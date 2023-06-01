@@ -43,7 +43,7 @@ class Texture final : public ObjectBase, public ChildOf<Device> {
   WeakPtr<CanvasContext> mTargetContext;
 
  private:
-  virtual ~Texture();
+  ~Texture() override;
   void Cleanup();
 
   const ffi::WGPUExtent3d mSize;

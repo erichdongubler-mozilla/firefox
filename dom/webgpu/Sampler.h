@@ -24,7 +24,7 @@ class Sampler final : public ObjectBase, public ChildOf<Device> {
   const RawId mId;
 
  private:
-  virtual ~Sampler();
+  ~Sampler() override;
   void Cleanup();
 };
 
