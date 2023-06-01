@@ -45,7 +45,7 @@ class CompilationMessage final : public nsWrapperCache, public ChildOf<Device> {
   uint64_t Length() const { return mLength; }
 
  private:
-  ~CompilationMessage() = default;
+  ~CompilationMessage() override = default;
   void Cleanup() {}
 };
 

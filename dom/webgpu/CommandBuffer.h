@@ -29,7 +29,7 @@ class CommandBuffer final : public ObjectBase, public ChildOf<Device> {
 
  private:
   CommandBuffer() = delete;
-  ~CommandBuffer();
+  ~CommandBuffer() override;
   void Cleanup();
 
   const RawId mId;

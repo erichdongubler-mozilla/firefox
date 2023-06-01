@@ -89,7 +89,7 @@ class Adapter final : public ObjectBase, public ChildOf<Instance> {
   RefPtr<WebGPUChild> mBridge;
 
  private:
-  ~Adapter();
+  ~Adapter() override;
   void Cleanup();
 
   const RawId mId;
