@@ -51,7 +51,7 @@ class RenderPassEncoder final : public nsWrapperCache,
                     const dom::GPURenderPassDescriptor& aDesc);
 
  protected:
-  virtual ~RenderPassEncoder();
+  ~RenderPassEncoder() override;
 
   std::unique_ptr<ffi::WGPURecordedRenderPass, ffiWGPURenderPassDeleter> mPass;
   // keep all the used objects alive while the pass is recorded

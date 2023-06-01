@@ -119,7 +119,7 @@ class Buffer final : public nsWrapperCache,
  private:
   Buffer(Device* const aParent, RawId aId, BufferAddress aSize, uint32_t aUsage,
          ipc::SharedMemoryMapping&& aShmem);
-  virtual ~Buffer();
+  ~Buffer() override;
   void Cleanup();
   void UnmapArrayBuffers(JSContext* aCx, ErrorResult& aRv);
   void AbortMapRequest();

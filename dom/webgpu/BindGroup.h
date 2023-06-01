@@ -38,7 +38,7 @@ class BindGroup final : public nsWrapperCache,
   }
 
  private:
-  virtual ~BindGroup();
+  ~BindGroup() override;
 
   // The canvas contexts of any canvas textures used in this bind group.
   CanvasContextArray mUsedCanvasContexts;

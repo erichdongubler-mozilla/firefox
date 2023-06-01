@@ -88,7 +88,7 @@ class Adapter final : public nsWrapperCache,
   GPU_DECL_JS_WRAP(Adapter)
 
  private:
-  virtual ~Adapter();
+  ~Adapter() override;
 
   // Cant have them as `const` right now, since we wouldn't be able
   // to unlink them in CC unlink.

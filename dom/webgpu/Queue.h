@@ -64,7 +64,7 @@ class Queue final : public nsWrapperCache,
       const dom::GPUExtent3D& aCopySize, ErrorResult& aRv);
 
  private:
-  virtual ~Queue();
+  ~Queue() override;
 
   // Index to use for the next submission containing external textures. Used to
   // keep track of when work involving external textures is done.

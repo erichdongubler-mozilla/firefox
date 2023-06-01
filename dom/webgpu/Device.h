@@ -115,7 +115,7 @@ class Device final : public DOMEventTargetHelper,
   void UntrackBuffer(Buffer* aBuffer);
 
  private:
-  virtual ~Device();
+  ~Device() override;
   // Expires external textures in mExternalTexturesToExpire. Scheduled to run
   // as a stable state task when an external texture is imported from an
   // HTMLVideoElement.

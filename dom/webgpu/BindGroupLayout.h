@@ -24,7 +24,7 @@ class BindGroupLayout final : public nsWrapperCache,
   BindGroupLayout(Device* const aParent, RawId aId);
 
  private:
-  virtual ~BindGroupLayout();
+  ~BindGroupLayout() override;
 };
 
 }  // namespace mozilla::webgpu

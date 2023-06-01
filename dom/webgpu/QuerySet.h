@@ -37,7 +37,7 @@ class QuerySet final : public nsWrapperCache,
   uint32_t Count() const;
 
  private:
-  virtual ~QuerySet();
+  ~QuerySet() override;
 
   dom::GPUQueryType mType;
   uint32_t mCount;

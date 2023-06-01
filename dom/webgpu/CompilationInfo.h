@@ -27,7 +27,7 @@ class CompilationInfo final : public nsWrapperCache, public ChildOf<Device> {
       nsTArray<RefPtr<mozilla::webgpu::CompilationMessage>>& aMessages);
 
  private:
-  virtual ~CompilationInfo();
+  ~CompilationInfo() override;
 
   nsTArray<RefPtr<mozilla::webgpu::CompilationMessage>> mMessages;
 };

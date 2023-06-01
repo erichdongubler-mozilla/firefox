@@ -85,7 +85,7 @@ class WebGPUChild final : public PWebGPUChild {
                               ipc::ByteBuf aSerializedMessages);
 
  private:
-  virtual ~WebGPUChild();
+  ~WebGPUChild() override;
 
   UniquePtr<ffi::WGPUClient> const mClient;
 

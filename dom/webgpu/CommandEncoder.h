@@ -66,7 +66,7 @@ class CommandEncoder final : public nsWrapperCache,
       ffi::WGPUTexelCopyTextureInfo_TextureId* aViewFFI);
 
  private:
-  virtual ~CommandEncoder();
+  ~CommandEncoder() override;
 
   CommandEncoderState mState;
 

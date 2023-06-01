@@ -45,7 +45,7 @@ class Texture final : public nsWrapperCache,
   WeakPtr<CanvasContext> mTargetContext;
 
  private:
-  virtual ~Texture();
+  ~Texture() override;
 
   const ffi::WGPUExtent3d mSize;
   const uint32_t mMipLevelCount;

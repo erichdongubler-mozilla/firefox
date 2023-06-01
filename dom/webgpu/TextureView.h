@@ -27,7 +27,7 @@ class TextureView final : public nsWrapperCache,
   WeakPtr<CanvasContext> GetTargetContext() const;
 
  private:
-  virtual ~TextureView();
+  ~TextureView() override;
 };
 
 }  // namespace mozilla::webgpu

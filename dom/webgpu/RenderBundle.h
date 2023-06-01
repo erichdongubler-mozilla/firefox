@@ -29,7 +29,7 @@ class RenderBundle final : public nsWrapperCache,
   }
 
  private:
-  virtual ~RenderBundle();
+  ~RenderBundle() override;
 
   // The canvas contexts of any canvas textures used in this render bundle.
   CanvasContextArray mUsedCanvasContexts;

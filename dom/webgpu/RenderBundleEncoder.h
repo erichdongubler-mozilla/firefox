@@ -43,7 +43,7 @@ class RenderBundleEncoder final : public nsWrapperCache,
                       const dom::GPURenderBundleEncoderDescriptor& aDesc);
 
  private:
-  virtual ~RenderBundleEncoder();
+  ~RenderBundleEncoder() override;
 
   std::unique_ptr<ffi::WGPURenderBundleEncoder,
                   ffiWGPURenderBundleEncoderDeleter>

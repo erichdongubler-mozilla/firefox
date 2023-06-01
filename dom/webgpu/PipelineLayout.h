@@ -24,7 +24,7 @@ class PipelineLayout final : public nsWrapperCache,
   PipelineLayout(Device* const aParent, RawId aId);
 
  private:
-  virtual ~PipelineLayout();
+  ~PipelineLayout() override;
 };
 
 }  // namespace mozilla::webgpu

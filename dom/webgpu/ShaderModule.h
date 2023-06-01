@@ -27,7 +27,7 @@ class ShaderModule final : public nsWrapperCache,
   already_AddRefed<dom::Promise> GetCompilationInfo(ErrorResult& aRv);
 
  private:
-  virtual ~ShaderModule();
+  ~ShaderModule() override;
 
   RefPtr<dom::Promise> mCompilationInfo;
 };

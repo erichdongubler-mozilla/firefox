@@ -42,7 +42,7 @@ class ComputePassEncoder final : public nsWrapperCache,
                      const dom::GPUComputePassDescriptor& aDesc);
 
  private:
-  virtual ~ComputePassEncoder();
+  ~ComputePassEncoder() override;
 
   std::unique_ptr<ffi::WGPURecordedComputePass, ffiWGPUComputePassDeleter>
       mPass;

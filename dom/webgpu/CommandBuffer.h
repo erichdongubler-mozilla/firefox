@@ -38,7 +38,7 @@ class CommandBuffer final : public nsWrapperCache,
   RawId Commit();
 
  private:
-  virtual ~CommandBuffer();
+  ~CommandBuffer() override;
 
   const nsTArray<WeakPtr<CanvasContext>> mPresentationContexts;
 

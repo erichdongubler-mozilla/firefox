@@ -24,7 +24,7 @@ class Sampler final : public nsWrapperCache,
   Sampler(Device* const aParent, RawId aId);
 
  private:
-  virtual ~Sampler();
+  ~Sampler() override;
 };
 
 }  // namespace mozilla::webgpu

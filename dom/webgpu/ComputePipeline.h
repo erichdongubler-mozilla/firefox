@@ -26,7 +26,7 @@ class ComputePipeline final : public nsWrapperCache,
   already_AddRefed<BindGroupLayout> GetBindGroupLayout(uint32_t index) const;
 
  private:
-  virtual ~ComputePipeline();
+  ~ComputePipeline() override;
 };
 
 }  // namespace mozilla::webgpu
