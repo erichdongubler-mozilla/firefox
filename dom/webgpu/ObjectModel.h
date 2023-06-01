@@ -13,17 +13,48 @@ class nsIGlobalObject;
 
 namespace mozilla::webgpu {
 class WebGPUChild;
+class Instance;
 
-template <typename T>
-class ChildOf {
+// Base class modeling clean-up during [cycle collection]. Intended to be used
+// with `GPU_DECL_CYCLE_COLLECTION` and `GPU_IMPL_CYCLE_COLLECTION`.
+//
+// [cycle collection]:
+// https://firefox-source-docs.mozilla.org/xpcom/cc-macros.html
+class GpuCycleCollected {
+  virtual ~GpuCycleCollected() { BeforeUnlinkStrongRefs(); }
+
+  // Event handler called right before cycle collected references are unlinked.
+  // If you are defining a type that inherits from this class, and it
+  // contains strong references to objects that need to be used for cleaning
+  // up (i.e., `WebGPUChild`), then you _must_ do so in this method.
+  //
+  // Implementations of this method should be idempotent; that is, multiple
+  // calls to it should achieve the same state of being "cleaned up".
+  virtual void BeforeUnlinkStrongRefs();
+};
+
+// Base class that only inherits from `nsWrapperCache`, for the sake of a name
+// that is close to other elements of WebGPU's implementation. Intended to be
+// used with `GPU_DECL_JS_WRAP` and `GPU_IMPL_JS_WRAP` to remove boilerplate
+// for wrapping JS objects in IDL bindings.
+class GpuJsWrap : public nsWrapperCache {};
+
+// Base class intended to remove boilerplate that IDL bindings rely on for
+// getting parent objects.
+template <typename T = nsIGlobalObject>
+class HasParentObject {
  protected:
-  explicit ChildOf(T* const parent);
-  virtual ~ChildOf();
+  explicit HasParentObject(T* const parent) : mParent(parent) {}
+  virtual ~HasParentObject() = default;
 
   RefPtr<T> mParent;
 
  public:
-  nsIGlobalObject* GetParentObject() const;
+  nsIGlobalObject* GetParentObject() const {
+    return mParent->GetParentObject();
+  }
+}
+
 };
 
 /// Most WebGPU DOM objects inherit from this class.
@@ -50,16 +81,14 @@ class ChildOf {
 /// - Any method outside of the destruction sequence can assume the pointers are
 ///   non-null. They only have to check that the IPDL actor can send messages
 ///   using `WebGPUChild::CanSend()`.
-class ObjectBase : public nsWrapperCache {
+class ObjectBase {
  protected:
-  virtual ~ObjectBase() = default;
-
   /// False during the destruction sequence of the object.
   bool mValid = true;
 
  public:
-  void GetLabel(nsAString& aValue) const;
-  void SetLabel(const nsAString& aLabel);
+  void GetLabel(nsAString& aValue) const { aValue = mLabel; }
+  void SetLabel(const nsAString& aLabel) { mLabel = aValue; }
 
   auto CLabel() const { return NS_ConvertUTF16toUTF8(mLabel); }
 
@@ -88,7 +117,7 @@ class ObjectBase : public nsWrapperCache {
 #define GPU_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(T, ...) \
   NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(T)       \
   NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(T)             \
-    tmp->Cleanup();                                    \
+    tmp->BeforeUnlinkStrongRefs();                     \
     NS_IMPL_CYCLE_COLLECTION_UNLINK(__VA_ARGS__)       \
     NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER  \
   NS_IMPL_CYCLE_COLLECTION_UNLINK_END                  \
@@ -99,7 +128,7 @@ class ObjectBase : public nsWrapperCache {
 #define GPU_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK_PTR(T, ...) \
   NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(T)                \
   NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(T)                      \
-    tmp->Cleanup();                                             \
+    tmp->BeforeUnlinkStrongRefs();                              \
     NS_IMPL_CYCLE_COLLECTION_UNLINK(__VA_ARGS__)                \
     NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER           \
     NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR                    \
@@ -111,7 +140,7 @@ class ObjectBase : public nsWrapperCache {
 #define GPU_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_INHERITED(T, P, ...) \
   NS_IMPL_CYCLE_COLLECTION_CLASS(T)                                 \
   NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(T, P)             \
-    tmp->Cleanup();                                                 \
+    tmp->BeforeUnlinkStrongRefs();                                  \
     NS_IMPL_CYCLE_COLLECTION_UNLINK(__VA_ARGS__)                    \
     NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER               \
     NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR                        \
