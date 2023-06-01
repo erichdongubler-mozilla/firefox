@@ -65,7 +65,7 @@ class Queue final : public ObjectBase, public ChildOf<Device> {
   const RawId mId;
 
  private:
-  virtual ~Queue();
+  ~Queue() override;
   void Cleanup() {}
 
   RefPtr<WebGPUChild> mBridge;
