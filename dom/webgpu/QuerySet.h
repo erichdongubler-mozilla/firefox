@@ -37,7 +37,7 @@ class QuerySet final : public ObjectBase, public ChildOf<Device> {
   const RawId mId;
 
  private:
-  virtual ~QuerySet();
+  ~QuerySet() override;
   void Cleanup();
 
   dom::GPUQueryType mType;

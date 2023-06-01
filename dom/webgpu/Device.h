@@ -119,7 +119,7 @@ class Device final : public DOMEventTargetHelper, public SupportsWeakPtr {
   RawId GetId() const { return mId; }
 
  private:
-  ~Device();
+  ~Device() override;
   void Cleanup();
 
   RefPtr<WebGPUChild> mBridge;

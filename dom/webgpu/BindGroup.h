@@ -24,7 +24,7 @@ class BindGroup final : public ObjectBase, public ChildOf<Device> {
   const RawId mId;
 
  private:
-  ~BindGroup();
+  ~BindGroup() override;
   void Cleanup();
 };
 

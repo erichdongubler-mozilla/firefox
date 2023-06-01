@@ -23,7 +23,7 @@ class RenderBundle final : public ObjectBase, public ChildOf<Device> {
   const RawId mId;
 
  private:
-  virtual ~RenderBundle();
+  ~RenderBundle() override;
   void Cleanup();
 };
 

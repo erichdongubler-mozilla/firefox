@@ -118,7 +118,7 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
  private:
   Buffer(Device* const aParent, RawId aId, BufferAddress aSize, uint32_t aUsage,
          ipc::SharedMemoryMapping&& aShmem);
-  virtual ~Buffer();
+  ~Buffer() override;
   Device& GetDevice() { return *mParent; }
   void Cleanup();
   void UnmapArrayBuffers(JSContext* aCx, ErrorResult& aRv);

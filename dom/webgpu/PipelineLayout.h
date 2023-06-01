@@ -24,7 +24,7 @@ class PipelineLayout final : public ObjectBase, public ChildOf<Device> {
   const RawId mId;
 
  private:
-  virtual ~PipelineLayout();
+  ~PipelineLayout() override;
   void Cleanup();
 };
 

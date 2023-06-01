@@ -166,7 +166,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   static void DeviceLostCallback(uint8_t* aUserData, uint8_t aReason,
                                  const char* aMessage);
 
-  virtual ~WebGPUParent();
+  ~WebGPUParent() override;
   void MaintainDevices();
   void LoseDevice(const RawId aDeviceId, Maybe<uint8_t> aReason,
                   const nsACString& aMessage);
