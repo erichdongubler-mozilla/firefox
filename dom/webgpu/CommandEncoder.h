@@ -58,7 +58,7 @@ class CommandEncoder final : public ObjectBase, public ChildOf<Device> {
       ffi::WGPUTexelCopyTextureInfo_TextureId* aViewFFI);
 
  private:
-  ~CommandEncoder();
+  ~CommandEncoder() override;
   void Cleanup();
 
   RefPtr<WebGPUChild> mBridge;

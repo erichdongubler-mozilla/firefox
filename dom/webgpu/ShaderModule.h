@@ -27,7 +27,7 @@ class ShaderModule final : public ObjectBase, public ChildOf<Device> {
   const RawId mId;
 
  private:
-  virtual ~ShaderModule();
+  ~ShaderModule() override;
   void Cleanup();
 
   RefPtr<dom::Promise> mCompilationInfo;
