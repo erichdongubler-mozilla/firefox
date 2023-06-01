@@ -25,7 +25,7 @@ class BindGroupLayout final : public ObjectBase, public ChildOf<Device> {
   const bool mOwning;
 
  private:
-  ~BindGroupLayout();
+  ~BindGroupLayout() override;
   void Cleanup();
 };
 

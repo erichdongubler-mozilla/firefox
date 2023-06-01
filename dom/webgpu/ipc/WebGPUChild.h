@@ -90,7 +90,7 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
   static void JsWarning(nsIGlobalObject* aGlobal, const nsACString& aMessage);
 
  private:
-  virtual ~WebGPUChild();
+  ~WebGPUChild() override;
 
   UniquePtr<ffi::WGPUClient> const mClient;
   std::unordered_map<RawId, WeakPtr<Device>> mDeviceMap;

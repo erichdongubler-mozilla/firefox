@@ -32,7 +32,7 @@ class RenderPipeline final : public ObjectBase, public ChildOf<Device> {
   already_AddRefed<BindGroupLayout> GetBindGroupLayout(uint32_t index) const;
 
  private:
-  virtual ~RenderPipeline();
+  ~RenderPipeline() override;
   void Cleanup();
 };
 

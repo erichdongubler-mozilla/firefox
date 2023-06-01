@@ -201,7 +201,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
   void RemoveExternalTexture(RawId aTextureId);
 
-  virtual ~WebGPUParent();
+  ~WebGPUParent() override;
   void MaintainDevices();
   void LoseDevice(const RawId aDeviceId, Maybe<uint8_t> aReason,
                   const nsACString& aMessage);
