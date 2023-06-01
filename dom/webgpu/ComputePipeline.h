@@ -32,7 +32,7 @@ class ComputePipeline final : public ObjectBase, public ChildOf<Device> {
   already_AddRefed<BindGroupLayout> GetBindGroupLayout(uint32_t index) const;
 
  private:
-  ~ComputePipeline();
+  ~ComputePipeline() override;
   void Cleanup();
 };
 
