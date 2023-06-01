@@ -22,7 +22,7 @@ class QuerySet final : public ObjectBase, public ChildOf<Device> {
   void Destroy();
 
  private:
-  virtual ~QuerySet();
+  ~QuerySet() override;
   void Cleanup() {}
 };
 
