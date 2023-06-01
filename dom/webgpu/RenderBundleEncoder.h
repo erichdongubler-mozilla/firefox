@@ -30,7 +30,7 @@ class RenderBundleEncoder final : public ObjectBase, public ChildOf<Device> {
                       const dom::GPURenderBundleEncoderDescriptor& aDesc);
 
  private:
-  ~RenderBundleEncoder();
+  ~RenderBundleEncoder() override;
   void Cleanup();
 
   std::unique_ptr<ffi::WGPURenderBundleEncoder,

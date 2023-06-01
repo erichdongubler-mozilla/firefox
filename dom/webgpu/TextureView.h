@@ -26,7 +26,7 @@ class TextureView final : public ObjectBase, public ChildOf<Texture> {
   const RawId mId;
 
  private:
-  virtual ~TextureView();
+  ~TextureView() override;
   void Cleanup();
 };
 
