@@ -16,6 +16,9 @@ class CompilationInfo;
 class Device;
 
 class ShaderModule final : public ObjectBase, public ChildOf<Device> {
+ private:
+  Maybe<RefPtr<CompilationInfo>> mCompilationInfo;
+
  public:
   GPU_DECL_CYCLE_COLLECTION(ShaderModule)
   GPU_DECL_JS_WRAP(ShaderModule)
@@ -29,8 +32,6 @@ class ShaderModule final : public ObjectBase, public ChildOf<Device> {
  private:
   virtual ~ShaderModule();
   void Cleanup();
-
-  RefPtr<dom::Promise> mCompilationInfo;
 };
 
 }  // namespace mozilla::webgpu
