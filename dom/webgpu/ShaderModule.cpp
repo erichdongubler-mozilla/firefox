@@ -44,8 +44,17 @@ void ShaderModule::Cleanup() {
 
 already_AddRefed<dom::Promise> ShaderModule::GetCompilationInfo(
     ErrorResult& aRv) {
-  RefPtr<dom::Promise> tmp = mCompilationInfo;
-  return tmp.forget();
+  RefPtr<dom::Promise> promise = dom::Promise::Create(GetParentObject(), aRv);
+
+  // NOTE: We should have had this set on construction after being received via
+  // IPC. If this isn't here, it's an IPC problem.
+  if (mCompilationInfo) {
+    promise->MaybeResolve(*mCompilationInfo);
+  } else {
+    promise->MaybeRejectWithNotSupportedError("IPC error");
+  }
+
+  return promise.forget();
 }
 
 }  // namespace mozilla::webgpu
