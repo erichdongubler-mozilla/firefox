@@ -176,7 +176,7 @@ interface GPUDevice : EventTarget {
     GPUCommandEncoder createCommandEncoder(optional GPUCommandEncoderDescriptor descriptor = {});
     GPURenderBundleEncoder createRenderBundleEncoder(GPURenderBundleEncoderDescriptor descriptor);
 
-    //GPUQuerySet createQuerySet(GPUQuerySetDescriptor descriptor);
+    GPUQuerySet createQuerySet(GPUQuerySetDescriptor descriptor);
 };
 GPUDevice includes GPUObjectBase;
 
@@ -952,6 +952,13 @@ interface GPUCommandEncoder {
         optional GPUSize64 offset = 0,
         optional GPUSize64 size);
 
+    undefined resolveQuerySet(
+        GPUQuerySet querySet,
+        GPUSize32 firstQuery,
+        GPUSize32 queryCount,
+        GPUBuffer destination,
+        GPUSize64 destinationOffset);
+
     GPUCommandBuffer finish(optional GPUCommandBufferDescriptor descriptor = {});
 };
 GPUCommandEncoder includes GPUObjectBase;
@@ -1153,6 +1160,9 @@ GPUQueue includes GPUObjectBase;
  Exposed=(Window, DedicatedWorker), SecureContext]
 interface GPUQuerySet {
     undefined destroy();
+
+    readonly attribute GPUQueryType type;
+    readonly attribute GPUSize32Out count;
 };
 GPUQuerySet includes GPUObjectBase;
 
