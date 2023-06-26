@@ -1739,7 +1739,7 @@ ipc::IPCResult WebGPUParent::RecvDevicePopErrorScope(
     }
 
     auto& stack = itr->second;
-    if (!stack.size()) {
+    if (stack.empty()) {
       // Content can cause this simply by calling `popErrorScope` when
       // there is no error scope pushed.
       return PopErrorScopeResult{PopErrorScopeResultType::ThrowOperationError,
