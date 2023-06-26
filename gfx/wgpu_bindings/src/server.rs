@@ -2184,6 +2184,8 @@ impl Global {
                     error_buf.init(err);
                 }
             }
+            // TODO: Why does this even exist? We're round-tripping with only details to burden this
+            // down. Why not just send something to the parent directly?
             DeviceAction::Error { message, r#type } => {
                 error_buf.init(ErrMsg {
                     message: &message,

@@ -22,6 +22,8 @@ use serde::{Deserialize, Serialize};
 /// construct a value of this type, available to C++ as `mozilla::webgpu::ffi::WGPUErrorBuffer`. If
 /// we catch a `Result::Err` in other functions of [this module](self), the error is converted to
 /// this type.
+// TODO: rename to `Error`
+// TODO: make into a lifetime'd structure!
 #[repr(C)]
 pub struct ErrorBuffer {
     /// The type of error that `string` is associated with. If this location is set to
