@@ -701,6 +701,7 @@ pub extern "C" fn wgpu_device_create_render_bundle_encoder(
     match wgc::command::RenderBundleEncoder::new(&descriptor, device_id, None) {
         Ok(encoder) => Box::into_raw(Box::new(encoder)),
         Err(e) => {
+            // TODO: We lose our error chain here! :scream:
             let message = format!("Error in `Device::create_render_bundle_encoder`: {}", e);
             let action = DeviceAction::Error {
                 message,
