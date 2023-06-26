@@ -634,7 +634,7 @@ void WebGPUParent::MapCallback(ffi::WGPUBufferMapAsyncStatus aStatus,
     mapData->mMappedSize = size;
   }
 
-  req->mResolver(std::move(result));
+  req->mResolver(result);
   delete req;
 }
 
@@ -1498,7 +1498,7 @@ ipc::IPCResult WebGPUParent::RecvDevicePopErrorScope(
     }
 
     auto& stack = itr->second;
-    if (!stack.size()) {
+    if (stack.empty()) {
       // Content can cause this simply by calling `popErrorScope` when
       // there is no error scope pushed.
       return PopErrorScopeResult{PopErrorScopeResultType::ThrowOperationError,
