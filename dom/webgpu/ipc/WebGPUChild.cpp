@@ -143,7 +143,9 @@ ipc::IPCResult WebGPUChild::RecvUncapturedError(const Maybe<RawId> aDeviceId,
       JsWarning(device->GetOwnerGlobal(), aMessage);
 
       dom::GPUUncapturedErrorEventInit init;
-      init.mError = new ValidationError(device->GetParentObject(), aMessage);
+      nsString message;
+      CopyUTF8toUTF16(aMessage, message);
+      init.mError = new ValidationError(device->GetParentObject(), message);
       RefPtr<mozilla::dom::GPUUncapturedErrorEvent> event =
           dom::GPUUncapturedErrorEvent::Constructor(
               device, u"uncapturederror"_ns, init);
