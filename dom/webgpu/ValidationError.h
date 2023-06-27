@@ -22,9 +22,6 @@ class ValidationError final : public Error {
   ValidationError(nsIGlobalObject* const aGlobal, const nsAString& aMessage)
       : Error(aGlobal, aMessage) {}
 
-  ValidationError(nsIGlobalObject* const aGlobal, const nsACString& aMessage)
-      : Error(aGlobal, aMessage) {}
-
  private:
   ~ValidationError() override = default;
 

@@ -9,11 +9,6 @@ namespace mozilla::webgpu {
 
 GPU_IMPL_CYCLE_COLLECTION(Error, mGlobal)
 
-Error::Error(nsIGlobalObject* const aGlobal, const nsACString& aMessage)
-    : mGlobal(aGlobal) {
-  CopyUTF8toUTF16(aMessage, mMessage);
-}
-
 Error::Error(nsIGlobalObject* const aGlobal, const nsAString& aMessage)
     : mGlobal(aGlobal), mMessage(aMessage) {}
 
