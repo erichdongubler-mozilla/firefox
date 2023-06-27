@@ -402,6 +402,7 @@ void WebGPUParent::ReportError(const Maybe<RawId> aDeviceId,
   }
   // No error scope found, so fall back to the uncaptured error handler
   if (!SendUncapturedError(aDeviceId, aMessage)) {
+  // if (!SendUncapturedError(aDeviceId, aType, aMessage)) {
     NS_ERROR("SendDeviceUncapturedError failed");
   }
 }
