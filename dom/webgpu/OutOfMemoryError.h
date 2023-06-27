@@ -22,9 +22,6 @@ class OutOfMemoryError final : public Error {
   OutOfMemoryError(nsIGlobalObject* const aGlobal, const nsAString& aMessage)
       : Error(aGlobal, aMessage) {}
 
-  OutOfMemoryError(nsIGlobalObject* const aGlobal, const nsACString& aMessage)
-      : Error(aGlobal, aMessage) {}
-
  private:
   ~OutOfMemoryError() override = default;
 

@@ -1135,6 +1135,13 @@ already_AddRefed<dom::Promise> Device::PopErrorScope(ErrorResult& aRv) {
       [self = RefPtr{this}, promise](const PopErrorScopeResult& aResult) {
         RefPtr<Error> error;
 
+        const nsACString& utf8Message = aResult.message;
+        auto getUtf16Message = [&utf8Message]() {
+          nsString utf16;
+          CopyUTF8toUTF16(utf8Message, utf16);
+          return utf16;
+        };
+
         switch (aResult.resultType) {
           case PopErrorScopeResultType::NoError:
             promise->MaybeResolve(JS::NullHandleValue);
@@ -1152,17 +1159,18 @@ already_AddRefed<dom::Promise> Device::PopErrorScope(ErrorResult& aRv) {
             return;
 
           case PopErrorScopeResultType::OutOfMemory:
-            error =
-                new OutOfMemoryError(self->GetParentObject(), aResult.message);
+            error = new OutOfMemoryError(self->GetParentObject(),
+                                         getUtf16Message());
             break;
 
           case PopErrorScopeResultType::ValidationError:
             error =
-                new ValidationError(self->GetParentObject(), aResult.message);
+                new ValidationError(self->GetParentObject(), getUtf16Message());
             break;
 
           case PopErrorScopeResultType::InternalError:
-            error = new InternalError(self->GetParentObject(), aResult.message);
+            error =
+                new InternalError(self->GetParentObject(), getUtf16Message());
             break;
         }
         promise->MaybeResolve(std::move(error));
