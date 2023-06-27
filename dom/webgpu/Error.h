@@ -28,7 +28,6 @@ class Error : public nsWrapperCache, public SupportsWeakPtr {
   GPU_DECL_CYCLE_COLLECTION(Error)
 
   Error(nsIGlobalObject* const aGlobal, const nsAString& aMessage);
-  Error(nsIGlobalObject* const aGlobal, const nsACString& aMessage);
 
  protected:
   virtual ~Error() = default;

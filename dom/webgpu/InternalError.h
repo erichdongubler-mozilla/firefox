@@ -22,9 +22,6 @@ class InternalError final : public Error {
   InternalError(nsIGlobalObject* const aGlobal, const nsAString& aMessage)
       : Error(aGlobal, aMessage) {}
 
-  InternalError(nsIGlobalObject* const aGlobal, const nsACString& aMessage)
-      : Error(aGlobal, aMessage) {}
-
  private:
   ~InternalError() override = default;
 
