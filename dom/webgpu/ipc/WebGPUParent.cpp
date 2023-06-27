@@ -576,6 +576,7 @@ void WebGPUParent::ReportError(RawId aDeviceId, const GPUErrorFilter aType,
   }
   // No error scope found, so fall back to the uncaptured error handler
   if (!SendUncapturedError(aDeviceId, aMessage)) {
+  // if (!SendUncapturedError(aDeviceId, aType, aMessage)) {
     NS_ERROR("SendDeviceUncapturedError failed");
   }
 }
