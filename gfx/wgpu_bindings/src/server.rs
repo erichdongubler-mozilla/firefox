@@ -909,6 +909,12 @@ pub extern "C" fn wgpu_server_buffer_unmap(
 ) {
     if let Err(e) = global.buffer_unmap(buffer_id) {
         match e {
+            // From the current draft of the WebGPU v1 spec. for [`unmap`]:
+            //
+            // > If `this.[[device]]` is invalid, return.
+            //
+            // [`unmap`]: https://gpuweb.github.io/gpuweb/#dom-gpubuffer-unmap
+            BufferAccessError::Device(DeviceError::Invalid) => (),
             // NOTE: This is presumed by CTS test cases, and was even formally specified in the
             // WebGPU spec. previously, but this doesn't seem formally specified now. :confused:
             //
