@@ -435,10 +435,8 @@ void Buffer::Unmap(JSContext* aCx, ErrorResult& aRv) {
     mShmem = std::make_shared<ipc::SharedMemoryMapping>();
   }
 
-  if (!GetDevice().IsLost()) {
     GetDevice().GetBridge()->SendBufferUnmap(GetDevice().mId, mId,
                                              mMapped->mWritable);
-  }
 
   mMapped.reset();
 }
