@@ -420,10 +420,8 @@ void Buffer::Unmap(JSContext* aCx, ErrorResult& aRv) {
     mShmem = std::make_shared<ipc::SharedMemoryMapping>();
   }
 
-  if (!GetDevice().IsLost()) {
     ffi::wgpu_client_buffer_unmap(GetDevice().GetBridge()->GetClient(),
                                   GetDevice().mId, mId, mMapped->mWritable);
-  }
 
   mMapped.reset();
 }
