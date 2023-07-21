@@ -617,7 +617,7 @@ enum GPUCompilationMessageType {
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
- Exposed=(Window, DedicatedWorker), SecureContext]
+ Exposed=(Window, DedicatedWorker), Serializable, SecureContext]
 interface GPUCompilationMessage {
     readonly attribute DOMString message;
     readonly attribute GPUCompilationMessageType type;
@@ -628,7 +628,7 @@ interface GPUCompilationMessage {
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
- Exposed=(Window, DedicatedWorker), SecureContext]
+ Exposed=(Window, DedicatedWorker), Serializable, SecureContext]
 interface GPUCompilationInfo {
     [Cached, Frozen, Pure]
     readonly attribute sequence<GPUCompilationMessage> messages;
