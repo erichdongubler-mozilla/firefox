@@ -612,7 +612,8 @@ GPUShaderModule includes GPUObjectBase;
 
 dictionary GPUShaderModuleDescriptor
          : GPUObjectDescriptorBase {
-    // UTF8String is not observably different from USVString
+    // NOTE: UTF8String is not observably different from USVString
+    // TODO: but y tho still
     required UTF8String code;
     sequence<GPUShaderModuleCompilationHint> compilationHints = [];
 };
