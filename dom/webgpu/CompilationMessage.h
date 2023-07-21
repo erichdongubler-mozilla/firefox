@@ -6,6 +6,7 @@
 #define GPU_CompilationMessage_H_
 
 #include "ObjectModel.h"
+#include "js/StructuredClone.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "nsWrapperCache.h"
 
@@ -41,6 +42,10 @@ class CompilationMessage final : public nsWrapperCache {
   uint64_t LinePos() const { return mLinePos; }
   uint64_t Offset() const { return mOffset; }
   uint64_t Length() const { return mLength; }
+
+  bool WriteStructuredClone(JSContext* aCx, JSStructuredCloneWriter* aWriter);
+  static already_AddRefed<CompilationMessage> ReadStructuredClone(
+      JSContext* aCx, JSStructuredCloneReader* aReader);
 
  private:
   ~CompilationMessage() = default;

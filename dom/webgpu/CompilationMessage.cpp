@@ -5,6 +5,8 @@
 #include "CompilationMessage.h"
 
 #include "CompilationInfo.h"
+#include "mozilla/dom/StructuredCloneTags.h"
+#include "mozilla/dom/StructuredCloneUtils.h"
 #include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla::webgpu {
@@ -22,5 +24,59 @@ CompilationMessage::CompilationMessage(dom::GPUCompilationMessageType aType,
       mOffset(aOffset),
       mLength(aLength),
       mMessage(std::move(aMessage)) {}
+
+bool CompilationMessage::WriteStructuredClone(
+    JSContext* aCx, JSStructuredCloneWriter* aWriter) {
+  if (!JS_WriteUint32Pair(aWriter, dom::SCTAG_DOM_GPUCOMPILATIONMESSAGE, 0)) {
+    return false;
+  }
+
+  if (!WriteString(aCx, aWriter, mMessage)) {
+    return false;
+  }
+
+  if (!JS_WriteUint32Pair(aWriter, static_cast<uint32_t>(mType), 0)) {
+    return false;
+  }
+
+  if (!JS_WriteUint64Pair(aWriter, mLineNum, mLinePos)) {
+    return false;
+  }
+
+  if (!JS_WriteUint64Pair(aWriter, mOffset, mLength)) {
+    return false;
+  }
+
+  return true;
+}
+
+already_AddRefed<CompilationMessage> CompilationMessage::ReadStructuredClone(
+    JSContext* aCx, JSStructuredCloneReader* aReader) {
+  nsString message;
+  if (!ReadString(aCx, aReader, message)) {
+    return nullptr;
+  }
+
+  uint32_t type, unused;
+  if (!JS_ReadUint32Pair(aReader, &type, &unused)) {
+    return nullptr;
+  }
+
+  uint64_t lineNum, linePos;
+  if (!JS_ReadUint64Pair(aReader, &lineNum, &linePos)) {
+    return nullptr;
+  }
+
+  uint64_t offset, length;
+  if (!JS_ReadUint64Pair(aReader, &offset, &length)) {
+    return nullptr;
+  }
+
+  RefPtr<CompilationMessage> msg = new CompilationMessage(
+      message, static_cast<dom::GPUCompilationMessageType>(type), lineNum,
+      linePos, offset, length);
+
+  return msg.forget();
+}
 
 }  // namespace mozilla::webgpu

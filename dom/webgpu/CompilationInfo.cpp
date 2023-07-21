@@ -6,6 +6,8 @@
 
 #include "CompilationMessage.h"
 #include "ShaderModule.h"
+#include "mozilla/dom/StructuredCloneTags.h"
+#include "mozilla/dom/StructuredCloneUtils.h"
 #include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla::webgpu {
@@ -14,6 +16,48 @@ GPU_IMPL_CYCLE_COLLECTION(CompilationInfo, mMessages)
 GPU_IMPL_JS_WRAP(CompilationInfo)
 
 CompilationInfo::CompilationInfo() = default;
+
+bool CompilationInfo::WriteStructuredClone(JSContext* aCx,
+                                           JSStructuredCloneWriter* aWriter) {
+  if (!JS_WriteUint32Pair(aWriter, SCTAG_DOM_GPUCOMPILATIONINFO, 0)) {
+    return false;
+  }
+
+  if (!JS_WriteUint32Pair(aWriter, mMessages.Length(), 0)) {
+    return false;
+  }
+
+  for (const auto& msg : mMessages) {
+    if (!msg->WriteStructuredClone(aCx, aWriter)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+already_AddRefed<CompilationInfo> CompilationInfo::ReadStructuredClone(
+    JSContext* aCx, JSStructuredCloneReader* aReader) {
+  uint32_t length, unused;
+  if (!JS_ReadUint32Pair(aReader, &length, &unused)) {
+    return nullptr;
+  }
+
+  nsTArray<RefPtr<CompilationMessage>> messages;
+  messages.SetCapacity(length);
+
+  for (uint32_t i = 0; i < length; ++i) {
+    RefPtr<CompilationMessage> msg =
+        CompilationMessage::ReadStructuredClone(aCx, aReader);
+    if (!msg) {
+      return nullptr;
+    }
+    messages.AppendElement(std::move(msg));
+  }
+
+  RefPtr<CompilationInfo> info = new CompilationInfo(std::move(messages));
+  return info.forget();
+}
 
 CompilationInfo::~CompilationInfo() = default;
 
