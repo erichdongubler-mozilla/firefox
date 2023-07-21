@@ -7,6 +7,7 @@
 
 #include "CompilationMessage.h"
 #include "ObjectModel.h"
+#include "js/StructuredClone.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla::webgpu {
@@ -24,6 +25,10 @@ class CompilationInfo final : public nsWrapperCache {
 
   void GetMessages(
       nsTArray<RefPtr<mozilla::webgpu::CompilationMessage>>& aMessages);
+
+  bool WriteStructuredClone(JSContext* aCx, JSStructuredCloneWriter* aWriter);
+  static already_AddRefed<CompilationInfo> ReadStructuredClone(
+      JSContext* aCx, JSStructuredCloneReader* aReader);
 
  private:
   virtual ~CompilationInfo();
