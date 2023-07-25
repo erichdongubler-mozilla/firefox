@@ -10,8 +10,7 @@
 // NOTE: This is part of WebGPU. We don't include this in `WebGPU.webidl`, in part because this
 // split allows code to generate properly.
 
-[Func="mozilla::webgpu::Instance::PrefEnabled",
- Exposed=(Window, Worker), SecureContext]
+[Exposed=(Window, Worker), SecureContext]
 interface GPUUncapturedErrorEvent : Event {
     constructor(
         DOMString type,
