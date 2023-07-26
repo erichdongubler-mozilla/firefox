@@ -1149,7 +1149,7 @@ enum GPUStoreOp {
 
 dictionary GPURenderPassLayout
          : GPUObjectDescriptorBase {
-    required sequence<GPUTextureFormat> colorFormats;
+    required sequence<GPUTextureFormat?> colorFormats;
     GPUTextureFormat depthStencilFormat;
     GPUSize32 sampleCount = 1;
 };
