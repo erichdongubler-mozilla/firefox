@@ -636,8 +636,7 @@ interface GPUCompilationMessage {
 [Func="mozilla::webgpu::Instance::PrefEnabled",
  Exposed=(Window, DedicatedWorker), SecureContext]
 interface GPUCompilationInfo {
-    [Cached, Frozen, Pure]
-    readonly attribute sequence<GPUCompilationMessage> messages;
+    readonly attribute FrozenArray<GPUCompilationMessage> messages;
 };
 
 enum GPUAutoLayoutMode {
