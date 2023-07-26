@@ -113,6 +113,7 @@ dom::Promise* Device::GetLost(ErrorResult& aRv) {
     mLostPromise = dom::Promise::Create(GetParentObject(), aRv);
     if (mLostPromise && !mBridge->CanSend()) {
       auto info = MakeRefPtr<DeviceLostInfo>(GetParentObject(),
+                                             dom::GPUDeviceLostReason::Unknown,
                                              u"WebGPUChild destroyed"_ns);
       mLostPromise->MaybeResolve(info);
     }
@@ -120,7 +121,7 @@ dom::Promise* Device::GetLost(ErrorResult& aRv) {
   return mLostPromise;
 }
 
-void Device::ResolveLost(Maybe<dom::GPUDeviceLostReason> aReason,
+void Device::ResolveLost(dom::GPUDeviceLostReason aReason,
                          const nsAString& aMessage) {
   IgnoredErrorResult rv;
   dom::Promise* lostPromise = GetLost(rv);
@@ -136,12 +137,8 @@ void Device::ResolveLost(Maybe<dom::GPUDeviceLostReason> aReason,
     // lostPromise was already resolved or rejected.
     return;
   }
-  RefPtr<DeviceLostInfo> info;
-  if (aReason.isSome()) {
-    info = MakeRefPtr<DeviceLostInfo>(GetParentObject(), *aReason, aMessage);
-  } else {
-    info = MakeRefPtr<DeviceLostInfo>(GetParentObject(), aMessage);
-  }
+  RefPtr<DeviceLostInfo> info =
+      MakeRefPtr<DeviceLostInfo>(GetParentObject(), aReason, aMessage);
   lostPromise->MaybeResolve(info);
 }
 
@@ -1085,7 +1082,7 @@ void Device::Destroy() {
   // always leads to device loss. This is guaranteeing the same result
   // as if we went through the bridge (device lost promise resolves,
   // then the device is cycle collected).
-  ResolveLost(Some(dom::GPUDeviceLostReason::Destroyed), u""_ns);
+  ResolveLost(dom::GPUDeviceLostReason::Destroyed, u""_ns);
 }
 
 void Device::PushErrorScope(const dom::GPUErrorFilter& aFilter) {

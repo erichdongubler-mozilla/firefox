@@ -199,7 +199,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
   virtual ~WebGPUParent();
   void MaintainDevices();
-  void LoseDevice(const RawId aDeviceId, Maybe<uint8_t> aReason,
+  void LoseDevice(const RawId aDeviceId, uint8_t aReason,
                   const nsACString& aMessage);
 
   bool ForwardError(Maybe<RawId> aDeviceId, ErrorBuffer& aError);
