@@ -1288,6 +1288,20 @@ partial interface GPUDevice {
     Promise<GPUError?> popErrorScope();
 };
 
+[Func="mozilla::webgpu::Instance::PrefEnabled",
+ Exposed=(Window, DedicatedWorker), SecureContext]
+interface GPUUncapturedErrorEvent : Event {
+    constructor(
+        DOMString type,
+        GPUUncapturedErrorEventInit gpuUncapturedErrorEventInitDict
+    );
+    [SameObject] readonly attribute GPUError error;
+};
+
+dictionary GPUUncapturedErrorEventInit : EventInit {
+    required GPUError error;
+};
+
 partial interface GPUDevice {
     [Exposed=(Window, DedicatedWorker)]
     attribute EventHandler onuncapturederror;
