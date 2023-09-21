@@ -85,8 +85,11 @@ class UpdateMetadata(Step):
             return
 
         kwargs = state.kwargs
+        import glob
+        import itertools
+        run_log = list(itertools.chain.from_iterable(map(glob.glob, kwargs["run_log"])))
         with state.push(["local_tree", "sync_tree", "paths", "serve_root"]):
-            state.run_log = kwargs["run_log"]
+            state.run_log = run_log
             state.disable_intermittent = kwargs["disable_intermittent"]
             state.update_intermittent = kwargs["update_intermittent"]
             state.remove_intermittent = kwargs["remove_intermittent"]
