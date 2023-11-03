@@ -90,7 +90,7 @@ void Device::CleanupUnregisteredInParent() {
 }
 
 bool Device::IsLost() const {
-  return !mBridge || !mBridge->CanSend() ||
+  return !IsBridgeAlive() ||
          (mLostPromise &&
           (mLostPromise->State() != dom::Promise::PromiseState::Pending));
 }
