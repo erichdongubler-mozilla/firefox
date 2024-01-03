@@ -131,7 +131,7 @@ class Device final : public DOMEventTargetHelper,
   nsTArray<WeakPtr<ExternalTexture>> mExternalTexturesToExpire;
 
  public:
-  dom::Promise* GetLost(ErrorResult& aRv);
+  dom::Promise* Lost();
   void ResolveLost(dom::GPUDeviceLostReason aReason, const nsAString& aMessage);
 
   const RefPtr<SupportedFeatures>& Features() const { return mFeatures; }
@@ -180,12 +180,12 @@ class Device final : public DOMEventTargetHelper,
   already_AddRefed<RenderPipeline> CreateRenderPipeline(
       const dom::GPURenderPipelineDescriptor& aDesc);
   already_AddRefed<dom::Promise> CreateComputePipelineAsync(
-      const dom::GPUComputePipelineDescriptor& aDesc, ErrorResult& aRv);
+      const dom::GPUComputePipelineDescriptor& aDesc);
   already_AddRefed<dom::Promise> CreateRenderPipelineAsync(
-      const dom::GPURenderPipelineDescriptor& aDesc, ErrorResult& aRv);
+      const dom::GPURenderPipelineDescriptor& aDesc);
 
   void PushErrorScope(const dom::GPUErrorFilter& aFilter);
-  already_AddRefed<dom::Promise> PopErrorScope(ErrorResult& aRv);
+  already_AddRefed<dom::Promise> PopErrorScope();
 
   void Destroy();
 
