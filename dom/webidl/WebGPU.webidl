@@ -88,7 +88,6 @@ interface mixin NavigatorGPU {
 
 [Exposed=(Window, Worker), SecureContext]
 interface GPU {
-    [Throws]
     Promise<GPUAdapter?> requestAdapter(optional GPURequestAdapterOptions options = {});
     GPUTextureFormat getPreferredCanvasFormat();
     [SameObject] readonly attribute WGSLLanguageFeatures wgslLanguageFeatures;
@@ -171,9 +170,7 @@ interface GPUDevice : EventTarget {
     GPUShaderModule createShaderModule(GPUShaderModuleDescriptor descriptor);
     GPUComputePipeline createComputePipeline(GPUComputePipelineDescriptor descriptor);
     GPURenderPipeline createRenderPipeline(GPURenderPipelineDescriptor descriptor);
-    [Throws]
     Promise<GPUComputePipeline> createComputePipelineAsync(GPUComputePipelineDescriptor descriptor);
-    [Throws]
     Promise<GPURenderPipeline> createRenderPipelineAsync(GPURenderPipelineDescriptor descriptor);
 
     GPUCommandEncoder createCommandEncoder(optional GPUCommandEncoderDescriptor descriptor = {});
@@ -191,7 +188,6 @@ interface GPUBuffer {
 
     readonly attribute GPUBufferMapState mapState;
 
-    [Throws]
     Promise<undefined> mapAsync(GPUMapModeFlags mode, optional GPUSize64 offset = 0, optional GPUSize64 size);
     [Throws]
     ArrayBuffer getMappedRange(optional GPUSize64 offset = 0, optional GPUSize64 size);
@@ -613,7 +609,6 @@ dictionary GPUPipelineLayoutDescriptor
 
 [Exposed=(Window, Worker), SecureContext]
 interface GPUShaderModule {
-    [Throws]
     Promise<GPUCompilationInfo> getCompilationInfo();
 };
 GPUShaderModule includes GPUObjectBase;
@@ -1190,7 +1185,6 @@ dictionary GPUQueueDescriptor
 interface GPUQueue {
     undefined submit(sequence<GPUCommandBuffer> commandBuffers);
 
-    [Throws]
     Promise<undefined> onSubmittedWorkDone();
 
     [Throws]
@@ -1285,7 +1279,6 @@ interface GPUDeviceLostInfo {
 };
 
 partial interface GPUDevice {
-    [Throws]
     readonly attribute Promise<GPUDeviceLostInfo> lost;
 };
 
@@ -1297,21 +1290,18 @@ interface GPUError {
 [Exposed=(Window, Worker), SecureContext]
 interface GPUValidationError
         : GPUError {
-    [Throws]
     constructor(DOMString message);
 };
 
 [Exposed=(Window, Worker), SecureContext]
 interface GPUOutOfMemoryError
         : GPUError {
-    [Throws]
     constructor(DOMString message);
 };
 
 [Exposed=(Window, Worker), SecureContext]
 interface GPUInternalError
         : GPUError {
-    [Throws]
     constructor(DOMString message);
 };
 
@@ -1323,7 +1313,6 @@ enum GPUErrorFilter {
 
 partial interface GPUDevice {
     undefined pushErrorScope(GPUErrorFilter filter);
-    [Throws]
     Promise<GPUError?> popErrorScope();
 };
 
