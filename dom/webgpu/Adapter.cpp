@@ -523,8 +523,9 @@ static auto ToACString(const nsAString& s) { return NS_ConvertUTF16toUTF8(s); }
 
 already_AddRefed<dom::Promise> Adapter::RequestDevice(
     const dom::GPUDeviceDescriptor& aDesc, ErrorResult& aRv) {
-  RefPtr<dom::Promise> promise = dom::Promise::Create(GetParentObject(), aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+  RefPtr<dom::Promise> promise =
+      dom::Promise::CreateInfallible(GetParentObject());
+  if (NS_WARN_IF(!promise)) {
     return nullptr;
   }
   RefPtr<dom::Promise> lost_promise =
