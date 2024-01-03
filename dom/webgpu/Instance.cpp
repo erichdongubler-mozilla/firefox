@@ -96,9 +96,9 @@ JSObject* Instance::WrapObject(JSContext* cx,
 }
 
 already_AddRefed<dom::Promise> Instance::RequestAdapter(
-    const dom::GPURequestAdapterOptions& aOptions, ErrorResult& aRv) {
-  RefPtr<dom::Promise> promise = dom::Promise::Create(mOwner, aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+    const dom::GPURequestAdapterOptions& aOptions) {
+  RefPtr<dom::Promise> promise = dom::Promise::CreateInfallible(mOwner);
+  if (NS_WARN_IF(!promise)) {
     return nullptr;
   }
 

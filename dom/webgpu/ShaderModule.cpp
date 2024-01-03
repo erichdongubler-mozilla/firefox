@@ -42,8 +42,7 @@ void ShaderModule::Cleanup() {
   wgpu_client_free_shader_module_id(bridge->GetClient(), mId);
 }
 
-already_AddRefed<dom::Promise> ShaderModule::GetCompilationInfo(
-    ErrorResult& aRv) {
+already_AddRefed<dom::Promise> ShaderModule::GetCompilationInfo() {
   RefPtr<dom::Promise> tmp = mCompilationInfo;
   return tmp.forget();
 }
