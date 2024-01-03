@@ -11,8 +11,7 @@ namespace mozilla::webgpu {
 GPU_IMPL_JS_WRAP(ValidationError)
 
 already_AddRefed<ValidationError> ValidationError::Constructor(
-    const dom::GlobalObject& aGlobal, const nsAString& aString,
-    ErrorResult& aRv) {
+    const dom::GlobalObject& aGlobal, const nsAString& aString) {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   MOZ_RELEASE_ASSERT(global);
   return MakeAndAddRef<ValidationError>(global, aString);
