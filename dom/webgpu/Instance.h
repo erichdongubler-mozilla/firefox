@@ -63,7 +63,7 @@ class Instance final : public nsWrapperCache {
   static already_AddRefed<Instance> Create(nsIGlobalObject* aOwner);
 
   already_AddRefed<dom::Promise> RequestAdapter(
-      const dom::GPURequestAdapterOptions& aOptions, ErrorResult& aRv);
+      const dom::GPURequestAdapterOptions& aOptions);
 
   dom::GPUTextureFormat GetPreferredCanvasFormat() const {
     // Changing implementation in a way that increases fingerprinting surface?
