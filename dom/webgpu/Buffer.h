@@ -99,8 +99,7 @@ class Buffer final : public nsWrapperCache,
                                          ErrorResult& aRv);
 
   already_AddRefed<dom::Promise> MapAsync(uint32_t aMode, uint64_t aOffset,
-                                          const dom::Optional<uint64_t>& aSize,
-                                          ErrorResult& aRv);
+                                          const dom::Optional<uint64_t>& aSize);
   void GetMappedRange(JSContext* aCx, uint64_t aOffset,
                       const dom::Optional<uint64_t>& aSize,
                       JS::Rooted<JSObject*>* aObject, ErrorResult& aRv);

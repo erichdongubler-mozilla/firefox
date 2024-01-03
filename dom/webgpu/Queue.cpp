@@ -129,9 +129,10 @@ void Queue::Submit(
   }
 }
 
-already_AddRefed<dom::Promise> Queue::OnSubmittedWorkDone(ErrorResult& aRv) {
-  RefPtr<dom::Promise> promise = dom::Promise::Create(GetParentObject(), aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+already_AddRefed<dom::Promise> Queue::OnSubmittedWorkDone() {
+  RefPtr<dom::Promise> promise =
+      dom::Promise::CreateInfallible(GetParentObject());
+  if (NS_WARN_IF(!promise)) {
     return nullptr;
   }
 
