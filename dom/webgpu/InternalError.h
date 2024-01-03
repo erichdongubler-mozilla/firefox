@@ -30,8 +30,7 @@ class InternalError final : public Error {
 
  public:
   static already_AddRefed<InternalError> Constructor(
-      const dom::GlobalObject& aGlobal, const nsAString& aString,
-      ErrorResult& aRv);
+      const dom::GlobalObject& aGlobal, const nsAString& aString);
 };
 
 }  // namespace webgpu
