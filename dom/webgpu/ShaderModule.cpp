@@ -38,8 +38,7 @@ void ShaderModule::Cleanup() {
   ffi::wgpu_client_drop_shader_module(bridge->GetClient(), mId);
 }
 
-already_AddRefed<dom::Promise> ShaderModule::GetCompilationInfo(
-    ErrorResult& aRv) {
+already_AddRefed<dom::Promise> ShaderModule::GetCompilationInfo() {
   RefPtr<dom::Promise> tmp = mCompilationInfo;
   return tmp.forget();
 }
