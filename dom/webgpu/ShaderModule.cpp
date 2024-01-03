@@ -24,8 +24,7 @@ ShaderModule::ShaderModule(Device* const aParent, RawId aId,
 
 ShaderModule::~ShaderModule() = default;
 
-already_AddRefed<dom::Promise> ShaderModule::GetCompilationInfo(
-    ErrorResult& aRv) {
+already_AddRefed<dom::Promise> ShaderModule::GetCompilationInfo() {
   RefPtr<dom::Promise> tmp = mCompilationInfo;
   return tmp.forget();
 }
