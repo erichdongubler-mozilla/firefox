@@ -30,8 +30,7 @@ class OutOfMemoryError final : public Error {
 
  public:
   static already_AddRefed<OutOfMemoryError> Constructor(
-      const dom::GlobalObject& aGlobal, const nsAString& aString,
-      ErrorResult& aRv);
+      const dom::GlobalObject& aGlobal, const nsAString& aString);
 };
 
 }  // namespace webgpu

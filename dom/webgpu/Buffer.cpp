@@ -182,10 +182,10 @@ void Buffer::SetMapped(BufferAddress aOffset, BufferAddress aSize,
 }
 
 already_AddRefed<dom::Promise> Buffer::MapAsync(
-    uint32_t aMode, uint64_t aOffset, const dom::Optional<uint64_t>& aSize,
-    ErrorResult& aRv) {
-  RefPtr<dom::Promise> promise = dom::Promise::Create(GetParentObject(), aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+    uint32_t aMode, uint64_t aOffset, const dom::Optional<uint64_t>& aSize) {
+  RefPtr<dom::Promise> promise =
+      dom::Promise::CreateInfallible(GetParentObject());
+  if (!promise) {
     return nullptr;
   }
 
