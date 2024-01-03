@@ -43,7 +43,7 @@ class Queue final : public ObjectBase, public ChildOf<Device> {
   void Submit(
       const dom::Sequence<OwningNonNull<CommandBuffer>>& aCommandBuffers);
 
-  already_AddRefed<dom::Promise> OnSubmittedWorkDone(ErrorResult& aRv);
+  already_AddRefed<dom::Promise> OnSubmittedWorkDone();
 
   void WriteBuffer(const Buffer& aBuffer, uint64_t aBufferOffset,
                    const dom::ArrayBufferViewOrArrayBuffer& aData,
