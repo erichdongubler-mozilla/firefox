@@ -943,9 +943,10 @@ already_AddRefed<RenderPipeline> Device::CreateRenderPipeline(
 }
 
 already_AddRefed<dom::Promise> Device::CreateComputePipelineAsync(
-    const dom::GPUComputePipelineDescriptor& aDesc, ErrorResult& aRv) {
-  RefPtr<dom::Promise> promise = dom::Promise::Create(GetParentObject(), aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+    const dom::GPUComputePipelineDescriptor& aDesc) {
+  RefPtr<dom::Promise> promise =
+      dom::Promise::CreateInfallible(GetParentObject());
+  if (NS_WARN_IF(!promise)) {
     return nullptr;
   }
 
@@ -959,9 +960,10 @@ already_AddRefed<dom::Promise> Device::CreateComputePipelineAsync(
 }
 
 already_AddRefed<dom::Promise> Device::CreateRenderPipelineAsync(
-    const dom::GPURenderPipelineDescriptor& aDesc, ErrorResult& aRv) {
-  RefPtr<dom::Promise> promise = dom::Promise::Create(GetParentObject(), aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+    const dom::GPURenderPipelineDescriptor& aDesc) {
+  RefPtr<dom::Promise> promise =
+      dom::Promise::CreateInfallible(GetParentObject());
+  if (NS_WARN_IF(!promise)) {
     return nullptr;
   }
 
@@ -1044,9 +1046,10 @@ void Device::PushErrorScope(const dom::GPUErrorFilter& aFilter) {
   ffi::wgpu_client_push_error_scope(GetClient(), GetId(), filter);
 }
 
-already_AddRefed<dom::Promise> Device::PopErrorScope(ErrorResult& aRv) {
-  RefPtr<dom::Promise> promise = dom::Promise::Create(GetParentObject(), aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+already_AddRefed<dom::Promise> Device::PopErrorScope() {
+  RefPtr<dom::Promise> promise =
+      dom::Promise::CreateInfallible(GetParentObject());
+  if (NS_WARN_IF(!promise)) {
     return nullptr;
   }
 
