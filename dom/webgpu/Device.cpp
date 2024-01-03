@@ -101,10 +101,9 @@ void Device::UntrackBuffer(Buffer* aBuffer) { mTrackedBuffers.Remove(aBuffer); }
 void Device::GetLabel(nsAString& aValue) const { aValue = mLabel; }
 void Device::SetLabel(const nsAString& aLabel) { mLabel = aLabel; }
 
-dom::Promise* Device::GetLost(ErrorResult& aRv) {
-  aRv = NS_OK;
+dom::Promise* Device::Lost() {
   if (!mLostPromise) {
-    mLostPromise = dom::Promise::Create(GetParentObject(), aRv);
+    mLostPromise = dom::Promise::CreateInfallible(GetParentObject());
     if (mLostPromise && !mBridge->CanSend()) {
       auto info = MakeRefPtr<DeviceLostInfo>(GetParentObject(),
                                              dom::GPUDeviceLostReason::Unknown,
@@ -117,8 +116,7 @@ dom::Promise* Device::GetLost(ErrorResult& aRv) {
 
 void Device::ResolveLost(dom::GPUDeviceLostReason aReason,
                          const nsAString& aMessage) {
-  IgnoredErrorResult rv;
-  dom::Promise* lostPromise = GetLost(rv);
+  dom::Promise* lostPromise = Lost();
   if (!lostPromise) {
     // Promise doesn't exist? Maybe out of memory.
     return;
@@ -881,9 +879,10 @@ already_AddRefed<RenderPipeline> Device::CreateRenderPipeline(
 }
 
 already_AddRefed<dom::Promise> Device::CreateComputePipelineAsync(
-    const dom::GPUComputePipelineDescriptor& aDesc, ErrorResult& aRv) {
-  RefPtr<dom::Promise> promise = dom::Promise::Create(GetParentObject(), aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+    const dom::GPUComputePipelineDescriptor& aDesc) {
+  RefPtr<dom::Promise> promise =
+      dom::Promise::CreateInfallible(GetParentObject());
+  if (NS_WARN_IF(!promise)) {
     return nullptr;
   }
 
@@ -908,9 +907,10 @@ already_AddRefed<dom::Promise> Device::CreateComputePipelineAsync(
 }
 
 already_AddRefed<dom::Promise> Device::CreateRenderPipelineAsync(
-    const dom::GPURenderPipelineDescriptor& aDesc, ErrorResult& aRv) {
-  RefPtr<dom::Promise> promise = dom::Promise::Create(GetParentObject(), aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+    const dom::GPURenderPipelineDescriptor& aDesc) {
+  RefPtr<dom::Promise> promise =
+      dom::Promise::CreateInfallible(GetParentObject());
+  if (NS_WARN_IF(!promise)) {
     return nullptr;
   }
 
@@ -996,9 +996,10 @@ void Device::PushErrorScope(const dom::GPUErrorFilter& aFilter) {
                                     (uint8_t)aFilter);
 }
 
-already_AddRefed<dom::Promise> Device::PopErrorScope(ErrorResult& aRv) {
-  RefPtr<dom::Promise> promise = dom::Promise::Create(GetParentObject(), aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
+already_AddRefed<dom::Promise> Device::PopErrorScope() {
+  RefPtr<dom::Promise> promise =
+      dom::Promise::CreateInfallible(GetParentObject());
+  if (NS_WARN_IF(!promise)) {
     return nullptr;
   }
 
