@@ -9,6 +9,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/Console.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebGPUBinding.h"
@@ -548,6 +549,64 @@ MOZ_CAN_RUN_SCRIPT void reportCompilationMessagesToConsole(
   const auto& cx = api.cx();
   dom::GlobalObject globalObj(cx, global->GetGlobalJSObject());
 
+  auto getCallStack3 = [global, &globalObj, aCx = cx]() {
+    JS::RootedObject stack(aCx);
+    if (!JS::CaptureCurrentStack(aCx, &stack)) {
+      // return Nothing();
+      return;
+      // auto warningReporter = JS::GetWarningReporter(aCx);
+      // JSErrorReport errReport{};
+      // warningReporter(aCx, &errReport);
+    }
+
+    dom::GlobalObject globalObj(aCx, global->GetGlobalJSObject());
+
+    dom::Sequence<JS::Value> args;
+    dom::SequenceRooter<JS::Value> msgArgsRooter(aCx, &args);
+    JS::Rooted<JS::Value> stackVal(aCx, JS::ObjectOrNullValue(stack));
+    JS::Rooted<JS::Value> wrappedStack(aCx);
+    ErrorResult rv;
+    dom::ChromeUtils::WaiveXrays(globalObj, stackVal, &wrappedStack, rv);
+    if (rv.Failed()) {
+      NS_ERROR("UNABLE TO WRAP FRICKING STACK FRAME WITH FRICKING NON-X-RAYS WRAPPER THING FRICK");
+      return;
+    }
+
+    nsString message(u"shader module stack thing plz work ,':[");
+
+    JS::Rooted<JSString*> jsStr(
+        aCx, JS_NewUCStringCopyN(aCx, message.Data(), message.Length()));
+    if (!jsStr) {
+      NS_ERROR("UNABLE TO CONSTRUCT FRICKING STRING MESSAGE");
+      // return Nothing();
+      return;
+    }
+    JS::Rooted<JS::Value> val(aCx, JS::StringValue(jsStr));
+    if (!args.AppendElement(val, fallible)) {
+      NS_ERROR("UNABLE TO APPEND FRICKING STRING MESSAGE TO ARGS");
+      // return Nothing();
+      return;
+    }
+
+    if (!args.AppendElement(wrappedStack, fallible)) {
+      NS_ERROR("UNABLE TO APPEND FRICKING STACK TO ARGS");
+    }
+
+    RefPtr<dom::Console> console =
+        nsGlobalWindowInner::Cast(global->GetAsInnerWindow())
+            ->GetConsole(aCx, rv);
+    if (rv.Failed()) {
+      NS_ERROR("UNABLE TO GET FRICKING CONSOLE");
+    }
+
+    console->Error(globalObj, args);
+
+    // return Some(std::move(stack));
+    return;
+  };
+  // auto stack = getCallStack3();
+  getCallStack3();
+
   dom::Sequence<JS::Value> args;
   dom::SequenceRooter<JS::Value> msgArgsRooter(cx, &args);
   auto SetSingleStrAsArgs =
@@ -656,7 +715,8 @@ MOZ_CAN_RUN_SCRIPT void reportCompilationMessagesToConsole(
 }
 
 already_AddRefed<ShaderModule> Device::CreateShaderModule(
-    const dom::GPUShaderModuleDescriptor& aDesc, ErrorResult& aRv) {
+    JSContext* aCx, const dom::GPUShaderModuleDescriptor& aDesc,
+    ErrorResult& aRv) {
   RefPtr<dom::Promise> promise = dom::Promise::Create(GetParentObject(), aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
@@ -664,11 +724,129 @@ already_AddRefed<ShaderModule> Device::CreateShaderModule(
 
   RawId moduleId = ffi::wgpu_client_make_shader_module_id(mBridge->GetClient());
 
+  auto asdf = CheckedInt<size_t>(12) - 16;
+  MOZ_ASSERT(!asdf.isValid());
+
   RefPtr<ShaderModule> shaderModule = new ShaderModule(this, moduleId, promise);
 
   shaderModule->SetLabel(aDesc.mLabel);
 
   RefPtr<Device> device = this;
+
+  auto getCallStack = [this, aCx]() {
+    JS::RootedObject stack(aCx);
+    if (!JS::CaptureCurrentStack(aCx, &stack)) {
+      // return Nothing();
+      return;
+      // auto warningReporter = JS::GetWarningReporter(aCx);
+      // JSErrorReport errReport{};
+      // warningReporter(aCx, &errReport);
+    }
+
+    auto* global = GetParentObject();
+
+    dom::GlobalObject globalObj(aCx, global->GetGlobalJSObject());
+
+    dom::Sequence<JS::Value> args;
+    dom::SequenceRooter<JS::Value> msgArgsRooter(aCx, &args);
+
+    nsString message(u"yo does this shader module stack thing work");
+
+    JS::Rooted<JSString*> jsStr(
+        aCx, JS_NewUCStringCopyN(aCx, message.Data(), message.Length()));
+    if (!jsStr) {
+      NS_ERROR("UNABLE TO CONSTRUCT FRICKING STRING MESSAGE");
+      // return Nothing();
+      return;
+    }
+    JS::Rooted<JS::Value> val(aCx, JS::StringValue(jsStr));
+    if (!args.AppendElement(val, fallible)) {
+      NS_ERROR("UNABLE TO APPEND FRICKING STRING MESSAGE TO ARGS");
+      // return Nothing();
+      return;
+    }
+
+    JS::Rooted<JS::Value> stackVal(aCx, JS::ObjectOrNullValue(stack));
+    if (!args.AppendElement(stackVal, fallible)) {
+      NS_ERROR("UNABLE TO APPEND FRICKING STACK TO ARGS");
+    }
+
+    ErrorResult rv;
+    RefPtr<dom::Console> console =
+        nsGlobalWindowInner::Cast(global->GetAsInnerWindow())
+            ->GetConsole(aCx, rv);
+    if (rv.Failed()) {
+      NS_ERROR("UNABLE TO GET FRICKING CONSOLE");
+    }
+
+    console->Error(globalObj, args);
+
+    // return Some(std::move(stack));
+    return;
+  };
+
+  // auto stack = getCallStack();
+  getCallStack();
+
+  auto getCallStack2 = [this, aCx]() {
+    JS::RootedObject stack(aCx);
+    if (!JS::CaptureCurrentStack(aCx, &stack)) {
+      // return Nothing();
+      return;
+      // auto warningReporter = JS::GetWarningReporter(aCx);
+      // JSErrorReport errReport{};
+      // warningReporter(aCx, &errReport);
+    }
+
+    auto* global = GetParentObject();
+
+    dom::GlobalObject globalObj(aCx, global->GetGlobalJSObject());
+
+    dom::Sequence<JS::Value> args;
+    dom::SequenceRooter<JS::Value> msgArgsRooter(aCx, &args);
+    JS::Rooted<JS::Value> stackVal(aCx, JS::ObjectOrNullValue(stack));
+    JS::Rooted<JS::Value> wrappedStack(aCx);
+    ErrorResult rv;
+    dom::ChromeUtils::WaiveXrays(globalObj, stackVal, &wrappedStack, rv);
+    if (rv.Failed()) {
+      NS_ERROR("UNABLE TO WRAP FRICKING STACK FRAME WITH FRICKING NON-X-RAYS WRAPPER THING FRICK");
+      return;
+    }
+
+    nsString message(u"shader module stack thing plz work ,':[");
+
+    JS::Rooted<JSString*> jsStr(
+        aCx, JS_NewUCStringCopyN(aCx, message.Data(), message.Length()));
+    if (!jsStr) {
+      NS_ERROR("UNABLE TO CONSTRUCT FRICKING STRING MESSAGE");
+      // return Nothing();
+      return;
+    }
+    JS::Rooted<JS::Value> val(aCx, JS::StringValue(jsStr));
+    if (!args.AppendElement(val, fallible)) {
+      NS_ERROR("UNABLE TO APPEND FRICKING STRING MESSAGE TO ARGS");
+      // return Nothing();
+      return;
+    }
+
+    if (!args.AppendElement(wrappedStack, fallible)) {
+      NS_ERROR("UNABLE TO APPEND FRICKING STACK TO ARGS");
+    }
+
+    RefPtr<dom::Console> console =
+        nsGlobalWindowInner::Cast(global->GetAsInnerWindow())
+            ->GetConsole(aCx, rv);
+    if (rv.Failed()) {
+      NS_ERROR("UNABLE TO GET FRICKING CONSOLE");
+    }
+
+    console->Warn(globalObj, args);
+
+    // return Some(std::move(stack));
+    return;
+  };
+  // auto stack = getCallStack2();
+  getCallStack2();
 
   if (mBridge->CanSend()) {
     mBridge
