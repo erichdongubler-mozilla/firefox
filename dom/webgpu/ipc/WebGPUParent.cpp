@@ -1043,12 +1043,13 @@ static void ReadbackPresentCallback(ffi::WGPUBufferMapAsyncStatus status,
     }
   });
 
-  if (!req->mRemoteTextureOwner->IsRegistered(req->mOwnerId)) {
+  RefPtr<PresentationData> data = req->mData;
+  if (!req->mRemoteTextureOwner->IsRegistered(req->mOwnerId) ||
+      data->mQueuedBufferIds.empty()) {
     // SwapChain is already Destroyed
     return;
   }
 
-  RefPtr<PresentationData> data = req->mData;
   // get the buffer ID
   RawId bufferId;
   {
@@ -1367,15 +1368,18 @@ ipc::IPCResult WebGPUParent::RecvSwapChainDrop(
   for (const auto bid : data->mUnassignedBufferIds) {
     wgpu_server_buffer_free(bid, ToFFI(&dropByteBuf));
   }
+  data->mUnassignedBufferIds.clear();
   if (dropByteBuf.mData && !SendDropAction(std::move(dropByteBuf))) {
     NS_WARNING("Unable to free an ID for non-assigned buffer");
   }
   for (const auto bid : data->mAvailableBufferIds) {
     ffi::wgpu_server_buffer_drop(mContext.get(), bid);
   }
+  data->mAvailableBufferIds.clear();
   for (const auto bid : data->mQueuedBufferIds) {
     ffi::wgpu_server_buffer_drop(mContext.get(), bid);
   }
+  data->mQueuedBufferIds.clear();
   return IPC_OK();
 }
 
