@@ -160,6 +160,7 @@ already_AddRefed<Texture> Device::CreateTexture(
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
 
+  // TODO: validate `aDesc.mSize`: https://www.w3.org/TR/webgpu/#abstract-opdef-validate-gpuextent3d-shape
   if (aDesc.mSize.IsRangeEnforcedUnsignedLongSequence()) {
     const auto& seq = aDesc.mSize.GetAsRangeEnforcedUnsignedLongSequence();
     desc.size.width = seq.Length() > 0 ? seq[0] : 1;
@@ -177,6 +178,7 @@ already_AddRefed<Texture> Device::CreateTexture(
   desc.sample_count = aDesc.mSampleCount;
   desc.dimension = ffi::WGPUTextureDimension(aDesc.mDimension);
   desc.format = ConvertTextureFormat(aDesc.mFormat);
+  // TODO: validate required features for format: https://www.w3.org/TR/webgpu/#abstract-opdef-validate-texture-format-required-features
   desc.usage = aDesc.mUsage;
 
   AutoTArray<ffi::WGPUTextureFormat, 8> viewFormats;
@@ -717,20 +719,19 @@ RawId CreateComputePipelineImpl(RawId deviceId, WebGPUChild* aBridge,
   } else {
     desc.stage.entry_point = nullptr;
   }
-  if (aDesc.mCompute.mConstants.WasPassed()) {
-    const auto& descConstants = aDesc.mCompute.mConstants.Value().Entries();
-    constantKeys.SetCapacity(descConstants.Length());
-    constants.SetCapacity(descConstants.Length());
-    for (const auto& entry : descConstants) {
-      ffi::WGPUConstantEntry constantEntry = {};
-      nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
-      constantKeys.AppendElement(key);
-      constantEntry.key = key.get();
-      constantEntry.value = entry.mValue;
-      constants.AppendElement(constantEntry);
-    }
-    desc.stage.constants = {constants.Elements(), constants.Length()};
+
+  const auto& descConstants = aDesc.mCompute.mConstants.Entries();
+  constantKeys.SetCapacity(descConstants.Length());
+  constants.SetCapacity(descConstants.Length());
+  for (const auto& entry : descConstants) {
+    ffi::WGPUConstantEntry constantEntry = {};
+    nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
+    constantKeys.AppendElement(key);
+    constantEntry.key = key.get();
+    constantEntry.value = entry.mValue;
+    constants.AppendElement(constantEntry);
   }
+  desc.stage.constants = {constants.Elements(), constants.Length()};
 
   RawId id = ffi::wgpu_client_create_compute_pipeline(aBridge->GetClient(),
                                                       deviceId, &desc, isAsync);
@@ -775,21 +776,20 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aBridge,
     } else {
       vertexState.stage.entry_point = nullptr;
     }
-    if (stage.mConstants.WasPassed()) {
-      const auto& descConstants = stage.mConstants.Value().Entries();
-      vsConstantKeys.SetCapacity(descConstants.Length());
-      vsConstants.SetCapacity(descConstants.Length());
-      for (const auto& entry : descConstants) {
-        ffi::WGPUConstantEntry constantEntry = {};
-        nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
-        vsConstantKeys.AppendElement(key);
-        constantEntry.key = key.get();
-        constantEntry.value = entry.mValue;
-        vsConstants.AppendElement(constantEntry);
-      }
-      vertexState.stage.constants = {vsConstants.Elements(),
-                                     vsConstants.Length()};
+
+    const auto& descConstants = stage.mConstants.Entries();
+    vsConstantKeys.SetCapacity(descConstants.Length());
+    vsConstants.SetCapacity(descConstants.Length());
+    for (const auto& entry : descConstants) {
+      ffi::WGPUConstantEntry constantEntry = {};
+      nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
+      vsConstantKeys.AppendElement(key);
+      constantEntry.key = key.get();
+      constantEntry.value = entry.mValue;
+      vsConstants.AppendElement(constantEntry);
     }
+    vertexState.stage.constants = {vsConstants.Elements(),
+                                   vsConstants.Length()};
 
     for (const auto& vertex_desc : stage.mBuffers) {
       ffi::WGPUVertexBufferLayout vb_desc = {};
@@ -829,21 +829,20 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aBridge,
     } else {
       fragmentState.stage.entry_point = nullptr;
     }
-    if (stage.mConstants.WasPassed()) {
-      const auto& descConstants = stage.mConstants.Value().Entries();
-      fsConstantKeys.SetCapacity(descConstants.Length());
-      fsConstants.SetCapacity(descConstants.Length());
-      for (const auto& entry : descConstants) {
-        ffi::WGPUConstantEntry constantEntry = {};
-        nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
-        fsConstantKeys.AppendElement(key);
-        constantEntry.key = key.get();
-        constantEntry.value = entry.mValue;
-        fsConstants.AppendElement(constantEntry);
-      }
-      fragmentState.stage.constants = {fsConstants.Elements(),
-                                       fsConstants.Length()};
+
+    const auto& descConstants = stage.mConstants.Entries();
+    fsConstantKeys.SetCapacity(descConstants.Length());
+    fsConstants.SetCapacity(descConstants.Length());
+    for (const auto& entry : descConstants) {
+      ffi::WGPUConstantEntry constantEntry = {};
+      nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
+      fsConstantKeys.AppendElement(key);
+      constantEntry.key = key.get();
+      constantEntry.value = entry.mValue;
+      fsConstants.AppendElement(constantEntry);
     }
+    fragmentState.stage.constants = {fsConstants.Elements(),
+                                     fsConstants.Length()};
 
     // Note: we pre-collect the blend states into a different array
     // so that we can have non-stale pointers into it.
