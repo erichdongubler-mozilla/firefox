@@ -243,10 +243,25 @@ struct FeatureImplementationStatus {
         return unimplemented(
             "https://bugzilla.mozilla.org/show_bug.cgi?id=1955417");
 
+      case dom::GPUFeatureName::Texture_formats_tier1:
+        // return implemented(WGPUWEBGPU_FEATURE_TEXTURE_FORMATS_TIER1);
+        return unimplemented(
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=1982451");
+
+      case dom::GPUFeatureName::Texture_formats_tier2:
+        // return implemented(WGPUWEBGPU_FEATURE_TEXTURE_FORMATS_TIER2);
+        return unimplemented(
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=1982451");
+
       case dom::GPUFeatureName::Primitive_index:
         // return implemented(WGPUWEBGPU_FEATURE_PRIMITIVE_INDEX);
         return unimplemented(
             "https://bugzilla.mozilla.org/show_bug.cgi?id=1989116");
+
+      case dom::GPUFeatureName::Texture_component_swizzle:
+        // return implemented(WGPUWEBGPU_FEATURE_TEXTURE_COMPONENT_SWIZZLE);
+        return unimplemented(
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=2005065");
 
       case dom::GPUFeatureName::Core_features_and_limits:
         // NOTE: `0` means that no bits are set in calling code, but this is on
@@ -274,7 +289,11 @@ double GetLimitDefault(Limit aLimit) {
       case Limit::MaxSampledTexturesPerShaderStage: return 16;
       case Limit::MaxSamplersPerShaderStage: return 16;
       case Limit::MaxStorageBuffersPerShaderStage: return 8;
+      case Limit::MaxStorageBuffersInVertexStage: return 8;
+      case Limit::MaxStorageBuffersInFragmentStage: return 8;
       case Limit::MaxStorageTexturesPerShaderStage: return 4;
+      case Limit::MaxStorageTexturesInVertexStage: return 8;
+      case Limit::MaxStorageTexturesInFragmentStage: return 8;
       case Limit::MaxUniformBuffersPerShaderStage: return 12;
       case Limit::MaxUniformBufferBindingSize: return 65536;
       case Limit::MaxStorageBufferBindingSize: return 134217728;
@@ -413,8 +432,16 @@ static std::string_view ToJsKey(const Limit limit) {
       return "maxSamplersPerShaderStage";
     case Limit::MaxStorageBuffersPerShaderStage:
       return "maxStorageBuffersPerShaderStage";
+    case Limit::MaxStorageBuffersInVertexStage:
+      return "maxStorageBuffersInVertexStage";
+    case Limit::MaxStorageBuffersInFragmentStage:
+      return "maxStorageBuffersInFragmentStage";
     case Limit::MaxStorageTexturesPerShaderStage:
       return "maxStorageTexturesPerShaderStage";
+    case Limit::MaxStorageTexturesInVertexStage:
+      return "maxStorageTexturesInVertexStage";
+    case Limit::MaxStorageTexturesInFragmentStage:
+      return "maxStorageTexturesInFragmentStage";
     case Limit::MaxUniformBuffersPerShaderStage:
       return "maxUniformBuffersPerShaderStage";
     case Limit::MaxUniformBufferBindingSize:
@@ -553,75 +580,73 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
     // -
     // Validate Limits
 
-    if (aDesc.mRequiredLimits.WasPassed()) {
-      static const auto LIMIT_BY_JS_KEY = []() {
-        std::unordered_map<std::string_view, Limit> ret;
-        for (const auto limit : MakeInclusiveEnumeratedRange(Limit::_LAST)) {
-          const auto jsKeyU8 = ToJsKey(limit);
-          ret[jsKeyU8] = limit;
-        }
-        return ret;
-      }();
+    static const auto LIMIT_BY_JS_KEY = []() {
+      std::unordered_map<std::string_view, Limit> ret;
+      for (const auto limit : MakeInclusiveEnumeratedRange(Limit::_LAST)) {
+        const auto jsKeyU8 = ToJsKey(limit);
+        ret[jsKeyU8] = limit;
+      }
+      return ret;
+    }();
 
-      for (const auto& entry : aDesc.mRequiredLimits.Value().Entries()) {
-        const auto& keyU16 = entry.mKey;
-        const nsCString keyU8 = ToACString(keyU16);
-        const auto itr = LIMIT_BY_JS_KEY.find(keyU8.get());
-        if (itr == LIMIT_BY_JS_KEY.end()) {
-          nsPrintfCString msg("requestDevice: Limit '%s' not recognized.",
-                              keyU8.get());
+    for (const auto& entry : aDesc.mRequiredLimits.Entries()) {
+      const auto& keyU16 = entry.mKey;
+      const nsCString keyU8 = ToACString(keyU16);
+      const auto itr = LIMIT_BY_JS_KEY.find(keyU8.get());
+      if (itr == LIMIT_BY_JS_KEY.end()) {
+        nsPrintfCString msg("requestDevice: Limit '%s' not recognized.",
+                            keyU8.get());
+        promise->MaybeRejectWithOperationError(msg);
+        return;
+      }
+
+      const auto& limit = itr->second;
+      uint64_t requestedValue = entry.mValue;
+      const auto supportedValue = GetLimit(*mLimits->mFfi, limit);
+      if (StringBeginsWith(keyU8, "max"_ns)) {
+        if (requestedValue > supportedValue) {
+          nsPrintfCString msg(
+              "requestDevice: Request for limit '%s' must be <= supported "
+              "%s, was %s.",
+              keyU8.get(), std::to_string(supportedValue).c_str(),
+              std::to_string(requestedValue).c_str());
           promise->MaybeRejectWithOperationError(msg);
           return;
         }
-
-        const auto& limit = itr->second;
-        uint64_t requestedValue = entry.mValue;
-        const auto supportedValue = GetLimit(*mLimits->mFfi, limit);
-        if (StringBeginsWith(keyU8, "max"_ns)) {
-          if (requestedValue > supportedValue) {
-            nsPrintfCString msg(
-                "requestDevice: Request for limit '%s' must be <= supported "
-                "%s, was %s.",
-                keyU8.get(), std::to_string(supportedValue).c_str(),
-                std::to_string(requestedValue).c_str());
-            promise->MaybeRejectWithOperationError(msg);
-            return;
-          }
-          // Clamp to default if lower than default
-          requestedValue =
-              std::max(requestedValue, GetLimit(deviceLimits, limit));
-        } else {
-          MOZ_ASSERT(StringBeginsWith(keyU8, "min"_ns));
-          if (requestedValue < supportedValue) {
-            nsPrintfCString msg(
-                "requestDevice: Request for limit '%s' must be >= supported "
-                "%s, was %s.",
-                keyU8.get(), std::to_string(supportedValue).c_str(),
-                std::to_string(requestedValue).c_str());
-            promise->MaybeRejectWithOperationError(msg);
-            return;
-          }
-          if (StringEndsWith(keyU8, "Alignment"_ns)) {
-            if (!IsPowerOfTwo(requestedValue)) {
-              nsPrintfCString msg(
-                  "requestDevice: Request for limit '%s' must be a power of "
-                  "two, "
-                  "was %s.",
-                  keyU8.get(), std::to_string(requestedValue).c_str());
-              promise->MaybeRejectWithOperationError(msg);
-              return;
-            }
-          }
-          /// Clamp to default if higher than default
-          /// Changing implementation in a way that increases fingerprinting
-          /// surface? Please create a bug in [Core::Privacy: Anti
-          /// Tracking](https://bugzilla.mozilla.org/enter_bug.cgi?product=Core&component=Privacy%3A%20Anti-Tracking)
-          requestedValue =
-              std::min(requestedValue, GetLimit(deviceLimits, limit));
+        // Clamp to default if lower than default
+        requestedValue =
+            std::max(requestedValue, GetLimit(deviceLimits, limit));
+      } else {
+        MOZ_ASSERT(StringBeginsWith(keyU8, "min"_ns));
+        if (requestedValue < supportedValue) {
+          nsPrintfCString msg(
+              "requestDevice: Request for limit '%s' must be >= supported "
+              "%s, was %s.",
+              keyU8.get(), std::to_string(supportedValue).c_str(),
+              std::to_string(requestedValue).c_str());
+          promise->MaybeRejectWithOperationError(msg);
+          return;
         }
-
-        SetLimit(&deviceLimits, limit, requestedValue);
+        if (StringEndsWith(keyU8, "Alignment"_ns)) {
+          if (!IsPowerOfTwo(requestedValue)) {
+            nsPrintfCString msg(
+                "requestDevice: Request for limit '%s' must be a power of "
+                "two, "
+                "was %s.",
+                keyU8.get(), std::to_string(requestedValue).c_str());
+            promise->MaybeRejectWithOperationError(msg);
+            return;
+          }
+        }
+        /// Clamp to default if higher than default
+        /// Changing implementation in a way that increases fingerprinting
+        /// surface? Please create a bug in [Core::Privacy: Anti
+        /// Tracking](https://bugzilla.mozilla.org/enter_bug.cgi?product=Core&component=Privacy%3A%20Anti-Tracking)
+        requestedValue =
+            std::min(requestedValue, GetLimit(deviceLimits, limit));
       }
+
+      SetLimit(&deviceLimits, limit, requestedValue);
     }
 
     // -

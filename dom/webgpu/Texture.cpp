@@ -48,7 +48,7 @@ Texture::Texture(Device* const aParent, RawId aId,
 Texture::~Texture() = default;
 
 already_AddRefed<TextureView> Texture::CreateView(
-    const dom::GPUTextureViewDescriptor& aDesc) {
+    const dom::GPUTextureViewDescriptor& aDesc, ErrorResult& aRv) {
   ffi::WGPUTextureViewDescriptor desc = {};
 
   webgpu::StringHelper label(aDesc.mLabel);
@@ -79,6 +79,50 @@ already_AddRefed<TextureView> Texture::CreateView(
   desc.base_array_layer = aDesc.mBaseArrayLayer;
   desc.array_layer_count =
       aDesc.mArrayLayerCount.WasPassed() ? &layerCount : nullptr;
+  desc.usage = aDesc.mUsage;
+
+  if (aDesc.mSwizzle != "rgba") {
+    if (!aParent->mFeatures->Features().count(
+            dom::GPUFeatureName::Texture_component_swizzle)) {
+      aRv.ThrowTypeError(
+          "requested non-default `GPUTextureViewDescriptor.swizzle`, but the "
+          "`texture-component-swizzle` feature is not enabled on the device"
+          // TODO: <https://bugzilla.mozilla.org/show_bug.cgi?id=2005065>:
+          // remove ref. when implemented
+          "; note that this feature is not yet implemented, see "
+          "<https://bugzilla.mozilla.org/show_bug.cgi?id=2005065>");
+
+      return nullptr;
+    }
+
+    auto isSwizzleChar = [](char c) {
+      switch (c) {
+        case 'r':
+        case 'g':
+        case 'b':
+        case 'a':
+        case '0':
+        case '1':
+          return true;
+        default:
+          return false;
+      }
+    };
+    if (aDesc.mSwizzle.Length() != 4 ||
+        !std::all_of(aDesc.mSwizzle.start(), aDesc.mSwizzle.end(),
+                     isSwizzleChar)) {
+      aRv.ThrowTypeError(
+          "`GPUTextureViewDescriptor.swizzle` does not match regex "
+          "/^[rgba01]{4}$/");
+      return nullptr;
+    }
+
+    // TODO: <https://bugzilla.mozilla.org/show_bug.cgi?id=2005065>: set
+    // `swizzle` on FFI descriptor when supported
+    MOZ_ASSERT_UNREACHABLE(
+        "`texture-component-swizzle` feature enabled, but not implemented "
+        "(!?)");
+  }
 
   RawId id = ffi::wgpu_client_create_texture_view(GetClient(), mParent->GetId(),
                                                   GetId(), &desc);
