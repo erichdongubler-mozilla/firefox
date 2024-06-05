@@ -586,7 +586,7 @@ describe("<TopSite>", () => {
     expect(action.data.source).toBe("newtab");
     expect(action.data.position).toBe(3);
     expect(action.data.reporting_url).toBe("https://impression.example.com/");
-    expect(action.data.advertiser).toBe("foo");
+    expect(action.data.advertiser_name).toBe("foo");
   });
 
   describe("#onLinkClick", () => {
@@ -701,7 +701,7 @@ describe("<TopSite>", () => {
       expect(sponsoredClick.data.tile_id).toBe(1);
       expect(sponsoredClick.data.source).toBe("newtab");
       expect(sponsoredClick.data.position).toBe(1);
-      expect(sponsoredClick.data.advertiser).toBe("test advertiser");
+      expect(sponsoredClick.data.advertiser_name).toBe("test advertiser");
     });
     it("should dispatch OPEN_LINK with the right data", () => {
       const dispatch = clickLink({

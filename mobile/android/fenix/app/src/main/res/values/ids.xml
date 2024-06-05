@@ -6,6 +6,7 @@
   <item name="navigation_bar" type="id" />
   <item name="composable_toolbar" type="id" />
   <item name="toolbar" type="id" />
+  <item name="tabstrip" type="id"/>
   <item name="homepageView" type="id" />
   <item name="listenSheet" type="id" />
 </resources>

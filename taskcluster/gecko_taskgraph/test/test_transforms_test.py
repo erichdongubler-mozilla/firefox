@@ -832,5 +832,32 @@ def test_resolve_dynamic_chunks_rounds_to_nearest_when_unrestricted(
     assert tasks[0]["chunks"] == 1
 
 
+@pytest.mark.parametrize(
+    "use_artifact_builds,supports_artifact_builds,expected_kept",
+    (
+        pytest.param(False, False, True, id="non_artifact_push_keeps_unsupported"),
+        pytest.param(True, True, True, id="artifact_push_keeps_supported"),
+        pytest.param(True, False, False, id="artifact_push_drops_unsupported"),
+    ),
+)
+def test_drop_artifact_build_unsupported(
+    run_transform,
+    make_test_task,
+    use_artifact_builds,
+    supports_artifact_builds,
+    expected_kept,
+):
+    task = make_test_task(**{"supports-artifact-builds": supports_artifact_builds})
+    params = FakeParameters({
+        "try_task_config": {"use-artifact-builds": use_artifact_builds}
+    })
+    tasks = list(
+        run_transform(
+            test_transforms.drop_artifact_build_unsupported, task, params=params
+        )
+    )
+    assert bool(tasks) is expected_kept
+
+
 if __name__ == "__main__":
     mozunit.main()

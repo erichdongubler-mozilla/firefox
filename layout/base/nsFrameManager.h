@@ -8,27 +8,16 @@
 #define _nsFrameManager_h_
 
 #include "mozilla/Attributes.h"
-#include "nsDebug.h"
 #include "nsFrameList.h"
 
 class nsContainerFrame;
 class nsIFrame;
-class nsILayoutHistoryState;
-class nsPlaceholderFrame;
 class nsWindowSizes;
 
 namespace mozilla {
 struct FrameDestroyContext;
 class PresShell;
 class ViewportFrame;
-
-enum class CaptureStateFlag : uint8_t {
-  // Whether we're capturing frame state for session history, rather than for
-  // frame reconstruction within the same PresShell.
-  ForSessionHistory,
-};
-using CaptureStateFlags = EnumSet<CaptureStateFlag>;
-
 }  // namespace mozilla
 
 /**
@@ -72,18 +61,6 @@ class nsFrameManager {
                     nsFrameList&& aFrameList);
 
   void RemoveFrame(DestroyContext&, mozilla::FrameChildListID, nsIFrame*);
-
-  /*
-   * Capture frame state for the frame subtree rooted at aFrame.
-   * aState is the document state storage object onto which each frame
-   * stores its state.  Callers of CaptureFrameState are responsible for
-   * traversing next continuations of special siblings of aFrame as
-   * needed; this method will only work with actual frametree descendants
-   * of aFrame.
-   */
-  void CaptureFrameState(nsIFrame*, nsILayoutHistoryState*,
-                         mozilla::CaptureStateFlags);
-  void RestoreFrameStateFor(nsIFrame* aFrame, nsILayoutHistoryState* aState);
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
 

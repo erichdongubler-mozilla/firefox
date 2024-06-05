@@ -30,7 +30,15 @@ add_task(async function unauthorized() {
 
   await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
     info("Set the flag from the content process");
-    await setFromContent(browser);
+    try {
+      await setFromContent(browser);
+      ok(false, "should throw");
+    } catch (e) {
+      Assert.stringContains(
+        e.message,
+        "watchedByDevTools can only be set from the parent process"
+      );
+    }
     is(
       await getFromContent(browser),
       false,
@@ -48,7 +56,7 @@ add_task(async function unauthorized() {
     is(
       browser.browsingContext.watchedByDevTools,
       false,
-      "Setting it from the parent process is also blocked"
+      "Setting it from the parent process is also blocked because devtools isn't declared as opened"
     );
 
     ok(!browser.isCrashed, "The content process was not killed");
@@ -77,24 +85,35 @@ add_task(async function authorizedFromParent() {
   });
 });
 
-add_task(async function authorizedFromContent() {
+add_task(async function unauthorizedFromContent() {
+  ChromeUtils.notifyDevToolsOpened();
   await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
     info("Set the flag from the content process");
     ChromeUtils.notifyDevToolsOpened();
-    await setFromContent(browser);
+    try {
+      // Having active DevTools in both content and parent process isn't enough
+      await setFromContent(browser);
+      ok(false, "should throw");
+    } catch (e) {
+      Assert.stringContains(
+        e.message,
+        "watchedByDevTools can only be set from the parent process"
+      );
+    }
     ChromeUtils.notifyDevToolsClosed();
 
     is(
       browser.browsingContext.watchedByDevTools,
-      true,
-      "Setting it from the content process was accepted"
+      false,
+      "Setting it from the content process was rejected"
     );
     is(
       await getFromContent(browser),
-      true,
-      "The flag is correctly reflected in the content"
+      false,
+      "The flag is still set to false in the content"
     );
 
     ok(!browser.isCrashed, "The content process was not killed");
   });
+  ChromeUtils.notifyDevToolsClosed();
 });

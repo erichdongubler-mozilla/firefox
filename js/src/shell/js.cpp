@@ -1558,15 +1558,10 @@ static bool GlobalOfFirstJobInQueue(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  auto& genericJob = cx->microTaskQueues->microTaskQueue.front();
-  JS::JSMicroTask* job = JS::ToUnwrappedJSMicroTask(genericJob);
-  if (!job) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
+  const JS::MicroTask& job =
+      cx->microTaskQueues->microTaskQueue.front().toMicroTask();
 
-    return false;
-  }
-
-  RootedObject global(cx, JS::GetExecutionGlobalFromJSMicroTask(job));
+  RootedObject global(cx, job.asJS().executionGlobal());
   if (!global) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
     return false;
@@ -6274,9 +6269,10 @@ static bool GetModuleEnvironmentNames(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  // The "*namespace*" binding is a detail of current implementation so hide
-  // it to give stable results in tests.
+  // The "*namespace*" and "*deferred-namespace*" bindings are implementation
+  // details, hide them to give stable results in tests.
   ids.eraseIfEqual(NameToId(cx->names().star_namespace_star_));
+  ids.eraseIfEqual(NameToId(cx->names().star_deferred_namespace_star_));
 
   uint32_t length = ids.length();
   Rooted<ArrayObject*> array(cx, NewDenseFullyAllocatedArray(cx, length));
@@ -6343,6 +6339,49 @@ static bool GetModuleEnvironmentValue(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  return true;
+}
+
+static bool GetModuleLoadedModules(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  if (args.length() != 1) {
+    JS_ReportErrorASCII(cx, "Wrong number of arguments");
+    return false;
+  }
+
+  Rooted<ModuleObject*> module(cx);
+  if (args[0].isObject() && args[0].toObject().is<ShellModuleObjectWrapper>()) {
+    module = args[0].toObject().as<ShellModuleObjectWrapper>().get();
+  } else if (ModuleNamespaceObject::isInstance(args[0])) {
+    module = &args[0].toObject().as<ModuleNamespaceObject>().module();
+  } else {
+    JS_ReportErrorASCII(cx,
+                        "First argument should be a ShellModuleObjectWrapper "
+                        "or a module namespace object");
+    return false;
+  }
+
+  if (!module->hasCyclicModuleFields()) {
+    JS_ReportErrorASCII(
+        cx, "Operation is not supported on synthetic module objects.");
+    return false;
+  }
+
+  LoadedModuleMap& loadedModules = module->loadedModules();
+  uint32_t length = loadedModules.count();
+  Rooted<ArrayObject*> array(cx, NewDenseFullyAllocatedArray(cx, length));
+  if (!array) {
+    return false;
+  }
+
+  array->setDenseInitializedLength(length);
+  uint32_t i = 0;
+  for (auto iter = loadedModules.iter(); !iter.done(); iter.next()) {
+    JSAtom* specifier = iter.get().key()->as<ModuleRequestObject>().specifier();
+    array->initDenseElement(i++, StringValue(specifier));
+  }
+
+  args.rval().setObject(*array);
   return true;
 }
 
@@ -7977,6 +8016,12 @@ static void SingleStepCallback(void* arg, jit::Simulator* sim, void* pc) {
   // see WasmTailCallFPScratchReg and CollapseWasmFrameFast
   state.tempFP = (void*)sim->getRegister(jit::Simulator::t7);
 #  elif defined(JS_SIMULATOR_LOONG64)
+  state.sp = (void*)sim->getRegister(jit::Simulator::sp);
+  state.lr = (void*)sim->getRegister(jit::Simulator::ra);
+  state.fp = (void*)sim->getRegister(jit::Simulator::fp);
+  // see WasmTailCallFPScratchReg and CollapseWasmFrameFast
+  state.tempFP = (void*)sim->getRegister(jit::Simulator::t3);
+#  elif defined(JS_SIMULATOR_RISCV64)
   state.sp = (void*)sim->getRegister(jit::Simulator::sp);
   state.lr = (void*)sim->getRegister(jit::Simulator::ra);
   state.fp = (void*)sim->getRegister(jit::Simulator::fp);
@@ -10287,6 +10332,11 @@ static const JSFunctionSpecWithHelp shell_functions[] = {
 "getModuleEnvironmentValue(module, name)",
 "  Get the value of a bound name in a module environment.\n"),
 
+    JS_FN_HELP("getModuleLoadedModules", GetModuleLoadedModules, 1, 0,
+"getModuleLoadedModules(module)",
+"  Get the list of specifiers recorded in a module's [[LoadedModules]]. The\n"
+"  argument is either a module object or a module namespace object\n"),
+
     JS_FN_HELP("dumpStencil", DumpStencil, 1, 0,
 "dumpStencil(code, [options])",
 "  Parses a string and returns string that represents stencil.\n"
@@ -11007,6 +11057,9 @@ static ExtraGlobalBindingWithHelp extraGlobalBindingsWithHelp[] = {
 "      Getter with JSJitInfo.slotIndex\n"
 "    FakeDOMObject.prototype.global\n"
 "      Getter/setter with JSJitInfo::AliasEverything\n"
+"    FakeDOMObject.prototype.pendingGlobalProperties\n"
+"      Setting this to N makes the next get define N new global properties,\n"
+"      even though the getter has JSJitInfo::AliasNone\n"
 "    FakeDOMObject.prototype.doFoo()\n"
 "      Method with JSJitInfo\n"
 "    FakeDOMObject.prototype.getObject()\n"
@@ -11465,6 +11518,48 @@ static bool dom_set_global(JSContext* cx, HandleObject obj, void* self,
   return true;
 }
 
+// Number of new global properties that the next call to the
+// FakeDOMObject.prototype.pendingGlobalProperties getter will define.
+static mozilla::Atomic<uint32_t> sFakeDOMPendingGlobalProperties(0);
+
+static bool dom_get_pendingGlobalProperties(JSContext* cx, HandleObject obj,
+                                            void* self,
+                                            JSJitGetterCallArgs args) {
+  MOZ_ASSERT(JS::GetClass(obj) == GetDomClass());
+  MOZ_ASSERT(self == DOM_PRIVATE_VALUE);
+
+  // Define new properties on the global, like a Gecko DOM getter that lazily
+  // defines interface constructors while creating a reflector. This may
+  // reallocate the global's dynamic slots.
+  static mozilla::Atomic<uint32_t> counter(0);
+  RootedObject global(cx, cx->global());
+  uint32_t count = sFakeDOMPendingGlobalProperties.exchange(0);
+  for (uint32_t i = 0; i < count; i++) {
+    char name[32];
+    SprintfLiteral(name, "__fakeDOMGlobalProp%u", uint32_t(counter++));
+    if (!JS_DefineProperty(cx, global, name, UndefinedHandleValue, 0)) {
+      return false;
+    }
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool dom_set_pendingGlobalProperties(JSContext* cx, HandleObject obj,
+                                            void* self,
+                                            JSJitSetterCallArgs args) {
+  MOZ_ASSERT(JS::GetClass(obj) == GetDomClass());
+  MOZ_ASSERT(self == DOM_PRIVATE_VALUE);
+
+  if (!args[0].isInt32() || args[0].toInt32() < 0) {
+    JS_ReportErrorASCII(cx, "Expected a non-negative int32");
+    return false;
+  }
+  sFakeDOMPendingGlobalProperties = uint32_t(args[0].toInt32());
+  return true;
+}
+
 static bool dom_doFoo(JSContext* cx, HandleObject obj, void* self,
                       const JSJitMethodCallArgs& args) {
   MOZ_ASSERT(JS::GetClass(obj) == GetDomClass());
@@ -11563,6 +11658,40 @@ static const JSJitInfo dom_global_getterinfo = {
     0                           /* slotIndex */
 };
 
+// Note: an AliasNone getter that may define properties on the global,
+// to mimic lazily initialized DOM constructors.
+static const JSJitInfo dom_pendingGlobalProperties_getterinfo = {
+    {(JSJitGetterOp)dom_get_pendingGlobalProperties},
+    {0}, /* protoID */
+    {0}, /* depth */
+    JSJitInfo::Getter,
+    JSJitInfo::AliasNone, /* aliasSet */
+    JSVAL_TYPE_UNDEFINED, /* returnType */
+    false,                /* isInfallible. False in setters. */
+    false,                /* isMovable */
+    false,                /* isEliminatable */
+    false,                /* isAlwaysInSlot */
+    false,                /* isLazilyCachedInSlot */
+    false,                /* isTypedMethod */
+    0                     /* slotIndex */
+};
+
+static const JSJitInfo dom_pendingGlobalProperties_setterinfo = {
+    {(JSJitGetterOp)dom_set_pendingGlobalProperties},
+    {0}, /* protoID */
+    {0}, /* depth */
+    JSJitInfo::Setter,
+    JSJitInfo::AliasEverything, /* aliasSet */
+    JSVAL_TYPE_UNKNOWN,         /* returnType */
+    false,                      /* isInfallible. False in setters. */
+    false,                      /* isMovable. */
+    false,                      /* isEliminatable. */
+    false,                      /* isAlwaysInSlot */
+    false,                      /* isLazilyCachedInSlot */
+    false,                      /* isTypedMethod */
+    0                           /* slotIndex */
+};
+
 static const JSJitInfo dom_global_setterinfo = {
     {(JSJitGetterOp)dom_set_global},
     {0}, /* protoID */
@@ -11620,6 +11749,10 @@ static const JSPropertySpec dom_props[] = {
     JSPropertySpec::nativeAccessors("global", JSPROP_ENUMERATE,
                                     dom_genericGetter, &dom_global_getterinfo,
                                     dom_genericSetter, &dom_global_setterinfo),
+    JSPropertySpec::nativeAccessors(
+        "pendingGlobalProperties", JSPROP_ENUMERATE, dom_genericGetter,
+        &dom_pendingGlobalProperties_getterinfo, dom_genericSetter,
+        &dom_pendingGlobalProperties_setterinfo),
     JS_PS_END,
 };
 
@@ -13469,7 +13602,9 @@ bool InitOptionParser(OptionParser& op) {
       !op.addBoolOption('\0', "enable-regexp-buffer-boundaries",
                         "Enable RegExp Buffer Boundaries") ||
       !op.addBoolOption('\0', "enable-wasm-esm-integration",
-                        "Enable wasm/esm integration")) {
+                        "Enable wasm/esm integration") ||
+      !op.addBoolOption('\0', "enable-defer-import-eval",
+                        "Enable Deferred Import Evaluation")) {
     return false;
   }
 
@@ -13581,6 +13716,9 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   }
   if (op.getBoolOption("enable-regexp-buffer-boundaries")) {
     JS::Prefs::setAtStartup_experimental_regexp_buffer_boundaries(true);
+  }
+  if (op.getBoolOption("enable-defer-import-eval")) {
+    JS::Prefs::setAtStartup_experimental_defer_import_eval(true);
   }
 #endif
   if (op.getBoolOption("enable-source-phase-imports")) {

@@ -91,6 +91,13 @@ skip-if = [
   "xorigin", # Bug 1953695, Bug 1958029
 ]
 
+["test_getCoalescedEvents_retained_event_leak.html"]
+scheme = "https"
+skip-if = [
+  "xorigin", # Bug 1953695, Bug 1958029
+]
+support-files = ["file_getCoalescedEvents_retained_event_leak.html"]
+
 ["test_getCoalescedEvents_touch.html"]
 scheme = "https"
 skip-if = [
@@ -155,6 +162,11 @@ skip-if = [
 ]
 
 ["test_remove_frame_when_got_pointer_capture.html"]
+
+["test_synthesized_mouse.html"]
+skip-if = [
+  "os == 'android'", # Bug 2014260
+]
 
 ["test_synthesized_touch.html"]
 

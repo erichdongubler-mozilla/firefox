@@ -382,27 +382,6 @@ NSSTrustDomain_ImportEncodedCertificateChain(
     return NULL;
 }
 
-NSS_IMPLEMENT NSSPrivateKey *
-NSSTrustDomain_ImportEncodedPrivateKey(
-    NSSTrustDomain *td,
-    NSSBER *ber,
-    NSSItem *passwordOpt, /* NULL will cause a callback */
-    NSSCallback *uhhOpt,
-    NSSToken *destination)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSPublicKey *
-NSSTrustDomain_ImportEncodedPublicKey(
-    NSSTrustDomain *td,
-    NSSBER *ber)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
 static NSSCertificate **
 get_certs_from_list(nssList *list)
 {
@@ -1049,7 +1028,9 @@ loser:
 NSS_IMPLEMENT NSSTrust *
 nssTrustDomain_FindTrustForCertificate(
     NSSTrustDomain *td,
-    NSSCertificate *c)
+    NSSDER *encoding,
+    NSSDER *issuer,
+    NSSDER *serial)
 {
     NSSSlot **slots;
     NSSSlot **slotp;
@@ -1066,9 +1047,9 @@ nssTrustDomain_FindTrustForCertificate(
 
         if (token) {
             to = nssToken_FindTrustForCertificate(token, NULL,
-                                                  &c->encoding,
-                                                  &c->issuer,
-                                                  &c->serial,
+                                                  encoding,
+                                                  issuer,
+                                                  serial,
                                                   nssTokenSearchType_TokenOnly);
             if (to) {
                 PRStatus status;
@@ -1086,7 +1067,7 @@ nssTrustDomain_FindTrustForCertificate(
         }
     }
     if (pkio) {
-        rvt = nssTrust_Create(pkio, &c->encoding);
+        rvt = nssTrust_Create(pkio, encoding);
         if (rvt) {
             pkio = NULL; /* rvt object now owns the pkio reference */
         }
@@ -1146,55 +1127,6 @@ loser:
     nssPKIObjectCollection_Destroy(collection);
     nssSlotArray_Destroy(slots);
     return rvCRLs;
-}
-
-NSS_IMPLEMENT PRStatus
-NSSTrustDomain_GenerateKeyPair(
-    NSSTrustDomain *td,
-    NSSAlgorithmAndParameters *ap,
-    NSSPrivateKey **pvkOpt,
-    NSSPublicKey **pbkOpt,
-    PRBool privateKeyIsSensitive,
-    NSSToken *destination,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return PR_FAILURE;
-}
-
-NSS_IMPLEMENT NSSSymmetricKey *
-NSSTrustDomain_GenerateSymmetricKey(
-    NSSTrustDomain *td,
-    NSSAlgorithmAndParameters *ap,
-    PRUint32 keysize,
-    NSSToken *destination,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSSymmetricKey *
-NSSTrustDomain_GenerateSymmetricKeyFromPassword(
-    NSSTrustDomain *td,
-    NSSAlgorithmAndParameters *ap,
-    NSSUTF8 *passwordOpt, /* if null, prompt */
-    NSSToken *destinationOpt,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
-}
-
-NSS_IMPLEMENT NSSSymmetricKey *
-NSSTrustDomain_FindSymmetricKeyByAlgorithmAndKeyID(
-    NSSTrustDomain *td,
-    NSSOID *algorithm,
-    NSSItem *keyID,
-    NSSCallback *uhhOpt)
-{
-    nss_SetError(NSS_ERROR_NOT_FOUND);
-    return NULL;
 }
 
 NSS_IMPLEMENT NSSCryptoContext *

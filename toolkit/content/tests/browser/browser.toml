@@ -49,14 +49,8 @@ run-if = ["os == 'win'"]
 skip-if = [
   "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
 ]
-fail-if = [
-  "a11y_checks", # Bug 1854538 clicked browser may not be focusable
-]
 
 ["browser_autoscroll_disabled_on_links.js"]
-fail-if = [
-  "a11y_checks", # Bug 1854538 clicked browser may not be focusable
-]
 
 ["browser_bug295977_autoscroll_overflow.js"]
 skip-if = [
@@ -101,9 +95,6 @@ fail-if = [
 ["browser_charsetMenu_swapBrowsers.js"]
 
 ["browser_click_event_during_autoscrolling.js"]
-fail-if = [
-  "a11y_checks", # Bug 1854538 clicked browser may not be accessible
-]
 
 ["browser_contentTitle.js"]
 

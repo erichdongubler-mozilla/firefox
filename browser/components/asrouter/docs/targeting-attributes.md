@@ -59,6 +59,28 @@ interface AddonsInfoResponse {
   hasInstalledAddons: boolean;
 }
 ```
+### `allowedNotificationOrigins`
+
+The number of origins the user has allowed to send web notifications. Origins the
+user has explicitly blocked are not counted. A count rather than a boolean, so it
+can also be used to distinguish users with a single allowed site from those with
+many.
+
+#### Examples
+* Has the user allowed any site to send notifications?
+```java
+allowedNotificationOrigins > 0
+```
+* Has the user allowed five or more sites?
+```java
+allowedNotificationOrigins >= 5
+```
+
+#### Definition
+```ts
+declare const allowedNotificationOrigins: number;
+```
+
 ### `attributionData`
 
 An object containing information on exactly how Firefox was downloaded
@@ -218,6 +240,17 @@ declare const isDefaultBrowser: boolean;
 ### `isDefaultBrowserUncached`
 
 Behaves the same as `isDefaultBrowser`, but retrieves the current value directly from shell service instead of using the cached value. This may not be as performant.
+
+### `hasAttemptedSetDefault`
+
+Has the user asked Firefox to make itself the default browser during this session. True as soon as the request is made, whether or not the OS honours it.
+Does not persist across restarts.
+
+#### Definition
+
+```ts
+declare const hasAttemptedSetDefault: boolean;
+```
 
 ### `isOneClickSetDefaultEnabled`
 

@@ -18,7 +18,6 @@ support-files = [
   "matrixUtils.js",
   "object-delayed-intrinsic-size.sjs",
   "object-immediate-intrinsic-size.sjs",
-  "pointer-events.js",
   "scientific-helper.svg",
   "selectSubString-helper.svg",
   "switch-helper.svg",
@@ -126,10 +125,6 @@ skip-if = [
 ["test_pathAnimInterpolation.xhtml"]
 
 ["test_pointAtLength.xhtml"]
-
-["test_pointer-events-1a.xhtml"]
-
-["test_pointer-events-1b.xhtml"]
 
 ["test_pointer-events-2.xhtml"]
 

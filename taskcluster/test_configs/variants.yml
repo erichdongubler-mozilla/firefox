@@ -109,7 +109,6 @@ trainhop-release:
                 - --install-extension=newtab.xpi
                 # Setting these to "any" allows us to install the newtab.xpi
                 # regardless of what version it is.
-                - --setpref=browser.newtabpage.trainhopAddon.version=any
                 - --setpref=browser.newtabpage.trainhopAddonDeployment.version=any
         dependencies:
             newtab-xpi-job: build-extensions-browser
@@ -148,7 +147,6 @@ trainhop-beta:
                 - --install-extension=newtab.xpi
                 # Setting these to "any" allows us to install the newtab.xpi
                 # regardless of what version it is.
-                - --setpref=browser.newtabpage.trainhopAddon.version=any
                 - --setpref=browser.newtabpage.trainhopAddonDeployment.version=any
         dependencies:
             newtab-xpi-job: build-extensions-browser
@@ -220,6 +218,19 @@ geckoview-fission-isolate-high-value:
         mozharness:
             extra-options:
                 - "--setpref=fission.webContentIsolationStrategy=2"
+
+geckoview-isolated-process:
+    description: "{description} with content service isolated process"
+    component: "GeckoView::General"
+    expiration: "2027-03-01"
+    when:
+        <<: *gv_e10s_filter
+    suffix: "isolated"
+    mozinfo: "isolated_process"
+    merge:
+        mozharness:
+            extra-options:
+                - "--enable-isolated-process"
 
 no-fission:
     description: "{description} without fission enabled"

@@ -695,13 +695,6 @@ def main():
             "TEST-UNEXPECTED-FAIL | check_spidermonkey_style.py | "
             + "actual output does not match expected output;  diff is above."
         )
-        print(
-            "TEST-UNEXPECTED-FAIL | check_spidermonkey_style.py | "
-            + "Hint: If the problem is that you renamed a header, and many #includes "
-            + "are no longer in alphabetical order, commit your work and then try "
-            + "`check_spidermonkey_style.py --fixup`. "
-            + "You need to commit first because --fixup modifies your files in place."
-        )
 
     sys.exit(0 if ok else 1)
 

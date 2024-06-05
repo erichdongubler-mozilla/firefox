@@ -153,7 +153,6 @@ internal sealed class EditPageEndActionsInteractions : BrowserToolbarEvent {
  * @param scope [CoroutineScope] used for running long running operations in background.
  * @param autocompleteDispatcher [CoroutineContext] used for querying autocomplete suggestions.
  */
-@Suppress("LongParameterList")
 class BrowserToolbarSearchMiddleware(
     private val uiContext: Context,
     private val appStore: AppStore,
@@ -601,7 +600,12 @@ class BrowserToolbarSearchMiddleware(
                         )
                         components.useCases.fenixBrowserUseCases.loadUrlOrSearch(
                             searchTermOrURL = it.qrScannerState.lastScanData,
-                            newTab = appStore.state.searchState.sourceTabId == null,
+                            newTab =
+                                if (settings.enableHomepageAsNewTab) {
+                                    false
+                                } else {
+                                    appStore.state.searchState.sourceTabId == null
+                                },
                             flags = EngineSession.LoadUrlFlags.external(),
                             private = browsingModeManager.mode.isPrivate,
                         )

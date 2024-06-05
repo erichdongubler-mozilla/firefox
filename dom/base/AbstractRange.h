@@ -21,7 +21,6 @@
 class JSObject;
 class nsIContent;
 class nsINode;
-class nsRange;
 struct JSContext;
 
 namespace mozilla {
@@ -29,6 +28,7 @@ class RectCallback;
 
 namespace dom {
 class Document;
+class Range;
 class Selection;
 class StaticRange;
 class HTMLSlotElement;
@@ -43,7 +43,7 @@ class AbstractRange : public nsISupports,
       mozilla::dom::AllowRangeCrossShadowBoundary;
 
  protected:
-  explicit AbstractRange(nsINode* aNode, bool aIsDynamicRange,
+  explicit AbstractRange(nsINode* aNode, bool aIsRange,
                          TreeKind aBoundaryTreeKind);
   virtual ~AbstractRange();
 
@@ -195,7 +195,7 @@ class AbstractRange : public nsISupports,
    * place in a hot path, each templated handler may be considered as not in a
    * hot path because the number of calling is half comparing with methods
    * checking RangeBoundarySide at the runtime. Actually, making these accessors
-   * and the handlers of nsRange::CharacterDataChanged() templated got worse
+   * and the handlers of Range::CharacterDataChanged() templated got worse
    * performance on Windows PGO build. Therefore, we now have only dynamic check
    * accessors only.
    */
@@ -279,10 +279,10 @@ class AbstractRange : public nsISupports,
   bool HasEqualBoundaries(const AbstractRange& aOther) const {
     return (mStart == aOther.mStart) && (mEnd == aOther.mEnd);
   }
-  bool IsDynamicRange() const { return mIsDynamicRange; }
-  bool IsStaticRange() const { return !mIsDynamicRange; }
-  inline nsRange* AsDynamicRange();
-  inline const nsRange* AsDynamicRange() const;
+  bool IsRange() const { return mIsRange; }
+  bool IsStaticRange() const { return !mIsRange; }
+  inline Range* AsRange();
+  inline const Range* AsRange() const;
   inline StaticRange* AsStaticRange();
   inline const StaticRange* AsStaticRange() const;
 
@@ -337,21 +337,21 @@ class AbstractRange : public nsISupports,
     if (aRange.MayCrossShadowBoundary()) {
       return fmt::format(
           "{{ MayCrossShadowBoundaryStartRef()={}, mIsGenerated={}, "
-          "mCalledByJS={}, mIsDynamicRange={} }}",
+          "mCalledByJS={}, mIsRange={} }}",
           aRange.Collapsed()
               ? fmt::format("MayCrossShadowBoundaryEndRef()={}",
                             aRange.MayCrossShadowBoundaryStartRef())
               : fmt::format("{}, MayCrossShadowBoundaryEndRef()={}",
                             aRange.MayCrossShadowBoundaryStartRef(),
                             aRange.MayCrossShadowBoundaryEndRef()),
-          aRange.mIsGenerated, aRange.mIsPositioned, aRange.mIsDynamicRange);
+          aRange.mIsGenerated, aRange.mIsPositioned, aRange.mIsRange);
     }
     return fmt::format(
-        "{{ mStart={}, mIsGenerated={}, mCalledByJS={}, mIsDynamicRange={} }}",
+        "{{ mStart={}, mIsGenerated={}, mCalledByJS={}, mIsRange={} }}",
         aRange.Collapsed()
             ? fmt::format("mEnd={}", aRange.mStart)
             : fmt::format("{}, mEnd={}", aRange.mStart, aRange.mEnd),
-        aRange.mIsGenerated, aRange.mIsPositioned, aRange.mIsDynamicRange);
+        aRange.mIsGenerated, aRange.mIsPositioned, aRange.mIsRange);
   }
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const AbstractRange& aRange) {
@@ -396,16 +396,16 @@ class AbstractRange : public nsISupports,
   nsCOMPtr<nsINode> mRegisteredClosestCommonInclusiveAncestor;
 
   // `true` if `mStart` and `mEnd` are set for StaticRange or set and valid
-  // for nsRange.
+  // for Range.
   bool mIsPositioned;
 
-  // Used by nsRange, but this should have this for minimizing the size.
+  // Used by Range, but this should have this for minimizing the size.
   bool mIsGenerated;
-  // Used by nsRange, but this should have this for minimizing the size.
+  // Used by Range, but this should have this for minimizing the size.
   bool mCalledByJS;
 
-  // true if this is an `nsRange` object.
-  const bool mIsDynamicRange;
+  // true if this is a `Range` object.
+  const bool mIsRange;
 
   static bool sHasShutDown;
 };

@@ -60,7 +60,7 @@ import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.compose.swipeToDismissFade
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
-import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
+import org.mozilla.fenix.tabstray.browser.compose.ItemInteractionState
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -89,7 +89,7 @@ fun TabGridTabItem(
     tab: TabsTrayItem.Tab,
     swipeToDismissBoxState: SwipeToDismissBoxState,
     swipingEnabled: Boolean,
-    interactionState: TabItemInteractionState,
+    interactionState: ItemInteractionState,
     onCloseClick: (TabsTrayItem.Tab) -> Unit,
     onClick: (TabsTrayItem) -> Unit,
     modifier: Modifier = Modifier,
@@ -163,7 +163,7 @@ private fun TabContent(
         ),
     clickHandler: TabsTrayItemClickHandler,
     onCloseTabClick: ((TabsTrayItem.Tab) -> Unit),
-    interactionState: TabItemInteractionState,
+    interactionState: ItemInteractionState,
     itemInfo: CollectionItemInfo? = null,
     accessibilityActions: List<CustomAccessibilityAction> = emptyList(),
 ) {
@@ -361,7 +361,7 @@ private data class TabGridItemPreviewState(
     val multiSelectionSelected: Boolean,
     val url: String = "www.mozilla.org",
     val title: String = "Mozilla Domain",
-    val interactionState: TabItemInteractionState = TabItemInteractionState(),
+    val interactionState: ItemInteractionState = ItemInteractionState(),
 )
 
 private val tabGridItemPreviewStateData: List<Pair<String, TabGridItemPreviewState>> =
@@ -430,7 +430,7 @@ private val tabGridItemPreviewStateData: List<Pair<String, TabGridItemPreviewSta
                 isActive = false,
                 multiSelectionEnabled = false,
                 multiSelectionSelected = false,
-                interactionState = TabItemInteractionState(isDragged = true),
+                interactionState = ItemInteractionState(isDragged = true),
             ),
         ),
         Pair(
@@ -439,7 +439,7 @@ private val tabGridItemPreviewStateData: List<Pair<String, TabGridItemPreviewSta
                 isActive = false,
                 multiSelectionEnabled = false,
                 multiSelectionSelected = false,
-                interactionState = TabItemInteractionState(isHoveredByItem = true),
+                interactionState = ItemInteractionState(isHoveredByItem = true),
             ),
         ),
     )
@@ -496,7 +496,7 @@ private fun TabGridItemMediaPreview() {
             thumbnailSize = 108,
             clickHandler = TabsTrayItemClickHandler(onClick = {}, onCloseClick = {}),
             onCloseTabClick = {},
-            interactionState = TabItemInteractionState(),
+            interactionState = ItemInteractionState(),
         )
     }
 }

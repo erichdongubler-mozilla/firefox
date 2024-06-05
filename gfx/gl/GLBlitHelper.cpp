@@ -31,6 +31,7 @@
 #  include "GLImages.h"
 #  include "GLLibraryEGL.h"
 #  include "mozilla/layers/AndroidHardwareBuffer.h"
+#  include "mozilla/layers/AndroidImageReader.h"
 #endif
 
 #ifdef XP_MACOSX
@@ -204,6 +205,15 @@ const char* const kFragConvert_ColorMatrix = R"(
     return (uColorMatrix * vec4(src, 1)).rgb;
   }
 )";
+#ifdef MOZ_WIDGET_GTK
+const char* const kFragConvert_ColorMatrixBGR = R"(
+  uniform mediump MAT4X3 uColorMatrix;
+
+  vec3 metaConvert(vec3 src) {
+    return (uColorMatrix * vec4(src, 1)).bgr;
+  }
+)";
+#endif
 const char* const kFragConvert_ColorLut3d = R"(
   uniform PRECISION sampler3D uColorLut;
 
@@ -443,19 +453,6 @@ class ScopedShader final {
 
 // --
 
-class SaveRestoreCurrentProgram final {
-  GLContext& mGL;
-  const GLuint mOld;
-
- public:
-  explicit SaveRestoreCurrentProgram(GLContext* const gl)
-      : mGL(*gl), mOld(mGL.GetIntAs<GLuint>(LOCAL_GL_CURRENT_PROGRAM)) {}
-
-  ~SaveRestoreCurrentProgram() { mGL.fUseProgram(mOld); }
-};
-
-// --
-
 class ScopedDrawBlitState final {
   GLContext& mGL;
 
@@ -575,7 +572,7 @@ void DrawBlitProg::Draw(const BaseArgs& args,
                         const YUVArgs* const argsYUV) const {
   const auto& gl = mParent.mGL;
 
-  const SaveRestoreCurrentProgram oldProg(gl);
+  const ScopedBindProgram oldProg(gl);
   gl->fUseProgram(mProg);
 
   // --
@@ -871,7 +868,7 @@ std::unique_ptr<const DrawBlitProg> GLBlitHelper::CreateDrawBlitProg(
   GLenum status = 0;
   mGL->fGetProgramiv(prog, LOCAL_GL_LINK_STATUS, (GLint*)&status);
   if (status == LOCAL_GL_TRUE || mGL->CheckContextLost()) {
-    const SaveRestoreCurrentProgram oldProg(mGL);
+    const ScopedBindProgram oldProg(mGL);
     mGL->fUseProgram(prog);
     const char* samplerNames[] = {"uTex0", "uTex1", "uTex2"};
     for (int i = 0; i < 3; i++) {
@@ -929,7 +926,8 @@ bool GLBlitHelper::BlitSdToFramebuffer(const layers::SurfaceDescriptor& asd,
                                        const gfx::IntRect& destRect,
                                        const OriginPos destOrigin,
                                        const gfx::IntSize& fbSize,
-                                       Maybe<gfxAlphaType> convertAlpha) {
+                                       Maybe<gfxAlphaType> convertAlpha,
+                                       gfx::SurfaceFormat aDestFormat) {
   const auto sdType = asd.type();
   switch (sdType) {
     case layers::SurfaceDescriptor::TSurfaceDescriptorBuffer: {
@@ -993,6 +991,23 @@ bool GLBlitHelper::BlitSdToFramebuffer(const layers::SurfaceDescriptor& asd,
 
       return Blit(buffer, destRect, destOrigin, fbSize, convertAlpha);
     }
+    case layers::SurfaceDescriptor::TAndroidImageReaderImageDescriptor: {
+      const auto& sd = asd.get_AndroidImageReaderImageDescriptor();
+
+      auto* imageReaderMap = layers::GpuProcessAndroidImageReaderMap::Get();
+      if (!imageReaderMap) {
+        return false;
+      }
+
+      RefPtr<layers::AndroidImageReader> imageReader =
+          imageReaderMap->GetImageReader(sd.imageReaderId());
+      if (!imageReader) {
+        return false;
+      }
+
+      return Blit(imageReader, sd.frameId(), sd.size(), destRect, destOrigin,
+                  fbSize, convertAlpha);
+    }
     case layers::SurfaceDescriptor::TSurfaceTextureDescriptor: {
       const auto& sd = asd.get_SurfaceTextureDescriptor();
       auto surfaceTexture = java::GeckoSurfaceTexture::Lookup(sd.handle());
@@ -1012,7 +1027,8 @@ bool GLBlitHelper::BlitSdToFramebuffer(const layers::SurfaceDescriptor& asd,
       if (!surface) {
         return false;
       }
-      return Blit(surface, destRect, destOrigin, fbSize, convertAlpha);
+      return Blit(surface, destRect, destOrigin, fbSize, convertAlpha,
+                  aDestFormat);
     }
 #endif
     default:
@@ -1111,6 +1127,44 @@ bool GLBlitHelper::Blit(layers::AndroidHardwareBuffer* const buffer,
   egl->fDestroyImage(image);
 
   return ret;
+}
+
+bool GLBlitHelper::Blit(layers::AndroidImageReader* imageReader,
+                        const layers::AndroidMediaCodecFrameId frameId,
+                        const gfx::IntSize& texSize,
+                        const gfx::IntRect& destRect, OriginPos destOrigin,
+                        const gfx::IntSize& fbSize,
+                        Maybe<gfxAlphaType> convertAlpha) const {
+  MOZ_ASSERT(imageReader);
+
+  if (!mGL->MakeCurrent()) {
+    return false;
+  }
+
+  const ScopedBindTextureUnit boundTU(mGL, LOCAL_GL_TEXTURE0);
+  ScopedTexture tex(mGL);
+  ScopedBindTexture bindTex(mGL, tex.Texture(), LOCAL_GL_TEXTURE_EXTERNAL);
+
+  mGL->TexParams_SetClampNoMips(LOCAL_GL_TEXTURE_EXTERNAL);
+
+  RefPtr<layers::AndroidImageWrapper> image;
+  if (!imageReader->UpdateTexImage(frameId, mGL, tex.Texture(),
+                                   getter_AddRefs(image))) {
+    return false;
+  }
+
+  const auto srcOrigin = OriginPos::BottomLeft;
+  const bool yFlip = (srcOrigin != destOrigin);
+
+  const auto& prog = GetDrawBlitProg(
+      {kFragHeader_TexExt,
+       {kFragSample_OnePlane, kFragConvert_None, GetAlphaMixin(convertAlpha)}});
+
+  const DrawBlitProg::BaseArgs baseArgs = {SubRectMat3(0, 0, 1, 1), yFlip,
+                                           fbSize, destRect, texSize};
+  prog.Draw(baseArgs);
+
+  return true;
 }
 
 bool GLBlitHelper::Blit(const java::GeckoSurfaceTexture::Ref& surfaceTexture,
@@ -1600,7 +1654,8 @@ void GLBlitHelper::BlitTextureToTexture(GLuint srcTex, GLuint destTex,
 #ifdef MOZ_WIDGET_GTK
 bool GLBlitHelper::Blit(DMABufSurface* surface, const gfx::IntRect& destRect,
                         OriginPos destOrigin, const gfx::IntSize& fbSize,
-                        Maybe<gfxAlphaType> convertAlpha) const {
+                        Maybe<gfxAlphaType> convertAlpha,
+                        gfx::SurfaceFormat aDestFormat) const {
   const auto& srcOrigin = OriginPos::BottomLeft;
 
   DrawBlitProg::BaseArgs baseArgs;
@@ -1663,9 +1718,21 @@ bool GLBlitHelper::Blit(DMABufSurface* surface, const gfx::IntRect& destRect,
 
   const char* fragSample = nullptr;
   auto fragConvert = kFragConvert_None;
+  // Determine the reorder from source and destination formats. The blit
+  // output is RGBA-ordered for every source shape (the YUV color matrix and
+  // EGL named-channel imports expose RGB in .rgb), while the destination
+  // may store the opposite, BGRA order (e.g. canvas2d); swap R/B exactly
+  // when the two orders differ.
+  const bool srcIsBGRA = false;
+  const bool dstIsBGRA = aDestFormat == gfx::SurfaceFormat::B8G8R8A8 ||
+                         aDestFormat == gfx::SurfaceFormat::B8G8R8X8;
+  const bool swapRB = srcIsBGRA != dstIsBGRA;
   switch (pixelFormat) {
     case DMABufSurface::SURFACE_RGBA:
       fragSample = kFragSample_OnePlane;
+      if (swapRB) {
+        fragConvert = kFragConvert_BGR;
+      }
       break;
     case DMABufSurface::SURFACE_YUV:
       if (surface->GetTextureCount() == 2) {
@@ -1678,7 +1745,8 @@ bool GLBlitHelper::Blit(DMABufSurface* surface, const gfx::IntRect& destRect,
         return false;
       }
       pYuvArgs = &yuvArgs;
-      fragConvert = kFragConvert_ColorMatrix;
+      fragConvert =
+          swapRB ? kFragConvert_ColorMatrixBGR : kFragConvert_ColorMatrix;
       break;
     default:
       return false;

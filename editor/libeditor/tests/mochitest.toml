@@ -521,6 +521,8 @@ skip-if = [
 
 ["test_insertText_around_text_node_in_plaintext_mode.html"]
 
+["test_insertText_during_composition.html"]
+
 ["test_join_split_node_direction_change_command.html"]
 
 ["test_keypress_untrusted_event.html"]
@@ -651,6 +653,8 @@ skip-if = [
 ["test_pasteImgFromTransferable.html"]
 
 ["test_pasteImgTextarea.html"]
+
+["test_pasteTransferable_data_in_paste_event.html"]
 
 ["test_pasteURLFromTransferable.html"]
 

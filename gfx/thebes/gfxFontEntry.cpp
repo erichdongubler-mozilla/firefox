@@ -1237,7 +1237,6 @@ void gfxFontEntry::CheckForVariationAxes() {
   if (mCheckedForVariationAxes) {
     return;
   }
-  mCheckedForVariationAxes = true;
   if (HasVariations()) {
     AutoTArray<gfxFontVariationAxis, 4> axes;
     GetVariationAxes(axes);
@@ -1254,6 +1253,7 @@ void gfxFontEntry::CheckForVariationAxes() {
       }
     }
   }
+  mCheckedForVariationAxes = true;
 }
 
 bool gfxFontEntry::HasBoldVariableWeight() {
@@ -1335,16 +1335,16 @@ void gfxFontEntry::GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
 
   struct TagEquals {
     bool Equals(const gfxFontVariation& aIter, uint32_t aTag) const {
-      return aIter.mTag == aTag;
+      return aIter.tag == aTag;
     }
   };
 
   auto replaceOrAppend = [&aResult](const gfxFontVariation& aSetting) {
-    auto index = aResult.IndexOf(aSetting.mTag, 0, TagEquals());
+    auto index = aResult.IndexOf(aSetting.tag, 0, TagEquals());
     if (index == aResult.NoIndex) {
       aResult.AppendElement(aSetting);
     } else {
-      aResult[index].mValue = aSetting.mValue;
+      aResult[index].value = aSetting.value;
     }
   };
 

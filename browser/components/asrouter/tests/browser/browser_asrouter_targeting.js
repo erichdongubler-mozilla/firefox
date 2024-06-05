@@ -8,7 +8,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   AttributionCode:
     "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
-  BrowserInitState: "resource:///modules/BrowserGlue.sys.mjs",
+  BrowserInitState: "moz-src:///browser/components/BrowserGlue.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
@@ -23,6 +23,7 @@ ChromeUtils.defineESModuleGetters(this, {
   OnboardingMessageProvider:
     "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs",
   PanelTestProvider: "resource:///modules/asrouter/PanelTestProvider.sys.mjs",
+  PermissionTestUtils: "resource://testing-common/PermissionTestUtils.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -43,8 +44,9 @@ ChromeUtils.defineESModuleGetters(this, {
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
   TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
-  TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
-  TaskbarTabsPin: "resource:///modules/taskbartabs/TaskbarTabsPin.sys.mjs",
+  TaskbarTabs: "moz-src:///browser/components/taskbartabs/TaskbarTabs.sys.mjs",
+  TaskbarTabsPin:
+    "moz-src:///browser/components/taskbartabs/TaskbarTabsPin.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   TelemetrySession: "resource://gre/modules/TelemetrySession.sys.mjs",
 });
@@ -594,6 +596,45 @@ add_task(async function check_totalBookmarksCount() {
   await PlacesUtils.bookmarks.remove(bookmark.guid);
 });
 
+add_task(async function check_allowedNotificationOrigins() {
+  const message = { id: "foo", targeting: "allowedNotificationOrigins > 0" };
+
+  ok(
+    !(await ASRouterTargeting.findMatchingMessage({ messages: [message] })),
+    "Should not match when no origin is allowed"
+  );
+
+  PermissionTestUtils.add(
+    "https://example.com",
+    "desktop-notification",
+    Services.perms.DENY_ACTION
+  );
+  ok(
+    !(await ASRouterTargeting.findMatchingMessage({ messages: [message] })),
+    "Should not count a blocked origin"
+  );
+
+  PermissionTestUtils.add(
+    "https://example.org",
+    "desktop-notification",
+    Services.perms.ALLOW_ACTION
+  );
+  is(
+    await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
+    message,
+    "Should match once an origin is allowed"
+  );
+  is(
+    await ASRouterTargeting.Environment.allowedNotificationOrigins,
+    1,
+    "Should count the allowed origin but not the blocked one"
+  );
+
+  // Cleanup
+  PermissionTestUtils.remove("https://example.com", "desktop-notification");
+  PermissionTestUtils.remove("https://example.org", "desktop-notification");
+});
+
 add_task(async function check_needsUpdate() {
   QueryCache.queries.CheckBrowserNeedsUpdate.setUp(true);
 
@@ -769,6 +810,38 @@ add_task(async function checkisDefaultBrowser() {
     message,
     "should select correct item by isDefaultBrowser"
   );
+});
+
+add_task(async function checkHasAttemptedSetDefault() {
+  is(
+    await ASRouterTargeting.Environment.hasAttemptedSetDefault,
+    false,
+    "hasAttemptedSetDefault should be false before the attempt"
+  );
+  const shellStub = sinon
+    .stub(ShellService, "shellService")
+    .value({ setDefaultBrowser: () => {} });
+  const guidanceStub = sinon
+    .stub(ShellService, "_maybeShowSetDefaultGuidanceNotification")
+    .resolves();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shell.setDefaultBrowserUserChoice", false]],
+  });
+
+  try {
+    await ShellService.setDefaultBrowser(false);
+
+    is(
+      await ASRouterTargeting.Environment.hasAttemptedSetDefault,
+      true,
+      "hasAttemptedSetDefault should be true once after the attempt"
+    );
+  } finally {
+    ShellService._attemptedSetDefaultThisSession = false;
+    guidanceStub.restore();
+    shellStub.restore();
+    await SpecialPowers.popPrefEnv();
+  }
 });
 
 add_task(async function checkisDefaultHandler_pdf() {

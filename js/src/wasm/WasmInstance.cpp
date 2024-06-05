@@ -3307,8 +3307,10 @@ void js::wasm::TraceInstanceEdge(JSTracer* trc, Instance* instance,
 }
 
 static uintptr_t* GetFrameScanStartForStackMap(
-    const Frame* frame, const StackMap* map,
+    const wasm::WasmFrameIter& wfi, const StackMap* map,
     uintptr_t* highestByteVisitedInPrevFrame) {
+  const Frame* frame = wfi.frame();
+
   // |frame| points somewhere in the middle of the area described by |map|.
   // We have to calculate |scanStart|, the lowest address that is described by
   // |map|, by consulting |map->frameOffsetFromTop|.
@@ -3328,6 +3330,13 @@ static uintptr_t* GetFrameScanStartForStackMap(
   // This is so as to ensure there are no areas of stack inadvertently ignored
   // by a stackmap, nor covered by two stackmaps.  Hence any failure of this
   // assertion is serious and should be investigated.
+  //
+  // The hidden frame of a cross-instance return_call has no stackmap, but its
+  // size is fixed, so step over it.
+  if (highestByteVisitedInPrevFrame && *highestByteVisitedInPrevFrame != 0 &&
+      wfi.skippedReturnCallTrampoline()) {
+    *highestByteVisitedInPrevFrame += SizeOfHiddenReturnCallFrame();
+  }
 #ifndef JS_CODEGEN_ARM64
   MOZ_ASSERT_IF(
       highestByteVisitedInPrevFrame && *highestByteVisitedInPrevFrame != 0,
@@ -3356,9 +3365,10 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
   if (!map) {
     return 0;
   }
+
   Frame* frame = wfi.frame();
   uintptr_t* stackWords =
-      GetFrameScanStartForStackMap(frame, map, &highestByteVisitedInPrevFrame);
+      GetFrameScanStartForStackMap(wfi, map, &highestByteVisitedInPrevFrame);
 
   // Hand refs off to the GC.
   for (uint32_t i = 0; i < map->header.numMappedWords; i++) {
@@ -3403,8 +3413,7 @@ void Instance::updateFrameForMovingGC(const wasm::WasmFrameIter& wfi,
   if (!map) {
     return;
   }
-  Frame* frame = wfi.frame();
-  uintptr_t* stackWords = GetFrameScanStartForStackMap(frame, map, nullptr);
+  uintptr_t* stackWords = GetFrameScanStartForStackMap(wfi, map, nullptr);
 
   // Update array data pointers, both IL and OOL, and struct data pointers,
   // which are only OOL, for any such data areas that moved.  Note, the

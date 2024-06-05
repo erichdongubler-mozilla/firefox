@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
-import * as UrlbarContentUtils from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
+import { UrlbarContentUtils } from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
 import { UrlbarResult } from "chrome://browser/content/urlbar/UrlbarResult.mjs";
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 import { L10nCache } from "chrome://browser/content/urlbar/L10nCache.mjs";
@@ -26,6 +26,7 @@ const RESULT_MENU_COMMANDS = {
   DISMISS: "dismiss",
   HELP: "help",
   MANAGE: "manage",
+  TOGGLE_KEYBOARD_ACCESSIBLE: "toggle-keyboard-accessible",
 };
 
 // The entry point the container menu items report to telemetry.
@@ -971,14 +972,22 @@ export class UrlbarView {
       return;
     }
 
-    // Search mode is active.  If the one-offs should be shown, make sure they
-    // are enabled and show the view.
+    // Search mode is active. Without results the view has nothing to show but
+    // the one-offs, so open it only when they will show.
+    let oneOffs = this.oneOffSearchButtons;
     let openPanelInstance = (this.#openPanelInstance = {});
-    this.oneOffSearchButtons?.willHide().then(willHide => {
-      if (!willHide && openPanelInstance == this.#openPanelInstance) {
-        this.oneOffSearchButtons.enable(true);
-        this.#openPanel();
+    (oneOffs?.willHide() ?? Promise.resolve(true)).then(willHide => {
+      if (openPanelInstance != this.#openPanelInstance) {
+        return;
       }
+      if (willHide) {
+        if (this.isOpen) {
+          this.close();
+        }
+        return;
+      }
+      oneOffs.enable(true);
+      this.#openPanel();
     });
   }
 
@@ -1145,18 +1154,21 @@ export class UrlbarView {
     rowToRemove.remove();
     this.#updateIndices();
 
-    if (!updateSelection) {
-      return;
+    if (updateSelection) {
+      // Select the row that shifted into the removed row's position, clamping
+      // to the last remaining row when the last row was removed. A negative
+      // index clears the selection, which resets the input value when no
+      // results remain.
+      let newSelectionIndex = Math.min(
+        removedIndex,
+        this.#rows.children.length - 1
+      );
+      this.selectedRowIndex = newSelectionIndex;
     }
-    // Select the row that shifted into the removed row's position, clamping to
-    // the last remaining row when the last row was removed. A negative index
-    // clears the selection, which resets the input value when no results
-    // remain.
-    let newSelectionIndex = Math.min(
-      removedIndex,
-      this.#rows.children.length - 1
-    );
-    this.selectedRowIndex = newSelectionIndex;
+
+    if (!this.#rows.children.length) {
+      this.close();
+    }
   }
 
   openResultMenu(result, anchor) {
@@ -4177,6 +4189,20 @@ export class UrlbarView {
   }
 
   /**
+   * Applies the current value of `resultMenu.keyboardAccessible` to the menu
+   * buttons of the rows that are already built, which would otherwise keep the
+   * attribute they got when they were created.
+   */
+  #updateMenuButtonKeyboardAccessibility() {
+    let inaccessible = !UrlbarPrefs.get("resultMenu.keyboardAccessible");
+    for (let button of this.#rows.querySelectorAll(
+      ".urlbarView-button-result-menu"
+    )) {
+      button.toggleAttribute("keyboard-inaccessible", inaccessible);
+    }
+  }
+
+  /**
    * @param {UrlbarResult} result
    *   The result to check.
    * @returns {boolean}
@@ -4186,6 +4212,7 @@ export class UrlbarView {
     return (
       UrlbarPrefs.get("contextMenu.featureGate") &&
       this.input.handlesOpenInCommands &&
+      result.type != UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
       !!UrlbarShared.getLoadRequestFromResult(result)
     );
   }
@@ -4197,17 +4224,30 @@ export class UrlbarView {
    *   Everything the result's menu shows, null if it has nothing to show. The
    *   three-dot button and a right-click both open this menu, so it combines
    *   the result's own commands with the ones that open it in a new tab or
-   *   window.
+   *   window, and closes with the checkbox that skips the menu button when
+   *   tabbing through the results.
    */
   #getMenuCommands(result) {
     let commands = this.#getResultMenuCommands(result);
-    if (!this.#canOpenInNewTarget(result)) {
-      return commands;
+    if (this.#canOpenInNewTarget(result)) {
+      let openInCommands = this.#openInCommands;
+      commands = commands
+        ? [...openInCommands, { name: "separator" }, ...commands]
+        : openInCommands;
     }
-    let openInCommands = this.#openInCommands;
-    return commands
-      ? [...openInCommands, { name: "separator" }, ...commands]
-      : openInCommands;
+    if (!commands) {
+      return null;
+    }
+    return [
+      ...commands,
+      { name: "separator" },
+      {
+        name: RESULT_MENU_COMMANDS.TOGGLE_KEYBOARD_ACCESSIBLE,
+        type: "checkbox",
+        checked: !UrlbarPrefs.get("resultMenu.keyboardAccessible"),
+        l10n: { id: "urlbar-view-context-menu-skip-menu-with-tab" },
+      },
+    ];
   }
 
   /**
@@ -4302,6 +4342,10 @@ export class UrlbarView {
       } else {
         this.#l10nCache.setElementL10n(menuitem, data.l10n);
       }
+      if (data.type == "checkbox") {
+        menuitem.type = "checkbox";
+        menuitem.checked = data.checked;
+      }
       panel.appendChild(menuitem);
     }
   }
@@ -4320,15 +4364,7 @@ export class UrlbarView {
     for (let container of containers) {
       let menuitem = this.document.createElement("panel-item");
       menuitem.dataset.usercontextid = String(container.userContextId);
-      if (container.l10nId) {
-        menuitem.setAttribute("data-l10n-attrs", "accesskey");
-        this.document.l10n.setAttributes(
-          menuitem,
-          `${container.l10nId}-panel-item`
-        );
-      } else {
-        menuitem.textContent = container.name;
-      }
+      menuitem.textContent = container.name;
       menuitem.style.setProperty(
         "--panel-item-icon",
         `url("${container.iconURL}")`
@@ -4340,7 +4376,7 @@ export class UrlbarView {
     panel.appendChild(this.document.createElement("hr"));
     panel.appendChild(
       this.#createContainerMenuItem(
-        "user-context-add-container-panel-item",
+        "user-context-add-container2-panel-item",
         () =>
           this.controller.parentController.openContainerCreationPanel(
             CONTAINER_SOURCE
@@ -4349,7 +4385,7 @@ export class UrlbarView {
     );
     panel.appendChild(
       this.#createContainerMenuItem(
-        "user-context-manage-containers-panel-item",
+        "user-context-manage-containers2-panel-item",
         () =>
           this.controller.parentController.openPreferences("paneContainers", {
             urlParams: { entrypoint: CONTAINER_SOURCE },
@@ -4362,7 +4398,7 @@ export class UrlbarView {
    * Builds one of the container submenu's items that don't pick the result.
    *
    * @param {string} l10nId
-   *   The l10n id of the item's label, which also carries its accesskey.
+   *   The l10n id of the item's label.
    * @param {Function} onPick
    *   Called when the item is picked.
    * @returns {Element}
@@ -4370,7 +4406,6 @@ export class UrlbarView {
    */
   #createContainerMenuItem(l10nId, onPick) {
     let menuitem = this.document.createElement("panel-item");
-    menuitem.setAttribute("data-l10n-attrs", "accesskey");
     this.document.l10n.setAttributes(menuitem, l10nId);
     menuitem.addEventListener("click", onPick);
     return menuitem;
@@ -4666,6 +4701,14 @@ export class UrlbarView {
         menuitem.dataset.usercontextid
       )
     ) {
+      return;
+    }
+    if (
+      menuitem.dataset.command ==
+      RESULT_MENU_COMMANDS.TOGGLE_KEYBOARD_ACCESSIBLE
+    ) {
+      UrlbarPrefs.toggleResultMenuKeyboardAccessible();
+      this.#updateMenuButtonKeyboardAccessibility();
       return;
     }
     let result = this.#resultMenuResult;

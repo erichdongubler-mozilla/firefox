@@ -191,7 +191,7 @@ The resulting crash reports will carry `AsyncShutdownTimeout` in their signature
 
 #### nsTerminator Timeout Crash
 
-The separate `nsTerminator` watchdog is initialized before entering `ShutdownPhase::AppShutdownConfirmed` and for each phase it resets a shutdown timeout of `toolkit.asyncshutdown.crash_timeout + 3000` ms, that is currently 63s. It captures all things ongoing between the notification of two shutdown phases, not only `AsyncShutdown` blockers, in particular everything synchronous happening in response to observer notifications. It is active for all shutdown phases, also the latest that `AsyncShutdown` cannot cover.
+The separate `nsTerminator` watchdog is initialized before entering `ShutdownPhase::AppShutdownConfirmed` and for each phase it resets a shutdown timeout of `toolkit.asyncshutdown.crash_timeout + toolkit.asyncshutdown.crash_timeout_additional_wait` ms, that is currently 70s (60s + 10s) by default. The additional wait gives `AsyncShutdown` time to write its own crash report first, so a hang in a phase covered by both is reported as an `AsyncShutdownTimeout` crash rather than a `shutdownhang` one. It captures all things ongoing between the notification of two shutdown phases, not only `AsyncShutdown` blockers, in particular everything synchronous happening in response to observer notifications. It is active for all shutdown phases, also the latest that `AsyncShutdown` cannot cover.
 
 The resulting crash reports carry `shutdownhang` in their signature, with a crash reason `Shutdown hanging at step <shutdown phase>. Something is blocking the main-thread.`. The `XPCOMSpinEventLoopStack` annotation might give hints on where we're waiting, in case the main thread stack is truncated.
 

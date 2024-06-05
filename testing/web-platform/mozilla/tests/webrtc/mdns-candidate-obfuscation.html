@@ -255,14 +255,24 @@ promise_test(t => withObfuscation(async () => {
   await Promise.all([exchange.complete(), connect(pc1, pc2)]);
   const gatheredBefore = exchange.from(pc1).gathered().length;
 
-  const pairChanged = Promise.all([
-    waitUntilEvent(iceTransportOf(pc1, 'offerer'), 'selectedcandidatepairchange'),
-    waitUntilEvent(iceTransportOf(pc2, 'answerer'), 'selectedcandidatepairchange'),
-  ]);
+  async function waitForSelectedPair(pc, who) {
+    const transport = iceTransportOf(pc, who);
+    while (true) {
+      await waitUntilEvent(transport, 'selectedcandidatepairchange');
+      const pair = transport.getSelectedCandidatePair();
+      if (pair) {
+        return pair;
+      }
+    }
+  }
+
   pc1.restartIce();
-  await Promise.all([exchange.complete(), exchangeOfferAnswer(pc1, pc2)]);
-  await pairChanged;
-  await Promise.all([listenToIceConnected(pc1), listenToIceConnected(pc2)]);
+  await Promise.all([
+    exchange.complete(),
+    exchangeOfferAnswer(pc1, pc2),
+    waitForSelectedPair(pc1, 'offerer'),
+    waitForSelectedPair(pc2, 'answerer'),
+  ]);
 
   assert_greater_than(exchange.from(pc1).gathered().length, gatheredBefore,
     'the restart gathered a new generation of candidates');

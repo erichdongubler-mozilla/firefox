@@ -719,7 +719,7 @@ export class RemoteRenderer {
   /**
    * Opens a cache entry for reading.
    *
-   * @param {nsIURI} uri - Cache key URI
+   * @param {nsIURI} resourceURI - Cache key URI
    * @returns {Promise<nsICacheEntry|null>}
    */
   async openCacheEntry(resourceURI) {

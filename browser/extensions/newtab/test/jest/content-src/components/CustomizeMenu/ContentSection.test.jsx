@@ -258,6 +258,23 @@ describe("ContentSection", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("labels the classic Crossword toggle with its Fluent string", () => {
+    const { container } = render(
+      <ContentSection
+        {...DEFAULT_PROPS}
+        mayHaveWidgets={true}
+        mayHaveCrosswordWidget={true}
+      />
+    );
+
+    const toggle = container.querySelector("#crossword-toggle");
+    expect(toggle).toHaveAttribute(
+      "data-l10n-id",
+      "newtab-custom-widget-crossword-toggle"
+    );
+    expect(toggle).not.toHaveAttribute("label");
+  });
+
   it("should dispatch WIDGETS_ENABLED with widget_size=large when widgetsMayBeMaximized is false", () => {
     const dispatch = jest.fn();
     const { instance } = renderWithInstance({

@@ -15,6 +15,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/MonitorUIUtils.sys.mjs",
 });
 
+// The panel is a summary rather than the whole list, which lives behind
+// "Manage and view all tasks". New matches take these slots first: they are
+// what pulled the user to the panel.
+const MAX_VISIBLE_ROWS = 5;
+
 /**
  * Contents of the "Tasks" toolbar panel: the monitors the user is watching and,
  * once they ask for one, the create form.
@@ -30,12 +35,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * Dispatches:
  *  - agent-monitor-panel:create-task
  *  - agent-monitor-panel:manage-tasks
- *  - agent-monitor-panel:open-task  (detail: { id }; a row was activated)
+ *  - agent-monitor-panel:open-task  (detail: { id }; a row was activated. Only
+ *    fires for a task that watches at least one page.)
  *  - agent-monitor-item:*  (re-dispatched from the create form, see that
  *    component; the host handles :submit, :cancel and :draft-change)
  *
- * @property {object[]} monitors - Monitors newest first, each formatted by
- *   MonitorUIUtils.formatMonitorForDisplay().
+ * @property {object[]} monitors - Monitors in the order they should be listed,
+ *   each formatted by MonitorUIUtils.formatMonitorForDisplay().
  * @property {number} maxMonitors - How many monitors the user may have.
  * @property {?object} agent - What the create form starts from, e.g. the page
  *   the user is on. See agent-monitor-item's 'agent'.
@@ -45,7 +51,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * to show the user the newly created monitor task
  * @property {string[]} attentionIds - Ids of monitors that newly matched since
  *   the user last opened the panel. They are listed together under a "New
- *   matches" section above the rest.
+ *   matches" section above the rest, and fill the panel's limited rows first.
  */
 export class AgentMonitorPanel extends MozLitElement {
   static properties = {
@@ -131,6 +137,12 @@ export class AgentMonitorPanel extends MozLitElement {
     if (!lastRun || lastRun.status === "running") {
       return nothing;
     }
+    if (lastRun.status === "error") {
+      return html`<span
+        class="monitor-row-result could-not-check"
+        data-l10n-id="smartwindow-monitor-panel-result-could-not-check"
+      ></span>`;
+    }
     if (lastRun.conditionMet) {
       return html`<span class="monitor-row-result match">
         ${isNewMatch
@@ -145,14 +157,23 @@ export class AgentMonitorPanel extends MozLitElement {
     ></span>`;
   }
 
+  #onRowClick(monitor) {
+    // Activating a row opens the pages the task watches, so a task with none
+    // has nothing to open. The row stays focusable so it can still be read.
+    if (!monitor.watchUrls?.length) {
+      return;
+    }
+    this.#dispatch("agent-monitor-panel:open-task", { id: monitor.id });
+  }
+
   #renderRow(monitor, isNewMatch) {
     return html`
       <button
         type="button"
         class="monitor-row"
+        aria-disabled=${monitor.watchUrls?.length ? nothing : "true"}
         ?data-just-created=${monitor.id === this.justCreatedId}
-        @click=${() =>
-          this.#dispatch("agent-monitor-panel:open-task", { id: monitor.id })}
+        @click=${() => this.#onRowClick(monitor)}
       >
         <monitor-status-chip
           kind=${monitor.status?.kind ?? nothing}
@@ -180,10 +201,12 @@ export class AgentMonitorPanel extends MozLitElement {
 
   #renderList() {
     const attention = new Set(this.attentionIds ?? []);
-    const newMatches = this.monitors.filter(monitor =>
-      attention.has(monitor.id)
-    );
-    const recent = this.monitors.filter(monitor => !attention.has(monitor.id));
+    const newMatches = this.monitors
+      .filter(monitor => attention.has(monitor.id))
+      .slice(0, MAX_VISIBLE_ROWS);
+    const recent = this.monitors
+      .filter(monitor => !attention.has(monitor.id))
+      .slice(0, MAX_VISIBLE_ROWS - newMatches.length);
     return html`
       <div class="monitor-list-view">
         ${this.monitors.length
@@ -216,7 +239,9 @@ export class AgentMonitorPanel extends MozLitElement {
   }
 
   #renderFooter() {
-    const atLimit = this.monitors.length >= this.maxMonitors;
+    // Paused monitors don't count toward the limit.
+    const activeCount = this.monitors.filter(monitor => monitor.enabled).length;
+    const atLimit = activeCount >= this.maxMonitors;
     return html`
       <div class="monitor-footer">
         <button
@@ -235,7 +260,7 @@ export class AgentMonitorPanel extends MozLitElement {
             class="monitor-footer-count"
             data-l10n-id="smartwindow-monitor-panel-count"
             data-l10n-args=${JSON.stringify({
-              used: this.monitors.length,
+              used: activeCount,
               max: this.maxMonitors,
             })}
           ></span>

@@ -22,17 +22,15 @@ import "chrome://browser/content/aiwindow/components/aitab-page-actions.mjs";
  *
  * @property {string} createdAt - Ready to display run date, already localized
  *   by AITabParent. The component does no date handling of its own.
- * @property {string} heading - Page title. The block calls this `title`,
- *   which cannot be used as a property name without giving the whole hero a
- *   tooltip.
- * @property {string} subhead - One sentence of context below the heading.
+ * @property {string} title - Page title.
+ * @property {string} subhead - One sentence of context below the title.
  * @property {SourceLink[]} references - Pages this report was built from.
  * @property {boolean} refreshing - Whether sources are being re-fetched.
  */
 export class AITabHeader extends MozLitElement {
   static properties = {
     createdAt: { type: String },
-    heading: { type: String },
+    title: { type: String },
     subhead: { type: String },
     references: { type: Array },
     refreshing: { type: Boolean },
@@ -41,7 +39,7 @@ export class AITabHeader extends MozLitElement {
   constructor() {
     super();
     this.createdAt = "";
-    this.heading = "";
+    this.title = "";
     this.subhead = "";
     this.references = [];
     this.refreshing = false;
@@ -75,7 +73,7 @@ export class AITabHeader extends MozLitElement {
     return html`
       <link
         rel="stylesheet"
-        href="chrome://browser/content/aiwindow/components/aitab-shared.css"
+        href="chrome://browser/content/aiwindow/components/aitab-base.css"
       />
       <link
         rel="stylesheet"
@@ -87,7 +85,7 @@ export class AITabHeader extends MozLitElement {
           ?refreshing=${this.refreshing}
         ></aitab-page-actions>
         ${this.#renderCreatedAt()}
-        <h1 class="aitab-title">${this.heading}</h1>
+        <h1 class="aitab-title">${this.title}</h1>
         ${this.subhead
           ? html`<p class="aitab-title-subtext">${this.subhead}</p>`
           : nothing}

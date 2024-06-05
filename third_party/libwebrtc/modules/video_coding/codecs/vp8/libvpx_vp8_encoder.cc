@@ -1542,6 +1542,13 @@ std::vector<scoped_refptr<VideoFrameBuffer>> LibvpxVp8Encoder::PrepareBuffers(
 
     auto scaled_buffer =
         buffer_to_scale->Scale(raw_images_[i].d_w, raw_images_[i].d_h);
+    if (!scaled_buffer) {
+      RTC_LOG(LS_ERROR) << "Failed to scale "
+                        << VideoFrameBufferTypeToString(
+                               buffer_to_scale->type())
+                        << " image. Can't encode frame.";
+      return {};
+    }
     if (scaled_buffer->type() == VideoFrameBuffer::Type::kNative) {
       auto mapped_scaled_buffer =
           scaled_buffer->GetMappedFrameBuffer(mapped_type);

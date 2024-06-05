@@ -121,9 +121,23 @@
   text-align: start;
   cursor: pointer;
 
-  &:hover {
+  &:hover:not([aria-disabled="true"]) {
     background-color: var(--button-background-color-hover);
     color: var(--button-text-color-hover);
+  }
+
+  &:active:not([aria-disabled="true"]) {
+    background-color: var(--button-background-color-active);
+    color: var(--button-text-color-active);
+  }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+  }
+
+  &[aria-disabled="true"] {
+    cursor: default;
   }
 
   &[data-just-created] {
@@ -171,10 +185,6 @@
     align-items: center;
     gap: var(--space-xsmall);
     font-weight: var(--font-weight-semibold);
-  }
-
-  &.error {
-    color: var(--text-color-error);
   }
 }
 

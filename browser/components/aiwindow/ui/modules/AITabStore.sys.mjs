@@ -20,12 +20,16 @@ import {
   GET_AITAB_VERSIONS_BY_SLUG,
   GET_AITAB_PAGES_BY_CONV_ID,
   DELETE_AITAB_PAGES_BY_SLUG,
+  SLUG_EXISTS,
 } from "moz-src:///browser/components/aiwindow/ui/modules/AITabSql.sys.mjs";
 import { SQLiteStoreBase } from "moz-src:///browser/components/aiwindow/ui/modules/SQLiteStoreBase.sys.mjs";
 import {
   parseJSONOrNull,
   toJSONOrNull,
 } from "moz-src:///browser/components/aiwindow/ui/modules/ChatUtils.sys.mjs";
+
+// How far #mintSlug will count before giving up on a readable slug.
+const MAX_SLUG_SUFFIX = 50;
 
 /**
  * Simple interface to store and retrieve AITab UI specific data
@@ -66,13 +70,17 @@ class AITabStore extends SQLiteStoreBase {
   }
 
   /**
-   * Creates a new tab: the first version for a new conv_id. Rejects if the
-   * conv_id already has a version (use edit instead).
+   * Creates a new tab at version 1.
+   *
+   * `page.slug` is the slug the caller would like; the stored slug is derived
+   * from it and is returned on the result, so callers must read it back
+   * rather than assume they got what they asked for. Slugs come from page
+   * titles, which repeat, so this is the layer that settles who holds one.
    *
    * @param {object} page - Page fields: convId, slug, title, and optional
    *   context, components, localState
-   * @returns {Promise<object>} The persisted page (with generated uuid,
-   *   version, and timestamps)
+   * @returns {Promise<object>} The persisted page (with the slug it was
+   *   stored under, plus generated uuid, version, and timestamps)
    */
   async create(page) {
     return this.#insertNextVersion(page, { expectNew: true });
@@ -80,8 +88,8 @@ class AITabStore extends SQLiteStoreBase {
 
   /**
    * Persists an edit as a new version of an existing tab. The version is the
-   * current highest version for the conv_id plus one. Rejects if the conv_id
-   * has no existing version (use create instead).
+   * current highest version for the slug plus one. Rejects if the slug has no
+   * existing version (use create instead).
    *
    * @param {object} page - Page fields: convId, slug, title, and optional
    *   context, components, localState
@@ -206,10 +214,15 @@ class AITabStore extends SQLiteStoreBase {
   }
 
   /**
-   * Inserts the next version row for a conv_id. The version is computed as
-   * MAX(existing version) + 1 (so 1 for a new tab). The version read and
-   * the insert run in one transaction so concurrent writers can't collide on
-   * the same version number.
+   * Inserts the next version row for a slug. A create mints a free slug and
+   * stores version 1; an edit addresses the slug it was given and stores
+   * MAX(existing version) + 1. Resolving the slug or version and inserting
+   * the row run in one transaction, so two writers cannot settle on the same
+   * pair.
+   *
+   * Keyed on slug rather than conv_id because the slug is the page's identity
+   * and what UNIQUE (slug, version) is enforced on; a conversation can hold
+   * more than one page.
    *
    * @param {object} page
    * @param {string} page.convId - Conversation id the page belongs to
@@ -219,8 +232,8 @@ class AITabStore extends SQLiteStoreBase {
    * @param {*} [page.components] - Component list describing how the page renders
    * @param {*} [page.localState] - Component state (checkboxes, etc.)
    * @param {object} opts
-   * @param {boolean} opts.expectNew - True for create (this must be the first
-   *   version); false for edit (a prior version must already exist).
+   * @param {boolean} opts.expectNew - True for create (mint a free slug and
+   *   store version 1); false for edit (a prior version must exist).
    * @returns {Promise<object>}
    */
   async #insertNextVersion(
@@ -239,30 +252,33 @@ class AITabStore extends SQLiteStoreBase {
     const uuid = crypto.randomUUID();
     const now = Date.now() * 1000;
     let version;
+    // A create can be moved off the slug it asked for; an edit names a page
+    // that already exists and has to keep it.
+    let storedSlug = slug;
 
     await this.connection
       .executeTransaction(async () => {
-        const rows = await this.connection.execute(GET_NEXT_VERSION, {
-          conv_id: convId,
-        });
-        version = rows[0].getResultByName("next_version");
+        if (expectNew) {
+          storedSlug = await this.#mintSlug(slug);
+          version = 1;
+        } else {
+          const rows = await this.connection.execute(GET_NEXT_VERSION, {
+            slug,
+          });
+          version = rows[0].getResultByName("next_version");
 
-        // version === 1 means this conv_id has no prior rows.
-        if (expectNew && version !== 1) {
-          throw new Error(
-            `create() called for existing tab "${convId}"; use edit()`
-          );
-        }
-        if (!expectNew && version === 1) {
-          throw new Error(
-            `edit() called for unknown tab "${convId}"; use create()`
-          );
+          // version === 1 means this slug has no prior rows.
+          if (version === 1) {
+            throw new Error(
+              `edit() called for unknown tab "${slug}"; use create()`
+            );
+          }
         }
 
         await this.connection.executeCached(AITAB_PAGE_INSERT, {
           uuid,
           conv_id: convId,
-          slug,
+          slug: storedSlug,
           version,
           title,
           created_at: now,
@@ -284,7 +300,7 @@ class AITabStore extends SQLiteStoreBase {
     return {
       uuid,
       convId,
-      slug,
+      slug: storedSlug,
       version,
       title,
       createdAt: now,
@@ -293,6 +309,37 @@ class AITabStore extends SQLiteStoreBase {
       components,
       localState,
     };
+  }
+
+  /**
+   * A slug no tab holds yet, derived from `base`.
+   *
+   * A slug comes from a page title, and titles repeat: two conversations that
+   * both generate "Hotels in Lisbon" ask for the same slug, and only one can
+   * have it. Suffixes are numbered rather than random so the URL a user sees
+   * stays readable, and the search runs inside the caller's transaction so
+   * two writers cannot both settle on the same free slug.
+   *
+   * Only called for a create, so `base` itself is available far more often
+   * than not and the loop usually ends on its first pass.
+   *
+   * @param {string} base - The slug the caller asked for.
+   * @returns {Promise<string>}
+   */
+  async #mintSlug(base) {
+    for (let suffix = 1; suffix <= MAX_SLUG_SUFFIX; suffix++) {
+      const candidate = suffix === 1 ? base : `${base}_${suffix}`;
+      const rows = await this.connection.execute(SLUG_EXISTS, {
+        slug: candidate,
+      });
+      if (!rows[0].getResultByName("taken")) {
+        return candidate;
+      }
+    }
+
+    // Enough same-titled pages to exhaust the numbered suffixes. Readability
+    // is already lost by this point, so take a slug that needs no search.
+    return `${base}_${crypto.randomUUID().slice(0, 8)}`;
   }
 
   async #ensureConnection() {

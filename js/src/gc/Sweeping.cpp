@@ -721,14 +721,12 @@ IncrementalProgress GCRuntime::markGrayRoots(SliceBudget& budget,
       return NotFinished;
     }
 
-    Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(
-        marker().tracer(), Compartment::GrayEdges);
+    traceIncomingCrossCompartmentEdgesForZoneGC(marker().tracer(), GrayEdges);
   }
 
   // Also mark any incoming cross compartment edges that were originally gray
   // but have been marked black by a barrier.
-  Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(
-      marker().tracer(), Compartment::BlackEdges);
+  traceIncomingCrossCompartmentEdgesForZoneGC(marker().tracer(), BlackEdges);
 
   return Finished;
 }

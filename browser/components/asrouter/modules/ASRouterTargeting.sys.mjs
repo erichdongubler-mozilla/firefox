@@ -1,4 +1,4 @@
-/* This Source Code Form is subject to the terms of the Mozilla PublicddonMa
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 const FXA_ENABLED_PREF = "identity.fxaccounts.enabled";
@@ -62,8 +62,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/asrouter/ASRouterPreferences.sys.mjs",
   AttributionCode:
     "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
-  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
-  BrowserInitState: "resource:///modules/BrowserGlue.sys.mjs",
+  BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
+  BrowserInitState: "moz-src:///browser/components/BrowserGlue.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   ClientEnvironment: "resource://normandy/lib/ClientEnvironment.sys.mjs",
   CustomizableUI:
@@ -91,7 +91,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
   TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
-  TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
+  TaskbarTabs: "moz-src:///browser/components/taskbartabs/TaskbarTabs.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   TelemetrySession: "resource://gre/modules/TelemetrySession.sys.mjs",
   LaunchOnLogin: "resource://gre/modules/LaunchOnLogin.sys.mjs",
@@ -939,6 +939,9 @@ const TargetingGetters = {
   get isDefaultBrowserUncached() {
     return ShellService.isDefaultBrowser();
   },
+  get hasAttemptedSetDefault() {
+    return ShellService.attemptedSetDefaultThisSession;
+  },
   get isOneClickSetDefaultEnabled() {
     return QueryCache.getters.isOneClickSetDefaultEnabled
       .get()
@@ -1220,6 +1223,13 @@ const TargetingGetters = {
 
   get userMonthlyActivity() {
     return QueryCache.queries.UserMonthlyActivity.get();
+  },
+
+  get allowedNotificationOrigins() {
+    // getAllByTypes returns denials as well as grants.
+    return Services.perms
+      .getAllByTypes(["desktop-notification"])
+      .filter(perm => perm.capability === Services.perms.ALLOW_ACTION).length;
   },
 
   get doesAppNeedPin() {

@@ -246,9 +246,6 @@ fail-if = [
 ["browser_styleeditor_syncIntoRuleView.js"]
 
 ["browser_styleeditor_telemetry.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_styleeditor_transition_rule.js"]
 fail-if = [
@@ -258,7 +255,3 @@ fail-if = [
 ["browser_styleeditor_xul.js"]
 
 ["browser_toolbox_styleeditor.js"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929428
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1929428, Bug 2028047
-]

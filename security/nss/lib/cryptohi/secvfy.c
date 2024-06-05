@@ -186,6 +186,7 @@ checkedSignatureLen(const SECKEYPublicKey *pubk)
             maxSigLen = DSA_MAX_SIGNATURE_LEN;
             break;
         case ecKey:
+        case edKey:
             maxSigLen = 2 * MAX_ECKEY_LEN;
             break;
         case mldsaKey:
@@ -298,6 +299,7 @@ sec_GetEncAlgFromSigAlg(SECOidTag sigAlg)
         case SEC_OID_ML_DSA_44:
         case SEC_OID_ML_DSA_65:
         case SEC_OID_ML_DSA_87:
+        case SEC_OID_ED25519:
             return sigAlg;
         /* we don't implement MD4 hashes */
         case SEC_OID_PKCS1_MD4_WITH_RSA_ENCRYPTION:
@@ -408,6 +410,12 @@ sec_GetCombinedMech(SECOidTag encalg, SECOidTag hashalg)
             /* make sure the hashAlg is rational */
             if ((hashalg == SEC_OID_UNKNOWN) || (hashalg == encalg)) {
                 return CKM_ML_DSA;
+            }
+            break;
+        case SEC_OID_ED25519:
+            /* make sure the hashAlg is rational */
+            if ((hashalg == SEC_OID_UNKNOWN) || (hashalg == encalg)) {
+                return CKM_EDDSA;
             }
             break;
         default:
@@ -605,6 +613,7 @@ sec_DecodeSigAlg(const SECKEYPublicKey *key, SECOidTag sigAlg,
         case SEC_OID_ML_DSA_44:
         case SEC_OID_ML_DSA_65:
         case SEC_OID_ML_DSA_87:
+        case SEC_OID_ED25519:
             /* RFC 9881 requires the parameters component to be absent, so
              * there is nothing to decode and nowhere to carry a signing
              * context; a caller that needs a non-empty context has to supply
@@ -769,7 +778,7 @@ vfy_CreateContext(const SECKEYPublicKey *key, const SECItem *sig,
     }
     /* for mldsa, the hash has to match the paramset anyway, so a caller of
      * the *Direct entry points may leave it unnamed */
-    if ((type == mldsaKey) && (hashAlg == SEC_OID_UNKNOWN)) {
+    if (((type == mldsaKey) || (type == edKey)) && (hashAlg == SEC_OID_UNKNOWN)) {
         hashAlg = encAlg;
     }
     if (NSS_OptionGet(NSS_KEY_SIZE_POLICY_FLAGS, &optFlags) != SECFailure) {
@@ -1151,6 +1160,7 @@ vfy_VerifyDigest(const SECItem *digest, const SECKEYPublicKey *key,
                     PORT_SetError(SEC_ERROR_BAD_SIGNATURE);
                 }
                 break;
+            case edKey:
             case mldsaKey:
             default:
                 PORT_SetError(SEC_ERROR_UNSUPPORTED_KEYALG);

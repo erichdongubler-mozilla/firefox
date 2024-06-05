@@ -70,6 +70,7 @@
 #include "mozilla/dom/NodeInfoInlines.h"
 #include "mozilla/dom/PermissionsPolicyUtils.h"
 #include "mozilla/dom/PolicyContainer.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/SVGUseElement.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/Selection.h"
@@ -109,7 +110,6 @@
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
 #include "nsPrintfCString.h"
-#include "nsRange.h"
 #include "nsString.h"
 #include "nsStyleConsts.h"
 #include "nsTHashMap.h"
@@ -740,7 +740,7 @@ static const nsINode* GetClosestCommonInclusiveAncestorForRangeInSelection(
 
 /**
  * A Comparator suitable for mozilla::BinarySearchIf for searching a collection
- * of nsRange* for an overlap of (mNode, mStartOffset) .. (mNode, mEndOffset).
+ * of Range* for an overlap of (mNode, mStartOffset) .. (mNode, mEndOffset).
  */
 class IsItemInRangeComparator {
  public:
@@ -899,11 +899,11 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
         }
 
         if (range->MayCrossShadowBoundary()) {
-          MOZ_ASSERT(range->IsDynamicRange(),
+          MOZ_ASSERT(range->IsRange(),
                      "range->MayCrossShadowBoundary() can only return true for "
                      "dynamic range");
           StaticRange* crossBoundaryRange =
-              range->AsDynamicRange()->GetCrossShadowBoundaryRange();
+              range->AsRange()->GetCrossShadowBoundaryRange();
           MOZ_ASSERT(crossBoundaryRange);
           if (!crossBoundaryRange->Collapsed()) {
             return true;
@@ -1337,6 +1337,8 @@ void nsINode::LastRelease() {
       }
     }
   }
+
+  CustomElementRegistry::RemoveScopedRegistry(*this);
 
   UnsetFlags(NODE_HAS_PROPERTIES);
   ReleaseWrapper(this);
@@ -4353,10 +4355,6 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
 
     aNode->mNodeInfo.swap(newNodeInfo);
 
-    // https://dom.spec.whatwg.org/#concept-node-adopt 3.3. onward
-    // 3.3. Otherwise, if inclusiveDescendant is an element:
-    // 3.3.1. Set the node document of each attribute in inclusiveDescendant's
-    //        attribute list to document.
     aNode->NodeInfoChanged(oldDoc);
 
     MOZ_ASSERT(newDoc != oldDoc);

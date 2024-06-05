@@ -345,9 +345,7 @@ export class StyleEditorUI extends EventEmitter {
       eventListenersConfig
     );
 
-    this.#shortcuts = new KeyShortcuts({
-      window: this.#window,
-    });
+    this.#shortcuts = new KeyShortcuts(this.#window);
     this.#shortcuts.on(
       `CmdOrCtrl+${getString("focusFilterInput.commandkey")}`,
       this.#onFocusFilterInputKeyboardShortcut

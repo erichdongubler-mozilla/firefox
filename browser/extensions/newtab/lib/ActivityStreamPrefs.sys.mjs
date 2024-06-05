@@ -51,7 +51,7 @@ export class DefaultPrefs extends Preferences {
    * @param  {Map} config A Map with {string} key of the pref name and {object}
    *                      value with the following pref properties:
    *         {string} .title (optional) A description of the pref
-   *         {bool|string|number} .value The default value for the pref
+   *         {boolean|string|number} .value The default value for the pref
    * @param  {string} branch (optional) The pref branch (defaults to ACTIVITY_STREAM_PREF_BRANCH)
    */
   constructor(config, branch = ACTIVITY_STREAM_PREF_BRANCH) {

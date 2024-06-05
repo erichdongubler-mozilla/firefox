@@ -9,8 +9,7 @@ mkdir -p $UPLOAD_DIR
 rm -rf /builds/worker/.mozbuild/jdk
 cp -rp $MOZ_FETCHES_DIR/jdk /builds/worker/.mozbuild/
 
-export REPO_OS_OVERRIDE=macosx
-export JAVA_TOOL_OPTIONS=-Dos.arch=aarch64
+export REPO_OS_OVERRIDE=macosx_arm64
 
 # Populate /builds/worker/.mozbuild/android-sdk-linux.
 cd $GECKO_PATH

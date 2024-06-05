@@ -76,3 +76,65 @@ add_task(async function preserveWatchedByDevToolsOnCrossGroupNavigation() {
     );
   });
 });
+
+add_task(async function assertWatchedByDevToolsCanBeSetEarlyFromParentForTab() {
+  function listener(subject) {
+    info(
+      "Enable the watchedByDevTools flag from the browsing-context-attached listener"
+    );
+    subject.watchedByDevTools = true;
+    Services.obs.removeObserver(listener, "browsing-context-attached");
+  }
+  Services.obs.addObserver(listener, "browsing-context-attached");
+
+  await BrowserTestUtils.withNewTab(TEST_URI_COM, async browser => {
+    is(
+      browser.browsingContext.watchedByDevTools,
+      true,
+      "The BrowsingContext is immediately flagged as watched by devtools in the parent process"
+    );
+
+    let success = await browser.browsingContext.currentWindowGlobal.domProcess
+      .getActor(ACTOR)
+      .sendQuery("wasWatchedEarly", {
+        browsingContextId: browser.browsingContext.id,
+      });
+    is(
+      success,
+      true,
+      "The watchedByDevTools flag was set to true the earliest possible in the content process"
+    );
+  });
+});
+
+add_task(
+  async function assertWatchedByDevToolsCanBeSetEarlyFromParentForTopLevelWindow() {
+    function listener(subject) {
+      info(
+        "Enable the watchedByDevTools flag from the browsing-context-attached listener"
+      );
+      subject.watchedByDevTools = true;
+      Services.obs.removeObserver(listener, "browsing-context-attached");
+    }
+    Services.obs.addObserver(listener, "browsing-context-attached");
+
+    const newWin = await BrowserTestUtils.openNewBrowserWindow();
+    is(
+      newWin.browsingContext.watchedByDevTools,
+      true,
+      "The BrowsingContext is immediately flagged as watched by devtools in the parent process"
+    );
+
+    let success = await newWin.browsingContext.currentWindowGlobal.domProcess
+      .getActor(ACTOR)
+      .sendQuery("wasWatchedEarly", {
+        browsingContextId: newWin.browsingContext.id,
+      });
+    is(
+      success,
+      true,
+      "The watchedByDevTools flag was set to true the earliest possible in the content process"
+    );
+    await BrowserTestUtils.closeWindow(newWin);
+  }
+);

@@ -6,6 +6,7 @@
 #include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "nsCOMPtr.h"
+#include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
 #include "nsFrameLoader.h"
@@ -1299,47 +1300,6 @@ void SessionHistoryEntry::GetChildAt(int32_t aIndex,
                                      SessionHistoryEntry** aChild) {
   RefPtr<SessionHistoryEntry> child = mChildren.SafeElementAt(aIndex);
   child.forget(aChild);
-}
-
-SessionHistoryEntry*
-SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
-    int32_t aChildOffset) {
-  bool dynamicallyAddedChild = false;
-  HasDynamicallyAddedChild(&dynamicallyAddedChild);
-  if (dynamicallyAddedChild) {
-    return nullptr;
-  }
-
-  // If the user did a shift-reload on this frameset page,
-  // we don't want to load the subframes from history.
-  if (IsForceReloadType(mInfo->mLoadType) || mInfo->mLoadType == LOAD_REFRESH) {
-    return nullptr;
-  }
-
-  /* Before looking for the subframe's url, check
-   * the expiration status of the parent. If the parent
-   * has expired from cache, then subframes will not be
-   * loaded from history in certain situations.
-   * If the user pressed reload and the parent frame has expired
-   *  from cache, we do not want to load the child frame from history.
-   */
-  if (SharedInfo()->mExpired && (mInfo->mLoadType == LOAD_RELOAD_NORMAL)) {
-    // The parent has expired. Return null.
-    return nullptr;
-  }
-  // Get the child subframe from session history.
-  auto* child = mChildren.SafeElementAt(aChildOffset);
-  if (child) {
-    // Set the parent's Load Type on the child
-    child->SetLoadType(mInfo->mLoadType);
-  }
-  return child;
-}
-
-NS_IMETHODIMP_(void)
-SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
-    int32_t aChildOffset, nsISHEntry** aChild) {
-  *aChild = GetChildSHEntryIfHasNoDynamicallyAddedChild(aChildOffset);
 }
 
 NS_IMETHODIMP

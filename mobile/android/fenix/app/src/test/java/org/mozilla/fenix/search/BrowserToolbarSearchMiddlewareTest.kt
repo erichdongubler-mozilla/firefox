@@ -1308,7 +1308,7 @@ class BrowserToolbarSearchMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN QR scan starteds from browser WHEN receiving a result THEN open it in the same tab`() {
+    fun `GIVEN QR scan started from browser WHEN receiving a result THEN open it in the same tab`() {
         val appStoreActionsCaptor = CaptureActionsMiddleware<AppState, AppAction>()
         val appStore =
             AppStore(
@@ -1317,6 +1317,10 @@ class BrowserToolbarSearchMiddlewareTest {
             )
         val browserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
         every { components.useCases.fenixBrowserUseCases } returns browserUseCases
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { enableHomepageAsNewTab } returns false
+            }
         val browsingModeManager: BrowsingModeManager =
             mockk(relaxed = true) {
                 every { mode } returns Normal
@@ -1325,6 +1329,145 @@ class BrowserToolbarSearchMiddlewareTest {
             buildMiddlewareAndAddToStore(
                 appStore = appStore,
                 components = components,
+                settings = settings,
+                browsingModeManager = browsingModeManager,
+            )
+        store.dispatch(EnterEditMode(false))
+        val qrScannerButton = store.state.editState.editActionsEnd.last() as ActionButtonRes
+
+        store.dispatch(qrScannerButton.onClick as BrowserToolbarEvent)
+        appStore.dispatch(QrScannerInputAvailable("test.com"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("test.com", store.state.editState.query.current)
+        assertTrue(store.state.editState.isQueryPrefilled)
+        appStoreActionsCaptor.assertLastAction(QrScannerInputConsumed::class)
+        verify {
+            browserUseCases.loadUrlOrSearch(
+                searchTermOrURL = "test.com",
+                newTab = false,
+                flags = EngineSession.LoadUrlFlags.external(),
+                private = false,
+            )
+        }
+        verify { navController.navigate(R.id.action_global_browser) }
+    }
+
+    @Test
+    fun `GIVEN QR scan did not start from browser WHEN receiving a result THEN open it in a new tab`() {
+        val appStoreActionsCaptor = CaptureActionsMiddleware<AppState, AppAction>()
+        val appStore =
+            AppStore(
+                initialState = AppState(searchState = AppSearchState.EMPTY),
+                middlewares = listOf(appStoreActionsCaptor),
+            )
+        val browserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
+        every { components.useCases.fenixBrowserUseCases } returns browserUseCases
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { enableHomepageAsNewTab } returns false
+            }
+        val browsingModeManager: BrowsingModeManager =
+            mockk(relaxed = true) {
+                every { mode } returns Normal
+            }
+        val (_, store) =
+            buildMiddlewareAndAddToStore(
+                appStore = appStore,
+                components = components,
+                settings = settings,
+                browsingModeManager = browsingModeManager,
+            )
+        store.dispatch(EnterEditMode(false))
+        val qrScannerButton = store.state.editState.editActionsEnd.last() as ActionButtonRes
+
+        store.dispatch(qrScannerButton.onClick as BrowserToolbarEvent)
+        appStore.dispatch(QrScannerInputAvailable("test.com"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("test.com", store.state.editState.query.current)
+        assertTrue(store.state.editState.isQueryPrefilled)
+        appStoreActionsCaptor.assertLastAction(QrScannerInputConsumed::class)
+        verify {
+            browserUseCases.loadUrlOrSearch(
+                searchTermOrURL = "test.com",
+                newTab = true,
+                flags = EngineSession.LoadUrlFlags.external(),
+                private = false,
+            )
+        }
+        verify { navController.navigate(R.id.action_global_browser) }
+    }
+
+    @Test
+    fun `GIVEN homepage as a new tab is enabled and QR scan started from browser WHEN receiving a QR scan result THEN open it in the current tab`() {
+        val appStoreActionsCaptor = CaptureActionsMiddleware<AppState, AppAction>()
+        val appStore =
+            AppStore(
+                initialState = AppState(searchState = AppSearchState.EMPTY.copy(sourceTabId = "test")),
+                middlewares = listOf(appStoreActionsCaptor),
+            )
+        val browserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
+        every { components.useCases.fenixBrowserUseCases } returns browserUseCases
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { enableHomepageAsNewTab } returns true
+            }
+        val browsingModeManager: BrowsingModeManager =
+            mockk(relaxed = true) {
+                every { mode } returns Normal
+            }
+        val (_, store) =
+            buildMiddlewareAndAddToStore(
+                appStore = appStore,
+                components = components,
+                settings = settings,
+                browsingModeManager = browsingModeManager,
+            )
+        store.dispatch(EnterEditMode(false))
+        val qrScannerButton = store.state.editState.editActionsEnd.last() as ActionButtonRes
+
+        store.dispatch(qrScannerButton.onClick as BrowserToolbarEvent)
+        appStore.dispatch(QrScannerInputAvailable("test.com"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("test.com", store.state.editState.query.current)
+        assertTrue(store.state.editState.isQueryPrefilled)
+        appStoreActionsCaptor.assertLastAction(QrScannerInputConsumed::class)
+        verify {
+            browserUseCases.loadUrlOrSearch(
+                searchTermOrURL = "test.com",
+                newTab = false,
+                flags = EngineSession.LoadUrlFlags.external(),
+                private = false,
+            )
+        }
+        verify { navController.navigate(R.id.action_global_browser) }
+    }
+
+    @Test
+    fun `GIVEN homepage as a new tab is enabled and QR scan did not start from browser WHEN receiving a QR scan result THEN open it in the current tab`() {
+        val appStoreActionsCaptor = CaptureActionsMiddleware<AppState, AppAction>()
+        val appStore =
+            AppStore(
+                initialState = AppState(searchState = AppSearchState.EMPTY),
+                middlewares = listOf(appStoreActionsCaptor),
+            )
+        val browserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
+        every { components.useCases.fenixBrowserUseCases } returns browserUseCases
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { enableHomepageAsNewTab } returns true
+            }
+        val browsingModeManager: BrowsingModeManager =
+            mockk(relaxed = true) {
+                every { mode } returns Normal
+            }
+        val (_, store) =
+            buildMiddlewareAndAddToStore(
+                appStore = appStore,
+                components = components,
+                settings = settings,
                 browsingModeManager = browsingModeManager,
             )
         store.dispatch(EnterEditMode(false))

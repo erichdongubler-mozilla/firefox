@@ -17,6 +17,8 @@
 #include "pkit.h"
 #endif /* PKIT_H */
 
+#include "certt.h"
+
 PR_BEGIN_EXTERN_C
 
 NSS_EXTERN NSSCallback *
@@ -35,7 +37,9 @@ nssTrustDomain_FindCertificatesBySubject(
 NSS_EXTERN NSSTrust *
 nssTrustDomain_FindTrustForCertificate(
     NSSTrustDomain *td,
-    NSSCertificate *c);
+    NSSDER *encoding,
+    NSSDER *issuer,
+    NSSDER *serial);
 
 NSS_EXTERN NSSCertificate *
 nssCertificate_AddRef(NSSCertificate *c);
@@ -68,26 +72,6 @@ NSS_EXTERN PRBool
 nssCertificate_IssuerAndSerialEqual(
     NSSCertificate *c1,
     NSSCertificate *c2);
-
-NSS_EXTERN NSSPrivateKey *
-nssPrivateKey_AddRef(NSSPrivateKey *vk);
-
-NSS_EXTERN PRStatus
-nssPrivateKey_Destroy(NSSPrivateKey *vk);
-
-NSS_EXTERN NSSItem *
-nssPrivateKey_GetID(NSSPrivateKey *vk);
-
-NSS_EXTERN NSSUTF8 *
-nssPrivateKey_GetNickname(
-    NSSPrivateKey *vk,
-    NSSToken *tokenOpt);
-
-NSS_EXTERN PRStatus
-nssPublicKey_Destroy(NSSPublicKey *bk);
-
-NSS_EXTERN NSSItem *
-nssPublicKey_GetID(NSSPublicKey *vk);
 
 NSS_EXTERN NSSCertificate **
 nssCryptoContext_FindCertificatesBySubject(
@@ -123,6 +107,9 @@ nssTrust_AddRef(NSSTrust *trust);
 
 NSS_EXTERN PRStatus
 nssTrust_Destroy(NSSTrust *trust);
+
+NSS_EXTERN void
+nssTrust_ToCERTCertTrust(NSSTrust *trust, CERTCertTrust *certTrust);
 
 NSS_EXTERN nssSMIMEProfile *
 nssSMIMEProfile_AddRef(nssSMIMEProfile *profile);

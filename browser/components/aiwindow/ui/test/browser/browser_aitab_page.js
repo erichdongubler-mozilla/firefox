@@ -5,7 +5,7 @@
 
 const AITAB_PREF = "browser.smartwindow.aitab.enabled";
 const PAGE_NAME = "hotels_san_francisco_1.html";
-const PAGE_URL = `about:aitab?page=${PAGE_NAME}`;
+const PAGE_URL = `about:smartpage?page=${PAGE_NAME}`;
 
 const PAGE_CONFIG = {
   header: {
@@ -56,7 +56,7 @@ add_task(async function test_page_unavailable_when_disabled() {
         Ci.nsIContentPolicy.TYPE_DOCUMENT
       ),
     /NS_ERROR_NOT_AVAILABLE/,
-    "about:aitab cannot be loaded when the pref is off"
+    "about:smartpage cannot be loaded when the pref is off"
   );
 
   await SpecialPowers.popPrefEnv();
@@ -88,8 +88,8 @@ add_task(async function test_unknown_page_reports_unavailable() {
       Assert.ok(
         content.document
           .querySelector("aitab-page")
-          .shadowRoot.querySelector(".aitab-status"),
-        "The unavailable message is rendered"
+          .shadowRoot.querySelector("aitab-error"),
+        "The error component is rendered"
       );
     });
   });
@@ -103,7 +103,7 @@ add_task(async function test_path_like_page_name_rejected() {
   const pathLikeName = "../../../etc/passwd";
 
   await BrowserTestUtils.withNewTab(
-    `about:aitab?page=${encodeURIComponent(pathLikeName)}`,
+    `about:smartpage?page=${encodeURIComponent(pathLikeName)}`,
     async browser => {
       await SpecialPowers.spawn(browser, [pathLikeName], async name => {
         await content.customElements.whenDefined("aitab-page");
@@ -125,9 +125,8 @@ add_task(async function test_path_like_page_name_rejected() {
           "error",
           "A name shaped like a path is refused rather than looked up"
         );
-        Assert.equal(
-          element.shadowRoot.querySelector(".aitab-status")?.dataset.l10nId,
-          "ai-tab-page-error",
+        Assert.ok(
+          element.shadowRoot.querySelector("aitab-error"),
           "The error message is rendered"
         );
         Assert.ok(
@@ -144,7 +143,7 @@ add_task(async function test_path_like_page_name_rejected() {
 add_task(async function test_missing_page_reports_unavailable() {
   await SpecialPowers.pushPrefEnv({ set: [[AITAB_PREF, true]] });
 
-  await BrowserTestUtils.withNewTab("about:aitab", async browser => {
+  await BrowserTestUtils.withNewTab("about:smartpage", async browser => {
     await SpecialPowers.spawn(browser, [], async () => {
       await content.customElements.whenDefined("aitab-page");
       const page = content.document.querySelector("aitab-page").wrappedJSObject;
@@ -159,6 +158,13 @@ add_task(async function test_missing_page_reports_unavailable() {
         page.status,
         "unavailable",
         "A URL with no page name renders the unavailable state"
+      );
+
+      Assert.ok(
+        content.document
+          .querySelector("aitab-page")
+          .shadowRoot.querySelector("aitab-error"),
+        "The error component is rendered for the unavailable state"
       );
     });
   });
@@ -237,17 +243,24 @@ const { Conversation } = ChromeUtils.importESModule(
  * Reads the page the content document ended up with.
  *
  * @param {object} browser
- * @returns {Promise<object>} status and the resolved page title, if any.
+ * @returns {Promise<object>} status, the resolved page title, if any, and
+ *   whether the error component is rendered.
  */
 function getPageState(browser) {
   return SpecialPowers.spawn(browser, [], async () => {
     await content.customElements.whenDefined("aitab-page");
-    const page = content.document.querySelector("aitab-page").wrappedJSObject;
+    const element = content.document.querySelector("aitab-page");
+    const page = element.wrappedJSObject;
     await ContentTaskUtils.waitForCondition(
       () => page.status != "loading",
       "The page finishes its lookup"
     );
-    return { status: page.status, title: page.page?.title ?? null };
+    await page.updateComplete;
+    return {
+      status: page.status,
+      title: page.page?.title ?? null,
+      errorRendered: !!element.shadowRoot.querySelector("aitab-error"),
+    };
   });
 }
 
@@ -266,7 +279,7 @@ add_task(async function test_deleting_an_already_deleted_page_succeeds() {
   // The tab has to be on the page being deleted: the parent reads the name
   // from the tab URL rather than from the message.
   await BrowserTestUtils.withNewTab(
-    "about:aitab?page=twice_page",
+    "about:smartpage?page=twice_page",
     async browser => {
       const actor =
         browser.browsingContext.currentWindowGlobal.getActor("AITab");
@@ -303,6 +316,10 @@ add_task(async function test_a_failing_store_surfaces_an_error() {
         state.status,
         "error",
         "A store that throws renders the error state, not an empty page"
+      );
+      Assert.ok(
+        state.errorRendered,
+        "The error component is rendered for the error state"
       );
     });
   } finally {

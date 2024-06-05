@@ -111,9 +111,9 @@ class NativeLayerRootSnapshotter : public profiler_screenshots::Window {
   // modifications by doing an offscreen commit.)
   // The readback buffer's stride is assumed to be aReadbackSize.width * 4. Only
   // BGRA is supported.
-  virtual bool ReadbackPixels(const gfx::IntSize& aReadbackSize,
-                              gfx::SurfaceFormat aReadbackFormat,
-                              const Range<uint8_t>& aReadbackBuffer) = 0;
+  virtual bool ReadbackPixels(
+      const gfx::IntSize& aReadbackSize, gfx::SurfaceFormat aReadbackFormat,
+      const mozilla::Range<uint8_t>& aReadbackBuffer) = 0;
 };
 
 // Represents a native layer. Native layers, such as CoreAnimation layers on

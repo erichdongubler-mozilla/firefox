@@ -608,7 +608,6 @@ void nsDOMMutationObserver::RescheduleForRun() {
 
 void nsDOMMutationObserver::Observe(nsINode& aTarget,
                                     const MutationObserverInit& aOptions,
-                                    nsIPrincipal& aSubjectPrincipal,
                                     ErrorResult& aRv) {
   bool childList = aOptions.mChildList;
   bool attributes =
@@ -687,13 +686,6 @@ void nsDOMMutationObserver::Observe(nsINode& aTarget,
   r->SetAnimations(animations);
   r->SetChromeOnlyNodes(chromeOnlyNodes);
   r->RemoveClones();
-
-  if (nsPIDOMWindowInner* window = aTarget.OwnerDoc()->GetInnerWindow();
-      window && !window->MutationObserverHasObservedNodeForTelemetry() &&
-      !aSubjectPrincipal.IsSystemPrincipal() &&
-      !aSubjectPrincipal.GetIsAddonOrExpandedAddonPrincipal()) {
-    window->SetMutationObserverHasObservedNodeForTelemetry();
-  }
 
 #ifdef DEBUG
   for (int32_t i = 0; i < mReceivers.Count(); ++i) {

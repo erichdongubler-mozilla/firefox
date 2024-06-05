@@ -16,6 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs",
   MonitorUIUtils:
     "moz-src:///browser/components/aiwindow/ui/modules/MonitorUIUtils.sys.mjs",
+  TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
   isAllowedWatchUrl:
     "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs",
 });
@@ -66,9 +67,31 @@ export const MonitorPanel = {
   },
 
   /**
+   * Open the panel straight to the create form.
+   *
    * @param {ChromeWindow} win
    */
-  showMonitorPanel(win) {
+  showCreateForm(win) {
+    const doc = win?.document;
+    if (!doc) {
+      return;
+    }
+
+    const existing = doc.getElementById(PANEL_ID);
+    if (existing) {
+      this._openCreateView(existing, win);
+      return;
+    }
+
+    this.showMonitorPanel(win, { create: true });
+  },
+
+  /**
+   * @param {ChromeWindow} win
+   * @param {object} [options]
+   * @param {boolean} [options.create] Open straight to the create form.
+   */
+  showMonitorPanel(win, { create = false } = {}) {
     const doc = win.document;
     const button = doc.getElementById(BUTTON_ID);
     const popupSet = doc.getElementById("mainPopupSet");
@@ -98,6 +121,9 @@ export const MonitorPanel = {
           onMonitorsChanged,
           lazy.MONITOR_AGENTS_CHANGED_TOPIC
         );
+        if (create) {
+          this._openCreateView(panel, win);
+        }
       },
       { once: true }
     );
@@ -145,11 +171,9 @@ export const MonitorPanel = {
 
     const contents = doc.createElement("agent-monitor-panel");
     contents.maxMonitors = lazy.TOTAL_NUM_MONITORS;
-    contents.addEventListener("agent-monitor-panel:create-task", () => {
-      // Set the agent's URL to the current watchable page.
-      contents.agent = { url: this._watchableUrl(win) };
-      this._setView(panel, "create");
-    });
+    contents.addEventListener("agent-monitor-panel:create-task", () =>
+      this._openCreateView(panel, win)
+    );
     contents.addEventListener("agent-monitor-item:cancel", () =>
       this._setView(panel, "list")
     );
@@ -165,15 +189,121 @@ export const MonitorPanel = {
       win.switchToTabHavingURI(TASKS_PAGE_URL, true);
       panel.hidePopup();
     });
-    contents.addEventListener("agent-monitor-panel:open-task", () => {
-      win.switchToTabHavingURI(TASKS_PAGE_URL, true);
-      panel.hidePopup();
-    });
+    contents.addEventListener("agent-monitor-panel:open-task", event =>
+      this._onOpenTask(panel, win, event.detail.id)
+    );
     panel._contents = contents;
 
     panel.append(header, doc.createXULElement("toolbarseparator"), contents);
     this._setView(panel, "list");
     return panel;
+  },
+
+  /**
+   * The tab group each task was last opened into, per window, so that opening
+   * the same task twice returns to its group rather than building a second
+   * identical one. Groups are tracked by id because a label is neither unique
+   * nor stable - the user can rename either the task or the group.
+   *
+   * @type {WeakMap<ChromeWindow, Map<string, string>>}
+   */
+  _taskTabGroupIds: new WeakMap(),
+
+  /**
+   * Opens the pages a task watches together in a tab group named after it, so
+   * its result stays separable from the rest of the session. The panel closes
+   * on the way, like the other things it can take you to.
+   *
+   * @param {XULElement} panel
+   * @param {ChromeWindow} win
+   * @param {string} id - The monitor whose row was activated.
+   */
+  _onOpenTask(panel, win, id) {
+    // Read the task before hiding the panel, which tears the contents down.
+    const monitor = panel._contents.monitors?.find(m => m.id === id);
+    const urls = (monitor?.watchUrls ?? []).filter(lazy.isAllowedWatchUrl);
+    if (!urls.length) {
+      return;
+    }
+    panel.hidePopup();
+
+    const existingGroup = this._existingTaskGroup(win, id);
+    if (existingGroup) {
+      existingGroup.collapsed = false;
+      win.gBrowser.selectedTab = existingGroup.tabs[0];
+      return;
+    }
+
+    const tabs = this._openTaskTabs(win, urls);
+    this._groupTaskTabs(win, id, tabs, monitor.monitorName);
+    win.gBrowser.selectedTab = tabs[0];
+  },
+
+  /**
+   * @param {ChromeWindow} win
+   * @param {string} id - The monitor whose row was activated.
+   * @returns {?MozTabbrowserTabGroup} The group this task was already opened
+   *   into in this window, if it is still around.
+   */
+  _existingTaskGroup(win, id) {
+    const groupId = this._taskTabGroupIds.get(win)?.get(id);
+    if (!groupId) {
+      return null;
+    }
+    // Scoped to this window rather than gBrowser.getTabGroupById, which
+    // searches every window and so can answer with a group that was since
+    // dragged out of this one.
+    return win.gBrowser.tabGroups.find(group => group.id === groupId) ?? null;
+  },
+
+  /**
+   * Opens a tab per watched page. Only the tab that ends up selected loads
+   * now, so opening a five-page task doesn't start five page loads at once.
+   *
+   * @param {ChromeWindow} win
+   * @param {string[]} urls
+   * @returns {MozTabbrowserTab[]} The tabs, in the order the pages were given.
+   */
+  _openTaskTabs(win, urls) {
+    // Open in the default container, which is what the monitor itself used to
+    // check these pages, so what the user is shown matches what was checked.
+    // Load them as a null principal: no page asked for these, so they get
+    // their own opaque origin rather than inheriting anyone's privileges.
+    const triggeringPrincipal =
+      Services.scriptSecurityManager.createNullPrincipal({});
+    return urls.map((url, index) =>
+      win.gBrowser.addTab(url, {
+        triggeringPrincipal,
+        inBackground: true,
+        bulkOrderedOpen: true,
+        createLazyBrowser: index > 0,
+      })
+    );
+  },
+
+  /**
+   * Puts the tabs in a group named after the task and remembers it, so coming
+   * back to the task returns to that group rather than building another.
+   *
+   * @param {ChromeWindow} win
+   * @param {string} id - The monitor the tabs were opened for.
+   * @param {MozTabbrowserTab[]} tabs
+   * @param {string} label
+   */
+  _groupTaskTabs(win, id, tabs, label) {
+    const group = win.gBrowser.addTabGroup(tabs, {
+      label,
+      metricsContext: {
+        isUserTriggered: false,
+        telemetrySource: lazy.TabMetrics.METRIC_SOURCE.SMART_WINDOW_TASKS,
+      },
+    });
+    if (!group) {
+      return;
+    }
+    const groupIds = this._taskTabGroupIds.get(win) ?? new Map();
+    groupIds.set(id, group.id);
+    this._taskTabGroupIds.set(win, groupIds);
   },
 
   /**
@@ -184,6 +314,13 @@ export const MonitorPanel = {
   _watchableUrl(win) {
     const url = win.gBrowser?.currentURI?.spec ?? "";
     return lazy.isAllowedWatchUrl(url) ? url : "";
+  },
+
+  // Switching to the create view while the list is already showing animates
+  // the form sliding in.
+  _openCreateView(panel, win) {
+    panel._contents.agent = { url: this._watchableUrl(win) };
+    this._setView(panel, "create");
   },
 
   /**
@@ -238,8 +375,12 @@ export const MonitorPanel = {
     if (!panel.isConnected) {
       return;
     }
+    // Most recently checked first, so what the panel has to say about a
+    // monitor is what is nearest the top. A monitor that has never run carries
+    // its creation time as its last run, which sorts it as newly added putting it at the top
+    // like we intend.
     panel._contents.monitors = monitors
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .sort((a, b) => new Date(b.lastRunTime) - new Date(a.lastRunTime))
       .map(monitor => lazy.MonitorUIUtils.formatMonitorForDisplay(monitor));
   },
 

@@ -270,7 +270,8 @@ template <size_t N>
 void CreateDataDescForPayload(PayloadBuffer& aBuffer,
                               EVENT_DATA_DESCRIPTOR& aDescriptor,
                               const char (&aPayload)[N]) {
-  EventDataDescCreate(&aDescriptor, aPayload, N + 1);
+  // N already counts the null terminator.
+  EventDataDescCreate(&aDescriptor, aPayload, N);
 }
 
 struct BaseEventStorage {
@@ -332,7 +333,7 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
   if constexpr (!MarkerSupportsETW<MarkerType>::value) {
     return EmitETWMarker(aName, aCategory, aOptions, SimpleMarkerType{});
   } else {
-    if (!(gETWCollectionMask & uint64_t(MarkerType::Group))) {
+    if (!IsProfilingGroup(MarkerType::Group)) {
       return;
     }
 

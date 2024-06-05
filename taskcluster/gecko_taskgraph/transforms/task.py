@@ -66,36 +66,6 @@ def _run_task_suffix(repo_type):
     return hash_path(str(RUN_TASK_GIT))[0:20]
 
 
-# As an additional mechanism to force the use of different caches, this
-# string literal can be changed. This is preferred to changing run-task
-# because it doesn't require images to be rebuilt.
-RUN_TASK_CACHE_VERSION = "v3"
-
-
-def _run_task_cache_suffix(config, task, uses_run_task):
-    if not uses_run_task:
-        return RUN_TASK_CACHE_VERSION
-    repo_type = task["attributes"].get("clone_with", config.params["repository_type"])
-    return f"{RUN_TASK_CACHE_VERSION}-{_run_task_suffix(repo_type)}"
-
-
-def _uses_run_task(command, mounts):
-    main_command = command[0] if command and isinstance(command[0], str) else ""
-    return is_run_task(main_command) or any(
-        mount.get("file") == "./run-task" for mount in mounts
-    )
-
-
-def _run_task_arguments(command):
-    arguments = []
-    for part in command:
-        if isinstance(part, list):
-            arguments.extend(p for p in part if isinstance(p, str))
-        elif isinstance(part, str):
-            arguments.extend(part.split())
-    return arguments
-
-
 def _compute_geckoview_version(app_version, moz_build_date):
     """Geckoview version string that matches geckoview gradle configuration"""
     # Must be synchronized with /mobile/android/geckoview/build.gradle computeVersionCode(...)
@@ -697,10 +667,25 @@ def build_docker_worker_payload(config, task, task_def):
         # the mechanism whereby changing run-task results in new caches
         # everywhere.
 
-        suffix = _run_task_cache_suffix(config, task, run_task)
-        if run_task and out_of_tree_image:
-            name_hash = hashlib.sha256(out_of_tree_image.encode("utf-8")).hexdigest()
-            suffix += name_hash[0:12]
+        # As an additional mechanism to force the use of different caches, the
+        # string literal in the variable below can be changed. This is
+        # preferred to changing run-task because it doesn't require images
+        # to be rebuilt.
+        cache_version = "v3"
+
+        if run_task:
+            suffix = (
+                f"{cache_version}-{_run_task_suffix(config.params['repository_type'])}"
+            )
+
+            if out_of_tree_image:
+                name_hash = hashlib.sha256(
+                    out_of_tree_image.encode("utf-8")
+                ).hexdigest()
+                suffix += name_hash[0:12]
+
+        else:
+            suffix = cache_version
 
         for cache in worker["caches"]:
             # Some caches aren't enabled in environments where we can't
@@ -870,16 +855,12 @@ def build_generic_worker_payload(config, task, task_def):
     #   * 'task-id'    -> 'taskId'
     # All other key names are already suitable, and don't need renaming.
     mounts = deepcopy(worker.get("mounts", []))
-    uses_run_task = _uses_run_task(worker["command"], mounts)
     for mount in mounts:
         if "cache-name" in mount:
-            name = mount.pop("cache-name")
-            if uses_run_task:
-                name = f"{name}-{_run_task_cache_suffix(config, task, True)}"
             mount["cacheName"] = "{trust_domain}-level-{level}-{name}".format(
                 trust_domain=config.graph_config["trust-domain"],
                 level=config.params["level"],
-                name=name,
+                name=mount.pop("cache-name"),
             )
             task_def["scopes"].append(
                 "generic-worker:cache:{}".format(mount["cacheName"])
@@ -2090,11 +2071,28 @@ def validate_shipping_product(config, product):
         raise Exception(UNSUPPORTED_SHIPPING_PRODUCT_ERROR.format(product=product))
 
 
+@functools.cache
+def _get_worker_validation_schema(implementation):
+    worker_schema = payload_builders[implementation].schema
+    if isinstance(worker_schema, dict):
+        from voluptuous import ALLOW_EXTRA
+
+        worker_schema = LegacySchema(worker_schema, extra=ALLOW_EXTRA)
+    elif isinstance(worker_schema, type) and issubclass(worker_schema, msgspec.Struct):
+        worker_schema = type(
+            worker_schema.__name__,
+            (worker_schema,),
+            {},
+            forbid_unknown_fields=False,
+            kw_only=True,
+        )
+    return worker_schema
+
+
 @transforms.add
 def validate(config, tasks):
     # Schema validation is a no-op in fast mode (see validate_schema), so skip
-    # this whole transform, including the costly per-task worker schema
-    # construction whose result would only be discarded.
+    # this whole transform.
     if taskgraph.fast:
         yield from tasks
         return
@@ -2105,21 +2103,7 @@ def validate(config, tasks):
             task,
             "In task {!r}:".format(task.get("label", "?no-label?")),
         )
-        worker_schema = payload_builders[task["worker"]["implementation"]].schema
-        if isinstance(worker_schema, dict):
-            from voluptuous import ALLOW_EXTRA
-
-            worker_schema = LegacySchema(worker_schema, extra=ALLOW_EXTRA)
-        elif isinstance(worker_schema, type) and issubclass(
-            worker_schema, msgspec.Struct
-        ):
-            worker_schema = type(
-                worker_schema.__name__,
-                (worker_schema,),
-                {},
-                forbid_unknown_fields=False,
-                kw_only=True,
-            )
+        worker_schema = _get_worker_validation_schema(task["worker"]["implementation"])
         validate_schema(
             worker_schema,
             task["worker"],
@@ -2710,6 +2694,14 @@ def build_task(config, tasks):
                     "MOZ_SOURCE_CHANGESET": get_branch_rev(config),
                     "MOZ_SOURCE_REPO": get_branch_repo(config),
                 })
+                prefix = config.graph_config["project-repo-param-prefix"]
+                git_repo = config.params.get(f"{prefix}head_git_repository")
+                git_rev = config.params.get(f"{prefix}head_git_rev")
+                if git_repo and git_rev:
+                    env.update({
+                        "MOZ_SOURCE_GIT_REPO": git_repo,
+                        "MOZ_SOURCE_GIT_CHANGESET": git_rev,
+                    })
 
         dependencies = task.get("dependencies", {})
         if_dependencies = task.get("if-dependencies", [])
@@ -2876,16 +2868,14 @@ def check_run_task_caches(config, tasks):
         level=config.params["level"],
     )
 
+    suffix = _run_task_suffix(config.params["repository_type"])
+
     for task in tasks:
         payload = task["task"].get("payload", {})
         command = payload.get("command") or [""]
-        mounts = payload.get("mounts", [])
-        repo_type = task["attributes"].get(
-            "clone_with", config.params["repository_type"]
-        )
-        suffix = _run_task_suffix(repo_type)
 
-        run_task = _uses_run_task(command, mounts)
+        main_command = command[0] if isinstance(command[0], str) else ""
+        run_task = is_run_task(main_command)
 
         require_sparse_cache = False
         require_shallow_cache = False
@@ -2894,7 +2884,10 @@ def check_run_task_caches(config, tasks):
         have_shallow_cache = False
 
         if run_task:
-            for arg in _run_task_arguments(command)[1:]:
+            for arg in command[1:]:
+                if not isinstance(arg, str):
+                    continue
+
                 if arg == "--":
                     break
 
@@ -2919,10 +2912,7 @@ def check_run_task_caches(config, tasks):
                     require_shallow_cache = True
                     break
 
-        caches = list(payload.get("cache", {})) + [
-            mount["cacheName"] for mount in mounts if "cacheName" in mount
-        ]
-        for cache in caches:
+        for cache in payload.get("cache", {}):
             if not cache.startswith(cache_prefix):
                 raise Exception(
                     "{} is using a cache ({}) which is not appropriate "

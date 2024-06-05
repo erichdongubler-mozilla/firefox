@@ -13,7 +13,11 @@ import {
   buildConversation,
   loadPrompt,
 } from "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs";
-import { UrlTokenizer } from "moz-src:///browser/components/aiwindow/ui/modules/UrlTokenizer.sys.mjs";
+import {
+  expandUrlTokens,
+  stripUnresolvedUrlTokens,
+  UrlTokenizer,
+} from "moz-src:///browser/components/aiwindow/ui/modules/UrlTokenizer.sys.mjs";
 
 /**
  * Reports the model and prompt version a request is about to be sent with.
@@ -357,7 +361,38 @@ const FORM_VALUES_RESPONSE_SCHEMA = {
 };
 
 /**
- * Generates values for one batch of fields.
+ * Shortens a URL into the sentinel form the model is asked to echo back, so
+ * that any URL it repeats can be resolved again on the way out.
+ *
+ * @param {UrlTokenizer} urlTokenizer
+ * @param {string} url
+ *
+ * @returns {string} e.g. "§url_token: EXAMPLE_COM_JOBS_APPLY_1§"
+ */
+function tokenizeUrl(urlTokenizer, url) {
+  return `§url_token: ${urlTokenizer.encodeToken(url)}§`;
+}
+
+/**
+ * Turns the URL tokens the model was given back into the URLs they stand for.
+ * A token the model invented resolves to nothing, so it is removed rather than
+ * handed to the caller as text to type into a field.
+ *
+ * @param {unknown} text
+ * @param {Map<string, string>} tokenToUrl
+ *
+ * @returns {string}
+ */
+function resolveUrlTokens(text, tokenToUrl) {
+  if (typeof text !== "string") {
+    return "";
+  }
+  return stripUnresolvedUrlTokens(expandUrlTokens(text, tokenToUrl));
+}
+
+/**
+ * Generates values for one batch of fields. URLs the batch reports back are
+ * still URL tokens: generateFormValues() resolves them once every batch is in.
  *
  * @param {GenerateFormValuesRequestBody} request
  * @param {object} [param1={}]
@@ -390,12 +425,12 @@ async function generateFormValuesBatch(
     ]);
   signal?.throwIfAborted();
 
-  const url = urlTokenizer.encodeToken(request.page.url);
+  const url = tokenizeUrl(urlTokenizer, request.page.url);
   const relevantTabs = request.context.relevantTabs.map(tab => {
     return {
       ...tab,
       title: tab.title.substring(0, TITLE_CHAR_LIMIT),
-      url: urlTokenizer.encodeToken(tab.url),
+      url: tokenizeUrl(urlTokenizer, tab.url),
     };
   });
 
@@ -636,14 +671,26 @@ export const SmartFormFillModel = {
       throw results[0].reason;
     }
 
+    const { tokenToUrl } = urlTokenizer;
+    const tabsUsed = new Set();
+    for (const tab of fulfilled.flatMap(({ value }) => value.tabs_used ?? [])) {
+      const tabUrl = resolveUrlTokens(tab, tokenToUrl);
+      if (tabUrl) {
+        tabsUsed.add(tabUrl);
+      }
+    }
+
     return {
-      fields: fulfilled.flatMap(({ value }) => value.fields ?? []),
+      fields: fulfilled
+        .flatMap(({ value }) => value.fields ?? [])
+        .map(field => ({
+          ...field,
+          value: resolveUrlTokens(field.value, tokenToUrl),
+        })),
       memories_used: [
         ...new Set(fulfilled.flatMap(({ value }) => value.memories_used ?? [])),
       ],
-      tabs_used: [
-        ...new Set(fulfilled.flatMap(({ value }) => value.tabs_used ?? [])),
-      ],
+      tabs_used: [...tabsUsed],
       batches: {
         total: results.length,
         failed: results.length - fulfilled.length,

@@ -1058,7 +1058,7 @@ features:
       enabled:
         description: If true, IP Protection feature is enabled.
         type: Boolean
-        default: false
+        default: true
       show-beta-badge:
         description: If true, a BETA badge is shown next to the IP Protection entry in the settings list.
         type: Boolean
@@ -1074,8 +1074,21 @@ features:
       allowed-regions:
         description: Country codes whose users are eligible for IP Protection.
         type: List<String>
-        default: [ "AU", "AT", "BE", "BG", "CA", "CL", "CO", "DK", "FI", "FR", "DE", "IE", "IT", "JP", "MY", "MX",
-                   "NL", "NZ", "NO", "PL", "PT", "RO", "SG", "ZA", "ES", "SE", "CH", "TH", "GB", "US" ]
+        default: [
+          "AD", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT", "AU", "AW", "AX", "BA", "BB", "BD",
+          "BE", "BF", "BG", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ", "BR", "BS", "BT", "BW", "BZ", "CA",
+          "CC", "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CO", "CR", "CV", "CW", "CY", "CZ", "DE", "DJ",
+          "DK", "DM", "DO", "DZ", "EC", "EE", "ES", "ET", "FI", "FJ", "FK", "FM", "FO", "FR", "GA", "GB",
+          "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GT", "GU", "GW", "GY",
+          "HN", "HR", "HT", "HU", "ID", "IE", "IL", "IM", "IO", "IS", "IT", "JE", "JM", "JO", "JP", "KE",
+          "KG", "KH", "KI", "KM", "KN", "KR", "KW", "KY", "LA", "LB", "LC", "LI", "LK", "LR", "LS", "LT",
+          "LU", "LV", "MA", "MC", "MD", "ME", "MF", "MG", "MH", "MK", "ML", "MN", "MO", "MP", "MQ", "MR",
+          "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "NA", "NC", "NE", "NF", "NG", "NI", "NL", "NO",
+          "NP", "NR", "NU", "NZ", "PA", "PE", "PF", "PG", "PH", "PL", "PM", "PN", "PR", "PT", "PW", "PY",
+          "RE", "RO", "RS", "RW", "SB", "SC", "SE", "SG", "SH", "SI", "SJ", "SK", "SL", "SM", "SN", "SO",
+          "SR", "ST", "SV", "SX", "SZ", "TC", "TD", "TG", "TH", "TK", "TL", "TN", "TO", "TT", "TV", "TW",
+          "UA", "US", "UY", "VA", "VC", "VE", "VG", "VI", "VU", "WF", "WS", "XK", "YT", "ZA", "ZM", "ZW"
+        ]
       promo-deadline:
         description: The final date for the promotion to end. This needs to be an ISO 8601 formatted date (i.e. YYYY-MM-DD).
         type: String
@@ -1083,14 +1096,7 @@ features:
     defaults:
       - channel: developer
         value:
-          enabled: true
           allowed-regions: ["XX"]
-      - channel: nightly
-        value:
-          enabled: true
-      - channel: beta
-        value:
-          enabled: true
 
   native-share-sheet:
     description: Feature to enable the Native Share Sheet for users on Firefox on Android.
@@ -1123,21 +1129,6 @@ features:
         type: Boolean
         default: true
 
-  merino-client:
-    description: Feature to enable the Merino Client for users on Firefox on Android.
-    variables:
-      enabled:
-        description: If true, Merino Client is enabled.
-        type: Boolean
-        default: false
-    defaults:
-      - channel: developer
-        value:
-          enabled: true
-      - channel: nightly
-        value:
-          enabled: true
-
   ads-client-for-stories:
     description: Feature to enable the Mozilla Ads Client support for Sponsored Stories for users on Firefox on Android.
     variables:
@@ -1153,13 +1144,6 @@ features:
         description: If true, Private Mode and Stories Entry Point Experiment is enabled.
         type: Boolean
         default: false
-    defaults:
-      - channel: developer
-        value:
-          enabled: true
-      - channel: nightly
-        value:
-          enabled: true
 
   search-optimization-option:
     description: Feature to enable the Search Optimization cards for users on Firefox on Android.
@@ -1332,6 +1316,35 @@ features:
         description: If true, the Android PDF UI tools are shown.
         type: Boolean
         default: false
+
+  tab-reload-cover:
+    description: >
+      Shows a cached thumbnail cover over the engine view while a tab reloads from session
+      restore, hiding it once the page has repainted. Optionally refreshes the stored thumbnail
+      before backgrounding so the cover reflects the last visible scroll position.
+    variables:
+      enabled:
+        description: If true, the cached thumbnail cover is shown on tab reloads.
+        type: Boolean
+        default: false
+      scroll-aware-capture-enabled:
+        description: >
+          If true, the stored thumbnail is refreshed at the last visible scroll position when the
+          selected tab loses foreground focus. Only meaningful when `enabled` is true.
+        type: Boolean
+        default: false
+
+  account-sync-decouple-m1:
+    description: Control whether the new UI for Account Sync is shown.
+    variables:
+      enabled:
+        description: If true, the new UI for Account Sync is shown.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
 
 types:
   objects:

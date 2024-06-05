@@ -1623,9 +1623,8 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 #ifdef DEBUG
   if (gNoisyReflow) {
     IndentBy(stdout, gNoiseIndent);
-    fmt::println("{}: begin reflow: availSize={} computedSize={}",
-                 ListTag().get(), ToString(aReflowInput.AvailableSize()),
-                 ToString(aReflowInput.ComputedSize()));
+    fmt::println("{}: begin reflow: availSize={} computedSize={}", ListTag(),
+                 aReflowInput.AvailableSize(), aReflowInput.ComputedSize());
   }
   AutoNoisyIndenter indent(gNoisy);
   PRTime start = 0;  // Initialize these variablies to silence the compiler.
@@ -2082,13 +2081,11 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   if (gNoisyReflow) {
     IndentBy(stdout, gNoiseIndent);
-    fmt::print("{}: status={} metrics={} carriedMargin={}", ListTag().get(),
-               ToString(aStatus), ToString(aMetrics.Size(wm)),
-               aMetrics.mCarriedOutBEndMargin.Get());
+    fmt::print("{}: status={} metrics={} carriedMargin={}", ListTag(), aStatus,
+               aMetrics.Size(wm), aMetrics.mCarriedOutBEndMargin.Get());
     if (HasOverflowAreas()) {
-      fmt::print(" overflow-ink={} overflow-scr={}",
-                 ToString(aMetrics.InkOverflow()),
-                 ToString(aMetrics.ScrollableOverflow()));
+      fmt::print(" overflow-ink={} overflow-scr={}", aMetrics.InkOverflow(),
+                 aMetrics.ScrollableOverflow());
     }
     printf("\n");
   }
@@ -3486,8 +3483,8 @@ static void DumpLine(const BlockReflowState& aState, nsLineBox* aLine,
         "line={} mBCoord={} dirty={} bounds={} overflow-ink={} "
         "overflow-scr={} deltaBCoord={} mPrevBEndMargin={} childCount={}",
         static_cast<void*>(aLine), aState.mBCoord, YesOrNo(aLine->IsDirty()),
-        ToString(aLine->GetBounds()), ToString(aLine->InkOverflowRect()),
-        ToString(aLine->ScrollableOverflowRect()), aDeltaBCoord,
+        aLine->GetBounds(), aLine->InkOverflowRect(),
+        aLine->ScrollableOverflowRect(), aDeltaBCoord,
         aState.mPrevBEndMargin.Get(), aLine->GetChildCount());
   }
 #endif

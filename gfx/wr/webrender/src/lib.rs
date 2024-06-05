@@ -144,6 +144,7 @@ mod debug_colors;
 mod debug_font_data;
 mod debug_item;
 mod device;
+mod dl_interner;
 mod ellipse;
 mod filterdata;
 mod frame_builder;
@@ -162,6 +163,7 @@ mod prepare;
 mod prim_store;
 mod print_tree;
 mod quad;
+mod quad_clip;
 mod render_backend;
 pub mod render_backend_pool;
 mod render_target;
@@ -210,7 +212,6 @@ extern crate bincode;
 extern crate byteorder;
 pub extern crate euclid;
 extern crate rustc_hash;
-extern crate gleam;
 extern crate num_traits;
 extern crate plane_split;
 extern crate rayon;
@@ -233,8 +234,8 @@ pub use crate::composite::{NativeSurfaceId, NativeTileId, NativeSurfaceHandle, N
 pub use crate::composite::{MappableCompositor, MappedTileInfo, SWGLCompositeSurfaceInfo, WindowVisibility, WindowProperties};
 pub use crate::device::{UploadMethod, VertexUsageHint, get_unoptimized_shader_source};
 pub use crate::device::{ProgramBinary, ProgramCache, ProgramCacheObserver, ShaderError};
-pub use crate::device::{Device, DeviceOptions, GraphicsApi, GraphicsApiInfo};
-pub use crate::profiler::{ProfilerHooks, set_profiler_hooks};
+pub use crate::device::{Device, DeviceOptions, GlBackendConfig, GpuBackendConfig, GraphicsApi, GraphicsApiInfo};
+pub use crate::profiler::{ProfilerHooks, ProfileCounterValue, set_profiler_hooks};
 pub use crate::renderer::{
     CpuProfile, DebugFlags, GpuProfile,
     PendingShadersToPrecache, PipelineInfo, Renderer, RendererError, RenderResults,

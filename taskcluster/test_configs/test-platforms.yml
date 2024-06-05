@@ -20,17 +20,6 @@
 # Linux platforms (matching /linux.*/)
 # Linux2404-64 uses Ubuntu 24.04 and is run on docker
 
-linux1804-64-qr/opt:
-    build-platform: linux64/opt
-    test-sets:
-        - talos
-
-linux1804-64-shippable-qr/opt:
-    build-platform: linux64-shippable/opt
-    test-sets:
-        - talos
-        - talos-profiling
-
 linux2404-64-nightlyasrelease/opt:
     build-platform: linux64-nightlyasrelease/opt
     test-sets:
@@ -415,6 +404,9 @@ macosx1500-aarch64-shippable/opt:
         - macosx1500-64-tests
         - macosx1500-64-perftests
         - macosx1500-aarch64-tests
+        - awsy
+        - macosx64-talos
+        - talos-profiling
         - web-platform-tests-backlog
 
 macosx1500-aarch64-devedition/opt:
@@ -427,6 +419,11 @@ macosx1500-aarch64-nightlyasrelease/opt:
     build-platform: macosx64-aarch64-nightlyasrelease/opt
     test-sets:
         - browsertime
+
+macosx2700-aarch64-shippable/opt:
+    build-platform: macosx64-shippable/opt
+    test-sets:
+        - macosx2700-aarch64-perftests
 
 macosx1470-64-shippable/opt:
     build-platform: macosx64-shippable/opt
@@ -486,6 +483,11 @@ android-em-14-x86_64-ccov/opt:
         - android14-x86_64-tests
         - web-platform-tests-backlog
 
+android-em-14-x86_64-appservices/opt:
+    build-platform: android-x86_64-appservices/opt
+    test-sets:
+        - android14-x86_64-appservices-tests
+
 android-em-14-x86_64-lite/opt:
     build-platform: android-x86_64-lite/opt
     test-sets:
@@ -504,11 +506,6 @@ android-em-14-x86_64-shippable-lite/opt:
 
 android-em-14-x86_64/debug:
     build-platform: android-x86_64/debug
-    test-sets:
-        - android14-x86_64-tests
-
-android-em-14-x86_64/debug-isolated-process:
-    build-platform: android-x86_64/debug-isolated-process
     test-sets:
         - android14-x86_64-tests
 

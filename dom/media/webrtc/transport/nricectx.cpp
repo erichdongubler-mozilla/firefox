@@ -560,7 +560,7 @@ int NrIceCtx::msg_recvd(void* obj, nr_ice_peer_ctx* pctx,
   // Streams which do not exist should never have packets.
   MOZ_ASSERT(s);
 
-  s->SignalPacketReceived(s, component_id, msg, len);
+  s->PacketReceived(stream, component_id, msg, len);
 
   return 0;
 }
@@ -1103,7 +1103,7 @@ nsresult NrIceCtx::StartChecks() {
     return NS_ERROR_FAILURE;
   }
 
-  r = nr_ice_peer_ctx_start_checks2(peer_, 1);
+  r = nr_ice_peer_ctx_start_checks(peer_);
   if (r) {
     if (r == R_NOT_FOUND) {
       MOZ_MTLOG(ML_INFO, "Couldn't start peer checks on "

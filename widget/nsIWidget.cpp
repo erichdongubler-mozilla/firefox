@@ -303,7 +303,6 @@ nsIWidget::nsIWidget(BorderStyle aBorderStyle)
       mIMEHasQuit(false),
       mIsFullyOccluded(false),
       mNeedFastSnaphot(false),
-      mCurrentPanGestureBelongsToSwipe(false),
       mPiPType(PiPType::NoPiP) {
 #ifdef NOISY_WIDGET_LEAKS
   gNumWidgets++;
@@ -1478,8 +1477,9 @@ already_AddRefed<WebRenderLayerManager> nsIWidget::CreateCompositorSession(
     // software WebRender instead.
     bool supportsAcceleration = WidgetTypeSupportsAcceleration();
     bool enableSWWR = true;
-    if (supportsAcceleration ||
-        StaticPrefs::gfx_webrender_unaccelerated_widget_force()) {
+    if (!IsHeadlessWidget() &&
+        (supportsAcceleration ||
+         StaticPrefs::gfx_webrender_unaccelerated_widget_force())) {
       enableSWWR = gfx::gfxVars::UseSoftwareWebRender();
     }
     bool enableAPZ = UseAPZ();
@@ -2303,9 +2303,7 @@ void nsIWidget::TrackScrollEventAsSwipe(
       new SwipeTracker(*this, aSwipeStartEvent, aAllowedDirections, direction);
   mSwipeTracker->StartTracking(aSwipeStartEvent);
 
-  if (!mAPZC) {
-    mCurrentPanGestureBelongsToSwipe = true;
-  } else {
+  if (mAPZC) {
     // Now SwipeTracker has started consuming pan events, notify it to APZ so
     // that APZ can discard queued events.
     mAPZC->InputBridge()->SetBrowserGestureResponse(
@@ -2339,8 +2337,8 @@ nsIWidget::SwipeInfo nsIWidget::SendMayStartSwipe(
   return result;
 }
 
-WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
-    const PanGestureInput& aPanInput, const APZEventResult& aApzResult) {
+WidgetWheelEvent nsIWidget::MayStartSwipe(const PanGestureInput& aPanInput,
+                                          const APZEventResult& aApzResult) {
   WidgetWheelEvent event = aPanInput.ToWidgetEvent(this);
 
   // Ignore swipe-to-navigation in PiP window.
@@ -2357,7 +2355,7 @@ WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
         // APZ has determined and that scrolling horizontally in the
         // requested direction is impossible, so it didn't do any
         // scrolling for the event.
-        // We know now that MayStartSwipe wants a swipe, so we can start
+        // We know now that SendMayStartSwipe wants a swipe, so we can start
         // the swipe now.
         TrackScrollEventAsSwipe(aPanInput, swipeInfo.allowedDirections,
                                 aApzResult.mInputBlockId);
@@ -2387,61 +2385,6 @@ WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
   }
 
   return event;
-}
-
-bool nsIWidget::MayStartSwipeForNonAPZ(const PanGestureInput& aPanInput) {
-  // Ignore swipe-to-navigation in PiP window.
-  if (mPiPType != PiPType::NoPiP) {
-    return false;
-  }
-
-  if (aPanInput.mType == PanGestureInput::PANGESTURE_MAYSTART ||
-      aPanInput.mType == PanGestureInput::PANGESTURE_START) {
-    mCurrentPanGestureBelongsToSwipe = false;
-  }
-  if (mCurrentPanGestureBelongsToSwipe) {
-    // Ignore this event. It's a momentum event from a scroll gesture
-    // that was processed as a swipe, and the swipe animation has
-    // already finished (so mSwipeTracker is already null).
-    MOZ_ASSERT(aPanInput.IsMomentum(),
-               "If the fingers are still on the touchpad, we should still have "
-               "a SwipeTracker, "
-               "and it should have consumed this event.");
-    return true;
-  }
-
-  if (!aPanInput.MayTriggerSwipe()) {
-    return false;
-  }
-
-  SwipeInfo swipeInfo = SendMayStartSwipe(aPanInput);
-
-  // We're in the non-APZ case here, but we still want to know whether
-  // the event was routed to a child process, so we use InputAPZContext
-  // to get that piece of information.
-  ScrollableLayerGuid guid;
-  uint64_t blockId = 0;
-  InputAPZContext context(guid, blockId, nsEventStatus_eIgnore);
-
-  WidgetWheelEvent event = aPanInput.ToWidgetEvent(this);
-  event.mCanTriggerSwipe = swipeInfo.wantsSwipe;
-  DispatchEvent(&event);
-  if (swipeInfo.wantsSwipe) {
-    if (context.WasRoutedToChildProcess()) {
-      // We don't know whether this event can start a swipe, so we need
-      // to queue up events and wait for a call to ReportSwipeStarted.
-      mSwipeEventQueue =
-          MakeUnique<SwipeEventQueue>(swipeInfo.allowedDirections, blockId);
-    } else if (event.TriggersSwipe()) {
-      TrackScrollEventAsSwipe(aPanInput, swipeInfo.allowedDirections, blockId);
-    }
-  }
-
-  if (mSwipeEventQueue && mSwipeEventQueue->inputBlockId == 0) {
-    mSwipeEventQueue->queuedEvents.AppendElement(aPanInput);
-  }
-
-  return true;
 }
 
 LayersId nsIWidget::GetLayersId() const {

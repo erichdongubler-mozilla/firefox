@@ -23,7 +23,7 @@ add_task(async function test_the_review_records_what_became_of_each_value() {
     const { reviewBrowser } = await getFormReview(win, browser);
     await editFormReviewInput(reviewBrowser, 1, REVIEWED_VALUE);
     await editFormReviewInput(reviewBrowser, 2, "");
-    await fillFormReview(win, browser);
+    await fillReviewedForm(reviewBrowser);
 
     const reviews = await waitForEvents(
       "formFillFieldReviewOutcome",

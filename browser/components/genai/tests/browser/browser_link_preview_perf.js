@@ -19,6 +19,8 @@ const { MLPerfTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/MLPerfTestUtils.sys.mjs"
 );
 
+MLPerfTestUtils.init(this);
+
 // The model workload is what production resolves for this page: input capped
 // by browser.ml.linkPreview.inputSentences (~6 sentences of the article
 // regardless of its length), output by outputSentences.
@@ -232,8 +234,6 @@ add_task(async function test_link_preview_keypoints_perf() {
   );
 
   await MLPerfTestUtils.runPerfScenario({
-    info,
-    Assert,
     metricPrefix: METRIC_PREFIX,
     scenario: generateKeyPointsOnce,
     engines: [{ featureId: "link-preview" }],

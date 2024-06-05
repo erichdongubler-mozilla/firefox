@@ -369,9 +369,6 @@ public class GeckoSession {
     @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
     public native Surface getMagnifiableSurface();
 
-    @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-    public native void setMaxToolbarHeight(int height);
-
     @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
     public native void setFixedBottomOffset(int offset);
 

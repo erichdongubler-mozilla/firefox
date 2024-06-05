@@ -441,6 +441,8 @@ bool js::RunScript(JSContext* cx, RunState& state) {
 
   MOZ_ASSERT_IF(cx->runtime()->hasJitRuntime(),
                 !cx->runtime()->jitRuntime()->disallowArbitraryCode());
+  MOZ_ASSERT_IF(cx->runtime()->hasJitRuntime(),
+                !cx->runtime()->jitRuntime()->inPureCall());
 
   // Since any script can conceivably GC, make sure it's safe to do so.
   cx->verifyIsSafeToGC();
@@ -1941,8 +1943,6 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
   RootedField<PropertyKey> rootId0(roots);
   RootedField<JSScript*> rootScript0(roots);
   RootedField<Scope*> rootScope0(roots);
-
-  DebugOnly<uint32_t> blockDepth;
 
   /* State communicated between non-local jumps: */
   bool interpReturnOK;

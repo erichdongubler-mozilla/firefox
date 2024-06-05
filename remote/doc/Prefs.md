@@ -81,7 +81,8 @@ Temporary preference to allow WebDriver clients to disable the system access che
 when trying to switch with Marionette into chrome scope (parent process) testing.
 
 Instead of switching the preference value, the client should ideally fix the breakage
-by passing `-remote-allow-system-access` as an argument to the Firefox binary.
+by setting the `MOZ_REMOTE_ALLOW_SYSTEM_ACCESS` environment variable to `1` when
+starting the Firefox binary.
 
 This preference was introduced in Firefox 138 with a default value of `true`
 and was removed in Firefox 141.

@@ -1107,8 +1107,6 @@ enum class ItemActivity : uint8_t {
   /// Typically active if first of an item group.
   Could = 1,
   /// Should be active unless something external makes that less useful.
-  /// For example if the item is affected by a complex mask, it remains
-  /// inactive.
   Should = 2,
   /// Must be active regardless of external factors.
   Must = 3,
@@ -1277,9 +1275,12 @@ static ItemActivity IsItemProbablyActive(
         auto activity =
             HasActiveChildren(*aItem->GetChildren(), aBuilder, aResources, aSc,
                               aManager, aDisplayListBuilder, aUniformlyScaled);
-        // For masked items, don't bother with making children active since we
-        // are going to have to need to paint and upload a large mask anyway.
-        if (activity < ItemActivity::Must) {
+        // The mask is painted and uploaded as an image either way, so a child
+        // that merely could be active is not worth the extra layers. A child
+        // that should be active is: any change inside an inactive masked group
+        // rasterizes the masked content and the mask again on the CPU, while
+        // the mask image of an active group is cached.
+        if (activity < ItemActivity::Should) {
           return ItemActivity::No;
         }
         return activity;

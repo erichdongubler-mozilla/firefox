@@ -10,6 +10,7 @@
 #include <xsimd/xsimd.hpp>
 
 #include "mozilla/SSE.h"
+#include "mozilla/arm.h"
 
 /* static */
 bool gfxAlphaRecovery::RecoverAlpha(gfxImageSurface* blackSurf,

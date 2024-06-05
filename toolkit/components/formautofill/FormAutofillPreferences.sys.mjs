@@ -133,17 +133,27 @@ export class FormAutofillPreferences {
             : -1
         )
         .map(record => {
+          const expDate = (record["cc-exp"] ?? "").replace(
+            /^(\d{4})-(\d{2})$/,
+            "$2/$1"
+          );
+          const hasSecurityCode =
+            FormAutofill.isAutofillCreditCardCVVEnabled && !!record["cc-csc"];
+          let l10nId = "payment-moz-box-item";
+          if (hasSecurityCode) {
+            l10nId = expDate
+              ? "payment-moz-box-item-with-security-code"
+              : "payment-moz-box-item-security-code-only";
+          }
+
           const config = {
             id: "payment-item",
             control: "moz-box-item",
-            l10nId: "payment-moz-box-item",
+            l10nId,
             iconSrc: "chrome://browser/skin/payment-methods-16.svg",
             l10nArgs: {
               cardNumber: record["cc-number"].replace(/^(\*+)(\d+)$/, "$1 $2"),
-              expDate: (record["cc-exp"] ?? "").replace(
-                /^(\d{4})-(\d{2})$/,
-                "$2/$1"
-              ),
+              expDate,
             },
             options: [
               {

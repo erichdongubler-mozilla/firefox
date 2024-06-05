@@ -96,7 +96,7 @@ static nsresult RawBytesToNetAddr(uint16_t aFamily, const uint8_t* aRemoteAddr,
   return NS_OK;
 }
 
-nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
+nsresult Http3Session::Init(nsHttpConnectionInfo* aConnInfo,
                             nsINetAddr* aSelfAddr, nsINetAddr* aPeerAddr,
                             HttpConnectionUDP* udpConn, uint32_t aProviderFlags,
                             nsIInterfaceRequestor* callbacks,
@@ -106,7 +106,7 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(udpConn);
 
-  mConnInfo = aConnInfo->Clone();
+  mConnInfo = aConnInfo;
   mNetAddr = aPeerAddr;
 
   // When `isOuterConnection` is true, this Http3Session represents the *outer*
@@ -308,7 +308,7 @@ void Http3Session::RekeyAfterHttp3OnlyHandOff(nsHttpConnectionInfo* aConnInfo) {
 
   LOG(("Http3Session::RekeyAfterHttp3OnlyHandOff [this=%p] %s -> %s", this,
        mConnInfo->HashKey().get(), aConnInfo->HashKey().get()));
-  mConnInfo = aConnInfo->Clone();
+  mConnInfo = aConnInfo;
 }
 
 void Http3Session::DoSetEchConfig(const nsACString& aEchConfig) {
@@ -405,7 +405,13 @@ void Http3Session::Shutdown() {
         // Connection has not been started yet. We can restart it.
         stream->Transaction()->DoNotRemoveAltSvc();
       }
-      stream->Close(NS_ERROR_NET_RESET);
+      stream->Close(
+          mError == NS_ERROR_NET_HTTP3_PROTOCOL_ERROR &&
+                  !mConnInfo->IsHttp3ProxyConnection() &&
+                  StaticPrefs::
+                      network_http_http3_fallback_to_h2_on_protocol_error()
+              ? NS_ERROR_NET_HTTP3_PROTOCOL_ERROR
+              : NS_ERROR_NET_RESET);
     } else if (stream->GetHttp3Stream() &&
                stream->GetHttp3Stream()->RecvdData()) {
       stream->Close(NS_ERROR_NET_PARTIAL_TRANSFER);
@@ -414,7 +420,10 @@ void Http3Session::Shutdown() {
     } else if (mError == NS_ERROR_NET_RESET) {
       stream->Close(NS_ERROR_NET_RESET);
     } else {
-      stream->Close(NS_ERROR_ABORT);
+      // The session went away without a clean reset/protocol error, but this
+      // stream never received any response data, so it is safe to retry it
+      // on a new connection.
+      stream->Close(NS_ERROR_NET_UNCLEAN_SHUTDOWN);
     }
     RemoveStreamFromQueues(stream);
     if (stream->HasStreamId()) {

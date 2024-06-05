@@ -104,6 +104,7 @@ skip-if = [
 ]
 
 ["browser_localStorage_e10s.js"]
+tags = "dom-storage"
 https_first_disabled = true
 fail-if = [
   "true",
@@ -113,13 +114,16 @@ skip-if = [
 ]
 
 ["browser_localStorage_fis.js"]
+tags = "dom-storage"
 skip-if = [
   "tsan",
 ]
 
 ["browser_localStorage_privatestorageevent.js"]
+tags = "dom-storage"
 
 ["browser_localStorage_snapshotting.js"]
+tags = "dom-storage"
 
 ["browser_navigate_replace_browsingcontext.js"]
 
@@ -207,6 +211,7 @@ support-files = [
 ]
 
 ["browser_sessionStorage_navigation.js"]
+tags = "dom-storage"
 support-files = [
   "file_empty.html",
   "file_coop_coep.html",
@@ -229,9 +234,6 @@ support-files = [
   "file_test_report_missing_child_module_parent.mjs",
   "file_test_report_missing_child_module_parent_02.mjs",
   "page_test_report_missing_child_module.html",
-]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019466
 ]
 
 ["browser_test_toolbars_visibility.js"]

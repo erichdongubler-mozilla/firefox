@@ -4006,12 +4006,11 @@ void APZCTreeManager::SetFixedLayerMarginsOnRootContentApzcs(
 ScreenPoint APZCTreeManager::ComputeFixedMarginsOffset(
     const MutexAutoLock& aProofOfMapLock, SideBits aFixedSides,
     const ScreenMargin& aGeckoFixedLayerMargins) const {
-  // If the software keyboard is visible and the interactive-widget is not
-  // resizes-content, we don't need to move the position:fixed or sticky
-  // elements at all.
-  if (IsSoftwareKeyboardVisible(aProofOfMapLock) &&
-      InteractiveWidgetMode(aProofOfMapLock) !=
-          dom::InteractiveWidget::ResizesContent) {
+  // In `overlays-content` mode with the software keyboard visible, the main
+  // thread ignores dynamic toolbar movement (see
+  // nsPresContext::UpdateDynamicToolbarOffset) so the compositor needs to
+  // ignore it too.
+  if (IsKeyboardVisibleOnOverlaysContent(aProofOfMapLock)) {
     return ScreenPoint(0, 0);
   }
 

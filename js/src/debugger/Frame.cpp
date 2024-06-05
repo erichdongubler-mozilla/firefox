@@ -1113,6 +1113,9 @@ static bool EvaluateInEnv(
       break;
     }
     case EvalOptions::EnvKind::Global: {
+      options.setAllowRedeclaringExistingLexicalBinding(
+          evalOptions.allowRedeclaringExistingLexicalBinding());
+
       AutoReportFrontendContext fc(cx);
       script = frontend::CompileGlobalScript(cx, &fc, options, srcBuf,
                                              ScopeKind::Global);
@@ -1132,7 +1135,9 @@ static bool EvaluateInEnv(
 
       MOZ_ASSERT(envArg == &cx->global()->lexicalEnvironment());
 
-      options.setNonSyntacticScope(true);
+      options.setNonSyntacticScope(true)
+          .setAllowRedeclaringExistingLexicalBinding(
+              evalOptions.allowRedeclaringExistingLexicalBinding());
 
       AutoReportFrontendContext fc(cx);
       script = frontend::CompileGlobalScriptWithExtraBindings(

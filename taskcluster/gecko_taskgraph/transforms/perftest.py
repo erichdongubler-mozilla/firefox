@@ -14,8 +14,6 @@ from taskgraph.util.copy import deepcopy
 from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.treeherder import join_symbol, split_symbol
 
-from gecko_taskgraph.transforms.test import linux_perf_platform_restrictions
-
 transforms = TransformSequence()
 
 # Target tasks methods that only select tasks meant to be profiled.
@@ -436,9 +434,6 @@ def set_perftest_attributes(config, jobs):
         attributes = job.setdefault("attributes", {})
         attributes["perftest_name"] = job["name"]
         yield job
-
-
-transforms.add(linux_perf_platform_restrictions.restrict_perftest_to_2404)
 
 
 @transforms.add

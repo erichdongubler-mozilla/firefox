@@ -15,5 +15,5 @@ the tab strip. Everything else internal is `#private`.
 
 ```{js:autoclass} Tabbrowser
 :members:
-:exclude-members: Tabbrowser, _findTabToBlurTo, _getTabsToTheEndFrom, _getTabsToTheStartFrom, _getTriggeringPrincipalFromHistory, _printPreviewBrowsers
+:exclude-members: Tabbrowser, _findTabToBlurTo, _getTabsToTheEndFrom, _getTabsToTheStartFrom, _printPreviewBrowsers
 ```

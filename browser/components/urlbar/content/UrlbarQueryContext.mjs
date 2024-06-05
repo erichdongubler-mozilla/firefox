@@ -286,6 +286,17 @@ export class UrlbarQueryContext {
   }
 
   /**
+   * Whether a string that is a URL may be navigated to in an engine search
+   * mode.
+   *
+   * @see {UrlbarShared.navigationInSearchModeEnabled}
+   * @type {boolean}
+   */
+  get navigationInSearchModeEnabled() {
+    return UrlbarShared.navigationInSearchModeEnabled(this.sapName);
+  }
+
+  /**
    * @type {UrlbarSearchModeData}
    *   Details about the search mode associated with this context.
    */

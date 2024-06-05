@@ -11,7 +11,7 @@ fuzzy(0-1,0-1000000) == blur-em-radius.html blur-em-radius-ref.html
 == blur-invalid-radius.html blur-invalid-radius-ref.html
 fuzzy(0-1,0-1000000) == blur-rem-radius.html blur-rem-radius-ref.html
 == blur-zero-radius.html blur-zero-radius-ref.html
-fails-if(useDrawSnapshot) fuzzy-if(gfxSVGFEGaussianBlur,0-2,0-1000000) == blur-zoomed-page.html blur-zoomed-page-ref.html
+fuzzy-if(gfxSVGFEGaussianBlur,0-2,0-1000000) == blur-zoomed-page.html blur-zoomed-page-ref.html
 == brightness.html brightness-ref.html
 == brightness-darken.html brightness-darken-ref.html
 == brightness-extreme.html brightness-extreme-ref.html

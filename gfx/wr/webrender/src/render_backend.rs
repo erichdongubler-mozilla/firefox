@@ -32,7 +32,7 @@ use crate::clip::{ClipIntern, PolygonIntern, ClipStoreScratchBuffer};
 use crate::filterdata::FilterDataIntern;
 #[cfg(any(feature = "capture", feature = "replay"))]
 use crate::capture::CaptureConfig;
-use crate::composite::{CompositorKind, CompositeDescriptor};
+use crate::composite::CompositeDescriptor;
 use crate::frame_builder::{FrameBuilder, FrameBuilderConfig, FrameScratchBuffer};
 use glyph_rasterizer::FontInstance;
 use crate::hit_test::{HitTest, HitTester, SharedHitTester};
@@ -158,6 +158,61 @@ macro_rules! declare_data_stores {
 }
 
 crate::enumerate_interners!(declare_data_stores);
+
+macro_rules! declare_dl_stores {
+    ( $( $field:ident : $key:ty => $template:ty, $gauge:ident, $report:ident, )* ) => {
+        /// The follower stores for everything interned by the content display
+        /// list builders, fed by `DlUpdates` from the scene builder.
+        ///
+        /// Separate from `DataStores` rather than a field on it: these are per
+        /// render backend while `DataStores` is per document, so a field would
+        /// mean either duplicating entries per document or introducing
+        /// sharing. It also means "which store does this handle refer to?" is
+        /// answered by the handle's type, with no runtime discriminator.
+        #[derive(Default)]
+        pub struct DlStores {
+            $( pub $field: crate::dl_interner::DlStore<$key, $template>, )*
+        }
+
+        // Until the first type is listed nothing in here has anything to do.
+        #[allow(unused_variables, unused_mut)]
+        impl DlStores {
+            /// Apply a transaction's ops and report what they did. The counts
+            /// join the interners' in `INTERN_INSERTIONS` / `INTERN_REMOVALS`,
+            /// and the store sizes go to the per-type `INTERNED_*` gauges.
+            fn apply(
+                &mut self,
+                updates: DlUpdates,
+                profile: &mut TransactionProfile,
+            ) -> (usize, usize) {
+                let mut totals = (0, 0);
+                $(
+                    // `apply` consumes the op list, so the count comes first.
+                    let (ins, rem) = crate::dl_interner::count_dl_ops(&updates.$field);
+                    totals.0 += ins;
+                    totals.1 += rem;
+                    self.$field.apply(updates.$field);
+                    profile.set(profiler::$gauge, self.$field.len());
+                )*
+                totals
+            }
+
+            /// Release the namespaces a transaction's `DlUpdates::closes`
+            /// held back from `apply`.
+            fn close(&mut self, namespaces: &[crate::dl_interner::DlNamespace]) {
+                for &namespace in namespaces {
+                    $( self.$field.close(namespace); )*
+                }
+            }
+
+            fn report_memory(&self, ops: &mut MallocSizeOfOps, r: &mut MemoryReport) {
+                $( r.interning.dl_stores.$report += self.$field.size_of(ops); )*
+            }
+        }
+    }
+}
+
+crate::enumerate_dl_stores!(declare_dl_stores);
 
 impl DataStores {
     /// Returns the local rect for a primitive. For most primitives, this is
@@ -874,7 +929,6 @@ pub struct WindowState {
     tile_caches: FastHashMap<SliceId, Box<TileCacheInstance>>,
 
     frame_config: FrameBuilderConfig,
-    default_compositor_kind: CompositorKind,
     debug_flags: DebugFlags,
 
     recycler: Recycler,
@@ -922,6 +976,19 @@ pub struct RenderBackend {
     /// pool that just allocated work is the one that gets gradually
     /// drained. Cleared when the window is unregistered.
     last_touched_window: Option<RenderBackendId>,
+
+    /// Follower stores for the items interned by the content display list
+    /// builders. Per backend rather than per document, matching the scene
+    /// builder that feeds them: a handle names its own namespace, so items
+    /// from several pipelines - and so several documents and windows - live
+    /// in one store and can be batched together.
+    dl_stores: DlStores,
+    /// Ops for `dl_stores` from transactions that built no scene, per
+    /// document, waiting for that document's next scene swap. The store may
+    /// only advance together with a swap: the scene being drawn in the
+    /// meantime can still reference what these ops remove or, on a builder
+    /// change, empty out. Flushed once the document is gone.
+    held_dl_updates: FastHashMap<DocumentId, DlUpdates>,
 
     size_of_ops: Option<MallocSizeOfOps>,
     namespace_alloc_by_client: bool,
@@ -991,6 +1058,8 @@ impl RenderBackend {
             windows: FastHashMap::default(),
             document_to_window: FastHashMap::default(),
             last_touched_window: None,
+            dl_stores: DlStores::default(),
+            held_dl_updates: FastHashMap::default(),
             size_of_ops,
             namespace_alloc_by_client,
         }
@@ -1033,7 +1102,6 @@ impl RenderBackend {
             resource_cache,
             chunk_pool,
             tile_caches: FastHashMap::default(),
-            default_compositor_kind: frame_config.compositor_kind,
             frame_config,
             debug_flags,
             recycler: Recycler::new(),
@@ -1180,8 +1248,53 @@ impl RenderBackend {
         }
 
         let mut built_frame = false;
+        let mut dl_closes = Vec::new();
         for mut txn in txns.drain(..) {
            let has_built_scene = txn.built_scene.is_some();
+
+            // Ops held for documents that have since been removed. Nothing is
+            // left to protect, and they were produced before anything below,
+            // in particular before a later transaction closes their
+            // namespaces.
+            let dead: Vec<DocumentId> = self.held_dl_updates
+                .keys()
+                .filter(|id| !self.documents.contains_key(id))
+                .copied()
+                .collect();
+            for id in dead {
+                let mut held = self.held_dl_updates.remove(&id).unwrap();
+                let closes = mem::take(&mut held.closes);
+                self.dl_stores.apply(held, &mut txn.profile);
+                self.dl_stores.close(&closes);
+            }
+
+            // The previous transaction's namespace releases, held back until
+            // its offscreen scenes had been frame-built; those can reference a
+            // pipeline removed in the same transaction. Applied ahead of this
+            // transaction's ops, which may reopen a released namespace.
+            self.dl_stores.close(&mem::take(&mut dl_closes));
+
+            // The stores are per backend and pure followers with no way to ask
+            // for a delta a second time, so every transaction's ops are applied
+            // whether or not its results are consumed below. They are applied
+            // together with the document's scene swap, though: a transaction
+            // that built no scene - the document has no root pipeline - leaves
+            // the current scene being drawn, and that scene can still reference
+            // what these ops remove or empty out. Such ops wait for the next
+            // transaction that does swap, unless the document is gone.
+            let mut dl_updates = self.held_dl_updates
+                .remove(&txn.document_id)
+                .unwrap_or_default();
+            dl_updates.append(mem::take(&mut txn.dl_updates));
+            let dl_counts = if has_built_scene || !self.documents.contains_key(&txn.document_id) {
+                dl_closes = mem::take(&mut dl_updates.closes);
+                self.dl_stores.apply(dl_updates, &mut txn.profile)
+            } else {
+                if !dl_updates.is_empty() {
+                    self.held_dl_updates.insert(txn.document_id, dl_updates);
+                }
+                (0, 0)
+            };
 
             // Look up the window that owns this document. Between the scene
             // builder enqueueing this transaction and us getting here the
@@ -1237,6 +1350,13 @@ impl RenderBackend {
                 if let Some(updates) = txn.interner_updates.take() {
                     doc.data_stores.apply_updates(updates, &mut doc.profile);
                 }
+
+                // Added rather than set: `apply_updates` has just set these from
+                // the interners, and the follower stores contribute to the same
+                // totals.
+                let (insertions, removals) = dl_counts;
+                doc.profile.add(profiler::INTERN_INSERTIONS, insertions);
+                doc.profile.add(profiler::INTERN_REMOVALS, removals);
 
                 // Apply the last sampled scroll offsets from the previous scene,
                 // to the current scene. The offsets are identified by scroll ids
@@ -1344,6 +1464,7 @@ impl RenderBackend {
                 }
             }
         }
+        self.dl_stores.close(&dl_closes);
 
         built_frame
     }
@@ -1641,38 +1762,6 @@ impl RenderBackend {
                         if let Some(win) = self.windows.get_mut(&backend_id) {
                             win.resource_cache.clear(mask);
                         }
-                        return RenderBackendStatus::Continue;
-                    }
-                    DebugCommand::EnableNativeCompositor(enable) => {
-                        let default_kind = match self.windows.get(&backend_id) {
-                            Some(w) => w.default_compositor_kind,
-                            None => return RenderBackendStatus::Continue,
-                        };
-                        // Default CompositorKind should be Native
-                        if let CompositorKind::Draw { .. } = default_kind {
-                            unreachable!();
-                        }
-
-                        let compositor_kind = if enable {
-                            default_kind
-                        } else {
-                            CompositorKind::default()
-                        };
-
-                        let doc_ids = self.documents_for_window(backend_id);
-                        for doc_id in doc_ids {
-                            if let Some(doc) = self.documents.get_mut(&doc_id) {
-                                doc.scene.config.compositor_kind = compositor_kind;
-                                doc.frame_is_valid = false;
-                            }
-                        }
-
-                        if let Some(win) = self.windows.get_mut(&backend_id) {
-                            win.frame_config.compositor_kind = compositor_kind;
-                        }
-                        self.update_frame_builder_config_for(backend_id);
-
-                        // We don't want to forward this message to the renderer.
                         return RenderBackendStatus::Continue;
                     }
                     DebugCommand::SetBatchingLookback(count) => {
@@ -2232,6 +2321,9 @@ impl RenderBackend {
             doc.data_stores.report_memory(ops, &mut report)
         }
 
+        // Per backend, not per document, like the stores themselves.
+        self.dl_stores.report_memory(ops, &mut report);
+
         for win in self.windows.values_mut() {
             (*report) += win.resource_cache.report_memory(op);
             report.texture_cache_structures += win.resource_cache
@@ -2509,7 +2601,10 @@ impl RenderBackend {
             win.send(msg_load);
         }
 
+        // The compositor kind describes the replaying renderer, not the captured one.
+        let compositor_kind = win.frame_config.compositor_kind;
         win.frame_config = backend.frame_config;
+        win.frame_config.compositor_kind = compositor_kind;
 
         let mut scenes_to_build = Vec::new();
 
@@ -2597,7 +2692,10 @@ impl RenderBackend {
             self.document_to_window.insert(id, backend_id);
 
             let frame_name = format!("frame-{}-{}", id.namespace_id.0, id.id);
-            let frame = config.deserialize_for_frame::<Frame, _>(frame_name);
+            // A frame built for a different compositor kind can't be rendered here,
+            // so rebuild it from the scene instead.
+            let frame = config.deserialize_for_frame::<Frame, _>(frame_name)
+                .filter(|frame| frame.composite_state.compositor_kind == compositor_kind);
             let build_frame = match frame {
                 Some(frame) => {
                     info!("\tloaded a built frame with {} passes", frame.passes.len());

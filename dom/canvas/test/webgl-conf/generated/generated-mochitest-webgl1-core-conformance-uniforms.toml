@@ -71,7 +71,6 @@ support-files = [
 ["test_conformance__uniforms__out-of-bounds-uniform-array-access.html"]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
 ]
 
 ["test_conformance__uniforms__uniform-default-values.html"]

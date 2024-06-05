@@ -10,6 +10,8 @@
 #include "mozilla/dom/ipc/IdType.h"
 #include "nsIContentPermissionPrompt.h"
 #include "nsIMutableArray.h"
+#include "nsIPrincipal.h"
+#include "nsPIDOMWindow.h"
 #include "nsTArray.h"
 
 // Microsoft's API Name hackery sucks

@@ -1,4 +1,4 @@
-import { render, fireEvent, act } from "@testing-library/react";
+import { render, fireEvent, createEvent, act } from "@testing-library/react";
 import { WrapWithProvider } from "test/jest/test-utils";
 import { Provider } from "react-redux";
 import { createStore, combineReducers } from "redux";
@@ -69,7 +69,6 @@ const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
 const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
-const PREF_WIDGETS_SPORTS_WIDGET_ENABLED = "widgets.sportsWidget.enabled";
 const PREF_WIDGETS_CLOCKS_ENABLED = "widgets.clocks.enabled";
 const PREF_WIDGETS_PRIVACY_ENABLED = "widgets.privacy.enabled";
 const PREF_WIDGETS_CROSSWORD_ENABLED = "widgets.crossword.enabled";
@@ -241,11 +240,10 @@ describe("<Widgets> handleHideAllWidgets", () => {
   }
 
   function expectAllWidgetPrefsDisabled(calls) {
-    expect(calls).toHaveLength(9);
+    expect(calls).toHaveLength(8);
     for (const name of [
       PREF_WIDGETS_LISTS_ENABLED,
       PREF_WIDGETS_TIMER_ENABLED,
-      PREF_WIDGETS_SPORTS_WIDGET_ENABLED,
       PREF_WIDGETS_CLOCKS_ENABLED,
       PREF_WIDGETS_PRIVACY_ENABLED,
       PREF_WIDGETS_CROSSWORD_ENABLED,
@@ -648,7 +646,6 @@ describe("<Widgets> handleToggleMaximize", () => {
       [PREF_WIDGETS_TIMER_ENABLED]: true,
       [PREF_WIDGETS_SYSTEM_TIMER_ENABLED]: true,
       "widgets.system.weather.enabled": true,
-      "widgets.system.sportsWidget.enabled": true,
       "widgets.system.clocks.enabled": true,
       "widgets.system.weatherForecast.enabled": true,
       "weather.display": "detailed",
@@ -697,7 +694,9 @@ describe("<Widgets> handleToggleMaximize", () => {
       const { container } = renderWidgets(novaState());
 
       expect(
-        container.querySelectorAll("#widgets-header-context-panel panel-item")
+        container.querySelectorAll(
+          '[id^="widgets-header-context-panel"] panel-item'
+        )
       ).toHaveLength(3);
     });
 
@@ -726,8 +725,6 @@ describe("<Widgets> handleToggleMaximize", () => {
         novaState({
           "widgets.weather.enabled": true,
           "widgets.system.weather.enabled": true,
-          "widgets.sportsWidget.enabled": true,
-          "widgets.system.sportsWidget.enabled": true,
           "widgets.clocks.enabled": true,
           "widgets.system.clocks.enabled": true,
         })
@@ -1061,28 +1058,6 @@ describe("<Widgets> overflow detection", () => {
     // Sizes don't affect the count.
     expect(section.hasAttribute("data-overflow-3")).toBe(true);
     expect(section.hasAttribute("data-overflow-4")).toBe(false);
-  });
-});
-
-// Bug 2063657: the sports widget is retired; removed in bug 2063656.
-describe("<Widgets> retired sports widget", () => {
-  it("never renders, whatever the prefs and trainhopConfig say", () => {
-    const state = makeNovaWidgetState([["lists", "medium"]], {
-      "widgets.sportsWidget.enabled": true,
-      "widgets.system.sportsWidget.enabled": true,
-      "widgets.sportsWidget.size": "medium",
-      trainhopConfig: {
-        widgets: { sportsWidgetEnabled: true },
-        widgetsSettings: { sportsWidgetVisible: true },
-      },
-    });
-    const { container } = renderWidgets(state);
-    expect(
-      container.querySelector('[data-widget-id="lists"]')
-    ).toBeInTheDocument();
-    expect(
-      container.querySelector('[data-widget-id="sportsWidget"]')
-    ).not.toBeInTheDocument();
   });
 });
 
@@ -1858,5 +1833,233 @@ describe("<Widgets> auto-minimize layout", () => {
         data => data.action_type === "change_size_all"
       )
     ).toBe(true);
+  });
+});
+
+// @experiment(remove) { bug 2069496 }
+describe("<Widgets> row ad slot", () => {
+  const SPOC = {
+    id: 1,
+    flight_id: 2,
+    url: "https://example.com/ad",
+    title: "Ad title",
+    raw_image_src: "https://example.com/ad.jpg",
+    domain: "example.com",
+    sponsor: "Example",
+    shim: {},
+  };
+
+  // Three enabled widgets, so a reserved slot has to push one out.
+  function adState(values = {}, spocs = [SPOC]) {
+    return {
+      ...ENABLED_STATE,
+      Prefs: {
+        ...ENABLED_STATE.Prefs,
+        values: {
+          ...ENABLED_STATE.Prefs.values,
+          "nova.enabled": true,
+          "pageLayouts.variant": "widgets-ad-large",
+          showSponsored: true,
+          "system.showSponsored": true,
+          "widgets.system.enabled": true,
+          // Ships as true, which is what makes medium the default row size.
+          "widgets.system.maximized": true,
+          "widgets.system.clocks.enabled": true,
+          "widgets.clocks.enabled": true,
+          "widgets.system.stocks.enabled": true,
+          "widgets.stocks.enabled": true,
+          ...values,
+        },
+      },
+      DiscoveryStream: {
+        ...ENABLED_STATE.DiscoveryStream,
+        spocs: {
+          loaded: true,
+          blocked: [],
+          data: { newtab_spocs: { items: spocs } },
+        },
+      },
+    };
+  }
+
+  const adCell = container => container.querySelector(".widgets-row-ad-cell");
+  const widgetCells = container =>
+    container.querySelectorAll(".widget-wrapper[data-widget-id]");
+
+  it("renders the ad cell only inside the variant", () => {
+    expect(adCell(renderWidgets(adState()).container)).toBeTruthy();
+    expect(
+      adCell(
+        renderWidgets(adState({ "pageLayouts.variant": "nova-full-width" }))
+          .container
+      )
+    ).toBeFalsy();
+  });
+
+  it("does not render a cell when no spoc is eligible", () => {
+    expect(adCell(renderWidgets(adState({}, [])).container)).toBeFalsy();
+  });
+
+  // The ad takes the last slot, so widgets get one fewer than the column
+  // count. Hiding starts one index earlier than it would without an ad.
+  it("gives widgets one slot fewer, so a widget is what the row hides", () => {
+    const { container } = renderWidgets(adState());
+    const cells = widgetCells(container);
+    expect(cells).toHaveLength(3);
+
+    // At three card columns the ad holds slot three, so widget index two goes.
+    expect(cells[0]).not.toHaveAttribute("data-hidden-3");
+    expect(cells[1]).not.toHaveAttribute("data-hidden-3");
+    expect(cells[2]).toHaveAttribute("data-hidden-3");
+
+    // At four columns all three widgets still fit alongside the ad.
+    expect(cells[2]).not.toHaveAttribute("data-hidden-4");
+  });
+
+  it("hides widgets at the column count when there is no ad", () => {
+    const { container } = renderWidgets(adState({}, []));
+    const cells = widgetCells(container);
+    expect(cells).toHaveLength(3);
+    expect(cells[2]).not.toHaveAttribute("data-hidden-3");
+  });
+
+  // One card column is the exception: reserving the only slot would leave no
+  // widgets, so the ad steps aside and widgets keep every slot.
+  it("does not take a slot from widgets at one card column", () => {
+    const { container } = renderWidgets(adState());
+    expect(widgetCells(container)[0]).not.toHaveAttribute("data-hidden-1");
+  });
+
+  it("never marks the ad cell itself as hidden", () => {
+    const cell = adCell(renderWidgets(adState()).container);
+    for (const cols of [1, 2, 3, 4, 5]) {
+      expect(cell).not.toHaveAttribute(`data-hidden-${cols}`);
+    }
+  });
+
+  // At one card column the slot is markup order, not CSS, because a drag
+  // preview puts an inline `order` on every widget that would beat a
+  // stylesheet one on the ad.
+  it("renders right after the first widget", () => {
+    const { container } = renderWidgets(adState());
+    const cells = [
+      ...container.querySelectorAll("#widgets-container > .widget-wrapper"),
+    ];
+
+    expect(cells[1]).toHaveClass("widgets-row-ad-cell");
+    expect(cells[0]).not.toHaveClass("widgets-row-ad-cell");
+    expect(cells).toHaveLength(4);
+  });
+
+  // jsdom measures everything as a zero rect, so the drag has to be told
+  // where the stacked slots are before it can map the cursor to one.
+  const stackSlots = slots =>
+    slots.forEach((el, i) => {
+      el.getBoundingClientRect = () => ({
+        left: 0,
+        right: 100,
+        top: i * 100,
+        bottom: i * 100 + 100,
+        width: 100,
+        height: 100,
+        x: 0,
+        y: i * 100,
+        toJSON() {},
+      });
+    });
+
+  const pointer = (type, clientY) =>
+    new PointerEvent(type, {
+      bubbles: true,
+      pointerId: 1,
+      pointerType: "mouse",
+      button: 0,
+      clientX: 50,
+      clientY,
+    });
+
+  // Holds the last widget over the first slot without dropping it.
+  const dragLastToFront = container => {
+    const slots = [...widgetCells(container)];
+    stackSlots(slots);
+    act(() => {
+      slots.at(-1).dispatchEvent(pointer("pointerdown", 250));
+    });
+    act(() => {
+      window.dispatchEvent(pointer("pointermove", 240));
+    });
+    act(() => {
+      window.dispatchEvent(pointer("pointermove", 50));
+    });
+  };
+
+  // The preview puts an inline `order` on every widget and the ad keeps the
+  // default 0, so it ties with whichever widget is shown first and only stays
+  // behind it by sitting later in the markup.
+  it.each([
+    ["large", "medium"],
+    ["medium", "large"],
+  ])(
+    "follows the widget dragged to the front, %s over %s",
+    (held, resident) => {
+      const { container } = renderWidgets(
+        adState({
+          "widgets.order": "clocks,lists,stocks",
+          "widgets.clocks.size": resident,
+          "widgets.stocks.size": held,
+        })
+      );
+
+      dragLastToFront(container);
+
+      const dragged = container.querySelector(".widget-wrapper[data-dragging]");
+      expect(dragged).toHaveAttribute("data-widget-id", "stocks");
+      expect(dragged.nextElementSibling).toHaveClass("widgets-row-ad-cell");
+    }
+  );
+
+  // CSS puts the card on the slot after the last widget, so it needs the
+  // count. Capped at four, the most any width shows ahead of it.
+  it("reports how many widgets sit ahead of it", () => {
+    const { container } = renderWidgets(adState());
+    expect(adCell(container)).toHaveAttribute("data-widgets-before", "3");
+
+    const one = renderWidgets(
+      adState({
+        "widgets.clocks.enabled": false,
+        "widgets.stocks.enabled": false,
+      })
+    ).container;
+    expect(adCell(one)).toHaveAttribute("data-widgets-before", "1");
+  });
+
+  it("is not draggable, so reordering widgets leaves it alone", () => {
+    const cell = adCell(renderWidgets(adState()).container);
+    expect(cell).not.toHaveClass("widget-draggable");
+    expect(cell).not.toHaveAttribute("data-widget-id");
+  });
+
+  // The card is a link, which Firefox makes draggable on its own. Fired on
+  // the link so the handler has to catch it on the way up, as it does live.
+  it("cancels the link drag the card would otherwise start", () => {
+    const cell = adCell(renderWidgets(adState()).container);
+    const link = cell.querySelector("a[href]");
+    expect(link).toBeTruthy();
+
+    const dragStart = createEvent.dragStart(link);
+    fireEvent(link, dragStart);
+    expect(dragStart.defaultPrevented).toBe(true);
+  });
+
+  // There is no half-height sponsored card yet, so the row's size toggle
+  // leaves the ad alone. Bug 2069496 follow-up.
+  it("stays large when the row is minimized", () => {
+    for (const maximized of [false, true]) {
+      const cell = adCell(
+        renderWidgets(adState({ "widgets.maximized": maximized })).container
+      );
+      expect(cell).toHaveClass("large-widget");
+      expect(cell).not.toHaveClass("medium-widget");
+    }
   });
 });

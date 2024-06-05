@@ -14,7 +14,7 @@ export default [
     plugins: { import: importPlugin, react, "jsx-a11y": jsxA11y },
     settings: {
       react: {
-        version: "16.2.0",
+        version: "19.2.0",
       },
     },
     rules: {

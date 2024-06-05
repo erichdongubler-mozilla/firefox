@@ -13,20 +13,6 @@ from marionette_driver import Wait
 from session_store_test_case import SessionStoreTestCase
 
 
-def wait_for_fog(marionette):
-    # Glean's blocking test APIs (testGetValue) park the main thread forever if
-    # Glean is still pre-init, and FOG is initialized from a startup idle task,
-    # so it can lag the point where the browser reports itself started up.
-    Wait(marionette, timeout=60).until(
-        lambda _: marionette.execute_script(
-            """
-            return Services.fog.initialized;
-            """
-        ),
-        message="FOG should be initialized before reading Glean metrics.",
-    )
-
-
 def inline(title):
     return f"data:text/html;charset=utf-8,<html><head><title>{title}</title></head><body></body></html>"
 
@@ -89,7 +75,7 @@ class TestNewTabOnRestore(SessionStoreTestCase):
         )
 
     def _get_telemetry_events(self):
-        wait_for_fog(self.marionette)
+        self.wait_for_fog()
         return self.marionette.execute_script(
             """
             return Glean.sessionRestore.startupSessionAutoRestored.testGetValue();
@@ -267,7 +253,7 @@ class TestNewTabOnRestoreNotSettingBased(SessionStoreTestCase):
             """
         )
 
-        wait_for_fog(self.marionette)
+        self.wait_for_fog()
         events = self.marionette.execute_script(
             """
             return Glean.sessionRestore.startupSessionAutoRestored.testGetValue();
@@ -374,7 +360,7 @@ class TestNewTabOnRestoreAfterCrash(SessionStoreTestCase):
             "No new tab should be added after a crash restore",
         )
 
-        wait_for_fog(self.marionette)
+        self.wait_for_fog()
         events = self.marionette.execute_script(
             """
             return Glean.sessionRestore.startupSessionAutoRestored.testGetValue();

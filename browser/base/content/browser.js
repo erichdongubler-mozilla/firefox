@@ -45,7 +45,8 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://gre/modules/LightweightThemeConsumer.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   LoginManagerParent: "resource://gre/modules/LoginManagerParent.sys.mjs",
-  MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
+  MigrationUtils:
+    "moz-src:///browser/components/migration/MigrationUtils.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   NewTabPagePreloading:
     "moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs",
@@ -76,7 +77,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs",
   PromptUtils: "resource://gre/modules/PromptUtils.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
-  Referrals: "resource:///modules/referrals/Referrals.sys.mjs",
+  Referrals: "moz-src:///browser/components/referrals/Referrals.sys.mjs",
   ResetPBMPanel:
     "moz-src:///browser/components/privatebrowsing/ResetPBMPanel.sys.mjs",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
@@ -99,10 +100,11 @@ ChromeUtils.defineESModuleGetters(this, {
   SubDialog: "resource://gre/modules/SubDialog.sys.mjs",
   SubDialogManager: "resource://gre/modules/SubDialog.sys.mjs",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.sys.mjs",
+  Tabbrowser: "moz-src:///browser/components/tabbrowser/Tabbrowser.sys.mjs",
   TabsSetupFlowManager:
     "resource:///modules/firefox-view-tabs-setup-manager.sys.mjs",
   TaskbarTabsChrome:
-    "resource:///modules/taskbartabs/TaskbarTabsChrome.sys.mjs",
+    "moz-src:///browser/components/taskbartabs/TaskbarTabsChrome.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   ToolbarContextMenu:
     "moz-src:///browser/components/customizableui/ToolbarContextMenu.sys.mjs",
@@ -124,7 +126,6 @@ ChromeUtils.defineESModuleGetters(this, {
   Weave: "resource://services-sync/main.sys.mjs",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.sys.mjs",
   webrtcUI: "resource:///modules/webrtcUI.sys.mjs",
-  WebsiteFilter: "resource:///modules/policies/WebsiteFilter.sys.mjs",
   ZoomUI: "resource:///modules/ZoomUI.sys.mjs",
 });
 
@@ -841,11 +842,17 @@ function updateFxaToolbarMenu(enable, isInitialUpdate = false) {
   const taskbarTab = mainWindowEl.hasAttribute("taskbartab");
 
   // To minimize the toolbar button flickering or appearing/disappearing during startup,
-  // we use this pref to anticipate the likely FxA status.
-  const statusGuess = !!Services.prefs.getStringPref(
-    "identity.fxaccounts.account.device.name",
-    ""
-  );
+  // we use this pref to anticipate the likely FxA status. Only guess a signed-in
+  // state when accounts are enabled: a device name can be persisted without ever
+  // signing in (e.g. it is written on first read or when creating a backup), so
+  // without gating on syncEnabled a profile with accounts disabled would
+  // incorrectly report "signed_in".
+  const statusGuess =
+    syncEnabled &&
+    !!Services.prefs.getStringPref(
+      "identity.fxaccounts.account.device.name",
+      ""
+    );
   mainWindowEl.setAttribute(
     "fxastatus",
     statusGuess ? "signed_in" : "not_configured"
@@ -1567,7 +1574,6 @@ function CreateContainerTabMenu(event) {
     return;
   }
   createUserContextMenu(event, {
-    useAccessKeys: false,
     showDefaultTab: true,
     containerSource: "new_tab_button",
   });
@@ -1899,11 +1905,14 @@ let gFileMenu = {
    * when applicable.
    */
   updateTabCloseCountState() {
-    document.l10n.setAttributes(
-      document.getElementById("menu_close"),
-      "menu-file-close-tab",
-      { tabCount: gBrowser.selectedTabs.length }
-    );
+    let closeTab = document.getElementById("menu_close");
+    if (document.getElementById("menu_closeWindow").hidden) {
+      document.l10n.setAttributes(closeTab, "menu-file-close");
+    } else {
+      document.l10n.setAttributes(closeTab, "menu-file-close-tab", {
+        tabCount: gBrowser.selectedTabs.length,
+      });
+    }
   },
 
   onPopupShowing(event) {
@@ -3955,7 +3964,7 @@ function WindowIsClosing(event) {
     "resource:///modules/asrouter/ASRouter.sys.mjs"
   );
   const { TaskbarTabsUtils } = ChromeUtils.importESModule(
-    "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs"
+    "moz-src:///browser/components/taskbartabs/TaskbarTabsUtils.sys.mjs"
   );
   if (gLastWindowCloseTriggerHandled) {
     // The user is closing this window again while a message from a previous
@@ -3965,10 +3974,12 @@ function WindowIsClosing(event) {
     Glean.messagingSystem.lastWindowCloseTriggerBypassed.add(1);
   } else if (
     isLastWindow &&
-    // Web app (Taskbar Tabs) windows aren't a normal browsing window this
-    // trigger targets, even though they keep the toolbar visible and don't
-    // change windowtype, so they otherwise look like one to the checks here.
+    // Web app (Taskbar Tabs) and mini windows aren't a normal browsing window
+    // this trigger targets, even though they keep the toolbar visible and
+    // don't change windowtype, so they otherwise look like one to the checks
+    // here.
     !TaskbarTabsUtils.isTaskbarTabWindow(window) &&
+    !document.documentElement.hasAttribute("mini-window") &&
     !shouldWarnForTabs &&
     ASRouter.initialized &&
     // Pre-check for messages so we don't hold up every last-window close when
@@ -4025,7 +4036,7 @@ function warnAboutClosingWindow() {
   if (!isPBWindow && !toolbar.visible) {
     return gBrowser.warnAboutClosingTabs(
       gBrowser.openTabs.length,
-      gBrowser.closingTabsEnum.ALL
+      Tabbrowser.closingTabsEnum.ALL
     );
   }
 
@@ -4065,7 +4076,7 @@ function warnAboutClosingWindow() {
       isPBWindow ||
       gBrowser.warnAboutClosingTabs(
         gBrowser.openTabs.length,
-        gBrowser.closingTabsEnum.ALL
+        Tabbrowser.closingTabsEnum.ALL
       )
     );
   }
@@ -4090,7 +4101,7 @@ function warnAboutClosingWindow() {
     isPBWindow ||
     gBrowser.warnAboutClosingTabs(
       gBrowser.openTabs.length,
-      gBrowser.closingTabsEnum.ALL
+      Tabbrowser.closingTabsEnum.ALL
     )
   );
 }
@@ -5148,9 +5159,13 @@ var FirefoxViewHandler = {
     if (section) {
       viewURL = `${viewURL}#${section}`;
     }
-    // Need to account for navigation to Firefox View pages
+    // Need to account for navigation to Firefox View pages, but keep a tab
+    // that hasn't committed its first load yet, e.g. when a click follows the
+    // mousedown that opened it.
     if (
       this.tab &&
+      !this.tab.linkedBrowser.browsingContext.currentWindowGlobal
+        .isInitialDocument &&
       this.tab.linkedBrowser.currentURI.spec.split("#")[0] != viewURL
     ) {
       gBrowser.removeTab(this.tab);

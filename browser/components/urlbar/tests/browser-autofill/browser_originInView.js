@@ -12,7 +12,9 @@
 // against that stored form without converting it, so an IDN host typed the way
 // a user would type it never autofills at all (Bug 1566151).
 
-const LONG_PATH = `/products/id=${"9".repeat(120)}`;
+const LONG_PATH = `/products/id=${"9".repeat(1000)}`;
+
+add_setup(adaptiveAutofillSetup);
 
 async function checkOriginInView(win, label) {
   await PlacesUtils.history.clear();
@@ -71,21 +73,6 @@ async function checkWithLocaleDirection(rtlUI) {
 
   await BrowserTestUtils.closeWindow(win);
   await SpecialPowers.popPrefEnv();
-}
-
-async function add_setup() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.autoFill", true],
-      ["browser.urlbar.autoFill.adaptiveHistory.enabled", true],
-      ["browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold", 0],
-      ["browser.urlbar.autoFill.adaptiveHistory.useCountThreshold", 0],
-    ],
-  });
-  registerCleanupFunction(async () => {
-    await PlacesUtils.history.clear();
-    await PlacesTestUtils.clearInputHistory();
-  });
 }
 
 add_task(async function originStaysInViewLTRLocale() {

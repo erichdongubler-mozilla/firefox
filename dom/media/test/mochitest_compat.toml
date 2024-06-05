@@ -542,6 +542,8 @@ support-files = [
   "invalid-cmap-s1c2.opus^headers^",
   "invalid-cmap-short.opus",
   "invalid-cmap-short.opus^headers^",
+  "invalid-crop-wrap.webm",
+  "invalid-crop-wrap.webm^headers^",
   "invalid-discard_on_multi_blocks.webm",
   "invalid-discard_on_multi_blocks.webm^headers^",
   "invalid-excess_discard.webm",
@@ -885,9 +887,6 @@ skip-if = [
 
 ["test_mediatrack_events.html"]
 scheme = "https"
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # TIMEOUT
-]
 
 ["test_mediatrack_parsing_ogg.html"]
 

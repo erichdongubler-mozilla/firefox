@@ -22,7 +22,9 @@
  * and as methods:
  *
  *  - `_recordFromRust()`, `_normalize()`, and the store calls listed under
- *    "Store operations".
+ *    "Store operations". `_recordFromRust()` is handed getAll()'s options, so
+ *    a collection that hides a stored field on read reports it under
+ *    `rawData`; one that hides nothing ignores them.
  *
  * `static _instance = null` is worth declaring for the reader, though
  * `getInstance()` stores per subclass either way.
@@ -361,9 +363,21 @@ export class RustAutofillAdapterBase {
     return found && this._recordFromRust(found);
   }
 
-  async getAll() {
+  /**
+   * @param {object} [options]
+   * @param {boolean} [options.rawData=false] Keep the fields the collection
+   *   hides from a consumer on read, so that every stored field is reported.
+   *   What a copy out of this store is built from: a filtered read would write
+   *   the hidden fields out of existence on the other side. A collection that
+   *   hides nothing reads the same either way.
+   *
+   *   Narrower than the JSON collection's option of the same name, which also
+   *   strips the computed fields. The records here carry them either way.
+   * @returns {Promise<Array<object>>}
+   */
+  async getAll({ rawData = false } = {}) {
     const records = await this._getAll(await this._store());
-    return records.map(record => this._recordFromRust(record));
+    return records.map(record => this._recordFromRust(record, { rawData }));
   }
 
   async notifyUsed(guid, { sourceSync = false, action = "notifyUsed" } = {}) {

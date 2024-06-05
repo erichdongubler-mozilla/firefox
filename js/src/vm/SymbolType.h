@@ -36,11 +36,11 @@ class Symbol
   JSAtom* description() const { return headerPtr(); }
 
  private:
-  SymbolCode code_;
+  const SymbolCode code_;
 
   // Each Symbol gets its own hash code so that we don't have to use
   // addresses as hash codes (a security hazard).
-  js::HashNumber hash_;
+  const js::HashNumber hash_;
 
   Symbol(SymbolCode code, js::HashNumber hash, Handle<JSAtom*> desc)
       : CellWithTenuredGCPointer(desc), code_(code), hash_(hash) {}
@@ -92,10 +92,6 @@ class Symbol
 
   // Override base class implementation to tell GC about well-known symbols.
   bool isPermanentAndMayBeShared() const { return isWellKnownSymbol(); }
-
-  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-    return mallocSizeOf(this);
-  }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump() const;  // Debugger-friendly stderr dump.

@@ -306,9 +306,6 @@ fail-if = [
 ["browser_net_headers_sorted.js"]
 
 ["browser_net_html-preview.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_net_image-tooltip.js"]
 

@@ -9,10 +9,10 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
-  IPPExceptionsManager:
-    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
   IPPPrincipalRules:
-    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
+  IPPSiteRuleManager:
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
   IPPProxyManager:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
@@ -23,9 +23,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 import { getSitePrincipal } from "chrome://browser/content/ipprotection/ipprotection-utils.mjs";
-
-const OPENED_WITH_LOCATION_PREF =
-  "browser.ipProtection.openedPanelWithLocation";
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -63,7 +60,6 @@ export class IPProtectionToolbarButton {
   #progressListener = null;
   #widgetId = null;
   #previousIsExcluded = null;
-  #prefObserver = null;
   #visitedExcludedSites = new Set();
 
   static CONFIRMATION_HINT_MESSAGE_ID =
@@ -154,17 +150,14 @@ export class IPProtectionToolbarButton {
       "IPPProxyManager:StateChanged",
       this.handleEvent
     );
-    lazy.IPPExceptionsManager.addEventListener(
-      "IPPExceptionsManager:ExclusionChanged",
+    lazy.IPPSiteRuleManager.addEventListener(
+      "SiteRuleManager:RuleChanged",
       this.handleEvent
     );
 
     if (this.gBrowser?.tabContainer) {
       this.gBrowser.tabContainer.addEventListener("TabSelect", this);
     }
-
-    this.#prefObserver = { observe: () => this.#updateBadge() };
-    Services.prefs.addObserver(OPENED_WITH_LOCATION_PREF, this.#prefObserver);
 
     if (toolbaritem) {
       toolbaritem.classList.add("subviewbutton-nav"); // adds the right arrow in overflow menu
@@ -221,14 +214,13 @@ export class IPProtectionToolbarButton {
     if (
       event.type !== "IPProtectionService:StateChanged" &&
       event.type !== "IPPProxyManager:StateChanged" &&
-      event.type !== "IPPExceptionsManager:ExclusionChanged" &&
+      event.type !== "SiteRuleManager:RuleChanged" &&
       event.type !== "TabSelect"
     ) {
       return;
     }
 
-    let exclusionChanged =
-      event.type === "IPPExceptionsManager:ExclusionChanged";
+    let ruleChanged = event.type === "SiteRuleManager:RuleChanged";
 
     if (
       event.type === "IPPProxyManager:StateChanged" &&
@@ -237,7 +229,7 @@ export class IPProtectionToolbarButton {
       this.#visitedExcludedSites.clear();
     }
 
-    this.updateState(null, { showConfirmationHint: !exclusionChanged });
+    this.updateState(null, { showConfirmationHint: !ruleChanged });
   }
 
   /**
@@ -285,13 +277,14 @@ export class IPProtectionToolbarButton {
     // excluded.
     let isExcluded =
       !!principal &&
-      lazy.IPPExceptionsManager.canManage(principal) &&
-      lazy.IPPExceptionsManager.getPrincipalRule(principal) ===
+      lazy.IPPSiteRuleManager.canManage(principal) &&
+      lazy.IPPSiteRuleManager.getRule(principal) ===
         lazy.IPPPrincipalRules.EXCLUDED;
-    //TODO: Add hasInclusion function to exceptions manager, replace false with commented out call to hasInclusion - Bug 2066802
     let isIncluded =
-      !!principal && lazy.IPPExceptionsManager.canManage(principal) && false;
-    //  lazy.IPPExceptionsManager.hasInclusion(principal);
+      !!principal &&
+      lazy.IPPSiteRuleManager.canManage(principal) &&
+      lazy.IPPSiteRuleManager.getRule(principal) ===
+        lazy.IPPPrincipalRules.INCLUDED;
     let isActive = lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE;
     let isPaused = lazy.IPPProxyManager.state === lazy.IPPProxyStates.PAUSED;
 
@@ -347,16 +340,14 @@ export class IPProtectionToolbarButton {
       return;
     }
 
-    let everOpenedPanel = Services.prefs.getBoolPref(
-      OPENED_WITH_LOCATION_PREF,
-      false
-    );
+    // Disabling notification until there is a new feature- Bug 2057313
+    let newFeatureRelease = false;
 
     let inPalette = !lazy.CustomizableUI.getPlacementOfWidget(this.#widgetId);
 
     let badge = toolbaritem.querySelector(".toolbarbutton-badge");
 
-    if (everOpenedPanel || inPalette) {
+    if (!newFeatureRelease || inPalette) {
       toolbaritem.removeAttribute("badged");
       badge?.classList.remove("feature-callout");
     } else {
@@ -528,12 +519,6 @@ export class IPProtectionToolbarButton {
     }
     this.#progressListener = null;
 
-    Services.prefs.removeObserver(
-      OPENED_WITH_LOCATION_PREF,
-      this.#prefObserver
-    );
-    this.#prefObserver = null;
-
     if (this.gBrowser?.tabContainer) {
       this.gBrowser.tabContainer.removeEventListener("TabSelect", this);
     }
@@ -546,8 +531,8 @@ export class IPProtectionToolbarButton {
       "IPPProxyManager:StateChanged",
       this.handleEvent
     );
-    lazy.IPPExceptionsManager.removeEventListener(
-      "IPPExceptionsManager:ExclusionChanged",
+    lazy.IPPSiteRuleManager.removeEventListener(
+      "SiteRuleManager:RuleChanged",
       this.handleEvent
     );
   }

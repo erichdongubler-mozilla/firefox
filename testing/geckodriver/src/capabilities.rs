@@ -951,18 +951,10 @@ mod tests {
 
     use self::mozprofile::preferences::Pref;
     use super::*;
-    use serde_json::{Map, Value, json};
-    use std::fs::File;
-    use std::io::Read;
+    use crate::test::build_zip;
+    use serde_json::{json, Map, Value};
     use url::{Host, Url};
     use webdriver::capabilities::Capabilities;
-
-    fn example_profile() -> Value {
-        let mut profile_data = Vec::with_capacity(1024);
-        let mut profile = File::open("src/tests/profile.zip").unwrap();
-        profile.read_to_end(&mut profile_data).unwrap();
-        Value::String(BASE64_STANDARD.encode(&profile_data))
-    }
 
     fn make_options(
         firefox_opts: Capabilities,
@@ -1544,7 +1536,13 @@ mod tests {
 
     #[test]
     fn test_profile() {
-        let encoded_profile = example_profile();
+        let profile_data = build_zip(&[
+            (
+                "user.js",
+                b"user_pref(\"startup.homepage_welcome_url\", \"foo\");\n",
+            ),
+        ]);
+        let encoded_profile = Value::String(BASE64_STANDARD.encode(&profile_data));
         let mut firefox_opts = Capabilities::new();
         firefox_opts.insert("profile".into(), encoded_profile);
 
@@ -1559,7 +1557,7 @@ mod tests {
 
         assert_eq!(
             prefs.get("startup.homepage_welcome_url"),
-            Some(&Pref::new("data:text/html,PASS"))
+            Some(&Pref::new("foo"))
         );
     }
 
@@ -1606,5 +1604,75 @@ mod tests {
         firefox_opts.insert("profile".into(), json!("foo"));
 
         make_options(firefox_opts, None).expect_err("Invalid args");
+    }
+
+    #[test]
+    fn unzip_valid_profile() {
+        let zip_data = build_zip(&[(
+            "user.js", b"user_pref(\"foo\", \"bar\");\n",
+        )]);
+
+        let dest = tempfile::tempdir().unwrap();
+        let dest_path = dest.path().join("profile");
+
+        unzip_buffer(&zip_data, &dest_path).expect("valid zip extraction");
+
+        let content = fs::read_to_string(dest_path.join("user.js")).unwrap();
+        assert!(content.contains("foo"));
+    }
+
+    #[test]
+    fn unzip_rejects_path_traversal() {
+        let zip_data = build_zip(&[
+            ("user.js", b"user_pref(\"foo\", \"bar\");\n"),
+            ("../escape.txt", b"path traversal succeeded"),
+            ("sub/../../escape_via_sub.txt", b"traversal via subdirectory"),
+        ]);
+
+        let dest = tempfile::tempdir().unwrap();
+        let dest_path = dest.path().join("profile");
+        fs::create_dir(&dest_path).unwrap();
+
+        unzip_buffer(&zip_data, &dest_path)
+            .expect_err("ZIP with path traversal entries should be rejected");
+
+        for name in &["../escape.txt", "sub/../../escape_via_sub.txt"] {
+            let escaped_file = dest_path.join(name);
+            assert!(
+                !escaped_file.exists(),
+                "ZIP entry '{}' escaped the profile directory",
+                name
+            );
+        }
+
+        assert_eq!(
+            dest_path.read_dir().unwrap().count(),
+            0,
+            "No files should be extracted from a rejected ZIP"
+        );
+    }
+
+    #[test]
+    fn unzip_rejects_symlink() {
+        let opts = zip::write::SimpleFileOptions::default();
+        let mut buf = Cursor::new(Vec::new());
+        let mut writer = zip::ZipWriter::new(&mut buf);
+
+        writer.add_symlink("link", "/etc/foo", opts).unwrap();
+        writer.finish().unwrap();
+        let zip_data = buf.into_inner();
+
+        let dest = tempfile::tempdir().unwrap();
+        let dest_path = dest.path().join("profile");
+        fs::create_dir(&dest_path).unwrap();
+
+        unzip_buffer(&zip_data, &dest_path)
+            .expect_err("ZIP with symlink entries should be rejected");
+
+        assert_eq!(
+            dest_path.read_dir().unwrap().count(),
+            0,
+            "No files should be extracted from a rejected ZIP"
+        );
     }
 }

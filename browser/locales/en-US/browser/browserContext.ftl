@@ -468,8 +468,11 @@ main-context-menu-inspect =
     .label = Inspect
     .accesskey = Q
 
-main-context-menu-inspect-a11y-properties =
+# This item only shows for DevTools users, so its access key may be the same
+# as another item's, such as "Copy Image".
+main-context-menu-inspect-a11y-properties2 =
     .label = Inspect Accessibility Properties
+    .accesskey = y
 
 main-context-menu-eme-learn-more =
     .label = Learn more about DRM…

@@ -50,6 +50,26 @@ class TestWeakPrefObserver final : public nsIObserver,
 
 NS_IMPL_ISUPPORTS(TestWeakPrefObserver, nsIObserver, nsISupportsWeakReference)
 
+// Like TestWeakPrefObserver, but also records the root-relative pref name that
+// nsPrefBranch::NotifyObserver hands to the observer.
+class TestPrefBranchObserver final : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) override {
+    mNotifyCount++;
+    mLastData.Assign(aData);
+    return NS_OK;
+  }
+  int mNotifyCount = 0;
+  nsString mLastData;
+
+ private:
+  ~TestPrefBranchObserver() = default;
+};
+
+NS_IMPL_ISUPPORTS(TestPrefBranchObserver, nsIObserver)
+
 TEST(PrefsBasics, Errors)
 {
   Preferences::SetBool("foo.bool", true, PrefValueKind::Default);
@@ -422,6 +442,73 @@ TEST(PrefsCallbackTrie, MultipleTrailingDotsRejected)
             NS_ERROR_INVALID_ARG);
   Preferences::SetBool("test.trie.dots.d.e", true);
   EXPECT_EQ(observer->mNotifyCount, 0);
+}
+
+// A domain registered with a trailing dot covers the subtree below it, not the
+// bare stem pref of the same name: "test.trie.stem.a." must not fire for the
+// pref "test.trie.stem.a", whose name is shorter than the registered domain.
+TEST(PrefsCallbackTrie, TrailingDotDomainSkipsStemPref)
+{
+  int count = 0;
+  Preferences::SetBool("test.trie.stem.a", false);
+  Preferences::SetBool("test.trie.stem.a.b", false);
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterPrefixCallback(
+      IncrementCount, "test.trie.stem.a."_ns, &count)));
+  Preferences::SetBool("test.trie.stem.a", true);
+  EXPECT_EQ(count, 0);
+  Preferences::SetBool("test.trie.stem.a.b", true);
+  EXPECT_EQ(count, 1);
+  Preferences::UnregisterPrefixCallback(IncrementCount, "test.trie.stem.a."_ns,
+                                        &count);
+}
+
+// Same for an array registration mixing a trailing-dot domain with a bare one:
+// the trailing-dot entry skips its stem while the bare entry still matches
+// exactly.
+TEST(PrefsCallbackTrie, TrailingDotDomainSkipsStemPrefInArray)
+{
+  static const char* const kPrefs[] = {"test.trie.stemarr.a.",
+                                       "test.trie.stemarr.b", nullptr};
+  int count = 0;
+  Preferences::SetBool("test.trie.stemarr.a", false);
+  Preferences::SetBool("test.trie.stemarr.a.b", false);
+  Preferences::SetBool("test.trie.stemarr.b", false);
+  ASSERT_TRUE(NS_SUCCEEDED(
+      Preferences::RegisterPrefixCallbacks(IncrementCount, kPrefs, &count)));
+  Preferences::SetBool("test.trie.stemarr.a", true);
+  EXPECT_EQ(count, 0);
+  Preferences::SetBool("test.trie.stemarr.a.b", true);
+  EXPECT_EQ(count, 1);
+  Preferences::SetBool("test.trie.stemarr.b", true);
+  EXPECT_EQ(count, 2);
+  Preferences::UnregisterPrefixCallbacks(IncrementCount, kPrefs, &count);
+}
+
+// A pref-branch observer is handed pref names relative to its branch root, so
+// the stem pref of the root has no representation in that namespace and must
+// not be reported: nsPrefBranch::NotifyObserver would otherwise offset past the
+// end of the shorter name.
+TEST(PrefsCallbackTrie, BranchObserverSkipsStemPref)
+{
+  nsCOMPtr<nsIPrefService> prefService =
+      do_GetService(NS_PREFSERVICE_CONTRACTID);
+  ASSERT_TRUE(prefService);
+
+  nsCOMPtr<nsIPrefBranch> branch;
+  ASSERT_TRUE(NS_SUCCEEDED(
+      prefService->GetBranch("test.branch.stem.", getter_AddRefs(branch))));
+
+  RefPtr<TestPrefBranchObserver> obs = new TestPrefBranchObserver();
+  ASSERT_TRUE(NS_SUCCEEDED(branch->AddObserver("", obs, false)));
+
+  Preferences::SetBool("test.branch.stem", true);
+  EXPECT_EQ(obs->mNotifyCount, 0);
+
+  Preferences::SetBool("test.branch.stem.child", true);
+  EXPECT_EQ(obs->mNotifyCount, 1);
+  EXPECT_TRUE(obs->mLastData.EqualsLiteral("child"));
+
+  branch->RemoveObserver("", obs);
 }
 
 // ---------------------------------------------------------------------------

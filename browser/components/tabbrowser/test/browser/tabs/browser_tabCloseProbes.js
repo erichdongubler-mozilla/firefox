@@ -11,7 +11,7 @@ add_setup(async function () {
  */
 add_task(async function test_close_time_anim_probe() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
-  await TestUtils.waitForCondition(() => tab._fullyOpen);
+  await BrowserTestUtils.allTabOpenAnimationsFinished(window);
 
   Services.fog.testResetFOG();
 
@@ -30,7 +30,7 @@ add_task(async function test_close_time_anim_probe() {
  */
 add_task(async function test_close_time_no_anim_probe() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
-  await TestUtils.waitForCondition(() => tab._fullyOpen);
+  await BrowserTestUtils.allTabOpenAnimationsFinished(window);
 
   Services.fog.testResetFOG();
 

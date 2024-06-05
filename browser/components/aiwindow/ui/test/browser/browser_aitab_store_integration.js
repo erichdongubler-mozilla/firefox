@@ -14,7 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AITabStore.sys.mjs",
 });
 
-describe("about:aitab store integration", () => {
+describe("about:smartpage store integration", () => {
   let tab;
 
   beforeEach(async () => {
@@ -35,7 +35,7 @@ describe("about:aitab store integration", () => {
   it("shows the unavailable state for an unknown slug", async () => {
     tab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
-      `about:aitab?page=${UNKNOWN_SLUG}`
+      `about:smartpage?page=${UNKNOWN_SLUG}`
     );
 
     await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
@@ -52,13 +52,12 @@ describe("about:aitab store integration", () => {
       Assert.equal(
         page.status,
         "unavailable",
-        "An unknown slug produces the unavailable state"
+        "An unknown slug produces the unavailable error state"
       );
       Assert.equal(page.page, null, "No page data is returned");
-      Assert.equal(
-        element.shadowRoot.querySelector(".aitab-status")?.dataset.l10nId,
-        "ai-tab-page-unavailable",
-        "The unavailable message is rendered"
+      Assert.ok(
+        element.shadowRoot.querySelector("aitab-error"),
+        "The error component is rendered"
       );
     });
   });
@@ -84,7 +83,7 @@ describe("about:aitab store integration", () => {
     it("loads the stored page through the actor pair", async () => {
       tab = await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
-        `about:aitab?page=${STORED_SLUG}`
+        `about:smartpage?page=${STORED_SLUG}`
       );
 
       await SpecialPowers.spawn(

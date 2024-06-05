@@ -34,6 +34,7 @@ tasks:
             gradle-build-type: debug
             gradle-build-name: focusDebug
             gradle-build: focus
+            track-build-times: true
         source-project-name: "focus-android"
         treeherder:
             symbol: focus-debug(Bf)
@@ -65,6 +66,7 @@ tasks:
             gradle-extra-options:
                 - -PdisableLeakCanary
             track-apk-size: true
+            track-build-times: true
         source-project-name: "fenix"
         treeherder:
             symbol: fenix-debug(Bf)
@@ -91,6 +93,7 @@ tasks:
             gradle-build-type: release
             gradle-build-name: focusRelease
             gradle-build: focus
+            track-build-times: true
         run-on-projects: []
         shipping-phase: promote
         source-project-name: "focus-android"
@@ -139,6 +142,7 @@ tasks:
             gradle-build-name: release
             gradle-build: fenix
             track-apk-size: true
+            track-build-times: true
             baseline-profile-path: /builds/worker/fetches/baselineProfiles
         run-on-projects: []
         shipping-phase: promote
@@ -165,6 +169,7 @@ tasks:
             gradle-build-type: nightly
             gradle-build-name: focusNightly
             gradle-build: focus
+            track-build-times: true
         run-on-projects: []
         source-project-name: "focus-android"
         treeherder:
@@ -189,6 +194,7 @@ tasks:
             gradle-build-name: nightly
             gradle-build: fenix
             track-apk-size: true
+            track-build-times: true
             baseline-profile-path: /builds/worker/fetches/baselineProfiles
         run-on-projects: []
         treeherder:
@@ -213,6 +219,7 @@ tasks:
             gradle-build-name: nightly
             gradle-build: fenix
             track-apk-size: true
+            track-build-times: true
         run-on-projects: []
         treeherder:
             symbol: fenix-nightly-nobp(B)
@@ -239,6 +246,7 @@ tasks:
             gradle-build-type: beta
             gradle-build-name: focusBeta
             gradle-build: focus
+            track-build-times: true
         run-on-projects: []
         shipping-phase: promote
         source-project-name: "focus-android"
@@ -266,6 +274,7 @@ tasks:
             gradle-build-name: beta
             gradle-build: fenix
             track-apk-size: true
+            track-build-times: true
             baseline-profile-path: /builds/worker/fetches/baselineProfiles
         run-on-projects: []
         shipping-phase: promote

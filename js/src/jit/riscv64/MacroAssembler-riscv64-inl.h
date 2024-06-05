@@ -1073,8 +1073,8 @@ void MacroAssembler::branchTestPrimitive(Condition cond,
 void MacroAssembler::branchTestPrimitive(Condition cond, Register tag,
                                          Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
-  ma_b(tag, ImmTagSignExt(JS::detail::ValueUpperExclPrimitiveTag), label,
-       (cond == Equal) ? Below : AboveOrEqual, ShortJump);
+  ma_b(tag, ImmTagSignExt(JSVAL_TAG_OBJECT), label,
+       (cond == Equal) ? NotEqual : Equal, ShortJump);
 }
 void MacroAssembler::branchTestPtr(Condition cond, Register lhs, Register rhs,
                                    Label* label) {

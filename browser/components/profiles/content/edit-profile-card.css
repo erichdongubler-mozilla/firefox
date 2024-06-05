@@ -36,6 +36,14 @@
   margin-bottom: var(--space-xsmall);
 }
 
+#theme-group::part(label) {
+  font-weight: var(--font-weight);
+}
+
+#theme-group::part(inputs) {
+  margin-block-start: var(--space-xsmall);
+}
+
 #profile-name {
   width: min(400px, 100%);
   margin: 0;

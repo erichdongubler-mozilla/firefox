@@ -26,10 +26,10 @@ const XPCOMUtils = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 ).XPCOMUtils;
 const { Referrals } = ChromeUtils.importESModule(
-  "resource:///modules/referrals/Referrals.sys.mjs"
+  "moz-src:///browser/components/referrals/Referrals.sys.mjs"
 );
 const lazy = XPCOMUtils.declareLazy({
-  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
+  BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
   Weave: "resource://services-sync/main.sys.mjs",
 
   SelectableProfileService:
@@ -959,6 +959,7 @@ SettingGroupManager.registerGroups({
     headingLevel: 2,
     iconSrc: "chrome://browser/skin/sync.svg",
     hidden: !accountsEnabled,
+    subcategory: "sync",
     items: [
       {
         id: "syncNoFxaSignIn",

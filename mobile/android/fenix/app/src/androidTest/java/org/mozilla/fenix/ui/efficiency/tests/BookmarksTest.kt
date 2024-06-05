@@ -9,6 +9,7 @@ import org.junit.After
 import org.junit.Ignore
 import org.junit.Test
 import org.mozilla.fenix.R
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.stubFilePickerSelection
 import org.mozilla.fenix.helpers.Constants
@@ -217,5 +218,84 @@ class BookmarksTest : BaseTest() {
 
         on.bookmarks.navigateToPage().mozVerifyElementsByGroup(BookmarksSelectors.Group.EMPTY_BOOKMARKS_MENU_VIEW)
         on.bookmarks.importBookmarksFromFile().mozVerify(BookmarksSelectors.BOOKMARK_ITEM(importedBookmarksFolder))
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833698
+    @Critical
+    @Test
+    fun deleteBookmarkInEditModeTest() {
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
+
+        createBookmarkItem(defaultWebPage.url.toString(), defaultWebPage.title, null)
+
+        on.bookmarks
+            .navigateToPage()
+            .openItemMenu(defaultWebPage.title)
+            .mozClick(BookmarksSelectors.EDIT_BUTTON)
+            .mozClick(BookmarksSelectors.DELETE_BOOKMARK_BUTTON)
+            .mozVerifyElementAbsent(BookmarksSelectors.BOOKMARK_ITEM(defaultWebPage.title))
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2999522
+    @Critical
+    @Test
+    fun verifyTheBookmarksSortingTest() {
+        val firstBookmarkFolderName = "A"
+        val secondBookmarkFolderName = "Z"
+
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
+
+        createBookmarkItem(firstWebPage.url.toString(), firstWebPage.title, null)
+        generateBookmarkFolder(title = firstBookmarkFolderName, position = null)
+
+        on.browserPage
+            .navigateToPage(secondWebPage.url.toString())
+            .mozClick(HomeSelectors.MAIN_MENU_BUTTON)
+            .mozClick(MainMenuSelectors.BOOKMARK_THIS_PAGE_BUTTON)
+        on.bookmarks
+            .navigateToPage()
+            .createFolder(secondBookmarkFolderName)
+            .mozClick(BookmarksSelectors.SORT_MENU_BUTTON)
+            .mozVerifyElementsByGroup(BookmarksSelectors.Group.BOOKMARKS_SORTING_OPTIONS)
+            .mozClick(BookmarksSelectors.SORT_BY_NEWEST_BUTTON)
+            .mozVerifyElementIsAbove(
+                BookmarksSelectors.BOOKMARK_ITEM(secondBookmarkFolderName),
+                BookmarksSelectors.BOOKMARK_ITEM(firstBookmarkFolderName),
+            )
+            .mozVerifyElementIsAbove(
+                BookmarksSelectors.BOOKMARK_ITEM(secondWebPage.url.toString()),
+                BookmarksSelectors.BOOKMARK_ITEM(firstWebPage.url.toString()),
+            )
+            .mozClick(BookmarksSelectors.SORT_MENU_BUTTON)
+            .mozClick(BookmarksSelectors.SORT_BY_OLDEST_BUTTON)
+            .mozVerifyElementIsAbove(
+                BookmarksSelectors.BOOKMARK_ITEM(firstBookmarkFolderName),
+                BookmarksSelectors.BOOKMARK_ITEM(secondBookmarkFolderName),
+            )
+            .mozVerifyElementIsAbove(
+                BookmarksSelectors.BOOKMARK_ITEM(firstWebPage.url.toString()),
+                BookmarksSelectors.BOOKMARK_ITEM(secondWebPage.url.toString()),
+            )
+            .mozClick(BookmarksSelectors.SORT_MENU_BUTTON)
+            .mozClick(BookmarksSelectors.SORT_Z_TO_A_BUTTON)
+            .mozVerifyElementIsAbove(
+                BookmarksSelectors.BOOKMARK_ITEM(secondBookmarkFolderName),
+                BookmarksSelectors.BOOKMARK_ITEM(firstBookmarkFolderName),
+            )
+            .mozVerifyElementIsAbove(
+                BookmarksSelectors.BOOKMARK_ITEM(secondWebPage.url.toString()),
+                BookmarksSelectors.BOOKMARK_ITEM(firstWebPage.url.toString()),
+            )
+            .mozClick(BookmarksSelectors.SORT_MENU_BUTTON)
+            .mozClick(BookmarksSelectors.SORT_A_TO_Z_BUTTON)
+            .mozVerifyElementIsAbove(
+                BookmarksSelectors.BOOKMARK_ITEM(firstBookmarkFolderName),
+                BookmarksSelectors.BOOKMARK_ITEM(secondBookmarkFolderName),
+            )
+            .mozVerifyElementIsAbove(
+                BookmarksSelectors.BOOKMARK_ITEM(firstWebPage.url.toString()),
+                BookmarksSelectors.BOOKMARK_ITEM(secondWebPage.url.toString()),
+            )
     }
 }

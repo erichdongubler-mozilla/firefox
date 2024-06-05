@@ -77,6 +77,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/Link.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/Selection.h"
 #include "nsBidiPresUtils.h"
 #include "nsBidiUtils.h"
@@ -87,7 +88,6 @@
 #include "nsIContent.h"
 #include "nsIURIMutator.h"
 #include "nsLayoutUtils.h"
-#include "nsRange.h"
 #include "nsStyleStructInlines.h"
 
 using namespace mozilla;
@@ -2226,7 +2226,7 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
       auto borderWidths = wr::ToBorderWidths(1.0, 1.0, 1.0, 1.0);
       wr::BorderSide side = {color, wr::BorderStyle::Solid};
       wr::BorderSide sides[4] = {side, side, side, side};
-      Range<const wr::BorderSide> sidesRange(sides, 4);
+      mozilla::Range<const wr::BorderSide> sidesRange(sides, 4);
       aBuilder.PushBorder(dest, wrBounds, isBackfaceVisible, borderWidths,
                           sidesRange, wr::EmptyBorderRadius());
 

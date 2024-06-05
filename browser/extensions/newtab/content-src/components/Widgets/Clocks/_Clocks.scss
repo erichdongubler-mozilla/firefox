@@ -128,25 +128,18 @@
     }
   }
 
+  // Panels fill the card and replace its content rather than floating over it,
+  // matching how the Weather widget swaps in its own subviews.
   .clocks-panel {
     position: absolute;
     z-index: 2;
-    inset-block-start: var(--space-xsmall);
-    inset-inline-end: var(--space-small);
+    inset: 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-medium);
-    // 332px is the Figma-spec overlay width; no design token exists.
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    inline-size: min(332px, calc(100% - var(--space-large)));
-    // Figma-spec panel height; no design token exists.
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    block-size: 276px;
     padding: var(--space-medium);
     background: var(--newtab-background-color-secondary);
-    border: var(--border-width) solid var(--border-color);
     border-radius: var(--border-radius-large);
-    box-shadow: var(--box-shadow-level-4);
 
     @media (prefers-contrast) {
       background-color: var(--background-color-box);
@@ -223,13 +216,13 @@
   .clocks-edit-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-small);
+    justify-content: space-evenly;
+    gap: var(--space-xsmall);
     flex: 1 1 0;
     min-block-size: 0;
     overflow-y: auto;
     margin: 0;
     padding: 0;
-    padding-block-start: var(--space-xxsmall);
     padding-inline: var(--space-xxsmall);
     list-style: none;
   }
@@ -237,18 +230,25 @@
   .clocks-edit-panel {
     flex: 1 1 0;
     min-block-size: 0;
+    gap: 0;
   }
 
   .clocks-edit-item {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: calc(var(--space-xxsmall) / 2);
     position: relative;
-    padding-block: var(--space-small);
-    padding-inline: var(--space-medium);
+    padding-block: var(--space-xsmall);
+    // Indent the city/nickname so the content clears the left edge, reserving
+    // room for the future drag handle per the Figma layout.
+    padding-inline-start: var(--space-xlarge);
     padding-inline-end: calc(var(--space-medium) * 4);
     border-radius: var(--button-border-radius);
     transition: background-color 180ms ease;
+
+    // Tall enough for a nicknamed row, so plain and nicknamed rows match.
+    min-block-size: var(--size-item-xlarge);
   }
 
   .clocks-edit-item:hover,
@@ -269,7 +269,7 @@
   }
 
   .clocks-edit-city {
-    font-size: var(--font-size-small);
+    font-size: var(--font-size-root);
     min-inline-size: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -382,6 +382,12 @@
     // first visible clock row.
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
     padding-block-start: 2.25rem;
+  }
+
+  // An open panel owns the whole card, so drop the rows instead of leaving
+  // them to show through it.
+  &.is-panel-open .clocks-list {
+    display: none;
   }
 
   .clocks-row {

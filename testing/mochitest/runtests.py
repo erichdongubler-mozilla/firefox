@@ -52,7 +52,7 @@ from manifestparser.filters import (
     subsuite,
     tags,
 )
-from manifestparser.util import normsep
+from manifestparser.util import normsep, split_manifest_list
 from mozgeckoprofiler import (
     symbolicate_profile_json,
     symbolicate_profiles,
@@ -85,6 +85,7 @@ from mozprofile.cli import KeyValueParseError, parse_key_value, parse_preference
 from mozprofile.permissions import ServerLocations
 from mozrunner.utils import get_stack_fixer_function, test_environment
 from mozscreenshot import dump_screen
+from moztest.assertions import AssertionFailureParser
 from moztest.tsan import TSANErrorParser
 
 HAVE_PSUTIL = False
@@ -576,8 +577,9 @@ class MochitestServer:
             self._httpdPath = SCRIPT_DIR
         self._httpdPath = os.path.abspath(self._httpdPath)
 
-        self._trainHop = "browser.newtabpage.trainhopAddon.version=any" in options.get(
-            "extraPrefs", []
+        self._trainHop = (
+            "browser.newtabpage.trainhopAddonDeployment.version=any"
+            in options.get("extraPrefs", [])
         )
 
         MochitestServer.instance_count += 1
@@ -1096,6 +1098,7 @@ class MochitestDesktop:
         self.browserProcessId = None
 
         self.haveDumpedScreen = False
+        self.appPid = None
         # Create variables to count the number of passes, fails, todos.
         self.countpass = 0
         self.countfail = 0
@@ -2393,7 +2396,10 @@ toolbar#nav-bar {
         certutil = os.path.join(options.utilityPath, "certutil" + bin_suffix)
         pk12util = os.path.join(options.utilityPath, "pk12util" + bin_suffix)
         toolsEnv = env
-        if "browser.newtabpage.trainhopAddon.version=any" in options.extraPrefs:
+        if (
+            "browser.newtabpage.trainhopAddonDeployment.version=any"
+            in options.extraPrefs
+        ):
             toolsEnv["LD_LIBRARY_PATH"] = os.path.join(os.path.dirname(here), "bin")
         if mozinfo.info["asan"]:
             # Disable leak checking when running these tools
@@ -2806,7 +2812,21 @@ toolbar#nav-bar {
             )
             return
         self.haveDumpedScreen = True
-        dump_screen(utilityPath, self.log)
+        # The browser can quit before the macOS capture lands; keep it on screen.
+        pid = self.appPid if mozinfo.isMac else None
+        if pid:
+            try:
+                os.kill(pid, signal.SIGSTOP)
+            except OSError:
+                pid = None
+        try:
+            dump_screen(utilityPath, self.log)
+        finally:
+            if pid:
+                try:
+                    os.kill(pid, signal.SIGCONT)
+                except OSError:
+                    pass
 
     def killAndGetStack(self, processPID, utilityPath, debuggerInfo, dump_screen=False):
         """
@@ -3002,7 +3022,7 @@ toolbar#nav-bar {
             # Enable Marionette and allow system access to execute the mochitest
             # init script in the chrome scope of the application
             args.append("-marionette")
-            args.append("-remote-allow-system-access")
+            env["MOZ_REMOTE_ALLOW_SYSTEM_ACCESS"] = "1"
 
             # TODO: mozrunner should use -foreground at least for mac
             # https://bugzilla.mozilla.org/show_bug.cgi?id=916512
@@ -3032,6 +3052,8 @@ toolbar#nav-bar {
             else:
                 tsanErrors = None
 
+            assertionFailures = AssertionFailureParser(self.log)
+
             # create an instance to process the output
             outputHandler = self.OutputHandler(
                 harness=self,
@@ -3042,6 +3064,7 @@ toolbar#nav-bar {
                 shutdownLeaks=shutdownLeaks,
                 lsanLeaks=lsanLeaks,
                 tsanErrors=tsanErrors,
+                assertionFailures=assertionFailures,
                 bisectChunk=bisectChunk,
                 restartAfterFailure=restartAfterFailure,
             )
@@ -3108,6 +3131,7 @@ toolbar#nav-bar {
                     outputTimeout=timeout,
                 )
                 proc = runner.process_handler
+                self.appPid = proc.pid
                 self.log.info(f"runtests.py | Application pid: {proc.pid}")
 
                 gecko_id = f"GECKO({proc.pid})"
@@ -3161,6 +3185,7 @@ toolbar#nav-bar {
             # see https://bugzilla.mozilla.org/show_bug.cgi?id=913970
             self.log.info("runtests.py | Waiting for browser...")
             status = proc.wait()
+            self.appPid = None
             if status is None:
                 self.log.warning(
                     "runtests.py | Failed to get app exit code - running/crashed?"
@@ -3812,6 +3837,7 @@ toolbar#nav-bar {
             "is_emulator": mozinfo.info.get("is_emulator", False),
             "coverage": mozinfo.info.get("coverage", False),
             "nogpu": mozinfo.info.get("nogpu", False),
+            "isolated_process": options.isolated_process,
         })
 
         if not self.mozinfo_variables_shown:
@@ -3879,7 +3905,7 @@ toolbar#nav-bar {
             prefs = list(self.prefs_by_manifest[m])[0]
             self.extraPrefs = origPrefs.copy()
             if prefs:
-                prefs = [p.strip() for p in prefs.strip().split("\n")]
+                prefs = split_manifest_list(prefs)
                 self.log.info(
                     "The following extra prefs will be set:\n  {}".format(
                         "\n  ".join(prefs)
@@ -3890,7 +3916,7 @@ toolbar#nav-bar {
             envVars = list(self.env_vars_by_manifest[m])[0]
             self.extraEnv = {}
             if envVars:
-                self.extraEnv = envVars.strip().split()
+                self.extraEnv = split_manifest_list(envVars)
                 env_list = "\n  ".join(self.extraEnv)
                 self.log.info(
                     f"The following extra environment variables will be set:\n  {env_list}"
@@ -3973,17 +3999,22 @@ toolbar#nav-bar {
 
             profiler_logger = get_proxy_logger("profiler")
             profiler_logger.info("Shutdown performance profiling was enabled")
-            profiler_logger.info(f"Profile saved locally to: {profile_path}")
 
             if options.profilerSaveOnly or options.profiler:
                 # Only do the extra work of symbolicating and viewing the profile if
                 # officially requested through a command line flag. The MOZ_PROFILER_*
                 # flags can be set by a user.
-                symbolicate_profile_json(profile_path, options.symbolsPath)
+                # Symbolication gzips the profile, which moves it, so report and
+                # open the path it returns.
+                profile_path = symbolicate_profile_json(
+                    profile_path, options.symbolsPath
+                )
+                profiler_logger.info(f"Profile saved locally to: {profile_path}")
                 view_gecko_profile_from_mochitest(
                     profile_path, options, profiler_logger
                 )
             else:
+                profiler_logger.info(f"Profile saved locally to: {profile_path}")
                 profiler_logger.info(
                     "The profiler was enabled outside of the mochitests. "
                     "Use --profiler instead of MOZ_PROFILER_SHUTDOWN to "
@@ -4418,6 +4449,7 @@ toolbar#nav-bar {
             shutdownLeaks=None,
             lsanLeaks=None,
             tsanErrors=None,
+            assertionFailures=None,
             bisectChunk=None,
             restartAfterFailure=None,
         ):
@@ -4433,6 +4465,7 @@ toolbar#nav-bar {
             self.shutdownLeaks = shutdownLeaks
             self.lsanLeaks = lsanLeaks
             self.tsanErrors = tsanErrors
+            self.assertionFailures = assertionFailures
             self.bisectChunk = bisectChunk
             self.restartAfterFailure = restartAfterFailure
             self.browserProcessId = None
@@ -4469,6 +4502,7 @@ toolbar#nav-bar {
                 self.trackShutdownLeaks,
                 self.trackLSANLeaks,
                 self.trackTSanErrors,
+                self.trackAssertionFailures,
                 self.count_structured,
             ]
             if self.bisectChunk or self.restartAfterFailure:
@@ -4512,6 +4546,9 @@ toolbar#nav-bar {
 
             if self.tsanErrors:
                 self.tsanErrors.flush()
+
+            if self.assertionFailures:
+                self.assertionFailures.flush()
 
         # output message handlers:
         # these take a message and return a message
@@ -4636,6 +4673,16 @@ toolbar#nav-bar {
                 else:
                     scope = self.harness.lastTestSeen
                 self.tsanErrors.log(line, pid=pid, scope=scope)
+            return message
+
+        def trackAssertionFailures(self, message):
+            if self.assertionFailures and message["action"] == "process_output":
+                test = self.harness.lastTestSeen
+                if test.endswith(" (finished)"):
+                    test = test[: -len(" (finished)")]
+                self.assertionFailures.log(
+                    message["data"], pid=message.get("process"), test=test
+                )
             return message
 
         def trackShutdownLeaks(self, message):

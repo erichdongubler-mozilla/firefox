@@ -15,8 +15,8 @@ import org.mozilla.fenix.databinding.TrackingProtectionCategoryBinding
 /**
  * A tracking protection category, shown as a title above a description of what it blocks.
  *
- * @attr ref R.styleable.TrackingProtectionCategory_categoryItemTitle
- * @attr ref R.styleable.TrackingProtectionCategory_categoryItemDescription
+ * @attr ref R.styleable.TrackingProtectionCategoryItem_categoryItemTitle
+ * @attr ref R.styleable.TrackingProtectionCategoryItem_categoryItemDescription
  */
 class TrackingProtectionCategoryItem
 @JvmOverloads
@@ -40,21 +40,21 @@ constructor(
 
         context.withStyledAttributes(
             attrs,
-            R.styleable.TrackingProtectionCategory,
+            R.styleable.TrackingProtectionCategoryItem,
             defStyleAttr,
             0,
         ) {
             binding.trackingProtectionCategoryTitle.text =
                 resources.getString(
                     getResourceId(
-                        R.styleable.TrackingProtectionCategory_categoryItemTitle,
+                        R.styleable.TrackingProtectionCategoryItem_categoryItemTitle,
                         R.string.etp_cookies_title,
                     )
                 )
             binding.trackingProtectionCategoryItemDescription.text =
                 resources.getString(
                     getResourceId(
-                        R.styleable.TrackingProtectionCategory_categoryItemDescription,
+                        R.styleable.TrackingProtectionCategoryItem_categoryItemDescription,
                         R.string.etp_cookies_description,
                     )
                 )

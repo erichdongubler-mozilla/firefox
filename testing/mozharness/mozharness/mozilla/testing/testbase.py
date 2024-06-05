@@ -548,7 +548,15 @@ You can set this by specifying --test-url URL
             if not self.symbols_path:
                 self.symbols_path = os.path.join(dirs["abs_work_dir"], "symbols")
 
-            if self.symbols_url:
+            fetched_symbols = None
+            if "abs_fetches_dir" in dirs:
+                fetched_symbols = os.path.join(
+                    dirs["abs_fetches_dir"], "target.crashreporter-symbols.zip"
+                )
+
+            if fetched_symbols and os.path.isfile(fetched_symbols):
+                self.unpack(fetched_symbols, self.symbols_path)
+            elif self.symbols_url:
                 self.download_unpack(self.symbols_url, self.symbols_path)
 
     def download_and_extract(self, extract_dirs=None, suite_categories=None):

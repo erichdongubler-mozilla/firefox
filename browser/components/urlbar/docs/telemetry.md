@@ -713,6 +713,27 @@ Changelog
 
   : The "impression" engagement event has been removed. \[Bug [1878983](https://bugzilla.mozilla.org/show_bug.cgi?id=1878983)\]
 
+### Engagements from a search bar in a web page
+
+A search bar in a content process, such as the one on about:newtab, builds the
+engagement event in the child and sends it to the parent in a
+`RecordEngagement` message. The parent adds the parent-only fields and makes the
+Glean call.
+
+A pick that loads a page in the same tab still records its engagement, because
+`UrlbarChildTelemetry.record()` sends `RecordEngagement` before the input sends
+its `LoadURL` query. Both messages travel in order over the window global's
+actor channel, so the parent has the engagement data before it starts the load.
+A session that ends without a pick is recorded as an abandonment on the `blur`
+event fired when the page is hidden, while the document can still run script.
+
+The child keeps the session's exposures until the session ends, so an
+engagement recorded while the session is still ongoing doesn't send them. If the
+page unloads before the session ends, the whole exposure list is lost, not just
+one event. How often this happens isn't measured, and a dropped
+`RecordEngagement` message leaves no diagnostic
+([Bug 2066851](https://bugzilla.mozilla.org/show_bug.cgi?id=2066851)).
+
 ## Custom pings for Contextual Services
 
 Contextual Services currently has two features involving the address bar, top

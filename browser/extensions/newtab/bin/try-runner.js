@@ -15,7 +15,6 @@ const { execFileSync } = require("child_process");
 const { readFileSync } = require("fs");
 const path = require("path");
 const { pathToFileURL } = require("url");
-const chalk = require("chalk");
 
 function logErrors(tool, errors) {
   for (const error of errors) {
@@ -309,8 +308,7 @@ async function main() {
   }
 
   for (const [name, result] of results) {
-    // colorize output based on result
-    console.log(result ? chalk.green(`✓ ${name}`) : chalk.red(`✗ ${name}`));
+    console.log(result ? `✓ ${name}` : `✗ ${name}`);
   }
 
   const success = results.every(([, result]) => result);

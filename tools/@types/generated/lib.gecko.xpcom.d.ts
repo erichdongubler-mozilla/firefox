@@ -1757,7 +1757,7 @@ interface nsIAppStartup extends nsISupports, Enums<typeof nsIAppStartup_IDLShutd
   /** <!-- binding_to(idl, method, XPIDL_nsIAppStartup_trackStartupCrashEnd) --> */
   trackStartupCrashEnd(): void;
   /** <!-- binding_to(idl, method, XPIDL_nsIAppStartup_quit) --> */
-  quit(aMode: u32, aExitCode?: i32): boolean;
+  quit(aMode: u32, aExitCode?: i32): void;
   /** <!-- binding_to(idl, method, XPIDL_nsIAppStartup_advanceShutdownPhase) --> */
   advanceShutdownPhase(aPhase: nsIAppStartup.IDLShutdownPhase): void;
   /** <!-- binding_to(idl, method, XPIDL_nsIAppStartup_setImpendingShutdown) --> */
@@ -11601,8 +11601,6 @@ interface nsILoadInfo extends nsISupports, Enums<typeof nsILoadInfo_StoragePermi
   triggeringSandboxFlags: u32;
   /** <!-- binding_to(idl, attribute, XPIDL_nsILoadInfo_triggeringWindowId) --> */
   triggeringWindowId: u64;
-  /** <!-- binding_to(idl, attribute, XPIDL_nsILoadInfo_triggeringStorageAccess) --> */
-  triggeringStorageAccess: boolean;
   /** <!-- binding_to(idl, attribute, XPIDL_nsILoadInfo_triggeringFirstPartyClassificationFlags) --> */
   triggeringFirstPartyClassificationFlags: u32;
   /** <!-- binding_to(idl, attribute, XPIDL_nsILoadInfo_triggeringThirdPartyClassificationFlags) --> */
@@ -13993,8 +13991,6 @@ interface nsICookieManager extends nsISupports {
   add(aHost: string, aPath: string, aName: string, aValue: string, aIsSecure: boolean, aIsHttpOnly: boolean, aIsSession: boolean, aExpiry: i64, aOriginAttributes: any, aSameSite: i32, aSchemeMap: nsICookie.schemeType, aIsPartitioned?: boolean): nsICookieValidation;
   /** <!-- binding_to(idl, method, XPIDL_nsICookieManager_cookieExists) --> */
   cookieExists(aHost: string, aPath: string, aName: string, aOriginAttributes: any): boolean;
-  /** <!-- binding_to(idl, method, XPIDL_nsICookieManager_countCookiesFromHost) --> */
-  countCookiesFromHost(aHost: string): u32;
   /** <!-- binding_to(idl, method, XPIDL_nsICookieManager_hasCookiesForSite) --> */
   hasCookiesForSite(aHost: string, aPattern: string): boolean;
   /** <!-- binding_to(idl, method, XPIDL_nsICookieManager_getCookiesFromHost) --> */
@@ -14083,12 +14079,6 @@ interface nsICookiePermission extends nsISupports {
 
 // https://searchfox.org/firefox-main/source/netwerk/cookie/nsICookieService.idl
 
-/** <!-- binding_to(idl, interface_name, XPIDL_nsICookieTransactionCallback) --> */
-type nsICookieTransactionCallback = Callable<{
-  /** <!-- binding_to(idl, method, XPIDL_nsICookieTransactionCallback_callback) --> */
-  callback(): void;
-}>
-
 /** <!-- binding_to(idl, interface_name, XPIDL_nsICookieService) --> */
 interface nsICookieService extends nsISupports {
   /** <!-- binding_to(idl, const, XPIDL_nsICookieService_BEHAVIOR_ACCEPT) --> */
@@ -14110,8 +14100,6 @@ interface nsICookieService extends nsISupports {
   getCookieStringFromHttp(aURI: nsIURI, aChannel: nsIChannel): string;
   /** <!-- binding_to(idl, method, XPIDL_nsICookieService_setCookieStringFromHttp) --> */
   setCookieStringFromHttp(aURI: nsIURI, aCookie: string, aChannel: nsIChannel): void;
-  /** <!-- binding_to(idl, method, XPIDL_nsICookieService_runInTransaction) --> */
-  runInTransaction(aCallback: nsICookieTransactionCallback): void;
 }
 
 // https://searchfox.org/firefox-main/source/netwerk/cookie/nsICookieValidation.idl
@@ -15602,11 +15590,11 @@ interface nsIWebSocketEventListener extends nsISupports {
   /** <!-- binding_to(idl, method, XPIDL_nsIWebSocketEventListener_webSocketMessageAvailable) --> */
   webSocketMessageAvailable(aWebSocketSerialID: u32, aMessage: string, aType: u16): void;
   /** <!-- binding_to(idl, method, XPIDL_nsIWebSocketEventListener_webSocketClosed) --> */
-  webSocketClosed(aWebSocketSerialID: u32, aWasClean: boolean, aCode: u16, aReason: string): void;
+  webSocketClosed(aWebSocketSerialID: u32, aHttpChannelId: u64, aWasClean: boolean, aCode: u16, aReason: string): void;
   /** <!-- binding_to(idl, method, XPIDL_nsIWebSocketEventListener_frameReceived) --> */
-  frameReceived(aWebSocketSerialID: u32, aFrame: nsIWebSocketFrame): void;
+  frameReceived(aWebSocketSerialID: u32, aHttpChannelId: u64, aFrame: nsIWebSocketFrame): void;
   /** <!-- binding_to(idl, method, XPIDL_nsIWebSocketEventListener_frameSent) --> */
-  frameSent(aWebSocketSerialID: u32, aFrame: nsIWebSocketFrame): void;
+  frameSent(aWebSocketSerialID: u32, aHttpChannelId: u64, aFrame: nsIWebSocketFrame): void;
 }
 
 /** <!-- binding_to(idl, interface_name, XPIDL_nsIWebSocketEventService) --> */
@@ -27132,7 +27120,6 @@ interface nsIXPCComponents_Interfaces {
   nsICookieManager: nsJSIID<nsICookieManager>;
   nsICookieNotification: nsJSIID<nsICookieNotification, typeof nsICookieNotification_Action>;
   nsICookiePermission: nsJSIID<nsICookiePermission>;
-  nsICookieTransactionCallback: nsJSIID<nsICookieTransactionCallback>;
   nsICookieService: nsJSIID<nsICookieService>;
   nsICookieValidation: nsJSIID<nsICookieValidation, typeof nsICookieValidation_ValidationError>;
   nsIThirdPartyCookieBlockingExceptionListService: nsJSIID<nsIThirdPartyCookieBlockingExceptionListService>;

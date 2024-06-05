@@ -5,13 +5,12 @@ members = [
     "webrender_api",
     "wrench",
     "wrshell",
-    "example-compositor/compositor",
 ]
 resolver = "2"
 
 [workspace.dependencies]
 gleam = "0.15.1"
-glean = "=68.0.1"
+glean = "=70.2.1"
 
 [profile.release]
 debug = true

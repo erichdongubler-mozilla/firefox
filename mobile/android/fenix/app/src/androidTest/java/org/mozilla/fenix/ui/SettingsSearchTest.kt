@@ -11,6 +11,7 @@ import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.clickSystemHomeScreenShortcutAddButton
@@ -56,6 +57,12 @@ class SettingsSearchTest {
     @get:Rule val searchMockServerRule = SearchMockServerRule()
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2203333
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsSearchTest#verifySearchSettingsMenuItemsTest"],
+        bug = 2074094,
+        since = "2026-09",
+    )
+    @Critical
     @Test
     fun verifySearchSettingsMenuItemsTest() {
         homeScreen(composeTestRule) {}

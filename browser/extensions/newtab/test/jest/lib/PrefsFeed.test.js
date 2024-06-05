@@ -58,9 +58,6 @@ describe("PrefsFeed", () => {
       ["baz", { value: 1, skipBroadcast: true }],
       ["qux", { value: 1, skipBroadcast: true, alsoToPreloaded: true }],
     ]);
-    // Services.vc.compare defaults to 0, i.e. a supported (>= 155) host, so
-    // that the theme-picker backward-compat gate lets the existing
-    // browserNovaEnabled assertions hold.
     services = mockServices(["prefs", "obs", "vc"]);
     nimbusFeatures = mockNimbusFeatures();
     region = { home: "US", REGION_TOPIC: "browser-region-updated" };
@@ -324,9 +321,8 @@ describe("PrefsFeed", () => {
         })
       );
     });
-    it("keeps browserNovaEnabled false on hosts older than 155 even when the pref is on", () => {
-      services.prefs.getBoolPref.mockReturnValue(true);
-      services.vc.compare.mockReturnValue(-1);
+    it("broadcasts browserNovaEnabled false when browser.nova.enabled is off", () => {
+      services.prefs.getBoolPref.mockReturnValue(false);
       feed.observe(null, "nsPref:changed", "browser.nova.enabled");
       expect(feed.store.dispatch).toHaveBeenCalledWith(
         ac.BroadcastToContent({
@@ -576,6 +572,38 @@ describe("PrefsFeed", () => {
       );
     });
 
+    // Bug 2068165: the control reads an override, so it shows the space as on
+    // while the pref is already off. Switching it off writes the value the pref
+    // already holds, the branch observer never fires, and without mirroring
+    // from the write itself the override survives and the control goes inert.
+    it("should opt out when SET_PREF writes the value the pref already holds", () => {
+      FAKE_PREFS.set("feeds.section.topstories", false);
+
+      feed.onAction({
+        type: at.SET_PREF,
+        data: { name: "feeds.section.topstories", value: false },
+      });
+
+      expect(feed._prefs.set).toHaveBeenCalledWith(
+        "spaces.storiesOptOut",
+        true
+      );
+    });
+
+    it("should opt out when SET_MULTIPLE_PREFS writes an unchanged value", () => {
+      FAKE_PREFS.set("widgets.enabled", false);
+
+      feed.onAction({
+        type: at.SET_MULTIPLE_PREFS,
+        data: { values: { "widgets.enabled": false } },
+      });
+
+      expect(feed._prefs.set).toHaveBeenCalledWith(
+        "spaces.widgetsOptOut",
+        true
+      );
+    });
+
     it("should not mirror a pref that is not a space", () => {
       feed.onPrefChanged("feeds.topsites", false);
 
@@ -808,6 +836,227 @@ describe("PrefsFeed", () => {
       expect(setBoolPref).toHaveBeenCalledWith(
         "widgets.focusTimer.enabled",
         true
+      );
+    });
+
+    it.each([
+      ["widgets", { enabled: true }],
+      ["widgetsSettings", { enabled: true }],
+    ])(
+      "should write the widgets.enabled container default from %s",
+      (type, payload) => {
+        const setBoolPref = jest.fn();
+        services.prefs.getDefaultBranch.mockReturnValue({
+          setBoolPref,
+          setStringPref: jest.fn(),
+        });
+        nimbusFeatures.newtabTrainhop.getAllEnrollments.mockReturnValue([
+          { meta: { isRollout: false }, value: { type, payload } },
+        ]);
+
+        feed.onTrainhopExperimentUpdated();
+
+        // Turns widgets back on in a region the region/locale gate leaves off.
+        expect(setBoolPref).toHaveBeenCalledWith("widgets.enabled", true);
+      }
+    );
+
+    it.each([
+      ["widgets", { privacyEnabled: true }],
+      ["widgetsSettings", { privacyEnabled: true }],
+    ])(
+      "should turn on the preffed-off privacy default from %s",
+      (type, payload) => {
+        const setBoolPref = jest.fn();
+        services.prefs.getDefaultBranch.mockReturnValue({
+          setBoolPref,
+          setStringPref: jest.fn(),
+        });
+        nimbusFeatures.newtabTrainhop.getAllEnrollments.mockReturnValue([
+          { meta: { isRollout: false }, value: { type, payload } },
+        ]);
+
+        feed.onTrainhopExperimentUpdated();
+
+        expect(setBoolPref).toHaveBeenCalledWith(
+          "widgets.privacy.enabled",
+          true
+        );
+      }
+    );
+
+    it.each([
+      ["widgetsSettings", { listsEnabled: false }],
+      ["widgets", { listsEnabled: false }],
+    ])(
+      "should write a widget's default enabled value from %s",
+      (type, payload) => {
+        const setBoolPref = jest.fn();
+        services.prefs.getDefaultBranch.mockReturnValue({
+          setBoolPref,
+          setStringPref: jest.fn(),
+        });
+        nimbusFeatures.newtabTrainhop.getAllEnrollments.mockReturnValue([
+          { meta: { isRollout: false }, value: { type, payload } },
+        ]);
+
+        feed.onTrainhopExperimentUpdated();
+
+        expect(setBoolPref).toHaveBeenCalledWith(
+          "widgets.lists.enabled",
+          false
+        );
+      }
+    );
+
+    it.each([
+      ["widgets", { stocksEnabled: true }],
+      ["widgetsSettings", { stocksEnabled: true }],
+    ])(
+      "should turn on the preffed-off stocks default from %s",
+      (type, payload) => {
+        const setBoolPref = jest.fn();
+        services.prefs.getDefaultBranch.mockReturnValue({
+          setBoolPref,
+          setStringPref: jest.fn(),
+        });
+        nimbusFeatures.newtabTrainhop.getAllEnrollments.mockReturnValue([
+          { meta: { isRollout: false }, value: { type, payload } },
+        ]);
+
+        feed.onTrainhopExperimentUpdated();
+
+        expect(setBoolPref).toHaveBeenCalledWith(
+          "widgets.stocks.enabled",
+          true
+        );
+      }
+    );
+
+    it.each([
+      ["widgets", { crosswordEnabled: true }],
+      ["widgetsSettings", { crosswordEnabled: true }],
+      ["widgetCrossword", { enabled: true }],
+    ])(
+      "should turn on the preffed-off crossword default from %s",
+      (type, payload) => {
+        const setBoolPref = jest.fn();
+        services.prefs.getDefaultBranch.mockReturnValue({
+          setBoolPref,
+          setStringPref: jest.fn(),
+        });
+        nimbusFeatures.newtabTrainhop.getAllEnrollments.mockReturnValue([
+          { meta: { isRollout: false }, value: { type, payload } },
+        ]);
+
+        feed.onTrainhopExperimentUpdated();
+
+        expect(setBoolPref).toHaveBeenCalledWith(
+          "widgets.crossword.enabled",
+          true
+        );
+      }
+    );
+
+    it.each([
+      ["widgets", { recentSearchesEnabled: true }],
+      ["widgetsSettings", { recentSearchesEnabled: true }],
+      ["widgetRecentSearches", { enabled: true }],
+    ])(
+      "should turn on the preffed-off recent searches default from %s",
+      (type, payload) => {
+        const setBoolPref = jest.fn();
+        services.prefs.getDefaultBranch.mockReturnValue({
+          setBoolPref,
+          setStringPref: jest.fn(),
+        });
+        nimbusFeatures.newtabTrainhop.getAllEnrollments.mockReturnValue([
+          { meta: { isRollout: false }, value: { type, payload } },
+        ]);
+
+        feed.onTrainhopExperimentUpdated();
+
+        expect(setBoolPref).toHaveBeenCalledWith(
+          "widgets.recentSearches.enabled",
+          true
+        );
+      }
+    );
+
+    it("should let widgetsSettings win over widgets for a widget default", () => {
+      const setBoolPref = jest.fn();
+      services.prefs.getDefaultBranch.mockReturnValue({
+        setBoolPref,
+        setStringPref: jest.fn(),
+      });
+      nimbusFeatures.newtabTrainhop.getAllEnrollments.mockReturnValue([
+        {
+          meta: { isRollout: false },
+          value: {
+            type: "multi-payload",
+            payload: [
+              { type: "widgets", payload: { listsEnabled: false } },
+              { type: "widgetsSettings", payload: { listsEnabled: true } },
+            ],
+          },
+        },
+      ]);
+
+      feed.onTrainhopExperimentUpdated();
+
+      expect(setBoolPref).toHaveBeenCalledWith("widgets.lists.enabled", true);
+      expect(setBoolPref).not.toHaveBeenCalledWith(
+        "widgets.lists.enabled",
+        false
+      );
+    });
+
+    it("should let widgetsSettings.enabled win over widgets.enabled", () => {
+      const setBoolPref = jest.fn();
+      services.prefs.getDefaultBranch.mockReturnValue({
+        setBoolPref,
+        setStringPref: jest.fn(),
+      });
+      nimbusFeatures.newtabTrainhop.getAllEnrollments.mockReturnValue([
+        {
+          meta: { isRollout: false },
+          value: {
+            type: "multi-payload",
+            payload: [
+              { type: "widgets", payload: { enabled: false } },
+              { type: "widgetsSettings", payload: { enabled: true } },
+            ],
+          },
+        },
+      ]);
+
+      feed.onTrainhopExperimentUpdated();
+
+      expect(setBoolPref).toHaveBeenCalledWith("widgets.enabled", true);
+      expect(setBoolPref).not.toHaveBeenCalledWith("widgets.enabled", false);
+    });
+
+    it("should not write widgets.enabled when no payload carries it", () => {
+      const setBoolPref = jest.fn();
+      services.prefs.getDefaultBranch.mockReturnValue({
+        setBoolPref,
+        setStringPref: jest.fn(),
+      });
+      nimbusFeatures.newtabTrainhop.getAllEnrollments.mockReturnValue([
+        {
+          meta: { isRollout: false },
+          value: {
+            type: "widgetsSettings",
+            payload: { listsEnabled: false },
+          },
+        },
+      ]);
+
+      feed.onTrainhopExperimentUpdated();
+
+      expect(setBoolPref).not.toHaveBeenCalledWith(
+        "widgets.enabled",
+        expect.anything()
       );
     });
 

@@ -241,6 +241,19 @@ const char* ToString(TrapMachineInsn tmi);
 // resulting FaultingCodeRange is ignored.  Hence the burden of
 // error/consistency checking is placed on the (infrequently used) access
 // routines rather than the constructors.
+//
+// In typical use, there are two reasons why FaultingCodeRange may fail
+// `isValid()`:
+//
+// * The generating assembler OOMd.  In this case, routines handling
+//   FaultingCodeRanges will ignore the ranges, and at the end of compilation
+//   the assembler's OOM flag is checked and as a result all code and metadata
+//   resulting from the compilation is discarded.
+//
+// * or, the FaultingCodeRange was deliberately created as invalid, using
+//   `FaultingCodeRange()`.  This can be used to signify to callers that "no
+//   trap required here / no stackmap required here" and is detected and handled
+//   accordingly.
 
 class FaultingCodeRange {
   // Definitions that summarise the range of instruction lengths in the code we
@@ -885,6 +898,11 @@ struct TrapData {
   // validly constructed, but has no debug frame yet.
   bool failedUnwindSignatureMismatch;
 
+  // Indicates whether wasm::StartUnwinding() actually unwound the frame within
+  // which the trap occurred. This is used to unwind the corresponding shadow
+  // stack entry in wasm::HandleExceptionWasm.
+  bool unwoundFrame;
+
   struct FaultInfo {
     uint32_t memoryIndex;
     uint64_t byteOffset;
@@ -991,6 +1009,7 @@ class CodeRange {
     DebugStub,                 // calls C++ to handle debug event
     RequestTierUpStub,         // calls C++ to request tier-2 compilation
     UpdateCallRefMetricsStub,  // updates a CallRefMetrics
+    ReturnCallTrampoline,      // returns through a return_call's hidden frame
 #ifdef ENABLE_WASM_JSPI
     ContBaseFrame,  // base frame for a cont stack
 #endif
@@ -1063,6 +1082,7 @@ class CodeRange {
   bool isUpdateCallRefMetricsStub() const {
     return kind() == UpdateCallRefMetricsStub;
   }
+  bool isReturnCallTrampoline() const { return kind() == ReturnCallTrampoline; }
   bool isThunk() const { return kind() == FarJumpIsland; }
 
   // Functions, import exits, debug stubs and JitEntry stubs have standard
@@ -1072,7 +1092,7 @@ class CodeRange {
   bool hasReturn() const {
     return isFunction() || isImportExit() || isDebugStub() ||
            isRequestTierUpStub() || isUpdateCallRefMetricsStub() ||
-           isJitEntry();
+           isReturnCallTrampoline() || isJitEntry();
   }
   uint32_t ret() const {
     MOZ_ASSERT(hasReturn());
@@ -1164,7 +1184,6 @@ enum class CallSiteKind : uint8_t {
   FuncRef,        // call using direct function reference
   FuncRefFast,    // call using direct function reference within same-instance
   ReturnFunc,     // return call to a specific function
-  ReturnStub,     // return call trampoline
   Symbolic,       // call to a single symbolic callee
   EnterFrame,     // call to a enter frame handler
   LeaveFrame,     // call to a leave frame handler
@@ -1244,11 +1263,10 @@ class CallSiteDesc {
   bool isImportCall() const { return kind() == CallSiteKind::Import; }
   bool isIndirectCall() const { return kind() == CallSiteKind::Indirect; }
   bool isFuncRefCall() const { return kind() == CallSiteKind::FuncRef; }
-  bool isReturnStub() const { return kind() == CallSiteKind::ReturnStub; }
   bool isStackSwitch() const { return kind() == CallSiteKind::StackSwitch; }
   bool mightBeCrossInstance() const {
     return isImportCall() || isIndirectCall() || isFuncRefCall() ||
-           isReturnStub() || isStackSwitch();
+           isStackSwitch();
   }
 };
 

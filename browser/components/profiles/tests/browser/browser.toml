@@ -79,8 +79,6 @@ skip-if = [
 ["browser_update_profile_on_window_switch.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1948374
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1948374
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1948374
   "os == 'win' && os_version == '11.26100' && opt", # Bug 1948374
   "os == 'win' && os_version == '11.26200' && opt", # Bug 1948374
 ]

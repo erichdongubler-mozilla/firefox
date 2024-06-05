@@ -12,6 +12,8 @@ support-files = [
   "iframe_main_bug1022229.html",
   "iframe_sandbox_bug1022229.html",
   "file_empty.html",
+  "file_domcontentloaded_document_open.html",
+  "file_domcontentloaded_terminated_parse.html",
   "iframe_postMessage_solidus.html",
   "file_setname.html",
   "345339_iframe.html",
@@ -352,6 +354,10 @@ skip-if = [
   "http3",
 ]
 
+["test_domcontentloaded_document_open.html"]
+
+["test_domcontentloaded_terminated_parse.html"]
+
 ["test_domparser_null_char.html"]
 
 ["test_domparsing.html"]
@@ -569,6 +575,8 @@ skip-if = [
 
 ["test_nodelist_holes.html"]
 
+["test_node_selected_flag_after_splitText.html"]
+
 ["test_omt_eager_baseline.html"]
 skip-if = [
   "ccov",
@@ -646,6 +654,8 @@ support-files = ["file_sandbox_and_document_uri.html"]
 
 ["test_selection_change_null_presshell.html"]
 support-files = ["file_selection_change_null_presshell.html"]
+
+["test_selection_cross_shadow_boundary_offset_after_mutation.html"]
 
 ["test_setInterval_from_start.html"]
 

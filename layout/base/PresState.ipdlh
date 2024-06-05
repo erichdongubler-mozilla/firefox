@@ -48,8 +48,6 @@ struct PresState {
   // For frames where layout and visual viewport aren't one and the same thing,
   // scrollState will store the position of the *visual* viewport.
   nsPoint scrollState;
-  uint32_t scrollEventGeneration;
-  uint32_t scrollEndEventGeneration;
   float resolution;
   bool allowScrollOriginDowngrade;
   bool disabledSet;

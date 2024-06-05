@@ -501,7 +501,7 @@ export class InferredPersonalizationFeed {
   /**
    * Deletes older data from a table
    *
-   * @param {int} preserveAgeDays Number of days to preserve
+   * @param {number} preserveAgeDays Number of days to preserve
    * @param {*} table Table to clear
    */
   async clearOldDataOfTable(
@@ -526,7 +526,7 @@ export class InferredPersonalizationFeed {
   /**
    * Deletes older data from impression and click tables
    *
-   * @param {int} preserveAgeDays Number of days to preserve (defaults to 6 months)
+   * @param {number} preserveAgeDays Number of days to preserve (defaults to 6 months)
    */
   async clearOldData(preserveAgeDays) {
     await this.clearOldDataOfTable(preserveAgeDays, IMPRESSION_TABLE);

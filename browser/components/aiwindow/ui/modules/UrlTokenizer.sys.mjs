@@ -130,3 +130,28 @@ export class UrlTokenizer {
     return tokenFinal;
   }
 }
+
+/**
+ * Expands URL tokens (e.g. §url_token: GITHUB_COM_1§) in text using the provided
+ * mapping. Any token not found in the mapping is left unchanged.
+ *
+ * @param {string} text
+ * @param {Map<string, string>} tokenToUrl - A tokenizer's `tokenToUrl` map.
+ * @returns {string}
+ */
+export function expandUrlTokens(text, tokenToUrl) {
+  return text.replace(/§url_token:\s*([A-Z0-9_]+_\d+)§/g, (match, token) => {
+    return tokenToUrl.get(token) ?? match;
+  });
+}
+
+/**
+ * Strips URL tokens that remain after expansion.
+ * Any remaining tokens at this point were hallucinated by the model.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function stripUnresolvedUrlTokens(text) {
+  return text.replace(/§url_token:\s*[A-Z0-9_]+_\d+§/g, "");
+}

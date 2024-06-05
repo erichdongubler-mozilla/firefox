@@ -30,7 +30,6 @@ const HEADING_LEVEL_TEMPLATES = {
  * @property {boolean} disabled - Whether the fieldset and its children are disabled.
  * @property {string} iconSrc - The src for an optional icon.
  * @property {"beta" | "new" | undefined} badge - Include a badge of this type with matching text.
- * @property {string | undefined} role - Role of the inner fieldset element.
  */
 export default class MozFieldset extends MozLitElement {
   static properties = {
@@ -40,6 +39,7 @@ export default class MozFieldset extends MozLitElement {
     ariaLabel: { type: String, fluent: true, mapped: true },
     ariaOrientation: { type: String, mapped: true },
     role: { type: String, mapped: true },
+    inputsRole: { type: String, state: true },
     headingLevel: { type: Number },
     disabled: { type: Boolean, reflect: true },
     iconSrc: { type: String },
@@ -69,6 +69,22 @@ export default class MozFieldset extends MozLitElement {
 
     /**@type {"beta" | "new" | undefined} */
     this.badge = undefined;
+
+    /**
+     * Role of the inner fieldset element.
+     *
+     * @type {ARIAMixin['role']}
+     */
+    this.role = null;
+
+    /**
+     * When set, the #inputs container receives this role plus the accessible
+     * name, description, orientation, and disabled state, instead of the inner
+     * fieldset.
+     *
+     * @type {string | undefined}
+     */
+    this.inputsRole = undefined;
   }
 
   updated(changedProperties) {
@@ -135,7 +151,7 @@ export default class MozFieldset extends MozLitElement {
   legendTemplate() {
     let label =
       HEADING_LEVEL_TEMPLATES[this.headingLevel]?.(this.label) || this.label;
-    return html`<legend part="label">
+    return html`<legend id="label" part="label">
       ${this.iconTemplate()}${label}${this.badgeTemplate()}
     </legend>`;
   }
@@ -165,6 +181,9 @@ export default class MozFieldset extends MozLitElement {
   }
 
   render() {
+    const hasInputsRole = Boolean(this.inputsRole);
+    const descriptionId = this.description ? "description" : undefined;
+
     return html`
       <link
         rel="stylesheet"
@@ -172,17 +191,38 @@ export default class MozFieldset extends MozLitElement {
       />
       <fieldset
         ?disabled=${this.disabled}
-        aria-label=${ifDefined(this.ariaLabel)}
+        role=${ifDefined(hasInputsRole ? "presentation" : this.role)}
+        aria-label=${ifDefined(!hasInputsRole ? this.ariaLabel : undefined)}
         aria-describedby=${ifDefined(
-          this.description ? "description" : undefined
+          !hasInputsRole ? descriptionId : undefined
         )}
-        aria-orientation=${ifDefined(this.ariaOrientation)}
-        role=${ifDefined(this.role)}
+        aria-orientation=${ifDefined(
+          !hasInputsRole ? this.ariaOrientation : undefined
+        )}
       >
         ${this.label ? this.legendTemplate() : ""}
         ${!this.description ? this.supportPageTemplate() : ""}
         ${this.descriptionTemplate()}
-        <div id="inputs" part="inputs">
+        <div
+          id="inputs"
+          part="inputs"
+          role=${ifDefined(this.inputsRole)}
+          aria-labelledby=${ifDefined(
+            hasInputsRole && this.label ? "label" : undefined
+          )}
+          aria-label=${ifDefined(
+            hasInputsRole && !this.label ? this.ariaLabel : undefined
+          )}
+          aria-describedby=${ifDefined(
+            hasInputsRole ? descriptionId : undefined
+          )}
+          aria-orientation=${ifDefined(
+            hasInputsRole ? this.ariaOrientation : undefined
+          )}
+          aria-disabled=${ifDefined(
+            hasInputsRole && this.disabled ? "true" : undefined
+          )}
+        >
           <slot></slot>
         </div>
       </fieldset>

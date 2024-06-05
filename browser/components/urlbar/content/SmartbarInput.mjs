@@ -8,11 +8,21 @@ import { UrlbarEventBufferer } from "chrome://browser/content/urlbar/UrlbarEvent
 import { UrlbarView } from "chrome://browser/content/urlbar/UrlbarView.mjs";
 import {
   createEditor,
+  getAgentCommandId,
   isAgentCommand,
 } from "chrome://browser/content/urlbar/SmartbarInputUtils.mjs";
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
-import * as UrlbarContentUtils from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
+import { UrlbarContentUtils } from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
+import {
+  CONTEXT_MENTION_TYPE,
+  getContextMentionKey,
+} from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs";
+
+/**
+ * @import {ContextMentionType} from "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs"
+ * @import {TabGroupColor} from "chrome://browser/content/tabbrowser/tabgroup.mjs"
+ */
 
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-smartbar-glow.mjs";
@@ -98,11 +108,11 @@ let getBoundsWithoutFlushing = element =>
 let px = number => number.toFixed(2) + "px";
 
 /**
- * A website context entry used to render website chips.
+ * A tab used as chat context.
  *
- * @typedef {object} ContextWebsite
- * @property {string} type
- *   The source kind; tab|currentTab
+ * @typedef {object} ContextWebsiteTab
+ * @property {Exclude<ContextMentionType, "tabGroup">} type
+ *   The source kind.
  * @property {string} url
  *   URL of the website.
  * @property {string} label
@@ -112,7 +122,27 @@ let px = number => number.toFixed(2) + "px";
  *   via `getIconForUrl`.
  * @property {boolean} [historyDeleted]
  *   Whether the URL has been removed from browsing history.
+ * @property {string} [groupId]
+ *   Id of the tab group the tab was expanded from.
+ * @property {string} [groupLabel]
+ *   Label of that tab group.
  */
+
+/**
+ * An open tab group used as chat context.
+ *
+ * @typedef {object} ContextTabGroup
+ * @property {typeof CONTEXT_MENTION_TYPE.TAB_GROUP} type
+ *   The source kind.
+ * @property {string} groupId
+ *   Id of the tab group.
+ * @property {string} label
+ *   Label of the tab group.
+ * @property {TabGroupColor} [color]
+ *   Unset once the group is closed.
+ */
+
+/** @typedef {ContextWebsiteTab | ContextTabGroup} ContextWebsite */
 
 const MAX_CONTEXT_WEBSITES = 5;
 
@@ -185,14 +215,10 @@ ${
             context=""
             role="group"
             tooltip="aHTMLTooltip">
-        <html:div class="urlbarView-body-outer">
-          <html:div class="urlbarView-body-inner">
-            <html:div id="urlbar-results"
-                      class="urlbarView-results"
-                      role="listbox"/>
-          </html:div>
-        </html:div>
-        <html:panel-list class="urlbarView-result-menu"></html:panel-list>
+        <html:div id="urlbar-results"
+                  class="urlbarView-results"
+                  role="listbox"/>
+        <html:panel-list class="urlbarView-result-menu" accesskey-conflicts-bug="2073892"></html:panel-list>
         <html:moz-urlbar-slot name="search-one-offs" />
       </html:div>
       <html:div class="smartbar-button-container">
@@ -1559,8 +1585,8 @@ ${
 
     // Handle website chip remove events.
     if (event.type === "ai-website-chip:remove") {
-      const { url } = /** @type {CustomEvent} */ (event).detail;
-      this.removeContextMention(url);
+      const { url, groupId } = /** @type {CustomEvent} */ (event).detail;
+      this.removeContextMention(groupId ?? url);
       const { chat_id, message_seq } = this.conversationTelemetryInfo;
       Glean.smartWindow.removeTab.record({
         chat_id,
@@ -1753,6 +1779,11 @@ ${
     }
 
     this.smartbarAction = event.detail.action;
+    if (!this.focused) {
+      // The CTA can be clicked when the input is not focused:
+      // Start an engagement session if none is currently open.
+      this.controller.engagementEvent.start(event, null, this.value);
+    }
     this.handleNavigation({ event });
   }
 
@@ -2071,6 +2102,17 @@ ${
     // Submit it to chat so the agent router handles it rather
     // than loading it as a file path (e.g. "file:///monitor")
     if (this.#isAgentCommand) {
+      const commandId = getAgentCommandId(this.untrimmedValue);
+      if (commandId) {
+        const { chat_id, message_seq } = this.conversationTelemetryInfo;
+        Glean.smartWindow.agentCommandSelect.record({
+          agent: commandId,
+          chat_id,
+          location: this.sapLocation,
+          message_seq: String(message_seq),
+          source: "manual",
+        });
+      }
       this.submitChat(event, this.untrimmedValue);
       return;
     }
@@ -2317,10 +2359,11 @@ ${
         dueToTabSwitch: true,
         hideSearchTerms: true,
       });
-    } else {
+    } else if (!this.#isSmartbarMode) {
+      // The smartbar has no URI to revert to.
       this.value = "";
     }
-    if (this.value && this.focused) {
+    if (this.#isAddressbar && this.value && this.focused) {
       this.select();
     }
   }
@@ -3753,10 +3796,8 @@ ${
   }
 
   get focused() {
-    return (
-      this.document.activeElement ==
-      (this.#smartbarInputController?.input ?? this.inputField)
-    );
+    const input = this.#smartbarInputController?.input ?? this.inputField;
+    return !!input && input.getRootNode().activeElement === input;
   }
 
   get goButton() {
@@ -5486,6 +5527,23 @@ ${
         // breakout-extend once it's open keeps it from showing (bug 2037468).
         this.view.close();
 
+        // The edit context menu is shared with other inputs in chrome, and
+        // only the items we add here conflict, so mark it for this opening
+        // alone, removing the marker again when closed.
+        let popup = this.#editContextMenu.popup;
+        popup.setAttribute("accesskey-conflicts-bug", "2073891");
+        popup.addEventListener(
+          "popuphidden",
+          () => {
+            // An opening that got superseded before it finished still fires
+            // popuphidden while the menu is open.
+            if (popup.state == "closed") {
+              popup.removeAttribute("accesskey-conflicts-bug");
+            }
+          },
+          { once: true }
+        );
+
         if (this.#pasteAndGoEnabled()) {
           pasteAndGo.removeAttribute("disabled");
         } else {
@@ -6066,6 +6124,9 @@ ${
    *  Urlbar state, and whether the selection is empty.
    */
   #maybeSelectAll() {
+    if (this.#isSmartbarMode) {
+      return;
+    }
     if (
       !this._preventClickSelectsAll &&
       this.#compositionState != UrlbarShared.COMPOSITION.COMPOSING &&
@@ -6309,7 +6370,7 @@ ${
       case this: {
         this._mousedownOnUrlbarDescendant = true;
         if (
-          event.composedTarget != this.inputField &&
+          !this.#isInsideContainer(event.composedTarget, this.inputField) &&
           event.composedTarget != this._inputContainer
         ) {
           if (
@@ -6329,7 +6390,7 @@ ${
         // Keep the focus status, since the attribute may be changed
         // upon calling this.focus().
         const hasFocus = this.hasAttribute("focused");
-        if (event.composedTarget != this.inputField) {
+        if (!this.#isInsideContainer(event.composedTarget, this.inputField)) {
           this.focus();
         }
 
@@ -6340,7 +6401,7 @@ ${
 
         // Clear any previous selection unless we are focused, to ensure it
         // doesn't affect drag selection.
-        if (this.focusedViaMousedown) {
+        if (this.focusedViaMousedown && !this.#isSmartbarMode) {
           this.setSelectionRange(0, 0);
         }
 
@@ -6403,6 +6464,10 @@ ${
       this.parentController.recordAutofillDeletion();
     }
 
+    const previousCommandId = this.#isAgentCommand
+      ? getAgentCommandId(this.untrimmedValue)
+      : null;
+
     let value = this.value;
     this.valueIsTyped = true;
     this._untrimmedValue = value;
@@ -6448,6 +6513,17 @@ ${
         state.persist.shouldPersist = false;
         this.removeAttribute("persistsearchterms");
       }
+    }
+
+    if (previousCommandId && event.inputType && !this.#isAgentCommand) {
+      const { chat_id, message_seq } = this.conversationTelemetryInfo;
+      Glean.smartWindow.agentCommandRemove.record({
+        agent: previousCommandId,
+        chat_id,
+        location: this.sapLocation,
+        message_seq: String(message_seq),
+        source: "manual",
+      });
     }
 
     // Suppress queries when there are inline mentions or command.
@@ -7076,7 +7152,10 @@ ${
 
     event.dataTransfer.setData("text/x-moz-url", `${href}\n${title}`);
     event.dataTransfer.setData("text/plain", href);
-    event.dataTransfer.setData("text/html", `<a href="${href}">${title}</a>`);
+    event.dataTransfer.setData(
+      "text/html",
+      `<a href="${UrlbarShared.escapeHtmlEntities(href)}">${UrlbarShared.escapeHtmlEntities(title)}</a>`
+    );
     event.dataTransfer.effectAllowed = "copyLink";
     event.stopPropagation();
   }
@@ -7328,7 +7407,10 @@ ${
 
     const seen = new Set();
     return candidates
-      .filter(site => site.url && !seen.has(site.url) && seen.add(site.url))
+      .filter(site => {
+        const key = getContextMentionKey(site);
+        return key && !seen.has(key) && seen.add(key);
+      })
       .slice(0, MAX_CONTEXT_WEBSITES);
   }
 
@@ -7416,9 +7498,10 @@ ${
    * @param {ContextWebsite} site
    */
   #ensureWebsiteIcon(site) {
-    if (!site.iconSrc) {
-      site.iconSrc = site.url ? UrlbarShared.getIconForUrl(site.url) : "";
+    if (site.type == CONTEXT_MENTION_TYPE.TAB_GROUP || site.iconSrc) {
+      return;
     }
+    site.iconSrc = site.url ? UrlbarShared.getIconForUrl(site.url) : "";
   }
 
   // Cache the container reference to avoid repeated querySelector calls
@@ -7456,23 +7539,20 @@ ${
   }
 
   /**
-   * Add a website to the context chips.
+   * Add a tab or tab group to the context chips, once per mention key.
    *
-   * @param {object} mention - The mention to add
-   * @param {string} mention.type - The type of context
-   * @param {string} mention.url - The mention URL
-   * @param {string} mention.label - The mention label
-   * @param {string} [mention.iconSrc] - The mention icon source
+   * @param {ContextWebsite} mention
    */
   addContextMention(mention) {
-    const hasMention = this.#contextWebsites.some(
-      site => site.url === mention.url
-    );
-    if (hasMention) {
+    const key = getContextMentionKey(mention);
+    if (
+      !key ||
+      this.#contextWebsites.some(site => getContextMentionKey(site) == key)
+    ) {
       return;
     }
 
-    if (this.#removedImplicitTabUrl == mention.url) {
+    if (mention.url && this.#removedImplicitTabUrl == mention.url) {
       this.#removedImplicitTabUrl = null;
       this.#contextWebsites = [mention, ...this.#contextWebsites];
     } else {
@@ -7489,19 +7569,22 @@ ${
   /**
    * Remove a context mention.
    *
-   * @param {string} url - The URL of the mention
+   * @param {string} urlOrGroupId - Tab URL or tab group id
    */
-  removeContextMention(url) {
+  removeContextMention(urlOrGroupId) {
     const originalLength = this.#contextWebsites.length;
-    this.#contextWebsites = this.#contextWebsites.filter(
-      site => site.url !== url
+    this.#contextWebsites = this.#contextWebsites.filter(site =>
+      site.type == CONTEXT_MENTION_TYPE.TAB_GROUP
+        ? site.groupId != urlOrGroupId
+        : site.url != urlOrGroupId
     );
 
     const isCurrentTab =
       this.#isSidebarMode &&
-      this.window.gBrowser.selectedTab.linkedBrowser.currentURI?.spec == url;
+      this.window.gBrowser.selectedTab.linkedBrowser.currentURI?.spec ==
+        urlOrGroupId;
     if (isCurrentTab) {
-      this.#removedImplicitTabUrl = url;
+      this.#removedImplicitTabUrl = urlOrGroupId;
     }
 
     if (this.#contextWebsites.length !== originalLength || isCurrentTab) {

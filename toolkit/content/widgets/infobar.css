@@ -73,7 +73,6 @@
 @media -moz-pref("browser.nova.enabled") {
   :host(.infobar) {
     --info-bar-background-color: transparent;
-    --info-bar-border-color: var(--chrome-content-separator-color);
     --info-bar-box-shadow: none;
     --message-bar-icon-container-padding: 0px;
     --message-bar-icon-container-align-items: center;

@@ -31,7 +31,7 @@ class AutoContainsBlendModeCapturer;
 namespace mozilla {
 struct nsDisplayListCollection;
 class PresShell;
-class PresState;
+struct ScrollState;
 enum class PhysicalAxis : uint8_t;
 enum class StyleScrollbarWidth : uint8_t;
 class ScrollContainerFrame;
@@ -154,6 +154,8 @@ class ScrollContainerFrame : public nsContainerFrame,
   void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
   void Destroy(DestroyContext&) override;
+  void Init(nsIContent*, nsContainerFrame* aParent,
+            nsIFrame* aPrevInFlow) override;
 
   ScrollContainerFrame* GetScrollTargetFrame() const final {
     return const_cast<ScrollContainerFrame*>(this);
@@ -950,9 +952,10 @@ class ScrollContainerFrame : public nsContainerFrame,
   bool ReflowFinished() override;
   void ReflowCallbackCanceled() final;
 
-  UniquePtr<PresState> SaveState(CaptureStateFlags);
-  void RestoreState(PresState*);
-  void SaveState(CaptureStateFlags, nsILayoutHistoryState*);
+  // State save / restoration.
+  Maybe<ScrollState> SaveState();
+  void RestoreState(const ScrollState& aState);
+  void SaveState(nsILayoutHistoryState*);
   void RestoreState(nsILayoutHistoryState*);
 
   // nsIScrollbarMediator

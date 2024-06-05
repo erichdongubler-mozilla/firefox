@@ -237,7 +237,6 @@ support-files = ["captureStream_common.js"]
 support-files = ["captureStream_common.js"]
 skip-if = [
   "os == 'android'", # Bug 1752351
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019625
 ]
 
 ["test_drawImageIncomplete.html"]

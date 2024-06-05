@@ -5,6 +5,7 @@
 package org.mozilla.fenix.utils
 
 import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import androidx.core.content.edit
 import io.mockk.every
 import io.mockk.spyk
@@ -38,6 +39,7 @@ import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 
 private const val TOU_VERSION = 5
 
@@ -329,6 +331,18 @@ class SettingsTest {
 
         // Then
         assertFalse(settings.shouldAutofillLogins)
+    }
+
+    @Test
+    fun `GIVEN Android Automotive WHEN reading the autofill settings THEN they are all disabled by default`() {
+        shadowOf(testContext.packageManager).setSystemFeature(PackageManager.FEATURE_AUTOMOTIVE, true)
+        val automotiveSettings = Settings(testContext)
+
+        assertFalse(automotiveSettings.isAutofillSupported)
+        assertFalse(automotiveSettings.shouldPromptToSaveLogins)
+        assertFalse(automotiveSettings.shouldAutofillLogins)
+        assertFalse(automotiveSettings.shouldAutofillCreditCardDetails)
+        assertFalse(automotiveSettings.shouldAutofillAddressDetails)
     }
 
     @Test
@@ -1090,6 +1104,37 @@ class SettingsTest {
     }
 
     @Test
+    fun `GIVEN the tab strip is enabled at the top WHEN checking if it should be shown at the top THEN return true`() {
+        settings.isTabStripEnabled = true
+        settings.shouldUseBottomTabStrip = false
+
+        assertTrue(settings.shouldShowTabStripAtTop)
+        assertFalse(settings.shouldShowTabStripAtBottom)
+    }
+
+    @Test
+    fun `GIVEN the tab strip is enabled at the bottom WHEN checking if it should be shown at the bottom THEN return true`() {
+        settings.isTabStripEnabled = true
+        settings.shouldUseBottomTabStrip = true
+
+        assertFalse(settings.shouldShowTabStripAtTop)
+        assertTrue(settings.shouldShowTabStripAtBottom)
+    }
+
+    @Test
+    fun `GIVEN the tab strip is disabled WHEN checking where it should be shown THEN return false`() {
+        settings.isTabStripEnabled = false
+
+        settings.shouldUseBottomTabStrip = false
+        assertFalse(settings.shouldShowTabStripAtTop)
+        assertFalse(settings.shouldShowTabStripAtBottom)
+
+        settings.shouldUseBottomTabStrip = true
+        assertFalse(settings.shouldShowTabStripAtTop)
+        assertFalse(settings.shouldShowTabStripAtBottom)
+    }
+
+    @Test
     fun `GIVEN top composable toolbar is enabled WHEN querying the toolbar height THEN get the height of the composable toolbar`() {
         val settings = spyk(settings)
         every { settings.toolbarPosition } returns ToolbarPosition.TOP
@@ -1458,5 +1503,31 @@ class SettingsTest {
         settings.recordLastBrowseActivity()
 
         assertEquals(fixedTime, settings.lastBrowseActivity)
+    }
+
+    @Test
+    fun `GIVEN a fresh profile WHEN reading the Power Saving Mode preferences THEN both are false`() {
+        assertFalse(settings.powerSavingModeAutoEnabled)
+        assertFalse(settings.powerSavingModeManuallyEnabled)
+    }
+
+    @Test
+    fun `GIVEN Power Saving Mode is enabled manually WHEN it is set to follow the OS THEN it is no longer enabled manually`() {
+        settings.powerSavingModeManuallyEnabled = true
+
+        settings.powerSavingModeAutoEnabled = true
+
+        assertTrue(settings.powerSavingModeAutoEnabled)
+        assertFalse(settings.powerSavingModeManuallyEnabled)
+    }
+
+    @Test
+    fun `GIVEN Power Saving Mode follows the OS WHEN it is enabled manually THEN it no longer follows the OS`() {
+        settings.powerSavingModeAutoEnabled = true
+
+        settings.powerSavingModeManuallyEnabled = true
+
+        assertTrue(settings.powerSavingModeManuallyEnabled)
+        assertFalse(settings.powerSavingModeAutoEnabled)
     }
 }

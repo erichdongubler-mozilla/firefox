@@ -99,15 +99,16 @@ use crate::image_tiling::{self, Repetition};
 use crate::border::BorderRadiusAu;
 use crate::renderer::GpuBufferBuilderF;
 use crate::spatial_tree::{SceneSpatialTree, SpatialTree, SpatialNodeIndex};
+use crate::surface::SurfaceInfo;
 use crate::ellipse::Ellipse;
 use crate::intern;
 use crate::internal_types::{FastHashMap, FastHashSet};
 use crate::prim_store::{VisibleMaskImageTile};
+use crate::quad_clip::{QuadClipStack, QuadMaskTile};
 use crate::prim_store::{ClipSnap, RectKey, PolygonKey};
 use crate::render_task::RenderTask;
 use crate::render_task_graph::RenderTaskGraphBuilder;
 use crate::resource_cache::{ImageRequest, ResourceCache};
-use crate::scene_builder_thread::Interners;
 use crate::space::{SpaceMapper, SpaceSnapper};
 use crate::util::{extract_inner_rect_safe, project_rect, MatrixHelpers, MaxRect, ScaleOffset};
 use euclid::approxeq::ApproxEq;
@@ -730,12 +731,12 @@ impl ClipTreeBuilder {
     fn has_complex_clips_impl(
         &self,
         clip_chain_index: usize,
-        interners: &Interners,
+        clips: &SceneClipStore,
     ) -> bool {
         let clip_chain = &self.clip_chains[clip_chain_index];
 
         for clip_entry in &clip_chain.clips {
-            let clip_info = &interners.clip[clip_entry.handle];
+            let clip_info = &clips[clip_entry.handle];
 
             if let ClipNodeKind::Complex = clip_info.key.kind.node_kind() {
                 return true;
@@ -743,7 +744,7 @@ impl ClipTreeBuilder {
         }
 
         match clip_chain.parent {
-            Some(parent) => self.has_complex_clips_impl(parent, interners),
+            Some(parent) => self.has_complex_clips_impl(parent, clips),
             None => false,
         }
     }
@@ -752,7 +753,7 @@ impl ClipTreeBuilder {
     pub fn clip_chain_has_complex_clips(
         &self,
         clip_chain_id: ClipChainId,
-        interners: &Interners,
+        clips: &SceneClipStore,
     ) -> bool {
         let clip_chain_index = match self.clip_chain_map.get(&clip_chain_id) {
             Some(index) => *index,
@@ -762,7 +763,7 @@ impl ClipTreeBuilder {
                 self.clip_chain_map.len(),
             ),
         };
-        self.has_complex_clips_impl(clip_chain_index, interners)
+        self.has_complex_clips_impl(clip_chain_index, clips)
     }
 
     /// Check if all complex clips in a clip chain are fixed-position rounded
@@ -772,7 +773,7 @@ impl ClipTreeBuilder {
     pub fn clip_chain_complex_clips_are_promotable(
         &self,
         clip_chain_id: ClipChainId,
-        interners: &Interners,
+        clips: &SceneClipStore,
         spatial_tree: &SceneSpatialTree,
     ) -> bool {
         let clip_chain_index = match self.clip_chain_map.get(&clip_chain_id) {
@@ -783,13 +784,13 @@ impl ClipTreeBuilder {
                 self.clip_chain_map.len(),
             ),
         };
-        self.complex_clips_are_promotable_impl(clip_chain_index, interners, spatial_tree)
+        self.complex_clips_are_promotable_impl(clip_chain_index, clips, spatial_tree)
     }
 
     fn complex_clips_are_promotable_impl(
         &self,
         clip_chain_index: usize,
-        interners: &Interners,
+        clips: &SceneClipStore,
         spatial_tree: &SceneSpatialTree,
     ) -> bool {
         let mut index = clip_chain_index;
@@ -798,7 +799,7 @@ impl ClipTreeBuilder {
             let clip_chain = &self.clip_chains[index];
 
             for clip_entry in &clip_chain.clips {
-                let clip_info = &interners.clip[clip_entry.handle];
+                let clip_info = &clips[clip_entry.handle];
 
                 match clip_info.key.kind {
                     ClipItemKeyKind::Rectangle(ClipMode::Clip) => {}
@@ -822,13 +823,13 @@ impl ClipTreeBuilder {
     pub fn clip_node_has_complex_clips(
         &self,
         clip_node_id: ClipNodeId,
-        interners: &Interners,
+        clips: &SceneClipStore,
     ) -> bool {
         let mut current = clip_node_id;
 
         while current != ClipNodeId::NONE {
             let node = &self.tree.nodes[current.0 as usize];
-            let clip_info = &interners.clip[node.handle];
+            let clip_info = &clips[node.handle];
 
             if let ClipNodeKind::Complex = clip_info.key.kind.node_kind() {
                 return true;
@@ -923,6 +924,10 @@ pub enum ClipIntern {}
 pub type ClipDataStore = intern::DataStore<ClipIntern>;
 pub type ClipDataHandle = intern::Handle<ClipIntern>;
 
+/// The scene builder's view of the interned clips, which clip chain building,
+/// slice partitioning and hit testing read for the clip's key.
+pub type SceneClipStore = intern::Interner<ClipIntern>;
+
 /// Helper to identify simple clips (normal rects) from other kinds of clips,
 /// which can often be handled via fast code paths.
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -974,10 +979,10 @@ impl From<ClipItemKey> for ClipNode {
                     mode,
                 }
             }
-            ClipItemKeyKind::ImageMask(image, polygon_handle) => {
+            // The polygon is only read by the hit tester, at scene build.
+            ClipItemKeyKind::ImageMask(image, _) => {
                 ClipItemKind::Image {
                     image,
-                    polygon_handle,
                 }
             }
         };
@@ -1369,6 +1374,88 @@ impl ClipStore {
         index: u32,
     ) -> &ClipNodeInstance {
         &self.clip_node_instances[(node_range.first + index) as usize]
+    }
+
+    /// Resolve a clip chain instance into a `QuadClipStack`, which the quad path
+    /// consumes without reaching back into the clip store or the interner.
+    ///
+    /// `surface` is the surface the primitive is drawn into. The caller picks
+    /// it because the clip store has no way to: it is the destination surface,
+    /// not the one the primitive's own picture belongs to.
+    pub fn fill_quad_clips(
+        &self,
+        dest: &mut QuadClipStack,
+        clip_chain: &ClipChainInstance,
+        surface: &SurfaceInfo,
+        interned_clips: &ClipDataStore,
+    ) {
+        self.fill_quad_clips_from_range(dest, clip_chain.clips_range, interned_clips);
+
+        dest.set_bounds(
+            clip_chain.local_clip_rect,
+            surface.map_to_device_rect(&clip_chain.pic_coverage_rect),
+            surface.clipping_rect,
+            clip_chain.needs_mask,
+        );
+    }
+
+    /// Resolve a range of clip node instances into a `QuadClipStack`, leaving the
+    /// stack's bounds alone. For the mask paths that assemble an ad-hoc range
+    /// rather than consuming a whole clip chain.
+    pub fn fill_quad_clips_from_range(
+        &self,
+        dest: &mut QuadClipStack,
+        range: ClipNodeRange,
+        interned_clips: &ClipDataStore,
+    ) {
+        dest.clear();
+
+        for instance in &self.clip_node_instances[range.to_range()] {
+            self.push_quad_clip(dest, instance, interned_clips);
+        }
+    }
+
+    /// Resolve a single clip node instance and append it to a `QuadClipStack`.
+    /// For the mask paths that pick out a subset of a clip chain.
+    pub fn push_quad_clip(
+        &self,
+        dest: &mut QuadClipStack,
+        instance: &ClipNodeInstance,
+        interned_clips: &ClipDataStore,
+    ) {
+        let uid = instance.handle.uid().get_uid();
+
+        match interned_clips[instance.handle].item.kind {
+            ClipItemKind::Rectangle { mode } => {
+                dest.push_rect(
+                    instance.clip_rect,
+                    mode,
+                    instance.spatial_node_index,
+                    uid,
+                );
+            }
+            ClipItemKind::RoundedRectangle { radius, inset, mode } => {
+                dest.push_rounded_rect(
+                    instance.clip_rect,
+                    radius,
+                    inset,
+                    mode,
+                    instance.spatial_node_index,
+                    uid,
+                );
+            }
+            ClipItemKind::Image { .. } => {
+                dest.push_mask(
+                    instance.clip_rect,
+                    instance.spatial_node_index,
+                    uid,
+                    self.visible_mask_tiles(instance).iter().map(|tile| QuadMaskTile {
+                        rect: tile.tile_rect,
+                        task_id: tile.task_id,
+                    }),
+                );
+            }
+        }
     }
 
     /// Setup the active clip chains for building a clip chain instance.
@@ -1777,7 +1864,6 @@ pub enum ClipItemKind {
     },
     Image {
         image: ImageKey,
-        polygon_handle: Option<PolygonDataHandle>,
     },
 }
 
@@ -2385,7 +2471,6 @@ mod tests {
         assert_eq!(rad.top_left.width, 0.0);
         assert_eq!(rad.bottom_right.width, 0.0);
     }
-
 
     #[test]
     fn test_intersect_linux_window_corners() {

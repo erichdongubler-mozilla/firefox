@@ -51,6 +51,8 @@ class PKCS11ModuleChild final : public PPKCS11ModuleChild {
 
   ipc::IPCResult RecvCancelProtectedAuth(uint64_t uuid);
 
+  ipc::IPCResult RecvFindCertificates(FindCertificatesResolver&& aResolver);
+
   // Called by RemotePKCS11PasswordPrompt to prompt for a password in the
   // parent and then return it to NSS.
   char* PromptForPassword(PK11SlotInfo* slot);

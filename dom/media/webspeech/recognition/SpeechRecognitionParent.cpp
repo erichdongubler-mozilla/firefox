@@ -85,99 +85,70 @@ namespace {
 
 // Interval covering one parakeet_capi_stream_feed() call: how much audio went
 // in, how much was still waiting behind it, and what came out.
-struct ParakeetFeedMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("ParakeetFeed");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   double aFedMs, double aQueuedMs,
-                                   double aTotalFedMs, int32_t aWordsCommitted,
-                                   bool aEndOfUtterance) {
-    aWriter.DoubleProperty("fedMs", aFedMs);
-    aWriter.DoubleProperty("queuedMs", aQueuedMs);
-    aWriter.DoubleProperty("totalFedMs", aTotalFedMs);
-    aWriter.IntProperty("wordsCommitted", aWordsCommitted);
-    aWriter.BoolProperty("endOfUtterance", aEndOfUtterance);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.SetTableLabel(
-        "{marker.name} - fed {marker.data.fedMs}, queued "
-        "{marker.data.queuedMs}, {marker.data.wordsCommitted} word(s)");
-    schema.AddKeyLabelFormat("fedMs", "Audio fed", MS::Format::Milliseconds);
-    schema.AddKeyLabelFormat("queuedMs", "Audio still queued",
-                             MS::Format::Milliseconds);
-    schema.AddKeyLabelFormat("totalFedMs", "Audio fed this session",
-                             MS::Format::Milliseconds);
-    schema.AddKeyLabelFormat("wordsCommitted", "Words committed",
-                             MS::Format::Integer);
-    schema.AddKeyLabelFormat("endOfUtterance", "End of utterance",
-                             MS::Format::String);
-    return schema;
-  }
+struct ParakeetFeedMarker : public BaseMarkerType<ParakeetFeedMarker> {
+  static constexpr const char* Name = "ParakeetFeed";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"fedMs", MS::InputType::Double, "Audio fed", MS::Format::Milliseconds},
+      {"queuedMs", MS::InputType::Double, "Audio still queued",
+       MS::Format::Milliseconds},
+      {"totalFedMs", MS::InputType::Double, "Audio fed this session",
+       MS::Format::Milliseconds},
+      {"wordsCommitted", MS::InputType::Int32, "Words committed",
+       MS::Format::Integer},
+      {"endOfUtterance", MS::InputType::Boolean, "End of utterance"},
+  };
+  static constexpr const char* TableLabel =
+      "{marker.name} - fed {marker.data.fedMs}, queued "
+      "{marker.data.queuedMs}, {marker.data.wordsCommitted} word(s)";
 };
 
 // One word the model committed, placed on the audio timeline it belongs to.
-struct ParakeetWordMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("ParakeetWord");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aWord,
-                                   double aAudioStartS, double aAudioEndS,
-                                   double aConfidence) {
-    aWriter.StringProperty("word", aWord);
-    aWriter.DoubleProperty("audioStartS", aAudioStartS);
-    aWriter.DoubleProperty("audioEndS", aAudioEndS);
-    aWriter.DoubleProperty("confidence", aConfidence);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.SetTableLabel(
-        "{marker.name} - \"{marker.data.word}\" @ "
-        "{marker.data.audioStartS} conf {marker.data.confidence}");
-    schema.AddKeyLabelFormat("word", "Word", MS::Format::String);
-    schema.AddKeyLabelFormat("audioStartS", "Audio start", MS::Format::Seconds);
-    schema.AddKeyLabelFormat("audioEndS", "Audio end", MS::Format::Seconds);
-    schema.AddKeyLabelFormat("confidence", "Confidence",
-                             MS::Format::Percentage);
-    return schema;
-  }
+struct ParakeetWordMarker : public BaseMarkerType<ParakeetWordMarker> {
+  static constexpr const char* Name = "ParakeetWord";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"word", MS::InputType::CString, "Word"},
+      {"audioStartS", MS::InputType::Double, "Audio start",
+       MS::Format::Seconds},
+      {"audioEndS", MS::InputType::Double, "Audio end", MS::Format::Seconds},
+      {"confidence", MS::InputType::Double, "Confidence",
+       MS::Format::Percentage},
+  };
+  static constexpr const char* TableLabel =
+      "{marker.name} - \"{marker.data.word}\" @ "
+      "{marker.data.audioStartS} conf {marker.data.confidence}";
 };
 
 // A result on its way to content. lagMs is the user-visible latency: how long
 // ago the audio behind this result was captured.
-struct ParakeetResultMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("ParakeetResult");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aTranscript,
-                                   bool aIsFinal, double aConfidence,
-                                   double aLagMs, int32_t aWordCount) {
-    aWriter.StringProperty("transcript", aTranscript);
-    aWriter.BoolProperty("isFinal", aIsFinal);
-    aWriter.DoubleProperty("confidence", aConfidence);
-    aWriter.DoubleProperty("lagMs", aLagMs);
-    aWriter.IntProperty("wordCount", aWordCount);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.SetTableLabel(
-        "{marker.name} - {marker.data.lagMs} behind capture: "
-        "\"{marker.data.transcript}\"");
-    schema.AddKeyLabelFormat("transcript", "Transcript", MS::Format::String);
-    schema.AddKeyLabelFormat("isFinal", "Final", MS::Format::String);
-    schema.AddKeyLabelFormat("confidence", "Confidence",
-                             MS::Format::Percentage);
-    schema.AddKeyLabelFormat("lagMs", "Behind capture",
-                             MS::Format::Milliseconds);
-    schema.AddKeyLabelFormat("wordCount", "Words", MS::Format::Integer);
-    return schema;
-  }
+struct ParakeetResultMarker : public BaseMarkerType<ParakeetResultMarker> {
+  static constexpr const char* Name = "ParakeetResult";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"transcript", MS::InputType::CString, "Transcript"},
+      {"isFinal", MS::InputType::Boolean, "Final"},
+      {"confidence", MS::InputType::Double, "Confidence",
+       MS::Format::Percentage},
+      {"lagMs", MS::InputType::Double, "Behind capture",
+       MS::Format::Milliseconds},
+      {"wordCount", MS::InputType::Int32, "Words", MS::Format::Integer},
+  };
+  static constexpr const char* TableLabel =
+      "{marker.name} - {marker.data.lagMs} behind capture: "
+      "\"{marker.data.transcript}\"";
 };
 
 }  // namespace
@@ -946,12 +917,16 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
       mozilla::llama::LlamaRuntimeLinker::Get();
 
   // parakeet_capi_stream_feed hands new audio to the model (which keeps its
-  // own caches) and returns the text newly committed by this call; a
-  // cache-aware transducer never revises past output, so each committed delta
-  // is emitted as a final result. Forward audio as it arrives; a small floor
+  // own caches) and commits words as it decodes them; a cache-aware transducer
+  // never revises past output. Forward audio as it arrives; a small floor
   // avoids spinning on sub-block wakeups.
   const size_t minFeed = size_t(0.01 * PARAKEET_SAMPLE_RATE);  // 10 ms
-  const size_t maxFeed = size_t(PARAKEET_SAMPLE_RATE);         // 1 s
+  // One encoder chunk at most per call: a bigger block decodes several chunks
+  // and reports their <EOU>s as one flag, merging two utterances into one
+  // result.
+  const int chunkSamples = lib->parakeet_capi_stream_chunk_samples(mCapiStream);
+  MOZ_ASSERT(chunkSamples != -1);
+  const size_t maxFeed = AssertedCast<size_t>(chunkSamples);
 
   // Strip inline <...> markers (e.g. nemotron <en-US> language tags).
   auto stripTags = [](nsCString& aText) {
@@ -994,44 +969,63 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
         }));
   };
 
-  // Drain the words the model finalized this step. They are already grouped at
-  // word boundaries and carry per-word timing + confidence. Emit them as a
-  // single final result with the mean confidence; the per-word timestamps are
-  // logged (kept engine-internal — the Web Speech result has no per-word timing
-  // field).
-  auto emitFinalizedWords = [&]() {
+  // The utterance being spoken, accumulated until it ends: the model commits
+  // words several times over, and the API wants one result for the lot.
+  nsCString utterance;
+  float confSum = 0.0f;
+  int wordCount = 0;
+
+  auto meanConfidence = [&]() {
+    return wordCount ? confSum / float(wordCount) : 1.0f;
+  };
+
+  // Drain the words committed this step into the utterance, and return how
+  // many. Their timings only reach the profiler: a result has no room for them.
+  auto drainWords = [&]() {
     parakeet_stream_word* words = nullptr;
     int n = lib->parakeet_capi_stream_drain_words(mCapiStream, &words);
-    int32_t counted = 0;
-    if (n > 0) {
-      nsCString text;
-      float confSum = 0.0f;
-      for (int i = 0; i < n; ++i) {
-        nsCString w(words[i].text ? words[i].text : "");
-        stripTags(w);  // drop any inline <lang> markers
-        w.Trim(" \t\n\r");
-        if (w.IsEmpty()) {
-          continue;
-        }
-        if (!text.IsEmpty()) {
-          text.Append(' ');
-        }
-        text.Append(w);
-        confSum += words[i].conf;
-        ++counted;
-        profiler_add_marker("parakeet word",
-                            geckoprofiler::category::MEDIA_PLAYBACK, {},
-                            ParakeetWordMarker{}, w, words[i].start,
-                            words[i].end, words[i].conf);
-        LOGV("  word '{}' [{:.2f}-{:.2f}] conf={:.2f}", w.get(), words[i].start,
-             words[i].end, words[i].conf);
+    int32_t added = 0;
+    for (int i = 0; i < n; ++i) {
+      nsCString w(words[i].text ? words[i].text : "");
+      stripTags(w);       // drop any inline <lang> markers
+      w.Trim(" \t\n\r");  // the token carries its own spacing; joined with one
+                          // below
+      if (w.IsEmpty()) {
+        continue;
       }
-      emit(text, /* isFinal */ true, counted ? confSum / counted : 1.0f,
-           CaptureTimeForPosition(mProcessedAudioPos), counted);
+      if (!utterance.IsEmpty()) {
+        utterance.Append(' ');
+      }
+      utterance.Append(w);
+      confSum += words[i].conf;
+      ++wordCount;
+      ++added;
+      profiler_add_marker(
+          "parakeet word", geckoprofiler::category::MEDIA_PLAYBACK, {},
+          ParakeetWordMarker{}, w, words[i].start, words[i].end, words[i].conf);
+      LOGV("  word '{}' [{:.2f}-{:.2f}] conf={:.2f}", w.get(), words[i].start,
+           words[i].end, words[i].conf);
     }
     lib->parakeet_capi_free_words(words, n > 0 ? n : 0);
-    return counted;
+    return added;
   };
+
+  auto flushUtterance = [&]() {
+    // emit() ignores an empty transcript, so an utterance that committed
+    // nothing is not reported as a result.
+    emit(utterance, /* isFinal */ true, meanConfidence(),
+         CaptureTimeForPosition(mProcessedAudioPos), wordCount);
+    utterance.Truncate();
+    confSum = 0.0f;
+    wordCount = 0;
+  };
+
+  // How long the decoder must emit nothing before that counts as the end of an
+  // utterance. Unused by an <EOU>-aware model, which marks its own boundaries.
+  const bool engineMarksBoundaries =
+      lib->parakeet_capi_stream_has_eou(mCapiStream) == 1;
+  const double endpointBlankSeconds =
+      StaticPrefs::media_webspeech_recognition_endpoint_blank_ms() / 1000.0;
 
   nsTArray<float> chunk;
   uint64_t realtimeFactorSum = 0;
@@ -1052,13 +1046,13 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
     // Dump audio for debugging
     mRecognitionAudioDumper.Write(chunk.Elements(), chunk.Length());
 
-    int eou = 0;
+    int events = 0;
     // The marker interval is the inference compute time; the text records the
     // audio fed and how much was queued (the buffering-latency component), so a
     // profile shows the real-time factor and end-to-end latency directly.
     TimeStamp feedStart = TimeStamp::Now();
     char* fed = lib->parakeet_capi_stream_feed(mCapiStream, chunk.Elements(),
-                                               AssertedCast<int>(got), &eou);
+                                               AssertedCast<int>(got), &events);
     if (fed) {
       lib->parakeet_capi_free_string(fed);  // text comes from drain_words
     }
@@ -1077,26 +1071,51 @@ void SpeechRecognitionParent::ProcessAudioStreaming() {
           100.0 * got / (PARAKEET_SAMPLE_RATE * computeTime.ToSeconds())));
       ++realtimeFactorCount;
     }
-    int32_t committed = emitFinalizedWords();
+    // Committed words go out as interim results; only the end of an utterance
+    // finalizes them. An <EOB> is a backchannel, not the end of a turn.
+    const bool eou = events & PARAKEET_EVENT_EOU;
+    int32_t committed = drainWords();
     profiler_add_marker(
         "parakeet_capi_stream_feed", geckoprofiler::category::MEDIA_PLAYBACK,
         MarkerOptions(MarkerTiming::Interval(feedStart, feedEnd)),
         ParakeetFeedMarker{}, 1000.0 * double(got) / PARAKEET_SAMPLE_RATE,
         1000.0 * double(available) / PARAKEET_SAMPLE_RATE, totalFedMs,
-        committed, eou != 0);
+        committed, eou);
+    if (committed && !eou) {
+      emit(utterance, /* isFinal */ false, meanConfidence(),
+           CaptureTimeForPosition(mProcessedAudioPos), wordCount);
+    }
+    if (eou) {
+      flushUtterance();
+    } else if (!engineMarksBoundaries && endpointBlankSeconds > 0.0 &&
+               lib->parakeet_capi_stream_blank_seconds(mCapiStream) >=
+                   endpointBlankSeconds) {
+      // A blank run this long is the boundary an <EOU> would have marked, and
+      // maxFeed keeps it read once per encoder chunk. end_utterance() releases
+      // the trailing word a transducer is still withholding; if there was
+      // none, it yields no text and flushUtterance() emits nothing.
+      char* closed = lib->parakeet_capi_stream_end_utterance(mCapiStream);
+      if (closed) {
+        // The text comes from drain_words below.
+        lib->parakeet_capi_free_string(closed);
+      }
+      drainWords();
+      flushUtterance();
+    }
   }
 
-  // Flush the end-of-stream tail, then emit its finalized words.
+  // Flush the end-of-stream tail, then close the utterance in progress.
   TimeStamp finalizeStart = TimeStamp::Now();
   char* tail = lib->parakeet_capi_stream_finalize(mCapiStream);
   if (tail) {
     lib->parakeet_capi_free_string(tail);
   }
-  int32_t tailWords = emitFinalizedWords();
+  int32_t tailWords = drainWords();
   PROFILER_MARKER_TEXT(
       "parakeet_capi_stream_finalize", MEDIA_PLAYBACK,
       MarkerOptions(MarkerTiming::IntervalUntilNowFrom(finalizeStart)),
       nsFmtCString("{} tail word(s)", tailWords));
+  flushUtterance();
   if (realtimeFactorCount) {
     glean::media_speech_recognition::inference_realtime_factor
         .AccumulateSingleSample(static_cast<uint32_t>(

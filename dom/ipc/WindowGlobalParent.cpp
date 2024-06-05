@@ -212,6 +212,19 @@ already_AddRefed<WindowGlobalParent> WindowGlobalParent::CreateDisconnected(
   return wgp.forget();
 }
 
+void WindowGlobalParent::InitFromContentProcess(const FieldValues& aRequested,
+                                                ContentParent* aSource) {
+  MOZ_ASSERT(GetContentParent() == aSource);
+  MOZ_DIAGNOSTIC_ASSERT(!BrowsingContext()->GetWindowContexts().Contains(this),
+                        "must reconcile before Init registers this context");
+
+  Transaction correction;
+  Transaction::ReconcileInitialFields(this, FieldValues(aRequested), aSource,
+                                      correction);
+  Init();
+  correction.SendCorrection(this, aSource);
+}
+
 void WindowGlobalParent::Init() {
   MOZ_ASSERT(Manager(), "Should have a manager!");
 
@@ -226,12 +239,6 @@ void WindowGlobalParent::Init() {
     cp = static_cast<ContentParent*>(Manager()->Manager());
     processId = cp->ChildID();
   }
-
-  MOZ_DIAGNOSTIC_ASSERT(
-      !BrowsingContext()->GetParent() ||
-          BrowsingContext()->GetEmbedderInnerWindowId(),
-      "When creating a non-root WindowGlobalParent, the WindowGlobalParent "
-      "for our embedder should've already been created.");
 
   // Ensure we have a document URI
   if (!mDocumentURI) {
@@ -325,6 +332,12 @@ already_AddRefed<WindowGlobalParent> WindowGlobalParent::GetByInnerWindowId(
   return WindowContext::GetById(aInnerWindowId).downcast<WindowGlobalParent>();
 }
 
+/* static */
+WindowGlobalParent* WindowGlobalParent::Cast(WindowContext* aContext) {
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  return static_cast<WindowGlobalParent*>(aContext);
+}
+
 already_AddRefed<WindowGlobalChild> WindowGlobalParent::GetChildActor() {
   if (!CanSend()) {
     return nullptr;
@@ -334,17 +347,12 @@ already_AddRefed<WindowGlobalChild> WindowGlobalParent::GetChildActor() {
 }
 
 BrowserParent* WindowGlobalParent::GetBrowserParent() const {
-  if (IsInProcess() || !CanSend()) {
-    return nullptr;
-  }
-  return static_cast<BrowserParent*>(Manager());
+  return IsInProcess() ? nullptr : static_cast<BrowserParent*>(Manager());
 }
 
-ContentParent* WindowGlobalParent::GetContentParent() {
-  if (IsInProcess() || !CanSend()) {
-    return nullptr;
-  }
-  return static_cast<ContentParent*>(Manager()->Manager());
+ContentParent* WindowGlobalParent::GetContentParent() const {
+  BrowserParent* browserParent = GetBrowserParent();
+  return browserParent ? browserParent->Manager() : nullptr;
 }
 
 already_AddRefed<nsFrameLoader> WindowGlobalParent::GetRootFrameLoader() {
@@ -359,13 +367,13 @@ already_AddRefed<nsFrameLoader> WindowGlobalParent::GetRootFrameLoader() {
 }
 
 uint64_t WindowGlobalParent::ContentParentId() {
-  RefPtr<BrowserParent> browserParent = GetBrowserParent();
-  return browserParent ? browserParent->Manager()->ChildID() : 0;
+  ContentParent* contentParent = GetContentParent();
+  return contentParent ? contentParent->ChildID() : 0;
 }
 
 int32_t WindowGlobalParent::OsPid() {
-  RefPtr<BrowserParent> browserParent = GetBrowserParent();
-  return browserParent ? browserParent->Manager()->Pid() : -1;
+  ContentParent* contentParent = GetContentParent();
+  return contentParent ? contentParent->Pid() : -1;
 }
 
 // A WindowGlobalPaernt is the root in its process if it has no parent, or its
@@ -677,8 +685,8 @@ IPCResult WindowGlobalParent::RecvRawMessage(const JSActorMessageMeta& aMeta,
 }
 
 const RemoteType& WindowGlobalParent::GetRemoteType() const {
-  if (RefPtr<BrowserParent> browserParent = GetBrowserParent()) {
-    return browserParent->Manager()->GetRemoteType();
+  if (ContentParent* contentParent = GetContentParent()) {
+    return contentParent->GetRemoteType();
   }
 
   return RemoteType::NotRemote();
@@ -1379,8 +1387,7 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvExpectPageUseCounters(
   // page use counters.  This causes us to wait for this window to go away
   // (in WindowGlobalParent::ActorDestroy) before reporting the page use
   // counters via Telemetry.
-  RefPtr<WindowGlobalParent> page =
-      static_cast<WindowGlobalParent*>(aTop.GetMaybeDiscarded());
+  RefPtr<WindowGlobalParent> page = Cast(aTop.GetMaybeDiscarded());
   if (!page || page->mSentPageUseCounters) {
     MOZ_LOG(gUseCountersLog, LogLevel::Debug,
             (" > too late, won't report page use counters for this straggler"));
@@ -1911,8 +1918,7 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
   // at end-of-page.
   MaybeReportContentBlockingLog();
   if (!IsInProcess()) {
-    RefPtr<BrowserParent> browserParent =
-        static_cast<BrowserParent*>(Manager());
+    RefPtr<BrowserParent> browserParent = GetBrowserParent();
     if (browserParent) {
       nsCOMPtr<nsILoadContext> loadContext = browserParent->GetLoadContext();
       if (loadContext && !loadContext->UsePrivateBrowsing() &&
@@ -2005,8 +2011,8 @@ nsIGlobalObject* WindowGlobalParent::GetParentObject() {
 }
 
 nsIDOMProcessParent* WindowGlobalParent::GetDomProcess() {
-  if (RefPtr<BrowserParent> browserParent = GetBrowserParent()) {
-    return browserParent->Manager();
+  if (ContentParent* contentParent = GetContentParent()) {
+    return contentParent;
   }
   return InProcessParent::Singleton();
 }
@@ -2030,8 +2036,7 @@ bool WindowGlobalParent::ShouldTrackSiteOriginTelemetry() {
     return false;
   }
 
-  RefPtr<BrowserParent> browserParent = GetBrowserParent();
-  if (!browserParent || !browserParent->Manager()->GetRemoteType().IsWeb()) {
+  if (!GetRemoteType().IsWeb()) {
     return false;
   }
 
@@ -2253,13 +2258,13 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvPDocAccessibleConstructor(
     return IPC_FAIL(
         this,
         "Attempt to construct PDocAccessible when accessibility not in use");
-  } else if (allow ==
-             a11y::DocAccessibleParent::AllowConstruction::AllowButIgnore) {
+  }
+  if (allow == a11y::DocAccessibleParent::AllowConstruction::AllowButIgnore) {
     doc->MarkAsShutdown();
     return IPC_OK();
   }
 
-  if (GetBrowsingContext()->IsDiscarded()) {
+  if (GetBrowsingContext()->IsDiscarded() || !IsCurrentGlobal()) {
     // This document is about to die, so ignore it. This is particularly
     // important on Android because we must never have more than one active top
     // level DocAccessible at the same time there.

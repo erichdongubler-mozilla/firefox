@@ -13,6 +13,7 @@
 #include "mozIStorageRow.h"
 #include "mozIStorageResultSet.h"
 #include "nsQueryObject.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "mozilla/dom/PlacesObservers.h"
 #include "mozilla/dom/PlacesVisit.h"
 #include "mozilla/dom/PlacesVisitRemoved.h"

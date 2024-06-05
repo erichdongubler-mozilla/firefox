@@ -73,6 +73,7 @@ pub struct FrameBuilderConfig {
     pub low_quality_pinch_zoom: bool,
     pub max_shared_surface_size: i32,
     pub enable_dithering: bool,
+    pub enable_yuv_overlay_stability: bool,
 }
 
 pub struct FrameScratchBuffer {
@@ -570,7 +571,7 @@ impl FrameBuilder {
             frame_state.surface_builder.push_surface(
                 snapshot_surface,
                 false,
-                PictureRect::max_rect(),
+                DeviceRect::max_rect(),
                 None,
                 frame_state.surfaces,
                 frame_state.rg_builder,

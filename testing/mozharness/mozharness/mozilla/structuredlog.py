@@ -124,6 +124,8 @@ class StructuredOutputParser(OutputParser):
             SystemResourceMonitor.lsan_summary(data)
         elif action == "tsan_error":
             SystemResourceMonitor.tsan_error(data)
+        elif action == "assertion_failure":
+            SystemResourceMonitor.assertion_failure(data)
         elif action == "mozleak_object":
             SystemResourceMonitor.mozleak_object(data)
         elif action == "mozleak_total":

@@ -872,6 +872,20 @@ describe("ASRouter", () => {
           "SET_DEFAULT_BROWSER_OPEN_WITH is an allowed action-only action"
         );
       });
+      it("allowlists ENABLE_CLOSED_BROWSER_NOTIFICATIONS but not its opposite", () => {
+        assert.isTrue(
+          Router._isAllowedActionOnlyMessageAction({
+            type: "ENABLE_CLOSED_BROWSER_NOTIFICATIONS",
+          }),
+          "the enabling action can fire from an action_only message"
+        );
+        assert.isFalse(
+          Router._isAllowedActionOnlyMessageAction({
+            type: "DISABLE_CLOSED_BROWSER_NOTIFICATIONS",
+          }),
+          "the disabling action only ever fires from UI the user clicked"
+        );
+      });
       it("does nothing for a non-allowlisted action", () => {
         const badMessage = {
           id: "BAD",

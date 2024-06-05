@@ -280,7 +280,7 @@ void HTMLFieldSetElement::NotifyElementsForFirstLegendChange(bool aNotify) {
         new ContentList(this, MatchListedElements, nullptr, nullptr, true);
   }
 
-  uint32_t length = mElements->Length(true);
+  uint32_t length = mElements->Length();
   for (uint32_t i = 0; i < length; ++i) {
     static_cast<nsGenericHTMLFormElement*>(mElements->Item(i))
         ->FieldSetFirstLegendChanged(aNotify);

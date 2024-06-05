@@ -1573,14 +1573,6 @@ class LayerViewSupport final
     }
   }
 
-  void SetMaxToolbarHeight(int32_t aHeight) {
-    MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
-
-    if (mUiCompositorControllerChild) {
-      mUiCompositorControllerChild->SetMaxToolbarHeight(aHeight);
-    }
-  }
-
   void SetFixedBottomOffset(int32_t aOffset) {
     if (auto acc{mWindow.Access()}) {
       nsWindow* gkWindow = acc->GetNsWindow();

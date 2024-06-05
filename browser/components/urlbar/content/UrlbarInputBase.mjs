@@ -5,7 +5,7 @@
 import { SearchModeSwitcher } from "chrome://browser/content/urlbar/SearchModeSwitcher.mjs";
 import { UrlbarChildController } from "chrome://browser/content/urlbar/UrlbarChildController.mjs";
 import { UrlbarEventBufferer } from "chrome://browser/content/urlbar/UrlbarEventBufferer.mjs";
-import * as UrlbarContentUtils from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
+import { UrlbarContentUtils } from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
 import { UrlbarQueryContext } from "chrome://browser/content/urlbar/UrlbarQueryContext.mjs";
 import { UrlbarView } from "chrome://browser/content/urlbar/UrlbarView.mjs";
@@ -66,8 +66,6 @@ if (lazy) {
     SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
     UrlbarTokenizer:
       "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
-    UrlbarSearchUtils:
-      "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
     UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
     UrlbarValueFormatter:
       "moz-src:///browser/components/urlbar/UrlbarValueFormatter.sys.mjs",
@@ -153,6 +151,7 @@ export class UrlbarInputBase extends HTMLElement {
                it contains text even when searchmode-switcher-title is hidden. -->
           <span class="urlbar-visually-hidden" aria-hidden="true">a</span>
           <span class="searchmode-switcher-content">
+            <span class="searchmode-switcher-wordmark" aria-hidden="true" />
             <img class="searchmode-switcher-dropmarker"
                  data-l10n-id="urlbar-searchmode-dropmarker2"
                  draggable="false" />
@@ -196,13 +195,9 @@ ${
            role="group"
            tooltip="aHTMLTooltip">
         <div class="urlbarView-background"/>
-        <div class="urlbarView-body-outer">
-          <div class="urlbarView-body-inner">
-            <div class="urlbarView-results"
-                 role="listbox"/>
-          </div>
-        </div>
-        <panel-list class="urlbarView-result-menu"></panel-list>
+        <div class="urlbarView-results"
+             role="listbox"/>
+        <panel-list class="urlbarView-result-menu" accesskey-conflicts-bug="2073892"></panel-list>
         <moz-urlbar-slot name="search-one-offs" />
    </div>`;
   }
@@ -418,10 +413,7 @@ ${
       schemeField.required = true;
       this.inputField.before(schemeField);
     }
-    if (this.#sapName == "searchbar") {
-      // This adds a native clear button.
-      this.inputField.setAttribute("type", "search");
-    }
+    this.sapInit();
 
     this.controller = new UrlbarChildController({ input: this });
     this.controller.addListener(this);
@@ -473,7 +465,7 @@ ${
     if (this.sapName != "newtab_searchbar") {
       if (this.controller.maybeInitEngineStore()) {
         // Engine store is initialized now and placeholder with
-        // engine name will be set in #connectedCallback.
+        // engine name will be set in connectedCallback.
       } else {
         // This happens on browser startup. We wait a bit before
         // initializing the search service to improve startup times.
@@ -502,18 +494,29 @@ ${
     this.updatePopover();
   }
 
+  /**
+   * Hook for subclass-specific initialization work, called during {@link #init}.
+   * Default no-op.
+   */
+  sapInit() {}
+
+  /**
+   * Hook for subclass-specific context-menu items. Default no-op.
+   */
+  initSapContextMenuItems() {}
+
+  /**
+   * Hook for subclass-specific work at the end of connection. Default no-op.
+   */
+  sapConnectedCallback() {}
+
+  /**
+   * Hook for subclass-specific work at the start of disconnection. Default
+   * no-op.
+   */
+  sapDisconnectedCallback() {}
+
   connectedCallback() {
-    if (
-      this.getAttribute("sap-name") == "searchbar" &&
-      !UrlbarPrefs.get("browser.search.widget.new")
-    ) {
-      return;
-    }
-
-    this.#connectedCallback();
-  }
-
-  #connectedCallback() {
     if (!this.controller) {
       this.#init();
     }
@@ -536,23 +539,6 @@ ${
       return;
     }
     this.toggleAttribute("focused", this.focused);
-
-    if (
-      this.sapName == "searchbar" &&
-      !document.documentElement.hasAttribute("customizing")
-    ) {
-      // Ensure we get persisted widths back, if we've been in the palette:
-      let storedWidth = Services.xulStore.getValue(
-        document.documentURI,
-        this.parentElement.id,
-        "width"
-      );
-      if (storedWidth) {
-        this.parentElement.setAttribute("width", storedWidth);
-        /** @type {XULElement} */ (this.parentElement).style.width =
-          storedWidth + "px";
-      }
-    }
 
     this._initCopyCutController();
 
@@ -605,26 +591,12 @@ ${
     this.updatePopover();
 
     this._addObservers();
+
+    this.sapConnectedCallback();
   }
 
   disconnectedCallback() {
-    if (
-      this.getAttribute("sap-name") == "searchbar" &&
-      !UrlbarPrefs.get("browser.search.widget.new")
-    ) {
-      return;
-    }
-
-    this.#disconnectedCallback();
-  }
-
-  #disconnectedCallback() {
-    if (this.sapName == "searchbar") {
-      // Exit search mode to make sure it doesn't become stale while the
-      // searchbar is invisible. Otherwise, the engine might get deleted
-      // but we don't notice because the search service observer is inactive.
-      this.searchMode = null;
-    }
+    this.sapDisconnectedCallback();
 
     this.searchModeSwitcher.disconnect();
 
@@ -684,17 +656,17 @@ ${
       return;
     }
 
-    this._initStripOnShare();
     this._initPasteAndGo();
     if (this.#isAddressbar && UrlbarContentUtils.getPlatform() == "macosx") {
+      // The share group handles the strip-on-share item on macOS.
       this.#initShareURL();
+    } else {
+      this._initStripOnShare();
     }
     if (this.#isAddressbar) {
       this._initAutofillDismiss();
     }
-    if (this.sapName == "searchbar") {
-      this.#initClearSearchHistory();
-    }
+    this.initSapContextMenuItems();
     this.#initAddSearchEngines();
   }
 
@@ -703,7 +675,7 @@ ${
    * AddSearchEngineHelper currently owns.
    */
   #initAddSearchEngines() {
-    this.#addContextMenuItems({
+    this.addContextMenuItems({
       createItems: () => {
         let fragment = this.document.createDocumentFragment();
         fragment.appendChild(
@@ -724,7 +696,7 @@ ${
    * @param {object} itemSet
    *   As passed to EditContextMenu.addItems(), minus `matches`.
    */
-  #addContextMenuItems(itemSet) {
+  addContextMenuItems(itemSet) {
     this.#contextMenuItemSets.push(
       this.window.EditContextMenu.addItems({
         ...itemSet,
@@ -783,6 +755,27 @@ ${
   }
 
   /**
+   * Whether this input shows layout variant A. New Tab's registrant sets the
+   * attribute from the urlbar's `newtabVariantA` Nimbus variable.
+   *
+   * @type {boolean}
+   */
+  get variantA() {
+    return this.hasAttribute("variant-a");
+  }
+
+  /**
+   * Whether this input shows layout variant B, with the search engine button on
+   * its own row above the input. New Tab's registrant sets the attribute from
+   * the urlbar's `newtabVariantB` Nimbus variable.
+   *
+   * @type {boolean}
+   */
+  get variantB() {
+    return this.hasAttribute("variant-b");
+  }
+
+  /**
    * Gets the window mode for telemetry.
    *
    * @returns {WindowMode} The window mode.
@@ -808,8 +801,8 @@ ${
     if (val != this.inputField.readOnly) {
       this.inputField.readOnly = val;
       if (this.isConnected) {
-        this.#disconnectedCallback();
-        this.#connectedCallback();
+        this.disconnectedCallback();
+        this.connectedCallback();
       }
     }
   }
@@ -847,17 +840,6 @@ ${
       case "keyword.enabled":
         this.updatePlaceholder();
         break;
-      case "browser.search.widget.new": {
-        if (this.getAttribute("sap-name") == "searchbar" && this.isConnected) {
-          if (UrlbarPrefs.get("browser.search.widget.new")) {
-            // The connectedCallback was skipped. Init now.
-            this.#connectedCallback();
-          } else {
-            // Uninit now, the disconnectedCallback will be skipped.
-            this.#disconnectedCallback();
-          }
-        }
-      }
     }
   }
 
@@ -1315,6 +1297,13 @@ ${
     ) {
       return null;
     }
+    if (
+      !result &&
+      this._resultForCurrentValue?.type == UrlbarShared.RESULT_TYPE.URL &&
+      UrlbarShared.navigationInSearchModeEnabled(this.#sapName)
+    ) {
+      return null;
+    }
     return this.controller.engineStore.getEngineByName(
       this.searchMode.engineName
     );
@@ -1515,7 +1504,7 @@ ${
     let url = this.untrimmedValue;
 
     if (!url) {
-      this.#handleEmptyValueNavigation(event);
+      this.handleEmptyValueNavigation(event);
       return;
     }
 
@@ -1628,26 +1617,14 @@ ${
   }
 
   /**
-   * Handles navigation when there is no URL to load. In the searchbar this
-   * opens the search engine page for the active or default engine; elsewhere
-   * it does nothing.
+   * Handles navigation when there is no URL to load. The base does nothing;
+   * subclasses such as the searchbar open the search engine page for the
+   * active or default engine.
    *
-   * @param {Event} [event]
+   * @param {Event} [_event]
    *   The event triggering the open.
    */
-  #handleEmptyValueNavigation(event) {
-    if (this.sapName != "searchbar") {
-      return;
-    }
-    let searchEngine = this.searchMode
-      ? lazy.UrlbarSearchUtils.getEngineByName(this.searchMode.engineName)
-      : lazy.UrlbarSearchUtils.getDefaultEngine(this.isPrivate);
-    this.openSearchEnginePage("", {
-      searchEngine,
-      event,
-      where: this.controller.whereToOpen(event),
-    });
-  }
+  handleEmptyValueNavigation(_event) {}
 
   handleRevert() {
     this.userTypedValue = null;
@@ -4454,58 +4431,70 @@ ${
   // The strip-on-share feature will strip known tracking/decorational
   // query params from the URI and copy the stripped version to the clipboard.
   _initStripOnShare() {
-    this.#addContextMenuItems({
+    this.addContextMenuItems({
       after: "edit-contextmenu-copy",
       createItems: () => {
         let fragment = this.document.createDocumentFragment();
-        let stripOnShare = this.document.createXULElement("menuitem");
-        this.document.l10n.setAttributes(
-          stripOnShare,
-          "text-action-copy-clean-link"
-        );
-        stripOnShare.setAttribute("anonid", "strip-on-share");
-        stripOnShare.id = "strip-on-share";
-
-        // Register listener that returns the stripped url or falls back
-        // to the original url if nothing can be stripped.
-        stripOnShare.addEventListener("command", () => {
-          let strippedURI = this.#stripURI();
-          lazy.ClipboardHelper.copyString(strippedURI.displaySpec);
-        });
-
-        fragment.appendChild(stripOnShare);
+        fragment.appendChild(this.#createStripOnShareItem());
         return fragment;
       },
-      // Hide the menu item if there is nothing to copy.
       onShowing: (input, [stripOnShare]) => {
-        // feature is not enabled
-        if (
-          !UrlbarPrefs.get("privacy.query_stripping.strip_on_share.enabled")
-        ) {
-          stripOnShare.setAttribute("hidden", true);
-          return;
-        }
-        let controller =
-          this.document.commandDispatcher.getControllerForCommand("cmd_copy");
-        if (
-          !controller.isCommandEnabled("cmd_copy") ||
-          !this.#isClipboardURIValid()
-        ) {
-          stripOnShare.setAttribute("hidden", true);
-          return;
-        }
-        stripOnShare.removeAttribute("hidden");
-        if (!this.#canStrip()) {
-          stripOnShare.setAttribute("disabled", true);
-          return;
-        }
-        stripOnShare.removeAttribute("disabled");
+        this.#updateStripOnShareItem(stripOnShare);
       },
     });
   }
 
+  /**
+   * Builds the strip-on-share menuitem. On macOS the addressbar appends it to
+   * the share group instead of registering its own item set.
+   *
+   * @returns {Element} A newly created menuitem
+   */
+  #createStripOnShareItem() {
+    let stripOnShare = this.document.createXULElement("menuitem");
+    this.document.l10n.setAttributes(
+      stripOnShare,
+      "text-action-copy-clean-link"
+    );
+    stripOnShare.setAttribute("anonid", "strip-on-share");
+    stripOnShare.id = "strip-on-share";
+
+    // Register listener that returns the stripped url or falls back
+    // to the original url if nothing can be stripped.
+    stripOnShare.addEventListener("command", () => {
+      let strippedURI = this.#stripURI();
+      lazy.ClipboardHelper.copyString(strippedURI.displaySpec);
+    });
+
+    return stripOnShare;
+  }
+
+  // Hide the menu item if there is nothing to copy.
+  #updateStripOnShareItem(stripOnShare) {
+    // feature is not enabled
+    if (!UrlbarPrefs.get("privacy.query_stripping.strip_on_share.enabled")) {
+      stripOnShare.setAttribute("hidden", true);
+      return;
+    }
+    let controller =
+      this.document.commandDispatcher.getControllerForCommand("cmd_copy");
+    if (
+      !controller.isCommandEnabled("cmd_copy") ||
+      !this.#isClipboardURIValid()
+    ) {
+      stripOnShare.setAttribute("hidden", true);
+      return;
+    }
+    stripOnShare.removeAttribute("hidden");
+    if (!this.#canStrip()) {
+      stripOnShare.setAttribute("disabled", true);
+      return;
+    }
+    stripOnShare.removeAttribute("disabled");
+  }
+
   _initPasteAndGo() {
-    this.#addContextMenuItems({
+    this.addContextMenuItems({
       after: "edit-contextmenu-paste",
       createItems: () => {
         let fragment = this.document.createDocumentFragment();
@@ -4537,6 +4526,23 @@ ${
         // popover once it's open keeps it from showing (bug 2037468).
         this.view.close();
 
+        // The edit context menu is shared with other inputs in chrome, and
+        // only the items we add here conflict, so mark it for this opening
+        // alone, removing the marker again when closed.
+        let popup = this.window.EditContextMenu.popup;
+        popup.setAttribute("accesskey-conflicts-bug", "2073891");
+        popup.addEventListener(
+          "popuphidden",
+          () => {
+            // An opening that got superseded before it finished still fires
+            // popuphidden while the menu is open.
+            if (popup.state == "closed") {
+              popup.removeAttribute("accesskey-conflicts-bug");
+            }
+          },
+          { once: true }
+        );
+
         let controller =
           this.document.commandDispatcher.getControllerForCommand("cmd_paste");
         let enabled = controller.isCommandEnabled("cmd_paste");
@@ -4552,7 +4558,7 @@ ${
   // Adds "Dismiss" and "Forget this site" entries to the urlbar input context
   // menu, both hidden unless the heuristic result is autofill.
   _initAutofillDismiss() {
-    this.#addContextMenuItems({
+    this.addContextMenuItems({
       after: "edit-contextmenu-select-all",
       createItems: () => {
         let fragment = this.document.createDocumentFragment();
@@ -4662,60 +4668,51 @@ ${
   }
 
   /**
-   * Initializes the share URL context menu item.
+   * Initializes the share group: Share…, Create QR Code and Copy Clean Link.
    * This is only shown on the addressbar and only on macOS.
    */
   #initShareURL() {
-    this.#addContextMenuItems({
+    this.addContextMenuItems({
       after: "edit-contextmenu-select-all",
       createItems: () => {
         let fragment = this.document.createDocumentFragment();
         fragment.appendChild(this.document.createXULElement("menuseparator"));
-        return fragment;
-      },
-      onShowing: (input, items) => {
-        let [separator] = items;
-        let gBrowser = this.window.gBrowser;
-        let browser = gBrowser?.selectedBrowser;
-        if (!browser) {
-          return;
-        }
-        lazy.SharingUtils.ensureShareMenu(
-          browser,
-          gBrowser.selectedTabs.length > 1
-            ? gBrowser.selectedTabs.map(t => t.linkedBrowser)
-            : null,
-          separator
-        );
-        // ensureShareMenu inserts the share menu after the separator. Claim it
-        // so it's hidden along with the separator when the menu opens on
-        // another input.
-        items[1] = separator.nextElementSibling;
-      },
-    });
-  }
 
-  /**
-   * Initializes the clear search history context menu item.
-   * This is only shown on the searchbar.
-   */
-  #initClearSearchHistory() {
-    this.#addContextMenuItems({
-      after: "edit-contextmenu-select-all",
-      createItems: () => {
-        let fragment = this.document.createDocumentFragment();
-        let separator = this.document.createXULElement("menuseparator");
-
-        let clearHistory = this.document.createXULElement("menuitem");
-        clearHistory.setAttribute("anonid", "clear-search-history");
-        this.document.l10n.setAttributes(clearHistory, "clear-search-history");
-        clearHistory.addEventListener("command", () => {
-          lazy.UrlbarUtils.clearFormHistory();
-          this.handleRevert();
+        let shareItem = this.document.createXULElement("menuitem");
+        shareItem.classList.add("share-tab-url-item", "share-mac-picker-item");
+        this.document.l10n.setAttributes(shareItem, "urlbar-share-url");
+        shareItem.addEventListener("command", () => {
+          lazy.SharingUtils.shareOnMacPicker(shareItem);
         });
+        fragment.appendChild(shareItem);
 
-        fragment.append(separator, clearHistory);
+        let qrCodeItem = this.document.createXULElement("menuitem");
+        qrCodeItem.classList.add("share-qrcode-item");
+        qrCodeItem.id = "share-qrcode";
+        this.document.l10n.setAttributes(qrCodeItem, "menu-file-share-qrcode3");
+        qrCodeItem.addEventListener("command", () => {
+          lazy.SharingUtils.showQRCode(qrCodeItem);
+        });
+        fragment.appendChild(qrCodeItem);
+        fragment.appendChild(this.#createStripOnShareItem());
+
         return fragment;
+      },
+      onShowing: (input, [, shareItem, qrCodeItem, stripOnShare]) => {
+        this.#updateStripOnShareItem(stripOnShare);
+        let browser = this.window.gBrowser?.selectedBrowser;
+        let browserRef = browser ? Cu.getWeakReference(browser) : null;
+        shareItem.contextBrowserToShare = browserRef;
+        shareItem.browsersToShare = null;
+        qrCodeItem.contextBrowserToShare = browserRef;
+        let shareable =
+          !!lazy.SharingUtils.getLinkToShare(shareItem).urlToShare;
+        shareItem.toggleAttribute("disabled", !shareable);
+        qrCodeItem.hidden = !Services.prefs.getBoolPref(
+          "browser.shareqrcode.enabled",
+          false
+        );
+        qrCodeItem.toggleAttribute("disabled", !shareable);
       },
     });
   }
@@ -5070,7 +5067,8 @@ ${
    * @param {boolean} available If true Unified Search Button will be available.
    */
   setUnifiedSearchButtonAvailability(available) {
-    available ||= UrlbarPrefs.get("unifiedSearchButton.always");
+    available ||=
+      this.isSearchbarSAP || UrlbarPrefs.get("unifiedSearchButton.always");
     const switcher = this.querySelector(".searchmode-switcher");
     switcher.toggleAttribute("offscreen", !available);
     if (available) {
@@ -5406,7 +5404,8 @@ ${
         this._mousedownOnUrlbarDescendant = true;
         if (
           event.target != this.inputField &&
-          event.target != this._inputContainer
+          event.target != this._inputContainer &&
+          event.target != this.inputField.parentNode
         ) {
           break;
         }
@@ -6077,7 +6076,10 @@ ${
 
     event.dataTransfer.setData("text/x-moz-url", `${href}\n${title}`);
     event.dataTransfer.setData("text/plain", href);
-    event.dataTransfer.setData("text/html", `<a href="${href}">${title}</a>`);
+    event.dataTransfer.setData(
+      "text/html",
+      `<a href="${UrlbarShared.escapeHtmlEntities(href)}">${UrlbarShared.escapeHtmlEntities(title)}</a>`
+    );
     event.dataTransfer.effectAllowed = "copyLink";
     event.stopPropagation();
   }

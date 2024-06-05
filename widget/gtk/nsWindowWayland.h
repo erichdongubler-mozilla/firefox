@@ -16,8 +16,8 @@ class nsWindowWayland final : public nsWindow {
   nsWindowWayland* AsWayland() override { return this; }
   nsWindow* GetEffectiveParent() const;
 
-  void GetWorkspaceID(nsAString& workspaceID) override;
-  void MoveToWorkspace(const nsAString& workspaceIDStr) override;
+  void GetWorkspaceID(nsAString& aWorkspaceID) override;
+  void MoveToWorkspace(const nsAString& aWorkspaceIDStr) override;
   void RestoreXdgToplevel();
 
   // Use xdg-activation protocol to transfer focus from gFocusWindow.
@@ -57,6 +57,8 @@ class nsWindowWayland final : public nsWindow {
   void ClearPipResources();
 
   bool ApplyEnterLeaveMutterWorkaround();
+
+  void ForceToplevelCommit();
 
  protected:
   virtual ~nsWindowWayland() = default;
@@ -247,6 +249,10 @@ class nsWindowWayland final : public nsWindow {
     struct xx_pip_v1* mPipSurface = nullptr;
     LayoutDeviceIntSize mConfigureSize;
   } mPipResources;
+
+  RefPtr<GdkWindow> mCommitWindow;
+  static constexpr int sCommitOrigin = -100;
+  int mCommitWindowPosition = sCommitOrigin;
 };
 
 }  // namespace mozilla::widget

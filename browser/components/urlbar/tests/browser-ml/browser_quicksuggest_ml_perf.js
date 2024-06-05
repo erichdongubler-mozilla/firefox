@@ -26,6 +26,8 @@ const { MLPerfTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/MLPerfTestUtils.sys.mjs"
 );
 
+MLPerfTestUtils.init(this);
+
 const METRIC_PREFIX = "MLSUGGEST";
 const SUGGESTION_LATENCY = "suggestion-latency";
 
@@ -169,8 +171,6 @@ add_setup(async function () {
 
 add_task(async function test_ml_suggest_perf() {
   await MLPerfTestUtils.runPerfScenario({
-    info,
-    Assert,
     metricPrefix: METRIC_PREFIX,
     scenario: searchOnce,
     engines: [

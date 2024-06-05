@@ -13,8 +13,10 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+const lazy = XPCOMUtils.declareLazy({
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
 });
@@ -65,7 +67,7 @@ class TabGroupsList extends MozLitElement {
   }
 
   #handleGroupClick(group, isOpen) {
-    this.closest("panel")?.hidePopup();
+    /** @type {XULPopupElement} */ (this.closest("panel"))?.hidePopup();
     if (isOpen) {
       group.select();
       group.documentGlobal.focus();
@@ -81,7 +83,9 @@ class TabGroupsList extends MozLitElement {
     const menuId = isOpen
       ? "open-tab-group-context-menu"
       : "saved-tab-group-context-menu";
-    const popup = this.ownerDocument.getElementById(menuId);
+    const popup = /** @type {XULPopupElement} */ (
+      this.ownerDocument.getElementById(menuId)
+    );
     popup.openPopupAtScreen(event.screenX, event.screenY, true, event);
   }
 
@@ -150,7 +154,7 @@ class TabGroupsList extends MozLitElement {
   }
 
   #handleCreateTabGroup() {
-    this.closest("panel")?.hidePopup();
+    /** @type {XULPopupElement} */ (this.closest("panel"))?.hidePopup();
     const win = this.#win;
     const newTab = win.gBrowser.addTrustedTab(win.BROWSER_NEW_TAB_URL);
     win.gBrowser.addTabGroup([newTab], {

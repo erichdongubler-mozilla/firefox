@@ -923,49 +923,6 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
-            "content-src/components/Widgets/SportsWidget/SportsWidget.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
-            },
-            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/SportsMatchRow.test.jsx)
-            "content-src/components/Widgets/SportsWidget/SportsMatchRow.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
-            },
-            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/WatchLiveModal.test.jsx)
-            "content-src/components/Widgets/SportsWidget/WatchLiveModal.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
-            },
-            // Coverage for this hook lives in Jest (test/jest/content-src/components/Widgets/useLocalizedTeamNames.test.jsx)
-            "content-src/components/Widgets/SportsWidget/useLocalizedTeamNames.jsx":
-              {
-                statements: 0,
-                lines: 0,
-                functions: 0,
-                branches: 0,
-              },
-            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/SportsWidget.test.jsx)
-            "content-src/components/Widgets/SportsWidget/LivePagination.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
-            },
-            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/SportsResultCelebration.test.jsx)
-            "content-src/components/Widgets/SportsWidget/SportsResultCelebration.jsx":
-              {
-                statements: 0,
-                lines: 0,
-                functions: 0,
-                branches: 0,
-              },
             // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/WidgetCelebration.test.jsx)
             "content-src/components/Widgets/WidgetCelebration.jsx": {
               statements: 0,
@@ -1155,7 +1112,7 @@ module.exports = function (config) {
         rules: [
           {
             test: /\.js$/,
-            exclude: [/node_modules\/(?!@fluent\/).*/, /test/],
+            exclude: [/node_modules\//, /test/],
             loader: "babel-loader",
           },
           {

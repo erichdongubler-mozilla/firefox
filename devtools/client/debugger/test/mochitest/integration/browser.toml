@@ -30,31 +30,16 @@ fail-if = [
 ["browser_dbg-features-browser-toolbox-source-tree.js"]
 
 ["browser_dbg-features-edit-stylesheets.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-features-source-text-content.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-features-source-tree.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-features-sourcemap-stylesheets.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-features-tabs.js"]
 
 ["browser_dbg-features-toggle-stylesheets.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-features-wasm.js"]
 

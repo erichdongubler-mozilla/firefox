@@ -58,10 +58,20 @@ export const AITAB_PAGES_SLUG_VERSION_INDEX = `
 CREATE UNIQUE INDEX idx_aitab_pages_slug_version ON aitab_pages (slug, version);
 `;
 
+// Keyed on slug, to match the UNIQUE index the insert has to satisfy. On
+// conv_id it would number versions per conversation while uniqueness was
+// enforced per slug, so one conversation could only ever hold one page.
 export const GET_NEXT_VERSION = `
 SELECT COALESCE(MAX(version), 0) + 1 AS next_version
 FROM aitab_pages
-WHERE conv_id = :conv_id;
+WHERE slug = :slug;
+`;
+
+// Whether any version already holds a slug, for minting a free one. Uses the
+// (slug, version) index by its leftmost prefix, and EXISTS stops at the first
+// row rather than counting them.
+export const SLUG_EXISTS = `
+SELECT EXISTS (SELECT 1 FROM aitab_pages WHERE slug = :slug) AS taken;
 `;
 
 const AITAB_PAGE_COLUMNS = `

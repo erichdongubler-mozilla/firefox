@@ -1105,12 +1105,13 @@
   );
 }
 
-[data-function-expression] .css-explainers-function-name {
+[data-function-expression] .css-explainers-function-name,
+[data-length-expression] {
   text-decoration: 1px solid underline;
   text-underline-offset: 2px;
 }
 
-[data-function-expression].tooltip-anchor {
+:is([data-function-expression], [data-length-expression]).tooltip-anchor {
   text-decoration: underline;
   text-decoration-color: var(--theme-highlight-blue);
   text-decoration-style: dotted;

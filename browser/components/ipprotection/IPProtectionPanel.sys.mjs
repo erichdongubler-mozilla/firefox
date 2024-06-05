@@ -9,10 +9,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
-  IPPExceptionsManager:
-    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
+  IPPPermissionRules:
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
   IPPPrincipalRules:
-    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
+  IPPSiteRuleManager:
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
   IPPOnboardingMessage:
     "moz-src:///browser/components/ipprotection/IPPOnboardingMessageHelper.sys.mjs",
   ERRORS: "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
@@ -54,8 +56,6 @@ const BANDWIDTH_WARNING_DISMISSED_PREF =
 const BANDWIDTH_RESET_DATE_PREF = "browser.ipProtection.bandwidthResetDate";
 const EGRESS_LOCATION_PREF = "browser.ipProtection.egressLocation";
 const USER_OPENED_PREF = "browser.ipProtection.everOpenedPanel";
-const OPENED_WITH_LOCATION_PREF =
-  "browser.ipProtection.openedPanelWithLocation";
 const LOCATION_BADGE_DISMISSED_PREF =
   "browser.ipProtection.locationButtonBadgeDismissed";
 const UPGRADE_NOT_AVAILABLE_PREF = "browser.ipProtection.upgradeNotAvailable";
@@ -652,13 +652,6 @@ export class IPProtectionPanel {
     if (!hasUserEverOpenedPanel) {
       Services.prefs.setBoolPref(USER_OPENED_PREF, true);
     }
-
-    let hasOpenedPanelWithLocation = Services.prefs.getBoolPref(
-      OPENED_WITH_LOCATION_PREF
-    );
-    if (!hasOpenedPanelWithLocation) {
-      Services.prefs.setBoolPref(OPENED_WITH_LOCATION_PREF, true);
-    }
   }
 
   /**
@@ -805,6 +798,7 @@ export class IPProtectionPanel {
     const result = await enrolling;
     Glean.ipprotection.enrollment.record({
       enrolled: result?.isEnrolledAndEntitled,
+      reason: result?.isEnrolledAndEntitled ? "" : (result?.error ?? ""),
     });
   }
 
@@ -980,8 +974,8 @@ export class IPProtectionPanel {
       "IPPAuthProvider:StateChanged",
       this.handleEvent
     );
-    lazy.IPPExceptionsManager.addEventListener(
-      "IPPExceptionsManager:ExclusionChanged",
+    lazy.IPPSiteRuleManager.addEventListener(
+      "SiteRuleManager:RuleChanged",
       this.handleEvent
     );
     lazy.IPProtectionServerlist.addEventListener(
@@ -1011,8 +1005,8 @@ export class IPProtectionPanel {
       "IPProtectionService:StateChanged",
       this.handleEvent
     );
-    lazy.IPPExceptionsManager.removeEventListener(
-      "IPPExceptionsManager:ExclusionChanged",
+    lazy.IPPSiteRuleManager.removeEventListener(
+      "SiteRuleManager:RuleChanged",
       this.handleEvent
     );
     lazy.IPProtectionServerlist.removeEventListener(
@@ -1105,19 +1099,13 @@ export class IPProtectionPanel {
 
   #getSiteData() {
     const principal = getSitePrincipal(this.gBrowser);
-    if (!principal || !lazy.IPPExceptionsManager.canManage(principal)) {
+    if (!principal || !lazy.IPPSiteRuleManager.canManage(principal)) {
       return null;
     }
-    const isExclusion =
-      lazy.IPPExceptionsManager.getPrincipalRule(principal) ===
-      lazy.IPPPrincipalRules.EXCLUDED;
-
-    //TODO: Check the exceptions manager for inclusions as well as exclusions - Bug 2066802
-    //const isInclusion = lazy.IPPExceptionsManager.hasInclusion(principal);
-    const isInclusion = false;
-
-    //TODO: Check the exceptions manager for inclusions as well as exclusions - Bug 2066802
-    const hasSiteRule = lazy.IPPExceptionsManager.hasExclusion(principal);
+    const rule = lazy.IPPSiteRuleManager.getRule(principal);
+    const isExclusion = rule === lazy.IPPPrincipalRules.EXCLUDED;
+    const isInclusion = rule === lazy.IPPPrincipalRules.INCLUDED;
+    const hasSiteRule = rule !== lazy.IPPPrincipalRules.DEFAULT;
     return { isExclusion, isInclusion, hasSiteRule };
   }
 
@@ -1217,7 +1205,7 @@ export class IPProtectionPanel {
             : false,
         paused: lazy.IPPProxyManager.state === lazy.IPPProxyStates.PAUSED,
       });
-    } else if (event.type == "IPPExceptionsManager:ExclusionChanged") {
+    } else if (event.type == "SiteRuleManager:RuleChanged") {
       this.#updateSiteData();
     } else if (event.type == "IPProtectionServerlist:ListChanged") {
       this.setState({
@@ -1227,13 +1215,19 @@ export class IPProtectionPanel {
       const win = event.target.documentGlobal;
       const principal = getSitePrincipal(win?.gBrowser);
 
-      lazy.IPPExceptionsManager.setExclusion(principal, false);
+      lazy.IPPPermissionRules.setRule(
+        principal,
+        lazy.IPPPrincipalRules.DEFAULT
+      );
       Glean.ipprotection.exclusionToggled.record({ excluded: false });
     } else if (event.type == "IPProtection:UserDisableVPNForSite") {
       const win = event.target.documentGlobal;
       const principal = getSitePrincipal(win?.gBrowser);
 
-      lazy.IPPExceptionsManager.setExclusion(principal, true);
+      lazy.IPPPermissionRules.setRule(
+        principal,
+        lazy.IPPPrincipalRules.EXCLUDED
+      );
       Glean.ipprotection.exclusionToggled.record({ excluded: true });
     } else if (event.type == "IPProtection:DismissBandwidthWarning") {
       const state = lazy.IPPUsageHelper.state;

@@ -52,12 +52,7 @@ export class SelectControlBaseElement extends MozLitElement {
     description: { type: String, fluent: true },
     supportPage: { type: String, attribute: "support-page" },
     label: { type: String, fluent: true },
-    // It looks like some interaction between fluent and mapped: true doesn't
-    // work well in this context of nested components and doesn't trigger a
-    // rerender when fluent sets the property. Therefore we don't use "mapped: true".
-    // This means that a specified aria-label attribute won't be removed. This is fine
-    // because this component has a "generic" role, where aria-label doesn't apply.
-    ariaLabel: { type: String, fluent: true, attribute: "aria-label" },
+    ariaLabel: { type: String, fluent: true, mapped: true },
     name: { type: String },
     value: { type: String },
     headingLevel: { type: Number },
@@ -280,6 +275,7 @@ export class SelectControlBaseElement extends MozLitElement {
   }
 
   willUpdate(changedProperties) {
+    super.willUpdate(changedProperties);
     if (changedProperties.has("name")) {
       this.handleSetName();
     }
@@ -337,7 +333,22 @@ export class SelectControlBaseElement extends MozLitElement {
     this.syncStateToChildElements();
   }
 
+  /**
+   * Renders the slot that projects the picker items into the container.
+   *
+   * @returns {import("lit-html").TemplateResult}
+   */
+  itemsSlotTemplate() {
+    return html`<slot
+      @slotchange=${this.handleSlotChange}
+      @change=${this.handleChange}
+    ></slot>`;
+  }
+
   render() {
+    const groupRole = this.getGroupRole();
+    const isListbox = groupRole === "listbox";
+
     return html`
       <moz-fieldset
         part="fieldset"
@@ -345,19 +356,17 @@ export class SelectControlBaseElement extends MozLitElement {
         support-page=${ifDefined(this.supportPage)}
         ?disabled=${this.disabled}
         label=${ifDefined(this.label)}
-        aria-label=${ifDefined(this.ariaLabel)}
+        .ariaLabel=${this.ariaLabel}
         headinglevel=${this.headingLevel}
         exportparts="inputs, support-link"
-        aria-orientation=${ifDefined(this.orientation)}
-        role=${ifDefined(this.getGroupRole())}
+        .ariaOrientation=${this.orientation}
+        .role=${isListbox ? undefined : groupRole}
+        .inputsRole=${isListbox ? groupRole : undefined}
       >
         ${!this.supportPage
           ? html`<slot slot="support-link" name="support-link"></slot>`
           : ""}
-        <slot
-          @slotchange=${this.handleSlotChange}
-          @change=${this.handleChange}
-        ></slot>
+        ${this.itemsSlotTemplate()}
       </moz-fieldset>
     `;
   }

@@ -10,11 +10,9 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import mozilla.components.browser.domains.autocomplete.BaseDomainAutocompleteProvider
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
 import mozilla.components.browser.engine.gecko.GeckoEngine
@@ -78,6 +76,7 @@ import mozilla.components.feature.session.middleware.LastAccessMiddleware
 import mozilla.components.feature.session.middleware.undo.UndoMiddleware
 import mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage
 import mozilla.components.feature.summarize.settings.SummarizationSettings
+import mozilla.components.feature.tabgroups.storage.repository.DefaultTabGroupRepository
 import mozilla.components.feature.top.sites.DefaultTopSitesStorage
 import mozilla.components.feature.top.sites.PinnedSiteStorage
 import mozilla.components.feature.webcompat.WebCompatFeature
@@ -106,7 +105,6 @@ import mozilla.components.service.sync.autofill.AutofillCreditCardsAddressesStor
 import mozilla.components.service.sync.logins.SyncableLoginsStorage
 import mozilla.components.support.base.worker.Frequency
 import mozilla.components.support.ktx.android.content.appVersionName
-import mozilla.components.support.ktx.android.content.res.readJSONObject
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
@@ -147,8 +145,7 @@ import org.mozilla.fenix.summarization.eligibility.DefaultSummarizationEligibili
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
-import org.mozilla.fenix.tabgroups.storage.redux.middleware.TabGroupMiddleware
-import org.mozilla.fenix.tabgroups.storage.repository.DefaultTabGroupRepository
+import org.mozilla.fenix.tabgroups.middleware.TabGroupMiddleware
 import org.mozilla.fenix.telemetry.TelemetryMiddleware
 import org.mozilla.fenix.translations.TranslationsEnabledSettings
 import org.mozilla.fenix.utils.Settings.DeleteDownloadBehavior
@@ -420,17 +417,13 @@ class Core(
                 // Install the "icons" WebExtension to automatically load icons for every visited website.
                 icons.install(engine, this)
 
-                CoroutineScope(Dispatchers.Main).launch {
-                    val readJson = { context.assets.readJSONObject("search/search_telemetry_v2.json") }
+                applicationScope.launch {
                     val providerList =
-                        withContext(Dispatchers.IO) {
-                            SerpTelemetryRepository(
-                                    readJson = readJson,
-                                    collectionName = COLLECTION_NAME,
-                                    remoteSettingsService = context.components.remoteSettingsService.value,
-                                )
-                                .updateProviderList()
-                        }
+                        SerpTelemetryRepository(
+                                collectionName = COLLECTION_NAME,
+                                remoteSettingsService = context.components.remoteSettingsService.value,
+                            )
+                            .updateProviderList()
                     // Install the "ads" WebExtension to get the links in an partner page.
                     adsTelemetry.install(engine, this@apply, providerList)
                     // Install the "cookies" WebExtension and tracks user interaction with SERPs.
@@ -599,7 +592,6 @@ class Core(
                 ContentRecommendationsRequestConfig(
                     locale = LocaleManager.getSelectedLocale(context),
                     userAgent = engine.settings.userAgentString.orEmpty(),
-                    useMerinoClient = context.components.settings.enableMerinoClient,
                 ),
             marsSponsoredContentsParams =
                 MarsSpocsRequestConfig(

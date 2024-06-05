@@ -327,13 +327,19 @@ class TestResourceMonitor(unittest.TestCase):
         self.assertIn({"type": "Text", "text": "foo"}, markers)
         self.assertIn({"type": "Text", "text": "bar"}, markers)
 
-    def _process_output(self, monitor, line):
-        SystemResourceMonitor.test_status({
+    def _process_output(self, monitor, line, process=None):
+        data = {
             "action": "process_output",
             "data": line,
             "time": (time.monotonic() - monitor.start_time) * 1000
             + monitor.start_timestamp * 1000,
-        })
+        }
+        if process is not None:
+            data["process"] = process
+        SystemResourceMonitor.test_status(data)
+
+    def _events(self, monitor, name):
+        return [e for e in monitor.events if len(e) == 3 and e[1] == name]
 
     def test_process_output_docshell(self):
         monitor = SystemResourceMonitor(poll_interval=0.25)
@@ -456,25 +462,242 @@ class TestResourceMonitor(unittest.TestCase):
         _, _, data = warnings_[1]
         self.assertEqual(data["message"], "'NS_FAILED(rv)'")
 
+    # NS_DebugBreak rings the bell before the assertion text.
+    NS_ASSERTION_LINE = (
+        "\x07[Parent 5900, Main Thread] ###!!! ASSERTION: Out-of-flow frame got "
+        "reflowed before its placeholder: 'Error', file "
+        "layout/generic/nsPlaceholderFrame.cpp:131"
+    )
+    NS_ASSERTION_FRAMES = (
+        "#01: NS_DebugBreak(unsigned int, char const*, char const*, char const*, int) "
+        "[xpcom/base/nsDebugImpl.cpp:516]",
+        "#02: nsPlaceholderFrame::Reflow(nsPresContext*) "
+        "[layout/generic/nsPlaceholderFrame.cpp:131]",
+    )
+    MOZ_ASSERT_LINE = (
+        "[6136] Assertion failure: false (unreachable), at "
+        "/builds/worker/checkouts/gecko/dom/workers/RuntimeService.cpp:2229"
+    )
+
     def test_process_output_cpp_assertion(self):
+        monitor = SystemResourceMonitor(poll_interval=0.25)
+        monitor.start()
+        self._process_output(monitor, self.NS_ASSERTION_LINE)
+        for frame in self.NS_ASSERTION_FRAMES:
+            self._process_output(monitor, frame)
+        self._process_output(monitor, "totally random output line that we don't parse")
+        monitor.stop()
+
+        asserts = self._events(monitor, "NS_ASSERTION")
+        self.assertEqual(len(asserts), 1)
+        _, _, data = asserts[0]
+        self.assertEqual(data["type"], "AssertionFailure")
+        self.assertEqual(data["kind"], "NS_ASSERTION")
+        self.assertEqual(data["color"], "orange")
+        self.assertNotIn("fatal", data)
+        self.assertIn("Out-of-flow frame", data["message"])
+        self.assertEqual(data["file"], "layout/generic/nsPlaceholderFrame.cpp")
+        self.assertEqual(data["line"], 131)
+        self.assertEqual(data["pid"], 5900)
+        self.assertEqual(data["process"], "Parent")
+        self.assertEqual(data["thread"], "Main Thread")
+        self.assertEqual(
+            [f["function"] for f in data["stack"]],
+            [
+                "NS_DebugBreak(unsigned int, char const*, char const*, char const*, int)",
+                "nsPlaceholderFrame::Reflow(nsPresContext*)",
+            ],
+        )
+        self.assertEqual(data["stack"][1]["line"], 131)
+        # The frames were folded into the assertion, only the trailing line
+        # is a generic output marker.
+        self.assertEqual(len(self._events(monitor, "output")), 1)
+
+    def test_process_output_assertion_flushed_on_stop(self):
+        monitor = SystemResourceMonitor(poll_interval=0.25)
+        monitor.start()
+        self._process_output(monitor, self.MOZ_ASSERT_LINE)
+        self._process_output(monitor, "#01: f() [dom/workers/RuntimeService.cpp:2229]")
+        self.assertEqual(self._events(monitor, "MOZ_ASSERT"), [])
+        monitor.stop()
+
+        asserts = self._events(monitor, "MOZ_ASSERT")
+        self.assertEqual(len(asserts), 1)
+        _, _, data = asserts[0]
+        self.assertEqual(data["color"], "red")
+        self.assertTrue(data["fatal"])
+        self.assertEqual(data["file"], "dom/workers/RuntimeService.cpp")
+        self.assertEqual(data["pid"], 6136)
+        self.assertNotIn("process", data)
+        self.assertEqual(
+            data["stack"],
+            [
+                {
+                    "function": "f()",
+                    "file": "dom/workers/RuntimeService.cpp",
+                    "line": 2229,
+                }
+            ],
+        )
+
+    def test_process_output_xpcshell_assertion_without_frames(self):
         monitor = SystemResourceMonitor(poll_interval=0.25)
         monitor.start()
         self._process_output(
             monitor,
-            "[Parent 5900, Main Thread] ###!!! ASSERTION: Out-of-flow frame got "
-            "reflowed before its placeholder: 'Error', file "
-            "layout/generic/nsPlaceholderFrame.cpp:131",
+            "[123, Main Thread] ###!!! ASSERTION: boom: 'expr', file xpcom/a.cpp:7",
         )
+        self._process_output(monitor, "unrelated")
         monitor.stop()
 
-        asserts = [e for e in monitor.events if len(e) == 3 and e[1] == "C++ assertion"]
+        asserts = self._events(monitor, "NS_ASSERTION")
+        self.assertEqual(len(asserts), 1)
+        _, _, data = asserts[0]
+        self.assertEqual(data["pid"], 123)
+        self.assertNotIn("process", data)
+        # Without frames the source location still gives the marker a cause.
+        self.assertEqual(data["stack"], [{"file": "xpcom/a.cpp", "line": 7}])
+
+    def test_process_output_assertions_keyed_by_process(self):
+        monitor = SystemResourceMonitor(poll_interval=0.25)
+        monitor.start()
+        self._process_output(monitor, self.MOZ_ASSERT_LINE, process="A")
+        self._process_output(monitor, self.NS_ASSERTION_LINE, process="B")
+        self._process_output(monitor, "#01: a() [a.cpp:1]", process="A")
+        self._process_output(monitor, "#01: b() [b.cpp:1]", process="B")
+        monitor.stop()
+
+        moz_assert = self._events(monitor, "MOZ_ASSERT")[0][2]
+        ns_assertion = self._events(monitor, "NS_ASSERTION")[0][2]
+        self.assertEqual([f["function"] for f in moz_assert["stack"]], ["a()"])
+        self.assertEqual([f["function"] for f in ns_assertion["stack"]], ["b()"])
+
+    def test_process_output_cpp_assertion_without_moztest(self):
+        monitor = SystemResourceMonitor(poll_interval=0.25)
+        monitor._assertion_parser = None
+        monitor.start()
+        self._process_output(monitor, self.NS_ASSERTION_LINE)
+        monitor.stop()
+
+        asserts = self._events(monitor, "C++ assertion")
         self.assertEqual(len(asserts), 1)
         _, _, data = asserts[0]
         self.assertEqual(data["type"], "cppDebug")
         self.assertEqual(data["color"], "red")
-        self.assertIn("Out-of-flow frame", data["message"])
-        self.assertEqual(data["file"], "layout/generic/nsPlaceholderFrame.cpp")
         self.assertEqual(data["line"], 131)
+
+    def _assertion_failure(self, message="x", stack=None, **extra):
+        SystemResourceMonitor.assertion_failure({
+            "time": int(time.time() * 1000),
+            "kind": "MOZ_ASSERT",
+            "message": message,
+            "file": "/builds/worker/checkouts/gecko/dom/workers/RuntimeService.cpp",
+            "lineno": 2229,
+            "fatal": True,
+            "stack": stack,
+            **extra,
+        })
+
+    def test_assertion_failure_action(self):
+        rev = "56b3cc68b5e7557a3e13fca984f0f8aebc60dd22"
+        monitor = SystemResourceMonitor(
+            poll_interval=0.25,
+            metadata={"sourceURL": f"https://hg.mozilla.org/try/rev/{rev}"},
+        )
+        monitor.start()
+        self._assertion_failure(
+            message="false (unreachable)",
+            pid=6136,
+            process_type="Child",
+            thread="DOM Worker",
+            test="dom/workers/test/test_bar.html",
+            stack=[
+                {
+                    "function": "Run()",
+                    "file": "/builds/worker/checkouts/gecko/dom/workers/RuntimeService.cpp",
+                    "line": 2229,
+                },
+                {"module": "libxul.so", "module_offset": 0x43A0},
+            ],
+        )
+        monitor.stop()
+
+        asserts = self._events(monitor, "MOZ_ASSERT")
+        self.assertEqual(len(asserts), 1)
+        _, _, data = asserts[0]
+        self.assertEqual(data["type"], "AssertionFailure")
+        self.assertEqual(data["kind"], "MOZ_ASSERT")
+        self.assertEqual(data["color"], "red")
+        self.assertTrue(data["fatal"])
+        self.assertEqual(data["message"], "false (unreachable)")
+        self.assertEqual(data["file"], "dom/workers/RuntimeService.cpp")
+        self.assertEqual(data["line"], 2229)
+        self.assertEqual(data["pid"], 6136)
+        self.assertEqual(data["process"], "Child")
+        self.assertEqual(data["thread"], "DOM Worker")
+        self.assertEqual(data["test"], "dom/workers/test/test_bar.html")
+        self.assertEqual(
+            data["stack"][0]["file"],
+            f"hg:hg.mozilla.org/try:dom/workers/RuntimeService.cpp:{rev}",
+        )
+        self.assertEqual(
+            data["stack"][1], {"module": "libxul.so", "module_offset": 0x43A0}
+        )
+
+        markers = monitor.as_profile()["threads"][0]["markers"]["data"]
+        marker = next(m for m in markers if m.get("type") == "AssertionFailure")
+        self.assertIn("cause", marker)
+
+    def test_assertion_failure_action_supersedes_line_report(self):
+        monitor = SystemResourceMonitor(poll_interval=0.25)
+        monitor.start()
+        self._process_output(monitor, self.MOZ_ASSERT_LINE)
+        self._process_output(monitor, "#01: f() [dom/workers/RuntimeService.cpp:2229]")
+        # The harness parser emits the action when it sees the terminating
+        # line, before that line is logged.
+        self._assertion_failure(
+            message="false (unreachable)",
+            stack=[{"function": "g()", "file": "dom/a.cpp", "line": 1}],
+        )
+        self._process_output(monitor, "terminating line")
+        monitor.stop()
+
+        asserts = self._events(monitor, "MOZ_ASSERT")
+        self.assertEqual(len(asserts), 1)
+        self.assertEqual([f["function"] for f in asserts[0][2]["stack"]], ["g()"])
+        self.assertEqual(len(self._events(monitor, "output")), 1)
+
+    def test_assertion_failure_action_with_other_key_keeps_both(self):
+        monitor = SystemResourceMonitor(poll_interval=0.25)
+        monitor.start()
+        self._process_output(monitor, self.MOZ_ASSERT_LINE)
+        self._process_output(monitor, "#01: f() [dom/workers/RuntimeService.cpp:2229]")
+        self._assertion_failure(message="something else")
+        self._process_output(monitor, "terminating line")
+        monitor.stop()
+
+        messages = sorted(e[2]["message"] for e in self._events(monitor, "MOZ_ASSERT"))
+        self.assertEqual(messages, ["false (unreachable)", "something else"])
+
+    def test_line_report_completing_after_action_is_dropped(self):
+        monitor = SystemResourceMonitor(poll_interval=0.25)
+        monitor.start()
+        self._assertion_failure(message="false (unreachable)")
+        self._process_output(monitor, self.MOZ_ASSERT_LINE)
+        self._process_output(monitor, "#01: f() [dom/workers/RuntimeService.cpp:2229]")
+        self._process_output(monitor, "terminating line")
+        # The same assertion firing again is a new event.
+        self._process_output(monitor, self.MOZ_ASSERT_LINE)
+        self._process_output(monitor, "terminating line")
+        monitor.stop()
+
+        asserts = self._events(monitor, "MOZ_ASSERT")
+        self.assertEqual(len(asserts), 2)
+        self.assertIsNone(asserts[0][2].get("stack", [{}])[0].get("function"))
+        self.assertEqual(
+            asserts[1][2]["stack"],
+            [{"file": "dom/workers/RuntimeService.cpp", "line": 2229}],
+        )
 
     def test_process_output_console(self):
         monitor = SystemResourceMonitor(poll_interval=0.25)

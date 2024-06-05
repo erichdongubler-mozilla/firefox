@@ -697,11 +697,10 @@ class ScriptMixin(PlatformMixin):
                 # Bug 1301645 - BadZipfile: Bad CRC-32 for file ...
                 #    http://stackoverflow.com/questions/5624669/strange-badzipfile-bad-crc-32-problem/5626098#5626098
                 # Bug 1301802 - error: Error -3 while decompressing: invalid stored block lengths
-                bundle.extract(entry, path=extract_to)
+                fname = bundle.extract(entry, path=extract_to)
 
                 # ZipFile doesn't preserve permissions during extraction:
                 # http://bugs.python.org/issue15795
-                fname = os.path.realpath(os.path.join(extract_to, entry))
                 try:
                     # getinfo() can raise KeyError
                     mode = bundle.getinfo(entry).external_attr >> 16 & 0x1FF

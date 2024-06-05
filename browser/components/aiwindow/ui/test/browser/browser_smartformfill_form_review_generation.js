@@ -38,6 +38,7 @@ describe("Smart Form Fill form review generation", () => {
       snapshot.l10nIds.includes("ai-smart-form-fill-finding-suggestions"),
       "The progress message should be rendered"
     );
+    await tabToFormReviewElement(reviewBrowser, ".form-review-stop");
 
     await respondWithGeneratedFields(context.mockEngineManager, []);
     await waitForFormReviewState(reviewBrowser, FORM_REVIEW_STATES.FINAL);
@@ -83,6 +84,7 @@ describe("Smart Form Fill form review generation", () => {
       snapshot.l10nIds.includes("ai-smart-form-fill-review-heading"),
       "The review heading should be rendered"
     );
+    await tabToFormReviewElement(reviewBrowser, "moz-input-text");
 
     const dialogClosed = waitForFormReviewClose(context.win, dialog);
     await BrowserTestUtils.synthesizeKey("KEY_Escape", {}, reviewBrowser);
@@ -140,6 +142,7 @@ describe("Smart Form Fill form review generation", () => {
       snapshot.l10nIds.includes("ai-smart-form-fill-no-suggestions-heading"),
       "The no-suggestions heading should be rendered"
     );
+    await tabToFormReviewElement(reviewBrowser, ".form-review-close");
 
     const dialogClosed = waitForFormReviewClose(context.win, dialog);
     await activateFormReviewButton(

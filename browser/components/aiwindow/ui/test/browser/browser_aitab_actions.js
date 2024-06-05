@@ -28,7 +28,7 @@ const { Conversation } = ChromeUtils.importESModule(
 const AITAB_PREF = "browser.smartwindow.aitab.enabled";
 const CONV_ID = "conv-delete-flow";
 const SLUG = "delete_flow";
-const PAGE_URL = `about:aitab?page=${SLUG}`;
+const PAGE_URL = `about:smartpage?page=${SLUG}`;
 
 // Every Smart Window openSeededPage() hands out, so cleanup can close any a
 // failing task left behind.

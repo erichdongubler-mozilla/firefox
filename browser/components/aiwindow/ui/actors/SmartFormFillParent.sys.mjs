@@ -349,7 +349,7 @@ export class SmartFormFillParent extends JSWindowActorParent {
     }
 
     const focusedForm = await this.#getFocusedForm();
-    if (!focusedForm) {
+    if (this.#destroyed || !focusedForm) {
       return;
     }
 
@@ -359,7 +359,6 @@ export class SmartFormFillParent extends JSWindowActorParent {
     }
 
     this.#startFormMetadataRequests(metadata);
-
     await Promise.all([
       metadata.relevantTabsPromise,
       metadata.classificationPromise,
@@ -384,7 +383,7 @@ export class SmartFormFillParent extends JSWindowActorParent {
    */
   async #editSources() {
     const focusedForm = await this.#getFocusedForm();
-    if (!focusedForm) {
+    if (this.#destroyed || !focusedForm) {
       return;
     }
 
@@ -682,7 +681,7 @@ export class SmartFormFillParent extends JSWindowActorParent {
     metadata.classificationStatus = METADATA_STATUS.IDLE;
     metadata.relevantTabsPromise = null;
     metadata.classificationPromise = null;
-    this.#controller?.invalidateForm(formData.id);
+    this.#controller.invalidateForm(formData.id);
 
     // The round this form was on is superseded, so its events stop sharing a
     // flow with the ones the next round will record.
@@ -982,12 +981,12 @@ export class SmartFormFillParent extends JSWindowActorParent {
    * @returns {void}
    */
   #cancelFormReviewGeneration(formId, generation) {
-    if (generation !== this.#autofillGeneration) {
+    if (this.#destroyed || generation !== this.#autofillGeneration) {
       return;
     }
 
     ++this.#autofillGeneration;
-    this.#controller?.cancelAutofill(formId);
+    this.#controller.cancelAutofill(formId);
   }
 
   /**
@@ -1174,13 +1173,18 @@ export class SmartFormFillParent extends JSWindowActorParent {
    * Invalidates tab-dependent metadata for all tracked forms.
    */
   #invalidateTabMetadata() {
+    if (this.#destroyed || !this.#controller) {
+      return;
+    }
+
     for (const metadata of this.#formMetadataById.values()) {
       ++metadata.relevantTabsRevision;
       metadata.relevantTabsPromise = null;
       metadata.relevantTabsStatus = METADATA_STATUS.IDLE;
     }
 
-    this.#controller?.invalidateTabs();
+    this.#controller.invalidateTabs();
+    this.sendAsyncMessage("SmartFormFill:RefreshAutocomplete");
   }
 
   /**
@@ -1259,7 +1263,7 @@ export class SmartFormFillParent extends JSWindowActorParent {
       if (!formData) {
         ++metadata.relevantTabsRevision;
         ++metadata.classificationRevision;
-        this.#controller?.invalidateForm(formId);
+        this.#controller.invalidateForm(formId);
         this.#formMetadataById.delete(formId);
         this.#flowIdByFormId.delete(formId);
         this.#fieldDecisionsByFormId.delete(formId);
@@ -1294,8 +1298,19 @@ export class SmartFormFillParent extends JSWindowActorParent {
    *   should not be shown.
    */
   async searchAutoCompleteEntries(_searchString, options) {
+    if (this.#destroyed) {
+      return null;
+    }
+
     const focusedForm = await this.#getFocusedForm();
-    if (!focusedForm) {
+
+    // Every provider that injects the Smart Form Fill entry funnels through
+    // here, so this is where the entry is kept out of a field the user has
+    // already put a value in, or is typing in.
+    if (
+      this.#destroyed ||
+      !focusedForm?.emptyFieldIds.has(focusedForm.focusedFieldId)
+    ) {
       return null;
     }
 
@@ -1308,10 +1323,12 @@ export class SmartFormFillParent extends JSWindowActorParent {
     this.#autocompleteFormId = focusedForm.id;
     this.#startFormMetadataRequests(metadata);
 
+    const availableTabs = this.#controller.getTabs().length;
     const entries = await lazy.SmartFormFillAutocomplete.createItemsAsync({
       sffActor: this,
       formId: focusedForm.id,
       focusElementId: options.focusElementId,
+      availableTabs,
     });
 
     return entries.length ? { entries } : null;
@@ -1335,6 +1352,10 @@ export class SmartFormFillParent extends JSWindowActorParent {
    * Updates the current Smart Form Fill row with its relevant tab sources.
    */
   #updateAutoCompletePopupSources() {
+    if (this.#destroyed) {
+      return;
+    }
+
     const formId = this.#autocompleteFormId;
     if (!formId || !this.areRelevantTabsReady(formId)) {
       return;
@@ -1359,6 +1380,10 @@ export class SmartFormFillParent extends JSWindowActorParent {
    *   unsupported action.
    */
   onAutoCompleteEntrySelected(message) {
+    if (this.#destroyed) {
+      return undefined;
+    }
+
     switch (message) {
       case "SmartFormFill:Start":
         return this.triggerAutofill();
@@ -1398,6 +1423,10 @@ export class SmartFormFillParent extends JSWindowActorParent {
    * @returns {boolean} Whether the relevant-tab result can be displayed.
    */
   areRelevantTabsReady(formId) {
+    if (this.#destroyed) {
+      return false;
+    }
+
     return (
       this.#formMetadataById.get(formId)?.relevantTabsStatus ===
       METADATA_STATUS.READY
@@ -1551,11 +1580,12 @@ export class SmartFormFillParent extends JSWindowActorParent {
    */
   #getRequestObserver() {
     return {
-      onRelevantTabsDispatched: (formId, request, modelInfo) =>
+      onRelevantTabsDispatched: (formId, request, modelInfo, threshold) =>
         this.#telemetry.startRelevantTabsRequest(
           this.#getFlowId(formId),
           request,
-          modelInfo
+          modelInfo,
+          threshold
         ),
 
       onRelevantTabsAnswered: (flow, response, tabsUsed) =>

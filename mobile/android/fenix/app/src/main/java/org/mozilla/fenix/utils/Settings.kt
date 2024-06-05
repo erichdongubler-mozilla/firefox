@@ -22,6 +22,7 @@ import java.security.InvalidParameterException
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode
+import mozilla.components.feature.automotive.isAndroidAutomotiveAvailable
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.AutoplayAction
@@ -1528,6 +1529,25 @@ class Settings(
             field = value
         }
 
+    /**
+     * The state of the OS power saving (battery saver) mode the last time it was observed, or `null` if it has never
+     * been observed. Persisted so that a change made while the app process was not running is still detected the next
+     * time the app starts.
+     */
+    var lastKnownPowerSaveMode: Boolean?
+        get() {
+            val key = appContext.getPreferenceKey(R.string.pref_key_last_known_power_save_mode)
+
+            return if (preferences.contains(key)) preferences.getBoolean(key, false) else null
+        }
+        set(value) {
+            val key = appContext.getPreferenceKey(R.string.pref_key_last_known_power_save_mode)
+
+            preferences.edit {
+                if (value == null) remove(key) else putBoolean(key, value)
+            }
+        }
+
     var shouldDeleteBrowsingDataOnQuit by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_delete_browsing_data_on_quit),
@@ -1633,13 +1653,32 @@ class Settings(
 
     val toolbarPosition: ToolbarPosition
         get() =
-            if (isTabStripEnabled) {
-                ToolbarPosition.TOP
-            } else if (shouldUseBottomToolbar) {
+            if (shouldUseBottomToolbar) {
                 ToolbarPosition.BOTTOM
             } else {
                 ToolbarPosition.TOP
             }
+
+    var shouldUseBottomTabStrip by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_tab_bar_bottom),
+            default = false,
+            persistDefaultIfNotExists = true,
+        )
+
+    val tabStripPosition: ToolbarPosition
+        get() =
+            if (shouldUseBottomTabStrip) {
+                ToolbarPosition.BOTTOM
+            } else {
+                ToolbarPosition.TOP
+            }
+
+    val shouldShowTabStripAtTop: Boolean
+        get() = isTabStripEnabled && tabStripPosition == ToolbarPosition.TOP
+
+    val shouldShowTabStripAtBottom: Boolean
+        get() = isTabStripEnabled && tabStripPosition == ToolbarPosition.BOTTOM
 
     /**
      * Check each active accessibility service to see if it can perform gestures, if any can, then it is *likely* a
@@ -1939,16 +1978,23 @@ class Settings(
             default = true,
         )
 
+    /**
+     * Whether this device supports the application's own autofill and password management. Both are disabled on Android
+     * Automotive OS for now until we meet specific Google requirements around protecting passwords and credit card
+     * information in cars.
+     */
+    val isAutofillSupported: Boolean by lazy { !appContext.isAndroidAutomotiveAvailable() }
+
     var shouldPromptToSaveLogins by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_save_logins),
-            default = true,
+            default = { isAutofillSupported },
         )
 
     var shouldAutofillLogins by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_autofill_logins),
-            default = true,
+            default = { isAutofillSupported },
         )
 
     /**
@@ -2304,7 +2350,7 @@ class Settings(
     var shouldAutofillCreditCardDetails by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_credit_cards_save_and_autofill_cards),
-            default = true,
+            default = { isAutofillSupported },
         )
 
     /**
@@ -2315,7 +2361,7 @@ class Settings(
     var shouldAutofillAddressDetails by
         booleanPreference(
             appContext.getPreferenceKey(R.string.pref_key_addresses_save_and_autofill_addresses),
-            default = true,
+            default = { isAutofillSupported },
         )
 
     /** Indicates if the Contile functionality should be visible. */
@@ -2589,13 +2635,6 @@ class Settings(
             default = { FxNimbus.features.showMoreShortcuts.value().enabled },
         )
 
-    /** Indicates if Merino Client is enabled. */
-    var enableMerinoClient by
-        booleanPreference(
-            key = appContext.getPreferenceKey(R.string.pref_key_enable_merino_client),
-            default = { FxNimbus.features.merinoClient.value().enabled },
-        )
-
     /** Indicates if the Homepage Weather Widget is enabled. */
     var enableHomepageWeatherWidget by
         booleanPreference(
@@ -2759,6 +2798,28 @@ class Settings(
             default = { FxNimbus.features.shakeToSummarize.value().enabled },
         )
 
+    /**
+     * Secret-settings override for the tab reload cover base feature. Defaults to the Nimbus `tab-reload-cover.enabled`
+     * value so the toggle initially reflects the Nimbus configuration; once toggled, the pref becomes the source of
+     * truth and overrides Nimbus.
+     */
+    var tabReloadCoverEnabled by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_tab_reload_cover_enabled),
+            default = { FxNimbus.features.tabReloadCover.value().enabled },
+        )
+
+    /**
+     * Secret-settings override for the tab reload cover's scroll-aware thumbnail capture. Only takes effect when
+     * [tabReloadCoverEnabled] is also true — scroll-aware capture without the cover has no user-visible effect.
+     * Defaults to the Nimbus `tab-reload-cover.scroll-aware-capture-enabled` value.
+     */
+    var tabReloadCoverScrollAwareEnabled by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_tab_reload_cover_scroll_aware_enabled),
+            default = { FxNimbus.features.tabReloadCover.value().scrollAwareCaptureEnabled },
+        )
+
     /** Nimbus controlled feature flag that indicates if the Listen to Page feature should be enabled */
     var listenToPageFeatureFlagEnabled by
         booleanPreference(
@@ -2845,17 +2906,6 @@ class Settings(
      */
     val isIPProtectionAvailable: Boolean
         get() = FxNimbus.features.ipProtection.value().enabled || isIPProtectionEnabled
-
-    /**
-     * Persists IPProtection locations state set through Secret Settings.
-     *
-     * `true` makes the IPProtection location UI elements interactable.
-     */
-    var isIPProtectionLocationsEnabled by
-        booleanPreference(
-            key = appContext.getPreferenceKey(R.string.pref_key_enable_ip_protection_locations),
-            default = Config.channel.isDebug,
-        )
 
     /**
      * Tracks how many times the summarize menu item has been shown. Used to control highlight/badge visibility for
@@ -3260,6 +3310,17 @@ class Settings(
             default = { DefaultTabManagementFeatureHelper.tabGroupsStripEnabled },
         )
 
+    /** Whether the Tab Groups strip should be shown: its feature is enabled and the tab strip is not shown. */
+    val shouldShowTabGroupsStrip: Boolean
+        get() = tabGroupsStripEnabled && !isTabStripEnabled
+
+    /** Whether the Tab Groups feature is visible in the browser menu. */
+    var showTabGroupsInMenu by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_show_tab_groups_in_menu),
+            default = { DefaultTabManagementFeatureHelper.showTabGroupsInMenu },
+        )
+
     /** Whether the Native Share Sheet feature is enabled. */
     var nativeShareSheetEnabled by
         booleanPreference(
@@ -3409,4 +3470,49 @@ class Settings(
             key = appContext.getPreferenceKey(R.string.pref_key_enable_pdf_tools),
             default = { FxNimbus.features.pdfViewer.value().androidUiTools },
         )
+
+    var accountSettingsNewUi by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_enable_account_settings_new_ui),
+            default = { FxNimbus.features.accountSyncDecoupleM1.value().enabled },
+        )
+
+    private var powerSavingModeAutoPreference by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_power_saving_mode_auto_enabled),
+            default = false,
+        )
+
+    private var powerSavingModeManuallyPreference by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_power_saving_mode_manually_enabled),
+            default = false,
+        )
+
+    /**
+     * Indicates if Power Saving Mode should turn on automatically whenever the OS reports that power save (battery
+     * saver) mode is active. Mutually exclusive with [powerSavingModeManuallyEnabled], which is turned off whenever
+     * this is turned on.
+     */
+    var powerSavingModeAutoEnabled: Boolean
+        get() = powerSavingModeAutoPreference
+        set(value) {
+            powerSavingModeAutoPreference = value
+            if (value) {
+                powerSavingModeManuallyPreference = false
+            }
+        }
+
+    /**
+     * Indicates if Power Saving Mode is enabled manually, regardless of the OS power save (battery saver) mode.
+     * Mutually exclusive with [powerSavingModeAutoEnabled], which is turned off whenever this is turned on.
+     */
+    var powerSavingModeManuallyEnabled: Boolean
+        get() = powerSavingModeManuallyPreference
+        set(value) {
+            powerSavingModeManuallyPreference = value
+            if (value) {
+                powerSavingModeAutoPreference = false
+            }
+        }
 }

@@ -695,6 +695,13 @@ static void FinishAsyncMemoryReport() {
   helper.Report(aReport.interning.data_stores.id, \
                 "interning/" #id "/data-stores");
 
+// Follower stores for types interned by the content display list builder
+// rather than by a scene builder interner. See
+// gfx/wr/webrender/doc/dl-builder-interning.md.
+#define REPORT_DL_STORE(id)                                             \
+  helper.Report(aReport.interning.dl_stores.id, "interning/" #id "/dl-" \
+                                                                 "stores");
+
 NS_IMPL_ISUPPORTS(WebRenderMemoryReporter, nsIMemoryReporter)
 
 NS_IMETHODIMP
@@ -731,6 +738,7 @@ WebRenderMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 
         WEBRENDER_FOR_EACH_INTERNER(REPORT_INTERNER, );
         WEBRENDER_FOR_EACH_INTERNER(REPORT_DATA_STORE, );
+        WEBRENDER_FOR_EACH_INTERNER(REPORT_DL_STORE, );
 
         // GPU Memory.
         helper.ReportTexture(aReport.vertex_data_textures, "vertex-data");
@@ -759,6 +767,7 @@ WebRenderMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 
 #undef REPORT_INTERNER
 #undef REPORT_DATA_STORE
+#undef REPORT_DL_STORE
 
 std::atomic<int8_t> gfxPlatform::sHasVariationFontSupport = -1;
 
@@ -2511,7 +2520,8 @@ void gfxPlatform::InitGPUProcessPrefs() {
     return;
   }
 
-  if (IsHeadless()) {
+  if (IsHeadless() &&
+      !StaticPrefs::layers_gpu_process_allow_headless_AtStartup()) {
     gpuProc.ForceDisable(FeatureStatus::Blocked, "Headless mode is enabled",
                          "FEATURE_FAILURE_HEADLESS_MODE"_ns);
     return;

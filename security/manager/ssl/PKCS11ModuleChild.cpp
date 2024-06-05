@@ -12,6 +12,7 @@
 #include "PKCS11ModuleDB.h"
 #include "PKCS11Token.h"
 #include "ScopedNSSTypes.h"
+#include "certdb.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsDebugImpl.h"
 
@@ -349,6 +350,66 @@ ipc::IPCResult PKCS11ModuleChild::RecvCancelProtectedAuth(uint64_t id) {
         Some(std::make_pair(ProtectedAuthState::Cancelled, id));
     authPromptMonitorLock.Notify();
   }
+  return IPC_OK();
+}
+
+enum class Trust {
+  Unknown,
+  Anchor,
+  Distrusted,
+};
+
+Trust GetTrustForCert(CERTCertificate* cert) {
+  CERTCertTrust trust;
+  // CERT_GetCertTrust returns SECSuccess iff there is a trust record. If there
+  // isn't a trust record, trust is unknown.
+  if (CERT_GetCertTrust(cert, &trust) != SECSuccess) {
+    return Trust::Unknown;
+  }
+  uint32_t flags = SEC_GET_TRUST_FLAGS(&trust, trustSSL);
+  // If the terminal bit is set and the trust bit is not set, this certificate
+  // is actively distrusted.
+  if ((flags & (CERTDB_TRUSTED_CA | CERTDB_TERMINAL_RECORD)) ==
+      CERTDB_TERMINAL_RECORD) {
+    return Trust::Distrusted;
+  }
+  // If the trust bit is set, this is a trust anchor.
+  if (flags & CERTDB_TRUSTED_CA) {
+    return Trust::Anchor;
+  }
+  // Otherwise, trust is unknown.
+  return Trust::Unknown;
+}
+
+ipc::IPCResult PKCS11ModuleChild::RecvFindCertificates(
+    FindCertificatesResolver&& aResolver) {
+  mAuthTaskQueue->Dispatch(NS_NewRunnableFunction(
+      __func__, [self = RefPtr{this}, resolver(std::move(aResolver))] {
+        nsTArray<Certificate> certificates;
+        UniqueCERTCertList nssCertificates(
+            PK11_ListCerts(PK11CertListUnique, self.get()));
+        if (nssCertificates.get()) {
+          for (CERTCertListNode* node = CERT_LIST_HEAD(nssCertificates.get());
+               !CERT_LIST_END(node, nssCertificates.get());
+               node = CERT_LIST_NEXT(node)) {
+            Trust trust = GetTrustForCert(node->cert);
+            // Don't expose actively distrusted certificates.
+            if (trust == Trust::Distrusted) {
+              continue;
+            }
+            Certificate certificate;
+            certificate.der().AppendElements(node->cert->derCert.data,
+                                             node->cert->derCert.len);
+            certificate.serverAuthTrustAnchor() = trust == Trust::Anchor;
+            certificates.AppendElement(std::move(certificate));
+          }
+        }
+        self->mTaskQueue->Dispatch(NS_NewRunnableFunction(
+            __func__, [certificates(std::move(certificates)),
+                       resolver(std::move(resolver))] {
+              resolver(std::move(certificates));
+            }));
+      }));
   return IPC_OK();
 }
 

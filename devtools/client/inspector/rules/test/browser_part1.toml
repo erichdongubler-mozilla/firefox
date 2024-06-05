@@ -349,9 +349,6 @@ skip-if = [
 ["browser_rules_variables-in-pseudo-element_02.js"]
 
 ["browser_rules_variables-jump-to-definition.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2034604
-]
 
 ["browser_rules_variables_01.js"]
 

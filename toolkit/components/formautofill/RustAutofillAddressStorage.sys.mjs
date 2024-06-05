@@ -159,8 +159,12 @@ export class RustAutofillAddressesAdapter extends RustAutofillAdapterBase {
     return lazy.VALID_ADDRESS_FIELDS;
   }
 
-  _recordFromRust(address) {
-    return addressToJsRecord(address);
+  _recordFromRust(address, { rawData = false } = {}) {
+    const record = addressToJsRecord(address);
+    if (!rawData) {
+      lazy.AddressRecord.hideCountryWithoutMetaData(record);
+    }
+    return record;
   }
 
   _normalize(record, preserveEmptyFields = false) {

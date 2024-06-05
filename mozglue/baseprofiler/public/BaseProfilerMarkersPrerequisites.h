@@ -692,8 +692,9 @@ class JSONWriter;
 
 // This class collects all the information necessary to stream the JSON schema
 // that informs the front-end how to display a type of markers.
-// It will be created and populated in `MarkerTypeDisplay()` functions in each
-// marker type definition, see Add/Set functions.
+// It is created and populated by `BaseMarkerType::MarkerTypeDisplay()` from
+// the static members of each marker type definition, and by Rust marker types
+// through the Add/Set functions.
 class MarkerSchema {
  public:
   // This is used to describe a C++ type that is expected to be specified to
@@ -791,7 +792,11 @@ class MarkerSchema {
     String,
 
     // Show a string from a UniqueStringArray given an index in the profile.
-    // e.g. 1, given string table ["hello", "world"] will show "world"
+    // e.g. 1, given string table ["hello", "world"] will show "world".
+    // URLs are sanitized, because the front-end scrubs the whole string table,
+    // so unlike `String` this format is safe for strings that may contain one.
+    // Nothing else is sanitized: file paths, host names and other PII are kept
+    // as-is.
     UniqueString,
 
     // ----------------------------------------------------
@@ -918,6 +923,17 @@ class MarkerSchema {
     Red,
     Teal,
     Yellow
+  };
+
+  // This describes a timeline track graph built from one payload field.
+  struct GraphField {
+    // Key of the payload field to graph.
+    // Must be set.
+    const char* Key = nullptr;
+    GraphType Type = GraphType::Line;
+    // When left as `Nothing`, the front-end uses its default track color.
+    // Optional.
+    Maybe<GraphColor> Color;
   };
 
   // Marker schema, with a non-empty list of locations where markers should be
@@ -1150,6 +1166,16 @@ struct StreamPayloadHelper<TimeDuration, aFormat> {
   }
 };
 
+template <MarkerSchema::Format aFormat>
+struct StreamPayloadHelper<TimeStamp, aFormat> {
+  static void Stream(baseprofiler::SpliceableJSONWriter& aWriter,
+                     const Span<const char> aKey, const TimeStamp& aTimeStamp) {
+    static_assert(aFormat == MarkerSchema::Format::Time,
+                  "Wrong MarkerSchema::Format for TimeStamp");
+    aWriter.TimeProperty(aKey, aTimeStamp);
+  }
+};
+
 template <MarkerSchema::InputType IT>
 struct InputTypeToCpp;
 template <>
@@ -1225,6 +1251,13 @@ using PayloadFieldsTuple = typename PayloadFieldsTupleImpl<T>::Type;
 
 }  // namespace detail
 
+// Check if T::Locations exists.
+template <typename T, typename = void>
+struct MarkerHasLocations : std::false_type {};
+template <typename T>
+struct MarkerHasLocations<T, std::void_t<decltype(T::Locations)>>
+    : std::true_type {};
+
 // Check if T::TranslateMarkerInputToSchema exists
 template <typename T, typename = void>
 struct MarkerHasTranslator : std::false_type {};
@@ -1260,50 +1293,89 @@ struct BaseMarkerType {
   // string is then copied into every ETW event.
   static constexpr bool ETWStoreName = false;
 
+  // Defines how ETW filters this marker at runtime.
   static constexpr MarkerSchema::ETWMarkerGroup Group =
       MarkerSchema::ETWMarkerGroup::Generic;
 
   static constexpr MarkerSchema::PayloadField PayloadFields[0] = {};
 
+  static constexpr MarkerSchema::GraphField GraphFields[0] = {};
+
+  // A marker type either declares a non-empty `Locations` array or sets
+  // `UseSpecialFrontendLocation` to true (for types with special frontend
+  // handling); the two are mutually exclusive.
+  static constexpr bool UseSpecialFrontendLocation = false;
+
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
-    MS schema{T::Locations, std::size(T::Locations)};
-    if constexpr (T::AllLabels) {
-      schema.SetAllLabels(T::AllLabels);
-    }
-    if constexpr (T::ChartLabel) {
-      schema.SetChartLabel(T::ChartLabel);
-    }
-    if constexpr (T::TableLabel) {
-      schema.SetTableLabel(T::TableLabel);
-    }
-    if constexpr (T::TooltipLabel) {
-      schema.SetTooltipLabel(T::TooltipLabel);
-    }
-    if constexpr (T::IsStackBased) {
-      schema.SetIsStackBased();
-    }
-    if constexpr (T::ColorField) {
-      schema.SetColorField(T::ColorField);
-    }
     if constexpr (std::extent_v<decltype(T::PayloadFields)>) {
       static_assert(
           CheckPayloadFields(T::PayloadFields),
           "PayloadField requires a non-null Key and an InputTy other than "
           "Undefined");
     }
-    for (const MS::PayloadField& field : T::PayloadFields) {
-      if (field.Label) {
-        schema.AddKeyLabelFormat(field.Key, field.Label, field.Fmt,
-                                 field.Flags);
-      } else {
-        schema.AddKeyFormat(field.Key, field.Fmt, field.Flags);
+    if constexpr (std::extent_v<decltype(T::GraphFields)>) {
+      static_assert(CheckGraphFields(T::GraphFields),
+                    "GraphField requires a non-null Key");
+    }
+    if constexpr (T::UseSpecialFrontendLocation) {
+      static_assert(!MarkerHasLocations<T>::value,
+                    "Set either Locations or UseSpecialFrontendLocation, not "
+                    "both");
+      // The frontend hardcodes how to display these markers, so no display
+      // property belongs in the schema. PayloadFields is still allowed, as it
+      // also drives payload serialization and ETW.
+      static_assert(!T::AllLabels && !T::ChartLabel && !T::TableLabel &&
+                        !T::TooltipLabel && !T::ColorField &&
+                        !T::IsStackBased && !T::Description &&
+                        !std::extent_v<decltype(T::GraphFields)>,
+                    "UseSpecialFrontendLocation ignores the display schema, so "
+                    "do not set AllLabels, ChartLabel, TableLabel, "
+                    "TooltipLabel, ColorField, IsStackBased, Description or "
+                    "GraphFields");
+      return MS{MS::SpecialFrontendLocation{}};
+    } else {
+      static_assert(MarkerHasLocations<T>::value,
+                    "Declare Locations or set UseSpecialFrontendLocation");
+      MS schema{T::Locations, std::size(T::Locations)};
+      if constexpr (T::AllLabels) {
+        schema.SetAllLabels(T::AllLabels);
       }
+      if constexpr (T::ChartLabel) {
+        schema.SetChartLabel(T::ChartLabel);
+      }
+      if constexpr (T::TableLabel) {
+        schema.SetTableLabel(T::TableLabel);
+      }
+      if constexpr (T::TooltipLabel) {
+        schema.SetTooltipLabel(T::TooltipLabel);
+      }
+      if constexpr (T::IsStackBased) {
+        schema.SetIsStackBased();
+      }
+      if constexpr (T::ColorField) {
+        schema.SetColorField(T::ColorField);
+      }
+      for (const MS::PayloadField& field : T::PayloadFields) {
+        if (field.Label) {
+          schema.AddKeyLabelFormat(field.Key, field.Label, field.Fmt,
+                                   field.Flags);
+        } else {
+          schema.AddKeyFormat(field.Key, field.Fmt, field.Flags);
+        }
+      }
+      for (const MS::GraphField& graph : T::GraphFields) {
+        if (graph.Color) {
+          schema.AddChartColor(graph.Key, graph.Type, *graph.Color);
+        } else {
+          schema.AddChart(graph.Key, graph.Type);
+        }
+      }
+      if constexpr (T::Description) {
+        schema.AddStaticLabelValue("Description", T::Description);
+      }
+      return schema;
     }
-    if constexpr (T::Description) {
-      schema.AddStaticLabelValue("Description", T::Description);
-    }
-    return schema;
   }
 
   static constexpr Span<const char> MarkerTypeName() {
@@ -1344,6 +1416,17 @@ struct BaseMarkerType {
         return false;
       }
       if (field.InputTy == MarkerSchema::InputType::Undefined) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  template <std::size_t N>
+  static constexpr bool CheckGraphFields(
+      const MarkerSchema::GraphField (&aGraphFields)[N]) {
+    for (const auto& field : aGraphFields) {
+      if (field.Key == nullptr) {
         return false;
       }
     }

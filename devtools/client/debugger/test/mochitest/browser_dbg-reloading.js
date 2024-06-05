@@ -16,6 +16,13 @@
 const INDEX_URL = `${EXAMPLE_URL}ember/quickstart/dist/assets/ember-application/index.js`;
 
 add_task(async function () {
+  // Without the script navigation cache, reloading the bundle can hand the
+  // debugger a source-map mapping to an original source the sources reducer
+  // has not been told about yet, which throws and permanently loses the
+  // reloaded sources. The pref is Nightly-only, so the test only hits this on
+  // beta and release builds.
+  await pushPref("dom.script_loader.experimental.navigation_cache", true);
+
   const dbg = await initDebugger("ember/quickstart/dist/", INDEX_URL);
 
   await selectSource(dbg, INDEX_URL);

@@ -13,8 +13,8 @@ export const migrations = [
    * claimed by more than one conversation. Databases created under v1 carry
    * the non-unique index and have to have it rebuilt.
    *
-   * Nothing writes to this store in production yet, so no v1 database can hold
-   * rows that would violate the new constraint.
+   * The store had no production writer while v1 was current, so no v1 database
+   * can hold rows that would violate the new constraint.
    *
    * @param {object} connection - The open database connection.
    * @param {number} version - Schema version the database is migrating from.

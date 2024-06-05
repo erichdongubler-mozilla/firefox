@@ -101,19 +101,6 @@
       "padding": {
         "value": "6px"
       },
-      "background": {
-        "color": {
-          "@base": {
-            "value": "{button.background.color.ghost.@base}"
-          },
-          "hover": {
-            "value": "{toolbarbutton.background.color.hover}"
-          },
-          "active": {
-            "value": "{toolbarbutton.background.color.active}"
-          }
-        }
-      },
       "border": {
         "color": {
           "@base": {
@@ -129,25 +116,6 @@
             "value": {
               "default": "{tab.border.color.@base}",
               "prefersContrast": "{button.border.color.active}"
-            }
-          }
-        }
-      },
-      "text": {
-        "color": {
-          "@base": {
-            "value": "{tab.text.color.@base}"
-          },
-          "hover": {
-            "value": {
-              "default": "{tab.text.color.@base}",
-              "forcedColors": "{button.text.color.hover}"
-            }
-          },
-          "active": {
-            "value": {
-              "default": "{tab.text.color.@base}",
-              "forcedColors": "{button.text.color.active}"
             }
           }
         }

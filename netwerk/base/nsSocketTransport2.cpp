@@ -909,6 +909,16 @@ nsresult nsSocketTransport::InitWithConnectedSocket(PRFileDesc* fd,
   opt.value.non_blocking = true;
   PR_SetSocketOption(fd, &opt);
 
+  // disable the nagle algorithm like InitiateSocket() does for outgoing
+  // connections - otherwise the second of two small writes in a row (e.g. a
+  // WebSocket event followed by a response) is held back until the peer's
+  // delayed ACK arrives, which costs 40ms per pair on Linux
+  if (addr->raw.family == AF_INET || addr->raw.family == AF_INET6) {
+    opt.option = PR_SockOpt_NoDelay;
+    opt.value.no_delay = true;
+    PR_SetSocketOption(fd, &opt);
+  }
+
   SOCKET_LOG(
       ("nsSocketTransport::InitWithConnectedSocket [this=%p addr=%s:%hu]\n",
        this, mHost.get(), mPort));

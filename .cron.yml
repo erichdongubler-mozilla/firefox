@@ -571,3 +571,14 @@ jobs:
       # Replaces manual smoke tests from the DevTools release checklist.
       when:
           - {hour: 8, minute: 0}
+
+    - name: appservices
+      job:
+          type: decision-task
+          treeherder-symbol: as
+          target-tasks-method: appservices
+          optimize-target-tasks: false
+      run-on-projects:
+          - mozilla-central
+      when:
+          - {hour: 12, minute: 0}

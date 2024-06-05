@@ -89,11 +89,11 @@ add_task(async function test_no_show_hide_for_private_window() {
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    "about:robots"
+    "https://example.com/browser/browser/components/extensions/test/browser/file_dummy.html"
   );
 
   // Open and close a menu on the public window.
-  await openContextMenu("body");
+  await openContextMenu("p");
 
   // We naturally expect both extensions here.
   ok(document.getElementById(extMenuId), `menu exists ${extMenuId}`);

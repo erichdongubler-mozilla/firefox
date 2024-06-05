@@ -53,8 +53,8 @@ export function formatCreatedAt(createdAt, now = Date.now()) {
 }
 
 /**
- * Parent actor for about:aitab. Resolves the page name from the page URL into
- * the stored page config that content renders, and owns the destructive
+ * Parent actor for about:smartpage. Resolves the page name from the page URL
+ * into the stored page config that content renders, and owns the destructive
  * actions the page offers.
  */
 export class AITabParent extends JSWindowActorParent {
@@ -207,11 +207,11 @@ export class AITabParent extends JSWindowActorParent {
    * deleted, so the user is not left on a page that no longer exists.
    *
    * This has to run in the parent: the home page is a chrome: URL and
-   * about:aitab is content, which is not allowed to navigate itself there.
+   * about:smartpage is content, which is not allowed to navigate itself there.
    */
   #returnToSmartWindowHome() {
-    // about:aitab is not MAKE_LINKABLE, so web content cannot load it at all,
-    // framed or otherwise: this is always the tab's own top-level context.
+    // about:smartpage is not MAKE_LINKABLE, so web content cannot load it at
+    // all, framed or otherwise: this is always the tab's own top-level context.
     // The optional call covers the tab being closed mid-delete.
     this.browsingContext?.loadURI(Services.io.newURI(lazy.AIWINDOW_URL), {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),

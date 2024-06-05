@@ -75,7 +75,7 @@ body {
     direction: rtl;
   }
 
-  &:not([popup-window]) {
+  &:not([popup-window], [mini-window]) {
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     min-width: var(--window-min-width);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -147,6 +147,22 @@ body {
     --toolbox-background-repeat: no-repeat, var(--lwt-background-tiling);
     --toolbox-background-position: right top, var(--lwt-background-alignment);
     --toolbox-background-size: auto, var(--lwt-background-size);
+  }
+
+  /* A mini window is a small always-on-top window. */
+  &[mini-window] {
+    @media not (forced-colors) {
+      --mini-window-toolbar-background: light-dark(var(--color-white), var(--color-gray-70));
+
+      --toolbox-background-image: none;
+      --toolbox-background-color: var(--mini-window-toolbar-background);
+      --toolbox-background-color-inactive: var(--mini-window-toolbar-background);
+    }
+
+    --mini-window-slide-duration: 180ms;
+    --mini-window-fade-duration: 140ms;
+    --mini-window-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --mini-window-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   --ext-theme-background-transition: background-color 0.1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
@@ -227,6 +243,61 @@ body {
     /* Variables defined in browser-colors.css will be updated to use design tokens, see bug 1952566. */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-bottom-color: var(--chrome-content-separator-color);
+  }
+
+  /* Mini window: the toolbar is pinned to the top of the window and slides in/out
+   * of it.
+   *
+   * MiniWindow watches the top few pixels via MousePosTracker to reveal the bar. CSS
+   * holds the bar open under the pointer or keyboard focus; JS toggles mini-window-revealed
+   * for the timed reveals. */
+  :root[mini-window] & {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    transform: translateY(-100%);
+    opacity: 0;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition:
+        transform var(--mini-window-slide-duration) var(--mini-window-ease-emphasized),
+        opacity var(--mini-window-fade-duration) var(--mini-window-ease-standard);
+    }
+
+    @media (prefers-reduced-motion) {
+      transition: opacity 80ms var(--mini-window-ease-standard);
+    }
+
+    &:is(.mini-window-revealed, :hover, :focus-within:not(:-moz-window-inactive)) {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+/* The page is pushed down while the bar is shown so the bar never covers it,
+ * and takes the whole window back when it hides.
+ *
+ * This moves the page rather than resizing it: a margin would change the remote
+ * browser's height, reflowing the page and running its resize handlers every
+ * time the bar comes and goes, where a transform costs a composite. The page
+ * keeps the window's full height throughout, so while the bar is up its last
+ * few rows sit below the bottom of the window. */
+:root[mini-window] {
+  #navigator-toolbox:is(.mini-window-revealed, :hover, :focus-within:not(:-moz-window-inactive)) ~ #browser {
+    /* 0 until the bar has been measured, which happens before it is first revealed. */
+    transform: translateY(var(--mini-window-toolbar-height, 0));
+  }
+
+  #browser {
+    @media (prefers-reduced-motion: no-preference) {
+      transition: transform var(--mini-window-slide-duration) var(--mini-window-ease-emphasized);
+    }
+  }
+
+  /* Set for the frame in which the bar is first revealed. */
+  &[mini-window-first-open] :is(#navigator-toolbox, #browser) {
+    transition: none;
   }
 }
 
@@ -427,12 +498,43 @@ body {
   }
 }
 
-/* Popup windows hide all of the browser chrome. Taskbar tabs hide the same
- * thing except for the navigation buttons, which have their own allowlist in
- * toolbarbuttons.css */
+/* Popup windows hide all of the browser chrome. Taskbar tabs and Mini
+ * windows hide the same thing except for the navigation buttons; taskbar tabs
+ * keep theirs via an allowlist in toolbarbuttons.css, mini windows via the
+ * rule below. */
 :root[popup-window] :is(#toolbar-menubar, #PersonalToolbar, .chromeclass-toolbar-additional, .chromeclass-extrachrome),
-:root[taskbartab] :is(#toolbar-menubar, #PersonalToolbar, .chromeclass-extrachrome) {
+:root:is([taskbartab], [mini-window]) :is(#toolbar-menubar, #PersonalToolbar, .chromeclass-extrachrome) {
   display: none;
+}
+
+/* A Mini window is a focused, single-tab utility window (like a taskbar tab):
+ * it keeps only back/forward/reload, the address bar, and the two mini-window
+ * controls. Everything else in the bar goes. */
+:root[mini-window] {
+  .chromeclass-toolbar-additional:not(
+    #back-button,
+    #forward-button,
+    #stop-reload-button,
+    #mini-window-audio-button,
+    #mini-window-restore-button,
+    #mini-window-close-button
+  ) {
+    display: none;
+  }
+
+  /* The app menu and page-action buttons expose tab/window management, add-on
+     and page tools that don't apply to a single popped-out tab. */
+  #PanelUI-button,
+  #page-action-buttons {
+    display: none;
+  }
+
+  /* The reused nav-bar acts as the titlebar here, so there are no window
+     controls or titlebar drag spacers to show. */
+  .titlebar-buttonbox-container,
+  .titlebar-spacer {
+    display: none;
+  }
 }
 
 /* Menu bar */
@@ -536,11 +638,6 @@ body {
   }
 }
 
-/* Share Button */
-.share-more-button {
-  --menuitem-icon: url("chrome://global/skin/icons/more.svg");
-}
-
 /* Bookmarks toolbar */
 
 #PersonalToolbar {
@@ -635,6 +732,11 @@ toolbarpaletteitem > #personal-bookmarks > #PlacesToolbar,
   @media -moz-pref("browser.nova.enabled") {
     --info-bar-margin: 0;
   }
+}
+
+:root[mini-window] notification-message .notification-button-container {
+  /* Mini Window's can be quite small, so we need to wrap the buttons */
+  flex-wrap: wrap;
 }
 
 .bookmark-item[cutting] {

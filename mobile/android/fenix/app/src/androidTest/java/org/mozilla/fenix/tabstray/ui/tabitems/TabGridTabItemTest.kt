@@ -14,7 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
-import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
+import org.mozilla.fenix.tabstray.browser.compose.ItemInteractionState
 import org.mozilla.fenix.tabstray.data.createTab
 
 /**
@@ -28,7 +28,7 @@ class TabGridTabItemTest {
     @Test
     fun verifyDraggedItemScale() {
         composeTestRule.setContent {
-            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = true))
+            ComposableUnderTest(interactionState = ItemInteractionState(isDragged = true))
         }
         composeTestRule.waitUntil("Dragged item is scaled at 75%") {
             composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[ScaleKey] == 0.75f
@@ -38,7 +38,7 @@ class TabGridTabItemTest {
     @Test
     fun verifyUndraggedItemScale() {
         composeTestRule.setContent {
-            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = false))
+            ComposableUnderTest(interactionState = ItemInteractionState(isDragged = false))
         }
         composeTestRule.waitUntil("Undragged item is scaled at 100%") {
             composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[ScaleKey] == 1f
@@ -48,7 +48,7 @@ class TabGridTabItemTest {
     @Test
     fun verifyDraggedItemAlpha() {
         composeTestRule.setContent {
-            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = true))
+            ComposableUnderTest(interactionState = ItemInteractionState(isDragged = true))
         }
         composeTestRule.waitUntil("Dragged item opacity is 70%") {
             composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[AlphaKey] == 0.7f
@@ -58,7 +58,7 @@ class TabGridTabItemTest {
     @Test
     fun verifyUndraggedItemAlpha() {
         composeTestRule.setContent {
-            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = false))
+            ComposableUnderTest(interactionState = ItemInteractionState(isDragged = false))
         }
         composeTestRule.waitUntil("Undragged item opacity is 100%") {
             composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[AlphaKey] == 1f
@@ -68,7 +68,7 @@ class TabGridTabItemTest {
     @Test
     fun verifyHeldUndraggedItemAlpha() {
         composeTestRule.setContent {
-            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = false, isHeld = true))
+            ComposableUnderTest(interactionState = ItemInteractionState(isDragged = false, isHeld = true))
         }
         composeTestRule.waitUntil("Held item opacity is 100%") {
             composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[AlphaKey] == 1f
@@ -78,7 +78,7 @@ class TabGridTabItemTest {
     @Test
     fun verifyHeldUndraggedItemScale() {
         composeTestRule.setContent {
-            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = false, isHeld = true))
+            ComposableUnderTest(interactionState = ItemInteractionState(isDragged = false, isHeld = true))
         }
         composeTestRule.waitUntil("Held item scale is 100%") {
             composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[ScaleKey] == 1f
@@ -88,7 +88,7 @@ class TabGridTabItemTest {
     @Test
     fun verifyHeldItemAlpha() {
         composeTestRule.setContent {
-            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = true, isHeld = true))
+            ComposableUnderTest(interactionState = ItemInteractionState(isDragged = true, isHeld = true))
         }
         composeTestRule.waitUntil("Held item opacity is 70%") {
             composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[AlphaKey] == 0.7f
@@ -98,7 +98,7 @@ class TabGridTabItemTest {
     @Test
     fun verifyHeldItemScale() {
         composeTestRule.setContent {
-            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = true, isHeld = true))
+            ComposableUnderTest(interactionState = ItemInteractionState(isDragged = true, isHeld = true))
         }
         composeTestRule.waitUntil("Held item scale is 75%") {
             composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).fetchSemanticsNode().config[ScaleKey] == 0.75f
@@ -128,7 +128,7 @@ class TabGridTabItemTest {
 
     @Composable
     private fun ComposableUnderTest(
-        interactionState: TabItemInteractionState = TabItemInteractionState(),
+        interactionState: ItemInteractionState = ItemInteractionState(),
         isMediaActive: Boolean = false,
     ) {
         TabGridTabItem(

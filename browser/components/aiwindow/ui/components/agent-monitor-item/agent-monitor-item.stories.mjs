@@ -48,13 +48,14 @@ const AGENT = {
   ],
 };
 
-const Template = ({ agent, mode, expanded, editing }) => html`
+const Template = ({ agent, mode, expanded, editing, showLastResult }) => html`
   <div style="max-width: 416px;">
     <agent-monitor-item
       .agent=${agent}
       mode=${mode}
       ?expanded=${expanded}
       ?editing=${editing}
+      .showLastResult=${showLastResult}
     ></agent-monitor-item>
   </div>
 `;
@@ -94,4 +95,55 @@ Create.args = {
   mode: "create",
   expanded: false,
   editing: false,
+};
+
+export const HistoryWithFailedChecks = Template.bind({});
+HistoryWithFailedChecks.args = {
+  agent: {
+    ...AGENT,
+    history: [
+      {
+        id: "h-rate-limit",
+        checkedAt: "2026-08-13T09:00:00.000Z",
+        status: "error",
+        resultExplanation: "429 status code",
+        conditionMet: false,
+        errorCode: "rate_limit",
+      },
+      {
+        id: "h-timeout",
+        checkedAt: "2026-08-12T09:00:00.000Z",
+        status: "error",
+        resultExplanation: "The read timed out",
+        conditionMet: false,
+        errorCode: "timeout",
+      },
+      {
+        id: "h-canceled",
+        checkedAt: "2026-08-11T09:00:00.000Z",
+        status: "error",
+        resultExplanation: "Monitor check was canceled before it finished.",
+        conditionMet: false,
+        errorCode: "canceled",
+      },
+      {
+        id: "h-met",
+        checkedAt: "2026-08-10T09:00:00.000Z",
+        status: "success",
+        resultExplanation: "The price dropped to $265.",
+        conditionMet: true,
+      },
+      {
+        id: "h-not-met",
+        checkedAt: "2026-08-09T09:00:00.000Z",
+        status: "success",
+        resultExplanation: "The price is still $299.",
+        conditionMet: false,
+      },
+    ],
+  },
+  mode: "display",
+  expanded: true,
+  editing: false,
+  showLastResult: true,
 };

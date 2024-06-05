@@ -21,7 +21,7 @@ Services.scriptloader.loadSubScript(
 );
 
 const DUMMY_PAGE =
-  "https://example.com/browser/browser/base/content/test/general/dummy_page.html";
+  "https://example.com/browser/browser/base/content/test/browser-general/dummy_page.html";
 
 let testActionCalled = 0;
 
@@ -69,14 +69,20 @@ async function exitActionsMode() {
   });
 }
 
+const TEST_TOP_SITE = "https://example.com";
+
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["test.wait300msAfterTabSwitch", true],
       ["browser.urlbar.quickactions.enabled", true],
       ["browser.urlbar.scotchBonnet.enableOverride", true],
+      ["browser.urlbar.suggest.topsites", true],
+      ["browser.newtabpage.activity-stream.default.sites", TEST_TOP_SITE],
     ],
   });
+
+  await updateTopSites(sites => sites?.length == 1);
 
   ActionsProviderQuickActions.addAction("testaction", {
     commands: ["testaction"],

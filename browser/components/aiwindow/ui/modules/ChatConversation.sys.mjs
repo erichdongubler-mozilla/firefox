@@ -9,7 +9,6 @@ import {
   constructRelevantMemoriesContextMessage,
   replaceUrlsWithTokens,
   resolveMentionUrls,
-  stripUnresolvedUrlTokens,
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 
 import { DEFAULT_RELEVANT_MEMORIES_MESSAGE_COUNT } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs";
@@ -30,7 +29,10 @@ import {
 import { EventEmitter } from "resource://gre/modules/EventEmitter.sys.mjs";
 import { Conversation } from "moz-src:///browser/components/aiwindow/models/Conversation.sys.mjs";
 import { consumeStreamChunk } from "moz-src:///browser/components/aiwindow/models/TokenStreamParser.sys.mjs";
-import { UrlTokenizer } from "moz-src:///browser/components/aiwindow/ui/modules/UrlTokenizer.sys.mjs";
+import {
+  stripUnresolvedUrlTokens,
+  UrlTokenizer,
+} from "moz-src:///browser/components/aiwindow/ui/modules/UrlTokenizer.sys.mjs";
 
 /** @typedef {import("moz-src:///browser/components/aiwindow/models/SearchBrowsingHistory.sys.mjs").HistoryRow} HistoryRow */
 
@@ -66,6 +68,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ToolUI: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
   CONFIRMATION_UI_TYPES:
     "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
+  isTabGroupMember: "chrome://browser/content/urlbar/SmartbarMentionUtils.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "fluentStrings", () => {
@@ -1064,7 +1067,11 @@ export class ChatConversation extends Conversation {
     const lastUserMsg = this.messages.findLast(
       m => m?.role === MESSAGE_ROLE.USER
     );
-    return lastUserMsg?.content?.contextMentions?.length ?? 0;
+    return (
+      lastUserMsg?.content?.contextMentions?.filter(
+        m => !lazy.isTabGroupMember(m)
+      ).length ?? 0
+    );
   }
 
   /**

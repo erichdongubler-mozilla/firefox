@@ -3,7 +3,7 @@ support-files = [
   "apz_test_native_event_utils.js",
   "apz_test_utils.js",
   "helper_browser_test_utils.js",
-  "!/browser/base/content/test/forms/head.js",
+  "!/browser/base/content/test/browser-forms/head.js",
   "!/browser/components/extensions/test/browser/head.js",
   "!/browser/components/extensions/test/browser/head_browserAction.js"
 ]
@@ -50,6 +50,12 @@ run-if = [
 
 ["browser_test_displayport_in_popup.js"]
 support-files = ["helper_popup_menu_in_parent_process-1.html"]
+run-if = [
+  "os != 'mac'", # On Mac popup windows having no remote content doesn't have the compositor
+]
+
+["browser_test_displayport_in_select_dropdown.js"]
+support-files = ["helper_bug2041504_select.html"]
 run-if = [
   "os != 'mac'", # On Mac popup windows having no remote content doesn't have the compositor
 ]

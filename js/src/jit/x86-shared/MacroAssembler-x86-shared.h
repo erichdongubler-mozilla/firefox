@@ -12,6 +12,7 @@
 #endif
 
 using js::wasm::FaultingCodeRange;
+using js::wasm::FaultingCodeRangePair;
 
 namespace js {
 namespace jit {

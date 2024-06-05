@@ -510,6 +510,15 @@ export const AIWindowUI = {
   },
 
   /**
+   * Open the monitor panel straight to the create form.
+   *
+   * @param {Window} win
+   */
+  showMonitorCreateForm(win) {
+    lazy.MonitorPanel.showCreateForm(win);
+  },
+
+  /**
    * Toggle the AI Window sidebar
    *
    * @param {Window} win

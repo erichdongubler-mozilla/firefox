@@ -214,11 +214,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_merino_client).apply {
-            isChecked = settings.enableMerinoClient
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_homepage_weather_widget).apply {
             isChecked = settings.enableHomepageWeatherWidget
             onPreferenceChangeListener = SharedPreferenceUpdater()
@@ -383,12 +378,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_ip_protection_locations).apply {
-            isVisible = Config.channel.isNightlyOrDebug
-            isChecked = settings.isIPProtectionLocationsEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_ip_protection_use_gpi).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = settings.ipProtectionUseGpi
@@ -417,6 +406,11 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_account_settings_new_ui).apply {
+            isChecked = settings.accountSettingsNewUi
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_homepage_customization).apply {
             isChecked = settings.enableHomepageCustomization
             onPreferenceChangeListener = SharedPreferenceUpdater()
@@ -437,6 +431,36 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_manager_opening_animation).apply {
             isVisible = true
             isChecked = settings.tabManagerOpeningAnimationEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_reload_cover_enabled).apply {
+            isVisible = true
+            isChecked = settings.tabReloadCoverEnabled
+            onPreferenceChangeListener =
+                object : SharedPreferenceUpdater() {
+                    override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                        // When the cover is turned off, also force the scroll-aware toggle to off. The XML
+                        // `android:dependency` alone would only grey out the child toggle but leave its
+                        // stored value intact — so re-enabling the cover would silently reactivate
+                        // scroll-aware without the user re-confirming it.
+                        if (newValue == false) {
+                            requirePreference<SwitchPreferenceCompat>(
+                                    R.string.pref_key_tab_reload_cover_scroll_aware_enabled
+                                )
+                                .isChecked = false
+                        }
+                        return super.onPreferenceChange(preference, newValue)
+                    }
+                }
+        }
+
+        // XML `android:dependency` greys out this toggle whenever the cover toggle above is off. The change
+        // listener on the cover toggle also flips this toggle's stored value to false, so re-enabling the
+        // cover doesn't silently reactivate scroll-aware.
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_reload_cover_scroll_aware_enabled).apply {
+            isVisible = true
+            isChecked = settings.tabReloadCoverScrollAwareEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -470,6 +494,33 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
+        // These two are mutually exclusive, which the Settings setters enforce, so they write through Settings
+        // rather than SharedPreferenceUpdater and refresh each other to reflect the setter's side effect.
+        val powerSavingModeAutoPreference =
+            requirePreference<SwitchPreferenceCompat>(R.string.pref_key_power_saving_mode_auto_enabled)
+        val powerSavingModeManualPreference =
+            requirePreference<SwitchPreferenceCompat>(R.string.pref_key_power_saving_mode_manually_enabled)
+
+        powerSavingModeAutoPreference.apply {
+            isVisible = Config.channel.isNightlyOrDebug
+            isChecked = settings.powerSavingModeAutoEnabled
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
+                settings.powerSavingModeAutoEnabled = newValue as Boolean
+                powerSavingModeManualPreference.isChecked = settings.powerSavingModeManuallyEnabled
+                true
+            }
+        }
+
+        powerSavingModeManualPreference.apply {
+            isVisible = Config.channel.isNightlyOrDebug
+            isChecked = settings.powerSavingModeManuallyEnabled
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
+                settings.powerSavingModeManuallyEnabled = newValue as Boolean
+                powerSavingModeAutoPreference.isChecked = settings.powerSavingModeAutoEnabled
+                true
+            }
+        }
+
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_persistent_onboarding).apply {
             isChecked = settings.enablePersistentOnboarding
             onPreferenceChangeListener = SharedPreferenceUpdater()
@@ -496,6 +547,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_groups_strip).apply {
             isVisible = Config.channel.isDebug
             isChecked = settings.tabGroupsStripEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_show_tab_groups_in_menu).apply {
+            isVisible = Config.channel.isDebug
+            isChecked = settings.showTabGroupsInMenu
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 

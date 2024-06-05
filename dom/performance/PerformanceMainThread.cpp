@@ -29,7 +29,6 @@
 #include "nsContainerFrame.h"
 #include "nsGkAtoms.h"
 #include "nsGlobalWindowInner.h"
-#include "nsICacheInfoChannel.h"
 #include "nsIChannel.h"
 #include "nsIDocShell.h"
 #include "nsIHttpChannel.h"
@@ -683,20 +682,6 @@ void PerformanceMainThread::CreateNavigationTimingEntry() {
   mDocEntry = new PerformanceNavigationTiming(std::move(timing), this, name);
 }
 
-static bool ServedFromCache(nsITimedChannel* aChannel) {
-  nsCOMPtr<nsICacheInfoChannel> cacheInfo = do_QueryInterface(aChannel);
-  if (!cacheInfo) {
-    return false;
-  }
-  nsICacheInfoChannel::CacheDisposition disposition =
-      nsICacheInfoChannel::kCacheUnresolved;
-  if (NS_FAILED(cacheInfo->GetCacheDisposition(&disposition))) {
-    return false;
-  }
-  return disposition == nsICacheInfoChannel::kCacheHit ||
-         disposition == nsICacheInfoChannel::kCacheHitViaReval;
-}
-
 void PerformanceMainThread::UpdateNavigationTimingEntry() {
   if (!mDocEntry) {
     return;
@@ -710,7 +695,7 @@ void PerformanceMainThread::UpdateNavigationTimingEntry() {
 
   // Not in Create(): the cache disposition is unresolved until the load ends.
   if (mDOMTiming && mDOMTiming->WasActivatedFromNavigationalPrefetch() &&
-      ServedFromCache(mChannel)) {
+      mDocEntry->ServedFromCache()) {
     mDocEntry->SetDeliveryType(u"navigational-prefetch"_ns);
   }
 }

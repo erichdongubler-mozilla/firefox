@@ -5,6 +5,7 @@
 import {
   MAX_HISTORY_ENTRIES,
   MONITOR_ERROR_CODES,
+  MONITOR_EXPIRY_REASONS,
   trimAndFilterWatchUrls,
 } from "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs";
 
@@ -28,6 +29,7 @@ const CREATED_AT_INDEX = "createdAt";
 const PREF_BRANCH = "browser.smartwindow.monitorStore";
 const HISTORY_STATUSES = new Set(["error", "running", "success"]);
 const HISTORY_ERROR_CODES = new Set(Object.values(MONITOR_ERROR_CODES));
+const EXPIRY_REASONS = new Set(Object.values(MONITOR_EXPIRY_REASONS));
 
 function invalidField(field) {
   return new Error(`Monitor ${field} is invalid.`);
@@ -56,6 +58,17 @@ function timestampField(value, field, nullable = false) {
     throw invalidField(field);
   }
   return value;
+}
+
+function runCountField(value, recoverInvalid = false) {
+  if (Number.isInteger(value) && value >= 0) {
+    return value;
+  }
+  if (!recoverInvalid) {
+    throw invalidField("run count");
+  }
+  lazy.log.warn("Discarding invalid stored monitor run count.");
+  return 0;
 }
 
 function scheduleRecord(schedule) {
@@ -146,6 +159,31 @@ function initialSnapshotRecord(snapshot, recoverInvalid = false) {
   }
 }
 
+function expiryRecord(expiry, recoverInvalid = false) {
+  if (expiry == null) {
+    return null;
+  }
+  try {
+    if (
+      typeof expiry !== "object" ||
+      Array.isArray(expiry) ||
+      !EXPIRY_REASONS.has(expiry.reason)
+    ) {
+      throw invalidField("expiry");
+    }
+    return {
+      expiredAt: timestampField(expiry.expiredAt, "expiry timestamp"),
+      reason: expiry.reason,
+    };
+  } catch (error) {
+    if (!recoverInvalid) {
+      throw error;
+    }
+    lazy.log.warn(`Discarding invalid stored expiry: ${error}`);
+    return null;
+  }
+}
+
 function historyRecord(entry) {
   if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
     throw invalidField("history entry");
@@ -205,7 +243,7 @@ function sanitizeHistoryRecords(history, recoverInvalid) {
   return records;
 }
 
-function sanitizeMonitorRecord(monitor, recoverInvalidHistory = false) {
+function sanitizeMonitorRecord(monitor, recoverInvalid = false) {
   if (!monitor || typeof monitor !== "object" || Array.isArray(monitor)) {
     throw invalidField("record");
   }
@@ -221,6 +259,13 @@ function sanitizeMonitorRecord(monitor, recoverInvalidHistory = false) {
     watchUrls: watchUrlRecords(monitor.watchUrls),
     schedule: scheduleRecord(monitor.schedule),
     enabled: monitor.enabled,
+    // Monitors stored before the counter existed start from their visible
+    // history length.
+    runCount: runCountField(
+      monitor.runCount ??
+        (Array.isArray(monitor.history) ? monitor.history.length : 0),
+      recoverInvalid
+    ),
     createdAt: timestampField(monitor.createdAt, "creation timestamp"),
     updatedAt: timestampField(monitor.updatedAt, "update timestamp"),
     lastRunTime: timestampField(monitor.lastRunTime, "last run timestamp"),
@@ -229,13 +274,21 @@ function sanitizeMonitorRecord(monitor, recoverInvalidHistory = false) {
       "next run timestamp",
       true
     ),
-    history: sanitizeHistoryRecords(
-      monitor.history ?? [],
-      recoverInvalidHistory
+    // records stored before auto-expiry existed count from their creation
+    activeSince: timestampField(
+      monitor.activeSince ?? monitor.createdAt,
+      "active since timestamp"
     ),
+    lastMatchAt: timestampField(
+      monitor.lastMatchAt ?? null,
+      "last match timestamp",
+      true
+    ),
+    expiry: expiryRecord(monitor.expiry ?? null, recoverInvalid),
+    history: sanitizeHistoryRecords(monitor.history ?? [], recoverInvalid),
     initialSnapshot: initialSnapshotRecord(
       monitor.initialSnapshot ?? null,
-      recoverInvalidHistory
+      recoverInvalid
     ),
   };
 }

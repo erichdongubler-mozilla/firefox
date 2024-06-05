@@ -36,12 +36,11 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.content.FileProvider
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
+import androidx.fragment.compose.content
 import java.io.File
 import java.io.IOException
 import java.util.Collections
@@ -123,6 +122,10 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
             }
 
             override fun onSurfaceTextureSizeChanged(texture: SurfaceTexture, width: Int, height: Int) {
+                // TextureView resets the default buffer size to its own pixel size before calling this, which
+                // would leave a later OutputConfiguration reading the view size instead of the configured stream
+                // size. The camera resize here is driven by previewAspectRatio, so restore what was selected.
+                previewSize?.let { texture.setDefaultBufferSize(it.width, it.height) }
                 configureTransform(width, height)
             }
 
@@ -190,34 +193,30 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
         outState.putBoolean(STATE_QR_RESULT_SENT, qrResultSent)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                val mode by cameraMode.collectAsState()
-                LensCameraScreen(
-                    state =
-                        LensCameraState(
-                            showError = showCameraError.value,
-                            mode = mode,
-                            previewAspectRatio = previewAspectRatio.value,
-                        ),
-                    onModeChange = ::handleModeChanged,
-                    onClose = { handleResult(null) },
-                    onShutter = { captureStillImage() },
-                    onGallery = { requestGalleryPick() },
-                    textureViewProvider = { ctx ->
-                        TextureView(ctx).also { view ->
-                            textureView = view
-                            if (isResumed) {
-                                startCamera()
-                            }
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+        content {
+            val mode by cameraMode.collectAsState()
+            LensCameraScreen(
+                state =
+                    LensCameraState(
+                        showError = showCameraError.value,
+                        mode = mode,
+                        previewAspectRatio = previewAspectRatio.value,
+                    ),
+                onModeChange = ::handleModeChanged,
+                onClose = { handleResult(null) },
+                onShutter = { captureStillImage() },
+                onGallery = { requestGalleryPick() },
+                textureViewProvider = { ctx ->
+                    TextureView(ctx).also { view ->
+                        textureView = view
+                        if (isResumed) {
+                            startCamera()
                         }
-                    },
-                )
-            }
+                    }
+                },
+            )
         }
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         view.isFocusableInTouchMode = true
@@ -355,6 +354,7 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
                     map.getOutputSizes(ImageFormat.YUV_420_888),
                     lensPreviewConstraints.maxWidth,
                     lensPreviewConstraints.maxHeight,
+                    optimalSize,
                 )
 
             qrImageReader =
@@ -388,30 +388,7 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
 
         handleCaptureException("Failed to create camera preview session") {
             cameraDevice?.let { camera ->
-                val previewRequestBuilder =
-                    camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
-                        addTarget(previewSurface)
-                        // qrSurface is added as a target in both LENS and QR modes. In LENS mode
-                        // qrImageAvailableListener drains frames without invoking the analyzer. The
-                        // alternative — rebuilding the repeating request on each mode toggle — costs
-                        // a brief preview stall and adds complexity, so we accept the steady-state
-                        // YUV throughput in exchange for an instantaneous mode switch.
-                        addTarget(qrSurface)
-                    }
-
-                previewRequestBuilder.set(
-                    CaptureRequest.CONTROL_AF_MODE,
-                    CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
-                )
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && isLowLightBoostSupported) {
-                    previewRequestBuilder.set(
-                        CaptureRequest.CONTROL_AE_MODE,
-                        CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY,
-                    )
-                }
-
-                val previewRequest = previewRequestBuilder.build()
+                val previewRequest = buildPreviewRequest(camera, previewSurface, qrSurface)
                 val captureCallback = object : CameraCaptureSession.CaptureCallback() {}
                 val sessionStateCallback =
                     object : CameraCaptureSession.StateCallback() {
@@ -437,6 +414,69 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
                 ", yuv=${qrImageReader?.width}x${qrImageReader?.height}"
         )
         mainHandler.post { showCameraError.value = true }
+    }
+
+    /**
+     * Builds the repeating preview request for the active [cameraMode].
+     *
+     * [qrSurface] stays in the session's output list in both modes so a mode toggle is only a
+     * [CameraCaptureSession.setRepeatingRequest] and never a session teardown, but it is only a request target in
+     * [CameraMode.QR]. In [CameraMode.LENS] its frames are pure overhead on the camera pipeline.
+     */
+    @VisibleForTesting
+    internal fun buildPreviewRequest(
+        camera: CameraDevice,
+        previewSurface: Surface,
+        qrSurface: Surface,
+    ): CaptureRequest {
+        val previewRequestBuilder =
+            camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                previewTargets(previewSurface, qrSurface).forEach(::addTarget)
+            }
+
+        previewRequestBuilder.set(
+            CaptureRequest.CONTROL_AF_MODE,
+            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && isLowLightBoostSupported) {
+            previewRequestBuilder.set(
+                CaptureRequest.CONTROL_AE_MODE,
+                CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY,
+            )
+        }
+
+        return previewRequestBuilder.build()
+    }
+
+    /** Repeating-request targets for the active [cameraMode]. */
+    @VisibleForTesting
+    internal fun previewTargets(previewSurface: Surface, qrSurface: Surface): List<Surface> =
+        if (cameraMode.value == CameraMode.QR) {
+            listOf(previewSurface, qrSurface)
+        } else {
+            listOf(previewSurface)
+        }
+
+    /** Swaps the repeating request for one matching the active [cameraMode], leaving the session intact. */
+    @VisibleForTesting
+    internal fun updatePreviewRequest() {
+        val session = captureSession ?: return
+        val camera = cameraDevice ?: return
+        val previewSurface = surface ?: return
+        val qrSurface = qrImageReader?.surface ?: return
+
+        handleCaptureException("Failed to update preview request") {
+            try {
+                session.setRepeatingRequest(
+                    buildPreviewRequest(camera, previewSurface, qrSurface),
+                    null,
+                    backgroundHandler,
+                )
+            } catch (e: IllegalArgumentException) {
+                logger.error("Failed to update preview request", e)
+            }
+        }
     }
 
     @VisibleForTesting
@@ -577,6 +617,7 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
             qrAnalyzer.reset()
             qrResultSent = false
         }
+        updatePreviewRequest()
     }
 
     @VisibleForTesting
@@ -777,6 +818,9 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
 
         private val BY_AREA = compareBy<Size> { it.width.toLong() * it.height }
 
+        // Widest ratio difference still treated as the same aspect ratio when picking a preview size.
+        private const val ASPECT_RATIO_TOLERANCE = 0.02
+
         private const val DEGREES_FULL_ROTATION = 360
 
         private val ORIENTATIONS =
@@ -804,21 +848,38 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
          * [QrAnalyzer]'s target, so analysis costs about what it does in the standalone QR scanner. Requesting
          * [QrAnalyzer.YUV_WIDTH] x [QrAnalyzer.YUV_HEIGHT] directly relies on the platform substituting a supported
          * size, which not every device does.
+         *
+         * Sizes sharing [aspectRatio] within [ASPECT_RATIO_TOLERANCE] are preferred over sizes closer to the target
+         * area, so the analysed frame is framed the same way as the preview the user is aiming with. On a device
+         * offering YUV sizes in several ratios, a code near the edge of the viewfinder is otherwise outside the frame
+         * that gets analysed.
          */
         @VisibleForTesting
-        internal fun chooseQrSize(choices: Array<Size>?, maxWidth: Int, maxHeight: Int): Size {
+        internal fun chooseQrSize(choices: Array<Size>?, maxWidth: Int, maxHeight: Int, aspectRatio: Size): Size {
             if (choices.isNullOrEmpty()) return Size(QrAnalyzer.YUV_WIDTH, QrAnalyzer.YUV_HEIGHT)
             val withinBounds = choices.filter { it.width <= maxWidth && it.height <= maxHeight }
             val candidates = withinBounds.ifEmpty { listOf(Collections.min(choices.asList(), BY_AREA)) }
+
+            val ratio = aspectRatio.width.toDouble() / aspectRatio.height
+            val ratioDelta = { size: Size -> abs(size.width.toDouble() / size.height - ratio) }
+            val closest = candidates.minOf(ratioDelta)
+            val matching = candidates.filter { ratioDelta(it) <= closest + ASPECT_RATIO_TOLERANCE }
+
             val target = QrAnalyzer.YUV_WIDTH.toLong() * QrAnalyzer.YUV_HEIGHT
-            return Collections.min(candidates, compareBy { abs(it.width.toLong() * it.height - target) })
+            return Collections.min(matching, compareBy { abs(it.width.toLong() * it.height - target) })
         }
 
         /**
-         * Picks the preview size: the smallest size that matches [aspectRatio] and covers the view, falling back to
-         * progressively looser criteria. Every branch but the last stays within [maxWidth] x [maxHeight], because a
+         * Picks the preview size: the smallest size that matches [aspectRatio] and covers the view, falling back to the
+         * largest matching size when nothing covers it. Both of those stay within [maxWidth] x [maxHeight], because a
          * preview stream above those bounds is not a PREVIEW-size stream and can fail the whole capture session on
-         * LIMITED and LEGACY devices.
+         * LIMITED and LEGACY devices; only the fallback for a device offering nothing within them at all can return a
+         * larger size.
+         *
+         * Matching is on the ratio closest to [aspectRatio] within [ASPECT_RATIO_TOLERANCE] rather than an exact match,
+         * because sensors routinely report a maximum capture size that is only approximately 4:3 or 16:9 (a Pixel 7's
+         * 4080x3072 is 1.328, not 1.333). An exact match rejects every realistic preview size on those devices and
+         * silently selects a tiny one.
          */
         @VisibleForTesting
         internal fun chooseOptimalSize(
@@ -830,19 +891,21 @@ class LensCameraFragment(private val now: () -> Long = DefaultDateTimeProvider()
             aspectRatio: Size,
         ): Size {
             require(choices.isNotEmpty()) { "No preview sizes available from camera" }
+            val target = aspectRatio.width.toDouble() / aspectRatio.height
+            val ratioDelta = { size: Size -> abs(size.width.toDouble() / size.height - target) }
+
             val withinBounds = choices.filter { it.width <= maxWidth && it.height <= maxHeight }
-            val w = aspectRatio.width
-            val h = aspectRatio.height
-            val matching = withinBounds.filter { it.height == it.width * h / w }
+            // The device offers no size within the preview bounds at all; the smallest is the closest we get.
+            if (withinBounds.isEmpty()) return Collections.min(choices.asList(), BY_AREA)
+
+            val closest = withinBounds.minOf(ratioDelta)
+            val matching = withinBounds.filter { ratioDelta(it) <= closest + ASPECT_RATIO_TOLERANCE }
             val bigEnough = matching.filter { it.width >= textureViewWidth && it.height >= textureViewHeight }
-            return when {
-                bigEnough.isNotEmpty() -> Collections.min(bigEnough, BY_AREA)
+            return if (bigEnough.isNotEmpty()) {
+                Collections.min(bigEnough, BY_AREA)
+            } else {
                 // Right aspect ratio, but nothing covers the view, so the preview is upscaled.
-                matching.isNotEmpty() -> Collections.max(matching, BY_AREA)
-                // Nothing shares the capture aspect ratio. A letterboxed preview beats a rejected session.
-                withinBounds.isNotEmpty() -> Collections.max(withinBounds, BY_AREA)
-                // The device offers no size within the preview bounds at all; the smallest is the closest we get.
-                else -> Collections.min(choices.asList(), BY_AREA)
+                Collections.max(matching, BY_AREA)
             }
         }
 

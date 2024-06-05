@@ -44,6 +44,11 @@ class NeqoHttp3Conn final {
         (const mozilla::net::NeqoHttp3Conn**)aConn);
   }
 
+  NeqoHttp3Conn() = delete;
+  ~NeqoHttp3Conn() = delete;
+  NeqoHttp3Conn(const NeqoHttp3Conn&) = delete;
+  NeqoHttp3Conn& operator=(const NeqoHttp3Conn&) = delete;
+
   void Close(uint64_t aError) { neqo_http3conn_close(this, aError); }
 
   nsresult GetSecInfo(NeqoSecretInfo* aSecInfo) {
@@ -264,11 +269,6 @@ class NeqoHttp3Conn final {
   }
 
  private:
-  NeqoHttp3Conn() = delete;
-  ~NeqoHttp3Conn() = delete;
-  NeqoHttp3Conn(const NeqoHttp3Conn&) = delete;
-  NeqoHttp3Conn& operator=(const NeqoHttp3Conn&) = delete;
-
   static void TranslateWebTransportSessionStats(
       const struct WebTransportSessionStats& aFrom,
       mozilla::dom::WebTransportStatsData& aTo) {
@@ -303,6 +303,10 @@ class NeqoEncoder final {
   static void Init(NeqoEncoder** aEncoder) {
     neqo_encoder_new((const mozilla::net::NeqoEncoder**)aEncoder);
   }
+  NeqoEncoder() = delete;
+  ~NeqoEncoder() = delete;
+  NeqoEncoder(const NeqoEncoder&) = delete;
+  NeqoEncoder& operator=(const NeqoEncoder&) = delete;
 
   void EncodeByte(uint8_t aData) { neqo_encode_byte(this, aData); }
 
@@ -330,12 +334,6 @@ class NeqoEncoder final {
 
   void AddRef() { neqo_encoder_addref(this); }
   void Release() { neqo_encoder_release(this); }
-
- private:
-  NeqoEncoder() = delete;
-  ~NeqoEncoder() = delete;
-  NeqoEncoder(const NeqoEncoder&) = delete;
-  NeqoEncoder& operator=(const NeqoEncoder&) = delete;
 };
 
 class NeqoDecoder final {
@@ -344,6 +342,10 @@ class NeqoDecoder final {
                    NeqoDecoder** aDecoder) {
     neqo_decoder_new(aBuf, aCount, (const mozilla::net::NeqoDecoder**)aDecoder);
   }
+  NeqoDecoder() = delete;
+  ~NeqoDecoder() = delete;
+  NeqoDecoder(const NeqoDecoder&) = delete;
+  NeqoDecoder& operator=(const NeqoDecoder&) = delete;
 
   bool DecodeVarint(uint64_t* aResult) {
     return neqo_decode_varint(this, aResult);
@@ -367,12 +369,6 @@ class NeqoDecoder final {
 
   void AddRef() { neqo_decoder_addref(this); }
   void Release() { neqo_decoder_release(this); }
-
- private:
-  NeqoDecoder() = delete;
-  ~NeqoDecoder() = delete;
-  NeqoDecoder(const NeqoDecoder&) = delete;
-  NeqoDecoder& operator=(const NeqoDecoder&) = delete;
 };
 
 }  // namespace net

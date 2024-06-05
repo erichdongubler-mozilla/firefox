@@ -268,9 +268,7 @@ add_task(async function test_tabGroupPreventScrollOnUncollapse() {
   // create some more tabs after the group
   createManyTabs(4, win);
 
-  await TestUtils.waitForCondition(() => {
-    return Array.from(win.gBrowser.tabs).every(tab => tab._fullyOpen);
-  });
+  await BrowserTestUtils.allTabOpenAnimationsFinished(win);
 
   info("selecting the last tab");
   let tabSelected = BrowserTestUtils.waitForEvent(win, "TabSelect");
@@ -619,7 +617,7 @@ add_task(async function test_tabGroupMoveToNewWindow() {
     tabGroupCreate,
   ]);
   Assert.ok(
-    tabGroupCreateEvent.detail.isAdoptingGroup,
+    tabGroupCreateEvent.detail.adopting,
     "TabGroupCreate event should report that this tab group was creating by adoption"
   );
 
@@ -678,7 +676,7 @@ add_task(async function test_TabGroupEvents() {
     "TabGroupCreate"
   ).then(event => {
     Assert.ok(
-      !event.detail.isAdoptingGroup,
+      !event.detail.adopting,
       "a tab group being created from scratch should not be treated like it was adopted from another window"
     );
     createdGroupId = event.target.id;
@@ -1478,4 +1476,30 @@ add_task(async function test_tabGroupGarbageCollection() {
     !weakRef.get(),
     "tab-group element should be garbage collected after removal from DOM"
   );
+});
+
+// Deleting a group closes the tabs in it. If the group holds every tab in the
+// window, the window itself should stay open, because the user asked to delete
+// a group and not to close the window.
+add_task(async function test_tabGroupRemoveKeepsTheWindowOpen() {
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+
+  try {
+    let group = win.gBrowser.addTabGroup([...win.gBrowser.tabs]);
+    Assert.equal(
+      group.tabs.length,
+      win.gBrowser.tabs.length,
+      "the group holds every tab in the window"
+    );
+
+    await win.gBrowser.removeTabGroup(group);
+
+    Assert.ok(!win.closed, "the window is still open");
+    await TestUtils.waitForCondition(
+      () => win.gBrowser.tabs.some(tab => !tab.group),
+      "the window is left with a tab that is not in a group"
+    );
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+  }
 });

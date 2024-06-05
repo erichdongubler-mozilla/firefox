@@ -99,7 +99,6 @@ skip-if = [
 ["browser_bfcache_copycommand.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1730593
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1775931
 ]
 
 ["browser_bfcache_page_restored_telemetry.js"]
@@ -170,7 +169,6 @@ https_first_disabled = true
 
 ["browser_bug420605.js"]
 skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1775923
   "verify-standalone",
 ]
 
@@ -327,11 +325,6 @@ https_first_disabled = true
 
 ["browser_fall_back_to_https.js"]
 https_first_disabled = true
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
-]
 
 ["browser_frameloader_swap_with_bfcache.js"]
 

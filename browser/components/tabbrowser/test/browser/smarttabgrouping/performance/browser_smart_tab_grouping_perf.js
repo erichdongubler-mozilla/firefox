@@ -183,6 +183,8 @@ const { SmartTabGroupingManager } = ChromeUtils.importESModule(
   "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs"
 );
 
+MLPerfTestUtils.init(this);
+
 const FIXTURE_PATH =
   "/browser/browser/components/tabbrowser/test/browser/smarttabgrouping/performance/data/e2e/";
 
@@ -432,8 +434,6 @@ add_task(async function test_smart_tab_grouping() {
 
   try {
     await MLPerfTestUtils.runPerfScenario({
-      info,
-      Assert,
       metricPrefix: "STG-E2E",
       // No backend override: pinEngineBackends (D323349) injects
       // {expectValue: "best-onnx", replaceWith: <MOZ_ML_BACKENDS>} for every

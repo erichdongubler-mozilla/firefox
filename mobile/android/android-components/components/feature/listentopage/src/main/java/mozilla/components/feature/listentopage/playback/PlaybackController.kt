@@ -29,7 +29,26 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import mozilla.components.feature.listentopage.ChunkState
 import mozilla.components.feature.listentopage.PlaybackPhase
+import mozilla.components.feature.listentopage.PlaybackSpeed
 import mozilla.components.feature.listentopage.PlaybackState
+import mozilla.components.support.ktx.android.content.appName
+
+/**
+ * What the playback notification and the lock screen say is being read out.
+ *
+ * @property title The article title, or `null` when the page has none, which [withAppNameIfUntitled] then fills in.
+ * @property site Where the article is from.
+ */
+data class ArticleDisplayData(val title: String? = null, val site: String? = null)
+
+/**
+ * [appName] as the title where the page gave none.
+ *
+ * Media3 passes a null title straight to the notification, which leaves its title line empty. The name is put on here
+ * rather than where the article is described, so that the store keeps saying the page itself had no title.
+ */
+internal fun ArticleDisplayData.withAppNameIfUntitled(appName: String): ArticleDisplayData =
+    if (title != null) this else copy(title = appName)
 
 /** Commands the playback of the synthesized audio. */
 interface PlaybackController {
@@ -40,8 +59,11 @@ interface PlaybackController {
      */
     val status: StateFlow<PlaybackState>
 
-    /** Plays [file], replacing anything already playing. */
-    suspend fun play(file: File)
+    /** Plays [file], replacing anything already playing, as [articleDisplayData] describes it. */
+    suspend fun play(file: File, articleDisplayData: ArticleDisplayData)
+
+    /** Adds [file] to the end of the playlist, to be read out once what is already queued has been. */
+    suspend fun enqueue(file: File)
 
     /** Pauses playback, keeping the position. */
     suspend fun pause()
@@ -49,11 +71,28 @@ interface PlaybackController {
     /** Resumes playback from the position it was paused at. */
     suspend fun resume()
 
-    /** Moves playback to [positionMs] in the current audio. */
+    /** Moves playback to [positionMs] in the current file being played. */
     suspend fun seekTo(positionMs: Long)
+
+    /**
+     * Moves playback to [positionMs] of the file [itemIndex] places into what is queued.
+     *
+     * The index is into the playlist rather than into the article. The playlist starts at whichever chunk the last
+     * restart or seek required.
+     */
+    suspend fun seekTo(itemIndex: Int, positionMs: Long)
+
+    /** Drops what is queued and starts again on [file] at [positionMs]. */
+    suspend fun restartAt(file: File, positionMs: Long)
+
+    /** Reads the rest of the article out at [speed]. */
+    suspend fun setSpeed(speed: PlaybackSpeed)
 
     /** Gives up the playback, which takes the notification away. A later call starts it again. */
     suspend fun release()
+
+    /** The position playback has reached in the current audio, or `0` when nothing is playing. */
+    suspend fun currentPositionMs(): Long
 }
 
 /**
@@ -84,6 +123,11 @@ class ListenPlaybackController(
     // Main thread only, like the controller it samples.
     private var positionJob: Job? = null
 
+    // What the article now playing says it is, kept so that every chunk of it is queued saying the same thing.
+    private var displayData: ArticleDisplayData? = null
+
+    private val appName: String by lazy { context.appName }
+
     private val playerListener =
         object : Player.Listener {
             // onEvents rather than the individual callbacks: it runs once per batch of changes, where the separate
@@ -94,14 +138,26 @@ class ListenPlaybackController(
             }
         }
 
-    override suspend fun play(file: File) = onController {
+    override suspend fun play(file: File, articleDisplayData: ArticleDisplayData) = onController {
         // Published before the command, so that a report the previous session left behind cannot be read as this
         // session's in the time it takes the player to report for itself.
-        _status.value = PlaybackState(phase = PlaybackPhase.Buffering)
+        _status.value =
+            PlaybackState(
+                phase = PlaybackPhase.Buffering,
+                speed = PlaybackSpeed.nearest(it.playbackParameters.speed),
+            )
 
-        it.setMediaItem(file.toMediaItem())
+        val displayDataWithAppNameIfUntitled = articleDisplayData.withAppNameIfUntitled(appName)
+        displayData = displayDataWithAppNameIfUntitled
+
+        it.setMediaItem(file.toMediaItem(displayDataWithAppNameIfUntitled))
         it.prepare()
         it.play()
+    }
+
+    override suspend fun enqueue(file: File) = onController {
+        val displayData = this.displayData ?: return@onController
+        it.addMediaItem(file.toMediaItem(displayData))
     }
 
     override suspend fun pause() = onController { it.pause() }
@@ -109,6 +165,21 @@ class ListenPlaybackController(
     override suspend fun resume() = onController { it.play() }
 
     override suspend fun seekTo(positionMs: Long) = onController { it.seekTo(positionMs) }
+
+    override suspend fun seekTo(itemIndex: Int, positionMs: Long) = onController { it.seekTo(itemIndex, positionMs) }
+
+    override suspend fun restartAt(file: File, positionMs: Long) = onController {
+        val displayData = this.displayData ?: return@onController
+
+        // The position goes in with the item rather than as a seek afterwards, which would let the player start at
+        // the top of the chunk and be moved off it a moment later.
+        it.setMediaItem(file.toMediaItem(displayData), positionMs)
+
+        // Prepared but not played: a player that was paused stays paused.
+        it.prepare()
+    }
+
+    override suspend fun setSpeed(speed: PlaybackSpeed) = onController { it.setPlaybackSpeed(speed.multiplier) }
 
     override suspend fun release() {
         withContext(Dispatchers.Main) {
@@ -120,9 +191,16 @@ class ListenPlaybackController(
             val controller = runCatching { released.await() }.getOrNull() ?: return@withContext
 
             controller.stop()
+            controller.clearMediaItems()
             controller.release()
         }
     }
+
+    override suspend fun currentPositionMs(): Long =
+        withContext(Dispatchers.Main) {
+            val connected = connection ?: return@withContext 0L
+            runCatching { connected.await() }.getOrNull()?.currentPosition ?: 0L
+        }
 
     /**
      * Keeps [status] a second fresh while the audio plays, and stops sampling when it does not.
@@ -161,6 +239,7 @@ class ListenPlaybackController(
     private fun forgetStatus() {
         positionJob?.cancel()
         positionJob = null
+        displayData = null
         _status.value = PlaybackState()
     }
 
@@ -238,6 +317,7 @@ private fun Player.toPlaybackState() =
         phase = toPlaybackPhase(),
         chunk = ChunkState(index = currentMediaItemIndex, durationMs = duration.takeIf { it != C.TIME_UNSET }),
         positionMs = currentPosition,
+        speed = PlaybackSpeed.nearest(playbackParameters.speed),
     )
 
 /** The phase the player is in. */

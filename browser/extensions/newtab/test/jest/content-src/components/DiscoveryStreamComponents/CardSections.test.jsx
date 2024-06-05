@@ -138,6 +138,50 @@ describe("<CardSections />", () => {
     expect(container.querySelector(".section-title").textContent).toBe("title");
   });
 
+  it("should send the rendered section order once until it changes", () => {
+    const secondSection = {
+      ...DEFAULT_PROPS.data.sections[0],
+      sectionKey: "second_key",
+    };
+    const data = {
+      sections: [DEFAULT_PROPS.data.sections[0], secondSection],
+    };
+    const orderActions = dispatch =>
+      dispatch.mock.calls.filter(
+        ([action]) => action.type === "CARD_SECTIONS_ORDER"
+      );
+
+    const dispatch = jest.fn();
+    const { rerender } = render(
+      <WrapWithProvider>
+        <CardSections dispatch={dispatch} {...DEFAULT_PROPS} data={data} />
+      </WrapWithProvider>
+    );
+    rerender(
+      <WrapWithProvider>
+        <CardSections dispatch={dispatch} {...DEFAULT_PROPS} data={data} />
+      </WrapWithProvider>
+    );
+    expect(orderActions(dispatch)).toHaveLength(1);
+    expect(orderActions(dispatch)[0][0].data).toEqual({
+      sections: ["section_key", "second_key"],
+    });
+
+    rerender(
+      <WrapWithProvider>
+        <CardSections
+          dispatch={dispatch}
+          {...DEFAULT_PROPS}
+          data={{ sections: [secondSection, DEFAULT_PROPS.data.sections[0]] }}
+        />
+      </WrapWithProvider>
+    );
+    expect(orderActions(dispatch)).toHaveLength(2);
+    expect(orderActions(dispatch)[1][0].data).toEqual({
+      sections: ["second_key", "section_key"],
+    });
+  });
+
   it("should skip a section with no items available for that section", () => {
     // Verify the section exists normally, so the next assertion is unlikely
     // to be a false positive.
@@ -207,6 +251,58 @@ describe("<CardSections />", () => {
     });
   });
 
+  describe("breakpoints with different card counts", () => {
+    // The render is sized to the breakpoint with the most tiles, so the two
+    // cards past col-1's tile list exist only for col-4.
+    const UNEVEN_LAYOUT = {
+      title: "layout_name",
+      responsiveLayouts: [
+        {
+          columnCount: 1,
+          tiles: [
+            { size: "medium", position: 0, hasExcerpt: false },
+            { size: "medium", position: 1, hasExcerpt: false },
+          ],
+        },
+        {
+          columnCount: 4,
+          tiles: [
+            { size: "medium", position: 0, hasExcerpt: false },
+            { size: "medium", position: 1, hasExcerpt: false },
+            { size: "medium", position: 2, hasExcerpt: false },
+            { size: "medium", position: 3, hasExcerpt: false },
+          ],
+        },
+      ],
+    };
+
+    const renderUnevenSection = () =>
+      renderCardSections({
+        data: {
+          sections: [
+            { ...DEFAULT_PROPS.data.sections[0], layout: UNEVEN_LAYOUT },
+          ],
+        },
+      });
+
+    it("hides the extra cards at the breakpoint with no tile for them", () => {
+      const cards =
+        renderUnevenSection().container.querySelectorAll("article.ds-card");
+
+      expect(cards[2]).toHaveClass("col-1-hidden");
+      expect(cards[3]).toHaveClass("col-1-hidden");
+    });
+
+    it("leaves the cards a breakpoint does have tiles for visible", () => {
+      const cards =
+        renderUnevenSection().container.querySelectorAll("article.ds-card");
+
+      expect(cards[0]).not.toHaveClass("col-1-hidden");
+      expect(cards[1]).not.toHaveClass("col-1-hidden");
+      cards.forEach(card => expect(card).not.toHaveClass("col-4-hidden"));
+    });
+  });
+
   it("should dispatch SECTION_PERSONALIZATION_UPDATE updates with follow and unfollow", () => {
     const fakeDate = "2020-01-01T00:00:00.000Z";
     jest.useFakeTimers().setSystemTime(new Date(fakeDate));
@@ -271,6 +367,7 @@ describe("<CardSections />", () => {
       state
     );
 
+    dispatch.mockClear();
     // section_key_1 is not followed, so its button follows the section.
     fireEvent.click(container.querySelector(".section-follow moz-button"));
     // section_key_2 is followed, so its button unfollows the section.
@@ -702,7 +799,7 @@ describe("<CardSections />", () => {
       expect(cardTabIndex(container, 1)).toBe(-1);
     });
 
-    it("should preserve focus on the same card after focus-driven layout sync when falling back to card order", () => {
+    it("should move the tab stop off a card the synced layout hides", () => {
       Object.defineProperty(window, "innerWidth", {
         writable: true,
         configurable: true,
@@ -795,9 +892,11 @@ describe("<CardSections />", () => {
       window.innerWidth = 800;
       fireEvent.focus(container.querySelector(".ds-section-grid.ds-card-grid"));
 
-      expect(cardTabIndex(container, 0)).toBe(-1);
+      // col-2 has no tile at position 2, so CSS hides that card. The tab stop
+      // cannot stay on it or the section becomes unreachable by Tab.
+      expect(cardTabIndex(container, 0)).toBe(0);
       expect(cardTabIndex(container, 1)).toBe(-1);
-      expect(cardTabIndex(container, 2)).toBe(0);
+      expect(cardTabIndex(container, 2)).toBe(-1);
     });
 
     it("should update focused index when onFocus is called", () => {
@@ -828,6 +927,38 @@ describe("<CardSections />", () => {
 
       expect(cardTabIndex(container, 0)).toBe(-1);
       expect(cardTabIndex(container, 1)).toBe(0);
+    });
+
+    describe("layout observer", () => {
+      afterEach(() => {
+        delete globalThis.ResizeObserver;
+      });
+
+      it("starts observing the grid on first focus, and only once", () => {
+        const observed = [];
+        globalThis.ResizeObserver = class {
+          observe(el) {
+            observed.push(el);
+          }
+          disconnect() {}
+        };
+        const novaState = {
+          ...INITIAL_STATE,
+          Prefs: {
+            ...INITIAL_STATE.Prefs,
+            values: { ...INITIAL_STATE.Prefs.values, "nova.enabled": true },
+          },
+        };
+
+        const { container } = renderCardSections({}, novaState);
+        const grid = container.querySelector(".ds-section-grid.ds-card-grid");
+        expect(observed).toHaveLength(0);
+
+        fireEvent.focus(grid);
+        fireEvent.focus(grid);
+
+        expect(observed).toEqual([grid]);
+      });
     });
 
     describe("handleCardKeyDown", () => {
@@ -1107,7 +1238,7 @@ describe("<CardSections /> rendering and placeholders", () => {
 
     const { container: baselineContainer } = render(
       <WrapWithProvider>
-        <CardSections {...sectionProps} />
+        <CardSections dispatch={dispatch} {...sectionProps} />
       </WrapWithProvider>
     );
     expect(baselineContainer.querySelectorAll("article.ds-card")).toHaveLength(
@@ -1116,7 +1247,11 @@ describe("<CardSections /> rendering and placeholders", () => {
 
     const { container } = render(
       <WrapWithProvider>
-        <CardSections {...sectionProps} spocsLoading={true} />
+        <CardSections
+          dispatch={dispatch}
+          {...sectionProps}
+          spocsLoading={true}
+        />
       </WrapWithProvider>
     );
     expect(container.querySelectorAll(".ds-card.placeholder")).toHaveLength(24);
@@ -1126,6 +1261,7 @@ describe("<CardSections /> rendering and placeholders", () => {
     const { container } = render(
       <WrapWithProvider>
         <CardSections
+          dispatch={dispatch}
           {...DEFAULT_PROPS}
           data={{
             ...DEFAULT_PROPS.data,

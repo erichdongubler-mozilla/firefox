@@ -25,46 +25,6 @@ function waitForMs(aMs) {
   });
 }
 
-function waitForCondition(condition, nextTest, errorMsg, aTries, aWait) {
-  let tries = 0;
-  let maxTries = aTries || 100; // 100 tries
-  let maxWait = aWait || 100; // 100 msec x 100 tries = ten seconds
-  let interval = setInterval(function () {
-    if (tries >= maxTries) {
-      ok(false, errorMsg);
-      moveOn();
-    }
-    let conditionPassed;
-    try {
-      conditionPassed = condition();
-    } catch (e) {
-      ok(false, e + "\n" + e.stack);
-      conditionPassed = false;
-    }
-    if (conditionPassed) {
-      moveOn();
-    }
-    tries++;
-  }, maxWait);
-  let moveOn = function () {
-    clearInterval(interval);
-    nextTest();
-  };
-}
-
-// Waits for a conditional function defined by the caller to return true.
-function promiseForCondition(aConditionFn, aMessage, aTries, aWait) {
-  return new Promise(resolve => {
-    waitForCondition(
-      aConditionFn,
-      resolve,
-      aMessage || "Condition didn't pass.",
-      aTries,
-      aWait
-    );
-  });
-}
-
 // Returns a promise for nsIObjectLoadingContent props data.
 function promiseForPluginInfo(aId, aBrowser) {
   let browser = aBrowser || gTestBrowser;
@@ -111,27 +71,19 @@ function promiseWaitForFocus(aWindow) {
  *
  * @return Promise
  */
-function waitForNotificationBar(notificationID, browser, callback) {
-  return new Promise(resolve => {
-    let notification;
-    let notificationBox = gBrowser.getNotificationBox(browser);
-    waitForCondition(
-      () =>
-        (notification =
-          notificationBox.getNotificationWithValue(notificationID)),
-      () => {
-        ok(
-          notification,
-          `Successfully got the ${notificationID} notification bar`
-        );
-        if (callback) {
-          callback(notification);
-        }
-        resolve(notification);
-      },
-      `Waited too long for the ${notificationID} notification bar`
-    );
-  });
+async function waitForNotificationBar(notificationID, browser, callback) {
+  let notificationBox = gBrowser.getNotificationBox(browser);
+  let notification = await TestUtils.waitForCondition(
+    () => notificationBox.getNotificationWithValue(notificationID),
+    `Waited too long for the ${notificationID} notification bar`,
+    100,
+    100
+  );
+  ok(notification, `Successfully got the ${notificationID} notification bar`);
+  if (callback) {
+    callback(notification);
+  }
+  return notification;
 }
 
 function promiseForNotificationBar(notificationID, browser) {

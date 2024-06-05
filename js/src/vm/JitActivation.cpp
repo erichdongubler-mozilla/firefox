@@ -287,6 +287,7 @@ void js::jit::JitActivation::startWasmTrap(wasm::Trap trap,
   wasmTrapData_->resumePC = resumePC;
   wasmTrapData_->unwoundPC = pc;
   wasmTrapData_->trap = trap;
+  wasmTrapData_->unwoundFrame = unwound;
   // If the frame was unwound, the source location must be recovered from the
   // callsite so that it is accurate.
   if (unwound) {

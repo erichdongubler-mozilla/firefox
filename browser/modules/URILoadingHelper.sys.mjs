@@ -81,7 +81,9 @@ function openInWindow(url, params, sourceWindow) {
   } = params;
   const chromelessDimensions =
     chromeless && width && height ? `,width=${width},height=${height}` : "";
-  const CHROMELESS_FEATURES = `resizable,minimizable,titlebar,close${chromelessDimensions}`;
+  // Ensures new chromeless windows appear in the current view instead of
+  // restoring a persisted fullscreen sizemode and taking a Space of their own.
+  const CHROMELESS_FEATURES = `resizable,minimizable,titlebar,close,suppressinitialfullscreen${chromelessDimensions}`;
   let features = `chrome,dialog=no,${chromeless ? CHROMELESS_FEATURES : "all"}`;
   if (params.private) {
     features += ",private";
@@ -745,6 +747,7 @@ export const URILoadingHelper = {
     if (
       top.document.documentElement.getAttribute("windowtype") ==
         "navigator:browser" &&
+      !top.document.documentElement.hasAttribute("mini-window") &&
       (!skipPopups || top.toolbar.visible) &&
       (!skipTaskbarTabs ||
         !top.document.documentElement.hasAttribute("taskbartab")) &&

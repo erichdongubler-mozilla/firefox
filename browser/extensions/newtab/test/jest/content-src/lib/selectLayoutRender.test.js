@@ -770,4 +770,84 @@ describe("selectLayoutRender", () => {
       expect(renderedSection.data.some(item => item.id === "spoc1")).toBe(true);
     });
   });
+
+  // @experiment(remove) { bug 2069496 }
+  describe("widgets row ad", () => {
+    // Everything isWidgetsAdActive gates on besides the variant itself.
+    const WIDGETS_AD_PREFS = {
+      ...SPONSORED_STORIES_PREFS,
+      "nova.enabled": true,
+      "pageLayouts.variant": "widgets-ad-large",
+      "widgets.system.enabled": true,
+      "widgets.enabled": true,
+      "widgets.system.lists.enabled": true,
+      "widgets.lists.enabled": true,
+    };
+
+    const renderWithSpocs = (prefs, items) => {
+      const fakeLayout = [
+        {
+          width: 3,
+          components: [
+            {
+              type: "foo",
+              feed: { url: "foo.com" },
+              spocs: { positions: [{ index: 0 }, { index: 1 }] },
+            },
+          ],
+        },
+      ];
+      store.dispatch({
+        type: at.DISCOVERY_STREAM_LAYOUT_UPDATE,
+        data: { layout: fakeLayout },
+      });
+      store.dispatch({
+        type: at.DISCOVERY_STREAM_FEED_UPDATE,
+        data: { feed: FAKE_FEEDS["foo.com"], url: "foo.com" },
+      });
+      store.dispatch({ type: at.DISCOVERY_STREAM_FEEDS_UPDATE });
+      store.dispatch({
+        type: at.DISCOVERY_STREAM_SPOCS_UPDATE,
+        data: { lastUpdated: 0, spocs: { newtab_spocs: { items } } },
+      });
+      const { layoutRender } = selectLayoutRender({
+        state: store.getState().DiscoveryStream,
+        prefs,
+      });
+      return layoutRender[0].components[0].data.recommendations.map(
+        rec => rec.id
+      );
+    };
+
+    const items = [
+      { id: "rowAd", url: "https://example.com/a" },
+      { id: "second", url: "https://example.com/b" },
+      { id: "third", url: "https://example.com/c" },
+    ];
+
+    it("fills story positions from the top of the set outside the variant", () => {
+      const ids = renderWithSpocs(SPONSORED_STORIES_PREFS, items);
+      expect(ids[0]).toBe("rowAd");
+      expect(ids[1]).toBe("second");
+    });
+
+    // The row takes the first ad, so the story positions shift up one.
+    it("skips the ad the row took and shifts the rest forward", () => {
+      const ids = renderWithSpocs(WIDGETS_AD_PREFS, items);
+      expect(ids).not.toContain("rowAd");
+      expect(ids[0]).toBe("second");
+      expect(ids[1]).toBe("third");
+    });
+
+    it("removes it exactly once when two ads share a url", () => {
+      const dupes = [
+        { id: "rowAd", url: "https://example.com/a" },
+        { id: "dupe", url: "https://example.com/a" },
+        { id: "third", url: "https://example.com/c" },
+      ];
+      const ids = renderWithSpocs(WIDGETS_AD_PREFS, dupes);
+      expect(ids).toContain("dupe");
+      expect(ids[0]).toBe("dupe");
+    });
+  });
 });

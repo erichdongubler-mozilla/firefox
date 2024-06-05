@@ -41,7 +41,8 @@ use neqo_http3::{
 use neqo_transport::{
     stream_id::StreamType, streams::SendGroupId, CongestionControl, Connection,
     ConnectionParameters, Error as TransportError, HyStartCssBaseline, Output, OutputBatch,
-    RandomConnectionIdGenerator, SlowStart, Stats as TransportStats, StreamId, Version,
+    RandomConnectionIdGenerator, SlowStart, Stats as TransportStats, StreamDataLimit, StreamId,
+    Version,
 };
 use nserror::{
     nsresult, NS_BASE_STREAM_WOULD_BLOCK, NS_ERROR_CONNECTION_REFUSED,
@@ -50,7 +51,7 @@ use nserror::{
     NS_ERROR_NET_RESET, NS_ERROR_NET_TIMEOUT, NS_ERROR_NOT_AVAILABLE, NS_ERROR_NOT_CONNECTED,
     NS_ERROR_OUT_OF_MEMORY, NS_ERROR_SOCKET_ADDRESS_IN_USE, NS_ERROR_UNEXPECTED, NS_OK,
 };
-use nss_rs::{agent::CertificateCompressor, init, PRErrorCode};
+use nss_rs::{cert::CertificateCompressor, init, PRErrorCode};
 use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
 use uuid::Uuid;
@@ -490,7 +491,7 @@ impl NeqoHttp3Conn {
             .congestion_control(cc_algorithm)
             .slow_start(slow_start)
             .max_data(max_data)
-            .max_stream_data(StreamType::BiDi, false, max_stream_data)
+            .max_stream_data(StreamDataLimit::BiDiLocal, max_stream_data)
             .grease(static_prefs::pref!("security.tls.grease_http3_enable"))
             .sni_slicing(static_prefs::pref!("network.http.http3.sni-slicing"))
             .idle_timeout(Duration::from_secs(idle_timeout.into()))
@@ -1706,7 +1707,6 @@ const fn crypto_error_code(err: &nss_rs::Error) -> u64 {
         nss_rs::Error::Aead => 1,
         nss_rs::Error::CertificateLoading => 2,
         nss_rs::Error::CreateSslSocket => 3,
-        nss_rs::Error::Hkdf => 4,
         nss_rs::Error::Internal => 5,
         nss_rs::Error::IntegerOverflow => 6,
         nss_rs::Error::InvalidEpoch => 7,
@@ -2215,6 +2215,7 @@ pub extern "C" fn neqo_http3conn_event(
             Http3ClientEvent::DataWritable { stream_id } => Http3Event::DataWritable {
                 stream_id: stream_id.as_u64(),
             },
+            Http3ClientEvent::OutgoingDatagramSpaceAvailable => Http3Event::NoEvent,
             Http3ClientEvent::StopSending { stream_id, error } => Http3Event::StopSending {
                 stream_id: stream_id.as_u64(),
                 error,

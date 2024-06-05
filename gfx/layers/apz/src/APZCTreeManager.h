@@ -889,6 +889,15 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       MOZ_REQUIRES(mMapLock) {
     mInteractiveWidget = aInteractiveWidgetMode;
   }
+  // The compositor-side counterpart of
+  // nsPresContext::IsKeyboardVisibleOnOverlaysContent; the two need to be kept
+  // consistent.
+  bool IsKeyboardVisibleOnOverlaysContent(
+      const MutexAutoLock& aProofOfMapLock) const MOZ_REQUIRES(mMapLock) {
+    return IsSoftwareKeyboardVisible(aProofOfMapLock) &&
+           InteractiveWidgetMode(aProofOfMapLock) ==
+               dom::InteractiveWidget::OverlaysContent;
+  }
 
  protected:
   /* The input queue where input events are held until we know enough to

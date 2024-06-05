@@ -20,6 +20,123 @@ const isMSIX =
 
 const MESSAGES = () => [
   {
+    id: "WELCOME_BACK_SPOTLIGHT",
+    skip_in_tests: "it's not tested in automation",
+    template: "spotlight",
+    content: {
+      id: "WELCOME_BACK_SPOTLIGHT",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: false,
+      screens: [
+        {
+          id: "CAROUSEL",
+          content: {
+            title: "New features built to help you do more",
+            tiles: {
+              type: "single-select",
+              selected: "vertical-tabs",
+              pill_nav_label: { raw: "Feature highlights" },
+              data: [
+                {
+                  id: "split-view",
+                  inert: true,
+                  targeting: "firefoxVersion >= 150",
+                  type: "carousel-card",
+                  pill: {
+                    label: { raw: "Split View" },
+                    icon: "chrome://browser/skin/split-view-left-16.svg",
+                  },
+                  icon: {
+                    background:
+                      "url('chrome://activity-stream/content/data/content/assets/mr-kit-smart-window.svg') center / cover no-repeat light-dark(rgb(240, 240, 244), rgb(43, 42, 51))",
+                    darkModeBackground:
+                      "url('chrome://activity-stream/content/data/content/assets/fox-doodle-backup-restore.svg') center / cover no-repeat light-dark(rgb(240, 240, 244), rgb(43, 42, 51))",
+                  },
+                  label: { raw: "Split View" },
+                  body: {
+                    raw: "Two tabs side by side, right where you need them. Finally.",
+                  },
+                  tilebutton: {
+                    label: {
+                      raw: "Try it now",
+                    },
+                    style: "secondary",
+                    action: {
+                      type: "OPEN_URL",
+                      data: {
+                        args: "https://support.mozilla.org/kb/split-view-firefox",
+                        where: "tabshifted",
+                      },
+                    },
+                  },
+                },
+                {
+                  id: "vertical-tabs",
+                  inert: true,
+                  type: "carousel-card",
+                  targeting: "firefoxVersion <= 140",
+                  pill: {
+                    label: { raw: "Vertical Tabs" },
+                    icon: "chrome://browser/skin/tabs.svg",
+                  },
+                  icon: {
+                    background:
+                      "url('chrome://activity-stream/content/data/content/assets/nuo-taborientation.svg') center / cover no-repeat light-dark(rgb(240, 240, 244), rgb(43, 42, 51))",
+                  },
+                  label: { raw: "Vertical Tabs" },
+                  body: {
+                    raw: "Stack your tabs down the side for calmer browsing.",
+                  },
+                },
+                {
+                  id: "tab-groups",
+                  inert: true,
+                  type: "carousel-card",
+                  pill: {
+                    label: { raw: "Tab Groups" },
+                    icon: "chrome://browser/skin/tabbrowser/tab-groups.svg",
+                  },
+                  icon: {
+                    background:
+                      "url('chrome://activity-stream/content/data/content/assets/euo-tab-orientation.svg') center / cover no-repeat light-dark(rgb(240, 240, 244), rgb(43, 42, 51))",
+                  },
+                  label: { raw: "Tab Groups" },
+                  body: { raw: "Keep related tabs together in named groups." },
+                  tilebutton: {
+                    label: {
+                      raw: "Try it now",
+                    },
+                    style: "secondary",
+                    action: {
+                      type: "OPEN_URL",
+                      data: {
+                        args: "https://support.mozilla.org/kb/split-view-firefox",
+                        where: "tabshifted",
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+            primary_button: {
+              label: { raw: "Start browsing" },
+              action: {
+                dismiss: true,
+              },
+            },
+            secondary_button: {
+              label: { raw: "Learn more" },
+              action: {
+                dismiss: true,
+              },
+            },
+          },
+        },
+      ],
+    },
+  },
+  {
     weight: 100,
     id: "FEATURE_CALLOUT_REFERRAL_TEST",
     template: "feature_callout",
@@ -2793,6 +2910,82 @@ const MESSAGES = () => [
     trigger: {
       id: "newtabMessageCheck",
     },
+  },
+  // The base template for the new tab card stack component (bug 2069986).
+  {
+    id: "TEST_HNT_CARD_STACK",
+    template: "newtab_message",
+    groups: [],
+    content: {
+      messageType: "ASRouterMultistageMessage",
+      id: "TEST_HNT_CARD_STACK",
+      transitions: true,
+      backdrop: "transparent",
+      screens: [
+        {
+          id: "CARD_STACK_SCREEN_1",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "card-stack",
+            background:
+              "url('chrome://activity-stream/content/data/content/assets/br-set-default-fox-heart.svg') center / contain no-repeat",
+            title: { raw: "This is a card-stack headline" },
+            subtitle: {
+              raw: "This is a card-stack subtitle, lower in the visual hierarchy.",
+            },
+            primary_button: {
+              label: { raw: "Primary action" },
+              action: { navigate: true },
+            },
+            secondary_button: {
+              label: { raw: "Dismiss" },
+              action: { navigate: true },
+            },
+          },
+        },
+        {
+          id: "CARD_STACK_SCREEN_2",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "card-stack",
+            background:
+              "url('chrome://activity-stream/content/data/content/assets/br-import-fox-house.svg') center / contain no-repeat",
+            title: {
+              raw: "This is a card-stack headline, on the second screen",
+            },
+            subtitle: {
+              raw: "This is a card-stack subtitle, lower in the visual hierarchy, on the second screen.",
+            },
+            primary_button: {
+              label: { raw: "Primary action" },
+              action: { navigate: true },
+            },
+            secondary_button: {
+              label: { raw: "Dismiss" },
+              action: { dismiss: true },
+            },
+          },
+        },
+        // The unique "last card" layout (bug 2069997).
+        {
+          id: "CARD_STACK_SCREEN_3",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "card-stack",
+            layout: "last-card",
+            title: { raw: "Tracking protection is on." },
+            subtitle: { raw: "Say hello to a better web." },
+            center_image: {
+              imageURL:
+                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260923193621--fox-peeking--a7cb53ba-228f-4b81-a92f-6ad34474872b.svg",
+              alt: "",
+              marginBlock: "40px 0",
+            },
+          },
+        },
+      ],
+    },
+    trigger: { id: "newtabMessageCheck" },
   },
   {
     id: "UNIVERSAL_INFOBAR_WITH_EMBEDDED_LINKS",

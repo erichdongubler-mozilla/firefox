@@ -1,6 +1,6 @@
 toolkit.jar:
 %  content global %content/global/ contentaccessible=yes
-*  content/global/license.html
+   content/global/license.html
    content/global/xul.css
    content/global/autocomplete.css
    content/global/aboutAbout.js
@@ -186,6 +186,7 @@ toolkit.jar:
    content/global/elements/panel-list.tokens.css      (widgets/panel-list/panel-list.tokens.css)
    content/global/elements/panel-list.css      (widgets/panel-list/panel-list.css)
    content/global/elements/panel-list.mjs      (widgets/panel-list/panel-list.mjs)
+   content/global/elements/accesskey-check.mjs (widgets/panel-list/accesskey-check.mjs)
    content/global/elements/radio.js            (widgets/radio.js)
    content/global/elements/richlistbox.js      (widgets/richlistbox.js)
    content/global/elements/marquee.css         (widgets/marquee.css)

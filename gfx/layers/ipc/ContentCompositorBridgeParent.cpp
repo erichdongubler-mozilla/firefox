@@ -180,7 +180,8 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
 }
 
 mozilla::ipc::IPCResult ContentCompositorBridgeParent::RecvNotifyChildCreated(
-    const LayersId& child, CompositorOptions* aOptions) {
+    const LayersId& child, const LayersId& embedderId,
+    CompositorOptions* aOptions) {
   if (NS_WARN_IF(!LayerTreeOwnerTracker::Get()->IsMapped(child, OtherPid()))) {
     return IPC_OK();
   }
@@ -193,7 +194,7 @@ mozilla::ipc::IPCResult ContentCompositorBridgeParent::RecvNotifyChildCreated(
             [&](LayersId, CompositorBridgeParent::LayerTreeState& lts) {
               if (!found && lts.mParent &&
                   lts.mContentCompositorBridgeParent == this) {
-                lts.mParent->NotifyChildCreated(child);
+                lts.mParent->NotifyChildCreated(child, embedderId);
                 *aOptions = lts.mParent->GetOptions();
                 found = true;
               }
@@ -204,8 +205,8 @@ mozilla::ipc::IPCResult ContentCompositorBridgeParent::RecvNotifyChildCreated(
 
 mozilla::ipc::IPCResult
 ContentCompositorBridgeParent::RecvMapAndNotifyChildCreated(
-    const LayersId& child, const base::ProcessId& pid,
-    CompositorOptions* aOptions) {
+    const LayersId& child, const LayersId& embedderId,
+    const base::ProcessId& pid, CompositorOptions* aOptions) {
   // This can only be called from the browser process, as the mapping
   // ensures proper window ownership of layer trees.
   return IPC_FAIL_NO_REASON(this);
@@ -412,6 +413,11 @@ ContentCompositorBridgeParent::AllocPTextureParent(
     const SurfaceDescriptor& aSharedData, ReadLockDescriptor& aReadLock,
     const LayersBackend& aLayersBackend, const TextureFlags& aFlags,
     const uint64_t& aSerial, const wr::MaybeExternalImageId& aExternalImageId) {
+  if (aFlags & TextureFlags::REMOTE_TEXTURE) {
+    MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
+    return nullptr;
+  }
+
   switch (aSharedData.type()) {
     case SurfaceDescriptor::TSurfaceDescriptorBuffer:
       break;

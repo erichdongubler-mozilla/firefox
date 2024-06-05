@@ -17,6 +17,7 @@
 #ifndef wasm_stubs_h
 #define wasm_stubs_h
 
+#include "util/Memory.h"
 #include "wasm/WasmFrameIter.h"  // js::wasm::ExitReason
 #include "wasm/WasmGenerator.h"
 #include "wasm/WasmOpIter.h"
@@ -264,6 +265,19 @@ extern void GenerateTrapExitRegisterOffsets(jit::RegisterOffsets* offsets,
 
 extern bool GenerateProvisionalLazyJitEntryStub(jit::MacroAssembler& masm,
                                                 Offsets* offsets);
+
+extern bool GenerateReturnCallTrampoline(jit::MacroAssembler& masm,
+                                         CallableOffsets* offsets);
+
+constexpr uint32_t SizeOfHiddenReturnCallFrameAfterBreak() {
+  return AlignBytes(FrameWithInstances::sizeOfInstanceFieldsAndShadowStack(),
+                    jit::WasmStackAlignment);
+}
+
+constexpr uint32_t SizeOfHiddenReturnCallFrame() {
+  return AlignBytes(uint32_t(sizeof(Frame)), jit::WasmStackAlignment) +
+         SizeOfHiddenReturnCallFrameAfterBreak();
+}
 
 // A value that is written into the trap exit frame, which is useful for
 // cross-checking during garbage collection.

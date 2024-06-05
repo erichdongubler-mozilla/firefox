@@ -12,7 +12,10 @@
  * ciphertext derived on write.
  */
 
-import { RustAutofillAdapterBase } from "resource://autofill/RustAutofillAdapterBase.sys.mjs";
+import {
+  RustAutofillAdapterBase,
+  INTERNAL_FIELDS,
+} from "resource://autofill/RustAutofillAdapterBase.sys.mjs";
 
 const lazy = {};
 
@@ -62,6 +65,83 @@ const JS_TO_RUST_INTEGER_FIELD = {
 // and ccNumberLast4, and only the ciphertext is stored as it was given. Reading
 // it back inverts, so `cc-number-encrypted` is what this store holds and
 // `cc-number` is derived, as cc-exp and the name components are.
+//
+// Both are still comparable, but not by string equality -- see
+// creditCardFieldDiffers.
+const storedFields = new Set([
+  ...Object.keys(JS_TO_RUST_STRING_FIELD),
+  ...Object.keys(JS_TO_RUST_INTEGER_FIELD),
+  "cc-number",
+  "cc-number-encrypted",
+  ...INTERNAL_FIELDS,
+]);
+
+/**
+ * Whether this store holds a field of this name, as opposed to deriving it on
+ * read or not recognising it at all.
+ *
+ * Used when comparing a record here against the same record in the JSON store,
+ * to decide whether a difference means the copy is unfaithful. Only a stored
+ * field can answer that. The copy carries the canonical fields and metadata and
+ * nothing else, so those are the only ones a failed copy can corrupt.
+ *
+ * A derived field is deliberately excluded even though this store understands
+ * it. The JSON store persists what it computed at write time and hands back
+ * what it wrote, while this one recomputes on every read, so the two disagree
+ * whenever the derivation has since changed -- for the whole population at
+ * once, not for the records a copy damaged. Two cases:
+ *
+ *  - cc-type is re-detected from the number on every normalise, so a change to
+ *    the detection table moves every stored card.
+ * The name components and cc-exp are excluded for that reason.
+ *
+ * The two number fields are included, but neither compares as a string --
+ * see creditCardFieldDiffers.
+ *
+ * @param {string} field
+ * @returns {boolean}
+ */
+export function isStoredCreditCardField(field) {
+  return storedFields.has(field);
+}
+
+/**
+ * Whether a field disagrees between a record and its copy, for the two fields
+ * where string equality is the wrong question.
+ *
+ * cc-number is a mask, rebuilt here at a fixed width and written by the JSON
+ * store at the card's own, so the masks differ for any card that was not 16
+ * digits long. What both do carry, in the clear, is the last four digits --
+ * they are what the UI shows -- so those are what get compared. That is also
+ * the comparison worth having: a card landing under the wrong guid, or a number
+ * truncated in transit, shows up here and nowhere else.
+ *
+ * cc-number-encrypted compares by presence only. A migration decrypts and
+ * re-encrypts, and encryption is not deterministic, so the bytes differ on
+ * every record by design; what is still answerable is whether both sides hold a
+ * number or neither does. An empty ciphertext is a legitimate state, which is
+ * why this is a parity check rather than an assertion that one exists.
+ *
+ * Comparing the two plaintexts is the stronger check and is not made: the copy
+ * lets go of the exported records before it verifies, so it would mean
+ * decrypting every record again on both sides. The last four digits of
+ * cc-number stand in for it.
+ *
+ * @param {string} field
+ * @param {*} a The value on the record.
+ * @param {*} b The value on its copy.
+ * @returns {boolean}
+ */
+export function creditCardFieldDiffers(field, a, b) {
+  switch (field) {
+    case "cc-number":
+      return String(a ?? "").slice(-4) !== String(b ?? "").slice(-4);
+    case "cc-number-encrypted":
+      return !a !== !b;
+    default:
+      return a !== b;
+  }
+}
 
 /**
  * How wide to rebuild the mask on a number this store no longer holds in full.

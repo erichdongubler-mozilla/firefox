@@ -12,6 +12,7 @@ from gecko_taskgraph import GECKO
 
 _DIRECTORY_LISTING_RE = re.compile(r"^\^(?:(?P<dir>[^\\^$*+?()|\[\]]+)/)?\[\^/\]\+\$$")
 _GIT_PATTERN_METACHARS_RE = re.compile(r"([*?\[\\])")
+_GIT_FULL_CHECKOUT_RE = re.compile(r"#\s*git-checkout:\s*full$")
 
 
 def _escape(name):
@@ -118,8 +119,23 @@ def load_sparse_profile(profile_path, topsrcdir=GECKO):
     sparse profile, following ``%include`` directives. Every line is checked
     against the subset that translates to git, and a line outside it raises
     ``ValueError`` naming the file and line number."""
+    includes, excludes, _ = _load_sparse_profile(profile_path, topsrcdir)
+    return includes, excludes
+
+
+def git_checkout_is_full(profile_path, topsrcdir=GECKO):
+    """Return whether the profile, or one it includes, carries the comment line
+    ``# git-checkout: full``, which asks git tasks to check out the whole tree.
+    A profile whose patterns match files all over the tree fetches their blobs
+    one by one and ends up slower than a full clone, while Mercurial, which
+    already holds every file, only writes fewer of them."""
+    return _load_sparse_profile(profile_path, topsrcdir)[2]
+
+
+def _load_sparse_profile(profile_path, topsrcdir):
     includes = []
     excludes = []
+    marked_full = []
     root = Path(topsrcdir).resolve()
     stack = []
 
@@ -141,6 +157,8 @@ def load_sparse_profile(profile_path, topsrcdir=GECKO):
         for lineno, raw_line in enumerate(lines, 1):
             line = raw_line.strip()
             if not line or line.startswith("#"):
+                if _GIT_FULL_CHECKOUT_RE.match(line):
+                    marked_full.append(relpath)
                 continue
             if line.startswith("%include "):
                 parse(line[len("%include ") :].strip())
@@ -165,7 +183,7 @@ def load_sparse_profile(profile_path, topsrcdir=GECKO):
         stack.pop()
 
     parse(profile_path)
-    return includes, excludes
+    return includes, excludes, bool(marked_full)
 
 
 def to_git_sparse_patterns(includes, excludes, list_files):

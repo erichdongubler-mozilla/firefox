@@ -1594,6 +1594,12 @@ bool BytecodeEmitter::emitTDZCheckIfNeeded(TaggedParserAtomIndex name,
     return true;
   }
 
+  // `.initializers` is an implementation detail that is always populated
+  // before a constructor can read it.
+  if (name == TaggedParserAtomIndex::WellKnown::dot_initializers_()) {
+    return true;
+  }
+
   Maybe<MaybeCheckTDZ> check =
       innermostTDZCheckCache->needsTDZCheck(this, name);
   if (!check) {
@@ -2569,6 +2575,12 @@ BytecodeEmitter::createImmutableScriptData() {
     propertyCountEstimate +=
         sc->asFunctionBox()->memberInitializers().numMemberInitializers;
   }
+
+#ifdef DEBUG
+  uint32_t codeLength = bytecodeSection().code().length();
+  bytecodeSection().tryNoteList().checkTryNotes(codeLength);
+  bytecodeSection().scopeNoteList().checkScopeNotes(codeLength);
+#endif
 
   return ImmutableScriptData::new_(
       fc, mainOffset(), maxFixedSlots, nslots, bodyScopeIndex,

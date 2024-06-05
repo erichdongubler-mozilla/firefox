@@ -3,11 +3,11 @@
 ["browser_pageinfo_iframe_media.js"]
 support-files = [
   "iframes.html",
-  "../general/moz.png",
+  "../browser-general/moz.png",
 ]
 
 ["browser_pageinfo_image_info.js"]
-support-files = ["../general/moz.png"]
+support-files = ["../browser-general/moz.png"]
 skip-if = [
   "true", # Bug 1998143, 1997129, 1161699
 ]
@@ -18,7 +18,7 @@ skip-if = [
 ]
 support-files = [
   "all_images.html",
-  "../general/moz.png",
+  "../browser-general/moz.png",
 ]
 
 ["browser_pageinfo_permissions.js"]
@@ -26,9 +26,9 @@ support-files = [
 ["browser_pageinfo_previewBrowser.js"]
 support-files = [
   "image.html",
-  "../general/audio.ogg",
-  "../general/moz.png",
-  "../general/video.webm",
+  "../browser-general/audio.ogg",
+  "../browser-general/moz.png",
+  "../browser-general/video.webm",
 ]
 skip-if = [
   "asan",
@@ -40,12 +40,12 @@ skip-if = [
 
 ["browser_pageinfo_security.js"]
 https_first_disabled = true
-support-files = ["../general/moz.png"]
+support-files = ["../browser-general/moz.png"]
 
 ["browser_pageinfo_separate_private.js"]
 
 ["browser_pageinfo_svg_image.js"]
 support-files = [
   "svg_image.html",
-  "../general/title_test.svg",
+  "../browser-general/title_test.svg",
 ]

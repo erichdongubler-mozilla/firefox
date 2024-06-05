@@ -249,18 +249,6 @@ static AVPixelFormat ChooseV4L2PixelFormat(AVCodecContext* aCodecContext,
 }
 
 #  ifdef MOZ_USE_HWDECODE_VULKAN
-static bool VulkanDirectDecodeExportEnabled() {
-  // Keep direct export disabled on bundled ffvpx until lavc is greater than
-  // MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF (62.29.101); then remove this #if.
-#    if defined(FFVPX_VERSION) && \
-        LIBAVCODEC_VERSION_INT <= MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF
-  return false;
-#    else
-  return StaticPrefs::
-      media_hardware_video_decoding_vulkan_direct_export_enabled_AtStartup();
-#    endif
-}
-
 static AVPixelFormat ChooseVulkanPixelFormat(AVCodecContext* aCodecContext,
                                              const AVPixelFormat* aFormats) {
   auto* decoder =
@@ -370,6 +358,24 @@ static void VulkanCopyQueues(const AVVulkanDeviceContext* aVkCtx,
   *aFamily = (uint32_t)std::max<int>(aVkCtx->queue_family_tx_index, 0);
   *aCount = (uint32_t)std::max(aVkCtx->nb_tx_queues, 1);
 #    endif
+}
+
+bool FFmpegVideoDecoder<LIBAV_VER>::VulkanDirectDecodeExportEnabled() {
+  static bool exportEnabled = [&]() {
+    if (!mLib->av_hwframe_map) {
+      return false;
+    }
+    // Keep direct export disabled on bundled ffvpx until lavc is greater than
+    // MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF (62.29.101); then remove this #if.
+#    if defined(FFVPX_VERSION) && \
+        LIBAVCODEC_VERSION_INT <= MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF
+    return false;
+#    else
+    return StaticPrefs::
+        media_hardware_video_decoding_vulkan_direct_export_enabled_AtStartup();
+#    endif
+  }();
+  return exportEnabled;
 }
 
 bool FFmpegVideoDecoder<LIBAV_VER>::CreateVulkanDeviceContext(
@@ -717,6 +723,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitVulkanDecoder() {
           mLib->av_buffer_unref(&mVulkanDeviceContext);
         }
         ReleaseCodecContext();
+        VulkanDeviceHolder::Drop(mVulkanDeviceHolder);
       });
 
   nsAutoCString rendererNode(gfx::gfxVars::DrmRenderDevice());
@@ -781,17 +788,6 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitV4L2Decoder() {
 
   StaticMutexAutoLock mon(sMutex);
 
-  // mAcceleratedFormats is already configured so check supported
-  // formats before we do anything.
-  if (mAcceleratedFormats.Length()) {
-    if (!IsFormatAccelerated(mCodecID)) {
-      FFMPEG_LOG("  Format {} is not accelerated",
-                 mLib->avcodec_get_name(mCodecID));
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-    FFMPEG_LOG("  Format {} is accelerated", mLib->avcodec_get_name(mCodecID));
-  }
-
   // Select the appropriate v4l2 codec
   AVCodec* codec = FindVideoHardwareAVCodec(mLib, mCodecID);
   if (!codec) {
@@ -830,15 +826,6 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitV4L2Decoder() {
   if (mLib->avcodec_open2(mCodecContext, codec, nullptr) < 0) {
     FFMPEG_LOG("  Couldn't initialise V4L2 decoder");
     return NS_ERROR_DOM_MEDIA_FATAL_ERR;
-  }
-
-  // Set mAcceleratedFormats
-  if (mAcceleratedFormats.IsEmpty()) {
-    // FFmpeg does not correctly report that the V4L2 wrapper decoders are
-    // hardware accelerated, but we know they always are.  If we've gotten
-    // this far then we know this codec has a V4L2 wrapper decoder and so is
-    // accelerateed.
-    mAcceleratedFormats.AppendElement(mCodecID);
   }
 
   AdjustHWDecodeLogging();
@@ -1010,6 +997,9 @@ FFmpegVideoDecoder<LIBAV_VER>::~FFmpegVideoDecoder() {
   // to FFmpegVideoDecoder in their CompositorListener, so it keeps it alive
   // long enough to present the frames in the compositor.
   ReleaseSurfaceMediaCodec();
+#endif
+#ifdef MOZ_USE_HWDECODE_VULKAN
+  VulkanDeviceHolder::Drop(mVulkanDeviceHolder);
 #endif
 #ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
   // ffmpeg should have cleared all of its strong references to the decoded data
@@ -1281,6 +1271,9 @@ FFmpegVideoDecoder<LIBAV_VER>::AllocateTextureClientForImage(
   mLib->avcodec_align_dimensions(aCodecContext, &paddedCbCrSize.width,
                                  &paddedCbCrSize.height);
   data.mCbCrStride = paddedCbCrSize.Width() * bytesPerChannel;
+
+  paddedYSize.height += GetBuffer2StrideAlign(data.mYStride);
+  paddedCbCrSize.height += GetBuffer2StrideAlign(data.mCbCrStride);
 
   // Setting other attributes
   data.mPictureRect = gfx::IntRect(
@@ -1556,14 +1549,6 @@ void FFmpegVideoDecoder<LIBAV_VER>::InitHWCodecContext(ContextType aType) {
   }
 }
 #endif
-
-static int64_t GetFramePts(const AVFrame* aFrame) {
-#if LIBAVCODEC_VERSION_MAJOR > 57
-  return aFrame->pts;
-#else
-  return aFrame->pkt_pts;
-#endif
-}
 
 static bool IsKeyFrame(const AVFrame* aFrame) {
 #if LIBAVCODEC_VERSION_MAJOR > 61
@@ -2642,14 +2627,14 @@ void FFmpegVideoDecoder<LIBAV_VER>::ProcessShutdown() {
   mVideoFramePool = nullptr;
 #endif
   // Shutdown order for Vulkan hw decode:
-  // 1. avcodec_free_context() via ProcessShutdown() — FFmpeg created the
-  //    VkDevice (av_hwdevice_ctx_create) and must finish its own teardown
-  //    (ff_vk_uninit) before we touch Firefox-owned Vulkan objects.
+  // 1. avcodec_free_context() via ProcessShutdown() — FFmpeg must finish
+  //    ff_vk_uninit before we touch Firefox-owned Vulkan objects.
   // 2. mVulkanDecoder.Cleanup() — uses mDeviceWaitIdle and destroys our
   //    command pools/fences; must run while mVulkanDeviceContext still keeps
   //    the AVHWDeviceContext alive.
-  // 3. av_buffer_unref(&mVulkanDeviceContext) — may be the last ref and call
-  //    vkDestroyDevice, so it must come after Cleanup().
+  // 3. av_buffer_unref(&mVulkanDeviceContext) — extra refs from this decoder.
+  // 4. VulkanDeviceHolder::Drop — always (no-op if already nullptr); last
+  //    process-wide client may vkDestroyDevice under sDeviceHolders.
   FFmpegDataDecoder<LIBAV_VER>::ProcessShutdown();
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
   if (IsHardwareAccelerated()) {
@@ -2661,6 +2646,9 @@ void FFmpegVideoDecoder<LIBAV_VER>::ProcessShutdown() {
     mLib->av_buffer_unref(&mVAAPIDeviceContext);
     mLib->av_buffer_unref(&mVulkanDeviceContext);
   }
+#  ifdef MOZ_USE_HWDECODE_VULKAN
+  VulkanDeviceHolder::Drop(mVulkanDeviceHolder);
+#  endif
 #endif
 #ifdef MOZ_ENABLE_D3D11VA
   if (IsHardwareAccelerated()) {

@@ -7272,9 +7272,9 @@ bool WarpCacheIRTranspiler::emitAssertRecoveredOnBailoutResult(
   return true;
 }
 
-bool WarpCacheIRTranspiler::emitGuardNoAllocationMetadataBuilder(
+bool WarpCacheIRTranspiler::emitAssertNoAllocationMetadataBuilder(
     uint32_t builderAddrOffset) {
-  // This is a no-op because we discard all JIT code when set an allocation
+  // This is a no-op because we discard all JIT code when we set an allocation
   // metadata callback.
   return true;
 }

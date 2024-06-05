@@ -336,6 +336,15 @@ WebrtcVideoEncoder::EncoderInfo WebrtcMediaDataEncoder::GetEncoderInfo() const {
   info.is_hardware_accelerated = false;
   info.supports_simulcast = false;
 
+  if (mCodecSpecific.codecType == webrtc::VideoCodecType::kVideoCodecH264) {
+    // Without this, libwebrtc's QualityScalerResource is torn down whenever
+    // this encoder becomes active, discarding any resolution restriction a
+    // fallback encoder already established (see
+    // VideoStreamEncoderResourceManager::UpdateQualityScalerSettings).
+    info.scaling_settings = WebrtcVideoEncoder::ScalingSettings(
+        kLowH264QpThreshold, kHighH264QpThreshold);
+  }
+
 #ifdef MOZ_WIDGET_ANDROID
   // Assume MediaDataEncoder is used mainly for hardware encoding. 16-alignment
   // seems required on Android. This could be improved by querying the

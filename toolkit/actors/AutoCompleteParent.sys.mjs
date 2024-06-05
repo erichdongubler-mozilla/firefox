@@ -183,6 +183,18 @@ var AutoCompleteResultView = {
 export class AutoCompleteParent extends JSWindowActorParent {
   #reportedTelemetryInputs = new Set();
 
+  /**
+   * The entry whose provider was last asked for a preview, so that the
+   * provider can be told to drop it once the preview moves elsewhere.
+   *
+   * @type {{
+   *   actor: JSWindowActorParent,
+   *   fillMessageName: string,
+   *   fillMessageData: object
+   * } | null}
+   */
+  #previewedEntry = null;
+
   didDestroy() {
     if (this.openedPopup) {
       this.openedPopup.closePopup();
@@ -656,6 +668,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
     const prefixToActor = [
       { prefix: "PasswordManager", actor: "LoginManager" },
       { prefix: "FormAutofill", actor: "FormAutofill" },
+      { prefix: "FormHistory", actor: "FormHistory" },
       { prefix: "SmartFormFill", actor: "SmartFormFill" },
     ];
 
@@ -712,21 +725,12 @@ export class AutoCompleteParent extends JSWindowActorParent {
    * Clear the autocomplete preview
    */
   clearAutoCompletePreview() {
-    const selectedIndex = this.openedPopup?.selectedIndex;
-    const result = AutoCompleteResultView.results[selectedIndex];
-    if (!result) {
-      return;
-    }
-
-    const { fillMessageName, fillMessageData } = JSON.parse(
-      result.comment || "{}"
+    const entry = this.#previewedEntry;
+    this.#previewedEntry = null;
+    entry?.actor?.onAutoCompleteEntryClearPreview?.(
+      entry.fillMessageName,
+      entry.fillMessageData
     );
-    if (!fillMessageName) {
-      return;
-    }
-
-    const actor = this.#getActorByMessagePrefix(fillMessageName);
-    actor?.onAutoCompleteEntryClearPreview?.(fillMessageName, fillMessageData);
   }
 
   /**
@@ -742,12 +746,23 @@ export class AutoCompleteParent extends JSWindowActorParent {
     const { fillMessageName, fillMessageData } = JSON.parse(
       result.comment || "{}"
     );
-    if (!fillMessageName) {
+    const actor = fillMessageName
+      ? this.#getActorByMessagePrefix(fillMessageName)
+      : null;
+
+    // A provider only drops its preview when another of its own entries is
+    // previewed, so an entry belonging to a different provider (such as the
+    // Smart Form Fill row) has to drop the previous preview here.
+    if (this.#previewedEntry?.actor != actor) {
+      this.clearAutoCompletePreview();
+    }
+
+    if (!actor) {
       return;
     }
 
-    const actor = this.#getActorByMessagePrefix(fillMessageName);
-    actor?.onAutoCompleteEntryHovered?.(fillMessageName, fillMessageData);
+    this.#previewedEntry = { actor, fillMessageName, fillMessageData };
+    actor.onAutoCompleteEntryHovered?.(fillMessageName, fillMessageData);
   }
 
   /**

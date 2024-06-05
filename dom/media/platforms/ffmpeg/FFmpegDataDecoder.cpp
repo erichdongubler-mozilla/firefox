@@ -111,6 +111,14 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitSWDecoder(
     AVDictionary** aOptions) {
   FFMPEG_LOG("Initialising FFmpeg decoder");
 
+#if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
+  if (mCDM) {
+    FFMPEG_LOG("  cannot use software decoder with CDM");
+    return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                       RESULT_DETAIL("CDM requires HW decoder"));
+  }
+#endif
+
   AVCodec* codec = FindSoftwareAVCodec(mLib, mCodecID);
   if (!codec) {
     FFMPEG_LOG("  couldn't find ffmpeg decoder for codec id {}",

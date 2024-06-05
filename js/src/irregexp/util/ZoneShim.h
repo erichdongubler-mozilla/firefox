@@ -42,10 +42,11 @@ class MOZ_STACK_CLASS Zone {
     js::LifoAlloc::AutoFallibleScope fallible(&inner());
     js::AutoEnterOOMUnsafeRegion oomUnsafe;
     size_t numBytes;
-    if (!mozilla::SafeMul(length, sizeof(T), &numBytes)) {
+    if (!mozilla::SafeMul(length, sizeof(T), &numBytes) ||
+        numBytes > INT32_MAX) {
       oomUnsafe.crash("Irregexp Zone::AllocateArray");
     }
-    void* memory = inner().alloc(length * sizeof(T));
+    void* memory = inner().alloc(numBytes);
     if (MOZ_UNLIKELY(!memory)) {
       oomUnsafe.crash(numBytes, "Irregexp Zone::AllocateArray");
     }

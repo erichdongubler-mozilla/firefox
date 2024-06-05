@@ -456,10 +456,6 @@ class PanGestureInput : public InputData {
     return mMayTriggerSwipe && mOverscrollBehaviorAllowsSwipe;
   }
 
-  // Similar to above AllowsSwipe() but this doesn't care the
-  // overscroll-behavior property, this function should be only used for cases
-  // where APZ isn't involved.
-  bool MayTriggerSwipe() const { return mMayTriggerSwipe; }
   bool RequiresContentResponseIfCannotScrollHorizontallyInStartDirection();
 
   static gfx::IntPoint GetIntegerDeltaForEvent(bool aIsStart, float x, float y);

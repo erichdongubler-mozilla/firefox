@@ -762,7 +762,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   // Copy parameters out of argv and into the wasm ABI registers/stack-slots.
   SetupABIArguments(masm, fe, funcType, argv, scratch);
 
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
                                      WasmCalleeInstanceOffsetBeforeCall));
@@ -1233,7 +1233,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   GenPrintf(DebugChannel::Function, masm, "\n");
 
   // Setup wasm register state.
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
                                      WasmCalleeInstanceOffsetBeforeCall));
@@ -1532,7 +1532,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   masm.movePtr(ImmPtr(&inst), InstanceReg);
   masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
                                      WasmCalleeInstanceOffsetBeforeCall));
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   // Actual call.
   const CodeBlock& codeBlock = inst.code().funcCodeBlock(fe.funcIndex());
@@ -1949,11 +1949,15 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   MoveSPForJitABI(masm);
   masm.wasmCallImport(desc, CalleeDesc::import(funcImportInstanceOffset));
 
+  // The call may not have preserved the stack pointer, so recover it from FP
+  // before reading the instance slot.
+  masm.freeStackTo(framePushed);
+
   // Restore the instance register and pinned regs, per wasm function ABI.
   masm.loadPtr(
       Address(masm.getStackPointer(), framePushed - sizeOfInstanceSlot),
       InstanceReg);
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   // Restore cx->realm.
   masm.switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
@@ -2644,9 +2648,10 @@ static const LiveRegisterSet RegsToPreserve(
                          (uint32_t(1) << Registers::fp) |
                          (uint32_t(1) << Registers::sp) |
                          (uint32_t(1) << Registers::zero))),
-    FloatRegisterSet(FloatRegisters::AllDoubleMask));
 #  ifdef ENABLE_JIT_SIMD
-#    error "high lanes of SIMD registers need to be saved too."
+    FloatRegisterSet(FloatRegisters::AllSimd128Mask));
+#  else
+    FloatRegisterSet(FloatRegisters::AllDoubleMask));
 #  endif
 #elif defined(JS_CODEGEN_RISCV64)
 static const LiveRegisterSet RegsToPreserve(
@@ -2989,7 +2994,8 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
   wasm::CalleeDesc callee = wasm::CalleeDesc::wasmFuncRef();
   CodeOffset fastCallOffset;
   CodeOffset slowCallOffset;
-  masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset);
+  masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset, nullptr,
+                   nullptr);
 
   // The current stack pointer might not match the one before the call if the
   // callee performed a tail call, so recover it from FP before reading the
@@ -3109,7 +3115,7 @@ void wasm::GenerateJumpToCatchHandler(MacroAssembler& masm, Register rfe,
                                       Register scratch3) {
   masm.loadPtr(Address(rfe, ResumeFromException::offsetOfInstance()),
                InstanceReg);
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
   masm.switchToWasmInstanceRealm(scratch1, scratch2);
 
 #ifdef ENABLE_WASM_JSPI
@@ -3160,6 +3166,16 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
 
   // Allocate space for exception or regular resume information.
   masm.reserveStack(sizeof(jit::ResumeFromException));
+#ifdef JS_HW_SHADOW_STACK
+  // Read the shadow stack pointer on entry to HandleThrow so
+  // that the exception handling logic knows the shadow stack entry
+  // corresponding to where JIT/WASM frame iteration begins.
+  masm.moveShadowStackPtrTo(scratch1);
+  masm.storePtr(
+      scratch1,
+      Address(masm.getStackPointer(),
+              jit::ResumeFromException::offsetOfShadowStackPointer()));
+#endif
   masm.moveStackPtrTo(scratch1);
 
   MIRTypeVector handleThrowTypes;
@@ -3233,7 +3249,7 @@ static bool GenerateDebugStub(MacroAssembler& masm, Label* throwLabel,
   // Memory can moving-grow during debugging, so we need to update the HeapReg.
   // InstanceReg is still live here because it is non-volatile.
   MOZ_ASSERT(NonVolatileRegs.has(InstanceReg));
-  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+  masm.loadWasmPinnedRegsFromInstance();
 
   masm.setFramePushed(framePushed);
 
@@ -3638,6 +3654,73 @@ bool wasm::GenerateProvisionalLazyJitEntryStub(MacroAssembler& masm,
   masm.SetStackPointer64(sp);
 #endif
 
+  return FinishOffsets(masm, offsets);
+}
+
+// Generates the trampoline that a cross-instance return_call returns through
+// when the caller's call site does not restore the instance and realm; see
+// CollapseWasmFrameSlow. It restores them and returns to the caller through the
+// hidden frame. ret() is the offset right after FP is restored.
+//
+// The hidden frame is a FrameWithInstances whose wasm::Frame and instance
+// fields are each padded to WasmStackAlignment. Its callee instance slot holds
+// the caller's instance.
+bool wasm::GenerateReturnCallTrampoline(MacroAssembler& masm,
+                                        CallableOffsets* offsets) {
+  AutoCreatedBy acb(masm, "GenerateReturnCallTrampoline");
+
+  uint32_t savedPushed = masm.framePushed();
+
+  offsets->begin = masm.currentOffset();
+
+  {
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
+    defined(JS_CODEGEN_RISCV64)
+    AutoForbidPoolsAndNops afp(&masm, 1);
+#endif
+    masm.setFramePushed(
+        AlignBytes(FrameWithInstances::sizeOfInstanceFieldsAndShadowStack(),
+                   WasmStackAlignment));
+    masm.wasmMarkCallAsSlow();
+  }
+
+  masm.loadPtr(
+      Address(masm.getStackPointer(), WasmCallerInstanceOffsetBeforeCall),
+      InstanceReg);
+  masm.loadWasmPinnedRegsFromInstance();
+  masm.switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
+  masm.moveToStackPtr(FramePointer);
+
+#ifdef JS_CODEGEN_ARM64
+  masm.pop(FramePointer, lr);
+  offsets->ret = masm.currentOffset();
+  masm.Mov(PseudoStackPointer64, vixl::sp);
+  masm.abiret();
+#elif defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
+  masm.loadPtr(Address(FramePointer, Frame::returnAddressOffset()), ra);
+  masm.loadPtr(Address(FramePointer, Frame::callerFPOffset()), FramePointer);
+  offsets->ret = masm.currentOffset();
+  masm.addToStackPtr(Imm32(sizeof(Frame)));
+  masm.abiret();
+#elif defined(JS_CODEGEN_RISCV64)
+  {
+    // This should be 4 instructions, but make room for 5 (25% slack) to be
+    // safe.
+    AutoForbidPoolsAndNops afp(&masm, 5);
+
+    masm.loadPtr(Address(FramePointer, Frame::returnAddressOffset()), ra);
+    masm.loadPtr(Address(FramePointer, Frame::callerFPOffset()), FramePointer);
+    offsets->ret = masm.currentOffset();
+    masm.addToStackPtr(Imm32(sizeof(Frame)));
+    masm.abiret();
+  }
+#else
+  masm.pop(FramePointer);
+  offsets->ret = masm.currentOffset();
+  masm.ret();
+#endif
+
+  masm.setFramePushed(savedPushed);
   return FinishOffsets(masm, offsets);
 }
 

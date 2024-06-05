@@ -1150,7 +1150,7 @@ async function setupStrictETP() {
   });
 }
 
-// copied from browser/base/content/test/protectionsUI/head.js
+// copied from browser/base/content/test/browser-protectionsUI/head.js
 function waitForContentBlockingEvent(numChanges, win = null) {
   if (!numChanges) {
     return Promise.resolve();

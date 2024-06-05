@@ -3017,8 +3017,7 @@ bool CacheIRCompiler::emitNumberParseIntResult(StringOperandId strId,
     masm.bind(&vmCall);
 
     callvm.prepare();
-    masm.Push(radix);
-    masm.Push(str);
+    masm.PushRegs(radix, str);
 
     using Fn = bool (*)(JSContext*, HandleString, int32_t, MutableHandleValue);
     callvm.call<Fn, js::NumberParseInt>();
@@ -3858,8 +3857,7 @@ bool CacheIRCompiler::emitBigIntBinaryOperationShared(BigIntOperandId lhsId,
 
   callvm.prepare();
 
-  masm.Push(rhs);
-  masm.Push(lhs);
+  masm.PushRegs(rhs, lhs);
 
   callvm.call<Fn, fn>();
   return true;
@@ -4703,8 +4701,7 @@ bool CacheIRCompiler::emitBindFunctionResult(ObjOperandId targetId,
 
   masm.Push(ImmWord(0));  // nullptr for maybeBound
   masm.Push(Imm32(argc));
-  masm.Push(scratch);
-  masm.Push(target);
+  masm.PushRegs(scratch, target);
 
   using Fn = BoundFunctionObject* (*)(JSContext*, Handle<JSObject*>, Value*,
                                       uint32_t, Handle<BoundFunctionObject*>);
@@ -4741,8 +4738,7 @@ bool CacheIRCompiler::emitSpecializedBindFunctionResult(
 
   masm.Push(scratch2);
   masm.Push(Imm32(argc));
-  masm.Push(scratch1);
-  masm.Push(target);
+  masm.PushRegs(scratch1, target);
 
   using Fn = BoundFunctionObject* (*)(JSContext*, Handle<JSObject*>, Value*,
                                       uint32_t, Handle<BoundFunctionObject*>);
@@ -5070,8 +5066,7 @@ bool CacheIRCompiler::emitStringIncludesResult(StringOperandId strId,
   Register searchStr = allocator.useRegister(masm, searchStrId);
 
   callvm.prepare();
-  masm.Push(searchStr);
-  masm.Push(str);
+  masm.PushRegs(searchStr, str);
 
   using Fn = bool (*)(JSContext*, HandleString, HandleString, bool*);
   callvm.call<Fn, js::StringIncludes>();
@@ -5088,8 +5083,7 @@ bool CacheIRCompiler::emitStringIndexOfResult(StringOperandId strId,
   Register searchStr = allocator.useRegister(masm, searchStrId);
 
   callvm.prepare();
-  masm.Push(searchStr);
-  masm.Push(str);
+  masm.PushRegs(searchStr, str);
 
   using Fn = bool (*)(JSContext*, HandleString, HandleString, int32_t*);
   callvm.call<Fn, js::StringIndexOf>();
@@ -5106,8 +5100,7 @@ bool CacheIRCompiler::emitStringLastIndexOfResult(StringOperandId strId,
   Register searchStr = allocator.useRegister(masm, searchStrId);
 
   callvm.prepare();
-  masm.Push(searchStr);
-  masm.Push(str);
+  masm.PushRegs(searchStr, str);
 
   using Fn = bool (*)(JSContext*, HandleString, HandleString, int32_t*);
   callvm.call<Fn, js::StringLastIndexOf>();
@@ -5124,8 +5117,7 @@ bool CacheIRCompiler::emitStringStartsWithResult(StringOperandId strId,
   Register searchStr = allocator.useRegister(masm, searchStrId);
 
   callvm.prepare();
-  masm.Push(searchStr);
-  masm.Push(str);
+  masm.PushRegs(searchStr, str);
 
   using Fn = bool (*)(JSContext*, HandleString, HandleString, bool*);
   callvm.call<Fn, js::StringStartsWith>();
@@ -5142,8 +5134,7 @@ bool CacheIRCompiler::emitStringEndsWithResult(StringOperandId strId,
   Register searchStr = allocator.useRegister(masm, searchStrId);
 
   callvm.prepare();
-  masm.Push(searchStr);
-  masm.Push(str);
+  masm.PushRegs(searchStr, str);
 
   using Fn = bool (*)(JSContext*, HandleString, HandleString, bool*);
   callvm.call<Fn, js::StringEndsWith>();
@@ -5503,20 +5494,17 @@ bool CacheIRCompiler::emitGuardXrayNoExpando(ObjOperandId objId) {
   return true;
 }
 
-bool CacheIRCompiler::emitGuardNoAllocationMetadataBuilder(
+bool CacheIRCompiler::emitAssertNoAllocationMetadataBuilder(
     uint32_t builderAddrOffset) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoScratchRegister scratch(allocator, masm);
 
-  FailurePath* failure;
-  if (!addFailurePath(&failure)) {
-    return false;
-  }
-
+  Label ok;
   StubFieldOffset builderField(builderAddrOffset, StubField::Type::RawPointer);
   emitLoadStubField(builderField, scratch);
-  masm.branchPtr(Assembler::NotEqual, Address(scratch, 0), ImmWord(0),
-                 failure->label());
+  masm.branchPtr(Assembler::Equal, Address(scratch, 0), ImmWord(0), &ok);
+  masm.assumeUnreachable("Unexpected allocation metadata builder");
+  masm.bind(&ok);
 
   return true;
 }
@@ -6381,9 +6369,7 @@ bool CacheIRCompiler::emitTypedArraySetResult(ObjOperandId targetId,
   } else {
     callvm->prepare();
 
-    masm.Push(offset);
-    masm.Push(source);
-    masm.Push(target);
+    masm.PushRegs(offset, source, target);
 
     using Fn =
         bool (*)(JSContext* cx, TypedArrayObject*, TypedArrayObject*, intptr_t);
@@ -6406,9 +6392,7 @@ bool CacheIRCompiler::emitTypedArraySubarrayResult(
   Register end = allocator.useRegister(masm, endId);
 
   callvm.prepare();
-  masm.Push(end);
-  masm.Push(start);
-  masm.Push(obj);
+  masm.PushRegs(end, start, obj);
 
   using Fn = TypedArrayObject* (*)(JSContext*, Handle<TypedArrayObject*>,
                                    intptr_t, intptr_t);
@@ -6626,9 +6610,7 @@ bool CacheIRCompiler::emitNewArrayFromLengthResult(
   emitLoadStubField(siteField, scratch2);
 
   callvm.prepare();
-  masm.Push(scratch2);
-  masm.Push(length);
-  masm.Push(scratch);
+  masm.PushRegs(scratch2, length, scratch);
 
   using Fn = ArrayObject* (*)(JSContext*, Handle<ArrayObject*>, int32_t,
                               gc::AllocSite*);
@@ -6648,8 +6630,7 @@ bool CacheIRCompiler::emitNewTypedArrayFromLengthResult(
   emitLoadStubField(objectField, scratch);
 
   callvm.prepare();
-  masm.Push(length);
-  masm.Push(scratch);
+  masm.PushRegs(length, scratch);
 
   using Fn = TypedArrayObject* (*)(JSContext*, HandleObject, int32_t length);
   callvm.call<Fn, NewTypedArrayWithTemplateAndLength>();
@@ -6677,8 +6658,7 @@ bool CacheIRCompiler::emitNewTypedArrayFromArrayBufferResult(
   callvm.prepare();
   masm.Push(length);
   masm.Push(byteOffset);
-  masm.Push(buffer);
-  masm.Push(scratch);
+  masm.PushRegs(buffer, scratch);
 
   using Fn = TypedArrayObject* (*)(JSContext*, HandleObject, HandleObject,
                                    HandleValue, HandleValue);
@@ -6698,8 +6678,7 @@ bool CacheIRCompiler::emitNewTypedArrayFromArrayResult(
   emitLoadStubField(objectField, scratch);
 
   callvm.prepare();
-  masm.Push(array);
-  masm.Push(scratch);
+  masm.PushRegs(array, scratch);
 
   using Fn = TypedArrayObject* (*)(JSContext*, HandleObject, HandleObject);
   callvm.call<Fn, NewTypedArrayWithTemplateAndArray>();
@@ -7553,9 +7532,7 @@ bool CacheIRCompiler::emitPackedArraySliceResult(uint32_t templateObjectOffset,
   ImmPtr result(nullptr);
 
   masm.Push(result);
-  masm.Push(end);
-  masm.Push(begin);
-  masm.Push(array);
+  masm.PushRegs(end, begin, array);
 
   using Fn =
       JSObject* (*)(JSContext*, HandleObject, int32_t, int32_t, HandleObject);
@@ -7581,9 +7558,7 @@ bool CacheIRCompiler::emitArgumentsSliceResult(uint32_t templateObjectOffset,
   ImmPtr result(nullptr);
 
   masm.Push(result);
-  masm.Push(end);
-  masm.Push(begin);
-  masm.Push(args);
+  masm.PushRegs(end, begin, args);
 
   using Fn =
       JSObject* (*)(JSContext*, HandleObject, int32_t, int32_t, HandleObject);
@@ -7643,8 +7618,7 @@ bool CacheIRCompiler::emitArrayJoinResult(ObjOperandId objId,
 
     callvm.prepare();
 
-    masm.Push(sep);
-    masm.Push(obj);
+    masm.PushRegs(sep, obj);
 
     using Fn = JSString* (*)(JSContext*, HandleObject, HandleString);
     callvm.call<Fn, jit::ArrayJoin>();
@@ -8101,8 +8075,7 @@ bool CacheIRCompiler::emitLoadDataViewValueResult(
       // We need two extra registers. Reuse the obj/littleEndian registers.
       Register bigInt = obj;
       Register bigIntScratch = littleEndian;
-      masm.push(bigInt);
-      masm.push(bigIntScratch);
+      masm.pushRegs(bigInt, bigIntScratch);
       Label fail, done;
       LiveRegisterSet save = liveVolatileRegs();
       save.takeUnchecked(bigInt);
@@ -8112,15 +8085,13 @@ bool CacheIRCompiler::emitLoadDataViewValueResult(
       masm.jump(&done);
 
       masm.bind(&fail);
-      masm.pop(bigIntScratch);
-      masm.pop(bigInt);
+      masm.popRegs(bigIntScratch, bigInt);
       masm.jump(failure->label());
 
       masm.bind(&done);
       masm.initializeBigInt64(elementType, bigInt, outputReg64);
       masm.tagValue(JSVAL_TYPE_BIGINT, bigInt, output.valueReg());
-      masm.pop(bigIntScratch);
-      masm.pop(bigInt);
+      masm.popRegs(bigIntScratch, bigInt);
       break;
     }
     case Scalar::Uint8Clamped:
@@ -9061,11 +9032,9 @@ bool CacheIRCompiler::emitCompareBigIntStringResult(JSOp op,
   // - |left <= right| is implemented as |right >= left|.
   // - |left > right| is implemented as |right < left|.
   if (op == JSOp::Le || op == JSOp::Gt) {
-    masm.Push(lhs);
-    masm.Push(rhs);
+    masm.PushRegs(lhs, rhs);
   } else {
-    masm.Push(rhs);
-    masm.Push(lhs);
+    masm.PushRegs(rhs, lhs);
   }
 
   using FnBigIntString =
@@ -9868,9 +9837,7 @@ bool CacheIRCompiler::emitMegamorphicLoadSlotPermissiveResult(
   callvm.prepare();
 
   emitLoadStubField(id, scratch2);
-  masm.Push(scratch3);
-  masm.Push(scratch2);
-  masm.Push(obj);
+  masm.PushRegs(scratch3, scratch2, obj);
 
   using Fn = bool (*)(JSContext*, HandleObject, HandleId,
                       MegamorphicCacheEntry*, MutableHandleValue);
@@ -9901,8 +9868,7 @@ bool CacheIRCompiler::emitMegamorphicStoreSlot(ObjOperandId objId,
   masm.Push(Imm32(strict));
   masm.Push(val);
   emitLoadStubField(id, scratch);
-  masm.Push(scratch);
-  masm.Push(obj);
+  masm.PushRegs(scratch, obj);
 
   using Fn = bool (*)(JSContext*, HandleObject, HandleId, HandleValue, bool);
   callvm.callNoResult<Fn, SetPropertyMegamorphic<false>>();
@@ -10271,8 +10237,7 @@ bool CacheIRCompiler::emitInt32ToStringWithBaseResult(Int32OperandId inputId,
   callvm.prepare();
 
   masm.Push(Imm32(lowerCase));
-  masm.Push(base);
-  masm.Push(input);
+  masm.PushRegs(base, input);
 
   using Fn = JSLinearString* (*)(JSContext*, int32_t, int32_t, bool);
   callvm.call<Fn, js::Int32ToStringWithBase<CanGC>>();
@@ -10393,8 +10358,7 @@ bool CacheIRCompiler::emitConcatStringsResult(StringOperandId lhsId,
     callvm.prepare();
 
     masm.Push(static_cast<js::jit::Imm32>(int32_t(js::gc::Heap::Default)));
-    masm.Push(rhs);
-    masm.Push(lhs);
+    masm.PushRegs(rhs, lhs);
 
     using Fn =
         JSString* (*)(JSContext*, HandleString, HandleString, js::gc::Heap);
@@ -10518,8 +10482,7 @@ bool CacheIRCompiler::emitCallGetSparseElementResult(ObjOperandId objId,
   Register id = allocator.useRegister(masm, indexId);
 
   callvm.prepare();
-  masm.Push(id);
-  masm.Push(obj);
+  masm.PushRegs(id, obj);
 
   using Fn = bool (*)(JSContext* cx, Handle<NativeObject*> obj, int32_t int_id,
                       MutableHandleValue result);
@@ -10576,9 +10539,7 @@ bool CacheIRCompiler::emitCallSubstringKernelResult(StringOperandId strId,
   Register length = allocator.useRegister(masm, lengthId);
 
   callvm.prepare();
-  masm.Push(length);
-  masm.Push(begin);
-  masm.Push(str);
+  masm.PushRegs(length, begin, str);
 
   using Fn = JSString* (*)(JSContext * cx, HandleString str, int32_t begin,
                            int32_t len);
@@ -10598,9 +10559,7 @@ bool CacheIRCompiler::emitStringReplaceStringResult(
   Register replacement = allocator.useRegister(masm, replacementId);
 
   callvm.prepare();
-  masm.Push(replacement);
-  masm.Push(pattern);
-  masm.Push(str);
+  masm.PushRegs(replacement, pattern, str);
 
   using Fn =
       JSString* (*)(JSContext*, HandleString, HandleString, HandleString);
@@ -10619,8 +10578,7 @@ bool CacheIRCompiler::emitStringSplitStringResult(StringOperandId strId,
 
   callvm.prepare();
   masm.Push(Imm32(INT32_MAX));
-  masm.Push(separator);
-  masm.Push(str);
+  masm.PushRegs(separator, str);
 
   using Fn = ArrayObject* (*)(JSContext*, HandleString, HandleString, uint32_t);
   callvm.call<Fn, js::StringSplitString>();
@@ -10712,10 +10670,7 @@ bool CacheIRCompiler::emitAtomicsCompareExchangeResult(
   if (Scalar::isBigIntType(elementType)) {
     callvm->prepare();
 
-    masm.Push(replacement);
-    masm.Push(expected);
-    masm.Push(index);
-    masm.Push(obj);
+    masm.PushRegs(replacement, expected, index, obj);
 
     using Fn = BigInt* (*)(JSContext*, TypedArrayObject*, size_t, const BigInt*,
                            const BigInt*);
@@ -10841,9 +10796,7 @@ bool CacheIRCompiler::emitAtomicsReadModifyWriteResult64(
 
   callvm.prepare();
 
-  masm.Push(value);
-  masm.Push(index);
-  masm.Push(obj);
+  masm.PushRegs(value, index, obj);
 
   callvm.call<AtomicsReadWriteModify64Fn, fn>();
   return true;
@@ -10977,8 +10930,7 @@ bool CacheIRCompiler::emitAtomicsLoadResult(ObjOperandId objId,
   if (Scalar::isBigIntType(elementType)) {
     callvm->prepare();
 
-    masm.Push(index);
-    masm.Push(obj);
+    masm.PushRegs(index, obj);
 
     using Fn = BigInt* (*)(JSContext*, TypedArrayObject*, size_t);
     callvm->call<Fn, jit::AtomicsLoad64>();
@@ -11114,8 +11066,7 @@ bool CacheIRCompiler::emitBigIntAsIntNResult(Int32OperandId bitsId,
   Register bigInt = allocator.useRegister(masm, bigIntId);
 
   callvm.prepare();
-  masm.Push(bits);
-  masm.Push(bigInt);
+  masm.PushRegs(bits, bigInt);
 
   using Fn = BigInt* (*)(JSContext*, HandleBigInt, int32_t);
   callvm.call<Fn, jit::BigIntAsIntN>();
@@ -11132,8 +11083,7 @@ bool CacheIRCompiler::emitBigIntAsUintNResult(Int32OperandId bitsId,
   Register bigInt = allocator.useRegister(masm, bigIntId);
 
   callvm.prepare();
-  masm.Push(bits);
-  masm.Push(bigInt);
+  masm.PushRegs(bits, bigInt);
 
   using Fn = BigInt* (*)(JSContext*, HandleBigInt, int32_t);
   callvm.call<Fn, jit::BigIntAsUintN>();

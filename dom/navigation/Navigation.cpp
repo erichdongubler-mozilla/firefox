@@ -637,9 +637,9 @@ struct NavigationWaitForAllScope final : public nsISupports,
     // Set up to maybe resume applying the history step. This needs to run after
     // the microtask checkpoint, and it's therefore important that this is done
     // before step 7.
-    auto resumeApplyTheHistoryStep =
-        MakeScopeExit([browsingContext = RefPtr{GetBrowsingContext()},
-                       loadState = RefPtr{mLoadState}]() {
+    auto resumeApplyTheHistoryStep = MakeScopeExit(
+        [browsingContext = RefPtr{GetBrowsingContext()},
+         loadState = RefPtr{mLoadState}]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
           if (browsingContext && loadState) {
             browsingContext->LoadURI(loadState, /* aSetNavigating */ false);
           }
@@ -1133,7 +1133,8 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
 
   RefPtr bc = document->GetBrowsingContext();
   MOZ_DIAGNOSTIC_ASSERT(bc);
-  bc->Navigate(urlRecord, document, *document->NodePrincipal(),
+  nsCOMPtr principal = document->NodePrincipal();
+  bc->Navigate(urlRecord, document, *principal,
                /* per spec, error handling defaults to false */ IgnoreErrors(),
                aOptions.mHistory, /* aNeedsCompletelyLoadedDocument */ false,
                serializedState, apiMethodTracker);
@@ -2293,9 +2294,10 @@ void Navigation::CreateNavigationActivationFrom(
 // https://html.spec.whatwg.org/#dom-navigationprecommitcontroller-redirect
 void Navigation::SetSerializedStateIntoOngoingAPIMethodTracker(
     nsIStructuredCloneContainer* aSerializedState) {
-  MOZ_DIAGNOSTIC_ASSERT(mOngoingAPIMethodTracker);
   // This is step 10.3 of NavigationPrecommitController.redirect()
-  mOngoingAPIMethodTracker->SetSerializedState(aSerializedState);
+  if (mOngoingAPIMethodTracker) {
+    mOngoingAPIMethodTracker->SetSerializedState(aSerializedState);
+  }
 }
 
 }  // namespace mozilla::dom

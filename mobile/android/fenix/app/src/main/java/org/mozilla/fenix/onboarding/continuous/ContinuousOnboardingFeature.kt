@@ -56,7 +56,8 @@ class IPProtectionOnboardingConfig(
  * - on day 2 or day 3, request the default browser role, followed by a notification-permission onboarding card if
  *   available, skipping either step if already satisfied,
  * - on day 5, show a Firefox Sync sign-in card, or skip it if already signed in, or
- * - on day 7, show the IP Protection onboarding prompt, or skip it if already satisfied.
+ * - on day 7, show the IP Protection onboarding prompt, or skip it if already satisfied or the user is not eligible for
+ *   IP Protection.
  */
 class ContinuousOnboardingFeature(
     private val activity: Activity,
@@ -80,15 +81,44 @@ class ContinuousOnboardingFeature(
     private val ipProtectionBinding =
         IPProtectionOnboardingPrompt(
             repository = ipProtectionOnboardingConfig.promptRepository,
-            timeProvider = dateTimeProvider,
             mainDispatcher = ipProtectionMainDispatcher,
             store = ipProtectionOnboardingConfig.store,
             onShowOnboarding = {
                 logger.info("Showing IP Protection onboarding prompt.")
                 ipProtectionOnboardingConfig.navigateToIpProtection()
-                markStageCompleted(ContinuousOnboardingStage.DAY_7)
+                completeDaySeven()
+            },
+            onIneligible = {
+                logger.info("User is not eligible for IP Protection.")
+                telemetryRecorder.onOnboardingComplete(
+                    sequenceId = IP_PROTECTION_SEQUENCE_ID,
+                    sequencePosition = "0",
+                    dismissedMethod = DismissedMethod.SKIPPED,
+                )
+                completeDaySeven()
+            },
+            onAlreadySatisfied = {
+                logger.info("IP Protection onboarding prompt is no longer allowed to be shown.")
+                telemetryRecorder.onOnboardingComplete(
+                    sequenceId = IP_PROTECTION_SEQUENCE_ID,
+                    sequencePosition = "0",
+                )
+                completeDaySeven()
             },
         )
+
+    /**
+     * Marks the day-7 stage complete exactly once, then stops observing the IP Protection store so later state
+     * emissions in the same session cannot complete the stage a second time.
+     */
+    private fun completeDaySeven() {
+        if (settings.seventhDayOnboardingCompletedTimestamp != -1L) {
+            logger.info("Day 7 stage already completed.")
+            return
+        }
+        markStageCompleted(ContinuousOnboardingStage.DAY_7)
+        ipProtectionBinding.stop()
+    }
 
     override fun start() {
         if (!shouldShowContinuousOnboarding()) return
@@ -403,6 +433,7 @@ class ContinuousOnboardingFeature(
 
     companion object {
         private const val CONTINUOUS_ONBOARDING_DIALOG_TAG = "continuous_onboarding_dialog"
+        private const val IP_PROTECTION_SEQUENCE_ID = "ip_protection"
 
         /**
          * Convenience method to register [ContinuousOnboardingFeature] with a [Fragment]. Upon destruction of the

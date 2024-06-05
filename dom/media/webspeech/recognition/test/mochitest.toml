@@ -2,6 +2,7 @@
 tags = "mtg"
 subsuite = "media"
 prefs = ["media.navigator.streams.fake=true"]
+environment = ["MOZ_PROFILER_STARTUP_FILTERS=GeckoMain,Compositor,Renderer,DOM Worker,MediaTrackGrph,NativeAudioCallback,Speech,Parakeet,GraphRunner"]
 scheme = "https"
 support-files = [
   "head.js",
@@ -16,6 +17,9 @@ support-files = [
   # Two pangrams separated by ~4s of silence, recorded for
   # test_parakeet_eou_flush.html. Original recording, no third-party rights.
   "pangrams.opus",
+  # A single spoken word followed by silence, for
+  # test_parakeet_one_word.html.
+  "single_word_dog.opus",
   "sinoid+hello.ogg",
   "sinoid+hello.ogg^headers^",
   "silence.ogg",
@@ -37,6 +41,8 @@ skip-if = [
   "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
 ]
 
+["test_event_bubbles.html"]
+
 ["test_fuzz_availability_install.html"]
 
 ["test_fuzz_iframe_teardown.html"]
@@ -57,6 +63,16 @@ skip-if = ["verify"]  # skip under test-verify: it runs outside the subsuite, so
 # needed). These are nets for concurrency bugs in the IPC/session lifecycle
 # (see bug 1940906), not targeted regression tests for a single bug.
 
+["test_parakeet_continuous.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+# Audio capture doesn't produce real signal under Wayland in CI, so
+# recognition always returns an empty transcript there.
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+]
+
 ["test_parakeet_e2e.html"]
 subsuite = "speech-recognition"
 tags = "mtg parakeet-asr"
@@ -67,7 +83,27 @@ skip-if = [
   "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
 ]
 
+["test_parakeet_endpoint_blank.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+# Audio capture doesn't produce real signal under Wayland in CI, so
+# recognition always returns an empty transcript there.
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+]
+
 ["test_parakeet_eou_flush.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+# Audio capture doesn't produce real signal under Wayland in CI, so
+# recognition always returns an empty transcript there.
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+]
+
+["test_parakeet_one_word.html"]
 subsuite = "speech-recognition"
 tags = "mtg parakeet-asr"
 # Audio capture doesn't produce real signal under Wayland in CI, so

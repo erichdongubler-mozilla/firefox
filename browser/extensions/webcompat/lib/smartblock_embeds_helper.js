@@ -371,8 +371,6 @@ const embedHelperLib = (() => {
 
       // Replace the original container with our replacement element
       originalContainer.replaceWith(replacementElement);
-
-      sendMessageToAddon("smartblockEmbedReplaced", shimId);
     });
 
     if (isTestShim) {

@@ -9,6 +9,14 @@
   --sidebar-width: var(--size-sidebar);
   --z-index-sticky-container: 5;
   --z-index-popup: 10;
+
+  /* Link-parameter used by the Nova theme preview svg to mirror itself,
+   * set on :root to ensure it is always defined, including inside the
+   * aboutaddons-themes-picker shadow DOM. */
+  --theme-preview-rtl-flip: none;
+  &:dir(rtl) {
+    --theme-preview-rtl-flip: scaleX(-1);
+  }
 }
 
 @media (max-width: 950px) {
@@ -175,6 +183,11 @@ aboutaddons-themes-picker {
   }
 }
 
+/* Hide addon-card description in themes list view */
+addon-list[type="theme"] addon-card .addon-description {
+  display: none;
+}
+
 #main {
   margin-inline-start: var(--main-margin-start);
   margin-inline-end: var(--main-margin-end);
@@ -332,6 +345,13 @@ theme-preview {
    * the toolbar color is exactly the same as the theme card background
    * color). */
   border-bottom: var(--border-width) solid var(--border-color-deemphasized);
+}
+
+/* The Nova theme preview svg mirrors itself through link-parameters, and so
+ * it must not be mirrored as a whole like the other theme preview images
+ * (see .card-heading-image:dir(rtl) in common-shared.css). */
+.card-heading-image[src="chrome://mozapps/content/extensions/default-theme/preview-nova.svg"]:dir(rtl) {
+  transform: none;
 }
 
 .card-heading-icon {

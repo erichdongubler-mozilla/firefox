@@ -207,6 +207,13 @@ static StyleXTextScale InitialTextScale(const Document& aDoc) {
   return StyleXTextScale::All;
 }
 
+static StyleAtom InitialLang(const Document& aDoc) {
+  if (auto* lang = aDoc.GetLanguageForStyle()) {
+    return StyleAtom{do_AddRef(lang)};
+  }
+  return StyleAtom{nsGkAtoms::empty};
+}
+
 nsStyleFont::nsStyleFont(const Document& aDocument)
     : mFont(*aDocument.GetFontPrefsForLang(nullptr)->GetDefaultFont(
           StyleGenericFontFamily::None)),
@@ -224,14 +231,14 @@ nsStyleFont::nsStyleFont(const Document& aDocument)
       mScriptUnconstrainedSize(mSize),
       mScriptMinSize(Length::FromPixels(
           CSSPixel::FromPoints(kMathMLDefaultScriptMinSizePt))),
-      mLanguage(aDocument.GetLanguageForStyle()) {
+      mLanguage(InitialLang(aDocument)) {
   MOZ_COUNT_CTOR(nsStyleFont);
   MOZ_ASSERT(NS_IsMainThread());
   mFont.family.is_initial = true;
   mFont.size = mSize;
   if (MinFontSizeEnabled()) {
     const Length minimumFontSize =
-        aDocument.GetFontPrefsForLang(mLanguage)->mMinimumFontSize;
+        aDocument.GetFontPrefsForLang(GetLangAtom())->mMinimumFontSize;
     mFont.size = Length::FromPixels(
         std::max(mSize.ToCSSPixels(), minimumFontSize.ToCSSPixels()));
   }
@@ -1104,8 +1111,6 @@ nsStylePosition::nsStylePosition()
       mFlexBasis(StyleFlexBasis::Size(StyleSize::Auto())),
       mAspectRatio(StyleAspectRatio::Auto()),
       mGridAutoFlow(StyleGridAutoFlow::ROW),
-      mMasonryAutoFlow(
-          {StyleMasonryPlacement::Pack, StyleMasonryItemOrder::DefiniteFirst}),
       mAlignContent({StyleAlignFlags::NORMAL}),
       mAlignItems({StyleAlignFlags::NORMAL}),
       mAlignSelf({StyleAlignFlags::AUTO}),
@@ -1157,7 +1162,6 @@ nsStylePosition::nsStylePosition(const nsStylePosition& aSource)
       mGridAutoRows(aSource.mGridAutoRows),
       mAspectRatio(aSource.mAspectRatio),
       mGridAutoFlow(aSource.mGridAutoFlow),
-      mMasonryAutoFlow(aSource.mMasonryAutoFlow),
       mAlignContent(aSource.mAlignContent),
       mAlignItems(aSource.mAlignItems),
       mAlignSelf(aSource.mAlignSelf),
@@ -1198,14 +1202,6 @@ static bool IsEqualInsetType(const StyleRect<StyleInset>& aSides1,
 
 nsChangeHint nsStylePosition::CalcDifference(
     const nsStylePosition& aNewData, const ComputedStyle& aOldStyle) const {
-  if (mGridTemplateColumns.IsMasonry() !=
-          aNewData.mGridTemplateColumns.IsMasonry() ||
-      mGridTemplateRows.IsMasonry() != aNewData.mGridTemplateRows.IsMasonry()) {
-    // XXXmats this could be optimized to AllReflowHints with a bit of work,
-    // but I'll assume this is a very rare use case in practice. (bug 1623886)
-    return nsChangeHint_ReconstructFrame;
-  }
-
   nsChangeHint hint = nsChangeHint(0);
 
   // Changes to "z-index" require a repaint.
@@ -1270,8 +1266,7 @@ nsChangeHint nsStylePosition::CalcDifference(
       mGridTemplateAreas != aNewData.mGridTemplateAreas ||
       mGridAutoColumns != aNewData.mGridAutoColumns ||
       mGridAutoRows != aNewData.mGridAutoRows ||
-      mGridAutoFlow != aNewData.mGridAutoFlow ||
-      mMasonryAutoFlow != aNewData.mMasonryAutoFlow) {
+      mGridAutoFlow != aNewData.mGridAutoFlow) {
     return hint | nsChangeHint_AllReflowHints;
   }
 
@@ -2071,10 +2066,10 @@ void nsStyleImageLayers::Layer::Initialize(
   mPosition = Position::FromPercentage(0.);
 
   if (aType == LayerType::Background) {
-    mOrigin = StyleGeometryBox::PaddingBox;
+    mOrigin = StyleBackgroundOrigin::PaddingBox;
   } else {
     MOZ_ASSERT(aType == LayerType::Mask, "unsupported layer type.");
-    mOrigin = StyleGeometryBox::BorderBox;
+    mOrigin = StyleBackgroundOrigin::BorderBox;
   }
 }
 
@@ -3299,14 +3294,9 @@ void nsStyleUI::TriggerImageLoads(Document& aDocument,
 }
 
 nsChangeHint nsStyleUI::CalcDifference(const nsStyleUI& aNewData) const {
-  // SVGGeometryFrame's mRect depends on stroke _and_ on the value of
-  // pointer-events. See SVGGeometryFrame::ReflowSVG's use of GetHitTestFlags.
-  // (Only a reflow, no visual change.)
-  //
   // pointer-events changes can change event regions overrides on layers and
   // so needs a repaint.
-  const auto kPointerEventsHint =
-      nsChangeHint_NeedReflow | nsChangeHint_SchedulePaint;
+  const auto kPointerEventsHint = nsChangeHint_SchedulePaint;
 
   nsChangeHint hint = nsChangeHint(0);
   if (mCursor != aNewData.mCursor) {

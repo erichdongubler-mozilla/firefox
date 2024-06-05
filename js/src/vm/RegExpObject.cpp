@@ -718,6 +718,37 @@ bool RegExpShared::compileIfNecessary(JSContext* cx,
   return true;
 }
 
+// This is inlined in jitcode in PrepareAndExecuteRegExp.
+// The two should be kept in sync.
+bool RegExpShared::quickCheckRejects(const JS::Latin1Char* chars, size_t length,
+                                     size_t index) const {
+  MOZ_ASSERT(hasQuickCheck());
+
+  // If we're at the end of the string, there are no characters to test.
+  if (index >= length) {
+    return false;
+  }
+
+  // Check the first character against the reject bitset.
+  auto [word, bit] = quickCheckBitsetBit(chars[index]);
+  if ((quickCheckRejectBitset_[word] & bit) != 0) {
+    return true;
+  }
+
+  // If there are at least 4 characters remaining in the string, test the mask.
+  if (index + sizeof(uint32_t) <= length) {
+    // We use memcpy here because this load may not be aligned. It will generate
+    // a regular load on every platform we care about.
+    uint32_t word;
+    memcpy(&word, chars + index, sizeof(word));
+    if ((word & quickCheckMask_) != quickCheckValue_) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /* static */
 RegExpRunStatus RegExpShared::execute(JSContext* cx,
                                       MutableHandleRegExpShared re,
@@ -730,6 +761,14 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
   /* Compile the code at point-of-use. */
   if (!compileIfNecessary(cx, re, input, RegExpShared::CodeKind::Any)) {
     return RegExpRunStatus::Error;
+  }
+
+  if (re->hasQuickCheck() && input->hasLatin1Chars()) {
+    AutoCheckCannotGC nogc;
+    if (re->quickCheckRejects(input->latin1Chars(nogc), input->length(),
+                              start)) {
+      return RegExpRunStatus::Success_NotFound;
+    }
   }
 
   /*
@@ -764,6 +803,20 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
         return RegExpRunStatus::Error;
       }
       if (cx->hasAnyPendingInterrupt()) {
+        if (!cx->isExceptionPending() &&
+            re->isCompiled(input->hasLatin1Chars(),
+                           RegExpShared::CodeKind::Jitcode)) {
+          // We can end up here if a compiled regexp is interrupted and invokes
+          // a handler that requests another interrupt and then returns false to
+          // signal that we should terminate. In that case, we should return now
+          // instead of handling the interrupt and retrying.  This can only
+          // happen with a custom interrupt handler in the shell, but it's
+          // easier to handle it here than to prevent the fuzzer from writing
+          // silly interrupt handlers.
+          MOZ_ASSERT(cx->hadUncatchableException());
+          return RegExpRunStatus::Error;
+        }
+
         if (!CheckForInterrupt(cx)) {
           return RegExpRunStatus::Error;
         }

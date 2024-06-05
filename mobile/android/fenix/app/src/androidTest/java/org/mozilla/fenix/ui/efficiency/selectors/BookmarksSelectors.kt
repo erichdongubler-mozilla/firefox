@@ -19,6 +19,7 @@ object BookmarksSelectors : SelectorContainer {
         EMPTY_BOOKMARKS_MENU_VIEW,
         BOOKMARKS_THREE_DOT_MENU,
         EDIT_BOOKMARKS_VIEW,
+        BOOKMARKS_SORTING_OPTIONS,
     }
 
     val TOOLBAR =
@@ -44,6 +45,46 @@ object BookmarksSelectors : SelectorContainer {
             value = getStringResource(R.string.bookmark_sort_menu_content_desc),
             description = "Bookmarks sorting options button",
             groups = setOf(Group.EMPTY_BOOKMARKS_MENU_VIEW),
+        )
+
+    val SORT_BY_CUSTOM_ORDER_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.bookmark_sort_menu_custom),
+            description = "Bookmarks sort by custom order button",
+            groups = setOf(Group.BOOKMARKS_SORTING_OPTIONS),
+        )
+
+    val SORT_BY_NEWEST_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.bookmark_sort_menu_newest),
+            description = "Bookmarks sort by newest button",
+            groups = setOf(Group.BOOKMARKS_SORTING_OPTIONS),
+        )
+
+    val SORT_BY_OLDEST_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.bookmark_sort_menu_oldest),
+            description = "Bookmarks sort by oldest button",
+            groups = setOf(Group.BOOKMARKS_SORTING_OPTIONS),
+        )
+
+    val SORT_A_TO_Z_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.bookmark_sort_menu_a_to_z),
+            description = "Bookmarks sort by A to Z button",
+            groups = setOf(Group.BOOKMARKS_SORTING_OPTIONS),
+        )
+
+    val SORT_Z_TO_A_BUTTON =
+        Selector(
+            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+            value = getStringResource(R.string.bookmark_sort_menu_z_to_a),
+            description = "Bookmarks sort by Z to A button",
+            groups = setOf(Group.BOOKMARKS_SORTING_OPTIONS),
         )
 
     val EMPTY_BOOKMARKS_LIST_TITLE =

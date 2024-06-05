@@ -98,7 +98,7 @@ export class DayTimeWeighting {
   /**
    * Instantiate class based on a series of day periods in the past.
    *
-   * @param {int[]} pastDays Series of number of days, indicating days ago intervals in reverse chronological order.
+   * @param {number[]} pastDays Series of number of days, indicating days ago intervals in reverse chronological order.
    * Intervals are added: If the first value is 1 and the second is 5, then the first interval is 0-1 and second interval is between 1 and 6.
    * @param {number[]} relativeWeight Relative weight of each period. Must be same length as pastDays
    */
@@ -133,7 +133,7 @@ export class DayTimeWeighting {
   /**
    * Get relative weight of current index.
    *
-   * @param {int} weightIndex Index
+   * @param {number} weightIndex Index
    * @returns {number} Weight at index, or 0 if index out of range.
    */
   getRelativeWeight(weightIndex) {
@@ -248,12 +248,13 @@ export class TileImportance {
 export class FeatureModel {
   /**
    *
-   * @param {string} modelId
-   * @param {object} dayTimeWeighting Data for day time weighting class
-   * @param {object} interestVectorModel Data for interest model
-   * @param {object} tileImportance Data for tile importance
-   * @param {boolean} rescale Whether to rescale to max value
-   * @param {boolean} logScale Whether to apply natural log (ln(x+ 1)) before rescaling
+   * @param {object} options
+   * @param {string} options.modelId
+   * @param {object} options.dayTimeWeighting Data for day time weighting class
+   * @param {object} options.interestVectorModel Data for interest model
+   * @param {object} options.tileImportance Data for tile importance
+   * @param {boolean} options.rescale Whether to rescale to max value
+   * @param {boolean} options.logScale Whether to apply natural log (ln(x+ 1)) before rescaling
    */
   constructor({
     modelId,
@@ -504,7 +505,7 @@ export class FeatureModel {
    *
    * @param {{[key: string]: number}} clicks - Per-feature click counts.
    * @param {{[key: string]: number}} impressions - Per-feature impression counts.
-   * @param {number} averageCTR - The average CTR for the user.
+   * @param {number} averageCTRInput - The average CTR for the user.
    * @returns {{[key: string]: number}} Normalized smoothed CTR values.
    */
   applyBayesianSmoothing(clicks, impressions, averageCTRInput = null) {

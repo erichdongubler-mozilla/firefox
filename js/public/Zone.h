@@ -76,8 +76,11 @@ extern JS_PUBLIC_API bool JS_RefreshCrossCompartmentWrappers(
 extern JS_PUBLIC_API void JS_MarkCrossZoneId(JSContext* cx, jsid id);
 
 /**
- * If value stores a jsid (an atomized string or symbol), mark that id as for
- * JS_MarkCrossZoneId.
+ * For a value containing a jsid (an atomized string or symbol), mark that id as
+ * for JS_MarkCrossZoneId.
+ *
+ * This should not be called on generic values. If you need to do that consider
+ * using JS_WrapValue instead.
  */
 extern JS_PUBLIC_API void JS_MarkCrossZoneIdValue(JSContext* cx,
                                                   const JS::Value& value);

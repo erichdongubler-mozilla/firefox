@@ -134,12 +134,17 @@ export default class MozSelect extends MozBaseInputElement {
 
     for (const node of this.slotRef.value.assignedNodes()) {
       if (node.localName === "moz-option") {
+        // Read the properties, since an option that was just created has not
+        // reflected them to attributes yet (bug 2070217). The label is the
+        // exception: Fluent sets the attribute before Lit syncs it to the
+        // property, and the options MutationObserver runs in between
+        // (bug 2075787).
         options.push({
-          value: node.getAttribute("value"),
-          label: node.getAttribute("label"),
-          iconSrc: node.getAttribute("iconsrc"),
-          disabled: node.getAttribute("disabled") !== null,
-          hidden: node.getAttribute("hidden") !== null,
+          value: node.value,
+          label: node.getAttribute("label") || node.label,
+          iconSrc: node.iconSrc,
+          disabled: node.disabled,
+          hidden: node.hidden,
         });
       } else if (node.localName === "hr") {
         options.push({

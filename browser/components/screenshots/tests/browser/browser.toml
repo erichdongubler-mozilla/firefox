@@ -33,6 +33,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
 ]
 
+["browser_mini_window_mode.js"]
+
 ["browser_overlay_keyboard_test.js"]
 
 ["browser_screenshots_download_filenames.js"]
@@ -61,10 +63,6 @@ skip-if = [
 ["browser_screenshots_splitview.js"]
 
 ["browser_screenshots_telemetry_tests.js"]
-
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
-]
 
 ["browser_screenshots_test_downloads.js"]
 

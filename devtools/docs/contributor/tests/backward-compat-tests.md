@@ -23,6 +23,7 @@ by Marionette, and a few command wrappers are exposed through control.py.
 ## Running the tests
 
 Locally you can run the whole test suite with:
+
 ```
 ./mach devtools-compat-test
 ```
@@ -37,11 +38,12 @@ You can run the suite against our other channels: `release`, `beta`,
 ```
 
 In this case, the devtools-compat-test task will download Firefox for the
-selected channel from https://download.mozilla.org/ and will start it as the
+selected channel from <https://download.mozilla.org/> and will start it as the
 server. The downloaded and installed binaries are cached to speedup successive
 runs.
 
 Use `--headless` to hide all browser windows.
+
 ```
 ./mach devtools-compat-test --headless
 ```

@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.Dp
 import kotlin.math.abs
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.AcornCorners
-import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
+import org.mozilla.fenix.tabstray.browser.compose.ItemInteractionState
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /** Object holding alpha values for tab items */
@@ -47,7 +47,7 @@ object Alpha {
 
 /** Animates the tab item's alpha value to be slightly transparent when it is dragged. */
 @Composable
-private fun tabGridItemAnimatedAlpha(interactionState: TabItemInteractionState): State<Float> {
+private fun tabGridItemAnimatedAlpha(interactionState: ItemInteractionState): State<Float> {
     return animateFloatAsState(
         targetValue =
             if (interactionState.isDragged) {
@@ -61,7 +61,7 @@ private fun tabGridItemAnimatedAlpha(interactionState: TabItemInteractionState):
 
 /** Animates the tab item's alpha value to be slightly transparent when it is dragged, after being moved. */
 @Composable
-private fun tabListItemAnimatedAlpha(interactionState: TabItemInteractionState): State<Float> {
+private fun tabListItemAnimatedAlpha(interactionState: ItemInteractionState): State<Float> {
     return animateFloatAsState(
         targetValue =
             if (interactionState.isDragged && !interactionState.isHeld) {
@@ -75,7 +75,7 @@ private fun tabListItemAnimatedAlpha(interactionState: TabItemInteractionState):
 
 /** Animates the tab item's size to be slightly reduced when it is dragged. */
 @Composable
-private fun tabGridItemAnimatedScale(interactionState: TabItemInteractionState): State<Float> {
+private fun tabGridItemAnimatedScale(interactionState: ItemInteractionState): State<Float> {
     val targetValue =
         when {
             interactionState.isDragged -> Scale.DRAG_ACTIVE
@@ -90,7 +90,7 @@ private fun tabGridItemAnimatedScale(interactionState: TabItemInteractionState):
 
 /** Animates the tab item's size to be slightly reduced when it is dragged, after being moved. */
 @Composable
-private fun tabListItemAnimatedScale(interactionState: TabItemInteractionState): State<Float> {
+private fun tabListItemAnimatedScale(interactionState: ItemInteractionState): State<Float> {
     val targetValue =
         when {
             interactionState.isHeld -> Scale.NO_INTERACTION
@@ -113,7 +113,7 @@ private fun tabListItemAnimatedScale(interactionState: TabItemInteractionState):
  * @param interactionState: State holding the hovered and dragged statuses.
  */
 @Composable
-fun Modifier.tabItemGridInteractionAnimation(interactionState: TabItemInteractionState): Modifier {
+fun Modifier.tabItemGridInteractionAnimation(interactionState: ItemInteractionState): Modifier {
     return this.tabItemInteractionAnimation(
         tabItemScaleState = tabGridItemAnimatedScale(interactionState),
         tabItemAlphaState = tabGridItemAnimatedAlpha(interactionState),
@@ -134,7 +134,7 @@ fun Modifier.tabItemGridInteractionAnimation(interactionState: TabItemInteractio
  */
 @Composable
 fun Modifier.tabItemGroupListInteractionAnimation(
-    interactionState: TabItemInteractionState,
+    interactionState: ItemInteractionState,
     key: String? = null,
     onGroupEntranceAnimationPlayed: () -> Unit = {},
 ): Modifier {
@@ -163,7 +163,7 @@ fun Modifier.tabItemGroupListInteractionAnimation(
  * @param interactionState: State holding the hovered and dragged statuses.
  */
 @Composable
-fun Modifier.tabItemListInteractionAnimation(interactionState: TabItemInteractionState): Modifier {
+fun Modifier.tabItemListInteractionAnimation(interactionState: ItemInteractionState): Modifier {
     return this.tabItemInteractionAnimation(
         tabItemScaleState = tabListItemAnimatedScale(interactionState),
         tabItemAlphaState = tabListItemAnimatedAlpha(interactionState),
@@ -180,12 +180,12 @@ fun Modifier.tabItemListInteractionAnimation(interactionState: TabItemInteractio
  */
 @Composable
 private fun tabGroupAppearanceAlpha(
-    interactionState: TabItemInteractionState,
+    interactionState: ItemInteractionState,
     key: String?,
 ): State<Float> {
     val alpha = remember { Animatable(1f) }
-    LaunchedEffect(key, interactionState.isEnteringGroup) {
-        if (interactionState.isEnteringGroup) {
+    LaunchedEffect(key, interactionState.isEntering) {
+        if (interactionState.isEntering) {
             alpha.snapTo(targetValue = 0f)
             alpha.animateTo(
                 targetValue = 1f,
@@ -205,14 +205,14 @@ private fun tabGroupAppearanceAlpha(
  */
 @Composable
 private fun tabGroupAppearanceScale(
-    interactionState: TabItemInteractionState,
+    interactionState: ItemInteractionState,
     key: String?,
     onGroupEntranceAnimationPlayed: () -> Unit,
 ): State<Float> {
     // This must be the default, else all group items will be incorrectly scaled
     val scale = remember { Animatable(Scale.NO_INTERACTION) }
-    LaunchedEffect(key, interactionState.isEnteringGroup) {
-        if (interactionState.isEnteringGroup) {
+    LaunchedEffect(key, interactionState.isEntering) {
+        if (interactionState.isEntering) {
             scale.snapTo(targetValue = Scale.NEW_GROUP_ENTRANCE_START)
             scale.animateTo(
                 targetValue = Scale.NEW_GROUP_ENTRANCE_PEAK,
@@ -245,11 +245,11 @@ private fun tabGroupAppearanceScale(
  */
 @Composable
 internal fun Modifier.tabGroupEntranceAnimation(
-    interactionState: TabItemInteractionState,
+    interactionState: ItemInteractionState,
     key: String?,
     onGroupEntranceAnimationPlayed: () -> Unit,
 ): Modifier {
-    if (!interactionState.isEnteringGroup) return this
+    if (!interactionState.isEntering) return this
     val entranceScale =
         tabGroupAppearanceScale(
             interactionState = interactionState,
@@ -275,7 +275,7 @@ private fun Modifier.tabItemInteractionAnimation(
     tabItemAlphaState: State<Float>,
     tabItemScaleState: State<Float>,
     cornerSize: Dp,
-    interactionState: TabItemInteractionState,
+    interactionState: ItemInteractionState,
 ): Modifier {
     val backdropColor = MaterialTheme.colorScheme.secondaryContainer
     val backdropBorder = MaterialTheme.colorScheme.tertiary
@@ -315,41 +315,34 @@ private fun Modifier.tabItemInteractionAnimation(
 }
 
 /**
- * The default animations for a tab GridItem.
+ * The default animations for a GridItem.
  *
  * @param lazyGridItemScope The [LazyGridItemScope] (needed to define animateItem())
- * @param enteringGroupId The id of the group entering composition, if any. Can be null.
+ * @param suppressTransitions Whether transition animations should be suppressed. Items are by default clipped to their
+ *   bounds while fade in/out animations are playing, so this can be helpful if you would like to e.g. play an
+ *   overshooting scale animation for an item entering composition.
  */
 @Composable
 fun Modifier.defaultGridItemAnimation(
     lazyGridItemScope: LazyGridItemScope,
-    enteringGroupId: String?,
+    suppressTransitions: Boolean,
 ): Modifier =
     with(lazyGridItemScope) {
-        /*
-         * We need to explicitly set each of the LazyGrid animations to NULL to prevent some defaults
-         * from occurring while the group entrance animation is playing.  Items are by default
-         * clipped to their bounds while fade in/out animations are playing, and the group animation
-         * scales to overshoot its bounds.
-         *
-         * Additionally, per the spec, we don't want to see 'ghost' items of the tabs that are being
-         * combined to show the group, and the group should start at its placed position.
-         */
         this@defaultGridItemAnimation.animateItem(
             fadeOutSpec =
-                if (enteringGroupId != null) {
+                if (suppressTransitions) {
                     null
                 } else {
                     spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
                 },
             placementSpec =
-                if (enteringGroupId != null) {
+                if (suppressTransitions) {
                     null
                 } else {
                     spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
                 },
             fadeInSpec =
-                if (enteringGroupId != null) {
+                if (suppressTransitions) {
                     null
                 } else {
                     spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
@@ -361,28 +354,23 @@ fun Modifier.defaultGridItemAnimation(
  * The default animations for a tab ListItem.
  *
  * @param lazyListItemScope The [LazyItemScope] (needed to define animateItem())
- * @param enteringGroupId The id of the group entering composition, if any. Can be null.
+ * @param suppressTransitions Whether transition animations should be suppressed
  */
 @Composable
 fun Modifier.defaultListItemAnimation(
     lazyListItemScope: LazyItemScope,
-    enteringGroupId: String?,
+    suppressTransitions: Boolean,
 ): Modifier =
     with(lazyListItemScope) {
         this@defaultListItemAnimation.animateItem(
-            // When the group entrance animation is playing, all fade-out animations should be suppressed.
-            // You should not see the exiting tabs fade out that are becoming a group.
             fadeOutSpec =
-                if (enteringGroupId != null) {
+                if (suppressTransitions) {
                     null
                 } else {
                     spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
                 },
-            // When the group entrance animation is playing, all grid shuffle animations should be suppressed.
-            // The group should appear to enter at the place it was dropped (without translating up/down/left/right).
-            // Nearby tabs should not appear to shuffle to make room for the group.
             placementSpec =
-                if (enteringGroupId != null) {
+                if (suppressTransitions) {
                     null
                 } else {
                     spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)

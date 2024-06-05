@@ -527,6 +527,15 @@ void HTMLCanvasElement::Destroy() {
   }
 }
 
+void HTMLCanvasElement::DestroyContent() {
+  // The document is going away, so release the 2D context's buffer now instead
+  // of at GC time, as accelerated canvases hold limited compositor resources.
+  if (!mOffscreenCanvas && mCurrentContext) {
+    mCurrentContext->OnWindowDestroy();
+  }
+  nsGenericHTMLElement::DestroyContent();
+}
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(HTMLCanvasElement)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLCanvasElement,

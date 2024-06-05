@@ -397,9 +397,7 @@ void AtomRefRuntime::recordRefToValue(JSContext* cx, const Value& value) {
     recordRef(cx, value.toSymbol());
     return;
   }
-  MOZ_ASSERT_IF(value.isGCThing(), value.isObject() ||
-                                       value.isPrivateGCThing() ||
-                                       value.isBigInt());
+  MOZ_ASSERT(!value.isGCThing());
 }
 
 template <typename T>

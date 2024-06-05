@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+include PSMIPCTypes;
+
 using SECMODModuleID from "secmodt.h";
 using CK_SLOT_ID from "pkcs11t.h";
 
@@ -70,6 +72,8 @@ protocol PPKCS11Module
         returns (nsresult rv, TokenInfo tokenInfo);
 
     async CancelProtectedAuth(uint64_t id);
+
+    async FindCertificates() returns (Certificate[] certificates);
 
   parent:
     async PromptPassword(nsCString aTokenName)

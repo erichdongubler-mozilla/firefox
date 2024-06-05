@@ -38,22 +38,21 @@ import mozilla.components.ui.icons.R as IconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.MenuGroup
 import org.mozilla.fenix.components.menu.compose.MenuItem
-import org.mozilla.fenix.share.ShareViewModel
+import org.mozilla.fenix.components.share.store.ShareUiState
 import org.mozilla.fenix.share.listadapters.SyncShareOption
 import org.mozilla.fenix.theme.FirefoxTheme
 
-private val SendToDevicesContentBottomPadding = 64.dp
-
 @Composable
 internal fun SendToDevicesContent(
-    uiState: ShareViewModel.ShareUiState,
+    uiState: ShareUiState,
     onDismiss: () -> Unit,
-    onSendToDevice: (SyncShareOption.SingleDevice) -> Unit,
-    onSendToAll: () -> Unit,
+    onSend: (Set<SyncShareOption.SingleDevice>) -> Unit,
+    onDeviceSelectionToggle: (SyncShareOption.SingleDevice) -> Unit,
     onSignInClicked: () -> Unit,
     onSignOutClicked: () -> Unit,
+    onRetryClicked: () -> Unit,
 ) {
-    val singleDevices = uiState.devices.filterIsInstance<SyncShareOption.SingleDevice>()
+    val singleDevices = uiState.singleDevices
     FirefoxTheme {
         Column(
             modifier =
@@ -61,7 +60,6 @@ internal fun SendToDevicesContent(
                     .padding(
                         start = FirefoxTheme.layout.space.static200,
                         end = FirefoxTheme.layout.space.static200,
-                        bottom = SendToDevicesContentBottomPadding,
                     )
                     .nestedScroll(rememberNestedScrollInteropConnection())
         ) {
@@ -97,20 +95,17 @@ internal fun SendToDevicesContent(
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 when (sendToDevicesUiMode(isLoading = uiState.isLoading, devices = uiState.devices)) {
                     SendToDevicesUiMode.Loading -> LoadingScreen()
-                    SendToDevicesUiMode.Offline -> NoInternetConnectionScreen()
+                    SendToDevicesUiMode.Offline -> NoInternetConnectionScreen(onRetryClicked)
                     SendToDevicesUiMode.Reconnect,
                     SendToDevicesUiMode.SignIn -> ReconnectToSyncScreen(onSignInClicked, onSignOutClicked)
                     SendToDevicesUiMode.NoDevices -> NoDevicesAvailableScreen()
-                    SendToDevicesUiMode.DeviceList -> {
-                        DeviceList(
+                    SendToDevicesUiMode.DeviceList ->
+                        DeviceListScreen(
                             devices = singleDevices,
-                            onDeviceClick = onSendToDevice,
+                            selectedDevices = uiState.selectedDevices,
+                            onSend = onSend,
+                            onDeviceSelectionToggle = onDeviceSelectionToggle,
                         )
-                        if (singleDevices.size > 1) {
-                            Spacer(modifier = Modifier.size(8.dp))
-                            SendToAllItem(onSendToAll = onSendToAll)
-                        }
-                    }
                 }
             }
         }
@@ -118,12 +113,56 @@ internal fun SendToDevicesContent(
 }
 
 @Composable
+private fun DeviceListScreen(
+    devices: List<SyncShareOption.SingleDevice>,
+    selectedDevices: Set<SyncShareOption.SingleDevice>,
+    onSend: (Set<SyncShareOption.SingleDevice>) -> Unit,
+    onDeviceSelectionToggle: (SyncShareOption.SingleDevice) -> Unit,
+) {
+    Column(modifier = Modifier.padding(bottom = FirefoxTheme.layout.space.static200)) {
+        val isSingleDevice = devices.size == 1
+        DeviceList(
+            devices = devices,
+            selectedDevices = if (isSingleDevice) emptySet() else selectedDevices,
+            onDeviceClicked =
+                if (isSingleDevice) {
+                    { device -> onSend(setOf(device)) }
+                } else {
+                    onDeviceSelectionToggle
+                },
+        )
+        if (!isSingleDevice) {
+            SendToDevicesButton(
+                selectedDevices = selectedDevices,
+                onSend = onSend,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SendToDevicesButton(
+    selectedDevices: Set<SyncShareOption.SingleDevice>,
+    onSend: (Set<SyncShareOption.SingleDevice>) -> Unit,
+) {
+    FilledButton(
+        text = stringResource(id = R.string.sync_send_to_selected_devices),
+        modifier = Modifier.fillMaxWidth().padding(top = FirefoxTheme.layout.space.static200),
+        enabled = selectedDevices.isNotEmpty(),
+        containerColor = MaterialTheme.colorScheme.primary,
+        onClick = { onSend(selectedDevices) },
+    )
+}
+
+@Composable
 private fun DeviceList(
     devices: List<SyncShareOption.SingleDevice>,
-    onDeviceClick: (SyncShareOption.SingleDevice) -> Unit,
+    selectedDevices: Set<SyncShareOption.SingleDevice>,
+    onDeviceClicked: (SyncShareOption.SingleDevice) -> Unit,
 ) {
     MenuGroup {
         for (option in devices) {
+            val isChecked = option in selectedDevices
             MenuItem(
                 label = option.device.displayName,
                 beforeIconPainter =
@@ -135,26 +174,27 @@ private fun DeviceList(
                                 IconsR.drawable.mozac_ic_device_desktop_24
                             }
                     ),
-                onClick = { onDeviceClick(option) },
+                afterIconPainter =
+                    if (isChecked) {
+                        painterResource(id = IconsR.drawable.mozac_ic_checkmark_24)
+                    } else {
+                        null
+                    },
+                stateDescription =
+                    if (isChecked) {
+                        stringResource(id = R.string.send_to_devices_device_selected_content_description)
+                    } else {
+                        ""
+                    },
+                onClick = { onDeviceClicked(option) },
             )
         }
     }
 }
 
 @Composable
-private fun SendToAllItem(onSendToAll: () -> Unit) {
-    MenuGroup {
-        MenuItem(
-            label = stringResource(id = R.string.sync_send_to_all),
-            beforeIconPainter = painterResource(id = IconsR.drawable.mozac_ic_select_all_24),
-            onClick = onSendToAll,
-        )
-    }
-}
-
-@Composable
 private fun LoadingScreen() {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = FirefoxTheme.layout.space.static400)) {
         CircularProgressIndicator(
             modifier =
                 Modifier.align(Alignment.CenterHorizontally).padding(vertical = FirefoxTheme.layout.space.static500)
@@ -164,7 +204,10 @@ private fun LoadingScreen() {
 
 @Composable
 private fun NoDevicesAvailableScreen() {
-    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        modifier = Modifier.padding(bottom = FirefoxTheme.layout.space.static400),
+    ) {
         Image(
             painter = painterResource(id = R.drawable.kit_devices_sync),
             contentDescription = null,
@@ -226,7 +269,7 @@ private fun ReconnectToSyncScreen(
     Spacer(modifier = Modifier.size(20.dp))
     Column(
         verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static150),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(bottom = FirefoxTheme.layout.space.static400),
     ) {
         FilledButton(
             text = stringResource(R.string.sync_send_tab_error_auth_button),
@@ -243,10 +286,10 @@ private fun ReconnectToSyncScreen(
 }
 
 @Composable
-private fun NoInternetConnectionScreen() {
+private fun NoInternetConnectionScreen(onRetryClicked: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(20.dp),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(bottom = FirefoxTheme.layout.space.static400),
     ) {
         Image(
             painter = painterResource(id = R.drawable.kit_plug_error),
@@ -270,6 +313,14 @@ private fun NoInternetConnectionScreen() {
                 color = MaterialTheme.colorScheme.secondary,
                 style = FirefoxTheme.typography.body2,
                 modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Column(modifier = Modifier.fillMaxWidth()) {
+            FilledButton(
+                text = stringResource(R.string.sync_send_tab_error_connection_button),
+                onClick = onRetryClicked,
+                containerColor = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.width(284.dp).height(40.dp).align(Alignment.CenterHorizontally),
             )
         }
     }
@@ -297,7 +348,7 @@ private fun SendToDevicesContentWithDevicesPreview() {
         Surface {
             SendToDevicesContent(
                 uiState =
-                    ShareViewModel.ShareUiState(
+                    ShareUiState(
                         devices =
                             listOf(
                                 previewDevice("My Phone", DeviceType.MOBILE),
@@ -305,10 +356,29 @@ private fun SendToDevicesContentWithDevicesPreview() {
                             )
                     ),
                 onDismiss = {},
-                onSendToDevice = {},
-                onSendToAll = {},
+                onSend = {},
+                onDeviceSelectionToggle = {},
                 onSignInClicked = {},
                 onSignOutClicked = {},
+                onRetryClicked = {},
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun SendToDevicesContentWithOneDevicePreview() {
+    FirefoxTheme {
+        Surface {
+            SendToDevicesContent(
+                uiState = ShareUiState(devices = listOf(previewDevice("My Phone", DeviceType.MOBILE))),
+                onDismiss = {},
+                onSend = {},
+                onDeviceSelectionToggle = {},
+                onSignInClicked = {},
+                onSignOutClicked = {},
+                onRetryClicked = {},
             )
         }
     }
@@ -320,12 +390,13 @@ private fun SendToDevicesContentNoDevicesPreview() {
     FirefoxTheme {
         Surface {
             SendToDevicesContent(
-                uiState = ShareViewModel.ShareUiState(devices = emptyList()),
+                uiState = ShareUiState(devices = emptyList()),
                 onDismiss = {},
-                onSendToDevice = {},
-                onSendToAll = {},
+                onSend = {},
+                onDeviceSelectionToggle = {},
                 onSignInClicked = {},
                 onSignOutClicked = {},
+                onRetryClicked = {},
             )
         }
     }
@@ -337,12 +408,13 @@ private fun SendToDevicesContentReconnectToSyncPreview() {
     FirefoxTheme {
         Surface {
             SendToDevicesContent(
-                uiState = ShareViewModel.ShareUiState(devices = listOf(SyncShareOption.Reconnect)),
+                uiState = ShareUiState(devices = listOf(SyncShareOption.Reconnect)),
                 onDismiss = {},
-                onSendToDevice = {},
-                onSendToAll = {},
+                onSend = {},
+                onDeviceSelectionToggle = {},
                 onSignInClicked = {},
                 onSignOutClicked = {},
+                onRetryClicked = {},
             )
         }
     }
@@ -354,12 +426,13 @@ private fun SendToDevicesContentNoInternetPreview() {
     FirefoxTheme {
         Surface {
             SendToDevicesContent(
-                uiState = ShareViewModel.ShareUiState(devices = listOf(SyncShareOption.Offline)),
+                uiState = ShareUiState(devices = listOf(SyncShareOption.Offline)),
                 onDismiss = {},
-                onSendToDevice = {},
-                onSendToAll = {},
+                onSend = {},
+                onDeviceSelectionToggle = {},
                 onSignInClicked = {},
                 onSignOutClicked = {},
+                onRetryClicked = {},
             )
         }
     }
@@ -371,12 +444,13 @@ private fun SendToDevicesLoadingPreview() {
     FirefoxTheme {
         Surface {
             SendToDevicesContent(
-                uiState = ShareViewModel.ShareUiState(isLoading = true),
+                uiState = ShareUiState(isLoading = true),
                 onDismiss = {},
-                onSendToDevice = {},
-                onSendToAll = {},
+                onSend = {},
+                onDeviceSelectionToggle = {},
                 onSignInClicked = {},
                 onSignOutClicked = {},
+                onRetryClicked = {},
             )
         }
     }

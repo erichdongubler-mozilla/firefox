@@ -57,6 +57,10 @@ namespace ipc {
 [NeedsOtherPid, ChildProc=Utility]
 protocol PUtilityProcess
 {
+#ifndef ANDROID
+  manages PHWInference;
+#endif  // !ANDROID
+
 parent:
   async InitCrashReporter(CrashReporterInitArgs aInitArgs);
 
@@ -144,7 +148,7 @@ child:
 #endif  // defined(XP_WIN)
 
 #ifndef ANDROID
-  async StartHWInferenceService(Endpoint<PHWInferenceChild> aEndpoint);
+  async PHWInference();
 #endif  // !ANDROID
 
   /**

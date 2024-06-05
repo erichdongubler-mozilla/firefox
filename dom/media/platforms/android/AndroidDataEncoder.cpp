@@ -58,6 +58,71 @@ static const char* MimeTypeOf(CodecType aCodec) {
   }
 }
 
+static int32_t ToAndroidAVCProfile(H264_PROFILE aProfile) {
+  using CodecProfileLevel = java::sdk::MediaCodecInfo::CodecProfileLevel;
+  switch (aProfile) {
+    case H264_PROFILE_BASE:
+      return CodecProfileLevel::AVCProfileBaseline;
+    case H264_PROFILE_MAIN:
+      return CodecProfileLevel::AVCProfileMain;
+    case H264_PROFILE_EXTENDED:
+      return CodecProfileLevel::AVCProfileExtended;
+    case H264_PROFILE_HIGH:
+      return CodecProfileLevel::AVCProfileHigh;
+    case H264_PROFILE_UNKNOWN:
+      break;
+  }
+  return 0;
+}
+
+static int32_t ToAndroidAVCLevel(H264_LEVEL aLevel) {
+  using CodecProfileLevel = java::sdk::MediaCodecInfo::CodecProfileLevel;
+  switch (aLevel) {
+    case H264_LEVEL::H264_LEVEL_1:
+      return CodecProfileLevel::AVCLevel1;
+    case H264_LEVEL::H264_LEVEL_1_1:
+      // H264_LEVEL_1_b has the same value as H264_LEVEL_1_1, while
+      // AVCLevel1b and AVCLevel11 differ. Since we can't tell the
+      // difference, we just ignore the 1_b case.
+      return CodecProfileLevel::AVCLevel11;
+    case H264_LEVEL::H264_LEVEL_1_2:
+      return CodecProfileLevel::AVCLevel12;
+    case H264_LEVEL::H264_LEVEL_1_3:
+      return CodecProfileLevel::AVCLevel13;
+    case H264_LEVEL::H264_LEVEL_2:
+      return CodecProfileLevel::AVCLevel2;
+    case H264_LEVEL::H264_LEVEL_2_1:
+      return CodecProfileLevel::AVCLevel21;
+    case H264_LEVEL::H264_LEVEL_2_2:
+      return CodecProfileLevel::AVCLevel22;
+    case H264_LEVEL::H264_LEVEL_3:
+      return CodecProfileLevel::AVCLevel3;
+    case H264_LEVEL::H264_LEVEL_3_1:
+      return CodecProfileLevel::AVCLevel31;
+    case H264_LEVEL::H264_LEVEL_3_2:
+      return CodecProfileLevel::AVCLevel32;
+    case H264_LEVEL::H264_LEVEL_4:
+      return CodecProfileLevel::AVCLevel4;
+    case H264_LEVEL::H264_LEVEL_4_1:
+      return CodecProfileLevel::AVCLevel41;
+    case H264_LEVEL::H264_LEVEL_4_2:
+      return CodecProfileLevel::AVCLevel42;
+    case H264_LEVEL::H264_LEVEL_5:
+      return CodecProfileLevel::AVCLevel5;
+    case H264_LEVEL::H264_LEVEL_5_1:
+      return CodecProfileLevel::AVCLevel51;
+    case H264_LEVEL::H264_LEVEL_5_2:
+      return CodecProfileLevel::AVCLevel52;
+    case H264_LEVEL::H264_LEVEL_6:
+      return CodecProfileLevel::AVCLevel6;
+    case H264_LEVEL::H264_LEVEL_6_1:
+      return CodecProfileLevel::AVCLevel61;
+    case H264_LEVEL::H264_LEVEL_6_2:
+      return CodecProfileLevel::AVCLevel62;
+  }
+  return 0;
+}
+
 using FormatResult = Result<java::sdk::MediaFormat::LocalRef, MediaResult>;
 
 FormatResult ToMediaFormat(const EncoderConfig& aConfig) {
@@ -101,6 +166,23 @@ FormatResult ToMediaFormat(const EncoderConfig& aConfig) {
   NS_ENSURE_SUCCESS(rv,
                     FormatResult(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                                              "fail to set I-frame interval")));
+
+  if (aConfig.mCodec == CodecType::H264 &&
+      aConfig.mCodecSpecific.is<H264Specific>()) {
+    const auto& h264 = aConfig.mCodecSpecific.as<H264Specific>();
+    if (int32_t profile = ToAndroidAVCProfile(h264.mProfile)) {
+      rv = format->SetInteger(java::sdk::MediaFormat::KEY_PROFILE, profile);
+      NS_ENSURE_SUCCESS(rv,
+                        FormatResult(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                                                 "fail to set profile")));
+    }
+    if (int32_t level = ToAndroidAVCLevel(h264.mLevel)) {
+      rv = format->SetInteger(java::sdk::MediaFormat::KEY_LEVEL, level);
+      NS_ENSURE_SUCCESS(rv,
+                        FormatResult(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                                                 "fail to set level")));
+    }
+  }
 
   return format;
 }

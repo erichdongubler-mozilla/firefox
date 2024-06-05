@@ -34,9 +34,15 @@
           },
           "nova": {
             "value": {
-              "nativeTheme": "color-mix(in srgb, AccentColor 20%, transparent)",
-              "light": "{color.violet-desaturated.20}",
-              "dark": "{color.violet-desaturated.50}",
+              "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)",
+              "platform": {
+                "light": "color-mix(in srgb, {color.accent.primary.@base} 32%, transparent)",
+                "dark": "color-mix(in srgb, {color.accent.primary.@base} 55%, transparent)"
+              },
+              "brand": {
+                "light": "{color.violet-desaturated.20}",
+                "dark": "{color.violet-desaturated.50}"
+              },
               "forcedColors": "SelectedItemText"
             }
           }
@@ -55,9 +61,15 @@
           },
           "nova": {
             "value": {
-              "nativeTheme": "color-mix(in srgb, AccentColor 30%, transparent)",
-              "light": "{color.violet-desaturated.30}",
-              "dark": "{color.violet-desaturated.40}",
+              "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)",
+              "platform": {
+                "light": "color-mix(in srgb, {color.accent.primary.@base} 50%, transparent)",
+                "dark": "color-mix(in srgb, {color.accent.primary.@base} 75%, transparent)"
+              },
+              "brand": {
+                "light": "{color.violet-desaturated.30}",
+                "dark": "{color.violet-desaturated.40}"
+              },
               "forcedColors": "SelectedItemText"
             }
           }
@@ -142,11 +154,7 @@
           }
         },
         "active": {
-          "value": {
-            "default": "{button.background.color.active}",
-            "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)",
-            "forcedColors": "{button.background.color.active}"
-          }
+          "value": "{button.background.color.active}"
         },
         "disabled": {
           "ignoreFigma": "Preserve token structure that can't be replicated in Figma",
@@ -158,11 +166,7 @@
           }
         },
         "hover": {
-          "value": {
-            "default": "{button.background.color.hover}",
-            "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)",
-            "forcedColors": "{button.background.color.hover}"
-          }
+          "value": "{button.background.color.hover}"
         },
         "selected": {
           "value": "{button.background.color.ghost.active}"
@@ -228,10 +232,7 @@
           "value": "{toolbarbutton.background.color.active}"
         },
         "disabled": {
-          "value": {
-            "default": "{toolbarbutton.background.color.@base}",
-            "forcedColors": "{button.background.color.disabled}"
-          }
+          "value": "{toolbarbutton.background.color.disabled}"
         },
         "selected": {
           "value": "{button.background.color.ghost.active}"
@@ -262,6 +263,7 @@
           "nova": {
             "comment": "Preserve prefersContrast value",
             "value": {
+              "nativeTheme": "currentColor",
               "default": "{color.accent.primary.@base}"
             }
           }
@@ -669,7 +671,16 @@
           }
         },
         "selected": {
-          "value": "{button.text.color.ghost.active}"
+          "value": {
+            "default": "{button.text.color.ghost.active}",
+            "nova": {
+              "comment": "Pair with the SelectedItem background in HCM",
+              "value": {
+                "default": "{button.text.color.ghost.active}",
+                "forcedColors": "{button.text.color.selected}"
+              }
+            }
+          }
         }
       },
       "muted": {

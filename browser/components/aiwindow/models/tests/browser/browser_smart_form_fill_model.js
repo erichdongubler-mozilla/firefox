@@ -334,7 +334,7 @@ describe("SmartFormFillModel", () => {
         {
           ...relevantTabs[0],
           title: tabTitle.substring(0, 100),
-          url: "EXAMPLE_COM_JOBS_ROLE_1",
+          url: "§url_token: EXAMPLE_COM_JOBS_ROLE_1§",
         },
       ];
       const requestPromise = SmartFormFillModel.generateFormValues({
@@ -365,7 +365,7 @@ describe("SmartFormFillModel", () => {
         role: "user",
         content:
           `Current page title:\n${pageTitle.substring(0, 100)}\n\n` +
-          "Current page url:\nEXAMPLE_COM_JOBS_GENERATE_1\n\n" +
+          "Current page url:\n§url_token: EXAMPLE_COM_JOBS_GENERATE_1§\n\n" +
           "Current page text:\nApply for the example role.\n\n" +
           "Relevant memories about the user:\n[]\n\n" +
           `Relevant open tabs:\n${JSON.stringify(shapedRelevantTabs)}\n\n` +
@@ -405,6 +405,121 @@ describe("SmartFormFillModel", () => {
         })
       );
       await requestPromise;
+    });
+
+    it("resolves URL tokens the model repeats back", async () => {
+      const tabUrl = "https://example.com/profile/contact?ref=form";
+      const requestPromise = SmartFormFillModel.generateFormValues({
+        task: "generate",
+        page: {
+          title: "Contact form",
+          url: "https://example.com/contact",
+        },
+        fields: makeFields(2),
+        candidates: [],
+        context: {
+          pageText: "",
+          relevantTabs: [
+            {
+              title: "Profile",
+              url: tabUrl,
+              tabContent: "The profile page for the user.",
+            },
+          ],
+          memories: [],
+        },
+      });
+
+      const { request, respond } = await mockEngineMan.captureRequest({
+        purpose: PURPOSE,
+      });
+      const tabToken = "EXAMPLE_COM_PROFILE_CONTACT_1";
+
+      Assert.stringContains(
+        request.args.at(-1).content,
+        `§url_token: ${tabToken}§`,
+        "Context tab URLs should be sent as sentinel URL tokens"
+      );
+
+      respond(
+        JSON.stringify({
+          memories_used: [],
+          tabs_used: [`§url_token: ${tabToken}§`],
+          fields: [
+            {
+              id: "field-0",
+              action: "generate",
+              confidence: "high",
+              value: `My page is §url_token: ${tabToken}§`,
+            },
+            {
+              id: "field-1",
+              action: "generate",
+              confidence: "high",
+              value: "§url_token: EXAMPLE_COM_INVENTED_9§",
+            },
+          ],
+        })
+      );
+
+      const result = await requestPromise;
+
+      Assert.equal(
+        result.fields[0].value,
+        `My page is ${tabUrl}`,
+        "A URL token in a generated value should expand to the full URL"
+      );
+      Assert.equal(
+        result.fields[1].value,
+        "",
+        "A URL token the model invented should be dropped from the value"
+      );
+      Assert.deepEqual(
+        result.tabs_used,
+        [tabUrl],
+        "Tabs the model reports using should expand to their full URLs"
+      );
+    });
+
+    it("resolves values that are not strings to nothing", async () => {
+      const requestPromise = generateValuesForFields(makeFields(2));
+      const { respond } = await mockEngineMan.captureRequest({
+        purpose: PURPOSE,
+      });
+
+      respond(
+        JSON.stringify({
+          memories_used: [],
+          tabs_used: [42, null],
+          fields: [
+            { id: "field-0", action: "generate", confidence: "high" },
+            {
+              id: "field-1",
+              action: "generate",
+              confidence: "high",
+              value: 42,
+            },
+          ],
+        })
+      );
+
+      const result = await requestPromise;
+
+      Assert.equal(
+        result.fields[0].value,
+        "",
+        "A missing generated value should resolve to the empty string"
+      );
+      Assert.equal(
+        result.fields[1].value,
+        "",
+        "A generated value that is not a string should resolve to the empty string"
+      );
+      Assert.deepEqual(
+        result.tabs_used,
+        [],
+        "Reported tabs that are not strings should be dropped"
+      );
     });
 
     it("splits fields into batches and combines their results", async () => {

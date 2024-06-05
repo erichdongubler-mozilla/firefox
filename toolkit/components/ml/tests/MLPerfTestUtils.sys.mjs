@@ -6,7 +6,6 @@
  * @import {
  *   EngineCreationInterceptionOptions,
  *   EngineFeatureIds,
- *   MLPerfAssertions,
  *   MLPerfEngineConfig,
  *   MLPerfEngineRunDetails,
  *   MLPerfEngineRunCapture,
@@ -19,7 +18,7 @@
  *   MLPerfScenarioContext,
  *   MLPerfScenarioInvocationOptions,
  *   MLPerfScenarioObservation,
- *   MLPerfTestHarness,
+ *   MLPerfTestContext,
  *   PeakInferenceMemorySampler,
  *   RunPerfScenarioConfig,
  * } from "../ml.d.ts"
@@ -31,6 +30,7 @@ import {
   MLEngine,
   MLEngineParent,
 } from "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs";
+import { TextGenerationEngine } from "moz-src:///toolkit/components/ml/textgeneration/TextGenerationEngine.sys.mjs";
 import { MLTestUtils } from "resource://testing-common/MLTestUtils.sys.mjs";
 import {
   clearInterval,
@@ -47,8 +47,14 @@ const BACKEND_TAGS = { "onnx-native": "NATIVE", onnx: "WASM" };
 /** The ONNX backends a pinned engine may resolve to. */
 const ONNX_BACKENDS = Object.keys(BACKEND_TAGS);
 
+/** Routes llama.cpp engines to the HWInference process when set. */
+const LLAMA_HW_INFERENCE_PREF = "browser.ml.llama.hwInference";
+
+/** Series tag for llama.cpp engines served by the HWInference process. */
+const HW_INFERENCE_TAG = "HWINF";
+
 /**
- * The run capture currently attached to MLEngine.
+ * The run capture currently attached to MLEngine and TextGenerationEngine.
  *
  * @type {MLPerfEngineRunCapture | null}
  */
@@ -72,6 +78,16 @@ function pinnedBackend() {
   }
 
   return backend;
+}
+
+/**
+ * Whether the MOZ_ML_LLAMA_HWINFERENCE environment variable, which CI sets
+ * per task, routes llama.cpp engines to the HWInference process.
+ *
+ * @returns {boolean} Whether llama.cpp engines run in HWInference.
+ */
+function pinsHWInferenceProcess() {
+  return Services.env.get("MOZ_ML_LLAMA_HWINFERENCE") === "1";
 }
 
 /**
@@ -141,7 +157,9 @@ function startPeakInferenceMemorySampler(intervalMs = 100) {
   const sample = () => {
     sampleChain = sampleChain
       .then(async () => {
-        const { memory } = await getInferenceProcessInfo();
+        const { memory } = await getInferenceProcessInfo(
+          pinsHWInferenceProcess() ? "hwInference" : "inference"
+        );
         if (Number.isFinite(memory)) {
           peakMemory = Math.max(peakMemory, memory);
         }
@@ -257,8 +275,11 @@ function startEngineRunCapture(enginesByFeatureId) {
     throw new Error("Another engine run capture is already active.");
   }
 
-  const originalRun = MLEngine.prototype.run;
-  const originalRunWithGenerator = MLEngine.prototype.runWithGenerator;
+  const originals = [MLEngine, TextGenerationEngine].map(({ prototype }) => ({
+    prototype,
+    run: prototype.run,
+    runWithGenerator: prototype.runWithGenerator,
+  }));
   let activeRuns = 0;
 
   /**
@@ -294,117 +315,132 @@ function startEngineRunCapture(enginesByFeatureId) {
   const configForEngine = engine =>
     enginesByFeatureId.get(engine.pipelineOptions.featureId) ?? null;
 
-  MLEngine.prototype.run = async function (request) {
-    const config = configForEngine(this);
-    if (!config) {
-      return originalRun.call(this, request);
-    }
+  for (const {
+    prototype,
+    run: originalRun,
+    runWithGenerator: originalRunWithGenerator,
+  } of originals) {
+    // TextGenerationEngine streams text without token ids, so only the engine
+    // can count and time its generated tokens.
+    const streamsTokenIds = prototype !== TextGenerationEngine.prototype;
 
-    const start = ChromeUtils.now();
-    activeRuns++;
-
-    try {
-      const result = await originalRun.call(this, request);
-      recordRun(this, config, start, result, {});
-
-      return result;
-    } finally {
-      activeRuns--;
-    }
-  };
-
-  MLEngine.prototype.runWithGenerator = async function* (request) {
-    const config = configForEngine(this);
-    if (!config) {
-      return yield* originalRunWithGenerator.call(this, request);
-    }
-
-    const start = ChromeUtils.now();
-    const generator = originalRunWithGenerator.call(this, request);
-    let completed = false;
-    let failed = false;
-    let firstTokenTime = null;
-    let firstChunkTokens = 0;
-    let lastTokenTime = null;
-    let outputTokens = 0;
-    let result;
-    activeRuns++;
-
-    try {
-      while (true) {
-        const step = await generator.next();
-
-        if (step.done) {
-          result = step.value;
-          completed = true;
-          break;
-        }
-
-        const chunk = step.value;
-        const tokenCount = chunk.tokens?.length ?? 0;
-
-        if (chunk.isPrompt) {
-          yield chunk;
-          continue;
-        }
-
-        if (tokenCount) {
-          const now = ChromeUtils.now();
-
-          if (firstTokenTime === null) {
-            firstTokenTime = now;
-            firstChunkTokens = tokenCount;
-          }
-
-          lastTokenTime = now;
-          outputTokens += tokenCount;
-        }
-
-        yield chunk;
+    prototype.run = async function (request) {
+      const config = configForEngine(this);
+      if (!config) {
+        return originalRun.call(this, request);
       }
 
-      return result;
-    } catch (error) {
-      failed = true;
-      throw error;
-    } finally {
+      const start = ChromeUtils.now();
+      activeRuns++;
+
       try {
-        if (!completed) {
-          await generator.return(undefined);
-        }
+        const result = await originalRun.call(this, request);
+        recordRun(this, config, start, result, {});
 
-        if (!failed) {
-          /** @type {MLPerfEngineRunDetails} */
-          const details = { outputTokens };
-          const metrics = result?.metrics;
-
-          if (metrics?.inputTokens != null) {
-            details.inputTokens = metrics.inputTokens;
-          }
-
-          if (metrics?.decodingTime != null) {
-            details.decodingTime = metrics.decodingTime;
-          }
-
-          if (firstTokenTime !== null && lastTokenTime !== null) {
-            details.timeToFirstToken = firstTokenTime - start;
-
-            const generationTime = lastTokenTime - firstTokenTime;
-            const timedOutputTokens = outputTokens - firstChunkTokens;
-
-            if (generationTime > 0 && timedOutputTokens > 0) {
-              details.tokensPerSecond =
-                timedOutputTokens / (generationTime / 1000);
-            }
-          }
-
-          recordRun(this, config, start, result, details);
-        }
+        return result;
       } finally {
         activeRuns--;
       }
-    }
-  };
+    };
+
+    prototype.runWithGenerator = async function* (request) {
+      const config = configForEngine(this);
+      if (!config) {
+        return yield* originalRunWithGenerator.call(this, request);
+      }
+
+      const start = ChromeUtils.now();
+      const generator = originalRunWithGenerator.call(this, request);
+      let completed = false;
+      let failed = false;
+      let firstTokenTime = null;
+      let firstChunkTokens = 0;
+      let lastTokenTime = null;
+      let outputTokens = 0;
+      let result;
+      activeRuns++;
+
+      try {
+        while (true) {
+          const step = await generator.next();
+
+          if (step.done) {
+            result = step.value;
+            completed = true;
+            break;
+          }
+
+          const chunk = step.value;
+          const tokenCount = chunk.tokens?.length ?? 0;
+
+          if (chunk.isPrompt) {
+            yield chunk;
+            continue;
+          }
+
+          if (tokenCount || (!streamsTokenIds && chunk.text)) {
+            const now = ChromeUtils.now();
+
+            if (firstTokenTime === null) {
+              firstTokenTime = now;
+              firstChunkTokens = tokenCount;
+            }
+
+            lastTokenTime = now;
+            outputTokens += tokenCount;
+          }
+
+          yield chunk;
+        }
+
+        return result;
+      } catch (error) {
+        failed = true;
+        throw error;
+      } finally {
+        try {
+          if (!completed) {
+            await generator.return(undefined);
+          }
+
+          if (!failed) {
+            /** @type {MLPerfEngineRunDetails} */
+            const details = { outputTokens };
+            const metrics = result?.metrics;
+
+            if (metrics?.inputTokens != null) {
+              details.inputTokens = metrics.inputTokens;
+            }
+
+            if (metrics?.decodingTime != null) {
+              details.decodingTime = metrics.decodingTime;
+            }
+
+            if (firstTokenTime !== null && lastTokenTime !== null) {
+              details.timeToFirstToken = firstTokenTime - start;
+
+              const generationTime = lastTokenTime - firstTokenTime;
+              const timedOutputTokens = outputTokens - firstChunkTokens;
+
+              if (generationTime > 0 && timedOutputTokens > 0) {
+                details.tokensPerSecond =
+                  timedOutputTokens / (generationTime / 1000);
+              }
+            }
+
+            if (!streamsTokenIds) {
+              details.outputTokens = metrics?.outputTokens;
+              details.tokensPerSecond = metrics?.tokensPerSecond;
+            }
+
+            recordRun(this, config, start, result, details);
+          }
+        } finally {
+          activeRuns--;
+        }
+      }
+    };
+  }
 
   /** @type {MLPerfEngineRunCapture} */
   const capture = {
@@ -416,8 +452,10 @@ function startEngineRunCapture(enginesByFeatureId) {
      * @returns {void}
      */
     cleanup() {
-      MLEngine.prototype.run = originalRun;
-      MLEngine.prototype.runWithGenerator = originalRunWithGenerator;
+      for (const { prototype, run, runWithGenerator } of originals) {
+        prototype.run = run;
+        prototype.runWithGenerator = runWithGenerator;
+      }
       activeEngineRunCapture = null;
 
       if (activeRuns) {
@@ -527,13 +565,11 @@ async function measureScenarioInvocation(
 /**
  * Creates a journal for MozPerftest measurement series.
  *
- * @param {MLPerfTestHarness} harness - The calling test's harness globals.
- * @param {(message: string) => void} harness.info - The Mochitest info logger.
- * @param {MLPerfAssertions} harness.Assert - The Mochitest assertions.
+ * @param {MLPerfTestContext} ctx - The calling test's context.
  * @param {string} [metricSuffix=""] - Suffix applied to every series name.
  * @returns {MLPerfJournal} The measurement journal.
  */
-function createJournal({ info, Assert }, metricSuffix = "") {
+function createJournal(ctx, metricSuffix = "") {
   /** @type {Map<string, number[]>} */
   const series = new Map();
 
@@ -548,7 +584,7 @@ function createJournal({ info, Assert }, metricSuffix = "") {
     add(name, value) {
       const seriesName = metricSuffix ? `${name}-${metricSuffix}` : name;
 
-      Assert.ok(
+      ctx.Assert.ok(
         Number.isFinite(value),
         `${seriesName} is a finite measurement`
       );
@@ -572,7 +608,7 @@ function createJournal({ info, Assert }, metricSuffix = "") {
         metrics.push({ name, values, value: median(values) });
       }
 
-      info(`perfMetrics | ${JSON.stringify(metrics)}`);
+      ctx.info(`perfMetrics | ${JSON.stringify(metrics)}`);
     },
   };
 }
@@ -741,17 +777,17 @@ function validateEngineConfigs(engines) {
  * Verifies that every ONNX engine observed on a run resolved to the pinned
  * backend. Engines on other backends are not pinned and pass through.
  *
- * @param {MLPerfAssertions} Assert - The Mochitest assertions.
+ * @param {MLPerfTestContext} ctx - The calling test's context.
  * @param {MLPerfScenarioObservation} observation - The observed scenario.
  * @param {string} backend - The pinned backend.
  * @returns {void}
  */
-function assertPinnedBackend(Assert, observation, backend) {
+function assertPinnedBackend(ctx, observation, backend) {
   for (const engine of new Set(observation.engineRuns.map(run => run.engine))) {
     const resolved = engine.pipelineOptions.backend;
 
     if (ONNX_BACKENDS.includes(resolved)) {
-      Assert.equal(
+      ctx.Assert.equal(
         resolved,
         backend,
         `${engine.pipelineOptions.featureId} resolved to the pinned backend`
@@ -761,20 +797,41 @@ function assertPinnedBackend(Assert, observation, backend) {
 }
 
 /**
- * Verifies that each configured engine ran the expected number of times.
+ * Verifies that every llama.cpp engine observed on a run was served by the
+ * process MOZ_ML_LLAMA_HWINFERENCE selects.
  *
  * @param {MLPerfAssertions} Assert - The Mochitest assertions.
+ * @param {MLPerfScenarioObservation} observation - The observed scenario.
+ * @param {boolean} hwInference - Whether HWInference must serve the engines.
+ * @returns {void}
+ */
+function assertLlamaProcess(Assert, observation, hwInference) {
+  for (const engine of new Set(observation.engineRuns.map(run => run.engine))) {
+    if (engine.pipelineOptions.backend === "llama.cpp") {
+      Assert.equal(
+        engine instanceof TextGenerationEngine,
+        hwInference,
+        `${engine.pipelineOptions.featureId} ran in the ${hwInference ? "HWInference" : "inference"} process`
+      );
+    }
+  }
+}
+
+/**
+ * Verifies that each configured engine ran the expected number of times.
+ *
+ * @param {MLPerfTestContext} ctx - The calling test's context.
  * @param {MLPerfScenarioObservation} observation - The observed scenario.
  * @param {MLPerfEngineConfig[]} engines - The configured engines.
  * @returns {void}
  */
-function assertExpectedEngineRuns(Assert, observation, engines) {
+function assertExpectedEngineRuns(ctx, observation, engines) {
   for (const engine of engines) {
     const runCount = observation.engineRuns.filter(
       run => run.featureId === engine.featureId
     ).length;
 
-    Assert.equal(
+    ctx.Assert.equal(
       runCount,
       engine.expectedRuns ?? 1,
       `${engine.featureId} ran the expected number of times`
@@ -785,13 +842,13 @@ function assertExpectedEngineRuns(Assert, observation, engines) {
 /**
  * Verifies that a warm invocation reuses the engines that served the warmup.
  *
- * @param {MLPerfAssertions} Assert - The Mochitest assertions.
+ * @param {MLPerfTestContext} ctx - The calling test's context.
  * @param {MLPerfScenarioObservation} warmup - The warmup observation.
  * @param {MLPerfScenarioObservation} observation - The later warm invocation.
  * @param {MLPerfEngineConfig[]} engines - The configured engines.
  * @returns {void}
  */
-function assertWarmEngineReuse(Assert, warmup, observation, engines) {
+function assertWarmEngineReuse(ctx, warmup, observation, engines) {
   for (const engine of engines) {
     const warmupEngines = new Set(
       warmup.engineRuns
@@ -802,7 +859,7 @@ function assertWarmEngineReuse(Assert, warmup, observation, engines) {
       .filter(run => run.featureId === engine.featureId)
       .every(run => warmupEngines.has(run.engine));
 
-    Assert.ok(reused, `${engine.featureId} reused its warm engine`);
+    ctx.Assert.ok(reused, `${engine.featureId} reused its warm engine`);
   }
 }
 
@@ -838,12 +895,16 @@ function validateIterationCount(name, value) {
  * Engines must therefore be created within the measured scenario for the pin
  * to apply.
  *
+ * When MOZ_ML_LLAMA_HWINFERENCE is set to "1", llama.cpp engines are served by
+ * the HWInference process instead of the inference process, verified to run
+ * there, and every series is suffixed with HWINF. Without it, they must run in
+ * the inference process.
+ *
  * Configured engines report creation and run time, before/after inference
  * process memory, and available generated-token measurements.
  *
+ * @param {MLPerfTestContext} ctx - The initialized test's context.
  * @param {RunPerfScenarioConfig} config - The scenario configuration.
- * @param {(message: string) => void} config.info - The Mochitest info logger.
- * @param {MLPerfAssertions} config.Assert - The Mochitest assertions.
  * @param {string} config.metricPrefix - Prefix for every reported series.
  * @param {string} [config.metricSuffix=""] - Suffix for every reported series.
  * @param {RunPerfScenarioConfig["scenario"]} config.scenario - Runs one
@@ -861,32 +922,43 @@ function validateIterationCount(name, value) {
  *   samples in milliseconds.
  * @returns {Promise<void>}
  */
-async function runPerfScenario({
-  info,
-  Assert,
-  metricPrefix,
-  metricSuffix = "",
-  scenario,
-  engines = [],
-  measureFirstUse = true,
-  coldIterations = 5,
-  warmIterations = 0,
-  memoryIterations = 3,
-  peakMemorySampleIntervalMs = 100,
-}) {
+async function runPerfScenario(
+  ctx,
+  {
+    metricPrefix,
+    metricSuffix = "",
+    scenario,
+    engines = [],
+    measureFirstUse = true,
+    coldIterations = 5,
+    warmIterations = 0,
+    memoryIterations = 3,
+    peakMemorySampleIntervalMs = 100,
+  }
+) {
   validateIterationCount("coldIterations", coldIterations);
   validateIterationCount("warmIterations", warmIterations);
   validateIterationCount("memoryIterations", memoryIterations);
 
   const backend = pinnedBackend();
   if (backend) {
-    info(`MOZ_ML_BACKENDS pins the ONNX backend to ${backend}`);
+    ctx.info(`MOZ_ML_BACKENDS pins the ONNX backend to ${backend}`);
     metricSuffix = BACKEND_TAGS[backend] ?? backend.toUpperCase();
     engines = pinEngineBackends(engines, backend);
   }
 
+  const hwInference = pinsHWInferenceProcess();
+  if (hwInference) {
+    ctx.info(
+      "MOZ_ML_LLAMA_HWINFERENCE routes llama.cpp to the HWInference process"
+    );
+    metricSuffix = metricSuffix
+      ? `${metricSuffix}-${HW_INFERENCE_TAG}`
+      : HW_INFERENCE_TAG;
+  }
+
   const enginesByFeatureId = validateEngineConfigs(engines);
-  const journal = createJournal({ info, Assert }, metricSuffix);
+  const journal = createJournal(ctx, metricSuffix);
 
   /**
    * Observes and validates one lifecycle invocation.
@@ -901,11 +973,13 @@ async function runPerfScenario({
       engines,
     });
 
-    assertExpectedEngineRuns(Assert, observation, engines);
+    assertExpectedEngineRuns(ctx, observation, engines);
 
     if (backend) {
-      assertPinnedBackend(Assert, observation, backend);
+      assertPinnedBackend(ctx, observation, backend);
     }
+
+    assertLlamaProcess(ctx.Assert, observation, hwInference);
 
     return observation;
   };
@@ -934,7 +1008,7 @@ async function runPerfScenario({
       throw new Error("Peak memory sampling did not return a measurement.");
     }
 
-    Assert.greater(
+    ctx.Assert.greater(
       observation.peakMemory,
       0,
       "The memory sampler observed the inference process"
@@ -942,7 +1016,19 @@ async function runPerfScenario({
     journal.add(`${metricPrefix}-peak-memory`, observation.peakMemory);
   };
 
+  const hadHWInferencePref = Services.prefs.prefHasUserValue(
+    LLAMA_HW_INFERENCE_PREF
+  );
+  const previousHWInferencePref = Services.prefs.getBoolPref(
+    LLAMA_HW_INFERENCE_PREF,
+    false
+  );
+
   try {
+    if (hwInference) {
+      Services.prefs.setBoolPref(LLAMA_HW_INFERENCE_PREF, true);
+    }
+
     if (backend === "onnx") {
       // Engines created concurrently each download the wasm runtime into the
       // same OPFS file, and the earlier writer's snapshot is invalidated when
@@ -997,7 +1083,7 @@ async function runPerfScenario({
           { captureEngineCreation: false }
         );
 
-        assertWarmEngineReuse(Assert, warmup, observation, engines);
+        assertWarmEngineReuse(ctx, warmup, observation, engines);
         addObservationMeasurements(
           journal,
           metricPrefix,
@@ -1028,7 +1114,18 @@ async function runPerfScenario({
       addPeakMemoryMeasurement(observation);
     }
   } finally {
-    await destroyEngines();
+    try {
+      await destroyEngines();
+    } finally {
+      if (hwInference && hadHWInferencePref) {
+        Services.prefs.setBoolPref(
+          LLAMA_HW_INFERENCE_PREF,
+          previousHWInferencePref
+        );
+      } else if (hwInference) {
+        Services.prefs.clearUserPref(LLAMA_HW_INFERENCE_PREF);
+      }
+    }
   }
 
   journal.report();
@@ -1037,6 +1134,35 @@ async function runPerfScenario({
 /**
  * Shared lifecycle, memory, and reporting utilities for ML performance tests.
  */
-export const MLPerfTestUtils = {
-  runPerfScenario,
-};
+export class MLPerfTestUtils {
+  /** @type {MLPerfTestContext | null} The initialized test's context. */
+  static #ctx = null;
+
+  /**
+   * Initializes the utility for the current test context until test cleanup.
+   *
+   * @param {MLPerfTestContext} ctx - The calling test's context.
+   * @returns {void}
+   */
+  static init(ctx) {
+    this.#ctx = ctx;
+
+    ctx.registerCleanupFunction(() => {
+      this.#ctx = null;
+    });
+  }
+
+  /**
+   * Runs and reports the configured ML scenario using the initialized test context.
+   *
+   * @param {RunPerfScenarioConfig} config - The lifecycle and measurement options.
+   * @returns {Promise<void>}
+   */
+  static async runPerfScenario(config) {
+    if (!this.#ctx) {
+      throw new Error("MLPerfTestUtils.init(ctx) must be called first.");
+    }
+
+    await runPerfScenario(this.#ctx, config);
+  }
+}

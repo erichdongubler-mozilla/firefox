@@ -2,9 +2,9 @@
 
 # Address Bar Architecture
 
-The address bar is implemented as a *model-view-controller* (MVC) system. One of
-the scopes of this architecture is to allow easy replacement of its components,
-for easier experimentation.
+The address bar and the search bars are implemented as a
+*model-view-controller* (MVC) system. One of the scopes of this architecture is
+to allow easy replacement of its components, for easier experimentation.
 
 Each search is represented by a unique object, the *UrlbarQueryContext*. This
 object, created by the *View*, describes the search and is passed through all of
@@ -241,7 +241,7 @@ The controller is responsible for reacting to the user's input, by communicating
 the proper course of action to the Model (e.g. starting/stopping a query) and the
 View (e.g. showing/hiding a panel). It is also responsible for reporting Telemetry.
 
-It is split into two classes connected by the *Urlbar* JSWindowActor pair:
+It is split into two classes:
 
 - {searchfox}`UrlbarParentController <browser/components/urlbar/UrlbarParentController.sys.mjs>`
   runs in the parent process. It owns the *ProvidersManager*, drives the query
@@ -273,6 +273,32 @@ UrlbarChildController {
   removeListener(listener);
 }
 ```
+
+### Direct path and message path
+
+The *UrlbarChildController* reaches its *UrlbarParentController* in one of two
+ways, chosen when the controller is created:
+
+- **Direct path.** Both controllers live in the parent process, so the child
+  controller creates the parent controller itself and calls it directly. The
+  address bar and the search bar in the toolbar use this path.
+- **Message path.** The child controller holds a
+  {searchfox}`UrlbarParentControllerProxy <browser/components/urlbar/content/UrlbarParentControllerProxy.mjs>`
+  instead, which sends each call to the parent process as a message over the
+  *Urlbar* JSWindowActor pair.
+  {searchfox}`UrlbarParent <browser/components/urlbar/actors/UrlbarParent.sys.mjs>`
+  creates the real controller on the other side and sends its notifications
+  back. A search bar in a content process, such as the one on about:newtab, uses
+  this path.
+
+Both paths give the child controller the same interface, but on the message path
+every call and notification is asynchronous. Setting
+`browser.urlbar.ipc.chromeMessagePassing` to `true` puts the toolbar's inputs on
+the message path too, which lets tests exercise it in the parent process.
+
+On the message path the parent keeps one controller per input. It drops the
+controller when the input is garbage collected, or when the input's window
+global goes away.
 
 ## The View
 

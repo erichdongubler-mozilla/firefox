@@ -290,7 +290,7 @@ void APZCCallbackHelper::NotifyLayerTransforms(
     const nsTArray<MatrixMessage>& aTransforms) {
   MOZ_ASSERT(NS_IsMainThread());
   for (const MatrixMessage& msg : aTransforms) {
-    BrowserParent* parent =
+    RefPtr<BrowserParent> parent =
         BrowserParent::GetBrowserParentFromLayersId(msg.GetLayersId());
     if (parent) {
       parent->SetChildToParentConversionMatrix(
@@ -500,6 +500,37 @@ void APZCCallbackHelper::InitializeRootDisplayport(nsIFrame* aFrame) {
     // Unlike normal root displayport, we don't need to walk up the frame tree
     // to set zero margin displayport for ancestor frames since this popup frame
     // is the root frame of the popuped window.
+  }
+}
+
+void APZCCallbackHelper::EnsureDisplayportSizeOnPopupRoot(nsIFrame* aFrame) {
+  MOZ_ASSERT(XRE_IsParentProcess(),
+             "The root displayport should be only used in the parent process");
+  MOZ_ASSERT(aFrame && aFrame->IsMenuPopupFrame(),
+             "This function is only available for popup frames.");
+
+  nsIContent* content = aFrame->GetContent();
+  if (!content) {
+    return;
+  }
+
+  uint32_t unused;
+  ScrollableLayerGuid::ViewID viewId;
+  if (APZCCallbackHelper::GetOrCreateScrollIdentifiers(content, &unused,
+                                                       &viewId)) {
+    MOZ_LOG(sDisplayportLog, LogLevel::Debug,
+            ("Refreshing root displayport on popup scrollId=%" PRIu64, viewId));
+
+    nsRect newBaseRect = DisplayPortUtils::GetDisplayportBase(aFrame);
+    nsRect currentBaseRect;
+    if (!DisplayPortUtils::GetDisplayPort(aFrame->GetContent(),
+                                          &currentBaseRect) ||
+        !newBaseRect.IsEqualEdges(currentBaseRect)) {
+      DisplayPortUtils::SetDisplayPortBase(content, newBaseRect);
+      DisplayPortUtils::SetDisplayPortMargins(
+          content, aFrame->PresShell(), DisplayPortMargins::Empty(content),
+          DisplayPortUtils::ClearMinimalDisplayPortProperty::Yes, 0);
+    }
   }
 }
 

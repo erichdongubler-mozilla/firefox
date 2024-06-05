@@ -10,6 +10,7 @@
 #  include "libwebrtcglue/WebrtcVideoCodecFactory.h"
 #  include "media/base/media_constants.h"
 #  include "mozilla/Maybe.h"
+#  include "mozilla/media/webrtc/AV1FmtpParser.h"
 #  include "mozilla/media/webrtc/H264FmtpParser.h"
 #endif
 
@@ -84,14 +85,18 @@ class CodecInfoImpl final : public WebrtcCodecInfo {
     Maybe<uint32_t> requestedPacketizationMode;
     if (isH264) {
       const auto fmtp = ParseH264Fmtp(aMime.OriginalString());
-      // Present-but-invalid packetization-mode (out of [0..2]) is unsupported.
-      if (fmtp.mPacketizationMode.isErr() &&
-          fmtp.mPacketizationMode.inspectErr() == H264FmtpParseError::Invalid) {
+      if (fmtp.HasInvalidParam()) {
         return false;
       }
       if (fmtp.mPacketizationMode.isOk()) {
         requestedPacketizationMode = Some(fmtp.mPacketizationMode.inspect());
       }
+    }
+
+    const bool isAV1 =
+        isVideo && payloadString.EqualsIgnoreCase(webrtc::kAv1CodecName);
+    if (isAV1 && ParseAV1Fmtp(aMime.OriginalString()).HasInvalidParam()) {
+      return false;
     }
 
     const auto& codecs = isAudio ? mAudioCodecs : mVideoCodecs;

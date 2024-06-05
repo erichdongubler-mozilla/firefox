@@ -229,6 +229,14 @@ var gGestureSupport = {
    *         otherwise.
    */
   _shouldDoSwipeGesture: function GS__shouldDoSwipeGesture(aEvent) {
+    // A cropped mini window frames one specific region of one page, so it has
+    // no business navigating: its back/forward buttons are hidden and their
+    // keys disabled. Swipes run the command directly rather than through the
+    // keyset, so they have to be turned away here too.
+    if (document.documentElement.hasAttribute("cropped-mini-window")) {
+      return false;
+    }
+
     const leftCommand = this._getCommand(aEvent, ["swipe", "left"]);
     const rightCommand = this._getCommand(aEvent, ["swipe", "right"]);
 

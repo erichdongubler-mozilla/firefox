@@ -1850,8 +1850,6 @@ class RustTest(BaseConfigureTest):
             "i686-pc-windows-msvc",
             "x86_64-pc-windows-msvc",
             "aarch64-pc-windows-msvc",
-            "i686-pc-windows-gnu",
-            "x86_64-pc-windows-gnu",
         ):
             self.assertEqual(self.get_rust_target(straightforward), straightforward)
 
@@ -1866,6 +1864,8 @@ class RustTest(BaseConfigureTest):
             ("i386-unknown-linux-android", "i686-linux-android"),
             ("i686-unknown-linux-android21", "i686-linux-android"),
             ("i686-pc-linux-gnu", "i686-unknown-linux-gnu"),
+            ("i686-pc-windows-gnu", "i686-pc-windows-gnullvm"),
+            ("x86_64-pc-windows-gnu", "x86_64-pc-windows-gnullvm"),
             ("x86_64-unknown-linux-android", "x86_64-linux-android"),
             ("x86_64-unknown-linux-android21", "x86_64-linux-android"),
             ("x86_64-pc-linux-gnu", "x86_64-unknown-linux-gnu"),

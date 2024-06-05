@@ -92,23 +92,44 @@ add_task(async function test_slug_version_index_is_unique() {
 });
 
 add_task(async function test_a_slug_cannot_be_reused_by_another_tab() {
-  await AITabStore.create({
+  const first = await AITabStore.create({
     convId: "conv-slug-owner",
-    slug: "contested-slug",
-    title: "First claim",
+    slug: "hotels_in_lisbon",
+    title: "Hotels in Lisbon",
   });
 
-  // Both would be version 1, so the pair collides. Without the UNIQUE index
-  // this silently succeeded and left the slug pointing at two conversations.
-  await Assert.rejects(
-    AITabStore.create({
-      convId: "conv-slug-squatter",
-      slug: "contested-slug",
-      title: "Second claim",
-    }),
-    /UNIQUE|constraint/i,
-    "A second conversation cannot take a slug that is already in use"
+  // Slugs come from page titles, which repeat, so a second conversation
+  // asking for one that is taken is ordinary. It gets its own rather than
+  // failing, and the slug still points at exactly one tab.
+  const second = await AITabStore.create({
+    convId: "conv-slug-squatter",
+    slug: "hotels_in_lisbon",
+    title: "Hotels in Lisbon",
+  });
+
+  Assert.equal(first.slug, "hotels_in_lisbon", "The first claim keeps it");
+  Assert.equal(second.slug, "hotels_in_lisbon_2", "The second is moved off it");
+  Assert.equal(
+    (await AITabStore.getBySlug("hotels_in_lisbon")).uuid,
+    first.uuid,
+    "The contested slug still resolves to the tab that claimed it"
   );
+  Assert.equal(
+    (await AITabStore.getBySlug("hotels_in_lisbon_2")).uuid,
+    second.uuid,
+    "And the second tab is reachable under the slug it was given"
+  );
+});
+
+add_task(async function test_minted_slugs_keep_counting() {
+  for (const slug of ["weekend_in_porto", "weekend_in_porto_2"]) {
+    const page = await AITabStore.create({
+      convId: `conv-${slug}`,
+      slug: "weekend_in_porto",
+      title: "Weekend in Porto",
+    });
+    Assert.equal(page.slug, slug, `The next free slug is ${slug}`);
+  }
 });
 
 add_task(async function test_create_inserts_first_version() {
@@ -169,20 +190,26 @@ add_task(async function test_edit_appends_new_version() {
   Assert.notEqual(rows[0].uuid, rows[1].uuid, "Each version is its own row");
 });
 
-add_task(async function test_versions_are_per_conversation() {
+add_task(async function test_versions_are_per_slug() {
   const a = await AITabStore.create({
     convId: "conv-a",
     slug: "slug-a",
     title: "A",
   });
+  await AITabStore.edit({ convId: "conv-a", slug: "slug-a", title: "A2" });
   const b = await AITabStore.create({
     convId: "conv-b",
     slug: "slug-b",
     title: "B",
   });
 
-  Assert.equal(a.version, 1, "conv-a starts at version 1");
-  Assert.equal(b.version, 1, "conv-b starts at version 1 independently");
+  Assert.equal(a.version, 1, "slug-a starts at version 1");
+  Assert.equal(b.version, 1, "slug-b starts at version 1 independently");
+  Assert.deepEqual(
+    await AITabStore.getVersionsBySlug("slug-a"),
+    [2, 1],
+    "and a revision to slug-a does not move slug-b's numbering"
+  );
 });
 
 add_task(async function test_get_by_slug_and_version() {
@@ -198,21 +225,45 @@ add_task(async function test_get_by_slug_and_version() {
   Assert.equal(missing, null, "A missing version returns null");
 });
 
-add_task(async function test_create_rejects_existing_tab() {
-  await AITabStore.create({
+add_task(async function test_create_never_appends_to_an_existing_tab() {
+  const first = await AITabStore.create({
     convId: "conv-guard",
-    slug: "guard-slug",
+    slug: "lisbon_food_guide",
+    title: "First",
+  });
+  const again = await AITabStore.create({
+    convId: "conv-guard",
+    slug: "lisbon_food_guide",
+    title: "Again",
+  });
+
+  Assert.equal(again.version, 1, "create() always writes a version 1");
+  Assert.notEqual(again.slug, first.slug, "under a slug of its own");
+  Assert.equal(
+    (await AITabStore.getBySlug("lisbon_food_guide")).title,
+    "First",
+    "so the existing tab is not replaced by it"
+  );
+});
+
+add_task(async function test_one_conversation_can_hold_several_tabs() {
+  await AITabStore.create({
+    convId: "conv-two-pages",
+    slug: "first-page",
     title: "First",
   });
 
-  await Assert.rejects(
-    AITabStore.create({
-      convId: "conv-guard",
-      slug: "guard-slug-2",
-      title: "Again",
-    }),
-    /use edit/,
-    "create() on an existing tab is rejected"
+  const second = await AITabStore.create({
+    convId: "conv-two-pages",
+    slug: "second-page",
+    title: "Second",
+  });
+
+  Assert.equal(second.version, 1, "The second tab starts its own versioning");
+  Assert.equal(
+    (await AITabStore.getBySlug("first-page")).title,
+    "First",
+    "The first tab is untouched"
   );
 });
 

@@ -28,7 +28,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.tabstray.LocalTabManagementFeatureHelper
 import org.mozilla.fenix.tabstray.TabManagementFeatureHelper
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
-import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
+import org.mozilla.fenix.tabstray.browser.compose.ItemInteractionState
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
@@ -52,6 +52,7 @@ class TabGroupCardTest {
             override val tabGroupsOnboardingEnabled: Boolean = false
             override val tabGroupsLiveReorderEnabled: Boolean = false
             override val tabGroupsStripEnabled: Boolean = false
+            override val showTabGroupsInMenu: Boolean = false
         }
 
     @Test
@@ -355,7 +356,7 @@ class TabGroupCardTest {
     fun verifyDraggedItemScale() {
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.setContent {
-            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = true))
+            ComposableUnderTest(interactionState = ItemInteractionState(isDragged = true))
         }
         composeTestRule.mainClock.advanceTimeBy(50L)
 
@@ -369,7 +370,7 @@ class TabGroupCardTest {
     fun verifyUndraggedItemScale() {
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.setContent {
-            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = false))
+            ComposableUnderTest(interactionState = ItemInteractionState(isDragged = false))
         }
         composeTestRule.mainClock.advanceTimeBy(50L)
 
@@ -383,7 +384,7 @@ class TabGroupCardTest {
     fun verifyDraggedItemAlpha() {
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.setContent {
-            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = true))
+            ComposableUnderTest(interactionState = ItemInteractionState(isDragged = true))
         }
         composeTestRule.mainClock.advanceTimeBy(50L)
 
@@ -397,7 +398,7 @@ class TabGroupCardTest {
     fun verifyUndraggedItemAlpha() {
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.setContent {
-            ComposableUnderTest(interactionState = TabItemInteractionState(isDragged = false))
+            ComposableUnderTest(interactionState = ItemInteractionState(isDragged = false))
         }
         composeTestRule.mainClock.advanceTimeBy(50L)
 
@@ -457,7 +458,7 @@ class TabGroupCardTest {
             ),
         onClick: (String) -> Unit = {},
         onLongClick: (String) -> Unit = {},
-        interactionState: TabItemInteractionState = TabItemInteractionState(),
+        interactionState: ItemInteractionState = ItemInteractionState(),
         onDeleteTabGroupClick: (String) -> Unit = {},
         onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit = {},
         onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit = {},

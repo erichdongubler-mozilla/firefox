@@ -799,6 +799,7 @@ void WebGLContext::InitUploadableSdTypes() {
     types[layers::SurfaceDescriptor::TSurfaceDescriptorMacIOSurface] = true;
   }
   if (kIsAndroid) {
+    types[layers::SurfaceDescriptor::TAndroidImageReaderImageDescriptor] = true;
     types[layers::SurfaceDescriptor::TSurfaceTextureDescriptor] = true;
   }
   if (kIsLinux) {
@@ -2539,7 +2540,7 @@ webgl::LinkActiveInfo GetLinkActiveInfo(
         const auto userName = fnUnmapName(mappedName);
 
         auto loc = gl.fGetAttribLocation(prog, mappedName.c_str());
-        if (mappedName.find("gl_") == 0) {
+        if (mappedName.starts_with("gl_")) {
           // Bug 1328559: Appears problematic on ANGLE and OSX, but not Linux or
           // Win+GL.
           loc = -1;
@@ -2813,7 +2814,7 @@ GLint WebGLContext::GetFragDataLocation(const WebGLProgram& prog,
 
   if (gl->WorkAroundDriverBugs() && gl->IsMesa()) {
     // Mesa incorrectly generates INVALID_OPERATION for gl_ prefixes here.
-    if (mappedName.find("gl_") == 0) {
+    if (mappedName.starts_with("gl_")) {
       return -1;
     }
   }

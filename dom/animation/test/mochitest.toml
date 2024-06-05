@@ -20,9 +20,6 @@ support-files = [
 ["document-timeline/test_document-timeline.html"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1784938
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1784938
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt && !xorigin", # Bug 1784938
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1784938
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && opt", # Bug 1784938
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1784938
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1784938

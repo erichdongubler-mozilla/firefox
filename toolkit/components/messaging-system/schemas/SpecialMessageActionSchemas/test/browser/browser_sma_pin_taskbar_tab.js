@@ -4,7 +4,7 @@
 "use strict";
 
 const { TaskbarTabs } = ChromeUtils.importESModule(
-  "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs"
+  "moz-src:///browser/components/taskbartabs/TaskbarTabs.sys.mjs"
 );
 
 add_task(async function test_PIN_TASKBAR_TAB_success() {

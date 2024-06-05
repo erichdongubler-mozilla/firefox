@@ -84,6 +84,7 @@ static constexpr FloatRegister InvalidFloatReg{};
 
 static constexpr Register StackPointer{Registers::sp};
 static constexpr Register FramePointer{Registers::fp};
+static constexpr Register LinkRegister{Registers::ra};
 static constexpr Register ReturnReg{Registers::a0};
 // Scratch register used for runtime call patching.
 // See MacroAssembler::patchNopToCall and MacroAssembler::PatchWrite_NearCall.

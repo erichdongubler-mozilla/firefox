@@ -23,3 +23,5 @@ support-files = [
 ["browser_reusable.js"]
 
 ["browser_selectionByMouse.js"]
+
+["browser_viewBounds.js"]

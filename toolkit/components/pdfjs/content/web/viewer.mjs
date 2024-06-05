@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.4.123
- * pdfjsBuild = 0ce03b5a0
+ * pdfjsVersion = 6.4.305
+ * pdfjsBuild = 2581d8f70
  */
 
 ;// ./web/ui_utils.js
@@ -146,10 +146,7 @@ function removeNullCharacters(str, replaceInvisible = false) {
   if (!InvisibleCharsRegExp.test(str)) {
     return str;
   }
-  if (replaceInvisible) {
-    return str.replaceAll(InvisibleCharsRegExp, m => m === "\x00" ? "" : " ");
-  }
-  return str.replaceAll("\x00", "");
+  return replaceInvisible ? str.replaceAll(InvisibleCharsRegExp, m => m === "\x00" ? "" : " ") : str.replaceAll("\x00", "");
 }
 function binarySearchFirstItem(items, condition, start = 0) {
   let minIndex = start;
@@ -898,7 +895,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "da1002a6-179a-43d8-9ce5-95a565db676c";
+const INTERNAL_EVT = "201d4100-6e9f-455a-8ef4-2a8ca6c25ac8";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -2059,13 +2056,10 @@ function mapVerificationStatus(signatureCode, certificateCode) {
       errorCode: certificateCode
     };
   }
-  if (NSS_ERR_CODES.UNTRUSTED.has(certificateCode)) {
-    return {
-      status: "untrusted",
-      errorCode: certificateCode
-    };
-  }
-  return {
+  return NSS_ERR_CODES.UNTRUSTED.has(certificateCode) ? {
+    status: "untrusted",
+    errorCode: certificateCode
+  } : {
     status: "untrusted",
     errorCode: certificateCode
   };
@@ -2222,7 +2216,11 @@ class ExternalServices extends BaseExternalServices {
     FirefoxCom.request("updateEditorStates", data);
   }
   async createL10n() {
-    await document.l10n.ready;
+    try {
+      await document.l10n.ready;
+    } catch (ex) {
+      console.error(`createL10n: "${ex}".`);
+    }
     return new L10n(AppOptions.get("localeProperties"), document.l10n);
   }
   createScripting() {
@@ -3712,7 +3710,7 @@ class CommentSidebar extends Sidebar {
     if (ids.length === 0 || !this.#idsToElements) {
       return;
     }
-    if (new Set(this.#idsToElements.keys()).difference(new Set(ids)).size === 0) {
+    if (new Set(this.#idsToElements.keys()).isSubsetOf(new Set(ids))) {
       this.#removeAll();
       return;
     }
@@ -3979,10 +3977,7 @@ class CommentSidebar extends Sidebar {
     if (a.rect[1] !== b.rect[1]) {
       return b.rect[1] - a.rect[1];
     }
-    if (a.rect[2] !== b.rect[2]) {
-      return a.rect[2] - b.rect[2];
-    }
-    return a.id.localeCompare(b.id);
+    return a.rect[2] !== b.rect[2] ? a.rect[2] - b.rect[2] : a.id.localeCompare(b.id);
   }
 }
 class CommentDialog {
@@ -5820,10 +5815,7 @@ class PDFFindController {
       if (query.startsWith(original)) {
         return `${fixed}[ ]*`;
       }
-      if (query.endsWith(original)) {
-        return `[ ]*${fixed}`;
-      }
-      return `[ ]*${fixed}[ ]*`;
+      return query.endsWith(original) ? `[ ]*${fixed}` : `[ ]*${fixed}[ ]*`;
     };
     query = query.replaceAll(SPECIAL_CHARS_REG_EXP, (match, p1, p2, p3, p4, p5) => {
       if (p1) {
@@ -6704,10 +6696,7 @@ class PDFHistory {
         return false;
       }
     }
-    if (!Number.isInteger(state.uid) || state.uid < 0) {
-      return false;
-    }
-    if (state.destination === null || typeof state.destination !== "object") {
+    if (!Number.isInteger(state.uid) || state.uid < 0 || state.destination === null || typeof state.destination !== "object") {
       return false;
     }
     return true;
@@ -6861,10 +6850,7 @@ function isDestHashesEqual(destHash, pushHash) {
 }
 function isDestArraysEqual(firstDest, secondDest) {
   function isEntryEqual(first, second) {
-    if (typeof first !== typeof second) {
-      return false;
-    }
-    if (Array.isArray(first) || Array.isArray(second)) {
+    if (typeof first !== typeof second || Array.isArray(first) || Array.isArray(second)) {
       return false;
     }
     if (first !== null && typeof first === "object" && second !== null) {
@@ -7407,10 +7393,7 @@ class PDFPresentationMode {
     return this.#state === PresentationModeState.CHANGING || this.#state === PresentationModeState.FULLSCREEN;
   }
   #mouseWheel(evt) {
-    if (!this.active) {
-      return;
-    }
-    if (evt.target.closest?.(".mediaAnnotation")) {
+    if (!this.active || evt.target.closest?.(".mediaAnnotation")) {
       return;
     }
     evt.preventDefault();
@@ -10521,10 +10504,7 @@ class AnnotationEditorLayerBuilder {
     viewport,
     intent = "display"
   }) {
-    if (intent !== "display") {
-      return;
-    }
-    if (this._cancelled) {
+    if (intent !== "display" || this._cancelled) {
       return;
     }
     const clonedViewport = viewport.clone({
@@ -12146,10 +12126,7 @@ class TextHighlighter {
         span.className = `${className} appended`;
         span.append(node);
         div.append(span);
-        if (className.includes("selected")) {
-          return span;
-        }
-        return null;
+        return className.includes("selected") ? span : null;
       }
       div.append(node);
       return 0;
@@ -13361,7 +13338,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.4.123";
+    const viewerVersion = "6.4.305";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -14360,10 +14337,7 @@ class PDFViewer {
       return null;
     }
     const i = this._pageLabels.indexOf(label);
-    if (i < 0) {
-      return null;
-    }
-    return i + 1;
+    return i < 0 ? null : i + 1;
   }
   scrollPageIntoView({
     pageNumber,
@@ -14576,10 +14550,10 @@ class PDFViewer {
     return this.presentationModeState === PresentationModeState.CHANGING;
   }
   get isHorizontalScrollbarEnabled() {
-    return this.isInPresentationMode ? false : this.container.scrollWidth > this.container.clientWidth;
+    return !this.isInPresentationMode && this.container.scrollWidth > this.container.clientWidth;
   }
   get isVerticalScrollbarEnabled() {
-    return this.isInPresentationMode ? false : this.container.scrollHeight > this.container.clientHeight;
+    return !this.isInPresentationMode && this.container.scrollHeight > this.container.clientHeight;
   }
   _getVisiblePages() {
     const views = this._scrollMode === ScrollMode.PAGE ? this.#scrollModePageState.pages : this._pages,
@@ -14851,7 +14825,7 @@ class PDFViewer {
                 }
               }
             } else {
-              for (let i = currentIndex + 1, ii = numPages; i < ii; i++) {
+              for (let i = currentIndex + 1; i < numPages; i++) {
                 const currentId = yArray[i],
                   expectedId = yArray[i - 1] + 1;
                 if (currentId > expectedId) {
@@ -15524,7 +15498,7 @@ class SignatureManager {
       passive: true
     });
     this.#initTabButtons(typeButton, drawButton, imageButton, panels);
-    imagePicker.accept = SupportedImageMimeTypes.join(",");
+    imagePicker.accept = SupportedImageMimeTypes.keys().join(",");
     eventBus.on("storedsignatureschanged", this.#signaturesChanged.bind(this), internalOpt);
     overlayManager.register(dialog);
   }
@@ -15812,7 +15786,7 @@ class SignatureManager {
     }, passiveOptions);
     this.#imagePicker.addEventListener("change", async () => {
       const file = this.#imagePicker.files?.[0];
-      if (!file || !SupportedImageMimeTypes.includes(file.type)) {
+      if (!file || !SupportedImageMimeTypes.has(file.type)) {
         this.#showError("Upload");
         this.#dialog.classList.toggle("waiting", false);
         return;
@@ -15829,7 +15803,7 @@ class SignatureManager {
       for (const {
         type
       } of dataTransfer.items) {
-        if (!SupportedImageMimeTypes.includes(type)) {
+        if (!SupportedImageMimeTypes.has(type)) {
           continue;
         }
         dataTransfer.dropEffect = dataTransfer.effectAllowed === "copy" ? "copy" : "move";
@@ -15848,7 +15822,7 @@ class SignatureManager {
         return;
       }
       for (const file of files) {
-        if (SupportedImageMimeTypes.includes(file.type)) {
+        if (SupportedImageMimeTypes.has(file.type)) {
           this.#extractSignature(file);
           break;
         }
@@ -17794,30 +17768,62 @@ const PDFViewerApplication = {
       const {
         featuresNotification
       } = appConfig;
-      customElements.whenDefined("moz-message-bar").then(() => {
+      let barResizeObserver = null,
+        dismissed = false;
+      const hideBar = () => {
+        dismissed = true;
+        barResizeObserver?.disconnect();
+        barResizeObserver = null;
+        docStyle.setProperty("--pfn-bar-height", "0px");
+        featuresNotification.hidden = true;
+      };
+      eventBus.on("featuresnotificationdismissed", ({
+        value
+      }) => {
+        if (value) {
+          hideBar();
+        }
+      }, {
+        signal: abortSignal,
+        ...internalOpt
+      });
+      const showFeaturesNotification = async () => {
         if (AppOptions.get("featuresNotificationDismissed")) {
           return;
         }
-        featuresNotification.addEventListener("click", event => {
-          if (!event.target.closest("a")) {
-            return;
+        document.l10n.addResourceIds(["branding/brand.ftl", "toolkit/global/mozMessageBar.ftl", "toolkit/about/pdfFeaturesNotification.ftl"]);
+        await import(
+        /*webpackIgnore: true*/
+        /*@vite-ignore*/
+        "chrome://global/content/elements/moz-message-bar.mjs");
+        const message = featuresNotification.querySelector("[slot='message']");
+        featuresNotification.setAttribute("data-l10n-id", "pdf-features-notification");
+        message.setAttribute("data-l10n-id", "pdf-features-notification-message");
+        await document.l10n.translateElements([featuresNotification, message]);
+        if (dismissed || AppOptions.get("featuresNotificationDismissed")) {
+          return;
+        }
+        const openFeatures = event => {
+          if (event.target.closest("a")) {
+            externalServices.openAboutPdfFeatures();
           }
-          event.preventDefault();
-          externalServices.openAboutPdfFeatures();
+        };
+        featuresNotification.addEventListener("click", openFeatures, {
+          signal: abortSignal
+        });
+        featuresNotification.addEventListener("keydown", event => {
+          if (event.key === "Enter") {
+            openFeatures(event);
+          }
         }, {
           signal: abortSignal
         });
-        const barResizeObserver = new ResizeObserver(entries => {
+        barResizeObserver = new ResizeObserver(entries => {
           const box = entries[0]?.borderBoxSize?.[0];
           const height = box ? box.blockSize : entries[0]?.contentRect.height ?? 0;
           docStyle.setProperty("--pfn-bar-height", `${Math.ceil(height)}px`);
         });
         barResizeObserver.observe(featuresNotification);
-        const hideBar = () => {
-          barResizeObserver.disconnect();
-          docStyle.setProperty("--pfn-bar-height", "0px");
-          featuresNotification.hidden = true;
-        };
         featuresNotification.addEventListener("message-bar:user-dismissed", () => {
           if (featuresNotification.matches(":focus-within")) {
             container.focus();
@@ -17827,17 +17833,16 @@ const PDFViewerApplication = {
         }, {
           once: true
         });
-        eventBus.on("featuresnotificationdismissed", ({
-          value
-        }) => {
-          if (value) {
-            hideBar();
-          }
-        }, {
-          signal: abortSignal,
-          ...internalOpt
-        });
         featuresNotification.hidden = false;
+      };
+      eventBus.on("pagerendered", () => {
+        showFeaturesNotification().catch(ex => {
+          console.error(`Cannot show the features notification: "${ex}".`);
+        });
+      }, {
+        once: true,
+        signal: abortSignal,
+        ...internalOpt
       });
     }
     let signatureManager = null;
@@ -19082,10 +19087,7 @@ const PDFViewerApplication = {
       copyLevels
     }
   }) {
-    if (!this.downloadManager) {
-      return;
-    }
-    if (!this.pdfDocument) {
+    if (!this.downloadManager || !this.pdfDocument) {
       return;
     }
     const modifiedPdfBytes = await this.pdfDocument.extractPages(pageInfos, copyLevels);

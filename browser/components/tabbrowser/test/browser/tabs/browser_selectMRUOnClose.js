@@ -28,8 +28,8 @@ async function discardTab(tab, loadedPromise) {
   await gBrowser.prepareDiscardBrowser(tab);
   gBrowser.discardBrowser(tab, true);
   ok(
-    tab.hasAttribute("pending"),
-    "tab should be pending after being discarded"
+    tab.hasAttribute("discarded"),
+    "tab should be marked discarded after being explicitly unloaded"
   );
 }
 
@@ -251,6 +251,34 @@ add_task(async function test_falls_back_past_multiple_unloaded_tabs() {
 
   BrowserTestUtils.removeTab(unloadedTab1);
   BrowserTestUtils.removeTab(unloadedTab2);
+  BrowserTestUtils.removeTab(loadedTab);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_pending_but_not_discarded_tab_is_not_skipped() {
+  await SpecialPowers.pushPrefEnv({ set: [[MRU_PREF, false]] });
+
+  const closedTab = BrowserTestUtils.addTab(gBrowser, "https://example.com/1");
+  const pendingTab = BrowserTestUtils.addTab(gBrowser, "https://example.com/2");
+  const loadedTab = BrowserTestUtils.addTab(gBrowser, "https://example.com/3");
+
+  await selectAndYield(closedTab);
+
+  pendingTab.setAttribute("pending", "true");
+  ok(
+    !pendingTab.hasAttribute("discarded"),
+    "pendingTab was never explicitly unloaded"
+  );
+
+  BrowserTestUtils.removeTab(closedTab);
+  is(
+    gBrowser.selectedTab,
+    pendingTab,
+    "A tab that is pending restoration but wasn't explicitly unloaded should not be skipped"
+  );
+
+  pendingTab.removeAttribute("pending");
+  BrowserTestUtils.removeTab(pendingTab);
   BrowserTestUtils.removeTab(loadedTab);
   await SpecialPowers.popPrefEnv();
 });

@@ -456,6 +456,77 @@ add_task(async function testAboutLoggingPresets() {
   clearLoggingPrefs();
 });
 
+// Test that a preset flagged with `javascriptTracing` checks the JavaScript
+// tracing checkbox without persisting it, so that selecting another preset
+// goes back to the preference the user set.
+add_task(async function testPresetChecksJavascriptTracing() {
+  await BrowserTestUtils.withNewTab(PAGE, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      let $ = content.document.querySelector.bind(content.document);
+      const checkbox = $("#with-javascript-tracing-checkbox");
+      const presetsDropdown = $("#logging-preset-dropdown");
+      // Selecting a preset happens in "onchange", asynchronously.
+      const selectPreset = async preset => {
+        presetsDropdown.value = preset;
+        presetsDropdown.dispatchEvent(new content.Event("change"));
+        // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+        await new Promise(resolve => content.setTimeout(resolve, 0));
+      };
+
+      Assert.ok(
+        !checkbox.checked,
+        "The JavaScript tracing checkbox isn't checked at load time."
+      );
+      Assert.ok(
+        content.presets().vpn.javascriptTracing,
+        "The vpn preset is flagged to enable JavaScript tracing."
+      );
+
+      await selectPreset("vpn");
+      Assert.ok(
+        checkbox.checked,
+        "Selecting the vpn preset checks the JavaScript tracing checkbox."
+      );
+      Assert.ok(
+        !Services.prefs.getBoolPref("logging.config.javascriptTracing", false),
+        "Selecting the vpn preset doesn't set the JavaScript tracing preference."
+      );
+
+      await selectPreset("networking");
+      Assert.ok(
+        !checkbox.checked,
+        "Selecting another preset unchecks the JavaScript tracing checkbox."
+      );
+
+      Services.prefs.setBoolPref("logging.config.javascriptTracing", true);
+      await selectPreset("vpn");
+      await selectPreset("networking");
+      Assert.ok(
+        checkbox.checked,
+        "A preset switch keeps the JavaScript tracing preference the user set."
+      );
+    });
+  });
+  clearLoggingPrefs();
+});
+
+// Test that a preset persisted from a previous session is reflected in the
+// JavaScript tracing checkbox at load time, even though the preset dropdown
+// itself is not restored from the preference.
+add_task(async function testPersistedPresetChecksJavascriptTracing() {
+  Services.prefs.setCharPref("logging.config.preset", "vpn");
+  await BrowserTestUtils.withNewTab(PAGE, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      Assert.ok(
+        content.document.querySelector("#with-javascript-tracing-checkbox")
+          .checked,
+        "A persisted preset checks the JavaScript tracing checkbox at load time."
+      );
+    });
+  });
+  clearLoggingPrefs();
+});
+
 // Test various things around the profiler stacks feature
 add_task(async function testProfilerStacks() {
   // Check the initial state before changing anything.

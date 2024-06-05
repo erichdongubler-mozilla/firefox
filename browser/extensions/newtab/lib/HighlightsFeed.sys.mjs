@@ -132,7 +132,7 @@ export class HighlightsFeed {
   /**
    * Refresh the highlights data for content.
    *
-   * @param {bool} options.broadcast Should the update be broadcasted.
+   * @param {boolean} options.broadcast Should the update be broadcasted.
    */
   async fetchHighlights(options = {}) {
     // If TopSites are enabled we need them for deduping, so wait for

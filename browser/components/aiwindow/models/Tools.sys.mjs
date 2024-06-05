@@ -10,9 +10,12 @@
 
 /**
  * @import { ChatConversation } from "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
+ * @import { TraceId } from "moz-src:///toolkit/components/pageextractor/PageExtractorEvents.sys.mjs"
+ * @import { AITabContext, AITabResult } from "moz-src:///browser/components/aiwindow/models/aitab/AITab.sys.mjs"
  */
 
 import { getSkillPrompt } from "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs";
+import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 import { searchBrowsingHistory as implSearchBrowsingHistory } from "moz-src:///browser/components/aiwindow/models/SearchBrowsingHistory.sys.mjs";
 import {
   manageTabsAction,
@@ -27,6 +30,7 @@ import {
   sanitizeUntrustedContent,
   isNewPageUrl,
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
+import { isAllowedURLProtocol } from "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs";
 
 import {
   CountVectorizer,
@@ -42,6 +46,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   AITab: "moz-src:///browser/components/aiwindow/models/aitab/AITab.sys.mjs",
+  AITabStore:
+    "moz-src:///browser/components/aiwindow/ui/modules/AITabStore.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
@@ -75,26 +81,12 @@ ChromeUtils.defineLazyGetter(lazy, "console", () =>
 export const MAX_TABS = 30;
 // Max number of tabs to rank by semantic similarity to topic (safeguard to avoid embedding hundreds of tabs)
 export const MAX_RANK_TABS = 5 * MAX_TABS;
-
-// Allow list of URL protocols for tabs and pages exposed to the LLM. Only http/https are
-// permitted; internal (about:, chrome:, moz-extension:, file:, data:, etc.)
-const ALLOWED_URL_PROTOCOLS = new Set(["http:", "https:"]);
+// Max number of tabs the mentioned tab groups expand to in total.
+export const MAX_TAB_GROUP_MEMBERS = MAX_TABS;
 
 const KEYWORD_WEIGHT = 0.3; // 0 = pure embedding, 1 = pure lexical
 
 const tokenizer = new CountVectorizer();
-
-/**
- * @param {string} url
- * @returns {boolean}
- */
-function isAllowedURL(url) {
-  try {
-    return ALLOWED_URL_PROTOCOLS.has(new URL(url).protocol);
-  } catch {
-    return false;
-  }
-}
 
 let _embeddingsGenerator = null;
 function getEmbeddingsGenerator() {
@@ -163,6 +155,47 @@ export const SEARCH_QUERY_APIKEY_PREF =
 // assistant. When false, it runs the answer-generation flow with page reads.
 // The two paths return different shapes and so need different tool configs.
 export const SEARCH_THE_WEB_FAST_PREF = "browser.smartwindow.searchTheWebFast";
+
+// When true, search_the_web asks Exa's /answers service for a written answer
+// and its citations in a single call. Takes precedence over
+// SEARCH_THE_WEB_FAST_PREF, which only selects between the other two paths, but
+// is ignored on a custom endpoint — see selectSearchTheWebPath.
+export const SEARCH_THE_WEB_ANSWERS_PREF =
+  "browser.smartwindow.searchTheWebAnswers";
+
+/**
+ * The paths search_the_web can take. Each returns a different shape, so the
+ * tool config offered to the model has to match the one that will run.
+ *
+ * @enum {string}
+ */
+export const SEARCH_THE_WEB_PATH = Object.freeze({
+  ANSWERS: "answers",
+  FAST: "fast",
+  GROUNDED: "grounded",
+});
+
+/**
+ * Which path search_the_web takes for the current profile. The single source of
+ * truth for the precedence: SearchWorkflow dispatches on it and Chat picks the
+ * matching tool config from it, so the two cannot drift apart.
+ *
+ * The answers path is only available on Mozilla MLPA endpoint - custom endpoints
+ * must use search_the_web_fast or grounded
+ *
+ * @returns {SEARCH_THE_WEB_PATH}
+ */
+export function selectSearchTheWebPath() {
+  if (
+    Services.prefs.getBoolPref(SEARCH_THE_WEB_ANSWERS_PREF, false) &&
+    !openAIEngine.usesCustomEndpoint()
+  ) {
+    return SEARCH_THE_WEB_PATH.ANSWERS;
+  }
+  return Services.prefs.getBoolPref(SEARCH_THE_WEB_FAST_PREF, true)
+    ? SEARCH_THE_WEB_PATH.FAST
+    : SEARCH_THE_WEB_PATH.GROUNDED;
+}
 
 export const TOOLS = [
   GET_OPEN_TABS,
@@ -259,8 +292,36 @@ const SEARCH_THE_WEB_TOOL_CONFIG = {
   },
 };
 
-// Fast-path variant, selected in Chat.sys.mjs when SEARCH_THE_WEB_FAST_PREF is
-// on. No `context` parameter: the fast path has no sub-agent prompt to feed it.
+export const SEARCH_THE_WEB_ANSWERS_DESCRIPTION =
+  "Answer a question using the web. Searches and reads web content in the " +
+  "background and returns an answer together with the URLs it cites. Use this " +
+  "whenever the user asks an informational question that needs fresh or " +
+  "external knowledge. Pass a clear, self-contained query; you may rewrite the " +
+  "user's phrasing (for example resolve 'near me' to a place).";
+
+// Answers-path variant. No `context` parameter: only the query is sent to the
+// /answers service.
+export const SEARCH_THE_WEB_TOOL_CONFIG_ANSWERS = {
+  type: "function",
+  function: {
+    name: SEARCH_THE_WEB,
+    description: SEARCH_THE_WEB_ANSWERS_DESCRIPTION,
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "The self-contained question or query to answer from the web.",
+        },
+      },
+      required: ["query"],
+    },
+  },
+};
+
+// Fast-path variant. No `context` parameter: the fast path has no sub-agent
+// prompt to feed it.
 export const SEARCH_THE_WEB_TOOL_CONFIG_FAST = {
   type: "function",
   function: {
@@ -279,6 +340,23 @@ export const SEARCH_THE_WEB_TOOL_CONFIG_FAST = {
     },
   },
 };
+
+/**
+ * The search_the_web config for the path that will run, or null for the
+ * grounded path, whose config is the one already in `toolsConfig`.
+ *
+ * @returns {object|null}
+ */
+export function searchTheWebToolConfig() {
+  switch (selectSearchTheWebPath()) {
+    case SEARCH_THE_WEB_PATH.ANSWERS:
+      return SEARCH_THE_WEB_TOOL_CONFIG_ANSWERS;
+    case SEARCH_THE_WEB_PATH.FAST:
+      return SEARCH_THE_WEB_TOOL_CONFIG_FAST;
+    default:
+      return null;
+  }
+}
 
 export const toolsConfig = [
   {
@@ -548,7 +626,7 @@ export function getTabList(amount = MAX_TABS) {
         const url = browser?.currentURI?.spec;
         const title = tab.label;
 
-        if (isAllowedURL(url) && !isNewPageUrl(url)) {
+        if (isAllowedURLProtocol(url) && !isNewPageUrl(url)) {
           tabs.push({
             url,
             title: sanitizeUntrustedContent(title),
@@ -987,42 +1065,50 @@ export class GetPageContent {
   static MAX_CHARACTERS = 10000;
 
   /**
-   * Tool entrypoint for get_page_content.
+   * getPageContent's results as plain text. A failed read contributes the
+   * sentence explaining it, so callers that must tell the two apart want
+   * getPageContent itself.
    *
    * @param {object} toolParams
    * @param {string[]} toolParams.url_list
-   * @param {AbortSignal} [toolParams.signal] - Cancels in-flight extractions
-   *   (and tears down any headless browser) when it aborts.
+   * @param {AbortSignal} [toolParams.signal]
    * @param {ChatConversation} conversation
    * @returns {Promise<Array<string>>}
-   *  A promise resolving to a string containing the extracted page content
-   *  with a descriptive header, or an error message if extraction fails.
    */
-  static async getPageContent({ url_list, signal }, conversation) {
-    // Sanitize the inputs from the language model:
-    if (!Array.isArray(url_list)) {
-      return "Error: the url_list argument must be an array of strings.";
-    }
-
-    const results = await GetPageContent.getPageContentResults(
-      { url_list, signal },
+  static async getPageContentText(toolParams, conversation) {
+    const results = await GetPageContent.getPageContent(
+      toolParams,
       conversation
     );
     return results.map(result => result.content);
   }
 
   /**
-   * Like getPageContent, but returns one structured result per URL so callers
-   * can tell failed extractions apart from actual page content. Used by the
-   * monitor agent to report "couldn't check" instead of "no match".
+   * Tool entrypoint for get_page_content.
+   *
+   * One result per requested URL, in the order requested. `content` is the
+   * extracted text on success and a sentence explaining what went wrong
+   * otherwise, so `ok` is the only way to tell the two apart: callers that
+   * feed this to a model must not let a failure reach it as page text.
    *
    * @param {object} toolParams
    * @param {string[]} toolParams.url_list
-   * @param {AbortSignal} [toolParams.signal]
+   * @param {AbortSignal} [toolParams.signal] - Cancels in-flight extractions
+   *   (and tears down any headless browser) when it aborts.
    * @param {ChatConversation} conversation
-   * @returns {Promise<Array<{url: string, ok: boolean, content: string}>>}
+   * @returns {Promise<Array<{url: ?string, ok: boolean, content: string}>>}
    */
-  static async getPageContentResults({ url_list, signal }, conversation) {
+  static async getPageContent({ url_list, signal }, conversation) {
+    // Sanitize the inputs from the language model:
+    if (!Array.isArray(url_list)) {
+      return [
+        {
+          url: null,
+          ok: false,
+          content: "Error: the url_list argument must be an array of strings.",
+        },
+      ];
+    }
     // This is a decision table for allowing and blocking fetches on the configuration of the
     // SecurityProperties and the URLs. Tab URLs don't do any new page loads. Mention urls
     // have been added by the user so they should be allowed. SERP urls came from a
@@ -1041,7 +1127,7 @@ export class GetPageContent {
 
     const results = await Promise.all(
       url_list.map(async (url, index) => {
-        if (!isAllowedURL(url)) {
+        if (!isAllowedURLProtocol(url)) {
           return { url, ok: false, content: "This URL is not allowed: " + url };
         }
         const startTime = ChromeUtils.now();
@@ -1075,6 +1161,14 @@ export class GetPageContent {
               content: `The page at ${url_list[index]} did not finish loading in time, so its content is unavailable. Do not retry it.`,
             };
           }
+          if (error?.name === "BlockedError") {
+            lazy.console.log("[Tool] getPageContent was blocked", error);
+            return {
+              url,
+              ok: false,
+              content: `The page at ${url_list[index]} appears to block automated access (e.g. a bot-detection challenge), so its content is unavailable. Do not retry it.`,
+            };
+          }
           console.error(error);
           return {
             url,
@@ -1099,7 +1193,7 @@ export class GetPageContent {
    * @returns {boolean}
    */
   static isContentAllowed(url, conversation) {
-    if (!isAllowedURL(url)) {
+    if (!isAllowedURLProtocol(url)) {
       // Only http/https pages may be exposed to the LLM at all; internal
       // schemes (about:, chrome:, file:, ...) stay out regardless of
       // conversation state.
@@ -1218,13 +1312,14 @@ export class GetPageContent {
       if (conversation.serpUrlsForAnonymousFetch.has(url)) {
         return PageExtractorParent.getHeadlessExtractor({
           urlString: url,
-          callback: pageExtractor =>
+          callback: (pageExtractor, traceId) =>
             GetPageContent.#runExtraction(
               pageExtractor,
               conversation,
               label,
               url,
-              signal
+              signal,
+              traceId
             ),
           anonymousFetch: true,
         });
@@ -1239,13 +1334,14 @@ export class GetPageContent {
 
     return PageExtractorParent.getHeadlessExtractor({
       urlString: url,
-      callback: pageExtractor =>
+      callback: (pageExtractor, traceId) =>
         GetPageContent.#runExtraction(
           pageExtractor,
           conversation,
           label,
           url,
-          signal
+          signal,
+          traceId
         ),
     });
   }
@@ -1260,6 +1356,8 @@ export class GetPageContent {
    * @param {string} sourceUrl
    * @param {AbortSignal} [signal] - Rejects the extraction early if it aborts,
    *   which lets the headless browser hosting the read be torn down promptly.
+   * @param {TraceId} [traceId] - Correlates this extraction with the enclosing
+   *   headless-extractor profiler marker.
    * @returns {Promise<{ok: boolean, content: string}>}
    *  A promise resolving to a formatted string containing the page content
    *  with mode and label information, or (with ok false) a failure message
@@ -1270,15 +1368,19 @@ export class GetPageContent {
     conversation,
     label,
     sourceUrl,
-    signal
+    signal,
+    traceId
   ) {
     const extraction = await raceAbort(
-      pageExtractor.getText({
-        sufficientLength: GetPageContent.MAX_CHARACTERS,
-        cleanWhitespace: true,
-        removeBoilerplate: true,
-        sourceUrl,
-      }),
+      pageExtractor.getText(
+        {
+          sufficientLength: GetPageContent.MAX_CHARACTERS,
+          cleanWhitespace: true,
+          removeBoilerplate: true,
+          sourceUrl,
+        },
+        traceId
+      ),
       signal
     );
 
@@ -1388,17 +1490,48 @@ export async function addMemory(
 }
 
 /**
+ * Stores a generated page as a new AITab.
+ *
+ * Every generate_aitab call asks for a page, so this only ever creates one.
+ * Treating a second call as a revision of the first, because the chat already
+ * had a page, filed it under the first page's slug and left that page's URL
+ * serving the new content. Appending a version belongs to a modify flow,
+ * which names the page it revises by slug.
+ *
+ * @param {AITabResult} result - From AITab.generateAITab.
+ * @param {ChatConversation} conversation - The chat that asked for the page.
+ * @returns {Promise<{uuid: string, convId: string, slug: string,
+ *   version: number, title: string, createdAt: number, updatedAt: number,
+ *   context: AITabContext, components: AITabResult, localState: ?object}>}
+ *   The row that was written: `uuid` identifies this one version, `slug` the
+ *   page across every version of it.
+ */
+async function persistAITabPage({ metadata, surface }, conversation) {
+  const { context, ...pageMetadata } = metadata;
+
+  return lazy.AITabStore.create({
+    convId: conversation.id,
+    slug: metadata.id,
+    title: metadata.title,
+    context,
+    components: { metadata: pageMetadata, surface },
+  });
+}
+
+/**
  * @param {object} toolParams
  * @param {string[]} [toolParams.url_list]
  * @param {string} [toolParams.focus]
  * @param {ChatConversation} conversation
  * @param {AbortSignal} [signal] - Cancels in-flight page extractions.
+ * @returns {Promise<{message: string, aiTab: {slug: string}}|string>} The
+ *   text for the model plus the stored page's slug, or a string describing a
+ *   failure.
  */
 export async function createAITab({ url_list, focus }, conversation, signal) {
   lazy.console.log("[Tool] aiTab", JSON.stringify({ url_list, focus }));
-  // Generate the page from the requested URLs. Nothing is persisted; the chat
-  // tool returns a link to the external viewer with the page config in the URL
-  // hash, so the page data never reaches the viewer host.
+  // The returned link points at the external viewer with the page config in
+  // the URL hash, so the page data never reaches the viewer host.
   const viewerBase = lazy.AITab.getViewerBaseURL();
   if (!viewerBase) {
     return (
@@ -1413,6 +1546,17 @@ export async function createAITab({ url_list, focus }, conversation, signal) {
   if (result.error) {
     return `The page could not be created: ${result.error}.`;
   }
+
+  // The UI opens the page from its stored slug, so a page that never reached
+  // the database would leave the user with a link that resolves to nothing.
+  let stored;
+  try {
+    stored = await persistAITabPage(result, conversation);
+  } catch (e) {
+    lazy.console.error("[Tool] aiTab failed to persist page", e.message);
+    return "The page could not be created: it could not be saved.";
+  }
+
   const viewerURL = lazy.AITab.buildViewerURL(viewerBase, result.surface);
 
   // Mark the viewer URL as seen so the chat renders it as a trusted, labeled
@@ -1423,9 +1567,16 @@ export async function createAITab({ url_list, focus }, conversation, signal) {
   // long URL (which it would otherwise truncate); expandUrlTokens restores the
   // exact URL when rendering the assistant's reply.
   const token = conversation.convertUrlToToken(viewerURL);
-  // Strip characters that would break the markdown link text and expose the URL.
-  const title = (result.metadata?.title || "the page").replace(/[[\]]/g, "");
-  return `The page was created. Link the user to it as [${title}](§url_token: ${token}§).`;
+  // Model output re-entering the prompt, so cap the length. Brackets would
+  // break out of the markdown link text and expose the URL.
+  const title = sanitizeUntrustedContent(
+    result.metadata?.title || "the page",
+    true // truncateOnly: the link label must stay readable.
+  ).replace(/[[\]]/g, "");
+  return {
+    message: `The page was created. Link the user to it as [${title}](§url_token: ${token}§).`,
+    aiTab: { slug: stored.slug },
+  };
 }
 
 // No securityProperties / trust flags: skill prompts are Remote Settings
@@ -1448,7 +1599,7 @@ function countOpenAIWindowTabs() {
     }
     for (const tab of win.gBrowser.tabs) {
       const url = tab.linkedBrowser?.currentURI?.spec;
-      if (isAllowedURL(url) && !isNewPageUrl(url)) {
+      if (isAllowedURLProtocol(url) && !isNewPageUrl(url)) {
         count += 1;
       }
     }
@@ -1550,7 +1701,7 @@ export async function manageTabs(
   }
 
   const validUrls = new Set(
-    url_tokens.filter(u => typeof u === "string" && isAllowedURL(u))
+    url_tokens.filter(u => typeof u === "string" && isAllowedURLProtocol(u))
   );
 
   if (!validUrls.size) {

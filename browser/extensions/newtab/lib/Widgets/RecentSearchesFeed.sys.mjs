@@ -186,7 +186,7 @@ export class RecentSearchesFeed {
    * removed one of the listed searches, and a default engine change, which decides
    * both which searches are listed and what is trending.
    *
-   * @param {nsISupports} subject Unused; the subject differs per topic.
+   * @param {nsISupports} _subject Unused; the subject differs per topic.
    * @param {string} topic Either `satchel-storage-changed` or
    *   `SearchUtils.TOPIC_ENGINE_MODIFIED`.
    * @param {string} data What changed: one of the form history operations for

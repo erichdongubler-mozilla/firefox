@@ -254,34 +254,55 @@ add_task(async function testSyncedEnginesEmptyState() {
     ],
   });
 
-  await runSyncPaneTest(
+  const testCases = [
     {
-      status: UIState.STATUS_SIGNED_IN,
-      email: "foo@bar.com",
-      syncEnabled: true,
+      isPerDeviceSyncEnabled: false,
+      dataL10nId: "sync-syncing-across-devices-empty-state2",
+      assertMessage: "Empty state text is displayed for legacy sync",
     },
-    async doc => {
-      let syncSettingGroup = doc.querySelector('setting-group[groupid="sync"]');
-      ok(
-        !BrowserTestUtils.isHidden(syncSettingGroup),
-        "Sync setting group is displayed."
-      );
+    {
+      isPerDeviceSyncEnabled: true,
+      dataL10nId: "sync-syncing-across-devices-empty-state3",
+      assertMessage: "Empty state text is displayed for per-device sync",
+    },
+  ];
 
-      let syncConfigured = syncSettingGroup.querySelector("#syncConfigured");
-      ok(
-        !BrowserTestUtils.isHidden(syncConfigured),
-        "Syncing is on section is displayed when user is signed in and sync is enabled."
-      );
+  for (const testCase of testCases) {
+    await runSyncPaneTest(
+      {
+        status: UIState.STATUS_SIGNED_IN,
+        email: "foo@bar.com",
+        syncEnabled: true,
+      },
+      async doc => {
+        let syncSettingGroup = doc.querySelector(
+          'setting-group[groupid="sync"]'
+        );
+        ok(
+          !BrowserTestUtils.isHidden(syncSettingGroup),
+          "Sync setting group is displayed."
+        );
 
-      let syncEnginesList = syncConfigured.querySelector("sync-engines-list");
-      ok(syncEnginesList, "sync-engines-list component is displayed.");
+        let syncConfigured = syncSettingGroup.querySelector("#syncConfigured");
+        ok(
+          !BrowserTestUtils.isHidden(syncConfigured),
+          "Syncing is on section is displayed when user is signed in and sync is enabled."
+        );
 
-      let engineListEmptyState =
-        syncEnginesList.shadowRoot.querySelector(".empty-state");
-      ok(
-        engineListEmptyState,
-        "Empty state message is displayed when syncing is on but non of the engines is synced."
-      );
-    }
-  );
+        let syncEnginesList = syncConfigured.querySelector("sync-engines-list");
+        ok(syncEnginesList, "sync-engines-list component is displayed.");
+
+        let engineListEmptyState =
+          syncEnginesList.shadowRoot.querySelector(".empty-state");
+        ok(
+          engineListEmptyState,
+          "Empty state message is displayed when syncing is on but non of the engines is synced."
+        );
+
+        let text = engineListEmptyState.getAttribute("data-l10n-id");
+        Assert.equal(text, testCase.dataL10nId, testCase.assertMessage);
+      },
+      testCase.isPerDeviceSyncEnabled
+    );
+  }
 });

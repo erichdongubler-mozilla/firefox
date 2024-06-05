@@ -27,9 +27,9 @@ from mozboot.bootstrap import MOZCONFIG_SUGGESTION_TEMPLATE
 # We need the NDK version in multiple different places, and it's inconvenient
 # to pass down the NDK version to all relevant places, so we have this global
 # variable.
-NDK_VERSION = "r29"
-CMDLINE_TOOLS_VERSION_STRING = "21.0"
-CMDLINE_TOOLS_VERSION = "15641748"
+NDK_VERSION = "r30"
+CMDLINE_TOOLS_VERSION_STRING = "23.0"
+CMDLINE_TOOLS_VERSION = "16111833"
 
 BUNDLETOOL_VERSION = "1.18.3"
 BUNDLETOOL_URL = f"https://github.com/google/bundletool/releases/download/{BUNDLETOOL_VERSION}/bundletool-all-{BUNDLETOOL_VERSION}.jar"
@@ -334,9 +334,9 @@ def get_os_name_for_android():
     return os_name
 
 
-def get_os_tag_for_android(os_name: str):
+def get_os_tag_for_android(os_name: str, os_arch: str):
     os_tag_map = {
-        "macosx": "mac",
+        "macosx": f"mac_{os_arch}",
         "windows": "win",
     }
     return os_tag_map.get(os_name, os_name)
@@ -367,7 +367,7 @@ def ensure_android(
             "Google does not distribute emulator binary for ARM64 Windows. "
             "See also https://issuetracker.google.com/issues/264614669."
         )
-    os_tag = get_os_tag_for_android(os_name)
+    os_tag = get_os_tag_for_android(os_name, os_arch)
 
     # Check for Android NDK only if we are not in artifact mode.
     if not artifact_mode:
@@ -833,8 +833,8 @@ def main():
         parser.error("--os-name and --os-arch are only supported with --jdk-only.")
 
     os_name = options.os_name or get_os_name_for_android()
-    os_tag = get_os_tag_for_android(os_name)
     os_arch = options.os_arch or platform.machine()
+    os_tag = get_os_tag_for_android(os_name, os_arch)
 
     avd_manifest_path = (
         Path(options.avd_manifest_path) if options.avd_manifest_path else None

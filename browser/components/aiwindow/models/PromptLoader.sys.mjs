@@ -278,6 +278,37 @@ export async function getSkillPrompt(name, model) {
 }
 
 /**
+ * Serialize mentioned URLs: List expanded tabs from a tab group under their
+ * respective group.
+ *
+ * @param {object[]} mentionsWithUrl - Mentions with an URL
+ * @returns {string}
+ */
+function renderMentionedUrls(mentionsWithUrl) {
+  // url is intentionally not wrapped in sanitizeUntrustedContent — it's a
+  // structured value the model uses to navigate/fetch, and the spotlighting
+  // tokens would corrupt it. The user-controlled label is sanitized.
+  let lastGroupId = null;
+  return mentionsWithUrl
+    .map(({ url, label, groupId, groupLabel }) => {
+      const lines = [];
+      if (groupId && groupId !== lastGroupId) {
+        const group = sanitizeUntrustedContent(groupLabel);
+        lines.push(group ? `- Tab group: ${group}` : "- Tab group");
+      }
+      lastGroupId = groupId ?? null;
+      // Members are indented under the group
+      const indent = groupId ? "  " : "";
+      lines.push(
+        `${indent}- URL: ${url}`,
+        `${indent}  Title: ${sanitizeUntrustedContent(label)}`
+      );
+      return lines.join("\n");
+    })
+    .join("\n");
+}
+
+/**
  * Build the per-turn browser-context prompt (active tab + any @mentions).
  * Returns null when nothing is available.
  *
@@ -325,19 +356,15 @@ export async function buildBrowserContextPrompt(
   delete browserContextMapping.hasTabInfo;
 
   if (contextMentions?.length) {
-    securityProperties.setPrivateData();
-    // m.url is intentionally not wrapped in sanitizeUntrustedContent — it's a
-    // structured value the model uses to navigate/fetch, and the spotlighting
-    // tokens would corrupt it. The user-controlled label is sanitized.
-    const contextUrls = contextMentions
-      .map(
-        m => `- URL: ${m.url}\n  Title: ${sanitizeUntrustedContent(m.label)}`
-      )
-      .join("\n");
-    browserContextMapping.contextUrls = contextUrls;
-    const record = findFragment("mentions");
-    if (record?.prompts) {
-      fragments.push(record.prompts);
+    // Tab group mentions do not have a URL
+    const mentionsWithUrl = contextMentions.filter(mention => mention.url);
+    if (mentionsWithUrl.length) {
+      securityProperties.setPrivateData();
+      browserContextMapping.contextUrls = renderMentionedUrls(mentionsWithUrl);
+      const record = findFragment("mentions");
+      if (record?.prompts) {
+        fragments.push(record.prompts);
+      }
     }
   }
 

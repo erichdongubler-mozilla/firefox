@@ -218,7 +218,7 @@ inline auto TiedFields<mozilla::wr::InternerSubReport>(
 template <>
 inline auto TiedFields<mozilla::wr::InterningMemoryReport>(
     mozilla::wr::InterningMemoryReport& a) {
-  return std::tie(a.interners, a.data_stores);
+  return std::tie(a.interners, a.data_stores, a.dl_stores);
 }
 
 template <>

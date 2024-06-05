@@ -27,9 +27,14 @@ function notifyMatch(monitorId) {
   Services.obs.notifyObservers(null, MONITOR_CONDITION_MET_TOPIC, monitorId);
 }
 
-const { MONITOR_CONDITION_MET_TOPIC } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs"
-);
+function notifyRunFailed(monitorId) {
+  Services.obs.notifyObservers(null, MONITOR_RUN_FAILED_TOPIC, monitorId);
+}
+
+const { MONITOR_CONDITION_MET_TOPIC, MONITOR_RUN_FAILED_TOPIC } =
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs"
+  );
 
 const { MonitorAttention } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/MonitorAttention.sys.mjs"
@@ -42,6 +47,7 @@ add_setup(async function setup() {
       ["browser.urlbar.suggest.searches", false],
       ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
       ["browser.smartwindow.firstrun.hasCompleted", true],
+      ["browser.smartwindow.enabled", true],
       ["browser.smartwindow.agent.enabled", true],
       ["browser.smartwindow.agent.toolbar.enabled", true],
       ["browser.smartwindow.agent.supportedRegions", TEST_REGION],
@@ -179,6 +185,47 @@ add_task(async function test_monitor_button_attention_dot() {
   } finally {
     Services.prefs.clearUserPref(PREF_MONITOR_ATTENTION);
     await BrowserTestUtils.closeWindow(otherWin);
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+/**
+ * A monitor that could not check is the other thing the dot reports, and the
+ * panel clears it the same way. The panel is not told about it though: a
+ * failed check says so on its own row rather than under "New matches".
+ */
+add_task(async function test_monitor_button_attention_dot_on_run_failure() {
+  let win;
+  try {
+    win = await openAIWindow();
+
+    notifyRunFailed("monitor-1");
+    Assert.ok(
+      getMonitorButton(win).hasAttribute("monitor-attention"),
+      "A failed check puts the dot on the button"
+    );
+    Assert.deepEqual(
+      AIWindow.monitorAttentionIds,
+      [],
+      "The failed monitor is not offered to the panel as a new match"
+    );
+
+    const shown = BrowserTestUtils.waitForEvent(
+      win.document.getElementById("mainPopupSet"),
+      "popupshown"
+    );
+    EventUtils.synthesizeMouseAtCenter(getMonitorButton(win), {}, win);
+    const panel = (await shown).target;
+    Assert.ok(
+      !getMonitorButton(win).hasAttribute("monitor-attention"),
+      "Opening the panel clears the dot a failed check put there"
+    );
+
+    const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+    panel.hidePopup();
+    await hidden;
+  } finally {
+    Services.prefs.clearUserPref(PREF_MONITOR_ATTENTION);
     await BrowserTestUtils.closeWindow(win);
   }
 });
@@ -328,8 +375,8 @@ add_task(async function test_monitor_announcement_dot() {
       "The dot is attributed to the announcement"
     );
     Assert.ok(
-      !MonitorAttention.hasMatches,
-      "No monitor matched, so the announcement is the only reason"
+      !MonitorAttention.hasAttention,
+      "No monitor matched or failed, so the announcement is the only reason"
     );
     Assert.deepEqual(
       AIWindow.monitorAttentionIds,

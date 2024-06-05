@@ -8,9 +8,19 @@
 
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
-  <string name="mozac_browser_errorpages_page_refresh">फिर कोशिश करें</string>
+  <string name="mozac_browser_errorpages_page_refresh">फिर से कोशिश करें</string>
   <!-- The button on an error page that checks whether an archived copy of the unreachable page exists. -->
   <string name="mozac_browser_errorpages_archive_check_button">आर्काइव किया गया वर्ज़न देखें</string>
+  <!--
+    The text shown underneath the archive button, explaining what the button does. The %1$s will be replaced by
+    the app name and %2$s will be replaced by the name of the archive service as a link
+  -->
+  <string name="mozac_browser_errorpages_archive_description">%1$s इस पेज का पुराना वर्ज़न Internet Archive के %2$s से ढूंढ सकता है।</string>
+  <!--
+    The name of the Internet Archive service, shown as a link at the end of
+    mozac_browser_errorpages_archive_description.
+  -->
+  <string name="mozac_browser_errorpages_archive_wayback_machine">Wayback Machine</string>
   <!-- The label shown on the archive button while the archived copy is being looked up. -->
   <string name="mozac_browser_errorpages_archive_checking">आर्काइव चेक किया जा रहा है</string>
   <!-- The message shown when no archived copy of the unreachable page could be found. -->
@@ -20,7 +30,7 @@
   <!-- The message shown when the archive service could not be reached to look up an archived copy. -->
   <string name="mozac_browser_errorpages_archive_unreachable">आर्काइव सेवा से कनेक्ट नहीं हो पाए।</string>
   <!-- A link, shown after the archive service could not be reached, that retries the lookup. -->
-  <string name="mozac_browser_errorpages_archive_retry">फिर कोशिश करें।</string>
+  <string name="mozac_browser_errorpages_archive_retry">फिर से कोशिश करें।</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">अनुरोध पूरा नहीं हो सका</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->

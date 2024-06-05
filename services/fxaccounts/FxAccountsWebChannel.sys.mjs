@@ -80,7 +80,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "pairingVersion",
   "identity.fxaccounts.pairing.version",
-  1
+  2
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,

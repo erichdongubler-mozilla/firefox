@@ -2,73 +2,32 @@
   "background": {
     "color": {
       "@base": {
-        "value": {
-          "default": "{button.background.color.@base}",
-          "nova": {
-            "comment": "HCM colors for toggle need to be updated in Figma",
-            "value": {
-              "forcedColors": "SelectedItemText"
-            }
-          }
-        }
+        "value": "{button.background.color.@base}"
       },
       "hover": {
-        "value": {
-          "default": "{button.background.color.hover}",
-          "nova": {
-            "comment": "HCM colors for toggle need to be updated in Figma",
-            "value": {
-              "forcedColors": "SelectedItemText"
-            }
-          }
-        }
+        "value": "{button.background.color.hover}"
       },
       "active": {
+        "value": "{button.background.color.active}"
+      },
+      "disabled": {
         "value": {
-          "default": "{button.background.color.active}",
-          "nova": {
-            "comment": "HCM colors for toggle need to be updated in Figma",
-            "value": {
-              "forcedColors": "SelectedItemText"
-            }
-          }
+          "forcedColors": "{button.background.color.disabled}"
         }
       },
       "pressed": {
         "@base": {
-          "value": {
-            "default": "{color.accent.primary.@base}",
-            "nova": {
-              "comment": "HCM colors for toggle need to be updated in Figma",
-              "value": {
-                "default": "{button.background.color.primary.@base}",
-                "forcedColors": "ButtonText"
-              }
-            }
-          }
+          "value": "{color.accent.primary.@base}"
         },
         "hover": {
-          "value": {
-            "default": "{color.accent.primary.hover}",
-            "nova": {
-              "comment": "HCM colors for toggle need to be updated in Figma",
-              "value": {
-                "default": "{button.background.color.primary.hover}",
-                "forcedColors": "SelectedItem"
-              }
-            }
-          }
+          "value": "{color.accent.primary.hover}"
         },
         "active": {
+          "value": "{color.accent.primary.active}"
+        },
+        "disabled": {
           "value": {
-            "default": "{color.accent.primary.active}",
-            "nova": {
-              "comment": "HCM colors for toggle need to be updated in Figma",
-              "value": {
-                "default": "{button.background.color.primary.active}",
-                "forcedColors": "SelectedItem"
-              }
-            }
+            "forcedColors": "{button.background.color.primary.disabled}"
           }
         }
       }
@@ -81,40 +40,24 @@
           "light": "{color.gray.70}",
           "dark": "{border.color.interactive.@base}",
           "prefersContrast": "{border.color.interactive.@base}",
-          "forcedColors": "{border.color.interactive.@base}",
-          "nova": {
-            "comment": "HCM colors for toggle need to be updated in Figma",
-            "value": {
-              "default": "{border.color.interactive.@base}",
-              "forcedColors": "ButtonText"
-            }
-          }
+          "forcedColors": "{border.color.interactive.@base}"
         }
       },
       "hover": {
         "value": {
           "default": "{toggle.border.color.@base}",
-          "forcedColors": "{border.color.interactive.hover}",
-          "nova": {
-            "comment": "HCM colors for toggle need to be updated in Figma",
-            "value": {
-              "default": "{border.color.interactive.hover}",
-              "forcedColors": "SelectedItem"
-            }
-          }
+          "forcedColors": "{border.color.interactive.hover}"
         }
       },
       "active": {
         "value": {
           "default": "{toggle.border.color.@base}",
-          "forcedColors": "{border.color.interactive.active}",
-          "nova": {
-            "comment": "HCM colors for toggle need to be updated in Figma",
-            "value": {
-              "default": "{border.color.interactive.active}",
-              "forcedColors": "ButtonText"
-            }
-          }
+          "forcedColors": "{border.color.interactive.active}"
+        }
+      },
+      "disabled": {
+        "value": {
+          "forcedColors": "{border.color.interactive.disabled}"
         }
       }
     },
@@ -137,51 +80,36 @@
         "@base": {
           "value": {
             "default": "{toggle.border.color.@base}",
-            "forcedColors": "{color.accent.primary.@base}",
-            "nova": {
-              "comment": "HCM colors for toggle need to be updated in Figma",
-              "value": {
-                "forcedColors": "ButtonText"
-              }
-            }
+            "forcedColors": "{color.accent.primary.@base}"
           }
         },
         "hover": {
           "value": {
             "default": "{toggle.dot.background.color.@base}",
-            "forcedColors": "{color.accent.primary.hover}",
-            "nova": {
-              "comment": "HCM colors for toggle need to be updated in Figma",
-              "value": {
-                "default": "{toggle.border.color.hover}",
-                "forcedColors": "SelectedItem"
-              }
-            }
+            "forcedColors": "{color.accent.primary.hover}"
           }
         },
         "active": {
           "value": {
             "default": "{toggle.dot.background.color.@base}",
-            "forcedColors": "{color.accent.primary.active}",
-            "nova": {
-              "comment": "HCM colors for toggle need to be updated in Figma",
-              "value": {
-                "default": "{toggle.border.color.active}",
-                "forcedColors": "SelectedItem"
-              }
-            }
+            "forcedColors": "{color.accent.primary.active}"
+          }
+        },
+        "disabled": {
+          "value": {
+            "forcedColors": "{button.text.color.disabled}"
           }
         },
         "on-pressed": {
-          "value": {
-            "default": "{background.color.canvas}",
-            "forcedColors": "{button.background.color.@base}",
-            "nova": {
-              "comment": "HCM colors for toggle need to be updated in Figma",
-              "value": {
-                "default": "{background.color.box.@base}",
-                "forcedColors": "ButtonText"
-              }
+          "@base": {
+            "value": {
+              "default": "{background.color.canvas}",
+              "forcedColors": "{button.background.color.@base}"
+            }
+          },
+          "disabled": {
+            "value": {
+              "forcedColors": "{button.text.color.primary.disabled}"
             }
           }
         }

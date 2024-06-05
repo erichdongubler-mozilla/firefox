@@ -8,6 +8,7 @@
 #include "VRManagerChild.h"
 #include "gfxVR.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebXRBinding.h"
 #include "nsContentPermissionHelper.h"
 

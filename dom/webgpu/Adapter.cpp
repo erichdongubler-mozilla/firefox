@@ -223,12 +223,10 @@ struct FeatureImplementationStatus {
         return implemented(WGPUWEBGPU_FEATURE_FLOAT32_FILTERABLE);
 
       case dom::GPUFeatureName::Float32_blendable:
-        return unimplemented(
-            "https://bugzilla.mozilla.org/show_bug.cgi?id=1931630");
+        return implemented(WGPUWEBGPU_FEATURE_FLOAT32_BLENDABLE);
 
       case dom::GPUFeatureName::Clip_distances:
-        return unimplemented(
-            "https://bugzilla.mozilla.org/show_bug.cgi?id=1931629");
+        return implemented(WGPUWEBGPU_FEATURE_CLIP_DISTANCES);
 
       case dom::GPUFeatureName::Dual_source_blending:
         return implemented(WGPUWEBGPU_FEATURE_DUAL_SOURCE_BLENDING);
@@ -238,10 +236,25 @@ struct FeatureImplementationStatus {
         return unimplemented(
             "https://bugzilla.mozilla.org/show_bug.cgi?id=1955417");
 
+      case dom::GPUFeatureName::Texture_formats_tier1:
+        // return implemented(WGPUWEBGPU_FEATURE_TEXTURE_FORMATS_TIER1);
+        return unimplemented(
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=1982451");
+
+      case dom::GPUFeatureName::Texture_formats_tier2:
+        // return implemented(WGPUWEBGPU_FEATURE_TEXTURE_FORMATS_TIER2);
+        return unimplemented(
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=1982451");
+
       case dom::GPUFeatureName::Primitive_index:
         // return implemented(WGPUWEBGPU_FEATURE_PRIMITIVE_INDEX);
         return unimplemented(
             "https://bugzilla.mozilla.org/show_bug.cgi?id=1989116");
+
+      case dom::GPUFeatureName::Texture_component_swizzle:
+        // return implemented(WGPUWEBGPU_FEATURE_TEXTURE_COMPONENT_SWIZZLE);
+        return unimplemented(
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=2005065");
 
       case dom::GPUFeatureName::Core_features_and_limits:
         // NOTE: `0` means that no bits are set in calling code, but this is on
@@ -603,6 +616,10 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
     // > devices created from such adapters.
     features->Add(dom::GPUFeatureName::Core_features_and_limits, aRv);
 
+    // Only a fallback for `WebGPUChild::ClearActorState`, which has no
+    // response to read the created device's limits from. Otherwise
+    // `wgpu_child_resolve_request_device_promise` builds them from the
+    // response, since wgpu-core may adjust what we ask for here.
     RefPtr<SupportedLimits> limits = new SupportedLimits(this, deviceLimits);
 
     ffi::WGPUFfiDeviceDescriptor ffiDesc = {};

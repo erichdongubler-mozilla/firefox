@@ -9,7 +9,7 @@
  * its own copy of the module).
  */
 
-import * as UrlbarContentUtils from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
+import { UrlbarContentUtils } from "chrome://browser/content/urlbar/UrlbarContentUtils.mjs";
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
 
 /**
@@ -29,7 +29,6 @@ import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs"
  *   The telemetry label for recording searches in this mode.
  * @property {string} uiLabel
  *   The L10n ID to use for the UI label.
- *   Has a value and an accesskey attribute.
  */
 
 /**
@@ -355,6 +354,10 @@ export const UrlbarShared = {
     DEFAULT: "chrome://global/skin/icons/defaultFavicon.svg",
   },
 
+  // Size in `px` of icons in top-pick rows in the view. Should be kept in sync
+  // with the `--urlbarview-top-pick-icon-size` CSS variable.
+  TOP_PICK_ICON_SIZE: 58,
+
   // The number of results by which Page Up/Down move the selection.
   PAGE_UP_DOWN_DELTA: 5,
 
@@ -436,7 +439,7 @@ export const UrlbarShared = {
         icon: "chrome://browser/skin/bookmark.svg",
         pref: "shortcuts.bookmarks",
         telemetryLabel: "bookmarks",
-        uiLabel: "urlbar-searchmode-bookmarks3",
+        uiLabel: "urlbar-searchmode-bookmarks4",
       },
       {
         source: this.RESULT_SOURCE.TABS,
@@ -444,7 +447,7 @@ export const UrlbarShared = {
         icon: "chrome://browser/skin/open-tabs.svg",
         pref: "shortcuts.tabs",
         telemetryLabel: "tabs",
-        uiLabel: "urlbar-searchmode-tabs3",
+        uiLabel: "urlbar-searchmode-tabs4",
       },
       {
         source: this.RESULT_SOURCE.HISTORY,
@@ -452,7 +455,7 @@ export const UrlbarShared = {
         icon: "chrome://browser/skin/history.svg",
         pref: "shortcuts.history",
         telemetryLabel: "history",
-        uiLabel: "urlbar-searchmode-history3",
+        uiLabel: "urlbar-searchmode-history4",
       },
       {
         source: this.RESULT_SOURCE.ACTIONS,
@@ -460,7 +463,7 @@ export const UrlbarShared = {
         icon: "chrome://browser/skin/lightning-bolt.svg",
         pref: "shortcuts.actions",
         telemetryLabel: "actions",
-        uiLabel: "urlbar-searchmode-actions3",
+        uiLabel: "urlbar-searchmode-actions4",
       },
     ]);
   },
@@ -712,6 +715,24 @@ export const UrlbarShared = {
    */
   navigationEnabled(sapName) {
     return sapName != "searchbar";
+  },
+
+  /**
+   * Whether a string that is a URL may be navigated to in an engine search
+   * mode, as it would be outside of search mode, rather than searched for. This
+   * holds where the unified search button is always available.
+   *
+   * @param {string} sapName
+   *   The SAP name to check.
+   * @returns {boolean}
+   *   Whether navigation is enabled in an engine search mode.
+   */
+  navigationInSearchModeEnabled(sapName) {
+    return (
+      this.navigationEnabled(sapName) &&
+      (this.isSearchbarSAP(sapName) ||
+        UrlbarPrefs.get("unifiedSearchButton.always"))
+    );
   },
 
   /**
@@ -1815,6 +1836,21 @@ export const UrlbarShared = {
       this.__firstDayOfWeek ??= 7;
     }
     return this.__firstDayOfWeek;
+  },
+
+  /**
+   * Escapes a string for safe interpolation into an HTML document.
+   *
+   * @param {string} s
+   * @returns {string}
+   */
+  escapeHtmlEntities(s) {
+    return (s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   },
 };
 

@@ -13,7 +13,125 @@ const { SmartFormFillTelemetry } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillTelemetry.sys.mjs"
 );
 
+const { MAX_SELECTED_TABS } = ChromeUtils.importESModule(
+  "chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs"
+);
+
 const EXPECTED_FORMS = 2;
+const SOURCE_TAB_URL = "https://example.net/";
+
+/**
+ * Opens tabs the relevant-tab request can be answered with, leaving the form
+ * page selected. Foreground tabs because addTab races its own load.
+ *
+ * @param {Window} win
+ * @param {MozBrowser} browser The form page's browser.
+ * @param {number} count How many tabs to open.
+ * @returns {Promise<Array<MozTabbrowserTab>>} The opened tabs.
+ */
+async function openSourceTabs(win, browser, count) {
+  const formTab = win.gBrowser.getTabForBrowser(browser);
+  const tabs = [];
+
+  for (let index = 0; index < count; index++) {
+    tabs.push(
+      await BrowserTestUtils.openNewForegroundTab(
+        win.gBrowser,
+        `${SOURCE_TAB_URL}?source=${index}`
+      )
+    );
+  }
+
+  if (win.gBrowser.selectedTab !== formTab) {
+    await BrowserTestUtils.switchTab(win.gBrowser, formTab);
+  }
+
+  return tabs;
+}
+
+/**
+ * Runs one round answering the relevant-tab request with the given relevance
+ * per offered tab.
+ *
+ * @param {Array<string>} relevanceByIndex Relevance to answer per offered tab.
+ * @returns {Promise<{offered: Array<object>, usedUrls: Array<string>,
+ *   extra: object}>} The tabs the request offered, the urls that became
+ *   context, and the recorded response event's extras.
+ */
+async function runRoundAnsweringRelevance(relevanceByIndex) {
+  let offered = [];
+  let usedUrls = [];
+  let extra;
+
+  await withFormPage(
+    {
+      findRelevantTabs: async (request, { onDispatch }) => {
+        onDispatch?.(TEST_MODEL_INFO);
+
+        offered = request.tabs.slice(0, relevanceByIndex.length);
+
+        return {
+          selectedTabs: offered.map((tab, index) => ({
+            id: tab.id,
+            relevance: relevanceByIndex[index],
+            reason: "Test source",
+          })),
+        };
+      },
+
+      generateFormValues: async (request, { onDispatch } = {}) => {
+        usedUrls = request.context.relevantTabs.map(({ url }) => url);
+        return generateEveryValue(request, { onDispatch });
+      },
+    },
+    async ({ win, browser, actor }) => {
+      const sourceTabs = await openSourceTabs(
+        win,
+        browser,
+        relevanceByIndex.length
+      );
+
+      try {
+        await runRoundOnForm(browser, actor);
+        [extra] = await waitForEvents("formRelevantTabsResponse", 1);
+      } finally {
+        for (const tab of sourceTabs) {
+          BrowserTestUtils.removeTab(tab);
+        }
+      }
+    }
+  );
+
+  return { offered, usedUrls, extra };
+}
+
+/**
+ * @param {Array<object>} offered Tabs the request offered.
+ * @param {Array<string>} relevanceByIndex Relevance answered per offered tab.
+ * @returns {Array<string>} Urls of the tabs that should become context.
+ */
+function expectedContextUrls(offered, relevanceByIndex) {
+  return offered
+    .filter((_, index) => relevanceByIndex[index] !== "low")
+    .map(({ url }) => url)
+    .slice(0, MAX_SELECTED_TABS);
+}
+
+/**
+ * Adds a field to the first form, which the document's observer reports as a
+ * form update.
+ *
+ * @param {MozBrowser} browser
+ * @returns {Promise<void>}
+ */
+function addFieldToForm(browser) {
+  return SpecialPowers.spawn(browser, [], () => {
+    const input = content.document.createElement("input");
+    input.type = "text";
+    input.name = "city";
+    content.document.getElementById("contact").append(input);
+  });
+}
 
 add_task(async function test_one_classification_flow_per_form() {
   await withFormPage({}, async ({ win, browser, actor }) => {
@@ -312,5 +430,40 @@ add_task(async function test_tabs_never_offered_are_selected_but_not_used() {
         "Expected relevance counts over all 3 selected tabs, and tabs_used to exclude unoffered ones"
       );
     }
+  );
+});
+
+add_task(async function test_tabs_below_the_relevance_threshold_are_not_used() {
+  // The sub-threshold tab is ranked ahead of more qualifying tabs than the cap
+  // allows, so dropping it only after the cap was applied would leave a slot
+  // unused.
+  const relevanceByIndex = [
+    "low",
+    "high",
+    "medium",
+    ...Array(MAX_SELECTED_TABS - 1).fill("high"),
+  ];
+  const { offered, usedUrls, extra } =
+    await runRoundAnsweringRelevance(relevanceByIndex);
+
+  Assert.equal(
+    offered.length,
+    relevanceByIndex.length,
+    "The request offered more tabs than the selection cap allows"
+  );
+  Assert.equal(
+    extra.tabs_selected,
+    String(relevanceByIndex.length),
+    "tabs_selected is what the model returned"
+  );
+  Assert.equal(
+    extra.tabs_used,
+    String(MAX_SELECTED_TABS),
+    "The tab below the threshold takes none of the selection slots"
+  );
+  Assert.deepEqual(
+    usedUrls,
+    expectedContextUrls(offered, relevanceByIndex),
+    "Only tabs at or above the threshold became context"
   );
 });

@@ -740,10 +740,11 @@ export class DiscoveryStreamFeed {
   /**
    * Returns true if data in the cache for a particular key has expired or is missing.
    *
-   * @param {object} cachedData data returned from cache.get()
-   * @param {string} key a cache key
-   * @param {string?} url for "feed" only, the URL of the feed.
-   * @param {boolean} is this check done at initial browser load
+   * @param {object} options
+   * @param {object} options.cachedData data returned from cache.get()
+   * @param {string} options.key a cache key
+   * @param {string?} options.url for "feed" only, the URL of the feed.
+   * @param {boolean} options.isStartup is this check done at initial browser load
    */
   isExpired({ cachedData, key, url, isStartup }) {
     const { spocs, feeds } = cachedData;

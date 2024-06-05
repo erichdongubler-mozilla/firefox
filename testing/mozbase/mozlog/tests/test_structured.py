@@ -709,6 +709,41 @@ class TestStructuredLog(BaseStructuredTest):
         with self.assertRaises(structuredlog.LoggerShutdownError):
             log2.info("line 3")
 
+    def test_assertion_failure(self):
+        stack = [{"function": "f", "file": "a.cpp", "line": 1}]
+        self.logger.assertion_failure(
+            "NS_ASSERTION",
+            "boom: 'expr'",
+            file="a.cpp",
+            lineno=1,
+            pid=42,
+            process_type="Parent",
+            thread="Main Thread",
+            stack=stack,
+            test="test1",
+        )
+        self.assert_log_equals({
+            "action": "assertion_failure",
+            "kind": "NS_ASSERTION",
+            "message": "boom: 'expr'",
+            "file": "a.cpp",
+            "lineno": 1,
+            "pid": 42,
+            "process_type": "Parent",
+            "thread": "Main Thread",
+            "stack": stack,
+            "test": "test1",
+        })
+
+    def test_assertion_failure_minimal(self):
+        self.logger.assertion_failure("MOZ_CRASH", "", fatal=True)
+        self.assert_log_equals({
+            "action": "assertion_failure",
+            "kind": "MOZ_CRASH",
+            "message": "",
+            "fatal": True,
+        })
+
 
 class TestTypeConversions(BaseStructuredTest):
     def test_raw(self):

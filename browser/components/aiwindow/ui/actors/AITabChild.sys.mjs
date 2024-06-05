@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
- * Child actor for about:aitab. Forwards requests from the content document to
- * the parent process under the same name content dispatched them with, so a
+ * Child actor for about:smartpage. Forwards requests from the content document
+ * to the parent process under the same name content dispatched them with, so a
  * message can be traced across the boundary without a translation table.
  */
 export class AITabChild extends JSWindowActorChild {

@@ -832,6 +832,12 @@ int32_t LibaomAv1Encoder::Encode(
     scaled_image = buffer->Scale(
         encoder_settings_.spatialLayers[last_active_layer_].width,
         encoder_settings_.spatialLayers[last_active_layer_].height);
+    if (!scaled_image) {
+      RTC_LOG(LS_ERROR) << "Failed to scale "
+                        << VideoFrameBufferTypeToString(buffer->type())
+                        << " image. Can't encode frame.";
+      return WEBRTC_VIDEO_CODEC_ENCODER_FAILURE;
+    }
   }
 
   scoped_refptr<VideoFrameBuffer> mapped_buffer;

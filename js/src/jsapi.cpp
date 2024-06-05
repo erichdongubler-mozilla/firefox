@@ -28,6 +28,7 @@
 #include "builtin/Eval.h"
 #include "builtin/JSON.h"
 #include "builtin/Math.h"
+#include "builtin/ModuleObject.h"
 #include "builtin/Promise.h"
 #include "builtin/Symbol.h"
 #include "frontend/FrontendContext.h"  // AutoReportFrontendContext
@@ -836,12 +837,18 @@ struct JSStdName {
 
 static const JSStdName* LookupStdName(const JSAtomState& names, JSAtom* name,
                                       const JSStdName* table) {
+  // Every name in the table is a permanent atom.
+  if (!name->isPermanent()) {
+    return nullptr;
+  }
+
   for (unsigned i = 0; !table[i].isSentinel(); i++) {
     if (table[i].isDummy()) {
       continue;
     }
     JSAtom* atom = AtomStateOffsetToName(names, table[i].atomOffset);
     MOZ_ASSERT(atom);
+    MOZ_ASSERT(atom->isPermanent());
     if (name == atom) {
       return &table[i];
     }
@@ -2514,6 +2521,8 @@ void JS::TransitiveCompileOptions::copyPODTransitiveOptions(
   sourceIsLazy = rhs.sourceIsLazy;
   allowHTMLComments = rhs.allowHTMLComments;
   nonSyntacticScope = rhs.nonSyntacticScope;
+  allowRedeclaringExistingLexicalBinding =
+      rhs.allowRedeclaringExistingLexicalBinding;
 
   topLevelAwait = rhs.topLevelAwait;
 
@@ -2791,6 +2800,11 @@ JS_PUBLIC_API JSString* JS_DecompileFunction(JSContext* cx,
 
 JS_PUBLIC_API void JS::SetScriptPrivate(JSScript* script,
                                         const JS::Value& value) {
+  // The referrer passed to the HostLoadImportedModule hook is either a module
+  // record or a classic script's private value, so a module object must not be
+  // used as a script private. See JS::GetReferrerPrivate.
+  MOZ_ASSERT_IF(value.isObject(), !value.toObject().is<js::ModuleObject>());
+
   JSRuntime* rt = script->zone()->runtimeFromMainThread();
   script->sourceObject()->setPrivate(rt, value);
 }

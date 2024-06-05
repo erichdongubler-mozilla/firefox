@@ -253,6 +253,131 @@ TEST_F(APZCPanningTester, DuplicatePanEndEvents_Bug1833950) {
              /*aSimulateMomentum=*/true);
 }
 
+#ifndef MOZ_WIDGET_ANDROID  // Only applies to GenericOverscrollEffect
+// When content preventDefaults a pan gesture block, the block is marked
+// interrupted and the pan-end that follows can no longer be added to it. If the
+// gesture had already scrolled the APZC into overscroll, that pan-end is the
+// only thing left that can start the snap-back, so it still has to reach
+// OnPanEnd. Note that on GTK, where this was reported, the pan-end is derived
+// from a scroll-stop event and therefore carries no displacement.
+//
+// helper_overscroll_stuck_pan_end.html covers the companion case, where an
+// overscroll snap-back animation from an earlier gesture is already running and
+// must not be cancelled. Here no animation is running yet, so nothing else can
+// relieve the overscroll.
+TEST_F(APZCPanningTester, StrayPanEndSnapsBackOverscroll_Bug1931090) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+
+  // Hold the block in the input queue until content has responded, as happens
+  // for a page with a non-passive wheel listener.
+  MakeApzcWaitForMainThread();
+
+  FrameMetrics metrics = apzc->GetFrameMetrics();
+  metrics.SetCompositionBounds(ParentLayerRect(0, 0, 100, 100));
+  metrics.SetScrollableRect(CSSRect(0, 0, 100, 1000));
+  metrics.SetVisualScrollOffset(CSSPoint(0, 0));
+  metrics.SetIsRootContent(true);
+  apzc->SetFrameMetrics(metrics);
+
+  // Send a pan-start with a displacement. No effect yet: it's waiting in the
+  // input queue for a content response.
+  APZEventResult result =
+      PanGesture(PanGestureInput::PANGESTURE_START, apzc,
+                 ScreenIntPoint(50, 50), ScreenPoint(0, -20), mcc->Time());
+  EXPECT_FALSE(apzc->IsOverscrolled());
+
+  // Content lets the first event of the gesture through. (The block needs
+  // both a confirmed target and a content response before the queue will
+  // allow it to be processed).
+  apzc->ConfirmTarget(result.mInputBlockId);
+  apzc->ContentReceivedInputBlock(result.mInputBlockId, false);
+
+  // So this pans upward at the top of the scroll range and the APZC goes into
+  // overscroll, with the fingers still on the touchpad. No snap-back animation
+  // runs yet, since the gesture has not ended.
+  EXPECT_TRUE(apzc->IsOverscrolled());
+  EXPECT_FALSE(apzc->IsOverscrollAnimationRunning());
+
+  // Send a second event in the block, which content now cancels. Every pan
+  // event is dispatched to content as a wheel event and reports its own
+  // response for the same block, and a preventDefault interrupts the block even
+  // after an earlier response allowed it.
+  mcc->AdvanceByMillis(10);
+  PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, ScreenIntPoint(50, 50),
+             ScreenPoint(0, -20), mcc->Time());
+  apzc->ContentReceivedInputBlock(result.mInputBlockId, true);
+  EXPECT_TRUE(apzc->IsOverscrolled());
+
+  // Send a zero-delta pan-end ending the gesture. This is the last chance to
+  // relieve the overscroll.
+  mcc->AdvanceByMillis(10);
+  APZEventResult endResult =
+      PanGesture(PanGestureInput::PANGESTURE_END, apzc, ScreenIntPoint(50, 50),
+                 ScreenPoint(0, 0), mcc->Time(), MODIFIER_NONE,
+                 /*aSimulateMomentum=*/true);
+
+  // Content lets the pan-end event through. Note: use endResult's input block
+  // id because the pan-end event creates a new input block since the previous
+  // block has been interrupted.
+  apzc->ConfirmTarget(endResult.mInputBlockId);
+  apzc->ContentReceivedInputBlock(endResult.mInputBlockId, false);
+
+  // Now the important assertion in the test: the pan-end should start an
+  // overscroll animation that allows overscroll to be relieved.
+  EXPECT_TRUE(apzc->IsOverscrollAnimationRunning());
+  apzc->AdvanceAnimationsUntilEnd();
+  EXPECT_FALSE(apzc->IsOverscrolled());
+}
+#endif
+
+// A zero-delta pan-end that arrives without an active pan gesture block is
+// turned into a synthesized block by InputQueue::ReceivePanGestureInput. Such a
+// block stands for a gesture that has already ended, so it must not cancel a
+// running scroll animation.
+TEST_F(APZCPanningTester, StrayPanEndPreservesSmoothMsdScroll_Bug2033958) {
+  FrameMetrics metrics = apzc->GetFrameMetrics();
+  metrics.SetCompositionBounds(ParentLayerRect(0, 0, 100, 100));
+  metrics.SetScrollableRect(CSSRect(0, 0, 100, 1000));
+  metrics.SetVisualScrollOffset(CSSPoint(0, 200));
+  metrics.SetIsRootContent(true);
+  apzc->SetFrameMetrics(metrics);
+
+  // Request a main-thread driven smooth scroll back to the top, of the kind
+  // scroll snapping uses.
+  ScrollMetadata metadata = apzc->GetScrollMetadata();
+  nsTArray<ScrollPositionUpdate> scrollUpdates;
+  scrollUpdates.AppendElement(ScrollPositionUpdate::NewSmoothScroll(
+      ScrollMode::SmoothMsd, ScrollOrigin::Other,
+      CSSPoint::ToAppUnits(CSSPoint(0, 0)), ScrollTriggeredByScript::Yes,
+      nullptr, ViewportType::Visual));
+  metadata.SetScrollUpdates(scrollUpdates);
+  metadata.GetMetrics().SetScrollGeneration(
+      scrollUpdates.LastElement().GetGeneration());
+  apzc->NotifyMainThreadTransaction(
+      metadata, AsyncPanZoomController::LayersUpdateFlags{
+                    .mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
+
+  apzc->AssertInSmoothMsdScroll();
+
+  // Let the animation get partway to its destination.
+  SampleAnimationOneFrame();
+  float scrollYMidway = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
+  EXPECT_LT(scrollYMidway, 200);
+  EXPECT_GT(scrollYMidway, 0);
+
+  // Send a pan-end with no preceding pan-start
+  mcc->AdvanceByMillis(10);
+  PanGesture(PanGestureInput::PANGESTURE_END, apzc, ScreenIntPoint(50, 50),
+             ScreenPoint(0, 0), mcc->Time(), MODIFIER_NONE,
+             /*aSimulateMomentum=*/true);
+
+  // The animation should have survived, and should still reach its
+  // destination.
+  apzc->AssertInSmoothMsdScroll();
+  apzc->AdvanceAnimationsUntilEnd();
+  EXPECT_EQ(apzc->GetFrameMetrics().GetVisualScrollOffset().y, 0);
+}
+
 class APZCPanningTesterMock : public APZCTreeManagerTester {
  public:
   APZCPanningTesterMock() { CreateMockHitTester(); }
@@ -488,7 +613,7 @@ TEST_F(APZCPanningTesterMock, HoldGesture_SubframeTargeting) {
   rootApzc->GetFrameMetrics().SetIsRootContent(true);
 
   // Mark the subframe as overscroll-behavior:none. This is important to
-  // trigger the codepath in FindFirstScrollable() that exposes the bug.
+  // trigger the codepath in FindScrollTarget() that exposes the bug.
   subframeApzc->GetScrollMetadata().SetOverscrollBehavior(
       OverscrollBehaviorInfo::FromStyleConstants(
           StyleOverscrollBehavior::None, StyleOverscrollBehavior::None));

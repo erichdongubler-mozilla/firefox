@@ -885,7 +885,10 @@ export class RTCPeerConnection {
   }
 
   async _createAnAnswer() {
-    if (this.signalingState != "have-remote-offer") {
+    if (
+      this.signalingState != "have-remote-offer" &&
+      this.signalingState != "have-local-pranswer"
+    ) {
       throw new this._win.DOMException(
         `Cannot create answer in ${this.signalingState}`,
         "InvalidStateError"
@@ -955,12 +958,6 @@ export class RTCPeerConnection {
   }
 
   _setLocalDescription({ type, sdp }) {
-    if (type == "pranswer") {
-      throw new this._win.DOMException(
-        "pranswer not yet implemented",
-        "NotSupportedError"
-      );
-    }
     this._checkClosed();
     return this._chain(async () => {
       // Avoid Promise.all ahead of synchronous part of spec algorithm, since it
@@ -984,7 +981,7 @@ export class RTCPeerConnection {
       if (!sdp) {
         if (type == "offer") {
           sdp = (await this._createAnOffer()).sdp;
-        } else if (type == "answer") {
+        } else if (type == "answer" || type == "pranswer") {
           sdp = (await this._createAnAnswer()).sdp;
         }
       } else {
@@ -1076,12 +1073,6 @@ export class RTCPeerConnection {
   }
 
   _setRemoteDescription({ type, sdp }) {
-    if (type == "pranswer") {
-      throw new this._win.DOMException(
-        "pranswer not yet implemented",
-        "NotSupportedError"
-      );
-    }
     this._checkClosed();
     return this._chain(async () => {
       try {
@@ -1433,9 +1424,13 @@ export class RTCPeerConnection {
 
   get pendingLocalDescription() {
     this._checkClosed();
+    let type = this._pc.pendingOfferer ? "offer" : "answer";
+    if (this.signalingState == "have-local-pranswer") {
+      type = "pranswer";
+    }
     return this.cacheDescription(
       "_pendingLocalDescription",
-      this._pc.pendingOfferer ? "offer" : "answer",
+      type,
       this._pc.pendingLocalDescription
     );
   }
@@ -1455,9 +1450,13 @@ export class RTCPeerConnection {
 
   get pendingRemoteDescription() {
     this._checkClosed();
+    let type = this._pc.pendingOfferer ? "answer" : "offer";
+    if (this.signalingState == "have-remote-pranswer") {
+      type = "pranswer";
+    }
     return this.cacheDescription(
       "_pendingRemoteDescription",
-      this._pc.pendingOfferer ? "answer" : "offer",
+      type,
       this._pc.pendingRemoteDescription
     );
   }

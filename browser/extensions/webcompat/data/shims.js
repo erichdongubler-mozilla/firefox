@@ -892,7 +892,6 @@ const AVAILABLE_SHIMS = [
     webExposedShimHelpers: [],
     needsShimHelpers: [
       "embedClicked",
-      "smartblockEmbedReplaced",
       "smartblockGetFluentString",
       "shouldShowEmbedContentInPlaceholders",
     ],
@@ -918,7 +917,6 @@ const AVAILABLE_SHIMS = [
     webExposedShimHelpers: [],
     needsShimHelpers: [
       "embedClicked",
-      "smartblockEmbedReplaced",
       "smartblockGetFluentString",
       "shouldShowEmbedContentInPlaceholders",
     ],
@@ -940,7 +938,6 @@ const AVAILABLE_SHIMS = [
     webExposedShimHelpers: [],
     needsShimHelpers: [
       "embedClicked",
-      "smartblockEmbedReplaced",
       "smartblockGetFluentString",
       "shouldShowEmbedContentInPlaceholders",
     ],
@@ -1011,7 +1008,6 @@ const AVAILABLE_SHIMS = [
     logos: ["x-logo.svg"],
     needsShimHelpers: [
       "embedClicked",
-      "smartblockEmbedReplaced",
       "smartblockGetFluentString",
       "shouldShowEmbedContentInPlaceholders",
     ],

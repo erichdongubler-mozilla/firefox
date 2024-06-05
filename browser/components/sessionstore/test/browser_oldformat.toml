@@ -169,8 +169,6 @@ skip-if = [
 
 ["browser_491577.js"]
 
-["browser_495495.js"]
-
 ["browser_500328.js"]
 
 ["browser_514751.js"]
@@ -221,13 +219,8 @@ https_first_disabled = true
 ["browser_590268.js"]
 
 ["browser_590563.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
-]
 
 ["browser_595601-restore_hidden.js"]
-
-["browser_597071.js"]
 
 ["browser_600545.js"]
 

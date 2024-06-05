@@ -1749,9 +1749,11 @@ bool NativeLayerCARepresentation::ApplyChanges(
 
   MOZ_ASSERT(aUpdate == UpdateType::All);
 
-  if (mWrappingCALayer && mMutatedSpecializeVideo) {
+  if (mWrappingCALayer && (mMutatedSpecializeVideo || mMutatedIsDRM)) {
     // Since specialize video changes the way we construct our wrapping and
-    // content layers, we have to scrap them if this value has changed.
+    // content layers, we have to scrap them if this value has changed. A DRM
+    // change also gets fresh layers, so a layer never switches between
+    // holding DRM and non-DRM frames.
 #ifdef NIGHTLY_BUILD
     if (aIsVideo && StaticPrefs::gfx_core_animation_specialize_video_log()) {
       NSLog(@"VIDEO_LOG: Scrapping existing video layer.");
@@ -1815,6 +1817,7 @@ bool NativeLayerCARepresentation::ApplyChanges(
         [(AVSampleBufferDisplayLayer*)mContentCALayer
             setControlTimebase:timebase];
         CFRelease(timebase);
+        ((AVSampleBufferDisplayLayer*)mContentCALayer).preventsCapture = aIsDRM;
       } else {
 #ifdef NIGHTLY_BUILD
         if (aIsVideo &&
@@ -1840,10 +1843,6 @@ bool NativeLayerCARepresentation::ApplyChanges(
 
       [mRoundedClipCALayer addSublayer:mContentCALayer];
     }
-  }
-
-  if (aSpecializeVideo && mMutatedIsDRM) {
-    ((AVSampleBufferDisplayLayer*)mContentCALayer).preventsCapture = aIsDRM;
   }
 
   bool shouldTintOpaqueness = StaticPrefs::gfx_core_animation_tint_opaque();
@@ -2033,7 +2032,9 @@ bool NativeLayerCARepresentation::ApplyChanges(
       // forcing the layer contents to display that frame. Our call to
       // enqueueSampleBuffer will handle future async updates to the layer;
       // buffers queued with enqueueSampleBuffer overwrite the layer contents.
-      if (layerNeedsInitialization) {
+      // DRM frames are left to enqueueSampleBuffer alone, because capture of
+      // the layer contents was observed not to be blocked by preventsCapture.
+      if (layerNeedsInitialization && !aIsDRM) {
         mContentCALayer.contents = (id)surface;
       }
 

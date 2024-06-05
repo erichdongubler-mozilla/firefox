@@ -954,7 +954,6 @@ class Shims {
       message !== "getOptions" &&
       message !== "optIn" &&
       message !== "embedClicked" &&
-      message !== "smartblockEmbedReplaced" &&
       message !== "smartblockGetFluentString" &&
       message !== "checkFacebookLoginStatus" &&
       message !== "shouldShowEmbedContentInPlaceholders"
@@ -1004,8 +1003,6 @@ class Shims {
       }
     } else if (message === "embedClicked") {
       browser.trackingProtection.openProtectionsPanel(id);
-    } else if (message === "smartblockEmbedReplaced") {
-      browser.trackingProtection.incrementSmartblockEmbedShownTelemetry();
     } else if (message === "smartblockGetFluentString") {
       return await browser.trackingProtection.getSmartBlockEmbedFluentString(
         id,

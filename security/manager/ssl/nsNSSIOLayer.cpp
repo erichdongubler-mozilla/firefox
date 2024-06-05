@@ -12,6 +12,7 @@
 #include "NSSCertDBTrustDomain.h"
 #include "NSSErrorsService.h"
 #include "NSSSocketControl.h"
+#include "PKCS11ModuleDB.h"
 #include "SSLServerCertVerification.h"
 #include "ScopedNSSTypes.h"
 #include "TLSClientAuthCertSelection.h"
@@ -1896,6 +1897,11 @@ const uint8_t kIPCClientCertsObjectTypeCert = 1;
 const uint8_t kIPCClientCertsObjectTypeRSAKey = 2;
 const uint8_t kIPCClientCertsObjectTypeECKey = 3;
 
+using FindObjectsCallback = void (*)(uint8_t type, size_t id_len,
+                                     const uint8_t* id, size_t data_len,
+                                     const uint8_t* data, void* ctx);
+using SignCallback = void (*)(size_t data_len, const uint8_t* data, void* ctx);
+
 // This function is provided to the IPC client certs module so it can cause the
 // parent process to find certificates and keys and send identifying
 // information about them over IPC.
@@ -2039,4 +2045,54 @@ void AndroidDoSign(size_t certLen, const uint8_t* cert, size_t dataLen,
   }
 }
 #endif  // MOZ_WIDGET_ANDROID
+
+// Similar to `DoFindObjects`, this function implements searching for
+// certificates stored on remote PKCS#11 tokens.
+void RemoteCertsDoFindObjects(FindObjectsCallback cb, void* ctx) {
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+  MOZ_ASSERT(!NS_IsMainThread());
+  if (NS_IsMainThread()) {
+    return;
+  }
+
+  Monitor monitor{__func__};
+  bool done = false;
+  nsTArray<Certificate> certificates;
+  nsresult rv = NS_DispatchToMainThread(
+      NS_NewRunnableFunction(__func__, [&monitor, &done, &certificates] {
+        RefPtr<PKCS11ModuleDB> pkcs11ModuleDB(PKCS11ModuleDB::GetSingleton());
+        if (!pkcs11ModuleDB) {
+          MonitorAutoLock lock(monitor);
+          done = true;
+          lock.Notify();
+          return;
+        }
+        pkcs11ModuleDB->FindCertificates()->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [&monitor, &done,
+             &certificates](const PKCS11ModuleDB::FindCertificatesPromise::
+                                ResolveOrRejectValue& value) {
+              MonitorAutoLock lock(monitor);
+              if (value.IsResolve()) {
+                certificates.Assign(value.ResolveValue());
+              }
+              done = true;
+              lock.Notify();
+            });
+      }));
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  MonitorAutoLock lock(monitor);
+  while (!done) {
+    lock.Wait();
+  }
+  for (const auto& certificate : certificates) {
+    uint8_t serverAuthTrustAnchor = certificate.serverAuthTrustAnchor() ? 1 : 0;
+    cb(kIPCClientCertsObjectTypeCert, certificate.der().Length(),
+       certificate.der().Elements(), 1, &serverAuthTrustAnchor, ctx);
+  }
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
+}
 }  // extern "C"

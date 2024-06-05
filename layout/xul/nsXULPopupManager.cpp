@@ -1521,19 +1521,10 @@ void nsXULPopupManager::HidePopupsInList(
     const nsTArray<nsMenuPopupFrame*>& aFrames) {
   // Create a weak frame list. This is done in a separate array with the
   // right capacity predetermined to avoid multiple allocations.
-  nsTArray<WeakFrame> weakPopups(aFrames.Length());
-  uint32_t f;
-  for (f = 0; f < aFrames.Length(); f++) {
-    WeakFrame* wframe = weakPopups.AppendElement();
-    if (wframe) {
-      *wframe = aFrames[f];
-    }
-  }
-
-  for (f = 0; f < weakPopups.Length(); f++) {
+  for (auto& f : ToTArray<AutoTArray<WeakFrame, 32>>(aFrames)) {
     // check to ensure that the frame is still alive before hiding it.
-    if (weakPopups[f].IsAlive()) {
-      auto* frame = static_cast<nsMenuPopupFrame*>(weakPopups[f].GetFrame());
+    if (f.IsAlive()) {
+      auto* frame = static_cast<nsMenuPopupFrame*>(f.GetFrame());
       frame->HidePopup(true, ePopupInvisible);
     }
   }

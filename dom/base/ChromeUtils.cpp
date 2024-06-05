@@ -22,6 +22,7 @@
 #include "js/Value.h"  // JS::Value, JS::StringValue
 #include "jsfriendapi.h"
 #include "mozJSModuleLoader.h"
+#include "mozilla/AwakeTimeStamp.h"
 #include "mozilla/Base64.h"
 #include "mozilla/ChromeProfilerCounter.h"
 #include "mozilla/Components.h"
@@ -1908,7 +1909,7 @@ static WebIDLProcType ProcTypeToWebIDL(mozilla::ProcType aType) {
 #ifndef MOZ_ENABLE_FORKSERVER
 #  define SKIP_PROCESS_TYPE_FORKSERVER
 #endif  // MOZ_ENABLE_FORKSERVER
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef SKIP_PROCESS_TYPE_CONTENT
 #ifndef MOZ_ENABLE_FORKSERVER
 #  undef SKIP_PROCESS_TYPE_FORKSERVER
@@ -1997,7 +1998,7 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
 #ifndef MOZ_ENABLE_FORKSERVER
 #  define SKIP_PROCESS_TYPE_FORKSERVER
 #endif  // MOZ_ENABLE_FORKSERVER
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #ifndef MOZ_ENABLE_FORKSERVER
 #  undef SKIP_PROCESS_TYPE_FORKSERVER
 #endif  // MOZ_ENABLE_FORKSERVER
@@ -2728,6 +2729,12 @@ double ChromeUtils::DateNow(GlobalObject&) { return JS_Now() / 1000.0; }
 /* static */
 double ChromeUtils::Now(GlobalObject&) {
   return (TimeStamp::Now() - TimeStamp::ProcessCreation()).ToMilliseconds();
+}
+
+/* static */
+double ChromeUtils::AwakeNow(GlobalObject&) {
+  static const AwakeTimeStamp sOrigin = AwakeTimeStamp::Now();
+  return (AwakeTimeStamp::Now() - sOrigin).ToMilliseconds();
 }
 
 /* static */

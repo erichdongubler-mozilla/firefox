@@ -221,6 +221,8 @@ skip-if = [
 
 ["test_menu.xhtml"]
 
+["test_menu_accesskey_conflicts.xhtml"]
+
 ["test_menu_activateitem.xhtml"]
 
 ["test_menu_hide.xhtml"]

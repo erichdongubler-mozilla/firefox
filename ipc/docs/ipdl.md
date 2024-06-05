@@ -1026,7 +1026,6 @@ that declare our actor implementation subclasses (`MyManagerParent.h` and
 
 ```{literalinclude} _static/PMyManager.ipdl
 :language: c++
-:name: PMyManager.ipdl
 ```
 
 So `MyManagerParent.h` looks like this:

@@ -413,7 +413,7 @@ class ContinuousOnboardingFeatureTest {
         }
 
     @Test
-    fun `WHEN stage is DAY_7 AND repository does not allow the prompt THEN navigateToIpProtection is not invoked`() =
+    fun `WHEN stage is DAY_7 AND repository does not allow the prompt THEN navigateToIpProtection is not invoked and seventh day timestamp is saved`() =
         runTest(testDispatcher) {
             settings.continuousOnboardingFeatureEnabled = true
             var navigateToIpProtectionInvoked = false
@@ -441,7 +441,83 @@ class ContinuousOnboardingFeatureTest {
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertFalse(navigateToIpProtectionInvoked)
-            assertEquals(-1L, settings.seventhDayOnboardingCompletedTimestamp)
+            assertEquals(dateTimeProvider.currentTimeMillis(), settings.seventhDayOnboardingCompletedTimestamp)
+            val completedEvent = Onboarding.completed.testGetValue()!!.single()
+            assertEquals("ip_protection", completedEvent.extra!!["sequence_id"])
+            assertEquals("completed", Onboarding.dismissed.testGetValue()!!.single().extra!!["method"])
+        }
+
+    @Test
+    fun `GIVEN day seven was completed by showing the prompt WHEN the repository stops allowing it and the store emits again THEN the prompt is not shown a second time`() =
+        runTest(testDispatcher) {
+            settings.continuousOnboardingFeatureEnabled = true
+            var navigateToIpProtectionCount = 0
+            val feature =
+                ContinuousOnboardingFeature(
+                    activity = activity,
+                    launcher = FakeActivityResultLauncher(),
+                    settings = settings,
+                    telemetryRecorder = telemetryRecorder,
+                    stageProvider = FakeContinuousOnboardingStageProvider(ContinuousOnboardingStage.DAY_7),
+                    dateTimeProvider = dateTimeProvider,
+                    navigateToSyncSignIn = {},
+                    ipProtectionOnboardingConfig =
+                        IPProtectionOnboardingConfig(
+                            store = ipProtectionStore,
+                            promptRepository = ipProtectionPromptRepository,
+                            navigateToIpProtection = { navigateToIpProtectionCount++ },
+                        ),
+                    ipProtectionMainDispatcher = testDispatcher,
+                )
+
+            feature.start()
+            ipProtectionStore.dispatch(IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible))
+            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.NoAccount))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            ipProtectionPromptRepository.canShowIPProtectionPrompt = false
+            ipProtectionStore.dispatch(IPProtectionAction.AccountStateChanged(AccountStatus.Authenticated))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(1, navigateToIpProtectionCount)
+        }
+
+    @Test
+    fun `WHEN stage is DAY_7 AND user is not eligible for IP Protection THEN navigateToIpProtection is not invoked and seventh day timestamp is saved`() =
+        runTest(testDispatcher) {
+            listOf(EligibilityStatus.Ineligible, EligibilityStatus.UnsupportedRegion).forEach { ineligibleStatus ->
+                settings.continuousOnboardingFeatureEnabled = true
+                settings.seventhDayOnboardingCompletedTimestamp = -1L
+                var navigateToIpProtectionInvoked = false
+                val store = IPProtectionStore()
+                val feature =
+                    ContinuousOnboardingFeature(
+                        activity = activity,
+                        launcher = FakeActivityResultLauncher(),
+                        settings = settings,
+                        telemetryRecorder = telemetryRecorder,
+                        stageProvider = FakeContinuousOnboardingStageProvider(ContinuousOnboardingStage.DAY_7),
+                        dateTimeProvider = dateTimeProvider,
+                        navigateToSyncSignIn = {},
+                        ipProtectionOnboardingConfig =
+                            IPProtectionOnboardingConfig(
+                                store = store,
+                                promptRepository = ipProtectionPromptRepository,
+                                navigateToIpProtection = { navigateToIpProtectionInvoked = true },
+                            ),
+                        ipProtectionMainDispatcher = testDispatcher,
+                    )
+
+                feature.start()
+                store.dispatch(IPProtectionAction.EligibilityChanged(ineligibleStatus))
+                testDispatcher.scheduler.advanceUntilIdle()
+
+                assertFalse(navigateToIpProtectionInvoked)
+                assertEquals(dateTimeProvider.currentTimeMillis(), settings.seventhDayOnboardingCompletedTimestamp)
+                val completedEvent = Onboarding.completed.testGetValue()!!.last()
+                assertEquals("ip_protection", completedEvent.extra!!["sequence_id"])
+                assertEquals("skipped", Onboarding.dismissed.testGetValue()!!.last().extra!!["method"])
+            }
         }
 
     @Test

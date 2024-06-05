@@ -686,8 +686,9 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
       // Note: this is async; the lambda can happen later
       // aCallback will now be owned by GetDictionaryFor
       guard.release();
+      RefPtr<LoadContextInfo> lci = GetLoadContextInfo(aChan);
       mDictionaryCache->GetDictionaryFor(
-          aURI, aType, aChan, aSuspend,
+          aURI, aType, lci, aChan, aSuspend,
           [self = RefPtr(this), aRequest, aCallback](
               bool aNeedsResume, DictionaryCacheEntry* aDict) {
             if (!aDict) {
@@ -2567,10 +2568,10 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
     ci = new nsHttpConnectionInfo(host, port, ""_ns, username, nullptr,
                                   originAttributes, aURI->SchemeIs("https"));
   }
-  ci->SetAnonymous(anonymous);
-  if (originAttributes.IsPrivateBrowsing()) {
-    ci->SetPrivate(true);
-  }
+  ci = ci->Mutate()
+           .SetAnonymous(anonymous)
+           .SetPrivate(originAttributes.IsPrivateBrowsing())
+           .Finalize();
 
   if (mDebugObservations) {
     // this is basically used for test coverage of an otherwise 'hintable'
@@ -2597,7 +2598,7 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
 
   bool fetchHTTPSRR = EchConfigEnabled();
   if (StaticPrefs::network_http_happy_eyeballs_enabled()) {
-    ci->SetHappyEyeballsEnabled(true);
+    ci = ci->Mutate().SetHappyEyeballsEnabled(true).Finalize();
     // When HE is enabled, HTTPS RR lookups are handled by
     // HappyEyeballsConnectionAttempt.
     fetchHTTPSRR = false;
@@ -2620,8 +2621,7 @@ nsresult nsHttpHandler::SpeculativeConnect(nsHttpConnectionInfo* ci,
                                   NS_ConvertUTF8toUTF16(debugHashKey).get());
     }
   }
-  RefPtr<nsHttpConnectionInfo> clone = ci->Clone();
-  return mConnMgr->SpeculativeConnect(clone, callbacks, caps, aTrans);
+  return mConnMgr->SpeculativeConnect(ci, callbacks, caps, aTrans);
 }
 
 NS_IMETHODIMP
@@ -2834,8 +2834,7 @@ bool nsHttpHandler::IsBeforeLastActiveTabLoadOptimization(
   return !lastTimestamp->IsNull() && when <= *lastTimestamp;
 }
 
-void nsHttpHandler::ExcludeHttp2OrHttp3Internal(
-    const nsHttpConnectionInfo* ci) {
+void nsHttpHandler::ExcludeHttp2OrHttp3Internal(nsHttpConnectionInfo* ci) {
   if (ci->GetHappyEyeballsEnabled()) {
     return;
   }
@@ -2846,7 +2845,7 @@ void nsHttpHandler::ExcludeHttp2OrHttp3Internal(
   if (XRE_IsSocketProcess()) {
     MOZ_ASSERT(OnSocketThread());
 
-    RefPtr<nsHttpConnectionInfo> cinfo = ci->Clone();
+    RefPtr<nsHttpConnectionInfo> cinfo = ci;
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "nsHttpHandler::ExcludeHttp2OrHttp3Internal",
         [cinfo{std::move(cinfo)}]() {
@@ -2877,7 +2876,7 @@ void nsHttpHandler::ExcludeHttp2OrHttp3Internal(
   }
 }
 
-void nsHttpHandler::ExcludeHttp2(const nsHttpConnectionInfo* ci) {
+void nsHttpHandler::ExcludeHttp2(nsHttpConnectionInfo* ci) {
   ExcludeHttp2OrHttp3Internal(ci);
 }
 
@@ -2886,7 +2885,7 @@ bool nsHttpHandler::IsHttp2Excluded(const nsHttpConnectionInfo* ci) {
   return mExcludedHttp2Origins.Contains(ci->GetOrigin());
 }
 
-void nsHttpHandler::ExcludeHttp3(const nsHttpConnectionInfo* ci) {
+void nsHttpHandler::ExcludeHttp3(nsHttpConnectionInfo* ci) {
   // TODO: exclude HTTP/3 for proxy connection properly.
   if (ci->IsHttp3ProxyConnection()) {
     return;

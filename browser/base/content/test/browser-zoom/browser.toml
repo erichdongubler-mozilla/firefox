@@ -1,7 +1,7 @@
 [DEFAULT]
 support-files = [
   "head.js",
-  "../general/moz.png",
+  "../browser-general/moz.png",
   "zoom_test.html",
 ]
 
@@ -22,16 +22,8 @@ https_first_disabled = true
 
 ["browser_image_zoom_tabswitch.js"]
 https_first_disabled = true
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1526628
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1526628
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1526628
-]
 
 ["browser_keyboard_mousewheel_zoom_consistency.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2019466
-]
 
 ["browser_mousewheel_zoom.js"]
 https_first_disabled = true
@@ -43,7 +35,7 @@ https_first_disabled = true
 
 ["browser_sitespecific_video_zoom.js"]
 https_first_disabled = true
-support-files = ["../general/video.webm"]
+support-files = ["../browser-general/video.webm"]
 skip-if = [
   "os == 'win' && debug", # Bug 1315042
 ]

@@ -182,6 +182,8 @@ class nsAutoOwningEventTarget {
 
 #  define MOZ_COUNTED_DTOR_META(_type, _prefix, _postfix) \
     _prefix ~_type() _postfix { MOZ_COUNT_DTOR(_type); }
+#  define MOZ_COUNTED_DTOR_META_DEF(_type, _prefix, _postfix) \
+    _type::~_type() _postfix { MOZ_COUNT_DTOR(_type); }
 #  define MOZ_COUNTED_DTOR_NESTED(_type, _nestedName) \
     ~_type() { MOZ_COUNT_DTOR(_nestedName); }
 
@@ -209,15 +211,24 @@ class nsAutoOwningEventTarget {
 #  define MOZ_COUNTED_DEFAULT_CTOR(_type) _type() = default;
 #  define MOZ_COUNTED_DTOR_META(_type, _prefix, _postfix) \
     _prefix ~_type() _postfix = default;
+#  define MOZ_COUNTED_DTOR_META_DEF(_type, _prefix, _postfix) \
+    _type::~_type() _postfix = default;
 #  define MOZ_COUNTED_DTOR_NESTED(_type, _nestedName) ~_type() = default;
 
 #endif /* NS_BUILD_REFCNT_LOGGING */
+
+#define MOZ_COUNTED_DTOR_META_DECL(_type, _prefix, _postfix) \
+  _prefix ~_type() _postfix;
 
 #define MOZ_COUNTED_DTOR(_type) MOZ_COUNTED_DTOR_META(_type, , )
 #define MOZ_COUNTED_DTOR_OVERRIDE(_type) \
   MOZ_COUNTED_DTOR_META(_type, , override)
 #define MOZ_COUNTED_DTOR_FINAL(_type) MOZ_COUNTED_DTOR_META(_type, , final)
 #define MOZ_COUNTED_DTOR_VIRTUAL(_type) MOZ_COUNTED_DTOR_META(_type, virtual, )
+#define MOZ_COUNTED_DTOR_VIRTUAL_DECL(_type) \
+  MOZ_COUNTED_DTOR_META_DECL(_type, virtual, )
+#define MOZ_COUNTED_DTOR_VIRTUAL_DEF(_type) \
+  MOZ_COUNTED_DTOR_META_DEF(_type, virtual, )
 
 // Support for ISupports classes which interact with cycle collector.
 

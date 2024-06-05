@@ -520,9 +520,80 @@ CK_RV Test_C_Logout(CK_SESSION_HANDLE hSession) {
   return CKR_OK;
 }
 
-CK_RV Test_C_CreateObject(CK_SESSION_HANDLE, CK_ATTRIBUTE_PTR, CK_ULONG,
-                          CK_OBJECT_HANDLE_PTR) {
-  return CKR_FUNCTION_NOT_SUPPORTED;
+struct MustHaveStr {
+  CK_ATTRIBUTE_TYPE attribute;
+  CK_BBOOL bVerifyULongValue;
+  CK_ULONG ulValue;
+  CK_BBOOL bFound;
+};
+
+CK_RV Test_C_CreateObject(CK_SESSION_HANDLE hSession, CK_ATTRIBUTE_PTR pTemplate,
+                          CK_ULONG ulTemplateCount,
+                          CK_OBJECT_HANDLE_PTR phObjectHandle) {
+  CK_ULONG  i;
+  size_t j;
+  struct MustHaveStr aMustHave[] = {
+    {CKA_CLASS, PR_TRUE, CKO_PRIVATE_KEY, PR_FALSE},
+    {CKA_KEY_TYPE, PR_TRUE, CKK_RSA, PR_FALSE},
+    {CKA_MODULUS, PR_FALSE, 0, PR_FALSE },
+    {CKA_PUBLIC_EXPONENT, PR_FALSE, 0, PR_FALSE },
+    {CKA_PRIVATE_EXPONENT, PR_FALSE, 0, PR_FALSE },
+    {CKA_PRIME_1, PR_FALSE, 0, PR_FALSE },
+    {CKA_PRIME_2, PR_FALSE, 0, PR_FALSE },
+    {CKA_EXPONENT_1, PR_FALSE, 0, PR_FALSE },
+    {CKA_EXPONENT_2, PR_FALSE, 0, PR_FALSE },
+    {CKA_COEFFICIENT, PR_FALSE, 0, PR_FALSE },
+  };
+  size_t iMustHaveLen = PR_ARRAY_SIZE(aMustHave);
+
+  CK_ATTRIBUTE_TYPE aCanHave[] = { CKA_TOKEN, CKA_PRIVATE, CKA_LABEL,
+    CKA_MODIFIABLE, CKA_ID, CKA_START_DATE, CKA_END_DATE, CKA_LOCAL,
+    CKA_SUBJECT, CKA_SENSITIVE, CKA_EXTRACTABLE, CKA_DECRYPT,
+    CKA_SIGN, CKA_SIGN_RECOVER, CKA_UNWRAP, CKA_ALWAYS_SENSITIVE,
+    CKA_NEVER_EXTRACTABLE,
+  };
+  size_t iCanHaveLen = PR_ARRAY_SIZE(aCanHave);
+
+  /* check that we are importing a valid rsa key */
+  for (i=0; i < ulTemplateCount; i++) {
+    CK_ATTRIBUTE_TYPE attr = pTemplate[i].type;
+    CK_BBOOL found=PR_FALSE;
+    for (j=0; j < iMustHaveLen; j++) {
+      struct MustHaveStr *mhp = &aMustHave[j];
+      if (attr == mhp->attribute) {
+        if (mhp->bVerifyULongValue) {
+          if (pTemplate[i].ulValueLen != sizeof(CK_ULONG)) {
+            return CKR_ATTRIBUTE_VALUE_INVALID;
+          }
+          if (*((CK_ULONG *)pTemplate[i].pValue) != mhp->ulValue) {
+            return CKR_ATTRIBUTE_VALUE_INVALID;
+          }
+        }
+        mhp->bFound=PR_TRUE;
+        found=PR_TRUE;
+        break;
+      }
+    }
+    if (found) {
+      continue;
+    }
+    for (j=0; j < iCanHaveLen; j++) {
+      if (attr == aCanHave[j]) {
+        found=PR_TRUE;
+        break;
+      }
+    }
+    if (!found) {
+      return CKR_ATTRIBUTE_TYPE_INVALID;
+    }
+  }
+  for (j=0; j < iMustHaveLen; j++) {
+    if (!aMustHave[j].bFound) {
+      return CKR_TEMPLATE_INCOMPLETE;
+    }
+  }
+  *phObjectHandle = 0x6;
+  return CKR_OK;
 }
 
 CK_RV Test_C_CopyObject(CK_SESSION_HANDLE, CK_OBJECT_HANDLE, CK_ATTRIBUTE_PTR,

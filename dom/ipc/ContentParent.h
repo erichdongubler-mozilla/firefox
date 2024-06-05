@@ -753,8 +753,9 @@ class ContentParent final : public PContentParent,
    * removed from this list, but will still be in the sContentParents list for
    * the GetAll/GetAllEvenIfDead APIs.
    */
-  static nsClassHashtable<nsGenericHashKey<RemoteType>,
-                          nsTArray<ContentParent*>>* sBrowserContentParents;
+  static mozilla::StaticAutoPtr<
+      nsClassHashtable<nsGenericHashKey<RemoteType>, nsTArray<ContentParent*>>>
+      sBrowserContentParents;
   static mozilla::StaticAutoPtr<LinkedList<ContentParent>> sContentParents;
 
   void AddShutdownBlockers();
@@ -1223,6 +1224,7 @@ class ContentParent final : public PContentParent,
       const nsACString& aTrackingOrigin, uint32_t aCookieBehavior,
       const ContentBlockingNotifier::StorageAccessPermissionGrantedReason&
           aReason,
+      const Maybe<bool>& aHadPriorUserInteraction,
       CompleteAllowAccessForResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvStoreUserInteractionAsPermission(
@@ -1291,8 +1293,8 @@ class ContentParent final : public PContentParent,
       const MaybeDiscarded<BrowsingContext>& aContext);
 
   mozilla::ipc::IPCResult RecvNotifyOnHistoryReload(
-      const MaybeDiscarded<BrowsingContext>& aContext, const bool& aForceReload,
-      NotifyOnHistoryReloadResolver&& aResolver);
+      const MaybeDiscarded<BrowsingContext>& aContext,
+      const uint32_t& aReloadFlags, NotifyOnHistoryReloadResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvHistoryCommit(
       const MaybeDiscarded<BrowsingContext>& aContext, const uint64_t& aLoadID,
@@ -1339,9 +1341,9 @@ class ContentParent final : public PContentParent,
   RecvSessionHistoryEntryStoreWindowNameInContiguousEntries(
       const MaybeDiscarded<BrowsingContext>& aContext, const nsAString& aName);
 
-  mozilla::ipc::IPCResult RecvGetLoadingSessionHistoryInfoFromParent(
+  mozilla::ipc::IPCResult RecvAdoptChildSHEntry(
       const MaybeDiscarded<BrowsingContext>& aContext,
-      GetLoadingSessionHistoryInfoFromParentResolver&& aResolver);
+      AdoptChildSHEntryResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvSynchronizeNavigationAPIState(
       const MaybeDiscarded<BrowsingContext>& aContext,
@@ -1471,11 +1473,9 @@ class ContentParent final : public PContentParent,
  private:
   // Return an existing ContentParent if possible. Otherwise, `nullptr`.
   static UniqueContentParentKeepAlive GetUsedBrowserProcess(
-      const RemoteType& aRemoteType, nsTArray<ContentParent*>& aContentParents,
-      uint32_t aMaxContentParents, bool aPreferUsed, ProcessPriority aPriority,
-      uint64_t aBrowserId);
+      const RemoteType& aRemoteType, bool aPreferUsed, uint64_t aBrowserId);
 
-  void AddToPool(nsTArray<ContentParent*>&);
+  void AddToPool();
   void RemoveFromPool(nsTArray<ContentParent*>&);
   void AssertNotInPool();
 

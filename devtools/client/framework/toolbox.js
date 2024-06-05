@@ -1294,12 +1294,11 @@ class Toolbox extends EventEmitter {
   #addShortcuts() {
     // Create shortcuts instance for the toolbox
     if (!this.shortcuts) {
-      this.shortcuts = new KeyShortcuts({
-        window: this.doc.defaultView,
+      this.shortcuts = new KeyShortcuts(
         // The toolbox key shortcuts should be triggered from any frame in DevTools.
         // Use the chromeEventHandler as the target to catch events from all frames.
-        target: this.getChromeEventHandler(),
-      });
+        this.getChromeEventHandler()
+      );
     }
 
     // Listen for the shortcut key to show the frame list
@@ -1416,12 +1415,11 @@ class Toolbox extends EventEmitter {
     }
 
     if (!this.#windowHostShortcuts) {
-      this.#windowHostShortcuts = new KeyShortcuts({
-        window: this.win,
+      this.#windowHostShortcuts = new KeyShortcuts(
         // The window host key shortcuts should be triggered from any frame in DevTools.
         // Use the chromeEventHandler as the target to catch events from all frames.
-        target: this.getChromeEventHandler(),
-      });
+        this.getChromeEventHandler()
+      );
     }
 
     const shortcuts = this.#windowHostShortcuts;

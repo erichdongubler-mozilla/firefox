@@ -9,6 +9,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -341,6 +342,11 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
                         requireContext(),
                         singleMediaPicker,
                         multipleMediaPicker,
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            AndroidPhotoPicker.allHdrCapabilities()
+                        } else {
+                            null
+                        },
                     ),
             ),
             this,

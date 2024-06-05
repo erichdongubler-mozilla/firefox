@@ -55,7 +55,7 @@ import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.compose.TabThumbnailImageData
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.TabsTrayTestTag.TAB_GROUP_TITLE
-import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
+import org.mozilla.fenix.tabstray.browser.compose.ItemInteractionState
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
@@ -104,7 +104,7 @@ fun TabGroupCard(
     selectionState: TabsTrayItemSelectionState,
     clickHandler: TabsTrayItemClickHandler,
     modifier: Modifier = Modifier,
-    interactionState: TabItemInteractionState,
+    interactionState: ItemInteractionState,
     onEditTabGroupClick: () -> Unit,
     onCloseTabGroupClick: () -> Unit,
     onShareTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
@@ -402,7 +402,7 @@ private data class TabGroupCardPreviewState(
                     }
                     .toMutableList(),
         ),
-    val interactionState: TabItemInteractionState = TabItemInteractionState(),
+    val interactionState: ItemInteractionState = ItemInteractionState(),
 )
 
 private class TabGroupCardPreviewProvider : PreviewParameterProvider<TabGroupCardPreviewState> {
@@ -479,7 +479,7 @@ private class TabGroupCardPreviewProvider : PreviewParameterProvider<TabGroupCar
                             multiSelectEnabled = false,
                         ),
                     groupSize = 4,
-                    interactionState = TabItemInteractionState(isDragged = true),
+                    interactionState = ItemInteractionState(isDragged = true),
                 ),
             ),
             Pair(
@@ -492,7 +492,7 @@ private class TabGroupCardPreviewProvider : PreviewParameterProvider<TabGroupCar
                             multiSelectEnabled = false,
                         ),
                     groupSize = 4,
-                    interactionState = TabItemInteractionState(isHoveredByItem = true),
+                    interactionState = ItemInteractionState(isHoveredByItem = true),
                 ),
             ),
         )
@@ -597,7 +597,7 @@ private fun TabGroupCardMediaPreview() {
                 ),
             selectionState = TabsTrayItemSelectionState(),
             clickHandler = TabsTrayItemClickHandler(onClick = {}),
-            interactionState = TabItemInteractionState(),
+            interactionState = ItemInteractionState(),
             onEditTabGroupClick = {},
             onCloseTabGroupClick = {},
             onShareTabGroupClick = {},

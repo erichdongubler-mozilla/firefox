@@ -35,8 +35,11 @@ use thin_vec::ThinVec;
 pub use crate::values::computed::Length as MozScriptMinSize;
 pub use crate::values::specified::Integer as SpecifiedInteger;
 pub use crate::values::specified::Number as SpecifiedNumber;
-pub use crate::values::specified::font::MozScriptSizeMultiplier;
-pub use crate::values::specified::font::{FontPalette, FontSynthesis, FontSynthesisStyle};
+pub use crate::values::specified::font::{
+    FontKerning, FontOpticalSizing, FontPalette, FontSmoothing, FontSynthesis, FontSynthesisStyle,
+    FontVariantCaps, FontVariantEmoji, FontVariantPosition, MathShift, MathStyle, MathVariant,
+    MozScriptSizeMultiplier,
+};
 pub use crate::values::specified::font::{
     FontVariantAlternates, FontVariantEastAsian, FontVariantLigatures, FontVariantNumeric,
     QueryFontMetricsFlags, XLang, XTextScale,
@@ -905,7 +908,12 @@ impl ToComputedValue for specified::FontSizeAdjust {
                 FontMetricsOrientation::Horizontal
             };
             let metrics = context.query_font_metrics(FontBaseSize::CurrentStyle, orient, flags);
-            let font_size = context.style().get_font().clone_font_size().used_size.0;
+            let font_size = context
+                .style()
+                .get_font()
+                .slow_clone_font_size()
+                .used_size
+                .0;
             (metrics, font_size)
         };
 
@@ -1019,7 +1027,7 @@ pub type FontVariationSettings = FontSettings<VariationValue<Number>>;
 
 // The computed value of font-{feature,variation}-settings discards values
 // with duplicate tags, keeping only the last occurrence of each tag.
-fn dedup_font_settings<T>(settings_list: &mut Vec<T>)
+fn dedup_font_settings<T>(settings_list: &mut ThinVec<T>)
 where
     T: TaggedFontValue,
 {
@@ -1050,9 +1058,9 @@ where
             .0
             .iter()
             .map(|item| item.to_computed_value(context))
-            .collect::<Vec<_>>();
+            .collect::<ThinVec<_>>();
         dedup_font_settings(&mut v);
-        FontSettings(v.into_boxed_slice())
+        FontSettings(v)
     }
 
     fn from_computed_value(computed: &Self::ComputedValue) -> Self {
@@ -1152,8 +1160,8 @@ impl ToComputedValue for specified::MathDepth {
 
         let int = match self {
             specified::MathDepth::AutoAdd => {
-                let parent = cx.builder.get_parent_font().clone_math_depth() as i32;
-                let style = cx.builder.get_parent_font().clone_math_style();
+                let parent = *cx.builder.get_parent_font().get_math_depth() as i32;
+                let style = *cx.builder.get_parent_font().get_math_style();
                 if style == MathStyleValue::Compact {
                     parent.saturating_add(1)
                 } else {
@@ -1161,7 +1169,7 @@ impl ToComputedValue for specified::MathDepth {
                 }
             },
             specified::MathDepth::Add(rel) => {
-                let parent = cx.builder.get_parent_font().clone_math_depth();
+                let parent = *cx.builder.get_parent_font().get_math_depth();
                 (parent as i32).saturating_add(rel.to_computed_value(cx))
             },
             specified::MathDepth::Absolute(abs) => abs.to_computed_value(cx),
@@ -1520,7 +1528,11 @@ impl ToResolvedValue for LineHeight {
         #[cfg(feature = "servo")]
         {
             if let LineHeight::Number(num) = &self {
-                let size = context.style.get_font().clone_font_size().computed_size();
+                let size = context
+                    .style
+                    .get_font()
+                    .slow_clone_font_size()
+                    .computed_size();
                 LineHeight::Length(NonNegativeLength::new(size.px() * num.0))
             } else {
                 self

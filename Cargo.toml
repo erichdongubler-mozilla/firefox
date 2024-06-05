@@ -20,6 +20,7 @@ members = [
   "third_party/application-services/tools/uniffi-bindgen-library-mode",
   "third_party/application-services/components/ads-client",
   "third_party/application-services/components/autofill",
+  "third_party/application-services/components/fxcontainers",
   "third_party/application-services/components/context_id",
   "third_party/application-services/components/crashtest",
   "third_party/application-services/components/example",
@@ -35,6 +36,7 @@ members = [
   "third_party/application-services/components/remote_settings",
   "third_party/application-services/components/search",
   "third_party/application-services/components/suggest",
+  "third_party/application-services/components/support/db-crypto",
   "third_party/application-services/components/support/error",
   "third_party/application-services/components/support/find-places-db",
   "third_party/application-services/components/support/firefox-versioning",
@@ -159,13 +161,13 @@ rust-version = "1.90.0"
 
 [workspace.dependencies]
 # Shared across multiple UniFFI consumers.
-uniffi = "0.31"
-uniffi_bindgen = "0.31"
-uniffi_pipeline = "0.31"
+uniffi = "0.32"
+uniffi_bindgen = "0.32"
+uniffi_pipeline = "0.32"
 # Shared across multiple application-services consumers.
 rusqlite = "0.37"
 # Shared across multiple glean consumers.
-glean = "=68.0.1"
+glean = "=70.2.1"
 
 # Explicitly specify what our profiles use.  The opt-level setting here is
 # a total fiction; see the setup of MOZ_RUST_DEFAULT_FLAGS for what the
@@ -225,10 +227,6 @@ mozilla-central-workspace-hack = { path = "build/workspace-hack" }
 # windows-targets replacement. It avoids the large dependencies of the original
 # crate, which we don't really need as we require MSVC anyways.
 windows-targets = { path = "build/rust/windows-targets" }
-
-# windows-link replacement that doesn't use raw-dylibs, which have problems on
-# the i686-pc-windows-gnu target.
-windows-link = { path = "build/rust/windows-link" }
 
 # Patch windows to use a non-vendored local copy of the crate.
 windows = { path = "build/rust/windows" }
@@ -311,8 +309,6 @@ procfs-core = { path = "build/rust/procfs-core" }
 # Patch rustc-hash 1.1.0 to 2.1.1
 rustc-hash = { path = "build/rust/rustc-hash" }
 
-# Patch memoffset from 0.8.0 to 0.9.0 since it's compatible and it avoids duplication
-memoffset = { path = "build/rust/memoffset" }
 
 # Patch `hashbrown` 0.13.* to depend on 0.15.*
 hashbrown_0_13 = { package = "hashbrown", path = "build/rust/hashbrown-0.13" }
@@ -334,7 +330,8 @@ hashlink = { path = "build/rust/hashlink" }
 thiserror = { path = "build/rust/thiserror" }
 
 # Patch `toml` 0.5 to 0.9
-toml = { path = "build/rust/toml" }
+toml_0_5 = { package = "toml", path = "build/rust/toml-0.5" }
+toml_0_9 = { package = "toml", path = "build/rust/toml" }
 
 # The following overrides point to dummy projects, as a temporary measure until this is resolved:
 # https://github.com/rust-lang/cargo/issues/6179
@@ -415,6 +412,8 @@ logins = { path = "third_party/application-services/components/logins" }
 autofill = { path = "third_party/application-services/components/autofill" }
 init_rust_components = { path = "third_party/application-services/components/init_rust_components" }
 breach-alerts = { path = "third_party/application-services/components/breach-alerts" }
+db-crypto = { path = "third_party/application-services/components/support/db-crypto" }
+fxcontainers = { path = "third_party/application-services/components/fxcontainers" }
 # temporary ohttp override enabling app-services build-related hacks while we wait for a new version.
 ohttp = { git = "https://github.com/martinthomson/ohttp", rev = "600931b5a1e947776cbaad931ed78f1e89005352" }
 

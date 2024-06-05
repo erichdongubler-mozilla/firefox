@@ -361,6 +361,39 @@ class OutputParser {
         case "Dimension": {
           if (angleOK(tokenText)) {
             this.#appendAngle(tokenText, options, token);
+          } else if (
+            options.cssExplainersEnabled &&
+            token.unit !== "px" &&
+            // we only want to handle lengths (e.g. not angles, frequency, …)
+            InspectorUtils.valueMatchesSyntax(
+              this.#doc,
+              `1${token.unit}`,
+              "<length>"
+            )
+          ) {
+            this.#appendNode(
+              "span",
+              {
+                "data-length-expression": tokenText,
+              },
+              tokenText,
+              token
+            );
+          } else {
+            this.#appendTextNode(tokenText, token);
+          }
+          break;
+        }
+        case "Percentage": {
+          if (options.cssExplainersEnabled) {
+            this.#appendNode(
+              "span",
+              {
+                "data-length-expression": tokenText,
+              },
+              tokenText,
+              token
+            );
           } else {
             this.#appendTextNode(tokenText, token);
           }

@@ -23,8 +23,7 @@ import {
   GENERATE_AITAB,
   ADD_MEMORY,
   SEARCH_THE_WEB,
-  SEARCH_THE_WEB_FAST_PREF,
-  SEARCH_THE_WEB_TOOL_CONFIG_FAST,
+  searchTheWebToolConfig,
   GET_SKILL,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
 import { runSearchTheWeb } from "moz-src:///browser/components/aiwindow/models/search/SearchWorkflow.sys.mjs";
@@ -57,7 +56,10 @@ export async function executeToolByName(
   switch (toolName) {
     case GET_PAGE_CONTENT: {
       const startTime = new Date();
-      result = await GetPageContent.getPageContent(toolParams, conversation);
+      result = await GetPageContent.getPageContentText(
+        toolParams,
+        conversation
+      );
       Glean.smartWindow.getPageContent.record({
         location: mode,
         chat_id: conversation.id,
@@ -147,6 +149,31 @@ const FEATURE_GATED_HANDLERS = new Map([
 const TOOLS_WITH_PENDING_ACTION_LOG = new Set([SEARCH_THE_WEB]);
 
 /**
+ * Splits a tool result into the reply the tool is writing for the user, if any,
+ * and the body that stays in the conversation. Only the answers path of
+ * search_the_web sets `directAnswerStream`; it is lifted out both because a
+ * generator is not something to serialize into a tool message, and because the
+ * prose it carries becomes the assistant turn rather than history the model
+ * answers from.
+ *
+ * Requiring an async-iterable `directAnswerStream` is the whole guard: it
+ * already excludes every other result shape a tool returns, including the
+ * arrays and strings the rest-destructure below would otherwise mangle.
+ *
+ * @param {unknown} result
+ * @returns {{directAnswerStream: AsyncGenerator<object>|null, toolBody: unknown}}
+ */
+function splitDirectAnswerStream(result) {
+  if (
+    typeof result?.directAnswerStream?.[Symbol.asyncIterator] !== "function"
+  ) {
+    return { directAnswerStream: null, toolBody: result };
+  }
+  const { directAnswerStream, ...toolBody } = result;
+  return { directAnswerStream, toolBody };
+}
+
+/**
  * Removes any feature-gated tools whose enable pref is currently off, so the
  * model is never offered tools the build is not configured to support, and
  * swaps in pref-selected variants of a tool's config.
@@ -161,11 +188,14 @@ const TOOLS_WITH_PENDING_ACTION_LOG = new Set([SEARCH_THE_WEB]);
  */
 function filterFeatureGatedTools(tools) {
   let filtered = tools;
-  // The two search_the_web paths return different shapes, so the description
-  // and parameters the model sees have to match the path that will run.
-  if (Services.prefs.getBoolPref(SEARCH_THE_WEB_FAST_PREF, false)) {
+  // The three search_the_web paths return different shapes, so the description
+  // and parameters the model sees have to match the path that will run. Both
+  // this and runSearchTheWeb's dispatch read the same selectSearchTheWebPath,
+  // so they cannot disagree about which one that is.
+  const searchTheWebConfig = searchTheWebToolConfig();
+  if (searchTheWebConfig) {
     filtered = filtered.map(t =>
-      t.function?.name === SEARCH_THE_WEB ? SEARCH_THE_WEB_TOOL_CONFIG_FAST : t
+      t.function?.name === SEARCH_THE_WEB ? searchTheWebConfig : t
     );
   }
   if (!Services.prefs.getBoolPref(AITAB_PREF, false)) {
@@ -346,15 +376,7 @@ Object.assign(Chat, {
     const streamModelResponse = () => {
       const snapshot = conversation.compactChatCompletions();
 
-      lazy.console.log(
-        `Request (${conversation.securityProperties.getLogText()})`,
-        snapshot.at(-1)
-      );
-
-      // Debug logging: Record only the latest message being sent to the model
-      logConversationStream(currentTurn, "CHAT SEND", snapshot.at(-1));
-
-      return conversation.runWithGenerator({
+      const stream = conversation.runWithGenerator({
         streamOptions: { enabled: true },
         fxAccountToken,
         chatId: conversation.id,
@@ -363,6 +385,20 @@ Object.assign(Chat, {
         inferenceParams: { tool_choice: "auto" },
         signal,
       });
+
+      // Logged after runWithGenerator, which is what commits the flags, so the
+      // ones printed are the ones this request is actually governed by. The
+      // generator body does not run until it is iterated, so nothing has been
+      // sent yet.
+      lazy.console.log(
+        `Request (${conversation.securityProperties.getLogText()})`,
+        snapshot.at(-1)
+      );
+
+      // Debug logging: Record only the latest message being sent to the model
+      logConversationStream(currentTurn, "CHAT SEND", snapshot.at(-1));
+
+      return stream;
     };
 
     while (true) {
@@ -567,6 +603,9 @@ Object.assign(Chat, {
         let result;
         let toolCallError = "";
         let isSearchHandoff = false;
+        // Set when the tool is writing the user-facing reply itself, in which
+        // case it is delivered below and the model gets no follow-up turn.
+        let directAnswerStream = null;
         const featureGatedHandler = FEATURE_GATED_HANDLERS.get(toolName);
         const dispatchTool = name =>
           executeToolByName(
@@ -595,7 +634,8 @@ Object.assign(Chat, {
             result = await featureGatedHandler(
               toolParams,
               conversation,
-              signal
+              signal,
+              mode
             );
             /**
              * On the first invocation of search_the_web, SearchProvider-powered
@@ -631,7 +671,13 @@ Object.assign(Chat, {
             `chat-run-tool-complete(${toolName})`
           );
 
-          const content = { tool_call_id: id, body: result, name: toolName };
+          const split = splitDirectAnswerStream(result);
+          directAnswerStream = split.directAnswerStream;
+          const content = {
+            tool_call_id: id,
+            body: split.toolBody,
+            name: toolName,
+          };
           conversation.updateToolCallMessage(pendingToolMessage, content);
         } catch (error) {
           console.error(error);
@@ -652,6 +698,18 @@ Object.assign(Chat, {
           conversation.updateToolCallMessage(pendingToolMessage, content);
         }
 
+        // A failed search returns an error-bearing result rather than
+        // throwing, which would otherwise count as a success. The precise
+        // category is on the search_the_web event.
+        if (
+          !toolCallError &&
+          !isSearchHandoff &&
+          toolName === SEARCH_THE_WEB &&
+          result?.error
+        ) {
+          toolCallError = "execution_failed";
+        }
+
         recordToolCallEvent({
           toolName,
           mode,
@@ -665,19 +723,22 @@ Object.assign(Chat, {
 
         // MANAGE_TABS is terminal - UI handles the interaction.
         if (toolName === MANAGE_TABS) {
-          conversation.securityProperties.commit();
+          return;
+        }
+
+        // Also terminal: the tool is writing the reply itself (the answers path
+        // of search_the_web), so stream it into the assistant message rather
+        // than spending another model turn rewriting prose we already have.
+        // Same receiveResponse the model's own output goes through, so it picks
+        // up the streaming updates, citations, persistence and completion.
+        if (directAnswerStream) {
+          await conversation.receiveResponse(directAnswerStream);
+          logConversationStream(currentTurn, "STREAM END", null, toolName);
           return;
         }
 
         // Perform the search handoff if the RUN_SEARCH tool was run.
         if (isSearchHandoff) {
-          // Commit here because we return early below and never reach the
-          // post-loop commit.
-          conversation.securityProperties.commit();
-          lazy.console.log(
-            `Security commit ${conversation.securityProperties.getLogText()}`
-          );
-
           const win = originalEmbedderElement?.documentGlobal;
           if (!win || win.closed) {
             console.error(
@@ -693,13 +754,6 @@ Object.assign(Chat, {
         // @todo Bug 2006159 - Implement parallel tool calling
         break;
       }
-
-      // Commit flags once all tool calls in this batch have finished so that
-      // no tool call can observe flags staged by a sibling call.
-      conversation.securityProperties.commit();
-      lazy.console.log(
-        `Security commit ${conversation.securityProperties.getLogText()}`
-      );
     }
   },
 });

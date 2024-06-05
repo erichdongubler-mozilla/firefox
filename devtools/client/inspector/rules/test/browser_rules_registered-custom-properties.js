@@ -79,16 +79,6 @@ const TEST_URI = `https://example.org/document-builder.sjs?html=${encodeURICompo
       --css-inherit: dashed;
       /* valid, complex value */
       --js-no-inherit: calc(100px * cos(45deg));
-      /* based on subsitution functions */
-      --substitution-1: var(--local-not-a-color);
-      --substitution-2: var(--local-color);
-      --substitution-3: attr(data-not-a-color);
-      --substitution-4: attr(data-color);
-      --substitution-5: env(safe-area-inset-bottom);
-
-      /* non registered */
-      --local-not-a-color: 10px;
-      --local-color: blue;
     }
   </style>
   <main>
@@ -633,6 +623,17 @@ add_task(async function iacvt() {
       initial-value: red;
     }
 
+    @property --length {
+      syntax: "<length>";
+      inherits: false;
+      initial-value: 10px;
+    }
+
+    :root {
+      --local-not-a-color: 10px;
+      --local-color: blue;
+    }
+
     aside {
      /* registered property has <color> syntax, this declaration is invalid at computed-value time */
       --css-inherit: dashed;
@@ -642,12 +643,10 @@ add_task(async function iacvt() {
       --color-1: var(--local-not-a-color);
       --color-2: var(--local-color);
       --color-3: attr(data-not-a-color);
-      --color-4: attr(data-color);
-      --color-5: env(safe-area-inset-bottom);
-
-      /* non registered */
-      --local-not-a-color: 10px;
-      --local-color: blue;
+      --color-4: attr(data-color type(<color>));
+      --color-5: attr(data-not-a-color type(<color>));
+      --color-6: env(safe-area-inset-bottom);
+      --length: env(safe-area-inset-bottom);
     }
   </style>
   <aside data-not-a-color="10" data-color="gold">fries</aside>
@@ -656,7 +655,6 @@ add_task(async function iacvt() {
   const { inspector, view } = await openRuleView();
 
   await selectNode("aside", inspector);
-
   info(
     "Check that the invalid at computed-value time icon is displayed when needed"
   );
@@ -677,13 +675,13 @@ add_task(async function iacvt() {
   });
 
   info(
-    "Declaration of variable based on substitution functions are not marked as invalid"
+    "Check declaration of registered properties based on substitution functions"
   );
   checkInvalidAtComputedValueTime(view, {
     ruleIndex: 1,
     declaration: { "--color-1": "var(--local-not-a-color)" },
-    // should be true (see Bug 2070169)
-    invalid: false,
+    invalid: true,
+    syntax: `<color>`,
   });
   checkInvalidAtComputedValueTime(view, {
     ruleIndex: 1,
@@ -692,19 +690,30 @@ add_task(async function iacvt() {
   });
   checkInvalidAtComputedValueTime(view, {
     ruleIndex: 1,
-    // should be true (see Bug 2070169)
     declaration: { "--color-3": "attr(data-not-a-color)" },
+    invalid: true,
+    syntax: `<color>`,
+  });
+  checkInvalidAtComputedValueTime(view, {
+    ruleIndex: 1,
+    declaration: { "--color-4": "attr(data-color type(<color>))" },
     invalid: false,
   });
   checkInvalidAtComputedValueTime(view, {
     ruleIndex: 1,
-    declaration: { "--color-4": "attr(data-color)" },
-    invalid: false,
+    declaration: { "--color-5": "attr(data-not-a-color type(<color>))" },
+    invalid: true,
+    syntax: `<color>`,
   });
   checkInvalidAtComputedValueTime(view, {
     ruleIndex: 1,
-    declaration: { "--color-5": "env(safe-area-inset-bottom)" },
-    // should be true (see Bug 2070169)
+    declaration: { "--color-6": "env(safe-area-inset-bottom)" },
+    invalid: true,
+    syntax: `<color>`,
+  });
+  checkInvalidAtComputedValueTime(view, {
+    ruleIndex: 1,
+    declaration: { "--length": "env(safe-area-inset-bottom)" },
     invalid: false,
   });
 });

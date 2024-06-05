@@ -12,7 +12,7 @@ import sys
 import threading
 import time
 import warnings
-from collections import namedtuple
+from collections import deque, namedtuple
 from contextlib import contextmanager
 
 # Common prefix in log lines from a Gecko process: "[Child|Parent <pid>: <thread>]"
@@ -58,7 +58,8 @@ _WARNING_RE = re.compile(
 )
 
 _ASSERTION_RE = re.compile(
-    _PROC_PREFIX_COMMA
+    r"\x07?"
+    + _PROC_PREFIX_COMMA
     + r" ###!!! ASSERTION: (?P<message>.*?), file (?P<file>[^:]+):(?P<line>\d+)\s*$"
 )
 
@@ -395,6 +396,17 @@ SystemResourceUsage = namedtuple(
 )
 
 
+class _AssertionFallbackLogger:
+    """Logger-like sink for the line-based AssertionFailureParser: the
+    actions it would emit become markers instead."""
+
+    def __init__(self, monitor):
+        self._monitor = monitor
+
+    def assertion_failure(self, **data):
+        self._monitor._record_line_assertion(data)
+
+
 class SystemResourceMonitor:
     """Measures system resources.
 
@@ -499,6 +511,22 @@ class SystemResourceMonitor:
         # console.trace: line waiting for follow-up stack frames; flushed when
         # a non-frame process_output line arrives or the monitor stops.
         self._pending_console_trace = None
+        # Line-based fallback for harnesses that do not emit assertion_failure
+        # actions: assembles assertion headers and their stack frames out of
+        # process_output lines. An assertion_failure action for the same
+        # assertion supersedes the pending line-based report.
+        self._assertion_parser = None
+        try:
+            from moztest.assertions import AssertionFailureParser
+        except ImportError:
+            pass
+        else:
+            self._assertion_parser = AssertionFailureParser(
+                _AssertionFallbackLogger(self)
+            )
+        # (message, file, lineno) of assertion_failure actions that found no
+        # pending line-based report, so that one completing later is dropped.
+        self._recent_assertion_actions = deque(maxlen=32)
         # Multi-line console.<method>: body (Message:/Stack:/frames) waiting
         # to be assembled into a single marker. Tuple of
         # (name, timestamp, marker_data, phase, prefix_body) where phase
@@ -658,6 +686,8 @@ class SystemResourceMonitor:
         self._flush_leak_logs()
         self._flush_pending_console_trace()
         self._flush_pending_multiline_console()
+        if self._assertion_parser is not None:
+            self._assertion_parser.flush()
 
         if self._stream_file:
             self._stream_file.close()
@@ -1002,8 +1032,11 @@ class SystemResourceMonitor:
             f"{self._frame_file_prefix}{cleaned}:{self._frame_file_rev}",
         )
 
-    def _parse_process_output(self, line, timestamp, test_name):
+    def _parse_process_output(self, line, timestamp, test_name, process=None):
         """Parse a single process_output line and emit a typed marker if it matches a known pattern.
+
+        `process` identifies the output stream the line came from, so that
+        multi-line reports from interleaved streams are kept apart.
 
         Returns True if the line produced a specialized marker, False otherwise.
         """
@@ -1078,7 +1111,12 @@ class SystemResourceMonitor:
             self._add_event("C++ warning", timestamp, marker_data)
             return True
 
-        if m := _ASSERTION_RE.match(line):
+        if self._assertion_parser is not None:
+            if self._assertion_parser.log(
+                line, pid=process, test=test_name, time=timestamp
+            ):
+                return True
+        elif m := _ASSERTION_RE.match(line):
             display, frame_file = self._clean_frame_file(m["file"])
             marker_data = {
                 "type": "cppDebug",
@@ -1408,7 +1446,7 @@ class SystemResourceMonitor:
             line = data.get("data")
             test_name = data.get("test")
             if line and SystemResourceMonitor.instance._parse_process_output(
-                line, timestamp, test_name
+                line, timestamp, test_name, process=data.get("process")
             ):
                 # Line was parsed into a specialized marker; nothing else to do.
                 return
@@ -1654,6 +1692,81 @@ class SystemResourceMonitor:
                     rewritten.append(frame)
             marker_data["stack"] = rewritten
             SystemResourceMonitor.record_event("TSan Error", timestamp, marker_data)
+
+    @staticmethod
+    def assertion_failure(data):
+        """Record a native assertion failure.
+
+        Args:
+            data: Dictionary containing assertion_failure data including:
+                  - "kind": "MOZ_ASSERT", "MOZ_CRASH", "NS_ASSERTION" or "NS_ABORT"
+                  - "message": asserted condition or crash reason
+                  - "file", "lineno": source location (optional)
+                  - "pid", "process_type", "thread": asserting process (optional)
+                  - "fatal": whether the process aborts (optional)
+                  - "stack": list of profiler-format frame dicts (optional)
+                  - "test": test name (optional)
+                  - "time": timestamp in milliseconds
+
+        The same assertion may be pending in the line-based fallback fed by
+        process_output lines; the structured action wins.
+        """
+        if not SystemResourceMonitor.instance:
+            return
+
+        monitor = SystemResourceMonitor.instance
+        timestamp = monitor.get_monotonic_time_from_data(data)
+
+        key = (data["message"], data.get("file"), data.get("lineno"))
+        if not (monitor._assertion_parser and monitor._assertion_parser.discard(key)):
+            monitor._recent_assertion_actions.append(key)
+        monitor._emit_assertion_marker(timestamp, data)
+
+    def _record_line_assertion(self, data):
+        key = (data["message"], data.get("file"), data.get("lineno"))
+        if key in self._recent_assertion_actions:
+            self._recent_assertion_actions.remove(key)
+            return
+        self._emit_assertion_marker(data.pop("time", time.monotonic()), data)
+
+    def _emit_assertion_marker(self, timestamp, data):
+        fatal = bool(data.get("fatal"))
+        marker_data = {
+            "type": "AssertionFailure",
+            "kind": data["kind"],
+            "message": data["message"],
+            "color": "red" if fatal else "orange",
+        }
+        if fatal:
+            marker_data["fatal"] = True
+        frame_file = None
+        if file_ := data.get("file"):
+            marker_data["file"], frame_file = self._clean_frame_file(file_)
+        lineno = data.get("lineno")
+        if lineno is not None:
+            marker_data["line"] = lineno
+        for source, target in (
+            ("pid", "pid"),
+            ("process_type", "process"),
+            ("thread", "thread"),
+            ("test", "test"),
+        ):
+            if value := data.get(source):
+                marker_data[target] = value
+        if stack := data.get("stack"):
+            rewritten = []
+            for frame in stack:
+                if "file" in frame:
+                    rewritten.append({
+                        **frame,
+                        "file": self._clean_frame_file(frame["file"])[1],
+                    })
+                else:
+                    rewritten.append(frame)
+            marker_data["stack"] = rewritten
+        elif frame_file and lineno is not None:
+            marker_data["stack"] = [{"file": frame_file, "line": lineno}]
+        self._add_event(data["kind"], timestamp, marker_data)
 
     @staticmethod
     def mozleak_object(data):
@@ -2298,6 +2411,26 @@ class SystemResourceMonitor:
                             "label": "Stack",
                             "format": "string",
                         },
+                    ],
+                },
+                {
+                    "name": "AssertionFailure",
+                    "tooltipLabel": "{marker.data.kind}: {marker.data.message}",
+                    "tableLabel": "{marker.data.kind}: {marker.data.message} — {marker.data.file}:{marker.data.line}",
+                    "chartLabel": "{marker.data.message}",
+                    "display": ["marker-chart", "marker-table"],
+                    "colorField": "color",
+                    "data": [
+                        {"key": "kind", "label": "Kind", "format": "string"},
+                        {"key": "message", "label": "Message", "format": "string"},
+                        {"key": "file", "format": "string", "hidden": True},
+                        {"key": "line", "format": "integer", "hidden": True},
+                        {"key": "fatal", "label": "Fatal", "format": "string"},
+                        {"key": "process", "label": "Process", "format": "string"},
+                        {"key": "pid", "label": "Process ID", "format": "integer"},
+                        {"key": "thread", "label": "Thread", "format": "string"},
+                        {"key": "test", "label": "Test", "format": "string"},
+                        {"key": "color", "hidden": True},
                     ],
                 },
                 {

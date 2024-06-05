@@ -2217,7 +2217,7 @@ const nsIFrame* nsLayoutUtils::FindNearestCommonAncestorFrameWithinBlock(
   return nullptr;
 }
 
-bool nsLayoutUtils::AuthorSpecifiedBorderBackgroundDisablesTheming(
+bool nsLayoutUtils::AuthorOrUserSpecifiedBorderBackgroundDisablesTheming(
     StyleAppearance aAppearance) {
   return aAppearance == StyleAppearance::NumberInput ||
          aAppearance == StyleAppearance::PasswordInput ||
@@ -3116,10 +3116,9 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
   // In the case where we use APZ for the given popup frame, we need to set the
   // displayport base.
   if (aFrame->IsMenuPopupFrame() &&
-      nsLayoutUtils::AsyncPanZoomEnabled(aFrame) &&
-      !DisplayPortUtils::HasDisplayPort(aFrame->GetContent())) {
+      nsLayoutUtils::AsyncPanZoomEnabled(aFrame)) {
     MOZ_ASSERT(XRE_IsParentProcess());
-    APZCCallbackHelper::InitializeRootDisplayport(aFrame);
+    APZCCallbackHelper::EnsureDisplayportSizeOnPopupRoot(aFrame);
   }
 
   nsRegion visibleRegion;
@@ -3981,7 +3980,7 @@ already_AddRefed<nsFontMetrics> nsLayoutUtils::GetFontMetricsForComputedStyle(
   WritingMode wm(aComputedStyle);
   const nsStyleFont* styleFont = aComputedStyle->StyleFont();
   nsFontMetrics::Params params;
-  params.language = styleFont->mLanguage;
+  params.language = styleFont->GetLangAtom();
   params.explicitLanguage = styleFont->mExplicitLanguage;
   params.orientation =
       !aForceHorizontalMetrics && wm.IsVertical() && !wm.IsSideways()
@@ -4283,7 +4282,7 @@ static Maybe<nscoord> GetPercentBSize(const LengthPercentage& aSize,
 // If aSize can be resolved to a definite value, returns it; otherwise returns
 // Nothing().
 static Maybe<nscoord> GetDefiniteSize(
-    const LengthPercentage& aSize, nsIFrame* aFrame, bool aIsInlineAxis,
+    const LengthPercentage& aSize, nsIFrame* aFrame, LogicalAxis aAxis,
     const Maybe<LogicalSize>& aPercentageBasis) {
   if (aSize.ConvertsToLength()) {
     return Some(aSize.ToLength());
@@ -4294,8 +4293,7 @@ static Maybe<nscoord> GetDefiniteSize(
   }
 
   auto wm = aFrame->GetWritingMode();
-  nscoord pb = aIsInlineAxis ? aPercentageBasis.value().ISize(wm)
-                             : aPercentageBasis.value().BSize(wm);
+  nscoord pb = aPercentageBasis.value().Size(aAxis, wm);
   if (pb == NS_UNCONSTRAINEDSIZE) {
     return Nothing();
   }
@@ -4303,16 +4301,28 @@ static Maybe<nscoord> GetDefiniteSize(
 }
 
 // If aSize can be resolved to a definite value, returns it; otherwise returns
-// Nothing().
+// Nothing(). aOffsets are aFrame's margin/border/padding in the axis of aSize,
+// which stretch-like keywords need to fill the percentage basis.
 template <typename SizeOrMaxSize>
 static Maybe<nscoord> GetDefiniteSize(
-    const SizeOrMaxSize& aSize, nsIFrame* aFrame, bool aIsInlineAxis,
-    const Maybe<LogicalSize>& aPercentageBasis) {
-  if (!aSize->IsLengthPercentage()) {
+    const SizeOrMaxSize& aSize, nsIFrame* aFrame, LogicalAxis aAxis,
+    const Maybe<LogicalSize>& aPercentageBasis,
+    const nsIFrame::IntrinsicSizeOffsetData& aOffsets,
+    StyleBoxSizing aBoxSizing) {
+  if (aSize->IsLengthPercentage()) {
+    return GetDefiniteSize(aSize->AsLengthPercentage(), aFrame, aAxis,
+                           aPercentageBasis);
+  }
+  if (!aPercentageBasis || !aSize->BehavesLikeStretch(aAxis)) {
     return Nothing();
   }
-  return GetDefiniteSize(aSize->AsLengthPercentage(), aFrame, aIsInlineAxis,
-                         aPercentageBasis);
+  const auto wm = aFrame->GetWritingMode();
+  const nscoord cbSize = aPercentageBasis->Size(aAxis, wm);
+  if (cbSize == NS_UNCONSTRAINEDSIZE) {
+    return Nothing();
+  }
+  return Some(nsLayoutUtils::ComputeStretchSize(
+      cbSize, aOffsets.margin, aOffsets.BorderPadding(), aBoxSizing));
 }
 
 // NOTE: this function will be replaced by GetDefiniteSizeTakenByBoxSizing (bug
@@ -4368,12 +4378,12 @@ static nscoord GetBSizePercentBasisAdjustment(StyleBoxSizing aBoxSizing,
 // aIsInlineAxis is true if we're computing for aFrame's inline axis.
 // aIgnorePadding is true if padding should be ignored.
 static nscoord GetDefiniteSizeTakenByBoxSizing(
-    StyleBoxSizing aBoxSizing, nsIFrame* aFrame, bool aIsInlineAxis,
+    StyleBoxSizing aBoxSizing, nsIFrame* aFrame, LogicalAxis aAxis,
     bool aIgnorePadding, const Maybe<LogicalSize>& aPercentageBasis) {
   nscoord sizeTakenByBoxSizing = 0;
   if (MOZ_UNLIKELY(aBoxSizing == StyleBoxSizing::BorderBox)) {
-    const bool isHorizontalAxis =
-        aIsInlineAxis == !aFrame->GetWritingMode().IsVertical();
+    const bool isHorizontalAxis = (aAxis == LogicalAxis::Inline) ==
+                                  !aFrame->GetWritingMode().IsVertical();
     const nsStyleBorder* styleBorder = aFrame->StyleBorder();
     sizeTakenByBoxSizing = isHorizontalAxis
                                ? styleBorder->GetComputedBorder().LeftRight()
@@ -4392,8 +4402,8 @@ static nscoord GetDefiniteSizeTakenByBoxSizing(
       // known.  See bug 1231059.
       auto GetPadding =
           [&](const LengthPercentage& aPadding) -> Maybe<nscoord> {
-        if (Maybe<nscoord> padding = GetDefiniteSize(
-                aPadding, aFrame, aIsInlineAxis, aPercentageBasis)) {
+        if (Maybe<nscoord> padding =
+                GetDefiniteSize(aPadding, aFrame, aAxis, aPercentageBasis)) {
           return padding;
         }
         if (aPercentageBasis) {
@@ -4769,7 +4779,8 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   PhysicalAxis ourInlineAxis =
       aFrame->GetWritingMode().PhysicalAxis(LogicalAxis::Inline);
   const bool isInlineAxis = aAxis == ourInlineAxis;
-
+  const auto logicalAxis =
+      isInlineAxis ? LogicalAxis::Inline : LogicalAxis::Block;
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(aFrame);
   auto styleMinISize = horizontalAxis
                            ? stylePos->GetMinWidth(anchorResolutionParams)
@@ -4788,13 +4799,16 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   auto ResetIfKeywords = [](AnchorResolvedSize& aSize,
                             AnchorResolvedSize& aMinSize,
                             AnchorResolvedMaxSize& aMaxSize) {
-    if (!aSize->IsLengthPercentage()) {
+    if (!aSize->IsLengthPercentage() &&
+        !aSize->BehavesLikeStretchOnBlockAxis()) {
       aSize = AnchorResolvedSizeHelper::Auto();
     }
-    if (!aMinSize->IsLengthPercentage()) {
+    if (!aMinSize->IsLengthPercentage() &&
+        !aMinSize->BehavesLikeStretchOnBlockAxis()) {
       aMinSize = AnchorResolvedSizeHelper::Auto();
     }
-    if (!aMaxSize->IsLengthPercentage()) {
+    if (!aMaxSize->IsLengthPercentage() &&
+        !aMaxSize->BehavesLikeStretchOnBlockAxis()) {
       aMaxSize = AnchorResolvedMaxSizeHelper::None();
     }
   };
@@ -4802,7 +4816,8 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   // property's initial values in block axis.
   // It also make senses to use the initial values for -moz-fit-content and
   // -moz-available for intrinsic size in block axis. Therefore, we reset them
-  // if needed.
+  // if needed. 'stretch' does resolve in the block axis when the containing
+  // block size is known, so it's kept.
   if (!isInlineAxis) {
     ResetIfKeywords(styleISize, styleMinISize, styleMaxISize);
   }
@@ -4873,15 +4888,15 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
       MOZ_LIKELY(isInlineAxis)
           ? aFrame->IntrinsicISizeOffsets(pmPercentageBasis)
           : aFrame->IntrinsicBSizeOffsets(pmPercentageBasis);
+  nsIFrame::IntrinsicSizeOffsetData offsetInOtherAxis =
+      MOZ_LIKELY(isInlineAxis)
+          ? aFrame->IntrinsicBSizeOffsets(pmPercentageBasis)
+          : aFrame->IntrinsicISizeOffsets(pmPercentageBasis);
 
   auto GetContentEdgeToBoxSizing = [&](const StyleBoxSizing aBoxSizing) {
     if (aBoxSizing == StyleBoxSizing::ContentBox) {
       return LogicalSize(childWM);
     }
-    nsIFrame::IntrinsicSizeOffsetData offsetInOtherAxis =
-        MOZ_LIKELY(isInlineAxis)
-            ? aFrame->IntrinsicBSizeOffsets(pmPercentageBasis)
-            : aFrame->IntrinsicISizeOffsets(pmPercentageBasis);
     const auto& inlineOffset =
         isInlineAxis ? offsetInRequestedAxis : offsetInOtherAxis;
     const auto& blockOffset =
@@ -4894,7 +4909,8 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   // in this function.
   auto GetBSize = [&](const auto& aSize) -> Maybe<nscoord> {
     if (Maybe<nscoord> bSize =
-            GetDefiniteSize(aSize, aFrame, !isInlineAxis, aPercentageBasis)) {
+            GetDefiniteSize(aSize, aFrame, GetOrthogonalAxis(logicalAxis),
+                            aPercentageBasis, offsetInOtherAxis, boxSizing)) {
       return bSize;
     }
     if (aPercentageBasis) {
@@ -4956,7 +4972,8 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
             nsIFrame::ComputeBSizeValueAsPercentageBasis(
                 *styleBSize, *styleMinBSize, *styleMaxBSize,
                 percentageBasisBSizeForFrame,
-                contentEdgeToBoxSizing->BSize(childWM));
+                contentEdgeToBoxSizing->BSize(childWM),
+                offsetInOtherAxis.margin, offsetInOtherAxis.BorderPadding());
       } else {
         // aFrame is not a containing block, so its children share the same
         // containing block as aFrame. Therefore, the percentage basis for
@@ -5004,7 +5021,8 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
             aFrame, NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE);
 
         nscoord bSizeTakenByBoxSizing = GetDefiniteSizeTakenByBoxSizing(
-            boxSizing, aFrame, !isInlineAxis, ignorePadding, aPercentageBasis);
+            boxSizing, aFrame, GetOrthogonalAxis(logicalAxis), ignorePadding,
+            aPercentageBasis);
         if (!contentEdgeToBoxSizing) {
           contentEdgeToBoxSizing.emplace(GetContentEdgeToBoxSizing(boxSizing));
         }
@@ -5055,7 +5073,8 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
         contentEdgeToBoxSizing.emplace(GetContentEdgeToBoxSizing(boxSizing));
       }
       nscoord bSizeTakenByBoxSizing = GetDefiniteSizeTakenByBoxSizing(
-          boxSizing, aFrame, !isInlineAxis, ignorePadding, aPercentageBasis);
+          boxSizing, aFrame, GetOrthogonalAxis(logicalAxis), ignorePadding,
+          aPercentageBasis);
 
       *bSize -= bSizeTakenByBoxSizing;
       iSizeFromAspectRatio.emplace(ar.ComputeRatioDependentSize(
@@ -7109,7 +7128,7 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromOffscreenCanvas(
 
 SurfaceFromElementResult nsLayoutUtils::SurfaceFromVideoFrame(
     VideoFrame* aVideoFrame, uint32_t aSurfaceFlags,
-    RefPtr<DrawTarget>& aTarget) {
+    RefPtr<DrawTarget>& aTarget, bool aOptimizeSourceSurface) {
   SurfaceFromElementResult result;
 
   RefPtr<layers::Image> layersImage = aVideoFrame->GetImage();
@@ -7199,10 +7218,10 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromVideoFrame(
     result.mPrincipal = global->PrincipalOrNull();
   }
 
-  if (aTarget) {
+  if (aTarget && aOptimizeSourceSurface) {
     // They gave us a DrawTarget to optimize for, so even though we may have a
-    // layers::Image, we should unconditionally try to grab a SourceSurface and
-    // try to optimize it.
+    // layers::Image, we should try to grab a SourceSurface and try to optimize
+    // it if requested.
     if (result.mLayersImage) {
       MOZ_ASSERT(!result.mSourceSurface);
       result.mSourceSurface = result.mLayersImage->GetAsSourceSurface();
@@ -7747,10 +7766,10 @@ static void AddFontsFromTextRun(gfxTextRun* aTextRun, nsTextFrame* aFrame,
       end = std::min(end, contentLimit);
 
       if (end > start) {
-        RefPtr<nsRange> range =
-            nsRange::Create(content, start, content, end, IgnoreErrors());
+        RefPtr<dom::Range> range =
+            dom::Range::Create(content, start, content, end, IgnoreErrors());
         NS_WARNING_ASSERTION(range,
-                             "nsRange::Create() failed to create valid range");
+                             "Range::Create() failed to create valid range");
         if (range) {
           fontFace->AddRange(range);
         }
@@ -8318,10 +8337,6 @@ bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
           ? SubtractDynamicToolbar::Yes
           : SubtractDynamicToolbar::No;
 
-  const bool isKeyboardVisibleOnOverlaysContent =
-      aPresContext->GetKeyboardHeight() &&
-      aPresContext->Document()->InteractiveWidget() ==
-          InteractiveWidget::OverlaysContent;
   if (shouldSubtractDynamicToolbar == SubtractDynamicToolbar::Yes &&
       // In `overlays-content` mode with the software keyboard visible, avoid
       // flipping `shouldSubtractDynamicToolbar` below. We want to exclude
@@ -8330,7 +8345,7 @@ bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
       // layout viewport height in ExpandHeightForDynamicToolbar(). Otherwise,
       // the visual viewport will be taller than the layout viewport which can
       // lead to rendering problems.
-      !isKeyboardVisibleOnOverlaysContent) {
+      !aPresContext->IsKeyboardVisibleOnOverlaysContent()) {
     if (RefPtr<MobileViewportManager> MVM =
             aPresContext->PresShell()->GetMobileViewportManager()) {
       // Convert the intrinsic composition size to app units here since
@@ -8363,7 +8378,7 @@ bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
   // Add the keyboard height in the case of
   // `interactive-widget=overlays-content` so that contents being overlaid by
   // the keyboard can NOT be reachable by scrolling.
-  if (isKeyboardVisibleOnOverlaysContent) {
+  if (aPresContext->IsKeyboardVisibleOnOverlaysContent()) {
     contentSize.height += ViewAs<LayoutDevicePixel>(
         aPresContext->GetKeyboardHeight(),
         PixelCastJustification::LayoutDeviceIsScreenForBounds);
@@ -9295,8 +9310,8 @@ nsRect nsLayoutUtils::GetSelectionBoundingRect(const Selection* aSel) {
     const uint32_t rangeCount = aSel->RangeCount();
     for (const uint32_t idx : IntegerRange(rangeCount)) {
       MOZ_ASSERT(aSel->RangeCount() == rangeCount);
-      nsRange* range = aSel->GetRangeAt(idx);
-      nsRange::CollectClientRectsAndText(
+      dom::Range* range = aSel->GetRangeAt(idx);
+      dom::Range::CollectClientRectsAndText(
           &accumulator, nullptr, range, range->GetStartContainer(),
           range->StartOffset(), range->GetEndContainer(), range->EndOffset(),
           true, false);
@@ -9797,13 +9812,10 @@ nsPoint nsLayoutUtils::ComputeOffsetToUserSpace(nsDisplayListBuilder* aBuilder,
   // if we want "ctx" to be in user space, we first need to subtract the
   // frame's position so that SVG painting can later add it again and the
   // frame is painted in the right place.
-  gfxPoint toUserSpaceGfx =
-      SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(aFrame);
-  nsPoint toUserSpace =
-      nsPoint(nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.x)),
-              nsPresContext::CSSPixelsToAppUnits(float(toUserSpaceGfx.y)));
+  nsPoint toUserSpace = CSSPoint::ToAppUnits(
+      SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(aFrame));
 
-  return (offsetToBoundingBox - toUserSpace);
+  return offsetToBoundingBox - toUserSpace;
 }
 
 /* static */
@@ -9815,7 +9827,7 @@ already_AddRefed<nsFontMetrics> nsLayoutUtils::GetMetricsFor(
   gfxFont::Orientation orientation =
       aIsVertical ? nsFontMetrics::eVertical : nsFontMetrics::eHorizontal;
   nsFontMetrics::Params params;
-  params.language = aStyleFont->mLanguage;
+  params.language = aStyleFont->GetLangAtom();
   params.explicitLanguage = aStyleFont->mExplicitLanguage;
   params.orientation = orientation;
   params.userFontSet =
@@ -10170,11 +10182,11 @@ template <typename SizeType>
     const nsPresContext* aPresContext, const SizeType& aSize) {
   MOZ_ASSERT(aPresContext);
 
-  // This expansion is applicable only for cases where the software keyboard is
-  // hidden or the document is `interactive-widget=resizes-content` mode
-  // because in other cases the visual viewport size is always smaller than
-  // the layout viewport so that there should be room to scroll.
-  if (!aPresContext->IsKeyboardHiddenOrResizesContentMode()) {
+  // In `overlays-content` mode with the software keyboard visible the dynamic
+  // toolbar never changes viewport related metrics
+  // (see nsPresContext::UpdateDynamicToolbarOffset), so there is no area for it
+  // to expand.
+  if (aPresContext->IsKeyboardVisibleOnOverlaysContent()) {
     return aSize;
   }
 

@@ -235,9 +235,9 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
   // font face corresponding to the mFont/mFontFile *without* any DWrite
   // style simulations applied
-  RefPtr<IDWriteFontFace> mFontFace;
+  RefPtr<IDWriteFontFace> mFontFace MOZ_GUARDED_BY(mLock);
   // Extended fontface interface if supported, else null
-  RefPtr<IDWriteFontFace5> mFontFace5;
+  RefPtr<IDWriteFontFace5> mFontFace5 MOZ_GUARDED_BY(mLock);
 
   DWRITE_FONT_FACE_TYPE mFaceType;
 
@@ -412,9 +412,6 @@ class gfxDWriteFontList final : public gfxPlatformFontList {
       WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry,
       FontData* aFontData) override;
 
-  IDWriteGdiInterop* GetGDIInterop() { return mGDIInterop; }
-  bool UseGDIFontTableAccess() const;
-
   bool FindAndAddFamiliesLocked(
       FontVisibilityProvider* aFontVisibilityProvider,
       mozilla::StyleGenericFontFamily aGeneric, const nsACString& aFamily,
@@ -497,10 +494,6 @@ class gfxDWriteFontList final : public gfxPlatformFontList {
   virtual already_AddRefed<FontInfoData> CreateFontInfoData();
 
   gfxFloat mForceGDIClassicMaxFontSize;
-
-  // whether to use GDI font table access routines
-  bool mGDIFontTableAccess;
-  RefPtr<IDWriteGdiInterop> mGDIInterop;
 
   RefPtr<DWriteFontFallbackRenderer> mFallbackRenderer;
   RefPtr<IDWriteTextFormat> mFallbackFormat;

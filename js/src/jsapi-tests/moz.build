@@ -94,6 +94,7 @@ UNIFIED_SOURCES += [
     "testMappedArrayBuffer.cpp",
     "testMapSet.cpp",
     "testMemoryAssociation.cpp",
+    "testMicroTask.cpp",
     "testMutedErrors.cpp",
     "testNewObject.cpp",
     "testNewTargetInvokeConstructor.cpp",

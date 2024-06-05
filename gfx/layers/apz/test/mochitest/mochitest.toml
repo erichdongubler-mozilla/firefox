@@ -149,6 +149,12 @@ skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1857059
 ]
 
+["test_group_overscroll_behavior.html"]
+skip-if = [
+  "os == 'android'", # getPanHandler() doesn't support Android
+  "os == 'linux'", # SpecialPowers.isHeadless is broken on Linux (bug 1889039)
+]
+
 ["test_group_overscroll_handoff.html"]
 run-if = [
   "os != 'android'", # wheel events not supported on mobile

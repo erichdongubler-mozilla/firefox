@@ -39,6 +39,155 @@ session_restore:
         type: string
     telemetry_mirror: Session_restore_BackupCanBeLoaded_SessionFile
 
+  startup_session_availability:
+    type: event
+    description: >
+      Recorded once per startup when the session file read completes, including
+      when nothing could be restored. Reports what we saw of each candidate
+      session file while looking for one to load, and whether the user wanted a
+      session restored, so that a session lost to missing files can be told
+      apart from a user who starts fresh by choice.
+      The per-file keys describe the search, not the profile directory: the
+      load order stops at the first file that loads, so files later in the
+      order are reported as "not_examined". They are only complete when nothing
+      could be loaded, which is the case this event exists to measure, and must
+      not be used to estimate how often an individual backup file exists.
+      "present" means the read did not report the file as missing, so an
+      unusual I/O error counts as present.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=780014
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=780014
+    notification_emails:
+      - session-restore-telemetry-alerts@mozilla.com
+    expires: never
+    extra_keys:
+      origin:
+        description: >
+          Which file the session was loaded from, one of "clean", "recovery",
+          "recoveryBackup", "cleanBackup" or "upgradeBackup", or "empty" if no
+          session could be loaded
+        type: string
+      format:
+        description: >
+          The format the session was loaded from, "jsonlz4" or the legacy "js",
+          or "none" if no session could be loaded
+        type: string
+      clean:
+        description: >
+          What we saw of the clean session file, one of "present", "absent" or
+          "not_examined"
+        type: string
+      recovery:
+        description: >
+          What we saw of the recovery file, one of "present", "absent" or
+          "not_examined"
+        type: string
+      recovery_backup:
+        description: >
+          What we saw of the recovery backup file, one of "present", "absent"
+          or "not_examined"
+        type: string
+      clean_backup:
+        description: >
+          What we saw of the clean backup file, one of "present", "absent" or
+          "not_examined"
+        type: string
+      upgrade_backup:
+        description: >
+          What we saw of the upgrade backup file, one of "present", "absent",
+          "not_examined", or "not_configured" if no upgrade backup was ever
+          taken
+        type: string
+      startup_page_is_resume:
+        description: >
+          Whether browser.startup.page is set to resume the previous session
+        type: boolean
+      resume_session_once:
+        description: >
+          Whether a one-off session resume was pending, as set for restarts due
+          to application update, as it was found at startup
+        type: boolean
+      resume_from_crash:
+        description: >
+          Whether browser.sessionstore.resume_from_crash allows a crash to lead
+          to a restore
+        type: boolean
+      restarted_by_os:
+        description: >
+          Whether the OS started the browser, rather than the user
+        type: boolean
+      resuming_after_os_restart:
+        description: >
+          Whether a session resume was armed for an OS-initiated restart, as it
+          was found at startup
+        type: boolean
+
+  startup_session_decision:
+    type: event
+    description: >
+      Recorded once per startup, when Session Restore has decided what to do
+      with the session it found. Reports the decision and the reasoning behind
+      it, so that a session the user never asked for can be told apart from one
+      we chose not to restore.
+      This describes the decision only, not whether the restore that followed
+      succeeded. No event is recorded if the browser exits before the first
+      browser window has finished its delayed startup.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1042341
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1042341
+    notification_emails:
+      - session-restore-telemetry-alerts@mozilla.com
+    expires: never
+    extra_keys:
+      session_type:
+        description: >
+          What Session Restore decided to do, one of "no_session", "recover"
+          (restore after a crash), "resume" (restore because it was asked for)
+          or "defer" (keep the session for the user to restore by hand)
+        type: string
+      resume_reason:
+        description: >
+          Why a session was resumed, set when session_type is "resume". One of
+          "os_restart" (armed before the OS restarted us), "resume_session_once"
+          (a one-off resume, as set for restarts due to application update) or
+          "startup_page" (the user asks for their session every time). Where
+          more than one applies, the most specific is reported.
+        type: string
+      previous_session_crashed:
+        description: >
+          Whether the previous session ended in a crash. Unset when we never
+          got as far as checking, which is the case when no session was found
+          and in permanent private browsing.
+        type: boolean
+      action:
+        description: >
+          What we did with the session state as a result, one of "restore",
+          "interstitial" (replaced it with about:sessionrestore), "welcomeback"
+          (replaced about:welcomeback with about:sessionrestore), "pinned_only"
+          (a deferred session whose pinned tabs were opened), "deferred_only"
+          (a deferred session with no pinned tabs, so nothing was opened, but
+          its tabs are available in recently-closed and its groups in saved
+          groups) or "nothing"
+        type: string
+      interstitial_reason:
+        description: >
+          Why about:sessionrestore was shown rather than restoring, set when
+          action is "interstitial". One of "old_session", "many_crashes",
+          "many_crashes_old_session" or "safe_mode".
+        type: string
+      init_error:
+        description: >
+          The name of the error thrown while preparing the session, if one was.
+          The session is left in whatever state it had reached.
+        type: string
+      permanent_private:
+        description: >
+          Whether this is an auto-started permanent private browsing session,
+          in which no session is ever restored
+        type: boolean
+
   shutdown_success_session_startup:
     type: event
     description: >
@@ -234,8 +383,21 @@ session_restore:
   corrupt_file:
     type: labeled_counter
     description: >
-      Session restore: Whether the file read on startup contained parse-able
-      JSON
+      Session restore: Counts session files that existed at startup,
+      labelled by whether the file failed to load because it was
+      unreadable, corrupt or an incompatible version. Recorded once
+      per candidate file in the load order, so one startup can
+      contribute several samples.
+
+      "true" means the file existed but failed to load because of a read
+      error, invalid JSON, an incompatible format version or an error
+      Session Restore does not specifically handle. "false" means the
+      file existed and was not recognised as corrupt.
+
+      Before Firefox 157 a successful load incremented "false" twice.
+      Before Firefox 158 errors that Session Restore does not
+      specifically handle, and files with an incompatible format
+      version, incremented "false" rather than "true".
 
       This metric was generated to correspond to the Legacy Telemetry boolean
       histogram FX_SESSION_RESTORE_CORRUPT_FILE.
@@ -244,8 +406,12 @@ session_restore:
       - "true"
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2071442
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072737
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1944631
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2071442
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072737
     notification_emails:
       - session-restore-telemetry-alerts@mozilla.com
     expires: never
@@ -475,6 +641,55 @@ session_restore:
     data_sensitivity:
       - interaction
 
+  window_features_mismatch_ignored:
+    type: event
+    # We should have identified all of the problem areas after a few months
+    expires: 2027-04-01
+    description: >
+      Recorded when SessionStore is asked to restore a saved window's state
+      into an existing window whose immutable window features doesn't match
+      that of the saved window state. A window's chrome is fixed at creation
+      time and can't be changed afterwards, so the mismatched parts of the
+      saved state are silently not applied - only tabs and other non-chrome
+      state still get restored into the existing window.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2070404
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2070404
+    notification_emails:
+      - session-restore-telemetry-alerts@mozilla.com
+    expires: never
+    extra_keys:
+      entry_point:
+        description: >
+          Which code path triggered the restore attempt:
+          - "set_window_state": SessionRestore.setWindowState()
+          - "set_browser_state": SessionRestore.setBrowserState()
+          - "automatic_startup": automatic session restore on startup
+          - "automatic_with_taskbar_tab": automatic session restore after
+            the user opened the first normal window after having only taskbar
+            tabs open
+          - "deferred_initial_state": deferred restore when opening the first
+            normal window after having closed all normal windows
+          - "unknown": caller didn't specify
+        type: string
+      existing_features:
+        description: >
+          Existing window's features in a comma-separated list. One or more of:
+          - popup
+          - private
+          - taskbartab
+          - chromeless-window
+          - web-extension-popup-window
+        type: string
+      requested_features:
+        description: >
+          Saved state's window features in a comma-separated list. See
+          `existing_features` for definitions.
+        type: string
+    data_sensitivity:
+      - interaction
+
 browser.engagement:
   sessionrestore_interstitial:
     type: labeled_counter
@@ -488,11 +703,16 @@ browser.engagement:
       'shown_many_crashes_old_session' all indicate we did show the
       interstitial because of a crash, and the text after 'shown'
       indicates what secondary reason there was to show this page (as we
-      don't show it for 'just' one crash).
+      don't show it for 'just' one crash). 'shown_safe_mode' also follows a
+      crash, but the interstitial is shown because we never automatically
+      restore in Safe Mode, whatever the crash count or session age. That
+      case was not recorded at all before Firefox 159, so the other 'shown'
+      keys undercount by however often it happened.
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.engagement.sessionrestore_interstitial.
     bugs:
       - https://bugzil.la/1671271
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1042341
     data_reviews:
       - https://bugzil.la/1671271
     notification_emails:

@@ -912,6 +912,8 @@ class SVGFilterObserverList : public ISVGFilterObserverList {
   virtual void OnRenderingChange(Element* aObservingElement) = 0;
 
  protected:
+  SVGFilterObserverList(const SVGFilterObserverList& aOther)
+      : mObservers(aOther.mObservers.Clone()) {}
   virtual ~SVGFilterObserverList();
 
   void DetachObservers() {
@@ -985,7 +987,14 @@ class SVGFilterObserverListForCSSProp final : public SVGFilterObserverList {
                               GetFrameContentAsElement(aFilteredFrame),
                               aFilteredFrame) {}
 
+  ISVGFilterObserverList* Clone() const override {
+    return new SVGFilterObserverListForCSSProp(*this);
+  }
+
  protected:
+  SVGFilterObserverListForCSSProp(const SVGFilterObserverListForCSSProp&) =
+      default;
+
   void OnRenderingChange(Element* aObservingElement) override;
 };
 
@@ -1023,18 +1032,22 @@ class SVGFilterObserverListForCanvasContext final
       : SVGFilterObserverList(aFilters, aCanvasElement), mContext(aContext) {}
 
   void OnRenderingChange(Element* aObservingElement) override;
-  void Detach() override { mContext = nullptr; }
+  void SetIsActive(bool aActive) override { mActive = aActive; }
+  ISVGFilterObserverList* Clone() const override {
+    return new SVGFilterObserverListForCanvasContext(*this);
+  }
 
  private:
+  SVGFilterObserverListForCanvasContext(
+      const SVGFilterObserverListForCanvasContext&) = default;
+
   CanvasRenderingContext2D* mContext;
+  bool mActive = true;
 };
 
 void SVGFilterObserverListForCanvasContext::OnRenderingChange(
     Element* aObservingElement) {
-  if (!mContext) {
-    NS_WARNING(
-        "GFX: This should never be called without a context, except during "
-        "cycle collection (when Detach has been called)");
+  if (!mActive) {
     return;
   }
   // Refresh the cached FilterDescription in mContext->CurrentState().filter.
@@ -1314,6 +1327,9 @@ NS_DECLARE_FRAME_PROPERTY_RELEASABLE(OffsetPathProperty,
 template <class T>
 static T* GetEffectProperty(SVGReference* aReference, nsIFrame* aFrame,
                             const FramePropertyDescriptor<T>* aProperty) {
+  // Continuations can come and go during reflow, and we don't need to observe
+  // the referenced element more than once for a given node.
+  aFrame = aFrame->FirstContinuation();
   if (!aReference) {
     return nullptr;
   }
@@ -1376,6 +1392,7 @@ static SVGFilterObserverListForCSSProp* GetOrCreateFilterObserverListForCSS(
     nsIFrame* aFrame, bool aHasFilters,
     FrameProperties::Descriptor<P> aProperty,
     Span<const StyleFilter> aFilters) {
+  MOZ_ASSERT(!aFrame->GetPrevContinuation(), "Require first continuation");
   if (!aHasFilters) {
     return nullptr;
   }
@@ -1713,6 +1730,9 @@ void SVGObserverUtils::RemoveTemplateObserver(nsIFrame* aFrame) {
 
 Element* SVGObserverUtils::GetAndObserveBackgroundImage(nsIFrame* aFrame,
                                                         const nsAtom* aHref) {
+  // Continuations can come and go during reflow, and we don't need to observe
+  // the referenced element more than once for a given node.
+  aFrame = aFrame->FirstContinuation();
   URIObserverHashtable* hashtable =
       aFrame->GetOrCreateDeletableProperty(BackgroundImageProperty());
   nsAutoString localRef = u"#"_ns + nsDependentAtomString(aHref);
@@ -1734,6 +1754,9 @@ Element* SVGObserverUtils::GetAndObserveBackgroundImage(nsIFrame* aFrame,
 }
 
 Element* SVGObserverUtils::GetAndObserveBackgroundClip(nsIFrame* aFrame) {
+  // Continuations can come and go during reflow, and we don't need to observe
+  // the referenced element more than once for a given node.
+  aFrame = aFrame->FirstContinuation();
   BackgroundClipRenderingObserver* obs = aFrame->GetOrCreateReleasableProperty(
       BackgroundClipObserverProperty(), aFrame);
   return obs->GetAndObserveReferencedElement();

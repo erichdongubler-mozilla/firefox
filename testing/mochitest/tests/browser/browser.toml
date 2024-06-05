@@ -11,6 +11,10 @@ skip-if = [
   "opt", # Bug 1993222
 ]
 
+["browser_EventUtils_drag_and_drop.js"]
+
+["browser_EventUtils_drag_suppressed.js"]
+
 ["browser_SpecialPowersForProcessSpawn.js"]
 support-files = ["../Harness_sanity/file_xorigin_frames.html"]
 

@@ -95,33 +95,14 @@
     :exclude-members: NssAuthenticationError
 ```
 
-```{js:autoclass} RustLogins.sys.NssKeyManager
-    :members:
-    :exclude-members: NssKeyManager
-```
-
 ```{js:autoclass} RustLogins.sys.NssUninitialized
     :members:
     :exclude-members: NssUninitialized
 ```
 
-```{js:autoclass} RustLogins.sys.PrimaryPasswordAuthenticator
-    :members:
-    :exclude-members: PrimaryPasswordAuthenticator
-```
-
 ```{js:autoclass} RustLogins.sys.UnexpectedLoginsApiError
     :members:
     :exclude-members: UnexpectedLoginsApiError
-```
-
-```{js:autofunction} RustLogins.sys.checkCanary
-```
-
-```{js:autofunction} RustLogins.sys.createCanary
-```
-
-```{js:autofunction} RustLogins.sys.createKey
 ```
 
 ```{js:autofunction} RustLogins.sys.createLoginStoreWithNssKeymanager

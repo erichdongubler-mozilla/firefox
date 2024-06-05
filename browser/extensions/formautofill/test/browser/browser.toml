@@ -23,6 +23,8 @@ support-files = [
   "../fixtures/**",
 ]
 
+["browser_address_migration.js"]
+
 ["browser_autocomplete_footer.js"]
 skip-if = [
   "verify-standalone",
@@ -31,15 +33,12 @@ skip-if = [
 ["browser_autocomplete_marked_back_forward.js"]
 
 ["browser_autocomplete_marked_detached_tab.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
-]
 
 ["browser_autocomplete_region.js"]
 
 ["browser_autocomplete_secondary_action.js"]
+
+["browser_autocomplete_unrecognized_attribute.js"]
 
 ["browser_autofill_address_housenumber.js"]
 

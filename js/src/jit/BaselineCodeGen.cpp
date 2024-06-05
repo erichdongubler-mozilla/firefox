@@ -5,6 +5,7 @@
 #include "jit/BaselineCodeGen.h"
 
 #include "mozilla/Casting.h"
+#include "mozilla/FloatingPoint.h"
 
 #include "gc/GC.h"
 #include "jit/BaselineCompileQueue.h"
@@ -787,9 +788,7 @@ bool BaselineInterpreterCodeGen::emitNextIC() {
     JSOp op = *handler.currentOp();
     MOZ_ASSERT(BytecodeOpHasIC(op));
     if (IsIonInlinableOp(op)) {
-      if (!handler.icReturnOffsets().emplaceBack(returnOffset, op)) {
-        return false;
-      }
+      handler.setICReturnOffset(returnOffset);
     }
   }
 
@@ -3130,10 +3129,13 @@ bool BaselineCompilerCodeGen::emitConstantStrictEq(JSOp op) {
         masm.branchTestValue(JSOpToCondition(op, false), value,
                              DoubleValue(constantVal), &pass);
       } else {
-        masm.branchTestValue(Assembler::Equal, value, DoubleValue(0.0),
-                             op == JSOp::StrictEq ? &pass : &fail);
-        masm.branchTestValue(JSOpToCondition(op, false), value,
-                             DoubleValue(-0.0), &pass);
+        // +0.0 and -0.0 are the only Values whose bits are zero outside the
+        // sign bit.
+        masm.branchTest64(
+            op == JSOp::StrictEq ? Assembler::Zero : Assembler::NonZero,
+            value.toRegister64(),
+            Imm64(~mozilla::SpecificFloatingPointBits<double, 1, 0, 0>::value),
+            &pass);
       }
       masm.bind(&fail);
       break;
@@ -4502,6 +4504,10 @@ bool BaselineCompilerCodeGen::emitFormalArgAccess(JSOp op) {
     Register temp = R1.scratchReg();
     emitGuardedCallPreBarrierAnyZone(argAddr, MIRType::Value, temp);
     masm.loadValue(frame.addressOfStackValue(-1), R0);
+    Label notMagic;
+    masm.branchTestMagic(Assembler::NotEqual, R0, &notMagic);
+    masm.assumeUnreachable("Unexpected magic value stored to ArgumentsObject");
+    masm.bind(&notMagic);
     masm.storeValue(R0, argAddr);
 
     MOZ_ASSERT(frame.numUnsyncedSlots() == 0);
@@ -4558,6 +4564,11 @@ bool BaselineInterpreterCodeGen::emitFormalArgAccess(JSOp op) {
       emitGuardedCallPreBarrierAnyZone(argAddr, MIRType::Value,
                                        R0.scratchReg());
       masm.loadValue(frame.addressOfStackValue(-1), R0);
+      Label notMagic;
+      masm.branchTestMagic(Assembler::NotEqual, R0, &notMagic);
+      masm.assumeUnreachable(
+          "Unexpected magic value stored to ArgumentsObject");
+      masm.bind(&notMagic);
       masm.storeValue(R0, argAddr);
 
       // Reload the arguments object.
@@ -6955,10 +6966,11 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
 
 #ifdef JS_USE_LINK_REGISTER
   // Push link register from generateEnterJIT()'s BLR.
-  masm.pushReturnAddress();
+  masm.pushRegs(LinkRegister, FramePointer);
+#else
+  masm.push(FramePointer);
 #endif
 
-  masm.push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
 
   masm.checkStackAlignment();
@@ -7145,22 +7157,21 @@ bool BaselineCompiler::emitBody() {
   return true;
 }
 
-void BaselineInterpreterGenerator::emitICBailoutStub() {
+bool BaselineInterpreterGenerator::emitICBailoutStub() {
   MOZ_ASSERT(handler.currentOp());
-  mozilla::DebugOnly<JSOp> op = *handler.currentOp();
+  JSOp op = *handler.currentOp();
   MOZ_ASSERT(BytecodeOpHasIC(op) && IsIonInlinableOp(op));
 
-  auto& entry = handler.icReturnOffsets().back();
-  MOZ_ASSERT(entry.op == op);
-
   Label icReturn;
-  icReturn.bind(entry.offset);
-  entry.bailoutStubOffset = masm.currentOffset();
+  icReturn.bind(handler.takeICReturnOffset());
+  uint32_t offset = masm.currentOffset();
   // The bailoutTail jumps here when performing bailout stack
   // reconstruction. The Baseline frame has been rebuilt.
   // Only the return address remains to be pushed.
-  entry.offset = masm.call(BailoutStubHandlerReg).offset();
+  masm.call(BailoutStubHandlerReg);
   masm.jump(&icReturn);
+
+  return handler.icBailoutStubOffsets().emplaceBack(offset, op);
 }
 
 bool BaselineInterpreterGenerator::emitDebugTrap() {
@@ -7264,8 +7275,9 @@ bool BaselineInterpreterGenerator::emitInterpreterLoop() {
     if (!opEpilogue(JSOp::OP, JSOpLength_##OP)) {                  \
       return false;                                                \
     }                                                              \
-    if (BytecodeOpHasIC(JSOp::OP) && IsIonInlinableOp(JSOp::OP)) { \
-      this->emitICBailoutStub();                                   \
+    if (BytecodeOpHasIC(JSOp::OP) && IsIonInlinableOp(JSOp::OP) && \
+        !this->emitICBailoutStub()) {                              \
+      return false;                                                \
     }                                                              \
     handler.resetCurrentOp();                                      \
   }
@@ -7471,7 +7483,7 @@ bool BaselineInterpreterGenerator::generate(JSContext* cx,
         profilerExitFrameToggleOffset_.offset(), debugTrapHandlerOffset_,
         std::move(handler.debugInstrumentationOffsets()),
         std::move(debugTrapOffsets_), std::move(handler.codeCoverageOffsets()),
-        std::move(handler.icReturnOffsets()), handler.callVMOffsets());
+        std::move(handler.icBailoutStubOffsets()), handler.callVMOffsets());
   }
 
   if (cx->runtime()->geckoProfiler().enabled()) {
@@ -7544,8 +7556,7 @@ JitCode* JitRuntime::generateDebugTrapHandler(JSContext* cx,
   VMFunctionId id = VMFunctionToId<Fn, jit::HandleDebugTrap>::id;
   TrampolinePtr code = cx->runtime()->jitRuntime()->getVMWrapper(id);
 
-  masm.push(scratch1);
-  masm.push(scratch2);
+  masm.pushRegs(scratch1, scratch2);
   EmitBaselineCallVM(code, masm);
 
   EmitBaselineLeaveStubFrame(masm);

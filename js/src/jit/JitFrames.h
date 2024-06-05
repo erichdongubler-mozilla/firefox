@@ -349,6 +349,15 @@ struct ResumeFromException {
   uint8_t* framePointer;
   uint8_t* stackPointer;
   uint8_t* target;
+#ifdef JS_HW_SHADOW_STACK
+  // Tracks the shadow stack pointer throughout the frame iteration and
+  // unwinding process. Initialized by the JIT before entering HandleException,
+  // and on exit back to the JIT, contains the new desired shadow stack pointer
+  // before jumping to target.
+  // If the shadow stack is disabled for this thread/process at runtime, then
+  // this field is nullptr.
+  uintptr_t* shadowStackPointer = nullptr;
+#endif
   ExceptionResumeKind kind;
   wasm::Instance* instance;
 #ifdef ENABLE_WASM_JSPI
@@ -374,6 +383,12 @@ struct ResumeFromException {
   static size_t offsetOfTarget() {
     return offsetof(ResumeFromException, target);
   }
+#ifdef JS_HW_SHADOW_STACK
+  static size_t offsetOfShadowStackPointer() {
+    return offsetof(ResumeFromException, shadowStackPointer);
+  }
+#endif
+
   static size_t offsetOfKind() { return offsetof(ResumeFromException, kind); }
   static size_t offsetOfInstance() {
     return offsetof(ResumeFromException, instance);

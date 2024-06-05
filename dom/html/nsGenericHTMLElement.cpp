@@ -58,6 +58,7 @@
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/PerformanceContainerTiming.h"
+#include "mozilla/dom/Range.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/ToggleEvent.h"
@@ -92,7 +93,6 @@
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
-#include "nsRange.h"
 #include "nsString.h"
 #include "nsStyleUtil.h"
 #include "nsTableCellFrame.h"
@@ -415,14 +415,15 @@ void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
       return;
     }
   }
+  RefPtr doc = OwnerDoc();
   // 3. Let oldEditContext be the value of this's internal [[EditContext]] slot.
   RefPtr<EditContext> oldEditContext = GetEditContext();
   if (oldEditContext) {
     // 4. If oldEditContext is not null and oldEditContext is this's node
     //    document's active EditContext, then:
-    if (oldEditContext == OwnerDoc()->GetActiveEditContext()) {
+    if (oldEditContext == doc->GetActiveEditContext()) {
       // 1. Run the steps to deactivate an EditContext with oldEditContext.
-      oldEditContext->Deactivate();
+      doc->DeactivateEditContextAndEndComposition();
       // 2. If oldEditContext's associated element is not equal to this, then
       //    terminate these steps.
       if (oldEditContext->GetAssociatedElement() != this) {
@@ -455,8 +456,12 @@ void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
   }
   EditContext::SetForElement(*this, aContext);
 
+  if (!IsInComposedDoc()) {
+    // Don't update editable state if the element is disconnected.
+    return;
+  }
+
   int32_t delta = (aContext != nullptr) - (oldEditContext != nullptr);
-  RefPtr doc = OwnerDoc();
   // First, update the editable state of this element and its descendants.
   // Computing the active EditContext depends on having the right editable
   // state, so this needs to happen first.
@@ -843,13 +848,15 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
         }
         if (IsInUncomposedDoc()) {
           RecomputeContainerTimingRootForSubtree();
-          // Removing containertiming unregisters this element as a container
-          // root; drop its accumulated painted region so the record can't
-          // outlive the registration (and dangle), or be inherited if the
-          // attribute is added back later.
-          if (aName == nsGkAtoms::containertiming && !aValue) {
-            ContainerTimingHelpers::DropRecordForContainerRoot(this);
-          }
+        }
+        // Removing containertiming unregisters this element as a container
+        // root; drop its accumulated painted region so the record can't
+        // outlive the registration (and dangle), or be inherited if the
+        // attribute is added back later. This must run even when detached or
+        // in a shadow tree, where the record would otherwise linger with a
+        // dangling key until the element is freed.
+        if (aName == nsGkAtoms::containertiming && !aValue) {
+          ContainerTimingHelpers::DropRecordForContainerRoot(this);
         }
       }
     } else if (aName == nsGkAtoms::dir) {
@@ -3320,7 +3327,7 @@ void nsGenericHTMLElement::GetInnerText(mozilla::dom::DOMString& aValue,
   if (!IsRendered()) {
     GetTextContentInternal(aValue, aError);
   } else {
-    nsRange::GetInnerTextNoFlush(aValue, aError, this);
+    dom::Range::GetInnerTextNoFlush(aValue, aError, this);
   }
 }
 

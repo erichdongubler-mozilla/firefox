@@ -5,6 +5,7 @@
 #include "nsBaseClipboard.h"
 
 #include "ContentAnalysis.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/Components.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
@@ -531,6 +532,19 @@ nsresult nsBaseClipboard::SetDataImpl(
     }
   }
 
+  // A clipboard write may still be on the stack, having spun a nested event
+  // loop or pumped the native message queue while rendering its data.
+  // Overwriting the native clipboard now would free state that the other
+  // commit is still using.  We fail the new request now rather than clearing
+  // the clipboard and queueing the incoming clipboard write.  This only covers
+  // the step of a write that can nest an event loop.  A copy still awaiting a
+  // content analysis verdict is not on the stack, and is superseded below
+  // instead.
+  if (mMutatingNativeClipboard) {
+    MOZ_CLIPBOARD_LOG("%s: rejecting re-entrant write.", __FUNCTION__);
+    return finish(NS_ERROR_IN_PROGRESS);
+  }
+
   const auto& clipboardCache = mCaches[aWhichClipboard];
   MOZ_ASSERT(clipboardCache);
   if (aTransferable == clipboardCache->GetTransferable() &&
@@ -581,7 +595,11 @@ nsresult nsBaseClipboard::SetDataImpl(
     // Reject existing pending asyncSetData request if any.
     RejectPendingAsyncSetDataRequestIfAny(aWhichClipboard);
     SanitizeForClipboard(aTransferable);
-    rv = SetNativeClipboardData(aTransferable, aWhichClipboard);
+    {
+      mozilla::AutoRestore<bool> mutating(mMutatingNativeClipboard);
+      mMutatingNativeClipboard = true;
+      rv = SetNativeClipboardData(aTransferable, aWhichClipboard);
+    }
     mIgnoreEmptyNotification = false;
   }
   if (NS_FAILED(rv)) {
@@ -1018,11 +1036,22 @@ NS_IMETHODIMP nsBaseClipboard::EmptyClipboard(ClipboardType aWhichClipboard) {
     return NS_ERROR_FAILURE;
   }
 
+  if (mMutatingNativeClipboard) {
+    // We are in the middle of a clipboard operation.  Don't cancel/empty.
+    // See SetDataImpl.
+    MOZ_CLIPBOARD_LOG("%s: rejecting re-entrant empty.", __FUNCTION__);
+    return NS_ERROR_IN_PROGRESS;
+  }
+
   // Emptying the clipboard supersedes any copy still awaiting a verdict, so
   // that a late "allow" doesn't repopulate what we just cleared.
   CancelPendingCopy(aWhichClipboard, NS_ERROR_ABORT);
 
-  EmptyNativeClipboardData(aWhichClipboard);
+  {
+    mozilla::AutoRestore<bool> mutating(mMutatingNativeClipboard);
+    mMutatingNativeClipboard = true;
+    EmptyNativeClipboardData(aWhichClipboard);
+  }
 
   const auto& clipboardCache = mCaches[aWhichClipboard];
   MOZ_ASSERT(clipboardCache);

@@ -47,7 +47,7 @@ async function isUrlbarInHistorySearchMode(targetWin) {
     BrowserWindowTracker.getTopWindow(),
     "Target window is top window."
   );
-  await UrlbarTestUtils.promisePopupOpen(targetWin, () => {});
+  await UrlbarTestUtils.promiseSearchComplete(targetWin);
 
   // Verify URLBar is in search mode with correct restriction
   let searchMode = targetWin.gURLBar.searchModeForToken("^");

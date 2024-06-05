@@ -12,7 +12,7 @@ document.addEventListener(
         "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
       ContainerCreationPanel:
         "chrome://browser/content/usercontext/ContainerCreationPanel.mjs",
-      Referrals: "resource:///modules/referrals/Referrals.sys.mjs",
+      Referrals: "moz-src:///browser/components/referrals/Referrals.sys.mjs",
     });
 
     // <commandset id="mainCommandSet"> defined in browser-sets.inc.xhtml

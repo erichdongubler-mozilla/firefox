@@ -20,7 +20,14 @@ upload::
 wget-en-US:
 	@$(MAKE) -C browser/locales $@
 
-merge-% installers-% langpack-% chrome-%:
+ifdef MAKENSISU
+INSTALLER_REPACK_DEPS = browser/installer/windows/nsis-stage.stamp
+endif
+
+installers-%: $(INSTALLER_REPACK_DEPS)
+	$(MAKE) -C browser/locales $@
+
+merge-% langpack-% chrome-%:
 	$(MAKE) -C browser/locales $@
 
 ifdef ENABLE_TESTS

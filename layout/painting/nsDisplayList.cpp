@@ -1401,7 +1401,10 @@ void nsDisplayListBuilder::LeavePresShell(const nsIFrame* aReferenceFrame,
       }
     }
     nsRootPresContext* rootPresContext = pc->GetRootPresContext();
-    if (!pc->HasStoppedGeneratingLCP() && rootPresContext) {
+    // NotifyContentfulPaint is responsible for dropping LCP entries that
+    // arrive after scroll.
+    if (rootPresContext &&
+        (!pc->HadFirstContentfulPaint() || !pc->HasStoppedGeneratingLCP())) {
       if (!CurrentPresShellState()->mIsBackgroundOnly) {
         if (pc->HasEverBuiltInvisibleText() ||
             DisplayListIsContentful(this, aPaintedContents)) {
@@ -2002,10 +2005,6 @@ size_t nsDisplayListBuilder::WeakFrameRegion::SizeOfExcludingThis(
     MallocSizeOf aMallocSizeOf) const {
   size_t n = 0;
   n += mFrames.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  for (const auto& frame : mFrames) {
-    const UniquePtr<WeakFrame>& weakFrame = frame.mWeakFrame;
-    n += aMallocSizeOf(weakFrame.get());
-  }
   n += mRects.ShallowSizeOfExcludingThis(aMallocSizeOf);
   return n;
 }
@@ -2020,13 +2019,13 @@ void nsDisplayListBuilder::WeakFrameRegion::RemoveModifiedFramesAndRects() {
   uint32_t length = mFrames.Length();
 
   while (i < length) {
-    auto& wrapper = mFrames[i];
+    auto& [weakFrame, rawFrame] = mFrames[i];
 
-    if (!wrapper.mWeakFrame->IsAlive() ||
-        AnyContentAncestorModified(wrapper.mWeakFrame->GetFrame())) {
+    if (!weakFrame.IsAlive() ||
+        AnyContentAncestorModified(weakFrame.GetFrame())) {
       // To avoid multiple O(n) shifts in the array, move the last element of
       // the array to the current position and decrease the array length.
-      mFrameSet.Remove(wrapper.mFrame);
+      mFrameSet.Remove(rawFrame);
       mFrames[i] = std::move(mFrames[length - 1]);
       mRects[i] = std::move(mRects[length - 1]);
       length--;
@@ -6541,11 +6540,10 @@ Matrix4x4 nsDisplayTransform::GetResultingTransformMatrixInternal(
   if (aProperties.HasTransform()) {
     // Calling from the compositor side, where we don't have access to frames
     // but transforms already have appropriate zoom applied.
-    const auto zoom = frame ? frame->Style()->EffectiveZoom() : StyleZoom::ONE;
     result = nsStyleTransformMatrix::ReadTransforms(
         aProperties.mTranslate, aProperties.mRotate, aProperties.mScale,
         aProperties.mMotion.ptrOr(nullptr), aProperties.mTransform, aRefBox,
-        aAppUnitsPerPixel, zoom);
+        aAppUnitsPerPixel, nsStyleTransformMatrix::Zoomed::Yes);
   }
 
   // Apply any translation due to 'transform-origin' and/or 'transform-box':
@@ -8114,7 +8112,7 @@ gfxRect nsDisplayEffectsBase::BBoxInUserSpace() const {
   return SVGUtils::GetBBox(mFrame);
 }
 
-gfxPoint nsDisplayEffectsBase::UserSpaceOffset() const {
+CSSPoint nsDisplayEffectsBase::UserSpaceOffset() const {
   return SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(mFrame);
 }
 
@@ -8388,11 +8386,20 @@ static Maybe<wr::WrClipChainId> CreateSimpleClipRegion(
 
   wr::WrClipId clipId{};
 
+  // The reference box of an SVG frame is in its user space, which for leaf
+  // frames does not include the frame's own position while ToReferenceFrame()
+  // does.
+  nsPoint toReferenceFrame = aDisplayItem.ToReferenceFrame();
+  if (frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
+    toReferenceFrame -= CSSPixel::ToAppUnits(
+        SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(frame));
+  }
+
   switch (shape.tag) {
     case StyleBasicShape::Tag::Rect: {
       const nsRect rect =
           ShapeUtils::ComputeInsetRect(shape.AsRect().rect, refBox) +
-          aDisplayItem.ToReferenceFrame();
+          toReferenceFrame;
 
       nsRectCornerRadii radii;
       if (ShapeUtils::ComputeRectRadii(shape.AsRect().round, refBox, rect,
@@ -8420,9 +8427,9 @@ static Maybe<wr::WrClipChainId> CreateSimpleClipRegion(
         radii = {radius, radius};
       }
 
-      nsRect ellipseRect(aDisplayItem.ToReferenceFrame() + center -
-                             nsPoint(radii.width, radii.height),
-                         radii * 2);
+      nsRect ellipseRect(
+          toReferenceFrame + center - nsPoint(radii.width, radii.height),
+          radii * 2);
 
       nsRectCornerRadii ellipseRadii;
       for (const auto corner : AllPhysicalHalfCorners()) {

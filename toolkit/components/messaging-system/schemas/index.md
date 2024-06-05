@@ -2,7 +2,7 @@
 
 ## Docs
 
-More information about [Messaging System](/browser/components/asrouter/docs).
+More information about [Messaging System](/browser/components/asrouter/docs/index.md).
 
 ## Messages
 

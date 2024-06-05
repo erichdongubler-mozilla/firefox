@@ -327,11 +327,12 @@ class TestScript(unittest.TestCase):
 
         # Test for invalid filenames (Windows only)
         if PYWIN32:
-            with self.assertRaises(IOError):
-                self.s.download_unpack(
-                    url=os.path.join(archives_path, "archive_invalid_filename.zip"),
-                    extract_to=self.tmpdir,
-                )
+            self.s.download_unpack(
+                url=os.path.join(archives_path, "archive_invalid_filename.zip"),
+                extract_to=self.tmpdir,
+            )
+            self.assertTrue(os.path.exists(os.path.join(self.tmpdir, "_^_$.txt")))
+            shutil.rmtree(self.tmpdir)
 
         for archive in (
             "archive-setuid.tar",

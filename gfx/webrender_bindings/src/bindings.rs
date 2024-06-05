@@ -42,12 +42,11 @@ use webrender::{
     api::units::*, api::*, create_webrender_instance, render_api::*, set_profiler_hooks, AsyncPropertySampler,
     AsyncScreenshotHandle, ClipRadius, Compositor, CompositorCapabilities, CompositorConfig, CompositorInputConfig,
     CompositorKind, CompositorSurfaceTransform, CompositorSurfaceUsage, Device, DeviceOptions, FrameBuilderConfig,
-    LayerCompositor,
-    MappableCompositor, MappedTileInfo, NativeSurfaceHandle, NativeSurfaceId, NativeSurfaceInfo, NativeTileId,
-    PartialPresentCompositor,
-    PendingShadersToPrecache, PipelineInfo, ProfilerHooks, RecordedFrameHandle, RenderBackendHooks, Renderer,
-    RendererStats, SWGLCompositeSurfaceInfo, SceneBuilderHooks, ShaderPrecacheFlags, Shaders, SharedShaders,
-    TextureCacheConfig, UploadMethod, WebRenderOptions, WindowProperties, WindowVisibility, ONE_TIME_USAGE_HINT,
+    GlBackendConfig, GpuBackendConfig, LayerCompositor, MappableCompositor, MappedTileInfo, NativeSurfaceHandle,
+    NativeSurfaceId, NativeSurfaceInfo, NativeTileId, PartialPresentCompositor, PendingShadersToPrecache, PipelineInfo,
+    ProfilerHooks, RecordedFrameHandle, RenderBackendHooks, Renderer, RendererStats, SWGLCompositeSurfaceInfo,
+    SceneBuilderHooks, ShaderPrecacheFlags, Shaders, SharedShaders, TextureCacheConfig, UploadMethod, WebRenderOptions,
+    WindowProperties, WindowVisibility, ONE_TIME_USAGE_HINT,
 };
 use wr_malloc_size_of::MallocSizeOfOps;
 
@@ -438,7 +437,9 @@ impl ExternalImageHandler for WrExternalImageHandler {
         ExternalImage {
             uv: TexelRect::new(image.u0, image.v0, image.u1, image.v1),
             source: match image.image_type {
-                WrExternalImageType::NativeTexture => ExternalImageSource::NativeTexture(ExternalTextureHandle(image.handle)),
+                WrExternalImageType::NativeTexture => {
+                    ExternalImageSource::NativeTexture(ExternalTextureHandle(image.handle))
+                },
                 WrExternalImageType::RawData => {
                     ExternalImageSource::RawData(unsafe { make_slice(image.buff, image.size) })
                 },
@@ -1297,6 +1298,7 @@ fn placeholder_frame_builder_config() -> FrameBuilderConfig {
         low_quality_pinch_zoom: false,
         max_shared_surface_size: 4096,
         enable_dithering: false,
+        enable_yuv_overlay_stability: false,
     }
 }
 
@@ -1425,7 +1427,7 @@ fn wr_device_new(gl_context: *mut c_void, pc: Option<&mut WrProgramCache>) -> De
     let cached_programs = pc.map(|cached_programs| Rc::clone(cached_programs.rc_get()));
 
     Device::new(
-        gl,
+        GpuBackendConfig::Gl(GlBackendConfig::new(gl)),
         DeviceOptions {
             crash_annotator: Some(Box::new(MozCrashAnnotator)),
             resource_override_path,
@@ -1433,11 +1435,9 @@ fn wr_device_new(gl_context: *mut c_void, pc: Option<&mut WrProgramCache>) -> De
             upload_method,
             batched_upload_threshold: 512 * 512,
             cached_programs,
-            allow_texture_storage_support: true,
             allow_texture_swizzling: true,
             dump_shader_source: None,
             surface_origin_is_top_left: false,
-            panic_on_gl_error: false,
         },
     )
 }
@@ -1446,7 +1446,6 @@ extern "C" {
     fn wr_compositor_create_surface(
         compositor: *mut c_void,
         id: NativeSurfaceId,
-        virtual_offset: DeviceIntPoint,
         tile_size: DeviceIntSize,
         is_opaque: bool,
     );
@@ -1532,15 +1531,9 @@ extern "C" {
 pub struct WrCompositor(*mut c_void);
 
 impl Compositor for WrCompositor {
-    fn create_surface(
-        &mut self,
-        id: NativeSurfaceId,
-        virtual_offset: DeviceIntPoint,
-        tile_size: DeviceIntSize,
-        is_opaque: bool,
-    ) {
+    fn create_surface(&mut self, id: NativeSurfaceId, tile_size: DeviceIntSize, is_opaque: bool) {
         unsafe {
-            wr_compositor_create_surface(self.0, id, virtual_offset, tile_size, is_opaque);
+            wr_compositor_create_surface(self.0, id, tile_size, is_opaque);
         }
     }
 
@@ -1580,12 +1573,7 @@ impl Compositor for WrCompositor {
         }
     }
 
-    fn bind(
-        &mut self,
-        id: NativeTileId,
-        dirty_rect: DeviceIntRect,
-        valid_rect: DeviceIntRect,
-    ) -> NativeSurfaceInfo {
+    fn bind(&mut self, id: NativeTileId, dirty_rect: DeviceIntRect, valid_rect: DeviceIntRect) -> NativeSurfaceInfo {
         let mut surface_info = NativeSurfaceInfo {
             origin: DeviceIntPoint::zero(),
             handle: NativeSurfaceHandle::DEFAULT,
@@ -1662,8 +1650,6 @@ impl Compositor for WrCompositor {
             wr_compositor_end_frame(self.0);
         }
     }
-
-    fn enable_native_compositor(&mut self, _enable: bool) {}
 
     fn deinit(&mut self) {
         unsafe {
@@ -2163,6 +2149,7 @@ pub extern "C" fn wr_window_new(
     max_shared_surface_size: i32,
     enable_subpixel_aa: bool,
     use_layer_compositor: bool,
+    limit_sdr_yuv_external_composites: bool,
 ) -> bool {
     assert!(unsafe { is_in_render_thread() });
 
@@ -2274,8 +2261,9 @@ pub extern "C" fn wr_window_new(
         false
     };
 
-    let enable_shared_instance_buffer =
-        static_prefs::pref!("gfx.webrender.shared-instance-buffer");
+    let enable_yuv_overlay_stability = cfg!(target_os = "windows");
+
+    let enable_shared_instance_buffer = static_prefs::pref!("gfx.webrender.shared-instance-buffer");
 
     let opts = WebRenderOptions {
         enable_aa: true,
@@ -2338,20 +2326,25 @@ pub extern "C" fn wr_window_new(
         surface_origin_is_top_left,
         compositor_config,
         enable_gpu_markers,
-        panic_on_gl_error,
         picture_tile_size,
         texture_cache_config,
         reject_software_rasterizer,
         low_quality_pinch_zoom,
         max_shared_surface_size,
         enable_dithering,
+        enable_yuv_overlay_stability,
+        limit_sdr_yuv_external_composites,
         enable_shared_instance_buffer,
         ..Default::default()
     };
 
     let window_size = DeviceIntSize::new(window_width, window_height);
     let notifier = Box::new(CppNotifier { window_id });
-    let (renderer, sender) = match create_webrender_instance(gl, notifier, opts, shaders.map(|sh| &sh.shaders)) {
+    let backend = GpuBackendConfig::Gl(GlBackendConfig {
+        panic_on_error: panic_on_gl_error,
+        ..GlBackendConfig::new(gl)
+    });
+    let (renderer, sender) = match create_webrender_instance(backend, notifier, opts, shaders.map(|sh| &sh.shaders)) {
         Ok((renderer, sender)) => (renderer, sender),
         Err(e) => {
             warn!(" Failed to create a Renderer: {:?}", e);
@@ -2552,10 +2545,12 @@ pub extern "C" fn wr_transaction_set_display_list(
     dl_descriptor: BuiltDisplayListDescriptor,
     dl_items_data: &mut WrVecU8,
     dl_spatial_tree_data: &mut WrVecU8,
+    dl_interner_delta: &mut WrVecU8,
 ) {
     let payload = DisplayListPayload {
         items_data: dl_items_data.flush_into_vec(),
         spatial_tree: dl_spatial_tree_data.flush_into_vec(),
+        interner_delta: dl_interner_delta.flush_into_vec(),
     };
 
     let dl = BuiltDisplayList::from_data(payload, dl_descriptor);
@@ -4276,8 +4271,8 @@ pub extern "C" fn wr_dp_push_border_gradient(
     height: i32,
     fill: bool,
     slice: DeviceIntSideOffsets,
-    start_point: LayoutPoint,
-    end_point: LayoutPoint,
+    start_point: LayoutVector2D,
+    end_point: LayoutVector2D,
     stops: *const GradientStop,
     stops_count: usize,
     extend_mode: ExtendMode,
@@ -4327,7 +4322,7 @@ pub extern "C" fn wr_dp_push_border_radial_gradient(
     parent: &WrSpaceAndClipChain,
     widths: LayoutSideOffsets,
     fill: bool,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     radius: LayoutSize,
     stops: *const GradientStop,
     stops_count: usize,
@@ -4385,7 +4380,7 @@ pub extern "C" fn wr_dp_push_border_conic_gradient(
     parent: &WrSpaceAndClipChain,
     widths: LayoutSideOffsets,
     fill: bool,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     angle: f32,
     stops: *const GradientStop,
     stops_count: usize,
@@ -4441,8 +4436,8 @@ pub extern "C" fn wr_dp_push_linear_gradient(
     clip: LayoutRect,
     is_backface_visible: bool,
     parent: &WrSpaceAndClipChain,
-    start_point: LayoutPoint,
-    end_point: LayoutPoint,
+    start: LayoutVector2D,
+    end: LayoutVector2D,
     stops: *const GradientStop,
     stops_count: usize,
     extend_mode: ExtendMode,
@@ -4458,7 +4453,7 @@ pub extern "C" fn wr_dp_push_linear_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_gradient(start_point, end_point, stops_vector, extend_mode);
+            .create_gradient(start, end, stops_vector, extend_mode);
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
@@ -4482,7 +4477,7 @@ pub extern "C" fn wr_dp_push_radial_gradient(
     clip: LayoutRect,
     is_backface_visible: bool,
     parent: &WrSpaceAndClipChain,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     radius: LayoutSize,
     stops: *const GradientStop,
     stops_count: usize,
@@ -4527,7 +4522,7 @@ pub extern "C" fn wr_dp_push_conic_gradient(
     clip: LayoutRect,
     is_backface_visible: bool,
     parent: &WrSpaceAndClipChain,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     angle: f32,
     stops: *const GradientStop,
     stops_count: usize,
@@ -4653,11 +4648,13 @@ pub unsafe extern "C" fn wr_api_end_builder(
     dl_descriptor: &mut BuiltDisplayListDescriptor,
     dl_items_data: &mut WrVecU8,
     dl_spatial_tree: &mut WrVecU8,
+    dl_interner_delta: &mut WrVecU8,
 ) {
     let (_, dl) = state.frame_builder.dl_builder.end();
     let (payload, descriptor) = dl.into_data();
     *dl_items_data = WrVecU8::from_vec(payload.items_data);
     *dl_spatial_tree = WrVecU8::from_vec(payload.spatial_tree);
+    *dl_interner_delta = WrVecU8::from_vec(payload.interner_delta);
     *dl_descriptor = descriptor;
 }
 

@@ -63,6 +63,7 @@ export function renderWithoutState() {
   if (ReactDOM.createRoot) {
     ReactDOM.createRoot(container).render(<NewTab store={store} />);
   } else {
+    // eslint-disable-next-line react/no-deprecated -- Will be removed when Karma integration is removed in bug 2024073.
     ReactDOM.render(<NewTab store={store} />, container);
   }
 }
@@ -89,6 +90,7 @@ export function renderCache(initialState) {
   if (ReactDOM.createRoot) {
     ReactDOM.createRoot(container).render(<NewTab store={store} />);
   } else {
+    // eslint-disable-next-line react/no-deprecated -- Will be removed when Karma integration is removed in bug 2024073.
     ReactDOM.render(<NewTab store={store} />, container);
   }
 }

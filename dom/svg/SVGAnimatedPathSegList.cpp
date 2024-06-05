@@ -47,14 +47,11 @@ static StyleCurveControlPoint<float> MakeControlPoint(PositionType type,
   }
 }
 
-static StyleAxisEndPoint<float> MakeAxisEndPoint(PositionType type,
-                                                 float end_point) {
-  if (type == PositionType::Absolute) {
-    const auto pos = StyleAxisPosition<float>::LengthPercent(end_point);
-    return StyleAxisEndPoint<float>::ToPosition(pos);
-  } else {
-    return StyleAxisEndPoint<float>::ByCoordinate(end_point);
-  }
+static StyleAxisEndPoint<float, float> MakeAxisEndPoint(PositionType type,
+                                                        float end_point) {
+  return type == PositionType::Absolute
+             ? StyleAxisEndPoint<float, float>::ToPosition(end_point)
+             : StyleAxisEndPoint<float, float>::ByCoordinate(end_point);
 }
 
 class MOZ_STACK_CLASS SVGPathSegmentInitWrapper final {

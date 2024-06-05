@@ -62,9 +62,6 @@ nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
   GETTER(uint64_t, TriggeringWindowId, triggeringWindowId, 0)                  \
   SETTER(uint64_t, TriggeringWindowId)                                         \
                                                                                \
-  GETTER(bool, TriggeringStorageAccess, triggeringStorageAccess, false)        \
-  SETTER(bool, TriggeringStorageAccess)                                        \
-                                                                               \
   GETTER(uint32_t, TriggeringFirstPartyClassificationFlags,                    \
          triggeringFirstPartyClassificationFlags, 0)                           \
   SETTER(uint32_t, TriggeringFirstPartyClassificationFlags)                    \
@@ -347,31 +344,6 @@ class LoadInfo final : public nsILoadInfo {
   dom::ReferrerPolicy GetFrameReferrerPolicySnapshot() const;
   void SetFrameReferrerPolicySnapshot(dom::ReferrerPolicy aPolicy);
 
-  // Hands off from the cspToInherit functionality!
-  //
-  // For navigations, GetCSPToInherit returns what the spec calls the
-  // "request's client's global object's CSP list", or more precisely
-  // a snapshot of it taken when the navigation starts.  For
-  // navigations that need to inherit their CSP, this is the right CSP
-  // to use for the new document.  We need a way to transfer the CSP
-  // from the docshell (where the navigation starts) to the point where
-  // the new document is created and decides whether to inherit its
-  // CSP, and this is the mechanism we use for that.
-  //
-  // For example:
-  // A document with a CSP triggers a new top-level data: URI load.
-  // We pass the CSP of the document that triggered the load all the
-  // way to docshell. Within docshell we call SetCSPToInherit() on the
-  // loadinfo. Within Document::InitCSP() we check if the newly created
-  // document needs to inherit the CSP. If so, we call
-  // GetCSPToInherit() and set the inherited CSP as the CSP for the new
-  // document. Please note that any additonal Meta CSP in that document
-  // will be merged into that CSP. Any subresource loads within that
-  // document subesquently will receive the correct CSP by querying
-  // loadinfo->GetCsp() from that point on.
-  void SetPolicyContainerToInherit(
-      nsIPolicyContainer* aPolicyContainerToInherit);
-
   bool HasIsThirdPartyContextToTopWindowSet() {
     return mIsThirdPartyContextToTopWindow.isSome();
   }
@@ -504,6 +476,10 @@ class LoadInfo final : public nsILoadInfo {
   nsContentPolicyType mInternalContentPolicyType;
   bool mServiceWorkerTaintingSynthesized = false;
   LoadTainting mTainting = LoadTainting::Basic;
+
+  // NOTE: This flag is intentionally not serialized, as it is used to disable
+  // IPC security checks based on mTriggeringRemoteType.
+  bool mTrustedPrincipalToInherit = false;
 
 #define DEFINE_FIELD(type, name, _, default_init) type m##name = default_init;
   LOADINFO_FOR_EACH_FIELD(DEFINE_FIELD, LOADINFO_DUMMY_SETTER)

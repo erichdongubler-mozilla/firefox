@@ -282,6 +282,28 @@ bool RUrsh::recover(JSContext* cx, SnapshotIterator& iter) const {
   return true;
 }
 
+bool MRotate::writeRecoverData(CompactBufferWriter& writer) const {
+  MOZ_ASSERT(canRecoverOnBailout());
+  writer.writeUnsigned(uint32_t(RInstruction::Recover_Rotate));
+  writer.writeByte(isLeftRotate_);
+  return true;
+}
+
+RRotate::RRotate(CompactBufferReader& reader) {
+  isLeftRotate_ = reader.readByte();
+}
+
+bool RRotate::recover(JSContext* cx, SnapshotIterator& iter) const {
+  uint32_t input = uint32_t(iter.read().toInt32());
+  int32_t c = iter.read().toInt32();
+  MOZ_ASSERT(c >= 1 && c <= 31);
+
+  uint32_t result = isLeftRotate_ ? ((input << c) | (input >> (32 - c)))
+                                  : ((input >> c) | (input << (32 - c)));
+  iter.storeInstructionResult(Int32Value(int32_t(result)));
+  return true;
+}
+
 bool MSignExtendInt32::writeRecoverData(CompactBufferWriter& writer) const {
   MOZ_ASSERT(canRecoverOnBailout());
   writer.writeUnsigned(uint32_t(RInstruction::Recover_SignExtendInt32));
