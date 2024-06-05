@@ -44,7 +44,8 @@ mozilla::LazyLogModule gWebGPULog("WebGPU");
 
 GPU_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_INHERITED(Device, DOMEventTargetHelper,
                                                  mBridge, mQueue, mFeatures,
-                                                 mLimits, mLostPromise);
+                                                 mLimits, mAdapterInfo,
+                                                 mLostPromise);
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(Device, DOMEventTargetHelper)
 GPU_IMPL_JS_WRAP(Device)
 
@@ -59,11 +60,13 @@ RefPtr<WebGPUChild> Device::GetBridge() { return mBridge; }
 
 Device::Device(Adapter* const aParent, RawId aDeviceId, RawId aQueueId,
                RefPtr<SupportedFeatures> aFeatures,
-               RefPtr<SupportedLimits> aLimits)
+               RefPtr<SupportedLimits> aLimits,
+               RefPtr<webgpu::AdapterInfo> aAdapterInfo)
     : DOMEventTargetHelper(aParent->GetParentObject()),
       mId(aDeviceId),
       mFeatures(std::move(aFeatures)),
       mLimits(std::move(aLimits)),
+      mAdapterInfo(std::move(aAdapterInfo)),
       mSupportExternalTextureInSwapChain(
           aParent->SupportExternalTextureInSwapChain()),
       mBridge(aParent->mBridge),
@@ -104,6 +107,7 @@ dom::Promise* Device::GetLost(ErrorResult& aRv) {
     mLostPromise = dom::Promise::Create(GetParentObject(), aRv);
     if (mLostPromise && !mBridge->CanSend()) {
       auto info = MakeRefPtr<DeviceLostInfo>(GetParentObject(),
+                                             dom::GPUDeviceLostReason::Unknown,
                                              u"WebGPUChild destroyed"_ns);
       mLostPromise->MaybeResolve(info);
     }
@@ -111,7 +115,7 @@ dom::Promise* Device::GetLost(ErrorResult& aRv) {
   return mLostPromise;
 }
 
-void Device::ResolveLost(Maybe<dom::GPUDeviceLostReason> aReason,
+void Device::ResolveLost(dom::GPUDeviceLostReason aReason,
                          const nsAString& aMessage) {
   IgnoredErrorResult rv;
   dom::Promise* lostPromise = GetLost(rv);
@@ -127,12 +131,8 @@ void Device::ResolveLost(Maybe<dom::GPUDeviceLostReason> aReason,
     // lostPromise was already resolved or rejected.
     return;
   }
-  RefPtr<DeviceLostInfo> info;
-  if (aReason.isSome()) {
-    info = MakeRefPtr<DeviceLostInfo>(GetParentObject(), *aReason, aMessage);
-  } else {
-    info = MakeRefPtr<DeviceLostInfo>(GetParentObject(), aMessage);
-  }
+  RefPtr<DeviceLostInfo> info =
+      MakeRefPtr<DeviceLostInfo>(GetParentObject(), aReason, aMessage);
   lostPromise->MaybeResolve(info);
 }
 
@@ -174,6 +174,7 @@ already_AddRefed<Texture> Device::CreateTexture(
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
 
+  // TODO: validate `aDesc.mSize`: https://www.w3.org/TR/webgpu/#abstract-opdef-validate-gpuextent3d-shape
   if (aDesc.mSize.IsRangeEnforcedUnsignedLongSequence()) {
     const auto& seq = aDesc.mSize.GetAsRangeEnforcedUnsignedLongSequence();
     desc.size.width = seq.Length() > 0 ? seq[0] : 1;
@@ -191,6 +192,7 @@ already_AddRefed<Texture> Device::CreateTexture(
   desc.sample_count = aDesc.mSampleCount;
   desc.dimension = ffi::WGPUTextureDimension(aDesc.mDimension);
   desc.format = ConvertTextureFormat(aDesc.mFormat);
+  // TODO: validate required features for format: https://www.w3.org/TR/webgpu/#abstract-opdef-validate-texture-format-required-features
   desc.usage = aDesc.mUsage;
 
   AutoTArray<ffi::WGPUTextureFormat, 8> viewFormats;
@@ -656,21 +658,20 @@ RawId CreateComputePipelineImpl(PipelineCreationContext* const aContext,
   } else {
     desc.stage.entry_point = nullptr;
   }
-  if (aDesc.mCompute.mConstants.WasPassed()) {
-    const auto& descConstants = aDesc.mCompute.mConstants.Value().Entries();
-    constantKeys.SetCapacity(descConstants.Length());
-    constants.SetCapacity(descConstants.Length());
-    for (const auto& entry : descConstants) {
-      ffi::WGPUConstantEntry constantEntry = {};
-      nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
-      constantKeys.AppendElement(key);
-      constantEntry.key = key.get();
-      constantEntry.value = entry.mValue;
-      constants.AppendElement(constantEntry);
-    }
-    desc.stage.constants = constants.Elements();
-    desc.stage.constants_length = constants.Length();
+
+  const auto& descConstants = aDesc.mCompute.mConstants.Entries();
+  constantKeys.SetCapacity(descConstants.Length());
+  constants.SetCapacity(descConstants.Length());
+  for (const auto& entry : descConstants) {
+    ffi::WGPUConstantEntry constantEntry = {};
+    nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
+    constantKeys.AppendElement(key);
+    constantEntry.key = key.get();
+    constantEntry.value = entry.mValue;
+    constants.AppendElement(constantEntry);
   }
+  desc.stage.constants = constants.Elements();
+  desc.stage.constants_length = constants.Length();
 
   RawId implicit_bgl_ids[WGPUMAX_BIND_GROUPS] = {};
   RawId id = ffi::wgpu_client_create_compute_pipeline(
@@ -723,21 +724,20 @@ RawId CreateRenderPipelineImpl(PipelineCreationContext* const aContext,
     } else {
       vertexState.stage.entry_point = nullptr;
     }
-    if (stage.mConstants.WasPassed()) {
-      const auto& descConstants = stage.mConstants.Value().Entries();
-      vsConstantKeys.SetCapacity(descConstants.Length());
-      vsConstants.SetCapacity(descConstants.Length());
-      for (const auto& entry : descConstants) {
-        ffi::WGPUConstantEntry constantEntry = {};
-        nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
-        vsConstantKeys.AppendElement(key);
-        constantEntry.key = key.get();
-        constantEntry.value = entry.mValue;
-        vsConstants.AppendElement(constantEntry);
-      }
-      vertexState.stage.constants = vsConstants.Elements();
-      vertexState.stage.constants_length = vsConstants.Length();
+
+    const auto& descConstants = stage.mConstants.Entries();
+    vsConstantKeys.SetCapacity(descConstants.Length());
+    vsConstants.SetCapacity(descConstants.Length());
+    for (const auto& entry : descConstants) {
+      ffi::WGPUConstantEntry constantEntry = {};
+      nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
+      vsConstantKeys.AppendElement(key);
+      constantEntry.key = key.get();
+      constantEntry.value = entry.mValue;
+      vsConstants.AppendElement(constantEntry);
     }
+    vertexState.stage.constants = vsConstants.Elements();
+    vertexState.stage.constants_length = vsConstants.Length();
 
     for (const auto& vertex_desc : stage.mBuffers) {
       ffi::WGPUVertexBufferLayout vb_desc = {};
@@ -778,21 +778,20 @@ RawId CreateRenderPipelineImpl(PipelineCreationContext* const aContext,
     } else {
       fragmentState.stage.entry_point = nullptr;
     }
-    if (stage.mConstants.WasPassed()) {
-      const auto& descConstants = stage.mConstants.Value().Entries();
-      fsConstantKeys.SetCapacity(descConstants.Length());
-      fsConstants.SetCapacity(descConstants.Length());
-      for (const auto& entry : descConstants) {
-        ffi::WGPUConstantEntry constantEntry = {};
-        nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
-        fsConstantKeys.AppendElement(key);
-        constantEntry.key = key.get();
-        constantEntry.value = entry.mValue;
-        fsConstants.AppendElement(constantEntry);
-      }
-      fragmentState.stage.constants = fsConstants.Elements();
-      fragmentState.stage.constants_length = fsConstants.Length();
+
+    const auto& descConstants = stage.mConstants.Entries();
+    fsConstantKeys.SetCapacity(descConstants.Length());
+    fsConstants.SetCapacity(descConstants.Length());
+    for (const auto& entry : descConstants) {
+      ffi::WGPUConstantEntry constantEntry = {};
+      nsCString key = NS_ConvertUTF16toUTF8(entry.mKey);
+      fsConstantKeys.AppendElement(key);
+      constantEntry.key = key.get();
+      constantEntry.value = entry.mValue;
+      fsConstants.AppendElement(constantEntry);
     }
+    fragmentState.stage.constants = fsConstants.Elements();
+    fragmentState.stage.constants_length = fsConstants.Length();
 
     // Note: we pre-collect the blend states into a different array
     // so that we can have non-stale pointers into it.
@@ -989,7 +988,7 @@ void Device::Destroy() {
   // always leads to device loss. This is guaranteeing the same result
   // as if we went through the bridge (device lost promise resolves,
   // then the device is cycle collected).
-  ResolveLost(Some(dom::GPUDeviceLostReason::Destroyed), u""_ns);
+  ResolveLost(dom::GPUDeviceLostReason::Destroyed, u""_ns);
 }
 
 void Device::PushErrorScope(const dom::GPUErrorFilter& aFilter) {

@@ -60,6 +60,7 @@ namespace ffi {
 struct WGPULimits;
 }
 class Adapter;
+class AdapterInfo;
 class BindGroup;
 class BindGroupLayout;
 class Buffer;
@@ -88,6 +89,7 @@ class Device final : public DOMEventTargetHelper, public SupportsWeakPtr {
   const RawId mId;
   RefPtr<SupportedFeatures> mFeatures;
   RefPtr<SupportedLimits> mLimits;
+  RefPtr<AdapterInfo> mAdapterInfo;
   const bool mSupportExternalTextureInSwapChain;
 
   static CheckedInt<uint32_t> BufferStrideWithMask(
@@ -95,7 +97,8 @@ class Device final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   explicit Device(Adapter* const aParent, RawId aDeviceId, RawId aQueueId,
                   RefPtr<SupportedFeatures> aFeatures,
-                  RefPtr<SupportedLimits> aLimits);
+                  RefPtr<SupportedLimits> aLimits,
+                  RefPtr<AdapterInfo> aAdapterInfo);
 
   RefPtr<WebGPUChild> GetBridge();
   already_AddRefed<Texture> InitSwapChain(
@@ -131,11 +134,13 @@ class Device final : public DOMEventTargetHelper, public SupportsWeakPtr {
   void GetLabel(nsAString& aValue) const;
   void SetLabel(const nsAString& aLabel);
   dom::Promise* GetLost(ErrorResult& aRv);
-  void ResolveLost(Maybe<dom::GPUDeviceLostReason> aReason,
-                   const nsAString& aMessage);
+  void ResolveLost(dom::GPUDeviceLostReason aReason, const nsAString& aMessage);
 
   const RefPtr<SupportedFeatures>& Features() const { return mFeatures; }
   const RefPtr<SupportedLimits>& Limits() const { return mLimits; }
+  const RefPtr<webgpu::AdapterInfo>& GetAdapterInfo() const {
+    return mAdapterInfo;
+  }
   const RefPtr<Queue>& GetQueue() const { return mQueue; }
 
   already_AddRefed<Buffer> CreateBuffer(const dom::GPUBufferDescriptor& aDesc,
