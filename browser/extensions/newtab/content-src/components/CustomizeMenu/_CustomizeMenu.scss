@@ -336,6 +336,9 @@
     min-height: 0;
     overflow-y: auto;
     padding-inline: var(--space-xlarge);
+    // Bug 2061155: Reserve padding at the bottom to prevent Manage settings footer
+    // from overlapping controls.
+    padding-block-end: calc(var(--space-xlarge) * 2);
   }
 
   .wallpapers-section h2 {

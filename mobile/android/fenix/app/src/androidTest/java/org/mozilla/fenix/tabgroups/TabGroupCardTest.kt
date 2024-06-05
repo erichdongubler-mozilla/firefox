@@ -52,6 +52,7 @@ class TabGroupCardTest {
             override val tabGroupsOnboardingEnabled: Boolean = false
             override val tabGroupsLiveReorderEnabled: Boolean = false
             override val tabGroupsStripEnabled: Boolean = false
+            override val showTabGroupsInMenu: Boolean = false
         }
 
     @Test

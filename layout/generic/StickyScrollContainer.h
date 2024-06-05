@@ -44,7 +44,7 @@ class StickyScrollContainer final {
    */
   static StickyScrollContainer* GetForFrame(const nsIFrame*);
 
-  void AddFrame(nsIFrame* aFrame) { mFrames.Add(aFrame); }
+  void AddFrame(nsIFrame* aFrame);
   void RemoveFrame(nsIFrame* aFrame) { mFrames.Remove(aFrame); }
 
   ScrollContainerFrame* ScrollContainer() const {

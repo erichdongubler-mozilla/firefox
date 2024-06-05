@@ -4353,10 +4353,6 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
 
     aNode->mNodeInfo.swap(newNodeInfo);
 
-    // https://dom.spec.whatwg.org/#concept-node-adopt 3.3. onward
-    // 3.3. Otherwise, if inclusiveDescendant is an element:
-    // 3.3.1. Set the node document of each attribute in inclusiveDescendant's
-    //        attribute list to document.
     aNode->NodeInfoChanged(oldDoc);
 
     MOZ_ASSERT(newDoc != oldDoc);

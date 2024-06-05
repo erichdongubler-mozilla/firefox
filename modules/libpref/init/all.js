@@ -3671,7 +3671,7 @@ pref("browser.ml.pageExtractor.headlessTimeoutMs", 15000);
 
 // Extract video metadata and the transcript from YouTube watch pages during
 // page extraction.
-pref("browser.pageextractor.youtube.enabled", false);
+pref("browser.pageextractor.youtube.enabled", true);
 
 // How long, in milliseconds, to wait for the YouTube transcript panel to render
 // after it is opened before giving up and returning metadata alone.
@@ -4132,13 +4132,36 @@ pref("extensions.formautofill.addresses.storage.rust.migrationTestVersion", 0);
 // Firefox, which gives up after a budget.
 pref("extensions.formautofill.addresses.storage.rust.migrationAttempts", 0);
 
+// Move desktop credit cards to the Application Services autofill store. Read at
+// startup and watched afterwards: the cards are copied over to the store this
+// asks for, which then serves them once that copy is verified complete.
+pref("extensions.formautofill.creditCards.storage.rust.enabled", false);
+// Which store is in fact serving credit cards. Managed by Firefox, not a knob:
+// the pref above only asks, and a profile whose copy has not completed keeps
+// reading from where its cards are.
+pref("extensions.formautofill.creditCards.storage.rust.active", false);
+// Run the migration purely to measure it, while the pref above is still off.
+// The copy is reported through migrate_to_rust and then wiped.
+pref("extensions.formautofill.creditCards.storage.rust.runMigrationTest", false);
+// Which generation of the dry run above this profile has done, so a build that
+// fixes a migration bug can bump it and measure the same profiles again.
+pref("extensions.formautofill.creditCards.storage.rust.migrationTestVersion", 0);
+// How many launches have already tried and failed to migrate. Managed by
+// Firefox, which gives up after a budget.
+pref("extensions.formautofill.creditCards.storage.rust.migrationAttempts", 0);
 pref("extensions.formautofill.creditCards.supported", "on");
 pref("extensions.formautofill.creditCards.enabled", true);
 pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);
 
-// Temporary pref for the in-progress CVV/CSC autofill work. When true, the CVV
-// (cc-csc) field participates in autofill and autocomplete.
-pref("extensions.formautofill.creditCards.cvv.enabled", false);
+// Whether the CVV/CSC feature has been rolled out to this user, using the same
+// "on"/"off" values as the other supported prefs above. Nothing about the CVV
+// (cc-csc) field is offered while this is "off", including the setting that
+// lets the user turn capture on or off.
+pref("extensions.formautofill.creditCards.cvv.supported", "off");
+// The user's own choice, exposed as a setting once the feature is supported.
+// CVVs are only captured and stored when both prefs are true; see
+// FormAutofill.isAutofillCreditCardCVVEnabled.
+pref("extensions.formautofill.creditCards.cvv.enabled", true);
 
 // Supported countries need to follow ISO 3166-1 to align with "browser.search.region"
 pref("extensions.formautofill.creditCards.supportedCountries", "US,CA,GB,FR,DE,IT,ES,AT,BE,PL");

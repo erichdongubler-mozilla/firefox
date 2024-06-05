@@ -1106,7 +1106,8 @@ export class ProtonScreen extends React.PureComponent {
                   ? this.getEffectiveBackground(content)
                   : null,
               width:
-                content.width && content.position !== "split"
+                content.width &&
+                !["split", "card-stack"].includes(content.position)
                   ? content.width
                   : null,
               paddingBlock: content.split_content_padding_block
@@ -1332,7 +1333,13 @@ const buttonPropTypes = PropTypes.exact({
 
 export const screenContentShape = {
   // The layout position of the screen.
-  position: PropTypes.oneOf(["center", "center-large", "split", "callout"]),
+  position: PropTypes.oneOf([
+    "center",
+    "center-large",
+    "split",
+    "callout",
+    "card-stack",
+  ]),
   // If true, the screens are displayed in fullscreen.
   fullscreen: PropTypes.bool,
   // If true, the progress bar will be shown. Defaults to true.

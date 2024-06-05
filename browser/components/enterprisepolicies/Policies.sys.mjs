@@ -31,6 +31,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ProxyPolicies: "resource:///modules/policies/ProxyPolicies.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
+  ContextualIdentityService:
+    "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
+  EphemeralContainerWatcher:
+    "resource:///modules/policies/EphemeralContainerWatcher.sys.mjs",
   WebsiteFilter: "resource:///modules/policies/WebsiteFilter.sys.mjs",
   LaunchOnLogin: "resource://gre/modules/LaunchOnLogin.sys.mjs",
 
@@ -53,6 +57,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const PREF_LOGLEVEL = "browser.policies.loglevel";
 const BROWSER_DOCUMENT_URL = AppConstants.BROWSER_CHROME_URL;
+
+// The only prefs read when clearing at shutdown.
+const CLEAR_ON_SHUTDOWN_PREFS = {
+  BrowsingHistoryAndDownloads:
+    "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads",
+  CookiesAndStorage: "privacy.clearOnShutdown_v2.cookiesAndStorage",
+  Cache: "privacy.clearOnShutdown_v2.cache",
+  FormData: "privacy.clearOnShutdown_v2.formdata",
+  SiteSettings: "privacy.clearOnShutdown_v2.siteSettings",
+};
 
 ChromeUtils.defineLazyGetter(lazy, "log", () => {
   const { ConsoleAPI } = ChromeUtils.importESModule(
@@ -683,6 +697,39 @@ export var Policies = {
             "Certificates",
             `Unable to import certificates - ${e}`
           )
+        );
+      }
+    },
+  },
+
+  ClearOnShutdown: {
+    onBeforeUIStartup(manager, param) {
+      if (typeof param === "boolean") {
+        lazy.PoliciesUtils.setAndLockPref(
+          "privacy.sanitize.sanitizeOnShutdown",
+          param
+        );
+        for (const pref of Object.values(CLEAR_ON_SHUTDOWN_PREFS)) {
+          lazy.PoliciesUtils.setAndLockPref(pref, param);
+        }
+        return;
+      }
+
+      // Named categories are enforced; the rest are left to the user.
+      lazy.PoliciesUtils.setAndLockPref(
+        "privacy.sanitize.sanitizeOnShutdown",
+        true
+      );
+      for (const [member, pref] of Object.entries(CLEAR_ON_SHUTDOWN_PREFS)) {
+        if (member in param) {
+          lazy.PoliciesUtils.setAndLockPref(pref, param[member]);
+        }
+      }
+
+      if (param.Exceptions) {
+        lazy.addAllowDenyPermissions(
+          "persist-data-on-shutdown",
+          param.Exceptions
         );
       }
     },
@@ -3076,6 +3123,12 @@ export var Policies = {
 
   SanitizeOnShutdown: {
     onBeforeUIStartup(manager, param) {
+      if (manager.getActivePolicies().ClearOnShutdown) {
+        lazy.log.error(
+          "SanitizeOnShutdown is ignored when ClearOnShutdown is also set."
+        );
+        return;
+      }
       if (typeof param === "boolean") {
         lazy.PoliciesUtils.setAndLockPref(
           "privacy.sanitize.sanitizeOnShutdown",
@@ -3610,8 +3663,25 @@ export var Policies = {
       return features;
     },
 
+    // When no policy is provided we just default to an empty set which allows us
+    // to clean up containers.
+    onMissing() {
+      return [];
+    },
+
     onBeforeAddons(manager, params) {
+      const policyContainerMap = new Map();
+      const cis = lazy.ContextualIdentityService;
+
+      for (const identity of cis.getPolicyIdentities()) {
+        policyContainerMap.set(identity.policyId, identity.userContextId);
+      }
+
+      const unseenContainers = new Set(policyContainerMap.values());
+
       const sitePolicies = [];
+      let hasContainerPolicy = false;
+      const ephemeralUserContextIds = new Set();
 
       for (const policies of params) {
         const matches = policies.Match ?? [];
@@ -3646,14 +3716,55 @@ export var Policies = {
           }
         }
 
+        const features = this.featuresForPolicies(policies.Policies);
+
+        if ("Container" in policies.Policies) {
+          const containerId = policies.Policies.Container.id;
+          let userContextId = policyContainerMap.get(containerId);
+
+          if (!userContextId) {
+            userContextId = cis.createForPolicy(containerId).userContextId;
+            policyContainerMap.set(containerId, userContextId);
+          } else {
+            unseenContainers.delete(userContextId);
+          }
+
+          features.container = userContextId;
+          hasContainerPolicy = true;
+
+          if (policies.Policies.Container.ephemeral) {
+            ephemeralUserContextIds.add(userContextId);
+          }
+        }
+
         sitePolicies.push({
           match: new MatchPatternSet(matchPatterns),
           exceptions: new MatchPatternSet(exceptionPatterns),
-          features: this.featuresForPolicies(policies.Policies),
+          features,
         });
       }
 
       manager.updateSitePolicies(sitePolicies);
+
+      for (const userContextId of unseenContainers) {
+        cis.removePolicyIdentity(userContextId);
+      }
+
+      if (hasContainerPolicy) {
+        lazy.PoliciesUtils.setAndLockPref("privacy.userContext.enabled", true);
+        lazy.PoliciesUtils.setAndLockPref(
+          "privacy.containers.switchDuringNavigation.enabled",
+          true
+        );
+
+        if (ephemeralUserContextIds.size > 0) {
+          lazy.EphemeralContainerWatcher.init(ephemeralUserContextIds);
+        } else {
+          lazy.EphemeralContainerWatcher.destroy();
+        }
+      } else {
+        lazy.EphemeralContainerWatcher.destroy();
+      }
     },
   },
 

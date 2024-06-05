@@ -79,19 +79,6 @@ function recordsHistory() {
 }
 
 /**
- * @backward-compat { version 155 }
- * The New Tab theme picker depends on the toolkit `theme-picker` custom element,
- * its JSWindowActor pair (bug 2050531), and `toolkit/global/theme-picker.ftl` —
- * all of which only exist in Firefox 155+. When newtab train-hops onto an older
- * host these are absent (the element never upgrades, the actor is unregistered,
- * and the ftl resource fails to load), so gate the whole feature off there.
- * Remove this guard once 155 reaches Release.
- */
-function isThemePickerHostSupported() {
-  return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "155.0a1") >= 0;
-}
-
-/**
  * @backward-compat { version 157 }
  * The recent searches widget requires the `newtab_search_widget` registered
  * in BrowserSearchTelemetry.sys.mjs and no partner code configuration which
@@ -101,6 +88,7 @@ function isThemePickerHostSupported() {
 function isWidgetSearchSapHostSupported() {
   return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "157.0a1") >= 0;
 }
+
 const PREF_DEFAULTS = [
   { type: "bool", key: "logowordmark.alwaysVisible", defaultValue: false },
   { type: "bool", key: "feeds.section.topstories", defaultValue: false },
@@ -739,9 +727,10 @@ export class PrefsFeed {
 
     // Read the browser-wide Nova gate and observe it so later changes are
     // broadcast to content (see observe()).
-    values.browserNovaEnabled =
-      isThemePickerHostSupported() &&
-      Services.prefs.getBoolPref(BROWSER_NOVA_ENABLED_PREF, false);
+    values.browserNovaEnabled = Services.prefs.getBoolPref(
+      BROWSER_NOVA_ENABLED_PREF,
+      false
+    );
     Services.prefs.addObserver(BROWSER_NOVA_ENABLED_PREF, this);
 
     // Seed the tracked value so observe() can tell a real flip from a pref
@@ -1113,9 +1102,10 @@ export class PrefsFeed {
               type: at.PREF_CHANGED,
               data: {
                 name: "browserNovaEnabled",
-                value:
-                  isThemePickerHostSupported() &&
-                  Services.prefs.getBoolPref(BROWSER_NOVA_ENABLED_PREF, false),
+                value: Services.prefs.getBoolPref(
+                  BROWSER_NOVA_ENABLED_PREF,
+                  false
+                ),
               },
             })
           );

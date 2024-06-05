@@ -301,15 +301,17 @@ export class SmartFormFillTelemetry {
    * @param {string} flowId
    * @param {RelevantTabRequestBody} request
    * @param {ModelInfo} modelInfo
+   * @param {string} threshold
    *
    * @returns {RequestFlow}
    */
-  startRelevantTabsRequest(flowId, request, modelInfo) {
+  startRelevantTabsRequest(flowId, request, modelInfo, threshold) {
     Glean.smartWindow.formRelevantTabsRequest.record({
       flow_id: flowId,
       model: modelInfo.model,
       prompt_version: modelInfo.promptVersion,
       tabs_sent: request.tabs.length,
+      threshold,
     });
 
     return { flowId, startTime: ChromeUtils.now() };

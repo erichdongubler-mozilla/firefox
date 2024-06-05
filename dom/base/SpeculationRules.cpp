@@ -234,6 +234,20 @@ void SpeculationRules::EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel) {
   }
 }
 
+void SpeculationRules::AddLink(Element* aElement) {
+  mLinks.Insert(aElement);
+  ConsiderLoads();
+}
+
+void SpeculationRules::RemoveLink(Element* aElement) {
+  mLinks.Remove(aElement);
+  if (mDocument && mDocument->IsFullyActive()) {
+    // Link elements are removed when a document is being cycle-collected; we
+    // shouldn't bother firing the microtask in that case.
+    ConsiderLoads();
+  }
+}
+
 // https://html.spec.whatwg.org/#find-matching-links
 void SpeculationRules::FindMatchingLinks(nsTArray<const Element*>& aLinks) {
   // Step 2.

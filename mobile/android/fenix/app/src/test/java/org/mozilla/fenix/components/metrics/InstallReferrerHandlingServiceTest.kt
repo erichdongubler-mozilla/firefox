@@ -11,7 +11,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -105,58 +104,84 @@ internal class InstallReferrerHandlingServiceTest {
         }
 
     @Test
-    fun `GIVEN a non-null referrer on OK response WHEN start is called THEN response is stored`() {
+    fun `GIVEN a non-null referrer on OK response WHEN start is called THEN response is stored`() = runTest {
         val referrer = "utm_source=addons.mozilla.org&utm_medium=referral&utm_content=rta%3Atest"
         val service =
-            fakeService(responseCode = InstallReferrerClient.InstallReferrerResponse.OK, referrerResponse = referrer)
+            fakeService(
+                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                referrerResponse = referrer,
+                scope = this,
+            )
 
         service.start()
+        advanceUntilIdle()
 
         assertEquals(referrer, InstallReferrerHandlingService.response)
     }
 
     @Test
-    fun `GIVEN FEATURE_NOT_SUPPORTED WHEN start is called THEN shouldShowMarketingOnboarding is false`() {
-        val service = fakeService(responseCode = InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED)
+    fun `GIVEN FEATURE_NOT_SUPPORTED WHEN start is called THEN shouldShowMarketingOnboarding is false`() = runTest {
+        val service =
+            fakeService(
+                responseCode = InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED,
+                scope = this,
+            )
 
         service.start()
+        advanceUntilIdle()
 
         assertNull(InstallReferrerHandlingService.response)
         assertFalse(testContext.components.settings.shouldShowMarketingOnboarding)
     }
 
     @Test
-    fun `GIVEN DEVELOPER_ERROR WHEN start is called THEN shouldShowMarketingOnboarding is false`() {
-        val service = fakeService(responseCode = InstallReferrerClient.InstallReferrerResponse.DEVELOPER_ERROR)
+    fun `GIVEN DEVELOPER_ERROR WHEN start is called THEN shouldShowMarketingOnboarding is false`() = runTest {
+        val service =
+            fakeService(
+                responseCode = InstallReferrerClient.InstallReferrerResponse.DEVELOPER_ERROR,
+                scope = this,
+            )
 
         service.start()
+        advanceUntilIdle()
 
         assertFalse(testContext.components.settings.shouldShowMarketingOnboarding)
     }
 
     @Test
-    fun `GIVEN SERVICE_UNAVAILABLE WHEN start is called THEN shouldShowMarketingOnboarding is false`() {
-        val service = fakeService(responseCode = InstallReferrerClient.InstallReferrerResponse.SERVICE_UNAVAILABLE)
+    fun `GIVEN SERVICE_UNAVAILABLE WHEN start is called THEN shouldShowMarketingOnboarding is false`() = runTest {
+        val service =
+            fakeService(
+                responseCode = InstallReferrerClient.InstallReferrerResponse.SERVICE_UNAVAILABLE,
+                scope = this,
+            )
 
         service.start()
+        advanceUntilIdle()
 
         assertFalse(testContext.components.settings.shouldShowMarketingOnboarding)
     }
 
     @Test
-    fun `GIVEN PERMISSION_ERROR WHEN start is called THEN shouldShowMarketingOnboarding is false`() {
-        val service = fakeService(responseCode = InstallReferrerClient.InstallReferrerResponse.PERMISSION_ERROR)
+    fun `GIVEN PERMISSION_ERROR WHEN start is called THEN shouldShowMarketingOnboarding is false`() = runTest {
+        val service =
+            fakeService(
+                responseCode = InstallReferrerClient.InstallReferrerResponse.PERMISSION_ERROR,
+                scope = this,
+            )
 
         service.start()
+        advanceUntilIdle()
 
         assertFalse(testContext.components.settings.shouldShowMarketingOnboarding)
     }
 
     @Test
-    fun `GIVEN a service disconnect WHEN start is called THEN shouldShowMarketingOnboarding is false`() {
-        val service = fakeService(simulateDisconnect = true)
+    fun `GIVEN a service disconnect WHEN start is called THEN shouldShowMarketingOnboarding is false`() = runTest {
+        val service = fakeService(simulateDisconnect = true, scope = this)
 
         service.start()
+        advanceUntilIdle()
 
         assertFalse(testContext.components.settings.shouldShowMarketingOnboarding)
     }
@@ -165,7 +190,7 @@ internal class InstallReferrerHandlingServiceTest {
         responseCode: Int = InstallReferrerClient.InstallReferrerResponse.OK,
         referrerResponse: String? = null,
         simulateDisconnect: Boolean = false,
-        scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+        scope: CoroutineScope,
     ) =
         InstallReferrerHandlingService(testContext, scope = scope).apply {
             clientFactory = {
@@ -365,30 +390,35 @@ internal class InstallReferrerHandlingServiceTest {
     }
 
     @Test
-    fun `GIVEN a Meta-attributed referrer on OK response WHEN start is called THEN isUserMetaAttributed is true`() {
-        val referrer =
-            """utm_source=apps.facebook.com&utm_medium=paid&utm_content={"app":12345,"t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}"""
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = referrer,
-            )
+    fun `GIVEN a Meta-attributed referrer on OK response WHEN start is called THEN isUserMetaAttributed is true`() =
+        runTest {
+            val referrer =
+                """utm_source=apps.facebook.com&utm_medium=paid&utm_content={"app":12345,"t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}"""
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = referrer,
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertTrue(testContext.components.settings.isUserMetaAttributed)
-    }
+            assertTrue(testContext.components.settings.isUserMetaAttributed)
+        }
 
     @Test
-    fun `GIVEN a non-Meta referrer on OK response WHEN start is called THEN isUserMetaAttributed is false`() {
+    fun `GIVEN a non-Meta referrer on OK response WHEN start is called THEN isUserMetaAttributed is false`() = runTest {
         testContext.components.settings.isUserMetaAttributed = true
         val service =
             fakeService(
                 responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
                 referrerResponse = "utm_source=google&utm_medium=cpc",
+                scope = this,
             )
 
         service.start()
+        advanceUntilIdle()
 
         assertFalse(testContext.components.settings.isUserMetaAttributed)
     }
@@ -445,32 +475,38 @@ internal class InstallReferrerHandlingServiceTest {
     }
 
     @Test
-    fun `GIVEN a TikTok-attributed referrer on OK response WHEN start is called THEN isUserTikTokAttributed is true`() {
-        val referrer = "adjust_external_click_id=E.C.P.C.04.AAA&utm_medium=paid"
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = referrer,
-            )
+    fun `GIVEN a TikTok-attributed referrer on OK response WHEN start is called THEN isUserTikTokAttributed is true`() =
+        runTest {
+            val referrer = "adjust_external_click_id=E.C.P.C.04.AAA&utm_medium=paid"
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = referrer,
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertTrue(testContext.components.settings.isUserTikTokAttributed)
-    }
+            assertTrue(testContext.components.settings.isUserTikTokAttributed)
+        }
 
     @Test
-    fun `GIVEN a non-TikTok referrer on OK response WHEN start is called THEN isUserTikTokAttributed is false`() {
-        testContext.components.settings.isUserTikTokAttributed = true
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = "utm_source=google&utm_medium=cpc",
-            )
+    fun `GIVEN a non-TikTok referrer on OK response WHEN start is called THEN isUserTikTokAttributed is false`() =
+        runTest {
+            testContext.components.settings.isUserTikTokAttributed = true
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = "utm_source=google&utm_medium=cpc",
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertFalse(testContext.components.settings.isUserTikTokAttributed)
-    }
+            assertFalse(testContext.components.settings.isUserTikTokAttributed)
+        }
 
     @Test
     fun `WHEN installReferrerResponse is a TikTok attribution THEN we should show marketing onboarding`() =
@@ -539,32 +575,38 @@ internal class InstallReferrerHandlingServiceTest {
     }
 
     @Test
-    fun `GIVEN a Reddit-attributed referrer on OK response WHEN start is called THEN isUserRedditAttributed is true`() {
-        val referrer = "adjust_external_click_id=reddit_abc123&utm_medium=paid"
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = referrer,
-            )
+    fun `GIVEN a Reddit-attributed referrer on OK response WHEN start is called THEN isUserRedditAttributed is true`() =
+        runTest {
+            val referrer = "adjust_external_click_id=reddit_abc123&utm_medium=paid"
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = referrer,
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertTrue(testContext.components.settings.isUserRedditAttributed)
-    }
+            assertTrue(testContext.components.settings.isUserRedditAttributed)
+        }
 
     @Test
-    fun `GIVEN a non-Reddit referrer on OK response WHEN start is called THEN isUserRedditAttributed is false`() {
-        testContext.components.settings.isUserRedditAttributed = true
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = "utm_source=google&utm_medium=cpc",
-            )
+    fun `GIVEN a non-Reddit referrer on OK response WHEN start is called THEN isUserRedditAttributed is false`() =
+        runTest {
+            testContext.components.settings.isUserRedditAttributed = true
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = "utm_source=google&utm_medium=cpc",
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertFalse(testContext.components.settings.isUserRedditAttributed)
-    }
+            assertFalse(testContext.components.settings.isUserRedditAttributed)
+        }
 
     @Test
     fun `WHEN installReferrerResponse is a Reddit attribution THEN we should show marketing onboarding`() =
@@ -616,32 +658,38 @@ internal class InstallReferrerHandlingServiceTest {
     }
 
     @Test
-    fun `GIVEN an X-attributed referrer on OK response WHEN start is called THEN isUserXTwitterAttributed is true`() {
-        val referrer = "utm_source=x&utm_medium=paid"
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = referrer,
-            )
+    fun `GIVEN an X-attributed referrer on OK response WHEN start is called THEN isUserXTwitterAttributed is true`() =
+        runTest {
+            val referrer = "utm_source=x&utm_medium=paid"
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = referrer,
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertTrue(testContext.components.settings.isUserXTwitterAttributed)
-    }
+            assertTrue(testContext.components.settings.isUserXTwitterAttributed)
+        }
 
     @Test
-    fun `GIVEN a non-X referrer on OK response WHEN start is called THEN isUserXTwitterAttributed is false`() {
-        testContext.components.settings.isUserXTwitterAttributed = true
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = "utm_source=google&utm_medium=cpc",
-            )
+    fun `GIVEN a non-X referrer on OK response WHEN start is called THEN isUserXTwitterAttributed is false`() =
+        runTest {
+            testContext.components.settings.isUserXTwitterAttributed = true
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = "utm_source=google&utm_medium=cpc",
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertFalse(testContext.components.settings.isUserXTwitterAttributed)
-    }
+            assertFalse(testContext.components.settings.isUserXTwitterAttributed)
+        }
 
     @Test
     fun `WHEN installReferrerResponse is an X attribution THEN we should show marketing onboarding`() = runBlocking {
@@ -691,32 +739,38 @@ internal class InstallReferrerHandlingServiceTest {
     }
 
     @Test
-    fun `GIVEN a Moloco-attributed referrer on OK response WHEN start is called THEN isUserMolocoAttributed is true`() {
-        val referrer = "adjust_external_click_id=moloco_9b1deb4d-3b7d-4bad-9bdd-2b0d7b3d41a6&utm_medium=paid"
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = referrer,
-            )
+    fun `GIVEN a Moloco-attributed referrer on OK response WHEN start is called THEN isUserMolocoAttributed is true`() =
+        runTest {
+            val referrer = "adjust_external_click_id=moloco_9b1deb4d-3b7d-4bad-9bdd-2b0d7b3d41a6&utm_medium=paid"
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = referrer,
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertTrue(testContext.components.settings.isUserMolocoAttributed)
-    }
+            assertTrue(testContext.components.settings.isUserMolocoAttributed)
+        }
 
     @Test
-    fun `GIVEN a non-Moloco referrer on OK response WHEN start is called THEN isUserMolocoAttributed is false`() {
-        testContext.components.settings.isUserMolocoAttributed = true
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = "utm_source=google&utm_medium=cpc",
-            )
+    fun `GIVEN a non-Moloco referrer on OK response WHEN start is called THEN isUserMolocoAttributed is false`() =
+        runTest {
+            testContext.components.settings.isUserMolocoAttributed = true
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = "utm_source=google&utm_medium=cpc",
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertFalse(testContext.components.settings.isUserMolocoAttributed)
-    }
+            assertFalse(testContext.components.settings.isUserMolocoAttributed)
+        }
 
     @Test
     fun `WHEN installReferrerResponse is a Moloco attribution THEN we should show marketing onboarding`() =
@@ -766,32 +820,38 @@ internal class InstallReferrerHandlingServiceTest {
     }
 
     @Test
-    fun `GIVEN a Rakuten-attributed referrer on OK response WHEN start is called THEN isUserRakutenAttributed is true`() {
-        val referrer = "utm_source=Rakuten&utm_medium=paid"
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = referrer,
-            )
+    fun `GIVEN a Rakuten-attributed referrer on OK response WHEN start is called THEN isUserRakutenAttributed is true`() =
+        runTest {
+            val referrer = "utm_source=Rakuten&utm_medium=paid"
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = referrer,
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertTrue(testContext.components.settings.isUserRakutenAttributed)
-    }
+            assertTrue(testContext.components.settings.isUserRakutenAttributed)
+        }
 
     @Test
-    fun `GIVEN a non-Rakuten referrer on OK response WHEN start is called THEN isUserRakutenAttributed is false`() {
-        testContext.components.settings.isUserRakutenAttributed = true
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = "utm_source=google&utm_medium=cpc",
-            )
+    fun `GIVEN a non-Rakuten referrer on OK response WHEN start is called THEN isUserRakutenAttributed is false`() =
+        runTest {
+            testContext.components.settings.isUserRakutenAttributed = true
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = "utm_source=google&utm_medium=cpc",
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertFalse(testContext.components.settings.isUserRakutenAttributed)
-    }
+            assertFalse(testContext.components.settings.isUserRakutenAttributed)
+        }
 
     @Test
     fun `WHEN installReferrerResponse is a Rakuten attribution THEN we should show marketing onboarding`() =
@@ -831,32 +891,38 @@ internal class InstallReferrerHandlingServiceTest {
     }
 
     @Test
-    fun `GIVEN a Skyflag-attributed referrer on OK response WHEN start is called THEN isUserSkyflagAttributed is true`() {
-        val referrer = "utm_source=skyflag&utm_medium=paid"
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = referrer,
-            )
+    fun `GIVEN a Skyflag-attributed referrer on OK response WHEN start is called THEN isUserSkyflagAttributed is true`() =
+        runTest {
+            val referrer = "utm_source=skyflag&utm_medium=paid"
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = referrer,
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertTrue(testContext.components.settings.isUserSkyflagAttributed)
-    }
+            assertTrue(testContext.components.settings.isUserSkyflagAttributed)
+        }
 
     @Test
-    fun `GIVEN a non-Skyflag referrer on OK response WHEN start is called THEN isUserSkyflagAttributed is false`() {
-        testContext.components.settings.isUserSkyflagAttributed = true
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = "utm_source=google&utm_medium=cpc",
-            )
+    fun `GIVEN a non-Skyflag referrer on OK response WHEN start is called THEN isUserSkyflagAttributed is false`() =
+        runTest {
+            testContext.components.settings.isUserSkyflagAttributed = true
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = "utm_source=google&utm_medium=cpc",
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertFalse(testContext.components.settings.isUserSkyflagAttributed)
-    }
+            assertFalse(testContext.components.settings.isUserSkyflagAttributed)
+        }
 
     @Test
     fun `WHEN installReferrerResponse is a Skyflag attribution THEN we should show marketing onboarding`() =
@@ -902,34 +968,44 @@ internal class InstallReferrerHandlingServiceTest {
     }
 
     @Test
-    fun `GIVEN a pairing-attributed referrer on OK response WHEN start is called THEN isUserPairingCampaignAttributed is true`() {
-        FxNimbus.features.pairingSigninPrompt.withCachedValue(PairingSigninPrompt(campaignUtmContent = "pairing123"))
-        val referrer = "utm_source=google&utm_content=pairing123"
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = referrer,
+    fun `GIVEN a pairing-attributed referrer on OK response WHEN start is called THEN isUserPairingCampaignAttributed is true`() =
+        runTest {
+            FxNimbus.features.pairingSigninPrompt.withCachedValue(
+                PairingSigninPrompt(campaignUtmContent = "pairing123")
             )
+            val referrer = "utm_source=google&utm_content=pairing123"
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = referrer,
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertTrue(testContext.components.settings.isUserPairingCampaignAttributed)
-    }
+            assertTrue(testContext.components.settings.isUserPairingCampaignAttributed)
+        }
 
     @Test
-    fun `GIVEN a non-pairing referrer on OK response WHEN start is called THEN isUserPairingCampaignAttributed is false`() {
-        FxNimbus.features.pairingSigninPrompt.withCachedValue(PairingSigninPrompt(campaignUtmContent = "pairing123"))
-        testContext.components.settings.isUserPairingCampaignAttributed = true
-        val service =
-            fakeService(
-                responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
-                referrerResponse = "utm_source=google&utm_content=pairing456",
+    fun `GIVEN a non-pairing referrer on OK response WHEN start is called THEN isUserPairingCampaignAttributed is false`() =
+        runTest {
+            FxNimbus.features.pairingSigninPrompt.withCachedValue(
+                PairingSigninPrompt(campaignUtmContent = "pairing123")
             )
+            testContext.components.settings.isUserPairingCampaignAttributed = true
+            val service =
+                fakeService(
+                    responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+                    referrerResponse = "utm_source=google&utm_content=pairing456",
+                    scope = this,
+                )
 
-        service.start()
+            service.start()
+            advanceUntilIdle()
 
-        assertFalse(testContext.components.settings.isUserPairingCampaignAttributed)
-    }
+            assertFalse(testContext.components.settings.isUserPairingCampaignAttributed)
+        }
 }
 
 private class FakeReferrerClient(

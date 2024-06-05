@@ -224,6 +224,9 @@ MACH_COMMANDS = {
     "run": MachCommandReference("python/mozbuild/mozbuild/mach_commands.py"),
     "run-condprofile": MachCommandReference("testing/condprofile/mach_commands.py"),
     "rusttests": MachCommandReference("testing/mach_commands.py"),
+    "sbom": MachCommandReference(
+        "python/mozbuild/mozbuild/licensing_commands.py",
+    ),
     "settings": MachCommandReference("python/mach/mach/commands/settings.py"),
     "shell-test": MachCommandReference("browser/installer/linux/mach_commands.py"),
     "show-log": MachCommandReference("python/mozbuild/mozbuild/mach_commands.py"),

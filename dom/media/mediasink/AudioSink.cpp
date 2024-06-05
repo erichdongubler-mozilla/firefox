@@ -337,6 +337,11 @@ RefPtr<MediaSink::EndedPromise> AudioSink::ResetForReuse(
              "Nothing may be pushed while the sink is stopped for a seek");
   SINK_LOG("ResetForReuse to start time {}", aStartTime.ToMicroseconds());
 
+  // This is safe because the sink is shut down, and all event listeners that
+  // push to this queue are disconnected at this time and nobody can be writing
+  // to it.
+  mProcessedSPSCQueue->ResetProducerThreadId();
+
   ApplyPlaybackParams(aParams);
 
   // Re-establish the same initial playback accounting as a freshly constructed

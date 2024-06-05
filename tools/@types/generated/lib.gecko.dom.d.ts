@@ -3137,8 +3137,6 @@ interface LoadURIOptions {
     triggeringRemoteType?: string | null;
     /** <!-- binding_to(idl, attribute, WEBIDL_LoadURIOptions_triggeringSandboxFlags) --> */
     triggeringSandboxFlags?: number;
-    /** <!-- binding_to(idl, attribute, WEBIDL_LoadURIOptions_triggeringStorageAccess) --> */
-    triggeringStorageAccess?: boolean;
     /** <!-- binding_to(idl, attribute, WEBIDL_LoadURIOptions_triggeringWindowId) --> */
     triggeringWindowId?: number;
 }

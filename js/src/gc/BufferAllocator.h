@@ -674,6 +674,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   // Testing functions we allow access.
   friend void* TestAllocAligned(JS::Zone* zone, size_t bytes);
   friend size_t TestGetAllocSizeKind(void* alloc);
+  friend bool TestGetAllocTenuredInMixedChunks(JS::Zone* zone);
 
 #ifdef DEBUG
   void checkChunkListsGCStateNotInUse(ChunkLists& chunkLists,

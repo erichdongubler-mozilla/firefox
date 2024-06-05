@@ -357,6 +357,28 @@ bool DMABufSurface::IsGlobalRefSet() {
   return poll(&pfd, 1, 0) == 1;
 }
 
+int DMABufSurface::GetGlobalRefCountFd() {
+  MutexAutoLock lock(mSurfaceLock);
+  return mGlobalRefCountFd;
+}
+
+/* static */
+void DMABufSurface::GetGlobalRefsSet(Span<const int> aRefCountFds,
+                                     nsTArray<bool>& aRefSet) {
+  // poll() ignores negative fds and reports no events for them, so surfaces
+  // without a global refcount still get a slot and the two arrays map 1:1.
+  AutoTArray<struct pollfd, 32> pfds;
+  pfds.SetCapacity(aRefCountFds.Length());
+  for (int fd : aRefCountFds) {
+    pfds.AppendElement(pollfd{fd ? fd : -1, POLLIN, 0});
+  }
+  aRefSet.SetCapacity(aRefCountFds.Length());
+  bool ret = poll(pfds.Elements(), pfds.Length(), 0) > 0;
+  for (const auto& pfd : pfds) {
+    aRefSet.AppendElement(ret && (pfd.revents & POLLIN));
+  }
+}
+
 void DMABufSurface::GlobalRefRelease() {
 #ifdef HAVE_EVENTFD
   MutexAutoLock lock(mSurfaceLock);

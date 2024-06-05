@@ -428,8 +428,9 @@ Result<IPCInternalRequest, nsresult> GetIPCInternalRequest(
       Nothing(), -1, alternativeDataType, contentPolicyType, internalPriority,
       referrer, referrerPolicy, environmentReferrerPolicy, requestMode,
       requestCredentials, cacheMode, requestRedirect, requestPriority,
-      integrity, false, fragment, principalInfo, interceptionPrincipalInfo,
-      contentPolicyType, redirectChain, isThirdPartyChannel, embedderPolicy);
+      integrity, /* keepalive */ false, /* hasStreamBody */ false, fragment,
+      principalInfo, interceptionPrincipalInfo, contentPolicyType,
+      redirectChain, isThirdPartyChannel, embedderPolicy);
 }
 
 nsresult MaybeStoreStreamForBackgroundThread(nsIInterceptedChannel* aChannel,

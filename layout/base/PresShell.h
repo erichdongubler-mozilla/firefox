@@ -86,6 +86,7 @@ class ReflowCountMgr;
 
 namespace mozilla {
 class AccessibleCaretEventHub;
+struct AnchorPosAnchorInfo;
 class FallbackRenderer;
 class GeckoMVMContext;
 class nsDisplayList;
@@ -100,6 +101,10 @@ struct StyleAtom;
 
 struct AutoConnectedAncestorTracker;
 struct PointerInfo;
+
+// Cache used for storing top layer indices of anchor lists, grouped by name.
+using AnchorPosAnchorTopLayerIndexCache =
+    nsTHashMap<const nsAtom*, nsTArray<size_t>>;
 
 #ifdef ACCESSIBILITY
 namespace a11y {
@@ -816,8 +821,10 @@ class PresShell final : public nsStubDocumentObserver,
   nsIFrame* GetAbsoluteContainingBlock(nsIFrame* aFrame);
 
   // https://drafts.csswg.org/css-anchor-position-1/#target
-  nsIFrame* GetAnchorPosAnchor(const ScopedNameRef& aName,
-                               const nsIFrame* aPositionedFrame) const;
+  nsIFrame* GetAnchorPosAnchor(
+      const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
+      uint32_t aPositionedFrameTreeDepth,
+      AnchorPosAnchorTopLayerIndexCache* aTopLayerIndexCache = nullptr) const;
   void CollectAnchorNames(const nsIFrame* aPositionedFrame,
                           nsTArray<nsString>& aResult);
   void AddAnchorPosAnchor(Span<const StyleAtom> aNames, nsIFrame* aFrame);
@@ -3322,7 +3329,8 @@ class PresShell final : public nsStubDocumentObserver,
   // Note: Does not store implicit anchors, since many elements can be
   // potential implicit anchors (e.g. pseudo-elements' implicit anchor
   // is its originating element).
-  nsTHashMap<RefPtr<const nsAtom>, nsTArray<nsIFrame*>> mAnchorPosAnchors;
+  nsTHashMap<RefPtr<const nsAtom>, nsTArray<AnchorPosAnchorInfo>>
+      mAnchorPosAnchors;
   nsTArray<nsIFrame*> mAnchorPosPositioned;
 
   // Reflow roots that need to be reflowed.

@@ -411,14 +411,13 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   mozilla::ipc::IPCResult RecvNormalPriorityInsertText(
       const nsAString& aStringToInsert);
 
-  mozilla::ipc::IPCResult RecvReplaceText(const nsString& aReplaceSrcString,
-                                          const nsString& aStringToInsert,
-                                          uint32_t aOffset,
-                                          bool aPreventSetSelection);
+  mozilla::ipc::IPCResult RecvReplaceText(
+      const nsString& aReplaceSrcString, const nsString& aStringToInsert,
+      uint32_t aOffset, PreventSetSelection aPreventSetSelection);
 
   mozilla::ipc::IPCResult RecvNormalPriorityReplaceText(
       const nsString& aReplaceSrcString, const nsString& aStringToInsert,
-      uint32_t aOffset, bool aPreventSetSelection);
+      uint32_t aOffset, PreventSetSelection aPreventSetSelection);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvPasteTransferable(
@@ -760,7 +759,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   mozilla::ipc::IPCResult RecvReleasePointerLock();
 
-#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#ifdef ACCESSIBILITY
   mozilla::ipc::IPCResult RecvRequestDocAccessibleForPrint();
 #endif
 

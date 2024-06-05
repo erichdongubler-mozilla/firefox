@@ -12,6 +12,7 @@
 #include "GLTypes.h"
 #include "ImageContainer.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/Span.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
 #include "mozilla/widget/BufferSurface.h"
@@ -149,6 +150,17 @@ class DMABufSurface : public BufferSurface {
   // If global reference counter was created by GlobalRefCountCreate()
   // returns true when there's an active surface reference.
   bool IsGlobalRefSet();
+
+  // Returns the file descriptor of the global reference counter,
+  // or 0 if the counter was not created. The descriptor stays owned
+  // by the surface.
+  int GetGlobalRefCountFd();
+
+  // Query GlobalRefSet() once by a single poll() call and stores one result
+  // per file descriptor to aRefSet. aRefCountFds holds descriptors obtained
+  // by GetGlobalRefCountFd().
+  static void GetGlobalRefsSet(mozilla::Span<const int> aRefCountFds,
+                               nsTArray<bool>& aRefSet);
 
   // Add/Remove additional reference to the surface global reference counter.
   void GlobalRefAdd();

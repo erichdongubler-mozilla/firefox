@@ -34,7 +34,7 @@
           },
           "nova": {
             "value": {
-              "nativeTheme": "color-mix(in srgb, AccentColor 20%, transparent)",
+              "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)",
               "light": "{color.violet-desaturated.20}",
               "dark": "{color.violet-desaturated.50}",
               "forcedColors": "SelectedItemText"
@@ -55,7 +55,7 @@
           },
           "nova": {
             "value": {
-              "nativeTheme": "color-mix(in srgb, AccentColor 30%, transparent)",
+              "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)",
               "light": "{color.violet-desaturated.30}",
               "dark": "{color.violet-desaturated.40}",
               "forcedColors": "SelectedItemText"
@@ -142,11 +142,7 @@
           }
         },
         "active": {
-          "value": {
-            "default": "{button.background.color.active}",
-            "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)",
-            "forcedColors": "{button.background.color.active}"
-          }
+          "value": "{button.background.color.active}"
         },
         "disabled": {
           "ignoreFigma": "Preserve token structure that can't be replicated in Figma",
@@ -158,11 +154,7 @@
           }
         },
         "hover": {
-          "value": {
-            "default": "{button.background.color.hover}",
-            "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)",
-            "forcedColors": "{button.background.color.hover}"
-          }
+          "value": "{button.background.color.hover}"
         },
         "selected": {
           "value": "{button.background.color.ghost.active}"
@@ -262,6 +254,7 @@
           "nova": {
             "comment": "Preserve prefersContrast value",
             "value": {
+              "nativeTheme": "currentColor",
               "default": "{color.accent.primary.@base}"
             }
           }

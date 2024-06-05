@@ -575,7 +575,7 @@ void js::Nursery::updateAllocFlagsForZone(JS::Zone* zone) {
 }
 
 void js::Nursery::discardCodeAndSetJitFlagsForZone(JS::Zone* zone) {
-  zone->forceDiscardJitCode(runtime()->gcContext());
+  zone->discardJitCodeForAllRealms(runtime()->gcContext());
 
   if (jit::JitZone* jitZone = zone->jitZone()) {
     jitZone->discardStubs();

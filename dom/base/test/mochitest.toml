@@ -12,6 +12,8 @@ support-files = [
   "iframe_main_bug1022229.html",
   "iframe_sandbox_bug1022229.html",
   "file_empty.html",
+  "file_domcontentloaded_document_open.html",
+  "file_domcontentloaded_terminated_parse.html",
   "iframe_postMessage_solidus.html",
   "file_setname.html",
   "345339_iframe.html",
@@ -351,6 +353,10 @@ skip-if = [
   "http2",
   "http3",
 ]
+
+["test_domcontentloaded_document_open.html"]
+
+["test_domcontentloaded_terminated_parse.html"]
 
 ["test_domparser_null_char.html"]
 

@@ -415,14 +415,15 @@ void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
       return;
     }
   }
+  RefPtr doc = OwnerDoc();
   // 3. Let oldEditContext be the value of this's internal [[EditContext]] slot.
   RefPtr<EditContext> oldEditContext = GetEditContext();
   if (oldEditContext) {
     // 4. If oldEditContext is not null and oldEditContext is this's node
     //    document's active EditContext, then:
-    if (oldEditContext == OwnerDoc()->GetActiveEditContext()) {
+    if (oldEditContext == doc->GetActiveEditContext()) {
       // 1. Run the steps to deactivate an EditContext with oldEditContext.
-      oldEditContext->Deactivate();
+      doc->DeactivateEditContextAndEndComposition();
       // 2. If oldEditContext's associated element is not equal to this, then
       //    terminate these steps.
       if (oldEditContext->GetAssociatedElement() != this) {
@@ -455,8 +456,12 @@ void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
   }
   EditContext::SetForElement(*this, aContext);
 
+  if (!IsInComposedDoc()) {
+    // Don't update editable state if the element is disconnected.
+    return;
+  }
+
   int32_t delta = (aContext != nullptr) - (oldEditContext != nullptr);
-  RefPtr doc = OwnerDoc();
   // First, update the editable state of this element and its descendants.
   // Computing the active EditContext depends on having the right editable
   // state, so this needs to happen first.

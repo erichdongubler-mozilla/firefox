@@ -717,6 +717,32 @@ export class TelemetryFeed {
   }
 
   /**
+   * Removes the tile_id from a top sites event bound for the newtab ping when
+   * the redactTileIdForSponsored trainhop config is enabled.
+   *
+   * Kept separate from redactNewTabPing because the topsites metrics are
+   * recorded directly rather than through the stories redaction path, and
+   * because content_redacted is not a declared extra key on most of them.
+   *
+   * @param {*} pingDict Input dictionary
+   * @param {boolean} isSponsored Whether this event is for a sponsored top
+   *   site. Defaults to true so that omitting it redacts rather than leaks.
+   * @returns {*} Possibly redacted dictionary
+   */
+  redactTopSitesTileId(pingDict, isSponsored = true) {
+    if (!isSponsored || !this.tileIdRedactedForSponsored) {
+      return pingDict;
+    }
+
+    const {
+      // eslint-disable-next-line no-unused-vars
+      tile_id,
+      ...result
+    } = pingDict;
+    return result;
+  }
+
+  /**
    * addSession - Start tracking a new session
    *
    * @param  {string} id the portID of the open session
@@ -1052,7 +1078,7 @@ export class TelemetryFeed {
             session.session_id
           );
         } else {
-          Glean.topsites.impression.record({
+          const gleanData = {
             advertiser_name,
             tile_id,
             newtab_visit_id: session.session_id,
@@ -1062,7 +1088,10 @@ export class TelemetryFeed {
             ...(is_ad_eligible_position && isAdEligiblePositionSupported()
               ? { is_ad_eligible_position: true }
               : {}),
-          });
+          };
+          Glean.topsites.impression.record(
+            this.redactTopSitesTileId(gleanData, true)
+          );
         }
       }
     } else if (type === "click") {
@@ -1086,14 +1115,17 @@ export class TelemetryFeed {
             session.session_id
           );
         } else {
-          Glean.topsites.click.record({
+          const gleanData = {
             advertiser_name,
             tile_id,
             newtab_visit_id: session.session_id,
             is_sponsored: true,
             position,
             visible_topsites,
-          });
+          };
+          Glean.topsites.click.record(
+            this.redactTopSitesTileId(gleanData, true)
+          );
         }
       }
     } else {
@@ -2686,13 +2718,16 @@ export class TelemetryFeed {
             session.session_id
           );
         } else {
-          Glean.topsites.dismiss.record({
+          const gleanData = {
             advertiser_name,
             tile_id,
             newtab_visit_id: session.session_id,
             is_sponsored: !!isSponsoredTopSite,
             position,
-          });
+          };
+          Glean.topsites.dismiss.record(
+            this.redactTopSitesTileId(gleanData, !!isSponsoredTopSite)
+          );
         }
       }
     }
@@ -2713,12 +2748,15 @@ export class TelemetryFeed {
           });
         }
       } else {
-        Glean.topsites.showPrivacyClick.record({
+        const gleanData = {
           advertiser_name,
           tile_id,
           newtab_visit_id: session.session_id,
           position,
-        });
+        };
+        Glean.topsites.showPrivacyClick.record(
+          this.redactTopSitesTileId(gleanData, true)
+        );
       }
     }
   }

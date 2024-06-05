@@ -246,6 +246,8 @@ linux64-toolchain-sysroot-gcc11:
             - libicu-dev
             # For libdmg-hfsplus
             - liblzma-dev
+            # For hfsplus
+            - uuid-dev
 
 linux64-aarch64-toolchain-sysroot:
     description: "Sysroot for aarch64 linux64 toolchain builds"

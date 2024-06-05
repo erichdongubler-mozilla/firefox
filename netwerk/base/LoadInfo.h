@@ -62,9 +62,6 @@ nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
   GETTER(uint64_t, TriggeringWindowId, triggeringWindowId, 0)                  \
   SETTER(uint64_t, TriggeringWindowId)                                         \
                                                                                \
-  GETTER(bool, TriggeringStorageAccess, triggeringStorageAccess, false)        \
-  SETTER(bool, TriggeringStorageAccess)                                        \
-                                                                               \
   GETTER(uint32_t, TriggeringFirstPartyClassificationFlags,                    \
          triggeringFirstPartyClassificationFlags, 0)                           \
   SETTER(uint32_t, TriggeringFirstPartyClassificationFlags)                    \
@@ -504,6 +501,10 @@ class LoadInfo final : public nsILoadInfo {
   nsContentPolicyType mInternalContentPolicyType;
   bool mServiceWorkerTaintingSynthesized = false;
   LoadTainting mTainting = LoadTainting::Basic;
+
+  // NOTE: This flag is intentionally not serialized, as it is used to disable
+  // IPC security checks based on mTriggeringRemoteType.
+  bool mTrustedPrincipalToInherit = false;
 
 #define DEFINE_FIELD(type, name, _, default_init) type m##name = default_init;
   LOADINFO_FOR_EACH_FIELD(DEFINE_FIELD, LOADINFO_DUMMY_SETTER)

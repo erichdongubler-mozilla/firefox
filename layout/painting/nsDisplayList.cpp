@@ -2002,10 +2002,6 @@ size_t nsDisplayListBuilder::WeakFrameRegion::SizeOfExcludingThis(
     MallocSizeOf aMallocSizeOf) const {
   size_t n = 0;
   n += mFrames.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  for (const auto& frame : mFrames) {
-    const UniquePtr<WeakFrame>& weakFrame = frame.mWeakFrame;
-    n += aMallocSizeOf(weakFrame.get());
-  }
   n += mRects.ShallowSizeOfExcludingThis(aMallocSizeOf);
   return n;
 }
@@ -2020,13 +2016,13 @@ void nsDisplayListBuilder::WeakFrameRegion::RemoveModifiedFramesAndRects() {
   uint32_t length = mFrames.Length();
 
   while (i < length) {
-    auto& wrapper = mFrames[i];
+    auto& [weakFrame, rawFrame] = mFrames[i];
 
-    if (!wrapper.mWeakFrame->IsAlive() ||
-        AnyContentAncestorModified(wrapper.mWeakFrame->GetFrame())) {
+    if (!weakFrame.IsAlive() ||
+        AnyContentAncestorModified(weakFrame.GetFrame())) {
       // To avoid multiple O(n) shifts in the array, move the last element of
       // the array to the current position and decrease the array length.
-      mFrameSet.Remove(wrapper.mFrame);
+      mFrameSet.Remove(rawFrame);
       mFrames[i] = std::move(mFrames[length - 1]);
       mRects[i] = std::move(mRects[length - 1]);
       length--;

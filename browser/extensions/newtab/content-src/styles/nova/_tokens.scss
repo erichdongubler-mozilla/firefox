@@ -28,7 +28,7 @@
 
     /** border **/
     --border-color: light-dark(var(--color-gray-30), var(--color-gray-40));
-    --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-50));
+    --border-color-deemphasized: color-mix(in srgb, currentColor 24%, transparent);
     --border-color-error: light-dark(var(--color-red-50), var(--color-red-20));
     --border-color-interactive-hover: light-dark(var(--color-gray-50), var(--color-gray-20));
     --border-color-interactive-active: light-dark(var(--color-gray-50), var(--color-gray-15));
@@ -56,8 +56,6 @@
     --button-background-color-destructive-hover: light-dark(var(--color-red-60), var(--color-red-20));
     --button-background-color-destructive-active: light-dark(var(--color-red-70), var(--color-red-10));
     --button-background-color-ghost: var(--button-background-color);
-    --button-background-color-ghost-hover: var(--button-background-color-hover);
-    --button-background-color-ghost-active: var(--button-background-color-active);
     --button-background-color-ghost-selected: var(--button-background-color-selected);
     --button-background-color-muted: light-dark(var(--color-gray-20), var(--color-gray-55));
     --button-background-color-muted-hover: light-dark(var(--color-gray-30), var(--color-gray-45));
@@ -117,7 +115,7 @@
     --card-header-border-color: transparent;
 
     /** color **/
-    --color-accent-attention: light-dark(var(--color-green-40), var(--color-green-30));
+    --color-accent-attention: light-dark(var(--color-green-50), var(--color-green-20));
     --color-accent-primary: light-dark(var(--color-violet-50), var(--color-violet-30));
     --color-accent-primary-hover: light-dark(var(--color-violet-60), var(--color-violet-20));
     --color-accent-primary-active: light-dark(var(--color-violet-70), var(--color-violet-10));
@@ -255,6 +253,7 @@
     --icon-size-xlarge: var(--size-item-large);
 
     /** info-bar **/
+    --info-bar-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-gray-60));
     --info-bar-margin: 0;
 
     /** input **/
@@ -331,6 +330,9 @@
 @layer tokens-prefers-contrast-nova {
   @media (prefers-contrast) {
     :root.nova-tokens {
+      /** info-bar **/
+      --info-bar-border-color: CanvasText;
+
       /** text-color **/
       --text-color: CanvasText;
       --text-color-error: inherit;

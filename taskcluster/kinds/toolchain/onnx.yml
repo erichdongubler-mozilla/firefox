@@ -12,6 +12,8 @@ task-defaults:
     run:
         clone-with: hg
         script: build-onnxruntime.sh
+        resources:
+            - taskcluster/scripts/misc/onnxruntime.patches/**
     fetches:
         fetch:
             - onnxruntime-src
@@ -34,8 +36,21 @@ onnxruntime-x86_64-linux-gnu:
             - linux64-clang-toolchain
             - sysroot-x86_64-linux-gnu
 
-# onnxruntime-i686-linux-gnu: requires more work upstream
-# onnxruntime-aarch64-linux-gnu: requires more work upstream
+onnxruntime-aarch64-linux-gnu:
+    description: "ONNX Runtime (linux aarch64)"
+    treeherder:
+        symbol: TLA64(onnx)
+    run:
+        arguments:
+            - "Linux"
+            - "aarch64"
+        toolchain-artifact: public/build/onnxruntime-aarch64-linux-gnu.tar.zst
+        resources:
+            - taskcluster/scripts/misc/onnxruntime-thread-atexit.cpp
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - sysroot-aarch64-linux-gnu
 
 onnxruntime-x86_64-windows-msvc:
     description: "ONNX Runtime (win64 x64)"
@@ -79,7 +94,26 @@ onnxruntime-i686-windows-msvc:
             - win64-ninja
 
 
-# onnxruntime-aarch64-windows-msvc: requires more work upstream
+onnxruntime-aarch64-windows-msvc:
+    description: "ONNX Runtime (win64 aarch64)"
+    worker-type: b-win2022
+    worker:
+        max-run-time: 7200
+    treeherder:
+        symbol: TWA64(onnx)
+    run:
+        arguments:
+            - "Windows"
+            - "aarch64"
+        toolchain-artifact: public/build/onnxruntime-aarch64-windows-msvc.tar.zst
+    fetches:
+        toolchain:
+            - vs-toolchain
+            - win64-cmake
+            - win64-clang
+        fetch:
+            - win64-ninja
+
 
 onnxruntime-x86_64-apple-darwin:
     description: "ONNX Runtime (macOS x64)"

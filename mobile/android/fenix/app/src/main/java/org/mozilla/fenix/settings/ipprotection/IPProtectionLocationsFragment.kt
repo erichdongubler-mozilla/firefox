@@ -10,18 +10,23 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.VisibleForTesting
 import androidx.compose.material3.SnackbarHostState
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.feature.ipprotection.IPProtectionWarningBinding
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
+import mozilla.components.feature.ipprotection.store.IPProtectionStore
+import mozilla.components.feature.ipprotection.store.state.Location
 import mozilla.components.feature.ipprotection.store.state.isActivationInFlight
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import org.mozilla.fenix.GleanMetrics.Vpn
+import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
@@ -54,9 +59,7 @@ class IPProtectionLocationsFragment : Fragment(), SystemInsetsPaddedFragment {
                 snackbarHostState = snackbarHostState,
                 isActivating = isActivating,
                 onNavigateBack = { findNavController().popBackStack() },
-                onLocationSelected = { country ->
-                    requireComponents.ipProtection.store.dispatch(IPProtectionAction.LocationChanged(country))
-                },
+                onLocationSelected = ::handleSelectedLocation,
             )
         }
     }
@@ -93,5 +96,24 @@ class IPProtectionLocationsFragment : Fragment(), SystemInsetsPaddedFragment {
             owner = this,
             view = view,
         )
+    }
+
+    /**
+     * Applies the user's selected location and returns to the built-in VPN settings screen.
+     *
+     * @param location The [Location] that the user selected from the list.
+     * @param store The [IPProtectionStore] the selected location is dispatched to.
+     * @param navController [NavController] used for navigation.
+     */
+    @VisibleForTesting
+    internal fun handleSelectedLocation(
+        location: Location,
+        store: IPProtectionStore = requireComponents.ipProtection.store,
+        navController: NavController = findNavController(),
+    ) {
+        if (location != store.state.locationState.selectedLocation) {
+            store.dispatch(IPProtectionAction.LocationChanged(location))
+        }
+        navController.popBackStack(R.id.ipProtectionFragment, false)
     }
 }

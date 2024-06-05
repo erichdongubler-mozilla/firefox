@@ -31,6 +31,9 @@ interface TabManagementFeatureHelper {
 
     /** Whether the Tab Groups strip is shown while the active tab is in a group. */
     val tabGroupsStripEnabled: Boolean
+
+    /** Control whether Tab Group options show up in the browser menu. */
+    val showTabGroupsInMenu: Boolean
 }
 
 /** The default implementation of [TabManagementFeatureHelper]. */
@@ -56,6 +59,11 @@ data object DefaultTabManagementFeatureHelper : TabManagementFeatureHelper {
 
     override val tabGroupsStripEnabled: Boolean
         get() = Config.channel.isDebug || FxNimbus.features.tabGroupsStrip.value().enabled
+
+    // Opt in via Secret Settings. Defaulting this on adds a browser menu row that pushes Print out
+    // of the main menu's visible area, which the Print UI tests rely on.
+    override val showTabGroupsInMenu: Boolean
+        get() = false
 }
 
 val LocalTabManagementFeatureHelper =

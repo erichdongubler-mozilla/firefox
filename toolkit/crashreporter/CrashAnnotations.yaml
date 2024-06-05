@@ -1675,6 +1675,29 @@ WindowsErrorReporting:
   glean:
     metric: crash.windows.error_reporting
 
+WindowsProcessMitigations:
+  description: >
+    A human-readable summary of the Windows process mitigation options configured
+    on the system for this executable, amalgamating the per-application and
+    system-wide values (per-application takes precedence per mitigation). A
+    comma-separated list of "Name=on", "Name=off", or "Name=<variant>" entries
+    (where <variant> names the mitigation's stricter or modified state, e.g.
+    "EmulateAtlThunks" or "StrictMode"); only mitigations that are explicitly
+    configured appear. See WindowsProcessMitigationsBytes for the raw bitmask.
+  type: string
+  scope: report
+
+WindowsProcessMitigationsBytes:
+  description: >
+    The Windows process mitigation options (Exploit Protection "Program
+    settings") configured on the system for this executable, read from the
+    registry at process start independently of any mitigations the process
+    later enables for itself. The value is the compound of the system-wide and
+    path-specific bitmasks, as would appear in regedit (hex-encoded, little
+    endian).
+  type: string
+  scope: report
+
 Winsock_LSP:
   description: >
     Information on winsock LSPs injected in our networking stack.

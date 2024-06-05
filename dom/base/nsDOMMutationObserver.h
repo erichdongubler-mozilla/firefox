@@ -722,7 +722,10 @@ class nsAutoAnimationMutationBatch {
   // List of nodes referred to by mEntryTable so we can sort them
   // For a specific pseudo element, we use its parent element as the
   // batch target, so they will be put in the same EntryArray.
-  nsTArray<nsINode*> mBatchTargets;
+  // Note: the batch object is used in lots of Animation APIs, and the script
+  // may be in the scope of the batch via ready/finished promises, so we use the
+  // strong refs here.
+  nsTArray<nsCOMPtr<nsINode>> mBatchTargets;
 };
 
 inline nsDOMMutationObserver* nsMutationReceiverBase::Observer() {

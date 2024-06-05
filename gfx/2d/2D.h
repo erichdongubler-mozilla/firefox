@@ -8,7 +8,6 @@
 #include <functional>
 #include <vector>
 
-#include "FontVariation.h"
 #include "Matrix.h"
 #include "Point.h"
 #include "Quaternion.h"
@@ -88,6 +87,7 @@ class TextureData;
 
 namespace wr {
 struct FontInstanceOptions;
+struct FontVariation;
 struct FontInstancePlatformOptions;
 }  // namespace wr
 
@@ -1304,7 +1304,7 @@ class UnscaledFont : public SupportsThreadSafeWeakPtr<UnscaledFont> {
 
   virtual already_AddRefed<ScaledFont> CreateScaledFont(
       Float aGlyphSize, const uint8_t* aInstanceData,
-      uint32_t aInstanceDataLength, const FontVariation* aVariations,
+      uint32_t aInstanceDataLength, const wr::FontVariation* aVariations,
       uint32_t aNumVariations) {
     return nullptr;
   }
@@ -1312,7 +1312,7 @@ class UnscaledFont : public SupportsThreadSafeWeakPtr<UnscaledFont> {
   virtual already_AddRefed<ScaledFont> CreateScaledFontFromWRFont(
       Float aGlyphSize, const wr::FontInstanceOptions* aOptions,
       const wr::FontInstancePlatformOptions* aPlatformOptions,
-      const FontVariation* aVariations, uint32_t aNumVariations) {
+      const wr::FontVariation* aVariations, uint32_t aNumVariations) {
     return CreateScaledFont(aGlyphSize, nullptr, 0, aVariations,
                             aNumVariations);
   }
@@ -1358,7 +1358,7 @@ class ScaledFont : public SupportsThreadSafeWeakPtr<ScaledFont> {
                                    const Matrix* aTransformHint = nullptr) = 0;
 
   typedef void (*FontInstanceDataOutput)(const uint8_t* aData, uint32_t aLength,
-                                         const FontVariation* aVariations,
+                                         const wr::FontVariation* aVariations,
                                          uint32_t aNumVariations, void* aBaton);
 
   virtual bool GetFontInstanceData(FontInstanceDataOutput, void*) {
@@ -1368,7 +1368,7 @@ class ScaledFont : public SupportsThreadSafeWeakPtr<ScaledFont> {
   virtual bool GetWRFontInstanceOptions(
       Maybe<wr::FontInstanceOptions>* aOutOptions,
       Maybe<wr::FontInstancePlatformOptions>* aOutPlatformOptions,
-      std::vector<FontVariation>* aOutVariations) {
+      std::vector<wr::FontVariation>* aOutVariations) {
     return false;
   }
 

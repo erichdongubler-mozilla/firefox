@@ -60,8 +60,8 @@ smart_window:
       submit_type: &submit_type
         type: string
         description: >
-          How the request was submitted: button, enter, follow-up, resume, retry,
-          shortcuts, starter, or suggestion
+          How the request was submitted: button, enter, follow-up, menu, resume,
+          retry, shortcuts, starter, or suggestion
       tabs:
         type: quantity
         unit: count
@@ -466,8 +466,10 @@ smart_window:
       with prompt revisions during debugging.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2041835
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068252
     data_reviews:
       - https://phabricator.services.mozilla.com/D302170
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068252
     data_sensitivity:
       - interaction
     notification_emails: *emails
@@ -489,7 +491,11 @@ smart_window:
       error:
         type: string
         description: >
-          Canonical tool-call error code, or empty on success
+          Canonical tool-call error code, or empty on success. A tool that
+          reports a failure by returning an error-bearing result rather than
+          throwing, as search_the_web does, is also counted as
+          "execution_failed" here; for the reason a search failed, see the
+          error extra on smart_window.search_the_web
 
   model_request:
     type: event
@@ -623,6 +629,113 @@ smart_window:
         description: >
           Line number in the source file the error originated from, or 0 if
           unknown
+
+  search_the_web:
+    type: event
+    description: |
+      Recorded when the snippets-based search_the_web flow finishes. Reports
+      how long the flow took and where that time went, so its latency can be
+      attributed to the Exa retrieval or to processing the results, and so
+      failed searches can be told apart from searches that returned nothing.
+
+      Only the snippets-based flow is reported. The flow is not recorded when
+      it escalates to the Google handoff, which retrieves nothing of its own
+      and is covered by smart_window.search_handoff.
+
+      These durations cover the tool call only. The event is recorded when the
+      flow returns its snippets to the assistant, before any of it has been
+      shown to the user: the assistant then composes the user-facing reply from
+      those snippets in a further model turn. For the user-visible turn, which
+      includes that reply, see smart_window.model_response.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068252
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068252
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      total_duration:
+        type: quantity
+        unit: ms
+        description: >
+          Time in ms for the whole search flow, from the flow starting through
+          the snippets being returned to the assistant. This starts before the
+          query is validated, so on the invalid_query path it covers a run
+          during which no search request was ever issued. It excludes the
+          argument parsing and action-log setup the chat loop does before
+          invoking the flow.
+      retrieval_duration:
+        type: quantity
+        unit: ms
+        description: >
+          Time in ms for the search provider to return results, including
+          acquiring the auth token the request needs. 0 when the flow failed
+          before the request was made.
+      processing_duration:
+        type: quantity
+        unit: ms
+        description: >
+          Time in ms to filter, cap, sanitize and truncate the retrieved
+          results and register them for citation. 0 when retrieval failed.
+      results_retrieved:
+        type: quantity
+        unit: count
+        description: >
+          Number of usable results the search provider returned, after results
+          with no URL were discarded. 0 when retrieval failed.
+      results_returned:
+        type: quantity
+        unit: count
+        description: >
+          Number of results handed to the assistant, never more than
+          results_retrieved. 0 on any failure. Two independent causes can make
+          this lower than results_retrieved, so the difference between them is
+          not a drop rate: results with an unusable URL or too short a snippet
+          are discarded, and whatever survives is then capped at a limit below
+          the number retrieval requests. When retrieval returns no more than
+          that cap and nothing is discarded, the two counts are equal.
+      snippet_chars_returned:
+        type: quantity
+        unit: count
+        description: >
+          Total characters of snippet text across the results handed to the
+          assistant, measured after whitespace is collapsed and the per-snippet
+          cap is applied, and counting the single ellipsis character appended
+          to a snippet that was cut. A length only, never the text itself.
+          0 on any failure. Read with results_returned this distinguishes a few
+          substantial snippets from several thin ones.
+      snippet_chars_truncated:
+        type: quantity
+        unit: count
+        description: >
+          Total characters removed from those snippets by the per-snippet cap,
+          summed across the results handed to the assistant. A length only,
+          never the text itself. 0 when nothing was cut and on any failure. A
+          large value means the assistant is answering from material the cap
+          shortened.
+      http_status:
+        type: quantity
+        unit: count
+        description: >
+          HTTP status from the search back-end, or 0 if no response arrived.
+      error:
+        type: string
+        description: >
+          Canonical reason the flow ended. One of: "" on success;
+          "invalid_query" when the assistant supplied no usable query;
+          "config_error" when the endpoint or auth token was unavailable;
+          "timeout" when the search request exceeded its deadline;
+          "http_error" when the back-end returned a non-2xx status, whose value
+          is in http_status; "network_error" when the request failed below the
+          HTTP layer; "retrieval_failed" for any other retrieval failure;
+          "no_results" when nothing usable survived processing;
+          "internal_error" when the flow itself threw, which is a client bug
+          rather than a search failure. Never a free form message.
 
   chat_storage:
     type: quantity
@@ -2643,6 +2756,11 @@ smart_window:
         unit: tabs
         description: >
           How many tabs were sent in the request.
+      threshold:
+        type: string
+        description: >
+          Minimum relevance a tab must reach to be selected as context.
+          A string. One of: low, medium or high.
 
   form_relevant_tabs_response:
     type: event
@@ -2685,8 +2803,9 @@ smart_window:
         description: >
           Number of those tabs that were actually included as context.
           Lower than tabs_selected when the model repeated a tab, named
-          one that was never offered, or picked more than the client accepts.
-          Absent when the request failed.
+          one that was never offered, rated a tab below the relevance
+          threshold, or picked more than the client accepts. Absent when
+          the request failed.
       tabs_high:
         type: quantity
         unit: tabs

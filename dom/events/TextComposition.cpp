@@ -261,20 +261,22 @@ void TextComposition::DispatchEvent(
   }
   RefPtr<nsINode> node = mNode;
   RefPtr<nsPresContext> presContext = mPresContext;
-  if (auto* element = nsGenericHTMLElement::FromNode(node)) {
-    if (RefPtr<dom::EditContext> editContext = element->GetEditContext()) {
-      // Only compositionstart and compositionend are sent to EditContext
-      if (aDispatchEvent->mMessage == eCompositionStart) {
-        editContext->StartComposition(*aDispatchEvent);
-      } else if (aDispatchEvent->mMessage == eCompositionEnd) {
-        editContext->EndComposition(*aDispatchEvent);
-      }
-      // Internally, we want to dispatch this event to the EditContext's
-      // associated element, since that is what the EditorEventListener is
-      // listening to. But according to the spec, composition events should only
-      // be dispatched to the EditContext.
-      aDispatchEvent->mFlags.mOnlySystemGroupDispatch = true;
+  // Note that the active EditContext can be different from
+  // node->GetEditContext() since this can be called after changing node's
+  // EditContext but before updating the active EditContext.
+  if (RefPtr<dom::EditContext> editContext =
+          node->OwnerDoc()->GetActiveEditContext()) {
+    // Only compositionstart and compositionend are sent to EditContext
+    if (aDispatchEvent->mMessage == eCompositionStart) {
+      editContext->StartComposition(*aDispatchEvent);
+    } else if (aDispatchEvent->mMessage == eCompositionEnd) {
+      editContext->EndComposition(*aDispatchEvent);
     }
+    // Internally, we want to dispatch this event to the EditContext's
+    // associated element, since that is what the EditorEventListener is
+    // listening to. But according to the spec, composition events should only
+    // be dispatched to the EditContext.
+    aDispatchEvent->mFlags.mOnlySystemGroupDispatch = true;
   }
   EventDispatcher::Dispatch(node, presContext, aDispatchEvent, nullptr, aStatus,
                             aCallBack);
@@ -577,6 +579,8 @@ void TextComposition::DispatchCompositionEvent(
 void TextComposition::HandleSelectionEvent(
     nsPresContext* aPresContext, BrowserParent* aBrowserParent,
     WidgetSelectionEvent* aSelectionEvent) {
+  MOZ_DIAGNOSTIC_ASSERT(aSelectionEvent->DispatchedByValidDispatcher());
+
   // If the content is a container of BrowserParent, composition should be in
   // the remote process.
   if (aBrowserParent) {

@@ -4273,7 +4273,7 @@ void PresShell::ClearMouseCapture(nsIFrame* aFrame) {
 }
 
 nsresult PresShell::CaptureHistoryState(nsILayoutHistoryState** aState) {
-  MOZ_ASSERT(nullptr != aState, "null state pointer");
+  MOZ_ASSERT(aState, "null state pointer");
 
   // We actually have to mess with the docshell here, since we want to
   // store the state back in it.
@@ -4297,15 +4297,10 @@ nsresult PresShell::CaptureHistoryState(nsILayoutHistoryState** aState) {
   *aState = historyState;
   NS_IF_ADDREF(*aState);
 
-  // Capture frame state for the entire frame hierarchy
-  nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
-  if (!rootFrame) {
-    return NS_OK;
+  // Capture the root scroll state.
+  if (auto* sf = GetRootScrollContainerFrame()) {
+    sf->SaveState(historyState);
   }
-
-  mFrameConstructor->CaptureFrameState(rootFrame, historyState,
-                                       {CaptureStateFlag::ForSessionHistory});
-
   return NS_OK;
 }
 
@@ -11641,17 +11636,30 @@ nsIFrame* PresShell::GetAbsoluteContainingBlock(nsIFrame* aFrame) {
 }
 
 nsIFrame* PresShell::GetAnchorPosAnchor(
-    const ScopedNameRef& aName, const nsIFrame* aPositionedFrame) const {
+    const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
+    uint32_t aPositionedFrameTreeDepth,
+    AnchorPosAnchorTopLayerIndexCache* aTopLayerIndexCache) const {
   MOZ_ASSERT(aName.mName);
   MOZ_ASSERT(!aName.mName->IsEmpty());
   MOZ_ASSERT(mLazyAnchorPosAnchorChanges.IsEmpty());
+  MOZ_ASSERT(aPositionedFrame->GetDepthInFrameTree() ==
+             aPositionedFrameTreeDepth);
   if (aName.mName == nsGkAtoms::AnchorPosImplicitAnchor) {
     return AnchorPositioningUtils::GetAnchorPosImplicitAnchor(aPositionedFrame)
         .mAnchorFrame;
   }
   if (const auto& entry = mAnchorPosAnchors.Lookup(aName.mName)) {
+    auto cacheEntry = [&]() -> nsTArray<size_t>* {
+      if (!aTopLayerIndexCache) {
+        return nullptr;
+      }
+      auto& v =
+          aTopLayerIndexCache->LookupOrInsert(aName.mName, entry->Length());
+      return &v;
+    }();
     return AnchorPositioningUtils::FindFirstAcceptableAnchor(
-        aName, aPositionedFrame, entry.Data());
+        aName, aPositionedFrame, entry.Data(), aPositionedFrameTreeDepth,
+        cacheEntry);
   }
   return nullptr;
 }
@@ -11665,30 +11673,37 @@ void PresShell::CollectAnchorNames(const nsIFrame* aPositionedFrame,
     const auto& name = iter.Key();
     ScopedNameRef scopedName{name, anchorTreeScope};
     if (AnchorPositioningUtils::FindFirstAcceptableAnchor(
-            scopedName, aPositionedFrame, iter.Data())) {
+            scopedName, aPositionedFrame, iter.Data(),
+            aPositionedFrame->GetDepthInFrameTree(), nullptr)) {
       aResult.AppendElement(nsDependentAtomString(name));
     }
   }
 }
+
+struct AnchorPosAnchorInfoComparator {
+  bool Equals(const AnchorPosAnchorInfo& aEntry, const nsIFrame* aFrame) const {
+    return aFrame == aEntry.mAnchor;
+  }
+};
 
 void PresShell::AddAnchorPosAnchorImpl(const nsAtom* aName, nsIFrame* aFrame,
                                        bool aForMerge) {
   MOZ_ASSERT(aName);
 
   auto& entry = mAnchorPosAnchors.LookupOrInsertWith(
-      aName, []() { return nsTArray<nsIFrame*>(); });
+      aName, []() { return nsTArray<AnchorPosAnchorInfo>(); });
 
   if (entry.IsEmpty()) {
-    entry.AppendElement(aFrame);
+    entry.AppendElement(AnchorPosAnchorInfo{aFrame});
     return;
   }
 
   struct FrameTreeComparator {
     nsIFrame* mFrame;
 
-    int32_t operator()(nsIFrame* aOther) const {
+    int32_t operator()(const AnchorPosAnchorInfo& aEntry) const {
       return nsLayoutUtils::CompareTreePosition(
-          mFrame, aOther, nullptr,
+          mFrame, aEntry.mAnchor, nullptr,
           nsLayoutUtils::CompareTreePositionFlags::
               FramesMayBeInDifferentOrIncompleteTrees);
     }
@@ -11700,7 +11715,7 @@ void PresShell::AddAnchorPosAnchorImpl(const nsAtom* aName, nsIFrame* aFrame,
   // If the same element is already in the array,
   // someone forgot to call RemoveAnchorPosAnchor.
   if (BinarySearchIf(entry, 0, entry.Length(), cmp, &matchOrInsertionIdx)) {
-    if (entry.ElementAt(matchOrInsertionIdx) == aFrame) {
+    if (entry.ElementAt(matchOrInsertionIdx).mAnchor == aFrame) {
       // nsLayoutUtils::CompareTreePosition() returns 0 when the frames are
       // in different documents or child lists. This could indicate that
       // the tree is being restructured and we can defer anchor insertion
@@ -11708,7 +11723,7 @@ void PresShell::AddAnchorPosAnchorImpl(const nsAtom* aName, nsIFrame* aFrame,
       MOZ_ASSERT_UNREACHABLE("Attempt to insert a frame twice was made");
       return;
     }
-    MOZ_ASSERT(!entry.Contains(aFrame));
+    MOZ_ASSERT(!entry.Contains(aFrame, AnchorPosAnchorInfoComparator{}));
 
     if (!aForMerge) {
       // nsLayoutUtils::CompareTreePosition() returns 0 when the frames are
@@ -11721,8 +11736,8 @@ void PresShell::AddAnchorPosAnchorImpl(const nsAtom* aName, nsIFrame* aFrame,
     }
   }
 
-  MOZ_ASSERT(!entry.Contains(aFrame));
-  entry.InsertElementAt(matchOrInsertionIdx, aFrame);
+  MOZ_ASSERT(!entry.Contains(aFrame, AnchorPosAnchorInfoComparator{}));
+  entry.InsertElementAt(matchOrInsertionIdx, AnchorPosAnchorInfo{aFrame});
 }
 
 void PresShell::AddAnchorPosAnchor(Span<const StyleAtom> aNames,
@@ -11774,7 +11789,7 @@ void PresShell::RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame) {
   // we should probably assert here that anchorArray
   // is not empty and aFrame is in it.
 
-  anchorArray.RemoveElement(aFrame);
+  anchorArray.RemoveElement(aFrame, AnchorPosAnchorInfoComparator{});
   if (anchorArray.IsEmpty()) {
     entry.Remove();
   }
@@ -11850,6 +11865,7 @@ PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
 
   auto result = AnchorPosUpdateResult::Flushed;
   AUTO_PROFILER_MARKER_UNTYPED("UpdateAnchorPosLayout", LAYOUT, {});
+  AnchorPosAnchorTopLayerIndexCache topLayerCache;
   for (auto* positioned : mAnchorPosPositioned) {
     MOZ_ASSERT(positioned->IsAbsolutelyPositioned(),
                "Anchor positioned frame is not absolutely positioned?");
@@ -11873,7 +11889,9 @@ PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
         return Nothing{};
       }
       const ScopedNameRef& usedName = *usedAnchorName;
-      const auto* anchor = GetAnchorPosAnchor(usedName, positioned);
+      const auto* anchor = GetAnchorPosAnchor(
+          usedName, positioned, anchorPosReferenceData->mFrameTreeDepth,
+          &topLayerCache);
       if (!anchor) {
         return Nothing{};
       }
@@ -11893,11 +11911,13 @@ PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
           [&](const ScopedNameRef& aNameRef,
               const nsIFrame* aPositioned) -> const nsIFrame* {
         if (!defaultAnchorInfo) {
-          return GetAnchorPosAnchor(aNameRef, aPositioned);
+          return GetAnchorPosAnchor(aNameRef, aPositioned,
+                                    anchorPosReferenceData->mFrameTreeDepth);
         }
         const auto* defaultAnchorName = defaultAnchorInfo->mName;
         if (aNameRef.mName != defaultAnchorName) {
-          return GetAnchorPosAnchor(aNameRef, aPositioned);
+          return GetAnchorPosAnchor(aNameRef, aPositioned,
+                                    anchorPosReferenceData->mFrameTreeDepth);
         }
         return defaultAnchorInfo->mAnchor;
       };

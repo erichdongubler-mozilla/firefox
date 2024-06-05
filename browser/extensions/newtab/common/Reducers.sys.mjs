@@ -325,7 +325,7 @@ export const INITIAL_STATE = {
   RecentSearches: {
     initialized: false,
     /**
-     * @type {[{value: string, lastUsed: number}]}
+     * @type {Array<{value: string, lastUsed: number}>}
      *   Recent searches, newest first, as { value, lastUsed } where lastUsed is
      *   a ms epoch.
      */

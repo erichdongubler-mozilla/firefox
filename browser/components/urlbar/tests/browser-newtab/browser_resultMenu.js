@@ -42,9 +42,7 @@ add_task(async function staysOpenWhenTheViewIsScrolled() {
     let utils = NewtabSearchbarContentTestUtils;
     utils.disableResultMenuAutohide(content);
 
-    let scroller = utils
-      .getResultsContainer(content)
-      .closest(".urlbarView-body-outer");
+    let scroller = utils.getResultsContainer(content);
     Assert.greater(
       scroller.scrollHeight,
       scroller.clientHeight,

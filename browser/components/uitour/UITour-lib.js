@@ -369,10 +369,16 @@ if (typeof Mozilla == "undefined") {
   /**
    * Loads about:newtab in the tour tab.
    *
+   * @param {string} [hash] - Optional fragment identifier to append to
+   *   about:newtab, e.g. "customize" to open the Customize panel. Must
+   *   consist only of the characters `[a-zA-Z0-9_-]`.
+   *
    * @since 51
    */
-  Mozilla.UITour.showNewTab = function () {
-    _sendEvent("showNewTab");
+  Mozilla.UITour.showNewTab = function (hash) {
+    _sendEvent("showNewTab", {
+      hash,
+    });
   };
 
   /**

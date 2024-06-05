@@ -111,6 +111,8 @@ skip-if = [
 
 ["test_selectormatcheselement_host.html"]
 
+["test_selectormatcheselement_part.html"]
+
 ["test_selectormatcheselement_scope.html"]
 
 ["test_supports.html"]

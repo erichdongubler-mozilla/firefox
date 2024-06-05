@@ -1753,6 +1753,33 @@ class TestRecursiveMakeBackend(BackendTester):
                 ][0]
                 self.assertEqual(shared_lib, expected_shared_lib)
 
+    def test_licenses_json(self):
+        """LICENSES declarations are aggregated into licenses.json."""
+        env = self._consume("licenses", RecursiveMakeBackend)
+
+        with open(mozpath.join(env.topobjdir, "licenses.json")) as fh:
+            licenses = json.load(fh)["licenses"]
+
+        by_id = {license["id"]: license for license in licenses}
+        self.assertEqual(sorted(by_id), ["MIT", "mylib"])
+
+        mit = by_id["MIT"]
+        self.assertEqual(mit["title"], "MIT License")
+        self.assertEqual(mit["spdx"], "MIT")
+        self.assertFalse(mit["html"])
+        self.assertIn("Permission is hereby granted", mit["text"])
+        # The explicit path plus the path-scoped LICENSED_UNDER entry. The
+        # declaring directory itself is not listed, because paths narrowed it.
+        self.assertEqual(
+            mit["paths"], ["lib/vendor/dep.js", "third_party/rust/byteorder"]
+        )
+
+        mylib = by_id["mylib"]
+        self.assertEqual(mylib["declared_in"], "lib")
+        self.assertEqual(mylib["notice"], "Copyright 2026 Somebody.")
+        self.assertTrue(mylib["html"])
+        self.assertEqual(mylib["paths"], [])
+
 
 if __name__ == "__main__":
     main()

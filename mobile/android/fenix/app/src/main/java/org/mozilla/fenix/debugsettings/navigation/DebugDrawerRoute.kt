@@ -13,6 +13,7 @@ import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.LoginsStorage
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.listentopage.ListenStore
+import mozilla.components.feature.tabgroups.storage.repository.TabGroupRepository
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.ClientUUID
 import org.mozilla.fenix.debugsettings.addons.ui.AddonsDebugToolsScreen
@@ -37,7 +38,6 @@ import org.mozilla.fenix.debugsettings.store.DebugDrawerStore
 import org.mozilla.fenix.debugsettings.tabprocesstools.TabProcessTools
 import org.mozilla.fenix.debugsettings.tabs.TabGroupTools
 import org.mozilla.fenix.debugsettings.tabs.TabTools as TabToolsScreen
-import org.mozilla.fenix.tabgroups.storage.repository.TabGroupRepository
 
 /**
  * The navigation routes for screens within the Debug Drawer.

@@ -651,6 +651,48 @@
       }
     },
 
+    "ClearOnShutdown": {
+      "type": ["boolean", "object"],
+      "x-category": "Local data storage",
+      "x-compatibility": {
+        "firefox": { "version_added": "158" },
+        "firefox_esr": { "version_added": false },
+        "firefox_enterprise": { "version_added": "158" }
+      },
+      "x-restart-required": true,
+      "description": "Clear browsing data when the browser closes. Only the named categories are enforced.",
+      "examples": [
+        false,
+        {
+          "BrowsingHistoryAndDownloads": true,
+          "CookiesAndStorage": true,
+          "Cache": true,
+          "Exceptions": ["https://example.com"]
+        }
+      ],
+      "properties": {
+        "BrowsingHistoryAndDownloads": {
+          "type": "boolean"
+        },
+        "CookiesAndStorage": {
+          "type": "boolean"
+        },
+        "Cache": {
+          "type": "boolean"
+        },
+        "FormData": {
+          "type": "boolean"
+        },
+        "SiteSettings": {
+          "type": "boolean"
+        },
+        "Exceptions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/origin" }
+        }
+      }
+    },
+
     "CNSA2KeyAgreementEnabled": {
       "type": "boolean",
       "x-category": "Network security",
@@ -1341,10 +1383,13 @@
       "x-compatibility": {
         "firefox": { "version_added": "155" },
         "firefox_esr": { "version_added": false },
-        "firefox_enterprise": { "version_added": "155" }
+        "firefox_enterprise": { "version_added": "155" },
+        "notes": [
+          "Windows support added in 155, macOS support added in 156. Has no effect on Linux."
+        ]
       },
       "x-restart-required": true,
-      "description": "Prevent Firefox from launching automatically when the user logs in, and prevent the user from enabling this setting. This policy currently only has an effect on Windows.",
+      "description": "Prevent Firefox from launching automatically when the user logs in, and prevent the user from enabling this setting.",
       "examples": [true]
     },
 
@@ -3770,6 +3815,12 @@
             "Policies": {
               "HttpsOnly": true
             }
+          },
+          {
+            "Match": ["*.example.com"],
+            "Policies": {
+              "Container": { "id": "work" }
+            }
           }
         ]
       ],
@@ -3801,6 +3852,19 @@
               },
               "DisableServiceWorkers": {
                 "type": "boolean"
+              },
+              "Container": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "ephemeral": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["id"]
               }
             }
           }

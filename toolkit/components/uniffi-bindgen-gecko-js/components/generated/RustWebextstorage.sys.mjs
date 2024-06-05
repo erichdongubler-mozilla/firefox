@@ -35,6 +35,7 @@ export var UnitTestObjs = {
 
 
 
+
 export class FfiConverterTypeJsonValue extends FfiConverter {
     static lift(value) {
         return FfiConverterString.lift(value);
@@ -1031,11 +1032,11 @@ export class FfiConverterTypeWebExtStorageBridgedEngine extends FfiConverter {
     }
 
     static read(dataStream) {
-        return this.lift(dataStream.readPointer(27));
+        return this.lift(dataStream.readPointer(26));
     }
 
     static write(dataStream, value) {
-        dataStream.writePointer(27, this.lower(value));
+        dataStream.writePointer(26, this.lower(value));
     }
 
     static computeSize(value) {
@@ -1431,17 +1432,15 @@ export class FfiConverterTypeWebExtStorageStore extends FfiConverter {
     }
 
     static read(dataStream) {
-        return this.lift(dataStream.readPointer(28));
+        return this.lift(dataStream.readPointer(27));
     }
 
     static write(dataStream, value) {
-        dataStream.writePointer(28, this.lower(value));
+        dataStream.writePointer(27, this.lower(value));
     }
 
     static computeSize(value) {
         return 8;
     }
 }
-
-
 

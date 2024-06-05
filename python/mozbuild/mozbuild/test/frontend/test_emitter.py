@@ -12,6 +12,8 @@ from mozbuild.frontend.context import ObjDirPath, Path, SourcePath
 from mozbuild.frontend.data import (
     ComputedFlags,
     ConfigFileSubstitution,
+    DeclaredLicensedPaths,
+    DeclaredLicenseNotice,
     Defines,
     DirectoryTraversal,
     Exports,
@@ -2027,6 +2029,40 @@ class TestEmitterBasic(unittest.TestCase):
             set(flags.flags["WASM_DEFINES"]),
             set(["-DFOO", '-DBAZ="abcd"', "-UQUX", "-DBAR=7", "-DVALUE=xyz"]),
         )
+
+    def test_licenses(self):
+        reader = self.reader("licenses")
+        objs = self.read_topsrcdir(reader)
+
+        notices = {o.id: o for o in objs if isinstance(o, DeclaredLicenseNotice)}
+        coverage = [o for o in objs if isinstance(o, DeclaredLicensedPaths)]
+
+        self.assertEqual(sorted(notices), ["MIT", "mylib"])
+
+        mit = notices["MIT"]
+        self.assertEqual(mit.title, "MIT License")
+        self.assertEqual(mit.spdx, "MIT")
+        self.assertEqual(mozpath.basename(mit.text_path), "mit.txt")
+        self.assertIsNone(mit.notice)
+
+        mylib = notices["mylib"]
+        self.assertEqual(mylib.notice, "Copyright 2026 Somebody.")
+        self.assertEqual(mylib.paths, ["extra/path"])
+
+        self.assertEqual([o.id for o in coverage], ["MIT"])
+        self.assertEqual(coverage[0].relsrcdir, "lib")
+        # paths are resolved relative to the declaring moz.build
+        self.assertEqual(coverage[0].paths, ["lib/vendor/dep.js", "lib/vendor/other*"])
+
+    def test_licenses_missing_title(self):
+        reader = self.reader("licenses-missing-title")
+        with self.assertRaisesRegex(SandboxValidationError, "requires a title"):
+            self.read_topsrcdir(reader)
+
+    def test_licenses_missing_text_file(self):
+        reader = self.reader("licenses-missing-text-file")
+        with self.assertRaisesRegex(SandboxValidationError, "does not exist"):
+            self.read_topsrcdir(reader)
 
 
 if __name__ == "__main__":

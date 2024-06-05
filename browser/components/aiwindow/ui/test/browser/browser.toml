@@ -88,6 +88,8 @@ skip-if = [
 
 ["browser_aitab_blocks.js"]
 
+["browser_aitab_menu_triggers.js"]
+
 ["browser_aitab_page.js"]
 
 ["browser_aitab_store_integration.js"]
@@ -209,6 +211,8 @@ skip-if = [
 ["browser_aiwindow_smartbar_placeholder.js"]
 
 ["browser_aiwindow_smartbar_quicksuggest.js"]
+
+["browser_aiwindow_smartbar_shortcuts.js"]
 
 ["browser_aiwindow_smartbar_suggestions.js"]
 
@@ -356,6 +360,10 @@ skip-if = [
 skip-if = [
   "os == 'win' && debug && standalone", # Bug 2028654
 ]
+
+["browser_smartwindow_resume_card.js"]
+
+["browser_smartwindow_resume_section.js"]
 
 ["browser_smartwindow_retry_context.js"]
 

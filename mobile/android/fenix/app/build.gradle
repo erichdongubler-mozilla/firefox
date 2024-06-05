@@ -503,6 +503,8 @@ dependencies {
     implementation project(':components:feature-syncedtabs')
     implementation project(':components:feature-toolbar')
     implementation project(':components:feature-tab-collections')
+    implementation project(':components:feature-tabdata-coordinator')
+    implementation project(':components:feature-tabgroups-storage')
     implementation project(':components:feature-tabs')
     implementation project(':components:feature-top-sites')
     implementation project(':components:feature-webauthn')
@@ -624,6 +626,7 @@ dependencies {
     testImplementation project(':components:support-test-fakes')
     testImplementation project(':components:support-test-libstate')
     testImplementation testFixtures(project(':components:support-utils'))
+    testImplementation testFixtures(project(':components:feature-tabgroups-storage'))
 
     testImplementation ComponentsDependencies.mozilla_appservices_full_megazord_libsForTests
 

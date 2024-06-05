@@ -16,6 +16,10 @@ const { MonitorAgent } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/agents/MonitorAgent.sys.mjs"
 );
 
+const { SpecialMessageActions } = ChromeUtils.importESModule(
+  "resource://messaging-system/lib/SpecialMessageActions.sys.mjs"
+);
+
 function notifyMatch(monitorId) {
   Services.obs.notifyObservers(null, MONITOR_CONDITION_MET_TOPIC, monitorId);
 }
@@ -206,6 +210,13 @@ add_task(async function test_monitor_panel_list_rows() {
     );
     await TestUtils.waitForCondition(() => metas.every(m => m.textContent));
 
+    const count = contents.shadowRoot.querySelector(".monitor-footer-count");
+    Assert.equal(
+      JSON.parse(count.getAttribute("data-l10n-args")).used,
+      1,
+      "The footer counts only active monitors toward the limit"
+    );
+
     const chips = [...rows].map(row =>
       row.querySelector("monitor-status-chip")
     );
@@ -232,43 +243,245 @@ add_task(async function test_monitor_panel_list_rows() {
   }
 });
 
+const DAY_DATE_URLS = [
+  "https://example.com/day-date",
+  "https://example.org/day-date",
+];
+
+function dayDateMonitor({ watchUrls = DAY_DATE_URLS } = {}) {
+  return {
+    id: "monitor-1",
+    title: "Le Gran (Alsta) Day-Date price",
+    monitorPrompt: "the price drops below $270",
+    watchUrls,
+    enabled: true,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    schedule: { type: "daily", hour: 9, minute: 0 },
+    history: [],
+  };
+}
+
+async function openMonitorPanel(win, expectedMonitors) {
+  const shown = BrowserTestUtils.waitForEvent(
+    win.document.getElementById("mainPopupSet"),
+    "popupshown"
+  );
+  EventUtils.synthesizeMouseAtCenter(getMonitorButton(win), {}, win);
+  const panel = (await shown).target;
+  const contents = panel.querySelector("agent-monitor-panel");
+  await TestUtils.waitForCondition(
+    () => contents.monitors.length === expectedMonitors
+  );
+  await contents.updateComplete;
+  return { panel, contents };
+}
+
 /**
- * Clicking a monitor row opens the tasks page and dismisses the panel.
+ * Activating a task opens every page it watches in a tab group named after the
+ * task, dismisses the panel and selects the group's first tab.
  */
-add_task(async function test_monitor_panel_row_opens_tasks_page() {
+add_task(async function test_monitor_panel_row_opens_tab_group() {
   const sb = this.sinon.createSandbox();
-  sb.stub(MonitorAgent, "listMonitors").resolves([
-    {
-      id: "monitor-1",
-      title: "Concert tickets",
-      monitorPrompt: "tickets go on sale",
-      watchUrls: ["https://example.com/tickets"],
-      enabled: true,
-      createdAt: "2026-01-01T00:00:00.000Z",
-      schedule: { type: "daily", hour: 9, minute: 0 },
-      history: [],
-    },
-  ]);
+  sb.stub(MonitorAgent, "listMonitors").resolves([dayDateMonitor()]);
   const win = await openAIWindow();
-  const switchToTab = sb.stub(win, "switchToTabHavingURI");
   try {
-    const shown = BrowserTestUtils.waitForEvent(
-      win.document.getElementById("mainPopupSet"),
-      "popupshown"
-    );
-    EventUtils.synthesizeMouseAtCenter(getMonitorButton(win), {}, win);
-    const panel = (await shown).target;
-    const contents = panel.querySelector("agent-monitor-panel");
-    await TestUtils.waitForCondition(() => contents.monitors.length === 1);
-    await contents.updateComplete;
+    const { panel, contents } = await openMonitorPanel(win, 1);
 
     const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
     contents.shadowRoot.querySelector(".monitor-row").click();
     await hidden;
 
+    Assert.equal(
+      win.gBrowser.tabGroups.length,
+      1,
+      "Activating a task creates one tab group"
+    );
+    const [group] = win.gBrowser.tabGroups;
+    Assert.equal(
+      group.label,
+      "Le Gran (Alsta) Day-Date price",
+      "The group is named after the task that was activated"
+    );
+    // The eagerly loaded tab reports about:blank until its load starts.
+    await TestUtils.waitForCondition(
+      () => group.tabs[0].linkedBrowser.currentURI.spec === DAY_DATE_URLS[0],
+      "Waiting for the first watched page to start loading"
+    );
+    Assert.deepEqual(
+      group.tabs.map(tab => tab.linkedBrowser.currentURI.spec),
+      DAY_DATE_URLS,
+      "The group holds one tab per watched page"
+    );
+    Assert.equal(
+      win.gBrowser.selectedTab,
+      group.tabs[0],
+      "The group's first tab is selected"
+    );
     Assert.ok(
-      switchToTab.calledWith("about:smartwindowtasks", true),
-      "Clicking a row opens the tasks page and dismisses the panel"
+      group.tabs[0].linkedPanel,
+      "The tab that ends up selected loads right away"
+    );
+    Assert.ok(
+      !group.tabs[1].linkedPanel,
+      "The rest wait to load until they are selected"
+    );
+  } finally {
+    sb.restore();
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+/**
+ * Coming back to the same task returns to the group it already has rather than
+ * building a second identical one, expanding it if it was collapsed.
+ */
+add_task(async function test_monitor_panel_row_reuses_tab_group() {
+  const sb = this.sinon.createSandbox();
+  sb.stub(MonitorAgent, "listMonitors").resolves([dayDateMonitor()]);
+  const win = await openAIWindow();
+  try {
+    const activateRow = async () => {
+      const { panel, contents } = await openMonitorPanel(win, 1);
+      const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+      contents.shadowRoot.querySelector(".monitor-row").click();
+      await hidden;
+    };
+
+    await activateRow();
+    const [group] = win.gBrowser.tabGroups;
+    group.collapsed = true;
+    win.gBrowser.selectedTab = win.gBrowser.tabs[0];
+
+    await activateRow();
+
+    Assert.equal(
+      win.gBrowser.tabGroups.length,
+      1,
+      "Coming back does not build a second group"
+    );
+    Assert.equal(
+      win.gBrowser.tabGroups[0],
+      group,
+      "The task keeps the group it was already given"
+    );
+    Assert.equal(
+      group.tabs.length,
+      DAY_DATE_URLS.length,
+      "Reopening the task does not open its pages a second time"
+    );
+    Assert.ok(!group.collapsed, "The group is expanded so its tabs are shown");
+    Assert.equal(
+      win.gBrowser.selectedTab,
+      group.tabs[0],
+      "The group's first tab is selected again"
+    );
+  } finally {
+    sb.restore();
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+/**
+ * A task that watches nothing has nothing to open, so its row says it cannot be
+ * activated and activating it anyway does nothing.
+ */
+add_task(async function test_monitor_panel_row_without_pages() {
+  const sb = this.sinon.createSandbox();
+  sb.stub(MonitorAgent, "listMonitors").resolves([
+    dayDateMonitor({ watchUrls: [] }),
+  ]);
+  const win = await openAIWindow();
+  try {
+    const { panel, contents } = await openMonitorPanel(win, 1);
+    const row = contents.shadowRoot.querySelector(".monitor-row");
+
+    Assert.equal(
+      row.getAttribute("aria-disabled"),
+      "true",
+      "The row reports that it cannot be activated"
+    );
+
+    row.click();
+    await TestUtils.waitForTick();
+
+    Assert.equal(
+      win.gBrowser.tabGroups.length,
+      0,
+      "Activating a task with no pages creates no tab group"
+    );
+    Assert.equal(panel.state, "open", "The panel stays open");
+
+    const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+    panel.hidePopup();
+    await hidden;
+  } finally {
+    sb.restore();
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+/**
+ * The row is a button, so it is reachable and activatable from the keyboard.
+ */
+add_task(async function test_monitor_panel_row_keyboard_activation() {
+  const sb = this.sinon.createSandbox();
+  sb.stub(MonitorAgent, "listMonitors").resolves([dayDateMonitor()]);
+  const win = await openAIWindow();
+  try {
+    const { panel, contents } = await openMonitorPanel(win, 1);
+    const row = contents.shadowRoot.querySelector(".monitor-row");
+
+    row.focus();
+    Assert.equal(
+      contents.shadowRoot.activeElement,
+      row,
+      "The row can take focus"
+    );
+
+    const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+    EventUtils.synthesizeKey("KEY_Enter", {}, win);
+    await hidden;
+
+    Assert.equal(
+      win.gBrowser.tabGroups.length,
+      1,
+      "Enter on the row opens the task's pages as a group"
+    );
+    Assert.equal(
+      win.gBrowser.tabGroups[0].label,
+      "Le Gran (Alsta) Day-Date price",
+      "The group is named after the task the keyboard activated"
+    );
+  } finally {
+    sb.restore();
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+/**
+ * The group is already named after the task, so the built-in "name your group"
+ * editor must not pop over the pages that were just opened.
+ */
+add_task(async function test_monitor_panel_row_skips_group_editor() {
+  const sb = this.sinon.createSandbox();
+  sb.stub(MonitorAgent, "listMonitors").resolves([dayDateMonitor()]);
+  const win = await openAIWindow();
+  try {
+    const { panel, contents } = await openMonitorPanel(win, 1);
+    const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+    contents.shadowRoot.querySelector(".monitor-row").click();
+    await hidden;
+    await TestUtils.waitForTick();
+
+    Assert.equal(
+      win.gBrowser.tabGroups.length,
+      1,
+      "The task's group was created"
+    );
+    Assert.equal(
+      win.document.getElementById("tab-group-editor").panel.state,
+      "closed",
+      "The group editor stays closed for a group that is already named"
     );
   } finally {
     sb.restore();
@@ -476,6 +689,78 @@ add_task(async function test_monitor_panel_create_view() {
     const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
     panel.hidePopup();
     await hidden;
+  } finally {
+    sb.restore();
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+add_task(async function test_monitor_panel_show_create_form() {
+  const sb = this.sinon.createSandbox();
+  sb.stub(MonitorAgent, "listMonitors").resolves([]);
+  const win = await openAIWindow();
+  try {
+    await promiseNavigateAndLoad(
+      win.gBrowser.selectedBrowser,
+      "https://example.com/"
+    );
+
+    const shown = BrowserTestUtils.waitForEvent(
+      win.document.getElementById("mainPopupSet"),
+      "popupshown"
+    );
+    AIWindowUI.showMonitorCreateForm(win);
+    const panel = (await shown).target;
+    Assert.equal(panel.id, PANEL_ID, "showMonitorCreateForm opens the panel");
+
+    const contents = panel.querySelector("agent-monitor-panel");
+    await TestUtils.waitForCondition(
+      () => contents.view === "create",
+      "Panel opens straight to the create view"
+    );
+    await contents.updateComplete;
+
+    const form = contents.shadowRoot.querySelector("agent-monitor-item");
+    Assert.ok(form, "Create view renders the monitor item form");
+    Assert.equal(form.mode, "create", "Monitor item is in create mode");
+
+    await TestUtils.waitForCondition(
+      () => form.pageUrls.length === 1,
+      "The create form is seeded with the current page"
+    );
+    Assert.deepEqual(
+      form.pageUrls,
+      ["https://example.com/"],
+      "The seeded page is the one the user is on"
+    );
+
+    const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+    panel.hidePopup();
+    await hidden;
+  } finally {
+    sb.restore();
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+/**
+ * The OPEN_SMARTWINDOW_MONITOR_CREATE special message action - the callout's
+ * primary button
+ */
+add_task(async function test_open_monitor_create_special_action() {
+  const win = await openAIWindow();
+  const sb = this.sinon.createSandbox();
+  const showCreateForm = sb.stub(AIWindowUI, "showMonitorCreateForm");
+  try {
+    await SpecialMessageActions.handleAction(
+      { type: "OPEN_SMARTWINDOW_MONITOR_CREATE" },
+      { documentGlobal: win }
+    );
+
+    Assert.ok(
+      showCreateForm.calledOnceWith(win),
+      "The action opens the create form for the action's window"
+    );
   } finally {
     sb.restore();
     await BrowserTestUtils.closeWindow(win);

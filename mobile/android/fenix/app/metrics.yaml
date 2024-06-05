@@ -3975,12 +3975,15 @@ metrics:
       - drag_and_drop
       - menu
       - fab
+      - browser_menu
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2047039
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061543
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2047039
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061543
     data_sensitivity:
       - interaction
     notification_emails:
@@ -14027,6 +14030,21 @@ fx_suggest:
     send_in_pings:
       - fx-suggest-api
     unit: integer
+  suggestion_id:
+    type: uuid
+    description: |
+      The suggestion ID from MARS/Merino
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2070953
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D325460
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    send_in_pings:
+      - fx-suggest
 debug_drawer:
   debug_drawer_enabled:
     type: boolean
@@ -17099,6 +17117,50 @@ pdf_viewer:
       - android-probes@mozilla.com
     data_sensitivity:
       - interaction
+    expires: never
+  sign_dialog_add_completed:
+    type: event
+    description: |
+      A signature the user typed in the PDF viewer's "add a signature" dialog was
+      passed to the PDF viewer successfully.
+    extra_keys:
+      signature_type:
+        description: |
+          How the signature was created. Possible values are: `typed`.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069504
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D325530
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+  sign_dialog_add_failure:
+    type: event
+    description: |
+      A signature the user typed in the PDF viewer's "add a signature" dialog could
+      not be passed to the PDF viewer, so it was not placed on the document. An unexpected
+      error occured.
+    extra_keys:
+      signature_type:
+        description: |
+          How the signature was created. Possible values are: `typed`.
+        type: string
+      reason:
+        description: |
+          Why the signature could not be handed to the PDF viewer. Possible values
+          are: `no_engine_session` and `engine_error`.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069504
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D325530
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - technical
     expires: never
   sign_dialog_close_tapped:
     type: event

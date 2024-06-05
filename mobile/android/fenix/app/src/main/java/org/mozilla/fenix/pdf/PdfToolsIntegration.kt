@@ -138,14 +138,33 @@ class PdfToolsIntegration(
 
         val engineSession = browserStore.state.selectedTab?.engineState?.engineSession
         if (engineSession == null) {
+            PdfViewer.signDialogAddFailure.record(
+                PdfViewer.SignDialogAddFailureExtra(
+                    reason = SignatureFailure.NoEngineSession.telemetryName,
+                    signatureType = SignatureType.Typed.telemetryName,
+                )
+            )
             dismissSignatureDialog()
             return
         }
 
         engineSession.addSignatureToPdf(
             text = signature.text.toString(),
-            onResult = ::dismissSignatureDialog,
-            onException = { dismissSignatureDialog() },
+            onResult = {
+                PdfViewer.signDialogAddCompleted.record(
+                    PdfViewer.SignDialogAddCompletedExtra(signatureType = SignatureType.Typed.telemetryName)
+                )
+                dismissSignatureDialog()
+            },
+            onException = {
+                PdfViewer.signDialogAddFailure.record(
+                    PdfViewer.SignDialogAddFailureExtra(
+                        reason = SignatureFailure.EngineError.telemetryName,
+                        signatureType = SignatureType.Typed.telemetryName,
+                    )
+                )
+                dismissSignatureDialog()
+            },
         )
     }
 

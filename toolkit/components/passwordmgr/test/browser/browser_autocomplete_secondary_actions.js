@@ -92,31 +92,41 @@ async function openFlyoutByKeyboard(item, rowItem) {
 }
 
 async function openFlyout(popup, button, label) {
+  const menuShown = BrowserTestUtils.waitForEvent(
+    popup,
+    "popupshown",
+    false,
+    event => event.target.localName == "menupopup"
+  );
+  const panelHidden = BrowserTestUtils.waitForEvent(
+    popup,
+    "popuphidden",
+    false,
+    event => event.target == popup
+  );
+
+  await EventUtils.promiseElementReadyForUserInput(button, window, info);
+
   await TestUtils.waitForCondition(
     () => button.checkVisibility({ checkVisibilityCSS: true }),
     "Wait for the secondary action button to be visible"
   );
-  // The click opens the flyout on mousedown, but a stray event can dismiss it
-  // before it settles; re-click while the panel is still up (a missed click
-  // would hit the row and close it) until the flyout sticks.
-  const menupopup = await TestUtils.waitForCondition(() => {
-    const found = [...popup.querySelectorAll("menupopup")].find(m =>
-      [...m.querySelectorAll("menuitem")].some(
-        mi => mi.getAttribute("label") === label
-      )
-    );
-    if (found) {
-      return found;
-    }
-    if (popup.state == "open") {
-      EventUtils.synthesizeMouseAtCenter(button, {});
-    }
-    return false;
-  }, "Wait for the flyout menu to open");
+  EventUtils.synthesizeMouseAtCenter(button, {}, window);
 
-  if (menupopup.state != "open") {
-    await BrowserTestUtils.waitForEvent(menupopup, "popupshown");
-  }
+  const event = await Promise.race([menuShown, panelHidden]);
+  Assert.equal(
+    event.type,
+    "popupshown",
+    "The click reached the secondary action button instead of the row"
+  );
+
+  const menupopup = event.target;
+  Assert.ok(
+    [...menupopup.querySelectorAll("menuitem")].some(
+      mi => mi.getAttribute("label") === label
+    ),
+    "The flyout belongs to the row's secondary action"
+  );
   return menupopup;
 }
 
@@ -336,7 +346,6 @@ add_task(async function test_flyout_actions_dispatch_by_index() {
         ...args
       ) {
         calls.push(args);
-        return original.apply(this, args);
       };
 
       try {

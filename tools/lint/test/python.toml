@@ -40,6 +40,8 @@ skip-if = ["os == 'win'"]
 
 ["test_file_whitespace.py"]
 
+["test_ffvpx_symbols.py"]
+
 ["test_fluent_lint.py"]
 
 ["test_forbid_moduleloaderbase_include.py"]

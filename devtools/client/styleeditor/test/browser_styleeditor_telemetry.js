@@ -22,11 +22,7 @@ add_task(async function testStylesheetLinksToStyleEditorTelemetry() {
     "Find the style link in the rule view and click it to open in the style editor"
   );
   const link = getRuleViewLinkByIndex(ruleView, 1);
-  is(
-    link.querySelector(".ruleview-rule-source-label").textContent,
-    "inline:1",
-    "The link text is correct"
-  );
+  is(link.textContent, "inline:1", "The link text is correct");
 
   link.scrollIntoView();
   link.click();

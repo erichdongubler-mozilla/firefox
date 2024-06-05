@@ -17,6 +17,7 @@ class TabGroupsStripMiddleware : Middleware<TabGroupsStripState, TabGroupsStripA
         next: (TabGroupsStripAction) -> Unit,
         action: TabGroupsStripAction,
     ) {
+        // Bug 2072307 - React to TabClicked here by selecting and showing the tapped tab in the browser
         next(action)
     }
 }

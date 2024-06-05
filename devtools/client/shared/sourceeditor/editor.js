@@ -4321,9 +4321,7 @@ class Editor extends EventEmitter {
    * Register all key shortcuts.
    */
   #initSearchShortcuts(win) {
-    const shortcuts = new KeyShortcuts({
-      window: win,
-    });
+    const shortcuts = new KeyShortcuts(win);
     const keys = ["find.key", "findNext.key", "findPrev.key"];
 
     if (OS === "Darwin") {

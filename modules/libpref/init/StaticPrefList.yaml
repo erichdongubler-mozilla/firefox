@@ -300,12 +300,10 @@
 #endif
   mirror: always
 
-#ifdef MOZ_ENABLE_SKIA_PDF
 - name: accessibility.tagged_pdf_output.enabled
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
-#endif
 
 # Whether to enable support for the UI Automation API on Windows. Values:
 # * 0: Never.
@@ -2158,7 +2156,7 @@
 # Testing-only pref which makes data: URIs be loaded in a "web" content process
 # instead of within a process based on the URI's loader.
 - name: browser.tabs.remote.dataUriInDefaultWebProcess
-  type: bool
+  type: RelaxedAtomicBool
   value: false
   mirror: always
 
@@ -2838,6 +2836,12 @@
   value: true
   mirror: always
 
+# Fire DOMContentLoaded at the end of parsing, instead of from a task.
+- name: dom.document.domcontentloaded.synchronous.enabled
+  type: bool
+  value: true
+  mirror: always
+
 # Enable/disable Gecko specific edit commands
 - name: dom.document.edit_command.contentReadOnly.enabled
   type: bool
@@ -3225,6 +3229,11 @@
   value: 256
   mirror: always
 
+- name: dom.fetch.streaming_upload
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # Whether to validate that a fetch request's principal is compatible with the
 # remote type of the process it originates from.
 - name: dom.fetch.validatePrincipalForRemoteType
@@ -3591,9 +3600,8 @@
   value: true
   mirror: always
 
-# How often to check for CPOW timeouts (ms). CPOWs are only timed
-# out by the hang monitor.
-- name: dom.ipc.cpow.timeout
+# How often to check for reply timeouts (ms).
+- name: dom.ipc.reply.timeout
   type: uint32_t
   value: 500
   mirror: always
@@ -4196,13 +4204,10 @@
   mirror: always
 
 # Is support for PerformanceResourceTiming/PerformanceNavigationTiming's
-# deliveryType enabled? Independent of dom.speculation_rules.enabled: this
-# only implements the "navigational-prefetch" value, not "cache" (bug
-# 1914120), so it must stay off even once speculation rules ships, until
-# "cache" support lands too.
+# deliveryType enabled? Independent of dom.speculation_rules.enabled.
 - name: dom.performance.deliverytype.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # Whether the interactionId will be computed and returned by performance observer*
@@ -4240,13 +4245,6 @@
 # asks the widget to deliver raw, unaccelerated mouse delta in mouse events
 # while the lock is active.
 - name: dom.pointer-lock.unadjusted-movement.enabled
-  type: bool
-  value: true
-  mirror: always
-
-# Whether the parent process should reset pointer when pointer lock is
-# requested.
-- name: dom.pointer-lock.reset-to-center-from-parent.enabled
   type: bool
   value: true
   mirror: always
@@ -4302,6 +4300,13 @@
 - name: dom.push.enabled
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+
+# Declarative Web Push
+# https://w3c.github.io/push-api/#declarative-push-message
+- name: dom.push.declarative.enabled
+  type: bool
+  value: false
   mirror: always
 
 # Indicate the deprecated aesgcm support in PushManager.supportedContentEncodings.
@@ -9869,6 +9874,13 @@
   mirror: always
   set_spidermonkey_pref: startup
 
+  # Experimental support for deferred import evaluation in JavaScript.
+- name: javascript.options.experimental.defer_import_eval
+  type: bool
+  value: false
+  mirror: always
+  set_spidermonkey_pref: startup
+  fuzzing_safe: false
 #endif  // NIGHTLY_BUILD
 
   # Capture stack traces for OOM
@@ -11011,7 +11023,7 @@
 # Is support for CSS Borders 4 corner-shape enabled?
 - name: layout.css.corner-shape.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
   rust: true
 
@@ -11262,6 +11274,14 @@
 - name: layout.css.progress-function.enabled
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+  rust: true
+
+# Is support for the random() function enabled?
+# https://drafts.csswg.org/css-values-5/#random
+- name: layout.css.random.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
   rust: true
 
@@ -13356,7 +13376,11 @@
 
 - name: media.webspeech.recognition.enable
   type: bool
+#ifndef ANDROID
+  value: @IS_NIGHTLY_BUILD@
+#else
   value: false
+#endif
   mirror: always
 
 # Whether start() offers to download the on-device model for its language when
@@ -13377,6 +13401,18 @@
 - name: media.webspeech.recognition.idle_shutdown_grace_ms
   type: uint32_t
   value: 5000
+  mirror: always
+
+# How long the decoder must emit nothing before that counts as the end of an
+# utterance, for an engine that marks no boundary itself (the multilingual
+# model, which has no <EOU> token). Counted in audio decoded, not wall clock.
+# The model's own blank output is the signal, so this needs no noise-floor
+# tuning: what a word was committed is not usable here, since a transducer
+# withholds an utterance's trailing word until the next one starts. 0 makes the
+# whole session one utterance.
+- name: media.webspeech.recognition.endpoint_blank_ms
+  type: RelaxedAtomicUint32
+  value: 800
   mirror: always
 
 # Delays the recognition thread, right before it acquires the parent actor's
@@ -14255,7 +14291,11 @@
 # can be turned on for other platforms.
 - name: media.audio.reuse-stream-on-seek
   type: RelaxedAtomicBool
+#if defined(XP_MACOSX)
+  value: true
+#else
   value: @IS_NIGHTLY_BUILD@
+#endif
   mirror: always
 
 # The duration, in milliseconds, of decoded audio to keep around in the
@@ -15703,6 +15743,16 @@
   value: 60
   mirror: always
 
+# Lifetime (in seconds) of a negative DNS cache entry.
+- name: network.dnsNegativeCacheExpiration
+  type: RelaxedAtomicUint32
+#if defined(NIGHTLY_BUILD)
+  value: 300
+#else
+  value: 60
+#endif
+  mirror: always
+
 # Get TTL; not supported on all platforms; nop on the unsupported ones.
 - name: network.dns.get-ttl
   type: RelaxedAtomicBool
@@ -17025,7 +17075,7 @@
 # to the tail of the EvictionQ.
 - name: network.dns.mru_to_tail
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # Whether to add additional record IPs to the cache
@@ -17789,11 +17839,10 @@
   value: 2
   mirror: always
 
-#ifdef MOZ_ENABLE_SKIA_PDF
 # Whether we should try to use skpdf for pdf output.
 - name: print.experimental.skpdf
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # Encoding quality for images. 101 means lossless, otherwise they get
@@ -17802,7 +17851,6 @@
   type: RelaxedAtomicInt32
   value: 101
   mirror: always
-#endif
 
 #---------------------------------------------------------------------------
 # Prefs starting with "privacy."
@@ -18284,11 +18332,7 @@
 # Enable the heuristic to allow storage access for extended navigations with interaction
 - name: privacy.restrict3rdpartystorage.heuristic.navigation
   type: bool
-#if defined(ANDROID)
-  value: false
-#else
   value: true
-#endif
   mirror: always
 
 # Anti-tracking permission expiration.
@@ -18338,11 +18382,7 @@
 # Enable the heuristic to allow storage access for recent visited pages
 - name: privacy.restrict3rdpartystorage.heuristic.recently_visited
   type: bool
-#if defined(ANDROID)
-  value: true
-#else
   value: false
-#endif
   mirror: always
 
 # Valid time gap since last visit
@@ -20288,6 +20328,8 @@
   type: RelaxedAtomicBool
 #if defined(XP_WIN)
   value: false
+#elif defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+  value: false
 #else
   value: true
 #endif
@@ -20512,7 +20554,7 @@
 #if defined(MOZ_WIDGET_ANDROID)
 - name: webgl.out-of-process.enable-ahardwarebuffer
   type: bool
-  value: false
+  value: true
   mirror: once
 #endif
 

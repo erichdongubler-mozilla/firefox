@@ -787,4 +787,15 @@
     <style name="RadioButtonStyle" parent="Widget.Material3.CompoundButton.RadioButton">
         <item name="buttonTint">@color/compound_button_tint</item>
     </style>
+
+   <!-- Style for the Tab Group flow that hides the dialog window in favor of a bottom sheet. -->
+    <style name="TabGroupFlowDialogStyle" parent="Theme.MaterialComponents.DayNight.Dialog">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>

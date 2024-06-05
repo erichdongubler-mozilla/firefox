@@ -28,6 +28,8 @@ from .data import (
     ChromeManifestEntry,
     ComputedFlags,
     ConfigFileSubstitution,
+    DeclaredLicensedPaths,
+    DeclaredLicenseNotice,
     Defines,
     DirectoryTraversal,
     Exports,
@@ -50,6 +52,7 @@ from .data import (
     JsShellArchive,
     LegacyRunTests,
     Library,
+    LicenseError,
     Linkable,
     LocalInclude,
     LocalizedFiles,
@@ -1413,6 +1416,8 @@ class TreeMetadataEmitter(LoggingMixin):
 
         generated_files = set()
         localized_generated_files = set()
+        yield from self._process_licenses(context)
+
         for obj in self._process_generated_files(context):
             for f in obj.outputs:
                 generated_files.add(f)
@@ -1804,6 +1809,31 @@ class TreeMetadataEmitter(LoggingMixin):
 
         yield XPIDLModule(context, xpidl_module, context["XPIDL_SOURCES"])
 
+    def _process_licenses(self, context):
+        licensed_under = context.get("LICENSED_UNDER")
+        for license_id in licensed_under or []:
+            paths = [
+                mozpath.normpath(mozpath.join(context.relsrcdir, path))
+                for path in licensed_under[license_id].paths
+            ]
+            yield DeclaredLicensedPaths(context, license_id, paths)
+
+        for license_id in context.get("LICENSES") or []:
+            fields = context["LICENSES"][license_id]
+            try:
+                yield DeclaredLicenseNotice(
+                    context,
+                    license_id,
+                    fields.title,
+                    SourcePath(context, fields.text).full_path if fields.text else None,
+                    notice=fields.notice or None,
+                    spdx=fields.spdx or None,
+                    url=fields.url or None,
+                    paths=fields.paths or (),
+                )
+            except LicenseError as error:
+                raise SandboxValidationError(str(error), context)
+
     def _process_generated_files(self, context):
         # The link reads whatever EXTRA_LINK_DEPS names, so a generated file
         # among them has to be written before the link rather than alongside
@@ -2009,9 +2039,9 @@ class TreeMetadataEmitter(LoggingMixin):
             # We also copy manifests into the output directory,
             # including manifests from [include:foo] directives.
             for mpath in mpmanifest.manifests():
-                mpath = mozpath.normpath(mpath)
-                out_path = mozpath.join(out_dir, mozpath.basename(mpath))
-                obj.installs[mpath] = (out_path, False)
+                norm_path = mozpath.normpath(mpath)
+                out_path = mozpath.join(out_dir, mozpath.basename(norm_path))
+                obj.installs[norm_path] = (out_path, False)
 
             # Some manifests reference files that are auto generated as
             # part of the build or shouldn't be installed for some

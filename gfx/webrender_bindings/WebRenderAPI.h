@@ -673,8 +673,8 @@ class DisplayListBuilder final {
 
   void PushLinearGradient(const wr::LayoutRect& aBounds,
                           const wr::LayoutRect& aClip, bool aIsBackfaceVisible,
-                          const wr::LayoutPoint& aStartPoint,
-                          const wr::LayoutPoint& aEndPoint,
+                          const wr::LayoutVector2D& aStartPoint,
+                          const wr::LayoutVector2D& aEndPoint,
                           const nsTArray<wr::GradientStop>& aStops,
                           wr::ExtendMode aExtendMode,
                           const wr::LayoutSize aTileSize,
@@ -682,7 +682,7 @@ class DisplayListBuilder final {
 
   void PushRadialGradient(const wr::LayoutRect& aBounds,
                           const wr::LayoutRect& aClip, bool aIsBackfaceVisible,
-                          const wr::LayoutPoint& aCenter,
+                          const wr::LayoutVector2D& aCenter,
                           const wr::LayoutSize& aRadius,
                           const nsTArray<wr::GradientStop>& aStops,
                           wr::ExtendMode aExtendMode,
@@ -691,7 +691,7 @@ class DisplayListBuilder final {
 
   void PushConicGradient(const wr::LayoutRect& aBounds,
                          const wr::LayoutRect& aClip, bool aIsBackfaceVisible,
-                         const wr::LayoutPoint& aCenter, const float aAngle,
+                         const wr::LayoutVector2D& aCenter, const float aAngle,
                          const nsTArray<wr::GradientStop>& aStops,
                          wr::ExtendMode aExtendMode,
                          const wr::LayoutSize aTileSize,
@@ -784,21 +784,21 @@ class DisplayListBuilder final {
                           const wr::LayoutSideOffsets& aWidths,
                           const int32_t aWidth, const int32_t aHeight,
                           bool aFill, const wr::DeviceIntSideOffsets& aSlice,
-                          const wr::LayoutPoint& aStartPoint,
-                          const wr::LayoutPoint& aEndPoint,
+                          const wr::LayoutVector2D& aStartPoint,
+                          const wr::LayoutVector2D& aEndPoint,
                           const nsTArray<wr::GradientStop>& aStops,
                           wr::ExtendMode aExtendMode);
 
   void PushBorderRadialGradient(
       const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
       bool aIsBackfaceVisible, const wr::LayoutSideOffsets& aWidths, bool aFill,
-      const wr::LayoutPoint& aCenter, const wr::LayoutSize& aRadius,
+      const wr::LayoutVector2D& aCenter, const wr::LayoutSize& aRadius,
       const nsTArray<wr::GradientStop>& aStops, wr::ExtendMode aExtendMode);
 
   void PushBorderConicGradient(
       const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
       bool aIsBackfaceVisible, const wr::LayoutSideOffsets& aWidths, bool aFill,
-      const wr::LayoutPoint& aCenter, const float aAngle,
+      const wr::LayoutVector2D& aCenter, const float aAngle,
       const nsTArray<wr::GradientStop>& aStops, wr::ExtendMode aExtendMode);
 
   void PushText(const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,

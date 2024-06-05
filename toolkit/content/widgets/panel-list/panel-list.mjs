@@ -568,7 +568,7 @@ export class PanelList extends HTMLElement {
           break;
         } else if (e.key === "Escape") {
           this.hide(undefined, { force: true });
-        } else if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+        } else if (!e.metaKey && !e.ctrlKey && !e.altKey) {
           // Check if any of the children have an accesskey for this letter.
           let item = this.querySelector(
             `[accesskey="${e.key.toLowerCase()}"],
@@ -578,6 +578,13 @@ export class PanelList extends HTMLElement {
             // Prevent the host from receiving input events for this keypress.
             e.preventDefault();
             item.click();
+          } else if (this.#selectByFirstLetter(e.key)) {
+            e.preventDefault();
+            // The listener is registered on both this element and the
+            // document, and an outer list holding a submenu gets the event
+            // too, so a selection that leaves the panel open would otherwise
+            // advance once per listener.
+            e.stopPropagation();
           }
         }
         break;
@@ -597,6 +604,59 @@ export class PanelList extends HTMLElement {
         }
         break;
     }
+  }
+
+  /**
+   * Selects the item whose label starts with a letter, among the items that
+   * carry no accesskey of their own. A `menupopup` selects its items this way,
+   * and a menu listing names a user chose - a container, a bookmark - can only
+   * be reached by keyboard this way, having no message to take an accesskey
+   * from.
+   *
+   * Only applies while focus is inside the panel. A panel-list that stays open
+   * over a focused field, as the Smartbar's mention panel does, filters itself
+   * from what the field receives, so the keystroke belongs to the field.
+   *
+   * @param {string} key
+   *   The pressed key.
+   * @returns {boolean}
+   *   Whether an item was activated or selected.
+   */
+  #selectByFirstLetter(key) {
+    if (key.length != 1) {
+      return false;
+    }
+    let focused = this.getRootNode().activeElement;
+    if (!this.contains(focused)) {
+      return false;
+    }
+    let letter = key.toLowerCase();
+    let startsWithLetter = item =>
+      !item.hasAttribute("accesskey") &&
+      (item.label?.textContent ?? item.textContent)
+        .trim()
+        .charAt(0)
+        .toLowerCase() === letter;
+    let items = [
+      ...this.querySelectorAll("panel-item:not([hidden]):not([disabled])"),
+    ];
+    let matches = items.filter(startsWithLetter);
+    if (!matches.length) {
+      return false;
+    }
+    if (matches.length == 1) {
+      matches[0].click();
+      return true;
+    }
+    // Several items share the letter, so move to the next one after the
+    // focused item without activating it, wrapping around.
+    let after =
+      items.findIndex(item => item == focused || item.contains(focused)) + 1;
+    let match = items.slice(after).find(startsWithLetter) ?? matches[0];
+    match.focus();
+    // Arrow navigation resumes from wherever the walker last stopped.
+    this.focusWalker.currentNode = match;
+    return true;
   }
 
   /**

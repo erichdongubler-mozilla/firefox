@@ -669,6 +669,16 @@ uint32_t HTMLSelectElement::CountRenderedRows() {
   return count;
 }
 
+void HTMLSelectElement::GetListItems(HTMLOptGroupElement* aGroup,
+                                     nsTArray<RefPtr<Element>>& aResult) {
+  if (aGroup && !IsOptionListItem(*aGroup, *this)) {
+    return;
+  }
+  nsINode& root = aGroup ? static_cast<nsINode&>(*aGroup) : *this;
+  ForEachOptionListItem(root,
+                        [&](Element& aItem) { aResult.AppendElement(&aItem); });
+}
+
 HTMLOptionElement* HTMLSelectElement::GetSelectedOption(
     IgnoredOptionList aIgnored) const {
   uint32_t len = Length();

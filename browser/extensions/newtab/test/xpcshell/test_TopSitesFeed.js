@@ -4271,7 +4271,8 @@ add_task(async function test_fetchSites_callsAdsClientWhenEnabled() {
   // The flags in adsBackendConfig only reach MARS if the prefs are passed.
   Assert.ok(
     AdsClient.requestOptions.calledOnceWithExactly(
-      feed.store.getState().Prefs.values
+      feed.store.getState().Prefs.values,
+      "duckduckgo"
     )
   );
   Assert.ok(

@@ -28,9 +28,11 @@
     "smartbar"
     "prompts"
     "topsites"
+    "resume-section"
     "."
     "footer";
-  grid-template-rows: 0 1fr auto auto auto auto 1fr auto;
+  /* Preserve space above the heading as the resume section grows. */
+  grid-template-rows: 0 minmax(var(--space-xlarge), 1fr) auto auto auto auto auto 1fr auto;
   align-content: stretch;
 }
 
@@ -306,6 +308,20 @@ smartwindow-topsites {
   :host(.chat-active) & {
     display: none;
   }
+}
+
+smartwindow-resume-section {
+  grid-area: resume-section;
+  width: 100%;
+
+  :host(.chat-active) & {
+    display: none;
+  }
+}
+
+/* Align the card grid with the content above it. */
+:host([mode="fullpage"]) smartwindow-resume-section {
+  max-width: var(--smartwindow-content-max-width);
 }
 
 smartwindow-footer {

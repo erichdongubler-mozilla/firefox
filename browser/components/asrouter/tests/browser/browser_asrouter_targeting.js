@@ -23,6 +23,7 @@ ChromeUtils.defineESModuleGetters(this, {
   OnboardingMessageProvider:
     "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs",
   PanelTestProvider: "resource:///modules/asrouter/PanelTestProvider.sys.mjs",
+  PermissionTestUtils: "resource://testing-common/PermissionTestUtils.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -592,6 +593,45 @@ add_task(async function check_totalBookmarksCount() {
 
   // Cleanup
   await PlacesUtils.bookmarks.remove(bookmark.guid);
+});
+
+add_task(async function check_allowedNotificationOrigins() {
+  const message = { id: "foo", targeting: "allowedNotificationOrigins > 0" };
+
+  ok(
+    !(await ASRouterTargeting.findMatchingMessage({ messages: [message] })),
+    "Should not match when no origin is allowed"
+  );
+
+  PermissionTestUtils.add(
+    "https://example.com",
+    "desktop-notification",
+    Services.perms.DENY_ACTION
+  );
+  ok(
+    !(await ASRouterTargeting.findMatchingMessage({ messages: [message] })),
+    "Should not count a blocked origin"
+  );
+
+  PermissionTestUtils.add(
+    "https://example.org",
+    "desktop-notification",
+    Services.perms.ALLOW_ACTION
+  );
+  is(
+    await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
+    message,
+    "Should match once an origin is allowed"
+  );
+  is(
+    await ASRouterTargeting.Environment.allowedNotificationOrigins,
+    1,
+    "Should count the allowed origin but not the blocked one"
+  );
+
+  // Cleanup
+  PermissionTestUtils.remove("https://example.com", "desktop-notification");
+  PermissionTestUtils.remove("https://example.org", "desktop-notification");
 });
 
 add_task(async function check_needsUpdate() {

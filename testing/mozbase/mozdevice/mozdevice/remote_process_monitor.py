@@ -96,9 +96,10 @@ class RemoteProcessMonitor:
     def log_test_end(self, status, message):
         """
         Report a harness-level abort as a structured result for the test that was
-        running, so it reaches consumers that only read structured actions. A plain
-        log message would be dropped by them. Does nothing when no test is in
-        flight, since last_test_seen then holds a sentinel rather than a test.
+        running, so consumers that only look at test results see it attributed to
+        that test; the matching log line carries no test or status. Does nothing
+        when no test is in flight, since last_test_seen then holds a sentinel
+        rather than a test.
         """
         if not getattr(self.message_logger, "is_test_running", False):
             return False

@@ -3547,8 +3547,8 @@ RTCIceConnectionState PeerConnectionImpl::GetNewIceConnectionState() const {
   std::set<RefPtr<RTCDtlsTransport>> transports(GetActiveTransports());
   for (const auto& transport : transports) {
     RefPtr<dom::RTCIceTransport> iceTransport = transport->IceTransport();
-    CSFLogWarn(LOGTAG, "GetNewIceConnectionState: %p %d", iceTransport.get(),
-               static_cast<int>(iceTransport->State()));
+    CSFLogDebug(LOGTAG, "GetNewIceConnectionState: %p %d", iceTransport.get(),
+                static_cast<int>(iceTransport->State()));
     statesFound.insert(iceTransport->State());
   }
 
@@ -3672,8 +3672,8 @@ void PeerConnectionImpl::IceGatheringStateChange(
     return;
   }
 
-  CSFLogWarn(LOGTAG, "IceGatheringStateChange: %s %d (%p)",
-             aTransportId.c_str(), static_cast<int>(state), this);
+  CSFLogDebug(LOGTAG, "IceGatheringStateChange: %s %d (%p)",
+              aTransportId.c_str(), static_cast<int>(state), this);
 
   // Let transport be the RTCIceTransport for which candidate gathering
   // began/finished.

@@ -185,13 +185,9 @@ ${
             context=""
             role="group"
             tooltip="aHTMLTooltip">
-        <html:div class="urlbarView-body-outer">
-          <html:div class="urlbarView-body-inner">
-            <html:div id="urlbar-results"
-                      class="urlbarView-results"
-                      role="listbox"/>
-          </html:div>
-        </html:div>
+        <html:div id="urlbar-results"
+                  class="urlbarView-results"
+                  role="listbox"/>
         <html:panel-list class="urlbarView-result-menu"></html:panel-list>
         <html:moz-urlbar-slot name="search-one-offs" />
       </html:div>
@@ -1753,6 +1749,11 @@ ${
     }
 
     this.smartbarAction = event.detail.action;
+    if (!this.focused) {
+      // The CTA can be clicked when the input is not focused:
+      // Start an engagement session if none is currently open.
+      this.controller.engagementEvent.start(event, null, this.value);
+    }
     this.handleNavigation({ event });
   }
 
@@ -2317,10 +2318,11 @@ ${
         dueToTabSwitch: true,
         hideSearchTerms: true,
       });
-    } else {
+    } else if (!this.#isSmartbarMode) {
+      // The smartbar has no URI to revert to.
       this.value = "";
     }
-    if (this.value && this.focused) {
+    if (this.#isAddressbar && this.value && this.focused) {
       this.select();
     }
   }
@@ -3753,10 +3755,8 @@ ${
   }
 
   get focused() {
-    return (
-      this.document.activeElement ==
-      (this.#smartbarInputController?.input ?? this.inputField)
-    );
+    const input = this.#smartbarInputController?.input ?? this.inputField;
+    return !!input && input.getRootNode().activeElement === input;
   }
 
   get goButton() {
@@ -6066,6 +6066,9 @@ ${
    *  Urlbar state, and whether the selection is empty.
    */
   #maybeSelectAll() {
+    if (this.#isSmartbarMode) {
+      return;
+    }
     if (
       !this._preventClickSelectsAll &&
       this.#compositionState != UrlbarShared.COMPOSITION.COMPOSING &&
@@ -6309,7 +6312,7 @@ ${
       case this: {
         this._mousedownOnUrlbarDescendant = true;
         if (
-          event.composedTarget != this.inputField &&
+          !this.#isInsideContainer(event.composedTarget, this.inputField) &&
           event.composedTarget != this._inputContainer
         ) {
           if (
@@ -6329,7 +6332,7 @@ ${
         // Keep the focus status, since the attribute may be changed
         // upon calling this.focus().
         const hasFocus = this.hasAttribute("focused");
-        if (event.composedTarget != this.inputField) {
+        if (!this.#isInsideContainer(event.composedTarget, this.inputField)) {
           this.focus();
         }
 
@@ -6340,7 +6343,7 @@ ${
 
         // Clear any previous selection unless we are focused, to ensure it
         // doesn't affect drag selection.
-        if (this.focusedViaMousedown) {
+        if (this.focusedViaMousedown && !this.#isSmartbarMode) {
           this.setSelectionRange(0, 0);
         }
 
@@ -7076,7 +7079,10 @@ ${
 
     event.dataTransfer.setData("text/x-moz-url", `${href}\n${title}`);
     event.dataTransfer.setData("text/plain", href);
-    event.dataTransfer.setData("text/html", `<a href="${href}">${title}</a>`);
+    event.dataTransfer.setData(
+      "text/html",
+      `<a href="${UrlbarShared.escapeHtmlEntities(href)}">${UrlbarShared.escapeHtmlEntities(title)}</a>`
+    );
     event.dataTransfer.effectAllowed = "copyLink";
     event.stopPropagation();
   }

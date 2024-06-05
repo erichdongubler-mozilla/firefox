@@ -9,6 +9,7 @@
 
 #include "CookieCommons.h"
 #include "CookieKey.h"
+#include "mozilla/net/Cookie.h"
 #include "nsICookieNotification.h"
 #include "nsIObserver.h"
 #include "nsTHashtable.h"
@@ -22,7 +23,6 @@ class nsIPrefBranch;
 namespace mozilla {
 namespace net {
 
-class Cookie;
 class CookieParser;
 
 // Inherit from CookieKey so this can be stored in nsTHashTable

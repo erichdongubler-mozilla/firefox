@@ -1488,6 +1488,30 @@ class GetUserMediaTask {
   const enum CallerType mCallerType;
 };
 
+// Glean label names must be lowercase, unlike dom::GetEnumString(), so this
+// cannot just reuse the WebIDL enum strings (e.g. "audioCapture").
+static const char* GleanLabelForMediaSource(MediaSourceEnum aSource) {
+  switch (aSource) {
+    case MediaSourceEnum::Camera:
+      return "camera";
+    case MediaSourceEnum::Screen:
+      return "screen";
+    case MediaSourceEnum::Application:
+      return "application";
+    case MediaSourceEnum::Window:
+      return "window";
+    case MediaSourceEnum::Browser:
+      return "browser";
+    case MediaSourceEnum::Microphone:
+      return "microphone";
+    case MediaSourceEnum::AudioCapture:
+      return "audiocapture";
+    case MediaSourceEnum::Other:
+      return "other";
+  }
+  MOZ_CRASH("Unexpected MediaSourceEnum value");
+}
+
 /**
  * Describes a requested task that handles response from the UI to a
  * getUserMedia() request and sends results back to content.  If the request
@@ -1518,6 +1542,18 @@ class GetUserMediaStreamTask final : public GetUserMediaTask {
   void Allowed(RefPtr<LocalMediaDevice> aAudioDevice,
                RefPtr<LocalMediaDevice> aVideoDevice) {
     MOZ_ASSERT(aAudioDevice || aVideoDevice);
+    if (aAudioDevice) {
+      glean::webrtc::get_user_media_source_granted
+          .Get(nsDependentCString(
+              GleanLabelForMediaSource(aAudioDevice->GetMediaSource())))
+          .Add();
+    }
+    if (aVideoDevice) {
+      glean::webrtc::get_user_media_source_granted
+          .Get(nsDependentCString(
+              GleanLabelForMediaSource(aVideoDevice->GetMediaSource())))
+          .Add();
+    }
     mAudioDevice = std::move(aAudioDevice);
     mVideoDevice = std::move(aVideoDevice);
     // Reuse the same thread to save memory.

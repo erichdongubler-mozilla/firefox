@@ -8,7 +8,7 @@ const TEST_PAGE =
   "http://example.org/browser/browser/base/content/test/browser-zoom/zoom_test.html";
 const TEST_VIDEO =
   // eslint-disable-next-line sdl/no-insecure-url
-  "http://example.org/browser/browser/base/content/test/general/video.webm";
+  "http://example.org/browser/browser/base/content/test/browser-general/video.webm";
 
 var gTab1, gTab2, gLevel1;
 

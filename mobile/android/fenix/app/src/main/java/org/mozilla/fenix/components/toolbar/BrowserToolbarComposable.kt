@@ -9,6 +9,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -98,9 +100,14 @@ class BrowserToolbarComposable(
     val layout: View =
         ScrollableToolbarComposeView(activity, this) {
                 val isSearching = toolbarStore.observeAsComposableState { it.isEditMode() }.value
-                val shouldShowTabStrip: Boolean = remember { shouldShowTabStrip() }
+                val shouldShowTabStripAtTop = remember {
+                    customTabSession == null && settings.shouldShowTabStripAtTop
+                }
+                val shouldShowTabStripAtBottom = remember {
+                    customTabSession == null && settings.shouldShowTabStripAtBottom
+                }
                 val customColors = browserScreenStore.observeAsComposableState { it.customTabColors }
-                val shouldUseBottomToolbar = remember(settings) { settings.shouldUseBottomToolbar }
+                val shouldUseBottomToolbar = remember { settings.shouldUseBottomToolbar }
 
                 val toolbarState by toolbarStore.stateFlow.collectAsState()
                 val toolbarCFR = toolbarState.displayState.cfr
@@ -146,10 +153,12 @@ class BrowserToolbarComposable(
                         }
 
                     MaterialTheme(colorScheme = colorScheme) {
-                        when (shouldShowTabStrip) {
+                        when (!shouldUseBottomToolbar) {
                             true ->
                                 Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                                    tabStripContent()
+                                    if (shouldShowTabStripAtTop) {
+                                        tabStripContent()
+                                    }
                                     BrowserToolbar(
                                         store = toolbarStore,
                                         cfr = toolbarCFR,
@@ -163,44 +172,35 @@ class BrowserToolbarComposable(
 
                             false ->
                                 Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                                    if (shouldUseBottomToolbar) {
-                                        if (customTabSession == null) {
-                                            searchSuggestionsContent(Modifier.weight(1f))
-                                        }
-                                        BrowserToolbar(
-                                            store = toolbarStore,
-                                            cfr = toolbarCFR,
-                                            useMinimalBottomToolbarWhenEnteringText =
-                                                settings.shouldUseMinimalBottomToolbarWhenEnteringText,
-                                        )
-                                        navigationBarContent?.invoke()
-                                    } else {
-                                        BrowserToolbar(
-                                            store = toolbarStore,
-                                            cfr = toolbarCFR,
-                                            useMinimalBottomToolbarWhenEnteringText =
-                                                settings.shouldUseMinimalBottomToolbarWhenEnteringText,
-                                        )
-                                        if (customTabSession == null) {
-                                            searchSuggestionsContent(Modifier.weight(1f))
+                                    if (customTabSession == null) {
+                                        searchSuggestionsContent(Modifier.weight(1f))
+                                    }
+                                    if (shouldShowTabStripAtBottom) {
+                                        Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+                                            tabStripContent()
                                         }
                                     }
+                                    BrowserToolbar(
+                                        store = toolbarStore,
+                                        cfr = toolbarCFR,
+                                        useMinimalBottomToolbarWhenEnteringText =
+                                            settings.shouldUseMinimalBottomToolbarWhenEnteringText,
+                                    )
+                                    navigationBarContent?.invoke()
                                 }
                         }
                     }
                 }
             }
             .apply {
-                if (!shouldShowTabStrip()) {
-                    val params = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
-
-                    when (settings.toolbarPosition) {
-                        TOP -> params.gravity = Gravity.TOP
-                        BOTTOM -> params.gravity = Gravity.BOTTOM
+                layoutParams =
+                    LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+                        gravity =
+                            when (settings.toolbarPosition) {
+                                TOP -> Gravity.TOP
+                                BOTTOM -> Gravity.BOTTOM
+                            }
                     }
-
-                    layoutParams = params
-                }
             }
 
     init {
@@ -316,8 +316,6 @@ class BrowserToolbarComposable(
             }
         }
     }
-
-    private fun shouldShowTabStrip() = customTabSession == null && settings.isTabStripEnabled
 
     private fun setupShowingToolbarsAfterKeyboardHidden() {
         container.addView(

@@ -66,6 +66,7 @@ async function cleanupTest(environmentCleanup) {
   try {
     MLTestUtils.cleanupEngineCreationInterceptions();
   } finally {
+    EngineProcess.resetNativeOnnxRuntimeAvailabilityForTests();
     await EngineProcess.destroyMLEngine();
     await environmentCleanup();
   }

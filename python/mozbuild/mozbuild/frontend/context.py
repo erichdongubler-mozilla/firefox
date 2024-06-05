@@ -1218,6 +1218,17 @@ GeneratedFilesList = StrictOrderingOnAppendListWithFlagsFactory({
     "flags": list,
 })
 
+LicensesList = StrictOrderingOnAppendListWithFlagsFactory({
+    "title": str,
+    "text": str,
+    "notice": str,
+    "spdx": str,
+    "url": str,
+    "paths": list,
+})
+
+LicensedUnderList = StrictOrderingOnAppendListWithFlagsFactory({"paths": list})
+
 
 class Files(SubContext):
     """Metadata attached to files.
@@ -1912,6 +1923,99 @@ VARIABLES = {
 
         This variable works like DEFINES, except that declarations apply to all
         libraries that link into this library via FINAL_LIBRARY.
+        """,
+    ),
+    "LICENSES": (
+        LicensesList,
+        list,
+        """Third-party license notices that must be reproduced in the product.
+
+        Each entry declares one license notice, identified by a short id that is
+        also its ``about:license`` anchor. Declare it in the directory that owns
+        the code, or in ``toolkit/content/licenses/moz.build`` for a shared
+        license text such as MPL-2.0 or MIT::
+
+           LICENSES += ["harfbuzz"]
+           LICENSES["harfbuzz"].title = "HarfBuzz License"
+           LICENSES["harfbuzz"].text = "LICENSE-NOTICE.txt"
+
+        The recognized fields are:
+
+        ``title``
+           Heading shown in ``about:license``. Required.
+
+        ``text``
+           Path, relative to the declaring ``moz.build``, of a file holding the
+           verbatim notice text. Required.
+
+        ``notice``
+           Optional prose rendered above the path list, for facts that cannot be
+           derived, such as a list of copyright holders and date ranges.
+
+        ``spdx``
+           Optional SPDX license expression, used by the generated SBOM. The
+           ``license-declarations`` linter validates it against the SPDX
+           license list.
+
+        ``url``
+           Optional canonical URL for the license.
+
+        ``paths``
+           Optional extra paths this notice covers, listed under its heading in
+           ``about:license`` alongside whatever ``LICENSED_UNDER`` attributes to
+           the same id. Entries may be globs, and a directory means the whole
+           subtree.
+
+           **These are relative to the top source directory**, not to the
+           declaring ``moz.build``, which is the opposite of
+           ``LICENSED_UNDER["x"].paths``. The two differ because this field
+           exists for the shared notices in ``toolkit/content/licenses/``,
+           declared far from every directory they cover::
+
+              # in toolkit/content/licenses/moz.build
+              LICENSES["apache"].paths = ["third_party/perfetto"]
+
+           So prefer ``LICENSED_UNDER``, declared next to the code, and reach
+           for this field only when the code has no built ``moz.build`` anywhere
+           near it.
+        """,
+    ),
+    "LICENSED_UNDER": (
+        LicensedUnderList,
+        list,
+        """Ids of the licenses that cover the code in this directory.
+
+        Each id must be declared by a ``LICENSES`` entry somewhere in the tree.
+        The generated ``about:license`` page lists this directory under every
+        license named here::
+
+           LICENSED_UNDER += ["MIT"]
+
+        The one recognized attribute is:
+
+        ``paths``
+           Optional list of the individual files or subdirectories the license
+           covers, narrowing the attribution from the whole directory. Leaving
+           it unset attributes the declaring directory itself, which is the
+           common case; setting it attributes only the entries listed, and
+           nothing else in the directory::
+
+              LICENSED_UNDER += ["MIT"]
+              LICENSED_UNDER["MIT"].paths = ["vendor/lodash.js", "vendor/react*"]
+
+           **Entries are relative to this** ``moz.build`` (unlike
+           ``LICENSES["x"].paths``, which is topsrcdir-relative), may be globs,
+           and a directory covers its whole subtree. They do not have to be
+           part of the build, which is how code the build system never
+           traverses, such as a crate under ``third_party/rust``, is attributed
+           from its nearest built ancestor::
+
+              # in a moz.build whose subtree has no moz.build of its own
+              LICENSED_UNDER["unicode"].paths = ["src/unicode"]
+
+           Whatever is listed here is joined onto the declaring directory and
+           shown, topsrcdir-relative, under the license's heading in
+           ``about:license``.
         """,
     ),
     "LIBRARY_NAME": (

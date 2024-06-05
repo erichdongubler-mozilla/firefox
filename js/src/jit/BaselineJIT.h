@@ -496,13 +496,13 @@ class BaselineInterpreter {
     uint32_t debugEpilogueOffset = 0;
     uint32_t debugAfterYieldOffset = 0;
   };
-  struct ICReturnOffset {
+  struct ICBailoutStubOffset {
     uint32_t offset;
-    uint32_t bailoutStubOffset = 0;
     JSOp op;
-    ICReturnOffset(uint32_t offset, JSOp op) : offset(offset), op(op) {}
+    ICBailoutStubOffset(uint32_t offset, JSOp op) : offset(offset), op(op) {}
   };
-  using ICReturnOffsetVector = Vector<ICReturnOffset, 0, SystemAllocPolicy>;
+  using ICBailoutStubOffsetVector =
+      Vector<ICBailoutStubOffset, 0, SystemAllocPolicy>;
 
  private:
   // The interpreter code.
@@ -541,8 +541,8 @@ class BaselineInterpreter {
   // Offsets of toggled jumps for code coverage.
   CodeOffsetVector codeCoverageOffsets_;
 
-  // Offsets of IC calls for IsIonInlinableOp ops, for Ion bailouts.
-  ICReturnOffsetVector icReturnOffsets_;
+  // Offsets of bailout stubs for IsIonInlinableOp IC ops, for Ion bailouts.
+  ICBailoutStubOffsetVector icBailoutStubOffsets_;
 
   // Offsets of some callVMs for BaselineDebugModeOSR.
   CallVMOffsets callVMOffsets_;
@@ -568,7 +568,7 @@ class BaselineInterpreter {
             CodeOffsetVector&& debugInstrumentationOffsets,
             CodeOffsetVector&& debugTrapOffsets,
             CodeOffsetVector&& codeCoverageOffsets,
-            ICReturnOffsetVector&& icReturnOffsets,
+            ICBailoutStubOffsetVector&& icBailoutStubOffsets,
             const CallVMOffsets& callVMOffsets);
 
   uint8_t* codeRaw() const { return code_->raw(); }
@@ -589,7 +589,6 @@ class BaselineInterpreter {
     return codeAtOffset(bailoutResumePrologueOffset_);
   }
 
-  uint8_t* retAddrForIC(JSOp op) const;
   uint8_t* bailoutStubAddrForIC(JSOp op) const;
 
   TrampolinePtr interpretOpAddr() const {

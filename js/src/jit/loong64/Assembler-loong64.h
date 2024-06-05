@@ -91,6 +91,7 @@ static constexpr FloatRegister InvalidFloatReg;
 
 static constexpr Register StackPointer = sp;
 static constexpr Register FramePointer = fp;
+static constexpr Register LinkRegister = ra;
 static constexpr Register ReturnReg = a0;
 static constexpr Register64 ReturnReg64(ReturnReg);
 static constexpr FloatRegister ReturnFloat32Reg{FloatRegisters::f0,

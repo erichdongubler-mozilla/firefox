@@ -375,6 +375,10 @@ async function getFormReview(win, browser) {
  */
 async function fillFormReview(win, browser) {
   const { reviewBrowser } = await getFormReview(win, browser);
+  await fillReviewedForm(reviewBrowser);
+}
+
+async function fillReviewedForm(reviewBrowser) {
   // Fill form only enables once the generated values have been scrolled
   // through.
   await scrollFormReviewFieldsToBottom(reviewBrowser);
@@ -445,6 +449,10 @@ async function fillContactForm(
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [[SMART_FORM_FILL_PREF, true]],
+    set: [
+      [SMART_FORM_FILL_PREF, true],
+      // The test forms are smaller than the minimum the feature ships with.
+      [MIN_FORM_FIELDS_PREF, 1],
+    ],
   });
 });

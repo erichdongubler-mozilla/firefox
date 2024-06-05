@@ -764,6 +764,20 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
         return RegExpRunStatus::Error;
       }
       if (cx->hasAnyPendingInterrupt()) {
+        if (!cx->isExceptionPending() &&
+            re->isCompiled(input->hasLatin1Chars(),
+                           RegExpShared::CodeKind::Jitcode)) {
+          // We can end up here if a compiled regexp is interrupted and invokes
+          // a handler that requests another interrupt and then returns false to
+          // signal that we should terminate. In that case, we should return now
+          // instead of handling the interrupt and retrying.  This can only
+          // happen with a custom interrupt handler in the shell, but it's
+          // easier to handle it here than to prevent the fuzzer from writing
+          // silly interrupt handlers.
+          MOZ_ASSERT(cx->hadUncatchableException());
+          return RegExpRunStatus::Error;
+        }
+
         if (!CheckForInterrupt(cx)) {
           return RegExpRunStatus::Error;
         }

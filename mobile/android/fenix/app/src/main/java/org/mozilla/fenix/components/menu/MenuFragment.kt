@@ -25,12 +25,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
 import androidx.fragment.compose.content
+import androidx.lifecycle.coroutineScope
+import androidx.navigation.fragment.findNavController
 import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import mozilla.components.compose.menu.Menu
-import mozilla.components.compose.menu.data.MenuItemsGroup
 import mozilla.components.compose.menu.store.MenuState
 import mozilla.components.compose.menu.store.MenuStore
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.composableStore
@@ -42,8 +43,20 @@ import mozilla.components.support.utils.ext.top
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
+import org.mozilla.fenix.bookmarks.BookmarkMenuItemProvider
+import org.mozilla.fenix.browser.BackMenuItemProvider
+import org.mozilla.fenix.browser.DesktopSiteMenuItemProvider
+import org.mozilla.fenix.browser.ForwardMenuItemProvider
+import org.mozilla.fenix.browser.readermode.ReaderViewMenuItemProvider
+import org.mozilla.fenix.components.FindInPageMenuItemProvider
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
 import org.mozilla.fenix.components.menu.compose.MenuHandleState
+import org.mozilla.fenix.components.menu.middleware.MenuMiddleware
+import org.mozilla.fenix.components.menu.middleware.MenuTelemetryMiddleware
+import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.isToolbarAtBottom
+import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.ipprotection.VpnMenuItemProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 
 private const val EXPANDED_OFFSET = 56
@@ -53,7 +66,6 @@ private const val MENU_ANIMATION_START_OFFSET_RATIO = 0.2f
 
 /** A bottom sheet fragment hosting the customizable menu. */
 class MenuFragment : BottomSheetDialogFragment() {
-
     private val snackbarHostState = SnackbarHostState()
     private var bottomSheetBehavior: BottomSheetBehavior<View>? = null
 
@@ -126,7 +138,7 @@ class MenuFragment : BottomSheetDialogFragment() {
         savedInstanceState: Bundle?,
     ) = content {
         val menuStore by
-            composableStore(MenuState(buildInitialMenuState())) {
+            composableStore(MenuState(emptyList())) {
                 buildMenuStore(it)
             }
 
@@ -185,11 +197,68 @@ class MenuFragment : BottomSheetDialogFragment() {
         return orientationMaxHeight - topBarHeight
     }
 
-    private fun buildInitialMenuState() = listOf<MenuItemsGroup>()
+    /**
+     * Builds the [MenuItemProvider] of every item that can be shown in this menu. They live as long as the store they
+     * are built for, so as long as this menu is open.
+     */
+    private fun buildMenuItemProviders(): Map<FenixMenuItem, MenuItemProvider> =
+        mapOf(
+            FenixMenuItem.CustomizeReaderView to
+                ReaderViewMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                ),
+            FenixMenuItem.IPProtection to
+                VpnMenuItemProvider(
+                    ipProtectionStore = requireComponents.ipProtection.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                ),
+            FenixMenuItem.Bookmark to
+                BookmarkMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    bookmarksStorage = requireComponents.core.bookmarksStorage,
+                    applicationScope = requireComponents.applicationScope,
+                ),
+            FenixMenuItem.Forward to
+                ForwardMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                ),
+            FenixMenuItem.Back to
+                BackMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                ),
+            FenixMenuItem.FindInPage to FindInPageMenuItemProvider(),
+            FenixMenuItem.DesktopSite to
+                DesktopSiteMenuItemProvider(
+                    browserStore = requireComponents.core.store,
+                    scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                ),
+        )
 
     private fun buildMenuStore(initialState: MenuState) =
         MenuStore(
             initialState = initialState,
-            middleware = emptyList(),
+            middleware =
+                listOf(
+                    MenuMiddleware(
+                        appStore = requireComponents.appStore,
+                        browserStore = requireComponents.core.store,
+                        ipProtectionStore = requireComponents.ipProtection.store,
+                        useCases = requireComponents.useCases,
+                        browserMenuBuilder =
+                            BrowserMenuBuilder(
+                                providers = buildMenuItemProviders(),
+                                isToolbarAtBottom = requireContext().isToolbarAtBottom(),
+                                isExpandedToolbarEnabled =
+                                    requireContext().components.settings.shouldUseExpandedToolbar,
+                            ),
+                        navController = findNavController(),
+                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
+                        applicationScope = requireComponents.applicationScope,
+                    ),
+                    MenuTelemetryMiddleware(accessPoint = MenuAccessPoint.Browser),
+                ),
         )
 }

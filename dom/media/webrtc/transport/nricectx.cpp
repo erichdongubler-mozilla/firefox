@@ -560,7 +560,7 @@ int NrIceCtx::msg_recvd(void* obj, nr_ice_peer_ctx* pctx,
   // Streams which do not exist should never have packets.
   MOZ_ASSERT(s);
 
-  s->SignalPacketReceived(s, component_id, msg, len);
+  s->PacketReceived(stream, component_id, msg, len);
 
   return 0;
 }

@@ -385,10 +385,10 @@ export class SmartFormFillChild extends JSWindowActorChild {
    * @param {HTMLInputElement | HTMLTextAreaElement} input
    *   The input associated with the autocomplete search.
    * @returns {boolean}
-   *   Whether Smart Form Fill supports the input.
+   *   Whether Smart Form Fill has an entry to offer for the input.
    */
   shouldSearchForAutoComplete(input) {
-    return this.#smartFormFillDocument?.isSupportedField(input) ?? false;
+    return this.#smartFormFillDocument?.shouldOfferFill(input) ?? false;
   }
 
   /**

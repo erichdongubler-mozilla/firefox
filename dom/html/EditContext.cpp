@@ -122,21 +122,11 @@ void EditContext::SetForElement(const Element& aElement,
 }
 
 void EditContext::Deactivate() {
-  // https://w3c.github.io/edit-context/#dfn-deactivate-an-editcontext
   MOZ_LOG_FMT(gEditContextLog, LogLevel::Info, "[{}] Deactivate EditContext",
               static_cast<void*>(this));
-
+  MOZ_ASSERT(!mIsComposing,
+             "Should have committed the composition before calling this.");
   UnsuppressNotifyingIME();
-
-  // https://github.com/w3c/edit-context/pull/123
-  if (!mIsComposing) {
-    return;
-  }
-
-  // 1. Set editContext's is composing to false.
-  // 2. Fire an event named compositionend at editContext using
-  //    CompositionEvent.
-  // TODO
 }
 
 bool EditContext::IsActive() const {
@@ -571,19 +561,19 @@ void EditContext::FireTextUpdate(uint32_t aUpdateRangeStart,
 
 void EditContext::DoSetSelection(WidgetSelectionEvent& aEvent) {
   MOZ_LOG_FMT(gEditContextLog, LogLevel::Debug,
-              "[{}] {} with offset={} length={} reversed={} "
+              "[{}] {} with offset={} length={} direction={} "
               "expandToClusterBoundary={}",
               static_cast<void*>(this), __func__, aEvent.mOffset,
-              aEvent.mLength, aEvent.mReversed,
+              aEvent.mLength, aEvent.mDirection,
               aEvent.mExpandToClusterBoundary);
   TextRange range(std::min(aEvent.mOffset, TextLength()),
                   std::min(aEvent.mOffset + aEvent.mLength, TextLength()));
-  if (aEvent.mExpandToClusterBoundary) {
+  if (aEvent.ShouldExpandToClusterBoundary()) {
     range = ExpandRangeToClusterBoundaries(range);
   }
   mSelectionStart = range.mStart;
   mSelectionEnd = range.mEnd;
-  if (aEvent.mReversed) {
+  if (aEvent.IsReversed()) {
     std::swap(mSelectionStart, mSelectionEnd);
   }
   if (IMEContentObserver* observer =
@@ -664,10 +654,9 @@ void EditContext::DoContentCommandReplaceText(
     return;
   }
   // Dispatch textupdate
-  UpdateTextAndFireEvent(
-      replaceOffset, replaceOffset + replaceLength, *aEvent.mString,
-      aEvent.mSelection.mPreventSetSelection ? PreventSetSelection::Yes
-                                             : PreventSetSelection::No);
+  UpdateTextAndFireEvent(replaceOffset, replaceOffset + replaceLength,
+                         *aEvent.mString,
+                         aEvent.mSelection.mPreventSetSelection);
   aEvent.mSucceeded = true;
 }
 

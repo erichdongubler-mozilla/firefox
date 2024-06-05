@@ -6,22 +6,16 @@
 
 #include "nsFrameManager.h"
 
-#include "ChildIterator.h"
-#include "GeckoProfiler.h"
 #include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/PresState.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "nsContainerFrame.h"
-#include "nsError.h"
-#include "nsILayoutHistoryState.h"
-#include "nsPlaceholderFrame.h"
+#include "nsContentUtils.h"
 #include "nsWindowSizes.h"
-#include "nscore.h"
 #include "plhash.h"
 
 using namespace mozilla;
@@ -115,56 +109,6 @@ void nsFrameManager::RemoveFrame(DestroyContext& aContext,
                                                            aOldFrame);
   } else {
     parentFrame->RemoveFrame(aContext, aListID, aOldFrame);
-  }
-}
-
-void nsFrameManager::CaptureFrameState(nsIFrame* aFrame,
-                                       nsILayoutHistoryState* aState,
-                                       CaptureStateFlags aFlags) {
-  MOZ_ASSERT(aFrame);
-  MOZ_ASSERT(aState);
-
-  if (ScrollContainerFrame* scrollFrame = do_QueryFrame(aFrame)) {
-    scrollFrame->SaveState(aFlags, aState);
-  }
-
-  // Now capture state recursively for the frame hierarchy rooted at aFrame
-  for (const auto& childList : aFrame->ChildLists()) {
-    for (nsIFrame* child : childList.mList) {
-      if (child->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-        // We'll pick it up when we get to its placeholder
-        continue;
-      }
-      // Make sure to walk through placeholders as needed, so that we
-      // save state for out-of-flows which may not be our descendants
-      // themselves but whose placeholders are our descendants.
-      nsIFrame* realChild = nsPlaceholderFrame::GetRealFrameFor(child);
-      // GetRealFrameFor should theoretically never return null here (and its
-      // helper has an assertion to enforce this); but we've got known fuzzer
-      // testcases where it does return null (in non-debug builds that make it
-      // past the aforementioned assertion) due to weird situations with
-      // out-of-flows and fragmentation. We handle that unexpected situation by
-      // silently skipping this frame, rather than crashing.
-      if (MOZ_LIKELY(realChild)) {
-        CaptureFrameState(realChild, aState, aFlags);
-      }
-    }
-  }
-}
-
-void nsFrameManager::RestoreFrameStateFor(nsIFrame* aFrame,
-                                          nsILayoutHistoryState* aState) {
-  MOZ_ASSERT(aFrame);
-  MOZ_ASSERT(aState);
-
-  if (!aState->HasStates()) {
-    // Nothing to restore.
-    return;
-  }
-
-  // Only restore state for scroll frames
-  if (ScrollContainerFrame* scrollFrame = do_QueryFrame(aFrame)) {
-    scrollFrame->RestoreState(aState);
   }
 }
 

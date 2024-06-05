@@ -238,10 +238,14 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   // (past-TTL, grace-period) cache entry. Captured at serve time: true only
   // when a grace-period cache hit is returned, and cleared on every fresh
   // resolution.
-  bool mFromStaleCache = false;
+  mozilla::Atomic<bool, mozilla::Relaxed> mFromStaleCache{false};
 
   // Explicitly expired
   bool mDoomed = false;
+
+  // Whether this record is currently linked into HostRecordQueue::mEvictionQ
+  // (as opposed to a pending queue, or no queue).
+  bool mInEvictionQueue = false;
 
   // Whether this is resolved by TRR successfully or not.
   bool mTRRSuccess = false;
@@ -406,5 +410,7 @@ static inline bool IsMediumPriority(nsIDNSService::DNSFlags flags) {
 static inline bool IsLowPriority(nsIDNSService::DNSFlags flags) {
   return flags & nsHostRecord::DNS_PRIORITY_LOW;
 }
+
+nsLiteralCString RecordFamilyLabel(nsHostRecord* aRec);
 
 #endif  // nsHostRecord_h_

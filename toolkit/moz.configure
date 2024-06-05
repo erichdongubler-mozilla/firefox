@@ -1197,30 +1197,6 @@ def app_system_headers(value):
 set_config("MOZ_APP_SYSTEM_HEADERS", app_system_headers)
 
 
-# Printing
-# ==============================================================
-@depends(target)
-def printing_default(target):
-    return target.os != "iOS"
-
-
-option(
-    "--disable-printing",
-    default=printing_default,
-    help="{Enable|Disable} printing support",
-)
-
-
-@depends("--disable-printing")
-def printing(value):
-    if value:
-        return True
-
-
-set_config("NS_PRINTING", printing)
-set_define("NS_PRINTING", printing)
-
-
 # Speech-dispatcher support
 # ==============================================================
 @depends(toolkit)
@@ -1254,16 +1230,6 @@ set_define("MOZ_WEBSPEECH", webspeech)
 
 # Graphics
 # ==============================================================
-@depends(milestone)
-def skia_pdf_default(milestone):
-    return milestone.is_nightly
-
-
-option("--enable-skia-pdf", default=skia_pdf_default, help="{Enable|Disable} Skia PDF")
-
-set_config("MOZ_ENABLE_SKIA_PDF", True, when="--enable-skia-pdf")
-set_define("MOZ_ENABLE_SKIA_PDF", True, when="--enable-skia-pdf")
-
 set_config(
     "SKIA_INCLUDES",
     [

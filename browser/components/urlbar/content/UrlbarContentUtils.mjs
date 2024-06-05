@@ -232,8 +232,9 @@ export function getContainers() {
   return Promise.resolve(
     ContextualIdentityService.getPublicIdentities().map(identity => ({
       userContextId: identity.userContextId,
-      name: identity.name,
-      l10nId: identity.l10nId,
+      name: ContextualIdentityService.getUserContextLabel(
+        identity.userContextId
+      ),
       iconURL: ContextualIdentityService.getContainerIconURL(identity.icon),
       colorCode: ContextualIdentityService.getContainerColorCode(
         identity.color

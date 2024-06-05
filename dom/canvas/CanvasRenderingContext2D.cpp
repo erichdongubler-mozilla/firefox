@@ -1192,14 +1192,14 @@ static CapStyle CanvasToGfx(CanvasLineCap aCap) {
   }
 }
 
-static uint8_t CanvasToGfx(CanvasFontKerning aKerning) {
+static StyleFontKerning CanvasToGfx(CanvasFontKerning aKerning) {
   switch (aKerning) {
     case CanvasFontKerning::Auto:
-      return NS_FONT_KERNING_AUTO;
+      return StyleFontKerning::Auto;
     case CanvasFontKerning::Normal:
-      return NS_FONT_KERNING_NORMAL;
+      return StyleFontKerning::Normal;
     case CanvasFontKerning::None:
-      return NS_FONT_KERNING_NONE;
+      return StyleFontKerning::None;
     default:
       MOZ_CRASH("unknown kerning!");
   }
@@ -3288,9 +3288,8 @@ void CanvasRenderingContext2D::UpdateFilter(bool aFlushIfNeeded) {
   auto lineHeight = currentFontStyle
                         ? currentFontStyle->StyleFont()->mLineHeight
                         : StyleLineHeight::Normal();
-  auto* language = currentFontStyle
-                       ? currentFontStyle->StyleFont()->mLanguage.get()
-                       : nullptr;
+  auto* language =
+      currentFontStyle ? currentFontStyle->StyleFont()->GetLangAtom() : nullptr;
   bool explicitLanguage =
       state.fontComputedStyle &&
       state.fontComputedStyle->StyleFont()->mExplicitLanguage;
@@ -4364,22 +4363,22 @@ bool CanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
       // Leave whatever the shorthand set.
       break;
     case CanvasFontVariantCaps::Small_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_SMALL_CAPS;
+      resizedFont.variantCaps = StyleFontVariantCaps::SmallCaps;
       break;
     case CanvasFontVariantCaps::All_small_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_ALL_SMALL_CAPS;
+      resizedFont.variantCaps = StyleFontVariantCaps::AllSmallCaps;
       break;
     case CanvasFontVariantCaps::Petite_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_PETITE_CAPS;
+      resizedFont.variantCaps = StyleFontVariantCaps::PetiteCaps;
       break;
     case CanvasFontVariantCaps::All_petite_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_ALL_PETITE_CAPS;
+      resizedFont.variantCaps = StyleFontVariantCaps::AllPetiteCaps;
       break;
     case CanvasFontVariantCaps::Unicase:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_UNICASE;
+      resizedFont.variantCaps = StyleFontVariantCaps::Unicase;
       break;
     case CanvasFontVariantCaps::Titling_caps:
-      resizedFont.variantCaps = NS_FONT_VARIANT_CAPS_TITLING_CAPS;
+      resizedFont.variantCaps = StyleFontVariantCaps::TitlingCaps;
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("unknown caps value");
@@ -4441,7 +4440,7 @@ static void SerializeFontForCanvas(const StyleFontFamilyList& aList,
     aUsedFont.Append(" ");
   }
 
-  if (aStyle.variantCaps == NS_FONT_VARIANT_CAPS_SMALL_CAPS) {
+  if (aStyle.variantCaps == StyleFontVariantCaps::SmallCaps) {
     aUsedFont.Append("small-caps ");
   }
 
@@ -4580,26 +4579,26 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   // the available values); see https://github.com/whatwg/html/issues/8103.
   switch (state.fontVariantCaps) {
     case CanvasFontVariantCaps::Normal:
-      fontStyle.variantCaps = smallCaps ? NS_FONT_VARIANT_CAPS_SMALL_CAPS
-                                        : NS_FONT_VARIANT_CAPS_NORMAL;
+      fontStyle.variantCaps = smallCaps ? StyleFontVariantCaps::SmallCaps
+                                        : StyleFontVariantCaps::Normal;
       break;
     case CanvasFontVariantCaps::Small_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_SMALL_CAPS;
+      fontStyle.variantCaps = StyleFontVariantCaps::SmallCaps;
       break;
     case CanvasFontVariantCaps::All_small_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_ALL_SMALL_CAPS;
+      fontStyle.variantCaps = StyleFontVariantCaps::AllSmallCaps;
       break;
     case CanvasFontVariantCaps::Petite_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_PETITE_CAPS;
+      fontStyle.variantCaps = StyleFontVariantCaps::PetiteCaps;
       break;
     case CanvasFontVariantCaps::All_petite_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_ALL_PETITE_CAPS;
+      fontStyle.variantCaps = StyleFontVariantCaps::AllPetiteCaps;
       break;
     case CanvasFontVariantCaps::Unicase:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_UNICASE;
+      fontStyle.variantCaps = StyleFontVariantCaps::Unicase;
       break;
     case CanvasFontVariantCaps::Titling_caps:
-      fontStyle.variantCaps = NS_FONT_VARIANT_CAPS_TITLING_CAPS;
+      fontStyle.variantCaps = StyleFontVariantCaps::TitlingCaps;
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("unknown caps value");
@@ -4607,17 +4606,17 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
   }
   // If variantCaps is set, we need to disable a gfxFont fast-path.
   fontStyle.noFallbackVariantFeatures =
-      (fontStyle.variantCaps == NS_FONT_VARIANT_CAPS_NORMAL);
+      (fontStyle.variantCaps == StyleFontVariantCaps::Normal);
 
   // Set the kerning feature, if required by the fontKerning attribute.
   gfxFontFeature setting{TRUETYPE_TAG('k', 'e', 'r', 'n'), 0};
   switch (state.fontKerning) {
     case CanvasFontKerning::None:
-      setting.mValue = 0;
+      setting.value = 0;
       fontStyle.featureSettings.AppendElement(setting);
       break;
     case CanvasFontKerning::Normal:
-      setting.mValue = 1;
+      setting.value = 1;
       fontStyle.featureSettings.AppendElement(setting);
       break;
     default:

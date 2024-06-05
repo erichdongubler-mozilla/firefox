@@ -9,10 +9,11 @@ RustLibrary("gkrust", gkrust_features, is_gkrust=True)
 for feature in gkrust_features:
     # We don't want to enable refcount logging during rusttests, since the
     # relevant FFI symbols wouldn't be found.
-    # Nor do we want Glean to assume there are Gecko symbols.
+    # Nor do we want Glean or Noise to assume there are Gecko symbols.
     if feature not in (
         "gkrust-shared/gecko_refcount_logging",
         "gkrust-shared/glean_with_gecko",
+        "gkrust-shared/noise_xpcom",
     ):
         RUST_TEST_FEATURES.append(feature)
 
@@ -23,6 +24,7 @@ RUST_TESTS = [
     "crash_helper_common",
     "firefox-on-glean",
     "l10nregistry",
+    "noise",
     "rsclientcerts-util",
     "selectors",
     "servo_arc",
@@ -34,8 +36,24 @@ RUST_TESTS = [
 
 if CONFIG["TARGET_OS"] in ("WINNT", "OSX"):
     RUST_TESTS += ["nmhproxy"]
+if CONFIG["TARGET_OS"] == "WINNT":
+    RUST_TESTS += ["win32_process_mitigations"]
+else:
+    # Windows linker pulls in FFI symbols despite them not being relevant for the tests.
+    RUST_TESTS += ["crash_helper_server"]
+
+if CONFIG["TARGET_OS"] == "WINNT":
+    RUST_TESTS += ["pushnotificationhelper"]
 
 RUST_TEST_FEATURES.append("crashreporter/mock")
+RUST_TEST_FEATURES.append("crashping/gecko_tests")
+RUST_TEST_FEATURES.append("firefox-on-glean/gecko_tests")
+
+# Glean requires SQLite, which is available either through nss or mozsqlite3
+if CONFIG["MOZ_FOLD_LIBS"]:
+    USE_LIBS += ["nss"]
+else:
+    USE_LIBS += ["sqlite"]
 
 # Code coverage builds link a bunch of Gecko bindings code from the style
 # crate, which is not used by our tests but would cause link errors.

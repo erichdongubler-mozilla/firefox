@@ -5917,13 +5917,15 @@ inline do_QueryFrameHelper<nsIFrame> do_QueryFrame(AutoWeakFrame& s) {
 /**
  * @see AutoWeakFrame
  */
-class MOZ_HEAP_CLASS WeakFrame {
+class MOZ_HEAP_CLASS MOZ_NON_MEMMOVABLE WeakFrame {
  public:
   WeakFrame() : mFrame(nullptr) {}
 
   WeakFrame(const WeakFrame& aOther) : mFrame(nullptr) {
     Init(aOther.GetFrame());
   }
+
+  WeakFrame(WeakFrame&& aOther) : mFrame(nullptr) { *this = std::move(aOther); }
 
   MOZ_IMPLICIT WeakFrame(const AutoWeakFrame& aOther) : mFrame(nullptr) {
     Init(aOther.GetFrame());
@@ -5936,6 +5938,13 @@ class MOZ_HEAP_CLASS WeakFrame {
   }
 
   WeakFrame& operator=(WeakFrame& aOther) {
+    Init(aOther.GetFrame());
+    return *this;
+  }
+
+  WeakFrame& operator=(WeakFrame&& aOther);
+
+  WeakFrame& operator=(const AutoWeakFrame& aOther) {
     Init(aOther.GetFrame());
     return *this;
   }
@@ -5960,6 +5969,9 @@ class MOZ_HEAP_CLASS WeakFrame {
 
   nsIFrame* mFrame;
 };
+
+// The PresShell tracks WeakFrames by address, so they can't be memmoved.
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(WeakFrame)
 
 // Use nsIFrame's fast-path to avoid QueryFrame:
 inline do_QueryFrameHelper<nsIFrame> do_QueryFrame(WeakFrame& s) {

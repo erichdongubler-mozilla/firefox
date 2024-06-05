@@ -4772,8 +4772,7 @@ MacroAssembler::AutoProfilerCallInstrumentation::
 
   Register reg = CallTempReg0;
   Register reg2 = CallTempReg1;
-  masm.push(reg);
-  masm.push(reg2);
+  masm.pushRegs(reg, reg2);
 
   CodeOffset label = masm.movWithPatch(ImmWord(uintptr_t(-1)), reg);
   masm.loadJSContext(reg2);
@@ -4783,8 +4782,7 @@ MacroAssembler::AutoProfilerCallInstrumentation::
 
   masm.appendProfilerCallSite(label);
 
-  masm.pop(reg2);
-  masm.pop(reg);
+  masm.popRegs(reg2, reg);
 }
 
 void MacroAssembler::linkProfilerCallSites(JitCode* code) {
@@ -7144,7 +7142,10 @@ void MacroAssembler::wasmReturnCallIndirect(
 void MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
                                  const wasm::CalleeDesc& callee,
                                  CodeOffset* fastCallOffset,
-                                 CodeOffset* slowCallOffset) {
+                                 CodeOffset* slowCallOffset,
+                                 wasm::StackMap* stackMapForTraps,
+                                 wasm::StackMapRegistry* stackMapRegistry) {
+  MOZ_ASSERT_IF(stackMapForTraps, stackMapRegistry);
   MOZ_ASSERT(callee.which() == wasm::CalleeDesc::FuncRef);
   const Register calleeScratch = WasmCallRefCallScratchReg0;
   const Register calleeFnObj = WasmCallRefReg;
@@ -7164,6 +7165,10 @@ void MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
   appendAndVerify(wasm::Trap::NullPointerDereference,
                   wasm::TrapMachineInsnForLoadWord(), fcr,
                   desc.toTrapSiteDesc());
+  if (stackMapForTraps) {
+    propagateOOM(stackMapRegistry->addMap(stackMapForTraps, fcr));
+  }
+
   branchPtr(Assembler::Equal, InstanceReg, newInstanceTemp, &fastCall);
 
   storePtr(InstanceReg,
@@ -7210,7 +7215,10 @@ void MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
 
 void MacroAssembler::wasmReturnCallRef(
     const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
-    const ReturnCallAdjustmentInfo& retCallInfo) {
+    const ReturnCallAdjustmentInfo& retCallInfo,
+    wasm::StackMap* stackMapForTraps,
+    wasm::StackMapRegistry* stackMapRegistry) {
+  MOZ_ASSERT_IF(stackMapForTraps, stackMapRegistry);
   MOZ_ASSERT(callee.which() == wasm::CalleeDesc::FuncRef);
   const Register calleeScratch = WasmCallRefCallScratchReg0;
   const Register calleeFnObj = WasmCallRefReg;
@@ -7230,6 +7238,10 @@ void MacroAssembler::wasmReturnCallRef(
   appendAndVerify(wasm::Trap::NullPointerDereference,
                   wasm::TrapMachineInsnForLoadWord(), fcr,
                   desc.toTrapSiteDesc());
+  if (stackMapForTraps) {
+    propagateOOM(stackMapRegistry->addMap(stackMapForTraps, fcr));
+  }
+
   branchPtr(Assembler::Equal, InstanceReg, newInstanceTemp, &fastCall);
 
   storePtr(InstanceReg,
@@ -7266,7 +7278,7 @@ void MacroAssembler::wasmReturnCallRef(
   append(wasm::CodeRangeUnwindInfo::Normal, currentOffset());
 }
 
-void MacroAssembler::wasmBoundsCheckRange32(
+FaultingCodeRange MacroAssembler::wasmBoundsCheckRange32(
     Register index, Register length, Register limit, Register tmp,
     const wasm::TrapSiteDesc& trapSiteDesc) {
   Label ok;
@@ -7278,9 +7290,10 @@ void MacroAssembler::wasmBoundsCheckRange32(
   jump(&ok);
 
   bind(&fail);
-  wasmTrap(wasm::Trap::OutOfBounds, trapSiteDesc);
+  FaultingCodeRange fcr = wasmTrap(wasm::Trap::OutOfBounds, trapSiteDesc);
 
   bind(&ok);
+  return fcr;
 }
 
 void MacroAssembler::wasmClampTable64Address(Register64 address, Register out) {

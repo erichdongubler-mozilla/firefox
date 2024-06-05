@@ -52,7 +52,7 @@ from manifestparser.filters import (
     subsuite,
     tags,
 )
-from manifestparser.util import normsep
+from manifestparser.util import normsep, split_manifest_list
 from mozgeckoprofiler import (
     symbolicate_profile_json,
     symbolicate_profiles,
@@ -3879,7 +3879,7 @@ toolbar#nav-bar {
             prefs = list(self.prefs_by_manifest[m])[0]
             self.extraPrefs = origPrefs.copy()
             if prefs:
-                prefs = [p.strip() for p in prefs.strip().split("\n")]
+                prefs = split_manifest_list(prefs)
                 self.log.info(
                     "The following extra prefs will be set:\n  {}".format(
                         "\n  ".join(prefs)
@@ -3890,7 +3890,7 @@ toolbar#nav-bar {
             envVars = list(self.env_vars_by_manifest[m])[0]
             self.extraEnv = {}
             if envVars:
-                self.extraEnv = envVars.strip().split()
+                self.extraEnv = split_manifest_list(envVars)
                 env_list = "\n  ".join(self.extraEnv)
                 self.log.info(
                     f"The following extra environment variables will be set:\n  {env_list}"

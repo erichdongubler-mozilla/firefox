@@ -28,33 +28,18 @@ prefs = [
 ["browser_dbg-reloading.js"]
 
 ["browser_dbg-remember-expanded-scopes.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-restart-frame.js"]
 
 ["browser_dbg-returnvalues.js"]
 
 ["browser_dbg-scopes-duplicated.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-scopes-mutations.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-scopes-xrays.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-scopes.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-scroll-run-to-completion.js"]
 skip-if = [
@@ -90,9 +75,6 @@ skip-if = [
 ["browser_dbg-stepping.js"]
 
 ["browser_dbg-stylesheets.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-tabs-keyboard.js"]
 
@@ -108,9 +90,6 @@ fail-if = [
 ["browser_dbg-tabs.js"]
 
 ["browser_dbg-telemetry-stylesheets.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-toggling-tools.js"]
 
@@ -119,9 +98,6 @@ fail-if = [
 ["browser_dbg-unselected-pause.js"]
 
 ["browser_dbg-watchpoints.js"]
-fail-if = [
-  "a11y_checks", # Bug 2070909 the tree does not name an active descendant
-]
 
 ["browser_dbg-windowless-service-workers-reload.js"]
 

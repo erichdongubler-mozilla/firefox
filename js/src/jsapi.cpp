@@ -28,6 +28,7 @@
 #include "builtin/Eval.h"
 #include "builtin/JSON.h"
 #include "builtin/Math.h"
+#include "builtin/ModuleObject.h"
 #include "builtin/Promise.h"
 #include "builtin/Symbol.h"
 #include "frontend/FrontendContext.h"  // AutoReportFrontendContext
@@ -2791,6 +2792,11 @@ JS_PUBLIC_API JSString* JS_DecompileFunction(JSContext* cx,
 
 JS_PUBLIC_API void JS::SetScriptPrivate(JSScript* script,
                                         const JS::Value& value) {
+  // The referrer passed to the HostLoadImportedModule hook is either a module
+  // record or a classic script's private value, so a module object must not be
+  // used as a script private. See JS::GetReferrerPrivate.
+  MOZ_ASSERT_IF(value.isObject(), !value.toObject().is<js::ModuleObject>());
+
   JSRuntime* rt = script->zone()->runtimeFromMainThread();
   script->sourceObject()->setPrivate(rt, value);
 }

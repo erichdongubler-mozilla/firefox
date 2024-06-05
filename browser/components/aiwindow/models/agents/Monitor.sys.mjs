@@ -35,7 +35,8 @@ ChromeUtils.defineLazyGetter(lazy, "log", () =>
 // TODO: Move these constants to RS: https://bugzilla.mozilla.org/show_bug.cgi?id=2054153
 export const MAX_HISTORY_ENTRIES = 30;
 const MONITOR_RUN_TIMEOUT_MS = 5 * 60 * 1000;
-export const TOTAL_NUM_MONITORS = 5;
+// Cap on enabled monitors; paused monitors are not counted.
+export const TOTAL_NUM_MONITORS = 15;
 export const TOTAL_NUM_URLS_IN_MONITOR = 5;
 export const MONITOR_PROMPT_VERSION = String(
   FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.AGENT_MONITOR]
@@ -46,7 +47,8 @@ export const MONITOR_AGENTS_CHANGED_TOPIC =
   "smartwindow-monitor-agents-changed";
 
 // Failure categories for monitor runs. Stored on error history entries as
-// errorCode for the UI and reused as the telemetry error_code.
+// errorCode for the UI and reused as the telemetry error_code. ACTIVE_LIMIT is
+// the one non-run code: creating or resuming a monitor past the active cap.
 export const MONITOR_ERROR_CODES = Object.freeze({
   NETWORK: "network_error",
   TIMEOUT: "timeout",
@@ -58,6 +60,7 @@ export const MONITOR_ERROR_CODES = Object.freeze({
   MODEL: "model_error",
   PROMPT_LOAD: "prompt_load_error",
   UNKNOWN: "unknown_error",
+  ACTIVE_LIMIT: "active_limit_reached",
 });
 
 /**
@@ -78,6 +81,24 @@ export class MonitorRunError extends Error {
     this.code = code;
   }
 }
+
+/**
+ * Error thrown when creating or resuming a monitor would exceed
+ * TOTAL_NUM_MONITORS active monitors. The UI keys off `code` rather than
+ * the message.
+ */
+export class MonitorLimitError extends Error {
+  /**
+   * @param {number} limit - The active monitor cap that was hit.
+   */
+  constructor(limit) {
+    super(`Cannot have more than ${limit} active monitors.`);
+    this.name = "MonitorLimitError";
+    this.code = MONITOR_ERROR_CODES.ACTIVE_LIMIT;
+    this.limit = limit;
+  }
+}
+
 // Fired once per monitor run that meets its condition, with the monitor id as
 // the data. Unlike the desktop notification this is not suppressed by muting,
 // it drives the passive dot on the monitor toolbar button.

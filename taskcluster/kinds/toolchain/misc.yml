@@ -78,6 +78,7 @@ linux64-hfsplus:
             - hfsplus-tools
         toolchain:
             - linux64-clang-toolchain
+            - linux64-toolchain-sysroot-gcc11
 
 linux64-libdmg:
     description: "libdmg-hfsplus toolchain build"
@@ -135,6 +136,7 @@ linux64-mar-tools:
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - sysroot-x86_64-linux-gnu
     run:
         script: build-mar-tools.sh
         sparse-profile: null
@@ -155,6 +157,7 @@ linux64-zucchini-bin:
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - sysroot-x86_64-linux-gnu
     run:
         script: build-zucchini.sh
         sparse-profile: null
@@ -449,6 +452,9 @@ linux64-wine:
     fetches:
         fetch:
             - wine
+        toolchain:
+            - linux64-gcc-11
+            - linux64-toolchain-sysroot-gcc11
 
 linux64-winchecksec:
     description: "winchecksec"

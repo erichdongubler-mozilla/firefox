@@ -216,6 +216,83 @@ describe("Smart Form Fill mutations", () => {
     );
   });
 
+  describe("when the form meets the minimum field requirement", () => {
+    beforeEach(async () => {
+      const actor = getSmartFormFillActor(browser);
+
+      // Raise the minimum past what the form has, so it starts out unoffered.
+      await SpecialPowers.pushPrefEnv({ set: [[MIN_FORM_FIELDS_PREF, 3]] });
+
+      Assert.equal(
+        await actor.sendQuery("SmartFormFill:GetFocusedForm"),
+        null,
+        "A form with fewer fields than the minimum should not be offered"
+      );
+
+      await SpecialPowers.spawn(browser, [], () => {
+        const input = content.document.createElement("input");
+        input.id = "company";
+        input.name = "company";
+
+        content.document.querySelector("#profile-form").append(input);
+      });
+    });
+
+    afterEach(async () => {
+      await SpecialPowers.popPrefEnv();
+    });
+
+    it("offers a form", async () => {
+      const formData = await waitForFocusedForm(
+        browser,
+        "#company",
+        data => getFieldsByName(data).has("company"),
+        "Smart Form Fill should offer the form once it has enough fields"
+      );
+
+      Assert.equal(
+        formData.id,
+        initialFormId,
+        "Reaching the minimum should not change the form ID"
+      );
+    });
+  });
+
+  describe("when too few of the form's fields are visible", () => {
+    let actor;
+
+    beforeEach(async () => {
+      actor = getSmartFormFillActor(browser);
+
+      // The form has exactly the minimum, so hiding one field takes it below.
+      await SpecialPowers.pushPrefEnv({ set: [[MIN_FORM_FIELDS_PREF, 2]] });
+
+      Assert.equal(
+        (await actor.sendQuery("SmartFormFill:GetFocusedForm"))?.id,
+        initialFormId,
+        "The form should be offered while both of its fields are visible"
+      );
+
+      await SpecialPowers.spawn(browser, [], () => {
+        content.document.querySelector("#email").style.display = "none";
+      });
+    });
+
+    afterEach(async () => {
+      await SpecialPowers.popPrefEnv();
+    });
+
+    it("stops offering the form", async () => {
+      // Hiding a field with CSS reports no mutation, so this answer cannot be
+      // one cached when the form was registered.
+      Assert.equal(
+        await actor.sendQuery("SmartFormFill:GetFocusedForm"),
+        null,
+        "Hiding a field should stop the form being offered"
+      );
+    });
+  });
+
   it("detects rapidly added fields", async () => {
     const addedFieldNames = ["rapidFirst", "rapidSecond", "rapidThird"];
 

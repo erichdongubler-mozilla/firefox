@@ -32,6 +32,8 @@ enum class IsKnownNewAttr : bool { No, Yes };
 }  // namespace dom
 }  // namespace mozilla
 
+class nsNodeInfoManager;
+
 class AttrArray {
   using BorrowedAttrInfo = mozilla::dom::BorrowedAttrInfo;
 
@@ -114,6 +116,10 @@ class AttrArray {
   int32_t IndexOfAttr(const nsAtom* aLocalName, int32_t aNamespaceID) const;
 
   void Compact();
+
+  // Re-creates the NodeInfo of each namespaced attribute name in aManager.
+  // Called when the owning element is adopted into another document.
+  void NodeInfoChanged(nsNodeInfoManager* aManager);
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 

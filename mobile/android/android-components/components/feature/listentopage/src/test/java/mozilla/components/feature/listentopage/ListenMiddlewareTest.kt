@@ -4,45 +4,78 @@
 
 package mozilla.components.feature.listentopage
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.File
+import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import mozilla.components.browser.state.action.ReaderAction
+import mozilla.components.browser.state.action.TabListAction
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.ReaderState
+import mozilla.components.browser.state.state.createTab
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.listentopage.content.Content
 import mozilla.components.feature.listentopage.content.ContentProvider
+import mozilla.components.feature.listentopage.content.TextChunker
 import mozilla.components.feature.listentopage.fakes.FakeAudioFileCache
 import mozilla.components.feature.listentopage.fakes.FakePlaybackController
 import mozilla.components.feature.listentopage.fakes.FakeSpeechSynthesizer
 import mozilla.components.feature.listentopage.playback.AudioFileCache
+import mozilla.components.feature.listentopage.playback.DirectoryAudioFileCache
 import mozilla.components.feature.listentopage.playback.PlaybackController
 import mozilla.components.feature.listentopage.settings.ListenSettings
 import mozilla.components.feature.listentopage.synthesis.NoOfflineVoiceAvailableException
 import mozilla.components.feature.listentopage.synthesis.SpeechSynthesisException
 import mozilla.components.feature.listentopage.synthesis.SpeechSynthesizer
+import mozilla.components.lib.state.Middleware
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
 
 private const val TAB_ID = "tab-1"
 private const val OTHER_TAB_ID = "tab-2"
 private const val URL = "https://example.org/article"
 private const val ENGINE = "com.example.tts"
 
+/** A chunker that finds nothing to read in anything, which the real one does only for text with no words in it. */
+private object NothingToChunk : TextChunker {
+    override fun chunk(text: String, maxInputLength: Int, languageTag: String): List<String> = emptyList()
+
+    override fun firstSentenceEnd(text: String, languageTag: String): Int = text.length
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(AndroidJUnit4::class)
 class ListenMiddlewareTest {
+
+    @get:Rule val temporaryFolder = TemporaryFolder()
 
     // The middleware watches the player for as long as a session lasts, so its scope cannot be the test's own: runTest
     // waits for that scope's children and the watch never finishes on its own. These share the test's scheduler, so
-    // advanceUntilIdle still drives them, but they are nobody's child and so nothing waits on them.
+    // advanceUntilIdle still drives them, but they are nobody's child and so nothing waits on them. Not
+    // backgroundScope, which would be detached too but which advanceUntilIdle does not run: it stops as soon as no
+    // foreground work is left.
     private val middlewareScopes = mutableListOf<CoroutineScope>()
 
     @After
@@ -101,7 +134,11 @@ class ListenMiddlewareTest {
 
     @Test
     fun `test that the voices of the article language are loaded once the article is ready`() = runTest {
-        val voices = listOf(Voice(id = "de-de-female"), Voice(id = "de-de-male"))
+        val voices =
+            listOf(
+                Voice(id = "de-de-female", locale = Locale.GERMANY),
+                Voice(id = "de-de-male", locale = Locale.GERMANY),
+            )
         val synthesizer = FakeSpeechSynthesizer(voices = voices)
         val store =
             storeWith(synthesizerProvider = { synthesizer }) {
@@ -112,8 +149,59 @@ class ListenMiddlewareTest {
 
         assertEquals(listOf("de-DE"), synthesizer.voiceRequests)
         assertEquals(voices, store.state.voiceState.availableVoices)
-        assertEquals(Voice(id = "de-de-female"), store.state.voiceState.selectedVoice)
+        assertEquals(Voice(id = "de-de-female", locale = Locale.GERMANY), store.state.voiceState.selectedVoice)
+        assertEquals(VoiceLoadState.Loaded, store.state.voiceState.loadState)
         assertNull(store.state.error)
+    }
+
+    // The engine reads with the voice it was last given, so an article synthesized before the voices are known is read
+    // out in whichever voice the engine happens to default to.
+    @Test
+    fun `test that the voices are loaded before the article is synthesized`() = runTest {
+        val calls = mutableListOf<String>()
+        val synthesizer =
+            object : SpeechSynthesizer {
+                override val maxInputLength = 4000
+
+                override val enginePackageName = ENGINE
+
+                override suspend fun synthesizeToFile(text: String): File {
+                    calls.add("synthesize")
+                    return File("/audio/1.wav")
+                }
+
+                override suspend fun setVoice(voice: Voice) = Unit
+
+                override fun close() = Unit
+
+                override suspend fun loadAvailableVoices(langTag: String): List<Voice> {
+                    calls.add("loadVoices")
+                    return listOf(Voice(id = "en-us-female", locale = Locale.US))
+                }
+            }
+        val store =
+            storeWith(synthesizerProvider = { synthesizer }) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        assertEquals(listOf("loadVoices", "synthesize"), calls)
+    }
+
+    @Test
+    fun `test that an article in a language with no offline voice is not read out`() = runTest {
+        val synthesizer = FakeSpeechSynthesizer(voices = emptyList())
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(synthesizerProvider = { synthesizer }, playbackController = playback) {
+                Result.success(Content(text = "Article text.", languageTag = "ja-JP"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        assertTrue(synthesizer.requests.isEmpty())
+        assertTrue(playback.played.isEmpty())
     }
 
     @Test
@@ -127,6 +215,7 @@ class ListenMiddlewareTest {
 
         assertEquals(ListenError.NoOfflineVoice, store.state.error)
         assertTrue(store.state.voiceState.availableVoices.isEmpty())
+        assertEquals(VoiceLoadState.Loaded, store.state.voiceState.loadState)
     }
 
     @Test
@@ -157,7 +246,7 @@ class ListenMiddlewareTest {
     }
 
     @Test
-    fun `test that an article longer than the engine limit is cut at the last sentence end that fits`() = runTest {
+    fun `test that the article is opened on its first sentence`() = runTest {
         val synthesizer = FakeSpeechSynthesizer(maxInputLength = 20)
         val playback = FakePlaybackController()
         val store =
@@ -167,7 +256,8 @@ class ListenMiddlewareTest {
         store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
         advanceUntilIdle()
 
-        assertEquals(listOf("One. Two."), synthesizer.requests)
+        // The requests after it are the queue working ahead of what is playing.
+        assertEquals("One.", synthesizer.requests.first())
         assertEquals(1, playback.played.size)
     }
 
@@ -182,12 +272,95 @@ class ListenMiddlewareTest {
         store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
         advanceUntilIdle()
 
-        assertEquals(listOf("abcde"), synthesizer.requests)
+        assertEquals("abcde", synthesizer.requests.first())
     }
 
     @Test
+    fun `test that the first request is one sentence, not everything the engine accepts`() = runTest {
+        val synthesizer = FakeSpeechSynthesizer()
+        val article = (1..100).joinToString(" ") { "Sentence $it is right here." }
+        val store =
+            storeWith(synthesizerProvider = { synthesizer }) {
+                Result.success(Content(text = article, languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        // The article is inside the engine's limit, so before this it went to the engine in one request and nothing
+        // played until the whole of it had been synthesized.
+        assertEquals("Sentence 1 is right here.", synthesizer.requests.first())
+        assertTrue(article.length > synthesizer.requests.first().length * 50)
+    }
+
+    @Test
+    fun `test that an article declaring no language is not read out`() = runTest {
+        val synthesizer = FakeSpeechSynthesizer()
+        val store =
+            storeWith(synthesizerProvider = { synthesizer }) {
+                Result.success(Content(text = "An article with no language. It does not read.", languageTag = ""))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        assertEquals(ListenError.ContentUnavailable, store.state.error)
+        assertEquals(emptyList<String>(), synthesizer.requests)
+        assertNull(store.state.languageTag)
+    }
+
+    @Test
+    fun `test that an article declaring a language with the wrong separator is repaired and read out`() = runTest {
+        val synthesizer = FakeSpeechSynthesizer()
+        val store =
+            storeWith(synthesizerProvider = { synthesizer }) {
+                Result.success(Content(text = "An article with a POSIX tag. It still reads.", languageTag = "en_US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        // The repaired tag, not the one the page gave, is what the article is read as and what its voices are looked
+        // up for. Repairing per consumer is how a session ends up reading an article aloud while also reporting that
+        // it has no voice for the language.
+        assertEquals("en-US", store.state.languageTag)
+        assertEquals(listOf("en-US"), synthesizer.voiceRequests)
+        assertEquals("An article with a POSIX tag.", synthesizer.requests.first())
+        assertNull(store.state.error)
+    }
+
+    @Test
+    fun `test that an article declaring a malformed language is not read out`() = runTest {
+        listOf("-en", "e", "  ").forEach { tag ->
+            val synthesizer = FakeSpeechSynthesizer()
+            val store =
+                storeWith(synthesizerProvider = { synthesizer }) {
+                    Result.success(Content(text = "An article with a bad tag. It does not read.", languageTag = tag))
+                }
+            store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+            advanceUntilIdle()
+
+            assertEquals("Read out <$tag>", emptyList<String>(), synthesizer.requests)
+            assertEquals("No error for <$tag>", ListenError.ContentUnavailable, store.state.error)
+        }
+    }
+
+    // The engine offers a voice here, so the synthesis is reached and it is the synthesis that fails.
+    @Test
     fun `test that a synthesis failure does not play anything`() = runTest {
         val playback = FakePlaybackController()
+        val store =
+            storeWith(
+                synthesizerProvider = { failingSynthesizer { throw SpeechSynthesisException(-1) } },
+                playbackController = playback,
+            ) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        assertTrue(playback.played.isEmpty())
+    }
+
+    @Test
+    fun `test that a synthesis failure is reported rather than only logged`() = runTest {
         val failing =
             object : SpeechSynthesizer {
                 override val maxInputLength = 4000
@@ -196,18 +369,21 @@ class ListenMiddlewareTest {
 
                 override suspend fun synthesizeToFile(text: String): File = throw SpeechSynthesisException(-1)
 
+                override suspend fun setVoice(voice: Voice) = Unit
+
                 override fun close() = Unit
 
-                override fun loadAvailableVoices(langTag: String): List<Voice> = emptyList()
+                override suspend fun loadAvailableVoices(langTag: String): List<Voice> =
+                    listOf(Voice(id = "en-us-female", locale = Locale.US))
             }
         val store =
-            storeWith(synthesizerProvider = { failing }, playbackController = playback) {
+            storeWith(synthesizerProvider = { failing }) {
                 Result.success(Content(text = "Article text.", languageTag = "en-US"))
             }
         store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
         advanceUntilIdle()
 
-        assertTrue(playback.played.isEmpty())
+        assertEquals(ListenError.SynthesisFailed, store.state.error)
     }
 
     // The voice list is not empty here, so the error can only have come from the synthesis path rather than from the
@@ -230,7 +406,7 @@ class ListenMiddlewareTest {
     }
 
     @Test
-    fun `test that a synthesis failing for exceptions other than offline voice log is swallowed`() = runTest {
+    fun `test that a synthesis failing for reasons other than an offline voice is reported`() = runTest {
         val playback = FakePlaybackController()
         val store =
             storeWith(
@@ -242,8 +418,417 @@ class ListenMiddlewareTest {
         store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
         advanceUntilIdle()
 
-        assertNull(store.state.error)
+        assertEquals(ListenError.SynthesisFailed, store.state.error)
         assertTrue(playback.played.isEmpty())
+    }
+
+    // The point of the playlist. A chunk handed over in place of what is playing cannot be joined onto it, and the
+    // silence while the player tears one file down and prepares the next is what a reader hears at every boundary.
+    @Test
+    fun `test that the chunks after the opening are queued behind it rather than played in its place`() = runTest {
+        val synthesizer = FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root)
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(synthesizerProvider = { synthesizer }, playbackController = playback) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        val opening = playback.played.single()
+        assertTrue("nothing was queued behind the opening", playback.queued.isNotEmpty())
+        assertFalse("the opening was queued as well as played", playback.queued.contains(opening))
+    }
+
+    // The chunks the lookahead has made are queued while the opening is still playing rather than when it ends,
+    // because a player can only read ahead across a join into an item it already holds.
+    @Test
+    fun `test that the chunk after the opening is queued before the opening has finished`() = runTest {
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(
+                synthesizerProvider = { FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root) },
+                playbackController = playback,
+            ) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        // No report of the opening ending, and no report of it playing either: the queueing cannot be waiting on the
+        // player to say anything.
+        assertEquals(PlaybackPhase.Buffering, store.state.playbackState.phase)
+        assertTrue(playback.queued.isNotEmpty())
+    }
+
+    @Test
+    fun `test that the article keeps going for as long as chunks are left`() = runTest {
+        val synthesizer = FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root)
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(synthesizerProvider = { synthesizer }, playbackController = playback) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        // The player walks its own playlist, so a report is it saying which chunk it has reached rather than asking
+        // for the next one.
+        repeat(4) { chunk ->
+            playback.status.value = PlaybackState(phase = PlaybackPhase.Playing, chunk = ChunkState(index = chunk))
+            advanceUntilIdle()
+        }
+
+        // The queue keeps running ahead of the reader, and no chunk is ever handed over twice.
+        val handedOver = playback.played + playback.queued
+        assertTrue("the article stopped at chunk ${handedOver.size}", handedOver.size > 4)
+        assertEquals(handedOver.distinct(), handedOver)
+        assertEquals(3, store.state.playbackState.chunk.index)
+        assertNull(store.state.error)
+    }
+
+    @Test
+    fun `test that the end of the last chunk ends the article rather than looping`() = runTest {
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(
+                synthesizerProvider = { FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root) },
+                playbackController = playback,
+            ) {
+                Result.success(Content(text = "The only sentence there is.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        playback.status.value = PlaybackState(phase = PlaybackPhase.Ended)
+        advanceUntilIdle()
+
+        assertEquals(1, playback.played.size)
+    }
+
+    @Test
+    fun `test that a report which is not the end of a chunk plays nothing new`() = runTest {
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(
+                synthesizerProvider = { FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root) },
+                playbackController = playback,
+            ) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        listOf(PlaybackPhase.Playing, PlaybackPhase.Paused, PlaybackPhase.Buffering).forEach {
+            playback.status.value = PlaybackState(phase = it, positionMs = 1_000)
+            advanceUntilIdle()
+        }
+
+        assertEquals(1, playback.played.size)
+    }
+
+    // Handling an end report is asynchronous: refillOrEnd reads appendedThrough, then queues the work behind
+    // requestTurn, so a second report can compute the same missing chunk before the first has queued it. Enqueuing
+    // republishes the player's state, so the refill can provoke the very report it then has to ignore.
+    @Test
+    fun `test that a double report of playback ending enqueues the next chunk only once`() = runTest {
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(
+                synthesizerProvider = {
+                    FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root, timePerRequest = 1.seconds)
+                },
+                playbackController = playback,
+            ) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+
+        // Far enough for the opening to be playing, not far enough for the lookahead behind it to have finished, so
+        // that the refill is still waiting its turn when the second report arrives.
+        advanceTimeBy(1500.milliseconds)
+        val queuedBefore = playback.queued.size
+
+        // The positions differ only so that the two reports are different values. A StateFlow drops a value equal to
+        // the one before it, so repeating the same position would leave the second report undelivered and the test
+        // passing without ever exercising the guard. Neither number stands for anything the player measured.
+        playback.status.value = PlaybackState(phase = PlaybackPhase.Ended, positionMs = 30_000)
+        advanceTimeBy(10.milliseconds)
+        playback.status.value = PlaybackState(phase = PlaybackPhase.Ended, positionMs = 30_004)
+        advanceUntilIdle()
+
+        // Without the guard the second report queues the same chunk the first one did, and the reader hears it twice.
+        assertTrue(playback.queued.size > queuedBefore)
+        assertEquals(playback.queued.distinct(), playback.queued)
+    }
+
+    // The playlist holds as much of the article as the engine has managed, so the player running out of it is the
+    // reader waiting on the engine rather than the article being over.
+    @Test
+    fun `test that a player running dry mid-article is a wait rather than the end of the article`() = runTest {
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(
+                synthesizerProvider = { FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root) },
+                playbackController = playback,
+            ) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+        val queuedBefore = playback.queued.size
+
+        playback.status.value = PlaybackState(phase = PlaybackPhase.Ended)
+        advanceUntilIdle()
+
+        assertEquals(PlaybackPhase.Buffering, store.state.playbackState.phase)
+        assertTrue("nothing was queued for the reader to carry on with", playback.queued.size > queuedBefore)
+        assertEquals(playback.queued.distinct(), playback.queued)
+        assertNull(store.state.error)
+    }
+
+    @Test
+    fun `test that running out with no chunks left is the end of the article`() = runTest {
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(
+                synthesizerProvider = { FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root) },
+                playbackController = playback,
+            ) {
+                Result.success(Content(text = "The only sentence there is.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        playback.status.value = PlaybackState(phase = PlaybackPhase.Ended)
+        advanceUntilIdle()
+
+        assertEquals(PlaybackPhase.Ended, store.state.playbackState.phase)
+        assertEquals(1, playback.played.size)
+        assertTrue(playback.queued.isEmpty())
+        assertEquals(0, playback.resumed)
+        assertNull(store.state.error)
+    }
+
+    @Test
+    fun `test that a player running dry is started again on the chunk queued behind it`() = runTest {
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(
+                synthesizerProvider = { FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root) },
+                playbackController = playback,
+            ) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+        assertEquals(0, playback.resumed)
+
+        playback.status.value = PlaybackState(phase = PlaybackPhase.Ended)
+        advanceUntilIdle()
+
+        assertEquals(1, playback.resumed)
+    }
+
+    @Test
+    fun `test that failing to work ahead does not put an error over a player still reading`() = runTest {
+        // The opening and the chunk after it are made; the one after that is not. Nobody is waiting on it, so the
+        // article carries on and the reader is told nothing.
+        val synthesizer = FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root, failAtRequest = 3)
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(synthesizerProvider = { synthesizer }, playbackController = playback) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        // The opening plays and the one chunk that was made is queued behind it, with nothing said about the third.
+        assertEquals(1, playback.played.size)
+        assertEquals(1, playback.queued.size)
+        assertNull(store.state.error)
+
+        // And the article still moves on, onto the chunk that was made before the failure.
+        playback.status.value = PlaybackState(phase = PlaybackPhase.Playing, chunk = ChunkState(index = 1))
+        advanceUntilIdle()
+
+        assertNull(store.state.error)
+    }
+
+    @Test
+    fun `test that a chunk the lookahead never made is made on its own when the player runs dry`() = runTest {
+        // The lookahead fails on the chunk after the opening, so the player runs dry on the opening. This will cause
+        // the next chunk to be manually created
+        val synthesizer =
+            FakeSpeechSynthesizer(
+                audioDirectory = temporaryFolder.root,
+                timePerRequest = 1.seconds,
+                failAtRequest = 2,
+            )
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(synthesizerProvider = { synthesizer }, playbackController = playback) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        assertEquals(1, playback.played.size)
+        assertTrue("the lookahead queued a chunk it never made", playback.queued.isEmpty())
+
+        playback.status.value = PlaybackState(phase = PlaybackPhase.Ended)
+        advanceTimeBy(1100.milliseconds)
+
+        assertEquals(1, playback.queued.size)
+    }
+
+    @Test
+    fun `test that the lookahead is not thrown away by the move to the next chunk`() = runTest {
+        // Every chunk of the window is asked for once. Cancelling the request in flight to move the article on made
+        // the engine do the same chunk again, and left the half-written file behind with nothing tracking it.
+        val synthesizer =
+            FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root, timePerRequest = 500.milliseconds)
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(synthesizerProvider = { synthesizer }, playbackController = playback) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        repeat(3) {
+            playback.status.value = PlaybackState(phase = PlaybackPhase.Playing)
+            advanceUntilIdle()
+            playback.status.value = PlaybackState(phase = PlaybackPhase.Ended)
+            advanceUntilIdle()
+        }
+
+        assertEquals(synthesizer.requests.distinct(), synthesizer.requests)
+    }
+
+    @Test
+    fun `test that a request in place of a live session stops the one before it moving on`() = runTest {
+        val playback = FakePlaybackController()
+        val extraction = CompletableDeferred<Result<Content>>()
+        val store =
+            storeWith(
+                synthesizerProvider = { FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root) },
+                playbackController = playback,
+            ) { tabId ->
+                if (tabId == TAB_ID) {
+                    Result.success(Content(text = longArticle(), languageTag = "en-US"))
+                } else {
+                    extraction.await()
+                }
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+        val readSoFar = playback.played.size
+
+        // The second session is still being extracted, and the player still holds the first article's opening. The end
+        // of that opening belongs to a session the reader has left, so it must not read out another of its chunks.
+        store.dispatch(ListenAction.Session.ListenRequested(OTHER_TAB_ID, URL))
+        advanceUntilIdle()
+        playback.status.value = PlaybackState(phase = PlaybackPhase.Ended)
+        advanceUntilIdle()
+
+        assertEquals(readSoFar, playback.played.size)
+
+        // Let the second extraction finish, so the middleware has nothing left running when the body returns.
+        extraction.complete(Result.failure(RuntimeException("Extraction abandoned")))
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun `test that a request in place of a live session throws away only that session's audio`() = runTest {
+        val cache = FakeAudioFileCache()
+        val synthesizer = FakeSpeechSynthesizer()
+        val store =
+            storeWith(synthesizerProvider = { synthesizer }, audioCache = cache) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        // A session replacing another keeps the engine, so this one fake writes for both and its files stay uniquely
+        // named across them. Everything it wrote up to here belongs to the article the reader is leaving.
+        val leftBehind = synthesizer.files.toList()
+
+        store.dispatch(ListenAction.Session.ListenRequested(OTHER_TAB_ID, URL))
+        advanceUntilIdle()
+
+        assertTrue("Nothing was made to delete", leftBehind.isNotEmpty())
+        assertEquals(leftBehind.toSet(), cache.deleted.toSet())
+        assertFalse(cache.cleared)
+    }
+
+    @Test
+    fun `test that a session starting while the last one is still ending keeps its own audio`() = runTest {
+        val directory = temporaryFolder.newFolder("audio")
+        val cache = slowToEmpty(DirectoryAudioFileCache({ directory }, ioDispatcher = Dispatchers.Unconfined))
+        val store =
+            storeWith(
+                synthesizerProvider = { FakeSpeechSynthesizer(audioDirectory = directory) },
+                audioCache = cache,
+            ) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        // Nothing advanced between them, so the stop is still emptying the cache directory when the session after it
+        // starts writing into it. Emptying is a recursive delete of the directory both of them share.
+        store.dispatch(ListenAction.Session.StopRequested)
+        store.dispatch(ListenAction.Session.ListenRequested(OTHER_TAB_ID, URL))
+        advanceUntilIdle()
+
+        assertTrue("The new session's audio was deleted under it", directory.list().orEmpty().isNotEmpty())
+    }
+
+    @Test
+    fun `test that an article the chunker finds nothing to read in is reported as unavailable content`() = runTest {
+        val synthesizer = FakeSpeechSynthesizer()
+        val store =
+            storeWith(
+                synthesizerProvider = { synthesizer },
+                chunker = NothingToChunk,
+            ) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        // The page is what had nothing in it, so the reader gets the snackbar for an article that cannot be read and
+        // not the dialog that an engine failing part way through an article puts over the player.
+        assertEquals(ListenError.ContentUnavailable, store.state.error)
+        assertEquals(emptyList<String>(), synthesizer.requests)
+    }
+
+    @Test
+    fun `test that a new session starts from its own opening rather than where the last one had got to`() = runTest {
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(
+                synthesizerProvider = { FakeSpeechSynthesizer(audioDirectory = temporaryFolder.root) },
+                playbackController = playback,
+            ) {
+                Result.success(Content(text = longArticle(), languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+        playback.status.value = PlaybackState(phase = PlaybackPhase.Playing, chunk = ChunkState(index = 1))
+        advanceUntilIdle()
+        val readTo = playback.queued.last()
+
+        store.dispatch(ListenAction.Session.StopRequested)
+        advanceUntilIdle()
+        store.dispatch(ListenAction.Session.ListenRequested(OTHER_TAB_ID, URL))
+        advanceUntilIdle()
+
+        // The new session starts its own playlist rather than queueing behind where the last one had got to.
+        assertNotEquals(readTo, playback.played.last())
+        assertEquals(2, playback.played.size)
     }
 
     @Test
@@ -260,6 +845,48 @@ class ListenMiddlewareTest {
 
         assertTrue(playback.released)
     }
+
+    @Test
+    fun `test that stopping waits for a request the engine has already taken before emptying the cache`() = runTest {
+        val directory = File(temporaryFolder.root, "audio")
+        val cache = DirectoryAudioFileCache({ directory }, ioDispatcher = Dispatchers.Unconfined)
+        val store =
+            storeWith(synthesizerProvider = { lateWritingSynthesizer(cache) }, audioCache = cache) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+
+        // Stop while the engine still has the request, so its write lands after the session has been told to stop.
+        advanceTimeBy(500.milliseconds)
+        store.dispatch(ListenAction.Session.StopRequested)
+        advanceUntilIdle()
+
+        assertEquals(emptyList<String>(), directory.list()?.toList().orEmpty())
+    }
+
+    /**
+     * An engine whose write cannot be cancelled, which is what the platform one is: the work is in another app's
+     * process, so our cancellation asks it to stop but cannot un-write a file it has already produced.
+     */
+    private fun lateWritingSynthesizer(cache: AudioFileCache) =
+        object : SpeechSynthesizer {
+            override val maxInputLength = 4000
+
+            override val enginePackageName = "com.example.tts"
+
+            override suspend fun synthesizeToFile(text: String): File =
+                withContext(NonCancellable) {
+                    delay(1.seconds)
+                    cache.create("late").apply { writeBytes(ByteArray(64)) }
+                }
+
+            override suspend fun setVoice(voice: Voice) = Unit
+
+            override fun close() = Unit
+
+            override suspend fun loadAvailableVoices(langTag: String): List<Voice> =
+                listOf(Voice(id = "voice-1", locale = Locale.US))
+        }
 
     // The engine is an IPC binding that lives until it is shut down, and close() is terminal, so the next session has
     // to get an engine of its own.
@@ -374,9 +1001,10 @@ class ListenMiddlewareTest {
 
     @Test
     fun `test that the voice saved for the article language is the one selected`() = runTest {
-        val voices = listOf(Voice(id = "en-us-female"), Voice(id = "en-us-male"))
-        val settings = ListenSettings.inMemory(ENGINE, voiceIds = mapOf("en-US" to "en-us-male"))
-        settings.setSelectedVoiceId("en-US", "en-us-male")
+        val voices =
+            listOf(Voice(id = "en-us-female", locale = Locale.US), Voice(id = "en-us-male", locale = Locale.US))
+        val settings = ListenSettings.inMemory(ENGINE, voiceIds = mapOf("en" to "en-us-male"))
+        settings.setSelectedVoiceId("en", "en-us-male")
         val store =
             storeWith(
                 synthesizerProvider = { FakeSpeechSynthesizer(voices = voices, enginePackageName = ENGINE) },
@@ -387,14 +1015,15 @@ class ListenMiddlewareTest {
         store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
         advanceUntilIdle()
 
-        assertEquals(Voice(id = "en-us-male"), store.state.voiceState.selectedVoice) // here
+        assertEquals(Voice(id = "en-us-male", locale = Locale.US), store.state.voiceState.selectedVoice)
     }
 
     @Test
     fun `test that a saved voice the engine no longer has falls back to the best one it does`() = runTest {
-        val voices = listOf(Voice(id = "en-us-female"), Voice(id = "en-us-male"))
-        val settings = ListenSettings.inMemory(ENGINE, voiceIds = mapOf("en-US" to "en-us-uninstalled"))
-        settings.setSelectedVoiceId("en-US", "en-us-uninstalled")
+        val voices =
+            listOf(Voice(id = "en-us-female", locale = Locale.US), Voice(id = "en-us-male", locale = Locale.US))
+        val settings = ListenSettings.inMemory(ENGINE, voiceIds = mapOf("en" to "en-us-uninstalled"))
+        settings.setSelectedVoiceId("en", "en-us-uninstalled")
         val store =
             storeWith(
                 synthesizerProvider = { FakeSpeechSynthesizer(voices = voices, enginePackageName = ENGINE) },
@@ -405,7 +1034,7 @@ class ListenMiddlewareTest {
         store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
         advanceUntilIdle()
 
-        assertEquals(Voice(id = "en-us-female"), store.state.voiceState.selectedVoice)
+        assertEquals(Voice(id = "en-us-female", locale = Locale.US), store.state.voiceState.selectedVoice)
         assertNull(store.state.error)
     }
 
@@ -418,18 +1047,183 @@ class ListenMiddlewareTest {
             }
         store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
         advanceUntilIdle()
-        store.dispatch(ListenAction.Voices.VoiceSelected(Voice(id = "fr-fr-male")))
+        store.dispatch(ListenAction.Voices.VoiceSelected(Voice(id = "fr-fr-male", locale = Locale.FRANCE)))
         advanceUntilIdle()
 
-        assertEquals("fr-fr-male", settings.getSelectedVoiceId("fr-FR"))
+        assertEquals("fr-fr-male", settings.getSelectedVoiceId("fr"))
+    }
+
+    // The same regions are offered whatever region the article is written in, so the choice made among them has to
+    // carry across articles too: saving it per region would forget it between one English page and the next.
+    @Test
+    fun `test that a voice picked on an article of one region is selected on an article of another`() = runTest {
+        val voices = listOf(Voice("en-us-female", Locale.US), Voice("en-gb-male", Locale.UK))
+        val store =
+            storeWith(synthesizerProvider = { FakeSpeechSynthesizer(voices = voices) }) { tabId ->
+                if (tabId == TAB_ID) {
+                    Result.success(Content(text = "Article text.", languageTag = "en-US"))
+                } else {
+                    Result.success(Content(text = "Article text.", languageTag = "en-GB"))
+                }
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+        store.dispatch(ListenAction.Voices.VoiceSelected(Voice("en-gb-male", Locale.UK)))
+        advanceUntilIdle()
+
+        store.dispatch(ListenAction.Session.ListenRequested(OTHER_TAB_ID, URL))
+        advanceUntilIdle()
+
+        assertEquals(Voice("en-gb-male", Locale.UK), store.state.voiceState.selectedVoice)
+    }
+
+    @Test
+    fun `test that the selected voice is given to the engine before the article is synthesized`() = runTest {
+        val voices =
+            listOf(Voice(id = "en-us-female", locale = Locale.US), Voice(id = "en-us-male", locale = Locale.US))
+        val synthesizer = FakeSpeechSynthesizer(voices = voices)
+        val store =
+            storeWith(synthesizerProvider = { synthesizer }) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        assertEquals(listOf(Voice(id = "en-us-female", locale = Locale.US)), synthesizer.voicesSet)
+
+        store.dispatch(ListenAction.Voices.VoiceSelected(Voice(id = "en-us-male", locale = Locale.US)))
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(Voice(id = "en-us-female", locale = Locale.US), Voice(id = "en-us-male", locale = Locale.US)),
+            synthesizer.voicesSet,
+        )
+    }
+
+    // The audio already made is in the voice before this one, so playing it to its end would keep reading the article
+    // in the voice the user has just turned down.
+    @Test
+    fun `test that picking a voice throws the audio of the previous one away and makes it again`() = runTest {
+        val audioCache = FakeAudioFileCache()
+        val synthesizer =
+            FakeSpeechSynthesizer(voices = listOf(Voice("en-us-female", Locale.US), Voice("en-us-male", Locale.US)))
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(
+                synthesizerProvider = { synthesizer },
+                playbackController = playback,
+                audioCache = audioCache,
+            ) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        assertEquals(emptyList<File>(), audioCache.deleted)
+
+        store.dispatch(ListenAction.Voices.VoiceSelected(Voice(id = "en-us-male", locale = Locale.US)))
+        advanceUntilIdle()
+
+        // Deleted chunk by chunk rather than by emptying the cache, because the playback carries on into the new voice
+        // and still holds the file it is reading.
+        assertEquals(listOf(File("/audio/1.wav")), audioCache.deleted)
+        assertEquals(listOf("Article text.", "Article text."), synthesizer.requests)
+        assertEquals(listOf(File("/audio/1.wav"), File("/audio/2.wav")), playback.played)
+    }
+
+    // Re-tapping the voice the article is already being read in is reachable from the popup, which checks the selected
+    // voice rather than disabling it.
+    @Test
+    fun `test that picking the voice already reading leaves the audio alone`() = runTest {
+        val audioCache = FakeAudioFileCache()
+        val voices = listOf(Voice("en-us-female", Locale.US), Voice("en-gb-male", Locale.UK))
+        val synthesizer = FakeSpeechSynthesizer(voices = voices)
+        val playback = FakePlaybackController()
+        val store =
+            storeWith(
+                synthesizerProvider = { synthesizer },
+                playbackController = playback,
+                audioCache = audioCache,
+            ) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        store.dispatch(ListenAction.Voices.VoiceSelected(Voice("en-us-female", Locale.US)))
+        advanceUntilIdle()
+
+        assertEquals(emptyList<File>(), audioCache.deleted)
+        assertEquals(listOf("Article text."), synthesizer.requests)
+        assertEquals(listOf(File("/audio/1.wav")), playback.played)
+    }
+
+    // The tap is still what turns the voice a load picked for itself into a choice the user has made, so it is saved
+    // even though nothing is synthesized again.
+    @Test
+    fun `test that picking the voice already reading still saves it`() = runTest {
+        val settings = ListenSettings.inMemory()
+        val voices = listOf(Voice("en-us-female", Locale.US), Voice("en-gb-male", Locale.UK))
+        val store =
+            storeWith(synthesizerProvider = { FakeSpeechSynthesizer(voices = voices) }, settings = settings) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        assertNull(settings.getSelectedVoiceId("en"))
+
+        store.dispatch(ListenAction.Voices.VoiceSelected(Voice("en-us-female", Locale.US)))
+        advanceUntilIdle()
+
+        assertEquals("en-us-female", settings.getSelectedVoiceId("en"))
+    }
+
+    @Test
+    fun `test that picking a voice resumes from where the article had got to`() = runTest {
+        val playback = FakePlaybackController(positionMs = 12_000L)
+        val store =
+            storeWith(
+                synthesizerProvider = {
+                    FakeSpeechSynthesizer(voices = listOf(Voice("a", Locale.US), Voice("b", Locale.UK)))
+                },
+                playbackController = playback,
+            ) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        assertEquals(emptyList<Long>(), playback.seekedTo)
+
+        store.dispatch(ListenAction.Voices.VoiceSelected(Voice(id = "b", locale = Locale.UK)))
+        advanceUntilIdle()
+
+        assertEquals(listOf(12_000L), playback.seekedTo)
+    }
+
+    // Reachable from the debug drawer, where the voice list is not tied to a running session. Binding an engine there
+    // would leave it bound for the life of the process, because only a session closes one.
+    @Test
+    fun `test that picking a voice with no session running builds no engine`() = runTest {
+        var built = 0
+        val store =
+            storeWith(synthesizerProvider = { FakeSpeechSynthesizer().also { built++ } }) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Voices.VoiceSelected(Voice(id = "en-us-male", locale = Locale.US)))
+        advanceUntilIdle()
+
+        assertEquals(0, built)
     }
 
     @Test
     fun `test that switching the speech engine drops the voice saved for the article language`() = runTest {
-        val voices = listOf(Voice(id = "en-us-female"), Voice(id = "en-us-male"))
+        val voices =
+            listOf(Voice(id = "en-us-female", locale = Locale.US), Voice(id = "en-us-male", locale = Locale.US))
         val settings = ListenSettings.inMemory()
         settings.clearSavedVoicesOnEngineChange("com.example.tts")
-        settings.setSelectedVoiceId("en-US", "en-us-male")
+        settings.setSelectedVoiceId("en", "en-us-male")
         val store =
             storeWith(
                 synthesizerProvider = {
@@ -441,8 +1235,8 @@ class ListenMiddlewareTest {
             }
         store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
         advanceUntilIdle()
-        assertEquals(Voice(id = "en-us-female"), store.state.voiceState.selectedVoice)
-        assertNull(settings.getSelectedVoiceId("en-US"))
+        assertEquals(Voice(id = "en-us-female", locale = Locale.US), store.state.voiceState.selectedVoice)
+        assertNull(settings.getSelectedVoiceId("en"))
     }
 
     @Test
@@ -457,7 +1251,7 @@ class ListenMiddlewareTest {
         store.dispatch(ListenAction.Session.ListenRequested(OTHER_TAB_ID, URL))
         advanceUntilIdle()
 
-        assertEquals(listOf("en-US"), synthesizer.voiceRequests) // here
+        assertEquals(listOf("en-US"), synthesizer.voiceRequests)
     }
 
     @Test
@@ -578,6 +1372,92 @@ class ListenMiddlewareTest {
         assertEquals(PlaybackPhase.Playing, store.state.playbackState.phase)
     }
 
+    @Test
+    fun `test that closing the tab being listened to stops the session`() = runTest {
+        val browserStore = browserStoreWithOpenTabs()
+        val actions = mutableListOf<ListenAction>()
+        val store =
+            storeWith(browserStore = browserStore, recordInto = actions) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        browserStore.dispatch(TabListAction.RemoveTabAction(TAB_ID))
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(ListenAction.Session.ListenRequested(TAB_ID, URL), ListenAction.Session.StopRequested),
+            actions.filterIsInstance<ListenAction.Session>(),
+        )
+    }
+
+    @Test
+    fun `test that closing another tab does not stop the session`() = runTest {
+        val browserStore = browserStoreWithOpenTabs()
+        val actions = mutableListOf<ListenAction>()
+        val store =
+            storeWith(browserStore = browserStore, recordInto = actions) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        browserStore.dispatch(TabListAction.RemoveTabAction(OTHER_TAB_ID))
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(ListenAction.Session.ListenRequested(TAB_ID, URL)),
+            actions.filterIsInstance<ListenAction.Session>(),
+        )
+    }
+
+    // Listening outlives the reader view it was started from: only closing the tab ends the session.
+    @Test
+    fun `test that leaving reader mode does not stop the session`() = runTest {
+        val browserStore = browserStoreWithOpenTabs()
+        val actions = mutableListOf<ListenAction>()
+        val store =
+            storeWith(browserStore = browserStore, recordInto = actions) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+
+        browserStore.dispatch(ReaderAction.UpdateReaderActiveAction(TAB_ID, false))
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(ListenAction.Session.ListenRequested(TAB_ID, URL)),
+            actions.filterIsInstance<ListenAction.Session>(),
+        )
+    }
+
+    @Test
+    fun `test that closing the tab an earlier session listened to does not stop the current session`() = runTest {
+        val browserStore = browserStoreWithOpenTabs()
+        val actions = mutableListOf<ListenAction>()
+        val store =
+            storeWith(browserStore = browserStore, recordInto = actions) {
+                Result.success(Content(text = "Article text.", languageTag = "en-US"))
+            }
+        store.dispatch(ListenAction.Session.ListenRequested(TAB_ID, URL))
+        advanceUntilIdle()
+        store.dispatch(ListenAction.Session.ListenRequested(OTHER_TAB_ID, URL))
+        advanceUntilIdle()
+
+        browserStore.dispatch(TabListAction.RemoveTabAction(TAB_ID))
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(
+                ListenAction.Session.ListenRequested(TAB_ID, URL),
+                ListenAction.Session.ListenRequested(OTHER_TAB_ID, URL),
+            ),
+            actions.filterIsInstance<ListenAction.Session>(),
+        )
+    }
+
     /** An engine that offers a voice, so that only [synthesizeToFile] can fail a test that uses it. */
     private fun failingSynthesizer(failure: () -> Nothing) =
         object : SpeechSynthesizer {
@@ -587,9 +1467,49 @@ class ListenMiddlewareTest {
 
             override suspend fun synthesizeToFile(text: String): File = failure()
 
+            override suspend fun setVoice(voice: Voice) = Unit
+
             override fun close() = Unit
 
-            override fun loadAvailableVoices(langTag: String): List<Voice> = listOf(Voice(id = "voice-1"))
+            override suspend fun loadAvailableVoices(langTag: String): List<Voice> =
+                listOf(Voice(id = "voice-1", locale = Locale.US))
+        }
+
+    private fun longArticle() = (1..400).joinToString(" ") { "Sentence $it is right here." }
+
+    /**
+     * [cache], with the emptying slowed down enough for a session starting in the middle of it to be seen writing into
+     * the directory it is deleting.
+     */
+    private fun slowToEmpty(cache: AudioFileCache) =
+        object : AudioFileCache by cache {
+            override suspend fun clear() {
+                delay(1.seconds)
+                cache.clear()
+            }
+        }
+
+    /**
+     * A browser with both tabs open and in reader mode, and [TAB_ID] selected, which is what the middleware sees when a
+     * session starts: listening is only offered from the reader view of the selected tab.
+     */
+    private fun browserStoreWithOpenTabs() =
+        BrowserStore(
+            BrowserState(
+                tabs =
+                    listOf(
+                        createTab(url = URL, id = TAB_ID, readerState = ReaderState(active = true)),
+                        createTab(url = URL, id = OTHER_TAB_ID, readerState = ReaderState(active = true)),
+                    ),
+                selectedTabId = TAB_ID,
+            )
+        )
+
+    /** Records every action that reaches the store into [into], and lets it through. */
+    private fun recordingMiddleware(into: MutableList<ListenAction>): Middleware<ListenState, ListenAction> =
+        { _, next, action ->
+            into.add(action)
+            next(action)
         }
 
     private fun TestScope.storeWith(
@@ -597,6 +1517,9 @@ class ListenMiddlewareTest {
         playbackController: PlaybackController = FakePlaybackController(),
         audioCache: AudioFileCache = FakeAudioFileCache(),
         settings: ListenSettings = ListenSettings.inMemory(),
+        chunker: TextChunker = TextChunker.android(),
+        browserStore: BrowserStore = browserStoreWithOpenTabs(),
+        recordInto: MutableList<ListenAction>? = null,
         contentProvider: ContentProvider,
     ): ListenStore {
         val middlewareScope = CoroutineScope(StandardTestDispatcher(testScheduler))
@@ -606,8 +1529,10 @@ class ListenMiddlewareTest {
             initialState = ListenState(),
             reducer = ::listenReducer,
             middleware =
-                listOf(
+                listOfNotNull(
+                    recordInto?.let(::recordingMiddleware),
                     ListenMiddleware(
+                        browserStore = browserStore,
                         contentProvider = contentProvider,
                         synthesizerProvider = synthesizerProvider,
                         audioCache = audioCache,
@@ -615,7 +1540,8 @@ class ListenMiddlewareTest {
                         settings = settings,
                         scope = middlewareScope,
                         ioDispatcher = Dispatchers.Unconfined,
-                    )
+                        chunker = chunker,
+                    ),
                 ),
         )
     }

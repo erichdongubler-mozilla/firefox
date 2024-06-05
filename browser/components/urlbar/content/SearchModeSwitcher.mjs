@@ -38,6 +38,20 @@ const DEFAULT_ENGINE_ICON =
 
 const SKIP_TAB_STOP_PREF = "searchModeSwitcher.skipTabStop";
 
+// The config engines whose wordmark variant A of the New Tab search bar shows in
+// place of their icon and name. Keyed by the first segment of the engine's
+// identifier, so that a regional or per-language engine shares its family's
+// wordmark, as ebay-uk and wikipedia-fr do. The images live in
+// browser/themes/shared/urlbar/engine-wordmarks/ and are picked in urlbar.css.
+const WORDMARK_ENGINE_FAMILIES = new Set([
+  "bing",
+  "ddg",
+  "ebay",
+  "google",
+  "perplexity",
+  "wikipedia",
+]);
+
 /**
  * Implements the SearchModeSwitcher in the urlbar.
  */
@@ -58,6 +72,13 @@ export class SearchModeSwitcher {
   #button;
   /** @type {HTMLButtonElement} */
   #closebutton;
+  /**
+   * Matches when the wordmark images, which are fixed-color and drawn for a
+   * light background, must give way to the engine's icon and name.
+   *
+   * @type {MediaQueryList}
+   */
+  #noWordmarkQuery;
 
   // The value of the urlbar the last time a search mode was changed.
   #lastInputValue;
@@ -78,6 +99,11 @@ export class SearchModeSwitcher {
     this.#panelList = input.querySelector(".searchmode-switcher-panel-list");
     this.#button = input.querySelector(".searchmode-switcher");
     this.#closebutton = input.querySelector(".searchmode-switcher-close");
+    // documentGlobal is chrome-only, and this also runs in about:newtab.
+    // eslint-disable-next-line mozilla/use-documentGlobal
+    this.#noWordmarkQuery = input.ownerDocument.defaultView.matchMedia(
+      "(forced-colors) or (prefers-color-scheme: dark)"
+    );
 
     // MozButton and PanelList have to be hooked up via id.
     this.#panelList.id = "searchmode-switcher-panel-list-" + input.sapName;
@@ -196,6 +222,12 @@ export class SearchModeSwitcher {
     }
     if (event.type == "searchmodechanged") {
       this.onSearchModeChanged();
+      return;
+    }
+    if (event.currentTarget == this.#noWordmarkQuery) {
+      if (this.#input.variantA) {
+        this.updateSearchIcon();
+      }
       return;
     }
     if (event.type == "focus") {
@@ -498,11 +530,17 @@ export class SearchModeSwitcher {
    */
 
   async updateSearchIcon(options = {}) {
-    let { label, icon } = await this.#getSearchIcon(options);
+    let { label, icon, wordmark } = await this.#getSearchIcon(options);
     if (!icon) {
       return;
     }
-    this.#button.setAttribute("iconsrc", icon);
+    if (wordmark) {
+      this.#button.removeAttribute("iconsrc");
+      this.#button.setAttribute("wordmark", wordmark);
+    } else {
+      this.#button.setAttribute("iconsrc", icon);
+      this.#button.removeAttribute("wordmark");
+    }
 
     if (label) {
       this.#input.document.l10n.setAttributes(
@@ -517,11 +555,15 @@ export class SearchModeSwitcher {
       );
     }
 
+    // Variant A names the engine next to its icon unless a wordmark, which
+    // already spells the name out, is taking the icon's place.
+    let showLabel =
+      !wordmark && (!!this.#input.searchMode || this.#input.variantA);
     let labelEl = this.#input.querySelector(".searchmode-switcher-title");
-    if (!this.#input.searchMode) {
-      labelEl.replaceChildren();
-    } else {
+    if (showLabel) {
       labelEl.textContent = label;
+    } else {
+      labelEl.replaceChildren();
     }
 
     if (!UrlbarShared.keywordEnabled(this.#input.sapName)) {
@@ -577,6 +619,27 @@ export class SearchModeSwitcher {
     return this.#getDisplayedEngineDetails(searchMode);
   }
 
+  /**
+   * The wordmark to show for an engine in place of its icon and name.
+   *
+   * @param {PartialSearchEngine} engine
+   *   The engine the button shows.
+   * @returns {?string}
+   *   The engine family whose wordmark to show, or null to show the engine's
+   *   icon.
+   */
+  #getEngineWordmark(engine) {
+    if (
+      !this.#input.variantA ||
+      !engine.isConfigEngine ||
+      this.#noWordmarkQuery.matches
+    ) {
+      return null;
+    }
+    let family = engine.id.split("-")[0];
+    return WORDMARK_ENGINE_FAMILIES.has(family) ? family : null;
+  }
+
   async #getSearchModeLabel(source) {
     let mode = UrlbarShared.LOCAL_SEARCH_MODES.find(m => m.source == source);
     let [str] = await getL10n().formatMessages([{ id: mode.uiLabel }]);
@@ -594,7 +657,11 @@ export class SearchModeSwitcher {
         return { label: null, icon: SearchModeSwitcher.ICON_GLASS };
       }
       let icon = (await engine.getIconURL()) ?? SearchModeSwitcher.ICON_GLASS;
-      return { label: engine.name, icon };
+      return {
+        label: engine.name,
+        icon,
+        wordmark: this.#getEngineWordmark(engine),
+      };
     }
 
     let mode = UrlbarShared.LOCAL_SEARCH_MODES.find(
@@ -866,6 +933,7 @@ export class SearchModeSwitcher {
     this.#closebutton.addEventListener("mousedown", this);
 
     this.#input.addEventListener("searchmodechanged", this);
+    this.#noWordmarkQuery.addEventListener("change", this);
   }
 
   #disableObservers() {
@@ -885,6 +953,7 @@ export class SearchModeSwitcher {
     this.#closebutton.removeEventListener("mousedown", this);
 
     this.#input.removeEventListener("searchmodechanged", this);
+    this.#noWordmarkQuery.removeEventListener("change", this);
   }
 
   /**

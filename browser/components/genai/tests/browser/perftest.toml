@@ -3,6 +3,8 @@ support-files = [
   "data/readableEn.html",
 ]
 prefs = [
+  "browser.newtabpage.enabled=false",
+  "browser.newtabpage.activity-stream.widgets.pictureOfTheDay.enabled=false",
   "browser.ml.enable=true",
   "browser.ml.linkPreview.collapsed=false",
   "browser.ml.linkPreview.optin=true",

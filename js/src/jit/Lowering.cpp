@@ -6468,6 +6468,10 @@ void LIRGenerator::visitIteratorEnd(MIteratorEnd* ins) {
 }
 
 void LIRGenerator::visitCloseIterCache(MCloseIterCache* ins) {
+  // Emit an overrecursed check: this is necessary because the cache can
+  // attach a scripted getter stub that calls this script recursively.
+  gen->setNeedsOverrecursedCheck();
+
   LCloseIterCache* lir =
       new (alloc()) LCloseIterCache(useRegister(ins->iter()), temp());
   add(lir, ins);

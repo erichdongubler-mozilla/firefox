@@ -145,6 +145,12 @@ export const SmartFormFillAutocomplete = {
     inputType,
     focusElementId,
   }) {
+    // A search string means the user typed in the field, so there is no entry
+    // to offer.
+    if (searchString) {
+      return [];
+    }
+
     const isSupportedInput =
       inputType == "textarea" || SUPPORTED_INPUT_TYPES.includes(inputType);
     const smartWindowActive = lazy.AIWindow.isAIWindowActive(

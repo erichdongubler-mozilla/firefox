@@ -799,6 +799,7 @@ void WebGLContext::InitUploadableSdTypes() {
     types[layers::SurfaceDescriptor::TSurfaceDescriptorMacIOSurface] = true;
   }
   if (kIsAndroid) {
+    types[layers::SurfaceDescriptor::TAndroidImageReaderImageDescriptor] = true;
     types[layers::SurfaceDescriptor::TSurfaceTextureDescriptor] = true;
   }
   if (kIsLinux) {

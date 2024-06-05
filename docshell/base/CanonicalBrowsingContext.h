@@ -121,7 +121,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   // Same as `GetParentWindowContext`, but will also cross <browser> and
   // content/chrome boundaries.
-  already_AddRefed<WindowGlobalParent> GetEmbedderWindowGlobal() const;
+  already_AddRefed<WindowGlobalParent> GetEmbedderWindowGlobal();
 
   CanonicalBrowsingContext* GetParentCrossChromeBoundary();
   CanonicalBrowsingContext* TopCrossChromeBoundary();
@@ -434,7 +434,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   const JS::Heap<JS::Value>& PermanentKey() { return mPermanentKey; }
   void ClearPermanentKey() { mPermanentKey.setNull(); }
-  void MaybeSetPermanentKey(Element* aEmbedder);
+
+  void SetCrossGroupEmbedderElement(Element* aEmbedder);
 
   // When request for page awake, it would increase a count that is used to
   // prevent whole browsing context tree from being suspended. The request can
@@ -641,6 +642,17 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   uint64_t mEmbedderProcessId;
 
   uint64_t mCrossGroupOpenerId = 0;
+
+  // Window ID of the cross-group WindowGlobalParent which most recently
+  // embedded this toplevel content BrowsingContext.
+  //
+  // This member is 0 for subframes, toplevel chrome documents, and windows
+  // which have not yet been embedded within a cross-group context.
+  //
+  // Unlike the embedder element, this will not be cleared when the document is
+  // removed from the DOM, and can be used on a CanonicalBrowsingContext which
+  // is actively being torn down.
+  uint64_t mCrossGroupEmbedderWindowId = 0;
 
   // This function will make the top window context reset its
   // "SHEntryHasUserInteraction" cache that prevents documents from repeatedly

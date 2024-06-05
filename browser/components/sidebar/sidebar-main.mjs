@@ -22,7 +22,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
-  GenAI: "resource:///modules/GenAI.sys.mjs",
+  GenAI: "moz-src:///browser/components/genai/GenAI.sys.mjs",
 });
 
 /**
@@ -200,7 +200,15 @@ export default class SidebarMain extends MozLitElement {
             if (!newCopyButton) {
               continue;
             }
-            panelButtonGroup.appendChild(newCopyButton);
+            // The Customize button stays last in the panel.
+            const customizeCopy = panelButtonGroup.querySelector(
+              '[view="viewCustomizeSidebar"]'
+            );
+            if (customizeCopy && view !== "viewCustomizeSidebar") {
+              panelButtonGroup.insertBefore(newCopyButton, customizeCopy);
+            } else {
+              panelButtonGroup.appendChild(newCopyButton);
+            }
 
             // Hide original button
             entry.target.style.visibility = "hidden";
@@ -504,6 +512,21 @@ export default class SidebarMain extends MozLitElement {
 
   getToolsAndExtensions() {
     return window.SidebarController.toolsAndExtensions;
+  }
+
+  getLauncherActions() {
+    const actions = [...this.getToolsAndExtensions().values()];
+    if (!window.SidebarController.sidebarVerticalTabsEnabled) {
+      return actions;
+    }
+    const settingsFirst =
+      this.expanded && !window.SidebarController._positionStart;
+    actions.splice(
+      settingsFirst ? 0 : actions.length,
+      0,
+      ...this.bottomActions
+    );
+    return actions;
   }
 
   setCustomize() {
@@ -879,26 +902,10 @@ export default class SidebarMain extends MozLitElement {
             orientation=${this.isToolsOverflowing() ? "horizontal" : "vertical"}
             overflowing=${ifDefined(this.shouldShowOverflowButton)}
           >
-            ${when(!this.isToolsOverflowing(), () =>
-              repeat(
-                this.getToolsAndExtensions().values(),
-                action => action.view,
-                action => this.entrypointTemplate(action)
-              )
-            )}
-            ${when(window.SidebarController.sidebarVerticalTabsEnabled, () =>
-              repeat(
-                this.bottomActions,
-                action => action.view,
-                action => this.entrypointTemplate(action)
-              )
-            )}
-            ${when(this.isToolsOverflowing(), () =>
-              repeat(
-                this.getToolsAndExtensions().values(),
-                action => action.view,
-                action => this.entrypointTemplate(action)
-              )
+            ${repeat(
+              this.getLauncherActions(),
+              action => action.view,
+              action => this.entrypointTemplate(action)
             )}
           </button-group>
           ${when(

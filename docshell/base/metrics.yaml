@@ -149,6 +149,7 @@ page:
           - BLOCKED_BY_POLICY
           - HTTP2_SENT_GOAWAY
           - HTTP3_PROTOCOL
+          - UNCLEAN_SHUTDOWN
           - BINDING_FAILED
           - otherError
         description: Labels of the keyed categorical legacy telemetry histogram

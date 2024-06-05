@@ -1673,21 +1673,10 @@ class nsDisplayListBuilder {
    * Modified frames and rects are removed and re-added to the region if needed.
    */
   struct WeakFrameRegion {
-    /**
-     * A wrapper to store WeakFrame and the pointer to the underlying frame.
-     * This is needed because WeakFrame does not store the frame pointer after
-     * the frame has been deleted.
-     */
-    struct WeakFrameWrapper {
-      explicit WeakFrameWrapper(nsIFrame* aFrame)
-          : mWeakFrame(new WeakFrame(aFrame)), mFrame(aFrame) {}
-
-      UniquePtr<WeakFrame> mWeakFrame;
-      void* mFrame;
-    };
-
     nsTHashSet<void*> mFrameSet;
-    nsTArray<WeakFrameWrapper> mFrames;
+    // WeakFrame does not store the frame pointer after the frame has been
+    // deleted, so keep the raw pointer around to remove it from mFrameSet.
+    nsTArray<std::pair<WeakFrame, void*>> mFrames;
     nsTArray<pixman_box32_t> mRects;
 
     template <typename RectType>
@@ -1697,7 +1686,7 @@ class nsDisplayListBuilder {
       }
 
       mFrameSet.Insert(aFrame);
-      mFrames.AppendElement(WeakFrameWrapper(aFrame));
+      mFrames.EmplaceBack(aFrame, aFrame);
       mRects.AppendElement(nsRegion::RectToBox(aRect));
     }
 
@@ -6707,7 +6696,8 @@ class nsDisplayText final : public nsPaintedDisplayItem {
       // On OS X, web authors can turn off subpixel text rendering using the
       // CSS property -moz-osx-font-smoothing. If they do that, we don't need
       // to use component alpha layers for the affected text.
-      if (mFrame->StyleFont()->mFont.smoothing == NS_FONT_SMOOTHING_GRAYSCALE) {
+      if (mFrame->StyleFont()->mFont.smoothing ==
+          mozilla::StyleFontSmoothing::Grayscale) {
         return nsRect();
       }
     }

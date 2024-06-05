@@ -359,7 +359,6 @@ export class SmartFormFillParent extends JSWindowActorParent {
     }
 
     this.#startFormMetadataRequests(metadata);
-
     await Promise.all([
       metadata.relevantTabsPromise,
       metadata.classificationPromise,
@@ -1295,7 +1294,11 @@ export class SmartFormFillParent extends JSWindowActorParent {
    */
   async searchAutoCompleteEntries(_searchString, options) {
     const focusedForm = await this.#getFocusedForm();
-    if (!focusedForm) {
+
+    // Every provider that injects the Smart Form Fill entry funnels through
+    // here, so this is where the entry is kept out of a field the user has
+    // already put a value in, or is typing in.
+    if (!focusedForm?.emptyFieldIds.has(focusedForm.focusedFieldId)) {
       return null;
     }
 
@@ -1551,11 +1554,12 @@ export class SmartFormFillParent extends JSWindowActorParent {
    */
   #getRequestObserver() {
     return {
-      onRelevantTabsDispatched: (formId, request, modelInfo) =>
+      onRelevantTabsDispatched: (formId, request, modelInfo, threshold) =>
         this.#telemetry.startRelevantTabsRequest(
           this.#getFlowId(formId),
           request,
-          modelInfo
+          modelInfo,
+          threshold
         ),
 
       onRelevantTabsAnswered: (flow, response, tabsUsed) =>

@@ -4,7 +4,7 @@
  */
 
 const imgUrl =
-  "https://example.com/browser/browser/base/content/test/general/moz.png";
+  "https://example.com/browser/browser/base/content/test/browser-general/moz.png";
 const URI =
   "data:text/html," +
   `<style type='text/css'>%23test-image,%23not-test-image {background-image: url('${imgUrl}?c');}</style>` +

@@ -27,12 +27,14 @@ using mozilla::Some;
 using mozilla::dom::ImageBitmapFormat;
 using mozilla::gfx::ChromaSize;
 using mozilla::gfx::ChromaSubsampling;
+using mozilla::gfx::ColorRange;
 using mozilla::gfx::DataSourceSurface;
 using mozilla::gfx::IntPoint;
 using mozilla::gfx::IntRect;
 using mozilla::gfx::IntSize;
 using mozilla::gfx::SourceSurfaceAlignedRawData;
 using mozilla::gfx::SurfaceFormat;
+using mozilla::gfx::YUVColorSpace;
 using mozilla::layers::Image;
 using mozilla::layers::PlanarYCbCrImage;
 using mozilla::layers::SourceSurfaceImage;
@@ -45,6 +47,20 @@ struct YCbCrValue {
   uint8_t mCb;
   uint8_t mCr;
 };
+
+// An R/G/B sample triple used to paint a surface, with the value for the
+// fourth byte, alpha or padding.
+struct RGBValue {
+  uint8_t mR;
+  uint8_t mG;
+  uint8_t mB;
+  uint8_t mA = 0xFF;
+};
+
+constexpr RGBValue kRGBRed{0xFF, 0x00, 0x00};
+constexpr RGBValue kRGBGreen{0x00, 0xFF, 0x00};
+constexpr RGBValue kRGBBlue{0x00, 0x00, 0xFF};
+constexpr RGBValue kRGBWhite{0xFF, 0xFF, 0xFF};
 
 // Red in BT.601 limited range, which every red RGB fixture converts to.
 constexpr YCbCrValue kYCbCrRed{0x52, 0x5A, 0xEF};
@@ -189,33 +205,39 @@ static already_AddRefed<Image> GenerateI420(int32_t aWidth, int32_t aHeight) {
   return MakeAndAddRef<TestPlanarYCbCrImage>(size, black);
 }
 
-static already_AddRefed<SourceSurfaceImage> CreateRedSurfaceImage2x2(
-    SurfaceFormat aFormat) {
-  uint8_t redPixel[4] = {};
+static already_AddRefed<SourceSurfaceImage> CreateSolidSurfaceImage(
+    const IntSize& aSize, SurfaceFormat aFormat, const RGBValue& aColor) {
+  uint8_t pixel[4] = {};
 
   switch (aFormat) {
     case SurfaceFormat::R8G8B8A8:
     case SurfaceFormat::R8G8B8X8:
-      redPixel[0] = 0xFF;
-      redPixel[3] = 0xFF;
+      pixel[0] = aColor.mR;
+      pixel[1] = aColor.mG;
+      pixel[2] = aColor.mB;
+      pixel[3] = aColor.mA;
       break;
     case SurfaceFormat::B8G8R8A8:
     case SurfaceFormat::B8G8R8X8:
-      redPixel[2] = 0xFF;
-      redPixel[3] = 0xFF;
+      pixel[0] = aColor.mB;
+      pixel[1] = aColor.mG;
+      pixel[2] = aColor.mR;
+      pixel[3] = aColor.mA;
       break;
-    case SurfaceFormat::R5G6B5_UINT16:
-      redPixel[1] = 0xF8;
+    case SurfaceFormat::R5G6B5_UINT16: {
+      const uint16_t rgb565 =
+          ((aColor.mR >> 3) << 11) | ((aColor.mG >> 2) << 5) | (aColor.mB >> 3);
+      pixel[0] = rgb565 & 0xFF;
+      pixel[1] = rgb565 >> 8;
       break;
+    }
     default:
       MOZ_ASSERT_UNREACHABLE("Unsupported format!");
       return nullptr;
   }
 
-  const IntSize size(2, 2);
-
   auto surface = MakeRefPtr<SourceSurfaceAlignedRawData>();
-  if (NS_WARN_IF(!surface->Init(size, aFormat, /* aClearMem */ false, 0, 0))) {
+  if (NS_WARN_IF(!surface->Init(aSize, aFormat, /* aClearMem */ false, 0, 0))) {
     return nullptr;
   }
 
@@ -225,19 +247,19 @@ static already_AddRefed<SourceSurfaceImage> CreateRedSurfaceImage2x2(
   }
 
   const uint32_t bpp = BytesPerPixel(aFormat);
-  MOZ_ASSERT(bpp <= sizeof(redPixel));
+  MOZ_ASSERT(bpp <= sizeof(pixel));
 
   uint8_t* rowPtr = map.GetData();
-  for (int32_t row = 0; row < size.height; ++row) {
-    for (int32_t col = 0; col < size.width; ++col) {
+  for (int32_t row = 0; row < aSize.height; ++row) {
+    for (int32_t col = 0; col < aSize.width; ++col) {
       for (uint32_t i = 0; i < bpp; ++i) {
-        rowPtr[col * bpp + i] = redPixel[i];
+        rowPtr[col * bpp + i] = pixel[i];
       }
     }
     rowPtr += map.GetStride();
   }
 
-  return MakeAndAddRef<SourceSurfaceImage>(size, surface);
+  return MakeAndAddRef<SourceSurfaceImage>(aSize, surface);
 }
 
 static already_AddRefed<SourceSurfaceImage> CreateSurfaceImage(
@@ -330,15 +352,15 @@ TEST(MediaImageConversion, ConvertToI420)
   };
 
   RefPtr<SourceSurfaceImage> imgRgba =
-      CreateRedSurfaceImage2x2(SurfaceFormat::R8G8B8A8);
+      CreateSolidSurfaceImage(IntSize(2, 2), SurfaceFormat::R8G8B8A8, kRGBRed);
   checkImage(imgRgba, Some(ImageBitmapFormat::RGBA32));
 
   RefPtr<SourceSurfaceImage> imgBgra =
-      CreateRedSurfaceImage2x2(SurfaceFormat::B8G8R8A8);
+      CreateSolidSurfaceImage(IntSize(2, 2), SurfaceFormat::B8G8R8A8, kRGBRed);
   checkImage(imgBgra, Some(ImageBitmapFormat::BGRA32));
 
-  RefPtr<SourceSurfaceImage> imgRgb565 =
-      CreateRedSurfaceImage2x2(SurfaceFormat::R5G6B5_UINT16);
+  RefPtr<SourceSurfaceImage> imgRgb565 = CreateSolidSurfaceImage(
+      IntSize(2, 2), SurfaceFormat::R5G6B5_UINT16, kRGBRed);
   checkImage(imgRgb565, Nothing());
 
   auto imgYuv420p = MakeRefPtr<TestPlanarYCbCrImage>(
@@ -432,7 +454,6 @@ TEST(MediaImageConversion, ConvertToNV12SourceSizeBounds)
   uint8_t uv[2] = {};
   const IntSize dst(2, 2);
 
-  // ConvertToNV12 takes an I420 (YUV420P) source and outputs NV12.
   RefPtr<Image> tall = GenerateI420(kSmallDimension, kOverLimitDimension);
   EXPECT_EQ(ConvertToNV12(tall, y, 2, uv, 2, dst), NS_ERROR_INVALID_ARG);
 
@@ -580,6 +601,359 @@ TEST(MediaImageConversion, ConvertToNV12HonorsPictureRectOrigin)
   }
 }
 
+namespace {
+
+// Solid colors and, per RGB-to-YUV matrix, the samples libyuv's fixed-point
+// coefficients produce for them.
+struct RGBSample {
+  const char* mName;
+  RGBValue mRGB;
+};
+
+constexpr RGBSample kRGBSamples[] = {
+    {"red", kRGBRed},
+    {"green", kRGBGreen},
+    {"blue", kRGBBlue},
+    {"white", kRGBWhite},
+};
+
+struct RGBToYUVExpectation {
+  YUVColorSpace mColorSpace;
+  ColorRange mColorRange;
+  // In kRGBSamples order.
+  YCbCrValue mYUV[std::size(kRGBSamples)];
+};
+
+constexpr RGBToYUVExpectation kRGBToYUVExpectations[] = {
+    {YUVColorSpace::BT601,
+     ColorRange::LIMITED,
+     {{0x52, 0x5A, 0xEF},
+      {0x90, 0x36, 0x22},
+      {0x29, 0xEF, 0x6E},
+      {0xEB, 0x80, 0x80}}},
+    {YUVColorSpace::BT601,
+     ColorRange::FULL,
+     {{0x4D, 0x55, 0xFF},
+      {0x95, 0x2B, 0x15},
+      {0x1D, 0xFF, 0x6B},
+      {0xFF, 0x80, 0x80}}},
+    {YUVColorSpace::BT709,
+     ColorRange::LIMITED,
+     {{0x3F, 0x66, 0xEF},
+      {0xAC, 0x2A, 0x1A},
+      {0x20, 0xEF, 0x76},
+      {0xEB, 0x80, 0x80}}},
+    {YUVColorSpace::BT709,
+     ColorRange::FULL,
+     {{0x36, 0x63, 0xFF},
+      {0xB6, 0x1D, 0x0C},
+      {0x13, 0xFF, 0x74},
+      {0xFF, 0x80, 0x80}}},
+    {YUVColorSpace::BT2020,
+     ColorRange::LIMITED,
+     {{0x4B, 0x61, 0xEF},
+      {0xA3, 0x2F, 0x19},
+      {0x1D, 0xEF, 0x77},
+      {0xEB, 0x80, 0x80}}},
+    {YUVColorSpace::BT2020,
+     ColorRange::FULL,
+     {{0x43, 0x5C, 0xFF},
+      {0xAD, 0x24, 0x0A},
+      {0x0F, 0xFF, 0x76},
+      {0xFF, 0x80, 0x80}}},
+};
+
+}  // namespace
+
+// Converts aImage to an I420 image of aDestSize with the given matrix and
+// checks that every sample matches aExpected.
+static void CheckI420Conversion(Image* aImage, const IntSize& aDestSize,
+                                YUVColorSpace aColorSpace,
+                                ColorRange aColorRange,
+                                const YCbCrValue& aExpected) {
+  const IntSize chroma =
+      ChromaSize(aDestSize, ChromaSubsampling::HALF_WIDTH_AND_HEIGHT);
+  nsTArray<uint8_t> y;
+  nsTArray<uint8_t> u;
+  nsTArray<uint8_t> v;
+  y.SetLength(size_t(aDestSize.width) * aDestSize.height);
+  u.SetLength(size_t(chroma.width) * chroma.height);
+  v.SetLength(u.Length());
+
+  ASSERT_EQ(ConvertToI420(aImage, y.Elements(), aDestSize.width, u.Elements(),
+                          chroma.width, v.Elements(), chroma.width, aDestSize,
+                          aColorSpace, aColorRange),
+            NS_OK);
+  for (uint8_t sample : y) {
+    EXPECT_EQ(sample, aExpected.mY);
+  }
+  for (uint8_t sample : u) {
+    EXPECT_EQ(sample, aExpected.mCb);
+  }
+  for (uint8_t sample : v) {
+    EXPECT_EQ(sample, aExpected.mCr);
+  }
+}
+
+static void CheckNV12Conversion(Image* aImage, const IntSize& aDestSize,
+                                YUVColorSpace aColorSpace,
+                                ColorRange aColorRange,
+                                const YCbCrValue& aExpected) {
+  const IntSize chroma =
+      ChromaSize(aDestSize, ChromaSubsampling::HALF_WIDTH_AND_HEIGHT);
+  nsTArray<uint8_t> y;
+  nsTArray<uint8_t> uv;
+  y.SetLength(size_t(aDestSize.width) * aDestSize.height);
+  uv.SetLength(size_t(2 * chroma.width) * chroma.height);
+
+  ASSERT_EQ(
+      ConvertToNV12(aImage, y.Elements(), aDestSize.width, uv.Elements(),
+                    2 * chroma.width, aDestSize, aColorSpace, aColorRange),
+      NS_OK);
+  for (uint8_t sample : y) {
+    EXPECT_EQ(sample, aExpected.mY);
+  }
+  for (size_t i = 0; i < uv.Length(); ++i) {
+    EXPECT_EQ(uv[i], (i % 2 == 0) ? aExpected.mCb : aExpected.mCr);
+  }
+}
+
+// The RGB paths must convert with the requested matrix whether the image is
+// converted as is, scaled down as RGB first, or converted first and then
+// scaled up as I420.
+TEST(MediaImageConversion, ConvertToI420SelectsRGBToYUVMatrix)
+{
+  const IntSize twoByTwo(2, 2);
+  const IntSize fourByFour(4, 4);
+
+  for (const RGBToYUVExpectation& e : kRGBToYUVExpectations) {
+    for (size_t i = 0; i < std::size(kRGBSamples); ++i) {
+      for (SurfaceFormat format :
+           {SurfaceFormat::B8G8R8A8, SurfaceFormat::B8G8R8X8,
+            SurfaceFormat::R8G8B8A8, SurfaceFormat::R8G8B8X8}) {
+        SCOPED_TRACE(::testing::Message()
+                     << kRGBSamples[i].mName << " " << e.mColorSpace << " "
+                     << e.mColorRange << " " << format);
+        RefPtr<SourceSurfaceImage> smallImage =
+            CreateSolidSurfaceImage(twoByTwo, format, kRGBSamples[i].mRGB);
+        RefPtr<SourceSurfaceImage> largeImage =
+            CreateSolidSurfaceImage(fourByFour, format, kRGBSamples[i].mRGB);
+        ASSERT_NE(smallImage, nullptr);
+        ASSERT_NE(largeImage, nullptr);
+
+        CheckI420Conversion(smallImage, twoByTwo, e.mColorSpace, e.mColorRange,
+                            e.mYUV[i]);
+        CheckI420Conversion(largeImage, twoByTwo, e.mColorSpace, e.mColorRange,
+                            e.mYUV[i]);
+        CheckI420Conversion(smallImage, fourByFour, e.mColorSpace,
+                            e.mColorRange, e.mYUV[i]);
+      }
+    }
+  }
+}
+
+TEST(MediaImageConversion, ConvertToNV12SelectsRGBToYUVMatrix)
+{
+  const IntSize twoByTwo(2, 2);
+  const IntSize fourByFour(4, 4);
+
+  for (const RGBToYUVExpectation& e : kRGBToYUVExpectations) {
+    for (size_t i = 0; i < std::size(kRGBSamples); ++i) {
+      for (SurfaceFormat format :
+           {SurfaceFormat::B8G8R8A8, SurfaceFormat::B8G8R8X8,
+            SurfaceFormat::R8G8B8A8, SurfaceFormat::R8G8B8X8}) {
+        SCOPED_TRACE(::testing::Message()
+                     << kRGBSamples[i].mName << " " << e.mColorSpace << " "
+                     << e.mColorRange << " " << format);
+        RefPtr<SourceSurfaceImage> smallImage =
+            CreateSolidSurfaceImage(twoByTwo, format, kRGBSamples[i].mRGB);
+        RefPtr<SourceSurfaceImage> largeImage =
+            CreateSolidSurfaceImage(fourByFour, format, kRGBSamples[i].mRGB);
+        ASSERT_NE(smallImage, nullptr);
+        ASSERT_NE(largeImage, nullptr);
+
+        CheckNV12Conversion(smallImage, twoByTwo, e.mColorSpace, e.mColorRange,
+                            e.mYUV[i]);
+        CheckNV12Conversion(largeImage, twoByTwo, e.mColorSpace, e.mColorRange,
+                            e.mYUV[i]);
+        CheckNV12Conversion(smallImage, fourByFour, e.mColorSpace,
+                            e.mColorRange, e.mYUV[i]);
+      }
+    }
+  }
+}
+
+// Runs aCheck on a red 2x2 image in every source layout the conversion reads,
+// telling it whether the image is RGB565.
+template <typename CheckImage>
+static void ForEachRedSourceImage(CheckImage&& aCheck) {
+  for (SurfaceFormat format : {SurfaceFormat::B8G8R8A8, SurfaceFormat::B8G8R8X8,
+                               SurfaceFormat::R8G8B8A8, SurfaceFormat::R8G8B8X8,
+                               SurfaceFormat::R5G6B5_UINT16}) {
+    SCOPED_TRACE(::testing::Message() << format);
+    RefPtr<SourceSurfaceImage> image =
+        CreateSolidSurfaceImage(IntSize(2, 2), format, kRGBRed);
+    ASSERT_NE(image, nullptr);
+    aCheck(image.get(), format == SurfaceFormat::R5G6B5_UINT16);
+  }
+  for (ImageBitmapFormat format :
+       {ImageBitmapFormat::YUV420P, ImageBitmapFormat::YUV422P,
+        ImageBitmapFormat::YUV444P, ImageBitmapFormat::YUV420SP_NV12,
+        ImageBitmapFormat::YUV420SP_NV21}) {
+    SCOPED_TRACE(::testing::Message() << static_cast<int>(format));
+    auto image =
+        MakeRefPtr<TestPlanarYCbCrImage>(IntSize(2, 2), kYCbCrRed, format);
+    aCheck(image.get(), false);
+  }
+}
+
+// Every source converts to I420, whether the image is converted as is, scaled
+// down, including to an odd size, or scaled up.
+TEST(MediaImageConversion, ConvertToI420FromEverySource)
+{
+  const IntSize sizes[] = {IntSize(2, 2), IntSize(1, 1), IntSize(4, 4)};
+  ForEachRedSourceImage([&](Image* aImage, bool) {
+    for (const IntSize& size : sizes) {
+      SCOPED_TRACE(::testing::Message() << size.width << "x" << size.height);
+      CheckI420Conversion(aImage, size, YUVColorSpace::BT601,
+                          ColorRange::LIMITED, kYCbCrRed);
+    }
+  });
+}
+
+// Every source but RGB565 converts to NV12 the same way; libyuv converts
+// RGB565 to I420 only.
+TEST(MediaImageConversion, ConvertToNV12FromEverySource)
+{
+  const IntSize sizes[] = {IntSize(2, 2), IntSize(1, 1), IntSize(4, 4)};
+  ForEachRedSourceImage([&](Image* aImage, bool aIsRGB565) {
+    if (aIsRGB565) {
+      uint8_t y[4] = {};
+      uint8_t uv[2] = {};
+      EXPECT_EQ(ConvertToNV12(aImage, y, 2, uv, 2, IntSize(2, 2)),
+                NS_ERROR_NOT_IMPLEMENTED);
+      return;
+    }
+    for (const IntSize& size : sizes) {
+      SCOPED_TRACE(::testing::Message() << size.width << "x" << size.height);
+      CheckNV12Conversion(aImage, size, YUVColorSpace::BT601,
+                          ColorRange::LIMITED, kYCbCrRed);
+    }
+  });
+}
+
+// One output row must fit in its stride: the width for luma, ceil(width / 2)
+// samples per chroma plane, and both chroma planes at once for NV12.
+TEST(MediaImageConversion, DestinationStrideBounds)
+{
+  auto image = MakeRefPtr<TestPlanarYCbCrImage>(IntSize(4, 4), kYCbCrRed);
+  const IntSize even(4, 4);
+  const IntSize odd(3, 3);
+  uint8_t y[16] = {};
+  uint8_t u[8] = {};
+  uint8_t v[8] = {};
+  uint8_t uv[16] = {};
+
+  // Strides that hold exactly one row are accepted, for an odd width too.
+  EXPECT_EQ(ConvertToI420(image, y, 4, u, 2, v, 2, even), NS_OK);
+  EXPECT_EQ(ConvertToNV12(image, y, 4, uv, 4, even), NS_OK);
+  EXPECT_EQ(ConvertToI420(image, y, 3, u, 2, v, 2, odd), NS_OK);
+  EXPECT_EQ(ConvertToNV12(image, y, 3, uv, 4, odd), NS_OK);
+
+  // A luma stride below the width is rejected.
+  EXPECT_EQ(ConvertToI420(image, y, 3, u, 2, v, 2, even), NS_ERROR_INVALID_ARG);
+  EXPECT_EQ(ConvertToNV12(image, y, 3, uv, 4, even), NS_ERROR_INVALID_ARG);
+
+  // A chroma stride below ceil(width / 2) samples is rejected for either plane.
+  EXPECT_EQ(ConvertToI420(image, y, 3, u, 1, v, 2, odd), NS_ERROR_INVALID_ARG);
+  EXPECT_EQ(ConvertToI420(image, y, 3, u, 2, v, 1, odd), NS_ERROR_INVALID_ARG);
+  EXPECT_EQ(ConvertToNV12(image, y, 3, uv, 3, odd), NS_ERROR_INVALID_ARG);
+}
+
+// The fourth byte, alpha or padding, must not affect the conversion: the
+// expected samples were computed for opaque colors.
+TEST(MediaImageConversion, RGBToYUVIgnoresFourthByte)
+{
+  const IntSize size(2, 2);
+
+  for (const RGBToYUVExpectation& e : kRGBToYUVExpectations) {
+    for (size_t i = 0; i < std::size(kRGBSamples); ++i) {
+      RGBValue transparent = kRGBSamples[i].mRGB;
+      transparent.mA = 0x00;
+      for (SurfaceFormat format :
+           {SurfaceFormat::B8G8R8A8, SurfaceFormat::B8G8R8X8,
+            SurfaceFormat::R8G8B8A8, SurfaceFormat::R8G8B8X8}) {
+        SCOPED_TRACE(::testing::Message()
+                     << kRGBSamples[i].mName << " " << e.mColorSpace << " "
+                     << e.mColorRange << " " << format);
+        RefPtr<SourceSurfaceImage> image =
+            CreateSolidSurfaceImage(size, format, transparent);
+        ASSERT_NE(image, nullptr);
+
+        CheckI420Conversion(image, size, e.mColorSpace, e.mColorRange,
+                            e.mYUV[i]);
+        CheckNV12Conversion(image, size, e.mColorSpace, e.mColorRange,
+                            e.mYUV[i]);
+      }
+    }
+  }
+}
+
+// A YUV source is repacked as it is; the matrix only applies to RGB sources.
+TEST(MediaImageConversion, YUVSourceIgnoresRGBToYUVMatrix)
+{
+  const IntSize size(2, 2);
+  auto image = MakeRefPtr<TestPlanarYCbCrImage>(size, kYCbCrRed);
+
+  CheckI420Conversion(image, size, YUVColorSpace::BT709, ColorRange::FULL,
+                      kYCbCrRed);
+  CheckNV12Conversion(image, size, YUVColorSpace::BT709, ColorRange::FULL,
+                      kYCbCrRed);
+}
+
+TEST(MediaImageConversion, UnsupportedRGBToYUVMatrix)
+{
+  const IntSize size(2, 2);
+  uint8_t y[4] = {};
+  uint8_t u[1] = {};
+  uint8_t v[1] = {};
+  uint8_t uv[2] = {};
+
+  // Identity is not an RGB-to-YUV matrix.
+  RefPtr<SourceSurfaceImage> bgra =
+      CreateSolidSurfaceImage(size, SurfaceFormat::B8G8R8A8, kRGBRed);
+  ASSERT_NE(bgra, nullptr);
+  EXPECT_EQ(ConvertToI420(bgra, y, 2, u, 1, v, 1, size, YUVColorSpace::Identity,
+                          ColorRange::LIMITED),
+            NS_ERROR_NOT_IMPLEMENTED);
+  EXPECT_EQ(ConvertToNV12(bgra, y, 2, uv, 2, size, YUVColorSpace::Identity,
+                          ColorRange::LIMITED),
+            NS_ERROR_NOT_IMPLEMENTED);
+
+  // libyuv converts RGB565 with BT.601 limited range only, and to I420 only.
+  RefPtr<SourceSurfaceImage> rgb565 =
+      CreateSolidSurfaceImage(size, SurfaceFormat::R5G6B5_UINT16, kRGBRed);
+  ASSERT_NE(rgb565, nullptr);
+  EXPECT_EQ(ConvertToI420(rgb565, y, 2, u, 1, v, 1, size, YUVColorSpace::BT709,
+                          ColorRange::LIMITED),
+            NS_ERROR_NOT_IMPLEMENTED);
+  EXPECT_EQ(ConvertToI420(rgb565, y, 2, u, 1, v, 1, size, YUVColorSpace::BT601,
+                          ColorRange::FULL),
+            NS_ERROR_NOT_IMPLEMENTED);
+  EXPECT_EQ(ConvertToI420(rgb565, y, 2, u, 1, v, 1, size, YUVColorSpace::BT601,
+                          ColorRange::LIMITED),
+            NS_OK);
+  EXPECT_EQ(ConvertToNV12(rgb565, y, 2, uv, 2, size, YUVColorSpace::BT709,
+                          ColorRange::LIMITED),
+            NS_ERROR_NOT_IMPLEMENTED);
+  EXPECT_EQ(ConvertToNV12(rgb565, y, 2, uv, 2, size, YUVColorSpace::BT601,
+                          ColorRange::FULL),
+            NS_ERROR_NOT_IMPLEMENTED);
+  EXPECT_EQ(ConvertToNV12(rgb565, y, 2, uv, 2, size, YUVColorSpace::BT601,
+                          ColorRange::LIMITED),
+            NS_ERROR_NOT_IMPLEMENTED);
+}
+
 // Downscaling an NV12 source must average each chroma quadrant on its own: the
 // interleaved chroma rows of the scaled intermediate are twice as wide as the
 // planar ones.
@@ -606,10 +980,17 @@ TEST(MediaImageConversion, DownscaleNV12SourceKeepsChromaRows)
   uint8_t y[16] = {};
   uint8_t u[4] = {};
   uint8_t v[4] = {};
+  uint8_t uv[8] = {};
 
   ASSERT_EQ(ConvertToI420(image, y, 4, u, 2, v, 2, dest), NS_OK);
   for (size_t i = 0; i < std::size(quadrants); ++i) {
     EXPECT_EQ(u[i], quadrants[i].mCb);
     EXPECT_EQ(v[i], quadrants[i].mCr);
+  }
+
+  ASSERT_EQ(ConvertToNV12(image, y, 4, uv, 4, dest), NS_OK);
+  for (size_t i = 0; i < std::size(quadrants); ++i) {
+    EXPECT_EQ(uv[2 * i], quadrants[i].mCb);
+    EXPECT_EQ(uv[2 * i + 1], quadrants[i].mCr);
   }
 }

@@ -402,12 +402,21 @@ export class LoginManagerRustStorage {
   #storageAdapter = null;
   #authenticator = null;
   #initializationPromise = null;
+  #initTimings = null;
   // Only the active backend fires storage-changed events to avoid duplicates
   // when both JSON and Rust stores are initialized.
   // Default is false (json is active)
   #isActive = false;
   set isActive(v) {
     this.#isActive = v;
+  }
+
+  get backendName() {
+    return "rust";
+  }
+
+  get initTimings() {
+    return this.#initTimings;
   }
 
   // have it a singleton
@@ -444,13 +453,19 @@ export class LoginManagerRustStorage {
       const path = `${profilePath}/logins.db`;
       this.log(`Initializing Rust login storage at ${path}`);
 
+      const startedAt = ChromeUtils.now();
       await initRustComponents(profilePath);
+      const componentsReadyAt = ChromeUtils.now();
 
       this.#authenticator = new RustLoginStorageAuthenticator();
       const store = await createLoginStoreWithNssKeymanager(
         path,
         this.#authenticator
       );
+      this.#initTimings = {
+        initRustComponentsMs: Math.round(componentsReadyAt - startedAt),
+        createRustStoreMs: Math.round(ChromeUtils.now() - componentsReadyAt),
+      };
       this.#storageAdapter = new RustLoginsStoreAdapter(store);
 
       this.log("Rust login storage ready.");

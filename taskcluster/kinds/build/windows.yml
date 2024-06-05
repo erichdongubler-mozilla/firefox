@@ -1426,6 +1426,7 @@ win64-aarch64/debug:
             - vs
             - dxc-aarch64-pc-windows-msvc
             - winappsdk-aarch64-pc-windows-msvc
+            - onnxruntime-aarch64-windows-msvc
     optimization:
         skip-unless-expanded: null
 
@@ -1478,6 +1479,7 @@ win64-aarch64/opt:
             - vs
             - dxc-aarch64-pc-windows-msvc
             - winappsdk-aarch64-pc-windows-msvc
+            - onnxruntime-aarch64-windows-msvc
     optimization:
         skip-unless-expanded: null
 
@@ -1534,6 +1536,7 @@ win64-aarch64-shippable/opt:
             - vs
             - dxc-aarch64-pc-windows-msvc
             - winappsdk-aarch64-pc-windows-msvc
+            - onnxruntime-aarch64-windows-msvc
 
 win64-aarch64-devedition/opt:
     description: "AArch64 Win64 Dev Edition (shippable)"
@@ -1589,3 +1592,4 @@ win64-aarch64-devedition/opt:
             - vs
             - dxc-aarch64-pc-windows-msvc
             - winappsdk-aarch64-pc-windows-msvc
+            - onnxruntime-aarch64-windows-msvc

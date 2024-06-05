@@ -1296,9 +1296,10 @@ class IceTestPeer : public sigslot::has_slots<> {
     }
   }
 
-  void PacketReceived(NrIceMediaStream* stream, int component,
-                      const unsigned char* data, int len) {
-    std::cerr << name_ << ": received " << len << " bytes" << std::endl;
+  void PacketReceived(NrIceMediaStream* stream, int component, uint32_t dtls_id,
+                      MediaPacket& packet) {
+    std::cerr << name_ << ": received " << packet.len() << " bytes"
+              << std::endl;
     ++received_;
   }
 
@@ -1310,7 +1311,8 @@ class IceTestPeer : public sigslot::has_slots<> {
       return;
     }
 
-    ASSERT_TRUE(NS_SUCCEEDED(media_stream->SendPacket(component, data, len)));
+    ASSERT_TRUE(NS_SUCCEEDED(media_stream->SendPacket(
+        component, data, len, media_stream->GetDtlsId())));
 
     ++sent_;
     std::cerr << name_ << ": sent " << len << " bytes" << std::endl;
@@ -1326,7 +1328,7 @@ class IceTestPeer : public sigslot::has_slots<> {
     const std::string d("FAIL");
     ASSERT_TRUE(NS_FAILED(media_stream->SendPacket(
         component, reinterpret_cast<const unsigned char*>(d.c_str()),
-        d.length())));
+        d.length(), media_stream->GetDtlsId())));
 
     std::cerr << name_ << ": send failed as expected" << std::endl;
   }

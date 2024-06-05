@@ -1064,7 +1064,7 @@ struct BaseCompiler final {
   bool callRef(const Stk& calleeRef, const FunctionCall& call,
                mozilla::Maybe<size_t> callRefIndex, CodeOffset* fastCallOffset,
                CodeOffset* slowCallOffset);
-  void returnCallRef(const Stk& calleeRef, const FunctionCall& call,
+  bool returnCallRef(const Stk& calleeRef, const FunctionCall& call,
                      const FuncType& funcType);
   CodeOffset builtinCall(SymbolicAddress builtin, const FunctionCall& call);
   void builtinInstanceMethodCall(const SymbolicAddressSignature& builtin,
@@ -1808,12 +1808,20 @@ struct BaseCompiler final {
   struct NoNullCheck {
     static void emitNullCheck(BaseCompiler* bc, RegRef rp) {}
     static void emitTrapSite(BaseCompiler* bc, FaultingCodeRange fcr,
-                             TrapMachineInsn tmi) {}
+                             TrapMachineInsn tmi, StackMap* debugOnlyStackMap) {
+      MOZ_ASSERT(!debugOnlyStackMap);
+    }
+    static StackMap* createDebugOnlyStackMapForNonResumingTrap(BaseCompiler* bc,
+                                                               Trap kind) {
+      return nullptr;
+    }
   };
   struct SignalNullCheck {
     static void emitNullCheck(BaseCompiler* bc, RegRef rp);
     static void emitTrapSite(BaseCompiler* bc, FaultingCodeRange fcr,
-                             TrapMachineInsn tmi);
+                             TrapMachineInsn tmi, StackMap* debugOnlyStackMap);
+    static StackMap* createDebugOnlyStackMapForNonResumingTrap(BaseCompiler* bc,
+                                                               Trap kind);
   };
 
   // Load a pointer to the AllocSite for current bytecode offset

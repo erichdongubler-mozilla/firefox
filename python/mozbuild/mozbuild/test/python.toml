@@ -155,6 +155,12 @@ subsuite = "mozbuild"
 
 ["test_vendor.py"]
 
+["test_vendor_sbom.py"]
+
+["test_vendor_sbom_cargo.py"]
+
+["test_vendor_sbom_cyclonedx.py"]
+
 ["test_vendor_tools.py"]
 skip-if = ["os == 'win'"] # Windows doesn't have the same path seperator as linux, and we just don't need to run it there
 

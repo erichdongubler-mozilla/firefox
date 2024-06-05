@@ -79,6 +79,9 @@ const CONFIDENCE_RANK = new Map([
 // the threshold of the generation request, so both have to move together.
 const FILL_CONFIDENCE_THRESHOLD = "medium";
 
+// the lowest confidence allowed for tab relevance
+const TAB_RELEVANCE_THRESHOLD = "medium";
+
 /**
  * @typedef {{
  *   id: string,
@@ -872,6 +875,13 @@ export class SmartFormFillController {
           return false;
         }
 
+        if (
+          (CONFIDENCE_RANK.get(tab?.relevance) ?? -1) <
+          CONFIDENCE_RANK.get(TAB_RELEVANCE_THRESHOLD)
+        ) {
+          return false;
+        }
+
         seen.add(id);
         return true;
       })
@@ -901,7 +911,8 @@ export class SmartFormFillController {
             flow = this.#requestObserver.onRelevantTabsDispatched(
               id,
               request,
-              modelInfo
+              modelInfo,
+              TAB_RELEVANCE_THRESHOLD
             );
           },
         });

@@ -184,8 +184,10 @@ bool BaseCompiler::createDebugOnlyStackMapForNonResumingTrap(StackMap** result,
   MOZ_ASSERT(!TrapMightResume(t1));
   MOZ_ASSERT_IF(t2 != Trap::Limit, !TrapMightResume(t2));
 
+  // Ensure `*result` is always defined.
+  *result = nullptr;
+
   if (MOZ_LIKELY(!compilerEnv_.debugEnabled())) {
-    *result = nullptr;
     return true;
   }
 

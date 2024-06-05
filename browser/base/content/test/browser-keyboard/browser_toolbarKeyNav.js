@@ -22,7 +22,7 @@ const FirefoxViewTestUtils = ChromeUtils.importESModule(
 FirefoxViewTestUtils.init(this);
 
 const PERMISSIONS_PAGE =
-  "https://example.com/browser/browser/base/content/test/permissions/permissions.html";
+  "https://example.com/browser/browser/base/content/test/browser-permissions/permissions.html";
 const afterUrlBarButton = "fxa-toolbar-menu-button";
 const sidebarRevampEnabled = Services.prefs.getBoolPref(
   "sidebar.revamp",

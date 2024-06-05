@@ -341,13 +341,17 @@ LoadInfo::LoadInfo(
 
     if (nsMixedContentBlocker::IsUpgradableContentType(
             mInternalContentPolicyType)) {
-      // Check the load is within a secure context but ignore loopback URLs
+      // Check the load is within a secure context, but ignore documents that
+      // are only a secure context because they are loopback or because the
+      // user allowlisted them: those are not served over https, so upgrading
+      // their subresources would just break them.
       nsCOMPtr<nsIPrincipal> precursorPrincipal =
           mLoadingPrincipal->GetPrecursorPrincipal();
       nsCOMPtr<nsIPrincipal> requestingPrincipal =
           precursorPrincipal ? precursorPrincipal : mLoadingPrincipal;
       if (requestingPrincipal->GetIsOriginPotentiallyTrustworthy() &&
-          !requestingPrincipal->GetIsLoopbackHost()) {
+          !requestingPrincipal->GetIsLoopbackHost() &&
+          !requestingPrincipal->GetIsSecureContextAllowlistedHost()) {
         if (StaticPrefs::security_mixed_content_upgrade_display_content()) {
           mBrowserUpgradeInsecureRequests = true;
         } else {
@@ -729,6 +733,7 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
       // mServiceWorkerTaintingSynthesized must be handled specially during
       // redirect
       mTainting(rhs.mTainting),
+      mTrustedPrincipalToInherit(rhs.mTrustedPrincipalToInherit),
 #define DEFINE_INIT(_t, name, _n, _d) m##name(rhs.m##name),
       LOADINFO_FOR_EACH_FIELD(DEFINE_INIT, LOADINFO_DUMMY_SETTER)
 #undef DEFINE_INIT
@@ -954,6 +959,7 @@ NS_IMETHODIMP
 LoadInfo::SetPrincipalToInherit(nsIPrincipal* aPrincipalToInherit) {
   MOZ_ASSERT(aPrincipalToInherit, "must be a valid principal to inherit");
   mPrincipalToInherit = aPrincipalToInherit;
+  mTrustedPrincipalToInherit = false;
   return NS_OK;
 }
 
@@ -971,6 +977,17 @@ nsIPrincipal* LoadInfo::FindPrincipalToInherit(nsIChannel* aChannel) {
 
   auto* prin = BasePrincipal::Cast(mTriggeringPrincipal);
   return prin->PrincipalToInherit(uri);
+}
+
+NS_IMETHODIMP
+LoadInfo::SetTrustedPrincipalToInherit(nsIPrincipal* aPrincipal) {
+  MOZ_ALWAYS_SUCCEEDS(SetPrincipalToInherit(aPrincipal));
+  mTrustedPrincipalToInherit = true;
+  return NS_OK;
+}
+
+bool LoadInfo::IsPrincipalToInheritTrusted() {
+  return mTrustedPrincipalToInherit;
 }
 
 const nsID& LoadInfo::GetSandboxedNullPrincipalID() {

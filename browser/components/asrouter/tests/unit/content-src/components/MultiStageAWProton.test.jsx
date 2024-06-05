@@ -126,6 +126,20 @@ describe("MultiStageAboutWelcomeProton module", () => {
       assert.equal(wrapper.find("main").prop("pos"), "split");
     });
 
+    it("should render secondary section for card-stack positioned screens", () => {
+      const SCREEN_PROPS = {
+        content: {
+          position: "card-stack",
+          title: "test title",
+          background: "url(test.svg)",
+        },
+      };
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+      assert.equal(wrapper.find("main").prop("pos"), "card-stack");
+      assert.ok(wrapper.find(".section-secondary").exists());
+    });
+
     it("should render secondary section with content background for split positioned screens", () => {
       const BACKGROUND_URL =
         "chrome://activity-stream/content/data/content/assets/confetti.svg";

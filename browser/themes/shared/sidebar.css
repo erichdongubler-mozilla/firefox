@@ -309,7 +309,7 @@ sidebar-main,
    * at the fixed width tabs.css pins the strip to. */
   @media -moz-pref("browser.nova.enabled") and -moz-pref("sidebar.verticalTabs") {
     &:not([uidensity="touch"]) {
-      --sidebar-launcher-button-padding-inline: var(--tab-inner-inline-margin);
+      --sidebar-launcher-button-padding-inline: var(--tab-margin-inline-inner);
     }
   }
 }

@@ -60,7 +60,7 @@ You can find the review identifier by inspecting the commit log with:
 
 ## Workflow
 - This repository moves fast. If the local checkout looks old compared to `origin/main`, suggest pulling the latest changes before going further.
-- You can run tests by using `./mach test --auto`. Once you are satisfied with the tests you run locally, use `mach try auto` to run tests in CI
+- You can run tests by using `./mach test --auto`. Once you are satisfied with the tests you run locally, ask the user if they would like you to use `mach try auto` to run tests in CI
 - When running slow commands like `./mach test`, `./mach mochitest`, etc., NEVER pipe their output through `tail`, `grep`, `head`, or other filters. Instead redirect output to a temporary file in `artifacts/` (create if necessary) and selectively read this file. This avoids having to re-run slow commands multiple times to extract different pieces of information.
 - Do not run `./mach build faster` when only front-end test files (JS, HTML, etc.) were modified — they don't need compilation.
 - Running tests with `--headless` is preferred if possible for the patch.

@@ -149,40 +149,48 @@ static void profiler_add_js_terminating_flow(mozilla::MarkerCategory aCategory,
       Flow::ProcessScoped(aFlowId));
 }
 
+struct JsAllocationMarker : public mozilla::BaseMarkerType<JsAllocationMarker> {
+  static constexpr const char* Name = "JS allocation";
+  static constexpr bool UseSpecialFrontendLocation = true;
+
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"typeName", MS::InputType::String, nullptr, MS::Format::String},
+      {"className", MS::InputType::CString, nullptr, MS::Format::String},
+      {"descriptiveTypeName", MS::InputType::String, nullptr,
+       MS::Format::String},
+      {"coarseType", MS::InputType::CString, nullptr, MS::Format::String},
+      {"size", MS::InputType::Uint64, nullptr, MS::Format::Bytes},
+      {"inNursery", MS::InputType::Boolean, nullptr, MS::Format::Integer},
+  };
+
+  static void StreamJSONMarkerData(
+      mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
+      const mozilla::ProfilerString16View& aTypeName,
+      const mozilla::ProfilerString8View& aClassName,
+      const mozilla::ProfilerString16View& aDescriptiveTypeName,
+      const mozilla::ProfilerString8View& aCoarseType, uint64_t aSize,
+      bool aInNursery) {
+    if (aClassName.Length() != 0) {
+      aWriter.StringProperty("className", aClassName);
+    }
+    if (aTypeName.Length() != 0) {
+      aWriter.StringProperty("typeName", NS_ConvertUTF16toUTF8(aTypeName));
+    }
+    if (aDescriptiveTypeName.Length() != 0) {
+      aWriter.StringProperty("descriptiveTypeName",
+                             NS_ConvertUTF16toUTF8(aDescriptiveTypeName));
+    }
+    aWriter.StringProperty("coarseType", aCoarseType);
+    aWriter.IntProperty("size", aSize);
+    aWriter.BoolProperty("inNursery", aInNursery);
+  }
+};
+
 static void profiler_add_js_allocation_marker(JS::RecordAllocationInfo&& info) {
   if (!profiler_thread_is_being_profiled_for_markers()) {
     return;
   }
-
-  struct JsAllocationMarker {
-    static constexpr mozilla::Span<const char> MarkerTypeName() {
-      return mozilla::MakeStringSpan("JS allocation");
-    }
-    static void StreamJSONMarkerData(
-        mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
-        const mozilla::ProfilerString16View& aTypeName,
-        const mozilla::ProfilerString8View& aClassName,
-        const mozilla::ProfilerString16View& aDescriptiveTypeName,
-        const mozilla::ProfilerString8View& aCoarseType, uint64_t aSize,
-        bool aInNursery) {
-      if (aClassName.Length() != 0) {
-        aWriter.StringProperty("className", aClassName);
-      }
-      if (aTypeName.Length() != 0) {
-        aWriter.StringProperty("typeName", NS_ConvertUTF16toUTF8(aTypeName));
-      }
-      if (aDescriptiveTypeName.Length() != 0) {
-        aWriter.StringProperty("descriptiveTypeName",
-                               NS_ConvertUTF16toUTF8(aDescriptiveTypeName));
-      }
-      aWriter.StringProperty("coarseType", aCoarseType);
-      aWriter.IntProperty("size", aSize);
-      aWriter.BoolProperty("inNursery", aInNursery);
-    }
-    static mozilla::MarkerSchema MarkerTypeDisplay() {
-      return mozilla::MarkerSchema::SpecialFrontendLocation{};
-    }
-  };
 
   profiler_add_marker(
       "JS allocation", geckoprofiler::category::JS,

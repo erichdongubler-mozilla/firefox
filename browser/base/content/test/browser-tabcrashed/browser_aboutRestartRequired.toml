@@ -1,9 +1,6 @@
 [DEFAULT]
 run-if = [
-  "crashreporter",
-]
-skip-if = [
-  "opt",
+  "!opt && crashreporter", # the tests need the debug-only build ID mismatch hook
 ]
 
 support-files = ["head.js"]

@@ -31,6 +31,7 @@
 #  include "GLImages.h"
 #  include "GLLibraryEGL.h"
 #  include "mozilla/layers/AndroidHardwareBuffer.h"
+#  include "mozilla/layers/AndroidImageReader.h"
 #endif
 
 #ifdef XP_MACOSX
@@ -993,6 +994,23 @@ bool GLBlitHelper::BlitSdToFramebuffer(const layers::SurfaceDescriptor& asd,
 
       return Blit(buffer, destRect, destOrigin, fbSize, convertAlpha);
     }
+    case layers::SurfaceDescriptor::TAndroidImageReaderImageDescriptor: {
+      const auto& sd = asd.get_AndroidImageReaderImageDescriptor();
+
+      auto* imageReaderMap = layers::GpuProcessAndroidImageReaderMap::Get();
+      if (!imageReaderMap) {
+        return false;
+      }
+
+      RefPtr<layers::AndroidImageReader> imageReader =
+          imageReaderMap->GetImageReader(sd.imageReaderId());
+      if (!imageReader) {
+        return false;
+      }
+
+      return Blit(imageReader, sd.frameId(), sd.size(), destRect, destOrigin,
+                  fbSize, convertAlpha);
+    }
     case layers::SurfaceDescriptor::TSurfaceTextureDescriptor: {
       const auto& sd = asd.get_SurfaceTextureDescriptor();
       auto surfaceTexture = java::GeckoSurfaceTexture::Lookup(sd.handle());
@@ -1111,6 +1129,44 @@ bool GLBlitHelper::Blit(layers::AndroidHardwareBuffer* const buffer,
   egl->fDestroyImage(image);
 
   return ret;
+}
+
+bool GLBlitHelper::Blit(layers::AndroidImageReader* imageReader,
+                        const layers::AndroidMediaCodecFrameId frameId,
+                        const gfx::IntSize& texSize,
+                        const gfx::IntRect& destRect, OriginPos destOrigin,
+                        const gfx::IntSize& fbSize,
+                        Maybe<gfxAlphaType> convertAlpha) const {
+  MOZ_ASSERT(imageReader);
+
+  if (!mGL->MakeCurrent()) {
+    return false;
+  }
+
+  const ScopedBindTextureUnit boundTU(mGL, LOCAL_GL_TEXTURE0);
+  ScopedTexture tex(mGL);
+  ScopedBindTexture bindTex(mGL, tex.Texture(), LOCAL_GL_TEXTURE_EXTERNAL);
+
+  mGL->TexParams_SetClampNoMips(LOCAL_GL_TEXTURE_EXTERNAL);
+
+  RefPtr<layers::AndroidImageWrapper> image;
+  if (!imageReader->UpdateTexImage(frameId, mGL, tex.Texture(),
+                                   getter_AddRefs(image))) {
+    return false;
+  }
+
+  const auto srcOrigin = OriginPos::BottomLeft;
+  const bool yFlip = (srcOrigin != destOrigin);
+
+  const auto& prog = GetDrawBlitProg(
+      {kFragHeader_TexExt,
+       {kFragSample_OnePlane, kFragConvert_None, GetAlphaMixin(convertAlpha)}});
+
+  const DrawBlitProg::BaseArgs baseArgs = {SubRectMat3(0, 0, 1, 1), yFlip,
+                                           fbSize, destRect, texSize};
+  prog.Draw(baseArgs);
+
+  return true;
 }
 
 bool GLBlitHelper::Blit(const java::GeckoSurfaceTexture::Ref& surfaceTexture,

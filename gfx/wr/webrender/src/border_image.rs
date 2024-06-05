@@ -6,13 +6,12 @@ use euclid::point2;
 use api::{ColorF, ImageBufferKind, RepeatMode};
 use api::units::*;
 use crate::border::compute_border_repetition_1d;
-use crate::clip::{ClipChainInstance, ClipIntern};
 use crate::command_buffer::CommandBufferIndex;
-use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext};
-use crate::intern::DataStore;
-use crate::pattern::{PatternBuilder, PatternBuilderContext, PatternBuilderState};
+use crate::frame_builder::{FrameBuildingContext, FrameBuildingState};
+use crate::pattern::{PatternBuilder, PatternBuilderState};
 use crate::pattern::image::ImagePattern;
 use crate::quad::{QuadDescriptor, QuadTransformState, prepare_repeatable_quad};
+use crate::quad_clip::QuadClipStack;
 use crate::prim_store::{NinePatchDescriptor, PrimitiveScratchBuffer};
 use crate::segment::EdgeMask;
 
@@ -22,26 +21,17 @@ pub fn prepare_border_image_nine_patch(
     src_image: &ImagePattern,
     src_image_size: DeviceIntSize,
     desc: &QuadDescriptor,
-    clip_chain: &ClipChainInstance,
+    clips: &QuadClipStack,
     transform: &mut QuadTransformState,
 
     frame_context: &FrameBuildingContext,
-    pic_context: &PictureContext,
     targets: &[CommandBufferIndex],
-    interned_clips: &DataStore<ClipIntern>,
 
     frame_state: &mut FrameBuildingState,
     scratch: &mut PrimitiveScratchBuffer,
 ) {
-    let pattern_ctx = PatternBuilderContext {
-        spatial_tree: frame_context.spatial_tree,
-        prim_origin: desc.pattern_rect.min,
-    };
-
     let img_pattern = src_image.build(
-        None,
-        LayoutVector2D::zero(),
-        &pattern_ctx,
+        &desc.pattern_rect,
         &mut PatternBuilderState {
             frame_gpu_data: frame_state.frame_gpu_data,
             transforms: frame_state.transforms,
@@ -80,12 +70,10 @@ pub fn prepare_border_image_nine_patch(
             stretch_size,
             spacing,
             &None,
-            clip_chain,
+            clips,
             transform,
-            frame_context,
-            pic_context,
+            frame_context.spatial_tree,
             targets,
-            interned_clips,
             frame_state,
             scratch,
         );

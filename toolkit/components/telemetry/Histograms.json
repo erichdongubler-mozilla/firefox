@@ -196,84 +196,6 @@
     "bug_numbers": [1172689, 1531034],
     "description": "Recorded when application reputation remote lookup is performed, `true` is recorded if the lookup times out."
   },
-  "CHILD_PROCESS_LAUNCH_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": [
-      "jld@mozilla.com",
-      "jimm@mozilla.com",
-      "mconley@mozilla.com"
-    ],
-    "expires_in_version": "never",
-    "bug_numbers": [1474991],
-    "kind": "exponential",
-    "high": 64000,
-    "n_buckets": 100,
-    "releaseChannelCollection": "opt-out",
-    "description": "Time spent in the generic child process launching code, which is run off-main-thread and used by all child process types"
-  },
-  "CONTENT_PROCESS_LAUNCH_MAINTHREAD_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": [
-      "jld@mozilla.com",
-      "jimm@mozilla.com",
-      "mconley@mozilla.com"
-    ],
-    "expires_in_version": "never",
-    "bug_numbers": [1474991],
-    "kind": "exponential",
-    "high": 64000,
-    "n_buckets": 100,
-    "releaseChannelCollection": "opt-out",
-    "description": "Time spent on the main thread during asynchronous content process launch."
-  },
-  "CONTENT_PROCESS_LAUNCH_TOTAL_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": [
-      "jld@mozilla.com",
-      "jimm@mozilla.com",
-      "mconley@mozilla.com"
-    ],
-    "expires_in_version": "never",
-    "bug_numbers": [1474991],
-    "kind": "exponential",
-    "high": 64000,
-    "n_buckets": 100,
-    "releaseChannelCollection": "opt-out",
-    "description": "Total time elapsed during asynchronous content process launch, until the process is usable for loading content."
-  },
-  "CONTENT_PROCESS_SYNC_LAUNCH_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": [
-      "jld@mozilla.com",
-      "jimm@mozilla.com",
-      "mconley@mozilla.com"
-    ],
-    "expires_in_version": "never",
-    "bug_numbers": [1474991],
-    "kind": "exponential",
-    "high": 64000,
-    "n_buckets": 100,
-    "releaseChannelCollection": "opt-out",
-    "description": "Time elapsed during synchronous content process launch until the process is usable for loading content."
-  },
-  "CONTENT_PROCESS_LAUNCH_IS_SYNC": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": [
-      "jld@mozilla.com",
-      "jimm@mozilla.com",
-      "mconley@mozilla.com"
-    ],
-    "expires_in_version": "never",
-    "bug_numbers": [1474991],
-    "kind": "boolean",
-    "releaseChannelCollection": "opt-out",
-    "description": "Whether a content process was launched synchronously (unnecessarily delaying UI response)."
-  },
   "DEVICE_RESET_REASON": {
     "record_in_processes": ["main", "content", "gpu"],
     "products": ["firefox", "fennec"],
@@ -1799,14 +1721,6 @@
     "n_values": 100,
     "description": "Security-related UI events (addons, form submission, TLS certs, Safe Browsing, updates and geolocation). See /security/manager/ssl/nsISecurityUITelemetry.idl for the specific values."
   },
-  "IPC_TRANSACTION_CANCEL": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["billm@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "description": "True when an IPC transaction is canceled"
-  },
   "SEARCH_COUNTS": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -2414,6 +2328,7 @@
       "BLOCKED_BY_POLICY",
       "HTTP2_SENT_GOAWAY",
       "HTTP3_PROTOCOL",
+      "UNCLEAN_SHUTDOWN",
       "BINDING_FAILED",
       "otherError"
     ],
@@ -3151,17 +3066,6 @@
     "kind": "enumerated",
     "n_values": 10,
     "description": "Media decoder backend (0=WMF Software, 1=DXVA2D3D9, 2=DXVA2D3D11)"
-  },
-  "SANDBOX_REJECTED_SYSCALLS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["jld@mozilla.com", "gcp@mozilla.com"],
-    "bug_numbers": [1286865],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "count",
-    "keyed": true,
-    "description": "System calls blocked by a seccomp-bpf sandbox policy; limited to syscalls where we would crash on Nightly.  The key is generally the architecture and syscall ID but in some cases we include non-personally-identifying information from the syscall arguments; see the function SubmitToTelemetry in security/sandbox/linux/reporter/SandboxReporter.cpp for details."
   },
   "SANDBOX_FAILED_LAUNCH_KEYED": {
     "record_in_processes": ["main"],

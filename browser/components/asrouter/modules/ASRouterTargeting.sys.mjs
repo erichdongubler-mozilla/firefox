@@ -1,4 +1,4 @@
-/* This Source Code Form is subject to the terms of the Mozilla PublicddonMa
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 const FXA_ENABLED_PREF = "identity.fxaccounts.enabled";
@@ -62,7 +62,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/asrouter/ASRouterPreferences.sys.mjs",
   AttributionCode:
     "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
-  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
+  BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
   BrowserInitState: "resource:///modules/BrowserGlue.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   ClientEnvironment: "resource://normandy/lib/ClientEnvironment.sys.mjs",
@@ -1220,6 +1220,13 @@ const TargetingGetters = {
 
   get userMonthlyActivity() {
     return QueryCache.queries.UserMonthlyActivity.get();
+  },
+
+  get allowedNotificationOrigins() {
+    // getAllByTypes returns denials as well as grants.
+    return Services.perms
+      .getAllByTypes(["desktop-notification"])
+      .filter(perm => perm.capability === Services.perms.ALLOW_ACTION).length;
   },
 
   get doesAppNeedPin() {

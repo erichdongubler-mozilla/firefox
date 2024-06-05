@@ -2747,12 +2747,11 @@ bool IMContextWrapper::DispatchCompositionCommitEvent(
   if (!dispatcher) {
     MOZ_ASSERT(aCommitString);
     MOZ_ASSERT(!aCommitString->IsEmpty());
-    WidgetContentCommandEvent insertTextEvent(true, eContentCommandInsertText,
-                                              lastFocusedWindow);
-    insertTextEvent.mString.emplace(*aCommitString);
-    lastFocusedWindow->DispatchEvent(&insertTextEvent);
-
-    if (!insertTextEvent.mSucceeded) {
+    dispatcher = GetTextEventDispatcher();
+    MOZ_ASSERT(dispatcher);
+    const Result<bool, nsresult> insertTextResult =
+        dispatcher->DispatchInsertTextCommandEvent(*aCommitString);
+    if (insertTextResult.isErr()) [[unlikely]] {
       MOZ_LOG(gIMELog, LogLevel::Error,
               ("0x%p   DispatchCompositionChangeEvent(), FAILED, inserting "
                "text failed",
@@ -3418,21 +3417,22 @@ nsresult IMContextWrapper::DeleteText(GtkIMContext* aContext, int32_t aOffset,
       g_utf8_offset_to_pointer(utf8Str.get(), endInUTF8Characters);
 
   // Set selection to delete
-  WidgetSelectionEvent selectionEvent(true, eSetSelection, mLastFocusedWindow);
-
+  const RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher();
+  if (NS_WARN_IF(!dispatcher)) {
+    return NS_ERROR_FAILURE;
+  }
   nsDependentCSubstring utf8StrBeforeOffset(utf8Str, 0,
                                             charAtOffset - utf8Str.get());
-  selectionEvent.mOffset = NS_ConvertUTF8toUTF16(utf8StrBeforeOffset).Length();
+  const uint32_t offset = NS_ConvertUTF8toUTF16(utf8StrBeforeOffset).Length();
 
   nsDependentCSubstring utf8DeletingStr(utf8Str, utf8StrBeforeOffset.Length(),
                                         charAtEnd - charAtOffset);
-  selectionEvent.mLength = NS_ConvertUTF8toUTF16(utf8DeletingStr).Length();
+  const uint32_t length = NS_ConvertUTF8toUTF16(utf8DeletingStr).Length();
 
-  selectionEvent.mReversed = false;
-  selectionEvent.mExpandToClusterBoundary = false;
-  lastFocusedWindow->DispatchEvent(&selectionEvent);
+  const bool setSelectionSucceeded = dispatcher->DispatchSetSelectionEvent(
+      offset, length, ExpandToClusterBoundary::No);
 
-  if (!selectionEvent.mSucceeded || lastFocusedWindow != mLastFocusedWindow ||
+  if (!setSelectionSucceeded || lastFocusedWindow != mLastFocusedWindow ||
       lastFocusedWindow->Destroyed()) {
     MOZ_LOG(gIMELog, LogLevel::Error,
             ("0x%p   DeleteText(), FAILED, setting selection caused "
@@ -3452,12 +3452,10 @@ nsresult IMContextWrapper::DeleteText(GtkIMContext* aContext, int32_t aOffset,
   }
 
   // Delete the selection
-  WidgetContentCommandEvent contentCommandEvent(true, eContentCommandDelete,
-                                                mLastFocusedWindow);
-  mLastFocusedWindow->DispatchEvent(&contentCommandEvent);
+  const Result<bool, nsresult> deleteCommandResult =
+      dispatcher->DispatchContentCommandEvent(eContentCommandDelete);
 
-  if (!contentCommandEvent.mSucceeded ||
-      lastFocusedWindow != mLastFocusedWindow ||
+  if (deleteCommandResult.isErr() || lastFocusedWindow != mLastFocusedWindow ||
       lastFocusedWindow->Destroyed()) {
     MOZ_LOG(gIMELog, LogLevel::Error,
             ("0x%p   DeleteText(), FAILED, deleting the selection caused "

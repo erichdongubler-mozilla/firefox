@@ -3,6 +3,8 @@ support-files = [
   "data/e2e/*.html",
 ]
 prefs = [
+  "browser.newtabpage.enabled=false",
+  "browser.newtabpage.activity-stream.widgets.pictureOfTheDay.enabled=false",
   "browser.ml.enable=true",
   "browser.ml.logLevel=Error",
   "browser.ml.checkForMemory=false",

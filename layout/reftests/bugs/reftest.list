@@ -2143,10 +2143,10 @@ skip-if(!cocoaWidget) != 1836024-1.html 1836024-1-notref.html
 # The 1840511-* tests are reliably fuzzy on certain configurations, per bug
 # 1840511.  (It passes on macOS and Android. It also passes with software WR,
 # or when using drawSnapshot.)
-fuzzy-if(!cocoaWidget&&!Android&&!swgl&&!useDrawSnapshot,1-1,142-142) == 1840511-1.html 1840511-1-ref.html
+fuzzy-if(!cocoaWidget&&!Android&&!swgl&&!useDrawSnapshot,0-1,0-142) == 1840511-1.html 1840511-1-ref.html
 fuzzy-if(!cocoaWidget&&!Android&&!swgl&&!useDrawSnapshot,1-1,284-309) fuzzy-if(useDrawSnapshot,0-1,0-4) == 1840511-2.html 1840511-1-ref.html
 # This test should render blank, but is reliably fuzzy, per bug 1840747.
-fuzzy-if(!useDrawSnapshot,18-19,294-322) == 1840747-1.html about:blank
+fuzzy-if(!useDrawSnapshot,0-19,0-322) == 1840747-1.html about:blank
 # This test has some fine/expected AA-related fuzziness along the edge of a
 # covered-up red shape. But there's a single bright-red pixel that shines
 # through, which is unexpected and is responsible for the 255-255 difference

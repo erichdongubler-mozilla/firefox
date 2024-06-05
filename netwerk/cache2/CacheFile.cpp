@@ -17,6 +17,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/TelemetryHistogramEnums.h"
 #include "mozilla/glean/NetwerkCache2Metrics.h"
+#include "nsCRTGlue.h"
 #include "nsComponentManagerUtils.h"
 #include "nsICacheEntry.h"
 #include "nsProxyRelease.h"

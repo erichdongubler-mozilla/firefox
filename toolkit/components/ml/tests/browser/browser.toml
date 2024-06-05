@@ -84,13 +84,6 @@ support-files = [
   "ml_native_ort_unavailable_stub.worker.mjs",
 ]
 
-["browser_ml_native_ort_availability_probe.js"]
-support-files = [
-  "ml_native_ort_available_stub.worker.mjs",
-  "ml_native_ort_error_stub.worker.mjs",
-  "ml_native_ort_unavailable_stub.worker.mjs",
-]
-
 ["browser_ml_nlp_utils.js"]
 
 ["browser_ml_openai.js"]

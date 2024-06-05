@@ -9,10 +9,10 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
-  IPPExceptionsManager:
-    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
   IPPPrincipalRules:
-    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
+  IPPSiteRuleManager:
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
   IPPProxyManager:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
@@ -154,8 +154,8 @@ export class IPProtectionToolbarButton {
       "IPPProxyManager:StateChanged",
       this.handleEvent
     );
-    lazy.IPPExceptionsManager.addEventListener(
-      "IPPExceptionsManager:ExclusionChanged",
+    lazy.IPPSiteRuleManager.addEventListener(
+      "SiteRuleManager:RuleChanged",
       this.handleEvent
     );
 
@@ -221,14 +221,13 @@ export class IPProtectionToolbarButton {
     if (
       event.type !== "IPProtectionService:StateChanged" &&
       event.type !== "IPPProxyManager:StateChanged" &&
-      event.type !== "IPPExceptionsManager:ExclusionChanged" &&
+      event.type !== "SiteRuleManager:RuleChanged" &&
       event.type !== "TabSelect"
     ) {
       return;
     }
 
-    let exclusionChanged =
-      event.type === "IPPExceptionsManager:ExclusionChanged";
+    let ruleChanged = event.type === "SiteRuleManager:RuleChanged";
 
     if (
       event.type === "IPPProxyManager:StateChanged" &&
@@ -237,7 +236,7 @@ export class IPProtectionToolbarButton {
       this.#visitedExcludedSites.clear();
     }
 
-    this.updateState(null, { showConfirmationHint: !exclusionChanged });
+    this.updateState(null, { showConfirmationHint: !ruleChanged });
   }
 
   /**
@@ -285,13 +284,14 @@ export class IPProtectionToolbarButton {
     // excluded.
     let isExcluded =
       !!principal &&
-      lazy.IPPExceptionsManager.canManage(principal) &&
-      lazy.IPPExceptionsManager.getPrincipalRule(principal) ===
+      lazy.IPPSiteRuleManager.canManage(principal) &&
+      lazy.IPPSiteRuleManager.getRule(principal) ===
         lazy.IPPPrincipalRules.EXCLUDED;
-    //TODO: Add hasInclusion function to exceptions manager, replace false with commented out call to hasInclusion - Bug 2066802
     let isIncluded =
-      !!principal && lazy.IPPExceptionsManager.canManage(principal) && false;
-    //  lazy.IPPExceptionsManager.hasInclusion(principal);
+      !!principal &&
+      lazy.IPPSiteRuleManager.canManage(principal) &&
+      lazy.IPPSiteRuleManager.getRule(principal) ===
+        lazy.IPPPrincipalRules.INCLUDED;
     let isActive = lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE;
     let isPaused = lazy.IPPProxyManager.state === lazy.IPPProxyStates.PAUSED;
 
@@ -546,8 +546,8 @@ export class IPProtectionToolbarButton {
       "IPPProxyManager:StateChanged",
       this.handleEvent
     );
-    lazy.IPPExceptionsManager.removeEventListener(
-      "IPPExceptionsManager:ExclusionChanged",
+    lazy.IPPSiteRuleManager.removeEventListener(
+      "SiteRuleManager:RuleChanged",
       this.handleEvent
     );
   }

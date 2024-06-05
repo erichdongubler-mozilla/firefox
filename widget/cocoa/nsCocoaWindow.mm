@@ -2432,11 +2432,7 @@ NSEvent* gLastDragMouseDownEvent = nil;  // [strong]
         ([[self window] isZoomed] != mZoomStateAtLastSingleClick);
 
     if (!zoomStateAlreadyChanged) {
-      if (nsCocoaUtils::ShouldZoomOnTitlebarDoubleClick()) {
-        [[self window] performZoom:nil];
-      } else if (nsCocoaUtils::ShouldMinimizeOnTitlebarDoubleClick()) {
-        [[self window] performMiniaturize:nil];
-      }
+      nsCocoaUtils::PerformTitlebarDoubleClickAction([self window]);
     }
   }
 
@@ -3177,13 +3173,16 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
     return;
   }
 
-  WidgetContentCommandEvent contentCommandEvent(
-      true, eContentCommandLookUpDictionary, mGeckoChild);
-  contentCommandEvent.mTimeStamp =
-      nsCocoaUtils::GetEventTimeStamp([event timestamp]);
-  NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  contentCommandEvent.mRefPoint = mGeckoChild->CocoaPointsToDevPixels(point);
-  mGeckoChild->DispatchWindowEvent(contentCommandEvent);
+  if (const RefPtr<TextEventDispatcher> dispatcher =
+          mGeckoChild->GetTextEventDispatcher()) {
+    WidgetContentCommandEvent contentCommandEvent(
+        true, eContentCommandLookUpDictionary, mGeckoChild);
+    contentCommandEvent.mTimeStamp =
+        nsCocoaUtils::GetEventTimeStamp([event timestamp]);
+    NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+    contentCommandEvent.mRefPoint = mGeckoChild->CocoaPointsToDevPixels(point);
+    dispatcher->DispatchContentCommandEvent(contentCommandEvent);
+  }
 }
 
 - (NSInteger)windowLevel {
@@ -4299,14 +4298,20 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
 
       // Determine if we can paste (if receiving data from the service).
       if (mGeckoChild && returnType) {
-        WidgetContentCommandEvent command(
-            true, eContentCommandPasteTransferable, mGeckoChild, true);
-        command.mTimeStamp =
-            nsCocoaUtils::GetEventTimeStamp([[NSApp currentEvent] timestamp]);
-        // This might possibly destroy our widget (and null out mGeckoChild).
-        mGeckoChild->DispatchWindowEvent(command);
-        if (!mGeckoChild || !command.mSucceeded || !command.mIsEnabled)
-          result = nil;
+        if (const RefPtr<TextEventDispatcher> dispatcher =
+                mGeckoChild->GetTextEventDispatcher()) {
+          // This might possibly destroy our widget (and null out mGeckoChild).
+          const Result<bool, nsresult> pasteTransferableCommandResult =
+              dispatcher->DispatchPasteTransferableCommandEvent(
+                  nullptr,
+                  nsCocoaUtils::GetEventTimeStamp(
+                      [[NSApp currentEvent] timestamp]),
+                  OnlyEnabledCheck::Yes);
+          if (!mGeckoChild || pasteTransferableCommandResult.isErr() ||
+              !pasteTransferableCommandResult.inspect()) {
+            result = nil;
+          }
+        }
       }
     }
   }
@@ -4433,14 +4438,17 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
 
   NS_ENSURE_TRUE(mGeckoChild, false);
 
-  WidgetContentCommandEvent command(true, eContentCommandPasteTransferable,
-                                    mGeckoChild);
-  command.mTimeStamp =
-      nsCocoaUtils::GetEventTimeStamp([[NSApp currentEvent] timestamp]);
-  command.mTransferable = trans;
-  mGeckoChild->DispatchWindowEvent(command);
+  if (const RefPtr<TextEventDispatcher> dispatcher =
+          mGeckoChild->GetTextEventDispatcher()) {
+    const Result<bool, nsresult> pasteTransferableCommandResult =
+        dispatcher->DispatchPasteTransferableCommandEvent(
+            trans,
+            nsCocoaUtils::GetEventTimeStamp([[NSApp currentEvent] timestamp]));
+    return pasteTransferableCommandResult.isOk() &&
+           pasteTransferableCommandResult.inspect();
+  }
 
-  return command.mSucceeded && command.mIsEnabled;
+  return false;
 }
 
 - (void)pressureChangeWithEvent:(NSEvent*)event {

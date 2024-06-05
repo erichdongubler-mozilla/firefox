@@ -15,6 +15,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ServoBindings.h"
 #include "nsContentUtils.h"  // nsAutoScriptBlocker
+#include "nsNodeInfoManager.h"
 #include "nsString.h"
 #include "nsUnicharUtils.h"
 
@@ -275,6 +276,22 @@ int32_t AttrArray::IndexOfAttr(const nsAtom* aLocalName,
     ++i;
   }
   return -1;
+}
+
+void AttrArray::NodeInfoChanged(nsNodeInfoManager* aManager) {
+  for (InternalAttr& attr : Attrs()) {
+    if (attr.mName.IsAtom()) {
+      continue;
+    }
+    mozilla::dom::NodeInfo* oldNi = attr.mName.NodeInfo();
+    if (oldNi->NodeInfoManager() == aManager) {
+      continue;
+    }
+    RefPtr<mozilla::dom::NodeInfo> ni =
+        aManager->GetNodeInfo(oldNi->NameAtom(), oldNi->GetPrefixAtom(),
+                              oldNi->NamespaceID(), oldNi->NodeType());
+    attr.mName.SetTo(ni);
+  }
 }
 
 void AttrArray::Compact() {

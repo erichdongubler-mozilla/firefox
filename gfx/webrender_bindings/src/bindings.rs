@@ -4276,8 +4276,8 @@ pub extern "C" fn wr_dp_push_border_gradient(
     height: i32,
     fill: bool,
     slice: DeviceIntSideOffsets,
-    start_point: LayoutPoint,
-    end_point: LayoutPoint,
+    start_point: LayoutVector2D,
+    end_point: LayoutVector2D,
     stops: *const GradientStop,
     stops_count: usize,
     extend_mode: ExtendMode,
@@ -4327,7 +4327,7 @@ pub extern "C" fn wr_dp_push_border_radial_gradient(
     parent: &WrSpaceAndClipChain,
     widths: LayoutSideOffsets,
     fill: bool,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     radius: LayoutSize,
     stops: *const GradientStop,
     stops_count: usize,
@@ -4385,7 +4385,7 @@ pub extern "C" fn wr_dp_push_border_conic_gradient(
     parent: &WrSpaceAndClipChain,
     widths: LayoutSideOffsets,
     fill: bool,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     angle: f32,
     stops: *const GradientStop,
     stops_count: usize,
@@ -4441,8 +4441,8 @@ pub extern "C" fn wr_dp_push_linear_gradient(
     clip: LayoutRect,
     is_backface_visible: bool,
     parent: &WrSpaceAndClipChain,
-    start_point: LayoutPoint,
-    end_point: LayoutPoint,
+    start: LayoutVector2D,
+    end: LayoutVector2D,
     stops: *const GradientStop,
     stops_count: usize,
     extend_mode: ExtendMode,
@@ -4458,7 +4458,7 @@ pub extern "C" fn wr_dp_push_linear_gradient(
         state
             .frame_builder
             .dl_builder
-            .create_gradient(start_point, end_point, stops_vector, extend_mode);
+            .create_gradient(start, end, stops_vector, extend_mode);
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
@@ -4482,7 +4482,7 @@ pub extern "C" fn wr_dp_push_radial_gradient(
     clip: LayoutRect,
     is_backface_visible: bool,
     parent: &WrSpaceAndClipChain,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     radius: LayoutSize,
     stops: *const GradientStop,
     stops_count: usize,
@@ -4527,7 +4527,7 @@ pub extern "C" fn wr_dp_push_conic_gradient(
     clip: LayoutRect,
     is_backface_visible: bool,
     parent: &WrSpaceAndClipChain,
-    center: LayoutPoint,
+    center: LayoutVector2D,
     angle: f32,
     stops: *const GradientStop,
     stops_count: usize,

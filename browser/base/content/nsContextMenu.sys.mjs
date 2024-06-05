@@ -15,7 +15,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
   DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
-  GenAI: "resource:///modules/GenAI.sys.mjs",
+  GenAI: "moz-src:///browser/components/genai/GenAI.sys.mjs",
   LinkPreview: "moz-src:///browser/components/genai/LinkPreview.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   LoginManagerContextMenu:
@@ -51,6 +51,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "TEXT_RECOGNITION_ENABLED",
   "dom.text-recognition.enabled",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "AITAB_ENABLED",
+  "browser.smartwindow.aitab.enabled",
   false
 );
 
@@ -930,6 +937,12 @@ export class nsContextMenu {
       showItem: this.showItem.bind(this),
       source: "page",
     });
+    this.showItem(
+      "context-create-aitab",
+      lazy.AITAB_ENABLED &&
+        lazy.AIWindow.isAIWindowActiveAndEnabled(this.window) &&
+        ["http", "https"].includes(this.browser.currentURI.scheme)
+    );
 
     // srcdoc cannot be opened separately due to concerns about web
     // content with about:srcdoc in location bar masquerading as trusted
@@ -2651,6 +2664,10 @@ export class nsContextMenu {
       dest = "tab";
     }
     this.window.openTrustedLinkIn(drmInfoURL, dest);
+  }
+
+  createAITab() {
+    lazy.AIWindow.createAITab(this.window, [this.browser.currentURI.spec]);
   }
 
   /**

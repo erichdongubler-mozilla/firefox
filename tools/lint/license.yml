@@ -10,6 +10,7 @@ license:
         - browser/branding/
         # Trademarks
         - browser/components/topsites/content/tippytop/images/
+        - browser/themes/shared/urlbar/engine-wordmarks/
         - toolkit/components/pdfjs/content/web/images/
         # We probably want a specific license
         - browser/extensions/webcompat/injections/

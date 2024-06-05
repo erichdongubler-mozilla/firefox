@@ -726,9 +726,10 @@ const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
     anchorName = anchorKey;
   }
 
-  return anchorName.mName
-             ? aPresShell->GetAnchorPosAnchor(anchorName, aPositionedFrame)
-             : nullptr;
+  return anchorName.mName ? aPresShell->GetAnchorPosAnchor(
+                                anchorName, aPositionedFrame,
+                                referencedAnchors->mFrameTreeDepth)
+                          : nullptr;
 }
 
 nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
@@ -757,7 +758,9 @@ nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
         const ScopedNameRef nameRef(name.AsAtom(), treeScope);
         const auto* data = referencedAnchors->Lookup(nameRef);
         if (data && *data && data->ref().mOffsetData) {
-          if (aAnchorFrame == aPresShell->GetAnchorPosAnchor(nameRef, frame)) {
+          if (aAnchorFrame ==
+              aPresShell->GetAnchorPosAnchor(
+                  nameRef, frame, referencedAnchors->mFrameTreeDepth)) {
             if (positionedFrame) {
               // Multiple positioned frames reference this anchor.
               return nullptr;

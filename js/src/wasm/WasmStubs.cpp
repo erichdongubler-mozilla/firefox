@@ -2989,7 +2989,8 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
   wasm::CalleeDesc callee = wasm::CalleeDesc::wasmFuncRef();
   CodeOffset fastCallOffset;
   CodeOffset slowCallOffset;
-  masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset);
+  masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset, nullptr,
+                   nullptr);
 
   // The current stack pointer might not match the one before the call if the
   // callee performed a tail call, so recover it from FP before reading the

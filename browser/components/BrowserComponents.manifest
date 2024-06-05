@@ -201,12 +201,11 @@ category browser-idle-startup resource://gre/modules/RFPHelper.sys.mjs RFPHelper
 category browser-idle-startup resource://gre/modules/Blocklist.sys.mjs Blocklist.loadBlocklistAsync
 category browser-idle-startup resource://gre/modules/psm/RemoteSecuritySettings.sys.mjs RemoteSecuritySettings.init
 category browser-idle-startup moz-src:///browser/components/tabbrowser/TabUnloader.sys.mjs TabUnloader.init
-category browser-idle-startup resource:///modules/GenAI.sys.mjs GenAI.init
+category browser-idle-startup moz-src:///browser/components/genai/GenAI.sys.mjs GenAI.init
 category browser-idle-startup moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs QuickSuggest.init
 category browser-idle-startup moz-src:///browser/components/urlbar/UrlbarSearchTermsPersistence.sys.mjs UrlbarSearchTermsPersistence.init
 category browser-idle-startup moz-src:///browser/components/search/SERPCategorization.sys.mjs SERPCategorization.init
 category browser-idle-startup resource://gre/modules/ContentRelevancyManager.sys.mjs ContentRelevancyManager.init
-category browser-idle-startup chrome://global/content/ml/EngineProcess.sys.mjs EngineProcess.maybeReportNativeOnnxRuntimeAvailability
 category browser-idle-startup resource://gre/modules/ColorwayThemeMigration.sys.mjs ColorwayThemeMigration.maybeWarn
 category browser-idle-startup resource://gre/modules/AppServicesTracing.sys.mjs RustLogForwarder.init
 category browser-idle-startup moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs ContextualIdentityService.load
@@ -216,12 +215,13 @@ category browser-idle-startup resource:///modules/UpdatePolicyEnforcer.sys.mjs U
 #endif
 #ifdef XP_WIN
 category browser-idle-startup resource:///modules/WindowsJumpLists.sys.mjs WinTaskbarJumpList.startup
+category browser-idle-startup resource://gre/modules/PushNotificationHelper.sys.mjs PushNotificationHelper.init
 #endif
 #ifdef MOZ_DEFAULT_BROWSER_AGENT
 category browser-idle-startup resource://gre/modules/DefaultAgentScheduler.sys.mjs DefaultAgentScheduler.maybeScheduleDefaultAgentTask
 #endif
 #if defined(XP_WIN) || defined(XP_MACOSX)
-category browser-idle-startup resource:///modules/DefaultLaunchOnLogin.sys.mjs DefaultLaunchOnLogin.maybeEnableOnFirstRun
+category browser-idle-startup moz-src:///browser/components/defaultlaunchonlogin/DefaultLaunchOnLogin.sys.mjs DefaultLaunchOnLogin.maybeEnableOnFirstRun
 category browser-idle-startup moz-src:///browser/components/shell/StartupOSIntegration.sys.mjs StartupOSIntegration.onStartupIdle
 #endif
 

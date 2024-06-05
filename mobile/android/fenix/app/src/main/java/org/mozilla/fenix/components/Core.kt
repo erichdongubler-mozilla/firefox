@@ -78,6 +78,7 @@ import mozilla.components.feature.session.middleware.LastAccessMiddleware
 import mozilla.components.feature.session.middleware.undo.UndoMiddleware
 import mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage
 import mozilla.components.feature.summarize.settings.SummarizationSettings
+import mozilla.components.feature.tabgroups.storage.repository.DefaultTabGroupRepository
 import mozilla.components.feature.top.sites.DefaultTopSitesStorage
 import mozilla.components.feature.top.sites.PinnedSiteStorage
 import mozilla.components.feature.webcompat.WebCompatFeature
@@ -147,8 +148,7 @@ import org.mozilla.fenix.summarization.eligibility.DefaultSummarizationEligibili
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
-import org.mozilla.fenix.tabgroups.storage.redux.middleware.TabGroupMiddleware
-import org.mozilla.fenix.tabgroups.storage.repository.DefaultTabGroupRepository
+import org.mozilla.fenix.tabgroups.middleware.TabGroupMiddleware
 import org.mozilla.fenix.telemetry.TelemetryMiddleware
 import org.mozilla.fenix.translations.TranslationsEnabledSettings
 import org.mozilla.fenix.utils.Settings.DeleteDownloadBehavior
@@ -599,7 +599,6 @@ class Core(
                 ContentRecommendationsRequestConfig(
                     locale = LocaleManager.getSelectedLocale(context),
                     userAgent = engine.settings.userAgentString.orEmpty(),
-                    useMerinoClient = context.components.settings.enableMerinoClient,
                 ),
             marsSponsoredContentsParams =
                 MarsSpocsRequestConfig(

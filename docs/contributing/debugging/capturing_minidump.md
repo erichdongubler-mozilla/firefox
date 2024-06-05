@@ -234,6 +234,8 @@ of a GPU process.
 ```{image} img/process-explorer.png
 ```
 
+(how-to-find-the-location-of-firefox-exe)=
+
 ## How to find the location of firefox.exe
 
 If you're not sure about the location of the executable file (firefox.exe) of

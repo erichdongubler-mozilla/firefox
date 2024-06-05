@@ -172,6 +172,7 @@ let Player = {
     "command",
     "dblclick",
     "keydown",
+    "mousedown",
     "mouseup",
     "mousemove",
     "MozDOMFullscreen:Entered",
@@ -221,6 +222,12 @@ let Player = {
    * Set a shortcut that can be used for unpiping without pausing
    */
   isUnpipWithoutPauseShortcut: e => e.shiftKey === true,
+
+  /**
+   * Becomes true once the first Tab press puts focus on the play/pause or
+   * seek backwards buttons.
+   */
+  didTabOverrideControlFocus: false,
 
   /**
    * Initializes the player browser, and sets up the initial state.
@@ -477,6 +484,22 @@ let Player = {
         if (event.keyCode == KeyEvent.DOM_VK_TAB) {
           this.controls.setAttribute(KEYING_ATTRIBUTE, true);
           this.showVideoControls();
+          // Tab order follows DOM order. To ensure Tab lands on primary controls
+          // after opening PiP for the first time, override the default Tab
+          // behaviour and focus on the primary buttons.
+          // Do not override in init() to prevent regressing the "space" play/pause shortcut.
+          if (
+            !this.didTabOverrideControlFocus &&
+            !this.controls.contains(document.activeElement)
+          ) {
+            this.didTabOverrideControlFocus = true;
+            event.preventDefault();
+            if (!event.shiftKey) {
+              this.playpauseButton.focus();
+            } else {
+              this.seekBackward.focus();
+            }
+          }
         } else if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
           let isSettingsPanelInFocus = this.settingsPanel.contains(
             document.activeElement
@@ -514,14 +537,19 @@ let Player = {
           this.cyclePlaybackRate(event.key == ">" ? 1 : -1);
         } else if (
           Services.prefs.getBoolPref(KEYBOARD_CONTROLS_ENABLED_PREF, false) &&
-          (event.keyCode != KeyEvent.DOM_VK_SPACE || !event.target.id)
+          (event.key != " " || !event.target.closest(".control-button, .panel"))
         ) {
-          // Pressing "space" fires a "keydown" event which can also trigger a control
-          // button's "click" event. Handle the "keydown" event only when the event did
-          // not originate from a control button and it is not a "space" keypress.
+          // Pressing "space" fires a "keydown" event which can also activate a
+          // focused control. Let "space" toggle playback unless a control that
+          // it would activate has focus.
           this.onKeyDown(event);
         }
 
+        break;
+      }
+
+      case "mousedown": {
+        this.onMouseDown(event);
         break;
       }
 
@@ -1256,6 +1284,21 @@ let Player = {
   },
 
   /**
+   * Event handler for "mousedown" events on the PiP window.
+   *
+   * @param {Event} event
+   *  Event context details
+   */
+  onMouseDown(event) {
+    // Prevent mouse clicks moving focus onto the control buttons.
+    // Otherwise, if focus stays, "space" key presses would act on that button
+    // instead of toggling playback.
+    if (event.target.closest(".control-button")) {
+      event.preventDefault();
+    }
+  },
+
+  /**
    * Event handler for "mouseup" events on the PiP window.
    *
    * @param {Event} event
@@ -1457,6 +1500,11 @@ let Player = {
   get seekBackward() {
     delete this.seekBackward;
     return (this.seekBackward = document.getElementById("seekBackward"));
+  },
+
+  get playpauseButton() {
+    delete this.playpauseButton;
+    return (this.playpauseButton = document.getElementById("playpause"));
   },
 
   get seekForward() {

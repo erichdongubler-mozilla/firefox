@@ -90,6 +90,7 @@ static constexpr Register ReturnReg{Registers::x0};
 static constexpr Register64 ReturnReg64(ReturnReg);
 static constexpr Register JSReturnReg{Registers::x2};
 static constexpr Register FramePointer{Registers::fp};
+static constexpr Register LinkRegister{Registers::x30};
 static constexpr ARMRegister FramePointer64{FramePointer, 64};
 static constexpr Register ZeroRegister{Registers::sp};
 static constexpr ARMRegister ZeroRegister64{Registers::sp, 64};

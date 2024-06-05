@@ -732,11 +732,6 @@ class EditorBase : public nsIEditor,
     Yes,
   };
 
-  enum class PreventSetSelection {
-    No,
-    Yes,
-  };
-
   /**
    * Replace text in aReplaceRange or all text in this editor with aString and
    * treat the change as inserting the string.

@@ -7,16 +7,15 @@ use api::{
 };
 use api::units::*;
 use euclid::point2;
-use crate::clip::{ClipChainInstance, ClipIntern};
 use crate::command_buffer::CommandBufferIndex;
 use crate::pattern::image::ImagePattern;
 use crate::quad::{QuadDescriptor, QuadTransformState};
-use crate::scene_building::{IsVisible};
-use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext};
-use crate::intern::{DataStore, Handle as InternHandle, InternDebug, Internable};
+use crate::quad_clip::QuadClipStack;
+use crate::frame_builder::{FrameBuildingContext, FrameBuildingState};
+use crate::intern::{Handle as InternHandle, InternDebug, Internable};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
-    EdgeMask, InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveKind, PrimitiveScratchBuffer, PrimitiveStore
+    EdgeMask, InternablePrimitive, PrimTemplate, PrimTemplateCommonData, PrimitiveKind, PrimitiveScratchBuffer, PrimitiveStore
 };
 use crate::render_target::RenderTargetKind;
 use crate::render_task_graph::RenderTaskId;
@@ -73,13 +72,12 @@ impl StretchSize {
     }
 }
 
-// `Image` now lives in `webrender_api::interned_prims` so content-process
-// interning can hold it. Re-exported to keep existing references working.
-pub use api::interned_prims::Image;
+// `Image` and its key live in `webrender_api::interned_prims` so
+// content-process interning can hold them. Re-exported to keep existing
+// references working.
+pub use api::interned_prims::{Image, ImagePrimKey};
 
-pub type ImageKey = PrimKey<Image>;
-
-impl InternDebug for ImageKey {}
+impl InternDebug for ImagePrimKey {}
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -171,12 +169,11 @@ pub fn prepare_image_quads(
     prim_rect: &LayoutRect,
     common_data: &PrimTemplateCommonData,
     image_data: &ImageData,
-    clip_chain: &ClipChainInstance,
+    coverage_rect: &LayoutRect,
+    clips: &QuadClipStack,
     quad_transform: &mut QuadTransformState,
     frame_context: &FrameBuildingContext,
-    pic_context: &PictureContext,
     targets: &[CommandBufferIndex],
-    interned_clips: &DataStore<ClipIntern>,
     frame_state: &mut FrameBuildingState,
     scratch: &mut PrimitiveScratchBuffer,
 ) {
@@ -199,7 +196,7 @@ pub fn prepare_image_quads(
     // We also rely on it being tight in some cases other than tiled/repeated
     // images, for example when rendering a snapshot image where the snapshot
     // area is tighter than the rasterized area.
-    let tight_clip_rect = clip_chain.local_coverage_rect;
+    let tight_clip_rect = *coverage_rect;
 
     let request = ImageRequest {
         key: image_data.key,
@@ -212,6 +209,13 @@ pub fn prepare_image_quads(
         sampler_kind = kind;
     }
 
+
+    if let Some(&snapshot_task_id) = frame_state.image_dependencies.get(&request.key) {
+        frame_state.surface_builder.add_child_render_task(
+            snapshot_task_id,
+            frame_state.rg_builder,
+        );
+    }
 
     match image_properties.tiling {
         // Non-tiled (most common) path.
@@ -290,12 +294,10 @@ pub fn prepare_image_quads(
                         transformed_aa_edges: common_data.transformed_aa_edges,
                     },
                     &None,
-                    clip_chain,
+                    clips,
                     quad_transform,
-                    frame_context,
-                    pic_context,
+                    frame_context.spatial_tree,
                     targets,
-                    interned_clips,
                     frame_state,
                     scratch,
                 );
@@ -313,12 +315,10 @@ pub fn prepare_image_quads(
                 stretch_size,
                 image_data.tile_spacing,
                 &None,
-                clip_chain,
+                clips,
                 quad_transform,
-                frame_context,
-                pic_context,
+                frame_context.spatial_tree,
                 targets,
-                interned_clips,
                 frame_state,
                 scratch,
             );
@@ -329,11 +329,10 @@ pub fn prepare_image_quads(
             // thing.
             let active_rect = image_properties.visible_rect;
             let visible_rect = compute_surface_visible_rect(
-                &frame_state.surfaces[pic_context.surface_index.0],
-                clip_chain,
-                quad_transform.prim_spatial_node_index(),
+                &clips.surface_clip_rect(),
+                clips.coverage_rect(),
+                quad_transform,
                 &tight_clip_rect,
-                frame_context.spatial_tree,
             );
 
             let effective_stretch_size = image_data.stretch_size.resolve(prim_rect);
@@ -390,12 +389,10 @@ pub fn prepare_image_quads(
                             transformed_aa_edges,
                         },
                         &None,
-                        clip_chain,
+                        clips,
                         quad_transform,
-                        frame_context,
-                        pic_context,
+                        frame_context.spatial_tree,
                         targets,
-                        interned_clips,
                         frame_state,
                         scratch,
                     );
@@ -420,8 +417,8 @@ fn edge_flags_for_tile_spacing(tile_spacing: &LayoutSize) -> EdgeMask {
 
 pub type ImageTemplate = PrimTemplate<ImageData>;
 
-impl From<ImageKey> for ImageTemplate {
-    fn from(image: ImageKey) -> Self {
+impl From<ImagePrimKey> for ImageTemplate {
+    fn from(image: ImagePrimKey) -> Self {
         let common = PrimTemplateCommonData::with_key_common(image.common);
 
         ImageTemplate {
@@ -434,7 +431,7 @@ impl From<ImageKey> for ImageTemplate {
 pub type ImageDataHandle = InternHandle<Image>;
 
 impl Internable for Image {
-    type Key = ImageKey;
+    type Key = ImagePrimKey;
     type StoreData = ImageTemplate;
     type InternData = ();
     const PROFILE_COUNTER: usize = crate::profiler::INTERNED_IMAGES;
@@ -444,25 +441,18 @@ impl InternablePrimitive for Image {
     fn into_key(
         self,
         info: &LayoutPrimitiveInfo,
-    ) -> ImageKey {
-        ImageKey::new(info.into(), self)
+    ) -> ImagePrimKey {
+        ImagePrimKey::new(info.into(), self)
     }
 
     fn make_instance_kind(
-        _key: ImageKey,
+        _key: ImagePrimKey,
         data_handle: ImageDataHandle,
         _prim_store: &mut PrimitiveStore,
     ) -> PrimitiveKind {
         PrimitiveKind::Image {
             data_handle,
         }
-    }
-}
-
-
-impl IsVisible for Image {
-    fn is_visible(&self) -> bool {
-        true
     }
 }
 
@@ -563,11 +553,9 @@ impl AdjustedImageSource {
 
 // `YuvImage` now lives in `webrender_api::interned_prims` so content-process
 // interning can hold it. Re-exported to keep existing references working.
-pub use api::interned_prims::YuvImage;
+pub use api::interned_prims::{YuvImage, YuvImagePrimKey};
 
-pub type YuvImageKey = PrimKey<YuvImage>;
-
-impl InternDebug for YuvImageKey {}
+impl InternDebug for YuvImagePrimKey {}
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -640,8 +628,8 @@ impl YuvImageData {
 
 pub type YuvImageTemplate = PrimTemplate<YuvImageData>;
 
-impl From<YuvImageKey> for YuvImageTemplate {
-    fn from(image: YuvImageKey) -> Self {
+impl From<YuvImagePrimKey> for YuvImageTemplate {
+    fn from(image: YuvImagePrimKey) -> Self {
         let common = PrimTemplateCommonData::with_key_common(image.common);
 
         YuvImageTemplate {
@@ -654,7 +642,7 @@ impl From<YuvImageKey> for YuvImageTemplate {
 pub type YuvImageDataHandle = InternHandle<YuvImage>;
 
 impl Internable for YuvImage {
-    type Key = YuvImageKey;
+    type Key = YuvImagePrimKey;
     type StoreData = YuvImageTemplate;
     type InternData = ();
     const PROFILE_COUNTER: usize = crate::profiler::INTERNED_YUV_IMAGES;
@@ -664,24 +652,18 @@ impl InternablePrimitive for YuvImage {
     fn into_key(
         self,
         info: &LayoutPrimitiveInfo,
-    ) -> YuvImageKey {
-        YuvImageKey::new(info.into(), self)
+    ) -> YuvImagePrimKey {
+        YuvImagePrimKey::new(info.into(), self)
     }
 
     fn make_instance_kind(
-        _key: YuvImageKey,
+        _key: YuvImagePrimKey,
         data_handle: YuvImageDataHandle,
         _prim_store: &mut PrimitiveStore,
     ) -> PrimitiveKind {
         PrimitiveKind::YuvImage {
             data_handle,
         }
-    }
-}
-
-impl IsVisible for YuvImage {
-    fn is_visible(&self) -> bool {
-        true
     }
 }
 
@@ -697,8 +679,8 @@ fn test_struct_sizes() {
     //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<Image>(), 36, "Image size changed");
     assert_eq!(mem::size_of::<ImageTemplate>(), 84, "ImageTemplate size changed");
-    assert_eq!(mem::size_of::<ImageKey>(), 72, "ImageKey size changed");
+    assert_eq!(mem::size_of::<ImagePrimKey>(), 72, "ImagePrimKey size changed");
     assert_eq!(mem::size_of::<YuvImage>(), 32, "YuvImage size changed");
     assert_eq!(mem::size_of::<YuvImageTemplate>(), 104, "YuvImageTemplate size changed");
-    assert_eq!(mem::size_of::<YuvImageKey>(), 68, "YuvImageKey size changed");
+    assert_eq!(mem::size_of::<YuvImagePrimKey>(), 68, "YuvImagePrimKey size changed");
 }

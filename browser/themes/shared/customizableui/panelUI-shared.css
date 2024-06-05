@@ -712,9 +712,11 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
       }
     }
 
-    /* menu-message sets its own :host margin in menu-message.css */
+    /* menu-message sets its own :host margin in menu-message.css. The
+       toolbaritem provides the insets, so stretch the card to fill it. */
     #appMenu-menu-message menu-message {
       margin: 0;
+      width: 100%;
     }
   }
 }

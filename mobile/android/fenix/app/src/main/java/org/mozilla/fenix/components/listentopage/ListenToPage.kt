@@ -39,6 +39,7 @@ class ListenToPage(
             middleware =
                 listOf(
                     ListenMiddleware(
+                        browserStore = browserStore,
                         contentProvider =
                             ContentProvider.fromPage(
                                 pageContentExtractor = pageExtractor,

@@ -21,6 +21,7 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RestyleManager.h"
+#include "mozilla/ScrollState.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TouchEvents.h"
@@ -794,6 +795,10 @@ size_t FragmentOrElement::nsExtendedDOMSlots::SizeOfExcludingThis(
   // report the memory it's using directly.
   if (mControllers) {
     n += aMallocSizeOf(mControllers);
+  }
+
+  if (mSavedScrollState) {
+    n += aMallocSizeOf(mSavedScrollState.get());
   }
 
   if (mLabelsList) {

@@ -87,7 +87,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs",
   TelemetryScheduler:
     "moz-src:///browser/components/aiwindow/models/TelemetryManager.sys.mjs",
+  URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
+
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "l10n",
+  () => new Localization(["preview/aiWindow.ftl"], true)
+);
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -1000,6 +1007,70 @@ export const AIWindow = {
   },
 
   /**
+   * Opens a new background tab whose chat asks for an AI Tab page built from
+   * the given tabs, as if the user had typed the request there. The current
+   * tab and its sidebar are left alone; the new tab decides for itself how to
+   * show its chat once selected.
+   *
+   * @param {Window} win
+   * @param {string[]} urls - Non-http(s) URLs are dropped since the model
+   *   cannot read them.
+   */
+  createAITab(win, urls) {
+    const pageUrls = urls.filter(url =>
+      ["http:", "https:"].includes(URL.parse(url)?.protocol)
+    );
+    if (!pageUrls.length) {
+      return;
+    }
+
+    const text = [
+      lazy.l10n.formatValueSync("ai-tab-create-page-prompt", {
+        tabCount: pageUrls.length,
+      }),
+      ...pageUrls,
+    ].join("\n");
+
+    lazy.URILoadingHelper.openTrustedLinkIn(win, AIWINDOW_URL, "tab", {
+      inBackground: true,
+      resolveOnContentBrowserCreated: browser => {
+        const submit = () =>
+          browser.contentDocument.querySelector("ai-window").submitChatMessage({
+            text,
+            submitType: "menu",
+            contextPageUrl: null,
+          });
+
+        // AIWINDOW_URL is the Smart Window's new tab page, so this may be the
+        // preloaded new tab browser, whose ai-window connected before it had a
+        // tab and will not connect again.
+        if (browser.contentDocument?.querySelector("ai-window")?.conversation) {
+          submit();
+          return;
+        }
+
+        // Otherwise the chat page is still loading; submit once its element
+        // connects, or give up if the tab is closed first.
+        const tab = win.gBrowser.getTabForBrowser(browser);
+        const controller = new AbortController();
+        const { signal } = controller;
+        tab.addEventListener("TabClose", () => controller.abort(), { signal });
+        win.addEventListener(
+          "ai-window:connected",
+          event => {
+            if (event.detail.tab !== tab) {
+              return;
+            }
+            controller.abort();
+            submit();
+          },
+          { signal }
+        );
+      },
+    });
+  },
+
+  /**
    * Records that a Smart Window was opened.
    *
    * @param {string} trigger - The reason the Smart Window was opened: switch,
@@ -1411,10 +1482,6 @@ export const AIWindow = {
       l10nId: "smartwindow-organize-tabs-button",
       defaultArea: lazy.CustomizableUI.AREA_TABSTRIP,
       defaultAreaVerticalTabs: lazy.CustomizableUI.AREA_NAVBAR,
-      // Profiles that already have a saved tab strip only get a new default
-      // widget put in its default spot if it is marked as newly introduced;
-      // without this it lands at the end of the toolbar instead.
-      _introducedByPref: PREF_AUTO_TAB_GROUPING,
       removable: true,
       showInPrivateBrowsing: false,
       onCreated: node => {

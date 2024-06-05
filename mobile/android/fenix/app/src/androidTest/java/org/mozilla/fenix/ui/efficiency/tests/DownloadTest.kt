@@ -8,6 +8,7 @@ import mozilla.components.support.ktx.util.PromptAbuserDetector
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.Constants
 import org.mozilla.fenix.helpers.TestAssetHelper.downloadPageAsset
@@ -96,6 +97,7 @@ class DownloadTest : BaseTest() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1114970
+    @Critical
     @Test
     fun deleteDownloadedFileTest() {
         // Local mockWebServer asset, like the legacy test: zip_small.zip completes instantly, so no

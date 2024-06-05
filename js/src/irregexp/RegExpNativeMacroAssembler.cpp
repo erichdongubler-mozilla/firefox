@@ -1681,7 +1681,7 @@ bool HandleRegExpInterrupt(JSContext* cx,
   // The remaining GC-related problem is the regexp code itself. Fortunately,
   // compiled regexps only touch two GC things: the input string, and the
   // JitCode itself. AutoInterruptingRegExp prevents RegExp code from being
-  // discarded in forceDiscardJitCode. We read the string from the FrameData
+  // discarded in Zone::discardJitCode. We read the string from the FrameData
   // here, root it, and update the frame before returning. The interrupt
   // handling code will reload fresh pointers to the string's characters
   // before resuming.

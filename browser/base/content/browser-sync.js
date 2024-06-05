@@ -3705,7 +3705,7 @@ var gSync = {
   },
 
   openPrefs(entryPoint = "syncbutton", origin = undefined, urlParams = {}) {
-    window.openPreferences("paneSync", {
+    window.openPreferences("paneSync-sync", {
       origin,
       urlParams: { ...urlParams, entrypoint: entryPoint },
     });
@@ -3771,7 +3771,7 @@ var gSync = {
   },
 
   enableSync() {
-    openTrustedLinkIn("about:preferences#sync", "tab");
+    openTrustedLinkIn("about:preferences#sync-sync", "tab");
   },
 
   async openPairDevice(sourceElement, entryPoint) {

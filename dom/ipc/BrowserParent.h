@@ -128,7 +128,7 @@ class BrowserParent final : public PBrowserParent,
 
   static BrowserParent* GetFrom(nsIContent* aContent);
 
-  static BrowserParent* GetBrowserParentFromLayersId(
+  static already_AddRefed<BrowserParent> GetBrowserParentFromLayersId(
       layers::LayersId aLayersId);
 
   static TabId GetTabIdFrom(nsIDocShell* docshell);
@@ -187,6 +187,10 @@ class BrowserParent final : public PBrowserParent,
   // Returns the BrowserHost if this BrowserParent is for a top-level browser
   // and nullptr otherwise.
   BrowserHost* GetBrowserHost() const;
+
+  bool IsEmbedded() const {
+    return mBrowserHost || mBrowserBridgeParent || mFrameElement;
+  }
 
   ParentShowInfo GetShowInfo();
 
@@ -546,11 +550,6 @@ class BrowserParent final : public PBrowserParent,
       const double& aDeltaY, const int32_t& aModifierFlags,
       const Maybe<uint64_t>& aCallbackId);
 
-  mozilla::ipc::IPCResult RecvLockNativePointer(
-      const nsIWidget::NativePointerLockMode& aNativePointerLockMode);
-
-  mozilla::ipc::IPCResult RecvUnlockNativePointer();
-
   mozilla::ipc::IPCResult RecvSetNativePointerLockMode(
       const nsIWidget::NativePointerLockMode& aNativePointerLockMode);
 
@@ -737,6 +736,8 @@ class BrowserParent final : public PBrowserParent,
 
   virtual void ActorDestroy(ActorDestroyReason why) override;
 
+  virtual mozilla::ipc::IPCResult Recv__delete__() override;
+
   mozilla::ipc::IPCResult RecvRemoteIsReadyToHandleInputEvents();
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
@@ -802,12 +803,10 @@ class BrowserParent final : public PBrowserParent,
   // and have to ensure that the child did not modify links to be loaded.
   bool QueryDropLinksForVerification();
 
-  void UnlockNativePointer();
-
  private:
   // This is used when APZ needs to find the BrowserParent associated with a
   // layer to dispatch events.
-  typedef nsTHashMap<nsUint64HashKey, BrowserParent*> LayerToBrowserParentTable;
+  typedef nsTHashMap<nsUint64HashKey, nsWeakPtr> LayerToBrowserParentTable;
   static LayerToBrowserParentTable* sLayerToBrowserParentTable;
 
   static void AddBrowserParentToTable(layers::LayersId aLayersId,
@@ -885,14 +884,14 @@ class BrowserParent final : public PBrowserParent,
   uint32_t mChromeFlags;
 
   // Pointer back to BrowserBridgeParent if there is one associated with
-  // this BrowserParent. This is non-owning to avoid cycles and is managed
-  // by the BrowserBridgeParent instance, which has the strong reference
-  // to this BrowserParent.
-  BrowserBridgeParent* mBrowserBridgeParent;
+  // this BrowserParent. This is weak to avoid cycles, as the
+  // BrowserBridgeParent holds the strong reference to this BrowserParent.
+  // It is normally cleared by BrowserBridgeParent::Destroy().
+  WeakPtr<BrowserBridgeParent> mBrowserBridgeParent;
   // Pointer to the BrowserHost that owns us, if any. This is mutually
   // exclusive with mBrowserBridgeParent, and one is guaranteed to be
   // non-null.
-  BrowserHost* mBrowserHost;
+  RefPtr<BrowserHost> mBrowserHost;
 
   // KeepAlive for the containing process.
   // NOTE: While this is a strong reference to ContentParent, which is
@@ -1008,14 +1007,6 @@ class BrowserParent final : public PBrowserParent,
   // BrowserChild was not ready to handle it. We will resend it when the next
   // time we fire a mouse event and the BrowserChild is ready.
   bool mIsMouseEnterIntoWidgetEventSuppressed : 1;
-
-  // True after RecvLockNativePointer has been called and until
-  // UnlockNativePointer has been called.
-  bool mLockedNativePointer : 1;
-
-  // True after mLockedNativePointer is changed to `false` and reset to false
-  // once we receive a native mouse move request.
-  bool mWaitingForNativeMouseMoveAfterUnlock : 1;
 
   // True between ShowTooltip and HideTooltip messages.
   bool mShowingTooltip : 1;

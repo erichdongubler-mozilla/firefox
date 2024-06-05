@@ -9,6 +9,7 @@ from mozunit import main
 
 from gecko_taskgraph import GECKO
 from gecko_taskgraph.util.sparse_profiles import (
+    git_checkout_is_full,
     is_path_covered_by_taskgraph_sparse_profile,
     list_directory_files,
     load_sparse_profile,
@@ -168,6 +169,41 @@ def test_load_rejects_like_mercurial(tmp_path, content, message):
     (tmp_path.parent / "outside").write_text("[include]\npath:x\n", encoding="utf-8")
     with pytest.raises(ValueError, match=message):
         load_sparse_profile("bad", topsrcdir=tmp_path)
+
+
+@pytest.mark.parametrize(
+    "content,expected",
+    [
+        pytest.param("[include]\npath:mach\n", False, id="no_marker"),
+        pytest.param("# git-checkout: full\n[include]\npath:mach\n", True, id="marker"),
+        pytest.param("#git-checkout:full\n[include]\npath:mach\n", True, id="tight"),
+        pytest.param(
+            "# git-checkout: fully\n[include]\npath:mach\n", False, id="other_comment"
+        ),
+        pytest.param("%include heavy\n[include]\npath:mach\n", True, id="inherited"),
+    ],
+)
+def test_git_checkout_is_full(tmp_path, content, expected):
+    (tmp_path / "heavy").write_text(
+        "# git-checkout: full\n[include]\npath:x\n", encoding="utf-8"
+    )
+    (tmp_path / "profile").write_text(content, encoding="utf-8")
+    assert git_checkout_is_full("profile", topsrcdir=tmp_path) is expected
+
+
+def test_in_tree_profiles_marked_full_on_git():
+    marked = {
+        p.name
+        for p in SPARSE_PROFILES_DIR.iterdir()
+        if git_checkout_is_full(f"build/sparse-profiles/{p.name}")
+    }
+    assert marked == {
+        "push-to-try",
+        "sphinx-docs",
+        "taskgraph",
+        "toolchain-build",
+        "webrender",
+    }
 
 
 def test_load_allows_diamond_includes(tmp_path):

@@ -927,15 +927,17 @@ void CompositorBridgeParent::DisconnectApzcTreeManager(
 }
 
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvNotifyChildCreated(
-    const LayersId& child, CompositorOptions* aOptions) {
+    const LayersId& aChild, const LayersId& aEmbedderId,
+    CompositorOptions* aOptions) {
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
-  NotifyChildCreated(child);
+  NotifyChildCreated(aChild, aEmbedderId);
   *aOptions = mOptions;
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvNotifyChildRecreated(
-    const LayersId& aChild, CompositorOptions* aOptions) {
+    const LayersId& aChild, const LayersId& aEmbedderId,
+    CompositorOptions* aOptions) {
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
 
   if (sIndirectLayerTrees.find(aChild) != sIndirectLayerTrees.end()) {
@@ -943,19 +945,22 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvNotifyChildRecreated(
     return IPC_FAIL_NO_REASON(this);
   }
 
-  NotifyChildCreated(aChild);
+  NotifyChildCreated(aChild, aEmbedderId);
   *aOptions = mOptions;
   return IPC_OK();
 }
 
-void CompositorBridgeParent::NotifyChildCreated(LayersId aChild) {
+void CompositorBridgeParent::NotifyChildCreated(LayersId aChild,
+                                                LayersId aEmbedderId) {
   sIndirectLayerTreesLock.AssertCurrentThreadOwns();
-  sIndirectLayerTrees.try_emplace(aChild).first->second.mParent = this;
+  LayerTreeState& state = sIndirectLayerTrees.try_emplace(aChild).first->second;
+  state.mParent = this;
+  state.mEmbedderLayersId = aEmbedderId;
 }
 
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvMapAndNotifyChildCreated(
-    const LayersId& aChild, const base::ProcessId& aOwnerPid,
-    CompositorOptions* aOptions) {
+    const LayersId& aChild, const LayersId& aEmbedderId,
+    const base::ProcessId& aOwnerPid, CompositorOptions* aOptions) {
   // We only use this message when the remote compositor is in the GPU process.
   // It is harmless to call it, though.
   MOZ_ASSERT(XRE_IsGPUProcess());
@@ -963,7 +968,7 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvMapAndNotifyChildCreated(
   LayerTreeOwnerTracker::Get()->Map(aChild, aOwnerPid);
 
   StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
-  NotifyChildCreated(aChild);
+  NotifyChildCreated(aChild, aEmbedderId);
   *aOptions = mOptions;
   return IPC_OK();
 }
@@ -986,7 +991,7 @@ static CompositorOptionsChangeKind ClassifyCompositorOptionsChange(
 }
 
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
-    const LayersId& child) {
+    const LayersId& child, const LayersId& embedderId) {
   RefPtr<APZUpdater> oldApzUpdater;
   RefPtr<APZCTreeManagerParent> parent;
   bool apzEnablementChanged = false;
@@ -1059,7 +1064,7 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
     StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
     // Update sIndirectLayerTrees[child].mParent after
     // WebRenderBridgeParent::UpdateWebRender().
-    NotifyChildCreated(child);
+    NotifyChildCreated(child, embedderId);
   }
 
   if (oldApzUpdater) {
@@ -1476,23 +1481,20 @@ already_AddRefed<IAPZCTreeManager> CompositorBridgeParent::GetAPZCTreeManager(
   return apzctm.forget();
 }
 
+struct VsyncMarker : public BaseMarkerType<VsyncMarker> {
+  static constexpr const char* Name = "VsyncTimestamp";
+  static constexpr const char* Description =
+      "Tracks when a vsync occurs according to the HardwareComposer";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+};
+
 static void InsertVsyncProfilerMarker(TimeStamp aVsyncTimestamp) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   if (profiler_thread_is_being_profiled_for_markers()) {
-    // Tracks when a vsync occurs according to the HardwareComposer.
-    struct VsyncMarker {
-      static constexpr mozilla::Span<const char> MarkerTypeName() {
-        return mozilla::MakeStringSpan("VsyncTimestamp");
-      }
-      static void StreamJSONMarkerData(
-          baseprofiler::SpliceableJSONWriter& aWriter) {}
-      static MarkerSchema MarkerTypeDisplay() {
-        using MS = MarkerSchema;
-        MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-        // Nothing outside the defaults.
-        return schema;
-      }
-    };
     profiler_add_marker("VsyncTimestamp", geckoprofiler::category::GRAPHICS,
                         MarkerTiming::InstantAt(aVsyncTimestamp),
                         VsyncMarker{});
@@ -1823,6 +1825,15 @@ bool CompositorBridgeParent::IsSameProcess() const {
   return OtherPid() == base::GetCurrentProcId();
 }
 
+struct ContentFrameMarker : public BaseMarkerType<ContentFrameMarker> {
+  static constexpr const char* Name = "CONTENT_FRAME_TIME";
+  using MS = MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+};
+
 int32_t RecordContentFrameTime(
     const VsyncId& aTxnId, const TimeStamp& aVsyncStart,
     const TimeStamp& aTxnStart, const VsyncId& aCompositeId,
@@ -1834,20 +1845,6 @@ int32_t RecordContentFrameTime(
   int32_t fracLatencyNorm = lround(latencyNorm * 100.0);
 
   if (profiler_thread_is_being_profiled_for_markers()) {
-    struct ContentFrameMarker {
-      static constexpr Span<const char> MarkerTypeName() {
-        return MakeStringSpan("CONTENT_FRAME_TIME");
-      }
-      static void StreamJSONMarkerData(
-          baseprofiler::SpliceableJSONWriter& aWriter) {}
-      static MarkerSchema MarkerTypeDisplay() {
-        using MS = MarkerSchema;
-        MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-        // Nothing outside the defaults.
-        return schema;
-      }
-    };
-
     profiler_add_marker("CONTENT_FRAME_TIME", geckoprofiler::category::GRAPHICS,
                         MarkerTiming::Interval(aTxnStart, aCompositeEnd),
                         ContentFrameMarker{});

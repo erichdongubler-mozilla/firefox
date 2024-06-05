@@ -918,7 +918,10 @@ export class ContileIntegration {
 
   async _fetchSitesWithAdsClient(placements) {
     const options = lazy.AdsClient.requestOptions(
-      this._topSitesFeed.store.getState().Prefs.values
+      this._topSitesFeed.store.getState().Prefs.values,
+      // Also block the user's current default search engine hostname so
+      // MARS returns a substitute sponsor instead of leaving us short.
+      this._topSitesFeed._currentSearchHostname || []
     );
 
     const requests = placements.map(

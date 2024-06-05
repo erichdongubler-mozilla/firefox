@@ -420,7 +420,7 @@ The interface
 lets us detect both interruptible and uninterruptible reflows. A number
 of tests have been written that exercise various functions of the
 browser [opening tabs](http://searchfox.org/mozilla-central/rev/78cefe75fb43195e7f5aee1d8042b8d8fc79fc70/browser/base/content/test/general/browser_tabopen_reflows.js),
-[opening windows](http://searchfox.org/firefox-main/source/browser/base/content/test/general/browser_windowopen_reflows.js)
+[opening windows](http://searchfox.org/firefox-main/source/browser/base/content/test/browser-general/browser_windowopen_reflows.js)
 and ensure that we don’t add new uninterruptible reflows accidentally
 while those actions occur.
 

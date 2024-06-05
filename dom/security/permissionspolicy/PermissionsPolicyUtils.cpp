@@ -250,8 +250,8 @@ void PermissionsPolicyUtils::ReportViolation(Document* aDocument,
                                                columnNumber, u"enforce"_ns);
 
   ReportingUtils::Report(window->AsGlobal(),
-                         nsGkAtoms::permissionsPolicyViolation, u"default"_ns,
-                         NS_ConvertUTF8toUTF16(url), body);
+                         nsGkAtoms::permissionsPolicyViolation, "default"_ns,
+                         url, body);
 }
 
 }  // namespace dom

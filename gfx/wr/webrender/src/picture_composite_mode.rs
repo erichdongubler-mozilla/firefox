@@ -499,7 +499,7 @@ pub fn prepare_composite_mode(
             let map_pic_to_parent = SpaceMapper::new_with_target(
                 parent_surface.surface_spatial_node_index,
                 surface_spatial_node_index,
-                parent_surface.clipping_rect,
+                parent_surface.clipping_rect_in_picture_space(),
                 frame_context.spatial_tree,
             );
             let pic_rect = surface.clipped_local_rect;
@@ -507,20 +507,11 @@ pub fn prepare_composite_mode(
                 .map(&pic_rect)
                 .expect("bug: unable to map mix-blend content into parent");
 
-            let backdrop_rect = pic_in_raster_space;
-            let parent_surface_rect = parent_surface.clipping_rect;
+            let backdrop_rect = parent_surface.map_to_device_rect(&pic_in_raster_space);
 
-            let readback_task_id = match backdrop_rect.intersection(&parent_surface_rect) {
+            let readback_task_id = match backdrop_rect.intersection(&parent_surface.clipping_rect) {
                 Some(available_rect) => {
-                    let backdrop_rect = parent_surface.map_to_device_rect(
-                        &backdrop_rect,
-                        frame_context.spatial_tree,
-                    );
-
-                    let available_rect = parent_surface.map_to_device_rect(
-                        &available_rect,
-                        frame_context.spatial_tree,
-                    ).round_out();
+                    let available_rect = available_rect.round_out();
 
                     let backdrop_uv = calculate_uv_rect_kind(
                         available_rect,
@@ -920,7 +911,10 @@ pub struct SurfaceAllocInfo {
     // Only used for SVGFEGraph currently, this is the source pixels needed to
     // render the pixels in clipped.
     pub source: DeviceRect,
-    // Only used for SVGFEGraph, this is the same as clipped before rounding.
+    // `clipped` before rounding, i.e. the exact device-space image of
+    // `clipped_local`. This is the rect to use where the surface's local ->
+    // device mapping matters rather than the allocated size, which is why it is
+    // what `SurfaceInfo::clipping_rect` is set from.
     pub clipped_notsnapped: DeviceRect,
     pub clipped_local: PictureRect,
     pub uv_rect_kind: UvRectKind,
@@ -964,15 +958,17 @@ pub fn get_surface_rects(
 ) -> Option<SurfaceAllocInfo> {
     let parent_surface = &surfaces[parent_surface_index.0];
 
+    let parent_clipping_rect = parent_surface.clipping_rect_in_picture_space();
+
     let local_to_parent = SpaceMapper::new_with_target(
         parent_surface.surface_spatial_node_index,
         surfaces[surface_index.0].surface_spatial_node_index,
-        parent_surface.clipping_rect,
+        parent_clipping_rect,
         spatial_tree,
     );
 
     let local_clip_rect = local_to_parent
-        .unmap(&parent_surface.clipping_rect)
+        .unmap(&parent_clipping_rect)
         .unwrap_or(PictureRect::max_rect())
         .cast_unit();
 
@@ -1099,28 +1095,10 @@ pub fn get_surface_rects(
         }
     };
 
-    let (mut clipped, mut unclipped, mut source) = if surface.raster_spatial_node_index != surface.surface_spatial_node_index {
-        assert_eq!(surface.device_pixel_scale.0, 1.0);
+    let mut clipped = surface.map_to_device_rect(&clipped_local.cast_unit());
+    let mut unclipped = surface.map_to_device_rect(&unclipped_local.cast_unit());
+    let mut source = surface.map_to_device_rect(&source_local.cast_unit());
 
-        let local_to_world = SpaceMapper::new_with_target(
-            spatial_tree.root_reference_frame_index(),
-            surface.surface_spatial_node_index,
-            WorldRect::max_rect(),
-            spatial_tree,
-        );
-
-        let clipped = local_to_world.map(&clipped_local.cast_unit()).unwrap() * surface.device_pixel_scale;
-        let unclipped = local_to_world.map(&unclipped_local).unwrap() * surface.device_pixel_scale;
-        let source = local_to_world.map(&source_local.cast_unit()).unwrap() * surface.device_pixel_scale;
-
-        (clipped, unclipped, source)
-    } else {
-        let clipped = clipped_local.cast_unit() * surface.device_pixel_scale;
-        let unclipped = unclipped_local.cast_unit() * surface.device_pixel_scale;
-        let source = source_local.cast_unit() * surface.device_pixel_scale;
-
-        (clipped, unclipped, source)
-    };
     let mut clipped_snapped = clipped.round_out();
     let mut source_snapped = source.round_out();
 
@@ -1140,11 +1118,14 @@ pub fn get_surface_rects(
         surface.raster_spatial_node_index = surface.surface_spatial_node_index;
         surface.device_pixel_scale = Scale::new(max_surface_size / max_dimension);
         surface.local_scale = (1.0, 1.0);
+        // The device space this surface rasterizes in just changed, so anything
+        // derived from the old one below has to be re-derived.
+        surface.update_picture_to_device_mapping(spatial_tree);
 
         let add_markers = profiler::thread_is_being_profiled();
         if add_markers {
-            let new_clipped = (clipped_local.cast_unit() * surface.device_pixel_scale).round();
-            let new_source = (source_local.cast_unit() * surface.device_pixel_scale).round();
+            let new_clipped = surface.map_to_device_rect(&clipped_local.cast_unit()).round();
+            let new_source = surface.map_to_device_rect(&source_local.cast_unit()).round();
             profiler::add_text_marker("SurfaceSizeLimited",
                 format!("Surface for {:?} reduced from raster {:?} (source {:?}) to local {:?} (source {:?})",
                     composite_mode.kind(),
@@ -1153,9 +1134,9 @@ pub fn get_surface_rects(
                 Duration::from_secs_f32(new_clipped.width() * new_clipped.height() / 1000000000.0));
         }
 
-        clipped = clipped_local.cast_unit() * surface.device_pixel_scale;
-        unclipped = unclipped_local.cast_unit() * surface.device_pixel_scale;
-        source = source_local.cast_unit() * surface.device_pixel_scale;
+        clipped = surface.map_to_device_rect(&clipped_local.cast_unit());
+        unclipped = surface.map_to_device_rect(&unclipped_local.cast_unit());
+        source = surface.map_to_device_rect(&source_local.cast_unit());
         clipped_snapped = clipped.round();
         source_snapped = source.round();
     }

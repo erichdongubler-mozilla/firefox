@@ -1,5 +1,6 @@
 [DEFAULT]
 support-files = ["empty.html"]
+environment = ["MOZ_PROFILER_STARTUP_FILTERS=GeckoMain,Compositor,Renderer,DOM Worker,MediaTrackGrph,NativeAudioCallback,Speech,Parakeet,GraphRunner"]
 
 ["browser_speech_recognition_inference_telemetry.js"]
 subsuite = "speech-recognition"

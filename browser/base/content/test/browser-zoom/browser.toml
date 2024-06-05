@@ -1,7 +1,7 @@
 [DEFAULT]
 support-files = [
   "head.js",
-  "../general/moz.png",
+  "../browser-general/moz.png",
   "zoom_test.html",
 ]
 
@@ -43,7 +43,7 @@ https_first_disabled = true
 
 ["browser_sitespecific_video_zoom.js"]
 https_first_disabled = true
-support-files = ["../general/video.webm"]
+support-files = ["../browser-general/video.webm"]
 skip-if = [
   "os == 'win' && debug", # Bug 1315042
 ]

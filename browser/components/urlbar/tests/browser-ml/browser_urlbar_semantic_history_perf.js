@@ -24,6 +24,8 @@ const { MLPerfTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/MLPerfTestUtils.sys.mjs"
 );
 
+MLPerfTestUtils.init(this);
+
 const METRIC_PREFIX = "SEMANTICHISTORY";
 const EMBEDDER_FEATURE_ID = "simple-text-embedder";
 const SEMANTIC_RESULT_LATENCY = "semantic-result-latency";
@@ -281,8 +283,6 @@ add_task(async function test_semantic_history_perf() {
   // Indexing has no user-facing first use or cold state: it runs in the
   // background on whatever engine is resident.
   await MLPerfTestUtils.runPerfScenario({
-    info,
-    Assert,
     metricPrefix: METRIC_PREFIX,
     scenario: indexBatchOnce,
     engines: [{ featureId: EMBEDDER_FEATURE_ID, metricName: "indexing" }],
@@ -300,8 +300,6 @@ add_task(async function test_semantic_history_perf() {
   // measurable first use; its shipping states are cold (first search of a
   // session, engine not yet running) and warm (engine resident, timeoutMS -1).
   await MLPerfTestUtils.runPerfScenario({
-    info,
-    Assert,
     metricPrefix: METRIC_PREFIX,
     scenario: searchOnce,
     engines: [{ featureId: EMBEDDER_FEATURE_ID }],

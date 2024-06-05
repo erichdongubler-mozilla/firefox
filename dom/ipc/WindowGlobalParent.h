@@ -89,15 +89,16 @@ class WindowGlobalParent final : public WindowContext,
     return GetByInnerWindowId(aInnerWindowId);
   }
 
+  static WindowGlobalParent* Cast(WindowContext* aContext);
+
   // The same as the corresponding methods on `WindowContext`, except that the
   // return types are already cast to their parent-process type variants, such
   // as `WindowGlobalParent` or `CanonicalBrowsingContext`.
   WindowGlobalParent* GetParentWindowContext() {
-    return static_cast<WindowGlobalParent*>(
-        WindowContext::GetParentWindowContext());
+    return Cast(WindowContext::GetParentWindowContext());
   }
   WindowGlobalParent* TopWindowContext() {
-    return static_cast<WindowGlobalParent*>(WindowContext::TopWindowContext());
+    return Cast(WindowContext::TopWindowContext());
   }
   CanonicalBrowsingContext* GetBrowsingContext() const {
     return CanonicalBrowsingContext::Cast(WindowContext::GetBrowsingContext());

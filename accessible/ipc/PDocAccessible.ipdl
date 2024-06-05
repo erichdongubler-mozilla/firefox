@@ -134,7 +134,6 @@ parent:
    */
   async AccessiblesWillMove(uint64_t[] aIDs);
 
-#ifdef MOZ_ENABLE_SKIA_PDF
   /*
    * Tell the parent process that this document is being printed. This must
    * be called first for the document itself that is being printed and then for
@@ -142,7 +141,6 @@ parent:
    * iframes.
    */
   async Printing();
-#endif
 
 child:
   async __delete__();

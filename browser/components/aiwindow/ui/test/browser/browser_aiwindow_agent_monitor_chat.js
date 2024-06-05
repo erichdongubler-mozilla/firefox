@@ -46,6 +46,7 @@ const MONITOR_CARD = {
     uiType: "agent-monitor-item",
     properties: {
       agent: {
+        monitorName: "Example product",
         url: "https://example.com/product",
         watchUrls: ["https://example.com/product"],
         condition: "the price drops",

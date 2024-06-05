@@ -213,7 +213,6 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   bool isPrologueBailout();
   bool isGeneratorResumePrologueBailout();
   jsbytecode* getResumePC();
-  void* getStubReturnAddress();
   uint8_t* getBailoutStubAddr();
 
   uint32_t exprStackSlots() const { return exprStackSlots_; }
@@ -1028,8 +1027,10 @@ bool BaselineStackBuilder::finishOuterFrame() {
     return false;
   }
 
-  uint8_t* retAddr = baselineInterp.retAddrForIC(op_);
-  return writePtr(retAddr, "ReturnAddr");
+  // Push nullptr in the return address stack frame slot.
+  // The real return address is pushed by the bailout stub.
+  // See the [SMDOC] comment IonMonkey Bailouts in Bailouts.h for details.
+  return writePtr(static_cast<void*>(nullptr), "ReturnAddr");
 }
 
 template <typename GetSlot>
@@ -1210,10 +1211,10 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
     return false;
   }
 
-  // Push return address into ICCall_Scripted stub, immediately after the call.
-  void* baselineCallReturnAddr = getStubReturnAddress();
-  MOZ_ASSERT(baselineCallReturnAddr);
-  if (!writePtr(baselineCallReturnAddr, "ReturnAddr")) {
+  // Push nullptr in the return address stack frame slot.
+  // The real return address is pushed by the bailout stub.
+  // See the [SMDOC] comment IonMonkey Bailouts in Bailouts.h for details.
+  if (!writePtr(static_cast<void*>(nullptr), "ReturnAddr")) {
     return false;
   }
 
@@ -1390,28 +1391,6 @@ bool BaselineStackBuilder::validateFrame() {
                                  expectedSlots);
 }
 #endif
-
-void* BaselineStackBuilder::getStubReturnAddress() {
-  const BaselineICFallbackCode& code =
-      cx_->runtime()->jitRuntime()->baselineICFallbackCode();
-
-  if (IsGetPropOp(op_)) {
-    return code.bailoutReturnAddr(BailoutReturnKind::GetProp);
-  }
-  if (IsSetPropOp(op_)) {
-    return code.bailoutReturnAddr(BailoutReturnKind::SetProp);
-  }
-  if (IsGetElemOp(op_)) {
-    return code.bailoutReturnAddr(BailoutReturnKind::GetElem);
-  }
-
-  // This should be a call op of some kind, now.
-  MOZ_ASSERT(IsInvokeOp(op_) && !IsSpreadOp(op_));
-  if (IsConstructOp(op_)) {
-    return code.bailoutReturnAddr(BailoutReturnKind::New);
-  }
-  return code.bailoutReturnAddr(BailoutReturnKind::Call);
-}
 
 uint8_t* BaselineStackBuilder::getBailoutStubAddr() {
   const BaselineICFallbackCode& code =

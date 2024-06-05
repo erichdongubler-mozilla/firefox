@@ -6,7 +6,6 @@
  * @import {
  *   EngineCreationInterceptionOptions,
  *   EngineFeatureIds,
- *   MLPerfAssertions,
  *   MLPerfEngineConfig,
  *   MLPerfEngineRunDetails,
  *   MLPerfEngineRunCapture,
@@ -19,7 +18,7 @@
  *   MLPerfScenarioContext,
  *   MLPerfScenarioInvocationOptions,
  *   MLPerfScenarioObservation,
- *   MLPerfTestHarness,
+ *   MLPerfTestContext,
  *   PeakInferenceMemorySampler,
  *   RunPerfScenarioConfig,
  * } from "../ml.d.ts"
@@ -527,13 +526,11 @@ async function measureScenarioInvocation(
 /**
  * Creates a journal for MozPerftest measurement series.
  *
- * @param {MLPerfTestHarness} harness - The calling test's harness globals.
- * @param {(message: string) => void} harness.info - The Mochitest info logger.
- * @param {MLPerfAssertions} harness.Assert - The Mochitest assertions.
+ * @param {MLPerfTestContext} ctx - The calling test's context.
  * @param {string} [metricSuffix=""] - Suffix applied to every series name.
  * @returns {MLPerfJournal} The measurement journal.
  */
-function createJournal({ info, Assert }, metricSuffix = "") {
+function createJournal(ctx, metricSuffix = "") {
   /** @type {Map<string, number[]>} */
   const series = new Map();
 
@@ -548,7 +545,7 @@ function createJournal({ info, Assert }, metricSuffix = "") {
     add(name, value) {
       const seriesName = metricSuffix ? `${name}-${metricSuffix}` : name;
 
-      Assert.ok(
+      ctx.Assert.ok(
         Number.isFinite(value),
         `${seriesName} is a finite measurement`
       );
@@ -572,7 +569,7 @@ function createJournal({ info, Assert }, metricSuffix = "") {
         metrics.push({ name, values, value: median(values) });
       }
 
-      info(`perfMetrics | ${JSON.stringify(metrics)}`);
+      ctx.info(`perfMetrics | ${JSON.stringify(metrics)}`);
     },
   };
 }
@@ -741,17 +738,17 @@ function validateEngineConfigs(engines) {
  * Verifies that every ONNX engine observed on a run resolved to the pinned
  * backend. Engines on other backends are not pinned and pass through.
  *
- * @param {MLPerfAssertions} Assert - The Mochitest assertions.
+ * @param {MLPerfTestContext} ctx - The calling test's context.
  * @param {MLPerfScenarioObservation} observation - The observed scenario.
  * @param {string} backend - The pinned backend.
  * @returns {void}
  */
-function assertPinnedBackend(Assert, observation, backend) {
+function assertPinnedBackend(ctx, observation, backend) {
   for (const engine of new Set(observation.engineRuns.map(run => run.engine))) {
     const resolved = engine.pipelineOptions.backend;
 
     if (ONNX_BACKENDS.includes(resolved)) {
-      Assert.equal(
+      ctx.Assert.equal(
         resolved,
         backend,
         `${engine.pipelineOptions.featureId} resolved to the pinned backend`
@@ -763,18 +760,18 @@ function assertPinnedBackend(Assert, observation, backend) {
 /**
  * Verifies that each configured engine ran the expected number of times.
  *
- * @param {MLPerfAssertions} Assert - The Mochitest assertions.
+ * @param {MLPerfTestContext} ctx - The calling test's context.
  * @param {MLPerfScenarioObservation} observation - The observed scenario.
  * @param {MLPerfEngineConfig[]} engines - The configured engines.
  * @returns {void}
  */
-function assertExpectedEngineRuns(Assert, observation, engines) {
+function assertExpectedEngineRuns(ctx, observation, engines) {
   for (const engine of engines) {
     const runCount = observation.engineRuns.filter(
       run => run.featureId === engine.featureId
     ).length;
 
-    Assert.equal(
+    ctx.Assert.equal(
       runCount,
       engine.expectedRuns ?? 1,
       `${engine.featureId} ran the expected number of times`
@@ -785,13 +782,13 @@ function assertExpectedEngineRuns(Assert, observation, engines) {
 /**
  * Verifies that a warm invocation reuses the engines that served the warmup.
  *
- * @param {MLPerfAssertions} Assert - The Mochitest assertions.
+ * @param {MLPerfTestContext} ctx - The calling test's context.
  * @param {MLPerfScenarioObservation} warmup - The warmup observation.
  * @param {MLPerfScenarioObservation} observation - The later warm invocation.
  * @param {MLPerfEngineConfig[]} engines - The configured engines.
  * @returns {void}
  */
-function assertWarmEngineReuse(Assert, warmup, observation, engines) {
+function assertWarmEngineReuse(ctx, warmup, observation, engines) {
   for (const engine of engines) {
     const warmupEngines = new Set(
       warmup.engineRuns
@@ -802,7 +799,7 @@ function assertWarmEngineReuse(Assert, warmup, observation, engines) {
       .filter(run => run.featureId === engine.featureId)
       .every(run => warmupEngines.has(run.engine));
 
-    Assert.ok(reused, `${engine.featureId} reused its warm engine`);
+    ctx.Assert.ok(reused, `${engine.featureId} reused its warm engine`);
   }
 }
 
@@ -841,9 +838,8 @@ function validateIterationCount(name, value) {
  * Configured engines report creation and run time, before/after inference
  * process memory, and available generated-token measurements.
  *
+ * @param {MLPerfTestContext} ctx - The initialized test's context.
  * @param {RunPerfScenarioConfig} config - The scenario configuration.
- * @param {(message: string) => void} config.info - The Mochitest info logger.
- * @param {MLPerfAssertions} config.Assert - The Mochitest assertions.
  * @param {string} config.metricPrefix - Prefix for every reported series.
  * @param {string} [config.metricSuffix=""] - Suffix for every reported series.
  * @param {RunPerfScenarioConfig["scenario"]} config.scenario - Runs one
@@ -861,32 +857,33 @@ function validateIterationCount(name, value) {
  *   samples in milliseconds.
  * @returns {Promise<void>}
  */
-async function runPerfScenario({
-  info,
-  Assert,
-  metricPrefix,
-  metricSuffix = "",
-  scenario,
-  engines = [],
-  measureFirstUse = true,
-  coldIterations = 5,
-  warmIterations = 0,
-  memoryIterations = 3,
-  peakMemorySampleIntervalMs = 100,
-}) {
+async function runPerfScenario(
+  ctx,
+  {
+    metricPrefix,
+    metricSuffix = "",
+    scenario,
+    engines = [],
+    measureFirstUse = true,
+    coldIterations = 5,
+    warmIterations = 0,
+    memoryIterations = 3,
+    peakMemorySampleIntervalMs = 100,
+  }
+) {
   validateIterationCount("coldIterations", coldIterations);
   validateIterationCount("warmIterations", warmIterations);
   validateIterationCount("memoryIterations", memoryIterations);
 
   const backend = pinnedBackend();
   if (backend) {
-    info(`MOZ_ML_BACKENDS pins the ONNX backend to ${backend}`);
+    ctx.info(`MOZ_ML_BACKENDS pins the ONNX backend to ${backend}`);
     metricSuffix = BACKEND_TAGS[backend] ?? backend.toUpperCase();
     engines = pinEngineBackends(engines, backend);
   }
 
   const enginesByFeatureId = validateEngineConfigs(engines);
-  const journal = createJournal({ info, Assert }, metricSuffix);
+  const journal = createJournal(ctx, metricSuffix);
 
   /**
    * Observes and validates one lifecycle invocation.
@@ -901,10 +898,10 @@ async function runPerfScenario({
       engines,
     });
 
-    assertExpectedEngineRuns(Assert, observation, engines);
+    assertExpectedEngineRuns(ctx, observation, engines);
 
     if (backend) {
-      assertPinnedBackend(Assert, observation, backend);
+      assertPinnedBackend(ctx, observation, backend);
     }
 
     return observation;
@@ -934,7 +931,7 @@ async function runPerfScenario({
       throw new Error("Peak memory sampling did not return a measurement.");
     }
 
-    Assert.greater(
+    ctx.Assert.greater(
       observation.peakMemory,
       0,
       "The memory sampler observed the inference process"
@@ -997,7 +994,7 @@ async function runPerfScenario({
           { captureEngineCreation: false }
         );
 
-        assertWarmEngineReuse(Assert, warmup, observation, engines);
+        assertWarmEngineReuse(ctx, warmup, observation, engines);
         addObservationMeasurements(
           journal,
           metricPrefix,
@@ -1037,6 +1034,35 @@ async function runPerfScenario({
 /**
  * Shared lifecycle, memory, and reporting utilities for ML performance tests.
  */
-export const MLPerfTestUtils = {
-  runPerfScenario,
-};
+export class MLPerfTestUtils {
+  /** @type {MLPerfTestContext | null} The initialized test's context. */
+  static #ctx = null;
+
+  /**
+   * Initializes the utility for the current test context until test cleanup.
+   *
+   * @param {MLPerfTestContext} ctx - The calling test's context.
+   * @returns {void}
+   */
+  static init(ctx) {
+    this.#ctx = ctx;
+
+    ctx.registerCleanupFunction(() => {
+      this.#ctx = null;
+    });
+  }
+
+  /**
+   * Runs and reports the configured ML scenario using the initialized test context.
+   *
+   * @param {RunPerfScenarioConfig} config - The lifecycle and measurement options.
+   * @returns {Promise<void>}
+   */
+  static async runPerfScenario(config) {
+    if (!this.#ctx) {
+      throw new Error("MLPerfTestUtils.init(ctx) must be called first.");
+    }
+
+    await runPerfScenario(this.#ctx, config);
+  }
+}

@@ -159,13 +159,13 @@ rust-version = "1.90.0"
 
 [workspace.dependencies]
 # Shared across multiple UniFFI consumers.
-uniffi = "0.31"
-uniffi_bindgen = "0.31"
-uniffi_pipeline = "0.31"
+uniffi = "0.32"
+uniffi_bindgen = "0.32"
+uniffi_pipeline = "0.32"
 # Shared across multiple application-services consumers.
 rusqlite = "0.37"
 # Shared across multiple glean consumers.
-glean = "=68.0.1"
+glean = "=70.1.0"
 
 # Explicitly specify what our profiles use.  The opt-level setting here is
 # a total fiction; see the setup of MOZ_RUST_DEFAULT_FLAGS for what the
@@ -334,7 +334,8 @@ hashlink = { path = "build/rust/hashlink" }
 thiserror = { path = "build/rust/thiserror" }
 
 # Patch `toml` 0.5 to 0.9
-toml = { path = "build/rust/toml" }
+toml_0_5 = { package = "toml", path = "build/rust/toml-0.5" }
+toml_0_9 = { package = "toml", path = "build/rust/toml" }
 
 # The following overrides point to dummy projects, as a temporary measure until this is resolved:
 # https://github.com/rust-lang/cargo/issues/6179

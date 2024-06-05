@@ -34,9 +34,7 @@
 #include "mozilla/dom/SessionStorageManager.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
-#ifdef NS_PRINTING
-#  include "mozilla/layout/RemotePrintJobParent.h"
-#endif
+#include "mozilla/layout/RemotePrintJobParent.h"
 #include "mozilla/net/DocumentLoadListener.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/ScopedPrefs.h"
@@ -481,24 +479,20 @@ CanonicalBrowsingContext::GetBrowserDOMWindow() {
 }
 
 already_AddRefed<WindowGlobalParent>
-CanonicalBrowsingContext::GetEmbedderWindowGlobal() const {
-  uint64_t windowId = GetEmbedderInnerWindowId();
-  if (windowId == 0) {
-    return nullptr;
+CanonicalBrowsingContext::GetEmbedderWindowGlobal() {
+  if (auto* parent = GetParentWindowContext()) {
+    return do_AddRef(parent);
   }
-
-  return WindowGlobalParent::GetByInnerWindowId(windowId);
+  if (mCrossGroupEmbedderWindowId) {
+    return WindowGlobalParent::GetByInnerWindowId(mCrossGroupEmbedderWindowId);
+  }
+  return nullptr;
 }
 
 CanonicalBrowsingContext*
 CanonicalBrowsingContext::GetParentCrossChromeBoundary() {
-  if (GetParent()) {
-    return Cast(GetParent());
-  }
-  if (auto* embedder = GetEmbedderElement()) {
-    return Cast(embedder->OwnerDoc()->GetBrowsingContext());
-  }
-  return nullptr;
+  RefPtr<WindowGlobalParent> parent = GetEmbedderWindowGlobal();
+  return parent ? parent->BrowsingContext() : nullptr;
 }
 
 CanonicalBrowsingContext* CanonicalBrowsingContext::TopCrossChromeBoundary() {
@@ -871,7 +865,6 @@ void CanonicalBrowsingContext::MaybeReuseNavigationKeyFromActiveEntry(
 }
 
 using PrintPromise = CanonicalBrowsingContext::PrintPromise;
-#ifdef NS_PRINTING
 // Clients must call StaticCloneForPrintingCreated or
 // NoStaticCloneForPrintingWillBeCreated before the underlying promise can
 // resolve.
@@ -952,7 +945,6 @@ class PrintListenerAdapter final : public nsIWebProgressListener {
 };
 
 NS_IMPL_ISUPPORTS(PrintListenerAdapter, nsIWebProgressListener)
-#endif
 
 already_AddRefed<Promise> CanonicalBrowsingContext::PrintJS(
     nsIPrintSettings* aPrintSettings, ErrorResult& aRv) {
@@ -973,9 +965,6 @@ already_AddRefed<Promise> CanonicalBrowsingContext::PrintJS(
 
 RefPtr<PrintPromise> CanonicalBrowsingContext::Print(
     nsIPrintSettings* aPrintSettings) {
-#ifndef NS_PRINTING
-  return PrintPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
-#else
   bool needContentAnalysis = false;
   nsCOMPtr<nsIContentAnalysis> contentAnalysis =
       mozilla::components::nsIContentAnalysis::Service();
@@ -1019,26 +1008,20 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::Print(
     return done;
   }
   return PrintWithNoContentAnalysis(aPrintSettings, false, nullptr);
-#endif
 }
 
 void CanonicalBrowsingContext::ReleaseClonedPrint(
     const MaybeDiscardedBrowsingContext& aClonedStaticBrowsingContext) {
-#ifdef NS_PRINTING
   auto* browserParent = GetBrowserParent();
   if (NS_WARN_IF(!browserParent)) {
     return;
   }
   (void)browserParent->SendDestroyPrintClone(aClonedStaticBrowsingContext);
-#endif
 }
 
 RefPtr<PrintPromise> CanonicalBrowsingContext::PrintWithNoContentAnalysis(
     nsIPrintSettings* aPrintSettings, bool aForceStaticDocument,
     const MaybeDiscardedBrowsingContext& aCachedStaticDocument) {
-#ifndef NS_PRINTING
-  return PrintPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
-#else
   auto promise = MakeRefPtr<PrintPromise::Private>(__func__);
   auto listener = MakeRefPtr<PrintListenerAdapter>(promise);
   if (IsInProcess()) {
@@ -1127,7 +1110,6 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::PrintWithNoContentAnalysis(
         });
   }
   return promise.forget();
-#endif
 }
 
 void CanonicalBrowsingContext::CallOnTopDescendants(
@@ -2697,15 +2679,16 @@ CanonicalBrowsingContext::ChangeRemoteness(
   return promise.forget();
 }
 
-void CanonicalBrowsingContext::MaybeSetPermanentKey(Element* aEmbedder) {
-  MOZ_DIAGNOSTIC_ASSERT(IsTop());
+void CanonicalBrowsingContext::SetCrossGroupEmbedderElement(
+    Element* aEmbedder) {
+  MOZ_DIAGNOSTIC_ASSERT(IsTop() && aEmbedder);
 
-  if (aEmbedder) {
-    if (nsCOMPtr<nsIBrowser> browser = aEmbedder->AsBrowser()) {
-      JS::Rooted<JS::Value> key(RootingCx());
-      if (NS_SUCCEEDED(browser->GetPermanentKey(&key)) && key.isObject()) {
-        mPermanentKey = key;
-      }
+  mCrossGroupEmbedderWindowId = aEmbedder->OwnerDoc()->InnerWindowID();
+
+  if (nsCOMPtr<nsIBrowser> browser = aEmbedder->AsBrowser()) {
+    JS::Rooted<JS::Value> key(RootingCx());
+    if (NS_SUCCEEDED(browser->GetPermanentKey(&key)) && key.isObject()) {
+      mPermanentKey = key;
     }
   }
 }

@@ -59,6 +59,28 @@ interface AddonsInfoResponse {
   hasInstalledAddons: boolean;
 }
 ```
+### `allowedNotificationOrigins`
+
+The number of origins the user has allowed to send web notifications. Origins the
+user has explicitly blocked are not counted. A count rather than a boolean, so it
+can also be used to distinguish users with a single allowed site from those with
+many.
+
+#### Examples
+* Has the user allowed any site to send notifications?
+```java
+allowedNotificationOrigins > 0
+```
+* Has the user allowed five or more sites?
+```java
+allowedNotificationOrigins >= 5
+```
+
+#### Definition
+```ts
+declare const allowedNotificationOrigins: number;
+```
+
 ### `attributionData`
 
 An object containing information on exactly how Firefox was downloaded

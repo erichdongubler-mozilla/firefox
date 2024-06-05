@@ -691,7 +691,7 @@ class Value {
 
   template <typename T>
   void setNumber(const T t) {
-    static_assert(std::is_integral<T>::value, "must be integral type");
+    static_assert(std::is_integral_v<T>, "must be integral type");
     MOZ_ASSERT(isNumberRepresentable(t), "value creation would be lossy");
 
     if constexpr (std::numeric_limits<T>::is_signed) {
@@ -1470,7 +1470,8 @@ auto MapGCThingTyped(const JS::Value& val, F&& f) {
     }
     case JS::ValueType::PrivateGCThing: {
       MOZ_ASSERT(gc::IsCellPointerValid(val.toGCThing()));
-      return mozilla::Some(MapGCThingTyped(val.toGCCellPtr(), std::move(f)));
+      return mozilla::Some(
+          MapGCThingTyped(val.toGCCellPtr(), std::forward<F>(f)));
     }
     case JS::ValueType::Double:
     case JS::ValueType::Int32:

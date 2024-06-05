@@ -363,9 +363,7 @@ class DocAccessibleParent : public RemoteAccessible,
    */
   bool RequestDomainsIfInactive(uint64_t aRequiredCacheDomains);
 
-#ifdef MOZ_ENABLE_SKIA_PDF
   mozilla::ipc::IPCResult RecvPrinting();
-#endif
 
   enum class AllowConstruction {
     Disallow,

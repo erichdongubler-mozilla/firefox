@@ -1201,6 +1201,8 @@ void DocAccessible::ElementStateChanged(dom::Document* aDocument,
     FireDelayedEvent(event);
     event = MakeRefPtr<AccStateChangeEvent>(accessible, states::ENABLED);
     FireDelayedEvent(event);
+    event = MakeRefPtr<AccStateChangeEvent>(accessible, states::SENSITIVE);
+    FireDelayedEvent(event);
     // This likely changes focusability as well.
     event = MakeRefPtr<AccStateChangeEvent>(accessible, states::FOCUSABLE);
     FireDelayedEvent(event);
@@ -3380,8 +3382,8 @@ void DocAccessible::RefreshAnchorRelationCacheForTarget(
       frame->GetProperty(nsIFrame::AnchorPosReferences());
   for (auto& entry : *referencedAnchors) {
     const auto& anchorName = entry.GetKey();
-    if (const nsIFrame* anchorFrame =
-            mPresShell->GetAnchorPosAnchor(anchorName, frame)) {
+    if (const nsIFrame* anchorFrame = mPresShell->GetAnchorPosAnchor(
+            anchorName, frame, referencedAnchors->mFrameTreeDepth)) {
       if (LocalAccessible* anchorAcc =
               GetAccessible(anchorFrame->GetContent())) {
         if (!mInsertedAccessibles.Contains(anchorAcc)) {

@@ -447,17 +447,20 @@ class MOZ_STACK_CLASS ContentEventHandler {
    * ConvertFlatTextOffsetToUnsafeDOMRange() instead of
    * ConvertFlatTextOffsetToDOMRangeBase<RangeType, TextNodeType>().
    */
+  // FIXME: Use ExpandToClusterBoundary for aExpandToClusterBoundaries.
   template <typename RangeType, typename TextNodeType>
   Result<DOMRangeAndAdjustedOffsetInFlattenedTextBase<RangeType, TextNodeType>,
          nsresult>
   ConvertFlatTextOffsetToDOMRangeBase(uint32_t aOffset, uint32_t aLength,
                                       bool aExpandToClusterBoundaries);
+  // FIXME: Use ExpandToClusterBoundary for aExpandToClusterBoundaries.
   MOZ_ALWAYS_INLINE Result<DOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
   ConvertFlatTextOffsetToDOMRange(uint32_t aOffset, uint32_t aLength,
                                   bool aExpandToClusterBoundaries) {
     return ConvertFlatTextOffsetToDOMRangeBase<SimpleRange, RefPtr<dom::Text>>(
         aOffset, aLength, aExpandToClusterBoundaries);
   }
+  // FIXME: Use ExpandToClusterBoundary for aExpandToClusterBoundaries.
   MOZ_ALWAYS_INLINE
   Result<UnsafeDOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
   ConvertFlatTextOffsetToUnsafeDOMRange(uint32_t aOffset, uint32_t aLength,

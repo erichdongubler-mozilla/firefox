@@ -1,5 +1,7 @@
 [DEFAULT]
 prefs = [
+  "browser.newtabpage.enabled=false",
+  "browser.newtabpage.activity-stream.widgets.pictureOfTheDay.enabled=false",
   "browser.ml.enable=true",
   "browser.search.suggest.enabled=false",
   # Contextual embeddings are only selected on mac and Windows; Linux stays on

@@ -189,6 +189,15 @@ class PrivacyReportNotificationWorkerTest {
             assertEquals(Result.success(), resultDeferred.await())
             assertEquals(NOW - TimeUnit.DAYS.toMillis(7), fakeEngine.lastDateFrom)
             assertEquals(NOW, fakeEngine.lastDateTo)
+
+            val notifications = shownNotifications()
+            assertEquals(1, notifications.size)
+            val notification = shadowOf(notifications.first())
+
+            val expectedContent =
+                PrivacyReportNotificationContent.trackersBlocked(testContext, trackersBlockedCount = 48)
+            assertEquals(expectedContent.title, notification.contentTitle)
+            assertEquals(expectedContent.text, notification.contentText)
         }
 
     @Test
@@ -204,7 +213,18 @@ class PrivacyReportNotificationWorkerTest {
 
             assertEquals(Result.success(), resultDeferred.await())
             assertEquals(1, fakeEngine.fetchTrackingEventsCallCount)
+
+            val notifications = shownNotifications()
+            assertEquals(1, notifications.size)
+            val notification = shadowOf(notifications.first())
+
+            val expectedContent = PrivacyReportNotificationContent.noTrackersBlocked(testContext)
+            assertEquals(expectedContent.title, notification.contentTitle)
+            assertEquals(expectedContent.text, notification.contentText)
         }
+
+    private fun shownNotifications() =
+        shadowOf(testContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).allNotifications
 }
 
 /**

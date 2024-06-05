@@ -164,8 +164,6 @@ UniquePtr<PresState> NewPresState() {
   return MakeUnique<PresState>(
       /* contentData */ mozilla::void_t(),
       /* scrollState */ nsPoint(),
-      /* scrollEventGeneration */ 0,
-      /* scrollEndEventGeneration */ 0,
       /* resolution */ 1.0,
       /* allowScrollOriginDowngrade */ true,
       /* disabledSet */ false,

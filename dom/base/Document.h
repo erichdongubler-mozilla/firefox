@@ -1615,6 +1615,9 @@ class Document : public nsINode,
   EditContext* GetActiveEditContext() const { return mActiveEditContext; }
   // https://w3c.github.io/edit-context/#dfn-update-the-text-edit-context
   MOZ_CAN_RUN_SCRIPT void UpdateTextEditContext();
+  // Deactivate the current EditContext and, even if the active editor
+  // is not an EditContext, commit the current composition.
+  MOZ_CAN_RUN_SCRIPT void DeactivateEditContextAndEndComposition();
 
   void SetKeyPressEventModel(uint16_t aKeyPressEventModel);
 
@@ -1673,7 +1676,9 @@ class Document : public nsINode,
                          NotNull<const Encoding*>& aEncoding,
                          nsHtml5TreeOpExecutor* aExecutor);
 
-  MOZ_CAN_RUN_SCRIPT void DispatchContentLoadedEvents();
+  MOZ_CAN_RUN_SCRIPT void DispatchContentLoadedEvents(bool aFinishSync);
+  // Unblocks the load event. An aborted load also gets readyState complete.
+  MOZ_CAN_RUN_SCRIPT void FinishDOMContentLoaded();
 
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DispatchPageTransition(
@@ -2139,8 +2144,11 @@ class Document : public nsINode,
       UniquePtr<FullscreenExit>);
 
   /**
-   * Returns true if this document is a fullscreen leaf document, i.e. it
-   * is in fullscreen mode and has no fullscreen children.
+   * Returns true if this document is a fullscreen leaf document, i.e. it is
+   * in fullscreen mode and its current fullscreen element does not embed
+   * another in-process fullscreen document. Note that this document may still
+   * have other fullscreen subdocuments which are not part of the current
+   * fullscreen document chain.
    */
   bool IsFullscreenLeaf();
 
@@ -2243,7 +2251,10 @@ class Document : public nsINode,
   uint32_t UpdateNestingLevel() { return mUpdateNestLevel; }
 
   void BeginLoad();
-  virtual void EndLoad();
+  // aFireDOMContentLoadedSync must be false for a terminated parse.
+  // See bug 344305.
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void EndLoad(
+      bool aFireDOMContentLoadedSync);
 
   enum ReadyState {
     READYSTATE_UNINITIALIZED = 0,
@@ -2646,7 +2657,8 @@ class Document : public nsINode,
 
   void BlockDOMContentLoaded() { ++mBlockDOMContentLoaded; }
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void UnblockDOMContentLoaded();
+  // If aFireSync is false, DOMContentLoaded fires from a task instead.
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void UnblockDOMContentLoaded(bool aFireSync);
 
   /**
    * Notification that the page has been shown, for documents which are loaded

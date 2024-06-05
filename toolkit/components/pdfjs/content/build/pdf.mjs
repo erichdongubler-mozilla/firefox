@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.4.123
- * pdfjsBuild = 0ce03b5a0
+ * pdfjsVersion = 6.4.168
+ * pdfjsBuild = 51fc21d1f
  */
 
 ;// ./src/shared/util.js
@@ -2067,7 +2067,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "da1002a6-179a-43d8-9ce5-95a565db676c";
+const INTERNAL_EVT = "2ca07d41-1e0b-4841-b7c0-1c41f6f2ac81";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -8013,28 +8013,21 @@ class FontLoader {
       if (this.isSyncFontLoadingSupported) {
         return;
       }
-      throw new Error("Not implemented: async font loading");
+      await this.#testFontLoaded(font);
     }
   }
   get isFontLoadingAPISupported() {
-    const hasFonts = !!this._document?.fonts;
-    return shadow(this, "isFontLoadingAPISupported", hasFonts);
+    return shadow(this, "isFontLoadingAPISupported", !!this._document?.fonts);
   }
   get isSyncFontLoadingSupported() {
     return shadow(this, "isSyncFontLoadingSupported", true);
   }
-  _queueLoadingCallback(callback) {
-    throw new Error("Not implemented: _queueLoadingCallback");
-  }
-  get _loadTestFont() {
-    throw new Error("Not implemented: _loadTestFont");
-  }
-  _prepareFontLoadEvent(font, request) {
-    throw new Error("Not implemented: _prepareFontLoadEvent");
+  #testFontLoaded(font) {
+    throw new Error("Not implemented: #testFontLoaded");
   }
 }
 class FontFaceObject {
-  compiledGlyphs = Object.create(null);
+  #compiledPaths = new Map();
   #fontData;
   constructor(translatedData, inspectFont = null, charProcOperatorList, extra) {
     this.#fontData = translatedData;
@@ -8085,21 +8078,23 @@ class FontFaceObject {
     return rule;
   }
   getPathGenerator(objs, character) {
-    if (this.compiledGlyphs[character] !== undefined) {
-      return this.compiledGlyphs[character];
+    let path = this.#compiledPaths.get(character);
+    if (path) {
+      return path;
     }
-    const objId = this.loadedName + "_path_" + character;
+    const objId = `${this.loadedName}_path_${character}`;
     let cmds;
     try {
       cmds = objs.get(objId);
     } catch (ex) {
       warn(`getPathGenerator - ignoring character: "${ex}".`);
     }
-    const path = makePathFromDrawOPS(cmds?.path);
+    path = makePathFromDrawOPS(cmds?.path);
     if (!this.fontExtraProperties) {
       objs.delete(objId);
     }
-    return this.compiledGlyphs[character] = path;
+    this.#compiledPaths.set(character, path);
+    return path;
   }
   get black() {
     return this.#fontData.black;
@@ -14555,7 +14550,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.4.123",
+    apiVersion: "6.4.168",
     data,
     password,
     disableAutoFetch,
@@ -16217,8 +16212,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.4.123";
-const build = "0ce03b5a0";
+const version = "6.4.168";
+const build = "51fc21d1f";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -19794,11 +19789,15 @@ class MediaAnnotationElement extends AnnotationElement {
     const {
       signal
     } = this.#abortController;
-    const url = URL.createObjectURL(new Blob([content], {
+    const blob = new Blob([content], {
       type: contentType
-    }));
+    });
+    if (!/^(?:video|audio)\//.test(blob.type)) {
+      return;
+    }
+    const url = URL.createObjectURL(blob);
     this.#contentUrl = url;
-    const isAudio = contentType.startsWith("audio/");
+    const isAudio = blob.type.startsWith("audio/");
     const media = document.createElement(isAudio ? "audio" : "video");
     this.#media = media;
     media.className = "mediaContent";

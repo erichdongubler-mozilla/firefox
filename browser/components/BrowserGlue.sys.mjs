@@ -15,7 +15,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/asrouter/ASRouterDefaultConfig.sys.mjs",
   ASRouterNewTabHook: "resource:///modules/asrouter/ASRouterNewTabHook.sys.mjs",
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
-  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
+  BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
   BrowserSearchTelemetry:
     "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
@@ -1293,11 +1293,7 @@ BrowserGlue.prototype = {
         false
       )
     ) {
-      lazy
-        .RemoteSettings(lazy.LoginBreaches.REMOTE_SETTINGS_COLLECTION)
-        .on("sync", async event => {
-          await lazy.LoginBreaches.update(event.data.current);
-        });
+      lazy.LoginBreaches.subscribeToBreachUpdates();
     }
   },
 

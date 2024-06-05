@@ -28,14 +28,16 @@ cargo = check_prog(
 
 @template
 def unwrap_rustup(prog, name):
-    # rustc and cargo can either be rustup wrappers, or they can be the actual,
-    # plain executables. For cargo, on OSX, rustup sets DYLD_LIBRARY_PATH (at
+    # rustc and cargo can be rustup wrappers, the actual, plain executables, or
+    # a wrapper script that calls one of the above.
+    #
+    # For cargo, on OSX, rustup sets DYLD_LIBRARY_PATH (at
     # least until https://github.com/rust-lang/rustup.rs/pull/1752 is merged
     # and shipped) and that can wreak havoc (see bug 1536486). Similarly, for
     # rustc, rustup silently honors toolchain overrides set by vendored crates
     # (see bug 1547196).
     #
-    # In either case, we need to find the plain executables.
+    # In any case, we need to find the plain executables.
     #
     # To achieve that, try to run `PROG +stable`. When the rustup wrapper is in
     # use, it either prints PROG's help and exits with status 0, or prints
@@ -56,14 +58,55 @@ def unwrap_rustup(prog, name):
             return
 
         def from_rustup_which():
-            out = check_cmd_output("rustup", "which", name, executable=prog).rstrip()
-            # If for some reason the above failed to return something, keep the
-            # PROG we found originally.
+            log.debug(
+                "'%s' looks like a %s rustup wrapper, trying to find its real path",
+                prog,
+                name,
+            )
+
+            # `rustup` is a multi-call binary that proxies calls to "real" Rust
+            # binaries based on `argv[0]`. When `PROG` is a symlink to `rustup`
+            # (or `rustup-init`), we can call it "as rustup".
+            log.debug("Trying to call '%s' for `rustup which %s`", prog, name)
+            out = check_cmd_output(
+                "rustup",
+                "which",
+                name,
+                executable=prog,
+                onerror=lambda: "",
+            ).rstrip()
+
             if out:
-                log.info("Actually using '%s'", out)
+                log.info("Actually using '%s' as %s", out, name)
                 return out
 
-            log.info("No `rustup which` output, using '%s'", prog)
+            # Bug 2068826: Homebrew rustup >= 1.29.0_1 sets extra environment
+            # variables with `env_script_all_files`, which replaces symlinks
+            # with `write_env_script` wrappers. These *don't* pass `argv[0]`,
+            # so we need to explicitly call `rustup`, which we'll look for in
+            # the same directory as `PROG`.
+            rustup = os.path.join(
+                os.path.dirname(prog),
+                "rustup" + os.path.splitext(prog)[1],
+            )
+
+            if os.path.isfile(rustup):
+                log.debug("Trying to call '%s' for `rustup which %s`", rustup, name)
+                out = check_cmd_output(
+                    "rustup",
+                    "which",
+                    name,
+                    executable=rustup,
+                    onerror=lambda: "",
+                ).rstrip()
+
+                if out:
+                    log.info("Actually using '%s' as %s", out, name)
+                    return out
+
+            # If for some reason the above failed to return something, keep the
+            # PROG we found originally.
+            log.info("No valid `rustup which %s` output, using '%s'", name, prog)
             return prog
 
         (retcode, stdout, stderr) = get_cmd_output(prog, "+stable")

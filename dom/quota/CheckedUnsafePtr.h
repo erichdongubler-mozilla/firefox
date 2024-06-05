@@ -8,6 +8,7 @@
 #define mozilla_CheckedUnsafePtr_h
 
 #include <cstddef>
+#include <source_location>
 #include <type_traits>
 #include <utility>
 
@@ -20,28 +21,6 @@
 #include "nsContentUtils.h"
 #include "nsString.h"
 #include "nsTArray.h"
-
-#if defined __has_builtin
-#  if __has_builtin(__builtin_FUNCTION)
-#    define bt_function __builtin_FUNCTION()
-#  else
-#    define bt_function "__builtin_FUNCTION() is undefined"
-#  endif
-#  if __has_builtin(__builtin_FILE)
-#    define bt_file __builtin_FILE()
-#  else
-#    define bt_file "__builtin_FILE() is undefined"
-#  endif
-#  if __has_builtin(__builtin_LINE)
-#    define bt_line __builtin_LINE()
-#  else
-#    define bt_line -1
-#  endif
-#else
-#  define bt_function "__builtin_FUNCTION() is undefined"
-#  define bt_file "__builtin_FILE() is undefined"
-#  define bt_line -1
-#endif
 
 namespace mozilla {
 enum class CheckingSupport {
@@ -231,9 +210,11 @@ class CheckedUnsafePtrBase<T, CheckingSupport::Enabled>
     : detail::CheckedUnsafePtrBaseCheckingEnabled {
  public:
   MOZ_IMPLICIT constexpr CheckedUnsafePtrBase(
-      const std::nullptr_t = nullptr, const char* aFunction = bt_function,
-      const char* aFile = bt_file, const int32_t aLine = bt_line)
-      : detail::CheckedUnsafePtrBaseCheckingEnabled(aFunction, aFile, aLine),
+      const std::nullptr_t = nullptr,
+      const std::source_location& aLoc = std::source_location::current())
+      : detail::CheckedUnsafePtrBaseCheckingEnabled(
+            aLoc.function_name(), aLoc.file_name(),
+            static_cast<int>(aLoc.line())),
         mRawPtr(nullptr) {
     if (StaticPrefs::dom_checkedUnsafePtr_dumpStacks_enabled()) {
       MozStackWalk(CheckedUnsafePtrStackCallback, CallerPC(), 0,
@@ -242,11 +223,12 @@ class CheckedUnsafePtrBase<T, CheckingSupport::Enabled>
   }
 
   template <typename U, typename = EnableIfCompatible<T, U>>
-  MOZ_IMPLICIT CheckedUnsafePtrBase(const U& aPtr,
-                                    const char* aFunction = bt_function,
-                                    const char* aFile = bt_file,
-                                    const int32_t aLine = bt_line)
-      : detail::CheckedUnsafePtrBaseCheckingEnabled(aFunction, aFile, aLine) {
+  MOZ_IMPLICIT CheckedUnsafePtrBase(
+      const U& aPtr,
+      const std::source_location& aLoc = std::source_location::current())
+      : detail::CheckedUnsafePtrBaseCheckingEnabled(
+            aLoc.function_name(), aLoc.file_name(),
+            static_cast<int>(aLoc.line())) {
     if (StaticPrefs::dom_checkedUnsafePtr_dumpStacks_enabled()) {
       MozStackWalk(CheckedUnsafePtrStackCallback, CallerPC(), 0,
                    &mCreationStack);
@@ -254,11 +236,12 @@ class CheckedUnsafePtrBase<T, CheckingSupport::Enabled>
     Set(aPtr);
   }
 
-  CheckedUnsafePtrBase(const CheckedUnsafePtrBase& aOther,
-                       const char* aFunction = bt_function,
-                       const char* aFile = bt_file,
-                       const int32_t aLine = bt_line)
-      : detail::CheckedUnsafePtrBaseCheckingEnabled(aFunction, aFile, aLine) {
+  CheckedUnsafePtrBase(
+      const CheckedUnsafePtrBase& aOther,
+      const std::source_location& aLoc = std::source_location::current())
+      : detail::CheckedUnsafePtrBaseCheckingEnabled(
+            aLoc.function_name(), aLoc.file_name(),
+            static_cast<int>(aLoc.line())) {
     if (StaticPrefs::dom_checkedUnsafePtr_dumpStacks_enabled()) {
       MozStackWalk(CheckedUnsafePtrStackCallback, CallerPC(), 0,
                    &mCreationStack);

@@ -27,10 +27,21 @@ function mockServicesChromeScript() {
 
   const mockAlertsService = {
     showAlertWithCallbacks(alert, callbacks) {
+      // Remove properties of object that can't be sent across process boundary.
+      function sanitizeObject(object) {
+        return Object.fromEntries(Object.entries(object)
+            .filter(([key, value]) => !["function", "object"].includes(typeof value)));
+      }
+      // data about this alert that can be queried by the content process
+      // with getNotificationData().
+      const data = sanitizeObject(alert);
+      data.body = data.text; // for consistency with Notification
+      data.actions = alert.actions.map(sanitizeObject);
       activeNotifications[alert.name] = {
         callbacks,
         title: alert.title,
         image: alert.image,
+        data,
       };
 
       // fake async alert show event
@@ -146,6 +157,10 @@ function mockServicesChromeScript() {
     Object.keys(activeNotifications)
   );
 
+  addMessageListener("mock-alert-service:get-notification-data", () =>
+    Object.values(activeNotifications).map(value => value.data)
+  );
+
   addMessageListener("mock-alert-service:get-icon-image", id => {
     let image = activeNotifications[id].image;
     if (!image) {
@@ -243,6 +258,11 @@ const MockAlertsService = {
   async getNotificationIds() {
     return await this._chromeScript.sendQuery(
       "mock-alert-service:get-notification-ids"
+    );
+  },
+  async getNotificationData() {
+    return await this._chromeScript.sendQuery(
+      "mock-alert-service:get-notification-data"
     );
   },
   async getIconImage(id) {

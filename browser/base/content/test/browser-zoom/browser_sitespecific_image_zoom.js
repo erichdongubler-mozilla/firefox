@@ -10,7 +10,7 @@ function start_test_prefNotSet() {
 
     await FullZoomHelper.load(
       gBrowser.selectedTab,
-      "http://mochi.test:8888/browser/browser/base/content/test/general/moz.png"
+      "http://mochi.test:8888/browser/browser/base/content/test/browser-general/moz.png"
     );
   })().then(continue_test_prefNotSet, FullZoomHelper.failAndContinue(finish));
 }

@@ -601,3 +601,50 @@ add_task(async function test_inline_mention_passed_to_model_as_url() {
     await BrowserTestUtils.closeWindow(win);
   }
 });
+
+add_task(async function test_mentions_filter_letter_reaches_editor() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  const mentionsOpen = waitForMentionsOpen(browser);
+  await typeInSmartbar(browser, "@");
+  await mentionsOpen;
+
+  // The suggestion titles all start with "P", so a panel-list that picked an
+  // item by the first letter of its label would swallow this keystroke.
+  let state = await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindow = content.document.querySelector("ai-window");
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+    const panel = smartbar
+      .querySelector("smartwindow-panel-list")
+      .shadowRoot.querySelector("panel-list");
+    const before = smartbar.value;
+
+    EventUtils.sendString("p", content);
+    await new Promise(resolve => content.requestAnimationFrame(resolve));
+
+    let active = content.document.activeElement;
+    while (active?.shadowRoot?.activeElement) {
+      active = active.shadowRoot.activeElement;
+    }
+
+    return {
+      before,
+      after: smartbar.value,
+      stillOpen: panel.hasAttribute("open"),
+      activeInPanel: panel.contains(active),
+      activeLocalName: active?.localName,
+    };
+  });
+
+  info(`active element while the panel is open: ${state.activeLocalName}`);
+  Assert.equal(
+    state.after,
+    state.before + "p",
+    "A filter letter reaches the editor while the mention panel is open"
+  );
+  Assert.ok(state.stillOpen, "The mention panel stays open");
+  Assert.ok(!state.activeInPanel, "Focus stays outside the mention panel");
+
+  await BrowserTestUtils.closeWindow(win);
+});

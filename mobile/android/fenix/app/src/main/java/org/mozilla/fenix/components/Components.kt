@@ -22,6 +22,8 @@ import mozilla.components.feature.addons.update.DefaultAddonUpdater
 import mozilla.components.feature.autofill.AutofillConfiguration
 import mozilla.components.feature.summarize.PageSummaryFeature
 import mozilla.components.feature.summarize.settings.SummarizationSettings
+import mozilla.components.feature.tabdata.coordinator.DefaultTabDataCoordinator
+import mozilla.components.feature.tabdata.coordinator.TabDataCoordinator
 import mozilla.components.lib.ai.controls.AIFeatureBlockStorage
 import mozilla.components.lib.ai.controls.dataStore
 import mozilla.components.lib.ai.controls.default
@@ -63,6 +65,7 @@ import org.mozilla.fenix.components.listentopage.ListenToPage
 import org.mozilla.fenix.components.llm.Llm
 import org.mozilla.fenix.components.llm.ext.accessTokenProvider
 import org.mozilla.fenix.components.metrics.MetricsMiddleware
+import org.mozilla.fenix.components.tabs.DefaultTabRepository
 import org.mozilla.fenix.crashes.CrashReportingAppMiddleware
 import org.mozilla.fenix.crashes.SettingsCrashReportCache
 import org.mozilla.fenix.datastore.pocketStoriesSelectedCategoriesDataStore
@@ -538,6 +541,16 @@ class Components(
             lazyAppStore = lazy { appStore },
             settings = settings,
             context = context,
+        )
+    }
+
+    val tabDataCoordinator: TabDataCoordinator by lazyMonitored {
+        DefaultTabDataCoordinator(
+            tabRepository = DefaultTabRepository(browserStore = core.store),
+            tabGroupRepository = core.tabGroupRepository,
+            isInactiveTabsEnabled = settings::inactiveTabsAreEnabled,
+            isTabGroupsEnabled = settings::tabGroupsEnabled,
+            scope = applicationScope,
         )
     }
 }

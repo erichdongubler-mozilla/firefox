@@ -1634,6 +1634,10 @@ export class TelemetryEvent {
       "tabswitch",
       "focus",
     ];
+    if (this._controller.sapName === "smartbar") {
+      // The smartbar CTA can start a session when the input is not focused.
+      validEvents.push("aiwindow-input-cta:on-action");
+    }
     if (!validEvents.includes(event.type)) {
       console.error("Can't start recording from event type: ", event.type);
       return;

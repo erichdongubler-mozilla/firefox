@@ -15,15 +15,13 @@
 #  include "Logging.h"
 #endif
 
-#include "mozilla/a11y/DocAccessibleChild.h"
-#ifdef MOZ_ENABLE_SKIA_PDF
-#  include "mozilla/a11y/PdfStructTreeBuilder.h"
-#endif
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_accessibility.h"
+#include "mozilla/a11y/DocAccessibleChild.h"
+#include "mozilla/a11y/PdfStructTreeBuilder.h"
 #include "mozilla/dom/Event.h"  // for Event
 #include "nsContentUtils.h"
 #include "nsCoreUtils.h"
@@ -198,7 +196,6 @@ bool DocManager::IsProcessingRefreshDriverNotification() const {
 }
 #endif
 
-#ifdef MOZ_ENABLE_SKIA_PDF
 /* static */
 void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
   if (!StaticPrefs::accessibility_tagged_pdf_output_enabled()) {
@@ -254,7 +251,6 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
     }
   }
 }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // DocManager protected

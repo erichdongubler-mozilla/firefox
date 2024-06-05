@@ -64,13 +64,16 @@ class PrivacyReportNotificationWorker(
             val trackersBlockedCount = fetchTrackersBlockedThisWeek()
             logger.info("trackersBlockedCount is $trackersBlockedCount")
 
-            if (trackersBlockedCount > SHOW_NOTIFICATION_THRESHOLD) {
-                logger.info("trackersBlockedCount is above the notification threshold")
-                showPrivacyReportNotification(applicationContext, notificationsDelegate, trackersBlockedCount)
-            } else {
-                logger.info("trackersBlockedCount is below the notification threshold")
-                showPrivacyReportNotification(applicationContext, notificationsDelegate)
-            }
+            val content =
+                if (trackersBlockedCount > SHOW_NOTIFICATION_THRESHOLD) {
+                    logger.info("trackersBlockedCount is above the notification threshold")
+                    PrivacyReportNotificationContent.trackersBlocked(applicationContext, trackersBlockedCount)
+                } else {
+                    logger.info("trackersBlockedCount is below the notification threshold")
+                    PrivacyReportNotificationContent.noTrackersBlocked(applicationContext)
+                }
+
+            showPrivacyReportNotification(applicationContext, notificationsDelegate, content)
         }
 
         return Result.success()

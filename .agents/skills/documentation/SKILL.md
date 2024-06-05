@@ -280,24 +280,32 @@ it in the browser from a CDN, which is what makes these worth knowing:
 -   **A mermaid block always builds.** `./mach doc` succeeding says nothing about
     the diagram, since nothing has drawn it yet -- every failure below is
     invisible until the built page is open in a browser.
--   **The body column is the constraint, so lay the diagram out for it.** Mermaid
-    sizes the SVG to its intrinsic width and lets the page scale it down, and the
-    column is around 700 pixels: a diagram twice that renders its text at half
-    size. `flowchart LR` and `sequenceDiagram` reach that width with only a
-    handful of participants carrying Firefox-length names, so prefer
-    `flowchart TD` and fix width by changing the layout rather than the font.
+-   **A diagram renders at its intrinsic size.** One narrower than the column is
+    centered in it, caption included, so the `:align:` option is redundant. One
+    wider than the column scrolls inside its own box, where an edge fade shows
+    that it continues. Its labels keep the size every other diagram's have, so
+    pick the direction the content reads in rather than the one that fits:
+    `flowchart LR` and `sequenceDiagram` cost no legibility at a width the
+    column cannot hold. A reader still has to scroll for whatever sits past the
+    column.
 -   **A label holding a long unbroken word renders as an empty box in Firefox**
     (mermaid#5785), which a `wrappingWidth` config block in the diagram's
     frontmatter works around.
 -   **A label starting with `1. ` renders as `Unsupported markdown: list`**,
     because mermaid parses labels as markdown. A colon in place of the period
     avoids it.
--   **Do not distinguish two kinds of node by fill colour alone**: it fails for
-    colourblind readers and on poor displays. Vary the shape as well -- a stadium
-    `(["text"])` reads clearly against a plain `["text"]`, while a rounded
-    rectangle `("text")` is too close to it. `classDef` accepts `rx` and `ry` for
-    a radius in between, but only with a unit: `rx:14` is silently ignored,
-    `rx:14px` applies.
+-   **A diagram follows the page's color scheme.** A `classDef` or `style` that
+    hardcodes a `fill` keeps that color in both schemes, so it needs an explicit
+    `color:` as well, or the theme's label color lands on it and comes out grey on
+    a light fill in dark mode. `tools/moztreedocs/docs/mermaid-integration.md` has
+    the color rules, including what the unstyled default fill means for prose that
+    points at a node by color.
+-   **Do not distinguish two kinds of node by fill color alone**: it fails for
+    readers with a color vision deficiency and on poor displays. Vary the shape as
+    well -- a stadium `(["text"])` reads clearly against a plain `["text"]`,
+    while a rounded rectangle `("text")` is too close to it. `classDef` accepts
+    `rx` and `ry` for a radius in between, but only with a unit: `rx:14` is
+    silently ignored, `rx:14px` applies.
 -   **Directive options have to be contiguous**, immediately under the opening
     fence. A blank line between two of them ends the option block, and the rest
     then render as diagram source.

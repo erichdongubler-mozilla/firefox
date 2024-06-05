@@ -2597,6 +2597,9 @@ class nsContentUtils {
   static already_AddRefed<mozilla::dom::ContentList> GetElementsByClassName(
       nsINode* aRootNode, const nsAString& aClasses);
 
+  static bool MatchClassNames(mozilla::dom::Element* aElement,
+                              int32_t aNamespaceID, nsAtom* aAtom, void* aData);
+
   /**
    * Returns a presshell for this document, if there is one. This will be
    * aDoc's direct presshell if there is one, otherwise we'll look at all
@@ -3769,8 +3772,6 @@ class nsContentUtils {
 
   static void DropFragmentParsers();
 
-  static bool MatchClassNames(mozilla::dom::Element* aElement,
-                              int32_t aNamespaceID, nsAtom* aAtom, void* aData);
   static void DestroyClassNameArray(void* aData);
   static void* AllocClassMatchingInfo(nsINode* aRootNode,
                                       const nsString* aClasses);

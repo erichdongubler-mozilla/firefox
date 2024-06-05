@@ -75,7 +75,7 @@ export class AITabHeader extends MozLitElement {
     return html`
       <link
         rel="stylesheet"
-        href="chrome://browser/content/aiwindow/components/aitab-shared.css"
+        href="chrome://browser/content/aiwindow/components/aitab-base.css"
       />
       <link
         rel="stylesheet"

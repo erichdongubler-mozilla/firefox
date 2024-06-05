@@ -152,6 +152,7 @@ export const MonitorUIUtils = {
       url: monitor.watchUrls?.[0] || "",
       watchUrls: monitor.watchUrls || [],
       condition: monitor.monitorPrompt || "",
+      enabled: !!monitor.enabled,
       status: monitorStatus,
       history: (monitor.history || []).slice().reverse(),
       // Pass the schedule data directly - agent-monitor-item will format it using FTL strings

@@ -1923,14 +1923,24 @@ def _get_desktop_run_parser():
         action="store_true",
         help="Do not pass the --profile argument by default.",
     )
-    group.add_argument(
+    appdata_group = group.add_mutually_exclusive_group()
+    appdata_group.add_argument(
         "--appdata",
         "-a",
         nargs="?",
         const=True,
+        default=None,
+        help="Overrides the application data storage area. Without an argument, "
+        "defaults to a temporary location in the object directory. When passed "
+        "explicitly, also implies --noprofile. This override is enabled by "
+        "default even without -a; pass --default-appdata to disable it.",
+    )
+    appdata_group.add_argument(
+        "--default-appdata",
+        action="store_true",
         default=False,
-        help="Overrides the application data storage area defaulting to a "
-        "temporary location in the object directory. Implies --noprofile.",
+        help="Use the system default application data directory instead of "
+        "overriding it to a location in the object directory.",
     )
     group.add_argument(
         "--disable-e10s",
@@ -2495,6 +2505,7 @@ def _run_desktop(
     background,
     noprofile,
     appdata,
+    default_appdata,
     disable_e10s,
     enable_crash_reporter,
     disable_fission,
@@ -2510,6 +2521,15 @@ def _run_desktop(
     show_dump_stats,
 ):
     from mozprofile import Preferences, Profile
+
+    if default_appdata:
+        use_appdata = False
+    elif appdata is None:
+        use_appdata = True
+    else:
+        use_appdata = appdata
+
+    skip_profile = appdata is not None
 
     try:
         if packaged:
@@ -2600,7 +2620,7 @@ def _run_desktop(
         no_profile_option_given
         and no_backgroundtask_mode_option_given
         and not noprofile
-        and not appdata
+        and not skip_profile
     ):
         prefs = {
             "browser.aboutConfig.showWarning": False,
@@ -2653,7 +2673,7 @@ def _run_desktop(
     }
 
     if (
-        not appdata
+        not use_appdata
         and sys.platform == "darwin"
         and conditions.is_firefox(command_context)
         and "MOZ_APP_DATA" not in os.environ
@@ -2689,19 +2709,18 @@ def _run_desktop(
                 "due to macOS application data protections. Allow the "
                 "terminal access to Firefox data in macOS Privacy & "
                 "Security -> Files & Folders settings to allow builds launched "
-                "from the CLI to access profile data. Alternatively, use "
-                "`./mach run -a` OR set MOZ_APP_DATA & MOZ_LOCAL_APP_DATA "
+                "from the CLI to access profile data. Alternatively, remove "
+                "`--default-appdata` OR set MOZ_APP_DATA & MOZ_LOCAL_APP_DATA "
                 "environment variables to use an alternate app directory for "
                 "all instances launched from the terminal. See bug 2068208 for "
                 "more information.",
             )
 
-    if appdata:
-        if appdata is True:
-            appdata = tmpdir
+    if use_appdata:
+        appdata_dir = use_appdata if isinstance(use_appdata, str) else tmpdir
 
         extra_env["MOZ_APP_DATA"] = os.path.normpath(
-            os.path.join(appdata, "AppData", "Roaming")
+            os.path.join(appdata_dir, "AppData", "Roaming")
         )
         command_context.log(
             logging.INFO,
@@ -2710,7 +2729,7 @@ def _run_desktop(
             "Overriding application data directory to {app_data}",
         )
         extra_env["MOZ_LOCAL_APP_DATA"] = os.path.normpath(
-            os.path.join(appdata, "Local")
+            os.path.join(appdata_dir, "Local")
         )
         command_context.log(
             logging.INFO,

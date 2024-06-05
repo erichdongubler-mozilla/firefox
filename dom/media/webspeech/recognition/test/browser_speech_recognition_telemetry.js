@@ -104,107 +104,85 @@ add_setup(async function () {
   });
 });
 
-add_task(
-  {
-    skip_if: () =>
-      Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
-  },
-  async function test_session_started_extras() {
-    await flushAndReset();
+add_task(async function test_session_started_extras() {
+  await flushAndReset();
 
-    await BrowserTestUtils.withNewTab(PAGE, async browser => {
-      const started = await startSession(browser, { lang: "en-US" });
-      is(started, "start", "Recognition session started");
+  await BrowserTestUtils.withNewTab(PAGE, async browser => {
+    const started = await startSession(browser, { lang: "en-US" });
+    is(started, "start", "Recognition session started");
 
-      const events = await sessionStartedEvents();
-      is(events.length, 1, "One session_started event");
-      const extra = events[0].extra;
-      is(extra.lang, "en-US", "lang is the requested language");
-      is(extra.lang_source, "attribute", "lang came from the attribute");
-      // What ran, as opposed to what was asked for: the English model
-      // declares "en", so every en-* request negotiates to that one locale
-      // and groups together instead of splintering per requested tag.
-      is(extra.model_id, "english", "model_id is the model that ran");
-      is(extra.model_locale, "en", "model_locale is the negotiated locale");
-      Assert.ok(extra.session_id, "A session_id was recorded");
+    const events = await sessionStartedEvents();
+    is(events.length, 1, "One session_started event");
+    const extra = events[0].extra;
+    is(extra.lang, "en-US", "lang is the requested language");
+    is(extra.lang_source, "attribute", "lang came from the attribute");
+    // What ran, as opposed to what was asked for: the English model
+    // declares "en", so every en-* request negotiates to that one locale
+    // and groups together instead of splintering per requested tag.
+    is(extra.model_id, "english", "model_id is the model that ran");
+    is(extra.model_locale, "en", "model_locale is the negotiated locale");
+    Assert.ok(extra.session_id, "A session_id was recorded");
 
-      // Closing the tab on a live session records a "discarded"
-      // session_ended while the window is torn down, which outlives the tab
-      // close and would land in the next task's metrics. End it here.
-      await endSession(browser, "abort");
-    });
-  }
-);
+    // Closing the tab on a live session records a "discarded"
+    // session_ended while the window is torn down, which outlives the tab
+    // close and would land in the next task's metrics. End it here.
+    await endSession(browser, "abort");
+  });
+});
 
 // A language no model recognizes is rejected before the session reaches
 // [[started]], so it records an error but neither session event. init_failure
 // is what keeps it visible, and what explains why error and session_ended do
 // not add up.
-add_task(
-  {
-    skip_if: () =>
-      Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
-  },
-  async function test_unsupported_language_init_failure() {
-    await flushAndReset();
+add_task(async function test_unsupported_language_init_failure() {
+  await flushAndReset();
 
-    await BrowserTestUtils.withNewTab(PAGE, async browser => {
-      const started = await startSession(browser, { lang: "zz" });
-      is(started, "error: service-not-allowed", "Unsupported language failed");
+  await BrowserTestUtils.withNewTab(PAGE, async browser => {
+    const started = await startSession(browser, { lang: "zz" });
+    is(started, "error: service-not-allowed", "Unsupported language failed");
 
-      await Services.fog.testFlushAllChildren();
-      is(
-        Glean.mediaSpeechRecognition.initFailure.language_not_supported.testGetValue(),
-        1,
-        "init_failure[language_not_supported] recorded"
-      );
-      is(
-        Glean.mediaSpeechRecognition.error.service_not_allowed.testGetValue(),
-        1,
-        "The spec-mandated error code is still the coarse one"
-      );
-      Assert.deepEqual(
-        await sessionStartedEvents(),
-        [],
-        "No session_started, the session never reached [[started]]"
-      );
-      Assert.deepEqual(
-        await sessionEndedEvents(),
-        [],
-        "No session_ended either"
-      );
-    });
-  }
-);
+    await Services.fog.testFlushAllChildren();
+    is(
+      Glean.mediaSpeechRecognition.initFailure.language_not_supported.testGetValue(),
+      1,
+      "init_failure[language_not_supported] recorded"
+    );
+    is(
+      Glean.mediaSpeechRecognition.error.service_not_allowed.testGetValue(),
+      1,
+      "The spec-mandated error code is still the coarse one"
+    );
+    Assert.deepEqual(
+      await sessionStartedEvents(),
+      [],
+      "No session_started, the session never reached [[started]]"
+    );
+    Assert.deepEqual(await sessionEndedEvents(), [], "No session_ended either");
+  });
+});
 
 // With no lang attribute and no document language, start() falls back to the
 // user's language, and the source says so rather than crediting the document.
-add_task(
-  {
-    skip_if: () =>
-      Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
-  },
-  async function test_session_started_lang_source_user() {
-    await flushAndReset();
+add_task(async function test_session_started_lang_source_user() {
+  await flushAndReset();
 
-    await BrowserTestUtils.withNewTab(PAGE, async browser => {
-      const started = await startSession(browser);
-      is(started, "start", "Recognition session started");
+  await BrowserTestUtils.withNewTab(PAGE, async browser => {
+    const started = await startSession(browser);
+    is(started, "start", "Recognition session started");
 
-      const userLang = await SpecialPowers.spawn(
-        browser,
-        [],
-        () => content.navigator.language
-      );
-      const events = await sessionStartedEvents();
-      is(events.length, 1, "One session_started event");
-      is(events[0].extra.lang, userLang, "Effective language is the user's");
-      is(events[0].extra.lang_source, "user", "Language came from the user");
+    const userLang = await SpecialPowers.spawn(
+      browser,
+      [],
+      () => content.navigator.language
+    );
+    const events = await sessionStartedEvents();
+    is(events.length, 1, "One session_started event");
+    is(events[0].extra.lang, userLang, "Effective language is the user's");
+    is(events[0].extra.lang_source, "user", "Language came from the user");
 
-      await endSession(browser, "abort");
-    });
-  }
-);
+    await endSession(browser, "abort");
+  });
+});
 
 // Every way a started session can end, with the session_ended events each one
 // is expected to record, in order, as [outcome, error_code] pairs. Each case
@@ -267,196 +245,163 @@ const SESSION_END_CASES = [
   },
 ];
 
-add_task(
-  {
-    skip_if: () =>
-      Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
-  },
-  async function test_session_ended() {
-    for (const { name, expected, run } of SESSION_END_CASES) {
-      await flushAndReset();
-
-      await BrowserTestUtils.withNewTab(PAGE, async browser => {
-        is(await startSession(browser), "start", "Recognition session started");
-        await run(browser);
-
-        const events = await sessionEndedEvents();
-        Assert.deepEqual(
-          events.map(event => [event.extra.outcome, event.extra.error_code]),
-          expected,
-          `Session ended by ${name}`
-        );
-        for (const event of events) {
-          Assert.ok(
-            "duration" in event.extra,
-            "A session duration was recorded"
-          );
-        }
-
-        // The whole point of session_id: each end pairs with exactly one
-        // start, so an outcome can be attributed to the session that had it
-        // without subtracting one population from another.
-        const endedIds = events.map(event => event.extra.session_id);
-        const startedIds = (await sessionStartedEvents()).map(
-          event => event.extra.session_id
-        );
-        is(new Set(endedIds).size, endedIds.length, "Session ids are distinct");
-        Assert.deepEqual(
-          endedIds.toSorted(),
-          startedIds.toSorted(),
-          `Every session_ended pairs with a session_started for ${name}`
-        );
-
-        for (const [outcome, errorCode] of expected) {
-          if (outcome == "error") {
-            is(
-              Glean.mediaSpeechRecognition.error[errorCode].testGetValue(),
-              1,
-              `error[${errorCode}] recorded for ${name}`
-            );
-          }
-        }
-      });
-    }
-  }
-);
-
-// Timing metrics: only the presence of samples is asserted, never a specific
-// duration.
-add_task(
-  {
-    skip_if: () =>
-      Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
-  },
-  async function test_session_init_time() {
+add_task(async function test_session_ended() {
+  for (const { name, expected, run } of SESSION_END_CASES) {
     await flushAndReset();
 
     await BrowserTestUtils.withNewTab(PAGE, async browser => {
       is(await startSession(browser), "start", "Recognition session started");
+      await run(browser);
 
-      await Services.fog.testFlushAllChildren();
-      const data = Glean.mediaSpeechRecognition.sessionInitTime.testGetValue();
-      Assert.ok(data, "session_init_time has samples");
-      is(data.count, 1, "One session init was timed");
+      const events = await sessionEndedEvents();
+      Assert.deepEqual(
+        events.map(event => [event.extra.outcome, event.extra.error_code]),
+        expected,
+        `Session ended by ${name}`
+      );
+      for (const event of events) {
+        Assert.ok("duration" in event.extra, "A session duration was recorded");
+      }
 
-      await endSession(browser, "abort");
+      // The whole point of session_id: each end pairs with exactly one
+      // start, so an outcome can be attributed to the session that had it
+      // without subtracting one population from another.
+      const endedIds = events.map(event => event.extra.session_id);
+      const startedIds = (await sessionStartedEvents()).map(
+        event => event.extra.session_id
+      );
+      is(new Set(endedIds).size, endedIds.length, "Session ids are distinct");
+      Assert.deepEqual(
+        endedIds.toSorted(),
+        startedIds.toSorted(),
+        `Every session_ended pairs with a session_started for ${name}`
+      );
+
+      for (const [outcome, errorCode] of expected) {
+        if (outcome == "error") {
+          is(
+            Glean.mediaSpeechRecognition.error[errorCode].testGetValue(),
+            1,
+            `error[${errorCode}] recorded for ${name}`
+          );
+        }
+      }
     });
   }
-);
+});
+
+// Timing metrics: only the presence of samples is asserted, never a specific
+// duration.
+add_task(async function test_session_init_time() {
+  await flushAndReset();
+
+  await BrowserTestUtils.withNewTab(PAGE, async browser => {
+    is(await startSession(browser), "start", "Recognition session started");
+
+    await Services.fog.testFlushAllChildren();
+    const data = Glean.mediaSpeechRecognition.sessionInitTime.testGetValue();
+    Assert.ok(data, "session_init_time has samples");
+    is(data.count, 1, "One session init was timed");
+
+    await endSession(browser, "abort");
+  });
+});
 
 // Initialization failures that do not need a loaded model are exercised here.
 // The timing metrics need the speech-recognition subsuite's real model/audio.
-add_task(
-  {
-    skip_if: () =>
-      Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
-  },
-  async function test_init_failure_concurrent_session() {
-    await flushAndReset();
+add_task(async function test_init_failure_concurrent_session() {
+  await flushAndReset();
 
-    await BrowserTestUtils.withNewTab(PAGE, async browser => {
-      is(await startSession(browser), "start", "First session started");
+  await BrowserTestUtils.withNewTab(PAGE, async browser => {
+    is(await startSession(browser), "start", "First session started");
 
-      const second = await SpecialPowers.spawn(browser, [], async () => {
-        const stream = await content.navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-        const recognition = new content.SpeechRecognition();
-        recognition.processLocally = true;
-        content.wrappedJSObject._second = recognition;
-        return new Promise(resolve => {
-          recognition.onstart = () => resolve("start");
-          recognition.onerror = e => resolve(`error: ${e.error}`);
-          recognition.start(stream.getAudioTracks()[0]);
-        });
+    const second = await SpecialPowers.spawn(browser, [], async () => {
+      const stream = await content.navigator.mediaDevices.getUserMedia({
+        audio: true,
       });
+      const recognition = new content.SpeechRecognition();
+      recognition.processLocally = true;
+      content.wrappedJSObject._second = recognition;
+      return new Promise(resolve => {
+        recognition.onstart = () => resolve("start");
+        recognition.onerror = e => resolve(`error: ${e.error}`);
+        recognition.start(stream.getAudioTracks()[0]);
+      });
+    });
+    is(
+      second,
+      "error: service-not-allowed",
+      "The second concurrent session is refused"
+    );
+
+    await Services.fog.testFlushAllChildren();
+    is(
+      Glean.mediaSpeechRecognition.initFailure.concurrent_session.testGetValue(),
+      1,
+      "init_failure[concurrent_session] recorded in the inference process"
+    );
+    is(
+      Glean.mediaSpeechRecognition.error.service_not_allowed.testGetValue(),
+      1,
+      "error[service_not_allowed] recorded in the content process"
+    );
+
+    await endSession(browser, "abort");
+  });
+});
+
+add_task(async function test_init_failure_model_not_installed() {
+  await flushAndReset();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.modelHub.testing", false],
+      // This label is about the path that fails instead of offering the
+      // download, so opt out of install-on-start here.
+      ["media.webspeech.recognition.install_on_start", false],
+    ],
+  });
+
+  try {
+    await BrowserTestUtils.withNewTab(PAGE, async browser => {
       is(
-        second,
-        "error: service-not-allowed",
-        "The second concurrent session is refused"
+        await startSession(browser, { lang: "fr" }),
+        "error: network",
+        "Starting without an installed model fails asynchronously"
       );
 
       await Services.fog.testFlushAllChildren();
       is(
-        Glean.mediaSpeechRecognition.initFailure.concurrent_session.testGetValue(),
+        Glean.mediaSpeechRecognition.initFailure.model_not_installed.testGetValue(),
         1,
-        "init_failure[concurrent_session] recorded in the inference process"
+        "init_failure[model_not_installed] is reachable from start()"
       );
-      is(
-        Glean.mediaSpeechRecognition.error.service_not_allowed.testGetValue(),
-        1,
-        "error[service_not_allowed] recorded in the content process"
-      );
-
-      await endSession(browser, "abort");
     });
+  } finally {
+    await SpecialPowers.popPrefEnv();
   }
-);
-
-add_task(
-  {
-    skip_if: () =>
-      Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
-  },
-  async function test_init_failure_model_not_installed() {
-    await flushAndReset();
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["browser.ml.modelHub.testing", false],
-        // This label is about the path that fails instead of offering the
-        // download, so opt out of install-on-start here.
-        ["media.webspeech.recognition.install_on_start", false],
-      ],
-    });
-
-    try {
-      await BrowserTestUtils.withNewTab(PAGE, async browser => {
-        is(
-          await startSession(browser, { lang: "fr" }),
-          "error: network",
-          "Starting without an installed model fails asynchronously"
-        );
-
-        await Services.fog.testFlushAllChildren();
-        is(
-          Glean.mediaSpeechRecognition.initFailure.model_not_installed.testGetValue(),
-          1,
-          "init_failure[model_not_installed] is reachable from start()"
-        );
-      });
-    } finally {
-      await SpecialPowers.popPrefEnv();
-    }
-  }
-);
+});
 
 // available() reports its answer through the availability counter on every
 // path, including the early-outs that never reach the backend.
-add_task(
-  {
-    skip_if: () =>
-      Services.prefs.getBoolPref("telemetry.fog.artifact_build", false),
-  },
-  async function test_availability_counter() {
-    await flushAndReset();
+add_task(async function test_availability_counter() {
+  await flushAndReset();
 
-    await BrowserTestUtils.withNewTab(PAGE, async browser => {
-      // processLocally: false is unsupported, and resolves without consulting
-      // the backend at all.
-      const status = await SpecialPowers.spawn(browser, [], () =>
-        content.SpeechRecognition.available({
-          langs: ["en-US"],
-          processLocally: false,
-        })
-      );
-      is(status, "unavailable", "Remote recognition is unavailable");
+  await BrowserTestUtils.withNewTab(PAGE, async browser => {
+    // processLocally: false is unsupported, and resolves without consulting
+    // the backend at all.
+    const status = await SpecialPowers.spawn(browser, [], () =>
+      content.SpeechRecognition.available({
+        langs: ["en-US"],
+        processLocally: false,
+      })
+    );
+    is(status, "unavailable", "Remote recognition is unavailable");
 
-      await Services.fog.testFlushAllChildren();
-      is(
-        Glean.mediaSpeechRecognition.availability.unavailable.testGetValue(),
-        1,
-        "availability[unavailable] recorded for the early-out"
-      );
-    });
-  }
-);
+    await Services.fog.testFlushAllChildren();
+    is(
+      Glean.mediaSpeechRecognition.availability.unavailable.testGetValue(),
+      1,
+      "availability[unavailable] recorded for the early-out"
+    );
+  });
+});

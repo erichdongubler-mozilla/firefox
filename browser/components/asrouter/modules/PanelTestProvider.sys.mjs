@@ -2794,6 +2794,66 @@ const MESSAGES = () => [
       id: "newtabMessageCheck",
     },
   },
+  // The base template for the new tab card stack component (bug 2069986).
+  {
+    id: "TEST_HNT_CARD_STACK",
+    template: "newtab_message",
+    groups: [],
+    content: {
+      messageType: "ASRouterMultistageMessage",
+      id: "TEST_HNT_CARD_STACK",
+      transitions: false,
+      backdrop: "transparent",
+      wrapper_content_style: { height: "204px" },
+      screens: [
+        {
+          id: "CARD_STACK_SCREEN_1",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "card-stack",
+            background:
+              "url('chrome://activity-stream/content/data/content/assets/br-set-default-fox-heart.svg') center / contain no-repeat",
+            title: { raw: "This is a card-stack headline" },
+            subtitle: {
+              raw: "This is a card-stack subtitle, lower in the visual hierarchy.",
+            },
+            primary_button: {
+              label: { raw: "Primary action" },
+              action: { navigate: true },
+            },
+            secondary_button: {
+              label: { raw: "Dismiss" },
+              action: { navigate: true },
+            },
+          },
+        },
+        {
+          id: "CARD_STACK_SCREEN_2",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "card-stack",
+            background:
+              "url('chrome://activity-stream/content/data/content/assets/br-import-fox-house.svg') center / contain no-repeat",
+            title: {
+              raw: "This is a card-stack headline, on the second screen",
+            },
+            subtitle: {
+              raw: "This is a card-stack subtitle, lower in the visual hierarchy, on the second screen.",
+            },
+            primary_button: {
+              label: { raw: "Primary action" },
+              action: { dismiss: true },
+            },
+            secondary_button: {
+              label: { raw: "Dismiss" },
+              action: { dismiss: true },
+            },
+          },
+        },
+      ],
+    },
+    trigger: { id: "newtabMessageCheck" },
+  },
   {
     id: "UNIVERSAL_INFOBAR_WITH_EMBEDDED_LINKS",
     content: {

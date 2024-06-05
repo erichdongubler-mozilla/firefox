@@ -9,6 +9,7 @@
 #include "AudioSinkWrapper.h"
 #include "CubebUtils.h"
 #include "MediaData.h"
+#include "MediaSinkTestUtils.h"
 #include "MockCubeb.h"
 #include "TimeUnits.h"
 #include "gmock/gmock.h"
@@ -22,21 +23,6 @@
 #include "nsThreadUtils.h"
 
 using namespace mozilla;
-
-// Build an AudioSinkWrapper whose sink creator draws from aQueue/aInfo. The
-// references must outlive the returned wrapper (the tests keep them as locals
-// or fixture members that do).
-static RefPtr<AudioSinkWrapper> MakeAudioSinkWrapper(
-    MediaQueue<AudioData>& aQueue, MediaInfo& aInfo, double aVolume) {
-  auto creator = [&aQueue, &aInfo]() {
-    return UniquePtr<AudioSink>{new AudioSink(AbstractThread::GetCurrent(),
-                                              aQueue, aInfo.mAudio,
-                                              /*resistFingerprinting*/ false)};
-  };
-  return new AudioSinkWrapper(
-      AbstractThread::GetCurrent(), aQueue, std::move(creator), aVolume,
-      /*playbackRate*/ 1.0, /*preservesPitch*/ true, /*sinkDevice*/ nullptr);
-}
 
 // This is a crashtest to check that AudioSinkWrapper::mEndedPromiseHolder is
 // not settled twice when sync and async AudioSink initializations race.

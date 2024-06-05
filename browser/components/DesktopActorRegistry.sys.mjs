@@ -324,10 +324,12 @@ let JSWINDOWACTORS = {
 
   BackupUI: {
     parent: {
-      esModuleURI: "resource:///actors/BackupUIParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/backup/actors/BackupUIParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource:///actors/BackupUIChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/backup/actors/BackupUIChild.sys.mjs",
       events: {
         "BackupUI:InitWidget": { wantUntrusted: true },
         "BackupUI:TriggerCreateBackup": { wantUntrusted: true },
@@ -580,10 +582,10 @@ let JSWINDOWACTORS = {
 
   GenAI: {
     parent: {
-      esModuleURI: "resource:///actors/GenAIParent.sys.mjs",
+      esModuleURI: "moz-src:///browser/components/genai/GenAIParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource:///actors/GenAIChild.sys.mjs",
+      esModuleURI: "moz-src:///browser/components/genai/GenAIChild.sys.mjs",
       events: {
         mousedown: {},
         mouseup: {},
@@ -680,10 +682,12 @@ let JSWINDOWACTORS = {
 
   LinkPreview: {
     parent: {
-      esModuleURI: "resource:///actors/LinkPreviewParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/genai/LinkPreviewParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource:///actors/LinkPreviewChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/genai/LinkPreviewChild.sys.mjs",
     },
     includeChrome: true,
     enablePreference: "browser.ml.linkPreview.enabled",
@@ -692,10 +696,12 @@ let JSWINDOWACTORS = {
 
   PageAssist: {
     parent: {
-      esModuleURI: "resource:///actors/PageAssistParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/genai/PageAssistParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource:///actors/PageAssistChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/genai/PageAssistChild.sys.mjs",
     },
     includeChrome: true,
     enablePreference: "browser.ml.pageAssist.enabled",

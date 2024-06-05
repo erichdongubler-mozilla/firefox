@@ -820,7 +820,6 @@ dom.contentprocess:
       - jimm@mozilla.com
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: CONTENT_PROCESS_LAUNCH_MAINTHREAD_MS
 
   launch_total:
     type: timing_distribution
@@ -840,7 +839,6 @@ dom.contentprocess:
       - jimm@mozilla.com
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: CONTENT_PROCESS_LAUNCH_TOTAL_MS
 
   sync_launch:
     type: timing_distribution
@@ -860,7 +858,6 @@ dom.contentprocess:
       - jimm@mozilla.com
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: CONTENT_PROCESS_SYNC_LAUNCH_MS
 
   launch_is_sync:
     type: labeled_counter
@@ -882,7 +879,6 @@ dom.contentprocess:
       - jimm@mozilla.com
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: h#CONTENT_PROCESS_LAUNCH_IS_SYNC
 
 dom.parentprocess:
   private_window_used:

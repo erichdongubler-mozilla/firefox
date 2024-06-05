@@ -33,10 +33,10 @@ vendoring:
     - expat/lib/random_*.h
 
   include:
-    - AUTHORS
-    - Changes
     - COPYING
-    - README.md
+    - expat/AUTHORS
+    - expat/Changes
+    - expat/README.md
     - expat/lib/*
 
   keep:

@@ -153,6 +153,7 @@ export class UrlbarInputBase extends HTMLElement {
                it contains text even when searchmode-switcher-title is hidden. -->
           <span class="urlbar-visually-hidden" aria-hidden="true">a</span>
           <span class="searchmode-switcher-content">
+            <span class="searchmode-switcher-wordmark" aria-hidden="true" />
             <img class="searchmode-switcher-dropmarker"
                  data-l10n-id="urlbar-searchmode-dropmarker2"
                  draggable="false" />
@@ -196,12 +197,8 @@ ${
            role="group"
            tooltip="aHTMLTooltip">
         <div class="urlbarView-background"/>
-        <div class="urlbarView-body-outer">
-          <div class="urlbarView-body-inner">
-            <div class="urlbarView-results"
-                 role="listbox"/>
-          </div>
-        </div>
+        <div class="urlbarView-results"
+             role="listbox"/>
         <panel-list class="urlbarView-result-menu"></panel-list>
         <moz-urlbar-slot name="search-one-offs" />
    </div>`;
@@ -780,6 +777,16 @@ ${
    */
   get isSearchbarSAP() {
     return UrlbarShared.isSearchbarSAP(this.#sapName);
+  }
+
+  /**
+   * Whether this bar shows layout variant A. New Tab's registrant sets the
+   * attribute from the urlbar's `newtabVariantA` Nimbus variable.
+   *
+   * @type {boolean}
+   */
+  get variantA() {
+    return this.hasAttribute("variant-a");
   }
 
   /**
@@ -6077,7 +6084,10 @@ ${
 
     event.dataTransfer.setData("text/x-moz-url", `${href}\n${title}`);
     event.dataTransfer.setData("text/plain", href);
-    event.dataTransfer.setData("text/html", `<a href="${href}">${title}</a>`);
+    event.dataTransfer.setData(
+      "text/html",
+      `<a href="${UrlbarShared.escapeHtmlEntities(href)}">${UrlbarShared.escapeHtmlEntities(title)}</a>`
+    );
     event.dataTransfer.effectAllowed = "copyLink";
     event.stopPropagation();
   }

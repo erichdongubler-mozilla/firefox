@@ -1466,6 +1466,20 @@ nsresult nsHttpConnectionMgr::MakeNewConnection(
   // because we have already determined there are no idle connections
   // to our destination
 
+  if (mNumIdleConns + mNumActiveConns + 1 >= mMaxConns &&
+      profiler_thread_is_being_profiled_for_markers()) {
+    // The marker payload has no 16-bit integer format.
+    uint32_t active = mNumActiveConns;
+    uint32_t idle = mNumIdleConns;
+    uint32_t maxConns = mMaxConns;
+    nsCString origin(ent->mConnInfo->GetOrigin());
+    PROFILER_MARKER_SIMPLE_PAYLOAD_WITH_LABEL(
+        "HttpConnectionLimit", NETWORK,
+        "active={marker.data.active} idle={marker.data.idle} "
+        "max={marker.data.maxConns} for {marker.data.origin}",
+        active, idle, maxConns, origin);
+  }
+
   if ((mNumIdleConns + mNumActiveConns + 1 >= mMaxConns) && mNumIdleConns) {
     // If the global number of connections is preventing the opening of new
     // connections to a host without idle connections, then close them
@@ -1473,6 +1487,12 @@ nsresult nsHttpConnectionMgr::MakeNewConnection(
     auto iter = mCT.ConstIter();
     while (mNumIdleConns + mNumActiveConns + 1 >= mMaxConns && !iter.Done()) {
       RefPtr<ConnectionEntry> entry = iter.Data();
+      // Losing the TRR connection stalls every pending DNS lookup until it is
+      // rebuilt, so it is not worth the connection slot it frees.
+      if (entry->mConnInfo->GetIsTrrServiceChannel()) {
+        iter.Next();
+        continue;
+      }
       entry->CloseIdleConnections((mNumIdleConns + mNumActiveConns + 1) -
                                   mMaxConns);
       iter.Next();
@@ -1485,6 +1505,9 @@ nsresult nsHttpConnectionMgr::MakeNewConnection(
     // connections to a host without idle connections, then close any spdy
     // ASAP.
     for (const RefPtr<ConnectionEntry>& entry : mCT.Values()) {
+      if (entry->mConnInfo->GetIsTrrServiceChannel()) {
+        continue;
+      }
       while (entry->MakeFirstActiveSpdyConnDontReuse()) {
         // Stop on <= (particularly =) because this dontreuse
         // causes async close.

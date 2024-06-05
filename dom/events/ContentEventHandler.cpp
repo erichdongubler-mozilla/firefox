@@ -3512,7 +3512,7 @@ nsresult ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent) {
         domRangeAndAdjustedOffsetOrError =
             ConvertFlatTextOffsetToUnsafeDOMRange(
                 aEvent->mOffset, aEvent->mLength,
-                aEvent->mExpandToClusterBoundary);
+                aEvent->ShouldExpandToClusterBoundary());
     if (MOZ_UNLIKELY(domRangeAndAdjustedOffsetOrError.isErr())) {
       NS_WARNING(
           "ContentEventHandler::ConvertFlatTextOffsetToDOMRangeBase() failed");
@@ -3533,7 +3533,7 @@ nsresult ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent) {
     }
   }
 
-  if (aEvent->mReversed) {
+  if (aEvent->IsReversed()) {
     nsCOMPtr<nsINode> startNodeStrong(startNode);
     nsCOMPtr<nsINode> endNodeStrong(endNode);
     ErrorResult error;

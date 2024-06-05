@@ -277,6 +277,7 @@ void nsHtml5TreeBuilder::SetSanitizer(mozilla::dom::Sanitizer* aSanitizer,
   MOZ_ASSERT(!aSanitizer || mBuilder,
              "Sanitizing while parsing needs the op-less builder.");
   if (aSanitizer) {
+    aSanitizer->RecordSanitizeUse();
     mSanitizerState = mozilla::MakeUnique<SanitizerState>(aSanitizer, aSafe);
   } else {
     mSanitizerState = nullptr;

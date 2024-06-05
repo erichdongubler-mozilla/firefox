@@ -39,6 +39,7 @@
 #include "mozilla/PresState.h"
 #include "mozilla/ReflowInput.h"
 #include "mozilla/SVGOuterSVGFrame.h"
+#include "mozilla/ScrollState.h"
 #include "mozilla/ScrollbarPreferences.h"
 #include "mozilla/ScrollingMetrics.h"
 #include "mozilla/StaticPrefs_apz.h"
@@ -81,7 +82,6 @@
 #include "nsHTMLDocument.h"
 #include "nsIDocumentViewer.h"
 #include "nsIFrameInlines.h"
-#include "nsILayoutHistoryState.h"
 #include "nsINode.h"
 #include "nsIScrollbarMediator.h"
 #include "nsIXULRuntime.h"
@@ -329,7 +329,22 @@ void ScrollContainerFrame::ScrollbarActivityStopped() const {
   }
 }
 
+void ScrollContainerFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                                nsIFrame* aPrevInFlow) {
+  nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
+  MOZ_ASSERT(aContent);
+  MOZ_ASSERT(aContent->IsElement());
+  if (UniquePtr state = aContent->AsElement()->TakeSavedScrollState()) {
+    RestoreState(*state);
+  }
+}
+
 void ScrollContainerFrame::Destroy(DestroyContext& aContext) {
+  if (Maybe<ScrollState> state = SaveState();
+      state && !PresShell()->IsDestroying()) {
+    mContent->AsElement()->SetSavedScrollState(MakeUnique<ScrollState>(*state));
+  }
+
   DestroyAbsoluteFrames(aContext);
   if (mIsRoot) {
     PresShell()->ResetVisualViewportOffset();
@@ -7395,7 +7410,7 @@ void ScrollContainerFrame::ResetScrollInfoIfNeeded(
   mInScrollingGesture = aInScrollingGesture;
 }
 
-UniquePtr<PresState> ScrollContainerFrame::SaveState(CaptureStateFlags aFlags) {
+Maybe<ScrollState> ScrollContainerFrame::SaveState() {
   // Don't store a scroll state if we never have been scrolled or restored
   // a previous scroll state, and we're not in the middle of a smooth scroll.
   auto scrollAnimationState = ScrollAnimationState();
@@ -7404,10 +7419,10 @@ UniquePtr<PresState> ScrollContainerFrame::SaveState(CaptureStateFlags aFlags) {
       scrollAnimationState.contains(AnimationState::APZPending) ||
       scrollAnimationState.contains(AnimationState::APZRequested);
   if (!mHasBeenScrolled && !mDidHistoryRestore && !isScrollAnimating) {
-    return nullptr;
+    return Nothing();
   }
 
-  UniquePtr<PresState> state = NewPresState();
+  ScrollState state;
   bool allowScrollOriginDowngrade =
       !nsLayoutUtils::CanScrollOriginClobberApz(mLastScrollOrigin) ||
       mAllowScrollOriginDowngrade;
@@ -7431,19 +7446,15 @@ UniquePtr<PresState> ScrollContainerFrame::SaveState(CaptureStateFlags aFlags) {
   if (mRestorePos.y != -1 && pt == mLastPos) {
     pt = mRestorePos;
   }
-  state->scrollState() = pt;
-  state->allowScrollOriginDowngrade() = allowScrollOriginDowngrade;
-  // Scroll event generations are per-PresShell, so they're meaningless when
-  // restoring from session history.
-  if (!aFlags.contains(CaptureStateFlag::ForSessionHistory)) {
-    state->scrollEventGeneration() = mScrollEventGeneration;
-    state->scrollEndEventGeneration() = mScrollEndEventGeneration;
-  }
+  state.mScrollPosition = pt;
+  state.mAllowScrollOriginDowngrade = allowScrollOriginDowngrade;
+  state.mScrollEventGeneration = mScrollEventGeneration;
+  state.mScrollEndEventGeneration = mScrollEndEventGeneration;
   if (mIsRoot) {
     // Only save resolution properties for root scroll frames
-    state->resolution() = PresShell()->GetResolution();
+    state.mResolution = PresShell()->GetResolution();
   }
-  return state;
+  return Some(state);
 }
 
 static bool GetStateKey(nsIContent* aContent, nsACString& aKey) {
@@ -7455,10 +7466,9 @@ static bool GetStateKey(nsIContent* aContent, nsACString& aKey) {
   return !aKey.IsEmpty();
 }
 
-void ScrollContainerFrame::SaveState(CaptureStateFlags aFlags,
-                                     nsILayoutHistoryState* aState) {
+void ScrollContainerFrame::SaveState(nsILayoutHistoryState* aState) {
   MOZ_ASSERT(aState);
-  UniquePtr state = SaveState(aFlags);
+  Maybe<ScrollState> state = SaveState();
   if (!state) {
     return;
   }
@@ -7466,7 +7476,11 @@ void ScrollContainerFrame::SaveState(CaptureStateFlags aFlags,
   if (!GetStateKey(mContent, key)) {
     return;
   }
-  aState->AddState(key, std::move(state));
+  UniquePtr presState = NewPresState();
+  presState->scrollState() = state->mScrollPosition;
+  presState->allowScrollOriginDowngrade() = state->mAllowScrollOriginDowngrade;
+  presState->resolution() = state->mResolution;
+  aState->AddState(key, std::move(presState));
 }
 
 void ScrollContainerFrame::RestoreState(nsILayoutHistoryState* aState) {
@@ -7477,14 +7491,19 @@ void ScrollContainerFrame::RestoreState(nsILayoutHistoryState* aState) {
     return;
   }
   if (UniquePtr state = aState->TakeState(key)) {
-    RestoreState(state.get());
+    ScrollState scrollState;
+    scrollState.mScrollPosition = state->scrollState();
+    scrollState.mAllowScrollOriginDowngrade =
+        state->allowScrollOriginDowngrade();
+    scrollState.mResolution = state->resolution();
+    RestoreState(scrollState);
   }
 }
 
-void ScrollContainerFrame::RestoreState(PresState* aState) {
-  mRestorePos = aState->scrollState();
+void ScrollContainerFrame::RestoreState(const ScrollState& aState) {
+  mRestorePos = aState.mScrollPosition;
   MOZ_ASSERT(mLastScrollOrigin == ScrollOrigin::None);
-  mAllowScrollOriginDowngrade = aState->allowScrollOriginDowngrade();
+  mAllowScrollOriginDowngrade = aState.mAllowScrollOriginDowngrade;
   // When restoring state, we promote mLastScrollOrigin to a stronger value
   // from the default of eNone, to restore the behaviour that existed when
   // the state was saved. If mLastScrollOrigin was a weaker value previously,
@@ -7496,18 +7515,18 @@ void ScrollContainerFrame::RestoreState(PresState* aState) {
   // future or if we tinker with this code more.
   mLastScrollOrigin = ScrollOrigin::Other;
   mDidHistoryRestore = true;
-  mScrollEventGeneration = aState->scrollEventGeneration();
-  mScrollEndEventGeneration = aState->scrollEndEventGeneration();
+  mScrollEventGeneration = aState.mScrollEventGeneration;
+  mScrollEndEventGeneration = aState.mScrollEndEventGeneration;
   mLastPos = mScrolledFrame ? GetLogicalVisualViewportOffset() : nsPoint(0, 0);
   SCROLLRESTORE_LOG("%p: RestoreState, set mRestorePos=%s mLastPos=%s\n", this,
                     ToString(mRestorePos).c_str(), ToString(mLastPos).c_str());
 
   // Resolution properties should only exist on root scroll frames.
-  MOZ_ASSERT(mIsRoot || aState->resolution() == 1.0);
+  MOZ_ASSERT(mIsRoot || aState.mResolution == 1.0f);
 
   if (mIsRoot) {
     PresShell()->SetResolutionAndScaleTo(
-        aState->resolution(), ResolutionChangeOrigin::MainThreadRestore);
+        aState.mResolution, ResolutionChangeOrigin::MainThreadRestore);
   }
 }
 
@@ -7838,7 +7857,10 @@ static void CollectScrollPositionsForSnap(
   }
 
   auto processFrame = [&](nsIFrame* f, ContainingBlockContext aCtx) {
-    if (aCtx == ContainingBlockContext::Direct) {
+    // A fragmented box has a single snap area covering all its fragments, so
+    // only the first fragment contributes snap positions.
+    if (aCtx == ContainingBlockContext::Direct &&
+        nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(f)) {
       const nsStyleDisplay* styleDisplay = f->StyleDisplay();
       if (styleDisplay->mScrollSnapAlign.inline_ !=
               StyleScrollSnapAlignKeyword::None ||

@@ -21,7 +21,7 @@ Services.scriptloader.loadSubScript(
 );
 
 const DUMMY_PAGE =
-  "https://example.com/browser/browser/base/content/test/general/dummy_page.html";
+  "https://example.com/browser/browser/base/content/test/browser-general/dummy_page.html";
 
 let testActionCalled = 0;
 

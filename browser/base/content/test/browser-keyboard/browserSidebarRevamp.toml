@@ -21,4 +21,4 @@ skip-if = [
 skip-if = [
   "true", # Bug 1775713
 ]
-support-files = ["!/browser/base/content/test/permissions/permissions.html"]
+support-files = ["!/browser/base/content/test/browser-permissions/permissions.html"]

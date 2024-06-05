@@ -257,8 +257,8 @@ void InspectorFontFace::GetVariationInstances(
     }
     for (const auto& v : i.mValues) {
       InspectorVariationValue value;
-      AppendTagAsASCII(value.mAxis, v.mTag);
-      value.mValue = v.mValue;
+      AppendTagAsASCII(value.mAxis, v.tag);
+      value.mValue = v.value;
       // This won't fail, because of SetCapacity above.
       (void)inst.mValues.AppendElement(value, mozilla::fallible);
     }

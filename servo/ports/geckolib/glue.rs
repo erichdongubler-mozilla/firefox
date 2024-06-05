@@ -152,6 +152,7 @@ use style::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use style::values::generics::Optional;
 use style::values::generics::color::ColorMixFlags;
 use style::values::generics::easing::BeforeFlag;
+use style::values::generics::font::{FeatureTagValue, VariationValue};
 use style::values::generics::length::GenericAnchorSizeFunction;
 use style::values::resolved;
 use style::values::resolved::ToResolvedValue;
@@ -1564,11 +1565,7 @@ pub extern "C" fn Servo_Element_IsDisplayContents(element: &RawGeckoElement) -> 
     let data = element
         .borrow_data()
         .expect("Invoking Servo_Element_IsDisplayContents on unstyled element");
-    data.styles
-        .primary()
-        .get_box()
-        .clone_display()
-        .is_contents()
+    data.styles.primary().get_box().get_display().is_contents()
 }
 
 #[unsafe(no_mangle)]
@@ -4022,7 +4019,7 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetSources(
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_FontFaceRule_GetVariationSettings(
     rule: &LockedFontFaceRule,
-    variations: &mut nsTArray<structs::gfxFontVariation>,
+    variations: &mut nsTArray<VariationValue<f32>>,
 ) {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
         let source_variations = match rule.descriptors.font_variation_settings {
@@ -4030,24 +4027,19 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetVariationSettings(
             None => return,
         };
 
-        variations.extend(
-            source_variations
-                .0
-                .iter()
-                .map(|source| structs::gfxFontVariation {
-                    mTag: source.tag.0,
-                    // The value is enforced to be resolvable at parse time
-                    // (see FontVariationSettings::parse_for_font_face_rule).
-                    mValue: source.value.resolve().unwrap(),
-                }),
-        );
+        variations.extend(source_variations.0.iter().map(|source| VariationValue {
+            tag: source.tag,
+            // The value is enforced to be resolvable at parse time
+            // (see FontVariationSettings::parse_for_font_face_rule).
+            value: source.value.resolve().unwrap(),
+        }));
     });
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_FontFaceRule_GetFeatureSettings(
     rule: &LockedFontFaceRule,
-    features: &mut nsTArray<structs::gfxFontFeature>,
+    features: &mut nsTArray<FeatureTagValue<i32>>,
 ) {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
         let source_features = match rule.descriptors.font_feature_settings {
@@ -4055,17 +4047,12 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetFeatureSettings(
             None => return,
         };
 
-        features.extend(
-            source_features
-                .0
-                .iter()
-                .map(|source| structs::gfxFontFeature {
-                    mTag: source.tag.0,
-                    // The value is enforced to be resolvable at parse time
-                    // (see FontFeatureSettings::parse_for_font_face_rule).
-                    mValue: source.value.resolve().unwrap() as u32,
-                }),
-        );
+        features.extend(source_features.0.iter().map(|source| FeatureTagValue {
+            tag: source.tag,
+            // The value is enforced to be resolvable at parse time
+            // (see FontFeatureSettings::parse_for_font_face_rule).
+            value: source.value.resolve().unwrap(),
+        }));
     });
 }
 
@@ -5037,7 +5024,7 @@ pub extern "C" fn Servo_ComputedValues_BlockifiedDisplay(
     style: &ComputedValues,
     is_root_element: bool,
 ) -> u16 {
-    let display = style.get_box().clone_display();
+    let display = *style.get_box().get_display();
     let blockified_display = display.equivalent_block_display(is_root_element);
     blockified_display.to_u16()
 }
@@ -6487,8 +6474,8 @@ pub extern "C" fn Servo_DeclarationBlock_SetKeywordValue(
         },
         FontWeight => longhands::font_weight::SpecifiedValue::from_gecko_keyword(value),
         ListStyleType => longhands::list_style_type::SpecifiedValue::from_gecko_keyword(value),
-        MathStyle => longhands::math_style::SpecifiedValue::from_gecko_keyword(value),
-        MozMathVariant => longhands::_moz_math_variant::SpecifiedValue::from_gecko_keyword(value),
+        MathStyle => get_from_computed::<longhands::math_style::SpecifiedValue>(value),
+        MozMathVariant => get_from_computed::<longhands::_moz_math_variant::SpecifiedValue>(value),
         WhiteSpaceCollapse => get_from_computed::<longhands::white_space_collapse::SpecifiedValue>(value),
         TextWrapMode => get_from_computed::<longhands::text_wrap_mode::SpecifiedValue>(value),
         CaptionSide => get_from_computed::<CaptionSide>(value),
@@ -7161,7 +7148,7 @@ pub unsafe extern "C" fn Servo_CSSSupports(
 
     // NOTE(emilio): The supports API is not associated to any stylesheet,
     // so the fact that there is no namespace map here is fine.
-    let context = ParserContext::new(
+    let mut context = ParserContext::new(
         params.origin,
         url_data,
         Some(CssRuleType::Style),
@@ -7173,7 +7160,7 @@ pub unsafe extern "C" fn Servo_CSSSupports(
         /* attr_taint */ Default::default(),
     );
 
-    cond.eval(&context)
+    cond.eval(&mut context)
 }
 
 #[unsafe(no_mangle)]
@@ -10768,6 +10755,9 @@ pub unsafe extern "C" fn Servo_Value_Matches_Syntax(
         None,
         AllowComputationallyDependent::Yes,
         /* attr_taint */ Default::default(),
+        // TODO(Bug 2071366) - Thread the custom property name through InspectorUtils so that
+        // declarations using random() are not immediately flagged as non-matching.
+        None,
     )
     .is_ok()
 }
@@ -11614,6 +11604,9 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
 
         let Ok(result) = custom_properties::substitute(
             &variable_value,
+            // TODO(Bug 2071366) - Thread the property being explained through InspectorUtils so
+            // that random() resolves the same way it does in the cascade.
+            None,
             &substitution_functions,
             stylist,
             &context,
@@ -11637,16 +11630,11 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
 
     // At the moment, we're only supporting top-level Math function
     // TODO: we should handle simple values too.
-    let math_func = match parser.next() {
-        Ok(Token::Function(name)) => match CalcNode::math_function(&parser_context, name) {
-            Ok(f) => f,
-            Err(_) => {
-                return;
-            },
-        },
-        _ => {
-            return;
-        },
+    let Ok(Token::Function(name)) = parser.next() else {
+        return;
+    };
+    let Ok(math_func) = CalcNode::math_function(&parser_context, name) else {
+        return;
     };
 
     let flags = CalcParseFlags {

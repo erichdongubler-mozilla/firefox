@@ -169,7 +169,7 @@ class IpcResourceUpdateQueue {
                        float aGlyphSize,
                        const wr::FontInstanceOptions* aOptions,
                        const wr::FontInstancePlatformOptions* aPlatformOptions,
-                       Range<const gfx::FontVariation> aVariations);
+                       Range<const wr::FontVariation> aVariations);
 
   void DeleteFontInstance(wr::FontInstanceKey aKey);
 

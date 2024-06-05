@@ -6,6 +6,8 @@ package org.mozilla.geckoview.test
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import org.hamcrest.Matchers.equalTo
+import org.junit.Assume.assumeThat
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.GeckoSessionSettings
@@ -14,6 +16,10 @@ import org.mozilla.geckoview.StorageController
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class StorageControllerTest : BaseSessionTest() {
+    @Before
+    fun setup() {
+        assumeThat(sessionRule.env.isCoverageBuild, equalTo(false))
+    }
 
     private val storageController
         get() = sessionRule.runtime.storageController

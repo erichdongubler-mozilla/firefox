@@ -48,9 +48,9 @@ use api::{ReferenceTransformBinding, Rotation, FillRule, SpatialTreeItem, Refere
 use api::{FilterOpGraphPictureBufferId, SVGFE_GRAPH_MAX};
 use api::channel::{unbounded_channel, Receiver, Sender};
 use api::units::*;
-use crate::image_tiling::simplify_repeated_primitive;
 use api::prim_geometry::{
     conic_gradient_prim, linear_gradient_prim, radial_gradient_prim,
+    simplify_repeated_primitive,
 };
 use crate::box_shadow::BLUR_SAMPLE_SCALE;
 use crate::clip::{ClipIntern, ClipItemKey, ClipItemKeyKind, ClipStore};
@@ -91,7 +91,6 @@ use crate::spatial_node::{
     ReferenceFrameInfo, StickyFrameInfo, ScrollFrameKind, SpatialNodeType
 };
 use crate::tile_cache::TileCacheBuilder;
-use euclid::approxeq::ApproxEq;
 use std::mem;
 use std::sync::Arc;
 use crate::util::{VecHelper, MaxRect};
@@ -594,7 +593,7 @@ impl<'a> SceneBuilder<'a> {
             &builder.spatial_tree,
             &builder.prim_instances,
             &mut builder.clip_tree_builder,
-            &builder.interners,
+            &builder.interners.clip,
         );
 
         for pic_index in &builder.snapshot_pictures {
@@ -1351,36 +1350,7 @@ impl<'a> SceneBuilder<'a> {
                     spatial_node_index,
                     clip_node_id,
                     &layout,
-                    StretchSizeKey::fills_prim(),
-                    LayoutSize::zero(),
-                    info.image_key,
-                    info.image_rendering,
-                    info.alpha_type,
-                    info.color,
-                );
-            }
-            DisplayItem::RepeatingImage(ref info) => {
-                tracy_rs::profile_scope!("repeating_image");
-
-                if !validate_image_key(info.image_key, namespace) {
-                    return;
-                }
-
-                let (layout, spatial_node_index, clip_node_id) = self.process_common_properties_with_bounds(
-                    &info.common,
-                    info.bounds,
-                );
-
-                let stretch_size = process_image_stretch_size(
-                    &layout.rect,
                     info.stretch_size,
-                );
-
-                self.add_image(
-                    spatial_node_index,
-                    clip_node_id,
-                    &layout,
-                    stretch_size,
                     info.tile_spacing,
                     info.image_key,
                     info.image_rendering,
@@ -1450,14 +1420,25 @@ impl<'a> SceneBuilder<'a> {
 
                 layout.transformed_aa_edges &= info.transformed_aa_edges;
 
-                self.add_primitive(
-                    spatial_node_index,
-                    clip_node_id,
-                    &layout,
-                    RectanglePrim {
-                        color: info.color.into(),
-                    },
-                );
+                // The display list builder drops every other fully transparent
+                // rectangle at record time, but records a checkerboard
+                // background whatever its colour, since the barrier below is
+                // keyed off the flag alone. Such a rectangle draws nothing.
+                // Tested on the quantized colour, as the primitive stores it.
+                let visible = match info.color {
+                    PropertyBinding::Value(color) => api::ColorU::from(color).a > 0,
+                    PropertyBinding::Binding(..) => true,
+                };
+                if visible {
+                    self.add_primitive(
+                        spatial_node_index,
+                        clip_node_id,
+                        &layout,
+                        RectanglePrim {
+                            color: info.color.into(),
+                        },
+                    );
+                }
 
                 if info.common.flags.contains(PrimitiveFlags::CHECKERBOARD_BACKGROUND) {
                     self.add_tile_cache_barrier_if_needed(SliceFlags::empty());
@@ -1529,8 +1510,8 @@ impl<'a> SceneBuilder<'a> {
 
                 if let Some(prim_key_kind) = linear_gradient_prim(
                     layout.rect,
-                    info.gradient.start_point,
-                    info.gradient.end_point,
+                    info.gradient.start,
+                    info.gradient.end,
                     read_gradient_stops(item.gradient_stops()),
                     info.gradient.extend_mode,
                     info.tile_size,
@@ -1843,19 +1824,17 @@ impl<'a> SceneBuilder<'a> {
         prim: P,
     )
     where
-        P: InternablePrimitive + IsVisible,
+        P: InternablePrimitive,
         Interners: AsMut<Interner<P>>,
     {
-        if prim.is_visible() {
-            self.clip_tree_builder.debug_check_clip_stack(clip_node_id);
+        self.clip_tree_builder.debug_check_clip_stack(clip_node_id);
 
-            self.add_prim_to_draw_list(
-                info,
-                spatial_node_index,
-                clip_node_id,
-                prim,
-            );
-        }
+        self.add_prim_to_draw_list(
+            info,
+            spatial_node_index,
+            clip_node_id,
+            prim,
+        );
     }
 
 
@@ -2075,7 +2054,7 @@ impl<'a> SceneBuilder<'a> {
         // If this stacking context has any complex clips, we need to draw it
         // to an off-screen surface.
         if let Some(clip_chain_id) = clip_chain_id {
-            if self.clip_tree_builder.clip_chain_has_complex_clips(clip_chain_id, &self.interners) {
+            if self.clip_tree_builder.clip_chain_has_complex_clips(clip_chain_id, &self.interners.clip) {
                 // At the root level, if all complex clips are fixed-position
                 // rounded rectangles, we can skip the intermediate surface.
                 // The clips will be promoted to compositor clips on the tile
@@ -2091,7 +2070,7 @@ impl<'a> SceneBuilder<'a> {
                    !self.sc_stack.is_empty() ||
                    !self.clip_tree_builder.clip_chain_complex_clips_are_promotable(
                        clip_chain_id,
-                       &self.interners,
+                       &self.interners.clip,
                        &self.spatial_tree,
                    )
                 {
@@ -2128,7 +2107,7 @@ impl<'a> SceneBuilder<'a> {
                 // and use that slice as the backing surface for the blend container
                 if self.tile_cache_builder.is_current_slice_empty() &&
                    self.spatial_tree.is_root_coord_system(spatial_node_index) &&
-                   !self.clip_tree_builder.clip_node_has_complex_clips(clip_node_id, &self.interners)
+                   !self.clip_tree_builder.clip_node_has_complex_clips(clip_node_id, &self.interners.clip)
                 {
                     self.add_tile_cache_barrier_if_needed(SliceFlags::IS_ATOMIC);
                     self.tile_cache_builder.make_current_slice_atomic();
@@ -2777,8 +2756,8 @@ impl<'a> SceneBuilder<'a> {
                     NinePatchBorderSource::Gradient(gradient) => {
                         let prim = match linear_gradient_prim(
                             info.rect,
-                            gradient.start_point,
-                            gradient.end_point,
+                            gradient.start,
+                            gradient.end,
                             read_gradient_stops(gradient_stops),
                             gradient.extend_mode,
                             LayoutSize::new(border.height as f32, border.width as f32),
@@ -2950,15 +2929,10 @@ impl<'a> SceneBuilder<'a> {
         color: ColorF,
     ) {
         let mut prim_rect = info.rect;
-        // Resolve per-axis: axes that fill the prim use the unsnapped
-        // prim-rect size (`prim_rect` here is unsnapped at scene build).
-        let prim_size = prim_rect.size();
-        let stored: LayoutSize = stretch_size.size.into();
-        let stretch_size_for_simplify = LayoutSize::new(
-            if stretch_size.fills_width { prim_size.width } else { stored.width },
-            if stretch_size.fills_height { prim_size.height } else { stored.height },
-        );
-        simplify_repeated_primitive(&stretch_size_for_simplify, &mut tile_spacing, &mut prim_rect);
+        // Resolved against the unsnapped prim rect, which is what scene
+        // building has.
+        let stretch = stretch_size.resolve(&prim_rect);
+        simplify_repeated_primitive(&stretch, &mut tile_spacing, &mut prim_rect);
         let info = LayoutPrimitiveInfo {
             rect: prim_rect,
             .. *info
@@ -2991,7 +2965,7 @@ impl<'a> SceneBuilder<'a> {
         image_rendering: ImageRendering,
     ) {
         let format = yuv_data.get_format();
-        let yuv_key = yuv_planes(&yuv_data);
+        let yuv_key = yuv_data.planes();
 
         self.add_primitive(
             spatial_node_index,
@@ -3747,11 +3721,6 @@ impl<'a> SceneBuilder<'a> {
     }
 }
 
-
-pub trait IsVisible {
-    fn is_visible(&self) -> bool;
-}
-
 /// A primitive instance + some extra information about the primitive. This is
 /// stored when constructing 3d rendering contexts, which involve cutting
 /// primitive lists.
@@ -3968,33 +3937,6 @@ fn filter_datas_for_compositing(
     filter_datas
 }
 
-/// Image-specific stretch-size discriminator. Decided per-axis: if the
-/// gecko-specified `repeat_size` matches the prim rect on that axis (within an
-/// FP-noise epsilon), the axis is flagged `fills_*` and the effective extent is
-/// resolved against the snapped prim rect at frame-build. Otherwise the explicit
-/// per-axis value is stored verbatim. Per-axis rather than all-or-nothing, which
-/// matches `resolve_tile_size`: there too a width-matching tile with a
-/// non-matching height picks up the prim width on the axis that matches.
-fn process_image_stretch_size(
-    unsnapped_rect: &LayoutRect,
-    repeat_size: LayoutSize,
-) -> StretchSizeKey {
-    const EPSILON: f32 = 0.001;
-    let fills_width = repeat_size.width.approx_eq_eps(&unsnapped_rect.width(), &EPSILON);
-    let fills_height = repeat_size.height.approx_eq_eps(&unsnapped_rect.height(), &EPSILON);
-    // Normalise filling axes to zero so prims that fill both axes share
-    // an intern key regardless of their displayed size.
-    let stored = LayoutSize::new(
-        if fills_width { 0.0 } else { repeat_size.width },
-        if fills_height { 0.0 } else { repeat_size.height },
-    );
-    StretchSizeKey {
-        size: stored.into(),
-        fills_width,
-        fills_height,
-    }
-}
-
 /// Encode a gradient's per-tile stretch as a fraction of its prim_size.
 /// Per-axis: ratio = stretch_size / prim_size, clamped to [0, 1] (the upper
 /// bound matches the old `stretch_size.min(prim_size)` clamp on the radial
@@ -4049,22 +3991,9 @@ fn validate_image_key(key: ImageKey, namespace: IdNamespace) -> bool {
     validate_resource_namespace(key.0, namespace, "image key")
 }
 
-/// The planes a `YuvData` actually references, padded with `ImageKey::DUMMY`.
-/// Shared by validation and `add_yuv_image` so that the set of keys checked is
-/// by construction the set of keys used.
-fn yuv_planes(yuv_data: &YuvData) -> [ImageKey; 3] {
-    match *yuv_data {
-        YuvData::NV12(p0, p1)
-        | YuvData::P010(p0, p1)
-        | YuvData::NV16(p0, p1)
-        | YuvData::P210(p0, p1) => [p0, p1, ImageKey::DUMMY],
-        YuvData::PlanarYCbCr(p0, p1, p2) => [p0, p1, p2],
-        YuvData::InterleavedYCbCr(p0) => [p0, ImageKey::DUMMY, ImageKey::DUMMY],
-    }
-}
-
+/// Checks the set of planes `add_yuv_image` uses, by construction.
 fn validate_yuv_data(yuv_data: &YuvData, namespace: IdNamespace) -> bool {
-    yuv_planes(yuv_data).iter().all(|key| validate_image_key(*key, namespace))
+    yuv_data.planes().iter().all(|key| validate_image_key(*key, namespace))
 }
 
 fn validate_font_instance_key(key: FontInstanceKey, namespace: IdNamespace) -> bool {

@@ -5,6 +5,10 @@
 package org.mozilla.fenix.browser.tabstrip
 
 import android.graphics.Bitmap
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -72,6 +76,8 @@ import mozilla.components.compose.base.theme.ThemedValue
 import mozilla.components.compose.base.theme.ThemedValueProvider
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.feature.tabs.TabsUseCases
+import mozilla.components.support.utils.KeyboardState
+import mozilla.components.support.utils.keyboardAsState
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.GleanMetrics.TabStrip as TabStripMetrics
 import org.mozilla.fenix.R
@@ -84,6 +90,8 @@ import org.mozilla.fenix.tabstray.browser.compose.ReorderableDragItemContainer
 import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
 import org.mozilla.fenix.tabstray.browser.compose.detectListPressAndDrag
 import org.mozilla.fenix.theme.FirefoxTheme
+
+private const val TAB_STRIP_VISIBILITY_ANIMATION_MS = 150
 
 private val minTabStripItemWidth = 130.dp
 private val maxTabStripItemWidth = 280.dp
@@ -104,6 +112,7 @@ private val tabStripIconSize
  * @param browserStore The [BrowserStore] instance used to observe tabs state.
  * @param appStore The [AppStore] instance used to observe browsing mode.
  * @param tabsUseCases The [TabsUseCases] instance to perform tab actions.
+ * @param hideWhenKeyboardShown Whether or not to hide the tabs strip when the keyboard is shown.
  * @param onAddTabClick Invoked when the add tab button is clicked.
  * @param onCloseTabClick Invoked when a tab is closed.
  * @param onLastTabClose Invoked when the last remaining open tab is closed.
@@ -118,6 +127,7 @@ fun TabStrip(
     browserStore: BrowserStore = components.core.store,
     appStore: AppStore = components.appStore,
     tabsUseCases: TabsUseCases = components.useCases.tabsUseCases,
+    hideWhenKeyboardShown: Boolean,
     onAddTabClick: () -> Unit,
     onCloseTabClick: (isPrivate: Boolean) -> Unit,
     onLastTabClose: (isPrivate: Boolean) -> Unit,
@@ -151,36 +161,82 @@ fun TabStrip(
     }
         .collectAsState(initial = TabStripState.initial)
 
-    TabStripContent(
-        state = state,
-        showTabCounterButton = showTabCounterButton,
-        colors = tabStripColors,
-        onAddTabClick = {
-            onAddTabClick()
-            TabStripMetrics.newTabTapped.record()
-        },
-        onCloseTabClick = { tabId, isPrivate ->
-            closeTab(
-                numberOfTabs = state.tabs.size,
-                isPrivate = isPrivate,
-                tabsUseCases = tabsUseCases,
-                tabId = tabId,
-                onLastTabClose = onLastTabClose,
-                onCloseTabClick = onCloseTabClick,
-            )
-        },
-        onSelectedTabClick = { tabId, url ->
-            tabsUseCases.selectTab(tabId)
-            onSelectedTabClick(url)
-            TabStripMetrics.selectTab.record()
-        },
-        onMove = { tabId, targetId, placeAfter ->
-            if (tabId != targetId) {
-                tabsUseCases.moveTabs(listOf(tabId), targetId, placeAfter)
-            }
-        },
-        onTabCounterClick = onTabCounterClick,
+    val isKeyboardVisible =
+        if (hideWhenKeyboardShown) {
+            val keyboardState by keyboardAsState()
+            keyboardState == KeyboardState.Opened
+        } else {
+            false
+        }
+
+    AnimatedVisibility(
+        visible = !isKeyboardVisible,
+        enter =
+            expandVertically(
+                expandFrom = Alignment.Bottom,
+                animationSpec = tween(durationMillis = TAB_STRIP_VISIBILITY_ANIMATION_MS),
+            ),
+        exit =
+            shrinkVertically(
+                shrinkTowards = Alignment.Bottom,
+                animationSpec = tween(durationMillis = TAB_STRIP_VISIBILITY_ANIMATION_MS),
+            ),
+    ) {
+        TabStripContent(
+            state = state,
+            showTabCounterButton = showTabCounterButton,
+            colors = tabStripColors,
+            onAddTabClick = createAddTabClickHandler(onAddTabClick),
+            onCloseTabClick =
+                createCloseTabClickHandler(
+                    numberOfTabs = state.tabs.size,
+                    tabsUseCases = tabsUseCases,
+                    onLastTabClose = onLastTabClose,
+                    onCloseTabClick = onCloseTabClick,
+                ),
+            onSelectedTabClick = createSelectedTabClickHandler(tabsUseCases, onSelectedTabClick),
+            onMove = createMoveTabHandler(tabsUseCases),
+            onTabCounterClick = onTabCounterClick,
+        )
+    }
+}
+
+private fun createAddTabClickHandler(onAddTabClick: () -> Unit): () -> Unit = {
+    onAddTabClick()
+    TabStripMetrics.newTabTapped.record()
+}
+
+private fun createCloseTabClickHandler(
+    numberOfTabs: Int,
+    tabsUseCases: TabsUseCases,
+    onCloseTabClick: (isPrivate: Boolean) -> Unit,
+    onLastTabClose: (isPrivate: Boolean) -> Unit,
+): (tabId: String, isPrivate: Boolean) -> Unit = { tabId, isPrivate ->
+    closeTab(
+        numberOfTabs = numberOfTabs,
+        isPrivate = isPrivate,
+        tabsUseCases = tabsUseCases,
+        tabId = tabId,
+        onLastTabClose = onLastTabClose,
+        onCloseTabClick = onCloseTabClick,
     )
+}
+
+private fun createSelectedTabClickHandler(
+    tabsUseCases: TabsUseCases,
+    onSelectedTabClick: (url: String) -> Unit,
+): (tabId: String, url: String) -> Unit = { tabId, url ->
+    tabsUseCases.selectTab(tabId)
+    onSelectedTabClick(url)
+    TabStripMetrics.selectTab.record()
+}
+
+private fun createMoveTabHandler(
+    tabsUseCases: TabsUseCases
+): (tabId: String, targetId: String, placeAfter: Boolean) -> Unit = { tabId, targetId, placeAfter ->
+    if (tabId != targetId) {
+        tabsUseCases.moveTabs(listOf(tabId), targetId, placeAfter)
+    }
 }
 
 @Composable
@@ -602,6 +658,7 @@ private fun TabStripPreview(@PreviewParameter(PreviewThemeProvider::class) theme
                 appStore = AppStore(),
                 browserStore = browserStore,
                 tabsUseCases = TabsUseCases(browserStore),
+                hideWhenKeyboardShown = false,
                 onAddTabClick = {
                     val tab = createTab(url = "www.example.com")
                     browserStore.dispatch(TabListAction.AddTabAction(tab))

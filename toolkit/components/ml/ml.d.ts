@@ -337,8 +337,8 @@ export interface MLPerfAssertions {
   equal(actual: unknown, expected: unknown, message?: string): void;
 }
 
-/** The Mochitest globals used by the ML performance harness. */
-export interface MLPerfTestHarness {
+/** The test context used by shared ML performance utilities. */
+export interface MLPerfTestContext {
   /**
    * Writes an informational test message.
    *
@@ -348,6 +348,13 @@ export interface MLPerfTestHarness {
 
   /** Assertions used to validate collected measurements. */
   Assert: MLPerfAssertions;
+
+  /**
+   * Registers work to run when the test finishes.
+   *
+   * @param cleanup - Releases state owned by the test utility.
+   */
+  registerCleanupFunction(cleanup: () => void): void;
 }
 
 /** A collection of named ML performance measurement series. */
@@ -375,7 +382,7 @@ export interface PeakInferenceMemorySampler {
 }
 
 /** Configuration for a complete ML performance scenario. */
-export interface RunPerfScenarioConfig extends MLPerfTestHarness {
+export interface RunPerfScenarioConfig {
   /** Prefix applied to every reported measurement series. */
   metricPrefix: string;
 

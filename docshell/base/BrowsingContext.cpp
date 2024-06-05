@@ -403,7 +403,6 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
   if (aParent) {
     MOZ_DIAGNOSTIC_ASSERT(parentBC->Group() == group);
     MOZ_DIAGNOSTIC_ASSERT(parentBC->mType == aType);
-    fields.Get<IDX_EmbedderInnerWindowId>() = aParent->WindowID();
     // Non-toplevel content documents are always embededed within content.
     fields.Get<IDX_EmbeddedInContentDocument>() =
         parentBC->mType == Type::Content;
@@ -805,10 +804,6 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
     txn.SetEmbedderElementType(Some(aEmbedder->LocalName()));
     txn.SetEmbeddedInContentDocument(
         aEmbedder->OwnerDoc()->IsContentDocument());
-    if (nsCOMPtr<nsPIDOMWindowInner> inner =
-            do_QueryInterface(aEmbedder->GetDocumentGlobal())) {
-      txn.SetEmbedderInnerWindowId(inner->WindowID());
-    }
     txn.SetFullscreenAllowedByOwner(OwnerAllowsFullscreen(*aEmbedder));
     if (XRE_IsParentProcess() && aEmbedder->IsXULElement() && IsTopContent()) {
       nsAutoString messageManagerGroup;
@@ -831,10 +826,10 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
     }
 
     MOZ_ALWAYS_SUCCEEDS(txn.Commit(this));
-  }
 
-  if (XRE_IsParentProcess() && IsTopContent()) {
-    Canonical()->MaybeSetPermanentKey(aEmbedder);
+    if (XRE_IsParentProcess() && IsTopContent()) {
+      Canonical()->SetCrossGroupEmbedderElement(aEmbedder);
+    }
   }
 
   mEmbedderElement = aEmbedder;
@@ -2345,7 +2340,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
     if (!effectiveRemoteType.IsNotRemote() &&
         !ContentTriggeredURILoadIsAllowed(aLoadState->URI(),
                                           effectiveRemoteType)) {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#ifdef DEBUG
       nsAutoCString aboutModuleOrScheme;
       if (aLoadState->URI()->SchemeIs("about")) {
         (void)NS_GetAboutModuleName(aLoadState->URI(), aboutModuleOrScheme);
@@ -2600,7 +2595,6 @@ BrowsingContext::CheckURLAndCreateLoadState(nsIURI* aURI,
       aSourceDocument->ConsumeTextDirectiveUserActivation() ||
       loadState->HasValidUserGestureActivation());
   loadState->SetTriggeringWindowId(aSourceDocument->InnerWindowID());
-  loadState->SetTriggeringStorageAccess(aSourceDocument->UsingStorageAccess());
   loadState->SetTriggeringClassificationFlags(
       aSourceDocument->GetScriptTrackingFlags());
 
@@ -3691,12 +3685,12 @@ void BrowsingContext::DidSet(FieldIndex<IDX_OverrideDPPX>, float aOldValue) {
   PresContextAffectingFieldChanged();
 }
 
-void BrowsingContext::SetCustomUserAgent(const nsAString& aUserAgent,
+void BrowsingContext::SetCustomUserAgent(const nsACString& aUserAgent,
                                          ErrorResult& aRv) {
   Top()->SetUserAgentOverride(aUserAgent, aRv);
 }
 
-nsresult BrowsingContext::SetCustomUserAgent(const nsAString& aUserAgent) {
+nsresult BrowsingContext::SetCustomUserAgent(const nsACString& aUserAgent) {
   return Top()->SetUserAgentOverride(aUserAgent);
 }
 
@@ -3855,20 +3849,14 @@ bool BrowsingContext::WatchedByDevTools() {
   return Top()->GetWatchedByDevToolsInternal();
 }
 
-auto BrowsingContext::CanSet(FieldIndex<IDX_WatchedByDevToolsInternal>,
+bool BrowsingContext::CanSet(FieldIndex<IDX_WatchedByDevToolsInternal>,
                              const bool& aWatchedByDevTools,
-                             ContentParent* aSource) -> CanSetResult {
-  // Enforce that the watchedByDevTools BC field can only be set on the top
-  // level Browsing Context.
-  if (!IsTop()) {
-    return CanSetResult::Deny;
-  }
-  // Check, only in the parent process, if any DevTools are actually opened
-  // before enabling this flag.
-  if (aWatchedByDevTools && aSource && !ChromeUtils::IsDevToolsOpened()) {
-    return CanSetResult::Revert;
-  }
-  return CanSetResult::Allow;
+                             ContentParent* aSource) {
+  // Can only be enabled or disabled from the Parent Process and only on top
+  // level BC. Also can only be enabled when at least one DevTools is currently
+  // active.
+  return XRE_IsParentProcess() && !aSource && IsTop() &&
+         (!aWatchedByDevTools || ChromeUtils::IsDevToolsOpened());
 }
 void BrowsingContext::SetWatchedByDevTools(bool aWatchedByDevTools,
                                            ErrorResult& aRv) {
@@ -3879,8 +3867,12 @@ void BrowsingContext::SetWatchedByDevTools(bool aWatchedByDevTools,
   }
   // The check is `CanSet` isn't enough to block modifications done from the
   // parent process
-  if (aWatchedByDevTools && XRE_IsParentProcess() &&
-      !ChromeUtils::IsDevToolsOpened()) {
+  if (!XRE_IsParentProcess()) {
+    aRv.ThrowInvalidModificationError(
+        "watchedByDevTools can only be set from the parent process");
+    return;
+  }
+  if (aWatchedByDevTools && !ChromeUtils::IsDevToolsOpened()) {
     aRv.ThrowInvalidModificationError(
         "watchedByDevTools can only be set when DevTools are opened");
     return;
@@ -3978,8 +3970,8 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_UseGlobalHistory>,
 }
 
 auto BrowsingContext::CanSet(FieldIndex<IDX_UserAgentOverride>,
-                             const nsString& aUserAgent, ContentParent* aSource)
-    -> CanSetResult {
+                             const nsCString& aUserAgent,
+                             ContentParent* aSource) -> CanSetResult {
   if (!IsTop()) {
     return CanSetResult::Deny;
   }
@@ -4003,18 +3995,6 @@ bool BrowsingContext::CheckOnlyEmbedderCanSet(ContentParent* aSource) {
     return Canonical()->IsEmbeddedInProcess(childId);
   }
   return mEmbeddedByThisProcess;
-}
-
-bool BrowsingContext::CanSet(FieldIndex<IDX_EmbedderInnerWindowId>,
-                             const uint64_t& aValue, ContentParent* aSource) {
-  // If we have a parent window, our embedder inner window ID must match it.
-  if (mParentWindow) {
-    return mParentWindow->Id() == aValue;
-  }
-
-  // For toplevel BrowsingContext instances, this value may only be set by the
-  // parent process, or initialized to `0`.
-  return CheckOnlyEmbedderCanSet(aSource);
 }
 
 bool BrowsingContext::CanSet(FieldIndex<IDX_EmbedderElementType>,

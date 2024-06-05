@@ -412,6 +412,7 @@ internal class ReleaseMetricController(
                         FxSuggest.reportingUrl.set(clickInfo.reportingUrl)
                         FxSuggest.iabCategory.set(clickInfo.iabCategory)
                         FxSuggest.contextId.set(UUID.fromString(clickInfo.contextId))
+                        FxSuggest.suggestionId.set(UUID.fromString(clickInfo.suggestionId))
                     }
                     is FxSuggestInteractionInfo.Wikipedia -> {
                         FxSuggest.advertiser.set("wikipedia")
@@ -614,6 +615,7 @@ internal class ReleaseMetricController(
                 FxSuggest.reportingUrl.set(impressionInfo.reportingUrl)
                 FxSuggest.iabCategory.set(impressionInfo.iabCategory)
                 FxSuggest.contextId.set(UUID.fromString(impressionInfo.contextId))
+                FxSuggest.suggestionId.set(UUID.fromString(impressionInfo.suggestionId))
             }
             is FxSuggestInteractionInfo.Wikipedia -> {
                 FxSuggest.advertiser.set("wikipedia")

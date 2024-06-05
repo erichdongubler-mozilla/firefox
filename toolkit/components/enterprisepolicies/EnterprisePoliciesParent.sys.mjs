@@ -94,7 +94,12 @@ EnterprisePoliciesManager.prototype = {
   ]),
 
   _initialize() {
-    if (Services.prefs.getBoolPref(PREF_POLICIES_APPLIED, false)) {
+    let previouslyApplied = Services.prefs.getBoolPref(
+      PREF_POLICIES_APPLIED,
+      false
+    );
+
+    if (previouslyApplied) {
       if ("_cleanup" in lazy.Policies) {
         let policyImpl = lazy.Policies._cleanup;
 
@@ -118,11 +123,17 @@ EnterprisePoliciesManager.prototype = {
     let provider = this._buildProvider();
 
     if (provider.failed) {
+      if (previouslyApplied) {
+        this._runMissingPolicyCallbacks();
+      }
       this.status = Ci.nsIEnterprisePolicies.FAILED;
       return;
     }
 
     if (!provider.hasPolicies) {
+      if (previouslyApplied) {
+        this._runMissingPolicyCallbacks();
+      }
       this.status = Ci.nsIEnterprisePolicies.INACTIVE;
       return;
     }
@@ -151,7 +162,7 @@ EnterprisePoliciesManager.prototype = {
       .setBoolPref("dom.webserial.enabled", false);
 
     this._parsedPolicies = {};
-    this._activatePolicies(provider.policies);
+    this._activatePolicies(provider.policies, previouslyApplied);
 
     Services.prefs.setBoolPref(PREF_POLICIES_APPLIED, true);
   },
@@ -189,10 +200,20 @@ EnterprisePoliciesManager.prototype = {
     return provider;
   },
 
-  _activatePolicies(unparsedPolicies) {
+  _activatePolicies(unparsedPolicies, previouslyApplied) {
     let { schema } = ChromeUtils.importESModule(
       "resource:///modules/policies/schema.sys.mjs"
     );
+
+    if (previouslyApplied) {
+      // Allow a policy to provide a default for when the provider did not set a policy.
+      for (let policyName of Object.keys(lazy.Policies)) {
+        let policyImpl = lazy.Policies[policyName];
+        if (policyImpl.onMissing && !(policyName in unparsedPolicies)) {
+          unparsedPolicies[policyName] = policyImpl.onMissing();
+        }
+      }
+    }
 
     for (let policyName of Object.keys(unparsedPolicies)) {
       let policySchema = schema.properties[policyName];
@@ -257,6 +278,26 @@ EnterprisePoliciesManager.prototype = {
               this /* the EnterprisePoliciesManager */,
               parsedParameters
             )
+          );
+        }
+      }
+    }
+  },
+
+  _runMissingPolicyCallbacks() {
+    for (let policyName of Object.keys(lazy.Policies)) {
+      let policyImpl = lazy.Policies[policyName];
+      if (!policyImpl.onMissing) {
+        continue;
+      }
+      let params = policyImpl.onMissing();
+      for (let timing of Object.keys(this._callbacks)) {
+        let policyCallback = policyImpl[timing];
+        if (policyCallback) {
+          this._schedulePolicyCallback(
+            timing,
+            policyName,
+            policyCallback.bind(policyImpl, this, params)
           );
         }
       }
@@ -449,6 +490,26 @@ EnterprisePoliciesManager.prototype = {
       feature,
       uri
     );
+  },
+
+  getContainerForURI(uri) {
+    for (let policies of SitePolicies) {
+      if (
+        policies.exceptions.matches(uri) ||
+        policies.exceptions.matchesAllWebUrls
+      ) {
+        continue;
+      }
+
+      if (!policies.match.matches(uri) && !policies.match.matchesAllWebUrls) {
+        continue;
+      }
+
+      if ("container" in policies.features) {
+        return policies.features.container;
+      }
+    }
+    return 0;
   },
 
   getActivePolicies() {

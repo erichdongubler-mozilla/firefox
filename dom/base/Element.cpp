@@ -55,6 +55,7 @@
 #include "mozilla/ReflowOutput.h"
 #include "mozilla/RelativeTo.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ScrollState.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/ServoStyleConstsInlines.h"
@@ -3189,6 +3190,17 @@ static bool WillDetachFromShadowOnUnbind(const Element& aElement,
          (aNullParent || !aElement.GetParent()->IsInShadowTree());
 }
 
+void Element::NodeInfoChanged(Document* aOldDoc) {
+  FragmentOrElement::NodeInfoChanged(aOldDoc);
+  // https://dom.spec.whatwg.org/#concept-node-adopt
+  // 3.3.1. Set the node document of each attribute in inclusiveDescendant's
+  //        attribute list to document.
+  mAttrs.NodeInfoChanged(NodeInfoManager());
+  if (nsDOMAttributeMap* attributeMap = GetAttributeMap()) {
+    attributeMap->AdoptCachedAttributes(NodeInfoManager());
+  }
+}
+
 void Element::UnbindFromTree(UnbindContext& aContext) {
   const bool nullParent = aContext.IsUnbindRoot(this);
 
@@ -3251,43 +3263,45 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
     }
   }
 
-  // Make sure to unbind this node before doing the kids
-  Document* document = GetComposedDoc();
-
   if (HasPointerLock()) {
     PointerLockManager::Unlock("Element::UnbindFromTree");
   }
-  if (!aContext.IsMove() && mState.HasState(ElementState::FULLSCREEN)) {
-    // The element being removed is an ancestor of the fullscreen element,
-    // exit fullscreen state.
-    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
-                                    OwnerDoc(), PropertiesFile::DOM_PROPERTIES,
-                                    "RemovedFullscreenElement");
-    // Fully exit fullscreen.
-    Document::ExitFullscreenInDocTree(OwnerDoc());
-  }
 
+  // Make sure to unbind this node before doing the kids
+  Document* document = GetComposedDoc();
   MOZ_ASSERT_IF(HasServoData(), document);
   MOZ_ASSERT_IF(HasServoData() && !aContext.IsMove(),
                 IsInNativeAnonymousSubtree());
-  if (document && !aContext.IsMove()) {
-    ClearServoData(document);
-  }
 
-  // Ensure that CSS transitions don't continue on an element at a
-  // different place in the tree (even if reinserted before next
-  // animation refresh).
-  //
-  // We need to delete the properties while we're still in document
-  // (if we were in document) so that they can look up the
-  // PendingAnimationTracker on the document and remove their animations,
-  // and so they can find their pres context for dispatching cancel events.
-  //
-  // FIXME(bug 522599): Need a test for this.
-  // FIXME(emilio): Why not clearing the effect set as well?
   if (!aContext.IsMove()) {
+    if (mState.HasState(ElementState::FULLSCREEN)) {
+      // The element being removed is an ancestor of the fullscreen element,
+      // exit fullscreen state.
+      nsContentUtils::ReportToConsole(
+          nsIScriptError::warningFlag, "DOM"_ns, OwnerDoc(),
+          PropertiesFile::DOM_PROPERTIES, "RemovedFullscreenElement");
+      // Fully exit fullscreen.
+      Document::ExitFullscreenInDocTree(OwnerDoc());
+    }
+    if (document) {
+      ClearServoData(document);
+    }
     if (auto* data = GetAnimationData()) {
+      // Ensure that CSS transitions don't continue on an element at a
+      // different place in the tree (even if reinserted before next
+      // animation refresh).
+      //
+      // We need to delete the properties while we're still in document
+      // (if we were in document) so that they can look up the
+      // PendingAnimationTracker on the document and remove their animations,
+      // and so they can find their pres context for dispatching cancel events.
+      //
+      // FIXME(bug 522599): Need a test for this.
+      // FIXME(emilio): Why not clearing the effect set as well?
       data->ClearAllAnimationCollections();
+    }
+    if (auto* slots = GetExistingExtendedDOMSlots()) {
+      slots->mSavedScrollState = nullptr;
     }
   }
 
@@ -6106,6 +6120,10 @@ void Element::GetCustomInterface(nsGetterAddRefs<T> aResult) {
       return;
     }
   }
+}
+
+void Element::SetSavedScrollState(UniquePtr<ScrollState> aState) {
+  ExtendedDOMSlots()->mSavedScrollState = std::move(aState);
 }
 
 void Element::ClearServoData(Document* aDoc) {

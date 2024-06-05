@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-09-10T09:42:51.803589+00:00'
+updated_at: '2026-09-16T07:14:16.136609+00:00'
 export:
   path: ./docs/mots/index.md
   format: md
@@ -1555,6 +1555,29 @@ modules:
           - *jmaher
         machine_name: core_build_config_taskgraph
     machine_name: core_build_config
+
+  - name: 'Core: Canvas (Graphics submodule)'
+    description: Canvas2D and WebGL implementation
+    includes:
+      - dom/canvas/**/*
+    meta:
+      group: dev-platform
+      url: <https://wiki.mozilla.org/Platform/GFX/Moz2D>
+      components:
+        - 'Core::Graphics: Canvas2D'
+        - 'Core::Graphics: CanvasWebGL'
+      review_group: gfx-reviewers
+      owners_emeritus:
+        - *jgilbert
+    owners:
+      - *lsalzman
+    peers:
+      - *ahale
+      - *nical
+      - *nrishel
+      - *aosmond
+      - *jfkthame
+    machine_name: core_canvas_graphics_submodule
 
   - name: 'Core: Code Analysis and Debugging Tools'
     description: Tools for debugging Mozilla code or for analyzing speed, memory use,
@@ -4927,5 +4950,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: dfc427889323fbcab7508f88a927c9a1a6051670
-  export: 561b29076ac1d044aeae0ffc2dd888616e7076e1
+  config: a75ed89e1a0a376a8d1c019a8efbb0a9aa773d3c
+  export: 492f77270ccf0d51ce6ff917f10e445385aee374

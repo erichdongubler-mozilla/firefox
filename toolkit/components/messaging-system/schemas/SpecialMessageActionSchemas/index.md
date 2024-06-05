@@ -211,6 +211,12 @@ Opens `about:protections`
 
 Opens the protection panel behind on the lock icon of the awesomebar
 
+### `OPEN_SMARTWINDOW_MONITOR_CREATE`
+
+Opens the Smart Window Monitor toolbar panel straight to the create form.
+
+* args: (none)
+
 ### `DISABLE_STP_DOORHANGERS`
 
 Disables all Social Tracking Protection messages

@@ -4,8 +4,8 @@
 
 use std::sync::Mutex;
 
-use adblock::Engine;
 use cstr::cstr;
+use etp_engine::Engine;
 use nserror::{nsresult, NS_ERROR_INVALID_ARG, NS_ERROR_SERVICE_NOT_AVAILABLE, NS_OK};
 use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
@@ -30,7 +30,7 @@ pub unsafe extern "C" fn content_classifier_initialize_domain_resolver() -> nsre
         guard.replace(etld_service);
     }
     let resolver = Box::new(SchemelessSiteResolver {});
-    let _ = adblock::url_parser::set_domain_resolver(resolver);
+    let _ = etp_engine::url_parser::set_domain_resolver(resolver);
     return NS_OK;
 }
 
@@ -55,12 +55,7 @@ pub unsafe extern "C" fn content_classifier_engine_from_rules(
         .map(|r| String::from_utf8_lossy(r.as_ref()).to_string())
         .collect();
 
-    let engine = Engine::from_rules(
-        rules_vec,
-        adblock::lists::ParseOptions {
-            ..adblock::lists::ParseOptions::default()
-        },
-    );
+    let engine = Engine::from_rules(rules_vec, etp_engine::lists::ParseOptions::default());
 
     let boxed_engine = Box::new(ContentClassifierFFIEngine { engine });
     *out_engine = Box::into_raw(boxed_engine);
@@ -80,8 +75,8 @@ pub unsafe extern "C" fn content_classifier_engine_destroy(
 pub unsafe extern "C" fn content_classifier_engine_check_network_request_preparsed(
     engine: *const ContentClassifierFFIEngine,
     url: &nsACString,
-    schemeless_site: &nsACString,
-    source_schemeless_site: &nsACString,
+    hostname: &nsACString,
+    source_hostname: &nsACString,
     request_type: &nsACString,
     third_party: bool,
     previously_matched_rule: bool,
@@ -96,15 +91,14 @@ pub unsafe extern "C" fn content_classifier_engine_check_network_request_prepars
     let engine = &(*engine).engine;
 
     let url_str = String::from_utf8_lossy(url.as_ref()).to_string();
-    let schemeless_site_str = String::from_utf8_lossy(schemeless_site.as_ref()).to_string();
-    let source_schemeless_site_str =
-        String::from_utf8_lossy(source_schemeless_site.as_ref()).to_string();
+    let hostname_str = String::from_utf8_lossy(hostname.as_ref()).to_string();
+    let source_hostname_str = String::from_utf8_lossy(source_hostname.as_ref()).to_string();
     let request_type_str = String::from_utf8_lossy(request_type.as_ref()).to_string();
 
-    let request = adblock::request::Request::preparsed(
+    let request = etp_engine::request::Request::preparsed(
         &url_str,
-        &schemeless_site_str,
-        &source_schemeless_site_str,
+        &hostname_str,
+        &source_hostname_str,
         &request_type_str,
         third_party,
     );
@@ -127,7 +121,7 @@ pub unsafe extern "C" fn content_classifier_engine_check_network_request_prepars
 
 struct SchemelessSiteResolver {}
 
-impl adblock::url_parser::ResolvesDomain for SchemelessSiteResolver {
+impl etp_engine::url_parser::ResolvesDomain for SchemelessSiteResolver {
     fn get_host_domain(&self, host: &str) -> (usize, usize) {
         let guard = match ETLD_SERVICE.lock() {
             Ok(g) => g,

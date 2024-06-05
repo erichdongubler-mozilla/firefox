@@ -485,18 +485,25 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
     help="Use the cached herald rules without checking for updates",
 )
 def file_info_reviewer_groups(command_context, fmt=None, offline=False):
-    """List the reviewer groups known to the reviewer-selector tool.
+    """List the known reviewer groups.
 
     These are the groups referenced by Phabricator's Herald rules, as scraped
-    into herald_rules.json. The list is the source of truth for valid group
-    names when choosing a reviewer (e.g. "#firefox-build-system-reviewers").
+    into herald_rules.json by the reviewer-selector tool, together with the
+    review groups declared by modules in the in-tree mots database. The list
+    is the source of truth for valid group names when choosing a reviewer
+    (e.g. "#firefox-build-system-reviewers").
     """
     rules_data = reviewers.load_herald_rules(offline=offline)
     if not rules_data:
         print("(herald rules unavailable)", file=sys.stderr)
+
+    mots_config = reviewers.load_mots_config(command_context.topsrcdir)
+    if not rules_data and not mots_config:
         return 1
 
-    groups = sorted(rules_data.get("groups", {}).keys())
+    groups = set((rules_data or {}).get("groups", {}).keys())
+    groups |= reviewers.mots_review_groups(mots_config)
+    groups = sorted(groups)
 
     if fmt == "json":
         json.dump(groups, sys.stdout, indent=2)

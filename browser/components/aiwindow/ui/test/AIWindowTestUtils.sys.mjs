@@ -243,16 +243,18 @@ export class MockSearchManager {
    * @param {object} options.response
    * @param {number} [options.status]
    * @param {string} [options.statusText]
+   * @param {boolean} [options.jsonThrows] - Fail the body parse, for a
+   *   response with a usable status but an unparseable payload.
    */
-  async respondTo({ response, status = 200, statusText }) {
+  async respondTo({ response, status = 200, statusText, jsonThrows = false }) {
     const request = await this.captureRequest();
-    request.respond(response, { status, statusText });
+    request.respond(response, { status, statusText, jsonThrows });
   }
 
   /**
    * Capture the next request to the search endpoint.
    *
-   * @returns {Promise<{request: {url: string, options: RequestInit}, respond: (response: object, options?: {status?: number, statusText?: string}) => void, reject: (reason: any) => void}>}
+   * @returns {Promise<{request: {url: string, options: RequestInit}, respond: (response: object, options?: {status?: number, statusText?: string, jsonThrows?: boolean}) => void, reject: (reason: any) => void}>}
    */
   async captureRequest() {
     await TestUtils.waitForCondition(
@@ -270,14 +272,24 @@ export class MockSearchManager {
     };
     return {
       request: pendingRequest.request,
-      respond: (response, { status = 200, statusText } = {}) =>
+      respond: (
+        response,
+        { status = 200, statusText, jsonThrows = false } = {}
+      ) =>
         settle(() =>
           pendingRequest.resolve({
             ok: status >= 200 && status < 300,
             status,
             statusText:
               statusText ?? (status >= 200 && status < 300 ? "OK" : "Error"),
-            json: async () => response,
+            json: async () => {
+              if (jsonThrows) {
+                throw new SyntaxError(
+                  "JSON.parse: unexpected character at line 1 column 1"
+                );
+              }
+              return response;
+            },
             text: async () =>
               typeof response === "string"
                 ? response

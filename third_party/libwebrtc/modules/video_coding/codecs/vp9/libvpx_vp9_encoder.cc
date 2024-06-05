@@ -1189,6 +1189,13 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
     scaled_image = input_image.video_frame_buffer()->Scale(
         codec_.spatialLayers[num_active_spatial_layers_ - 1].width,
         codec_.spatialLayers[num_active_spatial_layers_ - 1].height);
+    if (!scaled_image) {
+      RTC_LOG(LS_ERROR) << "Failed to scale "
+                        << VideoFrameBufferTypeToString(
+                               input_image.video_frame_buffer()->type())
+                        << " image. Can't encode frame.";
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
   }
 
   RTC_DCHECK_EQ(scaled_image->width(), config_->g_w);

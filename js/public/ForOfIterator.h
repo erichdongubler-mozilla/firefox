@@ -73,12 +73,12 @@ class MOZ_STACK_CLASS JS_PUBLIC_API ForOfIterator {
   uint32_t arrayIndex_ = 0;
   bool isOptimizedArray_ = false;
 
-  ForOfIterator(const ForOfIterator&) = delete;
-  ForOfIterator& operator=(const ForOfIterator&) = delete;
-
  public:
   explicit ForOfIterator(JSContext* cx)
       : cx_(cx), iteratorOrArray_(cx), nextMethod_(cx) {}
+
+  ForOfIterator(const ForOfIterator&) = delete;
+  ForOfIterator& operator=(const ForOfIterator&) = delete;
 
   enum NonIterableBehavior { ThrowOnNonIterable, AllowNonIterable };
 

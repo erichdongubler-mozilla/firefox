@@ -25,11 +25,22 @@ add_task(async function test_run_perf_scenario_lifecycles() {
   const contexts = [];
   let message;
 
-  await MLPerfTestUtils.runPerfScenario({
+  const ctx = {
     Assert,
+    registerCleanupFunction,
     info(value) {
+      Assert.equal(
+        this,
+        ctx,
+        "The logger retains the initialized test context"
+      );
       message = value;
     },
+  };
+
+  MLPerfTestUtils.init(ctx);
+
+  await MLPerfTestUtils.runPerfScenario({
     metricPrefix: "TEST",
     metricSuffix: "NATIVE",
     async scenario(context) {
@@ -76,11 +87,15 @@ add_task(async function test_run_perf_scenario_unreported_first_use() {
   const contexts = [];
   let message;
 
-  await MLPerfTestUtils.runPerfScenario({
+  MLPerfTestUtils.init({
     Assert,
+    registerCleanupFunction,
     info(value) {
       message = value;
     },
+  });
+
+  await MLPerfTestUtils.runPerfScenario({
     metricPrefix: "TEST",
     async scenario(context) {
       contexts.push(context);
@@ -117,12 +132,16 @@ add_task(async function test_run_perf_scenario_reports_engine_metrics() {
   let engine;
   let message;
 
+  MLPerfTestUtils.init({
+    Assert,
+    registerCleanupFunction,
+    info(value) {
+      message = value;
+    },
+  });
+
   try {
     await MLPerfTestUtils.runPerfScenario({
-      Assert,
-      info(value) {
-        message = value;
-      },
       metricPrefix: "TEST",
       metricSuffix: "NATIVE",
       engines: [
@@ -241,6 +260,11 @@ add_task(async function test_run_perf_scenario_reports_engine_metrics() {
  * scenario rejects.
  */
 add_task(async function test_run_perf_scenario_cleans_up_after_failure() {
+  MLPerfTestUtils.init({
+    Assert,
+    registerCleanupFunction,
+    info() {},
+  });
   const destroySpy = perfTestSinon.spy(
     PerfTestEngineProcess,
     "destroyMLEngine"
@@ -249,8 +273,6 @@ add_task(async function test_run_perf_scenario_cleans_up_after_failure() {
   try {
     await Assert.rejects(
       MLPerfTestUtils.runPerfScenario({
-        Assert,
-        info() {},
         metricPrefix: "TEST",
         async scenario() {
           throw new Error("Expected scenario failure");
@@ -282,12 +304,16 @@ add_task(async function test_run_perf_scenario_observes_real_engines() {
   const originalRun = PerfTestMLEngine.prototype.run;
   let message;
 
+  MLPerfTestUtils.init({
+    Assert,
+    registerCleanupFunction,
+    info(value) {
+      message = value;
+    },
+  });
+
   try {
     await MLPerfTestUtils.runPerfScenario({
-      Assert,
-      info(value) {
-        message = value;
-      },
       metricPrefix: "TEST",
       engines: [
         {
@@ -398,6 +424,11 @@ add_task(async function test_run_perf_scenario_observes_real_engines() {
  * rejecting unfinished inference.
  */
 add_task(async function test_run_perf_scenario_rejects_an_active_engine_run() {
+  MLPerfTestUtils.init({
+    Assert,
+    registerCleanupFunction,
+    info() {},
+  });
   const { cleanup, remoteClients } = await setup();
   let finishRun;
   const runStub = perfTestSinon
@@ -413,8 +444,6 @@ add_task(async function test_run_perf_scenario_rejects_an_active_engine_run() {
   try {
     await Assert.rejects(
       MLPerfTestUtils.runPerfScenario({
-        Assert,
-        info() {},
         metricPrefix: "TEST",
         engines: [{ featureId: "formfill-classification" }],
         async scenario() {
@@ -476,12 +505,16 @@ add_task(async function test_run_perf_scenario_observes_generator_lifecycles() {
     });
   let message;
 
+  MLPerfTestUtils.init({
+    Assert,
+    registerCleanupFunction,
+    info(value) {
+      message = value;
+    },
+  });
+
   try {
     await MLPerfTestUtils.runPerfScenario({
-      Assert,
-      info(value) {
-        message = value;
-      },
       metricPrefix: "TEST",
       engines: [{ featureId: "link-preview", expectedRuns: 2 }],
       async scenario() {

@@ -1411,7 +1411,8 @@ void InspectorUtils::GetAnchorFor(GlobalObject&, Element& aElement,
     name = NS_Atomize(aName);
     scopedName = {name, StyleCascadeLevel::Default()};
   }
-  anchor = frame->PresShell()->GetAnchorPosAnchor(scopedName, frame);
+  anchor = frame->PresShell()->GetAnchorPosAnchor(scopedName, frame,
+                                                  frame->GetDepthInFrameTree());
   if (!anchor) {
     return;
   }

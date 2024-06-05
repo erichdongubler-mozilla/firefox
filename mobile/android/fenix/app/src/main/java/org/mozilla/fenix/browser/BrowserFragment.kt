@@ -368,6 +368,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
             feature =
                 ListenSheetIntegration(
                     container = binding.browserLayout,
+                    browserStore = context.components.core.store,
                     listenStore = context.components.listenToPage.store,
                     isAddressBarAtBottom = settings.toolbarPosition == ToolbarPosition.BOTTOM,
                 ),

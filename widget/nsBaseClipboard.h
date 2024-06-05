@@ -384,6 +384,9 @@ class nsBaseClipboard : public nsIClipboard {
   RefPtr<PendingCopy> mPendingCopy;
   const mozilla::dom::ClipboardCapabilities mClipboardCaps;
   bool mIgnoreEmptyNotification = false;
+
+  // True when SetNativeClipboardData or EmptyNativeClipboardData is running.
+  bool mMutatingNativeClipboard = false;
 };
 
 #endif  // nsBaseClipboard_h_

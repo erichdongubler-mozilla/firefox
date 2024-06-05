@@ -211,9 +211,22 @@ moz-input-text::part(label),
 }
 
 .error-message {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xsmall);
   color: var(--text-color-error);
   font-size: var(--font-size-small);
   margin-inline-start: var(--space-small);
+
+  &::before {
+    content: "";
+    width: var(--icon-size-xsmall);
+    height: var(--icon-size-xsmall);
+    flex: none;
+    -moz-context-properties: fill;
+    fill: currentColor;
+    background: url("chrome://browser/content/aiwindow/assets/error-outline.svg") no-repeat center / contain;
+  }
 }
 
 .monitor-row {
@@ -282,6 +295,12 @@ moz-input-text::part(label),
   cursor: auto;
 }
 
+.required-note {
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+  margin: 0;
+}
+
 .monitor-card-actions {
   display: flex;
   align-items: center;
@@ -322,7 +341,7 @@ hr.rule {
 
 .history-item {
   display: grid;
-  grid-template-columns: minmax(200px, 30%) minmax(80px, 15%) 1fr;
+  grid-template-columns: minmax(170px, 25%) minmax(110px, 18%) 1fr;
   align-items: baseline;
   gap: var(--space-medium);
   padding: var(--space-small) 0;
@@ -400,6 +419,10 @@ hr.rule {
 
 .condition-badge.met {
   color: var(--icon-color-success);
+}
+
+.condition-badge.could-not-check {
+  color: var(--text-color-deemphasized);
 }
 
 .monitor-condition-input {

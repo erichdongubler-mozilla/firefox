@@ -412,6 +412,9 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
   Maybe<Rect> simpleBounds;
   if (getStroke && userToOuterSVG) {
     Matrix m = ToMatrix(*userToOuterSVG);
+    if (m.IsSingular()) {
+      return bbox;
+    }
     simpleBounds =
         element->GetGeometryBounds(strokeOptions, aToBBoxUserspace, &m);
   } else if (getFill || getStroke) {

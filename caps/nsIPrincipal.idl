@@ -474,6 +474,16 @@ interface nsIPrincipal : nsISupports
     readonly attribute boolean isLoopbackHost;
 
     /**
+     * True if this principal is only a secure context because its host was
+     * allowlisted by the user via `dom.securecontext.allowlist`, i.e. it is
+     * not actually served over an encrypted connection.
+     *
+     * NOTE: Main-Thread Only.
+     */
+    [infallible]
+    readonly attribute boolean isSecureContextAllowlistedHost;
+
+    /**
      * Returns the Flags of the Principals
      * associated AboutModule, in case there is one.
      *

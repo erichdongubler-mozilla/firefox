@@ -321,15 +321,6 @@ def accept_awsy_task(try_name, platform):
     return False
 
 
-def filter_unsupported_artifact_builds(task, parameters):
-    try_config = parameters.get("try_task_config", {})
-    if not try_config.get("use-artifact-builds", False):
-        return True
-
-    supports_artifact_builds = task.attributes.get("supports-artifact-builds", True)
-    return supports_artifact_builds
-
-
 def filter_out_shippable(task):
     return not task.attributes.get("shippable", False)
 

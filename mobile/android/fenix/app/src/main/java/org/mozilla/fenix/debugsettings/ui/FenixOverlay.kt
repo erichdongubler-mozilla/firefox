@@ -33,6 +33,9 @@ import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.listentopage.ListenState
 import mozilla.components.feature.listentopage.ListenStore
 import mozilla.components.feature.listentopage.listenReducer
+import mozilla.components.feature.tabgroups.storage.data.TabGroup
+import mozilla.components.feature.tabgroups.storage.data.TabGroupData
+import mozilla.components.feature.tabgroups.storage.repository.TabGroupRepository
 import mozilla.telemetry.glean.Glean
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.ClientUUID
@@ -62,9 +65,6 @@ import org.mozilla.fenix.debugsettings.store.DebugDrawerTelemetryMiddleware
 import org.mozilla.fenix.debugsettings.store.DrawerStatus
 import org.mozilla.fenix.debugsettings.tabs.TabGroupTools
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.tabgroups.storage.data.TabGroup
-import org.mozilla.fenix.tabgroups.storage.data.TabGroupData
-import org.mozilla.fenix.tabgroups.storage.repository.TabGroupRepository
 import org.mozilla.fenix.theme.DefaultThemeProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -250,7 +250,7 @@ private fun FenixOverlayPreview() {
             override val tabGroupDataFlow: Flow<TabGroupData>
                 get() = flowOf()
 
-            override suspend fun createTabGroupWithTabs(tabGroup: TabGroup, tabIds: List<String>) {}
+            override suspend fun createTabGroupWithTabs(tabGroup: TabGroup) {}
 
             override suspend fun closeTabGroup(tabGroupId: String) {}
 

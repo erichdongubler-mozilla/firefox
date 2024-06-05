@@ -733,16 +733,6 @@ criteria = "safe-to-deploy"
 version = "0.1.0"
 notes = "Written and maintained by Gfx team at Mozilla."
 
-[[audits.adblock]]
-who = "Benjamin VanderSloot <bvandersloot@mozilla.com>"
-criteria = "safe-to-deploy"
-version = "0.12.1"
-notes = """
-Most of the logic is safe and unsafe is added to the appropriate Send interfaces.
-From safe functions, unsafe code is used to read into a flatbuffer that was constructed
-safely. By the invariants of the flatbuffer crate, this is okay to do.
-"""
-
 [[audits.adler2]]
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
@@ -2649,12 +2639,6 @@ notes = "I, Henri Sivonen, wrote encoding_rs for Gecko and have reviewed contrib
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.8.31 -> 0.8.32"
-
-[[audits.encoding_rs]]
-who = "Henri Sivonen <hsivonen@hsivonen.fi>"
-criteria = "safe-to-deploy"
-delta = "0.8.35 -> 0.8.35@git:a4f2911cece3997c46da56785782b60dc0e5ab17"
-importable = false
 
 [[audits.enum-map]]
 who = "Kershaw Chang <kershaw@mozilla.com>"
@@ -5984,6 +5968,11 @@ who = "Oskar Mansfeld <git@omansfeld.net>"
 criteria = "safe-to-deploy"
 delta = "0.5.13 -> 0.6.0"
 
+[[audits.quinn-udp]]
+who = "Max Inden <mail@max-inden.de>"
+criteria = "safe-to-deploy"
+delta = "0.6.0 -> 0.6.2"
+
 [[audits.quote]]
 who = "Nika Layzell <nika@thelayzells.com>"
 criteria = "safe-to-deploy"
@@ -7011,6 +7000,12 @@ who = "Emilio Cobos Álvarez <emilio@crisal.io>"
 criteria = "safe-to-deploy"
 delta = "0.2.14 -> 0.2.16"
 notes = "All patches either authored or reviewed by me."
+
+[[audits.thin-vec]]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
+criteria = "safe-to-deploy"
+delta = "0.2.16 -> 0.2.20"
+notes = "Authored or reviewed all changes."
 
 [[audits.thiserror]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"

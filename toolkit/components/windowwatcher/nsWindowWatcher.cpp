@@ -2071,8 +2071,6 @@ already_AddRefed<nsDocShellLoadState> nsWindowWatcher::CreateLoadState(
     if (nsCOMPtr<nsPIDOMWindowInner> parentInnerWin =
             aParent->GetCurrentInnerWindow()) {
       loadState->SetTriggeringWindowId(parentInnerWin->WindowID());
-      loadState->SetTriggeringStorageAccess(
-          parentInnerWin->UsingStorageAccess());
     }
 
     if (RefPtr<BrowsingContext> parentBC = aParent->GetBrowsingContext()) {

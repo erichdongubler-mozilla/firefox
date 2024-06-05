@@ -1157,7 +1157,9 @@ void SpeechRecognition::DispatchNoMatch() {
   // the confidence threshold or may be null"; the engine hands us nothing at
   // all in this case, so the list is empty.
   RootedDictionary<SpeechRecognitionEventInit> init(RootingCx());
-  init.mBubbles = true;
+  // https://webaudio.github.io/web-speech-api/#speechreco-events
+  // "These events do not bubble and are not cancelable."
+  init.mBubbles = false;
   init.mCancelable = false;
   init.mResultIndex = 0;
   init.mResults = new SpeechRecognitionResultList(this);
@@ -1266,7 +1268,9 @@ void SpeechRecognition::DispatchError(SpeechRecognitionErrorCode aErrorCode,
   RefPtr<SpeechRecognitionErrorEvent> srError =
       new SpeechRecognitionErrorEvent(nullptr, nullptr, nullptr);
 
-  srError->InitSpeechRecognitionError(u"error"_ns, true, false, aErrorCode,
+  // https://webaudio.github.io/web-speech-api/#speechreco-events
+  // "These events do not bubble and are not cancelable."
+  srError->InitSpeechRecognitionError(u"error"_ns, false, false, aErrorCode,
                                       aMessage);
   srError->SetTrusted(true);
 
@@ -1326,9 +1330,18 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
     return;
   }
 
-  // NOTE: We don't implement non-continuous mode (mContinuous=false) for now.
-  // The spec semantics are unclear with modern local LLM-based recognition.
-  // See https://github.com/WebAudio/web-speech-api/issues/176
+  // https://webaudio.github.io/web-speech-api/#dom-speechrecognition-continuous
+  // "When the continuous attribute is set to false, the user agent must return
+  // no more than one final result". Such a session is stopped as soon as its
+  // first final result is dispatched (below), but the backend's end-of-stream
+  // flush can still produce results while it winds down; drop those. Only the
+  // finals: the same section notes that continuous "does not affect interim
+  // results".
+  if (aIsFinal && !mContinuous && !mRecognitionResults.IsEmpty()) {
+    LOG("Ignoring result - non-continuous session already delivered its final "
+        "result");
+    return;
+  }
 
   if (!aEventTime.IsNull()) {
     mResultLatencyTotal += TimeStamp::Now() - aEventTime;
@@ -1359,17 +1372,24 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
 
   result->SetFinal(aIsFinal);
 
-  // Streaming backends only emit final results, so prior entries never change.
-  MOZ_ASSERT(aIsFinal);
+  // event.results is every final of the session followed by the interim in
+  // flight, and resultIndex is the lowest changed index.
   uint32_t resultIndex = mRecognitionResults.Length();
-  mRecognitionResults.AppendElement(result);
+  if (aIsFinal) {
+    mRecognitionResults.AppendElement(result);
+  }
 
   RefPtr<SpeechRecognitionResultList> resultList =
       new SpeechRecognitionResultList(this);
   resultList->mItems.AppendElements(mRecognitionResults);
+  if (!aIsFinal) {
+    resultList->mItems.AppendElement(result);
+  }
 
   RootedDictionary<SpeechRecognitionEventInit> init(RootingCx());
-  init.mBubbles = true;
+  // https://webaudio.github.io/web-speech-api/#speechreco-events
+  // "These events do not bubble and are not cancelable."
+  init.mBubbles = false;
   init.mCancelable = false;
   init.mResultIndex = resultIndex;
   init.mResults = resultList;
@@ -1387,6 +1407,15 @@ void SpeechRecognition::HandleRecognitionResultFromBackend(
     mPerf.mFirstResult = Some(TimeStamp::Now() - mPerf.mStart);
   }
   DispatchEvent(*domEvent);
+
+  // https://webaudio.github.io/web-speech-api/#dom-speechrecognition-continuous
+  // False describes "a single turn pattern of interaction": the turn is over
+  // once its one final result has been delivered, so end the session rather
+  // than keep the microphone open. Stop() rather than Abort(), so that the
+  // backend still flushes and "end" fires the usual way.
+  if (aIsFinal && !mContinuous) {
+    Stop();
+  }
 }
 
 void SpeechRecognition::HandleRecognitionErrorFromBackend(

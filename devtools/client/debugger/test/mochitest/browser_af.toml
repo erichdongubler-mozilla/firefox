@@ -53,9 +53,6 @@ fail-if = [
 ["browser_dbg-breakpoints-cond-functional.js"]
 
 ["browser_dbg-breakpoints-cond-shortcut.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-breakpoints-cond-source-maps.js"]
 
@@ -65,9 +62,6 @@ fail-if = [
 ]
 
 ["browser_dbg-breakpoints-debugger-statement.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-breakpoints-duplicate-functions.js"]
 
@@ -126,23 +120,14 @@ fail-if = [
 ["browser_dbg-continue-to-here.js"]
 
 ["browser_dbg-custom-formatters.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-debug-line.js"]
 
 ["browser_dbg-debugger-buttons.js"]
 
 ["browser_dbg-dom-mutation-breakpoints-fission.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-dom-mutation-breakpoints.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-eager-eval-skip-pause.js"]
 
@@ -164,9 +149,6 @@ fail-if = [
 ["browser_dbg-editor-select.js"]
 
 ["browser_dbg-ember-original-variable-mapping-notifications.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-es-module-worker.js"]
 
@@ -183,23 +165,14 @@ fail-if = [
 ["browser_dbg-event-handler.js"]
 
 ["browser_dbg-expressions-error.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-expressions-focus.js"]
 
 ["browser_dbg-expressions-thread.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-expressions-watch.js"]
 
 ["browser_dbg-expressions.js"]
-fail-if = [
-  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
-]
 
 ["browser_dbg-extension-inspectedWindow-debugger-statement.js"]
 

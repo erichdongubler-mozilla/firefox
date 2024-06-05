@@ -6876,26 +6876,33 @@ EditContext* Document::DetermineActiveEditContext() const {
 
 void Document::UpdateTextEditContext() {
   // https://w3c.github.io/edit-context/#dfn-update-the-text-edit-context
-  // 1. Let oldActiveEditContext be document's active EditContext.
-  RefPtr<EditContext> oldActiveEditContext = mActiveEditContext;
   // 2. Let newActiveEditContext be the result of running the steps to determine
   //    the active EditContext given document.
   RefPtr<EditContext> newActiveEditContext = DetermineActiveEditContext();
-  // https://github.com/w3c/edit-context/pull/123
-  if (oldActiveEditContext == newActiveEditContext) {
+  // 3. If oldActiveEditContext is not null and is not equal to
+  //    newActiveEditContext, then run the steps to deactivate an EditContext
+  //    given oldActiveEditContext.
+  if (mActiveEditContext == newActiveEditContext) {
     return;
   }
-  // 3. If oldActiveEditContext is not null, then run the steps to deactivate an
-  //    EditContext given oldActiveEditContext.
-  if (oldActiveEditContext) {
-    oldActiveEditContext->Deactivate();
-  }
+  // End the composition, even if the old editor is not an EditContext,
+  // so that the new EditContext doesn't get half of the old composition.
+  DeactivateEditContextAndEndComposition();
   // 5. Set the document's active EditContext to newActiveEditContext.
   mActiveEditContext = newActiveEditContext;
   // 4. If newActiveEditContext is not null, then:
   //   1. Update the Text Edit Context's text state to match the values in
   //      newActiveEditContext's text state.
   EditContext::NotifyActiveEditContextChanged(*this);
+}
+
+void Document::DeactivateEditContextAndEndComposition() {
+  if (RefPtr<HTMLEditor> editor = GetHTMLEditor()) {
+    editor->CommitComposition();
+  }
+  if (mActiveEditContext) {
+    mActiveEditContext->Deactivate();
+  }
 }
 
 void Document::MaybeDispatchCheckKeyPressEventModelEvent() {
@@ -8772,7 +8779,7 @@ void Document::MozSetImageElement(const nsAString& aImageElementId,
   }
 }
 
-void Document::DispatchContentLoadedEvents() {
+void Document::DispatchContentLoadedEvents(bool aFinishSync) {
   // If you add early returns from this method, make sure you're
   // calling UnblockOnload properly.
 
@@ -8884,6 +8891,19 @@ void Document::DispatchContentLoadedEvents() {
     }
   }
 
+  if (aFinishSync) {
+    FinishDOMContentLoaded();
+    return;
+  }
+
+  // Keep the load event on a task, so that its timing does not change.
+  nsCOMPtr<nsIRunnable> ev =
+      NewRunnableMethod("Document::FinishDOMContentLoaded", this,
+                        &Document::FinishDOMContentLoaded);
+  Dispatch(ev.forget());
+}
+
+void Document::FinishDOMContentLoaded() {
   if (mSetCompleteAfterDOMContentLoaded) {
     SetReadyStateInternal(ReadyState::READYSTATE_COMPLETE);
     mSetCompleteAfterDOMContentLoaded = false;
@@ -8892,7 +8912,7 @@ void Document::DispatchContentLoadedEvents() {
   UnblockOnload(true);
 }
 
-void Document::EndLoad() {
+void Document::EndLoad(bool aFireDOMContentLoadedSync) {
   bool turnOnEditing =
       mParser && (IsInDesignMode() || mContentEditableCount > 0);
 
@@ -8940,7 +8960,7 @@ void Document::EndLoad() {
   }
   mDidCallBeginLoad = false;
 
-  UnblockDOMContentLoaded();
+  UnblockDOMContentLoaded(aFireDOMContentLoadedSync);
 
   if (turnOnEditing) {
     EditingStateChanged();
@@ -8965,7 +8985,7 @@ void Document::EndLoad() {
   }
 }
 
-void Document::UnblockDOMContentLoaded() {
+void Document::UnblockDOMContentLoaded(bool aFireSync) {
   MOZ_ASSERT(mBlockDOMContentLoaded);
   if (--mBlockDOMContentLoaded != 0 || mDidFireDOMContentLoaded) {
     return;
@@ -8976,17 +8996,28 @@ void Document::UnblockDOMContentLoaded() {
 
   mDidFireDOMContentLoaded = true;
 
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(IsInitialDocument() || mReadyState == READYSTATE_INTERACTIVE);
-  if (!mSynchronousDOMContentLoaded) {
-    MOZ_RELEASE_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(!IsInitialDocument());
-    nsCOMPtr<nsIRunnable> ev =
-        NewRunnableMethod("Document::DispatchContentLoadedEvents", this,
-                          &Document::DispatchContentLoadedEvents);
-    Dispatch(ev.forget());
-  } else {
-    DispatchContentLoadedEvents();
+
+  // These documents need the load event unblocked before we return.
+  if (mSynchronousDOMContentLoaded) {
+    MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
+    DispatchContentLoadedEvents(/* aFinishSync = */ true);
+    return;
   }
+
+  if (aFireSync &&
+      StaticPrefs::dom_document_domcontentloaded_synchronous_enabled()) {
+    nsContentUtils::AddScriptRunner(
+        NewRunnableMethod<bool>("Document::DispatchContentLoadedEvents", this,
+                                &Document::DispatchContentLoadedEvents, false));
+    return;
+  }
+
+  MOZ_ASSERT(!IsInitialDocument());
+  Dispatch(NewRunnableMethod<bool>("Document::DispatchContentLoadedEvents",
+                                   this, &Document::DispatchContentLoadedEvents,
+                                   true));
 }
 
 void Document::ElementStateChanged(Element* aElement, ElementState aStateMask) {
@@ -15322,7 +15353,8 @@ class UnblockParsingPromiseHandler final : public PromiseNativeHandler {
       // parser state for this document.  Maybe someone caused it to stop being
       // parsed, so CreatorParserOrNull() is returning null, but we still want
       // to unblock these.
-      mDocument->UnblockDOMContentLoaded();
+      // Async, because this also runs from our destructor.
+      mDocument->UnblockDOMContentLoaded(/* aFireSync = */ false);
       mDocument->UnblockOnload(false);
     }
     mParser = nullptr;
@@ -15918,27 +15950,36 @@ static uint32_t CountFullscreenSubDocuments(Document& aDoc) {
 }
 
 bool Document::IsFullscreenLeaf() {
-  // A fullscreen leaf document is fullscreen, and has no fullscreen
-  // subdocuments.
-  //
-  // FIXME(emilio): This doesn't seem to account for fission iframes, is that
-  // ok?
-  return Fullscreen() && CountFullscreenSubDocuments(*this) == 0;
+  // A fullscreen leaf document is fullscreen, and its fullscreen element does
+  // not embed another in-process fullscreen document, i.e. it is at the bottom
+  // of the fullscreen document chain. Other subdocuments may still be
+  // fullscreen without being part of that chain, for example when this document
+  // has more than one fullscreen element in its top layer.
+  Element* fsElement = GetUnretargetedFullscreenElement();
+  if (!fsElement) {
+    return false;
+  }
+
+  Document* subDoc = GetSubDocumentFor(fsElement);
+  if (!subDoc) {
+    return true;
+  }
+
+  return !subDoc->Fullscreen();
 }
 
 /* static */ Document* Document::GetFullscreenLeaf(Document& aDoc) {
   if (aDoc.IsFullscreenLeaf()) {
     return &aDoc;
   }
-  if (!aDoc.Fullscreen()) {
+  Element* fsElement = aDoc.GetUnretargetedFullscreenElement();
+  if (!fsElement) {
     return nullptr;
   }
-  Document* leaf = nullptr;
-  aDoc.EnumerateSubDocuments([&leaf](Document& aSubDoc) {
-    leaf = GetFullscreenLeaf(aSubDoc);
-    return leaf ? CallState::Stop : CallState::Continue;
-  });
-  return leaf;
+  Document* subDoc = aDoc.GetSubDocumentFor(fsElement);
+  MOZ_ASSERT(subDoc);
+  MOZ_ASSERT(subDoc->Fullscreen());
+  return GetFullscreenLeaf(*subDoc);
 }
 
 /* static */ Document* Document::GetFullscreenLeaf(Document* aDoc) {
@@ -15953,8 +15994,6 @@ bool Document::IsFullscreenLeaf() {
 
 static CallState ResetFullscreen(Document& aDocument) {
   if (Element* fsElement = aDocument.GetUnretargetedFullscreenElement()) {
-    NS_ASSERTION(CountFullscreenSubDocuments(aDocument) <= 1,
-                 "Should have at most 1 fullscreen subdocument.");
     aDocument.CleanupFullscreenState();
     NS_ASSERTION(!aDocument.Fullscreen(), "Should reset fullscreen");
     DispatchFullscreenChange(aDocument, fsElement);
@@ -16129,7 +16168,8 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
 
   Document* lastDoc = exitElements.LastElement()->OwnerDoc();
   size_t fullscreenCount = lastDoc->CountFullscreenElements();
-  if (!lastDoc->GetInProcessParentDocument() && fullscreenCount == 1) {
+  if ((!lastDoc->GetInProcessParentDocument() && fullscreenCount == 1) ||
+      GetFullscreenLeaf(lastDoc) != fullScreenDoc) {
     // If we are fully exiting fullscreen, don't touch anything here,
     // just wait for the window to get out from fullscreen first.
     PendingFullscreenChangeList::Add(std::move(aExit));
@@ -16929,8 +16969,6 @@ void Document::RemoteFrameFullscreenReverted() {
 
 static bool HasFullscreenSubDocument(Document& aDoc) {
   uint32_t count = CountFullscreenSubDocuments(aDoc);
-  NS_ASSERTION(count <= 1,
-               "Fullscreen docs should have at most 1 fullscreen child!");
   return count >= 1;
 }
 
@@ -20958,9 +20996,9 @@ nsIPrincipal* Document::EffectiveStoragePrincipal() const {
 
   // Calling StorageAllowedForDocument will notify the ContentBlockLog. This
   // loads TrackingDBService.sys.mjs, making us potentially
-  // fail // browser/base/content/test/performance/browser_startup.js. To avoid
-  // that, we short-circuit the check here by allowing storage access to system
-  // and addon principles, avoiding the test-failure.
+  // fail // browser/base/content/test/browser-performance/browser_startup.js.
+  // To avoid that, we short-circuit the check here by allowing storage access
+  // to system and addon principles, avoiding the test-failure.
   nsIPrincipal* principal = NodePrincipal();
   if (principal && (principal->IsSystemPrincipal() ||
                     principal->GetIsAddonOrExpandedAddonPrincipal())) {
@@ -21471,7 +21509,8 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
   // config from options with compliantOptions and false.
   RefPtr<Sanitizer> sanitizer;
   if (sanitize) {
-    sanitizer = Sanitizer::GetInstance(global, aOptions.mSanitizer.Value(),
+    sanitizer = Sanitizer::GetInstance(global->GetAsInnerWindow(),
+                                       aOptions.mSanitizer.Value(),
                                        /* aSafe */ false, aError);
     if (aError.Failed()) {
       return nullptr;
@@ -21518,9 +21557,10 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
 
   // Step 3. Let sanitizerConfig be the result of calling get a sanitizer
   // config from options with options and true.
-  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
+  nsCOMPtr<nsPIDOMWindowInner> window =
+      do_QueryInterface(aGlobal.GetAsSupports());
   RefPtr<Sanitizer> sanitizer = Sanitizer::GetInstance(
-      global, aOptions.mSanitizer, /* aSafe */ true, aError);
+      window, aOptions.mSanitizer, /* aSafe */ true, aError);
   if (aError.Failed()) {
     return nullptr;
   }

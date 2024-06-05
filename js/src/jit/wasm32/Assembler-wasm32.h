@@ -29,6 +29,7 @@ class MacroAssembler;
 
 static constexpr Register StackPointer{Registers::StackPointer};
 static constexpr Register FramePointer{Registers::FramePointer};
+static constexpr Register LinkRegister{Registers::invalid_reg2};
 
 static constexpr Register ReturnReg{Registers::invalid_reg2};
 static constexpr FloatRegister ReturnFloat32Reg = {FloatRegisters::invalid_reg};

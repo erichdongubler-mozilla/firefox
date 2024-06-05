@@ -267,7 +267,7 @@ toolbar[inactive="true"] .urlbar,
   --urlbar-background-color-focus: var(--input-text-background-color);
   --toolbar-field-text-color: var(--input-text-color);
   --toolbar-field-text-color-focus: var(--input-text-color);
-  --toolbar-field-border-color: var(--input-text-border-color);
+  --toolbar-field-border-color: var(--border-color-deemphasized);
 
   /* The selected row's background and text have to stay a pair, so both come
      from the list item tokens. The action text follows the input. */
@@ -284,6 +284,10 @@ toolbar[inactive="true"] .urlbar,
   background-clip: border-box;
   border-radius: var(--urlbar-background-border-radius);
   border: var(--urlbar-background-border);
+
+  .urlbar[in-page]:not([popover-open]) > & {
+    background-clip: padding-box;
+  }
 
   .urlbar:is([focused], [open]) > & {
     background-color: var(--urlbar-background-color-focus);
@@ -535,6 +539,10 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .urlbarView {
+  /* The max-height below has to bound the border box, which the view's block
+     padding is part of. */
+  box-sizing: border-box;
+
   &:popover-open {
     display: flex;
     flex-direction: column;
@@ -549,13 +557,7 @@ toolbar[inactive="true"] .urlbar,
     /* The view clips its rows, and the joint background and its shadow reach
        past it. */
     overflow-clip-margin: var(--urlbar-joint-background-shadow-margin);
-  }
 
-  /* In a page the viewport clips the top layer, where a chrome panel may
-     extend past the window, so the view takes the space below the input and
-     scrolls within it, bounded by a screenful so a long page doesn't give it
-     one and by the margin the joint background needs past the border box. */
-  .urlbar[in-page] > &:popover-open {
     max-height: min(calc(100% - var(--urlbarView-joint-background-outset-block)), 100vh);
   }
 }
@@ -1301,6 +1303,39 @@ toolbar[inactive="true"] .urlbar,
     }
   }
 
+  .urlbar[variant-a] & {
+    --button-border-color-muted: var(--border-color-deemphasized);
+    --button-border-color-muted-hover: var(--border-color-deemphasized);
+    --button-border-color-muted-active: var(--border-color-deemphasized);
+    --button-border-color-muted-selected: var(--border-color-deemphasized);
+
+    &::part(button) {
+      background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.3));
+      background-origin: border-box;
+      box-shadow: var(--box-shadow-level-1), var(--box-shadow-level-2);
+      cursor: pointer;
+
+      @media (prefers-color-scheme: dark) {
+        background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent);
+      }
+    }
+
+    /* The label's UA cursor would otherwise stop the button's from reaching the
+       slotted content. */
+    &::part(moz-button-label) {
+      cursor: inherit;
+    }
+
+    > .searchmode-switcher-content {
+      gap: var(--space-xsmall);
+
+      /* Put the engine name before the dropmarker. */
+      > .searchmode-switcher-title {
+        order: -1;
+      }
+    }
+  }
+
   &[addengines]::part(button)::after {
     content: "";
     position: absolute;
@@ -1311,6 +1346,50 @@ toolbar[inactive="true"] .urlbar,
     background: url(chrome://browser/skin/search-indicator-badge-add.svg) no-repeat center;
     background-size: contain;
     pointer-events: none;
+  }
+}
+
+/* The wordmark of the engine the switcher shows, in place of its icon and name.
+   The image comes from this sheet because a chrome: URL a node in a content
+   document loads, as on about:newtab, is refused. Each aspect ratio is the
+   image's viewBox, so the box is sized before the image has loaded. */
+.searchmode-switcher-wordmark {
+  display: none;
+  height: var(--icon-size-large);
+  background: no-repeat center / contain;
+
+  .searchmode-switcher[wordmark] & {
+    display: block;
+  }
+
+  .searchmode-switcher[wordmark="bing"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/Bing.svg");
+    aspect-ratio: 144 / 62.08;
+  }
+
+  .searchmode-switcher[wordmark="ddg"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/DuckDuckGo.svg");
+    aspect-ratio: 211 / 62.08;
+  }
+
+  .searchmode-switcher[wordmark="ebay"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/eBay.svg");
+    aspect-ratio: 133 / 62.08;
+  }
+
+  .searchmode-switcher[wordmark="google"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/Google.svg");
+    aspect-ratio: 173 / 62.08;
+  }
+
+  .searchmode-switcher[wordmark="perplexity"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/Perplexity.svg");
+    aspect-ratio: 230 / 62.08;
+  }
+
+  .searchmode-switcher[wordmark="wikipedia"] & {
+    background-image: url("chrome://browser/skin/urlbar/engine-wordmarks/Wikipedia.svg");
+    aspect-ratio: 233 / 62.08;
   }
 }
 
@@ -1326,6 +1405,12 @@ toolbar[inactive="true"] .urlbar,
     .urlbar:not(#searchbar-new)[searchmode] & {
       display: block;
     }
+  }
+
+  /* Variant A names the engine next to its icon, whether or not the bar is in
+     search mode. */
+  .urlbar[variant-a] .searchmode-switcher:not([wordmark]) &:not(:empty) {
+    display: block;
   }
 }
 

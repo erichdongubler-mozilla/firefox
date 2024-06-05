@@ -542,6 +542,7 @@ static AnchorPosResolutionCache PopulateAnchorResolutionCache(
     const nsIFrame* aKidFrame, AnchorPosReferenceData* aData,
     bool aReuseUnfragmentedAnchorPosReferences) {
   MOZ_ASSERT(aKidFrame->HasAnchorPosReference());
+  aData->mFrameTreeDepth = aKidFrame->GetDepthInFrameTree();
   if (aReuseUnfragmentedAnchorPosReferences) [[unlikely]] {
     MOZ_ASSERT(
         aKidFrame->FirstInFlow()->HasProperty(UnfragmentedPositionProperty()));
@@ -552,7 +553,7 @@ static AnchorPosResolutionCache PopulateAnchorResolutionCache(
       const auto* presShell = aKidFrame->PresShell();
       cache.mAnchor = presShell->GetAnchorPosAnchor(
           ScopedNameRef{aData->mDefaultAnchorName, aData->mAnchorTreeScope},
-          aKidFrame->FirstInFlow());
+          aKidFrame->FirstInFlow(), aData->mFrameTreeDepth);
       MOZ_ASSERT(cache.mAnchor);
       cache.mScrollContainer =
           AnchorPositioningUtils::GetNearestScrollFrame(cache.mAnchor)

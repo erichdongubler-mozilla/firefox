@@ -446,12 +446,45 @@ add_task(async function test_openURL_isAddressBarUrlNavigation_bookmark() {
     url: bookmarkURL,
     title: "bookmark for isAddressBarUrlNavigation test",
   });
+  await PlacesTestUtils.promiseAsyncUpdates();
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "example.com/bookmarked",
-  });
-  await UrlbarTestUtils.pickResultAndWaitForLoad(window, bookmarkURL);
+  // -1 means the matching row hasn't been found yet.
+  let bookmarkRowIndex = -1;
+
+  // Use bookmarks keyword to filter by bookmarks
+  await TestUtils.waitForCondition(async () => {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "@bookmarks",
+    });
+
+    EventUtils.synthesizeKey("KEY_Enter", {}, window);
+
+    // Then search the actual bookmark
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "bookmarked-path",
+    });
+
+    let resultCount = UrlbarTestUtils.getResultCount(window);
+    for (let i = 0; i < resultCount; i++) {
+      let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+      if (
+        details.result.payload.url === bookmarkURL &&
+        details.result.source === UrlbarShared.RESULT_SOURCE.BOOKMARKS
+      ) {
+        bookmarkRowIndex = i;
+        return true;
+      }
+    }
+    return false;
+  }, "Waiting for the newly-inserted bookmark to appear in the urlbar results");
+
+  let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  UrlbarTestUtils.setSelectedRowIndex(window, bookmarkRowIndex);
+  EventUtils.synthesizeKey("KEY_Enter", {}, window);
+  await loadPromise;
 
   Assert.equal(stub.callCount, 1, "Trigger fired for the bookmark navigation");
   Assert.equal(
@@ -1134,6 +1167,18 @@ add_task(async function test_ipprotection_ready() {
 
   IPProtection.uninit();
   sandbox.restore();
+
+  if (PanelUI.panel.state === "showing") {
+    await BrowserTestUtils.waitForEvent(PanelUI.panel, "popupshown");
+  }
+  if (PanelUI.panel.state !== "closed") {
+    let panelHidden = BrowserTestUtils.waitForEvent(
+      PanelUI.panel,
+      "popuphidden"
+    );
+    PanelUI.hide();
+    await panelHidden;
+  }
 });
 
 add_task(async function test_tabSwitch() {
@@ -1220,7 +1265,9 @@ add_task(async function test_ipprotection_panel_closed() {
   await panel.open(window);
 
   // Close the panel, which should trigger ipProtectionPanelClosed
+  let panelHidden = BrowserTestUtils.waitForEvent(panel.panel, "popuphidden");
   panel.close();
+  await panelHidden;
 
   Assert.ok(
     await receivedTrigger,
@@ -1229,9 +1276,9 @@ add_task(async function test_ipprotection_panel_closed() {
 
   // Open and close the panel again
   await panel.open(window);
+  panelHidden = BrowserTestUtils.waitForEvent(panel.panel, "popuphidden");
   panel.close();
-
-  await TestUtils.waitForTick();
+  await panelHidden;
 
   // Clean up prefs
   Services.prefs.clearUserPref("browser.ipProtection.added");

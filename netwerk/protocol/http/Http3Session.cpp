@@ -414,7 +414,10 @@ void Http3Session::Shutdown() {
     } else if (mError == NS_ERROR_NET_RESET) {
       stream->Close(NS_ERROR_NET_RESET);
     } else {
-      stream->Close(NS_ERROR_ABORT);
+      // The session went away without a clean reset/protocol error, but this
+      // stream never received any response data, so it is safe to retry it
+      // on a new connection.
+      stream->Close(NS_ERROR_NET_UNCLEAN_SHUTDOWN);
     }
     RemoveStreamFromQueues(stream);
     if (stream->HasStreamId()) {

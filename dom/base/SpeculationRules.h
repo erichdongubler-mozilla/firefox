@@ -39,8 +39,8 @@ class SpeculationRules final {
   void ConsiderLoads();
   void InnerConsiderLoads();
 
-  void AddLink(Element* aElement) { mLinks.Insert(aElement); }
-  void RemoveLink(Element* aElement) { mLinks.Remove(aElement); }
+  void AddLink(Element* aElement);
+  void RemoveLink(Element* aElement);
 
   void FindMatchingLinks(nsTArray<const Element*>& aLinks);
 

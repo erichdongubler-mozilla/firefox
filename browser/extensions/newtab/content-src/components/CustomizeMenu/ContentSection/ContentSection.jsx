@@ -435,7 +435,7 @@ export class ContentSection extends React.PureComponent {
                       ontoggle={this.onPreferenceSelect}
                       data-preference="widgets.recentSearches.enabled"
                       data-event-source="WIDGET_RECENT_SEARCHES"
-                      data-l10n-id="newtab-custom-widget-recent-searches-toggle"
+                      data-l10n-id="newtab-custom-widget-search-toggle"
                     />
                   </div>
                 )}

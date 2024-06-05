@@ -11601,8 +11601,6 @@ interface nsILoadInfo extends nsISupports, Enums<typeof nsILoadInfo_StoragePermi
   triggeringSandboxFlags: u32;
   /** <!-- binding_to(idl, attribute, XPIDL_nsILoadInfo_triggeringWindowId) --> */
   triggeringWindowId: u64;
-  /** <!-- binding_to(idl, attribute, XPIDL_nsILoadInfo_triggeringStorageAccess) --> */
-  triggeringStorageAccess: boolean;
   /** <!-- binding_to(idl, attribute, XPIDL_nsILoadInfo_triggeringFirstPartyClassificationFlags) --> */
   triggeringFirstPartyClassificationFlags: u32;
   /** <!-- binding_to(idl, attribute, XPIDL_nsILoadInfo_triggeringThirdPartyClassificationFlags) --> */
@@ -15602,11 +15600,11 @@ interface nsIWebSocketEventListener extends nsISupports {
   /** <!-- binding_to(idl, method, XPIDL_nsIWebSocketEventListener_webSocketMessageAvailable) --> */
   webSocketMessageAvailable(aWebSocketSerialID: u32, aMessage: string, aType: u16): void;
   /** <!-- binding_to(idl, method, XPIDL_nsIWebSocketEventListener_webSocketClosed) --> */
-  webSocketClosed(aWebSocketSerialID: u32, aWasClean: boolean, aCode: u16, aReason: string): void;
+  webSocketClosed(aWebSocketSerialID: u32, aHttpChannelId: u64, aWasClean: boolean, aCode: u16, aReason: string): void;
   /** <!-- binding_to(idl, method, XPIDL_nsIWebSocketEventListener_frameReceived) --> */
-  frameReceived(aWebSocketSerialID: u32, aFrame: nsIWebSocketFrame): void;
+  frameReceived(aWebSocketSerialID: u32, aHttpChannelId: u64, aFrame: nsIWebSocketFrame): void;
   /** <!-- binding_to(idl, method, XPIDL_nsIWebSocketEventListener_frameSent) --> */
-  frameSent(aWebSocketSerialID: u32, aFrame: nsIWebSocketFrame): void;
+  frameSent(aWebSocketSerialID: u32, aHttpChannelId: u64, aFrame: nsIWebSocketFrame): void;
 }
 
 /** <!-- binding_to(idl, interface_name, XPIDL_nsIWebSocketEventService) --> */

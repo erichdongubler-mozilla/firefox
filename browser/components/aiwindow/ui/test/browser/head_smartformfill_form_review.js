@@ -280,7 +280,11 @@ async function setupFormReviewTest() {
     Region._setHomeRegion("US", false);
 
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.smartwindow.smartformfill.enabled", true]],
+      set: [
+        [SMART_FORM_FILL_PREF, true],
+        // The test forms are smaller than the minimum the feature ships with.
+        [MIN_FORM_FIELDS_PREF, 1],
+      ],
     });
     context.prefEnvPushed = true;
 
@@ -381,7 +385,45 @@ async function waitForFormReviewState(reviewBrowser, expectedState) {
     }
 
     await review.updateComplete;
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        review.renderRoot.activeElement ===
+        review.renderRoot.querySelector(".form-review-dialog"),
+      `Waiting for the ${state} state to receive focus`
+    );
   });
+}
+
+/**
+ * Waits for an element in the review component to receive focus.
+ *
+ * @param {MozBrowser} reviewBrowser - Browser hosting the review component.
+ * @param {string} selector - Selector for the expected focused element.
+ * @returns {Promise<void>}
+ */
+async function waitForFormReviewFocus(reviewBrowser, selector) {
+  await SpecialPowers.spawn(reviewBrowser, [selector], async expected => {
+    const review = Cu.waiveXrays(
+      content.document.querySelector("ai-sff-form-review")
+    );
+
+    await ContentTaskUtils.waitForCondition(
+      () => review.renderRoot.activeElement?.matches(expected),
+      `Waiting for "${expected}" to receive focus`
+    );
+  });
+}
+
+/**
+ * Presses Tab and waits for the expected review element to receive focus.
+ *
+ * @param {MozBrowser} reviewBrowser - Browser hosting the review component.
+ * @param {string} selector - Selector for the expected focused element.
+ * @returns {Promise<void>}
+ */
+async function tabToFormReviewElement(reviewBrowser, selector) {
+  await BrowserTestUtils.synthesizeKey("KEY_Tab", {}, reviewBrowser);
+  await waitForFormReviewFocus(reviewBrowser, selector);
 }
 
 /**

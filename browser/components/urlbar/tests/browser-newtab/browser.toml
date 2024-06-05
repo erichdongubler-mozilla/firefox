@@ -23,6 +23,8 @@ support-files = ["../browser/slow-page.sjs"]
 
 ["browser_engineIcon.js"]
 
+["browser_engineWordmark.js"]
+
 ["browser_escape.js"]
 
 ["browser_inputBackground.js"]

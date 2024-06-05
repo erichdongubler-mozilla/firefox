@@ -268,21 +268,12 @@ void Navigator::Invalidate() {
   mClipboard = nullptr;
 }
 
-void Navigator::GetUserAgent(nsAString& aUserAgent, CallerType aCallerType,
+void Navigator::GetUserAgent(nsACString& aUserAgent, CallerType aCallerType,
                              ErrorResult& aRv) const {
-  nsCOMPtr<nsPIDOMWindowInner> window;
-
-  if (mWindow) {
-    window = mWindow;
-    nsIDocShell* docshell = window->GetDocShell();
-    nsString customUserAgent;
-    if (docshell) {
-      docshell->GetBrowsingContext()->GetCustomUserAgent(customUserAgent);
-
-      if (!customUserAgent.IsEmpty()) {
-        aUserAgent = std::move(customUserAgent);
-        return;
-      }
+  if (nsIDocShell* docshell = mWindow->GetDocShell()) {
+    docshell->GetBrowsingContext()->GetCustomUserAgent(aUserAgent);
+    if (!aUserAgent.IsEmpty()) {
+      return;
     }
   }
 
@@ -1211,6 +1202,21 @@ bool Navigator::SendBeacon(const nsAString& aUrl,
     return SendBeaconInternal(aUrl, nullptr, eBeaconTypeOther, aRv);
   }
 
+  // A beacon request has keepalive set, and extracting a body from a
+  // ReadableStream with keepalive throws.
+  // https://fetch.spec.whatwg.org/#concept-bodyinit-extract step 10
+  if (StaticPrefs::dom_fetch_streaming_upload()) {
+    if (aData.Value().IsReadableStream()) {
+      aRv.ThrowTypeError("sendBeacon cannot send a ReadableStream body");
+      return false;
+    }
+  } else if (aData.Value().IsReadableStream()) {
+    // Preserve previous behaviour when the pref is false.
+    nsAutoString stringified(u"[object ReadableStream]"_ns);
+    BodyExtractor<const nsAString> body(&stringified);
+    return SendBeaconInternal(aUrl, &body, eBeaconTypeOther, aRv);
+  }
+
   if (aData.Value().IsArrayBuffer()) {
     BodyExtractor<const ArrayBuffer> body(&aData.Value().GetAsArrayBuffer());
     return SendBeaconInternal(aUrl, &body, eBeaconTypeArrayBuffer, aRv);
@@ -2112,7 +2118,7 @@ void Navigator::ClearUserAgentCache() {
 nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
                                  Document* aCallerDoc,
                                  Maybe<bool> aShouldResistFingerprinting,
-                                 nsAString& aUserAgent) {
+                                 nsACString& aUserAgent) {
   MOZ_ASSERT(NS_IsMainThread());
 
   /*
@@ -2138,9 +2144,9 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
   // We will skip the override and pass to httpHandler to get spoofed userAgent
   // when 'privacy.resistFingerprinting' is true.
   if (!shouldResistFingerprinting) {
-    nsAutoString override;
-    nsresult rv =
-        mozilla::Preferences::GetString("general.useragent.override", override);
+    nsAutoCString override;
+    nsresult rv = mozilla::Preferences::GetCString("general.useragent.override",
+                                                   override);
 
     if (NS_SUCCEEDED(rv)) {
       aUserAgent = std::move(override);
@@ -2152,9 +2158,7 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
   // return a spoofed userAgent which reveals the platform but not the
   // specific OS version, etc.
   if (shouldResistFingerprinting) {
-    nsAutoCString spoofedUA;
-    nsRFPService::GetSpoofedUserAgent(spoofedUA);
-    CopyASCIItoUTF16(spoofedUA, aUserAgent);
+    nsRFPService::GetSpoofedUserAgent(aUserAgent);
     return NS_OK;
   }
 
@@ -2165,13 +2169,10 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
     return rv;
   }
 
-  nsAutoCString ua;
-  rv = service->GetUserAgent(ua);
+  rv = service->GetUserAgent(aUserAgent);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-
-  CopyASCIItoUTF16(ua, aUserAgent);
 
   if (!aWindow) {
     return NS_OK;
@@ -2191,12 +2192,10 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
     // Do not return user agent from the request
     // if the user agent of the channel is outdated.
     if (!IsUserAgentHeaderOutdated) {
-      nsAutoCString userAgent;
-      rv = httpChannel->GetRequestHeader("User-Agent"_ns, userAgent);
+      rv = httpChannel->GetRequestHeader("User-Agent"_ns, aUserAgent);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-      CopyASCIItoUTF16(userAgent, aUserAgent);
     }
   }
   return NS_OK;

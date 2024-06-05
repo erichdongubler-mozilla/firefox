@@ -1633,13 +1633,32 @@ class Settings(
 
     val toolbarPosition: ToolbarPosition
         get() =
-            if (isTabStripEnabled) {
-                ToolbarPosition.TOP
-            } else if (shouldUseBottomToolbar) {
+            if (shouldUseBottomToolbar) {
                 ToolbarPosition.BOTTOM
             } else {
                 ToolbarPosition.TOP
             }
+
+    var shouldUseBottomTabStrip by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_tab_bar_bottom),
+            default = false,
+            persistDefaultIfNotExists = true,
+        )
+
+    val tabStripPosition: ToolbarPosition
+        get() =
+            if (shouldUseBottomTabStrip) {
+                ToolbarPosition.BOTTOM
+            } else {
+                ToolbarPosition.TOP
+            }
+
+    val shouldShowTabStripAtTop: Boolean
+        get() = isTabStripEnabled && tabStripPosition == ToolbarPosition.TOP
+
+    val shouldShowTabStripAtBottom: Boolean
+        get() = isTabStripEnabled && tabStripPosition == ToolbarPosition.BOTTOM
 
     /**
      * Check each active accessibility service to see if it can perform gestures, if any can, then it is *likely* a
@@ -2589,13 +2608,6 @@ class Settings(
             default = { FxNimbus.features.showMoreShortcuts.value().enabled },
         )
 
-    /** Indicates if Merino Client is enabled. */
-    var enableMerinoClient by
-        booleanPreference(
-            key = appContext.getPreferenceKey(R.string.pref_key_enable_merino_client),
-            default = { FxNimbus.features.merinoClient.value().enabled },
-        )
-
     /** Indicates if the Homepage Weather Widget is enabled. */
     var enableHomepageWeatherWidget by
         booleanPreference(
@@ -3258,6 +3270,13 @@ class Settings(
         booleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_tab_groups_strip),
             default = { DefaultTabManagementFeatureHelper.tabGroupsStripEnabled },
+        )
+
+    /** Whether the Tab Groups feature is visible in the browser menu. */
+    var showTabGroupsInMenu by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_show_tab_groups_in_menu),
+            default = { DefaultTabManagementFeatureHelper.showTabGroupsInMenu },
         )
 
     /** Whether the Native Share Sheet feature is enabled. */

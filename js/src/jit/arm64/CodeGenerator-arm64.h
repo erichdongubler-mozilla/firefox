@@ -24,41 +24,17 @@ class CodeGeneratorARM64 : public CodeGeneratorShared {
   CodeGeneratorARM64(MIRGenerator* gen, LIRGraph* graph, MacroAssembler* masm,
                      const wasm::CodeMetadata* wasmCodeMeta);
 
-  NonAssertingLabel deoptLabel_;
-
   MoveOperand toMoveOperand(const LAllocation a) const;
 
   void bailoutIf(Assembler::Condition condition, LSnapshot* snapshot);
   void bailoutIfTest(Assembler::Condition condition, ARMRegister rt,
                      LSnapshot* snapshot);
-  void bailoutFrom(Label* label, LSnapshot* snapshot);
-  void bailout(LSnapshot* snapshot);
-
-  template <typename T1, typename T2>
-  void bailoutCmpPtr(Assembler::Condition c, T1 lhs, T2 rhs,
-                     LSnapshot* snapshot) {
-    Label bail;
-    masm.branchPtr(c, lhs, rhs, &bail);
-    bailoutFrom(&bail, snapshot);
-  }
-  template <typename T1, typename T2>
-  void bailoutCmp32(Assembler::Condition c, T1 lhs, T2 rhs,
-                    LSnapshot* snapshot) {
-    Label bail;
-    masm.branch32(c, lhs, rhs, &bail);
-    bailoutFrom(&bail, snapshot);
-  }
-  template <typename T1, typename T2>
-  void bailoutTest32(Assembler::Condition c, T1 lhs, T2 rhs,
-                     LSnapshot* snapshot) {
-    Label bail;
-    masm.branchTest32(c, lhs, rhs, &bail);
-    bailoutFrom(&bail, snapshot);
-  }
   void bailoutIfFalseBool(Register reg, LSnapshot* snapshot) {
     masm.test32(reg, Imm32(0xFF));
     return bailoutIf(Assembler::Zero, snapshot);
   }
+
+  void emitBailoutOOL(LSnapshot* snapshot);
 
   bool generateOutOfLineCode();
 
@@ -78,8 +54,6 @@ class CodeGeneratorARM64 : public CodeGeneratorShared {
   void generateInvalidateEpilogue();
 
  public:
-  void emitBailoutOOL(LSnapshot* snapshot);
-
   void visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool);
   void visitOutOfLineWasmTruncateCheck(OutOfLineWasmTruncateCheck* ool);
 };

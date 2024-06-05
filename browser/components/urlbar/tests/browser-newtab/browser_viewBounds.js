@@ -83,9 +83,8 @@ add_task(async function leavesTheScrollableAreaAlone() {
     [scrollHeightBefore],
     async heightBefore => {
       let bar = NewtabSearchbarContentTestUtils.getUrlbar(content);
-      let scroller = NewtabSearchbarContentTestUtils.getResultsContainer(
-        content
-      ).closest(".urlbarView-body-outer");
+      let scroller =
+        NewtabSearchbarContentTestUtils.getResultsContainer(content);
       Assert.greater(
         scroller.scrollHeight,
         scroller.clientHeight,

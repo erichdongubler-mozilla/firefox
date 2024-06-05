@@ -207,6 +207,10 @@
     <string name="pref_key_toolbar_expanded" translatable="false">pref_key_toolbar_expanded</string>
     <string name="pref_key_toolbar_focus_mode" translatable="false">pref_key_toolbar_focus_mode</string>
 
+    <!-- Tab bar Settings -->
+    <string name="pref_key_tab_bar_top" translatable="false">pref_key_tab_bar_top</string>
+    <string name="pref_key_tab_bar_bottom" translatable="false">pref_key_tab_bar_bottom</string>
+
     <!-- App icon settings-->
     <string name="pref_key_app_icon">pref_key_app_icon</string>
 
@@ -227,7 +231,7 @@
     <string name="pref_key_customization_preference_screen" translatable="false">pref_key_customization_preference_screen</string>
     <string name="pref_key_website_pull_to_refresh" translatable="false">pref_key_website_pull_to_refresh</string>
     <string name="pref_key_tab_strip_show" translatable="false">pref_key_tab_strip_show</string>
-    <string name="pref_key_tab_strip_message" translatable="false">pref_key_tab_strip_message</string>
+    <string name="pref_key_tab_strip_location" translatable="false">pref_key_tab_strip_location</string>
     <string name="pref_key_dynamic_toolbar" translatable="false">pref_key_dynamic_toolbar</string>
     <string name="pref_key_use_scroll_data_for_dynamic_toolbar" translatable="false">pref_key_use_scroll_data_for_dynamic_toolbar</string>
     <string name="pref_key_swipe_toolbar_switch_tabs" translatable="false">pref_key_swipe_toolbar_switch_tabs</string>
@@ -483,7 +487,6 @@
     <string name="pref_key_enable_ads_client_for_stories" translatable="false">pref_key_enable_ads_client_for_stories</string>
     <string name="pref_key_enable_add_shortcuts_improvement" translatable="false">pref_key_enable_add_shortcuts_improvement</string>
     <string name="pref_key_show_more_shortcuts" translatable="false">pref_key_show_more_shortcuts</string>
-    <string name="pref_key_enable_merino_client" translatable="false">pref_key_enable_merino_client</string>
     <string name="pref_key_enable_homepage_weather_widget" translatable="false">pref_key_enable_homepage_weather_widget</string>
     <string name="pref_key_show_homepage_weather_widget" translatable="false">pref_key_show_homepage_weather_widget</string>
     <string name="pref_key_use_minimal_bottom_toolbar_while_entering_text" translatable="false">pref_key_use_minimal_bottom_toolbar_while_entering_text</string>"
@@ -621,6 +624,7 @@
     <string name="pref_key_tab_groups_live_reorder" translatable="false">pref_key_tab_groups_live_reorder</string>
     <string name="pref_key_tab_groups_onboarding" translatable="false">pref_key_tab_groups_onboarding</string>
     <string name="pref_key_tab_groups_strip" translatable="false">pref_key_tab_groups_strip</string>
+    <string name="pref_key_show_tab_groups_in_menu" translatable="false">pref_key_show_tab_groups_in_menu</string>
 
     <!-- Native Share Sheet -->
     <string name="pref_key_native_share_sheet" translatable="false">pref_key_native_share_sheet</string>

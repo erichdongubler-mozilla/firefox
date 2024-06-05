@@ -913,14 +913,14 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
                  "Selection cache has not been updated yet");
   }
 
-  MOZ_LOG(sIMECOLog, LogLevel::Debug,
-          ("0x%p MaybeHandleSelectionEvent(aEvent={ "
-           "mMessage=%s, mOffset=%u, mLength=%u, mReversed=%s, "
-           "mExpandToClusterBoundary=%s }), "
-           "mSelectionData=%s",
-           this, ToChar(aEvent->mMessage), aEvent->mOffset, aEvent->mLength,
-           ToChar(aEvent->mReversed), ToChar(aEvent->mExpandToClusterBoundary),
-           ToString(mSelectionData).c_str()));
+  MOZ_LOG_FMT(sIMECOLog, LogLevel::Debug,
+              "{} MaybeHandleSelectionEvent(aEvent={{ "
+              "mMessage={}, mOffset={}, mLength={}, mDirection={}, "
+              "mExpandToClusterBoundary={} }}), "
+              "mSelectionData={}",
+              static_cast<void*>(this), ToChar(aEvent->mMessage),
+              aEvent->mOffset, aEvent->mLength, aEvent->mDirection,
+              aEvent->mExpandToClusterBoundary, ToString(mSelectionData));
 
   // When we have Selection cache, and the caller wants to set same selection
   // range, we shouldn't try to compute same range because it may be impossible
@@ -932,7 +932,7 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
       mSelectionData.HasRange() &&
       mSelectionData.StartOffset() == aEvent->mOffset &&
       mSelectionData.Length() == aEvent->mLength &&
-      mSelectionData.mReversed == aEvent->mReversed) {
+      mSelectionData.mReversed == aEvent->IsReversed()) {
     if (RefPtr<Selection> selection = GetSelection()) {
       selection->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION);
     }

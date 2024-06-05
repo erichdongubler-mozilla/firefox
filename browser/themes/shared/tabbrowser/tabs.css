@@ -163,12 +163,12 @@
   @media -moz-pref("browser.nova.enabled") {
     /* 32px tab background + 2 * 9px. */
     &:not([uidensity="touch"]) {
-      --tab-inner-inline-margin: 9px;
+      --tab-margin-inline-inner: 9px;
     }
 
     /* 28px tab background + 2 * 11px. */
     &[uidensity="compact"] {
-      --tab-inner-inline-margin: 11px;
+      --tab-margin-inline-inner: 11px;
     }
   }
 }
@@ -1022,7 +1022,7 @@ tab-split-view-wrapper[dragtarget] {
 
 .tab-background {
   /* The label takes its color from the sibling .tab-content. */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-background-without-text-color */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-paired-color-tokens */
   background-color: var(--tab-background-color);
   border-radius: var(--tab-border-radius);
   margin-block: var(--tab-margin-block);
@@ -1481,7 +1481,7 @@ tab-group > tab-split-view-wrapper {
 
   &[hasactivetab] {
     /* The tabs inside the wrapper take their own colors. */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-background-without-text-color */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-paired-color-tokens */
     background-color: var(--tab-background-color-hover);
 
     @media (forced-colors) {
@@ -1630,7 +1630,7 @@ tab-group > tab-split-view-wrapper {
 
 /* Overrides for split-view-wrapped tabs in a vertical tabstrip */
 #tabbrowser-tabs[orient="vertical"] tab-split-view-wrapper {
-  --split-view-wrapper-inline-inset: calc(var(--tab-inline-padding) - var(--space-medium));
+  --split-view-wrapper-inline-inset: calc(var(--tab-padding-inline) - var(--space-medium));
 
   border-radius: var(--tab-border-radius);
   gap: var(--space-xsmall);
@@ -2919,6 +2919,7 @@ tab-group {
         width: var(--icon-size);
         height: var(--icon-size);
         padding: 2px;
+        top: -2px;
         box-shadow: var(--box-shadow-level-1);
       }
 
@@ -3082,8 +3083,10 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
 #alltabs-button {
   list-style-image: url("chrome://browser/skin/search-tabs.svg");
 
-  #TabsToolbar & {
-    list-style-image: url("chrome://global/skin/icons/arrow-down.svg");
+  @media not (-moz-platform: linux) {
+    #TabsToolbar & {
+      list-style-image: url("chrome://global/skin/icons/arrow-down.svg");
+    }
   }
 
   #tabbrowser-tabs[hiddensoundplaying] ~ & > .toolbarbutton-badge-stack > .toolbarbutton-badge {

@@ -1694,6 +1694,12 @@ html {
 .onboardingContainer:has([pos=center-large][fullscreen]) migration-wizard::part(import-primary), .onboardingContainer:has([pos=center-large][fullscreen]) migration-wizard::part(continue-primary) {
   width: 100%;
 }
+.onboardingContainer:has([pos=center-large][fullscreen]) #content-tiles-container .content-tile.has-header button.tile-header.link-style {
+  margin-block-end: 6px;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) #content-tiles-container .content-tile.has-header button.tile-header.link-style:focus-visible {
+  border-radius: var(--border-radius-small);
+}
 .onboardingContainer .section-main {
   display: flex;
   flex-direction: column;
@@ -2026,7 +2032,7 @@ html {
   padding: 1.5px 37.5px;
   margin: auto;
 }
-.onboardingContainer .screen:not([pos=split], [pos=center-large]) .secondary-cta .secondary {
+.onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) .secondary-cta .secondary {
   background: none;
   border: none;
   text-decoration: underline;
@@ -2036,24 +2042,24 @@ html {
   font-weight: normal;
   line-height: 20px;
 }
-.onboardingContainer .screen:not([pos=split], [pos=center-large]) .secondary-cta .secondary:hover {
+.onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) .secondary-cta .secondary:hover {
   color: var(--link-color-hover);
 }
-.onboardingContainer .screen:not([pos=split], [pos=center-large]) .secondary-cta .secondary:active {
+.onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) .secondary-cta .secondary:active {
   color: var(--link-color-active);
 }
 @media (prefers-contrast) {
-  .onboardingContainer .screen:not([pos=split], [pos=center-large]) .secondary-cta .secondary:active {
+  .onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) .secondary-cta .secondary:active {
     text-decoration: none;
   }
 }
-.onboardingContainer .screen:not([pos=split], [pos=center-large]) .secondary-cta.top button {
+.onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) .secondary-cta.top button {
   color: white;
 }
-.onboardingContainer .screen:not([pos=split], [pos=center-large]) .secondary-cta.top button:hover {
+.onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) .secondary-cta.top button:hover {
   color: #E0E0E6;
 }
-.onboardingContainer .screen:not([pos=split], [pos=center-large]) .additional-cta.cta-link {
+.onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) .additional-cta.cta-link {
   background: none;
   padding: 0;
   font-weight: normal;
@@ -2063,28 +2069,152 @@ html {
   cursor: pointer;
   color: var(--link-color);
 }
-.onboardingContainer .screen:not([pos=split], [pos=center-large]) .additional-cta.cta-link:hover {
+.onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) .additional-cta.cta-link:hover {
   color: var(--link-color-hover);
 }
-.onboardingContainer .screen:not([pos=split], [pos=center-large]) .additional-cta.cta-link:active {
+.onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) .additional-cta.cta-link:active {
   color: var(--link-color-active);
 }
 @media (prefers-contrast) {
-  .onboardingContainer .screen:not([pos=split], [pos=center-large]) .additional-cta.cta-link:active {
+  .onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) .additional-cta.cta-link:active {
     text-decoration: none;
   }
 }
-.onboardingContainer .screen:not([pos=split], [pos=center-large]) migration-wizard {
+.onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) migration-wizard {
   padding: 5px 60px;
 }
-.onboardingContainer .screen:not([pos=split], [pos=center-large]) migration-wizard::part(header) {
+.onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) migration-wizard::part(header) {
   text-align: center;
 }
-.onboardingContainer .screen:not([pos=split], [pos=center-large]) migration-wizard::part(buttons) {
+.onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) migration-wizard::part(buttons) {
   margin: var(--space-xxlarge) auto 0;
 }
-.onboardingContainer .screen:not([pos=split], [pos=center-large]) .welcome-text:empty {
+.onboardingContainer .screen:not([pos=split], [pos=center-large], [pos=card-stack]) .welcome-text:empty {
   margin: 0;
+}
+.onboardingContainer .screen[pos=card-stack] {
+  --card-stack-color-1: light-dark(var(--color-violet-0), var(--color-violet-90));
+  --card-stack-color-2: light-dark(var(--color-violet-10), var(--color-violet-70));
+  --card-stack-color-3: light-dark(var(--color-violet-20), var(--color-violet-80));
+  --card-stack-border: 1px solid var(--card-border-color); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: color-mix(in srgb, var(--background-color-box) 40%, var(--card-stack-color-1));
+  border: var(--card-stack-border);
+  border-radius: var(--border-radius-medium);
+  box-sizing: border-box;
+  height: 204px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  min-height: 204px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  position: relative;
+  overflow: visible;
+}
+.onboardingContainer .screen[pos=card-stack]::before, .onboardingContainer .screen[pos=card-stack]::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  block-size: 100%;
+  box-sizing: border-box;
+  border: var(--card-stack-border);
+  border-radius: var(--border-radius-medium);
+  z-index: -1;
+}
+.onboardingContainer .screen[pos=card-stack]::before {
+  inset-inline: 18px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--card-stack-color-2);
+  transform: translateY(8px); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+}
+.onboardingContainer .screen[pos=card-stack]::after {
+  inset-inline: 42px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--card-stack-color-3);
+  transform: translateY(16px); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  z-index: -2;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .onboardingContainer .screen[pos=card-stack]::before, .onboardingContainer .screen[pos=card-stack]::after {
+    transition: transform 150ms ease;
+  }
+}
+.onboardingContainer .screen[pos=card-stack]:hover::before {
+  transform: translateY(12px); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+}
+.onboardingContainer .screen[pos=card-stack]:hover::after {
+  transform: translateY(24px); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+}
+.onboardingContainer .screen[pos=card-stack] .section-secondary,
+.onboardingContainer .screen[pos=card-stack] .section-main {
+  height: 100%;
+}
+.onboardingContainer .screen[pos=card-stack] .section-secondary {
+  flex: 0 0 auto;
+  width: 318px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border-start-start-radius: var(--border-radius-medium);
+  border-end-start-radius: var(--border-radius-medium);
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+  overflow: hidden;
+}
+.onboardingContainer .screen[pos=card-stack] .section-main {
+  flex: 1;
+  flex-direction: row;
+  display: block;
+  margin: 0;
+}
+.onboardingContainer .screen[pos=card-stack] .section-main .main-content {
+  background-color: transparent;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  border-start-end-radius: var(--border-radius-medium);
+  border-end-end-radius: var(--border-radius-medium);
+  overflow: hidden;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-inline-start: var(--space-xxlarge);
+  padding-inline-end: var(--space-xxlarge);
+  padding-block: var(--space-xxlarge);
+  width: auto;
+}
+.onboardingContainer .screen[pos=card-stack] .section-main .main-content .main-content-inner {
+  justify-content: center;
+}
+.onboardingContainer .screen[pos=card-stack] .welcome-text {
+  align-items: flex-start;
+  text-align: start;
+  margin: 0;
+  gap: var(--space-small);
+}
+.onboardingContainer .screen[pos=card-stack] .welcome-text h1,
+.onboardingContainer .screen[pos=card-stack] .welcome-text h2 {
+  margin: 0;
+  line-height: 1;
+  letter-spacing: normal;
+}
+.onboardingContainer .screen[pos=card-stack] .welcome-text h1 {
+  font-size: var(--font-size-heading-medium);
+  font-weight: var(--font-weight-semibold);
+}
+.onboardingContainer .screen[pos=card-stack] .welcome-text h2 {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight);
+}
+.onboardingContainer .screen[pos=card-stack] .action-buttons {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: var(--space-small);
+  padding: 0;
+  margin-block-start: var(--space-xlarge);
+}
+.onboardingContainer .screen[pos=card-stack] .action-buttons .primary,
+.onboardingContainer .screen[pos=card-stack] .action-buttons .secondary,
+.onboardingContainer .screen[pos=card-stack] .action-buttons .additional-cta {
+  font-size: var(--font-size-root);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
 }
 .onboardingContainer .screen[pos=split]:where(:not([fullscreen])) {
   margin: auto;

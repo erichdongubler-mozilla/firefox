@@ -730,12 +730,21 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                                     ToolbarSlot(captureToolbarBounds, { toolbarBoundsInRoot = it }) {
                                         toolbarView.Content()
                                     }
+                                } else {
+                                    if (settings.shouldShowTabStripAtTop) {
+                                        TabStrip()
+                                    }
                                 }
                             },
                             bottomBar = {
                                 if (isToolbarAtTop) {
                                     ToolbarSlot(captureToolbarBounds, { navbarBoundsInRoot = it }) {
-                                        homeNavigationBar?.Content()
+                                        Column {
+                                            if (settings.shouldShowTabStripAtBottom) {
+                                                TabStrip()
+                                            }
+                                            homeNavigationBar?.Content()
+                                        }
                                     }
                                 } else {
                                     ToolbarSlot(captureToolbarBounds, { toolbarBoundsInRoot = it }) {
@@ -945,6 +954,7 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                         browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                         settings = requireComponents.settings,
                     ),
+                hideWhenKeyboardShown = requireComponents.settings.shouldUseBottomTabStrip,
                 onAddTabClick = {
                     if (requireComponents.settings.enableHomepageAsNewTab) {
                         requireComponents.useCases.fenixBrowserUseCases.addNewHomepageTab(

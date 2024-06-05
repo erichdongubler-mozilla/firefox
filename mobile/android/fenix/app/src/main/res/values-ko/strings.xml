@@ -976,7 +976,7 @@
   -->
   <string name="customize_toggle_privacy_report">개인정보 보호 보고서</string>
   <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
-  <string name="customize_toggle_continue">계속</string>
+  <string name="customize_toggle_continue">이어하기</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">북마크</string>
   <!--
@@ -1758,7 +1758,7 @@
   <!-- Text for the snackbar action button to open a completed download. -->
   <string name="download_completed_snackbar_action_open">열기</string>
   <!-- Text for the snackbar action button to undo deleting a download. -->
-  <string name="download_undo_delete_snackbar_action">실행 취소</string>
+  <string name="download_undo_delete_snackbar_action">실행취소</string>
   <!-- Text shown when no download exists -->
   <string name="download_empty_message_2">다운로드 없음</string>
   <!-- Text description shown when no download exists -->
@@ -2466,7 +2466,7 @@
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">사생활 보호 탭 닫음</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
-  <string name="snackbar_deleted_undo">실행 취소</string>
+  <string name="snackbar_deleted_undo">실행취소</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned

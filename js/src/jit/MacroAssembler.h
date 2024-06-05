@@ -564,6 +564,15 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void PopStackPtr()
       DEFINED_ON(arm, mips64, x86_shared, loong64, riscv64, wasm32);
 
+  // Push |regs| in argument order, storing the first at the highest address.
+  // Some backends may optimize this to use a single stack adjustment.
+  template <typename... Regs>
+  inline void PushRegs(const Regs&... regs);
+  // Pop |regs| in argument order, loading the first from the lowest address.
+  // Some backends may optimize this to use a single stack adjustment.
+  template <typename... Regs>
+  inline void PopRegs(const Regs&... regs);
+
   // Move the stack pointer based on the requested amount.
   void adjustStack(int amount);
   void freeStack(uint32_t amount);
@@ -3836,14 +3845,24 @@ class MacroAssembler : public MacroAssemblerSpecific {
                          Address boundsCheckLimit, Label* label) PER_ARCH;
 
   // Each wasm load/store instruction appends its own wasm::Trap::OutOfBounds.
-  void wasmLoad(const wasm::MemoryAccessDesc& access, Operand srcAddr,
-                AnyRegister out) DEFINED_ON(x86, x64);
-  void wasmLoadI64(const wasm::MemoryAccessDesc& access, Operand srcAddr,
-                   Register64 out) DEFINED_ON(x86, x64);
-  void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                 Operand dstAddr) DEFINED_ON(x86, x64);
-  void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
-                    Operand dstAddr) DEFINED_ON(x86);
+  FaultingCodeRange wasmLoad(const wasm::MemoryAccessDesc& access,
+                             Operand srcAddr, AnyRegister out)
+      DEFINED_ON(x86, x64);
+
+  FaultingCodeRange wasmLoadI64(const wasm::MemoryAccessDesc& access,
+                                Operand srcAddr, Register64 out)
+      DEFINED_ON(x64);
+  FaultingCodeRangePair wasmLoadI32x2(const wasm::MemoryAccessDesc& access,
+                                      Operand srcAddr, Register64 out)
+      DEFINED_ON(x86);
+
+  FaultingCodeRange wasmStore(const wasm::MemoryAccessDesc& access,
+                              AnyRegister value, Operand dstAddr)
+      DEFINED_ON(x86, x64);
+
+  FaultingCodeRangePair wasmStoreI32x2(const wasm::MemoryAccessDesc& access,
+                                       Register64 value, Operand dstAddr)
+      DEFINED_ON(x86);
 
   // For all the ARM/MIPS/LOONG64 wasmLoad and wasmStore functions below, `ptr`
   // MUST equal `ptrScratch`, and that register will be updated based on
@@ -3851,47 +3870,72 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   // `ptr` will be updated if access.offset32() != 0 or access.type() ==
   // Scalar::Int64.
-  void wasmLoad(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                Register ptr, Register ptrScratch, AnyRegister output)
+  FaultingCodeRange wasmLoad(const wasm::MemoryAccessDesc& access,
+                             Register memoryBase, Register ptr,
+                             Register ptrScratch, AnyRegister output)
       DEFINED_ON(arm, loong64, mips64);
-  void wasmLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                   Register ptr, Register ptrScratch, Register64 output)
-      DEFINED_ON(arm, mips64, loong64);
-  void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                 Register memoryBase, Register ptr, Register ptrScratch)
+
+  FaultingCodeRangePair wasmLoadI32x2(const wasm::MemoryAccessDesc& access,
+                                      Register memoryBase, Register ptr,
+                                      Register ptrScratch, Register64 output)
+      DEFINED_ON(arm);
+  FaultingCodeRange wasmLoadI64(const wasm::MemoryAccessDesc& access,
+                                Register memoryBase, Register ptr,
+                                Register ptrScratch, Register64 output)
+      DEFINED_ON(mips64, loong64);
+
+  FaultingCodeRange wasmStore(const wasm::MemoryAccessDesc& access,
+                              AnyRegister value, Register memoryBase,
+                              Register ptr, Register ptrScratch)
       DEFINED_ON(arm, loong64, mips64);
-  void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
-                    Register memoryBase, Register ptr, Register ptrScratch)
-      DEFINED_ON(arm, mips64, loong64);
+
+  FaultingCodeRangePair wasmStoreI32x2(const wasm::MemoryAccessDesc& access,
+                                       Register64 value, Register memoryBase,
+                                       Register ptr, Register ptrScratch)
+      DEFINED_ON(arm);
+  FaultingCodeRange wasmStoreI64(const wasm::MemoryAccessDesc& access,
+                                 Register64 value, Register memoryBase,
+                                 Register ptr, Register ptrScratch)
+      DEFINED_ON(mips64, loong64);
 
   // These accept general memoryBase + ptr + offset (in `access`); the offset is
   // always smaller than the guard region.  They will insert an additional add
   // if the offset is nonzero, and of course that add may require a temporary
   // register for the offset if the offset is large, and instructions to set it
   // up.
-  void wasmLoad(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                Register ptr, AnyRegister output) DEFINED_ON(arm64);
-  void wasmLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                   Register ptr, Register64 output) DEFINED_ON(arm64);
-  void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                 Register memoryBase, Register ptr) DEFINED_ON(arm64);
-  void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
-                    Register memoryBase, Register ptr) DEFINED_ON(arm64);
+  FaultingCodeRange wasmLoad(const wasm::MemoryAccessDesc& access,
+                             Register memoryBase, Register ptr,
+                             AnyRegister output) DEFINED_ON(arm64);
+  FaultingCodeRange wasmLoadI64(const wasm::MemoryAccessDesc& access,
+                                Register memoryBase, Register ptr,
+                                Register64 output) DEFINED_ON(arm64);
+  FaultingCodeRange wasmStore(const wasm::MemoryAccessDesc& access,
+                              AnyRegister value, Register memoryBase,
+                              Register ptr) DEFINED_ON(arm64);
+  FaultingCodeRange wasmStoreI64(const wasm::MemoryAccessDesc& access,
+                                 Register64 value, Register memoryBase,
+                                 Register ptr) DEFINED_ON(arm64);
 
   // RISCV64 additionally supports ZeroExtendIndex. The other parameters are the
   // same as for ARM64.
-  void wasmLoad(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                Register ptr, AnyRegister output,
-                wasm::ZeroExtendIndex zeroExtend) DEFINED_ON(riscv64);
-  void wasmLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                   Register ptr, Register64 output,
-                   wasm::ZeroExtendIndex zeroExtend) DEFINED_ON(riscv64);
-  void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                 Register memoryBase, Register ptr,
-                 wasm::ZeroExtendIndex zeroExtend) DEFINED_ON(riscv64);
-  void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
-                    Register memoryBase, Register ptr,
-                    wasm::ZeroExtendIndex zeroExtend) DEFINED_ON(riscv64);
+  FaultingCodeRange wasmLoad(const wasm::MemoryAccessDesc& access,
+                             Register memoryBase, Register ptr,
+                             AnyRegister output,
+                             wasm::ZeroExtendIndex zeroExtend)
+      DEFINED_ON(riscv64);
+  FaultingCodeRange wasmLoadI64(const wasm::MemoryAccessDesc& access,
+                                Register memoryBase, Register ptr,
+                                Register64 output,
+                                wasm::ZeroExtendIndex zeroExtend)
+      DEFINED_ON(riscv64);
+  FaultingCodeRange wasmStore(const wasm::MemoryAccessDesc& access,
+                              AnyRegister value, Register memoryBase,
+                              Register ptr, wasm::ZeroExtendIndex zeroExtend)
+      DEFINED_ON(riscv64);
+  FaultingCodeRange wasmStoreI64(const wasm::MemoryAccessDesc& access,
+                                 Register64 value, Register memoryBase,
+                                 Register ptr, wasm::ZeroExtendIndex zeroExtend)
+      DEFINED_ON(riscv64);
 
   // `ptr` will always be updated.
   void wasmUnalignedLoad(const wasm::MemoryAccessDesc& access,
@@ -4046,11 +4090,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // pinned reg.
   void wasmCallRef(const wasm::CallSiteDesc& desc,
                    const wasm::CalleeDesc& callee, CodeOffset* fastCallOffset,
-                   CodeOffset* slowCallOffset);
+                   CodeOffset* slowCallOffset, wasm::StackMap* stackMapForTraps,
+                   wasm::StackMapRegistry* stackMapRegistry);
 
   void wasmReturnCallRef(const wasm::CallSiteDesc& desc,
                          const wasm::CalleeDesc& callee,
-                         const ReturnCallAdjustmentInfo& retCallInfo);
+                         const ReturnCallAdjustmentInfo& retCallInfo,
+                         wasm::StackMap* stackMapForTraps,
+                         wasm::StackMapRegistry* stackMapRegistry);
 
   // This function takes care of loading the pointer to the current instance
   // as the implicit first argument. It preserves instance and pinned registers.
@@ -4082,9 +4129,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // itself being out of bounds.
   //
   // `length` and `limit` will be unchanged.
-  void wasmBoundsCheckRange32(Register index, Register length, Register limit,
-                              Register tmp,
-                              const wasm::TrapSiteDesc& trapSiteDesc);
+  FaultingCodeRange wasmBoundsCheckRange32(
+      Register index, Register length, Register limit, Register tmp,
+      const wasm::TrapSiteDesc& trapSiteDesc);
 
   // Returns information about which registers are necessary for a
   // branchWasmRefIsSubtype call.
@@ -4562,84 +4609,95 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // Constraints, when omitted, are exactly as for the primitive operations
   // above.
 
-  void wasmCompareExchange(const wasm::MemoryAccessDesc& access,
-                           const Address& mem, Register expected,
-                           Register replacement, Register output)
+  FaultingCodeRange wasmCompareExchange(const wasm::MemoryAccessDesc& access,
+                                        const Address& mem, Register expected,
+                                        Register replacement, Register output)
       DEFINED_ON(arm, arm64, x86_shared);
 
-  void wasmCompareExchange(const wasm::MemoryAccessDesc& access,
-                           const BaseIndex& mem, Register expected,
-                           Register replacement, Register output)
+  FaultingCodeRange wasmCompareExchange(const wasm::MemoryAccessDesc& access,
+                                        const BaseIndex& mem, Register expected,
+                                        Register replacement, Register output)
       DEFINED_ON(arm, arm64, x86_shared);
 
-  void wasmCompareExchange(const wasm::MemoryAccessDesc& access,
-                           const Address& mem, Register expected,
-                           Register replacement, Register valueTemp,
-                           Register offsetTemp, Register maskTemp,
-                           Register output)
+  FaultingCodeRange wasmCompareExchange(const wasm::MemoryAccessDesc& access,
+                                        const Address& mem, Register expected,
+                                        Register replacement,
+                                        Register valueTemp, Register offsetTemp,
+                                        Register maskTemp, Register output)
       DEFINED_ON(mips64, loong64, riscv64);
 
-  void wasmCompareExchange(const wasm::MemoryAccessDesc& access,
-                           const BaseIndex& mem, Register expected,
-                           Register replacement, Register valueTemp,
-                           Register offsetTemp, Register maskTemp,
-                           Register output)
+  FaultingCodeRange wasmCompareExchange(const wasm::MemoryAccessDesc& access,
+                                        const BaseIndex& mem, Register expected,
+                                        Register replacement,
+                                        Register valueTemp, Register offsetTemp,
+                                        Register maskTemp, Register output)
       DEFINED_ON(mips64, loong64, riscv64);
 
-  void wasmCompareExchange(const wasm::MemoryAccessDesc& access,
-                           const BaseIndex& mem, Register expected,
-                           Register replacement, Register valueTemp,
-                           Register offsetTemp, Register maskTemp,
-                           Register output, wasm::ZeroExtendIndex zeroExtend)
+  FaultingCodeRange wasmCompareExchange(const wasm::MemoryAccessDesc& access,
+                                        const BaseIndex& mem, Register expected,
+                                        Register replacement,
+                                        Register valueTemp, Register offsetTemp,
+                                        Register maskTemp, Register output,
+                                        wasm::ZeroExtendIndex zeroExtend)
       DEFINED_ON(loong64, riscv64);
 
-  void wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
-                          const Address& mem, Register value, Register output)
+  FaultingCodeRange wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
+                                       const Address& mem, Register value,
+                                       Register output)
       DEFINED_ON(arm, arm64, x86_shared);
 
-  void wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
-                          const BaseIndex& mem, Register value, Register output)
+  FaultingCodeRange wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
+                                       const BaseIndex& mem, Register value,
+                                       Register output)
       DEFINED_ON(arm, arm64, x86_shared);
 
-  void wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
-                          const Address& mem, Register value,
-                          Register valueTemp, Register offsetTemp,
-                          Register maskTemp, Register output)
+  FaultingCodeRange wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
+                                       const Address& mem, Register value,
+                                       Register valueTemp, Register offsetTemp,
+                                       Register maskTemp, Register output)
       DEFINED_ON(mips64, loong64, riscv64);
 
-  void wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
-                          const BaseIndex& mem, Register value,
-                          Register valueTemp, Register offsetTemp,
-                          Register maskTemp, Register output)
+  FaultingCodeRange wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
+                                       const BaseIndex& mem, Register value,
+                                       Register valueTemp, Register offsetTemp,
+                                       Register maskTemp, Register output)
       DEFINED_ON(mips64, loong64, riscv64);
 
-  void wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
-                          const BaseIndex& mem, Register value,
-                          Register valueTemp, Register offsetTemp,
-                          Register maskTemp, Register output,
-                          wasm::ZeroExtendIndex zeroExtend)
+  FaultingCodeRange wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
+                                       const BaseIndex& mem, Register value,
+                                       Register valueTemp, Register offsetTemp,
+                                       Register maskTemp, Register output,
+                                       wasm::ZeroExtendIndex zeroExtend)
       DEFINED_ON(loong64, riscv64);
 
-  void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                         Register value, const Address& mem, Register temp,
-                         Register output) DEFINED_ON(arm, arm64, x86_shared);
+  FaultingCodeRange wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access,
+                                      AtomicOp op, Register value,
+                                      const Address& mem, Register temp,
+                                      Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-  void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                         Imm32 value, const Address& mem, Register temp,
-                         Register output) DEFINED_ON(x86_shared);
+  FaultingCodeRange wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access,
+                                      AtomicOp op, Imm32 value,
+                                      const Address& mem, Register temp,
+                                      Register output) DEFINED_ON(x86_shared);
 
-  void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                         Register value, const BaseIndex& mem, Register temp,
-                         Register output) DEFINED_ON(arm, arm64, x86_shared);
+  FaultingCodeRange wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access,
+                                      AtomicOp op, Register value,
+                                      const BaseIndex& mem, Register temp,
+                                      Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-  void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                         Imm32 value, const BaseIndex& mem, Register temp,
-                         Register output) DEFINED_ON(x86_shared);
+  FaultingCodeRange wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access,
+                                      AtomicOp op, Imm32 value,
+                                      const BaseIndex& mem, Register temp,
+                                      Register output) DEFINED_ON(x86_shared);
 
-  void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                         Register value, const Address& mem, Register valueTemp,
-                         Register offsetTemp, Register maskTemp,
-                         Register output) DEFINED_ON(mips64, loong64, riscv64);
+  FaultingCodeRange wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access,
+                                      AtomicOp op, Register value,
+                                      const Address& mem, Register valueTemp,
+                                      Register offsetTemp, Register maskTemp,
+                                      Register output)
+      DEFINED_ON(mips64, loong64, riscv64);
 
   void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
                          Register value, const BaseIndex& mem,
@@ -4701,13 +4759,15 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // x86: `temp` must be ecx:ebx; `output` must be edx:eax.
   // ARM: `temp` should be invalid; `output` must be (even,odd) pair.
 
-  void wasmAtomicLoad64(const wasm::MemoryAccessDesc& access,
-                        const Address& mem, Register64 temp, Register64 output)
+  FaultingCodeRange wasmAtomicLoad64(const wasm::MemoryAccessDesc& access,
+                                     const Address& mem, Register64 temp,
+                                     Register64 output)
       DEFINED_ON(arm, x86, wasm32);
 
-  void wasmAtomicLoad64(const wasm::MemoryAccessDesc& access,
-                        const BaseIndex& mem, Register64 temp,
-                        Register64 output) DEFINED_ON(arm, x86, wasm32);
+  FaultingCodeRange wasmAtomicLoad64(const wasm::MemoryAccessDesc& access,
+                                     const BaseIndex& mem, Register64 temp,
+                                     Register64 output)
+      DEFINED_ON(arm, x86, wasm32);
 
   // x86: `expected` must be the same as `output`, and must be edx:eax.
   // x86: `replacement` must be ecx:ebx.
@@ -4717,15 +4777,17 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // ARM64: The base register in `mem` must not overlap `output`.
   // MIPS: Registers must be distinct.
 
-  void wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
-                             const Address& mem, Register64 expected,
-                             Register64 replacement,
-                             Register64 output) PER_ARCH;
+  FaultingCodeRange wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
+                                          const Address& mem,
+                                          Register64 expected,
+                                          Register64 replacement,
+                                          Register64 output) PER_ARCH;
 
-  void wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
-                             const BaseIndex& mem, Register64 expected,
-                             Register64 replacement,
-                             Register64 output) PER_ARCH;
+  FaultingCodeRange wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
+                                          const BaseIndex& mem,
+                                          Register64 expected,
+                                          Register64 replacement,
+                                          Register64 output) PER_ARCH;
 
   void wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
                              const BaseIndex& mem, Register64 expected,
@@ -4738,13 +4800,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // pairs.
   // MIPS: Registers must be distinct.
 
-  void wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
-                            const Address& mem, Register64 value,
-                            Register64 output) PER_ARCH;
+  FaultingCodeRange wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
+                                         const Address& mem, Register64 value,
+                                         Register64 output) PER_ARCH;
 
-  void wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
-                            const BaseIndex& mem, Register64 value,
-                            Register64 output) PER_ARCH;
+  FaultingCodeRange wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
+                                         const BaseIndex& mem, Register64 value,
+                                         Register64 output) PER_ARCH;
 
   void wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
                             const BaseIndex& mem, Register64 value,
@@ -4757,14 +4819,16 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // pairs.
   // MIPS: Registers must be distinct.
 
-  void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                           Register64 value, const Address& mem,
-                           Register64 temp, Register64 output)
+  FaultingCodeRange wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access,
+                                        AtomicOp op, Register64 value,
+                                        const Address& mem, Register64 temp,
+                                        Register64 output)
       DEFINED_ON(arm, arm64, mips64, loong64, riscv64, x64);
 
-  void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                           Register64 value, const BaseIndex& mem,
-                           Register64 temp, Register64 output)
+  FaultingCodeRange wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access,
+                                        AtomicOp op, Register64 value,
+                                        const BaseIndex& mem, Register64 temp,
+                                        Register64 output)
       DEFINED_ON(arm, arm64, mips64, loong64, riscv64, x64);
 
   void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
@@ -4773,13 +4837,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
                            wasm::ZeroExtendIndex zeroExtend)
       DEFINED_ON(loong64, riscv64);
 
-  void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                           const Address& value, const Address& mem,
-                           Register64 temp, Register64 output) DEFINED_ON(x86);
+  FaultingCodeRangePair wasmAtomicFetchOp32x2(
+      const wasm::MemoryAccessDesc& access, AtomicOp op, const Address& value,
+      const Address& mem, Register64 temp, Register64 output) DEFINED_ON(x86);
 
-  void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                           const Address& value, const BaseIndex& mem,
-                           Register64 temp, Register64 output) DEFINED_ON(x86);
+  FaultingCodeRangePair wasmAtomicFetchOp32x2(
+      const wasm::MemoryAccessDesc& access, AtomicOp op, const Address& value,
+      const BaseIndex& mem, Register64 temp, Register64 output) DEFINED_ON(x86);
 
   // Here `value` can be any register.
 

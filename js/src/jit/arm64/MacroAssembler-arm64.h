@@ -5,6 +5,8 @@
 #ifndef jit_arm64_MacroAssembler_arm64_h
 #define jit_arm64_MacroAssembler_arm64_h
 
+#include <type_traits>
+
 #include "jit/arm64/Assembler-arm64.h"
 #include "jit/arm64/vixl/MacroAssembler-vixl.h"
 #include "jit/AtomicOp.h"
@@ -27,6 +29,9 @@ namespace jit {
 // Import VIXL operands directly into the jit namespace for shared code.
 using vixl::MemOperand;
 using vixl::Operand;
+
+using js::wasm::FaultingCodeRange;
+using js::wasm::FaultingCodeRangePair;
 
 struct ImmShiftedTag : public ImmWord {
   explicit ImmShiftedTag(JSValueType type)
@@ -205,6 +210,22 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     MOZ_ASSERT(f.isDouble() || f.isSingle(), "simd128 is not supported");
     // We pop the entire Dx register even when storing a Sx.
     vixl::MacroAssembler::Pop(ARMFPRegister(f, 64));
+  }
+
+  template <typename... Regs>
+  void pushRegs(const Regs&... regs) {
+    static_assert((std::is_convertible_v<Regs, Register> && ...));
+    static_assert(sizeof...(Regs) > 0 && sizeof...(Regs) <= 4);
+
+    push(regs...);
+  }
+
+  template <typename... Regs>
+  void popRegs(const Regs&... regs) {
+    static_assert((std::is_convertible_v<Regs, Register> && ...));
+    static_assert(sizeof...(Regs) > 0 && sizeof...(Regs) <= 4);
+
+    pop(regs...);
   }
 
   // Update sp with the value of the current active stack pointer, if necessary.
@@ -2006,14 +2027,18 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void profilerEnterFrame(Register framePtr, Register scratch);
   void profilerExitFrame();
 
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                    Register ptr, AnyRegister outany, Register64 out64);
-  void wasmLoadImpl(const wasm::MemoryAccessDesc& access, MemOperand srcAddr,
-                    AnyRegister outany, Register64 out64);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, AnyRegister valany,
-                     Register64 val64, Register memoryBase, Register ptr);
-  void wasmStoreImpl(const wasm::MemoryAccessDesc& access, MemOperand destAddr,
-                     AnyRegister valany, Register64 val64);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 Register memoryBase, Register ptr,
+                                 AnyRegister outany, Register64 out64);
+  FaultingCodeRange wasmLoadImpl(const wasm::MemoryAccessDesc& access,
+                                 MemOperand srcAddr, AnyRegister outany,
+                                 Register64 out64);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  AnyRegister valany, Register64 val64,
+                                  Register memoryBase, Register ptr);
+  FaultingCodeRange wasmStoreImpl(const wasm::MemoryAccessDesc& access,
+                                  MemOperand destAddr, AnyRegister valany,
+                                  Register64 val64);
   // The complete address is in `address`, and `access` is used for its type
   // attributes only; its `offset` is ignored.
   void wasmLoadAbsolute(const wasm::MemoryAccessDesc& access,

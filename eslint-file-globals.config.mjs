@@ -300,7 +300,7 @@ export default [
   {
     name: "globals-frame-script",
     files: [
-      "browser/base/content/test/performance/browser_startup_content.js",
+      "browser/base/content/test/browser-performance/browser_startup_content.js",
       "devtools/server/startup/frame.js",
       "docshell/test/browser/file_bug1328501_framescript.js",
       "dom/indexedDB/test/test_message_manager_ipc.html",

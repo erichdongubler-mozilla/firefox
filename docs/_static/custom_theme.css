@@ -101,3 +101,16 @@ pre.mermaid {
     width: auto;
   }
 }
+
+/* The extension wraps each diagram in this flex container to hold its
+   fullscreen button, which makes the diagram's box a flex item. `safe` leaves
+   a diagram wider than the column at the column's start, where the whole of
+   it can be scrolled to. */
+.mermaid-container {
+  justify-content: safe center;
+
+  /* The caption sits under the diagram it belongs to. */
+  & + figcaption {
+    text-align: center;
+  }
+}

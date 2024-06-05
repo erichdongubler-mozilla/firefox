@@ -3,6 +3,8 @@
 
 "use strict";
 
+MLPerfTestUtils.init(this);
+
 const perfMetadata = {
   owner: "Form Autofill Team",
   name: "browser_formautofill_ml_perf.js",
@@ -255,8 +257,6 @@ add_task(async function test_formautofill_ml_performance() {
 
     try {
       await MLPerfTestUtils.runPerfScenario({
-        Assert,
-        info,
         metricPrefix: `FORM-AUTOFILL-${architecture.name}`,
         scenario: runAutofillScenario,
         engines: architecture.engines,

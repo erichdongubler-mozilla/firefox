@@ -23,6 +23,7 @@
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/ipc/IPCTypes.h"
+#include "mozilla/layers/LayersTypes.h"
 #include "nsSize.h"
 #include "nsString.h"
 #include "nsTString.h"
@@ -67,6 +68,7 @@ class SurfaceDescriptorDXGIYCbCr;
 
 #ifdef MOZ_WIDGET_ANDROID
 class AndroidHardwareBuffer;
+class AndroidImageReader;
 class SurfaceTextureDescriptor;
 #endif
 
@@ -254,6 +256,11 @@ class GLBlitHelper final {
                        Maybe<gfxAlphaType> convertAlpha = {});
 #ifdef MOZ_WIDGET_ANDROID
   bool Blit(layers::AndroidHardwareBuffer* buffer, const gfx::IntRect& destRect,
+            OriginPos destOrigin, const gfx::IntSize& fbSize = gfx::IntSize(),
+            Maybe<gfxAlphaType> convertAlpha = {}) const;
+  bool Blit(layers::AndroidImageReader* imageReader,
+            const layers::AndroidMediaCodecFrameId frameId,
+            const gfx::IntSize& texSize, const gfx::IntRect& destRect,
             OriginPos destOrigin, const gfx::IntSize& fbSize = gfx::IntSize(),
             Maybe<gfxAlphaType> convertAlpha = {}) const;
   bool Blit(const java::GeckoSurfaceTexture::Ref& surfaceTexture,

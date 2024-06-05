@@ -575,6 +575,14 @@
             ? gBrowser.pinnedTabCount
             : dropIndex,
         });
+
+        // The group's tabs leave the window along with the group, so there is
+        // no _expandGroupOnDrop to release the space _resetTabsAfterDrop keeps
+        // reserved for them.
+        let periphery = draggedTab.ownerDocument.getElementById(
+          "tabbrowser-arrowscrollbox-periphery"
+        );
+        this.#releaseSpaceInScrolledContent(periphery);
       } else if (draggedTab) {
         // Move the tabs into this window. To avoid multiple tab-switches in
         // the original window, the selected tab should be adopted last.

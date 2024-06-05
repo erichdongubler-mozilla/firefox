@@ -9,6 +9,12 @@ import "chrome://browser/content/aiwindow/components/aitab-header.mjs";
 export default {
   title: "Domain-specific UI Widgets/AI Window/AI Tab Header",
   component: "aitab-header",
+  // The type scale queries a container that aitab-page normally provides.
+  // Without it the headings stay at their narrow sizes at every width.
+  decorators: [
+    story =>
+      html`<div style="container: aitab-page / inline-size;">${story()}</div>`,
+  ],
   argTypes: {
     createdAt: { control: { type: "text" } },
     heading: { control: { type: "text" } },

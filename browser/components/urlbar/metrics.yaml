@@ -1694,12 +1694,14 @@ urlbar.searchmode:
       Temporary decision-making probe.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2042945
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072847
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2042945
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072847
     notification_emails:
       - fx-search-telemetry@mozilla.com
       - dong@mozilla.com
-    expires: 160
+    expires: 172
     data_sensitivity:
       - interaction
 

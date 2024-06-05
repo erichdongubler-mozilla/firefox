@@ -21,6 +21,7 @@
     --background-color-warning: light-dark(var(--color-yellow-0), var(--color-yellow-90));
 
     /** border **/
+    --border-color-deemphasized: color-mix(in srgb, currentColor 24%, transparent);
     --border-color-error: light-dark(var(--color-red-70), var(--color-red-20));
     --border-color-interactive-hover: var(--border-color-interactive);
     --border-color-interactive-active: var(--border-color-interactive);
@@ -399,7 +400,7 @@
     --icon-size-xxlarge: var(--size-item-xlarge);
 
     /** info-bar **/
-    --info-bar-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-gray-60));
+    --info-bar-border-color: var(--border-color-deemphasized);
     --info-bar-margin: 4px;
 
     /** input **/
@@ -600,9 +601,6 @@
       --icon-color-success: var(--icon-color);
       --icon-color-warning: var(--icon-color);
 
-      /** info-bar **/
-      --info-bar-border-color: CanvasText;
-
       /** opacity **/
       --opacity-deemphasized: 1;
       --opacity-deemphasized-strong: 1;
@@ -653,8 +651,6 @@
       --button-background-color-destructive-active: var(--button-background-color-primary-active);
       --button-background-color-destructive-disabled: var(--button-background-color-primary-disabled);
       --button-background-color-ghost: ButtonFace;
-      --button-background-color-ghost-hover: var(--button-background-color-hover);
-      --button-background-color-ghost-active: var(--button-background-color-active);
       --button-background-color-menu: Menu;
       --button-background-color-menu-hover: -moz-menuhover;
       --button-background-color-menu-active: var(--button-background-color-menu-hover);
@@ -759,10 +755,12 @@
       --background-color-warning: light-dark(var(--color-yellow-10), var(--color-yellow-70));
 
       /** border **/
+      --border-color-deemphasized: color-mix(in srgb, currentColor 24%, transparent);
       --border-color-error: light-dark(var(--color-red-50), var(--color-red-20));
       --border-color-interactive-hover: light-dark(var(--color-gray-50), var(--color-gray-20));
       --border-color-interactive-active: light-dark(var(--color-gray-50), var(--color-gray-15));
       --border-color-interactive-disabled: light-dark(var(--color-gray-25), var(--color-gray-55));
+      --border-color-interactive: light-dark(var(--color-gray-45), var(--color-gray-40));
       --border-radius-xsmall: 4px;
       --border-radius-small: 8px;
       --border-radius-medium: 12px;
@@ -784,8 +782,6 @@
       --button-background-color-destructive-hover: light-dark(var(--color-red-60), var(--color-red-20));
       --button-background-color-destructive-active: light-dark(var(--color-red-70), var(--color-red-10));
       --button-background-color-ghost: var(--button-background-color);
-      --button-background-color-ghost-hover: var(--button-background-color-hover);
-      --button-background-color-ghost-active: var(--button-background-color-active);
       --button-background-color-ghost-selected: var(--button-background-color-selected);
       --button-background-color-muted: light-dark(var(--color-gray-20), var(--color-gray-55));
       --button-background-color-muted-hover: light-dark(var(--color-gray-30), var(--color-gray-45));
@@ -843,7 +839,7 @@
       --card-header-border-color: transparent;
 
       /** color **/
-      --color-accent-attention: light-dark(var(--color-green-40), var(--color-green-30));
+      --color-accent-attention: light-dark(var(--color-green-50), var(--color-green-20));
       --color-accent-primary: light-dark(var(--color-violet-50), var(--color-violet-30));
       --color-accent-primary-hover: light-dark(var(--color-violet-60), var(--color-violet-20));
       --color-accent-primary-active: light-dark(var(--color-violet-70), var(--color-violet-10));
@@ -981,6 +977,7 @@
       --icon-size-xlarge: var(--size-item-large);
 
       /** info-bar **/
+      --info-bar-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-gray-60));
       --info-bar-margin: 0;
 
       /** input **/
@@ -1051,6 +1048,9 @@
 
     @layer tokens-prefers-contrast-nova {
       @media (prefers-contrast) {
+        /** info-bar **/
+        --info-bar-border-color: CanvasText;
+
         /** text-color **/
         --text-color: CanvasText;
         --text-color-error: inherit;

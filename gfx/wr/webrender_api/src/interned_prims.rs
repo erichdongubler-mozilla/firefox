@@ -19,7 +19,7 @@ use crate::{
 };
 use crate::key_types::{
     BorderRadiusAu, ConicGradientParams, GradientStopKey, NinePatchDescriptor,
-    NormalBorderAu, PointKey, PrimKeyCommonData, RadialGradientParams, SizeKey, StretchSizeKey,
+    NormalBorderAu, PrimKeyCommonData, RadialGradientParams, SizeKey, StretchSizeKey,
     VectorKey,
 };
 use crate::units::{LayoutSideOffsetsAu, TileOffset};
@@ -48,6 +48,8 @@ pub struct RectanglePrim {
     pub color: PropertyBinding<ColorU>,
 }
 
+pub type RectangleKey = PrimKey<RectanglePrim>;
+
 #[derive(Debug, Clone, MallocSizeOf, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BoxShadow {
     pub color: ColorU,
@@ -63,6 +65,8 @@ pub struct BoxShadow {
     pub spread_amount: Au,
 }
 
+pub type BoxShadowKey = PrimKey<BoxShadow>;
+
 #[derive(Debug, Clone, Eq, PartialEq, MallocSizeOf, Hash, Serialize, Deserialize)]
 pub struct Image {
     pub key: ImageKey,
@@ -72,6 +76,10 @@ pub struct Image {
     pub image_rendering: ImageRendering,
     pub alpha_type: AlphaType,
 }
+
+/// Named to stay clear of `crate::ImageKey`, the resource key that is one of
+/// the fields.
+pub type ImagePrimKey = PrimKey<Image>;
 
 #[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
 pub struct YuvImage {
@@ -83,6 +91,8 @@ pub struct YuvImage {
     pub image_rendering: ImageRendering,
 }
 
+pub type YuvImagePrimKey = PrimKey<YuvImage>;
+
 #[derive(Clone, Debug, Hash, MallocSizeOf, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LineDecoration {
     pub style: LineStyle,
@@ -91,11 +101,15 @@ pub struct LineDecoration {
     pub color: ColorU,
 }
 
+pub type LineDecorationKey = PrimKey<LineDecoration>;
+
 #[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
 pub struct NormalBorderPrim {
     pub border: NormalBorderAu,
     pub widths: LayoutSideOffsetsAu,
 }
+
+pub type NormalBorderKey = PrimKey<NormalBorderPrim>;
 
 /// Interned representation of an image-source nine-patch border. The interned
 /// key stores the image request's parts directly (rather than a webrender
@@ -109,6 +123,8 @@ pub struct ImageBorder {
     pub nine_patch: NinePatchDescriptor,
 }
 
+pub type ImageBorderKey = PrimKey<ImageBorder>;
+
 #[derive(Debug, Clone, Eq, PartialEq, MallocSizeOf, Hash, Serialize, Deserialize)]
 pub struct BackdropCapture {
 }
@@ -120,8 +136,8 @@ pub struct BackdropRender {
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
 pub struct LinearGradient {
     pub extend_mode: ExtendMode,
-    pub start_point: PointKey,
-    pub end_point: PointKey,
+    pub start_point: VectorKey,
+    pub end_point: VectorKey,
     /// Per-axis tile size encoded as a fraction of the prim's size. See the
     /// matching `stretch_ratio` field on `LinearGradientKey`.
     pub stretch_ratio: SizeKey,
@@ -134,7 +150,7 @@ pub struct LinearGradient {
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
 pub struct RadialGradient {
     pub extend_mode: ExtendMode,
-    pub center: PointKey,
+    pub center: VectorKey,
     pub params: RadialGradientParams,
     /// Per-axis tile size encoded as a fraction of the prim's size. See the
     /// matching `stretch_ratio` field on `RadialGradientKey`.
@@ -147,7 +163,7 @@ pub struct RadialGradient {
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ConicGradient {
     pub extend_mode: ExtendMode,
-    pub center: PointKey,
+    pub center: VectorKey,
     pub params: ConicGradientParams,
     /// Per-axis tile size encoded as a fraction of the prim's size. See the
     /// matching `stretch_ratio` field on `ConicGradientKey`.
@@ -167,8 +183,8 @@ pub struct ConicGradient {
 pub struct LinearGradientKey {
     pub common: PrimKeyCommonData,
     pub extend_mode: ExtendMode,
-    pub start_point: PointKey,
-    pub end_point: PointKey,
+    pub start_point: VectorKey,
+    pub end_point: VectorKey,
     /// Per-axis tile size encoded as a fraction of `common.prim_size`. The
     /// runtime `stretch_size` is `stretch_ratio * common.prim_size`.
     pub stretch_ratio: SizeKey,
@@ -198,7 +214,7 @@ impl LinearGradientKey {
 pub struct RadialGradientKey {
     pub common: PrimKeyCommonData,
     pub extend_mode: ExtendMode,
-    pub center: PointKey,
+    pub center: VectorKey,
     pub params: RadialGradientParams,
     /// Per-axis tile size encoded as a fraction of `common.prim_size`. The
     /// runtime `stretch_size` is `stretch_ratio * common.prim_size`.
@@ -227,7 +243,7 @@ impl RadialGradientKey {
 pub struct ConicGradientKey {
     pub common: PrimKeyCommonData,
     pub extend_mode: ExtendMode,
-    pub center: PointKey,
+    pub center: VectorKey,
     pub params: ConicGradientParams,
     /// Per-axis tile size encoded as a fraction of `common.prim_size`. The
     /// runtime `stretch_size` is `stretch_ratio * common.prim_size`.

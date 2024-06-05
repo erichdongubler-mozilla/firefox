@@ -63,10 +63,6 @@
 using namespace mozilla;
 using namespace mozilla::net;
 
-// None of our implementations expose a TTL for negative responses, so we use a
-// constant always.
-static const unsigned int NEGATIVE_RECORD_LIFETIME = 60;
-
 //----------------------------------------------------------------------------
 
 // Use a persistent thread pool in order to avoid spinning up new threads all
@@ -634,6 +630,21 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
             glean::dns::lookup_method.AccumulateSingleSample(
                 METHOD_NETWORK_FIRST);
           }
+          // Record why the cache could not serve this lookup (A/AAAA or by-type
+          // such as HTTPS), keyed by family:
+          //   absent  - no entry existed (never cached, or previously evicted);
+          //   expired - an entry existed and its TTL had lapsed (a longer TTL
+          //             would have turned this into a hit);
+          //   refresh - an entry existed and was still valid, but we bypassed
+          //             it (RESOLVE_BYPASS_CACHE / *REFRESH* flags, incl. Happy
+          //             Eyeballs' negative-cache refresh).
+          nsLiteralCString missReason =
+              rec->mValidStart.IsNull() ? "absent"_ns
+              : (rec->CheckExpiration(now) == nsHostRecord::EXP_EXPIRED)
+                  ? "expired"_ns
+                  : "refresh"_ns;
+          glean::dns::cache_miss_reason.Get(RecordFamilyLabel(rec), missReason)
+              .Add(1);
           if (NS_FAILED(rv) && callback->isInList()) {
             callback->remove();
           } else {
@@ -1302,9 +1313,13 @@ void nsHostResolver::PrepareRecordExpirationAddrRecord(
   MOZ_ASSERT(((bool)rec->addr_info) != rec->negative);
   mQueue.mLock.AssertCurrentThreadOwns();
   if (!rec->addr_info) {
-    rec->SetExpiration(TimeStamp::NowLoRes(), NEGATIVE_RECORD_LIFETIME, 0);
+    // None of our implementations expose a TTL for negative responses, so we
+    // use a configurable constant lifetime.
+    unsigned int negativeLifetime =
+        StaticPrefs::network_dnsNegativeCacheExpiration();
+    rec->SetExpiration(TimeStamp::NowLoRes(), negativeLifetime, 0);
     LOG(("Caching host [%s] negative record for %u seconds.\n", rec->host.get(),
-         NEGATIVE_RECORD_LIFETIME));
+         negativeLifetime));
     return;
   }
 
