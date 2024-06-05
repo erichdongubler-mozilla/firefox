@@ -243,10 +243,25 @@ struct FeatureImplementationStatus {
         return unimplemented(
             "https://bugzilla.mozilla.org/show_bug.cgi?id=1955417");
 
+      case dom::GPUFeatureName::Texture_formats_tier1:
+        // return implemented(WGPUWEBGPU_FEATURE_TEXTURE_FORMATS_TIER1);
+        return unimplemented(
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=1982451");
+
+      case dom::GPUFeatureName::Texture_formats_tier2:
+        // return implemented(WGPUWEBGPU_FEATURE_TEXTURE_FORMATS_TIER2);
+        return unimplemented(
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=1982451");
+
       case dom::GPUFeatureName::Primitive_index:
         // return implemented(WGPUWEBGPU_FEATURE_PRIMITIVE_INDEX);
         return unimplemented(
             "https://bugzilla.mozilla.org/show_bug.cgi?id=1989116");
+
+      case dom::GPUFeatureName::Texture_component_swizzle:
+        // return implemented(WGPUWEBGPU_FEATURE_TEXTURE_COMPONENT_SWIZZLE);
+        return unimplemented(
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=2005065");
 
       case dom::GPUFeatureName::Core_features_and_limits:
         // NOTE: `0` means that no bits are set in calling code, but this is on

@@ -48,12 +48,16 @@ uint64_t GetLimit(const ffi::WGPULimits& limits, const Limit limit) {
     case Limit::MaxStorageBuffersInFragmentStage:
     case Limit::MaxStorageBuffersPerShaderStage:
       return limits.max_storage_buffers_per_shader_stage;
-    // TODO(bug 2006720): `In*Stage` limits are not in ffi::WGPULimits; report
-    // the per-stage limit instead.
     case Limit::MaxStorageTexturesInVertexStage:
+      return limits.max_storage_buffers_in_vertex_stage;
     case Limit::MaxStorageTexturesInFragmentStage:
+      return limits.max_storage_buffers_in_fragment_stage;
     case Limit::MaxStorageTexturesPerShaderStage:
       return limits.max_storage_textures_per_shader_stage;
+    case Limit::MaxStorageTexturesInVertexStage:
+      return limits.max_storage_textures_in_vertex_stage;
+    case Limit::MaxStorageTexturesInFragmentStage:
+      return limits.max_storage_textures_in_fragment_stage;
     case Limit::MaxUniformBuffersPerShaderStage:
       return limits.max_uniform_buffers_per_shader_stage;
     case Limit::MaxUniformBufferBindingSize:
@@ -141,8 +145,20 @@ void SetLimit(ffi::WGPULimits* const limits, const Limit limit,
     case Limit::MaxStorageTexturesInFragmentStage:
       // TODO(bug 2006720): Not in ffi::WGPULimits.
       return;
+    case Limit::MaxStorageBuffersInVertexStage:
+      limits->max_storage_buffers_in_vertex_stage = autoVal;
+      return;
+    case Limit::MaxStorageBuffersInFragmentStage:
+      limits->max_storage_buffers_in_fragment_stage = autoVal;
+      return;
     case Limit::MaxStorageTexturesPerShaderStage:
       limits->max_storage_textures_per_shader_stage = val;
+      return;
+    case Limit::MaxStorageTexturesInVertexStage:
+      limits->max_storage_textures_in_vertex_stage = autoVal;
+      return;
+    case Limit::MaxStorageTexturesInFragmentStage:
+      limits->max_storage_textures_in_fragment_stage = autoVal;
       return;
     case Limit::MaxUniformBuffersPerShaderStage:
       limits->max_uniform_buffers_per_shader_stage = val;
