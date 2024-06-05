@@ -145,6 +145,10 @@
       return Array.from(this.children).filter(node => node.matches("tab"));
     }
 
+    get visible() {
+      return this.tabs.every(tab => tab.visible);
+    }
+
     /**
      * Get the list of tab panels from this split view.
      *
@@ -292,7 +296,7 @@
       this.hasActiveTab = event.target.splitview === this;
       gBrowser.setIsSplitViewActive(this.hasActiveTab, this.#tabs);
       if (this.hasActiveTab) {
-        this.#activate(true);
+        this.#activate();
       } else {
         this.#deactivate(true);
       }

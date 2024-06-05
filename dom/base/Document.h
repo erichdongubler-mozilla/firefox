@@ -1610,6 +1610,7 @@ class Document : public nsINode,
   nsresult InitIntegrityPolicy(nsIChannel* aChannel);
   nsresult InitCOEP(nsIChannel* aChannel);
   nsresult InitDocPolicy(nsIChannel* aChannel);
+  nsresult InitTLSCertificateBinding(nsIChannel* aChannel);
 
   nsresult InitReferrerInfo(nsIChannel* aChannel);
 
@@ -3853,12 +3854,7 @@ class Document : public nsINode,
   // call it just before the document loses its window.
   void SendPageUseCounters();
 
-  void RecordASMJSExecutionTime();
-
   void SetUseCounter(UseCounter aUseCounter) {
-    if (aUseCounter == eUseCounter_custom_JS_use_asm) {
-      RecordASMJSExecutionTime();
-    }
     mUseCounters[aUseCounter] = true;
   }
 
@@ -5342,9 +5338,6 @@ class Document : public nsINode,
   // This only applies to error pages. Might be null.
   nsCOMPtr<nsIChannel> mFailedChannel;
 
-  // Timer for delayed ASMJS execution time recording
-  nsCOMPtr<nsITimer> mASMJSExecutionTimer;
-
   // if this document is part of a multipart document,
   // the ID can be used to distinguish it from the other parts.
   uint32_t mPartID;
@@ -5777,6 +5770,8 @@ class Document : public nsINode,
   RefPtr<class FragmentDirective> mFragmentDirective;
   UniquePtr<RadioGroupContainer> mRadioGroupContainer;
 
+  nsCOMPtr<nsIURI> mTLSCertificateBindingURI;
+
  public:
   // Needs to be public because the bindings code pokes at it.
   JS::ExpandoAndGeneration mExpandoAndGeneration;
@@ -5799,6 +5794,10 @@ class Document : public nsINode,
                                               const nsAString& aHTML,
                                               const SetHTMLOptions& aOptions,
                                               ErrorResult& aError);
+
+  nsIURI* GetTlsCertificateBindingURI() const {
+    return mTLSCertificateBindingURI;
+  }
 };
 
 enum class SyncOperationBehavior { eSuspendInput, eAllowInput };

@@ -2796,7 +2796,7 @@ where
     input.skip_whitespace();
 
     if parse_relative != ParseRelative::No {
-        let combinator = try_parse_combinator::<P, Impl>(input);
+        let combinator = try_parse_combinator(input);
         match parse_relative {
             ParseRelative::ForHas => {
                 builder.push_simple_selector(Component::RelativeSelectorAnchor);
@@ -2821,7 +2821,7 @@ where
             ParseRelative::No => unreachable!(),
         }
     }
-    'outer_loop: loop {
+    loop {
         // Parse a sequence of simple selectors.
         let empty = parse_compound_selector(parser, &mut state, input, &mut builder)?;
         if empty {
@@ -2842,10 +2842,10 @@ where
             break;
         }
 
-        let combinator = if let Ok(c) = try_parse_combinator::<P, Impl>(input) {
+        let combinator = if let Ok(c) = try_parse_combinator(input) {
             c
         } else {
-            break 'outer_loop;
+            break;
         };
 
         if !state.allows_combinators() {
@@ -2857,7 +2857,7 @@ where
     return Ok(Selector(builder.build(parse_relative)));
 }
 
-fn try_parse_combinator<'i, 't, P, Impl>(input: &mut CssParser<'i, 't>) -> Result<Combinator, ()> {
+fn try_parse_combinator<'i, 't>(input: &mut CssParser<'i, 't>) -> Result<Combinator, ()> {
     let mut any_whitespace = false;
     loop {
         let before_this_token = input.state();

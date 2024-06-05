@@ -16,6 +16,7 @@
     <string name="pref_key_accessibility_font_scale" translatable="false">pref_key_accessibility_font_scale</string>
     <string name="pref_key_accessibility_force_enable_zoom" translatable="false">pref_key_accessibility_force_enable_zoom</string>
     <string name="pref_key_advanced" translatable="false">pref_key_advanced</string>
+    <string name="pref_key_firefox_labs" translatable="false">pref_key_firefox_labs</string>
     <string name="pref_key_language" translatable="false">pref_key_language</string>
     <string name="pref_key_translation" translatable="false">pref_key_translation</string>
     <string name="pref_key_data_choices" translatable="false">pref_key_data_choices</string>
@@ -90,6 +91,7 @@
     <string name="pref_key_terms_prompt_displayed_count" translatable="false">pref_key_terms_prompt_displayed_count</string>
     <string name="pref_key_terms_last_prompt_time" translatable="false">pref_key_terms_last_prompt_time</string>
     <string name="pref_key_terms_postponed" translatable="false">pref_key_terms_postponed</string>
+    <string name="pref_key_terms_latest_date" translatable="false">pref_key_terms_latest_date</string>
     <string name="pref_key_debug_terms_trigger_time" translatable="false">pref_key_debug_terms_trigger_time</string>
     <string name="pref_key_should_show_marketing_onboarding" translatable="false">pref_key_should_show_marketing_onboarding</string>
     <string name="pref_key_use_onboarding_redesign" translatable="false">pref_key_use_onboarding_redesign</string>
@@ -180,9 +182,6 @@
     <!-- Cfr -->
     <string name="pref_key_menu_cfr" translatable="false">pref_key_menu_cfr</string>
     <string name="pref_key_toolbar_cfr" translatable="false">pref_key_toolbar_cfr</string>
-
-    <!-- Privacy Pop Window -->
-    <string name="pref_key_privacy_pop_window" translatable="false">pref_key_privacy_pop_window</string>
 
     <!-- Remote Server Settings -->
     <string name="pref_key_remote_server_prod" translatable="false">pref_key_remote_server_prod</string>
@@ -445,6 +444,7 @@
     <string name="pref_key_enable_firefox_labs" translatable="false">pref_key_enable_firefox_labs</string>
     <string name="pref_key_enable_unified_trust_panel" translatable="false">pref_key_enable_unified_trust_panel</string>
     <string name="pref_key_enable_composable_toolbar" translatable="false">pref_key_enable_composable_toolbar</string>"
+    <string name="pref_key_use_minimal_bottom_toolbar_while_entering_text" translatable="false">pref_key_use_minimal_bottom_toolbar_while_entering_text</string>"
     <string name="pref_key_enable_toolbar_redesign" translatable="false">pref_key_enable_toolbar_redesign</string>"
     <string name="pref_key_enable_address_sync" translatable="false">pref_key_enable_address_sync</string>"
     <string name="pref_key_enable_toolbar_customization">pref_key_enable_toolbar_customization</string>
@@ -519,4 +519,7 @@
     <!-- Tab Manager-->
     <string name="pref_key_tab_manager_enhancements" translatable="false">pref_key_tab_manager_enhancements</string>
     <string name="pref_key_tab_manager_opening_animation" translatable="false">pref_key_tab_manager_opening_animation</string>
+
+    <!-- Tab Search -->
+    <string name="pref_key_tab_search" translatable="false">pref_key_tab_search_feature</string>
 </resources>
