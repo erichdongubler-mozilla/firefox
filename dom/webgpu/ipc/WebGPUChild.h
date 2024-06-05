@@ -91,13 +91,13 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
   std::unordered_map<RawId, WeakPtr<Device>> mDeviceMap;
   nsTArray<RawId> mSwapChainTexturesWaitingForSubmit;
 
-  bool ResolveLostForDeviceId(RawId aDeviceId, Maybe<uint8_t> aReason,
+  bool ResolveLostForDeviceId(RawId aDeviceId, uint8_t aReason,
                               const nsAString& aMessage);
 
  public:
   ipc::IPCResult RecvUncapturedError(Maybe<RawId> aDeviceId,
                                      const nsACString& aMessage);
-  ipc::IPCResult RecvDeviceLost(RawId aDeviceId, Maybe<uint8_t> aReason,
+  ipc::IPCResult RecvDeviceLost(RawId aDeviceId, uint8_t aReason,
                                 const nsACString& aMessage);
   void ActorDestroy(ActorDestroyReason) override;
 };
