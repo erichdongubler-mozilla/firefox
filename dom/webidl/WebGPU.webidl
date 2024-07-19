@@ -82,7 +82,7 @@ interface GPUAdapterInfo {
 };
 
 interface mixin NavigatorGPU {
-    [SameObject, Func="mozilla::webgpu::Instance::PrefEnabled", Exposed=(Window, DedicatedWorker), SecureContext] readonly attribute GPU gpu;
+    [SameObject, Func="mozilla::webgpu::Instance::PrefEnabled", SecureContext] readonly attribute GPU gpu;
 };
 // NOTE: see `dom/webidl/Navigator.webidl`
 // Navigator includes NavigatorGPU;
