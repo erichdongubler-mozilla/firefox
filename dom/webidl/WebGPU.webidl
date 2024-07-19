@@ -144,6 +144,7 @@ enum GPUFeatureName {
     "bgra8unorm-storage",
     "float32-filterable",
     "clip-distances",
+    "dual-source-blending",
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
