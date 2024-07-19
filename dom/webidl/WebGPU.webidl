@@ -664,8 +664,6 @@ dictionary GPUProgrammableStage {
 
 typedef double GPUPipelineConstantValue; // May represent WGSL's bool, f32, i32, u32, and f16 if enabled.
 
-//TODO: Serializable
-// https://bugzilla.mozilla.org/show_bug.cgi?id=1696219
 [Func="mozilla::webgpu::Instance::PrefEnabled",
  Exposed=(Window, DedicatedWorker), SecureContext]
 interface GPUComputePipeline {
@@ -678,8 +676,6 @@ dictionary GPUComputePipelineDescriptor
     required GPUProgrammableStage compute;
 };
 
-//TODO: Serializable
-// https://bugzilla.mozilla.org/show_bug.cgi?id=1696219
 [Func="mozilla::webgpu::Instance::PrefEnabled",
  Exposed=(Window, DedicatedWorker), SecureContext]
 interface GPURenderPipeline {
