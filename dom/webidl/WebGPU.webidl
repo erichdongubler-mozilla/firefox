@@ -143,6 +143,7 @@ enum GPUFeatureName {
     "rg11b10ufloat-renderable",
     "bgra8unorm-storage",
     "float32-filterable",
+    "clip-distances",
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
