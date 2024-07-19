@@ -1022,6 +1022,7 @@ dictionary GPURenderPassDescriptor
     required sequence<GPURenderPassColorAttachment> colorAttachments;
     GPURenderPassDepthStencilAttachment depthStencilAttachment;
     GPUQuerySet occlusionQuerySet;
+    GPUSize64 maxDrawCount = 50000000;
 };
 
 dictionary GPURenderPassColorAttachment {
