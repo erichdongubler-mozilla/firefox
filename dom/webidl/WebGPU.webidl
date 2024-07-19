@@ -896,7 +896,7 @@ dictionary GPUImageCopyTexture {
 
 dictionary GPUImageCopyTextureTagged
          : GPUImageCopyTexture {
-    //GPUPredefinedColorSpace colorSpace = "srgb"; //TODO
+    PredefinedColorSpace colorSpace = "srgb";
     boolean premultipliedAlpha = false;
 };
 
