@@ -200,7 +200,7 @@ export class TestServiceWorker extends TestBaseWorker {
     const selfPathDir = selfPath.substring(0, selfPath.lastIndexOf('/'));
     // Construct the path to the worker file, then use URL to resolve the `../` components.
     const serviceWorkerURL = new URL(
-      `${selfPathDir}/../../../${suite}/webworker/${fileName}.as_worker.js`
+      `${location.origin}/_mozilla/webgpu/${suite}/webworker/${fileName}.as_worker.js`
     ).toString();
 
     // Ensure the correct service worker is registered.
