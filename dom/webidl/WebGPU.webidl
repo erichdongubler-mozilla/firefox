@@ -1205,7 +1205,7 @@ dictionary GPUQueueDescriptor
 [Func="mozilla::webgpu::Instance::PrefEnabled",
  Exposed=(Window, Worker), SecureContext]
 interface GPUQueue {
-    undefined submit(sequence<GPUCommandBuffer> buffers);
+    undefined submit(sequence<GPUCommandBuffer> commandBuffers);
 
     [Throws]
     Promise<undefined> onSubmittedWorkDone();
