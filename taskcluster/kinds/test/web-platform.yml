@@ -406,10 +406,7 @@ web-platform-tests-webgpu-backlog-long:
     treeherder-symbol: W(webgpu-backlog-long)
     virtualization: virtual-with-gpu
     tier: 3
-    chunks:
-        by-test-platform:
-            windows.*-64.*: 3
-            default: 2
+    chunks: 4
     max-run-time: 5400  # 90m
     variants: []  # We don't need sw or nofis testing.
     run-on-projects:
