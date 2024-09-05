@@ -194,6 +194,7 @@ already_AddRefed<Texture> Device::CreateTexture(
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
 
+  // TODO: validate `aDesc.mSize`: https://www.w3.org/TR/webgpu/#abstract-opdef-validate-gpuextent3d-shape
   if (aDesc.mSize.IsRangeEnforcedUnsignedLongSequence()) {
     const auto& seq = aDesc.mSize.GetAsRangeEnforcedUnsignedLongSequence();
     desc.size.width = seq.Length() > 0 ? seq[0] : 1;
@@ -211,6 +212,7 @@ already_AddRefed<Texture> Device::CreateTexture(
   desc.sample_count = aDesc.mSampleCount;
   desc.dimension = ffi::WGPUTextureDimension(aDesc.mDimension);
   desc.format = ConvertTextureFormat(aDesc.mFormat);
+  // TODO: validate required features for format: https://www.w3.org/TR/webgpu/#abstract-opdef-validate-texture-format-required-features
   desc.usage = aDesc.mUsage;
 
   AutoTArray<ffi::WGPUTextureFormat, 8> viewFormats;
