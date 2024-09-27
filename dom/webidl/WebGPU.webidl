@@ -900,8 +900,16 @@ dictionary GPUImageCopyTextureTagged
     boolean premultipliedAlpha = false;
 };
 
+typedef (ImageBitmap or
+         ImageData or
+         HTMLImageElement or
+         HTMLVideoElement or
+         VideoFrame or
+         HTMLCanvasElement or
+         OffscreenCanvas) GPUImageCopyExternalImageSource;
+
 dictionary GPUImageCopyExternalImage {
-    required (ImageBitmap or HTMLCanvasElement or OffscreenCanvas) source;
+    required GPUImageCopyExternalImageSource source;
     GPUOrigin2D origin = {};
     boolean flipY = false;
 };
