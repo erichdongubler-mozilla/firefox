@@ -133,7 +133,7 @@ interface GPUAdapter {
 dictionary GPUDeviceDescriptor
          : GPUObjectDescriptorBase {
     sequence<GPUFeatureName> requiredFeatures = [];
-    record<DOMString, GPUSize64> requiredLimits;
+    record<DOMString, (GPUSize64 or undefined)> requiredLimits;
     GPUQueueDescriptor defaultQueue = {};
 };
 
