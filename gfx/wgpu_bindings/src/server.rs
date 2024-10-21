@@ -4,7 +4,7 @@
 
 use crate::{
     command::{RecordedComputePass, RecordedRenderPass},
-    error::{ErrMsg, ErrorBuffer, ErrorBufferType},
+    error::{ErrMsg, ErrorBuffer, ErrorBufferType, HasErrorBufferType},
     wgpu_string, AdapterInformation, ByteBuf, CommandEncoderAction, DeviceAction, QueueWriteAction,
     SwapChainId, TextureAction,
 };
@@ -752,13 +752,6 @@ pub extern "C" fn wgpu_server_device_create_shader_module(
 
     if let Some(err) = error {
         out_message.set_error(&err, &source_str[..]);
-        let err_type = match &err {
-            CreateShaderModuleError::Device(DeviceError::OutOfMemory) => {
-                ErrorBufferType::OutOfMemory
-            }
-            CreateShaderModuleError::Device(DeviceError::Lost) => ErrorBufferType::DeviceLost,
-            _ => ErrorBufferType::Validation,
-        };
 
         // Per spec: "User agents should not include detailed compiler error messages or
         // shader text in the message text of validation errors arising here: these details
@@ -772,7 +765,7 @@ pub extern "C" fn wgpu_server_device_create_shader_module(
 
         error_buf.init(ErrMsg {
             message: &format!("Shader module creation failed: {message}"),
-            r#type: err_type,
+            r#type: err.error_type(),
         });
         return false;
     }
