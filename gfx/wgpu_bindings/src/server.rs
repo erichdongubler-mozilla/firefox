@@ -2758,6 +2758,11 @@ pub extern "C" fn wgpu_server_query_set_drop(global: &Global, self_id: id::Query
 }
 
 #[no_mangle]
+pub extern "C" fn wgpu_server_query_set_destroy(global: &Global, self_id: id::QuerySetId) {
+    global.query_set_destroy(self_id);
+}
+
+#[no_mangle]
 pub extern "C" fn wgpu_server_compute_pipeline_get_bind_group_layout(
     global: &Global,
     self_id: id::ComputePipelineId,
