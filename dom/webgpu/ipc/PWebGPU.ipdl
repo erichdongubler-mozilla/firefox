@@ -13,11 +13,14 @@ using mozilla::layers::RemoteTextureTxnId from "mozilla/layers/LayersTypes.h";
 using mozilla::webgpu::RawId from "mozilla/webgpu/WebGPUTypes.h";
 using mozilla::dom::GPUErrorFilter from "mozilla/dom/WebGPUBinding.h";
 using mozilla::dom::GPURequestAdapterOptions from "mozilla/dom/WebGPUBinding.h";
-using mozilla::dom::GPUCommandBufferDescriptor from "mozilla/dom/WebGPUBinding.h";
+using mozilla::dom::GPUCommandBufferDescriptor from
+    "mozilla/dom/WebGPUBinding.h";
 using mozilla::dom::GPUBufferDescriptor from "mozilla/dom/WebGPUBinding.h";
 using mozilla::webgpu::PopErrorScopeResult from "mozilla/webgpu/WebGPUTypes.h";
-using mozilla::webgpu::WebGPUCompilationMessage from "mozilla/webgpu/WebGPUTypes.h";
-[MoveOnly] using class mozilla::ipc::UnsafeSharedMemoryHandle from "mozilla/ipc/RawShmem.h";
+using mozilla::webgpu::WebGPUCompilationMessage from
+    "mozilla/webgpu/WebGPUTypes.h";
+[MoveOnly] using class mozilla::ipc::UnsafeSharedMemoryHandle from
+    "mozilla/ipc/RawShmem.h";
 using struct mozilla::void_t from "mozilla/ipc/IPCCore.h";
 
 include "mozilla/ipc/ByteBufUtils.h";
@@ -68,6 +71,7 @@ parent:
   async TextureDrop(RawId selfId);
   async TextureViewDrop(RawId selfId);
   async SamplerDrop(RawId selfId);
+  async QuerySetDestroy(RawId selfId);
   async QuerySetDrop(RawId selfId);
   async DeviceDestroy(RawId selfId);
   async DeviceDrop(RawId selfId);
