@@ -3157,6 +3157,11 @@ pub extern "C" fn wgpu_server_command_buffer_drop(global: &Global, self_id: id::
     global.command_buffer_drop(self_id);
 }
 
+#[no_mangle]
+pub extern "C" fn wgpu_server_query_set_destroy(global: &Global, self_id: id::QuerySetId) {
+    global.query_set_destroy(self_id);
+}
+
 /// Imports a Direct3D texture from a shared handle.
 #[cfg(target_os = "windows")]
 #[no_mangle]

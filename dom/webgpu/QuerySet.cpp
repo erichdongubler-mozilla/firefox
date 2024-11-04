@@ -22,7 +22,10 @@ QuerySet::QuerySet(Device* const aParent,
 QuerySet::~QuerySet() = default;
 
 void QuerySet::Destroy() {
-  // TODO: <https://bugzilla.mozilla.org/show_bug.cgi?id=1929168>
+  auto bridge = mParent->GetBridge();
+  if (bridge && bridge->CanSend()) {
+    bridge->SendQuerySetDestroy(mId, mParent->GetId());
+  }
 }
 
 dom::GPUQueryType QuerySet::Type() const { return mType; }
