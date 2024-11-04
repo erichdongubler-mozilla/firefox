@@ -3047,3 +3047,8 @@ pub extern "C" fn wgpu_server_command_encoder_drop(global: &Global, self_id: id:
 pub extern "C" fn wgpu_server_command_buffer_drop(global: &Global, self_id: id::CommandBufferId) {
     global.command_buffer_drop(self_id);
 }
+
+#[no_mangle]
+pub extern "C" fn wgpu_server_query_set_destroy(global: &Global, self_id: id::QuerySetId) {
+    global.query_set_destroy(self_id);
+}
