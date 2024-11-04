@@ -2813,3 +2813,8 @@ pub extern "C" fn wgpu_server_sampler_drop(global: &Global, self_id: id::Sampler
 pub extern "C" fn wgpu_server_query_set_drop(global: &Global, self_id: id::QuerySetId) {
     global.query_set_drop(self_id);
 }
+
+#[no_mangle]
+pub extern "C" fn wgpu_server_query_set_destroy(global: &Global, self_id: id::QuerySetId) {
+    global.query_set_destroy(self_id);
+}
