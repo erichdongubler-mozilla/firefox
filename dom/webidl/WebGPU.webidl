@@ -135,6 +135,7 @@ enum GPUFeatureName {
     "texture-compression-bc",
     "texture-compression-etc2",
     "texture-compression-astc",
+    "texture-compression-astc-sliced-3d",
     "timestamp-query",
     "indirect-first-instance",
     "shader-f16",
