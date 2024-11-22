@@ -135,11 +135,8 @@ redox_syscall = { path = "build/rust/redox_syscall" }
 # Patch hermit-abi to an empty crate
 hermit-abi = { path = "build/rust/hermit-abi" }
 
-# Patch base64 0.13 to 0.22
-base64_13 = { path = "build/rust/base64_13", package = "base64" }
-
 # Patch base64 0.21 to 0.22
-base64_21 = { path = "build/rust/base64_21", package = "base64" }
+base64 = { path = "build/rust/base64" }
 
 # Patch wasi 0.10 to 0.11
 wasi = { path = "build/rust/wasi" }
@@ -196,9 +193,6 @@ moz_asserts = { path = "mozglue/static/rust/moz_asserts" }
 # builds.
 # Workaround for https://github.com/rust-lang/cargo/issues/11232
 rure = { path = "third_party/rust/rure" }
-
-# Patch `plist` to work with `indexmap` 2.*
-plist = { path = "third_party/rust/plist" }
 
 # To-be-published changes.
 unicode-bidi = { git = "https://github.com/servo/unicode-bidi", rev = "ca612daf1c08c53abe07327cb3e6ef6e0a760f0c" }
