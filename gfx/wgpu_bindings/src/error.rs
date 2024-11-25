@@ -6,6 +6,7 @@
 //! of this module is [`ErrorBuffer`](crate::server::ErrorBuffer).
 
 use std::{
+    borrow::Cow,
     error::Error,
     fmt::{self, Display, Formatter},
     os::raw::c_char,
@@ -48,17 +49,12 @@ impl ErrorBuffer {
     /// byte. If the textual form of `error` itself includes a zero byte (as Rust strings can), then
     /// the C++ code receiving this error message has no way to distinguish that from the
     /// terminating zero byte, and will see the message as shorter than it is.
-    pub(crate) fn init(&mut self, error: impl HasErrorBufferType) {
-        use std::fmt::Write;
+    pub(crate) fn init<'a>(&mut self, error: impl Into<ErrMsg<'a>>) {
+        let ErrMsg {
+            message,
+            r#type: err_ty,
+        } = error.into();
 
-        let mut message = format!("{}", error);
-        let mut e = error.source();
-        while let Some(source) = e {
-            write!(message, ", caused by: {}", source).unwrap();
-            e = source.source();
-        }
-
-        let err_ty = error.error_type();
         // SAFETY: We presume the pointer provided by the caller is safe to write to.
         unsafe { *self.r#type = err_ty };
 
@@ -112,17 +108,21 @@ pub(crate) enum ErrorBufferType {
     Validation = 4,
 }
 
-/// A trait for querying the [`ErrorBufferType`] classification of an error. Used by
-/// [`ErrorBuffer::init`](crate::server::ErrorBuffer::init).
-pub(crate) trait HasErrorBufferType: Error {
-    fn error_type(&self) -> ErrorBufferType;
+impl From<wgc::error::ErrorType> for ErrorBufferType {
+    fn from(value: wgc::error::ErrorType) -> Self {
+        match value {
+            wgc::error::ErrorType::Internal => ErrorBufferType::Internal,
+            wgc::error::ErrorType::OutOfMemory => ErrorBufferType::OutOfMemory,
+            wgc::error::ErrorType::Validation => ErrorBufferType::Validation,
+        }
+    }
 }
 
 /// Representation an error whose error message is already rendered as a [`&str`], and has no error
 /// sources. Used for convenience in [`server`](crate::server) code.
 #[derive(Clone, Debug)]
 pub(crate) struct ErrMsg<'a> {
-    pub(crate) message: &'a str,
+    pub(crate) message: Cow<'a, str>,
     pub(crate) r#type: ErrorBufferType,
 }
 
@@ -135,532 +135,25 @@ impl Display for ErrMsg<'_> {
 
 impl Error for ErrMsg<'_> {}
 
-impl HasErrorBufferType for ErrMsg<'_> {
-    fn error_type(&self) -> ErrorBufferType {
-        self.r#type
-    }
-}
+impl<T> From<T> for ErrMsg<'static>
+where
+    T: wgc::error::AsWebGpuErrorType,
+{
+    fn from(error: T) -> Self {
+        use std::fmt::Write;
 
-/// Encapsulates implementations of [`HasErrorType`] for [`wgpu_core`] types.
-mod foreign {
-    use wgc::{
-        binding_model::{
-            CreateBindGroupError, CreateBindGroupLayoutError, CreatePipelineLayoutError,
-            GetBindGroupLayoutError,
-        },
-        command::{
-            ClearError, CommandEncoderError, ComputePassError, CopyError, CreateRenderBundleError,
-            QueryError, QueryUseError, RenderBundleError, RenderPassError, ResolveError,
-            TransferError,
-        },
-        device::{
-            queue::{QueueSubmitError, QueueWriteError},
-            DeviceError,
-        },
-        instance::RequestDeviceError,
-        pipeline::{
-            CreateComputePipelineError, CreateRenderPipelineError, CreateShaderModuleError,
-        },
-        resource::{
-            BufferAccessError, CreateBufferError, CreateQuerySetError, CreateSamplerError,
-            CreateTextureError, CreateTextureViewError, DestroyError,
-        },
-    };
-    use wgt::RequestAdapterError;
-
-    use super::{ErrorBufferType, HasErrorBufferType};
-
-    impl HasErrorBufferType for RequestAdapterError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                RequestAdapterError::NotFound { .. } | RequestAdapterError::EnvNotSet => {
-                    ErrorBufferType::Validation
-                }
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
+        let mut message = format!("{}", error);
+        let mut e = error.source();
+        while let Some(source) = e {
+            write!(message, ", caused by: {}", source).unwrap();
+            e = source.source();
         }
-    }
 
-    impl HasErrorBufferType for RequestDeviceError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                RequestDeviceError::Device(e) => e.error_type(),
+        let err_ty = error.as_webgpu_error_type().into();
 
-                RequestDeviceError::UnsupportedFeature(_)
-                | RequestDeviceError::LimitsExceeded(_) => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for CreateBufferError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                CreateBufferError::Device(e) => e.error_type(),
-                CreateBufferError::AccessError(e) => e.error_type(),
-
-                CreateBufferError::UnalignedSize
-                | CreateBufferError::InvalidUsage(_)
-                | CreateBufferError::UsageMismatch(_)
-                | CreateBufferError::MaxBufferSize { .. }
-                | CreateBufferError::MissingDownlevelFlags(_) => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for BufferAccessError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                BufferAccessError::Device(e) => e.error_type(),
-
-                BufferAccessError::Failed
-                | BufferAccessError::InvalidResource(_)
-                | BufferAccessError::DestroyedResource(_)
-                | BufferAccessError::AlreadyMapped
-                | BufferAccessError::MapAlreadyPending
-                | BufferAccessError::MissingBufferUsage(_)
-                | BufferAccessError::NotMapped
-                | BufferAccessError::UnalignedRange
-                | BufferAccessError::UnalignedOffset { .. }
-                | BufferAccessError::UnalignedRangeSize { .. }
-                | BufferAccessError::OutOfBoundsUnderrun { .. }
-                | BufferAccessError::OutOfBoundsOverrun { .. }
-                | BufferAccessError::NegativeRange { .. }
-                | BufferAccessError::MapAborted => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for CreateTextureError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                CreateTextureError::Device(e) => e.error_type(),
-
-                CreateTextureError::InvalidUsage(_)
-                | CreateTextureError::InvalidDimension(_)
-                | CreateTextureError::InvalidDepthDimension(_, _)
-                | CreateTextureError::InvalidCompressedDimension(_, _)
-                | CreateTextureError::InvalidMipLevelCount { .. }
-                | CreateTextureError::InvalidFormatUsages(_, _, _)
-                | CreateTextureError::InvalidViewFormat(_, _)
-                | CreateTextureError::InvalidDimensionUsages(_, _)
-                | CreateTextureError::InvalidMultisampledStorageBinding
-                | CreateTextureError::InvalidMultisampledFormat(_)
-                | CreateTextureError::InvalidSampleCount(..)
-                | CreateTextureError::MultisampledNotRenderAttachment
-                | CreateTextureError::MissingFeatures(_, _)
-                | CreateTextureError::MissingDownlevelFlags(_) => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for CreateSamplerError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                CreateSamplerError::Device(e) => e.error_type(),
-
-                CreateSamplerError::InvalidLodMinClamp(_)
-                | CreateSamplerError::InvalidLodMaxClamp { .. }
-                | CreateSamplerError::InvalidAnisotropy(_)
-                | CreateSamplerError::InvalidFilterModeWithAnisotropy { .. }
-                | CreateSamplerError::MissingFeatures(_) => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for CreateBindGroupLayoutError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                CreateBindGroupLayoutError::Device(e) => e.error_type(),
-
-                CreateBindGroupLayoutError::ConflictBinding(_)
-                | CreateBindGroupLayoutError::Entry { .. }
-                | CreateBindGroupLayoutError::TooManyBindings(_)
-                | CreateBindGroupLayoutError::InvalidBindingIndex { .. }
-                | CreateBindGroupLayoutError::InvalidVisibility(_) => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for CreatePipelineLayoutError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                CreatePipelineLayoutError::Device(e) => e.error_type(),
-
-                CreatePipelineLayoutError::InvalidResource(_)
-                | CreatePipelineLayoutError::MisalignedPushConstantRange { .. }
-                | CreatePipelineLayoutError::MissingFeatures(_)
-                | CreatePipelineLayoutError::MoreThanOnePushConstantRangePerStage { .. }
-                | CreatePipelineLayoutError::PushConstantRangeTooLarge { .. }
-                | CreatePipelineLayoutError::TooManyBindings(_)
-                | CreatePipelineLayoutError::TooManyGroups { .. } => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for CreateBindGroupError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                CreateBindGroupError::Device(e) => e.error_type(),
-
-                CreateBindGroupError::InvalidResource(_)
-                | CreateBindGroupError::BindingArrayPartialLengthMismatch { .. }
-                | CreateBindGroupError::BindingArrayLengthMismatch { .. }
-                | CreateBindGroupError::BindingArrayZeroLength
-                | CreateBindGroupError::BindingRangeTooLarge { .. }
-                | CreateBindGroupError::BindingSizeTooSmall { .. }
-                | CreateBindGroupError::BindingZeroSize(_)
-                | CreateBindGroupError::BindingsNumMismatch { .. }
-                | CreateBindGroupError::DuplicateBinding(_)
-                | CreateBindGroupError::MissingBindingDeclaration(_)
-                | CreateBindGroupError::MissingBufferUsage(_)
-                | CreateBindGroupError::MissingTextureUsage(_)
-                | CreateBindGroupError::SingleBindingExpected
-                | CreateBindGroupError::UnalignedBufferOffset(_, _, _)
-                | CreateBindGroupError::BufferRangeTooLarge { .. }
-                | CreateBindGroupError::WrongBindingType { .. }
-                | CreateBindGroupError::InvalidTextureMultisample { .. }
-                | CreateBindGroupError::InvalidTextureSampleType { .. }
-                | CreateBindGroupError::InvalidTextureDimension { .. }
-                | CreateBindGroupError::InvalidStorageTextureFormat { .. }
-                | CreateBindGroupError::InvalidStorageTextureMipLevelCount { .. }
-                | CreateBindGroupError::WrongSamplerComparison { .. }
-                | CreateBindGroupError::WrongSamplerFiltering { .. }
-                | CreateBindGroupError::DepthStencilAspect
-                | CreateBindGroupError::StorageReadNotSupported(_)
-                | CreateBindGroupError::ResourceUsageCompatibility(_)
-                | CreateBindGroupError::DestroyedResource(_) => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for CreateShaderModuleError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                CreateShaderModuleError::Device(e) => e.error_type(),
-
-                CreateShaderModuleError::Generation => ErrorBufferType::Internal,
-
-                CreateShaderModuleError::Parsing(_)
-                | CreateShaderModuleError::Validation(_)
-                | CreateShaderModuleError::MissingFeatures(_)
-                | CreateShaderModuleError::InvalidGroupIndex { .. } => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for CreateComputePipelineError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                CreateComputePipelineError::Device(e) => e.error_type(),
-
-                CreateComputePipelineError::Internal(_) => ErrorBufferType::Internal,
-
-                CreateComputePipelineError::InvalidResource(_)
-                | CreateComputePipelineError::Implicit(_)
-                | CreateComputePipelineError::Stage(_)
-                | CreateComputePipelineError::MissingDownlevelFlags(_) => {
-                    ErrorBufferType::Validation
-                }
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for CreateRenderPipelineError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                CreateRenderPipelineError::Device(e) => e.error_type(),
-
-                CreateRenderPipelineError::Internal { .. } => ErrorBufferType::Internal,
-
-                CreateRenderPipelineError::ColorAttachment(_)
-                | CreateRenderPipelineError::InvalidResource(_)
-                | CreateRenderPipelineError::Implicit(_)
-                | CreateRenderPipelineError::ColorState(_, _)
-                | CreateRenderPipelineError::DepthStencilState(_)
-                | CreateRenderPipelineError::InvalidSampleCount(_)
-                | CreateRenderPipelineError::TooManyVertexBuffers { .. }
-                | CreateRenderPipelineError::TooManyVertexAttributes { .. }
-                | CreateRenderPipelineError::VertexStrideTooLarge { .. }
-                | CreateRenderPipelineError::UnalignedVertexStride { .. }
-                | CreateRenderPipelineError::InvalidVertexAttributeOffset { .. }
-                | CreateRenderPipelineError::ShaderLocationClash(_)
-                | CreateRenderPipelineError::StripIndexFormatForNonStripTopology { .. }
-                | CreateRenderPipelineError::ConservativeRasterizationNonFillPolygonMode
-                | CreateRenderPipelineError::MissingFeatures(_)
-                | CreateRenderPipelineError::MissingDownlevelFlags(_)
-                | CreateRenderPipelineError::Stage { .. }
-                | CreateRenderPipelineError::UnalignedShader { .. } => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for RenderBundleError {
-        fn error_type(&self) -> ErrorBufferType {
-            // We can't classify this ourselves, because inner error classification is private. May
-            // need some upstream work to do this properly.
-            ErrorBufferType::Validation
-        }
-    }
-
-    impl HasErrorBufferType for DeviceError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                DeviceError::Invalid(_) | DeviceError::DeviceMismatch(_) => {
-                    ErrorBufferType::Validation
-                }
-                DeviceError::Lost => ErrorBufferType::DeviceLost,
-                DeviceError::OutOfMemory => ErrorBufferType::OutOfMemory,
-                DeviceError::ResourceCreationFailed => ErrorBufferType::Internal,
-                _ => ErrorBufferType::Internal,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for CreateTextureViewError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                CreateTextureViewError::InvalidTextureViewDimension { .. }
-                | CreateTextureViewError::InvalidResource(_)
-                | CreateTextureViewError::InvalidMultisampledTextureViewDimension(_)
-                | CreateTextureViewError::InvalidCubemapTextureDepth { .. }
-                | CreateTextureViewError::InvalidCubemapArrayTextureDepth { .. }
-                | CreateTextureViewError::InvalidCubeTextureViewSize
-                | CreateTextureViewError::ZeroMipLevelCount
-                | CreateTextureViewError::ZeroArrayLayerCount
-                | CreateTextureViewError::TooManyMipLevels { .. }
-                | CreateTextureViewError::TooManyArrayLayers { .. }
-                | CreateTextureViewError::InvalidArrayLayerCount { .. }
-                | CreateTextureViewError::InvalidAspect { .. }
-                | CreateTextureViewError::FormatReinterpretation { .. }
-                | CreateTextureViewError::DestroyedResource(_) => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for CopyError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                CopyError::Encoder(e) => e.error_type(),
-                CopyError::Transfer(e) => e.error_type(),
-
-                CopyError::InvalidResource(_) => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for TransferError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                TransferError::MemoryInitFailure(e) => e.error_type(),
-
-                TransferError::SameSourceDestinationBuffer
-                | TransferError::BufferOverrun { .. }
-                | TransferError::TextureOverrun { .. }
-                | TransferError::InvalidTextureAspect { .. }
-                | TransferError::InvalidTextureMipLevel { .. }
-                | TransferError::InvalidDimensionExternal
-                | TransferError::UnalignedBufferOffset(_)
-                | TransferError::UnalignedCopySize(_)
-                | TransferError::UnalignedCopyWidth
-                | TransferError::UnalignedCopyHeight
-                | TransferError::UnalignedCopyOriginX
-                | TransferError::UnalignedCopyOriginY
-                | TransferError::UnalignedBytesPerRow
-                | TransferError::UnspecifiedBytesPerRow
-                | TransferError::UnspecifiedRowsPerImage
-                | TransferError::InvalidBytesPerRow
-                | TransferError::InvalidRowsPerImage
-                | TransferError::CopySrcMissingAspects
-                | TransferError::CopyDstMissingAspects
-                | TransferError::CopyAspectNotOne
-                | TransferError::CopyFromForbiddenTextureFormat { .. }
-                | TransferError::CopyToForbiddenTextureFormat { .. }
-                | TransferError::ExternalCopyToForbiddenTextureFormat(_)
-                | TransferError::TextureFormatsNotCopyCompatible { .. }
-                | TransferError::MissingDownlevelFlags(_)
-                | TransferError::InvalidSampleCount { .. }
-                | TransferError::InvalidMipLevel { .. } => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for ComputePassError {
-        fn error_type(&self) -> ErrorBufferType {
-            // We can't classify this ourselves, because inner error classification is private. We
-            // may need some upstream work to do this properly. For now, we trust that this opaque
-            // type only ever represents `Validation`.
-            ErrorBufferType::Validation
-        }
-    }
-
-    impl HasErrorBufferType for QueryError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                QueryError::Encoder(e) => e.error_type(),
-                QueryError::Use(e) => e.error_type(),
-                QueryError::Resolve(e) => e.error_type(),
-
-                QueryError::InvalidResource(_) => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for QueryUseError {
-        fn error_type(&self) -> ErrorBufferType {
-            // We can't classify this ourselves, because inner error classification is private. We
-            // may need some upstream work to do this properly. For now, we trust that this opaque
-            // type only ever represents `Validation`.
-            ErrorBufferType::Validation
-        }
-    }
-
-    impl HasErrorBufferType for ResolveError {
-        fn error_type(&self) -> ErrorBufferType {
-            // We can't classify this ourselves, because inner error classification is private. We
-            // may need some upstream work to do this properly. For now, we trust that this opaque
-            // type only ever represents `Validation`.
-            ErrorBufferType::Validation
-        }
-    }
-
-    impl HasErrorBufferType for RenderPassError {
-        fn error_type(&self) -> ErrorBufferType {
-            // TODO: This type's `inner` member has an `OutOfMemory` variant. We definitely need to
-            // expose this upstream, or move this implementation upstream.
-            //
-            // Bug for tracking: https://bugzilla.mozilla.org/show_bug.cgi?id=1840926
-            ErrorBufferType::Validation
-        }
-    }
-
-    impl HasErrorBufferType for ClearError {
-        fn error_type(&self) -> ErrorBufferType {
-            // We can't classify this ourselves, because inner error classification is private. We
-            // may need some upstream work to do this properly. For now, we trust that this opaque
-            // type only ever represents `Validation`.
-            ErrorBufferType::Validation
-        }
-    }
-
-    impl HasErrorBufferType for CommandEncoderError {
-        fn error_type(&self) -> ErrorBufferType {
-            // We can't classify this ourselves, because inner error classification is private. We
-            // may need some upstream work to do this properly. For now, we trust that this opaque
-            // type only ever represents `Validation`.
-            ErrorBufferType::Validation
-        }
-    }
-
-    impl HasErrorBufferType for QueueSubmitError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                QueueSubmitError::Queue(e) => e.error_type(),
-                QueueSubmitError::Unmap(e) => e.error_type(),
-
-                QueueSubmitError::DestroyedResource(_)
-                | QueueSubmitError::BufferStillMapped(_)
-                | QueueSubmitError::InvalidResource(_) => ErrorBufferType::Validation,
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for QueueWriteError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                QueueWriteError::Queue(e) => e.error_type(),
-                QueueWriteError::Transfer(e) => e.error_type(),
-                QueueWriteError::MemoryInitFailure(e) => e.error_type(),
-
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
-        }
-    }
-
-    impl HasErrorBufferType for GetBindGroupLayoutError {
-        fn error_type(&self) -> ErrorBufferType {
-            // We can't classify this ourselves, because inner error classification is private. We
-            // may need some upstream work to do this properly. For now, we trust that this opaque
-            // type only ever represents `Validation`.
-            ErrorBufferType::Validation
-        }
-    }
-
-    impl HasErrorBufferType for CreateRenderBundleError {
-        fn error_type(&self) -> ErrorBufferType {
-            // We can't classify this ourselves, because inner error classification is private. We
-            // may need some upstream work to do this properly. For now, we trust that this opaque
-            // type only ever represents `Validation`.
-            ErrorBufferType::Validation
-        }
-    }
-
-    impl HasErrorBufferType for DestroyError {
-        fn error_type(&self) -> ErrorBufferType {
-            ErrorBufferType::Validation
-        }
-    }
-
-    impl HasErrorBufferType for CreateQuerySetError {
-        fn error_type(&self) -> ErrorBufferType {
-            match self {
-                CreateQuerySetError::Device(e) => e.error_type(),
-                CreateQuerySetError::ZeroCount
-                | CreateQuerySetError::TooManyQueries { .. }
-                | CreateQuerySetError::MissingFeatures(..) => ErrorBufferType::Validation,
-                // N.B: forced non-exhaustiveness
-                _ => ErrorBufferType::Validation,
-            }
+        Self {
+            message: message.into(),
+            r#type: err_ty,
         }
     }
 }
