@@ -3,15 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::{
-    cow_label, error::HasErrorBufferType, wgpu_string, AdapterInformation, ByteBuf,
-    CommandEncoderAction, DeviceAction, ImplicitLayout, QueueWriteAction, RawString,
-    TexelCopyBufferLayout, TextureAction,
+    cow_label, wgpu_string, AdapterInformation, ByteBuf, CommandEncoderAction, DeviceAction,
+    ImplicitLayout, QueueWriteAction, RawString, TexelCopyBufferLayout, TextureAction,
 };
 
 use crate::{BufferMapResult, Message, QueueWriteDataSource, ServerMessage, SwapChainId};
 
 use wgc::naga::front::wgsl::ImplementedLanguageExtension;
 use wgc::{command::RenderBundleEncoder, id, identity::IdentityManager};
+use wgt::error::WebGpuError;
 use wgt::{BufferAddress, BufferSize, DynamicOffset, IndexFormat, TextureFormat};
 
 use wgc::id::markers;
@@ -1171,7 +1171,7 @@ pub extern "C" fn wgpu_device_create_render_bundle_encoder(
             let message = format!("Error in `Device::create_render_bundle_encoder`: {}", e);
             let action = DeviceAction::Error {
                 message,
-                r#type: e.error_type(),
+                r#type: e.webgpu_error_type().into(),
             };
             let message = Message::Device(device_id, action);
             client.queue_message(&message);
