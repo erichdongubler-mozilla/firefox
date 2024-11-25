@@ -736,7 +736,7 @@ pub extern "C" fn wgpu_server_device_create_shader_module(
         };
 
         error_buf.init(ErrMsg {
-            message: &format!("Shader module creation failed: {message}"),
+            message: format!("Shader module creation failed: {message}").into(),
             r#type: err_type,
         });
         return false;
@@ -772,7 +772,7 @@ pub extern "C" fn wgpu_server_device_create_buffer(
     // Don't trust the graphics driver with buffer sizes larger than our conservative max texture size.
     if shm_allocation_failed || size > MAX_BUFFER_SIZE {
         error_buf.init(ErrMsg {
-            message: "Out of memory",
+            message: "Out of memory".into(),
             r#type: ErrorBufferType::OutOfMemory,
         });
         global.create_buffer_error(Some(buffer_id), &desc);
@@ -1970,7 +1970,7 @@ impl Global {
                 {
                     self.create_texture_error(Some(id), &desc);
                     error_buf.init(ErrMsg {
-                        message: "Out of memory",
+                        message: "Out of memory".into(),
                         r#type: ErrorBufferType::OutOfMemory,
                     });
                     return;
@@ -2187,7 +2187,7 @@ impl Global {
             }
             DeviceAction::Error { message, r#type } => {
                 error_buf.init(ErrMsg {
-                    message: &message,
+                    message: message.into(),
                     r#type,
                 });
             }

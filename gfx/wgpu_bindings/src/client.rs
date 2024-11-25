@@ -10,6 +10,7 @@ use crate::{
 
 use crate::SwapChainId;
 
+use wgc::error::AsWebGpuErrorType;
 use wgc::naga::front::wgsl::ImplementedLanguageExtension;
 use wgc::{command::RenderBundleEncoder, id, identity::IdentityManager};
 use wgt::{BufferAddress, BufferSize, DynamicOffset, IndexFormat, TextureFormat};
@@ -704,7 +705,7 @@ pub extern "C" fn wgpu_device_create_render_bundle_encoder(
             let message = format!("Error in `Device::create_render_bundle_encoder`: {}", e);
             let action = DeviceAction::Error {
                 message,
-                r#type: e.error_type(),
+                r#type: e.as_webgpu_error_type().into(),
             };
             *bb = make_byte_buf(&action);
             ptr::null_mut()
