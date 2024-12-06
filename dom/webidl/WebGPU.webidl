@@ -103,6 +103,7 @@ interface GPU {
 dictionary GPURequestAdapterOptions {
     GPUPowerPreference powerPreference;
     boolean forceFallbackAdapter = false;
+    boolean xrCompatible = false;
 };
 
 enum GPUPowerPreference {
