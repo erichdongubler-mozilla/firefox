@@ -281,13 +281,10 @@ fn run(args: CliArgs) -> miette::Result<()> {
         npm_run_wpt_cmd.spawn()
     })?;
 
-    let cts_https_html_path = out_wpt_dir.child("cts.https.html");
+    let cts_https_html_path = out_wpt_dir.child("cts-withsomeworkers.https.html");
 
     {
-        for file_name in [
-            "cts-chunked2sec.https.html",
-            "cts-withsomeworkers.https.html",
-        ] {
+        for file_name in ["cts-chunked2sec.https.html", "cts.https.html"] {
             let file_name = out_wpt_dir.child(file_name);
             log::info!("removing extraneous {file_name}…");
             remove_file(&*file_name)?;
@@ -386,6 +383,7 @@ fn run(args: CliArgs) -> miette::Result<()> {
                 "^",
                 "<meta name=variant content='",
                 r"\?",
+                r"(:?worker=(?P<worker_type>\w+)&)?",
                 r"q=(?P<test_path>[^']*?):\*'",
                 ">",
                 "$"
@@ -394,6 +392,10 @@ fn run(args: CliArgs) -> miette::Result<()> {
             cts_cases = cases_start
                 .split_terminator('\n')
                 .filter_map(|line| {
+                    if line.is_empty() {
+                        // Empty separator lines exist between groups of different `worker_type`s.
+                        return None;
+                    }
                     let captures = meta_variant_regex.captures(line);
                     if captures.is_none() {
                         parsing_failed = true;
