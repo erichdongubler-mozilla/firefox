@@ -2142,7 +2142,7 @@ function runTest(parentName, parent, ...interfaceGroups) {
       name +
         " should " +
         (interfaceMap[name] ? "" : " NOT") +
-        " be defined on '" +
+        "be defined on '" +
         parentName +
         "' scope"
     );
