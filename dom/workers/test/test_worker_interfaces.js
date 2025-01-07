@@ -658,7 +658,7 @@ function runTest(parentName, parent, data, ...interfaceGroups) {
       name +
         " should " +
         (interfaceMap[name] ? "" : " NOT") +
-        " be defined on " +
+        "be defined on " +
         parentName
     );
     if (!interfaceMap[name]) {
