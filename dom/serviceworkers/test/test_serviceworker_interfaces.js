@@ -633,7 +633,7 @@ function runTest(parentName, parent, data, ...interfaceGroups) {
         " to all webpages as a property on " +
         parentName +
         "? Do not make a change to this file without a " +
-        " review from a DOM peer for that specific change!!! (or a JS peer for changes to ecmaGlobals)"
+        "review from a DOM peer for that specific change!!! (or a JS peer for changes to ecmaGlobals)"
     );
     delete interfaceMap[name];
   }
