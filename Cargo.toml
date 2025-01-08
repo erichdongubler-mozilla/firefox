@@ -285,3 +285,18 @@ socket2_0_5 = { package = "socket2", version = "0.5", git = "https://github.com/
 tokio = { git = "https://github.com/erichdongubler-contrib/tokio", rev = "0f123e39cabb358a435837548d274d82f31ea1b2" }
 # Tip of this PR: <https://github.com/Traverse-Research/gpu-allocator/pull/258>
 gpu-allocator = { git = "https://github.com/Traverse-Research/gpu-allocator", rev = "6c262d0d88c605413955f9c851f7213d490d8771" }
+
+[patch."https://github.com/gfx-rs/wgpu"]
+naga = { path = "../../../wgpu/naga" }
+wgpu-core = { path = "../../../wgpu/wgpu-core" }
+wgpu-hal = { path = "../../../wgpu/wgpu-hal" }
+wgpu-types = { path = "../../../wgpu/wgpu-types" }
+
+[patch."https://github.com/mozilla/neqo"]
+neqo-bin = { path = "../../neqo/neqo-bin" }
+neqo-common = { path = "../../neqo/neqo-common" }
+neqo-crypto = { path = "../../neqo/neqo-crypto" }
+neqo-http3 = { path = "../../neqo/neqo-http3" }
+neqo-qpack = { path = "../../neqo/neqo-qpack" }
+neqo-transport = { path = "../../neqo/neqo-transport" }
+neqo-udp = { path = "../../neqo/neqo-udp" }
