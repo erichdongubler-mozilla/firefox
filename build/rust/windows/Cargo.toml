@@ -11,12 +11,13 @@
 
 [package]
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.74"
 name = "windows"
-version = "0.58.0"
+version = "0.59.0"
 authors = ["Microsoft"]
 build = false
 exclude = ["features.json"]
+autolib = false
 autobins = false
 autoexamples = false
 autotests = false
@@ -35,18 +36,6 @@ rustdoc-args = [
     "docsrs",
 ]
 targets = []
-
-[lib]
-name = "windows"
-path = "src/lib.rs"
-test = false
-doctest = false
-
-[dependencies.windows-core]
-version = "0.58.0"
-
-[dependencies.windows-targets]
-version = "0.52.6"
 
 [features]
 AI = ["Foundation"]
@@ -418,13 +407,16 @@ Win32_Data_Xml_MsXml = ["Win32_Data_Xml"]
 Win32_Data_Xml_XmlLite = ["Win32_Data_Xml"]
 Win32_Devices = ["Win32"]
 Win32_Devices_AllJoyn = ["Win32_Devices"]
+Win32_Devices_Beep = ["Win32_Devices"]
 Win32_Devices_BiometricFramework = ["Win32_Devices"]
 Win32_Devices_Bluetooth = ["Win32_Devices"]
+Win32_Devices_Cdrom = ["Win32_Devices"]
 Win32_Devices_Communication = ["Win32_Devices"]
 Win32_Devices_DeviceAccess = ["Win32_Devices"]
 Win32_Devices_DeviceAndDriverInstallation = ["Win32_Devices"]
 Win32_Devices_DeviceQuery = ["Win32_Devices"]
 Win32_Devices_Display = ["Win32_Devices"]
+Win32_Devices_Dvd = ["Win32_Devices"]
 Win32_Devices_Enumeration = ["Win32_Devices"]
 Win32_Devices_Enumeration_Pnp = ["Win32_Devices_Enumeration"]
 Win32_Devices_Fax = ["Win32_Devices"]
@@ -432,6 +424,8 @@ Win32_Devices_FunctionDiscovery = ["Win32_Devices"]
 Win32_Devices_Geolocation = ["Win32_Devices"]
 Win32_Devices_HumanInterfaceDevice = ["Win32_Devices"]
 Win32_Devices_ImageAcquisition = ["Win32_Devices"]
+Win32_Devices_Nfc = ["Win32_Devices"]
+Win32_Devices_Nfp = ["Win32_Devices"]
 Win32_Devices_PortableDevices = ["Win32_Devices"]
 Win32_Devices_Properties = ["Win32_Devices"]
 Win32_Devices_Pwm = ["Win32_Devices"]
@@ -738,11 +732,24 @@ Win32_Web_InternetExplorer = ["Win32_Web"]
 default = ["std"]
 deprecated = []
 docs = []
-implement = []
 std = ["windows-core/std"]
+
+[lib]
+name = "windows"
+path = "src/lib.rs"
+test = false
+doctest = false
+
+[dependencies.windows-core]
+version = "0.59.0"
+default-features = false
+
+[dependencies.windows-targets]
+version = "0.53.0"
 
 [lints.rust]
 missing_docs = "warn"
+unsafe_op_in_unsafe_fn = "warn"
 
 [lints.rust.rust_2018_idioms]
 level = "warn"

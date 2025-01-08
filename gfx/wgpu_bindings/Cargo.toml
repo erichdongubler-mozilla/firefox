@@ -62,7 +62,7 @@ rev = "2694b323c89eb2273e1ed879d6b51fe91cde8071"
 features = ["device_lost_panic", "internal_error_panic"]
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.58", default-features = false, features = [
+windows = { version = "0.59", default-features = false, features = [
   "Win32_Graphics_Direct3D12",
 ] }
 
