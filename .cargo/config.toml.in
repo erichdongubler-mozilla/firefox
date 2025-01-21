@@ -35,6 +35,11 @@ git = "https://github.com/chris-zen/coremidi.git"
 rev = "fc68464b5445caf111e41f643a2e69ccce0b4f83"
 replace-with = "vendored-sources"
 
+[source."git+https://github.com/erichdongubler-contrib/rust_libloading?rev=3a968416490d8d2beca36d9b18a4efde3eceb161"]
+git = "https://github.com/erichdongubler-contrib/rust_libloading"
+rev = "3a968416490d8d2beca36d9b18a4efde3eceb161"
+replace-with = "vendored-sources"
+
 [source."git+https://github.com/franziskuskiefer/cose-rust?rev=43c22248d136c8b38fe42ea709d08da6355cf04b"]
 git = "https://github.com/franziskuskiefer/cose-rust"
 rev = "43c22248d136c8b38fe42ea709d08da6355cf04b"
