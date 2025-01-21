@@ -266,15 +266,14 @@ dependencies = [
 [[package]]
 name = "audio_thread_priority"
 version = "0.32.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3632611da7e79f8fc8fd75840f1ccfa7792dbf1e25d00791344a4450dd8834f"
+source = "git+https://github.com/erichdongubler-mozilla/audio_thread_priority?rev=cfffed39397b18c39a680f3b05be61c10c1c96c7#cfffed39397b18c39a680f3b05be61c10c1c96c7"
 dependencies = [
  "cfg-if",
  "dbus",
  "libc",
  "log",
  "mach",
- "windows-sys",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -302,7 +301,7 @@ dependencies = [
  "serde_bytes",
  "serde_derive",
  "slab",
- "windows-sys",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1222,7 +1221,7 @@ dependencies = [
  "unic-langid",
  "uuid",
  "warp",
- "windows-sys",
+ "windows-sys 0.59.0",
  "yaml-rust",
  "zip",
 ]
@@ -1865,12 +1864,12 @@ checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
 
 [[package]]
 name = "errno"
-version = "0.3.8"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a258e46cdc063eb8519c00b9fc845fc47bcfca4130e2f08e88665ceda8474245"
+checksum = "33d852cb9b869c2a9b3df2f71a3074817f01e1844f839a144f5fcef059a4eb5d"
 dependencies = [
  "libc",
- "windows-sys",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1974,9 +1973,9 @@ dependencies = [
 
 [[package]]
 name = "fastrand"
-version = "2.1.1"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8c02a5121d4ea3eb16a80748c74f5549a5665e4c21333c6098f283870fbdea6"
+checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 
 [[package]]
 name = "ffi-support"
@@ -2823,8 +2822,7 @@ dependencies = [
 [[package]]
 name = "gpu-allocator"
 version = "0.27.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c151a2a5ef800297b4e79efa4f4bec035c5f51d5ae587287c9b952bdf734cacd"
+source = "git+https://github.com/Traverse-Research/gpu-allocator?rev=6c262d0d88c605413955f9c851f7213d490d8771#6c262d0d88c605413955f9c851f7213d490d8771"
 dependencies = [
  "log",
  "presser",
@@ -3687,8 +3685,7 @@ dependencies = [
 [[package]]
 name = "libloading"
 version = "0.8.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc2f4eb4bc735547cfed7c0a4922cbd04a4655978c09b54f1f7b228750664c34"
+source = "git+https://github.com/erichdongubler-contrib/rust_libloading?rev=3a968416490d8d2beca36d9b18a4efde3eceb161#3a968416490d8d2beca36d9b18a4efde3eceb161"
 dependencies = [
  "cfg-if",
  "windows-targets",
@@ -3755,9 +3752,9 @@ checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
 
 [[package]]
 name = "linux-raw-sys"
-version = "0.4.14"
+version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78b3ae25bc7c8c38cec158d1f2757ee79e9b3740fbc7ccf0e59e4b08d793fa89"
+checksum = "d26c52dbd32dccf2d10cac7725f8eae5296885fb5703b261f7d0a0739ec807ab"
 
 [[package]]
 name = "litemap"
@@ -4102,7 +4099,7 @@ dependencies = [
  "minidump",
  "minidump-unwind",
  "serde_json",
- "windows-sys",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4192,14 +4189,13 @@ dependencies = [
 [[package]]
 name = "mio"
 version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4569e456d394deccd22ce1c1913e6ea0e54519f577285001215d33557431afe4"
+source = "git+https://github.com/erichdongubler-contrib/mio?rev=f74b07f4333a916e753d33d54227b199da580cf7#f74b07f4333a916e753d33d54227b199da580cf7"
 dependencies = [
  "hermit-abi",
  "libc",
  "log",
  "wasi 0.11.999",
- "windows-sys",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4517,7 +4513,7 @@ dependencies = [
  "uuid",
  "winapi",
  "windows",
- "windows-sys",
+ "windows-sys 0.52.0",
  "xml-rs",
  "yoke",
  "zerocopy",
@@ -4578,7 +4574,7 @@ dependencies = [
  "serde",
  "serde_json",
  "uuid",
- "windows-sys",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5067,8 +5063,7 @@ dependencies = [
 [[package]]
 name = "parking_lot_core"
 version = "0.9.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e401f977ab385c9e4e3ab30627d6f26d00e2c73eef317493c4ec6d468726cf8"
+source = "git+https://github.com/erichdongubler-contrib/parking_lot?rev=5c8e6085ab63717bf96e42630d402a2db089e8b7#5c8e6085ab63717bf96e42630d402a2db089e8b7"
 dependencies = [
  "cfg-if",
  "libc",
@@ -5329,7 +5324,7 @@ dependencies = [
  "mozilla-central-workspace-hack",
  "scroll",
  "thiserror 2.0.9",
- "windows-sys",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5455,8 +5450,8 @@ dependencies = [
  "libc",
  "log",
  "once_cell",
- "socket2 0.5.7",
- "windows-sys",
+ "socket2 0.5.8",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5843,15 +5838,15 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.38.39"
+version = "0.38.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "375116bee2be9ed569afe2154ea6a99dfdffd257f533f187498c2a8f5feaf4ee"
+checksum = "a78891ee6bf2340288408954ac787aa063d8e8817e9f53abb37c695c6d834ef6"
 dependencies = [
  "bitflags 2.9.0",
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -6183,17 +6178,16 @@ checksum = "b7c388c1b5e93756d0c740965c41e8822f866621d41acbdf6336a6a168f8840c"
 name = "socket2"
 version = "0.4.999"
 dependencies = [
- "socket2 0.5.7",
+ "socket2 0.5.8",
 ]
 
 [[package]]
 name = "socket2"
-version = "0.5.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce305eb0b4296696835b71df73eb912e0f1ffd2556a501fcede6e0c50349191c"
+version = "0.5.8"
+source = "git+https://github.com/erichdongubler-contrib/socket2?rev=cdd3f30813bc75b09da811a45c53408b94aabea6#cdd3f30813bc75b09da811a45c53408b94aabea6"
 dependencies = [
  "libc",
- "windows-sys",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -6540,16 +6534,15 @@ dependencies = [
 
 [[package]]
 name = "tempfile"
-version = "3.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38c246215d7d24f48ae091a2902398798e05d978b24315d6efbc00ede9a8bb91"
+version = "3.15.0"
+source = "git+https://github.com/erichdongubler-contrib/tempfile?rev=16e37c89736d771bcc2617378eca6db3721df50d#16e37c89736d771bcc2617378eca6db3721df50d"
 dependencies = [
  "cfg-if",
  "fastrand",
- "getrandom 0.3.1",
+ "getrandom",
  "once_cell",
  "rustix",
- "windows-sys",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -6701,25 +6694,23 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.39.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "daa4fb1bc778bd6f04cbfc4bb2d06a7396a8f299dc33ea1900cedaa316f467b1"
+version = "1.43.0"
+source = "git+https://github.com/erichdongubler-contrib/tokio?rev=0f123e39cabb358a435837548d274d82f31ea1b2#0f123e39cabb358a435837548d274d82f31ea1b2"
 dependencies = [
  "backtrace",
  "bytes",
  "libc",
  "mio",
  "pin-project-lite",
- "socket2 0.5.7",
+ "socket2 0.5.8",
  "tokio-macros",
- "windows-sys",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
 name = "tokio-macros"
-version = "2.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "693d596312e88961bc67d7f1f97af8a70227d9f90c31bba5806eec004978d752"
+version = "2.5.0"
+source = "git+https://github.com/erichdongubler-contrib/tokio?rev=0f123e39cabb358a435837548d274d82f31ea1b2#0f123e39cabb358a435837548d274d82f31ea1b2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7803,6 +7794,15 @@ name = "windows-sys"
 version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d"
+dependencies = [
+ "windows-targets",
+]
+
+[[package]]
+name = "windows-sys"
+version = "0.59.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e38bc4d79ed67fd075bcc251a1c39b32a1776bbe92e5bef1f0bf1f8c531853b"
 dependencies = [
  "windows-targets",
 ]
