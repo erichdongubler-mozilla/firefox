@@ -45,7 +45,7 @@ objc = "0.2"
 gtk = { package = "gtkbind", path = "../gtkbind" }
 
 [target."cfg(target_os = \"windows\")".dependencies.windows-sys]
-version = "0.52"
+version = "0.59"
 features = [
     "Win32_Foundation",
     "Win32_Globalization",
