@@ -15,6 +15,12 @@ rust-version = "1.56.0"
 name = "libloading"
 version = "0.8.6"
 authors = ["Simonas Kazlauskas <libloading@kazlauskas.me>"]
+build = false
+autolib = false
+autobins = false
+autoexamples = false
+autotests = false
+autobenches = false
 description = "Bindings around the platform's dynamic library loading primitives with greatly improved memory safety."
 documentation = "https://docs.rs/libloading/"
 readme = "README.mkd"
@@ -35,22 +41,45 @@ rustdoc-args = [
     "libloading_docs",
 ]
 
-[dev-dependencies.libc]
-version = "0.2"
+[lib]
+name = "libloading"
+path = "src/lib.rs"
 
-[dev-dependencies.static_assertions]
-version = "1.1"
+[[test]]
+name = "constants"
+path = "tests/constants.rs"
+
+[[test]]
+name = "functions"
+path = "tests/functions.rs"
+
+[[test]]
+name = "library_filename"
+path = "tests/library_filename.rs"
+
+[[test]]
+name = "markers"
+path = "tests/markers.rs"
+
+[[test]]
+name = "windows"
+path = "tests/windows.rs"
+
+[dev-dependencies]
+libc = "0.2"
+static_assertions = "1.1"
 
 [target."cfg(unix)".dependencies.cfg-if]
 version = "1"
 
 [target."cfg(windows)".dependencies.windows-targets]
-version = ">=0.48, <0.53"
+version = ">=0.48, <0.54"
 
 [target."cfg(windows)".dev-dependencies.windows-sys]
-version = ">=0.52,<0.59"
+version = ">=0.52,<0.60"
 features = ["Win32_Foundation"]
 
 [lints.rust.unexpected_cfgs]
 level = "warn"
 priority = 0
+check-cfg = ["cfg(libloading_docs)"]
