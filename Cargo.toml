@@ -276,3 +276,20 @@ zip = { path = "third_party/rust/zip" }
 [patch."https://github.com/mozilla/neqo"]
 neqo-crypto = { path = "third_party/rust/neqo-crypto" }
 neqo-common = { path = "third_party/rust/neqo-common" }
+
+# Tip of this PR: <https://github.com/nagisa/rust_libloading/pull/169>
+libloading = { git = "https://github.com/erichdongubler-contrib/rust_libloading", rev = "3a968416490d8d2beca36d9b18a4efde3eceb161" }
+# Tip of this PR: <https://github.com/Amanieu/parking_lot/pull/458>
+parking_lot_core = { git = "https://github.com/erichdongubler-contrib/parking_lot", rev = "5c8e6085ab63717bf96e42630d402a2db089e8b7" }
+# Tip of this PR: <https://github.com/tokio-rs/mio/pull/1857>
+mio = { git = "https://github.com/erichdongubler-contrib/mio", rev = "f74b07f4333a916e753d33d54227b199da580cf7" }
+# Tip of this PR: <https://github.com/mozilla/audio_thread_priority/pull/30>
+audio_thread_priority = { git = "https://github.com/erichdongubler-mozilla/audio_thread_priority", rev = "cfffed39397b18c39a680f3b05be61c10c1c96c7" }
+# Tip of this PR: <https://github.com/Stebalien/tempfile/pull/319>
+tempfile = { git = "https://github.com/erichdongubler-contrib/tempfile", rev = "16e37c89736d771bcc2617378eca6db3721df50d" }
+# Tip of this PR: <https://github.com/rust-lang/socket2/pull/545>
+socket2_0_5 = { package = "socket2", version = "0.5", git = "https://github.com/erichdongubler-contrib/socket2", rev = "cdd3f30813bc75b09da811a45c53408b94aabea6" }
+# Tip of this PR: <https://github.com/tokio-rs/tokio/pull/7117>
+tokio = { git = "https://github.com/erichdongubler-contrib/tokio", rev = "0f123e39cabb358a435837548d274d82f31ea1b2" }
+# Tip of this PR: <https://github.com/Traverse-Research/gpu-allocator/pull/258>
+gpu-allocator = { git = "https://github.com/Traverse-Research/gpu-allocator", rev = "6c262d0d88c605413955f9c851f7213d490d8771" }
