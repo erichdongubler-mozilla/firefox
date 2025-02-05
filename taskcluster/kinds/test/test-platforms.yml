@@ -276,6 +276,7 @@ windows11-64-24h2-shippable/opt:
         - desktop-screenshot-capture
         - web-platform-tests
         - web-platform-tests-backlog
+        - webgpu
         - windows11-24h2-tests
         - talos-xperf
         - talos-profiling
@@ -288,6 +289,7 @@ windows11-64-24h2-devedition/opt:
     build-signing-label: build-signing-win64-devedition/opt
     test-sets:
         - desktop-screenshot-capture
+        - webgpu
         - web-platform-tests
         - windows11-24h2-tests
 
