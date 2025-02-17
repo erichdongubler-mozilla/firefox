@@ -147,10 +147,10 @@ base64_13 = { package = "base64", path = "build/rust/base64_13" }
 base64_21 = { package = "base64", path = "build/rust/base64" }
 
 # Patch wasi 0.10 to 0.13
-wasi_0_10 = { package = "wasi", path = "build/rust/wasi-0.10" }
+wasi-0_10 = { package = "wasi", version = "0.10", path = "build/rust/wasi-0.10" }
 
 # Patch wasi 0.11 to 0.13
-wasi_0_11 = { package = "wasi", path = "build/rust/wasi" }
+wasi-0_11 = { package = "wasi", version = "0.11", path = "build/rust/wasi-0.11" }
 
 # tokio 0.29.0 includes an experimental "tracing" feature which requires
 # backtrace ^0.3.58 and the `tokio_unstable` flag. We don't use it, and nothing
@@ -195,6 +195,9 @@ socket2 = { path = "build/rust/socket2" }
 
 # Patch `thiserror` 1 to 2.
 thiserror = { path = "build/rust/thiserror" }
+
+# Patch `getrandom` 0.2 to 0.3.
+getrandom = { path = "build/rust/getrandom" }
 
 # The following overrides point to dummy projects, as a temporary measure until this is resolved:
 # https://github.com/rust-lang/cargo/issues/6179

@@ -1,7 +1,7 @@
 [package]
 name = "getrandom"
 version = "0.2.999"
-edition = "2021"
+edition = "2018"
 license = "MIT OR Apache-2.0"
 
 [lib]
@@ -9,9 +9,14 @@ path = "lib.rs"
 
 [dependencies.getrandom]
 version = "0.3.1"
-no-default-features = true
+default-features = false
 
 [features]
-custom = []
-js = ["getrandom/wasm_js"]
+custom = []                                       # From 0.2.*, not present in 0.3.*.
+js = ["getrandom/wasm_js"]                        # From 0.2.*, not present in 0.3.*.
+wasm_js = ["getrandom/wasm_js"]                   # From 0.3.*.
+linux_disable_fallback = []                       # From 0.2.*, not present in 0.3.*.
+rdrand = []                                       # From 0.2.*, not present in 0.3.*.
+rustc-dep-of-std = ["getrandom/rustc-dep-of-std"]
 std = ["getrandom/std"]
+test-in-browser = []                              # From 0.2.*, not present in 0.3.*.
