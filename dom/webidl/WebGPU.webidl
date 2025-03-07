@@ -1328,7 +1328,6 @@ partial interface GPUDevice {
 // NOTE: `GPUUncapturedErrorEvent{,Init}` is in `GPUUncapturedErrorEvent.webidl`.
 
 partial interface GPUDevice {
-    [Exposed=(Window, Worker)]
     attribute EventHandler onuncapturederror;
 };
 
