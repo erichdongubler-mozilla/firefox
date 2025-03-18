@@ -7,13 +7,13 @@
 use indexmap::{map, IndexMap};
 use std::{
     fmt::{self, Debug},
-    iter::FromIterator,
     ops,
 };
 
 use crate::Value;
 
 /// Represents a plist dictionary type.
+#[derive(Clone, Default, PartialEq)]
 pub struct Dictionary {
     map: IndexMap<String, Value>,
 }
@@ -66,7 +66,7 @@ impl Dictionary {
     /// in the dictionary.
     #[inline]
     pub fn remove(&mut self, key: &str) -> Option<Value> {
-        self.map.remove(key)
+        self.map.swap_remove(key)
     }
 
     /// Scan through each key-value pair in the map and keep those where the
@@ -157,31 +157,6 @@ impl Dictionary {
         ValuesMut {
             iter: self.map.values_mut(),
         }
-    }
-}
-
-impl Default for Dictionary {
-    #[inline]
-    fn default() -> Self {
-        Dictionary {
-            map: Default::default(),
-        }
-    }
-}
-
-impl Clone for Dictionary {
-    #[inline]
-    fn clone(&self) -> Self {
-        Dictionary {
-            map: self.map.clone(),
-        }
-    }
-}
-
-impl PartialEq for Dictionary {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        self.map.eq(&other.map)
     }
 }
 
@@ -564,7 +539,7 @@ impl<'a> OccupiedEntry<'a> {
     /// ```
     #[inline]
     pub fn remove(self) -> Value {
-        self.occupied.remove()
+        self.occupied.swap_remove()
     }
 }
 
@@ -726,17 +701,18 @@ pub mod serde_impls {
 #[cfg(test)]
 mod tests {
     use super::Dictionary;
-    use std::array::IntoIter;
 
     #[test]
     fn from_hash_map_to_dict() {
-        let dict: Dictionary = IntoIter::new([
+        let dict: Dictionary = [
             ("Doge", "Shiba Inu"),
             ("Cheems", "Shiba Inu"),
             ("Walter", "Bull Terrier"),
             ("Perro", "Golden Retriever"),
-        ])
+        ]
+        .into_iter()
         .collect();
+
         assert_eq!(
             dict.get("Doge").and_then(|v| v.as_string()),
             Some("Shiba Inu")
