@@ -62,6 +62,7 @@
 #include "mozilla/dom/VideoFrame.h"
 #include "mozilla/dom/AudioData.h"
 #include "mozilla/dom/VideoFrameBinding.h"
+#include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/dom/WebIDLSerializable.h"
 #include "mozilla/dom/WritableStream.h"
 #include "mozilla/dom/WritableStreamBinding.h"
@@ -69,6 +70,7 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/fallible.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/webgpu/PipelineError.h"
 #include "nsContentUtils.h"
 #include "nsDebug.h"
 #include "nsError.h"
@@ -1150,6 +1152,14 @@ JSObject* StructuredCloneHolder::CustomReadHandler(
     if (EncodedAudioChunk_Binding::ConstructorEnabled(aCx, global)) {
       return EncodedAudioChunk::ReadStructuredClone(
           aCx, mGlobal, aReader, EncodedAudioChunks()[aIndex]);
+    }
+  }
+
+  if (StaticPrefs::dom_webgpu_enabled() && aTag == SCTAG_DOM_GPUPIPELINEERROR) {
+    JS::Rooted<JSObject*> global(aCx, mGlobal->GetGlobalJSObject());
+    if (GPUPipelineError_Binding::ConstructorEnabled(aCx, global)) {
+      return webgpu::PipelineError::ReadStructuredClone(aCx, mGlobal, aReader,
+                                                        aIndex);
     }
   }
 
