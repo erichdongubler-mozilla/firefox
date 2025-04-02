@@ -8,6 +8,7 @@
 
 #include "Error.h"
 #include "mozilla/dom/DOMException.h"
+#include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "nsIGlobalObject.h"
 
@@ -27,6 +28,13 @@ class PipelineError final : public dom::DOMException {
       const dom::GPUPipelineErrorInit& options);
 
   dom::GPUPipelineErrorReason Reason() const;
+
+  static JSObject* ReadStructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
+                                       JSStructuredCloneReader* aReader,
+                                       uint32_t aIndex);
+
+  bool WriteStructuredClone(JSStructuredCloneWriter* aWriter,
+                            dom::StructuredCloneHolder* aHolder) const;
 
  private:
   dom::GPUPipelineErrorReason mReason;
