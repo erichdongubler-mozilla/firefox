@@ -167,6 +167,10 @@ enum StructuredCloneTags : uint32_t {
 
   SCTAG_DOM_RTCENCODEDAUDIOFRAME,
 
+  // WebGPU
+
+  SCTAG_DOM_GPUPIPELINEERROR,
+
   // IMPORTANT: If you plan to add an new IDB tag, it _must_ be add before the
   // "less stable" tags!
 };
