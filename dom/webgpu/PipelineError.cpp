@@ -5,6 +5,7 @@
 
 #include "PipelineError.h"
 
+#include "js/StructuredClone.h"
 #include "mozilla/RefPtr.h"
 #include "nsIGlobalObject.h"
 
@@ -30,5 +31,15 @@ PipelineError::PipelineError(const nsACString& aMessage,
 }
 
 dom::GPUPipelineErrorReason PipelineError::Reason() const { return mReason; }
+
+/*static*/ JSObject* PipelineError::ReadStructuredClone(
+    JSContext* aCx, nsIGlobalObject* aGlobal, JSStructuredCloneReader* aReader,
+    uint32_t aIndex) {}
+
+bool PipelineError::WriteStructuredClone(
+    JSStructuredCloneWriter* aWriter,
+    dom::StructuredCloneHolder* aHolder) const {
+  JS_WriteUint32Pair();
+}
 
 }  // namespace mozilla::webgpu
