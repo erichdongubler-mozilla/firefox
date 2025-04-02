@@ -11,6 +11,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/Console.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "Device.h"
 #include "CommandEncoder.h"
@@ -23,6 +24,7 @@
 #include "DeviceLostInfo.h"
 #include "InternalError.h"
 #include "OutOfMemoryError.h"
+#include "PipelineError.h"
 #include "PipelineLayout.h"
 #include "QuerySet.h"
 #include "Queue.h"
@@ -37,6 +39,7 @@
 #include "ipc/WebGPUChild.h"
 #include "Utility.h"
 #include "nsGlobalWindowInner.h"
+#include "nsString.h"
 
 namespace mozilla::webgpu {
 
