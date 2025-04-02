@@ -11,6 +11,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/Console.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "Device.h"
 #include "CommandEncoder.h"
@@ -23,6 +24,7 @@
 #include "DeviceLostInfo.h"
 #include "InternalError.h"
 #include "OutOfMemoryError.h"
+#include "PipelineError.h"
 #include "PipelineLayout.h"
 #include "QuerySet.h"
 #include "Queue.h"
@@ -37,6 +39,7 @@
 #include "ipc/WebGPUChild.h"
 #include "Utility.h"
 #include "nsGlobalWindowInner.h"
+#include "nsString.h"
 
 namespace mozilla::webgpu {
 
@@ -988,8 +991,24 @@ already_AddRefed<dom::Promise> Device::CreateComputePipelineAsync(
               promise->MaybeResolve(object);
             },
             [promise](const ipc::ResponseRejectReason&) {
-              promise->MaybeRejectWithOperationError(
-                  "Internal communication error");
+              dom::GPUPipelineErrorInit errorInit;
+              errorInit.mReason = dom::GPUPipelineErrorReason::Internal;
+
+              auto* global = promise->GetGlobalObject();
+              dom::AutoJSAPI api;
+              ErrorResult res;
+              if (api.Init(global)) {
+                PipelineError error{"Internal communication error"_ns,
+                                    dom::GPUPipelineErrorReason::Internal};
+                const auto& cx = api.cx();
+                JS::Rooted<JS::Value> errorVal(cx, error);
+                ErrorResult res;
+                res.ThrowJSException(cx, errorVal);
+                promise->MaybeRejectWithExceptionFromContext(cx);
+              } else {
+                promise->MaybeRejectWithOperationError(
+                    "Internal communication error");
+              }
             });
   } else {
     promise->MaybeRejectWithOperationError("Internal communication error");
