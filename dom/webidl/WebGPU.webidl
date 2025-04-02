@@ -661,7 +661,7 @@ interface GPUCompilationInfo {
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
- Exposed=(Window, Worker), SecureContext]
+ Exposed=(Window, Worker), SecureContext, Serializable]
 interface GPUPipelineError : DOMException {
     constructor(optional DOMString message = "", GPUPipelineErrorInit options);
     readonly attribute GPUPipelineErrorReason reason;
