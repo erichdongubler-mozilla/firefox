@@ -22,7 +22,7 @@
 #include "nsString.h"
 #include "nsStringFwd.h"
 
-#ifndef EARLY_BETA_OR_EARLIER
+#if !defined(EARLY_BETA_OR_EARLIER) && !defined(MOZ_DEV_EDITION)
 #  include "mozilla/dom/WorkerPrivate.h"
 #endif
 
@@ -113,8 +113,8 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
     }
   };
 
-#ifndef EARLY_BETA_OR_EARLIER
-  rejectIf(true, "WebGPU is not yet available in Release or late Beta builds.");
+#if !defined(EARLY_BETA_OR_EARLIER) && !defined(MOZ_DEV_EDITION)
+  rejectIf(true, "WebGPU is not yet available in Release builds.");
 
   // NOTE: Deliberately left after the above check so that we only enter
   // here if it's removed. Above is a more informative diagnostic, while the
@@ -124,8 +124,8 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   // <https://bugzilla.mozilla.org/show_bug.cgi?id=1942431>
   if (dom::WorkerPrivate* wp = dom::GetCurrentThreadWorkerPrivate()) {
     rejectIf(wp->IsServiceWorker(),
-             "WebGPU in service workers is not yet available in Release or "
-             "late Beta builds; see "
+             "WebGPU in service workers is not yet available in Release "
+             "builds; see "
              "<https://bugzilla.mozilla.org/show_bug.cgi?id=1942431>.");
   }
 #endif
