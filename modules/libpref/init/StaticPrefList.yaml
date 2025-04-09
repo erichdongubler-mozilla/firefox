@@ -5379,13 +5379,13 @@
 # Is support for the Web GPU API enabled?
 - name: dom.webgpu.enabled
   type: RelaxedAtomicBool
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: @IS_DEV_EDITION_OR_EARLY_BETA_OR_EARLIER@
   mirror: always
 
 # Is support for the Web GPU API enabled on DOM workers?
 - name: dom.webgpu.workers.enabled
   type: RelaxedAtomicBool
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: @IS_DEV_EDITION_OR_EARLY_BETA_OR_EARLIER@
   mirror: always
 
 # Comma-separated list of wgpu backend names to permit in WebGPU adapters.
