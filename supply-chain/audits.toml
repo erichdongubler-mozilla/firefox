@@ -851,6 +851,11 @@ criteria = "safe-to-deploy"
 delta = "0.7.2 -> 0.7.6"
 notes = "Manually verified new unsafe pointer arithmetic."
 
+[[audits.as-slice]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+version = "0.2.1"
+
 [[audits.ascii]]
 who = "Glenn Watson <git@chillybin.org>"
 criteria = "safe-to-deploy"
