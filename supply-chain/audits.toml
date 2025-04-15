@@ -1941,6 +1941,11 @@ who = "Matthew Gregan <kinetik@flim.org>"
 criteria = "safe-to-deploy"
 delta = "0.29.0 -> 0.30.1"
 
+[[audits.cvt]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+version = "0.1.2"
+
 [[audits.d3d12]]
 who = "Jim Blandy <jimb@red-bean.com>"
 criteria = "safe-to-deploy"
