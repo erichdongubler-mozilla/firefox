@@ -5439,6 +5439,11 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.6.27 -> 0.6.28"
 
+[[audits.remove_dir_all]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.5.3 -> 0.8.3"
+
 [[audits.replace_with]]
 who = "Lars Eggert <lars@eggert.org>"
 criteria = "safe-to-deploy"
