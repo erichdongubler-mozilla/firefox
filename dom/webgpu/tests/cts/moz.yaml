@@ -29,8 +29,8 @@ vendoring:
   skip-vendoring-steps:
     - update-moz-build
   include:
-    - .gitattributes
-    - .gitignore  # Avoids re-formatting of generated files.
+    - '**/.gitattributes'
+    - '**/.gitignore'  # Avoids re-formatting of generated files.
   update-actions:
     # Use the version from `mach vendor`, instead of a script that consults Git. This is wrong,
     # because (1) it would use a Git checkout of _Gecko_ rather than CTS, and (2) we might not even
