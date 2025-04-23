@@ -457,6 +457,14 @@ fn run(args: CliArgs) -> miette::Result<()> {
                         DivideInto::TestsInSameFile,
                     ),
                 ),
+                (
+                    "webgpu:web_platform,copyToTexture,ImageBitmap",
+                    TestGroupSplit::single(
+                        "from_ImageData",
+                        &["alpha"],
+                        DivideInto::TestsInSameFile,
+                    ),
+                ),
             ]
         };
 
