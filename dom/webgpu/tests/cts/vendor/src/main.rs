@@ -304,6 +304,12 @@ fn run(args: CliArgs) -> miette::Result<()> {
                     ),
                 ),
                 (
+                    "webgpu:shader,validation,expression,call,builtin,quadSwap",
+                        "return_type",
+                        &["retType"],
+                    ),
+                ),
+                (
                     "webgpu:shader,execution,expression,call,builtin,textureGatherCompare",
                     TestGroupSplit::multiple(
                         [
@@ -356,19 +362,34 @@ fn run(args: CliArgs) -> miette::Result<()> {
                 ),
                 (
                     "webgpu:shader,execution,expression,call,builtin,textureSampleCompare",
-                    TestGroupSplit::multiple(["2d_coords", "arrayed_2d_coords"].map(|test| {
-                        (
-                            test,
-                            TestSplit::new(&["format"], DivideInto::TestsInSameFile),
-                        )
-                    })),
+                    TestGroupSplit::multiple(
+                        ["2d_coords", "arrayed_2d_coords", "depth_3d_coords"].map(|test| {
+                            (
+                                test,
+                                TestSplit::new(&["format"], DivideInto::TestsInSameFile),
+                            )
+                        }),
+                    ),
                 ),
                 (
                     "webgpu:shader,execution,expression,call,builtin,textureSampleLevel",
-                    TestGroupSplit::single(
-                        "sampled_3d_coords,lodClamp",
-                        &["stage"],
-                        DivideInto::TestsInSameFile,
+                    TestGroupSplit::multiple(
+                        [
+                            "sampled_2d_coords",
+                            "sampled_3d_coords",
+                            "sampled_array_3d_coords",
+                        ]
+                        .map(|test| {
+                            (
+                                test,
+                                TestSplit::new(&["stage"], DivideInto::TestsInSameFile),
+                            )
+                        })
+                        .into_iter()
+                        .chain([(
+                            "sampled_3d_coords,lodClamp",
+                            TestSplit::new(&["stage"], DivideInto::TestsInSameFile),
+                        )]),
                     ),
                 ),
                 (
