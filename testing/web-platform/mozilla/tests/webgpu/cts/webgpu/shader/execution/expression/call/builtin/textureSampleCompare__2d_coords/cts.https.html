@@ -33,5 +33,8 @@
 </script>
 <script type=module src=/_mozilla/webgpu/common/runtime/wpt.js></script>
 
-<meta name=variant content='?q=webgpu:shader,execution,expression,call,builtin,textureSampleCompare:3d_coords:*'>
-<meta name=variant content='?q=webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_3d_coords:*'>
+<meta name=variant content='?q=webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:format="depth16unorm";*'>
+<meta name=variant content='?q=webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:format="depth24plus";*'>
+<meta name=variant content='?q=webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:format="depth24plus-stencil8";*'>
+<meta name=variant content='?q=webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:format="depth32float";*'>
+<meta name=variant content='?q=webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:format="depth32float-stencil8";*'>
