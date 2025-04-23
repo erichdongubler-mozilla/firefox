@@ -312,6 +312,14 @@ fn run(args: CliArgs) -> miette::Result<()> {
                 (
                     "webgpu:shader,execution,expression,call,builtin,textureGather",
                     TestGroupSplit::single(
+                        "sampled_2d_coords",
+                        &["stage"],
+                        DivideInto::TestsInSameFile,
+                    ),
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureGather",
+                    TestGroupSplit::single(
                         "sampled_3d_coords",
                         &["stage"],
                         DivideInto::TestsInSameFile,
