@@ -270,16 +270,358 @@ fn run(args: CliArgs) -> miette::Result<()> {
 
         let test_split_config = {
             use test_split::*;
-            [(
-                "webgpu:api,operation,command_buffer,image_copy:mip_levels",
-                Config {
-                    new_sibling_basename: "image_copy__mip_levels",
-                    split_by: SplitBy::first_param(
-                        "initMethod",
-                        SplitParamsTo::SeparateTestsInSameFile,
-                    ),
-                },
-            )]
+            [
+                (
+                    "webgpu:api,operation,command_buffer,image_copy:mip_levels",
+                    Config {
+                        new_sibling_basename: "image_copy__mip_levels",
+                        split_by: SplitBy::first_param(
+                            "initMethod",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:api,validation,encoding,cmds,copyTextureToTexture:texture_format_compatibility",
+                    Config {
+                        new_sibling_basename: "copyTextureToTexture__texture_format_compatibility",
+                        split_by: SplitBy::first_param(
+                            "srcFormat",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    }
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,subgroupAdd:fp_accuracy",
+                    Config {
+                        new_sibling_basename: "subgroupAdd__fp_accuracy",
+                        split_by: SplitBy::first_param(
+                            "case",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,subgroupMinMax:fp_accuracy",
+                    Config {
+                        new_sibling_basename: "subgroupMinMax__fp_accuracy",
+                        split_by: SplitBy::first_param(
+                            "case",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureGather:sampled_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureGather__sampled_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureGather:sampled_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureGather__sampled_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureGather:sampled_array_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureGather__sampled_array_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureGather:sampled_array_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureGather__sampled_array_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare:array_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureGatherCompare__array_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare:array_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureGatherCompare__array_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare:sampled_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureGatherCompare__sampled_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare:sampled_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureGatherCompare__sampled_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSample:sampled_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSample__sampled_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSample:sampled_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureSample__sampled_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSample:sampled_array_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSample__sampled_array_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSample:sampled_array_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureSample__sampled_array_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:arrayed_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleBias__arrayed_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:arrayed_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleBias__arrayed_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        )
+                    }
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:sampled_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleBias__sampled_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:sampled_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleBias__sampled_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:arrayed_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleBias__arrayed_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        )
+                    }
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:arrayed_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleBias__arrayed_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleCompare__2d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleCompare__arrayed_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:depth_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleLevel__depth_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleLevel__sampled_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_3d_coords,lodClamp",
+                    Config {
+                        new_sibling_basename: "textureSampleLevel__sampled_3d_coords,lodClamp",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleLevel__sampled_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_array_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleLevel__sampled_array_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_array_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleLevel__sampled_array_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_3d_coords,lodClamp",
+                    Config {
+                        new_sibling_basename: "textureSampleLevel__sampled_3d_coords__lodClamp",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,validation,expression,call,builtin,quadSwap:return_type",
+                    Config {
+                        new_sibling_basename: "quadSwap__return_type",
+                        split_by: SplitBy::first_param(
+                            "retType",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,validation,expression,call,builtin,subgroupShuffle:return_type",
+                    Config {
+                        new_sibling_basename: "subgroupShuffle__return_type",
+                        split_by: SplitBy::first_param(
+                            "retType",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:web_platform,copyToTexture,ImageBitmap:from_canvas",
+                    Config {
+                        new_sibling_basename: "ImageBitmap__from_canvas",
+                        split_by: SplitBy::first_param(
+                            "orientation",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:web_platform,copyToTexture,ImageBitmap:from_ImageData",
+                    Config {
+                        new_sibling_basename: "ImageBitmap__from_ImageData",
+                        split_by: SplitBy::first_param(
+                            "alpha",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+            ]
         };
 
         let mut tests_to_split = test_split_config
