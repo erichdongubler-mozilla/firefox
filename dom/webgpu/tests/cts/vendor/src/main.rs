@@ -314,8 +314,13 @@ fn run(args: CliArgs) -> miette::Result<()> {
                 ),
                 (
                     "webgpu:shader,execution,expression,call,builtin,textureGather",
-                    TestGroupSplit::multiple(["sampled_3d_coords", "sampled_array_3d_coords"].map(
-                        |test| {
+                    TestGroupSplit::multiple(
+                        [
+                            "sampled_2d_coords",
+                            "sampled_3d_coords",
+                            "sampled_array_3d_coords",
+                        ]
+                        .map(|test| {
                             let (params, divide_into): (&'static [_], _) = match test {
                                 "sampled_3d_coords" => (&["stage"], DivideInto::TestsInSameFile),
                                 _ => (
@@ -324,8 +329,8 @@ fn run(args: CliArgs) -> miette::Result<()> {
                                 ),
                             };
                             (test, TestSplit::new(params, divide_into))
-                        },
-                    )),
+                        }),
+                    ),
                 ),
                 (
                     "webgpu:shader,execution,expression,call,builtin,textureGatherCompare",
