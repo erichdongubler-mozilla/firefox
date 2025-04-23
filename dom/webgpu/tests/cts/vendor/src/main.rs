@@ -347,6 +347,66 @@ fn run(args: CliArgs) -> miette::Result<()> {
                     },
                 ),
                 (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:arrayed_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleBias__arrayed_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:arrayed_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleBias__arrayed_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        )
+                    }
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:sampled_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleBias__sampled_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:sampled_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleBias__sampled_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:arrayed_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleBias__arrayed_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        )
+                    }
+                ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:arrayed_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureSampleBias__arrayed_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "format",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
                     "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_3d_coords,lodClamp",
                     Config {
                         new_sibling_basename: "textureSampleLevel__sampled_3d_coords,lodClamp",
