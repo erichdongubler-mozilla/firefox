@@ -313,11 +313,14 @@ fn run(args: CliArgs) -> miette::Result<()> {
                 ),
                 (
                     "webgpu:shader,execution,expression,call,builtin,textureGather",
-                    TestGroupSplit::single(
-                        "sampled_array_3d_coords",
-                        &["stage"],
-                        DivideInto::TestsInSameFile,
-                    ),
+                    TestGroupSplit::multiple(["sampled_3d_coords", "sampled_array_3d_coords"].map(
+                        |test| {
+                            (
+                                test,
+                                TestSplit::new(&["stage"], DivideInto::TestsInSameFile),
+                            )
+                        },
+                    )),
                 ),
                 (
                     "webgpu:shader,execution,expression,call,builtin,textureGatherCompare",
