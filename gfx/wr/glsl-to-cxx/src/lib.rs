@@ -954,7 +954,7 @@ pub fn write_convert_constructor(state: &OutputState, name: &str, s: &hir::Struc
     }
     state.write("}\n");
 
-    let _ = write!(state, "IMPLICIT {}({}_scalar s)", name, name);
+    let _ = write!(state, "explicit {}({}_scalar s)", name, name);
     let mut first_field = true;
     for hir::StructField { ty, name } in &s.fields {
         if ty.array_sizes.is_none() {
