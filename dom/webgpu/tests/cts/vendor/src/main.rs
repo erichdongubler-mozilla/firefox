@@ -306,6 +306,16 @@ fn run(args: CliArgs) -> miette::Result<()> {
                         ),
                     }
                 ),
+                (
+                    "webgpu:web_platform,copyToTexture,ImageBitmap:from_canvas",
+                    Config {
+                        new_sibling_basename: "ImageBitmap__from_canvas",
+                        split_by: SplitBy::first_param(
+                            "orientation",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
             ]
         };
 
