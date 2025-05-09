@@ -10,6 +10,7 @@ use clap::Parser;
 use ezcmd::EasyCommand;
 use itertools::Itertools;
 use joinery::JoinableIterator;
+use lazy_format::lazy_format;
 use miette::{ensure, miette, Context, Diagnostic, IntoDiagnostic, Report, SourceSpan};
 use regex::Regex;
 
@@ -287,282 +288,221 @@ fn run(args: CliArgs) -> miette::Result<()> {
             use test_split::*;
             [
                 (
-                    "webgpu:api,operation,command_buffer,image_copy:mip_levels",
-                    Config {
-                        new_sibling_basename: "image_copy__mip_levels",
-                        split_by: SplitBy::first_param(
-                            "initMethod",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:api,operation,command_buffer,image_copy",
+                    TestGroupSplit::single(
+                        "mip_levels",
+                        &["initMethod"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:api,validation,encoding,cmds,copyTextureToTexture:texture_format_compatibility",
-                    Config {
-                        new_sibling_basename: "copyTextureToTexture__texture_format_compatibility",
-                        split_by: SplitBy::first_param(
-                            "srcFormat",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    }
+                    "webgpu:api,validation,encoding,cmds,copyTextureToTexture",
+                    TestGroupSplit::single(
+                        "texture_format_compatibility",
+                        &["srcFormat"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare:array_2d_coords",
-                    Config {
-                        new_sibling_basename: "textureGatherCompare__array_2d_coords",
-                        split_by: SplitBy::first_param(
-                            "stage",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare",
+                    TestGroupSplit::single(
+                        "array_2d_coords",
+                        &["stage"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare:array_3d_coords",
-                    Config {
-                        new_sibling_basename: "textureGatherCompare__array_3d_coords",
-                        split_by: SplitBy::first_param(
-                            "stage",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare",
+                    TestGroupSplit::single(
+                        "array_3d_coords",
+                        &["stage"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare:sampled_2d_coords",
-                    Config {
-                        new_sibling_basename: "textureGatherCompare__sampled_2d_coords",
-                        split_by: SplitBy::first_param(
-                            "stage",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare",
+                    TestGroupSplit::single(
+                        "sampled_2d_coords",
+                        &["stage"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare:sampled_3d_coords",
-                    Config {
-                        new_sibling_basename: "textureGatherCompare__sampled_3d_coords",
-                        split_by: SplitBy::first_param(
-                            "stage",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare",
+                    TestGroupSplit::single(
+                        "sampled_3d_coords",
+                        &["stage"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSample:sampled_2d_coords",
-                    Config {
-                        new_sibling_basename: "textureSample__sampled_2d_coords",
-                        split_by: SplitBy::first_param(
-                            "format",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSample",
+                    TestGroupSplit::single(
+                        "sampled_2d_coords",
+                        &["format"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSample:sampled_3d_coords",
-                    Config {
-                        new_sibling_basename: "textureSample__sampled_3d_coords",
-                        split_by: SplitBy::first_param(
-                            "format",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSample",
+                    TestGroupSplit::single(
+                        "sampled_3d_coords",
+                        &["format"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSample:sampled_array_2d_coords",
-                    Config {
-                        new_sibling_basename: "textureSample__sampled_array_2d_coords",
-                        split_by: SplitBy::first_param(
-                            "format",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSample",
+                    TestGroupSplit::single(
+                        "sampled_array_2d_coords",
+                        &["format"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSample:sampled_array_3d_coords",
-                    Config {
-                        new_sibling_basename: "textureSample__sampled_array_3d_coords",
-                        split_by: SplitBy::first_param(
-                            "format",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSample",
+                    TestGroupSplit::single(
+                        "sampled_array_3d_coords",
+                        &["format"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:arrayed_2d_coords",
-                    Config {
-                        new_sibling_basename: "textureSampleBias__arrayed_2d_coords",
-                        split_by: SplitBy::first_param(
-                            "format",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias",
+                    TestGroupSplit::single(
+                        "arrayed_2d_coords",
+                        &["format"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:arrayed_3d_coords",
-                    Config {
-                        new_sibling_basename: "textureSampleBias__arrayed_3d_coords",
-                        split_by: SplitBy::first_param(
-                            "format",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        )
-                    }
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias",
+                    TestGroupSplit::single(
+                        "arrayed_3d_coords",
+                        &["format"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:sampled_2d_coords",
-                    Config {
-                        new_sibling_basename: "textureSampleBias__sampled_2d_coords",
-                        split_by: SplitBy::first_param(
-                            "format",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias",
+                    TestGroupSplit::single(
+                        "sampled_2d_coords",
+                        &["format"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:sampled_3d_coords",
-                    Config {
-                        new_sibling_basename: "textureSampleBias__sampled_3d_coords",
-                        split_by: SplitBy::first_param(
-                            "format",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias",
+                    TestGroupSplit::single(
+                        "sampled_3d_coords",
+                        &["format"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:arrayed_2d_coords",
-                    Config {
-                        new_sibling_basename: "textureSampleBias__arrayed_2d_coords",
-                        split_by: SplitBy::first_param(
-                            "format",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        )
-                    }
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias",
+                    TestGroupSplit::single(
+                        "arrayed_2d_coords",
+                        &["format"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias:arrayed_2d_coords",
-                    Config {
-                        new_sibling_basename: "textureSampleBias__arrayed_2d_coords",
-                        split_by: SplitBy::first_param(
-                            "format",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleBias",
+                    TestGroupSplit::single(
+                        "arrayed_2d_coords",
+                        &["format"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords",
-                    Config {
-                        new_sibling_basename: "textureSampleCompare__2d_coords",
-                        split_by: SplitBy::first_param(
-                            "format",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleCompare",
+                    TestGroupSplit::single("2d_coords", &["format"], DivideInto::TestsInSameFile),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords",
-                    Config {
-                        new_sibling_basename: "textureSampleCompare__arrayed_2d_coords",
-                        split_by: SplitBy::first_param(
-                            "format",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleCompare",
+                    TestGroupSplit::single(
+                        "arrayed_2d_coords",
+                        &["format"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:depth_3d_coords",
-                    Config {
-                        new_sibling_basename: "textureSampleLevel__depth_3d_coords",
-                        split_by: SplitBy::first_param(
-                            "stage",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel",
+                    TestGroupSplit::single(
+                        "depth_3d_coords",
+                        &["stage"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_2d_coords",
-                    Config {
-                        new_sibling_basename: "textureSampleLevel__sampled_2d_coords",
-                        split_by: SplitBy::first_param(
-                            "stage",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel",
+                    TestGroupSplit::single(
+                        "sampled_2d_coords",
+                        &["stage"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_3d_coords,lodClamp",
-                    Config {
-                        new_sibling_basename: "textureSampleLevel__sampled_3d_coords,lodClamp",
-                        split_by: SplitBy::first_param(
-                            "stage",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel",
+                    TestGroupSplit::single(
+                        "sampled_3d_coords,lodClamp",
+                        &["stage"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_3d_coords",
-                    Config {
-                        new_sibling_basename: "textureSampleLevel__sampled_3d_coords",
-                        split_by: SplitBy::first_param(
-                            "stage",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel",
+                    TestGroupSplit::single(
+                        "sampled_3d_coords",
+                        &["stage"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_array_3d_coords",
-                    Config {
-                        new_sibling_basename: "textureSampleLevel__sampled_array_3d_coords",
-                        split_by: SplitBy::first_param(
-                            "stage",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel",
+                    TestGroupSplit::single(
+                        "sampled_array_3d_coords",
+                        &["stage"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_3d_coords,lodClamp",
-                    Config {
-                        new_sibling_basename: "textureSampleLevel__sampled_3d_coords__lodClamp",
-                        split_by: SplitBy::first_param(
-                            "stage",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,execution,expression,call,builtin,textureSampleLevel",
+                    TestGroupSplit::single(
+                        "sampled_3d_coords,lodClamp",
+                        &["stage"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,validation,expression,call,builtin,quadSwap:return_type",
-                    Config {
-                        new_sibling_basename: "quadSwap__return_type",
-                        split_by: SplitBy::first_param(
-                            "retType",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,validation,expression,call,builtin,quadSwap",
+                    TestGroupSplit::single(
+                        "return_type",
+                        &["retType"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:shader,validation,expression,call,builtin,subgroupShuffle:return_type",
-                    Config {
-                        new_sibling_basename: "subgroupShuffle__return_type",
-                        split_by: SplitBy::first_param(
-                            "retType",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:shader,validation,expression,call,builtin,subgroupShuffle",
+                    TestGroupSplit::single(
+                        "return_type",
+                        &["retType"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
                 (
-                    "webgpu:web_platform,copyToTexture,ImageBitmap:from_canvas",
-                    Config {
-                        new_sibling_basename: "ImageBitmap__from_canvas",
-                        split_by: SplitBy::first_param(
-                            "orientation",
-                            SplitParamsTo::SeparateTestsInSameFile,
-                        ),
-                    },
+                    "webgpu:web_platform,copyToTexture,ImageBitmap",
+                    TestGroupSplit::single(
+                        "from_canvas",
+                        &["orientation"],
+                        DivideInto::TestsInSameFile,
+                    ),
                 ),
             ]
         };
 
-        let mut tests_to_split = test_split_config
-            .into_iter()
-            .map(|(test_path, config)| (test_path, test_split::Entry::from_config(config)))
-            .collect::<BTreeMap<_, _>>();
+        let mut tests_to_split = test_split_config.into_iter().collect::<BTreeMap<_, _>>();
 
         log::debug!("blocking on list of tests…");
         test_listing_buf = test_listing_join_handle
@@ -624,43 +564,45 @@ fn run(args: CliArgs) -> miette::Result<()> {
                     continue;
                 }
             };
-            let (test_group_path, _test_name) = test_path.rsplit_once(':').unwrap();
+            let (test_group_path, test_name) = test_path.rsplit_once(':').unwrap();
             let mut test_group_path_components = test_group_path.split([':', ',']);
 
-            if let Some(entry) = tests_to_split.get_mut(test_path) {
-                let test_split::Entry { seen, ref config } = entry;
-                let test_split::Config {
-                    new_sibling_basename,
-                    split_by,
-                } = config;
+            if let Some(test_group_config) = tests_to_split.get_mut(test_group_path) {
+                let test_split = test_group_config.get_test_for_wpt(test_name);
 
-                let file_path = {
-                    test_group_path_components.next_back();
-                    test_group_path_components
-                        .chain([*new_sibling_basename])
-                        .join_with("/")
-                        .to_string()
+                let file_path = match test_split.divide_into {
+                    test_split::DivideInto::TestsInSameFile => {
+                        let new_sibling_name =
+                            [test_group_path_components.next_back().unwrap(), test_name]
+                                .into_iter()
+                                .join_with("__")
+                                .to_string();
+
+                        let path = test_group_path_components
+                            .chain([new_sibling_name.as_ref()])
+                            .join_with("/")
+                            .to_string();
+
+                        path
+                    }
                 };
 
-                seen.wpt_files = true;
-
-                match split_by {
-                    test_split::SplitBy::FirstParam {
-                        expected_name,
-                        split_to,
-                        observed_values,
-                    } => match split_to {
-                        test_split::SplitParamsTo::SeparateTestsInSameFile => {
-                            for value in observed_values {
-                                let new_meta = meta.replace(
-                                    &*path,
-                                    &format!("{test_path}:{expected_name}={value};*"),
-                                );
-                                assert_ne!(meta, new_meta);
-                                insert!(&file_path, new_meta.into());
-                            }
+                for param_value_set in test_split.observed_param_values() {
+                    let new_meta = meta.replace(
+                        &*path,
+                        &format!(
+                            "{test_path}:{}*",
+                            param_value_set
+                                .map(|(name, value)| lazy_format!("{name}={value};"))
+                                .join_with("")
+                        ),
+                    );
+                    match test_split.divide_into {
+                        test_split::DivideInto::TestsInSameFile => {
+                            assert_ne!(meta, new_meta);
+                            insert!(&file_path, new_meta.into());
                         }
-                    },
+                    }
                 }
             } else {
                 insert!(
@@ -830,4 +772,16 @@ fn split_at_nth_colon(nth: usize, path: &str) -> miette::Result<(&str, &str)> {
         .ok_or_else(move || {
             miette::diagnostic!("failed to split at colon {nth} from CTS path `{path}`").into()
         })
+}
+
+fn split_at_colons<const N: usize>(path: &str) -> miette::Result<[&str; N]> {
+    let mut arr = arrayvec::ArrayVec::<_, N>::new();
+    let mut last_idx = 0;
+    for (idx, _) in path.match_indices(':').take(N) {
+        arr.push(&path[last_idx..idx]);
+        last_idx = idx;
+    }
+    arr.into_inner().map_err(|_e| {
+        miette::diagnostic!("failed to split at colon {N} from CTS path `{path}`").into()
+    })
 }
