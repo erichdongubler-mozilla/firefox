@@ -306,6 +306,16 @@ fn run(args: CliArgs) -> miette::Result<()> {
                         ),
                     }
                 ),
+                (
+                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare:array_2d_coords",
+                    Config {
+                        new_sibling_basename: "textureGatherCompare__array_2d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
             ]
         };
 
