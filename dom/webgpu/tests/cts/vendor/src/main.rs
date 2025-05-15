@@ -327,6 +327,16 @@ fn run(args: CliArgs) -> miette::Result<()> {
                     },
                 ),
                 (
+                    "webgpu:shader,validation,expression,call,builtin,subgroupShuffle:return_type",
+                    Config {
+                        new_sibling_basename: "subgroupShuffle__return_type",
+                        split_by: SplitBy::first_param(
+                            "retType",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
                     "webgpu:web_platform,copyToTexture,ImageBitmap:from_canvas",
                     Config {
                         new_sibling_basename: "ImageBitmap__from_canvas",
