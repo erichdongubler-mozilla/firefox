@@ -317,6 +317,7 @@ fn run(args: CliArgs) -> miette::Result<()> {
                         [
                             "sampled_2d_coords",
                             "sampled_3d_coords",
+                            "sampled_array_2d_coords",
                             "sampled_array_3d_coords",
                         ]
                         .map(|test| {
