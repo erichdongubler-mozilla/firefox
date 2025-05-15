@@ -317,6 +317,16 @@ fn run(args: CliArgs) -> miette::Result<()> {
                     },
                 ),
                 (
+                    "webgpu:shader,execution,expression,call,builtin,textureGatherCompare:array_3d_coords",
+                    Config {
+                        new_sibling_basename: "textureGatherCompare__array_3d_coords",
+                        split_by: SplitBy::first_param(
+                            "stage",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
                     "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_3d_coords,lodClamp",
                     Config {
                         new_sibling_basename: "textureSampleLevel__sampled_3d_coords,lodClamp",
