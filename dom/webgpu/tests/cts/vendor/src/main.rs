@@ -313,6 +313,10 @@ fn run(args: CliArgs) -> miette::Result<()> {
                     ),
                 ),
                 (
+                    "webgpu:shader,execution,expression,call,builtin,subgroupAdd",
+                    TestGroupSplit::single("fp_accuracy", &["case"], DivideInto::TestsInSameFile),
+                ),
+                (
                     "webgpu:shader,execution,expression,call,builtin,textureGather",
                     TestGroupSplit::multiple(
                         [
