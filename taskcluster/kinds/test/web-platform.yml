@@ -355,7 +355,7 @@ web-platform-tests-webgpu-long:
     treeherder-symbol: W(webgpu-long)
     virtualization: virtual-with-gpu
     tier: 2
-    chunks: 2
+    chunks: 3
     max-run-time: 5400  # 90m
     variants: []  # We don't need sw or nofis testing.
     run-on-projects:
