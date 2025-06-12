@@ -267,3 +267,11 @@ viaduct = { git = "https://github.com/mozilla/application-services", rev = "9b46
 webext-storage = { git = "https://github.com/mozilla/application-services", rev = "9b46be5beedb6a1d859014a71bac58e2d722f954" }
 
 allocator-api2 = { path = "third_party/rust/allocator-api2" }
+
+[patch."https://github.com/gfx-rs/wgpu"]
+"naga" = { path = "/Users/mozilla/workspace/wgpu/naga" }
+"wgpu-core" = { path = "/Users/mozilla/workspace/wgpu/wgpu-core" }
+"wgpu-core-deps-apple" = { path = "/Users/mozilla/workspace/wgpu/wgpu-core/platform-deps/apple" }
+"wgpu-core-deps-windows-linux-android" = { path = "/Users/mozilla/workspace/wgpu/wgpu-core/platform-deps/windows-linux-android" }
+"wgpu-hal" = { path = "/Users/mozilla/workspace/wgpu/wgpu-hal" }
+"wgpu-types" = { path = "/Users/mozilla/workspace/wgpu/wgpu-types" }
