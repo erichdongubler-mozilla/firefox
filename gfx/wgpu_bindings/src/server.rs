@@ -2018,7 +2018,10 @@ impl Global {
                     {
                         self.create_texture_error(Some(id), &desc);
                         error_buf.init(ErrMsg {
-                            message: "Bgra8Unorm with GPUStorageBinding usage with BGRA8UNORM_STORAGE disabled",
+                            message: concat!(
+                                "Bgra8Unorm with GPUStorageBinding usage ",
+                                "with BGRA8UNORM_STORAGE disabled"
+                            ),
                             r#type: ErrorBufferType::Validation,
                         }, device_id);
                         return;
