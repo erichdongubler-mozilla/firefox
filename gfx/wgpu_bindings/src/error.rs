@@ -163,7 +163,7 @@ mod foreign {
         },
         resource::{
             BufferAccessError, CreateBufferError, CreateQuerySetError, CreateSamplerError,
-            CreateTextureError, CreateTextureViewError,
+            CreateTextureError, CreateTextureViewError, DestroyedResourceError,
         },
     };
     use wgt::RequestAdapterError;
@@ -219,14 +219,20 @@ mod foreign {
         }
     }
 
+    impl HasErrorBufferType for DestroyedResourceError {
+        fn error_type(&self) -> ErrorBufferType {
+            ErrorBufferType::Validation
+        }
+    }
+
     impl HasErrorBufferType for BufferAccessError {
         fn error_type(&self) -> ErrorBufferType {
             match self {
                 BufferAccessError::Device(e) => e.error_type(),
+                BufferAccessError::DestroyedResource(e) => e.error_type(),
 
                 BufferAccessError::Failed
                 | BufferAccessError::InvalidResource(_)
-                | BufferAccessError::DestroyedResource(_)
                 | BufferAccessError::AlreadyMapped
                 | BufferAccessError::MapAlreadyPending
                 | BufferAccessError::MissingBufferUsage(_)
@@ -341,6 +347,7 @@ mod foreign {
         fn error_type(&self) -> ErrorBufferType {
             match self {
                 CreateBindGroupError::Device(e) => e.error_type(),
+                CreateBindGroupError::DestroyedResource(e) => e.error_type(),
 
                 CreateBindGroupError::InvalidResource(_)
                 | CreateBindGroupError::BindingArrayPartialLengthMismatch { .. }
@@ -368,7 +375,6 @@ mod foreign {
                 | CreateBindGroupError::DepthStencilAspect
                 | CreateBindGroupError::StorageReadNotSupported(_)
                 | CreateBindGroupError::ResourceUsageCompatibility(_)
-                | CreateBindGroupError::DestroyedResource(_)
                 | CreateBindGroupError::MissingTLASVertexReturn { .. }
                 | CreateBindGroupError::StorageAtomicNotSupported(..)
                 | CreateBindGroupError::StorageWriteNotSupported(..)
@@ -504,6 +510,7 @@ mod foreign {
             match self {
                 CreateTextureViewError::Device(e) => e.error_type(),
                 CreateTextureViewError::MissingFeatures(e) => e.error_type(),
+                CreateTextureViewError::DestroyedResource(e) => e.error_type(),
 
                 CreateTextureViewError::InvalidTextureViewDimension { .. }
                 | CreateTextureViewError::InvalidResource(_)
@@ -518,7 +525,6 @@ mod foreign {
                 | CreateTextureViewError::InvalidArrayLayerCount { .. }
                 | CreateTextureViewError::InvalidAspect { .. }
                 | CreateTextureViewError::FormatReinterpretation { .. }
-                | CreateTextureViewError::DestroyedResource(_)
                 | CreateTextureViewError::TextureViewFormatNotRenderable(_)
                 | CreateTextureViewError::TextureViewFormatNotStorage(_)
                 | CreateTextureViewError::InvalidTextureViewUsage { .. } => {
@@ -537,10 +543,9 @@ mod foreign {
                 CopyError::Device(e) => e.error_type(),
                 CopyError::EncoderState(e) => e.error_type(),
                 CopyError::Transfer(e) => e.error_type(),
+                CopyError::DestroyedResource(e) => e.error_type(),
 
-                CopyError::InvalidResource(_) | CopyError::DestroyedResource(_) => {
-                    ErrorBufferType::Validation
-                }
+                CopyError::InvalidResource(_) => ErrorBufferType::Validation,
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -609,10 +614,9 @@ mod foreign {
                 QueryError::Use(e) => e.error_type(),
                 QueryError::Resolve(e) => e.error_type(),
                 QueryError::MissingFeature(e) => e.error_type(),
+                QueryError::DestroyedResource(e) => e.error_type(),
 
-                QueryError::InvalidResource(_) | QueryError::DestroyedResource(_) => {
-                    ErrorBufferType::Validation
-                }
+                QueryError::InvalidResource(_) => ErrorBufferType::Validation,
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -680,9 +684,9 @@ mod foreign {
                 QueueSubmitError::Queue(e) => e.error_type(),
                 QueueSubmitError::Unmap(e) => e.error_type(),
                 QueueSubmitError::CommandEncoder(e) => e.error_type(),
+                QueueSubmitError::DestroyedResource(e) => e.error_type(),
 
-                QueueSubmitError::DestroyedResource(_)
-                | QueueSubmitError::BufferStillMapped(_)
+                QueueSubmitError::BufferStillMapped(_)
                 | QueueSubmitError::InvalidResource(_)
                 | QueueSubmitError::ValidateAsActionsError(_) => ErrorBufferType::Validation,
 
@@ -698,10 +702,9 @@ mod foreign {
                 QueueWriteError::Queue(e) => e.error_type(),
                 QueueWriteError::Transfer(e) => e.error_type(),
                 QueueWriteError::MemoryInitFailure(e) => e.error_type(),
+                QueueWriteError::DestroyedResource(e) => e.error_type(),
 
-                QueueWriteError::DestroyedResource(_) | QueueWriteError::InvalidResource(_) => {
-                    ErrorBufferType::Validation
-                }
+                QueueWriteError::InvalidResource(_) => ErrorBufferType::Validation,
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
