@@ -164,6 +164,7 @@ mod foreign {
         resource::{
             BufferAccessError, CreateBufferError, CreateQuerySetError, CreateSamplerError,
             CreateTextureError, CreateTextureViewError, DestroyedResourceError,
+            InvalidResourceError,
         },
     };
     use wgt::RequestAdapterError;
@@ -225,14 +226,20 @@ mod foreign {
         }
     }
 
+    impl HasErrorBufferType for InvalidResourceError {
+        fn error_type(&self) -> ErrorBufferType {
+            ErrorBufferType::Validation
+        }
+    }
+
     impl HasErrorBufferType for BufferAccessError {
         fn error_type(&self) -> ErrorBufferType {
             match self {
                 BufferAccessError::Device(e) => e.error_type(),
                 BufferAccessError::DestroyedResource(e) => e.error_type(),
+                BufferAccessError::InvalidResource(e) => e.error_type(),
 
                 BufferAccessError::Failed
-                | BufferAccessError::InvalidResource(_)
                 | BufferAccessError::AlreadyMapped
                 | BufferAccessError::MapAlreadyPending
                 | BufferAccessError::MissingBufferUsage(_)
@@ -329,9 +336,9 @@ mod foreign {
             match self {
                 CreatePipelineLayoutError::Device(e) => e.error_type(),
                 CreatePipelineLayoutError::MissingFeatures(e) => e.error_type(),
+                CreatePipelineLayoutError::InvalidResource(e) => e.error_type(),
 
-                CreatePipelineLayoutError::InvalidResource(_)
-                | CreatePipelineLayoutError::MisalignedPushConstantRange { .. }
+                CreatePipelineLayoutError::MisalignedPushConstantRange { .. }
                 | CreatePipelineLayoutError::MoreThanOnePushConstantRangePerStage { .. }
                 | CreatePipelineLayoutError::PushConstantRangeTooLarge { .. }
                 | CreatePipelineLayoutError::TooManyBindings(_)
@@ -348,9 +355,9 @@ mod foreign {
             match self {
                 CreateBindGroupError::Device(e) => e.error_type(),
                 CreateBindGroupError::DestroyedResource(e) => e.error_type(),
+                CreateBindGroupError::InvalidResource(e) => e.error_type(),
 
-                CreateBindGroupError::InvalidResource(_)
-                | CreateBindGroupError::BindingArrayPartialLengthMismatch { .. }
+                CreateBindGroupError::BindingArrayPartialLengthMismatch { .. }
                 | CreateBindGroupError::BindingArrayLengthMismatch { .. }
                 | CreateBindGroupError::BindingArrayZeroLength
                 | CreateBindGroupError::BindingRangeTooLarge { .. }
@@ -410,11 +417,11 @@ mod foreign {
         fn error_type(&self) -> ErrorBufferType {
             match self {
                 CreateComputePipelineError::Device(e) => e.error_type(),
+                CreateComputePipelineError::InvalidResource(e) => e.error_type(),
 
                 CreateComputePipelineError::Internal(_) => ErrorBufferType::Internal,
 
-                CreateComputePipelineError::InvalidResource(_)
-                | CreateComputePipelineError::Implicit(_)
+                CreateComputePipelineError::Implicit(_)
                 | CreateComputePipelineError::Stage(_)
                 | CreateComputePipelineError::MissingDownlevelFlags(_)
                 | CreateComputePipelineError::PipelineConstants(_) => ErrorBufferType::Validation,
@@ -430,11 +437,11 @@ mod foreign {
             match self {
                 CreateRenderPipelineError::Device(e) => e.error_type(),
                 CreateRenderPipelineError::MissingFeatures(e) => e.error_type(),
+                CreateRenderPipelineError::InvalidResource(e) => e.error_type(),
 
                 CreateRenderPipelineError::Internal { .. } => ErrorBufferType::Internal,
 
                 CreateRenderPipelineError::ColorAttachment(_)
-                | CreateRenderPipelineError::InvalidResource(_)
                 | CreateRenderPipelineError::Implicit(_)
                 | CreateRenderPipelineError::ColorState(_, _)
                 | CreateRenderPipelineError::DepthStencilState(_)
@@ -511,9 +518,9 @@ mod foreign {
                 CreateTextureViewError::Device(e) => e.error_type(),
                 CreateTextureViewError::MissingFeatures(e) => e.error_type(),
                 CreateTextureViewError::DestroyedResource(e) => e.error_type(),
+                CreateTextureViewError::InvalidResource(e) => e.error_type(),
 
                 CreateTextureViewError::InvalidTextureViewDimension { .. }
-                | CreateTextureViewError::InvalidResource(_)
                 | CreateTextureViewError::InvalidMultisampledTextureViewDimension(_)
                 | CreateTextureViewError::InvalidCubemapTextureDepth { .. }
                 | CreateTextureViewError::InvalidCubemapArrayTextureDepth { .. }
@@ -544,8 +551,7 @@ mod foreign {
                 CopyError::EncoderState(e) => e.error_type(),
                 CopyError::Transfer(e) => e.error_type(),
                 CopyError::DestroyedResource(e) => e.error_type(),
-
-                CopyError::InvalidResource(_) => ErrorBufferType::Validation,
+                CopyError::InvalidResource(e) => e.error_type(),
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -615,8 +621,7 @@ mod foreign {
                 QueryError::Resolve(e) => e.error_type(),
                 QueryError::MissingFeature(e) => e.error_type(),
                 QueryError::DestroyedResource(e) => e.error_type(),
-
-                QueryError::InvalidResource(_) => ErrorBufferType::Validation,
+                QueryError::InvalidResource(e) => e.error_type(),
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -685,9 +690,9 @@ mod foreign {
                 QueueSubmitError::Unmap(e) => e.error_type(),
                 QueueSubmitError::CommandEncoder(e) => e.error_type(),
                 QueueSubmitError::DestroyedResource(e) => e.error_type(),
+                QueueSubmitError::InvalidResource(e) => e.error_type(),
 
                 QueueSubmitError::BufferStillMapped(_)
-                | QueueSubmitError::InvalidResource(_)
                 | QueueSubmitError::ValidateAsActionsError(_) => ErrorBufferType::Validation,
 
                 // N.B: forced non-exhaustiveness
@@ -703,8 +708,7 @@ mod foreign {
                 QueueWriteError::Transfer(e) => e.error_type(),
                 QueueWriteError::MemoryInitFailure(e) => e.error_type(),
                 QueueWriteError::DestroyedResource(e) => e.error_type(),
-
-                QueueWriteError::InvalidResource(_) => ErrorBufferType::Validation,
+                QueueWriteError::InvalidResource(e) => e.error_type(),
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
