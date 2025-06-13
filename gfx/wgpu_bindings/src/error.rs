@@ -298,7 +298,11 @@ mod foreign {
                 | CreateBindGroupLayoutError::Entry { .. }
                 | CreateBindGroupLayoutError::TooManyBindings(_)
                 | CreateBindGroupLayoutError::InvalidBindingIndex { .. }
-                | CreateBindGroupLayoutError::InvalidVisibility(_) => ErrorBufferType::Validation,
+                | CreateBindGroupLayoutError::InvalidVisibility(_)
+                | CreateBindGroupLayoutError::ContainsBothBindingArrayAndDynamicOffsetArray
+                | CreateBindGroupLayoutError::ContainsBothBindingArrayAndUniformBuffer => {
+                    ErrorBufferType::Validation
+                }
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -356,7 +360,13 @@ mod foreign {
                 | CreateBindGroupError::DepthStencilAspect
                 | CreateBindGroupError::StorageReadNotSupported(_)
                 | CreateBindGroupError::ResourceUsageCompatibility(_)
-                | CreateBindGroupError::DestroyedResource(_) => ErrorBufferType::Validation,
+                | CreateBindGroupError::DestroyedResource(_)
+                | CreateBindGroupError::MissingTLASVertexReturn { .. }
+                | CreateBindGroupError::StorageAtomicNotSupported(..)
+                | CreateBindGroupError::StorageWriteNotSupported(..)
+                | CreateBindGroupError::StorageReadWriteNotSupported(..) => {
+                    ErrorBufferType::Validation
+                }
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -392,9 +402,8 @@ mod foreign {
                 CreateComputePipelineError::InvalidResource(_)
                 | CreateComputePipelineError::Implicit(_)
                 | CreateComputePipelineError::Stage(_)
-                | CreateComputePipelineError::MissingDownlevelFlags(_) => {
-                    ErrorBufferType::Validation
-                }
+                | CreateComputePipelineError::MissingDownlevelFlags(_)
+                | CreateComputePipelineError::PipelineConstants(_) => ErrorBufferType::Validation,
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -426,7 +435,13 @@ mod foreign {
                 | CreateRenderPipelineError::MissingFeatures(_)
                 | CreateRenderPipelineError::MissingDownlevelFlags(_)
                 | CreateRenderPipelineError::Stage { .. }
-                | CreateRenderPipelineError::UnalignedShader { .. } => ErrorBufferType::Validation,
+                | CreateRenderPipelineError::UnalignedShader { .. }
+                | CreateRenderPipelineError::VertexAttributeStrideTooLarge { .. }
+                | CreateRenderPipelineError::PipelineConstants { .. }
+                | CreateRenderPipelineError::BlendFactorOnUnsupportedTarget { .. }
+                | CreateRenderPipelineError::PipelineExpectsShaderToUseDualSourceBlending
+                | CreateRenderPipelineError::ShaderExpectsPipelineToUseDualSourceBlending
+                | CreateRenderPipelineError::NoTargetSpecified => ErrorBufferType::Validation,
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -493,7 +508,11 @@ mod foreign {
                 | CreateTextureViewError::InvalidArrayLayerCount { .. }
                 | CreateTextureViewError::InvalidAspect { .. }
                 | CreateTextureViewError::FormatReinterpretation { .. }
-                | CreateTextureViewError::DestroyedResource(_) => ErrorBufferType::Validation,
+                | CreateTextureViewError::DestroyedResource(_)
+                | CreateTextureViewError::TextureViewFormatNotRenderable(_)
+                | CreateTextureViewError::TextureViewFormatNotStorage(_)
+                | CreateTextureViewError::InvalidTextureViewUsage { .. }
+                | CreateTextureViewError::MissingFeatures(_) => ErrorBufferType::Validation,
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -508,7 +527,9 @@ mod foreign {
                 CopyError::EncoderState(e) => e.error_type(),
                 CopyError::Transfer(e) => e.error_type(),
 
-                CopyError::InvalidResource(_) => ErrorBufferType::Validation,
+                CopyError::InvalidResource(_) | CopyError::DestroyedResource(_) => {
+                    ErrorBufferType::Validation
+                }
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -553,7 +574,10 @@ mod foreign {
                 | TransferError::TextureFormatsNotCopyCompatible { .. }
                 | TransferError::MissingDownlevelFlags(_)
                 | TransferError::InvalidSampleCount { .. }
-                | TransferError::InvalidMipLevel { .. } => ErrorBufferType::Validation,
+                | TransferError::InvalidMipLevel { .. }
+                | TransferError::MissingBufferUsage(..)
+                | TransferError::MissingTextureUsage(..)
+                | TransferError::SampleCountNotEqual { .. } => ErrorBufferType::Validation,
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -580,7 +604,9 @@ mod foreign {
                 QueryError::Use(e) => e.error_type(),
                 QueryError::Resolve(e) => e.error_type(),
 
-                QueryError::InvalidResource(_) => ErrorBufferType::Validation,
+                QueryError::InvalidResource(_)
+                | QueryError::MissingFeature(_)
+                | QueryError::DestroyedResource(_) => ErrorBufferType::Validation,
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -651,7 +677,8 @@ mod foreign {
 
                 QueueSubmitError::DestroyedResource(_)
                 | QueueSubmitError::BufferStillMapped(_)
-                | QueueSubmitError::InvalidResource(_) => ErrorBufferType::Validation,
+                | QueueSubmitError::InvalidResource(_)
+                | QueueSubmitError::ValidateAsActionsError(_) => ErrorBufferType::Validation,
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
@@ -665,6 +692,10 @@ mod foreign {
                 QueueWriteError::Queue(e) => e.error_type(),
                 QueueWriteError::Transfer(e) => e.error_type(),
                 QueueWriteError::MemoryInitFailure(e) => e.error_type(),
+
+                QueueWriteError::DestroyedResource(_) | QueueWriteError::InvalidResource(_) => {
+                    ErrorBufferType::Validation
+                }
 
                 // N.B: forced non-exhaustiveness
                 _ => ErrorBufferType::Validation,
