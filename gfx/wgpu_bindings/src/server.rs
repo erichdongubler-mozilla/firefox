@@ -314,46 +314,43 @@ fn support_use_external_texture_in_swap_chain(
 
     #[cfg(target_os = "linux")]
     {
-        let support = if backend != wgt::Backend::Vulkan {
+        if backend != wgt::Backend::Vulkan {
             log::info!(
                 "WebGPU: disabling ExternalTexture swapchain: \n\
-                        wgpu backend is not Vulkan"
+                wgpu backend is not Vulkan"
             );
-            false
-        } else {
-            unsafe {
-                global.adapter_as_hal::<wgc::api::Vulkan, _, bool>(self_id, |hal_adapter| {
-                    let hal_adapter = match hal_adapter {
-                        None => {
-                            let msg = c"Vulkan adapter is invalid";
-                            gfx_critical_note(msg.as_ptr());
-                            return false;
-                        }
-                        Some(hal_adapter) => hal_adapter,
-                    };
+            return false;
+        }
 
-                    let capabilities = hal_adapter.physical_device_capabilities();
-                    static REQUIRED: &[&'static std::ffi::CStr] = &[
-                        khr::external_memory_fd::NAME,
-                        ash::ext::external_memory_dma_buf::NAME,
-                        ash::ext::image_drm_format_modifier::NAME,
-                        khr::external_semaphore_fd::NAME,
-                    ];
-                    REQUIRED.iter().all(|extension| {
-                        let supported = capabilities.supports_extension(extension);
-                        if !supported {
-                            log::info!(
-                                "WebGPU: disabling ExternalTexture swapchain: \n\
-                                        Vulkan extension not supported: {:?}",
-                                extension.to_string_lossy()
-                            );
-                        }
-                        supported
-                    })
-                })
-            }
+        return unsafe {
+            global.adapter_as_hal::<wgc::api::Vulkan, _, bool>(self_id, |hal_adapter| {
+                let Some(hal_adapter) = hal_adapter else {
+                    let msg = c"Vulkan adapter is invalid";
+                    gfx_critical_note(msg.as_ptr());
+                    return false;
+                };
+
+                let capabilities = hal_adapter.physical_device_capabilities();
+                static REQUIRED: &[&'static std::ffi::CStr] = &[
+                    khr::external_memory_fd::NAME,
+                    ash::ext::external_memory_dma_buf::NAME,
+                    ash::ext::image_drm_format_modifier::NAME,
+                    khr::external_semaphore_fd::NAME,
+                ];
+                for extension in REQUIRED.iter() {
+                    if !capabilities.supports_extension(extension) {
+                        log::info!(
+                            "WebGPU: disabling ExternalTexture swapchain: \n\
+                                    Vulkan extension not supported: {:?}",
+                            extension.to_string_lossy()
+                        );
+                        return false;
+                    }
+                }
+
+                true
+            })
         };
-        return support;
     }
 
     #[cfg(target_os = "macos")]
