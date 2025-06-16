@@ -348,6 +348,27 @@ fn support_use_external_texture_in_swap_chain(
                     }
                 }
 
+                // We need to be able to export the semaphore that gets signalled
+                // when the GPU is done drawing on the ExternalTextureDMABuf.
+                let semaphore_info = vk::PhysicalDeviceExternalSemaphoreInfo::default()
+                    .handle_type(vk::ExternalSemaphoreHandleTypeFlags::OPAQUE_FD);
+                let mut semaphore_props = vk::ExternalSemaphoreProperties::default();
+                hal_adapter
+                    .shared_instance()
+                    .raw_instance()
+                    .get_physical_device_external_semaphore_properties(
+                        hal_adapter.raw_physical_device(),
+                        &semaphore_info,
+                        &mut semaphore_props
+                    );
+                if !semaphore_props.external_semaphore_features.contains(
+                    vk::ExternalSemaphoreFeatureFlags::EXPORTABLE
+                ) {
+                    log::info!("WebGPU: disabling ExternalTexture swapchain: \n\
+                                device can't export opaque file descriptor semaphores");
+                    return false;
+                }
+
                 true
             })
         };
