@@ -331,6 +331,7 @@ web-platform-tests-webgpu:
     run-on-projects:
         by-test-platform:
             android.*: []  # https://bugzilla.mozilla.org/show_bug.cgi?id=1836811
+            windows.*-64.*: built-projects
             default: ['trunk']
     mozharness:
         chunked: true
@@ -367,6 +368,7 @@ web-platform-tests-webgpu-long:
     run-on-projects:
         by-test-platform:
             android.*: []  # https://bugzilla.mozilla.org/show_bug.cgi?id=1836811
+            windows.*-64.*: built-projects
             default: ['trunk']
     mozharness:
         chunked: true

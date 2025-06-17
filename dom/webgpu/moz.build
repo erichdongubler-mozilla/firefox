@@ -9,7 +9,6 @@ with Files("**"):
 
 MOCHITEST_MANIFESTS += [
     "tests/mochitest/mochitest-disabled.toml",
-    "tests/mochitest/mochitest-no-pref.toml",
     "tests/mochitest/mochitest-resistfingerprinting.toml",
     "tests/mochitest/mochitest.toml",
     "tests/mochitest/perftest.toml",

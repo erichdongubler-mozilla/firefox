@@ -9,7 +9,7 @@ var supportedProps = [
   "appName",
   "appVersion",
   "globalPrivacyControl",
-  { name: "gpu", isEarlyBetaOrEarlier: true, isSecureContext: true },
+  { name: "gpu", isSecureContext: true },
   "platform",
   "product",
   "userAgent",
