@@ -129,19 +129,6 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
            "WebGPU is only available on Windows, and in Nightly and Early Beta "
            "builds on other platforms.");
 #  endif
-
-  // NOTE: Deliberately left after the above check so that we only enter
-  // here if it's removed. Above is a more informative diagnostic, while the
-  // check is still present.
-  //
-  // Follow-up to remove this check:
-  // <https://bugzilla.mozilla.org/show_bug.cgi?id=1942431>
-  if (dom::WorkerPrivate* wp = dom::GetCurrentThreadWorkerPrivate()) {
-    rejectIf(wp->IsServiceWorker(),
-             "WebGPU in service workers is not yet available in Release or "
-             "late Beta builds; see "
-             "<https://bugzilla.mozilla.org/show_bug.cgi?id=1942431>.");
-  }
 #endif
   rejectIf(!gfx::gfxVars::AllowWebGPU(), "WebGPU is disabled by blocklist.");
   rejectIf(!StaticPrefs::dom_webgpu_enabled(),
