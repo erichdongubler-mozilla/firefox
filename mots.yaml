@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2025-06-05T11:07:53.355698+00:00'
+updated_at: '2025-06-26T17:56:43.822278+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -1137,8 +1137,8 @@ people:
     nick: zrhoffman
 modules:
   - name: firefox-toplevel
-    description: The top level directory for the Firefox/Gecko tree. Owned by the
-      TLMC
+    description: The top level directory for the Firefox/Gecko tree. Owned by 
+      the TLMC
     includes:
       - README.txt
     meta:
@@ -1157,16 +1157,16 @@ modules:
     submodules:
 
       - name: Code Review Policy
-        description: Submodule governing the code review process, ensuring adherence
-          to coding standards and quality requirements.
+        description: Submodule governing the code review process, ensuring 
+          adherence to coding standards and quality requirements.
         owners:
           - *TLMC
         peers: []
         machine_name: code_review_policy
 
       - name: Performance Regression Policy
-        description: Submodule focused on preventing and addressing performance regressions,
-          ensuring stable and optimized performance.
+        description: Submodule focused on preventing and addressing performance 
+          regressions, ensuring stable and optimized performance.
         owners:
           - *TLMC
         peers: []
@@ -1174,8 +1174,9 @@ modules:
 
   - machine_name: android_components
     name: Android Components
-    description: A collection of independent, reusable Android library components
-      to make it easier to build browsers and browser-like applications.
+    description: A collection of independent, reusable Android library 
+      components to make it easier to build browsers and browser-like 
+      applications.
     includes:
       - mobile/android/android-components/**/*
     excludes: []
@@ -1188,8 +1189,8 @@ modules:
       review_group: android-reviewers
   - machine_name: code_coverage
     name: Code Coverage
-    description: Tools for code coverage instrumentation, and coverage data parsing
-      and management.
+    description: Tools for code coverage instrumentation, and coverage data 
+      parsing and management.
     includes:
       - tools/code-coverage/**/*
       - python/mozbuild/mozbuild/codecoverage/**/*
@@ -1205,10 +1206,10 @@ modules:
         - 'Testing :: Code Coverage'
 
   - name: 'Core: Accessibility'
-    description: Support for platform accessibility APIs. Accessibility APIs are used
-      by 3rd party software like screen readers, screen magnifiers, and voice dictation
-      software, which need information about document content and UI controls, as
-      well as important events like changes of focus.
+    description: Support for platform accessibility APIs. Accessibility APIs are
+      used by 3rd party software like screen readers, screen magnifiers, and 
+      voice dictation software, which need information about document content 
+      and UI controls, as well as important events like changes of focus.
     includes:
       - accessible/**/*
     meta:
@@ -1303,8 +1304,8 @@ modules:
     machine_name: core_apz_graphics_submodule
 
   - name: 'Core: Build and Release Tools'
-    description: Tools related to build and release automation and configuration of
-      release builds.
+    description: Tools related to build and release automation and configuration
+      of release builds.
     includes:
       - tools/update-packaging/**/*
       - tools/update-verify/**/*
@@ -1324,8 +1325,8 @@ modules:
     machine_name: core_build_and_release_tools
 
   - name: 'Core: Build Config'
-    description: The build system for Gecko and several mozilla.org hosted Gecko-based
-      applications.
+    description: The build system for Gecko and several mozilla.org hosted 
+      Gecko-based applications.
     includes:
       - build/**/*
       - config/**/*
@@ -1359,8 +1360,8 @@ modules:
     submodules:
 
       - name: 'Core: Build Config - Fennec'
-        description: Submodule of the build config covering Fennec's build system
-          in mobile/android.
+        description: Submodule of the build config covering Fennec's build 
+          system in mobile/android.
         meta:
           group: dev-builds
           components:
@@ -1371,9 +1372,10 @@ modules:
         machine_name: core_build_config_fennec
 
       - name: 'Core: Build Config - Taskgraph'
-        description: Support for task-graph generation in decision, action, and cron
-          tasks, including configuration of all tasks including those for CI, nightlies,
-          and releases; as well as Docker and VM images used to execute those tasks.
+        description: Support for task-graph generation in decision, action, and 
+          cron tasks, including configuration of all tasks including those for 
+          CI, nightlies, and releases; as well as Docker and VM images used to 
+          execute those tasks.
         includes:
           - taskcluster
         meta:
@@ -1399,8 +1401,8 @@ modules:
     machine_name: core_build_config
 
   - name: 'Core: Code Analysis and Debugging Tools'
-    description: Tools for debugging Mozilla code or for analyzing speed, memory use,
-      and other characteristics of it.
+    description: Tools for debugging Mozilla code or for analyzing speed, memory
+      use, and other characteristics of it.
     includes:
       - tools/performance/**/*
       - tools/rb/**/*
@@ -1473,10 +1475,10 @@ modules:
     machine_name: core_cookies
 
   - name: 'Core: Crash reporting'
-    description: Infrastructure and tools used to generate, submit and process crash
-      reports. This includes the in-tree google-breakpad fork, the crash report generation
-      machinery as well as the host tools used to dump symbols, analyse minidumps
-      and generate stack traces.
+    description: Infrastructure and tools used to generate, submit and process 
+      crash reports. This includes the in-tree google-breakpad fork, the crash 
+      report generation machinery as well as the host tools used to dump 
+      symbols, analyse minidumps and generate stack traces.
     includes:
       - toolkit/crashreporter/**/*
       - toolkit/components/crashes/**/*
@@ -1520,9 +1522,9 @@ modules:
         - 'Core::DOM: Web Authentication'
 
   - name: 'Core: C++/Rust usage, tools, and style'
-    description: Aspects of C++ use such as language feature usage, standard library
-      versions/usage, compiler/toolchain versions, formatting and naming style, and
-      aspects of Rust use as needs arise
+    description: Aspects of C++ use such as language feature usage, standard 
+      library versions/usage, compiler/toolchain versions, formatting and naming
+      style, and aspects of Rust use as needs arise
     includes: []
       # NOTE: more of a "meta module" -- who do we ask when we want to do the above?
       # Includes/globs include where we define coding style, etc... (i.e. documentation)
@@ -1726,8 +1728,8 @@ modules:
 
   - machine_name: core_firefox_source_documentation
     name: 'Core: Firefox Source Documentation'
-    description: The infrastructure platform used to generate Firefox's source documentation,
-      excluding editorial control over the content.
+    description: The infrastructure platform used to generate Firefox's source 
+      documentation, excluding editorial control over the content.
     includes:
       - docs/
       - tools/moztreedocs/
@@ -1803,14 +1805,15 @@ modules:
     machine_name: core_geckoview
 
   - name: 'Core: Global Key Bindings'
-    description: Global hot keys for Firefox. Does not include underlined menu accelerators
-      and the like, as those are part of i18n.
+    description: Global hot keys for Firefox. Does not include underlined menu 
+      accelerators and the like, as those are part of i18n.
     includes:
       - dom/events/**/*
       # TODO "and platform specific directories under it"
     meta:
       group: dev-accessibility
-      url: https://support.mozilla.org/kb/keyboard-shortcuts-perform-firefox-tasks-quickly
+      url: 
+        https://support.mozilla.org/kb/keyboard-shortcuts-perform-firefox-tasks-quickly
       components:
         - 'Core::Keyboard: Navigation'
       peers_emeritus:
@@ -1842,7 +1845,8 @@ modules:
         - Nick Cameron
         - *rhunt
       group: dev-platform
-      url: https://wiki.mozilla.org/Platform/GFX https://wiki.mozilla.org/Gecko:Layers
+      url: https://wiki.mozilla.org/Platform/GFX 
+        https://wiki.mozilla.org/Gecko:Layers 
         https://wiki.mozilla.org/Gecko:2DGraphicsSketch
       components:
         - Core::Graphics
@@ -1882,9 +1886,9 @@ modules:
     machine_name: core_hal
 
   - name: 'Core: HTML Parser'
-    description: The HTML Parser transforms HTML source code into a DOM. It conforms
-      to the HTML specification, and is mostly translated automatically from Java
-      to C++.
+    description: The HTML Parser transforms HTML source code into a DOM. It 
+      conforms to the HTML specification, and is mostly translated automatically
+      from Java to C++.
     includes:
       - parser/html/**/*
     meta:
@@ -2132,8 +2136,8 @@ modules:
     machine_name: core_legacy_html_parser
 
   - name: 'Core: libjar'
-    description: The JAR handling code (protocol handler, stream implementation, and
-      zipreader/zipwriter).
+    description: The JAR handling code (protocol handler, stream implementation,
+      and zipreader/zipwriter).
     includes:
       - modules/libjar/**/*
     meta:
@@ -2155,8 +2159,8 @@ modules:
 
   - machine_name: core_localstorage_sessionstorage
     name: localStorage & sessionStorage
-    description: Implementation of localStorage & sessionStorage exposed only on window
-      objects as “localStorage” and “sessionStorage”.
+    description: Implementation of localStorage & sessionStorage exposed only on
+      window objects as “localStorage” and “sessionStorage”.
     includes:
       - dom/localstorage/**/*
       - dom/storage/**/*
@@ -2185,8 +2189,9 @@ modules:
       - *gregtatum
 
   - name: 'Core: MathML'
-    description: MathML is a low-level specification for describing mathematics which
-      provides a foundation for the inclusion of mathematical expressions in Web pages.
+    description: MathML is a low-level specification for describing mathematics 
+      which provides a foundation for the inclusion of mathematical expressions 
+      in Web pages.
     includes:
       - layout/mathml/**/*
     meta:
@@ -2206,8 +2211,9 @@ modules:
     machine_name: core_mathml
 
   - name: 'Core: Media Playback'
-    description: HTML Media APIs, including Media Source Extensions and non-MSE video/audio
-      element playback, and Encrypted Media Extensions. (WebRTC and WebAudio not included).
+    description: HTML Media APIs, including Media Source Extensions and non-MSE 
+      video/audio element playback, and Encrypted Media Extensions. (WebRTC and 
+      WebAudio not included).
     includes:
       - dom/media/**/*
       - media/gmp-clearkey/**/*
@@ -2256,8 +2262,8 @@ modules:
     machine_name: core_media_transport
 
   - name: 'Core: Memory Allocator'
-    description: Most things related to memory allocation in Gecko, including jemalloc,
-      replace-malloc, DMD (dark matter detector), logalloc, etc.
+    description: Most things related to memory allocation in Gecko, including 
+      jemalloc, replace-malloc, DMD (dark matter detector), logalloc, etc.
     includes:
       - memory/**/*
     meta:
@@ -2275,9 +2281,9 @@ modules:
     machine_name: core_memory_allocator
 
   - name: 'Core: mfbt'
-    description: mfbt is a collection of headers, macros, data structures, methods,
-      and other functionality available for use and reuse throughout all Mozilla code
-      (including SpiderMonkey and Gecko more broadly).
+    description: mfbt is a collection of headers, macros, data structures, 
+      methods, and other functionality available for use and reuse throughout 
+      all Mozilla code (including SpiderMonkey and Gecko more broadly).
     includes:
       - mfbt/**/*
     meta:
@@ -2310,8 +2316,8 @@ modules:
     machine_name: core_moz2d_graphics_submodule
 
   - name: 'Core: Mozglue'
-    description: Glue library containing various low-level functionality, including
-      a dynamic linker for Android, a DLL block list for Windows, etc.
+    description: Glue library containing various low-level functionality, 
+      including a dynamic linker for Android, a DLL block list for Windows, etc.
     includes:
       - mozglue/**/*
     meta:
@@ -2403,11 +2409,12 @@ modules:
     machine_name: core_necko
 
   - name: 'Core: NodeJS usage, tools, and style'
-    description: Advises on the use of NodeJS and npm packages at build and runtime.
-      Reviews additions/upgrades/removals of vendored npm packages. Works with appropriate
-      teams to maintain automated license and security audits of npm packages. Works
-      with the security team and relevant developers to respond to vulnerabilities
-      in NodeJS and vendored npm packages.
+    description: Advises on the use of NodeJS and npm packages at build and 
+      runtime. Reviews additions/upgrades/removals of vendored npm packages. 
+      Works with appropriate teams to maintain automated license and security 
+      audits of npm packages. Works with the security team and relevant 
+      developers to respond to vulnerabilities in NodeJS and vendored npm 
+      packages.
     includes:
       - package.json
       - package-lock.json
@@ -2429,8 +2436,8 @@ modules:
     machine_name: core_nodejs_usage_tools_and_style
 
   - name: 'Core: Notifications'
-    description: The infrastructure for Web Notifications API and the Firefox Desktop
-      notifications.
+    description: The infrastructure for Web Notifications API and the Firefox 
+      Desktop notifications.
     includes:
       - dom/notification/**/*
       - toolkit/components/alerts/**/*
@@ -2468,8 +2475,8 @@ modules:
     machine_name: core_nspr
 
   - name: 'Core: PDF'
-    description: Rendering code to display documents encoded in the ISO 32000-1 PDF
-      format.
+    description: Rendering code to display documents encoded in the ISO 32000-1 
+      PDF format.
     includes:
       - toolkit/components/pdfjs/**/*
     meta:
@@ -2555,8 +2562,8 @@ modules:
     machine_name: core_preferences
 
   - name: 'Core: Private Browsing'
-    description: Implementation of the Private Browsing mode, and the integration
-      of other modules with Private Browsing APIs.
+    description: Implementation of the Private Browsing mode, and the 
+      integration of other modules with Private Browsing APIs.
     includes:
     # TODO
     # Implementation and consumers of Private Browsing APIs in nsILoadContext,
@@ -2598,8 +2605,8 @@ modules:
     machine_name: core_privilege_manager
 
   - name: 'Core: Push Subscriptions'
-    description: Push is a way for application developers to send messages to their
-      web applications.
+    description: Push is a way for application developers to send messages to 
+      their web applications.
     includes:
       - dom/push/**/*
       - dom/interfaces/push/**/*
@@ -2618,8 +2625,8 @@ modules:
 
   - machine_name: core_quota_manager
     name: 'Core: Quota Manager'
-    description: Centralized quota tracked storage management and implementation of
-      StorageManager.
+    description: Centralized quota tracked storage management and implementation
+      of StorageManager.
     includes:
       - dom/quota/**/*
       - dom/simpledb/**/*
@@ -2682,8 +2689,8 @@ modules:
     machine_name: core_sandboxing_windows
 
   - name: 'Core: security'
-    description: Crypto/PKI code, including NSS (Network Security Services) and JSS
-      (NSS for Java)
+    description: Crypto/PKI code, including NSS (Network Security Services) and 
+      JSS (NSS for Java)
     includes:
       - security/nss/**/*
     meta:
@@ -2755,8 +2762,8 @@ modules:
       components:
         - 'Core::Security: RLBox'
   - name: 'Core: Static analysis & rewriting for C++'
-    description: Tools for checking C++ code looking for problems at compile time,
-      plus tools for automated rewriting of C++ code.
+    description: Tools for checking C++ code looking for problems at compile 
+      time, plus tools for automated rewriting of C++ code.
     includes:
       - build/clang-plugin/**/*
       - tools/rewriting/**/*
@@ -2890,7 +2897,7 @@ modules:
       - netwerk/protocol/http/**/*
     meta:
       group: dev-platform
-      url:
+      url: 
         https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/User-Agent/Firefox
       components:
         - 'Core::Networking: HTTP'
@@ -2902,8 +2909,8 @@ modules:
     machine_name: core_ua_string
 
   - name: 'Core: View System'
-    description: The View Manager is responsible for handling "heavyweight" rendering
-      (some clipping, compositing) and event handling tasks.
+    description: The View Manager is responsible for handling "heavyweight" 
+      rendering (some clipping, compositing) and event handling tasks.
     includes:
       - view/**/*
     meta:
@@ -2979,7 +2986,8 @@ modules:
         - Ben Kelly
         - Yaron Tausky
       group: dev-platform
-      url: https://developer.mozilla.org/docs/Web/API/Web_Workers_API/Using_web_workers
+      url: 
+        https://developer.mozilla.org/docs/Web/API/Web_Workers_API/Using_web_workers
       components:
         - 'Core::DOM: Service Workers'
         - 'Core::DOM: Workers'
@@ -3024,8 +3032,9 @@ modules:
     machine_name: core_webgpu_graphics_submodule
 
   - name: 'Core: WebRTC'
-    description: WebRTC is responsible for realtime audio and video communication,
-      as well as related issues like low-level camera and microphone access
+    description: WebRTC is responsible for realtime audio and video 
+      communication, as well as related issues like low-level camera and 
+      microphone access
     includes:
       - netwerk/sctp/**/*
       # TODO: also see submodules "WebRTC Media" and "WebRTC Signaling"
@@ -3046,8 +3055,8 @@ modules:
     machine_name: core_webrtc
 
   - name: 'Core: WebVR'
-    description: Gecko's implementation of WebVR (Virtual Reality) functionality,
-      including API, devices, graphics and integration
+    description: Gecko's implementation of WebVR (Virtual Reality) 
+      functionality, including API, devices, graphics and integration
     includes:
       - dom/vr/**/*
       - gfx/vr/**/*
@@ -3066,9 +3075,9 @@ modules:
     submodules:
 
       - name: 'Core: WebRTC Media'
-        description: Submodule of WebRTC responsible for access to media input devices
-          (microphones, cameras, screen capture), as well as realtime audiovisual
-          codecs and packetization.
+        description: Submodule of WebRTC responsible for access to media input 
+          devices (microphones, cameras, screen capture), as well as realtime 
+          audiovisual codecs and packetization.
         includes:
           - media/webrtc/**/*
           - dom/media/webrtc/**/*
@@ -3090,8 +3099,8 @@ modules:
         machine_name: core_webrtc_media
 
       - name: 'Core: WebRTC Signaling'
-        description: Submodule of WebRTC responsible for implementation of PeerConnection
-          API, WebRTC identity, and SDP/JSEP handling
+        description: Submodule of WebRTC responsible for implementation of 
+          PeerConnection API, WebRTC identity, and SDP/JSEP handling
         includes:
           - media/webrtc/signaling/**/*
         meta:
@@ -3132,8 +3141,8 @@ modules:
     machine_name: core_widget
 
   - name: 'Core: Widget - Android'
-    description: This is part of the [https://wiki.mozilla.org/Modules/Core#GeckoView
-      GeckoView] module.
+    description: This is part of the 
+      [https://wiki.mozilla.org/Modules/Core#GeckoView GeckoView] module.
     meta: {}
     owners:
       - *agi
@@ -3224,9 +3233,9 @@ modules:
     machine_name: core_widget_windows
 
   - name: 'Core: XML'
-    description: XML in Mozilla, including XML, XHTML, Namespaces in XML, Associating
-      Style Sheets with XML Documents, XML Linking and XML Extras. XML-related things
-      that are not covered by more specific projects.
+    description: XML in Mozilla, including XML, XHTML, Namespaces in XML, 
+      Associating Style Sheets with XML Documents, XML Linking and XML Extras. 
+      XML-related things that are not covered by more specific projects.
     includes:
       - dom/xml/**/*
       - parser/expat/**/*
@@ -3248,8 +3257,8 @@ modules:
     machine_name: core_xml
 
   - name: 'Core: XPApps'
-    description: Cross-Platform Applications, mostly Navigator front end and application
-      shell.
+    description: Cross-Platform Applications, mostly Navigator front end and 
+      application shell.
     includes:
       - xpfe/**/*
     meta:
@@ -3330,8 +3339,8 @@ modules:
     machine_name: core_xpconnect
 
   - name: 'Core: XPIDL'
-    description: Cross-platform IDL compiler; produces .h C++ header files and .xpt
-      runtime type description files from .idl interface description files.
+    description: Cross-platform IDL compiler; produces .h C++ header files and 
+      .xpt runtime type description files from .idl interface description files.
     includes:
       - xpcom/idl-parser/**/*
       - xpcom/xpidl/**/*
@@ -3522,7 +3531,8 @@ modules:
         machine_name: desktop_theme
 
       - name: Desktop UI
-        description: The main browser UI except where covered by more specific submodules.
+        description: The main browser UI except where covered by more specific 
+          submodules.
         includes:
           - browser/base/content/**/*
         meta:
@@ -3568,8 +3578,8 @@ modules:
         machine_name: enterprise_policies
 
       - name: Experiments/Rollouts
-        description: Desktop clients for our experiments and off-train deployments
-          systems.
+        description: Desktop clients for our experiments and off-train 
+          deployments systems.
         includes:
           - toolkit/components/normandy/**/*
           - toolkit/components/nimbus/**/*
@@ -3623,8 +3633,8 @@ modules:
         machine_name: form_autofill
 
       - name: In-product Messaging
-        description: The system for delivering in-product messaging and onboarding
-          including Activity Stream Router, about:welcome, UI tour.
+        description: The system for delivering in-product messaging and 
+          onboarding including Activity Stream Router, about:welcome, UI tour.
         includes:
           - browser/components/asrouter/**/*
           - browser/components/aboutwelcome/**/*
@@ -3732,8 +3742,8 @@ modules:
 
       - machine_name: firefox_pip
         name: Picture-in-Picture
-        description: A component that allows video elements to be pulled out into
-          an always-on-top window.
+        description: A component that allows video elements to be pulled out 
+          into an always-on-top window.
         includes:
           - toolkit/components/pictureinpicture
           - browser/extensions/pictureinpicture
@@ -3801,8 +3811,9 @@ modules:
         machine_name: search
 
       - name: Security and Privacy UI
-        description: The front-end to our security and privacy features, including
-          Protections UI, Site Identity, Site Permissions and Certificate Errors
+        description: The front-end to our security and privacy features, 
+          including Protections UI, Site Identity, Site Permissions and 
+          Certificate Errors
         includes:
           - browser/components/protections/**/*
           - browser/components/controlcenter/**/*
@@ -4022,8 +4033,8 @@ modules:
     meta:
   - machine_name: javascript_usage
     name: JavaScript usage, tools, and style
-    description: Aspects of JavaScript use such as language feature usage, tooling
-      such as lint configurations, formatting and naming style.
+    description: Aspects of JavaScript use such as language feature usage, 
+      tooling such as lint configurations, formatting and naming style.
     includes:
       - eslint*.config.mjs
       - '**/.eslintrc*.js'
@@ -4069,7 +4080,8 @@ modules:
 
   - machine_name: python_usage
     name: Python usage, tools, and style
-    description: Aspects of Python use such as tooling, formatting and naming style
+    description: Aspects of Python use such as tooling, formatting and naming 
+      style
     includes:
       - tools/lint/python/**/*
     excludes: []
@@ -4085,10 +4097,10 @@ modules:
 
   - machine_name: remote_protocol
     name: Remote Protocol
-    description: Low-level remote protocol exposing interfaces for inspecting state
-      and controlling execution of web documents, instrumenting various subsystems
-      in the browser, simulating user interaction for automation purposes, and for
-      subscribing to updates from the aforementioned.
+    description: Low-level remote protocol exposing interfaces for inspecting 
+      state and controlling execution of web documents, instrumenting various 
+      subsystems in the browser, simulating user interaction for automation 
+      purposes, and for subscribing to updates from the aforementioned.
     includes:
       - remote/**/*
     meta:
@@ -4105,8 +4117,8 @@ modules:
 
       - machine_name: remote_protocol_agent
         name: Agent
-        description: Underlying transport layer and server to allow remoting of Firefox
-          for automation and debugging.
+        description: Underlying transport layer and server to allow remoting of 
+          Firefox for automation and debugging.
         includes:
           - remote/**/*
         excludes:
@@ -4131,8 +4143,9 @@ modules:
 
       - machine_name: remote_protocol_cdp
         name: CDP
-        description: The core implementation for CDP support. Please file domain specific
-          issues and requests under the appropriate CDP-prefixed Remote Protocol component.
+        description: The core implementation for CDP support. Please file domain
+          specific issues and requests under the appropriate CDP-prefixed Remote
+          Protocol component.
         includes:
           - remote/cdp/*
         meta:
@@ -4154,9 +4167,10 @@ modules:
 
       - machine_name: remote_protocol_marionette
         name: Marionette
-        description: Marionette is a remote protocol that lets out-of-process programs
-          communicate with, instrument, and control Gecko-based browsers. Combined
-          with geckodriver, this forms our WebDriver classic implementation.
+        description: Marionette is a remote protocol that lets out-of-process 
+          programs communicate with, instrument, and control Gecko-based 
+          browsers. Combined with geckodriver, this forms our WebDriver classic 
+          implementation.
         includes:
           - remote/marionette/*
         meta:
@@ -4233,8 +4247,8 @@ modules:
 
   - machine_name: testing_geckodriver
     name: geckodriver
-    description: Proxy for using W3C WebDriver-compatible clients to interact with
-      Gecko-based browsers.
+    description: Proxy for using W3C WebDriver-compatible clients to interact 
+      with Gecko-based browsers.
     includes:
       - testing/geckodriver/**/*
     excludes: []
@@ -4262,7 +4276,8 @@ modules:
 
   - machine_name: testing_marionette_client_harness
     name: Marionette Client & Harness
-    description: Python client and harness for the Marionette remote protocol implementation.
+    description: Python client and harness for the Marionette remote protocol 
+      implementation.
     includes:
       - testing/marionette/**/*
     meta:
@@ -4425,7 +4440,8 @@ modules:
     submodules:
 
       - name: Application Startup
-        description: The profile system and startup process before the front-end launches.
+        description: The profile system and startup process before the front-end
+          launches.
         includes:
           - toolkit/profile/**/*
           - toolkit/components/remote/**/*
@@ -4482,8 +4498,8 @@ modules:
         machine_name: ui_widgets
 
       - name: WebCompat Addons
-        description: Compatibility interventions (webcompat system addon) and bug
-          reporting capabilities (Report Site Issue addon).
+        description: Compatibility interventions (webcompat system addon) and 
+          bug reporting capabilities (Report Site Issue addon).
         includes:
           - browser/extensions/webcompat
           - mobile/android/android-components/components/feature/webcompat
@@ -4527,8 +4543,8 @@ modules:
     machine_name: toolkit
   - machine_name: translation
     name: Translation
-    description: Support for translation in Firefox, and the infrastructure to train
-      new translation language models.
+    description: Support for translation in Firefox, and the infrastructure to 
+      train new translation language models.
     includes:
       - toolkit/components/translations/**/*
       - browser/components/translations/**/*
@@ -4541,21 +4557,24 @@ modules:
       - *marco
     meta:
       group: dev-platform
-      url: https://github.com/mozilla/firefox-translations-training https://github.com/mozilla/firefox-translations-models
-        https://github.com/mozilla/firefox-translations-evaluations https://github.com/mozilla/firefox-translations
+      url: https://github.com/mozilla/firefox-translations-training 
+        https://github.com/mozilla/firefox-translations-models 
+        https://github.com/mozilla/firefox-translations-evaluations 
+        https://github.com/mozilla/firefox-translations
       components:
         - Firefox::Translation
       review_group: translations-reviewers
   - machine_name: tree_sheriffs
     name: Tree Sheriffs
-    description: Tree Sheriffs aid developers to easily, quickly, and seamlessly land
-      their code in the proper location(s) and ensure that code does not break our
-      automated tests. In the service of this objective, the Sheriffs work closely
-      with the larger engineering organization to create and enforce landing policies
-      that increase productivity while maintaining an efficient and robust automated
-      testing system. Beyond the policy role, they have also become shepherds of automation
-      quality by monitoring intermittent failures, performing uplifts and merges,
-      and identifying poorly performing automation machines.
+    description: Tree Sheriffs aid developers to easily, quickly, and seamlessly
+      land their code in the proper location(s) and ensure that code does not 
+      break our automated tests. In the service of this objective, the Sheriffs 
+      work closely with the larger engineering organization to create and 
+      enforce landing policies that increase productivity while maintaining an 
+      efficient and robust automated testing system. Beyond the policy role, 
+      they have also become shepherds of automation quality by monitoring 
+      intermittent failures, performing uplifts and merges, and identifying 
+      poorly performing automation machines.
     meta:
       group: sheriffs
       url: https://wiki.mozilla.org/Sheriffing
@@ -4573,8 +4592,8 @@ modules:
       - *RyanVM
   - machine_name: url_classifier
     name: URL Classifier
-    description: Database and list-based classification of URL resources, such as
-      Tracking Protection and SafeBrowsing.
+    description: Database and list-based classification of URL resources, such 
+      as Tracking Protection and SafeBrowsing.
     includes:
       - toolkit/components/url-classifier/**/*
       - netwerk/url-classifier/**/*
@@ -4586,8 +4605,10 @@ modules:
       - *timhuang
       - *gcp
     meta:
-      url: https://github.com/mozilla-services/shavar https://wiki.mozilla.org/Phishing_Protection
-        https://wiki.mozilla.org/Security/Tracking_protection https://wiki.mozilla.org/Security/Application_Reputation
+      url: https://github.com/mozilla-services/shavar 
+        https://wiki.mozilla.org/Phishing_Protection 
+        https://wiki.mozilla.org/Security/Tracking_protection 
+        https://wiki.mozilla.org/Security/Application_Reputation
       owners_emeritus:
         - François Marier
       peers_emeritus:
@@ -4595,5 +4616,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 5238770d67e1dbb0f77c69094919d3875ca79bcb
+  config: d94e01337cb4ae240766a959ff450e6aeb4de857
   export: 4a1cfbaad83e2605a8530f8da80c72c0abf58479
