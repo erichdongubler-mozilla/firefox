@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2025-06-26T17:56:43.822278+00:00'
+updated_at: '2025-06-26T17:58:03.546140+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -50,6 +50,10 @@ people:
     bmo_id: 693303
     name: Alex Hochheiden
     nick: ahochheiden
+  - &aleiserson
+    bmo_id: 713407
+    name: Andy Leiserson
+    nick: aleiserson
   - &allstarschh
     bmo_id: 434670
     name: Yoshi Cheng-Hao Huang
@@ -3029,6 +3033,7 @@ modules:
       - *jgilbert
       - *nical
       - *teoxoy
+      - *aleiserson
     machine_name: core_webgpu_graphics_submodule
 
   - name: 'Core: WebRTC'
@@ -4616,5 +4621,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: d94e01337cb4ae240766a959ff450e6aeb4de857
-  export: 4a1cfbaad83e2605a8530f8da80c72c0abf58479
+  config: 0a197421374d2d085b347c46884f208466f26f44
+  export: b146015d013626727c255ec6847f10bde4ffa412
