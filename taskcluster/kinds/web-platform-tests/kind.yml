@@ -481,10 +481,8 @@ tasks:
         chunks:
             by-test-platform:
                 linux2204.*/debug.*: 25
-                linux2204.*: 20
-                macosx.*-64.*/debug.*: 15
-                windows.*-64.*/opt.*: 14
-                default: 14
+                linux2204.*: 24
+                default: 18
         max-run-time: 2700  # 45m
         variants: []  # We don't need sw or nofis testing.
         run-on-projects:
