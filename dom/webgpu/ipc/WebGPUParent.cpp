@@ -735,7 +735,13 @@ void WebGPUParent::MapCallback(uint8_t* aUserData,
           req->mParent->GetContext(), mapData->mDeviceId, req->mBufferId,
           offset, size, error.ToFFI());
 
-      MOZ_RELEASE_ASSERT(!error.GetError());
+      if (error.GetError()) {
+        // It's unfortunate that the error here is opaque. The only cases we're
+        // aware that this can happen is if the device or buffer was destroyed.
+        // Presuming this to be the case, we've already resolved the pending
+        // promise with an `AbortError`, we need not do anything else.
+        return;
+      }
 
       MOZ_RELEASE_ASSERT(mapData->mShmem.Size() >= offset + size);
       if (src.ptr != nullptr && src.length >= size) {
