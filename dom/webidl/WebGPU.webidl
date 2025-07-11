@@ -594,6 +594,7 @@ dictionary GPUBindGroupDescriptor
 };
 
 typedef (GPUSampler or
+         GPUTexture or
          GPUTextureView or
          GPUBufferBinding) GPUBindingResource;
 
@@ -1116,9 +1117,9 @@ dictionary GPURenderPassDescriptor
 };
 
 dictionary GPURenderPassColorAttachment {
-    required GPUTextureView view;
+    required (GPUTexture or GPUTextureView) view;
     GPUIntegerCoordinate depthSlice;
-    GPUTextureView resolveTarget;
+    (GPUTexture or GPUTextureView) resolveTarget;
 
     GPUColor clearValue;
     required GPULoadOp loadOp;
@@ -1126,7 +1127,7 @@ dictionary GPURenderPassColorAttachment {
 };
 
 dictionary GPURenderPassDepthStencilAttachment {
-    required GPUTextureView view;
+    required (GPUTexture or GPUTextureView) view;
 
     float depthClearValue;
     GPULoadOp depthLoadOp;
