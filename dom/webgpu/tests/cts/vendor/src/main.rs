@@ -467,6 +467,26 @@ fn run(args: CliArgs) -> miette::Result<()> {
                     },
                 ),
                 (
+                    "webgpu:shader,execution,expression,constructor,non_zero:concrete_vector_mix",
+                    Config {
+                        new_sibling_basename: "non_zero__concrete_vector_mix",
+                        split_by: SplitBy::first_param(
+                            "inputSource",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
+                    "webgpu:shader,execution,expression,constructor,non_zero:concrete_vector_splat",
+                    Config {
+                        new_sibling_basename: "non_zero__concrete_vector_splat",
+                        split_by: SplitBy::first_param(
+                            "inputSource",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
                     "webgpu:shader,execution,expression,call,builtin,textureSampleLevel:sampled_3d_coords,lodClamp",
                     Config {
                         new_sibling_basename: "textureSampleLevel__sampled_3d_coords,lodClamp",
