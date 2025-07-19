@@ -375,6 +375,7 @@ fn run(args: CliArgs) -> miette::Result<()> {
                     "webgpu:shader,execution,expression,call,builtin,textureSampleLevel",
                     TestGroupSplit::multiple(
                         [
+                            "depth_3d_coords",
                             "sampled_2d_coords",
                             "sampled_3d_coords",
                             "sampled_array_3d_coords",
