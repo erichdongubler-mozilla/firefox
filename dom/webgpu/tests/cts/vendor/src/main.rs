@@ -468,6 +468,13 @@ fn run(args: CliArgs) -> miette::Result<()> {
                     )),
                 ),
                 (
+                    "webgpu:shader,execution,memory_model,coherence",
+                    TestGroupSplit::multiple(
+                        ["corr", "corw1", "corw2", "cowr", "coww"]
+                            .map(|test| (test, TestSplit::new(&[], DivideInto::TestsInSameFile))),
+                    ),
+                ),
+                (
                     "webgpu:web_platform,copyToTexture,ImageBitmap",
                     TestGroupSplit::multiple([
                         (
