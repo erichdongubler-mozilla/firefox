@@ -46,7 +46,7 @@ impl CargoOutput {
             warnings: true,
             output: OutputKind::Forward,
             debug: match std::env::var_os("CC_ENABLE_DEBUG_OUTPUT") {
-                Some(v) => v != "0" && v != "false" && v != "",
+                Some(v) => v != "0" && v != "false" && !v.is_empty(),
                 None => false,
             },
             checked_dbg_var: Arc::new(AtomicBool::new(false)),
@@ -55,13 +55,13 @@ impl CargoOutput {
 
     pub(crate) fn print_metadata(&self, s: &dyn Display) {
         if self.metadata {
-            println!("{}", s);
+            println!("{s}");
         }
     }
 
     pub(crate) fn print_warning(&self, arg: &dyn Display) {
         if self.warnings {
-            println!("cargo:warning={}", arg);
+            println!("cargo:warning={arg}");
         }
     }
 
@@ -71,7 +71,7 @@ impl CargoOutput {
             println!("cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT");
         }
         if self.debug {
-            println!("{}", arg);
+            println!("{arg}");
         }
     }
 
@@ -375,7 +375,7 @@ pub(crate) fn spawn(cmd: &mut Command, cargo_output: &CargoOutput) -> Result<Chi
         }
     }
 
-    cargo_output.print_debug(&format_args!("running: {:?}", cmd));
+    cargo_output.print_debug(&format_args!("running: {cmd:?}"));
 
     let cmd = ResetStderr(cmd);
     let child = cmd

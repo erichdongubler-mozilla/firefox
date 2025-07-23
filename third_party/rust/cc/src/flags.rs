@@ -178,14 +178,13 @@ impl<'this> RustcCodegenFlags<'this> {
                 tool.args.push(flag);
             } else {
                 build.cargo_output.print_warning(&format!(
-                    "Inherited flag {:?} is not supported by the currently used CC",
-                    flag
+                    "Inherited flag {flag:?} is not supported by the currently used CC"
                 ));
             }
         };
 
         let clang_or_gnu =
-            matches!(family, ToolFamily::Clang { .. }) || matches!(family, ToolFamily::Gnu { .. });
+            matches!(family, ToolFamily::Clang { .. }) || matches!(family, ToolFamily::Gnu);
 
         // Flags shared between clang and gnu
         if clang_or_gnu {
@@ -315,7 +314,7 @@ impl<'this> RustcCodegenFlags<'this> {
                     }
                 }
             }
-            ToolFamily::Gnu { .. } => {}
+            ToolFamily::Gnu => {}
             ToolFamily::Msvc { .. } => {
                 // https://learn.microsoft.com/en-us/cpp/build/reference/guard-enable-control-flow-guard
                 if let Some(value) = self.control_flow_guard {
