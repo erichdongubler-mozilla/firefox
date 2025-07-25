@@ -4029,25 +4029,17 @@ criteria = "safe-to-deploy"
 delta = "24.0.0 -> 25.0.0"
 
 [[audits.naga]]
-who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
-    "Andy Leiserson <aleiserson@mozilla.com>",
-    "Jim Blandy <jimb@red-bean.com>",
-    "Erich Gubler <erichdongubler@gmail.com>",
-]
-criteria = "safe-to-deploy"
-delta = "25.0.0 -> 25.0.0@git:12591e42715badafef264609cb29d4a8e0b90847"
-importable = false
-
-[[audits.naga]]
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "25.0.0 -> 26.0.0"
 
 [[audits.naga]]
-who = "Andy Leiserson <aleiserson@mozilla.com>"
+who = [
+    "Andy Leiserson <aleiserson@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
+]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:b83c9cfd578837a6163d980130249c245a9c5f8a"
+delta = "26.0.0 -> 26.0.0@git:6f0cfdeb8a1668880f9175ae55d393894a0c7c06"
 importable = false
 
 [[audits.net2]]
@@ -6461,25 +6453,17 @@ criteria = "safe-to-deploy"
 delta = "24.0.0 -> 25.0.0"
 
 [[audits.wgpu-core]]
-who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
-    "Andy Leiserson <aleiserson@mozilla.com>",
-    "Jim Blandy <jimb@red-bean.com>",
-    "Erich Gubler <erichdongubler@gmail.com>",
-]
-criteria = "safe-to-deploy"
-delta = "25.0.0 -> 25.0.0@git:12591e42715badafef264609cb29d4a8e0b90847"
-importable = false
-
-[[audits.wgpu-core]]
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "25.0.0 -> 26.0.0"
 
 [[audits.wgpu-core]]
-who = "Andy Leiserson <aleiserson@mozilla.com>"
+who = [
+    "Andy Leiserson <aleiserson@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
+]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:b83c9cfd578837a6163d980130249c245a9c5f8a"
+delta = "26.0.0 -> 26.0.0@git:6f0cfdeb8a1668880f9175ae55d393894a0c7c06"
 importable = false
 
 [[audits.wgpu-core-deps-apple]]
@@ -6488,25 +6472,17 @@ criteria = "safe-to-deploy"
 version = "25.0.0"
 
 [[audits.wgpu-core-deps-apple]]
-who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
-    "Andy Leiserson <aleiserson@mozilla.com>",
-    "Jim Blandy <jimb@red-bean.com>",
-    "Erich Gubler <erichdongubler@gmail.com>",
-]
-criteria = "safe-to-deploy"
-delta = "25.0.0 -> 25.0.0@git:12591e42715badafef264609cb29d4a8e0b90847"
-importable = false
-
-[[audits.wgpu-core-deps-apple]]
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "25.0.0 -> 26.0.0"
 
 [[audits.wgpu-core-deps-apple]]
-who = "Andy Leiserson <aleiserson@mozilla.com>"
+who = [
+    "Andy Leiserson <aleiserson@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
+]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:b83c9cfd578837a6163d980130249c245a9c5f8a"
+delta = "26.0.0 -> 26.0.0@git:6f0cfdeb8a1668880f9175ae55d393894a0c7c06"
 importable = false
 
 [[audits.wgpu-core-deps-windows-linux-android]]
@@ -6515,25 +6491,17 @@ criteria = "safe-to-deploy"
 version = "25.0.0"
 
 [[audits.wgpu-core-deps-windows-linux-android]]
-who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
-    "Andy Leiserson <aleiserson@mozilla.com>",
-    "Jim Blandy <jimb@red-bean.com>",
-    "Erich Gubler <erichdongubler@gmail.com>",
-]
-criteria = "safe-to-deploy"
-delta = "25.0.0 -> 25.0.0@git:12591e42715badafef264609cb29d4a8e0b90847"
-importable = false
-
-[[audits.wgpu-core-deps-windows-linux-android]]
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "25.0.0 -> 26.0.0"
 
 [[audits.wgpu-core-deps-windows-linux-android]]
-who = "Andy Leiserson <aleiserson@mozilla.com>"
+who = [
+    "Andy Leiserson <aleiserson@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
+]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:b83c9cfd578837a6163d980130249c245a9c5f8a"
+delta = "26.0.0 -> 26.0.0@git:6f0cfdeb8a1668880f9175ae55d393894a0c7c06"
 importable = false
 
 [[audits.wgpu-hal]]
@@ -6620,25 +6588,17 @@ criteria = "safe-to-deploy"
 delta = "24.0.0 -> 25.0.0"
 
 [[audits.wgpu-hal]]
-who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
-    "Andy Leiserson <aleiserson@mozilla.com>",
-    "Jim Blandy <jimb@red-bean.com>",
-    "Erich Gubler <erichdongubler@gmail.com>",
-]
-criteria = "safe-to-deploy"
-delta = "25.0.0 -> 25.0.0@git:12591e42715badafef264609cb29d4a8e0b90847"
-importable = false
-
-[[audits.wgpu-hal]]
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "25.0.0 -> 26.0.0"
 
 [[audits.wgpu-hal]]
-who = "Andy Leiserson <aleiserson@mozilla.com>"
+who = [
+    "Andy Leiserson <aleiserson@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
+]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:b83c9cfd578837a6163d980130249c245a9c5f8a"
+delta = "26.0.0 -> 26.0.0@git:6f0cfdeb8a1668880f9175ae55d393894a0c7c06"
 importable = false
 
 [[audits.wgpu-types]]
@@ -6720,25 +6680,17 @@ criteria = "safe-to-deploy"
 delta = "24.0.0 -> 25.0.0"
 
 [[audits.wgpu-types]]
-who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
-    "Andy Leiserson <aleiserson@mozilla.com>",
-    "Jim Blandy <jimb@red-bean.com>",
-    "Erich Gubler <erichdongubler@gmail.com>",
-]
-criteria = "safe-to-deploy"
-delta = "25.0.0 -> 25.0.0@git:12591e42715badafef264609cb29d4a8e0b90847"
-importable = false
-
-[[audits.wgpu-types]]
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "25.0.0 -> 26.0.0"
 
 [[audits.wgpu-types]]
-who = "Andy Leiserson <aleiserson@mozilla.com>"
+who = [
+    "Andy Leiserson <aleiserson@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
+]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:b83c9cfd578837a6163d980130249c245a9c5f8a"
+delta = "26.0.0 -> 26.0.0@git:6f0cfdeb8a1668880f9175ae55d393894a0c7c06"
 importable = false
 
 [[audits.whatsys]]
