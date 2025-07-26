@@ -155,6 +155,7 @@ enum GPUFeatureName {
     "clip-distances",
     "dual-source-blending",
     "subgroups",
+    "texture-formats-tier1",
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
@@ -339,6 +340,8 @@ enum GPUTextureFormat {
     "r8sint",
 
     // 16-bit formats
+    "r16unorm",
+    "r16snorm",
     "r16uint",
     "r16sint",
     "r16float",
@@ -351,6 +354,8 @@ enum GPUTextureFormat {
     "r32uint",
     "r32sint",
     "r32float",
+    "rg16unorm",
+    "rg16snorm",
     "rg16uint",
     "rg16sint",
     "rg16float",
@@ -371,6 +376,8 @@ enum GPUTextureFormat {
     "rg32uint",
     "rg32sint",
     "rg32float",
+    "rgba16unorm",
+    "rgba16snorm",
     "rgba16uint",
     "rgba16sint",
     "rgba16float",
