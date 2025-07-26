@@ -74,6 +74,12 @@ ffi::WGPUTextureFormat ConvertTextureFormat(
     case dom::GPUTextureFormat::R8sint:
       result.tag = ffi::WGPUTextureFormat_R8Sint;
       break;
+    case dom::GPUTextureFormat::R16unorm:
+      result.tag = ffi::WGPUTextureFormat_R16Unorm;
+      break;
+    case dom::GPUTextureFormat::R16snorm:
+      result.tag = ffi::WGPUTextureFormat_R16Snorm;
+      break;
     case dom::GPUTextureFormat::R16uint:
       result.tag = ffi::WGPUTextureFormat_R16Uint;
       break;
@@ -103,6 +109,12 @@ ffi::WGPUTextureFormat ConvertTextureFormat(
       break;
     case dom::GPUTextureFormat::R32float:
       result.tag = ffi::WGPUTextureFormat_R32Float;
+      break;
+    case dom::GPUTextureFormat::Rg16unorm:
+      result.tag = ffi::WGPUTextureFormat_Rg16Unorm;
+      break;
+    case dom::GPUTextureFormat::Rg16snorm:
+      result.tag = ffi::WGPUTextureFormat_Rg16Snorm;
       break;
     case dom::GPUTextureFormat::Rg16uint:
       result.tag = ffi::WGPUTextureFormat_Rg16Uint;
@@ -151,6 +163,12 @@ ffi::WGPUTextureFormat ConvertTextureFormat(
       break;
     case dom::GPUTextureFormat::Rg32float:
       result.tag = ffi::WGPUTextureFormat_Rg32Float;
+      break;
+    case dom::GPUTextureFormat::Rgba16unorm:
+      result.tag = ffi::WGPUTextureFormat_Rgba16Unorm;
+      break;
+    case dom::GPUTextureFormat::Rgba16snorm:
+      result.tag = ffi::WGPUTextureFormat_Rgba16Snorm;
       break;
     case dom::GPUTextureFormat::Rgba16uint:
       result.tag = ffi::WGPUTextureFormat_Rgba16Uint;
