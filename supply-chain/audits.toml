@@ -4042,9 +4042,10 @@ delta = "25.0.0 -> 26.0.0"
 who = [
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:36ae215e9cfb0defb94f889f55edc18c5b87f150"
+delta = "26.0.0 -> 26.0.0@git:1bf1671ed877a6a9ccf5f1a349ec167cd28af3d7"
 importable = false
 
 [[audits.net2]]
@@ -6471,9 +6472,10 @@ delta = "25.0.0 -> 26.0.0"
 who = [
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:36ae215e9cfb0defb94f889f55edc18c5b87f150"
+delta = "26.0.0 -> 26.0.0@git:1bf1671ed877a6a9ccf5f1a349ec167cd28af3d7"
 importable = false
 
 [[audits.wgpu-core-deps-apple]]
@@ -6490,9 +6492,10 @@ delta = "25.0.0 -> 26.0.0"
 who = [
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:36ae215e9cfb0defb94f889f55edc18c5b87f150"
+delta = "26.0.0 -> 26.0.0@git:1bf1671ed877a6a9ccf5f1a349ec167cd28af3d7"
 importable = false
 
 [[audits.wgpu-core-deps-windows-linux-android]]
@@ -6509,9 +6512,10 @@ delta = "25.0.0 -> 26.0.0"
 who = [
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:36ae215e9cfb0defb94f889f55edc18c5b87f150"
+delta = "26.0.0 -> 26.0.0@git:1bf1671ed877a6a9ccf5f1a349ec167cd28af3d7"
 importable = false
 
 [[audits.wgpu-hal]]
@@ -6606,9 +6610,10 @@ delta = "25.0.0 -> 26.0.0"
 who = [
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:36ae215e9cfb0defb94f889f55edc18c5b87f150"
+delta = "26.0.0 -> 26.0.0@git:1bf1671ed877a6a9ccf5f1a349ec167cd28af3d7"
 importable = false
 
 [[audits.wgpu-types]]
@@ -6698,9 +6703,10 @@ delta = "25.0.0 -> 26.0.0"
 who = [
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:36ae215e9cfb0defb94f889f55edc18c5b87f150"
+delta = "26.0.0 -> 26.0.0@git:1bf1671ed877a6a9ccf5f1a349ec167cd28af3d7"
 importable = false
 
 [[audits.whatsys]]
