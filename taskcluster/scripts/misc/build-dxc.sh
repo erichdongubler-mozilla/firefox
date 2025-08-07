@@ -18,7 +18,8 @@ artifact=$(basename "$TOOLCHAIN_ARTIFACT")
 dxc_folder=${artifact%.tar.*}
 
 
-cd "$HOME/fetches/DirectXShaderCompiler"
+dxc_src_dir="$HOME/fetches/DirectXShaderCompiler"
+cd "$dxc_src_dir"
 
 # Configure and build.
 mkdir build
@@ -52,9 +53,22 @@ cmake .. \
 # NOTE: This builds `dxcompiler.pdb`, too.
 ninja dxcompiler.dll
 
+# Create `dxcompiler.sym`.
+./mach python toolkit/crashreporter/tools/symbolstore.py \
+  "$MOZ_FETCHES_DIR/dump_syms/dump_syms" \
+  --srcdir "$dxc_src_dir" \ # Make symbols relative to the DXC repo root.
+  "bin/dxcompiler.sym" \ # Place output into `./bin/dxcompiler.sym`.
+  "bin/dxcompiler.dll" # `symbolstore.py` will find the `pdb` based on this name.
+
+# - In the build job:
+#   - Include `dxcompiler.sym` in `crashreporter-symbols.zip`
+#   - Include `dxcompiler.sym` and `dxcompiler.pdb` in the `crashreporter-symbols-full.tar.zstd`.
+#
+# …And then the existing `build` job `Sym` task will handle the uploading.
+
 # Pack the result and upload.
 mkdir $dxc_folder
-mv bin/dxcompiler.dll bin/dxcompiler.pdb $dxc_folder
+mv bin/dxcompiler.dll bin/dxcompiler.pdb bin/dxcompiler.sym $dxc_folder
 
 mkdir -p $UPLOAD_DIR
 tar cavf $UPLOAD_DIR/$artifact $dxc_folder
