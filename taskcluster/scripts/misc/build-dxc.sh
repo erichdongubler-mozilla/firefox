@@ -32,6 +32,7 @@ cmake .. \
   -C ../cmake/caches/PredefinedParams.cmake \
   -DCMAKE_TOOLCHAIN_FILE=../cmake/platforms/WinMsvc.cmake \
   -DHOST_ARCH="$MOZ_DXC_TARGET_ARCH" \
+  # TODO: use `Debug` or `RelWithDebInfo`, depending on the build profile
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DLLVM_DISABLE_ASSEMBLY_FILES=ON \
   -DLLVM_NATIVE_TOOLCHAIN="$MOZ_FETCHES_DIR/clang" \
