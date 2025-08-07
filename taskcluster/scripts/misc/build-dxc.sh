@@ -28,6 +28,7 @@ cd "$dxc_build_dir"
 
 # Note: it is important that LLVM_ENABLE_ASSERTIONS remains enabled.
 
+# TODO: use `Debug` or `RelWithDebInfo`, depending on the build profile
 cmake .. \
   -C ../cmake/caches/PredefinedParams.cmake \
   -DCMAKE_TOOLCHAIN_FILE=../cmake/platforms/WinMsvc.cmake \
