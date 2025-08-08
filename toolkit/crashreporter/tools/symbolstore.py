@@ -411,12 +411,11 @@ def get_generated_file_s3_path(filename, rel_path, bucket):
         return f"s3:{bucket}:{path}:"
 
 
-def GetPlatformSpecificDumper(**kwargs):
+def GetPlatformSpecificDumper(platform=None, **kwargs):
     """This function simply returns a instance of a subclass of Dumper
     that is appropriate for the current platform."""
-    return {"WINNT": Dumper_Win32, "Linux": Dumper_Linux, "Darwin": Dumper_Mac}[
-        buildconfig.substs["OS_ARCH"]
-    ](**kwargs)
+    platform = platform or buildconfig.substs["OS_ARCH"]
+    return {"WINNT": Dumper_Win32, "Linux": Dumper_Linux, "Darwin": Dumper_Mac}[platform](**kwargs)
 
 
 def SourceIndex(fileStream, outputPath, vcs_root, s3_bucket):
@@ -1117,6 +1116,14 @@ to canonical locations in the source repository. Specify
         default=False,
         help="Count static initializers",
     )
+    parser.add_option(
+        "--platform",
+        action="append",
+        dest="platform",
+        default=None,
+        help="Force a specific platform for processing symbols. Useful for processing "
+        + "cross-compiled symbols. Takes values from `OS_ARCH`, i.e., `WINNT`.",
+    )
     (options, args) = parser.parse_args()
 
     # check to see if the pdbstr.exe exists
@@ -1146,6 +1153,7 @@ to canonical locations in the source repository. Specify
         srcsrv=options.srcsrv,
         s3_bucket=bucket,
         file_mapping=file_mapping,
+        platform=options.platform,
     )
 
     dumper.Process(args[2], options.count_ctors)
