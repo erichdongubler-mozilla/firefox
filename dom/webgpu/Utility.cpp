@@ -673,10 +673,9 @@ mozilla::Maybe<mozilla::Buffer<uint32_t>> GetDynamicOffsetsFromArray(
                 aDynamicOffsetsDataLength;
             if (!checkedLength.isValid() || checkedLength.value() > aLength) {
               return mozilla::Nothing();
-            } else {
-              return mozilla::Some(std::make_pair(aDynamicOffsetsDataStart,
-                                                  aDynamicOffsetsDataLength));
             }
+            return mozilla::Some(std::make_pair(aDynamicOffsetsDataStart,
+                                                aDynamicOffsetsDataLength));
           });
 
   if (dynamicOffsets.isNothing()) {
