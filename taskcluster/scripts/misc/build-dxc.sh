@@ -70,6 +70,7 @@ cd "$GECKO_PATH"
 symbols_dir="$dxc_build_dir/sym"
 ./mach python toolkit/crashreporter/tools/symbolstore.py \
   "$MOZ_FETCHES_DIR/dump_syms/dump_syms" \
+  --srcdir "$dxc_src_dir" \
   --platform "WINNT" \
   --no-rust \
   --no-moz-extra-info \
