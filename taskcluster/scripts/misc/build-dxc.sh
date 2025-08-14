@@ -62,3 +62,23 @@ tar cavf $UPLOAD_DIR/$artifact \
   --transform "r;s|^$bin_dir_relative|$dxc_folder|" --show-transformed \
   "$bin_dir/dxcompiler.dll" \
   "$bin_dir/dxcompiler.pdb"
+
+cd "$GECKO_PATH"
+
+# Create a directory for `*.sym` files of the form `…/<bin>/<hash>/<bin>.sym`.
+symbols_dir="$dxc_build_dir/sym"
+./mach python toolkit/crashreporter/tools/symbolstore.py \
+  "$MOZ_FETCHES_DIR/dump_syms/dump_syms" \
+  --platform "WINNT" \
+  --no-rust \
+  --no-moz-extra-info \
+  "$symbols_dir" \
+  "$bin_dir/dxcompiler.dll"
+  # NOTE: `dll` is not a typo. `symbolstore.py` will find the `pdb` based on this name.
+
+# Now, upload symbols!
+symbols_archive="$UPLOAD_DIR/target-crashsymbols-dxc.tar.zst"
+cd $symbols_dir
+tar -cavf "$symbols_archive" *
+cd -
+./mach python toolkit/crashreporter/tools/upload_symbols.py "$symbols_archive"

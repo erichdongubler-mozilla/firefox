@@ -816,6 +816,10 @@ win64-dxc:
         local-toolchain: true
     treeherder:
         symbol: TW64(dxc)
+    worker:
+        env:
+            SYMBOL_SECRET: "project/releng/gecko/build/level-1/gecko-symbol-upload"
+            MAKECAB: /builds/worker/fetches/makecab/makecab
     run:
         script: build-dxc.sh
         sparse-profile: null
@@ -823,9 +827,13 @@ win64-dxc:
             - "x86_64"
         toolchain-artifact: public/build/dxc-x86_64-pc-windows-msvc.tar.zst
         toolchain-alias: dxc-x86_64-pc-windows-msvc
+    scopes:
+        - secrets:get:project/releng/gecko/build/level-1/gecko-symbol-upload
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - linux64-dump_syms
+            - linux64-makecab
             - vs-toolchain
         fetch:
             - dxc-src
@@ -836,6 +844,10 @@ win64-aarch64-dxc:
         local-toolchain: true
     treeherder:
         symbol: TWA64(dxc)
+    worker:
+        env:
+            SYMBOL_SECRET: "project/releng/gecko/build/level-1/gecko-symbol-upload"
+            MAKECAB: /builds/worker/fetches/makecab/makecab
     run:
         script: build-dxc.sh
         sparse-profile: null
@@ -843,9 +855,13 @@ win64-aarch64-dxc:
             - "aarch64"
         toolchain-artifact: public/build/dxc-aarch64-pc-windows-msvc.tar.zst
         toolchain-alias: dxc-aarch64-pc-windows-msvc
+    scopes:
+        - secrets:get:project/releng/gecko/build/level-1/gecko-symbol-upload
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - linux64-dump_syms
+            - linux64-makecab
             - vs-toolchain
         fetch:
             - dxc-src
