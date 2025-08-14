@@ -816,6 +816,10 @@ win64-dxc:
         local-toolchain: true
     treeherder:
         symbol: TW64(dxc)
+    worker:
+        env:
+            MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
+            MAKECAB: /builds/worker/fetches/makecab/makecab
     run:
         script: build-dxc.sh
         sparse-profile: null
@@ -826,6 +830,8 @@ win64-dxc:
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - linux64-dump_syms
+            - linux64-makecab
             - vs-toolchain
         fetch:
             - dxc-src
@@ -836,6 +842,10 @@ win64-aarch64-dxc:
         local-toolchain: true
     treeherder:
         symbol: TWA64(dxc)
+    worker:
+        env:
+            MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
+            MAKECAB: /builds/worker/fetches/makecab/makecab
     run:
         script: build-dxc.sh
         sparse-profile: null
@@ -846,6 +856,8 @@ win64-aarch64-dxc:
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - linux64-dump_syms
+            - linux64-makecab
             - vs-toolchain
         fetch:
             - dxc-src
