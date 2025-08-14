@@ -55,8 +55,10 @@ cmake .. \
 ninja dxcompiler.dll
 
 # Pack the result and upload.
-mkdir $dxc_folder
-mv bin/dxcompiler.dll bin/dxcompiler.pdb $dxc_folder
-
 mkdir -p $UPLOAD_DIR
-tar cavf $UPLOAD_DIR/$artifact $dxc_folder
+bin_dir="$dxc_build_dir/bin"
+bin_dir_relative="$(echo "$($bin_dir)" | sed 's,^/,,')"
+tar cavf $UPLOAD_DIR/$artifact \
+  --transform "r;s|^$bin_dir_relative|$dxc_folder|" --show-transformed \
+  "$bin_dir/dxcompiler.dll" \
+  "$bin_dir/dxcompiler.pdb"
