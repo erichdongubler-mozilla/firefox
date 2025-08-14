@@ -325,6 +325,9 @@ def GetVCSFilenameFromSrcdir(file, srcdir):
         # Not in cache, so find it adnd cache it
         if os.path.isdir(os.path.join(srcdir, ".hg")):
             Dumper.srcdirRepoInfo[srcdir] = HGRepoInfo(srcdir)
+        # TODO: make this work, needs to auto-discover revision and single remote (otherwise bail)
+        elif os.path.isdir(os.path.join(srcdir, ".git")):
+            Dumper.srcdirRepoInfo[srcdir] = GitRepoInfo(srcdir)
         else:
             # Unknown VCS or file is not in a repo.
             return None
