@@ -77,8 +77,9 @@ symbols_dir="$dxc_build_dir/sym"
   "$bin_dir/dxcompiler.dll"
   # NOTE: `dll` is not a typo. `symbolstore.py` will find the `pdb` based on this name.
 
-# Upload a symbols tarball to this job's artifacts.
+# Upload a symbols tarball to this job's artifacts and the symbol server.
 symbols_archive="$UPLOAD_DIR/target-crashsymbols-dxc.tar.zst"
 cd $symbols_dir
 tar cavf "$symbols_archive" *
 cd -
+./mach python toolkit/crashreporter/tools/upload_symbols.py "$symbols_archive"
