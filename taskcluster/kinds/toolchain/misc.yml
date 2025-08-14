@@ -797,10 +797,16 @@ win64-dxc:
         local-toolchain: true
     treeherder:
         symbol: TW64(dxc)
+    task-context:
+        from-parameters:
+            level: level
+        substitution-fields:
+            - worker.env.SYMBOL_SECRET
     worker:
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
             MAKECAB: /builds/worker/fetches/makecab/makecab
+            SYMBOL_SECRET: "project/releng/gecko/build/level-{level}/gecko-symbol-upload"
     run:
         script: build-dxc.sh
         sparse-profile: null
@@ -808,6 +814,11 @@ win64-dxc:
             - "x86_64"
         toolchain-artifact: public/build/dxc-x86_64-pc-windows-msvc.tar.zst
         toolchain-alias: dxc-x86_64-pc-windows-msvc
+    scopes:
+        # NOTE: `{level}` is replaced using a different mechanism from `SYMBOL_SECRET`.
+        # See also:
+        # <https://searchfox.org/firefox-main/rev/4b63e8e14125558cd75be1a53b6fc40b48cc2560/taskcluster/gecko_taskgraph/transforms/task.py#2228-2230>
+        - secrets:get:project/releng/gecko/build/level-{level}/gecko-symbol-upload
     fetches:
         toolchain:
             - linux64-clang-toolchain
@@ -823,10 +834,16 @@ win64-aarch64-dxc:
         local-toolchain: true
     treeherder:
         symbol: TWA64(dxc)
+    task-context:
+        from-parameters:
+            level: level
+        substitution-fields:
+            - worker.env.SYMBOL_SECRET
     worker:
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
             MAKECAB: /builds/worker/fetches/makecab/makecab
+            SYMBOL_SECRET: "project/releng/gecko/build/level-{level}/gecko-symbol-upload"
     run:
         script: build-dxc.sh
         sparse-profile: null
@@ -834,6 +851,11 @@ win64-aarch64-dxc:
             - "aarch64"
         toolchain-artifact: public/build/dxc-aarch64-pc-windows-msvc.tar.zst
         toolchain-alias: dxc-aarch64-pc-windows-msvc
+    scopes:
+        # NOTE: `{level}` is replaced using a different mechanism from `SYMBOL_SECRET`.
+        # See also:
+        # <https://searchfox.org/firefox-main/rev/4b63e8e14125558cd75be1a53b6fc40b48cc2560/taskcluster/gecko_taskgraph/transforms/task.py#2228-2230>
+        - secrets:get:project/releng/gecko/build/level-{level}/gecko-symbol-upload
     fetches:
         toolchain:
             - linux64-clang-toolchain

@@ -9,6 +9,7 @@ kind-dependencies:
     - packages
 
 transforms:
+    - taskgraph.transforms.task_context
     - gecko_taskgraph.transforms.try_job:transforms
     - gecko_taskgraph.transforms.job:transforms
     - gecko_taskgraph.transforms.cached_tasks:transforms
