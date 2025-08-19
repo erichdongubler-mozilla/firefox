@@ -3034,6 +3034,7 @@ modules:
       - *nical
       - *teoxoy
       - *aleiserson
+      - *jnicol
     machine_name: core_webgpu_graphics_submodule
 
   - name: 'Core: WebRTC'
