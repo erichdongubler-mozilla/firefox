@@ -721,6 +721,7 @@ RawId CreateComputePipelineImpl(RawId deviceId, WebGPUChild* aChild,
 
 RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
                                const dom::GPURenderPipelineDescriptor& aDesc,
+                               const webgpu::SupportedFeatures& aFeatures,
                                bool isAsync) {
   // A bunch of stack locals that we can have pointers into
   nsTArray<ffi::WGPUVertexBufferLayout> vertexBuffers;
@@ -836,8 +837,22 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
       ffi::WGPUBlendState bs = {};
       if (colorState.mBlend.WasPassed()) {
         const auto& blend = colorState.mBlend.Value();
-        bs.alpha = ConvertBlendComponent(blend.mAlpha);
-        bs.color = ConvertBlendComponent(blend.mColor);
+
+        bool failed = false;
+        auto convertBlendComponent =
+            [&failed, &aFeatures](auto& dst,
+                                  const dom::GPUBlendComponent& component) {
+              auto convertedMaybe = ConvertBlendComponent(component, aFeatures);
+
+              if (convertedMaybe.isSome()) {
+                dst = convertedMaybe.extract();
+              } else {
+                failed = true;
+              }
+            };
+
+        convertBlendComponent(bs.alpha, blend.mAlpha);
+        convertBlendComponent(bs.color, blend.mColor);
       }
       blendStates.AppendElement(bs);
     }
@@ -893,7 +908,7 @@ already_AddRefed<ComputePipeline> Device::CreateComputePipeline(
 already_AddRefed<RenderPipeline> Device::CreateRenderPipeline(
     const dom::GPURenderPipelineDescriptor& aDesc) {
   RawId pipelineId =
-      CreateRenderPipelineImpl(GetId(), GetChild(), aDesc, false);
+      CreateRenderPipelineImpl(GetId(), GetChild(), aDesc, *mFeatures, false);
 
   RefPtr<RenderPipeline> object = new RenderPipeline(this, pipelineId);
   object->SetLabel(aDesc.mLabel);
@@ -926,7 +941,7 @@ already_AddRefed<dom::Promise> Device::CreateRenderPipelineAsync(
     return nullptr;
   }
 
-  RawId pipelineId = CreateRenderPipelineImpl(GetId(), GetChild(), aDesc, true);
+  RawId pipelineId = CreateRenderPipelineImpl(GetId(), GetChild(), aDesc, *mFeatures, true);
 
   auto pending_promise = WebGPUChild::PendingCreatePipelinePromise{
       RefPtr(promise), RefPtr(this), true, pipelineId, aDesc.mLabel};
