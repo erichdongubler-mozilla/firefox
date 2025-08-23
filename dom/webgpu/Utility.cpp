@@ -5,6 +5,7 @@
 
 #include "Utility.h"
 
+#include "SupportedFeatures.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
@@ -581,16 +582,63 @@ ffi::WGPUMultisampleState ConvertMultisampleState(
   return desc;
 }
 
-ffi::WGPUBlendComponent ConvertBlendComponent(
-    const dom::GPUBlendComponent& aDesc) {
+Maybe<ffi::WGPUBlendFactor> ConvertBlendFactor(
+    dom::GPUBlendFactor aFactor, const SupportedFeatures& aFeatures) {
+  switch (aFactor) {
+    case dom::GPUBlendFactor::Zero:
+    case dom::GPUBlendFactor::One:
+    case dom::GPUBlendFactor::Src:
+    case dom::GPUBlendFactor::One_minus_src:
+    case dom::GPUBlendFactor::Src_alpha:
+    case dom::GPUBlendFactor::One_minus_src_alpha:
+    case dom::GPUBlendFactor::Dst:
+    case dom::GPUBlendFactor::One_minus_dst:
+    case dom::GPUBlendFactor::Dst_alpha:
+    case dom::GPUBlendFactor::One_minus_dst_alpha:
+    case dom::GPUBlendFactor::Src_alpha_saturated:
+    case dom::GPUBlendFactor::Constant:
+    case dom::GPUBlendFactor::One_minus_constant:
+      break;
+
+    case dom::GPUBlendFactor::Src1:
+    case dom::GPUBlendFactor::One_minus_src1:
+    case dom::GPUBlendFactor::Src1_alpha:
+    case dom::GPUBlendFactor::One_minus_src1_alpha:
+      if (aFeatures.Features().find(
+              dom::GPUFeatureName::Dual_source_blending) ==
+          aFeatures.Features().end()) {
+        // TODO: warn
+      }
+      break;
+  }
+
+  return Some(ffi::WGPUBlendFactor(aFactor));
+}
+
+Maybe<ffi::WGPUBlendComponent> ConvertBlendComponent(
+    const dom::GPUBlendComponent& aDesc, const SupportedFeatures& aFeatures) {
   ffi::WGPUBlendComponent desc = {};
   // NOTE: We rely on discriminants between `GPUBlendFactor` and
   // `wgpu_types::BlendFactor` being the same. See also
   // `dom/webidl/WebGPU.webidl`.
-  desc.src_factor = ffi::WGPUBlendFactor(aDesc.mSrcFactor);
-  desc.dst_factor = ffi::WGPUBlendFactor(aDesc.mDstFactor);
+  bool failed = false;
+  auto convertBlendFactor = [&failed, &aFeatures](auto& dst, auto factor) {
+    auto convertedMaybe = ConvertBlendFactor(factor, aFeatures);
+    if (convertedMaybe.isSome()) {
+      dst = convertedMaybe.extract();
+    } else {
+      failed = true;
+    }
+  };
+
+  convertBlendFactor(desc.src_factor, aDesc.mSrcFactor);
+  convertBlendFactor(desc.dst_factor, aDesc.mDstFactor);
   desc.operation = ffi::WGPUBlendOperation(aDesc.mOperation);
-  return desc;
+
+  if (failed) {
+    return Nothing();
+  }
+  return Some(desc);
 }
 
 ffi::WGPUStencilFaceState ConvertStencilFaceState(
