@@ -748,6 +748,7 @@ RawId CreateComputePipelineImpl(RawId deviceId, WebGPUChild* aChild,
 
 RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
                                const dom::GPURenderPipelineDescriptor& aDesc,
+                               const webgpu::SupportedFeatures& aFeatures,
                                bool isAsync) {
   // A bunch of stack locals that we can have pointers into
   nsTArray<ffi::WGPUFfiOption_VertexBufferLayout> vertexBuffers;
@@ -933,7 +934,7 @@ already_AddRefed<ComputePipeline> Device::CreateComputePipeline(
 already_AddRefed<RenderPipeline> Device::CreateRenderPipeline(
     const dom::GPURenderPipelineDescriptor& aDesc) {
   RawId pipelineId =
-      CreateRenderPipelineImpl(GetId(), GetChild(), aDesc, false);
+      CreateRenderPipelineImpl(GetId(), GetChild(), aDesc, *mFeatures, false);
 
   RefPtr<RenderPipeline> object = new RenderPipeline(this, pipelineId);
   object->SetLabel(aDesc.mLabel);
@@ -964,7 +965,7 @@ already_AddRefed<dom::Promise> Device::CreateRenderPipelineAsync(
     return nullptr;
   }
 
-  RawId pipelineId = CreateRenderPipelineImpl(GetId(), GetChild(), aDesc, true);
+  RawId pipelineId = CreateRenderPipelineImpl(GetId(), GetChild(), aDesc, *mFeatures, true);
 
   GetChild()->EnqueueCreatePipelinePromise(PendingCreatePipelinePromise{
       promise, this, true, pipelineId, aDesc.mLabel});
