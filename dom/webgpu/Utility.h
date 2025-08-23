@@ -5,6 +5,7 @@
 #ifndef GPU_UTIL_H_
 #define GPU_UTIL_H_
 
+#include "SupportedFeatures.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
@@ -68,8 +69,8 @@ ffi::WGPUVertexFormat ConvertVertexFormat(const dom::GPUVertexFormat& aFormat);
 ffi::WGPUMultisampleState ConvertMultisampleState(
     const dom::GPUMultisampleState& aDesc);
 
-ffi::WGPUBlendComponent ConvertBlendComponent(
-    const dom::GPUBlendComponent& aDesc);
+Maybe<ffi::WGPUBlendComponent> ConvertBlendComponent(
+    const dom::GPUBlendComponent& aDesc, const SupportedFeatures& aFeatures);
 
 ffi::WGPUStencilFaceState ConvertStencilFaceState(
     const dom::GPUStencilFaceState& aDesc);
