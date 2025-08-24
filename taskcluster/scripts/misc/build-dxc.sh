@@ -28,11 +28,12 @@ cd $dxc_build_dir
 
 # Note: it is important that LLVM_ENABLE_ASSERTIONS remains enabled.
 
+# TODO: use `Debug` or `RelWithDebInfo`, depending on the build profile
 cmake .. \
   -C ../cmake/caches/PredefinedParams.cmake \
   -DCMAKE_TOOLCHAIN_FILE=../cmake/platforms/WinMsvc.cmake \
   -DHOST_ARCH="$MOZ_DXC_TARGET_ARCH" \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_BUILD_TYPE=Release \
   -DLLVM_DISABLE_ASSEMBLY_FILES=ON \
   -DLLVM_NATIVE_TOOLCHAIN="$MOZ_FETCHES_DIR/clang" \
   -DLLVM_WINSYSROOT="$VSINSTALLDIR" \
@@ -70,6 +71,7 @@ cd "$GECKO_PATH"
 symbols_dir="$dxc_build_dir/sym"
 ./mach python toolkit/crashreporter/tools/symbolstore.py \
   "$MOZ_FETCHES_DIR/dump_syms/dump_syms" \
+  --srcdir "$dxc_src_dir" \
   --platform "WINNT" \
   --no-rust \
   --no-moz-extra-info \
