@@ -816,12 +816,17 @@ win64-dxc:
         local-toolchain: true
     treeherder:
         symbol: TW64(dxc)
+    task-context:
+        from-parameters:
+            level: level
+        substitution-fields:
+            - worker.env.SYMBOL_SECRET
+            - scopes.0
     worker:
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
             MAKECAB: /builds/worker/fetches/makecab/makecab
-            # TODO: figure out the appropriate level
-            SYMBOL_SECRET: "project/releng/gecko/build/level-1/gecko-symbol-upload"
+            SYMBOL_SECRET: "project/releng/gecko/build/level-{level}/gecko-symbol-upload"
     run:
         script: build-dxc.sh
         sparse-profile: null
@@ -830,7 +835,7 @@ win64-dxc:
         toolchain-artifact: public/build/dxc-x86_64-pc-windows-msvc.tar.zst
         toolchain-alias: dxc-x86_64-pc-windows-msvc
     scopes:
-        - secrets:get:project/releng/gecko/build/level-1/gecko-symbol-upload
+        - secrets:get:project/releng/gecko/build/level-{level}/gecko-symbol-upload
     fetches:
         toolchain:
             - linux64-clang-toolchain
@@ -846,12 +851,17 @@ win64-aarch64-dxc:
         local-toolchain: true
     treeherder:
         symbol: TWA64(dxc)
+    task-context:
+        from-parameters:
+            level: level
+        substitution-fields:
+            - worker.env.SYMBOL_SECRET
+            - scopes.0
     worker:
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
             MAKECAB: /builds/worker/fetches/makecab/makecab
-            # TODO: figure out the appropriate level
-            SYMBOL_SECRET: "project/releng/gecko/build/level-1/gecko-symbol-upload"
+            SYMBOL_SECRET: "project/releng/gecko/build/level-{level}/gecko-symbol-upload"
     run:
         script: build-dxc.sh
         sparse-profile: null
@@ -860,7 +870,7 @@ win64-aarch64-dxc:
         toolchain-artifact: public/build/dxc-aarch64-pc-windows-msvc.tar.zst
         toolchain-alias: dxc-aarch64-pc-windows-msvc
     scopes:
-        - secrets:get:project/releng/gecko/build/level-1/gecko-symbol-upload
+        - secrets:get:project/releng/gecko/build/level-{level}/gecko-symbol-upload
     fetches:
         toolchain:
             - linux64-clang-toolchain
