@@ -85,7 +85,7 @@ transforms.add_validate(SCHEMA)
 @transforms.add
 def render_task(config, tasks):
     for task in tasks:
-        sub_config = task.pop("task-context")
+        sub_config = task.pop("task-context", {"substitution-fields": []})
         params_context = {}
         for var, path in sub_config.pop("from-parameters", {}).items():
             if isinstance(path, str):
