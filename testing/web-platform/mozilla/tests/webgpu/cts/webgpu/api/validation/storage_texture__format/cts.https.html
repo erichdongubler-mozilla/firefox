@@ -1,0 +1,75 @@
+<!-- AUTO-GENERATED - DO NOT EDIT. See WebGPU CTS: tools/gen_wpt_cts_html. -->
+<!--
+    This test suite is built from the TypeScript sources at:
+    https://github.com/gpuweb/cts
+
+    If you are debugging WebGPU conformance tests, it's highly recommended that
+    you use the standalone interactive runner in that repository, which
+    provides tools for easier debugging and editing (source maps, debug
+    logging, warn/skip functionality, etc.)
+
+    NOTE:
+    The WPT version of this file is generated with *one variant per test spec
+    file*. If your harness needs more fine-grained suppressions, you'll need to
+    generate your own variants list from your suppression list.
+    See `tools/gen_wpt_cts_html` to do this.
+
+    When run under browser CI, the original cts.https.html should be skipped, and
+    this alternate version should be run instead, under a non-exported WPT test
+    directory (e.g. Chromium's wpt_internal).
+-->
+
+<!doctype html>
+<title>WebGPU CTS</title>
+<meta charset=utf-8>
+<meta name="timeout" content="long"> <!-- TODO: narrow to only where it's needed, see https://bugzilla.mozilla.org/show_bug.cgi?id=1850537 -->
+<link rel=help href='https://gpuweb.github.io/gpuweb/'>
+
+<script src=/resources/testharness.js></script>
+<script src=/resources/testharnessreport.js></script>
+<script>
+    const loadWebGPUExpectations = undefined;
+    const shouldWebGPUCTSFailOnWarnings = undefined;
+</script>
+<script type=module src=/_mozilla/webgpu/common/runtime/wpt.js></script>
+
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="bgra8unorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="r16float";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="r16sint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="r16snorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="r16uint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="r16unorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="r32float";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="r32sint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="r32uint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="r8sint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="r8snorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="r8uint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="r8unorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg11b10ufloat";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg16float";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg16sint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg16snorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg16uint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg16unorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg32float";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg32sint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg32uint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg8sint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg8snorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg8uint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rg8unorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgb10a2uint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgb10a2unorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgba16float";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgba16sint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgba16snorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgba16uint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgba16unorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgba32float";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgba32sint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgba32uint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgba8sint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgba8snorm";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgba8uint";*'>
+<meta name=variant content='?q=webgpu:api,validation,createBindGroup:storage_texture,format:storageTextureFormat="rgba8unorm";*'>
