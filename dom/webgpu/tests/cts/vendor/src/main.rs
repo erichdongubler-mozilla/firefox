@@ -297,6 +297,16 @@ fn run(args: CliArgs) -> miette::Result<()> {
                     },
                 ),
                 (
+                    "webgpu:api,validation,createBindGroup:storage_texture,format",
+                    Config {
+                        new_sibling_basename: "storage_texture__format",
+                        split_by: SplitBy::first_param(
+                            "storageTextureFormat",
+                            SplitParamsTo::SeparateTestsInSameFile,
+                        ),
+                    },
+                ),
+                (
                     "webgpu:shader,execution,expression,call,builtin,textureStore:texel_formats",
                     Config {
                         new_sibling_basename: "textureStore__texel_formats",
