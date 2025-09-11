@@ -181,6 +181,12 @@ toolchain-dxc
 Builds the `DirectXShaderCompiler` (`dxcompiler.dll`) for graphics on Windows builds. Maintained by
 Firefox's WebGPU team.
 
+toolchain-dxc-upload
+---------
+
+Upload Windows symbols for `DirectXShaderCompiler` to tecken, based on builds in `toolchain-dxc`.
+Maintained by Firefox's WebGPU team.
+
 spidermonkey
 ------------
 
