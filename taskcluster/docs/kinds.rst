@@ -175,6 +175,12 @@ Toolchain builds create the compiler toolchains used to build Firefox.  These
 will eventually be dependencies of the builds themselves, but for the moment
 are run manually via try pushes and the results uploaded to tooltool.
 
+toolchain-dxc
+---------
+
+Builds the `DirectXShaderCompiler` (`dxcompiler.dll`) for graphics on Windows builds. Maintained by
+Firefox's WebGPU team.
+
 spidermonkey
 ------------
 
