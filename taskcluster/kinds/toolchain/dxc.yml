@@ -4,6 +4,7 @@
 ---
 task-defaults:
     attributes:
+        dxc-crash-symbols: true
         local-toolchain: true
     fetches:
         toolchain:
