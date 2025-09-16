@@ -1,0 +1,6 @@
+---
+command: cargo-fix
+continue_on_error: true
+cargo_extra_flags:
+  - --allow-no-vcs
+requires_export: false
