@@ -248,6 +248,11 @@ struct FeatureImplementationStatus {
         return unimplemented(
             "https://bugzilla.mozilla.org/show_bug.cgi?id=1982451");
 
+      case dom::GPUFeatureName::Texture_formats_tier2:
+        // return implemented(WGPUWEBGPU_FEATURE_TEXTURE_FORMATS_TIER2);
+        return unimplemented(
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=1982451");
+
       case dom::GPUFeatureName::Primitive_index:
         // return implemented(WGPUWEBGPU_FEATURE_PRIMITIVE_INDEX);
         return unimplemented(
