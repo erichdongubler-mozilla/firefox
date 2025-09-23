@@ -4148,6 +4148,12 @@ who = "Max Leonard Inden <mail@max-inden.de>"
 criteria = "safe-to-deploy"
 delta = "0.2.6 -> 0.2.9"
 
+[[audits.mtu]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.2.9 -> 0.2.9@git:b3d8f0d21db5657ebafb14f9b60c8892d2eb3aa9"
+importable = false
+
 [[audits.naga]]
 who = "Dzmitry Malyshau <kvark@fastmail.com>"
 criteria = "safe-to-deploy"

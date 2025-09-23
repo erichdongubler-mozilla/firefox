@@ -179,6 +179,9 @@ audit-as-crates-io = false
 [policy.mp4parse_capi]
 audit-as-crates-io = false
 
+[policy.mtu]
+audit-as-crates-io = true
+
 [policy.naga]
 audit-as-crates-io = true
 notes = "Part of the wgpu repository, pinned as the rest of wgpu crates."
