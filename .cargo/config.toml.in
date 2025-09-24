@@ -35,14 +35,29 @@ git = "https://github.com/erichdongubler-contrib/hashlink"
 rev = "76dc47a12af5829c1e8bf4834e38b410dec2aeff"
 replace-with = "vendored-sources"
 
+[source."git+https://github.com/erichdongubler-mozilla/memtest?rev=eb41c0433d804239e5cf848f51d33fe598aeae32"]
+git = "https://github.com/erichdongubler-mozilla/memtest"
+rev = "eb41c0433d804239e5cf848f51d33fe598aeae32"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/erichdongubler-mozilla/midir.git?rev=c15e9358b4ddb653e0ff0888eb0cc7703eb28cf8"]
+git = "https://github.com/erichdongubler-mozilla/midir.git"
+rev = "c15e9358b4ddb653e0ff0888eb0cc7703eb28cf8"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/erichdongubler-mozilla/neqo?rev=672b359461adeddcc3b1a02cf1db3036551c1229"]
+git = "https://github.com/erichdongubler-mozilla/neqo"
+rev = "672b359461adeddcc3b1a02cf1db3036551c1229"
+replace-with = "vendored-sources"
+
 [source."git+https://github.com/franziskuskiefer/cose-rust?rev=43c22248d136c8b38fe42ea709d08da6355cf04b"]
 git = "https://github.com/franziskuskiefer/cose-rust"
 rev = "43c22248d136c8b38fe42ea709d08da6355cf04b"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/gfx-rs/wgpu?rev=1072b87894b7c3084f80bc9d2679e822435186ba"]
+[source."git+https://github.com/gfx-rs/wgpu?rev=03fce83337fb6ae8ab817364b79ab2f8a1c27031"]
 git = "https://github.com/gfx-rs/wgpu"
-rev = "1072b87894b7c3084f80bc9d2679e822435186ba"
+rev = "03fce83337fb6ae8ab817364b79ab2f8a1c27031"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/glandium/allocator-api2?rev=ad5f3d56a5a4519eff52af4ff85293431466ef5c"]
@@ -98,11 +113,6 @@ replace-with = "vendored-sources"
 [source."git+https://github.com/mozilla/cubeb-pulse-rs?rev=4e3ea4bbc582705a4e7d9220679525283c035a7e"]
 git = "https://github.com/mozilla/cubeb-pulse-rs"
 rev = "4e3ea4bbc582705a4e7d9220679525283c035a7e"
-replace-with = "vendored-sources"
-
-[source."git+https://github.com/mozilla/midir.git?rev=37ad39de3382c2aad0758dab49ba545331a2257d"]
-git = "https://github.com/mozilla/midir.git"
-rev = "37ad39de3382c2aad0758dab49ba545331a2257d"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/mp4parse-rust?rev=f955be5d2a04a631c0f1777d6f35370ea1a99e2d"]
