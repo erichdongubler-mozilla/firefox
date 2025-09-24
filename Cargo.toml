@@ -244,7 +244,7 @@ firefox-on-glean = { path = "toolkit/components/glean/api" }
 icu_capi = { path = "intl/icu_capi" }
 icu_segmenter_data = { path = "intl/icu_segmenter_data" }
 libudev-sys = { path = "dom/webauthn/libudev-sys" }
-midir = { git = "https://github.com/mozilla/midir.git", rev = "37ad39de3382c2aad0758dab49ba545331a2257d" }
+midir = { git = "https://github.com/mozilla/midir.git", rev = "1a758b19f0e1cd6540d9af697259aaeeccea96ee" }
 # Allow webrender to have a versioned dependency on the older crate on crates.io
 # in order to build standalone.
 malloc_size_of_derive = { path = "xpcom/rust/malloc_size_of_derive" }
@@ -277,3 +277,10 @@ zip = { path = "third_party/rust/zip" }
 
 # Patch libcrux-traits to avoid unnecessary unused dependencies and conflicts.
 libcrux-traits = { path = "build/rust/libcrux-traits" }
+
+memtest = { git = "https://github.com/erichdongubler-mozilla/memtest", rev = "eb41c0433d804239e5cf848f51d33fe598aeae32" }
+
+[patch."https://github.com/mozilla/neqo"]
+neqo-common = { git = "https://github.com/erichdongubler-mozilla/neqo", rev = "672b359461adeddcc3b1a02cf1db3036551c1229" }
+neqo-udp = { git = "https://github.com/erichdongubler-mozilla/neqo", rev = "672b359461adeddcc3b1a02cf1db3036551c1229" }
+mtu = { git = "https://github.com/erichdongubler-mozilla/neqo", rev = "672b359461adeddcc3b1a02cf1db3036551c1229" }
