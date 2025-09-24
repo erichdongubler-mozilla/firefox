@@ -244,7 +244,7 @@ firefox-on-glean = { path = "toolkit/components/glean/api" }
 icu_capi = { path = "intl/icu_capi" }
 icu_segmenter_data = { path = "intl/icu_segmenter_data" }
 libudev-sys = { path = "dom/webauthn/libudev-sys" }
-midir = { git = "https://github.com/mozilla/midir.git", rev = "37ad39de3382c2aad0758dab49ba545331a2257d" }
+midir = { git = "https://github.com/erichdongubler-mozilla/midir.git", rev = "e81510cadc35d8bff5973ef2f85a6f459f59d44f" }
 # Allow webrender to have a versioned dependency on the older crate on crates.io
 # in order to build standalone.
 malloc_size_of_derive = { path = "xpcom/rust/malloc_size_of_derive" }
@@ -281,3 +281,21 @@ libcrux-traits = { path = "build/rust/libcrux-traits" }
 # Patch `hashlink` 0.10.0 to include a `hashbrown` range dependency of 0.15 <= ver <= 0.16: <https://github.com/erichdongubler-contrib/hashlink/pull/6>
 # This technically breaks `hashbrown::DefaultHashBuilder: Copy`, but it's not something we use.
 hashlink = { git = "https://github.com/erichdongubler-contrib/hashlink", rev = "76dc47a12af5829c1e8bf4834e38b410dec2aeff" }
+
+memtest = { git = "https://github.com/erichdongubler-mozilla/memtest", rev = "eb41c0433d804239e5cf848f51d33fe598aeae32" }
+
+windows-collections = { git = "https://github.com/microsoft/windows-rs", rev = "73afb3ddf2e6a41c552e808923aa983f7262fc8f" }
+windows-core = { git = "https://github.com/microsoft/windows-rs", rev = "73afb3ddf2e6a41c552e808923aa983f7262fc8f" }
+windows-future = { git = "https://github.com/microsoft/windows-rs", rev = "73afb3ddf2e6a41c552e808923aa983f7262fc8f" }
+windows-implement = { git = "https://github.com/microsoft/windows-rs", rev = "73afb3ddf2e6a41c552e808923aa983f7262fc8f" }
+windows-interface = { git = "https://github.com/microsoft/windows-rs", rev = "73afb3ddf2e6a41c552e808923aa983f7262fc8f" }
+windows-link = { git = "https://github.com/microsoft/windows-rs", rev = "73afb3ddf2e6a41c552e808923aa983f7262fc8f" }
+windows-numerics = { git = "https://github.com/microsoft/windows-rs", rev = "73afb3ddf2e6a41c552e808923aa983f7262fc8f" }
+windows-result = { git = "https://github.com/microsoft/windows-rs", rev = "73afb3ddf2e6a41c552e808923aa983f7262fc8f" }
+windows-strings = { git = "https://github.com/microsoft/windows-rs", rev = "73afb3ddf2e6a41c552e808923aa983f7262fc8f" }
+windows-threading = { git = "https://github.com/microsoft/windows-rs", rev = "73afb3ddf2e6a41c552e808923aa983f7262fc8f" }
+
+[patch."https://github.com/mozilla/neqo"]
+neqo-common = { git = "https://github.com/erichdongubler-mozilla/neqo", rev = "672b359461adeddcc3b1a02cf1db3036551c1229" }
+neqo-udp = { git = "https://github.com/erichdongubler-mozilla/neqo", rev = "672b359461adeddcc3b1a02cf1db3036551c1229" }
+mtu = { git = "https://github.com/erichdongubler-mozilla/neqo", rev = "672b359461adeddcc3b1a02cf1db3036551c1229" }

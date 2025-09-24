@@ -112,6 +112,9 @@ notes = "This was originally servo code which Bobby Holley put on crates.io some
 audit-as-crates-io = false
 notes = "This is a first-party crate which is also published to crates.io. We certify audits for this crate as part of the documented release process, but that step happens after the version bump lands on central so we don't enforce it here."
 
+[policy.memtest]
+audit-as-crates-io = true
+
 [policy.midir]
 audit-as-crates-io = true
 notes = "This is a pinned version of the upstream code, presumably to get a fix that hadn't been released yet. We should consider switching to the latest official release."
@@ -293,6 +296,46 @@ notes = "Upstream project which we pin."
 [policy.windows]
 audit-as-crates-io = true
 notes = "Local override of the crates.io crate that uses a non-vendored local copy of the downloaded crate"
+
+[policy.windows-collections]
+audit-as-crates-io = true
+notes = "TODO: remove before landing, this should converge with upstream!"
+
+[policy.windows-core]
+audit-as-crates-io = true
+notes = "TODO: remove before landing, this should converge with upstream!"
+
+[policy.windows-future]
+audit-as-crates-io = true
+notes = "TODO: remove before landing, this should converge with upstream!"
+
+[policy.windows-implement]
+audit-as-crates-io = true
+notes = "TODO: remove before landing, this should converge with upstream!"
+
+[policy.windows-interface]
+audit-as-crates-io = true
+notes = "TODO: remove before landing, this should converge with upstream!"
+
+[policy.windows-link]
+audit-as-crates-io = true
+notes = "TODO: remove before landing, this should converge with upstream!"
+
+[policy.windows-numerics]
+audit-as-crates-io = true
+notes = "TODO: remove before landing, this should converge with upstream!"
+
+[policy.windows-result]
+audit-as-crates-io = true
+notes = "TODO: remove before landing, this should converge with upstream!"
+
+[policy.windows-strings]
+audit-as-crates-io = true
+notes = "TODO: remove before landing, this should converge with upstream!"
+
+[policy.windows-threading]
+audit-as-crates-io = true
+notes = "TODO: remove before landing, this should converge with upstream!"
 
 [policy.wr_malloc_size_of]
 audit-as-crates-io = false

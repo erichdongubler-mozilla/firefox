@@ -35,14 +35,29 @@ git = "https://github.com/erichdongubler-contrib/hashlink"
 rev = "76dc47a12af5829c1e8bf4834e38b410dec2aeff"
 replace-with = "vendored-sources"
 
+[source."git+https://github.com/erichdongubler-mozilla/memtest?rev=eb41c0433d804239e5cf848f51d33fe598aeae32"]
+git = "https://github.com/erichdongubler-mozilla/memtest"
+rev = "eb41c0433d804239e5cf848f51d33fe598aeae32"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/erichdongubler-mozilla/midir.git?rev=e81510cadc35d8bff5973ef2f85a6f459f59d44f"]
+git = "https://github.com/erichdongubler-mozilla/midir.git"
+rev = "e81510cadc35d8bff5973ef2f85a6f459f59d44f"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/erichdongubler-mozilla/neqo?rev=672b359461adeddcc3b1a02cf1db3036551c1229"]
+git = "https://github.com/erichdongubler-mozilla/neqo"
+rev = "672b359461adeddcc3b1a02cf1db3036551c1229"
+replace-with = "vendored-sources"
+
 [source."git+https://github.com/franziskuskiefer/cose-rust?rev=43c22248d136c8b38fe42ea709d08da6355cf04b"]
 git = "https://github.com/franziskuskiefer/cose-rust"
 rev = "43c22248d136c8b38fe42ea709d08da6355cf04b"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/gfx-rs/wgpu?rev=ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"]
+[source."git+https://github.com/gfx-rs/wgpu?rev=f23bbb34c777adde586c6b26546713ffe773e0b9"]
 git = "https://github.com/gfx-rs/wgpu"
-rev = "ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+rev = "f23bbb34c777adde586c6b26546713ffe773e0b9"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/glandium/allocator-api2?rev=ad5f3d56a5a4519eff52af4ff85293431466ef5c"]
@@ -75,6 +90,11 @@ git = "https://github.com/jfkthame/mapped_hyph.git"
 rev = "eff105f6ad7ec9b79816cfc1985a28e5340ad14b"
 replace-with = "vendored-sources"
 
+[source."git+https://github.com/microsoft/windows-rs?rev=73afb3ddf2e6a41c552e808923aa983f7262fc8f"]
+git = "https://github.com/microsoft/windows-rs"
+rev = "73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+replace-with = "vendored-sources"
+
 [source."git+https://github.com/mozilla/application-services?rev=f6f667f590ac15367fc37eb1ad3a6bdea4ffc526"]
 git = "https://github.com/mozilla/application-services"
 rev = "f6f667f590ac15367fc37eb1ad3a6bdea4ffc526"
@@ -93,11 +113,6 @@ replace-with = "vendored-sources"
 [source."git+https://github.com/mozilla/cubeb-pulse-rs?rev=4e3ea4bbc582705a4e7d9220679525283c035a7e"]
 git = "https://github.com/mozilla/cubeb-pulse-rs"
 rev = "4e3ea4bbc582705a4e7d9220679525283c035a7e"
-replace-with = "vendored-sources"
-
-[source."git+https://github.com/mozilla/midir.git?rev=37ad39de3382c2aad0758dab49ba545331a2257d"]
-git = "https://github.com/mozilla/midir.git"
-rev = "37ad39de3382c2aad0758dab49ba545331a2257d"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/mp4parse-rust?rev=f955be5d2a04a631c0f1777d6f35370ea1a99e2d"]

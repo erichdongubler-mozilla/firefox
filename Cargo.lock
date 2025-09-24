@@ -2822,13 +2822,14 @@ dependencies = [
 
 [[package]]
 name = "gpu-allocator"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c151a2a5ef800297b4e79efa4f4bec035c5f51d5ae587287c9b952bdf734cacd"
+checksum = "51255ea7cfaadb6c5f1528d43e92a82acb2b96c43365989a28b2d44ee38f8795"
 dependencies = [
+ "hashbrown 0.16.0",
  "log",
  "presser",
- "thiserror 1.999.999",
+ "thiserror 2.0.12",
  "windows",
 ]
 
@@ -3369,7 +3370,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4b0f83760fb341a774ed326568e19f5a863af4a952def8c39f9ab92fd95b88e5"
 dependencies = [
  "equivalent",
- "hashbrown 0.15.999",
+ "hashbrown 0.16.0",
  "serde",
  "serde_core",
 ]
@@ -4019,8 +4020,7 @@ dependencies = [
 [[package]]
 name = "memtest"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8ff5f1d8294a1fd0c8a32428d826ae22da3d473f0052c6e6d449a91b24e365c"
+source = "git+https://github.com/erichdongubler-mozilla/memtest?rev=eb41c0433d804239e5cf848f51d33fe598aeae32#eb41c0433d804239e5cf848f51d33fe598aeae32"
 dependencies = [
  "anyhow",
  "libc",
@@ -4049,8 +4049,8 @@ dependencies = [
 
 [[package]]
 name = "midir"
-version = "0.10.1"
-source = "git+https://github.com/mozilla/midir.git?rev=37ad39de3382c2aad0758dab49ba545331a2257d#37ad39de3382c2aad0758dab49ba545331a2257d"
+version = "0.10.2"
+source = "git+https://github.com/erichdongubler-mozilla/midir.git?rev=e81510cadc35d8bff5973ef2f85a6f459f59d44f#e81510cadc35d8bff5973ef2f85a6f459f59d44f"
 dependencies = [
  "alsa",
  "coremidi",
@@ -4641,7 +4641,7 @@ dependencies = [
 [[package]]
 name = "mtu"
 version = "0.2.9"
-source = "git+https://github.com/mozilla/neqo?tag=v0.16.1#b3d8f0d21db5657ebafb14f9b60c8892d2eb3aa9"
+source = "git+https://github.com/erichdongubler-mozilla/neqo?rev=672b359461adeddcc3b1a02cf1db3036551c1229#672b359461adeddcc3b1a02cf1db3036551c1229"
 dependencies = [
  "bindgen 0.69.999",
  "cfg_aliases",
@@ -4660,7 +4660,7 @@ checksum = "a2983372caf4480544083767bf2d27defafe32af49ab4df3a0b7fc90793a3664"
 [[package]]
 name = "naga"
 version = "26.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24#ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+source = "git+https://github.com/gfx-rs/wgpu?rev=f23bbb34c777adde586c6b26546713ffe773e0b9#f23bbb34c777adde586c6b26546713ffe773e0b9"
 dependencies = [
  "arrayvec",
  "bit-set",
@@ -4710,7 +4710,7 @@ dependencies = [
 [[package]]
 name = "neqo-common"
 version = "0.16.1"
-source = "git+https://github.com/mozilla/neqo?tag=v0.16.1#b3d8f0d21db5657ebafb14f9b60c8892d2eb3aa9"
+source = "git+https://github.com/erichdongubler-mozilla/neqo?rev=672b359461adeddcc3b1a02cf1db3036551c1229#672b359461adeddcc3b1a02cf1db3036551c1229"
 dependencies = [
  "enum-map",
  "env_logger",
@@ -4795,7 +4795,7 @@ dependencies = [
 [[package]]
 name = "neqo-udp"
 version = "0.16.1"
-source = "git+https://github.com/mozilla/neqo?tag=v0.16.1#b3d8f0d21db5657ebafb14f9b60c8892d2eb3aa9"
+source = "git+https://github.com/erichdongubler-mozilla/neqo?rev=672b359461adeddcc3b1a02cf1db3036551c1229#672b359461adeddcc3b1a02cf1db3036551c1229"
 dependencies = [
  "cfg_aliases",
  "libc",
@@ -7735,7 +7735,7 @@ dependencies = [
 [[package]]
 name = "wgpu-core"
 version = "26.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24#ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+source = "git+https://github.com/gfx-rs/wgpu?rev=f23bbb34c777adde586c6b26546713ffe773e0b9#f23bbb34c777adde586c6b26546713ffe773e0b9"
 dependencies = [
  "arrayvec",
  "bit-set",
@@ -7765,7 +7765,7 @@ dependencies = [
 [[package]]
 name = "wgpu-core-deps-apple"
 version = "26.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24#ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+source = "git+https://github.com/gfx-rs/wgpu?rev=f23bbb34c777adde586c6b26546713ffe773e0b9#f23bbb34c777adde586c6b26546713ffe773e0b9"
 dependencies = [
  "wgpu-hal",
 ]
@@ -7773,7 +7773,7 @@ dependencies = [
 [[package]]
 name = "wgpu-core-deps-windows-linux-android"
 version = "26.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24#ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+source = "git+https://github.com/gfx-rs/wgpu?rev=f23bbb34c777adde586c6b26546713ffe773e0b9#f23bbb34c777adde586c6b26546713ffe773e0b9"
 dependencies = [
  "wgpu-hal",
 ]
@@ -7781,7 +7781,7 @@ dependencies = [
 [[package]]
 name = "wgpu-hal"
 version = "26.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24#ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+source = "git+https://github.com/gfx-rs/wgpu?rev=f23bbb34c777adde586c6b26546713ffe773e0b9#f23bbb34c777adde586c6b26546713ffe773e0b9"
 dependencies = [
  "android_system_properties",
  "arrayvec",
@@ -7819,7 +7819,7 @@ dependencies = [
 [[package]]
 name = "wgpu-types"
 version = "26.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24#ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+source = "git+https://github.com/gfx-rs/wgpu?rev=f23bbb34c777adde586c6b26546713ffe773e0b9#f23bbb34c777adde586c6b26546713ffe773e0b9"
 dependencies = [
  "bitflags 2.9.0",
  "bytemuck",
@@ -7871,6 +7871,7 @@ dependencies = [
  "nsstring",
  "thin-vec",
  "windows",
+ "windows-collections",
  "xpcom",
 ]
 
@@ -7907,31 +7908,50 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "windows"
-version = "0.58.0"
+version = "0.62.0"
 dependencies = [
  "mozbuild",
+ "windows-collections",
  "windows-core",
- "windows-targets",
+ "windows-future",
+ "windows-link",
+ "windows-numerics",
+]
+
+[[package]]
+name = "windows-collections"
+version = "0.3.1"
+source = "git+https://github.com/microsoft/windows-rs?rev=73afb3ddf2e6a41c552e808923aa983f7262fc8f#73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+dependencies = [
+ "windows-core",
 ]
 
 [[package]]
 name = "windows-core"
-version = "0.58.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ba6d44ec8c2591c134257ce647b7ea6b20335bf6379a27dac5f1641fcf59f99"
+version = "0.62.1"
+source = "git+https://github.com/microsoft/windows-rs?rev=73afb3ddf2e6a41c552e808923aa983f7262fc8f#73afb3ddf2e6a41c552e808923aa983f7262fc8f"
 dependencies = [
  "windows-implement",
  "windows-interface",
+ "windows-link",
  "windows-result",
  "windows-strings",
- "windows-targets",
+]
+
+[[package]]
+name = "windows-future"
+version = "0.3.1"
+source = "git+https://github.com/microsoft/windows-rs?rev=73afb3ddf2e6a41c552e808923aa983f7262fc8f#73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+dependencies = [
+ "windows-core",
+ "windows-link",
+ "windows-threading",
 ]
 
 [[package]]
 name = "windows-implement"
-version = "0.58.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bbd5b46c938e506ecbce286b6628a02171d56153ba733b6c741fc627ec9579b"
+version = "0.60.1"
+source = "git+https://github.com/microsoft/windows-rs?rev=73afb3ddf2e6a41c552e808923aa983f7262fc8f#73afb3ddf2e6a41c552e808923aa983f7262fc8f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7940,9 +7960,8 @@ dependencies = [
 
 [[package]]
 name = "windows-interface"
-version = "0.58.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "053c4c462dc91d3b1504c6fe5a726dd15e216ba718e84a0e46a88fbe5ded3515"
+version = "0.59.2"
+source = "git+https://github.com/microsoft/windows-rs?rev=73afb3ddf2e6a41c552e808923aa983f7262fc8f#73afb3ddf2e6a41c552e808923aa983f7262fc8f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7952,26 +7971,31 @@ dependencies = [
 [[package]]
 name = "windows-link"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45e46c0661abb7180e7b9c281db115305d49ca1709ab8242adf09666d2173c65"
+source = "git+https://github.com/microsoft/windows-rs?rev=73afb3ddf2e6a41c552e808923aa983f7262fc8f#73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+
+[[package]]
+name = "windows-numerics"
+version = "0.3.0"
+source = "git+https://github.com/microsoft/windows-rs?rev=73afb3ddf2e6a41c552e808923aa983f7262fc8f#73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+dependencies = [
+ "windows-core",
+ "windows-link",
+]
 
 [[package]]
 name = "windows-result"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d1043d8214f791817bab27572aaa8af63732e11bf84aa21a45a78d6c317ae0e"
+version = "0.4.0"
+source = "git+https://github.com/microsoft/windows-rs?rev=73afb3ddf2e6a41c552e808923aa983f7262fc8f#73afb3ddf2e6a41c552e808923aa983f7262fc8f"
 dependencies = [
- "windows-targets",
+ "windows-link",
 ]
 
 [[package]]
 name = "windows-strings"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cd9b125c486025df0eabcb585e62173c6c9eddcec5d117d3b6e8c30e2ee4d10"
+version = "0.5.0"
+source = "git+https://github.com/microsoft/windows-rs?rev=73afb3ddf2e6a41c552e808923aa983f7262fc8f#73afb3ddf2e6a41c552e808923aa983f7262fc8f"
 dependencies = [
- "windows-result",
- "windows-targets",
+ "windows-link",
 ]
 
 [[package]]
@@ -7989,6 +8013,14 @@ version = "0.52.999"
 dependencies = [
  "quote",
  "syn",
+]
+
+[[package]]
+name = "windows-threading"
+version = "0.2.0"
+source = "git+https://github.com/microsoft/windows-rs?rev=73afb3ddf2e6a41c552e808923aa983f7262fc8f#73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+dependencies = [
+ "windows-link",
 ]
 
 [[package]]

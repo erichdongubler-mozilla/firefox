@@ -881,43 +881,64 @@ user-login = "BurntSushi"
 user-name = "Andrew Gallant"
 
 [[publisher.windows]]
-version = "0.58.0"
-when = "2024-07-03"
+version = "0.62.0"
+when = "2025-09-04"
+user-id = 64539
+user-login = "kennykerr"
+user-name = "Kenny Kerr"
+
+[[publisher.windows-collections]]
+version = "0.3.1"
+when = "2025-09-25"
 user-id = 64539
 user-login = "kennykerr"
 user-name = "Kenny Kerr"
 
 [[publisher.windows-core]]
-version = "0.58.0"
-when = "2024-07-03"
+version = "0.62.1"
+when = "2025-09-25"
+user-id = 64539
+user-login = "kennykerr"
+user-name = "Kenny Kerr"
+
+[[publisher.windows-future]]
+version = "0.3.1"
+when = "2025-09-25"
 user-id = 64539
 user-login = "kennykerr"
 user-name = "Kenny Kerr"
 
 [[publisher.windows-implement]]
-version = "0.58.0"
-when = "2024-07-03"
+version = "0.60.1"
+when = "2025-09-25"
 user-id = 64539
 user-login = "kennykerr"
 user-name = "Kenny Kerr"
 
 [[publisher.windows-interface]]
-version = "0.58.0"
-when = "2024-07-03"
+version = "0.59.2"
+when = "2025-09-25"
+user-id = 64539
+user-login = "kennykerr"
+user-name = "Kenny Kerr"
+
+[[publisher.windows-numerics]]
+version = "0.3.0"
+when = "2025-09-04"
 user-id = 64539
 user-login = "kennykerr"
 user-name = "Kenny Kerr"
 
 [[publisher.windows-result]]
-version = "0.2.0"
-when = "2024-07-03"
+version = "0.4.0"
+when = "2025-09-04"
 user-id = 64539
 user-login = "kennykerr"
 user-name = "Kenny Kerr"
 
 [[publisher.windows-strings]]
-version = "0.1.0"
-when = "2024-07-03"
+version = "0.5.0"
+when = "2025-09-04"
 user-id = 64539
 user-login = "kennykerr"
 user-name = "Kenny Kerr"
@@ -925,6 +946,13 @@ user-name = "Kenny Kerr"
 [[publisher.windows-sys]]
 version = "0.52.0"
 when = "2023-11-15"
+user-id = 64539
+user-login = "kennykerr"
+user-name = "Kenny Kerr"
+
+[[publisher.windows-threading]]
+version = "0.2.0"
+when = "2025-09-04"
 user-id = 64539
 user-login = "kennykerr"
 user-name = "Kenny Kerr"

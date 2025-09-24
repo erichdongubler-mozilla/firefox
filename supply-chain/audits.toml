@@ -3862,6 +3862,12 @@ criteria = "safe-to-deploy"
 delta = "0.3.1 -> 0.4.0"
 notes = "This crate is written and maintained by Mozilla employees."
 
+[[audits.memtest]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.4.0 -> 0.4.0@git:eb41c0433d804239e5cf848f51d33fe598aeae32"
+importable = false
+
 [[audits.metal]]
 who = "Jim Blandy <jimb@red-bean.com>"
 criteria = "safe-to-deploy"
@@ -3937,16 +3943,15 @@ delta = "0.7.0 -> 0.10.1"
 notes = "Large formatting changes and some safe additions, the very few modified unsafe blocks deal with explicit memory management and appear to be sound."
 
 [[audits.midir]]
-who = "Gabriele Svelto <gsvelto@mozilla.com>"
+who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
-delta = "0.10.1 -> 0.10.1@git:37ad39de3382c2aad0758dab49ba545331a2257d"
-importable = false
-notes = "Minimal changes to enable vendoring the crate"
+delta = "0.10.1 -> 0.10.2"
 
 [[audits.midir]]
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
-delta = "0.10.1 -> 0.10.2"
+delta = "0.10.2 -> 0.10.2@git:e81510cadc35d8bff5973ef2f85a6f459f59d44f"
+importable = false
 
 [[audits.minidump-common]]
 who = "Gabriele Svelto <gsvelto@mozilla.com>"
@@ -4207,9 +4212,9 @@ criteria = "safe-to-deploy"
 delta = "0.2.6 -> 0.2.9"
 
 [[audits.mtu]]
-who = "Max Leonard Inden <mail@max-inden.de>"
+who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
-delta = "0.2.9 -> 0.2.9@git:b3d8f0d21db5657ebafb14f9b60c8892d2eb3aa9"
+delta = "0.2.9 -> 0.2.9@git:672b359461adeddcc3b1a02cf1db3036551c1229"
 importable = false
 
 [[audits.naga]]
@@ -4307,7 +4312,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+delta = "26.0.0 -> 26.0.0@git:f23bbb34c777adde586c6b26546713ffe773e0b9"
 importable = false
 
 [[audits.net2]]
@@ -6822,7 +6827,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+delta = "26.0.0 -> 26.0.0@git:f23bbb34c777adde586c6b26546713ffe773e0b9"
 importable = false
 
 [[audits.wgpu-core-deps-apple]]
@@ -6843,7 +6848,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+delta = "26.0.0 -> 26.0.0@git:f23bbb34c777adde586c6b26546713ffe773e0b9"
 importable = false
 
 [[audits.wgpu-core-deps-windows-linux-android]]
@@ -6864,7 +6869,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+delta = "26.0.0 -> 26.0.0@git:f23bbb34c777adde586c6b26546713ffe773e0b9"
 importable = false
 
 [[audits.wgpu-hal]]
@@ -6963,7 +6968,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+delta = "26.0.0 -> 26.0.0@git:f23bbb34c777adde586c6b26546713ffe773e0b9"
 importable = false
 
 [[audits.wgpu-types]]
@@ -7057,7 +7062,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:ffd4e9fb53a98f8ad67bab8c5d2b42cc9dbdff24"
+delta = "26.0.0 -> 26.0.0@git:f23bbb34c777adde586c6b26546713ffe773e0b9"
 importable = false
 
 [[audits.whatsys]]
@@ -7076,6 +7081,36 @@ criteria = "safe-to-deploy"
 delta = "0.1.2 -> 0.3.1"
 notes = "Maintained by me. I have written or reviewed all of the code."
 
+[[audits.windows-collections]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.3.1 -> 0.3.1@git:73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+importable = false
+
+[[audits.windows-core]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.62.1 -> 0.62.1@git:73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+importable = false
+
+[[audits.windows-future]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.3.1 -> 0.3.1@git:73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+importable = false
+
+[[audits.windows-implement]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.60.1 -> 0.60.1@git:73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+importable = false
+
+[[audits.windows-interface]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.59.2 -> 0.59.2@git:73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+importable = false
+
 [[audits.windows-link]]
 who = "Mark Hammond <mhammond@skippinet.com.au>"
 criteria = "safe-to-deploy"
@@ -7086,6 +7121,36 @@ notes = "A microsoft crate allowing unsafe calls to windows apis."
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.1.1 -> 0.2.0"
+
+[[audits.windows-link]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.2.0 -> 0.2.0@git:73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+importable = false
+
+[[audits.windows-numerics]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.3.0 -> 0.3.0@git:73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+importable = false
+
+[[audits.windows-result]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.4.0 -> 0.4.0@git:73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+importable = false
+
+[[audits.windows-strings]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.5.0 -> 0.5.0@git:73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+importable = false
+
+[[audits.windows-threading]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.2.0 -> 0.2.0@git:73afb3ddf2e6a41c552e808923aa983f7262fc8f"
+importable = false
 
 [[audits.winreg]]
 who = "Ray Kraesig <rkraesig@mozilla.com>"
@@ -7867,43 +7932,79 @@ end = "2024-05-03"
 criteria = "safe-to-deploy"
 user-id = 64539 # Kenny Kerr (kennykerr)
 start = "2021-01-15"
-end = "2025-01-30"
+end = "2026-10-02"
+
+[[trusted.windows-collections]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2025-02-06"
+end = "2026-10-02"
 
 [[trusted.windows-core]]
 criteria = "safe-to-deploy"
 user-id = 64539 # Kenny Kerr (kennykerr)
 start = "2021-11-15"
-end = "2024-09-20"
+end = "2026-10-02"
+
+[[trusted.windows-future]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2025-02-10"
+end = "2026-10-02"
 
 [[trusted.windows-implement]]
 criteria = "safe-to-deploy"
 user-id = 64539 # Kenny Kerr (kennykerr)
 start = "2022-01-27"
-end = "2025-07-29"
+end = "2026-10-02"
 
 [[trusted.windows-interface]]
 criteria = "safe-to-deploy"
 user-id = 64539 # Kenny Kerr (kennykerr)
 start = "2022-02-18"
-end = "2025-07-29"
+end = "2026-10-02"
+
+[[trusted.windows-link]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2024-07-17"
+end = "2026-10-02"
+
+[[trusted.windows-numerics]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2023-05-15"
+end = "2026-10-02"
 
 [[trusted.windows-result]]
 criteria = "safe-to-deploy"
 user-id = 64539 # Kenny Kerr (kennykerr)
 start = "2024-02-02"
-end = "2025-07-29"
+end = "2026-10-02"
 
 [[trusted.windows-strings]]
 criteria = "safe-to-deploy"
 user-id = 64539 # Kenny Kerr (kennykerr)
 start = "2024-02-02"
-end = "2025-07-29"
+end = "2026-10-02"
 
 [[trusted.windows-sys]]
 criteria = "safe-to-deploy"
 user-id = 64539 # Kenny Kerr (kennykerr)
 start = "2021-11-15"
-end = "2024-09-12"
+end = "2026-10-02"
+
+[[trusted.windows-targets]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2022-09-09"
+end = "2026-10-02"
+
+[[trusted.windows-threading]]
+criteria = "safe-to-deploy"
+user-id = 64539 # Kenny Kerr (kennykerr)
+start = "2025-04-29"
+end = "2026-10-02"
 
 [[trusted.winnow]]
 criteria = "safe-to-deploy"
