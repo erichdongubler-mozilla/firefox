@@ -3579,6 +3579,11 @@ who = "Alex Franchuk <afranchuk@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.2.154 -> 0.2.158"
 
+[[audits.libc]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.2.171 -> 0.2.176"
+
 [[audits.libcrux-hacl-rs]]
 who = "Dana Keeler <dkeeler@mozilla.com>"
 criteria = "safe-to-deploy"
