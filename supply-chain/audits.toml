@@ -3038,7 +3038,7 @@ delta = "0.9.1 -> 0.10.0"
 [[audits.hashlink]]
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
-delta = "0.10.0 -> 0.10.0@git:76dc47a12af5829c1e8bf4834e38b410dec2aeff"
+delta = "0.10.0 -> 0.11.0@git:b5b2fe08490e7ed93e01d9e9e8f58a889edb5d94"
 importable = false
 
 [[audits.headers]]

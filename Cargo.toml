@@ -191,6 +191,13 @@ hashbrown_0_14 = { package = "hashbrown", path = "build/rust/hashbrown-0.14" }
 # Patch `hashbrown` 0.15.* to depend on 0.16.*
 hashbrown_0_15 = { package = "hashbrown", path = "build/rust/hashbrown" }
 
+# Consume `hashlink` 0.11.0's development history to upgrade its `hashbrown` dependency to 0.16.
+hashlink_0_10 = { package = "hashlink", git = "https://github.com/djc/hashlink", rev = "b5b2fe08490e7ed93e01d9e9e8f58a889edb5d94" }
+
+# Patch `hashlink` 0.10.* to 0.11.*
+# This technically breaks `hashbrown::DefaultHashBuilder: Copy`, but it's not something we use.
+hashlink = { path = "build/rust/hashlink" }
+
 # Patch `thiserror` 1 to 2.
 thiserror = { path = "build/rust/thiserror" }
 
@@ -286,7 +293,3 @@ zip = { path = "third_party/rust/zip" }
 
 # Patch libcrux-traits to avoid unnecessary unused dependencies and conflicts.
 libcrux-traits = { path = "build/rust/libcrux-traits" }
-
-# Patch `hashlink` 0.10.0 to include a `hashbrown` range dependency of 0.15 <= ver <= 0.16: <https://github.com/erichdongubler-contrib/hashlink/pull/6>
-# This technically breaks `hashbrown::DefaultHashBuilder: Copy`, but it's not something we use.
-hashlink = { git = "https://github.com/erichdongubler-contrib/hashlink", rev = "76dc47a12af5829c1e8bf4834e38b410dec2aeff" }
