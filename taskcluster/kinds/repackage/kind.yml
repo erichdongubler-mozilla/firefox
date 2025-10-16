@@ -19,6 +19,9 @@ kind-dependencies:
     - build-mac-notarization
     - toolchain
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 only-for-build-platforms:
     - linux64-shippable/opt
     - linux64-devedition/opt
@@ -53,7 +56,7 @@ tasks:
                         production: build-mac-notarization
                         staging: build-mac-signing
                 default: build-mac-signing
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             max-run-time:
                 by-build-platform:

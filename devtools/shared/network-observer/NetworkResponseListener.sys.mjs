@@ -341,9 +341,8 @@ export class NetworkResponseListener {
    * https://developer.mozilla.org/En/NsIRequestObserver
    *
    * @param nsIRequest request
-   * @param nsISupports context
    */
-  onStartRequest(request) {
+  async onStartRequest(request) {
     request = request.QueryInterface(Ci.nsIChannel);
     // Converter will call this again, we should just ignore that.
     if (this.#request) {
@@ -373,7 +372,7 @@ export class NetworkResponseListener {
       // Accessing `alternativeDataType` for some SW requests throws.
     }
     if (isOptimizedContent) {
-      const data = this.#getContentFromCache();
+      const data = await this.#getContentFromCache();
       this.#getResponseContent(data);
       this.#getResponseContentComplete();
       return;
@@ -464,6 +463,7 @@ export class NetworkResponseListener {
 
   /**
    * Fetches cache information from CacheEntry
+   *
    * @private
    */
   async #getCacheInformation() {
@@ -653,7 +653,12 @@ export class NetworkResponseListener {
     this.#onSecurityInfo.then(() => this.#destroy());
   }
 
-  async #getContentFromCache() {
+  /**
+   * Loads the content from the cache
+   *
+   * @returns Promise
+   */
+  #getContentFromCache() {
     return new Promise(resolve => {
       // Response is cached, so we load it from cache.
       let charset;

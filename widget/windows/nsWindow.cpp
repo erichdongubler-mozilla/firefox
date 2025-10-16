@@ -75,7 +75,6 @@
 
 #include "mozilla/ipc/MessageChannel.h"
 #include <algorithm>
-#include <limits>
 
 #include "mozilla/widget/WinEventObserver.h"
 #include "mozilla/widget/WinMessages.h"
@@ -254,7 +253,7 @@ static const wchar_t kUser32LibName[] = L"user32.dll";
 
 uint32_t nsWindow::sInstanceCount = 0;
 bool nsWindow::sIsOleInitialized = false;
-MOZ_RUNINIT nsIWidget::Cursor nsWindow::sCurrentCursor = {};
+MOZ_CONSTINIT nsIWidget::Cursor nsWindow::sCurrentCursor = {};
 nsWindow* nsWindow::sCurrentWindow = nullptr;
 bool nsWindow::sJustGotDeactivate = false;
 bool nsWindow::sJustGotActivate = false;
@@ -7777,7 +7776,6 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
 
   nsIRollupListener::RollupOptions rollupOptions{
       popupsToRollup,
-      nsIRollupListener::FlushViews::Yes,
       /* mPoint = */ nullptr,
       allowAnimations,
   };

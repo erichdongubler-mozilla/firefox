@@ -55,6 +55,7 @@
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/glean/DomMetrics.h"
 #include "nsAttrValueInlines.h"
+#include "nsAttrValueOrString.h"
 #include "nsBaseCommandController.h"
 #include "nsCRTGlue.h"
 #include "nsColorControlFrame.h"
@@ -100,7 +101,6 @@
 #include "nsIObserverService.h"
 
 // input type=image
-#include <limits>
 
 #include "HTMLSplitOnSpacesTokenizer.h"
 #include "imgRequestProxy.h"
@@ -912,6 +912,14 @@ nsresult HTMLInputElement::InitFilePicker(FilePickerType aType) {
   nsCOMPtr<nsIFilePickerShownCallback> callback =
       new HTMLInputElement::nsFilePickerShownCallback(this, filePicker);
 
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  if (obs) {
+    // Used by WebDriver BiDi to emit input.fileDialogOpened whenever an input
+    // type=file opens a file picker.
+    obs->NotifyObservers(ToSupports(this), "file-input-picker-opening",
+                         nullptr);
+  }
+
   if (!oldFiles.IsEmpty() && aType != FILE_PICKER_DIRECTORY) {
     nsAutoString path;
 
@@ -1297,17 +1305,17 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   if (aNameSpaceID == kNameSpaceID_None) {
     bool needValidityUpdate = false;
     if (aName == nsGkAtoms::src) {
+      nsAttrValueOrString value(aValue);
       mSrcTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
-          this, aValue ? aValue->GetStringValue() : EmptyString(),
-          aSubjectPrincipal);
+          this, value.String(), aSubjectPrincipal);
       if (aNotify && mType == FormControlType::InputImage) {
         if (aValue) {
           // Mark channel as urgent-start before load image if the image load is
           // initiated by a user interaction.
           mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
 
-          LoadImage(aValue->GetStringValue(), true, aNotify,
-                    eImageLoadType_Normal, mSrcTriggeringPrincipal);
+          LoadImage(value.String(), true, aNotify, eImageLoadType_Normal,
+                    mSrcTriggeringPrincipal);
         } else {
           // Null value means the attr got unset; drop the image
           CancelImageRequests(aNotify);
@@ -5949,7 +5957,8 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
   // Step 6 for input elements with a suggestions source element.
   // I.e. show the autocomplete dropdown based on the list attribute.
   // XXX Form-fill support on android is bug 1535985.
-  if (IsSingleLineTextControl(true) && GetList()) {
+  if (StaticPrefs::dom_input_showPicker_datalist_enabled() &&
+      IsSingleLineTextControl(true) && GetList()) {
     if (nsCOMPtr<nsIFormFillController> controller =
             do_GetService("@mozilla.org/satchel/form-fill-controller;1")) {
       controller->SetControlledElement(this);

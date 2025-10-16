@@ -25,7 +25,6 @@ import androidx.test.uiautomator.Until
 import org.hamcrest.Matchers.not
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.mozilla.focus.R
 import org.mozilla.focus.helpers.Constants.RETRY_COUNT
 import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestHelper.packageName
@@ -292,12 +291,10 @@ class BrowserRobot {
     fun clickCalendarForm() = clickPageObject(webPageItemWithResourceId("calendar"))
 
     fun selectDate() {
-        mDevice.findObject(UiSelector().resourceId("android:id/month_view")).waitForExists(waitingTime)
-
         mDevice.findObject(
             UiSelector()
                 .textContains("$currentDay")
-                .descriptionContains("$currentDay $currentMonth $currentYear"),
+                .descriptionContains("$currentMonth $currentDay"),
         ).click()
     }
 

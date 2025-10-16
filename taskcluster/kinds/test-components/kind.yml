@@ -17,6 +17,7 @@ kind-dependencies:
 
 
 task-defaults:
+    run-on-repo-type: [hg]
     attributes:
         build_platform: android
         build-type: debug
@@ -44,7 +45,7 @@ task-defaults:
         kind: test
         platform: 'AC-ui-test/opt'
         tier: 2
-    worker-type: b-linux-medium-gcp
+    worker-type: b-linux-medium
     worker:
         artifacts:
             - name: public

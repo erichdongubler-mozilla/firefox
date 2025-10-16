@@ -982,12 +982,9 @@ public class Tokenizer implements Locator, Locator2 {
      * @param c
      *            the UTF-16 code unit to append
      */
-    private void appendStrBuf(char c) {
-        // CPPONLY: assert strBufLen < strBuf.length: "Previous buffer length insufficient.";
+    @Inline private void appendStrBuf(char c) {
         // CPPONLY: if (strBufLen == strBuf.length) {
-        // CPPONLY:     if (!EnsureBufferSpace(1)) {
-        // CPPONLY:         assert false: "RELEASE: Unable to recover from buffer reallocation failure";
-        // CPPONLY:     } // TODO: Add telemetry when outer if fires but inner does not
+        // CPPONLY:     EnsureBufferSpaceShouldNeverHappen(1);
         // CPPONLY: }
         strBuf[strBufLen++] = c;
     }
@@ -1001,8 +998,21 @@ public class Tokenizer implements Locator, Locator2 {
      * @return the buffer as a string
      */
     @Inline protected String strBufToString() {
+        // CPPONLY: String digitAtom = TryAtomizeForSingleDigit();
+        // CPPONLY: if (digitAtom) {
+        // CPPONLY:   return digitAtom;
+        // CPPONLY: }
+        // CPPONLY:
+        // CPPONLY: boolean maybeAtomize = false;
+        // CPPONLY: if (!newAttributesEachTime) {
+        // CPPONLY:   if (attributeName == AttributeName.CLASS ||
+        // CPPONLY:       attributeName == AttributeName.TYPE) {
+        // CPPONLY:     maybeAtomize = true;
+        // CPPONLY:   }
+        // CPPONLY: }
+        // CPPONLY:
         String str = Portability.newStringFromBuffer(strBuf, 0, strBufLen
-            // CPPONLY: , tokenHandler, !newAttributesEachTime && attributeName == AttributeName.CLASS
+            // CPPONLY: , tokenHandler, maybeAtomize
         );
         clearStrBufAfterUse();
         return str;
@@ -1094,13 +1104,12 @@ public class Tokenizer implements Locator, Locator2 {
         // ]NOCPP]
     }
 
-    private void appendStrBuf(@NoLength char[] buffer, int offset, int length) throws SAXException {
-        int newLen = Portability.checkedAdd(strBufLen, length);
-        // CPPONLY: assert newLen <= strBuf.length: "Previous buffer length insufficient.";
+    @Inline private void appendStrBuf(@NoLength char[] buffer, int offset, int length) throws SAXException {
+        // Years of crash stats have shown that the this addition doesn't overflow, as it logically
+        // shouldn't.
+        int newLen = strBufLen + length;
         // CPPONLY: if (strBuf.length < newLen) {
-        // CPPONLY:     if (!EnsureBufferSpace(length)) {
-        // CPPONLY:         assert false: "RELEASE: Unable to recover from buffer reallocation failure";
-        // CPPONLY:     } // TODO: Add telemetry when outer if fires but inner does not
+        // CPPONLY:     EnsureBufferSpaceShouldNeverHappen(length);
         // CPPONLY: }
         System.arraycopy(buffer, offset, strBuf, strBufLen, length);
         strBufLen = newLen;

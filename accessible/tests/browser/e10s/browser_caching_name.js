@@ -6,7 +6,11 @@
 requestLongerTimeout(2);
 
 /* import-globals-from ../../mochitest/name.js */
-loadScripts({ name: "name.js", dir: MOCHITESTS_DIR });
+/* import-globals-from ../../mochitest/attributes.js */
+loadScripts(
+  { name: "name.js", dir: MOCHITESTS_DIR },
+  { name: "attributes.js", dir: MOCHITESTS_DIR }
+);
 
 /**
  * Rules for name tests that are inspired by
@@ -371,6 +375,7 @@ const markupTests = [
  * results in a reorder or text inserted event - wait for it. If accessible
  * becomes defunct, update its reference using the one that is attached to one
  * of the above events.
+ *
  * @param {Object} browser      current "tabbrowser" element
  * @param {Object} target       { acc, id } structure that contains an
  *                               accessible and its content element
@@ -399,6 +404,7 @@ async function testAttrRule(browser, target, rule, expected) {
  * element before proceeding to the next name test. If element removal results
  * in a reorder event - wait for it. If accessible becomes defunct, update its
  * reference using the one that is attached to a possible reorder event.
+ *
  * @param {Object} browser      current "tabbrowser" element
  * @param {Object} target       { acc, id } structure that contains an
  *                               accessible and its content element
@@ -427,6 +433,7 @@ async function testElmRule(browser, target, rule, expected) {
  * and wait for a reorder event before proceeding to the next name test. If
  * accessible becomes defunct, update its reference using the one that is
  * attached to a reorder event.
+ *
  * @param {Object} browser      current "tabbrowser" element
  * @param {Object} target       { acc, id } structure that contains an
  *                               accessible and its content element
@@ -455,6 +462,7 @@ async function testSubtreeRule(browser, target, rule, expected) {
 /**
  * Iterate over a list of rules and test accessible names for each one of the
  * rules.
+ *
  * @param {Object} browser      current "tabbrowser" element
  * @param {Object} target       { acc, id } structure that contains an
  *                               accessible and its content element
@@ -588,4 +596,85 @@ addAccessibleTask(
     testName(tab, "Title");
   },
   { chrome: true, topLevel: true }
+);
+
+/**
+ * Test abbr name change notification
+ */
+addAccessibleTask(
+  `<abbr id="abbr" title="JavaScript Object Notation">JSON</abbr>
+   <abbr id="labelled-abbr" aria-label="YML"
+         title="Yet Another Markup Language">YAML</abbr>`,
+  async function testAbbrName(browser, docAcc) {
+    const abbr = findAccessibleChildByID(docAcc, "abbr");
+    testName(abbr, "JavaScript Object Notation");
+
+    let nameChanged = waitForEvent(EVENT_NAME_CHANGE, abbr);
+    invokeSetAttribute(browser, "abbr", "title", "Jason's Other Nettle");
+    await nameChanged;
+    testName(abbr, "Jason's Other Nettle");
+
+    nameChanged = waitForEvent(EVENT_NAME_CHANGE, abbr);
+    invokeSetAttribute(browser, "abbr", "title");
+    await nameChanged;
+    testName(abbr, null);
+
+    const labelledAbbr = findAccessibleChildByID(docAcc, "labelled-abbr");
+    testName(labelledAbbr, "YML");
+
+    let events = waitForEvents({
+      expected: [[EVENT_DESCRIPTION_CHANGE, labelledAbbr]],
+      unexpected: [[EVENT_NAME_CHANGE, labelledAbbr]],
+    });
+    invokeSetAttribute(
+      browser,
+      "labelled-abbr",
+      "title",
+      "Your Another Marker Lye"
+    );
+    await events;
+    is(labelledAbbr.description, "Your Another Marker Lye");
+
+    events = waitForEvents([
+      [EVENT_NAME_CHANGE, labelledAbbr],
+      // Bug 1997464 - When losing ARIA name, we lose the description that is used
+      // now for the name.
+      // [EVENT_DESCRIPTION_CHANGE, labelledAbbr],
+    ]);
+    invokeSetAttribute(browser, "labelled-abbr", "aria-label");
+    await events;
+  },
+  { chrome: true, topLevel: true }
+);
+
+/**
+ * Test consistent doc name for remote and local docs.
+ */
+addAccessibleTask(
+  `<iframe id="iframe"></iframe>`,
+  async function testDocName(browser, docAcc) {
+    const iframe = findAccessibleChildByID(docAcc, "iframe");
+    info("Setting iframe src");
+    // This iframe won't finish loading. Thus, it will get the stale state and
+    // won't fire a document load complete event. We use the reorder event on
+    // the iframe to know when the document has been created.
+    let reordered = waitForEvent(EVENT_REORDER, iframe);
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("iframe").src =
+        `data:text/html,<html><body>hey</body></html>`;
+    });
+    let iframeDoc = (await reordered).accessible.firstChild;
+    is(iframeDoc.name, null, "Doc should have 'null' name");
+    testAbsentAttrs(iframeDoc, { "explicit-name": "true" });
+
+    reordered = waitForEvent(EVENT_REORDER, iframe);
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("iframe").src =
+        `data:text/html,<html><title>hello</title><body>hey</body></html>`;
+    });
+    iframeDoc = (await reordered).accessible.firstChild;
+    is(iframeDoc.name, "hello", "Doc should have name");
+    testAttrs(iframeDoc, { "explicit-name": "true" }, true);
+  },
+  { topLevel: true, chrome: true }
 );

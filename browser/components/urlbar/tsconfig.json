@@ -1,12 +1,8 @@
 {
   "include": ["**/*.sys.mjs", "types/*.ts"],
   "exclude": [
-    "UrlbarInput.sys.mjs",
     "UrlbarProviderGlobalActions.sys.mjs",
-    "UrlbarProviderPlaces.sys.mjs",
-    "UrlbarProvidersManager.sys.mjs",
     "UrlbarView.sys.mjs",
-    "private/MLSuggest.sys.mjs",
     "private/SuggestBackendRust.sys.mjs",
     "tests/UrlbarTestUtils.sys.mjs"
   ],

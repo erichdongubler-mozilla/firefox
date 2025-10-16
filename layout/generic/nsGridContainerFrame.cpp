@@ -5735,7 +5735,6 @@ static nscoord MeasuringReflow(nsIFrame* aChild,
   nsReflowStatus childStatus;
   const nsIFrame::ReflowChildFlags flags =
       nsIFrame::ReflowChildFlags::NoMoveFrame |
-      nsIFrame::ReflowChildFlags::NoSizeView |
       nsIFrame::ReflowChildFlags::NoDeleteNextInFlowChild;
 
   // Reflowing the child might invalidate the cache, so we declare the variable
@@ -10711,8 +10710,10 @@ bool nsGridContainerFrame::ShouldInhibitSubgridDueToIFC(
   // NS_FRAME_OUT_OF_FLOW bit potentially isn't set yet, so we check our style.
   // * contain:layout and contain:paint each make us establish an IFC.
   const auto* display = aFrame->StyleDisplay();
-  return display->IsAbsolutelyPositionedStyle() || display->IsContainLayout() ||
-         display->IsContainPaint();
+  return display->IsContainLayout() || display->IsContainPaint() ||
+         display->mContainerType &
+             (StyleContainerType::SIZE | StyleContainerType::INLINE_SIZE) ||
+         display->IsAbsolutelyPositionedStyle();
 }
 
 nsGridContainerFrame* nsGridContainerFrame::GetGridContainerFrame(

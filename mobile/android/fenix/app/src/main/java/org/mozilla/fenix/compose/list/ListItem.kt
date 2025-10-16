@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@file:Suppress("TooManyFunctions")
+
 package org.mozilla.fenix.compose.list
 
 import android.content.res.Configuration
@@ -52,6 +54,8 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -61,6 +65,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.modifier.thenConditional
+import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.compose.button.RadioButton
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -254,11 +259,17 @@ fun FaviconListItem(
  * @param minHeight An optional minimum height for the list item.
  * @param onClick Called when the user clicks on the item.
  * @param onLongClick Called when the user long clicks on the item.
+ * @param beforeIconTint [Color] used to tint the icon.  Note: Color.Unspecified is used when you
+ * wish to preserve the original colors of the icon.  This color should NOT be combined with
+ * ListItemColors because ListItemDefaults will not allow you to specify Color.Unspecified.
  * @param beforeIconPainter [Painter] used to display an [Icon] before the list item.
  * @param beforeIconDescription Content description of the icon.
  * @param isBeforeIconHighlighted Whether or not the item should be highlighted with a notification icon.
  * @param showDivider Whether or not to display a vertical divider line before the [IconButton]
  * at the end.
+ * @param afterIconTint [Color] used to tint the icon.  Note: Color.Unspecified is used when you
+ * wish to preserve the original colors of the icon.  This color should NOT be combined with
+ * ListItemColors because ListItemDefaults will not allow you to specify Color.Unspecified.
  * @param afterIconPainter [Painter] used to display an icon after the list item.
  * @param afterIconDescription Content description of the icon.
  * @param onAfterIconClick Called when the user clicks on the icon. An [IconButton] will be
@@ -279,10 +290,12 @@ fun IconListItem(
     minHeight: Dp = LIST_ITEM_HEIGHT,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
+    beforeIconTint: Color = ListItemDefaults.colors().leadingIconColor,
     beforeIconPainter: Painter,
     beforeIconDescription: String? = null,
     isBeforeIconHighlighted: Boolean = false,
     showDivider: Boolean = false,
+    afterIconTint: Color = ListItemDefaults.colors().leadingIconColor,
     afterIconPainter: Painter? = null,
     afterIconDescription: String? = null,
     onAfterIconClick: (() -> Unit)? = null,
@@ -306,7 +319,7 @@ fun IconListItem(
                 isHighlighted = isBeforeIconHighlighted,
                 painter = beforeIconPainter,
                 description = beforeIconDescription,
-                tint = if (enabled) colors.leadingIconColor else colors.disabledLeadingIconColor,
+                tint = if (enabled) beforeIconTint else colors.disabledLeadingIconColor,
             )
         },
         afterListItemAction = {
@@ -314,13 +327,28 @@ fun IconListItem(
                 enabled = enabled,
                 painter = afterIconPainter,
                 description = afterIconDescription,
-                tint = if (enabled) colors.trailingIconColor else colors.disabledTrailingIconColor,
+                tint = if (enabled) afterIconTint else colors.disabledTrailingIconColor,
                 onClick = onAfterIconClick,
                 listAction = afterListAction,
                 showDivider = showDivider,
             )
         },
     )
+}
+
+@Composable
+@PreviewLightDark
+private fun IconListItemBeforeIconPreview() {
+    FirefoxTheme {
+        Box(Modifier.background(MaterialTheme.colorScheme.surfaceDimVariant)) {
+            IconListItemBeforeIcon(
+                isHighlighted = false,
+                painter = painterResource(iconsR.drawable.mozac_ic_shield_slash_critical_24),
+                description = "",
+                tint = Color.Unspecified,
+            )
+        }
+    }
 }
 
 @Composable
@@ -428,6 +456,10 @@ fun RadioButtonListItem(
             selected = selected,
             modifier = Modifier
                 .size(ICON_SIZE)
+                .semantics {
+                    testTag = "$label.radio.button"
+                    testTagsAsResourceId = true
+                }
                 .clearAndSetSemantics {},
             enabled = enabled,
             onClick = onClick,
@@ -612,10 +644,16 @@ fun SelectableFaviconListItem(
  * @param minHeight An optional minimum height for the list item.
  * @param onClick Called when the user clicks on the item.
  * @param onLongClick Called when the user long clicks on the item.
+ * @param beforeIconTint [Color] used to tint the icon.  Note: Color.Unspecified is used when you
+ * wish to preserve the original colors of the icon.  This color should NOT be combined with
+ * ListItemColors because ListItemDefaults will not allow you to specify Color.Unspecified.
  * @param beforeIconPainter [Painter] used to display an [Icon] before the list item.
  * @param beforeIconDescription Content description of the icon.
  * @param showDivider Whether or not to display a vertical divider line before the [IconButton]
  * at the end.
+ * @param afterIconTint [Color] used to tint the icon.  Note: Color.Unspecified is used when you
+ * wish to preserve the original colors of the icon.  This color should NOT be combined with
+ * ListItemColors because ListItemDefaults will not allow you to specify Color.Unspecified.
  * @param afterIconPainter [Painter] used to display an icon after the list item.
  * @param afterIconDescription Content description of the icon.
  * @param onAfterIconClick Called when the user clicks on the icon. An [IconButton] will be
@@ -624,6 +662,7 @@ fun SelectableFaviconListItem(
  * not supplied.
  */
 @Composable
+@Suppress("CognitiveComplexMethod")
 fun SelectableIconListItem(
     label: String,
     isSelected: Boolean,
@@ -637,9 +676,11 @@ fun SelectableIconListItem(
     minHeight: Dp = LIST_ITEM_HEIGHT,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
+    beforeIconTint: Color = ListItemDefaults.colors().leadingIconColor,
     beforeIconPainter: Painter,
     beforeIconDescription: String? = null,
     showDivider: Boolean = false,
+    afterIconTint: Color = ListItemDefaults.colors().trailingIconColor,
     afterIconPainter: Painter? = null,
     afterIconDescription: String? = null,
     onAfterIconClick: (() -> Unit)? = null,
@@ -664,7 +705,7 @@ fun SelectableIconListItem(
                     Icon(
                         painter = beforeIconPainter,
                         contentDescription = beforeIconDescription,
-                        tint = if (enabled) colors.leadingIconColor else colors.disabledLeadingIconColor,
+                        tint = if (enabled) beforeIconTint else colors.disabledLeadingIconColor,
                     )
                 },
             )
@@ -674,7 +715,7 @@ fun SelectableIconListItem(
                 return@ListItem
             }
 
-            val tint = if (enabled) colors.trailingIconColor else colors.disabledTrailingIconColor
+            val tint = if (enabled) afterIconTint else colors.disabledTrailingIconColor
 
             if (showDivider) {
                 VerticalDivider()
@@ -1054,6 +1095,17 @@ private fun IconListItemPreview() {
                 enabled = false,
                 onClick = {},
                 beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
+                beforeIconDescription = "click me",
+                afterIconPainter = painterResource(iconsR.drawable.mozac_ic_chevron_right_24),
+                afterIconDescription = null,
+            )
+
+            IconListItem(
+                label = "Colorful icon list item",
+                enabled = true,
+                onClick = {},
+                beforeIconTint = Color.Unspecified,
+                beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_shield_slash_critical_24),
                 beforeIconDescription = "click me",
                 afterIconPainter = painterResource(iconsR.drawable.mozac_ic_chevron_right_24),
                 afterIconDescription = null,

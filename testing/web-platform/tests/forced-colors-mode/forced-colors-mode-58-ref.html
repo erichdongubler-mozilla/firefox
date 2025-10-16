@@ -2,7 +2,15 @@
 <meta charset="utf-8">
 <title>Reference: Emoji should appear in color (not text-style)</title>
 <link rel="author" title="Sejal Anand" href="sejalanand@microsoft.com">
+<style>
+  @media (forced-colors: active) {
+    .optout {
+      font-variant-emoji: normal;
+      forced-color-adjust: none; /* prevents override to text-style emoji */
+    }
+  }
+</style>
 
 <p>In forced-colors mode, this emoji should remain colorful because of <code>forced-color-adjust: none</code>.</p>
 
-<div>&#x1f600; 😀</div>
+<div class="optout">&#x1f600; 😀</div>

@@ -4,6 +4,7 @@
 ---
 task-defaults:
     description: 'Run detekt over all modules'
+    run-on-repo-type: [hg]
     run:
         using: gradlew
         gradlew: ['detekt']
@@ -22,7 +23,7 @@ task-defaults:
     treeherder:
         kind: test
         tier: 1
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     when:
         files-changed:
             - "mobile/android/android-components/**"

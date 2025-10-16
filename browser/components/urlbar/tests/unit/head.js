@@ -21,7 +21,6 @@ ChromeUtils.defineESModuleGetters(this, {
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
   UrlbarController:
     "moz-src:///browser/components/urlbar/UrlbarController.sys.mjs",
-  UrlbarInput: "moz-src:///browser/components/urlbar/UrlbarInput.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderOpenTabs:
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
@@ -135,7 +134,8 @@ function createContext(searchString = "foo", properties = {}) {
       properties
     )
   );
-  UrlbarTokenizer.tokenize(context);
+  let tokens = UrlbarTokenizer.tokenize(context);
+  context.tokens = tokens;
   return context;
 }
 
@@ -1014,7 +1014,6 @@ async function check_results({
 
   const controller = UrlbarTestUtils.newMockController({
     input: {
-      isAddressbar: true,
       isPrivate: context.isPrivate,
       onFirstResult() {
         return false;

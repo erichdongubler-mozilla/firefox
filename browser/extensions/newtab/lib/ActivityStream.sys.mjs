@@ -28,6 +28,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   HighlightsFeed: "resource://newtab/lib/HighlightsFeed.sys.mjs",
   ListsFeed: "resource://newtab/lib/Widgets/ListsFeed.sys.mjs",
   NewTabAttributionFeed: "resource://newtab/lib/NewTabAttributionFeed.sys.mjs",
+  NewTabActorRegistry: "resource://newtab/lib/NewTabActorRegistry.sys.mjs",
   NewTabInit: "resource://newtab/lib/NewTabInit.sys.mjs",
   NewTabMessaging: "resource://newtab/lib/NewTabMessaging.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -1308,6 +1309,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "discoverystream.sections.clientLayout.enabled",
+    {
+      title: "Enables client side layout for recommended stories",
+      value: false,
+    },
+  ],
+  [
     "support.url",
     {
       title: "Link to HNT's support page",
@@ -1339,15 +1347,6 @@ export const PREFS_CONFIG = new Map([
       getValue: () => {
         return Services.appinfo.caretBlinkTime;
       },
-    },
-  ],
-  // Sponsored checkboxes placement experiment
-  [
-    "system.showSponsoredCheckboxes",
-    {
-      title:
-        "Switches on grouping of sponsored checkboxes on 'about:settings#home' page",
-      value: true,
     },
   ],
   [
@@ -1582,6 +1581,7 @@ export class ActivityStream {
     this._defaultPrefs.init();
     Services.obs.addObserver(this, "intl:app-locales-changed");
     Services.obs.addObserver(this, "browser-search-engine-modified");
+    lazy.NewTabActorRegistry.init();
 
     // Bug 1969587: Because our pref system does not support async getValue(),
     // we mirror the value of the BROWSER_URLBAR_PLACEHOLDERNAME pref into

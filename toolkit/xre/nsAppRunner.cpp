@@ -312,8 +312,8 @@ extern const char gToolkitBuildID[];
 
 static nsIProfileLock* gProfileLock;
 #if defined(MOZ_HAS_REMOTE)
-MOZ_RUNINIT static RefPtr<nsRemoteService> gRemoteService;
-MOZ_RUNINIT static RefPtr<nsStartupLock> gStartupLock;
+MOZ_CONSTINIT static RefPtr<nsRemoteService> gRemoteService;
+MOZ_CONSTINIT static RefPtr<nsStartupLock> gStartupLock;
 #endif
 
 int gRestartArgc;
@@ -350,7 +350,7 @@ MOZ_CONSTINIT nsString gProcessStartupShortcut;
 #endif
 
 #if defined(MOZ_WAYLAND)
-MOZ_RUNINIT std::unique_ptr<WaylandProxy> gWaylandProxy;
+MOZ_CONSTINIT std::unique_ptr<WaylandProxy> gWaylandProxy;
 #endif
 
 #include "BinaryPath.h"
@@ -3028,7 +3028,7 @@ static ReturnAbortOnError ShowProfileSelector(
 
 static bool gDoMigration = false;
 static bool gDoProfileReset = false;
-MOZ_RUNINIT static nsCOMPtr<nsIToolkitProfile> gResetOldProfile;
+MOZ_CONSTINIT static nsCOMPtr<nsIToolkitProfile> gResetOldProfile;
 
 static nsresult LockProfile(nsINativeAppSupport* aNative, nsIFile* aRootDir,
                             nsIFile* aLocalDir, nsIToolkitProfile* aProfile,
@@ -4456,6 +4456,12 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   // These arguments do nothing in platforms with no remoting support but we
   // should remove them from the command line anyway.
   CheckArg("new-instance");
+#endif
+
+#ifndef XP_WIN
+  // This command line argument is only implemented on Windows. It should be
+  // removed from the command line if present on other platforms.
+  CheckArg("wait-for-browser");
 #endif
 
   ar = CheckArg("offline");

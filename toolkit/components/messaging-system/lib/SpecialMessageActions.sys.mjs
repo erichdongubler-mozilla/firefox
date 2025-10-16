@@ -193,6 +193,49 @@ export const SpecialMessageActions = {
   },
 
   /**
+   * Set a target pref's value to the value of a source pref.
+   *
+   * @param {string} targetPref - The name of a pref to be updated.
+   * @param {string} sourcePref - The name of the source pref whose value will be copied to the target pref.
+   */
+  copyPrefValue(targetPref, sourcePref) {
+    const sourceType = Services.prefs.getPrefType(sourcePref);
+    const targetType = Services.prefs.getPrefType(targetPref);
+    if (
+      targetType !== Services.prefs.PREF_INVALID &&
+      targetType !== sourceType
+    ) {
+      throw new Error(
+        `Special message action with type SET_PREF(copyFromPref), target pref "${targetPref}" has type ${targetType} which does not match source pref "${sourcePref}" type ${sourceType}.`
+      );
+    }
+    switch (sourceType) {
+      case Services.prefs.PREF_STRING:
+        Services.prefs.setStringPref(
+          targetPref,
+          Services.prefs.getStringPref(sourcePref)
+        );
+        break;
+      case Services.prefs.PREF_INT:
+        Services.prefs.setIntPref(
+          targetPref,
+          Services.prefs.getIntPref(sourcePref)
+        );
+        break;
+      case Services.prefs.PREF_BOOL:
+        Services.prefs.setBoolPref(
+          targetPref,
+          Services.prefs.getBoolPref(sourcePref)
+        );
+        break;
+      default:
+        throw new Error(
+          `Special message action with type SET_PREF(copyFromPref), pref of "${sourcePref}" is invalid or not a supported type.`
+        );
+    }
+  },
+
+  /**
    * Set prefs with special message actions
    *
    * @param {Object} pref - A pref to be updated.
@@ -208,6 +251,7 @@ export const SpecialMessageActions = {
       "browser.crashReports.unsubmittedCheck.autoSubmit2",
       "browser.dataFeatureRecommendations.enabled",
       "browser.ipProtection.enabled",
+      "browser.ipProtection.optedOut",
       "browser.migrate.content-modal.about-welcome-behavior",
       "browser.migrate.content-modal.import-all.enabled",
       "browser.migrate.preferences-entrypoint.enabled",
@@ -235,6 +279,7 @@ export const SpecialMessageActions = {
       "sidebar.visibility",
       "termsofuse.acceptedVersion",
       "termsofuse.acceptedDate",
+      "termsofuse.firstAcceptedDate",
       "termsofuse.currentVersion",
       "termsofuse.minimumVersion",
       "privacy.trackingprotection.allow_list.baseline.enabled",
@@ -263,6 +308,8 @@ export const SpecialMessageActions = {
       case "object":
         if (pref.value.timestamp) {
           Services.prefs.setStringPref(pref.name, Date.now().toString());
+        } else if (pref.value.copyFromPref) {
+          this.copyPrefValue(pref.name, pref.value.copyFromPref);
         } else {
           Services.prefs.clearUserPref(pref.name);
         }

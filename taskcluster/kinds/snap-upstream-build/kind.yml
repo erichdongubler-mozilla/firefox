@@ -14,12 +14,13 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
+    run-on-repo-type: [hg]
     attributes:
         cron: true
     treeherder:
         kind: build
         tier: 2
-    worker-type: b-linux-xlarge-amd
+    worker-type: b-linux-docker-xlarge-amd
     run:
         checkout: true
     worker:

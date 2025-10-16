@@ -847,7 +847,6 @@ class MarkupView extends EventEmitter {
    *        Optional configuration passed to the highlighter when shown
    *        {CustomHighlighterFront} data.highlighter
    *        Highlighter instance
-   *
    */
   handleHighlighterEvent(eventName, data) {
     switch (data.type) {
@@ -1175,6 +1174,7 @@ class MarkupView extends EventEmitter {
     // If there's no selected container, or if the search is empty, we don't have anything
     // to highlight.
     if (!this._selectedContainer || !searchQuery) {
+      this.emitForTests("search-results-highlighting-updated");
       return;
     }
 
@@ -1245,6 +1245,7 @@ class MarkupView extends EventEmitter {
         false
       );
     }
+    this.emitForTests("search-results-highlighting-updated");
   }
 
   /**
@@ -2142,6 +2143,7 @@ class MarkupView extends EventEmitter {
   /**
    * Replace the innerHTML of any node displayed in the inspector with
    * some other HTML code
+   *
    * @param  {Node} node
    *         node which innerHTML will be replaced.
    * @param  {String} newValue
@@ -2834,13 +2836,13 @@ class MarkupView extends EventEmitter {
 
     if (nextSibling) {
       while (
-        nextSibling.isMarkerPseudoElement ||
-        nextSibling.isBeforePseudoElement
+        nextSibling.displayName === "::marker" ||
+        nextSibling.displayName === "::before"
       ) {
         nextSibling =
           this.getContainer(nextSibling).elt.nextSibling.container.node;
       }
-      if (nextSibling.isAfterPseudoElement) {
+      if (nextSibling.displayName === "::after") {
         parent = target.parentNode.container.node.parentNode();
         nextSibling = null;
       }

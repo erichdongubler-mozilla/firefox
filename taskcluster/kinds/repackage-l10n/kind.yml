@@ -19,6 +19,9 @@ kind-dependencies:
     - shippable-l10n-mac-notarization
     - toolchain
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 only-for-build-platforms:
     - linux64-shippable/opt
     - linux64-aarch64-shippable/opt
@@ -44,7 +47,7 @@ tasks:
                         production: shippable-l10n-mac-notarization
                         staging: shippable-l10n-mac-signing
                 default: shippable-l10n-mac-signing
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         mozharness:
             config:
                 by-build-platform:

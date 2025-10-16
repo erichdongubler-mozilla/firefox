@@ -11,6 +11,7 @@ task-defaults:
     treeherder:
         kind: test
         tier: 1
+    run-on-repo-type: [hg]
     run:
         using: run-task
         cwd: '{checkout}'
@@ -239,7 +240,7 @@ stylelint-plugin-mozilla:
     when:
         files-changed:
             - 'tools/lint/stylelint/stylelint-plugin-mozilla/**'
-            - toolkit/themes/shared/design-system/tokens-table.mjs
+            - toolkit/themes/shared/design-system/dist/tokens-table.mjs
     fetches:
         toolchain:
             - linux64-node

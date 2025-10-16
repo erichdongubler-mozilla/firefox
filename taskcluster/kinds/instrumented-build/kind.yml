@@ -18,6 +18,7 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
+    run-on-repo-type: [hg]
     shipping-phase: build
     treeherder:
         symbol: Bpgo(instr)
@@ -51,7 +52,7 @@ tasks:
         shipping-product: firefox
         treeherder:
             platform: linux64-shippable/opt
-        worker-type: b-linux-amd
+        worker-type: b-linux-docker-amd
         run:
             config:
                 - builds/releng_base_firefox.py
@@ -80,7 +81,7 @@ tasks:
         shipping-product: firefox
         treeherder:
             platform: linux64-aarch64-shippable/opt
-        worker-type: b-linux-amd
+        worker-type: b-linux-docker-amd
         run:
             config:
                 - builds/releng_base_firefox.py
@@ -111,7 +112,7 @@ tasks:
         shipping-product: firefox
         treeherder:
             platform: osx-shippable/opt
-        worker-type: b-linux-amd
+        worker-type: b-linux-docker-amd
         worker:
             max-run-time: 7200
             env:
@@ -157,7 +158,7 @@ tasks:
         shipping-product: firefox
         treeherder:
             platform: osx-aarch64-shippable/opt
-        worker-type: b-linux-amd
+        worker-type: b-linux-docker-amd
         worker:
             max-run-time: 7200
             env:
@@ -207,7 +208,7 @@ tasks:
         shipping-product: fennec
         treeherder:
             platform: android-5-0-x86_64-shippable/opt
-        worker-type: b-linux-xlarge-amd
+        worker-type: b-linux-docker-xlarge-amd
         worker:
             docker-image: {in-tree: android-build}
             env:
@@ -262,7 +263,7 @@ tasks:
         shipping-product: fennec
         treeherder:
             platform: android-5-0-aarch64-shippable/opt
-        worker-type: b-linux-xlarge-amd
+        worker-type: b-linux-docker-xlarge-amd
         worker:
             docker-image: {in-tree: android-build}
             env:
@@ -317,7 +318,7 @@ tasks:
         shipping-product: fennec
         treeherder:
             platform: android-5-0-armv7-shippable/opt
-        worker-type: b-linux-xlarge-amd
+        worker-type: b-linux-docker-xlarge-amd
         worker:
             docker-image: {in-tree: android-build}
             env:
@@ -372,7 +373,7 @@ tasks:
         shipping-product: firefox
         treeherder:
             platform: windows2012-32-shippable/opt
-        worker-type: b-linux-amd
+        worker-type: b-linux-docker-amd
         run:
             options: [append-env-variables-from-configs]
             mozconfig-variant: profile-generate
@@ -411,7 +412,7 @@ tasks:
         shipping-product: firefox
         treeherder:
             platform: win64-nightlyasrelease/opt
-        worker-type: b-linux-amd
+        worker-type: b-linux-docker-amd
         run:
             options: [append-env-variables-from-configs]
             mozconfig-variant: profile-generate
@@ -453,7 +454,7 @@ tasks:
         shipping-product: firefox
         treeherder:
             platform: windows2012-64-shippable/opt
-        worker-type: b-linux-amd
+        worker-type: b-linux-docker-amd
         run:
             options: [append-env-variables-from-configs]
             mozconfig-variant: profile-generate
@@ -493,7 +494,7 @@ tasks:
         shipping-product: firefox
         treeherder:
             platform: windows2012-aarch64-shippable/opt
-        worker-type: b-linux-amd
+        worker-type: b-linux-docker-amd
         run:
             options: [append-env-variables-from-configs]
             mozconfig-variant: profile-generate

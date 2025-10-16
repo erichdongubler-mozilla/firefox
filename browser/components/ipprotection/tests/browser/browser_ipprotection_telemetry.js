@@ -7,6 +7,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  IPPProxyManager: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
     "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
 });
@@ -54,16 +55,18 @@ add_task(async function user_toggle_on_and_off() {
   IPProtectionService.updateState();
   await content.updateComplete;
 
-  let toggle = content.connectionToggleEl;
+  let statusCard = content.shadowRoot.querySelector("ipprotection-status-card");
+
+  let toggle = statusCard.connectionToggleEl;
   Assert.ok(toggle, "Status card connection toggle should be present");
 
   Services.fog.testResetFOG();
   await Services.fog.testFlushAllChildren();
   let vpnOnPromise = BrowserTestUtils.waitForEvent(
-    lazy.IPProtectionService,
-    "IPProtectionService:StateChanged",
+    lazy.IPPProxyManager,
+    "IPPProxyManager:StateChanged",
     false,
-    () => !!IPProtectionService.activatedAt
+    () => !!IPPProxyManager.activatedAt
   );
   // Toggle the VPN on
   toggle.click();
@@ -76,10 +79,10 @@ add_task(async function user_toggle_on_and_off() {
   Assert.equal(toggledEvents[0].extra.userAction, "true");
 
   let vpnOffPromise = BrowserTestUtils.waitForEvent(
-    lazy.IPProtectionService,
-    "IPProtectionService:StateChanged",
+    lazy.IPPProxyManager,
+    "IPPProxyManager:StateChanged",
     false,
-    () => !IPProtectionService.activatedAt
+    () => !IPPProxyManager.activatedAt
   );
   // Toggle the VPN off
   toggle.click();
@@ -140,16 +143,17 @@ add_task(async function toggle_off_on_shutdown() {
   await content.updateComplete;
   await putServerInRemoteSettings();
 
-  let toggle = content.connectionToggleEl;
+  let statusCard = content.statusCardEl;
+  let toggle = statusCard.connectionToggleEl;
   Assert.ok(toggle, "Status card connection toggle should be present");
 
   Services.fog.testResetFOG();
 
   let vpnOnPromise = BrowserTestUtils.waitForEvent(
-    lazy.IPProtectionService,
-    "IPProtectionService:StateChanged",
+    lazy.IPPProxyManager,
+    "IPPProxyManager:StateChanged",
     false,
-    () => !!IPProtectionService.activatedAt
+    () => !!IPPProxyManager.activatedAt
   );
   // Toggle the VPN on
   toggle.click();

@@ -232,7 +232,7 @@ internal object BookmarksDestinations {
  * The Bookmarks list screen.
  */
 @OptIn(ExperimentalLayoutApi::class) // for WindowInsets.isImeVisible
-@Suppress("LongMethod", "ComplexMethod")
+@Suppress("LongMethod", "CognitiveComplexMethod", "CyclomaticComplexMethod")
 @Composable
 private fun BookmarksList(
     store: BookmarksStore,
@@ -990,9 +990,9 @@ private fun NewFolderListItem(onClick: () -> Unit) {
         modifier = Modifier.width(FirefoxTheme.layout.size.containerMaxWidth),
         colors = ListItemDefaults.colors(
             headlineColor = MaterialTheme.colorScheme.tertiary,
-            leadingIconColor = MaterialTheme.colorScheme.tertiary,
             ),
         beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_add_24),
+        beforeIconTint = MaterialTheme.colorScheme.tertiary,
         onClick = onClick,
     )
 }

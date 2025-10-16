@@ -3481,6 +3481,12 @@
   value: true
   mirror: always
 
+# Whether to enable showPicker() support for datalist.
+- name: dom.input.showPicker_datalist.enabled
+  type: bool
+  value: @IS_EARLY_BETA_OR_EARLIER@
+  mirror: always
+
 # Does mousewheel-scrolling over a focused <input type="number"> or
 # <input type="range"> field cause the value to increase/decrease (rather
 # than scrolling the page)?
@@ -3687,11 +3693,7 @@
 # Whether the navigation API will be exposed.
 - name: dom.navigation.webidl.enabled
   type: RelaxedAtomicBool
-#ifdef ANDROID
-  value: @IS_NIGHTLY_BUILD@
-#else
-  value: @IS_EARLY_BETA_OR_EARLIER@
-#endif
+  value: true
   mirror: always
   do_not_use_directly: true
 
@@ -4069,6 +4071,40 @@
   value: false
   mirror: always
   do_not_use_directly: true
+
+# Should we clear non-persisted origins with zero usage during final steps of
+# temporary storage initialization?
+# When enabled, the QuotaManager will automatically clear non-persisted
+# origins that have zero quota-charged usage during final steps of temporary
+# storage initialization. This removes directories and files belonging to
+# origins that do not store any real data but still consume resources through
+# bookkeeping structures on disk. The feature helps reduce storage bloat and
+# improve initialization performance, especially on long-lived profiles with a
+# large number of unused origins.
+- name: dom.quotaManager.temporaryStorage.clearNonPersistedZeroUsageOrigins
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
+# Controls the maximum number of origins cleared in a single batch during
+# final steps of temporary storage initialization. The value defaults to 50 on
+# Android and 150 on other platforms. Smaller values can be useful for testing
+# and experimentation to exercise multi-batch clearing behavior without
+# requiring hundreds of origins. Larger values may reduce the number of
+# batches but can increase I/O spikes.
+#
+# Currently this pref is only applied when clearing non-persisted zero-usage
+# origins, but it is intended to serve as a general batch limit for other
+# clearing strategies that may be introduced in the future (for example, to
+# remove very old origins).
+- name: dom.quotaManager.temporaryStorage.maxOriginsToClearDuringCleanup
+  type: RelaxedAtomicUint32
+#if defined(MOZ_WIDGET_ANDROID)
+  value: 50
+#else
+  value: 150
+#endif
+  mirror: always
 
 # A pref that is used to slow down origin operations for testing purposes.
 - name: dom.quotaManager.originOperations.pauseOnIOThreadMs
@@ -6074,14 +6110,17 @@
 # whether fission is enabled by default.
 - name: fission.autostart
   type: bool
-  value: @IS_NOT_MOBILE@
+#if defined(MOZ_WIDGET_ANDROID) && !defined(IS_EARLY_BETA_OR_EARLIER)
+  value: false
+#else
+  value: true
   mirror: never
 
 # Disable storing the session history in the parent process, and accessing it
 # over IPC from the child processes.
 - name: fission.disableSessionHistoryInParent
   type: bool
-#if defined(MOZ_WIDGET_ANDROID) && !defined(NIGHTLY_BUILD)
+#if defined(MOZ_WIDGET_ANDROID) && !defined(IS_EARLY_BETA_OR_EARLIER)
   value: true
 #else
   value: false
@@ -6206,18 +6245,6 @@
 # This pref has no effect if font inflation is not enabled through
 # either of the prefs above.  It has no meaning in single-mode UIs.
 - name: font.size.inflation.forceEnabled
-  type: bool
-  value: false
-  mirror: always
-
-# In products with multi-mode pan-and-zoom and non-pan-and-zoom UIs,
-# this pref disables font inflation in master-process contexts where
-# existing heuristics can't be used determine enabled-ness.
-#
-# This pref has no effect if font inflation is not enabled through
-# either of the prefs above.  The "forceEnabled" pref above overrides
-# this pref.
-- name: font.size.inflation.disabledInMasterProcess
   type: bool
   value: false
   mirror: always
@@ -6721,6 +6748,11 @@
 - name: gfx.canvas.accelerated.max-export-surface-memory
   type: RelaxedAtomicUint32
   value: 512 * 1024 * 1024
+  mirror: always
+
+- name: gfx.canvas.accelerated.max-snapshot-pbo-memory
+  type: RelaxedAtomicUint32
+  value: 64 * 1024 * 1024
   mirror: always
 
 - name: gfx.canvas.accelerated.max-surface-size
@@ -8946,6 +8978,13 @@
   mirror: always
   set_spidermonkey_pref: startup
 
+  # Experimental support for Iterator Sequencing in JavaScript.
+-   name: javascript.options.experimental.iterator_sequencing
+    type: bool
+    value: true
+    mirror: always
+    set_spidermonkey_pref: startup
+
 #ifdef NIGHTLY_BUILD
   # Experimental support for Async Iterator Helpers in JavaScript.
 -   name: javascript.options.experimental.async_iterator_helpers
@@ -8968,13 +9007,6 @@
     mirror: always
     set_spidermonkey_pref: startup
 
-  # Experimental support for Iterator Sequencing in JavaScript.
--   name: javascript.options.experimental.iterator_sequencing
-    type: bool
-    value: false
-    mirror: always
-    set_spidermonkey_pref: startup
-
   # Experimental support for immutable ArrayBuffers in JavaScript.
 -   name: javascript.options.experimental.arraybuffer_immutable
     type: bool
@@ -8989,14 +9021,21 @@
   mirror: always
   set_spidermonkey_pref: startup
 
- # Experimental support for Iterator Chunking in JavaScript.
+  # Experimental support for Iterator Chunking in JavaScript.
 - name: javascript.options.experimental.iterator_chunking
   type: bool
   value: false
   mirror: always
   set_spidermonkey_pref: startup
 
-#endif  // NIGHTLY_BUILD
+ #endif  // NIGHTLY_BUILD
+
+  # Capture stack traces for OOM
+- name: javascript.options.experimental.capture_oom_stack_trace
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+  set_spidermonkey_pref: startup
 
 # Whether to Baseline-compile self-hosted functions the first time they are
 # used and cache the result.
@@ -9368,11 +9407,9 @@
   do_not_use_directly: true
 
 # Use the JS microtask queue for Promise jobs and other microtasks.
-# DO NOT TURN THIS ON BY DEFAULT WITHOUT THE BUGS BLOCKING
-# BUG 1990841 being fixed (especially Bug 1990842).
 - name: javascript.options.use_js_microtask_queue
   type: RelaxedAtomicBool
-  value: false
+  value: true
   # Changing this mid process will break invariants and crash, however
   # making this mirror: once, and set_spidermonkey_pref: startup is
   # broken: See Bug 1989094
@@ -11105,6 +11142,12 @@
 - name: mathml.math_shift.enabled
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+
+# Whether to remove the accent property from the operator dictionary.
+- name: mathml.operator_dictionary_accent.disabled
+  type: bool
+  value: false
   mirror: always
 
 # Whether to disable the MathML3 support for the mathvariant attribute. For
@@ -13414,14 +13457,17 @@
   value: false
   mirror: always
 
-# If we should attempt to race the cache and network.
+# If we should attempt to race the cache with network.
+# See also race_with_non_ssd for auto-enable behavior on Windows non-SSD drives.
 - name: network.http.rcwn.enabled
   type: bool
-#if defined(ANDROID)
   value: false
-#else
+  mirror: always
+
+# If we should attempt to race the cache with network for non-SSD drives (Windows only).
+- name: network.http.rcwn.race_with_non_ssd
+  type: bool
   value: true
-#endif
   mirror: always
 
 - name: network.http.rcwn.cache_queue_normal_threshold
@@ -14248,7 +14294,7 @@
 # Max time to shutdown the resolver threads
 - name: network.dns.resolver_shutdown_timeout_ms
   type: uint32_t
-  value: 2000
+  value: 5000
   mirror: always
 
 # When true on Windows DNS resolutions for single label domains
@@ -15218,11 +15264,6 @@
   #
   # See https://bugzilla.mozilla.org/show_bug.cgi?id=1979279 for details.
   value: 1
-#elif defined(ANDROID)
-  # Disable GSO on Android.
-  #
-  # See <https://bugzilla.mozilla.org/show_bug.cgi?id=1987256> for details.
-  value: 1
 #else
   # Current industry standard. Likely worth tuning.
   value: 10
@@ -15890,20 +15931,77 @@
   value: 2 * 60
   mirror: once
 
-# Minimum time required to upgrade a visit score.
+# Minimum view time required to upgrade a visit score.
 - name: places.frecency.pages.alternative.interactions.viewTimeSeconds
   type: uint32_t
   value: 60
   mirror: once
 
-# Minimum time required to upgrade a visit score of a visit
+# Minimum view time required to upgrade a visit score of a visit
 # provided there is a minimum threshold of keypresses.
 - name: places.frecency.pages.alternative.interactions.viewTimeIfManyKeypressesSeconds
   type: uint32_t
   value: 20
   mirror: once
 
+# Minimum keypresses of a visit required to upgrade a visit score.
 - name: places.frecency.pages.alternative.interactions.manyKeypresses
+  type: uint32_t
+  value: 50
+  mirror: once
+
+# Preferences related to interaction based frecency.
+- name: places.frecency.pages.veryHighWeight
+  type: uint32_t
+  value: 200
+  mirror: once
+
+- name: places.frecency.pages.highWeight
+  type: uint32_t
+  value: 100
+  mirror: once
+
+- name: places.frecency.pages.mediumWeight
+  type: uint32_t
+  value: 50
+  mirror: once
+
+- name: places.frecency.pages.lowWeight
+  type: uint32_t
+  value: 20
+  mirror: once
+
+- name: places.frecency.pages.halfLifeDays
+  type: uint32_t
+  value: 30
+  mirror: once
+
+- name: places.frecency.pages.numSampledVisits
+  type: uint32_t
+  value: 10
+  mirror: once
+
+# Max difference allowed between a visit and an interaction.
+- name: places.frecency.pages.interactions.maxVisitGapSeconds
+  type: uint32_t
+  value: 2 * 60
+  mirror: once
+
+# Minimum view time required to upgrade a visit score.
+- name: places.frecency.pages.interactions.viewTimeSeconds
+  type: uint32_t
+  value: 60
+  mirror: once
+
+# Minimum view time required to upgrade a visit score of a visit
+# provided there is a minimum threshold of keypresses.
+- name: places.frecency.pages.interactions.viewTimeIfManyKeypressesSeconds
+  type: uint32_t
+  value: 20
+  mirror: once
+
+# Minimum keypresses of a visit required to upgrade a visit score.
+- name: places.frecency.pages.interactions.manyKeypresses
   type: uint32_t
   value: 50
   mirror: once
@@ -16929,7 +17027,7 @@
 - name: security.sandbox.gpu.level
   type: int32_t
 #if defined(XP_WIN)
-#if defined(NIGHTLY_BUILD)
+#if defined(EARLY_BETA_OR_EARLIER)
   value: 2
 #else
   value: 1
@@ -17057,6 +17155,13 @@
 -   name: security.sandbox.chrome-pipe-rule.enabled
     type: RelaxedAtomicBool
     value: false
+    mirror: always
+
+  # Whether \Device\KsecDD is closed in content process. We are closing this
+  # using a pref to give users a work-around if they have issues.
+-   name: security.sandbox.content.close-ksecdd-handle
+    type: RelaxedAtomicBool
+    value: true
     mirror: always
 #endif
 

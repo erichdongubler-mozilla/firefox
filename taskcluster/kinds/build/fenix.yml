@@ -14,6 +14,7 @@ task-defaults:
         max-run-time: 7200
         env:
             GRADLE_USER_HOME: "/builds/worker/checkouts/gecko/mobile/android/gradle/dotgradle-offline"
+    run-on-repo-type: [hg]
     run:
         using: mozharness
         script: "mozharness/scripts/fx_desktop_build.py"
@@ -44,7 +45,7 @@ android-aarch64-fenix/debug:
     treeherder:
         platform: fenix-android-all/opt
         symbol: fenix-debug(Br)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"

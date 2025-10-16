@@ -255,16 +255,8 @@ const DEFAULT_ENVIRONMENT_PREFS = new Map([
     "browser.urlbar.dnsResolveSingleWordsAfterSearch",
     { what: RECORD_DEFAULTPREF_VALUE },
   ],
-  [
-    "browser.urlbar.quicksuggest.dataCollection.enabled",
-    { what: RECORD_DEFAULTPREF_VALUE },
-  ],
   ["browser.urlbar.showSearchSuggestionsFirst", { what: RECORD_PREF_VALUE }],
   ["browser.urlbar.showSearchTerms.enabled", { what: RECORD_PREF_VALUE }],
-  [
-    "browser.urlbar.suggest.quicksuggest.nonsponsored",
-    { what: RECORD_DEFAULTPREF_VALUE },
-  ],
   [
     "browser.urlbar.suggest.quicksuggest.sponsored",
     { what: RECORD_DEFAULTPREF_VALUE },
@@ -408,6 +400,7 @@ const SERVICES_INFO_CHANGE_TOPIC = "sync-ui-state:update";
 
 /**
  * Get the current browser locale.
+ *
  * @return a string with the locale or null on failure.
  */
 function getBrowserLocale() {
@@ -420,6 +413,7 @@ function getBrowserLocale() {
 
 /**
  * Get the current OS locale.
+ *
  * @return a string with the OS locale or null on failure.
  */
 function getSystemLocale() {
@@ -434,6 +428,7 @@ function getSystemLocale() {
 
 /**
  * Get the current OS locales.
+ *
  * @return an array of strings with the OS locales or null on failure.
  */
 function getSystemLocales() {
@@ -448,6 +443,7 @@ function getSystemLocales() {
 
 /**
  * Get the current OS regional preference locales.
+ *
  * @return an array of strings with the OS regional preference locales or null on failure.
  */
 function getRegionalPrefsLocales() {
@@ -653,6 +649,7 @@ EnvironmentCache.prototype = {
   /**
    * The current environment data. The returned data is cloned to avoid
    * unexpected sharing or mutation.
+   *
    * @returns object
    */
   get currentEnvironment() {
@@ -661,6 +658,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Wait for the current enviroment to be fully initialized.
+   *
    * @returns Promise<object>
    */
   onInitialized() {
@@ -738,6 +736,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Register a listener for environment changes.
+   *
    * @param name The name of the listener. If a new listener is registered
    *             with the same name, the old listener will be replaced.
    * @param listener function(reason, oldEnvironment) - Will receive a reason for
@@ -755,6 +754,7 @@ EnvironmentCache.prototype = {
   /**
    * Unregister from listening to environment changes.
    * It's fine to call this on an unitialized TelemetryEnvironment.
+   *
    * @param name The name of the listener to remove.
    */
   unregisterChangeListener(name) {
@@ -862,6 +862,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Only used in tests, set the preferences to watch.
+   *
    * @param aPreferences A map of preferences names and their recording policy.
    */
   _watchPreferences(aPreferences) {
@@ -893,6 +894,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Get the value of a preference given the preference name and the policy.
+   *
    * @param pref Name of the preference.
    * @param what Policy of the preference.
    *
@@ -1166,6 +1168,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Get the build data in object form.
+   *
    * @return Object containing the build data.
    */
   _getBuild() {
@@ -1190,6 +1193,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Determine if we're the default browser.
+   *
    * @returns null on error, true if we are the default browser, or false otherwise.
    */
   _isDefaultBrowser() {
@@ -1354,6 +1358,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Update the cached profile data.
+   *
    * @returns Promise<> resolved when the I/O is complete.
    */
   async _updateProfile() {
@@ -1392,6 +1397,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Load the attribution data object and updates the environment.
+   *
    * @returns Promise<> resolved when the I/O is complete.
    */
   async _loadAttributionAsync() {
@@ -1486,6 +1492,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Get i18n data about the system.
+   *
    * @return A promise of completion.
    */
   async _loadIntlData() {
@@ -1535,6 +1542,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Get the partner data in object form.
+   *
    * @return Object containing the partner data.
    */
   _getPartner() {
@@ -1571,6 +1579,7 @@ EnvironmentCache.prototype = {
   _cpuData: null,
   /**
    * Get the CPU information.
+   *
    * @return Object containing the CPU information data.
    */
   _getCPUData() {
@@ -1617,6 +1626,7 @@ EnvironmentCache.prototype = {
   _processData: null,
   /**
    * Get the process information.
+   *
    * @return Object containing the process information data.
    */
   _getProcessData() {
@@ -1629,6 +1639,7 @@ EnvironmentCache.prototype = {
   _osData: null,
   /**
    * Get the OS information.
+   *
    * @return Object containing the OS data.
    */
   _getOSData() {
@@ -1695,6 +1706,7 @@ EnvironmentCache.prototype = {
   _hddData: null,
   /**
    * Get the HDD information.
+   *
    * @return Object containing the HDD data.
    */
   _getHDDData() {
@@ -1707,6 +1719,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Get registered security product information.
+   *
    * @return Object containing the security product data
    */
   _getSecurityAppData() {
@@ -1735,6 +1748,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Get the GFX information.
+   *
    * @return Object containing the GFX data.
    */
   _getGFXData() {
@@ -1821,6 +1835,7 @@ EnvironmentCache.prototype = {
 
   /**
    * Get the system data in object form.
+   *
    * @return Object containing the system data.
    */
   _getSystem() {

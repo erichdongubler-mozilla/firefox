@@ -13,6 +13,10 @@ const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPProtectionService.sys.mjs"
 );
 
+const { IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
+  "resource:///modules/ipprotection/IPPProxyManager.sys.mjs"
+);
+
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs"
 );
@@ -270,6 +274,10 @@ add_setup(async function setupVPN() {
     cleanupExperiment();
     CustomizableUI.reset();
     Services.prefs.clearUserPref(IPProtectionWidget.ADDED_PREF);
+    Services.prefs.clearUserPref("browser.ipProtection.panelOpenCount");
+    Services.prefs.clearUserPref("browser.ipProtection.stateCache");
+    Services.prefs.clearUserPref("browser.ipProtection.entitlementCache");
+    Services.prefs.clearUserPref("browser.ipProtection.locationListCache");
   });
 });
 

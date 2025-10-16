@@ -199,7 +199,7 @@ private fun CrashReportsSection(
                     selected = selectedOption == crashReportOption,
                     modifier = Modifier
                         .semantics {
-                            testTag = "data.collection.$crashReportOption.radio.button"
+                            testTag = "data.collection.$crashReportOption.option"
                             testTagsAsResourceId = true
                         },
                     maxLabelLines = 1,
@@ -317,6 +317,7 @@ private fun TogglePreferenceSection(
  * @param onClick Callback invoked when the section is clicked (if enabled).
  */
 @Composable
+@Suppress("CognitiveComplexMethod")
 private fun StudiesSection(
     studiesEnabled: Boolean = true,
     sectionEnabled: Boolean = true,

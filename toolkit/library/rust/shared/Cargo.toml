@@ -106,11 +106,11 @@ processtools = { path = "../../../components/processtools" }
 qcms = { path = "../../../../gfx/qcms", features = ["c_bindings", "neon"], default-features = false }
 
 wpf-gpu-raster = { git = "https://github.com/FirefoxGraphics/wpf-gpu-raster", rev = "99979da091fd58fba8477e7fcdf5ec0727102916" }
-aa-stroke = { git = "https://github.com/FirefoxGraphics/aa-stroke", rev = "a821fa621c2def48e90c82774b4c6563b5a8ea4a" }
+aa-stroke = { git = "https://github.com/FirefoxGraphics/aa-stroke", rev = "5776bdfc8ad664a1503db668fab397d818a5f98a" }
 etagere = { version = "0.2.13", features = ["ffi"] }
 
 url = "2.5.7"
-urlpattern = "0.4.0"
+urlpattern = "0.4.1"
 urlpattern_glue = { path = "../../../../netwerk/base/urlpattern_glue" }
 uritemplate_glue = { path = "../../../../netwerk/base/uritemplate_glue" }
 

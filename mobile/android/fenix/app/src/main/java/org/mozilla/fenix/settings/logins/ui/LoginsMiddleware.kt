@@ -45,7 +45,7 @@ internal class LoginsMiddleware(
 
     private val scope = CoroutineScope(ioDispatcher)
 
-    @Suppress("LongMethod", "ComplexMethod")
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     override fun invoke(
         context: MiddlewareContext<LoginsState, LoginsAction>,
         next: (LoginsAction) -> Unit,
@@ -120,12 +120,6 @@ internal class LoginsMiddleware(
             is EditLoginAction.SaveEditClicked -> {
                 context.store.handleEditLogin(loginItem = action.login)
             }
-            is UnlockScreenAction.LeaveTapped -> exitLogins()
-            is UnlockScreenAction.UnlockTapped,
-            is LifecycleAction.OnResume,
-            is BiometricAuthenticationAction.Started,
-            is BiometricAuthenticationAction.Succeeded,
-            is BiometricAuthenticationAction.Failed,
             is LoginsLoaded,
             is EditLoginAction.UsernameChanged,
             is EditLoginAction.PasswordChanged,
@@ -135,8 +129,6 @@ internal class LoginsMiddleware(
             is AddLoginAction.PasswordChanged,
             is DetailLoginMenuAction.DeleteLoginMenuItemClicked,
             is LoginDeletionDialogAction.CancelTapped,
-            is ViewDisposed,
-            is LifecycleAction.OnPause,
                 -> Unit
         }
     }

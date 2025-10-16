@@ -600,6 +600,7 @@ class ResourceCommand {
 
   /**
    * Method called by the TargetCommand when a target has just been destroyed
+   *
    * @param {Object} arg
    * @param {Front} arg.targetFront
    *        The Front of the target that was destroyed
@@ -1348,11 +1349,6 @@ loader.lazyRequireGetter(
   LegacyListeners,
   ResourceCommand.TYPES.CONSOLE_MESSAGE,
   "resource://devtools/shared/commands/resource/legacy-listeners/console-messages.js"
-);
-loader.lazyRequireGetter(
-  LegacyListeners,
-  ResourceCommand.TYPES.CSS_CHANGE,
-  "resource://devtools/shared/commands/resource/legacy-listeners/css-changes.js"
 );
 loader.lazyRequireGetter(
   LegacyListeners,

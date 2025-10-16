@@ -16,6 +16,9 @@ kind-dependencies:
     - build-signing
     - toolchain
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 only-for-build-platforms:
     - linux64-shippable/opt
     - linux64-devedition/opt
@@ -29,7 +32,7 @@ tasks:
         from-deps:
             group-by: single-with-filters
         shipping-phase: promote
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             docker-image:
                 in-tree: debian12-repackage

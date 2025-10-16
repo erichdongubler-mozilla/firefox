@@ -16,6 +16,7 @@ kind-dependencies:
     - instrumented-build-apk
 
 task-defaults:
+    run-on-repo-type: [hg]
     attributes:
         build_platform: android
         build-type: debug
@@ -24,7 +25,7 @@ task-defaults:
             - android-sdk-linux
     optimization:
         skip-unless-backstop: null
-    worker-type: b-linux-medium-gcp
+    worker-type: b-linux-medium
     worker:
         docker-image: {in-tree: android-ui-tests}
         max-run-time: 7200

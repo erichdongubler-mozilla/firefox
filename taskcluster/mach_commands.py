@@ -19,8 +19,6 @@ from mach.decorators import Command, CommandArgument, SubCommand
 from mach.util import strtobool
 from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
 
-logger = logging.getLogger("taskcluster")
-
 
 def setup_logging(command_context, quiet=False, verbose=True):
     """
@@ -40,6 +38,7 @@ def setup_logging(command_context, quiet=False, verbose=True):
             write_interval=old.formatter.write_interval,
             write_times=old.formatter.write_times,
         )
+        logging.getLogger("taskcluster").setLevel(logging.INFO)
 
     # all of the taskgraph logging is unstructured logging
     command_context.log_manager.enable_unstructured()
@@ -114,6 +113,21 @@ def taskgraph_command(command_context):
     by dependencies: for example, a binary must be built before it is tested,
     and that build may further depend on various toolchains, libraries, etc.
     """
+
+
+@SubCommand(
+    "taskgraph",
+    "kind-graph",
+    description="Generate a graph of the relationship between taskgraph kinds",
+    parser=partial(get_taskgraph_command_parser, "kind-graph"),
+)
+def taskgraph_kind_graph(command_context, **options):
+    try:
+        setup_logging(command_context)
+        return taskgraph_commands["kind-graph"].func(options)
+    except Exception:
+        traceback.print_exc()
+        sys.exit(1)
 
 
 @SubCommand(
@@ -253,13 +267,28 @@ def taskgraph_decision(command_context, **options):
     try:
         setup_logging(command_context)
 
-        monitor = SystemResourceMonitor(poll_interval=0.1)
-        monitor.start()
+        in_automation = os.environ.get("MOZ_AUTOMATION") == "1"
+        moz_upload_dir = os.environ.get("MOZ_UPLOAD_DIR")
+        if in_automation and moz_upload_dir:
+            monitor = SystemResourceMonitor(poll_interval=0.1)
+            monitor.start()
+        else:
+            monitor = None
 
-        start = time.monotonic()
-        ret = taskgraph_commands["decision"].func(options)
-        end = time.monotonic()
-        if os.environ.get("MOZ_AUTOMATION") == "1":
+        try:
+            start = time.monotonic()
+            ret = taskgraph_commands["decision"].func(options)
+            end = time.monotonic()
+        finally:
+            if monitor is not None:
+                monitor.stop()
+                upload_dir = pathlib.Path(moz_upload_dir)
+                profile_path = upload_dir / "profile_build_resources.json"
+                with open(profile_path, "w", encoding="utf-8", newline="\n") as f:
+                    to_write = json.dumps(monitor.as_profile(), separators=(",", ":"))
+                    f.write(to_write)
+
+        if in_automation:
             perfherder_data = {
                 "framework": {"name": "build_metrics"},
                 "suites": [
@@ -276,19 +305,12 @@ def taskgraph_decision(command_context, **options):
                 f"PERFHERDER_DATA: {json.dumps(perfherder_data)}",
                 file=sys.stderr,
             )
-            moz_upload_dir = os.environ.get("MOZ_UPLOAD_DIR")
+
             if moz_upload_dir:
                 upload_dir = pathlib.Path(moz_upload_dir)
                 out_path = upload_dir / "perfherder-data-decision.json"
                 with out_path.open("w", encoding="utf-8") as f:
                     json.dump(perfherder_data, f)
-
-                # Save resource profile
-                monitor.stop()
-                profile_path = upload_dir / "profile_build_resources.json"
-                with open(profile_path, "w", encoding="utf-8", newline="\n") as f:
-                    to_write = json.dumps(monitor.as_profile(), separators=(",", ":"))
-                    f.write(to_write)
 
         return ret
     except Exception:

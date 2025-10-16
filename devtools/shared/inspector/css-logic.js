@@ -13,6 +13,7 @@ const MAX_DATA_URL_LENGTH = 40;
  * that helps them understand:
  * - why their expectations may not have been fulfilled
  * - how browsers process CSS
+ *
  * @constructor
  */
 
@@ -26,6 +27,12 @@ loader.lazyRequireGetter(
   this,
   "getTabPrefs",
   "resource://devtools/shared/indentation.js",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "getNodeDisplayName",
+  "resource://devtools/server/actors/inspector/utils.js",
   true
 );
 const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
@@ -49,6 +56,7 @@ exports.FILTER = {
  *
  * These statuses are localized inside the styleinspector.properties
  * string bundle.
+ *
  * @see csshtmltree.js RuleView._cacheStatusNames()
  */
 exports.STATUS = {
@@ -547,22 +555,35 @@ exports.prettifyCSS = prettifyCSS;
  * it was.  Otherwise, return the node itself.
  *
  * @returns {Object}
- *            - {DOMNode} node The non-anonymous node
- *            - {string} pseudo One of '::marker', '::before', '::after', or null.
+ *            - {DOMNode} node: The non-anonymous node
+ *            - {string|null} pseudo: The label representing the anonymous node
+ *                                    (e.g. '::marker',  '::before', '::after', '::view-transition',
+ *                                    '::view-transition-group(root)', …).
+ *                                    null if node isn't an anonymous node or isn't handled
+ *                                    yet.
  */
 function getBindingElementAndPseudo(node) {
   let bindingElement = node;
   let pseudo = null;
-  if (node.nodeName == "_moz_generated_content_marker") {
-    bindingElement = node.parentNode;
-    pseudo = "::marker";
-  } else if (node.nodeName == "_moz_generated_content_before") {
-    bindingElement = node.parentNode;
-    pseudo = "::before";
-  } else if (node.nodeName == "_moz_generated_content_after") {
-    bindingElement = node.parentNode;
-    pseudo = "::after";
+  const { implementedPseudoElement } = node;
+  if (implementedPseudoElement) {
+    // we only want to explicitly handle the elements we're displaying in the markup view
+    if (
+      implementedPseudoElement === "::marker" ||
+      implementedPseudoElement === "::before" ||
+      implementedPseudoElement === "::after"
+    ) {
+      pseudo = getNodeDisplayName(node);
+      bindingElement = node.parentNode;
+    } else if (implementedPseudoElement.startsWith("::view-transition")) {
+      pseudo = getNodeDisplayName(node);
+      // The binding for all view transition pseudo element is the <html> element, i.e. we
+      // can't use `node.parentNode` as for`::view-transition-old` element, we'd get the
+      // `::view-transition-group`, which is not the binding element.
+      bindingElement = node.getRootNode().documentElement;
+    }
   }
+
   return {
     bindingElement,
     pseudo,
@@ -602,6 +623,7 @@ exports.hasVisitedState = hasVisitedState;
 
 /**
  * Find the position of [element] in [nodeList].
+ *
  * @returns an index of the match, or -1 if there is no match
  */
 function positionInNodeList(element, nodeList) {
@@ -643,6 +665,7 @@ function findNodeAndContainer(node) {
 
 /**
  * Find a unique CSS selector for a given element
+ *
  * @returns a string such that:
  *   - ele.containingDocOrShadow.querySelector(reply) === ele
  *   - ele.containingDocOrShadow.querySelectorAll(reply).length === 1

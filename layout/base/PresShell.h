@@ -206,8 +206,6 @@ class PresShell final : public nsStubDocumentObserver,
     return sCapturingContentInfo.mPreventDrag && sCapturingContentInfo.mContent;
   }
 
-  static void ClearMouseCaptureOnView(nsView* aView);
-
   // Clear the capture content if it exists in this process.
   static void ClearMouseCapture();
 
@@ -361,17 +359,12 @@ class PresShell final : public nsStubDocumentObserver,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult Initialize();
 
   /**
-   * Schedule a reflow for the frame model into a new width and height.  The
-   * coordinates for aWidth and aHeight must be in standard nscoord's.
-   *
-   * Returns whether layout might have changed.
+   * Schedule a reflow for the frame model into a new size, in app units.
    */
   MOZ_CAN_RUN_SCRIPT void ResizeReflow(
-      nscoord aWidth, nscoord aHeight,
-      ResizeReflowOptions = ResizeReflowOptions::NoOption);
+      const nsSize&, ResizeReflowOptions = ResizeReflowOptions::NoOption);
   MOZ_CAN_RUN_SCRIPT bool ResizeReflowIgnoreOverride(
-      nscoord aWidth, nscoord aHeight,
-      ResizeReflowOptions = ResizeReflowOptions::NoOption);
+      const nsSize&, ResizeReflowOptions = ResizeReflowOptions::NoOption);
   MOZ_CAN_RUN_SCRIPT void ForceResizeReflowWithCurrentDimensions();
 
   /** Schedule a resize event if applicable. */
@@ -400,7 +393,7 @@ class PresShell final : public nsStubDocumentObserver,
    * This is what ResizeReflowIgnoreOverride does when not shrink-wrapping (that
    * is, when ResizeReflowOptions::BSizeLimit is not specified).
    */
-  bool SimpleResizeReflow(nscoord aWidth, nscoord aHeight);
+  bool SimpleResizeReflow(const nsSize&);
 
   bool CanHandleUserInputEvents(WidgetGUIEvent* aGUIEvent);
 
@@ -463,6 +456,7 @@ class PresShell final : public nsStubDocumentObserver,
 
   // Get the current frame of our embedder, if it's in our same process.
   nsSubDocumentFrame* GetInProcessEmbedderFrame() const;
+  void SetInProcessEmbedderFrame(nsSubDocumentFrame*);
 
   /**
    * Get root scroll container frame from the frame constructor.
@@ -1127,10 +1121,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   bool FontSizeInflationForceEnabled() const {
     return mFontSizeInflationForceEnabled;
-  }
-
-  bool FontSizeInflationDisabledInMasterProcess() const {
-    return mFontSizeInflationDisabledInMasterProcess;
   }
 
   bool FontSizeInflationEnabled() const { return mFontSizeInflationEnabled; }
@@ -1858,8 +1848,8 @@ class PresShell final : public nsStubDocumentObserver,
  private:
   ~PresShell();
 
-  template <bool AreWeMerging>
-  void AddAnchorPosAnchorImpl(const nsAtom* aName, nsIFrame* aFrame);
+  void AddAnchorPosAnchorImpl(const nsAtom* aName, nsIFrame* aFrame,
+                              bool aForMerge);
 
   void SetIsActive(bool aIsActive);
   bool ComputeActiveness() const;
@@ -2073,9 +2063,6 @@ class PresShell final : public nsStubDocumentObserver,
       dom::Selection* aSelection, const Maybe<CSSIntRegion>& aRegion,
       nsRect aArea, const LayoutDeviceIntPoint aPoint,
       LayoutDeviceIntRect* aScreenRect, RenderImageFlags aFlags);
-
-  // Hide a view if it is a popup
-  void HideViewIfPopup(nsView* aView);
 
   // Utility method to restore the root scrollframe state
   void RestoreRootScrollPosition();
@@ -3161,8 +3148,7 @@ class PresShell final : public nsStubDocumentObserver,
 
   void ClearApproximatelyVisibleFramesList(
       const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
-  static void ClearApproximateFrameVisibilityVisited(nsView* aView,
-                                                     bool aClear);
+  void ClearApproximateFrameVisibilityVisited();
   static void MarkFramesInListApproximatelyVisible(const nsDisplayList& aList);
   void MarkFramesInSubtreeApproximatelyVisible(nsIFrame* aFrame,
                                                const nsRect& aRect,
@@ -3363,6 +3349,9 @@ class PresShell final : public nsStubDocumentObserver,
   // The focus sequence number of the last processed input event
   uint64_t mAPZFocusSequenceNumber;
 
+  // The nsSubDocumentFrame* that is embedding us.
+  WeakFrame mEmbedderFrame;
+
   nscoord mLastAnchorScrollPositionY = 0;
 
   // Most recent canvas background color.
@@ -3444,7 +3433,6 @@ class PresShell final : public nsStubDocumentObserver,
   bool mVisualViewportResizeEventPending : 1;
 
   bool mFontSizeInflationForceEnabled : 1;
-  bool mFontSizeInflationDisabledInMasterProcess : 1;
   bool mFontSizeInflationEnabled : 1;
 
   // If a document belongs to an invisible DocShell, this flag must be set

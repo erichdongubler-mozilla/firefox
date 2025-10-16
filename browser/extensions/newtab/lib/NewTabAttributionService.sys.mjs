@@ -7,7 +7,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   IndexedDB: "resource://gre/modules/IndexedDB.sys.mjs",
-  DAPTelemetrySender: "resource://gre/modules/DAPTelemetrySender.sys.mjs",
+  DAPSender: "resource://gre/modules/DAPSender.sys.mjs",
 });
 
 const MAX_CONVERSIONS = 5;
@@ -18,7 +18,7 @@ const CONVERSION_RESET_MILLI = 7 * DAY_IN_MILLI;
 /**
  *
  */
-export class NewTabAttributionService {
+class NewTabAttributionService {
   /**
    * @typedef { 'view' | 'click' | 'default' } matchType - Available matching methodologies for conversion events.
    *
@@ -46,13 +46,13 @@ export class NewTabAttributionService {
    * @property {number} conversions - Number of conversions that have occurred in the budget period.
    * @property {number} nextReset - Timestamp in milliseconds for the end of the period this budget applies to.
    */
-  #dapTelemetrySenderInternal;
+  #dapSenderInternal;
   #dateProvider;
   // eslint-disable-next-line no-unused-private-class-members
   #testDapOptions;
 
-  constructor({ dapTelemetrySender, dateProvider, testDapOptions } = {}) {
-    this.#dapTelemetrySenderInternal = dapTelemetrySender;
+  constructor({ dapSender, dateProvider, testDapOptions } = {}) {
+    this.#dapSenderInternal = dapSender;
     this.#dateProvider = dateProvider ?? Date;
     this.#testDapOptions = testDapOptions;
 
@@ -68,8 +68,8 @@ export class NewTabAttributionService {
     };
   }
 
-  get #dapTelemetrySender() {
-    return this.#dapTelemetrySenderInternal || lazy.DAPTelemetrySender;
+  get #dapSender() {
+    return this.#dapSenderInternal || lazy.DAPSender;
   }
 
   #now() {
@@ -205,7 +205,7 @@ export class NewTabAttributionService {
       }
 
       await this.#updateBudget(budget, budgetSpend, partnerId);
-      await this.#dapTelemetrySender.sendDAPMeasurement(
+      await this.#dapSender.sendDAPMeasurement(
         conversion.task,
         measurement,
         {}
@@ -217,6 +217,7 @@ export class NewTabAttributionService {
 
   /**
    * findImpression queries the local events to find an attributable event.
+   *
    * @param {string} partnerId - Partner the event must be associated with.
    * @param {number} lookbackDays - Maximum number of days ago that the event occurred for it to
    *  be eligible.
@@ -256,6 +257,7 @@ export class NewTabAttributionService {
    * getImpression searches existing events for the partner and retuns the event
    * if it is found, defaulting to the passed in impression if there are none. This
    * enables timestamp fields of the stored event to be updated or carried forward.
+   *
    * @param {ObjectStore} impressionStore - Promise-based wrapped IDBObjectStore.
    * @param {string} partnerId - partner this event is associated with.
    * @param {impression} defaultImpression - event to use if it has not been seen previously.
@@ -276,6 +278,7 @@ export class NewTabAttributionService {
   /**
    * updateImpression stores the passed event, either updating the record
    * if this event was already seen, or appending to the list of events if it is new.
+   *
    * @param {ObjectStore} impressionStore - Promise-based wrapped IDBObjectStore.
    * @param {string} partnerId - partner this event is associated with.
    * @param {impression} impression - event to update.
@@ -333,6 +336,7 @@ export class NewTabAttributionService {
 
   /**
    * updateBudget updates the stored budget to indicate some has been used.
+   *
    * @param {budget} budget - current budget to be modified.
    * @param {number} value - amount of budget that has been used.
    * @param {string} partnerId - partner this budget is for.
@@ -399,3 +403,10 @@ export class NewTabAttributionService {
     return this.models[type] ?? this.models.default;
   }
 }
+
+const newTabAttributionService = new NewTabAttributionService();
+
+export {
+  newTabAttributionService,
+  NewTabAttributionService as NewTabAttributionServiceClass,
+};

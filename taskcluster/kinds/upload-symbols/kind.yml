@@ -27,12 +27,15 @@ not-for-build-platforms:
     - win64-geckodriver/opt
     - win64-aarch64-geckodriver/opt
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 tasks:
     upload-symbols:
         description: Upload Symbols
         from-deps:
             group-by: platform
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         use-python: default
         worker:
             docker-image: {in-tree: "debian12-base"}

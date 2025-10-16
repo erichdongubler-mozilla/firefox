@@ -4,6 +4,7 @@
 ---
 task-defaults:
     description: 'Run ktlint over all modules'
+    run-on-repo-type: [hg]
     run:
         using: gradlew
         gradlew: ['ktlint']
@@ -19,7 +20,7 @@ task-defaults:
     treeherder:
         kind: test
         tier: 1
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     worker:
         docker-image: {in-tree: lint}
         max-run-time: 1200

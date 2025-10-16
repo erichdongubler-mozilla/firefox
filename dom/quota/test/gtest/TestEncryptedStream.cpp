@@ -11,7 +11,6 @@
 #include <numeric>
 #include <ostream>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -264,10 +263,12 @@ class DOM_Quota_EncryptedStream : public ::testing::Test {
   struct NSSInitContextDeleter {
     void operator()(NSSInitContext* p) { NSS_ShutdownContext(p); }
   };
-  MOZ_RUNINIT inline static std::unique_ptr<NSSInitContext,
-                                            NSSInitContextDeleter>
-      sNssContext;
+  static std::unique_ptr<NSSInitContext, NSSInitContextDeleter> sNssContext;
 };
+
+MOZ_CONSTINIT std::unique_ptr<NSSInitContext,
+                              DOM_Quota_EncryptedStream::NSSInitContextDeleter>
+    DOM_Quota_EncryptedStream::sNssContext;
 
 enum struct FlushMode { AfterEachChunk, Never };
 enum struct ChunkSize { SingleByte, Unaligned, DataSize };

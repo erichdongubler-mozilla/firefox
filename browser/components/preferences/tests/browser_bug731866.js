@@ -69,13 +69,17 @@ function checkElements(expectedPane) {
     }
 
     // Backup is currently disabled by default. (bug 1895791)
-    if (element.id == "dataBackupSection" && backupSectionDisabled) {
+    if (
+      (element.id == "dataBackupGroup" || element.id == "backupCategory") &&
+      backupSectionDisabled
+    ) {
       is_element_hidden(element, "Disabled dataBackupSection should be hidden");
       continue;
     }
 
     // Profiles is only enabled in Nightly by default (bug 1947633)
     if (element.id === "profilesGroup" && profilesGroupDisabled) {
+      is_element_hidden(element, "Disabled profilesGroup should be hidden");
       continue;
     }
 
@@ -84,6 +88,12 @@ function checkElements(expectedPane) {
       element.id === "dataIPProtectionGroup" &&
       ipProtectionExperiment !== "beta"
     ) {
+      is_element_hidden(element, "Disabled ipProtection should be hidden");
+      continue;
+    }
+
+    if (element.getAttribute("data-hidden-from-search") == "true") {
+      is_element_hidden(element, "Hidden from search element should be hidden");
       continue;
     }
 

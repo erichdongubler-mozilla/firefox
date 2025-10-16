@@ -17,6 +17,7 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 task-defaults:
+    run-on-repo-type: [hg]
     index:
         product: firefox
     treeherder:
@@ -24,7 +25,7 @@ task-defaults:
         symbol: AB
         tier: 1
     run-on-projects: ['mozilla-central']
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     worker:
         max-run-time: 3600
         env:

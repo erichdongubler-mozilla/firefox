@@ -63,6 +63,7 @@ docker_image_schema = Schema(
             "cache",
             description="Whether this image should be cached based on inputs.",
         ): bool,
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
     }
 )
 
@@ -118,9 +119,9 @@ def fill_template(config, tasks):
         zstd_level = "3" if int(config.params["level"]) == 1 else "10"
 
         if task.get("arch", "") == "arm64":
-            worker_type = "images-gcp-aarch64"
+            worker_type = "images-aarch64"
         else:
-            worker_type = "images-gcp"
+            worker_type = "images"
 
         # include some information that is useful in reconstructing this task
         # from JSON
@@ -141,6 +142,7 @@ def fill_template(config, tasks):
                 "tier": 1,
             },
             "run-on-projects": [],
+            "run-on-repo-type": task.get("run-on-repo-type", ["git", "hg"]),
             "worker-type": worker_type,
             "worker": {
                 "implementation": "docker-worker",

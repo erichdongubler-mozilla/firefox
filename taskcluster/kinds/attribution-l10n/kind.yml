@@ -20,11 +20,12 @@ kind-dependencies:
     - repackage-l10n
 
 task-defaults:
+    run-on-repo-type: [hg]
     description: Attribute release builds
     shipping-phase: promote
     # never run as part of CI
     run-on-projects: []
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     attributes:
         build_type: opt
         release_artifacts:

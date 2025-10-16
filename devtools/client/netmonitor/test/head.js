@@ -127,6 +127,7 @@ const CSP_RESEND_URL = EXAMPLE_URL + "html_csp-resend-test-page.html";
 const IMAGE_CACHE_URL = HTTPS_EXAMPLE_URL + "html_image-cache.html";
 const STYLESHEET_CACHE_URL = HTTPS_EXAMPLE_URL + "html_stylesheet-cache.html";
 const SCRIPT_CACHE_URL = HTTPS_EXAMPLE_URL + "html_script-cache.html";
+const SOURCEMAP_URL = HTTPS_EXAMPLE_URL + "html_maps-test-page.html";
 const MODULE_SCRIPT_CACHE_URL =
   HTTPS_EXAMPLE_URL + "html_module-script-cache.html";
 const SLOW_REQUESTS_URL = EXAMPLE_URL + "html_slow-requests-test-page.html";
@@ -441,6 +442,7 @@ function restartNetMonitor(monitor, { requestCount }) {
 
 /**
  * Clears the network requests in the UI
+ *
  * @param {Object} monitor
  *         The netmonitor instance used for retrieving a context menu element.
  */
@@ -970,7 +972,6 @@ function testFilterButtonsCustom(monitor, isChecked) {
  * @return Promise A promise that's resolved with object
  *         { status: XMLHttpRequest.status,
  *           response: XMLHttpRequest.response }
- *
  */
 function promiseXHR(data) {
   return new Promise(resolve => {
@@ -1017,7 +1018,6 @@ function promiseXHR(data) {
  * @return Promise A promise that's resolved with object
  *         { status: websocket status(101),
  *           response: empty string }
- *
  */
 function promiseWS(data) {
   return new Promise(resolve => {
@@ -1516,6 +1516,7 @@ function compareValues(first, second) {
 
 /**
  * Click on the "Response" tab to open "Response" panel in the sidebar.
+ *
  * @param {Document} doc
  *        Network panel document.
  * @param {String} name
@@ -1618,6 +1619,7 @@ async function toggleUrlPreview(shouldExpand, monitor) {
 
 /**
  * Wait for the eager evaluated result from the split console
+ *
  * @param {Object} hud
  * @param {String} text - expected evaluation result
  */
@@ -1661,7 +1663,6 @@ function testAutocompleteContents(expected, document) {
  *     A request element from the netmonitor requests list.
  * @return {boolean}
  *     True if the size column contains a valid size, false otherwise.
- *
  */
 function hasValidSize(request) {
   const VALID_SIZE_RE = /^\d+(\.\d+)? \w+/;

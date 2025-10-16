@@ -7,13 +7,15 @@
 
 use crate::values::animated::{lists, Animate, Procedure, ToAnimatedZero};
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
-use crate::values::generics::border::GenericBorderRadius;
-use crate::values::generics::position::{GenericPosition, GenericPositionOrAuto};
-use crate::values::generics::rect::Rect;
+use crate::values::generics::{
+    border::GenericBorderRadius,
+    position::{GenericPosition, GenericPositionOrAuto},
+    rect::Rect,
+    NonNegative,
+};
 use crate::values::specified::svg_path::{PathCommand, SVGPathData};
 use crate::Zero;
 use std::fmt::{self, Write};
-use std::ops::AddAssign;
 use style_traits::{CssWriter, ToCss};
 
 /// TODO(bug 1982941): Replace with GenericPosition directly if ShapePosition is under utilized.
@@ -137,7 +139,7 @@ pub enum GenericClipPath<BasicShape, U> {
     Url(U),
     #[typed_value(skip)]
     Shape(
-        Box<BasicShape>,
+        #[animation(field_bound)] Box<BasicShape>,
         #[css(skip_if = "is_default_box_for_clip_path")] ShapeGeometryBox,
     ),
     #[animation(error)]
@@ -197,26 +199,22 @@ pub use self::GenericShapeOutside as ShapeOutside;
     ToShmem,
 )]
 #[repr(C, u8)]
-pub enum GenericBasicShape<
-    Angle,
-    Position,
-    LengthPercentage,
-    NonNegativeLengthPercentage,
-    BasicShapeRect,
-> {
+pub enum GenericBasicShape<Angle, Position, LengthPercentage, BasicShapeRect> {
     /// The <basic-shape-rect>.
     Rect(BasicShapeRect),
     /// Defines a circle with a center and a radius.
     Circle(
+        #[animation(field_bound)]
         #[css(field_bound)]
         #[shmem(field_bound)]
-        Circle<Position, NonNegativeLengthPercentage>,
+        Circle<Position, NonNegative<LengthPercentage>>,
     ),
     /// Defines an ellipse with a center and x-axis/y-axis radii.
     Ellipse(
+        #[animation(field_bound)]
         #[css(field_bound)]
         #[shmem(field_bound)]
-        Ellipse<Position, NonNegativeLengthPercentage>,
+        Ellipse<Position, NonNegative<LengthPercentage>>,
     ),
     /// Defines a polygon with pair arguments.
     Polygon(GenericPolygon<LengthPercentage>),
@@ -249,10 +247,11 @@ pub use self::GenericBasicShape as BasicShape;
 )]
 #[css(function = "inset")]
 #[repr(C)]
-pub struct GenericInsetRect<LengthPercentage, NonNegativeLengthPercentage> {
+pub struct GenericInsetRect<LengthPercentage> {
     pub rect: Rect<LengthPercentage>,
     #[shmem(field_bound)]
-    pub round: GenericBorderRadius<NonNegativeLengthPercentage>,
+    #[animation(field_bound)]
+    pub round: GenericBorderRadius<NonNegative<LengthPercentage>>,
 }
 
 pub use self::GenericInsetRect as InsetRect;
@@ -493,10 +492,9 @@ impl<B, U> ToAnimatedZero for ShapeOutside<B, U> {
     }
 }
 
-impl<Length, NonNegativeLength> ToCss for InsetRect<Length, NonNegativeLength>
+impl<Length> ToCss for InsetRect<Length>
 where
-    Length: ToCss + PartialEq,
-    NonNegativeLength: ToCss + PartialEq + Zero,
+    Length: ToCss + PartialEq + Zero,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -691,6 +689,7 @@ impl<Angle, LengthPercentage> ToCss for Shape<Angle, LengthPercentage>
 where
     Angle: ToCss + Zero,
     LengthPercentage: PartialEq + ToCss,
+    ShapePosition<LengthPercentage>: ToCss,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -770,18 +769,18 @@ pub enum GenericShapeCommand<Angle, LengthPercentage> {
     /// The cubic Bézier curve command.
     CubicCurve {
         point: CommandEndPoint<LengthPercentage>,
-        control1: CoordinatePair<LengthPercentage>,
-        control2: CoordinatePair<LengthPercentage>,
+        control1: ControlPoint<LengthPercentage>,
+        control2: ControlPoint<LengthPercentage>,
     },
     /// The quadratic Bézier curve command.
     QuadCurve {
         point: CommandEndPoint<LengthPercentage>,
-        control1: CoordinatePair<LengthPercentage>,
+        control1: ControlPoint<LengthPercentage>,
     },
     /// The smooth command.
     SmoothCubic {
         point: CommandEndPoint<LengthPercentage>,
-        control2: CoordinatePair<LengthPercentage>,
+        control2: ControlPoint<LengthPercentage>,
     },
     /// The smooth quadratic Bézier curve command.
     SmoothQuad {
@@ -805,6 +804,7 @@ impl<Angle, LengthPercentage> ToCss for ShapeCommand<Angle, LengthPercentage>
 where
     Angle: ToCss + Zero,
     LengthPercentage: PartialEq + ToCss,
+    ShapePosition<LengthPercentage>: ToCss,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -840,11 +840,11 @@ where
                 dest.write_str("curve ")?;
                 point.to_css(dest)?;
                 dest.write_str(" with ")?;
-                control1.to_css(dest)?;
+                control1.to_css(dest, point.is_abs())?;
                 dest.write_char(' ')?;
                 dest.write_char('/')?;
                 dest.write_char(' ')?;
-                control2.to_css(dest)
+                control2.to_css(dest, point.is_abs())
             },
             QuadCurve {
                 ref point,
@@ -853,7 +853,7 @@ where
                 dest.write_str("curve ")?;
                 point.to_css(dest)?;
                 dest.write_str(" with ")?;
-                control1.to_css(dest)
+                control1.to_css(dest, point.is_abs())
             },
             SmoothCubic {
                 ref point,
@@ -862,7 +862,7 @@ where
                 dest.write_str("smooth ")?;
                 point.to_css(dest)?;
                 dest.write_str(" with ")?;
-                control2.to_css(dest)
+                control2.to_css(dest, point.is_abs())
             },
             SmoothQuad { ref point } => {
                 dest.write_str("smooth ")?;
@@ -1006,22 +1006,6 @@ impl<LengthPercentage: ToCss> ToCss for CommandEndPoint<LengthPercentage> {
     }
 }
 
-impl<LengthPercentage: AddAssign> AddAssign<CoordinatePair<LengthPercentage>>
-    for CommandEndPoint<LengthPercentage>
-{
-    fn add_assign(&mut self, other: CoordinatePair<LengthPercentage>) {
-        match self {
-            CommandEndPoint::ToPosition(ref mut a) => {
-                a.horizontal += other.x;
-                a.vertical += other.y;
-            },
-            CommandEndPoint::ByCoordinate(ref mut a) => {
-                *a += other;
-            },
-        }
-    }
-}
-
 /// Defines a pair of coordinates, representing a rightward and downward offset, respectively, from
 /// a specified reference point. Percentages are resolved against the width or height,
 /// respectively, of the reference box.
@@ -1058,6 +1042,137 @@ impl<LengthPercentage> CoordinatePair<LengthPercentage> {
     pub fn new(x: LengthPercentage, y: LengthPercentage) -> Self {
         Self { x, y }
     }
+}
+
+/// Defines a control point for a quadratic or cubic Bézier curve, which can be specified
+/// in absolute or relative coordinates.
+/// https://drafts.csswg.org/css-shapes/#typedef-shape-control-point
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    Copy,
+    ComputeSquaredDistance,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum ControlPoint<LengthPercentage> {
+    Position(ShapePosition<LengthPercentage>),
+    Relative(RelativeControlPoint<LengthPercentage>),
+}
+
+impl<LengthPercentage> ControlPoint<LengthPercentage> {
+    /// Serialize <control-point>
+    pub fn to_css<W>(&self, dest: &mut CssWriter<W>, is_endpoint_abs: bool) -> fmt::Result
+    where
+        W: Write,
+        LengthPercentage: ToCss,
+        ShapePosition<LengthPercentage>: ToCss,
+    {
+        match self {
+            ControlPoint::Position(pos) => pos.to_css(dest),
+            ControlPoint::Relative(point) => point.to_css(dest, is_endpoint_abs),
+        }
+    }
+}
+
+/// Defines a relative control point to a quadratic or cubic Bézier curve, dependent on the
+/// reference value. The default "none" is to be relative to the command’s starting point.
+/// https://drafts.csswg.org/css-shapes/#typedef-shape-relative-control-point
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub struct RelativeControlPoint<LengthPercentage> {
+    pub coord: CoordinatePair<LengthPercentage>,
+    pub reference: ControlReference,
+}
+
+impl<LengthPercentage: ToCss> RelativeControlPoint<LengthPercentage> {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>, is_endpoint_abs: bool) -> fmt::Result
+    where
+        W: Write,
+    {
+        self.coord.to_css(dest)?;
+        let should_omit_reference = match self.reference {
+            ControlReference::None => true,
+            ControlReference::Start => !is_endpoint_abs,
+            ControlReference::Origin => is_endpoint_abs,
+            ControlReference::End => false,
+        };
+        if !should_omit_reference {
+            dest.write_str(" from ")?;
+            self.reference.to_css(dest)?;
+        }
+        Ok(())
+    }
+}
+
+impl<LengthPercentage: ComputeSquaredDistance> ComputeSquaredDistance
+    for RelativeControlPoint<LengthPercentage>
+{
+    fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
+        self.coord.compute_squared_distance(&other.coord)
+    }
+}
+
+/// Defines the point of reference for a <relative-control-point>.
+///
+/// The default `None` is equivalent to `Origin` or `Start`, depending on
+/// whether the associated <command-end-point> is absolutely or relatively
+/// positioned, respectively.
+/// https://drafts.csswg.org/css-shapes/#typedef-shape-relative-control-point
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    Parse,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub enum ControlReference {
+    #[css(skip)]
+    None,
+    Start,
+    End,
+    Origin,
 }
 
 /// This indicates that the arc that is traced around the ellipse clockwise or counter-clockwise

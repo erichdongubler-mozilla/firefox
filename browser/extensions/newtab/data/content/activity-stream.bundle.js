@@ -725,6 +725,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.refreshTopicSelectionCache = this.refreshTopicSelectionCache.bind(this);
     this.handleSectionsToggle = this.handleSectionsToggle.bind(this);
     this.toggleIABBanners = this.toggleIABBanners.bind(this);
+    this.sendConversionEvent = this.sendConversionEvent.bind(this);
     this.state = {
       toggledStories: {},
       weatherQuery: ""
@@ -888,6 +889,19 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.props.dispatch(actionCreators.SetPref(PREF_SECTIONS_ENABLED, pressed));
     this.props.dispatch(actionCreators.SetPref("discoverystream.sections.cards.enabled", pressed));
     this.props.dispatch(actionCreators.SetPref("discoverystream.sections.cards.thumbsUpDown.enabled", pressed));
+  }
+  sendConversionEvent() {
+    const detail = {
+      partnerId: "demo-partner",
+      lookbackDays: 7,
+      impressionType: "default"
+    };
+    const event = new CustomEvent("FirefoxConversionNotification", {
+      detail,
+      bubbles: true,
+      composed: true
+    });
+    window?.dispatchEvent(event);
   }
   renderComponent(width, component) {
     return /*#__PURE__*/external_React_default().createElement("table", null, /*#__PURE__*/external_React_default().createElement("tbody", null, /*#__PURE__*/external_React_default().createElement(Row, null, /*#__PURE__*/external_React_default().createElement("td", {
@@ -1113,7 +1127,10 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       pressed: mediumRectangleEnabledPressed || null,
       onToggle: this.toggleIABBanners,
       label: "Enable IAB Medium Rectangle (MREC)"
-    }))), /*#__PURE__*/external_React_default().createElement("table", null, /*#__PURE__*/external_React_default().createElement("tbody", null, prefToggles.map(pref => /*#__PURE__*/external_React_default().createElement(Row, {
+    }))), /*#__PURE__*/external_React_default().createElement("button", {
+      className: "button",
+      onClick: this.sendConversionEvent
+    }, "Send conversion event"), /*#__PURE__*/external_React_default().createElement("table", null, /*#__PURE__*/external_React_default().createElement("tbody", null, prefToggles.map(pref => /*#__PURE__*/external_React_default().createElement(Row, {
       key: pref
     }, /*#__PURE__*/external_React_default().createElement("td", null, /*#__PURE__*/external_React_default().createElement(TogglePrefCheckbox, {
       checked: config[pref],
@@ -2553,6 +2570,7 @@ const PREF_SYSTEM_STORIES_ENABLED = "feeds.system.topstories";
  * A custom react hook that sets up an IntersectionObserver to observe a single
  * or list of elements and triggers a callback when the element comes into the viewport
  * Note: The refs used should be an array type
+ *
  * @function useIntersectionObserver
  * @param {function} callback - The function to call when an element comes into the viewport
  * @param {Object} options - Options object passed to Intersection Observer:
@@ -2560,9 +2578,6 @@ const PREF_SYSTEM_STORIES_ENABLED = "feeds.system.topstories";
  * @param {Boolean} [isSingle = false] Boolean if the elements are an array or single element
  *
  * @returns {React.MutableRefObject} a ref containing an array of elements or single element
- *
- *
- *
  */
 function useIntersectionObserver(callback, threshold = 0.3) {
   const elementsRef = (0,external_React_namespaceObject.useRef)([]);
@@ -2593,6 +2608,7 @@ function useIntersectionObserver(callback, threshold = 0.3) {
 
 /**
  * Determines which column layout is active based on the screen width
+ *
  * @param {number} screenWidth - The current window width (in pixels)
  * @returns {string} The active column layout (e.g. "col-3", "col-2", "col-1")
  */
@@ -3460,6 +3476,7 @@ const PREF_FAVICONS_ENABLED = "discoverystream.publisherFavicon.enabled";
 
 /**
  * READ TIME FROM WORD COUNT
+ *
  * @param {int} wordCount number of words in an article
  * @returns {int} number of words per minute in minutes
  */
@@ -9754,6 +9771,7 @@ function topSiteIconType(link) {
 
 /**
  * Iterates through TopSites and counts types of images.
+ *
  * @param acc Accumulator for reducer.
  * @param topsite Entry in TopSites.
  */
@@ -12939,6 +12957,27 @@ const formatTime = seconds => {
 };
 
 /**
+ * Validates that the inputs in the timer only allow numerical digits (0-9)
+ *
+ * @param input - The character being input
+ * @returns boolean - true if valid numeric input, false otherwise
+ */
+const isNumericValue = input => {
+  // Check for null/undefined input or non-numeric characters
+  return input && /^\d+$/.test(input);
+};
+
+/**
+ * Validates if adding a new digit would exceed the 2-character limit
+ *
+ * @param currentValue - The current value in the field
+ * @returns boolean - true if at 2-character limit, false otherwise
+ */
+const isAtMaxLength = currentValue => {
+  return currentValue.length >= 2;
+};
+
+/**
  * Converts a polar coordinate (angle on circle) into a percentage-based [x,y] position for clip-path
  *
  * @param cx
@@ -13245,13 +13284,9 @@ const FocusTimer = ({
     const values = e.target.innerText.trim();
 
     // only allow numerical digits 0–9 for time input
-    if (!/^\d+$/.test(input)) {
+    if (!isNumericValue(input)) {
       e.preventDefault();
-    }
-
-    // only allow 2 values each for minutes and seconds
-    if (values.length >= 2) {
-      e.preventDefault();
+      return;
     }
     const selection = window.getSelection();
     const selectedText = selection.toString();
@@ -13269,6 +13304,12 @@ const FocusTimer = ({
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
+      return;
+    }
+
+    // only allow 2 values each for minutes and seconds
+    if (isAtMaxLength(values)) {
+      e.preventDefault();
     }
   };
   const handleFocus = e => {
@@ -13924,7 +13965,8 @@ function SectionsMgmtPanel_extends() { return SectionsMgmtPanel_extends = Object
 
 function SectionsMgmtPanel({
   exitEventFired,
-  pocketEnabled
+  pocketEnabled,
+  onSubpanelToggle
 }) {
   const [showPanel, setShowPanel] = (0,external_React_namespaceObject.useState)(false); // State management with useState
   const {
@@ -14043,6 +14085,13 @@ function SectionsMgmtPanel({
       setShowPanel(false);
     }
   }, [exitEventFired]);
+
+  // Notify parent menu when subpanel opens/closes
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (onSubpanelToggle) {
+      onSubpanelToggle(showPanel);
+    }
+  }, [showPanel, onSubpanelToggle]);
   const togglePanel = () => {
     setShowPanel(prevShowPanel => !prevShowPanel);
 
@@ -14362,6 +14411,11 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       activeCategory: event.target.id
     });
     this.handleUserEvent(actionTypes.WALLPAPER_CATEGORY_CLICK, event.target.id);
+
+    // Notify parent menu when subpanel opens
+    if (this.props.onSubpanelToggle) {
+      this.props.onSubpanelToggle(true);
+    }
     let fluent_id;
     switch (event.target.id) {
       case "abstracts":
@@ -14375,6 +14429,10 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
         break;
       case "solid-colors":
         fluent_id = "newtab-wallpaper-category-title-colors";
+        break;
+      case "firefox":
+        fluent_id = "newtab-wallpaper-category-title-firefox";
+        break;
     }
     this.setState({
       activeCategoryFluentID: fluent_id
@@ -14455,6 +14513,11 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     this.setState({
       activeCategory: null
     }, () => {
+      // Notify parent menu when subpanel closes
+      if (this.props.onSubpanelToggle) {
+        this.props.onSubpanelToggle(false);
+      }
+
       // Wait for the category grid to be back in the DOM
       requestAnimationFrame(() => {
         this.focusCategory(this.state.focusedCategoryIndex);
@@ -14606,6 +14669,10 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
           break;
         case "solid-colors":
           fluent_id = "newtab-wallpaper-category-title-colors";
+          break;
+        case "firefox":
+          fluent_id = "newtab-wallpaper-category-title-firefox";
+          break;
       }
       let style = {};
       if (thumbnail?.wallpaperUrl) {
@@ -14831,7 +14898,8 @@ class ContentSection extends (external_React_default()).PureComponent {
       activeWallpaper,
       setPref,
       mayHaveTopicSections,
-      exitEventFired
+      exitEventFired,
+      onSubpanelToggle
     } = this.props;
     const {
       topSitesEnabled,
@@ -14852,7 +14920,8 @@ class ContentSection extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement(WallpaperCategories, {
       setPref: setPref,
       activeWallpaper: activeWallpaper,
-      exitEventFired: exitEventFired
+      exitEventFired: exitEventFired,
+      onSubpanelToggle: onSubpanelToggle
     })), !mayHaveWidgets && /*#__PURE__*/external_React_default().createElement("span", {
       className: "divider",
       role: "separator"
@@ -15010,7 +15079,8 @@ class ContentSection extends (external_React_default()).PureComponent {
       "data-l10n-id": "newtab-custom-stories-personalized-checkbox-label"
     })), mayHaveTopicSections && /*#__PURE__*/external_React_default().createElement(SectionsMgmtPanel, {
       exitEventFired: exitEventFired,
-      pocketEnabled: pocketEnabled
+      pocketEnabled: pocketEnabled,
+      onSubpanelToggle: onSubpanelToggle
     }))))))), /*#__PURE__*/external_React_default().createElement("span", {
       className: "divider",
       role: "separator"
@@ -15037,9 +15107,16 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
     super(props);
     this.onEntered = this.onEntered.bind(this);
     this.onExited = this.onExited.bind(this);
+    this.onSubpanelToggle = this.onSubpanelToggle.bind(this);
     this.state = {
-      exitEventFired: false
+      exitEventFired: false,
+      subpanelOpen: false
     };
+  }
+  onSubpanelToggle(isOpen) {
+    this.setState({
+      subpanelOpen: isOpen
+    });
   }
   onEntered() {
     this.setState({
@@ -15073,12 +15150,12 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
         }
       },
       ref: c => this.openButton = c
-    }, /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("img", {
+    }, /*#__PURE__*/external_React_default().createElement("label", {
+      "data-l10n-id": "newtab-customize-panel-icon-button-label"
+    }), /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("img", {
       role: "presentation",
       src: "chrome://global/skin/icons/edit-outline.svg"
-    })), /*#__PURE__*/external_React_default().createElement("label", {
-      "data-l10n-id": "newtab-customize-panel-icon-button-label"
-    }))), /*#__PURE__*/external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
+    })))), /*#__PURE__*/external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
       timeout: 250,
       classNames: "customize-animate",
       in: this.props.showing,
@@ -15086,7 +15163,9 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       onExited: this.onExited,
       appear: true
     }, /*#__PURE__*/external_React_default().createElement("div", {
-      className: "customize-menu",
+      className: "customize-menu-animate-wrapper"
+    }, /*#__PURE__*/external_React_default().createElement("div", {
+      className: `customize-menu ${this.state.subpanelOpen ? "subpanel-open" : ""}`,
       role: "dialog",
       "data-l10n-id": "newtab-settings-dialog-label"
     }, /*#__PURE__*/external_React_default().createElement("div", {
@@ -15114,8 +15193,9 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       mayHaveTimerWidget: this.props.mayHaveTimerWidget,
       mayHaveListsWidget: this.props.mayHaveListsWidget,
       dispatch: this.props.dispatch,
-      exitEventFired: this.state.exitEventFired
-    }))));
+      exitEventFired: this.state.exitEventFired,
+      onSubpanelToggle: this.onSubpanelToggle
+    })))));
   }
 }
 const CustomizeMenu = (0,external_ReactRedux_namespaceObject.connect)(state => ({

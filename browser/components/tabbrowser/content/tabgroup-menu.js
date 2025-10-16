@@ -577,8 +577,7 @@
         () => {
           this.#handleMLOptinTelemetry("step0-optin-link-click");
           openTrustedLinkIn(
-            // this is a placeholder link, it should be replaced with the actual link
-            "https://support.mozilla.org",
+            "https://support.mozilla.org/kb/how-use-ai-enhanced-tab-groups",
             "tab"
           );
         }
@@ -806,6 +805,7 @@
 
     /**
      * Check if the label should be updated with the suggested label
+     *
      * @returns {boolean}
      */
     #shouldUpdateLabelWithMlLabel() {
@@ -814,6 +814,7 @@
 
     /**
      * Attempt to set the label of the group to the suggested label
+     *
      * @param {MozTabbrowserTabGroup} group
      * @param {string} newLabel
      * @returns
@@ -1046,6 +1047,7 @@
 
     /**
      * Set the state of the form to disabled or enabled
+     *
      * @param {boolean} state
      */
     #setFormToDisabled(state) {
@@ -1140,6 +1142,7 @@
 
     /**
      * Sends Glean metrics if smart tab grouping is enabled
+     *
      * @param {string} action "save", "save-popup-hidden" or "cancel"
      */
     #handleMlTelemetry(action) {
@@ -1173,6 +1176,7 @@
 
     /**
      * Sends Glean metrics for opt-in UI flow
+     *
      * @param {string} step contains step number and description of flow
      */
     #handleMLOptinTelemetry(step) {
@@ -1259,6 +1263,7 @@
     /**
      * Unique state setter for a "3rd" panel state while in suggest Mode
      * that just shows suggestions and hides the majority of the panel
+     *
      * @param {boolean} value
      */
     #setSuggestModeSuggestionState(value) {

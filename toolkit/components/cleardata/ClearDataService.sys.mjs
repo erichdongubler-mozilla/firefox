@@ -61,6 +61,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 /**
  * Adds brackets to a host if it's an IPv6 address.
+ *
  * @param {string} host - Host which may be an IPv6.
  * @returns {string} bracketed IPv6 or host if host is not an IPv6.
  */
@@ -81,6 +82,7 @@ function maybeFixupIpv6(host) {
  * Test if (host, OriginAttributes) or principal belong to a (schemeless) site.
  * Also considers partitioned storage by inspecting OriginAttributes
  * partitionKey.
+ *
  * @param options
  * @param {string} [options.host] - Optional host to compare to site.
  * @param {object} [options.originAttributes] - Optional origin attributes to
@@ -438,11 +440,7 @@ const CookieBannerExecutedRecordCleaner = {
 
 // A cleaner for cleaning fingerprinting protection states.
 const FingerprintingProtectionStateCleaner = {
-  async _maybeClearSiteSpecificZoom(
-    deleteAll,
-    aSchemelessSite,
-    aOriginAttributes = {}
-  ) {
+  async _maybeClearSiteSpecificZoom(aSchemelessSite, aOriginAttributes = {}) {
     if (
       !ChromeUtils.shouldResistFingerprinting("SiteSpecificZoom", null, true)
     ) {
@@ -455,8 +453,24 @@ const FingerprintingProtectionStateCleaner = {
     const ZOOM_PREF_NAME = "browser.content.full-zoom";
 
     await new Promise((aResolve, aReject) => {
-      if (deleteAll) {
-        cps2.removeByName(ZOOM_PREF_NAME, null, {
+      aOriginAttributes =
+        ChromeUtils.fillNonDefaultOriginAttributes(aOriginAttributes);
+
+      let loadContext;
+      if (
+        aOriginAttributes.privateBrowsingId ==
+        Services.scriptSecurityManager.DEFAULT_PRIVATE_BROWSING_ID
+      ) {
+        loadContext = Cu.createLoadContext();
+      } else {
+        loadContext = Cu.createPrivateLoadContext();
+      }
+
+      cps2.removeBySubdomainAndName(
+        aSchemelessSite,
+        ZOOM_PREF_NAME,
+        loadContext,
+        {
           handleCompletion: aReason => {
             if (aReason === cps2.COMPLETE_ERROR) {
               aReject();
@@ -464,50 +478,19 @@ const FingerprintingProtectionStateCleaner = {
               aResolve();
             }
           },
-        });
-      } else {
-        aOriginAttributes =
-          ChromeUtils.fillNonDefaultOriginAttributes(aOriginAttributes);
-
-        let loadContext;
-        if (
-          aOriginAttributes.privateBrowsingId ==
-          Services.scriptSecurityManager.DEFAULT_PRIVATE_BROWSING_ID
-        ) {
-          loadContext = Cu.createLoadContext();
-        } else {
-          loadContext = Cu.createPrivateLoadContext();
         }
-
-        cps2.removeBySubdomainAndName(
-          aSchemelessSite,
-          ZOOM_PREF_NAME,
-          loadContext,
-          {
-            handleCompletion: aReason => {
-              if (aReason === cps2.COMPLETE_ERROR) {
-                aReject();
-              } else {
-                aResolve();
-              }
-            },
-          }
-        );
-      }
+      );
     });
   },
 
   async deleteAll() {
     Services.rfp.cleanAllRandomKeys();
-
-    await this._maybeClearSiteSpecificZoom(true);
   },
 
   async deleteByPrincipal(aPrincipal) {
     Services.rfp.cleanRandomKeyByPrincipal(aPrincipal);
 
     await this._maybeClearSiteSpecificZoom(
-      false,
       aPrincipal.host,
       aPrincipal.originAttributes
     );
@@ -520,7 +503,6 @@ const FingerprintingProtectionStateCleaner = {
     );
 
     await this._maybeClearSiteSpecificZoom(
-      false,
       aSchemelessSite,
       aOriginAttributesPattern
     );
@@ -532,11 +514,7 @@ const FingerprintingProtectionStateCleaner = {
       JSON.stringify(aOriginAttributesPattern)
     );
 
-    await this._maybeClearSiteSpecificZoom(
-      false,
-      aHost,
-      aOriginAttributesPattern
-    );
+    await this._maybeClearSiteSpecificZoom(aHost, aOriginAttributesPattern);
   },
 
   async deleteByOriginAttributes(aOriginAttributesString) {
@@ -836,6 +814,7 @@ const MediaDevicesCleaner = {
 const QuotaCleaner = {
   /**
    * Clear quota storage for matching principals.
+   *
    * @param {function} filterFn - Filter function which is passed a principal.
    * Return true to clear storage for given principal or false to skip it.
    * @returns {Promise} - Resolves once all matching items have been cleared.
@@ -1187,6 +1166,7 @@ const PredictorNetworkCleaner = {
 const PushNotificationsCleaner = {
   /**
    * Clear entries for aDomain including subdomains of aDomain.
+   *
    * @param {string} aDomain - Domain to clear data for.
    * @param {Object} aOriginAttributesPattern - Optional pattern to filter OriginAttributes.
    * @returns {Promise} a promise which resolves once data has been cleared.

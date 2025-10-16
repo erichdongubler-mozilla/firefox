@@ -16,6 +16,7 @@ kind-dependencies:
     - build-fat-aar
 
 task-defaults:
+    run-on-repo-type: [hg]
     attributes:
         build_platform: android
         retrigger: true
@@ -32,7 +33,7 @@ task-defaults:
         using: gradlew
     treeherder:
         kind: test
-    worker-type: b-linux-medium-gcp
+    worker-type: b-linux-medium
     worker:
         docker-image: {in-tree: android-components}
         max-run-time: 7200

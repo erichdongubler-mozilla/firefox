@@ -14,8 +14,7 @@ kind-dependencies:
     - build-fat-aar
 
 task-defaults:
-    attributes:
-        retrigger: true
+    run-on-repo-type: [hg]
     fetches:
         toolchain:
             - linux64-android-sdk-linux-repack

@@ -7082,13 +7082,11 @@ var gCSSProperties = {
     initial_values: [
       "none",
       "medium",
-      "thin",
-      // XXX Should be invert, but currently currentcolor.
-      //"invert", "none medium invert"
       "currentColor",
       "none medium currentcolor",
     ],
     other_values: [
+      "thin",
       "solid",
       "medium solid",
       "green solid",
@@ -10311,6 +10309,9 @@ var gCSSProperties = {
       "calc(3em / 100% * 3em)",
       "calc(3em * (3em / 100%))",
       "calc(3em * 3em / 100%)",
+      "anchor-size()",
+      "anchor-size(--a width)",
+      "anchor-size(--a width, 10px)",
     ],
   },
   "flex-direction": {
@@ -13338,9 +13339,16 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
     domProp: "positionAnchor",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    initial_values: ["auto"],
-    other_values: ["--foo"],
-    invalid_values: ["none", "--foo, auto", "auto, --bar", "foo"],
+    initial_values: ["none"],
+    other_values: ["auto", "--foo"],
+    invalid_values: [
+      "normal",
+      "none, auto",
+      "--foo none",
+      "--foo, auto",
+      "auto, --bar",
+      "foo",
+    ],
   };
 
   gCSSProperties["position-area"] = {

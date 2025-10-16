@@ -20,7 +20,6 @@
 #ifdef __linux__
 #  include <dlfcn.h>
 #endif
-#include <iterator>
 #include <stdarg.h>
 #include <string.h>
 
@@ -2636,6 +2635,10 @@ JS::CompileOptions::CompileOptions(JSContext* cx) {
   if (Realm* realm = cx->realm()) {
     alwaysUseFdlibm_ = realm->creationOptions().alwaysUseFdlibm();
     discardSource = realm->behaviors().discardSource();
+  }
+
+  if (cx->options().disableFilenameSecurityChecks()) {
+    skipFilenameValidation_ = true;
   }
 }
 

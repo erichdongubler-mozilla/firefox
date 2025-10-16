@@ -3,10 +3,14 @@
 const PATH_NET = TEST_PATH + "file_dummy.html";
 const PATH_ORG = PATH_NET.replace("example.net", "example.org");
 
-add_task(async function () {
+async function runTest(defaultZoom) {
   let tab1, tab1Zoom;
 
   tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, PATH_NET);
+
+  tab1Zoom = ZoomManager.getZoomForBrowser(tab1.linkedBrowser);
+  is(tab1Zoom, defaultZoom, "We are starting with the default zoom.");
+
   await FullZoom.setZoom(1.25, tab1.linkedBrowser);
   tab1Zoom = ZoomManager.getZoomForBrowser(tab1.linkedBrowser);
 
@@ -46,7 +50,7 @@ add_task(async function () {
 
   is(
     tab1Zoom,
-    1.0,
+    defaultZoom,
     "privacy.resistFingerprinting is true, site-specific zoom should be reset when clearing FPP state for tab1"
   );
 
@@ -55,4 +59,34 @@ add_task(async function () {
   BrowserTestUtils.removeTab(tab1);
 
   await SpecialPowers.popPrefEnv();
+}
+
+add_task(async function () {
+  await runTest(1.0);
+
+  let defaultZoom = 1.5;
+  let context = Cu.createLoadContext();
+  let cps2 = Cc["@mozilla.org/content-pref/service;1"].getService(
+    Ci.nsIContentPrefService2
+  );
+  let promisifyCps2 = async f => {
+    let { promise, resolve, reject } = Promise.withResolvers();
+    f({
+      handleError(error) {
+        reject(error);
+      },
+      handleCompletion() {
+        resolve();
+      },
+    });
+    await promise;
+  };
+  await promisifyCps2(cb =>
+    cps2.setGlobal(FullZoom.name, defaultZoom, context, cb)
+  );
+  try {
+    await runTest(defaultZoom);
+  } finally {
+    await promisifyCps2(cb => cps2.removeGlobal(FullZoom.name, context, cb));
+  }
 });

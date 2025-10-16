@@ -55,13 +55,6 @@ class CodeGeneratorLOONG64 : public CodeGeneratorShared {
     masm.branchPtr(c, lhs, rhs, &bail);
     bailoutFrom(&bail, snapshot);
   }
-  template <typename T1, typename T2>
-  void bailoutTestPtr(Assembler::Condition c, T1 lhs, T2 rhs,
-                      LSnapshot* snapshot) {
-    Label bail;
-    masm.branchTestPtr(c, lhs, rhs, &bail);
-    bailoutFrom(&bail, snapshot);
-  }
   void bailoutIfFalseBool(Register reg, LSnapshot* snapshot) {
     Label bail;
     UseScratchRegisterScope temps(masm);
@@ -74,7 +67,7 @@ class CodeGeneratorLOONG64 : public CodeGeneratorShared {
   void bailoutFrom(Label* label, LSnapshot* snapshot);
   void bailout(LSnapshot* snapshot);
 
-  bool generateOutOfLineCode();
+  bool generateOutOfLineCode(CodeGenerator* codegen);
 
   template <typename T>
   void branchToBlock(Register lhs, T rhs, MBasicBlock* mir,

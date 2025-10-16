@@ -47,7 +47,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.mozilla.gecko.GeckoEditableChild;
 import org.mozilla.gecko.IGeckoEditableChild;
 import org.mozilla.gecko.IGeckoEditableParent;
-import org.mozilla.gecko.InputMethods;
 import org.mozilla.gecko.MozLog;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
@@ -1034,12 +1033,18 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         for (final CharacterStyle span : styleSpans) {
           span.updateDrawState(tp);
         }
-        int tpUnderlineColor = 0;
-        float tpUnderlineThickness = 0.0f;
 
-        // These TextPaint fields only exist on Android ICS+ and are not in the SDK.
-        tpUnderlineColor = (Integer) getField(tp, "underlineColor", 0);
-        tpUnderlineThickness = (Float) getField(tp, "underlineThickness", 0.0f);
+        final int tpUnderlineColor;
+        final float tpUnderlineThickness;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+          tpUnderlineColor = tp.underlineColor;
+          tpUnderlineThickness = tp.underlineThickness;
+        } else {
+          // These TextPaint fields only exist on Android ICS+ and are not in the SDK.
+          tpUnderlineColor = (Integer) getField(tp, "underlineColor", 0);
+          tpUnderlineThickness = (Float) getField(tp, "underlineThickness", 0.0f);
+        }
         if (tpUnderlineColor != 0) {
           rangeStyles |= IME_RANGE_UNDERLINE | IME_RANGE_LINECOLOR;
           rangeLineColor = tpUnderlineColor;
@@ -1984,7 +1989,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     }
 
     if ((flags & SessionTextInput.EditableListener.IME_FLAG_PRIVATE_BROWSING) != 0) {
-      outAttrs.imeOptions |= InputMethods.IME_FLAG_NO_PERSONALIZED_LEARNING;
+      outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;
     }
 
     if (typeHint.length() == 0) {

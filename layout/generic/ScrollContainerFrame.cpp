@@ -100,7 +100,6 @@
 #include "nsStyleConsts.h"
 #include "nsStyleTransformMatrix.h"
 #include "nsSubDocumentFrame.h"
-#include "nsView.h"
 #include "nsViewportInfo.h"
 
 static mozilla::LazyLogModule sApzPaintSkipLog("apz.paintskip");
@@ -917,15 +916,9 @@ void ScrollContainerFrame::ReflowScrolledFrame(ScrollReflowInput& aState,
   mHasHorizontalScrollbar = didHaveHorizontalScrollbar;
   mHasVerticalScrollbar = didHaveVerticalScrollbar;
 
-  // Don't resize or position the view (if any) because we're going to resize
-  // it to the correct size anyway in PlaceScrollArea. Allowing it to
-  // resize here would size it to the natural height of the frame,
-  // which will usually be different from the scrollport height;
-  // invalidating the difference will cause unnecessary repainting.
-  FinishReflowChild(
-      mScrolledFrame, presContext, *aMetrics, &kidReflowInput, wm,
-      LogicalPoint(wm), dummyContainerSize,
-      ReflowChildFlags::NoMoveFrame | ReflowChildFlags::NoSizeView);
+  FinishReflowChild(mScrolledFrame, presContext, *aMetrics, &kidReflowInput, wm,
+                    LogicalPoint(wm), dummyContainerSize,
+                    ReflowChildFlags::NoMoveFrame);
 
   if (mScrolledFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
     // Propagate NS_FRAME_CONTAINS_RELATIVE_BSIZE from our inner scrolled frame
@@ -1138,19 +1131,8 @@ void ScrollContainerFrame::PlaceScrollArea(ScrollReflowInput& aState,
   // Using FinishAndStoreOverflow is needed so the overflow rect gets set
   // correctly.  It also messes with the overflow rect in the 'clip' case, but
   // scrolled frames can't have 'overflow' either.
-  // This needs to happen before SyncFrameViewAfterReflow so
-  // HasOverflowRect() will return the correct value.
   OverflowAreas overflow(scrolledArea, scrolledArea);
   mScrolledFrame->FinishAndStoreOverflow(overflow, mScrolledFrame->GetSize());
-
-  // Note that making the view *exactly* the size of the scrolled area
-  // is critical, since the view scrolling code uses the size of the
-  // scrolled view to clamp scroll requests.
-  // Normally the mScrolledFrame won't have a view but in some cases it
-  // might create its own.
-  nsContainerFrame::SyncFrameViewAfterReflow(
-      mScrolledFrame->PresContext(), mScrolledFrame, mScrolledFrame->GetView(),
-      scrolledArea, ReflowChildFlags::Default);
 }
 
 nscoord ScrollContainerFrame::IntrinsicScrollbarGutterSizeAtInlineEdges()
@@ -2555,32 +2537,6 @@ void ScrollContainerFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
   }
 }
 
-// We can't use nsContainerFrame::PositionChildViews here because
-// we don't want to invalidate views that have moved.
-static void AdjustViews(nsIFrame* aFrame) {
-  nsView* view = aFrame->GetView();
-  if (view) {
-    nsPoint pt;
-    aFrame->GetParent()->GetClosestView(&pt);
-    pt += aFrame->GetPosition();
-    view->SetPosition(pt.x, pt.y);
-
-    return;
-  }
-
-  if (!aFrame->HasAnyStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW)) {
-    return;
-  }
-
-  // Call AdjustViews recursively for all child frames except the popup list as
-  // the views for popups are not scrolled.
-  for (const auto& [list, listID] : aFrame->ChildLists()) {
-    for (nsIFrame* child : list) {
-      AdjustViews(child);
-    }
-  }
-}
-
 void ScrollContainerFrame::MarkScrollbarsDirtyForReflow() const {
   auto* presShell = PresShell();
   if (mVScrollbarBox) {
@@ -2774,8 +2730,6 @@ void ScrollContainerFrame::TriggerDisplayPortExpiration() {
 
 void ScrollContainerFrame::ScrollVisual() {
   MarkEverScrolled();
-
-  AdjustViews(mScrolledFrame);
   // We need to call this after fixing up the view positions
   // to be consistent with the frame hierarchy.
   MarkRecentlyScrolled();
@@ -3906,8 +3860,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     if (mWillBuildScrollableLayer) {
       return true;
     }
-    return StyleVisibility()->IsVisible() &&
-           nsLayoutUtils::AsyncPanZoomEnabled(this) && WantAsyncScroll();
+    return nsLayoutUtils::AsyncPanZoomEnabled(this) && WantAsyncScroll();
   }();
 
   // Now display the scrollbars and scrollcorner. These parts are drawn
@@ -4012,14 +3965,17 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       // of the scroll frame, the scrolled content is always hit, even
       // if we are checkerboarding.
       CompositorHitTestInfo info =
-          mScrolledFrame->GetCompositorHitTestInfo(aBuilder);
+          mScrolledFrame->GetCompositorHitTestInfoWithoutPointerEvents(
+              aBuilder);
 
-      if (info != CompositorHitTestInvisibleToHit) {
+      if (mScrolledFrame->Style()->PointerEvents() !=
+              StylePointerEvents::None &&
+          info != CompositorHitTestInvisibleToHit) {
         auto* hitInfo =
             MakeDisplayItemWithIndex<nsDisplayCompositorHitTestInfo>(
                 aBuilder, mScrolledFrame, 1);
         if (hitInfo) {
-          aBuilder->SetCompositorHitTestInfo(info);
+          aBuilder->SetInheritedCompositorHitTestInfo(info);
           set.BorderBackground()->AppendToTop(hitInfo);
         }
       }
@@ -4055,13 +4011,15 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         scrolledRectClip = scrolledRectClip.Intersect(visibleRect);
         clippedToDisplayPort = scrolledRectClip.IsEqualEdges(visibleRect);
       }
-      scrolledRectClipState.ClipContainingBlockDescendants(
-          scrolledRectClip + aBuilder->ToReferenceFrame(this));
       if (clippedToDisplayPort) {
+        scrolledRectClipState.ClipToDisplayPort(
+            scrolledRectClip + aBuilder->ToReferenceFrame(this));
+      } else {
         // We have to do this after the ClipContainingBlockDescendants call
         // above, otherwise that call will clobber the flag set by this call
         // to SetClippedToDisplayPort.
-        scrolledRectClipState.SetClippedToDisplayPort();
+        scrolledRectClipState.ClipContainingBlockDescendants(
+            scrolledRectClip + aBuilder->ToReferenceFrame(this));
       }
 
       nsRect visibleRectForChildren = visibleRect;
@@ -4137,6 +4095,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 #ifndef MOZ_WIDGET_ANDROID
           gfxCriticalNoteOnce << "inserted scroll frame";
 #endif
+          MOZ_ASSERT(!ShouldActivateAllScrollFrames());
           asrSetter.InsertScrollFrame(this);
           aBuilder->SetDisablePartialUpdates(true);
         }
@@ -4166,7 +4125,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
   }
 
-  if (couldBuildLayer) {
+  if (couldBuildLayer & StyleVisibility()->IsVisible()) {
     CompositorHitTestInfo info(CompositorHitTestFlags::eVisibleToHitTest,
                                CompositorHitTestFlags::eInactiveScrollframe);
     // If the scroll frame has non-default overscroll-behavior, instruct
@@ -4211,7 +4170,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
               aBuilder, mScrolledFrame, 1, area, info);
       if (hitInfo) {
         AppendInternalItemToTop(set, hitInfo, Some(zIndex));
-        aBuilder->SetCompositorHitTestInfo(info);
+        aBuilder->SetInheritedCompositorHitTestInfo(info);
       }
     }
 

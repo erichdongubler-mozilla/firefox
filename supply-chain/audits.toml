@@ -2875,6 +2875,12 @@ criteria = "safe-to-deploy"
 delta = "6.0.1 -> 6.0.2"
 notes = "I'm the author of the changes in this version of the crate."
 
+[[audits.glslopt]]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
+criteria = "safe-to-deploy"
+delta = "0.1.11 -> 0.1.12"
+notes = "Only a minor build tweak."
+
 [[audits.goblin]]
 who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
@@ -3180,6 +3186,11 @@ delta = "2.0.0-beta2 -> 2.0.0"
 who = "Henri Sivonen <hsivonen@hsivonen.fi>"
 criteria = "safe-to-deploy"
 delta = "2.0.0-beta2 -> 2.0.0"
+
+[[audits.icu_casemap]]
+who = "Henri Sivonen <hsivonen@hsivonen.fi>"
+criteria = "safe-to-deploy"
+delta = "2.0.0 -> 2.0.1"
 
 [[audits.icu_casemap_data]]
 who = "Henri Sivonen <hsivonen@hsivonen.fi>"
@@ -3785,6 +3796,16 @@ who = "Gabriele Svelto <gsvelto@mozilla.com>"
 criteria = "safe-to-deploy"
 version = "0.4.1"
 
+[[audits.macro_rules_attribute]]
+who = "Andy Leiserson <aleiserson@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.2.2"
+
+[[audits.macro_rules_attribute-proc_macro]]
+who = "Andy Leiserson <aleiserson@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.2.2"
+
 [[audits.malloc_buf]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
@@ -3879,6 +3900,12 @@ criteria = "safe-to-deploy"
 delta = "0.3.1 -> 0.4.0"
 notes = "This crate is written and maintained by Mozilla employees."
 
+[[audits.memtest]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.4.0 -> 0.4.0@git:ad681ba425beb0aeba95f03e671432b4be932174"
+importable = false
+
 [[audits.metal]]
 who = "Jim Blandy <jimb@red-bean.com>"
 criteria = "safe-to-deploy"
@@ -3966,7 +3993,7 @@ delta = "0.10.2 -> 0.10.3"
 [[audits.midir]]
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
-delta = "0.10.3 -> 0.10.3@git:0cc61b81b26088bb8d6e593caf96879879ab814b"
+delta = "0.10.3 -> 0.10.3@git:54759f681f3b523e120d047adec2bb1a97152017"
 importable = false
 
 [[audits.minidump-common]]
@@ -4229,9 +4256,9 @@ criteria = "safe-to-deploy"
 delta = "0.2.6 -> 0.2.9"
 
 [[audits.mtu]]
-who = "Max Leonard Inden <mail@max-inden.de>"
+who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
-delta = "0.2.9 -> 0.2.9@git:57ef3bd8f67023a168734a154e0ef273e9ddc7f1"
+delta = "0.2.9 -> 0.2.9@git:5bfb65919fb5804ec1dd68cc93e014cb9c830d94"
 importable = false
 
 [[audits.naga]]
@@ -4339,7 +4366,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "27.0.0 -> 27.0.0@git:d8f97261d23e436be75884f792b5931b383c4041"
+delta = "27.0.0 -> 27.0.0@git:868fa196977c828f1e43a1882af495aa3100680b"
 importable = false
 
 [[audits.net2]]
@@ -4910,6 +4937,15 @@ who = "Drew Willcoxon <adw@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.11.9 -> 0.12.1"
 
+[[audits.prost]]
+who = "Alex Franchuk <afranchuk@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "0.12.1 -> 0.13.5"
+notes = """
+This is mostly a reorganization of code (splitting one big file into many),
+with some minor changes to improve safety and readability.
+"""
+
 [[audits.prost-derive]]
 who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
@@ -4926,6 +4962,16 @@ notes = "Changes against 0.11.9 are mine."
 who = "Drew Willcoxon <adw@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.11.9 -> 0.12.1"
+
+[[audits.prost-derive]]
+who = "Alex Franchuk <afranchuk@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "0.12.1 -> 0.13.5"
+notes = """
+This is mostly code cleanup and using higher-level functions from
+itertools/std. There were also a few tests added, which is an improvement over
+having none at all.
+"""
 
 [[audits.qlog]]
 who = "Kershaw Chang <kershaw@mozilla.com>"
@@ -5580,6 +5626,12 @@ delta = "0.1.8 -> 0.1.9"
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-run"
 delta = "0.1.9 -> 0.1.10"
+
+[[audits.serde_spanned]]
+who = "Ben Dean-Kawamura <bdk@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "1.0.3"
+notes = "Relatively simple Serde trait implementations.  No IO or unsafe code."
 
 [[audits.serde_with]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -6616,6 +6668,11 @@ who = "edgul <ed.guloien@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.3.0 -> 0.4.0"
 
+[[audits.urlpattern]]
+who = "Valentin Gosu <valentin.gosu@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.4.0 -> 0.4.1"
+
 [[audits.utf16_iter]]
 who = "Henri Sivonen <hsivonen@hsivonen.fi>"
 criteria = "safe-to-deploy"
@@ -6876,7 +6933,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "27.0.0 -> 27.0.0@git:d8f97261d23e436be75884f792b5931b383c4041"
+delta = "27.0.0 -> 27.0.0@git:868fa196977c828f1e43a1882af495aa3100680b"
 importable = false
 
 [[audits.wgpu-core-deps-apple]]
@@ -6907,7 +6964,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "27.0.0 -> 27.0.0@git:d8f97261d23e436be75884f792b5931b383c4041"
+delta = "27.0.0 -> 27.0.0@git:868fa196977c828f1e43a1882af495aa3100680b"
 importable = false
 
 [[audits.wgpu-core-deps-windows-linux-android]]
@@ -6938,7 +6995,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "27.0.0 -> 27.0.0@git:d8f97261d23e436be75884f792b5931b383c4041"
+delta = "27.0.0 -> 27.0.0@git:868fa196977c828f1e43a1882af495aa3100680b"
 importable = false
 
 [[audits.wgpu-hal]]
@@ -7047,7 +7104,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "27.0.0 -> 27.0.0@git:d8f97261d23e436be75884f792b5931b383c4041"
+delta = "27.0.0 -> 27.0.0@git:868fa196977c828f1e43a1882af495aa3100680b"
 importable = false
 
 [[audits.wgpu-types]]
@@ -7151,7 +7208,7 @@ who = [
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "27.0.0 -> 27.0.0@git:d8f97261d23e436be75884f792b5931b383c4041"
+delta = "27.0.0 -> 27.0.0@git:868fa196977c828f1e43a1882af495aa3100680b"
 importable = false
 
 [[audits.whatsys]]
@@ -7169,6 +7226,12 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.1.2 -> 0.3.1"
 notes = "Maintained by me. I have written or reviewed all of the code."
+
+[[audits.whatsys]]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
+criteria = "safe-to-deploy"
+delta = "0.3.1 -> 0.3.2"
+notes = "Minor tweak to avoid depending on min() macro which I authored."
 
 [[audits.windows-link]]
 who = "Mark Hammond <mhammond@skippinet.com.au>"
@@ -7908,6 +7971,30 @@ criteria = "safe-to-deploy"
 user-id = 1 # Alex Crichton (alexcrichton)
 start = "2019-05-16"
 end = "2024-05-06"
+
+[[trusted.toml]]
+criteria = "safe-to-deploy"
+user-id = 6743 # Ed Page (epage)
+start = "2022-12-14"
+end = "2026-11-12"
+
+[[trusted.toml_datetime]]
+criteria = "safe-to-deploy"
+user-id = 6743 # Ed Page (epage)
+start = "2022-10-21"
+end = "2026-11-12"
+
+[[trusted.toml_parser]]
+criteria = "safe-to-deploy"
+user-id = 6743 # Ed Page (epage)
+start = "2025-07-08"
+end = "2026-11-12"
+
+[[trusted.toml_writer]]
+criteria = "safe-to-deploy"
+user-id = 6743 # Ed Page (epage)
+start = "2025-07-08"
+end = "2026-11-12"
 
 [[trusted.unicode-ident]]
 criteria = "safe-to-deploy"

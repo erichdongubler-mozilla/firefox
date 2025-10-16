@@ -126,7 +126,7 @@ import org.mozilla.fenix.ext.isWideWindow
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.navigateSafe
 import org.mozilla.fenix.nimbus.FxNimbus
-import org.mozilla.fenix.settings.ToolbarShortcutPreference
+import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.quicksettings.protections.cookiebanners.getCookieBannerUIMode
 import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.ext.isActiveDownload
@@ -218,7 +218,7 @@ class BrowserToolbarMiddleware(
     @VisibleForTesting
     internal var environment: BrowserToolbarEnvironment? = null
 
-    @Suppress("LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth", "ReturnCount")
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth", "ReturnCount", "CognitiveComplexMethod")
     override fun invoke(
         context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
         next: (BrowserToolbarAction) -> Unit,
@@ -747,8 +747,8 @@ class BrowserToolbarMiddleware(
     private fun buildEndPageActions(): List<Action> {
         val isWideScreen = environment?.fragment?.isWideWindow() == true
         val tabStripEnabled = settings.isTabStripEnabled
-        val translateShortcutEnabled = settings.toolbarShortcutKey == ToolbarShortcutPreference.Keys.TRANSLATE
-        val shareShortcutEnabled = settings.toolbarShortcutKey == ToolbarShortcutPreference.Keys.SHARE
+        val translateShortcutEnabled = settings.toolbarSimpleShortcutKey == ShortcutType.TRANSLATE
+        val shareShortcutEnabled = settings.toolbarSimpleShortcutKey == ShortcutType.SHARE
 
         return listOf(
             ToolbarActionConfig(ToolbarAction.ReaderMode) {
@@ -774,9 +774,10 @@ class BrowserToolbarMiddleware(
         val isTallWindow = environment?.fragment?.isTallWindow() == true
         val tabStripEnabled = settings.isTabStripEnabled
         val shouldUseExpandedToolbar = settings.shouldUseExpandedToolbar
-        val useCustomPrimary = settings.shouldShowToolbarCustomization && !shouldUseExpandedToolbar
+        val useCustomPrimary = settings.shouldShowToolbarCustomization
         val primarySlotAction = mapShortcutToAction(
-            settings.toolbarShortcutKey,
+            settings.toolbarSimpleShortcutKey,
+            ToolbarAction.NewTab,
             isBookmarked,
         ).takeIf { useCustomPrimary } ?: ToolbarAction.NewTab
 
@@ -817,14 +818,15 @@ class BrowserToolbarMiddleware(
         val isWideWindow = environment.fragment.isWideWindow()
         val isTallWindow = environment.fragment.isTallWindow()
         val shouldUseExpandedToolbar = settings.shouldUseExpandedToolbar
+        val useCustomPrimary = settings.shouldShowToolbarCustomization
+        val primarySlotAction = mapShortcutToAction(
+            settings.toolbarExpandedShortcutKey,
+            getBookmarkAction(isBookmarked),
+            isBookmarked,
+        ).takeIf { useCustomPrimary } ?: getBookmarkAction(isBookmarked)
 
         return listOf(
-            ToolbarActionConfig(ToolbarAction.Bookmark) {
-                shouldUseExpandedToolbar && isTallWindow && !isWideWindow && !isBookmarked
-            },
-            ToolbarActionConfig(ToolbarAction.EditBookmark) {
-                shouldUseExpandedToolbar && isTallWindow && !isWideWindow && isBookmarked
-            },
+            ToolbarActionConfig(primarySlotAction) { shouldUseExpandedToolbar && isTallWindow && !isWideWindow },
             ToolbarActionConfig(ToolbarAction.Share) { shouldUseExpandedToolbar && isTallWindow && !isWideWindow },
             ToolbarActionConfig(ToolbarAction.NewTab) { shouldUseExpandedToolbar && isTallWindow && !isWideWindow },
             ToolbarActionConfig(ToolbarAction.TabCounter) { shouldUseExpandedToolbar && isTallWindow && !isWideWindow },
@@ -1023,8 +1025,13 @@ class BrowserToolbarMiddleware(
         browserScreenStore.observeWhileActive {
             distinctUntilChangedBy { it.pageTranslationStatus }
             .collect {
-                updateEndBrowserActions(context)
                 updateEndPageActions(context)
+                if (settings.toolbarSimpleShortcutKey == ShortcutType.TRANSLATE) {
+                    updateEndBrowserActions(context)
+                }
+                if (settings.toolbarExpandedShortcutKey == ShortcutType.TRANSLATE) {
+                    updateNavigationActions(context)
+                }
             }
         }
     }
@@ -1038,6 +1045,7 @@ class BrowserToolbarMiddleware(
                 )
             }.collect {
                 updateEndBrowserActions(context)
+                updateNavigationActions(context)
                 updateStartBrowserActions(context)
             }
         }
@@ -1124,7 +1132,7 @@ class BrowserToolbarMiddleware(
         appStore.state.searchState.selectedSearchEngine?.searchEngine
             ?: browserStore.state.search.selectedOrDefaultSearchEngine
 
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "CognitiveComplexMethod")
     @VisibleForTesting
     internal fun buildAction(
         toolbarAction: ToolbarAction,
@@ -1315,21 +1323,26 @@ class BrowserToolbarMiddleware(
 
     companion object {
         @VisibleForTesting
-        @JvmStatic
-        internal fun mapShortcutToAction(
-            key: String,
-            isBookmarked: Boolean = false,
-        ): ToolbarAction = when (key) {
-            ToolbarShortcutPreference.Keys.NEW_TAB -> ToolbarAction.NewTab
-            ToolbarShortcutPreference.Keys.SHARE -> ToolbarAction.Share
-            ToolbarShortcutPreference.Keys.BOOKMARK -> when (isBookmarked) {
+        internal fun getBookmarkAction(isBookmarked: Boolean): ToolbarAction =
+            when (isBookmarked) {
                 true -> ToolbarAction.EditBookmark
                 false -> ToolbarAction.Bookmark
             }
-            ToolbarShortcutPreference.Keys.TRANSLATE -> ToolbarAction.Translate
-            ToolbarShortcutPreference.Keys.HOMEPAGE -> ToolbarAction.Homepage
-            ToolbarShortcutPreference.Keys.BACK -> ToolbarAction.Back
-            else -> ToolbarAction.NewTab
+
+        @VisibleForTesting
+        @JvmStatic
+        internal fun mapShortcutToAction(
+            key: String,
+            default: ToolbarAction,
+            isBookmarked: Boolean = false,
+        ): ToolbarAction = when (key) {
+            ShortcutType.NEW_TAB -> ToolbarAction.NewTab
+            ShortcutType.SHARE -> ToolbarAction.Share
+            ShortcutType.BOOKMARK -> getBookmarkAction(isBookmarked)
+            ShortcutType.TRANSLATE -> ToolbarAction.Translate
+            ShortcutType.HOMEPAGE -> ToolbarAction.Homepage
+            ShortcutType.BACK -> ToolbarAction.Back
+            else -> default
         }
     }
 }

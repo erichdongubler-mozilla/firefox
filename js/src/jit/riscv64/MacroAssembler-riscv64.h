@@ -10,8 +10,6 @@
 #ifndef jit_riscv64_MacroAssembler_riscv64_h
 #define jit_riscv64_MacroAssembler_riscv64_h
 
-#include <iterator>
-
 #include "jit/MoveResolver.h"
 #include "jit/riscv64/Assembler-riscv64.h"
 #include "wasm/WasmTypeDecls.h"
@@ -841,10 +839,10 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
   void unboxGCThingForGCBarrier(const Address& src, Register dest) {
     loadPtr(src, dest);
-    ExtractBits(dest, dest, 0, JSVAL_TAG_SHIFT - 1);
+    ExtractBits(dest, dest, 0, JSVAL_TAG_SHIFT);
   }
   void unboxGCThingForGCBarrier(const ValueOperand& src, Register dest) {
-    ExtractBits(dest, src.valueReg(), 0, JSVAL_TAG_SHIFT - 1);
+    ExtractBits(dest, src.valueReg(), 0, JSVAL_TAG_SHIFT);
   }
 
   void unboxWasmAnyRefGCThingForGCBarrier(const Address& src, Register dest) {

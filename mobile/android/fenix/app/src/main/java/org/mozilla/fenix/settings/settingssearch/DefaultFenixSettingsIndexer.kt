@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.settings.settingssearch
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Resources
 import android.content.res.XmlResourceParser
@@ -67,7 +68,7 @@ class DefaultFenixSettingsIndexer(private val context: Context) : SettingsIndexe
         return null
     }
 
-    @Suppress("NestedBlockDepth")
+    @Suppress("NestedBlockDepth", "CognitiveComplexMethod")
     private fun parseXmlFile(
         parser: XmlResourceParser,
         preferenceFileInformation: PreferenceFileInformation,
@@ -93,6 +94,7 @@ class DefaultFenixSettingsIndexer(private val context: Context) : SettingsIndexe
                             DEFAULT_BROWSER_PREFERENCE_TAG,
                             PREFERENCE_TAG,
                             SWITCH_PREFERENCE_TAG,
+                            SWITCH_PREFERENCE_PLAIN_TAG,
                             TEXT_PERCENTAGE_SEEK_BAR_PREFERENCE_TAG,
                             TOGGLE_RADIO_BUTTON_PREFERENCE_TAG,
                                 -> {
@@ -105,7 +107,6 @@ class DefaultFenixSettingsIndexer(private val context: Context) : SettingsIndexe
                                     }
                             }
                             RADIO_BUTTON_PREFERENCE_TAG,
-                            SWITCH_PREFERENCE_PLAIN_TAG,
                                 -> {
                                 if (categoryItem != null && !categoryItemAdded) {
                                     categoryItemAdded = true
@@ -277,6 +278,7 @@ class DefaultFenixSettingsIndexer(private val context: Context) : SettingsIndexe
      *
      * @param resourceName The name of the resource.
      */
+    @SuppressLint("DiscouragedApi")
     private fun getStringResource(resourceName: String): String {
         return try {
             val resourceId = context.resources.getIdentifier(
@@ -327,6 +329,7 @@ class DefaultFenixSettingsIndexer(private val context: Context) : SettingsIndexe
             PreferenceFileInformation.OpenLinksInAppsPreferences,
             PreferenceFileInformation.PrivateBrowsingPreferences,
             PreferenceFileInformation.SearchSettingsPreferences,
+            PreferenceFileInformation.SiteSettingsPreferences,
             PreferenceFileInformation.TabsPreferences,
             PreferenceFileInformation.TrackingProtectionPreferences,
             PreferenceFileInformation.SaveLoginsPreferences,

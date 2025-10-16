@@ -24,6 +24,9 @@ only-for-build-platforms:
     - win32/opt
     - win64/opt
 
+task-defaults:
+    run-on-repo-type: [hg]
+
 tasks:
     l10n:
         description: Localization
@@ -67,7 +70,7 @@ tasks:
                     win32.*: win32-opt
                     win64.*: win64-opt
         run-on-projects: ['all']
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         treeherder:
             symbol: L10n
             tier: 1

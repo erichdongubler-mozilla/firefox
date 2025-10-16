@@ -359,14 +359,28 @@ class nsHtml5Tokenizer {
     strBufLen = 0;
   }
 
-  void appendStrBuf(char16_t c);
+  inline void appendStrBuf(char16_t c) {
+    if (MOZ_UNLIKELY(strBufLen == strBuf.length)) {
+      EnsureBufferSpaceShouldNeverHappen(1);
+    }
+    strBuf[strBufLen++] = c;
+  }
 
  protected:
   inline nsHtml5String strBufToString() {
+    nsHtml5String digitAtom = TryAtomizeForSingleDigit();
+    if (digitAtom) {
+      return digitAtom;
+    }
+    bool maybeAtomize = false;
+    if (!newAttributesEachTime) {
+      if (attributeName == nsHtml5AttributeName::ATTR_CLASS ||
+          attributeName == nsHtml5AttributeName::ATTR_TYPE) {
+        maybeAtomize = true;
+      }
+    }
     nsHtml5String str = nsHtml5Portability::newStringFromBuffer(
-        strBuf, 0, strBufLen, tokenHandler,
-        !newAttributesEachTime &&
-            attributeName == nsHtml5AttributeName::ATTR_CLASS);
+        strBuf, 0, strBufLen, tokenHandler, maybeAtomize);
     clearStrBufAfterUse();
     return str;
   }
@@ -392,7 +406,15 @@ class nsHtml5Tokenizer {
     appendStrBuf(c);
   }
 
-  void appendStrBuf(char16_t* buffer, int32_t offset, int32_t length);
+  inline void appendStrBuf(char16_t* buffer, int32_t offset, int32_t length) {
+    int32_t newLen = strBufLen + length;
+    if (MOZ_UNLIKELY(strBuf.length < newLen)) {
+      EnsureBufferSpaceShouldNeverHappen(length);
+    }
+    nsHtml5ArrayCopy::arraycopy(buffer, offset, strBuf, strBufLen, length);
+    strBufLen = newLen;
+  }
+
   inline void appendCharRefBufToStrBuf() {
     appendStrBuf(charRefBuf, 0, charRefBufLen);
     charRefBufLen = 0;
