@@ -270,6 +270,10 @@ class JujutsuRepository(Repository):
                 outgoing.append(mozpath.normsep(file))
         return outgoing
 
+    def _repo_root_relative_path(self, path: Union[str, Path]):
+        # Avoid problems with special file patterns when passing a file path to jj.
+        return f'file:"{super()._repo_root_relative_path(path)}"'
+
     def add_remove_files(self, *paths: Union[str, Path], force: bool = False):
         if not paths:
             return
@@ -439,7 +443,7 @@ class JujutsuRepository(Repository):
                 p.write_text(content)
                 # Manually track the file in case it is not automatically,
                 # e.g. because `snapshot.auto-track` has been configured.
-                self._run("file", "track", p)
+                self.add_remove_files(p)
             # Update the jj commit with the changes we just made.
             self._snapshot()
             yield self._resolve_to_change("@")
