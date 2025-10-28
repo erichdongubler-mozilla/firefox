@@ -645,6 +645,7 @@ pub extern "C" fn wgpu_client_receive_server_message(client: &Client, byte_buf: 
                 vendor,
                 support_use_shared_texture_in_swap_chain,
                 transient_saves_memory,
+                device_pci_bus_id,
             }) = adapter_information
             {
                 let nss = |s: &str| {
@@ -665,6 +666,7 @@ pub extern "C" fn wgpu_client_receive_server_message(client: &Client, byte_buf: 
                     vendor,
                     support_use_shared_texture_in_swap_chain,
                     transient_saves_memory,
+                    device_pci_bus_id: nss(&device_pci_bus_id),
                 };
                 unsafe {
                     wgpu_child_resolve_request_adapter_promise(

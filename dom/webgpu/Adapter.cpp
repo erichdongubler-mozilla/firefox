@@ -144,6 +144,10 @@ void AdapterInfo::GetWgpuBackend(nsString& s) const {
   MOZ_CRASH("Bad `ffi::WGPUBackend`");
 }
 
+void AdapterInfo::GetWgpuDevicePciBusId(nsString& s) const {
+  s = mAboutSupportInfo->device_pci_bus_id;
+}
+
 // -
 
 GPU_IMPL_CYCLE_COLLECTION(Adapter, mParent, mFeatures, mLimits, mInfo)

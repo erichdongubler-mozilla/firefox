@@ -82,6 +82,7 @@ interface GPUAdapterInfo {
     [ChromeOnly] readonly attribute DOMString wgpuDriver;
     [ChromeOnly] readonly attribute DOMString wgpuDriverInfo;
     [ChromeOnly] readonly attribute DOMString wgpuBackend;
+    [ChromeOnly] readonly attribute DOMString wgpuDevicePciBusId;
 };
 
 interface mixin NavigatorGPU {

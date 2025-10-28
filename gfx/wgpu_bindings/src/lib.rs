@@ -127,6 +127,7 @@ pub struct AdapterInformation<S> {
     backend: wgt::Backend,
     support_use_shared_texture_in_swap_chain: bool,
     transient_saves_memory: bool,
+    device_pci_bus_id: S,
 }
 
 #[repr(C)]

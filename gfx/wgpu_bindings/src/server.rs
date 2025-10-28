@@ -2665,7 +2665,7 @@ unsafe fn process_message(
                     driver_info,
                     backend,
                     transient_saves_memory,
-                    device_pci_bus_id: _,
+                    device_pci_bus_id,
                 } = global.adapter_get_info(adapter_id);
 
                 let is_hardware = match device_type {
@@ -2704,6 +2704,7 @@ unsafe fn process_message(
                     backend,
                     support_use_shared_texture_in_swap_chain,
                     transient_saves_memory,
+                    device_pci_bus_id: Cow::Owned(device_pci_bus_id),
                 };
                 Some(info)
             } else {
