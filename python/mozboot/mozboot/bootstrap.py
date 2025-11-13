@@ -30,6 +30,7 @@ from packaging.version import Version
 from mozboot.aerynos import AerynOsBootstrapper
 from mozboot.archlinux import ArchlinuxBootstrapper
 from mozboot.base import MODERN_RUST_VERSION
+from mozboot.bazzite import BazziteBootstrapper
 from mozboot.centosfedora import CentOSFedoraBootstrapper
 from mozboot.debian import DebianBootstrapper
 from mozboot.freebsd import FreeBSDBootstrapper
@@ -283,6 +284,8 @@ class Bootstrapper:
                 "suse",
             ):
                 cls = OpenSUSEBootstrapper
+            elif dist_id in ("bazzite"):
+                cls = BazziteBootstrapper
             else:
                 raise NotImplementedError(
                     "Bootstrap support for this Linux "
