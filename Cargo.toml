@@ -124,6 +124,10 @@ mozilla-central-workspace-hack = { path = "build/workspace-hack" }
 # crate, which we don't really need as we require MSVC anyways.
 windows-targets = { path = "build/rust/windows-targets" }
 
+# Patch windows-link to avoid `import_name_type = "undecorated"` on `link` attributes, which causes
+# problems on Windows x86.
+windows-link = { git = "https://github.com/erichdongubler-contrib/windows-rs", rev = "b2c384c5584c92ce1a7dcf1c1ac97b9093efd740" }
+
 # Patch windows to use a non-vendored local copy of the crate.
 windows = { path = "build/rust/windows" }
 

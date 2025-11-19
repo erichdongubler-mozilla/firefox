@@ -8221,8 +8221,7 @@ dependencies = [
 [[package]]
 name = "windows-link"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
+source = "git+https://github.com/erichdongubler-contrib/windows-rs?rev=b2c384c5584c92ce1a7dcf1c1ac97b9093efd740#b2c384c5584c92ce1a7dcf1c1ac97b9093efd740"
 
 [[package]]
 name = "windows-numerics"

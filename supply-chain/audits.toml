@@ -7259,6 +7259,12 @@ who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.1.1 -> 0.2.0"
 
+[[audits.windows-link]]
+who = "Erich Gubler <erichdongubler@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.2.1 -> 0.2.1@git:b2c384c5584c92ce1a7dcf1c1ac97b9093efd740"
+importable = false
+
 [[audits.winreg]]
 who = "Ray Kraesig <rkraesig@mozilla.com>"
 criteria = "safe-to-run"

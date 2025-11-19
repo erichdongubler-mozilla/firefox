@@ -294,6 +294,10 @@ notes = "Upstream project which we pin."
 audit-as-crates-io = true
 notes = "Local override of the crates.io crate that uses a non-vendored local copy of the downloaded crate"
 
+[policy.windows-link]
+audit-as-crates-io = true
+notes = "Adds a workaround for Windows x86 builds."
+
 [policy.wr_malloc_size_of]
 audit-as-crates-io = false
 
