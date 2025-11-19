@@ -5,9 +5,7 @@ edition = "2018"
 license = "MIT OR Apache-2.0"
 
 [lib]
-proc-macro = true
 path = "lib.rs"
 
 [dependencies]
-syn = { version = "2", features = ["full"] }
-quote = "1"
+windows-link = "0.2"

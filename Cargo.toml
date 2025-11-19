@@ -123,6 +123,8 @@ mozbuild = { path = "build/rust/mozbuild" }
 # Workspace hack
 mozilla-central-workspace-hack = { path = "build/workspace-hack" }
 
+windows-link = { path = "build/rust/windows-link" }
+
 # windows-targets replacement. It avoids the large dependencies of the original
 # crate, which we don't really need as we require MSVC anyways.
 windows-targets = { path = "build/rust/windows-targets" }
