@@ -52,6 +52,7 @@ interface GPUSupportedLimits {
     readonly attribute unsigned long maxComputeWorkgroupSizeY;
     readonly attribute unsigned long maxComputeWorkgroupSizeZ;
     readonly attribute unsigned long maxComputeWorkgroupsPerDimension;
+    readonly attribute unsigned long maxImmediateSize;
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
@@ -638,6 +639,7 @@ GPUPipelineLayout includes GPUObjectBase;
 dictionary GPUPipelineLayoutDescriptor
          : GPUObjectDescriptorBase {
     required sequence<GPUBindGroupLayout?> bindGroupLayouts;
+    GPUSize32 immediateSize = 0;
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
@@ -1070,6 +1072,8 @@ interface mixin GPUBindingCommandsMixin {
         [AllowShared] Uint32Array dynamicOffsetsData,
         GPUSize64 dynamicOffsetsDataStart,
         GPUSize32 dynamicOffsetsDataLength);
+    undefined setImmediates(GPUSize32 rangeOffset, AllowSharedBufferSource data,
+        optional GPUSize64 dataOffset = 0, optional GPUSize64 size);
 };
 
 interface mixin GPUDebugCommandsMixin {
