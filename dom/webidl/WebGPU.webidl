@@ -298,6 +298,7 @@ namespace GPUTextureUsage {
     const GPUFlagsConstant TEXTURE_BINDING   = 0x04;
     const GPUFlagsConstant STORAGE_BINDING   = 0x08;
     const GPUFlagsConstant RENDER_ATTACHMENT = 0x10;
+    const GPUFlagsConstant TRANSIENT         = 0x20;
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
