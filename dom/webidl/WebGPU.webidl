@@ -156,6 +156,7 @@ enum GPUFeatureName {
     "dual-source-blending",
     "subgroups",
     "primitive-index",
+    "texture-component-swizzle",
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
@@ -257,6 +258,7 @@ namespace GPUMapMode {
 [Func="mozilla::webgpu::Instance::PrefEnabled",
  Exposed=(Window, Worker), SecureContext]
 interface GPUTexture {
+    [Throws]
     GPUTextureView createView(optional GPUTextureViewDescriptor descriptor = {});
 
     undefined destroy();
@@ -315,6 +317,9 @@ dictionary GPUTextureViewDescriptor
     GPUIntegerCoordinate mipLevelCount;
     GPUIntegerCoordinate baseArrayLayer = 0;
     GPUIntegerCoordinate arrayLayerCount;
+
+    // Requires "texture-component-swizzle" feature.
+    DOMString swizzle = "rgba";
 };
 
 enum GPUTextureViewDimension {
