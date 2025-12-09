@@ -633,7 +633,7 @@ GPUPipelineLayout includes GPUObjectBase;
 
 dictionary GPUPipelineLayoutDescriptor
          : GPUObjectDescriptorBase {
-    required sequence<GPUBindGroupLayout> bindGroupLayouts;
+    required sequence<GPUBindGroupLayout?> bindGroupLayouts;
     GPUSize32 immediateSize = 0;
 };
 
