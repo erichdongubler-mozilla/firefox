@@ -2060,6 +2060,9 @@ impl Global {
                     error_buf.init(err, device_id);
                 }
             }
+            DeviceAction::CreateBindGroupLayoutError(id, label) => {
+                self.create_bind_group_layout_error(Some(id), label);
+            }
             DeviceAction::RenderPipelineGetBindGroupLayout(pipeline_id, index, bgl_id) => {
                 let (_, error) =
                     self.render_pipeline_get_bind_group_layout(pipeline_id, index, Some(bgl_id));

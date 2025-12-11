@@ -189,6 +189,16 @@ pub enum RawBindingType {
     WriteonlyStorageTexture,
     ReadWriteStorageTexture,
     ExternalTexture,
+    Error,
+}
+
+/// A [`BindGroupLayoutEntry::error_case`], specified when [`BindGroupLayoutEntry::ty`] is set to
+/// [`RawBindingType::Error`].
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub enum BindingTypeError {
+    NoneSpecified,
+    MultipleSpecified,
 }
 
 /// An FFI-friendly representation of a [`wgt::BindGroupLayoutEntry`].
@@ -208,6 +218,8 @@ pub struct BindGroupLayoutEntry<'a> {
     storage_texture_format: Option<&'a wgt::TextureFormat>,
     sampler_filter: bool,
     sampler_compare: bool,
+    /// The error case, for when [`Self::ty`] is set to [`RawBindingType::Error`].
+    error_case: BindingTypeError,
 }
 
 #[repr(C)]
@@ -1460,8 +1472,9 @@ pub unsafe extern "C" fn wgpu_client_create_bind_group_layout(
         .entries
         .as_slice()
         .iter()
-        .map(|entry| {
-            wgt::BindGroupLayoutEntry {
+        .enumerate()
+        .map(|(idx, entry)| {
+            Ok(wgt::BindGroupLayoutEntry {
                 binding: entry.binding,
                 visibility: entry.visibility,
                 count: None,
@@ -1524,16 +1537,40 @@ pub unsafe extern "C" fn wgpu_client_create_bind_group_layout(
                         format: *entry.storage_texture_format.unwrap(),
                     },
                     RawBindingType::ExternalTexture => wgt::BindingType::ExternalTexture,
+                    RawBindingType::Error => return Err((idx, entry.error_case)),
                 },
-            }
+            })
         })
-        .collect();
-    let wgpu_desc = wgc::binding_model::BindGroupLayoutDescriptor {
-        label,
-        entries: Cow::Owned(entries),
-    };
+        .collect::<Result<_, _>>();
 
-    let action = DeviceAction::CreateBindGroupLayout(id, wgpu_desc);
+    let action = match entries {
+        Ok(entries) => {
+            let wgpu_desc = wgc::binding_model::BindGroupLayoutDescriptor {
+                label,
+                entries: Cow::Owned(entries),
+            };
+            DeviceAction::CreateBindGroupLayout(id, wgpu_desc)
+        }
+        Err((idx, error_case)) => {
+            let initial_msg = match error_case {
+                BindingTypeError::NoneSpecified => "no type specified",
+                BindingTypeError::MultipleSpecified => "multiple types specified",
+            };
+            let mut message = format!("{initial_msg} for entry {idx} of bind group layout");
+            if let Some(label) = label.as_deref() {
+                write!(&mut message, "\"{label}\"").unwrap();
+            }
+
+            client.queue_message(&Message::Device(
+                device_id,
+                DeviceAction::Error {
+                    message,
+                    r#type: wgt::error::ErrorType::Validation,
+                },
+            ));
+            DeviceAction::CreateBindGroupLayoutError(id, label)
+        }
+    };
     let message = Message::Device(device_id, action);
     client.queue_message(&message);
     id
