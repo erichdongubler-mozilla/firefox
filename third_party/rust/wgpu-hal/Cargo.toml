@@ -206,7 +206,7 @@ optional = true
 
 [dependencies.naga]
 version = "27.0.0"
-path = "../naga"
+path = '..\naga'
 
 [dependencies.ordered-float]
 version = ">=3, <6.0"
@@ -232,7 +232,7 @@ default-features = false
 
 [dependencies.wgpu-types]
 version = "27.0.0"
-path = "../wgpu-types"
+path = '..\wgpu-types'
 default-features = false
 
 [dev-dependencies.env_logger]
@@ -244,7 +244,7 @@ version = "0.30.7"
 
 [dev-dependencies.naga]
 version = "27.0.0"
-path = "../naga"
+path = '..\naga'
 features = [
     "wgsl-in",
     "termcolor",

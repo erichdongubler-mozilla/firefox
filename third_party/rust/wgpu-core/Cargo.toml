@@ -151,7 +151,7 @@ optional = true
 
 [dependencies.naga]
 version = "27.0.0"
-path = "../naga"
+path = '..\naga'
 
 [dependencies.once_cell]
 version = "1.21"
@@ -196,11 +196,11 @@ default-features = false
 
 [dependencies.wgpu-hal]
 version = "27.0.0"
-path = "../wgpu-hal"
+path = '..\wgpu-hal'
 
 [dependencies.wgpu-types]
 version = "27.0.0"
-path = "../wgpu-types"
+path = '..\wgpu-types'
 default-features = false
 
 [build-dependencies.cfg_aliases]
@@ -208,12 +208,12 @@ version = "0.2.1"
 
 [target.'cfg(all(target_arch = "wasm32", not(target_os = "emscripten")))'.dependencies.wgpu-core-deps-wasm]
 version = "27.0.0"
-path = "platform-deps/wasm"
+path = 'platform-deps\wasm'
 optional = true
 
 [target.'cfg(any(windows, target_os = "linux", target_os = "android", target_os = "freebsd"))'.dependencies.wgpu-core-deps-windows-linux-android]
 version = "27.0.0"
-path = "platform-deps/windows-linux-android"
+path = 'platform-deps\windows-linux-android'
 optional = true
 
 [target.'cfg(not(target_has_atomic = "64"))'.dependencies.portable-atomic]
@@ -222,12 +222,12 @@ optional = true
 
 [target.'cfg(target_os = "emscripten")'.dependencies.wgpu-core-deps-emscripten]
 version = "27.0.0"
-path = "platform-deps/emscripten"
+path = 'platform-deps\emscripten'
 optional = true
 
 [target.'cfg(target_vendor = "apple")'.dependencies.wgpu-core-deps-apple]
 version = "27.0.0"
-path = "platform-deps/apple"
+path = 'platform-deps\apple'
 optional = true
 
 [lints.rust.unexpected_cfgs]
