@@ -350,6 +350,7 @@ enum DeviceAction<'a> {
         id::BindGroupLayoutId,
         wgc::binding_model::BindGroupLayoutDescriptor<'a>,
     ),
+    CreateBindGroupLayoutError(id::BindGroupLayoutId, wgc::Label<'a>),
     RenderPipelineGetBindGroupLayout(id::RenderPipelineId, u32, id::BindGroupLayoutId),
     ComputePipelineGetBindGroupLayout(id::ComputePipelineId, u32, id::BindGroupLayoutId),
     CreatePipelineLayout(
