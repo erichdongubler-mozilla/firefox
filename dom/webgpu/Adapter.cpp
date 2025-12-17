@@ -274,7 +274,11 @@ double GetLimitDefault(Limit aLimit) {
       case Limit::MaxSampledTexturesPerShaderStage: return 16;
       case Limit::MaxSamplersPerShaderStage: return 16;
       case Limit::MaxStorageBuffersPerShaderStage: return 8;
+      case Limit::MaxStorageBuffersInVertexStage: return 8;
+      case Limit::MaxStorageBuffersInFragmentStage: return 8;
       case Limit::MaxStorageTexturesPerShaderStage: return 4;
+      case Limit::MaxStorageTexturesInVertexStage: return 8;
+      case Limit::MaxStorageTexturesInFragmentStage: return 8;
       case Limit::MaxUniformBuffersPerShaderStage: return 12;
       case Limit::MaxUniformBufferBindingSize: return 65536;
       case Limit::MaxStorageBufferBindingSize: return 134217728;
@@ -413,8 +417,16 @@ static std::string_view ToJsKey(const Limit limit) {
       return "maxSamplersPerShaderStage";
     case Limit::MaxStorageBuffersPerShaderStage:
       return "maxStorageBuffersPerShaderStage";
+    case Limit::MaxStorageBuffersInVertexStage:
+      return "maxStorageBuffersInVertexStage";
+    case Limit::MaxStorageBuffersInFragmentStage:
+      return "maxStorageBuffersInFragmentStage";
     case Limit::MaxStorageTexturesPerShaderStage:
       return "maxStorageTexturesPerShaderStage";
+    case Limit::MaxStorageTexturesInVertexStage:
+      return "maxStorageTexturesInVertexStage";
+    case Limit::MaxStorageTexturesInFragmentStage:
+      return "maxStorageTexturesInFragmentStage";
     case Limit::MaxUniformBuffersPerShaderStage:
       return "maxUniformBuffersPerShaderStage";
     case Limit::MaxUniformBufferBindingSize:
