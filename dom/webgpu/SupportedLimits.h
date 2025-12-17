@@ -30,7 +30,11 @@ enum class Limit : uint8_t {
   MaxSampledTexturesPerShaderStage,
   MaxSamplersPerShaderStage,
   MaxStorageBuffersPerShaderStage,
+  MaxStorageBuffersInVertexStage,
+  MaxStorageBuffersInFragmentStage,
   MaxStorageTexturesPerShaderStage,
+  MaxStorageTexturesInVertexStage,
+  MaxStorageTexturesInFragmentStage,
   MaxUniformBuffersPerShaderStage,
   MaxUniformBufferBindingSize,
   MaxStorageBufferBindingSize,
@@ -77,7 +81,11 @@ class SupportedLimits final : public nsWrapperCache, public ChildOf<Adapter> {
   _(MaxSampledTexturesPerShaderStage)
   _(MaxSamplersPerShaderStage)
   _(MaxStorageBuffersPerShaderStage)
+  _(MaxStorageBuffersInVertexStage)
+  _(MaxStorageBuffersInFragmentStage)
   _(MaxStorageTexturesPerShaderStage)
+  _(MaxStorageTexturesInVertexStage)
+  _(MaxStorageTexturesInFragmentStage)
   _(MaxUniformBuffersPerShaderStage)
   _(MaxUniformBufferBindingSize)
   _(MaxStorageBufferBindingSize)
