@@ -109,6 +109,22 @@ opt-level = 2
 [profile.release.package.glsl]
 opt-level = 2
 
+[profile.release.package.naga]
+opt-level = 0
+debug = true
+
+[profile.release.package.wgpu-core]
+opt-level = 0
+debug = true
+
+[profile.release.package.wgpu-hal]
+opt-level = 0
+debug = true
+
+[profile.release.package.wgpu-types]
+opt-level = 0
+debug = true
+
 [patch.crates-io]
 # The build system doesn't want those to be used, but they are pulled anyways (because
 # dependencies can't be disabled based on features), but remain unused. We ensure they
