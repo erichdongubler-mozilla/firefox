@@ -262,9 +262,9 @@ pub enum CooperativeScalarType {
 /// Describes a supported cooperative matrix configuration.
 ///
 /// Cooperative matrices perform the operation `C = A * B + C` where:
-/// - `A` is an M×K matrix
-/// - `B` is a K×N matrix
-/// - `C` is an M×N matrix (both input accumulator and output)
+/// - `A` is an M�K matrix
+/// - `B` is a K�N matrix
+/// - `C` is an M�N matrix (both input accumulator and output)
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub struct CooperativeMatrixProperties {
     /// Number of rows in matrices A and C (M dimension)

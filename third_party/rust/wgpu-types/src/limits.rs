@@ -180,7 +180,7 @@ pub struct Limits {
     /// Defaults to 2048. Higher is "better".
     pub max_vertex_buffer_array_stride: u32,
     /// Maximum value for the number of input or output variables for inter-stage communication
-    /// (like vertex outputs or fragment inputs) `@location(…)`s (in WGSL parlance)
+    /// (like vertex outputs or fragment inputs) `@location(\u2026)`s (in WGSL parlance)
     /// when creating a `RenderPipeline`.
     /// Defaults to 16. Higher is "better".
     pub max_inter_stage_shader_variables: u32,
