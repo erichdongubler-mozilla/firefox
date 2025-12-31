@@ -36,7 +36,7 @@
 
 namespace mozilla::webgpu {
 
-const uint64_t POLL_TIME_MS = 100;
+const uint64_t POLL_TIME_MS = 1;
 
 static mozilla::LazyLogModule sLogger("WebGPU");
 
