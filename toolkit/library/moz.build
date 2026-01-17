@@ -29,6 +29,7 @@ def Libxul(name, output_category=None):
         "avrt.dll",
         "comdlg32.dll",
         "credui.dll",
+        "d2d1.dll",
         "d3d11.dll",
         "D3DCompiler_47.dll",
         "dhcpcsvc.dll",
