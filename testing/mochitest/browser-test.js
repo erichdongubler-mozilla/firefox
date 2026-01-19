@@ -1019,12 +1019,17 @@ Tester.prototype = {
 
       // Notify a long running test problem if it didn't end up in a timeout.
       if (this.currentTest.unexpectedTimeouts && !this.currentTest.timedOut) {
+        let timeRan = Math.ceil((Date.now() - this.lastStartTime) / 1000);
+        let timeoutFactor = this.currentTest.scope.__maxTimeoutFactor;
+        let timeLimit = Math.round(gTimeoutSeconds * timeoutFactor);
         this.currentTest.addResult(
           new testResult({
             name:
-              "This test exceeded the timeout threshold. It should be" +
-              " rewritten or split up. If that's not possible, use" +
-              " requestLongerTimeout(N), but only as a last resort.",
+              `This test exceeded the timeout threshold. It should be ` +
+              `rewritten or split up. If that's not possible, use ` +
+              `requestLongerTimeout(N), but only as a last resort. ` +
+              `Test ran for ${timeRan}s, limit was ${timeLimit}s ` +
+              `(timeout factor ${timeoutFactor}).`,
           })
         );
       }
@@ -1972,6 +1977,9 @@ function testScope(aTester, aTest, expected) {
 
   this.requestLongerTimeout = function test_requestLongerTimeout(aFactor) {
     self.__timeoutFactor = aFactor;
+    if (aFactor > self.__maxTimeoutFactor) {
+      self.__maxTimeoutFactor = aFactor;
+    }
   };
 
   this.expectUncaughtException = function test_expectUncaughtException(
@@ -2045,6 +2053,7 @@ testScope.prototype = {
   __waitTimer: null,
   __cleanupFunctions: [],
   __timeoutFactor: 1,
+  __maxTimeoutFactor: 1,
   __expectedMinAsserts: 0,
   __expectedMaxAsserts: 0,
   /** @type {AbortSignal} */
