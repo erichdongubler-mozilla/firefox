@@ -246,7 +246,14 @@ export class SmartbarInput extends HTMLElement {
   constructor() {
     super();
 
+    // If the current window context does not have gBrowser,
+    // get the main browser window.
     this.window = this.ownerGlobal;
+    if (!this.window.gBrowser) {
+      lazy.logger.debug(`gBrowser not available, get the browser window.`);
+      this.window = window.browsingContext.topChromeWindow;
+    }
+
     this.document = this.window.document;
     this.isPrivate = lazy.PrivateBrowsingUtils.isWindowPrivate(this.window);
 
@@ -551,6 +558,10 @@ export class SmartbarInput extends HTMLElement {
    * Note that it might be called before #init has finished.
    */
   #onContextMenuRebuilt() {
+    // Skip context menu initialization for smartbar mode.
+    if (this.#isSmartbarMode) {
+      return;
+    }
     this._initStripOnShare();
     this._initPasteAndGo();
   }
@@ -1214,10 +1225,11 @@ export class SmartbarInput extends HTMLElement {
           detail: { value: committedValue, event, action },
         })
       );
-      if (!this.window.gBrowser) {
+
+      // Fall through to default navigation behaviour except for "chat".
+      if (action === "chat") {
         return;
       }
-      // Fall through to default navigation behaviour.
     }
     let element = this.view.selectedElement;
     let result = this.view.getResultFromElement(element);
@@ -5206,7 +5218,8 @@ export class SmartbarInput extends HTMLElement {
     this.removeAttribute("actiontype");
 
     if (this.#isSmartbarMode) {
-      this.smartbarAction = value ? "search" : "";
+      // TODO (Bug 2008926): The initial smartbar action needs to be determined by the intent model.
+      this.smartbarAction = value ? "chat" : "";
     }
 
     if (
