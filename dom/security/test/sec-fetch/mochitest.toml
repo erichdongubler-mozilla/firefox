@@ -14,7 +14,7 @@ support-files = [
 
 ["test_noreferrer_popup.html"]
 skip-if = [
-  "os == 'android' && !fission",
+  "!fission",
 ]
 
 ["test_trustworthy_loopback.html"]
