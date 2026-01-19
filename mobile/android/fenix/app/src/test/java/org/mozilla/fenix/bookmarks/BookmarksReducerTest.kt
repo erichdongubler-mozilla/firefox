@@ -857,6 +857,23 @@ class BookmarksReducerTest {
     }
 
     @Test
+    fun `WHEN the title of a bookmark is changed on the edit bookmark screen THEN it is filtered`() {
+        val state = BookmarksState.default.copy(
+            bookmarksEditBookmarkState = BookmarksEditBookmarkState(
+                bookmark = generateBookmark(title = "old title"),
+                folder = generateFolder(title = "parent"),
+            ),
+        )
+
+        val titleChange = "  New\nTitle  \n"
+
+        val result = bookmarksReducer(state, EditBookmarkAction.TitleChanged(titleChange))
+
+        assertEquals("New Title", result.bookmarksEditBookmarkState?.bookmark?.title)
+        assertEquals(true, result.bookmarksEditBookmarkState?.edited)
+    }
+
+    @Test
     fun `GIVEN a bookmark WHEN a edit is made THEN the edited state is persisted`() {
         val bookmarkItem = generateBookmark()
         val folderItem = SelectFolderItem(0, BookmarkItem.Folder("Bookmarks", "guid0", null), SelectFolderExpansionState.None)
