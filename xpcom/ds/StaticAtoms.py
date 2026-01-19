@@ -592,6 +592,7 @@ STATIC_ATOMS = [
     Atom("insertion", "insertion"),
     Atom("integer", "integer"),
     Atom("integrity", "integrity"),
+    Atom("integrity_violation", "integrity-violation"),
     Atom("interactive_widget", "interactive-widget"),
     Atom("internal", "internal"),
     Atom("internals", "internals"),

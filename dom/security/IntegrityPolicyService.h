@@ -26,12 +26,17 @@ class IntegrityPolicyService : public nsIContentPolicy {
 
   bool ShouldRequestBeBlocked(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo);
 
-  void MaybeReport(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
-                   IntegrityPolicy::DestinationType aDestination, bool aEnforce,
-                   bool aReportOnly);
-
  protected:
   virtual ~IntegrityPolicyService();
+
+  void ReportToConsole(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
+                       IntegrityPolicy::DestinationType aDestination,
+                       bool aEnforce, bool aReportOnly) const;
+
+  void ReportViolation(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
+                       IntegrityPolicy::DestinationType aDestination,
+                       const IntegrityPolicy* aPolicy, bool aEnforce,
+                       bool aReportOnly) const;
 };
 }  // namespace mozilla::dom
 

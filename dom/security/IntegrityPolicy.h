@@ -48,6 +48,9 @@ class IntegrityPolicy : public nsIIntegrityPolicy {
   void PolicyContains(DestinationType aDestination, bool* aContains,
                       bool* aROContains) const;
 
+  void Endpoints(nsTArray<nsCString>& aEnforcement,
+                 nsTArray<nsCString>& aReportOnly) const;
+
   static Maybe<DestinationType> ContentTypeToDestinationType(
       nsContentPolicyType aType);
 
