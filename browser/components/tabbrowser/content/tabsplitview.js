@@ -58,6 +58,26 @@
     }
 
     /**
+     * @typedef {object} TabSplitViewStateData
+     *   State of a tab group inside of an open window.
+     * @property {string} id
+     *   Unique ID of the tab splitview.
+     * @property {string} numberOfTabs
+     *   Number of expected tabs in the splitview.
+     *
+     * Collect data related to a single tab splitview, synchronously.
+     *
+     * @returns {TabSplitViewStateData}
+     *   Serialized splitview data
+     */
+    get state() {
+      return {
+        id: this.splitViewId,
+        numberOfTabs: this.tabs.length,
+      };
+    }
+
+    /**
      * @param {boolean} val
      */
     set hasActiveTab(val) {
@@ -241,8 +261,9 @@
      * add tabs to the split view wrapper
      *
      * @param {MozTabbrowserTab[]} tabs
+     * @param {boolean} isSessionRestore
      */
-    addTabs(tabs) {
+    addTabs(tabs, isSessionRestore = false) {
       for (let tab of tabs) {
         if (tab.pinned) {
           return;
@@ -255,14 +276,19 @@
                 selectTab: tab.selected,
               });
         this.#tabs.push(tabToMove);
-        gBrowser.moveTabToSplitView(tabToMove, this);
+        isSessionRestore
+          ? this.appendChild(tab)
+          : gBrowser.moveTabToSplitView(tabToMove, this);
         if (tab === gBrowser.selectedTab) {
           this.hasActiveTab = true;
         }
       }
+
       if (this.hasActiveTab) {
         this.#activate();
         gBrowser.setIsSplitViewActive(true, this.#tabs);
+      } else if (isSessionRestore) {
+        this.#activate();
       }
     }
 
