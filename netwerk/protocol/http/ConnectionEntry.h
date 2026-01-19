@@ -39,6 +39,7 @@ class ConnectionEntry : public SupportsWeakPtr {
                          bool aInsertAsFirstForTheSamePriority = false);
 
   size_t UrgentStartQueueLength();
+  bool UrgentStartQueueIsEmpty() const;
 
   void PrintPendingQ();
 
@@ -179,6 +180,7 @@ class ConnectionEntry : public SupportsWeakPtr {
   // Return the count of pending transactions for all window ids.
   size_t PendingQueueLength() const;
   size_t PendingQueueLengthForWindow(uint64_t windowId) const;
+  bool PendingQueueIsEmpty() const;
 
   void AppendPendingUrgentStartQ(
       nsTArray<RefPtr<PendingTransactionInfo>>& result);

@@ -172,6 +172,10 @@ size_t ConnectionEntry::PendingQueueLength() const {
   return mPendingQ.PendingQueueLength();
 }
 
+bool ConnectionEntry::PendingQueueIsEmpty() const {
+  return mPendingQ.PendingQueueIsEmpty();
+}
+
 size_t ConnectionEntry::PendingQueueLengthForWindow(uint64_t windowId) const {
   return mPendingQ.PendingQueueLengthForWindow(windowId);
 }
@@ -299,6 +303,10 @@ uint32_t ConnectionEntry::TotalActiveConnections() const {
 
 size_t ConnectionEntry::UrgentStartQueueLength() {
   return mPendingQ.UrgentStartQueueLength();
+}
+
+bool ConnectionEntry::UrgentStartQueueIsEmpty() const {
+  return mPendingQ.UrgentStartQueueIsEmpty();
 }
 
 void ConnectionEntry::PrintPendingQ() { mPendingQ.PrintPendingQ(); }

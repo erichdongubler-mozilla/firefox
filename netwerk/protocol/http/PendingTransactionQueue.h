@@ -54,12 +54,21 @@ class PendingTransactionQueue {
   size_t PendingQueueLength() const;
   size_t PendingQueueLengthForWindow(uint64_t windowId) const;
 
+  // Return true if there are any pending transactions (optimized version of
+  // PendingQueueLength() == 0). Returns early as soon as a non-empty queue is
+  // found.
+  bool PendingQueueIsEmpty() const;
+
   // Remove the empty pendingQ in |mPendingTransactionTable|.
   void RemoveEmptyPendingQ();
 
   void PrintDiagnostics(nsCString& log);
 
   size_t UrgentStartQueueLength();
+
+  // Return true if the urgent start queue is empty (optimized version of
+  // UrgentStartQueueLength() == 0).
+  bool UrgentStartQueueIsEmpty() const;
 
   void PrintPendingQ();
 
