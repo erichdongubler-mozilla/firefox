@@ -25,7 +25,7 @@ import org.mozilla.fenix.ext.showToolbar
 class TrackingProtectionExceptionsFragment : Fragment() {
 
     private lateinit var exceptionsStore: ExceptionsFragmentStore
-    private lateinit var exceptionsView: TrackingProtectionExceptionsView
+    private var exceptionsView: TrackingProtectionExceptionsView? = null
     private lateinit var exceptionsInteractor: DefaultTrackingProtectionExceptionsInteractor
 
     override fun onResume() {
@@ -68,7 +68,12 @@ class TrackingProtectionExceptionsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         consumeFrom(exceptionsStore) {
-            exceptionsView.update(it.items)
+            exceptionsView?.update(it.items)
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        exceptionsView = null
     }
 }
