@@ -326,22 +326,24 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
             Log.i(TAG, "enterURLAndEnterToBrowser: Trying to click navigation toolbar")
             composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL_BOX).onLast().performClick()
             Log.i(TAG, "enterURLAndEnterToBrowser: Clicked navigation toolbar")
-            composeTestRule.runOnIdle {
-                Log.i(TAG, "runOnIdle: Compose is idle, thread=${Thread.currentThread().name}")
-            }
+
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waited for compose rule to be idle")
+
             Log.i(TAG, "enterURLAndEnterToBrowser: Trying to set toolbar text to: $url")
             composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performTextReplacement(url.toString())
             Log.i(TAG, "enterURLAndEnterToBrowser: Toolbar text was set to: $url")
-            composeTestRule.runOnIdle {
-                Log.i(TAG, "runOnIdle: Compose is idle, thread=${Thread.currentThread().name}")
-            }
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waited for compose rule to be idle")
+
             Log.i(TAG, "enterURLAndEnterToBrowser: Trying to perform IME action perform on the toolbar")
             composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performImeAction()
             Log.i(TAG, "enterURLAndEnterToBrowser: IME action performed on the toolbar")
-            composeTestRule.runOnIdle {
-                Log.i(TAG, "runOnIdle: Compose is idle, thread=${Thread.currentThread().name}")
-            }
-            waitForAppWindowToBeUpdated()
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waited for compose rule to be idle")
 
             BrowserRobot(composeTestRule).interact()
             return BrowserRobot.Transition(composeTestRule)
