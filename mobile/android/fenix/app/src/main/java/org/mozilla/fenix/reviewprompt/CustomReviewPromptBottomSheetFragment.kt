@@ -31,7 +31,9 @@ import org.mozilla.fenix.reviewprompt.ui.CustomReviewPrompt
 import org.mozilla.fenix.theme.FirefoxTheme
 import com.google.android.material.R as materialR
 
-/** A bottom sheet fragment for displaying [CustomReviewPrompt]. */
+/**
+ * A bottom sheet fragment for displaying [CustomReviewPrompt].
+ */
 class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
     private val store by fragmentStore(CustomReviewPromptState.PrePrompt) {
         CustomReviewPromptStore(
