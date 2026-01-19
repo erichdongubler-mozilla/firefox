@@ -60,17 +60,21 @@ MFBT_API void vprintf_stderr(const char* aFmt, va_list aArgs)
 MFBT_API void fprintf_stderr(FILE* aFile, const char* aFmt, ...)
     MOZ_FORMAT_PRINTF(2, 3);
 
-/*
- * print_stderr and fprint_stderr are like printf_stderr and fprintf_stderr,
- * except they deal with Android logcat line length limitations. They do this
- * by printing individual lines out of the provided stringstream using separate
- * calls to logcat.
- */
-MFBT_API void print_stderr(std::stringstream& aStr);
-MFBT_API void fprint_stderr(FILE* aFile, std::stringstream& aStr);
-
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
+
+#ifdef __cplusplus
+/*
+ * print_stderr and fprint_stderr are like printf_stderr and fprintf_stderr,
+ * except the stringstream versions deal with Android logcat line length
+ * limitations. They do this by printing individual lines out of the provided
+ * stringstream using separate calls to logcat.
+ */
+MFBT_API void print_stderr(std::stringstream&);
+MFBT_API void fprint_stderr(FILE*, std::stringstream&);
+MFBT_API void print_stderr(const std::string&);
+MFBT_API void fprint_stderr(FILE*, const std::string&);
+#endif
 
 #endif  // mozilla_glue_Debug_h
