@@ -38,8 +38,6 @@ skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1727691
 ]
 
-["test_splitview_restore.py"]
-
 ["test_tabgroups_restore.py"]
 
 ["test_taskbartab_restore.py"]
