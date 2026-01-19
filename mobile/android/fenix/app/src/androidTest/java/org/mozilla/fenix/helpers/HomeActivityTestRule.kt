@@ -67,7 +67,7 @@ class HomeActivityTestRule(
         isPageLoadTranslationsPromptEnabled: Boolean = false,
         isMicrosurveyEnabled: Boolean = settings.microsurveyFeatureEnabled,
         shouldUseBottomToolbar: Boolean = settings.shouldUseBottomToolbar,
-        isUseNewCrashReporterDialog: Boolean = false,
+        isUseNewCrashReporterFlow: Boolean = false,
         isTabSwipeCFREnabled: Boolean = false,
         isTermsOfServiceAccepted: Boolean = true,
         openLinksInExternalApp: OpenLinksInApp = getOpenLinksInApp(settings),
@@ -89,7 +89,7 @@ class HomeActivityTestRule(
         this.enableOrDisablePageLoadTranslationsPrompt(isPageLoadTranslationsPromptEnabled)
         this.isMicrosurveyEnabled = isMicrosurveyEnabled
         this.shouldUseBottomToolbar = shouldUseBottomToolbar
-        this.isUseNewCrashReporterDialog = isUseNewCrashReporterDialog
+        this.isUseNewCrashReporterFlow = isUseNewCrashReporterFlow
         this.isTabSwipeCFREnabled = isTabSwipeCFREnabled
         this.isTermsOfServiceAccepted = isTermsOfServiceAccepted
         this.openLinksInExternalApp = openLinksInExternalApp
@@ -140,7 +140,7 @@ class HomeActivityTestRule(
             initialTouchMode: Boolean = false,
             launchActivity: Boolean = true,
             skipOnboarding: Boolean = false,
-            useNewCrashReporterDialog: Boolean = false,
+            useNewCrashReporterFlow: Boolean = false,
         ) = HomeActivityTestRule(
             initialTouchMode = initialTouchMode,
             launchActivity = launchActivity,
@@ -154,7 +154,7 @@ class HomeActivityTestRule(
             // remove with https://bugzilla.mozilla.org/show_bug.cgi?id=1917640
             shouldUseBottomToolbar = true,
             isPageLoadTranslationsPromptEnabled = false,
-            isUseNewCrashReporterDialog = useNewCrashReporterDialog,
+            isUseNewCrashReporterFlow = useNewCrashReporterFlow,
             isTabSwipeCFREnabled = true,
             isTermsOfServiceAccepted = true,
         )

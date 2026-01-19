@@ -568,7 +568,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
     private fun handleCaughtException() {
         if (
             isMainProcess() &&
-            Config.channel.isNightlyOrDebug &&
+            components.settings.useNewCrashReporterFlow &&
             !components.performance.visualCompletenessQueue.isReady()
         ) {
             val intent = Intent(applicationContext, StartupCrashActivity::class.java)

@@ -97,9 +97,9 @@ interface FeatureSettingsHelper {
     var onboardingFeatureEnabled: Boolean
 
     /**
-     * Enable or disable new crash reporter.
+     * Enable or disable new crash reporter flow.
      */
-    var isUseNewCrashReporterDialog: Boolean
+    var isUseNewCrashReporterFlow: Boolean
 
     /**
      * Enable or disable the tab swipe CFR.

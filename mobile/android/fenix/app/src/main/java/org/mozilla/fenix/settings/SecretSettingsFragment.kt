@@ -329,10 +329,10 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
 
         requirePreference<SwitchPreference>(R.string.pref_key_use_new_crash_reporter).apply {
             isVisible = true
-            isChecked = context.settings().useNewCrashReporterDialog
+            isChecked = context.settings().useNewCrashReporterFlow
             onPreferenceChangeListener =
                 Preference.OnPreferenceChangeListener { _, newValue ->
-                    context.settings().useNewCrashReporterDialog = newValue as Boolean
+                    context.settings().useNewCrashReporterFlow = newValue as Boolean
                     true
                 }
         }

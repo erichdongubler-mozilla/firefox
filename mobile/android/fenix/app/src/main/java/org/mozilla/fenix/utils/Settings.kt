@@ -2645,11 +2645,11 @@ class Settings(
     )
 
     /**
-     * Indicates whether or not we should use the new crash reporter dialog.
+     * Indicates whether or not we should use the new crash reporter flow.
      */
-    var useNewCrashReporterDialog by booleanPreference(
+    var useNewCrashReporterFlow by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_use_new_crash_reporter),
-        default = Config.channel.isNightlyOrDebug,
+        default = Config.channel.isNightlyOrDebug || Config.channel.isBeta,
     )
 
     /**
