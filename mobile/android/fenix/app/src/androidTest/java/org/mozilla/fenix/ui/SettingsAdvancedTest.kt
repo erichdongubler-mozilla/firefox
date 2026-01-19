@@ -7,6 +7,7 @@ package org.mozilla.fenix.ui
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
@@ -220,6 +221,7 @@ class SettingsAdvancedTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1058617
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=2009379")
     @Test
     fun dismissOpenLinksInAppCFRTest() {
         composeTestRule.activityRule.applySettingsExceptions {
