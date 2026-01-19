@@ -3647,16 +3647,16 @@ void EventStateManager::DoScrollText(
   nsIntSize devPixelPageSize(pc->AppUnitsToDevPixels(pageSize.width),
                              pc->AppUnitsToDevPixels(pageSize.height));
   if (!WheelPrefs::GetInstance()->IsOverOnePageScrollAllowedX(aEvent) &&
-      DeprecatedAbs(actualDevPixelScrollAmount.x.value) >
-          devPixelPageSize.width) {
+      Abs(actualDevPixelScrollAmount.x.value) >
+          (unsigned)std::max(devPixelPageSize.width, 0)) {
     actualDevPixelScrollAmount.x = (actualDevPixelScrollAmount.x >= 0)
                                        ? devPixelPageSize.width
                                        : -devPixelPageSize.width;
   }
 
   if (!WheelPrefs::GetInstance()->IsOverOnePageScrollAllowedY(aEvent) &&
-      DeprecatedAbs(actualDevPixelScrollAmount.y.value) >
-          devPixelPageSize.height) {
+      Abs(actualDevPixelScrollAmount.y.value) >
+          (unsigned)std::max(devPixelPageSize.height, 0)) {
     actualDevPixelScrollAmount.y = (actualDevPixelScrollAmount.y >= 0)
                                        ? devPixelPageSize.height
                                        : -devPixelPageSize.height;
