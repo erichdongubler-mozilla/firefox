@@ -360,6 +360,10 @@ add_task(async function test_onboarding() {
 });
 
 add_task(async function keep_search_query_searchbar() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.widget.new", true]],
+  });
+
   let gCUITestUtils = new CustomizableUITestUtils(window);
   let searchbar = await gCUITestUtils.addSearchBar();
 
@@ -387,6 +391,7 @@ add_task(async function keep_search_query_searchbar() {
   );
 
   gCUITestUtils.removeSearchBar();
+  await SpecialPowers.popPrefEnv();
 });
 
 async function hasActions(index) {
