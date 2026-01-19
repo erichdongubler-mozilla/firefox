@@ -87,6 +87,16 @@ interface CSPViolationReportBody : ReportBody {
   readonly attribute unsigned long? columnNumber;
 };
 
+// https://w3c.github.io/webappsec-subresource-integrity/#report-violations
+[Exposed=Window, Pref="dom.reporting.enabled"]
+interface IntegrityViolationReportBody : ReportBody {
+  [Default] object toJSON();
+  readonly attribute UTF8String documentURL;
+  readonly attribute UTF8String blockedURL;
+  readonly attribute UTF8String destination;
+  readonly attribute boolean    reportOnly;
+};
+
 // Used internally to process the JSON
 [GenerateInit]
 dictionary ReportingHeaderValue {
