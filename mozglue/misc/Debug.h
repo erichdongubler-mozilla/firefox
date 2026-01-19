@@ -9,6 +9,7 @@
 
 #include "mozilla/Attributes.h"  // For MOZ_FORMAT_PRINTF
 #include "mozilla/Types.h"       // For MFBT_API
+#include "fmt/format.h"
 
 #include <cstdarg>
 #include <sstream>
@@ -75,6 +76,18 @@ MFBT_API void print_stderr(std::stringstream&);
 MFBT_API void fprint_stderr(FILE*, std::stringstream&);
 MFBT_API void print_stderr(const std::string&);
 MFBT_API void fprint_stderr(FILE*, const std::string&);
+
+template <typename... Args>
+inline void print_stderr(fmt::format_string<std::type_identity_t<Args>...> aFmt,
+                         Args&&... aArgs) {
+  print_stderr(fmt::format(aFmt, std::forward<Args>(aArgs)...));
+}
+template <typename... Args>
+inline void fprint_stderr(
+    FILE* aFile, fmt::format_string<std::type_identity_t<Args>...> aFmt,
+    Args&&... aArgs) {
+  fprint_stderr(aFile, fmt::format(aFmt, std::forward<Args>(aArgs)...));
+}
 #endif
 
 #endif  // mozilla_glue_Debug_h
