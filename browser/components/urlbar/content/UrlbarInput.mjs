@@ -5520,7 +5520,7 @@ export class UrlbarInput extends HTMLElement {
    * @param {DragEvent} event
    */
   _on_dragover(event) {
-    if (!getDroppableData(event)) {
+    if (!Services.droppedLinkHandler.canDropLink(event, true)) {
       event.dataTransfer.dropEffect = "none";
     }
   }
@@ -5532,6 +5532,9 @@ export class UrlbarInput extends HTMLElement {
    */
   _on_drop(event) {
     let droppedData = getDroppableData(event);
+    if (!droppedData) {
+      return;
+    }
     let droppedString = URL.isInstance(droppedData)
       ? droppedData.href
       : droppedData;
