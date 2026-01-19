@@ -3328,15 +3328,6 @@ void BrowsingContext::DidSet(FieldIndex<IDX_ForcedColorsOverride>,
   PresContextAffectingFieldChanged();
 }
 
-void BrowsingContext::DidSet(FieldIndex<IDX_AnimationsPlayBackRateMultiplier>,
-                             double aOldValue) {
-  MOZ_ASSERT(IsTop());
-  if (AnimationsPlayBackRateMultiplier() == aOldValue) {
-    return;
-  }
-  PresContextAffectingFieldChanged();
-}
-
 void BrowsingContext::DidSet(FieldIndex<IDX_LanguageOverride>,
                              nsCString&& aOldValue) {
   MOZ_ASSERT(IsTop());

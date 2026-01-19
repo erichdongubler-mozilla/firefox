@@ -243,9 +243,6 @@ interface BrowsingContext {
   // Forced-colors simulation, for DevTools
   [SetterThrows] attribute ForcedColorsOverride forcedColorsOverride;
 
-  // Animation playbackRate multiplier, for Devtools
-  [SetterThrows] attribute double animationsPlayBackRateMultiplier;
-
   /**
    * A unique identifier for the browser element that is hosting this
    * BrowsingContext tree. Every BrowsingContext in the element's tree will
