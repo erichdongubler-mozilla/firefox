@@ -352,21 +352,14 @@ export var ToolbarContextMenu = {
 
     let movable =
       toolbarItem?.id && lazy.CustomizableUI.isWidgetRemovable(toolbarItem);
-    if (movable) {
-      if (lazy.CustomizableUI.isSpecialWidget(toolbarItem.id)) {
-        moveToPanel.setAttribute("disabled", true);
-      } else {
-        moveToPanel.removeAttribute("disabled");
-      }
-      if (shouldHideCustomizationItems) {
-        removeFromToolbar.setAttribute("disabled", true);
-      } else {
-        removeFromToolbar.removeAttribute("disabled");
-      }
-    } else {
-      removeFromToolbar.setAttribute("disabled", true);
-      moveToPanel.setAttribute("disabled", true);
-    }
+    moveToPanel.toggleAttribute(
+      "disabled",
+      !movable || lazy.CustomizableUI.isSpecialWidget(toolbarItem.id)
+    );
+    removeFromToolbar.toggleAttribute(
+      "disabled",
+      !movable || shouldHideCustomizationItems
+    );
   },
 
   /**
@@ -616,8 +609,8 @@ export var ToolbarContextMenu = {
     );
 
     if (
-      removeFromToolbar?.getAttribute("disabled") &&
-      moveToPanel.getAttribute("disabled")
+      removeFromToolbar?.hasAttribute("disabled") &&
+      moveToPanel.hasAttribute("disabled")
     ) {
       removeFromToolbar.hidden = true;
       moveToPanel.hidden = true;

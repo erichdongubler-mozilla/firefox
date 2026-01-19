@@ -3010,7 +3010,7 @@ var CustomizableUIInternal = {
 
       // Break out of the loop immediately for disabled items, as we need to
       // keep the menu open in that case.
-      if (target.getAttribute("disabled") == "true") {
+      if (target.hasAttribute("disabled")) {
         return true;
       }
 
