@@ -6092,7 +6092,8 @@ already_AddRefed<DocumentFragment> nsContentUtils::CreateContextualFragment(
 
   RefPtr<DocumentFragment> frag;
   aRv = ParseFragmentXML(aFragment, document, tagStack, aPreventScriptExecution,
-                         -1, getter_AddRefs(frag));
+                         kParseFragmentPrivilegedDefaultSanitization,
+                         getter_AddRefs(frag));
   return frag.forget();
 }
 
@@ -6105,32 +6106,6 @@ void nsContentUtils::DropFragmentParsers() {
 
 /* static */
 void nsContentUtils::XPCOMShutdown() { nsContentUtils::DropFragmentParsers(); }
-
-/* Helper function to compuate Sanitization Flags for ParseFramentHTML/XML */
-uint32_t computeSanitizationFlags(nsIPrincipal* aPrincipal, int32_t aFlags) {
-  uint32_t sanitizationFlags = 0;
-  if (aPrincipal->IsSystemPrincipal()) {
-    if (aFlags < 0) {
-      // if this is a chrome-privileged document and no explicit flags
-      // were passed, then use this sanitization flags.
-      sanitizationFlags = nsIParserUtils::SanitizerAllowStyle |
-                          nsIParserUtils::SanitizerAllowComments |
-                          nsIParserUtils::SanitizerDropForms |
-                          nsIParserUtils::SanitizerLogRemovals;
-    } else {
-      // if the caller explicitly passes flags, then we use those
-      // flags but additionally drop forms.
-      sanitizationFlags = aFlags | nsIParserUtils::SanitizerDropForms;
-    }
-  } else if (aFlags >= 0) {
-    // aFlags by default is -1 and is only ever non equal to -1 if the
-    // caller of ParseFragmentHTML/ParseFragmentXML is
-    // ParserUtils::ParseFragment(). Only in that case we should use
-    // the sanitization flags passed within aFlags.
-    sanitizationFlags = aFlags;
-  }
-  return sanitizationFlags;
-}
 
 // https://wicg.github.io/sanitizer-api/#set-and-filter-html
 static void SetAndFilterHTML(
@@ -6195,8 +6170,12 @@ static void SetAndFilterHTML(
 
   nsAtom* contextLocalName = aContext->NodeInfo()->NameAtom();
   int32_t contextNameSpaceID = aContext->GetNameSpaceID();
-  aError = nsContentUtils::ParseFragmentHTML(aHTML, fragment, contextLocalName,
-                                             contextNameSpaceID, false, true);
+  int32_t flags =
+      aSafe ? nsContentUtils::kParseFragmentNoSanitization
+            : nsContentUtils::kParseFragmentPrivilegedDefaultSanitization;
+  aError = nsContentUtils::ParseFragmentHTML(
+      aHTML, fragment, contextLocalName, contextNameSpaceID,
+      /* aQuirks */ false, /* aPreventScriptExecution */ true, flags);
   if (aError.Failed()) {
     return;
   }
@@ -6284,6 +6263,63 @@ void nsContentUtils::SetHTMLUnsafe(
   aTarget->ReplaceChildren(fragment, IgnoreErrors());
 }
 
+// We sanitize if the fragment occurs in a system privileged
+// context, an about: page, or if there are explicit sanitization flags.
+// Please note that about:blank and about:srcdoc inherit the security
+// context from the embedding context and hence are not loaded using
+// an about: scheme principal.
+bool ShouldSanitize(nsIPrincipal* aPrincipal, int32_t aFlags) {
+  // We don't need to sanitize for setHTML(), which uses
+  // kParseFragmentNoSanitization.
+  if (aFlags == nsContentUtils::kParseFragmentNoSanitization) {
+    return false;
+  }
+
+  if (aFlags >= 0) {
+    return true;
+  }
+
+  MOZ_ASSERT(aFlags ==
+             nsContentUtils::kParseFragmentPrivilegedDefaultSanitization);
+  return aPrincipal->IsSystemPrincipal() || aPrincipal->SchemeIs("about");
+}
+
+// Helper function to compuate Sanitization Flags for ParseFramentHTML/XML
+uint32_t ComputeSanitizationFlags(nsIPrincipal* aPrincipal, int32_t aFlags) {
+  MOZ_ASSERT(aFlags ==
+                 nsContentUtils::kParseFragmentPrivilegedDefaultSanitization ||
+             aFlags >= 0);
+
+  if (aPrincipal->IsSystemPrincipal() || aPrincipal->SchemeIs("about")) {
+    if (aFlags == nsContentUtils::kParseFragmentPrivilegedDefaultSanitization) {
+      // If this is a chrome-privileged document and no explicit flags
+      // were passed, then use these sanitization flags.
+      return nsIParserUtils::SanitizerAllowStyle |
+             nsIParserUtils::SanitizerAllowComments |
+             // Don't drop forms in about: to avoid breaking existing users
+             (aPrincipal->IsSystemPrincipal()
+                  ? nsIParserUtils::SanitizerDropForms
+                  : 0) |
+             nsIParserUtils::SanitizerLogRemovals;
+    }
+
+    // If the caller explicitly passes flags, then we use those
+    // flags but additionally drop forms.
+    return aFlags | nsIParserUtils::SanitizerDropForms;
+  }
+
+  if (aFlags >= 0) {
+    // aFlags by default is -1 and is only ever non equal to -1 if the
+    // caller of ParseFragmentHTML/ParseFragmentXML is
+    // ParserUtils::ParseFragment(). Only in that case we should use
+    // the sanitization flags passed within aFlags.
+    return aFlags;
+  }
+
+  MOZ_ASSERT_UNREACHABLE("We should have explicit flags");
+  return 0;
+}
+
 /* static */
 nsresult nsContentUtils::ParseFragmentHTML(
     const nsAString& aSourceBuffer, nsIContent* aTargetNode,
@@ -6303,11 +6339,14 @@ nsresult nsContentUtils::ParseFragmentHTML(
   nsCOMPtr<nsIPrincipal> nodePrincipal = aTargetNode->NodePrincipal();
 
 #ifdef DEBUG
-  // aFlags should always be -1 unless the caller of ParseFragmentHTML
-  // is ParserUtils::ParseFragment() which is the only caller that intends
-  // sanitization. For all other callers we need to ensure to call
-  // AuditParsingOfHTMLXMLFragments.
-  if (aFlags < 0) {
+  // aFlags should always be kParseFragmentPrivilegedDefaultSanitization unless
+  // the caller of ParseFragmentHTML is ParserUtils::ParseFragment() which is
+  // the only caller that intends sanitization. For all other callers we need to
+  // ensure to call AuditParsingOfHTMLXMLFragments.
+  //
+  // For SetHTML the flag is kParseFragmentNoSanitization, because that function
+  // already sanitizes.
+  if (aFlags == kParseFragmentPrivilegedDefaultSanitization) {
     DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(nodePrincipal,
                                                        aSourceBuffer);
   }
@@ -6317,14 +6356,8 @@ nsresult nsContentUtils::ParseFragmentHTML(
 
   RefPtr<Document> doc = aTargetNode->OwnerDoc();
   RefPtr<DocumentFragment> fragment;
-  // We sanitize if the fragment occurs in a system privileged
-  // context, an about: page, or if there are explicit sanitization flags.
-  // Please note that about:blank and about:srcdoc inherit the security
-  // context from the embedding context and hence are not loaded using
-  // an about: scheme principal.
-  bool shouldSanitize = nodePrincipal->IsSystemPrincipal() ||
-                        nodePrincipal->SchemeIs("about") || aFlags >= 0;
-  if (shouldSanitize) {
+
+  if (ShouldSanitize(nodePrincipal, aFlags)) {
     if (!doc->IsLoadedAsData()) {
       doc = nsContentUtils::CreateInertHTMLDocument(doc);
       if (!doc) {
@@ -6343,7 +6376,7 @@ nsresult nsContentUtils::ParseFragmentHTML(
 
   if (fragment) {
     uint32_t sanitizationFlags =
-        computeSanitizationFlags(nodePrincipal, aFlags);
+        ComputeSanitizationFlags(nodePrincipal, aFlags);
     // Don't fire mutation events for nodes removed by the sanitizer.
     nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
     nsTreeSanitizer sanitizer(sanitizationFlags);
@@ -6406,23 +6439,17 @@ nsresult nsContentUtils::ParseFragmentXML(const nsAString& aSourceBuffer,
   nsCOMPtr<nsIPrincipal> nodePrincipal = aDocument->NodePrincipal();
 
 #ifdef DEBUG
-  // aFlags should always be -1 unless the caller of ParseFragmentXML
-  // is ParserUtils::ParseFragment() which is the only caller that intends
-  // sanitization. For all other callers we need to ensure to call
-  // AuditParsingOfHTMLXMLFragments.
-  if (aFlags < 0) {
+  // aFlags should always be kParseFragmentPrivilegedDefaultSanitization unless
+  // the caller of ParseFragmentXML is ParserUtils::ParseFragment() which is the
+  // only caller that intends sanitization. For all other callers we need to
+  // ensure to call AuditParsingOfHTMLXMLFragments.
+  if (aFlags == kParseFragmentPrivilegedDefaultSanitization) {
     DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(nodePrincipal,
                                                        aSourceBuffer);
   }
 #endif
 
-  // We sanitize if the fragment occurs in a system privileged
-  // context, an about: page, or if there are explicit sanitization flags.
-  // Please note that about:blank and about:srcdoc inherit the security
-  // context from the embedding context and hence are not loaded using
-  // an about: scheme principal.
-  bool shouldSanitize = nodePrincipal->IsSystemPrincipal() ||
-                        nodePrincipal->SchemeIs("about") || aFlags >= 0;
+  bool shouldSanitize = ShouldSanitize(nodePrincipal, aFlags);
   if (shouldSanitize && !aDocument->IsLoadedAsData()) {
     doc = nsContentUtils::CreateInertXMLDocument(aDocument);
   } else {
@@ -6447,7 +6474,7 @@ nsresult nsContentUtils::ParseFragmentXML(const nsAString& aSourceBuffer,
 
   if (shouldSanitize) {
     uint32_t sanitizationFlags =
-        computeSanitizationFlags(nodePrincipal, aFlags);
+        ComputeSanitizationFlags(nodePrincipal, aFlags);
     // Don't fire mutation events for nodes removed by the sanitizer.
     nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
     nsTreeSanitizer sanitizer(sanitizationFlags);

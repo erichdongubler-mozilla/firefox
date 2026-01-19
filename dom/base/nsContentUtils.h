@@ -1898,6 +1898,15 @@ class nsContentUtils {
                             const mozilla::dom::SetHTMLUnsafeOptions& aOptions,
                             bool aIsShadowRoot, nsIPrincipal* aSubjectPrincipal,
                             mozilla::ErrorResult& aError);
+
+  // This flags indicates that ParseFragmentHTML/ParseFragmentXHTML should
+  // automatically do default sanitization using the nsTreeSantizer when called
+  // from system privileged or about: code.
+  static const int32_t kParseFragmentPrivilegedDefaultSanitization = -1;
+  // Warning: Only use this for safe callers that do their own sanitization like
+  // setHTML().
+  static const int32_t kParseFragmentNoSanitization = -2;
+
   /**
    * Invoke the fragment parsing algorithm (innerHTML) using the HTML parser.
    *
@@ -1913,22 +1922,22 @@ class nsContentUtils {
    * @param aPreventScriptExecution true to prevent scripts from executing;
    *        don't set to false when parsing into a target node that has been
    *        bound to tree.
+   * @param aFlags defaults to kParseFragmentPrivilegedDefaultSanitization
+   * indicating that ParseFragmentHTML will do default sanitization for system
+   * privileged calls to it. Only ParserUtils::ParseFragment() should ever pass
+   * explicit aFlags which will then used for sanitization of the fragment. To
+   * pass explicit aFlags use any of the sanitization flags listed in
+   * nsIParserUtils.idl. kParseFragmentHTMLNoSanitization should only be used
+   * for setHTML(), which already does its own sanitization.
    * @return NS_ERROR_DOM_INVALID_STATE_ERR if a re-entrant attempt to parse
    *         fragments is made, NS_ERROR_OUT_OF_MEMORY if aSourceBuffer is too
    *         long and NS_OK otherwise.
-   * @param aFlags defaults to -1 indicating that ParseFragmentHTML will do
-   *        default sanitization for system privileged calls to it. Only
-   *        ParserUtils::ParseFragment() should ever pass explicit aFlags
-   *        which will then used for sanitization of the fragment.
-   *        To pass explicit aFlags use any of the sanitization flags
-   *        listed in nsIParserUtils.idl.
    */
-  static nsresult ParseFragmentHTML(const nsAString& aSourceBuffer,
-                                    nsIContent* aTargetNode,
-                                    nsAtom* aContextLocalName,
-                                    int32_t aContextNamespace, bool aQuirks,
-                                    bool aPreventScriptExecution,
-                                    int32_t aFlags = -1);
+  static nsresult ParseFragmentHTML(
+      const nsAString& aSourceBuffer, nsIContent* aTargetNode,
+      nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
+      bool aPreventScriptExecution,
+      int32_t aFlags = kParseFragmentPrivilegedDefaultSanitization);
 
   /**
    * Invoke the fragment parsing algorithm (innerHTML) using the XML parser.
@@ -1941,9 +1950,9 @@ class nsContentUtils {
    * @param aDocument the target document
    * @param aTagStack the namespace mapping context
    * @param aPreventExecution whether to mark scripts as already started
-   * @param aFlags, pass -1 and ParseFragmentXML will do default
-   *        sanitization for system privileged calls to it. Only
-   *        ParserUtils::ParseFragment() should ever pass explicit aFlags
+   * @param aFlags, pass kParseFragmentPrivilegedDefaultSanitization and
+   * ParseFragmentXML will do default sanitization for system privileged calls
+   * to it. Only ParserUtils::ParseFragment() should ever pass explicit aFlags
    *        which will then used for sanitization of the fragment.
    *        To pass explicit aFlags use any of the sanitization flags
    *        listed in nsIParserUtils.idl.
