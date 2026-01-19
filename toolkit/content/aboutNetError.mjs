@@ -779,11 +779,8 @@ function getNetErrorDescParts(noConnectivity) {
       return [["span", "neterror-sslv3-used"]];
     case "unknownProtocolFound":
       return [["li", "neterror-unknown-protocol"]];
-    case "unknownSocketType":
-      return [
-        ["li", "neterror-unknown-socket-type-psm-installed"],
-        ["li", "neterror-unknown-socket-type-server-config"],
-      ];
+    case "clientSocketMisconfiguration":
+      return [["li", "neterror-unknown-socket-type-client-config"]];
     case "unsafeContentType":
       return [["li", "neterror-unsafe-content-type"]];
     case "basicHttpAuthDisabled":

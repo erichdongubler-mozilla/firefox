@@ -90,8 +90,7 @@ neterror-unknown-protocol = You might need to install other software to open thi
 
 neterror-redirect-loop = This problem can sometimes be caused by disabling or refusing to accept cookies.
 
-neterror-unknown-socket-type-psm-installed = Check to make sure your system has the Personal Security Manager installed.
-neterror-unknown-socket-type-server-config = This might be due to a non-standard configuration on the server.
+neterror-unknown-socket-type-client-config = This might be due to a configuration error with your client.
 
 neterror-not-cached-intro = The requested document is not available in { -brand-short-name }’s cache.
 neterror-not-cached-sensitive = As a security precaution, { -brand-short-name } does not automatically re-request sensitive documents.
