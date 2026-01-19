@@ -1283,6 +1283,9 @@ class TrustPanel {
   }
 
   async observe(subject, topic) {
+    if (!this.#enabled) {
+      return;
+    }
     switch (topic) {
       case "smartblock:open-protections-panel": {
         if (gBrowser.selectedBrowser.browserId !== subject.browserId) {
