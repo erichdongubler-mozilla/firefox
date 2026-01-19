@@ -60,9 +60,16 @@ export class SearchModeSwitcher {
 
     this.#toolbarbutton = input.querySelector(".searchmode-switcher");
 
-    if (lazy.UrlbarPrefs.get("scotchBonnet.enableOverride")) {
+    if (this.#isEnabled) {
       this.#enableObservers();
     }
+  }
+
+  #isEnabled() {
+    return (
+      lazy.UrlbarPrefs.get("scotchBonnet.enableOverride") ||
+      this.#input.sapName == "searchbar"
+    );
   }
 
   async #onPopupShowing() {
@@ -123,7 +130,7 @@ export class SearchModeSwitcher {
       return;
     }
 
-    if (lazy.UrlbarPrefs.get("scotchBonnet.enableOverride")) {
+    if (this.#isEnabled()) {
       this.updateSearchIcon();
 
       if (
@@ -232,6 +239,11 @@ export class SearchModeSwitcher {
    */
   onPrefChanged(pref) {
     if (!this.#input.window || this.#input.window.closed) {
+      return;
+    }
+
+    if (this.#input.sapName == "searchbar") {
+      // The searchbar cares about neither of the two prefs.
       return;
     }
 

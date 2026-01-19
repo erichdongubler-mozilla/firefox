@@ -879,7 +879,9 @@ class UrlbarInputTestUtils {
       let keywordEnabled = Services.prefs.getBoolPref("keyword.enabled");
 
       let expectedPlaceholder;
-      if (keywordEnabled && engineName) {
+      if (this.#urlbar(window).sapName == "searchbar") {
+        expectedPlaceholder = { id: "searchbar-input" };
+      } else if (keywordEnabled && engineName) {
         expectedPlaceholder = {
           id: "urlbar-placeholder-with-name",
           args: { name: engineName },

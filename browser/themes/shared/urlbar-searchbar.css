@@ -1169,11 +1169,13 @@ toolbar[inactive="true"] .urlbar,
     background-color: var(--urlbar-box-focus-bgcolor);
   }
 
-  /* stylelint-disable media-query-no-invalid */
-  @media (not -moz-pref("browser.urlbar.searchModeSwitcher.featureGate")) and (not -moz-pref("browser.urlbar.scotchBonnet.enableOverride")) {
-    display: none;
+  .urlbar:not(#searchbar-new) & {
+    /* stylelint-disable media-query-no-invalid */
+    @media (not -moz-pref("browser.urlbar.searchModeSwitcher.featureGate")) and (not -moz-pref("browser.urlbar.scotchBonnet.enableOverride")) {
+      display: none;
+    }
+    /* stylelint-enable media-query-no-invalid */
   }
-  /* stylelint-enable media-query-no-invalid */
 }
 
 .searchmode-switcher-icon {
@@ -1262,27 +1264,29 @@ toolbar[inactive="true"] .urlbar,
   #urlbar[searchmode] > .urlbar-input-container > #urlbar-search-mode-indicator {
     display: none;
   }
-
   /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-    .searchmode-switcher {
-      background-color: var(--urlbar-box-bgcolor);
-      .urlbar:not([unifiedsearchbutton-available]) > .urlbar-input-container > & {
-        /* Display as off-screen to get focus */
-        position: fixed;
-        top: -999px;
-      }
-    }
-
-    .searchmode-switcher-dropmarker {
-      margin-inline-start: var(--urlbar-searchmodeswitcher-inline-padding);
-    }
-
     #urlbar[pageproxystate="invalid"] {
       #identity-box,
       #tracking-protection-icon-container {
         display: none;
       }
     }
+  }
+}
+
+/* stylelint-disable-next-line media-query-no-invalid */
+@media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
+  .searchmode-switcher {
+    background-color: var(--urlbar-box-bgcolor);
+    .urlbar:not([unifiedsearchbutton-available]) > .urlbar-input-container > & {
+      /* Display as off-screen to get focus */
+      position: fixed;
+      top: -999px;
+    }
+  }
+
+  .searchmode-switcher-dropmarker {
+    margin-inline-start: var(--urlbar-searchmodeswitcher-inline-padding);
   }
 }
