@@ -3177,6 +3177,14 @@ nsresult nsHttpChannel::ContinueProcessResponse1(
 
   gHttpHandler->OnAfterExamineResponse(this);
 
+  if (mResponseHead && mResponseHead->HasHeader(nsHttp::Clear_Site_Data)) {
+    if (nsCOMPtr<nsIObserverService> obsService =
+            services::GetObserverService()) {
+      obsService->NotifyObservers(static_cast<nsIHttpChannel*>(this),
+                                  "clear-site-data", nullptr);
+    }
+  }
+
   // No process switch needed, continue as normal.
   return ContinueProcessResponse2(rv);
 }
