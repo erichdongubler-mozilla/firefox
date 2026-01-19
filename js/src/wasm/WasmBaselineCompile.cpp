@@ -8109,7 +8109,7 @@ bool BaseCompiler::emitArrayAllocFixed(uint32_t typeIndex, RegRef object,
   static_assert(MaxArrayNewFixedElements * sizeof(wasm::LitVal) <
                 MaxArrayPayloadBytes);
   uint32_t storageBytes =
-      WasmArrayObject::calcStorageBytesUnchecked(elemSize, numElements);
+      WasmArrayObject::calcArrayDataBytesUnchecked(elemSize, numElements);
   if (storageBytes > WasmArrayObject_MaxInlineBytes) {
     freeRef(object);
     pushI32(numElements);

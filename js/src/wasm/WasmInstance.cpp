@@ -3280,6 +3280,11 @@ void Instance::updateFrameForMovingGC(const wasm::WasmFrameIter& wfi,
 
     switch (kind) {
       case StackMap::Kind::ArrayDataPointer: {
+        // The following makes more sense if you look at the pictures in the
+        // SMDOC at the definition of WasmArrayData, and also read-along in
+        // WasmArrayObject::obj_moved, which sets up the forwarding information
+        // which we now will consult.
+
         // Make oldDataPointer point at the storage array in the old object.
         uint8_t* oldDataPointer = (uint8_t*)stackWords[i];
         if (WasmArrayObject::isDataInline(oldDataPointer)) {
@@ -3292,18 +3297,29 @@ void Instance::updateFrameForMovingGC(const wasm::WasmFrameIter& wfi,
               (WasmArrayObject*)gc::MaybeForwarded(oldArray);
           if (newArray != oldArray) {
             stackWords[i] =
-                uintptr_t(WasmArrayObject::addressOfInlineData(newArray));
+                uintptr_t(WasmArrayObject::addressOfInlineArrayData(newArray));
             MOZ_ASSERT(WasmArrayObject::isDataInline((uint8_t*)stackWords[i]));
           }
         } else {
-          WasmArrayObject::DataHeader* oldHeader =
-              WasmArrayObject::dataHeaderFromDataPointer(oldDataPointer);
-          WasmArrayObject::DataHeader* newHeader = oldHeader;
-          nursery.forwardBufferPointer((uintptr_t*)&newHeader);
-          if (newHeader != oldHeader) {
-            stackWords[i] =
-                uintptr_t(WasmArrayObject::dataHeaderToDataPointer(newHeader));
-            MOZ_ASSERT(!WasmArrayObject::isDataInline((uint8_t*)stackWords[i]));
+          // It's a pointer managed by BufferAllocator.  The forwarded location
+          // is stored in the OOLHeader::word field of the old block, with its
+          // bit zero set to 1.
+          WasmArrayObject::OOLDataHeader* oldHeader =
+              WasmArrayObject::oolDataHeaderFromDataPointer(oldDataPointer);
+          if (nursery.isInside((const void*)oldHeader)) {
+            // If the old header word is OOLDataHeader_Magic it means there's
+            // no forwarding pointer stored there, so don't update the stack
+            // slot.
+            if (oldHeader->word != WasmArrayObject::OOLDataHeader_Magic) {
+              MOZ_ASSERT(oldHeader->word & 1);
+              WasmArrayObject::OOLDataHeader* newHeader =
+                  (WasmArrayObject::OOLDataHeader*)(oldHeader->word &
+                                                    ~uintptr_t(1));
+              MOZ_ASSERT(newHeader != oldHeader);
+              stackWords[i] = uintptr_t(
+                  WasmArrayObject::oolDataHeaderToDataPointer(newHeader));
+              newHeader->word = WasmArrayObject::OOLDataHeader_Magic;
+            }
           }
         }
         break;

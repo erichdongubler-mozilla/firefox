@@ -21422,10 +21422,10 @@ void CodeGenerator::visitWasmNewArrayObject(LWasmNewArrayObject* lir) {
   if (lir->numElements()->isConstant()) {
     // numElements is constant, so we can do optimized code generation.
     uint32_t numElements = lir->numElements()->toConstant()->toInt32();
-    CheckedUint32 storageBytes =
-        WasmArrayObject::calcStorageBytesChecked(mir->elemSize(), numElements);
-    if (!storageBytes.isValid() ||
-        storageBytes.value() > WasmArrayObject_MaxInlineBytes) {
+    CheckedUint32 arrayDataBytes = WasmArrayObject::calcArrayDataBytesChecked(
+        mir->elemSize(), numElements);
+    if (!arrayDataBytes.isValid() ||
+        arrayDataBytes.value() > WasmArrayObject_MaxInlineBytes) {
       // Too much array data to store inline. Immediately perform an instance
       // call to handle the out-of-line storage (or the trap).
       masm.move32(Imm32(typeDefIndex), temp0);
@@ -21433,7 +21433,7 @@ void CodeGenerator::visitWasmNewArrayObject(LWasmNewArrayObject* lir) {
       callWasmArrayAllocFun(lir, fun, temp1, temp0, allocSite, output,
                             mir->trapSiteDesc());
     } else {
-      // storageBytes is small enough to be stored inline in WasmArrayObject.
+      // arrayDataBytes is small enough to be stored inline in WasmArrayObject.
       // Attempt a nursery allocation and fall back to an instance call if it
       // fails.
       Register instance = ToRegister(lir->instance());
@@ -21453,7 +21453,7 @@ void CodeGenerator::visitWasmNewArrayObject(LWasmNewArrayObject* lir) {
           wasmCodeMeta()->offsetOfTypeDefInstanceData(typeDefIndex));
       masm.wasmNewArrayObjectFixed(
           instance, output, allocSite, temp0, temp1, offsetOfTypeDefData,
-          ool->entry(), numElements, storageBytes.value(), mir->zeroFields());
+          ool->entry(), numElements, arrayDataBytes.value(), mir->zeroFields());
 
       masm.bind(ool->rejoin());
     }
