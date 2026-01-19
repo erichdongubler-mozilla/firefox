@@ -22,7 +22,7 @@
 #include <gdk/gdk.h>
 
 using namespace mozilla;
-extern const StaticXREAppData* gAppData;
+extern const XREAppData* gAppData;
 
 static bool gHasActions = false;
 static bool gHasCaps = false;
@@ -209,8 +209,9 @@ nsresult nsAlertsIconListener::ShowAlert(imgIContainer* aImage) {
           mNotification, "desktop-entry",
           g_variant_new("s", getenv("MOZ_DESKTOP_FILE_NAME")));
     } else {
-      notify_notification_set_hint(mNotification, "desktop-entry",
-                                   g_variant_new("s", gAppData->remotingName));
+      notify_notification_set_hint(
+          mNotification, "desktop-entry",
+          g_variant_new("s", (const char*)gAppData->remotingName));
     }
   }
 
