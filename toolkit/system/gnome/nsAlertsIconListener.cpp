@@ -22,7 +22,7 @@
 #include <gdk/gdk.h>
 
 using namespace mozilla;
-extern const StaticXREAppData* gAppData;
+extern const XREAppData* gAppData;
 
 static bool gHasActions = false;
 static bool gHasCaps = false;
