@@ -7423,6 +7423,22 @@ tracking_protection:
     metadata:
       tags:
         - TrackingProtection
+
+trust_panel:
+  security_certificate:
+    type: event
+    description: |
+      A user pressed the secure connection button in the panel to view the certificate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2006685
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D278697
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
 tab:
   media_play:
     type: event
