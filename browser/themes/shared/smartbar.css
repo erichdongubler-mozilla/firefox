@@ -2,14 +2,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-.smartbar {
+:root {
+  --smartbar-border-style-gradient: var(--border-width) solid;
+  --smartbar-border-color-gradient: linear-gradient(172deg, #321bfd -18%, #cf30e2 53%, #ff9900 89%, #f5c451 109%);
+  --smartbar-focus-outline: var(--focus-outline-width) solid var(--color-violet-20);
   --smartbar-min-height: var(--urlbar-min-height);
-  bottom: 0;
+}
+
+.smartbar {
   display: block;
   height: auto;
-  min-height: var(--smartbar-min-height);
-  position: absolute;
   width: 100%;
+}
+
+.smartbar .urlbar-background {
+  background-clip: padding-box, border-box;
+  background-image: linear-gradient(white, white), var(--smartbar-border-color-gradient);
+  background-origin: border-box;
+  border-radius: var(--border-radius-large);
+  border: var(--smartbar-border-style-gradient) transparent;
 }
 
 .smartbar .urlbar-input-box {
@@ -19,7 +30,25 @@
 .smartbar .urlbar-input {
   box-sizing: border-box;
   height: auto;
-  min-height: var(--smartbar-min-height);
   white-space: pre-wrap;
   width: 100%;
+}
+
+.smartbar moz-multiline-editor {
+  --multiline-editor-border: none;
+  --multiline-editor-focus-outline: none;
+  padding: var(--space-medium) var(--space-large);
+}
+
+.smartbar .urlbar-go-button {
+  display: none;
+}
+
+.smartbar-button-container {
+  padding: 0 var(--space-large) var(--space-medium);
+  position: relative;
+}
+
+.smartbar-button-container input-cta {
+  margin-inline-start: auto;
 }
