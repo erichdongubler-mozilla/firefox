@@ -32,7 +32,6 @@ class AutoSlowOperation;
 
 class CycleCollectedJSContext;
 class CycleCollectedJSRuntime;
-class PromiseJobRunnable;
 
 namespace dom {
 class Exception;
@@ -551,9 +550,6 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
   mozilla::LinkedList<MicroTaskRunnable> mMicrotasksToTrace;
 
  private:
-  friend class PromiseJobRunnable;
-  RefPtr<PromiseJobRunnable> mRecycledPromiseJob;
-
   // How many times the debugger has interrupted execution, possibly creating
   // microtask checkpoints in places that they would not normally occur.
   uint32_t mDebuggerRecursionDepth;

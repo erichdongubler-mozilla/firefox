@@ -77,7 +77,6 @@ CycleCollectedJSContext::~CycleCollectedJSContext() {
   if (!mJSContext) {
     return;
   }
-  mRecycledPromiseJob = nullptr;
 
   JS::SetHostCleanupFinalizationRegistryCallback(mJSContext, nullptr, nullptr);
 
@@ -171,118 +170,6 @@ size_t CycleCollectedJSContext::SizeOfExcludingThis(
     MallocSizeOf aMallocSizeOf) const {
   return 0;
 }
-
-class PromiseJobRunnable final : public CallbackObjectBase,
-                                 public MicroTaskRunnable {
- public:
-  PromiseJobRunnable(JS::HandleObject aPromise, JS::HandleObject aCallback,
-                     JS::HandleObject aCallbackGlobal,
-                     JS::HandleObject aAllocationSite,
-                     nsIGlobalObject* aIncumbentGlobal,
-                     WebTaskSchedulingState* aSchedulingState)
-      : CallbackObjectBase(aCallback, aCallbackGlobal, aAllocationSite,
-                           aIncumbentGlobal),
-        mPropagateUserInputEventHandling(false) {
-    MOZ_ASSERT(js::IsFunctionObject(aCallback));
-    InitInternal(aPromise, aSchedulingState);
-  }
-
-  void Reinit(JS::HandleObject aPromise, JS::HandleObject aCallback,
-              JS::HandleObject aCallbackGlobal,
-              JS::HandleObject aAllocationSite,
-              nsIGlobalObject* aIncumbentGlobal,
-              WebTaskSchedulingState* aSchedulingState) {
-    InitNoHold(aCallback, aCallbackGlobal, aAllocationSite, aIncumbentGlobal);
-    InitInternal(aPromise, aSchedulingState);
-  }
-
- protected:
-  virtual ~PromiseJobRunnable() = default;
-
-  // This is modeled on the Call methods which WebIDL codegen creates for
-  // callback PromiseJobCallback = undefined();
-  MOZ_CAN_RUN_SCRIPT inline void Call() {
-    IgnoredErrorResult rv;
-    CallSetup s(this, rv, "promise callback", eReportExceptions);
-    if (!s.GetContext()) {
-      MOZ_ASSERT(rv.Failed());
-      return;
-    }
-    JS::Rooted<JS::Value> rval(s.GetContext());
-
-    JS::Rooted<JS::Value> callable(s.GetContext(), JS::ObjectValue(*mCallback));
-    if (!JS::Call(s.GetContext(), JS::UndefinedHandleValue, callable,
-                  JS::HandleValueArray::empty(), &rval)) {
-      // This isn't really needed but it ensures that rv's value is updated
-      // consistently.
-      rv.NoteJSContextException(s.GetContext());
-    }
-  }
-
-  MOZ_CAN_RUN_SCRIPT
-  virtual void Run(AutoSlowOperation& aAso) override {
-    JSObject* callback = CallbackPreserveColor();
-    nsCOMPtr<nsIGlobalObject> global =
-        callback ? xpc::NativeGlobal(callback) : nullptr;
-    if (global && !global->IsDying()) {
-      // Propagate the user input event handling bit if needed.
-      AutoHandlingUserInputStatePusher userInpStatePusher(
-          mPropagateUserInputEventHandling);
-
-      // https://wicg.github.io/scheduling-apis/#sec-patches-html-hostcalljobcallback
-      // 2. Set event loop’s current scheduling state to
-      // callback.[[HostDefined]].[[SchedulingState]].
-      global->SetWebTaskSchedulingState(mSchedulingState);
-
-      Call();
-
-      // (The step after step 7): Set event loop’s current scheduling state to
-      // null
-      global->SetWebTaskSchedulingState(nullptr);
-    }
-    // Now that PromiseJobCallback is no longer needed, clear any pointers it
-    // contains. This removes any storebuffer entries associated with those
-    // pointers, which can cause problems by taking up memory and by triggering
-    // minor GCs. This otherwise would not happen until the next minor GC or
-    // cycle collection.
-    Reset();
-    // Clear also other explicit member variables of PromiseJobRunnable so that
-    // we can possibly reuse it.
-    mSchedulingState = nullptr;
-    mPropagateUserInputEventHandling = false;
-
-    if (CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get()) {
-      ccjs->mRecycledPromiseJob = this;
-    }
-  }
-
-  virtual bool Suppressed() override {
-    JSObject* callback = CallbackPreserveColor();
-    nsIGlobalObject* global = callback ? xpc::NativeGlobal(callback) : nullptr;
-    return global && global->IsInSyncOperation();
-  }
-
-  void TraceMicroTask(JSTracer* aTracer) override {
-    // We can trace CallbackObjectBase.
-    Trace(aTracer);
-  }
-
- private:
-  void InitInternal(JS::HandleObject aPromise,
-                    WebTaskSchedulingState* aSchedulingState) {
-    if (aPromise) {
-      JS::PromiseUserInputEventHandlingState state =
-          JS::GetPromiseUserInputEventHandlingState(aPromise);
-      mPropagateUserInputEventHandling =
-          state ==
-          JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
-    }
-    mSchedulingState = aSchedulingState;
-  }
-
-  RefPtr<WebTaskSchedulingState> mSchedulingState;
-  bool mPropagateUserInputEventHandling;
-};
 
 enum { INCUMBENT_SETTING_SLOT, SCHEDULING_STATE_SLOT, HOSTDEFINED_DATA_SLOTS };
 
