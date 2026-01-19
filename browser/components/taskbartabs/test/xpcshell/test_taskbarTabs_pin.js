@@ -21,18 +21,10 @@ XPCOMUtils.defineLazyServiceGetters(this, {
 // We want to mock the native XPCOM interfaces of the initialized
 // `ShellService.shellService`, but those interfaces are frozen. Instead we
 // proxy `ShellService.shellService` and mock it.
-let gCreateWindowsIcon = ShellService.shellService.createWindowsIcon;
+let gCreateWindowsIcon = ShellService.createWindowsIcon;
 let gOverrideWindowsIconFileOnce;
 const kMockNativeShellService = {
   ...ShellService.shellService,
-  createWindowsIcon: sinon
-    .stub()
-    .callsFake(async (aIconFile, aImgContainer) => {
-      if (gOverrideWindowsIconFileOnce) {
-        await gCreateWindowsIcon(gOverrideWindowsIconFileOnce, aImgContainer);
-        gOverrideWindowsIconFileOnce = null;
-      }
-    }),
   createShortcut: sinon.stub().resolves("dummy_path"),
   deleteShortcut: sinon.stub().resolves("dummy_path"),
   pinShortcutToTaskbar: sinon.stub().resolves(),
@@ -43,6 +35,15 @@ const kMockNativeShellService = {
 };
 
 sinon.stub(ShellService, "shellService").value(kMockNativeShellService);
+
+sinon
+  .stub(ShellService, "createWindowsIcon")
+  .callsFake(async (aIconFile, aImgContainer) => {
+    if (gOverrideWindowsIconFileOnce) {
+      await gCreateWindowsIcon(gOverrideWindowsIconFileOnce, aImgContainer);
+      gOverrideWindowsIconFileOnce = null;
+    }
+  });
 
 sinon.stub(TaskbarTabsPin, "_getLocalization").returns({
   formatValue(msg) {
@@ -93,7 +94,7 @@ const kDefaultIconSpy = sinon.spy(kMockFaviconService, "defaultFavicon", [
 
 function shellPinCalled(aTaskbarTab) {
   ok(
-    kMockNativeShellService.createWindowsIcon.calledOnce,
+    ShellService.createWindowsIcon.calledOnce,
     `Icon creation should have been called.`
   );
   ok(
@@ -184,8 +185,7 @@ add_task(async function test_pin_existing_favicon_raster() {
     kMockFaviconService.getFaviconForPage.calledOnce,
     "The favicon for the page should have attempted to be retrieved."
   );
-  const imgContainer =
-    kMockNativeShellService.createWindowsIcon.firstCall.args[1];
+  const imgContainer = ShellService.createWindowsIcon.firstCall.args[1];
   equal(imgContainer.width, 256, "Image should be scaled to 256px width.");
   equal(imgContainer.height, 256, "Image should be scaled to 256px height.");
   ok(

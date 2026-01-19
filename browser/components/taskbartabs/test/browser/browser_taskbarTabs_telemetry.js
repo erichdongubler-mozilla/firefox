@@ -38,7 +38,6 @@ const exposeDeleteResult = async () => {
 
 const proxyNativeShellService = {
   ...ShellService.shellService,
-  createWindowsIcon: sinon.stub().resolves(),
   createShortcut: sinon.stub().resolves("dummy_path"),
   deleteShortcut: sinon.stub().callsFake(exposeDeleteResult),
   pinShortcutToTaskbar: sinon.stub().callsFake(exposePinResult),
@@ -46,6 +45,7 @@ const proxyNativeShellService = {
 };
 
 sinon.stub(ShellService, "shellService").value(proxyNativeShellService);
+sinon.stub(ShellService, "createWindowsIcon").resolves();
 
 registerCleanupFunction(() => {
   sinon.restore();
