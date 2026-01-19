@@ -8,7 +8,6 @@ import android.app.Dialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.util.Base64
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -55,8 +54,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
-import org.mozilla.fenix.ext.openToBrowser
-import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelMiddleware
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelNavigationMiddleware
@@ -166,6 +163,8 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                             privacySecurityPrefKey = requireContext().getString(
                                 R.string.pref_key_privacy_security_category,
                             ),
+                            appStore = components.appStore,
+                            tabsUseCases = components.useCases.tabsUseCases,
                             scope = coroutineScope,
                         ),
                         TrustPanelTelemetryMiddleware(),
@@ -291,16 +290,8 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                                 onToggleablePermissionClick = { websitePermission: WebsitePermission.Toggleable ->
                                     store.dispatch(TrustPanelAction.TogglePermission(websitePermission))
                                 },
-                                onViewCertificateClick = { certificate ->
-                                    val bytes = certificate.getEncoded()
-                                    val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP or Base64.NO_PADDING)
-                                    findNavController().openToBrowser()
-                                    requireComponents.useCases.tabsUseCases.addTab(
-                                        "about:certificate?cert=${Uri.encode(base64)}",
-                                        parentId = sessionState?.id,
-                                        contextId = sessionState?.contextId,
-                                        private = browsingModeManager.mode.isPrivate,
-                                    )
+                                onViewCertificateClick = {
+                                    store.dispatch(TrustPanelAction.Navigate.SecurityCertificate)
                                 },
                             )
                         }

@@ -64,7 +64,6 @@ import org.mozilla.fenix.settings.trustpanel.store.AutoplayValue
 import org.mozilla.fenix.settings.trustpanel.store.WebsiteInfoState
 import org.mozilla.fenix.settings.trustpanel.store.WebsitePermission
 import org.mozilla.fenix.theme.FirefoxTheme
-import java.security.cert.X509Certificate
 import mozilla.components.ui.icons.R as iconsR
 
 private val BANNER_ROUNDED_CORNER_SHAPE = RoundedCornerShape(
@@ -92,7 +91,7 @@ internal fun ProtectionPanel(
     onPrivacySecuritySettingsClick: () -> Unit,
     onAutoplayValueClick: (AutoplayValue) -> Unit,
     onToggleablePermissionClick: (WebsitePermission.Toggleable) -> Unit,
-    onViewCertificateClick: (X509Certificate) -> Unit,
+    onViewCertificateClick: () -> Unit,
 ) {
     val isSiteProtectionEnabled = isTrackingProtectionEnabled && isGlobalTrackingProtectionEnabled
     MenuScaffold(
@@ -167,7 +166,7 @@ internal fun ProtectionPanel(
                         id = R.string.connection_security_panel_verified_by,
                         websiteInfoState.certificateName,
                     ),
-                    onClick = { websiteInfoState.certificate?.let { onViewCertificateClick(it) } },
+                    onClick = onViewCertificateClick,
                 )
             } else {
                 MenuItem(

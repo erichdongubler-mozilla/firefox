@@ -44,6 +44,7 @@ class TrustPanelTelemetryMiddleware : Middleware<TrustPanelState, TrustPanelActi
             is TrustPanelAction.WebsitePermissionAction,
             TrustPanelAction.Navigate.PrivacySecuritySettings,
             is TrustPanelAction.Navigate.ManagePhoneFeature,
+            is TrustPanelAction.Navigate.SecurityCertificate,
             -> Unit
         }
     }
