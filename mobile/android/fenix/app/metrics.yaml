@@ -2735,7 +2735,7 @@ metrics:
     description: >
       This event records an attempt to show the Set as Default Browser native prompt.
     send_in_pings:
-      - metrics
+      - events
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1923744
     data_reviews:
@@ -8062,8 +8062,6 @@ email_mask:
         type: boolean
         description:
           The set value.
-    send_in_pings:
-      - metrics
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1977933
     data_reviews:
