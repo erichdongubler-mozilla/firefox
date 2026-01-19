@@ -27,7 +27,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "diplomat_runtime.hpp"
 #include "jstypes.h"
 #include "NamespaceImports.h"
 
@@ -51,6 +50,7 @@
 #include "gc/GCEnum.h"
 #include "icu4x/Calendar.hpp"
 #include "icu4x/Date.hpp"
+#include "icu4x/diplomat_runtime.hpp"
 #include "icu4x/IsoDate.hpp"
 #include "js/AllocPolicy.h"
 #include "js/ErrorReport.h"
@@ -76,7 +76,8 @@
 // avoid memory allocation.
 // (https://github.com/rust-diplomat/diplomat/issues/866)
 namespace diplomat::capi {
-extern "C" DiplomatWrite diplomat_simple_write(char* buf, size_t buf_size);
+extern "C" icu4x::diplomat::capi::DiplomatWrite diplomat_simple_write(
+    char* buf, size_t buf_size);
 }
 
 using namespace js;
@@ -933,10 +934,10 @@ static mozilla::Result<UniqueICU4XDate, CalendarError> CreateDateFromCodes(
   auto era = IcuEraName(calendarId, eraYear.era);
   auto monthCodeView = std::string_view{monthCode};
   auto date = icu4x::capi::icu4x_Date_from_codes_in_calendar_mv1(
-      diplomat::capi::DiplomatStringView{era.data(), era.length()},
+      icu4x::diplomat::capi::DiplomatStringView{era.data(), era.length()},
       eraYear.year,
-      diplomat::capi::DiplomatStringView{monthCodeView.data(),
-                                         monthCodeView.length()},
+      icu4x::diplomat::capi::DiplomatStringView{monthCodeView.data(),
+                                                monthCodeView.length()},
       day, calendar);
   if (date.is_ok) {
     return UniqueICU4XDate{date.ok};
@@ -1026,12 +1027,6 @@ static bool JapaneseEraYearToCommonEraYear(
 }
 
 static constexpr int32_t ethiopianYearsFromCreationToIncarnation = 5500;
-
-static int32_t FromAmeteAlemToAmeteMihret(int32_t year) {
-  // Subtract the number of years from creation to incarnation to anchor
-  // at the date of incarnation.
-  return year - ethiopianYearsFromCreationToIncarnation;
-}
 
 static int32_t FromAmeteMihretToAmeteAlem(int32_t year) {
   // Add the number of years from creation to incarnation to anchor at the date
@@ -1534,21 +1529,15 @@ static int32_t CalendarDateYear(CalendarId calendar,
       //
       // https://unicode-org.atlassian.net/browse/CLDR-18739
 
-      int32_t year = icu4x::capi::icu4x_Date_extended_year_mv1(date);
-
+#ifdef DEBUG
       auto eraName = EraName(date);
       MOZ_ASSERT(
           eraName == IcuEraName(CalendarId::Ethiopian, EraCode::Standard) ||
           eraName ==
               IcuEraName(CalendarId::EthiopianAmeteAlem, EraCode::Standard));
+#endif
 
-      // Workaround for <https://github.com/unicode-org/icu4x/issues/6719>.
-      if (eraName ==
-          IcuEraName(CalendarId::EthiopianAmeteAlem, EraCode::Standard)) {
-        year = FromAmeteAlemToAmeteMihret(year);
-      }
-
-      return year;
+      return icu4x::capi::icu4x_Date_extended_year_mv1(date);
     }
 
     case CalendarId::ROC: {

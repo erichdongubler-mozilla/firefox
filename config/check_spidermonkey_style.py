@@ -57,13 +57,13 @@ ignored_js_src_dirs = [
 included_inclnames_to_ignore = set([
     "ffi.h",  # generated in ctypes/libffi/
     "devtools/Instruments.h",  # we ignore devtools/ in general
-    "diplomat_runtime.hpp",  # ICU4X
     "double-conversion/double-conversion.h",  # strange MFBT case
     "frontend/ReservedWordsGenerated.h",  # generated in $OBJDIR
     "gc/StatsPhasesGenerated.h",  # generated in $OBJDIR
     "gc/StatsPhasesGenerated.inc",  # generated in $OBJDIR
     "icu4x/Calendar.hpp",  # ICU4X
     "icu4x/Date.hpp",  # ICU4X
+    "icu4x/diplomat_runtime.hpp",  # ICU4X
     "icu4x/GraphemeClusterSegmenter.hpp",  # ICU4X
     "icu4x/IsoDate.hpp",  # ICU4X
     "icu4x/Locale.hpp",  # ICU4X
