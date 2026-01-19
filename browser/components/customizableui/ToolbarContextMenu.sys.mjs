@@ -342,7 +342,7 @@ export var ToolbarContextMenu = {
       let closedCount = lazy.SessionStore.getLastClosedTabCount(window);
       document
         .getElementById("History:UndoCloseTab")
-        .setAttribute("disabled", closedCount == 0);
+        .toggleAttribute("disabled", closedCount == 0);
       document.l10n.setArgs(
         document.getElementById("toolbar-context-undoCloseTab"),
         { tabCount: closedCount }
