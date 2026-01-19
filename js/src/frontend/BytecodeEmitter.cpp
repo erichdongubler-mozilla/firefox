@@ -1144,6 +1144,9 @@ restart:
       return true;
 
     case ParseNodeKind::CallImportExpr:
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    case ParseNodeKind::CallImportSourceExpr:
+#endif
     case ParseNodeKind::CallImportSpec:
       MOZ_ASSERT(pn->is<BinaryNode>());
       *answer = true;
@@ -9002,7 +9005,11 @@ bool BytecodeEmitter::emitOptionalTree(
                                 kind == ParseNodeKind::ImportMetaExpr;
 
       bool isCallExpression = kind == ParseNodeKind::SetThis ||
-                              kind == ParseNodeKind::CallImportExpr;
+                              kind == ParseNodeKind::CallImportExpr
+#  ifdef ENABLE_SOURCE_PHASE_IMPORTS
+                              || kind == ParseNodeKind::CallImportSourceExpr
+#  endif
+          ;
 
       MOZ_ASSERT(isMemberExpression || isCallExpression,
                  "Unknown ParseNodeKind for OptionalChain");
@@ -13086,6 +13093,19 @@ bool BytecodeEmitter::emitTree(
 
       break;
     }
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    case ParseNodeKind::CallImportSourceExpr: {
+      // TODO: Bytecode and code generation will be added in
+      // Bug 2010101.
+      // Pushing undefined here for now fakes a return value,
+      // which allows running additional tests.
+      if (!emit1(JSOp::Undefined)) {
+        return false;
+      }
+      break;
+    }
+#endif
 
     case ParseNodeKind::SetThis:
       if (!emitSetThis(&pn->as<BinaryNode>())) {
