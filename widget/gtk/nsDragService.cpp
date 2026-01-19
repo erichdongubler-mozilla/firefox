@@ -2531,6 +2531,14 @@ void nsDragSession::SetDragIcon(GdkDragContext* aContext) {
   }
 }
 
+void nsDragSession::MarkAsActive() { mSourceDragContext = nullptr; }
+
+bool nsDragSession::IsActive() const { return !!mSourceDragContext; }
+
+RefPtr<GdkDragContext> nsDragSession::GetSourceDragContext() {
+  return mSourceDragContext;
+}
+
 static void invisibleSourceDragBegin(GtkWidget* aWidget,
                                      GdkDragContext* aContext, gpointer aData) {
   LOGDRAGSERVICESTATIC("invisibleSourceDragBegin (%p)", aContext);

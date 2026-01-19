@@ -332,9 +332,9 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
   // set the drag icon during drag-begin
   void SetDragIcon(GdkDragContext* aContext);
 
-  void MarkAsActive() { mSourceDragContext = nullptr; }
-  bool IsActive() const { return !!mSourceDragContext; }
-  RefPtr<GdkDragContext> GetSourceDragContext() { return mSourceDragContext; }
+  void MarkAsActive();
+  bool IsActive() const;
+  RefPtr<GdkDragContext> GetSourceDragContext();
 
  protected:
   virtual ~nsDragSession();
