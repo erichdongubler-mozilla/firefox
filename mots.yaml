@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-01-16T11:21:57.623728+00:00'
+updated_at: '2026-01-16T11:46:32.948561+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -1041,6 +1041,10 @@ people:
     bmo_id: 263117
     name: Martin Stránský
     nick: stransky
+  - &suhaib
+    bmo_id: 702054
+    name: Suhaib Mujahid
+    nick: suhaib
   - bmo_id: 468136
     name: Dan Gohman
     nick: sunfish
@@ -1222,6 +1226,28 @@ modules:
           - *sfriedberger
         machine_name: security_architecture
 
+  - machine_name: ai_for_development
+    name: AI for Development
+    description: Integration of AI tools for Firefox development, including AI coding
+      assistants.
+    includes:
+      - AGENTS.md
+      - docs/ai-agent-tools/**/*
+      - CLAUDE.md
+      - .claude/**/*
+      - .codex/**/*
+      - .mcp.json
+      - https://github.com/mozilla/bugbug
+    excludes: []
+    owners:
+      - *marco
+      - *padenot
+      - *suhaib
+    peers: []
+    meta:
+      group: ai4dev-reviewers
+      components:
+        - Developer Infrastructure::AI for Development
   - machine_name: android_components
     name: Android Components
     description: A collection of independent, reusable Android library components
@@ -4676,5 +4702,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: a1fa08577c0ed003045f5d66cc4df34345b378a8
-  export: 3c05e959bc7d5628b595fa5b684623cedbb95972
+  config: 9d84d2bfd82f9297ad5259a5977bf6a7815b3d74
+  export: 9c759f9fbc101c0e4c89cf45c371661a21ce04f7
