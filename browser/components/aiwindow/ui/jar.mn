@@ -34,3 +34,5 @@ browser.jar:
   content/browser/aiwindow/components/memories-icon-button.css      (components/memories-icon-button/memories-icon-button.css)
   content/browser/aiwindow/assets/memories-on.svg                   (assets/memories-on.svg)
   content/browser/aiwindow/assets/memories-off.svg                  (assets/memories-off.svg)
+  content/browser/aiwindow/components/website-chip-container.mjs    (components/website-chip-container/website-chip-container.mjs)
+  content/browser/aiwindow/components/website-chip-container.css    (components/website-chip-container/website-chip-container.css)
