@@ -480,14 +480,6 @@ criteria = "safe-to-deploy"
 version = "0.1.3"
 criteria = "safe-to-deploy"
 
-[[exemptions.gpu-alloc]]
-version = "0.5.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.gpu-alloc-types]]
-version = "0.2.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.gpu-descriptor]]
 version = "0.2.2"
 criteria = "safe-to-deploy"
