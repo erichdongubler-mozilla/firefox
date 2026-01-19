@@ -1199,10 +1199,9 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyReflow) {
     nsIFrame::IndentBy(stdout, nsBlockFrame::gNoiseIndent);
-    fmt::println(
-        FMT_STRING("abspos {}: begin reflow: availSize={}, orig cbRect={}"),
-        aKidFrame->ListTag(), ToString(aReflowInput.AvailableSize()),
-        ToString(aOriginalContainingBlockRect));
+    fmt::println("abspos {}: begin reflow: availSize={}, orig cbRect={}",
+                 aKidFrame->ListTag(), ToString(aReflowInput.AvailableSize()),
+                 ToString(aOriginalContainingBlockRect));
   }
   AutoNoisyIndenter indent(nsBlockFrame::gNoisy);
 #endif  // DEBUG
@@ -1811,7 +1810,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyReflow) {
     nsIFrame::IndentBy(stdout, nsBlockFrame::gNoiseIndent - 1);
-    fmt::println(FMT_STRING("abspos {}: rect {}"), aKidFrame->ListTag().get(),
+    fmt::println("abspos {}: rect {}", aKidFrame->ListTag().get(),
                  ToString(aKidFrame->GetRect()));
   }
 #endif

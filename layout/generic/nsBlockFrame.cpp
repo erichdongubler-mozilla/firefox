@@ -1302,7 +1302,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 #ifdef DEBUG
   if (gNoisyReflow) {
     IndentBy(stdout, gNoiseIndent);
-    fmt::println(FMT_STRING("{}: begin reflow: availSize={} computedSize={}"),
+    fmt::println("{}: begin reflow: availSize={} computedSize={}",
                  ListTag().get(), ToString(aReflowInput.AvailableSize()),
                  ToString(aReflowInput.ComputedSize()));
   }
@@ -1728,11 +1728,11 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   if (gNoisyReflow) {
     IndentBy(stdout, gNoiseIndent);
-    fmt::print(FMT_STRING("{}: status={} metrics={} carriedMargin={}"),
-               ListTag().get(), ToString(aStatus), ToString(aMetrics.Size(wm)),
+    fmt::print("{}: status={} metrics={} carriedMargin={}", ListTag().get(),
+               ToString(aStatus), ToString(aMetrics.Size(wm)),
                aMetrics.mCarriedOutBEndMargin.Get());
     if (HasOverflowAreas()) {
-      fmt::print(FMT_STRING(" overflow-ink={} overflow-scr={}"),
+      fmt::print(" overflow-ink={} overflow-scr={}",
                  ToString(aMetrics.InkOverflow()),
                  ToString(aMetrics.ScrollableOverflow()));
     }
@@ -2919,9 +2919,8 @@ static void DumpLine(const BlockReflowState& aState, nsLineBox* aLine,
   if (nsBlockFrame::gNoisyReflow) {
     nsBlockFrame::IndentBy(stdout, nsBlockFrame::gNoiseIndent + aDeltaIndent);
     fmt::println(
-        FMT_STRING("line={} mBCoord={} dirty={} bounds={} overflow-ink={} "
-                   "overflow-scr={} deltaBCoord={} mPrevBEndMargin={} "
-                   "childCount={}"),
+        "line={} mBCoord={} dirty={} bounds={} overflow-ink={} "
+        "overflow-scr={} deltaBCoord={} mPrevBEndMargin={} childCount={}",
         static_cast<void*>(aLine), aState.mBCoord, YesOrNo(aLine->IsDirty()),
         ToString(aLine->GetBounds()), ToString(aLine->InkOverflowRect()),
         ToString(aLine->ScrollableOverflowRect()), aDeltaBCoord,
@@ -5067,7 +5066,7 @@ void nsBlockFrame::DoReflowInlineFrames(
 #ifdef DEBUG
   if (gNoisyReflow) {
     IndentBy(stdout, gNoiseIndent);
-    fmt::println(FMT_STRING("LineReflowStatus={}"), ToString(lineReflowStatus));
+    fmt::println("LineReflowStatus={}", ToString(lineReflowStatus));
   }
 #endif
 

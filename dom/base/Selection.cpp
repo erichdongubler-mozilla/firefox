@@ -3208,8 +3208,8 @@ void Selection::Extend(nsINode& aContainer, uint32_t aOffset,
     NS_ASSERTION(
         false,
         nsFmtCString(
-            FMT_STRING("mFrameSelection is {} which is expected as "
-                       "aContainer.GetFrameSelection() ({})"),
+            "mFrameSelection is {} which is expected as "
+            "aContainer.GetFrameSelection() ({})",
             mozilla::ToString(mFrameSelection).c_str(),
             mozilla::ToString(RefPtr{aContainer.GetFrameSelection()}).c_str())
             .get());

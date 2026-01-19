@@ -392,8 +392,7 @@ void LogPrintVA(const JS::OpaqueLogger logger, mozilla::LogLevel level,
 void LogPrintFmt(const JS::OpaqueLogger logger, mozilla::LogLevel level,
                  fmt::string_view fmt, fmt::format_args args) {
   ShellLogModule* mod = static_cast<ShellLogModule*>(logger);
-  fmt::print(stderr, FMT_STRING("[{}] {}\n"), mod->name,
-             fmt::vformat(fmt, args));
+  fmt::print(stderr, "[{}] {}\n", mod->name, fmt::vformat(fmt, args));
 }
 
 JS::LoggingInterface shellLoggingInterface = {GetLoggerByName, LogPrintVA,

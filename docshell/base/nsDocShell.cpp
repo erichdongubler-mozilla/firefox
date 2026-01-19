@@ -14799,7 +14799,7 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aExpired, uint32_t aCacheKey,
                                  .valueOr(nullptr)),
                     loadingEntry->mTriggeringNavigationType
                         .map([](NavigationType type) {
-                          return fmt::format(FMT_STRING("{}"), type);
+                          return fmt::format("{}", type);
                         })
                         .valueOr("none"));
         if (loadingEntry->mTriggeringEntry &&

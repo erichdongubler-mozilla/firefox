@@ -977,11 +977,10 @@ float WidgetMouseEventBase::ComputeMouseButtonPressure() const {
       }
       break;
     default:
-      NS_ASSERTION(false,
-                   nsFmtCString(FMT_STRING("This method is not designed for "
-                                           "{}, implement the case explicitly"),
-                                ToChar(mMessage))
-                       .get());
+      NS_ASSERTION(false, nsFmtCString("This method is not designed for "
+                                       "{}, implement the case explicitly",
+                                       ToChar(mMessage))
+                              .get());
   }
   switch (mInputSource) {
     // The caller must want to handle these cases.

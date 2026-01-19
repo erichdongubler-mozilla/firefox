@@ -105,9 +105,8 @@ ResultStatus LlamaBackend::Reinitialize(const LlamaModelOptions& aOptions,
   }
 
   if (!mLib) {
-    auto msg =
-        nsFmtCString(FMT_STRING("{}: Failed to get llama runtime linker"),
-                     __PRETTY_FUNCTION__);
+    auto msg = nsFmtCString("{}: Failed to get llama runtime linker",
+                            __PRETTY_FUNCTION__);
     LOGE("{}", msg);
     return mozilla::Err(Error{msg});
   }
@@ -151,9 +150,9 @@ ResultStatus LlamaBackend::Reinitialize(const LlamaModelOptions& aOptions,
   mModel.reset(mLib->llama_model_load_from_file_handle(aFp, modelParams));
 
   if (!mModel) {
-    auto msg = nsFmtCString(
-        FMT_STRING("{}: Unable to load the model during initialization"),
-        __PRETTY_FUNCTION__);
+    auto msg =
+        nsFmtCString("{}: Unable to load the model during initialization",
+                     __PRETTY_FUNCTION__);
     LOGE("{}", msg);
     return mozilla::Err(Error{msg});
   }
@@ -210,9 +209,8 @@ ResultStatus LlamaBackend::ReinitializeContext(
   // alive for the entire lifetime of mCtx.
   mCtx.reset(mLib->llama_init_from_model(mModel.get(), ctxParams));
   if (!mCtx) {
-    auto msg =
-        nsFmtCString(FMT_STRING("{}: failed to create the llama_context {}"),
-                     __PRETTY_FUNCTION__, mModelGeneralName);
+    auto msg = nsFmtCString("{}: failed to create the llama_context {}",
+                            __PRETTY_FUNCTION__, mModelGeneralName);
     LOGE("{}", msg);
     return mozilla::Err(Error{msg});
   }
@@ -237,8 +235,7 @@ ResultStatus LlamaBackend::ReinitializeContext(
     mThreadpoolBatch.reset(mLib->ggml_threadpool_new(&tppBatch));
     if (!mThreadpoolBatch) {
       auto msg = nsFmtCString(
-          FMT_STRING(
-              "{}: Failed to create decoding threadpool: n_threads: {}  {}"),
+          "{}: Failed to create decoding threadpool: n_threads: {}  {}",
           __PRETTY_FUNCTION__, ctxParams.n_threads_batch, mModelGeneralName);
       LOGE("{}", msg);
       return mozilla::Err(Error{msg});
@@ -249,9 +246,9 @@ ResultStatus LlamaBackend::ReinitializeContext(
 
   mThreadpool.reset(mLib->ggml_threadpool_new(&tpp));
   if (!mThreadpool) {
-    auto msg = nsFmtCString(
-        FMT_STRING("{}: Failed to create threadpool: n_threads: {} {}"),
-        __PRETTY_FUNCTION__, ctxParams.n_threads, mModelGeneralName);
+    auto msg = nsFmtCString("{}: Failed to create threadpool: n_threads: {} {}",
+                            __PRETTY_FUNCTION__, ctxParams.n_threads,
+                            mModelGeneralName);
     LOGE("{}", msg);
     return mozilla::Err(Error{msg});
   }
@@ -275,9 +272,8 @@ ChatMessageResult LlamaBackend::FormatChat(
   MOZ_ASSERT(mLib, "No shared library pointer in FormatChat, fix this");
 
   if (!mModel) {
-    auto msg = nsFmtCString(
-        FMT_STRING("{}: Model not loaded when trying to format chat"),
-        __PRETTY_FUNCTION__);
+    auto msg = nsFmtCString("{}: Model not loaded when trying to format chat",
+                            __PRETTY_FUNCTION__);
     LOGE("{}", msg);
     return ChatMessageResult(Error{msg});
   }
@@ -318,7 +314,7 @@ ChatMessageResult LlamaBackend::FormatChat(
       aOptions.mAddAssistant, formatted.BeginWriting(), formatted.Length());
 
   if (chatTemplateLength < 0) {
-    auto msg = nsFmtCString(FMT_STRING("{}: failed to apply the chat template"),
+    auto msg = nsFmtCString("{}: failed to apply the chat template",
                             __PRETTY_FUNCTION__);
     LOGE("{}", msg);
     return ChatMessageResult(Error{msg});
@@ -409,8 +405,8 @@ LlamaBackend::SamplerResult LlamaBackend::InitializeSampler(
 
       default:
 
-        auto msg = nsFmtCString(FMT_STRING("{}: Unimplemented sampler type"),
-                                __PRETTY_FUNCTION__);
+        auto msg =
+            nsFmtCString("{}: Unimplemented sampler type", __PRETTY_FUNCTION__);
         LOGE("{}", msg);
         return mozilla::Err(Error{msg});
     }
@@ -443,8 +439,7 @@ ResultStatus LlamaBackend::Generate(
   });
 
   if (!mModel) {
-    auto msg = nsFmtCString(FMT_STRING("{}: error: Model not loaded"),
-                            __PRETTY_FUNCTION__);
+    auto msg = nsFmtCString("{}: error: Model not loaded", __PRETTY_FUNCTION__);
     LOGE("{}", msg);
     return mozilla::Err(Error{msg});
   }
@@ -453,9 +448,8 @@ ResultStatus LlamaBackend::Generate(
   const llama_vocab* vocab = mLib->llama_model_get_vocab(mModel.get());
 
   if (!vocab) {
-    auto msg =
-        nsFmtCString(FMT_STRING("{}: error: Unable to get model vocabulary."),
-                     __PRETTY_FUNCTION__);
+    auto msg = nsFmtCString("{}: error: Unable to get model vocabulary.",
+                            __PRETTY_FUNCTION__);
     LOGE("{}", msg);
     return mozilla::Err(Error{msg});
   }
@@ -482,7 +476,7 @@ ResultStatus LlamaBackend::Generate(
       aOptions.mTokenizationOptions.mParseSpecilControlTokens);
 
   if (nPromptTokens < 0) {
-    auto msg = nsFmtCString(FMT_STRING("{}: failed to tokenize the prompt {}"),
+    auto msg = nsFmtCString("{}: failed to tokenize the prompt {}",
                             __PRETTY_FUNCTION__, mModelGeneralName);
     LOGE("{}", msg);
     return mozilla::Err(Error{msg});
@@ -552,7 +546,7 @@ ResultStatus LlamaBackend::Generate(
   mozilla::HashSet<int32_t> stopTokens;
   for (const auto& v : aOptions.mStopTokens) {
     if (!stopTokens.put(v)) {
-      auto msg = nsFmtCString(FMT_STRING("{}: Unable to create stopTokens {}"),
+      auto msg = nsFmtCString("{}: Unable to create stopTokens {}",
                               __PRETTY_FUNCTION__, mModelGeneralName);
       LOGE("{}", msg);
       return mozilla::Err(Error{msg});
@@ -581,10 +575,10 @@ ResultStatus LlamaBackend::Generate(
     int nCtxUsed =
         mLib->llama_memory_seq_pos_max(mLib->llama_get_memory(mCtx.get()), 0);
     if (nCtxUsed + batch.n_tokens > nCtx) {
-      auto msg = nsFmtCString(
-          FMT_STRING("{}: context size exceeded. Size is: {} Needed: {} {}"),
-          __PRETTY_FUNCTION__, nCtx, nCtxUsed + batch.n_tokens,
-          mModelGeneralName);
+      auto msg =
+          nsFmtCString("{}: context size exceeded. Size is: {} Needed: {} {}",
+                       __PRETTY_FUNCTION__, nCtx, nCtxUsed + batch.n_tokens,
+                       mModelGeneralName);
       LOGE("{}", msg);
       return mozilla::Err(Error{msg});
     }
@@ -593,8 +587,8 @@ ResultStatus LlamaBackend::Generate(
          __PRETTY_FUNCTION__, mModelGeneralName);
 
     if (mLib->llama_decode(mCtx.get(), batch) != 0) {
-      auto msg = nsFmtCString(FMT_STRING("{}: failed to decode {}"),
-                              __PRETTY_FUNCTION__, mModelGeneralName);
+      auto msg = nsFmtCString("{}: failed to decode {}", __PRETTY_FUNCTION__,
+                              mModelGeneralName);
       LOGE("{}", msg);
       return mozilla::Err(Error{msg});
     }
@@ -647,9 +641,8 @@ ResultStatus LlamaBackend::Generate(
         aOptions.mDeTokenizationOptions.mRenderSpecialTokens);
 
     if (n < 0) {
-      auto msg = nsFmtCString(
-          FMT_STRING("{}: failed to convert token to string piece {}"),
-          __PRETTY_FUNCTION__, mModelGeneralName);
+      auto msg = nsFmtCString("{}: failed to convert token to string piece {}",
+                              __PRETTY_FUNCTION__, mModelGeneralName);
       LOGE("{}", msg);
       return mozilla::Err(Error{msg});
     }

@@ -15,14 +15,18 @@
  * nsTFmtString lets you create a nsTString using a C++20-style format
  * string.  For example:
  *
- *   NS_WARNING(nsFmtCString(FMT_STRING("Unexpected value: {}"), 13.917).get());
- *   NS_WARNING(nsFmtString(FMT_STRING(u"Unexpected value: {}"),
- *                                     u"weird").get());
+ *   NS_WARNING(nsFmtCString("Unexpected value: {}", 13.917).get());
+ *   NS_WARNING(nsFmtString(u"Unexpected value: {}", u"weird").get());
  *
  * nsTFmtString has a small built-in auto-buffer.  For larger strings, it
  * will allocate on the heap.
  *
  * See also nsTSubstring::AppendFmt().
+ *
+ * Note also that for one-off C strings you can also use fmt::format() directly:
+ *
+ *   NS_WARNING(std::format("Unexpected value: {}", 13.917).c_str());
+ *
  */
 template <typename T>
 class nsTFmtString : public nsTAutoStringN<T, 16> {

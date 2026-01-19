@@ -3111,23 +3111,23 @@ void nsGridContainerFrame::Tracks::Dump() const {
                                           : std::to_string(aCoord);
   };
 
-  fmt::print(FMT_STRING("{} {} {}{}, track union bits: "), numTracks,
+  fmt::print("{} {} {}{}, track union bits: ", numTracks,
              mIsMasonry ? "masonry" : "grid", trackName,
              numTracks > 1 ? "s" : "");
   TrackSize::DumpStateBits(mStateUnion);
   printf("\n");
 
   for (uint32_t i = 0; i < numTracks; ++i) {
-    fmt::print(FMT_STRING("  {} {}: "), trackName, i);
+    fmt::print("  {} {}: ", trackName, i);
     mSizes[i].Dump();
     printf("\n");
   }
 
-  fmt::println(FMT_STRING("  first baseline: {}, last baseline: {}"),
+  fmt::println("  first baseline: {}, last baseline: {}",
                BaselineToStr(GetBaseline(0, BaselineSharingGroup::First)),
                BaselineToStr(GetBaseline(mBaselines.Length() - 1,
                                          BaselineSharingGroup::Last)));
-  fmt::println(FMT_STRING("  {} gap: {}, content-box {}-size: {}"), trackName,
+  fmt::println("  {} gap: {}, content-box {}-size: {}", trackName,
                CoordToStr(mGridGap),
                mAxis == LogicalAxis::Inline ? "inline" : "block",
                CoordToStr(mContentBoxSize));
