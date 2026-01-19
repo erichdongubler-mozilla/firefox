@@ -2700,7 +2700,7 @@ pref("browser.tabs.fadeOutUnloadedTabs", false);
 #endif
 
 // Whether SVG favicons should be safely re-encoded using the moz-remote-image:// protocol.
-pref("browser.tabs.remoteSVGIconDecoding", false);
+pref("browser.tabs.remoteSVGIconDecoding", true);
 
 // If true, unprivileged extensions may use experimental APIs on
 // nightly and developer edition.
