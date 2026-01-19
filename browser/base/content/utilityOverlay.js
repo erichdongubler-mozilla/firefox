@@ -132,7 +132,7 @@ function checkForMiddleClick(node, event) {
   // We should be using the disabled property here instead of the attribute,
   // but some elements that this function is used with don't support it (e.g.
   // menuitem).
-  if (node.getAttribute("disabled") == "true") {
+  if (node.hasAttribute("disabled")) {
     return;
   } // Do nothing
 
