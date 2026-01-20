@@ -2322,6 +2322,9 @@ pref("identity.fxaccounts.autoconfig.uri", "");
 // URL for help link about Send Tab.
 pref("identity.sendtabpromo.url", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/send-tab");
 
+// Whether synced tabs should be loaded using the moz-remote-image: protocol.
+pref("identity.tabs.remoteSVGIconDecoding", false);
+
 // URLs for promo links to mobile browsers. Note that consumers are expected to
 // append a value for utm_campaign.
 pref("identity.mobilepromo.android", "https://www.mozilla.org/firefox/android/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_campaign=");
@@ -2696,7 +2699,7 @@ pref("browser.tabs.fadeOutUnloadedTabs", false);
 #endif
 
 // Whether SVG favicons should be safely re-encoded using the moz-remote-image:// protocol.
-pref("browser.tabs.remoteSVGIconDecoding", false);
+pref("browser.tabs.remoteSVGIconDecoding", true);
 
 // If true, unprivileged extensions may use experimental APIs on
 // nightly and developer edition.

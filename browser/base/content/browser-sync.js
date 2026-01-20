@@ -588,7 +588,7 @@ var gSync = {
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "REMOTE_SVG_ICON_DECODING",
-      "browser.tabs.remoteSVGIconDecoding"
+      "identity.tabs.remoteSVGIconDecoding"
     );
   },
 

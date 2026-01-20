@@ -260,7 +260,7 @@ add_task(async function () {
 // Test the "Sync Now" button
 add_task(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.remoteSVGIconDecoding", true]],
+    set: [["identity.tabs.remoteSVGIconDecoding", true]],
   });
 
   gSync.updateAllUI({
