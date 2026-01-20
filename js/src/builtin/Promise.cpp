@@ -6226,15 +6226,19 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   MOZ_ASSERT(thisVal.isObject());
   MOZ_ASSERT(thisVal.toObject().is<AsyncFromSyncIteratorObject>());
 
+  RootedTuple<PromiseObject*, AsyncFromSyncIteratorObject*, JSObject*, Value,
+              Value, Value, JSObject*, Value, Value, Value>
+      roots(cx);
+
   // Step 3. Let promiseCapability be ! NewPromiseCapability(%Promise%).
-  Rooted<PromiseObject*> resultPromise(
-      cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
+  RootedField<PromiseObject*, 0> resultPromise(
+      roots, CreatePromiseObjectWithoutResolutionFunctions(cx));
   if (!resultPromise) {
     return false;
   }
 
-  Rooted<AsyncFromSyncIteratorObject*> asyncIter(
-      cx, &thisVal.toObject().as<AsyncFromSyncIteratorObject>());
+  RootedField<AsyncFromSyncIteratorObject*, 1> asyncIter(
+      roots, &thisVal.toObject().as<AsyncFromSyncIteratorObject>());
 
   // next():
   // Step 4. Let syncIteratorRecord be O.[[SyncIteratorRecord]].
@@ -6244,9 +6248,9 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   // return() / throw():
   // Step 4. Let syncIteratorRecord be O.[[SyncIteratorRecord]].
   // Step 5. Let syncIterator be syncIteratorRecord.[[Iterator]].
-  RootedObject iter(cx, asyncIter->iterator());
+  RootedField<JSObject*, 2> iter(roots, asyncIter->iterator());
 
-  RootedValue func(cx);
+  RootedField<Value, 3> func(roots);
   if (completionKind == CompletionKind::Normal) {
     // next() preparing for steps 5-6.
     func.set(asyncIter->nextMethod());
@@ -6268,7 +6272,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
         return AbruptRejectPromise(cx, args, resultPromise, nullptr);
       }
 
-      RootedValue resultVal(cx, ObjectValue(*resultObj));
+      RootedField<Value, 4> resultVal(roots, ObjectValue(*resultObj));
 
       // Step 8.b. Perform ! Call(promiseCapability.[[Resolve]], undefined,
       //                          « iterResult »).
@@ -6313,7 +6317,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
       //           promise.
       // Step 8.g. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*,
       //           « a newly created *TypeError* object »).
-      Rooted<Value> noThrowMethodError(cx);
+      RootedField<Value, 4> noThrowMethodError(roots);
       if (!GetTypeError(cx, JSMSG_ITERATOR_NO_THROW, &noThrowMethodError)) {
         return AbruptRejectPromise(cx, args, resultPromise, nullptr);
       }
@@ -6349,8 +6353,8 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   //                                         « value »)).
   // Step 10. Else,
   // Step 10.a. Let result be Completion(Call(throw, syncIterator)).
-  RootedValue iterVal(cx, ObjectValue(*iter));
-  RootedValue resultVal(cx);
+  RootedField<Value, 4> iterVal(roots, ObjectValue(*iter));
+  RootedField<Value, 5> resultVal(roots);
   bool ok;
   if (args.length() == 0) {
     ok = Call(cx, func, iterVal, &resultVal);
@@ -6395,7 +6399,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
     return AbruptRejectPromise(cx, args, resultPromise, nullptr);
   }
 
-  RootedObject resultObj(cx, &resultVal.toObject());
+  RootedField<JSObject*, 6> resultObj(roots, &resultVal.toObject());
 
   // next():
   // Step 8. Return AsyncFromSyncIteratorContinuation(result,
@@ -6426,7 +6430,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   //         the use IfAbruptRejectPromise below are guaranteed not to throw.
   // Step 2. Let done be Completion(IteratorComplete(result)).
   // Step 3. IfAbruptRejectPromise(done, promiseCapability).
-  RootedValue doneVal(cx);
+  RootedField<Value, 7> doneVal(roots);
   if (!GetProperty(cx, resultObj, resultObj, cx->names().done, &doneVal)) {
     return AbruptRejectPromise(cx, args, resultPromise, nullptr);
   }
@@ -6434,7 +6438,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
 
   // Step 4. Let value be Completion(IteratorValue(result)).
   // Step 5. IfAbruptRejectPromise(value, promiseCapability).
-  RootedValue value(cx);
+  RootedField<Value, 8> value(roots);
   if (!GetProperty(cx, resultObj, resultObj, cx->names().value, &value)) {
     return AbruptRejectPromise(cx, args, resultPromise, nullptr);
   }
