@@ -61,14 +61,14 @@ struct MotionSegment {
   // Default constructor just locks us into being a Translation, and leaves
   // other fields uninitialized (since client is presumably about to set them)
   MotionSegment()
-      : mRotateType(eRotateType_Auto),
+      : mRotateType(RotateType::Auto),
         mRotateAngle(0.0),
         mSegmentType(eSegmentType_Translation),
         mU{} {}
 
   // Constructor for a translation
   MotionSegment(float aX, float aY, float aRotateAngle)
-      : mRotateType(eRotateType_Explicit),
+      : mRotateType(RotateType::Explicit),
         mRotateAngle(aRotateAngle),
         mSegmentType(eSegmentType_Translation) {
     mU.mTranslationParams.mX = aX;
@@ -112,7 +112,7 @@ struct MotionSegment {
     // Compare basic params
     if (mSegmentType != aOther.mSegmentType ||
         mRotateType != aOther.mRotateType ||
-        (mRotateType == eRotateType_Explicit &&   // Technically, angle mismatch
+        (mRotateType == RotateType::Explicit &&   // Technically, angle mismatch
          mRotateAngle != aOther.mRotateAngle)) {  // only matters for Explicit.
       return false;
     }
@@ -136,7 +136,7 @@ struct MotionSegment {
   // Member Data
   // -----------
   RotateType mRotateType;  // Explicit angle vs. auto vs. auto-reverse.
-  float mRotateAngle;      // Only used if mRotateType == eRotateType_Explicit.
+  float mRotateAngle;      // Only used if mRotateType == RotateType::Explicit.
   const SegmentType mSegmentType;  // This determines how we interpret
                                    // mU. (const for safety/sanity)
 
@@ -222,17 +222,17 @@ inline static void GetAngleAndPointAtDistance(
     float& aRotateAngle,  // in & out-param.
     Point& aPoint)        // out-param.
 {
-  if (aRotateType == eRotateType_Explicit) {
+  if (aRotateType == RotateType::Explicit) {
     // Leave aRotateAngle as-is.
     aPoint = aPath->ComputePointAtLength(aDistance);
   } else {
     Point tangent;  // Unit vector tangent to the point we find.
     aPoint = aPath->ComputePointAtLength(aDistance, &tangent);
     float tangentAngle = atan2(tangent.y, tangent.x);
-    if (aRotateType == eRotateType_Auto) {
+    if (aRotateType == RotateType::Auto) {
       aRotateAngle = tangentAngle;
     } else {
-      MOZ_ASSERT(aRotateType == eRotateType_AutoReverse);
+      MOZ_ASSERT(aRotateType == RotateType::AutoReverse);
       aRotateAngle = M_PI + tangentAngle;
     }
   }
@@ -431,7 +431,7 @@ nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
     if (arr[i].mSegmentType == eSegmentType_Translation) {
       point.x = arr[i].mU.mTranslationParams.mX;
       point.y = arr[i].mU.mTranslationParams.mY;
-      MOZ_ASSERT(arr[i].mRotateType == eRotateType_Explicit,
+      MOZ_ASSERT(arr[i].mRotateType == RotateType::Explicit,
                  "'auto'/'auto-reverse' should have been converted to "
                  "explicit angles when we generated this translation");
     } else {

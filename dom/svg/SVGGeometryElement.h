@@ -111,40 +111,44 @@ class SVGGeometryElement : public SVGGeometryElementBase {
   class SimplePath {
    public:
     SimplePath()
-        : mX(0.0), mY(0.0), mWidthOrX2(0.0), mHeightOrY2(0.0), mType(NONE) {}
-    bool IsPath() const { return mType != NONE; }
+        : mX(0.0),
+          mY(0.0),
+          mWidthOrX2(0.0),
+          mHeightOrY2(0.0),
+          mType(Type::None) {}
+    bool IsPath() const { return mType != Type::None; }
     void SetRect(Float x, Float y, Float width, Float height) {
       mX = x;
       mY = y;
       mWidthOrX2 = width;
       mHeightOrY2 = height;
-      mType = RECT;
+      mType = Type::Rect;
     }
     Rect AsRect() const {
-      MOZ_ASSERT(mType == RECT);
+      MOZ_ASSERT(mType == Type::Rect);
       return Rect(mX, mY, mWidthOrX2, mHeightOrY2);
     }
-    bool IsRect() const { return mType == RECT; }
+    bool IsRect() const { return mType == Type::Rect; }
     void SetLine(Float x1, Float y1, Float x2, Float y2) {
       mX = x1;
       mY = y1;
       mWidthOrX2 = x2;
       mHeightOrY2 = y2;
-      mType = LINE;
+      mType = Type::Line;
     }
     Point Point1() const {
-      MOZ_ASSERT(mType == LINE);
+      MOZ_ASSERT(mType == Type::Line);
       return Point(mX, mY);
     }
     Point Point2() const {
-      MOZ_ASSERT(mType == LINE);
+      MOZ_ASSERT(mType == Type::Line);
       return Point(mWidthOrX2, mHeightOrY2);
     }
-    bool IsLine() const { return mType == LINE; }
-    void Reset() { mType = NONE; }
+    bool IsLine() const { return mType == Type::Line; }
+    void Reset() { mType = Type::None; }
 
    private:
-    enum Type { NONE, RECT, LINE };
+    enum class Type { None, Rect, Line };
     Float mX, mY, mWidthOrX2, mHeightOrY2;
     Type mType;
   };
