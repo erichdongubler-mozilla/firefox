@@ -692,6 +692,8 @@ nsresult RTCDataChannel::DoOnMessageAvailable(const nsACString& aData,
     return NS_OK;
   }
 
+  MOZ_ASSERT(mReadyState == RTCDataChannelState::Open);
+
   DC_VERBOSE(("%p: DoOnMessageAvailable%s\n", this,
               aBinary
                   ? ((mBinaryType == RTCDataChannelType::Blob) ? " (blob)"
