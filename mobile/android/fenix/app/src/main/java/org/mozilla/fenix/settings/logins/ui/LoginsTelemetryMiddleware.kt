@@ -36,7 +36,7 @@ internal class LoginsTelemetryMiddleware : Middleware<LoginsState, LoginsAction>
             }
             is DetailLoginAction.PasswordVisibilityChanged -> {
                 if (action.isPasswordVisible) {
-                    Logins.copyLogin.record(NoExtras())
+                    Logins.viewPasswordLogin.record(NoExtras())
                 }
             }
             is DetailLoginMenuAction.EditLoginMenuItemClicked -> {
