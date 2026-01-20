@@ -117,3 +117,118 @@ add_task(async function test_switch_to_classic_window() {
 
   await SpecialPowers.popPrefEnv();
 });
+
+// Window switcher should be positioned in TabsToolbar when vertical tabs are disabled
+add_task(async function test_switcher_position_horizontal_tabs() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.aiwindow.enabled", true],
+      ["sidebar.verticalTabs", false],
+    ],
+  });
+
+  let button = document.getElementById("ai-window-toggle");
+  Assert.ok(button, "Window switcher button should exist");
+
+  let tabsToolbar = document.getElementById("TabsToolbar");
+  Assert.ok(tabsToolbar, "TabsToolbar should exist");
+
+  Assert.equal(
+    button.closest("#TabsToolbar"),
+    tabsToolbar,
+    "Window switcher should be in TabsToolbar when vertical tabs are disabled"
+  );
+
+  Assert.ok(
+    !button.closest("#nav-bar"),
+    "Window switcher should not be in nav-bar when vertical tabs are disabled"
+  );
+
+  await SpecialPowers.popPrefEnv();
+});
+
+// Window switcher should be positioned in nav-bar when vertical tabs are enabled
+add_task(async function test_switcher_position_vertical_tabs() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.aiwindow.enabled", true],
+      ["sidebar.verticalTabs", true],
+    ],
+  });
+
+  let button = document.getElementById("ai-window-toggle");
+  Assert.ok(button, "Window switcher button should exist");
+
+  let navBar = document.getElementById("nav-bar");
+  Assert.ok(navBar, "nav-bar should exist");
+
+  Assert.equal(
+    button.closest("#nav-bar"),
+    navBar,
+    "Window switcher should be in nav-bar when vertical tabs are enabled"
+  );
+
+  Assert.ok(
+    !button.closest("#TabsToolbar"),
+    "Window switcher should not be in TabsToolbar when vertical tabs are enabled"
+  );
+
+  let panelUIButton = document.getElementById("PanelUI-button");
+  Assert.ok(panelUIButton, "PanelUI button should exist");
+
+  await SpecialPowers.popPrefEnv();
+});
+
+// Window switcher should dynamically reposition when horizontal/vertical tabs preference changes
+add_task(async function test_switcher_repositions_on_pref_change() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.aiwindow.enabled", true],
+      ["sidebar.verticalTabs", false],
+    ],
+  });
+
+  let button = document.getElementById("ai-window-toggle");
+  let tabsToolbar = document.getElementById("TabsToolbar");
+  let navBar = document.getElementById("nav-bar");
+
+  Assert.equal(
+    button.closest("#TabsToolbar"),
+    tabsToolbar,
+    "Window switcher should initially be in TabsToolbar"
+  );
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.verticalTabs", true]],
+  });
+
+  await BrowserTestUtils.waitForMutationCondition(
+    navBar,
+    { childList: true, subtree: true },
+    () => button.closest("#nav-bar") === navBar
+  );
+
+  Assert.equal(
+    button.closest("#nav-bar"),
+    navBar,
+    "Window switcher should be in nav-bar after enabling vertical tabs"
+  );
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.verticalTabs", false]],
+  });
+
+  await BrowserTestUtils.waitForMutationCondition(
+    tabsToolbar,
+    { childList: true, subtree: true },
+    () => button.closest("#TabsToolbar") === tabsToolbar
+  );
+
+  Assert.equal(
+    button.closest("#TabsToolbar"),
+    tabsToolbar,
+    "Window switcher should be back in TabsToolbar after disabling vertical tabs"
+  );
+
+  await SpecialPowers.flushPrefEnv();
+});
