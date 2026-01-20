@@ -14616,7 +14616,9 @@ void CodeGenerator::visitLinearizeString(LLinearizeString* lir) {
 
   masm.branchIfRope(str, ool->entry());
 
-  masm.movePtr(str, output);
+  if (str != output) {
+    masm.movePtr(str, output);
+  }
   masm.bind(ool->rejoin());
 }
 

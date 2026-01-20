@@ -2934,7 +2934,7 @@ void LIRGenerator::visitLinearizeString(MLinearizeString* ins) {
   MDefinition* str = ins->string();
   MOZ_ASSERT(str->type() == MIRType::String);
 
-  auto* lir = new (alloc()) LLinearizeString(useRegister(str));
+  auto* lir = new (alloc()) LLinearizeString(useRegisterAtStart(str));
   define(lir, ins);
   assignSafepoint(lir, ins);
 }
