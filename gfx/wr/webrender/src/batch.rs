@@ -942,12 +942,11 @@ impl BatchBuilder {
             return;
         }
 
-        let transform_id = transforms
-            .get_id(
-                prim_spatial_node_index,
-                root_spatial_node_index,
-                ctx.spatial_tree,
-            );
+        let transform_id = transforms.gpu.get_id(
+            prim_spatial_node_index,
+            root_spatial_node_index,
+            ctx.spatial_tree,
+        );
 
         // TODO(gw): Calculating this for every primitive is a bit
         //           wasteful. We should probably cache this in
@@ -1034,7 +1033,7 @@ impl BatchBuilder {
                             .unwrap();
                         local_clip_rect = transform.unmap_rect(&raster_clip_rect);
 
-                        transforms.get_custom(transform.to_transform())
+                        transforms.gpu.get_custom(transform.to_transform())
                     };
 
                     let picture_prim_header = PrimitiveHeader {
@@ -1436,12 +1435,11 @@ impl BatchBuilder {
 
                                     let prim_header = PrimitiveHeader {
                                         z: z_id,
-                                        transform_id: transforms
-                                            .get_id(
-                                                prim_spatial_node_index,
-                                                root_spatial_node_index,
-                                                ctx.spatial_tree,
-                                            ),
+                                        transform_id: transforms.gpu.get_id(
+                                            prim_spatial_node_index,
+                                            root_spatial_node_index,
+                                            ctx.spatial_tree,
+                                        ),
                                         user_data: [
                                             uv_rect_address.as_int(),
                                             BrushFlags::PERSPECTIVE_INTERPOLATION.bits() as i32,
@@ -3110,13 +3108,13 @@ impl ClipBatcher {
             let clip_instance = clip_store.get_instance_from_range(&clip_node_range, i);
             let clip_node = &ctx.data_stores.clip[clip_instance.handle];
 
-            let clip_transform_id = transforms.get_id(
+            let clip_transform_id = transforms.gpu.get_id(
                 clip_node.item.spatial_node_index,
                 ctx.root_spatial_node_index,
                 ctx.spatial_tree,
             );
 
-            let prim_transform_id = transforms.get_id(
+            let prim_transform_id = transforms.gpu.get_id(
                 root_spatial_node_index,
                 ctx.root_spatial_node_index,
                 ctx.spatial_tree,

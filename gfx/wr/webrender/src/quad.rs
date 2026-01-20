@@ -344,7 +344,7 @@ fn prepare_quad_impl(
         EdgeAaSegmentMask::all()
     };
 
-    let transform_id = frame_state.transforms.get_id(
+    let transform_id = frame_state.transforms.gpu.get_id(
         prim_spatial_node_index,
         pic_context.raster_spatial_node_index,
         ctx.spatial_tree,

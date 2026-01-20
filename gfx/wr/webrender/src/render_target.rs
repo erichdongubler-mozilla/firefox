@@ -924,7 +924,7 @@ fn build_mask_tasks(
                 panic!("bug: box-shadow clips not expected on non-legacy rect/quads");
             }
             ClipItemKind::Image { rect, .. } => {
-                let clip_transform_id = transforms.get_id(
+                let clip_transform_id = transforms.gpu.get_id(
                     clip_node.item.spatial_node_index,
                     raster_spatial_node_index,
                     spatial_tree,
@@ -1008,7 +1008,7 @@ fn build_mask_tasks(
             let prim_transform_id = GpuTransformId::IDENTITY;
             let pattern = Pattern::color(ColorF::WHITE);
 
-            let clip_transform_id = transforms.get_id(
+            let clip_transform_id = transforms.gpu.get_id(
                 raster_spatial_node_index,
                 clip_node.item.spatial_node_index,
                 spatial_tree,
@@ -1026,20 +1026,20 @@ fn build_mask_tasks(
 
             (ClipSpace::Raster, clip_transform_id, main_prim_address, prim_transform_id, true)
         } else {
-            let prim_transform_id = transforms.get_id(
+            let prim_transform_id = transforms.gpu.get_id(
                 prim_spatial_node_index,
                 raster_spatial_node_index,
                 spatial_tree,
             );
 
             let clip_transform_id = if prim_spatial_node.coordinate_system_id < clip_spatial_node.coordinate_system_id {
-                transforms.get_id(
+                transforms.gpu.get_id(
                     clip_node.item.spatial_node_index,
                     prim_spatial_node_index,
                     spatial_tree,
                 )
             } else {
-                transforms.get_id(
+                transforms.gpu.get_id(
                     prim_spatial_node_index,
                     clip_node.item.spatial_node_index,
                     spatial_tree,
