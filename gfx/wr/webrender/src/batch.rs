@@ -31,7 +31,7 @@ use crate::renderer::{BlendMode, GpuBufferAddress, GpuBufferBlockF, GpuBufferBui
 use crate::renderer::MAX_VERTEX_TEXTURE_WIDTH;
 use crate::resource_cache::{GlyphFetchResult, ImageProperties};
 use crate::space::SpaceMapper;
-use crate::transform::{TransformPaletteId, TransformPalette};
+use crate::transform::{GpuTransformId, TransformPalette};
 use crate::visibility::{PrimitiveVisibilityFlags, VisibilityState};
 use smallvec::SmallVec;
 use std::{f32, i32, usize};
@@ -2578,7 +2578,7 @@ impl BatchBuilder {
         prim_rect: LayoutRect,
         local_clip_rect: LayoutRect,
         clip_task_index: ClipTaskIndex,
-        transform_id: TransformPaletteId,
+        transform_id: GpuTransformId,
         z_id: ZBufferId,
         bounding_rect: &PictureRect,
         ctx: &RenderTargetContext,
@@ -2974,8 +2974,8 @@ impl ClipBatcher {
     ) {
         let instance = ClipMaskInstanceRect {
             common: ClipMaskInstanceCommon {
-                clip_transform_id: TransformPaletteId::IDENTITY,
-                prim_transform_id: TransformPaletteId::IDENTITY,
+                clip_transform_id: GpuTransformId::IDENTITY,
+                prim_transform_id: GpuTransformId::IDENTITY,
                 sub_rect,
                 task_origin,
                 screen_origin,

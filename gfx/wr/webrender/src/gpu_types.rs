@@ -9,7 +9,7 @@ use crate::composite::{CompositeFeatures, CompositorClip};
 use crate::pattern::PatternShaderInput;
 use crate::quad::LayoutOrDeviceRect;
 use crate::segment::EdgeAaSegmentMask;
-use crate::transform::TransformPaletteId;
+use crate::transform::GpuTransformId;
 use crate::internal_types::{FrameVec, FrameMemory};
 use crate::prim_store::{ClipData, VECS_PER_SEGMENT};
 use crate::render_task::RenderTaskAddress;
@@ -217,8 +217,8 @@ pub struct ClipMaskInstanceCommon {
     pub task_origin: DevicePoint,
     pub screen_origin: DevicePoint,
     pub device_pixel_scale: f32,
-    pub clip_transform_id: TransformPaletteId,
-    pub prim_transform_id: TransformPaletteId,
+    pub clip_transform_id: GpuTransformId,
+    pub prim_transform_id: GpuTransformId,
 }
 
 #[derive(Clone, Debug)]
@@ -509,7 +509,7 @@ pub struct PrimitiveHeader {
     pub local_rect: LayoutRect,
     pub local_clip_rect: LayoutRect,
     pub specific_prim_address: i32,
-    pub transform_id: TransformPaletteId,
+    pub transform_id: GpuTransformId,
     pub z: ZBufferId,
     pub render_task_address: RenderTaskAddress,
     pub user_data: [i32; 4],
@@ -534,7 +534,7 @@ pub struct PrimitiveHeaderF {
 pub struct PrimitiveHeaderI {
     pub z: ZBufferId,
     pub specific_prim_address: i32,
-    pub transform_id: TransformPaletteId,
+    pub transform_id: GpuTransformId,
     pub render_task_address: RenderTaskAddress,
     pub user_data: [i32; 4],
 }
@@ -646,7 +646,7 @@ impl From<QuadInstance> for PrimitiveInstanceData {
 
 /// Matches QuadHeader in ps_quad.glsl
 pub struct QuadHeader {
-    pub transform_id: TransformPaletteId,
+    pub transform_id: GpuTransformId,
     pub z_id: ZBufferId,
     pub pattern_input: PatternShaderInput,
 }
@@ -756,7 +756,7 @@ impl ClipSpace {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct MaskInstance {
     pub prim: PrimitiveInstanceData,
-    pub clip_transform_id: TransformPaletteId,
+    pub clip_transform_id: GpuTransformId,
     pub clip_address: i32,
     pub clip_space: u32,
     pub unused: i32,

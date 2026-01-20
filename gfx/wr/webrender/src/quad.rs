@@ -24,7 +24,7 @@ use crate::segment::EdgeAaSegmentMask;
 use crate::space::SpaceMapper;
 use crate::spatial_tree::{CoordinateSpaceMapping, SpatialNodeIndex, SpatialTree};
 use crate::surface::SurfaceBuilder;
-use crate::transform::TransformPaletteId;
+use crate::transform::GpuTransformId;
 use crate::util::{extract_inner_rect_k, MaxRect, ScaleOffset};
 use crate::visibility::compute_conservative_visible_rect;
 
@@ -1083,7 +1083,7 @@ fn add_render_task_with_mask(
     prim_spatial_node_index: SpatialNodeIndex,
     raster_spatial_node_index: SpatialNodeIndex,
     prim_address_f: GpuBufferAddress,
-    transform_id: TransformPaletteId,
+    transform_id: GpuTransformId,
     aa_flags: EdgeAaSegmentMask,
     quad_flags: QuadFlags,
     device_pixel_scale: DevicePixelScale,
@@ -1179,7 +1179,7 @@ fn add_pattern_prim(
             pattern.texture_input.task_id,
             prim_instance_index,
             prim_address,
-            TransformPaletteId::IDENTITY,
+            GpuTransformId::IDENTITY,
             quad_flags,
             // TODO(gw): No AA on composite, unless we use it to apply 2d clips
             EdgeAaSegmentMask::empty(),
@@ -1225,7 +1225,7 @@ fn add_composite_prim(
             RenderTaskId::INVALID,
             prim_instance_index,
             composite_prim_address,
-            TransformPaletteId::IDENTITY,
+            GpuTransformId::IDENTITY,
             quad_flags,
             // TODO(gw): No AA on composite, unless we use it to apply 2d clips
             EdgeAaSegmentMask::empty(),
@@ -1264,7 +1264,7 @@ pub fn add_to_batch<F>(
     kind: PatternKind,
     pattern_input: PatternShaderInput,
     dst_task_address: RenderTaskAddress,
-    transform_id: TransformPaletteId,
+    transform_id: GpuTransformId,
     prim_address_f: GpuBufferAddress,
     quad_flags: QuadFlags,
     edge_flags: EdgeAaSegmentMask,

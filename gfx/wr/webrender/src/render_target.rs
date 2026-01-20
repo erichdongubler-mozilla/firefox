@@ -20,7 +20,7 @@ use crate::internal_types::{CacheTextureId, FastHashMap, FrameAllocator, FrameMe
 use crate::svg_filter::FilterGraphOp;
 use crate::picture::{SurfaceInfo, ResolvedSurfaceTexture};
 use crate::tile_cache::{SliceId, TileCacheInstance};
-use crate::transform::{TransformPalette, TransformPaletteId};
+use crate::transform::{TransformPalette, GpuTransformId};
 use crate::quad;
 use crate::prim_store::{PrimitiveInstance, PrimitiveStore, PrimitiveScratchBuffer};
 use crate::prim_store::gradient::{
@@ -1005,7 +1005,7 @@ fn build_mask_tasks(
         let raster_clip = raster_spatial_node.coordinate_system_id == clip_spatial_node.coordinate_system_id;
 
         let (clip_space, clip_transform_id, main_prim_address, prim_transform_id, is_same_coord_system) = if raster_clip {
-            let prim_transform_id = TransformPaletteId::IDENTITY;
+            let prim_transform_id = GpuTransformId::IDENTITY;
             let pattern = Pattern::color(ColorF::WHITE);
 
             let clip_transform_id = transforms.get_id(

@@ -18,11 +18,11 @@ use crate::util::{TransformedRectKind, MatrixHelpers};
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[repr(C)]
-pub struct TransformPaletteId(pub u32);
+pub struct GpuTransformId(pub u32);
 
-impl TransformPaletteId {
+impl GpuTransformId {
     /// Identity transform ID.
-    pub const IDENTITY: Self = TransformPaletteId(0);
+    pub const IDENTITY: Self = GpuTransformId(0);
 
     /// Extract the transform kind from the id.
     pub fn transform_kind(&self) -> TransformedRectKind {
@@ -38,7 +38,7 @@ impl TransformPaletteId {
     /// aligned (i.e. perspective warp) even though we may still want to for the
     /// general case.
     pub fn override_transform_kind(&self, kind: TransformedRectKind) -> Self {
-        TransformPaletteId((self.0 & 0x7FFFFFu32) | ((kind as u32) << 23))
+        GpuTransformId((self.0 & 0x7FFFFFu32) | ((kind as u32) << 23))
     }
 }
 
@@ -163,14 +163,14 @@ impl TransformPalette {
         from_index: SpatialNodeIndex,
         to_index: SpatialNodeIndex,
         spatial_tree: &SpatialTree,
-    ) -> TransformPaletteId {
+    ) -> GpuTransformId {
         let index = self.get_index(
             from_index,
             to_index,
             spatial_tree,
         );
         let transform_kind = self.metadata[index].transform_kind as u32;
-        TransformPaletteId(
+        GpuTransformId(
             (index as u32) |
             (transform_kind << 23)
         )
@@ -179,7 +179,7 @@ impl TransformPalette {
     pub fn get_custom(
         &mut self,
         transform: LayoutToPictureTransform,
-    ) -> TransformPaletteId {
+    ) -> GpuTransformId {
         let index = register_transform(
             &mut self.metadata,
             &mut self.transforms,
@@ -187,7 +187,7 @@ impl TransformPalette {
         );
 
         let transform_kind = self.metadata[index].transform_kind as u32;
-        TransformPaletteId(
+        GpuTransformId(
             (index as u32) |
             (transform_kind << 23)
         )

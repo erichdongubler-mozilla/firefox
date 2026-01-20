@@ -19,7 +19,7 @@ use crate::segment::EdgeAaSegmentMask;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::gpu_types::{BoxShadowStretchMode, UvRectKind, BlurEdgeMode};
 use crate::render_task_graph::RenderTaskId;
-use crate::transform::TransformPaletteId;
+use crate::transform::GpuTransformId;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::util::{extract_inner_rect_k, ScaleOffset};
 
@@ -119,7 +119,7 @@ impl PatternBuilder for BoxShadowTemplate {
                 device_pixel_scale: DevicePixelScale::new(1.0),
                 content_origin,
                 prim_address_f: pattern_prim_address_f,
-                transform_id: TransformPaletteId::IDENTITY,
+                transform_id: GpuTransformId::IDENTITY,
                 edge_flags: EdgeAaSegmentMask::empty(),
                 quad_flags: QuadFlags::APPLY_RENDER_TASK_CLIP | QuadFlags::IGNORE_DEVICE_PIXEL_SCALE,
                 prim_needs_scissor_rect: false,
