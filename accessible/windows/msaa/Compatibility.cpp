@@ -250,5 +250,19 @@ bool Compatibility::IsUiaEnabled() {
     }
     return *sIsNvdaVersionSupported;
   }
-  return !IsJAWS() && !IsOldJAWS() && !IsVisperoShared();
+  if (IsJAWS()) {
+    // Cache to avoid repeated version checks.
+    static Maybe<bool> sIsJawsVersionSupported;
+    if (sIsJawsVersionSupported.isNothing()) {
+      if (HMODULE jawsHandle = ::GetModuleHandleW(L"jhook")) {
+        // JAWS 2026 (file version 27) and later handles UIA correctly in Gecko.
+        sIsJawsVersionSupported = Some(!IsModuleVersionLessThan(
+            jawsHandle, MAKE_FILE_VERSION(27, 0, 0, 0)));
+      } else {
+        sIsJawsVersionSupported = Some(false);
+      }
+    }
+    return *sIsJawsVersionSupported;
+  }
+  return !IsOldJAWS() && !IsVisperoShared();
 }
