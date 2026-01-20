@@ -62,8 +62,8 @@ class nsWinGesture {
   bool IsPanEvent(LPARAM lParam);
   bool ProcessPanMessage(HWND hWnd, WPARAM wParam, LPARAM lParam);
   bool PanDeltaToPixelScroll(mozilla::WidgetWheelEvent& aWheelEvent);
-  void UpdatePanFeedbackX(HWND hWnd, int32_t scrollOverflow, bool& endFeedback);
-  void UpdatePanFeedbackY(HWND hWnd, int32_t scrollOverflow, bool& endFeedback);
+  void UpdatePanFeedbackX(HWND hWnd, bool scrollOverflow, bool& endFeedback);
+  void UpdatePanFeedbackY(HWND hWnd, bool scrollOverflow, bool& endFeedback);
   void PanFeedbackFinalize(HWND hWnd, bool endFeedback);
 
  private:
