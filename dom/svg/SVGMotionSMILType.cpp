@@ -26,7 +26,7 @@ namespace mozilla {
 SVGMotionSMILType SVGMotionSMILType::sSingleton;
 
 // Helper enum, for distinguishing between types of MotionSegment structs
-enum SegmentType { eSegmentType_Translation, eSegmentType_PathPoint };
+enum class SegmentType { Translation, PathPoint };
 
 // Helper Structs: containers for params to define our MotionSegment
 // (either simple translation or point-on-a-path)
@@ -51,9 +51,9 @@ struct PathPointParams {  // Point along a path
  * matches our behavior in SVGTransformListSMILType.)
  *
  * NOTE: In general, MotionSegments are represented as points on a path
- * (eSegmentType_PathPoint), so that we can easily interpolate and compute
+ * (SegmentType::PathPoint), so that we can easily interpolate and compute
  * distance *along their path*.  However, Add() outputs MotionSegments as
- * simple translations (eSegmentType_Translation), because adding two points
+ * simple translations (SegmentType::Translation), because adding two points
  * from a path (e.g. when accumulating a repeated animation) will generally
  * take you to an arbitrary point *off* of the path.
  */
@@ -63,14 +63,14 @@ struct MotionSegment {
   MotionSegment()
       : mRotateType(RotateType::Auto),
         mRotateAngle(0.0),
-        mSegmentType(eSegmentType_Translation),
+        mSegmentType(SegmentType::Translation),
         mU{} {}
 
   // Constructor for a translation
   MotionSegment(float aX, float aY, float aRotateAngle)
       : mRotateType(RotateType::Explicit),
         mRotateAngle(aRotateAngle),
-        mSegmentType(eSegmentType_Translation) {
+        mSegmentType(SegmentType::Translation) {
     mU.mTranslationParams.mX = aX;
     mU.mTranslationParams.mY = aY;
   }
@@ -80,21 +80,21 @@ struct MotionSegment {
                 float aRotateAngle)
       : mRotateType(aRotateType),
         mRotateAngle(aRotateAngle),
-        mSegmentType(eSegmentType_PathPoint) {
+        mSegmentType(SegmentType::PathPoint) {
     mU.mPathPointParams.mPath = aPath;
     mU.mPathPointParams.mDistToPoint = aDistToPoint;
 
     NS_ADDREF(mU.mPathPointParams.mPath);  // Retain a reference to path
   }
 
-  // Copy constructor (NOTE: AddRef's if we're eSegmentType_PathPoint)
+  // Copy constructor (NOTE: AddRef's if we're SegmentType::PathPoint)
   MotionSegment(const MotionSegment& aOther)
       : mRotateType(aOther.mRotateType),
         mRotateAngle(aOther.mRotateAngle),
         mSegmentType(aOther.mSegmentType) {
-    if (mSegmentType == eSegmentType_Translation) {
+    if (mSegmentType == SegmentType::Translation) {
       mU.mTranslationParams = aOther.mU.mTranslationParams;
-    } else {  // mSegmentType == eSegmentType_PathPoint
+    } else {  // mSegmentType == SegmentType::PathPoint
       mU.mPathPointParams = aOther.mU.mPathPointParams;
       NS_ADDREF(mU.mPathPointParams.mPath);  // Retain a reference to path
     }
@@ -102,7 +102,7 @@ struct MotionSegment {
 
   // Destructor (releases any reference we were holding onto)
   ~MotionSegment() {
-    if (mSegmentType == eSegmentType_PathPoint) {
+    if (mSegmentType == SegmentType::PathPoint) {
       NS_RELEASE(mU.mPathPointParams.mPath);
     }
   }
@@ -118,7 +118,7 @@ struct MotionSegment {
     }
 
     // Compare translation params, if we're a translation.
-    if (mSegmentType == eSegmentType_Translation) {
+    if (mSegmentType == SegmentType::Translation) {
       return mU.mTranslationParams.mX == aOther.mU.mTranslationParams.mX &&
              mU.mTranslationParams.mY == aOther.mU.mTranslationParams.mY;
     }
@@ -258,9 +258,9 @@ nsresult SVGMotionSMILType::Add(SMILValue& aDest, const SMILValue& aValueToAdd,
   MOZ_ASSERT(dstArr.Length() == 1, "Invalid dest segment arr to add to");
   const MotionSegment& srcSeg = srcArr[0];
   const MotionSegment& dstSeg = dstArr[0];
-  MOZ_ASSERT(srcSeg.mSegmentType == eSegmentType_PathPoint,
+  MOZ_ASSERT(srcSeg.mSegmentType == SegmentType::PathPoint,
              "expecting to be adding points from a motion path");
-  MOZ_ASSERT(dstSeg.mSegmentType == eSegmentType_PathPoint,
+  MOZ_ASSERT(dstSeg.mSegmentType == SegmentType::PathPoint,
              "expecting to be adding points from a motion path");
 
   const PathPointParams& srcParams = srcSeg.mU.mPathPointParams;
@@ -325,7 +325,7 @@ nsresult SVGMotionSMILType::ComputeDistance(const SMILValue& aFrom,
 
   MOZ_ASSERT(from.mSegmentType == to.mSegmentType,
              "Mismatched MotionSegment types");
-  if (from.mSegmentType == eSegmentType_PathPoint) {
+  if (from.mSegmentType == SegmentType::PathPoint) {
     const PathPointParams& fromParams = from.mU.mPathPointParams;
     const PathPointParams& toParams = to.mU.mPathPointParams;
     MOZ_ASSERT(fromParams.mPath == toParams.mPath,
@@ -370,7 +370,7 @@ nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
              "Expecting result to be just-initialized w/ empty array");
 
   const MotionSegment& endSeg = endArr[0];
-  MOZ_ASSERT(endSeg.mSegmentType == eSegmentType_PathPoint,
+  MOZ_ASSERT(endSeg.mSegmentType == SegmentType::PathPoint,
              "Expecting to be interpolating along a path");
 
   const PathPointParams& endParams = endSeg.mU.mPathPointParams;
@@ -398,7 +398,7 @@ nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
     MOZ_ASSERT(startArr.Length() <= 1,
                "Invalid start-point for animateMotion interpolation");
     const MotionSegment& startSeg = startArr[0];
-    MOZ_ASSERT(startSeg.mSegmentType == eSegmentType_PathPoint,
+    MOZ_ASSERT(startSeg.mSegmentType == SegmentType::PathPoint,
                "Expecting to be interpolating along a path");
     const PathPointParams& startParams = startSeg.mU.mPathPointParams;
     MOZ_ASSERT(startSeg.mRotateType == endSeg.mRotateType &&
@@ -428,7 +428,7 @@ nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
   for (uint32_t i = 0; i < length; i++) {
     Point point;                              // initialized below
     float rotateAngle = arr[i].mRotateAngle;  // might get updated below
-    if (arr[i].mSegmentType == eSegmentType_Translation) {
+    if (arr[i].mSegmentType == SegmentType::Translation) {
       point.x = arr[i].mU.mTranslationParams.mX;
       point.y = arr[i].mU.mTranslationParams.mY;
       MOZ_ASSERT(arr[i].mRotateType == RotateType::Explicit,
