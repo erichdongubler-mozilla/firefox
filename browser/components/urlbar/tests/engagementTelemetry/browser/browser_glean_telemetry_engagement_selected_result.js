@@ -159,7 +159,7 @@ add_task(async function selected_result_bookmark_serp() {
       ],
     });
 
-    let defaultEngine = await SearchService.getDefault();
+    let defaultEngine = await Services.search.getDefault();
     let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
 
     await PlacesTestUtils.addVisits(serpUrl);
@@ -191,7 +191,7 @@ add_task(async function selected_result_bookmark_adaptive_serp() {
       set: [["browser.urlbar.autoFill", false]],
     });
 
-    let defaultEngine = await SearchService.getDefault();
+    let defaultEngine = await Services.search.getDefault();
     let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
 
     await PlacesUtils.bookmarks.insert({
@@ -265,7 +265,7 @@ add_task(async function selected_result_history_adaptive() {
 
 add_task(async function selected_result_history_adaptive_serp() {
   await doTest(async () => {
-    let defaultEngine = await SearchService.getDefault();
+    let defaultEngine = await Services.search.getDefault();
     let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
 
     await PlacesTestUtils.addVisits(serpUrl);
@@ -462,7 +462,7 @@ add_task(async function selected_result_tab_adaptive_serp() {
     set: [["browser.urlbar.suggest.searches", false]],
   });
 
-  let defaultEngine = await SearchService.getDefault();
+  let defaultEngine = await Services.search.getDefault();
   let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
   let tab = BrowserTestUtils.addTab(gBrowser, serpUrl);
 
@@ -504,7 +504,7 @@ add_task(async function selected_result_tab_serp() {
     set: [["browser.urlbar.suggest.searches", false]],
   });
 
-  let defaultEngine = await SearchService.getDefault();
+  let defaultEngine = await Services.search.getDefault();
   let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
   let tab = BrowserTestUtils.addTab(gBrowser, serpUrl);
 
@@ -905,7 +905,7 @@ add_task(async function selected_result_trending() {
     ],
   });
 
-  let defaultEngine = await SearchService.getDefault();
+  let defaultEngine = await Services.search.getDefault();
 
   await SearchTestUtils.updateRemoteSettingsConfig([
     {
@@ -941,8 +941,8 @@ add_task(async function selected_result_trending() {
     },
   ]);
 
-  let engine = SearchService.getEngineByName("mozengine");
-  await SearchService.setDefault(
+  let engine = Services.search.getEngineByName("mozengine");
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -962,9 +962,9 @@ add_task(async function selected_result_trending() {
     ]);
   });
 
-  await SearchService.removeEngine(engine);
+  await Services.search.removeEngine(engine);
 
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     defaultEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -989,7 +989,7 @@ add_task(async function selected_result_trending_rich() {
     ],
   });
 
-  let defaultEngine = await SearchService.getDefault();
+  let defaultEngine = await Services.search.getDefault();
 
   await SearchTestUtils.updateRemoteSettingsConfig([
     {
@@ -1031,8 +1031,8 @@ add_task(async function selected_result_trending_rich() {
     },
   ]);
 
-  let engine = SearchService.getEngineByName("mozengine");
-  await SearchService.setDefault(
+  let engine = Services.search.getEngineByName("mozengine");
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -1052,9 +1052,9 @@ add_task(async function selected_result_trending_rich() {
     ]);
   });
 
-  await SearchService.removeEngine(engine);
+  await Services.search.removeEngine(engine);
 
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     defaultEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -1185,7 +1185,7 @@ add_task(async function selected_result_action() {
 
 add_task(async function selected_result_semantic() {
   const historyUrl = "https://www.example.com/semantic/";
-  let defaultEngine = await SearchService.getDefault();
+  let defaultEngine = await Services.search.getDefault();
   const searchUrl = defaultEngine.getSubmission("semantic", null).uri.spec;
   await doTestWithSemantic(
     [

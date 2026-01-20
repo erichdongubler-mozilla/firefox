@@ -8,7 +8,7 @@
 add_setup(async function () {
   useHttpServer();
 
-  await SearchService.init();
+  await Services.search.init();
 
   // This test purposely attempts to load an invalid engine.
   consoleAllowList.push("_onLoad: Failed to init engine!");
@@ -17,7 +17,7 @@ add_setup(async function () {
 
 add_task(async function test_invalid_path_fails() {
   await Assert.rejects(
-    SearchService.addOpenSearchEngine(
+    Services.search.addOpenSearchEngine(
       "http://invalid/opensearch/generic1.xml",
       null
     ),
@@ -34,14 +34,14 @@ add_task(async function test_invalid_path_fails() {
 });
 
 add_task(async function test_install_duplicate_fails() {
-  let engine = await SearchService.addOpenSearchEngine(
+  let engine = await Services.search.addOpenSearchEngine(
     `${gHttpURL}/opensearch/simple.xml`,
     null
   );
   Assert.equal(engine.name, "simple", "Should have installed the engine.");
 
   await Assert.rejects(
-    SearchService.addOpenSearchEngine(
+    Services.search.addOpenSearchEngine(
       `${gHttpURL}/opensearch/simple.xml`,
       null
     ),
@@ -59,7 +59,7 @@ add_task(async function test_install_duplicate_fails() {
 
 add_task(async function test_invalid_engine_from_dir() {
   await Assert.rejects(
-    SearchService.addOpenSearchEngine(
+    Services.search.addOpenSearchEngine(
       `${gHttpURL}/opensearch/invalid.xml`,
       null
     ),

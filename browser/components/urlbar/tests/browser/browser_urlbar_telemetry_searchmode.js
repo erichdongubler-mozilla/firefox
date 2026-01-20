@@ -90,7 +90,7 @@ add_setup(async function () {
   engineName = suggestionEngine.name;
 
   // And the first one-off engine.
-  await SearchService.moveEngine(suggestionEngine, 0);
+  await Services.search.moveEngine(suggestionEngine, 0);
 
   // Enable local telemetry recording for the duration of the tests.
   let oldCanRecord = Services.telemetry.canRecordExtended;

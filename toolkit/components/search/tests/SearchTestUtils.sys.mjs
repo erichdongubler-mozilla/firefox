@@ -9,7 +9,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionTestUtils:
     "resource://testing-common/ExtensionXPCShellUtils.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
@@ -69,7 +68,7 @@ class _SearchTestUtils {
         if (this.#stubs.size) {
           this.#stubs = new Map();
 
-          lazy.SearchService.wrappedJSObject._settings._testResetSettings();
+          Services.search.wrappedJSObject._settings._testResetSettings();
           let settingsWritten = SearchTestUtils.promiseSearchNotification(
             "write-settings-to-disk-complete"
           );
@@ -118,36 +117,36 @@ class _SearchTestUtils {
   }) {
     // OpenSearch engines can only be added via http protocols.
     url = url.replace("chrome://mochitests/content", "https://example.com");
-    let engine = await lazy.SearchService.addOpenSearchEngine(url, faviconURL);
-    let previousEngine = lazy.SearchService.defaultEngine;
-    let previousPrivateEngine = lazy.SearchService.defaultPrivateEngine;
+    let engine = await Services.search.addOpenSearchEngine(url, faviconURL);
+    let previousEngine = Services.search.defaultEngine;
+    let previousPrivateEngine = Services.search.defaultPrivateEngine;
     if (setAsDefault) {
-      await lazy.SearchService.setDefault(
+      await Services.search.setDefault(
         engine,
         Ci.nsISearchService.CHANGE_REASON_UNKNOWN
       );
     }
     if (setAsDefaultPrivate) {
-      await lazy.SearchService.setDefaultPrivate(
+      await Services.search.setDefaultPrivate(
         engine,
         Ci.nsISearchService.CHANGE_REASON_UNKNOWN
       );
     }
     this.#testScope.registerCleanupFunction(async () => {
       if (setAsDefault && !skipReset) {
-        await lazy.SearchService.setDefault(
+        await Services.search.setDefault(
           previousEngine,
           Ci.nsISearchService.CHANGE_REASON_UNKNOWN
         );
       }
       if (setAsDefaultPrivate && !skipReset) {
-        await lazy.SearchService.setDefaultPrivate(
+        await Services.search.setDefaultPrivate(
           previousPrivateEngine,
           Ci.nsISearchService.CHANGE_REASON_UNKNOWN
         );
       }
       try {
-        await lazy.SearchService.removeEngine(engine);
+        await Services.search.removeEngine(engine);
       } catch (ex) {
         // Don't throw if the test has already removed it.
       }
@@ -186,9 +185,7 @@ class _SearchTestUtils {
           if (i == times) {
             Services.obs.removeObserver(observer, topic);
             // Let the stack unwind.
-            Services.tm.dispatchToMainThread(() =>
-              resolve(aSubject?.wrappedJSObject ?? aSubject)
-            );
+            Services.tm.dispatchToMainThread(() => resolve(aSubject));
           }
         }
       }, topic);
@@ -482,7 +479,7 @@ class _SearchTestUtils {
       await this.initXPCShellAddonManager();
     }
 
-    await lazy.SearchService.init();
+    await Services.search.init();
 
     let extensionInfo = {
       useAddonManager: "permanent",
@@ -492,19 +489,19 @@ class _SearchTestUtils {
 
     let extension;
 
-    let previousEngine = lazy.SearchService.defaultEngine;
-    let previousPrivateEngine = lazy.SearchService.defaultPrivateEngine;
+    let previousEngine = Services.search.defaultEngine;
+    let previousPrivateEngine = Services.search.defaultPrivateEngine;
 
     let cleanup = async () => {
       if (setAsDefault) {
-        await lazy.SearchService.setDefault(
+        await Services.search.setDefault(
           previousEngine,
           Ci.nsISearchService.CHANGE_REASON_UNKNOWN
         );
         this.clearDefaultSearchEngineCachedPrefs();
       }
       if (setAsDefaultPrivate) {
-        await lazy.SearchService.setDefaultPrivate(
+        await Services.search.setDefaultPrivate(
           previousPrivateEngine,
           Ci.nsISearchService.CHANGE_REASON_UNKNOWN
         );
@@ -521,16 +518,16 @@ class _SearchTestUtils {
     extension = this.#testScope.ExtensionTestUtils.loadExtension(extensionInfo);
     await extension.startup();
     await lazy.AddonTestUtils.waitForSearchProviderStartup(extension);
-    let engine = lazy.SearchService.getEngineByName(manifest.name);
+    let engine = Services.search.getEngineByName(manifest.name);
 
     if (setAsDefault) {
-      await lazy.SearchService.setDefault(
+      await Services.search.setDefault(
         engine,
         Ci.nsISearchService.CHANGE_REASON_UNKNOWN
       );
     }
     if (setAsDefaultPrivate) {
-      await lazy.SearchService.setDefaultPrivate(
+      await Services.search.setDefaultPrivate(
         engine,
         Ci.nsISearchService.CHANGE_REASON_UNKNOWN
       );

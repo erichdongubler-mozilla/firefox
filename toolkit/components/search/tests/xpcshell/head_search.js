@@ -18,7 +18,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSearch.sys.mjs",
   SearchEngineSelector:
     "moz-src:///toolkit/components/search/SearchEngineSelector.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
+  SearchService: "resource://gre/modules/SearchService.sys.mjs",
   SearchSettings: "moz-src:///toolkit/components/search/SearchSettings.sys.mjs",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
@@ -474,14 +474,14 @@ async function assertGleanDefaultEngine(expected) {
  *   The enterprise policy to use.
  */
 async function setupPolicyEngineWithJson(policy) {
-  SearchService.wrappedJSObject.reset();
+  Services.search.wrappedJSObject.reset();
 
   await this.EnterprisePolicyTesting.setupPolicyEngineWithJson(policy);
 
   let settingsWritten = SearchTestUtils.promiseSearchNotification(
     "write-settings-to-disk-complete"
   );
-  await SearchService.init();
+  await Services.search.init();
   await settingsWritten;
 }
 
@@ -592,7 +592,7 @@ let updatePromise = SearchTestUtils.promiseSearchNotification(
 );
 
 registerCleanupFunction(async () => {
-  if (SearchService.isInitialized) {
+  if (Services.search.isInitialized) {
     await updatePromise;
   }
 });

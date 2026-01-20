@@ -57,7 +57,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchSERPTelemetry:
     "moz-src:///browser/components/search/SearchSERPTelemetry.sys.mjs",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.sys.mjs",
@@ -273,7 +272,7 @@ BrowserGlue.prototype = {
         // URI that it's been asked to load into a keyword search.
         let engine = null;
         try {
-          engine = lazy.SearchService.getEngineByName(
+          engine = Services.search.getEngineByName(
             subject.QueryInterface(Ci.nsISupportsString).data
           );
         } catch (ex) {
@@ -1352,7 +1351,7 @@ BrowserGlue.prototype = {
       }.bind(this),
 
       function searchBackgroundChecks() {
-        lazy.SearchService.runBackgroundChecks();
+        Services.search.runBackgroundChecks();
       },
     ];
 

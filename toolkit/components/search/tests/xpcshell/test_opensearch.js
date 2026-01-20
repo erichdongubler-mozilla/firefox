@@ -55,7 +55,7 @@ const tests = [
 add_setup(async function () {
   Services.fog.initializeFOG();
   useHttpServer();
-  await SearchService.init();
+  await Services.search.init();
 });
 
 for (const test of tests) {
@@ -125,8 +125,8 @@ for (const test of tests) {
 
 add_task(async function test_telemetry_reporting() {
   // Use an engine from the previous tests.
-  let engine = SearchService.getEngineByName("simple");
-  await SearchService.setDefault(
+  let engine = Services.search.getEngineByName("simple");
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );

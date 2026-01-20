@@ -95,7 +95,7 @@ async function selectEngine(tree, index) {
 
 add_setup(async function () {
   await SearchTestUtils.updateRemoteSettingsConfig(CONFIG);
-  installedEngines = await SearchService.getAppProvidedEngines();
+  installedEngines = await Services.search.getAppProvidedEngines();
 
   await SearchTestUtils.installSearchExtension({
     keyword: ["testing", "customkeyword"],
@@ -103,10 +103,10 @@ add_setup(async function () {
     search_url_get_params: "search={searchTerms}",
     name: "Extension Engine",
   });
-  extensionEngine = SearchService.getEngineByName("Extension Engine");
+  extensionEngine = Services.search.getEngineByName("Extension Engine");
   installedEngines.push(extensionEngine);
 
-  userEngine = await SearchService.addUserEngine({
+  userEngine = await Services.search.addUserEngine({
     name: "User Engine",
     url: "https://example.com/user?q={searchTerms}&b=ff",
     alias: "u",
@@ -114,9 +114,9 @@ add_setup(async function () {
   installedEngines.push(userEngine);
 
   userInstalledAppEngine =
-    await SearchService.findContextualSearchEngineByHost("moz.test");
+    await Services.search.findContextualSearchEngineByHost("moz.test");
 
-  await SearchService.addSearchEngine(userInstalledAppEngine);
+  await Services.search.addSearchEngine(userInstalledAppEngine);
   // The added engines are removed in the last test.
 });
 
@@ -249,12 +249,12 @@ engine_list_test(async function test_rename_engines(tree) {
 });
 
 engine_list_test(async function test_remove_button_disabled_state(tree, doc) {
-  let appProvidedEngines = await SearchService.getAppProvidedEngines();
+  let appProvidedEngines = await Services.search.getAppProvidedEngines();
   for (let i = 0; i < appProvidedEngines.length; i++) {
     let engine = appProvidedEngines[i];
     let isDefaultSearchEngine =
-      engine.id == SearchService.defaultEngine.id ||
-      engine.id == SearchService.defaultPrivateEngine.id;
+      engine.id == Services.search.defaultEngine.id ||
+      engine.id == Services.search.defaultPrivateEngine.id;
 
     await selectEngine(tree, i);
     Assert.equal(
@@ -293,7 +293,7 @@ engine_list_test(async function test_remove_button(tree, doc) {
   );
 
   // Re-fetch the engines since removing the user engine changed it.
-  installedEngines = await SearchService.getEngines();
+  installedEngines = await Services.search.getEngines();
 
   info("Removing extension engine.");
   let extensionEngineIndex = installedEngines.findIndex(
@@ -331,7 +331,7 @@ engine_list_test(async function test_remove_button(tree, doc) {
   );
 
   info("Removing (last) app provided engine.");
-  let appProvidedEngines = await SearchService.getAppProvidedEngines();
+  let appProvidedEngines = await Services.search.getAppProvidedEngines();
   let lastAppEngine = appProvidedEngines[appProvidedEngines.length - 1];
   let lastAppEngineIndex = installedEngines.findIndex(
     e => e.id == lastAppEngine.id

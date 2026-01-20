@@ -127,7 +127,7 @@ const CONFIG = [
 ];
 
 async function visibleEngines() {
-  return (await SearchService.getVisibleEngines()).map(e => e.id);
+  return (await Services.search.getVisibleEngines()).map(e => e.id);
 }
 
 add_setup(async function () {
@@ -146,9 +146,9 @@ add_setup(async function () {
 add_task(async function test_initial_config_correct() {
   Region._setHomeRegion("", false);
 
-  await SearchService.init();
+  await Services.search.init();
 
-  const installedEngines = await SearchService.getAppProvidedEngines();
+  const installedEngines = await Services.search.getAppProvidedEngines();
   Assert.deepEqual(
     installedEngines.map(e => e.id),
     [
@@ -163,13 +163,13 @@ add_task(async function test_initial_config_correct() {
   );
 
   Assert.equal(
-    (await SearchService.getDefault()).id,
+    (await Services.search.getDefault()).id,
     "appDefault",
     "Should have loaded the expected default engine"
   );
 
   Assert.equal(
-    (await SearchService.getDefaultPrivate()).id,
+    (await Services.search.getDefaultPrivate()).id,
     "appDefault",
     "Should have loaded the expected private default engine"
   );
@@ -205,7 +205,7 @@ add_task(async function test_config_updated_engine_changes() {
 
   Region._setHomeRegion("FR", false);
 
-  await SearchService.wrappedJSObject._maybeReloadEngines();
+  await Services.search.wrappedJSObject._maybeReloadEngines();
 
   await reloadObserved;
   Services.obs.removeObserver(enginesObs, SearchUtils.TOPIC_ENGINE_MODIFIED);
@@ -228,7 +228,7 @@ add_task(async function test_config_updated_engine_changes() {
     "Should have removed the expected engines"
   );
 
-  const installedEngines = await SearchService.getAppProvidedEngines();
+  const installedEngines = await Services.search.getAppProvidedEngines();
 
   Assert.deepEqual(
     installedEngines.map(e => e.id),
@@ -257,7 +257,7 @@ add_task(async function test_config_updated_engine_changes() {
     "Should have correctly notified the new default private engine"
   );
 
-  const engineWithParams = await SearchService.getEngineById(
+  const engineWithParams = await Services.search.getEngineById(
     "hasParamsInFRRegion"
   );
   Assert.equal(
@@ -266,7 +266,7 @@ add_task(async function test_config_updated_engine_changes() {
     "Should have updated the parameters"
   );
 
-  const engineWithSameName = await SearchService.getEngineById(
+  const engineWithSameName = await Services.search.getEngineById(
     "engineSameNameOther"
   );
   Assert.equal(
@@ -276,7 +276,7 @@ add_task(async function test_config_updated_engine_changes() {
   );
 
   Assert.equal(
-    SearchService.wrappedJSObject._settings.getMetaDataAttribute(
+    Services.search.wrappedJSObject._settings.getMetaDataAttribute(
       "useSavedOrder"
     ),
     false,
@@ -295,8 +295,8 @@ add_task(async function test_user_settings_persist() {
   );
 
   let settingsFileWritten = promiseAfterSettings();
-  let engine = await SearchService.getEngineById("notInFRRegion1");
-  await SearchService.removeEngine(engine);
+  let engine = await Services.search.getEngineById("notInFRRegion1");
+  await Services.search.removeEngine(engine);
   await settingsFileWritten;
 
   Assert.ok(

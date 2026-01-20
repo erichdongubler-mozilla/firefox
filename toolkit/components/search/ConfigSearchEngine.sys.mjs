@@ -25,7 +25,6 @@ const lazy = XPCOMUtils.declareLazy({
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SearchEngineClassification:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSearch.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   idleService: {
     service: "@mozilla.org/widget/useridleservice;1",
@@ -184,7 +183,7 @@ class IconHandler {
     // Update the icon list, in case engines will call getIcon() again.
     await this.#buildIconMap();
 
-    let appProvidedEngines = await lazy.SearchService.getAppProvidedEngines();
+    let appProvidedEngines = await Services.search.getAppProvidedEngines();
     for (let record of this.#pendingUpdatesMap.values()) {
       let iconData;
       try {

@@ -27,7 +27,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
 });
 
 const LINK_BLOCKED_EVENT = "newtab-linkBlocked";
@@ -311,10 +310,7 @@ export class PlacesFeed {
   }
 
   async fillSearchTopSiteTerm({ _target, data }) {
-    // @backward-compat { version 148 }
-    // SearchService replaces Services.search in 148.
-    const searchEngine = await (Services.search ?? lazy.SearchService) // eslint-disable-line mozilla/valid-services
-      .getEngineByAlias(data.label);
+    const searchEngine = await Services.search.getEngineByAlias(data.label);
     _target.browser.ownerGlobal.gURLBar.search(data.label, {
       searchEngine,
       searchModeEntry: "topsites_newtab",
@@ -322,10 +318,7 @@ export class PlacesFeed {
   }
 
   _getDefaultSearchEngine(isPrivateWindow) {
-    // @backward-compat { version 148 }
-    // SearchService replaces Services.search in 148.
-    // eslint-disable-next-line mozilla/valid-services
-    return (Services.search ?? lazy.SearchService)[
+    return Services.search[
       isPrivateWindow ? "defaultPrivateEngine" : "defaultEngine"
     ];
   }

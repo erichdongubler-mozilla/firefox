@@ -28,7 +28,7 @@ const SUGGESTION_VALUE_SCHEDULED = {
 };
 
 add_setup(async function init() {
-  await SearchService.init();
+  await Services.search.init();
 
   // Disable search suggestions so we don't hit the network.
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
@@ -594,7 +594,7 @@ function expectedResult(expectedItems) {
       provider: "sports",
       telemetryType: "sports",
       isSponsored: false,
-      engine: SearchService.defaultEngine.name,
+      engine: Services.search.defaultEngine.name,
       dynamicType: "realtime-sports",
     },
   };

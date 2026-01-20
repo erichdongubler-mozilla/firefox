@@ -551,20 +551,20 @@ add_task(async function () {
   });
 
   info("change default engine");
-  let originalTestEngine = SearchService.getEngineByName(
+  let originalTestEngine = Services.search.getEngineByName(
     SUGGESTIONS_ENGINE_NAME
   );
   await SearchTestUtils.installSearchExtension({
     name: "AliasEngine",
     keyword: "alias",
   });
-  let engine2 = SearchService.getEngineByName("AliasEngine");
+  let engine2 = Services.search.getEngineByName("AliasEngine");
   Assert.notEqual(
-    SearchService.defaultEngine,
+    Services.search.defaultEngine,
     engine2,
     "New engine shouldn't be the current engine yet"
   );
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     engine2,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -579,7 +579,7 @@ add_task(async function () {
       }),
     ],
   });
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     originalTestEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );

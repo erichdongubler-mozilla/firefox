@@ -14,7 +14,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 add_setup(async function () {
   await SearchTestUtils.initXPCShellAddonManager();
-  await SearchService.init();
+  await Services.search.init();
 });
 
 add_task(async function test_uninstall_appProvided_extension() {
@@ -29,7 +29,7 @@ add_task(async function test_uninstall_appProvided_extension() {
   Assert.ok(policy, "Should have installed the app provided extension");
 
   info("Uninstall app provided extension on idle");
-  await SearchService.runBackgroundChecks();
+  await Services.search.runBackgroundChecks();
 
   policy = WebExtensionPolicy.getByID("ddg@search.mozilla.org");
   Assert.ok(!policy, "Should have uninstalled the app provided extension");
@@ -39,12 +39,12 @@ add_task(async function test_installed_addon_engine_remains() {
   await SearchTestUtils.installSearchExtension({
     name: "bacon",
   });
-  let engine1 = await SearchService.getEngineByName("bacon");
+  let engine1 = await Services.search.getEngineByName("bacon");
 
   Assert.ok(engine1, "Should have Add-on engine installed.");
-  await SearchService.runBackgroundChecks();
+  await Services.search.runBackgroundChecks();
 
-  engine1 = await SearchService.getEngineByName("bacon");
+  engine1 = await Services.search.getEngineByName("bacon");
 
   Assert.ok(engine1, "Should have Add-on engine remain installed.");
 });

@@ -10,7 +10,6 @@ ChromeUtils.defineESModuleGetters(this, {
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
@@ -131,7 +130,7 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
       heuristic: true,
       payload: {
         query,
-        engine: SearchService.defaultEngine.name,
+        engine: Services.search.defaultEngine.name,
       },
     }),
   ];
@@ -149,7 +148,7 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
                 query,
                 suggestion: str,
                 lowerCaseSuggestion: str.toLowerCase(),
-                engine: SearchService.defaultEngine.name,
+                engine: Services.search.defaultEngine.name,
               },
             })
           );

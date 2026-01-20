@@ -11,7 +11,6 @@ import "chrome://browser/content/sidebar/sidebar-panel-header.mjs";
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SmartAssistEngine:
     "moz-src:///browser/components/genai/SmartAssistEngine.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -124,8 +123,8 @@ export class SmartAssist extends MozLitElement {
 
     const isPrivate = lazy.PrivateBrowsingUtils.isWindowPrivate(window);
     const engine = isPrivate
-      ? await lazy.SearchService.getDefaultPrivate()
-      : await lazy.SearchService.getDefault();
+      ? await Services.search.getDefaultPrivate()
+      : await Services.search.getDefault();
 
     const submission = engine.getSubmission(searchTerms); // default to SEARCH (text/html)
 

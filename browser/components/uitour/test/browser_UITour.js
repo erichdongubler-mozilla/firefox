@@ -600,8 +600,8 @@ var tests = [
     });
   },
   taskify(async function test_search() {
-    let defaultEngine = await SearchService.getDefault();
-    let visibleEngines = await SearchService.getVisibleEngines();
+    let defaultEngine = await Services.search.getDefault();
+    let visibleEngines = await Services.search.getVisibleEngines();
     let expectedEngines = visibleEngines
       .filter(engine => engine.isAppProvided)
       .map(engine => "searchEngine-" + engine.id);
@@ -637,7 +637,7 @@ var tests = [
         info("browser-search-engine-modified: " + verb);
         if (verb == "engine-default") {
           is(
-            SearchService.defaultEngine.id,
+            Services.search.defaultEngine.id,
             someOtherEngineID,
             "correct engine was switched to"
           );
@@ -646,7 +646,7 @@ var tests = [
       };
       Services.obs.addObserver(observe, "browser-search-engine-modified");
       registerCleanupFunction(async () => {
-        await SearchService.setDefault(
+        await Services.search.setDefault(
           defaultEngine,
           Ci.nsISearchService.CHANGE_REASON_UNKNOWN
         );
@@ -655,7 +655,7 @@ var tests = [
       gContentAPI.setDefaultSearchEngine(someOtherEngineID);
     });
 
-    let engine = SearchService.getEngineById(someOtherEngineID);
+    let engine = Services.search.getEngineById(someOtherEngineID);
 
     let submissionUrl = engine
       .getSubmission("dummy")

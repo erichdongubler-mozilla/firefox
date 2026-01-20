@@ -28,7 +28,7 @@ add_setup(async function () {
 async function checkSearchString(searchString, isIpv6) {
   info("Search for term:", searchString);
   let [searchUrl] = UrlbarUtils.getSearchQueryUrl(
-    SearchService.defaultEngine,
+    Services.search.defaultEngine,
     searchString
   );
   let browserLoadedPromise = BrowserTestUtils.browserLoaded(

@@ -27,7 +27,7 @@ add_setup(async function () {
     },
     { setAsDefault: true }
   );
-  await SearchService.moveEngine(suggestionsEngine, 0);
+  await Services.search.moveEngine(suggestionsEngine, 0);
 
   async function cleanup() {
     await PlacesUtils.history.clear();

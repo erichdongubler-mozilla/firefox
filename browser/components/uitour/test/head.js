@@ -4,7 +4,6 @@
 /* global gTestTab:true, gContentAPI:true, tests:false */
 
 ChromeUtils.defineESModuleGetters(this, {
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UITour: "moz-src:///browser/components/uitour/UITour.sys.mjs",
 });
 

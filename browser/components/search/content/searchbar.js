@@ -16,7 +16,6 @@
       "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
     BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
     FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
-    SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
     SearchSuggestionController:
       "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   });
@@ -135,7 +134,8 @@
 
       (window.delayedStartupPromise || Promise.resolve()).then(() => {
         window.requestIdleCallback(() => {
-          lazy.SearchService.init()
+          Services.search
+            .init()
             .then(() => {
               // Bail out if the binding's been destroyed
               if (!this._initialized) {
@@ -185,19 +185,19 @@
 
     async getEngines() {
       if (!this._engines) {
-        this._engines = await lazy.SearchService.getVisibleEngines();
+        this._engines = await Services.search.getVisibleEngines();
       }
       return this._engines;
     }
 
     set currentEngine(val) {
       if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-        lazy.SearchService.setDefaultPrivate(
+        Services.search.setDefaultPrivate(
           val,
           Ci.nsISearchService.CHANGE_REASON_USER_SEARCHBAR
         );
       } else {
-        lazy.SearchService.setDefault(
+        Services.search.setDefault(
           val,
           Ci.nsISearchService.CHANGE_REASON_USER_SEARCHBAR
         );
@@ -207,9 +207,9 @@
     get currentEngine() {
       let currentEngine;
       if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-        currentEngine = lazy.SearchService.defaultPrivateEngine;
+        currentEngine = Services.search.defaultPrivateEngine;
       } else {
-        currentEngine = lazy.SearchService.defaultEngine;
+        currentEngine = Services.search.defaultEngine;
       }
       // Return a dummy engine if there is no currentEngine
       return currentEngine || { name: "", uri: null };

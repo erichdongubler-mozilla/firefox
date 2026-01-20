@@ -30,7 +30,7 @@ add_setup(async function () {
   await SearchTestUtils.installSearchExtension({
     keyword: ALIAS,
   });
-  aliasEngine = SearchService.getEngineByName("Example");
+  aliasEngine = Services.search.getEngineByName("Example");
 });
 
 // An incomplete alias should not be replaced.

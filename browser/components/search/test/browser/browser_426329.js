@@ -96,7 +96,7 @@ async function prepareTest(searchBarValue = "test") {
 }
 
 add_setup(async function () {
-  await SearchService.init();
+  await Services.search.init();
 
   searchBar = await gCUITestUtils.addSearchBar();
   searchButton = searchBar.querySelector(".search-go-button");

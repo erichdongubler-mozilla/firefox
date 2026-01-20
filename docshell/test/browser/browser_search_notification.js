@@ -1,9 +1,6 @@
 /* Any copyright is dedicated to the Public Domain.
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
-const { SearchService } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
-);
 const { SearchTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/SearchTestUtils.sys.mjs"
 );
@@ -28,7 +25,7 @@ add_task(async function () {
     { setAsDefault: true }
   );
 
-  let selectedName = (await SearchService.getDefault()).name;
+  let selectedName = (await Services.search.getDefault()).name;
   Assert.equal(
     selectedName,
     kSearchEngineID,

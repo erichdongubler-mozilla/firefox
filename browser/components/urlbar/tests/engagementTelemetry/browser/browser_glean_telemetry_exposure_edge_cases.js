@@ -91,7 +91,7 @@ async function do_noExposure(showExposureResults) {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         payload: {
           suggestion: "suggestion " + i,
-          engine: SearchService.defaultEngine.name,
+          engine: Services.search.defaultEngine.name,
         },
       })
     );
@@ -299,7 +299,7 @@ async function do_exposure_append_underfilled({
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       payload: {
         suggestion: newSuggestion,
-        engine: SearchService.defaultEngine.name,
+        engine: Services.search.defaultEngine.name,
       },
     }),
     new UrlbarResult({
@@ -416,7 +416,7 @@ async function do_exposure_replace({ showExposureResults, cancelSecondQuery }) {
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       payload: {
         suggestion: "suggestion",
-        engine: SearchService.defaultEngine.name,
+        engine: Services.search.defaultEngine.name,
       },
     }),
   ];
@@ -452,7 +452,7 @@ async function do_exposure_replace({ showExposureResults, cancelSecondQuery }) {
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       payload: {
         suggestion: newSuggestion,
-        engine: SearchService.defaultEngine.name,
+        engine: Services.search.defaultEngine.name,
       },
     }),
     new UrlbarResult({
@@ -575,7 +575,7 @@ async function do_exposure_append_full(showExposureResults) {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         payload: {
           suggestion: "suggestion " + i,
-          engine: SearchService.defaultEngine.name,
+          engine: Services.search.defaultEngine.name,
         },
       })
     );
@@ -801,7 +801,7 @@ async function do_exposure_append_full_twice(showExposureResults) {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         payload: {
           suggestion: "suggestion " + i,
-          engine: SearchService.defaultEngine.name,
+          engine: Services.search.defaultEngine.name,
         },
       })
     );

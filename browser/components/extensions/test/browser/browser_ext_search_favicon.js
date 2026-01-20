@@ -17,9 +17,6 @@ const { sinon } = ChromeUtils.importESModule(
 const { AppProvidedConfigEngine } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs"
 );
-const { SearchService } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
-);
 
 AddonTestUtils.initMochitest(this);
 XPCShellContentUtils.initMochitest(this);
@@ -78,7 +75,7 @@ async function promiseEngineIconLoaded(engineName) {
     }
   );
   Assert.ok(
-    await SearchService.getEngineByName(engineName).getIconURL(),
+    await Services.search.getEngineByName(engineName).getIconURL(),
     "Should have a valid icon URL"
   );
 }

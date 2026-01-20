@@ -21,7 +21,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
   UrlbarController:
     "moz-src:///browser/components/urlbar/UrlbarController.sys.mjs",
@@ -917,7 +916,7 @@ class UrlbarInputTestUtils {
 
     let isGeneralPurposeEngine = false;
     if (expectedSearchMode.engineName) {
-      let engine = lazy.SearchService.getEngineByName(
+      let engine = Services.search.getEngineByName(
         expectedSearchMode.engineName
       );
       isGeneralPurposeEngine = engine.isGeneralPurposeEngine;
@@ -1032,7 +1031,7 @@ class UrlbarInputTestUtils {
             "Search mode result matches engine name."
           );
         } else {
-          let engine = lazy.SearchService.getEngineByName(
+          let engine = Services.search.getEngineByName(
             expectedSearchMode.engineName
           );
           let engineRootDomain =
@@ -1080,7 +1079,7 @@ class UrlbarInputTestUtils {
     let buttons = oneOffs.getSelectableButtons(true);
     if (!searchMode) {
       searchMode = { engineName: buttons[0].engine.name };
-      let engine = lazy.SearchService.getEngineByName(searchMode.engineName);
+      let engine = Services.search.getEngineByName(searchMode.engineName);
       if (engine.isGeneralPurposeEngine) {
         searchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
       }

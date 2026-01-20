@@ -15,7 +15,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderOpenTabs:
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
@@ -965,9 +964,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       // against, so avoid processing the url.
       state.suggestions.size
     ) {
-      let submission = lazy.SearchService.parseSubmissionURL(
-        result.payload.url
-      );
+      let submission = Services.search.parseSubmissionURL(result.payload.url);
       if (submission) {
         let resultQuery = submission.terms.trim().toLocaleLowerCase();
         if (state.suggestions.has(resultQuery)) {
@@ -993,7 +990,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     // When in an engine search mode, discard URL results whose hostnames don't
     // include the root domain of the search mode engine.
     if (state.context.searchMode?.engineName && result.payload.url) {
-      let engine = lazy.SearchService.getEngineByName(
+      let engine = Services.search.getEngineByName(
         state.context.searchMode.engineName
       );
       if (engine) {
@@ -1286,7 +1283,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     // are other results and all of them are searches.  It should not be shown
     // if the user typed an alias because that's an explicit engine choice.
     if (
-      !lazy.SearchService.separatePrivateDefaultUrlbarResultEnabled ||
+      !Services.search.separatePrivateDefaultUrlbarResultEnabled ||
       (state.canShowPrivateSearch &&
         (result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
           result.payload.providesSearchMode ||

@@ -19,15 +19,15 @@ add_setup(async function () {
     search_url_get_params: "search={searchTerms}",
   });
 
-  const defaultEngine = await SearchService.getDefault();
-  const defaultPrivateEngine = await SearchService.getDefaultPrivate();
+  const defaultEngine = await Services.search.getDefault();
+  const defaultPrivateEngine = await Services.search.getDefaultPrivate();
 
   registerCleanupFunction(async () => {
-    await SearchService.setDefault(
+    await Services.search.setDefault(
       defaultEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
-    await SearchService.setDefaultPrivate(
+    await Services.search.setDefaultPrivate(
       defaultPrivateEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
@@ -238,8 +238,8 @@ async function setDefaultEngine(
   await defaultChanged;
 
   const newDefault = testPrivate
-    ? await SearchService.getDefaultPrivate()
-    : await SearchService.getDefault();
+    ? await Services.search.getDefaultPrivate()
+    : await Services.search.getDefault();
   Assert.equal(
     newDefault.name,
     expectedEngineName,
@@ -248,10 +248,10 @@ async function setDefaultEngine(
 }
 
 add_task(async function test_setDefaultEngine() {
-  const engine1 = SearchService.getEngineByName("engine1");
+  const engine1 = Services.search.getEngineByName("engine1");
 
   // Set an initial default so we have a known engine.
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     engine1,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -294,10 +294,10 @@ add_task(async function test_setPrivateDefaultEngine() {
     ],
   });
 
-  const engine2 = SearchService.getEngineByName("engine2");
+  const engine2 = Services.search.getEngineByName("engine2");
 
   // Set an initial default so we have a known engine.
-  await SearchService.setDefaultPrivate(
+  await Services.search.setDefaultPrivate(
     engine2,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );

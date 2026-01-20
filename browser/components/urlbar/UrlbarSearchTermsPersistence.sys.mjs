@@ -8,7 +8,6 @@ import { UrlbarUtils } from "moz-src:///browser/components/urlbar/UrlbarUtils.sy
 
 ChromeUtils.defineESModuleGetters(lazy, {
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
 });
 
 /**
@@ -142,7 +141,7 @@ class _UrlbarSearchTermsPersistence {
    *   or the default engine hasn't been initialized.
    */
   getSearchTerm(uri) {
-    if (!lazy.SearchService.hasSuccessfullyInitialized || !uri?.spec) {
+    if (!Services.search.hasSuccessfullyInitialized || !uri?.spec) {
       return "";
     }
 
@@ -157,7 +156,7 @@ class _UrlbarSearchTermsPersistence {
     // understand changes to params.
     let provider = this.#getProviderInfoForURL(uri.spec);
     if (provider) {
-      let result = lazy.SearchService.parseSubmissionURL(uri.spec);
+      let result = Services.search.parseSubmissionURL(uri.spec);
       if (
         !result.engine?.isConfigEngine ||
         !this.isDefaultPage(uri, provider)
@@ -166,7 +165,7 @@ class _UrlbarSearchTermsPersistence {
       }
       searchTerm = result.terms;
     } else {
-      let result = lazy.SearchService.parseSubmissionURL(uri.spec);
+      let result = Services.search.parseSubmissionURL(uri.spec);
       if (!result.engine?.isConfigEngine) {
         return "";
       }
@@ -399,16 +398,16 @@ class _UrlbarSearchTermsPersistence {
    */
   #searchModeForUrl(url) {
     // If there's no default engine, no engines are available.
-    if (!lazy.SearchService.defaultEngine) {
+    if (!Services.search.defaultEngine) {
       return null;
     }
-    let result = lazy.SearchService.parseSubmissionURL(url);
+    let result = Services.search.parseSubmissionURL(url);
     if (!result.engine?.isConfigEngine) {
       return null;
     }
     return {
       engineName: result.engine.name,
-      isDefaultEngine: result.engine === lazy.SearchService.defaultEngine,
+      isDefaultEngine: result.engine === Services.search.defaultEngine,
     };
   }
 

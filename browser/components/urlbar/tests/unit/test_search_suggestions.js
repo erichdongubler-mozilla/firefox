@@ -140,9 +140,9 @@ add_setup(async function () {
   });
 
   // Install the test engine.
-  let oldDefaultEngine = await SearchService.getDefault();
+  let oldDefaultEngine = await Services.search.getDefault();
   registerCleanupFunction(async () => {
-    SearchService.setDefault(
+    Services.search.setDefault(
       oldDefaultEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
@@ -152,7 +152,7 @@ add_setup(async function () {
     Services.prefs.clearUserPref(TAB_TO_SEARCH_PREF);
     sandbox.restore();
   });
-  SearchService.setDefault(engine, Ci.nsISearchService.CHANGE_REASON_UNKNOWN);
+  Services.search.setDefault(engine, Ci.nsISearchService.CHANGE_REASON_UNKNOWN);
   Services.prefs.setBoolPref(PRIVATE_SEARCH_PREF, false);
   Services.prefs.setBoolPref(TRENDING_PREF, false);
   Services.prefs.setBoolPref(QUICKACTIONS_PREF, false);
@@ -1900,7 +1900,7 @@ add_task(async function formHistory() {
   // "foobar" and "fooquux" form history should be included; the "food" SERP
   // should be included since it doesn't dupe either form history result; and
   // the "foobar" and "fooBAR " SERPs depend on the result groups, see below.
-  let engine = await SearchService.getDefault();
+  let engine = await Services.search.getDefault();
   let serpURLs = ["foobar", "fooBAR ", "food"].map(
     term => UrlbarUtils.getSearchQueryUrl(engine, term)[0]
   );
@@ -2097,7 +2097,7 @@ add_task(async function hideHeuristic_formHistory() {
   //   form history
   // * "foo foo" and "foo bar" remote suggestions should be included because
   //   they don't dupe anything
-  let engine = await SearchService.getDefault();
+  let engine = await Services.search.getDefault();
   let serpURLs = ["foo", "food"].map(
     term => UrlbarUtils.getSearchQueryUrl(engine, term)[0]
   );

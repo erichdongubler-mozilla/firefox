@@ -8,7 +8,7 @@ const kExtensionID = "simple@tests.mozilla.org";
 add_setup(async function () {
   useHttpServer();
   SearchTestUtils.setRemoteSettingsConfig([{ identifier: "unused" }]);
-  await SearchService.init();
+  await Services.search.init();
 });
 
 add_task(async function test_migrateLegacyEngine() {
@@ -20,7 +20,7 @@ add_task(async function test_migrateLegacyEngine() {
   engine.wrappedJSObject._loadPath = `jar:[profile]/extensions/${kExtensionID}.xpi!/simple.xml`;
   engine.wrappedJSObject._extensionID = null;
 
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -35,12 +35,12 @@ add_task(async function test_migrateLegacyEngine() {
     { skipUnload: true }
   );
 
-  engine = SearchService.getEngineByName("simple");
+  engine = Services.search.getEngineByName("simple");
   Assert.equal(engine.wrappedJSObject._loadPath, "[addon]" + kExtensionID);
   Assert.equal(engine.wrappedJSObject._extensionID, kExtensionID);
 
   Assert.equal(
-    (await SearchService.getDefault()).name,
+    (await Services.search.getDefault()).name,
     "simple",
     "Should have kept the default engine the same"
   );
@@ -57,7 +57,7 @@ add_task(async function test_migrateLegacyEngineDifferentName() {
   engine.wrappedJSObject._loadPath = `jar:[profile]/extensions/${kExtensionID}.xpi!/simple.xml`;
   engine.wrappedJSObject._extensionID = null;
 
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -72,16 +72,16 @@ add_task(async function test_migrateLegacyEngineDifferentName() {
     { skipUnload: true }
   );
 
-  engine = SearchService.getEngineByName("simple");
+  engine = Services.search.getEngineByName("simple");
   Assert.equal(engine, null, "Should have removed the old engine");
 
   // The engine should have changed its name.
-  engine = SearchService.getEngineByName("simple search");
+  engine = Services.search.getEngineByName("simple search");
   Assert.equal(engine.wrappedJSObject._loadPath, "[addon]" + kExtensionID);
   Assert.equal(engine.wrappedJSObject._extensionID, kExtensionID);
 
   Assert.equal(
-    (await SearchService.getDefault()).name,
+    (await Services.search.getDefault()).name,
     "simple search",
     "Should have made the new engine default"
   );

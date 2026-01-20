@@ -25,7 +25,6 @@ const lazy = XPCOMUtils.declareLazy({
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   SearchUIUtilsL10n: () => {
     return new Localization(["browser/search.ftl", "branding/brand.ftl"]);
@@ -125,11 +124,11 @@ export var SearchUIUtils = {
     // _updatePlaceholderFromDefaultEngine only updates the pref if the search service
     // hasn't finished initializing, so we explicitly update it here to be sure.
     SearchUIUtils.updatePlaceholderNamePreference(
-      await lazy.SearchService.getDefault(),
+      await Services.search.getDefault(),
       false
     );
     SearchUIUtils.updatePlaceholderNamePreference(
-      await lazy.SearchService.getDefaultPrivate(),
+      await Services.search.getDefaultPrivate(),
       true
     );
 
@@ -197,7 +196,7 @@ export var SearchUIUtils = {
    */
   async addOpenSearchEngine(locationURL, image, browsingContext) {
     try {
-      await lazy.SearchService.addOpenSearchEngine(
+      await Services.search.addOpenSearchEngine(
         locationURL,
         image,
         browsingContext?.embedderElement?.contentPrincipal?.originAttributes
@@ -419,8 +418,8 @@ export var SearchUIUtils = {
 
     if (!engine) {
       engine = usePrivateWindow
-        ? await lazy.SearchService.getDefaultPrivate()
-        : await lazy.SearchService.getDefault();
+        ? await Services.search.getDefaultPrivate()
+        : await Services.search.getDefault();
     }
 
     let submission = engine.getSubmission(searchText, searchUrlType);

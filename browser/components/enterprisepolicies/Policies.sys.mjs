@@ -28,7 +28,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   ProxyPolicies: "resource:///modules/policies/ProxyPolicies.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   WebsiteFilter: "resource:///modules/policies/WebsiteFilter.sys.mjs",
 });
@@ -2639,7 +2638,7 @@ export var Policies = {
       }
     },
     onAllWindowsRestored(manager, param) {
-      lazy.SearchService.init().then(async () => {
+      Services.search.init().then(async () => {
         // Adding of engines is handled by the SearchService in the init().
         // Remove can happen after those are added - no engines are allowed
         // to replace the application provided engines, even if they have been
@@ -2651,10 +2650,10 @@ export var Policies = {
             JSON.stringify(param.Remove),
             async function () {
               for (let engineName of param.Remove) {
-                let engine = lazy.SearchService.getEngineByName(engineName);
+                let engine = Services.search.getEngineByName(engineName);
                 if (engine) {
                   try {
-                    await lazy.SearchService.removeEngine(
+                    await Services.search.removeEngine(
                       engine,
                       Ci.nsISearchService.CHANGE_REASON_ENTERPRISE
                     );
@@ -2673,9 +2672,7 @@ export var Policies = {
             async () => {
               let defaultEngine;
               try {
-                defaultEngine = lazy.SearchService.getEngineByName(
-                  param.Default
-                );
+                defaultEngine = Services.search.getEngineByName(param.Default);
                 if (!defaultEngine) {
                   throw new Error("No engine by that name could be found");
                 }
@@ -2689,7 +2686,7 @@ export var Policies = {
               }
               if (defaultEngine) {
                 try {
-                  await lazy.SearchService.setDefault(
+                  await Services.search.setDefault(
                     defaultEngine,
                     Ci.nsISearchService.CHANGE_REASON_ENTERPRISE
                   );
@@ -2707,7 +2704,7 @@ export var Policies = {
             async () => {
               let defaultPrivateEngine;
               try {
-                defaultPrivateEngine = lazy.SearchService.getEngineByName(
+                defaultPrivateEngine = Services.search.getEngineByName(
                   param.DefaultPrivate
                 );
                 if (!defaultPrivateEngine) {
@@ -2723,7 +2720,7 @@ export var Policies = {
               }
               if (defaultPrivateEngine) {
                 try {
-                  await lazy.SearchService.setDefaultPrivate(
+                  await Services.search.setDefaultPrivate(
                     defaultPrivateEngine,
                     Ci.nsISearchService.CHANGE_REASON_ENTERPRISE
                   );

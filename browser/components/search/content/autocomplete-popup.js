@@ -12,7 +12,6 @@
       "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
     BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
     SearchOneOffs: "moz-src:///browser/components/search/SearchOneOffs.sys.mjs",
-    SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   });
 
   /**
@@ -250,9 +249,9 @@
     async updateHeader(engine) {
       if (!engine) {
         if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-          engine = await lazy.SearchService.getDefaultPrivate();
+          engine = await Services.search.getDefaultPrivate();
         } else {
-          engine = await lazy.SearchService.getDefault();
+          engine = await Services.search.getDefault();
         }
       }
       this.#currentEngineName = engine.name;

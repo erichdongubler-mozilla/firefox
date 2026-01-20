@@ -24,7 +24,7 @@ add_setup(async function () {
     url: getRootDirectory(gTestPath) + SUGGESTIONS_ENGINE_NAME,
     setAsDefault: true,
   });
-  await SearchService.moveEngine(engine, 0);
+  await Services.search.moveEngine(engine, 0);
 
   await PlacesUtils.history.clear();
 

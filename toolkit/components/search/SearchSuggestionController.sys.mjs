@@ -10,7 +10,6 @@ const REMOTE_TIMEOUT_DEFAULT = 500;
 
 const lazy = XPCOMUtils.declareLazy({
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   logConsole: () =>
     console.createInstance({
@@ -287,7 +286,7 @@ export class SearchSuggestionController {
 
     this.stop();
 
-    if (!lazy.SearchService.isInitialized) {
+    if (!Services.search.isInitialized) {
       throw new Error("Search not initialized yet (how did you get here?)");
     }
     if (typeof inPrivateBrowsing === "undefined") {

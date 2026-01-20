@@ -12,7 +12,6 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
  */
 
 const lazy = XPCOMUtils.declareLazy({
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   logConsole: () =>
     console.createInstance({
       prefix: "SearchUtils",
@@ -221,7 +220,7 @@ export var SearchUtils = {
    * @see nsISearchService.idl
    */
   notifyAction(engine, verb) {
-    if (lazy.SearchService.isInitialized) {
+    if (Services.search.isInitialized) {
       lazy.logConsole.debug("NOTIFY: Engine:", engine.name, "Verb:", verb);
       Services.obs.notifyObservers(engine, this.TOPIC_ENGINE_MODIFIED, verb);
     }

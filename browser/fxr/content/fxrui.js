@@ -40,9 +40,6 @@ const { AppConstants } = ChromeUtils.importESModule(
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
-const { SearchService } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
-);
 
 // Note: FxR UI uses a fork of browser-fullScreenAndPointerLock.js which removes
 // the dependencies on browser.js.
@@ -198,7 +195,7 @@ function setupUrlBar() {
     if (e.key == "Enter") {
       // Use the URL Fixup Service in case the user wants to search instead
       // of directly navigating to a location.
-      await SearchService.init();
+      await Services.search.init();
 
       let valueToFixUp = urlInput.value;
       let flags =

@@ -9,9 +9,6 @@ const lazy = {};
 const { Preferences } = ChromeUtils.importESModule(
   "resource://gre/modules/Preferences.sys.mjs"
 );
-const { SearchService } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
-);
 const { SearchSettings } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/search/SearchSettings.sys.mjs"
 );
@@ -71,7 +68,7 @@ async function setupPolicyEngineWithJson(json, customSchema) {
  *   A custom schema to use to validate the enterprise policy.
  */
 async function setupPolicyEngineWithJsonWithSearch(json, customSchema) {
-  SearchService.wrappedJSObject.reset();
+  Services.search.wrappedJSObject.reset();
   if (typeof json != "object") {
     let filePath = do_get_file(json ? json : "non-existing-file.json").path;
     await EnterprisePolicyTesting.setupPolicyEngineWithJson(
@@ -84,7 +81,7 @@ async function setupPolicyEngineWithJsonWithSearch(json, customSchema) {
   let settingsWritten = lazy.SearchTestUtils.promiseSearchNotification(
     "write-settings-to-disk-complete"
   );
-  await SearchService.init();
+  await Services.search.init();
   await settingsWritten;
 }
 

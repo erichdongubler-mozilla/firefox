@@ -1,21 +1,5 @@
 "use strict";
 
-let SearchService;
-/**
- * @backward-compat { version 149 }
- *   The search service was replaced by a singleton in 149. When this is removed
- *   the import above can be made `const`.
- */
-/* eslint-disable mozilla/valid-services */
-if (Services.search) {
-  SearchService = Services.search;
-} else {
-  SearchService = ChromeUtils.importESModule(
-    "moz-src:///toolkit/components/search/SearchService.sys.mjs"
-  ).SearchService;
-}
-/* eslint-enable mozilla/valid-services */
-
 // Check TopSites edit modal and overlay show up.
 test_newtab({
   before: setTestTopSites,
@@ -226,8 +210,7 @@ test_newtab({
       gURLBar.focused,
       "We clicked a search topsite the focus should be in location bar"
     );
-
-    let engine = await SearchService.getEngineByAlias(searchTopSiteTag);
+    let engine = await Services.search.getEngineByAlias(searchTopSiteTag);
 
     // We don't use UrlbarTestUtils.assertSearchMode here since the newtab
     // testing scope doesn't integrate well with UrlbarTestUtils.
@@ -297,12 +280,12 @@ add_task(async function test_search_topsite_remove_engine() {
     }
   );
 
-  await SearchService.removeEngine(
-    await SearchService.getEngineByAlias(topSiteAlias)
+  await Services.search.removeEngine(
+    await Services.search.getEngineByAlias(topSiteAlias)
   );
 
   registerCleanupFunction(() => {
-    SearchService.restoreDefaultEngines();
+    Services.search.restoreDefaultEngines();
   });
 
   await SpecialPowers.spawn(

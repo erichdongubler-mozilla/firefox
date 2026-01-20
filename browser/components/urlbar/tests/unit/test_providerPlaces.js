@@ -16,16 +16,16 @@ add_task(async function test_places() {
   Services.prefs.setBoolPref(SUGGEST_ENABLED_PREF, true);
   Services.prefs.setBoolPref(QUICKACTIONS_PREF, false);
   let engine = await addTestSuggestionsEngine();
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
-  let oldCurrentEngine = SearchService.defaultEngine;
+  let oldCurrentEngine = Services.search.defaultEngine;
   registerCleanupFunction(async () => {
     Services.prefs.clearUserPref(SUGGEST_PREF);
     Services.prefs.clearUserPref(SUGGEST_ENABLED_PREF);
     Services.prefs.clearUserPref(QUICKACTIONS_PREF);
-    await SearchService.setDefault(
+    await Services.search.setDefault(
       oldCurrentEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );

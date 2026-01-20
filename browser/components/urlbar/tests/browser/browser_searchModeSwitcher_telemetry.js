@@ -141,9 +141,9 @@ async function removeAddonSearchEngine(name) {
   let settingsWritten = SearchTestUtils.promiseSearchNotification(
     "write-settings-to-disk-complete"
   );
-  let engine = SearchService.getEngineByName(name);
+  let engine = Services.search.getEngineByName(name);
   await Promise.all([
-    SearchService.removeEngine(engine),
+    Services.search.removeEngine(engine),
     promiseEngineRemoved,
     settingsWritten,
   ]);

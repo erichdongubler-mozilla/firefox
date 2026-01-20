@@ -14,7 +14,7 @@ add_setup(async function () {
     });
   }
 
-  defaultEngine = await SearchService.getDefault();
+  defaultEngine = await Services.search.getDefault();
 
   extension = await SearchTestUtils.installSearchExtension({
     id: TEST_ENGINE_NAME,
@@ -24,7 +24,7 @@ add_setup(async function () {
     suggest_url_get_params: "query={searchTerms}",
   });
 
-  addedEngine = await SearchService.getEngineByName(TEST_ENGINE_NAME);
+  addedEngine = await Services.search.getEngineByName(TEST_ENGINE_NAME);
 
   // Enable suggestions in this test. Otherwise, the string in the content
   // search box changes.
@@ -33,7 +33,7 @@ add_setup(async function () {
   });
 
   registerCleanupFunction(async () => {
-    await SearchService.setDefault(
+    await Services.search.setDefault(
       defaultEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
@@ -131,10 +131,10 @@ async function runNewTabTest() {
   await ensurePlaceholder(
     tab,
     "newtab-search-box-handoff-input",
-    SearchService.defaultEngine.name
+    Services.search.defaultEngine.name
   );
 
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     addedEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -152,7 +152,7 @@ async function runNewTabTest() {
   await ensurePlaceholder(tab, "newtab-search-box-input");
   await SpecialPowers.popPrefEnv();
 
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     defaultEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -177,10 +177,10 @@ add_task(async function test_content_search_attributes_in_private_window() {
   await ensurePlaceholder(
     tab,
     "about-private-browsing-handoff",
-    SearchService.defaultEngine.name
+    Services.search.defaultEngine.name
   );
 
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     addedEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -196,7 +196,7 @@ add_task(async function test_content_search_attributes_in_private_window() {
   await ensurePlaceholder(tab, "about-private-browsing-search-btn");
   await SpecialPowers.popPrefEnv();
 
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     defaultEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );

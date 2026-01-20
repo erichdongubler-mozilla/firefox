@@ -1,9 +1,5 @@
 "use strict";
 
-const { SearchService } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
-);
-
 let contextMenu;
 let LOGIN_FILL_ITEMS = ["---", null, "manage-saved-logins", true];
 let NAVIGATION_ITEMS =
@@ -1782,7 +1778,7 @@ add_task(async function test_select_text() {
 add_task(async function test_select_text_search_service_not_initialized() {
   let statuses = ["not initialized", "failed", "started"];
   for (let status of statuses) {
-    SearchService.wrappedJSObject.forceInitializationStatusForTests(status);
+    Services.search.wrappedJSObject.forceInitializationStatusForTests(status);
     await test_contextmenu(
       "#test-select-text",
       [
@@ -1824,7 +1820,7 @@ add_task(async function test_select_text_search_service_not_initialized() {
     );
   }
   // Restore the search service initialization status
-  SearchService.wrappedJSObject.forceInitializationStatusForTests("success");
+  Services.search.wrappedJSObject.forceInitializationStatusForTests("success");
 });
 
 add_task(async function test_select_text_link() {

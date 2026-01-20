@@ -181,7 +181,7 @@ add_task(async function autofillIsCleared() {
     secondContext,
     matches: [
       makeSearchResult(secondContext, {
-        engineName: (await SearchService.getDefault()).name,
+        engineName: (await Services.search.getDefault()).name,
         providerName: "UrlbarProviderHeuristicFallback",
         heuristic: true,
       }),

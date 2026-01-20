@@ -99,7 +99,7 @@ async function runURLBarSearchTest({
     if (!expectSearch) {
       expectedURI = "http://" + valueToOpen + "/";
     } else {
-      expectedURI = (await SearchService.getDefault()).getSubmission(
+      expectedURI = (await Services.search.getDefault()).getSubmission(
         valueToOpen,
         null,
         "keyword"

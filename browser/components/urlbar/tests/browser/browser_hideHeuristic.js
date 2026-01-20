@@ -409,23 +409,23 @@ async function withEngine(
   callback
 ) {
   await SearchTestUtils.installSearchExtension({ keyword });
-  let engine = SearchService.getEngineByName("Example");
+  let engine = Services.search.getEngineByName("Example");
   let originalEngine;
   if (makeDefault) {
-    originalEngine = await SearchService.getDefault();
-    await SearchService.setDefault(
+    originalEngine = await Services.search.getDefault();
+    await Services.search.setDefault(
       engine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
   }
   await callback();
   if (originalEngine) {
-    await SearchService.setDefault(
+    await Services.search.setDefault(
       originalEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
   }
-  await SearchService.removeEngine(engine);
+  await Services.search.removeEngine(engine);
 }
 
 /**

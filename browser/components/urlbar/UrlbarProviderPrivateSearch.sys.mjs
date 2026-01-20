@@ -15,7 +15,6 @@ import {
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
@@ -81,11 +80,11 @@ export class UrlbarProviderPrivateSearch extends UrlbarProvider {
     let instance = this.queryInstance;
 
     let engine = queryContext.searchMode?.engineName
-      ? lazy.SearchService.getEngineByName(queryContext.searchMode.engineName)
-      : await lazy.SearchService.getDefaultPrivate();
+      ? Services.search.getEngineByName(queryContext.searchMode.engineName)
+      : await Services.search.getDefaultPrivate();
     let isPrivateEngine =
       lazy.UrlbarSearchUtils.separatePrivateDefault &&
-      engine != (await lazy.SearchService.getDefault());
+      engine != (await Services.search.getDefault());
     this.logger.info(`isPrivateEngine: ${isPrivateEngine}`);
 
     // This is a delay added before returning results, to avoid flicker.

@@ -38,15 +38,15 @@ async function addSearches(searches = TEST_SEARCHES) {
 
 add_setup(async () => {
   defaultEngine = await addTestSuggestionsEngine();
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     defaultEngine,
     Ci.nsISearchService.CHANGE_REASON_ADDON_INSTALL
   );
 
-  let oldCurrentEngine = SearchService.defaultEngine;
+  let oldCurrentEngine = Services.search.defaultEngine;
 
   registerCleanupFunction(async () => {
-    await SearchService.setDefault(
+    await Services.search.setDefault(
       oldCurrentEngine,
       Ci.nsISearchService.CHANGE_REASON_ADDON_INSTALL
     );
@@ -109,7 +109,7 @@ add_task(async function test_per_engine() {
   defaultEngine = await addTestSuggestionsEngine(null, {
     name: "NewTestEngine",
   });
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     defaultEngine,
     Ci.nsISearchService.CHANGE_REASON_ADDON_INSTALL
   );
@@ -129,7 +129,7 @@ add_task(async function test_per_engine() {
   });
 
   defaultEngine = oldEngine;
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     defaultEngine,
     Ci.nsISearchService.CHANGE_REASON_ADDON_INSTALL
   );

@@ -199,21 +199,15 @@ const gEmptyParseSubmissionResult = Object.freeze(
 /**
  * The search service handles loading and maintaining of search engines. It will
  * also work out the default lists for each locale/region.
+ *
+ * @implements {nsISearchService}
  */
-export const SearchService = new (class SearchService {
+export class SearchService {
   constructor() {
     this._settings = new lazy.SearchSettings(this);
   }
 
   classID = Components.ID("{7319788a-fe93-4db3-9f39-818cf08f4256}");
-
-  /**
-   * Temporary property to maintain compatibility whilst migration away from
-   * a service is in work.
-   *
-   * @deprecated
-   */
-  wrappedJSObject = this;
 
   /**
    * The currently active search engine.
@@ -644,9 +638,7 @@ export const SearchService = new (class SearchService {
   }
 
   /**
-   * Test-only function to set SearchService initialization status.
-   *
-   * @param {string} status
+   * Test-only function to set SearchService initialization status
    */
   forceInitializationStatusForTests(status) {
     this.#initializationStatus = status;
@@ -4041,7 +4033,7 @@ export const SearchService = new (class SearchService {
       this.#openSearchUpdateTimerStarted = true;
     }
   }
-})(); // end SearchService class
+} // end SearchService class
 
 /**
  * Handles getting and checking extensions against the allow list.

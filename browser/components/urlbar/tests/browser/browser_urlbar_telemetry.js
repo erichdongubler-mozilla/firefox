@@ -75,8 +75,8 @@ async function withNewSearchEngine(taskFn) {
   let suggestionEngine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + "urlbarTelemetrySearchSuggestions.xml",
   });
-  let previousEngine = await SearchService.getDefault();
-  await SearchService.setDefault(
+  let previousEngine = await Services.search.getDefault();
+  await Services.search.setDefault(
     suggestionEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -84,11 +84,11 @@ async function withNewSearchEngine(taskFn) {
   try {
     await taskFn(suggestionEngine);
   } finally {
-    await SearchService.setDefault(
+    await Services.search.setDefault(
       previousEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
-    await SearchService.removeEngine(suggestionEngine);
+    await Services.search.removeEngine(suggestionEngine);
   }
 }
 
@@ -103,8 +103,8 @@ add_setup(async function () {
   );
 
   // Make it the first one-off engine.
-  let engine = SearchService.getEngineByName("MozSearch");
-  await SearchService.moveEngine(engine, 0);
+  let engine = Services.search.getEngineByName("MozSearch");
+  await Services.search.moveEngine(engine, 0);
 
   // Enable search suggestions in the urlbar.
   let suggestionsEnabled = Services.prefs.getBoolPref(SUGGEST_URLBAR_PREF);

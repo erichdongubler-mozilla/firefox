@@ -19,12 +19,12 @@ add_setup(async function () {
 
   // Persisted Search requires config search engines.
   let cleanup = await installPersistTestEngines("MochiSearch");
-  let engine = SearchService.getEngineByName("MochiSearch");
-  await SearchService.setDefault(
+  let engine = Services.search.getEngineByName("MochiSearch");
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
-  await SearchService.moveEngine(engine, 0);
+  await Services.search.moveEngine(engine, 0);
   registerCleanupFunction(async function () {
     await PlacesUtils.history.clear();
     cleanup();

@@ -41,7 +41,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Region: "resource://gre/modules/Region.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   Sampling: "resource://gre/modules/components-utils/Sampling.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   Screenshots: "resource://newtab/lib/Screenshots.sys.mjs",
 });
 
@@ -160,11 +159,8 @@ function smartshortcutsEnabled(values) {
 const OVERSAMPLE_MULTIPLIER = 2;
 
 function getShortHostnameForCurrentSearch() {
-  // @backward-compat { version 148 }
-  // SearchService replaces Services.search in 148.
   return lazy.NewTabUtils.shortHostname(
-    // eslint-disable-next-line mozilla/valid-services
-    (Services.search ?? lazy.SearchService).defaultEngine.searchUrlDomain
+    Services.search.defaultEngine.searchUrlDomain
   );
 }
 
@@ -1517,10 +1513,7 @@ export class TopSitesFeed {
     // We must wait for search services to initialize in order to access default
     // search engine properties without triggering a synchronous initialization
     try {
-      // @backward-compat { version 148 }
-      // SearchService replaces Services.search in 148.
-      // eslint-disable-next-line mozilla/valid-services
-      await (Services.search ?? lazy.SearchService).init();
+      await Services.search.init();
     } catch {
       // We continue anyway because we want the user to see their sponsored,
       // saved, or visited shortcut tiles even if search engines are not
@@ -1973,10 +1966,7 @@ export class TopSitesFeed {
 
     // Populate the state with available search shortcuts
     let searchShortcuts = [];
-    // @backward-compat { version 148 }
-    // SearchService replaces Services.search in 148.
-    for (const engine of await (Services.search ?? lazy.SearchService) // eslint-disable-line mozilla/valid-services
-      .getAppProvidedEngines()) {
+    for (const engine of await Services.search.getAppProvidedEngines()) {
       const shortcut = CUSTOM_SEARCH_SHORTCUTS.find(s =>
         engine.aliases.includes(s.keyword)
       );

@@ -112,13 +112,13 @@ add_setup(async function () {
   ];
   Services.locale.requestedLocales = ["en"];
 
-  await SearchService.init();
+  await Services.search.init();
 
   const settings = await RemoteSettings(SearchUtils.SETTINGS_ALLOWLIST_KEY);
   sinon.stub(settings, "get").returns(ALLOWLIST);
 
   notificationBoxStub = sinon.stub(
-    SearchService.wrappedJSObject,
+    Services.search.wrappedJSObject,
     "_showRemovalOfSearchEngineNotificationBox"
   );
 
@@ -243,7 +243,7 @@ add_task(
         // simulate this being a startup extension.
         await simulateExtensionStartup(false);
 
-        await SearchService.init();
+        await Services.search.init();
       },
     });
   }
@@ -336,9 +336,9 @@ async function runTestScenario({ extend, remove, testOpenSearch = false }) {
 async function restartSearchService(initSearchService = false) {
   info("Restarting search service.");
   await promiseAfterSettings();
-  SearchService.wrappedJSObject.reset();
+  Services.search.wrappedJSObject.reset();
   if (initSearchService) {
-    await SearchService.init();
+    await Services.search.init();
   }
 }
 
@@ -348,9 +348,9 @@ async function simulateExtensionStartup(trySetDefault) {
     startupReason: "APP_STARTUP",
   };
   if (trySetDefault) {
-    await SearchService.maybeSetAndOverrideDefault(extensionData);
+    await Services.search.maybeSetAndOverrideDefault(extensionData);
   } else {
-    await SearchService.addEnginesFromExtension(extensionData);
+    await Services.search.addEnginesFromExtension(extensionData);
   }
 }
 
@@ -435,7 +435,7 @@ async function assertCorrectlySwitchedWhenRemoved(
     await simulateExtensionStartup(false);
   }
 
-  await SearchService.init();
+  await Services.search.init();
 
   await assertEngineCorrectlySet({
     expectedId: engineId,
@@ -444,7 +444,7 @@ async function assertCorrectlySwitchedWhenRemoved(
   });
 
   if (testOpenSearch) {
-    await SearchService.removeEngine(SearchService.getEngineById(engineId));
+    await Services.search.removeEngine(Services.search.getEngineById(engineId));
   } else {
     await extension.unload();
   }
@@ -455,14 +455,14 @@ async function assertEngineCorrectlySet({
   expectedId,
   appEngineOverriden,
 }) {
-  let engines = await SearchService.getEngines();
+  let engines = await Services.search.getEngines();
   Assert.equal(
     engines.filter(e => e.name == ENGINE_NAME).length,
     1,
     "Should only be one engine with matching name after changing configuration"
   );
 
-  let defaultEngine = await SearchService.getDefault();
+  let defaultEngine = await Services.search.getDefault();
   Assert.equal(
     defaultEngine.id,
     expectedId,
@@ -516,12 +516,12 @@ async function installThirdPartyEngineAsDefault(useOpenSearch) {
     );
     await extension.awaitStartup();
 
-    engine = SearchService.getEngineById(
+    engine = Services.search.getEngineById(
       "simpleengine@tests.mozilla.orgdefault"
     );
   }
 
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );

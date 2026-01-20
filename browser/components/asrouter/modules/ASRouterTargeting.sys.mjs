@@ -67,7 +67,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
@@ -770,11 +769,12 @@ const TargetingGetters = {
       return Promise.resolve(NONE);
     }
     return new Promise(resolve => {
-      // Note: calling getAppProvidedEngines, calls SearchService.init which
+      // Note: calling getAppProvidedEngines, calls Services.search.init which
       // ensures this code is only executed after Search has been initialized.
-      lazy.SearchService.getAppProvidedEngines()
+      Services.search
+        .getAppProvidedEngines()
         .then(engines => {
-          let { defaultEngine } = lazy.SearchService;
+          let { defaultEngine } = Services.search;
           resolve({
             // Skip reporting the id for third party engines.
             current: defaultEngine.isAppProvided ? defaultEngine.id : null,

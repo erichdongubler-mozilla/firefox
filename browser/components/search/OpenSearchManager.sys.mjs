@@ -6,7 +6,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
 });
 
 /**
@@ -79,7 +78,7 @@ class _OpenSearchManager {
    *   The title of the engine and the url to the opensearch XML.
    */
   addEngine(browser, engine) {
-    if (!lazy.SearchService.hasSuccessfullyInitialized) {
+    if (!Services.search.hasSuccessfullyInitialized) {
       // We haven't finished initializing search yet. This means we can't
       // call getEngineByName here. Since this is only on start-up and unlikely
       // to happen in the normal case, we'll just return early rather than
@@ -93,7 +92,7 @@ class _OpenSearchManager {
 
     // If this engine (identified by title) is already in the list, add it
     // to the list of hidden engines rather than to the main list.
-    let shouldBeHidden = !!lazy.SearchService.getEngineByName(engine.title);
+    let shouldBeHidden = !!Services.search.getEngineByName(engine.title);
 
     let engines =
       (shouldBeHidden

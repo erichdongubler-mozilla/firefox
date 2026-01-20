@@ -9,7 +9,6 @@ var { XPCOMUtils } = ChromeUtils.importESModule(
 ChromeUtils.defineESModuleGetters(this, {
   HttpServer: "resource://testing-common/httpd.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
@@ -32,7 +31,7 @@ async function setupSearchService() {
   SearchTestUtils.init(this);
 
   await SearchTestUtils.setRemoteSettingsConfig(CONFIG);
-  await SearchService.init();
+  await Services.search.init();
 }
 
 /**

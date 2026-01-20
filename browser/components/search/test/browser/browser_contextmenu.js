@@ -42,7 +42,7 @@ add_setup(async function () {
     set: [["test.wait300msAfterTabSwitch", true]],
   });
 
-  await SearchService.init();
+  await Services.search.init();
 
   for (let [name, search_url] of ENGINE_DATA) {
     let extension = ExtensionTestUtils.loadExtension({
@@ -62,17 +62,17 @@ add_setup(async function () {
     extensions.push(extension);
   }
 
-  engine = await SearchService.getEngineByName(ENGINE_NAME);
+  engine = await Services.search.getEngineByName(ENGINE_NAME);
   Assert.ok(engine, "Got a search engine");
-  oldDefaultEngine = await SearchService.getDefault();
-  await SearchService.setDefault(
+  oldDefaultEngine = await Services.search.getDefault();
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
 
-  privateEngine = await SearchService.getEngineByName(PRIVATE_ENGINE_NAME);
+  privateEngine = await Services.search.getEngineByName(PRIVATE_ENGINE_NAME);
   Assert.ok(privateEngine, "Got a search engine");
-  oldDefaultPrivateEngine = await SearchService.getDefaultPrivate();
+  oldDefaultPrivateEngine = await Services.search.getDefaultPrivate();
 });
 
 /**
@@ -408,7 +408,7 @@ async function doTest({
   });
 
   if (defaultPrivateEngine) {
-    await SearchService.setDefaultPrivate(
+    await Services.search.setDefaultPrivate(
       defaultPrivateEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
@@ -437,16 +437,16 @@ async function doTest({
 // We can't do the unload within registerCleanupFunction as that's too late for
 // the test to be happy. Do it into a cleanup "test" here instead.
 add_task(async function cleanup() {
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     oldDefaultEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
-  await SearchService.setDefaultPrivate(
+  await Services.search.setDefaultPrivate(
     oldDefaultPrivateEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
-  await SearchService.removeEngine(engine);
-  await SearchService.removeEngine(privateEngine);
+  await Services.search.removeEngine(engine);
+  await Services.search.removeEngine(privateEngine);
 
   for (let extension of extensions) {
     await extension.unload();

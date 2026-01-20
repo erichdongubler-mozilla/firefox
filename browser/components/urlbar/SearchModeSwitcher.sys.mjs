@@ -8,7 +8,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   OpenSearchManager:
     "moz-src:///browser/components/search/OpenSearchManager.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarSearchUtils:
@@ -373,7 +372,7 @@ export class SearchModeSwitcher {
   }
 
   async #getDisplayedEngineDetails(searchMode = null) {
-    if (!lazy.SearchService.hasSuccessfullyInitialized) {
+    if (!Services.search.hasSuccessfullyInitialized) {
       return { label: null, icon: SearchModeSwitcher.DEFAULT_ICON };
     }
 
@@ -432,7 +431,7 @@ export class SearchModeSwitcher {
     // Add engines installed.
     let engines = [];
     try {
-      engines = await lazy.SearchService.getVisibleEngines();
+      engines = await Services.search.getVisibleEngines();
     } catch {
       console.error("Failed to fetch engines");
     }
@@ -597,9 +596,7 @@ export class SearchModeSwitcher {
 
     let observer = engineObj => {
       Services.obs.removeObserver(observer, topic);
-      let eng = lazy.SearchService.getEngineByName(
-        engineObj.wrappedJSObject.name
-      );
+      let eng = Services.search.getEngineByName(engineObj.wrappedJSObject.name);
       this.search({
         engine: eng,
         openEngineHomePage: e.shiftKey,

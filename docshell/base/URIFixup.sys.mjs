@@ -22,10 +22,6 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
-ChromeUtils.defineESModuleGetters(lazy, {
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
-});
-
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "externalProtocolService",
@@ -497,7 +493,7 @@ URIFixup.prototype = {
     }
     keyword = keyword.trim();
 
-    if (!lazy.SearchService.hasSuccessfullyInitialized) {
+    if (!Services.search.hasSuccessfullyInitialized) {
       return info;
     }
 
@@ -505,8 +501,8 @@ URIFixup.prototype = {
     // We must use an appropriate search engine depending on the private
     // context.
     let engine = isPrivateContext
-      ? lazy.SearchService.defaultPrivateEngine
-      : lazy.SearchService.defaultEngine;
+      ? Services.search.defaultPrivateEngine
+      : Services.search.defaultEngine;
 
     // We allow default search plugins to specify alternate parameters that are
     // specific to keyword searches.

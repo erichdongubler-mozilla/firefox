@@ -18,7 +18,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
 });
@@ -1565,9 +1564,10 @@ export var UITour = {
         break;
       case "search":
       case "selectedSearchEngine":
-        lazy.SearchService.getVisibleEngines()
+        Services.search
+          .getVisibleEngines()
           .then(engines => {
-            let { defaultEngine } = lazy.SearchService;
+            let { defaultEngine } = Services.search;
             this.sendPageCallback(aBrowser, aCallbackID, {
               searchEngineIdentifier: defaultEngine.isAppProvided
                 ? defaultEngine.id
@@ -1926,11 +1926,11 @@ export var UITour = {
   },
 
   async selectSearchEngine(id) {
-    let engine = lazy.SearchService.getEngineById(id);
+    let engine = Services.search.getEngineById(id);
     if (!engine || engine.hidden) {
       throw new Error("selectSearchEngine could not find engine with given ID");
     }
-    return lazy.SearchService.setDefault(
+    return Services.search.setDefault(
       engine,
       Ci.nsISearchService.CHANGE_REASON_UITOUR
     );

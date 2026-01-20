@@ -17,7 +17,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
   L10nCache: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarProviderOpenTabs:
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
@@ -2689,7 +2688,7 @@ export class UrlbarView {
     }
 
     let engineName =
-      row.result.payload.engine || lazy.SearchService.defaultEngine.name;
+      row.result.payload.engine || Services.search.defaultEngine.name;
 
     if (row.result.payload.trending) {
       return {
@@ -3518,13 +3517,13 @@ export class UrlbarView {
     // ongoing. Generally there's no reason for our string-caching paths to be
     // async and it may even be a bad idea (except for the final necessary
     // `this.#l10nCache.ensureAll()` call).
-    if (!lazy.SearchService.hasSuccessfullyInitialized) {
+    if (!Services.search.hasSuccessfullyInitialized) {
       return [];
     }
 
     let idArgs = [];
 
-    let { defaultEngine, defaultPrivateEngine } = lazy.SearchService;
+    let { defaultEngine, defaultPrivateEngine } = Services.search;
     let engineNames = [defaultEngine?.name, defaultPrivateEngine?.name].filter(
       name => name
     );

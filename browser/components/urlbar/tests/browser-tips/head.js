@@ -16,7 +16,6 @@ Services.scriptloader.loadSubScript(
 ChromeUtils.defineESModuleGetters(this, {
   HttpServer: "resource://testing-common/httpd.sys.mjs",
   ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
   UrlbarProviderInterventions:
     "moz-src:///browser/components/urlbar/UrlbarProviderInterventions.sys.mjs",
@@ -537,7 +536,7 @@ async function checkTip(win, expectedTip, closeView = true) {
   Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.TIP, "Result type");
   let heuristic;
   let title;
-  let name = SearchService.defaultEngine.name;
+  let name = Services.search.defaultEngine.name;
   switch (expectedTip) {
     case UrlbarProviderSearchTips.TIP_TYPE.ONBOARD:
       heuristic = true;
@@ -713,9 +712,9 @@ function resetSearchTipsProvider() {
 }
 
 async function setDefaultEngine(name) {
-  let engine = (await SearchService.getEngines()).find(e => e.name == name);
+  let engine = (await Services.search.getEngines()).find(e => e.name == name);
   Assert.ok(engine);
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );

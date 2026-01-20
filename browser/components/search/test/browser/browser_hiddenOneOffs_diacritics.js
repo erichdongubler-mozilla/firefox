@@ -21,12 +21,12 @@ add_setup(async function () {
   });
   searchIcon = searchbar.querySelector(".searchbar-search-button");
 
-  let defaultEngine = await SearchService.getDefault();
+  let defaultEngine = await Services.search.getDefault();
   engine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + "testEngine_diacritics.xml",
   });
   registerCleanupFunction(async () => {
-    await SearchService.setDefault(
+    await Services.search.setDefault(
       defaultEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
