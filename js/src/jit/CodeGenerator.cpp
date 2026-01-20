@@ -15568,18 +15568,11 @@ void CodeGenerator::visitStringTrimStartIndex(LStringTrimStartIndex* lir) {
   Register string = ToRegister(lir->string());
   Register output = ToRegister(lir->output());
 
-  auto volatileRegs = liveVolatileRegs(lir);
-  volatileRegs.takeUnchecked(output);
-
-  masm.PushRegsInMask(volatileRegs);
-
   using Fn = int32_t (*)(const JSString*);
   masm.setupAlignedABICall();
   masm.passABIArg(string);
   masm.callWithABI<Fn, jit::StringTrimStartIndex>();
   masm.storeCallInt32Result(output);
-
-  masm.PopRegsInMask(volatileRegs);
 }
 
 void CodeGenerator::visitStringTrimEndIndex(LStringTrimEndIndex* lir) {
@@ -15587,19 +15580,12 @@ void CodeGenerator::visitStringTrimEndIndex(LStringTrimEndIndex* lir) {
   Register start = ToRegister(lir->start());
   Register output = ToRegister(lir->output());
 
-  auto volatileRegs = liveVolatileRegs(lir);
-  volatileRegs.takeUnchecked(output);
-
-  masm.PushRegsInMask(volatileRegs);
-
   using Fn = int32_t (*)(const JSString*, int32_t);
   masm.setupAlignedABICall();
   masm.passABIArg(string);
   masm.passABIArg(start);
   masm.callWithABI<Fn, jit::StringTrimEndIndex>();
   masm.storeCallInt32Result(output);
-
-  masm.PopRegsInMask(volatileRegs);
 }
 
 void CodeGenerator::visitStringSplit(LStringSplit* lir) {
