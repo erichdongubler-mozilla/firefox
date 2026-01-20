@@ -5946,15 +5946,16 @@ static bool OriginalPromiseThenBuiltin(JSContext* cx, HandleValue promiseVal,
   cx->check(promiseVal, onFulfilled, onRejected);
   MOZ_ASSERT(CanCallOriginalPromiseThenBuiltin(cx, promiseVal));
 
-  Rooted<PromiseObject*> promise(cx,
-                                 &promiseVal.toObject().as<PromiseObject>());
+  RootedTuple<PromiseObject*, PromiseCapability> roots(cx);
+  RootedField<PromiseObject*, 0> promise(
+      roots, &promiseVal.toObject().as<PromiseObject>());
 
   bool rvalUsed = rvalExplicitlyUsed ||
                   IsPromiseThenOrCatchRetValImplicitlyUsed(cx, promise);
 
   // Step 3. Let C be ? SpeciesConstructor(promise, %Promise%).
   // Step 4. Let resultCapability be ? NewPromiseCapability(C).
-  Rooted<PromiseCapability> resultCapability(cx);
+  RootedField<PromiseCapability, 1> resultCapability(roots);
   if (rvalUsed) {
     PromiseObject* resultPromise =
         CreatePromiseObjectWithoutResolutionFunctions(cx);
@@ -6104,8 +6105,13 @@ template <typename T>
                                         PromiseHandler onFulfilled,
                                         PromiseHandler onRejected,
                                         T extraStep) {
+  RootedTuple<JSObject*, PromiseObject*, Value, Value, PromiseCapability,
+              PromiseReactionRecord*>
+      roots(cx);
+
   // Step 2. Let promise be ? PromiseResolve(%Promise%, value).
-  RootedObject promise(cx, PromiseObject::unforgeableResolve(cx, value));
+  RootedField<JSObject*, 0> promise(
+      roots, PromiseObject::unforgeableResolve(cx, value));
   if (!promise) {
     return false;
   }
@@ -6113,8 +6119,8 @@ template <typename T>
   // This downcast is safe because unforgeableResolve either returns `value`
   // (only if it is already a possibly-wrapped promise) or creates a new
   // promise using the Promise constructor.
-  Rooted<PromiseObject*> unwrappedPromise(
-      cx, UnwrapAndDowncastObject<PromiseObject>(cx, promise));
+  RootedField<PromiseObject*, 1> unwrappedPromise(
+      roots, UnwrapAndDowncastObject<PromiseObject>(cx, promise));
   if (!unwrappedPromise) {
     return false;
   }
@@ -6122,9 +6128,10 @@ template <typename T>
   // Steps 3-6 for creating onFulfilled/onRejected are done by caller.
 
   // Step 7. Perform ! PerformPromiseThen(promise, onFulfilled, onRejected).
-  RootedValue onFulfilledValue(cx, Int32Value(int32_t(onFulfilled)));
-  RootedValue onRejectedValue(cx, Int32Value(int32_t(onRejected)));
-  Rooted<PromiseCapability> resultCapability(cx);
+  RootedField<Value, 2> onFulfilledValue(roots,
+                                         Int32Value(int32_t(onFulfilled)));
+  RootedField<Value, 3> onRejectedValue(roots, Int32Value(int32_t(onRejected)));
+  RootedField<PromiseCapability, 4> resultCapability(roots);
   resultCapability.promise().set(resultPromise);
 
   auto hostDefinedDataObjectOption =
@@ -6132,9 +6139,9 @@ template <typename T>
           ? HostDefinedDataObjectOption::Allocate
           : HostDefinedDataObjectOption::OptimizeOut;
 
-  Rooted<PromiseReactionRecord*> reaction(
-      cx, NewReactionRecord(cx, resultCapability, onFulfilledValue,
-                            onRejectedValue, hostDefinedDataObjectOption));
+  RootedField<PromiseReactionRecord*, 5> reaction(
+      roots, NewReactionRecord(cx, resultCapability, onFulfilledValue,
+                               onRejectedValue, hostDefinedDataObjectOption));
   if (!reaction) {
     return false;
   }
