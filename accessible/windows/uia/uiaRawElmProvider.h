@@ -55,6 +55,9 @@ class uiaRawElmProvider : public IAccessibleEx,
                                          uint32_t aGeckoEvent);
   static void RaiseUiaEventForStateChange(Accessible* aAcc, uint64_t aState,
                                           bool aEnabled);
+  static void RaiseUiaNotificationEvent(Accessible* aAcc,
+                                        const nsAString& aAnnouncement,
+                                        uint16_t aPriority);
 
   // IUnknown
   STDMETHODIMP QueryInterface(REFIID aIid, void** aInterface);

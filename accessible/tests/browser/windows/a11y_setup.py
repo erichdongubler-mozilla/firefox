@@ -94,8 +94,8 @@ del ia2Mod
 uiaMod = comtypes.client.GetModule("UIAutomationCore.dll")
 globals().update((k, getattr(uiaMod, k)) for k in uiaMod.__all__)
 uiaClient = comtypes.CoCreateInstance(
-    uiaMod.CUIAutomation._reg_clsid_,
-    interface=uiaMod.IUIAutomation,
+    uiaMod.CUIAutomation8._reg_clsid_,
+    interface=uiaMod.IUIAutomation5,
     clsctx=comtypes.CLSCTX_INPROC_SERVER,
 )
 
@@ -368,6 +368,7 @@ class WaitForUiaEvent(comtypes.COMObject):
         uiaMod.IUIAutomationFocusChangedEventHandler,
         uiaMod.IUIAutomationPropertyChangedEventHandler,
         uiaMod.IUIAutomationEventHandler,
+        uiaMod.IUIAutomationNotificationEventHandler,
     ]
 
     def __init__(self, *, eventId=None, property=None, match=None):
@@ -383,6 +384,13 @@ class WaitForUiaEvent(comtypes.COMObject):
         self._signal = ctypes.windll.kernel32.CreateEventW(None, True, False, None)
         if eventId == uiaMod.UIA_AutomationFocusChangedEventId:
             uiaClient.AddFocusChangedEventHandler(None, self)
+        elif eventId == uiaMod.UIA_NotificationEventId:
+            uiaClient.AddNotificationEventHandler(
+                uiaClient.GetRootElement(),
+                uiaMod.TreeScope_Subtree,
+                None,
+                self,
+            )
         elif eventId:
             # Generic automation event.
             uiaClient.AddAutomationEventHandler(
@@ -429,6 +437,24 @@ class WaitForUiaEvent(comtypes.COMObject):
 
     def HandleAutomationEvent(self, sender, eventId):
         self._checkMatch(UiaEvent(sender))
+
+    def HandleNotificationEvent(
+        self,
+        sender,
+        notificationKind,
+        notificationProcessing,
+        displayString,
+        activityId,
+    ):
+        self._checkMatch(
+            UiaEvent(
+                sender,
+                notificationKind=notificationKind,
+                notificationProcessing=notificationProcessing,
+                displayString=displayString,
+                activityId=activityId,
+            )
+        )
 
     def wait(self):
         """Wait for and return the desired UiaEvent."""
