@@ -2166,7 +2166,11 @@ void HTMLInputElement::GetColor(InputPickerColor& aValue) {
   nsAutoString value;
   GetValue(value, CallerType::System);
 
-  StyleAbsoluteColor color = MaybeComputeColorOrBlack(OwnerDoc(), value);
+  // We should pass colorspace info to the color picker (bug 2009748), but for
+  // now we pass sRGB values.
+  StyleAbsoluteColor color = MaybeComputeColorOrBlack(OwnerDoc(), value)
+                                 .ToColorSpace(StyleColorSpace::Srgb);
+  ClampColorComponents(color);
   aValue.mComponent1 = color.components._0;
   aValue.mComponent2 = color.components._1;
   aValue.mComponent3 = color.components._2;
