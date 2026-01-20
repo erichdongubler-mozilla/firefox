@@ -33,7 +33,6 @@
 #include "jit/JitCommon.h"
 #include "jit/JitRuntime.h"
 #include "jit/Registers.h"
-#include "js/ForOfIterator.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/Stack.h"                 // JS::NativeStackLimitMin
 #include "util/StringBuilder.h"
@@ -178,8 +177,8 @@ static bool UnpackResults(JSContext* cx, const ValTypeVector& resultTypes,
   }
 
   MOZ_ASSERT(stackResultsArea.isSome());
-  Rooted<ArrayObject*> array(cx);
-  if (!IterableToArray(cx, rval, &array)) {
+  Rooted<ArrayObject*> array(cx, IterableToArray(cx, rval));
+  if (!array) {
     return false;
   }
 

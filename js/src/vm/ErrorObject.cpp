@@ -403,8 +403,8 @@ static bool AggregateError(JSContext* cx, unsigned argc, Value* vp) {
 
   // Step 4.
 
-  Rooted<ArrayObject*> errorsList(cx);
-  if (!IterableToArray(cx, args.get(0), &errorsList)) {
+  Rooted<ArrayObject*> errorsList(cx, IterableToArray(cx, args.get(0)));
+  if (!errorsList) {
     return false;
   }
 
