@@ -35,7 +35,8 @@ Key Features
   the machine
 - **Real-time Interaction**: Provides live access to browser state and network
   activity
-- **Firefox Output Capture**: stdout/stderr capturing, including setting and reading MOZ_LOG
+- **Firefox Output Capture**: stdout/stderr capturing, including setting and
+  reading MOZ_LOG
 
 Prerequisites
 =============
@@ -50,86 +51,40 @@ Required Software
 Installation and Configuration
 ===============================
 
-Step 1: Clone and Build the MCP Server
----------------------------------------
-
-First, clone the Mozilla fork with enhanced logging capabilities (we'll try to
-upstream those changes):
+Claude Code can install and configure the MCP server with a single command:
 
 .. code-block:: bash
 
-   git clone https://github.com/padenot/firefox-devtools-mcp.git
-   cd firefox-devtools-mcp
-   npm install
-   npm run build
+   claude mcp add firefox-devtools npx @padenot/firefox-devtools-mcp
 
-Step 2: Add the MCP Server to Claude Code
-------------------------------------------
+This command registers the MCP server with your Claude Code configuration for
+the current project (typically ``project/.claude/``).
 
-Using Claude Code CLI
-~~~~~~~~~~~~~~~~~~~~~
-
-The simplest method is to use the Claude Code command-line interface:
+If a global installation is preferred (so that it works from multiple project
+directories), it can be installed at the user scope:
 
 .. code-block:: bash
 
-   claude mcp add firefox-devtools node /path/to/firefox-devtools-mcp/dist/index.js
+   claude mcp add firefox-devtools npx @padenot/firefox-devtools-mcp --scope user
 
-Replace ``/path/to/firefox-devtools-mcp`` with the actual path where you cloned the repository.
+This changes ``~/.claude.json``, either in the project section, or in the global
+section (if installed at the user scope).
 
-This command registers the MCP server with your Claude Code configuration for the current project.
-
-Manual Configuration
-~~~~~~~~~~~~~~~~~~~~
-
-Alternatively, you can manually edit your Claude Code configuration file:
-
-**Configuration file locations:**
-
-- **macOS**: ``~/Library/Application Support/Claude/Code/mcp_settings.json``
-- **Linux**: ``~/.config/claude/code/mcp_settings.json``
-- **Windows**: ``%APPDATA%\Claude\Code\mcp_settings.json``
-
-Add the following to your project's ``mcpServers`` section:
-
-.. code-block:: json
-
-   {
-     "projects": {
-       "/path/to/firefox": {
-         "mcpServers": {
-           "firefox-devtools": {
-             "type": "stdio",
-             "command": "node",
-             "args": [
-               "/path/to/firefox-devtools-mcp/dist/index.js",
-               "--firefox-path",
-               "/path/to/firefox/obj-x86_64-pc-linux-gnu/dist/bin/firefox"
-             ],
-             "env": {}
-           }
-         }
-       }
-     }
-   }
-
-Replace paths with your actual locations.
-
-Step 3: Configure Local Firefox Build
---------------------------------------
-
-To use your local Firefox development build, add the ``--firefox-path`` argument
-pointing to your compiled Firefox binary, which is in the objdir, e.g. for a
-standard Linux build:
+After installation and/or configuration restart Claude Code to load the new MCP
+server:
 
 .. code-block:: bash
 
-   --firefox-path /path/to/mozilla-central/obj-x86_64-pc-linux-gnu/dist/bin/firefox
+   # Exit Claude Code, then restart it, continuing the last session
+   claude -c
 
-Step 4: Configuration Options
-------------------------------
+The MCP server will automatically start when Claude Code initializes.
 
-The MCP server supports several command-line options:
+Configuration options
+---------------------
+
+The MCP server supports several command-line options. It's preferable to start
+with no options, but they exist:
 
 .. list-table::
    :widths: 25 75
@@ -161,9 +116,9 @@ Example with multiple options:
 .. code-block:: json
 
    {
-     "command": "node",
-     "args": [
-       "/path/to/firefox-devtools-mcp/dist/index.js",
+      "type": "stdio",
+      "command": "@padenot/firefox-devtools-mcp",
+      "args": [
        "--firefox-path",
        "/home/developer/firefox/obj-x86_64-pc-linux-gnu/dist/bin/firefox",
        "--headless",
@@ -174,18 +129,6 @@ Example with multiple options:
      ]
    }
 
-Step 5: Restart Claude Code
-----------------------------
-
-After configuration, restart Claude Code to load the new MCP server:
-
-.. code-block:: bash
-
-   # Exit Claude Code, then restart it, continuing the last session
-   claude -c
-
-The MCP server will automatically start when Claude Code initializes.
-
 Available Capabilities
 ======================
 
@@ -193,6 +136,10 @@ The ``firefox-devtools-mcp`` provides tools through the MCP protocol. Tool names
 are generally self-describing. Simply ask your AI assistant to perform tasks - it
 will use the appropriate tools. This list may not be complete as the server is
 under active development.
+
+Importantly, you can instruct the agent to run a different Firefox than the one
+it picked, e.g. your own build, or some specific version, by telling it the
+path: it isn't necessary to configure it.
 
 **Page Management:**
 ``list_pages``, ``new_page``, ``navigate_page``, ``select_page``, ``close_page``
