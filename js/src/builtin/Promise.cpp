@@ -1518,6 +1518,8 @@ void ReportThenable(JSContext* cx, bool isOnProto, bool isOnStandardProto,
   cx->check(promise, resolutionVal);
   MOZ_ASSERT(!IsSettledMaybeWrappedPromise(promise));
 
+  RootedTuple<JSObject*, Value, SavedFrame*, Value, Value> roots(cx);
+
   // (reordered)
   // Step 8. If Type(resolution) is not Object, then
   if (!resolutionVal.isObject()) {
@@ -1525,15 +1527,15 @@ void ReportThenable(JSContext* cx, bool isOnProto, bool isOnStandardProto,
     return FulfillMaybeWrappedPromise(cx, promise, resolutionVal);
   }
 
-  RootedObject resolution(cx, &resolutionVal.toObject());
+  RootedField<JSObject*, 0> resolution(roots, &resolutionVal.toObject());
 
   // Step 7. If SameValue(resolution, promise) is true, then
   if (resolution == promise) {
     // Step 7.a. Let selfResolutionError be a newly created TypeError object.
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_CANNOT_RESOLVE_PROMISE_WITH_ITSELF);
-    RootedValue selfResolutionError(cx);
-    Rooted<SavedFrame*> stack(cx);
+    RootedField<Value, 1> selfResolutionError(roots);
+    RootedField<SavedFrame*, 2> stack(roots);
     if (!MaybeGetAndClearExceptionAndStack(cx, &selfResolutionError, &stack)) {
       return false;
     }
@@ -1543,15 +1545,15 @@ void ReportThenable(JSContext* cx, bool isOnProto, bool isOnStandardProto,
   }
 
   // Step 9. Let then be Get(resolution, "then").
-  RootedValue thenVal(cx);
+  RootedField<Value, 1> thenVal(roots);
   bool isOnProto = false;
   bool isOnStandardProto = false;
   bool isOnObjectProto = false;
   bool status = GetThenValue(cx, resolution, resolutionVal, &thenVal,
                              &isOnProto, &isOnStandardProto, &isOnObjectProto);
 
-  RootedValue error(cx);
-  Rooted<SavedFrame*> errorStack(cx);
+  RootedField<Value, 3> error(roots);
+  RootedField<SavedFrame*, 2> errorStack(roots);
 
   // Step 10. If then is an abrupt completion, then
   if (!status) {
@@ -1608,7 +1610,7 @@ void ReportThenable(JSContext* cx, bool isOnProto, bool isOnStandardProto,
   if (!isBuiltinThen) {
     ReportThenable(cx, isOnProto, isOnStandardProto, isOnObjectProto);
 
-    RootedValue promiseVal(cx, ObjectValue(*promise));
+    RootedField<Value, 4> promiseVal(roots, ObjectValue(*promise));
     if (!EnqueuePromiseResolveThenableJob(cx, promiseVal, resolutionVal,
                                           thenVal)) {
       return false;
