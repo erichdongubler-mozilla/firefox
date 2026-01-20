@@ -2061,8 +2061,9 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
 [[nodiscard]] static bool FulfillMaybeWrappedPromise(JSContext* cx,
                                                      HandleObject promiseObj,
                                                      HandleValue value_) {
-  Rooted<PromiseObject*> promise(cx);
-  RootedValue value(cx, value_);
+  RootedTuple<PromiseObject*, Value> roots(cx);
+  RootedField<PromiseObject*, 0> promise(roots);
+  RootedField<Value, 1> value(roots, value_);
 
   mozilla::Maybe<AutoRealm> ar;
   if (!IsProxy(promiseObj)) {
