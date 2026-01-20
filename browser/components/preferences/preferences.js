@@ -249,6 +249,7 @@ const CONFIG_PANES = Object.freeze({
     parent: "privacy",
     l10nId: "autofill-payment-methods-manage-payments-title",
     groupIds: ["managePayments"],
+    iconSrc: "chrome://browser/skin/payment-methods-16.svg",
   },
   paneProfiles: {
     parent: "general",
@@ -269,6 +270,7 @@ const CONFIG_PANES = Object.freeze({
     parent: "privacy",
     l10nId: "autofill-addresses-manage-addresses-title",
     groupIds: ["manageAddresses"],
+    iconSrc: "chrome://browser/skin/notification-icons/geo.svg",
   },
   translations: {
     parent: "general",
