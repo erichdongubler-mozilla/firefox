@@ -413,6 +413,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
             fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
             closeSyncedTabsUseCases = requireComponents.useCases.closeSyncedTabsUseCases,
             bookmarksStorage = requireComponents.core.bookmarksStorage,
+            mainDispatcher = Dispatchers.Main,
             ioDispatcher = Dispatchers.IO,
             collectionStorage = requireComponents.core.tabCollectionStorage,
             dismissTray = ::dismissTabsTray,
