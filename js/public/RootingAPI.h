@@ -1335,8 +1335,10 @@ class RootedTuple {
 template <typename T, size_t N /* = SIZE_MAX */>
 class MOZ_RAII RootedField : public js::RootedOperations<T, RootedField<T, N>> {
   T* ptr;
-  friend class Handle<T>;
-  friend class MutableHandle<T>;
+  template <typename U>
+  friend class Handle;
+  template <typename U>
+  friend class MutableHandle;
 
 #ifdef DEBUG
   bool* inUseFlag = nullptr;
