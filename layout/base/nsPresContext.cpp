@@ -1288,13 +1288,13 @@ void nsPresContext::SetSMILAnimations(dom::Document* aDoc, uint16_t aNewMode,
       case imgIContainer::kNormalAnimMode:
       case imgIContainer::kLoopOnceAnimMode:
         if (aOldMode == imgIContainer::kDontAnimMode) {
-          controller->Resume(SMILTimeContainer::PAUSE_USERPREF);
+          controller->Resume(SMILTimeContainer::PauseType::UserPref);
         }
         break;
 
       case imgIContainer::kDontAnimMode:
         if (aOldMode != imgIContainer::kDontAnimMode) {
-          controller->Pause(SMILTimeContainer::PAUSE_USERPREF);
+          controller->Pause(SMILTimeContainer::PauseType::UserPref);
         }
         break;
     }

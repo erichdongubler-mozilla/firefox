@@ -497,7 +497,7 @@ void SMILTimedElement::DoSampleAt(SMILTime aContainerTime, bool aEndOnly) {
   // start) we transfer a node from another document fragment that has already
   // started. In such a case we might receive milestone samples registered with
   // the already active container.
-  if (GetTimeContainer()->IsPausedByType(SMILTimeContainer::PAUSE_BEGIN))
+  if (GetTimeContainer()->IsPausedByType(SMILTimeContainer::PauseType::Begin))
     return;
 
   // We use an end-sample to start animation since an end-sample lets us

@@ -8286,11 +8286,12 @@ nsISupports* Document::GetContainer() const {
 
 void Document::SetScriptGlobalObject(
     nsIScriptGlobalObject* aScriptGlobalObject) {
-  MOZ_ASSERT(aScriptGlobalObject || !mAnimationController ||
-                 mAnimationController->IsPausedByType(
-                     SMILTimeContainer::PAUSE_PAGEHIDE |
-                     SMILTimeContainer::PAUSE_BEGIN),
-             "Clearing window pointer while animations are unpaused");
+  MOZ_ASSERT(
+      aScriptGlobalObject || !mAnimationController ||
+          mAnimationController->IsPausedByType(SMILTimeContainer::PauseTypes(
+              SMILTimeContainer::PauseType::PageHide,
+              SMILTimeContainer::PauseType::Begin)),
+      "Clearing window pointer while animations are unpaused");
 
   if (mScriptGlobalObject && !aScriptGlobalObject) {
     // We're detaching from the window.  We need to grab a pointer to
@@ -10101,7 +10102,7 @@ SMILAnimationController* Document::GetAnimationController() {
   nsPresContext* context = GetPresContext();
   if (mAnimationController && context &&
       context->ImageAnimationMode() == imgIContainer::kDontAnimMode) {
-    mAnimationController->Pause(SMILTimeContainer::PAUSE_USERPREF);
+    mAnimationController->Pause(SMILTimeContainer::PauseType::UserPref);
   }
 
   // If we're hidden (or being hidden), notify the newly-created animation
