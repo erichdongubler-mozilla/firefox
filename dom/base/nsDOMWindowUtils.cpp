@@ -3303,6 +3303,24 @@ nsDOMWindowUtils::CheckAndClearDisplayListState(Element* aElement,
 }
 
 NS_IMETHODIMP
+nsDOMWindowUtils::CheckAndClearWRDidRasterize(bool* aResult) {
+  *aResult = false;
+
+  nsIWidget* widget = GetWidget();
+  if (!widget) {
+    return NS_OK;
+  }
+
+  CompositorBridgeChild* cbc = GetCompositorBridge();
+  if (!cbc) {
+    return NS_OK;
+  }
+
+  cbc->SendCheckAndClearWRDidRasterize(widget->GetLayersId(), aResult);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsDOMWindowUtils::EnableDialogs() {
   nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryReferent(mWindow);
   NS_ENSURE_TRUE(window, NS_ERROR_FAILURE);

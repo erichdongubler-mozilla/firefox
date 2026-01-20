@@ -903,6 +903,41 @@ void WebRenderAPI::WaitUntilPresentationFlushed() {
   task.Wait();
 }
 
+bool WebRenderAPI::CheckAndClearDidRasterize() {
+  class CheckRasterizeEvent : public RendererEvent {
+   public:
+    CheckRasterizeEvent(layers::SynchronousTask* aTask, bool* aResult)
+        : mTask(aTask), mResult(aResult) {
+      MOZ_COUNT_CTOR(CheckRasterizeEvent);
+    }
+
+    MOZ_COUNTED_DTOR_OVERRIDE(CheckRasterizeEvent)
+
+    void Run(RenderThread& aRenderThread, WindowId aWindowId) override {
+      if (RendererOGL* renderer = aRenderThread.GetRenderer(aWindowId)) {
+        *mResult = renderer->CheckAndClearDidRasterize();
+      } else {
+        *mResult = false;
+      }
+      layers::AutoCompleteTask complete(mTask);
+    }
+
+    const char* Name() override { return "CheckRasterizeEvent"; }
+
+   private:
+    layers::SynchronousTask* mTask;
+    bool* mResult;
+  };
+
+  bool result = false;
+  layers::SynchronousTask task("CheckAndClearDidRasterize");
+  auto event = MakeUnique<CheckRasterizeEvent>(&task, &result);
+  RunOnRenderThread(std::move(event));
+
+  task.Wait();
+  return result;
+}
+
 void WebRenderAPI::Capture() {
   // see CaptureBits
   // SCENE | FRAME | TILE_CACHE

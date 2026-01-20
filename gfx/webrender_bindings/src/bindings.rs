@@ -648,11 +648,13 @@ pub extern "C" fn wr_renderer_render(
     buffer_age: usize,
     out_stats: &mut RendererStats,
     out_dirty_rects: &mut ThinVec<DeviceIntRect>,
+    out_did_rasterize: &mut bool,
 ) -> bool {
     match renderer.render(DeviceIntSize::new(width, height), buffer_age) {
         Ok(results) => {
             *out_stats = results.stats;
             out_dirty_rects.extend(results.dirty_rects);
+            *out_did_rasterize = results.did_rasterize_any_tile;
             true
         },
         Err(errors) => {

@@ -4833,6 +4833,9 @@ pub struct RenderResults {
     /// Information about the state of picture cache tiles. This is only
     /// allocated and stored if config.testing is true (such as wrench)
     pub picture_cache_debug: PictureCacheDebugInfo,
+
+    /// Whether any tile was rasterized (had is_valid = false)
+    pub did_rasterize_any_tile: bool,
 }
 
 #[cfg(any(feature = "capture", feature = "replay"))]

@@ -1217,6 +1217,7 @@ impl Renderer {
                 &mut frame.composite_state.picture_cache_debug,
                 PictureCacheDebugInfo::new(),
             );
+            results.did_rasterize_any_tile = frame.composite_state.did_rasterize_any_tile;
 
             let size = frame.device_rect.size().to_f32();
             let surface_origin_is_top_left = self.device.surface_origin_is_top_left();

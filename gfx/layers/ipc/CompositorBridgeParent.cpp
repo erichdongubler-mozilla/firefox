@@ -1908,6 +1908,19 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvEndRecording(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult CompositorBridgeParent::RecvCheckAndClearWRDidRasterize(
+    const LayersId& aId, bool* aDidRasterize) {
+  *aDidRasterize = false;
+
+  if (mWrBridge) {
+    if (RefPtr<wr::WebRenderAPI> api = mWrBridge->GetWebRenderAPI()) {
+      *aDidRasterize = api->CheckAndClearDidRasterize();
+    }
+  }
+
+  return IPC_OK();
+}
+
 void CompositorBridgeParent::FlushPendingWrTransactionEventsWithWait() {
   if (!mWrBridge) {
     return;

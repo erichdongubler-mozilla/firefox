@@ -133,6 +133,7 @@ export const globals = {
     failedOpaqueLayerMessages: [],
     failedAssignedLayer: false,
     failedAssignedLayerMessages: [],
+    failedNoWRRaster: false,
 
     startAfter: undefined,
     suiteStarted: false,

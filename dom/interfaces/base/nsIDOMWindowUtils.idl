@@ -1647,6 +1647,12 @@ interface nsIDOMWindowUtils : nsISupports {
   boolean checkAndClearDisplayListState(in Element aElement);
 
   /**
+   * Check if WebRender rasterized any tiles during the last frame, and
+   * clear the state. Used by reftests with reftest-no-wr-raster class.
+   */
+  boolean checkAndClearWRDidRasterize();
+
+  /**
    * Get internal id of the stored blob, file or file handle.
    */
   [implicit_jscontext] long long getFileId(in jsval aFile);

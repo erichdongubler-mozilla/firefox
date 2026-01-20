@@ -83,6 +83,9 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
   mozilla::ipc::IPCResult RecvCheckContentOnlyTDR(
       const uint32_t& sequenceNum, bool* isContentOnlyTDR) override;
 
+  mozilla::ipc::IPCResult RecvCheckAndClearWRDidRasterize(
+      const LayersId& aId, bool* aDidRasterize) override;
+
   mozilla::ipc::IPCResult RecvDynamicToolbarOffsetChanged(
       const int32_t& aOffset) override {
     return IPC_FAIL_NO_REASON(this);

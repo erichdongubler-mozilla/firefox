@@ -1452,7 +1452,8 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
         g.failedNoDisplayList ||
         g.failedDisplayList ||
         g.failedOpaqueLayer ||
-        g.failedAssignedLayer;
+        g.failedAssignedLayer ||
+        g.failedNoWRRaster;
 
       // whether the comparison result matches what is in the manifest
       var test_passed =
@@ -1512,6 +1513,9 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
             "failed reftest-assigned-layer: " +
               g.failedAssignedLayerMessages.join(", ")
           );
+        }
+        if (g.failedNoWRRaster) {
+          failures.push("failed reftest-no-wr-raster");
         }
         var failureString = failures.join(", ");
         logger.testStatus(
@@ -1718,6 +1722,7 @@ function FinishTestItem() {
   g.failedOpaqueLayerMessages = [];
   g.failedAssignedLayer = false;
   g.failedAssignedLayerMessages = [];
+  g.failedNoWRRaster = false;
 }
 
 async function DoAssertionCheck(numAsserts) {
@@ -1864,6 +1869,12 @@ function RegisterMessageListenersAndLoadContentScript(aReload) {
     }
   );
   g.browserMessageManager.addMessageListener(
+    "reftest:FailedNoWRRaster",
+    function () {
+      RecvFailedNoWRRaster();
+    }
+  );
+  g.browserMessageManager.addMessageListener(
     "reftest:InitCanvasWithSnapshot",
     function () {
       RecvInitCanvasWithSnapshot();
@@ -1986,6 +1997,10 @@ function RecvFailedOpaqueLayer(why) {
 function RecvFailedAssignedLayer(why) {
   g.failedAssignedLayer = true;
   g.failedAssignedLayerMessages.push(why);
+}
+
+function RecvFailedNoWRRaster() {
+  g.failedNoWRRaster = true;
 }
 
 async function RecvInitCanvasWithSnapshot() {
