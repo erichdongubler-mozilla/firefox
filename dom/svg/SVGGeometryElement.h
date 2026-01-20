@@ -7,19 +7,20 @@
 #ifndef DOM_SVG_SVGGEOMETRYELEMENT_H_
 #define DOM_SVG_SVGGEOMETRYELEMENT_H_
 
+#include "mozilla/EnumeratedArray.h"
 #include "mozilla/dom/SVGAnimatedNumber.h"
 #include "mozilla/dom/SVGGraphicsElement.h"
 #include "mozilla/gfx/2D.h"
 
 namespace mozilla {
 
-struct SVGMark {
-  enum Type {
-    eStart,
-    eMid,
-    eEnd,
+class SVGMarkerFrame;
 
-    eTypeCount
+struct SVGMark {
+  enum class Type {
+    Start,
+    Mid,
+    End,
   };
 
   float x, y, angle;
@@ -27,6 +28,14 @@ struct SVGMark {
   SVGMark(float aX, float aY, float aAngle, Type aType)
       : x(aX), y(aY), angle(aAngle), type(aType) {}
 };
+
+// Glue to make EnumeratedArray work with SVGMark::Type.
+template <>
+struct MaxContiguousEnumValue<SVGMark::Type> {
+  static constexpr auto value = SVGMark::Type::End;
+};
+
+using SVGMarkerFrames = EnumeratedArray<SVGMark::Type, SVGMarkerFrame*>;
 
 namespace dom {
 

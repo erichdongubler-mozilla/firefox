@@ -1341,8 +1341,8 @@ static already_AddRefed<SVGReference> GetMarkerURI(
   return ResolveURLUsingLocalRef(url.AsUrl());
 }
 
-bool SVGObserverUtils::GetAndObserveMarkers(
-    nsIFrame* aMarkedFrame, SVGMarkerFrame* (*aFrames)[SVGMark::eTypeCount]) {
+bool SVGObserverUtils::GetAndObserveMarkers(nsIFrame* aMarkedFrame,
+                                            SVGMarkerFrames* aFrames) {
   MOZ_ASSERT(!aMarkedFrame->GetPrevContinuation() &&
                  aMarkedFrame->IsSVGGeometryFrame() &&
                  static_cast<SVGGeometryElement*>(aMarkedFrame->GetContent())
@@ -1362,7 +1362,7 @@ bool SVGObserverUtils::GetAndObserveMarkers(
                           LayoutFrameType::SVGMarker, nullptr)              \
                     : nullptr;                                              \
   foundMarker = foundMarker || bool(marker);                                \
-  (*aFrames)[SVGMark::e##type] = static_cast<SVGMarkerFrame*>(marker);
+  (*aFrames)[SVGMark::Type::type] = static_cast<SVGMarkerFrame*>(marker);
 
   GET_MARKER(Start)
   GET_MARKER(Mid)

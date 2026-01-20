@@ -259,8 +259,8 @@ class SVGObserverUtils {
    * an observer to those markers.  Returns true if at least one marker type is
    * found, false otherwise.
    */
-  static bool GetAndObserveMarkers(
-      nsIFrame* aMarkedFrame, SVGMarkerFrame* (*aFrames)[SVGMark::eTypeCount]);
+  static bool GetAndObserveMarkers(nsIFrame* aMarkedFrame,
+                                   SVGMarkerFrames* aFrames);
 
   /**
    * Get the frames of the SVG filters applied to the given frame, and add the

@@ -517,7 +517,7 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   // Account for markers:
   if ((aFlags & SVGUtils::eBBoxIncludeMarkers) && element->IsMarkable()) {
-    SVGMarkerFrame* markerFrames[SVGMark::eTypeCount];
+    SVGMarkerFrames markerFrames;
     if (SVGObserverUtils::GetAndObserveMarkers(this, &markerFrames)) {
       nsTArray<SVGMark> marks;
       element->GetMarkPoints(&marks);
@@ -796,7 +796,7 @@ void SVGGeometryFrame::PaintMarkers(gfxContext& aContext,
   if (!element->IsMarkable()) {
     return;
   }
-  SVGMarkerFrame* markerFrames[SVGMark::eTypeCount];
+  SVGMarkerFrames markerFrames;
   if (!SVGObserverUtils::GetAndObserveMarkers(this, &markerFrames)) {
     return;
   }
