@@ -109,6 +109,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
 
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericPage.url) {
+            waitForPageToLoad()
         }.openSiteSecuritySheet {
             verifyETPSwitchVisibility(false)
         }.closeSiteSecuritySheet(composeTestRule) {
