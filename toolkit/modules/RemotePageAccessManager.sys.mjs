@@ -100,7 +100,12 @@ export let RemotePageAccessManager = {
         "OpenTRRPreferences",
       ],
       RPMCheckAlternateHostAvailable: ["*"],
-      RPMRecordGleanEvent: ["securityDohNeterror", "securityUiTlserror"],
+      RPMRecordGleanEvent: [
+        "securityDohNeterror",
+        "securityUiTlserror",
+        "securityUiCerterror",
+        "securityUiNeterror",
+      ],
       RPMAddMessageListener: ["*"],
       RPMRemoveMessageListener: ["*"],
       RPMGetFormatURLPref: [
@@ -125,7 +130,7 @@ export let RemotePageAccessManager = {
       RPMSetTRRDisabledLoadFlags: ["*"],
       RPMShowOSXLocalNetworkPermissionWarning: ["*"],
       RPMSendQuery: ["Browser:AddTRRExcludedDomain"],
-      RPMGetIntPref: ["network.trr.mode"],
+      RPMGetIntPref: ["network.trr.mode", "security.dialog_enable_delay"],
     },
     "about:newtab": {
       RPMSendAsyncMessage: ["ActivityStream:ContentToMain"],
