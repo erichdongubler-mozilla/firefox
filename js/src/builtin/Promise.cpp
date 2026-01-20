@@ -1730,7 +1730,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   // To properly handle that case here, unwrap it and enter its
   // compartment, where the job creation should take place anyway.
   RootedTuple<PromiseReactionRecord*, Value, Value, Value, JSObject*,
-              JSFunction*, JSObject*, JSObject*>
+              JSFunction*, JSObject*, JSObject*, JSObject*>
       roots(cx);
   RootedField<PromiseReactionRecord*, 0> reaction(roots);
   RootedField<Value, 1> handlerArg(roots, handlerArg_);
@@ -1842,7 +1842,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   // If after all this we do have an object, wrap it in case we entered the
   // handler's compartment above, because we should pass objects from a
   // single compartment to the enqueuePromiseJob callback.
-  RootedField<JSObject*, 6> promise(roots, reaction->promise());
+  RootedField<JSObject*, 4> promise(roots, reaction->promise());
   if (promise) {
     if (promise->is<PromiseObject>()) {
       if (!cx->compartment()->wrap(cx, &promise)) {
@@ -1876,7 +1876,8 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
     //
     // So instead we simply store Object.prototype from the target global,
     // an object which always exists.
-    RootedObject globalRepresentative(cx, &cx->global()->getObjectPrototype());
+    RootedField<JSObject*, 6> globalRepresentative(
+        roots, &cx->global()->getObjectPrototype());
 
     // PromiseReactionJob job will use the existence of a CCW as a signal
     // to change to the reactionVal's realm for execution. I believe
@@ -1886,8 +1887,8 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
     {
       AutoRealm ar(cx, reaction);
 
-      RootedObject stack(
-          cx,
+      RootedField<JSObject*, 7> stack(
+          roots,
           JS::MaybeGetPromiseAllocationSiteFromPossiblyWrappedPromise(promise));
       if (!cx->compartment()->wrap(cx, &stack)) {
         return false;
@@ -1897,7 +1898,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
       if (!reaction->getHostDefinedData().isObject()) {
         // We do need to still provide an incumbentGlobal here
         // MG:XXX: I'm pretty sure this can be appreciably more elegant later.
-        RootedObject hostGlobal(cx);
+        RootedField<JSObject*, 8> hostGlobal(roots);
         if (!cx->jobQueue->getHostDefinedGlobal(cx, &hostGlobal)) {
           return false;
         }
@@ -1929,7 +1930,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
     return EnqueueJob(cx, &reactionVal.toObject());
   }
 
-  RootedField<JSObject*, 7> hostDefinedData(roots);
+  RootedField<JSObject*, 6> hostDefinedData(roots);
   if (JSObject* hostDefined = reaction->getAndClearHostDefinedData()) {
     hostDefined = CheckedUnwrapStatic(hostDefined);
     MOZ_ASSERT(hostDefined);
