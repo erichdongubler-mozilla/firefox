@@ -29,13 +29,13 @@
 #  include <stdlib.h>
 #  include <unistd.h>
 char* get_current_dir_name() {
-  char* buffer = (char*)malloc(PATH_MAX * sizeof(char));
+  char* buffer = js_pod_malloc<char>(PATH_MAX);
   if (buffer == nullptr) {
     return nullptr;
   }
 
   if (getcwd(buffer, PATH_MAX) == nullptr) {
-    free(buffer);
+    js_free(buffer);
     return nullptr;
   }
 
@@ -200,7 +200,7 @@ static bool openJitDump() {
         return false;
       }
       spew_dir = JS_smprintf("%s/%s", dir, env_dir);
-      free((void*)dir);
+      js_free((void*)dir);
     }
   } else {
     fprintf(stderr, "Please define PERF_SPEW_DIR as an output directory.\n");
