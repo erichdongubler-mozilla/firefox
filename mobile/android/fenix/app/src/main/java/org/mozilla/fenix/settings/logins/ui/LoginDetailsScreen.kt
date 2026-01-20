@@ -24,6 +24,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,7 +53,6 @@ import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
@@ -61,7 +61,7 @@ import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun LoginDetailsScreen(store: LoginsStore) {
-    val state by store.observeAsState(store.state) { it }
+    val state by store.stateFlow.collectAsState()
     val detailState = state.loginsLoginDetailState ?: return
     val snackbarHostState = remember { SnackbarHostState() }
 

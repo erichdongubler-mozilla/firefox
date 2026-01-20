@@ -19,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,11 +36,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.map
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
-import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.support.ktx.util.URLStringUtils.isHttpOrHttps
 import mozilla.components.support.ktx.util.URLStringUtils.isValidHost
 import org.mozilla.fenix.R
@@ -77,7 +78,8 @@ internal fun AddLoginScreen(store: LoginsStore) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddLoginTopBar(store: LoginsStore) {
-    val state by store.observeAsState(store.state.loginsAddLoginState) { it.loginsAddLoginState }
+    val state by remember { store.stateFlow.map { it.loginsAddLoginState } }
+        .collectAsState(store.state.loginsAddLoginState)
     val host = state?.host ?: ""
     val username = state?.username ?: ""
     val password = state?.password ?: ""
@@ -130,7 +132,8 @@ private fun AddLoginTopBar(store: LoginsStore) {
 
 @Composable
 private fun AddLoginHost(store: LoginsStore) {
-    val state by store.observeAsState(store.state.loginsAddLoginState) { it.loginsAddLoginState }
+    val state by remember { store.stateFlow.map { it.loginsAddLoginState } }
+        .collectAsState(initial = store.state.loginsAddLoginState)
     val host = state?.host ?: ""
     var isFocused by remember { mutableStateOf(false) }
 
@@ -176,8 +179,12 @@ private fun AddLoginHost(store: LoginsStore) {
 
 @Composable
 private fun AddLoginUsername(store: LoginsStore) {
-    val addLoginState by store.observeAsState(store.state.loginsAddLoginState) { it.loginsAddLoginState }
-    val newLoginState by store.observeAsState(store.state.newLoginState) { it.newLoginState }
+    val addLoginState by remember {
+        store.stateFlow.map { it.loginsAddLoginState }
+    }.collectAsState(initial = store.state.loginsAddLoginState)
+    val newLoginState by remember {
+        store.stateFlow.map { it.newLoginState }
+    }.collectAsState(initial = store.state.newLoginState)
     val username = addLoginState?.username ?: ""
     var isFocused by remember { mutableStateOf(false) }
 
@@ -214,7 +221,9 @@ private fun AddLoginUsername(store: LoginsStore) {
 
 @Composable
 private fun AddLoginPassword(store: LoginsStore) {
-    val state by store.observeAsState(store.state.loginsAddLoginState) { it.loginsAddLoginState }
+    val state by remember {
+        store.stateFlow.map { it.loginsAddLoginState }
+    }.collectAsState(initial = store.state.loginsAddLoginState)
     val password = state?.password ?: ""
     var isFocused by remember { mutableStateOf(false) }
 

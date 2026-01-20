@@ -56,6 +56,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -98,6 +99,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.action.AwesomeBarAction
@@ -123,7 +125,6 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.lib.state.ext.observeAsComposableState
-import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.Config
@@ -180,11 +181,10 @@ internal fun BookmarksScreen(
     val navController = rememberNavController()
     val store = buildStore(navController)
 
-    val isPrivateModeLocked by appStore.observeAsState(
-        initialValue = appStore.state.isPrivateScreenLocked,
-    ) { appState ->
-        appState.isPrivateScreenLocked
-    }
+    val isPrivateModeLocked by remember {
+        appStore.stateFlow.map { appState -> appState.isPrivateScreenLocked }
+    }.collectAsState(initial = appStore.state.isPrivateScreenLocked)
+
     LaunchedEffect(isPrivateModeLocked) {
         if (!isPrivateModeLocked) {
             store.dispatch(PrivateBrowsingAuthorized)
@@ -256,7 +256,7 @@ private fun BookmarksList(
     profiler: Profiler?,
     useNewSearchUX: Boolean = false,
 ) {
-    val state by store.observeAsState(store.state) { it }
+    val state by store.stateFlow.collectAsState()
     val searchState = searchStore.observeAsComposableState { it }.value
     val awesomebarBackground = AwesomeBarDefaults.colors().background
     val awesomebarScrim by remember(searchState.query) {
@@ -636,11 +636,15 @@ private fun LazyListScope.fabOffsetSpace(fabHeight: Int) {
 private fun BookmarksListTopBar(
     store: BookmarksStore,
 ) {
-    val selectedItems by store.observeAsState(store.state.selectedItems) { it.selectedItems }
-    val recursiveCount by store.observeAsState(store.state.recursiveSelectedCount) { it.recursiveSelectedCount }
-    val folderTitle by store.observeAsState(store.state.currentFolder.title) { store.state.currentFolder.title }
+    val selectedItems by remember { store.stateFlow.map { it.selectedItems } }
+        .collectAsState(initial = store.state.selectedItems)
+    val recursiveCount by remember { store.stateFlow.map { it.recursiveSelectedCount } }
+        .collectAsState(initial = store.state.recursiveSelectedCount)
+    val folderTitle by remember { store.stateFlow.map { store.state.currentFolder.title } }
+        .collectAsState(store.state.currentFolder.title)
     var showMenu by remember { mutableStateOf(false) }
-    val showSortMenu by store.observeAsState(store.state.sortMenuShown) { it.sortMenuShown }
+    val showSortMenu by remember { store.stateFlow.map { it.sortMenuShown } }
+        .collectAsState(store.state.sortMenuShown)
 
     val backgroundColor = if (selectedItems.isEmpty()) {
         MaterialTheme.colorScheme.surface
@@ -717,12 +721,13 @@ private fun BookmarksListTopBarActions(
     showMenu: Boolean,
     onShowMenuChanged: (Boolean) -> Unit,
 ) {
-    val isCurrentFolderDesktopRoot by store.observeAsState(store.state.currentFolder.isDesktopRoot) {
-        store.state.currentFolder.isDesktopRoot
-    }
-    val isCurrentFolderMobileRoot by store.observeAsState(store.state.currentFolder.isMobileRoot) {
-        store.state.currentFolder.isMobileRoot
-    }
+    val isCurrentFolderDesktopRoot by remember {
+        store.stateFlow.map { store.state.currentFolder.isDesktopRoot }
+    }.collectAsState(store.state.currentFolder.isDesktopRoot)
+    val isCurrentFolderMobileRoot by remember {
+        store.stateFlow.map { store.state.currentFolder.isMobileRoot }
+    }.collectAsState(store.state.currentFolder.isMobileRoot)
+
     when {
         selectedItems.isEmpty() -> BookmarksListTopBarActionsNoSelection(
             store = store,
@@ -901,9 +906,8 @@ private fun BookmarksListTopBarActionsNoSelection(
 private fun WarnDialog(
     store: BookmarksStore,
 ) {
-    val state by store.observeAsState(store.state.openTabsConfirmationDialog) {
-        it.openTabsConfirmationDialog
-    }
+    val state by remember { store.stateFlow.map { it.openTabsConfirmationDialog } }
+        .collectAsState(initial = store.state.openTabsConfirmationDialog)
 
     val dialog = state
     if (dialog is OpenTabsConfirmationDialog.Presenting) {
@@ -967,8 +971,10 @@ private fun AlertDialogDeletionWarning(
 private fun SelectFolderScreen(
     store: BookmarksStore,
 ) {
-    val showNewFolderButton by store.observeAsState(store.state.showNewFolderButton) { store.state.showNewFolderButton }
-    val state by store.observeAsState(store.state.bookmarksSelectFolderState) { it.bookmarksSelectFolderState }
+    val showNewFolderButton by remember { store.stateFlow.map { store.state.showNewFolderButton } }
+        .collectAsState(initial = store.state.showNewFolderButton)
+    val state by remember { store.stateFlow.map { it.bookmarksSelectFolderState } }
+        .collectAsState(initial = store.state.bookmarksSelectFolderState)
 
     LaunchedEffect(Unit) {
         store.dispatch(SelectFolderAction.ViewAppeared)
@@ -1251,10 +1257,10 @@ private fun SelectFolderTopBar(store: BookmarksStore) {
 
 @Composable
 private fun SelectFolderSortOverflowMenu(store: BookmarksStore) {
-    val showMenu by store.observeAsState(store.state.sortMenuShown) {
-        store.state.sortMenuShown
-    }
-    val sortOrder by store.observeAsState(store.state.sortOrder) { store.state.sortOrder }
+    val showMenu by remember { store.stateFlow.map { store.state.sortMenuShown } }
+        .collectAsState(initial = store.state.sortMenuShown)
+    val sortOrder by remember { store.stateFlow.map { store.state.sortOrder } }
+        .collectAsState(initial = store.state.sortOrder)
 
     val menuItems = listOf(
         MenuItem.CheckableItem(
@@ -1381,7 +1387,8 @@ private fun BookmarkSortOverflowMenu(
     onDismissRequest: () -> Unit,
     store: BookmarksStore,
 ) {
-    val sortOrder by store.observeAsState(store.state.sortOrder) { store.state.sortOrder }
+    val sortOrder by remember { store.stateFlow.map { store.state.sortOrder } }
+        .collectAsState(store.state.sortOrder)
 
     val menuItems = listOf(
         MenuItem.CheckableItem(
@@ -1572,7 +1579,7 @@ private fun BookmarkListFolderMenu(
 private fun EditFolderScreen(
     store: BookmarksStore,
 ) {
-    val state by store.observeAsState(store.state) { it }
+    val state by store.stateFlow.collectAsState()
     val editState = state.bookmarksEditFolderState ?: return
     val dialogState = state.bookmarksDeletionDialogState
 
@@ -1674,7 +1681,8 @@ private fun EditFolderTopBar(
 private fun AddFolderScreen(
     store: BookmarksStore,
 ) {
-    val state by store.observeAsState(store.state.bookmarksAddFolderState) { it.bookmarksAddFolderState }
+    val state by remember { store.stateFlow.map { it.bookmarksAddFolderState } }
+        .collectAsState(initial = store.state.bookmarksAddFolderState)
     Scaffold(
         topBar = { AddFolderTopBar(onBackClick = { store.dispatch(BackClicked) }) },
     ) { paddingValues ->
@@ -1752,7 +1760,8 @@ private fun AddFolderTopBar(onBackClick: () -> Unit) {
 private fun EditBookmarkScreen(
     store: BookmarksStore,
 ) {
-    val state by store.observeAsState(store.state.bookmarksEditBookmarkState) { it.bookmarksEditBookmarkState }
+    val state by remember { store.stateFlow.map { it.bookmarksEditBookmarkState } }
+        .collectAsState(initial = store.state.bookmarksEditBookmarkState)
 
     val bookmark = state?.bookmark ?: return
     val folder = state?.folder ?: return

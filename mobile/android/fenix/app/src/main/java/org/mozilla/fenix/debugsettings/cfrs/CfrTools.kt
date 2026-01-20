@@ -17,13 +17,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.OutlinedButton
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -61,9 +61,7 @@ fun CfrTools(
 private fun ResetCfrTool(
     cfrToolsStore: CfrToolsStore,
 ) {
-    val cfrPreferences by cfrToolsStore.observeAsState(initialValue = cfrToolsStore.state) { state ->
-        state
-    }
+    val cfrPreferences by cfrToolsStore.stateFlow.collectAsState()
 
     Column(
         modifier = Modifier

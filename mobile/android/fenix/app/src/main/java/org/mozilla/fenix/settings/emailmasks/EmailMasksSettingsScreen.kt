@@ -18,6 +18,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +29,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.lib.state.Store
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
@@ -39,7 +39,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 internal fun EmailMasksSettingsScreen(
     store: Store<EmailMasksState, EmailMasksAction>,
 ) {
-    val state by store.observeAsState(store.state) { it }
+    val state by store.stateFlow.collectAsState()
 
     Surface {
         Column(

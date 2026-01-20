@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,13 +36,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
+import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.compose.base.utils.toLocaleString
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.debugsettings.ui.DebugDrawer
 import org.mozilla.fenix.ext.maxActiveTime
@@ -64,7 +65,8 @@ fun TabTools(
     store: BrowserStore,
     inactiveTabsEnabled: Boolean,
 ) {
-    val tabs by store.observeAsState(initialValue = emptyList()) { state -> state.tabs }
+    val tabs by remember { store.stateFlow.map { state -> state.tabs } }
+        .collectAsState(initial = emptyList())
     val totalTabCount = remember(tabs) { tabs.size }
     val privateTabCount = remember(tabs) { tabs.filter { it.content.private }.size }
     val inactiveTabCount = remember(tabs) {

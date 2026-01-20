@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +33,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.search.RegionState
 import mozilla.components.compose.base.Dropdown
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
@@ -44,7 +46,6 @@ import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.concept.engine.autofill.AddressStructure
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.UpdatableAddressFields
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.address.store.AddressState
 import org.mozilla.fenix.settings.address.store.AddressStore
@@ -73,7 +74,9 @@ fun EditAddressScreen(store: AddressStore) {
             EditAddressTopBar(store)
         },
     ) { paddingValues ->
-        val structureState by store.observeAsState(store.state.structureState) { it.structureState }
+        val structureState by remember {
+            store.stateFlow.map { it.structureState }
+        }.collectAsState(initial = store.state.structureState)
         var hasRequestedFocus by remember { mutableStateOf(false) }
         val focusRequester = remember { FocusRequester() }
 
@@ -139,9 +142,8 @@ private fun TextField(
     field: AddressStructure.Field.TextField,
     modifier: Modifier = Modifier,
 ) {
-    val value by store.observeAsState(store.state.address.valueForID(field.id)) {
-        it.address.valueForID(field.id)
-    }
+    val value by remember { store.stateFlow.map { it.address.valueForID(field.id) } }
+        .collectAsState(initial = store.state.address.valueForID(field.id))
 
     TextField(
         value = value,
@@ -158,9 +160,8 @@ private fun SelectField(
     store: AddressStore,
     field: AddressStructure.Field.SelectField,
 ) {
-    val value by store.observeAsState(store.state.address.valueForID(field.id)) {
-        it.address.valueForID(field.id)
-    }
+    val value by remember { store.stateFlow.map { it.address.valueForID(field.id) } }
+        .collectAsState(store.state.address.valueForID(field.id))
 
     val items = field.options.map {
         MenuItem.CheckableItem(

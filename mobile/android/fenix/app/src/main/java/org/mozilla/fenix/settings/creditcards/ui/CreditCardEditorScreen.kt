@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -55,7 +56,6 @@ import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorAction.DeleteDialogAction
 import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorAction.FieldChanged
@@ -80,7 +80,7 @@ private const val EXPIRATION_YEAR_WEIGHT = 4f
  */
 @Composable
 fun CreditCardEditorScreen(store: CreditCardEditorStore) {
-    val state by store.observeAsState(store.state) { it }
+    val state by store.stateFlow.collectAsState()
 
     Scaffold(
         modifier = Modifier.semantics {

@@ -34,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -58,13 +59,13 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 import androidx.core.text.BidiFormatter
+import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.feature.tabs.TabsUseCases
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.components
@@ -115,26 +116,29 @@ fun TabStrip(
     onSelectedTabClick: (url: String) -> Unit,
     onTabCounterClick: () -> Unit,
 ) {
-    val isPossiblyPrivateMode by appStore.observeAsState(false) { it.mode.isPrivate }
-    val state by browserStore.observeAsState(TabStripState.initial) {
-        it.toTabStripState(
-            isSelectDisabled = isSelectDisabled,
-            isPossiblyPrivateMode = isPossiblyPrivateMode,
-            addTab = onAddTabClick,
-            closeTab = { isPrivate, numberOfTabs ->
-                it.selectedTabId?.let { selectedTabId ->
-                    closeTab(
-                        numberOfTabs = numberOfTabs,
-                        isPrivate = isPrivate,
-                        tabsUseCases = tabsUseCases,
-                        tabId = selectedTabId,
-                        onLastTabClose = onLastTabClose,
-                        onCloseTabClick = onCloseTabClick,
-                    )
-                }
-            },
-        )
-    }
+    val isPossiblyPrivateMode by remember { appStore.stateFlow.map { it.mode.isPrivate } }
+        .collectAsState(initial = false)
+    val state by remember {
+        browserStore.stateFlow.map {
+            it.toTabStripState(
+                isSelectDisabled = isSelectDisabled,
+                isPossiblyPrivateMode = isPossiblyPrivateMode,
+                addTab = onAddTabClick,
+                closeTab = { isPrivate, numberOfTabs ->
+                    it.selectedTabId?.let { selectedTabId ->
+                        closeTab(
+                            numberOfTabs = numberOfTabs,
+                            isPrivate = isPrivate,
+                            tabsUseCases = tabsUseCases,
+                            tabId = selectedTabId,
+                            onLastTabClose = onLastTabClose,
+                            onCloseTabClick = onCloseTabClick,
+                        )
+                    }
+                },
+            )
+        }
+    }.collectAsState(initial = TabStripState.initial)
 
     TabStripContent(
         state = state,

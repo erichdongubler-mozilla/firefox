@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.theme.surfaceDimVariant
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptAction
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptState
@@ -373,7 +373,7 @@ private fun InteractiveBottomSheetPreview(
     @PreviewParameter(ThemeProvider::class) theme: Theme,
 ) {
     val store = CustomReviewPromptStore(PrePrompt)
-    val promptState by store.observeAsState(PrePrompt) { it }
+    val promptState by store.stateFlow.collectAsState()
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 

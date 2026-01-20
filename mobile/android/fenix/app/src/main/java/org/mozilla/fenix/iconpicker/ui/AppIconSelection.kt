@@ -34,6 +34,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -57,7 +58,6 @@ import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.displaySnackbar
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.button.RadioButton
 import org.mozilla.fenix.iconpicker.AppIcon
@@ -96,7 +96,7 @@ fun AppIconSelection(
     store: AppIconStore,
     shortcutRemovalWarning: () -> Boolean,
 ) {
-    val state by store.observeAsState(store.state) { it }
+    val state by store.stateFlow.collectAsState()
     val selectedIcon = state.userSelectedAppIcon ?: state.currentAppIcon
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }

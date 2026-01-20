@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -30,7 +31,6 @@ import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.compose.list.TextListItem
@@ -52,7 +52,7 @@ fun GleanDebugToolsScreen(
     gleanDebugToolsStore: GleanDebugToolsStore,
     modifier: Modifier = Modifier,
 ) {
-    val gleanDebugToolsState by gleanDebugToolsStore.observeAsState(gleanDebugToolsStore.state) { it }
+    val gleanDebugToolsState by gleanDebugToolsStore.stateFlow.collectAsState()
 
     Surface {
         Column(

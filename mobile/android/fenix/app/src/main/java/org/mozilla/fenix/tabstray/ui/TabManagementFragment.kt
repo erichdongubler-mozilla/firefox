@@ -18,6 +18,7 @@ import androidx.biometric.BiometricManager
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.toArgb
@@ -32,6 +33,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.selector.normalTabs
@@ -43,7 +45,6 @@ import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.feature.accounts.push.CloseTabsUseCases
 import mozilla.components.feature.downloads.ui.DownloadCancelDialogFragment
 import mozilla.components.feature.tabs.tabstray.TabsFeature
-import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.storeProvider
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.view.setSystemBarsBackground
@@ -215,11 +216,10 @@ class TabManagementFragment : DialogFragment() {
         )
 
         return content {
-            val state by tabsTrayStore.observeAsState(tabsTrayStore.state) { it }
-            val isPbmLocked by requireComponents.appStore
-                .observeAsState(initialValue = requireComponents.appStore.state.isPrivateScreenLocked) {
-                    it.isPrivateScreenLocked
-                }
+            val state by tabsTrayStore.stateFlow.collectAsState()
+            val isPbmLocked by remember {
+                requireComponents.appStore.stateFlow.map { it.isPrivateScreenLocked }
+            }.collectAsState(initial = requireComponents.appStore.state.isPrivateScreenLocked)
             val density = LocalDensity.current
             val tabManagerAnimationHelper = remember {
                 DefaultTabManagerAnimationHelper(

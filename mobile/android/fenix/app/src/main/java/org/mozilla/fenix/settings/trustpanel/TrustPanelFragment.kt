@@ -23,6 +23,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,13 +39,13 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.lib.state.ext.consumeFlow
-import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.view.setNavigationBarColorCompat
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
@@ -179,27 +180,27 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                 onRequestDismiss = ::dismiss,
                 handlebarContentDescription = "",
             ) {
-                val baseDomain by store.observeAsState(initialValue = null) { state ->
-                    state.baseDomain
-                }
-                val isTrackingProtectionEnabled by store.observeAsState(initialValue = false) { state ->
-                    state.isTrackingProtectionEnabled
-                }
-                val numberOfTrackersBlocked by store.observeAsState(initialValue = 0) { state ->
-                    state.numberOfTrackersBlocked
-                }
-                val bucketedTrackers by store.observeAsState(initialValue = TrackerBuckets()) { state ->
-                    state.bucketedTrackers
-                }
-                val detailedTrackerCategory by store.observeAsState(initialValue = null) { state ->
-                    state.detailedTrackerCategory
-                }
-                val sessionState by store.observeAsState(initialValue = null) { state ->
-                    state.sessionState
-                }
-                val websitePermissions by store.observeAsState(initialValue = listOf()) { state ->
-                    state.websitePermissionsState.values
-                }
+                val baseDomain by remember {
+                    store.stateFlow.map { state -> state.baseDomain }
+                }.collectAsState(initial = null)
+                val isTrackingProtectionEnabled by remember {
+                    store.stateFlow.map { state -> state.isTrackingProtectionEnabled }
+                }.collectAsState(initial = false)
+                val numberOfTrackersBlocked by remember {
+                    store.stateFlow.map { state -> state.numberOfTrackersBlocked }
+                }.collectAsState(initial = 0)
+                val bucketedTrackers by remember {
+                    store.stateFlow.map { state -> state.bucketedTrackers }
+                }.collectAsState(initial = TrackerBuckets())
+                val detailedTrackerCategory by remember {
+                    store.stateFlow.map { state -> state.detailedTrackerCategory }
+                }.collectAsState(initial = null)
+                val sessionState by remember {
+                    store.stateFlow.map { state -> state.sessionState }
+                }.collectAsState(initial = null)
+                val websitePermissions by remember {
+                    store.stateFlow.map { state -> state.websitePermissionsState.values }
+                }.collectAsState(initial = listOf())
                 val isGlobalTrackingProtectionEnabled = settings.shouldUseTrackingProtection
 
                 permissionsCallback = { isGranted: Map<String, Boolean> ->

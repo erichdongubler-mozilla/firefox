@@ -33,6 +33,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,7 +60,6 @@ import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.compose.base.text.Text
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.ExpandableListHeader
 import org.mozilla.fenix.downloads.listscreen.store.DownloadListItem
@@ -94,7 +94,7 @@ fun DownloadsScreen(
     onNavigationIconClick: () -> Unit,
     onSettingsClick: () -> Unit,
 ) {
-    val uiState by downloadsStore.observeAsState(initialValue = downloadsStore.state) { it }
+    val uiState by downloadsStore.stateFlow.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()

@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,11 +50,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.searchbar.TopSearchBar
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.TabSearchAction
@@ -82,7 +83,8 @@ private val SearchResultsPadding = 16.dp
 fun TabSearchScreen(
     store: TabsTrayStore,
 ) {
-    val state by store.observeAsState(store.state.tabSearchState) { it.tabSearchState }
+    val state by remember { store.stateFlow.map { it.tabSearchState } }
+        .collectAsState(initial = store.state.tabSearchState)
     val searchBarState = rememberSearchBarState()
     var expanded by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }

@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -32,7 +33,6 @@ import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.CreditCard
-import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.IconListItem
@@ -137,7 +137,7 @@ private fun AutofillSettingsAddressSection(
     store: AutofillSettingsStore,
     isAddressSyncEnabled: Boolean,
 ) {
-    val state by store.observeAsState(store.state) { it }
+    val state by store.stateFlow.collectAsState()
 
     SettingsSectionHeader(
         text = stringResource(id = R.string.preferences_addresses),
@@ -191,7 +191,7 @@ private fun AutofillSettingsAddressSection(
 
 @Composable
 private fun AutofillSettingsCreditCardSection(store: AutofillSettingsStore) {
-    val state by store.observeAsState(store.state) { it }
+    val state by store.stateFlow.collectAsState()
 
     SettingsSectionHeader(
         text = stringResource(id = R.string.preferences_credit_cards_2),
