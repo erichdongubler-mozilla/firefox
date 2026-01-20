@@ -17,8 +17,9 @@ use crate::render_task::{BlurTask, MaskSubPass, PrimTask, RenderTask, RenderTask
 use crate::scene_building::{SceneBuilder, IsVisible};
 use crate::segment::EdgeAaSegmentMask;
 use crate::spatial_tree::SpatialNodeIndex;
-use crate::gpu_types::{BoxShadowStretchMode, TransformPaletteId, UvRectKind, BlurEdgeMode};
+use crate::gpu_types::{BoxShadowStretchMode, UvRectKind, BlurEdgeMode};
 use crate::render_task_graph::RenderTaskId;
+use crate::transform::TransformPaletteId;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::util::{extract_inner_rect_k, ScaleOffset};
 

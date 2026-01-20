@@ -5,8 +5,9 @@
 use api::units::PictureRect;
 use crate::pattern::{PatternKind, PatternShaderInput};
 use crate::{spatial_tree::SpatialNodeIndex, render_task_graph::RenderTaskId, surface::SurfaceTileDescriptor, tile_cache::TileKey, renderer::GpuBufferAddress, FastHashMap, prim_store::PrimitiveInstanceIndex};
-use crate::gpu_types::{QuadSegment, TransformPaletteId};
+use crate::gpu_types::QuadSegment;
 use crate::segment::EdgeAaSegmentMask;
+use crate::transform::TransformPaletteId;
 
 /// A tightly packed command stored in a command buffer
 #[cfg_attr(feature = "capture", derive(Serialize))]

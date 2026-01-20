@@ -6,7 +6,7 @@ use api::{ExternalScrollId, PropertyBinding, ReferenceFrameKind, TransformStyle,
 use api::{APZScrollGeneration, HasScrollLinkedEffect, PipelineId, SampledScrollOffset, SpatialTreeItemKey};
 use api::units::*;
 use euclid::Transform3D;
-use crate::gpu_types::TransformPalette;
+use crate::transform::TransformPalette;
 use crate::internal_types::{FastHashMap, FastHashSet, FrameMemory, PipelineInstanceId};
 use crate::print_tree::{PrintableTree, PrintTree, PrintTreePrinter};
 use crate::scene::SceneProperties;
