@@ -345,11 +345,6 @@ struct IsRectHelper {
   }
 };
 
-bool ApproxEqual(gfx::Point a, gfx::Point b) {
-  auto v = b - a;
-  return fabs(v.x) < 0.001 && fabs(v.y) < 0.001;
-}
-
 Maybe<gfx::Rect> SVGPathToAxisAlignedRect(Span<const StylePathCommand> aPath) {
   Point pathStart(0.0, 0.0);
   Point segStart(0.0, 0.0);
@@ -360,6 +355,7 @@ Maybe<gfx::Rect> SVGPathToAxisAlignedRect(Span<const StylePathCommand> aPath) {
       0,
       {EdgeDir::NONE, EdgeDir::NONE, EdgeDir::NONE, EdgeDir::NONE},
   };
+  static constexpr float kEpsilon = 0.001f;
 
   for (const StylePathCommand& cmd : aPath) {
     switch (cmd.tag) {
@@ -373,7 +369,7 @@ Maybe<gfx::Rect> SVGPathToAxisAlignedRect(Span<const StylePathCommand> aPath) {
           return Nothing();
         }
 
-        if (!ApproxEqual(pathStart, segStart)) {
+        if (!pathStart.WithinEpsilonOf(segStart, kEpsilon)) {
           // If we were only interested in filling we could auto-close here
           // by calling helper.Edge like in the ClosePath case and detect some
           // unclosed paths as rectangles.
@@ -454,8 +450,8 @@ Maybe<gfx::Rect> SVGPathToAxisAlignedRect(Span<const StylePathCommand> aPath) {
     }
   }
 
-  if (!ApproxEqual(pathStart, segStart)) {
-    // Same situation as with moveto regarding stroking not fullly closed path
+  if (!pathStart.WithinEpsilonOf(segStart, kEpsilon)) {
+    // Same situation as with moveto regarding stroking not fully closed path
     // even though the fill is a rectangle.
     return Nothing();
   }
@@ -464,7 +460,7 @@ Maybe<gfx::Rect> SVGPathToAxisAlignedRect(Span<const StylePathCommand> aPath) {
     return Nothing();
   }
 
-  auto size = (helper.max - helper.min);
+  auto size = helper.max - helper.min;
   return Some(Rect(helper.min, Size(size.x, size.y)));
 }
 
