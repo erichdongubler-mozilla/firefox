@@ -3,12 +3,6 @@
 
 "use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  Chat: "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs",
-  openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
-  sinon: "resource://testing-common/Sinon.sys.mjs",
-});
-
 const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
 
 add_setup(async function () {

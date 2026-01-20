@@ -2,20 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html, repeat } from "chrome://global/content/vendor/lit.all.mjs";
+import {
+  html,
+  ifDefined,
+  repeat,
+} from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
 
 /**
- * An input call to action (CTA) button which shows the current action choice
- * for the Smartbar. It is updated depending on the recognised intent or the
- * action selected by the user.
+ * Input CTA button with action menu extending `moz-button`.
  *
- * The component is based on `moz-button` and extended with an action menu.
- *
- * @typedef {"" | "chat" | "search" | "navigate"} SmartbarAction
- * @property {SmartbarAction} action - Current action or empty string for initial state.
+ * @property {string|null} action - Current action or null for initial state.
  */
 export class InputCta extends MozLitElement {
   static shadowRootOptions = {
@@ -31,7 +30,7 @@ export class InputCta extends MozLitElement {
 
   constructor() {
     super();
-    this.action = "";
+    this.action = null;
     this._menuId = `actions-menu-${crypto.randomUUID()}`;
   }
 
@@ -46,18 +45,8 @@ export class InputCta extends MozLitElement {
 
     this.action = key;
     this.dispatchEvent(
-      new CustomEvent("aiwindow-input-cta:on-action-change", {
+      new CustomEvent("aiwindow-input-cta:action-change", {
         detail: { action: key },
-        bubbles: true,
-        composed: true,
-      })
-    );
-  }
-
-  #onAction() {
-    this.dispatchEvent(
-      new CustomEvent("aiwindow-input-cta:on-action", {
-        detail: { action: this.action },
         bubbles: true,
         composed: true,
       })
@@ -67,11 +56,11 @@ export class InputCta extends MozLitElement {
   willUpdate(changedProps) {
     if (
       changedProps.has("action") &&
-      this.action &&
+      this.action !== null &&
       !InputCta.ACTIONS.includes(this.action)
     ) {
       console.warn(`Invalid action: ${this.action}`);
-      this.action = "";
+      this.action = null;
     }
   }
 
@@ -98,16 +87,16 @@ export class InputCta extends MozLitElement {
       <moz-button
         type=${this.action ? "split" : "default"}
         class="input-cta"
-        .menuId=${this.action ? this._menuId : undefined}
+        menuId=${ifDefined(this.action ? this._menuId : undefined)}
         .iconSrc=${this.action
           ? undefined
           : "chrome://browser/content/aiwindow/assets/input-cta-arrow-icon.svg"}
-        @click=${this.#onAction}
         ?disabled=${!this.action}
       >
         <slot>
-          ${this.action &&
-          html`<span data-l10n-id=${this.actionLabelId}></span>`}
+          <span
+            data-l10n-id=${ifDefined(this.actionLabelId || undefined)}
+          ></span>
         </slot>
       </moz-button>
       ${panelListTemplate}
