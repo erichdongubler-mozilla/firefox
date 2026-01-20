@@ -500,6 +500,8 @@ export class MLEngineParent extends JSProcessActorParent {
     featureId,
     sessionId,
   }) {
+    let downloadStart = ChromeUtils.now();
+
     // Create the model hub instance if needed
     if (this.modelHub === null) {
       lazy.console.debug("Creating model hub instance");
@@ -542,10 +544,15 @@ export class MLEngineParent extends JSProcessActorParent {
       ...parsedUrl,
     });
 
+    const sizeMB = Math.round(headers.fileSize / (1024 * 1024));
     lazy.console.debug(
-      `Model ${parsedUrl.model} was fetched from ${url}, size ${Math.round(
-        headers.fileSize / (1024 * 1024)
-      )}MiB`
+      `Model ${parsedUrl.model} was fetched from ${url}, size ${sizeMB}MiB`
+    );
+
+    ChromeUtils.addProfilerMarker(
+      "MLEngineParent",
+      { startTime: downloadStart },
+      `Downloaded model ${parsedUrl.file}: ${sizeMB}MB`
     );
 
     return [data, headers];
@@ -656,6 +663,12 @@ export class MLEngineParent extends JSProcessActorParent {
         `The best available llama backend detected for this machine is ${bestBackend}`
       );
     }
+
+    ChromeUtils.addProfilerMarker(
+      "MLEngineParent",
+      null,
+      `Backend selected: ${bestBackend} (requested: ${backend})`
+    );
 
     return bestBackend;
   }

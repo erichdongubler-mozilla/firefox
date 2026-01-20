@@ -86,6 +86,8 @@ export async function importTransformers(backend) {
     return transformers;
   }
 
+  let importStart = ChromeUtils.now();
+
   lazy.console.debug(`Using backend ${backend}`);
 
   if (backend === NATIVE_BACKEND) {
@@ -111,6 +113,12 @@ export async function importTransformers(backend) {
     lazy.console.debug("Beta or Release detected, using transformers.js");
     transformers = await import("chrome://global/content/ml/transformers.js");
   }
+
+  ChromeUtils.addProfilerMarker(
+    "MLEngine:ONNX",
+    { startTime: importStart },
+    `Load transformers.js for ${backend}`
+  );
 
   return transformers;
 }
@@ -318,7 +326,13 @@ async function textToGoal(
       max_length: 64,
       return_attention_mask: true,
     });
-    metrics.preprocessingTime += ChromeUtils.now() - startToken;
+    const tokenizeTime = ChromeUtils.now() - startToken;
+    metrics.preprocessingTime += tokenizeTime;
+    ChromeUtils.addProfilerMarker(
+      "MLEngine:ONNX",
+      { startTime: startToken },
+      `Tokenize text: ${encoded.input_ids.data.length} tokens`
+    );
     const input_ids = encoded.input_ids.ort_tensor;
     const attention_mask = encoded.attention_mask.ort_tensor;
     const domain_vocab = modelConfig["transformers.js_config"].domain_vocab;
@@ -349,7 +363,13 @@ async function textToGoal(
     const startInfer = ChromeUtils.now();
     const session = model.sessions.model;
     const output = await session.run(inputs);
-    metrics.inferenceTime += ChromeUtils.now() - startInfer;
+    const inferenceTime = ChromeUtils.now() - startInfer;
+    metrics.inferenceTime += inferenceTime;
+    ChromeUtils.addProfilerMarker(
+      "MLEngine:ONNX",
+      { startTime: startInfer },
+      `textToGoal`
+    );
     metrics.inputTokens += encoded.input_ids.ort_tensor.dims[1];
 
     result.output.push({
@@ -667,8 +687,9 @@ export class ONNXPipeline {
    * @returns {Promise<Pipeline>} The initialized pipeline instance.
    */
   static async initialize(mlEngineWorker, runtime, options, errorFactory) {
+    let initStart = ChromeUtils.now();
     let snapShot = {
-      when: ChromeUtils.now(),
+      when: initStart,
     };
 
     if (options.logLevel) {
@@ -702,13 +723,28 @@ export class ONNXPipeline {
     if (lazy.console.logLevel != config.logLevel) {
       lazy.console.logLevel = config.logLevel;
     }
+
+    let pipelineReadyStart = ChromeUtils.now();
     const pipeline = new ONNXPipeline(mlEngineWorker, config, errorFactory);
     await pipeline.ensurePipelineIsReady();
+
+    ChromeUtils.addProfilerMarker(
+      "MLEngine:ONNX",
+      { startTime: pipelineReadyStart },
+      `Pipeline ready`
+    );
+
     await pipeline.#metricsSnapShot({
       name: "initializationStart",
       snapshot: snapShot,
     });
     await pipeline.#metricsSnapShot({ name: "initializationEnd" });
+
+    ChromeUtils.addProfilerMarker(
+      "MLEngine:ONNX",
+      { startTime: initStart },
+      `Initialized: task=${taskName}, backend=${config.backend}`
+    );
 
     return pipeline;
   }
@@ -938,7 +974,13 @@ export class ONNXPipeline {
           ...requestWithCallback.args,
           requestWithCallback.options || {}
         );
-        metrics.inferenceTime = ChromeUtils.now() - start;
+        const inferenceTime = ChromeUtils.now() - start;
+        metrics.inferenceTime = inferenceTime;
+        ChromeUtils.addProfilerMarker(
+          "MLEngine:ONNX",
+          { startTime: start },
+          `Inference`
+        );
         if (output instanceof transformers.Tensor) {
           output = output.tolist();
         }

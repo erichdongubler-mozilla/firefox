@@ -53,7 +53,9 @@ export class OpenAIPipeline {
   }
 
   static async initialize(mlEngineWorker, wasm, options = {}, errorFactory) {
+    let initStart = ChromeUtils.now();
     lazy.console.debug("Initializing OpenAI pipeline");
+    let importStart = ChromeUtils.now();
     if (AppConstants.NIGHTLY_BUILD) {
       OpenAIPipeline.OpenAILib =
         await import("chrome://global/content/ml/openai-dev.mjs");
@@ -61,6 +63,11 @@ export class OpenAIPipeline {
       OpenAIPipeline.OpenAILib =
         await import("chrome://global/content/ml/openai.mjs");
     }
+    ChromeUtils.addProfilerMarker(
+      "MLEngine:OpenAI",
+      { startTime: importStart },
+      `Library loaded`
+    );
     if (options.logLevel) {
       _logLevel = options.logLevel;
       lazy.setLogLevel(options.logLevel); // setting Utils log level
@@ -73,6 +80,12 @@ export class OpenAIPipeline {
     if (lazy.console.logLevel != config.logLevel) {
       lazy.console.logLevel = config.logLevel;
     }
+
+    ChromeUtils.addProfilerMarker(
+      "MLEngine:OpenAI",
+      { startTime: initStart },
+      `Initialized`
+    );
 
     return new OpenAIPipeline(config, errorFactory);
   }
