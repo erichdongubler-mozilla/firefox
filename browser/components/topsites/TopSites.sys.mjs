@@ -23,6 +23,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "log", () => {
@@ -70,7 +71,7 @@ const DEFAULT_SITES_EXPERIMENTS_PREF_BRANCH = "browser.topsites.experiment.";
 
 function getShortHostnameForCurrentSearch() {
   const url = lazy.NewTabUtils.shortHostname(
-    Services.search.defaultEngine.searchUrlDomain
+    lazy.SearchService.defaultEngine.searchUrlDomain
   );
   return url;
 }
@@ -601,7 +602,7 @@ class _TopSites {
     // We must wait for search services to initialize in order to access default
     // search engine properties without triggering a synchronous initialization
     try {
-      await Services.search.init();
+      await lazy.SearchService.init();
     } catch {
       // We continue anyway because we want the user to see their sponsored,
       // saved, or visited shortcut tiles even if search engines are not
@@ -821,7 +822,7 @@ class _TopSites {
 
     // Populate the state with available search shortcuts
     let searchShortcuts = [];
-    for (const engine of await Services.search.getAppProvidedEngines()) {
+    for (const engine of await lazy.SearchService.getAppProvidedEngines()) {
       const shortcut = CUSTOM_SEARCH_SHORTCUTS.find(s =>
         engine.aliases.includes(s.keyword)
       );

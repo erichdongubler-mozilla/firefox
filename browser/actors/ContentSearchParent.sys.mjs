@@ -7,6 +7,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
 });
 
@@ -160,8 +161,8 @@ export let ContentSearch = {
     let urlBar = win.gURLBar;
     let inPrivateBrowsing = lazy.PrivateBrowsingUtils.isBrowserPrivate(browser);
     let searchEngine = inPrivateBrowsing
-      ? Services.search.defaultPrivateEngine
-      : Services.search.defaultEngine;
+      ? lazy.SearchService.defaultPrivateEngine
+      : lazy.SearchService.defaultEngine;
     let isFirstChange = true;
 
     // It's possible that this is a handoff from about:home / about:newtab,
@@ -268,8 +269,8 @@ export let ContentSearch = {
 
   async _currentEngineObj(usePrivate) {
     let engine = usePrivate
-      ? await Services.search.getDefaultPrivate()
-      : await Services.search.getDefault();
+      ? await lazy.SearchService.getDefaultPrivate()
+      : await lazy.SearchService.getDefault();
     return {
       name: engine.name,
       iconData: await this._getEngineIconURL(engine),

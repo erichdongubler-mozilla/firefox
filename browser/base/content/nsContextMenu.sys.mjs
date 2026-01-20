@@ -24,6 +24,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
@@ -2305,7 +2306,7 @@ export class nsContextMenu {
     // If the user saved, engineInfo contains `name` and `alias`.
     // Otherwise, it's undefined.
     if (engineInfo) {
-      let searchEngine = await Services.search.addUserEngine({
+      let searchEngine = await lazy.SearchService.addUserEngine({
         name: engineInfo.name,
         alias: engineInfo.alias,
         url,
@@ -2777,8 +2778,8 @@ export class nsContextMenu {
 
     const { gNavigatorBundle } = this.window;
     // format "Search <engine> for <selection>" string to show in menu
-    let engineName = Services.search.defaultEngine.name;
-    let privateEngineName = Services.search.defaultPrivateEngine.name;
+    let engineName = lazy.SearchService.defaultEngine.name;
+    let privateEngineName = lazy.SearchService.defaultPrivateEngine.name;
     if (!menuItem.hidden) {
       const docIsPrivate = lazy.PrivateBrowsingUtils.isBrowserPrivate(
         this.browser
@@ -2822,7 +2823,7 @@ export class nsContextMenu {
     if (!menuitem) {
       return;
     }
-    if (!Services.search.hasSuccessfullyInitialized) {
+    if (!lazy.SearchService.hasSuccessfullyInitialized) {
       menuitem.hidden = true;
       return;
     }
@@ -2837,8 +2838,8 @@ export class nsContextMenu {
     );
     let engine =
       isBrowserPrivate || isPrivateSearchMenuitem
-        ? Services.search.defaultPrivateEngine
-        : Services.search.defaultEngine;
+        ? lazy.SearchService.defaultPrivateEngine
+        : lazy.SearchService.defaultEngine;
 
     menuitem.hidden =
       !isContextRelevant ||

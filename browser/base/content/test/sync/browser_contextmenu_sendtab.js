@@ -61,7 +61,7 @@ add_setup(async function () {
   });
 
   await promiseSyncReady();
-  await Services.search.init();
+  await SearchService.init();
   // gSync.init() is called in a requestIdleCallback. Force its initialization.
   gSync.init();
   sinon

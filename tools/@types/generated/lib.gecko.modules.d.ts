@@ -922,7 +922,6 @@ export interface Modules {
   "resource://gre/modules/SafeBrowsing.sys.mjs": typeof import("resource://gre/modules/SafeBrowsing.sys.mjs"),
   "resource://gre/modules/SandboxUtils.sys.mjs": typeof import("resource://gre/modules/SandboxUtils.sys.mjs"),
   "resource://gre/modules/Schemas.sys.mjs": typeof import("resource://gre/modules/Schemas.sys.mjs"),
-  "resource://gre/modules/SearchService.sys.mjs": typeof import("resource://gre/modules/SearchService.sys.mjs"),
   "resource://gre/modules/SecurityInfo.sys.mjs": typeof import("resource://gre/modules/SecurityInfo.sys.mjs"),
   "resource://gre/modules/SelectionUtils.sys.mjs": typeof import("resource://gre/modules/SelectionUtils.sys.mjs"),
   "resource://gre/modules/ServiceRequest.sys.mjs": typeof import("resource://gre/modules/ServiceRequest.sys.mjs"),

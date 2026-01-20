@@ -25,6 +25,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   QueryCache: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
@@ -504,7 +505,7 @@ add_task(async function check_needsUpdate() {
 
 add_task(async function checksearchEngines() {
   const result = await ASRouterTargeting.Environment.searchEngines;
-  const expectedInstalled = (await Services.search.getAppProvidedEngines())
+  const expectedInstalled = (await SearchService.getAppProvidedEngines())
     .map(engine => engine.id)
     .sort()
     .join(",");
@@ -523,14 +524,14 @@ add_task(async function checksearchEngines() {
   );
   is(
     result.current,
-    (await Services.search.getDefault()).id,
+    (await SearchService.getDefault()).id,
     "searchEngines.current should be the current engine name"
   );
 
   const message = {
     id: "foo",
     targeting: `searchEngines[.current == ${
-      (await Services.search.getDefault()).id
+      (await SearchService.getDefault()).id
     }]`,
   };
   is(
@@ -542,7 +543,7 @@ add_task(async function checksearchEngines() {
   const message2 = {
     id: "foo",
     targeting: `searchEngines[${
-      (await Services.search.getAppProvidedEngines())[0].id
+      (await SearchService.getAppProvidedEngines())[0].id
     } in .installed]`,
   };
   is(
