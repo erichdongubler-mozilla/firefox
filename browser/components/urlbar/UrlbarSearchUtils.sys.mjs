@@ -285,7 +285,7 @@ class SearchUtils {
    *
    * @param {UrlbarResult} result
    *   The result to evaluate
-   * @param {Array<RESULT_SOURCE>} [allowedSources]
+   * @param {Values<typeof lazy.UrlbarUtils.RESULT_SOURCE>[]} [allowedSources]
    *   Array of allowed result sources. if defined, the result must be from one
    *   of these sources to be evaluated as a SERP, otherwise this will return
    *   false.

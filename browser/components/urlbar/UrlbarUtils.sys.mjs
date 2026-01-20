@@ -14,9 +14,7 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
   DEFAULT_FORM_HISTORY_PARAM:
@@ -41,14 +39,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
+  parserUtils: {
+    service: "@mozilla.org/parserutils;1",
+    iid: Ci.nsIParserUtils,
+  },
 });
-
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "parserUtils",
-  "@mozilla.org/parserutils;1",
-  Ci.nsIParserUtils
-);
 
 export var UrlbarUtils = {
   // Results are categorized into groups to help the muxer compose them.  See
@@ -238,7 +233,24 @@ export var UrlbarUtils = {
   // Search mode objects corresponding to the local shortcuts in the view, in
   // order they appear.  Pref names are relative to the `browser.urlbar` branch.
   get LOCAL_SEARCH_MODES() {
-    return [
+    /**
+     * @typedef {object} LocalSearchMode
+     * @property {Values<typeof this.RESULT_SOURCE>} source
+     *   The source which the search mode will search.
+     * @property {Values<typeof lazy.UrlbarTokenizer.RESTRICT>} restrict
+     *   The restrict token that is associated with the search (*, %, $ etc).
+     * @property {string} icon
+     *   The URL of the icon associated with the search mode in preferences.
+     * @property {string} pref
+     *   The suffix of the preference associated with if the mode is displayed
+     *   in the lists or not (prefix with `browser.urlbar.`).
+     * @property {string} telemetryLabel
+     *   The telemetry label for recording searches in this mode.
+     * @property {string} uiLabel
+     *   The string to use for the UI label.
+     */
+
+    return /** @type {LocalSearchMode[]} */ ([
       {
         source: this.RESULT_SOURCE.BOOKMARKS,
         restrict: lazy.UrlbarTokenizer.RESTRICT.BOOKMARK,
@@ -271,7 +283,7 @@ export var UrlbarUtils = {
         telemetryLabel: "actions",
         uiLabel: "urlbar-searchmode-actions",
       },
-    ];
+    ]);
   },
 
   /**
