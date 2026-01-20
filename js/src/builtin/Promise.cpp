@@ -5857,15 +5857,15 @@ static bool PromiseThenNewPromiseCapability(
   MOZ_ASSERT_IF(onFulfilled_, IsCallable(onFulfilled_));
   MOZ_ASSERT_IF(onRejected_, IsCallable(onRejected_));
 
-  RootedValue onFulfilled(
-      cx, onFulfilled_ ? ObjectValue(*onFulfilled_)
-                       : Int32Value(int32_t(PromiseHandler::Identity)));
-
-  RootedValue onRejected(
-      cx, onRejected_ ? ObjectValue(*onRejected_)
-                      : Int32Value(int32_t(PromiseHandler::Thrower)));
-
-  Rooted<PromiseCapability> resultCapability(cx);
+  RootedTuple<Value, Value, PromiseCapability, PromiseReactionRecord*> roots(
+      cx);
+  RootedField<Value, 0> onFulfilled(
+      roots, onFulfilled_ ? ObjectValue(*onFulfilled_)
+                          : Int32Value(int32_t(PromiseHandler::Identity)));
+  RootedField<Value, 1> onRejected(
+      roots, onRejected_ ? ObjectValue(*onRejected_)
+                         : Int32Value(int32_t(PromiseHandler::Thrower)));
+  RootedField<PromiseCapability, 2> resultCapability(roots);
   MOZ_ASSERT(!resultCapability.promise());
 
   auto hostDefinedDataObjectOption =
@@ -5873,9 +5873,9 @@ static bool PromiseThenNewPromiseCapability(
           ? HostDefinedDataObjectOption::Allocate
           : HostDefinedDataObjectOption::OptimizeOut;
 
-  Rooted<PromiseReactionRecord*> reaction(
-      cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
-                            hostDefinedDataObjectOption));
+  RootedField<PromiseReactionRecord*, 3> reaction(
+      roots, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
+                               hostDefinedDataObjectOption));
   if (!reaction) {
     return false;
   }
