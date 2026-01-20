@@ -1305,9 +1305,6 @@ class RootedTuple {
  public:
   template <typename RootingContext>
   explicit RootedTuple(const RootingContext& cx) : fields(cx) {}
-  template <typename RootingContext>
-  explicit RootedTuple(const RootingContext& cx, const Fs&... fs)
-      : fields(cx, fs...) {}
 };
 
 // Reference to a field in a RootedTuple. This is a drop-in replacement for an
@@ -1357,6 +1354,7 @@ class MOZ_RAII RootedField : public js::RootedOperations<T, RootedField<T, N>> {
       static_assert(std::is_same_v<T, std::tuple_element_t<N, Tuple>>);
       ptr = &std::get<N>(rootedTuple.fields.get());
     }
+    *ptr = SafelyInitialized<T>::create();
 #ifdef DEBUG
     size_t index = N;
     if constexpr (N == SIZE_MAX) {
