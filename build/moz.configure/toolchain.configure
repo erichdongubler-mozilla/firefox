@@ -2011,28 +2011,28 @@ using_msvc_stl = depends(cxx_compiler)(lambda c: c.type == "clang-cl")
 
 using_msvc_stl_202503_or_newer = try_compile(
     language="C++",
-    includes=["new"],
+    includes=["version"],
     body="#if !defined(_MSVC_STL_UPDATE) || _MSVC_STL_UPDATE < 202503L\n#error 1\n#endif",
     when=using_msvc_stl,
 )
 
 using_libstdcxx = try_compile(
     language="C++",
-    includes=["new"],
+    includes=["version"],
     body="#ifndef __GLIBCXX__\n#error 1\n#endif",
     when=~using_msvc_stl,
 )
 
 using_libcxx = try_compile(
     language="C++",
-    includes=["new"],
+    includes=["version"],
     body="#ifndef _LIBCPP_VERSION\n#error 1\n#endif",
     when=~using_libstdcxx,
 )
 
 using_libcxx_19_or_newer = try_compile(
     language="C++",
-    includes=["new"],
+    includes=["version"],
     body="#if _LIBCPP_VERSION < 190000\n#error 1\n#endif",
     when=using_libcxx,
 )
