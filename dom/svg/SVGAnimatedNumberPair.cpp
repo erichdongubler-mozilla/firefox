@@ -96,12 +96,10 @@ nsresult SVGAnimatedNumberPair::SetBaseValueString(
   // which takes care of notifying.
   AutoChangeNumberPairNotifier notifier(this, aSVGElement, false);
 
-  mBaseVal[0] = val[0];
-  mBaseVal[1] = val[1];
+  mBaseVal = PairValues(val[0], val[1]);
   mIsBaseSet = true;
   if (!mIsAnimated) {
-    mAnimVal[0] = mBaseVal[0];
-    mAnimVal[1] = mBaseVal[1];
+    mAnimVal = mBaseVal;
   }
 
   return NS_OK;
@@ -110,66 +108,67 @@ nsresult SVGAnimatedNumberPair::SetBaseValueString(
 void SVGAnimatedNumberPair::GetBaseValueString(
     nsAString& aValueAsString) const {
   aValueAsString.Truncate();
-  aValueAsString.AppendFloat(mBaseVal[0]);
-  if (mBaseVal[0] != mBaseVal[1]) {
+  aValueAsString.AppendFloat(mBaseVal[WhichOneOfPair::First]);
+  if (mBaseVal[WhichOneOfPair::First] != mBaseVal[WhichOneOfPair::Second]) {
     aValueAsString.AppendLiteral(", ");
-    aValueAsString.AppendFloat(mBaseVal[1]);
+    aValueAsString.AppendFloat(mBaseVal[WhichOneOfPair::Second]);
   }
 }
 
-void SVGAnimatedNumberPair::SetBaseValue(float aValue, PairIndex aPairIndex,
+void SVGAnimatedNumberPair::SetBaseValue(float aValue,
+                                         WhichOneOfPair aWhichOneOfPair,
                                          SVGElement* aSVGElement) {
-  uint32_t index = (aPairIndex == eFirst ? 0 : 1);
-  if (mIsBaseSet && mBaseVal[index] == aValue) {
+  if (mIsBaseSet && mBaseVal[aWhichOneOfPair] == aValue) {
     return;
   }
 
   AutoChangeNumberPairNotifier notifier(this, aSVGElement);
 
-  mBaseVal[index] = aValue;
+  mBaseVal[aWhichOneOfPair] = aValue;
   mIsBaseSet = true;
   if (!mIsAnimated) {
-    mAnimVal[index] = aValue;
+    mAnimVal[aWhichOneOfPair] = aValue;
   }
 }
 
 void SVGAnimatedNumberPair::SetBaseValues(float aValue1, float aValue2,
                                           SVGElement* aSVGElement) {
-  if (mIsBaseSet && mBaseVal[0] == aValue1 && mBaseVal[1] == aValue2) {
+  PairValues value(aValue1, aValue2);
+  if (mIsBaseSet && std::ranges::equal(mBaseVal, value)) {
     return;
   }
 
   AutoChangeNumberPairNotifier notifier(this, aSVGElement);
 
-  mBaseVal[0] = aValue1;
-  mBaseVal[1] = aValue2;
+  mBaseVal = value;
   mIsBaseSet = true;
   if (!mIsAnimated) {
-    mAnimVal[0] = aValue1;
-    mAnimVal[1] = aValue2;
+    mAnimVal = value;
   }
 }
 
 void SVGAnimatedNumberPair::SetAnimValue(const float aValue[2],
                                          SVGElement* aSVGElement) {
-  if (mIsAnimated && mAnimVal[0] == aValue[0] && mAnimVal[1] == aValue[1]) {
+  PairValues value(aValue[0], aValue[1]);
+  if (mIsAnimated && std::ranges::equal(mAnimVal, value)) {
     return;
   }
-  mAnimVal[0] = aValue[0];
-  mAnimVal[1] = aValue[1];
+  mAnimVal = value;
   mIsAnimated = true;
   aSVGElement->DidAnimateNumberPair(mAttrEnum);
 }
 
 already_AddRefed<DOMSVGAnimatedNumber>
-SVGAnimatedNumberPair::ToDOMAnimatedNumber(PairIndex aIndex,
+SVGAnimatedNumberPair::ToDOMAnimatedNumber(WhichOneOfPair aWhichOneOfPair,
                                            SVGElement* aSVGElement) {
   RefPtr<DOMAnimatedNumber> domAnimatedNumber =
-      aIndex == eFirst ? sSVGFirstAnimatedNumberTearoffTable.GetTearoff(this)
-                       : sSVGSecondAnimatedNumberTearoffTable.GetTearoff(this);
+      aWhichOneOfPair == WhichOneOfPair::First
+          ? sSVGFirstAnimatedNumberTearoffTable.GetTearoff(this)
+          : sSVGSecondAnimatedNumberTearoffTable.GetTearoff(this);
   if (!domAnimatedNumber) {
-    domAnimatedNumber = new DOMAnimatedNumber(this, aIndex, aSVGElement);
-    if (aIndex == eFirst) {
+    domAnimatedNumber =
+        new DOMAnimatedNumber(this, aWhichOneOfPair, aSVGElement);
+    if (aWhichOneOfPair == WhichOneOfPair::First) {
       sSVGFirstAnimatedNumberTearoffTable.AddTearoff(this, domAnimatedNumber);
     } else {
       sSVGSecondAnimatedNumberTearoffTable.AddTearoff(this, domAnimatedNumber);
@@ -180,7 +179,7 @@ SVGAnimatedNumberPair::ToDOMAnimatedNumber(PairIndex aIndex,
 }
 
 SVGAnimatedNumberPair::DOMAnimatedNumber::~DOMAnimatedNumber() {
-  if (mIndex == eFirst) {
+  if (mWhichOneOfPair == WhichOneOfPair::First) {
     sSVGFirstAnimatedNumberTearoffTable.RemoveTearoff(mVal);
   } else {
     sSVGSecondAnimatedNumberTearoffTable.RemoveTearoff(mVal);
@@ -211,16 +210,15 @@ nsresult SVGAnimatedNumberPair::SMILNumberPair::ValueFromString(
 
 SMILValue SVGAnimatedNumberPair::SMILNumberPair::GetBaseValue() const {
   SMILValue val(&SVGNumberPairSMILType::sSingleton);
-  val.mU.mNumberPair[0] = mVal->mBaseVal[0];
-  val.mU.mNumberPair[1] = mVal->mBaseVal[1];
+  val.mU.mNumberPair[0] = mVal->mBaseVal[WhichOneOfPair::First];
+  val.mU.mNumberPair[1] = mVal->mBaseVal[WhichOneOfPair::Second];
   return val;
 }
 
 void SVGAnimatedNumberPair::SMILNumberPair::ClearAnimValue() {
   if (mVal->mIsAnimated) {
     mVal->mIsAnimated = false;
-    mVal->mAnimVal[0] = mVal->mBaseVal[0];
-    mVal->mAnimVal[1] = mVal->mBaseVal[1];
+    mVal->mAnimVal = mVal->mBaseVal;
     mSVGElement->DidAnimateNumberPair(mVal->mAttrEnum);
   }
 }
