@@ -111,7 +111,6 @@ class BookmarkFragment : Fragment() {
                                 BookmarksSyncMiddleware(requireComponents.backgroundServices.syncStore, lifecycleScope),
                                 BrowserToolbarSyncToBookmarksMiddleware(toolbarStore, lifecycleScope),
                                 BookmarksMiddleware(
-                                    lifecycleScope = lifecycleScope,
                                     bookmarksStorage = requireContext().bookmarkStorage,
                                     clipboardManager = requireActivity().getSystemService(),
                                     addNewTabUseCase = requireComponents.useCases.tabsUseCases.addTab,
