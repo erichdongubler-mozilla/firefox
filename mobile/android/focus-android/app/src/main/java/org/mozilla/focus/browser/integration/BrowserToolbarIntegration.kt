@@ -256,7 +256,7 @@ class BrowserToolbarIntegration(
             store.flowScoped(coroutineScope = CoroutineScope(coroutineDispatcher + SupervisorJob())) { flow ->
                 flow.distinctUntilChangedBy { state -> state.tabs.size > 1 }
                     .collect { state ->
-                        if (state.tabs.size > 1) {
+                        if (state.tabs.isNotEmpty()) {
                             toolbar.addBrowserAction(tabsAction)
                         } else {
                             toolbar.removeBrowserAction(tabsAction)
