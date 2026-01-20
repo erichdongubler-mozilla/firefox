@@ -457,7 +457,8 @@ static nsresult WriteBitmap(nsIFile* aFile, imgIContainer* aImage) {
   nsresult rv;
 
   RefPtr<gfx::SourceSurface> surface = aImage->GetFrame(
-      imgIContainer::FRAME_FIRST, imgIContainer::FLAG_SYNC_DECODE);
+      imgIContainer::FRAME_FIRST,
+      imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY);
   NS_ENSURE_TRUE(surface, NS_ERROR_FAILURE);
 
   // For either of the following formats we want to set the biBitCount member
