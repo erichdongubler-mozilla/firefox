@@ -2855,6 +2855,14 @@ class Settings(
     )
 
     /**
+     * Whether the Native Share Sheet feature is enabled.
+     */
+    var nativeShareSheetEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_native_share_sheet),
+        default = { FxNimbus.features.nativeShareSheet.value().enabled },
+    )
+
+    /**
      * Indicates whether the app should automatically clean up downloaded files.
      */
     fun shouldCleanUpDownloadsAutomatically(): Boolean {

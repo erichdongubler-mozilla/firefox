@@ -534,4 +534,7 @@
 
     <!-- Tab Search -->
     <string name="pref_key_tab_search" translatable="false">pref_key_tab_search_feature</string>
+
+    <!-- Native Share Sheet -->
+    <string name="pref_key_native_share_sheet" translatable="false">pref_key_native_share_sheet</string>
 </resources>
