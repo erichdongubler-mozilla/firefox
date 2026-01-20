@@ -3,6 +3,8 @@
  * See pwmgr_common.js for the content process companion.
  */
 
+/* eslint-env mozilla/chrome-script */
+
 "use strict";
 
 var { AppConstants } = ChromeUtils.importESModule(

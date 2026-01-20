@@ -1,3 +1,5 @@
+/* eslint-env webextensions */
+
 const PROXY_PREF = "network.proxy.type";
 const HOMEPAGE_URL_PREF = "browser.startup.homepage";
 const HOMEPAGE_OVERRIDE_KEY = "homepage_override";

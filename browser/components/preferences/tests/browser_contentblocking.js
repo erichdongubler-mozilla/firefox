@@ -1,3 +1,5 @@
+/* eslint-env webextensions */
+
 "use strict";
 
 const { Preferences } = ChromeUtils.importESModule(

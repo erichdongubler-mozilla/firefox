@@ -29,6 +29,7 @@
  *   session to the proxy.
  */
 
+/* eslint-env node */
 /* global serverPort */
 
 "use strict";

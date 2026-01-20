@@ -60,6 +60,7 @@
         }
 
         let script = SpecialPowers.loadChromeScript(function() {
+          /* eslint-env mozilla/chrome-script */
           var EventUtils = {};
           EventUtils.window = {};
           EventUtils._EU_Ci = Ci;
