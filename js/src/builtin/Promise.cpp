@@ -7052,7 +7052,11 @@ bool PromiseObject::forEachReactionRecord(
     return true;
   }
 
-  RootedValue reactionsVal(cx, reactions());
+  RootedTuple<Value, PromiseReactionRecord*, AsyncFunctionGeneratorObject*,
+              AsyncGeneratorObject*, PromiseObject*, JSObject*, JSObject*,
+              JSObject*>
+      roots(cx);
+  RootedField<Value, 0> reactionsVal(roots, reactions());
   if (reactionsVal.isNullOrUndefined()) {
     // No reaction records are attached to this promise.
     return true;
@@ -7069,30 +7073,32 @@ bool PromiseObject::forEachReactionRecord(
       return false;
     }
 
-    Rooted<PromiseReactionRecord*> reaction(cx,
-                                            &obj->as<PromiseReactionRecord>());
+    RootedField<PromiseReactionRecord*, 1> reaction(
+        roots, &obj->as<PromiseReactionRecord>());
     MOZ_ASSERT(reaction->targetState() == JS::PromiseState::Pending);
 
     if (reaction->isAsyncFunction()) {
-      Rooted<AsyncFunctionGeneratorObject*> generator(
-          cx, reaction->asyncFunctionGenerator());
+      RootedField<AsyncFunctionGeneratorObject*, 2> generator(
+          roots, reaction->asyncFunctionGenerator());
       if (!builder.asyncFunction(cx, generator)) {
         return false;
       }
     } else if (reaction->isAsyncGenerator()) {
-      Rooted<AsyncGeneratorObject*> generator(cx, reaction->asyncGenerator());
+      RootedField<AsyncGeneratorObject*, 3> generator(
+          roots, reaction->asyncGenerator());
       if (!builder.asyncGenerator(cx, generator)) {
         return false;
       }
     } else if (reaction->isDefaultResolvingHandler()) {
-      Rooted<PromiseObject*> promise(cx, reaction->defaultResolvingPromise());
+      RootedField<PromiseObject*, 4> promise(
+          roots, reaction->defaultResolvingPromise());
       if (!builder.direct(cx, promise)) {
         return false;
       }
     } else {
-      RootedObject resolve(cx);
-      RootedObject reject(cx);
-      RootedObject result(cx, reaction->promise());
+      RootedField<JSObject*, 5> resolve(roots);
+      RootedField<JSObject*, 6> reject(roots);
+      RootedField<JSObject*, 7> result(roots, reaction->promise());
 
       Value v = reaction->getFixedSlot(PromiseReactionRecord::OnFulfilled);
       if (v.isObject()) {
