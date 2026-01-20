@@ -2724,8 +2724,9 @@ static bool PromiseResolveThenableJob(JSContext* cx, HandleObject promise,
                                       HandleValue thenable, HandleObject then) {
   // Step 1.a. Let resolvingFunctions be
   //           CreateResolvingFunctions(promiseToResolve).
-  RootedObject resolveFn(cx);
-  RootedObject rejectFn(cx);
+  RootedTuple<JSObject*, JSObject*, Value, SavedFrame*, Value> roots(cx);
+  RootedField<JSObject*, 0> resolveFn(roots);
+  RootedField<JSObject*, 1> rejectFn(roots);
   if (!CreateResolvingFunctions(cx, promise, &resolveFn, &rejectFn)) {
     return false;
   }
@@ -2739,7 +2740,7 @@ static bool PromiseResolveThenableJob(JSContext* cx, HandleObject promise,
   args2[1].setObject(*rejectFn);
 
   // In difference to the usual pattern, we return immediately on success.
-  RootedValue rval(cx);
+  RootedField<Value, 2> rval(roots);
   if (Call(cx, thenable, then, args2, &rval)) {
     // Step 1.d. Return Completion(thenCallResult).
     return true;
@@ -2747,7 +2748,7 @@ static bool PromiseResolveThenableJob(JSContext* cx, HandleObject promise,
 
   // Step 1.c. If thenCallResult is an abrupt completion, then
 
-  Rooted<SavedFrame*> stack(cx);
+  RootedField<SavedFrame*, 3> stack(roots);
   if (!MaybeGetAndClearExceptionAndStack(cx, &rval, &stack)) {
     return false;
   }
@@ -2756,7 +2757,7 @@ static bool PromiseResolveThenableJob(JSContext* cx, HandleObject promise,
   //             Call(resolvingFunctions.[[Reject]], undefined,
   //                  « thenCallResult.[[Value]] »).
   // Step 1.c.ii. Return Completion(status).
-  RootedValue rejectVal(cx, ObjectValue(*rejectFn));
+  RootedField<Value, 4> rejectVal(roots, ObjectValue(*rejectFn));
   return Call(cx, rejectVal, UndefinedHandleValue, rval, &rval);
 }
 
@@ -2767,12 +2768,14 @@ static bool PromiseResolveThenableJob(JSContext* cx, HandleObject promise,
 static bool PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  RootedFunction job(cx, &args.callee().as<JSFunction>());
-  RootedObject promise(
-      cx, &job->getExtendedSlot(ThenableJobSlot_Promise).toObject());
-  RootedValue thenable(cx, job->getExtendedSlot(ThenableJobSlot_Thenable));
-  RootedObject then(cx,
-                    &job->getExtendedSlot(ThenableJobSlot_Handler).toObject());
+  RootedTuple<JSFunction*, JSObject*, Value, JSObject*> roots(cx);
+  RootedField<JSFunction*, 0> job(roots, &args.callee().as<JSFunction>());
+  RootedField<JSObject*, 1> promise(
+      roots, &job->getExtendedSlot(ThenableJobSlot_Promise).toObject());
+  RootedField<Value, 2> thenable(
+      roots, job->getExtendedSlot(ThenableJobSlot_Thenable));
+  RootedField<JSObject*, 3> then(
+      roots, &job->getExtendedSlot(ThenableJobSlot_Handler).toObject());
 
   return PromiseResolveThenableJob(cx, promise, thenable, then);
 }
