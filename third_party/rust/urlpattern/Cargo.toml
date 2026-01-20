@@ -10,9 +10,9 @@
 # See Cargo.toml.orig for the original contents.
 
 [package]
-edition = "2021"
+edition = "2024"
 name = "urlpattern"
-version = "0.4.2"
+version = "0.5.0"
 authors = [
     "the Deno authors",
     "crowlKats <crowlkats@toaxl.com>",
