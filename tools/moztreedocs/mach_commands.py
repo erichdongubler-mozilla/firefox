@@ -544,7 +544,7 @@ def transform_error_regexp():
     # We need to replace the path, and split the text of the message so
     # that we can insert a pipe for automation to detect.
     return re.compile(
-        os.path.join(manager().staging_dir, "") + r"(.*?)(:[0-9]*)?:\s*(.*)"
+        re.escape(os.path.join(manager().staging_dir, "")) + r"(.*?)(:[0-9]*)?:\s*(.*)"
     )
 
 
