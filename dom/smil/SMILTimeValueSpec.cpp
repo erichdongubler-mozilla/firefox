@@ -125,7 +125,8 @@ void SMILTimeValueSpec::HandleNewInterval(
 
   // Create the instance time and register it with the interval
   RefPtr<SMILInstanceTime> newInstance = new SMILInstanceTime(
-      newTime, SMILInstanceTime::SOURCE_SYNCBASE, this, &aInterval);
+      newTime, SMILInstanceTime::SMILInstanceTimeSource::Syncbase, this,
+      &aInterval);
   mOwner->AddInstanceTime(newInstance, mIsBegin);
 }
 
@@ -309,8 +310,8 @@ void SMILTimeValueSpec::HandleEvent(Event* aEvent) {
     return;
   }
 
-  RefPtr<SMILInstanceTime> newInstance =
-      new SMILInstanceTime(newTime, SMILInstanceTime::SOURCE_EVENT);
+  RefPtr<SMILInstanceTime> newInstance = new SMILInstanceTime(
+      newTime, SMILInstanceTime::SMILInstanceTimeSource::Event);
   mOwner->AddInstanceTime(newInstance, mIsBegin);
 }
 

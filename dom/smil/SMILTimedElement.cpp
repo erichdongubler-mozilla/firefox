@@ -1950,8 +1950,8 @@ void SMILTimedElement::AddInstanceTimeFromCurrentTime(SMILTime aCurrentTime,
   SMILTimeValue timeVal(std::clamp<SMILTime>(
       aCurrentTime + offset, 0, std::numeric_limits<SMILTime>::max()));
 
-  RefPtr<SMILInstanceTime> instanceTime =
-      new SMILInstanceTime(timeVal, SMILInstanceTime::SOURCE_DOM);
+  RefPtr<SMILInstanceTime> instanceTime = new SMILInstanceTime(
+      timeVal, SMILInstanceTime::SMILInstanceTimeSource::DOM);
 
   AddInstanceTime(instanceTime, aIsBegin);
 }
