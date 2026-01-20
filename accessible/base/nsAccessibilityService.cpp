@@ -30,6 +30,7 @@
 #include "nsCRT.h"
 #include "nsEventShell.h"
 #include "nsGkAtoms.h"
+#include "nsIAccessibleAnnouncementEvent.h"
 #include "nsIFrameInlines.h"
 #include "nsServiceManagerUtils.h"
 #include "nsTextFormatter.h"
@@ -60,6 +61,7 @@
 #include "nsTreeBodyFrame.h"
 #include "nsTreeUtils.h"
 #include "mozilla/a11y/AccTypes.h"
+#include "mozilla/dom/ARIANotifyMixinBinding.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/DOMStringList.h"
 #include "mozilla/dom/EventTarget.h"
@@ -749,6 +751,26 @@ void nsAccessibilityService::NotifyAttrElementChanged(
   MOZ_ASSERT(doc);
   if (DocAccessible* docAcc = GetDocAccessible(doc)) {
     docAcc->AttrElementChanged(aElement, aAttr);
+  }
+}
+
+void nsAccessibilityService::AriaNotify(
+    nsINode* aNode, const nsAString& aAnnouncement,
+    const mozilla::dom::AriaNotificationOptions& aOptions) {
+  Document* doc = aNode->GetUncomposedDoc();
+  if (!doc) {
+    return;
+  }
+  DocAccessible* docAcc = GetDocAccessible(doc);
+  if (!docAcc) {
+    return;
+  }
+  LocalAccessible* acc = docAcc->GetAccessible(aNode);
+  if (acc) {
+    acc->Announce(aAnnouncement,
+                  aOptions.mPriority == dom::AriaNotifyPriority::High
+                      ? nsIAccessibleAnnouncementEvent::ASSERTIVE
+                      : nsIAccessibleAnnouncementEvent::POLITE);
   }
 }
 

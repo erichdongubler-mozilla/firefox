@@ -4,9 +4,12 @@
 
 "use strict";
 
+/**
+ * Test internal announce method.
+ */
 addAccessibleTask(
   `<p id="p">abc</p>`,
-  async function (browser, accDoc) {
+  async function testAnnounce(browser, accDoc) {
     function announce(announcement, priority) {
       return invokeContentTask(
         browser,
@@ -43,4 +46,81 @@ addAccessibleTask(
     );
   },
   { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
+);
+
+/**
+ * Test ariaNotify.
+ */
+addAccessibleTask(
+  `<p id="p">abc</p>`,
+  async function testAriaNotify(browser, docAcc) {
+    const p = findAccessibleChildByID(docAcc, "p");
+    info("p.ariaNotify a, priority unspecified");
+    let announced = waitForEvent(EVENT_ANNOUNCEMENT, p);
+    await invokeContentTask(browser, [], () => {
+      content.p = content.document.getElementById("p");
+      content.p.ariaNotify("a");
+    });
+    let evt = await announced;
+    evt.QueryInterface(nsIAccessibleAnnouncementEvent);
+    is(evt.announcement, "a", "announcement matches");
+    is(evt.priority, nsIAccessibleAnnouncementEvent.POLITE, "priority correct");
+
+    info("p.ariaNotify b, priority normal");
+    announced = waitForEvent(EVENT_ANNOUNCEMENT, p);
+    await invokeContentTask(browser, [], () => {
+      content.p.ariaNotify("b", { priority: "normal" });
+    });
+    evt = await announced;
+    evt.QueryInterface(nsIAccessibleAnnouncementEvent);
+    is(evt.announcement, "b", "announcement matches");
+    is(evt.priority, nsIAccessibleAnnouncementEvent.POLITE, "priority correct");
+
+    info("p.ariaNotify c, priority high");
+    announced = waitForEvent(EVENT_ANNOUNCEMENT, p);
+    await invokeContentTask(browser, [], () => {
+      content.p.ariaNotify("c", { priority: "high" });
+    });
+    evt = await announced;
+    evt.QueryInterface(nsIAccessibleAnnouncementEvent);
+    is(evt.announcement, "c", "announcement matches");
+    is(
+      evt.priority,
+      nsIAccessibleAnnouncementEvent.ASSERTIVE,
+      "priority correct"
+    );
+
+    info("doc.ariaNotify d, priority unspecified");
+    announced = waitForEvent(EVENT_ANNOUNCEMENT, docAcc);
+    await invokeContentTask(browser, [], () => {
+      content.document.ariaNotify("d");
+    });
+    evt = await announced;
+    evt.QueryInterface(nsIAccessibleAnnouncementEvent);
+    is(evt.announcement, "d", "announcement matches");
+    is(evt.priority, nsIAccessibleAnnouncementEvent.POLITE, "priority correct");
+  },
+  { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
+);
+
+/**
+ * Test ariaNotify's feature policy.
+ */
+addAccessibleTask(
+  ``,
+  async function testAriaNotifyPolicy(browser, docAcc) {
+    info("doc.ariaNotify a");
+    await contentSpawnMutation(
+      browser,
+      { unexpected: [[EVENT_ANNOUNCEMENT, docAcc]] },
+      () => {
+        content.document.ariaNotify("a");
+      }
+    );
+  },
+  {
+    topLevel: false,
+    remoteIframe: true,
+    iframeAttrs: { allow: "aria-notify none" },
+  }
 );

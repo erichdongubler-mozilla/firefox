@@ -270,6 +270,11 @@
   value: false
   mirror: always
 
+- name: accessibility.ariaNotify.enabled
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # Whether to enable all accessibility cache domains on startup.
 #  * false: enable domains as needed
 #  * true:  enable all domains regardless of need (cache everything)

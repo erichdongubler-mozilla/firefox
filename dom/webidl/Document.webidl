@@ -790,3 +790,5 @@ partial interface Document {
   [Throws, Pref="dom.security.sanitizer.enabled"]
   static Document parseHTML(DOMString html, optional SetHTMLOptions options = {});
 };
+
+Document includes ARIANotifyMixin;

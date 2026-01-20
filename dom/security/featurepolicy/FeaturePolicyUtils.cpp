@@ -44,6 +44,7 @@ static FeatureMap sSupportedFeatures[] = {
     {"speaker-selection", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"storage-access", FeaturePolicyUtils::FeaturePolicyValue::eAll},
     {"screen-wake-lock", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+    {"aria-notify", FeaturePolicyUtils::FeaturePolicyValue::eAll},
 };
 
 /*

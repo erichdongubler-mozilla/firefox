@@ -309,6 +309,9 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
    */
   void NotifyAttrElementChanged(mozilla::dom::Element* aElement, nsAtom* aAttr);
 
+  void AriaNotify(nsINode* aNode, const nsAString& aAnnouncement,
+                  const mozilla::dom::AriaNotificationOptions& aOptions);
+
   // nsAccessibiltiyService
 
   /**

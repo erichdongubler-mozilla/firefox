@@ -118,6 +118,7 @@ struct DOMPointInit;
 struct GetRootNodeOptions;
 enum class AllowRangeCrossShadowBoundary : bool;  // defined in AbstractRange.h
 enum class CallerType : uint32_t;
+struct AriaNotificationOptions;
 }  // namespace dom
 }  // namespace mozilla
 
@@ -2639,6 +2640,9 @@ class nsINode : public mozilla::dom::EventTarget {
   NodeSelectorFlags GetSelectorFlags() const {
     return static_cast<NodeSelectorFlags>(mSelectorFlags.Get());
   }
+
+  void AriaNotify(const nsAString& aAnnouncement,
+                  const mozilla::dom::AriaNotificationOptions& aOptions);
 
  protected:
   static bool Traverse(nsINode* tmp, nsCycleCollectionTraversalCallback& cb);
