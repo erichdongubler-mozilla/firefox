@@ -242,7 +242,7 @@ class SVGGeometryElement : public SVGGeometryElementBase {
    */
   FillRule GetFillRule();
 
-  enum PathLengthScaleForType { eForTextPath, eForStroking };
+  enum class PathLengthScaleUsageType { TextPath, Stroking };
 
   /**
    * Gets the ratio of the actual element's length to the content author's
@@ -250,7 +250,7 @@ class SVGGeometryElement : public SVGGeometryElementBase {
    * This is used to scale stroke dashing, and to scale offsets along a
    * textPath.
    */
-  float GetPathLengthScale(PathLengthScaleForType aFor);
+  float GetPathLengthScale(PathLengthScaleUsageType aFor);
 
   // WebIDL
   already_AddRefed<DOMSVGAnimatedNumber> PathLength();

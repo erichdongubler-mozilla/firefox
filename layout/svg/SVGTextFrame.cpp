@@ -4641,7 +4641,8 @@ gfxFloat SVGTextFrame::GetOffsetScale(nsIFrame* aTextPathFrame) {
   if (!geomElement) {
     return 1.0;
   }
-  return geomElement->GetPathLengthScale(SVGGeometryElement::eForTextPath);
+  return geomElement->GetPathLengthScale(
+      SVGGeometryElement::PathLengthScaleUsageType::TextPath);
 }
 
 gfxFloat SVGTextFrame::GetStartOffset(nsIFrame* aTextPathFrame) {

@@ -108,8 +108,8 @@ static DashState GetStrokeDashData(
       return eContinuousStroke;
     }
     if (auto* shapeElement = SVGGeometryElement::FromNode(aElement)) {
-      pathScale =
-          shapeElement->GetPathLengthScale(SVGGeometryElement::eForStroking);
+      pathScale = shapeElement->GetPathLengthScale(
+          SVGGeometryElement::PathLengthScaleUsageType::Stroking);
       if (pathScale <= 0 || !std::isfinite(pathScale)) {
         return eContinuousStroke;
       }
