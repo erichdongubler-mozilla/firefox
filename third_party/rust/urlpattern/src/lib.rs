@@ -6,13 +6,13 @@
 //! For a usage example, see the [UrlPattern] documentation.
 
 mod canonicalize_and_process;
-pub mod component;
+mod component;
 mod constructor_parser;
 mod error;
-pub mod matcher;
-pub mod parser;
+mod matcher;
+mod parser;
 pub mod quirks;
-pub mod regexp;
+mod regexp;
 mod tokenizer;
 
 pub use error::Error;
@@ -20,21 +20,17 @@ use serde::Deserialize;
 use serde::Serialize;
 use url::Url;
 
-use crate::canonicalize_and_process::ProcessType;
 use crate::canonicalize_and_process::is_special_scheme;
 use crate::canonicalize_and_process::process_base_url;
 use crate::canonicalize_and_process::special_scheme_default_port;
+use crate::canonicalize_and_process::ProcessType;
 use crate::component::Component;
 use crate::regexp::RegExp;
-
-pub use parser::RegexSyntax;
 
 /// Options to create a URL pattern.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UrlPatternOptions {
-  #[serde(default)]
-  pub regex_syntax: RegexSyntax,
   pub ignore_case: bool,
 }
 
@@ -207,16 +203,17 @@ impl UrlPatternInit {
     if let Some(pathname) = &self.pathname {
       result.pathname = Some(pathname.clone());
 
-      if let Some(base_url) = base_url
-        && !base_url.cannot_be_a_base()
-        && !is_absolute_pathname(pathname, &kind)
-      {
-        let baseurl_path = url::quirks::pathname(base_url);
-        let slash_index = baseurl_path.rfind('/');
-        if let Some(slash_index) = slash_index {
-          let new_pathname = baseurl_path[..=slash_index].to_string();
-          result.pathname =
-            Some(format!("{}{}", new_pathname, result.pathname.unwrap()));
+      if let Some(base_url) = base_url {
+        if !base_url.cannot_be_a_base()
+          && !is_absolute_pathname(pathname, &kind)
+        {
+          let baseurl_path = url::quirks::pathname(base_url);
+          let slash_index = baseurl_path.rfind('/');
+          if let Some(slash_index) = slash_index {
+            let new_pathname = baseurl_path[..=slash_index].to_string();
+            result.pathname =
+              Some(format!("{}{}", new_pathname, result.pathname.unwrap()));
+          }
         }
       }
 
@@ -287,14 +284,14 @@ fn is_absolute_pathname(
 /// ```
 #[derive(Debug)]
 pub struct UrlPattern<R: RegExp = regex::Regex> {
-  pub protocol: Component<R>,
-  pub username: Component<R>,
-  pub password: Component<R>,
-  pub hostname: Component<R>,
-  pub port: Component<R>,
-  pub pathname: Component<R>,
-  pub search: Component<R>,
-  pub hash: Component<R>,
+  protocol: Component<R>,
+  username: Component<R>,
+  password: Component<R>,
+  hostname: Component<R>,
+  port: Component<R>,
+  pathname: Component<R>,
+  search: Component<R>,
+  hash: Component<R>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -331,22 +328,19 @@ impl<R: RegExp> UrlPattern<R> {
     )?;
 
     //  If processedInit["protocol"] is a special scheme and processedInit["port"] is its corresponding default port
-    if let Some(protocol) = &processed_init.protocol
-      && is_special_scheme(protocol)
-    {
-      let default_port = special_scheme_default_port(protocol);
-      if default_port == processed_init.port.as_deref() {
-        processed_init.port = Some(String::new())
+    if let Some(protocol) = &processed_init.protocol {
+      if is_special_scheme(protocol) {
+        let default_port = special_scheme_default_port(protocol);
+        if default_port == processed_init.port.as_deref() {
+          processed_init.port = Some(String::new())
+        }
       }
     }
 
     let protocol = Component::compile(
       processed_init.protocol.as_deref(),
       canonicalize_and_process::canonicalize_protocol,
-      parser::Options {
-        regex_syntax: options.regex_syntax,
-        ..parser::Options::default()
-      },
+      parser::Options::default(),
     )?
     .optionally_transpose_regex_error(report_regex_errors)?;
 
@@ -360,27 +354,20 @@ impl<R: RegExp> UrlPattern<R> {
       Component::compile(
         processed_init.hostname.as_deref(),
         canonicalize_and_process::canonicalize_ipv6_hostname,
-        parser::Options {
-          regex_syntax: options.regex_syntax,
-          ..parser::Options::hostname()
-        },
+        parser::Options::hostname(),
       )?
       .optionally_transpose_regex_error(report_regex_errors)?
     } else {
       Component::compile(
         processed_init.hostname.as_deref(),
         canonicalize_and_process::canonicalize_hostname,
-        parser::Options {
-          regex_syntax: options.regex_syntax,
-          ..parser::Options::hostname()
-        },
+        parser::Options::hostname(),
       )?
       .optionally_transpose_regex_error(report_regex_errors)?
     };
 
     let compile_options = parser::Options {
       ignore_case: options.ignore_case,
-      regex_syntax: options.regex_syntax,
       ..Default::default()
     };
 
@@ -404,7 +391,6 @@ impl<R: RegExp> UrlPattern<R> {
           canonicalize_and_process::canonicalize_pathname,
           parser::Options {
             ignore_case: options.ignore_case,
-            regex_syntax: options.regex_syntax,
             ..parser::Options::pathname()
           },
         )?
@@ -424,29 +410,20 @@ impl<R: RegExp> UrlPattern<R> {
       username: Component::compile(
         processed_init.username.as_deref(),
         canonicalize_and_process::canonicalize_username,
-        parser::Options {
-          regex_syntax: options.regex_syntax,
-          ..parser::Options::default()
-        },
+        parser::Options::default(),
       )?
       .optionally_transpose_regex_error(report_regex_errors)?,
       password: Component::compile(
         processed_init.password.as_deref(),
         canonicalize_and_process::canonicalize_password,
-        parser::Options {
-          regex_syntax: options.regex_syntax,
-          ..parser::Options::default()
-        },
+        parser::Options::default(),
       )?
       .optionally_transpose_regex_error(report_regex_errors)?,
       hostname,
       port: Component::compile(
         processed_init.port.as_deref(),
         |port| canonicalize_and_process::canonicalize_port(port, None),
-        parser::Options {
-          regex_syntax: options.regex_syntax,
-          ..parser::Options::default()
-        },
+        parser::Options::default(),
       )?
       .optionally_transpose_regex_error(report_regex_errors)?,
       pathname,
@@ -647,11 +624,11 @@ mod tests {
   use serde::Serialize;
   use url::Url;
 
+  use crate::quirks;
+  use crate::quirks::StringOrInit;
   use crate::UrlPatternComponentResult;
   use crate::UrlPatternOptions;
   use crate::UrlPatternResult;
-  use crate::quirks;
-  use crate::quirks::StringOrInit;
 
   use super::UrlPattern;
   use super::UrlPatternInit;
@@ -924,12 +901,12 @@ mod tests {
 
     let match_input = quirks::process_match_input(input, base_url.as_deref());
 
-    if let Some(ExpectedMatch::String(s)) = &case.expected_match
-      && s == "error"
-    {
-      assert!(match_input.is_err());
-      println!("✅ Passed");
-      return;
+    if let Some(ExpectedMatch::String(s)) = &case.expected_match {
+      if s == "error" {
+        assert!(match_input.is_err());
+        println!("✅ Passed");
+        return;
+      }
     };
 
     let input = match_input.expect("failed to parse match input");
@@ -949,13 +926,13 @@ mod tests {
     } else {
       Ok(None)
     };
-    if let Some(ExpectedMatch::String(s)) = &case.expected_match
-      && s == "error"
-    {
-      assert!(test_res.is_err());
-      assert!(exec_res.is_err());
-      println!("✅ Passed");
-      return;
+    if let Some(ExpectedMatch::String(s)) = &case.expected_match {
+      if s == "error" {
+        assert!(test_res.is_err());
+        assert!(exec_res.is_err());
+        println!("✅ Passed");
+        return;
+      }
     };
 
     let expected_match = case.expected_match.map(|x| match x {
