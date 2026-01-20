@@ -796,7 +796,8 @@ var gSearchPane = {
 
   async setDefaultEngine() {
     await lazy.SearchService.setDefault(
-      document.getElementById("defaultEngine").selectedItem.engine,
+      document.getElementById("defaultEngine").selectedItem.engine
+        .originalEngine,
       Ci.nsISearchService.CHANGE_REASON_USER
     );
     if (ExtensionSettingsStore.getSetting(SEARCH_TYPE, SEARCH_KEY) !== null) {
@@ -810,7 +811,8 @@ var gSearchPane = {
 
   async setDefaultPrivateEngine() {
     await lazy.SearchService.setDefaultPrivate(
-      document.getElementById("defaultPrivateEngine").selectedItem.engine,
+      document.getElementById("defaultPrivateEngine").selectedItem.engine
+        .originalEngine,
       Ci.nsISearchService.CHANGE_REASON_USER
     );
   },

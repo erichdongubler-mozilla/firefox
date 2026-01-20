@@ -186,7 +186,9 @@ class _SearchTestUtils {
           if (i == times) {
             Services.obs.removeObserver(observer, topic);
             // Let the stack unwind.
-            Services.tm.dispatchToMainThread(() => resolve(aSubject));
+            Services.tm.dispatchToMainThread(() =>
+              resolve(aSubject?.wrappedJSObject ?? aSubject)
+            );
           }
         }
       }, topic);

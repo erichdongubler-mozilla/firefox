@@ -1013,7 +1013,8 @@ EnvironmentCache.prototype = {
         if (
           aData == "engine-changed" &&
           aSubject.QueryInterface(Ci.nsISearchEngine) &&
-          lazy.SearchService.defaultEngine != aSubject
+          lazy.SearchService.defaultEngine !=
+            (aSubject?.wrappedJSObject ?? aSubject)
         ) {
           return;
         }

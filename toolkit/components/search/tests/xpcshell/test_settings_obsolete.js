@@ -25,11 +25,12 @@ async function loadSettingsFile(settingsFile, name) {
  *   The engine name that should be default and is being removed.
  */
 async function checkLoadSettingProperties(settingsFile, engineName) {
+  SearchService.reset();
+
   await loadSettingsFile(settingsFile, engineName);
 
   const settingsFileWritten = promiseAfterSettings();
-  let ss = new SearchService();
-  let result = await ss.init();
+  let result = await SearchService.init();
 
   Assert.ok(
     Components.isSuccessCode(result),
@@ -38,7 +39,7 @@ async function checkLoadSettingProperties(settingsFile, engineName) {
 
   await settingsFileWritten;
 
-  let engines = await ss.getEngines();
+  let engines = await SearchService.getEngines();
 
   Assert.deepEqual(
     engines.map(e => e.name),
@@ -53,7 +54,6 @@ async function checkLoadSettingProperties(settingsFile, engineName) {
   );
 
   removeSettingsFile();
-  ss._removeObservers();
 }
 
 /**
