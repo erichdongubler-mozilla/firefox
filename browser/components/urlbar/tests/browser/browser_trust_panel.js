@@ -25,6 +25,8 @@ add_setup(async function setup() {
     set: [
       ["browser.urlbar.scotchBonnet.enableOverride", true],
       ["browser.urlbar.trustPanel.featureGate", true],
+      // Hover previews can block opening the trustpanel.
+      ["browser.tabs.hoverPreview.enabled", false],
     ],
   });
   registerCleanupFunction(async () => {
