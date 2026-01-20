@@ -2263,7 +2263,7 @@ pref("browser.aiwindow.apiKey", '');
 pref("browser.aiwindow.chatStore.loglevel", "Error");
 pref("browser.aiwindow.enabled", false);
 pref("browser.aiwindow.endpoint", "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1");
-pref("browser.aiwindow.memories", false);
+pref("browser.aiwindow.memories", true);
 pref("browser.aiwindow.memoriesLogLevel", "Warn");
 pref("browser.aiwindow.firstrun.autoAdvanceMS", 3000);
 pref("browser.aiwindow.firstrun.hasCompleted", false);
