@@ -16,9 +16,6 @@ namespace mozilla {
 #define SUBDIVISION_PRECISION 0.0000001
 #define SUBDIVISION_MAX_ITERATIONS 10
 
-const double SMILKeySpline::kSampleStepSize =
-    1.0 / double(kSplineTableSize - 1);
-
 void SMILKeySpline::Init(double aX1, double aY1, double aX2, double aY2) {
   mX1 = aX1;
   mY1 = aY1;
