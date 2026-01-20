@@ -5792,9 +5792,12 @@ static bool PromiseThenNewPromiseCapability(
                                                      HandleObject onRejected) {
   cx->check(promiseObj, onFulfilled, onRejected);
 
-  RootedValue promiseVal(cx, ObjectValue(*promiseObj));
-  Rooted<PromiseObject*> unwrappedPromise(
-      cx,
+  RootedTuple<Value, PromiseObject*, PromiseObject*, PromiseCapability, Value,
+              Value>
+      roots(cx);
+  RootedField<Value, 0> promiseVal(roots, ObjectValue(*promiseObj));
+  RootedField<PromiseObject*, 1> unwrappedPromise(
+      roots,
       UnwrapAndTypeCheckValue<PromiseObject>(cx, promiseVal, [cx, promiseObj] {
         JS_ReportErrorNumberLatin1(cx, GetErrorMessage, nullptr,
                                    JSMSG_INCOMPATIBLE_PROTO, "Promise", "then",
@@ -5806,21 +5809,21 @@ static bool PromiseThenNewPromiseCapability(
 
   // Step 3. Let C be ? SpeciesConstructor(promise, %Promise%).
   // Step 4. Let resultCapability be ? NewPromiseCapability(C).
-  Rooted<PromiseObject*> newPromise(
-      cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
+  RootedField<PromiseObject*, 2> newPromise(
+      roots, CreatePromiseObjectWithoutResolutionFunctions(cx));
   if (!newPromise) {
     return nullptr;
   }
   newPromise->copyUserInteractionFlagsFrom(*unwrappedPromise);
 
-  Rooted<PromiseCapability> resultCapability(cx);
+  RootedField<PromiseCapability, 3> resultCapability(roots);
   resultCapability.promise().set(newPromise);
 
   // Step 5. Return PerformPromiseThen(promise, onFulfilled, onRejected,
   //                                   resultCapability).
   {
-    RootedValue onFulfilledVal(cx, ObjectOrNullValue(onFulfilled));
-    RootedValue onRejectedVal(cx, ObjectOrNullValue(onRejected));
+    RootedField<Value, 4> onFulfilledVal(roots, ObjectOrNullValue(onFulfilled));
+    RootedField<Value, 5> onRejectedVal(roots, ObjectOrNullValue(onRejected));
     if (!PerformPromiseThen(cx, unwrappedPromise, onFulfilledVal, onRejectedVal,
                             resultCapability)) {
       return nullptr;
