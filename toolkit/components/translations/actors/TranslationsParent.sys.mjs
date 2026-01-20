@@ -2250,7 +2250,9 @@ export class TranslationsParent extends JSWindowActorParent {
     }
 
     /** @type {RemoteSettingsClient} */
-    const client = lazy.RemoteSettings("translations-models-v2");
+    const client = lazy.RemoteSettings(
+      lazy.TranslationsUtils.translationsModelsCollectionName
+    );
     TranslationsParent.#translationModelsRemoteClient = client;
     client.on("sync", TranslationsParent.#handleTranslationsModelsSync);
 
@@ -2609,7 +2611,9 @@ export class TranslationsParent extends JSWindowActorParent {
     }
 
     /** @type {RemoteSettingsClient} */
-    const client = lazy.RemoteSettings("translations-wasm-v2");
+    const client = lazy.RemoteSettings(
+      lazy.TranslationsUtils.translationsWasmCollectionName
+    );
     TranslationsParent.#translationsWasmRemoteClient = client;
     client.on("sync", TranslationsParent.#handleTranslationsWasmSync);
 
@@ -2849,18 +2853,6 @@ export class TranslationsParent extends JSWindowActorParent {
     });
 
     return downloadManager(queue);
-  }
-
-  /**
-   * Delete all language model files.
-   *
-   * @returns {Promise<string[]>} A list of record IDs.
-   */
-  static async deleteAllLanguageFiles() {
-    const client = TranslationsParent.#getTranslationModelsRemoteClient();
-    await chaosMode();
-    await client.attachments.deleteAll();
-    return [...(await TranslationsParent.#getTranslationModelRecords()).keys()];
   }
 
   /**
