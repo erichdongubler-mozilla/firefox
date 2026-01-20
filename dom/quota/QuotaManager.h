@@ -754,6 +754,9 @@ class QuotaManager final : public BackgroundThreadObject {
 
   static void InvalidateQuotaCache();
 
+  OriginMetadataArray GetTemporaryOrigins(
+      PersistenceType aPersistenceType) const;
+
  private:
   virtual ~QuotaManager();
 

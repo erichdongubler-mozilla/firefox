@@ -4173,6 +4173,13 @@
 #endif
   mirror: always
 
+# When enabled, ClearRequestBase::DeleteFiles would use cached temporary origins
+# to clear origin directories rather than scanning the whole storage directory.
+- name: dom.quotaManager.temporaryStorage.clearTemporaryOriginsUsingOriginCache
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 # A pref that is used to slow down origin operations for testing purposes.
 - name: dom.quotaManager.originOperations.pauseOnIOThreadMs
   type: RelaxedAtomicUint32

@@ -43,6 +43,12 @@ static const PersistenceType kBestEffortPersistenceTypes[] = {
 static const PersistenceType kInitializableBestEffortPersistenceTypes[] = {
     PERSISTENCE_TYPE_TEMPORARY, PERSISTENCE_TYPE_DEFAULT};
 
+static const PersistenceType kTemporaryPersistenceTypes[] = {
+    PERSISTENCE_TYPE_TEMPORARY, PERSISTENCE_TYPE_DEFAULT,
+    PERSISTENCE_TYPE_PRIVATE};
+
+bool IsTemporaryPersistenceType(const PersistenceType aPersistenceType);
+
 bool IsValidPersistenceType(PersistenceType aPersistenceType);
 
 bool IsBestEffortPersistenceType(const PersistenceType aPersistenceType);

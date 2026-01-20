@@ -745,6 +745,15 @@ class ClearRequestBase
                  //
                  kStringifyEndInstance);
   }
+
+  inline bool UseCachedTemporaryOrigins(
+      const PersistenceType aPersistenceType,
+      const QuotaManager& aQuotaManager) const {
+    return StaticPrefs::
+               dom_quotaManager_temporaryStorage_clearTemporaryOriginsUsingOriginCache() &&
+           aQuotaManager.IsTemporaryStorageInitializedInternal() &&
+           IsTemporaryPersistenceType(aPersistenceType);
+  }
 };
 
 class ClearOriginOp final : public ClearRequestBase {
@@ -2715,17 +2724,14 @@ void ClearRequestBase::DeleteFiles(QuotaManager& aQuotaManager,
   DeleteFilesInternal(
       aQuotaManager, aOriginMetadata.mPersistenceType,
       OriginScope::FromOrigin(aOriginMetadata),
-      [&aQuotaManager, &aOriginMetadata](
-          const std::function<Result<Ok, nsresult>(nsCOMPtr<nsIFile>)>& aBody)
-          -> Result<Ok, nsresult> {
+      [&aQuotaManager, &aOriginMetadata](auto&& aBody) -> Result<Ok, nsresult> {
         QM_TRY_UNWRAP(auto directory,
                       aQuotaManager.GetOriginDirectory(aOriginMetadata));
 
         // We're not checking if the origin directory actualy exists because
         // it can be a pending origin (OriginInfo does exist but the origin
         // directory hasn't been created yet).
-
-        QM_TRY_RETURN(aBody(std::move(directory)));
+        QM_TRY_RETURN(aBody(directory, Some(aOriginMetadata)));
       });
 }
 
@@ -2736,9 +2742,8 @@ void ClearRequestBase::DeleteFiles(QuotaManager& aQuotaManager,
 
   DeleteFilesInternal(
       aQuotaManager, aPersistenceType, aOriginScope,
-      [&aQuotaManager, &aPersistenceType](
-          const std::function<Result<Ok, nsresult>(nsCOMPtr<nsIFile>)>& aBody)
-          -> Result<Ok, nsresult> {
+      [this, &aQuotaManager, &aPersistenceType,
+       aOriginScope](auto&& aBody) -> Result<Ok, nsresult> {
         QM_TRY_INSPECT(
             const auto& directory,
             QM_NewLocalFile(aQuotaManager.GetStoragePath(aPersistenceType)));
@@ -2750,7 +2755,23 @@ void ClearRequestBase::DeleteFiles(QuotaManager& aQuotaManager,
           return Ok{};
         }
 
-        QM_TRY(CollectEachFile(*directory, aBody));
+        if (UseCachedTemporaryOrigins(aPersistenceType, aQuotaManager)) {
+          // These are the origins that actually exist on disk and does not
+          // capture pending origins and hence, we still need to iterate over
+          // pending origins below.
+          const auto& correspondingMetadataList =
+              aQuotaManager.GetTemporaryOrigins(aPersistenceType);
+
+          for (const auto& metadata : correspondingMetadataList) {
+            QM_TRY_UNWRAP(auto originDirectory,
+                          aQuotaManager.GetOriginDirectory(metadata));
+
+            QM_WARNONLY_TRY(aBody(originDirectory, Some(metadata),
+                                  Some(nsIFileKind::ExistsAsDirectory)));
+          }
+        } else {
+          QM_TRY(CollectEachFile(*directory, aBody));
+        }
 
         // CollectEachFile above only consulted the file-system to get a list of
         // known origins, but we also need to include origins that have pending
@@ -2804,29 +2825,47 @@ void ClearRequestBase::DeleteFilesInternal(
   QM_TRY(
       aFileCollector([&originScope = aOriginScope, aPersistenceType,
                       &aQuotaManager, &directoriesForRemovalRetry,
-                      this](nsCOMPtr<nsIFile> file)
-                         -> mozilla::Result<Ok, nsresult> {
-        QM_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*file));
+                      this](nsCOMPtr<nsIFile> file,
+                            Maybe<OriginMetadata> maybeMetadata = Nothing(),
+                            Maybe<nsIFileKind> maybeDirEntryKind =
+                                Nothing()) -> mozilla::Result<Ok, nsresult> {
+        if (!maybeDirEntryKind) {
+          QM_TRY_UNWRAP(maybeDirEntryKind,
+                        QM_OR_ELSE_WARN_IF(
+                            // Expression
+                            GetDirEntryKind(*file).map([](auto dirEntryKind) {
+                              return Some(dirEntryKind);
+                            }),
+                            // Predicate.
+                            IsSpecificError<NS_ERROR_FILE_UNKNOWN_TYPE>,
+                            // Fallback.
+                            ErrToDefaultOk<Maybe<nsIFileKind>>)
 
-        QM_TRY_INSPECT(
-            const auto& leafName,
-            MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsAutoString, file, GetLeafName));
+          );
+        }
 
-        switch (dirEntryKind) {
+        MOZ_ASSERT(maybeDirEntryKind);
+        switch (*maybeDirEntryKind) {
           case nsIFileKind::ExistsAsDirectory: {
-            QM_TRY_UNWRAP(auto maybeMetadata,
-                          QM_OR_ELSE_WARN_IF(
-                              // Expression
-                              aQuotaManager.GetOriginMetadata(file).map(
-                                  [](auto metadata) -> Maybe<OriginMetadata> {
-                                    return Some(std::move(metadata));
-                                  }),
-                              // Predicate.
-                              IsSpecificError<NS_ERROR_MALFORMED_URI>,
-                              // Fallback.
-                              ErrToDefaultOk<Maybe<OriginMetadata>>));
+            if (maybeMetadata.isNothing()) {
+              QM_TRY_UNWRAP(maybeMetadata,
+                            QM_OR_ELSE_WARN_IF(
+                                // Expression
+                                aQuotaManager.GetOriginMetadata(file).map(
+                                    [](auto metadata) -> Maybe<OriginMetadata> {
+                                      return Some(std::move(metadata));
+                                    }),
+                                // Predicate.
+                                IsSpecificError<NS_ERROR_MALFORMED_URI>,
+                                // Fallback.
+                                ErrToDefaultOk<Maybe<OriginMetadata>>));
+            }
 
             if (!maybeMetadata) {
+              QM_TRY_INSPECT(const auto& leafName,
+                             MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
+                                 nsAutoString, file, GetLeafName));
+
               // Unknown directories during clearing are allowed. Just
               // warn if we find them.
               UNKNOWN_FILE_WARNING(leafName);
@@ -2842,8 +2881,7 @@ void ClearRequestBase::DeleteFilesInternal(
               break;
             }
 
-            // We can't guarantee that this will always succeed on
-            // Windows...
+            // We can't guarantee that this will always succeed on Windows...
             QM_WARNONLY_TRY(
                 aQuotaManager.RemoveOriginDirectory(*file), [&](const auto&) {
                   directoriesForRemovalRetry.AppendElement(std::move(file));
@@ -2876,6 +2914,10 @@ void ClearRequestBase::DeleteFilesInternal(
           }
 
           case nsIFileKind::ExistsAsFile: {
+            QM_TRY_INSPECT(const auto& leafName,
+                           MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsAutoString, file,
+                                                             GetLeafName));
+
             // Unknown files during clearing are allowed. Just warn if we
             // find them.
             if (!IsOSMetadata(leafName)) {
