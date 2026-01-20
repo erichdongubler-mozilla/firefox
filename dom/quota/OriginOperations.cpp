@@ -754,6 +754,43 @@ class ClearRequestBase
            aQuotaManager.IsTemporaryStorageInitializedInternal() &&
            IsTemporaryPersistenceType(aPersistenceType);
   }
+
+  inline bool IsNonActionableFileError(const nsresult& aRv) {
+    if (NS_SUCCEEDED(aRv)) {
+      return false;
+    }
+
+    // Only care about file-related errors here.
+    if (NS_ERROR_GET_MODULE(aRv) != NS_ERROR_MODULE_FILES) {
+      return false;
+    }
+
+    switch (aRv) {
+      case NS_ERROR_FILE_UNRECOGNIZED_PATH:
+        [[fallthrough]];
+      case NS_ERROR_FILE_UNRESOLVABLE_SYMLINK:
+        [[fallthrough]];
+      case NS_ERROR_FILE_UNKNOWN_TYPE:
+        [[fallthrough]];
+      case NS_ERROR_FILE_DESTINATION_NOT_DIR:
+        [[fallthrough]];
+      case NS_ERROR_FILE_INVALID_PATH:
+        [[fallthrough]];
+      case NS_ERROR_FILE_NOT_DIRECTORY:
+        [[fallthrough]];
+      case NS_ERROR_FILE_TOO_BIG:
+        [[fallthrough]];
+      case NS_ERROR_FILE_NAME_TOO_LONG:
+        [[fallthrough]];
+      case NS_ERROR_FILE_NOT_FOUND:
+        [[fallthrough]];
+      case NS_ERROR_FILE_DIR_NOT_EMPTY:
+        return true;
+      default:
+        break;
+    }
+    return false;
+  }
 };
 
 class ClearOriginOp final : public ClearRequestBase {
@@ -2883,8 +2920,11 @@ void ClearRequestBase::DeleteFilesInternal(
 
             // We can't guarantee that this will always succeed on Windows...
             QM_WARNONLY_TRY(
-                aQuotaManager.RemoveOriginDirectory(*file), [&](const auto&) {
-                  directoriesForRemovalRetry.AppendElement(std::move(file));
+                aQuotaManager.RemoveOriginDirectory(*file),
+                [&](const auto& aRv) {
+                  if (!NS_WARN_IF(IsNonActionableFileError(aRv))) {
+                    directoriesForRemovalRetry.AppendElement(std::move(file));
+                  }
                 });
 
             mOriginMetadataArray.AppendElement(metadata);
