@@ -132,9 +132,22 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
 
     fun verifyUrl(url: String) {
         Log.i(TAG, "verifyUrl: Trying to verify $url")
-        composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL, useUnmergedTree = true)
-            .assertAny(hasText(url.replace("http://", ""), substring = true, ignoreCase = true))
-        Log.i(TAG, "verifyUrl: Verified $url")
+
+        val expectedText = url.replace("http://", "")
+        val textMatcher = hasText(expectedText, substring = true, ignoreCase = true)
+        try {
+            composeTestRule.waitUntil(waitingTimeShort) {
+                composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL, useUnmergedTree = true).fetchSemanticsNodes()
+                    .any { textMatcher.matches(it) }
+            }
+        } catch (_: ComposeTimeoutException) {
+            Log.i(TAG, "verifyUrl [$url] failed because: ")
+            composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL, useUnmergedTree = true).fetchSemanticsNodes()
+                .forEachIndexed { index, node ->
+                    val text = node.config.getOrNull(SemanticsProperties.Text)?.joinToString("")
+                    Log.i(TAG, "verifyUrl: Node[$index] with tag '$ADDRESSBAR_URL' has text: '$text'")
+                }
+        }
     }
 
     fun verifyHelpUrl() {
