@@ -46,9 +46,9 @@ ai-window-toggleview-status-label-inactive = Classic Window
 
 ## Input CTA
 
-aiwindow-input-cta-label-chat = Chat
+aiwindow-input-cta-label-chat = Ask
 aiwindow-input-cta-label-search = Search
-aiwindow-input-cta-label-navigate = Navigate
+aiwindow-input-cta-label-navigate = Go
 
 ## Smartbar
 

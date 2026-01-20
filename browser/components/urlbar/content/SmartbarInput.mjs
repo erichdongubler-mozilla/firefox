@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { createEditor } from "chrome://browser/content/urlbar/SmartbarInputUtils.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/input-cta.mjs";
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -14,6 +16,7 @@ const { AppConstants } = ChromeUtils.importESModule(
 
 /**
  * @import {UrlbarSearchOneOffs} from "moz-src:///browser/components/urlbar/UrlbarSearchOneOffs.sys.mjs"
+ * @import {SmartbarAction} from "moz-src:///browser/components/aiwindow/ui/components/input-cta/input-cta.mjs"
  */
 
 const lazy = XPCOMUtils.declareLazy({
@@ -141,6 +144,9 @@ export class SmartbarInput extends HTMLElement {
                data-l10n-id="urlbar-go-button"/>
         <moz-urlbar-slot name="page-actions" hidden=""> </moz-urlbar-slot>
       </hbox>
+      <hbox class="smartbar-button-container">
+        <html:input-cta action=""></html:input-cta>
+      </hbox>
       <vbox class="urlbarView"
             context=""
             role="group"
@@ -198,8 +204,6 @@ export class SmartbarInput extends HTMLElement {
     "selectionchange",
   ];
 
-  static #validSmartbarModes = ["chat", "search", "navigate"];
-
   #allowBreakout = false;
   #gBrowserListenersAdded = false;
   #breakoutBlockerCount = 0;
@@ -213,9 +217,12 @@ export class SmartbarInput extends HTMLElement {
    */
   #isSmartbarMode = false;
   #sapName = "";
+  /**
+   * @type {SmartbarAction}
+   */
+  #smartbarAction = "";
   #smartbarEditor = null;
   #smartbarInputController = null;
-  #smartbarMode = "search";
   _userTypedValue = "";
   _actionOverrideKeyCount = 0;
   _lastValidURLStr = "";
@@ -320,6 +327,13 @@ export class SmartbarInput extends HTMLElement {
     );
     if (this.#isSmartbarMode) {
       this.#ensureSmartbarEditor();
+      this._inputCta = this.querySelector("input-cta");
+      this._inputCta.setAttribute("action", this.smartbarAction);
+      this._inputCta.addEventListener(
+        "aiwindow-input-cta:on-action-change",
+        this
+      );
+      this._inputCta.addEventListener("aiwindow-input-cta:on-action", this);
     }
     this._inputContainer = this.querySelector(".urlbar-input-container");
 
@@ -516,6 +530,14 @@ export class SmartbarInput extends HTMLElement {
       this.#gBrowserListenersAdded = false;
     }
 
+    if (this.#isSmartbarMode) {
+      this._inputCta.removeEventListener(
+        "aiwindow-input-cta:on-action-change",
+        this
+      );
+      this._inputCta.removeEventListener("aiwindow-input-cta:on-action", this);
+    }
+
     this._resizeObserver?.disconnect();
 
     this._removeObservers();
@@ -588,19 +610,22 @@ export class SmartbarInput extends HTMLElement {
     return this.#sapName;
   }
 
-  get smartbarMode() {
-    const mode = this.getAttribute("smartbar-mode") || this.#smartbarMode;
-    return SmartbarInput.#validSmartbarModes.includes(mode)
-      ? mode
-      : SmartbarInput.#validSmartbarModes[0];
+  /**
+   * @returns {SmartbarAction}
+   */
+  get smartbarAction() {
+    return /** @type {SmartbarAction} */ (
+      this.getAttribute("smartbar-action") || this.#smartbarAction
+    );
   }
 
-  set smartbarMode(mode) {
-    if (!SmartbarInput.#validSmartbarModes.includes(mode)) {
-      return;
-    }
-    this.#smartbarMode = mode;
-    this.setAttribute("smartbar-mode", mode);
+  /**
+   * @param {SmartbarAction} action
+   */
+  set smartbarAction(action) {
+    this.#smartbarAction = action;
+    this.setAttribute("smartbar-action", action);
+    this._inputCta.setAttribute("action", action);
   }
 
   blur() {
@@ -1077,11 +1102,36 @@ export class SmartbarInput extends HTMLElement {
   }
 
   /**
+   * Handles custom input CTA events.
+   *
+   * @param {CustomEvent} event The custom event to handle.
+   */
+  handleCtaInputEvent(event) {
+    switch (event.type) {
+      case "aiwindow-input-cta:on-action-change":
+      case "aiwindow-input-cta:on-action":
+        this.smartbarAction = event.detail.action;
+        break;
+      default:
+        lazy.logger.debug(`Unhandled event ${event.type}`, event);
+    }
+
+    // TODO (Bug 2008925): Handle different smartbar actions
+    this.handleCommand(event);
+  }
+
+  /**
    * Passes DOM events to the _on_<event type> methods.
    *
    * @param {Event} event The event to handle.
    */
   handleEvent(event) {
+    // Forward custom input CTA events.
+    if (event.type.startsWith("aiwindow-input-cta:")) {
+      this.handleCtaInputEvent(/** @type {CustomEvent} */ (event));
+      return;
+    }
+
     let methodName = "_on_" + event.type;
     if (methodName in this) {
       try {
@@ -1156,12 +1206,12 @@ export class SmartbarInput extends HTMLElement {
   handleNavigation({ event, oneOffParams, triggeringPrincipal }) {
     if (this.#isSmartbarMode) {
       const committedValue = this.untrimmedValue;
-      const mode = this.smartbarMode;
-      lazy.logger.debug(`commit (${mode}): ${committedValue}`);
+      const action = this.smartbarAction;
+      lazy.logger.debug(`commit (${action}): ${committedValue}`);
       this.#clearSmartbarInput();
       this.dispatchEvent(
         new CustomEvent("smartbar-commit", {
-          detail: { value: committedValue, event, mode },
+          detail: { value: committedValue, event, action },
         })
       );
       if (!this.window.gBrowser) {
@@ -5154,6 +5204,10 @@ export class SmartbarInput extends HTMLElement {
 
     this.toggleAttribute("usertyping", value);
     this.removeAttribute("actiontype");
+
+    if (this.#isSmartbarMode) {
+      this.smartbarAction = value ? "search" : "";
+    }
 
     if (
       this.getAttribute("pageproxystate") == "valid" &&
