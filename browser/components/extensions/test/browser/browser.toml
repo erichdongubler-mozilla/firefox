@@ -662,6 +662,9 @@ skip-if = [
 
 ["browser_ext_user_events.js"]
 
+["browser_ext_webNavigation_bookmark_transitions.js"]
+support-files = ["!/browser/components/places/tests/browser/head.js"]
+
 ["browser_ext_webNavigation_containerIsolation.js"]
 https_first_disabled = true
 

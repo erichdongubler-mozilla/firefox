@@ -2084,6 +2084,15 @@
       return true;
     }
 
+    /**
+     * Load multiple URIs in tabs.
+     *
+     * @param {string[]} aURIs
+     *   Array of URIs to load.
+     * @param {object} [options]
+     * @returns {MozTabbrowserTab[]}
+     *   Array of tabs that were opened or reused, in the same order as aURIs.
+     */
     loadTabs(
       aURIs,
       {
@@ -2103,8 +2112,10 @@
       } = {}
     ) {
       if (!aURIs.length) {
-        return;
+        return [];
       }
+
+      let tabs = [];
 
       // The tab selected after this new tab is closed (i.e. the new tab's
       // "owner") is the next adjacent tab (i.e. not the previously viewed tab)
@@ -2176,6 +2187,7 @@
           // Ignore failure in case a URI is wrong, so we can continue
           // opening the next ones.
         }
+        tabs.push(targetTab || this.selectedTab);
       } else {
         let params = {
           allowInheritPrincipal,
@@ -2194,6 +2206,7 @@
           params.tabIndex = newIndex;
         }
         firstTabAdded = this.addTab(aURIs[0], params);
+        tabs.push(firstTabAdded);
         if (newIndex > -1) {
           targetTabIndex = firstTabAdded._tPos;
         }
@@ -2216,12 +2229,15 @@
         if (targetTabIndex > -1) {
           params.tabIndex = ++tabNum;
         }
-        this.addTab(aURIs[i], params);
+        let tab = this.addTab(aURIs[i], params);
+        tabs.push(tab);
       }
 
       if (firstTabAdded && !inBackground) {
         this.selectedTab = firstTabAdded;
       }
+
+      return tabs;
     }
 
     updateBrowserRemoteness(aBrowser, { newFrameloader, remoteType } = {}) {
