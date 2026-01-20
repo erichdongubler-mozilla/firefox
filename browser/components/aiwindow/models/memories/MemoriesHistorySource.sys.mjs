@@ -206,7 +206,13 @@ export async function getRecentHistory(opts = {}) {
         for (const row of stmt) {
           const url = row.getResultByName("url");
           const host = row.getResultByName("host");
-          const title = row.getResultByName("title") || "";
+          const onlyTitle = row.getResultByName("title") || "";
+          let title;
+          if (onlyTitle) {
+            title = onlyTitle + " | " + host;
+          } else {
+            title = onlyTitle;
+          }
           const visitDateMicros = row.getResultByName("visit_date") || 0;
           const frequencyPct = row.getResultByName("frecency_pct") || 0;
           const domainFrequencyPct =

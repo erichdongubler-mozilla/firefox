@@ -168,28 +168,22 @@ export async function renderRecentHistoryForPrompt(
 ) {
   let finalCSV = "";
 
-  if (domainItems.length) {
-    let domainRecordsTable = ["Domain,Importance Score"];
-    for (const domainItem of domainItems) {
-      domainRecordsTable.push(domainItem.join(","));
-    }
-    finalCSV += "# Domains\n" + domainRecordsTable.join("\n") + "\n\n";
-  }
-
   if (titleItems.length) {
-    let titleRecordsTable = ["Title,Importance Score"];
+    let titleRecordsTable = ["Website Title,Importance Score"];
     for (const titleItem of titleItems) {
       titleRecordsTable.push(titleItem.join(","));
     }
-    finalCSV += "# Titles\n" + titleRecordsTable.join("\n") + "\n\n";
+    finalCSV += "# Website Titles\n" + titleRecordsTable.join("\n") + "\n\n";
   }
 
   if (searchItems.length) {
-    let searchRecordsTable = ["Search,Importance Score"];
+    let searchRecordsTable = ["Search Query,Importance Score"];
     for (const searchItem of searchItems) {
-      searchRecordsTable.push(`${searchItem.q},${searchItem.r}`);
+      for (const searchText of searchItem.q) {
+        searchRecordsTable.push(`${searchText},${searchItem.r}`);
+      }
     }
-    finalCSV += "# Searches\n" + searchRecordsTable.join("\n");
+    finalCSV += "# Web Searches\n" + searchRecordsTable.join("\n");
   }
 
   return finalCSV.trim();

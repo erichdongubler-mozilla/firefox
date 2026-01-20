@@ -140,12 +140,12 @@ add_task(async function test_getAggregatedBrowserHistory() {
   );
   Assert.deepEqual(
     titleItems[0],
-    ["Internet for people, not profit — Mozilla", 100],
+    ["Internet for people, not profit — Mozilla | mozilla.org", 100],
     "Top title should be 'Internet for people, not profit — Mozilla' with score 100"
   );
   Assert.equal(
     searchItems[0].q[0],
-    "Google Search: firefox history",
+    "Google Search: firefox history | www.google.com",
     "Top search item query should be 'Google Search: firefox history'"
   );
   Assert.equal(searchItems[0].r, 1, "Top search item rank should be 1");

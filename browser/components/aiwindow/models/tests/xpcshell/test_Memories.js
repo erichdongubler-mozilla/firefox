@@ -177,21 +177,15 @@ add_task(async function test_buildInitialMemoriesGenerationPrompt() {
   );
   Assert.equal(
     renderedBrowserHistory,
-    `# Domains
-Domain,Importance Score
-www.google.com,100
-news.ycombinator.com,100
-mozilla.org,100
+    `# Website Titles
+Website Title,Importance Score
+Google Search: firefox history | www.google.com,100
+Hacker News | news.ycombinator.com,100
+Internet for people, not profit — Mozilla | mozilla.org,100
 
-# Titles
-Title,Importance Score
-Google Search: firefox history,100
-Hacker News,100
-Internet for people, not profit — Mozilla,100
-
-# Searches
-Search,Importance Score
-Google Search: firefox history,1`.trim()
+# Web Searches
+Search Query,Importance Score
+Google Search: firefox history | www.google.com,1`.trim()
   );
 
   // Check that the full prompt is built correctly with injected categories, intents, and browsing history
@@ -242,17 +236,13 @@ add_task(async function test_buildRecentHistoryCSV_only_search() {
   );
   Assert.equal(
     renderedBrowserHistory,
-    `# Domains
-Domain,Importance Score
-www.google.com,100
+    `# Website Titles
+Website Title,Importance Score
+Google Search: firefox history | www.google.com,100
 
-# Titles
-Title,Importance Score
-Google Search: firefox history,100
-
-# Searches
-Search,Importance Score
-Google Search: firefox history,1`.trim()
+# Web Searches
+Search Query,Importance Score
+Google Search: firefox history | www.google.com,1`.trim()
   );
 });
 
@@ -285,15 +275,10 @@ add_task(async function test_buildRecentHistoryCSV_only_browsing_history() {
   );
   Assert.equal(
     renderedBrowserHistory,
-    `# Domains
-Domain,Importance Score
-news.ycombinator.com,100
-mozilla.org,100
-
-# Titles
-Title,Importance Score
-Hacker News,100
-Internet for people, not profit — Mozilla,100`.trim()
+    `# Website Titles
+Website Title,Importance Score
+Hacker News | news.ycombinator.com,100
+Internet for people, not profit — Mozilla | mozilla.org,100`.trim()
   );
 });
 

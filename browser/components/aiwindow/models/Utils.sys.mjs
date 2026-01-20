@@ -88,7 +88,7 @@ export const DEFAULT_MODEL = Object.freeze({
     "qwen3-235b-a22b-instruct-2507-maas",
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_INSIGHTS]:
     "qwen3-235b-a22b-instruct-2507-maas",
-  // TODO: update with actual memories default model
+  // TODO: pin gemini as default memories model
   [MODEL_FEATURES.MEMORIES]: "qwen3-235b-a22b-instruct-2507-maas",
 });
 
