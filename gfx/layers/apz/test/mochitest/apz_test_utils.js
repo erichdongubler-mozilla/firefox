@@ -664,7 +664,6 @@ function isKeyApzEnabled() {
 // The snapshot is returned in the form of a data URL.
 function getSnapshot(rect) {
   function parentProcessSnapshot() {
-    /* eslint-env mozilla/chrome-script */
     addMessageListener("snapshot", function (parentRect) {
       var topWin = Services.wm.getMostRecentWindow("navigator:browser");
       if (!topWin) {

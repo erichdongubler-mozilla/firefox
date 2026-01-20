@@ -25,7 +25,6 @@
   async function fireLotsOfSingleTouchMoves() {
     var ret = new Promise(function(resolve) {
       SpecialPowers.loadChromeScript(function() {
-        /* eslint-env mozilla/chrome-script */
         var element = this.actorParent.rootFrameLoader.ownerElement;
         var rect = element.getBoundingClientRect();
         var win = element.ownerDocument.defaultView;
@@ -66,7 +65,6 @@
   async function fireTwoSingleTouches() {
     var ret = new Promise(function(resolve) {
       SpecialPowers.loadChromeScript(function() {
-        /* eslint-env mozilla/chrome-script */
         var element = this.actorParent.rootFrameLoader.ownerElement;
         var rect = element.getBoundingClientRect();
         var win = element.ownerDocument.defaultView;
@@ -109,7 +107,6 @@
   async function fireLotsOfMultiTouchMoves() {
     var ret = new Promise(function(resolve) {
       SpecialPowers.loadChromeScript(function() {
-        /* eslint-env mozilla/chrome-script */
         var element = this.actorParent.rootFrameLoader.ownerElement;
         var rect = element.getBoundingClientRect();
         var win = element.ownerDocument.defaultView;
