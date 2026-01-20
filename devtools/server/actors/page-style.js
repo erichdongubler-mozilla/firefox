@@ -26,7 +26,7 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(
   this,
   "getFontPreviewData",
-  "resource://devtools/server/actors/utils/style-utils.js",
+  "resource://devtools/server/actors/stylesheets/style-utils.js",
   true
 );
 loader.lazyRequireGetter(
@@ -49,7 +49,7 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(
   this,
   "UPDATE_GENERAL",
-  "resource://devtools/server/actors/utils/stylesheets-manager.js",
+  "resource://devtools/server/actors/stylesheets/stylesheets-manager.js",
   true
 );
 

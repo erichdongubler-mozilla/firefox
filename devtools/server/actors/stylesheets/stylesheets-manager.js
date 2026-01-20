@@ -24,7 +24,7 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(
   this,
   ["getStyleSheetOwnerNode", "getStyleSheetText"],
-  "resource://devtools/server/actors/utils/stylesheet-utils.js",
+  "resource://devtools/server/actors/stylesheets/stylesheet-utils.js",
   true
 );
 
