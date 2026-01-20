@@ -345,6 +345,13 @@ def findUiaByDomId(root, id):
     return el.QueryInterface(uiaMod.IUIAutomationElement9)
 
 
+class UiaEvent:
+    def __init__(self, sender, **kwargs):
+        self.sender = sender
+        # Make any kwargs accessible as attributes.
+        self.__dict__.update(**kwargs)
+
+
 class WaitForUiaEvent(comtypes.COMObject):
     """Wait for a UIA event.
     This should be used as follows:
@@ -396,36 +403,35 @@ class WaitForUiaEvent(comtypes.COMObject):
         else:
             raise ValueError("No supported event specified")
 
-    def _checkMatch(self, sender):
+    def _checkMatch(self, event):
         if isinstance(self._match, str):
             try:
-                if sender.CurrentAutomationId == self._match:
-                    self._matched = sender
+                if event.sender.CurrentAutomationId == self._match:
+                    self._matched = event
             except comtypes.COMError:
                 pass
         elif callable(self._match):
             try:
-                if self._match(sender):
-                    self._matched = sender
+                if self._match(event):
+                    self._matched = event
             except Exception as e:
                 self._matched = e
         else:
-            self._matched = sender
+            self._matched = event
         if self._matched:
             ctypes.windll.kernel32.SetEvent(self._signal)
 
     def HandleFocusChangedEvent(self, sender):
-        self._checkMatch(sender)
+        self._checkMatch(UiaEvent(sender))
 
     def HandlePropertyChangedEvent(self, sender, propertyId, newValue):
-        self._checkMatch(sender)
+        self._checkMatch(UiaEvent(sender))
 
     def HandleAutomationEvent(self, sender, eventId):
-        self._checkMatch(sender)
+        self._checkMatch(UiaEvent(sender))
 
     def wait(self):
-        """Wait for and return the IUIAutomationElement which sent the desired
-        event."""
+        """Wait for and return the desired UiaEvent."""
         # Pump Windows messages until we get the desired event, which will be
         # signalled using a kernel event.
         handles = (ctypes.c_void_p * 1)(self._signal)
