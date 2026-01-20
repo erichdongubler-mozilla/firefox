@@ -31,11 +31,11 @@ use crate::renderer::{BlendMode, GpuBufferAddress, GpuBufferBlockF, GpuBufferBui
 use crate::renderer::MAX_VERTEX_TEXTURE_WIDTH;
 use crate::resource_cache::{GlyphFetchResult, ImageProperties};
 use crate::space::SpaceMapper;
-use crate::transform::{GpuTransformId, TransformPalette};
+use crate::transform::{GpuTransformId, TransformPalette, TransformMetadata};
 use crate::visibility::{PrimitiveVisibilityFlags, VisibilityState};
 use smallvec::SmallVec;
 use std::{f32, i32, usize};
-use crate::util::{project_rect, MaxRect, TransformedRectKind, ScaleOffset};
+use crate::util::{project_rect, MaxRect, ScaleOffset};
 use crate::segment::EdgeAaSegmentMask;
 
 
@@ -951,7 +951,7 @@ impl BatchBuilder {
         // TODO(gw): Calculating this for every primitive is a bit
         //           wasteful. We should probably cache this in
         //           the scroll node...
-        let transform_kind = transform_id.transform_kind();
+        let transform_metadata = transform_id.metadata();
         let prim_info = &prim_instance.vis;
         let bounding_rect = &prim_info.clip_chain.pic_coverage_rect;
 
@@ -968,7 +968,7 @@ impl BatchBuilder {
             batch_features |= BatchFeatures::REPETITION;
         }
 
-        if transform_kind != TransformedRectKind::AxisAligned || is_anti_aliased {
+        if !transform_id.is_2d_axis_aligned() || is_anti_aliased {
             batch_features |= BatchFeatures::ANTIALIASING;
         }
 
@@ -1048,7 +1048,7 @@ impl BatchBuilder {
 
                     let mut is_opaque = prim_info.clip_task_index == ClipTaskIndex::INVALID
                         && surface.is_opaque
-                        && transform_kind == TransformedRectKind::AxisAligned
+                        && transform_id.is_2d_axis_aligned()
                         && !is_anti_aliased;
 
                     let pic_task_id = picture.primary_render_task_id.unwrap();
@@ -1510,7 +1510,7 @@ impl BatchBuilder {
                                         EdgeAaSegmentMask::all(),
                                         prim_header_index,
                                         bounding_rect,
-                                        transform_kind,
+                                        transform_metadata,
                                         z_id,
                                         prim_info.clip_task_index,
                                         ctx,
@@ -1584,7 +1584,7 @@ impl BatchBuilder {
 
         let needs_blending = !common_data.opacity.is_opaque ||
             prim_info.clip_task_index != ClipTaskIndex::INVALID ||
-            transform_kind == TransformedRectKind::Complex ||
+            !transform_metadata.is_2d_axis_aligned ||
             is_anti_aliased;
 
         let blend_mode = if needs_blending {
@@ -1681,7 +1681,7 @@ impl BatchBuilder {
                     common_data.edge_aa_mask,
                     prim_header_index,
                     bounding_rect,
-                    transform_kind,
+                    transform_metadata,
                     z_id,
                     prim_info.clip_task_index,
                     ctx,
@@ -1791,7 +1791,7 @@ impl BatchBuilder {
                     common_data.edge_aa_mask,
                     prim_header_index,
                     bounding_rect,
-                    transform_kind,
+                    transform_metadata,
                     z_id,
                     prim_info.clip_task_index,
                     ctx,
@@ -2109,7 +2109,7 @@ impl BatchBuilder {
                     common_data.edge_aa_mask,
                     prim_header_index,
                     bounding_rect,
-                    transform_kind,
+                    transform_metadata,
                     z_id,
                     prim_info.clip_task_index,
                     ctx,
@@ -2203,7 +2203,7 @@ impl BatchBuilder {
                     common_data.edge_aa_mask,
                     prim_header_index,
                     bounding_rect,
-                    transform_kind,
+                    transform_metadata,
                     z_id,
                     prim_info.clip_task_index,
                     ctx,
@@ -2307,7 +2307,7 @@ impl BatchBuilder {
                         common_data.edge_aa_mask,
                         prim_header_index,
                         bounding_rect,
-                        transform_kind,
+                        transform_metadata,
                         z_id,
                         prim_info.clip_task_index,
                         ctx,
@@ -2420,7 +2420,7 @@ impl BatchBuilder {
                         prim_data.edge_aa_mask,
                         prim_header_index,
                         bounding_rect,
-                        transform_kind,
+                        transform_metadata,
                         z_id,
                         prim_info.clip_task_index,
                         ctx,
@@ -2637,7 +2637,7 @@ impl BatchBuilder {
         brush_flags: BrushFlags,
         edge_aa_mask: EdgeAaSegmentMask,
         bounding_rect: &PictureRect,
-        transform_kind: TransformedRectKind,
+        transform_metadata: TransformMetadata,
         z_id: ZBufferId,
         prim_opacity: PrimitiveOpacity,
         clip_task_index: ClipTaskIndex,
@@ -2657,7 +2657,7 @@ impl BatchBuilder {
             let is_inner = segment.edge_flags.is_empty();
             let needs_blending = !prim_opacity.is_opaque ||
                                  clip_task_address != OPAQUE_TASK_ADDRESS ||
-                                 (!is_inner && transform_kind == TransformedRectKind::Complex) ||
+                                 (!is_inner && !transform_metadata.is_2d_axis_aligned) ||
                                  brush_flags.contains(BrushFlags::FORCE_AA);
 
             let textures = BatchTextures {
@@ -2703,7 +2703,7 @@ impl BatchBuilder {
         edge_aa_mask: EdgeAaSegmentMask,
         prim_header_index: PrimitiveHeaderIndex,
         bounding_rect: &PictureRect,
-        transform_kind: TransformedRectKind,
+        transform_metadata: TransformMetadata,
         z_id: ZBufferId,
         clip_task_index: ClipTaskIndex,
         ctx: &RenderTargetContext,
@@ -2730,7 +2730,7 @@ impl BatchBuilder {
                         brush_flags,
                         edge_aa_mask,
                         bounding_rect,
-                        transform_kind,
+                        transform_metadata,
                         z_id,
                         prim_opacity,
                         clip_task_index,
@@ -2757,7 +2757,7 @@ impl BatchBuilder {
                         brush_flags,
                         edge_aa_mask,
                         bounding_rect,
-                        transform_kind,
+                        transform_metadata,
                         z_id,
                         prim_opacity,
                         clip_task_index,
