@@ -6806,6 +6806,50 @@ tabs_tray:
       - interaction
     expires: never
 
+tab_search:
+  tab_search_icon_clicked:
+    type: event
+    description: |
+      Recorded when the user clicked on the tab search icon to enter tab search mode.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1970705
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1994280
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1970705
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  navigate_back_icon_clicked:
+    type: event
+    description: |
+      Recorded when the user clicked on the navigate back icon to exit tab search mode.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1970705
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1994277
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1970705
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  result_clicked:
+    type: event
+    description: |
+      Recorded when a user clicked on a tab suggestion result
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1994284
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2005595
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1994284
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
 tab_strip:
   enabled:
     type: boolean
