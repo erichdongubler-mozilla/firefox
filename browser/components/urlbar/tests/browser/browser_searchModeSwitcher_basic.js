@@ -208,7 +208,7 @@ function updateEngine(fun) {
 }
 
 add_task(async function new_window() {
-  let oldEngine = Services.search.getEngineByName("Bing");
+  let oldEngine = SearchService.getEngineByName("Bing");
   await updateEngine(() => {
     oldEngine.hidden = true;
   });
@@ -232,7 +232,7 @@ add_task(async function new_window() {
   await popupHidden;
   newWin.gURLBar.querySelector(".searchmode-switcher-close").click();
 
-  await Services.search.restoreDefaultEngines();
+  await SearchService.restoreDefaultEngines();
   await BrowserTestUtils.closeWindow(newWin);
 });
 
@@ -267,9 +267,9 @@ add_task(async function detect_searchmode_changes() {
 });
 
 async function setDefaultEngine(name) {
-  let engine = (await Services.search.getEngines()).find(e => e.name == name);
+  let engine = (await SearchService.getEngines()).find(e => e.name == name);
   Assert.ok(engine);
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -277,7 +277,7 @@ async function setDefaultEngine(name) {
 
 add_task(async function test_icon_new_window() {
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
-  let expectedIcon = await Services.search.defaultEngine.getIconURL();
+  let expectedIcon = await SearchService.defaultEngine.getIconURL();
 
   Assert.equal(
     UrlbarTestUtils.getSearchModeSwitcherIcon(newWin),
@@ -315,9 +315,8 @@ add_task(async function test_search_icon_change() {
   popup.querySelector(`menuitem[label=${engineName}]`).click();
   await popupHidden;
 
-  const bingSearchEngineIconUrl = await Services.search
-    .getEngineByName(engineName)
-    .getIconURL();
+  const bingSearchEngineIconUrl =
+    await SearchService.getEngineByName(engineName).getIconURL();
 
   Assert.equal(
     UrlbarTestUtils.getSearchModeSwitcherIcon(newWin),
@@ -730,7 +729,7 @@ add_task(async function test_search_service_fail() {
     .stub(UrlbarSearchUtils, "init")
     .rejects(new Error("Initialization failed"));
 
-  Services.search.wrappedJSObject.forceInitializationStatusForTests(
+  SearchService.wrappedJSObject.forceInitializationStatusForTests(
     "not initialized"
   );
 
@@ -770,7 +769,7 @@ add_task(async function test_search_service_fail() {
 
   stub.restore();
 
-  Services.search.wrappedJSObject.forceInitializationStatusForTests("success");
+  SearchService.wrappedJSObject.forceInitializationStatusForTests("success");
 
   await BrowserTestUtils.closeWindow(newWin);
   await SpecialPowers.popPrefEnv();
@@ -823,12 +822,12 @@ add_task(async function test_search_mode_switcher_private_engine_icon() {
     { skipUnload: true }
   );
 
-  const defaultPrivateEngine = Services.search.getEngineByName(testEngineName);
+  const defaultPrivateEngine = SearchService.getEngineByName(testEngineName);
   const defaultPrivateEngineIcon = `moz-extension://${searchExtension.uuid}/private.png`;
-  const defaultEngine = await Services.search.getDefault();
+  const defaultEngine = await SearchService.getDefault();
   const defaultEngineIcon = await defaultEngine.getIconURL();
 
-  Services.search.setDefaultPrivate(
+  SearchService.setDefaultPrivate(
     defaultPrivateEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -839,12 +838,12 @@ add_task(async function test_search_mode_switcher_private_engine_icon() {
     "Default engine is not private engine."
   );
   Assert.equal(
-    (await Services.search.getDefault()).id,
+    (await SearchService.getDefault()).id,
     defaultEngine.id,
     "Default engine is still correct."
   );
   Assert.equal(
-    (await Services.search.getDefaultPrivate()).id,
+    (await SearchService.getDefaultPrivate()).id,
     defaultPrivateEngine.id,
     "Default private engine is correct."
   );
@@ -873,7 +872,7 @@ add_task(async function test_search_mode_switcher_private_engine_icon() {
   );
 
   info("Changing the default private engine.");
-  Services.search.setDefaultPrivate(
+  SearchService.setDefaultPrivate(
     defaultEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );

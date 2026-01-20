@@ -49,7 +49,7 @@ add_task(async function viewUpdateAppendHidden() {
           query: queries[0],
           suggestion,
           lowerCaseSuggestion: suggestion.toLocaleLowerCase(),
-          engine: Services.search.defaultEngine.name,
+          engine: SearchService.defaultEngine.name,
         },
       })
   );

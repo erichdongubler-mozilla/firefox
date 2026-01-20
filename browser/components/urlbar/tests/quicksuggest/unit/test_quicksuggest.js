@@ -209,7 +209,7 @@ add_setup(async function init() {
 
   // Install a default test engine.
   let engine = await addTestSuggestionsEngine();
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -551,17 +551,17 @@ add_task(async function suggestionsBeforeGeneral_only() {
       makeSearchResult(context, {
         heuristic: true,
         query: SPONSORED_SEARCH_STRING,
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       makeSearchResult(context, {
         query: SPONSORED_SEARCH_STRING,
         suggestion: SPONSORED_SEARCH_STRING + " foo",
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       makeSearchResult(context, {
         query: SPONSORED_SEARCH_STRING,
         suggestion: SPONSORED_SEARCH_STRING + " bar",
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       QuickSuggestTestUtils.ampResult(),
     ],
@@ -606,17 +606,17 @@ add_task(async function suggestionsBeforeGeneral_others() {
       makeSearchResult(context, {
         heuristic: true,
         query: SPONSORED_SEARCH_STRING,
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       makeSearchResult(context, {
         query: SPONSORED_SEARCH_STRING,
         suggestion: SPONSORED_SEARCH_STRING + " foo",
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       makeSearchResult(context, {
         query: SPONSORED_SEARCH_STRING,
         suggestion: SPONSORED_SEARCH_STRING + " bar",
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       QuickSuggestTestUtils.ampResult(),
       ...historyResults,
@@ -646,18 +646,18 @@ add_task(async function generalBeforeSuggestions_only() {
       makeSearchResult(context, {
         heuristic: true,
         query: SPONSORED_SEARCH_STRING,
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 }),
       makeSearchResult(context, {
         query: SPONSORED_SEARCH_STRING,
         suggestion: SPONSORED_SEARCH_STRING + " foo",
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       makeSearchResult(context, {
         query: SPONSORED_SEARCH_STRING,
         suggestion: SPONSORED_SEARCH_STRING + " bar",
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
     ],
   });
@@ -701,19 +701,19 @@ add_task(async function generalBeforeSuggestions_others() {
       makeSearchResult(context, {
         heuristic: true,
         query: SPONSORED_SEARCH_STRING,
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       ...historyResults,
       QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 }),
       makeSearchResult(context, {
         query: SPONSORED_SEARCH_STRING,
         suggestion: SPONSORED_SEARCH_STRING + " foo",
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       makeSearchResult(context, {
         query: SPONSORED_SEARCH_STRING,
         suggestion: SPONSORED_SEARCH_STRING + " bar",
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
     ],
   });
@@ -971,7 +971,7 @@ async function doDedupeAgainstURLTest({
       makeSearchResult(context, {
         heuristic: true,
         query: searchString,
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       makeVisitResult(context, {
         uri: otherURL,
@@ -991,7 +991,7 @@ async function doDedupeAgainstURLTest({
     makeSearchResult(context, {
       heuristic: true,
       query: searchString,
-      engineName: Services.search.defaultEngine.name,
+      engineName: SearchService.defaultEngine.name,
     }),
   ];
 
@@ -1091,7 +1091,7 @@ add_task(async function dedupeAgainstURL_timestamps() {
   let expectedHeuristic = makeSearchResult(context, {
     heuristic: true,
     query: TIMESTAMP_SEARCH_STRING,
-    engineName: Services.search.defaultEngine.name,
+    engineName: SearchService.defaultEngine.name,
   });
   let expectedDupeResult = makeVisitResult(context, {
     uri: dupeURL,
@@ -1434,7 +1434,7 @@ add_task(async function tabToSearch() {
     },
     { skipUnload: true }
   );
-  let engine = Services.search.getEngineByName("Test");
+  let engine = SearchService.getEngineByName("Test");
 
   // Also need to add a visit to trigger TTS.
   await PlacesTestUtils.addVisits(engineURL);
@@ -1447,8 +1447,8 @@ add_task(async function tabToSearch() {
     matches: [
       // search heuristic
       makeSearchResult(context, {
-        engineName: Services.search.defaultEngine.name,
-        engineIconUri: await Services.search.defaultEngine.getIconURL(),
+        engineName: SearchService.defaultEngine.name,
+        engineIconUri: await SearchService.defaultEngine.getIconURL(),
         heuristic: true,
       }),
       // tab to search
@@ -1524,8 +1524,8 @@ add_task(async function globalAction() {
     matches: [
       // search heuristic
       makeSearchResult(context, {
-        engineName: Services.search.defaultEngine.name,
-        engineIconUri: await Services.search.defaultEngine.getIconURL(),
+        engineName: SearchService.defaultEngine.name,
+        engineIconUri: await SearchService.defaultEngine.getIconURL(),
         heuristic: true,
       }),
 

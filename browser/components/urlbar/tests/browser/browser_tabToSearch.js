@@ -79,9 +79,8 @@ add_task(async function basic() {
   );
   let [actionTabToSearch] = await document.l10n.formatValues([
     {
-      id: Services.search.getEngineByName(
-        tabToSearchDetails.searchParams.engine
-      ).isGeneralPurposeEngine
+      id: SearchService.getEngineByName(tabToSearchDetails.searchParams.engine)
+        .isGeneralPurposeEngine
         ? "urlbar-result-action-tabtosearch-web"
         : "urlbar-result-action-tabtosearch-other-engine",
       args: { engine: tabToSearchDetails.searchParams.engine },
@@ -381,7 +380,7 @@ add_task(async function onboard() {
         },
       },
       {
-        id: Services.search.getEngineByName(
+        id: SearchService.getEngineByName(
           onboardingElement.result.payload.engine
         ).isGeneralPurposeEngine
           ? "urlbar-result-action-tabtosearch-web"

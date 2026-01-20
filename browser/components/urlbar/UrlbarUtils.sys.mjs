@@ -24,6 +24,7 @@ const lazy = XPCOMUtils.declareLazy({
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchSuggestionController:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
@@ -337,7 +338,7 @@ export var UrlbarUtils = {
     }
 
     /** @type {nsISearchEngine} */
-    let engine = await Services.search.getEngineByAlias(keyword);
+    let engine = await lazy.SearchService.getEngineByAlias(keyword);
     if (engine) {
       let submission = engine.getSubmission(param, null);
       return {
@@ -659,7 +660,9 @@ export var UrlbarUtils = {
         result.payload.suggestion ||
         result.payload.query;
       if (query) {
-        const engine = Services.search.getEngineByName(result.payload.engine);
+        const engine = lazy.SearchService.getEngineByName(
+          result.payload.engine
+        );
         let [url, postData] = this.getSearchQueryUrl(engine, query);
         return { url, postData };
       }

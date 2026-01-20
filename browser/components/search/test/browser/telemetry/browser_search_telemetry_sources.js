@@ -247,7 +247,7 @@ add_task(async function test_source_urlbar_oneoffs_newtab() {
           true
         );
 
-      let engines = await Services.search.getEngines();
+      let engines = await SearchService.getEngines();
       let index = engines.findIndex(e => e.name == "Example");
       let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
       EventUtils.synthesizeMouseAtCenter(oneOffs[index], {

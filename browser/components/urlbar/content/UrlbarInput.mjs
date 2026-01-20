@@ -27,6 +27,7 @@ const lazy = XPCOMUtils.declareLazy({
   PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchModeSwitcher:
     "moz-src:///browser/components/urlbar/SearchModeSwitcher.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
@@ -422,11 +423,13 @@ export class UrlbarInput extends HTMLElement {
       this.addGBrowserListeners();
     }
 
-    // If the search service is not initialized yet, the placeholder
-    // and icon will be updated in delayedStartupInit.
+    // If gBrowser or the search service is not initialized yet,
+    // the placeholder and icon will be updated in delayedStartupInit.
     if (
-      Cu.isESModuleLoaded("resource://gre/modules/SearchService.sys.mjs") &&
-      Services.search.isInitialized
+      Cu.isESModuleLoaded(
+        "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+      ) &&
+      lazy.SearchService.isInitialized
     ) {
       this.searchModeSwitcher.updateSearchIcon();
       this._updatePlaceholderFromDefaultEngine();
@@ -1622,7 +1625,9 @@ export class UrlbarInput extends HTMLElement {
             result.source == lazy.UrlbarUtils.RESULT_SOURCE.HISTORY,
           alias: result.payload.keyword,
         };
-        const engine = Services.search.getEngineByName(result.payload.engine);
+        const engine = lazy.SearchService.getEngineByName(
+          result.payload.engine
+        );
 
         if (where == "tab") {
           // The TabOpen event is fired synchronously so tabEvent.target
@@ -2349,10 +2354,10 @@ export class UrlbarInput extends HTMLElement {
     // Exit search mode if the passed-in engine is invalid or hidden.
     let engine;
     if (searchMode?.engineName) {
-      if (!Services.search.isInitialized) {
-        await Services.search.init();
+      if (!lazy.SearchService.isInitialized) {
+        await lazy.SearchService.init();
       }
-      engine = Services.search.getEngineByName(searchMode.engineName);
+      engine = lazy.SearchService.getEngineByName(searchMode.engineName);
       if (!engine || engine.hidden) {
         searchMode = null;
       }
@@ -4578,8 +4583,8 @@ export class UrlbarInput extends HTMLElement {
    */
   _getDefaultSearchEngine() {
     return this.isPrivate
-      ? Services.search.getDefaultPrivate()
-      : Services.search.getDefault();
+      ? lazy.SearchService.getDefaultPrivate()
+      : lazy.SearchService.getDefault();
   }
 
   /**
@@ -4609,7 +4614,7 @@ export class UrlbarInput extends HTMLElement {
       return;
     }
 
-    let engine = Services.search.getEngineByName(engineName);
+    let engine = lazy.SearchService.getEngineByName(engineName);
     if (engine.isConfigEngine) {
       this._setPlaceholder(engineName);
     } else {

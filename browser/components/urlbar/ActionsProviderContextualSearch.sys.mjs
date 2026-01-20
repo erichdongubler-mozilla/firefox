@@ -21,6 +21,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/search/OpenSearchLoader.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
@@ -125,8 +126,8 @@ class ProviderContextualSearch extends ActionsProvider {
 
     // Don't match the default engine for non-query-matches.
     let defaultEngine = queryContext.isPrivate
-      ? Services.search.defaultPrivateEngine
-      : Services.search.defaultEngine;
+      ? lazy.SearchService.defaultPrivateEngine
+      : lazy.SearchService.defaultEngine;
 
     let browser =
       lazy.BrowserWindowTracker.getTopWindow()?.gBrowser.selectedBrowser;
@@ -154,7 +155,7 @@ class ProviderContextualSearch extends ActionsProvider {
         // the current host. If the user is on ecosia.com and starts searching
         // offer ecosia's search.
         let contextualEngineConfig =
-          await Services.search.findContextualSearchEngineByHost(host);
+          await lazy.SearchService.findContextualSearchEngineByHost(host);
         if (contextualEngineConfig) {
           hostEngine = {
             type: CONTEXTUAL_SEARCH_ENGINE,
@@ -226,7 +227,7 @@ class ProviderContextualSearch extends ActionsProvider {
   async #matchTabToSearchEngine(queryContext) {
     let searchStr = queryContext.trimmedSearchString.toLocaleLowerCase();
 
-    for (let engine of await Services.search.getVisibleEngines()) {
+    for (let engine of await lazy.SearchService.getVisibleEngines()) {
       if (
         engine.name.toLocaleLowerCase().startsWith(searchStr) &&
         ((await this.#shouldskipRecentVisitCheck(searchStr)) ||
@@ -317,7 +318,7 @@ class ProviderContextualSearch extends ActionsProvider {
     if (
       !queryContext.isPrivate &&
       type != INSTALLED_ENGINE &&
-      (await Services.search.shouldShowInstallPrompt(engine))
+      (await lazy.SearchService.shouldShowInstallPrompt(engine))
     ) {
       this.#showInstallPrompt(controller, engine);
     }
@@ -343,7 +344,7 @@ class ProviderContextualSearch extends ActionsProvider {
       {
         "l10n-id": "install-search-engine-add",
         callback() {
-          Services.search.addSearchEngine(engineData);
+          lazy.SearchService.addSearchEngine(engineData);
         },
       },
       {

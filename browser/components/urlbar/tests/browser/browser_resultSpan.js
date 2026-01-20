@@ -117,7 +117,7 @@ add_task(async function oneTip_nonRestricting() {
     type: UrlbarUtils.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     payload: {
-      engine: Services.search.defaultEngine.name,
+      engine: SearchService.defaultEngine.name,
       query: "test",
     },
   });
@@ -162,7 +162,7 @@ add_task(async function threeTips_nonRestricting() {
     type: UrlbarUtils.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     payload: {
-      engine: Services.search.defaultEngine.name,
+      engine: SearchService.defaultEngine.name,
       query: "test",
     },
   });

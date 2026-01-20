@@ -15,7 +15,7 @@ add_task(async function slowHeuristicSelected() {
   // First, add a provider that adds a heuristic result on a delay.  Both this
   // provider and the one below have a high priority so that only they are used
   // during the test.
-  let engine = await Services.search.getDefault();
+  let engine = await SearchService.getDefault();
   let heuristicResult = new UrlbarResult({
     type: UrlbarUtils.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
@@ -73,7 +73,7 @@ add_task(async function oneOffRemainsSelected() {
   // First, add a provider that adds a heuristic result on a delay.  Both this
   // provider and the one below have a high priority so that only they are used
   // during the test.
-  let engine = await Services.search.getDefault();
+  let engine = await SearchService.getDefault();
   let heuristicResult = new UrlbarResult({
     type: UrlbarUtils.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,

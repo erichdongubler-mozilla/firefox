@@ -184,7 +184,7 @@ add_task(async function test_selectContextualSearchResult_already_installed() {
   await loadUri("https://example.com/");
 
   const query = "search";
-  let engine = Services.search.getEngineByName("Contextual");
+  let engine = SearchService.getEngineByName("Contextual");
   const [expectedUrl] = UrlbarUtils.getSearchQueryUrl(engine, query);
 
   Assert.ok(

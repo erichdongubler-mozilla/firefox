@@ -106,6 +106,7 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
@@ -491,7 +492,7 @@ class Search {
     this.#searchModeEngine = queryContext.searchMode?.engineName;
     if (this.#searchModeEngine) {
       // Filter Places results on host.
-      let engine = Services.search.getEngineByName(this.#searchModeEngine);
+      let engine = lazy.SearchService.getEngineByName(this.#searchModeEngine);
       this.#filterOnHost = engine.searchUrlDomain;
     }
 
@@ -877,7 +878,7 @@ class Search {
   #maybeRestyleSearchMatch(match) {
     // Return if the URL does not represent a search result.
     let historyUrl = match.value;
-    let parseResult = Services.search.parseSubmissionURL(historyUrl);
+    let parseResult = lazy.SearchService.parseSubmissionURL(historyUrl);
     if (!parseResult?.engine) {
       return false;
     }

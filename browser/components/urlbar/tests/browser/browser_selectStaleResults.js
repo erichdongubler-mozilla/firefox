@@ -187,9 +187,9 @@ add_task(async function staleReplacedWithFresh() {
   let engine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + "searchSuggestionEngineSlow.xml",
   });
-  let oldDefaultEngine = await Services.search.getDefault();
-  await Services.search.moveEngine(engine, 0);
-  await Services.search.setDefault(
+  let oldDefaultEngine = await SearchService.getDefault();
+  await SearchService.moveEngine(engine, 0);
+  await SearchService.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -323,7 +323,7 @@ add_task(async function staleReplacedWithFresh() {
     EventUtils.synthesizeKey("KEY_Escape")
   );
   await SpecialPowers.popPrefEnv();
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     oldDefaultEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
