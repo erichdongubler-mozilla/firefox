@@ -9,6 +9,7 @@ export const HeuristicsRegExp = {
     email: undefined,
     "tel-country-code" : undefined,
     tel: undefined,
+    "address-extra-housesuffix": undefined,
     "address-housenumber": undefined,
     "street-address": undefined,
     "address-line1": undefined,
@@ -71,6 +72,8 @@ export const HeuristicsRegExp = {
 		"|n[úu]mero(?!\\s*int)|exterior" +
         "|domu" + // pl-PL
         "|huisnummer", // nl
+      "address-extra-housesuffix":
+        "toevoeging|toev.?", // nl
       "address-level3":
         "(^address-?level-?3$)" +
         "|neighbou*rhood|barrio|bairro|colonia|suburb", // en/es/pt/mx/au/nz

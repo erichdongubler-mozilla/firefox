@@ -1552,15 +1552,27 @@ class ProfileTransformer {
     // If a house number field exists, split the address up into house number
     // and street name.
     if (this.getFieldDetailByName("address-housenumber")) {
-      let address = lazy.AddressParser.parseStreetAddress(
-        this.getField("street-address")
-      );
-      if (address) {
-        this.setField("address-housenumber", address.street_number);
+      streetAddress = this.getField("street-address");
+      let parsedAddress = lazy.AddressParser.parseStreetAddress(streetAddress);
+      if (parsedAddress) {
         let field = this.getFieldDetailByName("address-line1")
           ? "address-line1"
           : "street-address";
-        this.setField(field, address.street_name);
+        this.setField(field, parsedAddress.street_name);
+
+        // If there is a suffix field, fill the house number prefix into the
+        // house number field and the suffix into the suffix field.
+        if (this.getFieldDetailByName("address-extra-housesuffix")) {
+          let houseNumber = this.getField("address-housenumber");
+          let suffix = this.getField("address-extra-housesuffix");
+          if (houseNumber.endsWith(suffix)) {
+            houseNumber = houseNumber.substring(
+              0,
+              houseNumber.length - suffix.length
+            );
+            this.setField("address-housenumber", houseNumber);
+          }
+        }
       }
     }
   }

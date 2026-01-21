@@ -1111,7 +1111,8 @@ export class FormAutofillChild extends JSWindowActorChild {
     // temporarily excluding "address-housenumber" until it is added to the savedFieldNames set properly
     if (
       !lazy.FormAutofillContent.savedFieldNames.has(fieldName) &&
-      fieldName != "address-housenumber"
+      fieldName != "address-housenumber" &&
+      fieldName != "address-extra-housesuffix"
     ) {
       return false;
     }

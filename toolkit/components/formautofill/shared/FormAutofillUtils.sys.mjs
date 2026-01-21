@@ -143,6 +143,9 @@ FormAutofillUtils = {
     // combined they form address-line1
     "address-streetname": "address",
     "address-housenumber": "address",
+    // NL forms often split the suffix from the house number;
+    // for example 35B becomes '35' as the number and 'B' as the suffix.
+    "address-extra-housesuffix": "address",
     "postal-code": "address",
     country: "address",
     "country-name": "address",
