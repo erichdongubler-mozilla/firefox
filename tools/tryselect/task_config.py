@@ -397,7 +397,7 @@ class Rebuild(TryConfig):
             ["--rebuild"],
             {
                 "action": RangeAction,
-                "min": 2,
+                "min": 1,
                 "max": 20,
                 "default": None,
                 "type": int,
@@ -410,16 +410,17 @@ class Rebuild(TryConfig):
         if not rebuild:
             return
 
-        if (
-            not kwargs.get("new_test_config", False)
-            and kwargs.get("full")
-            and rebuild > 3
-        ):
-            print(
-                "warning: limiting --rebuild to 3 when using --full. "
-                "Use custom push actions to add more."
-            )
-            rebuild = 3
+        if not kwargs.get("new_test_config", False):
+            if rebuild == 1:
+                print(
+                    "warning: setting --rebuild to 1 is the same as not specifying it."
+                )
+            elif kwargs.get("full") and rebuild > 3:
+                print(
+                    "warning: limiting --rebuild to 3 when using --full. "
+                    "Use custom push actions to add more."
+                )
+                rebuild = 3
 
         return {
             "rebuild": rebuild,
