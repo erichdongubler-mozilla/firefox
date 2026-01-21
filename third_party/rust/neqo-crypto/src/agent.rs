@@ -231,9 +231,9 @@ fn get_alpn(fd: *mut ssl::PRFileDesc, pre: bool) -> Res<Option<String>> {
     secstatus_to_res(unsafe {
         ssl::SSL_GetNextProto(
             fd,
-            &raw mut alpn_state,
+            &mut alpn_state,
             chosen.as_mut_ptr(),
-            &raw mut chosen_len,
+            &mut chosen_len,
             c_uint::try_from(chosen.len())?,
         )
     })?;
@@ -414,6 +414,7 @@ impl SecretAgentInfo {
     pub const fn alpn(&self) -> Option<&String> {
         self.alpn.as_ref()
     }
+    // TODO: Not used in neqo, but Gecko calls it. Needs a test to call it.
     #[must_use]
     pub const fn signature_scheme(&self) -> SignatureScheme {
         self.signature_scheme
@@ -446,7 +447,7 @@ pub struct SecretAgent {
 
 impl SecretAgent {
     fn new() -> Res<Self> {
-        let mut io = Box::pin(AgentIo::default());
+        let mut io = Box::pin(AgentIo::new());
         let fd = Self::create_fd(&mut io)?;
         Ok(Self {
             fd,
@@ -575,7 +576,7 @@ impl SecretAgent {
     /// If the range of versions isn't supported.
     pub fn set_version_range(&mut self, min: Version, max: Version) -> Res<()> {
         let range = ssl::SSLVersionRange { min, max };
-        secstatus_to_res(unsafe { ssl::SSL_VersionRangeSet(self.fd, &raw const range) })
+        secstatus_to_res(unsafe { ssl::SSL_VersionRangeSet(self.fd, &range) })
     }
 
     /// Enable a set of ciphers.  Note that the order of these is not respected.
@@ -1255,17 +1256,6 @@ pub struct Server {
     zero_rtt_check: Option<Pin<Box<ZeroRttCheckState>>>,
 }
 
-fn load_cert_and_key(name: &str) -> Res<(p11::Certificate, PrivateKey)> {
-    let c = CString::new(name)?;
-    let cert = p11::Certificate::from_ptr(unsafe {
-        p11::PK11_FindCertFromNickname(c.as_ptr(), null_mut())
-    })
-    .map_err(|_| Error::CertificateLoading)?;
-    let key = PrivateKey::from_ptr(unsafe { p11::PK11_FindKeyByAnyCert(*cert, null_mut()) })
-        .map_err(|_| Error::CertificateLoading)?;
-    Ok((cert, key))
-}
-
 impl Server {
     /// Create a new server agent.
     ///
@@ -1274,63 +1264,22 @@ impl Server {
     /// Errors returned when NSS fails.
     pub fn new<A: AsRef<str>>(certificates: &[A]) -> Res<Self> {
         let mut agent = SecretAgent::new()?;
+
         for n in certificates {
-            let (cert, key) = load_cert_and_key(n.as_ref())?;
+            let c = CString::new(n.as_ref())?;
+            let cert_ptr = unsafe { p11::PK11_FindCertFromNickname(c.as_ptr(), null_mut()) };
+            let Ok(cert) = p11::Certificate::from_ptr(cert_ptr) else {
+                return Err(Error::CertificateLoading);
+            };
+            let key_ptr = unsafe { p11::PK11_FindKeyByAnyCert(*cert, null_mut()) };
+            let Ok(key) = PrivateKey::from_ptr(key_ptr) else {
+                return Err(Error::CertificateLoading);
+            };
             secstatus_to_res(unsafe {
                 ssl::SSL_ConfigServerCert(agent.fd, (*cert).cast(), (*key).cast(), null(), 0)
             })?;
         }
-        agent.ready(true, true)?;
-        Ok(Self {
-            agent,
-            zero_rtt_check: None,
-        })
-    }
 
-    /// Create a server with OCSP responses and SCTs configured.
-    /// Not suitable for multiple certificates, because it configures the same OCSP/SCT for all
-    /// certificates. In other words, this is good for testing that the plumbing works, not for
-    /// a real server.
-    ///
-    /// # Errors
-    ///
-    /// Errors returned when NSS fails.
-    pub fn new_with_ocsp_and_scts<A: AsRef<str>>(
-        certificates: &[A],
-        ocsp_responses: &[&[u8]],
-        scts: &[u8],
-    ) -> Res<Self> {
-        let mut agent = SecretAgent::new()?;
-        for n in certificates {
-            let (cert, key) = load_cert_and_key(n.as_ref())?;
-            let ocsp_items: Vec<p11::SECItem> = ocsp_responses
-                .iter()
-                .map(|b| p11::Item::wrap(b))
-                .collect::<Res<_>>()?;
-            let ocsp_array = ssl::SECItemArrayStr {
-                items: ocsp_items.as_ptr().cast::<ssl::SECItem>().cast_mut(),
-                len: c_uint::try_from(ocsp_items.len())?,
-            };
-            let sct_item = p11::Item::wrap(scts)?;
-            let extra = ssl::SSLExtraServerCertDataStr {
-                // ssl_auth_null means "I don't care what sort of certificate this is".
-                authType: ssl::SSLAuthType::ssl_auth_null,
-                certChain: null(),
-                stapledOCSPResponses: &raw const ocsp_array,
-                signedCertTimestamps: std::ptr::from_ref(&sct_item).cast(),
-                delegCred: null(),
-                delegCredPrivKey: null(),
-            };
-            secstatus_to_res(unsafe {
-                ssl::SSL_ConfigServerCert(
-                    agent.fd,
-                    (*cert).cast(),
-                    (*key).cast(),
-                    &raw const extra,
-                    c_uint::try_from(size_of::<ssl::SSLExtraServerCertDataStr>())?,
-                )
-            })?;
-        }
         agent.ready(true, true)?;
         Ok(Self {
             agent,

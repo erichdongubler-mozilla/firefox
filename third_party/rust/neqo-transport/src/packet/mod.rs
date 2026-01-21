@@ -307,7 +307,7 @@ impl<B: Buffer> Builder<B> {
     /// This stores a value that can be used as a limit.  This does not cause
     /// this limit to be enforced until encryption occurs.  Prior to that, it
     /// is only used voluntarily by users of the builder, through `remaining()`.
-    pub const fn set_limit(&mut self, limit: usize) {
+    pub fn set_limit(&mut self, limit: usize) {
         self.limit = limit;
     }
 
@@ -336,7 +336,7 @@ impl<B: Buffer> Builder<B> {
     }
 
     /// Mark the packet as needing padding (or not).
-    pub const fn enable_padding(&mut self, needs_padding: bool) {
+    pub fn enable_padding(&mut self, needs_padding: bool) {
         self.padding = needs_padding;
     }
 
@@ -796,7 +796,7 @@ impl<'a> Public<'a> {
 
     #[cfg(feature = "build-fuzzing-corpus")]
     #[must_use]
-    pub const fn data(&self) -> &[u8] {
+    pub fn data(&self) -> &[u8] {
         self.data
     }
 
@@ -815,12 +815,6 @@ impl<'a> Public<'a> {
         }
     }
 
-    #[allow(
-        clippy::allow_attributes,
-        clippy::missing_asserts_for_indexing,
-        reason = "Checked, but clippy doesn't recognize it."
-        // FIXME: Check if MSRV >= 1.88 fixes this.
-    )]
     /// Decrypt the header of the packet.
     fn decrypt_header(&mut self, crypto: &CryptoDxState) -> Res<(bool, Number, Range<usize>)> {
         debug_assert_ne!(self.packet_type, Type::Retry);
@@ -845,7 +839,6 @@ impl<'a> Public<'a> {
         } else {
             HP_MASK_LONG
         };
-        assert!(!self.data.is_empty());
         let first_byte = self.data[0] ^ (mask[0] & bits);
 
         let mut hdrbytes = 0..self.header_len + 4;
@@ -1121,7 +1114,7 @@ mod tests {
         assert_eq!(burn.len(), prot.expansion());
 
         let mut builder = Builder::long(
-            Encoder::default(),
+            Encoder::new(),
             Type::Initial,
             Version::default(),
             None::<&[u8]>,
@@ -1157,7 +1150,7 @@ mod tests {
 
     #[test]
     fn disallow_long_dcid() {
-        let mut enc = Encoder::default();
+        let mut enc = Encoder::new();
         enc.encode_byte(packet::BIT_LONG | packet::BIT_FIXED_QUIC);
         enc.encode_uint(4, Version::default().wire_version());
         enc.encode_vec(1, &[0x00; ConnectionId::MAX_LEN + 1]);
@@ -1169,7 +1162,7 @@ mod tests {
 
     #[test]
     fn disallow_long_scid() {
-        let mut enc = Encoder::default();
+        let mut enc = Encoder::new();
         enc.encode_byte(packet::BIT_LONG | packet::BIT_FIXED_QUIC);
         enc.encode_uint(4, Version::default().wire_version());
         enc.encode_vec(1, &[]);
@@ -1188,14 +1181,12 @@ mod tests {
     #[test]
     fn build_short() {
         fixture_init();
-        assert!(!Type::Short.is_long());
         let mut builder = Builder::short(
-            Encoder::default(),
+            Encoder::new(),
             true,
             Some(ConnectionId::from(SERVER_CID)),
             packet::LIMIT,
         );
-        assert!(!builder.is_empty());
         builder.pn(0, 1);
         builder.encode(SAMPLE_SHORT_PAYLOAD); // Enough payload for sampling.
         let packet = builder
@@ -1210,7 +1201,7 @@ mod tests {
         let mut firsts = Vec::new();
         for _ in 0..64 {
             let mut builder = Builder::short(
-                Encoder::default(),
+                Encoder::new(),
                 true,
                 Some(ConnectionId::from(SERVER_CID)),
                 packet::LIMIT,
@@ -1277,7 +1268,7 @@ mod tests {
         fixture_init();
         let mut prot = CryptoDxState::test_default();
         let mut builder = Builder::long(
-            Encoder::default(),
+            Encoder::new(),
             Type::Handshake,
             Version::default(),
             Some(ConnectionId::from(SERVER_CID)),
@@ -1317,7 +1308,7 @@ mod tests {
 
         fixture_init();
         let mut builder = Builder::long(
-            Encoder::default(),
+            Encoder::new(),
             Type::Handshake,
             Version::default(),
             None::<&[u8]>,
@@ -1337,7 +1328,7 @@ mod tests {
         let mut found_set = false;
         for _ in 1..64 {
             let mut builder = Builder::long(
-                Encoder::default(),
+                Encoder::new(),
                 Type::Handshake,
                 Version::default(),
                 None::<&[u8]>,
@@ -1359,7 +1350,7 @@ mod tests {
     #[test]
     fn build_abort() {
         let mut builder = Builder::long(
-            Encoder::default(),
+            Encoder::new(),
             Type::Initial,
             Version::default(),
             None::<&[u8]>,
@@ -1385,7 +1376,7 @@ mod tests {
         fixture_init();
 
         let mut builder = Builder::short(
-            Encoder::default(),
+            Encoder::new(),
             true,
             Some(ConnectionId::from(SERVER_CID)),
             LIMIT_FIRST,
@@ -1422,7 +1413,7 @@ mod tests {
         fixture_init();
         let crypto = CryptoDxState::test_default();
 
-        let mut encoder = Encoder::default();
+        let mut encoder = Encoder::new();
         encoder.pad_to(FIRST_QUIC_PACKET, 0);
 
         // Builder::long should add 1 (first byte) + 4 (version) + 2
@@ -1459,7 +1450,7 @@ mod tests {
 
         // Set up a builder with a very small limit
         let mut builder = Builder::short(
-            Encoder::default(),
+            Encoder::new(),
             false,
             Some(ConnectionId::from(SERVER_CID)),
             SMALL_LIMIT,

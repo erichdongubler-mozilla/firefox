@@ -46,7 +46,7 @@ impl Decoder {
         send_buf.encode_varint(QPACK_UNI_STREAM_TYPE_DECODER);
         let max_blocked_streams = usize::from(qpack_settings.max_blocked_streams);
         Self {
-            instruction_reader: EncoderInstructionReader::default(),
+            instruction_reader: EncoderInstructionReader::new(),
             table: HeaderTable::new(false),
             acked_inserts: 0,
             max_entries: qpack_settings.max_table_size_decoder >> 5,
@@ -64,7 +64,7 @@ impl Decoder {
         self.table.capacity()
     }
 
-    /// Returns a list of unblocked streams.
+    /// returns a list of unblocked streams
     ///
     /// # Errors
     ///
@@ -79,11 +79,13 @@ impl Decoder {
             return Ok(Vec::new());
         }
 
-        Ok(self
+        let r = self
             .blocked_streams
-            .extract_if(.., |(_, req)| *req <= base_new)
-            .map(|(id, _)| id)
-            .collect())
+            .iter()
+            .filter_map(|(id, req)| (*req <= base_new).then_some(*id))
+            .collect::<Vec<_>>();
+        self.blocked_streams.retain(|(_, req)| *req > base_new);
+        Ok(r)
     }
 
     fn read_instructions(&mut self, conn: &mut Connection, stream_id: StreamId) -> Res<()> {

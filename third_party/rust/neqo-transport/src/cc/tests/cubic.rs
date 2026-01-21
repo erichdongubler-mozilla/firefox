@@ -419,12 +419,3 @@ fn congestion_event_congestion_avoidance_no_overflow() {
         &mut cc_stats,
     );
 }
-
-#[test]
-fn cubic_display() {
-    let cubic = Cubic::default();
-    assert_eq!(
-        cubic.to_string(),
-        "Cubic state [w_max: 0, k: 0, t_epoch: None]"
-    );
-}

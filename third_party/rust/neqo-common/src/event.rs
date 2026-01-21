@@ -36,7 +36,7 @@ impl<'a, P, E> Iter<'a, P, E>
 where
     P: Provider<Event = E> + ?Sized,
 {
-    const fn new(p: &'a mut P) -> Self {
+    fn new(p: &'a mut P) -> Self {
         Self { p, _e: PhantomData }
     }
 }

@@ -539,9 +539,10 @@ impl RecvStream {
             mem::discriminant(&new_state)
         );
         qtrace!(
-            "RecvStream {} state {} -> {new_state}",
+            "RecvStream {} state {} -> {}",
             self.stream_id.as_u64(),
-            self.state
+            self.state,
+            new_state
         );
 
         match new_state {
@@ -742,13 +743,13 @@ impl RecvStream {
     /// Send a flow control update.
     /// This is used when a peer declares that they are blocked.
     /// This sends `MAX_STREAM_DATA` if there is any increase possible.
-    pub const fn send_flowc_update(&mut self) {
+    pub fn send_flowc_update(&mut self) {
         if let RecvStreamState::Recv { fc, .. } = &mut self.state {
             fc.send_flowc_update();
         }
     }
 
-    pub const fn set_stream_max_data(&mut self, max_data: u64) {
+    pub fn set_stream_max_data(&mut self, max_data: u64) {
         if let RecvStreamState::Recv { fc, .. } = &mut self.state {
             fc.set_max_active(max_data);
         }
@@ -905,13 +906,13 @@ impl RecvStream {
         }
     }
 
-    pub const fn max_stream_data_lost(&mut self, maximum_data: u64) {
+    pub fn max_stream_data_lost(&mut self, maximum_data: u64) {
         if let RecvStreamState::Recv { fc, .. } = &mut self.state {
             fc.frame_lost(maximum_data);
         }
     }
 
-    pub const fn stop_sending_lost(&mut self) {
+    pub fn stop_sending_lost(&mut self) {
         if let RecvStreamState::AbortReading { frame_needed, .. } = &mut self.state {
             *frame_needed = true;
         }
@@ -1460,7 +1461,7 @@ mod tests {
 
         // consume it
         let mut builder =
-            packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+            packet::Builder::short(Encoder::new(), false, None::<&[u8]>, packet::LIMIT);
         let mut token = recovery::Tokens::new();
         s.write_frame(
             &mut builder,
@@ -1581,7 +1582,7 @@ mod tests {
         assert!(session_fc.borrow().frame_needed());
         // consume it
         let mut builder =
-            packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+            packet::Builder::short(Encoder::new(), false, None::<&[u8]>, packet::LIMIT);
         let mut token = recovery::Tokens::new();
         session_fc.borrow_mut().write_frames(
             &mut builder,
@@ -1607,7 +1608,7 @@ mod tests {
         assert!(session_fc.borrow().frame_needed());
         // consume it
         let mut builder =
-            packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+            packet::Builder::short(Encoder::new(), false, None::<&[u8]>, packet::LIMIT);
         let mut token = recovery::Tokens::new();
         session_fc.borrow_mut().write_frames(
             &mut builder,
@@ -1916,7 +1917,7 @@ mod tests {
 
         // Write the fc update frame
         let mut builder =
-            packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+            packet::Builder::short(Encoder::new(), false, None::<&[u8]>, packet::LIMIT);
         let mut token = recovery::Tokens::new();
         let mut stats = FrameStats::default();
         fc.borrow_mut().write_frames(

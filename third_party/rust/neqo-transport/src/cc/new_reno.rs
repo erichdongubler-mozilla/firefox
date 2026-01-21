@@ -47,8 +47,4 @@ impl WindowAdjustment for NewReno {
     }
 
     fn on_app_limited(&mut self) {}
-
-    fn save_undo_state(&mut self) {}
-
-    fn restore_undo_state(&mut self) {}
 }

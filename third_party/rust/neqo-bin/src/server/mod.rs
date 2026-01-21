@@ -219,9 +219,9 @@ fn qns_read_response(filename: &str) -> Result<Vec<u8>, io::Error> {
 
 #[expect(clippy::module_name_repetitions, reason = "This is OK.")]
 pub trait HttpServer: Display {
-    fn process_multiple<'a, D: IntoIterator<Item = Datagram<&'a mut [u8]>>>(
+    fn process_multiple<'a>(
         &mut self,
-        dgrams: D,
+        dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
         now: Instant,
         max_datagrams: NonZeroUsize,
     ) -> OutputBatch;

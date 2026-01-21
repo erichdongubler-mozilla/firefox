@@ -404,7 +404,7 @@ notes = "Maintained by the DevTools team at Mozilla and has no unsafe code."
 [[wildcard-audits.mtu]]
 who = "Max Leonard Inden <mail@max-inden.de>"
 criteria = "safe-to-deploy"
-user-id = 83100 # Max Inden (mxinden)
+user-id = 83100
 start = "2025-01-29"
 end = "2026-09-24"
 
@@ -4391,7 +4391,7 @@ delta = "0.2.6 -> 0.2.9"
 [[audits.mtu]]
 who = "Max Leonard Inden <mail@max-inden.de>"
 criteria = "safe-to-deploy"
-delta = "0.3.0 -> 0.3.0@git:56dd5a59c60b80ad47b7da4abc519684ef932305"
+delta = "0.2.9 -> 0.2.9@git:b3338f904e2b9cdd59fbb2ade6b36d1a2ced4eba"
 importable = false
 
 [[audits.naga]]

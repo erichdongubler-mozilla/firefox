@@ -201,9 +201,9 @@ impl HttpServer {
 }
 
 impl super::HttpServer for HttpServer {
-    fn process_multiple<'a, D: IntoIterator<Item = Datagram<&'a mut [u8]>>>(
+    fn process_multiple<'a>(
         &mut self,
-        dgrams: D,
+        dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
         now: Instant,
         max_datagrams: NonZeroUsize,
     ) -> OutputBatch {

@@ -12,12 +12,11 @@ use std::{
     time::Duration,
 };
 
-use clap::{builder::TypedValueParser as _, Parser};
+use clap::Parser;
 use neqo_transport::{
     tparams::PreferredAddress, CongestionControlAlgorithm, ConnectionParameters, StreamType,
     Version, DEFAULT_INITIAL_RTT,
 };
-use strum::VariantNames as _;
 use thiserror::Error;
 
 pub mod client;
@@ -123,9 +122,7 @@ pub struct QuicParameters {
     /// The initial round-trip time, in milliseconds.
     pub initial_rtt_ms: u64,
 
-    #[arg(long = "cc", default_value = "cubic",
-        value_parser = clap::builder::PossibleValuesParser::new(CongestionControlAlgorithm::VARIANTS)
-            .map(|s| s.parse::<CongestionControlAlgorithm>().unwrap()))]
+    #[arg(long = "cc", default_value = "cubic")]
     /// The congestion controller to use.
     pub congestion_control: CongestionControlAlgorithm,
 

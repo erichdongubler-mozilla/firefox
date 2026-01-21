@@ -19,7 +19,7 @@ use std::{
 };
 
 use log::{log_enabled, Level};
-use neqo_common::{datagram, qdebug, qtrace, Datagram, Tos};
+use neqo_common::{qdebug, qtrace, Datagram, DatagramBatch, Tos};
 use quinn_udp::{EcnCodepoint, RecvMeta, Transmit, UdpSocketState};
 
 /// Receive buffer size
@@ -58,7 +58,7 @@ impl Default for RecvBuf {
 pub fn send_inner(
     state: &UdpSocketState,
     socket: quinn_udp::UdpSockRef<'_>,
-    d: &datagram::Batch,
+    d: &DatagramBatch,
 ) -> io::Result<()> {
     let transmit = Transmit {
         destination: d.destination(),
@@ -72,12 +72,13 @@ pub fn send_inner(
         Ok(()) => {}
         Err(e) if is_emsgsize(&e) => {
             qdebug!(
-                "Failed to send datagram of size {} bytes, in {} segments, each {} bytes, from {} to {}. PMTUD probe? Ignoring error: {e}",
+                "Failed to send datagram of size {} bytes, in {} segments, each {} bytes, from {} to {}. PMTUD probe? Ignoring error: {}",
                 d.data().len(),
                 d.num_datagrams(),
                 d.datagram_size().get(),
                 d.source(),
-                d.destination()
+                d.destination(),
+                e
             );
             return Ok(());
         }
@@ -235,8 +236,8 @@ impl<S: SocketRef> Socket<S> {
         })
     }
 
-    /// Send a [`datagram::Batch`] on the given [`Socket`].
-    pub fn send(&self, d: &datagram::Batch) -> io::Result<()> {
+    /// Send a [`Datagram`] on the given [`Socket`].
+    pub fn send(&self, d: &DatagramBatch) -> io::Result<()> {
         send_inner(&self.state, (&self.inner).into(), d)
     }
 
@@ -308,7 +309,7 @@ mod tests {
         let receiver = socket()?;
         let receiver_addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
 
-        let datagram: datagram::Batch = Datagram::new(
+        let datagram: DatagramBatch = Datagram::new(
             sender.inner.local_addr()?,
             receiver.inner.local_addr()?,
             Tos::from((Dscp::Le, Ecn::Ect1)),
@@ -414,7 +415,7 @@ mod tests {
 
         let max_gso_segments = sender.max_gso_segments();
         let msg = vec![0xAB; SEGMENT_SIZE * max_gso_segments];
-        let batch = datagram::Batch::new(
+        let batch = DatagramBatch::new(
             sender.inner.local_addr()?,
             receiver.inner.local_addr()?,
             Tos::from((Dscp::Le, Ecn::Ect0)),
