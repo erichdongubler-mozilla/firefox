@@ -175,6 +175,26 @@ def build(
                 flush=True,
             )
 
+    from mach.logging import THIRD_PARTY_WARNING
+
+    if command_context.log_manager.terminal_handler.level > THIRD_PARTY_WARNING:
+        warnings_path = os.path.join(
+            command_context.topobjdir, ".mozbuild", "logs", "build", "warnings_*.json"
+        )
+        command_context.log(
+            logging.WARNING,
+            "build",
+            {},
+            "Warnings in third-party code are being suppressed from the terminal output. "
+            "Use --verbose to see them.",
+        )
+        command_context.log(
+            logging.WARNING,
+            "build",
+            {"warnings_path": warnings_path},
+            "All warnings will still be dumped to {warnings_path} at the end of the build.",
+        )
+
     loader = MozconfigLoader(command_context.topsrcdir)
     mozconfig = loader.read_mozconfig(loader.AUTODETECT)
     configure_args = mozconfig["configure_args"]
