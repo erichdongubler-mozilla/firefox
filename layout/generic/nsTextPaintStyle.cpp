@@ -253,6 +253,17 @@ void nsTextPaintStyle::GetTargetTextColors(nscolor* aForeColor,
                                                    : darkSchemeForeground;
 }
 
+mozilla::Span<const StyleSimpleShadow> nsTextPaintStyle::GetTargetTextShadow() {
+  InitTargetTextPseudoStyle();
+
+  if (mTargetTextPseudoStyle &&
+      mTargetTextPseudoStyle->HasAuthorSpecifiedTextShadow()) {
+    return mTargetTextPseudoStyle->StyleText()->mTextShadow.AsSpan();
+  }
+
+  return {};
+}
+
 bool nsTextPaintStyle::GetCustomHighlightTextColor(nsAtom* aHighlightName,
                                                    nscolor* aForeColor) {
   NS_ASSERTION(aForeColor, "aForeColor is null");
@@ -295,6 +306,20 @@ bool nsTextPaintStyle::GetCustomHighlightBackgroundColor(nsAtom* aHighlightName,
   *aBackColor = highlightStyle->GetVisitedDependentColor(
       &nsStyleBackground::mBackgroundColor);
   return NS_GET_A(*aBackColor) != 0;
+}
+
+mozilla::Span<const StyleSimpleShadow>
+nsTextPaintStyle::GetCustomHighlightTextShadow(nsAtom* aHighlightName) {
+  RefPtr<ComputedStyle> highlightStyle =
+      mCustomHighlightPseudoStyles.LookupOrInsertWith(
+          aHighlightName, [this, &aHighlightName] {
+            return mFrame->ComputeHighlightSelectionStyle(aHighlightName);
+          });
+  if (!highlightStyle || !highlightStyle->HasAuthorSpecifiedTextShadow()) {
+    return {};
+  }
+
+  return highlightStyle->StyleText()->mTextShadow.AsSpan();
 }
 
 RefPtr<ComputedStyle> nsTextPaintStyle::GetComputedStyleForSelectionPseudo(
@@ -593,18 +618,17 @@ bool nsTextPaintStyle::GetSelectionUnderline(nsIFrame* aFrame,
          size > 0.0f;
 }
 
-bool nsTextPaintStyle::GetSelectionShadow(
-    Span<const StyleSimpleShadow>* aShadows) {
+mozilla::Span<const StyleSimpleShadow> nsTextPaintStyle::GetSelectionShadow() {
   if (!InitSelectionColorsAndShadow()) {
-    return false;
+    return {};
   }
 
-  if (mSelectionPseudoStyle) {
-    *aShadows = mSelectionPseudoStyle->StyleText()->mTextShadow.AsSpan();
-    return true;
+  if (mSelectionPseudoStyle &&
+      mSelectionPseudoStyle->HasAuthorSpecifiedTextShadow()) {
+    return mSelectionPseudoStyle->StyleText()->mTextShadow.AsSpan();
   }
 
-  return false;
+  return {};
 }
 
 inline nscolor Get40PercentColor(nscolor aForeColor, nscolor aBackColor) {
