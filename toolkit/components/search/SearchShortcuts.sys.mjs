@@ -2,9 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+const lazy = {};
 
-const lazy = XPCOMUtils.declareLazy({
+// TODO: We can't use XPCOMUtils.declareLazy here, as that breaks the newtab
+// mocha tests, due to their integration with Karma. We either need to fix that
+// or move declareLazy to ChromeUtils (bug 1992437).
+ChromeUtils.defineESModuleGetters(lazy, {
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
 });
 
