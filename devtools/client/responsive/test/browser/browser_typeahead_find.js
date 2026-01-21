@@ -50,10 +50,8 @@ addRDMTask(TEST_URL, async function ({ ui }) {
 
     const findBar = await gBrowser.getFindBar();
 
-    const findIsTriggered = findBar._findField.value == "t";
-    is(
-      findIsTriggered,
-      e.findTriggered,
+    await waitFor(
+      () => e.findTriggered == (findBar._findField.value == "t"),
       "Text input with focused element " +
         e.id +
         " should " +
