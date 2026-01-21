@@ -21,8 +21,6 @@ prefs = [
 
 ["test_IPPStartupCache.js"]
 
-["test_IPProtection.js"]
-
 ["test_IPProtectionPanel.js"]
 
 ["test_IPProtectionServerlist.js"]
@@ -30,6 +28,8 @@ prefs = [
 ["test_IPProtectionService.js"]
 
 ["test_IPProtectionStates.js"]
+
+["test_IPProtectionToolbarButton.js"]
 
 ["test_IPProtectionUsage.js"]
 

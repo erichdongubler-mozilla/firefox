@@ -197,84 +197,104 @@ add_task(async function test_site_exclusion_toggle_pressed_isExclusion() {
 });
 
 /**
- * Tests the site exclusion toggle dispatches the expected events and calls
- * the appropriate IPPExceptionsManager methods.
+ * Tests the site exclusion toggle dispatches the expected events, calls
+ * the appropriate IPPExceptionsManager methods, and correctly updates the
+ * toolbar button icon.
  */
-add_task(async function test_site_exclusion_toggle_events() {
-  const sandbox = sinon.createSandbox();
-  Services.perms.removeByType(PERM_NAME);
+add_task(
+  async function test_site_exclusion_on_toggle_events_and_toolbar_icon() {
+    const sandbox = sinon.createSandbox();
+    Services.perms.removeByType(PERM_NAME);
 
-  let setExclusionSpy = sandbox.spy(IPPExceptionsManager, "setExclusion");
+    let setExclusionSpy = sandbox.spy(IPPExceptionsManager, "setExclusion");
+    sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
-  let content = await openPanel({
-    isSignedOut: false,
-    isProtectionEnabled: true,
-    siteData: {
-      isExclusion: false,
-    },
-  });
+    let content = await openPanel({
+      isSignedOut: false,
+      isProtectionEnabled: true,
+      siteData: {
+        isExclusion: false,
+      },
+    });
+    // TODO Bug 2010761: Toolbar button doesn't update automatically on exclusion changes yet.
+    // Once Bug 2010761 is fixed (page reload on toggle), uncomment this line.
+    // let toolbarButton = document.getElementById(IPProtectionWidget.WIDGET_ID);
 
-  Assert.ok(
-    BrowserTestUtils.isVisible(content),
-    "ipprotection content component should be present"
-  );
-  Assert.ok(
-    content.siteExclusionControlEl,
-    "Site exclusion control should be present with VPN on"
-  );
-  Assert.ok(
-    content.siteExclusionToggleEl,
-    "Site exclusion toggle should be present with VPN on"
-  );
-  Assert.ok(
-    content.siteExclusionToggleEl.pressed,
-    "Site exclusion toggle should be in pressed state (VPN enabled for site)"
-  );
+    Assert.ok(
+      BrowserTestUtils.isVisible(content),
+      "ipprotection content component should be present"
+    );
+    Assert.ok(
+      content.siteExclusionControlEl,
+      "Site exclusion control should be present with VPN on"
+    );
+    Assert.ok(
+      content.siteExclusionToggleEl,
+      "Site exclusion toggle should be present with VPN on"
+    );
+    Assert.ok(
+      content.siteExclusionToggleEl.pressed,
+      "Site exclusion toggle should be in pressed state (VPN enabled for site)"
+    );
 
-  // Click to disable VPN protection for site (add exclusion)
-  let disableVPNEventPromise = BrowserTestUtils.waitForEvent(
-    window,
-    DISABLE_VPN_EVENT
-  );
-  content.siteExclusionToggleEl.click();
-  await disableVPNEventPromise;
+    // Click to disable VPN protection for site (add exclusion)
+    let disableVPNEventPromise = BrowserTestUtils.waitForEvent(
+      window,
+      DISABLE_VPN_EVENT
+    );
+    content.siteExclusionToggleEl.click();
+    await disableVPNEventPromise;
 
-  Assert.ok(true, "Disable VPN protection for site event was dispatched");
-  Assert.ok(
-    setExclusionSpy.calledOnce,
-    "IPPExceptionsManager.setExclusion should be called after disabling VPN"
-  );
-  Assert.strictEqual(
-    setExclusionSpy.firstCall.args[1],
-    true,
-    "IPPExceptionsManager.setExclusion should be called with shouldExclude=true"
-  );
+    Assert.ok(true, "Disable VPN protection for site event was dispatched");
+    Assert.ok(
+      setExclusionSpy.calledOnce,
+      "IPPExceptionsManager.setExclusion should be called after disabling VPN"
+    );
+    Assert.strictEqual(
+      setExclusionSpy.firstCall.args[1],
+      true,
+      "IPPExceptionsManager.setExclusion should be called with shouldExclude=true"
+    );
 
-  // Click to enable VPN protection for site (remove exclusion)
-  let enableVPNEventPromise = BrowserTestUtils.waitForEvent(
-    window,
-    ENABLE_VPN_EVENT
-  );
-  content.siteExclusionToggleEl.click();
-  await enableVPNEventPromise;
+    // TODO Bug 2010761: Toolbar button doesn't update automatically on exclusion changes yet.
+    // Once Bug 2010761 is fixed (page reload on toggle), uncomment this assertion.
+    // Assert.ok(
+    //   toolbarButton.classList.contains("ipprotection-excluded"),
+    //   "Toolbar icon should show the excluded status after disabling VPN for site"
+    // );
 
-  Assert.ok(true, "Enable VPN protection for site event was dispatched");
-  Assert.ok(
-    setExclusionSpy.calledTwice,
-    "IPPExceptionsManager.setExclusion should be called two times now"
-  );
-  Assert.strictEqual(
-    setExclusionSpy.secondCall.args[1],
-    false,
-    "IPPExceptionsManager.setExclusion should be called with shouldExclude=false"
-  );
+    // Click to enable VPN protection for site (remove exclusion)
+    let enableVPNEventPromise = BrowserTestUtils.waitForEvent(
+      window,
+      ENABLE_VPN_EVENT
+    );
+    content.siteExclusionToggleEl.click();
+    await enableVPNEventPromise;
 
-  await closePanel();
+    Assert.ok(true, "Enable VPN protection for site event was dispatched");
+    Assert.ok(
+      setExclusionSpy.calledTwice,
+      "IPPExceptionsManager.setExclusion should be called two times now"
+    );
+    Assert.strictEqual(
+      setExclusionSpy.secondCall.args[1],
+      false,
+      "IPPExceptionsManager.setExclusion should be called with shouldExclude=false"
+    );
 
-  // Clean up
-  Services.perms.removeByType(PERM_NAME);
-  sandbox.restore();
-});
+    // TODO Bug 2010761: Toolbar button doesn't update automatically on exclusion changes yet.
+    // Once Bug 2010761 is fixed (page reload on toggle), uncomment this assertion.
+    // Assert.ok(
+    //   toolbarButton.classList.contains("ipprotection-on"),
+    //   "Toolbar icon should show the connection status after enabling VPN for site"
+    // );
+
+    // Clean up
+    await closePanel();
+    Services.perms.removeByType(PERM_NAME);
+    sandbox.restore();
+  }
+);
 
 /**
  * Tests that siteData and toggle pressed state update when navigating from
@@ -285,13 +305,15 @@ add_task(
     const sandbox = sinon.createSandbox();
     Services.perms.removeByType(PERM_NAME);
 
-    const FIRST_SITE = "https://example.com";
-    const SECOND_SITE = "https://example.org";
+    sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+
+    const PROTECTED_SITE = "https://example.com";
+    const EXCLUDED_SITE = "https://example.org";
 
     // Add second site as an exclusion
     const secondSitePrincipal =
       Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-        SECOND_SITE
+        EXCLUDED_SITE
       );
     Services.perms.addFromPrincipal(
       secondSitePrincipal,
@@ -302,7 +324,7 @@ add_task(
     // Open first tab (not excluded)
     let tab1 = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
-      FIRST_SITE
+      PROTECTED_SITE
     );
 
     let content = await openPanel({
@@ -323,10 +345,16 @@ add_task(
       "Toggle should be in pressed state for first site (not excluded)"
     );
 
+    let toolbarButton = document.getElementById(IPProtectionWidget.WIDGET_ID);
+    Assert.ok(
+      toolbarButton.classList.contains("ipprotection-on"),
+      "Toolbar icon should show the connection status"
+    );
+
     // Now open the second tab (site excluded)
     let tab2 = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
-      SECOND_SITE
+      EXCLUDED_SITE
     );
 
     let siteDataUpdatePromise = BrowserTestUtils.waitForMutationCondition(
@@ -344,6 +372,10 @@ add_task(
     Assert.ok(
       !content.siteExclusionToggleEl.pressed,
       "Toggle should not be in pressed state for the second site (which is excluded)"
+    );
+    Assert.ok(
+      toolbarButton.classList.contains("ipprotection-excluded"),
+      "Toolbar icon should show the excluded status"
     );
 
     await closePanel();
@@ -363,12 +395,14 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
   const sandbox = sinon.createSandbox();
   Services.perms.removeByType(PERM_NAME);
 
-  const FIRST_SITE = "https://example.com";
-  const SECOND_SITE = "https://example.org";
+  sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+
+  const PROTECTED_SITE = "https://example.com";
+  const EXCLUDED_SITE = "https://example.org";
 
   const secondSitePrincipal =
     Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-      SECOND_SITE
+      EXCLUDED_SITE
     );
   Services.perms.addFromPrincipal(
     secondSitePrincipal,
@@ -377,7 +411,10 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
   );
 
   // Open the first site (not excluded) first
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, FIRST_SITE);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    PROTECTED_SITE
+  );
 
   let content = await openPanel({
     isSignedOut: false,
@@ -397,6 +434,12 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
     "Toggle should be in pressed state for first site (not excluded)"
   );
 
+  let toolbarButton = document.getElementById(IPProtectionWidget.WIDGET_ID);
+  Assert.ok(
+    toolbarButton.classList.contains("ipprotection-on"),
+    "Toolbar icon should show the connection status"
+  );
+
   let siteDataUpdatePromise = BrowserTestUtils.waitForMutationCondition(
     content.shadowRoot,
     {
@@ -408,7 +451,7 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
   );
 
   // Now load the second site (excluded)
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, SECOND_SITE);
+  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, EXCLUDED_SITE);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   await Promise.all([content.updateComplete, siteDataUpdatePromise]);
@@ -417,10 +460,95 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
     !content.siteExclusionToggleEl.pressed,
     "Toggle should not be in pressed state for the second site (which is excluded)"
   );
+  Assert.ok(
+    toolbarButton.classList.contains("ipprotection-excluded"),
+    "Toolbar icon should show the excluded status"
+  );
 
   await closePanel();
   BrowserTestUtils.removeTab(tab);
 
+  Services.perms.removeByType(PERM_NAME);
+  sandbox.restore();
+});
+
+/**
+ * Tests that the toolbar icon updates when switching between tabs with different exclusion states.
+ */
+add_task(async function test_site_exclusion_updates_on_tab_switch() {
+  const sandbox = sinon.createSandbox();
+  Services.perms.removeByType(PERM_NAME);
+
+  sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+
+  const PROTECTED_SITE = "https://example.com";
+  const EXCLUDED_SITE = "https://example.org";
+
+  // Add second site as an exclusion
+  const excludedSitePrincipal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      EXCLUDED_SITE
+    );
+  Services.perms.addFromPrincipal(
+    excludedSitePrincipal,
+    PERM_NAME,
+    Ci.nsIPermissionManager.DENY_ACTION
+  );
+
+  // Open first tab (not excluded)
+  let protectedTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    PROTECTED_SITE
+  );
+
+  let toolbarButton = document.getElementById(IPProtectionWidget.WIDGET_ID);
+  Assert.ok(
+    toolbarButton.classList.contains("ipprotection-on"),
+    "Toolbar icon should show connection status for opened protected site tab"
+  );
+
+  // Open second tab (excluded), making it the active tab
+  let excludedTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    EXCLUDED_SITE
+  );
+
+  Assert.ok(
+    toolbarButton.classList.contains("ipprotection-excluded"),
+    "Toolbar icon should show excluded status for opened excluded site tab"
+  );
+  Assert.ok(
+    !toolbarButton.classList.contains("ipprotection-on"),
+    "Toolbar icon should not show connection status"
+  );
+
+  // Switch back to protected site tab
+  await BrowserTestUtils.switchTab(gBrowser, protectedTab);
+
+  Assert.ok(
+    toolbarButton.classList.contains("ipprotection-on"),
+    "Toolbar icon should show connection status after switching to protected site tab"
+  );
+  Assert.ok(
+    !toolbarButton.classList.contains("ipprotection-excluded"),
+    "Toolbar icon should not show excluded status after switching to protected site tab"
+  );
+
+  // Switch back to excluded site tab
+  await BrowserTestUtils.switchTab(gBrowser, excludedTab);
+
+  Assert.ok(
+    toolbarButton.classList.contains("ipprotection-excluded"),
+    "Toolbar icon should show excluded status after switching to excluded site tab"
+  );
+  Assert.ok(
+    !toolbarButton.classList.contains("ipprotection-on"),
+    "Toolbar icon should not show connection status after switching to excluded site tab"
+  );
+
+  // Cleanup
+  BrowserTestUtils.removeTab(protectedTab);
+  BrowserTestUtils.removeTab(excludedTab);
   Services.perms.removeByType(PERM_NAME);
   sandbox.restore();
 });
