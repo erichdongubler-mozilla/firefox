@@ -8,6 +8,7 @@ import {
   ifDefined,
   literal,
   ref,
+  repeat,
   staticHtml,
   unsafeStatic,
 } from "chrome://global/content/vendor/lit.all.mjs";
@@ -384,7 +385,9 @@ export class SettingControl extends SettingElement {
       setting: this.getSetting(i.id),
     }));
     let control = config.control || "moz-checkbox";
-    return itemArgs.map(
+    return repeat(
+      itemArgs,
+      item => item.config.key || item.config.id,
       item =>
         html`<setting-control
           .config=${item.config}
