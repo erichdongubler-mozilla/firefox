@@ -330,7 +330,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     }
                                 },
                                 onSendPendingIntentWithUrl = ::sendPendingIntentWithUrl,
-                                scope = coroutineScope,
+                                mainDispatcher = Dispatchers.Main,
                                 lastSavedFolderCache = context.settings().lastSavedFolderCache,
                             ),
                             MenuNavigationMiddleware(
