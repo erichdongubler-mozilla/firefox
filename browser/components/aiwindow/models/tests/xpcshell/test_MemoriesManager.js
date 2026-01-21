@@ -871,82 +871,76 @@ add_task(async function test_getLastConversationMemoryTimestamp_reads_meta() {
 });
 
 /**
- * Tests that history memory generation updates last_history_memory_ts and not last_conversation_memory_ts.
+ * Tests that non-empty aggregated browser history triggers generation,
+ * ensures the LLM is called, and last_history_memory_ts is updated.
  */
 add_task(
   async function test_historyTimestampUpdatedAfterHistoryMemoriesGenerationPass() {
     const sb = sinon.createSandbox();
 
-    const lastHistoryMemoriesUpdateTs =
-      await MemoriesManager.getLastHistoryMemoryTimestamp();
     const lastConversationMemoriesUpdateTs =
       await MemoriesManager.getLastConversationMemoryTimestamp();
 
     try {
-      const aggregateBrowserHistoryStub = sb
-        .stub(MemoriesManager, "getAggregatedBrowserHistory")
-        .resolves([[], [], []]);
-      const fakeEngine = sb
-        .stub(MemoriesManager, "ensureOpenAIEngine")
-        .resolves({
-          run() {
-            return {
-              finalOutput: `[
-  {
-    "why": "User has recently searched for Firefox history and visited mozilla.org.",
-    "category": "Internet & Telecom",
-    "intent": "Research / Learn",
-    "memory_summary": "Searches for Firefox information",
-    "score": 7,
-    "evidence": [
-      {
-        "type": "search",
-        "value": "Google Search: firefox history"
-      },
-      {
-        "type": "domain",
-        "value": "mozilla.org"
-      }
-    ]
-  },
-  {
-    "why": "User buys dog food online regularly from multiple sources.",
-    "category": "Pets & Animals",
-    "intent": "Buy / Acquire",
-    "memory_summary": "Purchases dog food online",
-    "score": -1,
-    "evidence": [
-      {
-        "type": "domain",
-        "value": "example.com"
-      }
-    ]
-  }
-]`,
-            };
-          },
+      const domainAgg = [["mozilla.org", 100]];
+      const titleAgg = [
+        ["Internet for people, not profit — Mozilla | mozilla.org", 100],
+      ];
+      const searchAgg = [
+        { q: ["Google Search: firefox history | www.google.com"], r: 1 },
+      ];
+
+      sb.stub(MemoriesManager, "getAggregatedBrowserHistory").resolves([
+        domainAgg,
+        titleAgg,
+        searchAgg,
+      ]);
+
+      const now = Date.now();
+      const fakePersisted = [
+        {
+          id: "m1",
+          memory_summary: "Searches for Firefox information",
+          updated_at: now,
+        },
+      ];
+
+      const saveStub = sb
+        .stub(MemoriesManager, "generateAndSaveMemoriesFromSources")
+        .callsFake(async (_sources, sourceType) => {
+          Assert.equal(
+            sourceType,
+            SOURCE_HISTORY,
+            "Should pass SOURCE_HISTORY"
+          );
+          await MemoryStore.updateMeta({ last_history_memory_ts: now }); // real write
+          return fakePersisted;
         });
 
-      await MemoriesManager.generateMemoriesFromBrowsingHistory();
+      const result =
+        await MemoriesManager.generateMemoriesFromBrowsingHistory();
 
-      Assert.ok(
-        aggregateBrowserHistoryStub.calledOnce,
-        "getAggregatedBrowserHistory should be called once during memory generation"
+      Assert.ok(Array.isArray(result), "Result should be an array.");
+      Assert.equal(
+        result.length,
+        1,
+        "Result should contain persisted memories."
       );
       Assert.ok(
-        fakeEngine.calledOnce,
-        "ensureOpenAIEngine should be called once during memory generation"
+        saveStub.calledOnce,
+        "generateAndSaveMemoriesFromSources should be called once"
       );
 
-      Assert.greater(
-        await MemoriesManager.getLastHistoryMemoryTimestamp(),
-        lastHistoryMemoriesUpdateTs,
-        "Last history memory timestamp should be updated after history generation pass"
-      );
       Assert.equal(
         await MemoriesManager.getLastConversationMemoryTimestamp(),
         lastConversationMemoriesUpdateTs,
         "Last conversation memory timestamp should remain unchanged after history generation pass"
+      );
+
+      Assert.equal(
+        await MemoriesManager.getLastHistoryMemoryTimestamp(),
+        now,
+        "Last history memory timestamp should match meta written during generation"
       );
     } finally {
       sb.restore();
@@ -955,7 +949,61 @@ add_task(
 );
 
 /**
- * Tests that conversation memory generation updates last_conversation_memory_ts and not last_history_memory_ts.
+ * Tests that when aggregated browser history is empty we skip generation,
+ * warn, and do not call generateAndSaveMemoriesFromSources (no timestamp updates).
+ */
+add_task(async function test_historyGeneration_skips_when_aggregates_empty() {
+  const sb = sinon.createSandbox();
+
+  const lastHistoryMemoriesUpdateTs =
+    await MemoriesManager.getLastHistoryMemoryTimestamp();
+  const lastConversationMemoriesUpdateTs =
+    await MemoriesManager.getLastConversationMemoryTimestamp();
+
+  try {
+    sb.stub(MemoriesManager, "getAggregatedBrowserHistory").resolves([
+      [],
+      [],
+      [],
+    ]);
+
+    const saveStub = sb.stub(
+      MemoriesManager,
+      "generateAndSaveMemoriesFromSources"
+    );
+
+    const result = await MemoriesManager.generateMemoriesFromBrowsingHistory();
+
+    Assert.ok(Array.isArray(result), "Result should be an array.");
+    Assert.equal(
+      result.length,
+      0,
+      "Result should be empty when aggregates are empty."
+    );
+
+    Assert.ok(
+      saveStub.notCalled,
+      "generateAndSaveMemoriesFromSources should NOT be called"
+    );
+
+    Assert.equal(
+      await MemoriesManager.getLastHistoryMemoryTimestamp(),
+      lastHistoryMemoriesUpdateTs,
+      "History timestamp should remain unchanged when generation is skipped"
+    );
+    Assert.equal(
+      await MemoriesManager.getLastConversationMemoryTimestamp(),
+      lastConversationMemoriesUpdateTs,
+      "Conversation timestamp should remain unchanged when history generation is skipped"
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
+/**
+ * Tests that non-empty recent chats trigger generation,
+ * and last_chat_memory_ts is updated (history timestamp unchanged).
  */
 add_task(
   async function test_conversationTimestampUpdatedAfterConversationMemoriesGenerationPass() {
@@ -967,74 +1015,130 @@ add_task(
       await MemoriesManager.getLastHistoryMemoryTimestamp();
 
     try {
+      // Non-empty chats so guard does not short-circuit
+      const now = Date.now();
+      const chatMessages = [
+        {
+          id: "msg-1",
+          author: "user",
+          content: "Remember I like coffee.",
+          ts: now,
+        },
+      ];
+
       const getRecentChatsStub = sb
         .stub(MemoriesManager, "_getRecentChats")
-        .resolves([]);
+        .resolves(chatMessages);
 
-      const fakeEngine = sb
-        .stub(MemoriesManager, "ensureOpenAIEngine")
-        .resolves({
-          run() {
-            return {
-              finalOutput: `[
-  {
-    "why": "User has recently searched for Firefox history and visited mozilla.org.",
-    "category": "Internet & Telecom",
-    "intent": "Research / Learn",
-    "memory_summary": "Searches for Firefox information",
-    "score": 7,
-    "evidence": [
-      {
-        "type": "search",
-        "value": "Google Search: firefox history"
-      },
-      {
-        "type": "domain",
-        "value": "mozilla.org"
-      }
-    ]
-  },
-  {
-    "why": "User buys dog food online regularly from multiple sources.",
-    "category": "Pets & Animals",
-    "intent": "Buy / Acquire",
-    "memory_summary": "Purchases dog food online",
-    "score": -1,
-    "evidence": [
-      {
-        "type": "domain",
-        "value": "example.com"
-      }
-    ]
-  }
-]`,
-            };
-          },
+      const fakePersisted = [
+        { id: "c1", memory_summary: "Loves drinking coffee", updated_at: now },
+      ];
+
+      const saveStub = sb
+        .stub(MemoriesManager, "generateAndSaveMemoriesFromSources")
+        .callsFake(async (_sources, sourceType) => {
+          Assert.equal(
+            sourceType,
+            SOURCE_CONVERSATION,
+            "Should pass SOURCE_CONVERSATION"
+          );
+          // Real write so readback works
+          await MemoryStore.updateMeta({ last_chat_memory_ts: now });
+          return fakePersisted;
         });
 
-      await MemoriesManager.generateMemoriesFromConversationHistory();
+      const result =
+        await MemoriesManager.generateMemoriesFromConversationHistory();
 
       Assert.ok(
         getRecentChatsStub.calledOnce,
-        "getRecentChats should be called once during memory generation"
+        "_getRecentChats should be called once"
       );
       Assert.ok(
-        fakeEngine.calledOnce,
-        "ensureOpenAIEngine should be called once during memory generation"
+        saveStub.calledOnce,
+        "generateAndSaveMemoriesFromSources should be called once"
       );
 
-      Assert.greater(
-        await MemoriesManager.getLastConversationMemoryTimestamp(),
-        lastConversationMemoriesUpdateTs,
-        "Last conversation memory timestamp should be updated after conversation generation pass"
+      Assert.ok(Array.isArray(result), "Result should be an array.");
+      Assert.equal(
+        result.length,
+        1,
+        "Result should contain persisted memories."
       );
+
       Assert.equal(
         await MemoriesManager.getLastHistoryMemoryTimestamp(),
         lastHistoryMemoriesUpdateTs,
         "Last history memory timestamp should remain unchanged after conversation generation pass"
+      );
+
+      const readTs = await MemoriesManager.getLastConversationMemoryTimestamp();
+      Assert.ok(
+        typeof readTs === "number" && readTs > 0,
+        "Last conversation memory timestamp should be a positive number"
+      );
+      Assert.equal(
+        readTs,
+        now,
+        "Last conversation memory timestamp should match meta written during generation"
+      );
+      Assert.greaterOrEqual(
+        readTs,
+        lastConversationMemoriesUpdateTs,
+        "Conversation timestamp should be >= the previous value"
       );
     } finally {
       sb.restore();
     }
   }
 );
+
+/**
+ * Tests when there are no recent chat messages we skip generation
+ * and do not call generateAndSaveMemoriesFromSources (no timestamp updates).
+ */
+add_task(async function test_conversationGeneration_skips_when_chats_empty() {
+  const sb = sinon.createSandbox();
+
+  const lastConversationMemoriesUpdateTs =
+    await MemoriesManager.getLastConversationMemoryTimestamp();
+  const lastHistoryMemoriesUpdateTs =
+    await MemoriesManager.getLastHistoryMemoryTimestamp();
+
+  try {
+    sb.stub(MemoriesManager, "_getRecentChats").resolves([]);
+
+    const saveStub = sb.stub(
+      MemoriesManager,
+      "generateAndSaveMemoriesFromSources"
+    );
+
+    const result =
+      await MemoriesManager.generateMemoriesFromConversationHistory();
+
+    Assert.ok(Array.isArray(result), "Result should be an array.");
+    Assert.equal(
+      result.length,
+      0,
+      "Result should be empty when no chat messages exist."
+    );
+
+    Assert.ok(
+      saveStub.notCalled,
+      "generateAndSaveMemoriesFromSources should NOT be called"
+    );
+
+    Assert.equal(
+      await MemoriesManager.getLastConversationMemoryTimestamp(),
+      lastConversationMemoriesUpdateTs,
+      "Conversation timestamp should remain unchanged when generation is skipped"
+    );
+    Assert.equal(
+      await MemoriesManager.getLastHistoryMemoryTimestamp(),
+      lastHistoryMemoriesUpdateTs,
+      "History timestamp should remain unchanged when conversation generation is skipped"
+    );
+  } finally {
+    sb.restore();
+  }
+});

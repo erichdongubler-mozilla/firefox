@@ -198,6 +198,19 @@ export class MemoriesManager {
         topkAggregatesOpts
       );
     const sources = { history: [domainItems, titleItems, searchItems] };
+
+    const hasAnyHistory = sources.history.some(
+      items => Array.isArray(items) && !!items.length
+    );
+
+    if (!hasAnyHistory) {
+      console.warn(
+        "MemoriesManager.generateMemoriesFromBrowsingHistory: " +
+          "History aggregates are empty; skipping memory generation."
+      );
+      return [];
+    }
+
     return await this.generateAndSaveMemoriesFromSources(
       sources,
       SOURCE_HISTORY
@@ -240,6 +253,15 @@ export class MemoriesManager {
       DEFAULT_CHAT_HALF_LIFE_DAYS_FULL_RESULTS
     );
     const sources = { conversation: chatMessages };
+
+    if (!Array.isArray(chatMessages) || chatMessages.length === 0) {
+      console.warn(
+        "MemoriesManager.generateMemoriesFromConversationHistory: " +
+          "No recent chat messages found; skipping memory generation."
+      );
+      return [];
+    }
+
     return await this.generateAndSaveMemoriesFromSources(
       sources,
       SOURCE_CONVERSATION

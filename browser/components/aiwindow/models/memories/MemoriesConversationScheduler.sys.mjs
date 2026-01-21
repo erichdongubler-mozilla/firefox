@@ -21,8 +21,8 @@ ChromeUtils.defineLazyGetter(lazy, "console", function () {
 // Generate memories if there have been at least 10 user messages since the last run
 const MEMORIES_SCHEDULER_MESSAGES_THRESHOLD = 10;
 
-// Conversation scheduler tick every 30 mins
-const MEMORIES_SCHEDULER_INTERVAL_MS = 30 * 60 * 1000;
+// Conversation scheduler tick every 2 mins
+const MEMORIES_SCHEDULER_INTERVAL_MS = 2 * 60 * 1000;
 // Cooldown period - don't run more than once every 4 hours
 const MEMORIES_SCHEDULER_COOLDOWN_MS = 4 * 60 * 60 * 1000;
 

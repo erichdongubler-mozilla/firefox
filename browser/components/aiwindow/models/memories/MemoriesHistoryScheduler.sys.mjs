@@ -31,8 +31,8 @@ const INITIAL_MEMORIES_PAGES_THRESHOLD = 10;
 // Only run if at least this many pages have been visited.
 const MEMORIES_SCHEDULER_PAGES_THRESHOLD = 15;
 
-// Memories history schedule every 30 mins
-const MEMORIES_SCHEDULER_INTERVAL_MS = 30 * 60 * 1000;
+// Memories history schedule every 2 mins
+const MEMORIES_SCHEDULER_INTERVAL_MS = 2 * 60 * 1000;
 // Cooldown period - don't run more than once every 6 hours
 const MEMORIES_SCHEDULER_COOLDOWN_MS = 6 * 60 * 60 * 1000;
 
