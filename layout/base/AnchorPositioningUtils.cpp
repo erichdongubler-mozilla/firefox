@@ -795,12 +795,12 @@ const nsAtom* AnchorPositioningUtils::GetUsedAnchorName(
   }
 
   const auto& defaultAnchor = aPositioned->StylePosition()->mPositionAnchor;
-  if (defaultAnchor.IsNone()) {
+  if (defaultAnchor.value.IsNone()) {
     return nullptr;
   }
 
-  if (defaultAnchor.IsIdent()) {
-    return defaultAnchor.AsIdent().AsAtom();
+  if (defaultAnchor.value.IsIdent()) {
+    return defaultAnchor.value.AsIdent().AsAtom();
   }
 
   if (aPositioned->Style()->IsPseudoElement()) {
@@ -934,11 +934,12 @@ nsIFrame* AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
   }
 
   const auto* pos = aFrame->StylePosition();
-  if (!pos->mPositionAnchor.IsIdent()) {
+  if (!pos->mPositionAnchor.value.IsIdent()) {
     return nullptr;
   }
 
-  const nsAtom* defaultAnchorName = pos->mPositionAnchor.AsIdent().AsAtom();
+  const nsAtom* defaultAnchorName =
+      pos->mPositionAnchor.value.AsIdent().AsAtom();
   nsIFrame* anchor = const_cast<nsIFrame*>(
       aFrame->PresShell()->GetAnchorPosAnchor(defaultAnchorName, aFrame));
   // TODO Bug 1997026 We need to update the anchor finding code so this can't
@@ -991,7 +992,7 @@ static ScrollShifts FindScrollCompensatedAnchorShift(
   // end up containing scroll offset in their position. For now, walk the chain
   // to account for those deltas too.
   const nsPoint chainedDelta = [&]() -> nsPoint {
-    if (defaultAnchor->StylePosition()->mPositionAnchor.IsNone()) {
+    if (defaultAnchor->StylePosition()->mPositionAnchor.value.IsNone()) {
       return {};
     }
     const auto* referenceData =
