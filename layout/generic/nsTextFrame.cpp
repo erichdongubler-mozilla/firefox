@@ -6609,19 +6609,13 @@ bool nsTextFrame::GetSelectionTextColors(SelectionType aSelectionType,
  * type of selection.
  * If text-shadow was not specified, *aShadows is left untouched.
  */
-mozilla::Span<const StyleSimpleShadow> nsTextFrame::GetSelectionTextShadow(
+void nsTextFrame::GetSelectionTextShadow(
     SelectionType aSelectionType, nsTextPaintStyle& aTextPaintStyle,
-    nsAtom* aHighlightName) {
-  if (aSelectionType == SelectionType::eNormal) {
-    return aTextPaintStyle.GetSelectionShadow();
+    Span<const StyleSimpleShadow>* aShadows) {
+  if (aSelectionType != SelectionType::eNormal) {
+    return;
   }
-  if (aSelectionType == SelectionType::eTargetText) {
-    return aTextPaintStyle.GetTargetTextShadow();
-  }
-  if (aSelectionType == SelectionType::eHighlight && aHighlightName) {
-    return aTextPaintStyle.GetCustomHighlightTextShadow(aHighlightName);
-  }
-  return {};
+  aTextPaintStyle.GetSelectionShadow(aShadows);
 }
 
 /**
@@ -7196,25 +7190,9 @@ bool nsTextFrame::PaintTextWithSelectionColors(
 
     // Determine what shadow, if any, to draw - either from textStyle
     // or from the ::-moz-selection pseudo-class if specified there
-    AutoTArray<Span<const StyleSimpleShadow>, 1> shadows;
-    // Collect all selection/highlight shadows first
-    for (size_t index = 0; index < selectionTypes.Length(); ++index) {
-      nsAtom* highlightName = index < highlightNames.Length()
-                                  ? highlightNames[index].get()
-                                  : nullptr;
-      Span<const StyleSimpleShadow> shadowSpan = GetSelectionTextShadow(
-          selectionTypes[index], *aParams.textPaintStyle, highlightName);
-      if (!shadowSpan.IsEmpty()) {
-        shadows.AppendElement(shadowSpan);
-      }
-    }
-
-    // Only use element shadow if no selection shadow was explicitly specified
-    // See https://github.com/w3c/csswg-drafts/issues/13376 for context.
-    if (shadows.IsEmpty()) {
-      if (auto sh = textStyle->mTextShadow.AsSpan(); !sh.IsEmpty()) {
-        shadows.AppendElement(sh);
-      }
+    Span<const StyleSimpleShadow> shadows = textStyle->mTextShadow.AsSpan();
+    for (auto selectionType : selectionTypes) {
+      GetSelectionTextShadow(selectionType, *aParams.textPaintStyle, &shadows);
     }
     if (!shadows.IsEmpty()) {
       nscoord startEdge = iOffset;
@@ -7222,14 +7200,11 @@ bool nsTextFrame::PaintTextWithSelectionColors(
         startEdge -=
             hyphenWidth + mTextRun->GetAdvanceWidth(range, aParams.provider);
       }
-      shadowParams.foregroundColor = foreground;
-      shadowParams.textBaselinePt = textBaselinePt;
-      shadowParams.framePt = aParams.framePt;
-      shadowParams.leftSideOffset = startEdge;
       shadowParams.range = range;
-      for (const Span<const StyleSimpleShadow>& shadowSpan : shadows) {
-        PaintShadows(shadowSpan, shadowParams);
-      }
+      shadowParams.textBaselinePt = textBaselinePt;
+      shadowParams.foregroundColor = foreground;
+      shadowParams.leftSideOffset = startEdge;
+      PaintShadows(shadows, shadowParams);
     }
 
     // Draw text segment
