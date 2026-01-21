@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef __CParserContext
-#define __CParserContext
+#ifndef CParserContext
+#define CParserContext
 
 #include "nsIParser.h"
 #include "nsIRequest.h"

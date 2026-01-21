@@ -33,8 +33,8 @@
 // OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 // EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef _JEMALLOC_TYPES_H_
-#define _JEMALLOC_TYPES_H_
+#ifndef JEMALLOC_TYPES_H_
+#define JEMALLOC_TYPES_H_
 
 #include <stdint.h>
 
@@ -254,4 +254,4 @@ enum may_purge_now_result_t {
 }  // extern "C"
 #endif
 
-#endif  // _JEMALLOC_TYPES_H_
+#endif  // JEMALLOC_TYPES_H_
