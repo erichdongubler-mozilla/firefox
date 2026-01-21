@@ -1303,9 +1303,7 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
       output = outputs[expected].false;
       extra = { status_msg: output.n };
       ++g.testResults[output.n];
-      if (output.s[0] !== output.s[1]) {
-        g.currentTestStatus = "FAIL";
-      }
+      g.currentTestStatus = output.s[0];
       logger.testStatus(
         g.urls[0].identifier,
         errorMsg,
@@ -1524,9 +1522,7 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
           failures.push("failed reftest-no-wr-raster");
         }
         var failureString = failures.join(", ");
-        if (output.s[0] !== output.s[1]) {
-          g.currentTestStatus = "FAIL";
-        }
+        g.currentTestStatus = output.s[0];
         logger.testStatus(
           g.urls[0].identifier,
           failureString,
@@ -1578,9 +1574,7 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
         }
         extra.modifiers = g.urls[0].modifiers;
 
-        if (output.s[0] !== output.s[1]) {
-          g.currentTestStatus = "FAIL";
-        }
+        g.currentTestStatus = output.s[0];
         logger.testStatus(
           g.urls[0].identifier,
           message,
@@ -1722,7 +1716,13 @@ function CleanUpCrashDumpFiles() {
 
 function FinishTestItem(skipTestEndLogging = false) {
   if (!skipTestEndLogging) {
-    logger.testEnd(g.urls[0].identifier, g.currentTestStatus);
+    let expectedStatus = "PASS";
+    if (g.urls[0].expected == EXPECTED_FAIL) {
+      expectedStatus = "FAIL";
+    } else if (g.urls[0].expected == EXPECTED_RANDOM) {
+      expectedStatus = g.currentTestStatus;
+    }
+    logger.testEnd(g.urls[0].identifier, g.currentTestStatus, expectedStatus);
   }
 
   // Replace document with BLANK_URL_FOR_CLEARING in case there are
