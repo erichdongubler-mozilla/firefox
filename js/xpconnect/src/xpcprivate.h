@@ -226,10 +226,12 @@ class nsXPConnect final : public nsIXPConnect {
 
   void RecordTraversal(void* p, nsISupports* s);
 
- private:
-  nsXPConnect() = default;
+ protected:
   virtual ~nsXPConnect();
 
+  nsXPConnect();
+
+ private:
   // Singleton instance
   static nsXPConnect* gSelf;
   static bool gOnceAliveNowDead;
