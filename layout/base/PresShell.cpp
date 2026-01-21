@@ -11327,14 +11327,14 @@ nsIFrame* PresShell::GetAbsoluteContainingBlock(nsIFrame* aFrame) {
 }
 
 nsIFrame* PresShell::GetAnchorPosAnchor(
-    const ScopedNameRef& aName, const nsIFrame* aPositionedFrame) const {
-  MOZ_ASSERT(aName.mName);
-  MOZ_ASSERT(!aName.mName->IsEmpty());
+    const nsAtom* aName, const nsIFrame* aPositionedFrame) const {
+  MOZ_ASSERT(aName);
+  MOZ_ASSERT(!aName->IsEmpty());
   MOZ_ASSERT(mLazyAnchorPosAnchorChanges.IsEmpty());
-  if (aName.mName == nsGkAtoms::AnchorPosImplicitAnchor) {
+  if (aName == nsGkAtoms::AnchorPosImplicitAnchor) {
     return AnchorPositioningUtils::GetAnchorPosImplicitAnchor(aPositionedFrame);
   }
-  if (const auto& entry = mAnchorPosAnchors.Lookup(aName.mName)) {
+  if (const auto& entry = mAnchorPosAnchors.Lookup(aName)) {
     return AnchorPositioningUtils::FindFirstAcceptableAnchor(
         aName, aPositionedFrame, entry.Data());
   }
@@ -11483,7 +11483,6 @@ static bool NeedReflowForAnchorPos(
 
 struct DefaultAnchorInfo {
   const nsAtom* mName;
-  StyleCascadeLevel mTreeScope;
   const nsIFrame* mAnchor;
   DistanceToNearestScrollContainer mDistanceToNearestScrollContainer;
 };
@@ -11515,20 +11514,19 @@ PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
       continue;
     }
     const auto defaultAnchorInfo = [&]() -> Maybe<DefaultAnchorInfo> {
-      auto usedAnchorName = AnchorPositioningUtils::GetUsedAnchorName(
-          positioned, ScopedNameRef{nullptr, StyleCascadeLevel::Default()});
-      if (!usedAnchorName) {
+      const auto* anchorName =
+          AnchorPositioningUtils::GetUsedAnchorName(positioned, nullptr);
+      if (!anchorName) {
         return Nothing{};
       }
-      const ScopedNameRef& usedName = *usedAnchorName;
-      const auto* anchor = GetAnchorPosAnchor(usedName, positioned);
+      const auto* anchor = GetAnchorPosAnchor(anchorName, positioned);
       if (!anchor) {
         return Nothing{};
       }
       const auto nearestScrollFrame =
           AnchorPositioningUtils::GetNearestScrollFrame(anchor);
-      return Some(DefaultAnchorInfo{usedName.mName, usedName.mTreeScope, anchor,
-                                    nearestScrollFrame.mDistance});
+      return Some(
+          DefaultAnchorInfo{anchorName, anchor, nearestScrollFrame.mDistance});
     }();
     bool shouldReflow = false;
     if (defaultAnchorInfo &&
@@ -11538,21 +11536,21 @@ PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
       shouldReflow = true;
     } else {
       const auto GetAnchor =
-          [&](const ScopedNameRef& aNameRef,
+          [&](const nsAtom* aName,
               const nsIFrame* aPositioned) -> const nsIFrame* {
         if (!defaultAnchorInfo) {
-          return GetAnchorPosAnchor(aNameRef, aPositioned);
+          return GetAnchorPosAnchor(aName, aPositioned);
         }
         const auto* defaultAnchorName = defaultAnchorInfo->mName;
-        if (aNameRef.mName != defaultAnchorName) {
-          return GetAnchorPosAnchor(aNameRef, aPositioned);
+        if (aName != defaultAnchorName) {
+          return GetAnchorPosAnchor(aName, aPositioned);
         }
         return defaultAnchorInfo->mAnchor;
       };
       for (const auto& kv : *anchorPosReferenceData) {
         const auto& data = kv.GetData();
-        const auto& anchorKey = kv.GetKey();
-        const auto* anchor = GetAnchor(anchorKey, positioned);
+        const auto& anchorName = kv.GetKey();
+        const auto* anchor = GetAnchor(anchorName, positioned);
         if (NeedReflowForAnchorPos(anchor, positioned, data)) {
           shouldReflow = true;
           break;

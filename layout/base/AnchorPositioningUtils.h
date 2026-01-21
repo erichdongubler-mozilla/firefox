@@ -9,7 +9,6 @@
 
 #include "WritingModes.h"
 #include "mozilla/Maybe.h"
-#include "nsHashKeys.h"
 #include "nsRect.h"
 #include "nsTHashMap.h"
 
@@ -66,48 +65,6 @@ struct AnchorPosOffsetData {
   DistanceToNearestScrollContainer mDistanceToNearestScrollContainer;
 };
 
-class ScopedNameRef {
- public:
-  ScopedNameRef(const nsAtom* aAtom, const StyleCascadeLevel& aTreeScope)
-      : mName(aAtom), mTreeScope(aTreeScope) {}
-
-  const nsAtom* mName = nullptr;
-  StyleCascadeLevel mTreeScope = StyleCascadeLevel::Default();
-};
-
-class nsScopedNameRefHashKey : public PLDHashEntryHdr {
- public:
-  using KeyType = ScopedNameRef;
-  using KeyTypePointer = const ScopedNameRef*;
-
-  explicit nsScopedNameRefHashKey(const ScopedNameRef* aKey)
-      : mAtom(aKey->mName), mTreeScope(aKey->mTreeScope) {
-    MOZ_ASSERT(aKey);
-    MOZ_ASSERT(aKey->mName);
-  }
-  nsScopedNameRefHashKey(const nsScopedNameRefHashKey& aOther) = delete;
-  nsScopedNameRefHashKey(nsScopedNameRefHashKey&& aOther) = default;
-  ~nsScopedNameRefHashKey() = default;
-
-  KeyType GetKey() const { return ScopedNameRef(mAtom, mTreeScope); }
-  bool KeyEquals(KeyTypePointer aKey) const {
-    // This should work because a positioned element can't make two references
-    // with the same name in different tree scopes. Further scope resolution is
-    // hard to do here because the map does not have all the context.
-    return aKey->mName == mAtom.get();
-  }
-
-  static KeyTypePointer KeyToPointer(const KeyType& aKey) { return &aKey; }
-  static PLDHashNumber HashKey(KeyTypePointer aKey) {
-    return MOZ_LIKELY(aKey && aKey->mName) ? aKey->mName->hash() : 0;
-  }
-  enum { ALLOW_MEMMOVE = true };
-
- private:
-  RefPtr<const nsAtom> mAtom;
-  StyleCascadeLevel mTreeScope;
-};
-
 // Resolved anchor positioning data.
 struct AnchorPosResolutionData {
   // Size of the referenced anchor.
@@ -115,7 +72,6 @@ struct AnchorPosResolutionData {
   // Offset resolution data. Nothing if the anchor did not resolve, or if the
   // anchor was only referred to by its size.
   Maybe<AnchorPosOffsetData> mOffsetData;
-  StyleCascadeLevel mAnchorTreeScope;
 };
 
 // Data required for an anchor positioned frame, including:
@@ -129,9 +85,7 @@ struct AnchorPosResolutionData {
 class AnchorPosReferenceData {
  private:
   using ResolutionMap =
-      nsBaseHashtable<nsScopedNameRefHashKey,
-                      mozilla::Maybe<AnchorPosResolutionData>,
-                      mozilla::Maybe<AnchorPosResolutionData>>;
+      nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>;
 
  public:
   // Backup data for attempting a different `@position-try` style, when
@@ -158,8 +112,8 @@ class AnchorPosReferenceData {
     Value* mEntry;
   };
 
-  Result InsertOrModify(const ScopedNameRef& aKey, bool aNeedOffset);
-  const Value* Lookup(const ScopedNameRef& aKey) const;
+  Result InsertOrModify(const nsAtom* aAnchorName, bool aNeedOffset);
+  const Value* Lookup(const nsAtom* aAnchorName) const;
 
   bool IsEmpty() const { return mMap.IsEmpty(); }
 
@@ -227,8 +181,6 @@ class AnchorPosReferenceData {
   // Resolved insets for this positioned element. Modifies the adjusted &
   // scrolled containing block.
   nsMargin mInsets;
-
-  StyleCascadeLevel mAnchorTreeScope = StyleCascadeLevel::Default();
 
  private:
   ResolutionMap mMap;
@@ -311,7 +263,7 @@ struct AnchorPositioningUtils {
    * following https://drafts.csswg.org/css-anchor-position-1/#target
    */
   static nsIFrame* FindFirstAcceptableAnchor(
-      const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
+      const nsAtom* aName, const nsIFrame* aPositionedFrame,
       const nsTArray<nsIFrame*>& aPossibleAnchorFrames);
 
   static Maybe<nsRect> GetAnchorPosRect(
@@ -320,11 +272,11 @@ struct AnchorPositioningUtils {
 
   static Maybe<AnchorPosInfo> ResolveAnchorPosRect(
       const nsIFrame* aPositioned, const nsIFrame* aAbsoluteContainingBlock,
-      const ScopedNameRef& aAnchorName, bool aCBRectIsvalid,
+      const nsAtom* aAnchorName, bool aCBRectIsvalid,
       AnchorPosResolutionCache* aResolutionCache);
 
   static Maybe<nsSize> ResolveAnchorPosSize(
-      const nsIFrame* aPositioned, const ScopedNameRef& aAnchorName,
+      const nsIFrame* aPositioned, const nsAtom* aAnchorName,
       AnchorPosResolutionCache* aResolutionCache);
 
   /**
@@ -348,8 +300,8 @@ struct AnchorPositioningUtils {
    * Otherwise it will return `nsGkAtoms::AnchorPosImplicitAnchor` if the
    * element has an implicit anchor, or a nullptr.
    */
-  static Maybe<ScopedNameRef> GetUsedAnchorName(
-      const nsIFrame* aPositioned, const ScopedNameRef& aAnchorName);
+  static const nsAtom* GetUsedAnchorName(const nsIFrame* aPositioned,
+                                         const nsAtom* aAnchorName);
 
   /**
    * Get the implicit anchor of the frame.

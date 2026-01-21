@@ -263,8 +263,7 @@ static AnchorPosResolutionCache PopulateAnchorResolutionCache(
   AnchorPosResolutionCache result{aData, {}};
   // Let this call populate the cache.
   const auto defaultAnchorInfo = AnchorPositioningUtils::ResolveAnchorPosRect(
-      aKidFrame, aKidFrame->GetParent(),
-      {nullptr, StyleCascadeLevel::Default()}, false, &result);
+      aKidFrame, aKidFrame->GetParent(), nullptr, false, &result);
   if (defaultAnchorInfo) {
     aData->AdjustCompensatingForScroll(
         CheckEarlyCompensatingForScroll(aKidFrame));
@@ -805,11 +804,11 @@ static nscoord OffsetToAlignedStaticPos(
   Maybe<CSSAlignUtils::AnchorAlignInfo> anchorAlignInfo;
   if (alignConst == StyleAlignFlags::ANCHOR_CENTER &&
       aKidReflowInput.mAnchorPosResolutionCache) {
-    AnchorPosReferenceData* referenceData =
+    auto* referenceData =
         aKidReflowInput.mAnchorPosResolutionCache->mReferenceData;
     if (referenceData) {
-      const auto* cachedData = referenceData->Lookup(
-          {referenceData->mDefaultAnchorName, referenceData->mAnchorTreeScope});
+      const auto* cachedData =
+          referenceData->Lookup(referenceData->mDefaultAnchorName);
       if (cachedData && *cachedData) {
         referenceData->AdjustCompensatingForScroll(
             aAbsPosCBWM.PhysicalAxis(aAbsPosCBAxis));
@@ -1332,8 +1331,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
           return Nothing{};
         }
         return AnchorPositioningUtils::ResolveAnchorPosRect(
-            aKidFrame, aDelegatingFrame,
-            {nullptr, StyleCascadeLevel::Default()}, false,
+            aKidFrame, aDelegatingFrame, nullptr, false,
             aAnchorPosResolutionCache);
       }();
       if (defaultAnchorInfo) {

@@ -96,7 +96,6 @@ class nsDisplayListBuilder;
 class OverflowChangedTracker;
 class PresShellWidgetListener;
 class ProfileChunkedBuffer;
-class ScopedNameRef;
 class ScrollContainerFrame;
 class StyleSheet;
 
@@ -764,7 +763,7 @@ class PresShell final : public nsStubDocumentObserver,
   nsIFrame* GetAbsoluteContainingBlock(nsIFrame* aFrame);
 
   // https://drafts.csswg.org/css-anchor-position-1/#target
-  nsIFrame* GetAnchorPosAnchor(const ScopedNameRef& aName,
+  nsIFrame* GetAnchorPosAnchor(const nsAtom* aName,
                                const nsIFrame* aPositionedFrame) const;
   void AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
   void RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
