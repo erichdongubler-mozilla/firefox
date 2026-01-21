@@ -16,6 +16,7 @@ from mozbuild.mozconfig import MozconfigLoader
 from mozbuild.util import (
     MOZBUILD_METRICS_PATH,
     ensure_l10n_central,
+    get_latest_file,
     is_running_under_coding_agent,
 )
 
@@ -324,10 +325,8 @@ def resource_usage(command_context, address=None, port=None, browser=None, url=N
     if url:
         server.add_resource_json_url("profile", url)
     else:
-        profile = command_context._get_build_log_filename(
-            "profile_build_resources.json"
-        )
-        if not os.path.exists(profile):
+        profile = get_latest_file(command_context._build_log_dir(), "profile")
+        if not profile:
             command_context.log(
                 logging.WARNING,
                 "build_resources",
@@ -338,7 +337,7 @@ def resource_usage(command_context, address=None, port=None, browser=None, url=N
             )
             return 1
 
-        server.add_resource_json_file("profile", profile)
+        server.add_resource_json_file("profile", str(profile))
 
     profiler_url = "https://profiler.firefox.com/from-url/" + quote(
         server.url + "resources/profile", ""

@@ -44,6 +44,7 @@ from mozbuild.util import (
     MOZBUILD_METRICS_PATH,
     ForwardingArgumentParser,
     ensure_l10n_central,
+    get_latest_file,
 )
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -650,12 +651,14 @@ def show_log(command_context, log_file=None):
             return
         command_name = latest_file.read_text().strip()
         subdir = f"logs/{command_name}"
-        log_path = Path(
-            command_context._get_state_filename("last_log.json", subdir=subdir)
-        )
-        if not log_path.exists():
+        log_dir = Path(command_context._get_state_filename("", subdir=subdir))
+        log_path = get_latest_file(log_dir, command_name)
+        if not log_path:
             command_context.log(
-                logging.WARNING, "show_log", {}, f"Log file not found: {log_path}"
+                logging.WARNING,
+                "show_log",
+                {},
+                f"No log files found for latest '{command_name}' command. They may have been deleted.",
             )
             return
         log_file = log_path.open("rb")
@@ -749,7 +752,7 @@ def handle_log_file(command_context, log_file):
 
 
 def database_path(command_context):
-    return command_context._get_build_log_filename("warnings.json")
+    return get_latest_file(command_context._build_log_dir(), "warnings")
 
 
 def get_warnings_database(command_context):
@@ -759,8 +762,8 @@ def get_warnings_database(command_context):
 
     database = WarningsDatabase()
 
-    if os.path.exists(path):
-        database.load_from_file(path)
+    if path and path.exists():
+        database.load_from_file(str(path))
 
     return database
 

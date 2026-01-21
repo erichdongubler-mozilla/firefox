@@ -43,7 +43,7 @@ from ..dirutils import mkdir
 from ..serialized_logging import read_serialized_record
 from ..telemetry import get_cpu_brand
 from ..testing import install_test_files
-from ..util import FileAvoidWrite, resolve_target_to_make
+from ..util import FileAvoidWrite, construct_log_filename, resolve_target_to_make
 from .clobber import Clobberer
 
 RE_WARNING_SUMMARY = re.compile(r"\d+\s+warnings?\s+generated\.")
@@ -374,7 +374,7 @@ class BuildMonitor(MozbuildObject):
             else:
                 self._ensure_build_log_dir_exists()
                 build_resources_profile_path = self._get_build_log_filename(
-                    "profile_build_resources.json"
+                    construct_log_filename("profile")
                 )
             with open(
                 build_resources_profile_path, "w", encoding="utf-8", newline="\n"
@@ -1161,7 +1161,7 @@ class BuildDriver(MozbuildObject):
         append_env=None,
     ):
         self._ensure_build_log_dir_exists()
-        warnings_path = self._get_build_log_filename("warnings.json")
+        warnings_path = self._get_build_log_filename(construct_log_filename("warnings"))
         monitor = self._spawn(BuildMonitor)
         monitor.init(warnings_path, self.log_manager.terminal, metrics)
         status = self._build(
