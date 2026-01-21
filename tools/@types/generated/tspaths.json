@@ -6050,9 +6050,6 @@
       "resource://gre/modules/Schemas.sys.mjs": [
         "toolkit/components/extensions/Schemas.sys.mjs"
       ],
-      "resource://gre/modules/SearchService.sys.mjs": [
-        "toolkit/components/search/SearchService.sys.mjs"
-      ],
       "resource://gre/modules/SecurityInfo.sys.mjs": [
         "toolkit/components/extensions/webrequest/SecurityInfo.sys.mjs"
       ],

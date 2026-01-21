@@ -16,7 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowAccountAuth.sys.mjs",
   AIWindowMenu:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowMenu.sys.mjs",
-
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   ChatStore:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs",
@@ -349,7 +349,7 @@ export const AIWindow = {
   async performSearch(query, window) {
     let engine = null;
     try {
-      engine = await Services.search.getDefault();
+      engine = await lazy.SearchService.getDefault();
     } catch (error) {
       console.error(`Failed to get default search engine:`, error);
     }
