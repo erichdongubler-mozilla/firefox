@@ -111,6 +111,7 @@ const Template = ({
   ellipsized,
   disabledOption,
   hiddenOption,
+  withSeparator,
 }) => html`
   <div style="width:300px">
     <moz-select
@@ -131,13 +132,14 @@ const Template = ({
         : ""}
       ${options.map(
         (opt, i) =>
-          html`<moz-option
-            value=${opt.value}
-            data-l10n-id=${opt.l10nId}
-            iconsrc=${opt.iconSrc}
-            ?disabled=${disabledOption && i == 1}
-            ?hidden=${hiddenOption && i == 2}
-          ></moz-option>`
+          html`${i == 2 && withSeparator ? html`<hr />` : ""}
+            <moz-option
+              value=${opt.value}
+              data-l10n-id=${opt.l10nId}
+              iconsrc=${opt.iconSrc}
+              ?disabled=${disabledOption && i == 1}
+              ?hidden=${hiddenOption && i == 2}
+            ></moz-option>`
       )}
     </moz-select>
   </div>
@@ -159,6 +161,7 @@ Default.args = {
   ellipsized: false,
   disabledOption: false,
   hiddenOption: false,
+  withSeparator: false,
 };
 
 export const WithIcon = Template.bind({});
@@ -242,4 +245,10 @@ export const WithHiddenOption = Template.bind({});
 WithHiddenOption.args = {
   ...Default.args,
   hiddenOption: true,
+};
+
+export const WithSeparator = Template.bind({});
+WithSeparator.args = {
+  ...Default.args,
+  withSeparator: true,
 };
