@@ -9,11 +9,10 @@
 #include "AbstractRange.h"
 #include "nsCycleCollectionParticipant.h"
 
-StyledRange::StyledRange(mozilla::dom::AbstractRange* aRange,
-                         mozilla::TextRangeStyle aStyle)
-    : mRange(aRange), mTextRangeStyle(aStyle) {}
-
 namespace mozilla::dom {
+
+StyledRange::StyledRange(AbstractRange* aRange, TextRangeStyle aStyle)
+    : mRange(aRange), mTextRangeStyle(aStyle) {}
 
 void ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
                                  StyledRangeCollection& aField,
@@ -48,6 +47,16 @@ void StyledRangeCollection::InsertElementsAt(
   for (size_t i = 0; i < aStyledRanges.Length(); ++i) {
     InsertElementAt(aIndex + i, aStyledRanges[i]);
   }
+}
+
+bool StyledRangeCollection::RemoveElement(const AbstractRange* aRange) {
+  for (size_t i = 0; i < mRanges.Length(); ++i) {
+    if (mRanges[i] == aRange) {
+      RemoveElementAt(i);
+      return true;
+    }
+  }
+  return false;
 }
 
 void StyledRangeCollection::RemoveElementAt(size_t aIndex) {

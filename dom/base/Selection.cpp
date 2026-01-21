@@ -1484,17 +1484,11 @@ nsresult Selection::StyledRanges::RemoveRangeAndUnregisterSelection(
   // get O(log n) time, but that requires many expensive DOM comparisons.
   // For even several thousand items, this is probably faster because the
   // comparisons are so fast.
-  int32_t idx = -1;
-  uint32_t i;
-  for (i = 0; i < mRanges.Length(); i++) {
-    if (GetAbstractRangeAt(i) == &aRange) {
-      idx = (int32_t)i;
-      break;
-    }
+  const bool rangeExists = mRanges.RemoveElement(&aRange);
+  if (!rangeExists) {
+    return NS_ERROR_DOM_NOT_FOUND_ERR;
   }
-  if (idx < 0) return NS_ERROR_DOM_NOT_FOUND_ERR;
 
-  mRanges.RemoveElementAt(idx);
   aRange.UnregisterSelection(mSelection);
 #ifdef ACCESSIBILITY
   a11y::SelectionManager::SelectionRangeChanged(mSelection.GetType(), aRange);
@@ -2332,9 +2326,8 @@ void Selection::SetAncestorLimiter(Element* aLimiter) {
 }
 
 void Selection::StyledRanges::UnregisterSelection(IsUnlinking aIsUnlinking) {
-  uint32_t count = mRanges.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    GetAbstractRangeAt(i)->UnregisterSelection(mSelection, aIsUnlinking);
+  for (const auto& range : Ranges()) {
+    range->UnregisterSelection(mSelection, aIsUnlinking);
   }
 }
 
@@ -4127,15 +4120,11 @@ void Selection::DeleteFromDocument(ErrorResult& aRv) {
   }
 
   // nsRange::DeleteContents() may run script, let's store all ranges first.
-  AutoTArray<RefPtr<nsRange>, 1> ranges;
-  MOZ_ASSERT(RangeCount() == mStyledRanges.Length());
-  ranges.SetCapacity(RangeCount());
-  for (uint32_t index : IntegerRange(RangeCount())) {
-    ranges.AppendElement(
-        mStyledRanges.GetAbstractRangeAt(index)->AsDynamicRange());
-  }
+  nsTArray<RefPtr<AbstractRange>> ranges{mStyledRanges.Ranges()};
   for (const auto& range : ranges) {
-    MOZ_KnownLive(range)->DeleteContents(aRv);
+    // This runs only for normal selections, therefore all ranges are guaranteed
+    // to be dynamic.
+    MOZ_KnownLive(range)->AsDynamicRange()->DeleteContents(aRv);
     if (aRv.Failed()) {
       return;
     }
