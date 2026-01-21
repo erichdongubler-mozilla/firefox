@@ -8332,7 +8332,7 @@ bool nsWindow::InitTouchInjection() {
     }
 
     if (!func(TOUCH_INJECT_MAX_POINTS, TOUCH_FEEDBACK_DEFAULT)) {
-      WinUtils::Log("InitializeTouchInjection failure. GetLastError=%d",
+      WinUtils::Log("InitializeTouchInjection failure. GetLastError=%lu",
                     GetLastError());
       return false;
     }
@@ -8389,7 +8389,7 @@ bool nsWindow::InjectTouchPoint(uint32_t aId, LayoutDeviceIntPoint& aPoint,
       ::Sleep(i);
       continue;
     }
-    WinUtils::Log("InjectTouchInput failure. GetLastError=%d", error);
+    WinUtils::Log("InjectTouchInput failure. GetLastError=%lu", error);
     return false;
   }
   return true;

@@ -269,8 +269,8 @@ class WinUtils {
    * Logging helpers that dump output to prlog module 'Widget', console, and
    * OutputDebugString. Note these output in both debug and release builds.
    */
-  static void Log(const char* fmt, ...);
-  static void LogW(const wchar_t* fmt, ...);
+  static void Log(const char* fmt, ...) MOZ_FORMAT_PRINTF(1, 2);
+  static void LogW(const wchar_t* fmt, ...) MOZ_FORMAT_WPRINTF(1, 2);
 
   /**
    * PeekMessage() and GetMessage() are wrapper methods for PeekMessageW(),
