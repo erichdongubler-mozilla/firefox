@@ -10,27 +10,22 @@ import { OnDeviceModelManager } from "chrome://browser/content/preferences/OnDev
  * @import { OnDeviceModelFeaturesEnum } from "chrome://browser/content/preferences/OnDeviceModelManager.mjs"
  */
 
-const { CommonDialog } = ChromeUtils.importESModule(
-  "resource://gre/modules/CommonDialog.sys.mjs"
-);
-
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
+const XPCOMUtils = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+).XPCOMUtils;
+const lazy = XPCOMUtils.declareLazy({
   GenAI: "resource:///modules/GenAI.sys.mjs",
   log: () =>
     console.createInstance({
       prefix: "aiFeatures",
       maxLogLevel: "Info",
     }),
-  MemoryStore:
-    "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs",
 });
 
 Preferences.addAll([
   { id: "browser.ml.chat.provider", type: "string" },
-  { id: "browser.aiwindow.preferences.enabled", type: "bool" },
   { id: "browser.aiwindow.enabled", type: "bool" },
-  { id: "browser.aiwindow.memories", type: "bool" },
+  { id: "browser.aiwindow.preferences.enabled", type: "bool" },
 ]);
 
 Preferences.addSetting({ id: "chatbotProviderItem" });
@@ -129,13 +124,13 @@ Preferences.addSetting({
 });
 
 Preferences.addSetting({
-  id: "AIWindowPreferencesEnabled",
-  pref: "browser.aiwindow.preferences.enabled",
+  id: "AIWindowEnabled",
+  pref: "browser.aiwindow.enabled",
 });
 
 Preferences.addSetting({
-  id: "AIWindowEnabled",
-  pref: "browser.aiwindow.enabled",
+  id: "AIWindowPreferencesEnabled",
+  pref: "browser.aiwindow.preferences.enabled",
 });
 
 // Only show the feature settings if the prefs are allowed to show and the
@@ -152,6 +147,7 @@ Preferences.addSetting({ id: "AIWindowActivateLink" });
 
 // Only show the AI Window features if the prefs are allowed to show and the
 // feature is enabled.
+// TODO: Enable when Model and Insight options are added
 Preferences.addSetting({
   id: "aiFeaturesAIWindowGroup",
   deps: ["AIWindowEnabled", "AIWindowPreferencesEnabled"],
@@ -159,176 +155,6 @@ Preferences.addSetting({
     return deps.AIWindowPreferencesEnabled.value && deps.AIWindowEnabled.value;
   },
 });
-
-Preferences.addSetting({
-  id: "personalizeSmartWindowButton",
-  onUserClick(e) {
-    e.preventDefault();
-    window.gotoPref("panePersonalizeSmartWindow");
-  },
-});
-
-Preferences.addSetting({ id: "learnFromActivityWrapper" });
-Preferences.addSetting({
-  id: "learnFromActivity",
-  pref: "browser.aiwindow.memories",
-});
-
-Preferences.addSetting({
-  id: "manageMemories",
-  onUserClick(e) {
-    e.preventDefault();
-    window.gotoPref("paneManageMemories");
-  },
-});
-
-Preferences.addSetting({ id: "memories" });
-
-Preferences.addSetting({
-  id: "memory-item",
-  onUserClick(e) {
-    const action = e.target.getAttribute("action");
-    const memoryId = e.target.getAttribute("memoryId");
-    if (action === "delete") {
-      lazy.MemoryStore.hardDeleteMemory(memoryId);
-    }
-  },
-});
-
-Preferences.addSetting({
-  id: "deleteAllMemoriesButton",
-  async onUserClick() {
-    const memories = await lazy.MemoryStore.getMemories();
-    if (!memories.length) {
-      return;
-    }
-
-    const [title, message, deleteButton, cancelButton] =
-      await document.l10n.formatValues([
-        { id: "ai-window-delete-all-memories-title" },
-        { id: "ai-window-delete-all-memories-message" },
-        { id: "ai-window-delete-all-memories-confirm" },
-        { id: "ai-window-delete-all-memories-cancel" },
-      ]);
-
-    const buttonFlags =
-      Services.prompt.BUTTON_POS_0 * Services.prompt.BUTTON_TITLE_IS_STRING +
-      Services.prompt.BUTTON_POS_1 * Services.prompt.BUTTON_TITLE_IS_STRING +
-      Services.prompt.BUTTON_POS_0_DEFAULT;
-
-    const result = await Services.prompt.asyncConfirmEx(
-      window.browsingContext,
-      Services.prompt.MODAL_TYPE_CONTENT,
-      title,
-      message,
-      buttonFlags,
-      deleteButton,
-      cancelButton,
-      null,
-      null,
-      false,
-      {
-        useTitle: true,
-        headerIconCSSValue: CommonDialog.DEFAULT_APP_ICON_CSS,
-      }
-    );
-
-    if (result.get("buttonNumClicked") === 0) {
-      for (const memory of memories) {
-        try {
-          await lazy.MemoryStore.hardDeleteMemory(memory.id);
-        } catch (err) {
-          console.error("Failed to delete memory:", memory.id, err);
-        }
-      }
-    }
-  },
-});
-
-Preferences.addSetting({ id: "no-memories-stored" });
-Preferences.addSetting({ id: "memories-list-header" });
-
-Preferences.addSetting(
-  class extends Preferences.AsyncSetting {
-    static id = "memoriesList";
-
-    setup() {
-      Services.obs.addObserver(this.emitChange, "memory-store-changed");
-      Services.prefs.addObserver("browser.aiwindow.memories", this.emitChange);
-      return () => {
-        Services.obs.removeObserver(this.emitChange, "memory-store-changed");
-        Services.prefs.removeObserver(
-          "browser.aiwindow.memories",
-          this.emitChange
-        );
-      };
-    }
-
-    async getMemories() {
-      return lazy.MemoryStore.getMemories();
-    }
-
-    async getControlConfig() {
-      const memories = await this.getMemories();
-      const isLearningEnabled = Services.prefs.getBoolPref(
-        "browser.aiwindow.memories",
-        false
-      );
-
-      if (!memories.length) {
-        return {
-          items: [
-            {
-              id: "no-memories-stored",
-              l10nId: isLearningEnabled
-                ? "ai-window-no-memories"
-                : "ai-window-no-memories-learning-off",
-              control: "placeholder-message",
-            },
-          ],
-        };
-      }
-
-      return {
-        items: [
-          {
-            id: "memories-list-header",
-            control: "moz-box-item",
-            items: [
-              {
-                id: "deleteAllMemoriesButton",
-                control: "moz-button",
-                l10nId: "ai-window-delete-all-memories-button",
-                iconSrc: "chrome://global/skin/icons/delete.svg",
-              },
-            ],
-          },
-          ...memories.map((memory, index) => ({
-            id: `memory-item`,
-            key: `memory-${index}`,
-            control: "moz-box-item",
-            controlAttrs: {
-              ".label": memory.memory_summary,
-            },
-            options: [
-              {
-                control: "moz-button",
-                iconSrc: "chrome://global/skin/icons/delete.svg",
-                l10nId: "ai-window-memory-delete-button",
-                l10nArgs: { label: memory.memory_summary },
-                controlAttrs: {
-                  slot: "actions-start",
-                  action: "delete",
-                  memoryId: memory.id,
-                },
-              },
-            ],
-          })),
-        ],
-      };
-    }
-  }
-);
 
 SettingGroupManager.registerGroups({
   debugModelManagement: {
@@ -397,60 +223,14 @@ SettingGroupManager.registerGroups({
   },
   aiWindowFeatures: {
     l10nId: "ai-window-features-group",
-    // TODO: Finalize SUMO support page slug (GENAI-3016)
-    supportPage: "smart-window",
+    headingLevel: 2,
     items: [
       {
         id: "aiFeaturesAIWindowGroup",
         control: "moz-box-group",
-        items: [
-          {
-            id: "personalizeSmartWindowButton",
-            l10nId: "ai-window-personalize-button",
-            control: "moz-box-button",
-          },
-        ],
-      },
-    ],
-  },
-  memoriesGroup: {
-    l10nId: "ai-window-memories-section",
-    headingLevel: 2,
-    // TODO: Finalize SUMO support page slug (GENAI-3016)
-    supportPage: "smart-window-memories",
-    items: [
-      {
-        id: "memories",
-        control: "moz-box-group",
-        items: [
-          {
-            id: "learnFromActivityWrapper",
-            control: "moz-box-item",
-            items: [
-              {
-                id: "learnFromActivity",
-                l10nId: "ai-window-learn-from-activity",
-                control: "moz-checkbox",
-              },
-            ],
-          },
-          {
-            id: "manageMemories",
-            l10nId: "ai-window-manage-memories-button",
-            control: "moz-box-button",
-          },
-        ],
-      },
-    ],
-  },
-  manageMemories: {
-    items: [
-      {
-        id: "memoriesList",
-        control: "moz-box-group",
-        controlAttrs: {
-          type: "list",
-        },
+        // TODO: Add Model and Insight list
+        // options: [
+        // ],
       },
     ],
   },
