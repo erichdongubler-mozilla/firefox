@@ -293,11 +293,7 @@ nsLDBBrowserContentListener.prototype = {
 
   // non-interface methods
   setButtonEnabled: function (aButtonElement, aEnabled) {
-    if (aEnabled) {
-      aButtonElement.removeAttribute("disabled");
-    } else {
-      aButtonElement.setAttribute("disabled", "true");
-    }
+    aButtonElement.toggleAttribute("disabled", !aEnabled);
   },
 
   mStatusText: null,
@@ -541,7 +537,7 @@ function OnLDBLoad() {
 
 function checkPersistentMenu(item) {
   var menuitem = document.getElementById("menu_" + item);
-  menuitem.setAttribute("checked", gDebugger[item]);
+  menuitem.toggleAttribute("checked", gDebugger[item]);
 }
 
 function checkPersistentMenus() {
