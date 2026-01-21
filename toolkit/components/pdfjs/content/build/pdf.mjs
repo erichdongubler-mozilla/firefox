@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.4.561
- * pdfjsBuild = 67673ea27
+ * pdfjsVersion = 5.4.569
+ * pdfjsBuild = 6a4a3b060
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -5699,6 +5699,9 @@ class AnnotationEditor {
     this.#commentStandaloneButton?.classList.add("hidden");
   }
   get comment() {
+    if (!this.#comment) {
+      return null;
+    }
     const {
       data: {
         richText,
@@ -13143,7 +13146,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.4.561",
+    apiVersion: "5.4.569",
     data,
     password,
     disableAutoFetch,
@@ -14734,8 +14737,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.4.561";
-const build = "67673ea27";
+const version = "5.4.569";
+const build = "6a4a3b060";
 
 ;// ./src/display/editor/color_picker.js
 

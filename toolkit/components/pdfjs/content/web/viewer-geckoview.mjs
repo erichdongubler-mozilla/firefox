@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.4.561
- * pdfjsBuild = 67673ea27
+ * pdfjsVersion = 5.4.569
+ * pdfjsBuild = 6a4a3b060
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -4150,6 +4150,7 @@ class PDFFindController {
   #state = null;
   #updateMatchesCountOnProgress = true;
   #visitedPagesCount = 0;
+  #pagesMapper = PagesMapper.instance;
   constructor({
     linkService,
     eventBus,
@@ -4162,6 +4163,7 @@ class PDFFindController {
     this.#reset();
     eventBus._on("find", this.#onFind.bind(this));
     eventBus._on("findbarclose", this.#onFindBarClose.bind(this));
+    eventBus._on("pagesedited", this.#onPagesEdited.bind(this));
   }
   get highlightMatches() {
     return this._highlightMatches;
@@ -4405,11 +4407,12 @@ class PDFFindController {
     if (query.length === 0) {
       return;
     }
-    const pageContent = this._pageContents[pageIndex];
+    const pageId = this.getPageId(pageIndex);
+    const pageContent = this._pageContents[pageId];
     const matcherResult = this.match(query, pageContent, pageIndex);
     const matches = this._pageMatches[pageIndex] = [];
     const matchesLength = this._pageMatchesLength[pageIndex] = [];
-    const diffs = this._pageDiffs[pageIndex];
+    const diffs = this._pageDiffs[pageId];
     matcherResult?.forEach(({
       index,
       length
@@ -4438,7 +4441,7 @@ class PDFFindController {
     }
   }
   match(query, pageContent, pageIndex) {
-    const hasDiacritics = this._hasDiacritics[pageIndex];
+    const hasDiacritics = this._hasDiacritics[this.getPageId(pageIndex)];
     let isUnicode = false;
     if (typeof query === "string") {
       [isUnicode, query] = this.#convertToRegExpString(query, hasDiacritics);
@@ -4511,19 +4514,27 @@ class PDFFindController {
       });
     }
   }
+  getPageNumber(idx) {
+    return this.#pagesMapper.getPageNumber(idx + 1) - 1;
+  }
+  getPageId(pageNumber) {
+    return this.#pagesMapper.getPageId(pageNumber + 1) - 1;
+  }
   #updatePage(index) {
     if (this._scrollMatches && this._selected.pageIdx === index) {
       this._linkService.page = index + 1;
     }
     this._eventBus.dispatch("updatetextlayermatches", {
       source: this,
-      pageIndex: index
+      pageIndex: index,
+      pageId: this.getPageId(index)
     });
   }
   #updateAllPages() {
     this._eventBus.dispatch("updatetextlayermatches", {
       source: this,
-      pageIndex: -1
+      pageIndex: -1,
+      pageId: -1
     });
   }
   #nextMatch() {
@@ -4548,7 +4559,7 @@ class PDFFindController {
           continue;
         }
         this._pendingFindMatches.add(i);
-        this._extractTextPromises[i].then(() => {
+        this._extractTextPromises[this.getPageId(i)].then(() => {
           this._pendingFindMatches.delete(i);
           this.#calculateMatch(i);
         });
@@ -4637,6 +4648,13 @@ class PDFFindController {
       this._scrollMatches = true;
       this.#updatePage(this._selected.pageIdx);
     }
+  }
+  #onPagesEdited() {
+    if (this._extractTextPromises.length === 0) {
+      return;
+    }
+    this.#onFindBarClose();
+    this._dirtyMatch = true;
   }
   #onFindBarClose(evt) {
     const pdfDocument = this._pdfDocument;
@@ -7301,7 +7319,7 @@ class TextHighlighter {
     if (!this.#eventAbortController) {
       this.#eventAbortController = new AbortController();
       this.eventBus._on("updatetextlayermatches", evt => {
-        if (evt.pageIndex === this.pageIdx || evt.pageIndex === -1) {
+        if (evt.pageId === this.pageIdx || evt.pageId === -1) {
           this._updateMatches();
         }
       }, {
@@ -7370,7 +7388,7 @@ class TextHighlighter {
       textContentItemsStr,
       textDivs
     } = this;
-    const isSelectedPage = pageIdx === findController.selected.pageIdx;
+    const isSelectedPage = findController.getPageNumber(pageIdx) === findController.selected.pageIdx;
     const selectedMatchIdx = findController.selected.matchIdx;
     const highlightAll = findController.state.highlightAll;
     let prevEnd = null;
@@ -7455,7 +7473,7 @@ class TextHighlighter {
         findController.scrollMatchIntoView({
           element: textDivs[begin.divIdx],
           selectedLeft,
-          pageIndex: pageIdx,
+          pageIndex: findController.getPageNumber(pageIdx),
           matchIndex: selectedMatchIdx
         });
       }
@@ -7490,8 +7508,9 @@ class TextHighlighter {
     if (!findController?.highlightMatches || reset) {
       return;
     }
-    const pageMatches = findController.pageMatches[pageIdx] || null;
-    const pageMatchesLength = findController.pageMatchesLength[pageIdx] || null;
+    const pageNumber = findController.getPageNumber(pageIdx);
+    const pageMatches = findController.pageMatches[pageNumber] || null;
+    const pageMatchesLength = findController.pageMatchesLength[pageNumber] || null;
     this.matches = this._convertMatches(pageMatches, pageMatchesLength);
     this._renderMatches(this.matches);
   }
@@ -8524,7 +8543,7 @@ class PDFViewer {
   #originalPages = null;
   #pagesMapper = PagesMapper.instance;
   constructor(options) {
-    const viewerVersion = "5.4.561";
+    const viewerVersion = "5.4.569";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }

@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.4.561
- * pdfjsBuild = 67673ea27
+ * pdfjsVersion = 5.4.569
+ * pdfjsBuild = 6a4a3b060
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -59185,10 +59185,14 @@ class PDFEditor {
     for (const {
       document,
       includePages,
-      excludePages
+      excludePages,
+      pageIndices
     } of pageInfos) {
       if (!document) {
         continue;
+      }
+      if (pageIndices) {
+        newIndex = -1;
       }
       const documentData = new DocumentData(document);
       allDocumentData.push(documentData);
@@ -59208,6 +59212,7 @@ class PDFEditor {
           (deletedIndices ||= new Set()).add(page);
         }
       }
+      let pageIndex = 0;
       for (let i = 0, ii = document.numPages; i < ii; i++) {
         if (deletedIndices?.has(i)) {
           continue;
@@ -59242,7 +59247,17 @@ class PDFEditor {
         if (!takePage) {
           continue;
         }
-        const newPageIndex = newIndex++;
+        let newPageIndex;
+        if (pageIndices) {
+          newPageIndex = pageIndices[pageIndex++];
+        }
+        if (newPageIndex === undefined) {
+          if (newIndex !== -1) {
+            newPageIndex = newIndex++;
+          } else {
+            for (newPageIndex = 0; this.oldPages[newPageIndex] === undefined; newPageIndex++) {}
+          }
+        }
         promises.push(document.getPage(i).then(page => {
           this.oldPages[newPageIndex] = new PageData(page, documentData);
         }));
@@ -60300,7 +60315,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "5.4.561";
+    const workerVersion = "5.4.569";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
