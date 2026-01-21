@@ -29,7 +29,7 @@ add_setup(async function () {
     },
   ]);
 
-  const result = await Services.search.init();
+  const result = await SearchService.init();
   Assert.ok(
     Components.isSuccessCode(result),
     "Should have initialized the service"
@@ -39,7 +39,7 @@ add_setup(async function () {
 });
 
 function checkIdentifier(engineName, expectedIdentifier, expectedTelemetryId) {
-  const engine = Services.search.getEngineByName(engineName);
+  const engine = SearchService.getEngineByName(engineName);
   Assert.ok(
     engine instanceof Ci.nsISearchEngine,
     "Should be derived from nsISearchEngine"

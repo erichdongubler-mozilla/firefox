@@ -47,7 +47,7 @@ async function checkLoadSettingProperties(settingsFile, engineName) {
   );
 
   Assert.equal(
-    (await Services.search.getDefault()).name,
+    (await SearchService.getDefault()).name,
     "engine1",
     "Should have used the configured default engine"
   );

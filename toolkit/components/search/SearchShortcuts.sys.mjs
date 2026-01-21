@@ -2,6 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+const lazy = XPCOMUtils.declareLazy({
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
+});
+
 // List of sites we match against Topsites in order to identify sites
 // that should be converted to search Topsites
 export const SEARCH_SHORTCUTS = [
@@ -54,7 +60,7 @@ export function getSearchProvider(candidateShortURL) {
 // https://searchfox.org/mozilla-central/rev/ca869724246f4230b272ed1c8b9944596e80d920/toolkit/components/search/nsSearchService.js#939
 export async function checkHasSearchEngine(keyword) {
   try {
-    return !!(await Services.search.getAppProvidedEngines()).find(
+    return !!(await lazy.SearchService.getAppProvidedEngines()).find(
       e => e.aliases.includes(keyword) && !e.hidden
     );
   } catch {

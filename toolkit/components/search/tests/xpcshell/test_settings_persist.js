@@ -31,8 +31,8 @@ add_setup(async function () {
   // This is only needed as otherwise events will not be properly notified
   // due to https://searchfox.org/mozilla-central/rev/5f0a7ca8968ac5cef8846e1d970ef178b8b76dcc/toolkit/components/search/SearchSettings.sys.mjs#41-42
   let settingsFileWritten = promiseAfterSettings();
-  await Services.search.init(false);
-  Services.search.wrappedJSObject._removeObservers();
+  await SearchService.init(false);
+  SearchService.wrappedJSObject._removeObservers();
   await settingsFileWritten;
 });
 
