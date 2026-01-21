@@ -116,7 +116,7 @@ double SMILKeySpline::BinarySubdivide(double aX, double aA, double aB) const {
     } else {
       aA = currentT;
     }
-  } while (std::abs(currentX) > SUBDIVISION_PRECISION &&
+  } while (fabs(currentX) > SUBDIVISION_PRECISION &&
            ++i < SUBDIVISION_MAX_ITERATIONS);
 
   return currentT;

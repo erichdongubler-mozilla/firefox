@@ -57,7 +57,7 @@ nsresult SMILFloatType::ComputeDistance(const SMILValue& aFrom,
   const double& from = aFrom.mU.mDouble;
   const double& to = aTo.mU.mDouble;
 
-  aDistance = std::abs(to - from);
+  aDistance = fabs(to - from);
 
   return NS_OK;
 }
