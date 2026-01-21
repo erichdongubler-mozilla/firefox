@@ -195,7 +195,7 @@ run-sequentially = ["true"] # hardcoded ports
 # have a way to test it on OS X.
 run-if = [
   "os == 'mac'",
-  "os == 'windows'",
+  "os == 'win'",
 ]
 
 ["test_ev_certs.js"]

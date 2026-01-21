@@ -120,7 +120,7 @@ tags = "vertical-tabs"
 
 ["browser_lastAccessedTab.js"]
 skip-if = [
-  "os == 'windows'", # Disabled on Windows due to frequent failures (bug 969405)
+  "os == 'win'", # Disabled on Windows due to frequent failures (bug 969405)
 ]
 tags = "vertical-tabs"
 
