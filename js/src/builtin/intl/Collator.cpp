@@ -56,7 +56,7 @@ const JSClass CollatorObject::class_ = {
     "Intl.Collator",
     JSCLASS_HAS_RESERVED_SLOTS(CollatorObject::SLOT_COUNT) |
         JSCLASS_HAS_CACHED_PROTO(JSProto_Collator) |
-        JSCLASS_FOREGROUND_FINALIZE,
+        JSCLASS_BACKGROUND_FINALIZE,
     &CollatorObject::classOps_,
     &CollatorObject::classSpec_,
 };
@@ -175,8 +175,6 @@ CollatorObject* js::intl::GetOrCreateCollator(JSContext* cx,
 }
 
 void js::CollatorObject::finalize(JS::GCContext* gcx, JSObject* obj) {
-  MOZ_ASSERT(gcx->onMainThread());
-
   if (mozilla::intl::Collator* coll = obj->as<CollatorObject>().getCollator()) {
     intl::RemoveICUCellMemory(gcx, obj, CollatorObject::EstimatedMemoryUse);
     delete coll;

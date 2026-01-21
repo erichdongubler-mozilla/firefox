@@ -74,7 +74,7 @@ const JSClass NumberFormatObject::class_ = {
     "Intl.NumberFormat",
     JSCLASS_HAS_RESERVED_SLOTS(NumberFormatObject::SLOT_COUNT) |
         JSCLASS_HAS_CACHED_PROTO(JSProto_NumberFormat) |
-        JSCLASS_FOREGROUND_FINALIZE,
+        JSCLASS_BACKGROUND_FINALIZE,
     &NumberFormatObject::classOps_,
     &NumberFormatObject::classSpec_,
 };
@@ -214,8 +214,6 @@ NumberFormatObject* js::intl::GetOrCreateNumberFormat(JSContext* cx,
 }
 
 void js::NumberFormatObject::finalize(JS::GCContext* gcx, JSObject* obj) {
-  MOZ_ASSERT(gcx->onMainThread());
-
   auto* numberFormat = &obj->as<NumberFormatObject>();
   mozilla::intl::NumberFormat* nf = numberFormat->getNumberFormatter();
   mozilla::intl::NumberRangeFormat* nrf =

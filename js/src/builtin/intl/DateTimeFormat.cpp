@@ -85,7 +85,7 @@ const JSClass DateTimeFormatObject::class_ = {
     "Intl.DateTimeFormat",
     JSCLASS_HAS_RESERVED_SLOTS(DateTimeFormatObject::SLOT_COUNT) |
         JSCLASS_HAS_CACHED_PROTO(JSProto_DateTimeFormat) |
-        JSCLASS_FOREGROUND_FINALIZE,
+        JSCLASS_BACKGROUND_FINALIZE,
     &DateTimeFormatObject::classOps_,
     &DateTimeFormatObject::classSpec_,
 };
@@ -279,8 +279,6 @@ DateTimeFormatObject* js::intl::GetOrCreateDateTimeFormat(
 }
 
 void js::DateTimeFormatObject::finalize(JS::GCContext* gcx, JSObject* obj) {
-  MOZ_ASSERT(gcx->onMainThread());
-
   auto* dateTimeFormat = &obj->as<DateTimeFormatObject>();
   mozilla::intl::DateTimeFormat* df = dateTimeFormat->getDateFormat();
   mozilla::intl::DateIntervalFormat* dif =

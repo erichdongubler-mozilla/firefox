@@ -60,7 +60,7 @@ const JSClass DisplayNamesObject::class_ = {
     "Intl.DisplayNames",
     JSCLASS_HAS_RESERVED_SLOTS(DisplayNamesObject::SLOT_COUNT) |
         JSCLASS_HAS_CACHED_PROTO(JSProto_DisplayNames) |
-        JSCLASS_FOREGROUND_FINALIZE,
+        JSCLASS_BACKGROUND_FINALIZE,
     &DisplayNamesObject::classOps_,
     &DisplayNamesObject::classSpec_,
 };
@@ -199,8 +199,6 @@ static bool MozDisplayNames(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 void js::DisplayNamesObject::finalize(JS::GCContext* gcx, JSObject* obj) {
-  MOZ_ASSERT(gcx->onMainThread());
-
   if (mozilla::intl::DisplayNames* displayNames =
           obj->as<DisplayNamesObject>().getDisplayNames()) {
     intl::RemoveICUCellMemory(gcx, obj, DisplayNamesObject::EstimatedMemoryUse);
