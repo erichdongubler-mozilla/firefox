@@ -6876,7 +6876,7 @@ export var CustomizableUI = {
       }
       for (let attr of attrs) {
         let attrVal = menuChild.getAttribute(attr);
-        if (attrVal) {
+        if (attrVal !== null) {
           subviewItem.setAttribute(attr, attrVal);
         }
       }
