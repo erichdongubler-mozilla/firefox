@@ -140,7 +140,6 @@ export class SettingPane extends MozLitElement {
       <moz-page-header
         data-l10n-id=${this.config.l10nId}
         .iconSrc=${this.config.iconSrc}
-        .supportPage=${this.config.supportPage}
         .backButton=${this.isSubPane}
         @navigate-back=${this.goBack}
       ></moz-page-header>
