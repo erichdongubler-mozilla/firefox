@@ -4114,6 +4114,15 @@ void LIRGenerator::visitDynamicImport(MDynamicImport* ins) {
   assignSafepoint(lir, ins);
 }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+void LIRGenerator::visitDynamicImportSource(MDynamicImportSource* ins) {
+  LDynamicImportSource* lir =
+      new (alloc()) LDynamicImportSource(useBoxAtStart(ins->specifier()));
+  defineReturn(lir, ins);
+  assignSafepoint(lir, ins);
+}
+#endif
+
 void LIRGenerator::visitLambda(MLambda* ins) {
   MOZ_ASSERT(ins->environmentChain()->type() == MIRType::Object);
 

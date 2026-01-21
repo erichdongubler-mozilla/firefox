@@ -3804,6 +3804,16 @@ void CodeGenerator::visitDynamicImport(LDynamicImport* lir) {
   callVM<Fn, js::StartDynamicModuleImport>(lir);
 }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+void CodeGenerator::visitDynamicImportSource(LDynamicImportSource* lir) {
+  pushArg(ToValue(lir->specifier()));
+  pushArg(ImmGCPtr(current->mir()->info().script()));
+
+  using Fn = JSObject* (*)(JSContext*, HandleScript, HandleValue);
+  callVM<Fn, js::StartDynamicModuleImportSource>(lir);
+}
+#endif
+
 void CodeGenerator::visitLambda(LLambda* lir) {
   Register envChain = ToRegister(lir->environmentChain());
   Register output = ToRegister(lir->output());

@@ -1665,6 +1665,15 @@
   possibly_calls: true
   generate_lir: true
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+- name: DynamicImportSource
+  operands:
+    specifier: Value
+  result_type: Object
+  possibly_calls: true
+  generate_lir: true
+#endif
+
 - name: Lambda
   gen_boilerplate: false
 
