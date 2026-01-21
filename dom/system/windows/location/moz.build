@@ -13,8 +13,12 @@ UNIFIED_SOURCES += [
     "WindowsLocationChild.cpp",
     "WindowsLocationParent.cpp",
     "WindowsLocationProvider.cpp",
-    "WindowsRuntimeLocationChild.cpp",
 ]
+
+if CONFIG["CC_TYPE"] == "clang-cl":
+    UNIFIED_SOURCES += [
+        "WindowsRuntimeLocationChild.cpp",
+    ]
 
 SOURCES += [
     "WindowsLegacyLocationChild.cpp",  # includes locationapi.h
