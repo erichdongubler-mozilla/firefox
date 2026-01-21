@@ -31,7 +31,13 @@ from .backend.configenvironment import ConfigEnvironment, ConfigStatusFailure
 from .configure import ConfigureSandbox
 from .controller.clobber import Clobberer
 from .mozconfig import MozconfigLoader, MozconfigLoadException
-from .util import construct_log_filename, cpu_count, memoize, memoized_property
+from .util import (
+    construct_log_filename,
+    cpu_count,
+    is_running_under_coding_agent,
+    memoize,
+    memoized_property,
+)
 
 try:
     import psutil
@@ -1012,12 +1018,17 @@ class MachCommandBase(MozbuildObject):
             command_name = handler.name
             subdir = os.path.join("logs", command_name)
             self._ensure_state_subdir_exists(subdir)
+            use_text_log = is_running_under_coding_agent()
+            suffix = ".log" if use_text_log else ".json"
             self.logfile = self._get_state_filename(
-                construct_log_filename(command_name), subdir=subdir
+                construct_log_filename(command_name, suffix=suffix), subdir=subdir
             )
             try:
                 fd = open(self.logfile, "w")
-                self.log_manager.add_json_handler(fd)
+                if use_text_log:
+                    self.log_manager.add_text_handler(fd)
+                else:
+                    self.log_manager.add_json_handler(fd)
                 latest_file = self._get_state_filename("latest-command")
                 with open(latest_file, "w") as f:
                     f.write(command_name)
