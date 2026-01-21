@@ -297,12 +297,7 @@
         let translateOffsetY = oldTranslateY % tabHeight;
         let newTranslateX = oldTranslateX - translateOffsetX;
         let newTranslateY = oldTranslateY - translateOffsetY;
-        let isPinned = draggedTab.pinned;
-        let numPinned = gBrowser.pinnedTabCount;
-        let tabs = this._tabbrowserTabs.dragAndDropElements.slice(
-          isPinned ? 0 : numPinned,
-          isPinned ? numPinned : undefined
-        );
+        let searchArray = draggedTab._dragData.searchArray;
 
         if (this._tabbrowserTabs.isContainerVerticalPinnedGrid(draggedTab)) {
           // Update both translate axis for pinned vertical expanded tabs
@@ -324,8 +319,8 @@
           let tabSize = this._tabbrowserTabs.verticalMode
             ? tabHeight
             : tabWidth;
-          let firstTab = tabs[0];
-          let lastTab = tabs.at(-1);
+          let firstTab = searchArray[0];
+          let lastTab = searchArray.at(-1);
           let lastMovingTabScreen = movingTabs.at(-1)[screenAxis];
           let firstMovingTabScreen = movingTabs[0][screenAxis];
           let startBound = firstTab[screenAxis] - firstMovingTabScreen;
@@ -362,12 +357,13 @@
             directionForward = true;
           }
         } else if (
-          draggedTab.currentIndex > tabs[tabs.length - 1].currentIndex
+          draggedTab.currentIndex >
+          searchArray[searchArray.length - 1].currentIndex
         ) {
           // There is a case where the currentIndex could be greater than the last item's in
           // the container. If this is the case, dropIndex needs to be set to the last item's
           // elementIndex to ensure the draggedTab/s are dropped in the last position.
-          dropIndex = tabs[tabs.length - 1].elementIndex;
+          dropIndex = searchArray[searchArray.length - 1].elementIndex;
         }
 
         const dragToPinTargets = [
@@ -1125,6 +1121,22 @@
 
       let movingTabs = tab.multiselected ? gBrowser.selectedTabs : [tab];
       let movingTabsSet = new Set(movingTabs);
+      let dragAndDropElements = this._tabbrowserTabs.dragAndDropElements;
+      let unmovingTabStripItems = dragAndDropElements.filter(
+        t => !movingTabsSet.has(t)
+      );
+      /**
+       * The tabs we are interested in for the dragging animation.
+       * If we are dragging pinned tabs, its the pinned tabs
+       * If we are dragging unpinned tabs, its the unpinned tabs
+       */
+      let searchArray = dragAndDropElements.slice(
+        tab.pinned ? 0 : gBrowser.pinnedTabCount,
+        tab.pinned ? gBrowser.pinnedTabCount : undefined
+      );
+      let dropIndexSearchArray = searchArray.filter(
+        t => !movingTabsSet.has(t) || t == tab
+      );
 
       let dropEffect = this.getDropEffectForTabDrag(event);
       let isMovingInTabStrip = !fromTabList && dropEffect == "move";
@@ -1146,6 +1158,9 @@
         screenY: event.screenY,
         movingTabs,
         movingTabsSet,
+        searchArray,
+        dropIndexSearchArray,
+        unmovingTabStripItems,
         fromTabList,
         tabGroupCreationColor: gBrowser.tabGroupMenu.nextUnusedColor,
         expandGroupOnDrop: collapseTabGroupDuringDrag,
@@ -1154,6 +1169,7 @@
         // Reverse order to handle positioning in `_updateTabStylesOnDrag`
         // and animation in `_animateTabMove`
         tab._dragData.movingTabs.reverse();
+        tab._dragData.dropIndexSearchArray.reverse();
       }
 
       if (isMovingInTabStrip) {
@@ -1703,7 +1719,7 @@
       // * We're doing a binary search in order to reduce the amount of
       //   tabs we need to check.
 
-      tabs = tabs.filter(t => !movingTabs.includes(t) || t == draggedTab);
+      let dropIndexSearchArray = draggedTab._dragData.dropIndexSearchArray;
       let tabCenterX = startScreenX + translateX + tabWidth / 2;
       let tabCenterY = startScreenY + translateY + tabHeight / 2;
 
@@ -1751,18 +1767,18 @@
       };
 
       let low = 0;
-      let high = tabs.length - 1;
+      let high = dropIndexSearchArray.length - 1;
       let newIndex = -1;
       let oldIndex = dragData.animDropElementIndex ?? draggedTab.elementIndex;
 
       while (low <= high) {
         let mid = Math.floor((low + high) / 2);
-        if (tabs[mid] == draggedTab && ++mid > high) {
+        if (dropIndexSearchArray[mid] == draggedTab && ++mid > high) {
           break;
         }
-        let [shiftX, shiftY] = getTabShift(tabs[mid], oldIndex);
-        screenX = tabs[mid].screenX + shiftX;
-        screenY = tabs[mid].screenY + shiftY;
+        let [shiftX, shiftY] = getTabShift(dropIndexSearchArray[mid], oldIndex);
+        screenX = dropIndexSearchArray[mid].screenX + shiftX;
+        screenY = dropIndexSearchArray[mid].screenY + shiftY;
 
         if (screenY + tabHeight < tabCenterY) {
           low = mid + 1;
@@ -1777,12 +1793,12 @@
         ) {
           low = mid + 1;
         } else {
-          newIndex = tabs[mid].currentIndex;
+          newIndex = dropIndexSearchArray[mid].currentIndex;
           break;
         }
       }
 
-      if (newIndex >= oldIndex && newIndex < tabs.length) {
+      if (newIndex >= oldIndex && newIndex < dropIndexSearchArray.length) {
         newIndex++;
       }
 
@@ -1795,17 +1811,18 @@
       }
 
       dragData.animDropElementIndex = newIndex;
-      dragData.dropElement = tabs[Math.min(newIndex, tabs.length - 1)];
+      dragData.dropElement =
+        dropIndexSearchArray[
+          Math.min(newIndex, dropIndexSearchArray.length - 1)
+        ];
       dragData.dropBefore = newIndex < tabs.length;
 
       // Shift background tabs to leave a gap where the dragged tab
       // would currently be dropped.
-      for (let tab of tabs) {
-        if (tab != draggedTab) {
-          let [shiftX, shiftY] = getTabShift(tab, newIndex);
-          tab.style.transform =
-            shiftX || shiftY ? `translate(${shiftX}px, ${shiftY}px)` : "";
-        }
+      for (let tab of dragData.unmovingTabStripItems) {
+        let [shiftX, shiftY] = getTabShift(tab, newIndex);
+        tab.style.transform =
+          shiftX || shiftY ? `translate(${shiftX}px, ${shiftY}px)` : "";
       }
     }
 
@@ -1833,15 +1850,6 @@
 
       let isPinned = draggedTab.pinned;
       let numPinned = gBrowser.pinnedTabCount;
-      let dragAndDropElements = this._tabbrowserTabs.dragAndDropElements;
-      let tabs = dragAndDropElements.slice(
-        isPinned ? 0 : numPinned,
-        isPinned ? numPinned : undefined
-      );
-
-      if (this._rtlMode) {
-        tabs.reverse();
-      }
 
       let bounds = ele => window.windowUtils.getBoundsWithoutFlushing(ele);
       let logicalForward = screenForward != this._rtlMode;
@@ -1923,7 +1931,7 @@
 
       dragData.translatePos = translate;
 
-      tabs = tabs.filter(t => !movingTabsSet.has(t) || t == draggedTab);
+      let dropIndexSearchArray = dragData.dropIndexSearchArray;
 
       /**
        * When the `draggedTab` is just starting to move, the `draggedTab` is in
@@ -2049,13 +2057,13 @@
       let getOverlappedElement = () => {
         let point = (screenForward ? endScreen : startScreen) + translate;
         let low = 0;
-        let high = tabs.length - 1;
+        let high = dropIndexSearchArray.length - 1;
         while (low <= high) {
           let mid = Math.floor((low + high) / 2);
-          if (tabs[mid] == draggedTab && ++mid > high) {
+          if (dropIndexSearchArray[mid] == draggedTab && ++mid > high) {
             break;
           }
-          let element = tabs[mid];
+          let element = dropIndexSearchArray[mid];
           let elementForSize = elementToMove(element);
           screen =
             elementForSize[screenAxis] +
@@ -2117,8 +2125,8 @@
         //    valuë of `movingTabs[0].elementIndex`. In this case, the drop element
         //    shouldn't be a moving tab, so keep it `undefined`.
         let lastPossibleDropElement = this._rtlMode
-          ? tabs.find(t => t != draggedTab)
-          : tabs.findLast(t => t != draggedTab);
+          ? dropIndexSearchArray.find(t => t != draggedTab)
+          : dropIndexSearchArray.findLast(t => t != draggedTab);
         let maxElementIndexForDropElement =
           lastPossibleDropElement?.currentIndex ??
           lastPossibleDropElement?.elementIndex;
@@ -2329,10 +2337,7 @@
 
       // Shift background tabs to leave a gap where the dragged tab
       // would currently be dropped.
-      for (let item of tabs) {
-        if (item == draggedTab) {
-          continue;
-        }
+      for (let item of dragData.unmovingTabStripItems) {
         let shift = getTabShift(item, newDropElementIndex);
         let transform = shift ? `${translateAxis}(${shift}px)` : "";
         item = elementToMove(item);
