@@ -21,6 +21,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 import { IPPProxyManager } from "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs";
+import { IPPAutoRestoreHelper } from "moz-src:///browser/components/ipprotection/IPPAutoRestore.sys.mjs";
 import { IPPAutoStartHelpers } from "moz-src:///browser/components/ipprotection/IPPAutoStart.sys.mjs";
 import { IPPEnrollAndEntitleManager } from "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs";
 import { IPPNimbusHelper } from "moz-src:///browser/components/ipprotection/IPPNimbusHelper.sys.mjs";
@@ -87,6 +88,7 @@ const IPPHelpers = [
   IPPOnboardingMessage,
   IPPProxyManager,
   new UIHelper(),
+  IPPAutoRestoreHelper,
   ...IPPAutoStartHelpers,
   IPPOptOutHelper,
   IPPNimbusHelper,
