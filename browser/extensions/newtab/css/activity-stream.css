@@ -4223,7 +4223,7 @@ dialog:dir(rtl)::after {
 
 .widgets-container {
   --widgets-card-width: var(--newtab-card-grid-layout-width);
-  --widgets-max-cols: 2;
+  --widgets-max-cols: 3;
   --widgets-grid-gap: var(--space-large);
 }
 .has-sections-grid .widgets-container {
