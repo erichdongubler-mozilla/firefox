@@ -1111,8 +1111,8 @@ static gfxRect PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
     matrix.PreMultiply(outerSVGToUser);
   }
 
-  double dx = style_expansion * (fabs(matrix._11) + fabs(matrix._21));
-  double dy = style_expansion * (fabs(matrix._22) + fabs(matrix._12));
+  double dx = style_expansion * (std::abs(matrix._11) + std::abs(matrix._21));
+  double dy = style_expansion * (std::abs(matrix._22) + std::abs(matrix._12));
 
   gfxRect strokeExtents = aPathExtents;
   strokeExtents.Inflate(dx, dy);

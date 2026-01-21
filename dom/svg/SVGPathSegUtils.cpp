@@ -187,7 +187,7 @@ void SVGPathSegUtils::TraversePathSegment(const StylePathCommand& aCommand,
       Point to(aCommand.h_line.x.IsToPosition() ? x : aState.pos.x + x,
                aState.pos.y);
       if (aState.ShouldUpdateLengthAndControlPoints()) {
-        aState.length += std::fabs(to.x - aState.pos.x);
+        aState.length += std::abs(to.x - aState.pos.x);
         aState.cp1 = aState.cp2 = to;
       }
       aState.pos = to;
@@ -198,7 +198,7 @@ void SVGPathSegUtils::TraversePathSegment(const StylePathCommand& aCommand,
       Point to(aState.pos.x,
                aCommand.v_line.y.IsToPosition() ? y : aState.pos.y + y);
       if (aState.ShouldUpdateLengthAndControlPoints()) {
-        aState.length += std::fabs(to.y - aState.pos.y);
+        aState.length += std::abs(to.y - aState.pos.y);
         aState.cp1 = aState.cp2 = to;
       }
       aState.pos = to;
@@ -251,8 +251,8 @@ Maybe<EdgeDir> GetDirection(Point v) {
     return Nothing();
   }
 
-  bool x = fabs(v.x) > 0.001;
-  bool y = fabs(v.y) > 0.001;
+  bool x = std::abs(v.x) > 0.001;
+  bool y = std::abs(v.y) > 0.001;
   if (x && y) {
     return Nothing();
   }

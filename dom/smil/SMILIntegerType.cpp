@@ -54,7 +54,7 @@ nsresult SMILIntegerType::ComputeDistance(const SMILValue& aFrom,
                                           double& aDistance) const {
   MOZ_ASSERT(aFrom.mType == aTo.mType, "Trying to compare different types");
   MOZ_ASSERT(aFrom.mType == this, "Unexpected source type");
-  aDistance = fabs(double(aTo.mU.mInt - aFrom.mU.mInt));
+  aDistance = std::abs(double(aTo.mU.mInt - aFrom.mU.mInt));
   return NS_OK;
 }
 

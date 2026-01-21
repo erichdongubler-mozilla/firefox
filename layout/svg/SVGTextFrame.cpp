@@ -3180,7 +3180,7 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
   }
 
   const float epsilon = 0.0001;
-  if (abs(mLengthAdjustScaleFactor) < epsilon) {
+  if (std::abs(mLengthAdjustScaleFactor) < epsilon) {
     // A zero scale factor can be caused by having forced the text length to
     // zero. In this situation there is nothing to show.
     return;

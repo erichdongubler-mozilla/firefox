@@ -428,8 +428,8 @@ ComputeSegAnglesAndCorrectRadii(const Point& aSegStart, const Point& aSegEnd,
                                 const float aAngle, const bool aLargeArcFlag,
                                 const bool aSweepFlag, const float aRx,
                                 const float aRy) {
-  float rx = fabs(aRx);  // F.6.6.1
-  float ry = fabs(aRy);
+  float rx = std::abs(aRx);  // F.6.6.1
+  float ry = std::abs(aRy);
 
   // F.6.5.1:
   const float angle = static_cast<float>(aAngle * M_PI / 180.0);
