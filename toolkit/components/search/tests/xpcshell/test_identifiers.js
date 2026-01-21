@@ -7,6 +7,10 @@
 
 "use strict";
 
+let { SearchEngine } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
+);
+
 add_setup(async function () {
   SearchTestUtils.setRemoteSettingsConfig([
     {
@@ -41,8 +45,8 @@ add_setup(async function () {
 function checkIdentifier(engineName, expectedIdentifier, expectedTelemetryId) {
   const engine = SearchService.getEngineByName(engineName);
   Assert.ok(
-    engine instanceof Ci.nsISearchEngine,
-    "Should be derived from nsISearchEngine"
+    engine instanceof SearchEngine,
+    "Should be derived from SearchEngine"
   );
 
   Assert.equal(

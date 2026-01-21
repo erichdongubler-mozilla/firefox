@@ -24,6 +24,7 @@ const lazy = XPCOMUtils.declareLazy({
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SearchEngine: "moz-src:///toolkit/components/search/SearchEngine.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchSuggestionController:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
@@ -764,15 +765,19 @@ export var UrlbarUtils = {
    * Note: This is not infallible, if a speculative connection cannot be
    *       initialized, it will be a no-op.
    *
-   * @param {nsISearchEngine|nsIURI|URL|string} urlOrEngine entity to initiate
-   *        a speculative connection for.
-   * @param {window} window the window from where the connection is initialized.
+   * @param {typeof lazy.SearchEngine.prototype|nsISearchEngine|nsIURI|URL|string} urlOrEngine
+   *   The entity to initiate a speculative connection for.
+   * @param {window} window
+   *   The window from where the connection is initialized.
    */
   setupSpeculativeConnection(urlOrEngine, window) {
     if (!lazy.UrlbarPrefs.get("speculativeConnect.enabled")) {
       return;
     }
-    if (urlOrEngine instanceof Ci.nsISearchEngine) {
+    if (
+      urlOrEngine instanceof Ci.nsISearchEngine ||
+      urlOrEngine instanceof lazy.SearchEngine
+    ) {
       try {
         urlOrEngine.speculativeConnect({
           window,
