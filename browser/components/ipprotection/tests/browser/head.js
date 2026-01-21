@@ -157,6 +157,21 @@ async function closePanel(win = window) {
 }
 /* exported closePanel */
 
+function waitForTabReloaded(tab) {
+  return new Promise(resolve => {
+    gBrowser.addTabsProgressListener({
+      async onLocationChange(aBrowser) {
+        if (tab.linkedBrowser == aBrowser) {
+          gBrowser.removeTabsProgressListener(this);
+          await Promise.resolve();
+          resolve();
+        }
+      },
+    });
+  });
+}
+/* exported waitForTabReloaded */
+
 /**
  * Creates a fake proxy server for testing.
  * Verifies that the server receives a CONNECT request with the expected headers.

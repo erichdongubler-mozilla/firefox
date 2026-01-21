@@ -541,6 +541,13 @@ export class IPProtectionPanel {
     this.setState({ siteData });
   }
 
+  #reloadCurrentTab(win) {
+    if (!win) {
+      return;
+    }
+    win.gBrowser.reloadTab(win.gBrowser.selectedTab);
+  }
+
   #handleEvent(event) {
     if (event.type == "IPProtection:Init") {
       this.updateState();
@@ -591,11 +598,15 @@ export class IPProtectionPanel {
       const principal = win?.gBrowser.contentPrincipal;
 
       lazy.IPPExceptionsManager.setExclusion(principal, false);
+
+      this.#reloadCurrentTab(win);
     } else if (event.type == "IPProtection:UserDisableVPNForSite") {
       const win = event.target.ownerGlobal;
       const principal = win?.gBrowser.contentPrincipal;
 
       lazy.IPPExceptionsManager.setExclusion(principal, true);
+
+      this.#reloadCurrentTab(win);
     }
   }
 }

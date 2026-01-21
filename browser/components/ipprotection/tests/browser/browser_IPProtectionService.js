@@ -428,20 +428,6 @@ add_task(async function test_IPProtectionService_stop_on_signout() {
   cleanupService();
 });
 
-function waitForTabReloaded(tab) {
-  return new Promise(resolve => {
-    gBrowser.addTabsProgressListener({
-      async onLocationChange(aBrowser) {
-        if (tab.linkedBrowser == aBrowser) {
-          gBrowser.removeTabsProgressListener(this);
-          await Promise.resolve();
-          resolve();
-        }
-      },
-    });
-  });
-}
-
 /**
  * Tests a user start or stopping the proxy reloads the current tab.
  */
