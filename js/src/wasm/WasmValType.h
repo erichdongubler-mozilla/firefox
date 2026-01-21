@@ -1013,6 +1013,10 @@ class MaybeRefType {
     return mozilla::Nothing();
   }
 
+  // Takes the least upper bound of two ref types. Returns Nothing if either
+  // input is Nothing. This is because the LUB is the "conservative" choice, for
+  // when you need to find a common type for two different values.
+  // (Conceptually, Nothing is above the top type in each wasm type hierarchy.)
   static MaybeRefType leastUpperBound(MaybeRefType a, MaybeRefType b) {
     if (a.isSome() && b.isSome()) {
       return MaybeRefType(RefType::leastUpperBound(a.value(), b.value()));
@@ -1020,11 +1024,19 @@ class MaybeRefType {
     return MaybeRefType();
   }
 
+  // Takes the greatest lower bound of two ref types. Returns Nothing only if
+  // *both* inputs are Nothing. This is because the GLB is the "aggressive"
+  // choice, for when two values are determined to be equal and we want the
+  // tightest possible type to describe them. (Conceptually, Nothing is above
+  // the top type in each wasm type hierarchy.)
   static MaybeRefType greatestLowerBound(MaybeRefType a, MaybeRefType b) {
-    if (a.isSome() && b.isSome()) {
-      return MaybeRefType(RefType::greatestLowerBound(a.value(), b.value()));
+    if (!a.isSome()) {
+      return b;
     }
-    return MaybeRefType();
+    if (!b.isSome()) {
+      return a;
+    }
+    return MaybeRefType(RefType::greatestLowerBound(a.value(), b.value()));
   }
 };
 
