@@ -16,7 +16,6 @@ from mozbuild.mozconfig import MozconfigLoader
 from mozbuild.util import (
     MOZBUILD_METRICS_PATH,
     ensure_l10n_central,
-    get_latest_file,
     is_running_under_coding_agent,
 )
 
@@ -120,14 +119,6 @@ def _set_priority(command_context, priority, verbose):
     help="Verbose output for what commands the build is running.",
 )
 @CommandArgument(
-    "-q",
-    "--quiet",
-    dest="quiet",
-    default=False,
-    action="store_true",
-    help="Suppress most output, showing only errors and warnings.",
-)
-@CommandArgument(
     "--keep-going",
     action="store_true",
     help="Keep building after an error has occurred",
@@ -139,12 +130,6 @@ def _set_priority(command_context, priority, verbose):
     type=str,
     help="idle/less/normal/more/high. (Default idle)",
 )
-@CommandArgument(
-    "--show-all-warnings",
-    default=False,
-    action="store_true",
-    help="Show all warnings including third-party and suppressed warnings.",
-)
 def build(
     command_context,
     what=None,
@@ -152,10 +137,8 @@ def build(
     job_size=0,
     directory=None,
     verbose=False,
-    quiet=None,
     keep_going=False,
     priority="idle",
-    show_all_warnings=None,
 ):
     """Build the source tree.
 
@@ -183,66 +166,10 @@ def build(
 
     # For coding agents, automatically enable quiet mode
     if is_running_under_coding_agent():
-        command_context.log(
-            logging.WARNING,
-            "build",
-            {},
-            "AI agent detected. Terminal output limited to warnings and errors.",
-        )
-        quiet = True
-
-        if command_context.log_file_path:
-            command_context.log(
-                logging.WARNING,
-                "build",
-                {"logfile": command_context.log_file_path},
-                "Full output: {logfile}",
-            )
-        else:
-            command_context.log(
-                logging.WARNING,
-                "build",
-                {},
-                "Log file could not be created.",
-            )
-
-    from mach.logging import THIRD_PARTY_WARNING
-
-    if quiet and show_all_warnings:
-        command_context.log(
-            logging.ERROR,
-            "build",
-            {},
-            "--quiet and --show-all-warnings are mutually exclusive.",
-        )
-        return 1
-
-    if quiet:
-        command_context.log_manager.terminal_handler.setLevel(logging.WARNING)
-
-    if show_all_warnings:
-        command_context.log_manager.terminal_handler.setLevel(THIRD_PARTY_WARNING)
-
-    if (
-        command_context.log_manager.terminal_handler.level > THIRD_PARTY_WARNING
-        and not is_running_under_coding_agent()
-    ):
-        warnings_path = os.path.join(
-            command_context.topobjdir, ".mozbuild", "logs", "build", "warnings_*.json"
-        )
-        command_context.log(
-            logging.WARNING,
-            "build",
-            {},
-            "Warnings in third-party code are being suppressed from the terminal output. "
-            "Use --show-all-warnings or --verbose to see them.",
-        )
-        command_context.log(
-            logging.WARNING,
-            "build",
-            {"warnings_path": warnings_path},
-            "All warnings will still be dumped to {warnings_path} at the end of the build.",
-        )
+        if command_context.log_manager.terminal_handler:
+            command_context.log_manager.terminal_handler.setLevel(logging.WARNING)
+        log_path = command_context._get_state_filename("last_log.json")
+        print(f"Running in quiet mode. Full build output: {log_path}\n", flush=True)
 
     loader = MozconfigLoader(command_context.topsrcdir)
     mozconfig = loader.read_mozconfig(loader.AUTODETECT)
@@ -394,8 +321,8 @@ def resource_usage(command_context, address=None, port=None, browser=None, url=N
     if url:
         server.add_resource_json_url("profile", url)
     else:
-        profile = get_latest_file(command_context._build_log_dir(), "profile")
-        if not profile:
+        profile = command_context._get_state_filename("profile_build_resources.json")
+        if not os.path.exists(profile):
             command_context.log(
                 logging.WARNING,
                 "build_resources",
@@ -406,7 +333,7 @@ def resource_usage(command_context, address=None, port=None, browser=None, url=N
             )
             return 1
 
-        server.add_resource_json_file("profile", str(profile))
+        server.add_resource_json_file("profile", profile)
 
     profiler_url = "https://profiler.firefox.com/from-url/" + quote(
         server.url + "resources/profile", ""

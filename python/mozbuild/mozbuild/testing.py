@@ -251,12 +251,11 @@ def read_wpt_manifest(context, paths):
         import manifest as wptmanifest
     finally:
         sys.path = old_path
-
-    f = context._finder.get(full_path)
-    try:
-        rv = wptmanifest.manifest.load(tests_root, f)
-    except wptmanifest.manifest.ManifestVersionMismatch:
-        # If we accidentially end up with a committed manifest that's the wrong
-        # version, then return an empty manifest here just to not break the build
-        rv = wptmanifest.manifest.Manifest()
-    return rv
+        f = context._finder.get(full_path)
+        try:
+            rv = wptmanifest.manifest.load(tests_root, f)
+        except wptmanifest.manifest.ManifestVersionMismatch:
+            # If we accidentially end up with a committed manifest that's the wrong
+            # version, then return an empty manifest here just to not break the build
+            rv = wptmanifest.manifest.Manifest()
+        return rv

@@ -16,7 +16,7 @@ from collections import Counter, OrderedDict, namedtuple
 from itertools import dropwhile, islice, takewhile
 from textwrap import TextWrapper
 
-from mach.logging import BUILD_ERROR, SUPPRESSED_WARNING, THIRD_PARTY_WARNING
+from mach.logging import BUILD_ERROR
 from mach.site import CommandSiteManager
 
 try:
@@ -34,6 +34,7 @@ from mozterm.widgets import Footer
 from ..backend import get_backend_class
 from ..base import MozbuildObject
 from ..compilation.warnings import (
+    IN_FILE_INCLUDED_FROM,
     RE_STRIP_COLORS,
     WarningsCollector,
     WarningsDatabase,
@@ -42,26 +43,16 @@ from ..dirutils import mkdir
 from ..serialized_logging import read_serialized_record
 from ..telemetry import get_cpu_brand
 from ..testing import install_test_files
-from ..util import FileAvoidWrite, construct_log_filename, resolve_target_to_make
+from ..util import FileAvoidWrite, resolve_target_to_make
 from .clobber import Clobberer
 
-RE_BUILD_OUTPUT = re.compile(
-    r"""
-    (?P<info_masm>Microsoft\ \(R\)\ Macro\ Assembler|Copyright\ \(C\)\ Microsoft\ Corporation)
-    |(?P<info_cargo>^\s{3,}(?:Compiling|Downloading|Building|Finished|Fresh|Running|Documenting)\s)
-    |(?P<warning_summary>^\d+\s+(?:compiler\s+)?warnings?\s+(?:generated|present)\.)
-    |(?P<error_summary>^\d+\s+errors?\s+generated\.)
-    |(?P<make_error>make(?:\[\d+\])?\s*:\s*\*\*\*)
-    |(?P<nsis_warning_block>^\d+\s+warnings?:)
-    |(?P<error_block>^error:(?:\[e\d+\])?:?\s?)
-    |(?P<warning_standalone>^warning:\s+mkdir\s)
-    |(?P<warning_num>^warning\s+\d+:)
-    |(?P<warning_block>^warning:\s?)
-    |(?P<include_from>^In\ file\ included\ from\ (?P<include_path>[^:]+):)
-    |(?P<inline_diagnostic>^(?P<diag_path>.+?)(?:\(\d+,\d+\)|:\d+:\d+)?:\s*(?P<diag_type>warning|error|note):)
-    |(?P<continuation>^\s+(?:\d+\s+)?\||\s+[\^~])
-    """,
-    re.VERBOSE | re.IGNORECASE,
+RE_WARNING_SUMMARY = re.compile(r"\d+\s+warnings?\s+generated\.")
+RE_ERROR_SUMMARY = re.compile(r"\d+\s+errors?\s+generated\.")
+RE_MAKE_ERROR = re.compile(r"make(?:\[\d+\])?\s*:\s*\*\*\*")
+RE_WARNING = re.compile(r"^warning:\s", re.IGNORECASE)
+RE_ERROR = re.compile(r"^error:(?:\[E\d+\])?:\s", re.IGNORECASE)
+RE_CARGO_PROGRESS = re.compile(
+    r"^\s{3,}(Compiling|Downloading|Building|Finished|Fresh|Running|Documenting)\s"
 )
 
 FINDER_SLOW_MESSAGE = """
@@ -381,9 +372,8 @@ class BuildMonitor(MozbuildObject):
                     os.environ["UPLOAD_PATH"], "profile_build_resources.json"
                 )
             else:
-                self._ensure_build_log_dir_exists()
-                build_resources_profile_path = self._get_build_log_filename(
-                    construct_log_filename("profile")
+                build_resources_profile_path = self._get_state_filename(
+                    "profile_build_resources.json"
                 )
             with open(
                 build_resources_profile_path, "w", encoding="utf-8", newline="\n"
@@ -705,44 +695,7 @@ class BuildOutputManager(OutputManager):
     def __init__(self, log_manager, monitor, footer):
         self.monitor = monitor
         self._active_log_level = None
-        self._stdout_warning_lines_remaining = 0
-        self._third_party_dirs = self._load_third_party_paths()
         OutputManager.__init__(self, log_manager, footer)
-
-    def _load_third_party_paths(self):
-        paths = []
-        for filename in ("ThirdPartyPaths.txt", "Generated.txt"):
-            filepath = mozpath.join(
-                self.monitor.topsrcdir, "tools", "rewriting", filename
-            )
-            if os.path.exists(filepath):
-                with open(filepath, encoding="utf-8", newline="\n") as f:
-                    paths.extend(line.rstrip("\n/") for line in f)
-        return tuple(paths)
-
-    def _load_suppressed_flags(self):
-        substs = self.monitor.substs
-        return {
-            w.replace("-Wno-error=", "-W")
-            for w in substs.get("WARNINGS_CFLAGS", [])
-            + substs.get("WARNINGS_CXXFLAGS", [])
-            if w.startswith("-Wno-error=")
-        }
-
-    @property
-    def _suppressed_flags(self):
-        if not hasattr(self, "_suppressed_flags_cache"):
-            self._suppressed_flags_cache = self._load_suppressed_flags()
-        return self._suppressed_flags_cache
-
-    def _is_third_party_path(self, filepath):
-        path = mozpath.normsep(filepath)
-        if not path.startswith(self.monitor.topsrcdir):
-            return True
-        if not self._third_party_dirs:
-            return False
-        path = path[len(self.monitor.topsrcdir) + 1 :]
-        return path.startswith(self._third_party_dirs)
 
     def __exit__(self, exc_type, exc_value, traceback):
         OutputManager.__exit__(self, exc_type, exc_value, traceback)
@@ -751,16 +704,6 @@ class BuildOutputManager(OutputManager):
         # could result in the process hanging on exit because the resource
         # collection child process hasn't been told to stop.
         self.monitor.stop_resource_recording()
-
-    def _refresh_with_lock(self):
-        have_handler = hasattr(self, "_handler")
-        if have_handler:
-            self._handler.acquire()
-        try:
-            self.refresh()
-        finally:
-            if have_handler:
-                self._handler.release()
 
     def on_stdout_line(self, line):
         """Handle stdout output - log as INFO, but catch obvious warnings/errors."""
@@ -771,25 +714,20 @@ class BuildOutputManager(OutputManager):
             else:
                 log_level = logging.INFO
                 if isinstance(message, str):
-                    stripped = RE_STRIP_COLORS.sub("", message)
-                    match = RE_BUILD_OUTPUT.match(stripped)
-                    if match:
-                        match_type = match.lastgroup
-                        if match_type == "error_block":
-                            log_level = BUILD_ERROR
-                        elif match_type in ("warning_block", "warning_num"):
-                            log_level = logging.WARNING
-                        elif match_type == "nsis_warning_block":
-                            self._stdout_warning_lines_remaining = int(
-                                match.group().split()[0]
-                            )
-                            log_level = logging.WARNING
-                    elif self._stdout_warning_lines_remaining > 0:
-                        self._stdout_warning_lines_remaining -= 1
+                    if RE_ERROR.match(message):
+                        log_level = BUILD_ERROR
+                    elif RE_WARNING.match(message):
                         log_level = logging.WARNING
                 self.log(log_level, "build_output", {"line": message}, "{line}")
         elif state_changed:
-            self._refresh_with_lock()
+            have_handler = hasattr(self, "_handler")
+            if have_handler:
+                self._handler.acquire()
+            try:
+                self.refresh()
+            finally:
+                if have_handler:
+                    self._handler.release()
 
     def on_stderr_line(self, line):
         """Handle stderr output - parse for warnings/errors."""
@@ -801,60 +739,38 @@ class BuildOutputManager(OutputManager):
                 log_level = self._active_log_level or logging.WARNING
 
                 if warning:
-                    if warning["type"] == "error":
-                        self._active_log_level = log_level = BUILD_ERROR
-                    elif self._is_third_party_path(warning["filename"]):
-                        self._active_log_level = log_level = THIRD_PARTY_WARNING
-                    elif warning["flag"] and warning["flag"] in self._suppressed_flags:
-                        self._active_log_level = log_level = SUPPRESSED_WARNING
-                    else:
-                        self._active_log_level = log_level = logging.WARNING
+                    self._active_log_level = log_level = (
+                        BUILD_ERROR if warning["type"] == "error" else logging.WARNING
+                    )
                 elif isinstance(message, str):
                     stripped = RE_STRIP_COLORS.sub("", message)
-                    match = RE_BUILD_OUTPUT.search(stripped)
-                    if match:
-                        match_type = match.lastgroup
-                        if match_type in ("info_masm", "info_cargo"):
-                            log_level = logging.INFO
-                        elif match_type == "nsis_warning_block":
-                            self._active_log_level = log_level = logging.WARNING
-                        elif match_type in ("warning_summary", "warning_standalone"):
-                            log_level = logging.WARNING
-                            self._active_log_level = None
-                        elif match_type in (
-                            "error_summary",
-                            "make_error",
-                            "error_block",
-                        ):
-                            self._active_log_level = log_level = BUILD_ERROR
-                        elif match_type in ("warning_block", "warning_num"):
-                            if self._active_log_level != THIRD_PARTY_WARNING:
-                                self._active_log_level = log_level = logging.WARNING
-                        elif match_type == "continuation":
-                            if self._active_log_level:
-                                log_level = self._active_log_level
-                        elif match.group("include_from"):
-                            path = match.group("include_path")
-                            self._active_log_level = log_level = (
-                                THIRD_PARTY_WARNING
-                                if self._is_third_party_path(path)
-                                else logging.WARNING
-                            )
-                        elif match.group("inline_diagnostic"):
-                            path = match.group("diag_path")
-                            diag_type = match.group("diag_type").lower()
-                            if diag_type == "error":
-                                self._active_log_level = log_level = BUILD_ERROR
-                            elif diag_type == "note":
-                                log_level = self._active_log_level or logging.WARNING
-                            elif self._is_third_party_path(path):
-                                self._active_log_level = log_level = THIRD_PARTY_WARNING
-                            else:
-                                self._active_log_level = log_level = logging.WARNING
+
+                    if RE_CARGO_PROGRESS.match(stripped):
+                        log_level = logging.INFO
+                    elif RE_WARNING_SUMMARY.search(stripped):
+                        log_level = logging.WARNING
+                        self._active_log_level = None
+                    elif (
+                        RE_ERROR_SUMMARY.search(stripped)
+                        or RE_MAKE_ERROR.search(stripped)
+                        or RE_ERROR.match(stripped)
+                    ):
+                        self._active_log_level = log_level = BUILD_ERROR
+                    elif RE_WARNING.match(stripped) or stripped.startswith(
+                        IN_FILE_INCLUDED_FROM
+                    ):
+                        self._active_log_level = log_level = logging.WARNING
 
                 self.log(log_level, "build_output", {"line": message}, "{line}")
         elif state_changed:
-            self._refresh_with_lock()
+            have_handler = hasattr(self, "_handler")
+            if have_handler:
+                self._handler.acquire()
+            try:
+                self.refresh()
+            finally:
+                if have_handler:
+                    self._handler.release()
 
 
 class StaticAnalysisFooter(Footer):
@@ -1243,8 +1159,7 @@ class BuildDriver(MozbuildObject):
         mach_context=None,
         append_env=None,
     ):
-        self._ensure_build_log_dir_exists()
-        warnings_path = self._get_build_log_filename(construct_log_filename("warnings"))
+        warnings_path = self._get_state_filename("warnings.json")
         monitor = self._spawn(BuildMonitor)
         monitor.init(warnings_path, self.log_manager.terminal, metrics)
         status = self._build(

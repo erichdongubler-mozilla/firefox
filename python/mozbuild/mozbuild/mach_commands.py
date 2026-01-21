@@ -44,7 +44,6 @@ from mozbuild.util import (
     MOZBUILD_METRICS_PATH,
     ForwardingArgumentParser,
     ensure_l10n_central,
-    get_latest_file,
 )
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -640,28 +639,8 @@ def show_log(command_context, log_file=None):
     (https://man7.org/linux/man-pages/man1/less.1.html)
     """
     if not log_file:
-        latest_file = Path(command_context._get_state_filename("latest-command"))
-        if not latest_file.exists():
-            command_context.log(
-                logging.WARNING,
-                "show_log",
-                {},
-                "Could not locate latest log file. You may need to run a command first.",
-            )
-            return
-        command_name = latest_file.read_text().strip()
-        subdir = f"logs/{command_name}"
-        log_dir = Path(command_context._get_state_filename("", subdir=subdir))
-        log_path = get_latest_file(log_dir, command_name)
-        if not log_path:
-            command_context.log(
-                logging.WARNING,
-                "show_log",
-                {},
-                f"No log files found for latest '{command_name}' command. They may have been deleted.",
-            )
-            return
-        log_file = log_path.open("rb")
+        path = command_context._get_state_filename("last_log.json")
+        log_file = open(path, "rb")
 
     if os.isatty(sys.stdout.fileno()):
         env = dict(os.environ)
@@ -732,7 +711,7 @@ def show_log(command_context, log_file=None):
 def handle_log_file(command_context, log_file):
     start_time = 0
     for line in log_file:
-        created, action, params, msg = json.loads(line)
+        created, action, params = json.loads(line)
         if not start_time:
             start_time = created
             command_context.log_manager.terminal_handler.formatter.start_time = created
@@ -741,7 +720,7 @@ def handle_log_file(command_context, log_file):
                 "created": created,
                 "name": command_context._logger.name,
                 "levelno": logging.INFO,
-                "msg": msg,
+                "msg": "{line}",
                 "params": params,
                 "action": action,
             })
@@ -752,7 +731,7 @@ def handle_log_file(command_context, log_file):
 
 
 def database_path(command_context):
-    return get_latest_file(command_context._build_log_dir(), "warnings")
+    return command_context._get_state_filename("warnings.json")
 
 
 def get_warnings_database(command_context):
@@ -762,8 +741,8 @@ def get_warnings_database(command_context):
 
     database = WarningsDatabase()
 
-    if path and path.exists():
-        database.load_from_file(str(path))
+    if os.path.exists(path):
+        database.load_from_file(path)
 
     return database
 
