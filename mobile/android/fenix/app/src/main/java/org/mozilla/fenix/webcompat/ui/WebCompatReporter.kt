@@ -47,9 +47,7 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.Dropdown
 import mozilla.components.compose.base.button.FilledButton
@@ -64,7 +62,8 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemedValue
+import org.mozilla.fenix.theme.ThemedValueProvider
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_CHOOSE_REASON_BUTTON
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_SEND_BUTTON
 import org.mozilla.fenix.webcompat.store.WebCompatReporterAction
@@ -366,54 +365,39 @@ private fun TempAppBar(
     )
 }
 
-private class WebCompatPreviewParameterProvider : PreviewParameterProvider<WebCompatReporterState> {
-    override val values: Sequence<WebCompatReporterState>
-        get() = sequenceOf(
-            // Initial feature opening
-            WebCompatReporterState(
-                enteredUrl = "www.example.com/url_parameters_that_break_the_page",
-            ),
-            // Error in URL field
-            WebCompatReporterState(
-                enteredUrl = "",
-            ),
-            // Multi-line description
-            WebCompatReporterState(
-                enteredUrl = "www.example.com/url_parameters_that_break_the_page",
-                reason = BrokenSiteReason.Slow,
-                problemDescription = "The site wouldn’t load and after I tried xyz it still wouldn’t " +
-                        "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
-                        "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
-                        "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
-                        "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
-                        "load and then again ",
-            ),
-        )
-}
-
-@PreviewLightDark
-@Composable
-private fun WebCompatReporterPreview(
-    @PreviewParameter(WebCompatPreviewParameterProvider::class) initialState: WebCompatReporterState,
-) {
-    FirefoxTheme {
-        WebCompatReporter(
-            store = WebCompatReporterStore(
-                initialState = initialState,
-            ),
-        )
-    }
-}
+private class WebCompatPreviewParameterProvider : ThemedValueProvider<WebCompatReporterState>(
+    sequenceOf(
+        // Initial feature opening
+        WebCompatReporterState(
+            enteredUrl = "www.example.com/url_parameters_that_break_the_page",
+        ),
+        // Error in URL field
+        WebCompatReporterState(
+            enteredUrl = "",
+        ),
+        // Multi-line description
+        WebCompatReporterState(
+            enteredUrl = "www.example.com/url_parameters_that_break_the_page",
+            reason = BrokenSiteReason.Slow,
+            problemDescription = "The site wouldn’t load and after I tried xyz it still wouldn’t " +
+                    "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
+                    "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
+                    "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
+                    "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
+                    "load and then again ",
+        ),
+    ),
+)
 
 @Preview
 @Composable
-private fun WebCompatReporterPrivatePreview(
-    @PreviewParameter(WebCompatPreviewParameterProvider::class) initialState: WebCompatReporterState,
+private fun WebCompatReporterPreview(
+    @PreviewParameter(WebCompatPreviewParameterProvider::class) state: ThemedValue<WebCompatReporterState>,
 ) {
-    FirefoxTheme(theme = Theme.Private) {
+    FirefoxTheme(state.theme) {
         WebCompatReporter(
             store = WebCompatReporterStore(
-                initialState = initialState,
+                initialState = state.value,
             ),
         )
     }

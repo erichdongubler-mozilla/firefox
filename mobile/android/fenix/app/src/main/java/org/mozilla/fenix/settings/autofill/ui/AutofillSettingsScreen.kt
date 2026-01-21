@@ -23,13 +23,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.CreditCard
@@ -44,7 +42,8 @@ import org.mozilla.fenix.debugsettings.addresses.FakeCreditCardsAddressesStorage
 import org.mozilla.fenix.debugsettings.addresses.FakeCreditCardsAddressesStorage.Companion.toCreditCard
 import org.mozilla.fenix.debugsettings.addresses.generateFakeAddressForLangTag
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemedValue
+import org.mozilla.fenix.theme.ThemedValueProvider
 import mozilla.components.ui.icons.R as iconsR
 
 @Composable
@@ -252,59 +251,38 @@ private data class AutofillSettingsScreenPreviewState(
     val accountAuthState: AccountAuthState = AccountAuthState.LoggedOut,
 )
 
-private class AutofillSettingsScreenPreviewProvider : PreviewParameterProvider<AutofillSettingsScreenPreviewState> {
-    override val values = sequenceOf(
-        AutofillSettingsScreenPreviewState(),
-        AutofillSettingsScreenPreviewState(
-            addresses = listOf(
-                "en-CA".generateFakeAddressForLangTag().toAddress(),
+private class AutofillSettingsScreenPreviewProvider :
+    ThemedValueProvider<AutofillSettingsScreenPreviewState>(
+        sequenceOf(
+            AutofillSettingsScreenPreviewState(),
+            AutofillSettingsScreenPreviewState(
+                addresses = listOf(
+                    "en-CA".generateFakeAddressForLangTag().toAddress(),
+                ),
+                creditCards = listOf(generateCreditCard().toCreditCard()),
             ),
-            creditCards = listOf(generateCreditCard().toCreditCard()),
-        ),
-        AutofillSettingsScreenPreviewState(
-            accountAuthState = AccountAuthState.Authenticated,
+            AutofillSettingsScreenPreviewState(
+                accountAuthState = AccountAuthState.Authenticated,
+            ),
         ),
     )
-}
 
 @Composable
-@FlexibleWindowLightDarkPreview
+@FlexibleWindowPreview
 private fun AutofillSettingsScreenPreview(
-    @PreviewParameter(AutofillSettingsScreenPreviewProvider::class) param: AutofillSettingsScreenPreviewState,
+    @PreviewParameter(AutofillSettingsScreenPreviewProvider::class)
+    state: ThemedValue<AutofillSettingsScreenPreviewState>,
 ) {
     val store = { _: NavHostController ->
         AutofillSettingsStore(
             initialState = AutofillSettingsState.default.copy(
-                addresses = param.addresses,
-                creditCards = param.creditCards,
-                accountAuthState = param.accountAuthState,
+                addresses = state.value.addresses,
+                creditCards = state.value.creditCards,
+                accountAuthState = state.value.accountAuthState,
             ),
         )
     }
-    FirefoxTheme {
-        AutofillSettingsScreen(
-            buildStore = store,
-            accountManager = null,
-            isAddressSyncEnabled = true,
-        )
-    }
-}
-
-@Composable
-@Preview
-private fun AutofillSettingsScreenPrivatePreview(
-    @PreviewParameter(AutofillSettingsScreenPreviewProvider::class) param: AutofillSettingsScreenPreviewState,
-) {
-    val store = { _: NavHostController ->
-        AutofillSettingsStore(
-            initialState = AutofillSettingsState.default.copy(
-                addresses = param.addresses,
-                creditCards = param.creditCards,
-                accountAuthState = param.accountAuthState,
-            ),
-        )
-    }
-    FirefoxTheme(theme = Theme.Private) {
+    FirefoxTheme(state.theme) {
         AutofillSettingsScreen(
             buildStore = store,
             accountManager = null,

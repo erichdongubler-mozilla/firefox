@@ -47,9 +47,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
@@ -75,7 +73,8 @@ import org.mozilla.fenix.downloads.listscreen.ui.FileListItem
 import org.mozilla.fenix.downloads.listscreen.ui.Filters
 import org.mozilla.fenix.downloads.listscreen.ui.ToolbarConfig
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemedValue
+import org.mozilla.fenix.theme.ThemedValueProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -613,9 +612,8 @@ private fun getDeleteSnackBarMessage(fileItems: Set<FileItem>, context: Context)
 }
 
 private class DownloadsScreenPreviewModelParameterProvider :
-    PreviewParameterProvider<DownloadUIState> {
-    override val values: Sequence<DownloadUIState>
-        get() = sequenceOf(
+    ThemedValueProvider<DownloadUIState>(
+        sequenceOf(
             DownloadUIState.INITIAL,
             DownloadUIState(
                 items = listOf(
@@ -730,18 +728,18 @@ private class DownloadsScreenPreviewModelParameterProvider :
                 pendingDeletionIds = emptySet(),
                 userSelectedContentTypeFilter = FileItem.ContentTypeFilter.All,
             ),
-        )
-}
+        ),
+    )
 
 @Composable
 @FlexibleWindowLightDarkPreview
 private fun DownloadsScreenPreviews(
-    @PreviewParameter(DownloadsScreenPreviewModelParameterProvider::class) state: DownloadUIState,
+    @PreviewParameter(DownloadsScreenPreviewModelParameterProvider::class) state: ThemedValue<DownloadUIState>,
 ) {
-    val downloadsStore = remember { DownloadUIStore(initialState = state) }
+    val downloadsStore = remember { DownloadUIStore(initialState = state.value) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    FirefoxTheme {
+    FirefoxTheme(state.theme) {
         Box {
             DownloadsScreen(
                 downloadsStore = downloadsStore,
@@ -772,47 +770,6 @@ private fun DownloadsScreenPreviews(
             ) {
                 Snackbar(snackbarData = it)
             }
-        }
-    }
-}
-
-@Composable
-@Preview
-private fun DownloadsScreenPrivatePreviews(
-    @PreviewParameter(DownloadsScreenPreviewModelParameterProvider::class) state: DownloadUIState,
-) {
-    val downloadsStore = remember { DownloadUIStore(initialState = state) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    FirefoxTheme(theme = Theme.Private) {
-        Box {
-            DownloadsScreen(
-                downloadsStore = downloadsStore,
-                onItemClick = {
-                    scope.launch {
-                        snackbarHostState.displaySnackbar(
-                            message = "Item ${it.fileName} clicked",
-                        )
-                    }
-                },
-                onNavigationIconClick = {
-                    scope.launch {
-                        snackbarHostState.displaySnackbar(
-                            message = "Navigation Icon clicked",
-                        )
-                    }
-                },
-                onSettingsClick = {
-                    scope.launch {
-                        snackbarHostState.displaySnackbar(
-                            message = "Navigation to Downloads Settings clicked",
-                        )
-                    }
-                },
-            )
-            SnackbarHost(
-                hostState = snackbarHostState,
-            )
         }
     }
 }

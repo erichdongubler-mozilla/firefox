@@ -33,7 +33,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.map
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
@@ -52,6 +51,8 @@ import org.mozilla.fenix.settings.labs.store.LabsStore
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.theme.ThemeProvider
+import org.mozilla.fenix.theme.ThemedValue
+import org.mozilla.fenix.theme.ThemedValueProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -304,52 +305,30 @@ private fun RestoreDefaultsDialog(
     )
 }
 
-private class FirefoxLabsScreenPreviewProvider : PreviewParameterProvider<List<LabsFeature>> {
-    override val values: Sequence<List<LabsFeature>>
-        get() {
-            val sequenceOf = sequenceOf(
-                listOf(
-                    LabsFeature(
-                        key = FeatureKey.HOMEPAGE_AS_A_NEW_TAB,
-                        name = R.string.firefox_labs_homepage_as_a_new_tab,
-                        description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                        enabled = true,
-                    ),
-                ),
-                emptyList(),
-            )
-            return sequenceOf
-        }
-}
+private class FirefoxLabsScreenPreviewProvider : ThemedValueProvider<List<LabsFeature>>(
+    sequenceOf(
+        listOf(
+            LabsFeature(
+                key = FeatureKey.HOMEPAGE_AS_A_NEW_TAB,
+                name = R.string.firefox_labs_homepage_as_a_new_tab,
+                description = R.string.firefox_labs_homepage_as_a_new_tab_description,
+                enabled = true,
+            ),
+        ),
+        emptyList(),
+    ),
+)
 
 @Composable
 @FlexibleWindowLightDarkPreview
 private fun FirefoxLabsScreenPreview(
-    @PreviewParameter(FirefoxLabsScreenPreviewProvider::class) labsFeatures: List<LabsFeature>,
+    @PreviewParameter(FirefoxLabsScreenPreviewProvider::class) state: ThemedValue<List<LabsFeature>>,
 ) {
-    FirefoxTheme {
+    FirefoxTheme(state.theme) {
         FirefoxLabsScreen(
             store = LabsStore(
                 initialState = LabsState(
-                    labsFeatures = labsFeatures,
-                    dialogState = DialogState.Closed,
-                ),
-            ),
-            onNavigationIconClick = {},
-        )
-    }
-}
-
-@Composable
-@Preview
-private fun FirefoxLabsScreenPrivatePreview(
-    @PreviewParameter(FirefoxLabsScreenPreviewProvider::class) labsFeatures: List<LabsFeature>,
-) {
-    FirefoxTheme(theme = Theme.Private) {
-        FirefoxLabsScreen(
-            store = LabsStore(
-                initialState = LabsState(
-                    labsFeatures = labsFeatures,
+                    labsFeatures = state.value,
                     dialogState = DialogState.Closed,
                 ),
             ),
