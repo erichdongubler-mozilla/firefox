@@ -175,9 +175,12 @@ class ToolSidebar extends EventEmitter {
 
   /**
    * Select a specific tab.
+   *
+   * @param {string} id The ID of the tab
+   * @returns {Promise}
    */
   select(id) {
-    this.#tabbar.select(id);
+    return this.#tabbar.select(id);
   }
 
   /**
