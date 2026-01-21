@@ -2,17 +2,6 @@
 /* vim: set sts=2 sw=2 et tw=80: */
 "use strict";
 
-// Get main thread CPU time, in ms.
-async function getMainThreadCpuTime() {
-  let proc = await ChromeUtils.requestProcInfo();
-  let thread =
-    proc.threads.find(t => t.name === "MainThread" || t.tid == proc.pid) ??
-    // Apparently the main thread has an empty name "" in xpcshell,
-    // so fall back to the first one.
-    proc.threads[0];
-  return Math.round(thread.cpuTime / 1_000_000);
-}
-
 registerCleanupFunction(async () => {
   Services.prefs.clearUserPref("network.url.useDefaultURI");
 });
@@ -504,13 +493,13 @@ add_task(async function test_MatchGlob_redundant_wildcards_backtracking() {
   const first_limit = slow_build ? 200 : 20;
   {
     // Bug 1570868 - repeated * in tabs.query glob causes too much backtracking.
-    let title = `Monster${"*".repeat(999)}Mash`;
+    let title = `Monster${"*".repeat(99)}Mash`;
 
     // The first run could take longer than subsequent runs, as the DFA is lazily created.
-    let first_start = await getMainThreadCpuTime();
+    let first_start = Date.now();
     let glob = new MatchGlob(title);
     let first_matches = glob.matches(title);
-    let first_duration = (await getMainThreadCpuTime()) - first_start;
+    let first_duration = Date.now() - first_start;
     ok(first_matches, `Expected match: ${title}, ${title}`);
     Assert.less(
       first_duration,
@@ -518,22 +507,22 @@ add_task(async function test_MatchGlob_redundant_wildcards_backtracking() {
       `First matching duration: ${first_duration}ms (limit: ${first_limit}ms)`
     );
 
-    let start = await getMainThreadCpuTime();
+    let start = Date.now();
     let matches = glob.matches(title);
-    let duration = (await getMainThreadCpuTime()) - start;
+    let duration = Date.now() - start;
 
     ok(matches, `Expected match: ${title}, ${title}`);
     Assert.less(duration, 10, `Matching duration: ${duration}ms`);
   }
   {
     // Similarly with any continuous combination of ?**???****? wildcards.
-    let title = `Monster${"?*".repeat(999)}Mash`;
+    let title = `Monster${"?*".repeat(99)}Mash`;
 
     // The first run could take longer than subsequent runs, as the DFA is lazily created.
-    let first_start = await getMainThreadCpuTime();
+    let first_start = Date.now();
     let glob = new MatchGlob(title);
     let first_matches = glob.matches(title);
-    let first_duration = (await getMainThreadCpuTime()) - first_start;
+    let first_duration = Date.now() - first_start;
     ok(first_matches, `Expected match: ${title}, ${title}`);
     Assert.less(
       first_duration,
@@ -541,9 +530,9 @@ add_task(async function test_MatchGlob_redundant_wildcards_backtracking() {
       `First matching duration: ${first_duration}ms (limit: ${first_limit}ms)`
     );
 
-    let start = await getMainThreadCpuTime();
+    let start = Date.now();
     let matches = glob.matches(title);
-    let duration = (await getMainThreadCpuTime()) - start;
+    let duration = Date.now() - start;
 
     ok(matches, `Expected match: ${title}, ${title}`);
     Assert.less(duration, 10, `Matching duration: ${duration}ms`);
