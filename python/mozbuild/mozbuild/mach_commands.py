@@ -732,7 +732,7 @@ def show_log(command_context, log_file=None):
 def handle_log_file(command_context, log_file):
     start_time = 0
     for line in log_file:
-        created, action, params = json.loads(line)
+        created, action, params, msg = json.loads(line)
         if not start_time:
             start_time = created
             command_context.log_manager.terminal_handler.formatter.start_time = created
@@ -741,7 +741,7 @@ def handle_log_file(command_context, log_file):
                 "created": created,
                 "name": command_context._logger.name,
                 "levelno": logging.INFO,
-                "msg": "{line}",
+                "msg": msg,
                 "params": params,
                 "action": action,
             })

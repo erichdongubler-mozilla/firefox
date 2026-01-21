@@ -132,8 +132,9 @@ class StructuredJSONFormatter(logging.Formatter):
     def format(self, record):
         action = getattr(record, "action", "UNKNOWN")
         params = getattr(record, "params", {})
+        msg = record.msg
 
-        return json.dumps([record.created, action, params])
+        return json.dumps([record.created, action, params, msg])
 
 
 class StructuredHumanFormatter(logging.Formatter):
