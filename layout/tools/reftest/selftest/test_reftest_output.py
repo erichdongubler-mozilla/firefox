@@ -61,7 +61,7 @@ def test_output_fail(runtests):
 
     test_end = filter_action("test_end", lines)
     assert len(test_end) == 3
-    assert all(t["status"] == "PASS" for t in test_end)
+    assert all(t["status"] == "FAIL" for t in test_end)
 
     # ensure screenshots were printed
     formatted = buf.getvalue()

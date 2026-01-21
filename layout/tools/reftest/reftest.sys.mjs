@@ -687,6 +687,7 @@ function Blur() {
 
 async function StartCurrentTest() {
   g.testLog = [];
+  g.currentTestStatus = "PASS";
 
   // make sure we don't run tests that are expected to kill the browser
   while (g.urls.length) {
@@ -1272,7 +1273,7 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
               );
             });
           }
-          FinishTestItem();
+          FinishTestItem(true);
         });
         break;
       }
@@ -1302,6 +1303,9 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
       output = outputs[expected].false;
       extra = { status_msg: output.n };
       ++g.testResults[output.n];
+      if (output.s[0] !== output.s[1]) {
+        g.currentTestStatus = "FAIL";
+      }
       logger.testStatus(
         g.urls[0].identifier,
         errorMsg,
@@ -1318,6 +1322,8 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
     var anyFailed = typeSpecificResults.some(function (result) {
       return !result.passed;
     });
+    g.currentTestStatus = anyFailed ? "FAIL" : "PASS";
+
     var outputPair;
     if (anyFailed && expected == EXPECTED_FAIL) {
       // If we're marked as expected to fail, and some (but not all) tests
@@ -1518,6 +1524,9 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
           failures.push("failed reftest-no-wr-raster");
         }
         var failureString = failures.join(", ");
+        if (output.s[0] !== output.s[1]) {
+          g.currentTestStatus = "FAIL";
+        }
         logger.testStatus(
           g.urls[0].identifier,
           failureString,
@@ -1569,6 +1578,9 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
         }
         extra.modifiers = g.urls[0].modifiers;
 
+        if (output.s[0] !== output.s[1]) {
+          g.currentTestStatus = "FAIL";
+        }
         logger.testStatus(
           g.urls[0].identifier,
           message,
@@ -1621,6 +1633,7 @@ function LoadFailed(why) {
       "load failed with unknown reason (we should always have a reason!)"
     );
   }
+  g.currentTestStatus = why?.startsWith("timed out") ? "TIMEOUT" : "FAIL";
   logger.testStatus(
     g.urls[0].identifier,
     "load failed: " + why,
@@ -1663,6 +1676,7 @@ function FindUnexpectedCrashDumpFiles() {
         ++g.testResults.UnexpectedFail;
         foundCrashDumpFile = true;
         if (g.currentURL) {
+          g.currentTestStatus = "CRASH";
           logger.testStatus(
             g.urls[0].identifier,
             "crash-check",
@@ -1706,8 +1720,10 @@ function CleanUpCrashDumpFiles() {
   g.expectingProcessCrash = false;
 }
 
-function FinishTestItem() {
-  logger.testEnd(g.urls[0].identifier, "PASS");
+function FinishTestItem(skipTestEndLogging = false) {
+  if (!skipTestEndLogging) {
+    logger.testEnd(g.urls[0].identifier, g.currentTestStatus);
+  }
 
   // Replace document with BLANK_URL_FOR_CLEARING in case there are
   // assertions when unloading.
@@ -1971,6 +1987,7 @@ function RecvContentReady(info) {
 function RecvException(what) {
   logger.error(g.currentURL + " | " + what);
   ++g.testResults.Exception;
+  g.currentTestStatus = "FAIL";
 }
 
 function RecvFailedLoad(why) {
@@ -2019,6 +2036,7 @@ function RecvLog(type, msg) {
       "REFTEST TEST-UNEXPECTED-FAIL | " + g.currentURL + " | " + msg + "\n"
     );
     ++g.testResults.Exception;
+    g.currentTestStatus = "FAIL";
   } else {
     logger.error(
       "REFTEST TEST-UNEXPECTED-FAIL | " +
@@ -2028,6 +2046,7 @@ function RecvLog(type, msg) {
         "\n"
     );
     ++g.testResults.Exception;
+    g.currentTestStatus = "FAIL";
   }
 }
 
@@ -2085,6 +2104,7 @@ function RecvPrintResult(runtimeMs, status, fileName) {
         " | error during printing\n"
     );
     ++g.testResults.Exception;
+    g.currentTestStatus = "FAIL";
   }
   RecordResult(runtimeMs, "", fileName);
 }
