@@ -272,11 +272,12 @@ struct AnchorPositioningUtils {
 
   static Maybe<AnchorPosInfo> ResolveAnchorPosRect(
       const nsIFrame* aPositioned, const nsIFrame* aAbsoluteContainingBlock,
-      const nsAtom* aAnchorName, bool aCBRectIsvalid,
-      AnchorPosResolutionCache* aResolutionCache);
+      const nsAtom* aAnchorName, StyleCascadeLevel aAnchorTreeScope,
+      bool aCBRectIsvalid, AnchorPosResolutionCache* aResolutionCache);
 
   static Maybe<nsSize> ResolveAnchorPosSize(
       const nsIFrame* aPositioned, const nsAtom* aAnchorName,
+      StyleCascadeLevel aAnchorTreeScope,
       AnchorPosResolutionCache* aResolutionCache);
 
   /**

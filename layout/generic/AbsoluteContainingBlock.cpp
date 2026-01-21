@@ -263,7 +263,8 @@ static AnchorPosResolutionCache PopulateAnchorResolutionCache(
   AnchorPosResolutionCache result{aData, {}};
   // Let this call populate the cache.
   const auto defaultAnchorInfo = AnchorPositioningUtils::ResolveAnchorPosRect(
-      aKidFrame, aKidFrame->GetParent(), nullptr, false, &result);
+      aKidFrame, aKidFrame->GetParent(), nullptr, StyleCascadeLevel::Default(),
+      false, &result);
   if (defaultAnchorInfo) {
     aData->AdjustCompensatingForScroll(
         CheckEarlyCompensatingForScroll(aKidFrame));
@@ -1331,8 +1332,8 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
           return Nothing{};
         }
         return AnchorPositioningUtils::ResolveAnchorPosRect(
-            aKidFrame, aDelegatingFrame, nullptr, false,
-            aAnchorPosResolutionCache);
+            aKidFrame, aDelegatingFrame, nullptr, StyleCascadeLevel::Default(),
+            false, aAnchorPosResolutionCache);
       }();
       if (defaultAnchorInfo) {
         // Presence of a valid default anchor causes us to use the scrollable

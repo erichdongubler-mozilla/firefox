@@ -513,8 +513,8 @@ Maybe<nsRect> AnchorPositioningUtils::GetAnchorPosRect(
 
 Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
     const nsIFrame* aPositioned, const nsIFrame* aAbsoluteContainingBlock,
-    const nsAtom* aAnchorName, bool aCBRectIsvalid,
-    AnchorPosResolutionCache* aResolutionCache) {
+    const nsAtom* aAnchorName, StyleCascadeLevel /* aAnchorTreeScope */,
+    bool aCBRectIsvalid, AnchorPosResolutionCache* aResolutionCache) {
   if (!aPositioned) {
     return Nothing{};
   }
@@ -604,6 +604,7 @@ Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
 
 Maybe<nsSize> AnchorPositioningUtils::ResolveAnchorPosSize(
     const nsIFrame* aPositioned, const nsAtom* aAnchorName,
+    StyleCascadeLevel /*aAnchorTreeScope*/,
     AnchorPosResolutionCache* aResolutionCache) {
   const auto* anchorName = GetUsedAnchorName(aPositioned, aAnchorName);
   if (!anchorName) {
