@@ -681,7 +681,9 @@ const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
     return nullptr;
   }
 
-  const nsAtom* anchorName = nullptr;
+  // TODO: Anchor tree scope should be a part of the return value of
+  // entry.GetKey(), default value here is just a workaround.
+  ScopedNameRef anchorName{nullptr, StyleCascadeLevel::Default()};
   AnchorPosReferenceData* referencedAnchors =
       aPositionedFrame->GetProperty(nsIFrame::AnchorPosReferences());
 
@@ -694,15 +696,16 @@ const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
       continue;
     }
 
-    if (anchorName && entry.GetKey() != anchorName) {
+    const auto& anchorKey = entry.GetKey();
+    if (anchorName.mName && anchorKey != anchorName.mName) {
       // Multiple anchors referenced.
       return nullptr;
     }
 
-    anchorName = entry.GetKey();
+    anchorName.mName = anchorKey;
   }
 
-  return anchorName
+  return anchorName.mName
              ? aPresShell->GetAnchorPosAnchor(anchorName, aPositionedFrame)
              : nullptr;
 }
@@ -716,6 +719,7 @@ nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
   nsIFrame* positionedFrame = nullptr;
   const auto* styleDisp = aAnchorFrame->StyleDisplay();
   if (styleDisp->HasAnchorName()) {
+    auto treeScope = styleDisp->mAnchorName.scope;
     for (auto& name : styleDisp->mAnchorName.AsSpan()) {
       for (nsIFrame* frame : aPresShell->GetAnchorPosPositioned()) {
         // Bug 1990069: We need to iterate over all positioned frames in doc and
@@ -729,10 +733,10 @@ nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
           // just skip this frame for now.
           continue;
         }
-        const auto* data = referencedAnchors->Lookup(name.AsAtom());
+        const ScopedNameRef nameRef(name.AsAtom(), treeScope);
+        const auto* data = referencedAnchors->Lookup(nameRef);
         if (data && *data && data->ref().mOffsetData) {
-          if (aAnchorFrame ==
-              aPresShell->GetAnchorPosAnchor(name.AsAtom(), frame)) {
+          if (aAnchorFrame == aPresShell->GetAnchorPosAnchor(nameRef, frame)) {
             if (positionedFrame) {
               // Multiple positioned frames reference this anchor.
               return nullptr;

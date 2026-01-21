@@ -355,7 +355,9 @@ AnchorPosResolutionParams::AutoResolutionOverrideParams::
               // It is presumed that this is called on a reflowed frame.
               return false;
             }
-            return references->Lookup(references->mDefaultAnchorName)->isSome();
+            const auto* entry = references->Lookup(
+                {references->mDefaultAnchorName, references->mAnchorTreeScope});
+            return entry && entry->isSome();
           }())} {}
 
 AnchorResolvedMargin AnchorResolvedMarginHelper::ResolveAnchor(

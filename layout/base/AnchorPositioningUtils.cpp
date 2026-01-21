@@ -372,9 +372,11 @@ bool IsAcceptableAnchorElement(
 }  // namespace
 
 AnchorPosReferenceData::Result AnchorPosReferenceData::InsertOrModify(
-    const nsAtom* aAnchorName, bool aNeedOffset) {
+    const ScopedNameRef& aKey, const bool aNeedOffset) {
+  MOZ_ASSERT(aKey.mName);
+
   bool exists = true;
-  auto* result = &mMap.LookupOrInsertWith(aAnchorName, [&exists]() {
+  auto* result = &mMap.LookupOrInsertWith(aKey.mName, [&exists]() {
     exists = false;
     return Nothing{};
   });
@@ -400,8 +402,8 @@ AnchorPosReferenceData::Result AnchorPosReferenceData::InsertOrModify(
 }
 
 const AnchorPosReferenceData::Value* AnchorPosReferenceData::Lookup(
-    const nsAtom* aAnchorName) const {
-  return mMap.Lookup(aAnchorName).DataPtrOrNull();
+    const ScopedNameRef& aKey) const {
+  return mMap.Lookup(aKey.mName).DataPtrOrNull();
 }
 
 AnchorPosDefaultAnchorCache::AnchorPosDefaultAnchorCache(
@@ -416,7 +418,7 @@ AnchorPosDefaultAnchorCache::AnchorPosDefaultAnchorCache(
 }
 
 nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
-    const nsAtom* aName, const nsIFrame* aPositionedFrame,
+    const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
     const nsTArray<nsIFrame*>& aPossibleAnchorFrames) {
   LazyAncestorHolder positionedFrameAncestorHolder(aPositionedFrame);
   const auto* positionedContent = aPositionedFrame->GetContent();
@@ -431,7 +433,7 @@ nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
     }
 
     // Check if the possible anchor is an acceptable anchor element.
-    if (IsAcceptableAnchorElement(*it, aName, aPositionedFrame,
+    if (IsAcceptableAnchorElement(*it, aName.mName, aPositionedFrame,
                                   positionedFrameAncestorHolder)) {
       return *it;
     }
@@ -458,7 +460,7 @@ static const nsIFrame* TraverseUpToContainerChild(const nsIFrame* aContainer,
 }
 
 static const nsIFrame* GetAnchorOf(const nsIFrame* aPositioned,
-                                   const nsAtom* aAnchorName) {
+                                   const ScopedNameRef& aAnchorName) {
   const auto* presShell = aPositioned->PresShell();
   MOZ_ASSERT(presShell, "No PresShell for frame?");
   return presShell->GetAnchorPosAnchor(aAnchorName, aPositioned);
@@ -513,8 +515,8 @@ Maybe<nsRect> AnchorPositioningUtils::GetAnchorPosRect(
 
 Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
     const nsIFrame* aPositioned, const nsIFrame* aAbsoluteContainingBlock,
-    const nsAtom* aAnchorName, StyleCascadeLevel /* aAnchorTreeScope */,
-    bool aCBRectIsvalid, AnchorPosResolutionCache* aResolutionCache) {
+    const ScopedNameRef& aAnchorName, bool aCBRectIsvalid,
+    AnchorPosResolutionCache* aResolutionCache) {
   if (!aPositioned) {
     return Nothing{};
   }
@@ -525,7 +527,7 @@ Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
 
   MOZ_ASSERT(aPositioned->GetParent() == aAbsoluteContainingBlock);
 
-  const auto* anchorName = GetUsedAnchorName(aPositioned, aAnchorName);
+  const auto anchorName = GetUsedAnchorName(aPositioned, aAnchorName);
   if (!anchorName) {
     return Nothing{};
   }
@@ -533,7 +535,7 @@ Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
   Maybe<AnchorPosResolutionData>* entry = nullptr;
   if (aResolutionCache) {
     const auto result =
-        aResolutionCache->mReferenceData->InsertOrModify(anchorName, true);
+        aResolutionCache->mReferenceData->InsertOrModify(*anchorName, true);
     if (result.mAlreadyResolved) {
       MOZ_ASSERT(result.mEntry, "Entry exists but null?");
       return result.mEntry->map([&](const AnchorPosResolutionData& aData) {
@@ -546,7 +548,7 @@ Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
     entry = result.mEntry;
   }
 
-  const auto* anchor = GetAnchorOf(aPositioned, anchorName);
+  const auto* anchor = GetAnchorOf(aPositioned, *anchorName);
   if (!anchor) {
     // If we have a cached entry, just check that it resolved to nothing last
     // time as well.
@@ -564,7 +566,7 @@ Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
       // Update the cache.
       compensatesForScroll = [&]() {
         auto& defaultAnchorCache = aResolutionCache->mDefaultAnchorCache;
-        if (!aAnchorName) {
+        if (!aAnchorName.mName) {
           // Explicitly resolved default anchor for the first time - populate
           // the cache.
           defaultAnchorCache.mAnchor = anchor;
@@ -574,7 +576,10 @@ Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
           defaultAnchorCache.mScrollContainer = scrollContainer;
           aResolutionCache->mReferenceData->mDistanceToDefaultScrollContainer =
               distance;
-          aResolutionCache->mReferenceData->mDefaultAnchorName = anchorName;
+          aResolutionCache->mReferenceData->mDefaultAnchorName =
+              anchorName->mName;
+          aResolutionCache->mReferenceData->mAnchorTreeScope =
+              anchorName->mTreeScope;
           // This is the default anchor, so scroll compensated by definition.
           return true;
         }
@@ -596,17 +601,16 @@ Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
           aRect.Size(),
           Some(AnchorPosOffsetData{aRect.TopLeft(), compensatesForScroll,
                                    distanceToNearestScrollContainer}),
-      });
+          aAnchorName.mTreeScope});
     }
     return AnchorPosInfo{aRect, compensatesForScroll};
   });
 }
 
 Maybe<nsSize> AnchorPositioningUtils::ResolveAnchorPosSize(
-    const nsIFrame* aPositioned, const nsAtom* aAnchorName,
-    StyleCascadeLevel /*aAnchorTreeScope*/,
+    const nsIFrame* aPositioned, const ScopedNameRef& aAnchorName,
     AnchorPosResolutionCache* aResolutionCache) {
-  const auto* anchorName = GetUsedAnchorName(aPositioned, aAnchorName);
+  auto anchorName = GetUsedAnchorName(aPositioned, aAnchorName);
   if (!anchorName) {
     return Nothing{};
   }
@@ -614,7 +618,7 @@ Maybe<nsSize> AnchorPositioningUtils::ResolveAnchorPosSize(
   auto* referencedAnchors =
       aResolutionCache ? aResolutionCache->mReferenceData : nullptr;
   if (referencedAnchors) {
-    const auto result = referencedAnchors->InsertOrModify(anchorName, false);
+    const auto result = referencedAnchors->InsertOrModify(*anchorName, false);
     if (result.mAlreadyResolved) {
       MOZ_ASSERT(result.mEntry, "Entry exists but null?");
       return result.mEntry->map(
@@ -622,13 +626,14 @@ Maybe<nsSize> AnchorPositioningUtils::ResolveAnchorPosSize(
     }
     entry = result.mEntry;
   }
-  const auto* anchor = GetAnchorOf(aPositioned, anchorName);
+  const auto* anchor = GetAnchorOf(aPositioned, *anchorName);
   if (!anchor) {
     return Nothing{};
   }
   const auto size = nsLayoutUtils::GetCombinedFragmentRects(anchor).Size();
   if (entry) {
-    *entry = Some(AnchorPosResolutionData{size, Nothing{}});
+    *entry =
+        Some(AnchorPosResolutionData{size, Nothing{}, aAnchorName.mTreeScope});
   }
   return Some(size);
 }
@@ -789,34 +794,37 @@ void DeleteLastSuccessfulPositionData(LastSuccessfulPositionData* aData) {
   delete aData;
 }
 
-const nsAtom* AnchorPositioningUtils::GetUsedAnchorName(
-    const nsIFrame* aPositioned, const nsAtom* aAnchorName) {
-  if (aAnchorName && !aAnchorName->IsEmpty()) {
-    return aAnchorName;
+Maybe<ScopedNameRef> AnchorPositioningUtils::GetUsedAnchorName(
+    const nsIFrame* aPositioned, const ScopedNameRef& aAnchorName) {
+  if (aAnchorName.mName && !aAnchorName.mName->IsEmpty()) {
+    return Some(aAnchorName);
   }
 
   const auto& defaultAnchor = aPositioned->StylePosition()->mPositionAnchor;
   if (defaultAnchor.value.IsNone()) {
-    return nullptr;
+    return Nothing{};
   }
 
   if (defaultAnchor.value.IsIdent()) {
-    return defaultAnchor.value.AsIdent().AsAtom();
+    return Some(ScopedNameRef(defaultAnchor.value.AsIdent().AsAtom(),
+                              defaultAnchor.scope));
   }
 
   if (aPositioned->Style()->IsPseudoElement()) {
-    return nsGkAtoms::AnchorPosImplicitAnchor;
+    return Some(ScopedNameRef(nsGkAtoms::AnchorPosImplicitAnchor,
+                              StyleCascadeLevel::Default()));
   }
 
   if (const nsIContent* content = aPositioned->GetContent()) {
     if (const auto* element = content->AsElement()) {
       if (element->GetPopoverData()) {
-        return nsGkAtoms::AnchorPosImplicitAnchor;
+        return Some(ScopedNameRef(nsGkAtoms::AnchorPosImplicitAnchor,
+                                  StyleCascadeLevel::Default()));
       }
     }
   }
 
-  return nullptr;
+  return Nothing{};
 }
 
 nsIFrame* AnchorPositioningUtils::GetAnchorPosImplicitAnchor(
@@ -941,8 +949,10 @@ nsIFrame* AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
 
   const nsAtom* defaultAnchorName =
       pos->mPositionAnchor.value.AsIdent().AsAtom();
-  nsIFrame* anchor = const_cast<nsIFrame*>(
-      aFrame->PresShell()->GetAnchorPosAnchor(defaultAnchorName, aFrame));
+  StyleCascadeLevel anchorTreeScope = pos->mPositionAnchor.scope;
+  nsIFrame* anchor =
+      const_cast<nsIFrame*>(aFrame->PresShell()->GetAnchorPosAnchor(
+          {defaultAnchorName, anchorTreeScope}, aFrame));
   // TODO Bug 1997026 We need to update the anchor finding code so this can't
   // happen. For now we just detect it and reject it.
   if (anchor && !nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
@@ -982,8 +992,9 @@ static ScrollShifts FindScrollCompensatedAnchorShift(
   if (!defaultAnchorName) {
     return {};
   }
-  auto* defaultAnchor =
-      aPresShell->GetAnchorPosAnchor(defaultAnchorName, aPositioned);
+  const StyleCascadeLevel& anchorTreeScope = aReferenceData.mAnchorTreeScope;
+  auto* defaultAnchor = aPresShell->GetAnchorPosAnchor(
+      {defaultAnchorName, anchorTreeScope}, aPositioned);
   if (!defaultAnchor) {
     return {};
   }
@@ -1137,9 +1148,10 @@ static bool ComputePositionVisibility(
   }
   if (vis & StylePositionVisibility::ANCHORS_VISIBLE) {
     const auto* defaultAnchorName = aReferencedAnchors.mDefaultAnchorName.get();
+    auto anchorTreeScope = aReferencedAnchors.mAnchorTreeScope;
     if (defaultAnchorName) {
-      auto* defaultAnchor =
-          aPresShell->GetAnchorPosAnchor(defaultAnchorName, aPositioned);
+      auto* defaultAnchor = aPresShell->GetAnchorPosAnchor(
+          {defaultAnchorName, anchorTreeScope}, aPositioned);
       if (defaultAnchor && AnchorIsEffectivelyHidden(defaultAnchor)) {
         return false;
       }
