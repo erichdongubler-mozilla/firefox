@@ -200,12 +200,6 @@ impl LocalBrowser {
             }
         }
         self.process.kill()?;
-
-        // Restoring the prefs if the browser fails to stop perhaps doesn't work anyway
-        if let Some(prefs_backup) = self.prefs_backup {
-            prefs_backup.restore();
-        };
-
         Ok(())
     }
 
@@ -239,6 +233,15 @@ impl LocalBrowser {
             ),
             Ok(None) => None,
             Err(_) => Some("{unknown}".into()),
+        }
+    }
+}
+
+impl Drop for LocalBrowser {
+    fn drop(&mut self) {
+        if let Some(prefs_backup) = self.prefs_backup.take() {
+            debug!("Restore user preferences");
+            prefs_backup.restore();
         }
     }
 }
@@ -327,14 +330,8 @@ impl RemoteBrowser {
         })
     }
 
-    fn close(self) -> WebDriverResult<()> {
+    fn close(&self) -> WebDriverResult<()> {
         self.handler.force_stop()?;
-
-        // Restoring the prefs if the browser fails to stop perhaps doesn't work anyway
-        if let Some(prefs_backup) = self.prefs_backup {
-            prefs_backup.restore();
-        };
-
         Ok(())
     }
 
@@ -348,6 +345,15 @@ impl RemoteBrowser {
 
     fn push_file(&self, content: &[u8], path: &str) -> Result<String, AndroidError> {
         self.handler.push_as_file(content, path)
+    }
+}
+
+impl Drop for RemoteBrowser {
+    fn drop(&mut self) {
+        // Restore preferences which had custom values set.
+        if let Some(prefs_backup) = self.prefs_backup.take() {
+            prefs_backup.restore();
+        }
     }
 }
 

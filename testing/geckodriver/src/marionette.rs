@@ -279,9 +279,13 @@ impl WebDriverHandler<GeckoExtensionRoute> for MarionetteHandler {
                 }
                 let conn = connection.as_mut().expect("Missing connection");
                 conn.send_command(&msg).map_err(|mut err| {
-                    // Shutdown the browser if no session can
-                    // be established due to errors.
-                    if let NewSession(_) = msg.command {
+                    // Shutdown the browser if no new session can be established
+                    // or the already existing session id is no longer valid.
+                    let is_new_session = matches!(msg.command, NewSession(_));
+                    let invalid_session = msg.session_id.is_some()
+                        && err.error_code() == ErrorStatus::InvalidSessionId.error_code();
+
+                    if is_new_session || invalid_session {
                         err.delete_session = true;
                     }
                     err
