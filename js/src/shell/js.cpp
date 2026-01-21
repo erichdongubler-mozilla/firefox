@@ -13361,7 +13361,6 @@ bool InitOptionParser(OptionParser& op) {
       !op.addBoolOption('\0', "disable-explicit-resource-management",
                         "Disable Explicit Resource Management") ||
       !op.addBoolOption('\0', "enable-temporal", "Enable Temporal") ||
-      !op.addBoolOption('\0', "enable-upsert", "Enable Upsert proposal") ||
       !op.addBoolOption('\0', "enable-import-bytes", "Enable import bytes") ||
       !op.addBoolOption('\0', "enable-promise-allkeyed",
                         "Enable Promise.allKeyed") ||
@@ -13443,9 +13442,6 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   }
   if (op.getBoolOption("enable-iterator-range")) {
     JS::Prefs::setAtStartup_experimental_iterator_range(true);
-  }
-  if (op.getBoolOption("enable-upsert")) {
-    JS::Prefs::setAtStartup_experimental_upsert(true);
   }
   if (op.getBoolOption("enable-arraybuffer-immutable")) {
     JS::Prefs::setAtStartup_experimental_arraybuffer_immutable(true);

@@ -2235,13 +2235,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
       return true;
     }
   }
-  if (key == JSProto_Map || key == JSProto_WeakMap) {
-    if (!JS::Prefs::experimental_upsert() &&
-        (id == NameToId(cx->names().getOrInsert) ||
-         id == NameToId(cx->names().getOrInsertComputed))) {
-      return true;
-    }
-  }
   if (key == JSProto_ArrayBuffer &&
       !JS::Prefs::experimental_arraybuffer_immutable()) {
     if (id == NameToId(cx->names().immutable) ||

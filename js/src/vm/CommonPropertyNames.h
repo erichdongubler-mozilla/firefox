@@ -212,8 +212,6 @@
   MACRO_(GetInternalError, "GetInternalError")                                 \
   MACRO_(getInternals, "getInternals")                                         \
   MACRO_(GetIterator, "GetIterator")                                           \
-  MACRO_(getOrInsert, "getOrInsert")                                           \
-  MACRO_(getOrInsertComputed, "getOrInsertComputed")                           \
   MACRO_(getOwnPropertyDescriptor, "getOwnPropertyDescriptor")                 \
   MACRO_(getPropertySuper, "getPropertySuper")                                 \
   MACRO_(getPrototypeOf, "getPrototypeOf")                                     \
