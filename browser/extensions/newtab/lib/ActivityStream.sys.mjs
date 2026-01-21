@@ -1431,6 +1431,12 @@ export const PREFS_CONFIG = new Map([
 // Array of each feed's FEEDS_CONFIG factory and values to add to PREFS_CONFIG
 const FEEDS_DATA = [
   {
+    name: "startupcacheinit",
+    factory: () => new lazy.StartupCacheInit(),
+    title: "Sends a copy of the state to the startup cache newtab",
+    value: true,
+  },
+  {
     name: "aboutpreferences",
     factory: () => new lazy.AboutPreferences(),
     title: "about:preferences rendering",
@@ -1458,12 +1464,6 @@ const FEEDS_DATA = [
     name: "sections",
     factory: () => new lazy.SectionsFeed(),
     title: "Manages sections",
-    value: true,
-  },
-  {
-    name: "startupcacheinit",
-    factory: () => new lazy.StartupCacheInit(),
-    title: "Sends a copy of the state to the startup cache newtab",
     value: true,
   },
   {
