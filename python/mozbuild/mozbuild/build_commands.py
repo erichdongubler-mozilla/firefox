@@ -120,6 +120,14 @@ def _set_priority(command_context, priority, verbose):
     help="Verbose output for what commands the build is running.",
 )
 @CommandArgument(
+    "-q",
+    "--quiet",
+    dest="quiet",
+    default=False,
+    action="store_true",
+    help="Suppress most output, showing only errors and warnings.",
+)
+@CommandArgument(
     "--keep-going",
     action="store_true",
     help="Keep building after an error has occurred",
@@ -144,6 +152,7 @@ def build(
     job_size=0,
     directory=None,
     verbose=False,
+    quiet=None,
     keep_going=False,
     priority="idle",
     show_all_warnings=None,
@@ -183,6 +192,18 @@ def build(
             )
 
     from mach.logging import THIRD_PARTY_WARNING
+
+    if quiet and show_all_warnings:
+        command_context.log(
+            logging.ERROR,
+            "build",
+            {},
+            "--quiet and --show-all-warnings are mutually exclusive.",
+        )
+        return 1
+
+    if quiet:
+        command_context.log_manager.terminal_handler.setLevel(logging.WARNING)
 
     if show_all_warnings:
         command_context.log_manager.terminal_handler.setLevel(THIRD_PARTY_WARNING)
