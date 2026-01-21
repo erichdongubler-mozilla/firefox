@@ -37,6 +37,8 @@ try:
 except Exception:
     psutil = None
 
+BUILD_LOG_SUBDIR = os.path.join("logs", "build")
+
 
 class BadEnvironmentException(Exception):
     """Base class for errors raised when the build environment is not sane."""
@@ -695,6 +697,17 @@ class MozbuildObject(ProcessExecutionMixin):
 
         return os.path.join(path, filename)
 
+    def _get_build_log_filename(self, filename):
+        return os.path.join(self.statedir, BUILD_LOG_SUBDIR, filename)
+
+    def _ensure_build_log_dir_exists(self):
+        self._ensure_state_subdir_exists(BUILD_LOG_SUBDIR)
+
+    @property
+    def log_file_path(self):
+        """Return the path to the current command's log file, or None if not logging."""
+        return getattr(self, "logfile", None)
+
     def _wrap_path_argument(self, arg):
         return PathArgument(arg, self.topsrcdir, self.topobjdir)
 
@@ -952,19 +965,25 @@ class MachCommandBase(MozbuildObject):
             print(e)
             sys.exit(1)
 
-        # Always keep a log of the last command, but don't do that for mach
-        # invokations from scripts (especially not the ones done by the build
-        # system itself).
+        # Keep a per-command log in logs/{command}/, and track the latest command
+        # in latest-command. Don't do that for mach invocations from scripts
+        # (especially not the ones done by the build system itself).
         try:
             fileno = getattr(sys.stdout, "fileno", lambda: None)()
         except io.UnsupportedOperation:
             fileno = None
-        if fileno and os.isatty(fileno) and not no_auto_log:
-            self._ensure_state_subdir_exists(".")
-            logfile = self._get_state_filename("last_log.json")
+        handler = getattr(context, "handler", None)
+        if fileno and os.isatty(fileno) and not no_auto_log and handler:
+            command_name = handler.name
+            subdir = os.path.join("logs", command_name)
+            self._ensure_state_subdir_exists(subdir)
+            self.logfile = self._get_state_filename("last_log.json", subdir=subdir)
             try:
-                fd = open(logfile, "w")
+                fd = open(self.logfile, "w")
                 self.log_manager.add_json_handler(fd)
+                latest_file = self._get_state_filename("latest-command")
+                with open(latest_file, "w") as f:
+                    f.write(command_name)
             except Exception as e:
                 self.log(
                     logging.WARNING,
@@ -972,6 +991,7 @@ class MachCommandBase(MozbuildObject):
                     {"error": str(e)},
                     "Log will not be kept for this command: {error}.",
                 )
+                self.logfile = None
 
     def _sub_mach(self, argv):
         return subprocess.call(
