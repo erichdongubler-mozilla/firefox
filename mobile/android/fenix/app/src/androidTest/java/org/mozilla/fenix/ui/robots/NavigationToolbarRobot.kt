@@ -323,6 +323,12 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
             url: Uri,
             interact: BrowserRobot.() -> Unit,
         ): BrowserRobot.Transition {
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waiting for URL box node to appear and be ready for interaction")
+            composeTestRule.waitUntil(waitingTime) {
+                composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL_BOX).fetchSemanticsNodes().isNotEmpty()
+            }
+            Log.i(TAG, "enterURLAndEnterToBrowser: URL box node is now present and ready")
+
             Log.i(TAG, "enterURLAndEnterToBrowser: Trying to click navigation toolbar")
             composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL_BOX).onLast().performClick()
             Log.i(TAG, "enterURLAndEnterToBrowser: Clicked navigation toolbar")
