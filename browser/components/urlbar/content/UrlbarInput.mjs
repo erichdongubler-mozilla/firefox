@@ -272,7 +272,7 @@ export class UrlbarInput extends HTMLElement {
   /**
    * Initialization that happens once on the first connect.
    */
-  #initOnce() {
+  #init() {
     this.#sapName = this.getAttribute("sap-name");
     this.#isAddressbar = this.#sapName == "urlbar";
 
@@ -361,12 +361,12 @@ export class UrlbarInput extends HTMLElement {
       return;
     }
 
-    this.#init();
+    this.#connectedCallback();
   }
 
-  #init() {
+  #connectedCallback() {
     if (!this.controller) {
-      this.#initOnce();
+      this.#init();
     }
 
     if (this.sapName == "searchbar") {
@@ -407,8 +407,6 @@ export class UrlbarInput extends HTMLElement {
     // recording abandonment events when the command causes a blur event.
     this.view.panel.addEventListener("command", this, true);
 
-    this.window.addEventListener("customizationstarting", this);
-    this.window.addEventListener("aftercustomization", this);
     this.window.addEventListener("toolbarvisibilitychange", this);
     let menuToolbar = this.window.document.getElementById("toolbar-menubar");
     if (menuToolbar) {
@@ -436,7 +434,9 @@ export class UrlbarInput extends HTMLElement {
     }
 
     // Expanding requires a parent toolbar, and us not being read-only.
-    this.#allowBreakout = !!this.closest("toolbar");
+    this.#allowBreakout =
+      !!this.closest("toolbar") &&
+      !document.documentElement.hasAttribute("customizing");
     if (this.#allowBreakout) {
       // TODO(emilio): This could use CSS anchor positioning rather than this
       // ResizeObserver, eventually.
@@ -447,9 +447,11 @@ export class UrlbarInput extends HTMLElement {
         );
       });
       this._resizeObserver.observe(this.parentNode);
-    }
 
-    this.#updateLayoutBreakout();
+      this.#updateLayoutBreakout();
+    } else {
+      this.#stopBreakout();
+    }
 
     this._addObservers();
   }
@@ -462,10 +464,10 @@ export class UrlbarInput extends HTMLElement {
       return;
     }
 
-    this.#uninit();
+    this.#disconnectedCallback();
   }
 
-  #uninit() {
+  #disconnectedCallback() {
     if (this.sapName == "searchbar") {
       this.parentNode.removeAttribute("overflows");
 
@@ -502,8 +504,6 @@ export class UrlbarInput extends HTMLElement {
     // recording abandonment events when the command causes a blur event.
     this.view.panel.removeEventListener("command", this, true);
 
-    this.window.removeEventListener("customizationstarting", this);
-    this.window.removeEventListener("aftercustomization", this);
     this.window.removeEventListener("toolbarvisibilitychange", this);
     let menuToolbar = this.window.document.getElementById("toolbar-menubar");
     if (menuToolbar) {
@@ -607,10 +607,10 @@ export class UrlbarInput extends HTMLElement {
         if (this.getAttribute("sap-name") == "searchbar" && this.isConnected) {
           if (lazy.UrlbarPrefs.get("browser.search.widget.new")) {
             // The connectedCallback was skipped. Init now.
-            this.#init();
+            this.#connectedCallback();
           } else {
             // Uninit now, the disconnectedCallback will be skipped.
-            this.#uninit();
+            this.#disconnectedCallback();
           }
         }
       }
@@ -5578,16 +5578,6 @@ export class UrlbarInput extends HTMLElement {
         });
       }
     }
-  }
-
-  _on_customizationstarting() {
-    this.incrementBreakoutBlockerCount();
-    this.blur();
-  }
-
-  _on_aftercustomization() {
-    this.decrementBreakoutBlockerCount();
-    this.#updateLayoutBreakout();
   }
 
   _on_uidensitychanged() {
