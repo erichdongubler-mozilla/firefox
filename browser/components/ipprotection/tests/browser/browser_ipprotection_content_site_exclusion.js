@@ -12,8 +12,8 @@ const MOCK_SITE_NAME = "https://example.com";
 
 const PERM_NAME = "ipp-vpn";
 
-const TOGGLE_ON_EVENT = "IPProtection:ToggleOnExclusion";
-const TOGGLE_OFF_EVENT = "IPProtection:ToggleOffExclusion";
+const ENABLE_VPN_EVENT = "IPProtection:UserEnableVPNForSite";
+const DISABLE_VPN_EVENT = "IPProtection:UserDisableVPNForSite";
 
 /**
  * Tests the site exclusion toggle visibility with VPN on or off.
@@ -138,7 +138,7 @@ add_task(async function test_site_exclusion_VPN_error() {
 });
 
 /**
- * Tests the site exclusion toggle is pressed if isExclusion is true.
+ * Tests the site exclusion toggle is pressed if isExclusion is false.
  */
 add_task(async function test_site_exclusion_toggle_pressed_isExclusion() {
   let content = await openPanel({
@@ -162,8 +162,8 @@ add_task(async function test_site_exclusion_toggle_pressed_isExclusion() {
     "Site exclusion toggle should be present with VPN on"
   );
   Assert.ok(
-    !content.siteExclusionToggleEl.pressed,
-    "Site exclusion toggle should not be in pressed state"
+    content.siteExclusionToggleEl.pressed,
+    "Site exclusion toggle should be in pressed state when isExclusion is false"
   );
 
   let togglePressedPromise = BrowserTestUtils.waitForMutationCondition(
@@ -174,7 +174,7 @@ add_task(async function test_site_exclusion_toggle_pressed_isExclusion() {
       attributes: true,
       attributeFilter: ["pressed"],
     },
-    () => content.siteExclusionToggleEl?.pressed
+    () => !content.siteExclusionToggleEl?.pressed
   );
 
   // Set isExclusion to true
@@ -189,8 +189,8 @@ add_task(async function test_site_exclusion_toggle_pressed_isExclusion() {
   await Promise.all([content.updateComplete, togglePressedPromise]);
 
   Assert.ok(
-    content.siteExclusionToggleEl?.pressed,
-    "Site exclusion toggle should now be in pressed state"
+    !content.siteExclusionToggleEl?.pressed,
+    "Site exclusion toggle should not be in pressed state when isExclusion is true"
   );
 
   await closePanel();
@@ -227,22 +227,22 @@ add_task(async function test_site_exclusion_toggle_events() {
     "Site exclusion toggle should be present with VPN on"
   );
   Assert.ok(
-    !content.siteExclusionToggleEl.pressed,
-    "Site exclusion toggle should not be in pressed state"
+    content.siteExclusionToggleEl.pressed,
+    "Site exclusion toggle should be in pressed state (VPN enabled for site)"
   );
 
-  // Toggle ON exclusion
-  let toggleOnEventPromise = BrowserTestUtils.waitForEvent(
+  // Click to disable VPN protection for site (add exclusion)
+  let disableVPNEventPromise = BrowserTestUtils.waitForEvent(
     window,
-    TOGGLE_ON_EVENT
+    DISABLE_VPN_EVENT
   );
   content.siteExclusionToggleEl.click();
-  await toggleOnEventPromise;
+  await disableVPNEventPromise;
 
-  Assert.ok(true, "Toggle exclusion ON event was dispatched");
+  Assert.ok(true, "Disable VPN protection for site event was dispatched");
   Assert.ok(
     setExclusionSpy.calledOnce,
-    "IPPExceptionsManager.setExclusion should be called after toggling exclusion to ON"
+    "IPPExceptionsManager.setExclusion should be called after disabling VPN"
   );
   Assert.strictEqual(
     setExclusionSpy.firstCall.args[1],
@@ -250,15 +250,15 @@ add_task(async function test_site_exclusion_toggle_events() {
     "IPPExceptionsManager.setExclusion should be called with shouldExclude=true"
   );
 
-  // Toggle OFF exclusion
-  let toggleOffEventPromise = BrowserTestUtils.waitForEvent(
+  // Click to enable VPN protection for site (remove exclusion)
+  let enableVPNEventPromise = BrowserTestUtils.waitForEvent(
     window,
-    TOGGLE_OFF_EVENT
+    ENABLE_VPN_EVENT
   );
   content.siteExclusionToggleEl.click();
-  await toggleOffEventPromise;
+  await enableVPNEventPromise;
 
-  Assert.ok(true, "Toggle exclusion OFF event was dispatched");
+  Assert.ok(true, "Enable VPN protection for site event was dispatched");
   Assert.ok(
     setExclusionSpy.calledTwice,
     "IPPExceptionsManager.setExclusion should be called two times now"
@@ -319,8 +319,8 @@ add_task(
       "Site exclusion toggle should be present"
     );
     Assert.ok(
-      !content.siteExclusionToggleEl.pressed,
-      "Toggle should not be pressed for first site (not excluded)"
+      content.siteExclusionToggleEl.pressed,
+      "Toggle should be in pressed state for first site (not excluded)"
     );
 
     // Now open the second tab (site excluded)
@@ -342,8 +342,8 @@ add_task(
     await Promise.all([content.updateComplete, siteDataUpdatePromise]);
 
     Assert.ok(
-      content.siteExclusionToggleEl.pressed,
-      "Toggle should be pressed for the second site (which is excluded)"
+      !content.siteExclusionToggleEl.pressed,
+      "Toggle should not be in pressed state for the second site (which is excluded)"
     );
 
     await closePanel();
@@ -393,8 +393,8 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
     "Site exclusion toggle should be present"
   );
   Assert.ok(
-    !content.siteExclusionToggleEl.pressed,
-    "Toggle should not be pressed for first site (not excluded)"
+    content.siteExclusionToggleEl.pressed,
+    "Toggle should be in pressed state for first site (not excluded)"
   );
 
   let siteDataUpdatePromise = BrowserTestUtils.waitForMutationCondition(
@@ -414,8 +414,8 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
   await Promise.all([content.updateComplete, siteDataUpdatePromise]);
 
   Assert.ok(
-    content.siteExclusionToggleEl.pressed,
-    "Toggle should be pressed for the second site (which is excluded)"
+    !content.siteExclusionToggleEl.pressed,
+    "Toggle should not be in pressed state for the second site (which is excluded)"
   );
 
   await closePanel();

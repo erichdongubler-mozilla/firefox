@@ -179,18 +179,18 @@ export default class IPProtectionContentElement extends MozLitElement {
     }
   }
 
-  handleToggleExclusion(event) {
+  handleToggleUseVPN(event) {
     let isEnabled = event.target.pressed;
 
     if (isEnabled) {
       this.dispatchEvent(
-        new CustomEvent("IPProtection:ToggleOnExclusion", {
+        new CustomEvent("IPProtection:UserEnableVPNForSite", {
           bubbles: true,
         })
       );
     } else {
       this.dispatchEvent(
-        new CustomEvent("IPProtection:ToggleOffExclusion", {
+        new CustomEvent("IPProtection:UserDisableVPNForSite", {
           bubbles: true,
           composed: true,
         })
@@ -299,8 +299,8 @@ export default class IPProtectionContentElement extends MozLitElement {
 
     const isExclusion = this.state.siteData.isExclusion;
     const siteExclusionToggleStateL10nId = isExclusion
-      ? "site-exclusion-toggle-enabled"
-      : "site-exclusion-toggle-disabled";
+      ? "site-exclusion-toggle-disabled"
+      : "site-exclusion-toggle-enabled";
     return html` <div id="site-exclusion-control">
       <span id="site-exclusion-label-container">
         <img
@@ -317,8 +317,8 @@ export default class IPProtectionContentElement extends MozLitElement {
         data-l10n-id=${siteExclusionToggleStateL10nId}
         data-l10n-attrs="label"
         id="site-exclusion-toggle"
-        ?pressed=${isExclusion}
-        @toggle=${this.handleToggleExclusion}
+        ?pressed=${!isExclusion}
+        @toggle=${this.handleToggleUseVPN}
       >
       </moz-toggle>
     </div>`;
