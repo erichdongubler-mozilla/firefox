@@ -295,6 +295,20 @@ const CONFIG_PANES = Object.freeze({
     l10nId: "home-custom-homepage-subpage",
     groupIds: ["customHomepage"],
   },
+  personalizeSmartWindow: {
+    parent: "aiFeatures",
+    l10nId: "ai-window-personalize-header",
+    iconSrc: "chrome://devtools/skin/images/globe.svg",
+    groupIds: ["memoriesGroup"],
+    module: "chrome://browser/content/preferences/config/aiFeatures.mjs",
+  },
+  manageMemories: {
+    parent: "personalizeSmartWindow",
+    l10nId: "ai-window-manage-memories-header",
+    groupIds: ["manageMemories"],
+    module: "chrome://browser/content/preferences/config/aiFeatures.mjs",
+    supportPage: "smart-window-memories",
+  },
 });
 
 var gLastCategory = { category: undefined, subcategory: undefined };

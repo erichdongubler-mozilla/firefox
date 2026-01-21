@@ -27,6 +27,9 @@ import { JSONFile } from "resource://gre/modules/JSONFile.sys.mjs";
 const MEMORY_STORE_FILE = "memories.json.lz4";
 const MEMORY_STORE_VERSION = 1;
 
+// Observer notification topic
+const MEMORY_STORE_CHANGED = "memory-store-changed";
+
 // In-memory state
 let gState = {
   memories: [],
@@ -95,6 +98,9 @@ async function loadMemories() {
 
 // Public API object
 export const MemoryStore = {
+  // Observer notification topic
+  MEMORY_STORE_CHANGED,
+
   /**
    * Initialize the store: set up JSONFile and load from disk.
    *
@@ -183,6 +189,7 @@ export const MemoryStore = {
       memory.updated_at = memoryPartial.updated_at || now;
 
       gJSONFile?.saveSoon();
+      Services.obs.notifyObservers(null, MEMORY_STORE_CHANGED);
       return memory;
     }
 
@@ -199,6 +206,7 @@ export const MemoryStore = {
 
     gState.memories.push(memory);
     gJSONFile?.saveSoon();
+    Services.obs.notifyObservers(null, MEMORY_STORE_CHANGED);
     return memory;
   },
 
@@ -238,6 +246,7 @@ export const MemoryStore = {
     memory.updated_at = updates.updated_at || Date.now();
 
     gJSONFile?.saveSoon();
+    Services.obs.notifyObservers(null, MEMORY_STORE_CHANGED);
     return memory;
   },
 
@@ -250,7 +259,9 @@ export const MemoryStore = {
    * @returns {Promise<Memory|null>}
    */
   async softDeleteMemory(id) {
-    return this.updateMemory(id, { is_deleted: true });
+    let memory = await this.updateMemory(id, { is_deleted: true });
+    Services.obs.notifyObservers(null, MEMORY_STORE_CHANGED);
+    return memory;
   },
 
   /**
@@ -267,6 +278,7 @@ export const MemoryStore = {
     }
     gState.memories.splice(idx, 1);
     gJSONFile?.saveSoon();
+    Services.obs.notifyObservers(null, MEMORY_STORE_CHANGED);
     return true;
   },
 
