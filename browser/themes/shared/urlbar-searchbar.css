@@ -152,7 +152,7 @@ toolbar[inactive="true"] .urlbar,
   outline: none;
 }
 
-.urlbar-input {
+#urlbar .urlbar-input {
   mask-repeat: no-repeat;
   unicode-bidi: plaintext;
   text-align: match-parent;
@@ -362,9 +362,11 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .urlbar-input-box {
-  /* Show the url scheme in a static box when overflowing to the left */
-  position: relative;
-  direction: ltr;
+  #urlbar & {
+    /* Show the url scheme in a static box when overflowing to the left */
+    position: relative;
+    direction: ltr;
+  }
 
   :root[customizing] & {
     visibility: hidden;
