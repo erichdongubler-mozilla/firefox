@@ -57,12 +57,16 @@ class MOZ_RAII AutoChangeIntegerPairNotifier {
   bool mDoSetAttr;
 };
 
-constinit static SVGAttrTearoffTable<SVGAnimatedIntegerPair,
-                                     SVGAnimatedIntegerPair::DOMAnimatedInteger>
-    sSVGFirstAnimatedIntegerTearoffTable;
-constinit static SVGAttrTearoffTable<SVGAnimatedIntegerPair,
-                                     SVGAnimatedIntegerPair::DOMAnimatedInteger>
-    sSVGSecondAnimatedIntegerTearoffTable;
+// An array of two tearoff tables, indexed using the enum
+// SVGAnimatedIntegerPairWhichOne.  Each of the two tables is a map from
+// SVGAnimatedIntegerPair to a DOM wrapper for the first or second entry in the
+// SVGAnimatedIntegerPair. (The first table contains wrappers for pairs' first
+// entries, and the second table contains wrappers for pairs' second entries.)
+constinit static EnumeratedArray<
+    SVGAnimatedIntegerPairWhichOne,
+    SVGAttrTearoffTable<SVGAnimatedIntegerPair,
+                        SVGAnimatedIntegerPair::DOMAnimatedInteger>>
+    sSVGAnimatedIntegerTearoffTables;
 
 /* Implementation */
 
@@ -154,29 +158,19 @@ already_AddRefed<DOMSVGAnimatedInteger>
 SVGAnimatedIntegerPair::ToDOMAnimatedInteger(WhichOneOfPair aWhichOneOfPair,
                                              SVGElement* aSVGElement) {
   RefPtr<DOMAnimatedInteger> domAnimatedInteger =
-      aWhichOneOfPair == WhichOneOfPair::First
-          ? sSVGFirstAnimatedIntegerTearoffTable.GetTearoff(this)
-          : sSVGSecondAnimatedIntegerTearoffTable.GetTearoff(this);
+      sSVGAnimatedIntegerTearoffTables[aWhichOneOfPair].GetTearoff(this);
   if (!domAnimatedInteger) {
     domAnimatedInteger =
         new DOMAnimatedInteger(this, aWhichOneOfPair, aSVGElement);
-    if (aWhichOneOfPair == WhichOneOfPair::First) {
-      sSVGFirstAnimatedIntegerTearoffTable.AddTearoff(this, domAnimatedInteger);
-    } else {
-      sSVGSecondAnimatedIntegerTearoffTable.AddTearoff(this,
-                                                       domAnimatedInteger);
-    }
+    sSVGAnimatedIntegerTearoffTables[aWhichOneOfPair].AddTearoff(
+        this, domAnimatedInteger);
   }
 
   return domAnimatedInteger.forget();
 }
 
 SVGAnimatedIntegerPair::DOMAnimatedInteger::~DOMAnimatedInteger() {
-  if (mWhichOneOfPair == WhichOneOfPair::First) {
-    sSVGFirstAnimatedIntegerTearoffTable.RemoveTearoff(mVal);
-  } else {
-    sSVGSecondAnimatedIntegerTearoffTable.RemoveTearoff(mVal);
-  }
+  sSVGAnimatedIntegerTearoffTables[mWhichOneOfPair].RemoveTearoff(mVal);
 }
 
 UniquePtr<SMILAttr> SVGAnimatedIntegerPair::ToSMILAttr(

@@ -51,12 +51,16 @@ class MOZ_RAII AutoChangeNumberPairNotifier {
   bool mDoSetAttr;
 };
 
-constinit static SVGAttrTearoffTable<SVGAnimatedNumberPair,
-                                     SVGAnimatedNumberPair::DOMAnimatedNumber>
-    sSVGFirstAnimatedNumberTearoffTable;
-constinit static SVGAttrTearoffTable<SVGAnimatedNumberPair,
-                                     SVGAnimatedNumberPair::DOMAnimatedNumber>
-    sSVGSecondAnimatedNumberTearoffTable;
+// An array of two tearoff tables, indexed using the enum
+// SVGAnimatedNumberPairWhichOne.  Each of the two tables is a map from
+// SVGAnimatedNumberPair to a DOM wrapper for the first or second entry in the
+// SVGAnimatedNumberPair. (The first table contains wrappers for pairs' first
+// entries, and the second table contains wrappers for pairs' second entries.)
+constinit static EnumeratedArray<
+    SVGAnimatedNumberPairWhichOne,
+    SVGAttrTearoffTable<SVGAnimatedNumberPair,
+                        SVGAnimatedNumberPair::DOMAnimatedNumber>>
+    sSVGAnimatedNumberTearoffTables;
 
 static nsresult ParseNumberOptionalNumber(const nsAString& aValue,
                                           float aValues[2]) {
@@ -162,28 +166,19 @@ already_AddRefed<DOMSVGAnimatedNumber>
 SVGAnimatedNumberPair::ToDOMAnimatedNumber(WhichOneOfPair aWhichOneOfPair,
                                            SVGElement* aSVGElement) {
   RefPtr<DOMAnimatedNumber> domAnimatedNumber =
-      aWhichOneOfPair == WhichOneOfPair::First
-          ? sSVGFirstAnimatedNumberTearoffTable.GetTearoff(this)
-          : sSVGSecondAnimatedNumberTearoffTable.GetTearoff(this);
+      sSVGAnimatedNumberTearoffTables[aWhichOneOfPair].GetTearoff(this);
   if (!domAnimatedNumber) {
     domAnimatedNumber =
         new DOMAnimatedNumber(this, aWhichOneOfPair, aSVGElement);
-    if (aWhichOneOfPair == WhichOneOfPair::First) {
-      sSVGFirstAnimatedNumberTearoffTable.AddTearoff(this, domAnimatedNumber);
-    } else {
-      sSVGSecondAnimatedNumberTearoffTable.AddTearoff(this, domAnimatedNumber);
-    }
+    sSVGAnimatedNumberTearoffTables[aWhichOneOfPair].AddTearoff(
+        this, domAnimatedNumber);
   }
 
   return domAnimatedNumber.forget();
 }
 
 SVGAnimatedNumberPair::DOMAnimatedNumber::~DOMAnimatedNumber() {
-  if (mWhichOneOfPair == WhichOneOfPair::First) {
-    sSVGFirstAnimatedNumberTearoffTable.RemoveTearoff(mVal);
-  } else {
-    sSVGSecondAnimatedNumberTearoffTable.RemoveTearoff(mVal);
-  }
+  sSVGAnimatedNumberTearoffTables[mWhichOneOfPair].RemoveTearoff(mVal);
 }
 
 UniquePtr<SMILAttr> SVGAnimatedNumberPair::ToSMILAttr(SVGElement* aSVGElement) {
