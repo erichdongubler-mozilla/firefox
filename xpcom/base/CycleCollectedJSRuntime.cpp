@@ -1304,6 +1304,7 @@ struct GCMinorMarker : public BaseMarkerType<GCMinorMarker> {
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable,
                                                MS::Location::TimelineMemory};
+  static constexpr bool IsStackBased = true;
 
   static constexpr const char* Description =
       "A minor GC (aka nursery collection) to clear out the buffer used "
