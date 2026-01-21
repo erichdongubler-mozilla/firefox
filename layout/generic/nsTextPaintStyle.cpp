@@ -253,16 +253,6 @@ void nsTextPaintStyle::GetTargetTextColors(nscolor* aForeColor,
                                                    : darkSchemeForeground;
 }
 
-mozilla::Span<const StyleSimpleShadow> nsTextPaintStyle::GetTargetTextShadow() {
-  InitTargetTextPseudoStyle();
-
-  if (mTargetTextPseudoStyle) {
-    return mTargetTextPseudoStyle->StyleText()->mTextShadow.AsSpan();
-  }
-
-  return {};
-}
-
 bool nsTextPaintStyle::GetCustomHighlightTextColor(nsAtom* aHighlightName,
                                                    nscolor* aForeColor) {
   NS_ASSERTION(aForeColor, "aForeColor is null");
@@ -305,20 +295,6 @@ bool nsTextPaintStyle::GetCustomHighlightBackgroundColor(nsAtom* aHighlightName,
   *aBackColor = highlightStyle->GetVisitedDependentColor(
       &nsStyleBackground::mBackgroundColor);
   return NS_GET_A(*aBackColor) != 0;
-}
-
-mozilla::Span<const StyleSimpleShadow>
-nsTextPaintStyle::GetCustomHighlightTextShadow(nsAtom* aHighlightName) {
-  RefPtr<ComputedStyle> highlightStyle =
-      mCustomHighlightPseudoStyles.LookupOrInsertWith(
-          aHighlightName, [this, &aHighlightName] {
-            return mFrame->ComputeHighlightSelectionStyle(aHighlightName);
-          });
-  if (!highlightStyle) {
-    return {};
-  }
-
-  return highlightStyle->StyleText()->mTextShadow.AsSpan();
 }
 
 RefPtr<ComputedStyle> nsTextPaintStyle::GetComputedStyleForSelectionPseudo(
@@ -617,16 +593,18 @@ bool nsTextPaintStyle::GetSelectionUnderline(nsIFrame* aFrame,
          size > 0.0f;
 }
 
-mozilla::Span<const StyleSimpleShadow> nsTextPaintStyle::GetSelectionShadow() {
+bool nsTextPaintStyle::GetSelectionShadow(
+    Span<const StyleSimpleShadow>* aShadows) {
   if (!InitSelectionColorsAndShadow()) {
-    return {};
+    return false;
   }
 
   if (mSelectionPseudoStyle) {
-    return mSelectionPseudoStyle->StyleText()->mTextShadow.AsSpan();
+    *aShadows = mSelectionPseudoStyle->StyleText()->mTextShadow.AsSpan();
+    return true;
   }
 
-  return {};
+  return false;
 }
 
 inline nscolor Get40PercentColor(nscolor aForeColor, nscolor aBackColor) {
