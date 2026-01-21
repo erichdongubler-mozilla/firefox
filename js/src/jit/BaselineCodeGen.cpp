@@ -6836,6 +6836,27 @@ bool BaselineCodeGen<Handler>::emit_DynamicImport() {
   return true;
 }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+template <typename Handler>
+bool BaselineCodeGen<Handler>::emit_DynamicImportSource() {
+  // Put specifier into R0
+  frame.popRegsAndSync(1);
+
+  prepareVMCall();
+  pushArg(R0);
+  pushScriptArg();
+
+  using Fn = JSObject* (*)(JSContext*, HandleScript, HandleValue);
+  if (!callVM<Fn, js::StartDynamicModuleImportSource>()) {
+    return false;
+  }
+
+  masm.tagValue(JSVAL_TYPE_OBJECT, ReturnReg, R0);
+  frame.push(R0);
+  return true;
+}
+#endif
+
 template <>
 bool BaselineCompilerCodeGen::emit_ForceInterpreter() {
   // Caller is responsible for checking script->hasForceInterpreterOp().
