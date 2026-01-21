@@ -280,7 +280,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(smallFunctionMaxBytecodeLength, 140);
 
   // The minimum entry count for an IC stub before it can be trial-inlined.
-  SET_DEFAULT(inliningEntryThreshold, 100);
+  SET_DEFAULT(inliningEntryThreshold, 90);
 
   // An artificial testing limit for the maximum supported offset of
   // pc-relative jump and call instructions.
