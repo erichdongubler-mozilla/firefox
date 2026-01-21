@@ -207,6 +207,9 @@ Preferences.addAll([
   { id: "browser.ipProtection.features.autoStart", type: "bool" },
   { id: "browser.ipProtection.autoStartEnabled", type: "bool" },
   { id: "browser.ipProtection.autoStartPrivateEnabled", type: "bool" },
+  { id: "browser.ipProtection.bandwidth.enabled", type: "bool" },
+  { id: "browser.ipProtection.bandwidth.value", type: "int" },
+  { id: "browser.ipProtection.bandwidth.max", type: "int" },
 
   // Media
   { id: "media.autoplay.default", type: "int" },
@@ -1530,7 +1533,26 @@ Preferences.addSetting({
   visible: ({ ipProtectionVisible }) => ipProtectionVisible.value,
 });
 Preferences.addSetting({
-  id: "ipProtectionLinks",
+  id: "ipProtectionBandwidthVisible",
+  deps: ["ipProtectionVisible"],
+  pref: "browser.ipProtection.bandwidth.enabled",
+});
+Preferences.addSetting({
+  id: "ipProtectionBandwidth",
+  deps: ["ipProtectionVisible", "ipProtectionBandwidthVisible"],
+  visible: ({ ipProtectionVisible, ipProtectionBandwidthVisible }) =>
+    ipProtectionVisible.value && ipProtectionBandwidthVisible.value,
+  pref: "browser.ipProtection.bandwidth.value",
+  getControlConfig: config => {
+    const max = Services.prefs.getIntPref("browser.ipProtection.bandwidth.max");
+    return {
+      ...config,
+      controlAttrs: { max },
+    };
+  },
+});
+Preferences.addSetting({
+  id: "ipProtectionAdditionalLinks",
   deps: ["ipProtectionVisible"],
   visible: ({ ipProtectionVisible }) => ipProtectionVisible.value,
 });
