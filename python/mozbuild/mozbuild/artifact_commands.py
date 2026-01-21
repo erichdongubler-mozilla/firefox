@@ -427,7 +427,7 @@ def artifact_toolchain(
             # `local-toolchain attribute set. Taskgraph ensures that these
             # are built on trunk projects, so the task will be available to
             # install here.
-            if bootstrap and not task.attributes.get("local-toolchain"):
+            if bootstrap and not task["attributes"].get("local-toolchain"):
                 command_context.log(
                     logging.ERROR,
                     "artifact",
@@ -436,19 +436,20 @@ def artifact_toolchain(
                 )
                 return 1
 
-            artifact_name = task.attributes.get(f"{task.kind}-artifact")
+            artifact_name = task["attributes"].get(f"{task['kind']}-artifact")
+            optimization = task.get("optimization", {})
             command_context.log(
                 logging.DEBUG,
                 "artifact",
                 {
                     "name": artifact_name,
-                    "index": task.optimization.get("index-search"),
+                    "index": optimization.get("index-search"),
                 },
                 "Searching for {name} in {index}",
             )
             deadline = None
             task_id = IndexSearch().should_replace_task(
-                task, {}, deadline, task.optimization.get("index-search", [])
+                task, {}, deadline, optimization.get("index-search", [])
             )
             if task_id in (True, False) or not artifact_name:
                 command_context.log(
