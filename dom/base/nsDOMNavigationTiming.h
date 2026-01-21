@@ -175,7 +175,8 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
   void NotifyContentfulCompositeForRootContentDocument(
       const mozilla::TimeStamp& aCompositeEndTime);
   void NotifyLargestContentfulRenderForRootContentDocument(
-      const DOMHighResTimeStamp& aRenderTime);
+      const DOMHighResTimeStamp& aRenderTime, const nsAString& aElement,
+      const nsACString& aImageURL);
   void NotifyDocShellStateChanged(DocShellState aDocShellState);
 
   void MaybeAddLCPProfilerMarker(mozilla::MarkerInnerWindowId aInnerWindowID);
@@ -236,6 +237,8 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
   mozilla::TimeStamp mNonBlankPaint;
   mozilla::TimeStamp mContentfulComposite;
   mozilla::TimeStamp mLargestContentfulRender;
+  nsString mLCPElement;
+  nsCString mLCPImageURL;
 
   mozilla::TimeStamp mBeforeUnloadStart;
   mozilla::TimeStamp mUnloadStart;
