@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef SECURITY_SANDBOX_SANDBOXBROKER_H_
-#define SECURITY_SANDBOX_SANDBOXBROKER_H_
+#ifndef __SECURITY_SANDBOX_SANDBOXBROKER_H__
+#define __SECURITY_SANDBOX_SANDBOXBROKER_H__
 
 #include <stdint.h>
 #include <windows.h>

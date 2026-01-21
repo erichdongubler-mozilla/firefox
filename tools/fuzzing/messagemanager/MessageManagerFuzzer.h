@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_MessageManagerFuzzer_h_
-#define mozilla_dom_MessageManagerFuzzer_h_
+#ifndef mozilla_dom_MessageManagerFuzzer_h__
+#define mozilla_dom_MessageManagerFuzzer_h__
 
 #include "jspubtd.h"
 #include "nsAString.h"

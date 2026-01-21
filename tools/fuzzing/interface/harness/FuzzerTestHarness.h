@@ -9,8 +9,8 @@
  * and stdio.h/stdlib.h.
  */
 
-#ifndef FuzzerTestHarness_h_
-#define FuzzerTestHarness_h_
+#ifndef FuzzerTestHarness_h__
+#define FuzzerTestHarness_h__
 
 #include "mozilla/Attributes.h"
 #include "mozilla/IntegerPrintfMacros.h"
@@ -252,4 +252,4 @@ ScopedXPCOM::Release() { return 1; }
 
 }  // namespace
 
-#endif  // FuzzerTestHarness_h_
+#endif  // FuzzerTestHarness_h__

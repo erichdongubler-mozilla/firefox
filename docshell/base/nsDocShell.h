@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsDocShell_h_
-#define nsDocShell_h_
+#ifndef nsDocShell_h__
+#define nsDocShell_h__
 
 #include "Units.h"
 #include "mozilla/Encoding.h"
@@ -1489,4 +1489,4 @@ inline nsISupports* ToSupports(nsDocShell* aDocShell) {
   return static_cast<nsIDocumentLoader*>(aDocShell);
 }
 
-#endif /* nsDocShell_h_ */
+#endif /* nsDocShell_h__ */

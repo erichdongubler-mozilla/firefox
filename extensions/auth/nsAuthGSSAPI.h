@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsAuthGSSAPI_h_
-#define nsAuthGSSAPI_h_
+#ifndef nsAuthGSSAPI_h__
+#define nsAuthGSSAPI_h__
 
 #include "nsAuth.h"
 #include "nsIAuthModule.h"
@@ -60,4 +60,4 @@ class nsAuthGSSAPI final : public nsIAuthModule {
   bool mDelegationSupported = false;
 };
 
-#endif /* nsAuthGSSAPI_h_ */
+#endif /* nsAuthGSSAPI_h__ */

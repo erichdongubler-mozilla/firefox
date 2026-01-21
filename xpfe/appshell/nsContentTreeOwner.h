@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsContentTreeOwner_h_
-#define nsContentTreeOwner_h_
+#ifndef nsContentTreeOwner_h__
+#define nsContentTreeOwner_h__
 
 // Helper Classes
 #include "nsCOMPtr.h"
@@ -58,4 +58,4 @@ class nsContentTreeOwner final : public nsIDocShellTreeOwner,
   bool mPrimary;
 };
 
-#endif /* nsContentTreeOwner_h_ */
+#endif /* nsContentTreeOwner_h__ */

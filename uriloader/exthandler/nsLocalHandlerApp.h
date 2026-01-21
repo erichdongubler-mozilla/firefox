@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _nsLocalHandlerAppImpl_h_
-#define _nsLocalHandlerAppImpl_h_
+#ifndef __nsLocalHandlerAppImpl_h__
+#define __nsLocalHandlerAppImpl_h__
 
 #include "nsString.h"
 #include "nsIMIMEInfo.h"
@@ -66,4 +66,4 @@ typedef nsLocalHandlerAppWin PlatformLocalHandlerApp_t;
 typedef nsLocalHandlerApp PlatformLocalHandlerApp_t;
 #endif
 
-#endif  //  _nsLocalHandlerAppImpl_h_
+#endif  //  __nsLocalHandlerAppImpl_h__

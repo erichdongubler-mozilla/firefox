@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsOSHelperAppServiceChild_h_
-#define nsOSHelperAppServiceChild_h_
+#ifndef nsOSHelperAppServiceChild_h__
+#define nsOSHelperAppServiceChild_h__
 
 #include "nsExternalHelperAppService.h"
 
@@ -45,4 +45,4 @@ class nsOSHelperAppServiceChild : public nsExternalHelperAppService {
                                nsIMIMEInfo** aMIMEInfo) override;
 };
 
-#endif  // nsOSHelperAppServiceChild_h_
+#endif  // nsOSHelperAppServiceChild_h__

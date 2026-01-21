@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsJARURI_h_
-#define nsJARURI_h_
+#ifndef nsJARURI_h__
+#define nsJARURI_h__
 
 #include "nsIJARURI.h"
 #include "nsISerializable.h"
@@ -151,4 +151,4 @@ class nsJARURI final : public nsIJARURI,
   friend BaseURIMutator<nsJARURI>;
 };
 
-#endif  // nsJARURI_h_
+#endif  // nsJARURI_h__

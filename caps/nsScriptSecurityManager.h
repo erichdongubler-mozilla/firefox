@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsScriptSecurityManager_h_
-#define nsScriptSecurityManager_h_
+#ifndef nsScriptSecurityManager_h__
+#define nsScriptSecurityManager_h__
 
 #include "nsIScriptSecurityManager.h"
 
@@ -139,4 +139,4 @@ class nsScriptSecurityManager final : public nsIScriptSecurityManager {
   static nsIStringBundle* sStrBundle;
 };
 
-#endif  // nsScriptSecurityManager_h_
+#endif  // nsScriptSecurityManager_h__

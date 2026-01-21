@@ -38,8 +38,8 @@
  *
  */
 
-#ifndef NS_PARSER_
-#define NS_PARSER_
+#ifndef NS_PARSER__
+#define NS_PARSER__
 
 #include "nsIParser.h"
 #include "nsDeque.h"

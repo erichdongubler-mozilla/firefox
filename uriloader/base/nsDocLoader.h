@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsDocLoader_h_
-#define nsDocLoader_h_
+#ifndef nsDocLoader_h__
+#define nsDocLoader_h__
 
 #include "nsIDocumentLoader.h"
 #include "nsIWebProgress.h"
@@ -386,4 +386,4 @@ static inline nsISupports* ToSupports(nsDocLoader* aDocLoader) {
   return static_cast<nsIDocumentLoader*>(aDocLoader);
 }
 
-#endif /* nsDocLoader_h_ */
+#endif /* nsDocLoader_h__ */
