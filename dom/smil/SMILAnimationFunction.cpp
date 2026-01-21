@@ -6,9 +6,8 @@
 
 #include "SMILAnimationFunction.h"
 
-#include <math.h>
-
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
 #include "mozilla/DebugOnly.h"
