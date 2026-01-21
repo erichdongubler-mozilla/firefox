@@ -379,6 +379,7 @@ export interface Modules {
   "moz-src:///toolkit/components/search/PolicySearchEngine.sys.mjs": typeof import("moz-src:///toolkit/components/search/PolicySearchEngine.sys.mjs"),
   "moz-src:///toolkit/components/search/SearchEngine.sys.mjs": typeof import("moz-src:///toolkit/components/search/SearchEngine.sys.mjs"),
   "moz-src:///toolkit/components/search/SearchEngineSelector.sys.mjs": typeof import("moz-src:///toolkit/components/search/SearchEngineSelector.sys.mjs"),
+  "moz-src:///toolkit/components/search/SearchService.sys.mjs": typeof import("moz-src:///toolkit/components/search/SearchService.sys.mjs"),
   "moz-src:///toolkit/components/search/SearchSettings.sys.mjs": typeof import("moz-src:///toolkit/components/search/SearchSettings.sys.mjs"),
   "moz-src:///toolkit/components/search/SearchShortcuts.sys.mjs": typeof import("moz-src:///toolkit/components/search/SearchShortcuts.sys.mjs"),
   "moz-src:///toolkit/components/search/SearchStaticData.sys.mjs": typeof import("moz-src:///toolkit/components/search/SearchStaticData.sys.mjs"),
