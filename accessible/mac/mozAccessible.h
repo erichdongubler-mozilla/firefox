@@ -90,6 +90,9 @@ enum CheckedState {
 
 - (void)maybePostValidationErrorChanged;
 
+- (void)handleAnnouncementEvent:(NSString*)announcement
+                       priority:(uint16_t)priority;
+
 // internal method to retrieve a child at a given index.
 - (id)childAt:(uint32_t)i;
 

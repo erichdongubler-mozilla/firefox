@@ -27,6 +27,7 @@
 #include "mozilla/a11y/PDocAccessible.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "OuterDocAccessible.h"
+#include "nsIAccessibleAnnouncementEvent.h"
 #include "nsChildView.h"
 #include "TextLeafRange.h"
 #include "xpcAccessibleMacInterface.h"
@@ -1170,6 +1171,19 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
       }
     }
   }
+}
+
+- (void)handleAnnouncementEvent:(NSString*)announcement
+                       priority:(uint16_t)priority {
+  NSDictionary* info = @{
+    NSAccessibilityAnnouncementKey : announcement,
+    NSAccessibilityPriorityKey :
+                priority == nsIAccessibleAnnouncementEvent::ASSERTIVE
+        ? @(NSAccessibilityPriorityHigh)
+        : @(NSAccessibilityPriorityMedium)
+  };
+  [self moxPostNotification:NSAccessibilityAnnouncementRequestedNotification
+               withUserInfo:info];
 }
 
 - (void)expire {
