@@ -206,8 +206,9 @@ class ProcessHandlerMixin:
                             if retries < 1 and getattr(e, "errno", None) == errno.EPERM:
                                 try:
                                     os.waitpid(-pid, 0)
-                                finally:
-                                    return send_sig(sig, retries + 1)
+                                except OSError:
+                                    pass
+                                return send_sig(sig, retries + 1)
 
                             # ESRCH is a "no such process" failure, which is fine because the
                             # application might already have been terminated itself. Any other
@@ -536,7 +537,6 @@ falling back to not using job objects for managing child processes""",
                                 file=sys.stderr,
                             )
                             raise WinError(errcode)
-                            break
 
                     if compkey.value == winprocess.COMPKEY_TERMINATE.value:
                         self.debug("compkeyterminate detected")
