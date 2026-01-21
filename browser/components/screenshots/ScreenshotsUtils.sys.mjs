@@ -556,6 +556,7 @@ export var ScreenshotsUtils = {
    */
   setPerBrowserState(browser, nameValues = {}) {
     if (!this.browserToScreenshotsState.has(browser)) {
+      // we should really have this state already, created when the preview dialog was opened
       this.browserToScreenshotsState.set(browser, {});
     }
     let perBrowserState = this.browserToScreenshotsState.get(browser);
@@ -776,20 +777,22 @@ export var ScreenshotsUtils = {
    * @returns The buttons panel
    */
   panelForBrowser(browser) {
-    let perBrowserState = this.browserToScreenshotsState.get(browser);
-    // We store the buttons panel element as a weakref to allow it to get destroyed along
-    // with the <browser> if the tab closes
-    return perBrowserState?.buttonsPanel
-      ? perBrowserState.buttonsPanel.get()
-      : null;
-  },
+    let buttonsPanel = browser.ownerDocument.getElementById(
+      "screenshotsPagePanel"
+    );
+    if (!buttonsPanel) {
+      let doc = browser.ownerDocument;
+      let template = doc.getElementById("screenshotsPagePanelTemplate");
+      let fragmentClone = template.content.cloneNode(true);
+      buttonsPanel = fragmentClone.firstElementChild;
+      template.replaceWith(buttonsPanel);
+      browser.closest("#tabbrowser-tabbox").prepend(buttonsPanel);
+    }
 
-  createPanel(browser, containerElem) {
-    const doc = browser.ownerDocument;
-    const template = doc.getElementById("screenshotsPagePanelTemplate");
-    const fragmentClone = doc.importNode(template.content, true);
-
-    return containerElem.appendChild(fragmentClone.firstElementChild);
+    return (
+      buttonsPanel ??
+      browser.ownerDocument.getElementById("screenshotsPagePanel")
+    );
   },
 
   /**
@@ -799,25 +802,9 @@ export var ScreenshotsUtils = {
    */
   openPanel(browser) {
     let buttonsPanel = this.panelForBrowser(browser);
-    if (buttonsPanel && !buttonsPanel.hidden) {
+    if (!buttonsPanel.hidden) {
       return null;
     }
-    const { gBrowser } = browser.ownerGlobal;
-    // The element may exist but be associated with a different browser
-    if (!buttonsPanel) {
-      buttonsPanel = gBrowser.tabpanels.querySelector(".screenshotsPagePanel");
-    }
-    const browserWrapper = gBrowser.getPanel(browser);
-    if (!buttonsPanel) {
-      buttonsPanel = this.createPanel(browser, browserWrapper);
-    }
-    if (buttonsPanel.parentElement !== browserWrapper) {
-      browserWrapper.appendChild(buttonsPanel);
-    }
-    this.setPerBrowserState(browser, {
-      buttonsPanel: Cu.getWeakReference(buttonsPanel),
-    });
-
     buttonsPanel.hidden = false;
 
     return new Promise(resolve => {
@@ -850,11 +837,11 @@ export var ScreenshotsUtils = {
    *
    * @param browser The current browser.
    */
-  showPanelAndOverlay(browser, data) {
+  async showPanelAndOverlay(browser, data) {
     let actor = this.getActor(browser);
     actor.sendAsyncMessage("Screenshots:ShowOverlay");
     this.recordTelemetryEvent("started" + data);
-    return this.openPanel(browser);
+    this.openPanel(browser);
   },
 
   /**

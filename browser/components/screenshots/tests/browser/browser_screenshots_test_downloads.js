@@ -115,7 +115,7 @@ add_task(async function test_download_without_filepicker() {
       );
 
       let panel = gBrowser.selectedBrowser.ownerDocument.querySelector(
-        helper.selector.panel
+        "#screenshotsPagePanel"
       );
 
       // click the visible page button in panel

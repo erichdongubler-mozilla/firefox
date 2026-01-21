@@ -104,7 +104,7 @@ add_task(async function test_textSelectedDuringVisibleScreenshot() {
       );
 
       let panel = gBrowser.selectedBrowser.ownerDocument.querySelector(
-        helper.selector.panel
+        "#screenshotsPagePanel"
       );
 
       // click the visible page button in panel
