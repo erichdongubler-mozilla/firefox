@@ -26,6 +26,7 @@
 #include "Relation.h"
 #include "RootAccessible.h"
 #include "States.h"
+#include "nsIAccessibleAnnouncementEvent.h"
 #include "nsISimpleEnumerator.h"
 
 #include "mozilla/Sprintf.h"
@@ -1145,9 +1146,23 @@ void a11y::PlatformSelectionEvent(Accessible*, Accessible* aWidget, uint32_t) {
   g_signal_emit_by_name(obj, "selection_changed");
 }
 
+// XXX Taken from atkobject.h in ATK 2.57. Updating ATK causes a plethora of
+// build errors which aren't worth fixing for a single enum.
+typedef enum { ATK_LIVE_NONE, ATK_LIVE_POLITE, ATK_LIVE_ASSERTIVE } AtkLive;
+
 void a11y::PlatformAnnouncementEvent(Accessible* aTarget,
                                      const nsAString& aAnnouncement,
-                                     uint16_t aPriority) {}
+                                     uint16_t aPriority) {
+  if (!IsAtkVersionAtLeast(2, 50)) {
+    return;
+  }
+  AtkObject* wrapper = GetWrapperFor(aTarget);
+  g_signal_emit_by_name(wrapper, "notification",
+                        NS_ConvertUTF16toUTF8(aAnnouncement).get(),
+                        aPriority == nsIAccessibleAnnouncementEvent::ASSERTIVE
+                            ? ATK_LIVE_ASSERTIVE
+                            : ATK_LIVE_POLITE);
+}
 
 mozilla::StaticAutoPtr<nsCString> sReturnedString;
 
