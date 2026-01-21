@@ -7,6 +7,7 @@ import io
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -30,7 +31,7 @@ from .backend.configenvironment import ConfigEnvironment, ConfigStatusFailure
 from .configure import ConfigureSandbox
 from .controller.clobber import Clobberer
 from .mozconfig import MozconfigLoader, MozconfigLoadException
-from .util import cpu_count, memoize, memoized_property
+from .util import construct_log_filename, cpu_count, memoize, memoized_property
 
 try:
     import psutil
@@ -697,8 +698,11 @@ class MozbuildObject(ProcessExecutionMixin):
 
         return os.path.join(path, filename)
 
+    def _build_log_dir(self):
+        return os.path.join(self.statedir, BUILD_LOG_SUBDIR)
+
     def _get_build_log_filename(self, filename):
-        return os.path.join(self.statedir, BUILD_LOG_SUBDIR, filename)
+        return os.path.join(self._build_log_dir(), filename)
 
     def _ensure_build_log_dir_exists(self):
         self._ensure_state_subdir_exists(BUILD_LOG_SUBDIR)
@@ -707,6 +711,37 @@ class MozbuildObject(ProcessExecutionMixin):
     def log_file_path(self):
         """Return the path to the current command's log file, or None if not logging."""
         return getattr(self, "logfile", None)
+
+    def _cleanup_old_logs(self, subdir, max_logs=5):
+        """Remove old log files, keeping only the most recent max_logs files per type."""
+        log_dir = Path(self.statedir) / subdir
+        try:
+            files = list(log_dir.iterdir())
+        except OSError:
+            return
+
+        groups = {}
+        for f in files:
+            file_type = re.split(r"[._]", f.name)[0]
+            groups.setdefault(file_type, []).append(f)
+
+        # There are multiple types of build logs, and we want
+        # to keep the most recent ones of each type.
+        for log_files in groups.values():
+            if len(log_files) <= max_logs:
+                continue
+            for old_log in sorted(
+                log_files, key=lambda f: f.stat().st_mtime, reverse=True
+            )[max_logs:]:
+                try:
+                    old_log.unlink()
+                except OSError as e:
+                    self.log(
+                        logging.WARNING,
+                        "mach",
+                        {"file": str(old_log), "error": str(e)},
+                        "Failed to remove old log file {file}: {error}",
+                    )
 
     def _wrap_path_argument(self, arg):
         return PathArgument(arg, self.topsrcdir, self.topobjdir)
@@ -977,13 +1012,16 @@ class MachCommandBase(MozbuildObject):
             command_name = handler.name
             subdir = os.path.join("logs", command_name)
             self._ensure_state_subdir_exists(subdir)
-            self.logfile = self._get_state_filename("last_log.json", subdir=subdir)
+            self.logfile = self._get_state_filename(
+                construct_log_filename(command_name), subdir=subdir
+            )
             try:
                 fd = open(self.logfile, "w")
                 self.log_manager.add_json_handler(fd)
                 latest_file = self._get_state_filename("latest-command")
                 with open(latest_file, "w") as f:
                     f.write(command_name)
+                self._cleanup_old_logs(subdir)
             except Exception as e:
                 self.log(
                     logging.WARNING,

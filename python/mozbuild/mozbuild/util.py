@@ -17,6 +17,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from io import BytesIO, StringIO
 from pathlib import Path
 
@@ -35,6 +36,27 @@ if sys.platform == "win32":
     system_encoding = "mbcs"
 else:
     system_encoding = "utf-8"
+
+
+LOG_TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
+
+
+def get_latest_file(directory, prefix):
+    """Find the most recent file in a directory that starts with prefix, or None."""
+    log_dir = Path(directory)
+    try:
+        files = [f for f in log_dir.iterdir() if f.name.startswith(prefix)]
+    except OSError:
+        return None
+    if not files:
+        return None
+    return max(files, key=lambda f: f.stat().st_mtime)
+
+
+def construct_log_filename(prefix, suffix=".json"):
+    """Generate a timestamped log filename."""
+    timestamp = time.strftime(LOG_TIMESTAMP_FORMAT)
+    return f"{prefix}_log_{timestamp}{suffix}"
 
 
 class MissingL10nError(Exception):
