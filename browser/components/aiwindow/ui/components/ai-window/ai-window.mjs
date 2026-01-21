@@ -47,7 +47,9 @@ export class AIWindow extends MozLitElement {
   };
 
   #browser;
+  #smartbar;
   #conversation;
+  #visibilityChangeHandler;
 
   #detectModeFromContext() {
     return window.browsingContext?.embedderElement?.id === "ai-window-browser"
@@ -60,12 +62,45 @@ export class AIWindow extends MozLitElement {
 
     this.userPrompt = "";
     this.#browser = null;
+    this.#smartbar = null;
     this.#conversation = new lazy.ChatConversation({});
     this.mode = this.#detectModeFromContext();
   }
 
   connectedCallback() {
     super.connectedCallback();
+  }
+
+  disconnectedCallback() {
+    // Clean up visibility change handler
+    if (this.#visibilityChangeHandler) {
+      this.ownerDocument.removeEventListener(
+        "visibilitychange",
+        this.#visibilityChangeHandler
+      );
+      this.#visibilityChangeHandler = null;
+    }
+
+    // Clean up smartbar
+    if (this.#smartbar) {
+      this.#smartbar.removeEventListener(
+        "smartbar-commit",
+        this.#handleSmartbarCommit
+      );
+      this.#smartbar.remove();
+      this.#smartbar = null;
+    }
+
+    // Clean up browser
+    if (this.#browser) {
+      this.#browser.remove();
+      this.#browser = null;
+    }
+
+    // Clean up conversation
+    this.#conversation = null;
+
+    super.disconnectedCallback();
   }
 
   firstUpdated() {
@@ -84,7 +119,61 @@ export class AIWindow extends MozLitElement {
     container.appendChild(browser);
 
     this.#browser = browser;
+
+    // Defer Smartbar initialization for preloaded documents
+    if (doc.hidden) {
+      this.#visibilityChangeHandler = () => {
+        if (!doc.hidden && !this.#smartbar) {
+          this.#getOrCreateSmartbar(doc, container);
+        }
+      };
+      doc.addEventListener("visibilitychange", this.#visibilityChangeHandler, {
+        once: true,
+      });
+    } else {
+      this.#getOrCreateSmartbar(doc, container);
+    }
   }
+
+  /**
+   * Helper method to get or create the smartbar element
+   *
+   * @param {Document} doc - The document
+   * @param {Element} container - The container element
+   */
+  #getOrCreateSmartbar(doc, container) {
+    // Find existing Smartbar or create it when we init the AI Window.
+    let smartbar = container.querySelector("#ai-window-smartbar");
+
+    if (!smartbar) {
+      // The Smartbar can’t be initialized in the shadow DOM and needs
+      // to be created from the chrome document.
+      smartbar = doc.createElement("moz-smartbar");
+      smartbar.id = "ai-window-smartbar";
+      smartbar.setAttribute("sap-name", "smartbar");
+      smartbar.setAttribute("pageproxystate", "invalid");
+      smartbar.setAttribute("popover", "manual");
+      smartbar.classList.add("smartbar", "urlbar");
+      container.append(smartbar);
+
+      smartbar.addEventListener("smartbar-commit", this.#handleSmartbarCommit);
+    }
+    this.#smartbar = smartbar;
+  }
+
+  /**
+   * Handles the smartbar-commit action for the user prompt
+   *
+   * @param {CustomEvent} event - The smartbar-commit event
+   * @private
+   */
+  #handleSmartbarCommit = event => {
+    const { value, action } = event.detail;
+    if (action === "chat") {
+      this.userPrompt = value;
+      this.#fetchAIResponse();
+    }
+  };
 
   /**
    * Persists the current conversation state to the database.
@@ -267,50 +356,17 @@ export class AIWindow extends MozLitElement {
     return actor.dispatchMessageToChatContent(newMessage);
   }
 
-  /**
-   * Handles input events from the prompt textarea.
-   * Updates the userPrompt property with the current input value.
-   *
-   * @param {Event} e - The input event.
-   * @private
-   */
-
-  #handlePromptInput = e => {
-    const value = e.target.value;
-    this.userPrompt = value;
-  };
-
-  /**
-   * Handles the submit action for the user prompt.
-   * Triggers the AI response fetch process.
-   */
-
-  #handleSubmit() {
-    this.#fetchAIResponse();
-  }
-
   render() {
     return html`
       <link
         rel="stylesheet"
         href="chrome://browser/content/aiwindow/components/ai-window.css"
       />
-      <div>
-        <div id="browser-container"></div>
-        <!-- TODO : Remove place holder submit button, prompt will come from ai-input -->
-        <textarea
-          .value=${this.userPrompt}
-          @input=${e => this.#handlePromptInput(e)}
-        ></textarea>
-        <moz-button type="primary" size="small" @click=${this.#handleSubmit}>
-          Submit mock prompt
-        </moz-button>
-
-        <!-- TODO : Example of mode-based rendering -->
-        ${this.mode === FULLPAGE
-          ? html`<div>Fullpage Footer Content</div>`
-          : ""}
-      </div>
+      <!-- TODO (Bug 2008938): Make in-page Smartbar styling not dependent on chrome styles -->
+      <link rel="stylesheet" href="chrome://browser/skin/smartbar.css" />
+      <div id="browser-container"></div>
+      <!-- TODO : Example of mode-based rendering -->
+      ${this.mode === FULLPAGE ? html`<div>Fullpage Footer Content</div>` : ""}
     `;
   }
 }

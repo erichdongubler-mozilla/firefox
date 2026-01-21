@@ -1356,6 +1356,7 @@ static nsLiteralCString sImgSrcDataBlobAllowList[] = {
     "about:welcome"_ns,
     "chrome://browser/content/aboutDialog.xhtml"_ns,
     "chrome://browser/content/aboutlogins/aboutLogins.html"_ns,
+    "chrome://browser/content/aiwindow/aiWindow.html"_ns,
     "chrome://browser/content/genai/chat.html"_ns,
     "chrome://browser/content/places/bookmarksSidebar.xhtml"_ns,
     "chrome://browser/content/places/places.xhtml"_ns,

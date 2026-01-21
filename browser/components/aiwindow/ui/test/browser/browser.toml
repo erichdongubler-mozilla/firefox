@@ -30,6 +30,8 @@ support-files = [
 
 ["browser_aiwindow_search_button.js"]
 
+["browser_aiwindow_smartbar.js"]
+
 ["browser_aiwindow_switcher.js"]
 
 ["browser_aiwindow_token_parsing.js"]
