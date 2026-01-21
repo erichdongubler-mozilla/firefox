@@ -13096,11 +13096,17 @@ bool BytecodeEmitter::emitTree(
 
 #ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::CallImportSourceExpr: {
-      // TODO: Bytecode and code generation will be added in
-      // Bug 2010101.
-      // Pushing undefined here for now fakes a return value,
-      // which allows running additional tests.
-      if (!emit1(JSOp::Undefined)) {
+      BinaryNode* spec = &pn->as<BinaryNode>().right()->as<BinaryNode>();
+
+      if (!emitTree(spec->left())) {
+        //          [stack] specifier
+        return false;
+      }
+
+      // import.source does not have an options parameter
+      MOZ_ASSERT(spec->right()->isKind(ParseNodeKind::PosHolder));
+
+      if (!emit1(JSOp::DynamicImportSource)) {
         return false;
       }
       break;
