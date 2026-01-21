@@ -11,7 +11,7 @@ let defaultEngine;
 
 add_setup(async function () {
   await SearchTestUtils.updateRemoteSettingsConfig([{ identifier: "engine" }]);
-  defaultEngine = Services.search.defaultEngine;
+  defaultEngine = SearchService.defaultEngine;
 });
 
 add_task(async function test_simple() {

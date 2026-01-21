@@ -53,7 +53,7 @@ add_task(async function suggestedIndex() {
 
   urls.reverse();
   urls.unshift(
-    (await Services.search.getDefault()).getSubmission("foo").uri.spec
+    (await SearchService.getDefault()).getSubmission("foo").uri.spec
   );
   urls.splice(result1.suggestedIndex, 0, result1.payload.url);
   urls.splice(result2.suggestedIndex, 0, result2.payload.url);
@@ -104,7 +104,7 @@ add_task(async function suggestedIndex_append() {
   );
 
   let urls = [
-    (await Services.search.getDefault()).getSubmission("bar").uri.spec,
+    (await SearchService.getDefault()).getSubmission("bar").uri.spec,
     "http://example.com/bar",
     "http://mozilla.org/append/",
   ];

@@ -98,8 +98,8 @@ add_task(async function test_history() {
 
 add_task(async function test_remove_search_history() {
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
-  let engine = Services.search.getEngineByName("Example");
-  await Services.search.moveEngine(engine, 0);
+  let engine = SearchService.getEngineByName("Example");
+  await SearchService.moveEngine(engine, 0);
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.suggest.searches", true],

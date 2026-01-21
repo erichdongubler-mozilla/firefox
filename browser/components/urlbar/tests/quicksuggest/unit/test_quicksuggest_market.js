@@ -40,7 +40,7 @@ const TEST_MERINO_EMPTY_POLYGON_VALUES = [
 ];
 
 add_setup(async function init() {
-  await Services.search.init();
+  await SearchService.init();
 
   // Disable search suggestions so we don't hit the network.
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
@@ -243,7 +243,7 @@ function marketResult() {
       provider: "polygon",
       telemetryType: "market",
       isSponsored: false,
-      engine: Services.search.defaultEngine.name,
+      engine: SearchService.defaultEngine.name,
       items: [
         {
           image_url: "https://example.com/aapl.svg",

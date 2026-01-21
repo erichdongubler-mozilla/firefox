@@ -17,6 +17,7 @@ ChromeUtils.defineESModuleGetters(this, {
   HttpServer: "resource://testing-common/httpd.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
   UrlbarController:
@@ -248,7 +249,7 @@ async function addTestSuggestionsEngine(
     suggest_url: `http://localhost:${server.identity.primaryPort}/suggest`,
     suggest_url_get_params: "?q={searchTerms}",
   });
-  let engine = Services.search.getEngineByName(name);
+  let engine = SearchService.getEngineByName(name);
   return engine;
 }
 
@@ -303,7 +304,7 @@ async function addTestTailSuggestionsEngine(suggestionsFn = null) {
     suggest_url: `http://localhost:${server.identity.primaryPort}/suggest`,
     suggest_url_get_params: "?q={searchTerms}",
   });
-  let engine = Services.search.getEngineByName("Tail Suggestions");
+  let engine = SearchService.getEngineByName("Tail Suggestions");
   return engine;
 }
 
@@ -385,7 +386,7 @@ function testEngine_setup() {
   add_setup(async () => {
     await cleanupPlaces();
     let engine = await addTestSuggestionsEngine();
-    let oldDefaultEngine = await Services.search.getDefault();
+    let oldDefaultEngine = await SearchService.getDefault();
 
     registerCleanupFunction(async () => {
       Services.prefs.clearUserPref("browser.urlbar.suggest.searches");
@@ -393,16 +394,13 @@ function testEngine_setup() {
       Services.prefs.clearUserPref(
         "browser.search.separatePrivateDefault.ui.enabled"
       );
-      Services.search.setDefault(
+      SearchService.setDefault(
         oldDefaultEngine,
         Ci.nsISearchService.CHANGE_REASON_UNKNOWN
       );
     });
 
-    Services.search.setDefault(
-      engine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
+    SearchService.setDefault(engine, Ci.nsISearchService.CHANGE_REASON_UNKNOWN);
     Services.prefs.setBoolPref(
       "browser.search.separatePrivateDefault.ui.enabled",
       false

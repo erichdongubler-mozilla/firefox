@@ -65,7 +65,7 @@ add_task(async function test() {
       context,
       matches: [
         makeSearchResult(context, {
-          engineName: Services.search.defaultEngine.name,
+          engineName: SearchService.defaultEngine.name,
           providerName: "UrlbarProviderHeuristicFallback",
           heuristic: true,
         }),
@@ -93,7 +93,7 @@ add_task(async function test() {
     search_url: url2,
   });
 
-  let engine2 = Services.search.getEngineByName("TestEngine2");
+  let engine2 = SearchService.getEngineByName("TestEngine2");
   // Make sure the engine domain would be autofilled.
   await PlacesUtils.bookmarks.insert({
     url: url2,
@@ -108,7 +108,7 @@ add_task(async function test() {
       context,
       matches: [
         makeSearchResult(context, {
-          engineName: Services.search.defaultEngine.name,
+          engineName: SearchService.defaultEngine.name,
           providerName: "UrlbarProviderHeuristicFallback",
           heuristic: true,
         }),
@@ -193,7 +193,7 @@ add_task(async function test() {
     name: "FakeWikipedia",
     search_url: url,
   });
-  let wikiEngine = Services.search.getEngineByName("TestEngine");
+  let wikiEngine = SearchService.getEngineByName("TestEngine");
 
   // Make sure that wikiUrl will pass getTopHostOverThreshold.
   await PlacesUtils.bookmarks.insert({

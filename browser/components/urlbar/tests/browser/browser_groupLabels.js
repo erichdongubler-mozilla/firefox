@@ -165,7 +165,7 @@ add_task(async function generalBeforeSuggestions_defaultChanged() {
       Assert.ok(engine2.name, "Engine 2 name is non-empty");
       Assert.notEqual(engine1.name, engine2.name, "Engine names are different");
       Assert.equal(
-        Services.search.defaultEngine.name,
+        SearchService.defaultEngine.name,
         engine2.name,
         "Engine 2 is default"
       );
@@ -278,7 +278,7 @@ add_task(async function suggestedIndex_notFirst() {
 
 // Labels that appear multiple times but not consecutively should be shown.
 add_task(async function repeatLabels() {
-  let engineName = Services.search.defaultEngine.name;
+  let engineName = SearchService.defaultEngine.name;
   let results = [
     new UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -463,7 +463,7 @@ add_task(async function ariaLabel() {
 });
 
 add_task(async function hideRowLabel() {
-  let engineName = Services.search.defaultEngine.name;
+  let engineName = SearchService.defaultEngine.name;
   const results = [
     new UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -525,7 +525,7 @@ add_task(async function hideRowLabel() {
 });
 
 add_task(async function previousRowLabelIsHidden_then_searchResults() {
-  let engineName = Services.search.defaultEngine.name;
+  let engineName = SearchService.defaultEngine.name;
   const results = [
     new UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -715,19 +715,19 @@ async function withSuggestions(
   let engine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + engineBasename,
   });
-  let oldDefaultEngine = await Services.search.getDefault();
-  await Services.search.setDefault(
+  let oldDefaultEngine = await SearchService.getDefault();
+  await SearchService.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
   try {
     await callback(engine);
   } finally {
-    await Services.search.setDefault(
+    await SearchService.setDefault(
       oldDefaultEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
-    await Services.search.removeEngine(engine);
+    await SearchService.removeEngine(engine);
     await SpecialPowers.popPrefEnv();
   }
 }

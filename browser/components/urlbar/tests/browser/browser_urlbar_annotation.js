@@ -277,7 +277,7 @@ add_task(async function redirection() {
 });
 
 add_task(async function search() {
-  const originalDefaultEngine = await Services.search.getDefault();
+  const originalDefaultEngine = await SearchService.getDefault();
   await SearchTestUtils.installSearchExtension({
     name: "test engine",
     keyword: "@test",
@@ -374,7 +374,7 @@ add_task(async function search() {
     });
   }
 
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     originalDefaultEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );

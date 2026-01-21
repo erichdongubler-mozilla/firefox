@@ -38,7 +38,7 @@ const TEST_MERINO_SINGLE = [
 
 add_setup(async function init() {
   // Disable search suggestions so we don't hit the network.
-  await Services.search.init();
+  await SearchService.init();
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit({

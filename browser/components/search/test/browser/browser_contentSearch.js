@@ -72,7 +72,7 @@ add_task(async function test_GetEngine() {
     type: "Engine",
     data: {
       inPrivateBrowsing: false,
-      engine: await constructEngineObj(await Services.search.getDefault()),
+      engine: await constructEngineObj(await SearchService.getDefault()),
     },
   });
 });
@@ -101,7 +101,7 @@ add_task(async function badImage() {
     "contentSearchBadImage.xml"
   );
   let expectedCurrentState = await constructEngineObj(
-    await Services.search.getDefault()
+    await SearchService.getDefault()
   );
   Assert.strictEqual(
     expectedCurrentState.iconData,
@@ -116,7 +116,7 @@ add_task(async function badImage() {
   // Removing the engine triggers a final CurrentState message.  Wait for it so
   // it doesn't trip up subsequent tests.
   let statePromise = await waitForTestMsg(browser, "CurrentEngine");
-  await Services.search.removeEngine(engine);
+  await SearchService.removeEngine(engine);
   await statePromise.donePromise;
 });
 
@@ -214,7 +214,7 @@ async function waitForNewEngineAsDefault(browser, basename) {
   let engine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + basename,
   });
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -235,12 +235,12 @@ async function addTab() {
 var currentStateObj = async function (hiddenEngine = "") {
   let state = {
     engines: [],
-    currentEngine: await constructEngineObj(await Services.search.getDefault()),
+    currentEngine: await constructEngineObj(await SearchService.getDefault()),
     currentPrivateEngine: await constructEngineObj(
-      await Services.search.getDefaultPrivate()
+      await SearchService.getDefaultPrivate()
     ),
   };
-  for (let engine of await Services.search.getVisibleEngines()) {
+  for (let engine of await SearchService.getVisibleEngines()) {
     let uri = await engine.getIconURL(16);
     state.engines.push({
       name: engine.name,

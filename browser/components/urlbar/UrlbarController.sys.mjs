@@ -16,6 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Interactions: "moz-src:///browser/components/places/Interactions.sys.mjs",
   ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderSemanticHistorySearch:
     "moz-src:///browser/components/urlbar/UrlbarProviderSemanticHistorySearch.sys.mjs",
@@ -569,7 +570,7 @@ export class UrlbarController {
                 context.sapName == "searchbar") &&
               lazy.UrlbarPrefs.get("browser.search.suggest.enabled")
             ) {
-              let engine = Services.search.getEngineByName(
+              let engine = lazy.SearchService.getEngineByName(
                 result.payload.engine
               );
               lazy.UrlbarUtils.setupSpeculativeConnection(
@@ -1139,7 +1140,8 @@ class TelemetryEvent {
       .filter(v => v)
       .join(",");
     let available_semantic_sources = this.#getAvailableSemanticSources().join();
-    const search_engine_default_id = Services.search.defaultEngine.telemetryId;
+    const search_engine_default_id =
+      lazy.SearchService.defaultEngine.telemetryId;
 
     switch (method) {
       case "engagement": {

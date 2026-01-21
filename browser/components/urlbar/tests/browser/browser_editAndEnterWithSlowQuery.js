@@ -21,7 +21,7 @@ add_setup(async function setup() {
     },
     { setAsDefault: true }
   );
-  await Services.search.moveEngine(suggestionsEngine, 0);
+  await SearchService.moveEngine(suggestionsEngine, 0);
 
   registerCleanupFunction(async () => {
     ProvidersManager.chunkResultsDelayMs = ORIGINAL_CHUNK_RESULTS_DELAY;
@@ -383,7 +383,7 @@ add_task(async function test_heuristic() {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         heuristic: true,
         payload: {
-          engine: Services.search.defaultEngine.name,
+          engine: SearchService.defaultEngine.name,
           query: "heuristic_search",
         },
       }),

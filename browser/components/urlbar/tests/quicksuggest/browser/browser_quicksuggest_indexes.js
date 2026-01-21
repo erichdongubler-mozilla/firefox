@@ -426,19 +426,19 @@ async function withSuggestions(callback, enableSuggestions = true) {
   let engine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME,
   });
-  let oldDefaultEngine = await Services.search.getDefault();
-  await Services.search.setDefault(
+  let oldDefaultEngine = await SearchService.getDefault();
+  await SearchService.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
   try {
     await callback(engine);
   } finally {
-    await Services.search.setDefault(
+    await SearchService.setDefault(
       oldDefaultEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
-    await Services.search.removeEngine(engine);
+    await SearchService.removeEngine(engine);
     await SpecialPowers.popPrefEnv();
   }
 }
