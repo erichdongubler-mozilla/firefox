@@ -11552,10 +11552,7 @@ PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
       for (const auto& kv : *anchorPosReferenceData) {
         const auto& data = kv.GetData();
         const auto& anchorKey = kv.GetKey();
-        // TODO: Anchor tree scope should be a part of the key,
-        // default value here is just a workaround.
-        const auto* anchor =
-            GetAnchor({anchorKey, StyleCascadeLevel::Default()}, positioned);
+        const auto* anchor = GetAnchor(anchorKey, positioned);
         if (NeedReflowForAnchorPos(anchor, positioned, data)) {
           shouldReflow = true;
           break;

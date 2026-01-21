@@ -96,12 +96,12 @@ class nsDisplayListBuilder;
 class OverflowChangedTracker;
 class PresShellWidgetListener;
 class ProfileChunkedBuffer;
+class ScopedNameRef;
 class ScrollContainerFrame;
 class StyleSheet;
 
 struct AutoConnectedAncestorTracker;
 struct PointerInfo;
-struct ScopedNameRef;
 
 #ifdef ACCESSIBILITY
 namespace a11y {

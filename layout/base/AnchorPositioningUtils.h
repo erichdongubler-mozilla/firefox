@@ -9,6 +9,7 @@
 
 #include "WritingModes.h"
 #include "mozilla/Maybe.h"
+#include "nsHashKeys.h"
 #include "nsRect.h"
 #include "nsTHashMap.h"
 
@@ -65,8 +66,45 @@ struct AnchorPosOffsetData {
   DistanceToNearestScrollContainer mDistanceToNearestScrollContainer;
 };
 
-struct ScopedNameRef {
-  const nsAtom* mName;
+class ScopedNameRef {
+ public:
+  ScopedNameRef(const nsAtom* aAtom, const StyleCascadeLevel& aTreeScope)
+      : mName(aAtom), mTreeScope(aTreeScope) {}
+
+  const nsAtom* mName = nullptr;
+  StyleCascadeLevel mTreeScope = StyleCascadeLevel::Default();
+};
+
+class nsScopedNameRefHashKey : public PLDHashEntryHdr {
+ public:
+  using KeyType = ScopedNameRef;
+  using KeyTypePointer = const ScopedNameRef*;
+
+  explicit nsScopedNameRefHashKey(const ScopedNameRef* aKey)
+      : mAtom(aKey->mName), mTreeScope(aKey->mTreeScope) {
+    MOZ_ASSERT(aKey);
+    MOZ_ASSERT(aKey->mName);
+  }
+  nsScopedNameRefHashKey(const nsScopedNameRefHashKey& aOther) = delete;
+  nsScopedNameRefHashKey(nsScopedNameRefHashKey&& aOther) = default;
+  ~nsScopedNameRefHashKey() = default;
+
+  KeyType GetKey() const { return ScopedNameRef(mAtom, mTreeScope); }
+  bool KeyEquals(KeyTypePointer aKey) const {
+    // This should work because a positioned element can't make two references
+    // with the same name in different tree scopes. Further scope resolution is
+    // hard to do here because the map does not have all the context.
+    return aKey->mName == mAtom.get();
+  }
+
+  static KeyTypePointer KeyToPointer(const KeyType& aKey) { return &aKey; }
+  static PLDHashNumber HashKey(KeyTypePointer aKey) {
+    return MOZ_LIKELY(aKey && aKey->mName) ? aKey->mName->hash() : 0;
+  }
+  enum { ALLOW_MEMMOVE = true };
+
+ private:
+  RefPtr<const nsAtom> mAtom;
   StyleCascadeLevel mTreeScope;
 };
 
@@ -91,7 +129,9 @@ struct AnchorPosResolutionData {
 class AnchorPosReferenceData {
  private:
   using ResolutionMap =
-      nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>;
+      nsBaseHashtable<nsScopedNameRefHashKey,
+                      mozilla::Maybe<AnchorPosResolutionData>,
+                      mozilla::Maybe<AnchorPosResolutionData>>;
 
  public:
   // Backup data for attempting a different `@position-try` style, when
@@ -258,8 +298,6 @@ struct AnchorPosResolutionCache {
 enum class StylePositionTryFallbacksTryTacticKeyword : uint8_t;
 using StylePositionTryFallbacksTryTactic =
     CopyableTArray<StylePositionTryFallbacksTryTacticKeyword>;
-
-struct ScopedNameRef;
 
 /**
  * AnchorPositioningUtils is a namespace class used for various anchor
