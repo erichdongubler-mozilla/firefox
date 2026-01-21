@@ -131,6 +131,12 @@ def _set_priority(command_context, priority, verbose):
     type=str,
     help="idle/less/normal/more/high. (Default idle)",
 )
+@CommandArgument(
+    "--show-all-warnings",
+    default=False,
+    action="store_true",
+    help="Show all warnings including third-party and suppressed warnings.",
+)
 def build(
     command_context,
     what=None,
@@ -140,6 +146,7 @@ def build(
     verbose=False,
     keep_going=False,
     priority="idle",
+    show_all_warnings=None,
 ):
     """Build the source tree.
 
@@ -177,7 +184,13 @@ def build(
 
     from mach.logging import THIRD_PARTY_WARNING
 
-    if command_context.log_manager.terminal_handler.level > THIRD_PARTY_WARNING:
+    if show_all_warnings:
+        command_context.log_manager.terminal_handler.setLevel(THIRD_PARTY_WARNING)
+
+    if (
+        command_context.log_manager.terminal_handler.level > THIRD_PARTY_WARNING
+        and not is_running_under_coding_agent()
+    ):
         warnings_path = os.path.join(
             command_context.topobjdir, ".mozbuild", "logs", "build", "warnings_*.json"
         )
@@ -186,7 +199,7 @@ def build(
             "build",
             {},
             "Warnings in third-party code are being suppressed from the terminal output. "
-            "Use --verbose to see them.",
+            "Use --show-all-warnings or --verbose to see them.",
         )
         command_context.log(
             logging.WARNING,
