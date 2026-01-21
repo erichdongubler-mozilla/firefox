@@ -168,8 +168,11 @@ def build(
     if is_running_under_coding_agent():
         if command_context.log_manager.terminal_handler:
             command_context.log_manager.terminal_handler.setLevel(logging.WARNING)
-        log_path = command_context._get_state_filename("last_log.json")
-        print(f"Running in quiet mode. Full build output: {log_path}\n", flush=True)
+        if command_context.log_file_path:
+            print(
+                f"Running in quiet mode. Full build output: {command_context.log_file_path}\n",
+                flush=True,
+            )
 
     loader = MozconfigLoader(command_context.topsrcdir)
     mozconfig = loader.read_mozconfig(loader.AUTODETECT)
@@ -321,7 +324,9 @@ def resource_usage(command_context, address=None, port=None, browser=None, url=N
     if url:
         server.add_resource_json_url("profile", url)
     else:
-        profile = command_context._get_state_filename("profile_build_resources.json")
+        profile = command_context._get_build_log_filename(
+            "profile_build_resources.json"
+        )
         if not os.path.exists(profile):
             command_context.log(
                 logging.WARNING,

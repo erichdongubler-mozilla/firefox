@@ -372,7 +372,8 @@ class BuildMonitor(MozbuildObject):
                     os.environ["UPLOAD_PATH"], "profile_build_resources.json"
                 )
             else:
-                build_resources_profile_path = self._get_state_filename(
+                self._ensure_build_log_dir_exists()
+                build_resources_profile_path = self._get_build_log_filename(
                     "profile_build_resources.json"
                 )
             with open(
@@ -1159,7 +1160,8 @@ class BuildDriver(MozbuildObject):
         mach_context=None,
         append_env=None,
     ):
-        warnings_path = self._get_state_filename("warnings.json")
+        self._ensure_build_log_dir_exists()
+        warnings_path = self._get_build_log_filename("warnings.json")
         monitor = self._spawn(BuildMonitor)
         monitor.init(warnings_path, self.log_manager.terminal, metrics)
         status = self._build(

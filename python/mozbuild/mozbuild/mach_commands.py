@@ -639,8 +639,26 @@ def show_log(command_context, log_file=None):
     (https://man7.org/linux/man-pages/man1/less.1.html)
     """
     if not log_file:
-        path = command_context._get_state_filename("last_log.json")
-        log_file = open(path, "rb")
+        latest_file = Path(command_context._get_state_filename("latest-command"))
+        if not latest_file.exists():
+            command_context.log(
+                logging.WARNING,
+                "show_log",
+                {},
+                "Could not locate latest log file. You may need to run a command first.",
+            )
+            return
+        command_name = latest_file.read_text().strip()
+        subdir = f"logs/{command_name}"
+        log_path = Path(
+            command_context._get_state_filename("last_log.json", subdir=subdir)
+        )
+        if not log_path.exists():
+            command_context.log(
+                logging.WARNING, "show_log", {}, f"Log file not found: {log_path}"
+            )
+            return
+        log_file = log_path.open("rb")
 
     if os.isatty(sys.stdout.fileno()):
         env = dict(os.environ)
@@ -731,7 +749,7 @@ def handle_log_file(command_context, log_file):
 
 
 def database_path(command_context):
-    return command_context._get_state_filename("warnings.json")
+    return command_context._get_build_log_filename("warnings.json")
 
 
 def get_warnings_database(command_context):
