@@ -228,7 +228,7 @@ export const tokensTable = {
           default: "light-dark(var(--color-gray-20), var(--color-gray-80))",
         },
         platform: {
-          default: "color-mix(in srgb, currentColor 20%, transparent)",
+          default: "color-mix(in srgb, currentColor 6%, transparent)",
         },
       },
       name: "--background-color-box-info",
@@ -1211,7 +1211,7 @@ export const variableLookupTable = {
       dark: "var(--color-gray-80)",
       default: "light-dark(var(--color-gray-20), var(--color-gray-80))",
     },
-    platform: { default: "color-mix(in srgb, currentColor 20%, transparent)" },
+    platform: { default: "color-mix(in srgb, currentColor 6%, transparent)" },
   },
   "background-color-canvas": {
     prefersContrast: "Canvas",

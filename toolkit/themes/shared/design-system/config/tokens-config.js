@@ -26,6 +26,7 @@ const TOKEN_SECTIONS = {
   Page: "page",
   Size: "size",
   Space: "space",
+  Table: "table",
   Text: "text",
   Unspecified: "",
 };
