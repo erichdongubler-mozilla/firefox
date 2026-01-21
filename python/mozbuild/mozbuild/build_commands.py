@@ -183,12 +183,27 @@ def build(
 
     # For coding agents, automatically enable quiet mode
     if is_running_under_coding_agent():
-        if command_context.log_manager.terminal_handler:
-            command_context.log_manager.terminal_handler.setLevel(logging.WARNING)
+        command_context.log(
+            logging.WARNING,
+            "build",
+            {},
+            "AI agent detected. Terminal output limited to warnings and errors.",
+        )
+        quiet = True
+
         if command_context.log_file_path:
-            print(
-                f"Running in quiet mode. Full build output: {command_context.log_file_path}\n",
-                flush=True,
+            command_context.log(
+                logging.WARNING,
+                "build",
+                {"logfile": command_context.log_file_path},
+                "Full output: {logfile}",
+            )
+        else:
+            command_context.log(
+                logging.WARNING,
+                "build",
+                {},
+                "Log file could not be created.",
             )
 
     from mach.logging import THIRD_PARTY_WARNING
