@@ -19,12 +19,20 @@ from packaging.version import Version
 
 IS_WINDOWS = sys.platform.startswith("win")
 
+# Custom log levels for 'weaker' warnings, between DEBUG (10) and INFO (20)
+# to make them suppressed by default.
+THIRD_PARTY_WARNING = 15
+SUPPRESSED_WARNING = 16
+assert logging.DEBUG < THIRD_PARTY_WARNING < SUPPRESSED_WARNING < logging.INFO
+
 # Custom log level for build errors, between WARNING (30) and ERROR (40).
 # Using ERROR would trigger Sentry's LoggingIntegration for each line, which
 # generates excessive telemetry events and is very slow (~400ms per line).
 BUILD_ERROR = 35
 assert logging.WARNING < BUILD_ERROR < logging.ERROR
 
+logging.addLevelName(THIRD_PARTY_WARNING, "THIRD_PARTY_WARNING")
+logging.addLevelName(SUPPRESSED_WARNING, "SUPPRESSED_WARNING")
 logging.addLevelName(BUILD_ERROR, "BUILD_ERROR")
 
 if IS_WINDOWS:
@@ -86,6 +94,8 @@ def format_level(level, terminal=None):
     levels = {
         logging.NOTSET: ("N", "bright_white"),
         logging.DEBUG: ("D", "blue"),
+        THIRD_PARTY_WARNING: ("TPW", "yellow"),
+        SUPPRESSED_WARNING: ("SW", "yellow"),
         logging.INFO: (None, None),
         logging.WARNING: ("W", "yellow"),
         BUILD_ERROR: ("E", "red"),
