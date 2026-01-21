@@ -737,9 +737,6 @@ If the loaded document exposes a ``window.setPanel(ToolPanel)`` function, the si
   * - ``{tabId}-selected``
     - Tab has been selected and is visible
 
-  * - ``{tabId}-unselected``
-    - Tab has been unselected and is not visible
-
   * - ``show``
     - The sidebar has been opened.
 

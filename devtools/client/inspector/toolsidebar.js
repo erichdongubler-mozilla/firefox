@@ -210,10 +210,6 @@ class ToolSidebar extends EventEmitter {
     }
 
     const previousTool = this.#currentTool;
-    if (previousTool) {
-      this.emit(previousTool + "-unselected");
-    }
-
     this.#currentTool = id;
 
     this.updateTelemetryOnChange(id, previousTool);
