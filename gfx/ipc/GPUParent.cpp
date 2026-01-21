@@ -390,7 +390,6 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   SkInitCairoFT(false);
 
   if (gfxVars::UseAHardwareBufferSharedSurfaceWebglOop()) {
-    layers::AndroidHardwareBufferApi::Init();
     layers::AndroidHardwareBufferManager::Init();
   }
 

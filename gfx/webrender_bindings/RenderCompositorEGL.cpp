@@ -131,7 +131,7 @@ RenderedFrameId RenderCompositorEGL::EndFrame(
   const auto& egl = gle->mEgl;
 
   EGLSync sync = nullptr;
-  if (layers::AndroidHardwareBufferApi::Get()) {
+  if (layers::AndroidHardwareBufferManager::Get()) {
     sync = egl->fCreateSync(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
   }
   if (sync) {
@@ -265,7 +265,7 @@ void RenderCompositorEGL::DestroyEGLSurface() {
 
 RefPtr<layers::Fence> RenderCompositorEGL::GetAndResetReleaseFence() {
 #ifdef MOZ_WIDGET_ANDROID
-  MOZ_ASSERT(!layers::AndroidHardwareBufferApi::Get() || mReleaseFence);
+  MOZ_ASSERT(!layers::AndroidHardwareBufferManager::Get() || mReleaseFence);
   return mReleaseFence.forget();
 #else
   return nullptr;
