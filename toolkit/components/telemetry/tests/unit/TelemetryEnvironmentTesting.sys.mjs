@@ -159,9 +159,16 @@ export var TelemetryEnvironmentTesting = {
 
     // Spoof the preferences.
     for (let pref in prefsToSpoof) {
-      Services.prefs
-        .getDefaultBranch(null)
-        .setStringPref(pref, prefsToSpoof[pref]);
+      // distribution.id must use setCharPref to match distribution.sys.mjs
+      if (pref === "distribution.id") {
+        Services.prefs
+          .getDefaultBranch(null)
+          .setCharPref(pref, prefsToSpoof[pref]);
+      } else {
+        Services.prefs
+          .getDefaultBranch(null)
+          .setStringPref(pref, prefsToSpoof[pref]);
+      }
     }
   },
 
