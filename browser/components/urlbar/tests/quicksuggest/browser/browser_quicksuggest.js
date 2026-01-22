@@ -79,7 +79,6 @@ add_task(async function sponsored() {
     window,
     index: 1,
     isSponsored: true,
-    isManageable: true,
     url: "https://example.com/amp",
   });
   let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
@@ -126,7 +125,6 @@ add_task(async function sponsoredPriority() {
     index: 1,
     isSponsored: true,
     isBestMatch: true,
-    isManageable: true,
     url: "https://example.com/amp",
   });
 
@@ -201,7 +199,6 @@ add_task(async function ampTopPickCharThreshold_meetsThreshold() {
     index: 1,
     isSponsored: true,
     isBestMatch: true,
-    isManageable: true,
     hasSponsoredLabel: false,
     url: "https://example.com/amp",
   });
@@ -240,7 +237,6 @@ add_task(async function ampTopPickCharThreshold_belowThreshold() {
     window,
     index: 1,
     isSponsored: true,
-    isManageable: true,
     url: "https://example.com/amp",
   });
 
