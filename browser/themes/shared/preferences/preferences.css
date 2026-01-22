@@ -178,13 +178,19 @@ radio {
   margin: 4px 0;
 }
 
-.spotlight {
+.spotlight:not(setting-group:has(> moz-card)) {
   background-color: color-mix(in srgb, var(--color-accent-primary) 15%, transparent);
   outline: var(--border-color-selected) 1px dotted;
   animation: fade-out 0.5s ease-out 2s forwards;
   /* Show the border to spotlight the components in high-contrast mode. */
   border: 1px solid transparent;
   border-radius: var(--border-radius-xsmall);
+}
+
+setting-group:has(> moz-card).spotlight {
+  outline: 2px solid var(--border-color-selected);
+  border-radius: var(--border-radius-medium);
+  animation: fade-out 0.5s ease-out 2s forwards;
 }
 
 @keyframes fade-out {
@@ -194,7 +200,7 @@ radio {
   }
 }
 
-[data-subcategory] {
+[data-subcategory]:not(setting-group:has(> moz-card)) {
   margin-inline: -4px;
   padding-inline: 4px;
 }
