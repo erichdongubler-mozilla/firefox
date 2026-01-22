@@ -244,9 +244,10 @@ class TrustPanel {
         .addEventListener("click", event => this.#openBlockerSubview(event));
       document
         .getElementById("trustpanel-privacy-link")
-        .addEventListener("click", () =>
-          window.openTrustedLinkIn("about:preferences#privacy", "tab")
-        );
+        .addEventListener("click", () => {
+          this.#hidePopup();
+          window.openTrustedLinkIn("about:preferences#privacy", "tab");
+        });
       document
         .getElementById("trustpanel-clear-cookies-button")
         .addEventListener("click", event =>
