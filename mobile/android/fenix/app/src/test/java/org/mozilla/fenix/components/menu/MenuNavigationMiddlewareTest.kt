@@ -54,7 +54,6 @@ import org.mozilla.fenix.components.menu.store.BrowserMenuState
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
-import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.SupportUtils.AMO_HOMEPAGE_FOR_ANDROID
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.webcompat.WEB_COMPAT_REPORTER_URL
@@ -236,20 +235,6 @@ class MenuNavigationMiddlewareTest {
                 null,
             )
         }
-    }
-
-    @Test
-    fun `WHEN navigate to release notes action is dispatched THEN navigate to SUMO topic`() = runTest {
-        var params: BrowserNavigationParams? = null
-        val store = createStore(
-            openToBrowser = {
-                params = it
-            },
-        )
-
-        store.dispatch(MenuAction.Navigate.ReleaseNotes)
-
-        assertEquals(SupportUtils.WHATS_NEW_URL, params?.url)
     }
 
     @Test

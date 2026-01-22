@@ -344,8 +344,7 @@ events:
     extra_keys:
         source:
           description: |
-            The view the user was on when they tapped on "what's new" page button (For example:
-            `HOME`, `ABOUT` or `MENU`)
+            The view the user was on when they tapped on "what's new" page button (For example: `ABOUT`)
           type: string
     bugs:
       - https://github.com/mozilla-mobile/fenix/issues/5021

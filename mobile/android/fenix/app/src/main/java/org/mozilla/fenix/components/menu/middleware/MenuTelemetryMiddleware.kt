@@ -110,12 +110,6 @@ class MenuTelemetryMiddleware(
                 ),
             )
 
-            MenuAction.Navigate.ReleaseNotes -> Events.whatsNewTapped.record(
-                Events.WhatsNewTappedExtra(
-                    source = "MENU",
-                ),
-            )
-
             MenuAction.Navigate.Settings -> {
                 when (accessPoint) {
                     MenuAccessPoint.Browser -> Events.browserMenuAction.record(

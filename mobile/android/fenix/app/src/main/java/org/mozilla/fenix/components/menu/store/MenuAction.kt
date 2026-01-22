@@ -228,11 +228,6 @@ sealed class MenuAction : Action {
         data object Passwords : Navigate()
 
         /**
-         * [Navigate] action dispatched when navigating to release notes.
-         */
-        data object ReleaseNotes : Navigate()
-
-        /**
          * [Navigate] action dispatched when navigating to edit the existing bookmark.
          */
         data object EditBookmark : Navigate()

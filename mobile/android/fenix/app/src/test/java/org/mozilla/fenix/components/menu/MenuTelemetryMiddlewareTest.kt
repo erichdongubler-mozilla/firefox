@@ -164,20 +164,6 @@ class MenuTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `WHEN navigating to the release notes page from home page menu THEN record the whats new interaction telemetry`() {
-        val store = createStore()
-        assertNull(Events.whatsNewTapped.testGetValue())
-
-        store.dispatch(MenuAction.Navigate.ReleaseNotes)
-
-        assertNotNull(Events.whatsNewTapped.testGetValue())
-        val snapshot = Events.whatsNewTapped.testGetValue()!!
-
-        assertEquals(1, snapshot.size)
-        assertEquals("MENU", snapshot.single().extra?.getValue("source"))
-    }
-
-    @Test
     fun `WHEN navigating to the save to collection sheet THEN record the share browser menu telemetry`() {
         val store = createStore()
         assertNull(Events.browserMenuAction.testGetValue())
