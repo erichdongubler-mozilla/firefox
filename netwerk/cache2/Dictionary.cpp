@@ -1084,7 +1084,7 @@ void DictionaryCache::RemoveDictionariesForOrigin(nsIURI* aURI) {
   // We can't just use Remove here; the ClearSiteData service strips the
   // port.  We need to clear all that match the host with any port or none.
 
-  // Keep an array of origins to clear since tht will want to modify the
+  // Keep an array of origins to clear since that will want to modify the
   // hash table we're iterating
   AutoTArray<RefPtr<DictionaryOrigin>, 1> toClear;
   for (auto& entry : cache->mDictionaryCache) {
@@ -1129,9 +1129,34 @@ void DictionaryCache::RemoveAllDictionaries() {
   RefPtr<DictionaryCache> cache = GetInstance();
 
   DICTIONARY_LOG(("Removing all dictionaries"));
+  // Clear contents of all origins without calling DictionaryOrigin::Clear()
+  // which would try to modify the hashtable during iteration (causing
+  // reentrancy assertion in PLDHashTable).
+  // Note: This duplicates logic from DictionaryOrigin::Clear() but avoids
+  // the RemoveOrigin() call during iteration. For selective removal, see
+  // RemoveDictionariesForOrigin() which uses a collect-then-clear pattern.
+  AutoTArray<nsCOMPtr<nsICacheEntry>, 8> entriesToDoom;
   for (auto& origin : cache->mDictionaryCache) {
-    origin.GetData()->Clear();
+    DictionaryOrigin* originPtr = origin.GetData();
+    DICTIONARY_LOG(("*** Clearing origin %s", originPtr->mOrigin.get()));
+    originPtr->mEntries.Clear();
+    originPtr->mPendingEntries.Clear();
+    originPtr->mPendingRemove.Clear();
+    if (originPtr->mEntry) {
+      entriesToDoom.AppendElement(originPtr->mEntry);
+    }
   }
+  // Doom all cache entries asynchronously in one task
+  if (!entriesToDoom.IsEmpty()) {
+    NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+        "DictionaryOrigin::ClearAll", [entries = std::move(entriesToDoom)]() {
+          DICTIONARY_LOG(("*** Dooming %zu entries", entries.Length()));
+          for (auto& entry : entries) {
+            entry->AsyncDoom(nullptr);
+          }
+        }));
+  }
+  // Now clear the hashtable after iteration is complete
   cache->mDictionaryCache.Clear();
 }
 
