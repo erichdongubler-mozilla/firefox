@@ -25,7 +25,7 @@ import org.mozilla.fenix.compose.InfoCard
 import org.mozilla.fenix.compose.InfoType
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
-import org.mozilla.fenix.compose.SwitchWithLabel
+import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.compose.settings.SettingsSectionHeader
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -134,8 +134,6 @@ fun AddonPermissionsScreen(
                     // Hide <all_urls> permission and use the all_urls toggle instead
                     if (!optionalPermission.permission.isAllURLsPermission()) {
                         OptionalPermissionSwitch(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp, vertical = 6.dp),
                             localizedPermission = optionalPermission,
                             type = OptionalPermissionType.PERMISSION,
                             addOptionalPermission = onAddOptionalPermissions,
@@ -155,7 +153,6 @@ fun AddonPermissionsScreen(
                     // Also hide permissions that match all_urls because they are replaced by the all_urls toggle.
                     if (!originPermission.permission.isAllURLsPermission()) {
                         OptionalPermissionSwitch(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                             localizedPermission = originPermission,
                             type = OptionalPermissionType.ORIGIN,
                             isEnabled = !isAllSitesEnabled,
@@ -202,7 +199,6 @@ fun AddonPermissionsScreen(
                     key = { it.localizedName },
                 ) { optionalPermission ->
                     OptionalPermissionSwitch(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                         localizedPermission = optionalPermission,
                         type = OptionalPermissionType.DATA_COLLECTION,
                         addOptionalPermission = onAddOptionalPermissions,
@@ -252,12 +248,13 @@ private fun AllSitesToggle(
     onAddAllSitesPermissions: () -> Unit,
     onRemoveAllSitesPermissions: () -> Unit,
 ) {
-    SwitchWithLabel(
+    SwitchListItem(
         label = stringResource(R.string.addons_permissions_allow_for_all_sites),
         checked = enabledAllowForAll,
-        modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+        maxLabelLines = Int.MAX_VALUE,
         description = stringResource(R.string.addons_permissions_allow_for_all_sites_subtitle),
+        maxDescriptionLines = Int.MAX_VALUE,
+        showSwitchAfter = true,
     ) { enabled ->
         if (enabled) {
             onAddAllSitesPermissions()
@@ -312,18 +309,17 @@ enum class OptionalPermissionType {
 
 @Composable
 private fun OptionalPermissionSwitch(
-    modifier: Modifier,
     localizedPermission: Addon.LocalizedPermission,
     type: OptionalPermissionType,
     isEnabled: Boolean = true,
     addOptionalPermission: (AddonPermissionsUpdateRequest) -> Unit,
     removeOptionalPermission: (AddonPermissionsUpdateRequest) -> Unit,
 ) {
-    SwitchWithLabel(
+    SwitchListItem(
         label = localizedPermission.localizedName,
         checked = localizedPermission.permission.granted,
-        modifier = modifier,
         enabled = isEnabled,
+        showSwitchAfter = true,
     ) { enabled ->
         val request = AddonPermissionsUpdateRequest(
             optionalPermissions = when (type) {
