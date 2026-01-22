@@ -249,10 +249,13 @@ nsresult DictionaryCacheEntry::Prefetch(
     // will synchronously make a callback to OnCacheEntryAvailable() with
     // nullptr.  We can key off that to fail Prefetch(), and also to
     // remove ourselves from the origin.
+    // Use OPEN_ALWAYS to ensure we don't get stalled if this is for some
+    // reason a revalidation
     if (NS_FAILED(cacheStorage->AsyncOpenURIString(
             mURI, ""_ns,
             nsICacheStorage::OPEN_READONLY |
                 nsICacheStorage::OPEN_COMPLETE_ONLY |
+                nsICacheStorage::OPEN_ALWAYS |
                 nsICacheStorage::CHECK_MULTITHREADED,
             this)) ||
         mNotCached) {
