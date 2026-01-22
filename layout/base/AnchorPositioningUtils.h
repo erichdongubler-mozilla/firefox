@@ -65,6 +65,11 @@ struct AnchorPosOffsetData {
   DistanceToNearestScrollContainer mDistanceToNearestScrollContainer;
 };
 
+struct ScopedNameRef {
+  const nsAtom* mName;
+  StyleCascadeLevel mTreeScope;
+};
+
 // Resolved anchor positioning data.
 struct AnchorPosResolutionData {
   // Size of the referenced anchor.
@@ -72,6 +77,7 @@ struct AnchorPosResolutionData {
   // Offset resolution data. Nothing if the anchor did not resolve, or if the
   // anchor was only referred to by its size.
   Maybe<AnchorPosOffsetData> mOffsetData;
+  StyleCascadeLevel mAnchorTreeScope;
 };
 
 // Data required for an anchor positioned frame, including:
@@ -112,8 +118,8 @@ class AnchorPosReferenceData {
     Value* mEntry;
   };
 
-  Result InsertOrModify(const nsAtom* aAnchorName, bool aNeedOffset);
-  const Value* Lookup(const nsAtom* aAnchorName) const;
+  Result InsertOrModify(const ScopedNameRef& aKey, bool aNeedOffset);
+  const Value* Lookup(const ScopedNameRef& aKey) const;
 
   bool IsEmpty() const { return mMap.IsEmpty(); }
 
@@ -181,6 +187,8 @@ class AnchorPosReferenceData {
   // Resolved insets for this positioned element. Modifies the adjusted &
   // scrolled containing block.
   nsMargin mInsets;
+
+  StyleCascadeLevel mAnchorTreeScope = StyleCascadeLevel::Default();
 
  private:
   ResolutionMap mMap;
@@ -251,6 +259,8 @@ enum class StylePositionTryFallbacksTryTacticKeyword : uint8_t;
 using StylePositionTryFallbacksTryTactic =
     CopyableTArray<StylePositionTryFallbacksTryTacticKeyword>;
 
+struct ScopedNameRef;
+
 /**
  * AnchorPositioningUtils is a namespace class used for various anchor
  * positioning helper functions that are useful in multiple places.
@@ -263,7 +273,7 @@ struct AnchorPositioningUtils {
    * following https://drafts.csswg.org/css-anchor-position-1/#target
    */
   static nsIFrame* FindFirstAcceptableAnchor(
-      const nsAtom* aName, const nsIFrame* aPositionedFrame,
+      const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
       const nsTArray<nsIFrame*>& aPossibleAnchorFrames);
 
   static Maybe<nsRect> GetAnchorPosRect(
@@ -272,12 +282,11 @@ struct AnchorPositioningUtils {
 
   static Maybe<AnchorPosInfo> ResolveAnchorPosRect(
       const nsIFrame* aPositioned, const nsIFrame* aAbsoluteContainingBlock,
-      const nsAtom* aAnchorName, StyleCascadeLevel aAnchorTreeScope,
-      bool aCBRectIsvalid, AnchorPosResolutionCache* aResolutionCache);
+      const ScopedNameRef& aAnchorName, bool aCBRectIsvalid,
+      AnchorPosResolutionCache* aResolutionCache);
 
   static Maybe<nsSize> ResolveAnchorPosSize(
-      const nsIFrame* aPositioned, const nsAtom* aAnchorName,
-      StyleCascadeLevel aAnchorTreeScope,
+      const nsIFrame* aPositioned, const ScopedNameRef& aAnchorName,
       AnchorPosResolutionCache* aResolutionCache);
 
   /**
@@ -301,8 +310,8 @@ struct AnchorPositioningUtils {
    * Otherwise it will return `nsGkAtoms::AnchorPosImplicitAnchor` if the
    * element has an implicit anchor, or a nullptr.
    */
-  static const nsAtom* GetUsedAnchorName(const nsIFrame* aPositioned,
-                                         const nsAtom* aAnchorName);
+  static Maybe<ScopedNameRef> GetUsedAnchorName(
+      const nsIFrame* aPositioned, const ScopedNameRef& aAnchorName);
 
   /**
    * Get the implicit anchor of the frame.

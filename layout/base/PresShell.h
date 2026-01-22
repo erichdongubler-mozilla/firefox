@@ -101,6 +101,7 @@ class StyleSheet;
 
 struct AutoConnectedAncestorTracker;
 struct PointerInfo;
+struct ScopedNameRef;
 
 #ifdef ACCESSIBILITY
 namespace a11y {
@@ -763,7 +764,7 @@ class PresShell final : public nsStubDocumentObserver,
   nsIFrame* GetAbsoluteContainingBlock(nsIFrame* aFrame);
 
   // https://drafts.csswg.org/css-anchor-position-1/#target
-  nsIFrame* GetAnchorPosAnchor(const nsAtom* aName,
+  nsIFrame* GetAnchorPosAnchor(const ScopedNameRef& aName,
                                const nsIFrame* aPositionedFrame) const;
   void AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
   void RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);

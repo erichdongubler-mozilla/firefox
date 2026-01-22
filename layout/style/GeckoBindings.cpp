@@ -1916,8 +1916,8 @@ bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
   const auto* containingBlock = positioned->GetParent();
   auto* cache = aParams->mBaseParams.mCache;
   const auto info = AnchorPositioningUtils::ResolveAnchorPosRect(
-      positioned, containingBlock, aAnchorName, *aTreeScope, !aParams->mCBSize,
-      cache);
+      positioned, containingBlock, {aAnchorName, *aTreeScope},
+      !aParams->mCBSize, cache);
   if (!info) {
     return false;
   }
@@ -2047,7 +2047,7 @@ bool Gecko_GetAnchorPosSize(const AnchorPosResolutionParams* aParams,
   }
   const auto* positioned = aParams->mFrame;
   const auto size = AnchorPositioningUtils::ResolveAnchorPosSize(
-      positioned, aAnchorName, *aTreeScope, aParams->mCache);
+      positioned, {aAnchorName, *aTreeScope}, aParams->mCache);
   if (!size) {
     return false;
   }
