@@ -10,6 +10,7 @@ use crate::render_task_graph::{RenderTaskGraphBuilder, RenderTaskId};
 use crate::renderer::GpuBufferBuilder;
 use crate::scene::SceneProperties;
 use crate::spatial_tree::SpatialTree;
+use crate::transform::TransformPalette;
 
 #[repr(u32)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -79,6 +80,7 @@ pub struct PatternBuilderContext<'a> {
 
 pub struct PatternBuilderState<'a> {
     pub frame_gpu_data: &'a mut GpuBufferBuilder,
+    pub transforms: &'a mut TransformPalette,
     pub rg_builder: &'a mut RenderTaskGraphBuilder,
     pub clip_store: &'a mut ClipStore,
 }

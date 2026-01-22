@@ -108,6 +108,7 @@ pub fn prepare_quad(
             &pattern_ctx,
             &mut PatternBuilderState {
                 frame_gpu_data: frame_state.frame_gpu_data,
+                transforms: frame_state.transforms,
                 rg_builder: frame_state.rg_builder,
                 clip_store: frame_state.clip_store,
             },
@@ -193,6 +194,7 @@ pub fn prepare_repeatable_quad(
             &pattern_ctx,
             &mut PatternBuilderState {
                 frame_gpu_data: frame_state.frame_gpu_data,
+                transforms: frame_state.transforms,
                 rg_builder: frame_state.rg_builder,
                 clip_store: frame_state.clip_store,
             },
@@ -314,6 +316,7 @@ fn prepare_quad_impl(
 ) {
     let mut state = PatternBuilderState {
         frame_gpu_data: frame_state.frame_gpu_data,
+        transforms: frame_state.transforms,
         rg_builder: frame_state.rg_builder,
         clip_store: frame_state.clip_store,
     };
@@ -344,7 +347,7 @@ fn prepare_quad_impl(
         EdgeAaSegmentMask::all()
     };
 
-    let transform_id = frame_state.transforms.gpu.get_id(
+    let transform_id = state.transforms.gpu.get_id(
         prim_spatial_node_index,
         pic_context.raster_spatial_node_index,
         ctx.spatial_tree,
@@ -446,7 +449,7 @@ fn prepare_quad_impl(
             }
 
             let main_prim_address = write_prim_blocks(
-                &mut frame_state.frame_gpu_data.f32,
+                &mut state.frame_gpu_data.f32,
                 local_rect.to_untyped(),
                 clip_chain.local_clip_rect.to_untyped(),
                 pattern.base_color,
@@ -482,8 +485,8 @@ fn prepare_quad_impl(
                 needs_scissor,
                 cache_key.as_ref(),
                 frame_state.resource_cache,
-                frame_state.rg_builder,
-                &mut frame_state.frame_gpu_data.f32,
+                state.rg_builder,
+                state.frame_gpu_data,
                 &mut frame_state.surface_builder,
             );
 
@@ -737,7 +740,7 @@ fn prepare_quad_impl(
                             None,
                             frame_state.resource_cache,
                             state.rg_builder,
-                            &mut state.frame_gpu_data.f32,
+                            state.frame_gpu_data,
                             &mut frame_state.surface_builder,
                         );
 
@@ -917,7 +920,7 @@ fn prepare_quad_impl(
                             None,
                             frame_state.resource_cache,
                             state.rg_builder,
-                            &mut state.frame_gpu_data.f32,
+                            state.frame_gpu_data,
                             &mut frame_state.surface_builder,
                         );
                         scratch.quad_indirect_segments.push(QuadSegment {
@@ -1091,7 +1094,7 @@ fn add_render_task_with_mask(
     cache_key: Option<&RenderTaskCacheKey>,
     resource_cache: &mut ResourceCache,
     rg_builder: &mut RenderTaskGraphBuilder,
-    gpu_buffer: &mut GpuBufferBuilderF,
+    gpu_buffers: &mut GpuBufferBuilder,
     surface_builder: &mut SurfaceBuilder,
 ) -> RenderTaskId {
     let is_opaque = pattern.is_opaque && clips_range.count == 0;
@@ -1099,7 +1102,7 @@ fn add_render_task_with_mask(
         cache_key.cloned(),
         is_opaque,
         RenderTaskParent::Surface,
-        gpu_buffer,
+        &mut gpu_buffers.f32,
         rg_builder,
         surface_builder,
         &mut|rg_builder, _| {
