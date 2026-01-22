@@ -1,23 +1,17 @@
 // Copyright 2018-2021 the Deno authors. All rights reserved. MIT license.
 
-use crate::Error;
 use crate::error::ParserError;
 use crate::tokenizer::Token;
 use crate::tokenizer::TokenType;
-
-use serde::Deserialize;
-use serde::Serialize;
+use crate::Error;
 
 // Ref: https://wicg.github.io/urlpattern/#full-wildcard-regexp-value
 pub const FULL_WILDCARD_REGEXP_VALUE: &str = ".*";
 
 /// The regexp syntax that should be used.
-#[derive(
-  Default, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RegexSyntax {
   /// Compile regexes to rust-regex syntax. This is the default.
-  #[default]
   Rust,
   /// Compile regexes to ECMAScript syntax. This should be used with the
   /// [crate::quirks::component_regex].

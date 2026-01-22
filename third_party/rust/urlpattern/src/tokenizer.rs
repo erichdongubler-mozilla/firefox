@@ -1,10 +1,10 @@
 // Copyright 2018-2021 the Deno authors. All rights reserved. MIT license.
 
-use crate::Error;
 use crate::error::TokenizerError;
+use crate::Error;
 use icu_properties::{
-  CodePointSetDataBorrowed,
   props::{IdContinue, IdStart},
+  CodePointSetDataBorrowed,
 };
 
 // Ref: https://wicg.github.io/urlpattern/#tokens
