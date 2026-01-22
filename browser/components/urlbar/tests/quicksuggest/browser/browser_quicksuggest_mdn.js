@@ -165,11 +165,10 @@ async function doDismissTest(command) {
   let dismissalPromise = TestUtils.topicObserved(
     "quicksuggest-dismissals-changed"
   );
-  await UrlbarTestUtils.openResultMenuAndClickItem(
-    window,
-    ["[data-l10n-id=firefox-suggest-command-dont-show-mdn]", command],
-    { resultIndex, openByMouse: true }
-  );
+  await UrlbarTestUtils.openResultMenuAndClickItem(window, [command], {
+    resultIndex,
+    openByMouse: true,
+  });
   info("Awaiting dismissal promise");
   await dismissalPromise;
 

@@ -702,6 +702,10 @@ pref("browser.urlbar.suggest.addons", true);
 // Feature gate pref for MDN suggestions in the urlbar.
 pref("browser.urlbar.mdn.featureGate", false);
 
+// The minimum prefix length of a mdn keyword the user must type to trigger the
+// suggestion.
+pref("browser.urlbar.mdn.minKeywordLength", 0);
+
 // If `browser.urlbar.mdn.featureGate` is true, this controls whether
 // mdn suggestions are turned on.
 pref("browser.urlbar.suggest.mdn", true);
