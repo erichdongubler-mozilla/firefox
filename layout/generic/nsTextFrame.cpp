@@ -776,6 +776,8 @@ static void InvalidateFrameDueToGlyphsChanged(nsIFrame* aFrame) {
       // we should probably do lazily here since there could be a lot
       // of text frames affected and we'd like to coalesce the work. So that's
       // not easy to do well.
+      // TODO(emilio): If we allow text to store changes or so, this could use
+      // PostRestyleEvent(..., UpdateOverflow);
       presShell->FrameNeedsReflow(f, IntrinsicDirty::None, NS_FRAME_IS_DIRTY);
     }
   }
@@ -8424,17 +8426,19 @@ void nsTextFrame::SelectionStateChanged(uint32_t aStart, uint32_t aEnd,
 
   nsPresContext* presContext = PresContext();
   while (f && f->GetContentOffset() < int32_t(aEnd)) {
-    // We may need to reflow to recompute the overflow area for
-    // spellchecking or IME underline if their underline is thicker than
-    // the normal decoration line.
+    // We may need to reflow to recompute the overflow area for spellchecking or
+    // IME underline if their underline is thicker than the normal decoration
+    // line.
     if (ToSelectionTypeMask(aSelectionType) & kSelectionTypesWithDecorations) {
-      bool didHaveOverflowingSelection =
+      const bool didHaveOverflowingSelection =
           f->HasAnyStateBits(TEXT_SELECTION_UNDERLINE_OVERFLOWED);
-      nsRect r(nsPoint(0, 0), GetSize());
+      nsRect r(nsPoint(), GetSize());
       if (didHaveOverflowingSelection ||
           (aSelected && f->CombineSelectionUnderlineRect(presContext, r))) {
-        presContext->PresShell()->FrameNeedsReflow(
-            f, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
+        // TODO(emilio): If we allow text to store changes or so, this could use
+        // PostRestyleEvent(..., UpdateOverflow);
+        presContext->PresShell()->FrameNeedsReflow(f, IntrinsicDirty::None,
+                                                   NS_FRAME_IS_DIRTY);
       }
     }
     // Selection might change anything. Invalidate the overflow area.
