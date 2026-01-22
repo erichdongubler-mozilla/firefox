@@ -5,6 +5,7 @@
 package org.mozilla.fenix.tabstray
 
 import androidx.annotation.VisibleForTesting
+import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -30,11 +31,9 @@ import mozilla.components.feature.downloads.ui.DownloadCancelDialogFragment
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.lib.state.DelicateAction
 import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.Collections
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.TabsTray
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
@@ -177,7 +176,7 @@ interface TabsTrayController : SyncedTabsController, InactiveTabsController, Tab
 /**
  * Default implementation of [TabsTrayController].
  *
- * @param activity [HomeActivity] used to perform top-level app actions.
+ * @param activity [FragmentActivity] used to perform top-level app actions.
  * @param appStore [AppStore] used to dispatch any [AppAction].
  * @param tabsTrayStore [TabsTrayStore] used to read/update the [TabsTrayState].
  * @param browserStore [BrowserStore] used to read/update the current [BrowserState].
@@ -205,7 +204,7 @@ interface TabsTrayController : SyncedTabsController, InactiveTabsController, Tab
  */
 @Suppress("TooManyFunctions", "LongParameterList")
 class DefaultTabsTrayController(
-    private val activity: HomeActivity,
+    private val activity: FragmentActivity,
     private val appStore: AppStore,
     private val tabsTrayStore: TabsTrayStore,
     private val browserStore: BrowserStore,
@@ -559,11 +558,11 @@ class DefaultTabsTrayController(
         Events.syncedTabOpened.record(NoExtras())
 
         dismissTray()
-        activity.openToBrowserAndLoad(
+        fenixBrowserUseCases.loadUrlOrSearch(
             searchTermOrURL = tab.active().url,
             newTab = true,
-            from = BrowserDirection.FromTabsTray,
         )
+        handleNavigateToBrowser()
     }
 
     override fun handleSyncedTabClosed(deviceId: String, tab: Tab) {

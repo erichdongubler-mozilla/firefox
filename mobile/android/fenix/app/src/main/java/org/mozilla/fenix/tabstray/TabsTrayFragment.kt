@@ -205,7 +205,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
                     shouldShowTabAutoCloseBanner = requireContext().settings().shouldShowAutoCloseTabsBanner &&
                         requireContext().settings().canShowCfr,
                     shouldShowLockPbmBanner = shouldShowLockPbmBanner(
-                        isPrivateMode = (activity as HomeActivity).browsingModeManager.mode.isPrivate,
+                        isPrivateMode = requireComponents.appStore.state.mode.isPrivate,
                         hasPrivateTabs = requireComponents.core.store.state.privateTabs.isNotEmpty(),
                         biometricAvailable = BiometricManager.from(requireContext())
                             .isHardwareAvailable(),
@@ -399,7 +399,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
             )
 
         tabsTrayController = DefaultTabsTrayController(
-            activity = activity,
+            activity = requireActivity(),
             appStore = requireComponents.appStore,
             tabsTrayStore = tabsTrayStore,
             browserStore = requireComponents.core.store,

@@ -36,6 +36,8 @@ import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
 import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.feature.accounts.push.CloseTabsUseCases
+import mozilla.components.feature.search.SearchUseCases
+import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.robolectric.testContext
@@ -49,7 +51,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.Collections
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.TabsTray
@@ -60,7 +61,9 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.TabCollectionStorage
+import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.maxActiveTime
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_NORMAL_TABS
@@ -100,6 +103,11 @@ class DefaultTabsTrayControllerTest {
     @MockK(relaxed = true)
     private lateinit var activity: HomeActivity
 
+    private lateinit var addNewTabUseCase: TabsUseCases.AddNewTabUseCase
+    private lateinit var loadUrlUseCase: SessionUseCases.DefaultLoadUrlUseCase
+    private lateinit var searchUseCases: SearchUseCases
+    private lateinit var homepageTitle: String
+
     private val appStore: AppStore = mockk(relaxed = true)
     private val settings: Settings = mockk(relaxed = true)
 
@@ -122,14 +130,18 @@ class DefaultTabsTrayControllerTest {
     @Before
     fun setup() {
         MockKAnnotations.init(this)
+        addNewTabUseCase = mockk(relaxed = true)
+        loadUrlUseCase = mockk(relaxed = true)
+        searchUseCases = mockk(relaxed = true)
+        homepageTitle = testContext.getString(R.string.tab_tray_homepage_tab)
+        profiler = mockk(relaxed = true) {
+            every { getProfilerTime() } returns PROFILER_START_TIME
+            every { isProfilerActive() } returns true
+        }
     }
 
     @Test
     fun `GIVEN private mode WHEN the fab is clicked THEN a profile marker is added for the operations executed`() {
-        profiler = spyk(profiler) {
-            every { getProfilerTime() } returns Double.MAX_VALUE
-        }
-
         assertNull(TabsTray.newPrivateTabTapped.testGetValue())
 
         createController().handlePrivateTabsFabClick()
@@ -153,10 +165,6 @@ class DefaultTabsTrayControllerTest {
     fun `GIVEN private mode and homepage as a new tab is enabled WHEN the fab is clicked THEN a new private homepage tab is displayed`() {
         every { settings.enableHomepageAsNewTab } returns true
 
-        profiler = spyk(profiler) {
-            every { getProfilerTime() } returns Double.MAX_VALUE
-        }
-
         assertNull(TabsTray.newPrivateTabTapped.testGetValue())
 
         createController().handlePrivateTabsFabClick()
@@ -178,10 +186,6 @@ class DefaultTabsTrayControllerTest {
 
     @Test
     fun `GIVEN normal mode WHEN the fab is clicked THEN a profile marker is added for the operations executed`() {
-        profiler = spyk(profiler) {
-            every { getProfilerTime() } returns Double.MAX_VALUE
-        }
-
         createController().handleNormalTabsFabClick()
 
         verifyOrder {
@@ -200,10 +204,6 @@ class DefaultTabsTrayControllerTest {
     @Test
     fun `GIVEN normal mode and homepage as a new tab is enabled WHEN the fab is clicked THEN a new homepage tab is displayed`() {
         every { settings.enableHomepageAsNewTab } returns true
-
-        profiler = spyk(profiler) {
-            every { getProfilerTime() } returns Double.MAX_VALUE
-        }
 
         createController().handleNormalTabsFabClick()
 
@@ -623,6 +623,17 @@ class DefaultTabsTrayControllerTest {
         every { tab.active() }.answers { entry }
         every { entry.url }.answers { "https://mozilla.org" }
 
+        val appStore = AppStore(initialState = AppState(mode = BrowsingMode.Normal))
+        fenixBrowserUseCases = FenixBrowserUseCases(
+            appStore = appStore,
+            tabsUseCases = tabsUseCases,
+            loadUrlUseCase = loadUrlUseCase,
+            searchUseCases = searchUseCases,
+            homepageTitle = homepageTitle,
+            profiler = profiler,
+        )
+        every { testContext.components.useCases.fenixBrowserUseCases } returns fenixBrowserUseCases
+
         var dismissTabTrayInvoked = false
         createController(
             dismissTray = {
@@ -634,10 +645,10 @@ class DefaultTabsTrayControllerTest {
         assertNotNull(Events.syncedTabOpened.testGetValue())
 
         verify {
-            activity.openToBrowserAndLoad(
+            fenixBrowserUseCases.loadUrlOrSearch(
                 searchTermOrURL = "https://mozilla.org",
                 newTab = true,
-                from = BrowserDirection.FromTabsTray,
+                private = false,
             )
         }
     }
@@ -1407,4 +1418,8 @@ class DefaultTabsTrayControllerTest {
         lastModified = 0L,
         children = null,
     )
+
+    companion object {
+        private const val PROFILER_START_TIME = Double.MAX_VALUE
+    }
 }
