@@ -10,19 +10,15 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-requestLongerTimeout(2);
+const TEST_URL = `${URL_ROOT_COM_SSL}touch_iframe_parent_desktop.html`;
 
-const TEST_URL = `${URL_ROOT_COM_SSL}touch_iframe_parent.html`;
-
-for (const test of ["tap", "drag", "double_tap"]) {
+// The following tests change the page's zoom state, so we run each of them
+// separately to ensure they don't interfere with each other.
+for (const frameName of ["topFrame", "localIFrame", "remoteIFrame"]) {
   addRDMTask(TEST_URL, async function ({ ui }) {
     reloadOnTouchChange(true);
     await toggleTouchSimulation(ui);
-    await runTouchAllEventsTests(
-      ui,
-      ["topFrame", "localIFrame", "remoteIFrame"],
-      test
-    );
+    await runTouchAllEventsTests(ui, [frameName], "double_tap_zoom");
     await toggleTouchSimulation(ui);
   });
 }

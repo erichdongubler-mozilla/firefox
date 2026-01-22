@@ -10,19 +10,17 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-requestLongerTimeout(2);
-
 const TEST_URL = `${URL_ROOT_COM_SSL}touch_iframe_parent.html`;
 
-for (const test of ["tap", "drag", "double_tap"]) {
-  addRDMTask(TEST_URL, async function ({ ui }) {
-    reloadOnTouchChange(true);
-    await toggleTouchSimulation(ui);
-    await runTouchAllEventsTests(
-      ui,
-      ["topFrame", "localIFrame", "remoteIFrame"],
-      test
-    );
-    await toggleTouchSimulation(ui);
-  });
-}
+// The long_tap test frequently fails on CI, isolating it to reduce the risk of
+// intermittent failures. See Bug 1980013.
+addRDMTask(TEST_URL, async function ({ ui }) {
+  reloadOnTouchChange(true);
+  await toggleTouchSimulation(ui);
+  await runTouchAllEventsTests(
+    ui,
+    ["topFrame", "localIFrame", "remoteIFrame"],
+    "long_tap"
+  );
+  await toggleTouchSimulation(ui);
+});
