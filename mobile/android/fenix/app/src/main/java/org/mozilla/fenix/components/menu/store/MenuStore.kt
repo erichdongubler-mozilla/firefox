@@ -83,10 +83,6 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
             )
         }
 
-        is MenuAction.UpdateShowDisabledExtensionsOnboarding -> state.copyWithExtensionMenuState { extensionState ->
-            extensionState.copy(showDisabledExtensionsOnboarding = action.showDisabledExtensionsOnboarding)
-        }
-
         is MenuAction.UpdateAvailableAddons -> state.copyWithExtensionMenuState {
             it.copy(availableAddons = action.availableAddons)
         }
