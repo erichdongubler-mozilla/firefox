@@ -17,12 +17,10 @@
 #include "mozilla/dom/AuthenticatorAttestationResponse.h"
 #include "mozilla/dom/PWebAuthnTransaction.h"
 #include "mozilla/dom/PublicKeyCredential.h"
-#include "mozilla/dom/WebAuthenticationBinding.h"
 #include "mozilla/dom/WebAuthnTransactionChild.h"
 #include "mozilla/dom/WebAuthnUtil.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/glean/DomWebauthnMetrics.h"
-#include "nsContentUtils.h"
 #include "nsHTMLDocument.h"
 #include "nsIURIMutator.h"
 #include "nsThreadUtils.h"
@@ -118,7 +116,7 @@ void WebAuthnHandler::ActorDestroyed() {
 }
 
 void WebAuthnHandler::MakeCredential(
-    JSContext* aCx, const PublicKeyCredentialCreationOptions& aOptions,
+    const PublicKeyCredentialCreationOptions& aOptions,
     const Optional<OwningNonNull<AbortSignal>>& aSignal,
     const RefPtr<Promise>& aPromise) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -171,7 +169,13 @@ void WebAuthnHandler::MakeCredential(
   // If timeoutSeconds was specified, check if its value lies within a
   // reasonable range as defined by the platform and if not, correct it to the
   // closest value lying within that range.
-  uint32_t adjustedTimeout = WebAuthnTimeout(aOptions.mTimeout);
+
+  uint32_t adjustedTimeout = 30000;
+  if (aOptions.mTimeout.WasPassed()) {
+    adjustedTimeout = aOptions.mTimeout.Value();
+    adjustedTimeout = std::max(15000u, adjustedTimeout);
+    adjustedTimeout = std::min(120000u, adjustedTimeout);
+  }
 
   // <https://w3c.github.io/webauthn/#sctn-appid-extension>
   if (aOptions.mExtensions.mAppid.WasPassed()) {
@@ -367,23 +371,21 @@ void WebAuthnHandler::MakeCredential(
 
   // Abort the request if aborted flag is already set.
   if (aSignal.WasPassed() && aSignal.Value().Aborted()) {
-    JS::Rooted<JS::Value> reason(aCx);
-    aSignal.Value().GetReason(aCx, &reason);
+    AutoJSAPI jsapi;
+    if (!jsapi.Init(global)) {
+      aPromise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
+      return;
+    }
+    JSContext* cx = jsapi.cx();
+    JS::Rooted<JS::Value> reason(cx);
+    aSignal.Value().GetReason(cx, &reason);
     aPromise->MaybeReject(reason);
     return;
   }
 
-  nsString json;
-  nsresult rv = SerializeWebAuthnCreationOptions(
-      aCx, NS_ConvertUTF8toUTF16(rpId), aOptions, json);
-  if (NS_FAILED(rv)) {
-    aPromise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
-    return;
-  }
-
-  WebAuthnMakeCredentialInfo info(
-      rpId, challenge, adjustedTimeout, excludeList, rpInfo, userInfo,
-      coseAlgos, extensions, authSelection, attestation, aOptions.mHints, json);
+  WebAuthnMakeCredentialInfo info(rpId, challenge, adjustedTimeout, excludeList,
+                                  rpInfo, userInfo, coseAlgos, extensions,
+                                  authSelection, attestation, aOptions.mHints);
 
   // Set up the transaction state. Fallible operations should not be performed
   // below this line, as we must not leave the transaction state partially
@@ -422,7 +424,7 @@ void WebAuthnHandler::MakeCredential(
 const size_t MAX_ALLOWED_CREDENTIALS = 20;
 
 void WebAuthnHandler::GetAssertion(
-    JSContext* aCx, const PublicKeyCredentialRequestOptions& aOptions,
+    const PublicKeyCredentialRequestOptions& aOptions,
     const bool aConditionallyMediated,
     const Optional<OwningNonNull<AbortSignal>>& aSignal,
     const RefPtr<Promise>& aPromise) {
@@ -466,7 +468,13 @@ void WebAuthnHandler::GetAssertion(
   // If timeoutSeconds was specified, check if its value lies within a
   // reasonable range as defined by the platform and if not, correct it to the
   // closest value lying within that range.
-  uint32_t adjustedTimeout = WebAuthnTimeout(aOptions.mTimeout);
+
+  uint32_t adjustedTimeout = 30000;
+  if (aOptions.mTimeout.WasPassed()) {
+    adjustedTimeout = aOptions.mTimeout.Value();
+    adjustedTimeout = std::max(15000u, adjustedTimeout);
+    adjustedTimeout = std::min(120000u, adjustedTimeout);
+  }
 
   // Abort the request if the allowCredentials set is too large
   if (aOptions.mAllowCredentials.Length() > MAX_ALLOWED_CREDENTIALS) {
@@ -627,24 +635,21 @@ void WebAuthnHandler::GetAssertion(
 
   // Abort the request if aborted flag is already set.
   if (aSignal.WasPassed() && aSignal.Value().Aborted()) {
-    JS::Rooted<JS::Value> reason(aCx);
-    aSignal.Value().GetReason(aCx, &reason);
+    AutoJSAPI jsapi;
+    if (!jsapi.Init(global)) {
+      aPromise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
+      return;
+    }
+    JSContext* cx = jsapi.cx();
+    JS::Rooted<JS::Value> reason(cx);
+    aSignal.Value().GetReason(cx, &reason);
     aPromise->MaybeReject(reason);
     return;
   }
 
-  nsString json;
-  nsresult rv = SerializeWebAuthnRequestOptions(
-      aCx, NS_ConvertUTF8toUTF16(rpId), aOptions, json);
-  if (NS_FAILED(rv)) {
-    aPromise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
-    return;
-  }
-
-  WebAuthnGetAssertionInfo info(rpId, maybeAppId, challenge, adjustedTimeout,
-                                allowList, extensions,
-                                aOptions.mUserVerification,
-                                aConditionallyMediated, aOptions.mHints, json);
+  WebAuthnGetAssertionInfo info(
+      rpId, maybeAppId, challenge, adjustedTimeout, allowList, extensions,
+      aOptions.mUserVerification, aConditionallyMediated, aOptions.mHints);
 
   // Set up the transaction state. Fallible operations should not be performed
   // below this line, as we must not leave the transaction state partially

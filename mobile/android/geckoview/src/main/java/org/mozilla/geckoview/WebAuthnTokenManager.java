@@ -307,8 +307,7 @@ import org.mozilla.gecko.util.WebAuthnUtils;
       final GeckoBundle authenticatorSelection,
       final GeckoBundle extensions,
       final int[] algs,
-      final ByteBuffer clientDataHash,
-      final String requestJSON) {
+      final ByteBuffer clientDataHash) {
     final ArrayList<WebAuthnUtils.WebAuthnPublicCredential> excludeArrayList;
 
     final byte[] challBytes = new byte[challenge.remaining()];
@@ -332,7 +331,14 @@ import org.mozilla.gecko.util.WebAuthnUtils;
 
     final GeckoResult<WebAuthnUtils.MakeCredentialResponse> result = new GeckoResult<>();
     WebAuthnCredentialManager.makeCredential(
-            credentialBundle.getString("origin"), clientDataHashBytes, requestJSON)
+            credentialBundle,
+            userBytes,
+            challBytes,
+            algs,
+            excludeList,
+            authenticatorSelection,
+            extensions,
+            clientDataHashBytes)
         .accept(
             response -> result.complete(response),
             exceptionInCredManager -> {
@@ -504,8 +510,7 @@ import org.mozilla.gecko.util.WebAuthnUtils;
       final ByteBuffer transportList,
       final GeckoBundle assertionBundle,
       final GeckoBundle extensions,
-      final ByteBuffer clientDataHash,
-      final String requestJSON) {
+      final ByteBuffer clientDataHash) {
     final ArrayList<WebAuthnUtils.WebAuthnPublicCredential> allowArrayList;
 
     final byte[] challBytes = new byte[challenge.remaining()];
@@ -544,7 +549,7 @@ import org.mozilla.gecko.util.WebAuthnUtils;
               }
 
               WebAuthnCredentialManager.prepareGetAssertion(
-                      assertionBundle.getString("origin"), clientDataHashBytes, requestJSON)
+                      challBytes, allowList, assertionBundle, extensions, clientDataHashBytes)
                   .accept(
                       pendingHandle -> {
                         if (pendingHandle != null) {
