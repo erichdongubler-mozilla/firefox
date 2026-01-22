@@ -219,3 +219,61 @@ add_task(async () => {
 
   Assert.equal(0, Object.keys(testFunctions).length, "all markers were found");
 });
+
+add_task(async function test_registerMarkerSchema() {
+  const schema = {
+    name: "CustomMarker",
+    display: ["marker-chart", "marker-table"],
+    data: [
+      { key: "field1", label: "Field 1", format: "string" },
+      { key: "field2", label: "Field 2", format: "integer" },
+    ],
+  };
+
+  ChromeUtils.registerMarkerSchema(schema);
+  Assert.ok(true, "Schema registered without error");
+});
+
+add_task(async function test_registerMarkerSchemaNoName() {
+  const invalidSchema = {
+    display: ["marker-chart"],
+    data: [],
+  };
+
+  Assert.throws(
+    () => ChromeUtils.registerMarkerSchema(invalidSchema),
+    /name/,
+    "Should throw when schema lacks 'name' field"
+  );
+});
+
+add_task(async function test_addMarkerWithObject() {
+  await ProfilerTestUtils.startProfilerForMarkerTests();
+
+  const markerData = {
+    type: "CustomMarker",
+    field1: "test value",
+    field2: 42,
+  };
+
+  ChromeUtils.addProfilerMarker("TestMarker", {}, markerData);
+
+  const profile = await ProfilerTestUtils.stopNowAndGetProfile();
+  dump(JSON.stringify(profile) + "\n");
+  const mainThread = profile.threads.find(({ name }) => name === "GeckoMain");
+  const markers = ProfilerTestUtils.getInflatedMarkerData(mainThread);
+
+  const customMarker = markers.find(m => m.name === "TestMarker");
+  Assert.ok(customMarker, "Custom marker found in profile");
+  Assert.ok(customMarker.data, "Marker has data");
+
+  Assert.deepEqual(
+    customMarker.data,
+    markerData,
+    "Marker data should match exactly what was passed in"
+  );
+
+  const schemas = profile.meta.markerSchema;
+  const customSchema = schemas.find(s => s.name === "CustomMarker");
+  Assert.ok(customSchema, "Custom schema found in profile");
+});

@@ -321,11 +321,68 @@ namespace ChromeUtils {
    *                          object that can contain startTime, captureStack or
    *                          category fields. If this parameter is omitted, the marker
    *                          will have no duration.
-   * @param text              Text to associate with the marker.
+   * @param data              Text or object to associate with the marker.
+   *                          - If a string, creates a Text marker (for simple annotations)
+   *                          - If an object, must include a "type" field matching a
+   *                            registered schema name
+   *
+   * Example with object data:
+   *   ChromeUtils.addProfilerMarker("MyOperation", {}, {
+   *     type: "CustomOperation",
+   *     status: "completed",
+   *     itemCount: 42
+   *   });
    */
   undefined addProfilerMarker(UTF8String name,
                               optional (ProfilerMarkerOptions or double) options = {},
-                              optional UTF8String text);
+                              optional (UTF8String or object) data);
+
+  /**
+   * Register a custom marker schema for use with the profiler.
+   *
+   * The schema defines how markers with a given "type" field should be displayed
+   * in the Firefox Profiler UI. Schemas are automatically included in captured
+   * profiles and used by the profiler frontend to render custom markers.
+   *
+   * @param schema   An object with the following structure:
+   *   - name {string}:     Required. The marker type name (must match the "type"
+   *                        field in marker data objects)
+   *   - display {string[]}: Where to show the marker. Typical values:
+   *                        ["marker-chart", "marker-table"]
+   *   - data {object[]}:   Array of field definitions, each with:
+   *     - key {string}:    Field name in the marker data
+   *     - label {string}:  Display label in the UI
+   *     - format {string}: How to display the value. Common formats:
+   *                        "string", "integer", "decimal", "bytes",
+   *                        "duration" (in ms), "url", "file-path"
+   *     - searchable {boolean}: Optional. Whether the field is searchable in UI
+   *
+   * Example:
+   *   ChromeUtils.registerMarkerSchema({
+   *     name: "CustomOperation",
+   *     display: ["marker-chart", "marker-table"],
+   *     data: [
+   *       { key: "status", label: "Status", format: "string" },
+   *       { key: "itemCount", label: "Items Processed", format: "integer" },
+   *       { key: "duration", label: "Duration", format: "duration" }
+   *     ]
+   *   });
+   *
+   * After registering this schema, you can add markers with:
+   *   ChromeUtils.addProfilerMarker("MyOperation", {}, {
+   *     type: "CustomOperation",
+   *     status: "completed",
+   *     itemCount: 42,
+   *     duration: 15.5
+   *   });
+   *
+   * Note: If a marker's "type" field doesn't match any registered schema,
+   * the profiler will still capture the marker but it may not display optimally
+   * in the UI. No validation is performed - invalid schemas will be included
+   * in the profile output as-is.
+   */
+  [Throws]
+  undefined registerMarkerSchema(object schema);
 
   /**
    * Return the symbolic name of any given XPCOM error code (nsresult):
