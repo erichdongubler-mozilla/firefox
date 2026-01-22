@@ -47,6 +47,11 @@ ID
 # lint-ignore-next-line: syntax-difference
 !testing/web-platform/tests/tools/third_party/**/*.egg-info
 
+# Still add Cargo.toml.orig files in third_party/rust because cargo vendored
+# crates contain those files, which the "*.orig" rule ignores.
+# lint-ignore-next-line: syntax-difference
+!third_party/rust/**/Cargo.toml.orig
+
 # Ignore pywebsocket3 intermediate files.
 testing/web-platform/tests/tools/third_party/pywebsocket3/pywebsocket3.egg-info
 testing/web-platform/tests/tools/third_party/pywebsocket3/build
