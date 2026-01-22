@@ -314,7 +314,7 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   pref("media.peerconnection.ice.no_host", false);
   pref("media.peerconnection.ice.default_address_only", false);
   // See Bug 1581947 for Android hostname obfuscation
-  #if defined(MOZ_WIDGET_ANDROID)
+  #if defined(MOZ_WIDGET_ANDROID) && !defined(NIGHTLY_BUILD)
     pref("media.peerconnection.ice.obfuscate_host_addresses", false);
   #else
     pref("media.peerconnection.ice.obfuscate_host_addresses", true);
