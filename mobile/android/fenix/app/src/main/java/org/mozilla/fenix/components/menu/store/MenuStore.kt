@@ -87,10 +87,6 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
             extensionState.copy(showDisabledExtensionsOnboarding = action.showDisabledExtensionsOnboarding)
         }
 
-        is MenuAction.UpdateManageExtensionsMenuItemVisibility -> state.copyWithExtensionMenuState {
-            it.copy(shouldShowManageExtensionsMenuItem = action.isVisible)
-        }
-
         is MenuAction.UpdateAvailableAddons -> state.copyWithExtensionMenuState {
             it.copy(availableAddons = action.availableAddons)
         }

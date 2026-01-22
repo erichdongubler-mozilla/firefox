@@ -398,27 +398,6 @@ class MenuStoreTest {
         }
 
     @Test
-    fun `WHEN update manage extensions menu item visibility is dispatched THEN extension state is updated`() =
-        runTest {
-            val addon = Addon(id = "ext1")
-            val addonTwo = Addon(id = "ext2")
-            val store = MenuStore(
-                initialState = MenuState(
-                    extensionMenuState = ExtensionMenuState(
-                        recommendedAddons = listOf(
-                            addon,
-                            addonTwo,
-                        ),
-                    ),
-                ),
-            )
-
-            store.dispatch(MenuAction.UpdateManageExtensionsMenuItemVisibility(true))
-
-            assertTrue(store.state.extensionMenuState.shouldShowManageExtensionsMenuItem)
-        }
-
-    @Test
     fun `WHEN update show disabled extensions onboarding dispatched THEN extension state is updated`() =
         runTest {
             val initialState = MenuState()
