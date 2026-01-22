@@ -6382,8 +6382,9 @@ void nsTextFrame::DrawSelectionDecorations(
       }
       params.style =
           computedStyleFromPseudo->StyleTextReset()->mTextDecorationStyle;
-      params.color = computedStyleFromPseudo->StyleTextReset()
-                         ->mTextDecorationColor.CalcColor(this);
+      params.color =
+          computedStyleFromPseudo->StyleTextReset()
+              ->mTextDecorationColor.CalcColor(*computedStyleFromPseudo);
       params.decoration =
           computedStyleFromPseudo->StyleTextReset()->mTextDecorationLine;
       params.descentLimit = -1.f;
