@@ -47,11 +47,17 @@ fn render_task_sanity_check(size: &DeviceIntSize) {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 #[repr(C)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct RenderTaskAddress(pub i32);
+
+impl std::fmt::Debug for RenderTaskAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "#{}", self.0)
+    }
+}
 
 impl Into<RenderTaskAddress> for RenderTaskId {
     fn into(self) -> RenderTaskAddress {

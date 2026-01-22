@@ -146,7 +146,7 @@ pub struct ClipTreeLeaf {
 }
 
 /// ID for a ClipTreeNode
-#[derive(Debug, Copy, Clone, PartialEq, MallocSizeOf, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, MallocSizeOf, Eq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipNodeId(u32);
@@ -155,11 +155,27 @@ impl ClipNodeId {
     pub const NONE: ClipNodeId = ClipNodeId(0);
 }
 
+impl std::fmt::Debug for ClipNodeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if *self == Self::NONE {
+            write!(f, "<none>")
+        } else {
+            write!(f, "#{}", self.0)
+        }
+    }
+}
+
 /// ID for a ClipTreeLeaf
-#[derive(Debug, Copy, Clone, PartialEq, MallocSizeOf, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, MallocSizeOf, Eq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipLeafId(u32);
+
+impl std::fmt::Debug for ClipLeafId {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "#{}", self.0)
+    }
+}
 
 /// A clip-tree built during scene building and used during frame-building to apply clips to primitives.
 #[cfg_attr(feature = "capture", derive(Serialize))]

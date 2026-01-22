@@ -56,7 +56,7 @@ impl<'l> RenderTaskAllocation<'l> {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 #[derive(MallocSizeOf)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -68,6 +68,16 @@ impl RenderTaskId {
     pub const INVALID: RenderTaskId = RenderTaskId {
         index: u32::MAX,
     };
+}
+
+impl std::fmt::Debug for RenderTaskId {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if *self == Self::INVALID {
+            write!(f, "<invalid>")
+        } else {
+            write!(f, "#{}", self.index)
+        }
+    }
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]

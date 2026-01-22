@@ -11,7 +11,7 @@ use crate::util::{TransformedRectKind, MatrixHelpers};
 /// Represents the information about a transform palette
 /// entry that is passed to shaders. It includes an index
 /// into the transform palette, and a set of flags.
-#[derive(Copy, Debug, Clone, PartialEq, MallocSizeOf)]
+#[derive(Copy, Clone, PartialEq, MallocSizeOf)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[repr(C)]
@@ -20,6 +20,7 @@ pub struct GpuTransformId(pub u32);
 impl GpuTransformId {
     /// Identity transform ID.
     pub const IDENTITY: Self = GpuTransformId(0);
+    const INDEX_MASK: u32 = 0x003fffff;
 
     // Note: we use unset bits instead of set bits to denote certain
     // properties of the transform so that the identity transform id
@@ -65,6 +66,25 @@ impl GpuTransformId {
         GpuTransformId((self.0 & (1 << 23)) | ((kind as u32) << 23))
     }
 }
+
+impl std::fmt::Debug for GpuTransformId {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if *self == Self::IDENTITY {
+            write!(f, "<identity>")
+        } else {
+            let index = self.0 & Self::INDEX_MASK;
+            write!(f, "#{index}")?;
+            let flag_bits = Self::AXIS_ALIGNED_2D_BIT | Self::SCALE_OFFSET_2D_BIT;
+            if self.0 & flag_bits != flag_bits {
+                let axis_aligned = if self.is_2d_axis_aligned() { "axis-aligned" } else { "" };
+                let scale_offset = if self.is_2d_scale_offset() { "scale-offset" } else { "" };
+                write!(f, "({axis_aligned} {scale_offset})")?;
+            }
+            Ok(())
+        }
+    }
+}
+
 
 /// The GPU data payload for a transform palette entry.
 #[derive(Debug, Clone)]
