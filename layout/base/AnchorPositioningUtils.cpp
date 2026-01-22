@@ -58,8 +58,22 @@ dom::ShadowRoot* GetTreeForCascadeLevel(const nsIContent& aContent,
     // return the shadow root attached to this element (where the :host rule is
     // defined)
     const int8_t for_outermost_shadow_tree = -1;
-    return aCascadeOrder == for_outermost_shadow_tree ? aContent.GetShadowRoot()
-                                                      : nullptr;
+    if (aCascadeOrder != for_outermost_shadow_tree) {
+      return nullptr;
+    }
+
+    // For tree-like pseudo-elements (::before, ::after, ::marker), aContent
+    // is a generated content node. We need to get the parent (the originating
+    // element) to find the shadow root where the :host rule is defined.
+    if (aContent.IsGeneratedContentContainerForAfter() ||
+        aContent.IsGeneratedContentContainerForBefore() ||
+        aContent.IsGeneratedContentContainerForMarker()) {
+      if (const auto* parent = aContent.GetParent()) {
+        return parent->GetShadowRoot();
+      }
+    }
+
+    return aContent.GetShadowRoot();
   }
 
   auto* containingShadow = aContent.GetContainingShadow();
