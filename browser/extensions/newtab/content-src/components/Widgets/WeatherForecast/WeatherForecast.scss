@@ -25,10 +25,37 @@
   .city-wrapper {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+
+    .city-name {
+      width: 100%;
+    }
 
     h3 {
       margin-block: 0;
       font-weight: var(--font-weight-semibold);
+    }
+
+    .location-input-wrapper {
+      padding-block: 0;
+
+      input {
+        width: 100%;
+      }
+    }
+  }
+
+  // Make sure context menu is only visible as you hover over the Weather Forecast widget
+  .weather-forecast-context-menu-wrapper {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:hover,
+  &:focus-within {
+    .weather-forecast-context-menu-wrapper {
+      opacity: 1;
+      pointer-events: auto;
     }
   }
 

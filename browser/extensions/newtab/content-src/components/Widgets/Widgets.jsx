@@ -15,7 +15,6 @@ const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
 const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
-const PREF_WIDGETS_WEATHER_FORECAST_ENABLED = "widgets.weatherForecast.enabled";
 const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED =
   "widgets.system.weatherForecast.enabled";
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
@@ -63,8 +62,6 @@ function Widgets() {
 
   const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
   const nimbusTimerEnabled = prefs.widgetsConfig?.timerEnabled;
-  const nimbusWeatherForecastEnabled =
-    prefs.widgetsConfig?.weatherForecastEnabled;
   const nimbusListsTrainhopEnabled =
     prefs.trainhopConfig?.widgets?.listsEnabled;
   const nimbusTimerTrainhopEnabled =
@@ -85,10 +82,8 @@ function Widgets() {
     prefs[PREF_WIDGETS_TIMER_ENABLED];
 
   const weatherForecastEnabled =
-    (nimbusWeatherForecastTrainhopEnabled ||
-      nimbusWeatherForecastEnabled ||
-      prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED]) &&
-    prefs[PREF_WIDGETS_WEATHER_FORECAST_ENABLED];
+    nimbusWeatherForecastTrainhopEnabled ||
+    prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
 
   // track previous timerEnabled state to detect when it becomes disabled
   const prevTimerEnabledRef = useRef(timerEnabled);

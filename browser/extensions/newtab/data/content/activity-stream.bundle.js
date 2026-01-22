@@ -11027,8 +11027,14 @@ class _Weather extends (external_React_default()).PureComponent {
       Weather
     } = props;
     const WEATHER_SUGGESTION = Weather.suggestions?.[0];
+    const nimbusWeatherDisplay = Prefs.values.trainhopConfig?.weather?.display;
+    const showDetailedView = nimbusWeatherDisplay === "detailed" || Prefs.values["weather.display"] === "detailed";
+    const nimbusWeatherForecastTrainhopEnabled = Prefs.values.trainhopConfig?.widgets?.weatherForecastEnabled;
+    const weatherForecastWidgetEnabled = nimbusWeatherForecastTrainhopEnabled || Prefs.values["widgets.system.weatherForecast.enabled"];
+    if (showDetailedView && weatherForecastWidgetEnabled) {
+      return null;
+    }
     const outerClassName = ["weather", Weather.searchActive && "search", props.isInSection && "section-weather"].filter(v => v).join(" ");
-    const showDetailedView = Prefs.values["weather.display"] === "detailed";
     const weatherOptIn = Prefs.values["system.showWeatherOptIn"];
     const nimbusWeatherOptInEnabled = Prefs.values.trainhopConfig?.weather?.weatherOptInEnabled;
     // Bug 2009484: Controls button order in opt-in dialog for A/B testing.
@@ -11129,7 +11135,7 @@ class _Weather extends (external_React_default()).PureComponent {
         className: "weatherCityRow"
       }, /*#__PURE__*/external_React_default().createElement("span", {
         className: "weatherCity"
-      }, Weather.locationData.city)), showDetailedView ? /*#__PURE__*/external_React_default().createElement("div", {
+      }, Weather.locationData.city)), showDetailedView && !weatherForecastWidgetEnabled ? /*#__PURE__*/external_React_default().createElement("div", {
         className: "weatherDetailedSummaryRow"
       }, /*#__PURE__*/external_React_default().createElement("div", {
         className: "weatherHighLowTemps"
@@ -13082,19 +13088,131 @@ function EditableTimerFields({
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 
-function WeatherForecast() {
+
+
+function WeatherForecast({
+  dispatch
+}) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const weatherData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Weather);
   const WEATHER_SUGGESTION = weatherData.suggestions?.[0];
-  const showDetailedView = prefs["weather.display"] === "detailed";
-  if (!showDetailedView || !weatherData?.initialized) {
+  const nimbusWeatherDisplay = prefs.trainhopConfig?.weather?.display;
+  const showDetailedView = nimbusWeatherDisplay === "detailed" || prefs["weather.display"] === "detailed";
+
+  // Check if weather is enabled (browser.newtabpage.activity-stream.showWeather)
+  const {
+    showWeather
+  } = prefs;
+  const systemShowWeather = prefs["system.showWeather"];
+  const weatherExperimentEnabled = prefs.trainhopConfig?.weather?.enabled;
+  const isWeatherEnabled = showWeather && (systemShowWeather || weatherExperimentEnabled);
+
+  // Check if the WeatherForecast widget is enabled
+  const nimbusWeatherForecastTrainhopEnabled = prefs.trainhopConfig?.widgets?.weatherForecastEnabled;
+  const weatherForecastWidgetEnabled = nimbusWeatherForecastTrainhopEnabled || prefs["widgets.system.weatherForecast.enabled"];
+
+  // This weather forecast widget will only show when the following:
+  // - The weather view is set to "detailed" (can be checked with the weather.display pref)
+  // - Weather is displayed on New Tab (system.showWeather)
+  // The weather forecast widget is enabled (system.weatherForecast.enabled)
+  // Note that if the view is set to "detailed" but the weather forecast widget is not enabled, then the mini weather widget will display with the "detailed" view
+  if (!showDetailedView || !weatherData?.initialized || !weatherForecastWidgetEnabled || !isWeatherEnabled) {
     return null;
+  }
+  const weatherOptIn = prefs["system.showWeatherOptIn"];
+  const nimbusWeatherOptInEnabled = prefs.trainhopConfig?.weather?.weatherOptInEnabled;
+  const isOptInEnabled = weatherOptIn || nimbusWeatherOptInEnabled;
+  const {
+    searchActive
+  } = weatherData;
+  function handleChangeLocation() {
+    dispatch(actionCreators.BroadcastToContent({
+      type: actionTypes.WEATHER_SEARCH_ACTIVE,
+      data: true
+    }));
+  }
+  function handleDetectLocation() {
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WEATHER_USER_OPT_IN_LOCATION
+    }));
+  }
+  function handleChangeTempUnit(unit) {
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.SET_PREF,
+      data: {
+        name: "weather.temperatureUnits",
+        value: unit
+      }
+    }));
+  }
+  function handleChangeDisplay(display) {
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.SET_PREF,
+      data: {
+        name: "weather.display",
+        value: display
+      }
+    }));
+  }
+  function handleHideWeather() {
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.SET_PREF,
+      data: {
+        name: "showWeather",
+        value: false
+      }
+    }));
+  }
+  function handleLearnMore() {
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.OPEN_LINK,
+      data: {
+        url: "https://support.mozilla.org/kb/firefox-new-tab-widgets"
+      }
+    }));
   }
   return /*#__PURE__*/React.createElement("article", {
     className: "weather-forecast-widget"
   }, /*#__PURE__*/React.createElement("div", {
     className: "city-wrapper"
-  }, /*#__PURE__*/React.createElement("h3", null, weatherData.locationData.city)), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "city-name"
+  }, searchActive ? /*#__PURE__*/React.createElement(LocationSearch, {
+    outerClassName: ""
+  }) : /*#__PURE__*/React.createElement("h3", null, weatherData.locationData.city)), /*#__PURE__*/React.createElement("div", {
+    className: "weather-forecast-context-menu-wrapper"
+  }, /*#__PURE__*/React.createElement("moz-button", {
+    className: "weather-forecast-context-menu-button",
+    iconSrc: "chrome://global/skin/icons/more.svg",
+    menuId: "weather-forecast-context-menu",
+    type: "ghost"
+  }), /*#__PURE__*/React.createElement("panel-list", {
+    id: "weather-forecast-context-menu"
+  }, prefs["weather.locationSearchEnabled"] && /*#__PURE__*/React.createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-change-location",
+    onClick: handleChangeLocation
+  }), isOptInEnabled && /*#__PURE__*/React.createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-detect-my-location",
+    onClick: handleDetectLocation
+  }), prefs["weather.temperatureUnits"] === "f" ? /*#__PURE__*/React.createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-change-temperature-units-celsius",
+    onClick: () => handleChangeTempUnit("c")
+  }) : /*#__PURE__*/React.createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-change-temperature-units-fahrenheit",
+    onClick: () => handleChangeTempUnit("f")
+  }), !showDetailedView ? /*#__PURE__*/React.createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-change-weather-display-detailed",
+    onClick: () => handleChangeDisplay("detailed")
+  }) : /*#__PURE__*/React.createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-change-weather-display-simple",
+    onClick: () => handleChangeDisplay("simple")
+  }), /*#__PURE__*/React.createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-hide-weather",
+    onClick: handleHideWeather
+  }), /*#__PURE__*/React.createElement("panel-item", {
+    "data-l10n-id": "newtab-weather-menu-learn-more",
+    onClick: handleLearnMore
+  })))), /*#__PURE__*/React.createElement("div", {
     className: "current-weather-wrapper"
   }, /*#__PURE__*/React.createElement("div", {
     className: "weather-icon-column"
@@ -13204,7 +13322,6 @@ const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
 const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
-const PREF_WIDGETS_WEATHER_FORECAST_ENABLED = "widgets.weatherForecast.enabled";
 const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED = "widgets.system.weatherForecast.enabled";
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
 const PREF_WIDGETS_SYSTEM_MAXIMIZED = "widgets.system.maximized";
@@ -13247,13 +13364,12 @@ function Widgets() {
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
   const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
   const nimbusTimerEnabled = prefs.widgetsConfig?.timerEnabled;
-  const nimbusWeatherForecastEnabled = prefs.widgetsConfig?.weatherForecastEnabled;
   const nimbusListsTrainhopEnabled = prefs.trainhopConfig?.widgets?.listsEnabled;
   const nimbusTimerTrainhopEnabled = prefs.trainhopConfig?.widgets?.timerEnabled;
   const nimbusWeatherForecastTrainhopEnabled = prefs.trainhopConfig?.widgets?.weatherForecastEnabled;
   const listsEnabled = (nimbusListsTrainhopEnabled || nimbusListsEnabled || prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) && prefs[PREF_WIDGETS_LISTS_ENABLED];
   const timerEnabled = (nimbusTimerTrainhopEnabled || nimbusTimerEnabled || prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) && prefs[PREF_WIDGETS_TIMER_ENABLED];
-  const weatherForecastEnabled = (nimbusWeatherForecastTrainhopEnabled || nimbusWeatherForecastEnabled || prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED]) && prefs[PREF_WIDGETS_WEATHER_FORECAST_ENABLED];
+  const weatherForecastEnabled = nimbusWeatherForecastTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
 
   // track previous timerEnabled state to detect when it becomes disabled
   const prevTimerEnabledRef = (0,external_React_namespaceObject.useRef)(timerEnabled);

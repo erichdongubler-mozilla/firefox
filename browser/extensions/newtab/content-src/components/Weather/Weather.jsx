@@ -272,6 +272,22 @@ export class _Weather extends React.PureComponent {
 
     const WEATHER_SUGGESTION = Weather.suggestions?.[0];
 
+    const nimbusWeatherDisplay = Prefs.values.trainhopConfig?.weather?.display;
+    const showDetailedView =
+      nimbusWeatherDisplay === "detailed" ||
+      Prefs.values["weather.display"] === "detailed";
+
+    const nimbusWeatherForecastTrainhopEnabled =
+      Prefs.values.trainhopConfig?.widgets?.weatherForecastEnabled;
+
+    const weatherForecastWidgetEnabled =
+      nimbusWeatherForecastTrainhopEnabled ||
+      Prefs.values["widgets.system.weatherForecast.enabled"];
+
+    if (showDetailedView && weatherForecastWidgetEnabled) {
+      return null;
+    }
+
     const outerClassName = [
       "weather",
       Weather.searchActive && "search",
@@ -279,8 +295,6 @@ export class _Weather extends React.PureComponent {
     ]
       .filter(v => v)
       .join(" ");
-
-    const showDetailedView = Prefs.values["weather.display"] === "detailed";
 
     const weatherOptIn = Prefs.values["system.showWeatherOptIn"];
     const nimbusWeatherOptInEnabled =
@@ -421,10 +435,9 @@ export class _Weather extends React.PureComponent {
                       {Weather.locationData.city}
                     </span>
                   </div>
-                  {showDetailedView ? (
+                  {showDetailedView && !weatherForecastWidgetEnabled ? (
                     <div className="weatherDetailedSummaryRow">
                       <div className="weatherHighLowTemps">
-                        {/* Low Forecasted Temperature */}
                         <span>
                           {
                             WEATHER_SUGGESTION.forecast.high[
@@ -434,9 +447,7 @@ export class _Weather extends React.PureComponent {
                           &deg;
                           {Prefs.values["weather.temperatureUnits"]}
                         </span>
-                        {/* Spacer / Bullet */}
                         <span>&bull;</span>
-                        {/* Low Forecasted Temperature */}
                         <span>
                           {
                             WEATHER_SUGGESTION.forecast.low[

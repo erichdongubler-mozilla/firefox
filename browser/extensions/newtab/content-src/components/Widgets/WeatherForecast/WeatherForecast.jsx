@@ -3,23 +3,182 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { useSelector } from "react-redux";
+import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { LocationSearch } from "content-src/components/Weather/LocationSearch";
 
-function WeatherForecast() {
+function WeatherForecast({ dispatch }) {
   const prefs = useSelector(state => state.Prefs.values);
   const weatherData = useSelector(state => state.Weather);
 
   const WEATHER_SUGGESTION = weatherData.suggestions?.[0];
 
-  const showDetailedView = prefs["weather.display"] === "detailed";
+  const nimbusWeatherDisplay = prefs.trainhopConfig?.weather?.display;
+  const showDetailedView =
+    nimbusWeatherDisplay === "detailed" ||
+    prefs["weather.display"] === "detailed";
 
-  if (!showDetailedView || !weatherData?.initialized) {
+  // Check if weather is enabled (browser.newtabpage.activity-stream.showWeather)
+  const { showWeather } = prefs;
+  const systemShowWeather = prefs["system.showWeather"];
+  const weatherExperimentEnabled = prefs.trainhopConfig?.weather?.enabled;
+  const isWeatherEnabled =
+    showWeather && (systemShowWeather || weatherExperimentEnabled);
+
+  // Check if the WeatherForecast widget is enabled
+  const nimbusWeatherForecastTrainhopEnabled =
+    prefs.trainhopConfig?.widgets?.weatherForecastEnabled;
+
+  const weatherForecastWidgetEnabled =
+    nimbusWeatherForecastTrainhopEnabled ||
+    prefs["widgets.system.weatherForecast.enabled"];
+
+  // This weather forecast widget will only show when the following:
+  // - The weather view is set to "detailed" (can be checked with the weather.display pref)
+  // - Weather is displayed on New Tab (system.showWeather)
+  // The weather forecast widget is enabled (system.weatherForecast.enabled)
+  // Note that if the view is set to "detailed" but the weather forecast widget is not enabled, then the mini weather widget will display with the "detailed" view
+  if (
+    !showDetailedView ||
+    !weatherData?.initialized ||
+    !weatherForecastWidgetEnabled ||
+    !isWeatherEnabled
+  ) {
     return null;
+  }
+
+  const weatherOptIn = prefs["system.showWeatherOptIn"];
+  const nimbusWeatherOptInEnabled =
+    prefs.trainhopConfig?.weather?.weatherOptInEnabled;
+  const isOptInEnabled = weatherOptIn || nimbusWeatherOptInEnabled;
+
+  const { searchActive } = weatherData;
+
+  function handleChangeLocation() {
+    dispatch(
+      ac.BroadcastToContent({
+        type: at.WEATHER_SEARCH_ACTIVE,
+        data: true,
+      })
+    );
+  }
+
+  function handleDetectLocation() {
+    dispatch(
+      ac.AlsoToMain({
+        type: at.WEATHER_USER_OPT_IN_LOCATION,
+      })
+    );
+  }
+
+  function handleChangeTempUnit(unit) {
+    dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: {
+          name: "weather.temperatureUnits",
+          value: unit,
+        },
+      })
+    );
+  }
+
+  function handleChangeDisplay(display) {
+    dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: {
+          name: "weather.display",
+          value: display,
+        },
+      })
+    );
+  }
+
+  function handleHideWeather() {
+    dispatch(
+      ac.OnlyToMain({
+        type: at.SET_PREF,
+        data: {
+          name: "showWeather",
+          value: false,
+        },
+      })
+    );
+  }
+
+  function handleLearnMore() {
+    dispatch(
+      ac.OnlyToMain({
+        type: at.OPEN_LINK,
+        data: {
+          url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
+        },
+      })
+    );
   }
 
   return (
     <article className="weather-forecast-widget">
       <div className="city-wrapper">
-        <h3>{weatherData.locationData.city}</h3>
+        <div className="city-name">
+          {searchActive ? (
+            <LocationSearch outerClassName="" />
+          ) : (
+            <h3>{weatherData.locationData.city}</h3>
+          )}
+        </div>
+        <div className="weather-forecast-context-menu-wrapper">
+          <moz-button
+            className="weather-forecast-context-menu-button"
+            iconSrc="chrome://global/skin/icons/more.svg"
+            menuId="weather-forecast-context-menu"
+            type="ghost"
+          />
+          <panel-list id="weather-forecast-context-menu">
+            {prefs["weather.locationSearchEnabled"] && (
+              <panel-item
+                data-l10n-id="newtab-weather-menu-change-location"
+                onClick={handleChangeLocation}
+              />
+            )}
+            {isOptInEnabled && (
+              <panel-item
+                data-l10n-id="newtab-weather-menu-detect-my-location"
+                onClick={handleDetectLocation}
+              />
+            )}
+            {prefs["weather.temperatureUnits"] === "f" ? (
+              <panel-item
+                data-l10n-id="newtab-weather-menu-change-temperature-units-celsius"
+                onClick={() => handleChangeTempUnit("c")}
+              />
+            ) : (
+              <panel-item
+                data-l10n-id="newtab-weather-menu-change-temperature-units-fahrenheit"
+                onClick={() => handleChangeTempUnit("f")}
+              />
+            )}
+            {!showDetailedView ? (
+              <panel-item
+                data-l10n-id="newtab-weather-menu-change-weather-display-detailed"
+                onClick={() => handleChangeDisplay("detailed")}
+              />
+            ) : (
+              <panel-item
+                data-l10n-id="newtab-weather-menu-change-weather-display-simple"
+                onClick={() => handleChangeDisplay("simple")}
+              />
+            )}
+            <panel-item
+              data-l10n-id="newtab-weather-menu-hide-weather"
+              onClick={handleHideWeather}
+            />
+            <panel-item
+              data-l10n-id="newtab-weather-menu-learn-more"
+              onClick={handleLearnMore}
+            />
+          </panel-list>
+        </div>
       </div>
       <div className="current-weather-wrapper">
         <div className="weather-icon-column">

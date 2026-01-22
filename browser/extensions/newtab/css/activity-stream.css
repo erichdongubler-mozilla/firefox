@@ -4710,10 +4710,28 @@ dialog:dir(rtl)::after {
 .weather-forecast-widget .city-wrapper {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+}
+.weather-forecast-widget .city-wrapper .city-name {
+  width: 100%;
 }
 .weather-forecast-widget .city-wrapper h3 {
   margin-block: 0;
   font-weight: var(--font-weight-semibold);
+}
+.weather-forecast-widget .city-wrapper .location-input-wrapper {
+  padding-block: 0;
+}
+.weather-forecast-widget .city-wrapper .location-input-wrapper input {
+  width: 100%;
+}
+.weather-forecast-widget .weather-forecast-context-menu-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+.weather-forecast-widget:hover .weather-forecast-context-menu-wrapper, .weather-forecast-widget:focus-within .weather-forecast-context-menu-wrapper {
+  opacity: 1;
+  pointer-events: auto;
 }
 .weather-forecast-widget .current-weather-wrapper {
   display: flex;
