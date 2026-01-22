@@ -27,12 +27,140 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 Preferences.addAll([
+  { id: "browser.ai.controls.default", type: "string" },
+  { id: "browser.ai.controls.translations", type: "string" },
+  { id: "browser.ai.controls.pdfjsAltText", type: "string" },
+  { id: "browser.ai.controls.smartTabGroups", type: "string" },
+  { id: "browser.ai.controls.linkPreviewKeyPoints", type: "string" },
   { id: "browser.ml.chat.provider", type: "string" },
   { id: "browser.aiwindow.preferences.enabled", type: "bool" },
   { id: "browser.aiwindow.enabled", type: "bool" },
   { id: "browser.aiwindow.memories", type: "bool" },
 ]);
 
+Preferences.addSetting({ id: "onDeviceFieldset" });
+Preferences.addSetting({ id: "onDeviceGroup" });
+Preferences.addSetting({ id: "aiWindowFieldset" });
+Preferences.addSetting({ id: "sidebarChatbotFieldset" });
+
+const AiControlStates = Object.freeze({
+  default: "default",
+  enabled: "enabled",
+  blocked: "blocked",
+  available: "available",
+});
+
+const AiControlGlobalStates = Object.freeze({
+  available: "available",
+  blocked: "blocked",
+});
+
+const AI_CONTROL_OPTIONS = [
+  {
+    value: AiControlStates.available,
+    l10nId: "preferences-ai-controls-state-available",
+  },
+  {
+    value: AiControlStates.enabled,
+    l10nId: "preferences-ai-controls-state-enabled",
+  },
+  {
+    value: AiControlStates.blocked,
+    l10nId: "preferences-ai-controls-state-blocked",
+  },
+];
+
+Preferences.addSetting({
+  id: "aiControlsDefault",
+  pref: "browser.ai.controls.default",
+  get: prefVal =>
+    prefVal in AiControlGlobalStates
+      ? prefVal
+      : AiControlGlobalStates.available,
+});
+
+/**
+ * @param {object} options
+ * @param {string} options.id Setting id to create
+ * @param {string} options.pref Pref id for the state
+ * @param {OnDeviceModelFeaturesEnum} options.feature Feature id for removing models
+ * @param {boolean} [options.supportsEnabled] If the feature supports the "enabled" state
+ */
+function makeAiControlSetting({ id, pref, feature, supportsEnabled = true }) {
+  Preferences.addSetting({
+    id,
+    pref,
+    deps: ["aiControlsDefault"],
+    setup(emitChange) {
+      /**
+       * @param {nsISupports} _
+       * @param {string} __
+       * @param {string} changedFeature
+       */
+      const featureChange = (_, __, changedFeature) => {
+        if (changedFeature == feature) {
+          emitChange();
+        }
+      };
+      Services.obs.addObserver(featureChange, "OnDeviceModelManagerChange");
+      return () =>
+        Services.obs.removeObserver(
+          featureChange,
+          "OnDeviceModelManagerChange"
+        );
+    },
+    get(prefVal, deps) {
+      if (
+        prefVal == AiControlStates.blocked ||
+        (prefVal == AiControlStates.default &&
+          deps.aiControlsDefault.value == AiControlGlobalStates.blocked) ||
+        OnDeviceModelManager.isBlocked(feature)
+      ) {
+        return AiControlStates.blocked;
+      }
+      if (
+        supportsEnabled &&
+        (prefVal == AiControlStates.enabled ||
+          OnDeviceModelManager.isEnabled(feature))
+      ) {
+        return AiControlStates.enabled;
+      }
+      return AiControlStates.available;
+    },
+    onUserChange(prefVal) {
+      if (prefVal == AiControlStates.available) {
+        OnDeviceModelManager.reset(feature);
+      } else if (prefVal == AiControlStates.enabled) {
+        OnDeviceModelManager.enable(feature);
+      } else if (prefVal == AiControlStates.blocked) {
+        OnDeviceModelManager.disable(feature);
+      }
+    },
+  });
+}
+makeAiControlSetting({
+  id: "aiControlTranslations",
+  pref: "browser.ai.controls.translations",
+  feature: OnDeviceModelManager.features.Translations,
+  supportsEnabled: false,
+});
+makeAiControlSetting({
+  id: "aiControlPdfjsAltText",
+  pref: "browser.ai.controls.pdfjsAltText",
+  feature: OnDeviceModelManager.features.PdfAltText,
+});
+makeAiControlSetting({
+  id: "aiControlSmartTabGroups",
+  pref: "browser.ai.controls.smartTabGroups",
+  feature: OnDeviceModelManager.features.TabGroups,
+});
+makeAiControlSetting({
+  id: "aiControlLinkPreviewKeyPoints",
+  pref: "browser.ai.controls.linkPreviewKeyPoints",
+  feature: OnDeviceModelManager.features.KeyPoints,
+});
+
+// sidebar chatbot
 Preferences.addSetting({ id: "chatbotProviderItem" });
 Preferences.addSetting({
   id: "chatbotProvider",
@@ -99,6 +227,7 @@ Preferences.addSetting({
       deps.onDeviceModel.value
     );
     lazy.log.info("Will install: ", feature);
+    // @ts-expect-error: OnDeviceModelManager changed, remove this section
     await OnDeviceModelManager.install(feature);
     lazy.log.info("Done install: ", feature);
   },
@@ -111,6 +240,7 @@ Preferences.addSetting({
       deps.onDeviceModel.value
     );
     lazy.log.info("Will uninstall: ", feature);
+    // @ts-expect-error: OnDeviceModelManager changed, remove this section
     await OnDeviceModelManager.uninstall(feature);
     lazy.log.info("Done uninstall: ", feature);
   },
@@ -121,6 +251,7 @@ Preferences.addSetting({
     lazy.log.info("Will uninstall: ALL");
     await Promise.all(
       Object.values(OnDeviceModelManager.features).map(feature =>
+        // @ts-expect-error: OnDeviceModelManager changed, remove this section
         OnDeviceModelManager.uninstall(feature)
       )
     );
@@ -357,39 +488,132 @@ SettingGroupManager.registerGroups({
     ],
   },
   aiFeatures: {
-    l10nId: "preferences-ai-controls-sidebar-chatbot-group",
-    supportPage: "ai-chatbot",
     items: [
       {
-        id: "chatbotProviderItem",
-        control: "moz-box-item",
+        id: "onDeviceFieldset",
+        l10nId: "preferences-ai-controls-on-device-group",
+        supportPage: "on-device-models",
+        control: "moz-fieldset",
+        controlAttrs: {
+          headinglevel: 2,
+        },
         items: [
           {
-            id: "chatbotProvider",
-            l10nId: "preferences-ai-controls-sidebar-chatbot-control",
-            control: "moz-select",
+            id: "onDeviceGroup",
+            control: "moz-box-group",
             options: [
               {
-                l10nId: "preferences-ai-controls-state-available",
-                value: "",
+                control: "moz-box-item",
+                items: [
+                  {
+                    id: "aiControlTranslations",
+                    l10nId: "preferences-ai-controls-translations-control",
+                    control: "moz-select",
+                    options: [
+                      ...AI_CONTROL_OPTIONS.filter(
+                        opt => opt.value != AiControlStates.enabled
+                      ),
+                      {
+                        control: "a",
+                        l10nId:
+                          "preferences-ai-controls-translations-more-link",
+                        slot: "support-link",
+                        controlAttrs: {
+                          href: "#general-translations",
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                control: "moz-box-item",
+                items: [
+                  {
+                    id: "aiControlPdfjsAltText",
+                    l10nId: "preferences-ai-controls-pdfjs-control",
+                    control: "moz-select",
+                    supportPage: "pdf-alt-text",
+                    options: [...AI_CONTROL_OPTIONS],
+                  },
+                ],
+              },
+              {
+                control: "moz-box-item",
+                items: [
+                  {
+                    id: "aiControlSmartTabGroups",
+                    l10nId:
+                      "preferences-ai-controls-tab-group-suggestions-control",
+                    control: "moz-select",
+                    supportPage: "how-use-ai-enhanced-tab-groups",
+                    options: [...AI_CONTROL_OPTIONS],
+                  },
+                ],
+              },
+              {
+                control: "moz-box-item",
+                items: [
+                  {
+                    id: "aiControlLinkPreviewKeyPoints",
+                    l10nId: "preferences-ai-controls-key-points-control",
+                    control: "moz-select",
+                    supportPage: "use-link-previews-firefox",
+                    options: [...AI_CONTROL_OPTIONS],
+                  },
+                ],
               },
             ],
           },
         ],
       },
       {
-        id: "AIWindowItem",
-        control: "moz-box-group",
+        id: "aiWindowFieldset",
+        control: "moz-fieldset",
         items: [
           {
-            id: "AIWindowHeader",
-            l10nId: "try-ai-features-ai-window",
-            control: "moz-box-item",
+            id: "AIWindowItem",
+            control: "moz-box-group",
+            items: [
+              {
+                id: "AIWindowHeader",
+                l10nId: "try-ai-features-ai-window",
+                control: "moz-box-item",
+              },
+              {
+                id: "AIWindowActivateLink",
+                l10nId: "try-ai-features-ai-window-activate-link",
+                control: "moz-box-link",
+              },
+            ],
           },
+        ],
+      },
+      {
+        id: "sidebarChatbotFieldset",
+        control: "moz-fieldset",
+        l10nId: "preferences-ai-controls-sidebar-chatbot-group",
+        supportPage: "ai-chatbot",
+        controlAttrs: {
+          headinglevel: 2,
+        },
+        items: [
           {
-            id: "AIWindowActivateLink",
-            l10nId: "try-ai-features-ai-window-activate-link",
-            control: "moz-box-link",
+            id: "chatbotProviderItem",
+            control: "moz-box-item",
+            items: [
+              {
+                id: "chatbotProvider",
+                l10nId: "preferences-ai-controls-sidebar-chatbot-control",
+                control: "moz-select",
+                options: [
+                  {
+                    l10nId: "preferences-ai-controls-state-available",
+                    value: "",
+                  },
+                ],
+              },
+            ],
           },
         ],
       },
