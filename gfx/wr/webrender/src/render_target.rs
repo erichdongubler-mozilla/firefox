@@ -7,9 +7,10 @@ use api::units::*;
 use api::{ColorF, LineOrientation, BorderStyle};
 use crate::batch::{AlphaBatchBuilder, AlphaBatchContainer, BatchTextures};
 use crate::batch::{ClipBatcher, BatchBuilder, INVALID_SEGMENT_INDEX, ClipMaskInstanceList};
-use crate::render_task::{SubTask, ClipSubTask};
+use crate::render_task::{SubTask, RectangleClipSubTask, ImageClipSubTask};
 use crate::command_buffer::CommandBufferList;
 use crate::pattern::{PatternKind, PatternShaderInput};
+use crate::segment::EdgeAaSegmentMask;
 use crate::spatial_tree::SpatialTree;
 use crate::clip::ClipStore;
 use crate::frame_builder::FrameGlobalResources;
@@ -553,12 +554,26 @@ impl RenderTarget {
             RenderTaskKind::Test(..) => {}
         }
 
+        let task_address = task_id.into();
         for sub_task_id in task.sub_tasks.clone() {
             let sub_task = &render_tasks[sub_task_id];
             match sub_task {
-                SubTask::Clip(clip_task) => {
-                    add_clip_task_to_batch(
+                SubTask::RectangleClip(clip_task) => {
+                    add_rect_clip_task_to_batch(
                         clip_task,
+                        &target_rect,
+                        task_address,
+                        &ctx.frame_memory,
+                        render_tasks,
+                        gpu_buffer_builder,
+                        &mut self.clip_masks
+                    );
+                }
+                SubTask::ImageClip(clip_task) => {
+                    add_image_clip_task_to_batch(
+                        clip_task,
+                        &target_rect,
+                        task_address,
                         &ctx.frame_memory,
                         render_tasks,
                         gpu_buffer_builder,
@@ -855,86 +870,104 @@ pub struct LineDecorationJob {
     pub axis_select: f32,
 }
 
-fn add_clip_task_to_batch(
-    task: &ClipSubTask,
-
+fn add_rect_clip_task_to_batch(
+    task: &RectangleClipSubTask,
+    target_rect: &DeviceIntRect,
+    masked_task_address: RenderTaskAddress,
     memory: &FrameMemory,
     render_tasks: &RenderTaskGraph,
     gpu_buffers: &mut GpuBufferBuilder,
     results: &mut ClipMaskInstanceList,
 ) {
-    let is_image_mask = task.clip_pattern_kind == PatternKind::ColorOrTexture;
+    quad::add_to_batch(
+        PatternKind::Mask,
+        PatternShaderInput::default(),
+        masked_task_address,
+        task.quad_transform_id,
+        task.quad_address,
+        task.quad_flags,
+        EdgeAaSegmentMask::all(),
+        INVALID_SEGMENT_INDEX as u8,
+        RenderTaskId::INVALID,
+        ZBufferId(0),
+        render_tasks,
+        gpu_buffers,
+        |_, prim| {
+            let instance = MaskInstance {
+                prim,
+                clip_transform_id: task.clip_transform_id,
+                clip_address: task.clip_address.as_int(),
+                clip_space: task.clip_space.as_int(),
+                unused: 0,
+            };
+
+            if task.needs_scissor_rect {
+                if task.rounded_rect_fast_path {
+                    results.mask_instances_fast_with_scissor
+                            .entry(*target_rect)
+                            .or_insert_with(|| memory.new_vec())
+                            .push(instance);
+                } else {
+                    results.mask_instances_slow_with_scissor
+                            .entry(*target_rect)
+                            .or_insert_with(|| memory.new_vec())
+                            .push(instance);
+                }
+            } else {
+                if task.rounded_rect_fast_path {
+                    results.mask_instances_fast.push(instance);
+                } else {
+                    results.mask_instances_slow.push(instance);
+                }
+            }
+        }
+    );
+}
+
+fn add_image_clip_task_to_batch(
+    task: &ImageClipSubTask,
+    target_rect: &DeviceIntRect,
+    masked_task_address: RenderTaskAddress,
+    memory: &FrameMemory,
+    render_tasks: &RenderTaskGraph,
+    gpu_buffers: &mut GpuBufferBuilder,
+    results: &mut ClipMaskInstanceList,
+) {
     // A current oddity of the quads infrastructure is that image sources are encoded in
     // quad segment data so we need to have at least one segment if we have a uv rect as
-    // input. In other cases we don't currently use segments for masks.
-    let segment_index = if is_image_mask {
-        0
-    } else {
-        INVALID_SEGMENT_INDEX as u8
-    };
-
-    let target_rect = render_tasks[task.masked_task_id].get_target_rect();
+    // input.
+    let segment_index = 0;
 
     quad::add_to_batch(
-        task.clip_pattern_kind,
+        PatternKind::ColorOrTexture,
         PatternShaderInput::default(),
-        task.render_task_address,
-        task.prim_transform_id,
-        task.main_address,
+        masked_task_address,
+        task.quad_transform_id,
+        task.quad_address,
         task.quad_flags,
-        task.edge_aa,
+        EdgeAaSegmentMask::empty(),
         segment_index,
         task.src_task,
         ZBufferId(0),
         render_tasks,
         gpu_buffers,
         |_, prim| {
-            if is_image_mask {
-                let texture = render_tasks
-                    .resolve_texture(task.src_task)
-                    .expect("bug: texture not found for tile");
+            let texture = render_tasks
+                .resolve_texture(task.src_task)
+                .expect("bug: texture not found for tile");
 
-                if task.clip_needs_scissor_rect {
-                    results
-                        .image_mask_instances_with_scissor
-                        .entry((target_rect, texture))
-                        .or_insert_with(|| memory.new_vec())
-                        .push(prim);
-                } else {
-                    results
-                        .image_mask_instances
-                        .entry(texture)
-                        .or_insert_with(|| memory.new_vec())
-                        .push(prim);
-                }
+            if task.needs_scissor_rect {
+                results
+                    .image_mask_instances_with_scissor
+                    .entry((*target_rect, texture))
+                    .or_insert_with(|| memory.new_vec())
+                    .push(prim);
             } else {
-                let instance = MaskInstance {
-                    prim,
-                    clip_transform_id: task.clip_transform_id,
-                    clip_address: task.clip_address.as_int(),
-                    clip_space: task.clip_space.as_int(),
-                    unused: 0,
-                };
-
-                if task.clip_needs_scissor_rect {
-                    if task.rounded_rect_fast_path {
-                        results.mask_instances_fast_with_scissor
-                               .entry(target_rect)
-                               .or_insert_with(|| memory.new_vec())
-                               .push(instance);
-                    } else {
-                        results.mask_instances_slow_with_scissor
-                               .entry(target_rect)
-                               .or_insert_with(|| memory.new_vec())
-                               .push(instance);
-                    }
-                } else {
-                    if task.rounded_rect_fast_path {
-                        results.mask_instances_fast.push(instance);
-                    } else {
-                        results.mask_instances_slow.push(instance);
-                    }
-                }
+                results
+                    .image_mask_instances
+                    .entry(texture)
+                    .or_insert_with(|| memory.new_vec())
+                    .push(prim);
             }
         }
     );

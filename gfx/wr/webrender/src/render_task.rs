@@ -2359,27 +2359,57 @@ impl RenderTask {
     }
 }
 
+/// A rendering operation applied on top of a render task.
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum SubTask {
-    Clip(ClipSubTask),
+    RectangleClip(RectangleClipSubTask),
+    ImageClip(ImageClipSubTask),
 }
 
+/// A (rounded) rectangle clip applied to a render task using the multiply
+/// blend mode on top of the content being clipped.
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct ClipSubTask {
-    pub masked_task_id: RenderTaskId,
-    pub clip_pattern_kind: PatternKind,
-    pub render_task_address: RenderTaskAddress,
-    pub main_address: GpuBufferAddress,
-    pub prim_transform_id: GpuTransformId,
+pub struct RectangleClipSubTask {
+    /// Quad primitive address for this clip.
+    pub quad_address: GpuBufferAddress,
+    /// Location of the (rounded) rectangle parameters.
     pub clip_address: GpuBufferAddress,
+    /// The coordinate space of the clip.
+    /// - If primitive space, then the clip's quad primitive is positioned using
+    ///   the transform of the primitive being clipped. clip_transform_id is used
+    ///   by the shader to map from that space to the clip's local space.
+    ///   This is used when the clip and raster space are indifferent coordinate
+    ///   systems.
+    /// - If raster space, then the clip's quad primitive is positioned directly
+    ///   using rectangles in raster space (no transforms). The clip parameters
+    ///   are still potentially in a different space so clip_transform_id is used
+    ///   to map from raster to clip space (this transform is assumed to be a
+    ///   scale-offset).
+    pub clip_space: ClipSpace,
+    /// Transform applied to the quad primitive of the clip.
+    pub quad_transform_id: GpuTransformId,
+    /// Transform from the quad primitive's space to the clip's local space.
     pub clip_transform_id: GpuTransformId,
+    pub quad_flags: QuadFlags,
+    pub needs_scissor_rect: bool,
+    pub rounded_rect_fast_path: bool,
+}
+
+/// An clip applied to a render task using the multiply blend mode on top of
+/// the content being clipped.
+#[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct ImageClipSubTask {
+    /// Quad primitive address for this clip.
+    pub quad_address: GpuBufferAddress,
+    /// Transform from the clip's local space to raster space (to position the
+    /// clip's quad primitive).
+    pub quad_transform_id: GpuTransformId,
     pub src_task: RenderTaskId,
     pub quad_flags: QuadFlags,
-    pub edge_aa: EdgeAaSegmentMask,
-    pub clip_space: ClipSpace,
-    pub clip_needs_scissor_rect: bool,
-    pub rounded_rect_fast_path: bool,
+    pub needs_scissor_rect: bool,
 }
