@@ -190,6 +190,12 @@ def register_callback_action(
                 "base_revision": base_revision,
             }
 
+            if branch := parameters.get("head_ref"):
+                push["branch"] = branch
+
+            if (base_branch := parameters.get("base_ref")) and branch != base_branch:
+                push["base_branch"] = base_branch
+
             action = {
                 "name": name,
                 "title": title,
@@ -198,6 +204,13 @@ def register_callback_action(
                 "taskGroupId": decision_task_id,
                 "cb_name": cb_name,
                 "symbol": symbol,
+            }
+
+            # The full parameter set is too large, and gets duplicated in
+            # `actions.json` once per hook. So only pass in what's actually
+            # necessary.
+            filtered_params = {
+                "repository_type": parameters["repository_type"],
             }
 
             rv = {
@@ -233,6 +246,7 @@ def register_callback_action(
                         "action": action,
                         "repository": repository,
                         "push": push,
+                        "parameters": filtered_params,
                     },
                     # and pass everything else through from our own context
                     "user": {
