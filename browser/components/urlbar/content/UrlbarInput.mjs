@@ -3857,7 +3857,7 @@ export class UrlbarInput extends HTMLElement {
     if (openUILinkWhere == "current") {
       params.targetBrowser = browser;
       params.indicateErrorPageLoad = true;
-      params.allowPinnedTabHostChange = true;
+      params.allowPinnedTabHostChange = this.#isAddressbar;
       params.allowPopups = url.startsWith("javascript:");
     } else {
       params.initiatingDoc = this.window.document;
