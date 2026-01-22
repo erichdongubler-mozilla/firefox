@@ -4383,7 +4383,7 @@ void RemoveFromVary(nsHttpResponseHead* aResponseHead,
   bool remove = false;
   for (const nsACString& token :
        nsCCharSeparatedTokenizer(buf, NS_HTTP_HEADER_SEP).ToRange()) {
-    if (token.Equals(aRemove)) {
+    if (token.EqualsIgnoreCase(aRemove)) {
       // Need to build a new string without aRemove
       remove = true;
       break;
@@ -4395,7 +4395,7 @@ void RemoveFromVary(nsHttpResponseHead* aResponseHead,
   nsAutoCString newValue;
   for (const nsACString& token :
        nsCCharSeparatedTokenizer(buf, NS_HTTP_HEADER_SEP).ToRange()) {
-    if (!token.Equals(aRemove)) {
+    if (!token.EqualsIgnoreCase(aRemove)) {
       if (!newValue.IsEmpty()) {
         newValue += ","_ns;
       }
