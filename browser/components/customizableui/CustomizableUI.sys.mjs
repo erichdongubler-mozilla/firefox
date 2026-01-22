@@ -2983,8 +2983,8 @@ var CustomizableUIInternal = {
         // Find containing browser or iframe element in the parent doc.
         return target.defaultView.docShell.chromeEventHandler;
       }
-      // Iterate up through any shadow roots
-      return target.parentNode?.host || target.parentNode;
+      // Skip any parent shadow roots
+      return target.parentNode?.host?.parentNode || target.parentNode;
     }
 
     // While keeping track of that, we go from the original target back up,
@@ -3026,9 +3026,6 @@ var CustomizableUIInternal = {
       if (tagName == "menuitem") {
         // If we're in a nested menu we don't need to close this panel.
         return true;
-      }
-      if (tagName == "moz-button") {
-        return false;
       }
     }
 

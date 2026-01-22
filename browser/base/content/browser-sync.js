@@ -684,11 +684,11 @@ var gSync = {
     PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-sendtab-not-configured-button"
-    ).addEventListener("click", this);
+    ).addEventListener("command", this);
     PanelMultiView.getViewNode(
       document,
       "PanelUI-fxa-menu-sendtab-connect-device-button"
-    ).addEventListener("click", this);
+    ).addEventListener("command", this);
 
     PanelUI.mainView.addEventListener("ViewShowing", this);
 
@@ -725,8 +725,7 @@ var gSync = {
       case "mouseover":
         this.refreshSyncButtonsTooltip();
         break;
-      case "command":
-      case "click": {
+      case "command": {
         this.onCommand(event.target);
         break;
       }
