@@ -235,7 +235,7 @@ add_task(async function rowLabel() {
 
   const { element } = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
   const row = element.row;
-  Assert.equal(row.getAttribute("label"), "Firefox extension");
+  Assert.ok(!row.hasAttribute("label"), "Row should not have a label");
 
   await UrlbarTestUtils.promisePopupClose(window);
 });

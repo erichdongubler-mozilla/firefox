@@ -345,7 +345,6 @@ export class RealtimeSuggestProvider extends SuggestProvider {
       type: lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       isBestMatch: true,
-      hideRowLabel: true,
       ...additionalOptions,
       payload: {
         items: values.map((v, i) => this.makePayloadItem(v, i)),
@@ -400,7 +399,6 @@ export class RealtimeSuggestProvider extends SuggestProvider {
       type: lazy.UrlbarUtils.RESULT_TYPE.TIP,
       source: lazy.UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
       isBestMatch: true,
-      hideRowLabel: true,
       payload: {
         // This `type` is the tip type, required for `TIP` results.
         type: "realtime_opt_in",

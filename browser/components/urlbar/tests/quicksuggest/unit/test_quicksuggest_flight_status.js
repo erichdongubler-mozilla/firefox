@@ -216,7 +216,6 @@ function merinoResult() {
     type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     isBestMatch: true,
-    hideRowLabel: true,
     heuristic: false,
     payload: {
       source: "merino",

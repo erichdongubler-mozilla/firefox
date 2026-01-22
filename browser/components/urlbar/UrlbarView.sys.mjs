@@ -2702,23 +2702,10 @@ export class UrlbarView {
       return { id: "urlbar-group-recent-searches" };
     }
 
-    if (
-      row.result.isBestMatch &&
-      row.result.providerName == lazy.UrlbarProviderQuickSuggest.name
-    ) {
-      switch (row.result.payload.telemetryType) {
-        case "adm_sponsored":
-          if (!lazy.UrlbarPrefs.get("quickSuggestSponsoredPriority")) {
-            return { id: "urlbar-group-sponsored" };
-          }
-          break;
-        case "amo":
-          return { id: "urlbar-group-addon" };
-        case "mdn":
-          return { id: "urlbar-group-mdn" };
-        case "yelp":
-          return { id: "urlbar-group-local" };
-      }
+    if (row.result.providerName == lazy.UrlbarProviderQuickSuggest.name) {
+      return row.result.isBestMatch
+        ? null
+        : { id: "urlbar-group-firefox-suggest" };
     }
 
     if (row.result.isBestMatch) {
@@ -2735,16 +2722,6 @@ export class UrlbarView {
 
     if (!this.#queryContext?.searchString || row.result.heuristic) {
       return null;
-    }
-
-    if (row.result.providerName == lazy.UrlbarProviderQuickSuggest.name) {
-      if (
-        row.result.payload.provider == "Weather" &&
-        !row.result.payload.showRowLabel
-      ) {
-        return null;
-      }
-      return { id: "urlbar-group-firefox-suggest" };
     }
 
     switch (row.result.type) {
@@ -3468,32 +3445,14 @@ export class UrlbarView {
       { id: "urlbar-result-action-visit-from-clipboard" },
     ];
 
-    let suggestSponsoredEnabled =
-      lazy.UrlbarPrefs.get("quickSuggestEnabled") &&
-      lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored");
-
     if (lazy.UrlbarPrefs.get("groupLabels.enabled")) {
       idArgs.push({ id: "urlbar-group-firefox-suggest" });
       idArgs.push({ id: "urlbar-group-best-match" });
-      if (lazy.UrlbarPrefs.get("quickSuggestEnabled")) {
-        if (lazy.UrlbarPrefs.get("addonsFeatureGate")) {
-          idArgs.push({ id: "urlbar-group-addon" });
-        }
-        if (lazy.UrlbarPrefs.get("mdn.featureGate")) {
-          idArgs.push({ id: "urlbar-group-mdn" });
-        }
-        if (lazy.UrlbarPrefs.get("yelpFeatureGate")) {
-          idArgs.push({ id: "urlbar-group-local" });
-        }
-        if (
-          suggestSponsoredEnabled &&
-          lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold")
-        ) {
-          idArgs.push({ id: "urlbar-group-sponsored" });
-        }
-      }
     }
 
+    let suggestSponsoredEnabled =
+      lazy.UrlbarPrefs.get("quickSuggestEnabled") &&
+      lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored");
     if (suggestSponsoredEnabled) {
       idArgs.push({ id: "urlbar-result-action-sponsored" });
     }
