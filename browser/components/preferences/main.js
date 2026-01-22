@@ -2529,7 +2529,7 @@ SettingGroupManager.registerGroups({
           {
             id: "browserLayoutHorizontalTabs",
             value: "false",
-            l10nId: "browser-layout-horizontal-tabs",
+            l10nId: "browser-layout-horizontal-tabs2",
             controlAttrs: {
               class: "setting-chooser-item",
               imagesrc:
@@ -2539,7 +2539,7 @@ SettingGroupManager.registerGroups({
           {
             id: "browserLayoutVerticalTabs",
             value: "true",
-            l10nId: "browser-layout-vertical-tabs",
+            l10nId: "browser-layout-vertical-tabs2",
             controlAttrs: {
               class: "setting-chooser-item",
               imagesrc:

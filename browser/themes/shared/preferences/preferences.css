@@ -1408,7 +1408,7 @@ richlistitem .text-link:hover {
   &::part(image) {
     width: 54px;
     box-shadow: var(--box-shadow-card);
-    margin-block: var(--space-medium);
+    margin-block-start: var(--space-medium);
     border: var(--border-width) solid var(--border-color);
     border-radius: var(--border-radius-small);
   }

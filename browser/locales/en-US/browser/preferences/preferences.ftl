@@ -300,11 +300,15 @@ settings-tabs-show-image-in-preview =
 browser-layout-header2 =
     .label = Browser Layout
 
-browser-layout-horizontal-tabs =
+browser-layout-horizontal-tabs2 =
     .label = Horizontal tabs
+    .title = Tabs at the top
+    .description = Tabs at the top
 
-browser-layout-vertical-tabs =
+browser-layout-vertical-tabs2 =
     .label = Vertical tabs
+    .title = Tabs on the side, in the sidebar
+    .description = Tabs on the side, in the sidebar
 
 browser-layout-show-sidebar2 =
     .label = Show sidebar
