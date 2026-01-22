@@ -6777,11 +6777,6 @@
     !verbose push
     !verbose ${_MOZFUNC_VERBOSE}
     !define LogDesktopShortcut "!insertmacro LogDesktopShortcutCall"
-
-    Function LogDesktopShortcut
-      Call LogShortcut
-    FunctionEnd
-
     !verbose pop
   !endif
 !macroend
@@ -6791,7 +6786,7 @@
   !verbose ${_MOZFUNC_VERBOSE}
   Push "DESKTOP"
   Push "${_FILE_NAME}"
-  Call LogDesktopShortcut
+  Call LogShortcut
   !verbose pop
 !macroend
 
