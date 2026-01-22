@@ -241,7 +241,6 @@ mobile/android/**/.gradle
 mobile/android/**/build
 mobile/android/**/.kotlin
 mobile/android/**/bin
-mobile/android/**/generated
 
 # app-services build artifacts.
 services/app-services/tools/nimbus-gradle-plugin/.gradle
