@@ -435,6 +435,10 @@ class StorageUI {
     this.table.clear();
     this.hideSidebar();
     this.tree.clear();
+
+    // Do not attempt to load more items until the storage table has been
+    // populated again.
+    this.shouldLoadMoreItems = false;
   }
 
   set animationsEnabled(value) {
