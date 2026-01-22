@@ -17,11 +17,6 @@ const { CommonDialog } = ChromeUtils.importESModule(
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   GenAI: "resource:///modules/GenAI.sys.mjs",
-  log: () =>
-    console.createInstance({
-      prefix: "aiFeatures",
-      maxLogLevel: "Info",
-    }),
   MemoryStore:
     "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs",
 });
@@ -194,68 +189,6 @@ Preferences.addSetting({
       ...config,
       options,
     };
-  },
-});
-Preferences.addSetting(
-  /** @type {{ selected: string } & SettingConfig} */ ({
-    id: "onDeviceModel",
-    selected: Object.values(OnDeviceModelManager.features)[0],
-    getControlConfig(config) {
-      if (!config.options) {
-        config.options = Object.entries(OnDeviceModelManager.features).map(
-          ([key, value]) => ({
-            value,
-            controlAttrs: { label: key },
-          })
-        );
-      }
-      return config;
-    },
-    get() {
-      return this.selected;
-    },
-    set(val) {
-      this.selected = String(val);
-    },
-  })
-);
-Preferences.addSetting({
-  id: "onDeviceModelInstall",
-  deps: ["onDeviceModel"],
-  async onUserClick(_, deps) {
-    let feature = /** @type {OnDeviceModelFeaturesEnum} */ (
-      deps.onDeviceModel.value
-    );
-    lazy.log.info("Will install: ", feature);
-    // @ts-expect-error: OnDeviceModelManager changed, remove this section
-    await OnDeviceModelManager.install(feature);
-    lazy.log.info("Done install: ", feature);
-  },
-});
-Preferences.addSetting({
-  id: "onDeviceModelUninstall",
-  deps: ["onDeviceModel"],
-  async onUserClick(_, deps) {
-    let feature = /** @type {OnDeviceModelFeaturesEnum} */ (
-      deps.onDeviceModel.value
-    );
-    lazy.log.info("Will uninstall: ", feature);
-    // @ts-expect-error: OnDeviceModelManager changed, remove this section
-    await OnDeviceModelManager.uninstall(feature);
-    lazy.log.info("Done uninstall: ", feature);
-  },
-});
-Preferences.addSetting({
-  id: "onDeviceModelUninstallAll",
-  async onUserClick() {
-    lazy.log.info("Will uninstall: ALL");
-    await Promise.all(
-      Object.values(OnDeviceModelManager.features).map(feature =>
-        // @ts-expect-error: OnDeviceModelManager changed, remove this section
-        OnDeviceModelManager.uninstall(feature)
-      )
-    );
-    lazy.log.info("Done uninstall: ALL");
   },
 });
 
@@ -462,31 +395,6 @@ Preferences.addSetting(
 );
 
 SettingGroupManager.registerGroups({
-  debugModelManagement: {
-    l10nId: "debug-model-management-group",
-    items: [
-      {
-        id: "onDeviceModel",
-        control: "moz-select",
-        l10nId: "debug-model-management-feature",
-      },
-      {
-        id: "onDeviceModelInstall",
-        control: "moz-button",
-        l10nId: "debug-model-management-install",
-      },
-      {
-        id: "onDeviceModelUninstall",
-        control: "moz-button",
-        l10nId: "debug-model-management-uninstall",
-      },
-      {
-        id: "onDeviceModelUninstallAll",
-        control: "moz-button",
-        l10nId: "debug-model-management-uninstall-all",
-      },
-    ],
-  },
   aiFeatures: {
     items: [
       {
