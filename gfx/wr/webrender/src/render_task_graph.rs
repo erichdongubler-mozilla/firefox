@@ -12,7 +12,7 @@ use api::ImageFormat;
 use crate::gpu_types::ImageSource;
 use crate::internal_types::{TextureSource, CacheTextureId, FastHashMap, FastHashSet, FrameId};
 use crate::internal_types::size_of_frame_vec;
-use crate::render_task::{StaticRenderTaskSurface, RenderTaskLocation, RenderTask};
+use crate::render_task::{StaticRenderTaskSurface, RenderTaskLocation, RenderTask, SubTask};
 use crate::render_target::RenderTargetKind;
 use crate::render_task::{RenderTaskData, RenderTaskKind};
 use crate::renderer::GpuBufferAddress;
@@ -77,6 +77,45 @@ impl std::fmt::Debug for RenderTaskId {
         } else {
             write!(f, "#{}", self.index)
         }
+    }
+}
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Clone)]
+pub struct SubTaskRange(std::ops::Range<u32>);
+
+impl SubTaskRange {
+    pub fn empty() -> Self { SubTaskRange(0..0) }
+    pub fn is_empty(&self) -> bool { self.0.is_empty() }
+}
+
+impl std::fmt::Debug for SubTaskRange {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if self.is_empty() {
+            write!(f, "<empty>")
+        } else {
+            self.0.fmt(f)
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(MallocSizeOf)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct SubTaskId(u32);
+
+impl std::fmt::Debug for SubTaskId {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "#{}", self.0)
+    }
+}
+
+impl Iterator for SubTaskRange {
+    type Item = SubTaskId;
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(SubTaskId(self.0.next()?))
     }
 }
 
@@ -181,6 +220,9 @@ pub struct Pass {
 pub struct RenderTaskGraph {
     /// List of tasks added to the graph
     pub tasks: FrameVec<RenderTask>,
+    /// List of sub-tasks, executing after the regular tasks for a given
+    /// pass.
+    pub sub_tasks: FrameVec<SubTask>,
 
     /// The passes that were created, based on dependencies between tasks
     pub passes: FrameVec<Pass>,
@@ -205,6 +247,8 @@ pub struct RenderTaskGraph {
 pub struct RenderTaskGraphBuilder {
     /// List of tasks added to the builder
     tasks: Vec<RenderTask>,
+    /// List of sub-tasks added to the builder
+    sub_tasks: Vec<SubTask>,
 
     /// List of task roots
     roots: FastHashSet<RenderTaskId>,
@@ -227,6 +271,7 @@ impl RenderTaskGraphBuilder {
     pub fn new() -> Self {
         RenderTaskGraphBuilder {
             tasks: Vec::new(),
+            sub_tasks: Vec::new(),
             roots: FastHashSet::default(),
             frame_id: FrameId::INVALID,
             textures_to_free: FastHashSet::default(),
@@ -276,6 +321,19 @@ impl RenderTaskGraphBuilder {
         }
     }
 
+    pub fn begin_sub_tasks(&self) -> SubTaskRange {
+        let first = self.sub_tasks.len() as u32;
+        SubTaskRange(first..first)
+    }
+
+    pub fn push_sub_task(&mut self, in_range: &mut SubTaskRange, task: SubTask) {
+        // Check that we are pushing sub-tasks as contiguous sequences.
+        assert_eq!(in_range.0.end as usize, self.sub_tasks.len());
+        in_range.0.end += 1;
+
+        self.sub_tasks.push(task);
+    }
+
     /// Express a dependency, such that `task_id` depends on `input` as a texture source.
     pub fn add_dependency(
         &mut self,
@@ -309,8 +367,14 @@ impl RenderTaskGraphBuilder {
             tasks.push(task)
         }
 
+        let mut sub_tasks = memory.new_vec_with_capacity(self.sub_tasks.len());
+        for task in self.sub_tasks.drain(..) {
+            sub_tasks.push(task)
+        }
+
         let mut graph = RenderTaskGraph {
             tasks,
+            sub_tasks,
             passes: memory.new_vec(),
             task_data: memory.new_vec_with_capacity(task_count),
             frame_id: self.frame_id,
@@ -794,6 +858,7 @@ impl RenderTaskGraph {
         let allocator = FrameAllocator::fallback();
         RenderTaskGraph {
             tasks: allocator.clone().new_vec(),
+            sub_tasks: allocator.clone().new_vec(),
             passes: allocator.clone().new_vec(),
             frame_id: FrameId::INVALID,
             task_data: allocator.clone().new_vec(),
@@ -820,6 +885,13 @@ impl std::ops::Index<RenderTaskId> for RenderTaskGraph {
     type Output = RenderTask;
     fn index(&self, id: RenderTaskId) -> &RenderTask {
         &self.tasks[id.index as usize]
+    }
+}
+
+impl std::ops::Index<SubTaskId> for RenderTaskGraph {
+    type Output = SubTask;
+    fn index(&self, id: SubTaskId) -> &SubTask {
+        &self.sub_tasks[id.0 as usize]
     }
 }
 

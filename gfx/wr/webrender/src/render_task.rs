@@ -7,6 +7,7 @@ use api::{MAX_RENDER_TASK_SIZE, SVGFE_GRAPH_MAX};
 use api::units::*;
 use std::time::Duration;
 use crate::box_shadow::BLUR_SAMPLE_SCALE;
+use crate::render_task_graph::SubTaskRange;
 use crate::clip::{ClipDataStore, ClipItemKind, ClipStore, ClipNodeRange};
 use crate::command_buffer::{CommandBufferIndex, QuadFlags};
 use crate::pattern::{PatternKind, PatternShaderInput};
@@ -971,6 +972,7 @@ pub struct RenderTask {
     pub children: TaskDependencies,
     pub kind: RenderTaskKind,
     pub sub_pass: Option<SubPass>,
+    pub sub_tasks: SubTaskRange,
 
     // TODO(gw): These fields and perhaps others can become private once the
     //           frame_graph / render_task source files are unified / cleaned up.
@@ -1003,6 +1005,7 @@ impl RenderTask {
             uv_rect_kind: UvRectKind::Rect,
             cache_handle: None,
             sub_pass: None,
+            sub_tasks: SubTaskRange::empty(),
         }
     }
 
@@ -1048,6 +1051,7 @@ impl RenderTask {
             uv_rect_kind: UvRectKind::Rect,
             cache_handle: None,
             sub_pass: None,
+            sub_tasks: SubTaskRange::empty(),
         }
     }
 
@@ -1067,6 +1071,7 @@ impl RenderTask {
             uv_rect_kind: UvRectKind::Rect,
             cache_handle: None,
             sub_pass: None,
+            sub_tasks: SubTaskRange::empty(),
         }
     }
 
@@ -1248,6 +1253,14 @@ impl RenderTask {
     ) {
         assert!(self.sub_pass.is_none(), "multiple sub-passes are not supported for now");
         self.sub_pass = Some(sub_pass);
+    }
+
+    pub fn set_sub_tasks(
+        &mut self,
+        sub_tasks: SubTaskRange,
+    ) {
+        assert!(self.sub_tasks.is_empty());
+        self.sub_tasks = sub_tasks;
     }
 
     /// Creates render tasks from PictureCompositeMode::SVGFEGraph.
@@ -2372,6 +2385,12 @@ impl RenderTask {
     pub fn mark_cached(&mut self, handle: RenderTaskCacheEntryHandle) {
         self.cache_handle = Some(handle);
     }
+}
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum SubTask {
+    Clip(ClipSubTask),
 }
 
 #[derive(Debug)]

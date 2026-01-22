@@ -7,7 +7,7 @@ use api::units::*;
 use api::{ColorF, LineOrientation, BorderStyle};
 use crate::batch::{AlphaBatchBuilder, AlphaBatchContainer, BatchTextures};
 use crate::batch::{ClipBatcher, BatchBuilder, INVALID_SEGMENT_INDEX, ClipMaskInstanceList};
-use crate::render_task::{ClipSubTask};
+use crate::render_task::{SubTask, ClipSubTask};
 use crate::command_buffer::CommandBufferList;
 use crate::pattern::{PatternKind, PatternShaderInput};
 use crate::spatial_tree::SpatialTree;
@@ -1027,6 +1027,21 @@ fn build_sub_pass(
                     render_tasks,
                     output,
                     &ctx.frame_memory,
+                );
+            }
+        }
+    }
+
+    for sub_task_id in task.sub_tasks.clone() {
+        let sub_task = &render_tasks[sub_task_id];
+        match sub_task {
+            SubTask::Clip(clip_task) => {
+                add_clip_task_to_batch(
+                    clip_task,
+                    &ctx.frame_memory,
+                    render_tasks,
+                    gpu_buffer_builder,
+                    output
                 );
             }
         }
