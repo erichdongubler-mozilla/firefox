@@ -134,7 +134,7 @@ export class AddonSuggestions extends SuggestProvider {
       {
         name: RESULT_MENU_COMMAND.NOT_RELEVANT,
         l10n: {
-          id: "firefox-suggest-command-dismiss-this-suggestion",
+          id: "urlbar-result-menu-dismiss-suggestion",
         },
       },
       {
