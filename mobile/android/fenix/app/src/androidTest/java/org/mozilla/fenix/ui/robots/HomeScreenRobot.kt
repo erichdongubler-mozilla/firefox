@@ -574,10 +574,19 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
 
         @OptIn(ExperimentalTestApi::class)
         fun openSearch(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
-            composeTestRule.waitUntilAtLeastOneExists(hasTestTag(ADDRESSBAR_URL_BOX), waitingTime)
+            Log.i(TAG, "openSearch: Waiting for URL box node to appear and be ready for interaction")
+            composeTestRule.waitUntil(waitingTime) {
+                composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL_BOX).fetchSemanticsNodes().isNotEmpty()
+            }
+            Log.i(TAG, "openSearch: URL box node is now present and ready")
+
             Log.i(TAG, "openSearch: Trying to click navigation toolbar")
             composeTestRule.onNodeWithTag(ADDRESSBAR_URL_BOX).performClick()
             Log.i(TAG, "openSearch: Clicked navigation toolbar")
+
+            Log.i(TAG, "openSearch: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "openSearch: Waited for compose rule to be idle")
 
             SearchRobot(composeTestRule).interact()
             return SearchRobot.Transition(composeTestRule)
