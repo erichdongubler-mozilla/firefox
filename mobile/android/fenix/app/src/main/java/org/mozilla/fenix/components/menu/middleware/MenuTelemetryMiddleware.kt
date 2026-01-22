@@ -262,14 +262,6 @@ class MenuTelemetryMiddleware(
                 )
             }
 
-            MenuAction.Navigate.ExtensionsLearnMore -> {
-                Events.browserMenuAction.record(
-                    Events.BrowserMenuActionExtra(
-                        item = "extensions_learn_more",
-                    ),
-                )
-            }
-
             is MenuAction.Navigate.AddonDetails -> {
                 Events.browserMenuAction.record(
                     Events.BrowserMenuActionExtra(

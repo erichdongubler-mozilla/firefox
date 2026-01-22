@@ -1336,17 +1336,6 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         assertUIObjectIsGone(itemWithDescription(getStringResource(R.string.browser_extensions_menu_handlebar_content_description)))
     }
 
-    fun verifyExtensionsPromotionBannerLearnMoreLinkURL() {
-        try {
-            verifyUrl("support.mozilla.org/en-US/kb/find-and-install-add-ons-firefox-android")
-        } catch (e: AssertionError) {
-            Log.i(TAG, "verifyExtensionsPromotionBannerLearnMoreLinkURL: AssertionError caught, checking redirect URL")
-            verifyUrl(
-                SupportUtils.getSumoURLForTopic(appContext, SupportUtils.SumoTopic.FIND_INSTALL_ADDONS).replace("https://", ""),
-            )
-        }
-    }
-
     fun verifyWebCompatPageItemExists(itemText: String, isSmartBlockFixesItem: Boolean = false) {
         for (i in 1..RETRY_COUNT) {
             try {

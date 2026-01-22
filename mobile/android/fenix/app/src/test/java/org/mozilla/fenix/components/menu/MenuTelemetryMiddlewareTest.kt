@@ -522,16 +522,6 @@ class MenuTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `WHEN navigating to the sumo page for installing add-ons THEN record the extensions learn more browser menu telemetry`() {
-        val store = createStore()
-        assertNull(Events.browserMenuAction.testGetValue())
-
-        store.dispatch(MenuAction.Navigate.ExtensionsLearnMore)
-
-        assertTelemetryRecorded(Events.browserMenuAction, item = "extensions_learn_more")
-    }
-
-    @Test
     fun `WHEN navigating to an add-on's details THEN record the addon details browser menu telemetry`() {
         val store = createStore()
         assertNull(Events.browserMenuAction.testGetValue())

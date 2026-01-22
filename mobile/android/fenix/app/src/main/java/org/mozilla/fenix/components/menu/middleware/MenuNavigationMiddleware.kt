@@ -39,7 +39,6 @@ import org.mozilla.fenix.components.menu.toFenixFxAEntryPoint
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.SupportUtils.AMO_HOMEPAGE_FOR_ANDROID
-import org.mozilla.fenix.settings.SupportUtils.SumoTopic
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.webcompat.WEB_COMPAT_REPORTER_URL
 import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
@@ -252,10 +251,6 @@ class MenuNavigationMiddleware(
 
                 is MenuAction.Navigate.DiscoverMoreExtensions -> openToBrowser(
                     BrowserNavigationParams(url = AMO_HOMEPAGE_FOR_ANDROID),
-                )
-
-                is MenuAction.Navigate.ExtensionsLearnMore -> openToBrowser(
-                    BrowserNavigationParams(sumoTopic = SumoTopic.FIND_INSTALL_ADDONS),
                 )
 
                 is MenuAction.Navigate.AddonDetails -> navController.nav(
