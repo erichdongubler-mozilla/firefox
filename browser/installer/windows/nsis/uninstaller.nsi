@@ -1042,6 +1042,8 @@ FunctionEnd
 # Initialization Functions
 
 Function .onInit
+  StrCpy $AddTaskbarSC ""
+
   ; Remove the current exe directory from the search order.
   ; This only effects LoadLibrary calls and not implicitly loaded DLLs.
   System::Call 'kernel32::SetDllDirectoryW(w "")'
