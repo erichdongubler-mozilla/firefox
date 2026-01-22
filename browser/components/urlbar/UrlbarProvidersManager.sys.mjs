@@ -185,7 +185,7 @@ var localProviderModules = [
     name: "UrlbarProviderTabToSearch",
     module:
       "moz-src:///browser/components/urlbar/UrlbarProviderTabToSearch.sys.mjs",
-    supportedSAPs: ["searchbar", "smartbar", "urlbar"],
+    supportedSAPs: ["smartbar", "urlbar"],
   },
   {
     name: "UrlbarProviderTokenAliasEngines",
