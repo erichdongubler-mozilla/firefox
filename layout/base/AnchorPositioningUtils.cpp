@@ -44,6 +44,7 @@ bool IsScrolled(const nsIFrame* aFrame) {
 dom::ShadowRoot* GetTreeForCascadeLevel(const nsIContent& aContent,
                                         int8_t aCascadeOrder) {
   if (aCascadeOrder < 0) {
+    // First, walk through the slot chain for ::slotted() rules
     auto* slot = aContent.GetAssignedSlot();
     while (slot) {
       ++aCascadeOrder;
@@ -52,7 +53,13 @@ dom::ShadowRoot* GetTreeForCascadeLevel(const nsIContent& aContent,
       }
       slot = slot->GetAssignedSlot();
     }
-    return nullptr;
+    // If cascadeOrder is still -1 after processing all slots, this is a :host
+    // rule The element receiving the style is the shadow host, and we need to
+    // return the shadow root attached to this element (where the :host rule is
+    // defined)
+    const int8_t for_outermost_shadow_tree = -1;
+    return aCascadeOrder == for_outermost_shadow_tree ? aContent.GetShadowRoot()
+                                                      : nullptr;
   }
 
   auto* containingShadow = aContent.GetContainingShadow();
