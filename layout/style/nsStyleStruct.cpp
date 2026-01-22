@@ -2302,7 +2302,7 @@ nsStyleDisplay::nsStyleDisplay()
       mWebkitLineClamp(0),
       mShapeMargin(LengthPercentage::Zero()),
       mShapeOutside(StyleShapeOutside::None()),
-      mAnchorScope(StyleAnchorScope::None()) {
+      mAnchorScope(StyleAnchorScopeKeyword::None()) {
   MOZ_COUNT_CTOR(nsStyleDisplay);
 }
 
