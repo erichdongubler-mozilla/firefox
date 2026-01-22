@@ -304,7 +304,7 @@ function getSetting() {
   };
 }
 
-const Template = ({ type, hasHeader, hasFooter, scrollable, wrapped }) => html`
+const standardTemplateHtml = ({ scrollable }) => html`
   <style>
     moz-box-group {
       --box-group-max-height: ${scrollable ? "250px" : "unset"};
@@ -314,9 +314,23 @@ const Template = ({ type, hasHeader, hasFooter, scrollable, wrapped }) => html`
       margin-top: var(--space-medium);
     }
   </style>
+`;
+
+const Template = ({ type, hasHeader, hasFooter, scrollable, wrapped }) => html`
+  ${standardTemplateHtml({ scrollable })}
   ${wrapped
     ? wrappedTemplate({ type, hasHeader, hasFooter })
     : basicTemplate({ type, hasHeader, hasFooter, wrapped })}
+`;
+
+const ReorderableTemplate = ({
+  type,
+  hasHeader,
+  hasFooter,
+  scrollable,
+}) => html`
+  ${standardTemplateHtml({ scrollable })}
+  ${basicTemplate({ type, hasHeader, hasFooter })}
 `;
 
 export const Default = Template.bind({});
@@ -334,10 +348,12 @@ List.args = {
   type: "list",
 };
 
-export const Reorderable = Template.bind({});
+export const Reorderable = ReorderableTemplate.bind({});
 Reorderable.args = {
-  ...Default.args,
   type: "reorderable",
+  hasHeader: false,
+  hasFooter: false,
+  scrollable: false,
 };
 
 export const ListWithHeaderAndFooter = Template.bind({});
