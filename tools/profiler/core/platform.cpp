@@ -3224,6 +3224,14 @@ static void StreamCustomMarkerSchemas(
   }
 }
 
+static void ClearCustomMarkerSchemas() {
+  mozilla::StaticMutexAutoLock lock(sCustomMarkerSchemasMutex);
+  if (sCustomMarkerSchemas) {
+    sCustomMarkerSchemas->Clear();
+    sCustomMarkerSchemas = nullptr;
+  }
+}
+
 static void StreamMarkerSchema(SpliceableJSONWriter& aWriter) {
   // Get an array view with all registered marker-type-specific functions.
   base_profiler_markers_detail::Streaming::LockedMarkerTypeFunctionsList
@@ -6352,6 +6360,10 @@ void profiler_shutdown(IsFastShutdown aIsFastShutdown) {
     NotifyObservers("profiler-stopped");
     delete samplerThread;
   }
+
+  // Clear custom marker schemas to avoid StringBuffer leaks at shutdown.
+  // This is done after all profiling operations and notifications are complete.
+  ClearCustomMarkerSchemas();
 
   // Reverse the registration done in profiler_init.
   ThreadRegistration::UnregisterThread();
