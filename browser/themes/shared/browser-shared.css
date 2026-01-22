@@ -410,8 +410,6 @@ body {
 /* Profiles menu */
 
 #menu_newProfile {
-  -moz-context-properties: fill;
-  fill: currentColor;
   --menuitem-icon: url(chrome://global/skin/icons/plus.svg);
 }
 

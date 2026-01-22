@@ -258,8 +258,6 @@
 .bookmark-item {
   --bookmark-item-icon: url("chrome://global/skin/icons/defaultFavicon.svg");
   --menuitem-icon: var(--bookmark-item-icon);
-  -moz-context-properties: fill;
-  fill: currentColor;
 
   &:is(toolbarbutton) {
     -moz-context-properties: fill, fill-opacity;

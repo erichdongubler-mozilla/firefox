@@ -51,6 +51,7 @@ panel {
 menupopup {
   font: menu;
 
+  --menuitem-icon-fill: currentColor;
   /* Also apply the padding in the inline axis for menus */
   --panel-padding: var(--panel-padding-block);
 
@@ -66,6 +67,14 @@ menupopup {
   @media (-moz-platform: macos) {
     /* stylelint-disable-next-line font-family-no-missing-generic-family-keyword */
     font: -moz-pull-down-menu;
+
+    /* On macOS, native menu icons should always be black by default so that
+       they are considered template images. Template images should be used
+       whenever possible so that the OS can manage the icon color, as the OS
+       theme may differ from our theme. */
+    menubar[native] & {
+      --menuitem-icon-fill: black;
+    }
   }
 
   > menu > menupopup {
@@ -328,6 +337,8 @@ menuitem[highlightable] > .menu-text {
   width: 16px;
   height: 16px;
   box-sizing: border-box;
+  -moz-context-properties: fill;
+  fill: var(--menuitem-icon-fill);
 
   /* Empty icons shouldn't take up any space */
   display: none;
