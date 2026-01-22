@@ -15580,6 +15580,12 @@
   value: false
   mirror: always
 
+# When true, allow HTTP/3 first behavior when enabled via remote settings
+- name: network.trr.allow_default_http3_first
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # When true, a http request will be upgraded to https when HTTPS RR is
 # available.
 - name: network.dns.upgrade_with_https_rr
