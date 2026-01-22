@@ -14,6 +14,8 @@ prefs = [
 ["test_merinoClient_sessions.js"]
 requesttimeoutfactor = 2  # Slow on Windows
 
+["test_merinoClient_weather.js"]
+
 ["test_quicksuggest.js"]
 requesttimeoutfactor = 2  # Slow on Linux
 
