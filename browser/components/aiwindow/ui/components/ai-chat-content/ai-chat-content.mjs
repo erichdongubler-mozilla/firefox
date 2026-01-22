@@ -59,6 +59,7 @@ export class AIChatContent extends MozLitElement {
       body: content.body,
     });
     this.requestUpdate();
+    this.#scrollToBottom();
   }
 
   /**
@@ -86,6 +87,15 @@ export class AIChatContent extends MozLitElement {
     };
 
     this.requestUpdate();
+  }
+
+  #scrollToBottom() {
+    this.updateComplete.then(() => {
+      const wrapper = this.shadowRoot?.querySelector(".chat-content-wrapper");
+      if (wrapper) {
+        wrapper.scrollTop = wrapper.scrollHeight;
+      }
+    });
   }
 
   render() {

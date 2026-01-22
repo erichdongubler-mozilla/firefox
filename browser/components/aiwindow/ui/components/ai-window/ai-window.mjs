@@ -229,6 +229,11 @@ export class AIWindow extends MozLitElement {
       return;
     }
 
+    const container = this.renderRoot.querySelector("#browser-container");
+    if (container && !container.classList.contains("chat-active")) {
+      container.classList.add("chat-active");
+    }
+
     // Handle User Prompt
     this.#dispatchMessageToChatContent({
       role: lazy.MESSAGE_ROLE.USER,
