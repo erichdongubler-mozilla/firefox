@@ -1344,6 +1344,9 @@ void ForEachObjectFlag(ObjectFlags flags, KnownF known, UnknownF unknown) {
       case ObjectFlag::HasRealmFuseProperty:
         known("HasRealmFuseProperty");
         break;
+      case ObjectFlag::HasObjectFuse:
+        known("HasObjectFuse");
+        break;
       case ObjectFlag::HasPreservedWrapper:
         known("HasPreservedWrapper");
         break;
