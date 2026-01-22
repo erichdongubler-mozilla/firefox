@@ -467,7 +467,7 @@ class StorageUI {
     );
     this.sidebarToggleBtn = null;
 
-    this._window.removeEventListener("resize", this.#onLazyPanelResize, true);
+    this._window.removeEventListener("resize", this.onPanelWindowResize, true);
 
     this._treePopup.removeEventListener(
       "popupshowing",
