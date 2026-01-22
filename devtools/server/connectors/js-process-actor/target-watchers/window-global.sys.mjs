@@ -240,14 +240,6 @@ function onWindowGlobalCreated(
       "frame"
     )) {
       const { sessionContext } = watcherDataObject;
-      /*
-      try {
-        windowGlobal.browsingContext.watchedByDevTools = true;
-      } catch (e) {}
-      try {
-        windowGlobal.browsingContext.top.watchedByDevTools = true;
-      } catch (e) {}
-      */
       if (
         lazy.isWindowGlobalPartOfContext(windowGlobal, sessionContext, {
           forceAcceptTopLevelTarget,
