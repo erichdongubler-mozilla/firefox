@@ -285,7 +285,7 @@ TalosPowersService.prototype = {
       // that would cause us to write a mostly empty cache to the
       // about:home startup cache on shutdown, which causes that test
       // to break periodically.
-      AboutNewTab.onBrowserReady();
+      await AboutNewTab.onBrowserReady();
       // There aren't currently any easily observable notifications or
       // events to let us know when the feed is ready, so we'll just poll
       // for now.
