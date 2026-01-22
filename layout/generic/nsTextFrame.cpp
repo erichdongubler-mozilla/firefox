@@ -8428,7 +8428,9 @@ void nsTextFrame::SelectionStateChanged(uint32_t aStart, uint32_t aEnd,
     // We may need to reflow to recompute the overflow area for spellchecking or
     // IME underline if their underline is thicker than the normal decoration
     // line.
-    if (ToSelectionTypeMask(aSelectionType) & kSelectionTypesWithDecorations) {
+    // FIXME(emilio): Text shadows would need similar treatment, wouldn't they?
+    if (ToSelectionTypeMask(aSelectionType) & kSelectionTypesWithDecorations &&
+        !f->HasAnyStateBits(NS_FRAME_IS_DIRTY)) {
       const bool didHaveOverflowingSelection =
           f->HasAnyStateBits(TEXT_SELECTION_UNDERLINE_OVERFLOWED);
       nsRect r(nsPoint(), GetSize());
