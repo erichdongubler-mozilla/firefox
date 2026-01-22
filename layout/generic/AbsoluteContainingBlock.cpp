@@ -106,6 +106,29 @@ void AbsoluteContainingBlock::RemoveFrame(FrameDestroyContext& aContext,
   }
 }
 
+// In a fragmented context, for an absolutely positioned frame, this property
+// stores the logical position that the frame would have, if its abspos
+// containing block were not being fragmented. The value for this property is
+// determined by performing a special reflow on the abspos containing block (or
+// a larger subtree that includes it), with an unconstrained available
+// block-size.
+//
+// The position is relative to the absolute containing block's border-box, and
+// is stored in the containing block's writing mode.
+//
+// Note: caller should use GetUnfragmentedPosition() helper to get the property.
+NS_DECLARE_FRAME_PROPERTY_DELETABLE(UnfragmentedPositionProperty, LogicalPoint)
+
+static LogicalPoint* GetUnfragmentedPosition(const ReflowInput& aCBReflowInput,
+                                             const nsIFrame* aFrame) {
+  // If the absolute containing block is in a measuring reflow, then aFrame's
+  // unfragmented position is going to be updated. Don't return the obsolete
+  // value in the property.
+  return aCBReflowInput.mFlags.mIsInColumnMeasuringReflow
+             ? nullptr
+             : aFrame->GetProperty(UnfragmentedPositionProperty());
+}
+
 nsFrameList AbsoluteContainingBlock::StealPushedChildList() {
   return std::move(mPushedAbsoluteFrames);
 }
@@ -127,6 +150,9 @@ void AbsoluteContainingBlock::DrainPushedChildList(
         child->GetPrevInFlow()->GetParent() != aDelegatingFrame) {
       mPushedAbsoluteFrames.RemoveFrame(child);
       mAbsoluteFrames.AppendFrame(nullptr, child);
+      if (!child->GetPrevInFlow()) {
+        child->RemoveStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
+      }
     }
   }
 }
@@ -151,9 +177,27 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
     if (pushedFrames.NotEmpty()) {
       mAbsoluteFrames.InsertFrames(aDelegatingFrame, nullptr,
                                    std::move(pushedFrames));
+
+      // After stealing children from the previous absCB, traverse our children
+      // and see if any child has a prev-in-flow that is also in our child list.
+      // If so, we move the child to our pushed child list.
+      for (auto iter = mAbsoluteFrames.begin();
+           iter != mAbsoluteFrames.end();) {
+        // Advance the iterator first, so it's safe to move |child|.
+        nsIFrame* const child = *iter++;
+        nsIFrame* const childPrevInFlow = child->GetPrevInFlow();
+        if (childPrevInFlow &&
+            childPrevInFlow->GetParent() == aDelegatingFrame) {
+          mAbsoluteFrames.RemoveFrame(child);
+          mPushedAbsoluteFrames.AppendFrame(nullptr, child);
+        }
+      }
     }
   }
 
+  // Similarly, for any children in our pushed child list that don't have a
+  // prev-in-flow in our regular child list, we move those children back into
+  // our child list.
   DrainPushedChildList(aDelegatingFrame);
 
   // Steal absolute frame's first-in-flow from our next-in-flow's child lists.
@@ -173,6 +217,7 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
       if (!child->GetPrevInFlow()) {
         nextAbsCB->StealFrame(child);
         mAbsoluteFrames.AppendFrame(aDelegatingFrame, child);
+        child->RemoveStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
       }
     }
   }
@@ -186,6 +231,38 @@ void AbsoluteContainingBlock::StealFrame(nsIFrame* aFrame) {
       mPushedAbsoluteFrames.ContinueRemoveFrame(aFrame);
   MOZ_ASSERT(frameRemoved, "Failed to find aFrame from our child lists!");
 }
+
+#ifdef DEBUG
+void AbsoluteContainingBlock::SanityCheckChildListsBeforeReflow(
+    const nsIFrame* aDelegatingFrame) const {
+  // TODO(TYLin): This is potentially O(N^2), where N is the number of
+  // continuations that an abspos frame gets. Consider putting this behind an
+  // about:config pref if it turns out to slow down debug builds too much.
+  for (const nsFrameList* list : {&mAbsoluteFrames, &mPushedAbsoluteFrames}) {
+    for (const nsIFrame* child : *list) {
+      for (nsIFrame* prev = child->GetPrevInFlow(); prev;
+           prev = prev->GetPrevInFlow()) {
+        MOZ_ASSERT(!list->ContainsFrame(prev),
+                   "It is wrong that both a child and its prev-in-flow are in "
+                   "the same child list!");
+      }
+    }
+  }
+
+  for (const nsIFrame* next = aDelegatingFrame->GetNextInFlow(); next;
+       next = next->GetNextInFlow()) {
+    auto* nextAbsCB = next->GetAbsoluteContainingBlock();
+    MOZ_ASSERT(nextAbsCB,
+               "Delegating frame's next-in-flow should have "
+               "AbsoluteContainingBlock!");
+    for (nsIFrame* child : nextAbsCB->GetChildList()) {
+      MOZ_ASSERT(
+          child->GetPrevInFlow(),
+          "We should've pulled all abspos first-in-flows to our child list!");
+    }
+  }
+}
+#endif
 
 static void MaybeMarkAncestorsAsHavingDescendantDependentOnItsStaticPos(
     nsIFrame* aFrame, nsIFrame* aContainingBlockFrame) {
@@ -297,13 +374,38 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
     return aContainingBlock;
   }();
 
+#ifdef DEBUG
+  SanityCheckChildListsBeforeReflow(aDelegatingFrame);
+#endif
+
+  if (nsIFrame* prevInFlow = aDelegatingFrame->GetPrevInFlow()) {
+    const auto* prevAbsCB = prevInFlow->GetAbsoluteContainingBlock();
+    MOZ_ASSERT(prevAbsCB,
+               "If this delegating frame has an absCB, its prev-in-flow must "
+               "have one, too!");
+    mCumulativeContainingBlockBSize =
+        prevAbsCB->mCumulativeContainingBlockBSize;
+  } else {
+    mCumulativeContainingBlockBSize = 0;
+  }
+
   nsReflowStatus reflowStatus;
-  const bool reflowAll = aReflowInput.ShouldReflowAllKids();
+  // Assume all the kids may need a reflow when they are in a fragmented
+  // context. We'll perform more targeted check below. For example, skip reflow
+  // them when they are positioned in a later fragment.
+  const bool reflowAll =
+      aReflowInput.ShouldReflowAllKids() ||
+      (aPresContext->FragmentainerAwarePositioningEnabled() &&
+       aReflowInput.IsInFragmentedContext());
   const bool cbWidthChanged = aFlags.contains(AbsPosReflowFlag::CBWidthChanged);
   const bool cbHeightChanged =
       aFlags.contains(AbsPosReflowFlag::CBHeightChanged);
   nsOverflowContinuationTracker tracker(aDelegatingFrame, true);
-  for (nsIFrame* kidFrame : mAbsoluteFrames) {
+  const nscoord availBSize = aReflowInput.AvailableBSize();
+  const WritingMode containerWM = aReflowInput.GetWritingMode();
+  for (auto iter = mAbsoluteFrames.begin(); iter != mAbsoluteFrames.end();) {
+    // Advance the iterator first, so it's safe to move |kidFrame|.
+    nsIFrame* const kidFrame = *iter++;
     Maybe<AnchorPosResolutionCache> anchorPosResolutionCache;
     if (kidFrame->HasAnchorPosReference()) {
       auto* referenceData = kidFrame->SetOrUpdateDeletableProperty(
@@ -322,9 +424,12 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
       MaybeMarkAncestorsAsHavingDescendantDependentOnItsStaticPos(
           kidFrame, aDelegatingFrame);
     }
-    const nscoord availBSize = aReflowInput.AvailableBSize();
-    const WritingMode containerWM = aReflowInput.GetWritingMode();
     if (!kidNeedsReflow && availBSize != NS_UNCONSTRAINEDSIZE) {
+      MOZ_ASSERT(
+          !aPresContext->FragmentainerAwarePositioningEnabled(),
+          "We should not be here when "
+          "layout.abspos.fragmentainer-aware-positioning.enabled is enabled!");
+
       // If we need to redo pagination on the kid, we need to reflow it.
       // This can happen either if the available height shrunk and the
       // kid (or its overflow that creates overflow containers) is now
@@ -354,17 +459,66 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
       }
     }
     if (kidNeedsReflow && !aPresContext->HasPendingInterrupt()) {
-      // Reflow the frame
+      // TODO(TYLin, Bug 2009643): To get the correct cbSize, we should refactor
+      // the lambda that gets |cb| in ReflowAbsoluteFrame(), and call it here.
+      const LogicalSize cbSize(containerWM, aContainingBlock.Size());
+      const LogicalMargin border =
+          aDelegatingFrame->GetLogicalUsedBorder(containerWM)
+              .ApplySkipSides(
+                  aDelegatingFrame->PreReflowBlockLevelLogicalSkipSides());
+      const nsSize cbBorderBoxSize =
+          (cbSize + border.Size(containerWM)).GetPhysicalSize(containerWM);
+
+      bool kidFrameNeedsPush = false;
+      if (const auto* unfragPos =
+              GetUnfragmentedPosition(aReflowInput, kidFrame);
+          unfragPos && availBSize != NS_UNCONSTRAINEDSIZE) {
+        // If kidFrame's position in this fragment is beyond the end of this
+        // fragmentainer, push it to the next fragmentainer.
+        const nscoord kidBPosInThisFragment =
+            unfragPos->B(containerWM) - mCumulativeContainingBlockBSize;
+        if (kidBPosInThisFragment >= availBSize) {
+          kidFrameNeedsPush = true;
+        }
+      }
+
+      OverflowAreas kidOverflowAreas;
       nsReflowStatus kidStatus;
-      ReflowAbsoluteFrame(aDelegatingFrame, aPresContext, aReflowInput,
-                          aContainingBlock, scrollableContainingBlock, aFlags,
-                          kidFrame, kidStatus, aOverflowAreas,
-                          anchorPosResolutionCache.ptrOr(nullptr));
-      MOZ_ASSERT(!kidStatus.IsInlineBreakBefore(),
-                 "ShouldAvoidBreakInside should prevent this from happening");
+      if (!kidFrameNeedsPush) {
+        ReflowAbsoluteFrame(aDelegatingFrame, aPresContext, aReflowInput,
+                            aContainingBlock, scrollableContainingBlock, aFlags,
+                            kidFrame, kidStatus, aOverflowAreas,
+                            anchorPosResolutionCache.ptrOr(nullptr));
+
+        // TODO(TYLin, Bug 2009647): We'll support a measuring reflow in
+        // printing scenario for fragmentainer-aware abspos positioning such
+        // that nsIFrame::UnfragmentedPositionProperty() will be set.
+        if (aReflowInput.mFlags.mIsInColumnMeasuringReflow) {
+          kidFrame->SetOrUpdateDeletableProperty(
+              UnfragmentedPositionProperty(),
+              kidFrame->GetLogicalPosition(containerWM, cbBorderBoxSize));
+
+          // kidFrame must be a first-in-flow here. In a measuring reflow
+          // starting in the first column, we only see first-in-flows (either
+          // unsplit or pulled back from later continuations of this absolute
+          // containing block). However, in an incremental measuring reflow, if
+          // the first-in-flow is not fully-complete, it is possible that we
+          // still reflow continuations here.
+          NS_ASSERTION(!kidFrame->GetPrevInFlow(),
+                       "UnfragmentedPositionProperty should only be set on "
+                       "first-in-flow!");
+        }
+        MOZ_ASSERT(!kidStatus.IsInlineBreakBefore(),
+                   "ShouldAvoidBreakInside should prevent this from happening");
+      }
+
       nsIFrame* nextFrame = kidFrame->GetNextInFlow();
       if (aPresContext->FragmentainerAwarePositioningEnabled()) {
-        if (!kidStatus.IsFullyComplete()) {
+        if (kidFrameNeedsPush) {
+          StealFrame(kidFrame);
+          kidFrame->AddStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
+          mPushedAbsoluteFrames.AppendFrame(nullptr, kidFrame);
+        } else if (!kidStatus.IsFullyComplete()) {
           if (!nextFrame) {
             nextFrame = aPresContext->PresShell()
                             ->FrameConstructor()
@@ -440,9 +594,13 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
     }
   }
 
+  if (availBSize != NS_UNCONSTRAINEDSIZE) {
+    mCumulativeContainingBlockBSize += availBSize;
+  }
+
   // Abspos frames can't cause their parent to be incomplete,
   // only overflow incomplete.
-  if (reflowStatus.IsIncomplete()) {
+  if (reflowStatus.IsIncomplete() || mPushedAbsoluteFrames.NotEmpty()) {
     reflowStatus.SetOverflowIncomplete();
     reflowStatus.SetNextInFlowNeedsReflow();
   }
@@ -1461,11 +1619,11 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
         // containers.
         !aKidFrame->IsColumnSetWrapperFrame() &&
 
-        // Don't split things below the fold. (Ideally we shouldn't *have*
-        // anything totally below the fold, but we can't position frames
-        // across next-in-flow breaks yet. (Bug 1994346)
-        (aKidFrame->GetLogicalRect(cb.mFinalRect.Size()).BStart(wm) <=
-         aReflowInput.AvailableBSize());
+        // Allow splitting when fragmentainer-aware positioning is enabled, or
+        // when the item starts within the available block-size.
+        (aPresContext->FragmentainerAwarePositioningEnabled() ||
+         aKidFrame->GetLogicalRect(cb.mFinalRect.Size()).BStart(wm) <=
+             aReflowInput.AvailableBSize());
 
     // Get the border values
     const LogicalMargin border =
@@ -1473,20 +1631,31 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
             aDelegatingFrame->PreReflowBlockLevelLogicalSkipSides());
 
     const nsIFrame* kidPrevInFlow = aKidFrame->GetPrevInFlow();
+    const LogicalPoint* const unfragmentedPosition =
+        GetUnfragmentedPosition(aReflowInput, aKidFrame);
     nscoord availBSize;
     if (kidFrameMaySplit) {
-      availBSize = aReflowInput.AvailableBSize();
-      // If aKidFrame is a first-in-flow, we subtract our containing block's
-      // border-block-start, to consider the available space as starting at the
-      // containing block's padding-edge.
-      //
-      // If aKidFrame is *not* a first-in-flow, then we don't need to subtract
-      // the containing block's border. Instead, we consider this whole fragment
-      // as our available space, i.e., we allow abspos continuations to overlap
-      // any border that their containing block parent might have (including
-      // borders generated by 'box-decoration-break:clone').
-      if (!kidPrevInFlow) {
-        availBSize -= border.BStart(outerWM);
+      if (unfragmentedPosition) {
+        // The unfragmented position is relative to the absolute containing
+        // block's first fragment, so we subtract
+        // mCumulativeContainingBlockBSize to get the position in this fragment.
+        const nscoord kidBPosInThisFragment =
+            unfragmentedPosition->B(outerWM) - mCumulativeContainingBlockBSize;
+        availBSize = aReflowInput.AvailableBSize() - kidBPosInThisFragment;
+        NS_ASSERTION(availBSize > 0, "Why is available block-size <= 0?");
+      } else if (!aDelegatingFrame->GetPrevInFlow()) {
+        // aDelegatingFrame is a first-in-flow. We subtract our containing
+        // block's border-block-start, to consider the available space as
+        // starting at the containing block's padding-edge.
+        availBSize = aReflowInput.AvailableBSize() - border.BStart(outerWM);
+      } else {
+        // aDelegatingFrame is *not* a first-in-flow. Then we don't need to
+        // subtract the containing block's border. Instead, we consider this
+        // whole fragment as our available space, i.e., we allow abspos
+        // continuations to overlap any border that their containing block
+        // parent might have (including borders generated by
+        // 'box-decoration-break:clone').
+        availBSize = aReflowInput.AvailableBSize();
       }
     } else {
       availBSize = NS_UNCONSTRAINEDSIZE;
@@ -1497,16 +1666,20 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
                                Some(cbSize.ConvertTo(wm, outerWM)), initFlags,
                                {}, {}, aAnchorPosResolutionCache);
 
-    // ReflowInput's constructor may change the available block-size to
-    // unconstrained, e.g. in orthogonal reflow, so we retrieve it again and
-    // account for kid's constraints in its own writing-mode if needed.
-    if (!kidPrevInFlow) {
+    if (unfragmentedPosition) {
+      // Do nothing. If aKidFrame may split, we've adjusted availBSize before
+      // creating kidReflowInput.
+    } else if (!kidPrevInFlow) {
+      // ReflowInput's constructor may change the available block-size to
+      // unconstrained, e.g. in orthogonal reflow, so we retrieve it again and
+      // account for kid's constraints in its own writing-mode if needed.
       nscoord kidAvailBSize = kidReflowInput.AvailableBSize();
       if (kidAvailBSize != NS_UNCONSTRAINEDSIZE) {
         kidAvailBSize -= kidReflowInput.ComputedLogicalMargin(wm).BStart(wm);
-        const nscoord kidOffsetBStart =
+        nscoord kidOffsetBStart =
             kidReflowInput.ComputedLogicalOffsets(wm).BStart(wm);
         if (kidOffsetBStart != NS_AUTOOFFSET) {
+          kidOffsetBStart -= mCumulativeContainingBlockBSize;
           kidAvailBSize -= kidOffsetBStart;
         }
         kidReflowInput.SetAvailableBSize(kidAvailBSize);
@@ -1520,13 +1693,23 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     nsMargin insets;
     if (aKidFrame->IsMenuPopupFrame()) {
       // Do nothing. Popup frame will handle its own positioning.
-    } else if (kidPrevInFlow) {
-      // aKidFrame is a next-in-flow. Place it at the block-edge start of its
-      // containing block, with the same inline-position as its prev-in-flow.
+    } else if (unfragmentedPosition || kidPrevInFlow) {
       const nsSize cbBorderBoxSize =
           (cbSize + border.Size(outerWM)).GetPhysicalSize(outerWM);
-      const LogicalPoint kidPos(
-          outerWM, kidPrevInFlow->IStart(outerWM, cbBorderBoxSize), 0);
+      LogicalPoint kidPos(outerWM);
+      if (unfragmentedPosition) {
+        MOZ_ASSERT(!kidPrevInFlow, "aKidFrame should be a first-in-flow!");
+
+        // aKidFrame is a first-in-flow. Place it at its unfragmented position
+        // with the block-start position adjusted.
+        kidPos = *unfragmentedPosition;
+        kidPos.B(outerWM) -= mCumulativeContainingBlockBSize;
+      } else {
+        // aKidFrame is a next-in-flow. Place it at the block-edge start of its
+        // containing block, with the same inline-position as its prev-in-flow.
+        kidPos = LogicalPoint(
+            outerWM, kidPrevInFlow->IStart(outerWM, cbBorderBoxSize), 0);
+      }
       const LogicalSize kidSize = kidDesiredSize.Size(outerWM);
       const LogicalRect kidRect(outerWM, kidPos, kidSize);
       aKidFrame->SetRect(outerWM, kidRect, cbBorderBoxSize);

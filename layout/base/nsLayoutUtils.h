@@ -1411,6 +1411,14 @@ class nsLayoutUtils {
                                                  nsIFrame* aDescendantFrame);
 
   /**
+   * Returns true if aFrame or any of its descendants have absolutely
+   * positioned children. This is used in a fragmented context to determine
+   * whether a measuring reflow is required for computing unfragmented
+   * positions of absolutely positioned elements.
+   */
+  static bool HasAbsolutelyPositionedDescendants(const nsIFrame* aFrame);
+
+  /**
    * Find the nearest ancestor that's a block
    */
   static nsBlockFrame* FindNearestBlockAncestor(nsIFrame* aFrame);
