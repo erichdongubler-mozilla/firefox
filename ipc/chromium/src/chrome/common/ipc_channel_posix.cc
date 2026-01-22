@@ -242,7 +242,11 @@ bool ChannelPosix::ProcessIncomingMessages() {
     // Read from pipe.
     // recvmsg() returns 0 if the connection has closed or EAGAIN if no data
     // is waiting on the pipe.
-    ssize_t bytes_read = HANDLE_EINTR(recvmsg(pipe_, &msg, MSG_DONTWAIT));
+    int recvFlags = MSG_DONTWAIT;
+#ifdef MSG_CMSG_CLOEXEC
+    recvFlags |= MSG_CMSG_CLOEXEC;
+#endif
+    ssize_t bytes_read = HANDLE_EINTR(recvmsg(pipe_, &msg, recvFlags));
 
     if (bytes_read < 0) {
       if (errno == EAGAIN) {
@@ -454,7 +458,11 @@ bool ChannelPosix::ProcessIncomingMessages() {
         nsTArray<mozilla::UniqueFileHandle> handles(m.header()->num_handles);
         for (unsigned end_i = fds_i + m.header()->num_handles; fds_i < end_i;
              ++fds_i) {
-          handles.AppendElement(mozilla::UniqueFileHandle(fds[fds_i]));
+          mozilla::UniqueFileHandle fh(fds[fds_i]);
+#ifndef MSG_CMSG_CLOEXEC
+          mozilla::SetCloseOnExec(fh);
+#endif
+          handles.AppendElement(std::move(fh));
         }
         m.SetAttachedFileHandles(std::move(handles));
       }
