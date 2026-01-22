@@ -18,7 +18,7 @@ use crate::intern::DataStore;
 use crate::internal_types::TextureSource;
 use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState, PatternKind, PatternShaderInput};
 use crate::prim_store::{PrimitiveInstanceIndex, PrimitiveScratchBuffer};
-use crate::render_task::{MaskSubPass, RenderTask, RenderTaskAddress, RenderTaskKind, SubPass};
+use crate::render_task::{RenderTask, RenderTaskAddress, RenderTaskKind};
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent};
 use crate::render_task_graph::{RenderTaskGraph, RenderTaskGraphBuilder, RenderTaskId};
 use crate::renderer::{BlendMode, GpuBufferAddress, GpuBufferBuilder, GpuBufferBuilderF, GpuBufferDataI};
@@ -487,9 +487,13 @@ fn prepare_quad_impl(
                 device_pixel_scale,
                 needs_scissor,
                 cache_key.as_ref(),
+                ctx.spatial_tree,
+                interned_clips,
+                state.clip_store,
                 frame_state.resource_cache,
                 state.rg_builder,
                 state.frame_gpu_data,
+                state.transforms,
                 &mut frame_state.surface_builder,
             );
 
@@ -741,9 +745,13 @@ fn prepare_quad_impl(
                             device_pixel_scale,
                             needs_scissor,
                             None,
+                            ctx.spatial_tree,
+                            interned_clips,
+                            state.clip_store,
                             frame_state.resource_cache,
                             state.rg_builder,
                             state.frame_gpu_data,
+                            state.transforms,
                             &mut frame_state.surface_builder,
                         );
 
@@ -921,9 +929,13 @@ fn prepare_quad_impl(
                             device_pixel_scale,
                             false,
                             None,
+                            ctx.spatial_tree,
+                            interned_clips,
+                            state.clip_store,
                             frame_state.resource_cache,
                             state.rg_builder,
                             state.frame_gpu_data,
+                            state.transforms,
                             &mut frame_state.surface_builder,
                         );
                         scratch.quad_indirect_segments.push(QuadSegment {
@@ -1095,9 +1107,13 @@ fn add_render_task_with_mask(
     device_pixel_scale: DevicePixelScale,
     needs_scissor_rect: bool,
     cache_key: Option<&RenderTaskCacheKey>,
+    spatial_tree: &SpatialTree,
+    interned_clips: &DataStore<ClipIntern>,
+    clip_store: &ClipStore,
     resource_cache: &mut ResourceCache,
     rg_builder: &mut RenderTaskGraphBuilder,
     gpu_buffers: &mut GpuBufferBuilder,
+    transforms: &mut TransformPalette,
     surface_builder: &mut SurfaceBuilder,
 ) -> RenderTaskId {
     let is_opaque = pattern.is_opaque && clips_range.count == 0;
@@ -1108,7 +1124,7 @@ fn add_render_task_with_mask(
         &mut gpu_buffers.f32,
         rg_builder,
         surface_builder,
-        &mut|rg_builder, _| {
+        &mut|rg_builder, gpu_buffer| {
             let task_id = rg_builder.add().init(RenderTask::new_dynamic(
                 task_size,
                 RenderTaskKind::new_prim(
@@ -1133,14 +1149,25 @@ fn add_render_task_with_mask(
             }
 
             if clips_range.count > 0 {
-                let masks = MaskSubPass {
-                    clip_node_range: clips_range,
-                    prim_spatial_node_index,
-                    prim_address_f,
-                };
+                let task_world_rect = DeviceRect::from_origin_and_size(
+                    content_origin,
+                    task_size.to_f32(),
+                ) / device_pixel_scale;
 
-                let task = rg_builder.get_task_mut(task_id);
-                task.add_sub_pass(SubPass::Masks { masks });
+                prepare_clip_range(
+                    clips_range,
+                    task_id,
+                    task_world_rect,
+                    prim_address_f,
+                    prim_spatial_node_index,
+                    raster_spatial_node_index,
+                    interned_clips,
+                    clip_store,
+                    spatial_tree,
+                    rg_builder,
+                    gpu_buffer,
+                    transforms,
+                );
             }
 
             task_id
