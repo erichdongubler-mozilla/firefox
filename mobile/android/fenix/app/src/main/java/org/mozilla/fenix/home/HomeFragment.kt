@@ -5,7 +5,6 @@
 package org.mozilla.fenix.home
 
 import android.annotation.SuppressLint
-import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -151,7 +150,6 @@ import org.mozilla.fenix.microsurvey.ui.MicrosurveyRequestPrompt
 import org.mozilla.fenix.microsurvey.ui.ext.MicrosurveyUIData
 import org.mozilla.fenix.microsurvey.ui.ext.toMicrosurveyUIData
 import org.mozilla.fenix.nimbus.FxNimbus
-import org.mozilla.fenix.onboarding.WidgetPinnedReceiver
 import org.mozilla.fenix.pbmlock.NavigationOrigin
 import org.mozilla.fenix.pbmlock.observePrivateModeLock
 import org.mozilla.fenix.perf.MarkersFragmentLifecycleCallbacks
@@ -1360,15 +1358,7 @@ class HomeFragment : Fragment() {
      */
     private fun showAddSearchWidgetPrompt() {
         viewLifecycleOwner.lifecycleScope.launch {
-            val currentPackageName = requireActivity().packageName
-            val currentWidgetManager = AppWidgetManager.getInstance(requireContext())
-            val currentAddWidgetSuccessCallback = WidgetPinnedReceiver.getPendingIntent(requireContext())
-
-            showAddSearchWidgetPromptIfSupported(
-                packageName = currentPackageName,
-                appWidgetManager = currentWidgetManager,
-                successCallback = currentAddWidgetSuccessCallback,
-            )
+            showAddSearchWidgetPromptIfSupported(requireActivity())
         }
     }
 
