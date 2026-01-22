@@ -374,9 +374,8 @@ bool IsAcceptableAnchorElement(
 AnchorPosReferenceData::Result AnchorPosReferenceData::InsertOrModify(
     const ScopedNameRef& aKey, const bool aNeedOffset) {
   MOZ_ASSERT(aKey.mName);
-
   bool exists = true;
-  auto* result = &mMap.LookupOrInsertWith(aKey.mName, [&exists]() {
+  auto* result = &mMap.LookupOrInsertWith(aKey, [&exists]() {
     exists = false;
     return Nothing{};
   });
@@ -403,7 +402,7 @@ AnchorPosReferenceData::Result AnchorPosReferenceData::InsertOrModify(
 
 const AnchorPosReferenceData::Value* AnchorPosReferenceData::Lookup(
     const ScopedNameRef& aKey) const {
-  return mMap.Lookup(aKey.mName).DataPtrOrNull();
+  return mMap.Lookup(aKey).DataPtrOrNull();
 }
 
 AnchorPosDefaultAnchorCache::AnchorPosDefaultAnchorCache(
