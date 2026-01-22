@@ -20,7 +20,7 @@ use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuil
 use crate::prim_store::{PrimitiveInstanceIndex, PrimitiveScratchBuffer};
 use crate::render_task::{RenderTask, RenderTaskAddress, RenderTaskKind};
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent};
-use crate::render_task_graph::{RenderTaskGraph, RenderTaskGraphBuilder, RenderTaskId};
+use crate::render_task_graph::{RenderTaskGraph, RenderTaskGraphBuilder, RenderTaskId, SubTaskRange};
 use crate::renderer::{BlendMode, GpuBufferAddress, GpuBufferBuilder, GpuBufferBuilderF, GpuBufferDataI};
 use crate::resource_cache::ResourceCache;
 use crate::segment::EdgeAaSegmentMask;
@@ -1283,9 +1283,8 @@ pub fn prepare_clip_range(
     gpu_buffer: &mut GpuBufferBuilderF,
     transforms: &mut TransformPalette,
 ) {
-    // TODO(nical) get rid of this vector.
-    let mut clip_tasks = Vec::with_capacity(clips_range.count as usize);
     let mut sub_tasks = rg_builder.begin_sub_tasks();
+
     for i in 0 .. clips_range.count {
         let clip_instance = clip_store.get_instance_from_range(&clips_range, i);
         let clip_item = &interned_clips[clip_instance.handle].item;
@@ -1302,11 +1301,9 @@ pub fn prepare_clip_range(
             spatial_tree,
             gpu_buffer,
             transforms,
-            &mut clip_tasks,
+            rg_builder,
+            &mut sub_tasks,
         );
-    }
-    for task in clip_tasks {
-        rg_builder.push_sub_task(&mut sub_tasks, SubTask::Clip(task));
     }
 
     rg_builder
@@ -1326,7 +1323,8 @@ pub fn prepare_clip_task(
     spatial_tree: &SpatialTree,
     gpu_buffer: &mut GpuBufferBuilderF,
     transforms: &mut TransformPalette,
-    out_clip_tasks: &mut Vec<ClipSubTask>,
+    rg_builder: &mut RenderTaskGraphBuilder,
+    sub_tasks: &mut SubTaskRange,
 ) {
     let render_task_address = masked_task_id.into();
 
@@ -1410,21 +1408,25 @@ pub fn prepare_clip_task(
                     }],
                     ScaleOffset::identity(),
                 );
-                out_clip_tasks.push(ClipSubTask {
-                    masked_task_id,
-                    clip_pattern_kind: PatternKind::ColorOrTexture,
-                    render_task_address,
-                    main_address: prim_address,
-                    prim_transform_id: clip_transform_id,
-                    clip_address: GpuBufferAddress::INVALID,
-                    clip_transform_id,
-                    src_task: tile.task_id,
-                    quad_flags,
-                    edge_aa: EdgeAaSegmentMask::empty(),
-                    clip_space: ClipSpace::Raster,
-                    clip_needs_scissor_rect,
-                    rounded_rect_fast_path: false,
-                });
+
+                rg_builder.push_sub_task(
+                    sub_tasks,
+                    SubTask::Clip(ClipSubTask {
+                        masked_task_id,
+                        clip_pattern_kind: PatternKind::ColorOrTexture,
+                        render_task_address,
+                        main_address: prim_address,
+                        prim_transform_id: clip_transform_id,
+                        clip_address: GpuBufferAddress::INVALID,
+                        clip_transform_id,
+                        src_task: tile.task_id,
+                        quad_flags,
+                        edge_aa: EdgeAaSegmentMask::empty(),
+                        clip_space: ClipSpace::Raster,
+                        clip_needs_scissor_rect,
+                        rounded_rect_fast_path: false,
+                    }),
+                );
             }
 
             // TODO(gw): For now, we skip the main mask prim below for image masks. Perhaps
@@ -1498,21 +1500,25 @@ pub fn prepare_clip_task(
         QuadFlags::empty()
     };
 
-    out_clip_tasks.push(ClipSubTask {
-        masked_task_id,
-        clip_pattern_kind: PatternKind::Mask,
-        render_task_address,
-        main_address: main_prim_address,
-        prim_transform_id,
-        clip_address,
-        clip_transform_id,
-        src_task: RenderTaskId::INVALID,
-        quad_flags,
-        edge_aa: EdgeAaSegmentMask::all(),
-        clip_space,
-        clip_needs_scissor_rect,
-        rounded_rect_fast_path: fast_path,
-    });
+    
+    rg_builder.push_sub_task(
+        sub_tasks,
+        SubTask::Clip(ClipSubTask {
+            masked_task_id,
+            clip_pattern_kind: PatternKind::Mask,
+            render_task_address,
+            main_address: main_prim_address,
+            prim_transform_id,
+            clip_address,
+            clip_transform_id,
+            src_task: RenderTaskId::INVALID,
+            quad_flags,
+            edge_aa: EdgeAaSegmentMask::all(),
+            clip_space,
+            clip_needs_scissor_rect,
+            rounded_rect_fast_path: fast_path,
+        }),
+    );
 }
 
 pub fn write_prim_blocks(

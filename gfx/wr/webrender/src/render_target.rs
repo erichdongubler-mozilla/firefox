@@ -11,7 +11,7 @@ use crate::render_task::{SubTask, ClipSubTask};
 use crate::command_buffer::CommandBufferList;
 use crate::pattern::{PatternKind, PatternShaderInput};
 use crate::spatial_tree::SpatialTree;
-use crate::clip::{ClipItem, ClipStore};
+use crate::clip::ClipStore;
 use crate::frame_builder::FrameGlobalResources;
 use crate::gpu_types::{BorderInstance, SVGFEFilterInstance, BlurDirection, BlurInstance, PrimitiveHeaders, ScalingInstance};
 use crate::gpu_types::{ZBufferIdGenerator, MaskInstance, BlurEdgeMode};
@@ -29,8 +29,8 @@ use crate::prim_store::gradient::{
 };
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilder};
 use crate::render_backend::DataStores;
-use crate::render_task::{RenderTaskKind, RenderTaskAddress, SubPass};
-use crate::render_task::{RenderTask, ScalingTask, MaskSubPass, SVGFEFilterTask};
+use crate::render_task::{RenderTaskKind, RenderTaskAddress};
+use crate::render_task::{RenderTask, ScalingTask, SVGFEFilterTask};
 use crate::render_task_graph::{RenderTaskGraph, RenderTaskId};
 use crate::resource_cache::ResourceCache;
 use crate::spatial_tree::SpatialNodeIndex;
@@ -51,7 +51,6 @@ pub enum RenderTargetKind {
 pub struct RenderTargetContext<'a, 'rc> {
     pub global_device_pixel_scale: DevicePixelScale,
     pub prim_store: &'a PrimitiveStore,
-    pub clip_store: &'a ClipStore,
     pub resource_cache: &'rc mut ResourceCache,
     pub use_dual_source_blending: bool,
     pub use_advanced_blending: bool,
@@ -554,15 +553,20 @@ impl RenderTarget {
             RenderTaskKind::Test(..) => {}
         }
 
-        build_sub_pass(
-            task_id,
-            task,
-            gpu_buffer_builder,
-            render_tasks,
-            transforms,
-            ctx,
-            &mut self.clip_masks,
-        );
+        for sub_task_id in task.sub_tasks.clone() {
+            let sub_task = &render_tasks[sub_task_id];
+            match sub_task {
+                SubTask::Clip(clip_task) => {
+                    add_clip_task_to_batch(
+                        clip_task,
+                        &ctx.frame_memory,
+                        render_tasks,
+                        gpu_buffer_builder,
+                        &mut self.clip_masks
+                    );
+                }
+            }
+        }
     }
 
     pub fn needs_depth(&self) -> bool {
@@ -851,50 +855,6 @@ pub struct LineDecorationJob {
     pub axis_select: f32,
 }
 
-fn build_mask_tasks(
-    info: &MaskSubPass,
-    task_id: RenderTaskId,
-    task_world_rect: WorldRect,
-    main_prim_address: GpuBufferAddress,
-    prim_spatial_node_index: SpatialNodeIndex,
-    raster_spatial_node_index: SpatialNodeIndex,
-    clip_store: &ClipStore,
-    data_stores: &DataStores,
-    spatial_tree: &SpatialTree,
-    gpu_buffers: &mut GpuBufferBuilder,
-    transforms: &mut TransformPalette,
-    render_tasks: &RenderTaskGraph,
-    results: &mut ClipMaskInstanceList,
-    memory: &FrameMemory,
-) {
-    let mut clip_tasks = Vec::with_capacity(info.clip_node_range.count as usize);
-
-    // This belongs to the prepare phase rather than batching where it is currently
-    // happening.
-    for i in 0 .. info.clip_node_range.count {
-        let clip_instance = clip_store.get_instance_from_range(&info.clip_node_range, i);
-        let clip_item: &ClipItem = &data_stores.clip[clip_instance.handle].item;
-        crate::quad::prepare_clip_task(
-            clip_instance,
-            clip_item,
-            task_id,
-            task_world_rect,
-            main_prim_address,
-            prim_spatial_node_index,
-            raster_spatial_node_index,
-            clip_store,
-            spatial_tree,
-            &mut gpu_buffers.f32,
-            transforms,
-            &mut clip_tasks,
-        );
-    }
-
-    for task in &clip_tasks {
-        add_clip_task_to_batch(task, memory, render_tasks, gpu_buffers, results);
-    }
-}
-
 fn add_clip_task_to_batch(
     task: &ClipSubTask,
 
@@ -980,70 +940,3 @@ fn add_clip_task_to_batch(
     );
 }
 
-fn build_sub_pass(
-    task_id: RenderTaskId,
-    task: &RenderTask,
-    gpu_buffer_builder: &mut GpuBufferBuilder,
-    render_tasks: &RenderTaskGraph,
-    transforms: &mut TransformPalette,
-    ctx: &RenderTargetContext,
-    output: &mut ClipMaskInstanceList,
-) {
-    if let Some(ref sub_pass) = task.sub_pass {
-        match sub_pass {
-            SubPass::Masks { ref masks } => {
-                let target_rect = task.get_target_rect();
-
-                let (device_pixel_scale, content_origin, raster_spatial_node_index) = match task.kind {
-                    RenderTaskKind::Picture(ref info) => {
-                        (info.device_pixel_scale, info.content_origin, info.raster_spatial_node_index)
-                    }
-                    RenderTaskKind::Empty(ref info) => {
-                        (info.device_pixel_scale, info.content_origin, info.raster_spatial_node_index)
-                    }
-                    RenderTaskKind::Prim(ref info) => {
-                        (info.device_pixel_scale, info.content_origin, info.raster_spatial_node_index)
-                    }
-                    _ => panic!("unexpected: {}", task.kind.as_str()),
-                };
-
-                let content_rect = DeviceRect::new(
-                    content_origin,
-                    content_origin + target_rect.size().to_f32(),
-                );
-
-                build_mask_tasks(
-                    masks,
-                    task_id,
-                    content_rect / device_pixel_scale,
-                    masks.prim_address_f,
-                    masks.prim_spatial_node_index,
-                    raster_spatial_node_index,
-                    ctx.clip_store,
-                    ctx.data_stores,
-                    ctx.spatial_tree,
-                    gpu_buffer_builder,
-                    transforms,
-                    render_tasks,
-                    output,
-                    &ctx.frame_memory,
-                );
-            }
-        }
-    }
-
-    for sub_task_id in task.sub_tasks.clone() {
-        let sub_task = &render_tasks[sub_task_id];
-        match sub_task {
-            SubTask::Clip(clip_task) => {
-                add_clip_task_to_batch(
-                    clip_task,
-                    &ctx.frame_memory,
-                    render_tasks,
-                    gpu_buffer_builder,
-                    output
-                );
-            }
-        }
-    }
-}

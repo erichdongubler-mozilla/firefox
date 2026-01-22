@@ -951,27 +951,10 @@ pub type TaskDependencies = SmallVec<[RenderTaskId;2]>;
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct MaskSubPass {
-    pub clip_node_range: ClipNodeRange,
-    pub prim_spatial_node_index: SpatialNodeIndex,
-    pub prim_address_f: GpuBufferAddress,
-}
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub enum SubPass {
-    Masks {
-        masks: MaskSubPass,
-    },
-}
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct RenderTask {
     pub location: RenderTaskLocation,
     pub children: TaskDependencies,
     pub kind: RenderTaskKind,
-    pub sub_pass: Option<SubPass>,
     pub sub_tasks: SubTaskRange,
 
     // TODO(gw): These fields and perhaps others can become private once the
@@ -1004,7 +987,6 @@ impl RenderTask {
             uv_rect_handle: GpuBufferAddress::INVALID,
             uv_rect_kind: UvRectKind::Rect,
             cache_handle: None,
-            sub_pass: None,
             sub_tasks: SubTaskRange::empty(),
         }
     }
@@ -1050,7 +1032,6 @@ impl RenderTask {
             uv_rect_handle: GpuBufferAddress::INVALID,
             uv_rect_kind: UvRectKind::Rect,
             cache_handle: None,
-            sub_pass: None,
             sub_tasks: SubTaskRange::empty(),
         }
     }
@@ -1070,7 +1051,6 @@ impl RenderTask {
             uv_rect_handle: GpuBufferAddress::INVALID,
             uv_rect_kind: UvRectKind::Rect,
             cache_handle: None,
-            sub_pass: None,
             sub_tasks: SubTaskRange::empty(),
         }
     }
@@ -1245,14 +1225,6 @@ impl RenderTask {
         rg_builder.add_dependency(task_id, source);
 
         task_id
-    }
-
-    pub fn add_sub_pass(
-        &mut self,
-        sub_pass: SubPass,
-    ) {
-        assert!(self.sub_pass.is_none(), "multiple sub-passes are not supported for now");
-        self.sub_pass = Some(sub_pass);
     }
 
     pub fn set_sub_tasks(
