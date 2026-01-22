@@ -7,7 +7,7 @@ use euclid::{Scale, point2};
 
 use crate::ItemUid;
 use crate::gpu_types::ClipSpace;
-use crate::render_task::{ClipSubTask};
+use crate::render_task::{SubTask, ClipSubTask};
 use crate::transform::TransformPalette;
 use crate::batch::{BatchKey, BatchKind, BatchTextures};
 use crate::clip::{ClipChainInstance, ClipIntern, ClipItemKind, ClipNodeRange, ClipSpaceConversion, ClipStore, ClipNodeInstance, ClipItem};
@@ -1238,6 +1238,51 @@ fn add_composite_prim(
         ),
         targets,
     );
+}
+
+pub fn prepare_clip_range(
+    clips_range: ClipNodeRange,
+    masked_prim_task_id: RenderTaskId,
+    task_world_rect: WorldRect,
+    main_prim_address: GpuBufferAddress,
+    prim_spatial_node_index: SpatialNodeIndex,
+    raster_spatial_node_index: SpatialNodeIndex,
+    interned_clips: &DataStore<ClipIntern>,
+    clip_store: &ClipStore,
+    spatial_tree: &SpatialTree,
+    rg_builder: &mut RenderTaskGraphBuilder,
+    gpu_buffer: &mut GpuBufferBuilderF,
+    transforms: &mut TransformPalette,
+) {
+    // TODO(nical) get rid of this vector.
+    let mut clip_tasks = Vec::with_capacity(clips_range.count as usize);
+    let mut sub_tasks = rg_builder.begin_sub_tasks();
+    for i in 0 .. clips_range.count {
+        let clip_instance = clip_store.get_instance_from_range(&clips_range, i);
+        let clip_item = &interned_clips[clip_instance.handle].item;
+
+        prepare_clip_task(
+            clip_instance,
+            clip_item,
+            masked_prim_task_id,
+            task_world_rect,
+            main_prim_address,
+            prim_spatial_node_index,
+            raster_spatial_node_index,
+            clip_store,
+            spatial_tree,
+            gpu_buffer,
+            transforms,
+            &mut clip_tasks,
+        );
+    }
+    for task in clip_tasks {
+        rg_builder.push_sub_task(&mut sub_tasks, SubTask::Clip(task));
+    }
+
+    rg_builder
+        .get_task_mut(masked_prim_task_id)
+        .set_sub_tasks(sub_tasks);
 }
 
 pub fn prepare_clip_task(
