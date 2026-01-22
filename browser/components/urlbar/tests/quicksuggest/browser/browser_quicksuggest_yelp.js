@@ -334,18 +334,6 @@ add_task(async function resultMenu_not_relevant() {
   await QuickSuggest.clearDismissedSuggestions();
 });
 
-// Tests the "Not interested" result menu dismissal command.
-add_task(async function resultMenu_not_interested() {
-  await doDismiss({
-    menu: "not_interested",
-    assert: () => {
-      Assert.ok(!UrlbarPrefs.get("suggest.yelp"));
-    },
-  });
-
-  UrlbarPrefs.clear("suggest.yelp");
-});
-
 async function doDismiss({ menu, assert }) {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -362,14 +350,10 @@ async function doDismiss({ menu, assert }) {
   let dismissalPromise = TestUtils.topicObserved(
     "quicksuggest-dismissals-changed"
   );
-  await UrlbarTestUtils.openResultMenuAndClickItem(
-    window,
-    ["[data-l10n-id=firefox-suggest-command-dont-show-this]", menu],
-    {
-      resultIndex,
-      openByMouse: true,
-    }
-  );
+  await UrlbarTestUtils.openResultMenuAndClickItem(window, [menu], {
+    resultIndex,
+    openByMouse: true,
+  });
   info("Awaiting dismissal promise");
   await dismissalPromise;
 
@@ -450,6 +434,29 @@ async function doDismiss({ menu, assert }) {
 // Tests the "Manage" result menu.
 add_task(async function resultMenu_manage() {
   await doManageTest({ input: "ramen", index: 1 });
+});
+
+// Tests the "Learn more" result menu.
+add_task(async function resultMenu_learn_more() {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "ramen",
+  });
+
+  info("Selecting Learn more item from the result menu");
+  let tabOpenPromise = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    Services.urlFormatter.formatURLPref("app.support.baseURL") +
+      "awesome-bar-result-menu"
+  );
+  await UrlbarTestUtils.openResultMenuAndClickItem(window, "help", {
+    resultIndex: 1,
+  });
+  info("Waiting for Learn more link to open in a new tab");
+  await tabOpenPromise;
+  gBrowser.removeCurrentTab();
+
+  await UrlbarTestUtils.promisePopupClose(window);
 });
 
 // Tests the row/group label.

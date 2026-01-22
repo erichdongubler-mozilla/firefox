@@ -24,6 +24,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
  */
 
 const RESULT_MENU_COMMAND = {
+  HELP: "help",
   INACCURATE_LOCATION: "inaccurate_location",
   MANAGE: "manage",
   NOT_INTERESTED: "not_interested",
@@ -276,29 +277,22 @@ export class YelpSuggestions extends SuggestProvider {
 
     commands.push(
       {
+        name: RESULT_MENU_COMMAND.NOT_RELEVANT,
         l10n: {
-          id: "firefox-suggest-command-dont-show-this",
+          id: "urlbar-result-menu-dismiss-suggestion",
         },
-        children: [
-          {
-            name: RESULT_MENU_COMMAND.NOT_RELEVANT,
-            l10n: {
-              id: "firefox-suggest-command-not-relevant",
-            },
-          },
-          {
-            name: RESULT_MENU_COMMAND.NOT_INTERESTED,
-            l10n: {
-              id: "firefox-suggest-command-not-interested",
-            },
-          },
-        ],
       },
       { name: "separator" },
       {
         name: RESULT_MENU_COMMAND.MANAGE,
         l10n: {
           id: "urlbar-result-menu-manage-firefox-suggest",
+        },
+      },
+      {
+        name: RESULT_MENU_COMMAND.HELP,
+        l10n: {
+          id: "urlbar-result-menu-learn-more",
         },
       }
     );
@@ -309,8 +303,10 @@ export class YelpSuggestions extends SuggestProvider {
   onEngagement(queryContext, controller, details, searchString) {
     let { result } = details;
     switch (details.selType) {
+      case RESULT_MENU_COMMAND.HELP:
       case RESULT_MENU_COMMAND.MANAGE:
-        // "manage" is handled by UrlbarInput, no need to do anything here.
+        // "manage" and "help" are handled by UrlbarInput, no need to do
+        // anything here.
         break;
       case RESULT_MENU_COMMAND.INACCURATE_LOCATION:
         // Currently the only way we record this feedback is in the Glean
