@@ -352,10 +352,6 @@ var allowlist = [
   {
     file: "chrome://browser/content/aiwindow/components/memories-icon-button.mjs",
   },
-  // Bug 2010143: memory generation schedule updates
-  {
-    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchedulers.sys.mjs",
-  },
   // Bug 2011266 - Integrate current tab website chip context in sidebar
   {
     file: "chrome://browser/content/aiwindow/components/website-chip-container.mjs",

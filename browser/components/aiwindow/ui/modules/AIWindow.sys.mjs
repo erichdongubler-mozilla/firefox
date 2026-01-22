@@ -25,6 +25,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PanelMultiView:
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  MemoriesSchedulers:
+    "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchedulers.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -64,6 +66,12 @@ export const AIWindow = {
       () => new lazy.ChatStore()
     );
     this._initialized = true;
+
+    // On startup/restart, if the first window initialized is an
+    // AI window, we need to start the memories schedulers.
+    if (this.isAIWindowActive(win)) {
+      lazy.MemoriesSchedulers.maybeRunAndSchedule();
+    }
   },
 
   _reconcileNewTabPages(win, previousNewTabURL) {
@@ -382,6 +390,10 @@ export const AIWindow = {
       this._reconcileNewTabPages(win, previousNewTabURL);
       this._initializeAskButtonOnToolbox(win);
       Services.obs.notifyObservers(win, "ai-window-state-changed");
+
+      if (isTogglingToAIWindow) {
+        lazy.MemoriesSchedulers.maybeRunAndSchedule();
+      }
     }
   },
 
