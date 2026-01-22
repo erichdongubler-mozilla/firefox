@@ -274,10 +274,11 @@ export class IPPChannelFilter {
         return true;
       }
 
-      let loadingPrincipal = channel.loadInfo?.loadingPrincipal;
-      let hasExclusion =
-        loadingPrincipal &&
-        lazy.IPPExceptionsManager.hasExclusion(loadingPrincipal);
+      let principal =
+        channel.loadInfo?.loadingPrincipal ||
+        Services.scriptSecurityManager.getChannelURIPrincipal(channel);
+
+      let hasExclusion = lazy.IPPExceptionsManager.hasExclusion(principal);
 
       if (hasExclusion) {
         return true;
