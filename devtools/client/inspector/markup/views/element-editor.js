@@ -746,13 +746,13 @@ class ElementEditor {
     name.textContent = attribute.name;
     inner.appendChild(name);
 
-    inner.appendChild(this.doc.createTextNode('="'));
-
     const val = this.doc.createElement("span");
     val.classList.add("attr-value", "force-color-on-flash");
-    inner.appendChild(val);
 
-    inner.appendChild(this.doc.createTextNode('"'));
+    if (attribute.value) {
+      // Only display `="value"` if the value isn't empty/null
+      inner.append('="', val, '"');
+    }
 
     this._setupAttributeEditor(attribute, attr, inner, name, val);
 
