@@ -13,7 +13,7 @@ use crate::prim_store::{InternablePrimitive, PrimKey, PrimTemplate, PrimTemplate
 use crate::prim_store::{PrimitiveInstanceKind, PrimitiveStore, RectangleKey};
 use crate::quad;
 use crate::render_target::RenderTargetKind;
-use crate::render_task::{BlurTask, MaskSubPass, PrimTask, RenderTask, RenderTaskKind, SubPass};
+use crate::render_task::{BlurTask, PrimTask, RenderTask, RenderTaskKind};
 use crate::scene_building::{SceneBuilder, IsVisible};
 use crate::segment::EdgeAaSegmentMask;
 use crate::spatial_tree::SpatialNodeIndex;
@@ -127,14 +127,26 @@ impl PatternBuilder for BoxShadowTemplate {
             }),
         ));
 
-        let masks = MaskSubPass {
-            clip_node_range: clips_range,
-            prim_spatial_node_index: raster_spatial_node_index,
-            prim_address_f: pattern_prim_address_f,
-        };
+        let task_world_rect = DeviceRect::from_origin_and_size(
+            content_origin,
+            task_size.to_f32(),
+        ) / scale_factor;
 
-        let task = state.rg_builder.get_task_mut(pattern_task_id);
-        task.add_sub_pass(SubPass::Masks { masks });
+        crate::quad::prepare_clip_range(
+            clips_range,
+            pattern_task_id,
+            task_world_rect,
+            pattern_prim_address_f,
+            raster_spatial_node_index,
+            raster_spatial_node_index,
+            ctx.interned_clips,
+            state.clip_store,
+            ctx.spatial_tree,
+            &mut state.rg_builder,
+            &mut state.frame_gpu_data.f32,
+            state.transforms,
+        );
+
 
         let blur_task_v = state.rg_builder.add().init(RenderTask::new_dynamic(
             task_size,
