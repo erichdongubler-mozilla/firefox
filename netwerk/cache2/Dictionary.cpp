@@ -101,6 +101,9 @@ DictionaryCacheEntry::~DictionaryCacheEntry() {
   DICTIONARY_LOG(
       ("Destroyed DictionaryCacheEntry %p, uri=%s, pattern=%s, id=%s", this,
        mURI.get(), mPattern.get(), mId.get()));
+  if (mCachedPattern.isSome()) {
+    urlp_pattern_free(mCachedPattern.value());
+  }
 }
 
 DictionaryCacheEntry::DictionaryCacheEntry(const nsACString& aURI,
@@ -164,18 +167,24 @@ bool DictionaryCacheEntry::Match(const nsACString& aFilePath,
         mMatchDest.IndexOf(
             dom::InternalRequest::MapContentPolicyTypeToRequestDestination(
                 aType)) != mMatchDest.NoIndex) {
-      UrlpPattern pattern;
-      UrlpOptions options{};
-      const nsCString base(mURI);
-      if (!urlp_parse_pattern_from_string(&mPattern, &base, options,
-                                          &pattern)) {
-        DICTIONARY_LOG(
-            ("Failed to parse dictionary pattern %s", mPattern.get()));
-        return false;
+      // Check if we have a cached pattern, otherwise parse and cache it
+      if (mCachedPattern.isNothing()) {
+        UrlpPattern pattern;
+        UrlpOptions options{};
+        const nsCString base(mURI);
+        if (!urlp_parse_pattern_from_string(&mPattern, &base, options,
+                                            &pattern)) {
+          DICTIONARY_LOG(
+              ("Failed to parse dictionary pattern %s", mPattern.get()));
+          return false;
+        }
+        mCachedPattern.emplace(pattern);
       }
 
       UrlpInput input = net::CreateUrlpInput(aFilePath);
-      bool result = net::UrlpPatternTest(pattern, input, Some(base));
+      const nsCString base(mURI);
+      bool result =
+          net::UrlpPatternTest(mCachedPattern.value(), input, Some(base));
       if (result) {
         aLongest = mPattern.Length();
         DICTIONARY_LOG(("Match: %p   %s to %s, %s (now=%u, expiration=%u)",
@@ -1430,6 +1439,7 @@ void DictionaryOrigin::FinishAddEntry(DictionaryCacheEntry* aEntry) {
   if (mPendingEntries.RemoveElement(aEntry)) {
     // We need to give priority to elements fetched most recently if they
     // have an equivalent match length (and dest)
+    // XXX insert at the start of entries of this length
     mEntries.InsertElementAt(0, aEntry);
   }
   DICTIONARY_LOG(("FinishAddEntry(%s)", aEntry->mURI.get()));

@@ -23,6 +23,7 @@
 #include "mozilla/TimeStamp.h"
 #include "nsTHashMap.h"
 #include "nsHashKeys.h"
+#include "mozilla/net/urlpattern_glue.h"
 
 class nsICacheStorage;
 class nsIIOService;
@@ -190,6 +191,9 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   // dcb and dcz use type 'raw'.  We're allowed to ignore types we don't
   // understand, so we can fail to record a dictionary with type != 'raw'
   //  nsCString mType;
+
+  // Cached parsed URLPattern for performance
+  Maybe<UrlpPattern> mCachedPattern;
 
   // SHA-256 hash value ready to put into a header
   nsCString mHash;
