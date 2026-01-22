@@ -1139,33 +1139,50 @@ bool ChannelPosix::TransferMachPorts(Message& msg) {
 // static
 bool ChannelPosix::CreateRawPipe(ChannelHandle* server, ChannelHandle* client) {
   int fds[2];
-  if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) < 0) {
+  int type = SOCK_STREAM;
+#ifdef SOCK_CLOEXEC
+  type |= SOCK_CLOEXEC;
+#endif
+#ifdef SOCK_NONBLOCK
+  type |= SOCK_NONBLOCK;
+#endif
+
+  if (socketpair(AF_UNIX, type, 0, fds) < 0) {
     mozilla::ipc::AnnotateCrashReportWithErrno(
         CrashReporter::Annotation::IpcCreatePipeSocketPairErrno, errno);
     return false;
   }
 
   auto configureFd = [](int fd) -> bool {
+#ifndef SOCK_NONBLOCK
     // Mark the endpoints as non-blocking
-    if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) {
+    int flFlags = fcntl(fd, F_GETFL);
+    if (flFlags == -1) {
       mozilla::ipc::AnnotateCrashReportWithErrno(
           CrashReporter::Annotation::IpcCreatePipeFcntlErrno, errno);
       return false;
     }
+    if (fcntl(fd, F_SETFL, flFlags | O_NONBLOCK) == -1) {
+      mozilla::ipc::AnnotateCrashReportWithErrno(
+          CrashReporter::Annotation::IpcCreatePipeFcntlErrno, errno);
+      return false;
+    }
+#endif
 
+#ifndef SOCK_CLOEXEC
     // Mark the pipes as FD_CLOEXEC
-    int flags = fcntl(fd, F_GETFD);
-    if (flags == -1) {
+    int fdFlags = fcntl(fd, F_GETFD);
+    if (fdFlags == -1) {
       mozilla::ipc::AnnotateCrashReportWithErrno(
           CrashReporter::Annotation::IpcCreatePipeCloExecErrno, errno);
       return false;
     }
-    flags |= FD_CLOEXEC;
-    if (fcntl(fd, F_SETFD, flags) == -1) {
+    if (fcntl(fd, F_SETFD, fdFlags | FD_CLOEXEC) == -1) {
       mozilla::ipc::AnnotateCrashReportWithErrno(
           CrashReporter::Annotation::IpcCreatePipeCloExecErrno, errno);
       return false;
     }
+#endif
     return true;
   };
 
