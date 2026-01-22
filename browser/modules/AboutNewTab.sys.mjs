@@ -11,6 +11,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTabResourceMapping:
     "resource:///modules/AboutNewTabResourceMapping.sys.mjs",
   ActivityStream: "resource://newtab/lib/ActivityStream.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   TelemetryReportingPolicy:
     "resource://gre/modules/TelemetryReportingPolicy.sys.mjs",
@@ -21,6 +22,7 @@ const PREF_ACTIVITY_STREAM_DEBUG = "browser.newtabpage.activity-stream.debug";
 // AboutHomeStartupCache needs us in "quit-application", so stay alive longer.
 // TODO: We could better have a shared async shutdown blocker?
 const TOPIC_APP_QUIT = "profile-before-change";
+const TRAINHOP_NIMBUS_FEATURE = "newtabTrainhop";
 
 export const AboutNewTab = {
   QueryInterface: ChromeUtils.generateQI([
@@ -163,13 +165,27 @@ export const AboutNewTab = {
       return;
     }
 
-    // Wait until the built-in addon has reported that it has finished
-    // initializing.
+    // We want to block newtab startup on two things:
+    //  - The built-in addon has reported that it has finished
+    //    initializing
+    //  - The TRAINHOP_NIMBUS_FEATURE feature is up-to-date and ready to
+    //    read.
+    //
+    // That way, when the various feeds initialize, they can be certain that
+    // the addon has finished registering its resources, and that the
+    // trainhopConfig value computed in PrefsFeed is ready to be read.
+
+    const nimbusFeature = lazy.NimbusFeatures[TRAINHOP_NIMBUS_FEATURE];
+    const trainhopFeatureReady = nimbusFeature.ready();
+
     let redirector = Cc[
       "@mozilla.org/network/protocol/about;1?what=newtab"
     ].getService(Ci.nsIAboutModule).wrappedJSObject;
 
-    await redirector.promiseBuiltInAddonInitialized;
+    const addonInitted = redirector.promiseBuiltInAddonInitialized;
+
+    await Promise.all([trainhopFeatureReady, addonInitted]);
+
     lazy.AboutNewTabResourceMapping.scheduleUpdateTrainhopAddonState();
 
     try {
