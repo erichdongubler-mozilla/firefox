@@ -157,9 +157,6 @@ bool DictionaryCacheEntry::Match(const nsACString& aFilePath,
     return false;
   }
   // Not worth checking if we wouldn't use it
-  DICTIONARY_LOG(("Match: %p   %s to %s, %s (now=%u, expiration=%u)", this,
-                  PromiseFlatCString(aFilePath).get(), mPattern.get(),
-                  NS_CP_ContentTypeName(aType), aNow, mExpiration));
   if ((mExpiration == 0 || aNow < mExpiration) &&
       mPattern.Length() > aLongest) {
     // Need to match using match-dest, if it exists
@@ -179,19 +176,17 @@ bool DictionaryCacheEntry::Match(const nsACString& aFilePath,
 
       UrlpInput input = net::CreateUrlpInput(aFilePath);
       bool result = net::UrlpPatternTest(pattern, input, Some(base));
-      DICTIONARY_LOG(("URLPattern result was %d", result));
       if (result) {
         aLongest = mPattern.Length();
+        DICTIONARY_LOG(("Match: %p   %s to %s, %s (now=%u, expiration=%u)",
+                        this, PromiseFlatCString(aFilePath).get(),
+                        mPattern.get(), NS_CP_ContentTypeName(aType), aNow,
+                        mExpiration));
         DICTIONARY_LOG(("Match: %s (longest %u)", mURI.get(), aLongest));
       }
       return result;
-    } else {
-      DICTIONARY_LOG(("   Failed on matchDest"));
-    }
-  } else {
-    DICTIONARY_LOG(
-        ("   Failed due to expiration: %u vs %u", aNow, mExpiration));
-  }
+    }  // else failed on match-dest
+  }  // else failed on expiration
   return false;
 }
 
@@ -527,49 +522,14 @@ nsresult DictionaryCacheEntry::ReadCacheData(
   return NS_OK;
 }
 
-NS_IMETHODIMP
-DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
-  DICTIONARY_LOG(("DictionaryCacheEntry %s OnStopRequest", mURI.get()));
-  if (NS_SUCCEEDED(result)) {
-    mDictionaryDataComplete = true;
-
-    // Validate that the loaded dictionary data matches the stored hash
-    if (!mHash.IsEmpty()) {
-      nsCOMPtr<nsICryptoHash> hasher =
-          do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID);
-      if (hasher) {
-        hasher->Init(nsICryptoHash::SHA256);
-        hasher->Update(mDictionaryData.begin(),
-                       static_cast<uint32_t>(mDictionaryData.length()));
-        nsAutoCString computedHash;
-        MOZ_ALWAYS_SUCCEEDS(hasher->Finish(true, computedHash));
-
-        if (!computedHash.Equals(mHash)) {
-          DICTIONARY_LOG(("Hash mismatch for %s: expected %s, computed %s",
-                          mURI.get(), mHash.get(), computedHash.get()));
-          result = NS_ERROR_CORRUPTED_CONTENT;
-          mDictionaryDataComplete = false;
-          mDictionaryData.clear();
-          // Remove this corrupted dictionary entry
-          DictionaryCache::RemoveDictionaryFor(mURI);
-        }
-      }
-    }
-
-    DICTIONARY_LOG(("Unsuspending %zu channels, Dictionary len %zu",
-                    mWaitingPrefetch.Length(), mDictionaryData.length()));
-    // if we suspended, un-suspend the channel(s)
-    for (auto& lambda : mWaitingPrefetch) {
-      (lambda)(result);
-    }
-    mWaitingPrefetch.Clear();
-  } else {
-    // Pass error to waiting callbacks
-    for (auto& lambda : mWaitingPrefetch) {
-      (lambda)(result);
-    }
-    mWaitingPrefetch.Clear();
+void DictionaryCacheEntry::CleanupOnCacheData(nsresult result) {
+  DICTIONARY_LOG(("Unsuspending %zu channels, Dictionary len %zu",
+                  mWaitingPrefetch.Length(), mDictionaryData.length()));
+  // if we suspended, un-suspend the channel(s)
+  for (auto& lambda : mWaitingPrefetch) {
+    (lambda)(result);
   }
+  mWaitingPrefetch.Clear();
 
   // If we have a replacement entry waiting, unsuspend its channels too
   if (mReplacement) {
@@ -584,7 +544,7 @@ DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
   // If we're being replaced by a new entry, swap now
   RefPtr<DictionaryCacheEntry> self;
   if (mReplacement) {
-    DICTIONARY_LOG(("Replacing entry %p with %p for %s", this,
+    DICTIONARY_LOG(("*** Replacing entry %p with %p for %s", this,
                     mReplacement.get(), mURI.get()));
     // Make sure we don't destroy ourselves
     self = this;
@@ -594,9 +554,46 @@ DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
     mReplacement->UnblockAddEntry(mOrigin);
     mOrigin = nullptr;
   }
+}
 
-  mStopReceived = true;
-  return NS_OK;
+NS_IMETHODIMP
+DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
+  DICTIONARY_LOG(("DictionaryCacheEntry %s OnStopRequest", mURI.get()));
+
+  auto cleanup = MakeScopeExit([&] {
+    CleanupOnCacheData(result);
+    mStopReceived = true;
+  });
+  if (NS_FAILED(result)) {
+    return result;
+  }
+  mDictionaryDataComplete = true;
+
+  // Validate that the loaded dictionary data matches the stored hash
+  if (mHash.IsEmpty()) {
+    return NS_OK;
+  }
+  nsCOMPtr<nsICryptoHash> hasher = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID);
+  if (!hasher) {
+    return NS_OK;
+  }
+  hasher->Init(nsICryptoHash::SHA256);
+  hasher->Update(mDictionaryData.begin(),
+                 static_cast<uint32_t>(mDictionaryData.length()));
+  nsAutoCString computedHash;
+  MOZ_ALWAYS_SUCCEEDS(hasher->Finish(true, computedHash));
+
+  if (!computedHash.Equals(mHash)) {
+    DICTIONARY_LOG(("Hash mismatch for %s: expected %s, computed %s",
+                    mURI.get(), mHash.get(), computedHash.get()));
+    result = NS_ERROR_CORRUPTED_CONTENT;
+    mDictionaryDataComplete = false;
+    mDictionaryData.clear();
+    // Remove this corrupted dictionary entry
+    DictionaryCache::RemoveDictionaryFor(mURI);
+  }
+
+  return result;
 }
 
 void DictionaryCacheEntry::UnblockAddEntry(DictionaryOrigin* aOrigin) {
@@ -666,7 +663,11 @@ DictionaryCacheEntry::OnCacheEntryAvailable(nsICacheEntry* entry, bool isNew,
     // XXX Error out any channels waiting on this cache entry.  Also,
     // remove the dictionary entry from the origin.
     mNotCached = true;  // For Prefetch()
-    DICTIONARY_LOG(("Prefetched cache entry not available!"));
+    DICTIONARY_LOG(("Prefetched cache entry not available!!!"));
+
+    CleanupOnCacheData(NS_ERROR_CORRUPTED_CONTENT);
+    // Remove this corrupted dictionary entry
+    DictionaryCache::RemoveDictionaryFor(mURI);
   }
 
   return NS_OK;
@@ -1385,8 +1386,6 @@ nsresult DictionaryOrigin::RemoveEntry(const nsACString& aKey) {
       ("DictionaryOrigin::RemoveEntry for %s", PromiseFlatCString(aKey).get()));
   RefPtr<DictionaryCacheEntry> hold;
   for (const auto& dict : mEntries) {
-    DICTIONARY_LOG(
-        ("       Comparing to %s", PromiseFlatCString(dict->GetURI()).get()));
     if (dict->GetURI().Equals(aKey)) {
       // Ensure it doesn't disappear on us
       hold = dict;
@@ -1407,8 +1406,6 @@ nsresult DictionaryOrigin::RemoveEntry(const nsACString& aKey) {
     DICTIONARY_LOG(("DictionaryOrigin::RemoveEntry (pending) for %s",
                     PromiseFlatCString(aKey).get()));
     for (const auto& dict : mPendingEntries) {
-      DICTIONARY_LOG(
-          ("       Comparing to %s", PromiseFlatCString(dict->GetURI()).get()));
       if (dict->GetURI().Equals(aKey)) {
         // Ensure it doesn't disappear on us
         RefPtr<DictionaryCacheEntry> hold(dict);

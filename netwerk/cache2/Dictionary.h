@@ -154,6 +154,8 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
                                 const char* aFromSegment, uint32_t aToOffset,
                                 uint32_t aCount, uint32_t* aWriteCount);
 
+  void CleanupOnCacheData(nsresult result);
+
   void MakeMetadataEntry(nsCString& aNewValue);
 
   nsresult Write(nsICacheEntry* aEntry);
