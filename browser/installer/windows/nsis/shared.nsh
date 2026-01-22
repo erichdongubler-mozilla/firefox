@@ -446,12 +446,6 @@ Function OnInstallDesktopLauncherHandler
   Pop $0
 FunctionEnd
 
-Function DeleteDesktopShortcut
-  ${If} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
-    Delete "$DESKTOP\${BrandShortName}.lnk"
-  ${EndIf}
-FunctionEnd
-
 ; Adds shortcuts for this installation. This should also add the application
 ; to Open With for the file types the application handles (bug 370480).
 !macro ShowShortcuts
