@@ -42,7 +42,6 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
         is MenuAction.CustomizeReaderView,
         is MenuAction.Navigate,
         is MenuAction.OnCFRShown,
-        is MenuAction.OpenInRegularTab,
         is MenuAction.OnCFRDismiss,
         -> state
 

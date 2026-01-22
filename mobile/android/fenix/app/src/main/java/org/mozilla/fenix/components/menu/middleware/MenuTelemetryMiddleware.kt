@@ -302,14 +302,6 @@ class MenuTelemetryMiddleware(
                 )
             }
 
-            MenuAction.OpenInRegularTab -> {
-                Events.browserMenuAction.record(
-                    Events.BrowserMenuActionExtra(
-                        item = "open_in_regular_tab",
-                    ),
-                )
-            }
-
             MenuAction.OnCFRShown -> Menu.showCfr.record(NoExtras())
 
             MenuAction.OnCFRDismiss -> Menu.dismissCfr.record(NoExtras())

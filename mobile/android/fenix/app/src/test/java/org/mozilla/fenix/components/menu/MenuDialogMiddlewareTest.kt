@@ -20,7 +20,6 @@ import mozilla.components.feature.addons.AddonManager
 import mozilla.components.feature.app.links.AppLinkRedirect
 import mozilla.components.feature.app.links.AppLinksUseCases
 import mozilla.components.feature.session.SessionUseCases
-import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.feature.top.sites.PinnedSiteStorage
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesUseCases
@@ -78,8 +77,6 @@ class MenuDialogMiddlewareTest {
     private lateinit var removePinnedSiteUseCase: TopSitesUseCases.RemoveTopSiteUseCase
     private lateinit var appLinksUseCases: AppLinksUseCases
     private lateinit var requestDesktopSiteUseCase: SessionUseCases.RequestDesktopSiteUseCase
-    private lateinit var tabsUseCases: TabsUseCases
-    private lateinit var migratePrivateTabUseCase: TabsUseCases.MigratePrivateTabUseCase
     private lateinit var settings: Settings
     private lateinit var lastSavedFolderCache: LastSavedFolderCache
 
@@ -95,14 +92,11 @@ class MenuDialogMiddlewareTest {
         removePinnedSiteUseCase = mock()
         appLinksUseCases = mock()
         requestDesktopSiteUseCase = mock()
-        tabsUseCases = mock()
-        migratePrivateTabUseCase = mock()
         lastSavedFolderCache = mock()
 
         settings = Settings(testContext)
 
         runBlocking {
-            whenever(tabsUseCases.migratePrivateTabUseCase).thenReturn(migratePrivateTabUseCase)
             whenever(pinnedSiteStorage.getPinnedSites()).thenReturn(emptyList())
             whenever(addonManager.getAddons()).thenReturn(emptyList())
         }
@@ -1084,37 +1078,6 @@ class MenuDialogMiddlewareTest {
         assertFalse(shownWasCalled)
     }
 
-    @Test
-    fun `WHEN open in regular tab action is dispatched THEN private tab should be open in regular tab`() = runTest(testDispatcher) {
-        val url = "https://www.mozilla.org"
-        val title = "Mozilla"
-        var dismissWasCalled = false
-
-        val browserMenuState = BrowserMenuState(
-            selectedTab = createTab(
-                id = "id",
-                url = url,
-                title = title,
-            ),
-        )
-        val store = spy(
-            createStore(
-                menuState = MenuState(
-                    browserMenuState = browserMenuState,
-                ),
-                onDismiss = { dismissWasCalled = true },
-            ),
-        )
-        testScheduler.advanceUntilIdle()
-
-        store.dispatch(MenuAction.OpenInRegularTab)
-        testScheduler.advanceUntilIdle()
-
-        verify(migratePrivateTabUseCase).invoke(tabId = "id", alternativeUrl = url)
-
-        assertTrue(dismissWasCalled)
-    }
-
     private fun createStore(
         appStore: AppStore = AppStore(),
         menuState: MenuState = MenuState(),
@@ -1134,7 +1097,6 @@ class MenuDialogMiddlewareTest {
                 addPinnedSiteUseCase = addPinnedSiteUseCase,
                 removePinnedSitesUseCase = removePinnedSiteUseCase,
                 requestDesktopSiteUseCase = requestDesktopSiteUseCase,
-                tabsUseCases = tabsUseCases,
                 materialAlertDialogBuilder = alertDialogBuilder,
                 topSitesMaxLimit = TOP_SITES_MAX_COUNT,
                 onDeleteAndQuit = onDeleteAndQuit,

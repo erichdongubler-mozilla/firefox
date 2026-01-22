@@ -79,16 +79,6 @@ class MenuTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `WHEN open in regular tab THEN record open in regular tab menu telemetry`() {
-        val store = createStore()
-        assertNull(Events.browserMenuAction.testGetValue())
-
-        store.dispatch(MenuAction.OpenInRegularTab)
-
-        assertTelemetryRecorded(Events.browserMenuAction, item = "open_in_regular_tab")
-    }
-
-    @Test
     fun `WHEN removing a shortcut from top sites THEN record the remove from top sites browser menu telemetry`() {
         val store = createStore()
         assertNull(Events.browserMenuAction.testGetValue())

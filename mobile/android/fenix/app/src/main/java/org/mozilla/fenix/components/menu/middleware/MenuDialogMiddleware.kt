@@ -22,7 +22,6 @@ import mozilla.components.feature.addons.AddonManager
 import mozilla.components.feature.addons.AddonManagerException
 import mozilla.components.feature.app.links.AppLinksUseCases
 import mozilla.components.feature.session.SessionUseCases
-import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.feature.top.sites.PinnedSiteStorage
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesUseCases
@@ -65,7 +64,6 @@ import org.mozilla.fenix.utils.Settings
  * selected tab from pinned shortcuts.
  * @param requestDesktopSiteUseCase The [SessionUseCases.RequestDesktopSiteUseCase] for toggling
  * desktop mode for the current session.
- * @param tabsUseCases The [TabsUseCases] for reopening a private tab as a regular (ie, non-private) tab.
  * @param materialAlertDialogBuilder The [MaterialAlertDialogBuilder] used to create a popup when trying to
  * add a shortcut after the shortcut limit has been reached.
  * @param topSitesMaxLimit The maximum number of top sites the user can have.
@@ -88,7 +86,6 @@ class MenuDialogMiddleware(
     private val addPinnedSiteUseCase: TopSitesUseCases.AddPinnedSiteUseCase,
     private val removePinnedSitesUseCase: TopSitesUseCases.RemoveTopSiteUseCase,
     private val requestDesktopSiteUseCase: SessionUseCases.RequestDesktopSiteUseCase,
-    private val tabsUseCases: TabsUseCases,
     private val materialAlertDialogBuilder: MaterialAlertDialogBuilder,
     private val topSitesMaxLimit: Int,
     private val onDeleteAndQuit: () -> Unit,
@@ -124,7 +121,6 @@ class MenuDialogMiddleware(
             is MenuAction.ToggleReaderView -> toggleReaderView(state = currentState)
             is MenuAction.CustomizeReaderView -> customizeReaderView()
             is MenuAction.OnCFRShown -> onCFRShown()
-            is MenuAction.OpenInRegularTab -> openInRegularTab(state = currentState)
             is MenuAction.RequestDesktopSite,
             is MenuAction.RequestMobileSite,
             -> requestSiteMode(
@@ -423,16 +419,6 @@ class MenuDialogMiddleware(
         url: String?,
     ) = scope.launch {
         onSendPendingIntentWithUrl(intent, url)
-        onDismiss()
-    }
-
-    private fun openInRegularTab(state: MenuState) = scope.launch {
-        state.browserMenuState?.selectedTab?.id?.let { sessionId ->
-            tabsUseCases.migratePrivateTabUseCase.invoke(
-                sessionId,
-                state.browserMenuState.selectedTab.getUrl(),
-            )
-        }
         onDismiss()
     }
 
