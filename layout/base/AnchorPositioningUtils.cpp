@@ -41,13 +41,87 @@ bool IsScrolled(const nsIFrame* aFrame) {
   }
 }
 
+dom::ShadowRoot* GetTreeForCascadeLevel(const nsIContent& aContent,
+                                        int8_t aCascadeOrder) {
+  if (aCascadeOrder < 0) {
+    auto* slot = aContent.GetAssignedSlot();
+    while (slot) {
+      ++aCascadeOrder;
+      if (aCascadeOrder == 0) {
+        return slot->GetContainingShadow();
+      }
+      slot = slot->GetAssignedSlot();
+    }
+    return nullptr;
+  }
+
+  auto* containingShadow = aContent.GetContainingShadow();
+  while (containingShadow) {
+    if (aCascadeOrder == 0) {
+      return containingShadow;
+    }
+    --aCascadeOrder;
+    // Walk up through the shadow host to get to the containing tree
+    const auto* host = containingShadow->GetHost();
+    if (!host) {
+      break;
+    }
+    containingShadow = host->GetContainingShadow();
+  }
+
+  return containingShadow;
+}
+
+// Helper to extract shadow_cascade_order from a TreeScope
+int8_t GetShadowCascadeOrder(const StyleCascadeLevel& aScope) {
+  if (aScope.IsAuthorNormal()) {
+    return aScope.AsAuthorNormal().shadow_cascade_order;
+  }
+  if (aScope.IsAuthorImportant()) {
+    return aScope.AsAuthorImportant().shadow_cascade_order;
+  }
+  return 0;
+}
+
+// Helper to get shadow root for a property's tree scope
+dom::ShadowRoot* GetShadowRootForTreeScope(
+    const nsIContent& aContent, const StyleCascadeLevel& aTreeScope) {
+  const int8_t cascadeOrder = GetShadowCascadeOrder(aTreeScope);
+  return GetTreeForCascadeLevel(aContent, cascadeOrder);
+}
+
 bool DoTreeScopedPropertiesOfElementApplyToContent(
-    const nsINode* aStylePropertyElement, const nsINode* aStyledContent) {
-  // XXX: The proper implementation is deferred to bug 1988038
-  // concerning tree-scoped name resolution. For now, we just
-  // keep the shadow and light trees separate.
-  return aStylePropertyElement->GetContainingDocumentOrShadowRoot() ==
-         aStyledContent->GetContainingDocumentOrShadowRoot();
+    const ScopedNameRef& aAnchorName, const nsIFrame* aReferencingFrame,
+    const nsIFrame* aMaybeReferencedFrame) {
+  const auto* referencingContent = aReferencingFrame->GetContent();
+
+  const auto& referencingTreeScope =
+      aReferencingFrame->StyleDisplay()->mAnchorName.scope;
+
+  const auto* referencingShadowRoot =
+      GetShadowRootForTreeScope(*referencingContent, referencingTreeScope);
+
+  const auto* maybeReferencedContent = aMaybeReferencedFrame->GetContent();
+  const auto& maybeReferencedScope = aAnchorName.mTreeScope;
+
+  const auto* maybeReferencedShadowRoot =
+      GetShadowRootForTreeScope(*maybeReferencedContent, maybeReferencedScope);
+  const auto* currentShadowRoot = maybeReferencedShadowRoot;
+  while (currentShadowRoot) {
+    if (referencingShadowRoot == currentShadowRoot) {
+      return true;
+    }
+
+    const auto* containingHost = currentShadowRoot->GetContainingShadowHost();
+    if (!containingHost) {
+      break;
+    }
+    currentShadowRoot = containingHost->GetContainingShadow();
+  }
+
+  // Original maybeReferencedShadowRoot, currentShadowRoot becomes eventually
+  // null
+  return !referencingShadowRoot && !maybeReferencedShadowRoot;
 }
 
 /**
@@ -420,13 +494,12 @@ nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
     const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
     const nsTArray<nsIFrame*>& aPossibleAnchorFrames) {
   LazyAncestorHolder positionedFrameAncestorHolder(aPositionedFrame);
-  const auto* positionedContent = aPositionedFrame->GetContent();
 
   for (auto it = aPossibleAnchorFrames.rbegin();
        it != aPossibleAnchorFrames.rend(); ++it) {
     const nsIFrame* possibleAnchorFrame = *it;
     if (!DoTreeScopedPropertiesOfElementApplyToContent(
-            possibleAnchorFrame->GetContent(), positionedContent)) {
+            aName, possibleAnchorFrame, aPositionedFrame)) {
       // Skip anchors in different shadow trees.
       continue;
     }
