@@ -171,7 +171,6 @@ class MenuDialogMiddlewareTest {
         assertTrue(store.state.extensionMenuState.availableAddons.isEmpty())
         assertEquals(1, store.state.extensionMenuState.recommendedAddons.size)
         assertEquals(addon, store.state.extensionMenuState.recommendedAddons.first())
-        assertTrue(store.state.extensionMenuState.showExtensionsOnboarding)
     }
 
     @Test
@@ -211,7 +210,6 @@ class MenuDialogMiddlewareTest {
 
             assertEquals(1, store.state.extensionMenuState.availableAddons.size)
             assertTrue(store.state.extensionMenuState.recommendedAddons.isEmpty())
-            assertFalse(store.state.extensionMenuState.showExtensionsOnboarding)
             assertTrue(store.state.extensionMenuState.shouldShowManageExtensionsMenuItem)
         }
 
@@ -235,7 +233,6 @@ class MenuDialogMiddlewareTest {
 
             assertTrue(store.state.extensionMenuState.availableAddons.isEmpty())
             assertTrue(store.state.extensionMenuState.recommendedAddons.isEmpty())
-            assertFalse(store.state.extensionMenuState.showExtensionsOnboarding)
             assertTrue(store.state.extensionMenuState.shouldShowManageExtensionsMenuItem)
         }
 

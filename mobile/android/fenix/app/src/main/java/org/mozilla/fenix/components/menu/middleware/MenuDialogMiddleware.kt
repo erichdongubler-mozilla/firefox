@@ -184,7 +184,6 @@ class MenuDialogMiddleware(
             store.dispatch(MenuAction.UpdateAvailableAddons(addons.filter { it.isInstalled() && it.isEnabled() }))
 
             if (addons.any { it.isInstalled() }) {
-                store.dispatch(MenuAction.UpdateShowExtensionsOnboarding(false))
                 store.dispatch(MenuAction.UpdateManageExtensionsMenuItemVisibility(true))
                 return@launch
             }
@@ -200,7 +199,6 @@ class MenuDialogMiddleware(
                         recommendedAddons = recommendedAddons,
                     ),
                 )
-                store.dispatch(MenuAction.UpdateShowExtensionsOnboarding(true))
             }
         } catch (e: AddonManagerException) {
             logger.error("Failed to query extensions", e)
@@ -354,7 +352,6 @@ class MenuDialogMiddleware(
             installationMethod = InstallationMethod.MANAGER,
             onSuccess = {
                 store.dispatch(MenuAction.InstallAddonSuccess(addon = addon))
-                store.dispatch(MenuAction.UpdateShowExtensionsOnboarding(false))
                 store.dispatch(MenuAction.UpdateManageExtensionsMenuItemVisibility(true))
             },
             onError = { e ->

@@ -166,15 +166,6 @@ sealed class MenuAction : Action {
     ) : MenuAction()
 
     /**
-     * [MenuAction] dispatched when extensions promotion banner onboarding should be visible or not.
-     *
-     * @property showExtensionsOnboarding Show extensions promotion banner onboarding.
-     */
-    data class UpdateShowExtensionsOnboarding(
-        val showExtensionsOnboarding: Boolean,
-    ) : MenuAction()
-
-    /**
      * [MenuAction] dispatched when disabled extensions promotion banner onboarding should be visible or not.
      *
      * @property showDisabledExtensionsOnboarding Show extensions promotion banner onboarding when

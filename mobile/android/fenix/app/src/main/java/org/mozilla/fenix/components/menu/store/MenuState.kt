@@ -62,7 +62,6 @@ data class BrowserMenuState(
  *
  * @property recommendedAddons A list of recommended [Addon]s to suggest.
  * @property availableAddons A list of installed and enabled [Addon]s to be shown.
- * @property showExtensionsOnboarding Show extensions promotion banner onboarding.
  * @property showDisabledExtensionsOnboarding Show extensions promotion banner onboarding when
  * all installed extensions have been disabled.
  * @property addonInstallationInProgress The [Addon] that is currently being installed.
@@ -75,7 +74,6 @@ data class BrowserMenuState(
 data class ExtensionMenuState(
     val recommendedAddons: List<Addon> = emptyList(),
     val availableAddons: List<Addon> = emptyList(),
-    val showExtensionsOnboarding: Boolean = false,
     val showDisabledExtensionsOnboarding: Boolean = false,
     val addonInstallationInProgress: Addon? = null,
     val shouldShowManageExtensionsMenuItem: Boolean = false,

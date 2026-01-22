@@ -398,17 +398,6 @@ class MenuStoreTest {
         }
 
     @Test
-    fun `WHEN update show extensions onboarding dispatched THEN extension state is updated`() =
-        runTest {
-            val initialState = MenuState()
-            val store = MenuStore(initialState = initialState)
-
-            store.dispatch(MenuAction.UpdateShowExtensionsOnboarding(true))
-
-            assertTrue(store.state.extensionMenuState.showExtensionsOnboarding)
-        }
-
-    @Test
     fun `WHEN update manage extensions menu item visibility is dispatched THEN extension state is updated`() =
         runTest {
             val addon = Addon(id = "ext1")
