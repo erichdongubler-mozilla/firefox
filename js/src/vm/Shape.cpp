@@ -1067,15 +1067,15 @@ bool NativeObject::generateNewDictionaryShape(JSContext* cx,
 }
 
 /* static */
-bool JSObject::setFlag(JSContext* cx, HandleObject obj, ObjectFlag flag) {
+bool JSObject::setFlags(JSContext* cx, HandleObject obj, ObjectFlags flags) {
   MOZ_ASSERT(cx->compartment() == obj->compartment());
 
-  if (obj->hasFlag(flag)) {
+  if (obj->hasAllFlags(flags)) {
     return true;
   }
 
   ObjectFlags objectFlags = obj->shape()->objectFlags();
-  objectFlags.setFlag(flag);
+  objectFlags.setFlags(flags);
 
   uint32_t numFixed =
       obj->is<NativeObject>() ? obj->as<NativeObject>().numFixedSlots() : 0;
