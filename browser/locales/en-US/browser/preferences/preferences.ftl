@@ -297,19 +297,18 @@ settings-tabs-show-image-in-preview =
     .accessKey = h
 
 
-browser-layout-header = Browser Layout
+browser-layout-header2 =
+    .label = Browser Layout
 
 browser-layout-horizontal-tabs =
     .label = Horizontal tabs
-browser-layout-horizontal-tabs-desc = Display at top of browser
 
 browser-layout-vertical-tabs =
     .label = Vertical tabs
-browser-layout-vertical-tabs-desc = Display on the side, in the sidebar
 
-browser-layout-show-sidebar =
+browser-layout-show-sidebar2 =
     .label = Show sidebar
-browser-layout-show-sidebar-desc = Quickly access bookmarks, tabs from your phone, AI chatbots, and more without leaving your main view.
+    .description = Quickly access bookmarks, tabs from your phone, AI chatbots, and more without leaving your main view.
 
 ## General Section - Language & Appearance
 

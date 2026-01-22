@@ -1401,8 +1401,8 @@ richlistitem .text-link:hover {
   margin-block-end: var(--space-large);
 }
 
-/** SRD web-appearance-chooser control START **/
-.appearance-chooser-item {
+/** SRD setting-chooser control START **/
+.setting-chooser-item {
   flex: 1;
 
   &::part(image) {
@@ -1417,7 +1417,7 @@ richlistitem .text-link:hover {
     transform: scaleX(-1);
   }
 }
-/** SRD web-appearance-chooser control END **/
+/** SRD setting-chooser control END **/
 
 /** SRD rows control for Homepage START **/
 setting-group[groupid="homepage"] {

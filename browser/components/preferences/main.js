@@ -587,6 +587,23 @@ Preferences.addSetting({
   pref: "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features",
 });
 Preferences.addSetting({
+  id: "browserLayoutRadioGroup",
+  pref: "sidebar.verticalTabs",
+  get: prefValue => (prefValue ? "true" : "false"),
+  set: value => value === "true",
+});
+Preferences.addSetting({
+  id: "browserLayoutShowSidebar",
+  pref: "sidebar.revamp",
+  onUserChange(checked) {
+    if (checked) {
+      window.browsingContext.topChromeWindow.SidebarController?.enabledViaSettings(
+        true
+      );
+    }
+  },
+});
+Preferences.addSetting({
   id: "web-appearance-override-warning",
   setup: emitChange => {
     FORCED_COLORS_QUERY.addEventListener("change", emitChange);
@@ -2501,6 +2518,42 @@ SettingGroupManager.registerGroups({
       },
     ],
   },
+  browserLayout: {
+    l10nId: "browser-layout-header2",
+    headingLevel: 2,
+    items: [
+      {
+        id: "browserLayoutRadioGroup",
+        control: "moz-visual-picker",
+        options: [
+          {
+            id: "browserLayoutHorizontalTabs",
+            value: "false",
+            l10nId: "browser-layout-horizontal-tabs",
+            controlAttrs: {
+              class: "setting-chooser-item",
+              imagesrc:
+                "chrome://browser/content/preferences/browser-layout-horizontal.svg",
+            },
+          },
+          {
+            id: "browserLayoutVerticalTabs",
+            value: "true",
+            l10nId: "browser-layout-vertical-tabs",
+            controlAttrs: {
+              class: "setting-chooser-item",
+              imagesrc:
+                "chrome://browser/content/preferences/browser-layout-vertical.svg",
+            },
+          },
+        ],
+      },
+      {
+        id: "browserLayoutShowSidebar",
+        l10nId: "browser-layout-show-sidebar2",
+      },
+    ],
+  },
   appearance: {
     l10nId: "appearance-group",
     headingLevel: 2,
@@ -2519,7 +2572,7 @@ SettingGroupManager.registerGroups({
             l10nId: "preferences-web-appearance-choice-auto2",
             controlAttrs: {
               id: "preferences-web-appearance-choice-auto",
-              class: "appearance-chooser-item",
+              class: "setting-chooser-item",
               imagesrc:
                 "chrome://browser/content/preferences/web-appearance-light.svg",
             },
@@ -2529,7 +2582,7 @@ SettingGroupManager.registerGroups({
             l10nId: "preferences-web-appearance-choice-light2",
             controlAttrs: {
               id: "preferences-web-appearance-choice-light",
-              class: "appearance-chooser-item",
+              class: "setting-chooser-item",
               imagesrc:
                 "chrome://browser/content/preferences/web-appearance-light.svg",
             },
@@ -2539,7 +2592,7 @@ SettingGroupManager.registerGroups({
             l10nId: "preferences-web-appearance-choice-dark2",
             controlAttrs: {
               id: "preferences-web-appearance-choice-dark",
-              class: "appearance-chooser-item",
+              class: "setting-chooser-item",
               imagesrc:
                 "chrome://browser/content/preferences/web-appearance-dark.svg",
             },
@@ -4683,6 +4736,7 @@ var gMainPane = {
     gMainPane.initTranslations();
 
     // Initialize settings groups from the config object.
+    initSettingGroup("browserLayout");
     initSettingGroup("appearance");
     initSettingGroup("downloads");
     initSettingGroup("drm");
@@ -4737,14 +4791,6 @@ var gMainPane = {
       gMainPane._rebuildFonts.bind(gMainPane)
     );
     setEventListener("advancedFonts", "command", gMainPane.configureFonts);
-
-    document
-      .getElementById("browserLayoutShowSidebar")
-      .addEventListener(
-        "command",
-        gMainPane.onShowSidebarCommand.bind(gMainPane),
-        { capture: true }
-      );
 
     document
       .getElementById("migrationWizardDialog")
@@ -4970,21 +5016,6 @@ var gMainPane = {
     }
 
     return false;
-  },
-
-  /**
-   * Handle toggling the "Show sidebar" checkbox to allow SidebarController to know the
-   * origin of this change.
-   */
-  onShowSidebarCommand(event) {
-    // Note: We useCapture so while the checkbox' checked property is already updated,
-    // the pref value has not yet been changed
-    const willEnable = event.target.checked;
-    if (willEnable) {
-      window.browsingContext.topChromeWindow.SidebarController?.enabledViaSettings(
-        true
-      );
-    }
   },
 
   // CONTAINERS
