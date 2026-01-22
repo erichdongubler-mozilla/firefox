@@ -474,11 +474,6 @@ function makeBookmarkResult(
             "awesome-bar-result-menu"
           : undefined,
     },
-    highlights: {
-      url: UrlbarUtils.HIGHLIGHT.TYPED,
-      title: UrlbarUtils.HIGHLIGHT.TYPED,
-      tags: UrlbarUtils.HIGHLIGHT.TYPED,
-    },
   });
 }
 
@@ -509,10 +504,6 @@ function makeFormHistoryResult(queryContext, { suggestion, engineName }) {
       helpUrl:
         Services.urlFormatter.formatURLPref("app.support.baseURL") +
         "awesome-bar-result-menu",
-    },
-    highlights: {
-      suggestion: UrlbarUtils.HIGHLIGHT.SUGGESTED,
-      title: UrlbarUtils.HIGHLIGHT.SUGGESTED,
     },
   });
 }
@@ -550,11 +541,6 @@ function makeOmniboxResult(
       keyword,
       icon: UrlbarUtils.ICON.EXTENSION,
     },
-    highlights: {
-      title: UrlbarUtils.HIGHLIGHT.TYPED,
-      content: UrlbarUtils.HIGHLIGHT.TYPED,
-      keyword: UrlbarUtils.HIGHLIGHT.TYPED,
-    },
   });
 }
 
@@ -591,10 +577,6 @@ function makeTabSwitchResult(
       icon: typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`,
       userContextId: userContextId || 0,
       tabGroup,
-    },
-    highlights: {
-      url: UrlbarUtils.HIGHLIGHT.TYPED,
-      title: UrlbarUtils.HIGHLIGHT.TYPED,
     },
   });
 }
@@ -635,12 +617,6 @@ function makeKeywordSearchResult(
       input: queryContext.searchString,
       postData: postData || null,
       icon: typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`,
-    },
-    highlights: {
-      title: UrlbarUtils.HIGHLIGHT.TYPED,
-      url: UrlbarUtils.HIGHLIGHT.TYPED,
-      keyword: UrlbarUtils.HIGHLIGHT.TYPED,
-      input: UrlbarUtils.HIGHLIGHT.TYPED,
     },
   });
 }
@@ -688,11 +664,6 @@ function makeRemoteTabResult(
     type: UrlbarUtils.RESULT_TYPE.REMOTE_TAB,
     source: UrlbarUtils.RESULT_SOURCE.TABS,
     payload,
-    highlights: {
-      url: UrlbarUtils.HIGHLIGHT.TYPED,
-      title: UrlbarUtils.HIGHLIGHT.TYPED,
-      device: UrlbarUtils.HIGHLIGHT.TYPED,
-    },
   });
 }
 
@@ -848,13 +819,6 @@ function makeSearchResult(
     isRichSuggestion,
     providerName,
     payload,
-    highlights: {
-      engine: UrlbarUtils.HIGHLIGHT.TYPED,
-      suggestion: UrlbarUtils.HIGHLIGHT.SUGGESTED,
-      tail: UrlbarUtils.HIGHLIGHT.SUGGESTED,
-      keyword: providesSearchMode ? UrlbarUtils.HIGHLIGHT.TYPED : undefined,
-      query: UrlbarUtils.HIGHLIGHT.TYPED,
-    },
   });
 }
 
@@ -932,12 +896,6 @@ function makeVisitResult(
     heuristic,
     providerName,
     payload,
-    highlights: {
-      url: UrlbarUtils.HIGHLIGHT.TYPED,
-      title: UrlbarUtils.HIGHLIGHT.TYPED,
-      fallbackTitle: UrlbarUtils.HIGHLIGHT.TYPED,
-      tags: UrlbarUtils.HIGHLIGHT.TYPED,
-    },
   });
 }
 
