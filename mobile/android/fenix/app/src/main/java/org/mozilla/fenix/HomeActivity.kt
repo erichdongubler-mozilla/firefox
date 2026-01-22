@@ -552,11 +552,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             defaultTopSitesBinding,
             TopSitesRefresher(
                 settings = settings(),
-                topSitesProvider = if (settings().enableMozillaAdsClient) {
-                    components.core.macTopSitesProvider
-                } else {
-                    components.core.marsTopSitesProvider
-                },
+                topSitesProvider = components.core.marsTopSitesProvider,
                 startupPathProvider = startupPathProvider,
                 visualCompletenessQueue = components.performance.visualCompletenessQueue,
             ),

@@ -26,7 +26,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesUseCases
-import mozilla.components.service.mars.MozAdsUseCases
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.ktx.android.view.showKeyboard
 import mozilla.components.support.ktx.kotlin.isUrl
@@ -121,7 +120,6 @@ class DefaultTopSiteController(
     private val fenixBrowserUseCases: FenixBrowserUseCases,
     private val topSitesUseCases: TopSitesUseCases,
     private val marsUseCases: MARSUseCases,
-    private val mozAdsUseCases: MozAdsUseCases,
     private val viewLifecycleScope: CoroutineScope,
 ) : TopSiteController {
 
@@ -248,11 +246,7 @@ class DefaultTopSiteController(
             is TopSite.Frecent -> TopSites.openFrecency.record(NoExtras())
             is TopSite.Pinned -> TopSites.openPinned.record(NoExtras())
             is TopSite.Provided -> {
-                if (settings.enableMozillaAdsClient) {
-                    sendMozAdsClickInteraction(clickUrl = topSite.clickUrl)
-                } else {
-                    sendMarsTopSiteCallback(topSite.clickUrl)
-                }
+                sendMarsTopSiteCallback(topSite.clickUrl)
 
                 TopSites.openContileTopSite.record(NoExtras()).also {
                     recordTopSitesClickTelemetry(topSite, position)
@@ -329,11 +323,7 @@ class DefaultTopSiteController(
     }
 
     override fun handleTopSiteImpression(topSite: TopSite.Provided, position: Int) {
-        if (settings.enableMozillaAdsClient) {
-            sendMozAdsImpressionInteraction(impressionUrl = topSite.impressionUrl)
-        } else {
-            sendMarsTopSiteCallback(topSite.impressionUrl)
-        }
+        sendMarsTopSiteCallback(topSite.impressionUrl)
 
         TopSites.contileImpression.record(
             TopSites.ContileImpressionExtra(
@@ -351,18 +341,6 @@ class DefaultTopSiteController(
     private fun sendMarsTopSiteCallback(url: String) {
         viewLifecycleScope.launch(Dispatchers.IO) {
             marsUseCases.recordInteraction(url)
-        }
-    }
-
-    private fun sendMozAdsClickInteraction(clickUrl: String) {
-        viewLifecycleScope.launch(Dispatchers.IO) {
-            mozAdsUseCases.recordClickInteraction(clickUrl = clickUrl)
-        }
-    }
-
-    private fun sendMozAdsImpressionInteraction(impressionUrl: String) {
-        viewLifecycleScope.launch(Dispatchers.IO) {
-            mozAdsUseCases.recordImpressionInteraction(impressionUrl = impressionUrl)
         }
     }
 

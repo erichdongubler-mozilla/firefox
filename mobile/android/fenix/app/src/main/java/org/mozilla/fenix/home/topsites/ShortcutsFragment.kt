@@ -49,7 +49,6 @@ class ShortcutsFragment : Fragment() {
             fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
             topSitesUseCases = requireComponents.useCases.topSitesUseCase,
             marsUseCases = requireComponents.useCases.marsUseCases,
-            mozAdsUseCases = requireComponents.useCases.mozAdsUseCases,
             viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
         )
 
