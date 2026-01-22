@@ -137,6 +137,7 @@ describe("settings ai features", () => {
       const personalizeButton = doc.getElementById(
         "personalizeSmartWindowButton"
       );
+      personalizeButton.scrollIntoView();
       const paneLoaded = waitForPaneChange("personalizeSmartWindow");
       EventUtils.synthesizeMouseAtCenter(personalizeButton, {}, win);
       await paneLoaded;
@@ -145,6 +146,7 @@ describe("settings ai features", () => {
     async function openManageMemoriesPanel() {
       await openSmartWindowPanel();
       const manageButton = doc.getElementById("manageMemoriesButton");
+      manageButton.scrollIntoView();
       const paneLoaded = waitForPaneChange("manageMemories");
       EventUtils.synthesizeMouseAtCenter(manageButton, {}, win);
       await paneLoaded;
