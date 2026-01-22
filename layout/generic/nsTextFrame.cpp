@@ -5151,8 +5151,7 @@ nsresult nsTextFrame::CharacterDataChanged(
       if (!areAncestorsAwareOfReflowRequest) {
         // Ask the parent frame to reflow me.
         presShell->FrameNeedsReflow(
-            textFrame, IntrinsicDirty::FrameAncestorsAndDescendants,
-            NS_FRAME_IS_DIRTY);
+            textFrame, IntrinsicDirty::FrameAndAncestors, NS_FRAME_IS_DIRTY);
       } else {
         // We already called FrameNeedsReflow on behalf of an earlier sibling,
         // so we can just mark this frame as dirty and don't need to bother
