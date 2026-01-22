@@ -9001,6 +9001,14 @@
   mirror: always
   set_spidermonkey_pref: startup
 
+# Whether object fuses are used to optimize constant properties on all JS
+# objects that are used as prototypes.
+- name: javascript.options.objectfuse_for_all_protos
+  type: bool
+  value: true
+  mirror: always
+  set_spidermonkey_pref: startup
+
 - name: javascript.options.compact_on_user_inactive
   type: bool
   value: true

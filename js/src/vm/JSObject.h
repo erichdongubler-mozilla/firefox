@@ -197,9 +197,7 @@ class JSObject
   bool isUsedAsPrototype() const {
     return hasFlag(js::ObjectFlag::IsUsedAsPrototype);
   }
-  static bool setIsUsedAsPrototype(JSContext* cx, JS::HandleObject obj) {
-    return setFlag(cx, obj, js::ObjectFlag::IsUsedAsPrototype);
-  }
+  static bool setIsUsedAsPrototype(JSContext* cx, JS::HandleObject obj);
 
   bool useWatchtowerTestingLog() const {
     return hasFlag(js::ObjectFlag::UseWatchtowerTestingLog);
