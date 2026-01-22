@@ -438,9 +438,10 @@ input[type="image"]:disabled {
   box-sizing: border-box;
   border: 1px solid grey;
   display: block;
-  background-color: #fff;
-  background-image: linear-gradient(currentColor), repeating-conic-gradient(#ccc 0 25%, transparent 0 50%);
+  background-image: linear-gradient(currentColor), repeating-conic-gradient(#ccc 0 25%, white 0 50%);
   background-size: 12px 12px;
+  /* Make sure that the background color is properly set in High Contrast Mode */
+  forced-color-adjust: none;
 }
 
 /* radio buttons */
