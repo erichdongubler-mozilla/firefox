@@ -571,6 +571,16 @@ DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
     mWaitingPrefetch.Clear();
   }
 
+  // If we have a replacement entry waiting, unsuspend its channels too
+  if (mReplacement) {
+    DICTIONARY_LOG(("Unsuspending %zu replacement channels",
+                    mReplacement->mWaitingPrefetch.Length()));
+    for (auto& lambda : mReplacement->mWaitingPrefetch) {
+      (lambda)(result);
+    }
+    mReplacement->mWaitingPrefetch.Clear();
+  }
+
   // If we're being replaced by a new entry, swap now
   RefPtr<DictionaryCacheEntry> self;
   if (mReplacement) {

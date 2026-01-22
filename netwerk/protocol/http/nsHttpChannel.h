@@ -366,6 +366,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   [[nodiscard]] nsresult ContinueProcessResponse4(nsresult);
   [[nodiscard]] nsresult ProcessNormal();
   [[nodiscard]] nsresult ContinueProcessNormal(nsresult);
+  [[nodiscard]] nsresult ContinueProcessNormal2(nsresult);
   void ProcessAltService(nsHttpConnectionInfo* aTransConnInfo = nullptr);
   bool ShouldBypassProcessNotModified();
   [[nodiscard]] nsresult ProcessNotModified(
@@ -427,8 +428,7 @@ class nsHttpChannel final : public HttpBaseChannel,
                                                  const nsHttpAtom* aAtom);
   [[nodiscard]] nsresult FinalizeCacheEntry();
   [[nodiscard]] nsresult InstallCacheListener(int64_t offset = 0);
-  [[nodiscard]] nsresult DoInstallCacheListener(bool aIsDictionaryCompressed,
-                                                nsACString* aDictionary,
+  [[nodiscard]] nsresult DoInstallCacheListener(bool aSaveDecompressed,
                                                 int64_t offset = 0);
   void MaybeInvalidateCacheEntryForSubsequentGet();
   void AsyncOnExamineCachedResponse();
@@ -860,6 +860,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   bool mWritingToCache = false;
   bool mWaitingForProxy = false;
   bool mStaleRevalidation = false;
+  // Set if this is dictionary-compressed
+  bool mIsDictionaryCompressed = false;
   // Will be true if the onCacheEntryAvailable callback is not called by the
   // time we send the network request
   Atomic<bool> mRaceCacheWithNetwork{false};

@@ -2434,8 +2434,12 @@ nsresult nsHttpChannel::CallOnStartRequest() {
       // if somehow it is, we need a converter; content can't be allowed
       // to see dcb/dcz since it can't convert them
       StoreHasAppliedConversion(false);
-      rv = DoApplyContentConversions(mListener, getter_AddRefs(listener),
-                                     nullptr);
+      // IMPORTANT: Must use DoApplyContentConversionsInternal with
+      // aRemoveEncodings=true to clear Content-Encoding header. Otherwise,
+      // decompressed data will be cached with dcb/dcz in metadata, causing
+      // corruption on cache reads.
+      rv = DoApplyContentConversionsInternal(
+          mListener, getter_AddRefs(listener), true, nullptr);
       if (NS_FAILED(rv)) {
         return rv;
       }
@@ -2448,6 +2452,14 @@ nsresult nsHttpChannel::CallOnStartRequest() {
         mCompressListener = listener;
 
         StoreHasAppliedConversion(true);
+      } else {
+        // Failed to install decompressor for dcb/dcz - this is a fatal error
+        // as content cannot handle these encodings
+        LOG_DICTIONARIES(
+            ("FATAL: Failed to install decompressor for %s at "
+             "CallOnStartRequest",
+             contentEncoding.get()));
+        return NS_ERROR_INVALID_CONTENT_ENCODING;
       }
     }
   }
@@ -3574,6 +3586,13 @@ nsresult nsHttpChannel::ContinueProcessResponse4(nsresult rv) {
 
     MaybeCreateCacheEntryWhenRCWN();
 
+    if (mCacheEntry) {
+      rv = UpdateExpirationTime();
+      if (NS_FAILED(rv)) {
+        LOG(("ContinueProcessResponse4 UpdateExpirationTime failed [rv=%x]\n",
+             static_cast<uint32_t>(rv)));
+      }
+    }
     rv = InitCacheEntry();
     if (NS_FAILED(rv)) {
       LOG(
@@ -3624,16 +3643,6 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
 
   UpdateInhibitPersistentCachingFlag();
 
-  MaybeCreateCacheEntryWhenRCWN();
-
-  // this must be called before firing OnStartRequest, since http clients,
-  // such as imagelib, expect our cache entry to already have the correct
-  // expiration time (bug 87710).
-  if (mCacheEntry) {
-    rv = InitCacheEntry();
-    if (NS_FAILED(rv)) CloseCacheEntry(true);
-  }
-
   // We may need to install the cache listener before CallonStartRequest,
   // since InstallCacheListener can modify the Content-Encoding to remove
   // dcb/dcz (and perhaps others), and CallOnStartRequest() copies
@@ -3642,15 +3651,30 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
   // dictionary-compressed), call it after CallOnStartRequest so that we
   // save the compressed data in the cache, and run the decompressor in the
   // content process.
-  bool isDictionaryCompressed = false;
+  mIsDictionaryCompressed = false;
   nsAutoCString contentEncoding;
   (void)mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
-  // Note: doesn't handle dcb, gzip or gzip, dcb (etc)
   if (contentEncoding.Equals("dcb") || contentEncoding.Equals("dcz")) {
-    isDictionaryCompressed = true;
+    mIsDictionaryCompressed = true;
+  } else if (contentEncoding.Find("dcb") != -1 ||
+             contentEncoding.Find("dcz") != -1) {
+    // Reject responses that combine dcb/dcz with other encodings
+    // (e.g. "dcb, gzip" or "gzip, dcz"). We don't support chained
+    // dictionary compression with other compression methods.
+    LOG_DICTIONARIES(("Rejecting response with unsupported multi-encoding: %s",
+                      contentEncoding.get()));
+    Cancel(NS_ERROR_INVALID_CONTENT_ENCODING);
+    return NS_ERROR_INVALID_CONTENT_ENCODING;
   }
 
   if (mCacheEntry && !LoadCacheEntryIsReadOnly()) {
+    // Must update expiration time early - ParseDictionary reads it, and
+    // it's no longer done in InitCacheEntry to avoid double calculation
+    rv = UpdateExpirationTime();
+    if (NS_FAILED(rv)) {
+      LOG(("UpdateExpirationTime failed in ContinueProcessNormal"));
+    }
+
     // XXX We may want to consider recompressing any dcb/dcz files to save space
     // and improve hitrate.  Downside is CPU use, complexity and perhaps delay,
     // maybe.
@@ -3669,12 +3693,12 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
       }
     }
 
-    if (isDictionaryCompressed || mDictSaving) {
-      LOG(("Decompressing before saving into cache [channel=%p]", this));
-      rv = DoInstallCacheListener(isDictionaryCompressed, &dictionary, 0);
-    }
+    // we would call DoInstallCacheListener() here, but it will close the
+    // cache input stream, which causes problems if we going to be
+    // suspended because we're replacing a active dictionary. Instead we'll
+    // call it in ContinueProcessNormal2()
   } else {
-    if (isDictionaryCompressed) {
+    if (mIsDictionaryCompressed) {
       // We still need to decompress in the parent if it's dcb or dcz even if
       // not saving to the cache
       LOG_DICTIONARIES(
@@ -3696,9 +3720,68 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
         StoreHasAppliedConversion(true);
       } else {
         LOG_DICTIONARIES(("Didn't install decompressor without cache tee"));
+        // This should never happen for dictionary-compressed content (dcb/dcz)
+        // as it MUST be decompressed in the parent process
+        if (mIsDictionaryCompressed) {
+          LOG_DICTIONARIES(
+              ("FATAL: Failed to install decompressor for "
+               "dictionary-compressed content"));
+          Cancel(NS_ERROR_INVALID_CONTENT_ENCODING);
+          return NS_ERROR_INVALID_CONTENT_ENCODING;
+        }
       }
     }
   }  // else we'll call InstallCacheListener after CallOnStartRequest
+
+  // ParseDictionary may have resulted in our Suspend()ing this request
+  // until the old dictionary we're replacing has been read from the cache.
+  // If we continue we'll call InitCacheEntry() and Doom/truncate the entry
+  // the old one is reading from.
+  return ContinueProcessNormal2(rv);
+}
+
+nsresult nsHttpChannel::ContinueProcessNormal2(nsresult rv) {
+  if (mSuspendCount) {
+    LOG_DICTIONARIES(
+        ("*** Suspended %s in ContinueProcessNormal for dictionary "
+         "replacement!  [this=%p]\n",
+         mSpec.get(), this));
+    LOG(("Waiting until resume to finish processing response [this=%p]\n",
+         this));
+    mCallOnResume = [rv](nsHttpChannel* self) {
+      (void)self->ContinueProcessNormal2(rv);
+      return NS_OK;
+    };
+    return NS_OK;
+  }
+
+  if (NS_FAILED(rv) && !mCanceled) {
+    // The process switch failed, cancel this channel.
+    Cancel(rv);
+    return CallOnStartRequest();
+  }
+
+  MaybeCreateCacheEntryWhenRCWN();
+
+  // this must be called before firing OnStartRequest, since http clients,
+  // such as imagelib, expect our cache entry to already have the correct
+  // expiration time (bug 87710).
+  if (mCacheEntry) {
+    rv = InitCacheEntry();
+    if (NS_FAILED(rv)) CloseCacheEntry(true);
+  }
+
+  // Finish post-ParseDictionary work, must be done after waiting if Suspended
+  if (mCacheEntry && !LoadCacheEntryIsReadOnly()) {
+    if (mIsDictionaryCompressed || mDictSaving) {
+      LOG(("Decompressing before saving into cache [channel=%p]", this));
+      rv = DoInstallCacheListener(mIsDictionaryCompressed || mDictSaving, 0);
+      if (NS_FAILED(rv)) {
+        LOG_DICTIONARIES(
+            ("DoInstallCacheListener FAILED: %x", static_cast<uint32_t>(rv)));
+      }
+    }
+  }
 
   // Check that the server sent us what we were asking for
   if (LoadResuming()) {
@@ -3743,7 +3826,7 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
 
   // If we didn't install cache listeners to decompress above
   // install the cache listener now (so they'll get compressed data)
-  if (!isDictionaryCompressed && !mDictSaving) {
+  if (!mIsDictionaryCompressed && !mDictSaving) {
     // install cache listener if we still have a cache entry open
     if (mCacheEntry && !LoadCacheEntryIsReadOnly()) {
       rv = InstallCacheListener();
@@ -6095,11 +6178,13 @@ nsresult nsHttpChannel::InitCacheEntry() {
     }
 
     StoreCacheEntryIsWriteOnly(true);
-  }
 
-  // Set the expiration time for this cache entry
-  rv = UpdateExpirationTime();
-  if (NS_FAILED(rv)) return rv;
+    // Since we recreated, the new entry doesn't have expiration set yet.
+    // UpdateExpirationTime was called before ParseDictionary on the old entry,
+    // but we need to set it on this new entry too.
+    rv = UpdateExpirationTime();
+    if (NS_FAILED(rv)) return rv;
+  }
 
   // mark this weakly framed until a response body is seen
   mCacheEntry->SetMetaDataElement("strongly-framed", "0");
@@ -6316,7 +6401,7 @@ bool nsHttpChannel::ParseDictionary(nsICacheEntry* aEntry,
     if (mDictSaving) {
       if (mDictSaving->ShouldSuspendUntilCacheRead()) {
         LOG_DICTIONARIES(("Suspending %p to wait for cache read", this));
-        mTransactionPump->Suspend();
+        Suspend();
         mDictSaving->CallbackOnCacheRead([self = RefPtr(this)](nsresult) {
           LOG_DICTIONARIES(("Resuming %p after cache read", self.get()));
           self->Resume();
@@ -6376,7 +6461,7 @@ nsresult nsHttpChannel::FinalizeCacheEntry() {
 }
 
 nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
-  return DoInstallCacheListener(false, nullptr, offset);
+  return DoInstallCacheListener(false, offset);
 }
 
 // Open an output stream to the cache entry and insert a listener tee into
@@ -6388,8 +6473,7 @@ nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
 // entry is being used as a dictionary (Use-As-Dictionary), we want the data
 // to in the cache to be decompressed, so we should install a decompressor
 // before the tee as well.
-nsresult nsHttpChannel::DoInstallCacheListener(bool aIsDictionaryCompressed,
-                                               nsACString* aDictionary,
+nsresult nsHttpChannel::DoInstallCacheListener(bool aSaveDecompressed,
                                                int64_t offset) {
   nsresult rv;
 
@@ -6471,7 +6555,7 @@ nsresult nsHttpChannel::DoInstallCacheListener(bool aIsDictionaryCompressed,
 
   // Note: this doesn't handle cases like "dcb, gzip" or (worse?) "gzip, dcb".
   // We could in theory handle them.
-  if (aDictionary || aIsDictionaryCompressed) {
+  if (aSaveDecompressed) {
     nsCOMPtr<nsIStreamListener> listener;
     // otherwise we won't convert in the parent process
     SetApplyConversion(true);
@@ -6500,6 +6584,22 @@ nsresult nsHttpChannel::DoInstallCacheListener(bool aIsDictionaryCompressed,
 
     } else {
       LOG_DICTIONARIES(("Didn't install decompressor before tee"));
+      // This should never happen when we have dictionary-compressed content
+      // or are saving a dictionary, as decompression is required
+      if (aSaveDecompressed) {
+        nsAutoCString contentEncoding;
+        (void)mResponseHead->GetHeader(nsHttp::Content_Encoding,
+                                       contentEncoding);
+
+        LOG_DICTIONARIES(
+            ("FATAL: Failed to install decompressor before cache tee. "
+             "Content-Encoding='%s'",
+             contentEncoding.get()));
+
+        // Force clear Content-Encoding to prevent cache corruption
+        LOG_DICTIONARIES(("Forcing Content-Encoding to empty"));
+        (void)mResponseHead->SetHeaderOverride(nsHttp::Content_Encoding, ""_ns);
+      }
     }
     // We may have modified Content-Encoding; make sure cache metadata
     // reflects that.  Pass nullptr so we pick up the Vary updates above
@@ -6510,6 +6610,18 @@ nsresult nsHttpChannel::DoInstallCacheListener(bool aIsDictionaryCompressed,
     }
   }
 
+#ifdef DEBUG
+  // Verify that Content-Encoding was properly cleared
+  nsAutoCString verifyEncoding;
+  (void)mResponseHead->GetHeader(nsHttp::Content_Encoding, verifyEncoding);
+  MOZ_ASSERT(!verifyEncoding.Equals("dcb") && !verifyEncoding.Equals("dcz"),
+             "Content-Encoding should have been cleared for dcb/dcz");
+  if (aSaveDecompressed) {
+    MOZ_ASSERT(
+        verifyEncoding.IsEmpty(),
+        "Content-Encoding should have been cleared for dictionary resources");
+  }
+#endif
   return NS_OK;
 }
 
@@ -7293,7 +7405,7 @@ nsHttpChannel::Suspend() {
 
   PROFILER_MARKER("nsHttpChannel::Suspend", NETWORK, {}, FlowMarker,
                   Flow::FromPointer(this));
-  LOG(("nsHttpChannel::SuspendInternal [this=%p]\n", this));
+  LOG(("nsHttpChannel::Suspend [this=%p]\n", this));
   LogCallingScriptLocation(this);
 
   ++mSuspendCount;
