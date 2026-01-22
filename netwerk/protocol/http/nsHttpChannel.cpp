@@ -3485,7 +3485,7 @@ nsresult nsHttpChannel::ContinueProcessResponseAfterNotModified(nsresult aRv) {
        static_cast<uint32_t>(aRv)));
 
   // We cannot read from the cache entry, it might be in an
-  // incosistent state.  Doom it and redirect the channel
+  // inconsistent state.  Doom it and redirect the channel
   // to the same URI to reload from the network.
   mCacheInputStream.CloseAndRelease();
   if (mCacheEntry) {
@@ -6599,6 +6599,7 @@ nsresult nsHttpChannel::DoInstallCacheListener(bool aSaveDecompressed,
         // Force clear Content-Encoding to prevent cache corruption
         LOG_DICTIONARIES(("Forcing Content-Encoding to empty"));
         (void)mResponseHead->SetHeaderOverride(nsHttp::Content_Encoding, ""_ns);
+        (void)mResponseHead->SetHeaderOverride(nsHttp::Content_Length, ""_ns);
       }
     }
     // We may have modified Content-Encoding; make sure cache metadata
