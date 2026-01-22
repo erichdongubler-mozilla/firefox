@@ -1440,10 +1440,6 @@ setting-group[groupid="history"] > moz-card > moz-fieldset::part(inputs) {
 }
 /** SRD History first item is label-less END **/
 
-setting-group[groupid="aiFeatures"] {
-  --select-max-width: fit-content;
-}
-
 #translations-manage-install-list {
   height: 220px;
   overflow: auto;

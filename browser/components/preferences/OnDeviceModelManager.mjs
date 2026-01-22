@@ -3,176 +3,93 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
- * @import { AIFeature } from "chrome://global/content/ml/AIFeature.sys.mjs"
- * @typedef {typeof OnDeviceModelFeatures[keyof typeof OnDeviceModelFeatures]} OnDeviceModelFeaturesEnum
+ * @import { ModelHub } from  "chrome://global/content/ml/ModelHub.sys.mjs"
+ */
+
+/**
+ * Helpers for managing the install and uninstall of on-device AI models. This
+ * could be a .sys.mjs module if that makes more sense, but any feature-specific
+ * helpers could be imported here too.
  */
 
 const XPCOMUtils = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 ).XPCOMUtils;
 const lazy = XPCOMUtils.declareLazy({
-  LinkPreview: "moz-src:///browser/components/genai/LinkPreview.sys.mjs",
-  PdfJsGuessAltTextFeature: "resource://pdf.js/PdfJsAIFeature.sys.mjs",
-  SmartTabGroupingManager:
-    "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
-  // TranslationsFeature: "chrome://global/content/translations/TranslationsFeature.sys.mjs",
+  ModelHub: "chrome://global/content/ml/ModelHub.sys.mjs",
+  log: () =>
+    console.createInstance({
+      prefix: "OnDeviceModelManager",
+      maxLogLevel: "Info",
+    }),
 });
+
+/** @typedef {typeof OnDeviceModelFeatures[keyof typeof OnDeviceModelFeatures]} OnDeviceModelFeaturesEnum */
 
 /**
  * Features that support on-device AI models.
  */
 const OnDeviceModelFeatures = Object.freeze({
+  // NOTE: Feel free to change the values here to whatever makes sense.
   TabGroups: "tabgroups",
   KeyPoints: "keypoints",
   PdfAltText: "pdfalttext",
-  Translations: "translations",
-});
-
-/** @type {Record<OnDeviceModelFeaturesEnum, string[]>} */
-const FeaturePrefs = Object.freeze({
-  [OnDeviceModelFeatures.PdfAltText]: [
-    "pdfjs.enableGuessAltText",
-    "pdfjs.enableAltTextModelDownload",
-    "pdfjs.enableAltText",
-  ],
-  [OnDeviceModelFeatures.KeyPoints]: [
-    "browser.ml.linkPreview.enabled",
-    "browser.ml.linkPreview.optin",
-  ],
-  [OnDeviceModelFeatures.TabGroups]: [
-    "browser.tabs.groups.enabled",
-    "browser.tabs.groups.smart.enabled",
-    "browser.tabs.groups.smart.userEnabled",
-    "browser.tabs.groups.smart.optin",
-  ],
-  [OnDeviceModelFeatures.Translations]: ["browser.translations.enable"],
 });
 
 export const OnDeviceModelManager = {
   features: OnDeviceModelFeatures,
-  /** @type {Map<OnDeviceModelFeaturesEnum, Set<string>>} */
-  prefsByFeature: new Map(),
 
-  init() {
-    Services.prefs.addObserver("", this);
-    window.addEventListener(
-      "unload",
-      () => Services.prefs.removeObserver("", this),
-      { once: true }
-    );
-
-    for (let [feature, prefs] of Object.entries(FeaturePrefs)) {
-      this.prefsByFeature.set(
-        /** @type {OnDeviceModelFeaturesEnum} */ (feature),
-        new Set(prefs)
-      );
+  /** @type {ModelHub} */
+  _modelHub: null,
+  get modelHub() {
+    if (!this._modelHub) {
+      this._modelHub = new lazy.ModelHub();
     }
+    return this._modelHub;
   },
 
   /**
-   * @param {nsISupports} _
-   * @param {string} __
-   * @param {string} data
-   */
-  observe(_, __, data) {
-    for (let feature in FeaturePrefs) {
-      if (
-        this.prefsByFeature
-          .get(/** @type {OnDeviceModelFeaturesEnum} */ (feature))
-          .has(data)
-      ) {
-        Services.obs.notifyObservers(
-          null,
-          "OnDeviceModelManagerChange",
-          feature
-        );
-      }
-    }
-  },
-
-  /**
-   * Get an {@link AIFeature} for a feature id.
+   * Install the models for a specific feature. This should be used when a user
+   * explicitly enables a feature, so it's ready when they go to use it.
    *
-   * @param {OnDeviceModelFeaturesEnum} feature
-   * @returns {AIFeature}
+   * @param {OnDeviceModelFeaturesEnum} feature The feature key to install.
    */
-  getAIFeature(feature) {
+  async install(feature) {
     switch (feature) {
-      case OnDeviceModelFeatures.KeyPoints:
-        return lazy.LinkPreview;
-      case OnDeviceModelFeatures.PdfAltText:
-        return lazy.PdfJsGuessAltTextFeature;
       case OnDeviceModelFeatures.TabGroups:
-        return lazy.SmartTabGroupingManager;
-      case OnDeviceModelFeatures.Translations:
-        // TODO: (bug 2010922) Use TranslationsFeature instead of this stub
-        // return lazy.TranslationsFeature;
-        return {
-          isBlocked: false,
-          isAllowed: true,
-          isEnabled: false,
-          reset() {},
-          enable() {},
-          disable() {},
-        };
+        lazy.log.info("install TabGroups");
+        return;
+      case OnDeviceModelFeatures.KeyPoints:
+        lazy.log.info("install KeyPoints");
+        return;
+      case OnDeviceModelFeatures.PdfAltText:
+        lazy.log.info("install PdfAltText");
+        return;
       default:
-        throw new Error(`Unknown feature "${feature}"`);
+        throw new Error(`Unknown on-device model feature "${feature}"`);
     }
   },
 
   /**
-   * Check if a feature is allowed (by policy, locale restrictions, etc).
+   * Uninstall the models for a specific feature.
    *
-   * @param {OnDeviceModelFeaturesEnum} feature
+   * @param {OnDeviceModelFeaturesEnum} feature The feature key to uninstall.
    */
-  isAllowed(feature) {
-    return this.getAIFeature(feature).isAllowed;
-  },
-
-  /**
-   * Check if a feature is enabled (visible and opted-in).
-   *
-   * @param {OnDeviceModelFeaturesEnum} feature
-   */
-  isEnabled(feature) {
-    return this.getAIFeature(feature).isEnabled;
-  },
-
-  /**
-   * Check if a feature is blocked (UI hidden, models removed).
-   *
-   * @param {OnDeviceModelFeaturesEnum} feature
-   */
-  isBlocked(feature) {
-    return this.getAIFeature(feature).isBlocked;
-  },
-
-  /**
-   * Reset a feature to its default state.
-   *
-   * @param {OnDeviceModelFeaturesEnum} feature The feature key to reset.
-   */
-  async reset(feature) {
-    return this.getAIFeature(feature).reset();
-  },
-
-  /**
-   * Enable a feature (show its UI, parent feature, opt-in).
-   *
-   * @param {OnDeviceModelFeaturesEnum} feature The feature key to enable.
-   */
-  async enable(feature) {
-    return this.getAIFeature(feature).enable();
-  },
-
-  /**
-   * Disable a feature (block it, hide UI, remove models).
-   *
-   * @param {OnDeviceModelFeaturesEnum} feature The feature key to disable.
-   */
-  async disable(feature) {
-    return this.getAIFeature(feature).disable();
+  async uninstall(feature) {
+    // TODO: Maybe something like this?
+    // this.modelHub.deleteFilesByEngine(feature);
+    switch (feature) {
+      case OnDeviceModelFeatures.TabGroups:
+        lazy.log.info("uninstall TabGroups");
+        return;
+      case OnDeviceModelFeatures.KeyPoints:
+        lazy.log.info("uninstall KeyPoints");
+        return;
+      case OnDeviceModelFeatures.PdfAltText:
+        lazy.log.info("uninstall PdfAltText");
+        return;
+      default:
+        throw new Error(`Unknown on-device model feature "${feature}"`);
+    }
   },
 };
-
-OnDeviceModelManager.init();

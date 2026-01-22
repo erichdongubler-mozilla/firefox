@@ -105,7 +105,6 @@ Preferences.addAll([
   { id: "browser.ctrlTab.sortByRecentlyUsed", type: "bool" },
   { id: "browser.tabs.hoverPreview.enabled", type: "bool" },
   { id: "browser.tabs.hoverPreview.showThumbnails", type: "bool" },
-  { id: "browser.tabs.groups.enabled", type: "bool" },
   { id: "browser.tabs.groups.smart.userEnabled", type: "bool" },
   { id: "browser.tabs.groups.smart.enabled", type: "bool" },
   { id: "privacy.userContext.ui.enabled", type: "bool" },
@@ -1638,21 +1637,15 @@ Preferences.addSetting({
   visible: ({ tabHoverPreview }) => !!tabHoverPreview.value,
 });
 Preferences.addSetting({
-  id: "tabGroups",
-  pref: "browser.tabs.groups.enabled",
-});
-Preferences.addSetting({
   id: "smartTabGroups",
   pref: "browser.tabs.groups.smart.enabled",
 });
 Preferences.addSetting({
   id: "tabGroupSuggestions",
   pref: "browser.tabs.groups.smart.userEnabled",
-  deps: ["smartTabGroups", "tabGroups"],
-  visible: ({ tabGroups, smartTabGroups }) =>
-    !!tabGroups.value &&
-    !!smartTabGroups.value &&
-    Services.locale.appLocaleAsBCP47.startsWith("en"),
+  deps: ["smartTabGroups"],
+  visible: ({ smartTabGroups }) =>
+    !!smartTabGroups.value && Services.locale.appLocaleAsBCP47.startsWith("en"),
 });
 if (AppConstants.platform === "win") {
   /**

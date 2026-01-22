@@ -3681,13 +3681,6 @@ pref("browser.translations.simulateUnsupportedEngine", false);
 pref("browser.translations.chaos.errors", false);
 pref("browser.translations.chaos.timeoutMS", 0);
 
-// AI controls
-pref("browser.ai.controls.default", "available");
-pref("browser.ai.controls.translations", "default");
-pref("browser.ai.controls.pdfjsAltText", "default");
-pref("browser.ai.controls.smartTabGroups", "default");
-pref("browser.ai.controls.linkPreviewKeyPoints", "default");
-
 // Enable the experimental machine learning inference engine.
 pref("browser.ml.enable", true);
 // Set to "All" to see all logs, which are useful for debugging.
