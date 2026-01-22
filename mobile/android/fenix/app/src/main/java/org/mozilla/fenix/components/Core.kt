@@ -84,6 +84,8 @@ import mozilla.components.service.digitalassetlinks.local.StatementApi
 import mozilla.components.service.digitalassetlinks.local.StatementRelationChecker
 import mozilla.components.service.location.LocationService
 import mozilla.components.service.location.MozillaLocationService
+import mozilla.components.service.mars.MacTopSitesProvider
+import mozilla.components.service.mars.MacTopSitesRequestConfig
 import mozilla.components.service.mars.MarsTopSitesProvider
 import mozilla.components.service.mars.MarsTopSitesRequestConfig
 import mozilla.components.service.mars.NEW_TAB_TILE_1_PLACEMENT_KEY
@@ -611,11 +613,28 @@ class Core(
         )
     }
 
+    val macTopSitesProvider by lazyMonitored {
+        MacTopSitesProvider(
+            adsClientProvider = context.components.ads.lazyAdsClientProvider,
+            requestConfig = MacTopSitesRequestConfig(
+                placements = listOf(
+                    NEW_TAB_TILE_1_PLACEMENT_KEY,
+                    NEW_TAB_TILE_2_PLACEMENT_KEY,
+                ),
+            ),
+            crashReporter = crashReporter,
+        )
+    }
+
     @Suppress("MagicNumber")
     val contileTopSitesUpdater by lazyMonitored {
         ContileTopSitesUpdater(
             context = context,
-            provider = marsTopSitesProvider,
+            provider = if (context.settings().enableMozillaAdsClient) {
+                macTopSitesProvider
+            } else {
+                marsTopSitesProvider
+            },
             frequency = Frequency(3, TimeUnit.HOURS),
         )
     }
@@ -624,7 +643,11 @@ class Core(
         DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSiteStorage,
             historyStorage = historyStorage,
-            topSitesProvider = marsTopSitesProvider,
+            topSitesProvider = if (context.settings().enableMozillaAdsClient) {
+                macTopSitesProvider
+            } else {
+                marsTopSitesProvider
+            },
         )
     }
 
