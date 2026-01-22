@@ -108,6 +108,24 @@ class MOZ_RAII SelectionNodeCache final {
     return MaybeCollect(aSelection).Contains(aNode);
   }
 
+  AutoTArray<Selection*, 1>* LastCommonAncestorSelections(
+      const nsINode* aCommonAncestorForRangeInSelection) {
+    if (mLastCommonAncestorForRangeInSelection &&
+        mLastCommonAncestorForRangeInSelection ==
+            aCommonAncestorForRangeInSelection) {
+      return &mLastCommonAncestorSelections;
+    }
+    return nullptr;
+  }
+
+  void SetLastCommonAncestorSelections(
+      const nsINode* aCommonAncestorForRangeInSelection,
+      const AutoTArray<Selection*, 1>& aAncestorSelections) {
+    mLastCommonAncestorForRangeInSelection = aCommonAncestorForRangeInSelection;
+    mLastCommonAncestorSelections.Clear();
+    mLastCommonAncestorSelections.AppendElements(aAncestorSelections);
+  }
+
  private:
   /**
    * This class is supposed to be only created by the PresShell.
@@ -121,6 +139,10 @@ class MOZ_RAII SelectionNodeCache final {
    * If `aSelection` is already cached, the hash set is returned directly.
    */
   const nsTHashSet<const nsINode*>& MaybeCollect(const Selection* aSelection);
+
+  const nsINode* mLastCommonAncestorForRangeInSelection = nullptr;
+
+  AutoTArray<Selection*, 1> mLastCommonAncestorSelections;
 
   nsTHashMap<const Selection*, nsTHashSet<const nsINode*>> mSelectedNodes;
 
