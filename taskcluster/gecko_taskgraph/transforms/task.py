@@ -1955,6 +1955,7 @@ def add_l10n_index_routes(config, task, force_locale=None):
     subs["product"] = index["product"]
     subs["trust-domain"] = config.graph_config["trust-domain"]
     subs["branch_rev"] = get_branch_rev(config)
+    subs["project"] = get_project_alias(config)
 
     locales = task["attributes"].get(
         "chunk_locales", task["attributes"].get("all_locales")
@@ -2036,7 +2037,7 @@ def add_geckoview_index_routes(config, task):
         "geckoview-version": geckoview_version,
         "job-name": index["job-name"],
         "product": index["product"],
-        "project": config.params["project"],
+        "project": get_project_alias(config),
         "trust-domain": config.graph_config["trust-domain"],
     }
     routes.append(V2_GECKOVIEW_RELEASE.format(**subs))
@@ -2323,9 +2324,7 @@ def build_task(config, tasks):
 
         if task_th:
             # link back to treeherder in description
-            th_job_link = (
-                "https://treeherder.mozilla.org/#/jobs?repo={}&revision={}&selectedTaskRun=<self>"
-            ).format(config.params["project"], branch_rev)
+            th_job_link = f"https://treeherder.mozilla.org/#/jobs?repo={get_project_alias(config)}&revision={branch_rev}&selectedTaskRun=<self>"
             task_def["metadata"]["description"] = {
                 "task-reference": "{description} ([Treeherder job]({th_job_link}))".format(
                     description=task_def["metadata"]["description"],
