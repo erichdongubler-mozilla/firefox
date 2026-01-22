@@ -823,6 +823,15 @@ Tester.prototype = {
   },
 
   async notifyProfilerOfTestEnd() {
+    // Note the test run time
+    let name = this.currentTest.path;
+    name = name.slice(name.lastIndexOf("/") + 1);
+    ChromeUtils.addProfilerMarker(
+      "browser-test",
+      { category: "Test", startTime: this.lastStartTimestamp },
+      name
+    );
+
     // See if we should upload a profile of a failing test.
     if (this.currentTest.failCount) {
       // If MOZ_PROFILER_SHUTDOWN is set, the profiler got started from --profiler
@@ -832,8 +841,6 @@ Tester.prototype = {
         !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
         Services.profiler.IsActive()
       ) {
-        let name = this.currentTest.path;
-        name = name.slice(name.lastIndexOf("/") + 1);
         let filename = `profile_${name}.json`;
         let path = Services.env.get("MOZ_UPLOAD_DIR");
         let profilePath = PathUtils.join(path, filename);
