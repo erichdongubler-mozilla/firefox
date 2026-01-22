@@ -13,7 +13,7 @@ use crate::pattern::{PatternKind, PatternShaderInput};
 use crate::profiler::{add_text_marker};
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::frame_builder::FrameBuilderConfig;
-use crate::gpu_types::{BorderInstance, UvRectKind, BlurEdgeMode};
+use crate::gpu_types::{BorderInstance, UvRectKind, BlurEdgeMode, ClipSpace};
 use crate::internal_types::{CacheTextureId, FastHashMap, TextureSource, Swizzle};
 use crate::svg_filter::{FilterGraphNode, FilterGraphOp, FilterGraphPictureReference, SVGFE_CONVOLVE_VALUES_LIMIT};
 use crate::picture::ResolvedSurfaceTexture;
@@ -2372,4 +2372,23 @@ impl RenderTask {
     pub fn mark_cached(&mut self, handle: RenderTaskCacheEntryHandle) {
         self.cache_handle = Some(handle);
     }
+}
+
+#[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct ClipSubTask {
+    pub masked_task_id: RenderTaskId,
+    pub clip_pattern_kind: PatternKind,
+    pub render_task_address: RenderTaskAddress,
+    pub main_address: GpuBufferAddress,
+    pub prim_transform_id: GpuTransformId,
+    pub clip_address: GpuBufferAddress,
+    pub clip_transform_id: GpuTransformId,
+    pub src_task: RenderTaskId,
+    pub quad_flags: QuadFlags,
+    pub edge_aa: EdgeAaSegmentMask,
+    pub clip_space: ClipSpace,
+    pub clip_needs_scissor_rect: bool,
+    pub rounded_rect_fast_path: bool,
 }
