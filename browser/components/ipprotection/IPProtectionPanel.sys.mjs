@@ -22,11 +22,19 @@ ChromeUtils.defineESModuleGetters(lazy, {
   IPPSignInWatcher:
     "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs",
 });
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 import {
   LINKS,
   ERRORS,
 } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "BANDWIDTH_USAGE_ENABLED",
+  "browser.ipProtection.bandwidth.enabled",
+  false
+);
 
 let hasCustomElements = new WeakSet();
 
@@ -91,6 +99,8 @@ export class IPProtectionPanel {
    * True if the VPN service has been paused due to bandwidth limits
    * @property {object} siteData
    * Data about the currently loaded site, including "isExclusion".
+   * @property {object} bandwidthUsage
+   *  An object containing the current and max usage
    */
 
   /**
@@ -152,6 +162,9 @@ export class IPProtectionPanel {
       bandwidthWarning: "",
       paused: false,
       siteData: this.#getSiteData(),
+      bandwidthUsage: lazy.BANDWIDTH_USAGE_ENABLED
+        ? { currentBandwidthUsage: 0, maxBandwidth: 150 }
+        : null,
     };
 
     // The progress listener to listen for page navigations.

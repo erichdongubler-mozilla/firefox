@@ -14,3 +14,5 @@ browser.jar:
     content/browser/ipprotection/ipprotection-status-card.mjs (content/ipprotection-status-card.mjs)
     content/browser/ipprotection/ipprotection-status-box.css (content/ipprotection-status-box.css)
     content/browser/ipprotection/ipprotection-status-box.mjs (content/ipprotection-status-box.mjs)
+    content/browser/ipprotection/bandwidth-usage.css (content/bandwidth-usage.css)
+    content/browser/ipprotection/bandwidth-usage.mjs (content/bandwidth-usage.mjs)

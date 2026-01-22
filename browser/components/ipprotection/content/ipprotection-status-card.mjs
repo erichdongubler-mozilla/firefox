@@ -11,6 +11,8 @@ import {
 
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-toggle.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/ipprotection/bandwidth-usage.mjs";
 
 /**
  * Custom element that implements a status card for IP protection.
@@ -39,6 +41,7 @@ export default class IPProtectionStatusCard extends MozLitElement {
     // Track toggle state separately so that we can tell when the toggle
     // is enabled because of the existing protection state or because of user action.
     _toggleEnabled: { type: Boolean, state: true },
+    bandwidthUsage: { type: Object },
   };
 
   constructor() {
@@ -202,20 +205,27 @@ export default class IPProtectionStatusCard extends MozLitElement {
       fill: "currentColor",
     });
 
-    return this.location
-      ? html`
-          <div id="vpn-details">
-            <div id="location-label" style=${labelStyles}>
+    return html`
+      <div id="vpn-details">
+        ${this.bandwidthUsage
+          ? html`<bandwidth-usage
+              value=${this.bandwidthUsage.currentBandwidthUsage}
+              max=${this.bandwidthUsage.maxBandwidth}
+              numeric
+            ></bandwidth-usage>`
+          : null}
+        ${this.location
+          ? html`<div id="location-label" style=${labelStyles}>
               <span>${this.location.name}</span>
               <img
                 src="chrome://global/skin/icons/info.svg"
                 data-l10n-id="ipprotection-location-title"
                 style=${imgStyles}
               />
-            </div>
-          </div>
-        `
-      : null;
+            </div>`
+          : null}
+      </div>
+    `;
   }
 
   render() {

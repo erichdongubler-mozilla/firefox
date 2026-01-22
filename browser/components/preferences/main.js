@@ -3027,6 +3027,7 @@ SettingGroupManager.registerGroups({
           href: "https://www.mozilla.org/products/vpn/",
         },
       },
+      { id: "ipProtectionBandwidth", control: "bandwidth-usage" },
     ],
   },
   cookiesAndSiteData: {
