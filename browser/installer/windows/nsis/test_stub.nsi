@@ -152,8 +152,6 @@ Function .onInit
     ${EndIf}
     FileClose $Stdout
     Return
-OnError:
-    Abort "Failed to run tests."
 FunctionEnd
 
 ; Expect installation to abort if windows version < 10
