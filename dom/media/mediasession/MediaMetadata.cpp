@@ -70,15 +70,33 @@ already_AddRefed<MediaMetadata> MediaMetadata::Constructor(
 
 void MediaMetadata::GetTitle(nsString& aRetVal) const { aRetVal = mTitle; }
 
-void MediaMetadata::SetTitle(const nsAString& aTitle) { mTitle = aTitle; }
+void MediaMetadata::SetTitle(const nsAString& aTitle) {
+  if (mTitle == aTitle) {
+    return;
+  }
+  mTitle = aTitle;
+  mMetadataChangeEvent.Notify();
+}
 
 void MediaMetadata::GetArtist(nsString& aRetVal) const { aRetVal = mArtist; }
 
-void MediaMetadata::SetArtist(const nsAString& aArtist) { mArtist = aArtist; }
+void MediaMetadata::SetArtist(const nsAString& aArtist) {
+  if (mArtist == aArtist) {
+    return;
+  }
+  mArtist = aArtist;
+  mMetadataChangeEvent.Notify();
+}
 
 void MediaMetadata::GetAlbum(nsString& aRetVal) const { aRetVal = mAlbum; }
 
-void MediaMetadata::SetAlbum(const nsAString& aAlbum) { mAlbum = aAlbum; }
+void MediaMetadata::SetAlbum(const nsAString& aAlbum) {
+  if (mAlbum == aAlbum) {
+    return;
+  }
+  mAlbum = aAlbum;
+  mMetadataChangeEvent.Notify();
+}
 
 void MediaMetadata::GetArtwork(JSContext* aCx, nsTArray<JSObject*>& aRetVal,
                                ErrorResult& aRv) const {
@@ -127,7 +145,8 @@ void MediaMetadata::SetArtwork(JSContext* aCx,
   }
 
   SetArtworkInternal(artwork, aRv);
-};
+  mMetadataChangeEvent.Notify();
+}
 
 RefPtr<MediaMetadataBasePromise> MediaMetadata::FetchArtwork(
     const MediaMetadataBase& aMetadata, nsIPrincipal* aPrincipal,

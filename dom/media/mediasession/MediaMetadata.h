@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_MediaMetadata_h
 #define mozilla_dom_MediaMetadata_h
 
+#include "MediaEventSource.h"
 #include "js/TypeDecls.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/MediaSessionBinding.h"
@@ -100,6 +101,7 @@ class MediaMetadata final : public nsISupports,
   // Before LoadMetadataArtwork() resolves the mDataSurface of the
   // MediaImageData is going to be null.
   MediaMetadataBase* AsMetadataBaseWithoutArtworkSurface() { return this; }
+  MediaEventSource<void>& MetadataChangeEvent() { return mMetadataChangeEvent; }
 
  private:
   MediaMetadata(nsIGlobalObject* aParent, const nsString& aTitle,
@@ -117,6 +119,7 @@ class MediaMetadata final : public nsISupports,
       const size_t aIndex);
 
   nsCOMPtr<nsIGlobalObject> mParent;
+  MediaEventProducer<void> mMetadataChangeEvent;
 };
 
 }  // namespace dom

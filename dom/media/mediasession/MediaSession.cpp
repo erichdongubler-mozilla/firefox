@@ -88,6 +88,7 @@ void MediaSession::Shutdown() {
     SetMediaSessionDocStatus(SessionDocStatus::eInactive);
   }
   mLoadingArtworkRequest.DisconnectIfExists();
+  mMetadataChangeListener.DisconnectIfExists();
 }
 
 void MediaSession::NotifyOwnerDocumentActivityChanged() {
@@ -118,7 +119,13 @@ JSObject* MediaSession::WrapObject(JSContext* aCx,
 MediaMetadata* MediaSession::GetMetadata() const { return mMediaMetadata; }
 
 void MediaSession::SetMetadata(MediaMetadata* aMetadata) {
+  mMetadataChangeListener.DisconnectIfExists();
   mMediaMetadata = aMetadata;
+  if (mMediaMetadata) {
+    mMetadataChangeListener = mMediaMetadata->MetadataChangeEvent().Connect(
+        AbstractThread::MainThread(), this,
+        &MediaSession::NotifyMetadataUpdated);
+  }
   NotifyMetadataUpdated();
 }
 

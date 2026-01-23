@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_MediaSession_h
 #define mozilla_dom_MediaSession_h
 
+#include "MediaEventSource.h"
 #include "js/TypeDecls.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/TimeStamp.h"
@@ -134,6 +135,7 @@ class MediaSession final : public nsIDocumentActivity, public nsWrapperCache {
 
   MozPromiseRequestHolder<mozilla::dom::MediaMetadataBasePromise>
       mLoadingArtworkRequest;
+  MediaEventListener mMetadataChangeListener;
 };
 
 }  // namespace dom
