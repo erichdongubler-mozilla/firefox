@@ -118,10 +118,15 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   // Check if we should allow the request.
 
   std::optional<std::string_view> rejectionMessage = {};
-  const auto rejectIf = [&rejectionMessage](bool condition,
-                                            const char* message) {
+  const auto rejectIf = [&rejectionMessage, &promise, this](
+                            bool condition, const char* message) {
     if (condition && !rejectionMessage.has_value()) {
       rejectionMessage = message;
+      promise->MaybeResolve(JS::NullValue());
+      dom::AutoJSAPI api;
+      if (api.Init(mOwner)) {
+        JS::WarnUTF8(api.cx(), "%s", rejectionMessage.value().data());
+      }
     }
   };
 
@@ -146,7 +151,6 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   }
 
   if (rejectionMessage) {
-    promise->MaybeRejectWithNotSupportedError(ToCString(*rejectionMessage));
     return promise.forget();
   }
 
