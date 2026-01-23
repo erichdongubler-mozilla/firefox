@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { ERRORS } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -18,6 +19,20 @@ ChromeUtils.defineESModuleGetters(lazy, {
   IPPProxyStates:
     "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
 });
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "siteExceptionsFeaturePref",
+  "browser.ipProtection.features.siteExceptions",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "siteExceptionsHintsPref",
+  "browser.ipProtection.siteExceptionsHintsEnabled",
+  true
+);
 
 /**
  * IPProtectionToolbarButton manages the IP Protection toolbar button
@@ -46,6 +61,27 @@ export class IPProtectionToolbarButton {
   get gBrowser() {
     const win = this.#window.get();
     return win?.gBrowser;
+  }
+  /**
+   * Gets the value of the pref
+   * browser.ipProtection.features.siteExceptions.
+   *
+   * @returns {boolean}
+   *  True if site exceptions support is enabled, false otherwise.
+   */
+  get isExceptionsFeatureEnabled() {
+    return lazy.siteExceptionsFeaturePref;
+  }
+
+  /**
+   * Gets the value of the pref
+   * browser.ipProtection.siteExceptionsHintsEnabled.
+   *
+   * @returns {boolean}
+   *  True if confirmation hints for site exceptions are enabled, false otherwise.
+   */
+  get isExceptionsHintsEnabled() {
+    return lazy.siteExceptionsHintsPref;
   }
 
   /**
@@ -228,13 +264,11 @@ export class IPProtectionToolbarButton {
       return;
     }
 
-    const hintsEnabled = Services.prefs.getBoolPref(
-      "browser.ipProtection.siteExceptionsHintsEnabled",
-      true
-    );
+    let exceptionsPrefsEnabled =
+      this.isExceptionsFeatureEnabled && this.isExceptionsHintsEnabled;
 
     const canShowConfirmationHint =
-      hintsEnabled &&
+      exceptionsPrefsEnabled &&
       !status.isError &&
       status.isActive &&
       status.isExcluded &&
@@ -271,7 +305,7 @@ export class IPProtectionToolbarButton {
 
     let isActive = status.isActive;
     let isError = status.isError;
-    let isExcluded = status.isExcluded;
+    let isExcluded = status.isExcluded && this.isExceptionsFeatureEnabled;
     let l10nId = isError ? "ipprotection-button-error" : "ipprotection-button";
 
     toolbaritem.classList.remove(

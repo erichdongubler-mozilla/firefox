@@ -291,6 +291,7 @@ export default class IPProtectionContentElement extends MozLitElement {
 
   exclusionToggleTemplate() {
     if (
+      !this.state.isSiteExceptionsEnabled ||
       !this.state.siteData ||
       !this.state.isProtectionEnabled ||
       this.#hasErrors

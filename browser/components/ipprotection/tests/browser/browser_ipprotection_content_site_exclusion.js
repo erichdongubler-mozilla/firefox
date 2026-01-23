@@ -16,6 +16,59 @@ const ENABLE_VPN_EVENT = "IPProtection:UserEnableVPNForSite";
 const DISABLE_VPN_EVENT = "IPProtection:UserDisableVPNForSite";
 
 /**
+ * Tests that we don't show the exclusion toggle and ipprotection-excluded icon
+ * when the feature pref is disabled.
+ */
+add_task(async function test_site_exclusion_feature_pref_disabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.features.siteExceptions", false]],
+  });
+
+  const sandbox = sinon.createSandbox();
+  Services.perms.removeByType(PERM_NAME);
+
+  sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    MOCK_SITE_NAME
+  );
+
+  let content = await openPanel({
+    isSignedOut: false,
+    isProtectionEnabled: true,
+    siteData: {
+      isExclusion: false,
+    },
+  });
+
+  Assert.ok(
+    BrowserTestUtils.isVisible(content),
+    "ipprotection content component should be present"
+  );
+  Assert.ok(
+    !content.siteExclusionControlEl,
+    "Site exclusion control should not be present when feature pref is disabled"
+  );
+
+  let toolbarButton = document.getElementById(IPProtectionWidget.WIDGET_ID);
+  Assert.ok(
+    toolbarButton.classList.contains("ipprotection-on"),
+    "Toolbar icon should show connection status when feature pref is disabled"
+  );
+  Assert.ok(
+    !toolbarButton.classList.contains("ipprotection-excluded"),
+    "Toolbar icon should not show excluded status when feature pref is disabled"
+  );
+
+  await closePanel();
+  BrowserTestUtils.removeTab(tab);
+  Services.perms.removeByType(PERM_NAME);
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
  * Tests the site exclusion toggle visibility with VPN on or off.
  */
 add_task(async function test_site_exclusion_toggle_with_siteData() {
