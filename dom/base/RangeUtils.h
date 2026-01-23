@@ -26,19 +26,11 @@ class AbstractRange;
 struct ShadowDOMSelectionHelpers {
   ShadowDOMSelectionHelpers() = delete;
 
-  static RawRangeBoundary StartRef(
-      const AbstractRange* aRange,
-      AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
-
   static nsINode* GetStartContainer(
       const AbstractRange* aRange,
       AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 
   static uint32_t StartOffset(
-      const AbstractRange* aRange,
-      AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
-
-  static RawRangeBoundary EndRef(
       const AbstractRange* aRange,
       AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary);
 

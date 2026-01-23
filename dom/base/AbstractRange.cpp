@@ -377,10 +377,8 @@ nsresult AbstractRange::SetStartAndEndInternal(
       // shadow boundary or not.
       if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
           !IsRootUAWidget(newStartRoot) && !IsRootUAWidget(newEndRoot)) {
-        const auto startInFlat =
-            aStartBoundary.AsRangeBoundaryInFlatTree(RangeBoundaryFor::Start);
-        const auto endInFlat =
-            aEndBoundary.AsRangeBoundaryInFlatTree(RangeBoundaryFor::End);
+        const auto startInFlat = aStartBoundary.AsRangeBoundaryInFlatTree();
+        const auto endInFlat = aEndBoundary.AsRangeBoundaryInFlatTree();
         if (MOZ_UNLIKELY(!startInFlat.IsSet() || !endInFlat.IsSet())) {
           NS_WARNING_ASSERTION(
               !startInFlat.IsSet(),
@@ -449,17 +447,8 @@ nsresult AbstractRange::SetStartAndEndInternal(
 
   if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
       aRange->IsDynamicRange()) {
-    const bool isCollapsing = aStartBoundary == aEndBoundary;
-    const auto startInFlat = aStartBoundary
-                                 .AsRangeBoundaryInFlatTree(
-                                     isCollapsing ? RangeBoundaryFor::Collapsed
-                                                  : RangeBoundaryFor::Start)
-                                 .AsRaw();
-    const auto endInFlat =
-        isCollapsing
-            ? startInFlat
-            : aEndBoundary.AsRangeBoundaryInFlatTree(RangeBoundaryFor::End)
-                  .AsRaw();
+    const auto startInFlat = aStartBoundary.AsRangeBoundaryInFlatTree();
+    const auto endInFlat = aEndBoundary.AsRangeBoundaryInFlatTree();
     if (MOZ_UNLIKELY(!startInFlat.IsSet() || !endInFlat.IsSet())) {
       NS_WARNING_ASSERTION(
           !startInFlat.IsSet(),
