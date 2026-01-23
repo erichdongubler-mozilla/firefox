@@ -1840,6 +1840,7 @@ networking:
       Recorded when a site attempts to access local network resources.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1989916
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010465
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1989916#c5
     data_sensitivity:
@@ -1850,7 +1851,7 @@ networking:
       - necko@mozilla.com
     send_in_pings:
       - local-network-access
-    expires: 150
+    expires: 155
     extra_keys:
       top_level_site:
         description: The base domain (eTLD+1) of the top-level document/main window.
