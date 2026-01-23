@@ -900,8 +900,6 @@ export const URILoadingHelper = {
    *        the one from the new URI.
    *        - 'adoptIntoActiveWindow' boolean property to be set to true to adopt the tab
    *        into the current window.
-   * @param aSplitView
-   *        If not null, will move the tab to the active split view instead of switching to tab
    * @param aUserContextId
    *        If not null, will switch to the first found tab having the provided
    *        userContextId.
@@ -912,7 +910,6 @@ export const URILoadingHelper = {
     aURI,
     aOpenNew,
     aOpenParams = {},
-    aSplitView = null,
     aUserContextId = null
   ) {
     // Certain URLs can be switched to irrespective of the source or destination
@@ -1020,14 +1017,7 @@ export const URILoadingHelper = {
           }
 
           if (!doAdopt) {
-            if (aSplitView) {
-              aSplitView.replaceTab(
-                aWindow.gBrowser.selectedTab,
-                aWindow.gBrowser.visibleTabs[i]
-              );
-            } else {
-              aWindow.gBrowser.tabContainer.selectedIndex = i;
-            }
+            aWindow.gBrowser.tabContainer.selectedIndex = i;
           }
 
           return true;
