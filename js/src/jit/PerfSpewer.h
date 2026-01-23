@@ -138,6 +138,15 @@ class PerfSpewer {
                                  void* code_addr, uint64_t code_size,
                                  JS::JitCodeRecord* maybeProfilerRecord,
                                  AutoLockPerfSpewer& lock);
+
+  // Explicitly free heap memory allocated using the system allocator. This must
+  // be called when the PerfSpewer is allocated in a LifoAlloc, since the
+  // destructor won't be called when the LifoAlloc is freed.
+  void reset() {
+    endRecording();
+    debugInfo_.clearAndFree();
+    irFileName_ = JS::UniqueChars();
+  }
 };
 
 void CollectPerfSpewerJitCodeProfile(JitCode* code, const char* msg);
