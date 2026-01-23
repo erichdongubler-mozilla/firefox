@@ -51,6 +51,22 @@ export class AIFeature {
   }
 
   /**
+   * Reset the feature to its default state.
+   * - Sets feature pref to DEFAULT value (not explicitly disabled)
+   * - Uninstalls any downloaded models/artifacts
+   * - Resets all related prefs (opt-in, UI visibility, etc.) to defaults
+   *
+   * This differs from disable() in that it restores factory defaults rather than
+   * explicitly disabling. The default state may be enabled or disabled depending
+   * on rollout status and default pref values.
+   *
+   * @returns {Promise<void>} Resolves when reset is complete
+   */
+  static async reset() {
+    throw new Error("AIFeature subclass must implement static reset()");
+  }
+
+  /**
    * Check if the feature is enabled.
    *
    * @returns {boolean} True if enabled, false otherwise.
@@ -92,18 +108,17 @@ export class AIFeature {
   }
 
   /**
-   * Reset the feature to its default state.
-   * - Sets feature pref to DEFAULT value (not explicitly disabled)
-   * - Uninstalls any downloaded models/artifacts
-   * - Resets all related prefs (opt-in, UI visibility, etc.) to defaults
+   * Check if the enabled state of the feature is already managed by a policy
+   * and cannot be changed by the user in the settings. A policy may force the
+   * feature to be enabled or disabled. Either way, the user cannot change this.
    *
-   * This differs from disable() in that it restores factory defaults rather than
-   * explicitly disabling. The default state may be enabled or disabled depending
-   * on rollout status and default pref values.
+   * See https://support.mozilla.org/kb/customizing-firefox-using-policiesjson
    *
-   * @returns {Promise<void>} Resolves when reset is complete
+   * @returns {boolean} True if the feature is managed by a policy, otherwise false.
    */
-  static async reset() {
-    throw new Error("AIFeature subclass must implement static reset()");
+  static get isManagedByPolicy() {
+    throw new Error(
+      "AIFeature subclass must implement static get isManagedByPolicy()"
+    );
   }
 }
