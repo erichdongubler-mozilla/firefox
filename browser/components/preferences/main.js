@@ -132,6 +132,8 @@ Preferences.addAll([
   // Languages
   { id: "intl.regional_prefs.use_os_locales", type: "bool" },
 
+  { id: "intl.accept_languages", type: "string" },
+  { id: "privacy.spoof_english", type: "int" },
   // General tab
 
   /* Accessibility
@@ -660,6 +662,211 @@ Preferences.addSetting({
     );
   },
 });
+
+Preferences.addSetting({
+  id: "acceptLanguages",
+  pref: "intl.accept_languages",
+  get(prefVal, _, setting) {
+    return setting.pref.defaultValue != prefVal
+      ? prefVal.toLowerCase()
+      : Services.locale.acceptLanguages.toLowerCase();
+  },
+});
+Preferences.addSetting({
+  id: "availableLanguages",
+  deps: ["acceptLanguages"],
+  get(_, { acceptLanguages }) {
+    let re = /\s*(?:,|$)\s*/;
+    let _acceptLanguages = acceptLanguages.value.split(re);
+    let availableLanguages = [];
+    let localeCodes = [];
+    let localeValues = [];
+    let bundle = Services.strings.createBundle(
+      "resource://gre/res/language.properties"
+    );
+
+    for (let currString of bundle.getSimpleEnumeration()) {
+      let property = currString.key.split(".");
+      if (property[1] == "accept") {
+        localeCodes.push(property[0]);
+        localeValues.push(currString.value);
+      }
+    }
+
+    let localeNames = Services.intl.getLocaleDisplayNames(
+      undefined,
+      localeCodes
+    );
+
+    for (let i in localeCodes) {
+      let isVisible =
+        localeValues[i] == "true" &&
+        (!_acceptLanguages.includes(localeCodes[i]) ||
+          !_acceptLanguages[localeCodes[i]]);
+      let locale = {
+        code: localeCodes[i],
+        displayName: localeNames[i],
+        isVisible,
+      };
+      availableLanguages.push(locale);
+    }
+
+    return availableLanguages;
+  },
+});
+
+Preferences.addSetting({
+  id: "websiteLanguageWrapper",
+  deps: ["acceptLanguages"],
+  onUserReorder(event, deps) {
+    const { draggedIndex, targetIndex } = event.detail;
+
+    let re = /\s*(?:,|$)\s*/;
+    let languages = deps.acceptLanguages.value.split(re).filter(lang => lang);
+
+    const [draggedLang] = languages.splice(draggedIndex, 1);
+
+    languages.splice(targetIndex, 0, draggedLang);
+
+    deps.acceptLanguages.value = languages.join(",");
+  },
+  getControlConfig(config, deps) {
+    let languagePref = deps.acceptLanguages.value;
+    let localeCodes = languagePref
+      .toLowerCase()
+      .split(/\s*,\s*/)
+      .filter(code => code.length);
+    let localeDisplayNames = Services.intl.getLocaleDisplayNames(
+      undefined,
+      localeCodes
+    );
+    /** @type {SettingOptionConfig[]} */
+    let availableLanguages = [];
+    for (let i = 0; i < localeCodes.length; i++) {
+      let displayName = localeDisplayNames[i];
+      let localeCode = localeCodes[i];
+      availableLanguages.push({
+        l10nId: "languages-code-format",
+        l10nArgs: {
+          locale: displayName,
+          code: localeCode,
+        },
+        control: "moz-box-item",
+        key: localeCode,
+        options: [
+          {
+            control: "moz-button",
+            slot: "actions-start",
+            iconSrc: "chrome://global/skin/icons/delete.svg",
+            l10nId: "website-remove-language-button",
+            l10nArgs: {
+              locale: displayName,
+              code: localeCode,
+            },
+            controlAttrs: {
+              locale: localeCode,
+              action: "remove",
+            },
+          },
+        ],
+      });
+    }
+    config.options = [config.options[0], ...availableLanguages];
+    return config;
+  },
+  onUserClick(e, deps) {
+    let code = e.target.getAttribute("locale");
+    let action = e.target.getAttribute("action");
+    if (code && action) {
+      if (action === "remove") {
+        let re = /\s*(?:,|$)\s*/;
+        let acceptedLanguages = deps.acceptLanguages.value.split(re);
+        let filteredLanguages = acceptedLanguages.filter(
+          acceptedCode => acceptedCode !== code
+        );
+        deps.acceptLanguages.value = filteredLanguages.join(",");
+        let closestBoxItem = e.target.closest("moz-box-item");
+        closestBoxItem.nextElementSibling
+          ? closestBoxItem.nextElementSibling.focus()
+          : closestBoxItem.previousElementSibling.focus();
+      }
+    }
+  },
+});
+
+Preferences.addSetting({
+  id: "websiteLanguageAddLanguage",
+  deps: ["websiteLanguagePicker", "acceptLanguages"],
+  onUserClick(e, deps) {
+    let selectedLanguage = deps.websiteLanguagePicker.value;
+    if (selectedLanguage == "-1") {
+      return;
+    }
+
+    let re = /\s*(?:,|$)\s*/;
+    let currentLanguages = deps.acceptLanguages.value.split(re);
+    let isAlreadyAccepted = currentLanguages.includes(selectedLanguage);
+
+    if (isAlreadyAccepted) {
+      return;
+    }
+
+    currentLanguages.unshift(selectedLanguage);
+    deps.acceptLanguages.value = currentLanguages.join(",");
+  },
+});
+
+Preferences.addSetting(
+  /** @type {{inputValue: string} & SettingConfig } */ ({
+    id: "websiteLanguagePicker",
+    deps: ["availableLanguages", "acceptLanguages"],
+    inputValue: "-1",
+    getControlConfig(config, deps) {
+      let re = /\s*(?:,|$)\s*/;
+      let availableLanguages =
+        /** @type {{ locale: string, code: string, displayName: string, isVisible: boolean }[]} */
+        deps.availableLanguages.value;
+
+      let acceptLanguages = new Set(
+        /** @type {string} */ (deps.acceptLanguages.value).split(re)
+      );
+
+      let sortedOptions = availableLanguages.map(locale => ({
+        l10nId: "languages-code-format",
+        l10nArgs: {
+          locale: locale.displayName,
+          code: locale.code,
+        },
+        hidden: locale.isVisible && acceptLanguages.has(locale.code),
+        value: locale.code,
+      }));
+      // Sort the list of languages by name
+      let comp = new Services.intl.Collator(undefined, {
+        usage: "sort",
+      });
+
+      sortedOptions.sort((a, b) => {
+        return comp.compare(a.l10nArgs.locale, b.l10nArgs.locale);
+      });
+
+      // Take the existing "Add Language" option and prepend it.
+      config.options = [config.options[0], ...sortedOptions];
+      return config;
+    },
+    get(_, deps) {
+      if (
+        !this.inputValue ||
+        deps.acceptLanguages.value.split(",").includes(this.inputValue)
+      ) {
+        this.inputValue = "-1";
+      }
+      return this.inputValue;
+    },
+    set(inputVal) {
+      this.inputValue = String(inputVal);
+    },
+  })
+);
 
 Preferences.addSetting({
   id: "containersPane",
@@ -2613,6 +2820,52 @@ SettingGroupManager.registerGroups({
         controlAttrs: {
           href: "about:addons",
         },
+      },
+    ],
+  },
+  websiteLanguage: {
+    inProgress: true,
+    l10nId: "website-language-heading",
+    headingLevel: 2,
+    items: [
+      {
+        id: "websiteLanguageWrapper",
+        control: "moz-box-group",
+        controlAttrs: {
+          type: "reorderable-list",
+        },
+        options: [
+          {
+            id: "websiteLanguagePickerWrapper",
+            l10nId: "website-preferred-language",
+            key: "addlanguage",
+            control: "moz-box-item",
+            slot: "header",
+            items: [
+              {
+                id: "websiteLanguagePicker",
+                slot: "actions",
+                control: "moz-select",
+                options: [
+                  {
+                    control: "moz-option",
+                    l10nId: "website-add-language",
+                    controlAttrs: {
+                      value: "-1",
+                    },
+                  },
+                ],
+              },
+              {
+                id: "websiteLanguageAddLanguage",
+                slot: "actions",
+                control: "moz-button",
+                iconSrc: "chrome://global/skin/icons/plus.svg",
+                l10nId: "website-add-language-button",
+              },
+            ],
+          },
+        ],
       },
     ],
   },
@@ -4749,6 +5002,7 @@ var gMainPane = {
     initSettingGroup("downloads");
     initSettingGroup("drm");
     initSettingGroup("contrast");
+    initSettingGroup("websiteLanguage");
     initSettingGroup("browsing");
     initSettingGroup("zoom");
     initSettingGroup("support");
