@@ -258,11 +258,6 @@ void wgpu_child_resolve_buffer_map_promise(WGPUWebGPUChildPtr aChild,
   auto* c = static_cast<WebGPUChild*>(aChild);
   auto pending_promise = c->DequeueBufferMapPromise(aBufferId);
 
-  // Unmap might have been called while the result was on the way back.
-  if (pending_promise.promise->State() != dom::Promise::PromiseState::Pending) {
-    return;
-  }
-
   if (aError == nullptr) {
     pending_promise.buffer->ResolveMapRequest(pending_promise.promise, aOffset,
                                               aSize, aIsWritable);
@@ -654,11 +649,6 @@ void WebGPUChild::ClearActorState() {
   {
     for (auto& pending_promises : mPendingBufferMapPromises) {
       for (auto& pending_promise : pending_promises.second) {
-        // Unmap might have been called.
-        if (pending_promise.promise->State() !=
-            dom::Promise::PromiseState::Pending) {
-          continue;
-        }
         pending_promise.buffer->RejectMapRequestWithAbortError(
             pending_promise.promise);
       }

@@ -71,6 +71,7 @@ Device::Device(Adapter* const aParent, RawId aDeviceId, RawId aQueueId,
       mAdapterInfo(std::move(aAdapterInfo)),
       mSupportSharedTextureInSwapChain(
           aParent->SupportSharedTextureInSwapChain()),
+      mLost(false),
       mLostPromise(std::move(aLostPromise)),
       mQueue(new class Queue(this, aQueueId)) {
   GetChild()->RegisterDevice(this);
@@ -90,10 +91,11 @@ dom::Promise* Device::GetLost(ErrorResult& aRv) {
 
 void Device::ResolveLost(dom::GPUDeviceLostReason aReason,
                          const nsAString& aMessage) {
-  if (mLostPromise->State() != dom::Promise::PromiseState::Pending) {
-    // The lost promise was already resolved or rejected.
+  if (mLost) {
     return;
   }
+  mLost = true;
+
   RefPtr<DeviceLostInfo> info =
       MakeRefPtr<DeviceLostInfo>(GetParentObject(), aReason, aMessage);
   promise::MaybeResolve(RefPtr(mLostPromise), std::move(info));
@@ -976,10 +978,10 @@ void Device::Destroy() {
 
   ffi::wgpu_client_destroy_device(GetClient(), GetId());
 
-  if (mLostPromise->State() != dom::Promise::PromiseState::Pending) {
-    return;
+  if (!mLost) {
+    mLost = true;
+    GetChild()->RegisterDeviceLostPromise(GetId(), mLostPromise);
   }
-  GetChild()->RegisterDeviceLostPromise(GetId(), mLostPromise);
 }
 
 void Device::PushErrorScope(const dom::GPUErrorFilter& aFilter) {
