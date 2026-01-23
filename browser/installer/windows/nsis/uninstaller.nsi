@@ -132,6 +132,7 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro un.SetBrandNameVars
 
 !include shared.nsh
+!include uninstaller_helpers.nsh
 
 ; Helper macros for ui callbacks. Insert these after shared.nsh
 !insertmacro OnEndCommon
