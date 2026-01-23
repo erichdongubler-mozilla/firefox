@@ -1106,6 +1106,13 @@ class TelemetryEvent {
       sap = "handoff";
     } else if (searchSource === "searchbar") {
       sap = "searchbar";
+    } else if (browserWindow.closed) {
+      // If the browser window has already started closing, then we bail-out.
+      // We would rather return no telemetry than have telemetry with an
+      // incorrect SAP. Generally, this should only happen in tests, since
+      // the timing would need to be very close for the code not to have got
+      // here before the user started closing the window.
+      return;
     } else if (
       browserWindow.isBlankPageURL(browserWindow.gBrowser.currentURI.spec)
     ) {
