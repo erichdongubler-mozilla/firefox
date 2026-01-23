@@ -16,6 +16,7 @@
 #include "InternalError.h"
 #include "OutOfMemoryError.h"
 #include "PipelineLayout.h"
+#include "PromiseHelpers.h"
 #include "QuerySet.h"
 #include "Queue.h"
 #include "RenderBundleEncoder.h"
@@ -95,7 +96,7 @@ void Device::ResolveLost(dom::GPUDeviceLostReason aReason,
   }
   RefPtr<DeviceLostInfo> info =
       MakeRefPtr<DeviceLostInfo>(GetParentObject(), aReason, aMessage);
-  mLostPromise->MaybeResolve(info);
+  promise::MaybeResolve(RefPtr(mLostPromise), std::move(info));
 }
 
 already_AddRefed<Buffer> Device::CreateBuffer(

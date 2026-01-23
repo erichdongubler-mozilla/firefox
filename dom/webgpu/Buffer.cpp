@@ -6,6 +6,7 @@
 #include "Buffer.h"
 
 #include "Device.h"
+#include "PromiseHelpers.h"
 #include "ipc/WebGPUChild.h"
 #include "js/ArrayBuffer.h"
 #include "js/RootingAPI.h"
@@ -369,15 +370,14 @@ void Buffer::ResolveMapRequest(dom::Promise* aPromise, BufferAddress aOffset,
                                BufferAddress aSize, bool aWritable) {
   MOZ_RELEASE_ASSERT(mMapRequest == aPromise);
   SetMapped(aOffset, aSize, aWritable);
-  mMapRequest->MaybeResolveWithUndefined();
-  mMapRequest = nullptr;
+  promise::MaybeResolveWithUndefined(std::move(mMapRequest));
 }
 
 void Buffer::RejectMapRequest(dom::Promise* aPromise,
                               const nsACString& message) {
   MOZ_RELEASE_ASSERT(mMapRequest == aPromise);
-  mMapRequest->MaybeRejectWithOperationError(message);
-  mMapRequest = nullptr;
+  promise::MaybeRejectWithOperationError(std::move(mMapRequest),
+                                         nsCString(message));
 }
 
 void Buffer::RejectMapRequestWithAbortError(dom::Promise* aPromise) {
@@ -387,9 +387,9 @@ void Buffer::RejectMapRequestWithAbortError(dom::Promise* aPromise) {
 
 void Buffer::AbortMapRequest() {
   if (mMapRequest) {
-    mMapRequest->MaybeRejectWithAbortError("Buffer unmapped");
+    promise::MaybeRejectWithAbortError(std::move(mMapRequest),
+                                       nsCString("Buffer unmapped"));
   }
-  mMapRequest = nullptr;
 }
 
 void Buffer::Unmap(JSContext* aCx, ErrorResult& aRv) {
