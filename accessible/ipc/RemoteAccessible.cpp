@@ -348,12 +348,10 @@ void RemoteAccessible::Value(nsString& aValue) const {
     }
 
     const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
-    // The value of a textbox is the text content from its subtree.
-    if (IsTextField() ||
-        (roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
+    // Value of textbox is a textified subtree.
+    if ((roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
         (IsGeneric() && IsEditableRoot())) {
-      TextLeafRange::FromAccessible(const_cast<RemoteAccessible*>(this))
-          .GetFlattenedText(aValue);
+      nsTextEquivUtils::GetTextEquivFromSubtree(this, aValue);
       return;
     }
 

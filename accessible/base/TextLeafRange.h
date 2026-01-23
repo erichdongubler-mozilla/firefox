@@ -349,8 +349,6 @@ class TextLeafRange final {
    */
   nsTArray<TextLeafRange> VisibleLines(Accessible* aContainer) const;
 
-  void GetFlattenedText(nsAString& aText) const;
-
  private:
   TextLeafPoint mStart;
   TextLeafPoint mEnd;
