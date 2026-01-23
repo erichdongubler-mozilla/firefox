@@ -462,26 +462,30 @@ void WebGPUChild::UnregisterDevice(RawId aDeviceId) {
 void WebGPUChild::ActorDestroy(ActorDestroyReason) { ClearActorState(); }
 
 void WebGPUChild::ClearActorState() {
-  // All following code sections resolve/reject promises immediately. JS code
-  // can perform further calls that add more promises to data structures, so
-  // all code sections below should not use iterators!
+  // The following code sections dispatch runnables that resolve/reject
+  // promises.
+  //
+  // There are a few reasons why we defer promise resolution:
+  //
+  //  - this function can be indirectly called by `ScheduledFlushQueuedMessages`
+  // which is a runnable that should not enter the JS runtime; see docs of
+  // `nsContentUtils::RunInStableState`,
+  //  - if the thread is shutting down we can no longer resolve the promises;
+  //  `NS_DispatchToCurrentThread` will return an error in this case that we
+  //  ignore,
+  //  - it avoids reentrancy issues (ex: invalidating the iterators below).
 
-  // Make sure we resolve/reject all pending promises; even the ones that get
-  // enqueued immediately by JS code that gets to run as a result of a promise
-  // we just resolved/rejected.
-  while (true) {
-    // Resolve the promise with null since the WebGPUChild has been destroyed.
-    if (!mPendingRequestAdapterPromises.empty()) {
-      auto pending_promise = std::move(mPendingRequestAdapterPromises.front());
-      mPendingRequestAdapterPromises.pop_front();
-
+  // Resolve the promise with null since the WebGPUChild has been destroyed.
+  {
+    for (auto& pending_promise : mPendingRequestAdapterPromises) {
       promise::MaybeResolveWithNull(std::move(pending_promise.promise));
     }
-    // Pretend this worked but return a lost device, per spec.
-    else if (!mPendingRequestDevicePromises.empty()) {
-      auto pending_promise = std::move(mPendingRequestDevicePromises.front());
-      mPendingRequestDevicePromises.pop_front();
+    mPendingRequestAdapterPromises.clear();
+  }
 
+  // Pretend this worked but return a lost device, per spec.
+  {
+    for (auto& pending_promise : mPendingRequestDevicePromises) {
       RefPtr<Device> device =
           new Device(pending_promise.adapter, pending_promise.device_id,
                      pending_promise.queue_id, pending_promise.features,
@@ -493,41 +497,47 @@ void WebGPUChild::ClearActorState() {
       promise::MaybeResolve(std::move(pending_promise.promise),
                             std::move(device));
     }
-    // Resolve all promises that were pending due to `device.destroy()` being
-    // called.
-    else if (!mPendingDeviceLostPromises.empty()) {
-      auto pending_promise_entry = mPendingDeviceLostPromises.begin();
-      auto pending_promise = std::move(pending_promise_entry->second);
-      mPendingDeviceLostPromises.erase(pending_promise_entry->first);
+    mPendingRequestDevicePromises.clear();
+  }
+
+  // Resolve all promises that were pending due to `device.destroy()` being
+  // called.
+  {
+    for (auto& pending_promise_entry : mPendingDeviceLostPromises) {
+      auto pending_promise = std::move(pending_promise_entry.second);
 
       RefPtr<DeviceLostInfo> info = new DeviceLostInfo(
           pending_promise->GetParentObject(),
           dom::GPUDeviceLostReason::Destroyed, u"Device destroyed"_ns);
       promise::MaybeResolve(std::move(pending_promise), std::move(info));
     }
-    // Empty device map and resolve all lost promises with an "unknown" reason.
-    else if (!mDeviceMap.empty()) {
-      auto device_map_entry = mDeviceMap.begin();
-      RefPtr<Device> device = device_map_entry->second.get();
-      mDeviceMap.erase(device_map_entry->first);
+    mPendingDeviceLostPromises.clear();
+  }
+
+  // Empty device map and resolve all lost promises with an "unknown" reason.
+  {
+    for (auto& device_map_entry : mDeviceMap) {
+      RefPtr<Device> device = device_map_entry.second.get();
 
       if (device) {
         device->ResolveLost(dom::GPUDeviceLostReason::Unknown,
                             u"WebGPUChild destroyed"_ns);
       }
     }
-    // Pretend this worked and there is no error, per spec.
-    else if (!mPendingPopErrorScopePromises.empty()) {
-      auto pending_promise = std::move(mPendingPopErrorScopePromises.front());
-      mPendingPopErrorScopePromises.pop_front();
+    mDeviceMap.clear();
+  }
 
+  // Pretend this worked and there is no error, per spec.
+  {
+    for (auto& pending_promise : mPendingPopErrorScopePromises) {
       promise::MaybeResolveWithNull(std::move(pending_promise.promise));
     }
-    // Pretend this worked, per spec; see "Listen for timeline event".
-    else if (!mPendingCreatePipelinePromises.empty()) {
-      auto pending_promise = std::move(mPendingCreatePipelinePromises.front());
-      mPendingCreatePipelinePromises.pop_front();
+    mPendingPopErrorScopePromises.clear();
+  }
 
+  // Pretend this worked, per spec; see "Listen for timeline event".
+  {
+    for (auto& pending_promise : mPendingCreatePipelinePromises) {
       if (pending_promise.is_render_pipeline) {
         RefPtr<RenderPipeline> object = new RenderPipeline(
             pending_promise.device, pending_promise.pipeline_id);
@@ -542,12 +552,12 @@ void WebGPUChild::ClearActorState() {
                               std::move(object));
       }
     }
-    // Pretend this worked, per spec; see "Listen for timeline event".
-    else if (!mPendingCreateShaderModulePromises.empty()) {
-      auto pending_promise =
-          std::move(mPendingCreateShaderModulePromises.front());
-      mPendingCreateShaderModulePromises.pop_front();
+    mPendingCreatePipelinePromises.clear();
+  }
 
+  // Pretend this worked, per spec; see "Listen for timeline event".
+  {
+    for (auto& pending_promise : mPendingCreateShaderModulePromises) {
       nsTArray<WebGPUCompilationMessage> messages;
       RefPtr<CompilationInfo> infoObject(
           new CompilationInfo(pending_promise.device));
@@ -555,41 +565,33 @@ void WebGPUChild::ClearActorState() {
       promise::MaybeResolve(std::move(pending_promise.promise),
                             std::move(infoObject));
     }
-    // Reject the promise as if unmap() has been called, per spec.
-    else if (!mPendingBufferMapPromises.empty()) {
-      auto pending_promises = mPendingBufferMapPromises.begin();
-      auto pending_promise = std::move(pending_promises->second.front());
-      pending_promises->second.pop_front();
-      if (pending_promises->second.empty()) {
-        mPendingBufferMapPromises.erase(pending_promises->first);
-      }
+    mPendingCreateShaderModulePromises.clear();
+  }
 
-      // Unmap might have been called.
-      if (pending_promise.promise->State() !=
-          dom::Promise::PromiseState::Pending) {
-        continue;
+  // Reject the promise as if unmap() has been called, per spec.
+  {
+    for (auto& pending_promises : mPendingBufferMapPromises) {
+      for (auto& pending_promise : pending_promises.second) {
+        // Unmap might have been called.
+        if (pending_promise.promise->State() !=
+            dom::Promise::PromiseState::Pending) {
+          continue;
+        }
+        pending_promise.buffer->RejectMapRequestWithAbortError(
+            pending_promise.promise);
       }
-      pending_promise.buffer->RejectMapRequestWithAbortError(
-          pending_promise.promise);
     }
-    // Pretend this worked, per spec; see "Listen for timeline event".
-    else if (auto it = mPendingOnSubmittedWorkDonePromises.begin();
-             it != mPendingOnSubmittedWorkDonePromises.end()) {
-      auto& pending_promises = it->second;
-      MOZ_ASSERT(!pending_promises.empty(),
-                 "Empty queues should have been removed from the map");
+    mPendingBufferMapPromises.clear();
+  }
 
-      auto pending_promise = std::move(pending_promises.front());
-      pending_promises.pop_front();
-
-      if (pending_promises.empty()) {
-        mPendingOnSubmittedWorkDonePromises.erase(it);
+  // Pretend this worked, per spec; see "Listen for timeline event".
+  {
+    for (auto& pending_promises : mPendingOnSubmittedWorkDonePromises) {
+      for (auto& pending_promise : pending_promises.second) {
+        promise::MaybeResolveWithUndefined(std::move(pending_promise));
       }
-
-      promise::MaybeResolveWithUndefined(std::move(pending_promise));
-    } else {
-      break;
     }
+    mPendingOnSubmittedWorkDonePromises.clear();
   }
 }
 
