@@ -24,6 +24,7 @@ INSTALLER_FILES = \
   nsis/uninstaller.nsi \
   nsis/stub.nsi \
   nsis/stub.nsh \
+  nsis/stub_helpers.nsh \
   nsis/stub_shared_defs.nsh \
   nsis/shared.nsh \
   nsis/control_utils.nsh \

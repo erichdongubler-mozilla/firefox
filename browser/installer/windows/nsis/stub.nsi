@@ -28,6 +28,7 @@ Function CheckCpuSupportsSSE
 FunctionEnd
 
 !include "stub.nsh"
+!include stub_helpers.nsh
 
 Page custom createProfileCleanup
 Page custom createInstall ; Download / Installation page

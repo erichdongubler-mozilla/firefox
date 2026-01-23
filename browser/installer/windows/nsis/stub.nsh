@@ -409,26 +409,6 @@ Function getUIString
   ${EndSelect}
 FunctionEnd
 
-Function createProfileCleanup
-  ${If} $AbortInstallation != "false"
-    ; Abort in this context skips the "page"
-    Abort
-  ${EndIf}
-  Call ShouldPromptForProfileCleanup
-
-  ${If} $ProfileCleanupPromptType == 0
-    StrCpy $CheckboxCleanupProfile 0
-    Abort ; Skip this page
-  ${EndIf}
-
-  ${RegisterAllCustomFunctions}
-
-  File /oname=$PLUGINSDIR\profile_cleanup.html "profile_cleanup.html"
-  File /oname=$PLUGINSDIR\profile_cleanup_page.css "profile_cleanup_page.css"
-  File /oname=$PLUGINSDIR\profile_cleanup.js "profile_cleanup.js"
-  WebBrowser::ShowPage "$PLUGINSDIR\profile_cleanup.html"
-FunctionEnd
-
 Function createInstall
   ${If} $AbortInstallation != "false"
     ; Skip the installation, but first send the telemetry
