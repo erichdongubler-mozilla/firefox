@@ -216,6 +216,25 @@ export class AIWindow extends MozLitElement {
   }
 
   /**
+   * Processes tokens from the AI response stream and updates the message.
+   * Adds all tokens to their respective arrays in the tokens object and
+   * builds the memoriesApplied array for existing_memory tokens.
+   *
+   * @param {Array<{key: string, value: string}>} tokens - Array of parsed tokens from the stream
+   * @param {ChatMessage} currentMessage - The message object being updated
+   */
+  handleTokens = (tokens, currentMessage) => {
+    tokens.forEach(({ key, value }) => {
+      currentMessage.tokens[key].push(value);
+
+      // Build Applied Memories Array
+      if (key === "existing_memory") {
+        currentMessage.memoriesApplied.push(value);
+      }
+    });
+  };
+
+  /**
    * Fetches an AI response based on the current user prompt.
    * Validates the prompt, updates conversation state, streams the response,
    * and dispatches updates to the browser actor.
@@ -280,16 +299,17 @@ export class AIWindow extends MozLitElement {
           };
         }
 
+        if (!currentMessage.memoriesApplied) {
+          currentMessage.memoriesApplied = [];
+        }
+
         if (plainText) {
           currentMessage.content.body += plainText;
         }
 
         if (tokens?.length) {
-          tokens.forEach(token => {
-            currentMessage.tokens[token.key].push(token.value);
-          });
+          this.handleTokens(tokens, currentMessage);
         }
-
         this.#updateConversation();
         this.#dispatchMessageToChatContent(currentMessage);
         this.requestUpdate?.();
