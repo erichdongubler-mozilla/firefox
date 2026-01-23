@@ -5435,14 +5435,12 @@ bool HttpBaseChannel::ShouldTaintReplacementChannelOrigin(
     return false;
   }
 
-  // If new channel is not of same origin we need to taint unless
-  // mURI <-> mOriginalURI/LoadingPrincipal are same origin.
-  if (IsNewChannelSameOrigin(aNewChannel)) {
-    return false;
+  // If new channel is same origin to the redirecting channel we need to taint
+  if (!IsNewChannelSameOrigin(aNewChannel)) {
+    return true;
   }
 
   nsresult rv;
-
   if (mLoadInfo->GetLoadingPrincipal()) {
     bool sameOrigin = false;
     rv = mLoadInfo->GetLoadingPrincipal()->IsSameOrigin(mURI, &sameOrigin);
