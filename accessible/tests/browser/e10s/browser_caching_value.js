@@ -270,7 +270,7 @@ addAccessibleTask(
   <input id="combobox" role="combobox" aria-autocomplete="inline">
   <progress id="progress" value="22" max="100"></progress>
   <input type="range" id="range" min="0" max="10" value="6">
-  <div contenteditable="yes" role="textbox" id="textbox">Some   <a href="#">rich</a> text</div>
+  <div contenteditable="yes" role="textbox" id="textbox">Some   <a href="#" aria-label="label">rich</a> text</div>
   <input id="input" value="ab">
   <textarea id="textarea">ab</textarea>
   <input id="password" type="password" value="ab">`,

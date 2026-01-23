@@ -1756,10 +1756,11 @@ void LocalAccessible::Value(nsString& aValue) const {
 
   const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
 
-  // Value of textbox is a textified subtree.
+  // The value of a textbox is the text content from its subtree.
   if ((roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
       (IsGeneric() && IsEditableRoot())) {
-    nsTextEquivUtils::GetTextEquivFromSubtree(this, aValue);
+    TextLeafRange::FromAccessible(const_cast<LocalAccessible*>(this))
+        .GetFlattenedText(aValue);
     return;
   }
 
