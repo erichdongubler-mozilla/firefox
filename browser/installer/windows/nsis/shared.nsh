@@ -436,16 +436,6 @@ Function OnUpdateDesktopLauncherHandler
   Pop $0
 FunctionEnd
 
-; For new installs, install desktop launcher
-; TODO: This case needs more nuance. To be fixed as part of Bug 1981597
-Function OnInstallDesktopLauncherHandler
-  Push $0
-  ${SwapShellVarContext} current $0
-  Call InstallDesktopLauncher
-  ${SetShellVarContextToValue} $0
-  Pop $0
-FunctionEnd
-
 ; Adds shortcuts for this installation. This should also add the application
 ; to Open With for the file types the application handles (bug 370480).
 !macro ShowShortcuts

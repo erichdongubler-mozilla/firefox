@@ -100,6 +100,7 @@ Var PostSigningData
 !include defines.nsi
 !include common.nsh
 !include locales.nsi
+!include installer_helpers.nsh
 
 VIAddVersionKey "FileDescription" "${BrandShortName} Installer"
 VIAddVersionKey "OriginalFilename" "setup.exe"
