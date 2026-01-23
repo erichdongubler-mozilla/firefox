@@ -3216,9 +3216,11 @@ export class UrlbarView {
     } else {
       tabGroupAction?.remove();
     }
-
+    let isSplitViewActive = this.window.gBrowser.selectedTab.splitview;
     this.#l10nCache.setElementL10n(actionNode, {
-      id: "urlbar-result-action-switch-tab",
+      id: isSplitViewActive
+        ? "urlbar-result-action-move-tab-to-split-view"
+        : "urlbar-result-action-switch-tab",
     });
   }
 
@@ -3443,6 +3445,7 @@ export class UrlbarView {
       { id: "urlbar-result-action-switch-tab" },
       { id: "urlbar-result-action-visit" },
       { id: "urlbar-result-action-visit-from-clipboard" },
+      { id: "urlbar-result-action-move-tab-to-split-view" },
     ];
 
     if (lazy.UrlbarPrefs.get("groupLabels.enabled")) {

@@ -1532,18 +1532,20 @@ export class UrlbarInput extends HTMLElement {
           ),
         });
 
+        let activeSplitView = this.window.gBrowser.selectedTab.splitview;
+
         let switched = this.window.switchToTabHavingURI(
           Services.io.newURI(url),
           true,
           loadOpts,
-
+          activeSplitView ? activeSplitView : null,
           lazy.UrlbarProviderOpenTabs.isNonPrivateUserContextId(
             result.payload.userContextId
           )
             ? result.payload.userContextId
             : null
         );
-        if (switched && prevTab.isEmpty) {
+        if (switched && !activeSplitView && prevTab.isEmpty) {
           this.window.gBrowser.removeTab(prevTab);
         }
 
