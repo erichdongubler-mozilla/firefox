@@ -16,6 +16,8 @@ support-files = [
 
 ["browser_aichat_message.js"]
 
+["browser_aiwindow_account_auth.js"]
+
 ["browser_aiwindow_applied_memories_button.js"]
 
 ["browser_aiwindow_ask_button.js"]

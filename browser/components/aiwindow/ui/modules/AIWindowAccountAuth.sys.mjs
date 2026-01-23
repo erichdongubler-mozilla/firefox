@@ -40,6 +40,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.aiwindow.tos.hasConsent",
   false
 );
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "hasFirstrunCompleted",
+  "browser.aiwindow.firstrun.hasCompleted",
+  false
+);
 
 export const AIWindowAccountAuth = {
   get hasToSConsent() {
@@ -77,7 +83,7 @@ export const AIWindowAccountAuth = {
   async promptSignIn(browser) {
     try {
       const data = {
-        autoClose: false,
+        autoClose: lazy.hasFirstrunCompleted,
         entrypoint: "aiwindow",
         extraParams: {
           service: "aiwindow",
