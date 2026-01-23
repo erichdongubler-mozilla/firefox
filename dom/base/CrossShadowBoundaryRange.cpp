@@ -184,8 +184,7 @@ void CrossShadowBoundaryRange::ContentWillBeRemoved(nsIContent* aChild,
       // We're only interested if our boundary reference was removed, otherwise
       // we can just invalidate the offset.
       if (aChild == aBoundary.Ref()) {
-        return Some<RawRangeBoundary>(
-            {container, aChild->GetPreviousSibling(), TreeKind::Flat});
+        return Some(RawRangeBoundary::FromChild(*aChild, TreeKind::Flat));
       }
       RawRangeBoundary newBoundary(TreeKind::Flat);
       newBoundary.CopyFrom(aBoundary, RangeBoundarySetBy::Ref);

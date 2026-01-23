@@ -2185,8 +2185,8 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedStartPoint(
     // we hit generated content; STOP
     // XXX I think this comment is wrong, we should never reach here.
     if (NS_WARN_IF(!parentPointOrError.inspect().IsSet())) {
-      point = RawRangeBoundary(point.GetContainer(), nullptr, 0u,
-                               RangeBoundarySetBy::Ref, aPoint.GetTreeKind());
+      point = RawRangeBoundary::StartOfParent(
+          *point.GetContainer(), RangeBoundarySetBy::Ref, aPoint.GetTreeKind());
       break;
     }
     point = parentPointOrError.unwrap();
@@ -2251,13 +2251,13 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
       // If aPoint points a non-first child of the container, we should climb up
       // the tree from the previous sibling of the pointing child.
       else {
-        if (NS_WARN_IF(!*aPoint.Offset(OffsetFilter::kValidOrInvalidOffsets))) {
+        nsIContent* const previousSibling =
+            aPoint.GetPreviousSiblingOfChildAtOffset();
+        if (NS_WARN_IF(!previousSibling)) {
           return Err(NS_ERROR_FAILURE);
         }
-        point = RawRangeBoundary(
-            aPoint.GetContainer(),
-            *aPoint.Offset(OffsetFilter::kValidOrInvalidOffsets) - 1u,
-            RangeBoundarySetBy::Ref, aPoint.GetTreeKind());
+        point =
+            RawRangeBoundary::FromChild(*previousSibling, aPoint.GetTreeKind());
       }
     }
     // If the container of aPoint has no child node, we can climb up the tree
@@ -2322,8 +2322,8 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
     if (NS_WARN_IF(!isGeneratedContent)) {
       return Err(NS_ERROR_FAILURE);
     }
-    point =
-        RawRangeBoundary(point.GetContainer(), nullptr, point.GetTreeKind());
+    point = RawRangeBoundary::StartOfParent(
+        *point.GetContainer(), RangeBoundarySetBy::Ref, point.GetTreeKind());
     break;
   }
 
@@ -2331,8 +2331,8 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
     return aPoint;
   }
   // We want to be AFTER the node.
-  return RawRangeBoundary(point.GetContainer(), point.GetChildAtOffset(),
-                          point.GetTreeKind());
+  return RawRangeBoundary::After(*point.GetChildAtOffset(),
+                                 point.GetTreeKind());
 }
 
 bool nsHTMLCopyEncoder::IsMozBR(Element* aElement) {
