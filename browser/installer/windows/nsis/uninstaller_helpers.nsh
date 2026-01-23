@@ -5,6 +5,8 @@
 !ifndef UNINSTALLER_HELPERS_NSH
 !define UNINSTALLER_HELPERS_NSH
 
+!include get_installation_type.nsh
+
 /**
  * Called from the uninstaller's .onInit function not to be confused with the
  * installer's .onInit or the uninstaller's un.onInit functions.

@@ -108,7 +108,7 @@ Var TestFailureCount
 !define /redef ElevateUAC ``
 
 !include stub.nsh
-
+!include get_installation_type.nsh
 
 ; .onInit is responsible for running the tests
 Function .onInit

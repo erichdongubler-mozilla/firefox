@@ -31,6 +31,7 @@ INSTALLER_FILES = \
   nsis/control_utils.nsh \
   nsis/postupdate_helper.nsh \
   nsis/test_stub.nsi \
+  nsis/get_installation_type.nsh \
   stub.tag \
   $(NULL)
 
