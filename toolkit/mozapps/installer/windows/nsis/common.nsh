@@ -3469,7 +3469,6 @@
   !ifndef ${_MOZFUNC_UN}CleanMaintenanceServiceLogs
     !define _MOZFUNC_UN_TMP ${_MOZFUNC_UN}
     !insertmacro ${_MOZFUNC_UN_TMP}GetLongPath
-    !insertmacro ${_MOZFUNC_UN_TMP}GetCommonDirectory
     !undef _MOZFUNC_UN
     !define _MOZFUNC_UN ${_MOZFUNC_UN_TMP}
     !undef _MOZFUNC_UN_TMP

@@ -114,8 +114,8 @@ VIAddVersionKey "OriginalFilename" "helper.exe"
 !insertmacro un.CheckForFilesInUse
 !insertmacro un.CleanMaintenanceServiceLogs
 !insertmacro un.CleanVirtualStore
-!insertmacro un.DeleteShortcuts
 !insertmacro un.GetCommonDirectory
+!insertmacro un.DeleteShortcuts
 !insertmacro un.GetLongPath
 !insertmacro un.GetSecondInstallPath
 !insertmacro un.InitHashAppModelId
