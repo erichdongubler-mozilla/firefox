@@ -1137,7 +1137,6 @@ export class UserCharacteristicsPageService {
       "media.av1.enabled",
       "media.encoder.webm.enabled",
       "media.mediasource.enabled",
-      "media.mediasource.webm.enabled",
       "media.mediasource.vp9.enabled",
     ];
 
