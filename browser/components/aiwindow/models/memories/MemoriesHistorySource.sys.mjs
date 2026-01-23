@@ -7,6 +7,7 @@
  */
 
 import { PlacesUtils } from "resource://gre/modules/PlacesUtils.sys.mjs";
+import { BlockListManager } from "chrome://global/content/ml/Utils.sys.mjs";
 
 const MS_PER_DAY = 86_400_000;
 const MICROS_PER_MS = 1_000;
@@ -47,6 +48,8 @@ const SEARCH_ENGINE_PATTERN = new RegExp(
   `(^|\\.)(${SEARCH_ENGINE_DOMAINS.map(escapeRe).join("|")})\\.`,
   "i"
 );
+
+let _mgr = BlockListManager.initializeFromDefault({ language: "en" });
 
 /**
  * Fetch recent browsing history from Places (SQL), aggregate by URL,
@@ -212,6 +215,9 @@ export async function getRecentHistory(opts = {}) {
             title = onlyTitle + " | " + host;
           } else {
             title = onlyTitle;
+          }
+          if (_mgr.matchAtWordBoundary({ text: title.toLowerCase() })) {
+            continue;
           }
           const visitDateMicros = row.getResultByName("visit_date") || 0;
           const frequencyPct = row.getResultByName("frecency_pct") || 0;
@@ -753,4 +759,9 @@ function getOrInit(mapObj, key, initFn) {
 
 function round2(x) {
   return Math.round(Number(x) * 100) / 100;
+}
+
+// for tests only
+export function _setBlockListManagerForTesting(mgr) {
+  _mgr = mgr;
 }
