@@ -10,19 +10,8 @@ const { LINKS } = ChromeUtils.importESModule(
 const lazy = {};
 
 add_task(async function test_paused_content() {
-  setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
-    canEnroll: true,
-    proxyPass: {
-      status: 200,
-      error: undefined,
-      pass: makePass(),
-    },
-  });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
-
   let content = await openPanel({
+    isSignedOut: false,
     paused: true,
   });
 
@@ -61,5 +50,4 @@ add_task(async function test_paused_content() {
 
   await setPanelState();
   BrowserTestUtils.removeTab(newTab);
-  cleanupService();
 });

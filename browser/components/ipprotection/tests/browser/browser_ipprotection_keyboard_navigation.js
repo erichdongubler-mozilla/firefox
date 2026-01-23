@@ -26,20 +26,10 @@ async function expectFocusAfterKey(aKey, aFocus) {
  * and that the help button responds to the Enter key
  */
 add_task(async function test_keyboard_navigation_in_panel() {
-  setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
-    canEnroll: true,
-    proxyPass: {
-      status: 200,
-      error: undefined,
-      pass: makePass(),
-    },
-  });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
-
   const openLinkStub = sinon.stub(window, "openWebLinkIn");
-  let content = await openPanel();
+  let content = await openPanel({
+    isSignedOut: false,
+  });
 
   Assert.ok(
     BrowserTestUtils.isVisible(content),
@@ -52,13 +42,6 @@ add_task(async function test_keyboard_navigation_in_panel() {
       `#${IPProtectionPanel.HEADER_BUTTON_ID}`
     )
   );
-
-  await BrowserTestUtils.waitForMutationCondition(
-    content.shadowRoot,
-    { childList: true, subtree: true },
-    () => content.statusCardEl
-  );
-
   let statusCard = content.statusCardEl;
 
   await expectFocusAfterKey("Tab", statusCard.connectionToggleEl);
@@ -95,5 +78,4 @@ add_task(async function test_keyboard_navigation_in_panel() {
   await panelHiddenPromise;
   Assert.ok(openLinkStub.calledOnce, "help button should open a link");
   openLinkStub.restore();
-  cleanupService();
 });

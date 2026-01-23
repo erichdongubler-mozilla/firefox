@@ -12,7 +12,7 @@ import {
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/ipprotection/ipprotection-message-bar.mjs";
 // eslint-disable-next-line import/no-unassigned-import
-import "chrome://browser/content/ipprotection/ipprotection-unauthenticated.mjs";
+import "chrome://browser/content/ipprotection/ipprotection-signedout.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/ipprotection/ipprotection-status-card.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -20,21 +20,12 @@ import "chrome://browser/content/ipprotection/ipprotection-status-box.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-toggle.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
-  IPProtectionService:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
-  IPProtectionStates:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
-});
-
 /**
  * Custom element that implements a message bar and status card for IP protection.
  */
 export default class IPProtectionContentElement extends MozLitElement {
   static queries = {
-    unauthenticatedEl: "ipprotection-unauthenticated",
+    signedOutEl: "ipprotection-signedout",
     messagebarEl: "ipprotection-message-bar",
     statusCardEl: "ipprotection-status-card",
     upgradeEl: "#upgrade-vpn-content",
@@ -134,10 +125,8 @@ export default class IPProtectionContentElement extends MozLitElement {
   }
 
   focus() {
-    if (
-      lazy.IPProtectionService.state === lazy.IPProtectionStates.UNAUTHENTICATED
-    ) {
-      this.unauthenticatedEl?.focus();
+    if (this.state.isSignedOut) {
+      this.signedOutEl?.focus();
     } else {
       this.statusCardEl?.focus();
     }
@@ -282,19 +271,14 @@ export default class IPProtectionContentElement extends MozLitElement {
             href="chrome://browser/content/ipprotection/ipprotection-content.css"
           />
           <div id="upgrade-vpn-content">
-            <h2
-              id="upgrade-vpn-title"
-              class="vpn-title"
-              data-l10n-id="upgrade-vpn-title"
-            ></h2>
+            <h2 id="upgrade-vpn-title" data-l10n-id="upgrade-vpn-title"></h2>
             <span
               id="upgrade-vpn-description"
               data-l10n-id="upgrade-vpn-description"
-              class="vpn-description text-deemphasized"
+              class="text-deemphasized"
             ></span>
             <moz-button
               id="upgrade-vpn-button"
-              class="vpn-button"
               type="primary"
               data-l10n-id="upgrade-vpn-button"
               @click=${this.handleUpgrade}
@@ -342,12 +326,9 @@ export default class IPProtectionContentElement extends MozLitElement {
   }
 
   mainContentTemplate() {
-    if (
-      lazy.IPProtectionService.state === lazy.IPProtectionStates.UNAUTHENTICATED
-    ) {
-      return html`
-        <ipprotection-unauthenticated></ipprotection-unauthenticated>
-      `;
+    // TODO: Update support-page with new SUMO link for Mozilla VPN - Bug 1975474
+    if (this.state.isSignedOut) {
+      return html` <ipprotection-signedout></ipprotection-signedout> `;
     }
 
     if (this.state.paused) {

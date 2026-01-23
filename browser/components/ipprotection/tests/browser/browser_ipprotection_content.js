@@ -9,27 +9,15 @@ const { LINKS } = ChromeUtils.importESModule(
 );
 const lazy = {};
 
-const { sinon } = ChromeUtils.importESModule(
-  "resource://testing-common/Sinon.sys.mjs"
-);
-
 ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionWidget:
     "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
   IPProtectionPanel:
     "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs",
-  IPProtectionService:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
-  IPPSignInWatcher:
-    "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs",
-  IPPNimbusHelper:
-    "moz-src:///browser/components/ipprotection/IPPNimbusHelper.sys.mjs",
 });
 
-async function setAndUpdateIsAuthenticated(content, isSignedOut, sandbox) {
-  sandbox.stub(lazy.IPPSignInWatcher, "isSignedIn").get(() => !isSignedOut);
-  sandbox.stub(lazy.IPPNimbusHelper, "isEligible").get(() => true);
-  lazy.IPProtectionService.updateState();
+async function setAndUpdateIsSignedOut(content, isSignedOut) {
+  content.state.isSignedOut = isSignedOut;
   content.requestUpdate();
   await content.updateComplete;
 }
@@ -44,8 +32,6 @@ async function resetStateToObj(content, originalState) {
  * Tests that the ip protection main panel view has the correct content.
  */
 add_task(async function test_main_content() {
-  let sandbox = sinon.createSandbox();
-
   let button = document.getElementById(lazy.IPProtectionWidget.WIDGET_ID);
   let panelView = PanelMultiView.getViewNode(
     document,
@@ -61,7 +47,7 @@ add_task(async function test_main_content() {
 
   let originalState = structuredClone(content.state);
 
-  await setAndUpdateIsAuthenticated(content, false, sandbox);
+  await setAndUpdateIsSignedOut(content, false);
 
   Assert.ok(
     BrowserTestUtils.isVisible(content),
@@ -75,6 +61,4 @@ add_task(async function test_main_content() {
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
   EventUtils.synthesizeKey("KEY_Escape");
   await panelHiddenPromise;
-
-  sandbox.restore();
 });
