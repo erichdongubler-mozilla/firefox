@@ -5621,7 +5621,7 @@
         ${EndUnless}
       ${EndUnless}
 
-      StrCmp "$R0" "" continue +1
+      StrCmp "$R0" "" continue hideshortcuts
 
       ; Require elevation if the user can elevate
       hideshortcuts:
