@@ -6,7 +6,7 @@ android-lint = "31.13.2"
 # Kotlin
 coroutines = "1.10.2"
 kotlin = "2.3.0"
-serialization = "1.9.0"
+serialization = "1.10.0"
 
 # AndroidX
 activity = "1.12.2"
