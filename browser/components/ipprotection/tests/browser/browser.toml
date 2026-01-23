@@ -18,7 +18,7 @@ prefs = [
 
 ["browser_ipprotection_content.js"]
 
-["browser_ipprotection_content_signedout.js"]
+["browser_ipprotection_content_unauthenticated.js"]
 
 ["browser_ipprotection_content_site_exclusion.js"]
 

@@ -33,9 +33,10 @@ ipprotection-feature-introduction-button-secondary-no-thanks = No thanks
 
 ## Panel
 
-signed-out-vpn-title = Sign in to boost your browser’s privacy with free VPN
-signed-out-vpn-message = You’ve been selected for early access to our new, <a data-l10n-name="learn-more-vpn-signed-out">built-in VPN</a>. Enhance your browser’s protection by hiding your location and encrypting your traffic.
-sign-in-vpn = Next
+unauthenticated-vpn-title =Try { -brand-product-name }’s built-in VPN
+unauthenticated-hide-location-message = Hide your location and add extra encryption to your browsing inside { -brand-product-name }.
+unauthenticated-bandwidth-limit-message = Get 150 GB of free VPN data every month.
+unauthenticated-get-started = Get started
 
 site-exclusion-toggle-label = Use VPN for this site
 site-exclusion-toggle-enabled =
