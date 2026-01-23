@@ -95,11 +95,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 const PASSWORD_FIELDNAME_HINTS = ["current-password", "new-password"];
 const USERNAME_FIELDNAME_HINT = "username";
 
-const ALLOWED_CHROME_IMAGE_URLS = new Set([
-  "chrome://global/skin/illustrations/security-error.svg",
-  "chrome://global/skin/illustrations/no-connection.svg",
-]);
-
 export class nsContextMenu {
   /**
    * A promise to retrieve the translations language pair
@@ -1754,12 +1749,9 @@ export class nsContextMenu {
         });
       }, console.error);
     } else {
-      const isAllowedChromeImage = ALLOWED_CHROME_IMAGE_URLS.has(this.mediaURL);
-      const principal = isAllowedChromeImage ? systemPrincipal : this.principal;
-
       this.window.urlSecurityCheck(
         this.mediaURL,
-        principal,
+        this.principal,
         Ci.nsIScriptSecurityManager.DISALLOW_SCRIPT
       );
 
@@ -1767,7 +1759,7 @@ export class nsContextMenu {
       this.window.openLinkIn(this.mediaURL, where, {
         referrerInfo,
         forceAllowDataURI: true,
-        triggeringPrincipal: principal,
+        triggeringPrincipal: this.principal,
         triggeringRemoteType: this.remoteType,
         policyContainer: this.policyContainer,
       });
@@ -2158,12 +2150,7 @@ export class nsContextMenu {
         );
       }, console.error);
     } else if (this.onImage) {
-      const isAllowedChromeImage = ALLOWED_CHROME_IMAGE_URLS.has(this.mediaURL);
-      const principal = isAllowedChromeImage
-        ? Services.scriptSecurityManager.getSystemPrincipal()
-        : this.principal;
-
-      this.window.urlSecurityCheck(this.mediaURL, principal);
+      this.window.urlSecurityCheck(this.mediaURL, this.principal);
       this.window.internalSave(
         this.mediaURL,
         null, // originalURL
@@ -2180,7 +2167,7 @@ export class nsContextMenu {
         false, // don't skip prompt for where to save
         null, // cache key
         isPrivate,
-        principal
+        this.principal
       );
     } else if (this.onVideo || this.onAudio) {
       let defaultFileName = "";
