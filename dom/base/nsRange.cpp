@@ -1243,7 +1243,7 @@ void nsRange::SetStartInternal(
   // versus Flat RangeBoundary.
   auto pointInFlat =
       aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes
-          ? Some(aPoint.AsRangeBoundaryInFlatTree())
+          ? Some(aPoint.AsRangeBoundaryInFlatTree(RangeBoundaryFor::Start))
           : Nothing();
   MOZ_ASSERT_IF(pointInFlat.isSome(), pointInFlat->IsSetAndValid());
 
@@ -1260,7 +1260,8 @@ void nsRange::SetStartInternal(
         if (MayCrossShadowBoundaryEndRef() != mEnd) {
           CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
               pointInFlat.ref(),
-              MayCrossShadowBoundaryEndRef().AsRangeBoundaryInFlatTree());
+              MayCrossShadowBoundaryEndRef().AsRangeBoundaryInFlatTree(
+                  RangeBoundaryFor::End));
         }
       }
       if (aPoint.IsSetAndValid()) {
@@ -1277,7 +1278,8 @@ void nsRange::SetStartInternal(
                  AllowRangeCrossShadowBoundary::Yes);
       CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
           pointInFlat.ref(),
-          MayCrossShadowBoundaryEndRef().AsRangeBoundaryInFlatTree());
+          MayCrossShadowBoundaryEndRef().AsRangeBoundaryInFlatTree(
+              RangeBoundaryFor::End));
       if (aPoint.IsSetAndValid()) {
         DoSetRange(aPoint, aPoint, newRoot, false, behaviour);
       }
@@ -1364,7 +1366,7 @@ void nsRange::SetEndInternal(
   // versus Flat RangeBoundary.
   const Maybe<RawRangeBoundary> pointInFlat =
       aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes
-          ? Some(aPoint.AsRangeBoundaryInFlatTree())
+          ? Some(aPoint.AsRangeBoundaryInFlatTree(RangeBoundaryFor::End))
           : Nothing();
   if (NS_WARN_IF(pointInFlat && !pointInFlat->IsSetAndValid())) {
     aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
@@ -1383,7 +1385,8 @@ void nsRange::SetEndInternal(
       if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
         if (MayCrossShadowBoundaryStartRef() != mStart) {
           CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
-              MayCrossShadowBoundaryStartRef().AsRangeBoundaryInFlatTree(),
+              MayCrossShadowBoundaryStartRef().AsRangeBoundaryInFlatTree(
+                  RangeBoundaryFor::Start),
               pointInFlat.ref());
         }
       }
@@ -1400,7 +1403,8 @@ void nsRange::SetEndInternal(
       MOZ_ASSERT(aAllowCrossShadowBoundary ==
                  AllowRangeCrossShadowBoundary::Yes);
       CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
-          MayCrossShadowBoundaryStartRef().AsRangeBoundaryInFlatTree(),
+          MayCrossShadowBoundaryStartRef().AsRangeBoundaryInFlatTree(
+              RangeBoundaryFor::Start),
           pointInFlat.ref());
       if (aPoint.IsSetAndValid()) {
         DoSetRange(aPoint, aPoint, newRoot, false, policy);
