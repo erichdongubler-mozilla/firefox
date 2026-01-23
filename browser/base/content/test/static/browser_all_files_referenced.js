@@ -348,10 +348,6 @@ var allowlist = [
   {
     file: "chrome://browser/content/aiwindow/components/ai-website-chip.mjs",
   },
-  // Bug 2001456 - Toggle memories button for ai window
-  {
-    file: "chrome://browser/content/aiwindow/components/memories-icon-button.mjs",
-  },
   // Bug 2011266 - Integrate current tab website chip context in sidebar
   {
     file: "chrome://browser/content/aiwindow/components/website-chip-container.mjs",

@@ -10,6 +10,10 @@ import {
   flushTokenRemainder,
 } from "chrome://browser/content/aiwindow/modules/TokenStreamParser.mjs";
 
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   Chat: "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs",
@@ -19,9 +23,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   ChatConversation:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
+  MEMORIES_FLAG_SOURCE:
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatEnums.sys.mjs",
   MESSAGE_ROLE:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatEnums.sys.mjs",
   AssistantRoleOpts:
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs",
+  UserRoleOpts:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs",
   getRoleLabel:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatUtils.sys.mjs",
@@ -36,19 +44,21 @@ ChromeUtils.defineLazyGetter(lazy, "log", function () {
 
 const FULLPAGE = "fullpage";
 const SIDEBAR = "sidebar";
+const PREF_MEMORIES = "browser.aiwindow.memories";
 
 /**
  * A custom element for managing AI Window
  */
 export class AIWindow extends MozLitElement {
   static properties = {
-    userPrompt: { type: String },
     mode: { type: String }, // sidebar | fullpage
   };
 
   #browser;
   #smartbar;
   #conversation;
+  #memoriesButton = null;
+  #memoriesToggled = null;
   #visibilityChangeHandler;
 
   #detectModeFromContext() {
@@ -57,10 +67,39 @@ export class AIWindow extends MozLitElement {
       : FULLPAGE;
   }
 
+  #syncSmartbarMemoriesStateFromConversation() {
+    if (!this.#smartbar) {
+      return;
+    }
+
+    const lastUserMessage =
+      this.#conversation?.messages?.findLast?.(m => m.role === "user") ?? null;
+    if (
+      lastUserMessage?.memoriesFlagSource ===
+      lazy.MEMORIES_FLAG_SOURCE.CONVERSATION
+    ) {
+      this.#memoriesToggled = lastUserMessage.memoriesEnabled;
+    }
+    this.#syncMemoriesButtonUI();
+  }
+
+  #syncMemoriesButtonUI() {
+    this.#memoriesButton.disabled = !this.memoriesPref;
+    this.#memoriesButton.pressed =
+      this.memoriesPref && (this.#memoriesToggled ?? this.memoriesPref);
+  }
+
   constructor() {
     super();
 
-    this.userPrompt = "";
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "memoriesPref",
+      PREF_MEMORIES,
+      null,
+      () => this.#syncMemoriesButtonUI()
+    );
+
     this.#browser = null;
     this.#smartbar = null;
     this.#conversation = new lazy.ChatConversation({});
@@ -87,8 +126,13 @@ export class AIWindow extends MozLitElement {
         "smartbar-commit",
         this.#handleSmartbarCommit
       );
+      this.#smartbar.removeEventListener(
+        "aiwindow-memories-toggle:on-change",
+        this.#handleMemoriesToggle
+      );
       this.#smartbar.remove();
       this.#smartbar = null;
+      this.#memoriesButton = null;
     }
 
     // Clean up browser
@@ -157,8 +201,14 @@ export class AIWindow extends MozLitElement {
       container.append(smartbar);
 
       smartbar.addEventListener("smartbar-commit", this.#handleSmartbarCommit);
+      smartbar.addEventListener(
+        "aiwindow-memories-toggle:on-change",
+        this.#handleMemoriesToggle
+      );
     }
     this.#smartbar = smartbar;
+    this.#memoriesButton = smartbar.querySelector("memories-icon-button");
+    this.#syncSmartbarMemoriesStateFromConversation();
   }
 
   /**
@@ -170,9 +220,21 @@ export class AIWindow extends MozLitElement {
   #handleSmartbarCommit = event => {
     const { value, action } = event.detail;
     if (action === "chat") {
-      this.userPrompt = value;
-      this.#fetchAIResponse();
+      const userOpts = new lazy.UserRoleOpts({
+        memoriesEnabled: this.#memoriesToggled ?? this.memoriesPref,
+        memoriesFlagSource:
+          this.#memoriesToggled == null
+            ? lazy.MEMORIES_FLAG_SOURCE.GLOBAL
+            : lazy.MEMORIES_FLAG_SOURCE.CONVERSATION,
+      });
+
+      this.#fetchAIResponse(value, userOpts);
     }
+  };
+
+  #handleMemoriesToggle = event => {
+    this.#memoriesToggled = event.detail.pressed;
+    this.#syncMemoriesButtonUI();
   };
 
   /**
@@ -242,8 +304,8 @@ export class AIWindow extends MozLitElement {
    * @private
    */
 
-  #fetchAIResponse = async () => {
-    const formattedPrompt = (this.userPrompt || "").trim();
+  #fetchAIResponse = async (inputText, userOpts = undefined) => {
+    const formattedPrompt = (inputText || "").trim();
     if (!formattedPrompt) {
       return;
     }
@@ -266,14 +328,15 @@ export class AIWindow extends MozLitElement {
       const pageUrl = URL.fromURI(
         window.browsingContext.topChromeWindow.gBrowser.currentURI
       );
-
       const stream = lazy.Chat.fetchWithHistory(
-        await this.#conversation.generatePrompt(formattedPrompt, pageUrl)
+        await this.#conversation.generatePrompt(
+          formattedPrompt,
+          pageUrl,
+          userOpts
+        )
       );
       this.#updateConversation();
       this.#addConversationTitle();
-      this.userPrompt = "";
-
       // @todo
       // fill out these assistant message flags
       const assistantRoleOpts = new lazy.AssistantRoleOpts();

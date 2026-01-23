@@ -8,7 +8,7 @@ const { ChatConversation, MESSAGE_ROLE, ChatMessage } =
     "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs"
   );
 
-const { SYSTEM_PROMPT_TYPE } = ChromeUtils.importESModule(
+const { MEMORIES_FLAG_SOURCE, SYSTEM_PROMPT_TYPE } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatEnums.sys.mjs"
 );
 
@@ -190,7 +190,7 @@ add_task(function test_opts_ChatConversation_addUserMessage() {
   conversation.addUserMessage(
     content,
     "https://www.firefox.com",
-    new UserRoleOpts("321")
+    new UserRoleOpts({ revisionRootMessageId: "321" })
   );
 
   const message = conversation.messages[0];
@@ -700,7 +700,7 @@ add_task(
       .resolves({ content: "memories data" });
 
     const conversation = new ChatConversation({});
-    await conversation.getMemoriesContext(constructMemories);
+    await conversation.getMemoriesContext("hello", constructMemories);
 
     Assert.withSoftAssertions(function (soft) {
       soft.equal(conversation.messages[0].role, 2);
@@ -718,8 +718,35 @@ add_task(
     const constructMemories = lazy.sinon.stub().resolves({});
 
     const conversation = new ChatConversation({});
-    await conversation.getMemoriesContext(constructMemories);
+    await conversation.getMemoriesContext("hello", constructMemories);
 
     Assert.equal(conversation.messages.length, 0);
   }
 );
+
+add_task(async function test_addUserMessage_sets_memories_fields() {
+  const conversation = new ChatConversation({});
+
+  const userOpts = new UserRoleOpts({
+    memoriesEnabled: false,
+    memoriesFlagSource: MEMORIES_FLAG_SOURCE.CONVERSATION,
+  });
+
+  await conversation.addUserMessage("hello", null, userOpts);
+
+  const lastUserMessage = conversation.messages
+    .filter(m => m.role === MESSAGE_ROLE.USER)
+    .at(-1);
+
+  Assert.ok(lastUserMessage, "Last user message exists");
+  Assert.equal(
+    lastUserMessage.memoriesEnabled,
+    false,
+    "memoriesEnabled is persisted on the user message"
+  );
+  Assert.equal(
+    lastUserMessage.memoriesFlagSource,
+    MEMORIES_FLAG_SOURCE.CONVERSATION,
+    "memoriesFlagSource is persisted on the user message"
+  );
+});
