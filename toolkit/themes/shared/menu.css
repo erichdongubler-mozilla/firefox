@@ -235,6 +235,9 @@ menucaption {
 
 menu,
 menuitem {
+  -moz-context-properties: fill;
+  fill: var(--menuitem-icon-fill);
+
   &:where([disabled]) {
     color: var(--text-color-disabled);
     text-shadow: none;
@@ -337,8 +340,6 @@ menuitem[highlightable] > .menu-text {
   width: 16px;
   height: 16px;
   box-sizing: border-box;
-  -moz-context-properties: fill;
-  fill: var(--menuitem-icon-fill);
 
   /* Empty icons shouldn't take up any space */
   display: none;

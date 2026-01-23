@@ -2618,17 +2618,21 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
 .tab-group-icon.tab-group-icon {
   list-style-image: url("chrome://browser/skin/tabbrowser/tab-group-chicklet.svg");
   --menuitem-icon: url("chrome://browser/skin/tabbrowser/tab-group-chicklet.svg");
+  --menuitem-icon-fill: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
   -moz-context-properties: fill, stroke;
-  fill: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
   stroke: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
 
+  > .toolbarbutton-icon {
+    fill: var(--menuitem-icon-fill);
+  }
+
   &.tab-group-icon-collapsed {
-    fill: light-dark(var(--tab-group-color-pale), var(--tab-group-color));
+    --menuitem-icon-fill: light-dark(var(--tab-group-color-pale), var(--tab-group-color));
     stroke: light-dark(var(--tab-group-color), var(--tab-group-color-pale));
   }
 
   &.tab-group-icon-closed {
-    fill: transparent;
+    --menuitem-icon-fill: transparent;
     stroke: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
   }
 }
