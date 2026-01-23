@@ -352,7 +352,12 @@ already_AddRefed<BindGroupLayout> Device::CreateBindGroupLayout(
     ffi::WGPUBindGroupLayoutEntry e = {};
     e.binding = entry.mBinding;
     e.visibility = entry.mVisibility;
+
+    size_t numTypesSpecified = 0;
+    auto markTypeFound = [&numTypesSpecified]() { numTypesSpecified += 1; };
+
     if (entry.mBuffer.WasPassed()) {
+      markTypeFound();
       switch (entry.mBuffer.Value().mType) {
         case dom::GPUBufferBindingType::Uniform:
           e.ty = ffi::WGPURawBindingType_UniformBuffer;
@@ -368,12 +373,14 @@ already_AddRefed<BindGroupLayout> Device::CreateBindGroupLayout(
       e.min_binding_size = entry.mBuffer.Value().mMinBindingSize;
     }
     if (entry.mTexture.WasPassed()) {
+      markTypeFound();
       e.ty = ffi::WGPURawBindingType_SampledTexture;
       e.view_dimension = &optional[i].dim;
       e.texture_sample_type = &optional[i].type;
       e.multisampled = entry.mTexture.Value().mMultisampled;
     }
     if (entry.mStorageTexture.WasPassed()) {
+      markTypeFound();
       switch (entry.mStorageTexture.Value().mAccess) {
         case dom::GPUStorageTextureAccess::Write_only: {
           e.ty = ffi::WGPURawBindingType_WriteonlyStorageTexture;
@@ -395,6 +402,7 @@ already_AddRefed<BindGroupLayout> Device::CreateBindGroupLayout(
       e.storage_texture_format = &optional[i].format;
     }
     if (entry.mSampler.WasPassed()) {
+      markTypeFound();
       e.ty = ffi::WGPURawBindingType_Sampler;
       switch (entry.mSampler.Value().mType) {
         case dom::GPUSamplerBindingType::Filtering:
@@ -408,8 +416,26 @@ already_AddRefed<BindGroupLayout> Device::CreateBindGroupLayout(
       }
     }
     if (entry.mExternalTexture.WasPassed()) {
+      markTypeFound();
       e.ty = ffi::WGPURawBindingType_ExternalTexture;
     }
+
+    switch (numTypesSpecified) {
+      case 1:
+        // This is what we want. 👍
+        break;
+
+      case 0:
+        e.ty = ffi::WGPURawBindingType_Error;
+        e.error_case = ffi::WGPUBindingTypeError_NoneSpecified;
+        break;
+
+      default:
+        e.ty = ffi::WGPURawBindingType_Error;
+        e.error_case = ffi::WGPUBindingTypeError_MultipleSpecified;
+        break;
+    }
+
     entries.AppendElement(e);
   }
 
