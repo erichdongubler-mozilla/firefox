@@ -248,8 +248,6 @@ nsresult StorageDBThread::Shutdown() {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  auto timer = glean::localdomstorage::shutdown_database.Measure();
-
   {
     MonitorAutoLock monitor(mThreadObserver->GetMonitor());
 
