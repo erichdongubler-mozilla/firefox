@@ -327,13 +327,13 @@ class RangeBoundaryBase {
       MOZ_ASSERT(*Offset(OffsetFilter::kValidOffsets) == 0,
                  "invalid RangeBoundary");
       nsIContent* firstChild = GetFirstChild(mParent);
-      if (!firstChild) {
+      if (NS_WARN_IF(!firstChild)) {
         // Already referring the end of the container.
         return nullptr;
       }
       return GetNextSibling(firstChild);
     }
-    if (!GetNextSibling(ref)) {
+    if (NS_WARN_IF(!GetNextSibling(ref))) {
       // Already referring the end of the container.
       return nullptr;
     }
@@ -350,7 +350,7 @@ class RangeBoundaryBase {
       return nullptr;
     }
     RawRefType* const ref = Ref();
-    if (!ref) {
+    if (NS_WARN_IF(!ref)) {
       // Already referring the start of the container.
       return nullptr;
     }
