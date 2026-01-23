@@ -191,6 +191,10 @@ pub enum RawBindingType {
     ExternalTexture,
 }
 
+/// An FFI-friendly representation of a [`wgt::BindGroupLayoutEntry`].
+///
+/// This is implemented using a "poor person's tagged union". Most fields are expected to be set
+/// only with a specific variant of [`Self::ty`], but all are present at all times.
 #[repr(C)]
 pub struct BindGroupLayoutEntry<'a> {
     binding: u32,
