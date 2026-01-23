@@ -581,6 +581,26 @@ Preferences.addSetting(
     static id = "engineList";
 
     /**
+     * @type {?Map<Values<typeof lazy.UrlbarUtils.RESULT_SOURCE>, string[]>}
+     *   This maps local shortcut sources to their l10n names. The first item
+     *   in the string array is the display name for the local source.
+     *   All items in the string should be used for displaying as aliases.
+     */
+    #localShortcutL10nNames = null;
+
+    setup() {
+      Services.obs.addObserver(
+        this.emitChange,
+        "browser-search-engine-modified"
+      );
+      return () =>
+        Services.obs.removeObserver(
+          this.emitChange,
+          "browser-search-engine-modified"
+        );
+    }
+
+    /**
      * Gets and caches the l10n names for the local shortcut sources.
      */
     async getL10nNames() {
@@ -792,6 +812,12 @@ Preferences.addSetting(
       return configs;
     }
 
+    async onUserReorder(event) {
+      const { draggedElement, targetIndex } = event.detail;
+      let draggedEngineName = draggedElement.label;
+      let draggedEngine = lazy.SearchService.getEngineByName(draggedEngineName);
+      await lazy.SearchService.moveEngine(draggedEngine, targetIndex);
+    }
     async getControlConfig() {
       return {
         items: [
@@ -800,14 +826,6 @@ Preferences.addSetting(
         ],
       };
     }
-
-    /**
-     * @type {?Map<Values<typeof lazy.UrlbarUtils.RESULT_SOURCE>, string[]>}
-     *   This maps local shortcut sources to their l10n names. The first item
-     *   in the string array is the display name for the local source.
-     *   All items in the string should be used for displaying as aliases.
-     */
-    #localShortcutL10nNames = null;
   }
 );
 
