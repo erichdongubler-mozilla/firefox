@@ -4027,20 +4027,24 @@ const gRemoteControl = {
  * @param aUserContextId
  *        If not null, will switch to the first found tab having the provided
  *        userContextId.
+ * @param aSplitView
+ *        If not null, will move the tab to the active split view instead of switching to tab
  * @return True if an existing tab was found, false otherwise
  */
 function switchToTabHavingURI(
   aURI,
   aOpenNew,
   aOpenParams = {},
-  aUserContextId = null
+  aUserContextId = null,
+  aSplitView = null
 ) {
   return URILoadingHelper.switchToTabHavingURI(
     window,
     aURI,
     aOpenNew,
     aOpenParams,
-    aUserContextId
+    aUserContextId,
+    aSplitView
   );
 }
 
