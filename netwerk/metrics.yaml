@@ -1760,13 +1760,14 @@ networking:
       Whether the request is crossing to a more private addresspace
     bugs:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2010463
     data_reviews:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     notification_emails:
      - smayya@mozilla.com
      - vgosu@mozilla.com
      - necko@gmail.com
-    expires: 150
+    expires: 155
     labels:
       - private_to_local_http
       - private_to_local_https
@@ -1788,13 +1789,14 @@ networking:
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010463
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     notification_emails:
      - smayya@mozilla.com
      - vgosu@mozilla.com
      - necko@gmail.com
-    expires: 150
+    expires: 155
 
   local_network_access_prompts_shown:
     type: labeled_counter
@@ -1804,13 +1806,14 @@ networking:
       are used when the requesting origin differs from the top-level origin.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010463
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     notification_emails:
       - smayya@mozilla.com
       - vgosu@mozilla.com
-      - necko@gmail.com
-    expires: 150
+      - necko@mozilla.com
+    expires: 155
     labels:
       - localhost
       - local_network
