@@ -83,13 +83,11 @@ class WebAuthnHandler final : public AbortFollower {
     MOZ_ASSERT(aWindow);
   }
 
-  void MakeCredential(JSContext* aCx,
-                      const PublicKeyCredentialCreationOptions& aOptions,
+  void MakeCredential(const PublicKeyCredentialCreationOptions& aOptions,
                       const Optional<OwningNonNull<AbortSignal>>& aSignal,
                       const RefPtr<Promise>& aPromise);
 
-  void GetAssertion(JSContext* aCx,
-                    const PublicKeyCredentialRequestOptions& aOptions,
+  void GetAssertion(const PublicKeyCredentialRequestOptions& aOptions,
                     const bool aConditionallyMediated,
                     const Optional<OwningNonNull<AbortSignal>>& aSignal,
                     const RefPtr<Promise>& aPromise);
