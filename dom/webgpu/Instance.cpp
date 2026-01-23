@@ -118,15 +118,10 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   // Check if we should allow the request.
 
   std::optional<std::string_view> rejectionMessage = {};
-  const auto rejectIf = [&rejectionMessage, &promise, this](
-                            bool condition, const char* message) {
+  const auto rejectIf = [&rejectionMessage](bool condition,
+                                            const char* message) {
     if (condition && !rejectionMessage.has_value()) {
       rejectionMessage = message;
-      promise->MaybeResolve(JS::NullValue());
-      dom::AutoJSAPI api;
-      if (api.Init(mOwner)) {
-        JS::WarnUTF8(api.cx(), "%s", rejectionMessage.value().data());
-      }
     }
   };
 
@@ -151,6 +146,7 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   }
 
   if (rejectionMessage) {
+    promise->MaybeRejectWithNotSupportedError(ToCString(*rejectionMessage));
     return promise.forget();
   }
 
@@ -158,14 +154,15 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   // Make the request.
 
   auto* const canvasManager = gfx::CanvasManagerChild::Get();
-  rejectIf(!canvasManager, "Failed to create CanvasManagerChild");
-  if (rejectionMessage) {
+  if (!canvasManager) {
+    promise->MaybeRejectWithInvalidStateError(
+        "Failed to create CanvasManagerChild");
     return promise.forget();
   }
 
   RefPtr<WebGPUChild> child = canvasManager->GetWebGPUChild();
-  rejectIf(!child, "Failed to create WebGPUChild");
-  if (rejectionMessage) {
+  if (!child) {
+    promise->MaybeRejectWithInvalidStateError("Failed to create WebGPUChild");
     return promise.forget();
   }
 
