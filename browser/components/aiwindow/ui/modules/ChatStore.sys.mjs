@@ -341,6 +341,15 @@ export class ChatStore {
     limit = -1,
     offset = -1
   ) {
+    await this.#ensureDatabase().catch(e => {
+      lazy.log.error(
+        "Could not ensure a database connection.",
+        e.message,
+        e.stack
+      );
+      throw e;
+    });
+
     const params = {
       start_date: startDate.getTime(),
       end_date: endDate.getTime(),
@@ -379,6 +388,15 @@ export class ChatStore {
    * object path
    */
   async searchContent(keyChain, role = -1) {
+    await this.#ensureDatabase().catch(e => {
+      lazy.log.error(
+        "Could not ensure a database connection.",
+        e.message,
+        e.stack
+      );
+      throw e;
+    });
+
     const path = `$.${keyChain}`;
 
     const query =
@@ -614,7 +632,14 @@ export class ChatStore {
    * @returns {number} - The file size in bytes
    */
   async getDatabaseSize() {
-    await this.#ensureDatabase();
+    await this.#ensureDatabase().catch(e => {
+      lazy.log.error(
+        "Could not ensure a database connection.",
+        e.message,
+        e.stack
+      );
+      throw e;
+    });
 
     const stats = await IOUtils.stat(this.databaseFilePath);
     return stats.size;
