@@ -25,7 +25,9 @@ use std::array;
 use std::fmt::Write;
 use std::{borrow::Cow, ptr};
 
-use self::render_pass::{FfiRenderPassColorAttachment, RenderPassDepthStencilAttachment};
+use self::render_pass::{
+    FfiOption, FfiRenderPassColorAttachment, RenderPassDepthStencilAttachment,
+};
 
 pub mod render_pass;
 
@@ -103,26 +105,26 @@ impl VertexState<'_> {
 }
 
 #[repr(C)]
-pub struct ColorTargetState<'a> {
+pub struct ColorTargetState {
     format: wgt::TextureFormat,
-    blend: Option<&'a wgt::BlendState>,
+    blend: FfiOption<wgt::BlendState>,
     write_mask: wgt::ColorWrites,
 }
 
 #[repr(C)]
 pub struct FragmentState<'a> {
     stage: ProgrammableStageDescriptor<'a>,
-    targets: FfiSlice<'a, ColorTargetState<'a>>,
+    targets: FfiSlice<'a, FfiOption<ColorTargetState>>,
 }
 
 impl FragmentState<'_> {
     fn to_wgpu(&self) -> wgc::pipeline::FragmentState<'_> {
         let color_targets = unsafe { self.targets.as_slice() }
             .iter()
-            .map(|ct| {
-                Some(wgt::ColorTargetState {
+            .map(|ct_opt| {
+                ct_opt.as_ref().map(|ct| wgt::ColorTargetState {
                     format: ct.format,
-                    blend: ct.blend.cloned(),
+                    blend: ct.blend.to_std(),
                     write_mask: ct.write_mask,
                 })
             })
@@ -276,7 +278,7 @@ pub struct SamplerDescriptor<'a> {
 #[repr(C)]
 pub struct RenderBundleEncoderDescriptor<'a> {
     label: Option<&'a nsACString>,
-    color_formats: FfiSlice<'a, wgt::TextureFormat>,
+    color_formats: FfiSlice<'a, FfiOption<wgt::TextureFormat>>,
     depth_stencil_format: Option<&'a wgt::TextureFormat>,
     depth_read_only: bool,
     stencil_read_only: bool,
@@ -1212,7 +1214,7 @@ pub extern "C" fn wgpu_device_create_render_bundle_encoder(
 
     let color_formats: Vec<_> = unsafe { desc.color_formats.as_slice() }
         .iter()
-        .map(|format| Some(format.clone()))
+        .map(|format_opt| format_opt.to_std())
         .collect();
     let descriptor = wgc::command::RenderBundleEncoderDescriptor {
         label,
@@ -1390,7 +1392,7 @@ pub unsafe extern "C" fn wgpu_compute_pass_destroy(pass: *mut crate::command::Re
 #[repr(C)]
 pub struct RenderPassDescriptor<'a> {
     pub label: Option<&'a nsACString>,
-    pub color_attachments: FfiSlice<'a, FfiRenderPassColorAttachment>,
+    pub color_attachments: FfiSlice<'a, FfiOption<FfiRenderPassColorAttachment>>,
     pub depth_stencil_attachment: Option<&'a RenderPassDepthStencilAttachment>,
     pub timestamp_writes: Option<&'a PassTimestampWrites<'a>>,
     pub occlusion_query_set: Option<wgc::id::QuerySetId>,
@@ -1428,7 +1430,7 @@ pub unsafe extern "C" fn wgpu_command_encoder_begin_render_pass(
     let color_attachments: Vec<_> = color_attachments
         .as_slice()
         .iter()
-        .map(|color_attachment| Some(color_attachment.clone().to_wgpu()))
+        .map(|att_opt| att_opt.as_ref().map(|att| att.clone().to_wgpu()))
         .collect();
     let depth_stencil_attachment = depth_stencil_attachment.cloned().map(|dsa| dsa.to_wgpu());
     let pass = crate::command::RecordedRenderPass::new(
