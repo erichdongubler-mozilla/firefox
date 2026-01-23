@@ -5240,14 +5240,7 @@ var SessionStoreInternal = {
       // the state we're trying to restore and then fallback to the last selected
       // window.
       let windowToUse = windows[lastSessionWindowID];
-      let lastWindowIsAIWindow =
-        lastWindow && lazy.AIWindow.isAIWindowActiveAndEnabled(lastWindow);
-      let thisWindowIsAIWindow = !!winState.isAIWindow;
-      if (
-        !windowToUse &&
-        canUseLastWindow &&
-        lastWindowIsAIWindow == thisWindowIsAIWindow
-      ) {
+      if (!windowToUse && canUseLastWindow) {
         windowToUse = lastWindow;
         canUseLastWindow = false;
       }
