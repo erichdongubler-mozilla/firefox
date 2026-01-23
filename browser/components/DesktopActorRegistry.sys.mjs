@@ -303,6 +303,8 @@ let JSWINDOWACTORS = {
       events: {
         DOMContentLoaded: {},
         pageshow: {},
+        // `popstate` does not bubble, so it needs to be captured.
+        popstate: { capture: true },
       },
     },
     enablePreference: "browser.tabs.notes.enabled",
