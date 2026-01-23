@@ -35,11 +35,12 @@ function expectDuration(marker) {
     "number",
     "startTime should be a number"
   );
-  // Floats can cause rounding issues. We've seen up to a 4.17e-5 difference in
-  // intermittent failures, so we are permissive and accept up to 5e-5.
+  // Floats can cause rounding issues.
+  // In intermittent failures, we've seen up to a 9e-5 difference on win
+  // and 4.17e-5 on macosx, so we are permissive and accept up to 1e-4.
   Assert.less(
     Math.abs(marker.startTime - startTime),
-    5e-5,
+    1e-4,
     "startTime should be the expected time"
   );
   Assert.equal(typeof marker.endTime, "number", "endTime should be a number");
