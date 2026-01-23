@@ -666,10 +666,8 @@ already_AddRefed<ShaderModule> Device::CreateShaderModule(
 
   shaderModule->SetLabel(aDesc.mLabel);
 
-  auto pending_promise = WebGPUChild::PendingCreateShaderModulePromise{
-      RefPtr(promise), RefPtr(this), RefPtr(shaderModule)};
-  GetChild()->mPendingCreateShaderModulePromises.push_back(
-      std::move(pending_promise));
+  GetChild()->EnqueueCreateShaderModulePromise(PendingCreateShaderModulePromise{
+      RefPtr(promise), RefPtr(this), RefPtr(shaderModule)});
 
   return shaderModule.forget();
 }
@@ -912,10 +910,8 @@ already_AddRefed<dom::Promise> Device::CreateComputePipelineAsync(
   RawId pipelineId =
       CreateComputePipelineImpl(GetId(), GetChild(), aDesc, true);
 
-  auto pending_promise = WebGPUChild::PendingCreatePipelinePromise{
-      RefPtr(promise), RefPtr(this), false, pipelineId, aDesc.mLabel};
-  GetChild()->mPendingCreatePipelinePromises.push_back(
-      std::move(pending_promise));
+  GetChild()->EnqueueCreatePipelinePromise(PendingCreatePipelinePromise{
+      RefPtr(promise), RefPtr(this), false, pipelineId, aDesc.mLabel});
 
   return promise.forget();
 }
@@ -929,10 +925,8 @@ already_AddRefed<dom::Promise> Device::CreateRenderPipelineAsync(
 
   RawId pipelineId = CreateRenderPipelineImpl(GetId(), GetChild(), aDesc, true);
 
-  auto pending_promise = WebGPUChild::PendingCreatePipelinePromise{
-      RefPtr(promise), RefPtr(this), true, pipelineId, aDesc.mLabel};
-  GetChild()->mPendingCreatePipelinePromises.push_back(
-      std::move(pending_promise));
+  GetChild()->EnqueueCreatePipelinePromise(PendingCreatePipelinePromise{
+      RefPtr(promise), RefPtr(this), true, pipelineId, aDesc.mLabel});
 
   return promise.forget();
 }
@@ -985,9 +979,7 @@ void Device::Destroy() {
   if (mLostPromise->State() != dom::Promise::PromiseState::Pending) {
     return;
   }
-  RefPtr<dom::Promise> pending_promise = mLostPromise;
-  GetChild()->mPendingDeviceLostPromises.insert(
-      {GetId(), std::move(pending_promise)});
+  GetChild()->RegisterDeviceLostPromise(GetId(), mLostPromise);
 }
 
 void Device::PushErrorScope(const dom::GPUErrorFilter& aFilter) {
@@ -1002,10 +994,8 @@ already_AddRefed<dom::Promise> Device::PopErrorScope(ErrorResult& aRv) {
 
   ffi::wgpu_client_pop_error_scope(GetClient(), GetId());
 
-  auto pending_promise =
-      WebGPUChild::PendingPopErrorScopePromise{RefPtr(promise), RefPtr(this)};
-  GetChild()->mPendingPopErrorScopePromises.push_back(
-      std::move(pending_promise));
+  GetChild()->EnqueuePopErrorScopePromise(
+      PendingPopErrorScopePromise{RefPtr(promise), RefPtr(this)});
 
   return promise.forget();
 }

@@ -223,9 +223,8 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   RawId adapter_id = ffi::wgpu_client_request_adapter(
       child->GetClient(), power_preference, aOptions.mForceFallbackAdapter);
 
-  auto pending_promise = WebGPUChild::PendingRequestAdapterPromise{
-      RefPtr(promise), RefPtr(this), adapter_id};
-  child->mPendingRequestAdapterPromises.push_back(std::move(pending_promise));
+  child->EnqueueRequestAdapterPromise(
+      PendingRequestAdapterPromise{RefPtr(promise), RefPtr(this), adapter_id});
 
   return promise.forget();
 }

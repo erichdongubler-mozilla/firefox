@@ -98,9 +98,7 @@ void wgpu_child_resolve_request_adapter_promise(
     WGPUWebGPUChildPtr aChild, RawId aAdapterId,
     const struct WGPUAdapterInformation* aAdapterInfo) {
   auto* c = static_cast<WebGPUChild*>(aChild);
-  auto& pending_promises = c->mPendingRequestAdapterPromises;
-  auto pending_promise = std::move(pending_promises.front());
-  pending_promises.pop_front();
+  auto pending_promise = c->DequeueRequestAdapterPromise();
 
   MOZ_RELEASE_ASSERT(pending_promise.adapter_id == aAdapterId);
 
@@ -118,9 +116,7 @@ void wgpu_child_resolve_request_device_promise(WGPUWebGPUChildPtr aChild,
                                                RawId aDeviceId, RawId aQueueId,
                                                const nsCString* aError) {
   auto* c = static_cast<WebGPUChild*>(aChild);
-  auto& pending_promises = c->mPendingRequestDevicePromises;
-  auto pending_promise = std::move(pending_promises.front());
-  pending_promises.pop_front();
+  auto pending_promise = c->DequeueRequestDevicePromise();
 
   MOZ_RELEASE_ASSERT(pending_promise.device_id == aDeviceId);
   MOZ_RELEASE_ASSERT(pending_promise.queue_id == aQueueId);
@@ -144,9 +140,7 @@ void wgpu_child_resolve_pop_error_scope_promise(WGPUWebGPUChildPtr aChild,
                                                 RawId aDeviceId, uint8_t aTy,
                                                 const nsCString* aMessage) {
   auto* c = static_cast<WebGPUChild*>(aChild);
-  auto& pending_promises = c->mPendingPopErrorScopePromises;
-  auto pending_promise = std::move(pending_promises.front());
-  pending_promises.pop_front();
+  auto pending_promise = c->DequeuePopErrorScopePromise();
 
   MOZ_RELEASE_ASSERT(pending_promise.device->GetId() == aDeviceId);
 
@@ -190,9 +184,7 @@ void wgpu_child_resolve_create_pipeline_promise(WGPUWebGPUChildPtr aChild,
                                                 bool aIsValidationError,
                                                 const nsCString* aError) {
   auto* c = static_cast<WebGPUChild*>(aChild);
-  auto& pending_promises = c->mPendingCreatePipelinePromises;
-  auto pending_promise = std::move(pending_promises.front());
-  pending_promises.pop_front();
+  auto pending_promise = c->DequeueCreatePipelinePromise();
 
   MOZ_RELEASE_ASSERT(pending_promise.pipeline_id == aPipelineId);
   MOZ_RELEASE_ASSERT(pending_promise.is_render_pipeline == aIsRenderPipeline);
@@ -228,9 +220,7 @@ void wgpu_child_resolve_create_shader_module_promise(
     WGPUWebGPUChildPtr aChild, RawId aShaderModuleId,
     struct WGPUFfiSlice_FfiShaderModuleCompilationMessage aMessages) {
   auto* c = static_cast<WebGPUChild*>(aChild);
-  auto& pending_promises = c->mPendingCreateShaderModulePromises;
-  auto pending_promise = std::move(pending_promises.front());
-  pending_promises.pop_front();
+  auto pending_promise = c->DequeueCreateShaderModulePromise();
 
   MOZ_RELEASE_ASSERT(pending_promise.shader_module->GetId() == aShaderModuleId);
 
@@ -266,20 +256,7 @@ void wgpu_child_resolve_buffer_map_promise(WGPUWebGPUChildPtr aChild,
                                            uint64_t aSize,
                                            const nsCString* aError) {
   auto* c = static_cast<WebGPUChild*>(aChild);
-  auto& pending_promises = c->mPendingBufferMapPromises;
-
-  WebGPUChild::PendingBufferMapPromise pending_promise;
-  if (auto search = pending_promises.find(aBufferId);
-      search != pending_promises.end()) {
-    pending_promise = std::move(search->second.front());
-    search->second.pop_front();
-
-    if (search->second.empty()) {
-      pending_promises.erase(aBufferId);
-    }
-  } else {
-    NS_ERROR("Missing pending promise for buffer map");
-  }
+  auto pending_promise = c->DequeueBufferMapPromise(aBufferId);
 
   // Unmap might have been called while the result was on the way back.
   if (pending_promise.promise->State() != dom::Promise::PromiseState::Pending) {
@@ -297,15 +274,7 @@ void wgpu_child_resolve_buffer_map_promise(WGPUWebGPUChildPtr aChild,
 void wgpu_child_resolve_on_submitted_work_done_promise(
     WGPUWebGPUChildPtr aChild, WGPUQueueId aQueueId) {
   auto* c = static_cast<WebGPUChild*>(aChild);
-  const auto& it = c->mPendingOnSubmittedWorkDonePromises.find(aQueueId);
-  MOZ_RELEASE_ASSERT(it != c->mPendingOnSubmittedWorkDonePromises.end());
-  auto& pending_promises = it->second;
-  auto pending_promise = std::move(pending_promises.front());
-  pending_promises.pop_front();
-
-  if (pending_promises.empty()) {
-    c->mPendingOnSubmittedWorkDonePromises.erase(it);
-  }
+  auto pending_promise = c->DequeueOnSubmittedWorkDonePromise(aQueueId);
 
   promise::MaybeResolveWithUndefined(std::move(pending_promise));
 };
@@ -457,6 +426,119 @@ void WebGPUChild::RegisterDevice(Device* const aDevice) {
 
 void WebGPUChild::UnregisterDevice(RawId aDeviceId) {
   mDeviceMap.erase(aDeviceId);
+}
+
+void WebGPUChild::EnqueueRequestAdapterPromise(
+    PendingRequestAdapterPromise&& promise) {
+  mPendingRequestAdapterPromises.push_back(std::move(promise));
+}
+
+void WebGPUChild::EnqueueRequestDevicePromise(
+    PendingRequestDevicePromise&& promise) {
+  mPendingRequestDevicePromises.push_back(std::move(promise));
+}
+
+void WebGPUChild::RegisterDeviceLostPromise(RawId id,
+                                            RefPtr<dom::Promise>& promise) {
+  mPendingDeviceLostPromises.insert({id, promise});
+}
+
+void WebGPUChild::EnqueuePopErrorScopePromise(
+    PendingPopErrorScopePromise&& promise) {
+  mPendingPopErrorScopePromises.push_back(std::move(promise));
+}
+
+void WebGPUChild::EnqueueCreatePipelinePromise(
+    PendingCreatePipelinePromise&& promise) {
+  mPendingCreatePipelinePromises.push_back(std::move(promise));
+}
+
+void WebGPUChild::EnqueueCreateShaderModulePromise(
+    PendingCreateShaderModulePromise&& promise) {
+  mPendingCreateShaderModulePromises.push_back(std::move(promise));
+}
+
+void WebGPUChild::EnqueueBufferMapPromise(RawId id,
+                                          PendingBufferMapPromise&& promise) {
+  mPendingBufferMapPromises[id].push_back(std::move(promise));
+}
+
+void WebGPUChild::EnqueueOnSubmittedWorkDonePromise(
+    RawId id, RefPtr<dom::Promise>& promise) {
+  mPendingOnSubmittedWorkDonePromises[id].push_back(promise);
+}
+
+PendingRequestAdapterPromise WebGPUChild::DequeueRequestAdapterPromise() {
+  auto& promises = mPendingRequestAdapterPromises;
+  MOZ_RELEASE_ASSERT(!promises.empty());
+  auto promise = std::move(promises.front());
+  promises.pop_front();
+  return promise;
+}
+
+PendingRequestDevicePromise WebGPUChild::DequeueRequestDevicePromise() {
+  auto& promises = mPendingRequestDevicePromises;
+  MOZ_RELEASE_ASSERT(!promises.empty());
+  auto promise = std::move(promises.front());
+  promises.pop_front();
+  return promise;
+}
+
+PendingPopErrorScopePromise WebGPUChild::DequeuePopErrorScopePromise() {
+  auto& promises = mPendingPopErrorScopePromises;
+  MOZ_RELEASE_ASSERT(!promises.empty());
+  auto promise = std::move(promises.front());
+  promises.pop_front();
+  return promise;
+}
+
+PendingCreatePipelinePromise WebGPUChild::DequeueCreatePipelinePromise() {
+  auto& promises = mPendingCreatePipelinePromises;
+  MOZ_RELEASE_ASSERT(!promises.empty());
+  auto promise = std::move(promises.front());
+  promises.pop_front();
+  return promise;
+}
+
+PendingCreateShaderModulePromise
+WebGPUChild::DequeueCreateShaderModulePromise() {
+  auto& promises = mPendingCreateShaderModulePromises;
+  MOZ_RELEASE_ASSERT(!promises.empty());
+  auto promise = std::move(promises.front());
+  promises.pop_front();
+  return promise;
+}
+
+PendingBufferMapPromise WebGPUChild::DequeueBufferMapPromise(RawId id) {
+  auto& promises_map = mPendingBufferMapPromises;
+  const auto& it = promises_map.find(id);
+  MOZ_RELEASE_ASSERT(it != promises_map.end());
+
+  auto& promises = it->second;
+  MOZ_RELEASE_ASSERT(!promises.empty());
+  auto promise = std::move(promises.front());
+  promises.pop_front();
+
+  if (promises.empty()) {
+    promises_map.erase(it);
+  }
+  return promise;
+}
+
+RefPtr<dom::Promise> WebGPUChild::DequeueOnSubmittedWorkDonePromise(RawId id) {
+  auto& promises_map = mPendingOnSubmittedWorkDonePromises;
+  const auto& it = promises_map.find(id);
+  MOZ_RELEASE_ASSERT(it != promises_map.end());
+
+  auto& promises = it->second;
+  MOZ_RELEASE_ASSERT(!promises.empty());
+  auto promise = std::move(promises.front());
+  promises.pop_front();
+
+  if (promises.empty()) {
+    promises_map.erase(it);
+  }
+  return promise;
 }
 
 void WebGPUChild::ActorDestroy(ActorDestroyReason) { ClearActorState(); }
