@@ -719,7 +719,7 @@ Preferences.addSetting(
           controlAttrs: {
             label: engine.name,
             description: engine.aliases.join(", "),
-            layout: "large-icon",
+            layout: "medium-icon",
             iconsrc: await engine.getIconURL(),
           },
         };
@@ -782,7 +782,7 @@ Preferences.addSetting(
           controlAttrs: {
             label: l10nNames.get(searchMode.source)[0],
             description: keywords,
-            layout: "large-icon",
+            layout: "medium-icon",
             iconsrc: searchMode.icon,
             slot: "footer",
           },
