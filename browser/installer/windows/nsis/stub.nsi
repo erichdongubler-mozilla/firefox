@@ -31,6 +31,7 @@ FunctionEnd
 
 Page custom createProfileCleanup
 Page custom createInstall ; Download / Installation page
+Page instfiles
 
 Function CanWrite
   StrCpy $CanWriteToInstallDir "false"
