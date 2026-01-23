@@ -1069,11 +1069,8 @@ nsresult mozInlineSpellChecker::MakeSpellCheckRange(nsINode* aStartNode,
       return rv;
     }
   } else {
-    if (NS_WARN_IF(!aEndNode->IsContent())) {
-      return NS_ERROR_FAILURE;
-    }
     rv = range->SetStartAndEnd(RawRangeBoundary(aStartNode, aStartOffset),
-                               RawRangeBoundary::After(*aEndNode->AsContent()));
+                               RangeUtils::GetRawRangeBoundaryAfter(aEndNode));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }

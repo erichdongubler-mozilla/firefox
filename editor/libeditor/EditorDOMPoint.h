@@ -1360,9 +1360,9 @@ class EditorDOMPointBase final {
                               RangeBoundarySetBy::Offset);
     }
     if (mChild) {
-      return RawRangeBoundary::FromChild(*mChild);
+      return RawRangeBoundary(mParent, mChild->GetPreviousSibling());
     }
-    return RawRangeBoundary::EndOfParent(*mParent);
+    return RawRangeBoundary(mParent, mParent->GetLastChild());
   }
 
   already_AddRefed<nsRange> CreateCollapsedRange(ErrorResult& aRv) const {

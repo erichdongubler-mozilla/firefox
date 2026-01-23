@@ -102,7 +102,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
       return SetEnd(RawRangeBoundary(aEndContainer, aEndOffset));
     }
 
-    nsresult SetEndAfter(nsIContent* aEndContainer);
+    nsresult SetEndAfter(nsINode* aEndContainer);
     void SetStartAndEnd(const nsRange* aRange);
     nsresult SetStartAndEnd(const RawRangeBoundary& aStart,
                             const RawRangeBoundary& aEnd);

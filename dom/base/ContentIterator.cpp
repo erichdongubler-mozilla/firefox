@@ -474,7 +474,7 @@ ContentIteratorBase<NodeType>::Initializer::DetermineLastNode() const {
         if (result && result != mIterator.mFirst &&
             NS_WARN_IF(!NodeIsInTraversalRange(
                 result, mIterator.mOrder == Order::Pre,
-                RawRangeBoundary::StartOfParent(*mIterator.mFirst), mEnd))) {
+                RawRangeBoundary(mIterator.mFirst, 0u), mEnd))) {
           return nullptr;
         }
 

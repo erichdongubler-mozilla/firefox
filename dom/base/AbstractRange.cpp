@@ -20,7 +20,6 @@
 #include "mozilla/dom/TreeIterator.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsFmtString.h"
 #include "nsGkAtoms.h"
 #include "nsINode.h"
 #include "nsRange.h"
@@ -377,27 +376,10 @@ nsresult AbstractRange::SetStartAndEndInternal(
       // shadow boundary or not.
       if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
           !IsRootUAWidget(newStartRoot) && !IsRootUAWidget(newEndRoot)) {
-        const auto startInFlat = aStartBoundary.AsRangeBoundaryInFlatTree();
-        const auto endInFlat = aEndBoundary.AsRangeBoundaryInFlatTree();
-        if (MOZ_UNLIKELY(!startInFlat.IsSet() || !endInFlat.IsSet())) {
-          NS_WARNING_ASSERTION(
-              !startInFlat.IsSet(),
-              nsFmtCString(
-                  FMT_STRING("aStartBoundary={} could not convert to a "
-                             "point in the flat tree"),
-                  aStartBoundary)
-                  .get());
-          NS_WARNING_ASSERTION(
-              !endInFlat.IsSet(),
-              nsFmtCString(FMT_STRING("aEndBoundary={} could not convert to a "
-                                      "point in the flat tree"),
-                           aEndBoundary)
-                  .get());
-          return NS_ERROR_FAILURE;
-        }
         aRange->AsDynamicRange()
-            ->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(startInFlat,
-                                                             endInFlat);
+            ->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+                aStartBoundary.AsRangeBoundaryInFlatTree(),
+                aEndBoundary.AsRangeBoundaryInFlatTree());
       }
     }
     return NS_OK;
@@ -447,23 +429,8 @@ nsresult AbstractRange::SetStartAndEndInternal(
 
   if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
       aRange->IsDynamicRange()) {
-    const auto startInFlat = aStartBoundary.AsRangeBoundaryInFlatTree();
-    const auto endInFlat = aEndBoundary.AsRangeBoundaryInFlatTree();
-    if (MOZ_UNLIKELY(!startInFlat.IsSet() || !endInFlat.IsSet())) {
-      NS_WARNING_ASSERTION(
-          !startInFlat.IsSet(),
-          nsFmtCString(FMT_STRING("aStartBoundary={} could not convert to a "
-                                  "point in the flat tree"),
-                       aStartBoundary)
-              .get());
-      NS_WARNING_ASSERTION(
-          !endInFlat.IsSet(),
-          nsFmtCString(FMT_STRING("aEndBoundary={} could not convert to a "
-                                  "point in the flat tree"),
-                       aEndBoundary)
-              .get());
-      return NS_ERROR_FAILURE;
-    }
+    auto startInFlat = aStartBoundary.AsRangeBoundaryInFlatTree();
+    auto endInFlat = aEndBoundary.AsRangeBoundaryInFlatTree();
 
     aRange->AsDynamicRange()->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
         startInFlat, endInFlat);

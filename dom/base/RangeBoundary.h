@@ -7,8 +7,6 @@
 #ifndef mozilla_RangeBoundary_h
 #define mozilla_RangeBoundary_h
 
-#include <fmt/format.h>
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -16,7 +14,6 @@
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsCOMPtr.h"
-#include "nsFmtString.h"
 #include "nsIContent.h"
 
 class nsRange;
@@ -126,75 +123,6 @@ class RangeBoundaryBase {
   static_assert(std::is_same_v<RawRefType, nsIContent> ||
                 std::is_same_v<RawRefType, const nsIContent>);
 
- private:
-  /**
-   * Make an instance from "ref" which is the previous sibling of what the
-   * instance will point to.
-   */
-  [[nodiscard]] static RangeBoundaryBase FromRef(
-      RawRefType& aRef, TreeKind aTreeKind = TreeKind::DOM) {
-    nsINode* const parentNode = ComputeParentNode(&aRef, aTreeKind);
-    if (MOZ_UNLIKELY(!parentNode)) {
-      return RangeBoundaryBase(aTreeKind);
-    }
-    return RangeBoundaryBase(parentNode, &aRef, aTreeKind);
-  }
-
- public:
-  /**
-   * Make an instance from a child node which the instance will point to.
-   */
-  [[nodiscard]] static RangeBoundaryBase FromChild(
-      RawRefType& aChild, TreeKind aTreeKind = TreeKind::DOM) {
-    nsINode* const parentNode = ComputeParentNode(&aChild, aTreeKind);
-    if (MOZ_UNLIKELY(!parentNode)) {
-      return RangeBoundaryBase(aTreeKind);
-    }
-    nsIContent* const ref = ComputeRef(parentNode, &aChild, aTreeKind);
-    return RangeBoundaryBase(parentNode, ref, aTreeKind);
-  }
-
-  /**
-   * Make an instance pointing after aChild.
-   */
-  [[nodiscard]] static RangeBoundaryBase After(
-      RawRefType& aChild, TreeKind aTreeKind = TreeKind::DOM) {
-    // If the caller wants a point after aChild, we can use aChild as the ref.
-    return FromRef(aChild, aTreeKind);
-  }
-
-  /**
-   * Make an instance which points to the start of aParent.
-   */
-  [[nodiscard]] static RangeBoundaryBase StartOfParent(
-      RawParentType& aParent,
-      RangeBoundarySetBy aPointTo = RangeBoundarySetBy::Ref,
-      TreeKind aTreeKind = TreeKind::DOM) {
-    if (MOZ_UNLIKELY(aParent.NodeType() == nsINode::DOCUMENT_TYPE_NODE)) {
-      return RangeBoundaryBase(aTreeKind);
-    }
-    return RangeBoundaryBase(&aParent, nullptr, 0, aPointTo, aTreeKind);
-  }
-
-  /**
-   * Make an instance which points to the end of aParent.
-   */
-  [[nodiscard]] static RangeBoundaryBase EndOfParent(
-      RawParentType& aParent,
-      RangeBoundarySetBy aSetBy = RangeBoundarySetBy::Ref,
-      TreeKind aTreeKind = TreeKind::DOM) {
-    if (MOZ_UNLIKELY(aParent.NodeType() == nsINode::DOCUMENT_TYPE_NODE)) {
-      return RangeBoundaryBase(aTreeKind);
-    }
-    if (aSetBy == RangeBoundarySetBy::Ref && aParent.IsContainerNode()) {
-      MOZ_ASSERT(!aParent.IsCharacterData());
-      nsIContent* const lastChild = ComputeLastChild(&aParent, aTreeKind);
-      return RangeBoundaryBase(&aParent, lastChild, aTreeKind);
-    }
-    const uint32_t length = ComputeLength(&aParent, aTreeKind);
-    return RangeBoundaryBase(&aParent, length, aSetBy, aTreeKind);
-  }
-
   RangeBoundaryBase(RawParentType* aContainer, RawRefType* aRef,
                     TreeKind aTreeKind = TreeKind::DOM)
       : mParent(aContainer),
@@ -205,22 +133,11 @@ class RangeBoundaryBase {
         aTreeKind == TreeKind::DOM || aTreeKind == TreeKind::Flat,
         "Only TreeKind::DOM and TreeKind::Flat are valid at the moment.");
     if (mRef) {
-      MOZ_ASSERT(IsValidParent(mParent, mRef),
-                 "Initializing RangeBoundary with invalid value");
+      NS_WARNING_ASSERTION(IsValidParent(mParent, mRef),
+                           "Initializing RangeBoundary with invalid value");
     } else {
       mOffset.emplace(0);
     }
-  }
-
-  [[nodiscard]] static RangeBoundaryBase MakeIfValidRef(
-      RawParentType* aContainer, RawRefType* aRef,
-      TreeKind aTreeKind = TreeKind::DOM) {
-    if (MOZ_UNLIKELY(!aContainer ||
-                     aContainer->NodeType() == nsINode::DOCUMENT_TYPE_NODE ||
-                     (aRef && !IsValidParent(aContainer, aRef, aTreeKind)))) {
-      return RangeBoundaryBase(aTreeKind);
-    }
-    return RangeBoundaryBase(aContainer, aRef, aTreeKind);
   }
 
   RangeBoundaryBase(RawParentType* aContainer, uint32_t aOffset,
@@ -234,12 +151,7 @@ class RangeBoundaryBase {
     MOZ_ASSERT(
         aTreeKind == TreeKind::DOM || aTreeKind == TreeKind::Flat,
         "Only TreeKind::DOM and TreeKind::Flat are valid at the moment.");
-    if (IsSetByOffset()) {
-      // If aPointTo is "Offset", this may be created for a StaticRange so that
-      // we may not need to warn invalid boundary.
-      return;
-    }
-    if (mParent && mParent->IsContainerNode()) {
+    if (IsSetByRef() && mParent && mParent->IsContainerNode()) {
       // Find a reference node
       if (aOffset == GetLength(mParent)) {
         mRef = GetLastChild(mParent);
@@ -248,34 +160,13 @@ class RangeBoundaryBase {
       }
       NS_WARNING_ASSERTION(
           mRef || aOffset == 0,
-          nsFmtCString(
-              FMT_STRING(
-                  "Constructing RangeBoundary with invalid value:\nthis={}"),
-              *this)
+          nsPrintfCString("Constructing RangeBoundary with invalid "
+                          "value:\nthis=%s",
+                          ToString(*this).c_str())
               .get());
-      MOZ_ASSERT(mRef || aOffset == 0);
-      return;
     }
-    NS_WARNING_ASSERTION(
-        !mRef || IsValidParent(mParent, mRef),
-        nsFmtCString(
-            FMT_STRING(
-                "Constructing RangeBoundary with invalid value:\nthis={}"),
-            *this)
-            .get());
-    MOZ_ASSERT(!mRef || IsValidParent(mParent, mRef));
-  }
-
-  [[nodiscard]] static RangeBoundaryBase MakeIfValidOffset(
-      RawParentType* aContainer, uint32_t aOffset,
-      RangeBoundarySetBy aSetBy = RangeBoundarySetBy::Ref,
-      TreeKind aTreeKind = TreeKind::DOM) {
-    if (MOZ_UNLIKELY(!aContainer ||
-                     aContainer->NodeType() == nsINode::DOCUMENT_TYPE_NODE ||
-                     aOffset > ComputeLength(aContainer, aTreeKind))) {
-      return RangeBoundaryBase(aTreeKind);
-    }
-    return RangeBoundaryBase(aContainer, aOffset, aSetBy, aTreeKind);
+    NS_WARNING_ASSERTION(!mRef || IsValidParent(mParent, mRef),
+                         "Constructing RangeBoundary with invalid value");
   }
 
   [[nodiscard]] TreeKind GetTreeKind() const { return mTreeKind; }
@@ -294,43 +185,10 @@ class RangeBoundaryBase {
       // We don't assert IsSetAndValid() here because it's possible
       // that a RangeBoundary is not valid for TreeKind::DOM but valid
       // for TreeKind::Flat.
-      auto result =
-          MakeIfValidOffset(mParent, *mOffset, mSetBy, TreeKind::Flat);
-      NS_WARNING_ASSERTION(
-          result.IsSet(),
-          nsFmtCString(
-              FMT_STRING(
-                  "Failed to convert to a point in the flat tree\nthis={}"),
-              *this)
-              .get());
-      return result;
+      return RangeBoundaryBase(mParent, *mOffset, mSetBy, TreeKind::Flat);
     }
     MOZ_ASSERT_IF(IsSet(), IsSetAndValid());
     return RangeBoundaryBase(mParent, mRef, TreeKind::Flat);
-  }
-
-  RangeBoundaryBase AsRangeBoundaryInDOMTree() const {
-    if (mTreeKind == TreeKind::DOM) {
-      return *this;
-    }
-    MOZ_ASSERT(IsSet());
-    if (!mParent->IsContainerNode()) {
-      MOZ_ASSERT(mOffset);
-      return RangeBoundaryBase(mParent, *mOffset, mSetBy, TreeKind::DOM);
-    }
-    // If we're pointing a child node, let's recompute the point in the non-flat
-    // tree from the child node.
-    if (nsIContent* const child = GetChildAtOffset()) {
-      return FromChild(*child, TreeKind::DOM);
-    }
-    // Otherwise, we're pointing the end of the container in the flat tree.
-    // If the last children are assigned to a slot, let's return after the last
-    // assigned node.
-    if (nsIContent* const lastChild = GetLastChild(mParent)) {
-      return FromRef(*lastChild, TreeKind::DOM);
-    }
-    // Okay, there is no child in mParent, let's return end of it.
-    return EndOfParent(*mParent, mSetBy, TreeKind::DOM);
   }
 
   /**
@@ -438,25 +296,15 @@ class RangeBoundaryBase {
       }
       MOZ_ASSERT_IF(mTreeKind == TreeKind::DOM,
                     *Offset(OffsetFilter::kValidOrInvalidOffsets) == 0);
-      NS_ASSERTION(
-          *Offset(OffsetFilter::kValidOrInvalidOffsets) == 0,
-          nsFmtCString(FMT_STRING("Invalid range boundary:\nthis=%{}"), *this)
-              .get());
+      NS_ASSERTION(*Offset(OffsetFilter::kValidOrInvalidOffsets) == 0,
+                   nsPrintfCString("Invalid range boundary:\nthis=%s",
+                                   ToString(*this).c_str())
+                       .get());
       return GetFirstChild(mParent);
     }
-    NS_ASSERTION(
+    MOZ_ASSERT(
         GetChildAt(mParent, *Offset(OffsetFilter::kValidOrInvalidOffsets)) ==
-            GetNextSibling(ref),
-        nsFmtCString(
-            "Invalid range "
-            "boundary:\nthis={}\nGetChildAt()={}\nGetNextSibling(ref)={}\n",
-            *this,
-            ToString(
-                RefPtr{GetChildAt(
-                    mParent, *Offset(OffsetFilter::kValidOrInvalidOffsets))})
-                .c_str(),
-            ToString(RefPtr{GetNextSibling(ref)}).c_str())
-            .get());
+        GetNextSibling(ref));
     return GetNextSibling(ref);
   }
 
@@ -580,11 +428,6 @@ class RangeBoundaryBase {
     return aStream;
   }
 
-  friend auto format_as(
-      const RangeBoundaryBase<ParentType, RefType>& aRangeBoundary) {
-    return ToString(aRangeBoundary);
-  }
-
  private:
   void DetermineOffsetFromReference() const {
     MOZ_ASSERT(mParent);
@@ -626,33 +469,6 @@ class RangeBoundaryBase {
     return aCurrentNode->GetNextSibling();
   }
 
-  [[nodiscard]] static nsIContent* ComputeRef(const nsINode* aParent,
-                                              const nsIContent* aChild,
-                                              TreeKind aKind) {
-    MOZ_ASSERT(aParent);
-    MOZ_ASSERT(aChild);
-    MOZ_ASSERT(aParent == ComputeParentNode(aChild, aKind));
-    if (aKind == TreeKind::Flat) {
-      if (const auto* slot = dom::HTMLSlotElement::FromNode(aParent)) {
-        const Span assigned = slot->AssignedNodes();
-        const auto index = assigned.IndexOf(aChild);
-        if (index != decltype(assigned)::npos && index) {
-          return nsIContent::FromNode(assigned[index - 1]);
-        }
-      }
-    }
-    nsIContent* const prevSibling = aChild->GetPreviousSibling();
-    NS_ASSERTION(
-        !prevSibling || aParent == ComputeParentNode(prevSibling, aKind),
-        nsFmtCString(
-            FMT_STRING("Invalid previous "
-                       "sibling:\npreviousSibling={}\naChild={}\naParent={}"),
-            ToString(RefPtr{prevSibling}).c_str(),
-            ToString(RefPtr{aChild}).c_str(), ToString(RefPtr{aParent}).c_str())
-            .get());
-    return prevSibling;
-  }
-
   RawRefType* GetFirstChild(const nsINode* aNode) const {
     MOZ_ASSERT(aNode);
     if (mTreeKind == TreeKind::Flat) {
@@ -673,46 +489,27 @@ class RangeBoundaryBase {
     return aNode->GetFirstChild();
   }
 
-  [[nodiscard]] static nsINode* ComputeParentNode(const nsIContent* aChild,
-                                                  TreeKind aKind) {
-    MOZ_ASSERT(aChild);
-    if (aKind == TreeKind::Flat) {
-      if (dom::HTMLSlotElement* const slot = aChild->GetAssignedSlot()) {
-        return slot;
-      }
-      // Don't use shadow host as parent node if aChild is a child of a
-      // ShadowRoot even though we allow the relation in IsValidParent().
-    }
-    return aChild->GetParentNode();
-  }
-
-  [[nodiscard]] static bool IsValidParent(const nsINode* aParent,
-                                          const nsIContent* aChild,
-                                          TreeKind aKind) {
+  bool IsValidParent(const nsINode* aParent, const nsIContent* aChild) const {
     MOZ_ASSERT(aParent);
     MOZ_ASSERT(aChild);
-    if (aParent == ComputeParentNode(aChild, aKind)) {
-      return true;
-    }
-    if (aKind == TreeKind::Flat) {
-      // It's okay if aParent is a host of a shadow tree and aChild is a child
-      // of the ShadowRoot.
-      if (aParent->GetShadowRoot() == aChild->GetParentNode()) {
-        return true;
+    if (mTreeKind == TreeKind::Flat) {
+      if (const auto* slot = aChild->GetAssignedSlot()) {
+        return slot == aParent;
+      }
+
+      if (const auto* shadowRoot =
+              dom::ShadowRoot::FromNodeOrNull(aChild->GetParent())) {
+        if (shadowRoot->GetHost() == aParent) {
+          return true;
+        }
       }
     }
-    return false;
+    return aChild->GetParentNode() == aParent;
   }
 
-  [[nodiscard]] bool IsValidParent(const nsINode* aParent,
-                                   const nsIContent* aChild) const {
-    return IsValidParent(aParent, aChild, mTreeKind);
-  }
-
-  [[nodiscard]] static uint32_t ComputeLength(const nsINode* aNode,
-                                              TreeKind aKind) {
+  uint32_t GetLength(const nsINode* aNode) const {
     MOZ_ASSERT(aNode);
-    if (aKind == TreeKind::Flat) {
+    if (mTreeKind == TreeKind::Flat) {
       if (const auto* slot = dom::HTMLSlotElement::FromNode(aNode)) {
         const Span assigned = slot->AssignedNodes();
         if (!assigned.IsEmpty()) {
@@ -727,10 +524,6 @@ class RangeBoundaryBase {
     return aNode->Length();
   }
 
-  [[nodiscard]] uint32_t GetLength(const nsINode* aNode) const {
-    return ComputeLength(aNode, mTreeKind);
-  }
-
   RawRefType* GetChildAt(const nsINode* aParent, uint32_t aOffset) const {
     MOZ_ASSERT(aParent);
     return mTreeKind == TreeKind::Flat
@@ -739,10 +532,9 @@ class RangeBoundaryBase {
                : aParent->GetChildAt_Deprecated(aOffset);
   }
 
-  [[nodiscard]] static nsIContent* ComputeLastChild(const nsINode* aParent,
-                                                    TreeKind aKind) {
+  RawRefType* GetLastChild(const nsINode* aParent) const {
     MOZ_ASSERT(aParent);
-    if (aKind == TreeKind::Flat) {
+    if (mTreeKind == TreeKind::Flat) {
       if (const auto* slot = dom::HTMLSlotElement::FromNode(aParent)) {
         const Span assigned = slot->AssignedNodes();
         if (!assigned.IsEmpty()) {
@@ -754,10 +546,6 @@ class RangeBoundaryBase {
       }
     }
     return aParent->GetLastChild();
-  }
-
-  [[nodiscard]] nsIContent* GetLastChild(const nsINode* aParent) const {
-    return ComputeLastChild(aParent, mTreeKind);
   }
 
   void InvalidateOffset() {
@@ -814,8 +602,7 @@ class RangeBoundaryBase {
   }
 
   bool IsSetAndValid() const {
-    if (!IsSet() ||
-        MOZ_UNLIKELY(mParent->NodeType() == nsINode::DOCUMENT_TYPE_NODE)) {
+    if (!IsSet()) {
       return false;
     }
 

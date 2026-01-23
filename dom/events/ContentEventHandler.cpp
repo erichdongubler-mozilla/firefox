@@ -193,8 +193,8 @@ ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetEnd(
 template <typename NodeType, typename RangeBoundaryType>
 nsresult
 ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetEndAfter(
-    nsIContent* aEndContainer) {
-  return SetEnd(RawRangeBoundary::After(*aEndContainer));
+    nsINode* aEndContainer) {
+  return SetEnd(RangeUtils::GetRawRangeBoundaryAfter(aEndContainer));
 }
 
 template <typename NodeType, typename RangeBoundaryType>
@@ -457,8 +457,7 @@ nsresult ContentEventHandler::InitCommon(EventMessage aEventMessage,
 
   // But otherwise, we need to assume that there is a selection range at the
   // beginning of the root content if aSelectionType is eNormal.
-  rv = mFirstSelectedSimpleRange.CollapseTo(
-      RawRangeBoundary::StartOfParent(*mRootElement));
+  rv = mFirstSelectedSimpleRange.CollapseTo(RawRangeBoundary(mRootElement, 0u));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -1199,8 +1198,7 @@ ContentEventHandler::ConvertFlatTextOffsetToDOMRangeBase(
 
   // Special case like <br contenteditable>
   if (!mRootElement->HasChildren()) {
-    nsresult rv = result.mRange.CollapseTo(
-        RawRangeBoundary::StartOfParent(*mRootElement));
+    nsresult rv = result.mRange.CollapseTo(RawRangeBoundary(mRootElement, 0u));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return Err(rv);
     }
@@ -3213,8 +3211,7 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
       }
     } else if (endPosition.GetContainer() != aRootElement) {
       // Offset is past node's length; set end of range to end of node
-      rv = prevSimpleRange.SetEndAfter(
-          nsIContent::FromNode(endPosition.GetContainer()));
+      rv = prevSimpleRange.SetEndAfter(endPosition.GetContainer());
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -3328,12 +3325,11 @@ nsresult ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(
   if (startPoint.IsStartOfContainer()) {
     // If the range is the start of the container, adjusted the range to the
     // start of the first child.
-    nsIContent* const firstChild = startPoint.GetContainer()->GetFirstChild();
-    if (!firstChild->IsText()) {
+    if (!startPoint.GetContainer()->GetFirstChild()->IsText()) {
       return NS_OK;
     }
-    nsresult rv =
-        aSimpleRange.CollapseTo(RawRangeBoundary::StartOfParent(*firstChild));
+    nsresult rv = aSimpleRange.CollapseTo(
+        RawRangeBoundary(startPoint.GetContainer()->GetFirstChild(), 0u));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -3349,8 +3345,8 @@ nsresult ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(
   if (!startPoint.Ref()->IsText()) {
     return NS_OK;
   }
-  nsresult rv =
-      aSimpleRange.CollapseTo(RawRangeBoundary::EndOfParent(*startPoint.Ref()));
+  nsresult rv = aSimpleRange.CollapseTo(
+      RawRangeBoundary(startPoint.Ref(), startPoint.Ref()->Length()));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
