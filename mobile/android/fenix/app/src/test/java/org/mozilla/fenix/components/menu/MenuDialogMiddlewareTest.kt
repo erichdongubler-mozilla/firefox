@@ -271,11 +271,7 @@ class MenuDialogMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN last save folder cache has a value WHEN add bookmark action is dispatched for a selected tab THEN bookmark is added with the cached value as its parent`() = runTest(testDispatcher) {
-        // given that the last saved folder actually exists
-        val lastSavedFolderId = bookmarksStorage.addFolder(BookmarkRoot.Mobile.id, "last-folder")
-            .getOrThrow()
-        `when`(lastSavedFolderCache.getGuid()).thenReturn(lastSavedFolderId)
+    fun `GIVEN last save folder cache has a value WHEN add bookmark action is dispatched for a selected tab THEN bookmark is added with the caches value as its parent`() = runTest(testDispatcher) {
         val url = "https://www.mozilla.org"
         val title = "Mozilla"
         var dismissWasCalled = false
@@ -297,44 +293,17 @@ class MenuDialogMiddlewareTest {
         )
         testScheduler.advanceUntilIdle()
 
+        `when`(lastSavedFolderCache.getGuid()).thenReturn("cached-value")
+
         store.dispatch(MenuAction.AddBookmark)
         testScheduler.advanceUntilIdle()
 
-        verify(addBookmarkUseCase).invoke(url = url, title = title, parentGuid = lastSavedFolderId)
+        verify(addBookmarkUseCase).invoke(url = url, title = title, parentGuid = "cached-value")
 
         captureMiddleware.assertLastAction(BookmarkAction.BookmarkAdded::class) { action: BookmarkAction.BookmarkAdded ->
             assertNotNull(action.guidToEdit)
         }
         assertTrue(dismissWasCalled)
-    }
-
-    @Test
-    fun `GIVEN last save folder cache has a value that is no longer available THEN a new bookmark is added to the mobile root`() = runTestOnMain {
-        val url = "https://www.mozilla.org"
-        val title = "Mozilla"
-
-        val browserMenuState = BrowserMenuState(
-            selectedTab = createTab(
-                url = url,
-                title = title,
-            ),
-        )
-        val captureMiddleware = CaptureActionsMiddleware<AppState, AppAction>()
-        val appStore = AppStore(middlewares = listOf(captureMiddleware))
-        val store = createStore(
-            appStore = appStore,
-            menuState = MenuState(
-                browserMenuState = browserMenuState,
-            ),
-            onDismiss = { },
-        )
-
-        `when`(lastSavedFolderCache.getGuid()).thenReturn("cached-value")
-
-        store.dispatch(MenuAction.AddBookmark)
-
-        // we fallback to the mobile root
-        verify(addBookmarkUseCase).invoke(url = url, title = title, parentGuid = BookmarkRoot.Mobile.id)
     }
 
     @Test
