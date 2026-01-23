@@ -3435,9 +3435,7 @@ void SVGTextFrame::ReflowSVG() {
 static TextRenderedRun::GeometryFlags TextRenderedRunFlagsForBBoxContribution(
     const TextRenderedRun& aRun, uint32_t aBBoxFlags) {
   TextRenderedRun::GeometryFlags flags;
-  if ((aBBoxFlags & SVGUtils::eBBoxIncludeFillGeometry) ||
-      ((aBBoxFlags & SVGUtils::eBBoxIncludeFill) &&
-       !aRun.mFrame->StyleSVG()->mFill.kind.IsNone())) {
+  if (aBBoxFlags & SVGUtils::eBBoxIncludeFillGeometry) {
     flags += TextRenderedRun::GeometryFlag::IncludeFill;
   }
   if ((aBBoxFlags & SVGUtils::eBBoxIncludeStrokeGeometry) ||

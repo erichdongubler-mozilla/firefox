@@ -3020,7 +3020,7 @@ static Maybe<nsRect> ComputeClipForMaskItem(
   } else if (aMaskUsage.ShouldApplyClipPath()) {
     gfxRect result = SVGUtils::GetBBox(
         aMaskedFrame,
-        SVGUtils::eBBoxIncludeClipped | SVGUtils::eBBoxIncludeFill |
+        SVGUtils::eBBoxIncludeClipped | SVGUtils::eBBoxIncludeFillGeometry |
             SVGUtils::eBBoxIncludeMarkers | SVGUtils::eBBoxIncludeStroke |
             SVGUtils::eDoNotClipToBBoxOfContentInsideClipPath);
     combinedClip = Some(

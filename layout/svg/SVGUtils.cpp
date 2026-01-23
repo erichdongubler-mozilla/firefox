@@ -315,10 +315,10 @@ nsIFrame* SVGUtils::GetOuterSVGFrameAndCoveredRegion(nsIFrame* aFrame,
   // double-counting.
   m.PreTranslate(-initPosition);
 
-  uint32_t flags = SVGUtils::eForGetClientRects | SVGUtils::eBBoxIncludeFill |
-                   SVGUtils::eBBoxIncludeStroke |
-                   SVGUtils::eBBoxIncludeMarkers |
-                   SVGUtils::eUseUserSpaceOfUseElement;
+  uint32_t flags =
+      SVGUtils::eForGetClientRects | SVGUtils::eBBoxIncludeFillGeometry |
+      SVGUtils::eBBoxIncludeStroke | SVGUtils::eBBoxIncludeMarkers |
+      SVGUtils::eUseUserSpaceOfUseElement;
 
   gfxRect bbox = SVGUtils::GetBBox(aFrame, flags, &m);
   *aRect = nsLayoutUtils::RoundGfxRectToAppRect(bbox, appUnitsPerDevPixel);
@@ -901,7 +901,8 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
   if (aFlags & SVGUtils::eBBoxIncludeClipped) {
     gfxRect clipRect;
     gfxRect fillBBox =
-        svg->GetBBoxContribution({}, SVGUtils::eBBoxIncludeFill).ToThebesRect();
+        svg->GetBBoxContribution({}, SVGUtils::eBBoxIncludeFillGeometry)
+            .ToThebesRect();
     // XXX Should probably check for overflow: clip too.
     bool hasClip = aFrame->StyleDisplay()->IsScrollableOverflow();
     if (hasClip) {
@@ -1493,8 +1494,7 @@ bool SVGUtils::GetSVGGlyphExtents(const Element* aElement,
   *aResult =
       svgFrame
           ->GetBBoxContribution(gfx::ToMatrix(transform),
-                                SVGUtils::eBBoxIncludeFill |
-                                    SVGUtils::eBBoxIncludeFillGeometry |
+                                SVGUtils::eBBoxIncludeFillGeometry |
                                     SVGUtils::eBBoxIncludeStroke |
                                     SVGUtils::eBBoxIncludeStrokeGeometry |
                                     SVGUtils::eBBoxIncludeMarkers)
