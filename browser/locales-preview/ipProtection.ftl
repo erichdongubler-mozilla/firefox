@@ -89,6 +89,8 @@ ipprotection-message-continuous-onboarding-intro = Turn on VPN to hide your loca
 ipprotection-message-continuous-onboarding-autostart = <a data-l10n-name="setting-link">Set VPN to turn on</a> every time you open { -brand-short-name } for an extra layer of protection.
 ipprotection-message-continuous-onboarding-site-settings = { -brand-short-name } will remember which websites you’ve set to use VPN. Update these in <a data-l10n-name="setting-link">settings</a> anytime.
 
+confirmation-hint-ipprotection-navigated-to-excluded-site = VPN is off for this site
+
 ## IP Protection Settings
 
 ip-protection-description =
