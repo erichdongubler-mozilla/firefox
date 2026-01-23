@@ -300,8 +300,7 @@ class TrustPanel {
 
     this.#openingReason = opts.reason;
 
-    let anchor = document.getElementById("trust-icon-container");
-    PanelMultiView.openPopup(this.#popup, anchor, {
+    PanelMultiView.openPopup(this.#popup, this.#anchor(), {
       position: "bottomleft topleft",
     });
   }
@@ -346,6 +345,20 @@ class TrustPanel {
     }
 
     this.#updateUrlbarIcon();
+  }
+
+  /**
+   * The trust icon may be hidden, in that case the identity box
+   * should be shown so use that as anchor.
+   *
+   * @returns {DOMElement}
+   */
+  #anchor() {
+    let anchors = [
+      document.getElementById("trust-icon-container"),
+      document.getElementById("identity-icon-box"),
+    ];
+    return anchors.find(element => element.checkVisibility());
   }
 
   #updateUrlbarIcon() {

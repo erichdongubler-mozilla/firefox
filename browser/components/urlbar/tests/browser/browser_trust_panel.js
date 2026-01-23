@@ -289,3 +289,16 @@ add_task(async function test_privacy_link() {
   await BrowserTestUtils.removeTab(newTab);
   await BrowserTestUtils.removeTab(tab);
 });
+
+add_task(async function test_about() {
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "about:config",
+    waitForLoad: true,
+  });
+
+  await UrlbarTestUtils.openTrustPanel(window);
+  Assert.ok(true, "The panel can be opened.");
+
+  await BrowserTestUtils.removeTab(tab);
+});
