@@ -2780,7 +2780,7 @@ network:
     expires: never
     telemetry_mirror: h#REL_PRELOAD_MISS_RATIO
 
-  urlclassifier_addon_block:
+  urlclassifier_harmful_addon_block:
     type: event
     description: >
       A classified network request initiated by a WebExtension was blocked by the
@@ -2792,6 +2792,8 @@ network:
     notification_emails:
       - amarchesini@mozilla.com
       - addons-dev-internal@mozilla.com
+    send_in_pings:
+      - url-classifier-harmful-addon
     expires: never
     extra_keys:
       addon_id:
