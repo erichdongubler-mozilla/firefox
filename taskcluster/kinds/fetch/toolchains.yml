@@ -670,11 +670,11 @@ pkgconf:
         add-prefix: pkgconf/
 
 afl-plus-plus-4.0:
-    description: AFL++ 4.0x source
+    description: AFL++ 4.x source
     fetch:
         type: git
         repo: https://github.com/AFLplusplus/AFLplusplus
-        revision: 10db3a35cf17600594946edb6662d606bd4e4207
+        revision: ada0855022ac6e77de74622d0ab61ca7a37b9a9c
 
 cargo-vet:
     description: cargo-vet source
