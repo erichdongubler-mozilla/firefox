@@ -672,6 +672,8 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
       kidReflowInput.mFlags.mIsColumnBalancing = aConfig.mIsBalancing;
       kidReflowInput.mFlags.mIsInLastColumnBalancingReflow =
           aConfig.mIsLastBalancingReflow;
+      kidReflowInput.mFlags.mIsInColumnMeasuringReflow =
+          aConfig.mIsInMeasuringReflow;
       kidReflowInput.mBreakType = ReflowInput::BreakType::Column;
 
       // We need to reflow any float placeholders, even if our column block-size
@@ -1227,10 +1229,11 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
 
   //------------ Handle Incremental Reflow -----------------
 
-  COLUMN_SET_LOG("%s: Begin Reflow: this=%p, is nested multicol=%d", __func__,
-                 this,
-                 aReflowInput.mParentReflowInput->mFrame->HasAnyStateBits(
-                     NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR));
+  const bool isNestedMulticol =
+      aReflowInput.mParentReflowInput->mFrame->HasAnyStateBits(
+          NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
+  COLUMN_SET_LOG("%s: Begin Reflow: this=%p, is nested multicol? %s", __func__,
+                 this, YesOrNo(isNestedMulticol));
 
   // If inline size is unconstrained, set aForceAuto to true to allow
   // the columns to expand in the inline direction. (This typically
@@ -1238,6 +1241,61 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
   // container's block direction).
   ReflowConfig config = ChooseColumnStrategy(
       aReflowInput, aReflowInput.ComputedISize() == NS_UNCONSTRAINEDSIZE);
+
+  const bool shouldDoMeasuringReflow = [&]() {
+    if (!aPresContext->FragmentainerAwarePositioningEnabled()) {
+      return false;
+    }
+    if (isNestedMulticol) {
+      // Only the top-level multicol can initiate a measuring reflow. If we are
+      // a nested multicol, perform a measuring reflow only when the top-level
+      // one is doing it.
+      return aReflowInput.mFlags.mIsInColumnMeasuringReflow;
+    }
+    // Below is logic for top-level multicols.
+    if (GetPrevInFlow()) {
+      // A measuring reflow is only needed on first-in-flow.
+      return false;
+    }
+    // Only do a measuring reflow if there are absolutely positioned descendants
+    // since the purpose is to compute their unfragmented positions.
+    return nsLayoutUtils::HasAbsolutelyPositionedDescendants(this);
+  }();
+  if (shouldDoMeasuringReflow) {
+    // Reflow the content with an unconstrained available block-size, to
+    // compute the unfragmented position of the absolutely positioned
+    // descendants.
+    if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
+      // We need to reflow everything when we are in an incremental measuring
+      // reflow.
+      MarkPrincipalChildrenDirty(this);
+    }
+
+    ReflowConfig measuringConfig = config;
+    measuringConfig.mColBSize = NS_UNCONSTRAINEDSIZE;
+    measuringConfig.mIsInMeasuringReflow = true;
+
+    COLUMN_SET_LOG(
+        "%s: Doing column measuring reflow with an unconstrained block-size",
+        __func__);
+    ReflowColumns(aDesiredSize, aReflowInput, aStatus, measuringConfig, true);
+
+    if (isNestedMulticol) {
+      // Nested multicols return early after measuring reflow, skipping the
+      // subsequent normal reflow. During the top-level multicol's measuring
+      // reflow, the top-level multicol hasn't applied its column sizing
+      // constraints yet, so our available block-size here is not the actual
+      // one. We'll do our normal reflow later when the top-level does its
+      // normal reflow.
+      COLUMN_SET_LOG(
+          "%s: Nested multicol returns early after the column measuring reflow",
+          __func__);
+      return;
+    }
+
+    // Mark columns dirty for normal reflow below.
+    MarkPrincipalChildrenDirty(this);
+  }
 
   // If balancing, then we allow the last column to grow to unbounded
   // block-size during the first reflow. This gives us a way to estimate
@@ -1247,6 +1305,7 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
   // content back here and then have to push it out again!
   nsIFrame* nextInFlow = GetNextInFlow();
   bool unboundedLastColumn = config.mIsBalancing && !nextInFlow;
+  COLUMN_SET_LOG("%s: Doing column normal reflow", __func__);
   const ColumnBalanceData colData = ReflowColumns(
       aDesiredSize, aReflowInput, aStatus, config, unboundedLastColumn);
 
@@ -1254,6 +1313,7 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
   // reflown all of our children, and there is no need for a binary search to
   // determine proper column block-size.
   if (config.mIsBalancing && !aPresContext->HasPendingInterrupt()) {
+    COLUMN_SET_LOG("%s: Doing the column balancing reflow", __func__);
     FindBestBalanceBSize(aReflowInput, aPresContext, config, colData,
                          aDesiredSize, unboundedLastColumn, aStatus);
   }
