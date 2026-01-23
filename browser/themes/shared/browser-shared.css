@@ -1454,6 +1454,23 @@ popupnotificationcontent {
   }
 }
 
+/* AI window immersive view (hidden address bar and buttons) */
+:root[ai-window][aiwindow-immersive-view] {
+  #nav-bar:not(.browser-titlebar) {
+    height: 0;
+    min-height: 0;
+    visibility: hidden;
+  }
+
+  /* immersive view styles exclusive for first run */
+  &[aiwindow-first-run] {
+    .toolbar-items {
+      opacity: 0.2;
+      pointer-events: none;
+    }
+  }
+}
+
 /* Bookmarks roots menu-items */
 
 #BMB_bookmarksToolbar,

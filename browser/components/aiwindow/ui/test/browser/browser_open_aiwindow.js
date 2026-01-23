@@ -85,6 +85,13 @@ add_task(async function test_button_actions() {
     button.click();
 
     const newWin = await delayedStartupPromise;
+
+    const exampleUrl = "https://example.com/";
+    await BrowserTestUtils.loadURIString({
+      browser: newWin.gBrowser.selectedTab.linkedBrowser,
+      uriString: exampleUrl,
+    });
+
     const newWinIsAI =
       newWin.document.documentElement.hasAttribute("ai-window");
 

@@ -417,6 +417,39 @@ export const AIWindow = {
 
     return true;
   },
+
+  /**
+   * Toggles the immersive view (hidden address bar and disabled tabs) depending on the URL passed
+   *
+   * @param {nsIURI} currentURI
+   * @param {Window} win
+   */
+  updateImmersiveView(currentURI, win) {
+    if (!currentURI || !this.isAIWindowActiveAndEnabled(win)) {
+      return;
+    }
+
+    /* any URL that should have the immersive view */
+    const validImmersiveURIs = [FIRSTRUN_URI, AIWINDOW_URI];
+    const root = win.document.getElementById("main-window");
+    const isImmersiveView = validImmersiveURIs.some(uri =>
+      uri.equalsExceptRef(currentURI)
+    );
+
+    /* sets attr only for first run for css reasons */
+    const isFirstRun = currentURI.equalsExceptRef(FIRSTRUN_URI);
+    root.toggleAttribute("aiwindow-first-run", isFirstRun && isImmersiveView);
+    root.toggleAttribute("aiwindow-immersive-view", isImmersiveView);
+
+    /* disabling the current tab from being clicked from the keyboard */
+
+    const selectedTab = win.gBrowser.selectedTab;
+    if (isFirstRun) {
+      selectedTab?.setAttribute("tabindex", -1);
+    } else {
+      selectedTab?.removeAttribute("tabindex");
+    }
+  },
 };
 
 XPCOMUtils.defineLazyPreferenceGetter(
