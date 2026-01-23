@@ -1077,6 +1077,10 @@ void IonICPerfSpewer::saveProfile(JSContext* cx, JSScript* script,
     return;
   }
   UniqueChars desc = GetFunctionDesc("IonIC", cx, script, stubName);
+  if (!desc) {
+    disable();
+    return;
+  }
   PerfSpewer::saveJSProfile(code, desc, script);
 }
 
@@ -1085,6 +1089,10 @@ void BaselineICPerfSpewer::saveProfile(JitCode* code, const char* stubName) {
     return;
   }
   UniqueChars desc = JS_smprintf("BaselineIC: %s", stubName);
+  if (!desc) {
+    disable();
+    return;
+  }
   PerfSpewer::saveJSProfile(code, desc, nullptr);
 }
 
@@ -1094,6 +1102,10 @@ void BaselinePerfSpewer::saveProfile(JSContext* cx, JSScript* script,
     return;
   }
   UniqueChars desc = GetFunctionDesc("Baseline", cx, script);
+  if (!desc) {
+    disable();
+    return;
+  }
   PerfSpewer::saveJSProfile(code, desc, script);
 }
 
@@ -1122,6 +1134,9 @@ void BaselineInterpreterPerfSpewer::saveProfile(JitCode* code) {
     }
     ops_.clear();
     UniqueChars desc = DuplicateString("BaselineInterpreter");
+    if (!desc) {
+      return;
+    }
     PerfSpewer::saveJSProfile(code, desc, nullptr);
     return;
   }
@@ -1185,6 +1200,10 @@ void IonPerfSpewer::saveJSProfile(JSContext* cx, JSScript* script,
     return;
   }
   UniqueChars desc = GetFunctionDesc("Ion", cx, script);
+  if (!desc) {
+    disable();
+    return;
+  }
   PerfSpewer::saveJSProfile(code, desc, script);
 }
 
@@ -1218,6 +1237,10 @@ void js::jit::CollectPerfSpewerJitCodeProfile(JitCode* code, const char* msg) {
       return;  // Allocation failure.
     }
     UniqueChars desc = JS_smprintf("%s", msg);
+    if (!desc) {
+      DisablePerfSpewer();
+      return;
+    }
     PerfSpewer::CollectJitCodeInfo(desc, code, maybeProfilerRecord, lock);
   }
 }
@@ -1236,6 +1259,10 @@ void js::jit::CollectPerfSpewerJitCodeProfile(uintptr_t base, uint64_t size,
       return;  // Allocation failure.
     }
     UniqueChars desc = JS_smprintf("%s", msg);
+    if (!desc) {
+      DisablePerfSpewer();
+      return;
+    }
     PerfSpewer::CollectJitCodeInfo(desc, reinterpret_cast<void*>(base), size,
                                    maybeProfilerRecord, lock);
   }
@@ -1268,6 +1295,10 @@ void js::jit::PerfSpewerRangeRecorder::recordOffset(const char* name) {
     return;
   }
   UniqueChars desc = DuplicateString(name);
+  if (!desc) {
+    DisablePerfSpewer();
+    return;
+  }
   appendEntry(desc);
 }
 
@@ -1277,6 +1308,10 @@ void js::jit::PerfSpewerRangeRecorder::recordVMWrapperOffset(const char* name) {
   }
 
   UniqueChars desc = JS_smprintf("VMWrapper: %s", name);
+  if (!desc) {
+    DisablePerfSpewer();
+    return;
+  }
   appendEntry(desc);
 }
 
@@ -1287,6 +1322,10 @@ void js::jit::PerfSpewerRangeRecorder::recordOffset(const char* name,
     return;
   }
   UniqueChars desc = GetFunctionDesc(name, cx, script);
+  if (!desc) {
+    DisablePerfSpewer();
+    return;
+  }
   appendEntry(desc);
 }
 
