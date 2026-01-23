@@ -213,7 +213,6 @@ export function normalizeAttributeName(attr) {
  * Nimbus via the `getPrefValue` filter.
  */
 export const PREFS = Object.freeze({
-  "browser.ai.control.default": PREF_BOOL,
   "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons": PREF_BOOL,
   "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features":
     PREF_BOOL,

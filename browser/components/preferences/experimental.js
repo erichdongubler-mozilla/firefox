@@ -14,9 +14,6 @@ const gExperimentalPane = {
   _featureGatesContainer: null,
   _firefoxLabs: null,
 
-  /** @type {Promise<void>} */
-  _renderingPromise: Promise.resolve(),
-
   async init() {
     if (this.inited) {
       return;
@@ -39,30 +36,10 @@ const gExperimentalPane = {
 
     window.addEventListener("unload", () => this._removeObservers());
 
-    await this._queueRender();
-
-    Services.obs.addObserver(this, ExperimentAPI.ENROLLMENTS_UPDATED);
-  },
-
-  /**
-   * Queue the page to re-render.
-   *
-   * This function ensures at most one render happens at once.
-   *
-   * @returns {Promise<void>}
-   */
-  _queueRender() {
-    this._renderingPromise = this._renderingPromise.then(() =>
-      this._maybeRenderLabsRecipes()
-    );
-    return this._renderingPromise;
+    await this._maybeRenderLabsRecipes();
   },
 
   async _maybeRenderLabsRecipes() {
-    this._featureGatesContainer
-      .querySelectorAll(".featureGate")
-      .forEach(el => el.remove());
-
     this._firefoxLabs = await FirefoxLabs.create();
 
     const shouldHide = this._firefoxLabs.count === 0;
@@ -72,10 +49,6 @@ const gExperimentalPane = {
       return;
     }
 
-    this._renderLabsRecipes();
-  },
-
-  _renderLabsRecipes() {
     const frag = document.createDocumentFragment();
 
     const groups = new Map();
@@ -139,6 +112,14 @@ const gExperimentalPane = {
     Services.obs.notifyObservers(window, "experimental-pane-loaded");
   },
 
+  _removeLabsRecipes() {
+    ExperimentAPI.manager.store.off("update", this._onNimbusUpdate);
+
+    this._featureGatesContainer
+      .querySelectorAll(".featureGate")
+      .forEach(el => el.remove());
+  },
+
   async _onCheckboxChanged(event) {
     const target = event.target;
 
@@ -185,8 +166,6 @@ const gExperimentalPane = {
 
   _removeObservers() {
     ExperimentAPI.manager.store.off("update", this._onNimbusUpdate);
-
-    Services.obs.removeObserver(this, ExperimentAPI.ENROLLMENTS_UPDATED);
   },
 
   // Reset the features to their default values
@@ -216,13 +195,6 @@ const gExperimentalPane = {
     ) {
       // Leave the 'experimental' category if there are no available features
       gotoPref("general");
-    }
-  },
-
-  observe(_subject, topic, _data) {
-    switch (topic) {
-      case ExperimentAPI.ENROLLMENTS_UPDATED:
-        void this._queueRender();
     }
   },
 };
