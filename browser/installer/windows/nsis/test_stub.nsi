@@ -35,9 +35,6 @@ Var TestBreakpointNumber
 !include "WordFunc.nsh"
 !include "control_utils.nsh"
 
-Function ExitProcess
-FunctionEnd
-
 Function AttachConsole
     ; NSIS doesn't attach a console to the installer, so we'll do that now
     System::Call 'kernel32::AttachConsole(i -1)i.r0'
