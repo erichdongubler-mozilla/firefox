@@ -1753,13 +1753,12 @@ nsresult Selection::StyledRanges::GetIndicesForInterval(
       return FindInsertionPoint(
           mRanges.Ranges(),
           ConstRawRangeBoundary(aEndNode, aEndOffset,
-                                RangeBoundaryIsMutationObserved::No),
+                                RangeBoundarySetBy::Offset),
           &CompareToRangeStart<TreeKind::Flat>);
     }
     return FindInsertionPoint(
         mRanges.Ranges(),
-        ConstRawRangeBoundary(aEndNode, aEndOffset,
-                              RangeBoundaryIsMutationObserved::No),
+        ConstRawRangeBoundary(aEndNode, aEndOffset, RangeBoundarySetBy::Offset),
         &CompareToRangeStart<TreeKind::ShadowIncludingDOM>);
   }();
 
@@ -1787,14 +1786,13 @@ nsresult Selection::StyledRanges::GetIndicesForInterval(
       return FindInsertionPoint(
           mRanges.Ranges(),
           ConstRawRangeBoundary(aBeginNode, aBeginOffset,
-                                RangeBoundaryIsMutationObserved::No),
+                                RangeBoundarySetBy::Offset),
           &CompareToRangeEnd<TreeKind::Flat>);
     }
-    return FindInsertionPoint(
-        mRanges.Ranges(),
-        ConstRawRangeBoundary(aBeginNode, aBeginOffset,
-                              RangeBoundaryIsMutationObserved::No),
-        &CompareToRangeEnd<TreeKind::ShadowIncludingDOM>);
+    return FindInsertionPoint(mRanges.Ranges(),
+                              ConstRawRangeBoundary(aBeginNode, aBeginOffset,
+                                                    RangeBoundarySetBy::Offset),
+                              &CompareToRangeEnd<TreeKind::ShadowIncludingDOM>);
   }();
 
   if (beginsAfterIndex == mRanges.Length()) {

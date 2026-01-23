@@ -81,7 +81,7 @@ using ConstRawRangeBoundary =
  * returns false. However, `IsSet()` will still return true.
  *
  */
-enum class RangeBoundaryIsMutationObserved { No = 0, Yes = 1 };
+enum class RangeBoundarySetBy : bool { Offset = false, Ref = true };
 
 // This class has two types of specializations, one using reference counting
 // pointers and one using raw pointers (both non-const and const versions). The
@@ -127,7 +127,7 @@ class RangeBoundaryBase {
                     TreeKind aTreeKind = TreeKind::DOM)
       : mParent(aContainer),
         mRef(aRef),
-        mIsMutationObserved(true),
+        mSetBy(RangeBoundarySetBy::Ref),
         mTreeKind(aTreeKind) {
     MOZ_ASSERT(
         aTreeKind == TreeKind::DOM || aTreeKind == TreeKind::Flat,
@@ -141,18 +141,17 @@ class RangeBoundaryBase {
   }
 
   RangeBoundaryBase(RawParentType* aContainer, uint32_t aOffset,
-                    RangeBoundaryIsMutationObserved aRangeIsMutationObserver =
-                        RangeBoundaryIsMutationObserved::Yes,
+                    RangeBoundarySetBy aSetBy = RangeBoundarySetBy::Ref,
                     TreeKind aTreeKind = TreeKind::DOM)
       : mParent(aContainer),
         mRef(nullptr),
         mOffset(mozilla::Some(aOffset)),
-        mIsMutationObserved(bool(aRangeIsMutationObserver)),
+        mSetBy(aSetBy),
         mTreeKind(aTreeKind) {
     MOZ_ASSERT(
         aTreeKind == TreeKind::DOM || aTreeKind == TreeKind::Flat,
         "Only TreeKind::DOM and TreeKind::Flat are valid at the moment.");
-    if (mIsMutationObserved && mParent && mParent->IsContainerNode()) {
+    if (IsSetByRef() && mParent && mParent->IsContainerNode()) {
       // Find a reference node
       if (aOffset == GetLength(mParent)) {
         mRef = GetLastChild(mParent);
@@ -180,17 +179,13 @@ class RangeBoundaryBase {
     if (mOffset) {
       if (mTreeKind == TreeKind::Flat) {
         MOZ_ASSERT_IF(IsSet(), IsSetAndValid());
-        return RangeBoundaryBase(
-            mParent, mRef, *mOffset,
-            RangeBoundaryIsMutationObserved(mIsMutationObserved),
-            TreeKind::Flat);
+        return RangeBoundaryBase(mParent, mRef, *mOffset, mSetBy,
+                                 TreeKind::Flat);
       }
       // We don't assert IsSetAndValid() here because it's possible
       // that a RangeBoundary is not valid for TreeKind::DOM but valid
       // for TreeKind::Flat.
-      return RangeBoundaryBase(
-          mParent, *mOffset,
-          RangeBoundaryIsMutationObserved(mIsMutationObserved), TreeKind::Flat);
+      return RangeBoundaryBase(mParent, *mOffset, mSetBy, TreeKind::Flat);
     }
     MOZ_ASSERT_IF(IsSet(), IsSetAndValid());
     return RangeBoundaryBase(mParent, mRef, TreeKind::Flat);
@@ -204,13 +199,12 @@ class RangeBoundaryBase {
    */
   RangeBoundaryBase(RawParentType* aContainer, RawRefType* aRef,
                     uint32_t aOffset,
-                    RangeBoundaryIsMutationObserved aRangeIsMutationObserver =
-                        RangeBoundaryIsMutationObserved::Yes,
+                    RangeBoundarySetBy aSetBy = RangeBoundarySetBy::Ref,
                     TreeKind aTreeKind = TreeKind::DOM)
       : mParent(const_cast<nsINode*>(aContainer)),
         mRef(const_cast<nsIContent*>(aRef)),
         mOffset(mozilla::Some(aOffset)),
-        mIsMutationObserved(bool(aRangeIsMutationObserver)),
+        mSetBy(aSetBy),
         mTreeKind(aTreeKind) {
     MOZ_ASSERT(IsSetAndValid());
   }
@@ -218,7 +212,7 @@ class RangeBoundaryBase {
   explicit RangeBoundaryBase(TreeKind aTreeKind = TreeKind::DOM)
       : mParent(nullptr),
         mRef(nullptr),
-        mIsMutationObserved(true),
+        mSetBy(RangeBoundarySetBy::Ref),
         mTreeKind(aTreeKind) {}
 
   // Convert from RawRangeBoundary or RangeBoundary.
@@ -226,26 +220,26 @@ class RangeBoundaryBase {
             typename = std::enable_if_t<!std::is_const_v<RawParentType> ||
                                         std::is_const_v<PT>>>
   RangeBoundaryBase(const RangeBoundaryBase<PT, RT>& aOther,
-                    RangeBoundaryIsMutationObserved aIsMutationObserved)
+                    RangeBoundarySetBy aSetBy)
       : mParent(aOther.mParent),
         mRef(aOther.mRef),
         mOffset(aOther.mOffset),
-        mIsMutationObserved(bool(aIsMutationObserved)),
+        mSetBy(aSetBy),
         mTreeKind(aOther.mTreeKind) {}
 
   /**
    * This method may return `nullptr` in two cases:
-   *  1. `mIsMutationObserved` is true and the boundary points to the first
+   *  1. `mPointingToChildNode` is true and the boundary points to the first
    *      child of `mParent`.
-   *  2. `mIsMutationObserved` is false and `mOffset` is out of bounds for
+   *  2. `mPointingToChildNode` is false and `mOffset` is out of bounds for
    *     `mParent`s child list.
-   * If `mIsMutationObserved` is false, this method may do some significant
+   * If `mPointingToChildNode` is false, this method may do some significant
    * computation. Therefore it is advised to call it as seldom as possible.
    * Code inside of this class should call this method exactly one time and
    * afterwards refer to `mRef` directly.
    */
   RawRefType* Ref() const {
-    if (mIsMutationObserved) {
+    if (IsSetByRef()) {
       return mRef;
     }
     MOZ_ASSERT(mParent);
@@ -286,7 +280,7 @@ class RangeBoundaryBase {
   }
 
   /**
-   * This method may return `nullptr` if `mIsMutationObserved` is false and
+   * This method may return `nullptr` if `mPointingToChildNode` is false and
    * `mOffset` is out of bounds.
    */
   RawRefType* GetChildAtOffset() const {
@@ -295,7 +289,7 @@ class RangeBoundaryBase {
     }
     RawRefType* const ref = Ref();
     if (!ref) {
-      if (!mIsMutationObserved && *mOffset != 0) {
+      if (!MaybeMutationObserved() && *mOffset != 0) {
         // This means that this boundary is invalid.
         // `mOffset` is out of bounds.
         return nullptr;
@@ -325,7 +319,7 @@ class RangeBoundaryBase {
     }
     RawRefType* const ref = Ref();
     if (!ref) {
-      if (!mIsMutationObserved && *mOffset != 0) {
+      if (!MaybeMutationObserved() && *mOffset != 0) {
         // This means that this boundary is invalid.
         // `mOffset` is out of bounds.
         return nullptr;
@@ -381,20 +375,20 @@ class RangeBoundaryBase {
     switch (aOffsetFilter) {
       case OffsetFilter::kValidOffsets: {
         if (IsSetAndValid()) {
-          MOZ_ASSERT_IF(!mIsMutationObserved, mOffset);
-          if (!mOffset && mIsMutationObserved) {
+          MOZ_ASSERT_IF(IsSetByOffset(), mOffset);
+          if (!mOffset && IsSetByRef()) {
             DetermineOffsetFromReference();
           }
         }
-        return !mIsMutationObserved && *mOffset > GetLength(mParent) ? Nothing{}
-                                                                     : mOffset;
+        return IsSetByOffset() && *mOffset > GetLength(mParent) ? Nothing{}
+                                                                : mOffset;
       }
       case OffsetFilter::kValidOrInvalidOffsets: {
-        MOZ_ASSERT_IF(!mIsMutationObserved, mOffset.isSome());
+        MOZ_ASSERT_IF(IsSetByOffset(), mOffset.isSome());
         if (mOffset.isSome()) {
           return mOffset;
         }
-        if (mParent && mIsMutationObserved) {
+        if (mParent && IsSetByRef()) {
           DetermineOffsetFromReference();
           if (mOffset.isSome()) {
             return mOffset;
@@ -420,7 +414,7 @@ class RangeBoundaryBase {
       aStream << " (" << *aRangeBoundary.GetContainer() << ", Length="
               << aRangeBoundary.GetLength(aRangeBoundary.GetContainer()) << ")";
     }
-    if (aRangeBoundary.mIsMutationObserved) {
+    if (aRangeBoundary.IsSetByRef()) {
       aStream << ", mRef=" << aRangeBoundary.mRef;
       if (aRangeBoundary.mRef) {
         aStream << " (" << *aRangeBoundary.mRef << ")";
@@ -428,8 +422,7 @@ class RangeBoundaryBase {
     }
 
     aStream << ", mOffset=" << aRangeBoundary.mOffset;
-    aStream << ", mIsMutationObserved="
-            << (aRangeBoundary.mIsMutationObserved ? "true" : "false");
+    aStream << ", mSetBy=" << (aRangeBoundary.IsSetByRef() ? "Ref" : "Offset");
     aStream << ", mTreeKind=" << aRangeBoundary.mTreeKind;
     aStream << " }";
     return aStream;
@@ -440,7 +433,7 @@ class RangeBoundaryBase {
     MOZ_ASSERT(mParent);
     MOZ_ASSERT(mRef);
     MOZ_ASSERT(IsValidParent(mParent, mRef));
-    MOZ_ASSERT(mIsMutationObserved);
+    MOZ_ASSERT(IsSetByRef());
     MOZ_ASSERT(mOffset.isNothing());
 
     if (mRef->IsBeingRemoved()) {
@@ -559,7 +552,7 @@ class RangeBoundaryBase {
     MOZ_ASSERT(mParent);
     MOZ_ASSERT(mParent->IsContainerNode(),
                "Range is positioned on a text node!");
-    if (!mIsMutationObserved) {
+    if (IsSetByOffset()) {
       // RangeBoundaries that are not used in the context of a
       // `MutationObserver` use the offset as main source of truth to compute
       // `mRef`. Therefore, it must not be updated or invalidated.
@@ -582,7 +575,7 @@ class RangeBoundaryBase {
       return;
     }
 
-    if (!mIsMutationObserved) {
+    if (!MaybeMutationObserved()) {
       // RangeBoundaries that are not used in the context of a
       // `MutationObserver` use the offset as main source of truth to compute
       // `mRef`. Therefore, it must not be updated or invalidated.
@@ -613,7 +606,7 @@ class RangeBoundaryBase {
       return false;
     }
 
-    if (mIsMutationObserved && Ref()) {
+    if (IsSetByRef() && Ref()) {
       // XXX mRef refers previous sibling of pointing child.  Therefore, it
       //     seems odd that this becomes invalid due to its removal.  Should we
       //     change RangeBoundaryBase to refer child at offset directly?
@@ -628,8 +621,7 @@ class RangeBoundaryBase {
     // We're at the first point in the container if we don't have a reference,
     // and our offset is 0. If we don't have a Ref, we should already have an
     // offset, so we can just directly fetch it.
-    return mIsMutationObserved ? !Ref() && mOffset.value() == 0
-                               : mOffset.value() == 0;
+    return IsSetByRef() ? !Ref() && mOffset.value() == 0 : mOffset.value() == 0;
   }
 
   bool IsEndOfContainer() const {
@@ -637,8 +629,8 @@ class RangeBoundaryBase {
     // child in GetContainer(), or our Offset() is the same as the length of our
     // container. If we don't have a Ref, then we should already have an offset,
     // so we can just directly fetch it.
-    return mIsMutationObserved && Ref() ? !GetNextSibling(Ref())
-                                        : mOffset.value() == GetLength(mParent);
+    return IsSetByRef() && Ref() ? !GetNextSibling(Ref())
+                                 : mOffset.value() == GetLength(mParent);
   }
 
   // Convenience methods for switching between the two types
@@ -646,12 +638,10 @@ class RangeBoundaryBase {
   template <typename PT = RawParentType,
             typename = std::enable_if_t<!std::is_const_v<PT>>>
   RawRangeBoundary AsRaw() const {
-    return RawRangeBoundary(
-        *this, RangeBoundaryIsMutationObserved(mIsMutationObserved));
+    return RawRangeBoundary(*this, mSetBy);
   }
   ConstRawRangeBoundary AsConstRaw() const {
-    return ConstRawRangeBoundary(
-        *this, RangeBoundaryIsMutationObserved(mIsMutationObserved));
+    return ConstRawRangeBoundary(*this, mSetBy);
   }
 
   RangeBoundaryBase& operator=(const RangeBoundaryBase& aOther) {
@@ -660,7 +650,7 @@ class RangeBoundaryBase {
       mParent = aOther.mParent;
       mRef = aOther.mRef;
       mOffset = aOther.mOffset;
-      mIsMutationObserved = aOther.mIsMutationObserved;
+      mSetBy = aOther.mSetBy;
     }
     return *this;
   }
@@ -668,9 +658,8 @@ class RangeBoundaryBase {
   template <
       typename PT, typename RT, typename RPT = RawParentType,
       typename = std::enable_if_t<!std::is_const_v<PT> || std::is_const_v<RPT>>>
-  RangeBoundaryBase& CopyFrom(
-      const RangeBoundaryBase<PT, RT>& aOther,
-      RangeBoundaryIsMutationObserved aIsMutationObserved) {
+  RangeBoundaryBase& CopyFrom(const RangeBoundaryBase<PT, RT>& aOther,
+                              RangeBoundarySetBy aSetBy) {
     MOZ_ASSERT(mTreeKind == aOther.mTreeKind);
     // mParent and mRef can be strong pointers, so better to try to avoid any
     // extra AddRef/Release calls.
@@ -681,8 +670,8 @@ class RangeBoundaryBase {
       mRef = aOther.mRef;
     }
 
-    mIsMutationObserved = bool(aIsMutationObserved);
-    if (!mIsMutationObserved && aOther.mOffset.isNothing()) {
+    mSetBy = aSetBy;
+    if (IsSetByOffset() && aOther.mOffset.isNothing()) {
       // "Fix" the offset from mRef if and only if we won't be updated for
       // further mutations and aOther has not computed the offset of its mRef.
       // XXX What should we do if aOther is not updated for mutations and
@@ -696,8 +685,7 @@ class RangeBoundaryBase {
     // If the mutation will be observed but the other does not have proper
     // mRef for its mOffset, we need to compute mRef like the constructor
     // which takes aOffset.
-    if (mIsMutationObserved && !mRef && mParent && mOffset.isSome() &&
-        *mOffset) {
+    if (IsSetByRef() && !mRef && mParent && mOffset.isSome() && *mOffset) {
       if (*mOffset == mParent->GetChildCount()) {
         mRef = GetLastChild(mParent);
       } else {
@@ -748,17 +736,29 @@ class RangeBoundaryBase {
            (
                // If mutation is observed, mRef is the base of mOffset unless
                // it's not a container node like `Text` node.
-               (mIsMutationObserved && (mRef || mParent->IsContainerNode())) ||
+               (IsSetByRef() && (mRef || mParent->IsContainerNode())) ||
                // If offset is not set, we would compute mOffset from mRef.
                // So, mRef is "fixed" for now.
                mOffset.isNothing());
   }
 
+  [[nodiscard]] bool IsSetByOffset() const {
+    return !static_cast<bool>(mSetBy);
+  }
+  [[nodiscard]] bool IsSetByRef() const { return static_cast<bool>(mSetBy); }
+
+  /**
+   * If nsRange stores mutations for RangeBoundary instances, mSetBy is always
+   * "Ref".  However, it's the default behavior of RangeBoundaryBase so that
+   * even if this returns true, the mutations may not be observed actually.
+   */
+  [[nodiscard]] bool MaybeMutationObserved() const { return IsSetByRef(); }
+
   ParentType mParent;
   mutable RefType mRef;
 
   mutable mozilla::Maybe<uint32_t> mOffset;
-  bool mIsMutationObserved;
+  RangeBoundarySetBy mSetBy;
   const TreeKind mTreeKind;
 };
 

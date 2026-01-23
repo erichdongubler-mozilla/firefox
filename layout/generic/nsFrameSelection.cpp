@@ -1162,9 +1162,8 @@ void nsFrameSelection::MaintainedRange::AdjustContentOffsets(
   // Adjust offsets according to maintained amount
   if (mRange && mAmount != eSelectNoAmount) {
     const Maybe<int32_t> relativePosition = nsContentUtils::ComparePoints(
-        mRange->StartRef(),
-        RawRangeBoundary(aOffsets.content, aOffsets.offset,
-                         RangeBoundaryIsMutationObserved::No));
+        mRange->StartRef(), RawRangeBoundary(aOffsets.content, aOffsets.offset,
+                                             RangeBoundarySetBy::Offset));
     if (NS_WARN_IF(!relativePosition)) {
       // Potentially handle this properly when Selection across Shadow DOM
       // boundary is implemented

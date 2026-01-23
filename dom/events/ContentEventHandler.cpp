@@ -154,12 +154,12 @@ ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetStart(
   // Collapse if not positioned yet, or if positioned in another document.
   if (!IsPositioned() || newRoot != mRoot) {
     mRoot = newRoot;
-    mStart.CopyFrom(aStart, RangeBoundaryIsMutationObserved::Yes);
-    mEnd.CopyFrom(aStart, RangeBoundaryIsMutationObserved::Yes);
+    mStart.CopyFrom(aStart, RangeBoundarySetBy::Ref);
+    mEnd.CopyFrom(aStart, RangeBoundarySetBy::Ref);
     return NS_OK;
   }
 
-  mStart.CopyFrom(aStart, RangeBoundaryIsMutationObserved::Yes);
+  mStart.CopyFrom(aStart, RangeBoundarySetBy::Ref);
   AssertStartIsBeforeOrEqualToEnd();
   return NS_OK;
 }
@@ -180,12 +180,12 @@ ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetEnd(
   // Collapse if not positioned yet, or if positioned in another document.
   if (!IsPositioned() || newRoot != mRoot) {
     mRoot = newRoot;
-    mStart.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
-    mEnd.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
+    mStart.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
+    mEnd.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
     return NS_OK;
   }
 
-  mEnd.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
+  mEnd.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
   AssertStartIsBeforeOrEqualToEnd();
   return NS_OK;
 }
@@ -224,8 +224,8 @@ nsresult ContentEventHandler::SimpleRangeBase<
     MOZ_ASSERT(*aStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets) <=
                *aEnd.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets));
     mRoot = newStartRoot;
-    mStart.CopyFrom(aStart, RangeBoundaryIsMutationObserved::Yes);
-    mEnd.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
+    mStart.CopyFrom(aStart, RangeBoundarySetBy::Ref);
+    mEnd.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
     return NS_OK;
   }
 
@@ -240,15 +240,15 @@ nsresult ContentEventHandler::SimpleRangeBase<
   // If they have different root, this should be collapsed at the end point.
   if (newStartRoot != newEndRoot) {
     mRoot = newEndRoot;
-    mStart.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
-    mEnd.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
+    mStart.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
+    mEnd.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
     return NS_OK;
   }
 
   // Otherwise, set the range as specified.
   mRoot = newStartRoot;
-  mStart.CopyFrom(aStart, RangeBoundaryIsMutationObserved::Yes);
-  mEnd.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
+  mStart.CopyFrom(aStart, RangeBoundarySetBy::Ref);
+  mEnd.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
   AssertStartIsBeforeOrEqualToEnd();
   return NS_OK;
 }

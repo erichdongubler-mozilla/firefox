@@ -3815,9 +3815,9 @@ Maybe<int32_t> nsContentUtils::ComparePoints(
   // Otherwise, i.e., at least one RangeBoundaryBase stores the child node.
   // In the most cases, RangeBoundaryBase has it, so, the worst scenario here
   // is, one of the boundaries comes from a StaticRange or is initialized with
-  // offset and RangeBoundaryIsMutationObserved::No.  However, for making it
-  // faster in the most cases, we should compare the child nodes without
-  // offsets if possible.
+  // offset and RangeBoundarySetBy::Offset.  However, for making it faster in
+  // the most cases, we should compare the child nodes without offsets if
+  // possible.
 
   // If we're comparing children in the same container, we don't need to compute
   // common ancestors.  So, we can skip it and just compare the children.

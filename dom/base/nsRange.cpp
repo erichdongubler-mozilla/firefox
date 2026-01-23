@@ -599,10 +599,10 @@ void nsRange::CharacterDataChanged(nsIContent* aContent,
 
   if (newStart.IsSet() || newEnd.IsSet()) {
     if (!newStart.IsSet()) {
-      newStart.CopyFrom(mStart, RangeBoundaryIsMutationObserved::Yes);
+      newStart.CopyFrom(mStart, RangeBoundarySetBy::Ref);
     }
     if (!newEnd.IsSet()) {
-      newEnd.CopyFrom(mEnd, RangeBoundaryIsMutationObserved::Yes);
+      newEnd.CopyFrom(mEnd, RangeBoundarySetBy::Ref);
     }
     DoSetRange(newStart, newEnd, newRoot ? newRoot : mRoot.get(),
                !newEnd.GetContainer()->GetParentNode() ||
@@ -659,8 +659,8 @@ void nsRange::ContentInserted(nsIContent* aChild, const ContentInsertInfo&) {
   bool updateBoundaries = false;
   nsINode* container = aChild->GetParentNode();
   MOZ_ASSERT(container);
-  RawRangeBoundary newStart(mStart, RangeBoundaryIsMutationObserved::Yes);
-  RawRangeBoundary newEnd(mEnd, RangeBoundaryIsMutationObserved::Yes);
+  RawRangeBoundary newStart(mStart, RangeBoundarySetBy::Ref);
+  RawRangeBoundary newEnd(mEnd, RangeBoundarySetBy::Ref);
   MOZ_ASSERT(aChild->GetParentNode() == container);
 
   // Invalidate boundary offsets if a child that may have moved them was
@@ -726,7 +726,7 @@ void nsRange::ContentWillBeRemoved(nsIContent* aChild,
     if (aChild == mStart.Ref()) {
       newStart = {container, aChild->GetPreviousSibling()};
     } else {
-      newStart.CopyFrom(mStart, RangeBoundaryIsMutationObserved::Yes);
+      newStart.CopyFrom(mStart, RangeBoundarySetBy::Ref);
       newStart.InvalidateOffset();
     }
   } else {
@@ -741,7 +741,7 @@ void nsRange::ContentWillBeRemoved(nsIContent* aChild,
     if (aChild == mEnd.Ref()) {
       newEnd = {container, aChild->GetPreviousSibling()};
     } else {
-      newEnd.CopyFrom(mEnd, RangeBoundaryIsMutationObserved::Yes);
+      newEnd.CopyFrom(mEnd, RangeBoundarySetBy::Ref);
       newEnd.InvalidateOffset();
     }
   } else {
@@ -882,8 +882,7 @@ int16_t nsRange::ComparePoint(const nsINode& aContainer, uint32_t aOffset,
       aAllowCrossShadowBoundary ? MayCrossShadowBoundaryStartRef() : StartRef();
 
   const RawRangeBoundary point{const_cast<nsINode*>(&aContainer), aOffset,
-                               RangeBoundaryIsMutationObserved::Yes,
-                               startRef.GetTreeKind()};
+                               RangeBoundarySetBy::Ref, startRef.GetTreeKind()};
 
   MOZ_ASSERT(point.IsSetAndValid());
 
@@ -1095,8 +1094,8 @@ void nsRange::
   // GetClosestCommonInclusiveAncestor is unreliable while we're unlinking
   // (could return null if our start/end have already been unlinked), so make
   // sure to not use it here to determine our "old" current ancestor.
-  mStart.CopyFrom(aStartBoundary, RangeBoundaryIsMutationObserved::Yes);
-  mEnd.CopyFrom(aEndBoundary, RangeBoundaryIsMutationObserved::Yes);
+  mStart.CopyFrom(aStartBoundary, RangeBoundarySetBy::Ref);
+  mEnd.CopyFrom(aEndBoundary, RangeBoundarySetBy::Ref);
 
   if (aRangeBehaviour ==
       RangeBehaviour::CollapseDefaultRangeAndCrossShadowBoundaryRanges) {

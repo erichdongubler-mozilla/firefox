@@ -188,7 +188,7 @@ void CrossShadowBoundaryRange::ContentWillBeRemoved(nsIContent* aChild,
             {container, aChild->GetPreviousSibling(), TreeKind::Flat});
       }
       RawRangeBoundary newBoundary(TreeKind::Flat);
-      newBoundary.CopyFrom(aBoundary, RangeBoundaryIsMutationObserved::Yes);
+      newBoundary.CopyFrom(aBoundary, RangeBoundarySetBy::Ref);
       newBoundary.InvalidateOffset();
       return Some(newBoundary);
     }
