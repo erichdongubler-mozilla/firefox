@@ -1504,7 +1504,7 @@ FunctionEnd
 
   ; If the major number is less than 22000, then we're between
   ; 19046 and 22000, meaning pinning will produce a popup
-  IntCmp $2 22000 "" ${pin_lbl}_bad ""
+  IntCmp $2 22000 ${pin_lbl}_test_win11 ${pin_lbl}_bad ${pin_lbl}_test_win11
 
   ${pin_lbl}_test_win11:
 
