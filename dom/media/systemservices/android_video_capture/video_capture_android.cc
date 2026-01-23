@@ -231,9 +231,15 @@ int32_t VideoCaptureAndroid::StartCapture(
 int32_t VideoCaptureAndroid::StopCapture() {
   AttachThreadScoped ats(g_jvm_capture);
   JNIEnv* env = ats.env();
+
+  RTC_DCHECK_RUN_ON(&api_checker_);
+
   {
-    RTC_DCHECK_RUN_ON(&api_checker_);
     MutexLock lock(&api_lock_);
+
+    if (!_captureStarted) {
+      return 0;
+    }
 
     memset(&_requestedCapability, 0, sizeof(_requestedCapability));
     memset(&_captureCapability, 0, sizeof(_captureCapability));
