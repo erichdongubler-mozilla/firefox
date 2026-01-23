@@ -4,6 +4,9 @@
 
 /* import-globals-from extensionControlled.js */
 /* import-globals-from preferences.js */
+/**
+ *  @import { SearchEngine } from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs";
+ */
 
 const lazy = XPCOMUtils.declareLazy({
   AddonSearchEngine:
@@ -130,7 +133,7 @@ function createSearchEngineConfig({ settingId, getEngine, setEngine }) {
 
     observe(subject, topic, data) {
       if (topic == this.ENGINE_MODIFIED) {
-        let engine = subject.QueryInterface(Ci.nsISearchEngine);
+        let engine = subject.wrappedJSObject;
 
         // Clean up cache for removed engines.
         if (data == "engine-removed") {
@@ -775,16 +778,10 @@ var gSearchPane = {
         break;
       }
       case "browser-search-engine-modified": {
-        let engine = subject.QueryInterface(Ci.nsISearchEngine);
-        switch (data) {
-          case "engine-default": {
-            // Pass through to the engine store to handle updates.
-            this._engineStore.browserSearchEngineModified(engine, data);
-            break;
-          }
-          default:
-            this._engineStore.browserSearchEngineModified(engine, data);
-        }
+        this._engineStore.browserSearchEngineModified(
+          subject.wrappedJSObject,
+          data
+        );
         break;
       }
     }
@@ -1028,11 +1025,10 @@ class EngineStore {
    * Update the default engine UI and engine tree view as appropriate when engine changes
    * or locale changes occur.
    *
-   * @param {nsISearchEngine} engine
+   * @param {SearchEngine} engine
    * @param {string} data
    */
   browserSearchEngineModified(engine, data) {
-    engine.QueryInterface(Ci.nsISearchEngine);
     switch (data) {
       case "engine-added":
         this.addEngine(engine);

@@ -551,8 +551,8 @@ class SearchObserver {
       "Should be expecting a notification"
     );
 
-    let maybeEngine = subject.QueryInterface(Ci.nsISearchEngine);
-    let engineName = maybeEngine?.name ?? null;
+    let engine = subject.wrappedJSObject;
+    let engineName = engine.name;
     this.receivedNotifications.push({ type: data, engineName });
 
     let matchIndex = this.expectedNotifications.findIndex(

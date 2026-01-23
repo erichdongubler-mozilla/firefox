@@ -3878,15 +3878,15 @@ export const SearchService = new (class SearchService {
   ]);
 
   // nsIObserver
-  observe(engine, topic, verb) {
+  observe(subject, topic, verb) {
     switch (topic) {
-      case lazy.SearchUtils.TOPIC_ENGINE_MODIFIED:
+      case lazy.SearchUtils.TOPIC_ENGINE_MODIFIED: {
         switch (verb) {
           case lazy.SearchUtils.MODIFIED_TYPE.ADDED:
             this.#parseSubmissionMap = null;
             break;
-          case lazy.SearchUtils.MODIFIED_TYPE.CHANGED:
-            engine = engine.wrappedJSObject;
+          case lazy.SearchUtils.MODIFIED_TYPE.CHANGED: {
+            let engine = /** @type {SearchEngine} */ (subject.wrappedJSObject);
             if (
               engine == this.defaultEngine ||
               engine == this.defaultPrivateEngine
@@ -3900,13 +3900,14 @@ export const SearchService = new (class SearchService {
             }
             this.#parseSubmissionMap = null;
             break;
+          }
           case lazy.SearchUtils.MODIFIED_TYPE.REMOVED:
             // Invalidate the map used to parse URLs to search engines.
             this.#parseSubmissionMap = null;
             break;
         }
         break;
-
+      }
       case "idle": {
         lazy.idleService.removeIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
         this.#queuedIdle = false;

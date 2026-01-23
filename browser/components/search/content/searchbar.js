@@ -55,7 +55,7 @@
       this._setupEventListeners();
       let searchbar = this;
       this.observer = {
-        observe(aEngine, aTopic, aData) {
+        observe(_aSubject, aTopic, aData) {
           if (aTopic == "browser-search-engine-modified") {
             // Make sure the engine list is refetched next time it's needed
             searchbar._engines = null;

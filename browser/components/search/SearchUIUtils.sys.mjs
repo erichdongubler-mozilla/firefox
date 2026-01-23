@@ -8,8 +8,10 @@
 
 /**
  * @import { SearchUtils } from "moz-src:///toolkit/components/search/SearchUtils.sys.mjs"
- * @import { UrlbarInput } from "chrome://browser/content/urlbar/UrlbarInput.mjs";
+ * @import { UrlbarInput } from "chrome://browser/content/urlbar/UrlbarInput.mjs"
+ * @import { SearchEngine } from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  */
+
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import {
@@ -42,13 +44,18 @@ export var SearchUIUtils = {
     }
   },
 
-  observe(engine, topic, data) {
+  /**
+   * @param {{wrappedJSObject: SearchEngine}} subject
+   * @param {"browser-search-engine-modified"} topic
+   * @param {string} data
+   */
+  observe(subject, topic, data) {
     switch (data) {
       case "engine-default":
-        this.updatePlaceholderNamePreference(engine, false);
+        this.updatePlaceholderNamePreference(subject.wrappedJSObject, false);
         break;
       case "engine-default-private":
-        this.updatePlaceholderNamePreference(engine, true);
+        this.updatePlaceholderNamePreference(subject.wrappedJSObject, true);
         break;
     }
   },
@@ -258,7 +265,7 @@ export var SearchUIUtils = {
   /**
    * Update the placeholderName preference for the default search engine.
    *
-   * @param {nsISearchEngine} engine The new default search engine.
+   * @param {SearchEngine} engine The new default search engine.
    * @param {boolean} isPrivate Whether this change applies to private windows.
    */
   updatePlaceholderNamePreference(engine, isPrivate) {

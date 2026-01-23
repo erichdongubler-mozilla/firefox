@@ -15,8 +15,9 @@ const { AppConstants } = ChromeUtils.importESModule(
 );
 
 /**
- * @import {UrlbarSearchOneOffs} from "moz-src:///browser/components/urlbar/UrlbarSearchOneOffs.sys.mjs"
- * @import {SmartbarAction} from "moz-src:///browser/components/aiwindow/ui/components/input-cta/input-cta.mjs"
+ * @import { UrlbarSearchOneOffs } from "moz-src:///browser/components/urlbar/UrlbarSearchOneOffs.sys.mjs"
+ * @import { SearchEngine } from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
+ * @import { SmartbarAction } from "moz-src:///browser/components/aiwindow/ui/components/input-cta/input-cta.mjs"
  */
 
 const lazy = XPCOMUtils.declareLazy({
@@ -2963,10 +2964,15 @@ export class SmartbarInput extends HTMLElement {
     return true;
   }
 
+  /**
+   * @param {{wrappedJSObject: SearchEngine}} subject
+   * @param {"browser-search-engine-modified"} topic
+   * @param {string} data
+   */
   observe(subject, topic, data) {
     switch (topic) {
       case lazy.SearchUtils.TOPIC_ENGINE_MODIFIED: {
-        let engine = subject.QueryInterface(Ci.nsISearchEngine);
+        let engine = subject.wrappedJSObject;
         switch (data) {
           case lazy.SearchUtils.MODIFIED_TYPE.CHANGED:
           case lazy.SearchUtils.MODIFIED_TYPE.REMOVED: {

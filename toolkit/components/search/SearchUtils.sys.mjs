@@ -213,7 +213,7 @@ export var SearchUtils = {
    * Notifies watchers of SEARCH_ENGINE_TOPIC about changes to an engine or to
    * the state of the search service.
    *
-   * @param {nsISearchEngine} engine
+   * @param {SearchEngine} engine
    *   The engine to which the change applies.
    * @param {string} verb
    *   A verb describing the change.

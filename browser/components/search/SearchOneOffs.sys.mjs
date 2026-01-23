@@ -13,7 +13,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 /**
- * @import {UrlbarUtils} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs"
+ * @import { UrlbarUtils } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs"
+ * @import { SearchEngine } from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  */
 
 /**
@@ -381,7 +382,13 @@ export class SearchOneOffs {
     return this._engineInfo;
   }
 
-  observe(aEngine, aTopic, aData) {
+  /**
+   * @param {?{wrappedJSObject: SearchEngine}} aSubject
+   *   Null iff aTopic == "browser-search-service".
+   * @param {"browser-search-service"|"browser-search-engine-modified"} aTopic
+   * @param {string} aData
+   */
+  observe(aSubject, aTopic, aData) {
     // For the "browser-search-service" topic, we only need to invalidate
     // the cache on initialization complete or when the engines are reloaded.
     if (aTopic != "browser-search-service" || aData == "engines-reloaded") {
@@ -390,9 +397,10 @@ export class SearchOneOffs {
     }
 
     if (aData === "engine-icon-changed") {
-      aEngine.getIconURL().then(icon => {
+      let engine = aSubject.wrappedJSObject;
+      engine.getIconURL().then(icon => {
         this.getSelectableButtons(false)
-          .find(b => b.engine?.id == aEngine.id)
+          .find(b => b.engine?.id == engine.id)
           ?.setAttribute(
             "image",
             icon || "chrome://browser/skin/search-engine-placeholder.png"

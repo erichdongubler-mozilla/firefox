@@ -548,7 +548,7 @@ export class SearchSettings {
   }
 
   // nsIObserver
-  observe(engine, topic, verb) {
+  observe(subject, topic, verb) {
     switch (topic) {
       case lazy.SearchUtils.TOPIC_ENGINE_MODIFIED:
         switch (verb) {
@@ -560,7 +560,7 @@ export class SearchSettings {
           case lazy.SearchUtils.MODIFIED_TYPE.ICON_CHANGED:
             // Config Search Engines have their icons stored in Remote
             // Settings, so we don't need to update the saved settings.
-            if (!engine?.isConfigEngine) {
+            if (!subject.wrappedJSObject.isConfigEngine) {
               this._delayedWrite();
             }
             break;

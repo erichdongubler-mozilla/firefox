@@ -807,7 +807,7 @@ class _SearchTestUtils {
   promiseEngine(expectedEngineName, expectedData = "engine-added") {
     let { promise, resolve } = Promise.withResolvers();
     Services.obs.addObserver(function obs(subject, _topic, data) {
-      let engine = subject.QueryInterface(Ci.nsISearchEngine);
+      let engine = subject.wrappedJSObject;
 
       if (data == expectedData && engine.name == expectedEngineName) {
         Services.obs.removeObserver(obs, "browser-search-engine-modified");
