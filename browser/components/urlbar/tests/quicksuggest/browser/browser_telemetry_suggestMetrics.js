@@ -182,6 +182,7 @@ add_task(async function query() {
     window,
     index: 1,
     isSponsored: true,
+    isManageable: true,
     url: "https://example.com/amp",
   });
   const newValues = Object.fromEntries(
