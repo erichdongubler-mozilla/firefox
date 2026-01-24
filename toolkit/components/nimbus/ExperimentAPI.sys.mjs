@@ -38,6 +38,7 @@ const IS_MAIN_PROCESS =
   Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
 
 const Prefs = Object.freeze({
+  AI_FEATURES_ENABLED: "browser.ai.control.default",
   ROLLOUTS_ENABLED: "nimbus.rollouts.enabled",
   TELEMETRY_ENABLED: "datareporting.healthreport.uploadEnabled",
   STUDIES_ENABLED: "app.shield.optoutstudies.enabled",
@@ -149,6 +150,13 @@ export const ExperimentAPI = new (class {
    */
   #prefValues = {
     /**
+     * Whether or not AI features are enabled.
+     *
+     * @see {@link Prefs.AI_FEATURES_ENABLED}
+     */
+    aiFeaturesEnabled: "blocked",
+
+    /**
      * Whether or not rollouts are enabled.
      *
      * @see {@link Prefs.ROLLOUTS_ENABLED}
@@ -214,6 +222,13 @@ export const ExperimentAPI = new (class {
    */
   get STUDIES_ENABLED_CHANGED() {
     return "nimbus:studies-enabled-changed";
+  }
+
+  /**
+   * The topic that is notified when Nimbus updates enrollmments.
+   */
+  get ENROLLMENTS_UPDATED() {
+    return "nimbus:enrollments-updated";
   }
 
   /**
@@ -324,6 +339,10 @@ export const ExperimentAPI = new (class {
       Prefs.TELEMETRY_ENABLED,
       this._onEnabledPrefChange
     );
+    Services.prefs.addObserver(
+      Prefs.AI_FEATURES_ENABLED,
+      this._onEnabledPrefChange
+    );
 
     // If Nimbus was disabled between the start of this function and registering
     // the pref observers we have not handled it yet.
@@ -415,6 +434,10 @@ export const ExperimentAPI = new (class {
       false
     );
 
+    this.#prefValues.aiFeaturesEnabled = Services.prefs.getStringPref(
+      Prefs.AI_FEATURES_ENABLED
+    );
+
     this.#studiesEnabled =
       this.#prefValues.studiesEnabled &&
       this.#prefValues.telemetryEnabled &&
@@ -438,6 +461,10 @@ export const ExperimentAPI = new (class {
 
   get studiesEnabled() {
     return this.#studiesEnabled;
+  }
+
+  get aiFeaturesEnabled() {
+    return this.#prefValues.aiFeaturesEnabled === "available";
   }
 
   /**
@@ -515,6 +542,7 @@ export const ExperimentAPI = new (class {
 
     const studiesPreviouslyEnabled = this.studiesEnabled;
     const rolloutsPreviouslyEnabled = this.rolloutsEnabled;
+    const aiFeaturesPreviouslyEnabled = this.aiFeaturesEnabled;
 
     this.#computeEnabled();
 
@@ -522,6 +550,8 @@ export const ExperimentAPI = new (class {
       studiesPreviouslyEnabled !== this.studiesEnabled;
     const rolloutsEnabledChanged =
       rolloutsPreviouslyEnabled !== this.rolloutsEnabled;
+    const aiFeaturesEnabledChanged =
+      aiFeaturesPreviouslyEnabled !== this.aiFeaturesEnabled;
 
     if (studiesEnabledChanged || rolloutsEnabledChanged) {
       if (!this.studiesEnabled) {
@@ -538,6 +568,10 @@ export const ExperimentAPI = new (class {
       await this._rsLoader.onEnabledPrefChange();
 
       Services.obs.notifyObservers(null, this.STUDIES_ENABLED_CHANGED);
+    }
+
+    if (aiFeaturesEnabledChanged) {
+      await this._rsLoader.updateRecipes("ai-features-changed");
     }
   }
 
