@@ -36,10 +36,12 @@ Preferences.addAll([
   { id: "browser.aiwindow.memories", type: "bool" },
 ]);
 
+Preferences.addSetting({ id: "aiControlsDescription" });
 Preferences.addSetting({ id: "blockAiGroup" });
 Preferences.addSetting({ id: "blockAiDescription" });
 Preferences.addSetting({ id: "onDeviceFieldset" });
 Preferences.addSetting({ id: "onDeviceGroup" });
+Preferences.addSetting({ id: "aiStatesDescription" });
 Preferences.addSetting({ id: "aiWindowFieldset" });
 Preferences.addSetting({ id: "sidebarChatbotFieldset" });
 
@@ -466,6 +468,81 @@ Preferences.addSetting(
 );
 
 SettingGroupManager.registerGroups({
+  aiControlsDescription: {
+    items: [
+      {
+        id: "aiControlsDescription",
+        control: "moz-card",
+        controlAttrs: {
+          class: "ai-controls-description",
+        },
+        options: [
+          {
+            control: "p",
+            options: [
+              {
+                control: "span",
+                l10nId: "preferences-ai-controls-description",
+              },
+              {
+                control: "span",
+                controlAttrs: {
+                  ".textContent": " ",
+                },
+              },
+              {
+                control: "a",
+                controlAttrs: {
+                  is: "moz-support-link",
+                  "support-page": "firefox-ai-controls",
+                },
+              },
+            ],
+          },
+          {
+            control: "img",
+            controlAttrs: {
+              src: "chrome://browser/skin/preferences/fox-ai.svg",
+            },
+          },
+        ],
+      },
+    ],
+  },
+  aiStatesDescription: {
+    items: [
+      {
+        id: "aiStatesDescription",
+        control: "footer",
+        controlAttrs: {
+          class: "text-deemphasized",
+        },
+        options: [
+          {
+            control: "span",
+            l10nId: "preferences-ai-controls-state-description-before",
+          },
+          {
+            control: "ul",
+            options: [
+              {
+                control: "li",
+                l10nId: "preferences-ai-controls-state-description-available",
+              },
+              {
+                control: "li",
+                l10nId: "preferences-ai-controls-state-description-enabled",
+              },
+              {
+                control: "li",
+                l10nId: "preferences-ai-controls-state-description-blocked",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
   aiFeatures: {
     items: [
       {
@@ -506,6 +583,7 @@ SettingGroupManager.registerGroups({
         control: "moz-fieldset",
         controlAttrs: {
           headinglevel: 2,
+          iconsrc: "chrome://browser/skin/device-desktop.svg",
         },
         items: [
           {
@@ -606,6 +684,7 @@ SettingGroupManager.registerGroups({
         supportPage: "ai-chatbot",
         controlAttrs: {
           headinglevel: 2,
+          iconsrc: "chrome://browser/skin/sidebars.svg",
         },
         items: [
           {

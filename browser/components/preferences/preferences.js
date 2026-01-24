@@ -281,7 +281,13 @@ const CONFIG_PANES = Object.freeze({
   },
   ai: {
     l10nId: "preferences-ai-controls-header",
-    groupIds: ["aiFeatures", "aiWindowFeatures"],
+    iconSrc: "chrome://global/skin/icons/highlights.svg",
+    groupIds: [
+      "aiControlsDescription",
+      "aiFeatures",
+      "aiStatesDescription",
+      "aiWindowFeatures",
+    ],
     module: "chrome://browser/content/preferences/config/aiFeatures.mjs",
     visible: () =>
       Services.prefs.getBoolPref("browser.preferences.aiControls", false),
