@@ -42,7 +42,6 @@ Preferences.addSetting({ id: "blockAiDescription" });
 Preferences.addSetting({ id: "onDeviceFieldset" });
 Preferences.addSetting({ id: "onDeviceGroup" });
 Preferences.addSetting({ id: "aiStatesDescription" });
-Preferences.addSetting({ id: "aiWindowFieldset" });
 Preferences.addSetting({ id: "sidebarChatbotFieldset" });
 
 const AiControlStates = Object.freeze({
@@ -278,12 +277,14 @@ Preferences.addSetting({
 // Only show the feature settings if the prefs are allowed to show and the
 // feature isn't enabled.
 Preferences.addSetting({
-  id: "AIWindowItem",
+  id: "aiWindowFieldset",
   deps: ["AIWindowEnabled", "AIWindowPreferencesEnabled"],
   visible: deps => {
     return deps.AIWindowPreferencesEnabled.value && !deps.AIWindowEnabled.value;
   },
 });
+
+Preferences.addSetting({ id: "AIWindowItem" });
 Preferences.addSetting({ id: "AIWindowHeader" });
 Preferences.addSetting({ id: "AIWindowActivateLink" });
 

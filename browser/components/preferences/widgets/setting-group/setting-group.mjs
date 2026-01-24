@@ -7,6 +7,7 @@ import {
   SettingElement,
   spread,
 } from "chrome://browser/content/preferences/widgets/setting-element.mjs";
+import { SettingControl } from "chrome://browser/content/preferences/widgets/setting-control.mjs";
 
 /**
  * @import { SettingElementConfig } from "chrome://browser/content/preferences/widgets/setting-element.mjs"
@@ -60,8 +61,20 @@ export class SettingGroup extends SettingElement {
   };
 
   static queries = {
-    controlEls: { all: "setting-control" },
+    allControlEls: { all: "setting-control" },
+    fieldsetEl: "moz-fieldset",
   };
+
+  /**
+   * Immediate child control elements. See {@link SettingGroup.allControlEls} to
+   * get all ancestors.
+   */
+  get childControlEls() {
+    // @ts-expect-error bug 1997478
+    return [...this.fieldsetEl.children].filter(
+      child => child instanceof SettingControl
+    );
+  }
 
   constructor() {
     super();
@@ -98,8 +111,7 @@ export class SettingGroup extends SettingElement {
 
   async handleVisibilityChange() {
     await this.updateComplete;
-    // @ts-expect-error bug 1997478
-    let hasVisibleControls = [...this.controlEls].some(el => !el.hidden);
+    let hasVisibleControls = this.childControlEls.some(el => !el.hidden);
     let groupbox = /** @type {XULElement} */ (this.closest("groupbox"));
     if (hasVisibleControls) {
       if (this.hasAttribute(HiddenAttr.Self)) {
@@ -123,7 +135,7 @@ export class SettingGroup extends SettingElement {
   async getUpdateComplete() {
     let result = await super.getUpdateComplete();
     // @ts-expect-error bug 1997478
-    await Promise.all([...this.controlEls].map(el => el.updateComplete));
+    await Promise.all([...this.allControlEls].map(el => el.updateComplete));
     return result;
   }
 
