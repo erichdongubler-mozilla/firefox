@@ -3410,9 +3410,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
   if (useStickyPosition) {
     StickyScrollContainer* stickyScrollContainer =
         StickyScrollContainer::GetOrCreateForFrame(this);
-    if (stickyScrollContainer) {
-      if (aBuilder->IsPaintingToWindow() &&
-          !aBuilder->IsInViewTransitionCapture() &&
+    if (stickyScrollContainer && aBuilder->IsPaintingToWindow()) {
+      if (!aBuilder->IsInViewTransitionCapture() &&
           stickyScrollContainer->ScrollContainer()
               ->IsMaybeAsynchronouslyScrolled()) {
         shouldFlattenStickyItem = false;
