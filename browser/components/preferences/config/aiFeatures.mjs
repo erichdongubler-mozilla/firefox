@@ -90,6 +90,8 @@ Preferences.addSetting({
         OnDeviceModelManager.reset(feature);
       }
     }
+
+    Glean.browser.globalAiControlToggled.record({ blocked: inputVal });
   },
 });
 
