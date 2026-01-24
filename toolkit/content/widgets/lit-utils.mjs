@@ -463,12 +463,19 @@ export class MozBaseInputElement extends MozLitElement {
     if (!this.label) {
       return "";
     }
-    return html`<span class="text-container"
-      >${this.iconTemplate()}<span
-        class="text"
+    let labelEl;
+    if (this.getAttribute("headinglevel") == "2") {
+      // Undocumented hack for AI controls, do not use, it WILL be removed. (bug 2012250)
+      labelEl = html`<h2
+        class="text text-box-trim-start"
         .textContent=${this.label}
-      ></span
-    ></span>`;
+      ></h2>`;
+    } else {
+      labelEl = html`<span class="text" .textContent=${this.label}></span>`;
+    }
+    return html`<span class="text-container"
+      >${this.iconTemplate()}${labelEl}</span
+    >`;
   }
 
   descriptionTemplate() {
