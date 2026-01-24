@@ -933,14 +933,15 @@ class _QuickSuggestTestUtils {
         title,
         description,
         url,
+        subtitleL10n: {
+          id: "urlbar-result-addons-subtitle",
+        },
         originalUrl,
         icon,
         isSponsored: false,
-        shouldShowUrl: true,
         bottomTextL10n: {
           id: "firefox-suggest-addons-recommended",
         },
-        helpUrl: lazy.QuickSuggest.HELP_URL,
         telemetryType: "amo",
       },
     };

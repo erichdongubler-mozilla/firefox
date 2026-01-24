@@ -2108,6 +2108,7 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
         type: "string",
       },
       titleL10n: L10N_SCHEMA,
+      subtitleL10n: L10N_SCHEMA,
       url: {
         type: "string",
       },

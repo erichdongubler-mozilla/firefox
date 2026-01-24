@@ -1816,6 +1816,54 @@
   fill-opacity: var(--urlbar-icon-fill-opacity);
 }
 
+/* Nova style */
+.urlbarView-row[nova] {
+  .urlbarView-title {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .urlbarView-subtitle-separator::before {
+    content: "·";
+    margin: 0 0.4em;
+    color: var(--text-color-deemphasized);
+  }
+
+  .urlbarView-row-body-bottom {
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    align-items: baseline;
+    min-width: 0;
+  }
+
+  .urlbarView-bottom-label {
+    text-wrap: nowrap;
+  }
+
+  .urlbarView-bottom-separator {
+    &::before {
+      content: "·";
+      margin: 0 0.4em;
+      color: var(--text-color-deemphasized);
+    }
+
+    .urlbarView-row:not([selected], :hover) & {
+      display: none;
+    }
+  }
+
+  .urlbarView-url {
+    color: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    text-wrap: nowrap;
+
+    .urlbarView-row:not([selected], :hover) & {
+      display: none;
+    }
+  }
+}
+
 /* search bar popup */
 
 #PopupSearchAutoComplete {

@@ -91,22 +91,20 @@ export class AddonSuggestions extends SuggestProvider {
       type: lazy.UrlbarUtils.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       isBestMatch: true,
+      isNovaSuggestion: true,
       suggestedIndex: 1,
-      isRichSuggestion: true,
       richSuggestionIconSize: 24,
-      showFeedbackMenu: true,
       payload: {
         url: url.href,
         originalUrl: suggestion.url,
-        shouldShowUrl: true,
         // Rust uses `iconUrl` but Merino uses `icon`.
         icon: suggestion.iconUrl ?? suggestion.icon,
         title: suggestion.title,
+        subtitleL10n: { id: "urlbar-result-addons-subtitle" },
         description: suggestion.description,
         bottomTextL10n: {
           id: "firefox-suggest-addons-recommended",
         },
-        helpUrl: lazy.QuickSuggest.HELP_URL,
       },
     });
   }
