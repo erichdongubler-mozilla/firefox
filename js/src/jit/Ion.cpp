@@ -1815,7 +1815,7 @@ static AbortReason IonCompile(JSContext* cx, HandleScript script,
   }
 
   auto clearDependencies =
-      mozilla::MakeScopeExit([mirGen]() { mirGen->cleanup(); });
+      mozilla::MakeScopeExit([mirGen]() { mirGen->tracker.reset(); });
 
   MOZ_ASSERT(!script->baselineScript()->hasPendingIonCompileTask());
   MOZ_ASSERT(!script->hasIonScript());
