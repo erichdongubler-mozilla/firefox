@@ -50,7 +50,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.TabSessionState
-import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.cfr.CFRPopup
@@ -61,7 +60,7 @@ import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.feature.accounts.push.SendTabUseCases
 import mozilla.components.feature.tab.collections.TabCollection
-import mozilla.components.feature.top.sites.TopSitesFeature
+import mozilla.components.feature.top.sites.presenter.DefaultTopSitesPresenter
 import mozilla.components.lib.state.ext.consumeFlow
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.ext.flow
@@ -136,9 +135,7 @@ import org.mozilla.fenix.home.toolbar.HomeToolbarView
 import org.mozilla.fenix.home.toolbar.SearchSelectorBinding
 import org.mozilla.fenix.home.toolbar.SearchSelectorMenuBinding
 import org.mozilla.fenix.home.topsites.DefaultTopSitesView
-import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.AMAZON_SEARCH_ENGINE_NAME
-import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.AMAZON_SPONSORED_TITLE
-import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.EBAY_SPONSORED_TITLE
+import org.mozilla.fenix.home.topsites.TopSitesBinding
 import org.mozilla.fenix.home.topsites.controller.DefaultTopSiteController
 import org.mozilla.fenix.home.topsites.getTopSitesConfig
 import org.mozilla.fenix.home.ui.Homepage
@@ -187,7 +184,6 @@ class HomeFragment : Fragment() {
     @Suppress("VariableNaming")
     internal var _binding: FragmentHomeBinding? = null
     internal val binding get() = _binding!!
-    private val snackbarBinding = ViewBoundFeatureWrapper<SnackbarBinding>()
 
     private val homeViewModel: HomeScreenViewModel by activityViewModels()
 
@@ -252,8 +248,6 @@ class HomeFragment : Fragment() {
 
     private var lastAppliedWallpaperName: String = Wallpaper.DEFAULT
 
-    private val topSitesFeature = ViewBoundFeatureWrapper<TopSitesFeature>()
-
     @VisibleForTesting
     internal val messagingFeatureHomescreen = ViewBoundFeatureWrapper<MessagingFeature>()
 
@@ -268,19 +262,22 @@ class HomeFragment : Fragment() {
     private val searchSelectorBinding = ViewBoundFeatureWrapper<SearchSelectorBinding>()
     private val searchSelectorMenuBinding = ViewBoundFeatureWrapper<SearchSelectorMenuBinding>()
     private val thumbnailsFeature = ViewBoundFeatureWrapper<HomepageThumbnailIntegration>()
+    private val snackbarBinding = ViewBoundFeatureWrapper<SnackbarBinding>()
+    private val showReviewPromptBinding = ViewBoundFeatureWrapper<ShowReviewPromptBinding>()
+    private val topSitesBinding = ViewBoundFeatureWrapper<TopSitesBinding>()
+
     private var qrScanFenixFeature: ViewBoundFeatureWrapper<QrScanFenixFeature>? =
-        ViewBoundFeatureWrapper<QrScanFenixFeature>()
+        ViewBoundFeatureWrapper()
     private val qrScanLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             qrScanFenixFeature?.get()?.handleToolbarQrScanResults(result.resultCode, result.data)
         }
     private var voiceSearchFeature: ViewBoundFeatureWrapper<VoiceSearchFeature>? =
-        ViewBoundFeatureWrapper<VoiceSearchFeature>()
+        ViewBoundFeatureWrapper()
     private val voiceSearchLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             voiceSearchFeature?.get()?.handleVoiceSearchResult(result.resultCode, result.data)
         }
-    private val showReviewPromptBinding = ViewBoundFeatureWrapper<ShowReviewPromptBinding>()
 
     private val destinationChangedListener =
         NavController.OnDestinationChangedListener { _, destination, _ ->
@@ -366,16 +363,19 @@ class HomeFragment : Fragment() {
         }
 
         if (requireContext().settings().showTopSitesFeature) {
-            topSitesFeature.set(
-                feature = TopSitesFeature(
-                    view = DefaultTopSitesView(
-                        appStore = components.appStore,
-                        settings = components.settings,
-                    ),
-                    storage = components.core.topSitesStorage,
-                    config = getTopSitesConfig(
-                        settings = requireContext().settings(),
-                        store = store,
+            topSitesBinding.set(
+                feature = TopSitesBinding(
+                    browserStore = components.core.store,
+                    presenter = DefaultTopSitesPresenter(
+                        view = DefaultTopSitesView(
+                            appStore = components.appStore,
+                            settings = components.settings,
+                        ),
+                        storage = components.core.topSitesStorage,
+                        config = getTopSitesConfig(
+                            settings = components.settings,
+                            store = components.core.store,
+                        ),
                     ),
                 ),
                 owner = viewLifecycleOwner,
@@ -902,7 +902,6 @@ class HomeFragment : Fragment() {
             HomeScreen.standardHomepageViewCount.add()
         }
 
-        observeSearchEngineNameChanges()
         observeWallpaperUpdates()
 
         observePrivateModeLock {
@@ -1136,27 +1135,6 @@ class HomeFragment : Fragment() {
                 },
                 onTabCounterClick = { openTabsTray() },
             )
-        }
-    }
-
-    /**
-     * Method used to listen to search engine name changes and trigger a top sites update accordingly
-     */
-    private fun observeSearchEngineNameChanges() {
-        consumeFlow(store) { flow ->
-            flow.map { state ->
-                when (state.search.selectedOrDefaultSearchEngine?.name) {
-                    AMAZON_SEARCH_ENGINE_NAME -> AMAZON_SPONSORED_TITLE
-                    EBAY_SPONSORED_TITLE -> EBAY_SPONSORED_TITLE
-                    else -> null
-                }
-            }
-                .distinctUntilChanged()
-                .collect {
-                    topSitesFeature.withFeature {
-                        it.storage.notifyObservers { onStorageUpdated() }
-                    }
-                }
         }
     }
 

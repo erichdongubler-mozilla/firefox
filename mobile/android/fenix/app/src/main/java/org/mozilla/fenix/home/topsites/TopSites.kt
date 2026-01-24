@@ -485,11 +485,6 @@ internal fun getMenuItems(
         result.addAll(
             listOf(
                 MenuItem(
-                    title = stringResource(id = R.string.delete_from_history),
-                    testTag = TopSitesTestTag.REMOVE,
-                    onClick = { onRemoveTopSiteClicked(topSite) },
-                ),
-                MenuItem(
                     title = stringResource(id = R.string.top_sites_menu_settings),
                     onClick = onSettingsClicked,
                 ),
