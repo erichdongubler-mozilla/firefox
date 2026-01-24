@@ -381,7 +381,6 @@ async function doTest({
   let details = await QuickSuggestTestUtils.assertIsQuickSuggest({
     window,
     isSponsored,
-    isManageable: isSponsored || undefined,
     index: expectedViewIndex,
     url: isSponsored
       ? REMOTE_SETTINGS_RESULTS[0].url
