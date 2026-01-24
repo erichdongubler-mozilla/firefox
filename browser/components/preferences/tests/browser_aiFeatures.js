@@ -8,7 +8,7 @@ describe("settings ai features", () => {
 
   beforeEach(async function setup() {
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.settings-redesign.aiFeatures.enabled", true]],
+      set: [["browser.preferences.aiControls", true]],
     });
     await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
     doc = gBrowser.selectedBrowser.contentDocument;

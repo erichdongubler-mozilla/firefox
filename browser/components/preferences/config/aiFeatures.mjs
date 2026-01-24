@@ -14,8 +14,10 @@ const { CommonDialog } = ChromeUtils.importESModule(
   "resource://gre/modules/CommonDialog.sys.mjs"
 );
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
+const XPCOMUtils = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+).XPCOMUtils;
+const lazy = XPCOMUtils.declareLazy({
   GenAI: "resource:///modules/GenAI.sys.mjs",
   MemoryStore:
     "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs",
@@ -34,6 +36,8 @@ Preferences.addAll([
   { id: "browser.aiwindow.memories", type: "bool" },
 ]);
 
+Preferences.addSetting({ id: "blockAiGroup" });
+Preferences.addSetting({ id: "blockAiDescription" });
 Preferences.addSetting({ id: "onDeviceFieldset" });
 Preferences.addSetting({ id: "onDeviceGroup" });
 Preferences.addSetting({ id: "aiWindowFieldset" });
@@ -71,8 +75,21 @@ Preferences.addSetting({
   pref: "browser.ai.control.default",
   get: prefVal =>
     prefVal in AiControlGlobalStates
-      ? prefVal
+      ? prefVal == AiControlGlobalStates.blocked
       : AiControlGlobalStates.available,
+  set: inputVal =>
+    inputVal ? AiControlGlobalStates.blocked : AiControlGlobalStates.available,
+  onUserChange(inputVal) {
+    for (let feature of Object.values(OnDeviceModelManager.features)) {
+      if (inputVal) {
+        // Reset to default (blocked) state unless it was already blocked.
+        OnDeviceModelManager.disable(feature);
+      } else if (!inputVal && !OnDeviceModelManager.isEnabled(feature)) {
+        // Reset to default (available) state unless it was manually enabled.
+        OnDeviceModelManager.reset(feature);
+      }
+    }
+  },
 });
 
 /**
@@ -109,7 +126,7 @@ function makeAiControlSetting({ id, pref, feature, supportsEnabled = true }) {
       if (
         prefVal == AiControlStates.blocked ||
         (prefVal == AiControlStates.default &&
-          deps.aiControlsDefault.value == AiControlGlobalStates.blocked) ||
+          deps.aiControlsDefault.pref.value == AiControlGlobalStates.blocked) ||
         OnDeviceModelManager.isBlocked(feature)
       ) {
         return AiControlStates.blocked;
@@ -123,7 +140,7 @@ function makeAiControlSetting({ id, pref, feature, supportsEnabled = true }) {
       }
       return AiControlStates.available;
     },
-    onUserChange(prefVal) {
+    set(prefVal) {
       if (prefVal == AiControlStates.available) {
         OnDeviceModelManager.reset(feature);
       } else if (prefVal == AiControlStates.enabled) {
@@ -131,6 +148,7 @@ function makeAiControlSetting({ id, pref, feature, supportsEnabled = true }) {
       } else if (prefVal == AiControlStates.blocked) {
         OnDeviceModelManager.disable(feature);
       }
+      return prefVal;
     },
   });
 }
@@ -450,6 +468,37 @@ Preferences.addSetting(
 SettingGroupManager.registerGroups({
   aiFeatures: {
     items: [
+      {
+        id: "blockAiGroup",
+        control: "moz-box-item",
+        items: [
+          {
+            id: "aiControlsDefault",
+            l10nId: "preferences-ai-controls-block-ai",
+            control: "moz-toggle",
+            controlAttrs: {
+              headinglevel: 2,
+            },
+            options: [
+              {
+                l10nId: "preferences-ai-controls-block-ai-description",
+                control: "span",
+                slot: "description",
+                options: [
+                  {
+                    control: "a",
+                    controlAttrs: {
+                      "data-l10n-name": "link",
+                      "support-page": "firefox-ai-controls",
+                      is: "moz-support-link",
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
       {
         id: "onDeviceFieldset",
         l10nId: "preferences-ai-controls-on-device-group",
