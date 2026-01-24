@@ -41,7 +41,7 @@ describe("settings ai features", () => {
 
     await openAiFeaturePanel();
 
-    const providerControl = doc.getElementById("chatbotProvider");
+    const providerControl = doc.getElementById("aiControlSidebarChatbot");
     Assert.ok(providerControl, "control exists");
     Assert.ok(
       BrowserTestUtils.isVisible(providerControl),
@@ -53,7 +53,7 @@ describe("settings ai features", () => {
       "Pref is empty"
     );
 
-    Assert.equal(providerControl.value, "", "No provider set");
+    Assert.equal(providerControl.value, "available", "No provider set");
 
     const settingChanged = waitForSettingChange(providerControl.setting);
     providerControl.focus();
@@ -66,10 +66,10 @@ describe("settings ai features", () => {
     EventUtils.sendKey("return");
     await settingChanged;
 
-    Assert.notEqual(providerControl.value, "", "Provider changed");
+    Assert.notEqual(providerControl.value, "available", "Provider changed");
     Assert.notEqual(
       Services.prefs.getStringPref("browser.ml.chat.provider"),
-      "",
+      "available",
       "Pref is not empty"
     );
 

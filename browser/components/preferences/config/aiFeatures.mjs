@@ -161,37 +161,89 @@ Preferences.addSetting({ id: "chatbotProviderItem" });
 Preferences.addSetting({
   id: "chatbotProvider",
   pref: "browser.ml.chat.provider",
-  setup() {
-    lazy.GenAI.init();
-  },
-  getControlConfig(config, _, setting) {
-    let providerUrl = setting.value;
-    let isKnownProvider = providerUrl == "";
-    let options = [config.options[0]];
-    lazy.GenAI.chatProviders.forEach((provider, url) => {
-      let isSelected = url == providerUrl;
-      // @ts-expect-error provider.hidden isn't in the typing
-      if (!isSelected && provider.hidden) {
-        return;
-      }
-      isKnownProvider = isKnownProvider || isSelected;
-      options.push({
-        value: url,
-        controlAttrs: { label: provider.name },
-      });
-    });
-    if (!isKnownProvider) {
-      options.push({
-        value: providerUrl,
-        controlAttrs: { label: providerUrl },
-      });
-    }
-    return {
-      ...config,
-      options,
-    };
-  },
 });
+Preferences.addSetting(
+  /** @type {{ feature: OnDeviceModelFeaturesEnum } & SettingConfig } */ ({
+    id: "aiControlSidebarChatbot",
+    pref: "browser.ai.control.sidebarChatbot",
+    deps: ["aiControlsDefault", "chatbotProvider"],
+    feature: OnDeviceModelManager.features.SidebarChatbot,
+    setup(emitChange) {
+      lazy.GenAI.init();
+      /**
+       * @param {nsISupports} _
+       * @param {string} __
+       * @param {string} changedFeature
+       */
+      const featureChange = (_, __, changedFeature) => {
+        if (changedFeature == this.feature) {
+          emitChange();
+        }
+      };
+      Services.obs.addObserver(featureChange, "OnDeviceModelManagerChange");
+      return () =>
+        Services.obs.removeObserver(
+          featureChange,
+          "OnDeviceModelManagerChange"
+        );
+    },
+    get(prefVal, deps) {
+      if (
+        prefVal == AiControlStates.blocked ||
+        (prefVal == AiControlStates.default &&
+          deps.aiControlsDefault.pref.value == AiControlGlobalStates.blocked) ||
+        OnDeviceModelManager.isBlocked(this.feature)
+      ) {
+        return AiControlStates.blocked;
+      }
+      if (prefVal == AiControlStates.enabled) {
+        return deps.chatbotProvider.value || AiControlStates.available;
+      }
+      return AiControlStates.available;
+    },
+    set(inputVal, deps) {
+      if (inputVal == AiControlStates.blocked) {
+        OnDeviceModelManager.disable(this.feature);
+        return inputVal;
+      }
+      if (inputVal == AiControlStates.available) {
+        OnDeviceModelManager.reset(this.feature);
+        return inputVal;
+      }
+      if (inputVal) {
+        // Enable the chatbot sidebar so it can be used with this provider.
+        deps.chatbotProvider.value = inputVal;
+        OnDeviceModelManager.enable(this.feature);
+      }
+      return AiControlStates.enabled;
+    },
+    getControlConfig(config, _, setting) {
+      let providerUrl = setting.value;
+      let options = config.options.slice(0, 3);
+      lazy.GenAI.chatProviders.forEach((provider, url) => {
+        let isSelected = url == providerUrl;
+        // @ts-expect-error provider.hidden isn't in the typing
+        if (!isSelected && provider.hidden) {
+          return;
+        }
+        options.push({
+          value: url,
+          controlAttrs: { label: provider.name },
+        });
+      });
+      if (!options.some(opt => opt.value == providerUrl)) {
+        options.push({
+          value: providerUrl,
+          controlAttrs: { label: providerUrl },
+        });
+      }
+      return {
+        ...config,
+        options,
+      };
+    },
+  })
+);
 
 Preferences.addSetting({
   id: "AIWindowPreferencesEnabled",
@@ -512,14 +564,19 @@ SettingGroupManager.registerGroups({
             control: "moz-box-item",
             items: [
               {
-                id: "chatbotProvider",
+                id: "aiControlSidebarChatbot",
                 l10nId: "preferences-ai-controls-sidebar-chatbot-control",
                 control: "moz-select",
                 options: [
                   {
                     l10nId: "preferences-ai-controls-state-available",
-                    value: "",
+                    value: AiControlStates.available,
                   },
+                  {
+                    l10nId: "preferences-ai-controls-state-blocked",
+                    value: AiControlStates.blocked,
+                  },
+                  { control: "hr" },
                 ],
               },
             ],

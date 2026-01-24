@@ -14,7 +14,6 @@ ChromeUtils.defineLazyGetter(lazy, "console", () => {
   });
 });
 
-const AI_CONTROL_DEFAULT_PREF = "browser.ai.control.default";
 const AI_CONTROL_TRANSLATIONS_PREF = "browser.ai.control.translations";
 const TRANSLATIONS_ENABLE_PREF = "browser.translations.enable";
 
@@ -96,63 +95,12 @@ export class TranslationsFeature extends AIFeature {
   }
 
   /**
-   * Returns true if the Translations feature is allowed by AI control preferences, otherwise false.
+   * Returns true if the Translations feature is allowed on this system, always true.
    *
    * @returns {boolean}
    */
   static get isAllowed() {
-    const translationsPref = Services.prefs.getStringPref(
-      AI_CONTROL_TRANSLATIONS_PREF,
-      "default"
-    );
-
-    switch (translationsPref) {
-      case "blocked": {
-        // The feature has been explicitly blocked.
-        return false;
-      }
-      case "enabled": {
-        // The feature has been explicitly enabled.
-        return true;
-      }
-      case "default": {
-        // The feature's enabled state has not been explicity set,
-        // so we need to continue on to look at the default AI settings.
-        break;
-      }
-      default: {
-        lazy.console.warn(
-          "Invalid preference value for",
-          AI_CONTROL_TRANSLATIONS_PREF,
-          translationsPref
-        );
-
-        return false;
-      }
-    }
-
-    const defaultPref = Services.prefs.getStringPref(
-      AI_CONTROL_DEFAULT_PREF,
-      "available"
-    );
-
-    switch (defaultPref) {
-      case "available": {
-        return true;
-      }
-      case "blocked": {
-        return false;
-      }
-      default: {
-        lazy.console.warn(
-          "Invalid preference value for",
-          AI_CONTROL_DEFAULT_PREF,
-          defaultPref
-        );
-
-        return false;
-      }
-    }
+    return true;
   }
 
   /**
@@ -161,7 +109,10 @@ export class TranslationsFeature extends AIFeature {
    * @returns {boolean}
    */
   static get isBlocked() {
-    return !TranslationsFeature.isAllowed;
+    // This could check the browser.ai.control.default and .translations prefs
+    // but since the UI is currently shown/hidden based on the
+    // browser.translations.enable pref it just checks that.
+    return !Services.prefs.getBoolPref(TRANSLATIONS_ENABLE_PREF, true);
   }
 
   /**
