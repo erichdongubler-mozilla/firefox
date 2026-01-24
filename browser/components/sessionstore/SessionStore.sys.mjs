@@ -5240,7 +5240,15 @@ var SessionStoreInternal = {
       // the state we're trying to restore and then fallback to the last selected
       // window.
       let windowToUse = windows[lastSessionWindowID];
-      if (!windowToUse && canUseLastWindow) {
+      let lastWindowIsAIWindow =
+        lastWindow && lazy.AIWindow.isAIWindowActive(lastWindow);
+      let thisWindowIsAIWindow =
+        !!winState.isAIWindow && lazy.AIWindow.isAIWindowEnabled();
+      if (
+        !windowToUse &&
+        canUseLastWindow &&
+        lastWindowIsAIWindow == thisWindowIsAIWindow
+      ) {
         windowToUse = lastWindow;
         canUseLastWindow = false;
       }
@@ -5535,7 +5543,7 @@ var SessionStoreInternal = {
       winData.workspaceID = workspaceID;
     }
 
-    winData.isAIWindow = lazy.AIWindow.isAIWindowActiveAndEnabled(aWindow);
+    winData.isAIWindow = lazy.AIWindow.isAIWindowActive(aWindow);
   },
 
   /**
