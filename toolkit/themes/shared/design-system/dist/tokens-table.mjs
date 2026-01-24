@@ -299,6 +299,19 @@ export const tokensTable = {
       name: "--background-color-list-item-hover",
     },
     {
+      value: { default: "transparent", forcedColors: "Canvas" },
+      name: "--badge-background-color",
+    },
+    {
+      value: {
+        light: "var(--color-green-70)",
+        dark: "var(--color-green-40)",
+        forcedColors: "AccentColor",
+        default: "light-dark(var(--color-green-70), var(--color-green-40))",
+      },
+      name: "--badge-background-color-filled",
+    },
+    {
       value: {
         forcedColors: "ButtonFace",
         brand: { default: "color-mix(in srgb, currentColor 7%, transparent)" },
@@ -451,7 +464,261 @@ export const tokensTable = {
       name: "--table-row-background-color-alternate",
     },
   ],
+  "text-color": [
+    {
+      value: { default: "var(--text-color)", forcedColors: "CanvasText" },
+      name: "--badge-text-color",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-gray-100)",
+        forcedColors: "AccentColorText",
+        default: "light-dark(var(--color-white), var(--color-gray-100))",
+      },
+      name: "--badge-text-color-filled",
+    },
+    {
+      value: {
+        forcedColors: "ButtonText",
+        brand: {
+          light: "var(--color-gray-100)",
+          dark: "var(--color-gray-05)",
+          default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
+        },
+        platform: { default: "currentColor" },
+      },
+      name: "--button-text-color",
+    },
+    {
+      value: {
+        default: "var(--button-text-color)",
+        forcedColors: "SelectedItem",
+      },
+      name: "--button-text-color-active",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-gray-100)",
+        forcedColors: "var(--button-text-color-primary)",
+        default: "light-dark(var(--color-white), var(--color-gray-100))",
+      },
+      name: "--button-text-color-destructive",
+    },
+    {
+      value: {
+        default: "var(--button-text-color-destructive)",
+        forcedColors: "var(--button-text-color-primary-active)",
+      },
+      name: "--button-text-color-destructive-active",
+    },
+    {
+      value: {
+        default: "var(--button-text-color-destructive)",
+        forcedColors: "var(--button-text-color-primary-disabled)",
+      },
+      name: "--button-text-color-destructive-disabled",
+    },
+    {
+      value: {
+        default: "var(--button-text-color-destructive)",
+        forcedColors: "var(--button-text-color-primary-hover)",
+      },
+      name: "--button-text-color-destructive-hover",
+    },
+    {
+      value: "var(--button-text-color-destructive-active)",
+      name: "--button-text-color-destructive-selected",
+    },
+    {
+      value: { default: "var(--button-text-color)", forcedColors: "GrayText" },
+      name: "--button-text-color-disabled",
+    },
+    {
+      value: {
+        default: "inherit",
+        brand: {
+          prefersContrast: "var(--button-text-color)",
+          forcedColors: "var(--button-text-color)",
+        },
+      },
+      name: "--button-text-color-ghost",
+    },
+    {
+      value: {
+        default: "inherit",
+        prefersContrast: "var(--button-text-color-active)",
+        forcedColors: "var(--button-text-color-active)",
+      },
+      name: "--button-text-color-ghost-active",
+    },
+    {
+      value: {
+        default: "inherit",
+        brand: {
+          prefersContrast: "var(--button-text-color-disabled)",
+          forcedColors: "var(--button-text-color-disabled)",
+        },
+      },
+      name: "--button-text-color-ghost-disabled",
+    },
+    {
+      value: {
+        default: "inherit",
+        prefersContrast: "var(--button-text-color-hover)",
+        forcedColors: "var(--button-text-color-hover)",
+      },
+      name: "--button-text-color-ghost-hover",
+    },
+    {
+      value: "var(--button-text-color-ghost-active)",
+      name: "--button-text-color-ghost-selected",
+    },
+    {
+      value: {
+        default: "var(--button-text-color)",
+        forcedColors: "SelectedItem",
+      },
+      name: "--button-text-color-hover",
+    },
+    {
+      value: {
+        forcedColors: "ButtonFace",
+        brand: {
+          light: "var(--color-white)",
+          dark: "var(--color-gray-100)",
+          default: "light-dark(var(--color-white), var(--color-gray-100))",
+        },
+        platform: { default: "AccentColorText" },
+      },
+      name: "--button-text-color-primary",
+    },
+    {
+      value: "var(--button-text-color-primary-hover)",
+      name: "--button-text-color-primary-active",
+    },
+    {
+      value: "var(--button-text-color-primary)",
+      name: "--button-text-color-primary-disabled",
+    },
+    {
+      value: {
+        default: "var(--button-text-color-primary)",
+        forcedColors: "SelectedItemText",
+      },
+      name: "--button-text-color-primary-hover",
+    },
+    {
+      value: "var(--button-text-color-primary-active)",
+      name: "--button-text-color-primary-selected",
+    },
+    {
+      value: "var(--button-text-color-active)",
+      name: "--button-text-color-selected",
+    },
+    {
+      value: {
+        forcedColors: "LinkText",
+        brand: { default: "var(--color-accent-primary)" },
+        platform: { default: "LinkText" },
+      },
+      name: "--link-color",
+    },
+    {
+      value: {
+        forcedColors: "LinkText",
+        brand: { default: "var(--color-accent-primary-hover)" },
+        platform: {
+          default: "color-mix(in srgb, black 10%, var(--link-color))",
+        },
+      },
+      name: "--link-color-hover",
+    },
+    {
+      value: {
+        forcedColors: "ActiveText",
+        brand: { default: "var(--color-accent-primary-active)" },
+        platform: {
+          default: "color-mix(in srgb, black 20%, var(--link-color))",
+        },
+      },
+      name: "--link-color-active",
+    },
+    {
+      value: {
+        forcedColors: "var(--link-color)",
+        brand: { default: "var(--link-color)" },
+        platform: { default: "var(--link-color)" },
+      },
+      name: "--link-color-visited",
+    },
+    {
+      value: {
+        prefersContrast: "CanvasText",
+        brand: {
+          light: "var(--color-gray-100)",
+          dark: "var(--color-gray-05)",
+          default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
+        },
+        platform: { default: "currentColor" },
+      },
+      name: "--text-color",
+    },
+    {
+      value: {
+        default: "color-mix(in srgb, currentColor 69%, transparent)",
+        prefersContrast: "inherit",
+      },
+      name: "--text-color-deemphasized",
+    },
+    {
+      value: {
+        default: "color-mix(in srgb, currentColor 40%, transparent)",
+        forcedColors: "GrayText",
+      },
+      name: "--text-color-disabled",
+    },
+    {
+      value: {
+        light: "var(--color-red-70)",
+        dark: "var(--color-red-20)",
+        prefersContrast: "inherit",
+        default: "light-dark(var(--color-red-70), var(--color-red-20))",
+      },
+      name: "--text-color-error",
+    },
+    {
+      value: {
+        forcedColors: "SelectedItemText",
+        brand: {
+          light: "var(--color-white)",
+          dark: "var(--color-gray-100)",
+          default: "light-dark(var(--color-white), var(--color-gray-100))",
+        },
+        platform: { default: "SelectedItemText" },
+      },
+      name: "--text-color-accent-primary-selected",
+    },
+    {
+      value: {
+        default: "var(--text-color)",
+        prefersContrast: "SelectedItemText",
+      },
+      name: "--text-color-list-item-hover",
+    },
+  ],
   "border-color": [
+    { value: "var(--border-color)", name: "--badge-border-color" },
+    {
+      value: {
+        light: "rgba(251, 251, 254, 0.4)",
+        dark: "rgba(21, 20, 26, 0.4)",
+        forcedColors: "CanvasText",
+        default: "light-dark(rgba(251, 251, 254, 0.4), rgba(21, 20, 26, 0.4))",
+      },
+      name: "--badge-border-color-filled",
+    },
     {
       value: {
         brand: {
@@ -819,237 +1086,6 @@ export const tokensTable = {
     { value: "calc(6 * var(--space-xsmall))", name: "--space-xlarge" },
     { value: "calc(8 * var(--space-xsmall))", name: "--space-xxlarge" },
   ],
-  "text-color": [
-    {
-      value: {
-        forcedColors: "ButtonText",
-        brand: {
-          light: "var(--color-gray-100)",
-          dark: "var(--color-gray-05)",
-          default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
-        },
-        platform: { default: "currentColor" },
-      },
-      name: "--button-text-color",
-    },
-    {
-      value: {
-        default: "var(--button-text-color)",
-        forcedColors: "SelectedItem",
-      },
-      name: "--button-text-color-active",
-    },
-    {
-      value: {
-        light: "var(--color-white)",
-        dark: "var(--color-gray-100)",
-        forcedColors: "var(--button-text-color-primary)",
-        default: "light-dark(var(--color-white), var(--color-gray-100))",
-      },
-      name: "--button-text-color-destructive",
-    },
-    {
-      value: {
-        default: "var(--button-text-color-destructive)",
-        forcedColors: "var(--button-text-color-primary-active)",
-      },
-      name: "--button-text-color-destructive-active",
-    },
-    {
-      value: {
-        default: "var(--button-text-color-destructive)",
-        forcedColors: "var(--button-text-color-primary-disabled)",
-      },
-      name: "--button-text-color-destructive-disabled",
-    },
-    {
-      value: {
-        default: "var(--button-text-color-destructive)",
-        forcedColors: "var(--button-text-color-primary-hover)",
-      },
-      name: "--button-text-color-destructive-hover",
-    },
-    {
-      value: "var(--button-text-color-destructive-active)",
-      name: "--button-text-color-destructive-selected",
-    },
-    {
-      value: { default: "var(--button-text-color)", forcedColors: "GrayText" },
-      name: "--button-text-color-disabled",
-    },
-    {
-      value: {
-        default: "inherit",
-        brand: {
-          prefersContrast: "var(--button-text-color)",
-          forcedColors: "var(--button-text-color)",
-        },
-      },
-      name: "--button-text-color-ghost",
-    },
-    {
-      value: {
-        default: "inherit",
-        prefersContrast: "var(--button-text-color-active)",
-        forcedColors: "var(--button-text-color-active)",
-      },
-      name: "--button-text-color-ghost-active",
-    },
-    {
-      value: {
-        default: "inherit",
-        brand: {
-          prefersContrast: "var(--button-text-color-disabled)",
-          forcedColors: "var(--button-text-color-disabled)",
-        },
-      },
-      name: "--button-text-color-ghost-disabled",
-    },
-    {
-      value: {
-        default: "inherit",
-        prefersContrast: "var(--button-text-color-hover)",
-        forcedColors: "var(--button-text-color-hover)",
-      },
-      name: "--button-text-color-ghost-hover",
-    },
-    {
-      value: "var(--button-text-color-ghost-active)",
-      name: "--button-text-color-ghost-selected",
-    },
-    {
-      value: {
-        default: "var(--button-text-color)",
-        forcedColors: "SelectedItem",
-      },
-      name: "--button-text-color-hover",
-    },
-    {
-      value: {
-        forcedColors: "ButtonFace",
-        brand: {
-          light: "var(--color-white)",
-          dark: "var(--color-gray-100)",
-          default: "light-dark(var(--color-white), var(--color-gray-100))",
-        },
-        platform: { default: "AccentColorText" },
-      },
-      name: "--button-text-color-primary",
-    },
-    {
-      value: "var(--button-text-color-primary-hover)",
-      name: "--button-text-color-primary-active",
-    },
-    {
-      value: "var(--button-text-color-primary)",
-      name: "--button-text-color-primary-disabled",
-    },
-    {
-      value: {
-        default: "var(--button-text-color-primary)",
-        forcedColors: "SelectedItemText",
-      },
-      name: "--button-text-color-primary-hover",
-    },
-    {
-      value: "var(--button-text-color-primary-active)",
-      name: "--button-text-color-primary-selected",
-    },
-    {
-      value: "var(--button-text-color-active)",
-      name: "--button-text-color-selected",
-    },
-    {
-      value: {
-        forcedColors: "LinkText",
-        brand: { default: "var(--color-accent-primary)" },
-        platform: { default: "LinkText" },
-      },
-      name: "--link-color",
-    },
-    {
-      value: {
-        forcedColors: "LinkText",
-        brand: { default: "var(--color-accent-primary-hover)" },
-        platform: {
-          default: "color-mix(in srgb, black 10%, var(--link-color))",
-        },
-      },
-      name: "--link-color-hover",
-    },
-    {
-      value: {
-        forcedColors: "ActiveText",
-        brand: { default: "var(--color-accent-primary-active)" },
-        platform: {
-          default: "color-mix(in srgb, black 20%, var(--link-color))",
-        },
-      },
-      name: "--link-color-active",
-    },
-    {
-      value: {
-        forcedColors: "var(--link-color)",
-        brand: { default: "var(--link-color)" },
-        platform: { default: "var(--link-color)" },
-      },
-      name: "--link-color-visited",
-    },
-    {
-      value: {
-        prefersContrast: "CanvasText",
-        brand: {
-          light: "var(--color-gray-100)",
-          dark: "var(--color-gray-05)",
-          default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
-        },
-        platform: { default: "currentColor" },
-      },
-      name: "--text-color",
-    },
-    {
-      value: {
-        default: "color-mix(in srgb, currentColor 69%, transparent)",
-        prefersContrast: "inherit",
-      },
-      name: "--text-color-deemphasized",
-    },
-    {
-      value: {
-        default: "color-mix(in srgb, currentColor 40%, transparent)",
-        forcedColors: "GrayText",
-      },
-      name: "--text-color-disabled",
-    },
-    {
-      value: {
-        light: "var(--color-red-70)",
-        dark: "var(--color-red-20)",
-        prefersContrast: "inherit",
-        default: "light-dark(var(--color-red-70), var(--color-red-20))",
-      },
-      name: "--text-color-error",
-    },
-    {
-      value: {
-        forcedColors: "SelectedItemText",
-        brand: {
-          light: "var(--color-white)",
-          dark: "var(--color-gray-100)",
-          default: "light-dark(var(--color-white), var(--color-gray-100))",
-        },
-        platform: { default: "SelectedItemText" },
-      },
-      name: "--text-color-accent-primary-selected",
-    },
-    {
-      value: {
-        default: "var(--text-color)",
-        prefersContrast: "SelectedItemText",
-      },
-      name: "--text-color-list-item-hover",
-    },
-  ],
   outline: [
     {
       value: "var(--focus-outline-width) solid var(--focus-outline-color)",
@@ -1254,6 +1290,30 @@ export const variableLookupTable = {
     },
     platform: { default: "color-mix(in srgb, currentColor 20%, transparent)" },
     prefersContrast: "SelectedItem",
+  },
+  "badge-text-color": {
+    default: "var(--text-color)",
+    forcedColors: "CanvasText",
+  },
+  "badge-text-color-filled": {
+    light: "var(--color-white)",
+    dark: "var(--color-gray-100)",
+    forcedColors: "AccentColorText",
+    default: "light-dark(var(--color-white), var(--color-gray-100))",
+  },
+  "badge-background-color": { default: "transparent", forcedColors: "Canvas" },
+  "badge-background-color-filled": {
+    light: "var(--color-green-70)",
+    dark: "var(--color-green-40)",
+    forcedColors: "AccentColor",
+    default: "light-dark(var(--color-green-70), var(--color-green-40))",
+  },
+  "badge-border-color": "var(--border-color)",
+  "badge-border-color-filled": {
+    light: "rgba(251, 251, 254, 0.4)",
+    dark: "rgba(21, 20, 26, 0.4)",
+    forcedColors: "CanvasText",
+    default: "light-dark(rgba(251, 251, 254, 0.4), rgba(21, 20, 26, 0.4))",
   },
   "border-color": {
     brand: {
