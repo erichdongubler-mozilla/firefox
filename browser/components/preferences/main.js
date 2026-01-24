@@ -3174,6 +3174,7 @@ SettingGroupManager.registerGroups({
   },
   securityPrivacyStatus: {
     inProgress: true,
+    card: "never",
     items: [
       {
         id: "privacyCard",
@@ -3183,6 +3184,7 @@ SettingGroupManager.registerGroups({
   },
   securityPrivacyWarnings: {
     inProgress: true,
+    card: "never",
     items: [
       {
         id: "warningCard",
@@ -4164,6 +4166,7 @@ SettingGroupManager.registerGroups({
   },
   etpBanner: {
     inProgress: true,
+    card: "never",
     items: [
       {
         id: "etpBannerEl",

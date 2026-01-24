@@ -22,6 +22,8 @@ import {
  * @property {boolean} [inProgress]
  * Hide this section unless the browser.settings-redesign.enabled or
  * browser.settings-redesign.<groupid>.enabled prefs are true.
+ * @property {"default"|"always"|"never"} [card]
+ * Whether to use a card. Default: use a card after SRD or in a sub-pane.
  */
 /** @typedef {SettingElementConfig & SettingGroupConfigExtensions} SettingGroupConfig */
 
@@ -192,7 +194,10 @@ export class SettingGroup extends SettingElement {
    * @param {TemplateResult} content The content to render in a container.
    */
   containerTemplate(content) {
-    if (this.srdEnabled || this.inSubPane) {
+    if (
+      (this.srdEnabled || this.inSubPane || this.config.card == "always") &&
+      this.config.card != "never"
+    ) {
       return html`<moz-card>${content}</moz-card>`;
     }
     return content;
