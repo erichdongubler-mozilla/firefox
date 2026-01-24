@@ -154,15 +154,14 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   // Make the request.
 
   auto* const canvasManager = gfx::CanvasManagerChild::Get();
-  if (!canvasManager) {
-    promise->MaybeRejectWithInvalidStateError(
-        "Failed to create CanvasManagerChild");
+  rejectIf(!canvasManager, "Failed to create CanvasManagerChild");
+  if (rejectionMessage) {
     return promise.forget();
   }
 
   RefPtr<WebGPUChild> child = canvasManager->GetWebGPUChild();
-  if (!child) {
-    promise->MaybeRejectWithInvalidStateError("Failed to create WebGPUChild");
+  rejectIf(!child, "Failed to create WebGPUChild");
+  if (rejectionMessage) {
     return promise.forget();
   }
 
