@@ -10194,16 +10194,12 @@ var TabContextMenu = {
       .getElementById("context_closeTab")
       .setAttribute("data-l10n-args", tabCountInfo);
 
-    let closeDuplicateEnabled = Services.prefs.getBoolPref(
-      "browser.tabs.context.close-duplicate.enabled"
-    );
     let closeDuplicateTabsItem = document.getElementById(
       "context_closeDuplicateTabs"
     );
-    closeDuplicateTabsItem.hidden = !closeDuplicateEnabled;
-    closeDuplicateTabsItem.disabled =
-      !closeDuplicateEnabled ||
-      !gBrowser.getDuplicateTabsToClose(this.contextTab).length;
+    closeDuplicateTabsItem.disabled = !gBrowser.getDuplicateTabsToClose(
+      this.contextTab
+    ).length;
 
     // Disable "Close Multiple Tabs" if all sub menuitems are disabled
     document.getElementById("context_closeTabOptions").disabled =
