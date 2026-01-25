@@ -13500,6 +13500,13 @@
   value: true
   mirror: always
 
+# Chunk size for BackgroundFileSaver async copy operations. Should be a power
+# of 2 for optimal performance.
+- name: network.backgroundfilesaver.async_copy_chunk_size
+  type: RelaxedAtomicUint32
+  value: 1048576  # 1MB (1024 * 1024)
+  mirror: always
+
 # Default buffer size for buffered stream operations. The actual value used will
 # be floored to the nearest power of two.
 - name: network.buffer.default_size
