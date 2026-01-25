@@ -1627,21 +1627,46 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
   NS_IMETHOD EncodeToString(nsAString& aOutputString) override;
 
  protected:
+  [[nodiscard]] TreeKind GetTreeKind() const {
+    return mFlags & nsIDocumentEncoder::AllowCrossShadowBoundary
+               ? TreeKind::Flat
+               : TreeKind::DOM;
+  }
   nsresult PromoteRange(nsRange* inRange);
   struct MOZ_STACK_CLASS RangeInNode {
+    [[nodiscard]] RawRangeBoundary StartRef() const {
+      return RawRangeBoundary(mContainer, mStartOffset,
+                              // Do not compute previous sibling of the child at
+                              // mStartOffset immediately.
+                              RangeBoundarySetBy::Offset, mTreeKind);
+    }
+    [[nodiscard]] RawRangeBoundary EndRef() const {
+      return RawRangeBoundary(mContainer, mEndOffset,
+                              // Do not compute previous sibling of the child at
+                              // mEndOffset immediately.
+                              RangeBoundarySetBy::Offset, mTreeKind);
+    }
+
+    [[nodiscard]] nsINode* GetParentNode() const {
+      MOZ_ASSERT(mContainer);
+      return mTreeKind == TreeKind::Flat
+                 ? mContainer->GetFlattenedTreeParentNodeForSelection()
+                 : mContainer->GetParentNode();
+    }
+
     nsINode* mContainer = nullptr;
     uint32_t mStartOffset = 0;
     uint32_t mEndOffset = 0;
+    const TreeKind mTreeKind;
   };
   Result<RangeInNode, nsresult> PromoteAncestorChain(
-      nsINode& aNode, const uint32_t aStartOffset, const uint32_t aEndOffset);
-  nsresult GetPromotedStartPoint(nsINode* const aNode, const uint32_t aOffset,
+      const RangeInNode& aRangeInNode);
+  nsresult GetPromotedStartPoint(const RawRangeBoundary& aPoint,
                                  nsCOMPtr<nsINode>* aOutNode,
                                  uint32_t* aOutOffset, nsINode* const aCommon);
-  nsresult GetPromotedEndPoint(nsINode* const aNode, const uint32_t aOffset,
+  nsresult GetPromotedEndPoint(const RawRangeBoundary& aPoint,
                                nsCOMPtr<nsINode>* aOutNode,
                                uint32_t* aOutOffset, nsINode* const aCommon);
-  static nsCOMPtr<nsINode> GetChildAt(nsINode* aParent, const uint32_t aOffset);
   static bool IsMozBR(Element* aNode);
   nsresult GetNodeLocation(nsINode* const aInChild,
                            nsCOMPtr<nsINode>* aOutParent,
@@ -1879,11 +1904,23 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
   if (!inRange->IsPositioned()) {
     return NS_ERROR_UNEXPECTED;
   }
-  nsCOMPtr<nsINode> startNode =
-      inRange->GetMayCrossShadowBoundaryStartContainer();
-  const uint32_t startOffset = inRange->MayCrossShadowBoundaryStartOffset();
-  nsCOMPtr<nsINode> endNode = inRange->GetMayCrossShadowBoundaryEndContainer();
-  const uint32_t endOffset = inRange->MayCrossShadowBoundaryEndOffset();
+  const RawRangeBoundary startRef = [&]() -> RawRangeBoundary {
+    const auto& ref = inRange->MayCrossShadowBoundaryStartRef();
+    // XXX If GetTreeKind() returns TreeKind::DOM but ref.GetTreeKind() returns
+    // TreeKind::Flat, what should we do?  The result may cross the shadow DOM
+    // boundaries even though the our user do not want that.
+    if (GetTreeKind() == TreeKind::Flat && ref.GetTreeKind() == TreeKind::DOM) {
+      return ref.AsRaw().AsRangeBoundaryInFlatTree();
+    }
+    return ref.AsRaw();
+  }();
+  const RawRangeBoundary endRef = [&]() -> RawRangeBoundary {
+    const auto& ref = inRange->MayCrossShadowBoundaryEndRef();
+    if (GetTreeKind() == TreeKind::Flat && ref.GetTreeKind() == TreeKind::DOM) {
+      return ref.AsRaw().AsRangeBoundaryInFlatTree();
+    }
+    return ref.AsRaw();
+  }();
   nsCOMPtr<nsINode> common = inRange->GetClosestCommonInclusiveAncestor(
       AllowRangeCrossShadowBoundary::Yes);
   MOZ_ASSERT(common);
@@ -1893,11 +1930,10 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
   uint32_t opStartOffset, opEndOffset;
 
   // examine range endpoints.
-  nsresult rv = GetPromotedStartPoint(
-      startNode, startOffset, address_of(opStartNode), &opStartOffset, common);
+  nsresult rv = GetPromotedStartPoint(startRef, address_of(opStartNode),
+                                      &opStartOffset, common);
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = GetPromotedEndPoint(endNode, endOffset, address_of(opEndNode),
-                           &opEndOffset, common);
+  rv = GetPromotedEndPoint(endRef, address_of(opEndNode), &opEndOffset, common);
   NS_ENSURE_SUCCESS(rv, rv);
 
   // if both range endpoints are at the common ancestor, check for possible
@@ -1905,7 +1941,8 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
   if (StaticPrefs::dom_serializer_includeCommonAncestor_enabled() &&
       opStartNode == common && opEndNode == common) {
     Result<RangeInNode, nsresult> promotedRangeOrError =
-        PromoteAncestorChain(*opStartNode, opStartOffset, opEndOffset);
+        PromoteAncestorChain(RangeInNode{opStartNode, opStartOffset,
+                                         opEndOffset, startRef.GetTreeKind()});
     if (MOZ_UNLIKELY(promotedRangeOrError.isErr())) {
       return promotedRangeOrError.propagateErr();
     }
@@ -1916,12 +1953,14 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
   }
 
   // set the range to the new values
+  // FIXME: opStartNode and opStartOffset may point a child in the flat tree.
   ErrorResult err;
   inRange->SetStart(*opStartNode, opStartOffset, err,
                     GetAllowRangeCrossShadowBoundary(mFlags));
   if (NS_WARN_IF(err.Failed())) {
     return err.StealNSResult();
   }
+  // FIXME: opEndNode and opEndOffset may point a child in the flat tree.
   inRange->SetEnd(*opEndNode, opEndOffset, err,
                   GetAllowRangeCrossShadowBoundary(mFlags));
   if (NS_WARN_IF(err.Failed())) {
@@ -1930,20 +1969,15 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
   return NS_OK;
 }
 
-// PromoteAncestorChain will promote a range represented by
-// [{aNode,aStartOffset}, {aNode,aEndOffset}]. The promotion is different from
-// that found in GetPromoted(Start|End)Point: it will only promote one endpoint
-// if it can promote the other.  Thus, RangeInNode has only one nsINode* member,
-// mContainer.
+// PromoteAncestorChain will promote a range represented by aRangeInNode.
+// The promotion is different from that found in GetPromoted(Start|End)Point: it
+// will only promote one endpoint if it can promote the other.  Thus,
+// RangeInNode has only one nsINode* member, mContainer.
 Result<nsHTMLCopyEncoder::RangeInNode, nsresult>
-nsHTMLCopyEncoder::PromoteAncestorChain(nsINode& aNode,
-                                        const uint32_t aStartOffset,
-                                        const uint32_t aEndOffset) {
-  nsINode* node = &aNode;
-  uint32_t startOffset = aStartOffset;
-  uint32_t endOffset = aEndOffset;
+nsHTMLCopyEncoder::PromoteAncestorChain(const RangeInNode& aRangeInNode) {
+  RangeInNode rangeInNode = aRangeInNode;
   while (true) {
-    nsINode* const parentNode = aNode.GetParentNode();
+    nsINode* const parentNode = rangeInNode.GetParentNode();
     if (MOZ_UNLIKELY(!parentNode)) {
       break;
     }
@@ -1952,44 +1986,46 @@ nsHTMLCopyEncoder::PromoteAncestorChain(nsINode& aNode,
     nsCOMPtr<nsINode> promotedStartNode;
     uint32_t promotedStartOffset = 0;
     if (NS_WARN_IF(NS_FAILED(GetPromotedStartPoint(
-            node, startOffset, address_of(promotedStartNode),
+            rangeInNode.StartRef(), address_of(promotedStartNode),
             &promotedStartOffset, parentNode)))) {
       return Err(NS_ERROR_FAILURE);
     }
     // then we make the same attempt with the endpoint
     uint32_t promotedEndOffset = 0;
     nsCOMPtr<nsINode> promotedEndNode;
-    if (NS_WARN_IF(NS_FAILED(
-            GetPromotedEndPoint(node, endOffset, address_of(promotedEndNode),
-                                &promotedEndOffset, parentNode)))) {
+    if (NS_WARN_IF(NS_FAILED(GetPromotedEndPoint(
+            rangeInNode.EndRef(), address_of(promotedEndNode),
+            &promotedEndOffset, parentNode)))) {
       return Err(NS_ERROR_FAILURE);
     }
     // if both endpoints were promoted one level and isEditable is the same as
     // the original node, keep looping - otherwise we are done.
     if (promotedStartNode != parentNode || promotedEndNode != parentNode ||
-        promotedStartNode->IsEditable() != aNode.IsEditable()) {
+        promotedStartNode->IsEditable() !=
+            aRangeInNode.mContainer->IsEditable()) {
       break;
     }
-    node = promotedStartNode;
-    startOffset = promotedStartOffset;
-    endOffset = promotedEndOffset;
+    rangeInNode.mContainer = promotedStartNode;
+    rangeInNode.mStartOffset = promotedStartOffset;
+    rangeInNode.mEndOffset = promotedEndOffset;
   }
-  return RangeInNode{node, startOffset, endOffset};
+  return rangeInNode;
 }
 
-nsresult nsHTMLCopyEncoder::GetPromotedStartPoint(nsINode* const aNode,
-                                                  const uint32_t aOffset,
-                                                  nsCOMPtr<nsINode>* aOutNode,
-                                                  uint32_t* aOutOffset,
-                                                  nsINode* const aCommon) {
+nsresult nsHTMLCopyEncoder::GetPromotedStartPoint(
+    const RawRangeBoundary& aPoint, nsCOMPtr<nsINode>* aOutNode,
+    uint32_t* aOutOffset, nsINode* const aCommon) {
+  MOZ_ASSERT(aPoint.IsSet());
   MOZ_ASSERT(aOutNode);
   MOZ_ASSERT(aOutOffset);
 
-  // default values
-  *aOutNode = aNode;
-  *aOutOffset = aOffset;
+  using OffsetFilter = RawRangeBoundary::OffsetFilter;
 
-  if (aCommon == aNode) {
+  // default values
+  *aOutNode = aPoint.GetContainer();
+  *aOutOffset = *aPoint.Offset(OffsetFilter::kValidOrInvalidOffsets);
+
+  if (aCommon == aPoint.GetContainer()) {
     return NS_OK;
   }
 
@@ -2001,31 +2037,44 @@ nsresult nsHTMLCopyEncoder::GetPromotedStartPoint(nsINode* const aNode,
   bool bResetPromotion = false;
 
   // some special casing for text nodes
-  if (auto nodeAsText = aNode->GetAsText()) {
+  if (auto* const nodeAsText = Text::FromNode(aPoint.GetContainer())) {
     // if not at beginning of text node, we are done
-    if (aOffset > 0) {
+    if (!aPoint.IsStartOfContainer()) {
       // unless everything before us in just whitespace.  NOTE: we need a more
       // general solution that truly detects all cases of non-significant
       // whitesace with no false alarms.
-      if (!nodeAsText->TextStartsWithOnlyWhitespace(aOffset)) {
+      if (!nodeAsText->TextStartsWithOnlyWhitespace(
+              *aPoint.Offset(OffsetFilter::kValidOrInvalidOffsets))) {
         return NS_OK;
       }
       bResetPromotion = true;
     }
     // else
-    rv = GetNodeLocation(aNode, address_of(parent), &offsetInParent);
+    rv = GetNodeLocation(aPoint.GetContainer(), address_of(parent),
+                         &offsetInParent);
     NS_ENSURE_SUCCESS(rv, rv);
-    node = aNode;
+    if (parent == aCommon) {
+      return NS_OK;
+    }
+    node = aPoint.GetContainer();
   } else {
-    node = GetChildAt(aNode, aOffset);
-    if (node) {
-      parent = aNode;
-      offsetInParent = Some(aOffset);
+    // XXX: Should we only start from the container of aPoint when it points to
+    // start of the container and the container has no children? Currently we
+    // start from the container even when it has invalid offset, which seems
+    // wrong.
+    if (aPoint.GetContainer()->HasChildNodes() && !aPoint.IsEndOfContainer()) {
+      if (aPoint.GetContainer() == aCommon) {
+        return NS_OK;
+      }
+      parent = aPoint.GetContainer();
+      node = aPoint.GetChildAtOffset();
+      MOZ_ASSERT(node);
+      offsetInParent = aPoint.Offset(OffsetFilter::kValidOffsets);
     } else {
-      // XXX: Should we only start from aNode when aOffset is 0 and aNode has
-      // no children? Currently we start from aNode even when aOffset is an
-      // invalid offset, which seems wrong.
-      node = aNode;
+      rv = GetNodeLocation(aPoint.GetContainer(), address_of(parent),
+                           &offsetInParent);
+      NS_ENSURE_SUCCESS(rv, rv);
+      node = aPoint.GetContainer();
     }
   }
   MOZ_ASSERT(node);
@@ -2033,15 +2082,9 @@ nsresult nsHTMLCopyEncoder::GetPromotedStartPoint(nsINode* const aNode,
   // finding the real start for this point.  look up the tree for as long as
   // we are the first node in the container, and as long as we haven't hit the
   // body node.
-  if (parent == aCommon || IsRoot(node)) {
+  if (IsRoot(node)) {
     return rv;
   }
-  // XXX: We need to do this again because parent and offsetInParent might
-  // not be set up properly above, but this also means it will be performed
-  // twice on text nodes. Perhaps we could move this above and only do it
-  // when needed?
-  rv = GetNodeLocation(node, address_of(parent), &offsetInParent);
-  NS_ENSURE_SUCCESS(rv, rv);
   // we hit generated content; STOP
   if (!offsetInParent) {
     return NS_OK;
@@ -2049,12 +2092,11 @@ nsresult nsHTMLCopyEncoder::GetPromotedStartPoint(nsINode* const aNode,
 
   while (IsFirstNode(node) && !IsRoot(parent) && parent != aCommon) {
     if (bResetPromotion) {
-      nsCOMPtr<nsIContent> content = nsIContent::FromNodeOrNull(parent);
-      if (content && content->IsHTMLElement()) {
-        if (nsHTMLElement::IsBlock(
-                nsHTMLTags::AtomTagToId(content->NodeInfo()->NameAtom()))) {
-          bResetPromotion = false;
-        }
+      nsIContent* const parentContent = nsIContent::FromNodeOrNull(parent);
+      if (parentContent && parentContent->IsHTMLElement() &&
+          nsHTMLElement::IsBlock(
+              nsHTMLTags::AtomTagToId(parentContent->NodeInfo()->NameAtom()))) {
+        bResetPromotion = false;
       }
     }
 
@@ -2071,8 +2113,8 @@ nsresult nsHTMLCopyEncoder::GetPromotedStartPoint(nsINode* const aNode,
   }
 
   if (bResetPromotion) {
-    *aOutNode = aNode;
-    *aOutOffset = aOffset;
+    *aOutNode = aPoint.GetContainer();
+    *aOutOffset = *aPoint.Offset(OffsetFilter::kValidOrInvalidOffsets);
   } else {
     *aOutNode = parent;
     *aOutOffset = *offsetInParent;
@@ -2080,19 +2122,21 @@ nsresult nsHTMLCopyEncoder::GetPromotedStartPoint(nsINode* const aNode,
   return rv;
 }
 
-nsresult nsHTMLCopyEncoder::GetPromotedEndPoint(nsINode* const aNode,
-                                                const uint32_t aOffset,
+nsresult nsHTMLCopyEncoder::GetPromotedEndPoint(const RawRangeBoundary& aPoint,
                                                 nsCOMPtr<nsINode>* aOutNode,
                                                 uint32_t* aOutOffset,
                                                 nsINode* const aCommon) {
+  MOZ_ASSERT(aPoint.IsSet());
   MOZ_ASSERT(aOutNode);
   MOZ_ASSERT(aOutOffset);
 
-  // default values
-  *aOutNode = aNode;
-  *aOutOffset = aOffset;
+  using OffsetFilter = RawRangeBoundary::OffsetFilter;
 
-  if (aCommon == aNode) {
+  // default values
+  *aOutNode = aPoint.GetContainer();
+  *aOutOffset = *aPoint.Offset(OffsetFilter::kValidOrInvalidOffsets);
+
+  if (aCommon == aPoint.GetContainer()) {
     return NS_OK;
   }
 
@@ -2104,32 +2148,59 @@ nsresult nsHTMLCopyEncoder::GetPromotedEndPoint(nsINode* const aNode,
   bool bResetPromotion = false;
 
   // some special casing for text nodes
-  if (auto nodeAsText = aNode->GetAsText()) {
+  if (auto* const nodeAsText = Text::FromNode(aPoint.GetContainer())) {
     // if not at end of text node, we are done
-    uint32_t len = aNode->Length();
-    if (aOffset < len) {
+    if (!aPoint.IsEndOfContainer()) {
       // unless everything after us in just whitespace.  NOTE: we need a more
       // general solution that truly detects all cases of non-significant
       // whitespace with no false alarms.
-      if (!nodeAsText->TextEndsWithOnlyWhitespace(aOffset)) {
+      if (!nodeAsText->TextEndsWithOnlyWhitespace(
+              *aPoint.Offset(OffsetFilter::kValidOrInvalidOffsets))) {
         return NS_OK;
       }
       bResetPromotion = true;
     }
-    rv = GetNodeLocation(aNode, address_of(parent), &offsetInParent);
+    rv = GetNodeLocation(aPoint.GetContainer(), address_of(parent),
+                         &offsetInParent);
     NS_ENSURE_SUCCESS(rv, rv);
-    node = aNode;
+    if (parent == aCommon) {
+      return NS_OK;
+    }
+    node = aPoint.GetContainer();
   } else {
     // we want node _before_ offset
-    node = GetChildAt(aNode, aOffset ? aOffset - 1 : aOffset);
-    if (node) {
-      parent = aNode;
-      offsetInParent = Some(aOffset);
+    if (aPoint.GetContainer()->HasChildNodes()) {
+      if (aPoint.GetContainer() == aCommon) {
+        return NS_OK;
+      }
+      // XXX It looks odd that we handle it with the first child if and only if
+      // aPoint refers the first child even though we do it with the previous
+      // sibling if aPoint refers second or latter.
+      if (aPoint.IsStartOfContainer()) {
+        parent = aPoint.GetContainer();
+        node = aPoint.GetChildAtOffset();
+        MOZ_ASSERT(node);
+        offsetInParent = aPoint.Offset(OffsetFilter::kValidOffsets);
+      } else {
+        node = aPoint.GetPreviousSiblingOfChildAtOffset();
+        MOZ_ASSERT(node);
+        parent = aPoint.GetContainer();
+        offsetInParent = aPoint.Offset(OffsetFilter::kValidOffsets);
+        if (offsetInParent.isSome() && *offsetInParent) {
+          offsetInParent = Some(*offsetInParent - 1u);
+        } else {
+          offsetInParent.reset();
+        }
+      }
     } else {
-      // XXX: Should we only start from aNode when aOffset is 0 and aNode has
-      // no children? Currently we start from aNode even when aOffset is an
-      // invalid offset, which seems wrong.
-      node = aNode;
+      // XXX: Should we only start from the container of aPoint when it points
+      // start of the container and the container has no children? Currently we
+      // start from the container even when it has invalid offset, which seems
+      // wrong.
+      rv = GetNodeLocation(aPoint.GetContainer(), address_of(parent),
+                           &offsetInParent);
+      NS_ENSURE_SUCCESS(rv, rv);
+      node = aPoint.GetContainer();
     }
   }
   MOZ_ASSERT(node);
@@ -2137,15 +2208,9 @@ nsresult nsHTMLCopyEncoder::GetPromotedEndPoint(nsINode* const aNode,
   // finding the real end for this point.  look up the tree for as long as we
   // are the last node in the container, and as long as we haven't hit the
   // body node.
-  if (parent == aCommon || IsRoot(node)) {
+  if (IsRoot(node)) {
     return rv;
   }
-  // XXX: We need to do this again because parent and offsetInParent might
-  // not be set up properly above, but this also means it will be performed
-  // twice on text nodes. Perhaps we could move this above and only do it
-  // when needed?
-  rv = GetNodeLocation(node, address_of(parent), &offsetInParent);
-  NS_ENSURE_SUCCESS(rv, rv);
   // we hit generated content; STOP
   if (!offsetInParent) {
     return NS_OK;
@@ -2153,12 +2218,11 @@ nsresult nsHTMLCopyEncoder::GetPromotedEndPoint(nsINode* const aNode,
 
   while (IsLastNode(node) && !IsRoot(parent) && parent != aCommon) {
     if (bResetPromotion) {
-      nsCOMPtr<nsIContent> content = nsIContent::FromNodeOrNull(parent);
-      if (content && content->IsHTMLElement()) {
-        if (nsHTMLElement::IsBlock(
-                nsHTMLTags::AtomTagToId(content->NodeInfo()->NameAtom()))) {
-          bResetPromotion = false;
-        }
+      nsIContent* const parentContent = nsIContent::FromNodeOrNull(parent);
+      if (parentContent && parentContent->IsHTMLElement() &&
+          nsHTMLElement::IsBlock(
+              nsHTMLTags::AtomTagToId(parentContent->NodeInfo()->NameAtom()))) {
+        bResetPromotion = false;
       }
     }
 
@@ -2182,30 +2246,14 @@ nsresult nsHTMLCopyEncoder::GetPromotedEndPoint(nsINode* const aNode,
   }
 
   if (bResetPromotion) {
-    *aOutNode = aNode;
-    *aOutOffset = aOffset;
+    *aOutNode = aPoint.GetContainer();
+    *aOutOffset = *aPoint.Offset(OffsetFilter::kValidOrInvalidOffsets);
   } else {
     *aOutNode = parent;
     // add one since this in an endpoint - want to be AFTER node.
     *aOutOffset = *offsetInParent + 1;
   }
   return rv;
-}
-
-nsCOMPtr<nsINode> nsHTMLCopyEncoder::GetChildAt(nsINode* aParent,
-                                                const uint32_t aOffset) {
-  nsCOMPtr<nsINode> resultNode;
-
-  if (!aParent) {
-    return resultNode;
-  }
-
-  nsCOMPtr<nsIContent> content = nsIContent::FromNodeOrNull(aParent);
-  MOZ_ASSERT(content, "null content in nsHTMLCopyEncoder::GetChildAt");
-
-  resultNode = content->GetChildAt_Deprecated(aOffset);
-
-  return resultNode;
 }
 
 bool nsHTMLCopyEncoder::IsMozBR(Element* aElement) {
@@ -2224,7 +2272,7 @@ nsresult nsHTMLCopyEncoder::GetNodeLocation(
       return NS_ERROR_NULL_POINTER;
     }
 
-    nsINode* parent = mFlags & nsIDocumentEncoder::AllowCrossShadowBoundary
+    nsINode* parent = GetTreeKind() == TreeKind::Flat
                           ? child->GetFlattenedTreeParentNodeForSelection()
                           : child->GetParent();
     if (!parent) {
@@ -2232,7 +2280,7 @@ nsresult nsHTMLCopyEncoder::GetNodeLocation(
     }
 
     *aOutParent = parent;
-    *aOutOffsetInParent = mFlags & nsIDocumentEncoder::AllowCrossShadowBoundary
+    *aOutOffsetInParent = GetTreeKind() == TreeKind::Flat
                               ? parent->ComputeFlatTreeIndexOf(child)
                               : parent->ComputeIndexOf(child);
 
