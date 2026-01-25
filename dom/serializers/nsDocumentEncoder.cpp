@@ -14,6 +14,8 @@
 #include "mozilla/Encoding.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/RangeBoundary.h"
+#include "mozilla/Result.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StringBuffer.h"
 #include "mozilla/UniquePtr.h"
@@ -1626,9 +1628,13 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
 
  protected:
   nsresult PromoteRange(nsRange* inRange);
-  nsresult PromoteAncestorChain(nsCOMPtr<nsINode>* ioNode,
-                                uint32_t* aIOStartOffset,
-                                uint32_t* aIOEndOffset);
+  struct MOZ_STACK_CLASS RangeInNode {
+    nsINode* mContainer = nullptr;
+    uint32_t mStartOffset = 0;
+    uint32_t mEndOffset = 0;
+  };
+  Result<RangeInNode, nsresult> PromoteAncestorChain(
+      nsINode& aNode, const uint32_t aStartOffset, const uint32_t aEndOffset);
   nsresult GetPromotedStartPoint(nsINode* const aNode, const uint32_t aOffset,
                                  nsCOMPtr<nsINode>* aOutNode,
                                  uint32_t* aOutOffset, nsINode* const aCommon);
@@ -1880,6 +1886,7 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
   const uint32_t endOffset = inRange->MayCrossShadowBoundaryEndOffset();
   nsCOMPtr<nsINode> common = inRange->GetClosestCommonInclusiveAncestor(
       AllowRangeCrossShadowBoundary::Yes);
+  MOZ_ASSERT(common);
 
   nsCOMPtr<nsINode> opStartNode;
   nsCOMPtr<nsINode> opEndNode;
@@ -1897,10 +1904,15 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
   // inclusion of ancestors
   if (StaticPrefs::dom_serializer_includeCommonAncestor_enabled() &&
       opStartNode == common && opEndNode == common) {
-    rv = PromoteAncestorChain(address_of(opStartNode), &opStartOffset,
-                              &opEndOffset);
-    NS_ENSURE_SUCCESS(rv, rv);
-    opEndNode = opStartNode;
+    Result<RangeInNode, nsresult> promotedRangeOrError =
+        PromoteAncestorChain(*opStartNode, opStartOffset, opEndOffset);
+    if (MOZ_UNLIKELY(promotedRangeOrError.isErr())) {
+      return promotedRangeOrError.propagateErr();
+    }
+    const RangeInNode promotedRange = promotedRangeOrError.unwrap();
+    opStartNode = opEndNode = promotedRange.mContainer;
+    opStartOffset = promotedRange.mStartOffset;
+    opEndOffset = promotedRange.mEndOffset;
   }
 
   // set the range to the new values
@@ -1919,55 +1931,50 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
 }
 
 // PromoteAncestorChain will promote a range represented by
-// [{*ioNode,*aIOStartOffset} , {*ioNode,*aIOEndOffset}] The promotion is
-// different from that found in getPromoted(Start|End)Point: it will only
-// promote one endpoint if it can promote the other.  Thus, instead of having a
-// startnode/endNode, there is just the one ioNode.
-nsresult nsHTMLCopyEncoder::PromoteAncestorChain(nsCOMPtr<nsINode>* ioNode,
-                                                 uint32_t* aIOStartOffset,
-                                                 uint32_t* aIOEndOffset) {
-  if (!ioNode || !aIOStartOffset || !aIOEndOffset) {
-    return NS_ERROR_NULL_POINTER;
-  }
-
-  nsresult rv = NS_OK;
-
-  nsCOMPtr<nsINode> frontNode, endNode, parent;
-  uint32_t frontOffset, endOffset;
-
-  // save the editable state of the ioNode, so we don't promote an ancestor if
-  // it has different editable state
-  nsCOMPtr<nsINode> node = *ioNode;
-  bool isEditable = node->IsEditable();
-
-  // loop for as long as we can promote both endpoints
+// [{aNode,aStartOffset}, {aNode,aEndOffset}]. The promotion is different from
+// that found in GetPromoted(Start|End)Point: it will only promote one endpoint
+// if it can promote the other.  Thus, RangeInNode has only one nsINode* member,
+// mContainer.
+Result<nsHTMLCopyEncoder::RangeInNode, nsresult>
+nsHTMLCopyEncoder::PromoteAncestorChain(nsINode& aNode,
+                                        const uint32_t aStartOffset,
+                                        const uint32_t aEndOffset) {
+  nsINode* node = &aNode;
+  uint32_t startOffset = aStartOffset;
+  uint32_t endOffset = aEndOffset;
   while (true) {
-    node = *ioNode;
-    parent = node->GetParentNode();
-    if (!parent) {
+    nsINode* const parentNode = aNode.GetParentNode();
+    if (MOZ_UNLIKELY(!parentNode)) {
       break;
     }
     // passing parent as last param to GetPromotedStartPoint() allows it to
     // promote only one level up the hierarchy.
-    rv = GetPromotedStartPoint(*ioNode, *aIOStartOffset, address_of(frontNode),
-                               &frontOffset, parent);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsINode> promotedStartNode;
+    uint32_t promotedStartOffset = 0;
+    if (NS_WARN_IF(NS_FAILED(GetPromotedStartPoint(
+            node, startOffset, address_of(promotedStartNode),
+            &promotedStartOffset, parentNode)))) {
+      return Err(NS_ERROR_FAILURE);
+    }
     // then we make the same attempt with the endpoint
-    rv = GetPromotedEndPoint(*ioNode, *aIOEndOffset, address_of(endNode),
-                             &endOffset, parent);
-    NS_ENSURE_SUCCESS(rv, rv);
-
+    uint32_t promotedEndOffset = 0;
+    nsCOMPtr<nsINode> promotedEndNode;
+    if (NS_WARN_IF(NS_FAILED(
+            GetPromotedEndPoint(node, endOffset, address_of(promotedEndNode),
+                                &promotedEndOffset, parentNode)))) {
+      return Err(NS_ERROR_FAILURE);
+    }
     // if both endpoints were promoted one level and isEditable is the same as
     // the original node, keep looping - otherwise we are done.
-    if ((frontNode != parent) || (endNode != parent) ||
-        (frontNode->IsEditable() != isEditable)) {
+    if (promotedStartNode != parentNode || promotedEndNode != parentNode ||
+        promotedStartNode->IsEditable() != aNode.IsEditable()) {
       break;
     }
-    *ioNode = frontNode;
-    *aIOStartOffset = frontOffset;
-    *aIOEndOffset = endOffset;
+    node = promotedStartNode;
+    startOffset = promotedStartOffset;
+    endOffset = promotedEndOffset;
   }
-  return rv;
+  return RangeInNode{node, startOffset, endOffset};
 }
 
 nsresult nsHTMLCopyEncoder::GetPromotedStartPoint(nsINode* const aNode,
