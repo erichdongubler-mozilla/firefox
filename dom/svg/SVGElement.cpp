@@ -247,8 +247,8 @@ nsresult SVGElement::CopyInnerTo(mozilla::dom::Element* aDest) {
         dest->SMILOverrideStyle()->SetSMILValue(eCSSProperty_d, *pathSegList);
       }
     }
-    if (const auto* transformList = GetAnimatedTransformList()) {
-      *dest->GetAnimatedTransformList(DO_ALLOCATE) = *transformList;
+    if (const auto* transformList = GetExistingAnimatedTransformList()) {
+      *dest->GetOrCreateAnimatedTransformList() = *transformList;
     }
     if (const auto* animateMotionTransform = GetAnimateMotionTransform()) {
       dest->SetAnimateMotionTransform(animateMotionTransform);
@@ -670,7 +670,7 @@ bool SVGElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
         // The transform attribute is being set, so we must ensure that the
         // SVGAnimatedTransformList is/has been allocated:
         SVGAnimatedTransformList* transformList =
-            GetAnimatedTransformList(DO_ALLOCATE);
+            GetOrCreateAnimatedTransformList();
         rv = transformList->SetBaseValueString(aValue, this);
         if (NS_FAILED(rv)) {
           transformList->ClearBaseValue();
@@ -878,7 +878,8 @@ void SVGElement::UnsetAttrInternal(int32_t aNamespaceID, nsAtom* aName,
 
     // Check if this is a transform list attribute going away
     if (GetTransformListAttrName() == aName) {
-      SVGAnimatedTransformList* transformList = GetAnimatedTransformList();
+      SVGAnimatedTransformList* transformList =
+          GetExistingAnimatedTransformList();
       if (transformList) {
         transformList->ClearBaseValue();
         return;
@@ -1359,7 +1360,7 @@ void SVGElement::UpdateMappedDeclarationBlock() {
         nameAtom == nsGkAtoms::patternTransform ||
         nameAtom == nsGkAtoms::gradientTransform) {
       sawTransform = true;
-      const auto* transform = GetAnimatedTransformList();
+      const auto* transform = GetExistingAnimatedTransformList();
       MOZ_ASSERT(GetTransformListAttrName() == nameAtom);
       MOZ_ASSERT(transform);
       // We want to go through the optimized path to tell the style system the
@@ -1399,7 +1400,7 @@ void SVGElement::UpdateMappedDeclarationBlock() {
 
   // We need to map the SVG view's transform if we haven't mapped it already.
   if (NodeInfo()->NameAtom() == nsGkAtoms::svg && !sawTransform) {
-    if (const auto* transform = GetAnimatedTransformList()) {
+    if (const auto* transform = GetExistingAnimatedTransformList()) {
       mappedAttrParser.TellStyleAlreadyParsedResult(*transform);
     }
   }
@@ -1975,8 +1976,7 @@ void SVGElement::DidChangeTransformList(
   // The transform attribute is being set, so we must ensure that the
   // SVGAnimatedTransformList is/has been allocated:
   nsAttrValue newValue;
-  newValue.SetTo(GetAnimatedTransformList(DO_ALLOCATE)->GetBaseValue(),
-                 nullptr);
+  newValue.SetTo(GetOrCreateAnimatedTransformList()->GetBaseValue(), nullptr);
 
   DidChangeValue(GetTransformListAttrName(), newValue, aProofOfUpdate);
 }
@@ -1984,7 +1984,7 @@ void SVGElement::DidChangeTransformList(
 void SVGElement::DidAnimateTransformList() {
   MOZ_ASSERT(GetTransformListAttrName(),
              "Animating non-existent transform data?");
-  const auto* animTransformList = GetAnimatedTransformList();
+  const auto* animTransformList = GetExistingAnimatedTransformList();
   const auto* animateMotion = GetAnimateMotionTransform();
   if (animateMotion ||
       (animTransformList && animTransformList->IsAnimating())) {
@@ -2099,7 +2099,7 @@ UniquePtr<SMILAttr> SVGElement::GetAnimatedAttr(int32_t aNamespaceID,
     if (GetTransformListAttrName() == aName) {
       // The transform attribute is being animated, so we must ensure that the
       // SVGAnimatedTransformList is/has been allocated:
-      return GetAnimatedTransformList(DO_ALLOCATE)->ToSMILAttr(this);
+      return GetOrCreateAnimatedTransformList()->ToSMILAttr(this);
     }
 
     // Motion (fake 'attribute' for animateMotion)

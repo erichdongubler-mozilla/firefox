@@ -127,8 +127,8 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
   void UnbindFromTree(UnbindContext&) override;
-  SVGAnimatedTransformList* GetAnimatedTransformList(
-      uint32_t aFlags = 0) override;
+  SVGAnimatedTransformList* GetExistingAnimatedTransformList() const override;
+  SVGAnimatedTransformList* GetOrCreateAnimatedTransformList() override;
 
   // SVGSVGElement methods:
 

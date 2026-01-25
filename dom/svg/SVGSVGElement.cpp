@@ -362,12 +362,19 @@ void SVGSVGElement::UnbindFromTree(UnbindContext& aContext) {
   SVGGraphicsElement::UnbindFromTree(aContext);
 }
 
-SVGAnimatedTransformList* SVGSVGElement::GetAnimatedTransformList(
-    uint32_t aFlags) {
-  if (!(aFlags & DO_ALLOCATE) && mSVGView && mSVGView->mTransforms) {
+SVGAnimatedTransformList* SVGSVGElement::GetExistingAnimatedTransformList()
+    const {
+  if (mSVGView && mSVGView->mTransforms) {
     return mSVGView->mTransforms.get();
   }
-  return SVGGraphicsElement::GetAnimatedTransformList(aFlags);
+  return SVGGraphicsElement::GetExistingAnimatedTransformList();
+}
+
+SVGAnimatedTransformList* SVGSVGElement::GetOrCreateAnimatedTransformList() {
+  if (mSVGView && mSVGView->mTransforms) {
+    return mSVGView->mTransforms.get();
+  }
+  return SVGGraphicsElement::GetOrCreateAnimatedTransformList();
 }
 
 void SVGSVGElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {

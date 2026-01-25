@@ -269,16 +269,6 @@ class SVGElement : public SVGElementBase  // nsIContent
                         info.mInfos[aAttrEnum].mName);
   }
 
-  enum {
-    /**
-     * Flag to indicate to GetAnimatedXxx() methods that the object being
-     * requested should be allocated if it hasn't already been allocated, and
-     * that the method should not return null. Only applicable to methods that
-     * need to allocate the object that they return.
-     */
-    DO_ALLOCATE = 0x1
-  };
-
   SVGAnimatedLength* GetAnimatedLength(uint8_t aAttrEnum);
   SVGAnimatedLength* GetAnimatedLength(const nsAtom* aAttrName);
   void GetAnimatedLengthValues(float* aFirst, ...);
@@ -301,15 +291,11 @@ class SVGElement : public SVGElementBase  // nsIContent
    *
    * Despite the fact that animated transform lists are used for a variety of
    * attributes, no SVG element uses more than one.
-   *
-   * It's relatively uncommon for elements to have their transform attribute
-   * set, so to save memory the SVGAnimatedTransformList is not allocated
-   * until the attribute is set/animated or its DOM wrapper is created. Callers
-   * that require the SVGAnimatedTransformList to be allocated and for this
-   * method to return non-null must pass the DO_ALLOCATE flag.
    */
-  virtual SVGAnimatedTransformList* GetAnimatedTransformList(
-      uint32_t aFlags = 0) {
+  virtual SVGAnimatedTransformList* GetExistingAnimatedTransformList() const {
+    return nullptr;
+  }
+  virtual SVGAnimatedTransformList* GetOrCreateAnimatedTransformList() {
     return nullptr;
   }
 
