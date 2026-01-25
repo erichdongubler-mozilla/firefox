@@ -2702,6 +2702,13 @@
   value: false
   mirror: always
 
+# Legacy behavior: include named properties in [[OwnPropertyKeys]] for the
+# Window named properties object (see bug 2011056).
+- name: dom.window.named_properties_object.legacy_own_property_keys
+  type: bool
+  value: false
+  mirror: always
+
 # Only intended for fuzzing purposes, this will break mozPrintCallback, etc.
 - name: dom.window_print.fuzzing.block_while_printing
   type: bool
