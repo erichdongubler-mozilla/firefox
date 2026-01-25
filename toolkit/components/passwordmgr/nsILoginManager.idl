@@ -182,6 +182,16 @@ interface nsILoginManager : nsISupports {
   Promise reencryptAllLogins();
 
   /**
+   * Debug helper to identify logins with invalid origin/formActionOrigin URLs.
+   * Used to diagnose login storage incompatibilities with the Application Services
+   * Rust component, which has stricter URL validation requirements.
+   *
+   * @return A promise which resolves with a JS Array of origin strings that
+   *         failed URL validation.
+   */
+  Promise listInvalidOrigins();
+
+  /**
    * Obtain a list of all origins for which password saving is disabled.
    *
    * @return An array of origin strings. For example: ["https://www.site.com"].

@@ -561,4 +561,23 @@ LoginManager.prototype = {
   reencryptAllLogins() {
     return this._storage.reencryptAllLogins();
   },
+
+  /**
+   * Debug helper to identify logins with invalid origin/formActionOrigin URLs.
+   * Used to diagnose login storage incompatibilities with the Application Services
+   * Rust component, which has stricter URL validation requirements.
+   *
+   * @return {Promise<Array<string>>} Origin strings that failed URL validation.
+   */
+  async listInvalidOrigins() {
+    const logins = await this.getAllLogins();
+    const invalidOrigins = [];
+    for (const login of logins) {
+      const origin = login.origin || login.formActionOrigin;
+      if (!URL.canParse(origin)) {
+        invalidOrigins.push(origin);
+      }
+    }
+    return invalidOrigins;
+  },
 }; // end of LoginManager implementation
