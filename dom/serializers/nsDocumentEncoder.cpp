@@ -2016,20 +2016,12 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
 
   // set the range to the new values
   ErrorResult err;
-  // FIXME: promotedStartPoint may point a child in the flat tree.
-  inRange->SetStart(RawRangeBoundary(promotedStartPoint.GetContainer(),
-                                     *promotedStartPoint.Offset(
-                                         OffsetFilter::kValidOrInvalidOffsets),
-                                     RangeBoundarySetBy::Offset, TreeKind::DOM),
-                    err, GetAllowRangeCrossShadowBoundary(mFlags));
+  inRange->SetStart(promotedStartPoint.AsRangeBoundaryInDOMTree(), err,
+                    GetAllowRangeCrossShadowBoundary(mFlags));
   if (NS_WARN_IF(err.Failed())) {
     return err.StealNSResult();
   }
-  // FIXME: promotedEndPoint may point a child in the flat tree.
-  inRange->SetEnd(RawRangeBoundary(promotedEndPoint.GetContainer(),
-                                   *promotedEndPoint.Offset(
-                                       OffsetFilter::kValidOrInvalidOffsets),
-                                   RangeBoundarySetBy::Offset, TreeKind::DOM),
+  inRange->SetEnd(RawRangeBoundary(promotedEndPoint.AsRangeBoundaryInDOMTree()),
                   err, GetAllowRangeCrossShadowBoundary(mFlags));
   if (NS_WARN_IF(err.Failed())) {
     return err.StealNSResult();
