@@ -1700,6 +1700,8 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
   static Result<RawRangeBoundary, nsresult> GetParentPoint(
       const RawRangeBoundary& aPoint);
 
+  [[nodiscard]] static Maybe<uint32_t> ComputeIndexOfContent(
+      const nsINode* aParent, const nsIContent* aChild, TreeKind aTreeKind);
   static bool IsMozBR(Element* aNode);
   bool IsRoot(nsINode* aNode) const;
 
@@ -1958,14 +1960,18 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
     // TreeKind::Flat, what should we do?  The result may cross the shadow DOM
     // boundaries even though the our user do not want that.
     if (GetTreeKind() == TreeKind::Flat && ref.GetTreeKind() == TreeKind::DOM) {
-      return ref.AsRaw().AsRangeBoundaryInFlatTree();
+      return ref.AsRaw().AsRangeBoundaryInFlatTree(
+          inRange->Collapsed() ? RangeBoundaryFor::Collapsed
+                               : RangeBoundaryFor::Start);
     }
     return ref.AsRaw();
   }();
   const RawRangeBoundary endRef = [&]() -> RawRangeBoundary {
     const auto& ref = inRange->MayCrossShadowBoundaryEndRef();
     if (GetTreeKind() == TreeKind::Flat && ref.GetTreeKind() == TreeKind::DOM) {
-      return ref.AsRaw().AsRangeBoundaryInFlatTree();
+      return ref.AsRaw().AsRangeBoundaryInFlatTree(
+          inRange->Collapsed() ? RangeBoundaryFor::Collapsed
+                               : RangeBoundaryFor::End);
     }
     return ref.AsRaw();
   }();
@@ -2146,9 +2152,14 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedStartPoint(
       if (NS_WARN_IF(!point.IsSet())) {
         return aPoint;
       }
-      MOZ_ASSERT(point.GetChildAtOffset() == aPoint.GetContainer());
     }
   }
+  NS_WARNING_ASSERTION(
+      point.GetChildAtOffset(),
+      nsFmtCString(
+          FMT_STRING("Not pointing a child node:\npoint={}\naPoint={}\n"),
+          point, aPoint)
+          .get());
   MOZ_ASSERT(point.GetChildAtOffset());
 
   // finding the real start for this point.  look up the tree for as long as
@@ -2268,6 +2279,12 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
       }
     }
   }
+  NS_WARNING_ASSERTION(
+      point.GetChildAtOffset(),
+      nsFmtCString(
+          FMT_STRING("Not pointing a child node:\npoint={}\naPoint={}\n"),
+          point, aPoint)
+          .get());
   MOZ_ASSERT(point.GetChildAtOffset());
 
   // finding the real end for this point.  look up the tree for as long as we
@@ -2323,13 +2340,34 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
     return aPoint;
   }
   // We want to be AFTER the node.
-  return RawRangeBoundary::After(*point.GetChildAtOffset(),
-                                 point.GetTreeKind());
+  nsIContent* const childAtOffset = point.GetChildAtOffset();
+  return childAtOffset
+             ? RawRangeBoundary::After(*childAtOffset, point.GetTreeKind())
+             : RawRangeBoundary::EndOfParent(*point.GetContainer(),
+                                             RangeBoundarySetBy::Ref,
+                                             point.GetTreeKind());
 }
 
 bool nsHTMLCopyEncoder::IsMozBR(Element* aElement) {
   HTMLBRElement* brElement = HTMLBRElement::FromNodeOrNull(aElement);
   return brElement && brElement->IsPaddingForEmptyLastLine();
+}
+
+// static
+Maybe<uint32_t> nsHTMLCopyEncoder::ComputeIndexOfContent(
+    const nsINode* aParent, const nsIContent* aChild, TreeKind aTreeKind) {
+  MOZ_ASSERT(aParent);
+  MOZ_ASSERT(aChild);
+
+  if (aTreeKind == TreeKind::DOM) {
+    return aParent->ComputeIndexOf(aChild);
+  }
+  // If the parent of the container has a shadow root which is for <use> or a
+  // UI widget, we shouldn't treat it as a shadow host.
+  if (aParent->GetShadowRoot() && !aParent->GetShadowRootForSelection()) {
+    return aParent->ComputeIndexOf(aChild);
+  }
+  return aParent->ComputeFlatTreeIndexOf(aChild);
 }
 
 Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetParentPoint(
@@ -2342,6 +2380,21 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetParentPoint(
     return Err(NS_ERROR_NULL_POINTER);
   }
 
+  // If the container is a ShadowRoot, GetFlattenedTreeParentNodeForSelection()
+  // returns nullptr. However, we want to keep handling in the host.
+  if (aPoint.GetTreeKind() == TreeKind::Flat) {
+    if (ShadowRoot* const shadowRoot = ShadowRoot::FromNode(containerContent)) {
+      Element* const host = shadowRoot->GetHost();
+      if (MOZ_UNLIKELY(!host)) {
+        return Err(NS_ERROR_NULL_POINTER);
+      }
+      // Return the point of the host element. Then, the caller can check
+      // whether the host element is the first/last meaningful node in its
+      // parent.
+      return RawRangeBoundary::FromChild(*host, aPoint.GetTreeKind());
+    }
+  }
+
   nsINode* const containerParentNode =
       aPoint.GetTreeKind() == TreeKind::Flat
           ? containerContent->GetFlattenedTreeParentNodeForSelection()
@@ -2350,10 +2403,8 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetParentPoint(
     return Err(NS_ERROR_NULL_POINTER);
   }
 
-  const Maybe<uint32_t> indexOfContainer =
-      aPoint.GetTreeKind() == TreeKind::Flat
-          ? containerParentNode->ComputeFlatTreeIndexOf(containerContent)
-          : containerParentNode->ComputeIndexOf(containerContent);
+  const Maybe<uint32_t> indexOfContainer = ComputeIndexOfContent(
+      containerParentNode, containerContent, aPoint.GetTreeKind());
   if (MOZ_UNLIKELY(indexOfContainer.isNothing())) {
     return RawRangeBoundary(aPoint.GetTreeKind());
   }

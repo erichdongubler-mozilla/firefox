@@ -2511,6 +2511,8 @@ already_AddRefed<StaticRange> Selection::GetComposedRange(
 
   RefPtr<StaticRange> composedRange = StaticRange::Create(
       startNode, startOffset, endNode, endOffset, IgnoreErrors());
+  NS_WARNING(mozilla::ToString(composedRange->StartRef()).c_str());
+  NS_WARNING(mozilla::ToString(composedRange->EndRef()).c_str());
   return composedRange.forget();
 }
 

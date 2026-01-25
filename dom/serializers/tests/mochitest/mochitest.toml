@@ -112,12 +112,14 @@ support-files = [
 
 ["test_copypaste_flat_tree.html"]
 skip-if = [
-  "true", # Disable until fixing bug 2010730
+  "headless", # bug 904183
+  "os == 'android'",
 ]
 
 ["test_copypaste_shadow_dom.html"]
 skip-if = [
-  "true", # Disable until fixing bug 2010730
+  "headless", # bug 904183
+  "os == 'android'",
 ]
 
 ["test_encodeToStringWithMaxLength.html"]
