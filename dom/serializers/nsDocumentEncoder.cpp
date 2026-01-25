@@ -1931,7 +1931,6 @@ nsresult nsHTMLCopyEncoder::PromoteAncestorChain(nsCOMPtr<nsINode>* ioNode,
   }
 
   nsresult rv = NS_OK;
-  bool done = false;
 
   nsCOMPtr<nsINode> frontNode, endNode, parent;
   uint32_t frontOffset, endOffset;
@@ -1942,33 +1941,31 @@ nsresult nsHTMLCopyEncoder::PromoteAncestorChain(nsCOMPtr<nsINode>* ioNode,
   bool isEditable = node->IsEditable();
 
   // loop for as long as we can promote both endpoints
-  while (!done) {
+  while (true) {
     node = *ioNode;
     parent = node->GetParentNode();
     if (!parent) {
-      done = true;
-    } else {
-      // passing parent as last param to GetPromotedStartPoint() allows it to
-      // promote only one level up the hierarchy.
-      rv = GetPromotedStartPoint(*ioNode, *aIOStartOffset,
-                                 address_of(frontNode), &frontOffset, parent);
-      NS_ENSURE_SUCCESS(rv, rv);
-      // then we make the same attempt with the endpoint
-      rv = GetPromotedEndPoint(*ioNode, *aIOEndOffset, address_of(endNode),
-                               &endOffset, parent);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      // if both endpoints were promoted one level and isEditable is the same as
-      // the original node, keep looping - otherwise we are done.
-      if ((frontNode != parent) || (endNode != parent) ||
-          (frontNode->IsEditable() != isEditable))
-        done = true;
-      else {
-        *ioNode = frontNode;
-        *aIOStartOffset = frontOffset;
-        *aIOEndOffset = endOffset;
-      }
+      break;
     }
+    // passing parent as last param to GetPromotedStartPoint() allows it to
+    // promote only one level up the hierarchy.
+    rv = GetPromotedStartPoint(*ioNode, *aIOStartOffset, address_of(frontNode),
+                               &frontOffset, parent);
+    NS_ENSURE_SUCCESS(rv, rv);
+    // then we make the same attempt with the endpoint
+    rv = GetPromotedEndPoint(*ioNode, *aIOEndOffset, address_of(endNode),
+                             &endOffset, parent);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    // if both endpoints were promoted one level and isEditable is the same as
+    // the original node, keep looping - otherwise we are done.
+    if ((frontNode != parent) || (endNode != parent) ||
+        (frontNode->IsEditable() != isEditable)) {
+      break;
+    }
+    *ioNode = frontNode;
+    *aIOStartOffset = frontOffset;
+    *aIOEndOffset = endOffset;
   }
   return rv;
 }
