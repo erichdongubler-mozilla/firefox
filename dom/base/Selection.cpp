@@ -3540,8 +3540,11 @@ void Selection::SelectAllChildren(nsINode& aNode, ErrorResult& aRv) {
 
   // Chrome moves focus when aNode is outside of active editing host.
   // So, we don't need to respect the limiter with this method.
-  SetStartAndEndInternal(InLimiter::eNo, RawRangeBoundary(&aNode, 0u),
-                         RawRangeBoundary(&aNode, aNode.GetChildCount()),
+  const RawRangeBoundary startOfNode = RawRangeBoundary::StartOfParent(aNode);
+  SetStartAndEndInternal(InLimiter::eNo, startOfNode,
+                         aNode.IsContainerNode()
+                             ? RawRangeBoundary::EndOfParent(aNode)
+                             : startOfNode,
                          eDirNext, aRv);
 }
 

@@ -1261,10 +1261,11 @@ void nsRange::SetStartBefore(
   }
 
   AutoInvalidateSelection atEndOfBlock(this);
-  // If the node is being removed from its parent, GetRawRangeBoundaryBefore()
-  // returns unset instance.  Then, SetStart() will throw
-  // NS_ERROR_DOM_INVALID_NODE_TYPE_ERR.
-  SetStart(RangeUtils::GetRawRangeBoundaryBefore(&aNode), aRv,
+  if (MOZ_UNLIKELY(!aNode.IsContent() || aNode.IsBeingRemoved())) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_NODE_TYPE_ERR);
+    return;
+  }
+  SetStart(RawRangeBoundary::FromChild(*aNode.AsContent()), aRv,
            aAllowCrossShadowBoundary);
 }
 
@@ -1281,10 +1282,11 @@ void nsRange::SetStartAfter(nsINode& aNode, ErrorResult& aRv) {
   }
 
   AutoInvalidateSelection atEndOfBlock(this);
-  // If the node is being removed from its parent, GetRawRangeBoundaryAfter()
-  // returns unset instance.  Then, SetStart() will throw
-  // NS_ERROR_DOM_INVALID_NODE_TYPE_ERR.
-  SetStart(RangeUtils::GetRawRangeBoundaryAfter(&aNode), aRv);
+  if (MOZ_UNLIKELY(!aNode.IsContent() || aNode.IsBeingRemoved())) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_NODE_TYPE_ERR);
+    return;
+  }
+  SetStart(RawRangeBoundary::After(*aNode.AsContent()), aRv);
 }
 
 void nsRange::SetEndJS(nsINode& aNode, uint32_t aOffset, ErrorResult& aErr) {
@@ -1419,10 +1421,11 @@ void nsRange::SetEndBefore(
   }
 
   AutoInvalidateSelection atEndOfBlock(this);
-  // If the node is being removed from its parent, GetRawRangeBoundaryBefore()
-  // returns unset instance.  Then, SetEnd() will throw
-  // NS_ERROR_DOM_INVALID_NODE_TYPE_ERR.
-  SetEnd(RangeUtils::GetRawRangeBoundaryBefore(&aNode), aRv,
+  if (MOZ_UNLIKELY(!aNode.IsContent() || aNode.IsBeingRemoved())) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_NODE_TYPE_ERR);
+    return;
+  }
+  SetEnd(RawRangeBoundary::FromChild(*aNode.AsContent()), aRv,
          aAllowCrossShadowBoundary);
 }
 
@@ -1439,10 +1442,11 @@ void nsRange::SetEndAfter(nsINode& aNode, ErrorResult& aRv) {
   }
 
   AutoInvalidateSelection atEndOfBlock(this);
-  // If the node is being removed from its parent, GetRawRangeBoundaryAfter()
-  // returns unset instance.  Then, SetEnd() will throw
-  // NS_ERROR_DOM_INVALID_NODE_TYPE_ERR.
-  SetEnd(RangeUtils::GetRawRangeBoundaryAfter(&aNode), aRv);
+  if (MOZ_UNLIKELY(!aNode.IsContent() || aNode.IsBeingRemoved())) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_NODE_TYPE_ERR);
+    return;
+  }
+  SetEnd(RawRangeBoundary::After(*aNode.AsContent()), aRv);
 }
 
 void nsRange::Collapse(bool aToStart) {
@@ -1515,8 +1519,8 @@ void nsRange::SelectNodeContents(nsINode& aNode, ErrorResult& aRv) {
   }
 
   AutoInvalidateSelection atEndOfBlock(this);
-  DoSetRange(RawRangeBoundary(&aNode, 0u),
-             RawRangeBoundary(&aNode, aNode.Length()), newRoot);
+  DoSetRange(RawRangeBoundary::StartOfParent(aNode),
+             RawRangeBoundary::EndOfParent(aNode), newRoot);
 }
 
 // The Subtree Content Iterator only returns subtrees that are
