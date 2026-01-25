@@ -434,6 +434,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: پسند کوݩ موتور پیتینیڌن</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">%1$s ز ویرگار پاک وابی</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">پاک کردن ای و من زیڌنی ویرگار</string>
   <!--
     Home onboarding
 
@@ -900,7 +904,7 @@
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">کتن کردن داده یل</string>
   <!-- Preference for developers -->
-  <string name="preferences_remote_debugging">رفع اشکال ز ر دیر و واسته USB</string>
+  <string name="preferences_remote_debugging">رفع اشکال ز ره دیر و واسته USB</string>
   <!-- Preference title for switch preference to show search suggestions -->
   <string name="preferences_show_search_suggestions">نشووݩ داڌن پؽشنهاڌا پیتینیڌن</string>
   <!-- Preference title for switch preference to show voice search button -->
@@ -954,9 +958,18 @@
   <!-- Preference for open links in third party apps always open in apps option -->
   <string name="preferences_open_links_in_apps_always">هی</string>
   <!-- Preference for open links in third party apps ask before opening option -->
-  <string name="preferences_open_links_in_apps_ask">پورس پؽش ز گۊشیڌن</string>
+  <string name="preferences_open_links_in_apps_ask">پورس کردن پؽش ز گۊشیڌن</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">هرگشت</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">جاگه فایل</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">جاگه دانلود پؽش فرز</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost">ایسا نترین ای دوبلگه ن و کار گیرین. ی دوبلگه دی ن و کار بیگیرین.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">دؽوۉداری دانلودا وا برنومه ای دی</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1489,12 +1502,26 @@
   <string name="studies_active">فعال</string>
   <!-- Description for studies -->
   <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">ویژیی یل وو ایده یل ن پؽش ز تیجنیڌن سی پوی امتهووݩ کۊنین.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox و هالت تساڌۊفی منتورا ن سی آزمایش ویژیی یل پسند اکونه، ک ای کار کیفیت ن سی پوی وا روء ابره.</string>
   <!-- Title of the Studies data preference -->
   <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">پۊرنیڌن وو ر وندن خۊندنیا</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">هشتن خۊندنیا ویژیی</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">قلوه دووسته بۊین</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">امکووݩ بؽڌر وابیڌن ز ره دیر</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox ویژیی یل، عملکرد وو پایداری ن منجا ورۊ رسۊویا بؽڌر اکونه، آلشتکاریا ز ره دیر ائمال ابۊن.</string>
   <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
   <string name="remote_improvements_learn_more">قلوه دووسته بۊین</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">بؽڌر وابیڌنا ز ره دیر</string>
   <!--
     Sessions
 
@@ -1688,6 +1715,8 @@
   <string name="download_delete_item">پاک کردن</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">وورگشتن و عقب</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">و سامووا دانلودا ریوین</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">وورگشتن وو بستن پیتینیڌن</string>
   <!--
@@ -1985,6 +2014,10 @@
   <string name="select_bookmark_search_button_content_description">پیتینیڌن دوبلگه یل</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">نومگه موورد سی %s</string>
+  <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+  <string name="bookmark_select_folder_expand_folder_content_description">گۊشیڌن دوبلگه: %s</string>
+  <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+  <string name="bookmark_select_folder_close_folder_content_description">بستن دوبلگه: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">بستن نشووکا</string>
   <!-- Title for the bookmark list empty state -->
@@ -2810,8 +2843,20 @@
   <string name="saved_logins_sort_strategy_last_used">کرت دیندایی و کار گرؽڌن</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">نومگه کتن کردن رزما</string>
+  <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">بؽڌار کونا ایمیل</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">پؽشنهاڌ بؽڌار کونا ایمیل</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">ایمیل واقعی خوته بؽڌار کوݩ تا ز سندوق وۊرۊدی جلاو هرزنومه یل زفتت کونه. ی قرد ز وبگه یل ز بؽڌار کونا ایمیل لادراری نؽکونن.</string>
   <!-- Text that links to additional information about the Email Masks -->
   <string name="preferences_email_masks_suggest_learn_more">قلوه دووسته بۊین</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">دؽوۉداری بؽڌار کونا ایمیل</string>
   <!--
     Autofill
 
@@ -3003,7 +3048,7 @@
   <!-- Placeholder text shown in the Search Suggestion String TextField before a user enters text -->
   <string name="search_add_custom_engine_suggest_string_hint">نشۊوی اینترنتی API پؽشنهاڌی پیتینیڌن</string>
   <!-- Description text for the Search Suggestion String TextField. The %s is part of the string -->
-  <string name="search_add_custom_engine_suggest_string_example_2" formatted="false">جایونی پورس وو جۊ وا «%s». جۊر:\nhttps://suggestqueries.google.com/complete/search?client=firefox&amp;q=%s</string>
+  <string name="search_add_custom_engine_suggest_string_example_2" formatted="false">جایونی پورس ۉ جۊ وا «%s». جۊر:\nhttps://suggestqueries.google.com/complete/search?client=firefox&amp;q=%s</string>
   <!-- The text for the "Save" button for saving a custom search engine -->
   <string name="search_custom_engine_save_button">زفت</string>
   <!-- Text shown when a user leaves the name field empty -->
@@ -3991,6 +4036,8 @@
   <string name="settings_search_no_results_title">چیه نجۊرست</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">گاشڌ پیتینیڌن دیری ن امتهووݩ کۊنین؟</string>
+  <!-- Content Description for the button to open Settings Search (to search through settings). -->
+  <string name="settings_search_button_content_description">دویمه پیتینیڌن سامووا</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- Title for the pop up prompt -->
