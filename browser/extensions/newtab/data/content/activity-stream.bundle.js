@@ -13090,6 +13090,7 @@ function EditableTimerFields({
 
 
 
+
 function WeatherForecast({
   dispatch
 }) {
@@ -13171,93 +13172,93 @@ function WeatherForecast({
       }
     }));
   }
-  return /*#__PURE__*/React.createElement("article", {
+  return /*#__PURE__*/external_React_default().createElement("article", {
     className: "weather-forecast-widget"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "city-wrapper"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "city-name"
-  }, searchActive ? /*#__PURE__*/React.createElement(LocationSearch, {
+  }, searchActive ? /*#__PURE__*/external_React_default().createElement(LocationSearch, {
     outerClassName: ""
-  }) : /*#__PURE__*/React.createElement("h3", null, weatherData.locationData.city)), /*#__PURE__*/React.createElement("div", {
+  }) : /*#__PURE__*/external_React_default().createElement("h3", null, weatherData.locationData.city)), /*#__PURE__*/external_React_default().createElement("div", {
     className: "weather-forecast-context-menu-wrapper"
-  }, /*#__PURE__*/React.createElement("moz-button", {
+  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
     className: "weather-forecast-context-menu-button",
     iconSrc: "chrome://global/skin/icons/more.svg",
     menuId: "weather-forecast-context-menu",
     type: "ghost"
-  }), /*#__PURE__*/React.createElement("panel-list", {
+  }), /*#__PURE__*/external_React_default().createElement("panel-list", {
     id: "weather-forecast-context-menu"
-  }, prefs["weather.locationSearchEnabled"] && /*#__PURE__*/React.createElement("panel-item", {
+  }, prefs["weather.locationSearchEnabled"] && /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-change-location",
     onClick: handleChangeLocation
-  }), isOptInEnabled && /*#__PURE__*/React.createElement("panel-item", {
+  }), isOptInEnabled && /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-detect-my-location",
     onClick: handleDetectLocation
-  }), prefs["weather.temperatureUnits"] === "f" ? /*#__PURE__*/React.createElement("panel-item", {
+  }), prefs["weather.temperatureUnits"] === "f" ? /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-change-temperature-units-celsius",
     onClick: () => handleChangeTempUnit("c")
-  }) : /*#__PURE__*/React.createElement("panel-item", {
+  }) : /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-change-temperature-units-fahrenheit",
     onClick: () => handleChangeTempUnit("f")
-  }), !showDetailedView ? /*#__PURE__*/React.createElement("panel-item", {
+  }), !showDetailedView ? /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-change-weather-display-detailed",
     onClick: () => handleChangeDisplay("detailed")
-  }) : /*#__PURE__*/React.createElement("panel-item", {
+  }) : /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-change-weather-display-simple",
     onClick: () => handleChangeDisplay("simple")
-  }), /*#__PURE__*/React.createElement("panel-item", {
+  }), /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-hide-weather-v2",
     onClick: handleHideWeather
-  }), /*#__PURE__*/React.createElement("panel-item", {
+  }), /*#__PURE__*/external_React_default().createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-learn-more",
     onClick: handleLearnMore
-  })))), /*#__PURE__*/React.createElement("div", {
+  })))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "current-weather-wrapper"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "weather-icon-column"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  })), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/external_React_default().createElement("div", {
     className: "weather-info-column"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "temperature-unit"
-  }, WEATHER_SUGGESTION.current_conditions.temperature[prefs["weather.temperatureUnits"]], "\xB0", prefs["weather.temperatureUnits"]), /*#__PURE__*/React.createElement("span", {
+  }, WEATHER_SUGGESTION.current_conditions.temperature[prefs["weather.temperatureUnits"]], "\xB0", prefs["weather.temperatureUnits"]), /*#__PURE__*/external_React_default().createElement("span", {
     className: "temperature-description"
-  }, WEATHER_SUGGESTION.current_conditions.summary)), /*#__PURE__*/React.createElement("div", {
+  }, WEATHER_SUGGESTION.current_conditions.summary)), /*#__PURE__*/external_React_default().createElement("div", {
     className: "high-low-column"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "high-temperature"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "arrow-icon arrow-up"
-  }), WEATHER_SUGGESTION.forecast.high[prefs["weather.temperatureUnits"]], "\xB0"), /*#__PURE__*/React.createElement("span", {
+  }), WEATHER_SUGGESTION.forecast.high[prefs["weather.temperatureUnits"]], "\xB0"), /*#__PURE__*/external_React_default().createElement("span", {
     className: "low-temperature"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "arrow-icon arrow-down"
-  }), WEATHER_SUGGESTION.forecast.low[prefs["weather.temperatureUnits"]], "\xB0"))), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement("div", {
+  }), WEATHER_SUGGESTION.forecast.low[prefs["weather.temperatureUnits"]], "\xB0"))), /*#__PURE__*/external_React_default().createElement("hr", null), /*#__PURE__*/external_React_default().createElement("div", {
     className: "forecast-row"
-  }, /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/external_React_default().createElement("p", {
     className: "today-forecast",
     "data-l10n-id": "newtab-weather-todays-forecast"
-  }), /*#__PURE__*/React.createElement("ul", {
+  }), /*#__PURE__*/external_React_default().createElement("ul", {
     className: "forecast-row-items"
-  }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", null, "80\xB0"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/external_React_default().createElement("li", null, /*#__PURE__*/external_React_default().createElement("span", null, "80\xB0"), /*#__PURE__*/external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), /*#__PURE__*/React.createElement("span", null, "7:00")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", null, "80\xB0"), /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/external_React_default().createElement("span", null, "7:00")), /*#__PURE__*/external_React_default().createElement("li", null, /*#__PURE__*/external_React_default().createElement("span", null, "80\xB0"), /*#__PURE__*/external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), /*#__PURE__*/React.createElement("span", null, "7:00")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", null, "80\xB0"), /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/external_React_default().createElement("span", null, "7:00")), /*#__PURE__*/external_React_default().createElement("li", null, /*#__PURE__*/external_React_default().createElement("span", null, "80\xB0"), /*#__PURE__*/external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), /*#__PURE__*/React.createElement("span", null, "7:00")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", null, "80\xB0"), /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/external_React_default().createElement("span", null, "7:00")), /*#__PURE__*/external_React_default().createElement("li", null, /*#__PURE__*/external_React_default().createElement("span", null, "80\xB0"), /*#__PURE__*/external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), /*#__PURE__*/React.createElement("span", null, "7:00")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", null, "80\xB0"), /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/external_React_default().createElement("span", null, "7:00")), /*#__PURE__*/external_React_default().createElement("li", null, /*#__PURE__*/external_React_default().createElement("span", null, "80\xB0"), /*#__PURE__*/external_React_default().createElement("span", {
     className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
-  }), /*#__PURE__*/React.createElement("span", null, "7:00")))), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/external_React_default().createElement("span", null, "7:00")))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "weather-forecast-footer"
-  }, /*#__PURE__*/React.createElement("a", {
+  }, /*#__PURE__*/external_React_default().createElement("a", {
     href: "#",
     className: "full-forecast",
     "data-l10n-id": "newtab-weather-see-full-forecast"
-  }), /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "sponsored-text",
     "data-l10n-id": "newtab-weather-sponsored",
     "data-l10n-args": "{\"provider\": \"AccuWeather\xAE\"}"
