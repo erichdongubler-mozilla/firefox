@@ -7,22 +7,9 @@ plugins {
 }
 
 val mozconfig = gradle.extra["mozconfig"] as Map<*, *>
-val substs = mozconfig["substs"] as Map<*, *>
 val topobjdir = mozconfig["topobjdir"] as String
 
 layout.buildDirectory.set(file("$topobjdir/gradle/build/mobile/android/gradle/plugins/conventions"))
-
-repositories {
-    @Suppress("UNCHECKED_CAST")
-    (substs["GRADLE_MAVEN_REPOSITORIES"] as List<String>).forEach { repository ->
-        maven {
-            url = uri(repository)
-            if (substs["ALLOW_INSECURE_GRADLE_REPOSITORIES"] == true) {
-                isAllowInsecureProtocol = true
-            }
-        }
-    }
-}
 
 gradlePlugin {
     plugins.register("org.mozilla.conventions.settings") {
