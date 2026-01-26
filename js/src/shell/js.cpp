@@ -13275,15 +13275,18 @@ bool InitOptionParser(OptionParser& op) {
                        "NUMBER of instructions.",
                        -1) ||
 #ifdef JS_CODEGEN_RISCV64
-      !op.addBoolOption('\0', "riscv-debug", "debug print riscv info.") ||
+      !op.addBoolOption('\0', "riscv-debug",
+                        "Print riscv debugging messages.") ||
 #endif
 #ifdef JS_SIMULATOR_RISCV64
-      !op.addBoolOption('\0', "trace-sim", "print simulator info.") ||
-      !op.addBoolOption('\0', "debug-sim", "debug simulator.") ||
+      !op.addBoolOption('\0', "riscv-sim-trace",
+                        "Print the RISC-V simulator info.") ||
+      !op.addBoolOption('\0', "riscv-sim-debug",
+                        "Debug the RISC-V simulator.") ||
       !op.addBoolOption('\0', "riscv-trap-to-simulator-debugger",
-                        "trap into simulator debuggger.") ||
+                        "Trap into the RISC-V simulator debuggger.") ||
       !op.addIntOption('\0', "riscv-sim-stop-at", "NUMBER",
-                       "Stop the riscv simulator after the given "
+                       "Stop the RISC-V simulator after the given "
                        "NUMBER of instructions.",
                        -1) ||
 #endif
@@ -14349,10 +14352,10 @@ bool SetContextJITOptions(JSContext* cx, const OptionParser& op) {
   }
 #  endif
 #  ifdef JS_SIMULATOR_RISCV64
-  if (op.getBoolOption("trace-sim")) {
+  if (op.getBoolOption("riscv-sim-trace")) {
     jit::Simulator::FLAG_trace_sim = true;
   }
-  if (op.getBoolOption("debug-sim")) {
+  if (op.getBoolOption("riscv-sim-debug")) {
     jit::Simulator::FLAG_debug_sim = true;
   }
   if (op.getBoolOption("riscv-trap-to-simulator-debugger")) {
