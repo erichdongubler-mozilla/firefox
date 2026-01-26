@@ -421,6 +421,13 @@ user-id = 72814
 user-login = "gabrielesvelto"
 user-name = "Gabriele Svelto"
 
+[[publisher.mtu]]
+version = "0.3.0"
+when = "2025-12-19"
+user-id = 83100
+user-login = "mxinden"
+user-name = "Max Inden"
+
 [[publisher.nss-gk-api]]
 version = "0.3.0"
 when = "2023-06-14"

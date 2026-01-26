@@ -4757,8 +4757,8 @@ dependencies = [
 
 [[package]]
 name = "mtu"
-version = "0.2.9"
-source = "git+https://github.com/mozilla/neqo?tag=v0.21.0#b3338f904e2b9cdd59fbb2ade6b36d1a2ced4eba"
+version = "0.3.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.22.2#71889dfc61f8e61cc2cc37be78f0ec6b7ff39c0d"
 dependencies = [
  "bindgen 0.72.0",
  "cfg_aliases",
@@ -4802,13 +4802,14 @@ dependencies = [
 
 [[package]]
 name = "neqo-bin"
-version = "0.21.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.21.0#b3338f904e2b9cdd59fbb2ade6b36d1a2ced4eba"
+version = "0.22.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.22.2#71889dfc61f8e61cc2cc37be78f0ec6b7ff39c0d"
 dependencies = [
  "clap",
  "clap-verbosity-flag",
  "futures",
  "hex",
+ "http",
  "libc",
  "log",
  "neqo-common",
@@ -4818,17 +4819,16 @@ dependencies = [
  "neqo-udp",
  "qlog",
  "quinn-udp",
- "regex",
  "rustc-hash 2.1.1",
+ "strum",
  "thiserror 2.0.12",
  "tokio",
- "url",
 ]
 
 [[package]]
 name = "neqo-common"
-version = "0.21.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.21.0#b3338f904e2b9cdd59fbb2ade6b36d1a2ced4eba"
+version = "0.22.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.22.2#71889dfc61f8e61cc2cc37be78f0ec6b7ff39c0d"
 dependencies = [
  "enum-map",
  "env_logger",
@@ -4841,8 +4841,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-crypto"
-version = "0.21.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.21.0#b3338f904e2b9cdd59fbb2ade6b36d1a2ced4eba"
+version = "0.22.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.22.2#71889dfc61f8e61cc2cc37be78f0ec6b7ff39c0d"
 dependencies = [
  "bindgen 0.72.0",
  "enum-map",
@@ -4860,10 +4860,11 @@ dependencies = [
 
 [[package]]
 name = "neqo-http3"
-version = "0.21.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.21.0#b3338f904e2b9cdd59fbb2ade6b36d1a2ced4eba"
+version = "0.22.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.22.2#71889dfc61f8e61cc2cc37be78f0ec6b7ff39c0d"
 dependencies = [
  "enumset",
+ "http",
  "log",
  "neqo-common",
  "neqo-crypto",
@@ -4874,13 +4875,12 @@ dependencies = [
  "sfv",
  "strum",
  "thiserror 2.0.12",
- "url",
 ]
 
 [[package]]
 name = "neqo-qpack"
-version = "0.21.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.21.0#b3338f904e2b9cdd59fbb2ade6b36d1a2ced4eba"
+version = "0.22.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.22.2#71889dfc61f8e61cc2cc37be78f0ec6b7ff39c0d"
 dependencies = [
  "log",
  "neqo-common",
@@ -4893,8 +4893,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-transport"
-version = "0.21.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.21.0#b3338f904e2b9cdd59fbb2ade6b36d1a2ced4eba"
+version = "0.22.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.22.2#71889dfc61f8e61cc2cc37be78f0ec6b7ff39c0d"
 dependencies = [
  "enum-map",
  "enumset",
@@ -4913,8 +4913,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-udp"
-version = "0.21.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.21.0#b3338f904e2b9cdd59fbb2ade6b36d1a2ced4eba"
+version = "0.22.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.22.2#71889dfc61f8e61cc2cc37be78f0ec6b7ff39c0d"
 dependencies = [
  "cfg_aliases",
  "libc",
