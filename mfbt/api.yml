@@ -498,7 +498,6 @@ MacroForEach.h:
 
 MathAlgorithms.h:
   functions:
-    - DeprecatedAbs
     - Abs
     - CountLeadingZeroes32
     - CountTrailingZeroes32
