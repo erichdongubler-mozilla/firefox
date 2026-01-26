@@ -257,13 +257,13 @@ var gPermissionPanel = {
   },
 
   /**
-   * Update identity permission indicators based on sharing state of the
-   * selected tab. This should be called externally whenever the sharing state
-   * of the selected tab changes.
+   * Update identity permission indicators based on the browser's sharing state.
+   * This should be called externally whenever the sharing state
+   * for the selected tab's browser changes.
    */
   updateSharingIndicator() {
-    let tab = gBrowser.selectedTab;
-    this._sharingState = tab._sharingState;
+    let browser = gBrowser.selectedBrowser;
+    this._sharingState = browser._sharingState;
 
     this._webRTCSharingIcon.removeAttribute("paused");
     this._webRTCSharingIcon.removeAttribute("sharing");
@@ -456,7 +456,7 @@ var gPermissionPanel = {
       }
     });
 
-    this._sharingState = gBrowser.selectedTab._sharingState;
+    this._sharingState = gBrowser.selectedBrowser._sharingState;
 
     if (this._sharingState?.geo) {
       let geoPermission = permissions.find(perm => perm.id === "geo");

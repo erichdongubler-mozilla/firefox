@@ -610,7 +610,7 @@ export var webrtcUI = {
       throw new Error(`Invalid device types ${invalidTypes.join(",")}`);
     }
     let browser = tab.linkedBrowser;
-    let sharingState = tab._sharingState?.webRTC;
+    let sharingState = browser._sharingState?.webRTC;
 
     // If we clear a WebRTC permission we need to remove all permissions of
     // the same type across device ids. We also need to stop active WebRTC

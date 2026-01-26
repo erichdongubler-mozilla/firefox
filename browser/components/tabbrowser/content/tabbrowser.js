@@ -1879,7 +1879,9 @@
         return;
       }
       // If WebRTC was used, leave object to enable tracking of grace periods.
-      tab._sharingState = tab._sharingState?.webRTC ? { webRTC: {} } : {};
+      aBrowser._sharingState = aBrowser._sharingState?.webRTC
+        ? { webRTC: {} }
+        : {};
       tab.removeAttribute("sharing");
       this._tabAttrModified(tab, ["sharing"]);
       if (aBrowser == this.selectedBrowser) {
@@ -1892,14 +1894,15 @@
       if (!tab) {
         return;
       }
-      if (tab._sharingState == null) {
-        tab._sharingState = {};
+
+      if (aBrowser._sharingState == null) {
+        aBrowser._sharingState = {};
       }
-      tab._sharingState = Object.assign(tab._sharingState, aState);
+      aBrowser._sharingState = Object.assign(aBrowser._sharingState, aState);
 
       if ("webRTC" in aState) {
-        if (tab._sharingState.webRTC?.sharing) {
-          if (tab._sharingState.webRTC.paused) {
+        if (aBrowser._sharingState.webRTC?.sharing) {
+          if (aBrowser._sharingState.webRTC.paused) {
             tab.removeAttribute("sharing");
           } else {
             tab.setAttribute("sharing", aState.webRTC.sharing);
@@ -1917,9 +1920,10 @@
 
     getTabSharingState(aTab) {
       // Normalize the state object for consumers (ie.extensions).
+      let browser = aTab.linkedBrowser;
       let state = Object.assign(
         {},
-        aTab._sharingState && aTab._sharingState.webRTC
+        browser._sharingState && browser._sharingState.webRTC
       );
       return {
         camera: !!state.camera,
@@ -2814,9 +2818,7 @@
       }
 
       // Reset sharing state.
-      if (aTab._sharingState) {
-        this.resetBrowserSharing(browser);
-      }
+      this.resetBrowserSharing(browser);
       webrtcUI.forgetStreamsFromBrowserContext(browser.browsingContext);
 
       // Abort any dialogs since the browser is about to be discarded.
@@ -5528,7 +5530,7 @@
       // Delay hiding the the active tab if we're screen sharing.
       // See Bug 1642747.
       let screenShareInActiveTab =
-        aTab == this.selectedTab && aTab._sharingState?.webRTC?.screen;
+        aTab == this.selectedTab && browser._sharingState?.webRTC?.screen;
 
       if (!screenShareInActiveTab) {
         this._blurTab(aTab);
@@ -6137,7 +6139,7 @@
       if (aOtherTab.hasAttribute("sharing")) {
         aOurTab.setAttribute("sharing", aOtherTab.getAttribute("sharing"));
         modifiedAttrs.push("sharing");
-        aOurTab._sharingState = aOtherTab._sharingState;
+        ourBrowser._sharingState = otherBrowser._sharingState;
         webrtcUI.swapBrowserForNotification(otherBrowser, ourBrowser);
       }
       if (aOtherTab.hasAttribute("pictureinpicture")) {
@@ -6439,7 +6441,7 @@
         aTab.selected ||
         aTab.closing ||
         // Tabs that are sharing the screen, microphone or camera cannot be hidden.
-        aTab._sharingState?.webRTC?.sharing
+        aTab.linkedBrowser._sharingState?.webRTC?.sharing
       ) {
         return;
       }
