@@ -137,8 +137,16 @@ decorate_task(
 );
 
 decorate_task(
-  withStub(Normandy, "finishInit"),
+  withStub(Normandy, "finishInit", { returnValue: Promise.resolve() }),
   async function testStartupDelayed({ finishInitStub }) {
+    // Most likely our normal initialization has already started, so wait for
+    // it and clear initFinished for this test.
+    if (Normandy.initFinished !== undefined) {
+      await Normandy.initFinished.promise;
+    }
+    let originalFinished = Normandy.initFinished;
+    Normandy.initFinished = undefined;
+
     let originalDeferred = Normandy.uiAvailableNotificationObserved;
     let mockUiAvailableDeferred = Promise.withResolvers();
     Normandy.uiAvailableNotificationObserved = mockUiAvailableDeferred;
@@ -158,6 +166,8 @@ decorate_task(
       "Once the sessionstore-windows-restored event is observed, finishInit should be called."
     );
 
+    // Restore our previous state.
+    Normandy.initFinished = originalFinished;
     Normandy.uiAvailableNotificationObserved = originalDeferred;
   }
 );

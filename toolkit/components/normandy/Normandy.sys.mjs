@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { Log } from "resource://gre/modules/Log.sys.mjs";
-import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
+import { clearTimeout, setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
 const lazy = {};
 
@@ -42,19 +42,26 @@ export var Normandy = {
 
   /** Initialization that needs to happen before the first paint on startup. */
   async init({ runAsync = true } = {}) {
-    // NOTE: It looks like we can see us being called twice between init(true)
-    // coming from "browser-before-ui-startup" (see BrowserComponents.manifest)
-    // and init(false) coming from FirstStartup.sys.mjs.
-    // We need the UI_AVAILABLE_NOTIFICATION observer only if runAsync == true
-    // and we assume that the rest of the initialization can just happen twice.
-    // TODO: Check which pieces really need to run twice, if any.
+    if (this.initFinished === undefined) {
+      this.initFinished = Promise.withResolvers();
+    } else {
+      // We race with ourselves, this can happen only in tests.
+      if (!runAsync) {
+        // We are called sync only from tests, where we want to unblock the
+        // init immediately if it already started asynchronously.
+        this.observe(null, UI_AVAILABLE_NOTIFICATION);
+      }
+      return this.initFinished.promise;
+    }
+
+    // We need the UI_AVAILABLE_NOTIFICATION observer only if runAsync == true.
     if (runAsync) {
       // It is important to register the listener for the UI before the first
-      // await, to avoid missing it.
+      // async function call, to avoid missing it.
       Services.obs.addObserver(this, UI_AVAILABLE_NOTIFICATION);
     }
 
-    // It is important this happens before the first `await`. Note that this
+    // It is important this happens before the first async call. Note that this
     // also happens before migrations are applied.
     this.rolloutPrefsChanged = this.applyStartupPrefs(
       STARTUP_ROLLOUT_PREFS_BRANCH
@@ -64,20 +71,36 @@ export var Normandy = {
     );
     this.defaultPrefsHaveBeenApplied.resolve();
 
-    await lazy.NormandyMigrations.applyAll();
+    return lazy.NormandyMigrations.applyAll()
+      .then(() => {
+        if (!runAsync) {
+          return Promise.resolve();
+        }
+        // Setup the timeout promise first to set the timeoutId.
+        let timeoutId;
+        const timeoutPromise = new Promise((resolve, reject) => {
+          timeoutId = setTimeout(
+            () => {
+              Services.obs.removeObserver(this, UI_AVAILABLE_NOTIFICATION);
+              reject(new Error("UI_AVAILABLE_NOTIFICATION timeout"));
+            },
+            5 * 60 * 1000
+          );
+        });
 
-    // Wait for the UI to be ready, or time out after 5 minutes.
-    if (runAsync) {
-      await Promise.race([
-        this.uiAvailableNotificationObserved.promise,
-        new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000)),
-      ]);
-
-      // Remove observer for UI notifications.
-      Services.obs.removeObserver(this, UI_AVAILABLE_NOTIFICATION);
-    }
-
-    await this.finishInit();
+        return Promise.race([
+          this.uiAvailableNotificationObserved.promise.then(() => {
+            clearTimeout(timeoutId);
+            Services.obs.removeObserver(this, UI_AVAILABLE_NOTIFICATION);
+          }),
+          timeoutPromise,
+        ]);
+      })
+      .then(() => this.finishInit())
+      .then(() => {
+        this.initFinished.resolve();
+        return this.initFinished.promise;
+      });
   },
 
   async observe(subject, topic) {
@@ -143,6 +166,11 @@ export var Normandy = {
   },
 
   async uninit() {
+    if (!this.initFinished) {
+      return;
+    }
+    await this.initFinished.promise;
+
     await lazy.CleanupManager.cleanup();
     // Note that Service.pref.removeObserver and Service.obs.removeObserver have
     // oppositely ordered parameters.
@@ -151,11 +179,7 @@ export var Normandy = {
       lazy.LogManager.configure
     );
 
-    try {
-      Services.obs.removeObserver(this, UI_AVAILABLE_NOTIFICATION);
-    } catch (e) {
-      // topic must have already been removed or never added
-    }
+    delete this.initFinished;
   },
 
   /**
