@@ -39,6 +39,11 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1992633
 ]
 
+["browser_chat_sidebar_permissions.js"]
+support-files = [
+  "file_chat-webrtc.html",
+]
+
 ["browser_chat_telemetry.js"]
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1992527

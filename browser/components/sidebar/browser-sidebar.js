@@ -189,6 +189,7 @@ var SidebarController = {
           iconUrl: "chrome://global/skin/icons/highlights.svg",
           gleanClickEvent: Glean.sidebar.chatbotIconClick,
           toolContextMenuId: "aichat",
+          permissions: true,
         }
       );
     }
@@ -2011,6 +2012,15 @@ var SidebarController = {
               // Now that the currentId is updated, fire a show event.
               this._fireShowEvent();
               this._recordBrowserSize();
+
+              const sidebar = this.sidebars.get(commandID);
+              // Initialize sidebar permissions UI
+              if (sidebar?.permissions) {
+                if (!this._permissions) {
+                  this._permissions = new this.SidebarPermissions(window);
+                }
+                this._permissions.init(this.browser);
+              }
             }, 0);
           },
           { capture: true, once: true }
@@ -2412,6 +2422,8 @@ ChromeUtils.defineESModuleGetters(SidebarController, {
   SidebarManager:
     "moz-src:///browser/components/sidebar/SidebarManager.sys.mjs",
   SidebarState: "moz-src:///browser/components/sidebar/SidebarState.sys.mjs",
+  SidebarPermissions:
+    "chrome://browser/content/sidebar/sidebar-permissions.mjs",
 });
 
 // Add getters related to the position here, since we will want them
