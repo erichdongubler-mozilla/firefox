@@ -47,6 +47,14 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // Feature gate pref for AMP suggestions in the urlbar.
   ["amp.featureGate", false],
 
+  // The minimum prefix length of an AMP keyword the user must type to trigger
+  // the suggestion.
+  ["amp.minKeywordLength", 0],
+
+  // The number of times the user has clicked the "Show less frequently" command
+  // for AMP suggestions.
+  ["amp.showLessFrequentlyCount", 0],
+
   // "Autofill" is the name of the feature that automatically completes domains
   // and URLs that the user has visited as the user is typing them in the urlbar
   // textbox.  If false, autofill will be disabled.

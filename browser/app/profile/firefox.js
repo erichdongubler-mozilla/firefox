@@ -744,6 +744,10 @@ pref("browser.urlbar.addons.minKeywordLength", 0);
 // Feature gate pref for AMP suggestions in the urlbar.
 pref("browser.urlbar.amp.featureGate", false);
 
+// The minimum prefix length of an AMP keyword the user must type to trigger the
+// suggestion.
+pref("browser.urlbar.amp.minKeywordLength", 0);
+
 // If `browser.urlbar.amp.featureGate` is true, this controls whether AMP
 // suggestions are turned on.
 pref("browser.urlbar.suggest.amp", true);

@@ -493,8 +493,6 @@ class _QuickSuggestTestUtils {
         sponsoredBlockId: blockId,
         sponsoredAdvertiser: advertiser,
         sponsoredIabCategory: iabCategory,
-        isBlockable: true,
-        isManageable: true,
         telemetryType: "adm_sponsored",
       },
     };
@@ -1174,8 +1172,6 @@ class _QuickSuggestTestUtils {
    *   Whether the result is expected to be sponsored.
    * @param {boolean} [options.isBestMatch]
    *   Whether the result is expected to be a best match.
-   * @param {boolean} [options.isManageable]
-   *   Whether the result is expected to show Manage result menu item.
    * @param {boolean} [options.hasSponsoredLabel]
    *   Whether the result is expected to show the "Sponsored" label below the
    *   title.
@@ -1189,7 +1185,6 @@ class _QuickSuggestTestUtils {
     index = -1,
     isSponsored = true,
     isBestMatch = false,
-    isManageable = undefined,
     hasSponsoredLabel = isSponsored || isBestMatch,
   }) {
     this.Assert.ok(
@@ -1263,12 +1258,6 @@ class _QuickSuggestTestUtils {
         "Result sponsored label element should not exist"
       );
     }
-
-    this.Assert.equal(
-      result.payload.isManageable,
-      isManageable,
-      "Result isManageable"
-    );
 
     this.Assert.ok(
       row._buttons.get("result-menu"),

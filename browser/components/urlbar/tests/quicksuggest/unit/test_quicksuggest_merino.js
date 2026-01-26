@@ -537,8 +537,6 @@ add_task(async function dismissals_amp() {
         sponsoredBlockId: suggestion.block_id,
         sponsoredAdvertiser: suggestion.advertiser,
         sponsoredIabCategory: suggestion.iab_category,
-        isBlockable: true,
-        isManageable: true,
         isSponsored: true,
         source: "merino",
         telemetryType: "adm_sponsored",

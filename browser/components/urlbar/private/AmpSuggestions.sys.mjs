@@ -91,7 +91,14 @@ export class AmpSuggestions extends SuggestProvider {
     }
   }
 
-  makeResult(queryContext, suggestion) {
+  makeResult(queryContext, suggestion, searchString) {
+    if (
+      this.showLessFrequentlyCount &&
+      searchString.length < this.#minKeywordLength
+    ) {
+      return null;
+    }
+
     let normalized = Object.assign({}, suggestion);
     if (suggestion.source == "merino") {
       // Normalize the Merino suggestion so it has the same properties as Rust
@@ -136,8 +143,6 @@ export class AmpSuggestions extends SuggestProvider {
       sponsoredBlockId: normalized.blockId,
       sponsoredAdvertiser: normalized.advertiser,
       sponsoredIabCategory: normalized.iabCategory,
-      isBlockable: true,
-      isManageable: true,
     };
 
     let resultParams = {};
@@ -168,6 +173,44 @@ export class AmpSuggestions extends SuggestProvider {
     });
   }
 
+  getResultCommands() {
+    /** @type {UrlbarResultCommand[]} */
+    const commands = [];
+
+    if (this.canShowLessFrequently) {
+      commands.push({
+        name: "show_less_frequently",
+        l10n: {
+          id: "urlbar-result-menu-show-less-frequently",
+        },
+      });
+    }
+
+    commands.push(
+      {
+        name: "dismiss",
+        l10n: {
+          id: "urlbar-result-menu-dismiss-suggestion",
+        },
+      },
+      { name: "separator" },
+      {
+        name: "manage",
+        l10n: {
+          id: "urlbar-result-menu-manage-firefox-suggest",
+        },
+      },
+      {
+        name: "help",
+        l10n: {
+          id: "urlbar-result-menu-learn-more",
+        },
+      }
+    );
+
+    return commands;
+  }
+
   onImpression(state, queryContext, controller, featureResults, details) {
     // For the purpose of the `quick-suggest` impression ping, "impression"
     // means that one of these suggestions was visible at the time of an
@@ -184,15 +227,30 @@ export class AmpSuggestions extends SuggestProvider {
     }
   }
 
-  onEngagement(queryContext, controller, details, _searchString) {
+  onEngagement(queryContext, controller, details, searchString) {
     let { result } = details;
 
-    // Handle commands. These suggestions support the Dismissal and Manage
-    // commands. Dismissal is the only one we need to handle here. `UrlbarInput`
-    // handles Manage.
-    if (details.selType == "dismiss") {
-      lazy.QuickSuggest.dismissResult(result);
-      controller.removeResult(result);
+    switch (details.selType) {
+      case "help":
+      case "manage": {
+        // "manage" and "help" are handled by UrlbarInput, no need to do
+        // anything here.
+        return;
+      }
+      case "dismiss": {
+        lazy.QuickSuggest.dismissResult(result);
+        controller.removeResult(result);
+        break;
+      }
+      case "show_less_frequently": {
+        controller.view.acknowledgeFeedback(result);
+        this.incrementShowLessFrequentlyCount();
+        if (!this.canShowLessFrequently) {
+          controller.view.invalidateResultMenuCommands();
+        }
+        lazy.UrlbarPrefs.set("amp.minKeywordLength", searchString.length + 1);
+        break;
+      }
     }
 
     // A `quick-suggest` impression ping must always be submitted on engagement
@@ -222,6 +280,30 @@ export class AmpSuggestions extends SuggestProvider {
     if (pingData) {
       this.#submitQuickSuggestPing({ queryContext, result, ...pingData });
     }
+  }
+
+  incrementShowLessFrequentlyCount() {
+    if (this.canShowLessFrequently) {
+      lazy.UrlbarPrefs.set(
+        "amp.showLessFrequentlyCount",
+        this.showLessFrequentlyCount + 1
+      );
+    }
+  }
+
+  get showLessFrequentlyCount() {
+    const count = lazy.UrlbarPrefs.get("amp.showLessFrequentlyCount") || 0;
+    return Math.max(count, 0);
+  }
+
+  get canShowLessFrequently() {
+    const cap = lazy.QuickSuggest.config.showLessFrequentlyCap || 0;
+    return !cap || this.showLessFrequentlyCount < cap;
+  }
+
+  get #minKeywordLength() {
+    let minLength = lazy.UrlbarPrefs.get("amp.minKeywordLength");
+    return Math.max(minLength, 0);
   }
 
   isUrlEquivalentToResultUrl(url, result) {
