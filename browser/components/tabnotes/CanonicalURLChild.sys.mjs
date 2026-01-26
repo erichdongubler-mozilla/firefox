@@ -5,6 +5,8 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  cleanNoncanonicalUrl:
+    "moz-src:///browser/components/tabnotes/CanonicalURL.sys.mjs",
   findCandidates: "moz-src:///browser/components/tabnotes/CanonicalURL.sys.mjs",
   pickCanonicalUrl:
     "moz-src:///browser/components/tabnotes/CanonicalURL.sys.mjs",
@@ -44,8 +46,11 @@ export class CanonicalURLChild extends JSWindowActorChild {
    */
   receiveMessage(msg) {
     switch (msg.name) {
-      case "CanonicalURL:Detect":
-        this.#discoverCanonicalUrl();
+      case "CanonicalURL:DetectFromPushState":
+        this.sendAsyncMessage("CanonicalURL:Identified", {
+          canonicalUrl: lazy.cleanNoncanonicalUrl(msg.data.pushStateUrl),
+          canonicalUrlSources: ["pushState"],
+        });
         break;
     }
   }

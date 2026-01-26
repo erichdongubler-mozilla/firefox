@@ -8,7 +8,7 @@
  * did not declare a canonical URL.
  *
  * @param {Document} document
- * @returns {CanonicalURLSourceResults}
+ * @returns {Omit<CanonicalURLSourceResults, "pushstate">}
  */
 export function findCandidates(document) {
   return {
@@ -86,11 +86,17 @@ export function getJSONLDUrl(document) {
  * @returns {string|null}
  */
 export function getFallbackCanonicalUrl(document) {
-  const fallbackUrl = URL.parse(document.documentURI);
-  if (fallbackUrl) {
-    return [fallbackUrl.origin, fallbackUrl.pathname, fallbackUrl.search].join(
-      ""
-    );
+  return cleanNoncanonicalUrl(document.documentURI);
+}
+
+/**
+ * @param {string} url
+ * @returns {string|null}
+ */
+export function cleanNoncanonicalUrl(url) {
+  const parsed = URL.parse(url);
+  if (parsed) {
+    return [parsed.origin, parsed.pathname, parsed.search].join("");
   }
   return null;
 }

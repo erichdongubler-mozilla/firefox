@@ -240,9 +240,11 @@ class TabNotesControllerClass {
           );
 
         if (parent) {
-          parent.sendAsyncMessage("CanonicalURL:Detect");
+          parent.sendAsyncMessage("CanonicalURL:DetectFromPushState", {
+            pushStateUrl: aLocation.spec,
+          });
           lazy.logConsole.debug(
-            "requesting CanonicalURL:Detect due to history.pushState",
+            "requesting CanonicalURL:DetectFromPushState due to history.pushState",
             aLocation.spec
           );
         }
