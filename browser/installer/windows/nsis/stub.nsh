@@ -1543,6 +1543,8 @@ Function CommonOnInit
   System::Call 'kernel32::SetDllDirectoryW(w "")'
   StrCpy $PingAlreadySent "false"
   StrCpy $AbortInstallation "false"
+  ; Initialize PostSigningData to detect case of not being set at all
+  StrCpy $PostSigningData "stub_installer:unset"
   StrCpy $LANGUAGE 0
   ; This macro is used to set the brand name variables but the ini file method
   ; isn't supported for the stub installer.

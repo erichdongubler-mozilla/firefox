@@ -7427,8 +7427,8 @@
  * Copy the post-signing data, which was left alongside the installer
  * by the self-extractor stub, into the global location for this data.
  *
- * If the post-signing data file doesn't exist, or is empty, "0" is
- * pushed on the stack, and nothing is copied.
+ * If the post-signing data file doesn't exist, or is empty, an error value 
+ * is pushed on the stack, and nothing is copied.
  * Otherwise the first line of the post-signing data (including newline,
  * if any) is pushed on the stack.
  */
@@ -7442,12 +7442,17 @@
       Push $0   ; Stack: old $0
       Push $1   ; Stack: $1, old $0
 
+      ClearErrors
       ${LineRead} "$EXEDIR\postSigningData" "1" $0
       ${If} ${Errors}
         ClearErrors
-        StrCpy $0 "0"
+        StrCpy $0 "error:lineread"
       ${Else}
         CopyFiles /SILENT "$EXEDIR\postSigningData" "$INSTDIR"
+        ${If} ${Errors}
+          ClearErrors
+          StrCpy $0 "error:copyfile"
+        ${Endif}
       ${Endif}
 
       Pop $1    ; Stack: old $0
