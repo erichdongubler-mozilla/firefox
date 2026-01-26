@@ -2975,10 +2975,7 @@ dialog:dir(rtl)::after {
   display: flex;
   gap: var(--space-medium);
   padding: var(--space-small) var(--space-medium);
-  border-start-start-radius: var(--border-radius-medium);
-  border-start-end-radius: 0;
-  border-end-end-radius: 0;
-  border-end-start-radius: var(--border-radius-medium);
+  border-radius: var(--border-radius-medium);
   text-decoration: none;
   color: var(--text-color);
   min-width: 130px;
@@ -2988,6 +2985,12 @@ dialog:dir(rtl)::after {
 @media (min-width: 610px) {
   .weatherInfoLink {
     min-width: unset;
+  }
+}
+@media (min-width: 866px) {
+  .weatherInfoLink {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
   }
 }
 .weatherInfoLink:hover ~ .weatherButtonContextMenuWrapper::after {
