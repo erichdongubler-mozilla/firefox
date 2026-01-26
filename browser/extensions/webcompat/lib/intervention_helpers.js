@@ -305,7 +305,12 @@ var InterventionHelpers = {
   ],
   valid_channels: ["beta", "esr", "nightly", "stable"],
 
-  shouldSkip(intervention, firefoxVersion, firefoxChannel) {
+  shouldSkip(
+    intervention,
+    firefoxVersion,
+    firefoxChannel,
+    customFunctionNames
+  ) {
     const {
       bug,
       max_version,
@@ -317,30 +322,30 @@ var InterventionHelpers = {
     } = intervention;
     if (firefoxChannel) {
       if (only_channels && !only_channels.includes(firefoxChannel)) {
-        return true;
+        return `not for Firefox ${firefoxChannel}`;
       }
       if (not_channels?.includes(firefoxChannel)) {
-        return true;
+        return `not for Firefox ${firefoxChannel}`;
       }
     }
     if (min_version && firefoxVersion < min_version) {
-      return true;
+      return `only for Firefox ${min_version} or newer`;
     }
     if (max_version) {
       // Make sure to handle the case where only the major version matters,
       // for instance if we want 138 and the version number is 138.1.
       if (String(max_version).includes(".")) {
         if (firefoxVersion > max_version) {
-          return true;
+          return `only for Firefox ${max_version} or older`;
         }
       } else if (Math.floor(firefoxVersion) > max_version) {
-        return true;
+        return `only for Firefox ${max_version} or older`;
       }
     }
     if (ua_string) {
       for (let ua of Array.isArray(ua_string) ? ua_string : [ua_string]) {
         if (!InterventionHelpers.ua_change_functions[ua.change ?? ua]) {
-          return true;
+          return `unknown UA string helper ${ua.change ?? ua} (webcompat addon may be too old)`;
         }
       }
     }
@@ -350,17 +355,35 @@ var InterventionHelpers = {
           !this.skip_if_functions[skip_if] ||
           this.skip_if_functions[skip_if]?.()
         ) {
-          return true;
+          return `skipped because ${skip_if}`;
         }
       } catch (e) {
         console.trace(
           `Error while checking skip-if condition ${skip_if} for bug ${bug}:`,
           e
         );
-        return true;
+        return `error while checking if ${skip_if}`;
       }
     }
-    return false;
+
+    // special case: allow platforms=[] to indicate "disabled by default",
+    // meaning we intend for it to be available on every platform.
+    if (
+      !InterventionHelpers.isDisabledByDefault(intervention) &&
+      !InterventionHelpers.checkPlatformMatches(intervention)
+    ) {
+      return "unneeded on this platform";
+    }
+
+    const missingFn = InterventionHelpers.isMissingCustomFunctions(
+      intervention,
+      customFunctionNames
+    );
+    if (missingFn) {
+      return `needed function ${missingFn} unavailable (webcompat addon may be too old)`;
+    }
+
+    return undefined;
   },
 
   nonCustomInterventionKeys: Object.freeze(
@@ -385,10 +408,10 @@ var InterventionHelpers = {
         !InterventionHelpers.nonCustomInterventionKeys.has(key) &&
         !customFunctionNames.has(key)
       ) {
-        return true;
+        return key;
       }
     }
-    return false;
+    return undefined;
   },
 
   getOS() {
@@ -445,6 +468,14 @@ var InterventionHelpers = {
     return (
       desired.includes("all") ||
       !!actual.filter(x => desired.includes(x)).length
+    );
+  },
+
+  isDisabledByDefault(intervention) {
+    return (
+      intervention.platforms &&
+      !intervention.platforms.length &&
+      !intervention.not_platforms
     );
   },
 

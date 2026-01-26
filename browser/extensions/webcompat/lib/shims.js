@@ -788,14 +788,7 @@ class Shims {
   }
 
   async _checkEnabledPref() {
-    const value = browser.aboutConfigPrefs.getPref(this.ENABLED_PREF);
-    if (value === undefined) {
-      await browser.aboutConfigPrefs.setPref(this.ENABLED_PREF, true);
-    } else if (value === false) {
-      this.enabled = false;
-    } else {
-      this.enabled = true;
-    }
+    this.enabled = browser.aboutConfigPrefs.getPref(this.ENABLED_PREF, true);
   }
 
   get enabled() {
@@ -822,19 +815,10 @@ class Shims {
   }
 
   async _checkSmartblockEmbedsEnabledPref() {
-    const value = browser.aboutConfigPrefs.getPref(
-      this.SMARTBLOCK_EMBEDS_ENABLED_PREF
+    this.smartblockEmbedsEnabled = browser.aboutConfigPrefs.getPref(
+      this.SMARTBLOCK_EMBEDS_ENABLED_PREF,
+      true
     );
-    if (value === undefined) {
-      await browser.aboutConfigPrefs.setPref(
-        this.SMARTBLOCK_EMBEDS_ENABLED_PREF,
-        true
-      );
-    } else if (value === false) {
-      this.smartblockEmbedsEnabled = false;
-    } else {
-      this.smartblockEmbedsEnabled = true;
-    }
   }
 
   get smartblockEmbedsEnabled() {

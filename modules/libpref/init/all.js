@@ -4127,6 +4127,13 @@ pref("dom.sitepermsaddon-provider.separatedBlocklistedDomains", "shopee.co.th,sh
 // Log level for logger in URLQueryStrippingListService
 pref("privacy.query_stripping.listService.logLevel", "Error");
 
+// Signal to the webcompat built-in addon to enable webcompat interventions
+pref("extensions.webcompat.enable_interventions", true);
+// Signal to the webcompat built-in addon to enable SmartBlock shims
+pref("extensions.webcompat.enable_shims", true);
+// Signal to the webcompat built-in addon to enable SmartBlock embeds
+pref("extensions.webcompat.smartblockEmbeds.enabled", true);
+
 // Controls the log level for Fingerprinting Remote Overrides.
 pref("privacy.fingerprintingProtection.WebCompatService.logLevel", "Error");
 // To test strip on share site specific parameters by enabling a different list to be used

@@ -76,7 +76,7 @@ function listenForRemoteSettingsUpdates(interventions, shims) {
 
   window._downgradeForTesting = async () => {
     currentVersion = browser.runtime.getManifest().version;
-    await interventions._resetToDefaultInterventions();
+    await interventions.resetToDefaultInterventions();
     await shims._resetToDefaultShims();
   };
 }

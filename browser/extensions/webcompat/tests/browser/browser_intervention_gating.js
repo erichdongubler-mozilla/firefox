@@ -277,18 +277,18 @@ add_task(async function test_individual_interventions_prefs() {
   Assert.deepEqual(
     configs.map(c => c.active),
     [true, false, true],
-    "The correct interventions were activated on startup"
+    "The correct interventions are activated on startup"
   );
   Assert.deepEqual(
     configs.map(c => c.interventions.map(i => i.enabled)),
-    [[true], [true], [true]],
-    "The correct interventions were made available on startup"
+    [[true], [false], [true]],
+    "The correct interventions are enabled on startup"
   );
   let reg = await WebCompatExtension.getRegisteredContentScriptsFor(["test"]);
   Assert.deepEqual(
     reg.map(r => r.js).flat(),
     ["lib/run.js", "lib/custom_functions.js"],
-    "The correct content scripts were registered on startup"
+    "The correct content scripts are registered on startup"
   );
 
   Services.prefs.setBoolPref(
@@ -303,7 +303,7 @@ add_task(async function test_individual_interventions_prefs() {
     "extensions.webcompat.disabled_interventions.test7",
     true
   );
-  await WebCompatExtension.noOngoingInterventionChanges();
+  await WebCompatExtension.interventionsSettled();
   configs = await WebCompatExtension.updateInterventions([
     config5,
     config6,
@@ -312,12 +312,12 @@ add_task(async function test_individual_interventions_prefs() {
   Assert.deepEqual(
     configs.map(c => c.active),
     [false, true, false],
-    "The correct interventions were activated by pref changes"
+    "The correct interventions are active after pref changes"
   );
   Assert.deepEqual(
     configs.map(c => c.interventions.map(i => i.enabled)),
-    [[true], [true], [true]],
-    "The correct interventions were made available by pref changes"
+    [[false], [true], [false]],
+    "The correct interventions are enabled after pref changes"
   );
   reg = await WebCompatExtension.getRegisteredContentScriptsFor(["test"]);
   Assert.deepEqual(
@@ -338,7 +338,7 @@ add_task(async function test_individual_interventions_prefs() {
     "extensions.webcompat.disabled_interventions.test7",
     false
   );
-  await WebCompatExtension.noOngoingInterventionChanges();
+  await WebCompatExtension.interventionsSettled();
   configs = await WebCompatExtension.updateInterventions([
     config5,
     config6,
@@ -351,7 +351,7 @@ add_task(async function test_individual_interventions_prefs() {
   );
   Assert.deepEqual(
     configs.map(c => c.interventions.map(i => i.enabled)),
-    [[true], [true], [true]],
+    [[true], [false], [true]],
     "The correct interventions were made available by pref changes"
   );
   reg = await WebCompatExtension.getRegisteredContentScriptsFor(["test"]);
