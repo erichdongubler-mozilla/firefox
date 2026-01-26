@@ -89,14 +89,8 @@ add_task(async function () {
       continue;
     }
 
-    // Before dumping a frame with unexpected differences for the first time,
-    // ensure at least one previous frame has been logged so that it's possible
-    // to see the differences when examining the log.
-    if (!unexpectedRects) {
-      dumpFrame(previousFrame);
-    }
+    await reportFlickerWithAPNG(previousFrame, frame, i);
     unexpectedRects += rects.length;
-    dumpFrame(frame);
   }
   is(unexpectedRects, 0, "should have 0 unknown flickering areas");
 });

@@ -626,20 +626,213 @@ function compareFrames(frame, previousFrame) {
   return rects;
 }
 
-function dumpFrame({ data, width, height }) {
+let _artifactCounter = 0;
+
+/**
+ * Creates and uploads an animated PNG artifact showing flicker between two frames.
+ *
+ * The APNG contains three frames:
+ * - Previous frame with "Frame N" label
+ * - Current frame with "Frame N+1" label
+ * - Difference frame highlighting changed areas with "X unexpected changes" label
+ *
+ * Uploads to MOZ_UPLOAD_DIR if set, otherwise logs as base64 data URI.
+ */
+async function reportFlickerWithAPNG(previousFrame, currentFrame, frameIndex) {
+  let apngBytes = createAnimatedPNG(previousFrame, currentFrame, frameIndex);
+  if (apngBytes) {
+    _artifactCounter++;
+    let testName = "flicker_test";
+    if (typeof gTestPath === "string") {
+      testName = gTestPath.split("/").pop().replace(/\.js$/, "");
+    }
+    let filename = `${testName}_flicker_detected_${_artifactCounter}.png`;
+
+    let uploadDir = Services.env.get("MOZ_UPLOAD_DIR");
+    if (uploadDir) {
+      let file = PathUtils.join(uploadDir, filename);
+      await IOUtils.write(file, Uint8Array.from(apngBytes));
+      Assert.ok(false, `See the ${filename} APNG artifact`);
+    } else {
+      let binary = "";
+      for (let i = 0; i < apngBytes.length; i++) {
+        binary += String.fromCharCode(apngBytes[i]);
+      }
+      let base64 = btoa(binary);
+      info(`data:image/png;base64,${base64}`);
+      Assert.ok(
+        false,
+        "Set MOZ_UPLOAD_DIR environment variable to save APNG artifacts"
+      );
+    }
+  }
+}
+
+/**
+ * Helper function to add text overlay to a canvas
+ */
+function addTextOverlay(canvas, text) {
+  let ctx = canvas.getContext("2d");
+  ctx.font = "bold 32px Arial";
+  ctx.fillStyle = "yellow";
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 4;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  let x = canvas.width / 2;
+  let y = canvas.height / 2;
+
+  ctx.strokeText(text, x, y);
+  ctx.fillText(text, x, y);
+}
+
+/**
+ * Helper to create canvas frame with overlay text
+ */
+function createFrameWithOverlay(frameData, width, height, overlayText) {
   let canvas = document.createElementNS(
     "http://www.w3.org/1999/xhtml",
     "canvas"
   );
-  canvas.mozOpaque = true;
   canvas.width = width;
   canvas.height = height;
+  let ctx = canvas.getContext("2d");
+  ctx.putImageData(new ImageData(frameData, width, height), 0, 0);
+  addTextOverlay(canvas, overlayText);
+  return ctx.getImageData(0, 0, width, height).data;
+}
 
-  canvas
-    .getContext("2d", { alpha: false, willReadFrequently: true })
-    .putImageData(new ImageData(data, width, height), 0, 0);
+function createAnimatedPNG(previousFrame, currentFrame, frameIndex) {
+  const { width, height } = previousFrame;
 
-  info(canvas.toDataURL());
+  let apngFrames = [
+    {
+      data: createFrameWithOverlay(
+        previousFrame.data,
+        width,
+        height,
+        `Frame ${frameIndex}`
+      ),
+      delay: 1500,
+    },
+    {
+      data: createFrameWithOverlay(
+        currentFrame.data,
+        width,
+        height,
+        `Frame ${frameIndex + 1}`
+      ),
+      delay: 1500,
+    },
+    {
+      data: createDifferenceHighlight(previousFrame, currentFrame),
+      delay: 2000,
+    },
+  ];
+
+  // Start APNG encoding
+  let encoder = Cc[
+    "@mozilla.org/image/encoder;2?type=image/png"
+  ].createInstance(Ci.imgIEncoder);
+  encoder.startImageEncode(
+    width,
+    height,
+    encoder.INPUT_FORMAT_RGBA,
+    `frames=${apngFrames.length};plays=0;skipfirstframe=no`
+  );
+  let stride = width * 4;
+  for (let frame of apngFrames) {
+    encoder.addImageFrame(
+      frame.data,
+      frame.data.length,
+      width,
+      height,
+      stride,
+      encoder.INPUT_FORMAT_RGBA,
+      `delay=${frame.delay}`
+    );
+  }
+  encoder.endImageEncode();
+
+  let rawStream = encoder.QueryInterface(Ci.nsIInputStream);
+  let binaryStream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
+    Ci.nsIBinaryInputStream
+  );
+  binaryStream.setInputStream(rawStream);
+  let available = binaryStream.available();
+  if (available === 0) {
+    return null;
+  }
+  return binaryStream.readByteArray(available);
+}
+
+function createDifferenceHighlight(frame1, frame2) {
+  const width = frame1.width;
+  const height = frame1.height;
+
+  // Validate dimensions
+  if (
+    width <= 0 ||
+    height <= 0 ||
+    !frame2.data ||
+    frame2.data.length !== width * height * 4
+  ) {
+    let canvas = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "canvas"
+    );
+    canvas.width = 1;
+    canvas.height = 1;
+    let ctx = canvas.getContext("2d");
+    return ctx.getImageData(0, 0, 1, 1).data;
+  }
+
+  let canvas = document.createElementNS(
+    "http://www.w3.org/1999/xhtml",
+    "canvas"
+  );
+  canvas.width = width;
+  canvas.height = height;
+  let ctx = canvas.getContext("2d");
+  let rects = [];
+
+  try {
+    ctx.putImageData(new ImageData(frame2.data, width, height), 0, 0);
+
+    rects = compareFrames(frame2, frame1);
+
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 2;
+    ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
+
+    for (let rect of rects) {
+      // Draw the red rectangle (same for all)
+      ctx.fillRect(rect.x1, rect.y1, rect.w, rect.h);
+      ctx.strokeRect(rect.x1, rect.y1, rect.w, rect.h);
+
+      // For small flicker, also draw a larger circle
+      let area = rect.w * rect.h;
+      let minDimension = Math.min(rect.w, rect.h);
+
+      if (area < 100 || minDimension < 10) {
+        let centerX = rect.x1 + rect.w / 2;
+        let centerY = rect.y1 + rect.h / 2;
+        let radius = Math.max(20, Math.max(rect.w, rect.h) / 2 + 10);
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.stroke();
+      }
+    }
+
+    addTextOverlay(canvas, `${rects.length} unexpected changes`);
+  } catch (e) {
+    ctx.fillStyle = "red";
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  return ctx.getImageData(0, 0, width, height).data;
 }
 
 /**
@@ -668,7 +861,7 @@ function dumpFrame({ data, width, height }) {
  *               {name: "bug ...
  *             ]
  */
-function reportUnexpectedFlicker(frames, expectations) {
+async function reportUnexpectedFlicker(frames, expectations) {
   info("comparing " + frames.length + " frames");
 
   let unexpectedRects = 0;
@@ -704,14 +897,8 @@ function reportUnexpectedFlicker(frames, expectations) {
         .join(", ")}`
     );
 
-    // Before dumping a frame with unexpected differences for the first time,
-    // ensure at least one previous frame has been logged so that it's possible
-    // to see the differences when examining the log.
-    if (!unexpectedRects) {
-      dumpFrame(previousFrame);
-    }
+    await reportFlickerWithAPNG(previousFrame, frame, i);
     unexpectedRects += rects.length;
-    dumpFrame(frame);
   }
   is(unexpectedRects, 0, "should have 0 unknown flickering areas");
 }
@@ -756,7 +943,7 @@ async function withPerfObserver(testFn, exceptions = {}, win = window) {
   reportUnexpectedReflows(reflows, exceptions.expectedReflows);
 
   let frames = await promiseFrames;
-  reportUnexpectedFlicker(frames, exceptions.frames);
+  await reportUnexpectedFlicker(frames, exceptions.frames);
 }
 
 /**
