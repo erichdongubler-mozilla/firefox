@@ -25,6 +25,11 @@ hr {
   display: flex;
   flex-direction: column;
   padding: var(--space-small) var(--space-large);
+  moz-button {
+    --button-alignment: start;
+    --button-border-radius: var(--border-radius-small);
+    width: 100%;
+  }
 }
 
 .vpn-subtitle {

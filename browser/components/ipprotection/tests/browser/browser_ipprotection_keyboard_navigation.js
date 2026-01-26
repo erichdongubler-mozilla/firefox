@@ -46,6 +46,8 @@ add_task(async function test_keyboard_navigation_in_panel() {
 
   await expectFocusAfterKey("Tab", statusCard.connectionToggleEl);
 
+  await expectFocusAfterKey("Tab", content.settingsButtonEl);
+
   // Loop back around
   await expectFocusAfterKey(
     "Tab",
@@ -54,6 +56,8 @@ add_task(async function test_keyboard_navigation_in_panel() {
     )
   );
   await expectFocusAfterKey("Tab", statusCard.connectionToggleEl);
+
+  await expectFocusAfterKey("Tab", content.settingsButtonEl);
 
   // Loop back around
   await expectFocusAfterKey(

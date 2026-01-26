@@ -34,6 +34,7 @@ export default class IPProtectionContentElement extends MozLitElement {
     statusBoxEl: "ipprotection-status-box",
     siteExclusionControlEl: "#site-exclusion-control",
     siteExclusionToggleEl: "#site-exclusion-toggle",
+    settingsButtonEl: "#vpn-settings-button",
   };
 
   static properties = {
@@ -198,6 +199,15 @@ export default class IPProtectionContentElement extends MozLitElement {
     }
   }
 
+  handleClickSettingsButton(event) {
+    event.preventDefault();
+    const win = event.target.ownerGlobal;
+    win.openPreferences("privacy-vpn");
+    this.dispatchEvent(
+      new CustomEvent("IPProtection:Close", { bubbles: true, composed: true })
+    );
+  }
+
   updated(changedProperties) {
     super.updated(changedProperties);
 
@@ -326,6 +336,22 @@ export default class IPProtectionContentElement extends MozLitElement {
     </div>`;
   }
 
+  footerTemplate() {
+    return html`
+      <div class="vpn-bottom-content">
+        <moz-button
+          type="ghost"
+          data-l10n-id="ipprotection-settings-link"
+          iconsrc="chrome://global/skin/icons/settings.svg"
+          id="vpn-settings-button"
+          @click=${this.handleClickSettingsButton}
+        >
+          ></moz-button
+        >
+      </div>
+    `;
+  }
+
   mainContentTemplate() {
     // TODO: Update support-page with new SUMO link for Mozilla VPN - Bug 1975474
     if (this.state.isSignedOut) {
@@ -333,11 +359,12 @@ export default class IPProtectionContentElement extends MozLitElement {
     }
 
     if (this.state.paused) {
-      return html` ${this.pausedTemplate()} `;
+      return html` ${this.pausedTemplate()} ${this.footerTemplate()}`;
     }
 
     return html`
       ${this.statusCardTemplate()} ${this.exclusionToggleTemplate()}
+      ${this.footerTemplate()}
     `;
   }
 

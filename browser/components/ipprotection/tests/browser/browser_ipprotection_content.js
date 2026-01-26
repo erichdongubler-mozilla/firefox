@@ -16,6 +16,21 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs",
 });
 
+const PANELSTATES = {
+  signedOutVPNOff: {
+    isSignedOut: true,
+    isProtectionEnabled: false,
+  },
+  signedInVPNOff: {
+    isSignedOut: false,
+    isProtectionEnabled: false,
+  },
+  signedInVPNOn: {
+    isSignedOut: false,
+    isProtectionEnabled: true,
+  },
+};
+
 async function setAndUpdateIsSignedOut(content, isSignedOut) {
   content.state.isSignedOut = isSignedOut;
   content.requestUpdate();
@@ -61,4 +76,68 @@ add_task(async function test_main_content() {
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
   EventUtils.synthesizeKey("KEY_Escape");
   await panelHiddenPromise;
+});
+
+/**
+ * Tests settings link visibility in different panel states.
+ */
+add_task(async function test_settings_link_visibility() {
+  let content = await openPanel(PANELSTATES.signedOutVPNOff);
+
+  Assert.ok(
+    !content.settingsButtonEl,
+    "Settings button should NOT be present when not signed in"
+  );
+
+  await closePanel();
+
+  content = await openPanel(PANELSTATES.signedInVPNOff);
+
+  Assert.ok(
+    content.settingsButtonEl,
+    "Settings button should be present when VPN is disabled"
+  );
+
+  await closePanel();
+
+  content = await openPanel(PANELSTATES.signedInVPNOn);
+
+  Assert.ok(
+    content.settingsButtonEl,
+    "Settings button should be present when VPN is enabled"
+  );
+
+  await closePanel();
+});
+
+/**
+ * Tests that clicking the settings button closes the panel and calls
+ * openPreferences with the correct argument.
+ */
+add_task(async function test_settings_button_closes_panel() {
+  let content = await openPanel(PANELSTATES.signedInVPNOn);
+
+  Assert.ok(BrowserTestUtils.isVisible(content), "VPN panel should be present");
+
+  Assert.ok(content.settingsButtonEl, "Settings button should be present");
+
+  let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
+
+  const openPreferencesStub = sinon.stub(window, "openPreferences");
+
+  content.settingsButtonEl.click();
+
+  await panelHiddenPromise;
+
+  let panelView = PanelMultiView.getViewNode(
+    document,
+    lazy.IPProtectionWidget.PANEL_ID
+  );
+  Assert.ok(!BrowserTestUtils.isVisible(panelView), "Panel should be closed");
+
+  Assert.ok(
+    openPreferencesStub.calledWith("privacy-vpn"),
+    "openPreferences called with correct argument when settings button clicked"
+  );
+  openPreferencesStub.restore();
 });

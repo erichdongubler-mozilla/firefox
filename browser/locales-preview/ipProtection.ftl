@@ -43,6 +43,9 @@ site-exclusion-toggle-enabled =
 site-exclusion-toggle-disabled =
   .aria-label = VPN is off for this site
 
+ipprotection-settings-link =
+  .label = Settings
+
 ## Status card
 
 ipprotection-connection-status-on =
@@ -154,5 +157,4 @@ ip-protection-bandwidth-left-mb = { $usageLeft } MB of { $maxUsage } GB left
 
 ip-protection-bandwidth-hit-for-the-month = You’ve used all { $maxUsage } GB of your VPN data. Access will reset next month.
 ip-protection-bandwidth-help-text = Resets to { $maxUsage } GB on the first of every month.
-
 ##
