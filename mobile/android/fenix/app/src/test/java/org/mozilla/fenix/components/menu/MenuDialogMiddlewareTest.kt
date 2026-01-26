@@ -13,7 +13,6 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.BookmarkRoot
-import mozilla.components.browser.state.state.ReaderState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.concept.engine.webextension.InstallationMethod
 import mozilla.components.feature.addons.Addon
@@ -774,107 +773,6 @@ class MenuDialogMiddlewareTest {
         )
 
         assertEquals(store.state.extensionMenuState.addonInstallationInProgress, addon)
-    }
-
-    @Test
-    fun `GIVEN selected tab is readerable and reader view is off WHEN toggle reader view action is dispatched THEN reader view state is updated`() = runTest(testDispatcher) {
-        val url = "https://www.mozilla.org"
-        val title = "Mozilla"
-        var dismissWasCalled = false
-
-        val readerState = ReaderState(
-            readerable = true,
-            active = false,
-        )
-        val browserMenuState = BrowserMenuState(
-            selectedTab = createTab(
-                url = url,
-                title = title,
-                readerState = readerState,
-            ),
-        )
-        val appStore = spy(AppStore())
-        val store = createStore(
-            appStore = appStore,
-            menuState = MenuState(
-                browserMenuState = browserMenuState,
-            ),
-            onDismiss = { dismissWasCalled = true },
-        )
-        testScheduler.advanceUntilIdle()
-
-        store.dispatch(MenuAction.ToggleReaderView)
-        testScheduler.advanceUntilIdle()
-
-        verify(appStore).dispatch(ReaderViewAction.ReaderViewStarted)
-        assertTrue(dismissWasCalled)
-    }
-
-    @Test
-    fun `GIVEN selected tab is readerable and reader view is on WHEN toggle reader view action is dispatched THEN reader view state is updated`() = runTest(testDispatcher) {
-        val url = "https://www.mozilla.org"
-        val title = "Mozilla"
-        var dismissWasCalled = false
-
-        val readerState = ReaderState(
-            readerable = true,
-            active = true,
-        )
-        val browserMenuState = BrowserMenuState(
-            selectedTab = createTab(
-                url = url,
-                title = title,
-                readerState = readerState,
-            ),
-        )
-        val appStore = spy(AppStore())
-        val store = createStore(
-            appStore = appStore,
-            menuState = MenuState(
-                browserMenuState = browserMenuState,
-            ),
-            onDismiss = { dismissWasCalled = true },
-        )
-        testScheduler.advanceUntilIdle()
-
-        store.dispatch(MenuAction.ToggleReaderView)
-        testScheduler.advanceUntilIdle()
-
-        verify(appStore).dispatch(ReaderViewAction.ReaderViewDismissed)
-        assertTrue(dismissWasCalled)
-    }
-
-    @Test
-    fun `GIVEN selected tab is not readerable WHEN toggle reader view action is dispatched THEN reader view state is not updated`() = runTest(testDispatcher) {
-        val url = "https://www.mozilla.org"
-        val title = "Mozilla"
-        var dismissWasCalled = false
-
-        val readerState = ReaderState(
-            readerable = false,
-        )
-        val browserMenuState = BrowserMenuState(
-            selectedTab = createTab(
-                url = url,
-                title = title,
-                readerState = readerState,
-            ),
-        )
-        val appStore = spy(AppStore())
-        val store = createStore(
-            appStore = appStore,
-            menuState = MenuState(
-                browserMenuState = browserMenuState,
-            ),
-            onDismiss = { dismissWasCalled = true },
-        )
-        testScheduler.advanceUntilIdle()
-
-        store.dispatch(MenuAction.ToggleReaderView)
-        testScheduler.advanceUntilIdle()
-
-        verify(appStore, never()).dispatch(ReaderViewAction.ReaderViewStarted)
-        assertFalse(dismissWasCalled)
     }
 
     @Test

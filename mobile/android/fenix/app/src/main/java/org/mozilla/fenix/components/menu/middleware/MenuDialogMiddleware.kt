@@ -118,7 +118,6 @@ class MenuDialogMiddleware(
             is MenuAction.InstallAddon -> installAddon(store, action.addon)
             is MenuAction.InstallAddonSuccess -> installAddonSuccess()
             is MenuAction.CustomMenuItemAction -> customMenuItemAction(action.intent, action.url)
-            is MenuAction.ToggleReaderView -> toggleReaderView(state = currentState)
             is MenuAction.CustomizeReaderView -> customizeReaderView()
             is MenuAction.OnCFRShown -> onCFRShown()
             is MenuAction.RequestDesktopSite,
@@ -360,24 +359,6 @@ class MenuDialogMiddleware(
     }
 
     private fun installAddonSuccess() = scope.launch {
-        onDismiss()
-    }
-
-    private fun toggleReaderView(
-        state: MenuState,
-    ) = scope.launch {
-        val readerState = state.browserMenuState?.selectedTab?.readerState ?: return@launch
-
-        if (!readerState.readerable) {
-            return@launch
-        }
-
-        if (readerState.active) {
-            appStore.dispatch(ReaderViewAction.ReaderViewDismissed)
-        } else {
-            appStore.dispatch(ReaderViewAction.ReaderViewStarted)
-        }
-
         onDismiss()
     }
 
