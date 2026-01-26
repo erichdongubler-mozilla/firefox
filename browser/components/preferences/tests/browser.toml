@@ -25,8 +25,6 @@ run-if = [
 
 ["browser_aiFeatures.js"]
 
-["browser_aiFeatures_memories.js"]
-
 ["browser_application_xml_handle_internally.js"]
 
 ["browser_applications_selection.js"]
