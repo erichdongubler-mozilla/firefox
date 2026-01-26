@@ -42,7 +42,12 @@ export class AddonSearchEngine extends SearchEngine {
   constructor({ details, json } = {}) {
     let extensionId =
       details?.extensionID ?? json.extensionID ?? json._extensionID;
-    let id = extensionId + lazy.SearchUtils.DEFAULT_TAG;
+    // Historically, configuration based engines used to be backed by add-ons
+    // and they would sometimes have a specific locale enforced. For cases where
+    // it wasn't enforced, the locale was recorded as ``default``. We hard-code
+    // that here, as we have kept the same identifier format. We could potentially
+    // add a migration step in future and drop the ``default``.
+    let id = extensionId + "default";
 
     super({
       loadPath: "[addon]" + extensionId,

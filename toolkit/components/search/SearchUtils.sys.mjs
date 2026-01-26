@@ -204,9 +204,6 @@ export var SearchUtils = {
 
   DEFAULT_QUERY_CHARSET: "UTF-8",
 
-  // A tag to denote when we are using the "default_locale" of an engine.
-  DEFAULT_TAG: "default",
-
   LoadListener,
 
   /**
