@@ -315,7 +315,7 @@ describe("MultiStageAboutWelcome module", () => {
   describe("WelcomeScreen component", () => {
     describe("easy setup screen", () => {
       const easySetupScreen = AboutWelcomeDefaults.getDefaults().screens.find(
-        s => s.id === "AW_EASY_SETUP"
+        s => s.id === "AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN"
       );
       let EASY_SETUP_SCREEN_PROPS;
 

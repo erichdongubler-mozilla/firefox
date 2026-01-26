@@ -141,7 +141,7 @@ add_task(async function test_aboutwelcome_easy_setup_screen_impression() {
 
   Assert.ok(
     impressionCall.args[0].message_id.startsWith(
-      "MR_WELCOME_DEFAULT_0_AW_EASY_SETUP"
+      "MR_WELCOME_DEFAULT_0_AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN"
     ),
     "Impression telemetry includes correct message id"
   );
@@ -955,7 +955,10 @@ add_task(async function test_aboutwelcome_no_backups() {
   await test_screen_content(
     browser,
     "Easy setup renders with restore secondary top button",
-    ["main.AW_EASY_SETUP", "div.secondary-cta.top"],
+    [
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN, main.AW_EASY_SETUP_NEEDS_DEFAULT, main.AW_EASY_SETUP_NEEDS_PIN, main.AW_EASY_SETUP_ONLY_IMPORT",
+      "div.secondary-cta.top",
+    ],
     //Unexpected selectors:
     ["main.AW_BACKUP_RESTORE_EMBEDDED_BACKUP_FOUND"]
   );
@@ -1000,7 +1003,7 @@ add_task(async function test_aboutwelcome_secondary_top_signin_only() {
     browser,
     "Easy setup renders with secondary top button",
     [
-      "main.AW_EASY_SETUP",
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
       ".secondary-buttons-top-container, div.secondary-cta.top",
     ]
   );
@@ -1049,7 +1052,7 @@ add_task(async function test_aboutwelcome_secondary_top_backup_restore_only() {
     browser,
     "Easy setup renders with secondary top button",
     [
-      "main.AW_EASY_SETUP",
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
       ".secondary-buttons-top-container, div.secondary-cta.top",
     ]
   );
@@ -1100,7 +1103,7 @@ add_task(async function test_aboutwelcome_both_secondary_top_buttons() {
     browser,
     "Easy setup renders with secondary top button",
     [
-      "main.AW_EASY_SETUP",
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
       ".secondary-buttons-top-container, div.secondary-cta.top",
     ]
   );
