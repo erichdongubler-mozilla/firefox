@@ -273,11 +273,7 @@ static uint32_t ColumnBalancingDepth(const ReflowInput& aReflowInput,
 nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
     const ReflowInput& aReflowInput, bool aForceAuto = false) const {
   const nsStyleColumn* colStyle = StyleColumn();
-  nscoord availContentISize = aReflowInput.AvailableISize();
-  if (aReflowInput.ComputedISize() != NS_UNCONSTRAINEDSIZE) {
-    availContentISize = aReflowInput.ComputedISize();
-  }
-
+  const nscoord availContentISize = aReflowInput.AvailableISize();
   nscoord colBSize = aReflowInput.AvailableBSize();
   nscoord colGap =
       ColumnUtils::GetColumnGap(this, aReflowInput.ComputedISize());
