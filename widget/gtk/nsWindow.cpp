@@ -8920,6 +8920,13 @@ void nsWindow::SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   mCompositorWidgetDelegate =
       delegate ? delegate->AsPlatformSpecificDelegate() : nullptr;
+
+  if (mCompositorWidgetDelegate && GdkIsX11Display()) {
+    CompositorBridgeChild* remoteRenderer = GetRemoteRenderer();
+    MOZ_RELEASE_ASSERT(remoteRenderer);
+    remoteRenderer->SendResume();
+    remoteRenderer->SendForcePresent(wr::RenderReasons::WIDGET);
+  }
 }
 
 bool nsWindow::IsAlwaysUndecoratedWindow() const {
@@ -9819,6 +9826,13 @@ void nsWindow::OnMap() {
   }
 
   RefreshWindowClass();
+
+  if (GdkIsX11Display()) {
+    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
+      remoteRenderer->SendResume();
+      remoteRenderer->SendForcePresent(wr::RenderReasons::WIDGET);
+    }
+  }
 
   LOG("  finished, GdkWindow %p XID 0x%lx\n", mGdkWindow, GetX11Window());
 }
