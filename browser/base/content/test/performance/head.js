@@ -634,12 +634,22 @@ let _artifactCounter = 0;
  * The APNG contains three frames:
  * - Previous frame with "Frame N" label
  * - Current frame with "Frame N+1" label
- * - Difference frame highlighting changed areas with "X unexpected changes" label
+ * - Difference frame highlighting changed areas (orange for expected, red for unexpected)
  *
  * Uploads to MOZ_UPLOAD_DIR if set, otherwise logs as base64 data URI.
  */
-async function reportFlickerWithAPNG(previousFrame, currentFrame, frameIndex) {
-  let apngBytes = createAnimatedPNG(previousFrame, currentFrame, frameIndex);
+async function reportFlickerWithAPNG(
+  previousFrame,
+  currentFrame,
+  frameIndex,
+  expectedRects
+) {
+  let apngBytes = createAnimatedPNG(
+    previousFrame,
+    currentFrame,
+    frameIndex,
+    expectedRects
+  );
   if (apngBytes) {
     _artifactCounter++;
     let testName = "flicker_test";
@@ -703,7 +713,12 @@ function createFrameWithOverlay(frameData, width, height, overlayText) {
   return ctx.getImageData(0, 0, width, height).data;
 }
 
-function createAnimatedPNG(previousFrame, currentFrame, frameIndex) {
+function createAnimatedPNG(
+  previousFrame,
+  currentFrame,
+  frameIndex,
+  expectedRects
+) {
   const { width, height } = previousFrame;
 
   let apngFrames = [
@@ -726,11 +741,14 @@ function createAnimatedPNG(previousFrame, currentFrame, frameIndex) {
       delay: 1500,
     },
     {
-      data: createDifferenceHighlight(previousFrame, currentFrame),
+      data: createDifferenceHighlight(
+        previousFrame,
+        currentFrame,
+        expectedRects
+      ),
       delay: 2000,
     },
   ];
-
   // Start APNG encoding
   let encoder = Cc[
     "@mozilla.org/image/encoder;2?type=image/png"
@@ -767,7 +785,7 @@ function createAnimatedPNG(previousFrame, currentFrame, frameIndex) {
   return binaryStream.readByteArray(available);
 }
 
-function createDifferenceHighlight(frame1, frame2) {
+function createDifferenceHighlight(frame1, frame2, expectedRects) {
   const width = frame1.width;
   const height = frame1.height;
 
@@ -802,11 +820,24 @@ function createDifferenceHighlight(frame1, frame2) {
 
     rects = compareFrames(frame2, frame1);
 
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 2;
-    ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
+    const isExpected = rect =>
+      expectedRects.some(
+        exp =>
+          exp.x1 === rect.x1 &&
+          exp.y1 === rect.y1 &&
+          exp.w === rect.w &&
+          exp.h === rect.h
+      );
 
     for (let rect of rects) {
+      // Use orange for expected changes, red for unexpected
+      const expected = isExpected(rect);
+      ctx.strokeStyle = expected ? "orange" : "red";
+      ctx.lineWidth = 2;
+      ctx.fillStyle = expected
+        ? "rgba(255, 165, 0, 0.2)"
+        : "rgba(255, 0, 0, 0.2)";
+
       // Draw the red rectangle (same for all)
       ctx.fillRect(rect.x1, rect.y1, rect.w, rect.h);
       ctx.strokeRect(rect.x1, rect.y1, rect.w, rect.h);
@@ -826,7 +857,12 @@ function createDifferenceHighlight(frame1, frame2) {
       }
     }
 
-    addTextOverlay(canvas, `${rects.length} unexpected changes`);
+    let unexpectedCount = rects.filter(r => !isExpected(r)).length;
+    let expectedCount = expectedRects.length;
+    addTextOverlay(
+      canvas,
+      `${rects.length} changes (${unexpectedCount} unexpected, ${expectedCount} expected)`
+    );
   } catch (e) {
     ctx.fillStyle = "red";
     ctx.fillRect(0, 0, width, height);
@@ -868,14 +904,17 @@ async function reportUnexpectedFlicker(frames, expectations) {
   for (let i = 1; i < frames.length; ++i) {
     let frame = frames[i],
       previousFrame = frames[i - 1];
-    let rects = compareFrames(frame, previousFrame);
+    let allRects = compareFrames(frame, previousFrame);
 
     let rectText = r => `${r.toSource()}, window width: ${frame.width}`;
 
-    rects = rects.filter(rect => {
+    // Track which rects are expected (caught by exceptions)
+    let expectedRects = [];
+    let rects = allRects.filter(rect => {
       for (let e of expectations.exceptions || []) {
         if (e.condition(rect)) {
           todo(false, e.name + ", " + rectText(rect));
+          expectedRects.push(rect);
           return false;
         }
       }
@@ -897,7 +936,7 @@ async function reportUnexpectedFlicker(frames, expectations) {
         .join(", ")}`
     );
 
-    await reportFlickerWithAPNG(previousFrame, frame, i);
+    await reportFlickerWithAPNG(previousFrame, frame, i, expectedRects);
     unexpectedRects += rects.length;
   }
   is(unexpectedRects, 0, "should have 0 unknown flickering areas");

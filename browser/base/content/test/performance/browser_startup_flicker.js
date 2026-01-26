@@ -37,6 +37,7 @@ add_task(async function () {
     }
     alreadyFocused = true;
 
+    let expectedRects = [];
     rects = rects.filter(rect => {
       let width = frame.width;
 
@@ -77,6 +78,7 @@ add_task(async function () {
       for (let e of exceptions) {
         if (e.condition(rect)) {
           todo(false, e.name + ", " + rectText);
+          expectedRects.push(rect);
           return false;
         }
       }
@@ -89,7 +91,7 @@ add_task(async function () {
       continue;
     }
 
-    await reportFlickerWithAPNG(previousFrame, frame, i);
+    await reportFlickerWithAPNG(previousFrame, frame, i, expectedRects);
     unexpectedRects += rects.length;
   }
   is(unexpectedRects, 0, "should have 0 unknown flickering areas");
