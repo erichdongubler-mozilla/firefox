@@ -1004,6 +1004,8 @@ html {
 }
 
 .dummy {
+  /* No need to check for stylelint violations */
+  /* stylelint-disable-next-line */
   background: var(--mr-welcome-background-color) var(--mr-welcome-background-gradient) var(--mr-secondary-position) var(--mr-screen-background-color);
 }
 
@@ -1050,17 +1052,17 @@ html {
 }
 
 .onboardingContainer {
-  --grey-subtitle-1: light-dark(#696977, #FFF);
-  --mr-welcome-background-color: light-dark(#F8F6F4, #333336);
+  --grey-subtitle-1: light-dark(var(--color-gray-70), white);
+  --mr-welcome-background-color: light-dark(var(--color-gray-05), var(--color-gray-80));
   --mr-screen-heading-color: var(--text-color);
   --mr-welcome-background-gradient: linear-gradient(
     0deg,
     light-dark(rgba(144, 89, 255, 20%), rgba(144, 89, 255, 30%)) 0%,
     light-dark(rgba(2, 144, 238, 20%), rgba(2, 144, 238, 30%)) 100%
   );
-  --mr-screen-background-color: light-dark(#F8F6F4, #62697A);
-  --single-select-border-color: #8F8F9D;
-  --single-select-hover-color: light-dark(#DEDEDF, #52525E);
+  --mr-screen-background-color: light-dark(var(--color-gray-05), var(--color-gray-70));
+  --single-select-border-color: var(--color-gray-60);
+  --single-select-hover-color: light-dark(var(--color-gray-20), var(--color-gray-70));
   --picker-background-color: color-mix(in srgb, transparent 98%, light-dark(black, white) 2%);
   --picker-hover-background-color: color-mix(in srgb, transparent 95%, light-dark(black, white) 5%);
   --picker-border-color: var(--border-color);
@@ -1071,6 +1073,11 @@ html {
   --picker-checkbox-hover-color: var(--picker-checkbox-color);
   --picker-backup-flair-background: color-mix(in srgb, var(--color-accent-primary) 20%, transparent);
   --picker-backup-flair-color: var(--color-accent-primary);
+  --fancy-heading-selection-background-color: var(--color-gray-70);
+  --select-item-flair-background-color: var(--color-violet-50);
+  --tile-info-hover-background-color: oklch(from var(--color-violet-10) l c h / 30%);
+  --screen-1-yellow-circle-background-color: var(--color-purple-60);
+  --screen-2-yellow-circle-background-color: var(--color-pink-50);
   font-family: system-ui;
   font-size: 16px;
   position: relative;
@@ -1737,7 +1744,7 @@ html {
     background-color: var(--background-color-canvas);
   }
   .onboardingContainer .screen[pos=split] .section-main .main-content .steps.progress-bar .indicator {
-    background-color: var(--color-accent-primary);
+    background-color: var(--button-background-color-primary);
   }
 }
 .onboardingContainer .screen[pos=split] .section-secondary {
@@ -2646,8 +2653,8 @@ html {
 }
 @media (prefers-color-scheme: dark) {
   .onboardingContainer .welcome-text.fancy h1::selection {
-    color: #FFF;
-    background-color: #696977;
+    color: white;
+    background-color: var(--fancy-heading-selection-background-color);
   }
 }
 .onboardingContainer .welcome-text.shine h1 {
@@ -2769,8 +2776,8 @@ html {
 .onboardingContainer .tiles-single-select-section.single-select .select-item .flair, .onboardingContainer .tiles-single-select-section.theme .select-item .flair {
   height: 18px;
   border-radius: var(--border-radius-small);
-  background-color: #9059FF;
-  color: #FFF;
+  background-color: var(--select-item-flair-background-color);
+  color: white;
   padding: 2px 8px;
   position: absolute;
   right: 1px;
@@ -2903,7 +2910,7 @@ html {
   padding: 6px 12px 12px;
 }
 .onboardingContainer .tiles-container.info:hover, .onboardingContainer .tiles-container.info:focus {
-  background-color: rgba(217, 217, 227, 0.3);
+  background-color: var(--tile-info-hover-background-color);
   border-radius: var(--border-radius-small);
 }
 .onboardingContainer .tiles-delayed {
@@ -3383,6 +3390,7 @@ html {
   height: 6px;
   padding-block: 0;
   margin-block: 42px 0;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
   background-color: color-mix(in srgb, var(--button-text-color) 25%, transparent);
   justify-content: start;
   opacity: 1;
@@ -3543,7 +3551,7 @@ html {
   height: 165px;
   border-radius: var(--border-radius-circle);
   transform: translate(230%, -5%);
-  background: #952BB9;
+  background: var(--screen-1-yellow-circle-background-color);
   transition-delay: -0.2s;
 }
 .onboardingContainer .dialog-initial .brand-logo {
@@ -3616,7 +3624,7 @@ html {
   height: 165px;
   border-radius: var(--border-radius-circle);
   transform: translate(160%, 130%);
-  background: #E7258C;
+  background: var(--screen-2-yellow-circle-background-color);
 }
 .onboardingContainer.transition-in .noodle {
   opacity: 0;
