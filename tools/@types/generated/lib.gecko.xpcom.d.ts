@@ -11655,12 +11655,6 @@ interface nsISearchEngine extends nsISupports {
   readonly partnerCode: string;
 }
 
-interface nsISearchParseSubmissionResult extends nsISupports {
-  readonly engine: nsISearchEngine;
-  readonly terms: string;
-  readonly termsParameterName: string;
-}
-
 }  // global
 
 declare enum nsISearchService_OpenSearchInstallErrors {
@@ -16290,7 +16284,6 @@ interface nsIXPCComponents_Interfaces {
   nsIUserCharacteristicsPageService: nsJSIID<nsIUserCharacteristicsPageService>;
   nsISearchSubmission: nsJSIID<nsISearchSubmission>;
   nsISearchEngine: nsJSIID<nsISearchEngine>;
-  nsISearchParseSubmissionResult: nsJSIID<nsISearchParseSubmissionResult>;
   nsISearchService: nsJSIID<nsISearchService, typeof nsISearchService_OpenSearchInstallErrors & typeof nsISearchService_DefaultEngineChangeReason>;
   nsIToolkitShellService: nsJSIID<nsIToolkitShellService>;
   nsITerminatorTest: nsJSIID<nsITerminatorTest>;

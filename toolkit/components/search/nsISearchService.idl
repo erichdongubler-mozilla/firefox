@@ -231,28 +231,6 @@ interface nsISearchEngine : nsISupports
   readonly attribute AUTF8String partnerCode;
 };
 
-[scriptable, uuid(0dc93e51-a7bf-4a16-862d-4b3469ff6206)]
-interface nsISearchParseSubmissionResult : nsISupports
-{
-  /**
-   * The search engine associated with the URL passed in to
-   * nsISearchEngine::parseSubmissionURL, or null if the URL does not represent
-   * a search submission.
-   */
-  readonly attribute nsISearchEngine engine;
-
-  /**
-   * String containing the sought terms.  This can be an empty string in case no
-   * terms were specified or the URL does not represent a search submission.
-   */
-  readonly attribute AString terms;
-
-  /**
-   * The name of the query parameter used by `engine` for queries. E.g. "q".
-   */
-  readonly attribute AString termsParameterName;
-};
-
 [scriptable, uuid(0301834b-2630-440e-8b98-db8dc55f34b9)]
 interface nsISearchService : nsISupports
 {

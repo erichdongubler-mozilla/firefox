@@ -144,59 +144,6 @@ const REASON_CHANGE_MAP = new Map([
 ]);
 
 /**
- * The ParseSubmissionResult contains getter methods that return attributes
- * about the parsed submission url.
- *
- * @implements {nsISearchParseSubmissionResult}
- */
-class ParseSubmissionResult {
-  /**
-   * @param {?nsISearchEngine} engine
-   * @param {string} terms
-   * @param {string} termsParameterName
-   */
-  constructor(engine, terms, termsParameterName) {
-    this.#engine = engine;
-    this.#terms = terms;
-    this.#termsParameterName = termsParameterName;
-  }
-
-  /**
-   * The search engine associated with the URL passed in to
-   * nsISearchEngine::parseSubmissionURL, or null if the URL does not represent
-   * a search submission.
-   */
-  get engine() {
-    return this.#engine;
-  }
-
-  /**
-   * String containing the sought terms. This can be an empty string in case no
-   * terms were specified or the URL does not represent a search submission.
-   */
-  get terms() {
-    return this.#terms;
-  }
-
-  /**
-   * The name of the query parameter used by `engine` for queries. E.g. "q".
-   */
-  get termsParameterName() {
-    return this.#termsParameterName;
-  }
-
-  #engine;
-  #terms;
-  #termsParameterName;
-
-  QueryInterface = ChromeUtils.generateQI(["nsISearchParseSubmissionResult"]);
-}
-
-const gEmptyParseSubmissionResult = Object.freeze(
-  new ParseSubmissionResult(null, "", "")
-);
-
-/**
  * The search service handles loading and maintaining of search engines. It will
  * also work out the default lists for each locale/region.
  */
@@ -1143,6 +1090,19 @@ export const SearchService = new (class SearchService {
   }
 
   /**
+   * @typedef {object} ParseSubmissionResult
+   * @property {?SearchEngine} engine
+   *   The search engine associated with the URL passed in to
+   *   ``parseSubmissionURL``, or null if the URL does not represent a search
+   *   submission.
+   * @property {string} terms
+   *   String containing the sought terms. This can be an empty string in case
+   *   no terms were specified or the URL does not represent a search submission.
+   * @property {string} termsParameterName
+   *   The name of the query parameter used by `engine` for queries. E.g. "q".
+   */
+
+  /**
    * Determines if the provided URL represents results from a search engine, and
    * provides details about the match.
    *
@@ -1155,13 +1115,14 @@ export const SearchService = new (class SearchService {
    * @param {string} url
    *   String containing the URL to parse, for example
    *   `https://www.google.com/search?q=terms`.
+   * @returns {ParseSubmissionResult}
    */
   parseSubmissionURL(url) {
     if (!this.hasSuccessfullyInitialized) {
       // If search is not initialized or failed initializing, do nothing.
       // This allows us to use this function early in telemetry.
       // The only other consumer of this (places) uses it much later.
-      return gEmptyParseSubmissionResult;
+      return { engine: null, terms: "", termsParameterName: "" };
     }
 
     if (!this.#parseSubmissionMap) {
@@ -1175,7 +1136,7 @@ export const SearchService = new (class SearchService {
 
       // Exclude any URL that is not HTTP or HTTPS from the beginning.
       if (!soughtUrl.schemeIs("http") && !soughtUrl.schemeIs("https")) {
-        return gEmptyParseSubmissionResult;
+        return { engine: null, terms: "", termsParameterName: "" };
       }
 
       // Reading these URL properties may fail and raise an exception.
@@ -1183,13 +1144,13 @@ export const SearchService = new (class SearchService {
       soughtQuery = soughtUrl.query;
     } catch (ex) {
       // Errors while parsing the URL or accessing the properties are not fatal.
-      return gEmptyParseSubmissionResult;
+      return { engine: null, terms: "", termsParameterName: "" };
     }
 
     // Look up the domain and path in the map to identify the search engine.
     let mapEntry = this.#parseSubmissionMap.get(soughtKey);
     if (!mapEntry) {
-      return gEmptyParseSubmissionResult;
+      return { engine: null, terms: "", termsParameterName: "" };
     }
 
     // Extract the search terms from the parameter, for example "caff%C3%A8"
@@ -1209,7 +1170,7 @@ export const SearchService = new (class SearchService {
       }
     }
     if (encodedTerms === null) {
-      return gEmptyParseSubmissionResult;
+      return { engine: null, terms: "", termsParameterName: "" };
     }
 
     // Decode the terms using the charset defined in the search engine.
@@ -1221,14 +1182,14 @@ export const SearchService = new (class SearchService {
       );
     } catch (ex) {
       // Decoding errors will cause this match to be ignored.
-      return gEmptyParseSubmissionResult;
+      return { engine: null, terms: "", termsParameterName: "" };
     }
 
-    return new ParseSubmissionResult(
-      mapEntry.engine,
+    return {
+      engine: mapEntry.engine,
       terms,
-      mapEntry.termsParameterName
-    );
+      termsParameterName: mapEntry.termsParameterName,
+    };
   }
 
   /**
