@@ -8,6 +8,7 @@ import {
   generateProfileInputs,
   aggregateSessions,
   topkAggregates,
+  countRecentVisits,
 } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesHistorySource.sys.mjs";
 import { getRecentChats } from "./MemoriesChatSource.sys.mjs";
 import {
@@ -568,5 +569,16 @@ export class MemoriesManager {
       // If we cannot check window state, do NOT enable schedulers.
       return false;
     }
+  }
+
+  /**
+   * Count recent history visits.
+   * Thin wrapper around MemoriesHistorySource.countRecentVisits for callers/tests.
+   *
+   * @param {object} opts
+   * @returns {Promise<number>}
+   */
+  static async countRecentVisits(opts = {}) {
+    return await countRecentVisits(opts);
   }
 }
