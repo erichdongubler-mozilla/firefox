@@ -327,6 +327,7 @@ impl<'a> SceneBuilder<'a> {
         mut blur_radius: f32,
         spread_radius: f32,
         border_radius: BorderRadius,
+        mut shadow_radius: BorderRadius,
         clip_mode: BoxShadowClipMode,
         is_root_coord_system: bool,
     ) {
@@ -342,9 +343,6 @@ impl<'a> SceneBuilder<'a> {
 
         // Ensure the blur radius is somewhat sensible.
         blur_radius = f32::min(blur_radius, MAX_BLUR_RADIUS);
-
-        // Adjust the border radius of the box shadow per CSS-spec.
-        let mut shadow_radius = adjust_border_radius_for_box_shadow(border_radius, spread_amount);
 
         // Apply parameters that affect where the shadow rect
         // exists in the local space of the primitive.
@@ -570,29 +568,5 @@ impl<'a> SceneBuilder<'a> {
                 );
             }
         }
-    }
-}
-
-fn adjust_border_radius_for_box_shadow(radius: BorderRadius, spread_amount: f32) -> BorderRadius {
-    BorderRadius {
-        top_left: adjust_corner_for_box_shadow(radius.top_left, spread_amount),
-        top_right: adjust_corner_for_box_shadow(radius.top_right, spread_amount),
-        bottom_right: adjust_corner_for_box_shadow(radius.bottom_right, spread_amount),
-        bottom_left: adjust_corner_for_box_shadow(radius.bottom_left, spread_amount),
-    }
-}
-
-fn adjust_corner_for_box_shadow(corner: LayoutSize, spread_amount: f32) -> LayoutSize {
-    LayoutSize::new(
-        adjust_radius_for_box_shadow(corner.width, spread_amount),
-        adjust_radius_for_box_shadow(corner.height, spread_amount),
-    )
-}
-
-fn adjust_radius_for_box_shadow(border_radius: f32, spread_amount: f32) -> f32 {
-    if border_radius > 0.0 {
-        (border_radius + spread_amount).max(0.0)
-    } else {
-        0.0
     }
 }

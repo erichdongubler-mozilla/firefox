@@ -1850,11 +1850,12 @@ void DisplayListBuilder::PushBoxShadow(
     const wr::LayoutVector2D& aOffset, const wr::ColorF& aColor,
     const float& aBlurRadius, const float& aSpreadRadius,
     const wr::BorderRadius& aBorderRadius,
+    const wr::BorderRadius& aShadowRadius,
     const wr::BoxShadowClipMode& aClipMode) {
   wr_dp_push_box_shadow(mWrState, aRect, MergeClipLeaf(aClip),
                         aIsBackfaceVisible, &mCurrentSpaceAndClipChain,
                         aBoxBounds, aOffset, aColor, aBlurRadius, aSpreadRadius,
-                        aBorderRadius, aClipMode);
+                        aBorderRadius, aShadowRadius, aClipMode);
 }
 
 void DisplayListBuilder::PushDebug(uint32_t aVal) {

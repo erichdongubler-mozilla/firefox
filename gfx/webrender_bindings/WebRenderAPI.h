@@ -800,6 +800,7 @@ class DisplayListBuilder final {
                      const wr::ColorF& aColor, const float& aBlurRadius,
                      const float& aSpreadRadius,
                      const wr::BorderRadius& aBorderRadius,
+                     const wr::BorderRadius& aShadowRadius,
                      const wr::BoxShadowClipMode& aClipMode);
 
   void PushDebug(uint32_t aVal);
