@@ -21,7 +21,7 @@
 
 namespace mozilla {
 
-LazyIdleThread::LazyIdleThread(uint32_t aIdleTimeoutMS, const char* aName,
+LazyIdleThread::LazyIdleThread(uint32_t aIdleTimeoutMS, StaticString aName,
                                ShutdownMethod aShutdownMethod)
     : mOwningEventTarget(GetCurrentSerialEventTarget()),
       mThreadPool(new nsThreadPool()),
