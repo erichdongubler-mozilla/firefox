@@ -11,7 +11,8 @@ const zlib = require("zlib");
 function normalizeMessage(message) {
   return message
     ?.replace(/task_\d+/g, "task_id")
-    .replace(/\nRejection date: [^\n]+/g, "");
+    .replace(/\nRejection date: [^\n]+/g, "")
+    .replace(/Test ran for \d+s/g, "Test ran for Xs");
 }
 
 // Extract parallel execution time ranges from markers
