@@ -1324,18 +1324,6 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         }
     }
 
-    fun verifyToolsMenuDoesNotExist() {
-        assertUIObjectIsGone(itemWithDescription(getStringResource(R.string.browser_tools_menu_handlebar_content_description)))
-    }
-
-    fun verifySaveMenuDoesNotExist() {
-        assertUIObjectIsGone(itemWithDescription(getStringResource(R.string.browser_save_menu_handlebar_content_description)))
-    }
-
-    fun verifyExtensionsMenuDoesNotExist() {
-        assertUIObjectIsGone(itemWithDescription(getStringResource(R.string.browser_extensions_menu_handlebar_content_description)))
-    }
-
     fun verifyWebCompatPageItemExists(itemText: String, isSmartBlockFixesItem: Boolean = false) {
         for (i in 1..RETRY_COUNT) {
             try {

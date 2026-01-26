@@ -181,7 +181,7 @@
     <!-- Browser menu button that opens the extensions manager -->
     <string name="browser_menu_extensions">Extensions</string>
     <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-    <string name="browser_menu_disabled_extensions_banner_onboarding_header">You have extensions installed, but not enabled</string>
+    <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">You have extensions installed, but not enabled</string>
     <!-- Browser menu button that opens the extensions manager -->
     <string name="browser_menu_manage_extensions">Manage extensions</string>
     <!-- Browser menu group that contains additional settings in collapsed state-->
@@ -273,11 +273,11 @@
     <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
     <string name="browser_main_menu_content_description_navigation_header">Navigation</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-    <string name="browser_extensions_menu_handlebar_content_description">Close extensions menu sheet</string>
+    <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Close extensions menu sheet</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-    <string name="browser_save_menu_handlebar_content_description">Close save menu sheet</string>
+    <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Close save menu sheet</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-    <string name="browser_tools_menu_handlebar_content_description">Close tools menu sheet</string>
+    <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Close tools menu sheet</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
     <string name="browser_custom_tab_menu_handlebar_content_description">Close custom tab menu sheet</string>
     <!-- Browser menu label that bookmarks the currently visited page -->
