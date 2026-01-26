@@ -39,8 +39,14 @@ add_task(async function () {
   // The test starts on about:blank and opens an about:blank
   // tab which triggers opening the toolbar since
   // ensureNoPreloadedBrowser sets AboutNewTab.newTabURL to about:blank.
+  // Disable tab hover previews to avoid asynchronous reflows. On Windows when
+  // running standalone, mouse events on tabs during creation can trigger hover
+  // preview activation, causing a reflow during the performance measurement.
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.toolbars.bookmarks.visibility", "never"]],
+    set: [
+      ["browser.toolbars.bookmarks.visibility", "never"],
+      ["browser.tabs.hoverPreview.enabled", false],
+    ],
   });
 
   const TAB_COUNT_FOR_OVERFLOW = computeMaxTabCount();
