@@ -2521,11 +2521,6 @@ void VerifyCientPrincipalInfosMatch(const mozilla::ipc::PrincipalInfo& aLeft,
 void nsDocShell::MaybeInheritController(
     mozilla::dom::ClientSource* aClientSource, nsIPrincipal* aPrincipal) {
   nsCOMPtr<nsIDocShell> parent = GetInProcessParentDocshell();
-  if (!parent) {
-    if (RefPtr<BrowsingContext> opener = mBrowsingContext->GetOpener()) {
-      parent = opener->GetDocShell();
-    }
-  }
   nsPIDOMWindowOuter* parentOuter = parent ? parent->GetWindow() : nullptr;
   nsPIDOMWindowInner* parentInner =
       parentOuter ? parentOuter->GetCurrentInnerWindow() : nullptr;
