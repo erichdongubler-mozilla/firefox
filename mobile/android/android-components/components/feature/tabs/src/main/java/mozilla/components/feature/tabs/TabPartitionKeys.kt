@@ -2,11 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.mozilla.fenix
+package mozilla.components.feature.tabs
 
 /**
- * Tags used to identify tab partitions.
+ * Keys used to identify tab partitions.
  */
-object TabPartitionTags {
+internal object TabPartitionKeys {
     const val TAB_GROUPS = "TAB_GROUPS"
 }
