@@ -28,6 +28,10 @@
 #  include <CoreFoundation/CoreFoundation.h>
 #endif
 
+#ifdef XP_LINUX
+#  include <freetype/freetype.h>
+#endif
+
 #define LOG(log, args) MOZ_LOG(gfxPlatform::GetLog(log), LogLevel::Debug, args)
 
 #define UNICODE_BMP_LIMIT 0x10000
@@ -411,11 +415,12 @@ nsresult gfxFontUtils::ReadCMAPTableFormat14(const uint8_t* aBuf,
     (((p) == PLATFORM_ID_MICROSOFT && (e) == EncodingIDMicrosoft && !(k)) || \
      ((p) == PLATFORM_ID_UNICODE))
 
-#  define acceptableUCS4Encoding(p, e, k)           \
-    (((p) == PLATFORM_ID_MICROSOFT &&               \
-      (e) == EncodingIDUCS4ForMicrosoftPlatform) && \
-         (k) != 12 ||                               \
-     ((p) == PLATFORM_ID_UNICODE && ((e) != EncodingIDUVSForUnicodePlatform)))
+#  define acceptableUCS4Encoding(p, e, k)                                     \
+    (((p) == PLATFORM_ID_MICROSOFT &&                                         \
+      (e) == EncodingIDUCS4ForMicrosoftPlatform) &&                           \
+         (k) != 12 ||                                                         \
+     ((p) == PLATFORM_ID_UNICODE && (e) != EncodingIDUVSForUnicodePlatform && \
+      (e) != EncodingIDFullRepertoireForUnicodePlatform))
 #else
 #  define acceptableFormat4(p, e, k)                                 \
     (((p) == PLATFORM_ID_MICROSOFT && (e) == EncodingIDMicrosoft) || \
@@ -425,9 +430,29 @@ nsresult gfxFontUtils::ReadCMAPTableFormat14(const uint8_t* aBuf,
     ((p) == PLATFORM_ID_MICROSOFT && (e) == EncodingIDUCS4ForMicrosoftPlatform)
 #endif
 
+#if defined(XP_MACOSX) && defined(XP_WIN)
+static inline bool CheckFormat13Support() {
+  // On non-FreeType platforms, we can think format 13 table are always
+  // supported.
+  return true;
+}
+#else
+static inline bool CheckFormat13Support() {
+  // FreeType 2.14.1 and below has bug on cmap format 13 table,
+  // so only allow newer FreeType to use format 13 cmap.
+  // https://gitlab.freedesktop.org/freetype/freetype/-/commit/914b47403052ad6979029f51de925cd7f96053c1
+  FT_Int major, minor, patch;
+  FT_Library_Version(gfx::Factory::GetFTLibrary(), &major, &minor, &patch);
+  return major * 1000000 + minor * 1000 + patch > 2014001;
+}
+#endif
+
 #define acceptablePlatform(p) \
   ((p) == PLATFORM_ID_UNICODE || (p) == PLATFORM_ID_MICROSOFT)
 #define isSymbol(p, e) ((p) == PLATFORM_ID_MICROSOFT && (e) == EncodingIDSymbol)
+#define isFullRepertoireEncoding(p, e) \
+  ((p) == PLATFORM_ID_UNICODE &&       \
+   (e) == EncodingIDFullRepertoireForUnicodePlatform)
 #define isUVSEncoding(p, e) \
   ((p) == PLATFORM_ID_UNICODE && (e) == EncodingIDUVSForUnicodePlatform)
 
@@ -454,6 +479,7 @@ uint32_t gfxFontUtils::FindPreferredSubtable(const uint8_t* aBuf,
     EncodingIDDefaultForUnicodePlatform = 0,
     EncodingIDUCS4ForUnicodePlatform = 3,
     EncodingIDUVSForUnicodePlatform = 5,
+    EncodingIDFullRepertoireForUnicodePlatform = 6,
     EncodingIDUCS4ForMicrosoftPlatform = 10
   };
 
@@ -505,7 +531,7 @@ uint32_t gfxFontUtils::FindPreferredSubtable(const uint8_t* aBuf,
                acceptableFormat4(platformID, encodingID, keepFormat)) {
       keepFormat = format;
       *aTableOffset = offset;
-    } else if ((format == 10 || format == 12 || format == 13) &&
+    } else if ((format == 10 || format == 12) &&
                acceptableUCS4Encoding(platformID, encodingID, keepFormat)) {
       keepFormat = format;
       *aTableOffset = offset;
@@ -514,6 +540,14 @@ uint32_t gfxFontUtils::FindPreferredSubtable(const uint8_t* aBuf,
         break;  // we don't want to try anything else when this format is
                 // available.
       }
+    } else if (format == 13 &&
+               isFullRepertoireEncoding(platformID, encodingID) &&
+               CheckFormat13Support()) {
+      keepFormat = format;
+      *aTableOffset = offset;
+      // A last resort font shouldn't use any other encodings or subtable
+      // formats.
+      break;
     } else if (format == 14 && isUVSEncoding(platformID, encodingID) &&
                aUVSTableOffset) {
       *aUVSTableOffset = offset;
@@ -1845,5 +1879,6 @@ bool gfxFontUtils::IsCffFont(const uint8_t* aFontData) {
 #undef acceptablePlatform
 #undef isSymbol
 #undef isUVSEncoding
+#undef isFullRepertoireEncoding
 #undef LOG
 #undef LOG_ENABLED
