@@ -10,7 +10,6 @@
 #include "nsIThreadManager.h"
 #include "nsThread.h"
 #include "mozilla/ShutdownPhase.h"
-#include "mozilla/StaticString.h"
 
 class nsIRunnable;
 class nsIThread;
@@ -76,7 +75,7 @@ class nsThreadManager : public nsIThreadManager {
       nsIRunnable* aEvent, nsIEventTarget::DispatchFlags aDispatchFlags);
 
   already_AddRefed<mozilla::TaskQueue> CreateBackgroundTaskQueue(
-      mozilla::StaticString aName);
+      const char* aName);
 
   ~nsThreadManager();
 

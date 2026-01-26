@@ -48,7 +48,7 @@ class TaskQueueTrackerEntry final
 };
 
 RefPtr<TaskQueue> TaskQueue::Create(already_AddRefed<nsIEventTarget> aTarget,
-                                    StaticString aName,
+                                    const char* aName,
                                     bool aSupportsTailDispatch) {
   nsCOMPtr<nsIEventTarget> target(std::move(aTarget));
   RefPtr<TaskQueue> queue =
