@@ -76,27 +76,21 @@ describe("settings ai features", () => {
     await gBrowser.ownerGlobal.SidebarController.hide();
   });
 
-  it("hides AI Window when preferences not enabled", async () => {
+  it("hides Smart Window when preferences not enabled", async () => {
     await SpecialPowers.pushPrefEnv({
       set: [["browser.aiwindow.preferences.enabled", false]],
     });
 
     await openAiFeaturePanel();
 
-    const aiWindowItem = doc.getElementById("AIWindowItem");
-    const aiWindowFeatures = doc.getElementById("aiFeaturesAIWindowGroup");
-
-    Assert.ok(
-      !BrowserTestUtils.isVisible(aiWindowItem),
-      "AIWindowItem is hidden when preferences not enabled"
-    );
+    const aiWindowFeatures = doc.getElementById("aiFeaturesSmartWindowGroup");
     Assert.ok(
       !BrowserTestUtils.isVisible(aiWindowFeatures),
-      "aiWindowFeatures is hidden when preferences not enabled"
+      "smartWindowFeatures is hidden when preferences not enabled"
     );
   });
 
-  it("shows AI Window activate when preferences enabled and feature not enabled", async () => {
+  it("shows Smart Window activate when preferences enabled and feature not enabled", async () => {
     await SpecialPowers.pushPrefEnv({
       set: [
         ["browser.aiwindow.preferences.enabled", true],
@@ -106,14 +100,16 @@ describe("settings ai features", () => {
 
     await openAiFeaturePanel();
 
-    const aiWindowItem = doc.getElementById("AIWindowItem");
+    const smartWindowActivateLink = doc.getElementById(
+      "activateSmartWindowLink"
+    );
     Assert.ok(
-      BrowserTestUtils.isVisible(aiWindowItem),
-      "AIWindowItem is visible when preferences enabled and feature not enabled"
+      BrowserTestUtils.isVisible(smartWindowActivateLink),
+      "smartWindowActivateLink is visible when preferences enabled and feature not enabled"
     );
   });
 
-  it("hides AI Window activate when feature enabled", async () => {
+  it("hides Smart Window activate and show personalize button when feature enabled", async () => {
     await SpecialPowers.pushPrefEnv({
       set: [
         ["browser.aiwindow.preferences.enabled", true],
@@ -123,14 +119,19 @@ describe("settings ai features", () => {
 
     await openAiFeaturePanel();
 
-    const aiWindowItem = doc.getElementById("AIWindowItem");
+    const smartWindowActivateLink = doc.getElementById(
+      "activateSmartWindowLink"
+    );
+    const smartWindowPersonalizeButton = doc.getElementById(
+      "personalizeSmartWindowButton"
+    );
     Assert.ok(
-      !BrowserTestUtils.isVisible(aiWindowItem),
-      "AIWindowItem is hidden when feature enabled"
+      !BrowserTestUtils.isVisible(smartWindowActivateLink) &&
+        BrowserTestUtils.isVisible(smartWindowPersonalizeButton),
+      "smartWindowActivateLink is hidden and smartWindowPersonalizeButton is visible when feature enabled"
     );
   });
 
-  // TODO: Add tests for aiFeaturesAIWindowGroup when Model and Insight options are added
   describe("Smart Window memories", () => {
     async function openSmartWindowPanel() {
       await openAiFeaturePanel();

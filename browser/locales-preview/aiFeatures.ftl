@@ -2,15 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-try-ai-features-ai-window =
-    .label = AI Window
-    .description = A separate window that learns as you browse. Get quick answers about your tabs and a more personalized experience.
-try-ai-features-ai-window-activate-link =
-    .label = Activate AI Window
-
 ai-window-features-group =
     .label = Smart Window
     .description = Ask questions, compare pages, and more in a separate window with a built-in assistant. Smart Window can learn as you browse, for a more personalized experience.
+
+ai-window-activate-link =
+    .label = Get started
 
 ai-window-personalize-button =
     .label = Personalize Smart Window

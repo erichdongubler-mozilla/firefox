@@ -279,29 +279,29 @@ Preferences.addSetting({
 // Only show the feature settings if the prefs are allowed to show and the
 // feature isn't enabled.
 Preferences.addSetting({
-  id: "aiWindowFieldset",
+  id: "smartWindowFieldset",
+  deps: ["AIWindowPreferencesEnabled"],
+  visible: deps => deps.AIWindowPreferencesEnabled.value,
+});
+
+Preferences.addSetting({
+  id: "aiFeaturesSmartWindowGroup",
+});
+
+Preferences.addSetting({
+  id: "activateSmartWindowLink",
   deps: ["AIWindowEnabled", "AIWindowPreferencesEnabled"],
   visible: deps => {
     return deps.AIWindowPreferencesEnabled.value && !deps.AIWindowEnabled.value;
   },
 });
 
-Preferences.addSetting({ id: "AIWindowItem" });
-Preferences.addSetting({ id: "AIWindowHeader" });
-Preferences.addSetting({ id: "AIWindowActivateLink" });
-
-// Only show the AI Window features if the prefs are allowed to show and the
-// feature is enabled.
 Preferences.addSetting({
-  id: "aiFeaturesAIWindowGroup",
+  id: "personalizeSmartWindowButton",
   deps: ["AIWindowEnabled", "AIWindowPreferencesEnabled"],
   visible: deps => {
     return deps.AIWindowPreferencesEnabled.value && deps.AIWindowEnabled.value;
   },
-});
-
-Preferences.addSetting({
-  id: "personalizeSmartWindowButton",
   onUserClick(e) {
     e.preventDefault();
     window.gotoPref("panePersonalizeSmartWindow");
@@ -662,22 +662,26 @@ SettingGroupManager.registerGroups({
         ],
       },
       {
-        id: "aiWindowFieldset",
+        id: "smartWindowFieldset",
+        l10nId: "ai-window-features-group",
         control: "moz-fieldset",
+        controlAttrs: {
+          headinglevel: 2,
+        },
         items: [
           {
-            id: "AIWindowItem",
+            id: "aiFeaturesSmartWindowGroup",
             control: "moz-box-group",
             items: [
               {
-                id: "AIWindowHeader",
-                l10nId: "try-ai-features-ai-window",
-                control: "moz-box-item",
+                id: "activateSmartWindowLink",
+                l10nId: "ai-window-activate-link",
+                control: "moz-box-link",
               },
               {
-                id: "AIWindowActivateLink",
-                l10nId: "try-ai-features-ai-window-activate-link",
-                control: "moz-box-link",
+                id: "personalizeSmartWindowButton",
+                l10nId: "ai-window-personalize-button",
+                control: "moz-box-button",
               },
             ],
           },
@@ -714,24 +718,6 @@ SettingGroupManager.registerGroups({
                 ],
               },
             ],
-          },
-        ],
-      },
-    ],
-  },
-  aiWindowFeatures: {
-    l10nId: "ai-window-features-group",
-    // TODO: Finalize SUMO support page slug (GENAI-3016)
-    supportPage: "smart-window",
-    items: [
-      {
-        id: "aiFeaturesAIWindowGroup",
-        control: "moz-box-group",
-        items: [
-          {
-            id: "personalizeSmartWindowButton",
-            l10nId: "ai-window-personalize-button",
-            control: "moz-box-button",
           },
         ],
       },
