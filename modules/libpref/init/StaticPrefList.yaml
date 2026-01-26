@@ -9084,13 +9084,6 @@
   mirror: always
   set_spidermonkey_pref: startup
 
-# Experimental support for Math.sumPrecise in JavaScript.
-- name: javascript.options.experimental.math_sumprecise
-  type: bool
-  value: true
-  mirror: always
-  set_spidermonkey_pref: startup
-
   # Experimental support for Atomics.pause in JavaScript.
 - name: javascript.options.experimental.atomics_pause
   type: bool
