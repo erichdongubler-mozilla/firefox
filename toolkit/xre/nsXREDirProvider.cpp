@@ -74,9 +74,6 @@
 #  include "WinUtils.h"
 #endif
 #ifdef XP_MACOSX
-#  ifdef NIGHTLY_BUILD
-#    include "AppGroupPath.h"
-#  endif
 #  include "nsILocalFileMac.h"
 // for chflags()
 #  include <sys/stat.h>
@@ -226,26 +223,9 @@ nsXREDirProvider::Release() { return 0; }
 
 nsresult nsXREDirProvider::GetUserProfilesRootDir(nsIFile** aResult) {
   nsCOMPtr<nsIFile> file;
-  nsresult rv = NS_OK;
-#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
-  const char* appGroup = PR_GetEnv("MOZ_APP_GROUP");
-  if (appGroup && *appGroup && strcmp(appGroup, "0") != 0) {
-    nsCOMPtr<nsIFile> group;
-    rv = GetAppGroupContainerBase(getter_AddRefs(group));
-    if (NS_SUCCEEDED(rv) && group) {
-      rv = group->AppendNative("Library"_ns);
-      NS_ENSURE_SUCCESS(rv, rv);
-      rv = group->AppendNative("Application Support"_ns);
-      NS_ENSURE_SUCCESS(rv, rv);
-      rv = group->AppendNative("Profiles"_ns);
-      NS_ENSURE_SUCCESS(rv, rv);
-      file = group;
-    }
-  }
-#endif
-  if (!file) {
-    rv = GetUserDataDirectory(getter_AddRefs(file), false);
-    NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = GetUserDataDirectory(getter_AddRefs(file), false);
+
+  if (NS_SUCCEEDED(rv)) {
 #if !defined(XP_UNIX) || defined(XP_MACOSX)
     rv = file->AppendNative("Profiles"_ns);
 #endif
