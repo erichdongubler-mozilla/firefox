@@ -64,13 +64,17 @@ async function cleanUpSuggestions() {
   }
 }
 
-function makeFormHistoryResults(context, count) {
+function makeFormHistoryResults(
+  context,
+  count,
+  engineName = SUGGESTIONS_ENGINE_NAME
+) {
   let results = [];
   for (let i = 0; i < count; i++) {
     results.push(
       makeFormHistoryResult(context, {
         suggestion: `${SEARCH_STRING} world Form History ${i}`,
-        engineName: SUGGESTIONS_ENGINE_NAME,
+        engineName,
       })
     );
   }
@@ -1977,6 +1981,45 @@ add_task(async function formHistory() {
   });
 
   await UrlbarTestUtils.formHistory.remove(formHistoryStrings);
+});
+
+add_task(async function formHistoryRestrictToEngine() {
+  let engineName = "engine123";
+  // The extension will be cleaned up automatically.
+  await SearchTestUtils.installSearchExtension({ name: engineName });
+
+  info("Shouldn't restrict form history to search mode engine on searchbar");
+  let context = createContext(SEARCH_STRING, {
+    isPrivate: false,
+    searchMode: { engineName },
+    sapName: "searchbar",
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName,
+        heuristic: true,
+      }),
+      ...makeFormHistoryResults(context, MAX_RESULTS - 1, engineName),
+    ],
+  });
+
+  info("Should restrict form history to search mode engine on urlbar");
+  context = createContext(SEARCH_STRING, {
+    isPrivate: false,
+    searchMode: { engineName },
+    sapName: "urlbar",
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName,
+        heuristic: true,
+      }),
+    ],
+  });
 
   await cleanUpSuggestions();
   await PlacesUtils.history.clear();

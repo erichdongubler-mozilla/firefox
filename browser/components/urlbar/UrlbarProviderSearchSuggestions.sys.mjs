@@ -421,6 +421,11 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
       }
     }
 
+    // Show local results of all engines in search bar.
+    let restrictToEngine =
+      queryContext.sapName != "searchbar" &&
+      this._isTokenOrRestrictionPresent(queryContext);
+
     // See `SearchSuggestionsController.fetch` documentation for a description
     // of `fetchData`.
     let fetchData = await this.#suggestionsController.fetch({
@@ -428,7 +433,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
       inPrivateBrowsing: queryContext.isPrivate,
       engine,
       userContextId: queryContext.userContextId,
-      restrictToEngine: this._isTokenOrRestrictionPresent(queryContext),
+      restrictToEngine,
       dedupeRemoteAndLocal: false,
       fetchTrending: this.#shouldFetchTrending(queryContext),
       maxLocalResults,

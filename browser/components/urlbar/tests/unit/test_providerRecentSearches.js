@@ -140,6 +140,19 @@ add_task(async function test_per_engine() {
     context,
     matches: [],
   });
+  info("We show recent searches of all engines in the searchbar");
+  context = createContext("", {
+    isPrivate: false,
+    sapName: "searchbar",
+  });
+  await check_results({
+    context,
+    matches: [
+      makeRecentSearchResult(context, defaultEngine, "Joy Formidable"),
+      makeRecentSearchResult(context, defaultEngine, "Glasgow Weather"),
+      makeRecentSearchResult(context, defaultEngine, "Bob Vylan"),
+    ],
+  });
   await UrlbarTestUtils.formHistory.clear();
 });
 
