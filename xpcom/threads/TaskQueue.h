@@ -66,7 +66,7 @@ class TaskQueue final : public AbstractThread,
   NS_INLINE_DECL_STATIC_IID(MOZILLA_TASKQUEUE_IID)
 
   static RefPtr<TaskQueue> Create(already_AddRefed<nsIEventTarget> aTarget,
-                                  const char* aName,
+                                  StaticString aName,
                                   bool aSupportsTailDispatch = false);
 
   TaskDispatcher& TailDispatcher() override;

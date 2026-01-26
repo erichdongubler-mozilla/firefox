@@ -1522,10 +1522,6 @@ class ConnectionPool final {
 
   static void IdleTimerCallback(nsITimer* aTimer, void* aClosure);
 
-  static uint32_t SerialNumber() { return ++sSerialNumber; }
-
-  static uint32_t sSerialNumber;
-
   void Cleanup();
 
   void AdjustIdleTimer();
@@ -8226,14 +8222,9 @@ bool ConnectionPool::ScheduleTransaction(TransactionInfo& aTransactionInfo,
   }
 
   if (!dbInfo.mEventTarget) {
-    const uint32_t serialNumber = SerialNumber();
-    const nsCString serialName =
-        nsPrintfCString("IndexedDB #%" PRIu32, serialNumber);
-
-    dbInfo.mEventTarget =
-        TaskQueue::Create(do_AddRef(mIOTarget), serialName.get());
+    dbInfo.mEventTarget = TaskQueue::Create(do_AddRef(mIOTarget), "IndexedDB");
     MOZ_ASSERT(dbInfo.mEventTarget);
-    IDB_DEBUG_LOG(("ConnectionPool created task queue %" PRIu32, serialNumber));
+    IDB_DEBUG_LOG(("ConnectionPool created task queue IndexedDB"));
   }
 
   // The number of active operations equals the number of databases minus idle
@@ -8730,8 +8721,6 @@ nsresult ConnectionPool::FinishCallbackWrapper::Run() {
 
   return NS_OK;
 }
-
-uint32_t ConnectionPool::sSerialNumber = 0u;
 
 #ifdef DEBUG
 

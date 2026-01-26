@@ -55,7 +55,7 @@ class BackgroundEventTarget final : public nsIEventTarget,
 
   nsresult Init();
 
-  already_AddRefed<TaskQueue> CreateBackgroundTaskQueue(const char* aName);
+  already_AddRefed<TaskQueue> CreateBackgroundTaskQueue(StaticString aName);
 
   void BeginShutdown(nsTArray<RefPtr<ShutdownPromise>>&);
   void FinishShutdown();
@@ -213,7 +213,7 @@ void BackgroundEventTarget::FinishShutdown() {
 }
 
 already_AddRefed<TaskQueue> BackgroundEventTarget::CreateBackgroundTaskQueue(
-    const char* aName) {
+    StaticString aName) {
   return TaskQueue::Create(do_AddRef(this), aName).forget();
 }
 
@@ -548,7 +548,7 @@ nsresult nsThreadManager::DispatchToBackgroundThread(
 }
 
 already_AddRefed<TaskQueue> nsThreadManager::CreateBackgroundTaskQueue(
-    const char* aName) {
+    mozilla::StaticString aName) {
   RefPtr<BackgroundEventTarget> backgroundTarget;
   {
     OffTheBooksMutexAutoLock lock(mMutex);
