@@ -223,6 +223,13 @@ const valueTests = [
     id: "password",
     expected: PASSWORD_MASK.repeat(2),
   },
+  {
+    desc: "Password value changes when @value attribute changes",
+    id: "password",
+    attrs: [{ attr: "value", value: "cde" }],
+    waitFor: EVENT_TEXT_VALUE_CHANGE,
+    expected: PASSWORD_MASK.repeat(3),
+  },
 ];
 
 /**
