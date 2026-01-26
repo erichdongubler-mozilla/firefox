@@ -373,6 +373,26 @@
             "value": "{button.background.color.ghost.active}"
           }
         },
+        "menu": {
+          "@base": {
+            "value": "{button.background.color.ghost.@base}"
+          },
+          "active": {
+            "value": {
+              "default": "{button.background.color.ghost.active}",
+              "forcedColors": "{button.background.color.primary.@base}"
+            }
+          },
+          "disabled": {
+            "value": "{button.background.color.ghost.disabled}"
+          },
+          "hover": {
+            "value": {
+              "default": "{button.background.color.ghost.hover}",
+              "forcedColors": "{button.background.color.primary.@base}"
+            }
+          }
+        },
         "selected": {
           "value": "{button.background.color.active}"
         }
@@ -650,6 +670,26 @@
           "value": {
             "default": "{button.text.color.@base}",
             "forcedColors": "SelectedItem"
+          }
+        },
+        "menu": {
+          "@base": {
+            "value": "{button.text.color.ghost.@base}"
+          },
+          "active": {
+            "value": {
+              "default": "{button.text.color.ghost.active}",
+              "forcedColors": "{button.text.color.primary.@base}"
+            }
+          },
+          "disabled": {
+            "value": "{button.text.color.ghost.disabled}"
+          },
+          "hover": {
+            "value": {
+              "default": "{button.text.color.ghost.hover}",
+              "forcedColors": "{button.text.color.primary.@base}"
+            }
           }
         },
         "primary": {
