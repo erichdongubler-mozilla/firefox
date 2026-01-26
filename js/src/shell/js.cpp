@@ -13285,6 +13285,9 @@ bool InitOptionParser(OptionParser& op) {
                         "Debug the RISC-V simulator.") ||
       !op.addBoolOption('\0', "riscv-trap-to-simulator-debugger",
                         "Trap into the RISC-V simulator debuggger.") ||
+      !op.addBoolOption('\0', "riscv-sim-icache-checks",
+                        "Enable icache flush checks in the RISC-V "
+                        "simulator.") ||
       !op.addIntOption('\0', "riscv-sim-stop-at", "NUMBER",
                        "Stop the RISC-V simulator after the given "
                        "NUMBER of instructions.",
@@ -14357,6 +14360,9 @@ bool SetContextJITOptions(JSContext* cx, const OptionParser& op) {
   }
   if (op.getBoolOption("riscv-sim-debug")) {
     jit::Simulator::FLAG_debug_sim = true;
+  }
+  if (op.getBoolOption("riscv-sim-icache-checks")) {
+    jit::SimulatorProcess::ICacheCheckingDisableCount = 0;
   }
   if (op.getBoolOption("riscv-trap-to-simulator-debugger")) {
     jit::Simulator::FLAG_riscv_trap_to_simulator_debugger = true;

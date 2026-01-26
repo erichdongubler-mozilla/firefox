@@ -375,7 +375,7 @@ class SimInstructionBase : public InstructionBase {
 
 class SimInstruction : public InstructionGetters<SimInstructionBase> {
  public:
-  SimInstruction() {}
+  SimInstruction() = default;
 
   explicit SimInstruction(Instruction* instr) { *this = instr; }
 
@@ -1044,7 +1044,7 @@ class Simulator {
   }
 
   // Executes one instruction.
-  void InstructionDecode(Instruction* instr);
+  void InstructionDecode(const SimInstruction& instr);
 
   // ICache.
   // static void CheckICache(base::CustomMatcherHashMap* i_cache,
@@ -1253,7 +1253,7 @@ class SimulatorProcess {
       ICacheCheckingDisableCount;
   static void FlushICache(void* start, size_t size);
 
-  static void checkICacheLocked(SimInstruction* instr);
+  static void checkICacheLocked(const SimInstruction& instr);
 
   static bool initialize() {
     singleton_ = js_new<SimulatorProcess>();
