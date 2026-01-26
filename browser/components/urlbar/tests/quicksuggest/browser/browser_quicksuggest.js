@@ -79,6 +79,7 @@ add_task(async function sponsored() {
     window,
     index: 1,
     isSponsored: true,
+    isManageable: true,
     url: "https://example.com/amp",
   });
   let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
@@ -125,6 +126,7 @@ add_task(async function sponsoredPriority() {
     index: 1,
     isSponsored: true,
     isBestMatch: true,
+    isManageable: true,
     url: "https://example.com/amp",
   });
 
@@ -199,6 +201,7 @@ add_task(async function ampTopPickCharThreshold_meetsThreshold() {
     index: 1,
     isSponsored: true,
     isBestMatch: true,
+    isManageable: true,
     hasSponsoredLabel: false,
     url: "https://example.com/amp",
   });
@@ -237,6 +240,7 @@ add_task(async function ampTopPickCharThreshold_belowThreshold() {
     window,
     index: 1,
     isSponsored: true,
+    isManageable: true,
     url: "https://example.com/amp",
   });
 
@@ -316,27 +320,4 @@ add_task(async function resultMenu_manage_dynamicWikipedia() {
   });
 
   await SpecialPowers.popPrefEnv();
-});
-
-// Tests the "Learn more" result menu.
-add_task(async function resultMenu_learn_more_sponsored() {
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "fra",
-  });
-
-  info("Selecting Learn more item from the result menu");
-  let tabOpenPromise = BrowserTestUtils.waitForNewTab(
-    gBrowser,
-    Services.urlFormatter.formatURLPref("app.support.baseURL") +
-      "awesome-bar-result-menu"
-  );
-  await UrlbarTestUtils.openResultMenuAndClickItem(window, "help", {
-    resultIndex: 1,
-  });
-  info("Waiting for Learn more link to open in a new tab");
-  await tabOpenPromise;
-  gBrowser.removeCurrentTab();
-
-  await UrlbarTestUtils.promisePopupClose(window);
 });
