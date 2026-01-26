@@ -93,6 +93,9 @@ class nsMathMLFrame : public nsIMathMLFrame {
 
   bool IsMrowLike() override { return false; }
 
+  // TODO: Implement italic correction for mrow-like and mtext-like elements.
+  nscoord ItalicCorrection() override { return 0; }
+
   // helper to get the mEmbellishData of a frame
   // The MathML REC precisely defines an "embellished operator" as:
   // - an <mo> element;

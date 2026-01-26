@@ -148,6 +148,8 @@ class nsMathMLChar {
 
   void SetComputedStyle(mozilla::ComputedStyle* aComputedStyle);
 
+  nscoord ItalicCorrection() const { return mItalicCorrection; }
+
  protected:
   friend class nsGlyphTable;
   friend class nsPropertiesTable;
@@ -190,6 +192,8 @@ class nsMathMLChar {
     ScaleFallback,
   };
   MirroringMethod mMirroringMethod;
+
+  nscoord mItalicCorrection = 0;
 
   class StretchEnumContext;
   friend class StretchEnumContext;

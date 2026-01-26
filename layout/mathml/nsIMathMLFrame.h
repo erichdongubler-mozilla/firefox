@@ -76,6 +76,10 @@ enum class MathMLEmbellishFlag : uint8_t {
   // operator for which the core <mo> has accent="true"
   Accent,
 
+  // This bit is set if the frame is an <mo> frame or an embellihsed
+  // operator for which the core <mo> has largeop="true"
+  LargeOp,
+
   // This bit is set if the frame is an <mover> or <munderover> with
   // an accent frame
   AccentOver,
@@ -269,6 +273,10 @@ class nsIMathMLFrame {
   // child.  In the latter case, the child is to be treated as if it wasn't
   // within an mrow, so we pretend the mrow isn't mrow-like.
   virtual bool IsMrowLike() = 0;
+
+  // Return the italic correction of this frame.
+  // https://w3c.github.io/mathml-core/#dfn-italic-correction
+  virtual nscoord ItalicCorrection() = 0;
 };
 
 // struct used by a container frame to keep track of its embellishments.

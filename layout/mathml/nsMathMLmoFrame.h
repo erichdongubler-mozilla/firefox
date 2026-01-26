@@ -68,6 +68,8 @@ class nsMathMLmoFrame final : public nsMathMLTokenFrame {
     return nsMathMLContainerFrame::ChildListChanged();
   }
 
+  nscoord ItalicCorrection() final;
+
  protected:
   explicit nsMathMLmoFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
       : nsMathMLTokenFrame(aStyle, aPresContext, kClassID),

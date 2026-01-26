@@ -148,6 +148,7 @@ void nsMathMLmoFrame::ProcessTextData() {
 
   mFlags |= allFlags & NS_MATHML_OPERATOR_ACCENT;
   mFlags |= allFlags & NS_MATHML_OPERATOR_MOVABLELIMITS;
+  mFlags |= allFlags & NS_MATHML_OPERATOR_LARGEOP;
 
   // cache the operator
   mMathMLChar.SetData(data);
@@ -188,7 +189,7 @@ void nsMathMLmoFrame::ProcessOperatorData() {
   // Also remember the other special bits that we want to carry forward.
   mFlags &= NS_MATHML_OPERATOR_MUTABLE | NS_MATHML_OPERATOR_ACCENT |
             NS_MATHML_OPERATOR_MOVABLELIMITS | NS_MATHML_OPERATOR_INVISIBLE |
-            NS_MATHML_OPERATOR_FORCE_MATHML_CHAR;
+            NS_MATHML_OPERATOR_FORCE_MATHML_CHAR | NS_MATHML_OPERATOR_LARGEOP;
 
   if (!mEmbellishData.coreFrame) {
     // i.e., we haven't been here before, the default form is infix
@@ -227,6 +228,9 @@ void nsMathMLmoFrame::ProcessOperatorData() {
     }
     if (NS_MATHML_OPERATOR_IS_MOVABLELIMITS(mFlags)) {
       mEmbellishData.flags += MathMLEmbellishFlag::MovableLimits;
+    }
+    if (NS_MATHML_OPERATOR_IS_LARGEOP(mFlags)) {
+      mEmbellishData.flags += MathMLEmbellishFlag::LargeOp;
     }
 
     // see if the accent attribute is there
@@ -483,8 +487,10 @@ void nsMathMLmoFrame::ProcessOperatorData() {
   mContent->AsElement()->GetAttr(nsGkAtoms::largeop, value);
   if (value.LowerCaseEqualsLiteral("false")) {
     mFlags &= ~NS_MATHML_OPERATOR_LARGEOP;
+    mEmbellishData.flags -= MathMLEmbellishFlag::LargeOp;
   } else if (value.LowerCaseEqualsLiteral("true")) {
     mFlags |= NS_MATHML_OPERATOR_LARGEOP;
+    mEmbellishData.flags += MathMLEmbellishFlag::LargeOp;
   }
   if (NS_MATHML_OPERATOR_IS_SEPARATOR(mFlags)) {
     mContent->AsElement()->GetAttr(nsGkAtoms::separator, value);
@@ -1085,4 +1091,8 @@ nsresult nsMathMLmoFrame::AttributeChanged(int32_t aNameSpaceID,
 void nsMathMLmoFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
   nsMathMLTokenFrame::DidSetComputedStyle(aOldStyle);
   mMathMLChar.SetComputedStyle(Style());
+}
+
+nscoord nsMathMLmoFrame::ItalicCorrection() {
+  return UseMathMLChar() ? mMathMLChar.ItalicCorrection() : 0;
 }

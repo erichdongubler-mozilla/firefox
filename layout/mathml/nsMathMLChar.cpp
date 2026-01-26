@@ -819,26 +819,6 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
     RefPtr<gfxTextRun> textRun =
         aGlyphTable->MakeTextRun(mDrawTarget, oneDevPixel, *aFontGroup, ch);
     nsBoundingMetrics bm = MeasureTextRun(mDrawTarget, textRun.get());
-    if (ch.isGlyphID) {
-      RefPtr<gfxFont> mathFont = aFontGroup->get()->GetFirstMathFont();
-      if (mathFont) {
-        // MeasureTextRun should have set the advance width to the right
-        // bearing for OpenType MATH fonts. We now subtract the italic
-        // correction, so that nsMathMLmmultiscripts will place the scripts
-        // correctly.
-        // Note that STIX-Word does not provide italic corrections but its
-        // advance widths do not match right bearings.
-        // (http://sourceforge.net/p/stixfonts/tracking/50/)
-        gfxFloat italicCorrection =
-            mathFont->MathTable()->ItalicsCorrection(ch.glyphID);
-        if (italicCorrection) {
-          bm.width -= NSToCoordRound(italicCorrection * oneDevPixel);
-          if (bm.width < 0) {
-            bm.width = 0;
-          }
-        }
-      }
-    }
 
     nscoord charSize =
         isVertical ? bm.ascent + bm.descent : bm.rightBearing - bm.leftBearing;
@@ -866,6 +846,16 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
         bestSize = charSize;
         mChar->mGlyphs[0] = std::move(textRun);
         mChar->mDrawingMethod = DrawingMethod::Variant;
+
+        mChar->mItalicCorrection = 0;
+        if (ch.isGlyphID) {
+          if (RefPtr<gfxFont> mathFont =
+                  aFontGroup->get()->GetFirstMathFont()) {
+            mChar->mItalicCorrection = NSToCoordRound(
+                mathFont->MathTable()->ItalicsCorrection(ch.glyphID) *
+                oneDevPixel);
+          }
+        }
       }
 #ifdef NOISY_SEARCH
       printf("    size:%d Current best\n", size);
@@ -1054,6 +1044,9 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
     mBoundingMetrics.leftBearing = 0;
     mBoundingMetrics.rightBearing = computedSize;
   }
+  // TODO(bug 2009367): mChar->mItalicCorrection should be set to the italic
+  // correction of the glyph assembly.
+
   mGlyphFound = true;
   if (maxWidth) {
     return false;  // Continue to check other sizes
