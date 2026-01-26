@@ -150,6 +150,7 @@ let JSWINDOWACTORS = {
     },
 
     matches: ["about:privatebrowsing*"],
+    remoteTypes: ["privilegedabout"],
   },
 
   AboutProtections: {
@@ -165,6 +166,7 @@ let JSWINDOWACTORS = {
     },
 
     matches: ["about:protections", "about:protections?*"],
+    remoteTypes: ["privilegedabout"],
   },
 
   AboutReader: {
