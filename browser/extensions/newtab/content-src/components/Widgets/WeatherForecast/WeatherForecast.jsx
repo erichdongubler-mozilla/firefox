@@ -170,7 +170,7 @@ function WeatherForecast({ dispatch }) {
               />
             )}
             <panel-item
-              data-l10n-id="newtab-weather-menu-hide-weather"
+              data-l10n-id="newtab-weather-menu-hide-weather-v2"
               onClick={handleHideWeather}
             />
             <panel-item

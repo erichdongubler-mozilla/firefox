@@ -2155,7 +2155,7 @@ const LinkMenuOptions = {
     }),
   }),
   HideWeather: () => ({
-    id: "newtab-weather-menu-hide-weather",
+    id: "newtab-weather-menu-hide-weather-v2",
     action: actionCreators.OnlyToMain({
       type: actionTypes.SET_PREF,
       data: {
@@ -13207,7 +13207,7 @@ function WeatherForecast({
     "data-l10n-id": "newtab-weather-menu-change-weather-display-simple",
     onClick: () => handleChangeDisplay("simple")
   }), /*#__PURE__*/React.createElement("panel-item", {
-    "data-l10n-id": "newtab-weather-menu-hide-weather",
+    "data-l10n-id": "newtab-weather-menu-hide-weather-v2",
     onClick: handleHideWeather
   }), /*#__PURE__*/React.createElement("panel-item", {
     "data-l10n-id": "newtab-weather-menu-learn-more",
