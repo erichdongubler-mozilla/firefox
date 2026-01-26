@@ -33,6 +33,8 @@ add_task(async function () {
   gReduceMotionOverride = false;
 
   await ensureNoPreloadedBrowser();
+  await disableFxaBadge();
+  await ensureSearchIconVisible();
 
   // The test starts on about:blank and opens an about:blank
   // tab which triggers opening the toolbar since
@@ -46,7 +48,6 @@ add_task(async function () {
   await createTabs(TAB_COUNT_FOR_OVERFLOW);
 
   gURLBar.focus();
-  await disableFxaBadge();
 
   let tabStripRect =
     gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
