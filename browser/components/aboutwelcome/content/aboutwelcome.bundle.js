@@ -3159,6 +3159,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+async function evaluateTargeting(targeting) {
+  return await window.AWEvaluateAttributeTargeting(targeting);
+}
 const MULTI_SELECT_STYLES = [..._MSLocalized__WEBPACK_IMPORTED_MODULE_1__.CONFIGURABLE_STYLES, "flexDirection", "flexWrap", "flexFlow", "flexGrow", "flexShrink", "justifyContent", "alignItems", "gap"];
 const TILE_STYLES = ["marginBlock", "marginInline", "paddingBlock", "paddingInline"];
 
@@ -3183,6 +3186,7 @@ const MultiSelect = ({
   } = content.tiles;
   const isPicker = multiSelectItemDesign === "picker";
   const refs = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)({});
+  const [filteredData, setFilteredData] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(data);
   const handleChange = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
     const newActiveMultiSelect = [];
     Object.keys(refs.current).forEach(key => {
@@ -3192,12 +3196,22 @@ const MultiSelect = ({
     });
     setActiveMultiSelect(newActiveMultiSelect, multiSelectId);
   }, [setActiveMultiSelect, multiSelectId]);
+
+  // Filter items on mount: items without targeting are always shown, items with
+  // targeting are shown only if evaluation passes. Runs once to avoid re-evaluation.
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    (async () => {
+      const evaluatedItems = await Promise.all(data.map(async item => !item.targeting || (await evaluateTargeting(item.targeting)) ? item : null));
+      setFilteredData(evaluatedItems.filter(item => item !== null));
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const items = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(() => {
     function getOrderedIds() {
       if (screenMultiSelects) {
         return screenMultiSelects;
       }
-      let orderedIds = data.map(item => ({
+      let orderedIds = filteredData.map(item => ({
         id: item.id,
         rank: item.randomize ? Math.random() : NaN
       })).sort((a, b) => b.rank - a.rank).map(({
@@ -3206,8 +3220,8 @@ const MultiSelect = ({
       setScreenMultiSelects(orderedIds, multiSelectId);
       return orderedIds;
     }
-    return getOrderedIds().map(id => data.find(item => item.id === id));
-  }, [] // eslint-disable-line react-hooks/exhaustive-deps
+    return getOrderedIds().map(id => filteredData.find(item => item.id === id)).filter(item => item !== undefined);
+  }, [filteredData] // eslint-disable-line react-hooks/exhaustive-deps
   );
   const containerStyle = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(() => _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.getTileStyle(content.tiles, MULTI_SELECT_STYLES), [content.tiles]);
   const PickerIcon = ({
@@ -3269,6 +3283,9 @@ const MultiSelect = ({
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (!items.length || items.every(item => !item)) {
+    return null;
+  }
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: `multi-select-container ${multiSelectItemDesign || ""}`,
     style: containerStyle,

@@ -2,9 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import React, { useEffect, useCallback, useMemo, useRef } from "react";
+import React, {
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Localized, CONFIGURABLE_STYLES } from "./MSLocalized";
 import { AboutWelcomeUtils } from "../lib/aboutwelcome-utils.mjs";
+
+async function evaluateTargeting(targeting) {
+  return await window.AWEvaluateAttributeTargeting(targeting);
+}
 
 const MULTI_SELECT_STYLES = [
   ...CONFIGURABLE_STYLES,
@@ -66,6 +76,7 @@ export const MultiSelect = ({
 
   const isPicker = multiSelectItemDesign === "picker";
   const refs = useRef({});
+  const [filteredData, setFilteredData] = useState(data);
 
   const handleChange = useCallback(() => {
     const newActiveMultiSelect = [];
@@ -77,13 +88,28 @@ export const MultiSelect = ({
     setActiveMultiSelect(newActiveMultiSelect, multiSelectId);
   }, [setActiveMultiSelect, multiSelectId]);
 
+  // Filter items on mount: items without targeting are always shown, items with
+  // targeting are shown only if evaluation passes. Runs once to avoid re-evaluation.
+  useEffect(() => {
+    (async () => {
+      const evaluatedItems = await Promise.all(
+        data.map(async item =>
+          !item.targeting || (await evaluateTargeting(item.targeting))
+            ? item
+            : null
+        )
+      );
+      setFilteredData(evaluatedItems.filter(item => item !== null));
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const items = useMemo(
     () => {
       function getOrderedIds() {
         if (screenMultiSelects) {
           return screenMultiSelects;
         }
-        let orderedIds = data
+        let orderedIds = filteredData
           .map(item => ({
             id: item.id,
             rank: item.randomize ? Math.random() : NaN,
@@ -93,9 +119,11 @@ export const MultiSelect = ({
         setScreenMultiSelects(orderedIds, multiSelectId);
         return orderedIds;
       }
-      return getOrderedIds().map(id => data.find(item => item.id === id));
+      return getOrderedIds()
+        .map(id => filteredData.find(item => item.id === id))
+        .filter(item => item !== undefined);
     },
-    [] // eslint-disable-line react-hooks/exhaustive-deps
+    [filteredData] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const containerStyle = useMemo(
@@ -158,6 +186,10 @@ export const MultiSelect = ({
       setActiveMultiSelect(newActiveMultiSelect, multiSelectId);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!items.length || items.every(item => !item)) {
+    return null;
+  }
 
   return (
     <div
