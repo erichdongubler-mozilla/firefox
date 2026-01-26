@@ -114,7 +114,6 @@ async function doOneBasicBlockTest({ result, block }) {
     await QuickSuggestTestUtils.assertIsQuickSuggest({
       window,
       isSponsored,
-      isManageable: isSponsored || undefined,
       url: isSponsored ? undefined : result.url,
       originalUrl: isSponsored ? result.url : undefined,
     });
@@ -164,7 +163,6 @@ add_task(async function blockMultiple() {
       await QuickSuggestTestUtils.assertIsQuickSuggest({
         window,
         isSponsored,
-        isManageable: isSponsored || undefined,
         url: isSponsored ? undefined : url,
         originalUrl: isSponsored ? url : undefined,
       });
