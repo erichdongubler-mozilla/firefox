@@ -32,8 +32,8 @@ import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.compose.list.RadioButtonListItem
+import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
@@ -144,10 +144,11 @@ private fun DebugRegionsToEnableSection(
 
     Column {
         debugRegionStates.forEach { debugLocaleState ->
-            SwitchWithLabel(
+            SwitchListItem(
                 label = debugLocaleState.region.name,
                 checked = debugLocaleState.enabled,
-                onCheckedChange = { onRegionToggled(debugLocaleState.region, it) },
+                showSwitchAfter = true,
+                onClick = { onRegionToggled(debugLocaleState.region, it) },
             )
         }
     }

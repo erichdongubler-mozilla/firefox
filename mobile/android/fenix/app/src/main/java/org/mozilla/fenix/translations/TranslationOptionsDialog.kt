@@ -33,7 +33,7 @@ import mozilla.components.concept.engine.translate.TranslationError
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.InfoCard
 import org.mozilla.fenix.compose.InfoType
-import org.mozilla.fenix.compose.SwitchWithLabel
+import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
@@ -131,7 +131,7 @@ private fun TranslationPageSettingsErrorWarning() {
 private fun TranslationOptions(
     translationSwitchItem: TranslationSwitchItem,
 ) {
-    SwitchWithLabel(
+    SwitchListItem(
         label = translationSwitchItem.textLabel,
         checked = translationSwitchItem.isChecked,
         modifier = Modifier.padding(start = 72.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
@@ -144,7 +144,10 @@ private fun TranslationOptions(
         } else {
             null
         },
+        maxDescriptionLines = Int.MAX_VALUE,
+        maxLabelLines = Int.MAX_VALUE,
         enabled = translationSwitchItem.isEnabled,
+        showSwitchAfter = true,
     ) { checked ->
         translationSwitchItem.onStateChange.invoke(
             translationSwitchItem.type,

@@ -32,7 +32,7 @@ import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.SwitchWithLabel
+import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsAction
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsState
@@ -115,10 +115,11 @@ private fun GleanDebugLoggingSection(
 ) {
     GleanDebugSectionTitle(text = stringResource(R.string.glean_debug_tools_logging_title))
 
-    SwitchWithLabel(
+    SwitchListItem(
         label = stringResource(R.string.glean_debug_tools_log_pings_to_console),
         checked = logPingsToConsoleEnabled,
         modifier = Modifier.padding(horizontal = FirefoxTheme.layout.space.dynamic400),
+        showSwitchAfter = true,
     ) {
         onLogPingsToConsoleToggled()
     }
