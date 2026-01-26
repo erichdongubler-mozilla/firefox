@@ -112,10 +112,12 @@ var gBrowserInit = {
     if (window.arguments?.[1] instanceof Ci.nsIPropertyBag2) {
       let extraOptions = window.arguments[1];
       if (extraOptions.hasKey("taskbartab")) {
+        let taskbarTabId = extraOptions.getPropertyAsAString("taskbartab");
         window.document.documentElement.setAttribute(
           "taskbartab",
-          extraOptions.getPropertyAsAString("taskbartab")
+          taskbarTabId
         );
+        window.document.documentElement.id = "taskbartab-" + taskbarTabId;
       }
 
       if (extraOptions.hasKey("ai-window")) {
