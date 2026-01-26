@@ -11697,40 +11697,6 @@ namespace nsISearchService {
 }
 
 interface nsISearchService extends nsISupports, Enums<typeof nsISearchService_OpenSearchInstallErrors & typeof nsISearchService_DefaultEngineChangeReason> {
-  init(): Promise<any>;
-  readonly promiseInitialized: Promise<any>;
-  readonly isInitialized: boolean;
-  readonly hasSuccessfullyInitialized: boolean;
-  runBackgroundChecks(): Promise<any>;
-  resetToAppDefaultEngine(): void;
-  addOpenSearchEngine(engineURL: string, iconURL: string, originAttributes?: any): Promise<any>;
-  addUserEngine(formInfo: any): Promise<any>;
-  addEnginesFromExtension(extension: any): Promise<any>;
-  restoreDefaultEngines(): void;
-  getEngineByAlias(alias: string): Promise<any>;
-  getEngineByName(aEngineName: string): nsISearchEngine;
-  getEngineById(aEngineId: string): nsISearchEngine;
-  getEngines(): Promise<any>;
-  getVisibleEngines(): Promise<any>;
-  getAppProvidedEngines(): Promise<any>;
-  findContextualSearchEngineByHost(host: string): Promise<any>;
-  shouldShowInstallPrompt(engine: any): Promise<any>;
-  addSearchEngine(engine: any): Promise<any>;
-  moveEngine(engine: nsISearchEngine, newIndex: i32): Promise<any>;
-  removeEngine(engine: nsISearchEngine, changeReason?: u16): Promise<any>;
-  removeWebExtensionEngine(id: string): Promise<any>;
-  readonly appDefaultEngine: nsISearchEngine;
-  readonly appPrivateDefaultEngine: nsISearchEngine;
-  readonly defaultEngine: nsISearchEngine;
-  getDefault(): Promise<any>;
-  setDefault(engine: nsISearchEngine, changeReason: u16): Promise<any>;
-  readonly defaultPrivateEngine: nsISearchEngine;
-  getDefaultPrivate(): Promise<any>;
-  setDefaultPrivate(engine: nsISearchEngine, changeReason: u16): Promise<any>;
-  readonly separatePrivateDefaultUrlbarResultEnabled: boolean;
-  maybeSetAndOverrideDefault(extension: any): Promise<any>;
-  getDefaultEngineInfo(): any;
-  parseSubmissionURL(url: string): nsISearchParseSubmissionResult;
 }
 
 // https://searchfox.org/mozilla-central/source/toolkit/components/shell/nsIToolkitShellService.idl

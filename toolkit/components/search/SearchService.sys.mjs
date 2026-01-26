@@ -205,8 +205,6 @@ export const SearchService = new (class SearchService {
     this._settings = new lazy.SearchSettings(this);
   }
 
-  classID = Components.ID("{7319788a-fe93-4db3-9f39-818cf08f4256}");
-
   /**
    * Temporary property to maintain compatibility whilst migration away from
    * a service is in work.
@@ -3871,11 +3869,7 @@ export const SearchService = new (class SearchService {
     this.#earlyObserversAdded = false;
   }
 
-  QueryInterface = ChromeUtils.generateQI([
-    "nsISearchService",
-    "nsIObserver",
-    "nsITimerCallback",
-  ]);
+  QueryInterface = ChromeUtils.generateQI(["nsIObserver", "nsITimerCallback"]);
 
   // nsIObserver
   observe(subject, topic, verb) {

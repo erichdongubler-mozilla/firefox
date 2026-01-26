@@ -138,43 +138,70 @@ export var SearchUtils = {
   /**
    * This is the Remote Settings key that we use to get the ignore lists for
    * engines.
+   *
+   * @readonly
    */
   SETTINGS_IGNORELIST_KEY: "hijack-blocklists",
 
   /**
    * This is the Remote Settings key that we use to get the allow lists for
    * overriding the default engines.
+   *
+   * @readonly
    */
   SETTINGS_ALLOWLIST_KEY: "search-default-override-allowlist",
 
   /**
    * This is the Remote Settings key that we use to get the search engine
    * configurations.
+   *
+   * @readonly
    */
   SETTINGS_KEY: "search-config-v2",
 
   /**
    * This is the Remote Settings key that we use to get the search engine
    * configuration overrides.
+   *
+   * @readonly
    */
   SETTINGS_OVERRIDES_KEY: "search-config-overrides-v2",
 
   /**
-   * Topic used for events involving the service itself.
+   * Topic used for observer events involving the service itself.
+   *
+   * @readonly
    */
   TOPIC_SEARCH_SERVICE: "browser-search-service",
 
-  // See documentation in nsISearchService.idl.
+  /**
+   * Topic used for observer events involving search engines.
+   *
+   * @readonly
+   */
   TOPIC_ENGINE_MODIFIED: "browser-search-engine-modified",
-  MODIFIED_TYPE: {
+
+  /**
+   * The data sent with ``TOPIC_ENGINE_MODIFIED`` to identify the type of
+   * change to the search engine.
+   *
+   * @readonly
+   */
+  MODIFIED_TYPE: Object.freeze({
     CHANGED: "engine-changed",
     ICON_CHANGED: "engine-icon-changed",
     REMOVED: "engine-removed",
     ADDED: "engine-added",
     DEFAULT: "engine-default",
     DEFAULT_PRIVATE: "engine-default-private",
-  },
+  }),
 
+  /**
+   * The possible URL types that are used in the search service. Not all of
+   * these are available on ``getSubmission``.
+   *
+   * @readonly
+   */
   URL_TYPE: Object.freeze({
     SUGGEST_JSON: "application/x-suggestions+json",
     SEARCH: "text/html",
@@ -184,14 +211,23 @@ export var SearchUtils = {
     VISUAL_SEARCH: "application/x-visual-search+html",
   }),
 
-  // The following constants are left undocumented in nsISearchService.idl
-  // For the moment, they are meant for testing/debugging purposes only.
-
-  // Set an arbitrary cap on the maximum icon size. Without this, large icons can
-  // cause big delays when loading them at startup.
+  /**
+   * An arbitrary cap on the maximum icon size. Without this, large icons can
+   * cause big delays when loading them at startup. The unit is the number of
+   * bytes.
+   *
+   * @readonly
+   */
   MAX_ICON_SIZE: 20000,
 
-  DEFAULT_QUERY_CHARSET: "UTF-8",
+  /**
+   * The default character set for search queries.
+   *
+   * @readonly
+   */
+  get DEFAULT_QUERY_CHARSET() {
+    return "UTF-8";
+  },
 
   LoadListener,
 
@@ -203,8 +239,6 @@ export var SearchUtils = {
    *   The engine to which the change applies.
    * @param {string} verb
    *   A verb describing the change.
-   *
-   * @see nsISearchService.idl
    */
   notifyAction(engine, verb) {
     if (lazy.SearchService.isInitialized) {
