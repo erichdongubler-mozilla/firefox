@@ -92,6 +92,14 @@ def derive_misc_task(
             "source": target_task.task["metadata"]["source"],
         },
         "scopes": [],
+        "tags": {
+            "createdForUser": parameters["owner"],
+            "kind": "misc",
+            "label": label,
+            "project": parameters["project"],
+            "trust-domain": graph_config["trust-domain"],
+            "worker-implementation": "docker-worker",
+        },
         "payload": {
             "image": {
                 "path": "public/image.tar.zst",
