@@ -456,7 +456,7 @@ nsresult SerializeWebAuthnCreationOptions(
     return NS_ERROR_FAILURE;
   }
 
-  aOut = jsonString;
+  aOut = std::move(jsonString);
   return NS_OK;
 }
 
@@ -595,7 +595,7 @@ nsresult SerializeWebAuthnRequestOptions(
     return NS_ERROR_FAILURE;
   }
 
-  aOut = jsonString;
+  aOut = std::move(jsonString);
   return NS_OK;
 }
 
