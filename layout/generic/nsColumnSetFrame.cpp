@@ -275,8 +275,7 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
   const nsStyleColumn* colStyle = StyleColumn();
   const nscoord availContentISize = aReflowInput.AvailableISize();
   nscoord colBSize = aReflowInput.AvailableBSize();
-  nscoord colGap =
-      ColumnUtils::GetColumnGap(this, aReflowInput.ComputedISize());
+  const nscoord colGap = ColumnUtils::GetColumnGap(this, availContentISize);
   int32_t numColumns =
       colStyle->mColumnCount.IsAuto()
           ? 0
