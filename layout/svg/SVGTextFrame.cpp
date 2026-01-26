@@ -3323,8 +3323,7 @@ nsIFrame* SVGTextFrame::GetFrameForPoint(const gfxPoint& aPoint) {
   TextRenderedRunIterator it(this);
   nsIFrame* hit = nullptr;
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
-    uint16_t hitTestFlags = SVGUtils::GetGeometryHitTestFlags(run.mFrame);
-    if (!hitTestFlags) {
+    if (SVGUtils::GetGeometryHitTestFlags(run.mFrame).isEmpty()) {
       continue;
     }
 
@@ -3382,11 +3381,12 @@ void SVGTextFrame::ReflowSVG() {
     // fill/ stroke don't actually render (e.g. when stroke="none" or
     // stroke-opacity="0"). GetGeometryHitTestFlags accounts for
     // 'pointer-events'. The text-shadow is not part of the hit-test area.
-    uint16_t hitTestFlags = SVGUtils::GetGeometryHitTestFlags(run.mFrame);
-    if (hitTestFlags & SVG_HIT_TEST_FILL) {
+    SVGHitTestFlags hitTestFlags =
+        SVGUtils::GetGeometryHitTestFlags(run.mFrame);
+    if (hitTestFlags.contains(SVGHitTestFlag::Fill)) {
       runFlags += TextRenderedRun::GeometryFlag::IncludeFill;
     }
-    if (hitTestFlags & SVG_HIT_TEST_STROKE) {
+    if (hitTestFlags.contains(SVGHitTestFlag::Stroke)) {
       runFlags += TextRenderedRun::GeometryFlag::IncludeStroke;
     }
 

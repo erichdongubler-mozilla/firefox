@@ -1401,8 +1401,8 @@ void SVGUtils::SetupStrokeGeometry(nsIFrame* aFrame, gfxContext* aContext,
                     strokeOptions.mDashOffset, devPxPerCSSPx);
 }
 
-uint16_t SVGUtils::GetGeometryHitTestFlags(const nsIFrame* aFrame) {
-  uint16_t flags = 0;
+SVGHitTestFlags SVGUtils::GetGeometryHitTestFlags(const nsIFrame* aFrame) {
+  SVGHitTestFlags flags;
 
   switch (aFrame->Style()->PointerEvents()) {
     case StylePointerEvents::None:
@@ -1411,44 +1411,44 @@ uint16_t SVGUtils::GetGeometryHitTestFlags(const nsIFrame* aFrame) {
     case StylePointerEvents::Visiblepainted:
       if (aFrame->StyleVisibility()->IsVisible()) {
         if (!aFrame->StyleSVG()->mFill.kind.IsNone()) {
-          flags = SVG_HIT_TEST_FILL;
+          flags = SVGHitTestFlag::Fill;
         }
         if (!aFrame->StyleSVG()->mStroke.kind.IsNone()) {
-          flags |= SVG_HIT_TEST_STROKE;
+          flags += SVGHitTestFlag::Stroke;
         }
       }
       break;
     case StylePointerEvents::Visiblefill:
       if (aFrame->StyleVisibility()->IsVisible()) {
-        flags = SVG_HIT_TEST_FILL;
+        flags = SVGHitTestFlag::Fill;
       }
       break;
     case StylePointerEvents::Visiblestroke:
       if (aFrame->StyleVisibility()->IsVisible()) {
-        flags = SVG_HIT_TEST_STROKE;
+        flags = SVGHitTestFlag::Stroke;
       }
       break;
     case StylePointerEvents::Visible:
       if (aFrame->StyleVisibility()->IsVisible()) {
-        flags = SVG_HIT_TEST_FILL | SVG_HIT_TEST_STROKE;
+        flags = {SVGHitTestFlag::Fill, SVGHitTestFlag::Stroke};
       }
       break;
     case StylePointerEvents::Painted:
       if (!aFrame->StyleSVG()->mFill.kind.IsNone()) {
-        flags = SVG_HIT_TEST_FILL;
+        flags = SVGHitTestFlag::Fill;
       }
       if (!aFrame->StyleSVG()->mStroke.kind.IsNone()) {
-        flags |= SVG_HIT_TEST_STROKE;
+        flags += SVGHitTestFlag::Stroke;
       }
       break;
     case StylePointerEvents::Fill:
-      flags = SVG_HIT_TEST_FILL;
+      flags = SVGHitTestFlag::Fill;
       break;
     case StylePointerEvents::Stroke:
-      flags = SVG_HIT_TEST_STROKE;
+      flags = SVGHitTestFlag::Stroke;
       break;
     case StylePointerEvents::All:
-      flags = SVG_HIT_TEST_FILL | SVG_HIT_TEST_STROKE;
+      flags = {SVGHitTestFlag::Fill, SVGHitTestFlag::Stroke};
       break;
     default:
       NS_ERROR("not reached");

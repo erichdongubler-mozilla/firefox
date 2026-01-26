@@ -18,6 +18,7 @@
 #include "gfxMatrix.h"
 #include "gfxPoint.h"
 #include "gfxRect.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/ISVGDisplayableFrame.h"
 #include "mozilla/gfx/Rect.h"
 #include "nsCOMPtr.h"
@@ -58,12 +59,12 @@ class GeneralPattern;
 }  // namespace gfx
 }  // namespace mozilla
 
-#define SVG_HIT_TEST_FILL 0x01
-#define SVG_HIT_TEST_STROKE 0x02
-
 bool NS_SVGNewGetBBoxEnabled();
 
 namespace mozilla {
+
+enum class SVGHitTestFlag { Fill, Stroke };
+using SVGHitTestFlags = EnumSet<SVGHitTestFlag>;
 
 /**
  * Sometimes we need to distinguish between an empty box and a box
@@ -499,7 +500,7 @@ class SVGUtils final {
    * into account the type of element and the value of the 'pointer-events'
    * property on the element.
    */
-  static uint16_t GetGeometryHitTestFlags(const nsIFrame* aFrame);
+  static SVGHitTestFlags GetGeometryHitTestFlags(const nsIFrame* aFrame);
 
   static FillRule ToFillRule(StyleFillRule aFillRule) {
     return aFillRule == StyleFillRule::Evenodd ? FillRule::FILL_EVEN_ODD
