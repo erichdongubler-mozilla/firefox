@@ -2386,6 +2386,14 @@ class Settings(
     )
 
     /**
+     * Indicates if Browser Mode Toggle is enabled.
+     */
+    var enableBrowserModeToggle by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_browser_mode_toggle),
+        default = { FxNimbus.features.browserModeToggle.value().enabled },
+    )
+
+    /**
      * Indicates if the Unified Trust Panel is enabled.
      */
     var enableUnifiedTrustPanel by booleanPreference(

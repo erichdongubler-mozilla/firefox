@@ -229,6 +229,11 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_browser_mode_toggle).apply {
+            isChecked = context.settings().enableBrowserModeToggle
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
         requirePreference<SwitchPreference>(R.string.pref_key_enable_mozilla_ads_client).apply {
             isChecked = context.settings().enableMozillaAdsClient
             onPreferenceChangeListener = SharedPreferenceUpdater()
