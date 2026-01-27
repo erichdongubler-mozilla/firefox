@@ -148,8 +148,6 @@ void Buffer::Cleanup() {
   }
   mValid = false;
 
-  AbortMapRequest();
-
   if (mMapped && !mMapped->mViews.IsEmpty()) {
     // The array buffers could live longer than us and our shmem, so make sure
     // we clear the external buffer bindings.
@@ -351,8 +349,6 @@ void Buffer::UnmapArrayBuffers(JSContext* aCx, ErrorResult& aRv) {
 
   mMapped->mViews.Clear();
 
-  AbortMapRequest();
-
   if (NS_WARN_IF(!detachedArrayBuffers)) {
     aRv.NoteJSContextException(aCx);
     return;
@@ -395,6 +391,8 @@ void Buffer::AbortMapRequest() {
 }
 
 void Buffer::Unmap(JSContext* aCx, ErrorResult& aRv) {
+  AbortMapRequest();
+
   if (!mMapped) {
     return;
   }
@@ -418,9 +416,7 @@ void Buffer::Unmap(JSContext* aCx, ErrorResult& aRv) {
 }
 
 void Buffer::Destroy(JSContext* aCx, ErrorResult& aRv) {
-  if (mMapped) {
-    Unmap(aCx, aRv);
-  }
+  Unmap(aCx, aRv);
 
   ffi::wgpu_client_destroy_buffer(GetClient(), GetId());
 }
