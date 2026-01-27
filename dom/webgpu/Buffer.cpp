@@ -183,12 +183,18 @@ already_AddRefed<dom::Promise> Buffer::MapAsync(
   }
 
   if (mMapped) {
-    promise->MaybeRejectWithOperationError("Buffer is already mapped");
+    auto message = "Buffer is already mapped"_ns;
+    ffi::wgpu_report_validation_error(GetClient(), mParent->GetId(),
+                                      message.get());
+    promise->MaybeRejectWithOperationError(message);
     return promise.forget();
   }
 
   if (mMapRequest) {
-    promise->MaybeRejectWithOperationError("Buffer mapping is already pending");
+    auto message = "Buffer mapping is already pending"_ns;
+    ffi::wgpu_report_validation_error(GetClient(), mParent->GetId(),
+                                      message.get());
+    promise->MaybeRejectWithOperationError(message);
     return promise.forget();
   }
 
