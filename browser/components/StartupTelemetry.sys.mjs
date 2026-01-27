@@ -12,7 +12,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   OsEnvironment: "resource://gre/modules/OsEnvironment.sys.mjs",
-  OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
   PlacesDBUtils: "resource://gre/modules/PlacesDBUtils.sys.mjs",
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   TelemetryReportingPolicy:
@@ -104,7 +103,6 @@ export let StartupTelemetry = {
   bestEffortIdleStartup() {
     let tasks = [
       () => this.primaryPasswordEnabled(),
-      () => lazy.OSKeyStore.retentionTest(),
       () => lazy.OsEnvironment.reportAllowedAppSources(),
     ];
     if (AppConstants.platform == "win" && this._willUseExpensiveTelemetry) {

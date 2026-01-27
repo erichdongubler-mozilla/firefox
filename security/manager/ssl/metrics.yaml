@@ -1658,26 +1658,3 @@ oskeystore:
         description: >
           The error code, converted to a string.
         type: string
-  dummy_storage:
-    type: labeled_counter
-    description:
-      Whether or not each step of the OSKeyStore self test succeeded.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1992943
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1992943
-    notification_emails:
-      - simon@mozilla.com
-    expires: never
-    labels:
-      - lost # keystore should have test value but does not
-      - first # we have not initialized a test value yet
-      - available # keystore has a value with the right label
-      - asyncSecretAvailableSuccess
-      - asyncSecretAvailableError
-      - asyncEncryptBytesSuccess
-      - asyncEncryptBytesError
-      - asyncDecryptBytesSuccess
-      - asyncDecryptBytesError
-      - asyncGenerateSecretSuccess
-      - asyncGenerateSecretError
