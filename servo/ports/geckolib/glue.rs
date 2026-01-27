@@ -9787,12 +9787,14 @@ pub extern "C" fn Servo_InterpolateColor(
     end_color: &AbsoluteColor,
     progress: f32,
 ) -> AbsoluteColor {
-    style::color::mix::mix(
+    use style::color::mix;
+
+    mix::mix_many(
         interpolation,
-        start_color,
-        1.0 - progress,
-        end_color,
-        progress,
+        [
+            mix::ColorMixItem::new(*start_color, 1.0 - progress),
+            mix::ColorMixItem::new(*end_color, progress),
+        ],
         ColorMixFlags::empty(),
     )
 }
