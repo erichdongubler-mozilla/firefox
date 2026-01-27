@@ -346,7 +346,6 @@ export class FormAutofillPreferences {
           },
           options: [
             {
-              id: "delete-address-button",
               control: "moz-button",
               iconSrc: "chrome://global/skin/icons/delete.svg",
               type: "icon",
@@ -358,7 +357,6 @@ export class FormAutofillPreferences {
               },
             },
             {
-              id: "edit-address-button",
               control: "moz-button",
               iconSrc: "chrome://global/skin/icons/edit.svg",
               type: "icon",
