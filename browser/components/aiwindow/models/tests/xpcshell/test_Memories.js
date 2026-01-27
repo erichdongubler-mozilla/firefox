@@ -295,7 +295,7 @@ add_task(async function test_buildInitialMemoriesGenerationPrompt_only_chat() {
   try {
     // Stub the method
     const stub = sb
-      .stub(ChatStore.prototype, "findMessagesByDate")
+      .stub(ChatStore, "findMessagesByDate")
       .callsFake(async () => {
         return messages;
       });

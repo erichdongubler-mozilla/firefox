@@ -111,7 +111,7 @@ async function cleanUpDatabase() {
 async function test_ChatStorage_setup() {
   Services.prefs.setBoolPref("browser.aiwindow.removeDatabaseOnStartup", true);
 
-  gChatStore = new ChatStore();
+  gChatStore = ChatStore;
   await gChatStore.destroyDatabase();
 
   gSandbox = lazy.sinon.createSandbox();
@@ -125,8 +125,6 @@ async function test_cleanUp() {
 }
 
 add_atomic_task(async function task_ChatStorage_constructor() {
-  gChatStore = new ChatStore();
-
   Assert.ok(gChatStore, "Should return a ChatStorage instance");
 });
 
@@ -135,7 +133,6 @@ add_atomic_task(async function test_ChatStorage_updateConversation() {
   let errorMessage = "";
 
   try {
-    gChatStore = new ChatStore();
     const conversation = new ChatConversation({});
 
     conversation.addUserMessage("test content", "https://www.firefox.com", 0);
@@ -150,8 +147,6 @@ add_atomic_task(async function test_ChatStorage_updateConversation() {
 });
 
 add_atomic_task(async function test_ChatStorage_findRecentConversations() {
-  gChatStore = new ChatStore();
-
   await addBasicConvoTestData("1/1/2025", "conversation 1");
   await addBasicConvoTestData("1/2/2025", "conversation 2");
   await addBasicConvoTestData("1/3/2025", "conversation 3");
@@ -165,8 +160,6 @@ add_atomic_task(async function test_ChatStorage_findRecentConversations() {
 });
 
 add_atomic_task(async function test_ChatStorage_findConversationById() {
-  gChatStore = new ChatStore();
-
   let conversation = new ChatConversation({});
   conversation.title = "conversation 1";
   conversation.addUserMessage("test content", "https://www.firefox.com", 0);
@@ -183,8 +176,6 @@ add_atomic_task(async function test_ChatStorage_findConversationById() {
 });
 
 add_atomic_task(async function test_ChatStorage_findConversationsByDate() {
-  gChatStore = new ChatStore();
-
   await addBasicConvoWithSpecificUpdatedTestData("1/1/2025", "conversation 1");
   await addBasicConvoWithSpecificUpdatedTestData("6/1/2025", "conversation 2");
   await addBasicConvoWithSpecificUpdatedTestData("12/1/2025", "conversation 3");
@@ -232,8 +223,6 @@ add_atomic_task(async function test_ChatStorage_findConversationsByURL() {
       "Mozilla.org conversation 2"
     );
   }
-
-  gChatStore = new ChatStore();
 
   await addTestData();
 
@@ -306,8 +295,6 @@ async function addTestDataForFindMessageByDate() {
 
 add_atomic_task(
   async function test_withoutSpecifiedRole_ChatStorage_findMessagesByDate() {
-    gChatStore = new ChatStore();
-
     await addTestDataForFindMessageByDate();
 
     const startDate = new Date("6/1/2025");
@@ -323,8 +310,6 @@ add_atomic_task(
 );
 
 add_atomic_task(async function test_limit_ChatStorage_findMessagesByDate() {
-  gChatStore = new ChatStore();
-
   await addTestDataForFindMessageByDate();
 
   const startDate = new Date("6/1/2025");
@@ -343,8 +328,6 @@ add_atomic_task(async function test_limit_ChatStorage_findMessagesByDate() {
 });
 
 add_atomic_task(async function test_skip_ChatStorage_findMessagesByDate() {
-  gChatStore = new ChatStore();
-
   await addTestDataForFindMessageByDate();
 
   const startDate = new Date("6/1/2025");
@@ -365,8 +348,6 @@ add_atomic_task(async function test_skip_ChatStorage_findMessagesByDate() {
 
 add_atomic_task(
   async function test_withSpecifiedRole_ChatStorage_findMessagesByDate() {
-    gChatStore = new ChatStore();
-
     await addTestDataForFindMessageByDate();
 
     const startDate = new Date("6/1/2025");
@@ -565,8 +546,8 @@ add_atomic_task(async function test_ChatStorage_deleteConversationById() {
 // });
 
 add_atomic_task(async function test_applyMigrations_notCalledOnInitialSetup() {
-  lazy.sinon.stub(gChatStore, "CURRENT_SCHEMA_VERSION").returns(0);
-  lazy.sinon.spy(gChatStore, "applyMigrations");
+  gSandbox.stub(gChatStore, "CURRENT_SCHEMA_VERSION").returns(0);
+  gSandbox.spy(gChatStore, "applyMigrations");
 
   // Trigger connection to db so file creates and migrations applied
   await gChatStore.getDatabaseSize();
@@ -576,10 +557,10 @@ add_atomic_task(async function test_applyMigrations_notCalledOnInitialSetup() {
 
 add_atomic_task(
   async function test_applyMigrations_calledOnceIfSchemaIsGreaterThanDb() {
-    lazy.sinon.stub(gChatStore, "CURRENT_SCHEMA_VERSION").get(() => 2);
-    lazy.sinon.stub(gChatStore, "getDatabaseSchemaVersion").resolves(1);
-    lazy.sinon.stub(gChatStore, "applyMigrations");
-    lazy.sinon.stub(gChatStore, "setSchemaVersion");
+    gSandbox.stub(gChatStore, "CURRENT_SCHEMA_VERSION").get(() => 2);
+    gSandbox.stub(gChatStore, "getDatabaseSchemaVersion").resolves(1);
+    gSandbox.stub(gChatStore, "applyMigrations");
+    gSandbox.stub(gChatStore, "setSchemaVersion");
 
     // Trigger connection to db so file creates and migrations applied
     await gChatStore.getDatabaseSize();
@@ -593,10 +574,10 @@ add_atomic_task(
 
 add_atomic_task(
   async function test_applyMigrations_notCalledIfCurrentSchemaIsLessThanDbSchema_dbDowngrades() {
-    lazy.sinon.stub(gChatStore, "CURRENT_SCHEMA_VERSION").get(() => 1);
-    lazy.sinon.stub(gChatStore, "getDatabaseSchemaVersion").resolves(2);
-    lazy.sinon.stub(gChatStore, "applyMigrations");
-    lazy.sinon.stub(gChatStore, "setSchemaVersion");
+    gSandbox.stub(gChatStore, "CURRENT_SCHEMA_VERSION").get(() => 1);
+    gSandbox.stub(gChatStore, "getDatabaseSchemaVersion").resolves(2);
+    gSandbox.stub(gChatStore, "applyMigrations");
+    gSandbox.stub(gChatStore, "setSchemaVersion");
 
     // Trigger connection to db so file creates and migrations applied
     await gChatStore.getDatabaseSize();

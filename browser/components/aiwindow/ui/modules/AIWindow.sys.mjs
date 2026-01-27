@@ -60,11 +60,7 @@ export const AIWindow = {
       return;
     }
 
-    ChromeUtils.defineLazyGetter(
-      AIWindow,
-      "chatStore",
-      () => new lazy.ChatStore()
-    );
+    ChromeUtils.defineLazyGetter(AIWindow, "chatStore", () => lazy.ChatStore);
     this._initialized = true;
 
     // On startup/restart, if the first window initialized is an

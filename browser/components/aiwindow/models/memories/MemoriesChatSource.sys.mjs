@@ -53,8 +53,7 @@ export async function getRecentChats(
   // Underlying Chatstore uses Date type but MemoriesStore maintains in TS
   const startDate = new Date(startTime);
   const endDate = new Date();
-  const chatStore = new ChatStore();
-  const messages = await chatStore.findMessagesByDate(
+  const messages = await ChatStore.findMessagesByDate(
     startDate,
     endDate,
     MESSAGE_ROLE.USER,

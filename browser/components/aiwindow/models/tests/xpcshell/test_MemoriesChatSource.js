@@ -134,7 +134,7 @@ add_task(async function test_getRecentChats_basic_mapping_and_limit() {
 
   // Stub the method
   const stub = sandbox
-    .stub(ChatStore.prototype, "findMessagesByDate")
+    .stub(ChatStore, "findMessagesByDate")
     .callsFake(async (startTimeArg, endTimeArg, roleArg, limitArg) => {
       Assert.equal(
         roleArg,
@@ -216,9 +216,7 @@ add_task(async function test_getRecentChats_filters_blocked_messages() {
   const halfLifeDays = 7;
   const startTime = fixedNow - 1_000_000;
 
-  const stub = sandbox
-    .stub(ChatStore.prototype, "findMessagesByDate")
-    .resolves(messages);
+  const stub = sandbox.stub(ChatStore, "findMessagesByDate").resolves(messages);
 
   try {
     const result = await getRecentChats(startTime, maxResults, halfLifeDays);

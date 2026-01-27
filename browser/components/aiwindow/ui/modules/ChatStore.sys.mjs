@@ -90,7 +90,7 @@ const SORTS = ["ASC", "DESC"];
  * @example
  * let { ChatStore, ChatConversation, ChatMessage, MESSAGE_ROLE } =
  *   ChromeUtils.importESModule("resource:///modules/aiwindow/ui/modules/ChatStore.sys.mjs");
- * const chatStore = new ChatStore();
+ * const chatStore = ChatStore;
  * const conversation = new ChatConversation({
  *   title: "title",
  *   description: "description",
@@ -121,7 +121,7 @@ const SORTS = ["ASC", "DESC"];
  *
  * @property {*} x ?
  */
-export class ChatStore {
+class ChatStore {
   #asyncShutdownBlocker;
   #conn;
   #promiseConn;
@@ -670,6 +670,7 @@ export class ChatStore {
    */
   async destroyDatabase() {
     await this.#removeDatabaseFiles();
+    this.#promiseConn = null;
   }
 
   /**
@@ -961,3 +962,6 @@ export class ChatStore {
     return PathUtils.join(PathUtils.profileDir, this.databaseFileName);
   }
 }
+
+const chatStore = new ChatStore();
+export { chatStore as ChatStore };
