@@ -20,6 +20,22 @@ var gBrowserInit = {
   _firstContentWindowPaintDeferred: Promise.withResolvers(),
   idleTasksFinished: Promise.withResolvers(),
 
+  /**
+   * Handles considerations when the enabled state of the Translations feature
+   * changes during runtime, such as being blocked or re-enabled in the AI Settings.
+   */
+  _translationsEnabledStateObserver: {
+    observe(_subject, topic, _data) {
+      if (topic !== "translations:enabled-state-changed") {
+        console.warn(`received unexpected topic: ${topic}`);
+        return;
+      }
+
+      // Ensures that the Application Menu correctly includes or omits the translate-page menu item.
+      XULBrowserWindow._updateElementsForContentType();
+    },
+  },
+
   _setupFirstContentWindowPaintPromise() {
     let lastTransactionId = window.windowUtils.lastTransactionId;
     let layerTreeListener = () => {
@@ -419,6 +435,11 @@ var gBrowserInit = {
     Services.obs.addObserver(gXPInstallObserver, "addon-install-confirmation");
     Services.obs.addObserver(gKeywordURIFixup, "keyword-uri-fixup");
     Services.obs.addObserver(gLocaleChangeObserver, "intl:app-locales-changed");
+    TranslationsParent.ensurePrefObservers();
+    Services.obs.addObserver(
+      this._translationsEnabledStateObserver,
+      "translations:enabled-state-changed"
+    );
 
     BrowserOffline.init();
 
@@ -1162,6 +1183,10 @@ var gBrowserInit = {
       Services.obs.removeObserver(
         gLocaleChangeObserver,
         "intl:app-locales-changed"
+      );
+      Services.obs.removeObserver(
+        this._translationsEnabledStateObserver,
+        "translations:enabled-state-changed"
       );
 
       BrowserOffline.uninit();
