@@ -8,10 +8,8 @@
 #define builtin_temporal_Era_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/MathAlgorithms.h"
 
 #include <initializer_list>
-#include <stdint.h>
 #include <string_view>
 
 #include "jstypes.h"
@@ -170,14 +168,6 @@ constexpr auto& CalendarEras(CalendarId calendar) {
 }
 
 /**
- * Return `true` iff the calendar has an inverse era.
- */
-constexpr bool CalendarEraHasInverse(CalendarId calendar) {
-  // More than one era implies an inverse era is used.
-  return CalendarEras(calendar).size() > 1;
-}
-
-/**
  * CalendarSupportsEra ( calendar )
  */
 constexpr bool CalendarSupportsEra(CalendarId calendar) {
@@ -299,33 +289,6 @@ constexpr bool CalendarHasMidYearEras(CalendarId calendar) {
   // Japanese eras can start in the middle of the year. All other calendars
   // start their eras at year boundaries. (Or don't have eras at all.)
   return calendar == CalendarId::Japanese;
-}
-
-constexpr bool IsJapaneseEraName(EraCode era) {
-  switch (era) {
-    case EraCode::Standard:
-    case EraCode::Inverse:
-      return false;
-    case EraCode::Meiji:
-    case EraCode::Taisho:
-    case EraCode::Showa:
-    case EraCode::Heisei:
-    case EraCode::Reiwa:
-      return true;
-  }
-  MOZ_CRASH("invalid era");
-}
-
-struct EraYear {
-  EraCode era = EraCode::Standard;
-  int32_t year = 0;
-};
-
-constexpr EraYear CalendarEraYear(CalendarId calendar, int32_t year) {
-  if (year > 0 || !CalendarEraHasInverse(calendar)) {
-    return EraYear{EraCode::Standard, year};
-  }
-  return EraYear{EraCode::Inverse, int32_t(mozilla::Abs(year) + 1)};
 }
 
 }  // namespace js::temporal
