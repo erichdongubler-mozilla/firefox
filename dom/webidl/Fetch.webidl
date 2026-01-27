@@ -9,9 +9,8 @@
 
 typedef object JSON;
 typedef (Blob or BufferSource or FormData or URLSearchParams or USVString) XMLHttpRequestBodyInit;
-// ReadableStream is added here to allow proper TypeError when used with keepalive
-// (e.g., sendBeacon). See Bug 1387483 for full ReadableStream body support.
-typedef (XMLHttpRequestBodyInit or ReadableStream) BodyInit;
+/* no support for request body streams yet */
+typedef XMLHttpRequestBodyInit BodyInit;
 
 interface mixin Body {
   readonly attribute boolean bodyUsed;

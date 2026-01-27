@@ -432,17 +432,10 @@ SafeRefPtr<Request> Request::Constructor(
   }
 
   if (aInit.mBody.WasPassed()) {
-    const Nullable<OwningBodyInit>& bodyInitNullable = aInit.mBody.Value();
+    const Nullable<fetch::OwningBodyInit>& bodyInitNullable =
+        aInit.mBody.Value();
     if (!bodyInitNullable.IsNull()) {
-      const OwningBodyInit& bodyInit = bodyInitNullable.Value();
-
-      // ReadableStream request bodies are not yet supported (Bug 1387483)
-      if (bodyInit.IsReadableStream()) {
-        aRv.ThrowTypeError(
-            "ReadableStream request bodies are not yet supported");
-        return nullptr;
-      }
-
+      const fetch::OwningBodyInit& bodyInit = bodyInitNullable.Value();
       nsCOMPtr<nsIInputStream> stream;
       nsAutoCString contentTypeWithCharset;
       uint64_t contentLength = 0;

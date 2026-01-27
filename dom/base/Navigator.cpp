@@ -16,7 +16,6 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BodyExtractor.h"
 #include "mozilla/dom/FetchBinding.h"
-#include "mozilla/dom/FetchUtil.h"
 #include "mozilla/dom/File.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsContentPolicyUtils.h"
@@ -101,7 +100,6 @@
 #include "nsIUploadChannel2.h"
 #include "nsJSUtils.h"
 #include "nsStreamUtils.h"
-#include "nsWeakReference.h"
 
 #if defined(XP_WIN)
 #  include "mozilla/WindowsVersion.h"
@@ -1149,45 +1147,30 @@ class BeaconStreamListener final : public nsIStreamListener {
   ~BeaconStreamListener() = default;
 
  public:
-  BeaconStreamListener() : mChannelLoadGroup(nullptr), mBodyLength(0) {}
+  BeaconStreamListener() : mLoadGroup(nullptr) {}
 
-  void SetChannelLoadGroup(nsILoadGroup* aLoadGroup) {
-    mChannelLoadGroup = aLoadGroup;
-  }
-  void SetDocLoadGroup(nsILoadGroup* aLoadGroup) {
-    mDocLoadGroup = do_GetWeakReference(aLoadGroup);
-  }
-  void SetBodyLength(uint64_t aLength) { mBodyLength = aLength; }
+  void SetLoadGroup(nsILoadGroup* aLoadGroup) { mLoadGroup = aLoadGroup; }
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSIREQUESTOBSERVER
 
  private:
-  nsCOMPtr<nsILoadGroup> mChannelLoadGroup;
-  nsWeakPtr mDocLoadGroup;
-  uint64_t mBodyLength;
+  nsCOMPtr<nsILoadGroup> mLoadGroup;
 };
 
 NS_IMPL_ISUPPORTS(BeaconStreamListener, nsIStreamListener, nsIRequestObserver)
 
 NS_IMETHODIMP
 BeaconStreamListener::OnStartRequest(nsIRequest* aRequest) {
-  // release the channel loadgroup first
-  mChannelLoadGroup = nullptr;
+  // release the loadgroup first
+  mLoadGroup = nullptr;
 
   return NS_ERROR_ABORT;
 }
 
 NS_IMETHODIMP
 BeaconStreamListener::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
-  if (mBodyLength > 0) {
-    nsCOMPtr<nsILoadGroup> docLoadGroup = do_QueryReferent(mDocLoadGroup);
-    if (docLoadGroup) {
-      FetchUtil::DecrementPendingKeepaliveRequestSize(docLoadGroup,
-                                                      mBodyLength);
-    }
-  }
   return NS_OK;
 }
 
@@ -1200,17 +1183,10 @@ BeaconStreamListener::OnDataAvailable(nsIRequest* aRequest,
 }
 
 bool Navigator::SendBeacon(const nsAString& aUrl,
-                           const Nullable<BodyInit>& aData, ErrorResult& aRv) {
+                           const Nullable<fetch::BodyInit>& aData,
+                           ErrorResult& aRv) {
   if (aData.IsNull()) {
     return SendBeaconInternal(aUrl, nullptr, eBeaconTypeOther, aRv);
-  }
-
-  // ReadableStream is not supported with keepalive (which sendBeacon uses).
-  // Throw a TypeError as required by the Fetch specification.
-  // https://fetch.spec.whatwg.org/#concept-bodyinit-extract
-  if (aData.Value().IsReadableStream()) {
-    aRv.ThrowTypeError("ReadableStream body is not supported with keepalive");
-    return false;
   }
 
   if (aData.Value().IsArrayBuffer()) {
@@ -1296,28 +1272,6 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
     }
   }
 
-  // Check keepalive quota as per Fetch specification.
-  // Beacons use the keepalive flag and are subject to the same size limits.
-  nsCOMPtr<nsILoadGroup> docLoadGroup = doc->GetDocumentLoadGroup();
-  if (docLoadGroup) {
-    // Check cumulative size against the per-loadgroup quota
-    if (!FetchUtil::IncrementPendingKeepaliveRequestSize(docLoadGroup,
-                                                         length)) {
-      return false;
-    }
-  } else {
-    // If there's no load group, check individual request size
-    if (length > FETCH_KEEPALIVE_MAX_SIZE) {
-      return false;
-    }
-  }
-  // Ensure if something fails we clean up
-  auto guard = MakeScopeExit([&] {
-    if (docLoadGroup && length > 0) {
-      FetchUtil::DecrementPendingKeepaliveRequestSize(docLoadGroup, length);
-    }
-  });
-
   nsSecurityFlags securityFlags = nsILoadInfo::SEC_COOKIES_INCLUDE;
   // Ensure that only streams with content types that are safelisted ignore CORS
   // rules
@@ -1382,19 +1336,13 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
   channel->SetLoadGroup(loadGroup);
 
   RefPtr<BeaconStreamListener> beaconListener = new BeaconStreamListener();
-  // Pass the document's load group for keepalive quota tracking
-  beaconListener->SetDocLoadGroup(docLoadGroup);
-  beaconListener->SetBodyLength(length);
   rv = channel->AsyncOpen(beaconListener);
   // do not throw if security checks fail within asyncOpen
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-  guard.release();
+  NS_ENSURE_SUCCESS(rv, false);
 
-  // make the beaconListener hold a strong reference to the channel loadgroup
+  // make the beaconListener hold a strong reference to the loadgroup
   // which is released in ::OnStartRequest
-  beaconListener->SetChannelLoadGroup(loadGroup);
+  beaconListener->SetLoadGroup(loadGroup);
 
   return true;
 }

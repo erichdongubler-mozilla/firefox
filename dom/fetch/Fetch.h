@@ -10,7 +10,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/BodyConsumer.h"
-#include "mozilla/dom/FetchBindingFwd.h"
 #include "mozilla/dom/FetchStreamReader.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
@@ -48,9 +47,6 @@ class WorkerPrivate;
 
 enum class CallerType : uint32_t;
 
-using ResponseBodyInit =
-    BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrReadableStreamOrUSVString;
-
 already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
                                        const RequestOrUTF8String& aInput,
                                        const RequestInit& aInit,
@@ -60,12 +56,21 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
 nsresult UpdateRequestReferrer(nsIGlobalObject* aGlobal,
                                InternalRequest* aRequest);
 
+namespace fetch {
+using BodyInit =
+    BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
+using ResponseBodyInit =
+    BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrReadableStreamOrUSVString;
+using OwningBodyInit =
+    OwningBlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
+};  // namespace fetch
+
 /*
  * Creates an nsIInputStream based on the fetch specifications 'extract a byte
  * stream algorithm' - http://fetch.spec.whatwg.org/#concept-bodyinit-extract.
  * Stores content type in out param aContentType.
  */
-nsresult ExtractByteStreamFromBody(const OwningBodyInit& aBodyInit,
+nsresult ExtractByteStreamFromBody(const fetch::OwningBodyInit& aBodyInit,
                                    nsIInputStream** aStream,
                                    nsCString& aContentType,
                                    uint64_t& aContentLength);
@@ -73,7 +78,7 @@ nsresult ExtractByteStreamFromBody(const OwningBodyInit& aBodyInit,
 /*
  * Non-owning version.
  */
-nsresult ExtractByteStreamFromBody(const BodyInit& aBodyInit,
+nsresult ExtractByteStreamFromBody(const fetch::BodyInit& aBodyInit,
                                    nsIInputStream** aStream,
                                    nsCString& aContentType,
                                    uint64_t& aContentLength);
@@ -82,7 +87,7 @@ nsresult ExtractByteStreamFromBody(const BodyInit& aBodyInit,
  * Non-owning version. This method should go away when BodyInit will contain
  * ReadableStream.
  */
-nsresult ExtractByteStreamFromBody(const ResponseBodyInit& aBodyInit,
+nsresult ExtractByteStreamFromBody(const fetch::ResponseBodyInit& aBodyInit,
                                    nsIInputStream** aStream,
                                    nsCString& aContentType,
                                    uint64_t& aContentLength);
