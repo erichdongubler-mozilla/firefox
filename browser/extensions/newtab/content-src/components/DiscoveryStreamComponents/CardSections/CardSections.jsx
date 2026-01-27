@@ -44,6 +44,10 @@ const PREF_DAILY_BRIEF_V2_ENABLED = "discoverystream.dailyBrief.v2.enabled";
 const PREF_SPOCS_STARTUPCACHE_ENABLED =
   "discoverystream.spocs.startupCache.enabled";
 
+// Feed URL
+const CURATED_RECOMMENDATIONS_FEED_URL =
+  "https://merino.services.mozilla.com/api/v1/curated-recommendations";
+
 function getLayoutData(responsiveLayouts, index, refinedCardsLayout) {
   let layoutData = {
     classNames: [],
@@ -139,7 +143,7 @@ function CardSection({
 
   const { messageData } = useSelector(state => state.Messages);
 
-  const { sectionPersonalization } = useSelector(
+  const { sectionPersonalization, feeds } = useSelector(
     state => state.DiscoveryStream
   );
   const { isForStartupCache } = useSelector(state => state.App);
@@ -303,6 +307,28 @@ function CardSection({
   const shouldShowBriefingCard =
     sectionKey === dailyBriefSectionId && dailyBriefV2Enabled;
 
+  const getBriefingData = () => {
+    const EMPTY_BRIEFING = { headlines: [], lastUpdated: null };
+
+    if (!shouldShowBriefingCard) {
+      return EMPTY_BRIEFING;
+    }
+
+    const sections = feeds?.data[CURATED_RECOMMENDATIONS_FEED_URL];
+    if (!sections) {
+      return EMPTY_BRIEFING;
+    }
+
+    const headlines = sections.data.recommendations.filter(
+      rec => rec.section === dailyBriefSectionId && rec.isHeadline
+    );
+    return { headlines, lastUpdated: sections.lastUpdated };
+  };
+
+  const { headlines: briefingHeadlines, lastUpdated: briefingLastUpdated } =
+    getBriefingData();
+  const hasBriefingHeadlines = briefingHeadlines.length === 3;
+
   const displaySections = section.data.slice(0, maxTile);
   const isSectionEmpty = !displaySections?.length;
   const shouldShowLabels = sectionKey === dailyBriefSectionId && showTopics;
@@ -323,13 +349,17 @@ function CardSection({
       );
       const { classNames, imageSizes } = layoutData;
       const shouldRenderWidget =
-        shouldShowBriefingCard && layoutData.allowsWidget;
+        shouldShowBriefingCard &&
+        layoutData.allowsWidget &&
+        hasBriefingHeadlines;
 
       if (shouldRenderWidget) {
         cards.push(
           <BriefingCard
             key="briefing-card"
             sectionClassNames={classNames.join(" ")}
+            headlines={briefingHeadlines}
+            lastUpdated={briefingLastUpdated}
           />
         );
         continue;

@@ -842,6 +842,26 @@ describe("<DSCard>", () => {
       assert.equal(image.at(3).props().sizes[0].width, cardSizes.large.width);
     });
   });
+
+  it("should render topic label when isDailyBriefV2 is true", () => {
+    const store = createStore(combineReducers(reducers), INITIAL_STATE);
+    wrapper = mount(
+      <Provider store={store}>
+        <DSCard {...DEFAULT_PROPS} isDailyBriefV2={true} topic="technology" />
+      </Provider>
+    );
+
+    const dsCardInstance = wrapper.find(DSCard).instance();
+    dsCardInstance.setState({ isSeen: true });
+    wrapper.update();
+
+    const topicLabel = wrapper.find(".ds-card-daily-brief-topic");
+    assert.lengthOf(topicLabel, 1);
+    assert.equal(
+      topicLabel.prop("data-l10n-id"),
+      "newtab-topic-label-technology"
+    );
+  });
 });
 
 describe("<PlaceholderDSCard> component", () => {

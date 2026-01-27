@@ -3,8 +3,9 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React, { useEffect, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 import { SafeAnchor } from "../SafeAnchor/SafeAnchor";
+import { LinkMenuOptions } from "content-src/lib/link-menu-options.mjs";
 
 const TIMESTAMP_DISPLAY_DURATION = 15 * 60 * 1000;
 
@@ -12,24 +13,28 @@ const TIMESTAMP_DISPLAY_DURATION = 15 * 60 * 1000;
  * The BriefingCard component displays "In The Know" headlines.
  * It is the first card in the "Your Briefing" section.
  */
-const BriefingCard = ({ sectionClassNames = "" }) => {
+const BriefingCard = ({
+  sectionClassNames = "",
+  headlines = [],
+  lastUpdated,
+}) => {
   const [showTimestamp, setShowTimestamp] = useState(false);
   const [timeAgo, setTimeAgo] = useState("");
+  const [isDismissed, setIsDismissed] = useState(false);
 
   const dispatch = useDispatch();
-  const sections = useSelector(state => state.DiscoveryStream.feeds.data);
-  const prefs = useSelector(state => state.Prefs.values);
 
-  const dailyBriefSectionId =
-    prefs.trainhopConfig?.dailyBriefing?.sectionId ||
-    prefs["discoverystream.dailyBrief.sectionId"];
+  const handleDismiss = () => {
+    setIsDismissed(true);
 
-  const [firstSectionKey] = Object.keys(sections);
-  const { data: sectionData, lastUpdated } = sections[firstSectionKey];
+    const menuOption = LinkMenuOptions.BlockUrls(
+      headlines,
+      0,
+      "DAILY_BRIEFING"
+    );
 
-  const headlines = sectionData.recommendations.filter(
-    rec => rec.section === dailyBriefSectionId && rec.isHeadline
-  );
+    dispatch(menuOption.action);
+  };
 
   useEffect(() => {
     if (!lastUpdated) {
@@ -60,6 +65,10 @@ const BriefingCard = ({ sectionClassNames = "" }) => {
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
+  if (isDismissed || headlines.length === 0) {
+    return null;
+  }
+
   return (
     <div className={`briefing-card ${sectionClassNames}`}>
       <moz-button
@@ -69,7 +78,10 @@ const BriefingCard = ({ sectionClassNames = "" }) => {
         type="ghost"
       />
       <panel-list id="briefing-card-menu">
-        <panel-item data-l10n-id="newtab-daily-briefing-card-menu-dismiss"></panel-item>
+        <panel-item
+          data-l10n-id="newtab-daily-briefing-card-menu-dismiss"
+          onClick={handleDismiss}
+        ></panel-item>
       </panel-list>
       <div className="briefing-card-header">
         <h3

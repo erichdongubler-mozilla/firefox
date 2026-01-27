@@ -11214,6 +11214,7 @@ const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state =>
 
 
 
+
 const TIMESTAMP_DISPLAY_DURATION = 15 * 60 * 1000;
 
 /**
@@ -11221,20 +11222,19 @@ const TIMESTAMP_DISPLAY_DURATION = 15 * 60 * 1000;
  * It is the first card in the "Your Briefing" section.
  */
 const BriefingCard = ({
-  sectionClassNames = ""
+  sectionClassNames = "",
+  headlines = [],
+  lastUpdated
 }) => {
   const [showTimestamp, setShowTimestamp] = (0,external_React_namespaceObject.useState)(false);
   const [timeAgo, setTimeAgo] = (0,external_React_namespaceObject.useState)("");
+  const [isDismissed, setIsDismissed] = (0,external_React_namespaceObject.useState)(false);
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
-  const sections = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream.feeds.data);
-  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
-  const dailyBriefSectionId = prefs.trainhopConfig?.dailyBriefing?.sectionId || prefs["discoverystream.dailyBrief.sectionId"];
-  const [firstSectionKey] = Object.keys(sections);
-  const {
-    data: sectionData,
-    lastUpdated
-  } = sections[firstSectionKey];
-  const headlines = sectionData.recommendations.filter(rec => rec.section === dailyBriefSectionId && rec.isHeadline);
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    const menuOption = LinkMenuOptions.BlockUrls(headlines, 0, "DAILY_BRIEFING");
+    dispatch(menuOption.action);
+  };
   (0,external_React_namespaceObject.useEffect)(() => {
     if (!lastUpdated) {
       setShowTimestamp(false);
@@ -11258,6 +11258,9 @@ const BriefingCard = ({
     const interval = setInterval(updateTimestamp, 60000);
     return () => clearInterval(interval);
   }, [lastUpdated]);
+  if (isDismissed || headlines.length === 0) {
+    return null;
+  }
   return /*#__PURE__*/external_React_default().createElement("div", {
     className: `briefing-card ${sectionClassNames}`
   }, /*#__PURE__*/external_React_default().createElement("moz-button", {
@@ -11268,7 +11271,8 @@ const BriefingCard = ({
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
     id: "briefing-card-menu"
   }, /*#__PURE__*/external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-daily-briefing-card-menu-dismiss"
+    "data-l10n-id": "newtab-daily-briefing-card-menu-dismiss",
+    onClick: handleDismiss
   })), /*#__PURE__*/external_React_default().createElement("div", {
     className: "briefing-card-header"
   }, /*#__PURE__*/external_React_default().createElement("h3", {
@@ -11340,6 +11344,9 @@ const PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personaliza
 const CardSections_PREF_DAILY_BRIEF_SECTIONID = "discoverystream.dailyBrief.sectionId";
 const PREF_DAILY_BRIEF_V2_ENABLED = "discoverystream.dailyBrief.v2.enabled";
 const CardSections_PREF_SPOCS_STARTUPCACHE_ENABLED = "discoverystream.spocs.startupCache.enabled";
+
+// Feed URL
+const CURATED_RECOMMENDATIONS_FEED_URL = "https://merino.services.mozilla.com/api/v1/curated-recommendations";
 function getLayoutData(responsiveLayouts, index, refinedCardsLayout) {
   let layoutData = {
     classNames: [],
@@ -11420,7 +11427,8 @@ function CardSection({
     messageData
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   const {
-    sectionPersonalization
+    sectionPersonalization,
+    feeds
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream);
   const {
     isForStartupCache
@@ -11555,6 +11563,29 @@ function CardSection({
     maxTile = 12;
   }
   const shouldShowBriefingCard = sectionKey === dailyBriefSectionId && dailyBriefV2Enabled;
+  const getBriefingData = () => {
+    const EMPTY_BRIEFING = {
+      headlines: [],
+      lastUpdated: null
+    };
+    if (!shouldShowBriefingCard) {
+      return EMPTY_BRIEFING;
+    }
+    const sections = feeds?.data[CURATED_RECOMMENDATIONS_FEED_URL];
+    if (!sections) {
+      return EMPTY_BRIEFING;
+    }
+    const headlines = sections.data.recommendations.filter(rec => rec.section === dailyBriefSectionId && rec.isHeadline);
+    return {
+      headlines,
+      lastUpdated: sections.lastUpdated
+    };
+  };
+  const {
+    headlines: briefingHeadlines,
+    lastUpdated: briefingLastUpdated
+  } = getBriefingData();
+  const hasBriefingHeadlines = briefingHeadlines.length === 3;
   const displaySections = section.data.slice(0, maxTile);
   const isSectionEmpty = !displaySections?.length;
   const shouldShowLabels = sectionKey === dailyBriefSectionId && showTopics;
@@ -11570,11 +11601,13 @@ function CardSection({
         classNames,
         imageSizes
       } = layoutData;
-      const shouldRenderWidget = shouldShowBriefingCard && layoutData.allowsWidget;
+      const shouldRenderWidget = shouldShowBriefingCard && layoutData.allowsWidget && hasBriefingHeadlines;
       if (shouldRenderWidget) {
         cards.push(/*#__PURE__*/external_React_default().createElement(BriefingCard, {
           key: "briefing-card",
-          sectionClassNames: classNames.join(" ")
+          sectionClassNames: classNames.join(" "),
+          headlines: briefingHeadlines,
+          lastUpdated: briefingLastUpdated
         }));
         continue;
       }
