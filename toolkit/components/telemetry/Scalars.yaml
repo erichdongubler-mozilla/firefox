@@ -5285,10 +5285,11 @@ startup:
       - 1916867
       - 1958171
       - 1994608
+      - 2010455
     description: >
       The version of the profiles.ini database loaded during startup. A value
       of "0" is used to indicate that no file was present during startup.
-    expires: "150"
+    expires: "156"
     keyed: false
     kind: string
     notification_emails:
@@ -5310,10 +5311,11 @@ startup:
       - 1916867
       - 1958171
       - 1994608
+      - 2010455
     description: >
       This records the number of known profiles after startup completes. This
       includes any profiles that were created during startup.
-    expires: "150"
+    expires: "156"
     keyed: false
     kind: uint
     notification_emails:
