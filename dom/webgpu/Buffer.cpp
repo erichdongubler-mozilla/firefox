@@ -182,6 +182,11 @@ already_AddRefed<dom::Promise> Buffer::MapAsync(
     return nullptr;
   }
 
+  if (mMapped) {
+    promise->MaybeRejectWithOperationError("Buffer is already mapped");
+    return promise.forget();
+  }
+
   if (mMapRequest) {
     promise->MaybeRejectWithOperationError("Buffer mapping is already pending");
     return promise.forget();
