@@ -10,6 +10,15 @@ function ensureSchemaRegistered() {
   }
   gSchemaRegistered = true;
 
+  /**
+   * @backward-compat { version 149 }
+   *
+   * Bug 2011308: Remove the following typeof / early return check
+   */
+  if (!ChromeUtils.registerMarkerSchema) {
+    return;
+  }
+
   ChromeUtils.registerMarkerSchema({
     name: "TestStatus",
     tableLabel: "{marker.data.message}",
