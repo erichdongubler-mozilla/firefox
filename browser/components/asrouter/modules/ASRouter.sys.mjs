@@ -42,7 +42,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FeatureCalloutBroker:
     "resource:///modules/asrouter/FeatureCalloutBroker.sys.mjs",
   InfoBar: "resource:///modules/asrouter/InfoBar.sys.mjs",
-  KintoHttpClient: "resource://services-common/kinto-http-client.sys.mjs",
   MacAttribution:
     "moz-src:///browser/components/attribution/MacAttribution.sys.mjs",
   MenuMessage: "resource:///modules/asrouter/MenuMessage.sys.mjs",
@@ -55,7 +54,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
   TARGETING_PREFERENCES:
     "resource:///modules/asrouter/ASRouterPreferences.sys.mjs",
-  Utils: "resource://services-settings/Utils.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
   ToastNotification: "resource:///modules/asrouter/ToastNotification.sys.mjs",
@@ -314,16 +312,17 @@ export const MessageLoaderUtils = {
           lazy.RemoteL10n.isLocaleSupported(MessageLoaderUtils.locale)
         ) {
           const recordId = `${RS_FLUENT_RECORD_PREFIX}-${MessageLoaderUtils.locale}`;
-          const kinto = new lazy.KintoHttpClient(lazy.Utils.SERVER_URL);
-          const record = await kinto
-            .bucket(RS_MAIN_BUCKET)
-            .collection(RS_COLLECTION_L10N)
-            .getRecord(recordId);
-          if (record && record.data) {
+          const [record] = await RemoteSettings(RS_COLLECTION_L10N).get({
+            filters: {
+              id: recordId, // rely on indexed field.
+            },
+            syncIfEmpty: true, // explicit default.
+          });
+          if (record && record.attachment) {
             // Check that the file on disk is the same as the one on the server.
             // If the file is the same, we don't need to download it again.
             const localFile = lazy.RemoteL10n.cfrFluentFilePath;
-            const { size: remoteSize } = record.data.attachment;
+            const { size: remoteSize } = record.attachment;
             if (
               !(await IOUtils.exists(localFile)) ||
               (await IOUtils.stat(localFile)).size !== remoteSize
@@ -335,7 +334,7 @@ export const MessageLoaderUtils = {
                 RS_COLLECTION_L10N
               );
               // Await here in order to capture the exceptions for reporting.
-              const { buffer } = await downloader.download(record.data, {
+              const { buffer } = await downloader.download(record, {
                 retries: RS_DOWNLOAD_MAX_RETRIES,
               });
               // Write on disk.
