@@ -11620,13 +11620,6 @@ interface nsIUserCharacteristicsPageService extends nsISupports {
   pageLoaded(browsingContext: BrowsingContext, data: any): void;
 }
 
-// https://searchfox.org/mozilla-central/source/toolkit/components/search/nsISearchService.idl
-
-interface nsISearchSubmission extends nsISupports {
-  readonly postData: nsIInputStream;
-  readonly uri: nsIURI;
-}
-
 // https://searchfox.org/mozilla-central/source/toolkit/components/shell/nsIToolkitShellService.idl
 
 interface nsIToolkitShellService extends nsISupports {
@@ -16216,7 +16209,6 @@ interface nsIXPCComponents_Interfaces {
   nsIRFPService: nsJSIID<nsIRFPService>;
   nsIRFPTargetSetIDL: nsJSIID<nsIRFPTargetSetIDL>;
   nsIUserCharacteristicsPageService: nsJSIID<nsIUserCharacteristicsPageService>;
-  nsISearchSubmission: nsJSIID<nsISearchSubmission>;
   nsIToolkitShellService: nsJSIID<nsIToolkitShellService>;
   nsITerminatorTest: nsJSIID<nsITerminatorTest>;
   nsIXULStore: nsJSIID<nsIXULStore>;

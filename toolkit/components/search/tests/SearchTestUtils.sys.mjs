@@ -776,10 +776,10 @@ class _SearchTestUtils {
   }
 
   /**
-   * Extracts post data string from an nsISearchSubmission.
+   * Extracts post data string from the data returned by getSubmission.
    * If there is no post data, returns null.
    *
-   * @param {?nsISearchSubmission} submission
+   * @param {?{postData: nsIMIMEInputStream}} submission
    * @returns {?string}
    */
   getPostDataString(submission) {

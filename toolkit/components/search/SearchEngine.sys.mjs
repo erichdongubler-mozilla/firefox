@@ -380,7 +380,7 @@ export class EngineURL {
    *   The user's search terms.
    * @param {string} queryCharset
    *   The character set that is being used for the query.
-   * @returns {Submission}
+   * @returns {{uri: nsIURI, postData: ?nsIMIMEInputStream}}
    *   The submission data containing the URL and post data for the URL.
    */
   getSubmission(searchTerms, queryCharset) {
@@ -451,7 +451,7 @@ export class EngineURL {
       queryCharset
     );
 
-    return new Submission(templateURI.URI, postData);
+    return { uri: templateURI.URI, postData };
   }
 
   /**
@@ -1368,7 +1368,7 @@ export class SearchEngine {
    * @param {Values<typeof lazy.SearchUtils.URL_TYPE>} [responseType]
    *   The MIME type that we'd like to receive in response
    *   to this submission.  If null, will default to "text/html".
-   * @returns {?nsISearchSubmission}
+   * @returns {?{uri: nsIURI, postData: ?nsIMIMEInputStream}}
    *   The submission data. If no appropriate submission can be determined for
    *   the request type, this may be null.
    */
@@ -1716,40 +1716,5 @@ export class SearchEngine {
   #uuid() {
     let uuid = Services.uuid.generateUUID().toString();
     return uuid.slice(1, uuid.length - 1);
-  }
-}
-
-/**
- * @implements {nsISearchSubmission}.
- */
-class Submission {
-  QueryInterface = ChromeUtils.generateQI(["nsISearchSubmission"]);
-
-  /**
-   * @param {nsIURI} uri
-   *   The URI to submit a search to.
-   * @param {nsIMIMEInputStream} [postData]
-   *   The POST data associated with a search submission.
-   */
-  constructor(uri, postData = null) {
-    this._uri = uri;
-    this._postData = postData;
-  }
-
-  /**
-   * The URI to submit a search to.
-   */
-  get uri() {
-    return this._uri;
-  }
-
-  /**
-   * The POST data associated with a search submission, wrapped in a MIME
-   * input stream.
-   *
-   * The Mime Input Stream contains a nsIStringInputStream.
-   */
-  get postData() {
-    return this._postData;
   }
 }
