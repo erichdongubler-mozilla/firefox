@@ -343,12 +343,22 @@ LoginManager.prototype = {
 
   /**
    * Remove all user facing stored logins.
-   *
+   * Deprecated: Use removeAllUserFacingLoginsAsync() instead.
    * This will not remove the FxA Sync key, which is stored with the rest of a user's logins.
    */
   removeAllUserFacingLogins() {
     lazy.log.debug("Removing all user facing logins.");
     this._storage.removeAllUserFacingLogins();
+  },
+
+  /**
+   * Remove all user facing stored logins.
+   *
+   * This will not remove the FxA Sync key, which is stored with the rest of a user's logins.
+   */
+  async removeAllUserFacingLoginsAsync() {
+    lazy.log.debug("Removing all user facing logins.");
+    await this._storage.removeAllUserFacingLoginsAsync();
   },
 
   /**

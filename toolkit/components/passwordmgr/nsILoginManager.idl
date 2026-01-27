@@ -138,7 +138,7 @@ interface nsILoginManager : nsISupports {
 
   /**
    * Remove all stored user facing logins.
-   *
+   * Deprecated: use removeAllUserFacingLoginsAsync instead.
    * This will remove all the logins that a user can access through about:logins.
    * This will not remove the FxA Sync key which is stored with the rest of a user's logins
    * but is not accessible through about:logins
@@ -149,6 +149,20 @@ interface nsILoginManager : nsISupports {
    *
    */
   void removeAllUserFacingLogins();
+
+  /**
+   * Remove all stored user facing logins.
+   *
+   * This will remove all the logins that a user can access through about:logins.
+   * This will not remove the FxA Sync key which is stored with the rest of a user's logins
+   * but is not accessible through about:logins
+   *
+   * The browser sanitization feature allows the user to clear any stored
+   * passwords. This interface allows that to be done without getting each
+   * login first.
+   *
+   */
+  Promise removeAllUserFacingLoginsAsync();
 
   /**
    * Completely remove all logins, including the user's FxA Sync key.
