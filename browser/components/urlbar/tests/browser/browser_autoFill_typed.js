@@ -11,12 +11,7 @@ add_setup(async function () {
 });
 
 add_task(async function origin() {
-  await PlacesTestUtils.addVisits([
-    {
-      url: "http://example.com/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-  ]);
+  await PlacesTestUtils.addVisits(["http://example.com/"]);
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
   // all lowercase
   await typeAndCheck([
@@ -53,12 +48,7 @@ add_task(async function origin() {
 });
 
 add_task(async function url() {
-  await PlacesTestUtils.addVisits([
-    {
-      url: "http://example.com/foo/bar",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-  ]);
+  await PlacesTestUtils.addVisits(["http://example.com/foo/bar"]);
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
   // all lowercase
   await typeAndCheck([

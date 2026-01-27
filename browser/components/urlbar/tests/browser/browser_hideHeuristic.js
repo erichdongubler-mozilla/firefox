@@ -381,14 +381,7 @@ async function withVisits(callback) {
   for (let i = 0; i < UrlbarPrefs.get("maxRichResults"); i++) {
     urls.push("http://example.com/foo/" + i);
   }
-
-  let typedVisits = urls.map(url => {
-    return {
-      url,
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    };
-  });
-  await PlacesTestUtils.addVisits(typedVisits);
+  await PlacesTestUtils.addVisits(urls);
 
   // The URLs will appear in the view in reverse order so that newer visits are
   // first. Reverse the array now so callers to `checkVisitResults` or

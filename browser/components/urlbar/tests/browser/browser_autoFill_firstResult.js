@@ -9,12 +9,7 @@
 add_setup(async function () {
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();
-  await PlacesTestUtils.addVisits([
-    {
-      url: "http://example.com/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-  ]);
+  await PlacesTestUtils.addVisits(["http://example.com/"]);
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
   // Disable placeholder completion.  The point of this test is to make sure the

@@ -29,7 +29,6 @@ add_task(async function trailingSlash() {
   await PlacesTestUtils.addVisits([
     {
       uri: "http://example.com/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
 
@@ -55,7 +54,6 @@ add_task(async function trailingSlashWWW() {
   await PlacesTestUtils.addVisits([
     {
       uri: "http://www.example.com/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   let context = createContext(`${origin}/`, { isPrivate: false });
@@ -79,7 +77,6 @@ add_task(async function port() {
   await PlacesTestUtils.addVisits([
     {
       uri: "http://example.com:8888/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   let context = createContext("ex", { isPrivate: false });
@@ -104,7 +101,6 @@ add_task(async function portPartial() {
   await PlacesTestUtils.addVisits([
     {
       uri: "http://example.com:8888/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   let context = createContext(`${origin}:8`, { isPrivate: false });
@@ -129,7 +125,6 @@ add_task(async function preserveCase() {
   await PlacesTestUtils.addVisits([
     {
       uri: "http://example.com/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   let context = createContext("EXaM", { isPrivate: false });
@@ -155,7 +150,6 @@ add_task(async function preserveCasePort() {
   await PlacesTestUtils.addVisits([
     {
       uri: "http://example.com:8888/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   let context = createContext("EXaM", { isPrivate: false });
@@ -179,7 +173,6 @@ add_task(async function portNoMatch1() {
   await PlacesTestUtils.addVisits([
     {
       uri: "http://example.com:8888/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   let context = createContext(`${origin}:89`, { isPrivate: false });
@@ -204,7 +197,6 @@ add_task(async function portNoMatch2() {
   await PlacesTestUtils.addVisits([
     {
       uri: "http://example.com:8888/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   let context = createContext(`${origin}:9`, { isPrivate: false });
@@ -229,7 +221,6 @@ add_task(async function trailingSlash_2() {
   await PlacesTestUtils.addVisits([
     {
       uri: "http://example.com/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   let context = createContext("example/", { isPrivate: false });
@@ -254,7 +245,6 @@ add_task(async function multidotted() {
   await PlacesTestUtils.addVisits([
     {
       uri: "http://www.example.co.jp:8888/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   let context = createContext("www.example.co.", { isPrivate: false });
@@ -286,10 +276,7 @@ add_task(async function test_ip() {
     "[::1]/",
   ]) {
     info("testing " + str);
-    await PlacesTestUtils.addVisits({
-      url: "http://" + str,
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    });
+    await PlacesTestUtils.addVisits("http://" + str);
     for (let i = 1; i < str.length; ++i) {
       let context = createContext(str.substring(0, i), { isPrivate: false });
       await check_results({
@@ -315,7 +302,6 @@ add_task(async function large_number_host() {
   await PlacesTestUtils.addVisits([
     {
       uri: "http://12345example.it:8888/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   let context = createContext("1234", { isPrivate: false });
@@ -345,19 +331,11 @@ add_task(async function groupByHost() {
   // both so that alone, neither http nor https would be autofilled, but added
   // together they should be.
   await PlacesTestUtils.addVisits([
-    {
-      uri: "http://example.com/",
-      visitDate: daysAgo(30),
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
+    { uri: "http://example.com/", visitDate: daysAgo(30) },
 
     // Have a higher frecency by being more recent. But not so recent that it
     // has a higher frecency than other visits that bump the origins threshold.
-    {
-      uri: "https://example.com/",
-      visitDate: daysAgo(7),
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
+    { uri: "https://example.com/", visitDate: daysAgo(7) },
 
     {
       uri: "https://mozilla.org/",
@@ -370,14 +348,8 @@ add_task(async function groupByHost() {
     },
 
     // Add more origins to make the threshold higher
-    {
-      uri: "https://mozilla.com/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-    {
-      uri: "https://mozilla.ca/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
+    { uri: "https://mozilla.com/" },
+    { uri: "https://mozilla.ca/" },
   ]);
 
   let httpFrec = await getOriginFrecency("http://", "example.com");
@@ -441,42 +413,17 @@ add_task(async function groupByHostNonDefaultStddevMultiplier() {
   );
 
   await PlacesTestUtils.addVisits([
-    {
-      uri: "http://example.com/",
-      visitDate: daysAgo(30),
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
+    { uri: "http://example.com/", visitDate: daysAgo(30) },
 
-    {
-      uri: "https://example.com/",
-      visitDate: daysAgo(7),
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
+    { uri: "https://example.com/", visitDate: daysAgo(7) },
 
-    {
-      uri: "https://mozilla.org/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-    {
-      uri: "https://mozilla.org/1",
-      visitDate: daysAgo(1),
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-    {
-      uri: "https://mozilla.org/2",
-      visitDate: daysAgo(2),
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
+    { uri: "https://mozilla.org/" },
+    { uri: "https://mozilla.org/1", visitDate: daysAgo(1) },
+    { uri: "https://mozilla.org/2", visitDate: daysAgo(2) },
 
     // Add more origins to make the threshold higher
-    {
-      uri: "https://mozilla.com/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-    {
-      uri: "https://mozilla.ca/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
+    { uri: "https://mozilla.com/" },
+    { uri: "https://mozilla.ca/" },
   ]);
 
   let httpFrec = await getOriginFrecency("http://", "example.com");
@@ -542,7 +489,6 @@ add_task(async function suggestHistoryFalse_bookmark_multiple() {
   await PlacesTestUtils.addVisits([
     {
       uri: baseURL + "other1",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   let context = createContext(search, { isPrivate: false });
@@ -560,7 +506,6 @@ add_task(async function suggestHistoryFalse_bookmark_multiple() {
   await PlacesTestUtils.addVisits([
     {
       uri: bookmarkedURL,
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   context = createContext(search, { isPrivate: false });
@@ -578,7 +523,6 @@ add_task(async function suggestHistoryFalse_bookmark_multiple() {
   await PlacesTestUtils.addVisits([
     {
       uri: baseURL + "other2",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   context = createContext(search, { isPrivate: false });
@@ -639,7 +583,6 @@ add_task(async function suggestHistoryFalse_bookmark_prefix_multiple() {
   await PlacesTestUtils.addVisits([
     {
       uri: baseURL + "other1",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   let context = createContext(search, { isPrivate: false });
@@ -660,7 +603,6 @@ add_task(async function suggestHistoryFalse_bookmark_prefix_multiple() {
   await PlacesTestUtils.addVisits([
     {
       uri: bookmarkedURL,
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   context = createContext(search, { isPrivate: false });
@@ -681,7 +623,6 @@ add_task(async function suggestHistoryFalse_bookmark_prefix_multiple() {
   await PlacesTestUtils.addVisits([
     {
       uri: baseURL + "other2",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
     },
   ]);
   context = createContext(search, { isPrivate: false });
@@ -728,18 +669,9 @@ add_task(async function suggestHistoryFalse_bookmark_prefix_multiple() {
 // not be included in the results since it dupes the autofill result.
 add_task(async function searchParams() {
   await PlacesTestUtils.addVisits([
-    {
-      url: "http://example.com/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-    {
-      url: "http://example.com/?",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-    {
-      url: "http://example.com/?foo",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
+    "http://example.com/",
+    "http://example.com/?",
+    "http://example.com/?foo",
   ]);
 
   // First, do a search with autofill disabled to make sure the visits were
@@ -798,18 +730,9 @@ add_task(async function searchParams() {
 // substantive difference.)
 add_task(async function searchParams_https() {
   await PlacesTestUtils.addVisits([
-    {
-      url: "https://example.com/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-    {
-      url: "https://example.com/?",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-    {
-      url: "https://example.com/?foo",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
+    "https://example.com/",
+    "https://example.com/?",
+    "https://example.com/?foo",
   ]);
 
   // First, do a search with autofill disabled to make sure the visits were
@@ -866,9 +789,7 @@ add_task(async function searchParams_https() {
 add_task(async function originLooksLikePrefix() {
   let hostAndPort = "localhost:8888";
   let address = `http://${hostAndPort}/`;
-  await PlacesTestUtils.addVisits([
-    { uri: address, transition: PlacesUtils.history.TRANSITION_TYPED },
-  ]);
+  await PlacesTestUtils.addVisits([{ uri: address }]);
 
   // addTestSuggestionsEngine adds a search engine
   // with localhost as a server, so we have to disable the

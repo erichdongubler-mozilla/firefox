@@ -73,16 +73,18 @@ const SQL_AUTOFILL_WITH = ORIGIN_USE_ALT_FRECENCY
     )
   `;
 
-const SQL_AUTOFILL_FRECENCY_THRESHOLD = `total_fixed_host_frecency >= (
+const SQL_AUTOFILL_FRECENCY_THRESHOLD = `host_frecency >= (
     SELECT value FROM autofill_frecency_threshold
   )`;
 
-function originQuery(where, { preferHttps = false } = {}) {
+function originQuery(where) {
   // `frecency`, `n_bookmarks` and `visited` are partitioned by the fixed host,
   // without `www.`. `host_prefix` instead is partitioned by full host, because
   // we assume a prefix may not work regardless of `www.`.
-  let selectAnyRecentTyped = where.includes("any_recent_typed")
-    ? `MAX(${ORIGIN_FRECENCY_FIELD} > 1) OVER (PARTITION BY fixup_url(host))`
+  let selectVisited = where.includes("visited")
+    ? `MAX(EXISTS(
+      SELECT 1 FROM moz_places WHERE origin_id = o.id AND visit_count > 0
+    )) OVER (PARTITION BY fixup_url(host)) > 0`
     : "0";
   let selectTitle;
   let joinBookmarks;
@@ -93,30 +95,14 @@ function originQuery(where, { preferHttps = false } = {}) {
     selectTitle = "iif(h.frecency <> 0, h.title, NULL)";
     joinBookmarks = "";
   }
-
-  let hostPrefixOrder = preferHttps
-    ? `prefix = "https://" DESC, ${ORIGIN_FRECENCY_FIELD} DESC, id DESC`
-    : `${ORIGIN_FRECENCY_FIELD} DESC, prefix = "https://" DESC, id DESC`;
-
   return `/* do not warn (bug no): cannot use an index to sort */
     ${SQL_AUTOFILL_WITH},
-    origins(
-      id,
-      prefix,
-      host_prefix,
-      host,
-      fixed,
-      total_fixed_host_frecency,
-      frecency,
-      n_bookmarks,
-      any_recent_typed
-    ) AS (
+    origins(id, prefix, host_prefix, host, fixed, host_frecency, frecency, n_bookmarks, visited) AS (
       SELECT
       id,
       prefix,
       first_value(prefix) OVER (
-        PARTITION BY host
-        ORDER BY ${hostPrefixOrder}
+        PARTITION BY host ORDER BY ${ORIGIN_FRECENCY_FIELD} DESC, prefix = "https://" DESC, id DESC
       ),
       host,
       fixup_url(host),
@@ -125,7 +111,7 @@ function originQuery(where, { preferHttps = false } = {}) {
       total(
         (SELECT total(foreign_count) FROM moz_places WHERE origin_id = o.id)
       ) OVER (PARTITION BY fixup_url(host)),
-      ${selectAnyRecentTyped}
+      ${selectVisited}
       FROM moz_origins o
       WHERE prefix NOT IN ('about:', 'place:')
         AND ((host BETWEEN :searchString AND :searchString || X'FFFF')
@@ -136,12 +122,7 @@ function originQuery(where, { preferHttps = false } = {}) {
              ifnull(:prefix, host_prefix) || host || '/'
       FROM origins
       ${where}
-      ORDER BY
-        total_fixed_host_frecency DESC,
-        frecency DESC,
-        n_bookmarks DESC,
-        prefix = "https://" DESC,
-        id DESC
+      ORDER BY frecency DESC, n_bookmarks DESC, prefix = "https://" DESC, id DESC
       LIMIT 1
     ),
     matched_place(host_fixed, url, id, title, frecency) AS (
@@ -225,25 +206,21 @@ function urlQuery(where1, where2, isBookmarkContained) {
 
 // Queries
 const QUERY_ORIGIN_HISTORY_BOOKMARK = originQuery(
-  `WHERE n_bookmarks > 0 OR (any_recent_typed AND ${SQL_AUTOFILL_FRECENCY_THRESHOLD})`,
-  { preferHttps: true }
+  `WHERE n_bookmarks > 0 OR ${SQL_AUTOFILL_FRECENCY_THRESHOLD}`
 );
 
 const QUERY_ORIGIN_PREFIX_HISTORY_BOOKMARK = originQuery(
   `WHERE prefix BETWEEN :prefix AND :prefix || X'FFFF'
-     AND (n_bookmarks > 0 OR (any_recent_typed AND ${SQL_AUTOFILL_FRECENCY_THRESHOLD}))`,
-  { preferHttps: true }
+     AND (n_bookmarks > 0 OR ${SQL_AUTOFILL_FRECENCY_THRESHOLD})`
 );
 
 const QUERY_ORIGIN_HISTORY = originQuery(
-  `WHERE any_recent_typed AND ${SQL_AUTOFILL_FRECENCY_THRESHOLD}`,
-  { preferHttps: true }
+  `WHERE visited AND ${SQL_AUTOFILL_FRECENCY_THRESHOLD}`
 );
 
 const QUERY_ORIGIN_PREFIX_HISTORY = originQuery(
   `WHERE prefix BETWEEN :prefix AND :prefix || X'FFFF'
-     AND any_recent_typed AND ${SQL_AUTOFILL_FRECENCY_THRESHOLD}`,
-  { preferHttps: true }
+     AND visited AND ${SQL_AUTOFILL_FRECENCY_THRESHOLD}`
 );
 
 const QUERY_ORIGIN_BOOKMARK = originQuery(`WHERE n_bookmarks > 0`);
@@ -497,7 +474,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
     let rows = await db.executeCached(
       `
         ${SQL_AUTOFILL_WITH},
-        origins(id, prefix, host_prefix, host, fixed, total_fixed_host_frecency, frecency, n_bookmarks, visited) AS (
+        origins(id, prefix, host_prefix, host, fixed, host_frecency, frecency, n_bookmarks, visited) AS (
           SELECT
           id,
           prefix,

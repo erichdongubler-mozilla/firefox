@@ -1869,10 +1869,7 @@ add_task(async function formHistory() {
   // not a search result.  Now the "foo" and "foobar" form history should be
   // included.  The "foo" remote suggestion should not be included since it
   // dupes the "foo" form history.
-  await PlacesTestUtils.addVisits({
-    url: "http://foo.example.com/",
-    transition: PlacesUtils.history.TRANSITION_TYPED,
-  });
+  await PlacesTestUtils.addVisits("http://foo.example.com/");
   context = createContext("foo", { isPrivate: false });
   await check_results({
     context,

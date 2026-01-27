@@ -880,10 +880,9 @@ add_task(async function noAdaptiveHistoryMatch() {
  */
 async function addVisits(...urls) {
   for (let url of urls) {
-    await PlacesTestUtils.addVisits({
-      url,
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    });
+    for (let i = 0; i < 5; i++) {
+      await PlacesTestUtils.addVisits(url);
+    }
   }
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 }

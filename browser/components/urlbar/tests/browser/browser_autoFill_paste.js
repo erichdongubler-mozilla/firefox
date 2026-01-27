@@ -8,12 +8,7 @@
 add_task(async function test() {
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();
-  await PlacesTestUtils.addVisits([
-    {
-      url: "http://example.com/",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-  ]);
+  await PlacesTestUtils.addVisits(["http://example.com/"]);
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
   registerCleanupFunction(async () => {
     await PlacesUtils.history.clear();

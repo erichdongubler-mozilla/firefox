@@ -35,10 +35,7 @@ add_setup(async function () {
   });
 
   for (let i = 0; i < 3; i++) {
-    await PlacesTestUtils.addVisits({
-      url: `https://${TEST_ENGINE_DOMAIN}/`,
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    });
+    await PlacesTestUtils.addVisits([`https://${TEST_ENGINE_DOMAIN}/`]);
   }
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
   registerCleanupFunction(async () => {
