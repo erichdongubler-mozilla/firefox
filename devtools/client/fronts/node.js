@@ -288,23 +288,6 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     return this._form.nodeName;
   }
   get displayName() {
-    // @backward-compat { version 147 } When 147 reaches release, we can remove this 'if' block.
-    // The form's displayName will be populated correctly for pseudo elements.
-    if (
-      this.isPseudoElement &&
-      !this.traits.hasPseudoElementNameInDisplayName
-    ) {
-      if (this.isMarkerPseudoElement) {
-        return "::marker";
-      }
-      if (this.isBeforePseudoElement) {
-        return "::before";
-      }
-      if (this.isAfterPseudoElement) {
-        return "::after";
-      }
-    }
-
     return this._form.displayName;
   }
   get doctypeString() {
@@ -372,27 +355,7 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     return this._form.hasEventListeners;
   }
 
-  get isMarkerPseudoElement() {
-    return this._form.isMarkerPseudoElement;
-  }
-  get isBeforePseudoElement() {
-    return this._form.isBeforePseudoElement;
-  }
-  get isAfterPseudoElement() {
-    return this._form.isAfterPseudoElement;
-  }
   get isPseudoElement() {
-    // @backward-compat { version 147 } When 147 reaches release, we can remove this 'if' block,
-    // as well as the isXXXPseudoElement getters.
-    // The form isPseudoElement property will be populated correctly.
-    if (!this.traits.hasPseudoElementNameInDisplayName) {
-      return (
-        this.isBeforePseudoElement ||
-        this.isAfterPseudoElement ||
-        this.isMarkerPseudoElement
-      );
-    }
-
     return this._form.isPseudoElement;
   }
   get isNativeAnonymous() {
