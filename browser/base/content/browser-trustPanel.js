@@ -130,8 +130,6 @@ class TrustPanel {
   #uri = null;
   #uriHasHost = null;
   #pageExtensionPolicy = null;
-  #isSecureContext = null;
-  #isSecureInternalUI = null;
 
   #lastEvent = null;
 
@@ -331,18 +329,6 @@ class TrustPanel {
     this.#qwac = null;
     this.#qwacStatusPromise = null;
     this.#pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
-    this.#isSecureContext = this.#getIsSecureContext();
-
-    this.#isSecureInternalUI = false;
-    if (this.#uri.schemeIs("about")) {
-      let module = E10SUtils.getAboutModule(this.#uri);
-      if (module) {
-        let flags = module.getURIFlags(this.#uri);
-        this.#isSecureInternalUI = !!(
-          flags & Ci.nsIAboutModule.IS_SECURE_CHROME_UI
-        );
-      }
-    }
 
     this.#updateUrlbarIcon();
   }
@@ -374,7 +360,7 @@ class TrustPanel {
     }
 
     icon.setAttribute("tooltiptext", this.#tooltipText());
-    icon.classList.toggle("chickletShown", this.#isSecureInternalUI);
+    icon.classList.toggle("chickletShown", this.#isInternalSecurePage);
   }
 
   async #updatePopup() {
@@ -644,18 +630,29 @@ class TrustPanel {
   }
 
   #isSecurePage() {
-    return (
-      this.#state & Ci.nsIWebProgressListener.STATE_IS_SECURE ||
-      this.#isInternalSecurePage(this.#uri) ||
-      this.#isPotentiallyTrustworthy
-    );
+    if (this.#isInternalSecurePage) {
+      return true;
+    }
+    if (this.#isSecureConnection) {
+      return true;
+    }
+    if (this.#isBrokenConnection) {
+      return false;
+    }
+    if (this.#isCertErrorPage || this.#isCertUserOverridden) {
+      return false;
+    }
+    if (this.#isPotentiallyTrustworthy) {
+      return true;
+    }
+    return false;
   }
 
-  #isInternalSecurePage(uri) {
-    if (uri && uri.schemeIs("about")) {
-      let module = E10SUtils.getAboutModule(uri);
+  get #isInternalSecurePage() {
+    if (this.#uri?.schemeIs("about")) {
+      let module = E10SUtils.getAboutModule(this.#uri);
       if (module) {
-        let flags = module.getURIFlags(uri);
+        let flags = module.getURIFlags(this.#uri);
         if (flags & Ci.nsIAboutModule.IS_SECURE_CHROME_UI) {
           return true;
         }
@@ -729,7 +726,7 @@ class TrustPanel {
     return result;
   }
 
-  #getIsSecureContext() {
+  get #isSecureContext() {
     if (gBrowser.contentPrincipal?.originNoSuffix != "resource://pdf.js") {
       return gBrowser.securityUI.isSecureContext;
     }
@@ -987,7 +984,7 @@ class TrustPanel {
   #connectionState() {
     // Determine connection security information.
     let connection = "not-secure";
-    if (this.#isSecureInternalUI) {
+    if (this.#isInternalSecurePage) {
       connection = "chrome";
     } else if (this.#pageExtensionPolicy) {
       connection = "extension";
