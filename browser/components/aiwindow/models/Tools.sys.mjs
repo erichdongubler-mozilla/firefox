@@ -251,19 +251,14 @@ export class GetPageContent {
   static FALLBACK_MODE = "full";
   static MAX_CHARACTERS = 10000;
 
+  /**
+   * @type {Record<string, (pageExtractor: PageExtractor) => Promise<{ text: string }>>}
+   */
   static MODE_HANDLERS = {
-    viewport: async pageExtractor => {
-      const result = await pageExtractor.getText({ justViewport: true });
-      return { text: result.text };
-    },
-    reader: async pageExtractor => {
-      const text = await pageExtractor.getReaderModeContent();
-      return { text: typeof text === "string" ? text : "" };
-    },
-    full: async pageExtractor => {
-      const result = await pageExtractor.getText();
-      return { text: result };
-    },
+    viewport: async pageExtractor =>
+      pageExtractor.getText({ justViewport: true }),
+    reader: async pageExtractor => pageExtractor.getReaderModeContent(),
+    full: async pageExtractor => pageExtractor.getText(),
   };
 
   /**
@@ -283,7 +278,7 @@ export class GetPageContent {
     }
 
     const promises = url_list.map(url =>
-      this.#processSingleURL(url, allowedUrls)
+      GetPageContent.#processSingleURL(url, allowedUrls)
     );
 
     // Run all fetches in parallel
@@ -300,7 +295,11 @@ export class GetPageContent {
         // while it's open, and with a "keep alive" timeout. For now it's simpler to just
         // load the page fresh every time.
         return PageExtractorParent.getHeadlessExtractor(url, pageExtractor =>
-          this.#runExtraction(pageExtractor, this.DEFAULT_MODE, url)
+          GetPageContent.#runExtraction(
+            pageExtractor,
+            GetPageContent.DEFAULT_MODE,
+            url
+          )
         );
       }
 
@@ -366,9 +365,9 @@ export class GetPageContent {
       const pageExtractor =
         await currentWindowContext.getActor("PageExtractor");
 
-      return this.#runExtraction(
+      return GetPageContent.#runExtraction(
         pageExtractor,
-        this.DEFAULT_MODE,
+        GetPageContent.DEFAULT_MODE,
         `"${targetTab.label}" (${url})`
       );
     } catch (error) {
@@ -376,7 +375,7 @@ export class GetPageContent {
       // i.e., will the LLM keep retrying get_page_content due to error?
       console.error(error);
       return `Error retrieving content from ${url}.`;
-      // Stripped ${error.message} content to not confruse the LLM
+      // Stripped ${error.message} content to not confuse the LLM
     }
   }
 
@@ -393,10 +392,10 @@ export class GetPageContent {
    */
   static async #runExtraction(pageExtractor, mode, label) {
     const selectedMode =
-      typeof mode === "string" && this.MODE_HANDLERS[mode]
+      typeof mode === "string" && GetPageContent.MODE_HANDLERS[mode]
         ? mode
-        : this.DEFAULT_MODE;
-    const handler = this.MODE_HANDLERS[selectedMode];
+        : GetPageContent.DEFAULT_MODE;
+    const handler = GetPageContent.MODE_HANDLERS[selectedMode];
     let extraction = null;
 
     try {
@@ -409,12 +408,7 @@ export class GetPageContent {
       );
     }
 
-    let pageContent = "";
-    if (typeof extraction === "string") {
-      pageContent = extraction;
-    } else if (typeof extraction?.text === "string") {
-      pageContent = extraction.text;
-    }
+    let pageContent = extraction?.text ?? "";
 
     // Track which mode was actually used (in case we fall back)
     let actualMode = selectedMode;
@@ -422,20 +416,17 @@ export class GetPageContent {
     // If reader mode returns no content, fall back to full mode
     if (!pageContent && selectedMode === "reader") {
       try {
-        const fallbackHandler = this.MODE_HANDLERS[this.FALLBACK_MODE];
+        const fallbackHandler =
+          GetPageContent.MODE_HANDLERS[GetPageContent.FALLBACK_MODE];
         extraction = await fallbackHandler(pageExtractor);
-        if (typeof extraction === "string") {
-          pageContent = extraction;
-        } else if (typeof extraction?.text === "string") {
-          pageContent = extraction.text;
-        }
+        pageContent = extraction?.text ?? "";
         if (pageContent) {
-          actualMode = this.FALLBACK_MODE;
+          actualMode = GetPageContent.FALLBACK_MODE;
         }
       } catch (err) {
         console.error(
           "[SmartWindow] get_page_content fallback mode failed",
-          this.FALLBACK_MODE,
+          GetPageContent.FALLBACK_MODE,
           err
         );
       }
@@ -443,7 +434,7 @@ export class GetPageContent {
 
     if (!pageContent) {
       return `get_page_content(${selectedMode}) returned no content for ${label}.`;
-      // Stripped message "Try another mode if you still need information." to not confruse the LLM
+      // Stripped message "Try another mode if you still need information." to not confuse the LLM
     }
 
     // Clean and truncate content for better LLM consumption
@@ -456,31 +447,26 @@ export class GetPageContent {
     // Limit content length but be more generous for LLM processing
     // Bug 1995043 - once reader mode has length truncation,
     // we can remove this and directly do this in pageExtractor.
-    if (cleanContent.length > this.MAX_CHARACTERS) {
+    if (cleanContent.length > GetPageContent.MAX_CHARACTERS) {
       // Try to cut at a sentence boundary
-      const truncatePoint = cleanContent.lastIndexOf(".", this.MAX_CHARACTERS);
-      if (truncatePoint > this.MAX_CHARACTERS - 100) {
+      const truncatePoint = cleanContent.lastIndexOf(
+        ".",
+        GetPageContent.MAX_CHARACTERS
+      );
+      if (truncatePoint > GetPageContent.MAX_CHARACTERS - 100) {
         cleanContent = cleanContent.substring(0, truncatePoint + 1);
       } else {
-        cleanContent = cleanContent.substring(0, this.MAX_CHARACTERS) + "...";
+        cleanContent =
+          cleanContent.substring(0, GetPageContent.MAX_CHARACTERS) + "...";
       }
     }
 
-    let modeLabel;
-    switch (actualMode) {
-      case "viewport":
-        modeLabel = "current viewport";
-        break;
-      case "reader":
-        modeLabel = "reader mode";
-        break;
-      case "full":
-        modeLabel = "full page";
-        break;
-    }
+    const modeLabel = {
+      viewport: "current viewport",
+      reader: "reader mode",
+      full: "full page",
+    }[actualMode];
 
-    return `Content (${modeLabel}) from ${label}:
-
-${cleanContent}`;
+    return `Content (${modeLabel}) from ${label}:\n\n${cleanContent}`;
   }
 }

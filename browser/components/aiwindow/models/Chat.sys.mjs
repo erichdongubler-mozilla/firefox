@@ -34,7 +34,7 @@ Object.assign(Chat, {
   toolMap: {
     get_open_tabs: getOpenTabs,
     search_browsing_history: searchBrowsingHistory,
-    get_page_content: GetPageContent.getPageContent.bind(GetPageContent),
+    get_page_content: GetPageContent.getPageContent,
   },
 
   /**
