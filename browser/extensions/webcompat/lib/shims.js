@@ -4,7 +4,7 @@
 
 "use strict";
 
-/* globals browser, debugLog, InterventionHelpers, module, onMessageFromTab */
+/* globals browser, InterventionHelpers, module, onMessageFromTab */
 
 // To grant shims access to bundled logo images without risking
 // exposing our moz-extension URL, we have the shim request them via
@@ -12,10 +12,30 @@
 // on tabs where a shim using a given logo happens to be active).
 const LogosBaseURL = "https://smartblock.firefox.etp/";
 
+const loggingPrefValue = browser.aboutConfigPrefs.getPref(
+  "disable_debug_logging"
+);
+
 const releaseBranch = browser.appConstants.getReleaseBranch();
 
 const platform =
   browser.appConstants.getPlatform() === "android" ? "android" : "desktop";
+
+let debug = async function () {
+  if (loggingPrefValue !== true && releaseBranch !== "release_or_beta") {
+    console.debug.apply(this, arguments);
+  }
+};
+let error = async function () {
+  if (releaseBranch !== "release_or_beta") {
+    console.error.apply(this, arguments);
+  }
+};
+let warn = async function () {
+  if (releaseBranch !== "release_or_beta") {
+    console.warn.apply(this, arguments);
+  }
+};
 
 class Shim {
   constructor(opts, manager) {
@@ -650,12 +670,9 @@ class Shims {
     redirectTargetUrls = Array.from(new Set(redirectTargetUrls));
 
     if (redirectTargetUrls.length) {
-      debugLog(
-        "Registering redirect listener for requestStorageAccess helper",
-        {
-          redirectTargetUrls,
-        }
-      );
+      debug("Registering redirect listener for requestStorageAccess helper", {
+        redirectTargetUrls,
+      });
       registerShimListener(
         browser.webRequest.onBeforeRequest,
         this._onRequestStorageAccessRedirect.bind(this),
@@ -699,7 +716,7 @@ class Shims {
       const urls = Array.from(new Set(allLogos)).map(l => {
         return `${LogosBaseURL}${l}`;
       });
-      debugLog("Allowing access to these logos:", urls);
+      debug("Allowing access to these logos:", urls);
       const unmarkShimsActive = tabId => {
         for (const shim of this.shims.values()) {
           shim.setActiveOnTab(tabId, false);
@@ -725,7 +742,7 @@ class Shims {
         { patterns },
       ] of allHeaderChangingMatchTypePatterns.entries()) {
         const urls = Array.from(patterns);
-        debugLog("Shimming these", type, "URLs:", urls);
+        debug("Shimming these", type, "URLs:", urls);
         registerShimListener(
           browser.webRequest.onBeforeSendHeaders,
           this._onBeforeSendHeaders.bind(this),
@@ -742,13 +759,13 @@ class Shims {
     }
 
     if (!allMatchTypePatterns.size) {
-      debugLog("Skipping shims; none enabled");
+      debug("Skipping shims; none enabled");
       return;
     }
 
     for (const [type, { patterns }] of allMatchTypePatterns.entries()) {
       const urls = Array.from(patterns);
-      debugLog("Shimming these", type, "URLs:", urls);
+      debug("Shimming these", type, "URLs:", urls);
 
       registerShimListener(
         browser.webRequest.onBeforeRequest,
@@ -827,7 +844,7 @@ class Shims {
     url: dstUrl,
     tabId,
   }) {
-    debugLog("Detected redirect", { srcUrl, dstUrl, tabId });
+    debug("Detected redirect", { srcUrl, dstUrl, tabId });
 
     // Check if a shim needs to request storage access for this redirect. This
     // handler is called when the *source url* matches a shims redirect pattern,
@@ -893,7 +910,7 @@ class Shims {
       requestStorageAccessOrigin,
       warning,
     });
-    debugLog("requestStorageAccess callback", {
+    debug("requestStorageAccess callback", {
       success,
       requestStorageAccessOrigin,
       srcUrl,
@@ -945,7 +962,7 @@ class Shims {
       try {
         await shim.onUserOptIn(new URL(url).hostname, tab.incognito);
         const origin = new URL(tab.url).origin;
-        debugLog(
+        warn(
           "** User opted in for",
           shim.name,
           "shim on",
@@ -1097,7 +1114,7 @@ class Shims {
         browser.tabs
           .get(tabId)
           .then(({ url }) => {
-            debugLog(
+            debug(
               `Google Trends dFPI fix used on tab ${tabId} frame ${frameId} (${url})`
             );
           })
@@ -1184,7 +1201,7 @@ class Shims {
         // If the user has already opted in for this shim, all requests it covers
         // should be allowed; no need for a shim anymore.
         if (shim.hasUserOptedInAlready(topHost, isPB)) {
-          console.warn(
+          warn(
             `Allowing tracking ${type} ${url} on tab ${tabId} frame ${frameId} due to opt-in`
           );
           shim.showOptInWarningOnce(tabId, new URL(originUrl).origin);
@@ -1216,7 +1233,7 @@ class Shims {
 
       const redirect = target || file;
 
-      console.warn(
+      warn(
         `Shimming tracking ${type} ${url} on tab ${tabId} frame ${frameId} with ${
           redirect || runFirst
         }`
@@ -1287,14 +1304,12 @@ class Shims {
     // Sanity check: if no shims end up handling this request,
     // yet it was meant to be blocked by ETP, then block it now.
     if (unblocked) {
-      console.error(
-        `unexpected: ${url} not shimmed on tab ${tabId} frame ${frameId}`
-      );
+      error(`unexpected: ${url} not shimmed on tab ${tabId} frame ${frameId}`);
       return { cancel: true };
     }
 
     if (!runFirst) {
-      debugLog(`ignoring ${url} on tab ${tabId} frame ${frameId}`);
+      debug(`ignoring ${url} on tab ${tabId} frame ${frameId}`);
     }
     return undefined;
   }
@@ -1331,9 +1346,10 @@ class Shims {
     }
 
     if (contentScriptsToRegister.length) {
-      await InterventionHelpers.registerContentScripts(
+      await InterventionHelpers._registerContentScripts(
         contentScriptsToRegister,
-        "SmartBlock"
+        "SmartBlock",
+        debug
       );
     }
   }

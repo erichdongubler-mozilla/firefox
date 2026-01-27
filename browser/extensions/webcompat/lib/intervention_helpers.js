@@ -4,7 +4,7 @@
 
 "use strict";
 
-/* globals browser, debugLog, UAHelpers */
+/* globals browser, UAHelpers */
 
 const GOOGLE_TLDS = [
   "com",
@@ -526,7 +526,7 @@ var InterventionHelpers = {
     return InterventionHelpers.matchPatternsForTLDs(base, suffix, GOOGLE_TLDS);
   },
 
-  async registerContentScripts(scriptsToReg, typeStr) {
+  async _registerContentScripts(scriptsToReg, typeStr, logger) {
     // Try to avoid re-registering scripts already registered
     // (e.g. if the webcompat background page is restarted
     // after an extension process crash, after having registered
@@ -547,14 +547,14 @@ var InterventionHelpers = {
         ({ id }) => !alreadyReggedIds.includes(id)
       );
       await browser.scripting.registerContentScripts(stillNeeded);
-      debugLog(
+      logger(
         `Registered still-not-active ${typeStr} content scripts`,
         stillNeeded
       );
     } catch (e) {
       try {
         await browser.scripting.registerContentScripts(scriptsToReg);
-        debugLog(
+        logger(
           `Registered all ${typeStr} content scripts after error registering just non-active ones`,
           scriptsToReg,
           e
