@@ -137,6 +137,9 @@ inline mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
 
 // ETW collects on all threads. So when it is collecting these should always
 // return true.
+// This implementation must be kept in sync with
+// `gecko_profiler::current_thread_is_being_profiled_for_markers` in the
+// Profiler Rust API.
 [[nodiscard]] inline bool profiler_thread_is_being_profiled_for_markers() {
   return profiler_thread_is_being_profiled(ThreadProfilingFeatures::Markers) ||
          profiler_is_etw_collecting_markers() || profiler_is_perfetto_tracing();
