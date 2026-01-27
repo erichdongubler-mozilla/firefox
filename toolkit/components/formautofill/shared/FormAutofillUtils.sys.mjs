@@ -225,7 +225,7 @@ FormAutofillUtils = {
     return fields.size >= this.AUTOFILL_FIELDS_THRESHOLD;
   },
 
-  queryEligibleElements(element, includeIframe = false) {
+  queryEligibleElements(element, includeIframe = true) {
     const types = includeIframe
       ? [...ELIGIBLE_ELEMENT_TYPES, "iframe"]
       : ELIGIBLE_ELEMENT_TYPES;
