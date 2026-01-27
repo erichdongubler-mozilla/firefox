@@ -4,16 +4,7 @@
 
 "use strict";
 
-/* globals browser, InterventionHelpers */
-
-const debugLoggingPrefValue = browser.aboutConfigPrefs.getPref(
-  "disable_debug_logging"
-);
-let debugLog = function () {
-  if (debugLoggingPrefValue !== true) {
-    console.debug.apply(this, arguments);
-  }
-};
+/* globals browser, debugLog, InterventionHelpers */
 
 const ENABLE_INTERVENTIONS_PREF = "enable_interventions";
 
@@ -653,10 +644,9 @@ class Interventions {
       this.#uaOverridesListener.restartListener();
     }
 
-    return InterventionHelpers._registerContentScripts(
+    return InterventionHelpers.registerContentScripts(
       contentScriptsToRegister,
-      "webcompat",
-      debugLog
+      "webcompat"
     ).then(() => {
       if (enabledUAoverrides.length) {
         debugLog(
