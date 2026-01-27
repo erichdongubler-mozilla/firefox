@@ -160,7 +160,6 @@ import org.mozilla.fenix.splashscreen.DefaultSplashScreenStorage
 import org.mozilla.fenix.splashscreen.FetchExperimentsOperation
 import org.mozilla.fenix.splashscreen.SplashScreenManager
 import org.mozilla.fenix.tabhistory.TabHistoryDialogFragment
-import org.mozilla.fenix.tabstray.TabsTrayFragment
 import org.mozilla.fenix.theme.DefaultThemeManager
 import org.mozilla.fenix.theme.StatusBarColorManager
 import org.mozilla.fenix.theme.ThemeManager
@@ -937,19 +936,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             listOf(
                 CrashReporterIntentProcessor(components.appStore),
             ) + externalSourceIntentProcessors
-        val intentHandled =
-            intentProcessors.any { it.process(intent, navHost.navController, this.intent, settings()) }
+        intentProcessors.forEach { it.process(intent, navHost.navController, this.intent, settings()) }
         browsingModeManager.updateMode(intent)
-
-        if (intentHandled) {
-            supportFragmentManager
-                .primaryNavigationFragment
-                ?.childFragmentManager
-                ?.fragments
-                ?.lastOrNull()
-                ?.let { it as? TabsTrayFragment }
-                ?.also { it.dismissAllowingStateLoss() }
-        }
     }
 
     /**

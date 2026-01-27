@@ -134,8 +134,6 @@
     <!-- Label for toggling the Tab Search feature -->
     <string name="preferences_tab_search_feature" translatable="false">Enable Tab Search</string>
 
-    <!-- Label for toggling the Tab Manager enhancements -->
-    <string name="preferences_tab_manager_enhancements" translatable="false">Enable Tab Manager enhancements</string>
     <!-- Label for toggling the Tab Manager opening animation -->
     <string name="preferences_tab_manager_opening_animation" translatable="false">Enable Tab Manager opening animation</string>
 
@@ -152,8 +150,6 @@
     <string name="preferences_debug_settings_isolated_process" translatable="false">Enable Isolated Content Process (requires restart)</string>
     <string name="preferences_debug_settings_app_zygote" translatable="false">Enable Isolated Processes with Zygote Preloading (requires restart)</string>
 
-    <!-- A secret menu option in the tabs tray for making a tab inactive for testing. -->
-    <string name="inactive_tabs_menu_item">Make inactive</string>
     <!-- A secret menu option in the tabs tray for making a tab inactive for testing. -->
     <string name="inactive_tabs_menu_item_2">Make tabs inactive</string>
 

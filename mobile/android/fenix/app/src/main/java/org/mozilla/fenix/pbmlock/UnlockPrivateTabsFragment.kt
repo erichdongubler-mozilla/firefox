@@ -28,7 +28,6 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.ext.registerForActivityResult
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.settings.biometric.DefaultBiometricUtils
 import org.mozilla.fenix.tabstray.Page
@@ -118,19 +117,11 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler {
 
                 val hasNormalTabs = requireComponents.core.store.state.normalTabs.isNotEmpty()
                 if (hasNormalTabs) {
-                    if (requireContext().settings().tabManagerEnhancementsEnabled) {
-                        findNavController().navigate(
-                            HomeFragmentDirections.actionGlobalTabManagementFragment(
-                                page = Page.NormalTabs,
-                            ),
-                        )
-                    } else {
-                        findNavController().navigate(
-                            HomeFragmentDirections.actionGlobalTabsTrayFragment(
-                                page = Page.NormalTabs,
-                            ),
-                        )
-                    }
+                    findNavController().navigate(
+                        HomeFragmentDirections.actionGlobalTabManagementFragment(
+                            page = Page.NormalTabs,
+                        ),
+                    )
                 }
             }
             // If we locked private mode while the user had the tabs tray private page opened, then
@@ -139,19 +130,11 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler {
             NavigationOrigin.TABS_TRAY -> {
                 findNavController().popBackStack()
 
-                if (requireContext().settings().tabManagerEnhancementsEnabled) {
-                    findNavController().navigate(
-                        HomeFragmentDirections.actionGlobalTabManagementFragment(
-                            page = Page.NormalTabs,
-                        ),
-                    )
-                } else {
-                    findNavController().navigate(
-                        HomeFragmentDirections.actionGlobalTabsTrayFragment(
-                            page = Page.NormalTabs,
-                        ),
-                    )
-                }
+                findNavController().navigate(
+                    HomeFragmentDirections.actionGlobalTabManagementFragment(
+                        page = Page.NormalTabs,
+                    ),
+                )
             }
             // If private mode is locked and the user opens a private custom tab,
             // close the activity when they leave without authenticating to return to the host app.
@@ -167,19 +150,11 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler {
         findNavController().popBackStack()
 
         if (navigationOrigin == NavigationOrigin.TABS_TRAY) {
-            if (requireContext().settings().tabManagerEnhancementsEnabled) {
-                findNavController().navigate(
-                    HomeFragmentDirections.actionGlobalTabManagementFragment(
-                        page = Page.PrivateTabs,
-                    ),
-                )
-            } else {
-                findNavController().navigate(
-                    HomeFragmentDirections.actionGlobalTabsTrayFragment(
-                        page = Page.PrivateTabs,
-                    ),
-                )
-            }
+            findNavController().navigate(
+                HomeFragmentDirections.actionGlobalTabManagementFragment(
+                    page = Page.PrivateTabs,
+                ),
+            )
         }
     }
 

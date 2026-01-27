@@ -2,11 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.mozilla.fenix.tabstray.ext
-
-import org.mozilla.fenix.tabstray.TabsTrayState.Mode
+package org.mozilla.fenix.tabstray.ui
 
 /**
- * A helper to check if we're in [Mode.Select] mode.
+ * Value class representing the access point from which the Tab Manager was opened.
  */
-fun Mode.isSelect() = this is Mode.Select
+enum class AccessPoint {
+    None,
+    HomeRecentSyncedTab,
+}

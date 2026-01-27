@@ -75,7 +75,6 @@ import org.mozilla.fenix.settings.biometric.ext.isHardwareAvailable
 import org.mozilla.fenix.share.ShareFragment
 import org.mozilla.fenix.tabstray.InactiveTabsBinding
 import org.mozilla.fenix.tabstray.Page
-import org.mozilla.fenix.tabstray.TabsTrayAccessPoint
 import org.mozilla.fenix.tabstray.TabsTrayAction
 import org.mozilla.fenix.tabstray.TabsTrayState
 import org.mozilla.fenix.tabstray.TabsTrayStore
@@ -148,12 +147,12 @@ class TabManagementFragment : DialogFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View? {
+    ): View {
         // Remove the window dimming so the Toolbar UI from Home/Browser is still visible during the transition
         dialog?.window?.setDimAmount(0f)
 
         val args by navArgs<TabManagementFragmentArgs>()
-        args.accessPoint.takeIf { it != TabsTrayAccessPoint.None }?.let {
+        args.accessPoint.takeIf { it != AccessPoint.None }?.let {
             TabsTray.accessPoint[it.name.lowercase()].add()
         }
         val initialMode = if (args.enterMultiselect) {

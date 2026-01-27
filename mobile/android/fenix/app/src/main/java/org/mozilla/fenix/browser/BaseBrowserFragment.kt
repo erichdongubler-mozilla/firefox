@@ -1727,27 +1727,15 @@ abstract class BaseBrowserFragment :
 
     private fun onTabCounterClicked(browsingMode: BrowsingMode) {
         thumbnailsFeature.get()?.requestScreenshot()
-        if (requireContext().settings().tabManagerEnhancementsEnabled) {
-            findNavController().nav(
-                R.id.browserFragment,
-                BrowserFragmentDirections.actionGlobalTabManagementFragment(
-                    page = when (browsingMode) {
-                        BrowsingMode.Normal -> Page.NormalTabs
-                        BrowsingMode.Private -> Page.PrivateTabs
-                    },
-                ),
-            )
-        } else {
-            findNavController().nav(
-                R.id.browserFragment,
-                BrowserFragmentDirections.actionGlobalTabsTrayFragment(
-                    page = when (browsingMode) {
-                        BrowsingMode.Normal -> Page.NormalTabs
-                        BrowsingMode.Private -> Page.PrivateTabs
-                    },
-                ),
-            )
-        }
+        findNavController().nav(
+            R.id.browserFragment,
+            BrowserFragmentDirections.actionGlobalTabManagementFragment(
+                page = when (browsingMode) {
+                    BrowsingMode.Normal -> Page.NormalTabs
+                    BrowsingMode.Private -> Page.PrivateTabs
+                },
+            ),
+        )
     }
 
     @VisibleForTesting

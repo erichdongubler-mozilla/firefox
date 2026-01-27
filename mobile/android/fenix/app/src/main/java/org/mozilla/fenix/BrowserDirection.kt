@@ -38,7 +38,6 @@ enum class BrowserDirection(
     FromStudiesFragment(R.id.studiesFragment),
     FromAddonPermissionsDetailsFragment(R.id.addonPermissionsDetailFragment),
     FromLoginDetailFragment(R.id.loginDetailFragment),
-    FromTabsTray(R.id.tabsTrayFragment),
     FromTabManager(R.id.tabManagementFragment),
     FromRecentlyClosed(R.id.recentlyClosedFragment),
     FromAddonsManagementFragment(R.id.addonsManagementFragment),

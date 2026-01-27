@@ -2847,14 +2847,6 @@ class Settings(
     )
 
     /**
-     * Whether the Tab Manager enhancements are enabled.
-     */
-    var tabManagerEnhancementsEnabled by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_tab_manager_enhancements),
-        default = { DefaultTabManagementFeatureHelper.enhancementsEnabled },
-    )
-
-    /**
      * Whether the Tab Manager opening animation is enabled.
      */
     var tabManagerOpeningAnimationEnabled by booleanPreference(

@@ -412,12 +412,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_tab_manager_enhancements).apply {
-            isVisible = true
-            isChecked = context.settings().tabManagerEnhancementsEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreference>(R.string.pref_key_tab_manager_opening_animation).apply {
             isVisible = true
             isChecked = context.settings().tabManagerOpeningAnimationEnabled
