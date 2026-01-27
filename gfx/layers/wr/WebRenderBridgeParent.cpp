@@ -2990,3 +2990,4 @@ WebRenderBridgeParentRef::~WebRenderBridgeParentRef() {
 }
 
 }  // namespace mozilla::layers
+#undef LOG
