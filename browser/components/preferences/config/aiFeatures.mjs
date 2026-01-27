@@ -90,7 +90,9 @@ Preferences.addSetting({
         OnDeviceModelManager.reset(feature);
       }
     }
-
+    // There's no feature-specific dropdown for extensions since it's still a
+    // trial feature, so just turn it off/on based on the global switch.
+    Services.prefs.setBoolPref("extensions.ml.enabled", !inputVal);
     Glean.browser.globalAiControlToggled.record({ blocked: inputVal });
   },
 });
