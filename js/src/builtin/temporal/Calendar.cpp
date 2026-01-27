@@ -620,81 +620,9 @@ static UniqueICU4XCalendar CreateICU4XCalendar(CalendarId id) {
   return UniqueICU4XCalendar{result};
 }
 
-static uint32_t MaximumISOYear(CalendarId calendarId) {
-  switch (calendarId) {
-    case CalendarId::ISO8601:
-    case CalendarId::Buddhist:
-    case CalendarId::Coptic:
-    case CalendarId::Ethiopian:
-    case CalendarId::EthiopianAmeteAlem:
-    case CalendarId::Gregorian:
-    case CalendarId::Hebrew:
-    case CalendarId::Indian:
-    case CalendarId::IslamicCivil:
-    case CalendarId::IslamicTabular:
-    case CalendarId::Japanese:
-    case CalendarId::Persian:
-    case CalendarId::ROC: {
-      // Passing values near INT32_{MIN,MAX} triggers ICU4X assertions, so we
-      // have to handle large input years early.
-      return 300'000;
-    }
-
-    case CalendarId::Chinese:
-    case CalendarId::Dangi: {
-      // Lower limit for these calendars to avoid running into ICU4X assertions.
-      //
-      // https://github.com/unicode-org/icu4x/issues/4917
-      return 10'000;
-    }
-
-    case CalendarId::IslamicUmmAlQura: {
-      // Lower limit for these calendars to avoid running into ICU4X assertions.
-      //
-      // https://github.com/unicode-org/icu4x/issues/4917
-      return 5'000;
-    }
-  }
-  MOZ_CRASH("invalid calendar");
-}
-
-static uint32_t MaximumCalendarYear(CalendarId calendarId) {
-  switch (calendarId) {
-    case CalendarId::ISO8601:
-    case CalendarId::Buddhist:
-    case CalendarId::Coptic:
-    case CalendarId::Ethiopian:
-    case CalendarId::EthiopianAmeteAlem:
-    case CalendarId::Gregorian:
-    case CalendarId::Hebrew:
-    case CalendarId::Indian:
-    case CalendarId::IslamicCivil:
-    case CalendarId::IslamicTabular:
-    case CalendarId::Japanese:
-    case CalendarId::Persian:
-    case CalendarId::ROC: {
-      // Passing values near INT32_{MIN,MAX} triggers ICU4X assertions, so we
-      // have to handle large input years early.
-      return 300'000;
-    }
-
-    case CalendarId::Chinese:
-    case CalendarId::Dangi: {
-      // Lower limit for these calendars to avoid running into ICU4X assertions.
-      //
-      // https://github.com/unicode-org/icu4x/issues/4917
-      return 10'000;
-    }
-
-    case CalendarId::IslamicUmmAlQura: {
-      // Lower limit for these calendars to avoid running into ICU4X assertions.
-      //
-      // https://github.com/unicode-org/icu4x/issues/4917
-      return 5'000;
-    }
-  }
-  MOZ_CRASH("invalid calendar");
-}
+// Passing values near INT32_{MIN,MAX} triggers ICU4X assertions, so we have to
+// handle large input years early.
+static constexpr uint32_t MaximumYear = 300'000;
 
 static void ReportCalendarFieldOverflow(JSContext* cx, const char* name,
                                         double num) {
@@ -718,7 +646,7 @@ using UniqueICU4XDate = mozilla::UniquePtr<icu4x::capi::Date, ICU4XDateDeleter>;
 static UniqueICU4XDate CreateICU4XDate(JSContext* cx, const ISODate& date,
                                        CalendarId calendarId,
                                        const icu4x::capi::Calendar* calendar) {
-  if (mozilla::Abs(date.year) > MaximumISOYear(calendarId)) {
+  if (mozilla::Abs(date.year) > MaximumYear) {
     ReportCalendarFieldOverflow(cx, "year", date.year);
     return nullptr;
   }
@@ -926,7 +854,7 @@ static mozilla::Result<UniqueICU4XDate, CalendarError> CreateDateFromCodes(
              ToAnyCalendarKind(calendarId));
   MOZ_ASSERT(CalendarErasAsEnumSet(calendarId).contains(eraYear.era));
   MOZ_ASSERT_IF(CalendarEraHasInverse(calendarId), eraYear.year > 0);
-  MOZ_ASSERT(mozilla::Abs(eraYear.year) <= MaximumCalendarYear(calendarId));
+  MOZ_ASSERT(mozilla::Abs(eraYear.year) <= MaximumYear);
   MOZ_ASSERT(IsValidMonthCodeForCalendar(calendarId, monthCode));
   MOZ_ASSERT(day > 0);
   MOZ_ASSERT(day <= CalendarDaysInMonth(calendarId).second);
@@ -1104,7 +1032,7 @@ static UniqueICU4XDate CreateDateFromCodes(
   }
 
   // ICU4X doesn't support large dates, so we have to handle this case early.
-  if (mozilla::Abs(eraYear.year) > MaximumCalendarYear(calendarId)) {
+  if (mozilla::Abs(eraYear.year) > MaximumYear) {
     ReportCalendarFieldOverflow(cx, "year", eraYear.year);
     return nullptr;
   }
@@ -1687,7 +1615,7 @@ struct EraYears {
 static bool CalendarEraYear(JSContext* cx, CalendarId calendarId,
                             EraYear eraYear, EraYear* result) {
   MOZ_ASSERT(CalendarSupportsEra(calendarId));
-  MOZ_ASSERT(mozilla::Abs(eraYear.year) <= MaximumCalendarYear(calendarId));
+  MOZ_ASSERT(mozilla::Abs(eraYear.year) <= MaximumYear);
 
   if (eraYear.year > 0 || !CalendarEraHasInverse(calendarId)) {
     *result = eraYear;
@@ -1757,7 +1685,7 @@ static bool CalendarFieldYear(JSContext* cx, CalendarId calendar,
 
     int32_t intYear;
     if (!mozilla::NumberEqualsInt32(year, &intYear) ||
-        mozilla::Abs(intYear) > MaximumCalendarYear(calendar)) {
+        mozilla::Abs(intYear) > MaximumYear) {
       ReportCalendarFieldOverflow(cx, "year", year);
       return false;
     }
@@ -1797,7 +1725,7 @@ static bool CalendarFieldYear(JSContext* cx, CalendarId calendar,
 
     int32_t intEraYear;
     if (!mozilla::NumberEqualsInt32(eraYear, &intEraYear) ||
-        mozilla::Abs(intEraYear) > MaximumCalendarYear(calendar)) {
+        mozilla::Abs(intEraYear) > MaximumYear) {
       ReportCalendarFieldOverflow(cx, "eraYear", eraYear);
       return false;
     }
