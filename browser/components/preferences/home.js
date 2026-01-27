@@ -10,6 +10,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
 });
 
 /*
@@ -39,7 +40,7 @@ Preferences.addAll([
 ]);
 
 if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
-  // Homepage / New Windows
+  // Set up `browser.startup.homepage` to show homepage options for Homepage / New Windows
   Preferences.addSetting(
     /** @type {{ useCustomHomepage: boolean } & SettingConfig } */ ({
       id: "homepageNewWindows",
@@ -54,8 +55,8 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
             return "home";
           case BLANK_HOMEPAGE_URL:
             return "blank";
-          // Bug 1969951 - Custom value can be any string so leaving it as default value to catch
-          // non-default/blank entires.
+          // Custom value can be any string so leaving it as default value to catch
+          // non-default/blank entries.
           default:
             return "custom";
         }
@@ -72,7 +73,6 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
           case "blank":
             return BLANK_HOMEPAGE_URL;
           case "custom":
-            // Bug 1969951 - Add values set in subpage here
             return setting.pref.value;
           default:
             throw new Error("No handler for this value");
@@ -81,15 +81,57 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
     })
   );
 
+  // Set up `browser.startup.homepage` again to help make a pretty list of domains
+  // for displaying in the "Choose a specific website" link to the Custom Homepage subpage.
+  Preferences.addSetting({
+    id: "homepageDisplayPref",
+    pref: "browser.startup.homepage",
+  });
+
   // Homepage / Choose Custom Homepage URL Button
   Preferences.addSetting({
     id: "homepageGoToCustomHomepageUrlPanel",
-    deps: ["homepageNewWindows"],
+    deps: ["homepageNewWindows", "homepageDisplayPref"],
     visible: ({ homepageNewWindows }) => {
       return homepageNewWindows.value === "custom";
     },
     onUserClick: () => {
       gotoPref("customHomepage");
+    },
+
+    getControlConfig(config, deps) {
+      const servicePages = [
+        "about:home",
+        "chrome://browser/content/blanktab.html",
+      ];
+      let customURLsDescription;
+
+      if (servicePages.includes(deps.homepageDisplayPref.value.trim())) {
+        // Make sure we only show user-provided values for custom URLs rather than
+        // values we set in `browser.startup.homepage` for "Firefox Home"
+        // and "Blank Page".
+        customURLsDescription = null;
+      } else {
+        // Add a comma-separated list of Custom URLs the user set for their homepage
+        // to the description part of the "Choose a specific site" box button.
+        customURLsDescription = deps.homepageDisplayPref.value
+          .split("|")
+          .map(uri =>
+            BrowserUtils.formatURIStringForDisplay(uri, {
+              onlyBaseDomain: true,
+            })
+          )
+          .filter(Boolean)
+          .join(", ");
+      }
+
+      return {
+        ...config,
+        controlAttrs: {
+          ...config.controlAttrs,
+          ".description": customURLsDescription,
+        },
+      };
     },
   });
 

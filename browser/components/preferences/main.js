@@ -2643,9 +2643,6 @@ SettingGroupManager.registerGroups({
           {
             id: "recentActivityRows",
             control: "moz-select",
-            controlAttrs: {
-              class: "newtab-rows-select",
-            },
             options: [
               {
                 value: 1,
