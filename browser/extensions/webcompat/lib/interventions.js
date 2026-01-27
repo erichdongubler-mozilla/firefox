@@ -17,6 +17,116 @@ let debugLog = function () {
 
 const ENABLE_INTERVENTIONS_PREF = "enable_interventions";
 
+function getTLDForUrl(url) {
+  try {
+    // MatchPatterns usually have wildcards, so replace asterisks.
+    return browser.urlHelpers.getBaseDomainFromHost(
+      URL.parse(url.replaceAll("*", "x")).hostname
+    );
+  } catch (e) {
+    console.error("Could not get eTLD for UA Overrides for", url, e);
+  }
+  return undefined;
+}
+
+class InterventionsWebRequestListener {
+  #interventionsByTLD = new Map();
+  #matchPatternCache = new Map();
+  #matchPatternsForInterventions = new Map();
+  #eventName = undefined;
+  #listener = undefined;
+  #opts = undefined;
+
+  constructor(eventName, listener, opts) {
+    this.#eventName = eventName;
+    this.#listener = listener;
+    this.#opts = opts;
+  }
+
+  getMatchingInterventions(url) {
+    return [...this.#interventionsByTLD.get(getTLDForUrl(url))].filter(
+      intervention => {
+        // Matching the TLD may not be enough, so also check the MatchPatterns.
+        for (const matchPattern of this.#matchPatternsForInterventions.get(
+          intervention
+        )) {
+          if (matchPattern.matches(url)) {
+            return true;
+          }
+        }
+        return false;
+      }
+    );
+  }
+
+  restartListener() {
+    browser.webRequest[this.#eventName].removeListener(this.#listener);
+    const urls = [...this.#matchPatternsForInterventions.values()]
+      .map(setOfMatchPatterns => [...setOfMatchPatterns])
+      .flat()
+      .map(matchPattern => matchPattern.patterns)
+      .flat();
+    if (urls.length) {
+      browser.webRequest[this.#eventName].addListener(
+        this.#listener,
+        { urls },
+        this.#opts
+      );
+    }
+  }
+
+  #getMatchPatternInstance(patternString) {
+    let instance = this.#matchPatternCache.get(patternString);
+    if (!instance) {
+      instance = browser.matchPatterns.getMatcher([patternString]);
+      this.#matchPatternCache.set(patternString, instance);
+    }
+    return instance;
+  }
+
+  interventionHandlesMatchPattern(intervention, patternString) {
+    const actualMatchPatternInstance =
+      this.#getMatchPatternInstance(patternString);
+
+    let set = this.#matchPatternsForInterventions.get(intervention);
+    if (!set) {
+      set = new Set();
+      this.#matchPatternsForInterventions.set(intervention, set);
+    }
+    set.add(actualMatchPatternInstance);
+
+    const tld = getTLDForUrl(patternString);
+    set = this.#interventionsByTLD.get(tld);
+    if (!set) {
+      set = new Set();
+      this.#interventionsByTLD.set(tld, set);
+    }
+    set.add(intervention);
+  }
+
+  interventionNoLongerHandlesMatchPattern(intervention, patternString) {
+    const actualMatchPatternInstance =
+      this.#getMatchPatternInstance(patternString);
+
+    let set = this.#matchPatternsForInterventions.get(intervention);
+    if (set) {
+      set.delete(actualMatchPatternInstance);
+      if (!set.size) {
+        this.#matchPatternsForInterventions.delete(intervention);
+      }
+    }
+
+    const tld = getTLDForUrl(patternString);
+    set = this.#interventionsByTLD.get(tld);
+    if (set) {
+      set.delete(intervention);
+      if (!set.size) {
+        this.#interventionsByTLD.delete(tld);
+      }
+    }
+  }
+}
+
 class Interventions {
   #appVersion = parseFloat(
     browser.appConstants.getAppVersion().match(/\d+(\.\d+)?/)[0]
@@ -35,12 +145,25 @@ class Interventions {
   #doneBootingUp = undefined;
   #bootedUp = new Promise(resolve => (this.#doneBootingUp = resolve));
 
-  #activeListenersPerIntervention = new Map();
   #contentScriptsPerIntervention = new Map();
   #individualDisablingPrefListeners = new Map();
 
   #listenersForCheckedGlobalPrefs = new Map();
   #cachedCheckedGlobalPrefValues = new Map();
+
+  #requestBlocksListener = new InterventionsWebRequestListener(
+    "onBeforeRequest",
+    () => {
+      return { cancel: true };
+    },
+    ["blocking"]
+  );
+
+  #uaOverridesListener = new InterventionsWebRequestListener(
+    "onBeforeSendHeaders",
+    details => this.#maybeOverrideUAHeaders(details),
+    ["blocking", "requestHeaders"]
+  );
 
   constructor(availableInterventions, customFunctions) {
     this.#customFunctions = customFunctions;
@@ -184,43 +307,75 @@ class Interventions {
     });
   }
 
+  #getBlocksAndMatchesFor(config) {
+    const { bugs } = config;
+    return {
+      blocks: Object.values(bugs)
+        .map(bug => bug.blocks)
+        .flat()
+        .filter(v => v !== undefined),
+      matches: Object.values(bugs)
+        .map(bug => bug.matches)
+        .flat()
+        .filter(v => v !== undefined),
+    };
+  }
+
   #disableInterventionsInternal(
     whichInterventions = this.#availableInterventions
   ) {
     const contentScriptsToUnregister = [];
+    let requestBlocksChanged = false;
+    let uaOverridesChanged = false;
+
     for (const config of whichInterventions) {
-      const { active, label, interventions } = config;
+      const { active, interventions } = config;
       if (!active) {
         continue;
       }
+
+      const { blocks, matches } = this.#getBlocksAndMatchesFor(config);
 
       for (const intervention of interventions) {
         if (!intervention.enabled) {
           continue;
         }
 
-        this.#enableOrDisableCustomFuncs(
-          "disable",
-          label,
-          intervention,
-          config
-        );
+        this.#enableOrDisableCustomFuncs("disable", intervention, config);
         contentScriptsToUnregister.push(
           ...(this.#contentScriptsPerIntervention.get(intervention) ?? [])
         );
 
-        // This covers both request blocks and ua_string cases
-        const listeners =
-          this.#activeListenersPerIntervention.get(intervention);
-        if (listeners) {
-          for (const [name, listener] of Object.entries(listeners)) {
-            browser.webRequest[name].removeListener(listener);
+        if ("ua_string" in intervention) {
+          uaOverridesChanged = true;
+          for (const matchPattern of matches) {
+            this.#uaOverridesListener.interventionNoLongerHandlesMatchPattern(
+              intervention,
+              matchPattern
+            );
           }
-          this.#activeListenersPerIntervention.delete(intervention);
+        }
+
+        if (blocks.length) {
+          requestBlocksChanged = true;
+          for (const matchPattern of blocks) {
+            this.#requestBlocksListener.interventionNoLongerHandlesMatchPattern(
+              intervention,
+              matchPattern
+            );
+          }
         }
       }
 
       config.active = false;
+    }
+
+    if (requestBlocksChanged) {
+      this.#requestBlocksListener.restartListener();
+    }
+
+    if (uaOverridesChanged) {
+      this.#uaOverridesListener.restartListener();
     }
 
     return this.#disableContentScripts(contentScriptsToUnregister);
@@ -388,15 +543,7 @@ class Interventions {
             `force-disabled by pref extensions.webcompat.${disablingPref}`,
           ]);
         } else {
-          const { bugs, label } = config;
-          const blocks = Object.values(bugs)
-            .map(bug => bug.blocks)
-            .flat()
-            .filter(v => v !== undefined);
-          const matches = Object.values(bugs)
-            .map(bug => bug.matches)
-            .flat()
-            .filter(v => v !== undefined);
+          const { blocks, matches } = this.#getBlocksAndMatchesFor(config);
 
           let uaOverridesEnabled = false;
           let requestBlocksEnabled = false;
@@ -433,12 +580,7 @@ class Interventions {
             }
 
             if (
-              this.#enableOrDisableCustomFuncs(
-                "enable",
-                label,
-                intervention,
-                config
-              )
+              this.#enableOrDisableCustomFuncs("enable", intervention, config)
             ) {
               usesCustomFuncs = true;
             }
@@ -446,7 +588,7 @@ class Interventions {
             if (intervention.content_scripts) {
               const contentScriptsForIntervention =
                 this.#buildContentScriptRegistrations(
-                  label,
+                  config.label,
                   intervention,
                   matches
                 );
@@ -457,11 +599,24 @@ class Interventions {
               contentScriptsToRegister.push(...contentScriptsForIntervention);
             }
 
-            if (this.#enableUAOverrides(label, intervention, matches)) {
+            if ("ua_string" in intervention) {
               uaOverridesEnabled = true;
+              for (const matchPattern of matches) {
+                this.#uaOverridesListener.interventionHandlesMatchPattern(
+                  intervention,
+                  matchPattern
+                );
+              }
             }
-            if (this.#enableRequestBlocks(label, intervention, blocks)) {
+
+            if (blocks.length) {
               requestBlocksEnabled = true;
+              for (const matchPattern of blocks) {
+                this.#requestBlocksListener.interventionHandlesMatchPattern(
+                  intervention,
+                  matchPattern
+                );
+              }
             }
 
             somethingWasEnabled = true;
@@ -488,6 +643,14 @@ class Interventions {
         console.error("Error enabling intervention(s) for", config.label, e);
         skipped.push([config.label, ["unknown error occurred"]]);
       }
+    }
+
+    if (enabledRequestBlocks.length) {
+      this.#requestBlocksListener.restartListener();
+    }
+
+    if (enabledUAoverrides.length) {
+      this.#uaOverridesListener.restartListener();
     }
 
     return InterventionHelpers._registerContentScripts(
@@ -538,7 +701,7 @@ class Interventions {
     });
   }
 
-  #enableOrDisableCustomFuncs(action, label, intervention, config) {
+  #enableOrDisableCustomFuncs(action, intervention, config) {
     let usesCustomFuncs = false;
     for (const [customFuncName, customFunc] of Object.entries(
       this.#customFunctions
@@ -550,7 +713,7 @@ class Interventions {
             usesCustomFuncs = true;
           } catch (e) {
             console.trace(
-              `Error while calling custom function ${customFuncName}.${action} for ${label}:`,
+              `Error while calling custom function ${customFuncName}.${action} for ${config.label}:`,
               e
             );
           }
@@ -560,84 +723,47 @@ class Interventions {
     return usesCustomFuncs;
   }
 
-  #enableUAOverrides(label, intervention, matches) {
-    if (!("ua_string" in intervention)) {
-      return false;
-    }
-
-    let listeners = this.#activeListenersPerIntervention.get(intervention);
-    if (!listeners) {
-      listeners = {};
-      this.#activeListenersPerIntervention.set(intervention, listeners);
-    }
-
-    const listener = details =>
-      this.#maybeOverrideUAHeaders(details, intervention);
-
-    browser.webRequest.onBeforeSendHeaders.addListener(
-      listener,
-      { urls: matches },
-      ["blocking", "requestHeaders"]
-    );
-
-    listeners.onBeforeSendHeaders = listener;
-    return true;
-  }
-
-  #maybeOverrideUAHeaders(details, intervention) {
+  #maybeOverrideUAHeaders(details) {
     const { requestHeaders } = details;
-    const { enabled, ua_string } = intervention;
 
-    if (!enabled) {
+    const interventions = this.#uaOverridesListener.getMatchingInterventions(
+      details.url
+    );
+    if (!interventions?.length) {
+      console.error("Unexpectedly found no UA overrides matching", details.url);
       return { requestHeaders };
     }
 
-    for (const header of requestHeaders) {
-      if (header.name.toLowerCase() !== "user-agent") {
-        continue;
+    for (const intervention of interventions) {
+      const { enabled, ua_string } = intervention;
+
+      if (!enabled) {
+        return { requestHeaders };
       }
 
-      // Don't override the UA if we're on a mobile device that has the
-      // "Request Desktop Site" mode enabled. The UA for the desktop mode
-      // is set inside Gecko with a simple string replace, so we can use
-      // that as a check, see https://searchfox.org/mozilla-central/rev/89d33e1c3b0a57a9377b4815c2f4b58d933b7c32/mobile/android/chrome/geckoview/GeckoViewSettingsChild.js#23-28
-      let isMobileWithDesktopMode =
-        this.#currentPlatform == "android" &&
-        header.value.includes("X11; Linux x86_64");
-      if (isMobileWithDesktopMode) {
-        continue;
-      }
+      for (const header of requestHeaders) {
+        if (header.name.toLowerCase() !== "user-agent") {
+          continue;
+        }
 
-      header.value = InterventionHelpers.applyUAChanges(
-        header.value,
-        ua_string
-      );
+        // Don't override the UA if we're on a mobile device that has the
+        // "Request Desktop Site" mode enabled. The UA for the desktop mode
+        // is set inside Gecko with a simple string replace, so we can use
+        // that as a check, see https://searchfox.org/mozilla-central/rev/89d33e1c3b0a57a9377b4815c2f4b58d933b7c32/mobile/android/chrome/geckoview/GeckoViewSettingsChild.js#23-28
+        let isMobileWithDesktopMode =
+          this.#currentPlatform == "android" &&
+          header.value.includes("X11; Linux x86_64");
+        if (isMobileWithDesktopMode) {
+          return { requestHeaders };
+        }
+
+        header.value = InterventionHelpers.applyUAChanges(
+          header.value,
+          ua_string
+        );
+      }
     }
     return { requestHeaders };
-  }
-
-  #enableRequestBlocks(label, intervention, blocks) {
-    if (!blocks.length) {
-      return false;
-    }
-
-    let listeners = this.#activeListenersPerIntervention.get(intervention);
-    if (!listeners) {
-      listeners = {};
-      this.#activeListenersPerIntervention.set(intervention, listeners);
-    }
-
-    const listener = () => {
-      return { cancel: true };
-    };
-
-    browser.webRequest.onBeforeRequest.addListener(listener, { urls: blocks }, [
-      "blocking",
-    ]);
-
-    listeners.onBeforeRequest = listener;
-
-    return true;
   }
 
   async #disableContentScripts(contentScripts) {

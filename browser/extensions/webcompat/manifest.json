@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Web Compatibility Interventions",
   "description": "Urgent post-release fixes for web compatibility.",
-  "version": "149.3.0",
+  "version": "149.4.0",
   "browser_specific_settings": {
     "gecko": {
       "id": "webcompat@mozilla.org",
@@ -65,6 +65,14 @@
         "scopes": ["addon_parent"],
         "script": "experiment-apis/trackingProtection.js",
         "paths": [["trackingProtection"]]
+      }
+    },
+    "urlHelpers": {
+      "schema": "experiment-apis/urlHelpers.json",
+      "child": {
+        "scopes": ["addon_child"],
+        "script": "experiment-apis/urlHelpers.js",
+        "paths": [["appConstants"]]
       }
     }
   },
