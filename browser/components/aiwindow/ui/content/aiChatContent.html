@@ -14,8 +14,7 @@
       content="default-src resource: chrome:; object-src 'none'; img-src chrome:;"
     />
     <meta name="color-scheme" content="light dark" />
-    <!-- TODO : Add localization preview -->
-    <title>AI Chat Content</title>
+    <title data-l10n-id="smartwindow-messages-document-title"></title>
     <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
     <link
       rel="stylesheet"
@@ -30,6 +29,7 @@
       type="module"
       src="chrome://browser/content/aiwindow/components/ai-chat-message.mjs"
     ></script>
+    <link rel="localization" href="preview/aiWindowContent.ftl" />
   </head>
   <body id="ai-window-wrapper">
     <ai-chat-content></ai-chat-content>
