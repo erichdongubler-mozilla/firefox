@@ -660,7 +660,8 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
 
 /* IP Protection */
 #ipprotection-button > .toolbarbutton-icon {
-  width: calc(2 * var(--toolbarbutton-inner-padding) + 35px);
+  --icon-width: 48px;
+  width: calc(2 * var(--toolbarbutton-inner-padding) + var(--icon-width));
   padding-block: 0;
 }
 
