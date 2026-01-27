@@ -132,6 +132,21 @@ class LoadListener {
   onStatus() {}
 }
 
+/**
+ * Describes reasons why a search engine might have failed installation. Mainly
+ * used by OpenSearch engines, but may be raised for other engines as well.
+ */
+export class SearchEngineInstallError extends Error {
+  /**
+   * @param {"duplicate-title"|"corrupted"|"download-failure"} type
+   * @param {Parameters<ErrorConstructor>} params
+   */
+  constructor(type, ...params) {
+    super(...params);
+    this.type = type;
+  }
+}
+
 export var SearchUtils = {
   BROWSER_SEARCH_PREF,
 

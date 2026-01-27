@@ -11655,23 +11655,6 @@ interface nsISearchEngine extends nsISupports {
   readonly partnerCode: string;
 }
 
-}  // global
-
-declare enum nsISearchService_OpenSearchInstallErrors {
-  ERROR_DOWNLOAD_FAILURE = 1,
-  ERROR_DUPLICATE_ENGINE = 2,
-  ERROR_ENGINE_CORRUPTED = 3,
-}
-
-declare global {
-
-namespace nsISearchService {
-  type OpenSearchInstallErrors = nsISearchService_OpenSearchInstallErrors;
-}
-
-interface nsISearchService extends nsISupports, Enums<typeof nsISearchService_OpenSearchInstallErrors> {
-}
-
 // https://searchfox.org/mozilla-central/source/toolkit/components/shell/nsIToolkitShellService.idl
 
 interface nsIToolkitShellService extends nsISupports {
@@ -16263,7 +16246,6 @@ interface nsIXPCComponents_Interfaces {
   nsIUserCharacteristicsPageService: nsJSIID<nsIUserCharacteristicsPageService>;
   nsISearchSubmission: nsJSIID<nsISearchSubmission>;
   nsISearchEngine: nsJSIID<nsISearchEngine>;
-  nsISearchService: nsJSIID<nsISearchService, typeof nsISearchService_OpenSearchInstallErrors>;
   nsIToolkitShellService: nsJSIID<nsIToolkitShellService>;
   nsITerminatorTest: nsJSIID<nsITerminatorTest>;
   nsIXULStore: nsJSIID<nsIXULStore>;

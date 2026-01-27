@@ -247,8 +247,9 @@ add_task(async function test_duplicate_engine_error() {
   Assert.ok(engine, "User engine should be added successfully.");
   await Assert.rejects(
     SearchService.addUserEngine(engineData),
-    ex => ex.result == Ci.nsISearchService.ERROR_DUPLICATE_ENGINE,
-    "Adding a user engine with a duplicate name should throw ERROR_DUPLICATE_ENGINE."
+    ex =>
+      ex instanceof SearchEngineInstallError && ex.type == "duplicate-title",
+    "Adding a user engine with a duplicate name should throw an error of type 'duplicate-title'"
   );
 
   await SearchService.removeEngine(engine);

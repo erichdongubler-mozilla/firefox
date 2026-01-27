@@ -25,6 +25,8 @@ const lazy = XPCOMUtils.declareLazy({
   Region: "resource://gre/modules/Region.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SearchEngine: "moz-src:///toolkit/components/search/SearchEngine.sys.mjs",
+  SearchEngineInstallError:
+    "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   SearchEngineSelector:
     "moz-src:///toolkit/components/search/SearchEngineSelector.sys.mjs",
   SearchSettings: "moz-src:///toolkit/components/search/SearchSettings.sys.mjs",
@@ -815,30 +817,22 @@ export const SearchService = new (class SearchService {
    *   file.
    * @param {OriginAttributesDictionary} [originAttributes]
    *   The origin attributes to use to load this manifest.
-   * @throws {Cr.NS_ERROR_FAILURE}
+   * @throws {lazy.SearchEngineInstallError|TypeError|Error}
    *   If the description file cannot be successfully loaded.
    */
   async addOpenSearchEngine(engineURL, iconURL, originAttributes) {
     lazy.logConsole.debug("addOpenSearchEngine: Adding", engineURL);
     await this.init();
-    let engine;
-    try {
-      let engineData = await lazy.loadAndParseOpenSearchEngine(
-        Services.io.newURI(engineURL),
-        null,
-        originAttributes
-      );
-      engine = new lazy.OpenSearchEngine({
-        engineData,
-        faviconURL: iconURL,
-        originAttributes,
-      });
-    } catch (ex) {
-      throw Components.Exception(
-        "addEngine: Error adding engine:\n" + ex,
-        ex.result || Cr.NS_ERROR_FAILURE
-      );
-    }
+    let engineData = await lazy.loadAndParseOpenSearchEngine(
+      Services.io.newURI(engineURL),
+      null,
+      originAttributes
+    );
+    let engine = new lazy.OpenSearchEngine({
+      engineData,
+      faviconURL: iconURL,
+      originAttributes,
+    });
     this.#addEngineToStore(engine);
     this.#maybeStartOpenSearchUpdateTimer();
     return engine;
@@ -2611,9 +2605,9 @@ export const SearchService = new (class SearchService {
 
     // See if there is an existing engine with the same name.
     if (!skipDuplicateCheck && this.#getEngineByName(engine.name)) {
-      throw Components.Exception(
-        `#addEngineToStore: An engine called ${engine.name} already exists!`,
-        Ci.nsISearchService.ERROR_DUPLICATE_ENGINE
+      throw new lazy.SearchEngineInstallError(
+        "duplicate-title",
+        "An engine called ${engine.name} already exists!"
       );
     }
 

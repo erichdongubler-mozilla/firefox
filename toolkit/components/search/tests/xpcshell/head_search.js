@@ -16,6 +16,8 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://services-settings/RemoteSettingsClient.sys.mjs",
   SearchEngineClassification:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSearch.sys.mjs",
+  SearchEngineInstallError:
+    "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   SearchEngineSelector:
     "moz-src:///toolkit/components/search/SearchEngineSelector.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",

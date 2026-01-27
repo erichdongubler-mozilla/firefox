@@ -230,13 +230,3 @@ interface nsISearchEngine : nsISupports
    */
   readonly attribute AUTF8String partnerCode;
 };
-
-[scriptable, uuid(0301834b-2630-440e-8b98-db8dc55f34b9)]
-interface nsISearchService : nsISupports
-{
-  cenum OpenSearchInstallErrors : 8 {
-    ERROR_DOWNLOAD_FAILURE = 0x1,
-    ERROR_DUPLICATE_ENGINE = 0x2,
-    ERROR_ENGINE_CORRUPTED = 0x3,
-  };
-};
