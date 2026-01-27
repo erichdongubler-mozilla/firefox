@@ -538,11 +538,8 @@ export class EngineURL {
 
 /**
  * SearchEngine is the base class that all search engine classes inherit from.
- *
- * @implements {nsISearchEngine}
  */
 export class SearchEngine {
-  QueryInterface = ChromeUtils.generateQI(["nsISearchEngine"]);
   // Data set by the user.
   _metaData = {};
 
@@ -1644,7 +1641,7 @@ export class SearchEngine {
   speculativeConnect(options) {
     if (!options || !options.window) {
       console.error(
-        "invalid options arg passed to nsISearchEngine.speculativeConnect"
+        "invalid options arg passed to SearchEngine.speculativeConnect"
       );
       throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
     }

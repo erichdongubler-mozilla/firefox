@@ -1028,7 +1028,7 @@ export class UrlbarInput extends HTMLElement {
    *   Where we expect the result to be opened.
    * @property {object} openParams
    *   The parameters related to where the result will be opened.
-   * @property {nsISearchEngine} engine
+   * @property {SearchEngine} engine
    *   The selected one-off's engine.
    */
 
@@ -1304,7 +1304,7 @@ export class UrlbarInput extends HTMLElement {
    *
    * @param {string} searchString
    *   The search string to use.
-   * @param {nsISearchEngine} [searchEngine]
+   * @param {SearchEngine} [searchEngine]
    *   Optional. If included and the right prefs are set, we will enter search
    *   mode when handing `searchString` from the fake input to the Urlbar.
    * @param {string} [newtabSessionId]
@@ -2129,7 +2129,7 @@ export class UrlbarInput extends HTMLElement {
    *   use it as its query.
    * @param {object} [options]
    *   Object options
-   * @param {nsISearchEngine} [options.searchEngine]
+   * @param {SearchEngine} [options.searchEngine]
    *   Search engine to use when the search is using a known alias.
    * @param {UrlbarUtils.SEARCH_MODE_ENTRY} [options.searchModeEntry]
    *   If provided, we will record this parameter as the search mode entry point
@@ -2237,7 +2237,7 @@ export class UrlbarInput extends HTMLElement {
    *
    * @param {string} value
    * @param {object} options
-   * @param {nsISearchEngine} options.searchEngine
+   * @param {SearchEngine} options.searchEngine
    */
   openEngineHomePage(value, { searchEngine }) {
     if (!searchEngine) {
@@ -3471,7 +3471,7 @@ export class UrlbarInput extends HTMLElement {
    * updates an incremental total number of searches in a pref,
    * and informs ASRouter that a search has occurred via a trigger send
    *
-   * @param {nsISearchEngine} engine
+   * @param {SearchEngine} engine
    *   The engine to generate the query for.
    * @param {Event} event
    *   The event that triggered this query.
@@ -4587,7 +4587,7 @@ export class UrlbarInput extends HTMLElement {
   /**
    * Returns a Promise that resolves with default search engine.
    *
-   * @returns {Promise<nsISearchEngine>}
+   * @returns {Promise<SearchEngine>}
    */
   _getDefaultSearchEngine() {
     return this.isPrivate

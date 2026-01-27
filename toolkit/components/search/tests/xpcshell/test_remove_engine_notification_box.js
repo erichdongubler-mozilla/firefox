@@ -108,7 +108,7 @@ add_task(async function test_metadata_undefined() {
 
   const newDefault = await defaultEngineChanged;
   Assert.equal(
-    newDefault.QueryInterface(Ci.nsISearchEngine).name,
+    newDefault.name,
     "engine_to_keep",
     "Should have correctly notified the new default engine."
   );
@@ -246,7 +246,7 @@ add_task(async function test_default_engine_changed_and_metadata_unchanged() {
 
   const newDefault = await defaultEngineChanged;
   Assert.equal(
-    newDefault.QueryInterface(Ci.nsISearchEngine).name,
+    newDefault.name,
     "engine_to_keep",
     "Should have correctly notified the new default engine"
   );
@@ -349,7 +349,7 @@ async function assert_metadata_changed(settings) {
 
   let newDefault = await defaultEngineChanged;
   Assert.equal(
-    newDefault.QueryInterface(Ci.nsISearchEngine).name,
+    newDefault.name,
     "engine_to_remove",
     "Should have correctly notified the new default engine."
   );

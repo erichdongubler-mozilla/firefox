@@ -9,6 +9,7 @@
 
 /**
  * @import {Query} from "UrlbarProvidersManager.sys.mjs"
+ * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  * @import {UrlbarSearchStringTokenData} from "UrlbarTokenizer.sys.mjs"
  */
 
@@ -338,7 +339,7 @@ export var UrlbarUtils = {
       return { url, postData, mayInheritPrincipal };
     }
 
-    /** @type {nsISearchEngine} */
+    /** @type {SearchEngine} */
     let engine = await lazy.SearchService.getEngineByAlias(keyword);
     if (engine) {
       let submission = engine.getSubmission(param, null);
@@ -680,7 +681,7 @@ export var UrlbarUtils = {
   /**
    * Get the url to load for the search query.
    *
-   * @param {nsISearchEngine} engine
+   * @param {SearchEngine} engine
    *   The engine to generate the query for.
    * @param {string} query
    *   The query string to search for.
@@ -765,7 +766,7 @@ export var UrlbarUtils = {
    * Note: This is not infallible, if a speculative connection cannot be
    *       initialized, it will be a no-op.
    *
-   * @param {typeof lazy.SearchEngine.prototype|nsISearchEngine|nsIURI|URL|string} urlOrEngine
+   * @param {SearchEngine|nsIURI|URL|string} urlOrEngine
    *   The entity to initiate a speculative connection for.
    * @param {window} window
    *   The window from where the connection is initialized.
@@ -774,10 +775,7 @@ export var UrlbarUtils = {
     if (!lazy.UrlbarPrefs.get("speculativeConnect.enabled")) {
       return;
     }
-    if (
-      urlOrEngine instanceof Ci.nsISearchEngine ||
-      urlOrEngine instanceof lazy.SearchEngine
-    ) {
+    if (urlOrEngine instanceof lazy.SearchEngine) {
       try {
         urlOrEngine.speculativeConnect({
           window,

@@ -269,7 +269,7 @@ add_task(async function test() {
  *   The value to set for the `separatePrivateDefault` pref.
  * @param {boolean} options.separatePrivateDefaultUiEnabled
  *   The value to set for the `separatePrivateDefault.ui.enabled` pref.
- * @param {nsISearchEngine} options.defaultPrivateEngine
+ * @param {SearchEngine} options.defaultPrivateEngine
  *   The engine to set as the default private engine.
  * @param {boolean} options.inPrivateWindow
  *   Whether the test should start in a private window.
@@ -349,7 +349,7 @@ async function computeExpectedAndDoTest({
  *   The value to set for the `separatePrivateDefault` pref.
  * @param {boolean} options.separatePrivateDefaultUiEnabled
  *   The value to set for the `separatePrivateDefault.ui.enabled` pref.
- * @param {nsISearchEngine} options.defaultPrivateEngine
+ * @param {SearchEngine} options.defaultPrivateEngine
  *   The engine to set as the default private engine.
  * @param {boolean} options.inPrivateWindow
  *   Whether the test should start in a private window.

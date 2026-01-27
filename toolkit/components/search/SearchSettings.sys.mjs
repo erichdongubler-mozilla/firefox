@@ -16,6 +16,10 @@ const lazy = XPCOMUtils.declareLazy({
     }),
 });
 
+/**
+ * @import {SearchEngine} from "./SearchEngine.sys.mjs"
+ */
+
 const SETTINGS_FILENAME = "search.json.mozlz4";
 
 /**
@@ -695,7 +699,7 @@ export class SearchSettings {
    *
    * @param {string} engineName
    *   The name of the engine.
-   * @returns {?nsISearchEngine}
+   * @returns {?SearchEngine}
    *   The associated engine if found, null otherwise.
    */
   #getEngineByName(engineName) {

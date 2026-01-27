@@ -68,7 +68,7 @@ Preferences.addAll([
  *   Options for creating the config.
  * @param {string} options.settingId
  *   The id for the particular setting.
- * @param {() => Promise<nsISearchEngine>} options.getEngine
+ * @param {() => Promise<SearchEngine>} options.getEngine
  *   The method used to get the engine from the Search Service.
  * @param {(id: string) => Promise<void>} options.setEngine
  *   The method used to set a new engine.
@@ -1045,10 +1045,10 @@ class EngineStore {
   }
 
   /**
-   * Converts an nsISearchEngine object into an Engine Store
+   * Converts an SearchEngine object into an Engine Store
    * search engine object.
    *
-   * @param {nsISearchEngine} aEngine
+   * @param {SearchEngine} aEngine
    *   The search engine to convert.
    * @returns {object}
    *   The EngineStore search engine object.
@@ -1125,8 +1125,8 @@ class EngineStore {
   /**
    * Called when a search engine is removed.
    *
-   * @param {nsISearchEngine} aEngine
-   *   The Engine being removed. Note that this is an nsISearchEngine object.
+   * @param {SearchEngine} aEngine
+   *   The Engine being removed. Note that this is an SearchEngine object.
    */
   removeEngine(aEngine) {
     if (this.engines.length == 1) {

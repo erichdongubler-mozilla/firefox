@@ -245,14 +245,14 @@ add_task(async function test_config_updated_engine_changes() {
 
   const newDefault = await defaultEngineChanged;
   Assert.equal(
-    newDefault.QueryInterface(Ci.nsISearchEngine).name,
+    newDefault.name,
     "defaultInFRRegion",
     "Should have correctly notified the new default engine"
   );
 
   const newDefaultPrivate = await defaultPrivateEngineChanged;
   Assert.equal(
-    newDefaultPrivate.QueryInterface(Ci.nsISearchEngine).name,
+    newDefaultPrivate.name,
     "defaultInFRRegion",
     "Should have correctly notified the new default private engine"
   );

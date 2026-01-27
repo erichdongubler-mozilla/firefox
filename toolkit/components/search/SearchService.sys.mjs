@@ -984,10 +984,7 @@ export const SearchService = new (class SearchService {
         Cr.NS_ERROR_INVALID_ARG
       );
     }
-    if (
-      !(engine instanceof Ci.nsISearchEngine) &&
-      !(engine instanceof lazy.SearchEngine)
-    ) {
+    if (!(engine instanceof lazy.SearchEngine)) {
       throw Components.Exception(
         "moveEngine: Invalid engine passed to moveEngine!",
         Cr.NS_ERROR_INVALID_ARG
@@ -3328,13 +3325,7 @@ export const SearchService = new (class SearchService {
    *   The reason for the default search engine change.
    */
   #setEngineDefault(privateMode, newEngine, changeReason) {
-    // Sometimes we get wrapped nsISearchEngine objects (external XPCOM callers),
-    // and sometimes we get raw Engine JS objects (callers in this file), so
-    // handle both.
-    if (
-      !(newEngine instanceof Ci.nsISearchEngine) &&
-      !(newEngine instanceof lazy.SearchEngine)
-    ) {
+    if (!(newEngine instanceof lazy.SearchEngine)) {
       throw Components.Exception(
         "Invalid argument passed to defaultEngine setter",
         Cr.NS_ERROR_INVALID_ARG

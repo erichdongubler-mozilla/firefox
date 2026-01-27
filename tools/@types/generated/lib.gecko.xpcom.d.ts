@@ -11627,34 +11627,6 @@ interface nsISearchSubmission extends nsISupports {
   readonly uri: nsIURI;
 }
 
-interface nsISearchEngine extends nsISupports {
-  getSubmission(searchTerms: string, responseType?: string): nsISearchSubmission;
-  readonly searchURLWithNoTerms: nsIURI;
-  searchTermFromResult(uri: nsIURI): string;
-  readonly searchUrlQueryParamName: string;
-  readonly searchUrlPublicSuffix: string;
-  supportsResponseType(responseType: string): boolean;
-  getIconURL(preferredWidth?: u16): Promise<any>;
-  speculativeConnect(options: any): void;
-  alias: string;
-  readonly aliases: string[];
-  hidden: boolean;
-  hideOneOffButton: boolean;
-  readonly name: string;
-  readonly id: string;
-  readonly telemetryId: string;
-  readonly loadPath: string;
-  readonly isAppProvided: boolean;
-  readonly isConfigEngine: boolean;
-  readonly inMemory: boolean;
-  readonly overriddenById: string;
-  readonly isGeneralPurposeEngine: boolean;
-  readonly searchUrlDomain: string;
-  readonly clickUrl: string;
-  readonly searchForm: string;
-  readonly partnerCode: string;
-}
-
 // https://searchfox.org/mozilla-central/source/toolkit/components/shell/nsIToolkitShellService.idl
 
 interface nsIToolkitShellService extends nsISupports {
@@ -16245,7 +16217,6 @@ interface nsIXPCComponents_Interfaces {
   nsIRFPTargetSetIDL: nsJSIID<nsIRFPTargetSetIDL>;
   nsIUserCharacteristicsPageService: nsJSIID<nsIUserCharacteristicsPageService>;
   nsISearchSubmission: nsJSIID<nsISearchSubmission>;
-  nsISearchEngine: nsJSIID<nsISearchEngine>;
   nsIToolkitShellService: nsJSIID<nsIToolkitShellService>;
   nsITerminatorTest: nsJSIID<nsITerminatorTest>;
   nsIXULStore: nsJSIID<nsIXULStore>;

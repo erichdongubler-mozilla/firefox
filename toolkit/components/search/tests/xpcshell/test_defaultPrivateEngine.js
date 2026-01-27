@@ -197,7 +197,7 @@ add_task(async function test_defaultPrivateEngine() {
   );
 
   // We use the names here as for some reason the getDefaultPrivate promise
-  // returns something which is an nsISearchEngine but doesn't compare
+  // returns something which is an SearchEngine but doesn't compare
   // exactly to what engine2 is.
   Assert.equal(
     (await SearchService.getDefaultPrivate()).name,

@@ -129,7 +129,7 @@ class BrowserSearchTelemetryHandler {
    *
    * @param {MozBrowser} browser
    *        The browser where the search originated.
-   * @param {nsISearchEngine} engine
+   * @param {SearchEngine} engine
    *        The engine handling the search.
    * @param {string} source
    *        Where the search originated from. See KNOWN_SEARCH_SOURCES for allowed
@@ -260,7 +260,7 @@ class BrowserSearchTelemetryHandler {
   /**
    * Records visits to a search engine's search form.
    *
-   * @param {nsISearchEngine} engine
+   * @param {SearchEngine} engine
    *   The engine whose search form is being visited.
    * @param {string} source
    *   Where the search form was opened from.
@@ -278,7 +278,7 @@ class BrowserSearchTelemetryHandler {
    *
    * @param {MozBrowser} browser
    *   The browser associated with the SAP.
-   * @param {nsISearchEngine|null} engine
+   * @param {SearchEngine|null} engine
    *   The engine handling the search, or null if this doesn't apply to the SAP
    *   (e.g., the engine isn't known or selected yet). The counter's label will
    *   be `engine.id` if `engine` is a non-null, app-provided engine. Otherwise
@@ -307,7 +307,7 @@ class BrowserSearchTelemetryHandler {
    *
    * @param {MozBrowser} browser
    *   The browser where the search originated.
-   * @param {nsISearchEngine} engine
+   * @param {SearchEngine} engine
    *   The engine handling the search.
    * @param {string} source
    *   Where the search originated from.

@@ -54,8 +54,6 @@ add_task(async function test_icon_types() {
       url: `${gHttpURL}/sjs/engineMaker.sjs?${JSON.stringify(engineData)}`,
     });
     let engine = await promiseEngineAdded;
-    // Ensure this is a nsISearchEngine.
-    engine.QueryInterface(Ci.nsISearchEngine);
     await promiseIconChanged;
 
     Assert.ok(await engine.getIconURL(), `${test.name} engine has an icon`);

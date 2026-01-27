@@ -22,6 +22,10 @@
   });
 
   /**
+   * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
+   */
+
+  /**
    * Defines the search bar element.
    */
   class MozSearchbar extends MozXULElement {
@@ -520,7 +524,7 @@
      *
      * @param {event} aEvent
      *        The event causing the searchForm to be opened.
-     * @param {nsISearchEngine} [aEngine]
+     * @param {SearchEngine} [aEngine]
      *        The search engine or undefined to use the current engine.
      * @param {string} where
      *        Where the search form should be opened.

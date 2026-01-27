@@ -16,6 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 /**
  * @import {AppProvidedConfigEngine} from "ConfigSearchEngine.sys.mjs"
+ * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  */
 
 /**
@@ -801,7 +802,7 @@ class _SearchTestUtils {
    *   Name of the engine to wait for.
    * @param {string} expectedData
    *   Data to wait for.
-   * @returns {Promise<nsISearchEngine>}
+   * @returns {Promise<SearchEngine>}
    *   Resolves to the search engine with the expected name.
    */
   promiseEngine(expectedEngineName, expectedData = "engine-added") {

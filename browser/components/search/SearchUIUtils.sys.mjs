@@ -395,7 +395,7 @@ export var SearchUIUtils = {
    *   The policyContainer to use for a new window or tab.
    * @param {boolean} [options.inBackground]
    *   Set to true for the tab to be loaded in the background.
-   * @param {?nsISearchEngine} [options.engine]
+   * @param {?SearchEngine} [options.engine]
    *   The search engine to use for the search. If not supplied, this will default
    *   to the default search engine for normal or private mode, depending on
    *   ``options.usePrivateWindow``.
@@ -471,7 +471,7 @@ export var SearchUIUtils = {
    *
    * @param {object} options
    *   Options object.
-   * @param {nsISearchEngine} options.engine
+   * @param {SearchEngine} options.engine
    *   The engine to search with.
    * @param {WindowProxy} options.window
    *   The window where the search was triggered.

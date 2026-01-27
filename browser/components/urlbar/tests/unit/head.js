@@ -225,7 +225,7 @@ function makeTestServer(port = -1) {
  *   Options for the check.
  * @param {string} [options.name]
  *   The name of the engine to install.
- * @returns {nsISearchEngine} The new engine.
+ * @returns {SearchEngine} The new engine.
  */
 async function addTestSuggestionsEngine(
   suggestionsFn = null,
@@ -262,7 +262,7 @@ async function addTestSuggestionsEngine(
  *        responses. See bug 1626897.
  *        NOTE: Consumers specifying suggestionsFn must include searchStr as a
  *              part of the array returned by suggestionsFn.
- * @returns {nsISearchEngine} The new engine.
+ * @returns {SearchEngine} The new engine.
  */
 async function addTestTailSuggestionsEngine(suggestionsFn = null) {
   // This port number should match the number in engine-tail-suggestions.xml.

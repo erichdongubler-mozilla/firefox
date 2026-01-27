@@ -53,7 +53,7 @@ class _OpenSearchManager {
    */
   observe(subject, _topic, data) {
     let engine = subject.wrappedJSObject;
-    // There are two kinds of search engine objects: nsISearchEngine objects
+    // There are two kinds of search engine objects: SearchEngine objects
     // and plain OpenSearchData objects. `engine` in this observer is the
     // former and the arrays in #offeredEngines and #hiddenEngines contain the
     // latter. They are related by their names.

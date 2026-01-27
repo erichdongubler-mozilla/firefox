@@ -32,6 +32,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 /**
+ * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  * @import {SearchSuggestionController} from "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs"
  */
 
@@ -549,7 +550,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
   /**
    * @typedef {object} EngineAlias
    *
-   * @property {nsISearchEngine} engine
+   * @property {SearchEngine} engine
    *   The search engine
    * @property {string} alias
    *   The search engine's alias
