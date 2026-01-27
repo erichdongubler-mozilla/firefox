@@ -106,6 +106,13 @@ ip-protection-site-exceptions =
   .label = Site specific settings
 
 # Variables:
+#   $maxUsage (number) - The bandwidth limit of free VPN, in GB
+ip-protection-not-opted-in =
+  .heading = Try { -brand-short-name }’s built-in VPN
+  .message = Hide your location and add extra encryption to your browsing in { -brand-short-name }. Get { $maxUsage } GB of free VPN data every month.
+ip-protection-not-opted-in-button = Get started
+
+# Variables:
 #   $count (number) - The number of sites saved as VPN exclusions.
 ip-protection-site-exceptions-all-sites-button =
   .label = Manage website settings

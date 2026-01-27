@@ -3254,6 +3254,30 @@ SettingGroupManager.registerGroups({
     supportPage: "ip-protection",
     items: [
       {
+        id: "ipProtectionNotOptedInSection",
+        l10nId: "ip-protection-not-opted-in",
+        l10nArgs: {
+          maxUsage: "50",
+        },
+        control: "moz-promo",
+        controlAttrs: {
+          imagesrc:
+            "chrome://browser/content/ipprotection/assets/vpn-settings-get-started.svg",
+          imagealignment: "end",
+        },
+        items: [
+          {
+            id: "getStartedButton",
+            l10nId: "ip-protection-not-opted-in-button",
+            control: "moz-button",
+            slot: "actions",
+            controlAttrs: {
+              type: "primary",
+            },
+          },
+        ],
+      },
+      {
         id: "ipProtectionExceptions",
         l10nId: "ip-protection-site-exceptions",
         control: "moz-fieldset",

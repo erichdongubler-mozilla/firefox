@@ -82,7 +82,15 @@ ChromeUtils.defineESModuleGetters(this, {
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
+  IPPSignInWatcher:
+    "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs",
+  SpecialMessageActions:
+    "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
 });
+
+const { SIGNIN_DATA } = ChromeUtils.importESModule(
+  "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
+);
 
 const SANITIZE_ON_SHUTDOWN_MAPPINGS = {
   history: "privacy.clearOnShutdown.history",
@@ -203,6 +211,7 @@ Preferences.addAll([
 
   // Firefox VPN
   { id: "browser.ipProtection.enabled", type: "bool" },
+  { id: "browser.ipProtection.entitlementCache", type: "string" },
   { id: "browser.ipProtection.features.siteExceptions", type: "bool" },
   { id: "browser.ipProtection.features.autoStart", type: "bool" },
   { id: "browser.ipProtection.autoStartEnabled", type: "bool" },
@@ -1438,22 +1447,57 @@ Preferences.addSetting({
   pref: "browser.ipProtection.enabled",
 });
 Preferences.addSetting({
+  id: "ipProtectionNotOptedIn",
+  pref: "browser.ipProtection.entitlementCache",
+  get: prefVal => prefVal == "null",
+});
+Preferences.addSetting({
+  id: "ipProtectionNotOptedInSection",
+  deps: ["ipProtectionVisible", "ipProtectionNotOptedIn"],
+  visible: ({ ipProtectionVisible, ipProtectionNotOptedIn }) =>
+    ipProtectionVisible.value && ipProtectionNotOptedIn.value,
+});
+Preferences.addSetting({
+  id: "getStartedButton",
+  deps: ["ipProtectionVisible", "ipProtectionNotOptedIn"],
+  visible: ({ ipProtectionVisible, ipProtectionNotOptedIn }) =>
+    ipProtectionVisible.value && ipProtectionNotOptedIn.value,
+  onUserClick() {
+    SpecialMessageActions.fxaSignInFlow(
+      SIGNIN_DATA,
+      window.browsingContext.topChromeWindow.gBrowser
+    );
+  },
+});
+
+Preferences.addSetting({
   id: "ipProtectionSiteExceptionsFeatureEnabled",
   pref: "browser.ipProtection.features.siteExceptions",
 });
 Preferences.addSetting({
   id: "ipProtectionExceptions",
-  deps: ["ipProtectionVisible", "ipProtectionSiteExceptionsFeatureEnabled"],
+  deps: [
+    "ipProtectionVisible",
+    "ipProtectionSiteExceptionsFeatureEnabled",
+    "ipProtectionNotOptedIn",
+  ],
   visible: ({
     ipProtectionVisible,
     ipProtectionSiteExceptionsFeatureEnabled,
+    ipProtectionNotOptedIn,
   }) =>
-    ipProtectionVisible.value && ipProtectionSiteExceptionsFeatureEnabled.value,
+    ipProtectionVisible.value &&
+    ipProtectionSiteExceptionsFeatureEnabled.value &&
+    !ipProtectionNotOptedIn.value,
 });
 
 Preferences.addSetting({
   id: "ipProtectionExceptionAllListButton",
-  deps: ["ipProtectionVisible", "ipProtectionSiteExceptionsFeatureEnabled"],
+  deps: [
+    "ipProtectionVisible",
+    "ipProtectionSiteExceptionsFeatureEnabled",
+    "ipProtectionNotOptedIn",
+  ],
   setup(emitChange) {
     let permObserver = {
       observe(subject, topic, _data) {
@@ -1473,8 +1517,11 @@ Preferences.addSetting({
   visible: ({
     ipProtectionVisible,
     ipProtectionSiteExceptionsFeatureEnabled,
+    ipProtectionNotOptedIn,
   }) =>
-    ipProtectionVisible.value && ipProtectionSiteExceptionsFeatureEnabled.value,
+    ipProtectionVisible.value &&
+    ipProtectionSiteExceptionsFeatureEnabled.value &&
+    !ipProtectionNotOptedIn.value,
   onUserClick() {
     let params = {
       addVisible: true,
@@ -1516,21 +1563,41 @@ Preferences.addSetting({
 });
 Preferences.addSetting({
   id: "ipProtectionAutoStart",
-  deps: ["ipProtectionVisible", "ipProtectionAutoStartFeatureEnabled"],
-  visible: ({ ipProtectionVisible, ipProtectionAutoStartFeatureEnabled }) =>
-    ipProtectionVisible.value && ipProtectionAutoStartFeatureEnabled.value,
+  deps: [
+    "ipProtectionVisible",
+    "ipProtectionAutoStartFeatureEnabled",
+    "ipProtectionNotOptedIn",
+  ],
+  visible: ({
+    ipProtectionVisible,
+    ipProtectionAutoStartFeatureEnabled,
+    ipProtectionNotOptedIn,
+  }) =>
+    ipProtectionVisible.value &&
+    ipProtectionAutoStartFeatureEnabled.value &&
+    !ipProtectionNotOptedIn.value,
 });
 Preferences.addSetting({
   id: "ipProtectionAutoStartCheckbox",
   pref: "browser.ipProtection.autoStartEnabled",
-  deps: ["ipProtectionVisible", "ipProtectionAutoStart"],
-  visible: ({ ipProtectionVisible }) => ipProtectionVisible.value,
+  deps: [
+    "ipProtectionVisible",
+    "ipProtectionAutoStart",
+    "ipProtectionNotOptedIn",
+  ],
+  visible: ({ ipProtectionVisible, ipProtectionNotOptedIn }) =>
+    ipProtectionVisible.value && !ipProtectionNotOptedIn.value,
 });
 Preferences.addSetting({
   id: "ipProtectionAutoStartPrivateCheckbox",
   pref: "browser.ipProtection.autoStartPrivateEnabled",
-  deps: ["ipProtectionVisible", "ipProtectionAutoStart"],
-  visible: ({ ipProtectionVisible }) => ipProtectionVisible.value,
+  deps: [
+    "ipProtectionVisible",
+    "ipProtectionAutoStart",
+    "ipProtectionNotOptedIn",
+  ],
+  visible: ({ ipProtectionVisible, ipProtectionNotOptedIn }) =>
+    ipProtectionVisible.value && !ipProtectionNotOptedIn.value,
 });
 Preferences.addSetting({
   id: "ipProtectionBandwidthVisible",
@@ -1539,9 +1606,19 @@ Preferences.addSetting({
 });
 Preferences.addSetting({
   id: "ipProtectionBandwidth",
-  deps: ["ipProtectionVisible", "ipProtectionBandwidthVisible"],
-  visible: ({ ipProtectionVisible, ipProtectionBandwidthVisible }) =>
-    ipProtectionVisible.value && ipProtectionBandwidthVisible.value,
+  deps: [
+    "ipProtectionVisible",
+    "ipProtectionBandwidthVisible",
+    "ipProtectionNotOptedIn",
+  ],
+  visible: ({
+    ipProtectionVisible,
+    ipProtectionBandwidthVisible,
+    ipProtectionNotOptedIn,
+  }) =>
+    ipProtectionVisible.value &&
+    ipProtectionBandwidthVisible.value &&
+    !ipProtectionNotOptedIn.value,
   pref: "browser.ipProtection.bandwidth.value",
   getControlConfig: config => {
     const max = Services.prefs.getIntPref(
@@ -1556,8 +1633,9 @@ Preferences.addSetting({
 });
 Preferences.addSetting({
   id: "ipProtectionLinks",
-  deps: ["ipProtectionVisible"],
-  visible: ({ ipProtectionVisible }) => ipProtectionVisible.value,
+  deps: ["ipProtectionVisible", "ipProtectionNotOptedIn"],
+  visible: ({ ipProtectionVisible, ipProtectionNotOptedIn }) =>
+    ipProtectionVisible.value && !ipProtectionNotOptedIn.value,
 });
 
 // Study opt out
