@@ -10216,6 +10216,13 @@
   mirror: always
   rust: true
 
+# Is multiple color items upported for color-mix()?
+- name: layout.css.color-mix-multi-color.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+  rust: true
+
 # Is support for the contrast-color() function enabled?
 - name: layout.css.contrast-color.enabled
   type: RelaxedAtomicBool
