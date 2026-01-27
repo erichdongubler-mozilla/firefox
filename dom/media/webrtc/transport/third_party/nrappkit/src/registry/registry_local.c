@@ -276,7 +276,7 @@ nr_reg_insert_node(char *name, void *node)
       r_log(NR_LOG_REGISTRY, LOG_INFO,
              "insert '%s' (%s) %s: %s", name,
              nr_reg_type_name(((nr_registry_node*)node)->type),
-             (_status ? "FAILED" : "succeeded"), data);
+             (_status ? "FAILED" : "succeeded"), data?data:"");
       if (freeit)
         RFREE(data);
     }
@@ -307,7 +307,7 @@ nr_reg_change_node(char *name, void *node, void *old)
       r_log(NR_LOG_REGISTRY, LOG_INFO,
              "change '%s' (%s) %s: %s", name,
              nr_reg_type_name(((nr_registry_node*)node)->type),
-             (_status ? "FAILED" : "succeeded"), data);
+             (_status ? "FAILED" : "succeeded"), data?data:"");
       if (freeit)
         RFREE(data);
     }
@@ -342,7 +342,7 @@ nr_reg_alloc_node_data(char *name, nr_registry_node *node, int *freeit)
     if (alloc > 0) {
       s = (void*)RMALLOC(alloc);
       if (!s)
-        return "";
+        return 0;
 
       *freeit = 1;
     }
@@ -394,8 +394,11 @@ nr_reg_alloc_node_data(char *name, nr_registry_node *node, int *freeit)
       break;
     default:
       assert(0); /* bad value */
-      *freeit = 0;
-      s = "";
+      if (freeit) {
+        RFREE(s);
+        *freeit = 0;
+      }
+      s = 0;
       break;
     }
 
