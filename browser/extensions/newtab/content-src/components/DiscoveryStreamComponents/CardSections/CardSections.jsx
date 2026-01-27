@@ -208,6 +208,9 @@ function CardSection({
   const dailyBriefV2Enabled =
     prefs.trainhopConfig?.dailyBriefing_v2?.enabled ||
     prefs[PREF_DAILY_BRIEF_V2_ENABLED];
+  const dailyBriefSectionId =
+    prefs.trainhopConfig?.dailyBriefing?.sectionId ||
+    prefs[PREF_DAILY_BRIEF_SECTIONID];
 
   const mayHaveSectionsPersonalization =
     prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
@@ -464,9 +467,12 @@ function CardSection({
               tabIndex={index === focusedIndex ? 0 : -1}
               onFocus={() => onCardFocus(index)}
               attribution={rec.attribution}
+              isDailyBriefV2={
+                dailyBriefV2Enabled && sectionKey === dailyBriefSectionId
+              }
             />
           );
-          if (index === 0 && sectionKey === "top_stories_section") {
+          if (index === 0 && sectionKey === dailyBriefSectionId) {
             const cards = [];
             if (dailyBriefV2Enabled) {
               cards.push(<BriefingCard key="briefing-card" />);

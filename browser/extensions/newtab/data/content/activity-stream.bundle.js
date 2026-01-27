@@ -4004,7 +4004,10 @@ class _DSCard extends (external_React_default()).PureComponent {
       "data-l10n-id": `newtab-topic-label-${this.props.topic}`
     }), /*#__PURE__*/external_React_default().createElement("div", {
       className: "img-wrapper"
-    }, images), /*#__PURE__*/external_React_default().createElement(ImpressionStats_ImpressionStats, {
+    }, images, this.props.isDailyBriefV2 && this.props.topic && /*#__PURE__*/external_React_default().createElement("span", {
+      className: "ds-card-daily-brief-topic",
+      "data-l10n-id": `newtab-topic-label-${this.props.topic}`
+    })), /*#__PURE__*/external_React_default().createElement(ImpressionStats_ImpressionStats, {
       flightId: this.props.flightId,
       rows: [{
         id: this.props.id,
@@ -11459,6 +11462,7 @@ function CardSection({
   const refinedCardsLayout = prefs[PREF_REFINED_CARDS_ENABLED];
   const spocsStartupCacheEnabled = prefs[CardSections_PREF_SPOCS_STARTUPCACHE_ENABLED];
   const dailyBriefV2Enabled = prefs.trainhopConfig?.dailyBriefing_v2?.enabled || prefs[PREF_DAILY_BRIEF_V2_ENABLED];
+  const dailyBriefSectionId = prefs.trainhopConfig?.dailyBriefing?.sectionId || prefs[CardSections_PREF_DAILY_BRIEF_SECTIONID];
   const mayHaveSectionsPersonalization = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
   const {
     sectionKey,
@@ -11669,9 +11673,10 @@ function CardSection({
       isTimeSensitive: rec.isTimeSensitive,
       tabIndex: index === focusedIndex ? 0 : -1,
       onFocus: () => onCardFocus(index),
-      attribution: rec.attribution
+      attribution: rec.attribution,
+      isDailyBriefV2: dailyBriefV2Enabled && sectionKey === dailyBriefSectionId
     });
-    if (index === 0 && sectionKey === "top_stories_section") {
+    if (index === 0 && sectionKey === dailyBriefSectionId) {
       const cards = [];
       if (dailyBriefV2Enabled) {
         cards.push(/*#__PURE__*/external_React_default().createElement(BriefingCard, {

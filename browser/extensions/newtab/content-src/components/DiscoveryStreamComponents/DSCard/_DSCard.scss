@@ -246,6 +246,17 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     font-size: var(--font-size-small);
   }
 
+  .ds-card-daily-brief-topic {
+    position: absolute;
+    inset-block-end: var(--space-xsmall);
+    inset-inline-start: var(--space-xsmall);
+    background: var(--background-color-canvas);
+    border-radius: var(--border-radius-small);
+    color: var(--newtab-text-primary-color);
+    padding: var(--space-xsmall);
+    font-size: var(--font-size-small);
+  }
+
   .meta {
     display: flex;
     justify-content: space-between;
