@@ -70,7 +70,7 @@ impl Quantity for QuantityMetric {
             #[allow(unused)]
             QuantityMetric::Parent { id, inner } => {
                 #[cfg(feature = "with_gecko")]
-                if gecko_profiler::can_accept_markers() {
+                if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                     gecko_profiler::add_marker(
                         "Quantity::set",
                         super::profiler_utils::TelemetryProfilerCategory,

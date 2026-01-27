@@ -85,19 +85,6 @@ pub fn current_thread_is_being_profiled_for_markers() -> bool {
     false
 }
 
-#[cfg(feature = "enabled")]
-#[inline]
-pub fn can_accept_markers() -> bool {
-    is_active_and_unpaused()
-}
-
-/// Always false when MOZ_GECKO_PROFILER is not defined.
-#[cfg(not(feature = "enabled"))]
-#[inline]
-pub fn can_accept_markers() -> bool {
-    false
-}
-
 /// Returns the value of atomic `RacyFeatures::sActiveAndFeatures` from the C++ side.
 #[cfg(feature = "enabled")]
 #[inline]

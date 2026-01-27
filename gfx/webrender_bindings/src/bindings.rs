@@ -928,7 +928,7 @@ pub fn gecko_profiler_event_marker(name: &str) {
 
 pub fn gecko_profiler_add_text_marker(name: &str, text: &str, microseconds: f64) {
     use gecko_profiler::{gecko_profiler_category, MarkerOptions, MarkerTiming, ProfilerTime};
-    if !gecko_profiler::can_accept_markers() {
+    if !gecko_profiler::current_thread_is_being_profiled_for_markers() {
         return;
     }
 
