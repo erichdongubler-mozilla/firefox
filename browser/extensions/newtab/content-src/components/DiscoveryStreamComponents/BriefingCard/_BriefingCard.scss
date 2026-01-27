@@ -25,6 +25,11 @@
   margin-block-start: var(--space-xxsmall);
 }
 
+.briefing-card-timestamp {
+  font-size: var(--font-size-small);
+  color: var(--link-color);
+}
+
 hr {
   border: 0;
   border-block-start: 1px solid var(--border-color);

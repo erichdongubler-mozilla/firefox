@@ -11202,28 +11202,58 @@ const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state =>
 
 
 
+const SIXTEEN_MINUTES = 16 * 60 * 1000; // 16 minutes
 
 /**
  * The BriefingCard component displays "In The Know" headlines.
  * It is the first card in the "Your Briefing" section.
  */
 const BriefingCard = () => {
+  const [showTimestamp, setShowTimestamp] = (0,external_React_namespaceObject.useState)(false);
+  const [timeAgo, setTimeAgo] = (0,external_React_namespaceObject.useState)("");
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
   const sections = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream.feeds.data);
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const dailyBriefSectionId = prefs?.trainhopConfig?.dailyBriefing?.sectionId || prefs?.["discoverystream.dailyBrief.sectionId"];
   const [firstSectionKey] = Object.keys(sections);
   const {
-    data: sectionData
+    data: sectionData,
+    lastUpdated
   } = sections[firstSectionKey];
   const headlines = sectionData.recommendations.filter(rec => rec.section === dailyBriefSectionId).slice(0, 3);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!lastUpdated) {
+      setShowTimestamp(false);
+      return undefined;
+    }
+    const updateTimestamp = () => {
+      const now = Date.now();
+      const timeSinceUpdate = now - lastUpdated;
+      if (now - lastUpdated < SIXTEEN_MINUTES) {
+        setShowTimestamp(true);
+        const minutes = Math.floor(timeSinceUpdate / 60000);
+        if (minutes < 1) {
+          setTimeAgo("Updated <1m ago");
+        } else {
+          setTimeAgo(`Updated ${minutes}m ago`);
+        }
+      } else {
+        setShowTimestamp(false);
+      }
+    };
+    updateTimestamp();
+    const interval = setInterval(updateTimestamp, 60000);
+    return () => clearInterval(interval);
+  }, [lastUpdated]);
   return /*#__PURE__*/external_React_default().createElement("div", {
     className: "briefing-card"
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "briefing-card-header"
   }, /*#__PURE__*/external_React_default().createElement("h3", {
     className: "briefing-card-title"
-  }, "In the Know")), /*#__PURE__*/external_React_default().createElement("hr", null), /*#__PURE__*/external_React_default().createElement("ol", {
+  }, "In the Know"), showTimestamp && /*#__PURE__*/external_React_default().createElement("span", {
+    className: "briefing-card-timestamp"
+  }, timeAgo)), /*#__PURE__*/external_React_default().createElement("hr", null), /*#__PURE__*/external_React_default().createElement("ol", {
     className: "briefing-card-headlines"
   }, headlines.map((headline, index) => /*#__PURE__*/external_React_default().createElement("li", {
     key: index,
