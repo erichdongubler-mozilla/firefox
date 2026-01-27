@@ -4373,6 +4373,7 @@ pub extern "C" fn wr_dp_push_box_shadow(
     blur_radius: f32,
     spread_radius: f32,
     border_radius: BorderRadius,
+    shadow_radius: BorderRadius,
     clip_mode: BoxShadowClipMode,
 ) {
     debug_assert!(unsafe { is_in_main_thread() });
@@ -4394,6 +4395,7 @@ pub extern "C" fn wr_dp_push_box_shadow(
         blur_radius,
         spread_radius,
         border_radius,
+        shadow_radius,
         clip_mode,
     );
 }

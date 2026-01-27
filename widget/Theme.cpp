@@ -564,13 +564,14 @@ void Theme::PaintCircleShadow(WebRenderBackendData& aWrData,
   shadowRect.MoveBy(shadowOffset);
   shadowRect.Inflate(inflation.width, inflation.height);
   const auto boxRect = wr::ToLayoutRect(aBoxRect);
+  const auto borderRadius =
+      wr::ToBorderRadius(gfx::RectCornerRadii(aBoxRect.Size().width));
   aWrData.mBuilder.PushBoxShadow(
       wr::ToLayoutRect(shadowRect), wr::ToLayoutRect(aClipRect),
       kBackfaceIsVisible, boxRect,
       wr::ToLayoutVector2D(aShadowOffset * aDpiRatio),
       wr::ToColorF(DeviceColor(0.0f, 0.0f, 0.0f, aShadowAlpha)), stdDev,
-      /* aSpread = */ 0.0f,
-      wr::ToBorderRadius(gfx::RectCornerRadii(aBoxRect.Size().width)),
+      /* aSpread = */ 0.0f, borderRadius, borderRadius,
       wr::BoxShadowClipMode::Outset);
 }
 
