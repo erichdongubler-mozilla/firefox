@@ -11202,7 +11202,7 @@ const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state =>
 
 
 
-const SIXTEEN_MINUTES = 16 * 60 * 1000; // 16 minutes
+const TIMESTAMP_DISPLAY_DURATION = 15 * 60 * 1000;
 
 /**
  * The BriefingCard component displays "In The Know" headlines.
@@ -11214,7 +11214,7 @@ const BriefingCard = () => {
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
   const sections = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream.feeds.data);
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
-  const dailyBriefSectionId = prefs?.trainhopConfig?.dailyBriefing?.sectionId || prefs?.["discoverystream.dailyBrief.sectionId"];
+  const dailyBriefSectionId = prefs.trainhopConfig?.dailyBriefing?.sectionId || prefs["discoverystream.dailyBrief.sectionId"];
   const [firstSectionKey] = Object.keys(sections);
   const {
     data: sectionData,
@@ -11229,14 +11229,13 @@ const BriefingCard = () => {
     const updateTimestamp = () => {
       const now = Date.now();
       const timeSinceUpdate = now - lastUpdated;
-      if (now - lastUpdated < SIXTEEN_MINUTES) {
+
+      // Only show a timestamp for the first 15 minutes after feed refresh.
+      // This avoids showing an outdated timestamp for a cached version of the feed.
+      if (now - lastUpdated < TIMESTAMP_DISPLAY_DURATION) {
         setShowTimestamp(true);
-        const minutes = Math.floor(timeSinceUpdate / 60000);
-        if (minutes < 1) {
-          setTimeAgo("Updated <1m ago");
-        } else {
-          setTimeAgo(`Updated ${minutes}m ago`);
-        }
+        const minutes = Math.ceil(timeSinceUpdate / 60000);
+        setTimeAgo(minutes);
       } else {
         setShowTimestamp(false);
       }
@@ -11247,16 +11246,30 @@ const BriefingCard = () => {
   }, [lastUpdated]);
   return /*#__PURE__*/external_React_default().createElement("div", {
     className: "briefing-card"
-  }, /*#__PURE__*/external_React_default().createElement("div", {
+  }, /*#__PURE__*/external_React_default().createElement("moz-button", {
+    className: "briefing-card-context-menu-button",
+    iconSrc: "chrome://global/skin/icons/more.svg",
+    menuId: "briefing-card-menu",
+    type: "ghost"
+  }), /*#__PURE__*/external_React_default().createElement("panel-list", {
+    id: "briefing-card-menu"
+  }, /*#__PURE__*/external_React_default().createElement("panel-item", {
+    "data-l10n-id": "newtab-daily-briefing-card-menu-dismiss"
+  })), /*#__PURE__*/external_React_default().createElement("div", {
     className: "briefing-card-header"
   }, /*#__PURE__*/external_React_default().createElement("h3", {
-    className: "briefing-card-title"
-  }, "In the Know"), showTimestamp && /*#__PURE__*/external_React_default().createElement("span", {
-    className: "briefing-card-timestamp"
-  }, timeAgo)), /*#__PURE__*/external_React_default().createElement("hr", null), /*#__PURE__*/external_React_default().createElement("ol", {
+    className: "briefing-card-title",
+    "data-l10n-id": "newtab-daily-briefing-card-title"
+  }), showTimestamp && /*#__PURE__*/external_React_default().createElement("span", {
+    className: "briefing-card-timestamp",
+    "data-l10n-id": "newtab-daily-briefing-card-timestamp",
+    "data-l10n-args": JSON.stringify({
+      minutes: timeAgo
+    })
+  })), /*#__PURE__*/external_React_default().createElement("hr", null), /*#__PURE__*/external_React_default().createElement("ol", {
     className: "briefing-card-headlines"
-  }, headlines.map((headline, index) => /*#__PURE__*/external_React_default().createElement("li", {
-    key: index,
+  }, headlines.map(headline => /*#__PURE__*/external_React_default().createElement("li", {
+    key: headline.id,
     className: "briefing-card-headline"
   }, /*#__PURE__*/external_React_default().createElement(SafeAnchor, {
     url: headline.url,
@@ -11445,7 +11458,7 @@ function CardSection({
   const availableTopics = prefs[CardSections_PREF_TOPICS_AVAILABLE];
   const refinedCardsLayout = prefs[PREF_REFINED_CARDS_ENABLED];
   const spocsStartupCacheEnabled = prefs[CardSections_PREF_SPOCS_STARTUPCACHE_ENABLED];
-  const dailyBriefV2Enabled = prefs[PREF_DAILY_BRIEF_V2_ENABLED];
+  const dailyBriefV2Enabled = prefs.trainhopConfig?.dailyBriefing_v2?.enabled || prefs[PREF_DAILY_BRIEF_V2_ENABLED];
   const mayHaveSectionsPersonalization = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
   const {
     sectionKey,

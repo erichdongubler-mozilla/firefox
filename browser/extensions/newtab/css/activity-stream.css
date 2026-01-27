@@ -8807,9 +8807,23 @@ hr {
   display: flex;
   flex-direction: column;
   gap: var(--space-medium);
+  position: relative;
 }
 .briefing-card:hover {
   background: var(--newtab-background-color-secondary);
+}
+.briefing-card moz-button {
+  position: absolute;
+  inset-inline-end: var(--space-medium);
+  inset-block-start: var(--space-medium);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.briefing-card:hover moz-button, .briefing-card:focus-within moz-button {
+  opacity: 1;
+}
+.briefing-card:has(panel-list[open]) moz-button {
+  opacity: 1;
 }
 
 .briefing-card-header {

@@ -205,7 +205,9 @@ function CardSection({
   const availableTopics = prefs[PREF_TOPICS_AVAILABLE];
   const refinedCardsLayout = prefs[PREF_REFINED_CARDS_ENABLED];
   const spocsStartupCacheEnabled = prefs[PREF_SPOCS_STARTUPCACHE_ENABLED];
-  const dailyBriefV2Enabled = prefs[PREF_DAILY_BRIEF_V2_ENABLED];
+  const dailyBriefV2Enabled =
+    prefs.trainhopConfig?.dailyBriefing_v2?.enabled ||
+    prefs[PREF_DAILY_BRIEF_V2_ENABLED];
 
   const mayHaveSectionsPersonalization =
     prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];

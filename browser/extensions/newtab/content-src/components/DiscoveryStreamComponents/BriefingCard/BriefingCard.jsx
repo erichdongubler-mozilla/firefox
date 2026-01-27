@@ -6,7 +6,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { SafeAnchor } from "../SafeAnchor/SafeAnchor";
 
-const SIXTEEN_MINUTES = 16 * 60 * 1000; // 16 minutes
+const TIMESTAMP_DISPLAY_DURATION = 15 * 60 * 1000;
 
 /**
  * The BriefingCard component displays "In The Know" headlines.
@@ -21,8 +21,8 @@ const BriefingCard = () => {
   const prefs = useSelector(state => state.Prefs.values);
 
   const dailyBriefSectionId =
-    prefs?.trainhopConfig?.dailyBriefing?.sectionId ||
-    prefs?.["discoverystream.dailyBrief.sectionId"];
+    prefs.trainhopConfig?.dailyBriefing?.sectionId ||
+    prefs["discoverystream.dailyBrief.sectionId"];
 
   const [firstSectionKey] = Object.keys(sections);
   const { data: sectionData, lastUpdated } = sections[firstSectionKey];
@@ -41,15 +41,13 @@ const BriefingCard = () => {
       const now = Date.now();
       const timeSinceUpdate = now - lastUpdated;
 
-      if (now - lastUpdated < SIXTEEN_MINUTES) {
+      // Only show a timestamp for the first 15 minutes after feed refresh.
+      // This avoids showing an outdated timestamp for a cached version of the feed.
+      if (now - lastUpdated < TIMESTAMP_DISPLAY_DURATION) {
         setShowTimestamp(true);
 
-        const minutes = Math.floor(timeSinceUpdate / 60000);
-        if (minutes < 1) {
-          setTimeAgo("Updated <1m ago");
-        } else {
-          setTimeAgo(`Updated ${minutes}m ago`);
-        }
+        const minutes = Math.ceil(timeSinceUpdate / 60000);
+        setTimeAgo(minutes);
       } else {
         setShowTimestamp(false);
       }
@@ -64,16 +62,32 @@ const BriefingCard = () => {
 
   return (
     <div className="briefing-card">
+      <moz-button
+        className="briefing-card-context-menu-button"
+        iconSrc="chrome://global/skin/icons/more.svg"
+        menuId="briefing-card-menu"
+        type="ghost"
+      />
+      <panel-list id="briefing-card-menu">
+        <panel-item data-l10n-id="newtab-daily-briefing-card-menu-dismiss"></panel-item>
+      </panel-list>
       <div className="briefing-card-header">
-        <h3 className="briefing-card-title">In the Know</h3>
+        <h3
+          className="briefing-card-title"
+          data-l10n-id="newtab-daily-briefing-card-title"
+        ></h3>
         {showTimestamp && (
-          <span className="briefing-card-timestamp">{timeAgo}</span>
+          <span
+            className="briefing-card-timestamp"
+            data-l10n-id="newtab-daily-briefing-card-timestamp"
+            data-l10n-args={JSON.stringify({ minutes: timeAgo })}
+          ></span>
         )}
       </div>
       <hr />
       <ol className="briefing-card-headlines">
-        {headlines.map((headline, index) => (
-          <li key={index} className="briefing-card-headline">
+        {headlines.map(headline => (
+          <li key={headline.id} className="briefing-card-headline">
             <SafeAnchor
               url={headline.url}
               dispatch={dispatch}
