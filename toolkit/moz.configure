@@ -1061,9 +1061,9 @@ set_config("MOZ_PACKAGER_MINIFY", True, when=enable_minify.properties)
 set_config("MOZ_PACKAGER_MINIFY_JS", True, when=enable_minify.js)
 
 
-@depends(target_is_android, "--enable-debug", milestone.is_nightly)
-def enable_minify_pdfjs_default(is_android, debug, is_nightly):
-    return is_android and not debug and not is_nightly
+@depends("--enable-debug")
+def enable_minify_pdfjs_default(debug):
+    return not debug
 
 
 option(
