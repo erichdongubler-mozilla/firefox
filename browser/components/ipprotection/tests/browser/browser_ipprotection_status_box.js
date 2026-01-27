@@ -24,6 +24,7 @@ add_task(async function test_paused_content() {
 
   let content = await openPanel({
     paused: true,
+    hasUpgraded: false,
   });
 
   let statusBox = content.statusBoxEl;
@@ -39,9 +40,15 @@ add_task(async function test_paused_content() {
 
   Assert.ok(pausedTitle, "Paused title should be present");
   Assert.ok(pausedDescription, "Paused description should be present");
-  Assert.ok(upgradeContent, "Upgrade content should be present in paused view");
+  Assert.ok(
+    upgradeContent,
+    "Upgrade content should be present when not upgraded"
+  );
   Assert.ok(upgradeDescription, "Upgrade description should be present");
-  Assert.ok(upgradeButton, "Upgrade button should be present in paused view");
+  Assert.ok(
+    upgradeButton,
+    "Upgrade button should be present when not upgraded"
+  );
   Assert.ok(!content.statusCardEl, "Status card should be hidden when paused");
 
   let newTabPromise = BrowserTestUtils.waitForNewTab(
@@ -62,4 +69,29 @@ add_task(async function test_paused_content() {
   await setPanelState();
   BrowserTestUtils.removeTab(newTab);
   cleanupService();
+});
+
+add_task(async function test_paused_content_upgraded() {
+  let content = await openPanel({
+    isSignedOut: false,
+    paused: true,
+    hasUpgraded: true,
+  });
+
+  let statusBox = content.statusBoxEl;
+  Assert.ok(statusBox, "Status box should be shown when paused");
+
+  let pausedTitle = statusBox.titleEl;
+  let pausedDescription = statusBox.descriptionEl;
+  let upgradeContent = content.upgradeEl;
+
+  Assert.ok(pausedTitle, "Paused title should be present");
+  Assert.ok(pausedDescription, "Paused description should be present");
+  Assert.ok(
+    !upgradeContent,
+    "Upgrade content should not be present when user has upgraded"
+  );
+  Assert.ok(!content.statusCardEl, "Status card should be hidden when paused");
+
+  await setPanelState();
 });

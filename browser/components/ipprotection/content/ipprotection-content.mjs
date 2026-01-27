@@ -268,6 +268,33 @@ export default class IPProtectionContentElement extends MozLitElement {
     `;
   }
 
+  upgradeTemplate() {
+    if (this.state.hasUpgraded) {
+      return null;
+    }
+
+    return html` <div slot="content">
+      <link
+        rel="stylesheet"
+        href="chrome://browser/content/ipprotection/ipprotection-content.css"
+      />
+      <div id="upgrade-vpn-content">
+        <h2 id="upgrade-vpn-title" data-l10n-id="upgrade-vpn-title"></h2>
+        <span
+          id="upgrade-vpn-description"
+          data-l10n-id="upgrade-vpn-description"
+          class="text-deemphasized"
+        ></span>
+        <moz-button
+          id="upgrade-vpn-button"
+          type="primary"
+          data-l10n-id="upgrade-vpn-button"
+          @click=${this.handleUpgrade}
+        ></moz-button>
+      </div>
+    </div>`;
+  }
+
   pausedTemplate() {
     return html`
       <ipprotection-status-box
@@ -275,31 +302,7 @@ export default class IPProtectionContentElement extends MozLitElement {
         descriptionL10nId="ipprotection-connection-status-paused-description"
         type="disconnected"
       >
-        <div slot="content">
-          <link
-            rel="stylesheet"
-            href="chrome://browser/content/ipprotection/ipprotection-content.css"
-          />
-          <div id="upgrade-vpn-content">
-            <h2
-              id="upgrade-vpn-title"
-              class="vpn-title"
-              data-l10n-id="upgrade-vpn-title"
-            ></h2>
-            <span
-              id="upgrade-vpn-description"
-              data-l10n-id="upgrade-vpn-description"
-              class="vpn-description text-deemphasized"
-            ></span>
-            <moz-button
-              id="upgrade-vpn-button"
-              class="vpn-button"
-              type="primary"
-              data-l10n-id="upgrade-vpn-button"
-              @click=${this.handleUpgrade}
-            ></moz-button>
-          </div>
-        </div>
+        ${this.upgradeTemplate()}
       </ipprotection-status-box>
     `;
   }
