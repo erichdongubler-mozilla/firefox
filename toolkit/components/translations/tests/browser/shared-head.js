@@ -312,8 +312,7 @@ async function openAboutTranslations({
       await EngineProcess.destroyTranslationsEngine();
 
       await SpecialPowers.popPrefEnv();
-      TestTranslationsTelemetry.reset();
-      Services.fog.testResetFOG();
+      TestTranslationsTelemetry.cleanup();
     },
   };
 }
@@ -2395,7 +2394,7 @@ async function setupActorTest({
       await EngineProcess.destroyTranslationsEngine();
       BrowserTestUtils.removeTab(tab);
       await removeMocks();
-      TestTranslationsTelemetry.reset();
+      TestTranslationsTelemetry.cleanup();
       return SpecialPowers.popPrefEnv();
     },
   };
@@ -2876,11 +2875,10 @@ async function loadTestPage({
         await cleanupLocales();
       }
       restoreA11yUtils();
-      Services.fog.testResetFOG();
       TranslationsParent.testAutomaticPopup = false;
       TranslationsParent.resetHostsOffered();
       BrowserTestUtils.removeTab(tab);
-      TestTranslationsTelemetry.reset();
+      TestTranslationsTelemetry.cleanup();
       return Promise.all([
         SpecialPowers.popPrefEnv(),
         SpecialPowers.popPermissions(),
@@ -3608,7 +3606,7 @@ async function setupAboutPreferences(
     BrowserTestUtils.removeTab(tab);
     await removeMocks();
     await SpecialPowers.popPrefEnv();
-    TestTranslationsTelemetry.reset();
+    TestTranslationsTelemetry.cleanup();
   }
 
   return {
@@ -3723,8 +3721,9 @@ async function mockLocales({ systemLocales, appLocales, webLanguages }) {
 class TestTranslationsTelemetry {
   static #previousFlowId = null;
 
-  static reset() {
+  static cleanup() {
     TestTranslationsTelemetry.#previousFlowId = null;
+    Services.fog.testResetFOG();
   }
 
   /**
