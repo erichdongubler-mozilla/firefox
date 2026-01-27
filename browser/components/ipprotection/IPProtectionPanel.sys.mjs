@@ -21,6 +21,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
   IPPSignInWatcher:
     "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs",
+  IPProtectionStates:
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
 });
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
@@ -162,6 +164,9 @@ export class IPProtectionPanel {
 
     this.state = {
       isSignedOut: !lazy.IPPSignInWatcher.isSignedIn,
+      unauthenticated:
+        lazy.IPProtectionService.state ===
+        lazy.IPProtectionStates.UNAUTHENTICATED,
       isProtectionEnabled:
         lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE,
       location: {
@@ -447,7 +452,7 @@ export class IPProtectionPanel {
     doc.addEventListener("IPProtection:Close", this.handleEvent);
     doc.addEventListener("IPProtection:UserEnable", this.handleEvent);
     doc.addEventListener("IPProtection:UserDisable", this.handleEvent);
-    doc.addEventListener("IPProtection:SignIn", this.handleEvent);
+    doc.addEventListener("IPProtection:OptIn", this.handleEvent);
     doc.addEventListener("IPProtection:UserEnableVPNForSite", this.handleEvent);
     doc.addEventListener(
       "IPProtection:UserDisableVPNForSite",
@@ -461,7 +466,7 @@ export class IPProtectionPanel {
     doc.removeEventListener("IPProtection:Close", this.handleEvent);
     doc.removeEventListener("IPProtection:UserEnable", this.handleEvent);
     doc.removeEventListener("IPProtection:UserDisable", this.handleEvent);
-    doc.removeEventListener("IPProtection:SignIn", this.handleEvent);
+    doc.removeEventListener("IPProtection:OptIn", this.handleEvent);
     doc.removeEventListener(
       "IPProtection:UserEnableVPNForSite",
       this.handleEvent
@@ -603,7 +608,7 @@ export class IPProtectionPanel {
       // Let the service know that we tried upgrading at least once
       this.initiatedUpgrade = true;
       this.close();
-    } else if (event.type == "IPProtection:SignIn") {
+    } else if (event.type == "IPProtection:OptIn") {
       this.startLoginFlow();
     } else if (
       event.type == "IPPProxyManager:StateChanged" ||
@@ -616,6 +621,9 @@ export class IPProtectionPanel {
 
       this.setState({
         isSignedOut: !lazy.IPPSignInWatcher.isSignedIn,
+        unauthenticated:
+          lazy.IPProtectionService.state ===
+          lazy.IPProtectionStates.UNAUTHENTICATED,
         isProtectionEnabled:
           lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE,
         hasUpgraded: lazy.IPPEnrollAndEntitleManager.hasUpgraded,

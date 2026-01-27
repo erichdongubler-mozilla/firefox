@@ -19,12 +19,19 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
+  IPProtectionStates:
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
 /**
- * Tests that the ip protection signed out panel subview has the correct content.
+ * Tests that the ip protection unauthenticated panel subview has the correct content.
  */
-add_task(async function test_signed_out_content() {
+add_task(async function test_unauthenticated_content() {
+  Assert.equal(
+    lazy.IPProtectionService.state,
+    lazy.IPProtectionStates.UNAUTHENTICATED,
+    "Should be in the UNAUTHENTICATED state"
+  );
   let button = document.getElementById(lazy.IPProtectionWidget.WIDGET_ID);
 
   let panelView = PanelMultiView.getViewNode(
@@ -39,26 +46,34 @@ add_task(async function test_signed_out_content() {
 
   let content = panelView.querySelector(lazy.IPProtectionPanel.CONTENT_TAGNAME);
 
-  content.state.isSignedOut = true;
-  content.requestUpdate();
-  await content.updateComplete;
-
   Assert.ok(
     BrowserTestUtils.isVisible(content),
     "ipprotection content component should be present"
   );
 
-  let signedOutContent = content.signedOutEl.shadowRoot;
-  let signedOutImg = signedOutContent.querySelector("#signed-out-vpn-img");
-  let signedOutTitle = signedOutContent.querySelector(
-    "#signed-out-vpn-message"
-  );
-  let signedOutButton = signedOutContent.querySelector("#sign-in-vpn");
+  let unauthenticatedContent = content.unauthenticatedEl;
 
-  Assert.ok(signedOutContent, "Signed out content should be visible");
-  Assert.ok(signedOutImg, "Signed out image should be visible");
-  Assert.ok(signedOutTitle, "Signed out title should be visible");
-  Assert.ok(signedOutButton, "Signed out button should be visible");
+  Assert.ok(
+    unauthenticatedContent,
+    "Unauthenticated content should be visible"
+  );
+
+  let unauthenticatedImg = unauthenticatedContent.shadowRoot.querySelector(
+    "#unauthenticated-vpn-img"
+  );
+  let unauthenticatedMessage = unauthenticatedContent.shadowRoot.querySelector(
+    "#unauthenticated-vpn-message"
+  );
+  let getStartedButton = unauthenticatedContent.shadowRoot.querySelector(
+    "#unauthenticated-get-started"
+  );
+
+  Assert.ok(unauthenticatedImg, "Unauthenticated image should be visible");
+  Assert.ok(
+    unauthenticatedMessage,
+    "Unauthenticated message should be visible"
+  );
+  Assert.ok(getStartedButton, "Unauthenticated button should be visible");
 
   // Close the panel
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
@@ -70,6 +85,12 @@ add_task(async function test_signed_out_content() {
  * Tests sign-in button functionality
  */
 add_task(async function test_signin_button() {
+  Assert.equal(
+    lazy.IPProtectionService.state,
+    lazy.IPProtectionStates.UNAUTHENTICATED,
+    "Should be in the UNAUTHENTICATED state"
+  );
+
   let sandbox = sinon.createSandbox();
   sandbox
     .stub(lazy.SpecialMessageActions, "fxaSignInFlow")
@@ -90,30 +111,26 @@ add_task(async function test_signin_button() {
   await panelShownPromise;
 
   let content = panelView.querySelector(lazy.IPProtectionPanel.CONTENT_TAGNAME);
-
-  content.state.isSignedOut = true;
-  content.requestUpdate();
-  await content.updateComplete;
+  let unauthenticatedContent = content.unauthenticatedEl;
 
   Assert.ok(
-    BrowserTestUtils.isVisible(content.signedOutEl),
-    "Signed out element should be visible"
+    unauthenticatedContent,
+    "Unauthenticated content should be visible"
   );
 
-  let signInButton =
-    content.signedOutEl.shadowRoot.querySelector("#sign-in-vpn");
-  Assert.ok(
-    BrowserTestUtils.isVisible(signInButton),
-    "Signed out button should be visible"
+  let getStartedButton = unauthenticatedContent.shadowRoot.querySelector(
+    "#unauthenticated-get-started"
   );
 
-  let signInPromise = BrowserTestUtils.waitForEvent(
+  Assert.ok(getStartedButton, "Unauthenticated button should be visible");
+
+  let optInPromise = BrowserTestUtils.waitForEvent(
     document,
-    "IPProtection:SignIn"
+    "IPProtection:OptIn"
   );
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
-  signInButton.click();
-  await Promise.all([signInPromise, panelHiddenPromise]);
+  getStartedButton.click();
+  await Promise.all([optInPromise, panelHiddenPromise]);
 
   let panelShownAgainPromise = waitForPanelEvent(document, "popupshown");
   await lazy.IPProtectionService.startLoginFlow(gBrowser);

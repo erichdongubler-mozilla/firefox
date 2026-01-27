@@ -20,6 +20,18 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * Tests UI updates to the status card in the panel after enable/disables.
  */
 add_task(async function test_status_card_in_panel() {
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+    canEnroll: true,
+    proxyPass: {
+      status: 200,
+      error: undefined,
+      pass: makePass(),
+    },
+  });
+  await IPPEnrollAndEntitleManager.refetchEntitlement();
+
   const l10nIdOn = "ipprotection-connection-status-on";
   const l10nIdOff = "ipprotection-connection-status-off";
   const mockLocation = {
@@ -32,7 +44,6 @@ add_task(async function test_status_card_in_panel() {
   });
 
   let content = await openPanel({
-    isSignedOut: false,
     location: mockLocation,
     bandwidthUsage: { currentBandwidthUsage: 50, maxBandwidth: 150 },
   });
@@ -66,7 +77,6 @@ add_task(async function test_status_card_in_panel() {
 
   // Set state as if protection is enabled
   await setPanelState({
-    isSignedOut: false,
     location: mockLocation,
     isProtectionEnabled: true,
   });
@@ -100,6 +110,7 @@ add_task(async function test_status_card_in_panel() {
   );
 
   await closePanel();
+  cleanupService();
 });
 
 /**
@@ -149,12 +160,6 @@ add_task(async function test_ipprotection_events_on_toggle() {
   );
 
   let statusCard = content.statusCardEl;
-
-  await BrowserTestUtils.waitForMutationCondition(
-    content.shadowRoot,
-    { childList: true, subtree: true },
-    () => content.statusCardEl
-  );
 
   Assert.ok(statusCard, "Status card should be present");
 

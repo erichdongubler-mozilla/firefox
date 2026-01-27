@@ -72,6 +72,12 @@ add_task(async function test_site_exclusion_feature_pref_disabled() {
  * Tests the site exclusion toggle visibility with VPN on or off.
  */
 add_task(async function test_site_exclusion_toggle_with_siteData() {
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  await IPPEnrollAndEntitleManager.refetchEntitlement();
+
   let content = await openPanel({
     isSignedOut: false,
     isProtectionEnabled: false,
@@ -124,6 +130,12 @@ add_task(async function test_site_exclusion_toggle_with_siteData() {
  * Tests that we don't show the site exclusion toggle if siteData is invalid.
  */
 add_task(async function test_site_exclusion_toggle_no_siteData() {
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  await IPPEnrollAndEntitleManager.refetchEntitlement();
+
   let content = await openPanel({
     isSignedOut: false,
     isProtectionEnabled: false,
@@ -146,6 +158,12 @@ add_task(async function test_site_exclusion_toggle_no_siteData() {
  * Tests that we don't show the site exclusion toggle when an error occurs.
  */
 add_task(async function test_site_exclusion_VPN_error() {
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  await IPPEnrollAndEntitleManager.refetchEntitlement();
+
   let content = await openPanel({
     isSignedOut: false,
     isProtectionEnabled: true,
@@ -194,6 +212,12 @@ add_task(async function test_site_exclusion_VPN_error() {
  * Tests the site exclusion toggle is pressed if isExclusion is false.
  */
 add_task(async function test_site_exclusion_toggle_pressed_isExclusion() {
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  await IPPEnrollAndEntitleManager.refetchEntitlement();
+
   let content = await openPanel({
     isSignedOut: false,
     isProtectionEnabled: true,
@@ -258,6 +282,12 @@ add_task(
   async function test_site_exclusion_on_toggle_events_and_toolbar_icon() {
     const sandbox = sinon.createSandbox();
     Services.perms.removeByType(PERM_NAME);
+
+    setupService({
+      isSignedIn: true,
+      isEnrolledAndEntitled: true,
+    });
+    await IPPEnrollAndEntitleManager.refetchEntitlement();
 
     let setExclusionSpy = sandbox.spy(IPPExceptionsManager, "setExclusion");
     sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
@@ -360,6 +390,12 @@ add_task(
     const sandbox = sinon.createSandbox();
     Services.perms.removeByType(PERM_NAME);
 
+    setupService({
+      isSignedIn: true,
+      isEnrolledAndEntitled: true,
+    });
+    await IPPEnrollAndEntitleManager.refetchEntitlement();
+
     sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
     const PROTECTED_SITE = "https://example.com";
@@ -450,6 +486,12 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
   const sandbox = sinon.createSandbox();
   Services.perms.removeByType(PERM_NAME);
 
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  await IPPEnrollAndEntitleManager.refetchEntitlement();
+
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
   const PROTECTED_SITE = "https://example.com";
@@ -534,6 +576,12 @@ add_task(async function test_site_exclusion_updates_on_tab_switch() {
   const sandbox = sinon.createSandbox();
   Services.perms.removeByType(PERM_NAME);
 
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  await IPPEnrollAndEntitleManager.refetchEntitlement();
+
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
   const PROTECTED_SITE = "https://example.com";
@@ -614,6 +662,12 @@ add_task(async function test_site_exclusion_updates_on_tab_switch() {
 add_task(async function test_site_exclusion_toggle_privileged_page() {
   const sandbox = sinon.createSandbox();
   const ABOUT_PAGE = "about:about";
+
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  await IPPEnrollAndEntitleManager.refetchEntitlement();
 
   let panel = IPProtection.getPanel(window);
   sandbox.stub(panel, "_isPrivilegedPage").returns(true);
