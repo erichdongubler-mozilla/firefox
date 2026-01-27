@@ -23,7 +23,7 @@ JSObject* SVGFEGaussianBlurElement::WrapNode(
 }
 
 SVGElement::NumberPairInfo SVGFEGaussianBlurElement::sNumberPairInfo[1] = {
-    {nsGkAtoms::stdDeviation, 0, 0}};
+    {nsGkAtoms::stdDeviation, 0}};
 
 SVGElement::StringInfo SVGFEGaussianBlurElement::sStringInfo[2] = {
     {nsGkAtoms::result, kNameSpaceID_None, true},

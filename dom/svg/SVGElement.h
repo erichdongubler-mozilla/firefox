@@ -395,8 +395,7 @@ class SVGElement : public SVGElementBase  // nsIContent
 
   struct NumberPairInfo {
     nsStaticAtom* const mName;
-    const float mDefaultValue1;
-    const float mDefaultValue2;
+    const float mDefaultValue;
   };
 
   using NumberPairAttributesInfo =
@@ -411,8 +410,7 @@ class SVGElement : public SVGElementBase  // nsIContent
 
   struct IntegerPairInfo {
     nsStaticAtom* const mName;
-    const int32_t mDefaultValue1;
-    const int32_t mDefaultValue2;
+    const int32_t mDefaultValue;
   };
 
   using IntegerPairAttributesInfo =

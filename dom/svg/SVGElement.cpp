@@ -153,8 +153,7 @@ void SVGElement::NumberAttributesInfo::Reset(uint8_t aAttrEnum) {
 
 template <>
 void SVGElement::NumberPairAttributesInfo::Reset(uint8_t aAttrEnum) {
-  mValues[aAttrEnum].Init(aAttrEnum, mInfos[aAttrEnum].mDefaultValue1,
-                          mInfos[aAttrEnum].mDefaultValue2);
+  mValues[aAttrEnum].Init(aAttrEnum, mInfos[aAttrEnum].mDefaultValue);
 }
 
 template <>
@@ -164,8 +163,7 @@ void SVGElement::IntegerAttributesInfo::Reset(uint8_t aAttrEnum) {
 
 template <>
 void SVGElement::IntegerPairAttributesInfo::Reset(uint8_t aAttrEnum) {
-  mValues[aAttrEnum].Init(aAttrEnum, mInfos[aAttrEnum].mDefaultValue1,
-                          mInfos[aAttrEnum].mDefaultValue2);
+  mValues[aAttrEnum].Init(aAttrEnum, mInfos[aAttrEnum].mDefaultValue);
 }
 
 template <>

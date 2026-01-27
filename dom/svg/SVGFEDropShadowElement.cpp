@@ -25,7 +25,7 @@ SVGElement::NumberInfo SVGFEDropShadowElement::sNumberInfo[2] = {
     {nsGkAtoms::dx, 2}, {nsGkAtoms::dy, 2}};
 
 SVGElement::NumberPairInfo SVGFEDropShadowElement::sNumberPairInfo[1] = {
-    {nsGkAtoms::stdDeviation, 2, 2}};
+    {nsGkAtoms::stdDeviation, 2}};
 
 SVGElement::StringInfo SVGFEDropShadowElement::sStringInfo[2] = {
     {nsGkAtoms::result, kNameSpaceID_None, true},

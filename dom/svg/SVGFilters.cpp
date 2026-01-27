@@ -345,7 +345,7 @@ SVGElement::NumberInfo SVGFELightingElement::sNumberInfo[4] = {
     {nsGkAtoms::specularExponent, 1}};
 
 SVGElement::NumberPairInfo SVGFELightingElement::sNumberPairInfo[1] = {
-    {nsGkAtoms::kernelUnitLength, 0, 0}};
+    {nsGkAtoms::kernelUnitLength, 0}};
 
 SVGElement::StringInfo SVGFELightingElement::sStringInfo[2] = {
     {nsGkAtoms::result, kNameSpaceID_None, true},

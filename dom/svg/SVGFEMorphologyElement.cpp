@@ -23,7 +23,7 @@ JSObject* SVGFEMorphologyElement::WrapNode(JSContext* aCx,
 }
 
 SVGElement::NumberPairInfo SVGFEMorphologyElement::sNumberPairInfo[1] = {
-    {nsGkAtoms::radius, 0, 0}};
+    {nsGkAtoms::radius, 0}};
 
 SVGEnumMapping SVGFEMorphologyElement::sOperatorMap[] = {
     {nsGkAtoms::erode, SVG_OPERATOR_ERODE},

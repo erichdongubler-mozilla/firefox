@@ -40,8 +40,8 @@ class SVGAnimatedNumberPair {
   using WhichOneOfPair = SVGAnimatedNumberPairWhichOne;
   using PairValues = EnumeratedArray<WhichOneOfPair, float>;
 
-  void Init(uint8_t aAttrEnum = 0xff, float aValue1 = 0, float aValue2 = 0) {
-    mAnimVal = mBaseVal = PairValues(aValue1, aValue2);
+  void Init(uint8_t aAttrEnum = 0xff, float aValue = 0) {
+    mAnimVal = mBaseVal = PairValues(aValue, aValue);
     mAttrEnum = aAttrEnum;
     mIsAnimated = false;
     mIsBaseSet = false;
