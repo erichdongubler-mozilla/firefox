@@ -5,9 +5,11 @@
 package org.mozilla.fenix.downloads.listscreen.di
 
 import android.content.Context
+import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
 import mozilla.components.lib.state.Middleware
 import org.mozilla.fenix.components.Components
+import org.mozilla.fenix.downloads.listscreen.DownloadNavigationMiddleware
 import org.mozilla.fenix.downloads.listscreen.middleware.BroadcastSender
 import org.mozilla.fenix.downloads.listscreen.middleware.DefaultBroadcastSender
 import org.mozilla.fenix.downloads.listscreen.middleware.DefaultFileItemDescriptionProvider
@@ -29,12 +31,14 @@ internal object DownloadUIMiddlewareProvider {
     internal fun provideMiddleware(
         coroutineScope: CoroutineScope,
         applicationContext: Context,
+        navController: NavController,
     ): List<Middleware<DownloadUIState, DownloadUIAction>> = listOf(
         provideUIMapperMiddleware(applicationContext, coroutineScope),
         provideShareMiddleware(applicationContext),
         provideTelemetryMiddleware(),
         provideDeleteMiddleware(applicationContext.getUndoDelay(), applicationContext.components),
         provideDownloadsServiceCommunicationMiddleware(applicationContext),
+        provideDownloadNavigationMiddleware(navController),
     )
 
     private fun provideDeleteMiddleware(undoDelay: Long, components: Components) =
@@ -65,6 +69,9 @@ internal object DownloadUIMiddlewareProvider {
         DownloadsServiceCommunicationMiddleware(
            provideBroadcastSender(applicationContext),
         )
+
+    private fun provideDownloadNavigationMiddleware(navController: NavController) =
+        DownloadNavigationMiddleware(navController)
 
     private fun provideBroadcastSender(applicationContext: Context): BroadcastSender {
         initializeBroadcastSender(applicationContext)

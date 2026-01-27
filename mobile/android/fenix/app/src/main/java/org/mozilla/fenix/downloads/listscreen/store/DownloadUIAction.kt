@@ -115,4 +115,14 @@ sealed interface DownloadUIAction : Action {
      * [DownloadUIAction] to retry a failed download file.
      */
     data class RetryDownload(val downloadId: String) : DownloadUIAction
+
+    /**
+     * [DownloadUIAction] fired when a navigation to settings event occurs.
+     */
+    object SettingsIconClicked : DownloadUIAction
+
+    /**
+     * [DownloadUIAction] fired when a back navigation event occurs.
+     */
+    object NavigationIconClicked : DownloadUIAction
 }

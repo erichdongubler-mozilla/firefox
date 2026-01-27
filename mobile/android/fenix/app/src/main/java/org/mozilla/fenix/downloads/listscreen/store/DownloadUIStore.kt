@@ -84,6 +84,8 @@ private fun downloadStateReducer(
         is DownloadUIAction.ResumeDownload -> state
         is DownloadUIAction.RetryDownload -> state
         is DownloadUIAction.CancelDownload -> state
+        is DownloadUIAction.NavigationIconClicked -> state
+        is DownloadUIAction.SettingsIconClicked -> state
 
         is DownloadUIAction.SearchBarDismissRequest -> state.copy(
             isSearchFieldRequested = false,
