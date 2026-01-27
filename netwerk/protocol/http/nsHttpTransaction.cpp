@@ -544,12 +544,6 @@ void nsHttpTransaction::OnActivated() {
   mActivated = true;
   gHttpHandler->ConnMgr()->AddActiveTransaction(this);
   FinalizeConnInfo();
-  if (mConnection) {
-    RefPtr<HttpConnectionBase> conn = mConnection->HttpConnection();
-    if (conn) {
-      conn->RecordConnectionAddressType();
-    }
-  }
 }
 
 void nsHttpTransaction::GetSecurityCallbacks(nsIInterfaceRequestor** cb) {
@@ -1639,6 +1633,13 @@ void nsHttpTransaction::Close(nsresult reason) {
     if (mOrigConnInfo) {
       glean::http::dns_httpssvc_connection_failed_reason.AccumulateSingleSample(
           HTTPSSVC_CONNECTION_OK);
+    }
+
+    if (mConnection) {
+      RefPtr<HttpConnectionBase> conn = mConnection->HttpConnection();
+      if (conn) {
+        conn->RecordConnectionAddressType();
+      }
     }
   }
 
