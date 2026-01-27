@@ -172,25 +172,13 @@ export const OnDeviceModelManager = {
   },
 
   /**
-   * Check if a feature is managed by enterprise policy.
-   *
-   * @param {OnDeviceModelFeaturesEnum} feature
-   */
-  isManagedByPolicy(feature) {
-    return this.getAIFeature(feature).isManagedByPolicy;
-  },
-
-  /**
    * Reset a feature to its default state.
    *
    * @param {OnDeviceModelFeaturesEnum} feature The feature key to reset.
    */
   async reset(feature) {
-    if (this.isManagedByPolicy(feature)) {
-      return;
-    }
     Services.prefs.clearUserPref(this.getFeaturePref(feature));
-    await this.getAIFeature(feature).reset();
+    return this.getAIFeature(feature).reset();
   },
 
   /**
@@ -199,11 +187,8 @@ export const OnDeviceModelManager = {
    * @param {OnDeviceModelFeaturesEnum} feature The feature key to enable.
    */
   async enable(feature) {
-    if (this.isManagedByPolicy(feature)) {
-      return;
-    }
     Services.prefs.setStringPref(this.getFeaturePref(feature), "enabled");
-    await this.getAIFeature(feature).enable();
+    return this.getAIFeature(feature).enable();
   },
 
   /**
@@ -212,11 +197,8 @@ export const OnDeviceModelManager = {
    * @param {OnDeviceModelFeaturesEnum} feature The feature key to disable.
    */
   async disable(feature) {
-    if (this.isManagedByPolicy(feature)) {
-      return;
-    }
     Services.prefs.setStringPref(this.getFeaturePref(feature), "blocked");
-    await this.getAIFeature(feature).disable();
+    return this.getAIFeature(feature).disable();
   },
 };
 

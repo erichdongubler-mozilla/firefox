@@ -2,15 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html } from "chrome://global/content/vendor/lit.all.mjs";
-import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { Preferences } from "chrome://global/content/preferences/Preferences.mjs";
 import { SettingGroupManager } from "chrome://browser/content/preferences/config/SettingGroupManager.mjs";
 import { OnDeviceModelManager } from "chrome://browser/content/preferences/OnDeviceModelManager.mjs";
 
 /**
  * @import { OnDeviceModelFeaturesEnum } from "chrome://browser/content/preferences/OnDeviceModelManager.mjs"
- * @typedef {typeof AiControlGlobalStates[keyof typeof AiControlGlobalStates]} AiControlGlobalStatesEnum
  */
 
 const { CommonDialog } = ChromeUtils.importESModule(
@@ -46,11 +43,6 @@ Preferences.addSetting({ id: "onDeviceFieldset" });
 Preferences.addSetting({ id: "onDeviceGroup" });
 Preferences.addSetting({ id: "aiStatesDescription" });
 Preferences.addSetting({ id: "sidebarChatbotFieldset" });
-Preferences.addSetting({
-  id: "aiBlockedMessage",
-  deps: ["aiControlsDefault"],
-  visible: deps => deps.aiControlsDefault.value,
-});
 
 const AiControlStates = Object.freeze({
   default: "default",
@@ -63,136 +55,6 @@ const AiControlGlobalStates = Object.freeze({
   available: "available",
   blocked: "blocked",
 });
-
-/**
- * @param {AiControlGlobalStatesEnum} state
- */
-function updateAiControlDefault(state) {
-  let isBlocked = state == AiControlGlobalStates.blocked;
-  for (let feature of Object.values(OnDeviceModelManager.features)) {
-    if (isBlocked) {
-      // Reset to default (blocked) state unless it was already blocked.
-      OnDeviceModelManager.disable(feature);
-    } else if (!isBlocked && !OnDeviceModelManager.isEnabled(feature)) {
-      // Reset to default (available) state unless it was manually enabled.
-      OnDeviceModelManager.reset(feature);
-    }
-  }
-  if (isBlocked) {
-    Services.prefs.setStringPref(
-      "browser.ai.control.default",
-      AiControlGlobalStates.blocked
-    );
-  }
-  // There's no feature-specific dropdown for extensions since it's still a
-  // trial feature, so just turn it off/on based on the global switch.
-  Services.prefs.setBoolPref("extensions.ml.enabled", !isBlocked);
-  Glean.browser.globalAiControlToggled.record({ blocked: isBlocked });
-}
-
-class BlockAiConfirmationDialog extends MozLitElement {
-  get dialog() {
-    return this.renderRoot.querySelector("dialog");
-  }
-
-  get confirmButton() {
-    return this.renderRoot.querySelector('moz-button[type="primary"]');
-  }
-
-  get cancelButton() {
-    return this.renderRoot.querySelector('moz-button:not([type="primary"])');
-  }
-
-  async showModal() {
-    await this.updateComplete;
-    this.dialog.showModal();
-  }
-
-  handleCancel() {
-    this.dialog.close();
-  }
-
-  handleConfirm() {
-    this.dialog.close();
-    updateAiControlDefault(AiControlGlobalStates.blocked);
-  }
-
-  render() {
-    return html`
-      <link
-        rel="stylesheet"
-        href="chrome://global/skin/in-content/common.css"
-      />
-      <link
-        rel="stylesheet"
-        href="chrome://browser/skin/preferences/preferences.css"
-      />
-      <link
-        rel="stylesheet"
-        href="chrome://browser/content/preferences/config/block-ai-confirmation-dialog.css"
-      />
-      <dialog>
-        <div class="dialog-header">
-          <img
-            class="dialog-header-icon"
-            src="chrome://global/skin/icons/block.svg"
-            alt=""
-          />
-          <h2
-            class="text-box-trim-start"
-            data-l10n-id="preferences-ai-controls-block-confirmation-heading"
-          ></h2>
-        </div>
-        <div class="dialog-body">
-          <p
-            data-l10n-id="preferences-ai-controls-block-confirmation-description"
-          ></p>
-          <p
-            class="ul-prefix-p"
-            data-l10n-id="preferences-ai-controls-block-confirmation-features-start"
-          ></p>
-          <ul>
-            <li
-              data-l10n-id="preferences-ai-controls-block-confirmation-translations"
-            ></li>
-            <li
-              data-l10n-id="preferences-ai-controls-block-confirmation-pdfjs"
-            ></li>
-            <li
-              data-l10n-id="preferences-ai-controls-block-confirmation-tab-group-suggestions"
-            ></li>
-            <li
-              data-l10n-id="preferences-ai-controls-block-confirmation-key-points"
-            ></li>
-            <li
-              data-l10n-id="preferences-ai-controls-block-confirmation-sidebar-chatbot"
-            ></li>
-          </ul>
-          <p
-            data-l10n-id="preferences-ai-controls-block-confirmation-features-after"
-          ></p>
-          <a is="moz-support-link" support-page="firefox-ai-controls"></a>
-        </div>
-        <moz-button-group>
-          <moz-button
-            data-l10n-id="preferences-ai-controls-block-confirmation-cancel"
-            @click=${this.handleCancel}
-          ></moz-button>
-          <moz-button
-            autofocus
-            type="primary"
-            data-l10n-id="preferences-ai-controls-block-confirmation-confirm"
-            @click=${this.handleConfirm}
-          ></moz-button>
-        </moz-button-group>
-      </dialog>
-    `;
-  }
-}
-customElements.define(
-  "block-ai-confirmation-dialog",
-  BlockAiConfirmationDialog
-);
 
 const AI_CONTROL_OPTIONS = [
   {
@@ -212,27 +74,24 @@ const AI_CONTROL_OPTIONS = [
 Preferences.addSetting({
   id: "aiControlsDefault",
   pref: "browser.ai.control.default",
-  setup() {
-    document.body.append(
-      document.createElement("block-ai-confirmation-dialog")
-    );
-  },
   get: prefVal =>
     prefVal in AiControlGlobalStates
       ? prefVal == AiControlGlobalStates.blocked
       : AiControlGlobalStates.available,
-  set(inputVal, _, setting) {
-    if (inputVal) {
-      // Restore the toggle to not pressed, we're opening a dialog
-      setting.onChange();
-      let dialog = /** @type {BlockAiConfirmationDialog} */ (
-        document.querySelector("block-ai-confirmation-dialog")
-      );
-      dialog.showModal();
-    } else {
-      updateAiControlDefault(AiControlGlobalStates.available);
+  set: inputVal =>
+    inputVal ? AiControlGlobalStates.blocked : AiControlGlobalStates.available,
+  onUserChange(inputVal) {
+    for (let feature of Object.values(OnDeviceModelManager.features)) {
+      if (inputVal) {
+        // Reset to default (blocked) state unless it was already blocked.
+        OnDeviceModelManager.disable(feature);
+      } else if (!inputVal && !OnDeviceModelManager.isEnabled(feature)) {
+        // Reset to default (available) state unless it was manually enabled.
+        OnDeviceModelManager.reset(feature);
+      }
     }
-    return AiControlGlobalStates.available;
+
+    Glean.browser.globalAiControlToggled.record({ blocked: inputVal });
   },
 });
 
@@ -293,12 +152,6 @@ function makeAiControlSetting({ id, pref, feature, supportsEnabled = true }) {
         OnDeviceModelManager.disable(feature);
       }
       return prefVal;
-    },
-    disabled() {
-      return OnDeviceModelManager.isManagedByPolicy(feature);
-    },
-    visible() {
-      return OnDeviceModelManager.isAllowed(feature);
     },
   });
 }
@@ -384,12 +237,6 @@ Preferences.addSetting(
         OnDeviceModelManager.enable(this.feature);
       }
       return AiControlStates.enabled;
-    },
-    disabled() {
-      return OnDeviceModelManager.isManagedByPolicy(this.feature);
-    },
-    visible() {
-      return OnDeviceModelManager.isAllowed(this.feature);
     },
     getControlConfig(config, _, setting) {
       let providerUrl = setting.value;
@@ -732,11 +579,6 @@ SettingGroupManager.registerGroups({
                 ],
               },
             ],
-          },
-          {
-            id: "aiBlockedMessage",
-            control: "moz-message-bar",
-            l10nId: "preferences-ai-controls-blocked-message",
           },
         ],
       },

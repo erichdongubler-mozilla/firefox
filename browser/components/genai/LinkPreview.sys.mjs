@@ -242,7 +242,7 @@ export const LinkPreview = {
    * @returns {boolean}
    */
   get isAllowed() {
-    return this._isRegionSupported() && this._isLocaleSupported();
+    return this.canShowKeyPoints;
   },
 
   /**
@@ -252,15 +252,6 @@ export const LinkPreview = {
    */
   get isBlocked() {
     return !this.canShowKeyPoints;
-  },
-
-  /**
-   * Check if the feature is managed by enterprise policy.
-   *
-   * @returns {boolean}
-   */
-  get isManagedByPolicy() {
-    return Services.prefs.prefIsLocked("browser.ml.linkPreview.optin");
   },
 
   /**
