@@ -70,12 +70,6 @@ inline constexpr auto EthiopianAmeteAlem = {
     "aa"sv,
 };
 
-// "Intl era and monthCode" proposal follows CDLR which defines that Amete Alem
-// era is used for years before the incarnation. This may not match modern
-// usage, though. For the time being use a single era to check if we get any
-// user reports to clarify the situation.
-//
-// CLDR bug report: https://unicode-org.atlassian.net/browse/CLDR-18739
 inline constexpr auto Ethiopian = {
     "am"sv,
 };
@@ -147,13 +141,13 @@ constexpr auto& CalendarEras(CalendarId calendar) {
     case CalendarId::Chinese:
     case CalendarId::Coptic:
     case CalendarId::Dangi:
-    case CalendarId::Ethiopian:
     case CalendarId::EthiopianAmeteAlem:
     case CalendarId::Hebrew:
     case CalendarId::Indian:
     case CalendarId::Persian:
       return eras::Standard;
 
+    case CalendarId::Ethiopian:
     case CalendarId::Gregorian:
     case CalendarId::IslamicCivil:
     case CalendarId::IslamicTabular:
@@ -212,8 +206,9 @@ constexpr auto& CalendarEraNames(CalendarId calendar, EraCode era) {
       return eras::names::Coptic;
 
     case CalendarId::Ethiopian:
-      MOZ_ASSERT(era == EraCode::Standard);
-      return eras::names::Ethiopian;
+      MOZ_ASSERT(era == EraCode::Standard || era == EraCode::Inverse);
+      return era == EraCode::Standard ? eras::names::Ethiopian
+                                      : eras::names::EthiopianAmeteAlem;
 
     case CalendarId::EthiopianAmeteAlem:
       MOZ_ASSERT(era == EraCode::Standard);

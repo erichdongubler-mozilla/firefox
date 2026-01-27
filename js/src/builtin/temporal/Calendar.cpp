@@ -748,8 +748,8 @@ static constexpr std::string_view IcuEraName(CalendarId calendar, EraCode era) {
 
     // https://docs.rs/icu/latest/icu/calendar/cal/struct.Ethiopian.html#era-codes
     case CalendarId::Ethiopian: {
-      MOZ_ASSERT(era == EraCode::Standard);
-      return "am";
+      MOZ_ASSERT(era == EraCode::Standard || era == EraCode::Inverse);
+      return era == EraCode::Standard ? "am" : "aa";
     }
 
     // https://docs.rs/icu/latest/icu/calendar/cal/struct.Ethiopian.html#era-codes
