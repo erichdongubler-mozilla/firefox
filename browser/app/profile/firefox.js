@@ -3585,6 +3585,8 @@ pref("browser.ipProtection.guardian.endpoint", "https://vpn.mozilla.org/");
 pref("browser.ipProtection.added", false);
 // Pref that enables bandwidth usage feature
 pref("browser.ipProtection.bandwidth.enabled", false);
+// Pref that flips at 50%, 75%, and 90% bandwidth usage thresholds
+pref("browser.ipProtection.bandwidthThreshold", 0);
 
 // Pref to enable aboug:glean redesign.
 pref("about.glean.redesign.enabled", false);
