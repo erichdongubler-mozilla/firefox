@@ -677,7 +677,7 @@ menupopup::part(drop-indicator) {
 
 /* Various panels and popup notifications */
 
-#screenshotsPagePanel {
+.screenshotsPagePanel {
   position: relative;
   max-height: 0;
   z-index: 1; /* Above the web content in this stack. */
