@@ -153,6 +153,12 @@ function makeAiControlSetting({ id, pref, feature, supportsEnabled = true }) {
       }
       return prefVal;
     },
+    disabled() {
+      return OnDeviceModelManager.isManagedByPolicy(feature);
+    },
+    visible() {
+      return OnDeviceModelManager.isAllowed(feature);
+    },
   });
 }
 makeAiControlSetting({
@@ -237,6 +243,12 @@ Preferences.addSetting(
         OnDeviceModelManager.enable(this.feature);
       }
       return AiControlStates.enabled;
+    },
+    disabled() {
+      return OnDeviceModelManager.isManagedByPolicy(this.feature);
+    },
+    visible() {
+      return OnDeviceModelManager.isAllowed(this.feature);
     },
     getControlConfig(config, _, setting) {
       let providerUrl = setting.value;
