@@ -48,6 +48,7 @@ function getLayoutData(responsiveLayouts, index, refinedCardsLayout) {
   let layoutData = {
     classNames: [],
     imageSizes: {},
+    allowsWidget: false,
   };
 
   responsiveLayouts.forEach(layout => {
@@ -58,6 +59,10 @@ function getLayoutData(responsiveLayouts, index, refinedCardsLayout) {
           `col-${layout.columnCount}-position-${tileIndex}`
         );
         layoutData.imageSizes[layout.columnCount] = tile.size;
+
+        if (tile.allowsWidget) {
+          layoutData.allowsWidget = true;
+        }
 
         // The API tells us whether the tile should show the excerpt or not.
         // Apply extra styles accordingly.
@@ -206,7 +211,7 @@ function CardSection({
   const refinedCardsLayout = prefs[PREF_REFINED_CARDS_ENABLED];
   const spocsStartupCacheEnabled = prefs[PREF_SPOCS_STARTUPCACHE_ENABLED];
   const dailyBriefV2Enabled =
-    prefs.trainhopConfig?.dailyBriefing_v2?.enabled ||
+    prefs.trainhopConfig?.dailyBriefing?.v2Enabled ||
     prefs[PREF_DAILY_BRIEF_V2_ENABLED];
   const dailyBriefSectionId =
     prefs.trainhopConfig?.dailyBriefing?.sectionId ||
@@ -295,13 +300,125 @@ function CardSection({
     maxTile = 12;
   }
 
+  const shouldShowBriefingCard =
+    sectionKey === dailyBriefSectionId && dailyBriefV2Enabled;
+
   const displaySections = section.data.slice(0, maxTile);
   const isSectionEmpty = !displaySections?.length;
-  const shouldShowLabels = sectionKey === "top_stories_section" && showTopics;
+  const shouldShowLabels = sectionKey === dailyBriefSectionId && showTopics;
 
   if (isSectionEmpty) {
     return null;
   }
+
+  function buildCards() {
+    const cards = [];
+    let dataIndex = 0;
+
+    for (let position = 0; position < maxTile; position++) {
+      const layoutData = getLayoutData(
+        responsiveLayouts,
+        position,
+        refinedCardsLayout
+      );
+      const { classNames, imageSizes } = layoutData;
+      const shouldRenderWidget =
+        shouldShowBriefingCard && layoutData.allowsWidget;
+
+      if (shouldRenderWidget) {
+        cards.push(
+          <BriefingCard
+            key="briefing-card"
+            sectionClassNames={classNames.join(" ")}
+          />
+        );
+        continue;
+      }
+
+      if (dataIndex >= displaySections.length) {
+        break;
+      }
+      const rec = displaySections[dataIndex];
+      const currentIndex = dataIndex;
+
+      // Render a placeholder card when:
+      // 1. No recommendation is available.
+      // 2. The item is flagged as a placeholder.
+      // 3. Spocs are loading for with spocs startup cache disabled.
+      const isPlaceholder =
+        !rec ||
+        rec.placeholder ||
+        placeholder ||
+        (rec.flight_id &&
+          !spocsStartupCacheEnabled &&
+          isForStartupCache.DiscoveryStream);
+
+      if (isPlaceholder) {
+        cards.push(<PlaceholderDSCard key={`dscard-${currentIndex}`} />);
+      } else {
+        cards.push(
+          <DSCard
+            key={`dscard-${rec.id}`}
+            pos={rec.pos}
+            flightId={rec.flight_id}
+            image_src={rec.image_src}
+            raw_image_src={rec.raw_image_src}
+            icon_src={rec.icon_src}
+            word_count={rec.word_count}
+            time_to_read={rec.time_to_read}
+            title={rec.title}
+            topic={rec.topic}
+            features={rec.features}
+            excerpt={rec.excerpt}
+            url={rec.url}
+            id={rec.id}
+            shim={rec.shim}
+            fetchTimestamp={rec.fetchTimestamp}
+            type={type}
+            context={rec.context}
+            sponsor={rec.sponsor}
+            sponsored_by_override={rec.sponsored_by_override}
+            dispatch={dispatch}
+            source={rec.domain}
+            publisher={rec.publisher}
+            pocket_id={rec.pocket_id}
+            context_type={rec.context_type}
+            bookmarkGuid={rec.bookmarkGuid}
+            recommendation_id={rec.recommendation_id}
+            firstVisibleTimestamp={firstVisibleTimestamp}
+            corpus_item_id={rec.corpus_item_id}
+            scheduled_corpus_item_id={rec.scheduled_corpus_item_id}
+            recommended_at={rec.recommended_at}
+            received_rank={rec.received_rank}
+            format={rec.format}
+            alt_text={rec.alt_text}
+            mayHaveSectionsCards={mayHaveSectionsCards}
+            showTopics={shouldShowLabels}
+            selectedTopics={selectedTopics}
+            availableTopics={availableTopics}
+            ctaButtonSponsors={ctaButtonSponsors}
+            ctaButtonVariant={ctaButtonVariant}
+            sectionsClassNames={classNames.join(" ")}
+            sectionsCardImageSizes={imageSizes}
+            section={sectionKey}
+            sectionPosition={sectionPosition}
+            sectionFollowed={following}
+            sectionLayoutName={layoutName}
+            isTimeSensitive={rec.isTimeSensitive}
+            tabIndex={currentIndex === focusedIndex ? 0 : -1}
+            onFocus={() => onCardFocus(currentIndex)}
+            attribution={rec.attribution}
+            isDailyBriefV2={shouldShowBriefingCard}
+          />
+        );
+      }
+      dataIndex++;
+    }
+
+    return cards;
+  }
+
+  const cards = buildCards();
 
   const sectionContextWrapper = (
     <div className="section-context-wrapper">
@@ -392,96 +509,7 @@ function CardSection({
         className={`ds-section-grid ds-card-grid`}
         onKeyDown={handleCardKeyDown}
       >
-        {section.data.slice(0, maxTile).map((rec, index) => {
-          const layoutData = getLayoutData(
-            responsiveLayouts,
-            index,
-            refinedCardsLayout
-          );
-
-          const { classNames, imageSizes } = layoutData;
-          // Render a placeholder card when:
-          // 1. No recommendation is available.
-          // 2. The item is flagged as a placeholder.
-          // 3. Spocs are loading for with spocs startup cache disabled.
-          if (
-            !rec ||
-            rec.placeholder ||
-            placeholder ||
-            (rec.flight_id &&
-              !spocsStartupCacheEnabled &&
-              isForStartupCache.DiscoveryStream)
-          ) {
-            return <PlaceholderDSCard key={`dscard-${index}`} />;
-          }
-
-          const card = (
-            <DSCard
-              key={`dscard-${rec.id}`}
-              pos={rec.pos}
-              flightId={rec.flight_id}
-              image_src={rec.image_src}
-              raw_image_src={rec.raw_image_src}
-              icon_src={rec.icon_src}
-              word_count={rec.word_count}
-              time_to_read={rec.time_to_read}
-              title={rec.title}
-              topic={rec.topic}
-              features={rec.features}
-              excerpt={rec.excerpt}
-              url={rec.url}
-              id={rec.id}
-              shim={rec.shim}
-              fetchTimestamp={rec.fetchTimestamp}
-              type={type}
-              context={rec.context}
-              sponsor={rec.sponsor}
-              sponsored_by_override={rec.sponsored_by_override}
-              dispatch={dispatch}
-              source={rec.domain}
-              publisher={rec.publisher}
-              pocket_id={rec.pocket_id}
-              context_type={rec.context_type}
-              bookmarkGuid={rec.bookmarkGuid}
-              recommendation_id={rec.recommendation_id}
-              firstVisibleTimestamp={firstVisibleTimestamp}
-              corpus_item_id={rec.corpus_item_id}
-              scheduled_corpus_item_id={rec.scheduled_corpus_item_id}
-              recommended_at={rec.recommended_at}
-              received_rank={rec.received_rank}
-              format={rec.format}
-              alt_text={rec.alt_text}
-              mayHaveSectionsCards={mayHaveSectionsCards}
-              showTopics={shouldShowLabels}
-              selectedTopics={selectedTopics}
-              availableTopics={availableTopics}
-              ctaButtonSponsors={ctaButtonSponsors}
-              ctaButtonVariant={ctaButtonVariant}
-              sectionsClassNames={classNames.join(" ")}
-              sectionsCardImageSizes={imageSizes}
-              section={sectionKey}
-              sectionPosition={sectionPosition}
-              sectionFollowed={following}
-              sectionLayoutName={layoutName}
-              isTimeSensitive={rec.isTimeSensitive}
-              tabIndex={index === focusedIndex ? 0 : -1}
-              onFocus={() => onCardFocus(index)}
-              attribution={rec.attribution}
-              isDailyBriefV2={
-                dailyBriefV2Enabled && sectionKey === dailyBriefSectionId
-              }
-            />
-          );
-          if (index === 0 && sectionKey === dailyBriefSectionId) {
-            const cards = [];
-            if (dailyBriefV2Enabled) {
-              cards.push(<BriefingCard key="briefing-card" />);
-            }
-            cards.push(card);
-            return cards;
-          }
-          return [card];
-        })}
+        {cards}
       </div>
     </section>
   );

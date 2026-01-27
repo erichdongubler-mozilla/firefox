@@ -291,8 +291,7 @@
   &.refined-cards.ds-card.sections-card-ui {
     box-shadow: var(--box-shadow-card);
 
-    @media ($break-point-layout-variant <=width < $break-point-widest),
-      (min-width: $break-point-sections-variant) {
+    @media (min-width: $break-point-layout-variant) {
       .ds-card-link {
         gap: var(--space-large);
         padding: var(--space-large);
@@ -336,8 +335,7 @@
   }
 
   &.ds-card.sections-card-ui {
-    @media ($break-point-layout-variant <=width < $break-point-widest),
-      (min-width: $break-point-sections-variant) {
+    @media (min-width: $break-point-layout-variant) {
       align-content: flex-start;
       justify-content: center;
 
@@ -574,7 +572,7 @@
     }
   }
 
-  @media (min-width: $break-point-medium) {
+  @media (max-width: $break-point-layout-variant) {
     @for $i from 0 through 16 {
       .col-1-position-#{$i} {
         order: $i;
@@ -606,7 +604,7 @@
     }
   }
 
-  @media (min-width: $break-point-layout-variant) {
+  @media ($break-point-layout-variant <= width < $break-point-widest) {
     grid-template-columns: repeat(2, 300px);
 
     @for $i from 0 through 16 {
@@ -652,7 +650,7 @@
     }
   }
 
-  @media (min-width: $break-point-widest) {
+  @media ($break-point-widest <= width < $break-point-sections-variant) {
     grid-template-columns: repeat(3, 300px);
     gap: var(--space-large);
 

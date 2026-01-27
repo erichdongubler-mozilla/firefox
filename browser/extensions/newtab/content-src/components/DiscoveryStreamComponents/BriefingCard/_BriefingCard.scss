@@ -1,7 +1,6 @@
-.briefing-card {
+.ds-section-grid.ds-card-grid .briefing-card {
   @include newtab-card-style;
 
-  width: 300px;
   border-radius: var(--border-radius-medium);
   box-shadow: var(--box-shadow-card);
   padding: var(--space-large);

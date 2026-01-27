@@ -794,6 +794,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "discoverystream.sections.layout",
+    {
+      title: "CSV string of section layouts configs",
+      value: "7-double-row-2-ad",
+    },
+  ],
+  [
     "discoverystream.shortcuts.personalization.enabled",
     {
       title: "Boolean flag to enable shortcuts personalization",

@@ -5,7 +5,7 @@
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
-  DEFAULT_SECTION_LAYOUT: "resource://newtab/lib/SectionsLayoutManager.sys.mjs",
+  SectionsLayoutManager: "resource://newtab/lib/SectionsLayoutManager.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
@@ -259,6 +259,15 @@ export class DiscoveryStreamFeed {
       "feeds.recommendationprovider"
     );
     return this._recommendationProvider;
+  }
+
+  get sectionLayoutConfig() {
+    const prefs = this.store.getState().Prefs.values;
+    const trainhopConfig = prefs?.trainhopConfig || {};
+    const sectionlayoutPrefs = prefs?.["discoverystream.sections.layout"];
+    const layoutString =
+      trainhopConfig?.clientLayout?.layoutConfig || sectionlayoutPrefs;
+    return layoutString.split(",").map(s => s.trim());
   }
 
   setupConfig(isStartup = false) {
@@ -1775,13 +1784,32 @@ export class DiscoveryStreamFeed {
 
         if (sectionsEnabled) {
           const useClientLayout =
-            this.store.getState().Prefs.values[PREF_CLIENT_LAYOUT_ENABLED];
+            prefs.trainhopConfig?.clientLayout?.enabled ||
+            prefs[PREF_CLIENT_LAYOUT_ENABLED];
+          const dailyBriefV2Enabled =
+            prefs.trainhopConfig?.dailyBriefing?.v2Enabled ||
+            this.store.getState().Prefs.values[
+              "discoverystream.dailyBrief.v2.enabled"
+            ];
+          const dailyBriefSectionId =
+            prefs.trainhopConfig?.dailyBriefing?.sectionId ||
+            prefs["discoverystream.dailyBrief.sectionId"] ||
+            "top_stories_section";
 
           for (const [sectionKey, sectionData] of Object.entries(
             feedResponse.feeds
           )) {
             if (sectionData) {
+              let headlineCount = 0;
+              const shouldMarkHeadlines =
+                dailyBriefV2Enabled && sectionKey === dailyBriefSectionId;
+
               for (const item of sectionData.recommendations) {
+                const isHeadline = shouldMarkHeadlines && headlineCount < 3;
+                if (isHeadline) {
+                  headlineCount++;
+                }
+
                 recommendations.push({
                   id:
                     item.corpusItemId ||
@@ -1802,6 +1830,7 @@ export class DiscoveryStreamFeed {
                   section: sectionKey,
                   icon_src: item.iconUrl,
                   isTimeSensitive: item.isTimeSensitive,
+                  isHeadline,
                 });
               }
 
@@ -1823,10 +1852,24 @@ export class DiscoveryStreamFeed {
 
             sections.forEach((section, index) => {
               if (useClientLayout || !section.layout) {
-                section.layout =
-                  lazy.DEFAULT_SECTION_LAYOUT[
-                    index % lazy.DEFAULT_SECTION_LAYOUT.length
-                  ];
+                // is there a config for the selected index,
+                // otherwise we rotate through default layouts
+                if (this.sectionLayoutConfig[index]) {
+                  const sectionLayoutName = this.sectionLayoutConfig[index];
+                  section.layout =
+                    lazy.SectionsLayoutManager.SECTION_CONFIGS[
+                      sectionLayoutName
+                    ] ||
+                    lazy.SectionsLayoutManager.SECTION_CONFIGS[
+                      "7-double-row-2-ad"
+                    ];
+                } else {
+                  section.layout =
+                    lazy.SectionsLayoutManager.DEFAULT_SECTION_LAYOUT[
+                      index %
+                        lazy.SectionsLayoutManager.DEFAULT_SECTION_LAYOUT.length
+                    ];
+                }
               }
             });
           }

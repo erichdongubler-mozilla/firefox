@@ -10,7 +10,7 @@ import { RecommendationProvider } from "lib/RecommendationProvider.sys.mjs";
 import { reducers } from "common/Reducers.sys.mjs";
 
 import { PersistentCache } from "lib/PersistentCache.sys.mjs";
-import { DEFAULT_SECTION_LAYOUT } from "lib/SectionsLayoutManager.sys.mjs";
+import { SectionsLayoutManager } from "lib/SectionsLayoutManager.sys.mjs";
 
 const CONFIG_PREF_NAME = "discoverystream.config";
 const ENDPOINTS_PREF_NAME = "discoverystream.endpoints";
@@ -3416,8 +3416,9 @@ describe("DiscoveryStreamFeed", () => {
           recommendations: [
             {
               id: "decaf-c0ff33",
-              corpus_item_id: "decaf-c0ff33",
               scheduled_corpus_item_id: "matcha-latte-ff33c1",
+              corpus_item_id: "decaf-c0ff33",
+              features: {},
               excerpt: "excerpt",
               icon_src: "iconUrl",
               isTimeSensitive: true,
@@ -3428,25 +3429,24 @@ describe("DiscoveryStreamFeed", () => {
               title: "title",
               topic: "topic",
               url: "url",
-              features: {},
             },
             {
               id: "decaf-c0ff34",
-              corpus_item_id: "decaf-c0ff34",
               scheduled_corpus_item_id: "matcha-latte-ff33c2",
-              excerpt: "section excerpt",
-              icon_src: "sectionIconUrl",
-              isTimeSensitive: false,
-              publisher: "section publisher",
-              server_score: 0.9,
-              raw_image_src: "sectionImageUrl",
-              received_rank: 1,
-              recommended_at: 1755834072383,
+              corpus_item_id: "decaf-c0ff34",
+              url: "section url",
               title: "section title",
               topic: "section topic",
-              url: "section url",
               features: {},
+              excerpt: "section excerpt",
+              publisher: "section publisher",
+              raw_image_src: "sectionImageUrl",
+              received_rank: 1,
+              server_score: 0.9,
+              recommended_at: 1755834072383,
               section: "section-1",
+              icon_src: "sectionIconUrl",
+              isTimeSensitive: false,
             },
           ],
           surfaceId: "NEW_TAB_EN_US",
@@ -3454,13 +3454,15 @@ describe("DiscoveryStreamFeed", () => {
         },
       };
 
-      assert.deepEqual(feedData, expectedData);
+      // Use JSON comparison because deepEqual will error with incorrect property order message
+      assert.equal(JSON.stringify(feedData), JSON.stringify(expectedData));
     });
 
     describe("client layout for sections", () => {
       beforeEach(() => {
         setPref("discoverystream.sections.enabled", true);
-        globals.set("DEFAULT_SECTION_LAYOUT", DEFAULT_SECTION_LAYOUT);
+        setPref("discoverystream.sections.layout", "");
+        globals.set("SectionsLayoutManager", SectionsLayoutManager);
         const fakeCache = {};
         sandbox.stub(feed.cache, "get").returns(Promise.resolve(fakeCache));
         sandbox.stub(feed, "rotate").callsFake(val => val);
@@ -3513,12 +3515,12 @@ describe("DiscoveryStreamFeed", () => {
 
         assert.equal(
           feedData.data.sections[0].layout.name,
-          "7-double-row-2-ad",
+          "6-small-medium-1-ad",
           "First section should use first default layout"
         );
         assert.equal(
           feedData.data.sections[1].layout.name,
-          "6-small-medium-1-ad",
+          "4-large-small-medium-1-ad",
           "Second section should use second default layout"
         );
       });
@@ -3551,13 +3553,59 @@ describe("DiscoveryStreamFeed", () => {
 
         assert.equal(
           feedData.data.sections[0].layout.name,
-          "7-double-row-2-ad",
+          "6-small-medium-1-ad",
           "First section without layout should use client default layout"
         );
         assert.equal(
           feedData.data.sections[1].layout.name,
           "another-layout",
           "Second section with layout should keep its original layout"
+        );
+      });
+      it("should apply layout from sectionLayoutConfig when configured", async () => {
+        setPref("discoverystream.sections.layout", "daily-briefing");
+        setPref("discoverystream.sections.clientLayout.enabled", true);
+        const feedData = await feed.getComponentFeed("url");
+
+        assert.equal(
+          feedData.data.sections[0].layout.name,
+          "daily-briefing",
+          "First section should use daily-briefing layout from config"
+        );
+        assert.equal(
+          feedData.data.sections[1].layout.name,
+          "4-large-small-medium-1-ad",
+          "Second section should use default layout (config only has one entry)"
+        );
+      });
+      it("should fallback to 7-double-row-2-ad when sectionLayoutConfig layout name does not exist", async () => {
+        setPref("discoverystream.sections.layout", "non-existent-layout");
+        setPref("discoverystream.sections.clientLayout.enabled", true);
+        const feedData = await feed.getComponentFeed("url");
+
+        assert.equal(
+          feedData.data.sections[0].layout.name,
+          "7-double-row-2-ad",
+          "First section should fallback to 7-double-row-2-ad"
+        );
+      });
+      it("should apply multiple layouts from sectionLayoutConfig", async () => {
+        setPref(
+          "discoverystream.sections.layout",
+          "daily-briefing, 7-double-row-2-ad"
+        );
+        setPref("discoverystream.sections.clientLayout.enabled", true);
+        const feedData = await feed.getComponentFeed("url");
+
+        assert.equal(
+          feedData.data.sections[0].layout.name,
+          "daily-briefing",
+          "First section should use daily-briefing layout"
+        );
+        assert.equal(
+          feedData.data.sections[1].layout.name,
+          "7-double-row-2-ad",
+          "Second section should use 7-double-row-2-ad layout"
         );
       });
     });

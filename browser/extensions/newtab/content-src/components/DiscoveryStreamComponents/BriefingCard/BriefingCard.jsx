@@ -12,7 +12,7 @@ const TIMESTAMP_DISPLAY_DURATION = 15 * 60 * 1000;
  * The BriefingCard component displays "In The Know" headlines.
  * It is the first card in the "Your Briefing" section.
  */
-const BriefingCard = () => {
+const BriefingCard = ({ sectionClassNames = "" }) => {
   const [showTimestamp, setShowTimestamp] = useState(false);
   const [timeAgo, setTimeAgo] = useState("");
 
@@ -27,9 +27,9 @@ const BriefingCard = () => {
   const [firstSectionKey] = Object.keys(sections);
   const { data: sectionData, lastUpdated } = sections[firstSectionKey];
 
-  const headlines = sectionData.recommendations
-    .filter(rec => rec.section === dailyBriefSectionId)
-    .slice(0, 3);
+  const headlines = sectionData.recommendations.filter(
+    rec => rec.section === dailyBriefSectionId && rec.isHeadline
+  );
 
   useEffect(() => {
     if (!lastUpdated) {
@@ -61,7 +61,7 @@ const BriefingCard = () => {
   }, [lastUpdated]);
 
   return (
-    <div className="briefing-card">
+    <div className={`briefing-card ${sectionClassNames}`}>
       <moz-button
         className="briefing-card-context-menu-button"
         iconSrc="chrome://global/skin/icons/more.svg"
