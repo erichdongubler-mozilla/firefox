@@ -86,16 +86,13 @@ NS_IMPL_ISUPPORTS(mozJSSubScriptLoader, mozIJSSubScriptLoader)
 
 static void SubscriptCachePath(JSContext* cx, nsIURI* uri,
                                JS::HandleObject targetObj,
-                               nsACString& cachePath,
-                               scache::ResourceType* aResourceType) {
+                               nsACString& cachePath) {
   // StartupCache must distinguish between non-syntactic vs global when
   // computing the cache key.
   if (!JS_IsGlobalObject(targetObj)) {
-    PathifyURI(JSSUB_CACHE_PREFIX("non-syntactic", "script"), uri, cachePath,
-               aResourceType);
+    PathifyURI(JSSUB_CACHE_PREFIX("non-syntactic", "script"), uri, cachePath);
   } else {
-    PathifyURI(JSSUB_CACHE_PREFIX("global", "script"), uri, cachePath,
-               aResourceType);
+    PathifyURI(JSSUB_CACHE_PREFIX("global", "script"), uri, cachePath);
   }
 }
 
@@ -190,8 +187,7 @@ static bool EvalStencil(JSContext* cx, HandleObject targetObj,
 
   if (script && (storeIntoStartupCache || storeIntoPreloadCache)) {
     nsAutoCString cachePath;
-    scache::ResourceType resourceType;
-    SubscriptCachePath(cx, uri, targetObj, cachePath, &resourceType);
+    SubscriptCachePath(cx, uri, targetObj, cachePath);
 
     nsCString uriStr;
     if (storeIntoPreloadCache && NS_SUCCEEDED(uri->GetSpec(uriStr))) {
@@ -441,21 +437,13 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   StartupCache* cache = ignoreCache ? nullptr : StartupCache::GetSingleton();
 
   nsAutoCString cachePath;
-  scache::ResourceType resourceType;
-  SubscriptCachePath(cx, uri, targetObj, cachePath, &resourceType);
+  SubscriptCachePath(cx, uri, targetObj, cachePath);
 
   JS::DecodeOptions decodeOptions;
   ScriptPreloader::FillDecodeOptionsForCachedStencil(decodeOptions);
 
-  // Skip all caching for scripts not from omni.ja to avoid serving stale
-  // bytecode when JAR files from built-in add-ons installed in the profile
-  // directory are updated.
-  bool shouldUseCache =
-      !options.ignoreCache && (resourceType == scache::ResourceType::Gre ||
-                               resourceType == scache::ResourceType::App);
-
   RefPtr<JS::Stencil> stencil;
-  if (shouldUseCache) {
+  if (!options.ignoreCache) {
     if (!options.wantReturnValue) {
       // NOTE: If we need the return value, we cannot use ScriptPreloader.
       stencil = ScriptPreloader::GetSingleton().GetCachedStencil(

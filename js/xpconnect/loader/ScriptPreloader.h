@@ -135,7 +135,7 @@ class ScriptPreloader : public nsIObserver,
                                  ScriptCacheChild* cacheChild)
       MOZ_REQUIRES(sMainThreadCapability);
 
-  bool Active() const;
+  bool Active() const { return mCacheInitialized && !mStartupFinished; }
 
  private:
   Result<Ok, nsresult> InitCacheInternal(JS::Handle<JSObject*> scope = nullptr);

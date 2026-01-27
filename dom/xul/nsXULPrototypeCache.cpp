@@ -203,12 +203,11 @@ nsresult nsXULPrototypeCache::WritePrototype(
 
 static nsresult PathifyURIForType(nsXULPrototypeCache::CacheType cacheType,
                                   nsIURI* in, nsACString& out) {
-  scache::ResourceType resourceType;
   switch (cacheType) {
     case nsXULPrototypeCache::CacheType::Prototype:
-      return PathifyURI(CACHE_PREFIX("proto"), in, out, &resourceType);
+      return PathifyURI(CACHE_PREFIX("proto"), in, out);
     case nsXULPrototypeCache::CacheType::Script:
-      return PathifyURI(CACHE_PREFIX("script"), in, out, &resourceType);
+      return PathifyURI(CACHE_PREFIX("script"), in, out);
   }
   MOZ_ASSERT_UNREACHABLE("unknown cache type?");
   return NS_ERROR_UNEXPECTED;
