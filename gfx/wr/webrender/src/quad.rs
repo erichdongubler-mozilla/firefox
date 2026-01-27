@@ -410,19 +410,15 @@ fn prepare_quad_impl(
     }
 
     let surface = &mut frame_state.surfaces[pic_context.surface_index.0];
-    let clipped_local_rect = clip_chain.pic_coverage_rect.intersection_unchecked(&surface.clipping_rect);
+    let clipped_pic_rect = clip_chain.pic_coverage_rect.intersection_unchecked(&surface.clipping_rect);
 
-    let mut clipped_raster_rect = clip_chain.pic_coverage_rect.cast_unit();
-    if surface.raster_spatial_node_index != surface.surface_spatial_node_index {
-        let pic_to_raster = SpaceMapper::new_with_target(
-            surface.raster_spatial_node_index,
-            surface.surface_spatial_node_index,
-            RasterRect::max_rect(),
-            ctx.spatial_tree,
-        );
-
-        clipped_raster_rect = pic_to_raster.map(&clipped_local_rect).unwrap();
-    }
+    let pic_to_raster = SpaceMapper::new_with_target(
+        surface.raster_spatial_node_index,
+        surface.surface_spatial_node_index,
+        RasterRect::max_rect(),
+        ctx.spatial_tree,
+    );
+    let Some(clipped_raster_rect) = pic_to_raster.map(&clipped_pic_rect) else { return; };
 
     // TODO: we are making the assumption that raster space and world space have the same
     // scale. I think that it is the case, but it's not super clean.
@@ -1494,7 +1490,7 @@ pub fn prepare_clip_task(
         QuadFlags::empty()
     };
 
-    
+
     rg_builder.push_sub_task(
         sub_tasks,
         SubTask::RectangleClip(RectangleClipSubTask {
