@@ -3,9 +3,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { AIFeature } from "chrome://global/content/ml/AIFeature.sys.mjs";
-import { TranslationsUtils } from "chrome://global/content/translations/TranslationsUtils.mjs";
 
+/**
+ * @typedef {object} Lazy
+ * @property {typeof console} console
+ * @property {typeof import("chrome://global/content/translations/TranslationsUtils.mjs").TranslationsUtils} TranslationsUtils
+ * @property {typeof import("chrome://global/content/ml/EngineProcess.sys.mjs").EngineProcess} EngineProcess
+ */
+
+/** @type {Lazy} */
 const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  TranslationsUtils:
+    "chrome://global/content/translations/TranslationsUtils.mjs",
+  EngineProcess: "chrome://global/content/ml/EngineProcess.sys.mjs",
+});
 
 ChromeUtils.defineLazyGetter(lazy, "console", () => {
   return console.createInstance({
@@ -61,7 +74,10 @@ export class TranslationsFeature extends AIFeature {
     Services.prefs.setStringPref(AI_CONTROL_TRANSLATIONS_PREF, "blocked");
     Services.prefs.setBoolPref(TRANSLATIONS_ENABLE_PREF, false);
 
-    await TranslationsFeature.#deleteAllArtifacts();
+    await Promise.allSettled([
+      lazy.EngineProcess.destroyTranslationsEngine(),
+      TranslationsFeature.#deleteAllArtifacts(),
+    ]);
   }
 
   /**
@@ -79,7 +95,10 @@ export class TranslationsFeature extends AIFeature {
     Services.prefs.clearUserPref(AI_CONTROL_TRANSLATIONS_PREF);
     Services.prefs.clearUserPref(TRANSLATIONS_ENABLE_PREF);
 
-    await TranslationsFeature.#deleteAllArtifacts();
+    await Promise.allSettled([
+      lazy.EngineProcess.destroyTranslationsEngine(),
+      TranslationsFeature.#deleteAllArtifacts(),
+    ]);
   }
 
   /**
@@ -135,7 +154,7 @@ export class TranslationsFeature extends AIFeature {
    */
   static async #deleteAllArtifacts() {
     try {
-      await TranslationsUtils.deleteAllLanguageFiles();
+      await lazy.TranslationsUtils.deleteAllLanguageFiles();
     } catch (error) {
       lazy.console.error(
         "Failed to delete Translations language files.",
