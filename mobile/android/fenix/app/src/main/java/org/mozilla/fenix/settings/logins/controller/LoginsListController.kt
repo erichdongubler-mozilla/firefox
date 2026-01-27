@@ -6,7 +6,6 @@ package org.mozilla.fenix.settings.logins.controller
 
 import androidx.navigation.NavController
 import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.logins.LoginsAction
@@ -31,7 +30,6 @@ class LoginsListController(
     private val browserNavigator: (
         searchTermOrURL: String,
         newTab: Boolean,
-        from: BrowserDirection,
     ) -> Unit,
     private val addLoginCallback: () -> Unit,
     private val settings: Settings,
@@ -58,7 +56,6 @@ class LoginsListController(
         browserNavigator.invoke(
             SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.SYNC_SETUP),
             true,
-            BrowserDirection.FromSavedLoginsFragment,
         )
     }
 

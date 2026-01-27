@@ -14,7 +14,6 @@ import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.settings.SupportUtils
@@ -32,7 +31,7 @@ class LoginsListControllerTest {
     private val settings: Settings = mockk(relaxed = true)
     private val sortingStrategy: SortingStrategy = SortingStrategy.Alphabetically
     private val navController: NavController = mockk(relaxed = true)
-    private val browserNavigator: (String, Boolean, BrowserDirection) -> Unit = mockk(relaxed = true)
+    private val browserNavigator: (String, Boolean) -> Unit = mockk(relaxed = true)
     private val addLoginCallback: () -> Unit = mockk(relaxed = true)
     private val controller =
         LoginsListController(
@@ -80,7 +79,6 @@ class LoginsListControllerTest {
             browserNavigator.invoke(
                 SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.SYNC_SETUP),
                 true,
-                BrowserDirection.FromSavedLoginsFragment,
             )
         }
     }

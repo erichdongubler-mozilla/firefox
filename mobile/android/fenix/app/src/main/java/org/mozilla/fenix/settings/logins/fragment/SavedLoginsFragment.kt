@@ -37,9 +37,8 @@ import mozilla.components.concept.menu.Orientation
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.navBackStackStore
-import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.Config
-import org.mozilla.fenix.HomeActivity
+import org.mozilla.fenix.NavHostActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.SecureFragment
 import org.mozilla.fenix.biometricauthentication.AuthenticationStatus
@@ -48,7 +47,9 @@ import org.mozilla.fenix.components.LogMiddleware
 import org.mozilla.fenix.databinding.FragmentSavedLoginsBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
+import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.registerForActivityResult
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.biometric.DefaultBiometricUtils
@@ -155,7 +156,6 @@ class SavedLoginsFragment : SecureFragment(), MenuProvider {
             return ComposeView(requireContext()).apply {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 val buildStore = { composeNavController: NavHostController ->
-                    val homeActivity = (requireActivity() as HomeActivity)
                     val navController = findNavController()
 
                     val store by fragmentStore(
@@ -184,16 +184,16 @@ class SavedLoginsFragment : SecureFragment(), MenuProvider {
                                         ).savedLoginsSortOrder = it
                                     },
                                     openTab = { url, openInNewTab ->
-                                        homeActivity.openToBrowserAndLoad(
+                                        findNavController().openToBrowser()
+                                        requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
                                             searchTermOrURL = url,
                                             newTab = openInNewTab,
-                                            from = BrowserDirection.FromSavedLoginsFragment,
                                             flags = EngineSession.LoadUrlFlags.select(
                                                 EngineSession.LoadUrlFlags.ALLOW_JAVASCRIPT_URL,
                                             ),
                                         )
                                     },
-                                    clipboardManager = homeActivity.getSystemService(),
+                                    clipboardManager = requireContext().getSystemService(),
                                 ),
                             ),
                         )
@@ -349,8 +349,8 @@ class SavedLoginsFragment : SecureFragment(), MenuProvider {
 
         toolbarChildContainer.removeAllViews()
         toolbarChildContainer.visibility = View.GONE
-        (activity as HomeActivity).getSupportActionBarAndInflateIfNecessary()
-            .setDisplayShowTitleEnabled(true)
+        (activity as? NavHostActivity)?.getSupportActionBarAndInflateIfNecessary()
+            ?.setDisplayShowTitleEnabled(true)
         sortingStrategyMenu.menuController.dismiss()
         sortLoginsMenuRoot.setOnClickListener(null)
 
@@ -364,14 +364,19 @@ class SavedLoginsFragment : SecureFragment(), MenuProvider {
     private fun openToBrowserAndLoad(
         searchTermOrURL: String,
         newTab: Boolean,
-        from: BrowserDirection,
-    ) = (activity as HomeActivity).openToBrowserAndLoad(searchTermOrURL, newTab, from)
+    ) {
+        findNavController().openToBrowser()
+        requireContext().components.useCases.fenixBrowserUseCases.loadUrlOrSearch(
+            searchTermOrURL = searchTermOrURL,
+            newTab = newTab,
+            )
+        }
 
     private fun initToolbar() {
         requireActivity().addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
         showToolbar(getString(R.string.preferences_passwords_saved_logins_2))
-        (activity as HomeActivity).getSupportActionBarAndInflateIfNecessary()
-            .setDisplayShowTitleEnabled(false)
+        (activity as? NavHostActivity)?.getSupportActionBarAndInflateIfNecessary()
+            ?.setDisplayShowTitleEnabled(false)
         toolbarChildContainer = initChildContainerFromToolbar()
         sortLoginsMenuRoot = inflateSortLoginsMenuRoot()
         dropDownMenuAnchorView = sortLoginsMenuRoot.findViewById(R.id.drop_down_menu_anchor_view)
@@ -387,8 +392,8 @@ class SavedLoginsFragment : SecureFragment(), MenuProvider {
     }
 
     private fun initChildContainerFromToolbar(): FrameLayout {
-        val activity = activity as? AppCompatActivity
-        val toolbar = (activity as HomeActivity).findViewById<Toolbar>(R.id.navigationToolbar)
+        val activity = requireActivity() as AppCompatActivity
+        val toolbar = activity.findViewById<Toolbar>(R.id.navigationToolbar)
 
         return (toolbar.findViewById(R.id.toolbar_child_container) as FrameLayout).apply {
             visibility = View.VISIBLE
