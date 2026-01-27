@@ -3989,9 +3989,7 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
                                  [pasteboardOutputDict valueForKey:aType]))
                      forType:aType];
     } else if ([aType isEqualToString:[UTIHelper stringFromPboardType:
-                                                     NSPasteboardTypeTIFF]] ||
-               [aType isEqualToString:[UTIHelper stringFromPboardType:
-                                                     NSPasteboardTypePNG]]) {
+                                                     NSPasteboardTypeTIFF]]) {
       [aPasteboard setData:[pasteboardOutputDict valueForKey:aType]
                    forType:aType];
     }
@@ -4137,10 +4135,7 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
                 forType:currentKey];
     } else if ([currentKey
                    isEqualToString:
-                       [UTIHelper stringFromPboardType:NSPasteboardTypeTIFF]] ||
-               [currentKey
-                   isEqualToString:
-                       [UTIHelper stringFromPboardType:NSPasteboardTypePNG]]) {
+                       [UTIHelper stringFromPboardType:NSPasteboardTypeTIFF]]) {
       [pboard setData:currentValue forType:currentKey];
     } else if ([currentKey
                    isEqualToString:
