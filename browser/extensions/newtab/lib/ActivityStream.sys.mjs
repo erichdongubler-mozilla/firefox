@@ -787,6 +787,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "discoverystream.dailyBrief.v2.enabled",
+    {
+      title: "Boolean flag to enable daily brief v2 with Briefing Card",
+      value: false,
+    },
+  ],
+  [
     "discoverystream.shortcuts.personalization.enabled",
     {
       title: "Boolean flag to enable shortcuts personalization",
