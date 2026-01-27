@@ -124,26 +124,26 @@ class _SearchTestUtils {
     if (setAsDefault) {
       await lazy.SearchService.setDefault(
         engine,
-        Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+        lazy.SearchService.CHANGE_REASON.UNKNOWN
       );
     }
     if (setAsDefaultPrivate) {
       await lazy.SearchService.setDefaultPrivate(
         engine,
-        Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+        lazy.SearchService.CHANGE_REASON.UNKNOWN
       );
     }
     this.#testScope.registerCleanupFunction(async () => {
       if (setAsDefault && !skipReset) {
         await lazy.SearchService.setDefault(
           previousEngine,
-          Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+          lazy.SearchService.CHANGE_REASON.UNKNOWN
         );
       }
       if (setAsDefaultPrivate && !skipReset) {
         await lazy.SearchService.setDefaultPrivate(
           previousPrivateEngine,
-          Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+          lazy.SearchService.CHANGE_REASON.UNKNOWN
         );
       }
       try {
@@ -499,14 +499,14 @@ class _SearchTestUtils {
       if (setAsDefault) {
         await lazy.SearchService.setDefault(
           previousEngine,
-          Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+          lazy.SearchService.CHANGE_REASON.UNKNOWN
         );
         this.clearDefaultSearchEngineCachedPrefs();
       }
       if (setAsDefaultPrivate) {
         await lazy.SearchService.setDefaultPrivate(
           previousPrivateEngine,
-          Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+          lazy.SearchService.CHANGE_REASON.UNKNOWN
         );
       }
       await extension.unload();
@@ -526,13 +526,13 @@ class _SearchTestUtils {
     if (setAsDefault) {
       await lazy.SearchService.setDefault(
         engine,
-        Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+        lazy.SearchService.CHANGE_REASON.UNKNOWN
       );
     }
     if (setAsDefaultPrivate) {
       await lazy.SearchService.setDefaultPrivate(
         engine,
-        Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+        lazy.SearchService.CHANGE_REASON.UNKNOWN
       );
     }
 

@@ -40,7 +40,7 @@ add_setup(async () => {
   defaultEngine = await addTestSuggestionsEngine();
   await SearchService.setDefault(
     defaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_ADDON_INSTALL
+    SearchService.CHANGE_REASON.ADDON_INSTALL
   );
 
   let oldCurrentEngine = SearchService.defaultEngine;
@@ -48,7 +48,7 @@ add_setup(async () => {
   registerCleanupFunction(async () => {
     await SearchService.setDefault(
       oldCurrentEngine,
-      Ci.nsISearchService.CHANGE_REASON_ADDON_INSTALL
+      SearchService.CHANGE_REASON.ADDON_INSTALL
     );
     UrlbarPrefs.clear(ENABLED_PREF);
     UrlbarPrefs.clear(SUGGESTS_PREF);
@@ -111,7 +111,7 @@ add_task(async function test_per_engine() {
   });
   await SearchService.setDefault(
     defaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_ADDON_INSTALL
+    SearchService.CHANGE_REASON.ADDON_INSTALL
   );
 
   await addSearches();
@@ -131,7 +131,7 @@ add_task(async function test_per_engine() {
   defaultEngine = oldEngine;
   await SearchService.setDefault(
     defaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_ADDON_INSTALL
+    SearchService.CHANGE_REASON.ADDON_INSTALL
   );
 
   info("We only show searches made since last default engine change");

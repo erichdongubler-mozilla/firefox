@@ -86,62 +86,6 @@ const DONT_SHOW_PROMPT = -1;
 
 // Amount of times the engine has to be used before prompting.
 const ENGINES_SEEN_FOR_PROMPT = 1;
-/**
- * A reason that is used in the change of default search engine event telemetry.
- * These are mutally exclusive.
- */
-const REASON_CHANGE_MAP = new Map([
-  // The cause of the change is unknown.
-  [Ci.nsISearchService.CHANGE_REASON_UNKNOWN, "unknown"],
-  // The user changed the default search engine via the options in the
-  // preferences UI.
-  [Ci.nsISearchService.CHANGE_REASON_USER, "user"],
-  // The change resulted from the user toggling the "Use this search engine in
-  // Private Windows" option in the preferences UI.
-  [Ci.nsISearchService.CHANGE_REASON_USER_PRIVATE_SPLIT, "user_private_split"],
-  // The user changed the default via keys (cmd/ctrl-up/down) in the separate
-  // search bar.
-  [Ci.nsISearchService.CHANGE_REASON_USER_SEARCHBAR, "user_searchbar"],
-  // The user changed the default via context menu on the one-off buttons in the
-  // separate search bar.
-  [
-    Ci.nsISearchService.CHANGE_REASON_USER_SEARCHBAR_CONTEXT,
-    "user_searchbar_context",
-  ],
-  // An add-on requested the change of default on install, which was either
-  // accepted automatically or by the user.
-  [Ci.nsISearchService.CHANGE_REASON_ADDON_INSTALL, "addon-install"],
-  // An add-on was uninstalled, which caused the engine to be uninstalled.
-  [Ci.nsISearchService.CHANGE_REASON_ADDON_UNINSTALL, "addon-uninstall"],
-  // A configuration update caused a change of default.
-  [Ci.nsISearchService.CHANGE_REASON_CONFIG, "config"],
-  // A locale update caused a change of default.
-  [Ci.nsISearchService.CHANGE_REASON_LOCALE, "locale"],
-  // A region update caused a change of default.
-  [Ci.nsISearchService.CHANGE_REASON_REGION, "region"],
-  // Turning on/off an experiment caused a change of default.
-  [Ci.nsISearchService.CHANGE_REASON_EXPERIMENT, "experiment"],
-  // An enterprise policy caused a change of default.
-  [Ci.nsISearchService.CHANGE_REASON_ENTERPRISE, "enterprise"],
-  // The UI Tour caused a change of default.
-  [Ci.nsISearchService.CHANGE_REASON_UITOUR, "uitour"],
-  // The engine updated.
-  [Ci.nsISearchService.CHANGE_REASON_ENGINE_UPDATE, "engine-update"],
-  // When the private default UI is enabled (e.g. via toggling the preference
-  // when an experiment is run).
-  [
-    Ci.nsISearchService.CHANGE_REASON_USER_PRIVATE_PREF_ENABLED,
-    "user_private_pref_enabled",
-  ],
-  // An update to the search engine ignore list caused a change of default.
-  [Ci.nsISearchService.CHANGE_REASON_ENGINE_IGNORE_LIST_UPDATED, "ignore-list"],
-  // There was no default engine in the settings or it was hidden, so we found
-  // a new default engine.
-  [
-    Ci.nsISearchService.CHANGE_REASON_NO_EXISTING_DEFAULT_ENGINE,
-    "no-existing-default",
-  ],
-]);
 
 /**
  * The search service handles loading and maintaining of search engines. It will
@@ -151,6 +95,54 @@ export const SearchService = new (class SearchService {
   constructor() {
     this._settings = new lazy.SearchSettings(this);
   }
+
+  /**
+   * A reason that is used in the change of default search engine event telemetry.
+   * These are mutally exclusive.
+   */
+  CHANGE_REASON = Object.freeze({
+    // The cause of the change is unknown.
+    UNKNOWN: "unknown",
+    // The user changed the default search engine via the options in the
+    // preferences UI.
+    USER: "user",
+    // The change resulted from the user toggling the "Use this search engine in
+    // Private Windows" option in the preferences UI.
+    USER_PRIVATE_SPLIT: "user_private_split",
+    // The user changed the default via keys (cmd/ctrl-up/down) in the separate
+    // search bar.
+    USER_SEARCHBAR: "user_searchbar",
+    // The user changed the default via context menu on the one-off buttons in the
+    // separate search bar.
+    USER_SEARCHBAR_CONTEXT: "user_searchbar_context",
+    // An add-on requested the change of default on install, which was either
+    // accepted automatically or by the user.
+    ADDON_INSTALL: "addon-install",
+    // An add-on was uninstalled, which caused the engine to be uninstalled.
+    ADDON_UNINSTALL: "addon-uninstall",
+    // A configuration update caused a change of default.
+    CONFIG: "config",
+    // A locale update caused a change of default.
+    LOCALE: "locale",
+    // A region update caused a change of default.
+    REGION: "region",
+    // Turning on/off an experiment caused a change of default.
+    EXPERIMENT: "experiment",
+    // An enterprise policy caused a change of default.
+    ENTERPRISE: "enterprise",
+    // The UI Tour caused a change of default.
+    UITOUR: "uitour",
+    // The engine updated.
+    ENGINE_UPDATE: "engine-update",
+    // When the private default UI is enabled (e.g. via toggling the preference
+    // when an experiment is run).
+    USER_PRIVATE_PREF_ENABLED: "user_private_pref_enabled",
+    // An update to the search engine ignore list caused a change of default.
+    ENGINE_IGNORE_LIST_UPDATED: "ignore-list",
+    // There was no default engine in the settings or it was hidden, so we found
+    // a new default engine.
+    NO_EXISTING_DEFAULT_ENGINE: "no-existing-default",
+  });
 
   /**
    * Temporary property to maintain compatibility whilst migration away from
@@ -201,7 +193,7 @@ export const SearchService = new (class SearchService {
    *
    * @param {SearchEngine} engine
    *   The engine to set the default to.
-   * @param {nsISearchService.DefaultEngineChangeReason} changeReason
+   * @param {Values<typeof this.CHANGE_REASON>} changeReason
    *   The reason the default engine is being changed, used for recording to
    *   telemetry.
    */
@@ -225,7 +217,7 @@ export const SearchService = new (class SearchService {
    *
    * @param {SearchEngine} engine
    *   The engine to set the default to.
-   * @param {nsISearchService.DefaultEngineChangeReason} changeReason
+   * @param {Values<typeof this.CHANGE_REASON>} changeReason
    *   The reason the default engine is being changed, used for recording to
    *   telemetry.
    */
@@ -626,18 +618,14 @@ export const SearchService = new (class SearchService {
   resetToAppDefaultEngine() {
     let appDefaultEngine = this.appDefaultEngine;
     appDefaultEngine.hidden = false;
-    this.#setEngineDefault(
-      false,
-      appDefaultEngine,
-      Ci.nsISearchService.CHANGE_REASON_USER
-    );
+    this.#setEngineDefault(false, appDefaultEngine, this.CHANGE_REASON.USER);
 
     let appPrivateDefaultEngine = this.appPrivateDefaultEngine;
     appPrivateDefaultEngine.hidden = false;
     this.#setEngineDefault(
       true,
       appPrivateDefaultEngine,
-      Ci.nsISearchService.CHANGE_REASON_USER
+      this.CHANGE_REASON.USER
     );
   }
 
@@ -875,10 +863,7 @@ export const SearchService = new (class SearchService {
 
     lazy.logConsole.debug("removeWebExtensionEngine:", id);
     for (let engine of this.#getEnginesByExtensionID(id)) {
-      await this.removeEngine(
-        engine,
-        Ci.nsISearchService.CHANGE_REASON_ADDON_UNINSTALL
-      );
+      await this.removeEngine(engine, this.CHANGE_REASON.ADDON_UNINSTALL);
     }
   }
 
@@ -889,7 +874,7 @@ export const SearchService = new (class SearchService {
    *
    * @param {SearchEngine} engine
    *   The engine to remove.
-   * @param {nsISearchService.DefaultEngineChangeReason} changeReason
+   * @param {Values<typeof this.CHANGE_REASON>} changeReason
    *   The reason for the engine being removed, used for telemetry if the engine
    *   is currently a default engine.
    */
@@ -1538,7 +1523,7 @@ export const SearchService = new (class SearchService {
     // No default in settings or it is hidden, so find the new default.
     return this.#findAndSetNewDefaultEngine(
       { privateMode },
-      Ci.nsISearchService.CHANGE_REASON_NO_EXISTING_DEFAULT_ENGINE
+      this.CHANGE_REASON.NO_EXISTING_DEFAULT_ENGINE
     );
   }
 
@@ -1584,8 +1569,7 @@ export const SearchService = new (class SearchService {
     experimentPrefValue: {
       pref: "browser.search.experiment",
       default: "",
-      onUpdate: () =>
-        this._maybeReloadEngines(Ci.nsISearchService.CHANGE_REASON_EXPERIMENT),
+      onUpdate: () => this._maybeReloadEngines(this.CHANGE_REASON.EXPERIMENT),
     },
   });
 
@@ -1728,10 +1712,7 @@ export const SearchService = new (class SearchService {
         lazy.logConsole.debug("Removing delayed extension engines");
         for (let id of this.#startupRemovedExtensions) {
           for (let engine of this.#getEnginesByExtensionID(id)) {
-            await this.removeEngine(
-              engine,
-              Ci.nsISearchService.CHANGE_REASON_ADDON_UNINSTALL
-            );
+            await this.removeEngine(engine, this.CHANGE_REASON.ADDON_UNINSTALL);
           }
         }
         this.#startupRemovedExtensions.clear();
@@ -1797,7 +1778,7 @@ export const SearchService = new (class SearchService {
       if (this.#engineMatchesIgnoreLists(engine)) {
         await this.removeEngine(
           engine,
-          Ci.nsISearchService.CHANGE_REASON_ENGINE_IGNORE_LIST_UPDATED
+          this.CHANGE_REASON.ENGINE_IGNORE_LIST_UPDATED
         );
         engineRemoved = true;
       }
@@ -1807,7 +1788,7 @@ export const SearchService = new (class SearchService {
     // and that is now empty, so we need to load from our main list.
     if (engineRemoved && !this._engines.size) {
       this._maybeReloadEngines(
-        Ci.nsISearchService.CHANGE_REASON_ENGINE_IGNORE_LIST_UPDATED
+        this.CHANGE_REASON.ENGINE_IGNORE_LIST_UPDATED
       ).catch(console.error);
     }
   }
@@ -2177,7 +2158,7 @@ export const SearchService = new (class SearchService {
         this.#setEngineDefault(
           false,
           restoringEngine,
-          Ci.nsISearchService.CHANGE_REASON_CONFIG
+          this.CHANGE_REASON.CONFIG
         );
         delete engineSettings._metaData.overriddenByOpenSearch;
       }
@@ -2214,9 +2195,8 @@ export const SearchService = new (class SearchService {
    * This is prefixed with _ rather than # because it is
    * called in test_reload_engines.js
    *
-   * @param {nsISearchService.DefaultEngineChangeReason} changeReason
-   *   The reason reload engines is being called, one of
-   *   Ci.nsISearchService.CHANGE_REASON*
+   * @param {Values<typeof this.CHANGE_REASON>} changeReason
+   *   The reason reload engines is being called.
    */
   async _maybeReloadEngines(changeReason) {
     if (this.#maybeReloadDebounce) {
@@ -2277,9 +2257,8 @@ export const SearchService = new (class SearchService {
    *
    * @param {object} settings
    *   The user's current saved settings.
-   * @param {nsISearchService.DefaultEngineChangeReason} changeReason
-   *   The reason reload engines is being called, one of
-   *   Ci.nsISearchService.CHANGE_REASON*
+   * @param {Values<typeof this.CHANGE_REASON>} changeReason
+   *   The reason reload engines is being called.
    */
   async _reloadEngines(settings, changeReason) {
     // Capture the current engine state, in case we need to notify below.
@@ -2423,7 +2402,7 @@ export const SearchService = new (class SearchService {
           this.#setEngineDefault(
             false,
             newAppEngine,
-            Ci.nsISearchService.CHANGE_REASON_CONFIG
+            this.CHANGE_REASON.CONFIG
           );
           // We're removing the old engine and we've changed the default, but this
           // is intentional and effectively everything is the same for the user, so
@@ -2584,11 +2563,7 @@ export const SearchService = new (class SearchService {
     this.#addEngineToStore(engine, true);
 
     // Now set it back to default.
-    this.#setEngineDefault(
-      false,
-      engine,
-      Ci.nsISearchService.CHANGE_REASON_CONFIG
-    );
+    this.#setEngineDefault(false, engine, this.CHANGE_REASON.CONFIG);
     return true;
   }
 
@@ -2842,7 +2817,7 @@ export const SearchService = new (class SearchService {
         // to a configuration change. It is possible that it was actually
         // due to a locale/region change, but that is harder to detect
         // here.
-        Ci.nsISearchService.CHANGE_REASON_CONFIG
+        this.CHANGE_REASON.CONFIG
       );
       return true;
     }
@@ -2997,13 +2972,10 @@ export const SearchService = new (class SearchService {
               this.#setEngineDefault(
                 false,
                 engines[0],
-                Ci.nsISearchService.CHANGE_REASON_CONFIG
+                this.CHANGE_REASON.CONFIG
               );
             }
-            await this.removeEngine(
-              engine,
-              Ci.nsISearchService.CHANGE_REASON_ADDON_INSTALL
-            );
+            await this.removeEngine(engine, this.CHANGE_REASON.ADDON_INSTALL);
           }
         }
       }
@@ -3132,7 +3104,8 @@ export const SearchService = new (class SearchService {
     );
 
     let shouldSetAsDefault = false;
-    let changeReason = Ci.nsISearchService.CHANGE_REASON_UNKNOWN;
+    /** @type {Values<typeof this.CHANGE_REASON>} */
+    let changeReason = this.CHANGE_REASON.UNKNOWN;
 
     for (let engine of this._engines.values()) {
       if (
@@ -3142,10 +3115,7 @@ export const SearchService = new (class SearchService {
         // This is a legacy extension engine that needs to be migrated to WebExtensions.
         lazy.logConsole.debug("Migrating existing engine");
         shouldSetAsDefault = shouldSetAsDefault || this.defaultEngine == engine;
-        await this.removeEngine(
-          engine,
-          Ci.nsISearchService.CHANGE_REASON_ADDON_INSTALL
-        );
+        await this.removeEngine(engine, this.CHANGE_REASON.ADDON_INSTALL);
       }
     }
 
@@ -3190,7 +3160,7 @@ export const SearchService = new (class SearchService {
           // configuration change, and therefore we have re-added the add-on
           // search engine. It is possible that it was actually due to a
           // locale/region change, but that is harder to detect here.
-          changeReason = Ci.nsISearchService.CHANGE_REASON_CONFIG;
+          changeReason = this.CHANGE_REASON.CONFIG;
           newEngine.copyUserSettingsFrom(previouslyOverridden);
         }
       }
@@ -3284,7 +3254,7 @@ export const SearchService = new (class SearchService {
    *   If true, returns the default engine for private browsing mode, otherwise
    *   the default engine for the normal mode. Note, this function does not
    *   check the "separatePrivateDefault" preference - that is up to the caller.
-   * @param {nsISearchService.DefaultEngineChangeReason} changeReason
+   * @param {Values<typeof this.CHANGE_REASON>} changeReason
    *   The reason for the change of default engine.
    * @returns {?SearchEngine}
    *   The appropriate search engine, or null if one could not be determined.
@@ -3360,9 +3330,8 @@ export const SearchService = new (class SearchService {
    *   check the "separatePrivateDefault" preference - that is up to the caller.
    * @param {SearchEngine} newEngine
    *   The search engine to select.
-   * @param {nsISearchService.DefaultEngineChangeReason} changeReason
-   *   The reason for the default search engine change, one of
-   *   Ci.nsISearchService.CHANGE_REASON*.
+   * @param {Values<typeof this.CHANGE_REASON>} changeReason
+   *   The reason for the default search engine change.
    */
   #setEngineDefault(privateMode, newEngine, changeReason) {
     // Sometimes we get wrapped nsISearchEngine objects (external XPCOM callers),
@@ -3490,8 +3459,8 @@ export const SearchService = new (class SearchService {
     }
 
     let eventReason = prefName.endsWith("separatePrivateDefault.ui.enabled")
-      ? Ci.nsISearchService.CHANGE_REASON_USER_PRIVATE_PREF_ENABLED
-      : Ci.nsISearchService.CHANGE_REASON_USER_PRIVATE_SPLIT;
+      ? this.CHANGE_REASON.USER_PRIVATE_PREF_ENABLED
+      : this.CHANGE_REASON.USER_PRIVATE_SPLIT;
     if (!previousValue && currentValue) {
       this.#recordDefaultChangedEvent(
         true,
@@ -3603,15 +3572,14 @@ export const SearchService = new (class SearchService {
    *   The previously default search engine.
    * @param {SearchEngine} [newEngine]
    *   The new default search engine.
-   * @param {nsISearchService.DefaultEngineChangeReason} changeReason
-   *   The reason for the default search engine change, one of
-   *   Ci.nsISearchService.CHANGE_REASON*.
+   * @param {Values<typeof this.CHANGE_REASON>} changeReason
+   *   The reason for the default search engine change
    */
   #recordDefaultChangedEvent(
     isPrivate,
     previousEngine,
     newEngine,
-    changeReason = Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    changeReason = this.CHANGE_REASON.UNKNOWN
   ) {
     let engineInfo;
     // If we are toggling the separate private browsing settings, we might not
@@ -3630,7 +3598,7 @@ export const SearchService = new (class SearchService {
       new_load_path: engineInfo?.loadPath ?? "",
       // Glean has a limit of 100 characters.
       new_submission_url: submissionURL.slice(0, 100),
-      change_reason: REASON_CHANGE_MAP.get(changeReason) ?? "unknown",
+      change_reason: changeReason,
     };
     if (isPrivate) {
       Glean.searchEnginePrivate.changed.record(extraArgs);
@@ -3850,7 +3818,7 @@ export const SearchService = new (class SearchService {
                 engine != this.defaultEngine,
                 engine,
                 engine,
-                Ci.nsISearchService.CHANGE_REASON_ENGINE_UPDATE
+                this.CHANGE_REASON.ENGINE_UPDATE
               );
             }
             this.#parseSubmissionMap = null;
@@ -3869,9 +3837,9 @@ export const SearchService = new (class SearchService {
         lazy.logConsole.debug(
           "Reloading engines after idle due to configuration change"
         );
-        this._maybeReloadEngines(
-          Ci.nsISearchService.CHANGE_REASON_CONFIG
-        ).catch(console.error);
+        this._maybeReloadEngines(this.CHANGE_REASON.CONFIG).catch(
+          console.error
+        );
         break;
       }
 
@@ -3892,17 +3860,17 @@ export const SearchService = new (class SearchService {
         // down at the same time (see _reInit for more info).
         Services.tm.dispatchToMainThread(() => {
           if (!Services.startup.shuttingDown) {
-            this._maybeReloadEngines(
-              Ci.nsISearchService.CHANGE_REASON_LOCALE
-            ).catch(console.error);
+            this._maybeReloadEngines(this.CHANGE_REASON.LOCALE).catch(
+              console.error
+            );
           }
         });
         break;
       case lazy.Region.REGION_TOPIC:
         lazy.logConsole.debug("Region updated:", lazy.Region.home);
-        this._maybeReloadEngines(
-          Ci.nsISearchService.CHANGE_REASON_REGION
-        ).catch(console.error);
+        this._maybeReloadEngines(this.CHANGE_REASON.REGION).catch(
+          console.error
+        );
         break;
     }
   }

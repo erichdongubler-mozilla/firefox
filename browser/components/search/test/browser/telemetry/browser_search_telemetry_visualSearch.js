@@ -340,10 +340,7 @@ add_task(async function nonconfigEngine() {
 
   // Make the nonconfig engine the default so that it handles visual searches.
   let previousEngine = await SearchService.getDefault();
-  await SearchService.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   await openAndCheckMenu({
     shouldBeShown: true,
@@ -364,7 +361,7 @@ add_task(async function nonconfigEngine() {
 
   await SearchService.setDefault(
     previousEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
   await SpecialPowers.popPrefEnv();
 });

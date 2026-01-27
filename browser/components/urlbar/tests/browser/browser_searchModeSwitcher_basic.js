@@ -269,10 +269,7 @@ add_task(async function detect_searchmode_changes() {
 async function setDefaultEngine(name) {
   let engine = (await SearchService.getEngines()).find(e => e.name == name);
   Assert.ok(engine);
-  await SearchService.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 }
 
 add_task(async function test_icon_new_window() {
@@ -829,7 +826,7 @@ add_task(async function test_search_mode_switcher_private_engine_icon() {
 
   SearchService.setDefaultPrivate(
     defaultPrivateEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   Assert.notEqual(
@@ -874,7 +871,7 @@ add_task(async function test_search_mode_switcher_private_engine_icon() {
   info("Changing the default private engine.");
   SearchService.setDefaultPrivate(
     defaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   info("Waiting for the icon to be updated.");

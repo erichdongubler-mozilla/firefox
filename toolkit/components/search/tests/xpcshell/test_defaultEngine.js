@@ -94,7 +94,7 @@ add_task(async function test_alternateAppDefaultEngine_with_partnerCode() {
     SearchService.getEngineById("alternateEngine").wrappedJSObject;
   await SearchService.setDefault(
     alternateEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   Assert.equal((await promise).wrappedJSObject, alternateEngine);
@@ -118,7 +118,7 @@ add_task(async function test_alternateAppDefaultEngine_with_override() {
   let promise = promiseDefaultNotification();
   await SearchService.setDefault(
     SearchService.getEngineById("appDefault"),
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
   await promise;
 
@@ -192,10 +192,7 @@ add_task(async function test_alternateAppDefaultEngine_with_override() {
 
 add_task(async function test_thirdPartyDefaultEngine() {
   let promise = promiseDefaultNotification();
-  await SearchService.setDefault(
-    engine1,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine1, SearchService.CHANGE_REASON.UNKNOWN);
 
   Assert.equal((await promise).wrappedJSObject, engine1);
   Assert.equal(SearchService.defaultEngine.wrappedJSObject, engine1);
@@ -213,10 +210,7 @@ add_task(async function test_thirdPartyDefaultEngine() {
   });
 
   promise = promiseDefaultNotification();
-  await SearchService.setDefault(
-    engine2,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine2, SearchService.CHANGE_REASON.UNKNOWN);
   Assert.equal((await promise).wrappedJSObject, engine2);
   Assert.equal(SearchService.defaultEngine.wrappedJSObject, engine2);
 
@@ -233,10 +227,7 @@ add_task(async function test_thirdPartyDefaultEngine() {
   });
 
   promise = promiseDefaultNotification();
-  await SearchService.setDefault(
-    engine1,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine1, SearchService.CHANGE_REASON.UNKNOWN);
   Assert.equal((await promise).wrappedJSObject, engine1);
   Assert.equal(SearchService.defaultEngine.wrappedJSObject, engine1);
 
@@ -289,10 +280,7 @@ add_task(async function test_switch_with_invalid_overriddenBy() {
   );
 
   let promise = promiseDefaultNotification();
-  await SearchService.setDefault(
-    engine2,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine2, SearchService.CHANGE_REASON.UNKNOWN);
   Assert.equal((await promise).wrappedJSObject, engine2);
   Assert.equal(SearchService.defaultEngine.wrappedJSObject, engine2);
 });

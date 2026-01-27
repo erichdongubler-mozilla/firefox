@@ -2656,7 +2656,7 @@ export var Policies = {
                   try {
                     await lazy.SearchService.removeEngine(
                       engine,
-                      Ci.nsISearchService.CHANGE_REASON_ENTERPRISE
+                      lazy.SearchService.CHANGE_REASON.ENTERPRISE
                     );
                   } catch (ex) {
                     lazy.log.error("Unable to remove the search engine", ex);
@@ -2691,7 +2691,7 @@ export var Policies = {
                 try {
                   await lazy.SearchService.setDefault(
                     defaultEngine,
-                    Ci.nsISearchService.CHANGE_REASON_ENTERPRISE
+                    lazy.SearchService.CHANGE_REASON.ENTERPRISE
                   );
                 } catch (ex) {
                   lazy.log.error("Unable to set the default search engine", ex);
@@ -2725,7 +2725,7 @@ export var Policies = {
                 try {
                   await lazy.SearchService.setDefaultPrivate(
                     defaultPrivateEngine,
-                    Ci.nsISearchService.CHANGE_REASON_ENTERPRISE
+                    lazy.SearchService.CHANGE_REASON.ENTERPRISE
                   );
                 } catch (ex) {
                   lazy.log.error(

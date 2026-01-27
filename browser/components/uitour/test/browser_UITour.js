@@ -654,7 +654,7 @@ var tests = [
       registerCleanupFunction(async () => {
         await SearchService.setDefault(
           defaultEngine,
-          Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+          SearchService.CHANGE_REASON.UNKNOWN
         );
       });
 

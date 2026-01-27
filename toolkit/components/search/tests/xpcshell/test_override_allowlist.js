@@ -328,7 +328,7 @@ for (const test of tests) {
       let oldDefaultEngine = SearchService.defaultEngine;
       await SearchService.setDefault(
         engine,
-        Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+        SearchService.CHANGE_REASON.UNKNOWN
       );
 
       let engineInfo = SearchService.getDefaultEngineInfo();
@@ -346,7 +346,7 @@ for (const test of tests) {
       );
       await SearchService.setDefault(
         oldDefaultEngine,
-        Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+        SearchService.CHANGE_REASON.UNKNOWN
       );
 
       engine.wrappedJSObject.removeExtensionOverride();

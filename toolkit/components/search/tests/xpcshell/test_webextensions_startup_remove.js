@@ -45,10 +45,7 @@ add_task(async function test_removeAddonOnStartup() {
 
   Assert.ok(!!engine, "Should have installed the test engine");
 
-  await SearchService.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
   await promise;
 
   await AddonTestUtils.promiseShutdownManager();

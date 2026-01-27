@@ -6,16 +6,13 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 add_setup(async function () {
   let original = await SearchService.getDefault();
   registerCleanupFunction(() => {
-    SearchService.setDefault(
-      original,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
+    SearchService.setDefault(original, SearchService.CHANGE_REASON.UNKNOWN);
   });
 });
 
 add_task(async function test_search_suggestion_normal() {
   let engine = await addTestSuggestionsEngine(q => [q]);
-  SearchService.setDefault(engine, Ci.nsISearchService.CHANGE_REASON_UNKNOWN);
+  SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
   await doTest({
     context: createContext("test", {
       providers: ["UrlbarProviderSearchSuggestions"],
@@ -48,7 +45,7 @@ add_task(async function test_search_tail() {
       },
     ];
   });
-  SearchService.setDefault(engine, Ci.nsISearchService.CHANGE_REASON_UNKNOWN);
+  SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   await doTest({
     context: createContext("test t", {

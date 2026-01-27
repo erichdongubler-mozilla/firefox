@@ -159,7 +159,7 @@ Preferences.addSetting(
     setEngine: id =>
       lazy.SearchService.setDefault(
         lazy.SearchService.getEngineById(id),
-        Ci.nsISearchService.CHANGE_REASON_USER
+        lazy.SearchService.CHANGE_REASON.USER
       ),
   })
 );
@@ -226,7 +226,7 @@ Preferences.addSetting(
     setEngine: id =>
       lazy.SearchService.setDefaultPrivate(
         lazy.SearchService.getEngineById(id),
-        Ci.nsISearchService.CHANGE_REASON_USER
+        lazy.SearchService.CHANGE_REASON.USER
       ),
   })
 );
@@ -698,7 +698,7 @@ Preferences.addSetting(
             if (button == 0) {
               await lazy.SearchService.removeEngine(
                 engine,
-                Ci.nsISearchService.CHANGE_REASON_USER
+                lazy.SearchService.CHANGE_REASON.USER
               );
             }
           },
@@ -925,7 +925,7 @@ var gSearchPane = {
     await lazy.SearchService.setDefault(
       document.getElementById("defaultEngine").selectedItem.engine
         .originalEngine,
-      Ci.nsISearchService.CHANGE_REASON_USER
+      lazy.SearchService.CHANGE_REASON.USER
     );
     if (ExtensionSettingsStore.getSetting(SEARCH_TYPE, SEARCH_KEY) !== null) {
       ExtensionSettingsStore.select(
@@ -940,7 +940,7 @@ var gSearchPane = {
     await lazy.SearchService.setDefaultPrivate(
       document.getElementById("defaultPrivateEngine").selectedItem.engine
         .originalEngine,
-      Ci.nsISearchService.CHANGE_REASON_USER
+      lazy.SearchService.CHANGE_REASON.USER
     );
   },
 };
@@ -1220,7 +1220,7 @@ class EngineStore {
         try {
           await lazy.SearchService.removeEngine(
             engine,
-            Ci.nsISearchService.CHANGE_REASON_ENTERPRISE
+            lazy.SearchService.CHANGE_REASON.ENTERPRISE
           );
         } catch (ex) {
           // Engine might not exist
@@ -1407,7 +1407,7 @@ class EngineView {
     if (engine.isAppProvided) {
       lazy.SearchService.removeEngine(
         this.selectedEngine.originalEngine,
-        Ci.nsISearchService.CHANGE_REASON_USER
+        lazy.SearchService.CHANGE_REASON.USER
       );
       return;
     }
@@ -1443,7 +1443,7 @@ class EngineView {
     if (button == 0) {
       lazy.SearchService.removeEngine(
         this.selectedEngine.originalEngine,
-        Ci.nsISearchService.CHANGE_REASON_USER
+        lazy.SearchService.CHANGE_REASON.USER
       );
     }
   }

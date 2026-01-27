@@ -11663,34 +11663,13 @@ declare enum nsISearchService_OpenSearchInstallErrors {
   ERROR_ENGINE_CORRUPTED = 3,
 }
 
-declare enum nsISearchService_DefaultEngineChangeReason {
-  CHANGE_REASON_UNKNOWN = 0,
-  CHANGE_REASON_USER = 1,
-  CHANGE_REASON_USER_PRIVATE_SPLIT = 2,
-  CHANGE_REASON_USER_SEARCHBAR = 3,
-  CHANGE_REASON_USER_SEARCHBAR_CONTEXT = 4,
-  CHANGE_REASON_ADDON_INSTALL = 5,
-  CHANGE_REASON_ADDON_UNINSTALL = 6,
-  CHANGE_REASON_CONFIG = 7,
-  CHANGE_REASON_LOCALE = 8,
-  CHANGE_REASON_REGION = 9,
-  CHANGE_REASON_EXPERIMENT = 10,
-  CHANGE_REASON_ENTERPRISE = 11,
-  CHANGE_REASON_UITOUR = 12,
-  CHANGE_REASON_ENGINE_UPDATE = 13,
-  CHANGE_REASON_USER_PRIVATE_PREF_ENABLED = 14,
-  CHANGE_REASON_ENGINE_IGNORE_LIST_UPDATED = 15,
-  CHANGE_REASON_NO_EXISTING_DEFAULT_ENGINE = 16,
-}
-
 declare global {
 
 namespace nsISearchService {
   type OpenSearchInstallErrors = nsISearchService_OpenSearchInstallErrors;
-  type DefaultEngineChangeReason = nsISearchService_DefaultEngineChangeReason;
 }
 
-interface nsISearchService extends nsISupports, Enums<typeof nsISearchService_OpenSearchInstallErrors & typeof nsISearchService_DefaultEngineChangeReason> {
+interface nsISearchService extends nsISupports, Enums<typeof nsISearchService_OpenSearchInstallErrors> {
 }
 
 // https://searchfox.org/mozilla-central/source/toolkit/components/shell/nsIToolkitShellService.idl
@@ -16284,7 +16263,7 @@ interface nsIXPCComponents_Interfaces {
   nsIUserCharacteristicsPageService: nsJSIID<nsIUserCharacteristicsPageService>;
   nsISearchSubmission: nsJSIID<nsISearchSubmission>;
   nsISearchEngine: nsJSIID<nsISearchEngine>;
-  nsISearchService: nsJSIID<nsISearchService, typeof nsISearchService_OpenSearchInstallErrors & typeof nsISearchService_DefaultEngineChangeReason>;
+  nsISearchService: nsJSIID<nsISearchService, typeof nsISearchService_OpenSearchInstallErrors>;
   nsIToolkitShellService: nsJSIID<nsIToolkitShellService>;
   nsITerminatorTest: nsJSIID<nsITerminatorTest>;
   nsIXULStore: nsJSIID<nsIXULStore>;

@@ -951,10 +951,7 @@ add_task(async function selected_result_trending() {
   ]);
 
   let engine = SearchService.getEngineByName("mozengine");
-  await SearchService.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   await doTest(async () => {
     await openPopup("");
@@ -975,7 +972,7 @@ add_task(async function selected_result_trending() {
 
   await SearchService.setDefault(
     defaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
   let settingsWritten = SearchTestUtils.promiseSearchNotification(
     "write-settings-to-disk-complete"
@@ -1041,10 +1038,7 @@ add_task(async function selected_result_trending_rich() {
   ]);
 
   let engine = SearchService.getEngineByName("mozengine");
-  await SearchService.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   await doTest(async () => {
     await openPopup("");
@@ -1065,7 +1059,7 @@ add_task(async function selected_result_trending_rich() {
 
   await SearchService.setDefault(
     defaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
   let settingsWritten = SearchTestUtils.promiseSearchNotification(
     "write-settings-to-disk-complete"

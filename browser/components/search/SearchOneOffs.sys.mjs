@@ -1107,12 +1107,12 @@ export class SearchOneOffs {
       if (isPrivateButton) {
         lazy.SearchService.setDefaultPrivate(
           newDefaultEngine,
-          Ci.nsISearchService.CHANGE_REASON_USER_SEARCHBAR_CONTEXT
+          lazy.SearchService.CHANGE_REASON.USER_SEARCHBAR_CONTEXT
         );
       } else {
         lazy.SearchService.setDefault(
           newDefaultEngine,
-          Ci.nsISearchService.CHANGE_REASON_USER_SEARCHBAR_CONTEXT
+          lazy.SearchService.CHANGE_REASON.USER_SEARCHBAR_CONTEXT
         );
       }
     }

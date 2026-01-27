@@ -521,10 +521,7 @@ async function installThirdPartyEngineAsDefault(useOpenSearch) {
     );
   }
 
-  await SearchService.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   return { engine, extension };
 }

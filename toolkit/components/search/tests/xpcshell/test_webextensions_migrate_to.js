@@ -42,10 +42,7 @@ add_task(async function test_migrateLegacyEngineDifferentName() {
 
   // Set this engine as default, the new engine should become the default
   // after migration.
-  await SearchService.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   engine = SearchService.getEngineByName("simple search");
   Assert.ok(engine, "Should have the WebExtension engine.");

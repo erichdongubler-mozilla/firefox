@@ -361,7 +361,7 @@ add_task(async function test_user_changes_separate_private_pref() {
 
   await SearchService.setDefaultPrivate(
     SearchService.getEngineById("newDefault"),
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   Assert.notEqual(
@@ -452,10 +452,7 @@ add_task(async function test_default_engine_update() {
 
   Assert.ok(!!engine, "Should have loaded the engine");
 
-  await SearchService.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   clearTelemetry();
 

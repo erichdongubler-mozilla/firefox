@@ -194,12 +194,12 @@
       if (PrivateBrowsingUtils.isWindowPrivate(window)) {
         lazy.SearchService.setDefaultPrivate(
           val,
-          Ci.nsISearchService.CHANGE_REASON_USER_SEARCHBAR
+          lazy.SearchService.CHANGE_REASON.USER_SEARCHBAR
         );
       } else {
         lazy.SearchService.setDefault(
           val,
-          Ci.nsISearchService.CHANGE_REASON_USER_SEARCHBAR
+          lazy.SearchService.CHANGE_REASON.USER_SEARCHBAR
         );
       }
     }

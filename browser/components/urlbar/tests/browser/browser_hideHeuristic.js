@@ -420,16 +420,13 @@ async function withEngine(
   let originalEngine;
   if (makeDefault) {
     originalEngine = await SearchService.getDefault();
-    await SearchService.setDefault(
-      engine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
+    await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
   }
   await callback();
   if (originalEngine) {
     await SearchService.setDefault(
       originalEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+      SearchService.CHANGE_REASON.UNKNOWN
     );
   }
   await SearchService.removeEngine(engine);
