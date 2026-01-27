@@ -989,9 +989,9 @@
   <!-- Preference for notifications -->
   <string name="preferences_notifications">وارسۊویا</string>
   <!-- Summary for notification preference indicating notifications are allowed -->
-  <string name="notifications_allowed_summary">هشتن</string>
+  <string name="notifications_allowed_summary">هشته</string>
   <!-- Summary for notification preference indicating notifications are not allowed -->
-  <string name="notifications_not_allowed_summary">نشتن</string>
+  <string name="notifications_not_allowed_summary">نشته</string>
   <!--
     Add-on Permissions
 
@@ -1401,7 +1401,7 @@
     Message to warn users that a large number of tabs will be opened
     %s will be replaced by app name.
   -->
-  <string name="open_all_warning_message">گۊشیڌن پوی ای بلگه یل مجال گۊشیڌن بلگه یل، %s ن کوند اکونه. الن اخۊین رین وا پؽش؟</string>
+  <string name="open_all_warning_message">گۊشیڌن پوی ای بلگه یل گاشڌ مجال گۊشیڌن بلگه یل، %s ن کوند اکونه. الن اخۊین رین وا پؽش؟</string>
   <!-- Dialog button text for confirming open all tabs -->
   <string name="open_all_warning_confirm">گۊشیڌن بلگه یل</string>
   <!-- Dialog button text for canceling open all tabs -->
@@ -1528,7 +1528,7 @@
     Title for the list of tabs in the current normal session used by a11y services
     The %1$s will be replaced by the number of opened normal tabs
   -->
-  <string name="tabs_header_normal_tabs_counter_title">بلگه یل مئمۊلی واز: %1$s. سی آشت بلگه یل بزنین ریس.</string>
+  <string name="tabs_header_normal_tabs_counter_title">بلگه یل مئمۊلی واز: %1$s. سی آلشت بلگه یل بزنین ریس.</string>
   <!--
     Title for the list of tabs in the current private session used by a11y services
     The %1$s will be replaced by the number of opened private tabs
@@ -1957,15 +1957,15 @@
   <!-- Accessibility label for sorting options -->
   <string name="bookmark_sort_menu_content_desc">گۊزینه یل مورتب کردن</string>
   <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
-  <string name="bookmark_sort_menu_custom">و ری کتن سفارشی</string>
+  <string name="bookmark_sort_menu_custom">ترتیب و ری چیڌن سفارشی</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
-  <string name="bookmark_sort_menu_newest">کتن و ری نۊ ترین</string>
+  <string name="bookmark_sort_menu_newest">ترتیب و ری نۊ ترین</string>
   <!-- Label for button to sort bookmarks by oldest in the bookmark sorting overflow menu. -->
-  <string name="bookmark_sort_menu_oldest">کتن و ری قڌیمی ترین</string>
+  <string name="bookmark_sort_menu_oldest">ترتیب و ری قڌیمی ترین</string>
   <!-- Label for button to sort bookmarks in alphabetical order in the bookmark sorting overflow menu. -->
-  <string name="bookmark_sort_menu_a_to_z">کتن و ری ا تا ی</string>
+  <string name="bookmark_sort_menu_a_to_z">ترتیب و ری ا تا ی</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
-  <string name="bookmark_sort_menu_z_to_a">کتن و ری ی تا ا</string>
+  <string name="bookmark_sort_menu_z_to_a">ترتیب و ری ی تا ا</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2089,7 +2089,7 @@
   <!-- Label that indicates that a permission must be blocked -->
   <string name="preference_option_phone_feature_blocked">مسدۊد وابیڌه</string>
   <!-- Label that indicates that a permission must be allowed -->
-  <string name="preference_option_phone_feature_allowed">هشتسه</string>
+  <string name="preference_option_phone_feature_allowed">هشته</string>
   <!-- Label that indicates a permission is by the Android OS -->
   <string name="phone_feature_blocked_by_android">مسدۊد وابیڌه و دست ٱندروید</string>
   <!-- Preference for showing a list of websites that the default configurations won't apply to them -->
@@ -2538,7 +2538,7 @@
   <!-- Header for categories that are being being blocked by current Enhanced Tracking Protection settings -->
   <string name="enhanced_tracking_protection_blocked">مسدۊد وابیڌه</string>
   <!-- Header for categories that are being not being blocked by current Enhanced Tracking Protection settings -->
-  <string name="enhanced_tracking_protection_allowed">هشتسه</string>
+  <string name="enhanced_tracking_protection_allowed">هشته</string>
   <!-- Category of trackers (social media trackers) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_social_media_trackers_title">رڌجۊرا شبکه یل اجتماعی</string>
   <!-- Description of social media trackers that can be blocked by Enhanced Tracking Protection -->
@@ -2842,7 +2842,7 @@
   <!-- Saved logins sorting strategy menu item -by last used- (if selected, it will sort saved logins by last used) -->
   <string name="saved_logins_sort_strategy_last_used">کرت دیندایی و کار گرؽڌن</string>
   <!-- Content description (not visible, for screen readers etc.) -->
-  <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">نومگه کتن کردن رزما</string>
+  <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">نومگه مورتب کردن رزما</string>
   <!--
     Email Masks
 
