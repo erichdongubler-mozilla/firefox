@@ -11194,10 +11194,63 @@ const Weather_Weather = (0,external_ReactRedux_namespaceObject.connect)(state =>
   IntersectionObserver: globalThis.IntersectionObserver,
   document: globalThis.document
 }))(_Weather);
+;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/BriefingCard/BriefingCard.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+/**
+ * The BriefingCard component displays "In The Know" headlines.
+ * It is the first card in the "Your Briefing" section.
+ */
+const BriefingCard = () => {
+  const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+  const sections = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.DiscoveryStream.feeds.data);
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const dailyBriefSectionId = prefs?.trainhopConfig?.dailyBriefing?.sectionId || prefs?.["discoverystream.dailyBrief.sectionId"];
+  const [firstSectionKey] = Object.keys(sections);
+  const {
+    data: sectionData
+  } = sections[firstSectionKey];
+  const headlines = sectionData.recommendations.filter(rec => rec.section === dailyBriefSectionId).slice(0, 3);
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: "briefing-card"
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "briefing-card-header"
+  }, /*#__PURE__*/external_React_default().createElement("h3", {
+    className: "briefing-card-title"
+  }, "In the Know")), /*#__PURE__*/external_React_default().createElement("hr", null), /*#__PURE__*/external_React_default().createElement("ol", {
+    className: "briefing-card-headlines"
+  }, headlines.map((headline, index) => /*#__PURE__*/external_React_default().createElement("li", {
+    key: index,
+    className: "briefing-card-headline"
+  }, /*#__PURE__*/external_React_default().createElement(SafeAnchor, {
+    url: headline.url,
+    dispatch: dispatch,
+    className: "briefing-card-headline-link",
+    title: headline.title
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "briefing-card-headline-title"
+  }, headline.title), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "briefing-card-headline-footer"
+  }, headline.icon_src && /*#__PURE__*/external_React_default().createElement("img", {
+    src: headline.icon_src,
+    alt: "",
+    className: "briefing-card-headline-icon"
+  }), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "briefing-card-headline-source"
+  }, headline.publisher)))))));
+};
+
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamComponents/CardSections/CardSections.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 
 
 
@@ -11228,6 +11281,7 @@ const CardSections_PREF_LEADERBOARD_POSITION = "newtabAdSize.leaderboard.positio
 const PREF_REFINED_CARDS_ENABLED = "discoverystream.refinedCardsLayout.enabled";
 const PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personalization.inferred.user.enabled";
 const CardSections_PREF_DAILY_BRIEF_SECTIONID = "discoverystream.dailyBrief.sectionId";
+const PREF_DAILY_BRIEF_V2_ENABLED = "discoverystream.dailyBrief.v2.enabled";
 const CardSections_PREF_SPOCS_STARTUPCACHE_ENABLED = "discoverystream.spocs.startupCache.enabled";
 function getLayoutData(responsiveLayouts, index, refinedCardsLayout) {
   let layoutData = {
@@ -11361,6 +11415,7 @@ function CardSection({
   const availableTopics = prefs[CardSections_PREF_TOPICS_AVAILABLE];
   const refinedCardsLayout = prefs[PREF_REFINED_CARDS_ENABLED];
   const spocsStartupCacheEnabled = prefs[CardSections_PREF_SPOCS_STARTUPCACHE_ENABLED];
+  const dailyBriefV2Enabled = prefs[PREF_DAILY_BRIEF_V2_ENABLED];
   const mayHaveSectionsPersonalization = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
   const {
     sectionKey,
@@ -11573,6 +11628,16 @@ function CardSection({
       onFocus: () => onCardFocus(index),
       attribution: rec.attribution
     });
+    if (index === 0 && sectionKey === "top_stories_section") {
+      const cards = [];
+      if (dailyBriefV2Enabled) {
+        cards.push(/*#__PURE__*/external_React_default().createElement(BriefingCard, {
+          key: "briefing-card"
+        }));
+      }
+      cards.push(card);
+      return cards;
+    }
     return [card];
   })));
 }

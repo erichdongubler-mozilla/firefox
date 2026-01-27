@@ -19,6 +19,7 @@ import { PersonalizedCard } from "../PersonalizedCard/PersonalizedCard";
 import { FollowSectionButtonHighlight } from "../FeatureHighlight/FollowSectionButtonHighlight";
 import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
 import { Weather } from "../../Weather/Weather.jsx";
+import { BriefingCard } from "../BriefingCard/BriefingCard.jsx";
 
 // Prefs
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
@@ -39,6 +40,7 @@ const PREF_REFINED_CARDS_ENABLED = "discoverystream.refinedCardsLayout.enabled";
 const PREF_INFERRED_PERSONALIZATION_USER =
   "discoverystream.sections.personalization.inferred.user.enabled";
 const PREF_DAILY_BRIEF_SECTIONID = "discoverystream.dailyBrief.sectionId";
+const PREF_DAILY_BRIEF_V2_ENABLED = "discoverystream.dailyBrief.v2.enabled";
 const PREF_SPOCS_STARTUPCACHE_ENABLED =
   "discoverystream.spocs.startupCache.enabled";
 
@@ -203,6 +205,7 @@ function CardSection({
   const availableTopics = prefs[PREF_TOPICS_AVAILABLE];
   const refinedCardsLayout = prefs[PREF_REFINED_CARDS_ENABLED];
   const spocsStartupCacheEnabled = prefs[PREF_SPOCS_STARTUPCACHE_ENABLED];
+  const dailyBriefV2Enabled = prefs[PREF_DAILY_BRIEF_V2_ENABLED];
 
   const mayHaveSectionsPersonalization =
     prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
@@ -461,6 +464,14 @@ function CardSection({
               attribution={rec.attribution}
             />
           );
+          if (index === 0 && sectionKey === "top_stories_section") {
+            const cards = [];
+            if (dailyBriefV2Enabled) {
+              cards.push(<BriefingCard key="briefing-card" />);
+            }
+            cards.push(card);
+            return cards;
+          }
           return [card];
         })}
       </div>
