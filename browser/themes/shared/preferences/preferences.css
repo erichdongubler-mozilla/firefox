@@ -489,10 +489,6 @@ a[is="moz-support-link"]:not(.sidebar-footer-link, [hidden]) {
 
 /* Search Pane */
 
-#engineList {
-  margin: 2px 0 5px;
-}
-
 #engineList > treechildren::-moz-tree-image(engineShown, checked),
 #blocklistsTree > treechildren::-moz-tree-image(selectionCol, checked) {
   list-style-image: url("chrome://global/skin/icons/check.svg");
