@@ -92,6 +92,7 @@
 
   "background": {
     "scripts": [
+      "lib/logging.js",
       "lib/remote_settings_update_check.js",
       "lib/messaging_helper.js",
       "lib/ua_helpers.js",
