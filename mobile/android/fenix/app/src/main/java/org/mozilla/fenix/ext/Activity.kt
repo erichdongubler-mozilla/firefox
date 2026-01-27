@@ -52,6 +52,7 @@ import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.TrackingProtectionFragmentDirections
 import org.mozilla.fenix.settings.about.AboutFragmentDirections
 import org.mozilla.fenix.settings.doh.DohSettingsFragmentDirections
+import org.mozilla.fenix.settings.logins.fragment.LoginDetailFragmentDirections
 import org.mozilla.fenix.settings.logins.fragment.SavedLoginsAuthFragmentDirections
 import org.mozilla.fenix.settings.search.SaveSearchEngineFragmentDirections
 import org.mozilla.fenix.settings.search.SearchEngineFragmentDirections
@@ -328,6 +329,8 @@ private fun getHomeNavDirections(
 
     BrowserDirection.FromAddonPermissionsDetailsFragment ->
         AddonPermissionsDetailsFragmentDirections.actionGlobalBrowser()
+
+    BrowserDirection.FromLoginDetailFragment -> LoginDetailFragmentDirections.actionGlobalBrowser()
 
     BrowserDirection.FromTabsTray -> TabsTrayFragmentDirections.actionGlobalBrowser()
     BrowserDirection.FromTabManager -> TabManagementFragmentDirections.actionGlobalBrowser()

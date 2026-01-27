@@ -195,6 +195,11 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_compose_logins).apply {
+            isChecked = context.settings().enableComposeLogins
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
         requirePreference<SwitchPreference>(R.string.pref_key_should_show_custom_tab_extensions).apply {
             isVisible = Config.channel.isDebug
             isChecked = context.settings().shouldShowCustomTabExtensions
