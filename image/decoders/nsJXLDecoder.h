@@ -8,18 +8,14 @@
 #define mozilla_image_decoders_nsJXLDecoder_h
 
 #include "Decoder.h"
-#include "mp4parse.h"
-#include "SurfacePipe.h"
-
-#include "jxl/decode_cxx.h"
-#include "jxl/thread_parallel_runner_cxx.h"
+#include "StreamingLexer.h"
 
 namespace mozilla::image {
 class RasterImage;
 
 class nsJXLDecoder final : public Decoder {
  public:
-  virtual ~nsJXLDecoder();
+  ~nsJXLDecoder() override;
 
   DecoderType GetType() const override { return DecoderType::JXL; }
 
@@ -30,10 +26,7 @@ class nsJXLDecoder final : public Decoder {
  private:
   friend class DecoderFactory;
 
-  // Decoders should only be instantiated via DecoderFactory.
   explicit nsJXLDecoder(RasterImage* aImage);
-
-  size_t PreferredThreadCount();
 
   enum class State { JXL_DATA, FINISHED_JXL_DATA };
 
@@ -41,11 +34,6 @@ class nsJXLDecoder final : public Decoder {
   LexerTransition<State> FinishedJXLData();
 
   StreamingLexer<State> mLexer;
-  JxlDecoderPtr mDecoder;
-  JxlThreadParallelRunnerPtr mParallelRunner;
-  Vector<uint8_t> mBuffer;
-  Vector<uint8_t> mOutBuffer;
-  JxlBasicInfo mInfo{};
 };
 
 }  // namespace mozilla::image
