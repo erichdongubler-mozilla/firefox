@@ -1,5 +1,5 @@
 [package]
-name = "qwac-trust-anchors"
+name = "pdf-trust-anchors"
 version = "0.1.0"
 edition = "2021"
 

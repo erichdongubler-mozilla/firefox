@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-DIRS += ["abridged_certs", "qwac_trust_anchors"]
+DIRS += ["abridged_certs", "pdf_trust_anchors", "qwac_trust_anchors"]
 
 TEST_DIRS += ["tests"]
 
@@ -129,6 +129,7 @@ UNIFIED_SOURCES += [
     "nsTLSSocketProvider.cpp",
     "OSKeyStore.cpp",
     "PDFSignatureVerification.cpp",
+    "PDFTrustDomain.cpp",
     "PKCS11ModuleDB.cpp",
     "PSMRunnable.cpp",
     "PublicKeyPinningService.cpp",
