@@ -325,7 +325,9 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
                 isDailyUsagePingEnabled = settings().isDailyUsagePingEnabled,
             )
         } else {
-            components.distributionIdManager.startAdjustIfSkippingConsentScreen()
+            CoroutineScope(IO).launch {
+                components.distributionIdManager.startAdjustIfSkippingConsentScreen()
+            }
         }
 
         setupPush()
@@ -780,7 +782,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
      */
     @Suppress("CognitiveComplexMethod", "LongMethod", "CyclomaticComplexMethod")
     @VisibleForTesting
-    internal fun setStartupMetrics(
+    internal suspend fun setStartupMetrics(
         browserStore: BrowserStore,
         settings: Settings,
         dohSettingsProvider: DohSettingsProvider = DefaultDohSettingsProvider(
