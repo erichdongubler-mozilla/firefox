@@ -132,6 +132,61 @@ describe("settings ai features", () => {
     );
   });
 
+  describe("managed by policy", () => {
+    async function runPolicyTest(name, pref, settingId) {
+      try {
+        Services.prefs.lockPref(pref);
+
+        await openAiFeaturePanel();
+
+        const control = doc.getElementById(settingId);
+        Assert.ok(control, `${name} control exists`);
+        Assert.ok(
+          BrowserTestUtils.isVisible(control),
+          `${name} control is visible when locked`
+        );
+        Assert.ok(
+          control.disabled,
+          `${name} control is disabled when pref is locked`
+        );
+      } finally {
+        Services.prefs.unlockPref(pref);
+      }
+    }
+
+    it("disables Smart Tab Groups control when pref is locked", async () => {
+      await runPolicyTest(
+        "Smart Tab Groups",
+        "browser.tabs.groups.smart.userEnabled",
+        "aiControlSmartTabGroups"
+      );
+    });
+
+    it("disables Link Preview control when pref is locked", async () => {
+      await runPolicyTest(
+        "Link Preview",
+        "browser.ml.linkPreview.optin",
+        "aiControlLinkPreviewKeyPoints"
+      );
+    });
+
+    it("disables Sidebar Chatbot control when pref is locked", async () => {
+      await runPolicyTest(
+        "Sidebar Chatbot",
+        "browser.ml.chat.enabled",
+        "aiControlSidebarChatbot"
+      );
+    });
+
+    it("disables Translations control when pref is locked", async () => {
+      await runPolicyTest(
+        "Translations",
+        "browser.translations.enable",
+        "aiControlTranslations"
+      );
+    });
+  });
+
   describe("Smart Window memories", () => {
     async function openSmartWindowPanel() {
       await openAiFeaturePanel();
