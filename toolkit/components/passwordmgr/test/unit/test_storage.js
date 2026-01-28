@@ -98,6 +98,6 @@ add_task(async function test_listInvalidOrigins() {
   );
   let invalid = await Services.logins.listInvalidOrigins();
   Assert.equal(invalid.length, 1);
-  Assert.equal(invalid[0], "not a url");
+  Assert.equal(invalid[0].origin, "not a url");
   LoginTestUtils.clearData();
 });

@@ -577,7 +577,8 @@ LoginManager.prototype = {
    * Used to diagnose login storage incompatibilities with the Application Services
    * Rust component, which has stricter URL validation requirements.
    *
-   * @return {Promise<Array<string>>} Origin strings that failed URL validation.
+   * @return {Promise<Array<object>>} Array of objects containing origin,
+   * timeCreated, and timeLastUsed for logins that failed URL validation.
    */
   async listInvalidOrigins() {
     const logins = await this.getAllLogins();
@@ -585,7 +586,11 @@ LoginManager.prototype = {
     for (const login of logins) {
       const origin = login.origin || login.formActionOrigin;
       if (!URL.canParse(origin)) {
-        invalidOrigins.push(origin);
+        invalidOrigins.push({
+          origin,
+          timeCreated: new Date(login.timeCreated),
+          timeLastUsed: new Date(login.timeLastUsed),
+        });
       }
     }
     return invalidOrigins;
