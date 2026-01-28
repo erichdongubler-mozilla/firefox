@@ -1465,8 +1465,27 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         }
 
         fun clickDownloadLink(title: String, interact: DownloadRobot.() -> Unit): DownloadRobot.Transition {
-            clickPageObject(composeTestRule, itemContainingText(title))
-            waitForAppWindowToBeUpdated()
+            for (i in 1..RETRY_COUNT) {
+                Log.i(TAG, "clickDownloadLink: Started try #$i")
+                try {
+                    Log.i(TAG, "clickDownloadLink: Trying to click the: $title download link")
+                    mDevice.findObject(By.textContains(title)).click()
+                    Log.i(TAG, "clickDownloadLink: Clicked the: $title download link")
+                    assertUIObjectExists(itemWithResId("$packageName:id/parentPanel"))
+                } catch (e: AssertionError) {
+                    Log.i(TAG, "clickDownloadLink: AssertionError caught, executing fallback methods")
+                    if (i == RETRY_COUNT) {
+                        throw e
+                    } else {
+                        browserScreen(composeTestRule) {
+                        }.openThreeDotMenu {
+                        }.clickRefreshButton {
+                            waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
+                        }
+                    }
+                }
+            }
+
             DownloadRobot(composeTestRule).interact()
             return DownloadRobot.Transition(composeTestRule)
         }
