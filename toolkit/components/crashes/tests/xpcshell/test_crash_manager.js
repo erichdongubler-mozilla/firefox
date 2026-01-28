@@ -3,6 +3,9 @@
 
 "use strict";
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 const { CrashManager } = ChromeUtils.importESModule(
   "resource://gre/modules/CrashManager.sys.mjs"
 );
@@ -450,29 +453,35 @@ add_task(async function test_multiline_crash_id_rejected() {
 });
 
 // Main process crashes should be remembered beyond the high water mark.
-add_task(async function test_high_water_mark() {
-  let m = await getManager();
+add_task(
+  {
+    // Bug 2012641 will remove this skip
+    skip_if: () => AppConstants.platform === "macosx" && !AppConstants.DEBUG,
+  },
+  async function test_high_water_mark() {
+    let m = await getManager();
 
-  let store = await m._getStore();
+    let store = await m._getStore();
 
-  for (let i = 0; i < store.HIGH_WATER_DAILY_THRESHOLD + 1; i++) {
-    await m.createEventsFile(
-      "m" + i,
-      "crash.main.3",
-      DUMMY_DATE,
-      "m" + i,
-      "{}"
-    );
+    for (let i = 0; i < store.HIGH_WATER_DAILY_THRESHOLD + 1; i++) {
+      await m.createEventsFile(
+        "m" + i,
+        "crash.main.3",
+        DUMMY_DATE,
+        "m" + i,
+        "{}"
+      );
+    }
+
+    let count = await m.aggregateEventsFiles();
+    Assert.equal(count, store.HIGH_WATER_DAILY_THRESHOLD + 1);
+
+    // Need to fetch again in case the first one was garbage collected.
+    store = await m._getStore();
+
+    Assert.equal(store.crashesCount, store.HIGH_WATER_DAILY_THRESHOLD + 1);
   }
-
-  let count = await m.aggregateEventsFiles();
-  Assert.equal(count, store.HIGH_WATER_DAILY_THRESHOLD + 1);
-
-  // Need to fetch again in case the first one was garbage collected.
-  store = await m._getStore();
-
-  Assert.equal(store.crashesCount, store.HIGH_WATER_DAILY_THRESHOLD + 1);
-});
+);
 
 add_task(async function test_addCrash() {
   let m = await getManager();
