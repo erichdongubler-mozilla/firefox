@@ -2604,7 +2604,7 @@ export const SearchService = new (class SearchService {
     if (!skipDuplicateCheck && this.#getEngineByName(engine.name)) {
       throw new lazy.SearchEngineInstallError(
         "duplicate-title",
-        "An engine called ${engine.name} already exists!"
+        `An engine called ${engine.name} already exists!`
       );
     }
 
