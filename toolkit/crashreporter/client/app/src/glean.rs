@@ -6,11 +6,6 @@
 
 use crate::config::{buildid, Config};
 
-const APP_ID: &str = if cfg!(mock) {
-    "firefox.crashreporter.mock"
-} else {
-    "firefox.crashreporter"
-};
 const APP_DISPLAY_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Glean initialization options.
@@ -51,9 +46,15 @@ impl InitOptions {
         };
         data_dir.push("glean");
 
+        let app_id = format!(
+            "{}.crashreporter{}",
+            mozbuild::config::MOZ_APP_NAME,
+            cfg!(mock).then_some(".mock").unwrap_or_default()
+        );
+
         let mut init_glean = crashping::InitGlean::new(
             data_dir,
-            APP_ID,
+            &app_id,
             crashping::ClientInfoMetrics {
                 app_build: buildid().unwrap_or(APP_DISPLAY_VERSION).into(),
                 app_display_version: APP_DISPLAY_VERSION.into(),
