@@ -11,7 +11,7 @@
     <meta name="referrer" content="no-referrer" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src resource: chrome:; object-src 'none'; img-src chrome:;"
+      content="default-src resource: chrome:; object-src 'none'; img-src chrome: page-icon:;"
     />
     <meta name="color-scheme" content="light dark" />
     <title data-l10n-id="smartwindow-messages-document-title"></title>
@@ -30,6 +30,10 @@
       src="chrome://browser/content/aiwindow/components/ai-chat-message.mjs"
     ></script>
     <link rel="localization" href="preview/aiWindowContent.ftl" />
+    <script
+      type="module"
+      src="chrome://browser/content/aiwindow/components/ai-website-chip.mjs"
+    ></script>
   </head>
   <body id="ai-window-wrapper">
     <ai-chat-content></ai-chat-content>
