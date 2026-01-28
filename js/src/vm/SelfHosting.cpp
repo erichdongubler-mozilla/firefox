@@ -1872,7 +1872,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("intl_FindSegmentBoundaries", intl_FindSegmentBoundaries, 2, 0),
     JS_FN("intl_FormatDateTime", intl_FormatDateTime, 2, 0),
     JS_FN("intl_FormatDateTimeRange", intl_FormatDateTimeRange, 4, 0),
-    JS_FN("intl_FormatList", intl_FormatList, 3, 0),
     JS_FN("intl_FormatNumber", intl_FormatNumber, 3, 0),
     JS_FN("intl_FormatNumberRange", intl_FormatNumberRange, 4, 0),
     JS_FN("intl_GetPluralCategories", intl_GetPluralCategories, 1, 0),

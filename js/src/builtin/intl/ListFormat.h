@@ -102,15 +102,6 @@ class ListFormatObject : public NativeObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-/**
- * Returns a string representing the array of string values |list| according to
- * the effective locale and the formatting options of the given ListFormat.
- *
- * Usage: formatted = intl_FormatList(listFormat, list, formatToParts)
- */
-[[nodiscard]] extern bool intl_FormatList(JSContext* cx, unsigned argc,
-                                          JS::Value* vp);
-
 }  // namespace js
 
 #endif /* builtin_intl_ListFormat_h */

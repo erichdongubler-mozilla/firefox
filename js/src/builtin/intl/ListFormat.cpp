@@ -18,6 +18,7 @@
 #include "builtin/intl/ParameterNegotiation.h"
 #include "builtin/intl/UsingEnum.h"
 #include "gc/GCContext.h"
+#include "js/ForOfIterator.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
 #include "vm/JSContext.h"
@@ -57,6 +58,10 @@ const JSClass& ListFormatObject::protoClass_ = PlainObject::class_;
 static bool listFormat_supportedLocalesOf(JSContext* cx, unsigned argc,
                                           Value* vp);
 
+static bool listFormat_format(JSContext* cx, unsigned argc, Value* vp);
+
+static bool listFormat_formatToParts(JSContext* cx, unsigned argc, Value* vp);
+
 static bool listFormat_resolvedOptions(JSContext* cx, unsigned argc, Value* vp);
 
 static bool listFormat_toSource(JSContext* cx, unsigned argc, Value* vp) {
@@ -72,8 +77,8 @@ static const JSFunctionSpec listFormat_static_methods[] = {
 
 static const JSFunctionSpec listFormat_methods[] = {
     JS_FN("resolvedOptions", listFormat_resolvedOptions, 0, 0),
-    JS_SELF_HOSTED_FN("format", "Intl_ListFormat_format", 1, 0),
-    JS_SELF_HOSTED_FN("formatToParts", "Intl_ListFormat_formatToParts", 1, 0),
+    JS_FN("format", listFormat_format, 1, 0),
+    JS_FN("formatToParts", listFormat_formatToParts, 1, 0),
     JS_FN("toSource", listFormat_toSource, 0, 0),
     JS_FS_END,
 };
@@ -371,157 +376,289 @@ static mozilla::intl::ListFormat* GetOrCreateListFormat(
   return lf;
 }
 
-/**
- * FormatList ( listFormat, list )
- */
-static bool FormatList(JSContext* cx, mozilla::intl::ListFormat* lf,
-                       const mozilla::intl::ListFormat::StringList& list,
-                       MutableHandleValue result) {
-  intl::FormatBuffer<char16_t, intl::INITIAL_CHAR_BUFFER_SIZE> formatBuffer(cx);
-  auto formatResult = lf->Format(list, formatBuffer);
-  if (formatResult.isErr()) {
-    js::intl::ReportInternalError(cx, formatResult.unwrapErr());
-    return false;
-  }
+class TwoByteStringList final {
+  JSContext* cx_;
 
-  JSString* str = formatBuffer.toString(cx);
-  if (!str) {
-    return false;
-  }
-  result.setString(str);
-  return true;
-}
-
-/**
- * FormatListToParts ( listFormat, list )
- */
-static bool FormatListToParts(JSContext* cx, mozilla::intl::ListFormat* lf,
-                              const mozilla::intl::ListFormat::StringList& list,
-                              MutableHandleValue result) {
-  intl::FormatBuffer<char16_t, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
-  mozilla::intl::ListFormat::PartVector parts;
-  auto formatResult = lf->FormatToParts(list, buffer, parts);
-  if (formatResult.isErr()) {
-    intl::ReportInternalError(cx, formatResult.unwrapErr());
-    return false;
-  }
-
-  RootedString overallResult(cx, buffer.toString(cx));
-  if (!overallResult) {
-    return false;
-  }
-
-  Rooted<ArrayObject*> partsArray(
-      cx, NewDenseFullyAllocatedArray(cx, parts.length()));
-  if (!partsArray) {
-    return false;
-  }
-  partsArray->ensureDenseInitializedLength(0, parts.length());
-
-  RootedObject singlePart(cx);
-  RootedValue val(cx);
-
-  size_t index = 0;
-  size_t beginIndex = 0;
-  for (const mozilla::intl::ListFormat::Part& part : parts) {
-    singlePart = NewPlainObject(cx);
-    if (!singlePart) {
-      return false;
-    }
-
-    if (part.first == mozilla::intl::ListFormat::PartType::Element) {
-      val = StringValue(cx->names().element);
-    } else {
-      val = StringValue(cx->names().literal);
-    }
-
-    if (!DefineDataProperty(cx, singlePart, cx->names().type, val)) {
-      return false;
-    }
-
-    // There could be an empty string so the endIndex coule be equal to
-    // beginIndex.
-    MOZ_ASSERT(part.second >= beginIndex);
-    JSLinearString* partStr = NewDependentString(cx, overallResult, beginIndex,
-                                                 part.second - beginIndex);
-    if (!partStr) {
-      return false;
-    }
-    val = StringValue(partStr);
-    if (!DefineDataProperty(cx, singlePart, cx->names().value, val)) {
-      return false;
-    }
-
-    beginIndex = part.second;
-    partsArray->initDenseElement(index++, ObjectValue(*singlePart));
-  }
-
-  MOZ_ASSERT(index == parts.length());
-  MOZ_ASSERT(beginIndex == buffer.length());
-  result.setObject(*partsArray);
-
-  return true;
-}
-
-bool js::intl_FormatList(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 3);
-
-  Rooted<ListFormatObject*> listFormat(
-      cx, &args[0].toObject().as<ListFormatObject>());
-
-  bool formatToParts = args[2].toBoolean();
-
-  mozilla::intl::ListFormat* lf = GetOrCreateListFormat(cx, listFormat);
-  if (!lf) {
-    return false;
-  }
-
-  // Collect all strings and their lengths.
-  //
   // 'strings' takes the ownership of those strings, and 'list' will be passed
   // to mozilla::intl::ListFormat as a Span.
-  Vector<UniqueTwoByteChars, mozilla::intl::DEFAULT_LIST_LENGTH> strings(cx);
-  mozilla::intl::ListFormat::StringList list;
+  Vector<UniqueTwoByteChars, mozilla::intl::DEFAULT_LIST_LENGTH> strings_;
+  mozilla::intl::ListFormat::StringList list_{};
 
-  Rooted<ArrayObject*> listObj(cx, &args[1].toObject().as<ArrayObject>());
-  RootedValue value(cx);
-  uint32_t listLen = listObj->length();
-  for (uint32_t i = 0; i < listLen; i++) {
-    if (!GetElement(cx, listObj, listObj, i, &value)) {
-      return false;
-    }
+ public:
+  explicit TwoByteStringList(JSContext* cx) : cx_(cx), strings_(cx) {}
 
-    JSLinearString* linear = value.toString()->ensureLinear(cx);
+  bool append(JSString* string) {
+    auto* linear = string->ensureLinear(cx_);
     if (!linear) {
       return false;
     }
 
-    size_t linearLength = linear->length();
-
-    UniqueTwoByteChars chars = cx->make_pod_array<char16_t>(linearLength);
+    size_t length = linear->length();
+    auto chars = cx_->make_pod_array<char16_t>(length);
     if (!chars) {
       return false;
     }
     CopyChars(chars.get(), *linear);
 
-    if (!strings.append(std::move(chars))) {
+    return strings_.append(std::move(chars)) &&
+           list_.emplaceBack(strings_.back().get(), length);
+  }
+
+  size_t length() const { return list_.length(); }
+
+  const auto& operator[](size_t i) const { return list_[i]; }
+
+  const auto& getList() const { return list_; }
+};
+
+/**
+ * FormatList ( listFormat, list )
+ */
+static JSLinearString* FormatList(JSContext* cx,
+                                  Handle<ListFormatObject*> listFormat,
+                                  const TwoByteStringList& list) {
+  // We can directly return if |list| contains less than two elements.
+  if (list.length() == 0) {
+    return cx->emptyString();
+  }
+  if (list.length() == 1) {
+    return NewStringCopy<CanGC>(cx, list[0]);
+  }
+
+  auto* lf = GetOrCreateListFormat(cx, listFormat);
+  if (!lf) {
+    return nullptr;
+  }
+
+  FormatBuffer<char16_t, INITIAL_CHAR_BUFFER_SIZE> formatBuffer(cx);
+  auto formatResult = lf->Format(list.getList(), formatBuffer);
+  if (formatResult.isErr()) {
+    ReportInternalError(cx, formatResult.unwrapErr());
+    return nullptr;
+  }
+
+  return formatBuffer.toString(cx);
+}
+
+static PlainObject* NewFormatPart(JSContext* cx,
+                                  mozilla::intl::ListFormat::PartType type,
+                                  Handle<JSString*> value) {
+  JSString* typeStr = type == mozilla::intl::ListFormat::PartType::Element
+                          ? cx->names().element
+                          : cx->names().literal;
+
+  Rooted<IdValueVector> part(cx, cx);
+  if (!part.emplaceBack(NameToId(cx->names().type), StringValue(typeStr))) {
+    return nullptr;
+  }
+  if (!part.emplaceBack(NameToId(cx->names().value), StringValue(value))) {
+    return nullptr;
+  }
+  return NewPlainObjectWithUniqueNames(cx, part);
+}
+
+/**
+ * FormatListToParts ( listFormat, list )
+ */
+static ArrayObject* FormatListToParts(JSContext* cx,
+                                      Handle<ListFormatObject*> listFormat,
+                                      const TwoByteStringList& list) {
+  // We can directly return if |list| contains less than two elements.
+  if (list.length() == 0) {
+    return NewDenseEmptyArray(cx);
+  }
+  if (list.length() == 1) {
+    Rooted<JSString*> value(cx, NewStringCopy<CanGC>(cx, list[0]));
+    if (!value) {
+      return nullptr;
+    }
+
+    Rooted<PlainObject*> part(
+        cx,
+        NewFormatPart(cx, mozilla::intl::ListFormat::PartType::Element, value));
+    if (!part) {
+      return nullptr;
+    }
+
+    auto* array = NewDenseFullyAllocatedArray(cx, 1);
+    if (!array) {
+      return nullptr;
+    }
+    array->setDenseInitializedLength(1);
+    array->initDenseElement(0, ObjectValue(*part));
+
+    return array;
+  }
+
+  auto* lf = GetOrCreateListFormat(cx, listFormat);
+  if (!lf) {
+    return nullptr;
+  }
+
+  FormatBuffer<char16_t, INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
+  mozilla::intl::ListFormat::PartVector parts;
+  auto formatResult = lf->FormatToParts(list.getList(), buffer, parts);
+  if (formatResult.isErr()) {
+    ReportInternalError(cx, formatResult.unwrapErr());
+    return nullptr;
+  }
+
+  Rooted<JSString*> overallResult(cx, buffer.toString(cx));
+  if (!overallResult) {
+    return nullptr;
+  }
+
+  Rooted<ArrayObject*> partsArray(
+      cx, NewDenseFullyAllocatedArray(cx, parts.length()));
+  if (!partsArray) {
+    return nullptr;
+  }
+  partsArray->ensureDenseInitializedLength(0, parts.length());
+
+  Rooted<JSString*> value(cx);
+
+  size_t index = 0;
+  size_t beginIndex = 0;
+  for (const auto& part : parts) {
+    // |endIndex| can be equal to |beginIndex| when the string is empty.
+    MOZ_ASSERT(part.second >= beginIndex);
+    value = NewDependentString(cx, overallResult, beginIndex,
+                               part.second - beginIndex);
+    if (!value) {
+      return nullptr;
+    }
+
+    auto* obj = NewFormatPart(cx, part.first, value);
+    if (!obj) {
+      return nullptr;
+    }
+
+    beginIndex = part.second;
+    partsArray->initDenseElement(index++, ObjectValue(*obj));
+  }
+
+  MOZ_ASSERT(index == parts.length());
+  MOZ_ASSERT(beginIndex == buffer.length());
+
+  return partsArray;
+}
+
+/**
+ * StringListFromIterable ( iterable )
+ */
+static bool StringListFromIterable(JSContext* cx, Handle<JS::Value> iterable,
+                                   const char* methodName,
+                                   TwoByteStringList& list) {
+  // Step 1.
+  if (iterable.isUndefined()) {
+    return true;
+  }
+
+  // Step 2.
+  JS::ForOfIterator iterator(cx);
+  if (!iterator.init(iterable)) {
+    return false;
+  }
+
+  // Step 3. (Not applicable)
+
+  // Step 4.
+  Rooted<JS::Value> value(cx);
+  while (true) {
+    // Step 4.a.
+    bool done;
+    if (!iterator.next(&value, &done)) {
       return false;
     }
 
-    if (!list.emplaceBack(strings[i].get(), linearLength)) {
+    // Step 4.b.
+    if (done) {
+      return true;
+    }
+
+    // Step 4.c.
+    if (!value.isString()) {
+      // Step 4.c.i.
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_NOT_EXPECTED_TYPE, methodName, "string",
+                                JS::InformalValueTypeName(value));
+
+      // Step 4.c.ii.
+      iterator.closeThrow();
+      return false;
+    }
+
+    // Step 4.d.
+    if (!list.append(value.toString())) {
       return false;
     }
   }
-
-  if (formatToParts) {
-    return FormatListToParts(cx, lf, list, args.rval());
-  }
-  return FormatList(cx, lf, list, args.rval());
 }
 
 static bool IsListFormat(Handle<JS::Value> v) {
   return v.isObject() && v.toObject().is<ListFormatObject>();
+}
+
+/**
+ * Intl.ListFormat.prototype.format ( list )
+ */
+static bool listFormat_format(JSContext* cx, const CallArgs& args) {
+  Rooted<ListFormatObject*> listFormat(
+      cx, &args.thisv().toObject().as<ListFormatObject>());
+
+  // Step 3.
+  TwoByteStringList stringList(cx);
+  if (!StringListFromIterable(cx, args.get(0), "format", stringList)) {
+    return false;
+  }
+
+  // Step 4.
+  auto* str = FormatList(cx, listFormat, stringList);
+  if (!str) {
+    return false;
+  }
+  args.rval().setString(str);
+  return true;
+}
+
+/**
+ * Intl.ListFormat.prototype.format ( list )
+ */
+static bool listFormat_format(JSContext* cx, unsigned argc, Value* vp) {
+  // Steps 1-2.
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsListFormat, listFormat_format>(cx, args);
+}
+
+/**
+ * Intl.ListFormat.prototype.formatToParts ( list )
+ */
+static bool listFormat_formatToParts(JSContext* cx, const CallArgs& args) {
+  Rooted<ListFormatObject*> listFormat(
+      cx, &args.thisv().toObject().as<ListFormatObject>());
+
+  // Step 3.
+  TwoByteStringList stringList(cx);
+  if (!StringListFromIterable(cx, args.get(0), "formatToParts", stringList)) {
+    return false;
+  }
+
+  // Step 4.
+  auto* array = FormatListToParts(cx, listFormat, stringList);
+  if (!array) {
+    return false;
+  }
+  args.rval().setObject(*array);
+  return true;
+}
+
+/**
+ * Intl.ListFormat.prototype.formatToParts ( list )
+ */
+static bool listFormat_formatToParts(JSContext* cx, unsigned argc, Value* vp) {
+  // Steps 1-2.
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsListFormat, listFormat_formatToParts>(cx, args);
 }
 
 /**
