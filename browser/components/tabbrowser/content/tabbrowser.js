@@ -10108,7 +10108,9 @@ var TabContextMenu = {
     let visibleOrCollapsedTabs = gBrowser.tabs.filter(
       t => t.isOpen && !t.hidden
     );
-    let allTabsSelected = visibleOrCollapsedTabs.every(t => t.multiselected);
+    let allTabsSelected =
+      visibleOrCollapsedTabs.length == 1 ||
+      visibleOrCollapsedTabs.every(t => t.multiselected);
     contextMoveTabOptions.setAttribute("data-l10n-args", tabCountInfo);
     contextMoveTabOptions.disabled = this.contextTab.hidden || allTabsSelected;
     let selectedTabs = gBrowser.selectedTabs;
