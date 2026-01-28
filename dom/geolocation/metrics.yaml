@@ -92,3 +92,17 @@ geolocation:
     notification_emails:
       - daparks@mozilla.com
     expires: never
+  geolocation_cache_hit:
+    type: labeled_counter
+    description: >
+      How many times was a geolocation request serviced by the given cache.
+    labels:
+      - nsGeolocationRequest
+      - NetworkGeolocationProvider
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010958
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010958
+    notification_emails:
+      - daparks@mozilla.com
+    expires: never

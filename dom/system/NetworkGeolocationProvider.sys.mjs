@@ -336,6 +336,8 @@ NetworkGeolocationProvider.prototype = {
     );
 
     if (useCached) {
+      Glean.geolocation.geolocationCacheHit.NetworkGeolocationProvider.add();
+
       gCachedRequest.location.timestamp = Date.now();
       if (this.listener) {
         this.listener.update(gCachedRequest.location);
