@@ -258,8 +258,7 @@ function intlFallbackSymbol() {
 function initializeIntlObject(obj, type, lazyData) {
   assert(IsObject(obj), "Non-object passed to initializeIntlObject");
   assert(
-    (type === "Collator" && intl_GuardToCollator(obj) !== null) ||
-      (type === "DateTimeFormat" && intl_GuardToDateTimeFormat(obj) !== null) ||
+    (type === "DateTimeFormat" && intl_GuardToDateTimeFormat(obj) !== null) ||
       (type === "DurationFormat" && intl_GuardToDurationFormat(obj) !== null) ||
       (type === "NumberFormat" && intl_GuardToNumberFormat(obj) !== null) ||
       (type === "PluralRules" && intl_GuardToPluralRules(obj) !== null),
@@ -271,7 +270,6 @@ function initializeIntlObject(obj, type, lazyData) {
   //
   // The .type property indicates the type of Intl object that |obj| is. It
   // must be one of:
-  // - Collator
   // - DateTimeFormat
   // - DurationFormat
   // - NumberFormat
@@ -338,8 +336,7 @@ function maybeInternalProperties(internals) {
 function getIntlObjectInternals(obj) {
   assert(IsObject(obj), "getIntlObjectInternals called with non-Object");
   assert(
-    intl_GuardToCollator(obj) !== null ||
-      intl_GuardToDateTimeFormat(obj) !== null ||
+    intl_GuardToDateTimeFormat(obj) !== null ||
       intl_GuardToDurationFormat(obj) !== null ||
       intl_GuardToNumberFormat(obj) !== null ||
       intl_GuardToPluralRules(obj) !== null,
@@ -351,8 +348,7 @@ function getIntlObjectInternals(obj) {
   assert(IsObject(internals), "internals not an object");
   assert(hasOwn("type", internals), "missing type");
   assert(
-    (internals.type === "Collator" && intl_GuardToCollator(obj) !== null) ||
-      (internals.type === "DateTimeFormat" &&
+    (internals.type === "DateTimeFormat" &&
         intl_GuardToDateTimeFormat(obj) !== null) ||
       (internals.type === "DurationFormat" &&
         intl_GuardToDurationFormat(obj) !== null) ||
@@ -383,9 +379,7 @@ function getInternals(obj) {
 
   // Otherwise it's time to fully create them.
   var type = internals.type;
-  if (type === "Collator") {
-    internalProps = resolveCollatorInternals(internals.lazyData);
-  } else if (type === "DateTimeFormat") {
+  if (type === "DateTimeFormat") {
     internalProps = resolveDateTimeFormatInternals(internals.lazyData);
   } else if (type === "DurationFormat") {
     internalProps = resolveDurationFormatInternals(internals.lazyData);

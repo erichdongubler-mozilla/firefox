@@ -13180,7 +13180,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachFunctionBind();
 
     // Intl natives.
-    case InlinableNative::IntlGuardToCollator:
     case InlinableNative::IntlGuardToDateTimeFormat:
     case InlinableNative::IntlGuardToDurationFormat:
     case InlinableNative::IntlGuardToNumberFormat:

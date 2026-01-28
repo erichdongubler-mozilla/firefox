@@ -7,7 +7,6 @@
 #include "jit/InlinableNatives.h"
 
 #ifdef JS_HAS_INTL_API
-#  include "builtin/intl/Collator.h"
 #  include "builtin/intl/DateTimeFormat.h"
 #  include "builtin/intl/DurationFormat.h"
 #  include "builtin/intl/NumberFormat.h"
@@ -41,8 +40,6 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
   switch (native) {
 #ifdef JS_HAS_INTL_API
     // Intl natives.
-    case InlinableNative::IntlGuardToCollator:
-      return &CollatorObject::class_;
     case InlinableNative::IntlGuardToDateTimeFormat:
       return &DateTimeFormatObject::class_;
     case InlinableNative::IntlGuardToDurationFormat:
@@ -56,7 +53,6 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
     case InlinableNative::IntlGuardToSegmentIterator:
       return &SegmentIteratorObject::class_;
 #else
-    case InlinableNative::IntlGuardToCollator:
     case InlinableNative::IntlGuardToDateTimeFormat:
     case InlinableNative::IntlGuardToNumberFormat:
     case InlinableNative::IntlGuardToPluralRules:
@@ -164,7 +160,6 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
       // RNG state is per-realm.
       return false;
 
-    case InlinableNative::IntlGuardToCollator:
     case InlinableNative::IntlGuardToDateTimeFormat:
     case InlinableNative::IntlGuardToDurationFormat:
     case InlinableNative::IntlGuardToNumberFormat:

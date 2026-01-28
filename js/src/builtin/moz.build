@@ -89,7 +89,6 @@ selfhosted_inputs = [
 ] + (
     [
         "intl/NumberingSystemsGenerated.h",
-        "intl/Collator.js",
         "intl/CommonFunctions.js",
         "intl/CurrencyDataGenerated.js",
         "intl/DateTimeFormat.js",

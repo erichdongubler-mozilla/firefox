@@ -136,36 +136,6 @@ class CollatorObject : public NativeObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-/**
- * Compares x and y (which must be String values), and returns a number less
- * than 0 if x < y, 0 if x = y, or a number greater than 0 if x > y according
- * to the sort order for the locale and collation options of the given
- * Collator.
- *
- * Spec: ECMAScript Internationalization API Specification, 10.3.2.
- *
- * Usage: result = intl_CompareStrings(collator, x, y)
- */
-[[nodiscard]] extern bool intl_CompareStrings(JSContext* cx, unsigned argc,
-                                              JS::Value* vp);
-
-/**
- * Returns true if the given locale sorts upper-case before lower-case
- * characters.
- *
- * Usage: result = intl_isUpperCaseFirst(locale)
- */
-[[nodiscard]] extern bool intl_isUpperCaseFirst(JSContext* cx, unsigned argc,
-                                                JS::Value* vp);
-
-/**
- * Returns true if the given locale ignores punctuation by default.
- *
- * Usage: result = intl_isIgnorePunctuation(locale)
- */
-[[nodiscard]] extern bool intl_isIgnorePunctuation(JSContext* cx, unsigned argc,
-                                                   JS::Value* vp);
-
 namespace intl {
 
 /**
@@ -183,6 +153,11 @@ namespace intl {
     JSContext* cx, JS::Handle<JS::Value> locales,
     JS::Handle<JS::Value> options);
 
+/**
+ * Compares x and y, and returns a number less than 0 if x < y, 0 if x = y, or a
+ * number greater than 0 if x > y according to the sort order for the locale and
+ * collation options of the given Collator.
+ */
 [[nodiscard]] extern bool CompareStrings(JSContext* cx,
                                          JS::Handle<CollatorObject*> collator,
                                          JS::Handle<JSString*> str1,

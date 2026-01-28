@@ -36,8 +36,6 @@
 using namespace js;
 using namespace js::intl;
 
-using JS::AutoStableStringChars;
-
 const JSClassOps CollatorObject::classOps_ = {
     nullptr,                   // addProperty
     nullptr,                   // delProperty
@@ -603,9 +601,9 @@ static mozilla::intl::Collator* GetOrCreateCollator(
   return coll;
 }
 
-static bool CompareStrings(JSContext* cx, mozilla::intl::Collator* coll,
-                           JSString* str1, JSString* str2,
-                           MutableHandleValue result) {
+bool js::intl::CompareStrings(JSContext* cx, Handle<CollatorObject*> collator,
+                              Handle<JSString*> str1, Handle<JSString*> str2,
+                              MutableHandle<Value> result) {
   MOZ_ASSERT(str1);
   MOZ_ASSERT(str2);
 
@@ -614,93 +612,25 @@ static bool CompareStrings(JSContext* cx, mozilla::intl::Collator* coll,
     return true;
   }
 
-  AutoStableStringChars stableChars1(cx);
+  auto* coll = GetOrCreateCollator(cx, collator);
+  if (!coll) {
+    return false;
+  }
+
+  JS::AutoStableStringChars stableChars1(cx);
   if (!stableChars1.initTwoByte(cx, str1)) {
     return false;
   }
 
-  AutoStableStringChars stableChars2(cx);
+  JS::AutoStableStringChars stableChars2(cx);
   if (!stableChars2.initTwoByte(cx, str2)) {
     return false;
   }
 
-  mozilla::Range<const char16_t> chars1 = stableChars1.twoByteRange();
-  mozilla::Range<const char16_t> chars2 = stableChars2.twoByteRange();
+  auto chars1 = stableChars1.twoByteRange();
+  auto chars2 = stableChars2.twoByteRange();
 
   result.setInt32(coll->CompareStrings(chars1, chars2));
-  return true;
-}
-
-bool js::intl_CompareStrings(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 3);
-  MOZ_ASSERT(args[0].isObject());
-  MOZ_ASSERT(args[1].isString());
-  MOZ_ASSERT(args[2].isString());
-
-  Rooted<CollatorObject*> collator(cx,
-                                   &args[0].toObject().as<CollatorObject>());
-
-  mozilla::intl::Collator* coll = GetOrCreateCollator(cx, collator);
-  if (!coll) {
-    return false;
-  }
-
-  // Use the UCollator to actually compare the strings.
-  JSString* str1 = args[1].toString();
-  JSString* str2 = args[2].toString();
-  return CompareStrings(cx, coll, str1, str2, args.rval());
-}
-
-bool js::intl::CompareStrings(JSContext* cx, Handle<CollatorObject*> collator,
-                              Handle<JSString*> str1, Handle<JSString*> str2,
-                              MutableHandle<Value> result) {
-  mozilla::intl::Collator* coll = GetOrCreateCollator(cx, collator);
-  if (!coll) {
-    return false;
-  }
-  return CompareStrings(cx, coll, str1, str2, result);
-}
-
-bool js::intl_isUpperCaseFirst(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 1);
-  MOZ_ASSERT(args[0].isString());
-
-  SharedIntlData& sharedIntlData = cx->runtime()->sharedIntlData.ref();
-
-  Rooted<JSLinearString*> locale(cx, args[0].toString()->ensureLinear(cx));
-  if (!locale) {
-    return false;
-  }
-
-  bool isUpperFirst;
-  if (!sharedIntlData.isUpperCaseFirst(cx, locale, &isUpperFirst)) {
-    return false;
-  }
-
-  args.rval().setBoolean(isUpperFirst);
-  return true;
-}
-
-bool js::intl_isIgnorePunctuation(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 1);
-  MOZ_ASSERT(args[0].isString());
-
-  SharedIntlData& sharedIntlData = cx->runtime()->sharedIntlData.ref();
-
-  Rooted<JSLinearString*> locale(cx, args[0].toString()->ensureLinear(cx));
-  if (!locale) {
-    return false;
-  }
-
-  bool isIgnorePunctuation;
-  if (!sharedIntlData.isIgnorePunctuation(cx, locale, &isIgnorePunctuation)) {
-    return false;
-  }
-
-  args.rval().setBoolean(isIgnorePunctuation);
   return true;
 }
 

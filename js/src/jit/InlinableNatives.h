@@ -95,7 +95,6 @@
                                                    \
   _(FunctionBind)                                  \
                                                    \
-  _(IntlGuardToCollator)                           \
   _(IntlGuardToDateTimeFormat)                     \
   _(IntlGuardToDurationFormat)                     \
   _(IntlGuardToNumberFormat)                       \
