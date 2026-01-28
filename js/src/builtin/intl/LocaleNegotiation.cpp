@@ -25,6 +25,7 @@
 #include "builtin/intl/CommonFunctions.h"
 #include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/NumberingSystemsGenerated.h"
+#include "builtin/intl/ParameterNegotiation.h"
 #include "builtin/intl/SharedIntlData.h"
 #include "builtin/intl/StringAsciiChars.h"
 #include "js/Conversions.h"
@@ -353,30 +354,10 @@ static bool SupportedLocales(JSContext* cx,
     }
 
     // Step 1.b.
-    Rooted<Value> localeMatcher(cx);
-    if (!GetProperty(cx, obj, obj, cx->names().localeMatcher, &localeMatcher)) {
+    LocaleMatcher localeMatcher;
+    if (!GetLocaleMatcherOption(cx, obj, JSMSG_INVALID_LOCALE_MATCHER,
+                                &localeMatcher)) {
       return false;
-    }
-
-    if (!localeMatcher.isUndefined()) {
-      JSString* str = ToString(cx, localeMatcher);
-      if (!str) {
-        return false;
-      }
-
-      JSLinearString* linear = str->ensureLinear(cx);
-      if (!linear) {
-        return false;
-      }
-
-      if (!StringEqualsLiteral(linear, "lookup") &&
-          !StringEqualsLiteral(linear, "best fit")) {
-        if (auto chars = QuoteString(cx, linear)) {
-          JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                    JSMSG_INVALID_LOCALE_MATCHER, chars.get());
-        }
-        return false;
-      }
     }
   }
 
