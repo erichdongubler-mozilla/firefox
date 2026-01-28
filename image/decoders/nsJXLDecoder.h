@@ -9,9 +9,14 @@
 
 #include "Decoder.h"
 #include "StreamingLexer.h"
+#include "mozilla/Vector.h"
+#include "mozilla/image/jxl_decoder_ffi.h"
 
 namespace mozilla::image {
-class RasterImage;
+
+struct JxlDecoderDeleter {
+  void operator()(JxlApiDecoder* ptr) { jxl_decoder_destroy(ptr); }
+};
 
 class nsJXLDecoder final : public Decoder {
  public:
@@ -20,6 +25,7 @@ class nsJXLDecoder final : public Decoder {
   DecoderType GetType() const override { return DecoderType::JXL; }
 
  protected:
+  nsresult InitInternal() override;
   LexerResult DoDecode(SourceBufferIterator& aIterator,
                        IResumable* aOnResume) override;
 
@@ -28,12 +34,18 @@ class nsJXLDecoder final : public Decoder {
 
   explicit nsJXLDecoder(RasterImage* aImage);
 
+  std::unique_ptr<JxlApiDecoder, JxlDecoderDeleter> mDecoder;
+
   enum class State { JXL_DATA, FINISHED_JXL_DATA };
+
+  nsresult ProcessFrame(Vector<uint8_t>& aPixelBuffer);
 
   LexerTransition<State> ReadJXLData(const char* aData, size_t aLength);
   LexerTransition<State> FinishedJXLData();
 
   StreamingLexer<State> mLexer;
+
+  Vector<uint8_t> mPixelBuffer;
 };
 
 }  // namespace mozilla::image
