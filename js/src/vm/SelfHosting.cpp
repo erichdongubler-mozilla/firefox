@@ -1867,7 +1867,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("intl_CallSegmentsMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<SegmentsObject>>, 2, 0),
     JS_FN("intl_CompareStrings", intl_CompareStrings, 3, 0),
-    JS_FN("intl_ComputeDisplayName", intl_ComputeDisplayName, 6, 0),
     JS_FN("intl_CreateSegmentIterator", intl_CreateSegmentIterator, 1, 0),
     JS_FN("intl_CreateSegmentsObject", intl_CreateSegmentsObject, 2, 0),
     JS_FN("intl_DefaultTimeZone", intrinsic_DefaultTimeZone, 0, 0),
