@@ -810,6 +810,9 @@
       if (!item) {
         return this._tabbrowserTabs.dragAndDropElements.length;
       }
+      if (item.splitview) {
+        item = item.splitview;
+      }
       let isBeforeMiddle;
 
       let elementForSize = elementToMove(item);
