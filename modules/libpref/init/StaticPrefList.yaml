@@ -3713,7 +3713,7 @@
 # BrowsingContext. This includes calls to History and Location APIs.
 - name: dom.navigation.navigationRateLimit.count
   type: uint32_t
-  value: 1000
+  value: 200
   mirror: always
 
 # Time span in seconds for location change rate limit.
