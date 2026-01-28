@@ -28,7 +28,6 @@
 #  include "builtin/intl/DateTimeFormat.h"
 #  include "builtin/intl/DurationFormat.h"
 #  include "builtin/intl/IntlObject.h"
-#  include "builtin/intl/ListFormat.h"
 #  include "builtin/intl/Locale.h"
 #  include "builtin/intl/NumberFormat.h"
 #  include "builtin/intl/PluralRules.h"
@@ -1851,8 +1850,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
           CallNonGenericSelfhostedMethod<Is<DateTimeFormatObject>>, 2, 0),
     JS_FN("intl_CallDurationFormatMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<DurationFormatObject>>, 2, 0),
-    JS_FN("intl_CallListFormatMethodIfWrapped",
-          CallNonGenericSelfhostedMethod<Is<ListFormatObject>>, 2, 0),
     JS_FN("intl_CallNumberFormatMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<NumberFormatObject>>, 2, 0),
     JS_FN("intl_CallPluralRulesMethodIfWrapped",
@@ -1884,9 +1881,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_INLINABLE_FN("intl_GuardToDurationFormat",
                     intrinsic_GuardToBuiltin<DurationFormatObject>, 1, 0,
                     IntlGuardToDurationFormat),
-    JS_INLINABLE_FN("intl_GuardToListFormat",
-                    intrinsic_GuardToBuiltin<ListFormatObject>, 1, 0,
-                    IntlGuardToListFormat),
     JS_INLINABLE_FN("intl_GuardToNumberFormat",
                     intrinsic_GuardToBuiltin<NumberFormatObject>, 1, 0,
                     IntlGuardToNumberFormat),

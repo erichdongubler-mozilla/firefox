@@ -261,7 +261,6 @@ function initializeIntlObject(obj, type, lazyData) {
     (type === "Collator" && intl_GuardToCollator(obj) !== null) ||
       (type === "DateTimeFormat" && intl_GuardToDateTimeFormat(obj) !== null) ||
       (type === "DurationFormat" && intl_GuardToDurationFormat(obj) !== null) ||
-      (type === "ListFormat" && intl_GuardToListFormat(obj) !== null) ||
       (type === "NumberFormat" && intl_GuardToNumberFormat(obj) !== null) ||
       (type === "PluralRules" && intl_GuardToPluralRules(obj) !== null) ||
       (type === "Segmenter" && intl_GuardToSegmenter(obj) !== null),
@@ -276,7 +275,6 @@ function initializeIntlObject(obj, type, lazyData) {
   // - Collator
   // - DateTimeFormat
   // - DurationFormat
-  // - ListFormat
   // - NumberFormat
   // - PluralRules
   // - Segmenter
@@ -345,7 +343,6 @@ function getIntlObjectInternals(obj) {
     intl_GuardToCollator(obj) !== null ||
       intl_GuardToDateTimeFormat(obj) !== null ||
       intl_GuardToDurationFormat(obj) !== null ||
-      intl_GuardToListFormat(obj) !== null ||
       intl_GuardToNumberFormat(obj) !== null ||
       intl_GuardToPluralRules(obj) !== null ||
       intl_GuardToSegmenter(obj) !== null,
@@ -362,8 +359,6 @@ function getIntlObjectInternals(obj) {
         intl_GuardToDateTimeFormat(obj) !== null) ||
       (internals.type === "DurationFormat" &&
         intl_GuardToDurationFormat(obj) !== null) ||
-      (internals.type === "ListFormat" &&
-        intl_GuardToListFormat(obj) !== null) ||
       (internals.type === "NumberFormat" &&
         intl_GuardToNumberFormat(obj) !== null) ||
       (internals.type === "PluralRules" &&
@@ -399,8 +394,6 @@ function getInternals(obj) {
     internalProps = resolveDateTimeFormatInternals(internals.lazyData);
   } else if (type === "DurationFormat") {
     internalProps = resolveDurationFormatInternals(internals.lazyData);
-  } else if (type === "ListFormat") {
-    internalProps = resolveListFormatInternals(internals.lazyData);
   } else if (type === "NumberFormat") {
     internalProps = resolveNumberFormatInternals(internals.lazyData);
   } else if (type === "PluralRules") {
