@@ -45,7 +45,7 @@ describe("settings ai features", () => {
 
     await openAiFeaturePanel();
 
-    const providerControl = doc.getElementById("aiControlSidebarChatbot");
+    const providerControl = doc.getElementById("aiControlSidebarChatbotSelect");
     Assert.ok(providerControl, "control exists");
     Assert.ok(
       BrowserTestUtils.isVisible(providerControl),
@@ -162,7 +162,7 @@ describe("settings ai features", () => {
       await runPolicyTest(
         "Smart Tab Groups",
         "browser.tabs.groups.smart.userEnabled",
-        "aiControlSmartTabGroups"
+        "aiControlSmartTabGroupsSelect"
       );
     });
 
@@ -170,7 +170,7 @@ describe("settings ai features", () => {
       await runPolicyTest(
         "Link Preview",
         "browser.ml.linkPreview.optin",
-        "aiControlLinkPreviewKeyPoints"
+        "aiControlLinkPreviewKeyPointsSelect"
       );
     });
 
@@ -178,7 +178,7 @@ describe("settings ai features", () => {
       await runPolicyTest(
         "Sidebar Chatbot",
         "browser.ml.chat.enabled",
-        "aiControlSidebarChatbot"
+        "aiControlSidebarChatbotSelect"
       );
     });
 
@@ -186,7 +186,7 @@ describe("settings ai features", () => {
       await runPolicyTest(
         "Translations",
         "browser.translations.enable",
-        "aiControlTranslations"
+        "aiControlTranslationsSelect"
       );
     });
   });
@@ -202,7 +202,7 @@ describe("settings ai features", () => {
 
       await openAiFeaturePanel();
 
-      const toggle = doc.getElementById("aiControlsDefault");
+      const toggle = doc.getElementById("aiControlDefaultToggle");
       const dialogEl = doc.querySelector("block-ai-confirmation-dialog");
       await dialogEl.updateComplete;
 
@@ -245,7 +245,7 @@ describe("settings ai features", () => {
       await openAiFeaturePanel();
 
       // Flip the toggle to show confirmation dialog.
-      const toggle = doc.getElementById("aiControlsDefault");
+      const toggle = doc.getElementById("aiControlDefaultToggle");
       const dialogEl = doc.querySelector("block-ai-confirmation-dialog");
       await dialogEl.updateComplete;
       let dialogShown = BrowserTestUtils.waitForEvent(
@@ -267,9 +267,9 @@ describe("settings ai features", () => {
       );
 
       // Confirm the dialog to block
-      let defaultSetting = win.Preferences.getSetting("aiControlsDefault");
+      let defaultSetting = win.Preferences.getSetting("aiControlDefaultToggle");
       let translationsSetting = win.Preferences.getSetting(
-        "aiControlTranslations"
+        "aiControlTranslationsSelect"
       );
       Assert.equal(
         translationsSetting.value,
@@ -304,14 +304,16 @@ describe("settings ai features", () => {
       );
 
       // Enable STG to confirm it stays enabled on un-block
-      let stgSetting = win.Preferences.getSetting("aiControlSmartTabGroups");
+      let stgSetting = win.Preferences.getSetting(
+        "aiControlSmartTabGroupsSelect"
+      );
       Assert.equal(
         stgSetting.value,
         "blocked",
         "STG is blocked after global block"
       );
       await waitForAnimationFrame();
-      const stgControl = doc.getElementById("aiControlSmartTabGroups");
+      const stgControl = doc.getElementById("aiControlSmartTabGroupsSelect");
       stgControl.focus();
       let pickerOpened = BrowserTestUtils.waitForSelectPopupShown(
         win.docShell.chromeEventHandler.ownerGlobal
@@ -353,6 +355,181 @@ describe("settings ai features", () => {
         "false",
         "Telemetry recorded blocked=false"
       );
+    });
+  });
+
+  describe("AI Controls visibility on General pane", () => {
+    it("hides Link Preview setting when globally blocked via AI Controls toggle", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["browser.ai.control.default", "available"],
+          ["browser.ai.control.linkPreviewKeyPoints", "default"],
+          ["browser.ml.linkPreview.enabled", true],
+        ],
+      });
+
+      let aiControlsTab = gBrowser.selectedTab;
+      await openAiFeaturePanel();
+
+      await new Promise(resolve => open_preferences(resolve));
+      let generalTab = gBrowser.selectedTab;
+      let generalDoc = gBrowser.selectedBrowser.contentDocument;
+      let generalWin = generalDoc.ownerGlobal;
+
+      let linkPreviewSetting =
+        generalWin.Preferences.getSetting("linkPreviewEnabled");
+      let linkPreviewControl = generalDoc.getElementById("linkPreviewEnabled");
+      Assert.ok(
+        BrowserTestUtils.isVisible(linkPreviewControl),
+        "Link Preview control is visible"
+      );
+
+      gBrowser.selectedTab = aiControlsTab;
+      const toggle = doc.getElementById("aiControlDefaultToggle");
+      const dialogEl = doc.querySelector("block-ai-confirmation-dialog");
+      await dialogEl.updateComplete;
+      let dialogShown = BrowserTestUtils.waitForEvent(
+        dialogEl.dialog,
+        "toggle"
+      );
+      EventUtils.synthesizeMouseAtCenter(toggle.buttonEl, {}, win);
+      await dialogShown;
+      Assert.ok(dialogEl.dialog.open, "Dialog is open");
+      await waitForSettingChange(linkPreviewSetting, () =>
+        EventUtils.synthesizeMouseAtCenter(dialogEl.confirmButton, {}, win)
+      );
+
+      gBrowser.selectedTab = generalTab;
+      Assert.ok(
+        !BrowserTestUtils.isVisible(linkPreviewControl),
+        "Link Preview control is hidden after blocking"
+      );
+
+      // Explicitly enable Link Preview while globally blocked
+      gBrowser.selectedTab = aiControlsTab;
+      const linkPreviewSelect = doc.getElementById(
+        "aiControlLinkPreviewKeyPointsSelect"
+      );
+      linkPreviewSelect.scrollIntoView();
+      await waitForAnimationFrame();
+      linkPreviewSelect.focus();
+      let pickerOpened = BrowserTestUtils.waitForSelectPopupShown(
+        win.docShell.chromeEventHandler.ownerGlobal
+      );
+      EventUtils.sendKey("space");
+      await pickerOpened;
+      await waitForSettingChange(linkPreviewSetting, () => {
+        EventUtils.sendKey("up");
+        EventUtils.sendKey("return");
+      });
+
+      gBrowser.selectedTab = generalTab;
+      Assert.ok(
+        BrowserTestUtils.isVisible(linkPreviewControl),
+        "Link Preview control is visible after explicitly enabling"
+      );
+
+      BrowserTestUtils.removeTab(generalTab);
+    });
+
+    it("hides Tab Group Suggestions when globally blocked", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["browser.ai.control.default", "available"],
+          ["browser.ai.control.smartTabGroups", "default"],
+          ["browser.tabs.groups.enabled", true],
+          ["browser.tabs.groups.smart.enabled", true],
+          ["browser.tabs.groups.smart.userEnabled", true],
+        ],
+      });
+
+      // Tab Group Suggestions is only available in en-* locales
+      if (!Services.locale.appLocaleAsBCP47.startsWith("en")) {
+        Assert.ok(true, "Skipping: locale is not en-*");
+        return;
+      }
+
+      let aiControlsTab = gBrowser.selectedTab;
+      await openAiFeaturePanel();
+
+      await new Promise(resolve => open_preferences(resolve));
+      let generalTab = gBrowser.selectedTab;
+      let generalDoc = gBrowser.selectedBrowser.contentDocument;
+      let generalWin = generalDoc.ownerGlobal;
+
+      let tabGroupSetting = generalWin.Preferences.getSetting(
+        "tabGroupSuggestions"
+      );
+      let tabGroupControl = generalDoc.getElementById("tabGroupSuggestions");
+      Assert.ok(
+        BrowserTestUtils.isVisible(tabGroupControl),
+        "Tab Group Suggestions control is visible"
+      );
+
+      gBrowser.selectedTab = aiControlsTab;
+      const toggle = doc.getElementById("aiControlDefaultToggle");
+      const dialogEl = doc.querySelector("block-ai-confirmation-dialog");
+      await dialogEl.updateComplete;
+      let dialogShown = BrowserTestUtils.waitForEvent(
+        dialogEl.dialog,
+        "toggle"
+      );
+      EventUtils.synthesizeMouseAtCenter(toggle.buttonEl, {}, win);
+      await dialogShown;
+      Assert.ok(dialogEl.dialog.open, "Dialog is open");
+      await waitForSettingChange(tabGroupSetting, () =>
+        EventUtils.synthesizeMouseAtCenter(dialogEl.confirmButton, {}, win)
+      );
+
+      gBrowser.selectedTab = generalTab;
+      Assert.ok(
+        !BrowserTestUtils.isVisible(tabGroupControl),
+        "Tab Group Suggestions control is hidden after blocking"
+      );
+
+      BrowserTestUtils.removeTab(generalTab);
+    });
+
+    it("shows settings when unblocked via global toggle", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["browser.ai.control.default", "blocked"],
+          ["browser.ai.control.linkPreviewKeyPoints", "default"],
+          ["browser.ml.linkPreview.enabled", true],
+          ["extensions.ml.enabled", false],
+        ],
+      });
+
+      let aiControlsTab = gBrowser.selectedTab;
+      await openAiFeaturePanel();
+
+      await new Promise(resolve => open_preferences(resolve));
+      let generalTab = gBrowser.selectedTab;
+      let generalDoc = gBrowser.selectedBrowser.contentDocument;
+      let generalWin = generalDoc.ownerGlobal;
+
+      let linkPreviewSetting =
+        generalWin.Preferences.getSetting("linkPreviewEnabled");
+      let linkPreviewControl = generalDoc.getElementById("linkPreviewEnabled");
+      Assert.ok(
+        !BrowserTestUtils.isVisible(linkPreviewControl),
+        "Link Preview control is hidden when blocked"
+      );
+
+      gBrowser.selectedTab = aiControlsTab;
+      const toggle = doc.getElementById("aiControlDefaultToggle");
+      Assert.ok(toggle.pressed, "Toggle is pressed (blocked state)");
+      await waitForSettingChange(linkPreviewSetting, () =>
+        EventUtils.synthesizeMouseAtCenter(toggle.buttonEl, {}, win)
+      );
+
+      gBrowser.selectedTab = generalTab;
+      Assert.ok(
+        BrowserTestUtils.isVisible(linkPreviewControl),
+        "Link Preview control is visible after unblocking"
+      );
+
+      BrowserTestUtils.removeTab(generalTab);
     });
   });
 

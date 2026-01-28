@@ -27,12 +27,7 @@ const lazy = XPCOMUtils.declareLazy({
 });
 
 Preferences.addAll([
-  { id: "browser.ai.control.default", type: "string" },
-  { id: "browser.ai.control.translations", type: "string" },
-  { id: "browser.ai.control.pdfjsAltText", type: "string" },
-  { id: "browser.ai.control.smartTabGroups", type: "string" },
-  { id: "browser.ai.control.linkPreviewKeyPoints", type: "string" },
-  { id: "browser.ai.control.sidebarChatbot", type: "string" },
+  // browser.ai.control.* prefs defined in main.js
   { id: "browser.ml.chat.provider", type: "string" },
   { id: "browser.aiwindow.preferences.enabled", type: "bool" },
   { id: "browser.aiwindow.enabled", type: "bool" },
@@ -48,8 +43,8 @@ Preferences.addSetting({ id: "aiStatesDescription" });
 Preferences.addSetting({ id: "sidebarChatbotFieldset" });
 Preferences.addSetting({
   id: "aiBlockedMessage",
-  deps: ["aiControlsDefault"],
-  visible: deps => deps.aiControlsDefault.value,
+  deps: ["aiControlDefaultToggle"],
+  visible: deps => deps.aiControlDefaultToggle.value,
 });
 
 const AiControlStates = Object.freeze({
@@ -210,7 +205,7 @@ const AI_CONTROL_OPTIONS = [
 ];
 
 Preferences.addSetting({
-  id: "aiControlsDefault",
+  id: "aiControlDefaultToggle",
   pref: "browser.ai.control.default",
   setup() {
     document.body.append(
@@ -247,7 +242,7 @@ function makeAiControlSetting({ id, pref, feature, supportsEnabled = true }) {
   Preferences.addSetting({
     id,
     pref,
-    deps: ["aiControlsDefault"],
+    deps: ["aiControlDefault"],
     setup(emitChange) {
       /**
        * @param {nsISupports} _
@@ -270,7 +265,7 @@ function makeAiControlSetting({ id, pref, feature, supportsEnabled = true }) {
       if (
         prefVal == AiControlStates.blocked ||
         (prefVal == AiControlStates.default &&
-          deps.aiControlsDefault.pref.value == AiControlGlobalStates.blocked) ||
+          deps.aiControlDefault.value == AiControlGlobalStates.blocked) ||
         OnDeviceModelManager.isBlocked(feature)
       ) {
         return AiControlStates.blocked;
@@ -303,23 +298,23 @@ function makeAiControlSetting({ id, pref, feature, supportsEnabled = true }) {
   });
 }
 makeAiControlSetting({
-  id: "aiControlTranslations",
+  id: "aiControlTranslationsSelect",
   pref: "browser.ai.control.translations",
   feature: OnDeviceModelManager.features.Translations,
   supportsEnabled: false,
 });
 makeAiControlSetting({
-  id: "aiControlPdfjsAltText",
+  id: "aiControlPdfjsAltTextSelect",
   pref: "browser.ai.control.pdfjsAltText",
   feature: OnDeviceModelManager.features.PdfAltText,
 });
 makeAiControlSetting({
-  id: "aiControlSmartTabGroups",
+  id: "aiControlSmartTabGroupsSelect",
   pref: "browser.ai.control.smartTabGroups",
   feature: OnDeviceModelManager.features.TabGroups,
 });
 makeAiControlSetting({
-  id: "aiControlLinkPreviewKeyPoints",
+  id: "aiControlLinkPreviewKeyPointsSelect",
   pref: "browser.ai.control.linkPreviewKeyPoints",
   feature: OnDeviceModelManager.features.KeyPoints,
 });
@@ -332,9 +327,9 @@ Preferences.addSetting({
 });
 Preferences.addSetting(
   /** @type {{ feature: OnDeviceModelFeaturesEnum } & SettingConfig } */ ({
-    id: "aiControlSidebarChatbot",
+    id: "aiControlSidebarChatbotSelect",
     pref: "browser.ai.control.sidebarChatbot",
-    deps: ["aiControlsDefault", "chatbotProvider"],
+    deps: ["aiControlDefault", "chatbotProvider"],
     feature: OnDeviceModelManager.features.SidebarChatbot,
     setup(emitChange) {
       lazy.GenAI.init();
@@ -359,7 +354,7 @@ Preferences.addSetting(
       if (
         prefVal == AiControlStates.blocked ||
         (prefVal == AiControlStates.default &&
-          deps.aiControlsDefault.pref.value == AiControlGlobalStates.blocked) ||
+          deps.aiControlDefault.value == AiControlGlobalStates.blocked) ||
         OnDeviceModelManager.isBlocked(this.feature)
       ) {
         return AiControlStates.blocked;
@@ -709,7 +704,7 @@ SettingGroupManager.registerGroups({
         control: "moz-box-item",
         items: [
           {
-            id: "aiControlsDefault",
+            id: "aiControlDefaultToggle",
             l10nId: "preferences-ai-controls-block-ai",
             control: "moz-toggle",
             controlAttrs: {
@@ -758,7 +753,7 @@ SettingGroupManager.registerGroups({
                 control: "moz-box-item",
                 items: [
                   {
-                    id: "aiControlTranslations",
+                    id: "aiControlTranslationsSelect",
                     l10nId: "preferences-ai-controls-translations-control",
                     control: "moz-select",
                     options: [
@@ -782,7 +777,7 @@ SettingGroupManager.registerGroups({
                 control: "moz-box-item",
                 items: [
                   {
-                    id: "aiControlPdfjsAltText",
+                    id: "aiControlPdfjsAltTextSelect",
                     l10nId: "preferences-ai-controls-pdfjs-control",
                     control: "moz-select",
                     supportPage: "pdf-alt-text",
@@ -794,7 +789,7 @@ SettingGroupManager.registerGroups({
                 control: "moz-box-item",
                 items: [
                   {
-                    id: "aiControlSmartTabGroups",
+                    id: "aiControlSmartTabGroupsSelect",
                     l10nId:
                       "preferences-ai-controls-tab-group-suggestions-control",
                     control: "moz-select",
@@ -807,7 +802,7 @@ SettingGroupManager.registerGroups({
                 control: "moz-box-item",
                 items: [
                   {
-                    id: "aiControlLinkPreviewKeyPoints",
+                    id: "aiControlLinkPreviewKeyPointsSelect",
                     l10nId: "preferences-ai-controls-key-points-control",
                     control: "moz-select",
                     supportPage: "use-link-previews-firefox",
@@ -860,7 +855,7 @@ SettingGroupManager.registerGroups({
             control: "moz-box-item",
             items: [
               {
-                id: "aiControlSidebarChatbot",
+                id: "aiControlSidebarChatbotSelect",
                 l10nId: "preferences-ai-controls-sidebar-chatbot-control",
                 control: "moz-select",
                 options: [
