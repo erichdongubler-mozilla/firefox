@@ -10,6 +10,7 @@
 
 #include "mozilla/dom/GeolocationPosition.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
+#include "mozilla/glean/DomGeolocationMetrics.h"
 #include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
 #include "prtime.h"
@@ -27,14 +28,16 @@ using StatusChangedHandler =
 namespace mozilla::dom {
 
 extern LazyLogModule gWindowsLocationProviderLog;
-#define LOG(...) \
+#define LOGD(...) \
   MOZ_LOG(gWindowsLocationProviderLog, LogLevel::Debug, (__VA_ARGS__))
+#define LOGI(...) \
+  MOZ_LOG(gWindowsLocationProviderLog, LogLevel::Info, (__VA_ARGS__))
 
 HRESULT
 WindowsRuntimeLocationChild::OnPositionChanged(
     const ComPtr<IGeolocator>& aGeolocator,
     const ComPtr<IPositionChangedEventArgs>& aArgs) {
-  LOG("WindowsRuntimeLocationChild::OnPositionChanged(%p)", this);
+  LOGD("WindowsRuntimeLocationChild::OnPositionChanged(%p)", this);
 
   ComPtr<IGeoposition> geoposition;
   HRESULT hr = aArgs->get_Position(&geoposition);
@@ -134,12 +137,13 @@ WindowsRuntimeLocationChild::OnStatusChanged(
   PositionStatus status;
   HRESULT hr = aArgs->get_Status(&status);
   if (FAILED(hr)) {
-    LOG("WindowsRuntimeLocationChild::OnStatusChanged(%p) failed to get status",
+    LOGD(
+        "WindowsRuntimeLocationChild::OnStatusChanged(%p) failed to get status",
         this);
     return S_OK;
   }
 
-  LOG("WindowsRuntimeLocationChild::OnStatusChanged(%p, %d)", this, status);
+  LOGD("WindowsRuntimeLocationChild::OnStatusChanged(%p, %d)", this, status);
 
   uint16_t err;
   switch (status) {
@@ -156,15 +160,15 @@ WindowsRuntimeLocationChild::OnStatusChanged(
 }
 
 WindowsRuntimeLocationChild::WindowsRuntimeLocationChild() {
-  LOG("WindowsRuntimeLocationChild::WindowsRuntimeLocationChild(%p)", this);
+  LOGD("WindowsRuntimeLocationChild::WindowsRuntimeLocationChild(%p)", this);
 }
 
 WindowsRuntimeLocationChild::~WindowsRuntimeLocationChild() {
-  LOG("WindowsRuntimeLocationChild::~WindowsRuntimeLocationChild(%p)", this);
+  LOGD("WindowsRuntimeLocationChild::~WindowsRuntimeLocationChild(%p)", this);
 }
 
 mozilla::ipc::IPCResult WindowsRuntimeLocationChild::Startup() {
-  LOG("WindowsRuntimeLocationChild::Startup(%p, %p)", this, mGeolocator.Get());
+  LOGD("WindowsRuntimeLocationChild::Startup(%p, %p)", this, mGeolocator.Get());
 
   if (mGeolocator) {
     return IPC_OK();
@@ -181,7 +185,8 @@ mozilla::ipc::IPCResult WindowsRuntimeLocationChild::Startup() {
           .Get(),
       &inspectable);
   if (FAILED(hr)) {
-    LOG("WindowsRuntimeLocationChild(%p) failed to create Geolocator. "
+    LOGD(
+        "WindowsRuntimeLocationChild(%p) failed to create Geolocator. "
         "HRESULT=%08lx",
         this, hr);
     return IPC_OK();
@@ -190,7 +195,8 @@ mozilla::ipc::IPCResult WindowsRuntimeLocationChild::Startup() {
   ComPtr<IGeolocator> geolocator;
   hr = inspectable.As(&geolocator);
   if (FAILED(hr)) {
-    LOG("WindowsRuntimeLocationChild(%p) failed to get IGeolocator interface. "
+    LOGD(
+        "WindowsRuntimeLocationChild(%p) failed to get IGeolocator interface. "
         "HRESULT=%08lx",
         this, hr);
     return IPC_OK();
@@ -203,8 +209,8 @@ mozilla::ipc::IPCResult WindowsRuntimeLocationChild::Startup() {
 
 mozilla::ipc::IPCResult WindowsRuntimeLocationChild::SetHighAccuracy(
     const bool& aEnable) {
-  LOG("WindowsRuntimeLocationChild::SetHighAccuracy(%p, %p, %s)", this,
-      mGeolocator.Get(), aEnable ? "true" : "false");
+  LOGD("WindowsRuntimeLocationChild::SetHighAccuracy(%p, %p, %s)", this,
+       mGeolocator.Get(), aEnable ? "true" : "false");
 
   // We sometimes call SetHighAccuracy before Startup, so we save the
   // request and set it later, in RegisterForReport.
@@ -214,8 +220,8 @@ mozilla::ipc::IPCResult WindowsRuntimeLocationChild::SetHighAccuracy(
 }
 
 mozilla::ipc::IPCResult WindowsRuntimeLocationChild::RegisterForReport() {
-  LOG("WindowsRuntimeLocationChild::RegisterForReport(%p, %p)", this,
-      mGeolocator.Get());
+  LOGD("WindowsRuntimeLocationChild::RegisterForReport(%p, %p)", this,
+       mGeolocator.Get());
 
   auto sendFailOnError = MakeScopeExit([&] {
     SendFailed(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
@@ -259,15 +265,17 @@ mozilla::ipc::IPCResult WindowsRuntimeLocationChild::RegisterForReport() {
     return IPC_OK();
   }
 
-  LOG("WindowsRuntimeLocationChild::RegisterForReport successfully "
-      "registered");
+  glean::geolocation::geolocation_service
+      .EnumGet(glean::geolocation::GeolocationServiceLabel::eSystem)
+      .Add();
+  LOGI("WindowsLocationChild::RecvRegisterForReport successfully registered");
   sendFailOnError.release();
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult WindowsRuntimeLocationChild::UnregisterForReport() {
-  LOG("WindowsRuntimeLocationChild::UnregisterForReport(%p, %p)", this,
-      mGeolocator.Get());
+  LOGI("WindowsRuntimeLocationChild::UnregisterForReport(%p, %p)", this,
+       mGeolocator.Get());
 
   if (!mGeolocator) {
     return IPC_OK();
@@ -288,8 +296,8 @@ mozilla::ipc::IPCResult WindowsRuntimeLocationChild::UnregisterForReport() {
 }
 
 void WindowsRuntimeLocationChild::ActorDestroy(ActorDestroyReason aWhy) {
-  LOG("WindowsRuntimeLocationChild::ActorDestroy(%p, %p)", this,
-      mGeolocator.Get());
+  LOGD("WindowsRuntimeLocationChild::ActorDestroy(%p, %p)", this,
+       mGeolocator.Get());
 
   if (!mGeolocator) {
     return;

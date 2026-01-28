@@ -601,6 +601,10 @@ void GCLocProviderPriv::StartClient() {
   g_dbus_proxy_call(
       mProxyClient, "Start", nullptr, G_DBUS_CALL_FLAGS_NONE, -1, mCancellable,
       reinterpret_cast<GAsyncReadyCallback>(StartClientResponse), this);
+  glean::geolocation::geolocation_service
+      .EnumGet(glean::geolocation::GeolocationServiceLabel::eGeoclue)
+      .Add();
+  GCL_LOG(Info, "Geoclue location service starting.");
 }
 
 void GCLocProviderPriv::StartClientResponse(GDBusProxy* aProxy,

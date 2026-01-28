@@ -74,3 +74,21 @@ geolocation:
     notification_emails:
       - krosylight@mozilla.com
     expires: never
+  geolocation_service:
+    type: labeled_counter
+    description: >
+      How many geolocation requests were issued to the system provider, the
+      network wifi-lookup provider, the network ip-lookup provider, and the
+      Linux GeoClue service?  Wifi and IP currently use the same provider.
+    labels:
+      - system
+      - network_wifi_and_ip
+      - network_ip
+      - geoclue
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010958
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010958
+    notification_emails:
+      - daparks@mozilla.com
+    expires: never
