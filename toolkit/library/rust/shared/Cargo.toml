@@ -38,6 +38,7 @@ rsdparsa_capi = { path = "../../../../dom/media/webrtc/sdp/rsdparsa_capi" }
 log = {version = "0.4", features = ["release_max_level_info"]}
 cose-c = { version = "0.1.5" }
 jsrust_shared = { path = "../../../../js/src/rust/shared" }
+jxl_decoder = { path = "../../../../image/rust/jxl", optional = true }
 cascade_bloom_filter = { path = "../../../components/cascade_bloom_filter" }
 bitsdownload = { path = "../../../components/bitsdownload", optional = true }
 storage = { path = "../../../../storage/rust" }
@@ -156,6 +157,7 @@ thread_sanitizer = ["xpcom/thread_sanitizer"]
 uniffi_fixtures = ["uniffi-bindgen-gecko-js-test-fixtures"]
 webmidi_midir_impl = ["midir_impl"]
 icu4x = ["jsrust_shared/icu4x"]
+jxl_decoder = ["dep:jxl_decoder"]
 # Set when we're building libxul (as opposed to building the unittests, for example)
 for_xul = [
     # This makes it so `rusqlite` doesn't handle linking itself.  Instead, we'll link it to the
