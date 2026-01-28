@@ -390,6 +390,14 @@ export const listing = [
     "file": [
       "api",
       "operation",
+      "render_pass",
+      "transient_attachment"
+    ]
+  },
+  {
+    "file": [
+      "api",
+      "operation",
       "render_pipeline",
       "culling_tests"
     ]
@@ -1330,6 +1338,15 @@ export const listing = [
       "encoding",
       "programmable",
       "pipeline_bind_group_compat"
+    ]
+  },
+  {
+    "file": [
+      "api",
+      "validation",
+      "encoding",
+      "programmable",
+      "pipeline_immediate"
     ]
   },
   {
@@ -4218,6 +4235,14 @@ export const listing = [
       "validation",
       "const_assert",
       "const_assert"
+    ]
+  },
+  {
+    "file": [
+      "shader",
+      "validation",
+      "decl",
+      "assignment_statement"
     ]
   },
   {
