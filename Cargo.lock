@@ -1277,6 +1277,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "crashreporter-android-export"
+version = "0.1.0"
+dependencies = [
+ "android_logger",
+ "crashping",
+ "log",
+ "minidump-analyzer",
+ "mozilla-central-workspace-hack",
+ "serde_json",
+]
+
+[[package]]
 name = "crc32fast"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4307,14 +4319,6 @@ dependencies = [
  "minidump-unwind",
  "serde_json",
  "windows-sys",
-]
-
-[[package]]
-name = "minidump-analyzer-export"
-version = "0.1.0"
-dependencies = [
- "minidump-analyzer",
- "mozilla-central-workspace-hack",
 ]
 
 [[package]]
