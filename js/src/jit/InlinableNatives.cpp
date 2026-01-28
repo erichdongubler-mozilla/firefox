@@ -9,7 +9,6 @@
 #ifdef JS_HAS_INTL_API
 #  include "builtin/intl/Collator.h"
 #  include "builtin/intl/DateTimeFormat.h"
-#  include "builtin/intl/DisplayNames.h"
 #  include "builtin/intl/DurationFormat.h"
 #  include "builtin/intl/ListFormat.h"
 #  include "builtin/intl/NumberFormat.h"
@@ -47,8 +46,6 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
       return &CollatorObject::class_;
     case InlinableNative::IntlGuardToDateTimeFormat:
       return &DateTimeFormatObject::class_;
-    case InlinableNative::IntlGuardToDisplayNames:
-      return &DisplayNamesObject::class_;
     case InlinableNative::IntlGuardToDurationFormat:
       return &DurationFormatObject::class_;
     case InlinableNative::IntlGuardToListFormat:
@@ -66,7 +63,6 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
 #else
     case InlinableNative::IntlGuardToCollator:
     case InlinableNative::IntlGuardToDateTimeFormat:
-    case InlinableNative::IntlGuardToDisplayNames:
     case InlinableNative::IntlGuardToListFormat:
     case InlinableNative::IntlGuardToNumberFormat:
     case InlinableNative::IntlGuardToPluralRules:
@@ -177,7 +173,6 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
 
     case InlinableNative::IntlGuardToCollator:
     case InlinableNative::IntlGuardToDateTimeFormat:
-    case InlinableNative::IntlGuardToDisplayNames:
     case InlinableNative::IntlGuardToDurationFormat:
     case InlinableNative::IntlGuardToListFormat:
     case InlinableNative::IntlGuardToNumberFormat:

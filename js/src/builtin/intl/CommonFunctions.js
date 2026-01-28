@@ -260,7 +260,6 @@ function initializeIntlObject(obj, type, lazyData) {
   assert(
     (type === "Collator" && intl_GuardToCollator(obj) !== null) ||
       (type === "DateTimeFormat" && intl_GuardToDateTimeFormat(obj) !== null) ||
-      (type === "DisplayNames" && intl_GuardToDisplayNames(obj) !== null) ||
       (type === "DurationFormat" && intl_GuardToDurationFormat(obj) !== null) ||
       (type === "ListFormat" && intl_GuardToListFormat(obj) !== null) ||
       (type === "NumberFormat" && intl_GuardToNumberFormat(obj) !== null) ||
@@ -276,7 +275,6 @@ function initializeIntlObject(obj, type, lazyData) {
   // must be one of:
   // - Collator
   // - DateTimeFormat
-  // - DisplayNames
   // - DurationFormat
   // - ListFormat
   // - NumberFormat
@@ -346,7 +344,6 @@ function getIntlObjectInternals(obj) {
   assert(
     intl_GuardToCollator(obj) !== null ||
       intl_GuardToDateTimeFormat(obj) !== null ||
-      intl_GuardToDisplayNames(obj) !== null ||
       intl_GuardToDurationFormat(obj) !== null ||
       intl_GuardToListFormat(obj) !== null ||
       intl_GuardToNumberFormat(obj) !== null ||
@@ -363,8 +360,6 @@ function getIntlObjectInternals(obj) {
     (internals.type === "Collator" && intl_GuardToCollator(obj) !== null) ||
       (internals.type === "DateTimeFormat" &&
         intl_GuardToDateTimeFormat(obj) !== null) ||
-      (internals.type === "DisplayNames" &&
-        intl_GuardToDisplayNames(obj) !== null) ||
       (internals.type === "DurationFormat" &&
         intl_GuardToDurationFormat(obj) !== null) ||
       (internals.type === "ListFormat" &&
@@ -402,8 +397,6 @@ function getInternals(obj) {
     internalProps = resolveCollatorInternals(internals.lazyData);
   } else if (type === "DateTimeFormat") {
     internalProps = resolveDateTimeFormatInternals(internals.lazyData);
-  } else if (type === "DisplayNames") {
-    internalProps = resolveDisplayNamesInternals(internals.lazyData);
   } else if (type === "DurationFormat") {
     internalProps = resolveDurationFormatInternals(internals.lazyData);
   } else if (type === "ListFormat") {
