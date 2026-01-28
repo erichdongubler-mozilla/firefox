@@ -262,8 +262,7 @@ function initializeIntlObject(obj, type, lazyData) {
       (type === "DateTimeFormat" && intl_GuardToDateTimeFormat(obj) !== null) ||
       (type === "DurationFormat" && intl_GuardToDurationFormat(obj) !== null) ||
       (type === "NumberFormat" && intl_GuardToNumberFormat(obj) !== null) ||
-      (type === "PluralRules" && intl_GuardToPluralRules(obj) !== null) ||
-      (type === "Segmenter" && intl_GuardToSegmenter(obj) !== null),
+      (type === "PluralRules" && intl_GuardToPluralRules(obj) !== null),
     "type must match the object's class"
   );
   assert(IsObject(lazyData), "non-object lazy data");
@@ -277,7 +276,6 @@ function initializeIntlObject(obj, type, lazyData) {
   // - DurationFormat
   // - NumberFormat
   // - PluralRules
-  // - Segmenter
   //
   // The .lazyData property stores information needed to compute -- without
   // observable side effects -- the actual internal Intl properties of
@@ -344,8 +342,7 @@ function getIntlObjectInternals(obj) {
       intl_GuardToDateTimeFormat(obj) !== null ||
       intl_GuardToDurationFormat(obj) !== null ||
       intl_GuardToNumberFormat(obj) !== null ||
-      intl_GuardToPluralRules(obj) !== null ||
-      intl_GuardToSegmenter(obj) !== null,
+      intl_GuardToPluralRules(obj) !== null,
     "getIntlObjectInternals called with non-Intl object"
   );
 
@@ -362,9 +359,7 @@ function getIntlObjectInternals(obj) {
       (internals.type === "NumberFormat" &&
         intl_GuardToNumberFormat(obj) !== null) ||
       (internals.type === "PluralRules" &&
-        intl_GuardToPluralRules(obj) !== null) ||
-      (internals.type === "Segmenter" &&
-        intl_GuardToSegmenter(obj) !== null),
+        intl_GuardToPluralRules(obj) !== null),
     "type must match the object's class"
   );
   assert(hasOwn("lazyData", internals), "missing lazyData");
@@ -399,8 +394,7 @@ function getInternals(obj) {
   } else if (type === "PluralRules") {
     internalProps = resolvePluralRulesInternals(internals.lazyData);
   } else {
-    assert(type === "Segmenter", "unexpected Intl type");
-    internalProps = resolveSegmenterInternals(internals.lazyData);
+    assert(false, "unexpected Intl constructor");
   }
   setInternalProperties(internals, internalProps);
   return internalProps;

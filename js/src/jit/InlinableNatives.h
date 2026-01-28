@@ -100,7 +100,6 @@
   _(IntlGuardToDurationFormat)                     \
   _(IntlGuardToNumberFormat)                       \
   _(IntlGuardToPluralRules)                        \
-  _(IntlGuardToSegmenter)                          \
   _(IntlGuardToSegments)                           \
   _(IntlGuardToSegmentIterator)                    \
                                                    \
