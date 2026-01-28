@@ -98,7 +98,6 @@ selfhosted_inputs = [
         "intl/ListFormat.js",
         "intl/NumberFormat.js",
         "intl/PluralRules.js",
-        "intl/RelativeTimeFormat.js",
         "intl/SanctionedSimpleUnitIdentifiersGenerated.js",
         "intl/Segmenter.js",
     ]

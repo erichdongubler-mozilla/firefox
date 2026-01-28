@@ -60,6 +60,11 @@ const JSClass& RelativeTimeFormatObject::protoClass_ = PlainObject::class_;
 static bool relativeTimeFormat_supportedLocalesOf(JSContext* cx, unsigned argc,
                                                   Value* vp);
 
+static bool relativeTimeFormat_format(JSContext* cx, unsigned argc, Value* vp);
+
+static bool relativeTimeFormat_formatToParts(JSContext* cx, unsigned argc,
+                                             Value* vp);
+
 static bool relativeTimeFormat_resolvedOptions(JSContext* cx, unsigned argc,
                                                Value* vp);
 
@@ -77,9 +82,8 @@ static const JSFunctionSpec relativeTimeFormat_static_methods[] = {
 
 static const JSFunctionSpec relativeTimeFormat_methods[] = {
     JS_FN("resolvedOptions", relativeTimeFormat_resolvedOptions, 0, 0),
-    JS_SELF_HOSTED_FN("format", "Intl_RelativeTimeFormat_format", 2, 0),
-    JS_SELF_HOSTED_FN("formatToParts", "Intl_RelativeTimeFormat_formatToParts",
-                      2, 0),
+    JS_FN("format", relativeTimeFormat_format, 2, 0),
+    JS_FN("formatToParts", relativeTimeFormat_formatToParts, 2, 0),
     JS_FN("toSource", relativeTimeFormat_toSource, 0, 0),
     JS_FS_END,
 };
@@ -411,125 +415,225 @@ static mozilla::intl::RelativeTimeFormat* GetOrCreateRelativeTimeFormat(
   return rtf;
 }
 
-bool js::intl_FormatRelativeTime(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 4);
-  MOZ_ASSERT(args[0].isObject());
-  MOZ_ASSERT(args[1].isNumber());
-  MOZ_ASSERT(args[2].isString());
-  MOZ_ASSERT(args[3].isBoolean());
+/**
+ * SingularRelativeTimeUnit ( unit )
+ */
+static bool SingularRelativeTimeUnit(
+    JSContext* cx, Handle<JSString*> string,
+    mozilla::intl::RelativeTimeFormat::FormatUnit* result) {
+  using FormatUnit = mozilla::intl::RelativeTimeFormat::FormatUnit;
 
-  Rooted<RelativeTimeFormatObject*> relativeTimeFormat(cx);
-  relativeTimeFormat = &args[0].toObject().as<RelativeTimeFormatObject>();
+  auto* unit = string->ensureLinear(cx);
+  if (!unit) {
+    return false;
+  }
 
-  bool formatToParts = args[3].toBoolean();
+  // Steps 1-10.
+  if (StringEqualsLiteral(unit, "second") ||
+      StringEqualsLiteral(unit, "seconds")) {
+    *result = FormatUnit::Second;
+  } else if (StringEqualsLiteral(unit, "minute") ||
+             StringEqualsLiteral(unit, "minutes")) {
+    *result = FormatUnit::Minute;
+  } else if (StringEqualsLiteral(unit, "hour") ||
+             StringEqualsLiteral(unit, "hours")) {
+    *result = FormatUnit::Hour;
+  } else if (StringEqualsLiteral(unit, "day") ||
+             StringEqualsLiteral(unit, "days")) {
+    *result = FormatUnit::Day;
+  } else if (StringEqualsLiteral(unit, "week") ||
+             StringEqualsLiteral(unit, "weeks")) {
+    *result = FormatUnit::Week;
+  } else if (StringEqualsLiteral(unit, "month") ||
+             StringEqualsLiteral(unit, "months")) {
+    *result = FormatUnit::Month;
+  } else if (StringEqualsLiteral(unit, "quarter") ||
+             StringEqualsLiteral(unit, "quarters")) {
+    *result = FormatUnit::Quarter;
+  } else if (StringEqualsLiteral(unit, "year") ||
+             StringEqualsLiteral(unit, "years")) {
+    *result = FormatUnit::Year;
+  } else {
+    if (auto unitChars = QuoteString(cx, unit, '"')) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_INVALID_OPTION_VALUE, "unit",
+                                unitChars.get());
+    }
+    return false;
+  }
+  return true;
+}
 
-  // PartitionRelativeTimePattern, step 4.
-  double t = args[1].toNumber();
-  if (!std::isfinite(t)) {
+static RelativeTimeFormatUnit ToRelativeTimeFormatUnit(
+    mozilla::intl::RelativeTimeFormat::FormatUnit unit) {
+#ifndef USING_ENUM
+  using enum mozilla::intl::RelativeTimeFormat::FormatUnit;
+#else
+  USING_ENUM(mozilla::intl::RelativeTimeFormat::FormatUnit, Second, Minute,
+             Hour, Day, Week, Month, Quarter, Year);
+#endif
+
+  switch (unit) {
+    case Second:
+      return &JSAtomState::second;
+    case Minute:
+      return &JSAtomState::minute;
+    case Hour:
+      return &JSAtomState::hour;
+    case Day:
+      return &JSAtomState::day;
+    case Week:
+      return &JSAtomState::week;
+    case Month:
+      return &JSAtomState::month;
+    case Quarter:
+      return &JSAtomState::quarter;
+    case Year:
+      return &JSAtomState::year;
+  }
+  MOZ_CRASH("invalid format unit");
+}
+
+/**
+ * FormatRelativeTime ( relativeTimeFormat, value, unit )
+ * FormatRelativeTimeToParts ( relativeTimeFormat, value, unit )
+ * PartitionRelativeTimePattern ( relativeTimeFormat, value, unit )
+ *
+ * Returns a relative time as a string formatted according to the effective
+ * locale and the formatting options of the given RelativeTimeFormat.
+ */
+static bool FormatRelativeTime(
+    JSContext* cx, Handle<RelativeTimeFormatObject*> relativeTimeFormat,
+    double value, Handle<JSString*> unit, bool formatToParts,
+    MutableHandle<JS::Value> rvalue) {
+  // PartitionRelativeTimePattern, step 1.
+  if (!std::isfinite(value)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_DATE_NOT_FINITE, "RelativeTimeFormat",
                               formatToParts ? "formatToParts" : "format");
     return false;
   }
 
-  mozilla::intl::RelativeTimeFormat* rtf =
-      GetOrCreateRelativeTimeFormat(cx, relativeTimeFormat);
+  // PartitionRelativeTimePattern, step 2.
+  mozilla::intl::RelativeTimeFormat::FormatUnit relTimeUnit;
+  if (!SingularRelativeTimeUnit(cx, unit, &relTimeUnit)) {
+    return false;
+  }
+
+  auto* rtf = GetOrCreateRelativeTimeFormat(cx, relativeTimeFormat);
   if (!rtf) {
     return false;
   }
 
-  intl::RelativeTimeFormatUnit jsUnitType;
-  using FormatUnit = mozilla::intl::RelativeTimeFormat::FormatUnit;
-  FormatUnit relTimeUnit;
-  {
-    JSLinearString* unit = args[2].toString()->ensureLinear(cx);
-    if (!unit) {
-      return false;
-    }
-
-    // PartitionRelativeTimePattern, step 5.
-    if (StringEqualsLiteral(unit, "second") ||
-        StringEqualsLiteral(unit, "seconds")) {
-      jsUnitType = &JSAtomState::second;
-      relTimeUnit = FormatUnit::Second;
-    } else if (StringEqualsLiteral(unit, "minute") ||
-               StringEqualsLiteral(unit, "minutes")) {
-      jsUnitType = &JSAtomState::minute;
-      relTimeUnit = FormatUnit::Minute;
-    } else if (StringEqualsLiteral(unit, "hour") ||
-               StringEqualsLiteral(unit, "hours")) {
-      jsUnitType = &JSAtomState::hour;
-      relTimeUnit = FormatUnit::Hour;
-    } else if (StringEqualsLiteral(unit, "day") ||
-               StringEqualsLiteral(unit, "days")) {
-      jsUnitType = &JSAtomState::day;
-      relTimeUnit = FormatUnit::Day;
-    } else if (StringEqualsLiteral(unit, "week") ||
-               StringEqualsLiteral(unit, "weeks")) {
-      jsUnitType = &JSAtomState::week;
-      relTimeUnit = FormatUnit::Week;
-    } else if (StringEqualsLiteral(unit, "month") ||
-               StringEqualsLiteral(unit, "months")) {
-      jsUnitType = &JSAtomState::month;
-      relTimeUnit = FormatUnit::Month;
-    } else if (StringEqualsLiteral(unit, "quarter") ||
-               StringEqualsLiteral(unit, "quarters")) {
-      jsUnitType = &JSAtomState::quarter;
-      relTimeUnit = FormatUnit::Quarter;
-    } else if (StringEqualsLiteral(unit, "year") ||
-               StringEqualsLiteral(unit, "years")) {
-      jsUnitType = &JSAtomState::year;
-      relTimeUnit = FormatUnit::Year;
-    } else {
-      if (auto unitChars = QuoteString(cx, unit, '"')) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_INVALID_OPTION_VALUE, "unit",
-                                  unitChars.get());
-      }
-      return false;
-    }
-  }
-
-  using ICUError = mozilla::intl::ICUError;
+  // PartitionRelativeTimePattern, steps 3-14.
+  // FormatRelativeTimeToParts, steps 2-5.
   if (formatToParts) {
     mozilla::intl::NumberPartVector parts;
-    mozilla::Result<mozilla::Span<const char16_t>, ICUError> result =
-        rtf->formatToParts(t, relTimeUnit, parts);
-
+    auto result = rtf->formatToParts(value, relTimeUnit, parts);
     if (result.isErr()) {
-      intl::ReportInternalError(cx, result.unwrapErr());
+      ReportInternalError(cx, result.unwrapErr());
       return false;
     }
 
-    RootedString str(cx, NewStringCopy<CanGC>(cx, result.unwrap()));
+    Rooted<JSString*> str(cx, NewStringCopy<CanGC>(cx, result.unwrap()));
     if (!str) {
       return false;
     }
 
-    return js::intl::FormattedRelativeTimeToParts(cx, str, parts, jsUnitType,
-                                                  args.rval());
+    auto unitType = ToRelativeTimeFormatUnit(relTimeUnit);
+    return FormattedRelativeTimeToParts(cx, str, parts, unitType, rvalue);
   }
 
-  js::intl::FormatBuffer<char16_t, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
-  mozilla::Result<Ok, ICUError> result = rtf->format(t, relTimeUnit, buffer);
-
+  // PartitionRelativeTimePattern, steps 3-14.
+  // FormatRelativeTime, steps 2-4.
+  FormatBuffer<char16_t, INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
+  auto result = rtf->format(value, relTimeUnit, buffer);
   if (result.isErr()) {
-    intl::ReportInternalError(cx, result.unwrapErr());
+    ReportInternalError(cx, result.unwrapErr());
     return false;
   }
 
-  JSString* str = buffer.toString(cx);
+  auto* str = buffer.toString(cx);
   if (!str) {
     return false;
   }
 
-  args.rval().setString(str);
+  rvalue.setString(str);
   return true;
 }
 
 static bool IsRelativeTimeFormat(Handle<JS::Value> v) {
   return v.isObject() && v.toObject().is<RelativeTimeFormatObject>();
+}
+
+/**
+ * Intl.RelativeTimeFormat.prototype.format ( value, unit )
+ */
+static bool relativeTimeFormat_format(JSContext* cx, const CallArgs& args) {
+  Rooted<RelativeTimeFormatObject*> relativeTimeFormat(
+      cx, &args.thisv().toObject().as<RelativeTimeFormatObject>());
+
+  // Step 3.
+  double value;
+  if (!JS::ToNumber(cx, args.get(0), &value)) {
+    return false;
+  }
+
+  // Step 4.
+  Rooted<JSString*> unit(cx, JS::ToString(cx, args.get(1)));
+  if (!unit) {
+    return false;
+  }
+
+  // Step 5.
+  return FormatRelativeTime(cx, relativeTimeFormat, value, unit,
+                            /* formatToParts= */ false, args.rval());
+}
+
+/**
+ * Intl.RelativeTimeFormat.prototype.format ( value, unit )
+ */
+static bool relativeTimeFormat_format(JSContext* cx, unsigned argc, Value* vp) {
+  // Steps 1-2.
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsRelativeTimeFormat, relativeTimeFormat_format>(
+      cx, args);
+}
+
+/**
+ * Intl.RelativeTimeFormat.prototype.formatToParts ( value, unit )
+ */
+static bool relativeTimeFormat_formatToParts(JSContext* cx,
+                                             const CallArgs& args) {
+  Rooted<RelativeTimeFormatObject*> relativeTimeFormat(
+      cx, &args.thisv().toObject().as<RelativeTimeFormatObject>());
+
+  // Step 3.
+  double value;
+  if (!JS::ToNumber(cx, args.get(0), &value)) {
+    return false;
+  }
+
+  // Step 4.
+  Rooted<JSString*> unit(cx, JS::ToString(cx, args.get(1)));
+  if (!unit) {
+    return false;
+  }
+
+  // Step 5.
+  return FormatRelativeTime(cx, relativeTimeFormat, value, unit,
+                            /* formatToParts= */ true, args.rval());
+}
+
+/**
+ * Intl.RelativeTimeFormat.prototype.formatToParts ( value, unit )
+ */
+static bool relativeTimeFormat_formatToParts(JSContext* cx, unsigned argc,
+                                             Value* vp) {
+  // Steps 1-2.
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsRelativeTimeFormat,
+                              relativeTimeFormat_formatToParts>(cx, args);
 }
 
 /**

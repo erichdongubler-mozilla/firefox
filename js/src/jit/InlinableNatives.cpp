@@ -14,7 +14,6 @@
 #  include "builtin/intl/ListFormat.h"
 #  include "builtin/intl/NumberFormat.h"
 #  include "builtin/intl/PluralRules.h"
-#  include "builtin/intl/RelativeTimeFormat.h"
 #  include "builtin/intl/Segmenter.h"
 #endif
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
@@ -58,8 +57,6 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
       return &NumberFormatObject::class_;
     case InlinableNative::IntlGuardToPluralRules:
       return &PluralRulesObject::class_;
-    case InlinableNative::IntlGuardToRelativeTimeFormat:
-      return &RelativeTimeFormatObject::class_;
     case InlinableNative::IntlGuardToSegmenter:
       return &SegmenterObject::class_;
     case InlinableNative::IntlGuardToSegments:
@@ -73,7 +70,6 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
     case InlinableNative::IntlGuardToListFormat:
     case InlinableNative::IntlGuardToNumberFormat:
     case InlinableNative::IntlGuardToPluralRules:
-    case InlinableNative::IntlGuardToRelativeTimeFormat:
     case InlinableNative::IntlGuardToSegmenter:
     case InlinableNative::IntlGuardToSegments:
     case InlinableNative::IntlGuardToSegmentIterator:
@@ -186,7 +182,6 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
     case InlinableNative::IntlGuardToListFormat:
     case InlinableNative::IntlGuardToNumberFormat:
     case InlinableNative::IntlGuardToPluralRules:
-    case InlinableNative::IntlGuardToRelativeTimeFormat:
     case InlinableNative::IntlGuardToSegmenter:
     case InlinableNative::IntlGuardToSegments:
     case InlinableNative::IntlGuardToSegmentIterator:

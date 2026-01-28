@@ -118,21 +118,6 @@ class RelativeTimeFormatObject : public NativeObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-/**
- * Returns a relative time as a string formatted according to the effective
- * locale and the formatting options of the given RelativeTimeFormat.
- *
- * |t| should be a number representing a number to be formatted.
- * |unit| should be "second", "minute", "hour", "day", "week", "month",
- *                  "quarter", or "year".
- * |numeric| should be "always" or "auto".
- *
- * Usage: formatted = intl_FormatRelativeTime(relativeTimeFormat, t,
- *                                            unit, numeric, formatToParts)
- */
-[[nodiscard]] extern bool intl_FormatRelativeTime(JSContext* cx, unsigned argc,
-                                                  JS::Value* vp);
-
 namespace intl {
 
 using RelativeTimeFormatUnit =
