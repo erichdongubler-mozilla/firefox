@@ -1453,6 +1453,14 @@ setting-group[groupid="aiFeatures"] {
   }
 }
 
+#aiBlockedMessage {
+  margin: calc(-1 * var(--space-large));
+  margin-top: var(--space-medium);
+  --message-bar-border-radius: 0 0 var(--box-border-radius) var(--box-border-radius);
+  border-bottom-color: transparent;
+  border-inline-color: transparent;
+}
+
 #aiControlsDefault {
   --toggle-width: 40px;
   --toggle-height: 20px;
