@@ -1898,6 +1898,10 @@ EventSourceImpl::UnregisterShutdownTask(nsITargetShutdownTask*) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+nsIEventTarget::FeatureFlags EventSourceImpl::GetFeatures() {
+  return SUPPORTS_BASE;
+}
+
 //-----------------------------------------------------------------------------
 // EventSourceImpl::nsIThreadRetargetableStreamListener
 //-----------------------------------------------------------------------------

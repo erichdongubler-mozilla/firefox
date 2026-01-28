@@ -103,6 +103,10 @@ LazyIdleThread::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   return mTaskQueue->UnregisterShutdownTask(aTask);
 }
 
+nsIEventTarget::FeatureFlags LazyIdleThread::GetFeatures() {
+  return mTaskQueue->GetFeatures();
+}
+
 NS_IMETHODIMP
 LazyIdleThread::IsOnCurrentThread(bool* aIsOnCurrentThread) {
   return mTaskQueue->IsOnCurrentThread(aIsOnCurrentThread);

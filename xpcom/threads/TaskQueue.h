@@ -111,6 +111,7 @@ class TaskQueue final : public AbstractThread,
 
   NS_IMETHOD RegisterShutdownTask(nsITargetShutdownTask* aTask) override;
   NS_IMETHOD UnregisterShutdownTask(nsITargetShutdownTask* aTask) override;
+  NS_IMETHOD_(FeatureFlags) GetFeatures() override;
 
   using CancelPromise = MozPromise<bool, bool, false>;
 

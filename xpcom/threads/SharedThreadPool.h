@@ -108,6 +108,8 @@ class SharedThreadPool : public nsIThreadPool {
   // *Must* be called on the main thread.
   static void SpinUntilEmpty();
 
+  NS_IMETHOD_(FeatureFlags) GetFeatures() override { return SUPPORTS_BASE; }
+
  private:
   // Returns whether there are no pools in existence at the moment.
   static bool IsEmpty();

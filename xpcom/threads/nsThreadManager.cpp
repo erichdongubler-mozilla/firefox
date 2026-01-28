@@ -199,6 +199,11 @@ BackgroundEventTarget::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+nsIEventTarget::FeatureFlags BackgroundEventTarget::GetFeatures() {
+  // The underlying pools support drain and dispatch during shutdown.
+  return SUPPORTS_BASE;
+}
+
 void BackgroundEventTarget::BeginShutdown(
     nsTArray<RefPtr<ShutdownPromise>>& promises) {
   auto queues = GetAllTrackedTaskQueues();
