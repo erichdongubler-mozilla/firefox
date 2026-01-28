@@ -19,8 +19,8 @@ import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.store.TranslationInfo
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 @Suppress("LongParameterList", "CognitiveComplexMethod")
@@ -181,7 +181,7 @@ private fun ShortcutsMenuItem(
 @Preview
 @Composable
 private fun MoreSettingsSubmenuPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         Column(
@@ -225,7 +225,7 @@ private fun MoreSettingsSubmenuPreview(
 @Preview
 @Composable
 private fun MoreSettingsSubmenuDisabledOpenPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         Column(

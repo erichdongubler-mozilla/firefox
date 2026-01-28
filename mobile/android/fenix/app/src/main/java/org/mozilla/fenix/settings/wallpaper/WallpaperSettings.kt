@@ -52,8 +52,8 @@ import mozilla.components.compose.base.modifier.debouncedClickable
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.ClickableSubstringLink
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import org.mozilla.fenix.wallpapers.Wallpaper
 
 /**
@@ -317,7 +317,7 @@ private fun WallpaperThumbnailItem(
 @Composable
 @Suppress("MagicNumber")
 private fun WallpaperThumbnailsPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     val downloadedCollection: List<Wallpaper> = List(size = 5) { index ->
         Wallpaper(

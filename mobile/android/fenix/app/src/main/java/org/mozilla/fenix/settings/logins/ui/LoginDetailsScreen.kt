@@ -55,8 +55,8 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 @Composable
@@ -401,7 +401,7 @@ private fun createStore() = LoginsStore(
 @FlexibleWindowPreview
 @Composable
 private fun LoginDetailsScreenPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         LoginDetailsScreen(store = createStore())
@@ -411,7 +411,7 @@ private fun LoginDetailsScreenPreview(
 @Preview
 @Composable
 private fun LoginDeletionDialogPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         LoginDeletionDialog(

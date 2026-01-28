@@ -42,8 +42,8 @@ import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.onboarding.store.PrivacyPreferencesAction
 import org.mozilla.fenix.onboarding.store.PrivacyPreferencesStore
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Dialog to manage privacy preferences during onboarding.
@@ -260,7 +260,7 @@ private fun SwitchWithLabel(
 @FlexibleWindowPreview
 @Composable
 private fun ManagePrivacyPreferencesDialogPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         ManagePrivacyPreferencesDialog(PrivacyPreferencesStore(), {}, {}, {})

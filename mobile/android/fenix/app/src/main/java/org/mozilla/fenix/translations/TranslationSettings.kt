@@ -30,8 +30,8 @@ import org.mozilla.fenix.compose.InfoType
 import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Translation Settings Fragment.
@@ -202,7 +202,7 @@ internal fun getTranslationSettingsSwitchList(): List<TranslationSwitchItem> {
 @Preview
 @Composable
 private fun TranslationSettingsPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         TranslationSettings(

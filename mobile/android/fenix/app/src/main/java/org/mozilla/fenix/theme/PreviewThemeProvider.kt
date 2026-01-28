@@ -14,7 +14,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
  * @Preview
  * @Composable
  * private fun PreviewText(
- *     @PreviewParameter(ThemeProvider::class) theme: Theme,
+ *     @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
  * ) = FirefoxTheme(theme) {
  *     Surface {
  *         Text("hello")
@@ -22,7 +22,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
  * }
  * ```
  */
-class ThemeProvider : PreviewParameterProvider<Theme> {
+class PreviewThemeProvider : PreviewParameterProvider<Theme> {
     override val values = Theme.entries.asSequence()
 }
 

@@ -36,8 +36,8 @@ import org.mozilla.fenix.compose.list.RadioButtonListItem
 import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -235,7 +235,7 @@ private fun List<DebugRegionEnabledState>.updateRegionEnabled(regionToUpdate: De
 @Preview
 @Composable
 private fun AddressesScreenPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         AddressesTools(

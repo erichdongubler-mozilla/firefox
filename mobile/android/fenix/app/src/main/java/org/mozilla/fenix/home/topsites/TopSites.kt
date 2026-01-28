@@ -63,8 +63,8 @@ import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.home.topsites.TopSitesTestTag.TOP_SITE_CARD_FAVICON
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import org.mozilla.fenix.wallpapers.WallpaperState
 import mozilla.components.ui.icons.R as iconsR
 
@@ -502,7 +502,7 @@ internal fun getMenuItems(
 @FlexibleWindowPreview
 @Composable
 private fun TopSitesPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         Surface {
