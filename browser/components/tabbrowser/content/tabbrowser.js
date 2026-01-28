@@ -7605,7 +7605,8 @@
       return (
         (aBrowser == this.selectedBrowser && !document.hidden) ||
         this._printPreviewBrowsers.has(aBrowser) ||
-        this.PictureInPicture.isOriginatingBrowser(aBrowser)
+        this.PictureInPicture.isOriginatingBrowser(aBrowser) ||
+        this.splitViewBrowsers.includes(aBrowser)
       );
     }
 
