@@ -305,7 +305,6 @@
   MACRO_(loc, "loc")                                                           \
   MACRO_(locale, "locale")                                                     \
   MACRO_(localeMatcher, "localeMatcher")                                       \
-  MACRO_(lower, "lower")                                                       \
   MACRO_(many, "many")                                                         \
   MACRO_(MapConstructorInit, "MapConstructorInit")                             \
   MACRO_(MapIteratorNext, "MapIteratorNext")                                   \
