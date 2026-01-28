@@ -94,6 +94,10 @@ class UnicodeExtensionKeyword final {
     JS::HandleVector<UnicodeExtensionKeyword> keywords);
 
 JS::UniqueChars FormatLocale(
+    JSContext* cx, JS::Handle<JSLinearString*> locale,
+    JS::HandleVector<UnicodeExtensionKeyword> keywords);
+
+JS::UniqueChars FormatLocale(
     JSContext* cx, JS::Handle<JSObject*> internals,
     JS::HandleVector<UnicodeExtensionKeyword> keywords);
 

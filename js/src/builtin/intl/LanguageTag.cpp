@@ -242,23 +242,11 @@ JS::Result<JSLinearString*> js::intl::ParseStandaloneISO639LanguageTag(
 }
 
 JS::UniqueChars js::intl::FormatLocale(
-    JSContext* cx, JS::Handle<JSObject*> internals,
+    JSContext* cx, JS::Handle<JSLinearString*> locale,
     JS::HandleVector<UnicodeExtensionKeyword> keywords) {
-  RootedValue value(cx);
-  if (!GetProperty(cx, internals, internals, cx->names().locale, &value)) {
-    return nullptr;
-  }
-
   mozilla::intl::Locale tag;
-  {
-    Rooted<JSLinearString*> locale(cx, value.toString()->ensureLinear(cx));
-    if (!locale) {
-      return nullptr;
-    }
-
-    if (!ParseLocale(cx, locale, tag)) {
-      return nullptr;
-    }
+  if (!ParseLocale(cx, locale, tag)) {
+    return nullptr;
   }
 
   // |ApplyUnicodeExtensionToTag| applies the new keywords to the front of
@@ -275,6 +263,22 @@ JS::UniqueChars js::intl::FormatLocale(
     return nullptr;
   }
   return buffer.extractStringZ();
+}
+
+JS::UniqueChars js::intl::FormatLocale(
+    JSContext* cx, JS::Handle<JSObject*> internals,
+    JS::HandleVector<UnicodeExtensionKeyword> keywords) {
+  RootedValue value(cx);
+  if (!GetProperty(cx, internals, internals, cx->names().locale, &value)) {
+    return nullptr;
+  }
+
+  Rooted<JSLinearString*> locale(cx, value.toString()->ensureLinear(cx));
+  if (!locale) {
+    return nullptr;
+  }
+
+  return FormatLocale(cx, locale, keywords);
 }
 
 void js::intl::UnicodeExtensionKeyword::trace(JSTracer* trc) {
