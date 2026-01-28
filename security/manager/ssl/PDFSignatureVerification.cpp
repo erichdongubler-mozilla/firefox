@@ -121,6 +121,32 @@ void VerifySignature(
   }
 }
 
+static mozilla::pkix::Result BuildCertChainForDocumentSigningKeyUsage(
+    TrustDomain& trustDomain, Input certDER, Time time) {
+  mozilla::pkix::Result rv = BuildCertChain(
+      trustDomain, certDER, time, EndEntityOrCA::MustBeEndEntity,
+      KeyUsage::digitalSignature, KeyPurposeId::id_kp_documentSigning,
+      CertPolicyId::anyPolicy, nullptr /*stapledOCSPResponse*/);
+  if (rv == mozilla::pkix::Result::ERROR_INADEQUATE_CERT_TYPE) {
+    rv = BuildCertChain(
+        trustDomain, certDER, time, EndEntityOrCA::MustBeEndEntity,
+        KeyUsage::digitalSignature, KeyPurposeId::id_kp_documentSigningAdobe,
+        CertPolicyId::anyPolicy, nullptr /*stapledOCSPResponse*/);
+    if (rv == mozilla::pkix::Result::ERROR_INADEQUATE_CERT_TYPE) {
+      rv = BuildCertChain(
+          trustDomain, certDER, time, EndEntityOrCA::MustBeEndEntity,
+          KeyUsage::digitalSignature,
+          KeyPurposeId::id_kp_documentSigningMicrosoft, CertPolicyId::anyPolicy,
+          nullptr /*stapledOCSPResponse*/);
+      if (rv != Success) {
+        rv = mozilla::pkix::Result::ERROR_INADEQUATE_CERT_TYPE;
+      }
+    }
+  }
+
+  return rv;
+}
+
 nsresult VerifyCertificate() { return NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED; }
 
 class PDFVerificationResultImpl final : public nsIPDFVerificationResult {
