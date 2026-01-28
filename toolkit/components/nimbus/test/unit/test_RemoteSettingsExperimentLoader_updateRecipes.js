@@ -406,8 +406,10 @@ add_task(async function test_updateRecipes_simpleFeatureInvalidAfterUpdate() {
     additionalProperties: true,
   };
 
-  const { sandbox, loader, manager, initExperimentAPI, cleanup } =
-    await setupTest({ init: false, experiments: [recipe] });
+  const { sandbox, loader, manager, cleanup } = await setupTest({
+    init: false,
+    experiments: [recipe],
+  });
 
   sandbox.spy(loader, "updateRecipes");
   sandbox.spy(EnrollmentsContext.prototype, "_generateVariablesOnlySchema");
@@ -416,7 +418,7 @@ add_task(async function test_updateRecipes_simpleFeatureInvalidAfterUpdate() {
   sandbox.spy(manager, "enroll");
   sandbox.spy(manager, "_unenroll");
 
-  await initExperimentAPI();
+  await ExperimentAPI.init();
 
   Assert.ok(
     manager.onRecipe.calledOnceWith(recipe, "rs-loader", {
@@ -589,14 +591,14 @@ add_task(async function test_updateRecipes_validationTelemetry() {
   for (const { recipe, reason, events, callCount } of TEST_CASES) {
     info(`Testing validation failed telemetry for reason = "${reason}" ...`);
 
-    const { sandbox, initExperimentAPI, cleanup } = await setupTest({
+    const { sandbox, cleanup } = await setupTest({
       init: false,
       experiments: [recipe],
     });
 
     sandbox.spy(NimbusTelemetry, "recordValidationFailure");
 
-    await initExperimentAPI();
+    await ExperimentAPI.init();
 
     Assert.equal(
       NimbusTelemetry.recordValidationFailure.callCount,
@@ -667,7 +669,7 @@ add_task(async function test_updateRecipes_validationDisabled() {
   });
 
   for (const recipe of [invalidRecipe, invalidBranch, invalidFeature]) {
-    const { sandbox, manager, initExperimentAPI, cleanup } = await setupTest({
+    const { sandbox, manager, cleanup } = await setupTest({
       init: false,
       experiments: [recipe],
     });
@@ -676,7 +678,7 @@ add_task(async function test_updateRecipes_validationDisabled() {
     sandbox.spy(manager, "onRecipe");
     sandbox.spy(NimbusTelemetry, "recordValidationFailure");
 
-    await initExperimentAPI();
+    await ExperimentAPI.init();
 
     Assert.ok(
       NimbusTelemetry.recordValidationFailure.notCalled,
@@ -1549,7 +1551,7 @@ add_task(async function test_updateRecipes_secure() {
   ] of TEST_CASES.entries()) {
     info(`Running test ${idx}`);
 
-    const { sandbox, manager, initExperimentAPI, cleanup } = await setupTest({
+    const { sandbox, manager, cleanup } = await setupTest({
       init: false,
       experiments,
       secureExperiments,
@@ -1557,7 +1559,7 @@ add_task(async function test_updateRecipes_secure() {
 
     sandbox.stub(manager, "onRecipe");
 
-    await initExperimentAPI();
+    await ExperimentAPI.init();
 
     const enrolledSlugs = manager.onRecipe
       .getCalls()

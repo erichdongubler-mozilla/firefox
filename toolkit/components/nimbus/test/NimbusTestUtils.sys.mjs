@@ -1203,9 +1203,6 @@ export const NimbusTestUtils = {
    *           An ExperimentManager instance that will validate all enrollments
    *           added to its store.
    *
-   * @property {(function(): void)?} initExperimentAPI
-   *           A function that will complete ExperimentAPI initialization.
-   *
    * @property {function(): Promise<void>} cleanup
    *           A cleanup function that should be called at the end of the test.
    */
@@ -1215,8 +1212,8 @@ export const NimbusTestUtils = {
    * @param {boolean?} options.init
    *        Initialize the Experiment API.
    *
-   *        If false, the returned context will return an `initExperimentAPI` member that
-   *        will complete the initialization.
+   *        If false, the caller must call {@link ExperimentAPI.init} to
+   *        complete initialization.
    *
    * @param {string?} options.storePath
    *        An optional path to an existing ExperimentStore to use for the
@@ -1339,12 +1336,8 @@ export const NimbusTestUtils = {
       },
     };
 
-    const initExperimentAPI = () => ExperimentAPI.init();
-
     if (init) {
-      await initExperimentAPI();
-    } else {
-      ctx.initExperimentAPI = initExperimentAPI;
+      await ExperimentAPI.init();
     }
 
     return ctx;
