@@ -265,8 +265,6 @@ function initializeIntlObject(obj, type, lazyData) {
       (type === "ListFormat" && intl_GuardToListFormat(obj) !== null) ||
       (type === "NumberFormat" && intl_GuardToNumberFormat(obj) !== null) ||
       (type === "PluralRules" && intl_GuardToPluralRules(obj) !== null) ||
-      (type === "RelativeTimeFormat" &&
-        intl_GuardToRelativeTimeFormat(obj) !== null) ||
       (type === "Segmenter" && intl_GuardToSegmenter(obj) !== null),
     "type must match the object's class"
   );
@@ -283,7 +281,6 @@ function initializeIntlObject(obj, type, lazyData) {
   // - ListFormat
   // - NumberFormat
   // - PluralRules
-  // - RelativeTimeFormat
   // - Segmenter
   //
   // The .lazyData property stores information needed to compute -- without
@@ -354,7 +351,6 @@ function getIntlObjectInternals(obj) {
       intl_GuardToListFormat(obj) !== null ||
       intl_GuardToNumberFormat(obj) !== null ||
       intl_GuardToPluralRules(obj) !== null ||
-      intl_GuardToRelativeTimeFormat(obj) !== null ||
       intl_GuardToSegmenter(obj) !== null,
     "getIntlObjectInternals called with non-Intl object"
   );
@@ -377,8 +373,6 @@ function getIntlObjectInternals(obj) {
         intl_GuardToNumberFormat(obj) !== null) ||
       (internals.type === "PluralRules" &&
         intl_GuardToPluralRules(obj) !== null) ||
-      (internals.type === "RelativeTimeFormat" &&
-        intl_GuardToRelativeTimeFormat(obj) !== null) ||
       (internals.type === "Segmenter" &&
         intl_GuardToSegmenter(obj) !== null),
     "type must match the object's class"
@@ -418,8 +412,6 @@ function getInternals(obj) {
     internalProps = resolveNumberFormatInternals(internals.lazyData);
   } else if (type === "PluralRules") {
     internalProps = resolvePluralRulesInternals(internals.lazyData);
-  } else if (type === "RelativeTimeFormat") {
-    internalProps = resolveRelativeTimeFormatInternals(internals.lazyData);
   } else {
     assert(type === "Segmenter", "unexpected Intl type");
     internalProps = resolveSegmenterInternals(internals.lazyData);
