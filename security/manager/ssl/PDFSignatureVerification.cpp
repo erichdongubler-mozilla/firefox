@@ -7,6 +7,7 @@
 #include "nsNSSCertificate.h"
 #include "AppSignatureVerification.h"
 #include "CryptoTask.h"
+#include "PDFTrustDomain.h"
 
 #include "mozpkix/pkix.h"
 #include "mozpkix/pkixnss.h"
@@ -52,7 +53,8 @@ struct VerifySignatureResult {
 
 void VerifySignature(
     NSSCMSSignedData* signedData, const nsTArray<nsTArray<uint8_t>>& data,
-    /* out */ nsTArray<VerifySignatureResult>& signatureVerificationResults) {
+    /* out */ nsTArray<VerifySignatureResult>& signatureVerificationResults,
+    /* out */ nsTArray<Span<const uint8_t>>& collectedCerts) {
   nsTArray<std::tuple<NSSCMSSignerInfo*, SECOidTag>> signerInfos;
   // Returns a prioritized list of signerInfos.
   GetAllSignerInfosForSupportedDigestAlgorithms(signedData, signerInfos);
@@ -66,7 +68,6 @@ void VerifySignature(
     return;
   }
 
-  nsTArray<Span<const uint8_t>> collectedCerts;
   CollectCertificates(signedData, collectedCerts);
   if (collectedCerts.Length() == 0) {
     signatureVerificationResults.AppendElement(
@@ -116,7 +117,7 @@ void VerifySignature(
           TimeFromEpochInSeconds((uint64_t)(signingTime / 1000000))));
     } else {
       signatureVerificationResults.AppendElement(
-          VerifySignatureResult(rv, signerCertSpan, defaultTime));
+          VerifySignatureResult(rv, signerCertSpan, Now()));
     }
   }
 }
@@ -147,7 +148,22 @@ static mozilla::pkix::Result BuildCertChainForDocumentSigningKeyUsage(
   return rv;
 }
 
-nsresult VerifyCertificate() { return NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED; }
+nsresult VerifyCertificate(PDFTrustDomain& trustDomain,
+                           Span<const uint8_t> signerCert, Time time) {
+  Input certDER;
+  mozilla::pkix::Result result =
+      certDER.Init(signerCert.Elements(), signerCert.Length());
+  if (result != Success) {
+    return mozilla::psm::GetXPCOMFromNSSError(MapResultToPRErrorCode(result));
+  }
+
+  result = BuildCertChainForDocumentSigningKeyUsage(trustDomain, certDER, time);
+  if (result != Success) {
+    return mozilla::psm::GetXPCOMFromNSSError(MapResultToPRErrorCode(result));
+  }
+
+  return NS_OK;
+}
 
 class PDFVerificationResultImpl final : public nsIPDFVerificationResult {
  public:
@@ -228,7 +244,11 @@ void VerifyPKCS7Object(
   }
 
   nsTArray<VerifySignatureResult> signatureVerificationResults;
-  VerifySignature(signedData, data, signatureVerificationResults);
+  nsTArray<Span<const uint8_t>> collectedCerts;
+  VerifySignature(signedData, data, signatureVerificationResults,
+                  collectedCerts);
+
+  PDFTrustDomain trustDomain(std::move(collectedCerts));
 
   for (auto& result : signatureVerificationResults) {
     if (result.signatureVerificationResult != NS_OK) {
@@ -236,13 +256,14 @@ void VerifyPKCS7Object(
           result.signatureVerificationResult,
           NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED, nullptr));
     } else {
-      // The next patch will contain the certificate verification for each
-      // signerCert
+      nsresult certChainVerifResult =
+          VerifyCertificate(trustDomain, result.signerCert, result.time);
+
       nsCOMPtr<nsIX509Cert> cert(
           new nsNSSCertificate(std::move(result.signerCert)));
+
       pdfVerifResults.AppendElement(new PDFVerificationResultImpl(
-          result.signatureVerificationResult,
-          NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED, cert));
+          result.signatureVerificationResult, certChainVerifResult, cert));
     }
   }
 }

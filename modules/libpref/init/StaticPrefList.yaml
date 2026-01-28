@@ -17521,6 +17521,14 @@
   value: true
   mirror: always
 
+
+# Whether or not to enable the test trust anchor list when verifying PDF signatures
+- name: security.pdf_signature_verification.enable_test_trust_anchors
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+  rust: true
+
 # If true, attempt to load the osclientcerts PKCS#11 module at startup on a
 # background thread. This module allows Firefox to use client certificates
 # stored in OS certificate storage. Currently only available for Windows and
