@@ -476,7 +476,30 @@ tasks:
                                           - 'assume:repo:${repoUrl[8:]}:action:${action.action_perm}'
                               dependencies: []
                               requires: all-completed
-                              priority: {$if: 'eventType == "action"', then: "very-low", else: "lowest"}
+                              priority:
+                                  # There are (typically) 3 types of decision tasks that can run:
+                                  # cron, action, and on-push. We always treat cron as highest priority
+                                  # because it schedules things like nightlies, releases, etc. and are
+                                  # fairly few and far between.
+                                  #
+                                  # After that comes on-push decision tasks. These are in the critical
+                                  # path of all tasks the push will run, and are critical to run quickly
+                                  # to get quick results.
+                                  #
+                                  # Finally, action tasks are used to add tasks to a push, rerun tasks,
+                                  # start release automation, and other things. They are sometimes
+                                  # very numerous, and are treated as lowest priority to avoid interfering
+                                  # with fast scheduling of regular push tasks.
+                                  #
+                                  # SCM levels all use different workerTypes, so there is no need for priority
+                                  # between levels; "low" is the highest priority available at all levels, and
+                                  # nothing runs at any higher priority on these workerTypes.
+                                  $if: "tasks_for == 'cron'"
+                                  then: low
+                                  else:
+                                      $if: "tasks_for == 'github-push'"
+                                      then: very-low
+                                      else: lowest  # tasks_for == 'action'
                               retries: 5
 
                               payload:
