@@ -251,6 +251,7 @@ export const SpecialMessageActions = {
     // Array of prefs that are allowed to be edited by SET_PREF
     const allowedPrefs = [
       "browser.aboutwelcome.didSeeFinalScreen",
+      "browser.aiwindow.enabled",
       "browser.aiwindow.firstrun.hasCompleted",
       "browser.aiwindow.firstrun.modelChoice",
       "browser.crashReports.unsubmittedCheck.autoSubmit2",
