@@ -26,14 +26,6 @@ ChromeUtils.defineLazyGetter(lazy, "log", function () {
   });
 });
 
-// Temporary gating while feature is in development
-// To be set to true by default before MVP launch
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "AIWindowRequireSignIn",
-  "browser.aiwindow.requireSignIn",
-  false
-);
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "hasAIWindowToSConsent",
@@ -66,14 +58,7 @@ export const AIWindowAccountAuth = {
     }
   },
 
-  requiresSignIn() {
-    return lazy.AIWindowRequireSignIn;
-  },
-
   async canAccessAIWindow() {
-    if (!this.requiresSignIn()) {
-      return true;
-    }
     if (!this.hasToSConsent) {
       return false;
     }

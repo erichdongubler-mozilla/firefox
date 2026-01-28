@@ -36,6 +36,8 @@ add_task(async function test_switch_to_ai_window() {
     set: [["browser.aiwindow.enabled", true]],
   });
 
+  const restoreSignIn = skipSignIn();
+
   if (document.documentElement.hasAttribute("ai-window")) {
     document.documentElement.removeAttribute("ai-window");
   }
@@ -71,6 +73,7 @@ add_task(async function test_switch_to_ai_window() {
     "Panel should close after switching"
   );
 
+  restoreSignIn();
   await SpecialPowers.popPrefEnv();
 });
 
