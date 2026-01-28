@@ -52,9 +52,6 @@ UNCOMMON_TRY_TASK_LABELS = [
     # Windows tasks
     r"windows11-64-24h2-hw-ref",
     r"windows10-aarch64-qr",
-    # Linux tasks
-    r"linux-",  # hide all linux32 tasks by default - bug 1599197
-    r"linux1804-32",  # hide linux32 tests - bug 1599197
     # Test tasks
     r"web-platform-tests.*backlog",  # hide wpt jobs that are not implemented yet - bug 1572820
     r"-ccov",
