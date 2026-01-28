@@ -3689,26 +3689,6 @@ telemetry:
     record_in_processes:
       - 'main'
 
-  event_counts:
-    bug_numbers:
-      - 1440673
-    description: >
-      The counts of events recorded in the process, category, method, and
-      object of the key, even if event recording for the category was not
-      enabled.
-    expires: never
-    kind: uint
-    keyed: true
-    notification_emails:
-      - telemetry-client-dev@mozilla.com
-      - chutten@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-      - 'fennec'
-    record_in_processes:
-      - 'all'
-
   data_upload_optin:
     bug_numbers:
       - 1445921
