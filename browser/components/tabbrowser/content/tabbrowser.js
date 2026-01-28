@@ -6844,6 +6844,10 @@
         moveBefore = true;
       }
 
+      if (targetElement?.splitview) {
+        targetElement = targetElement.splitview;
+      }
+
       let getContainer = () =>
         element.pinned
           ? this.tabContainer.pinnedTabsContainer
