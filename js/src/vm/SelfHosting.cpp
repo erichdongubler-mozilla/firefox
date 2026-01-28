@@ -25,7 +25,6 @@
 #include "builtin/BigInt.h"
 #ifdef JS_HAS_INTL_API
 #  include "builtin/intl/DateTimeFormat.h"
-#  include "builtin/intl/DurationFormat.h"
 #  include "builtin/intl/IntlObject.h"
 #  include "builtin/intl/Locale.h"
 #  include "builtin/intl/NumberFormat.h"
@@ -1845,8 +1844,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("intl_BestAvailableLocale", intl_BestAvailableLocale, 3, 0),
     JS_FN("intl_CallDateTimeFormatMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<DateTimeFormatObject>>, 2, 0),
-    JS_FN("intl_CallDurationFormatMethodIfWrapped",
-          CallNonGenericSelfhostedMethod<Is<DurationFormatObject>>, 2, 0),
     JS_FN("intl_CallNumberFormatMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<NumberFormatObject>>, 2, 0),
     JS_FN("intl_CallPluralRulesMethodIfWrapped",
@@ -1868,9 +1865,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_INLINABLE_FN("intl_GuardToDateTimeFormat",
                     intrinsic_GuardToBuiltin<DateTimeFormatObject>, 1, 0,
                     IntlGuardToDateTimeFormat),
-    JS_INLINABLE_FN("intl_GuardToDurationFormat",
-                    intrinsic_GuardToBuiltin<DurationFormatObject>, 1, 0,
-                    IntlGuardToDurationFormat),
     JS_INLINABLE_FN("intl_GuardToNumberFormat",
                     intrinsic_GuardToBuiltin<NumberFormatObject>, 1, 0,
                     IntlGuardToNumberFormat),

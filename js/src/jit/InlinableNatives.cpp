@@ -8,7 +8,6 @@
 
 #ifdef JS_HAS_INTL_API
 #  include "builtin/intl/DateTimeFormat.h"
-#  include "builtin/intl/DurationFormat.h"
 #  include "builtin/intl/NumberFormat.h"
 #  include "builtin/intl/PluralRules.h"
 #  include "builtin/intl/Segmenter.h"
@@ -42,8 +41,6 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
     // Intl natives.
     case InlinableNative::IntlGuardToDateTimeFormat:
       return &DateTimeFormatObject::class_;
-    case InlinableNative::IntlGuardToDurationFormat:
-      return &DurationFormatObject::class_;
     case InlinableNative::IntlGuardToNumberFormat:
       return &NumberFormatObject::class_;
     case InlinableNative::IntlGuardToPluralRules:
@@ -161,7 +158,6 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
       return false;
 
     case InlinableNative::IntlGuardToDateTimeFormat:
-    case InlinableNative::IntlGuardToDurationFormat:
     case InlinableNative::IntlGuardToNumberFormat:
     case InlinableNative::IntlGuardToPluralRules:
     case InlinableNative::IntlGuardToSegments:

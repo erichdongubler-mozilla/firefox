@@ -259,7 +259,6 @@ function initializeIntlObject(obj, type, lazyData) {
   assert(IsObject(obj), "Non-object passed to initializeIntlObject");
   assert(
     (type === "DateTimeFormat" && intl_GuardToDateTimeFormat(obj) !== null) ||
-      (type === "DurationFormat" && intl_GuardToDurationFormat(obj) !== null) ||
       (type === "NumberFormat" && intl_GuardToNumberFormat(obj) !== null) ||
       (type === "PluralRules" && intl_GuardToPluralRules(obj) !== null),
     "type must match the object's class"
@@ -271,7 +270,6 @@ function initializeIntlObject(obj, type, lazyData) {
   // The .type property indicates the type of Intl object that |obj| is. It
   // must be one of:
   // - DateTimeFormat
-  // - DurationFormat
   // - NumberFormat
   // - PluralRules
   //
@@ -337,7 +335,6 @@ function getIntlObjectInternals(obj) {
   assert(IsObject(obj), "getIntlObjectInternals called with non-Object");
   assert(
     intl_GuardToDateTimeFormat(obj) !== null ||
-      intl_GuardToDurationFormat(obj) !== null ||
       intl_GuardToNumberFormat(obj) !== null ||
       intl_GuardToPluralRules(obj) !== null,
     "getIntlObjectInternals called with non-Intl object"
@@ -350,8 +347,6 @@ function getIntlObjectInternals(obj) {
   assert(
     (internals.type === "DateTimeFormat" &&
         intl_GuardToDateTimeFormat(obj) !== null) ||
-      (internals.type === "DurationFormat" &&
-        intl_GuardToDurationFormat(obj) !== null) ||
       (internals.type === "NumberFormat" &&
         intl_GuardToNumberFormat(obj) !== null) ||
       (internals.type === "PluralRules" &&
@@ -381,8 +376,6 @@ function getInternals(obj) {
   var type = internals.type;
   if (type === "DateTimeFormat") {
     internalProps = resolveDateTimeFormatInternals(internals.lazyData);
-  } else if (type === "DurationFormat") {
-    internalProps = resolveDurationFormatInternals(internals.lazyData);
   } else if (type === "NumberFormat") {
     internalProps = resolveNumberFormatInternals(internals.lazyData);
   } else if (type === "PluralRules") {
