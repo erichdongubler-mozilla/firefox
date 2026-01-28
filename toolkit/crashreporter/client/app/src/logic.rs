@@ -6,7 +6,7 @@
 
 use crate::std::{
     cell::RefCell,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering::Relaxed},
         Arc, Mutex, Weak,
@@ -44,6 +44,24 @@ fn modify_extra_for_report(extra: &mut serde_json::Value) {
 
     extra["SubmittedFrom"] = "Client".into();
     extra["Throttleable"] = "1".into();
+}
+
+pub fn sha256_hash_file(path: &Path) -> crate::std::io::Result<String> {
+    let hash = {
+        use sha2::{Digest, Sha256};
+        let mut file = std::fs::File::open(path)?;
+        let mut hasher = Sha256::new();
+        std::io::copy(&mut file, &mut hasher)?;
+        hasher.finalize()
+    };
+
+    let mut s = String::with_capacity(hash.len() * 2);
+    for byte in hash {
+        use crate::std::fmt::Write;
+        write!(s, "{:02x}", byte).unwrap();
+    }
+
+    Ok(s)
 }
 
 impl ReportCrash {
@@ -87,10 +105,7 @@ impl ReportCrash {
     pub fn run(mut self) -> anyhow::Result<bool> {
         self.memtest_according_to_settings();
         self.set_log_file();
-        let hash = self.compute_minidump_hash().map(Some).unwrap_or_else(|e| {
-            log::warn!("failed to compute minidump hash: {e:#}");
-            None
-        });
+        let hash = self.compute_minidump_hash();
         let ping_uuid = self.send_crash_ping(hash.as_deref());
         if let Err(e) = self.update_events_file(hash.as_deref(), ping_uuid) {
             log::warn!("failed to update events file: {e:#}");
@@ -116,23 +131,19 @@ impl ReportCrash {
         }
     }
 
-    /// Compute the SHA256 hash of the minidump file contents, and return it as a hex string.
-    fn compute_minidump_hash(&self) -> anyhow::Result<String> {
-        let hash = {
-            use sha2::{Digest, Sha256};
-            let mut dump_file = std::fs::File::open(self.config.dump_file())?;
-            let mut hasher = Sha256::new();
-            std::io::copy(&mut dump_file, &mut hasher)?;
-            hasher.finalize()
-        };
-
-        let mut s = String::with_capacity(hash.len() * 2);
-        for byte in hash {
-            use crate::std::fmt::Write;
-            write!(s, "{:02x}", byte).unwrap();
+    /// Compute the SHA256 hash of the minidump file contents, set it in the extra file, and return
+    /// it as a hex string.
+    fn compute_minidump_hash(&mut self) -> Option<String> {
+        match sha256_hash_file(self.config.dump_file()) {
+            Ok(hash) => {
+                self.extra["MinidumpSha256Hash"] = hash.clone().into();
+                Some(hash)
+            }
+            Err(e) => {
+                log::warn!("failed to compute minidump hash: {e:#}");
+                None
+            }
         }
-
-        Ok(s)
     }
 
     /// Send crash pings to legacy telemetry and Glean.
@@ -140,11 +151,14 @@ impl ReportCrash {
     /// Returns the crash ping uuid used in legacy telemetry.
     fn send_crash_ping(&self, minidump_hash: Option<&str>) -> Option<Uuid> {
         net::ping::CrashPing {
-            crash_id: self.config.local_dump_id().as_ref(),
             extra: &self.extra,
-            ping_dir: self.config.ping_dir.as_deref(),
-            minidump_hash,
-            pingsender_path: crate::config::installation_program_path("pingsender").as_ref(),
+            reason: Some("crash"),
+            legacy_telemetry: Some(net::ping::LegacyTelemetryCrashPing {
+                crash_id: self.config.local_dump_id().as_ref(),
+                ping_dir: self.config.ping_dir.as_deref(),
+                minidump_hash,
+                pingsender_path: crate::config::installation_program_path("pingsender").as_ref(),
+            }),
         }
         .send()
     }

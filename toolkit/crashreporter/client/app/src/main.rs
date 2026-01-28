@@ -33,6 +33,8 @@
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
 use crate::std::sync::Arc;
+#[cfg(not(test))]
+use anyhow::Context;
 use config::Config;
 
 // A few macros are defined here to allow use in all submodules via textual scope lookup.
@@ -264,7 +266,7 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
         //
         // When we are testing, glean will already be initialized (if needed).
         #[cfg(not(test))]
-        glean::init(&config);
+        let _glean_handle = glean::init(&config).context("failed to acquire Glean store")?;
 
         logic::ReportCrash::new(config.clone(), extra)?.run()
     }

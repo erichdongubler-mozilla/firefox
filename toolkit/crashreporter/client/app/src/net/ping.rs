@@ -2,19 +2,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//! Crash pings.
+//! Crash pings sent using Glean.
 
 use crate::std;
+use crate::std::mock;
 use crate::std::path::Path;
 use anyhow::Context;
 use uuid::Uuid;
 
-mod glean;
 mod legacy_telemetry;
 
 pub struct CrashPing<'a> {
-    pub crash_id: &'a str,
     pub extra: &'a serde_json::Value,
+    pub reason: Option<&'a str>,
+    pub legacy_telemetry: Option<LegacyTelemetryCrashPing<'a>>,
+}
+
+pub struct LegacyTelemetryCrashPing<'a> {
+    pub crash_id: &'a str,
     pub ping_dir: Option<&'a Path>,
     pub minidump_hash: Option<&'a str>,
     pub pingsender_path: &'a Path,
@@ -30,7 +35,7 @@ impl CrashPing<'_> {
         // Glean ping tests have to be run serially (because the glean interface is a global), but
         // we can run tests that are uninterested in glean pings in parallel by disabling the pings
         // here.
-        if std::mock::hook(true, "enable_glean_pings") {
+        if mock::hook(true, "enable_glean_pings") {
             if let Err(e) = self.send_glean() {
                 log::error!("failed to send glean ping: {e:#}");
             }
@@ -46,19 +51,26 @@ impl CrashPing<'_> {
     }
 
     fn send_glean(&self) -> anyhow::Result<()> {
-        glean::set_crash_ping_metrics(self.extra, self.minidump_hash)?;
-        log::debug!("submitting Glean crash ping");
-        crate::glean::crash.submit(Some("crash"));
-        Ok(())
+        crashping::send(&self.extra, self.reason)
     }
 
     fn send_legacy(&self, id: &Uuid) -> anyhow::Result<bool> {
-        let Some(ping_dir) = self.ping_dir else {
+        let Some(LegacyTelemetryCrashPing {
+            crash_id,
+            ping_dir,
+            minidump_hash,
+            pingsender_path,
+        }) = self.legacy_telemetry
+        else {
+            return Ok(false);
+        };
+
+        let Some(ping_dir) = ping_dir else {
             log::warn!("not sending legacy crash ping because no ping directory configured");
             return Ok(false);
         };
 
-        let ping = legacy_telemetry::Ping::crash(id, self.extra, self.crash_id, self.minidump_hash)
+        let ping = legacy_telemetry::Ping::crash(id, self.extra, crash_id, minidump_hash)
             .context("failed to create telemetry crash ping")?;
 
         let submission_url = ping
@@ -76,14 +88,14 @@ impl CrashPing<'_> {
 
         serde_json::to_writer(file, &ping).context("failed to serialize telemetry crash ping")?;
 
-        crate::process::background_command(self.pingsender_path)
+        crate::process::background_command(pingsender_path)
             .arg(submission_url)
             .arg(target_file)
             .spawn()
             .with_context(|| {
                 format!(
                     "failed to launch pingsender process at {}",
-                    self.pingsender_path.display()
+                    pingsender_path.display()
                 )
             })?;
 
