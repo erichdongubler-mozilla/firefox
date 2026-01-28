@@ -2665,7 +2665,6 @@ dependencies = [
  "osclientcerts",
  "oxilangtag",
  "oxilangtag-ffi",
- "pdf-trust-anchors",
  "prefs_parser",
  "processtools",
  "profiler_helper",
@@ -5394,15 +5393,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pdf-trust-anchors"
-version = "0.1.0"
-dependencies = [
- "static_prefs",
- "thin-vec",
- "trust-anchor-build-util",
-]
-
-[[package]]
 name = "pe-unwind-info"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5824,9 +5814,10 @@ dependencies = [
 name = "qwac-trust-anchors"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
+ "rsclientcerts-util",
  "static_prefs",
  "thin-vec",
- "trust-anchor-build-util",
 ]
 
 [[package]]
@@ -7277,14 +7268,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "803966e5a8397a70d3d8111afa1597ba8381346d7de4720e9f539471d371a1a3"
 dependencies = [
  "cache-padded",
-]
-
-[[package]]
-name = "trust-anchor-build-util"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "rsclientcerts-util",
 ]
 
 [[package]]
