@@ -216,9 +216,6 @@ function Intl_ListFormat_format(list) {
     return stringList.length === 0 ? "" : stringList[0];
   }
 
-  // Ensure the ListFormat internals are resolved.
-  getListFormatInternals(listFormat);
-
   // Step 5.
   return intl_FormatList(listFormat, stringList, /* formatToParts = */ false);
 }
@@ -252,9 +249,6 @@ function Intl_ListFormat_formatToParts(list) {
       ? []
       : [{ type: "element", value: stringList[0] }];
   }
-
-  // Ensure the ListFormat internals are resolved.
-  getListFormatInternals(listFormat);
 
   // Step 5.
   return intl_FormatList(listFormat, stringList, /* formatToParts = */ true);

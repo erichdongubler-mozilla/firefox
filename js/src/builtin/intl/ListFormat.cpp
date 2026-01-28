@@ -15,11 +15,13 @@
 #include "builtin/intl/CommonFunctions.h"
 #include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/LocaleNegotiation.h"
+#include "builtin/intl/ParameterNegotiation.h"
+#include "builtin/intl/UsingEnum.h"
 #include "gc/GCContext.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
 #include "vm/JSContext.h"
-#include "vm/PlainObject.h"  // js::PlainObject
+#include "vm/PlainObject.h"
 #include "vm/StringType.h"
 
 #include "vm/JSObject-inl.h"
@@ -55,6 +57,8 @@ const JSClass& ListFormatObject::protoClass_ = PlainObject::class_;
 static bool listFormat_supportedLocalesOf(JSContext* cx, unsigned argc,
                                           Value* vp);
 
+static bool listFormat_resolvedOptions(JSContext* cx, unsigned argc, Value* vp);
+
 static bool listFormat_toSource(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   args.rval().setString(cx->names().ListFormat);
@@ -67,8 +71,7 @@ static const JSFunctionSpec listFormat_static_methods[] = {
 };
 
 static const JSFunctionSpec listFormat_methods[] = {
-    JS_SELF_HOSTED_FN("resolvedOptions", "Intl_ListFormat_resolvedOptions", 0,
-                      0),
+    JS_FN("resolvedOptions", listFormat_resolvedOptions, 0, 0),
     JS_SELF_HOSTED_FN("format", "Intl_ListFormat_format", 1, 0),
     JS_SELF_HOSTED_FN("formatToParts", "Intl_ListFormat_formatToParts", 1, 0),
     JS_FN("toSource", listFormat_toSource, 0, 0),
@@ -93,6 +96,41 @@ const ClassSpec ListFormatObject::classSpec_ = {
     ClassSpec::DontDefineConstructor,
 };
 
+static constexpr std::string_view TypeToString(ListFormatOptions::Type type) {
+#ifndef USING_ENUM
+  using enum ListFormatOptions::Type;
+#else
+  USING_ENUM(ListFormatOptions::Type, Conjunction, Disjunction, Unit);
+#endif
+  switch (type) {
+    case Conjunction:
+      return "conjunction";
+    case Disjunction:
+      return "disjunction";
+    case Unit:
+      return "unit";
+  }
+  MOZ_CRASH("invalid list format type");
+}
+
+static constexpr std::string_view StyleToString(
+    ListFormatOptions::Style style) {
+#ifndef USING_ENUM
+  using enum ListFormatOptions::Style;
+#else
+  USING_ENUM(ListFormatOptions::Style, Long, Short, Narrow);
+#endif
+  switch (style) {
+    case Long:
+      return "long";
+    case Short:
+      return "short";
+    case Narrow:
+      return "narrow";
+  }
+  MOZ_CRASH("invalid list format style");
+}
+
 /**
  * Intl.ListFormat([ locales [, options]])
  */
@@ -105,7 +143,7 @@ static bool ListFormat(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Step 2 (Inlined 9.1.14, OrdinaryCreateFromConstructor).
-  RootedObject proto(cx);
+  Rooted<JSObject*> proto(cx);
   if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_ListFormat,
                                           &proto)) {
     return false;
@@ -117,117 +155,219 @@ static bool ListFormat(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  HandleValue locales = args.get(0);
-  HandleValue options = args.get(1);
+  // Step 3. (Inlined ResolveOptions)
 
-  // Step 3.
-  if (!intl::InitializeObject(cx, listFormat, cx->names().InitializeListFormat,
-                              locales, options)) {
+  // ResolveOptions, step 1.
+  Rooted<LocalesList> requestedLocales(cx, cx);
+  if (!CanonicalizeLocaleList(cx, args.get(0), &requestedLocales)) {
     return false;
   }
 
+  Rooted<ArrayObject*> requestedLocalesArray(
+      cx, LocalesListToArray(cx, requestedLocales));
+  if (!requestedLocalesArray) {
+    return false;
+  }
+  listFormat->setRequestedLocales(requestedLocalesArray);
+
+  auto lfOptions = cx->make_unique<ListFormatOptions>();
+  if (!lfOptions) {
+    return false;
+  }
+
+  if (args.hasDefined(1)) {
+    // ResolveOptions, steps 2-3.
+    Rooted<JSObject*> options(
+        cx, RequireObjectArg(cx, "options", "Intl.ListFormat", args[1]));
+    if (!options) {
+      return false;
+    }
+
+    // ResolveOptions, step 4.
+    LocaleMatcher matcher;
+    if (!GetLocaleMatcherOption(cx, options, &matcher)) {
+      return false;
+    }
+
+    // ResolveOptions, step 5.
+    //
+    // This implementation only supports the "lookup" locale matcher, therefore
+    // the "localeMatcher" option doesn't need to be stored.
+
+    // ResolveOptions, step 6.
+    //
+    // Intl.ListFormat doesn't support any Unicode extension keys.
+
+    // ResolveOptions, step 7. (Not applicable)
+
+    // ResolveOptions, step 8. (Performed in ResolveLocale)
+
+    // ResolveOptions, step 9. (Return)
+
+    // Step 4. (Not applicable when ResolveOptions is inlined.)
+
+    // Steps 5-6. (Performed in ResolveLocale)
+
+    // Steps 7-8.
+    static constexpr auto types = MapOptions<TypeToString>(
+        ListFormatOptions::Type::Conjunction,
+        ListFormatOptions::Type::Disjunction, ListFormatOptions::Type::Unit);
+    if (!GetStringOption(cx, options, cx->names().type, types,
+                         ListFormatOptions::Type::Conjunction,
+                         &lfOptions->type)) {
+      return false;
+    }
+
+    // Steps 9-10.
+    static constexpr auto styles = MapOptions<StyleToString>(
+        ListFormatOptions::Style::Long, ListFormatOptions::Style::Short,
+        ListFormatOptions::Style::Narrow);
+    if (!GetStringOption(cx, options, cx->names().style, styles,
+                         ListFormatOptions::Style::Long, &lfOptions->style)) {
+      return false;
+    }
+  }
+  listFormat->setOptions(lfOptions.release());
+  AddCellMemory(listFormat, sizeof(ListFormatOptions), MemoryUse::IntlOptions);
+
+  // Steps 11-13. (Not applicable in our implementation.)
+
+  // Step 14.
   args.rval().setObject(*listFormat);
   return true;
 }
 
 void js::ListFormatObject::finalize(JS::GCContext* gcx, JSObject* obj) {
-  mozilla::intl::ListFormat* lf =
-      obj->as<ListFormatObject>().getListFormatSlot();
-  if (lf) {
-    intl::RemoveICUCellMemory(gcx, obj, ListFormatObject::EstimatedMemoryUse);
+  auto* listFormat = &obj->as<ListFormatObject>();
+
+  if (auto* options = listFormat->getOptions()) {
+    gcx->delete_(obj, options, MemoryUse::IntlOptions);
+  }
+
+  if (auto* lf = listFormat->getListFormatSlot()) {
+    RemoveICUCellMemory(gcx, obj, ListFormatObject::EstimatedMemoryUse);
     delete lf;
   }
 }
 
 /**
+ * Resolve the actual locale to finish initialization of the ListFormat.
+ */
+static bool ResolveLocale(JSContext* cx, Handle<ListFormatObject*> listFormat) {
+  // Return if the locale was already resolved.
+  if (listFormat->isLocaleResolved()) {
+    return true;
+  }
+
+  Rooted<ArrayObject*> requestedLocales(
+      cx, &listFormat->getRequestedLocales()->as<ArrayObject>());
+
+  // %Intl.ListFormat%.[[RelevantExtensionKeys]] is « ».
+  mozilla::EnumSet<UnicodeExtensionKey> relevantExtensionKeys{};
+
+  // Initialize locale options from constructor arguments.
+  Rooted<LocaleOptions> localeOptions(cx);
+
+  // Use the default locale data.
+  auto localeData = LocaleData::Default;
+
+  // Resolve the actual locale.
+  Rooted<ResolvedLocale> resolved(cx);
+  if (!ResolveLocale(cx, AvailableLocaleKind::ListFormat, requestedLocales,
+                     localeOptions, relevantExtensionKeys, localeData,
+                     &resolved)) {
+    return false;
+  }
+
+  // Finish initialization by setting the actual locale.
+  auto* locale = resolved.toLocale(cx);
+  if (!locale) {
+    return false;
+  }
+  listFormat->setLocale(locale);
+
+  MOZ_ASSERT(listFormat->isLocaleResolved(), "locale successfully resolved");
+  return true;
+}
+
+static auto ToListFormatType(ListFormatOptions::Type type) {
+#ifndef USING_ENUM
+  using enum mozilla::intl::ListFormat::Type;
+#else
+  USING_ENUM(mozilla::intl::ListFormat::Type, Conjunction, Disjunction, Unit);
+#endif
+  switch (type) {
+    case ListFormatOptions::Type::Conjunction:
+      return Conjunction;
+    case ListFormatOptions::Type::Disjunction:
+      return Disjunction;
+    case ListFormatOptions::Type::Unit:
+      return Unit;
+  }
+  MOZ_CRASH("invalid list format type");
+}
+
+static auto ToListFormatStyle(ListFormatOptions::Style style) {
+#ifndef USING_ENUM
+  using enum mozilla::intl::ListFormat::Style;
+#else
+  USING_ENUM(mozilla::intl::ListFormat::Style, Long, Short, Narrow);
+#endif
+  switch (style) {
+    case ListFormatOptions::Style::Long:
+      return Long;
+    case ListFormatOptions::Style::Short:
+      return Short;
+    case ListFormatOptions::Style::Narrow:
+      return Narrow;
+  }
+  MOZ_CRASH("invalid list format style");
+}
+
+/**
  * Returns a new ListFormat with the locale and list formatting options
- * of the given ListFormat.
+ * of the given ListFormat object.
  */
 static mozilla::intl::ListFormat* NewListFormat(
     JSContext* cx, Handle<ListFormatObject*> listFormat) {
-  RootedObject internals(cx, intl::GetInternalsObject(cx, listFormat));
-  if (!internals) {
+  if (!ResolveLocale(cx, listFormat)) {
     return nullptr;
   }
+  auto lfOptions = *listFormat->getOptions();
 
-  RootedValue value(cx);
-
-  if (!GetProperty(cx, internals, internals, cx->names().locale, &value)) {
-    return nullptr;
-  }
-  UniqueChars locale = intl::EncodeLocale(cx, value.toString());
+  auto locale = EncodeLocale(cx, listFormat->getLocale());
   if (!locale) {
     return nullptr;
   }
 
-  mozilla::intl::ListFormat::Options options;
-
-  using ListFormatType = mozilla::intl::ListFormat::Type;
-  if (!GetProperty(cx, internals, internals, cx->names().type, &value)) {
-    return nullptr;
-  }
-  {
-    JSLinearString* strType = value.toString()->ensureLinear(cx);
-    if (!strType) {
-      return nullptr;
-    }
-
-    if (StringEqualsLiteral(strType, "conjunction")) {
-      options.mType = ListFormatType::Conjunction;
-    } else if (StringEqualsLiteral(strType, "disjunction")) {
-      options.mType = ListFormatType::Disjunction;
-    } else {
-      MOZ_ASSERT(StringEqualsLiteral(strType, "unit"));
-      options.mType = ListFormatType::Unit;
-    }
-  }
-
-  using ListFormatStyle = mozilla::intl::ListFormat::Style;
-  if (!GetProperty(cx, internals, internals, cx->names().style, &value)) {
-    return nullptr;
-  }
-  {
-    JSLinearString* strStyle = value.toString()->ensureLinear(cx);
-    if (!strStyle) {
-      return nullptr;
-    }
-
-    if (StringEqualsLiteral(strStyle, "long")) {
-      options.mStyle = ListFormatStyle::Long;
-    } else if (StringEqualsLiteral(strStyle, "short")) {
-      options.mStyle = ListFormatStyle::Short;
-    } else {
-      MOZ_ASSERT(StringEqualsLiteral(strStyle, "narrow"));
-      options.mStyle = ListFormatStyle::Narrow;
-    }
-  }
+  mozilla::intl::ListFormat::Options options = {
+      .mType = ToListFormatType(lfOptions.type),
+      .mStyle = ToListFormatStyle(lfOptions.style),
+  };
 
   auto result = mozilla::intl::ListFormat::TryCreate(
       mozilla::MakeStringSpan(locale.get()), options);
-
-  if (result.isOk()) {
-    return result.unwrap().release();
+  if (result.isErr()) {
+    ReportInternalError(cx, result.unwrapErr());
+    return nullptr;
   }
-
-  js::intl::ReportInternalError(cx, result.unwrapErr());
-  return nullptr;
+  return result.unwrap().release();
 }
 
 static mozilla::intl::ListFormat* GetOrCreateListFormat(
     JSContext* cx, Handle<ListFormatObject*> listFormat) {
   // Obtain a cached mozilla::intl::ListFormat object.
-  mozilla::intl::ListFormat* lf = listFormat->getListFormatSlot();
-  if (lf) {
+  if (auto* lf = listFormat->getListFormatSlot()) {
     return lf;
   }
 
-  lf = NewListFormat(cx, listFormat);
+  auto* lf = NewListFormat(cx, listFormat);
   if (!lf) {
     return nullptr;
   }
   listFormat->setListFormatSlot(lf);
 
-  intl::AddICUCellMemory(listFormat, ListFormatObject::EstimatedMemoryUse);
+  AddICUCellMemory(listFormat, ListFormatObject::EstimatedMemoryUse);
   return lf;
 }
 
@@ -378,6 +518,67 @@ bool js::intl_FormatList(JSContext* cx, unsigned argc, Value* vp) {
     return FormatListToParts(cx, lf, list, args.rval());
   }
   return FormatList(cx, lf, list, args.rval());
+}
+
+static bool IsListFormat(Handle<JS::Value> v) {
+  return v.isObject() && v.toObject().is<ListFormatObject>();
+}
+
+/**
+ * Intl.ListFormat.prototype.resolvedOptions ( )
+ */
+static bool listFormat_resolvedOptions(JSContext* cx, const CallArgs& args) {
+  Rooted<ListFormatObject*> listFormat(
+      cx, &args.thisv().toObject().as<ListFormatObject>());
+
+  if (!ResolveLocale(cx, listFormat)) {
+    return false;
+  }
+  auto lfOptions = *listFormat->getOptions();
+
+  // Step 3.
+  Rooted<IdValueVector> options(cx, cx);
+
+  // Step 4.
+  if (!options.emplaceBack(NameToId(cx->names().locale),
+                           StringValue(listFormat->getLocale()))) {
+    return false;
+  }
+
+  auto* type = NewStringCopy<CanGC>(cx, TypeToString(lfOptions.type));
+  if (!type) {
+    return false;
+  }
+  if (!options.emplaceBack(NameToId(cx->names().type), StringValue(type))) {
+    return false;
+  }
+
+  auto* style = NewStringCopy<CanGC>(cx, StyleToString(lfOptions.style));
+  if (!style) {
+    return false;
+  }
+  if (!options.emplaceBack(NameToId(cx->names().style), StringValue(style))) {
+    return false;
+  }
+
+  // Step 5.
+  auto* result = NewPlainObjectWithUniqueNames(cx, options);
+  if (!result) {
+    return false;
+  }
+  args.rval().setObject(*result);
+  return true;
+}
+
+/**
+ * Intl.ListFormat.prototype.resolvedOptions ( )
+ */
+static bool listFormat_resolvedOptions(JSContext* cx, unsigned argc,
+                                       Value* vp) {
+  // Steps 1-2.
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsListFormat, listFormat_resolvedOptions>(cx,
+                                                                        args);
 }
 
 /**
