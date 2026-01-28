@@ -87,7 +87,6 @@ module.exports = [
       "browser/components/genai/chat.css",
       "browser/components/genai/content/link-preview-card.css",
       "browser/components/genai/content/model-optin.css",
-      "browser/components/genai/content/smart-assist.css",
       "browser/components/ipprotection/content/ipprotection-content.css",
       "browser/components/ipprotection/content/ipprotection-status-card.css",
       "browser/components/messagepreview/messagepreview.css",

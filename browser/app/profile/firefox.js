@@ -2262,11 +2262,6 @@ pref("browser.ml.linkPreview.shiftAlt", false);
 pref("browser.ml.linkPreview.supportedLocales", "en");
 
 pref("browser.ml.pageAssist.enabled", false);
-pref("browser.ml.smartAssist.apiKey", "");
-pref("browser.ml.smartAssist.enabled", false);
-pref("browser.ml.smartAssist.endpoint", "");
-pref("browser.ml.smartAssist.model", "");
-pref("browser.ml.smartAssist.overrideNewTab", false);
 
 // AI Window Feature
 pref("browser.aiwindow.apiKey", '');
