@@ -1602,6 +1602,10 @@ class PresShell final : public nsStubDocumentObserver,
   // shown/hidden.
   nsSize GetVisualViewportSizeUpdatedByDynamicToolbar() const;
 
+  // Returns the fixed viewport size accounted for
+  // a fully shown or fully hidden dynamic toolbar
+  nsSize GetFixedViewportSize() const;
+
   // Trigger refreshing the MobileViewportManager's size metrics.
   void RefreshViewportSize();
 

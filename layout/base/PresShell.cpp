@@ -12162,6 +12162,16 @@ nsSize PresShell::GetVisualViewportSizeUpdatedByDynamicToolbar() const {
                                                  : sizeUpdatedByDynamicToolbar;
 }
 
+nsSize PresShell::GetFixedViewportSize() const {
+  nsSize layoutViewportSize = GetLayoutViewportSize();
+  if (!mPresContext->IsKeyboardHiddenOrResizesContentMode()) {
+    return layoutViewportSize;
+  }
+  layoutViewportSize.height +=
+      mPresContext->GetBimodalDynamicToolbarHeightForFixedPosInAppUnits();
+  return layoutViewportSize;
+}
+
 void PresShell::RecomputeFontSizeInflationEnabled() {
   mFontSizeInflationEnabled = DetermineFontSizeInflationState();
 }
