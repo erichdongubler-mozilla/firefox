@@ -2695,7 +2695,9 @@ export class nsContextMenu {
     const translateSelectionItem = this.document.getElementById(
       "context-translate-selection"
     );
-    const translationsEnabled = lazy.TranslationsParent.AIFeature.isEnabled;
+    const translationsEnabled = Services.prefs.getBoolPref(
+      "browser.translations.enable"
+    );
     const selectTranslationsEnabled = Services.prefs.getBoolPref(
       "browser.translations.select.enable"
     );

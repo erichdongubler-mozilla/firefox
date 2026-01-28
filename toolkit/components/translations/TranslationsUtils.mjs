@@ -9,7 +9,6 @@
 /**
  * @typedef {object} Lazy
  * @property {typeof console} console
- * @property {typeof import("resource://services-settings/RemoteSettingsClient.sys.mjs").RemoteSettingsClient} RemoteSettingsClient
  */
 
 /** @type {Lazy} */
@@ -20,11 +19,6 @@ ChromeUtils.defineLazyGetter(lazy, "console", () => {
     maxLogLevelPref: "browser.translations.logLevel",
     prefix: "Translations",
   });
-});
-
-ChromeUtils.defineESModuleGetters(lazy, {
-  RemoteSettingsClient:
-    "resource://services-settings/RemoteSettingsClient.sys.mjs",
 });
 
 /**
@@ -175,17 +169,7 @@ export class TranslationsUtils {
     const client = RemoteSettings(
       TranslationsUtils.translationsModelsCollectionName
     );
-
-    try {
-      await client.attachments.deleteAll();
-    } catch (error) {
-      if (!(error instanceof lazy.RemoteSettingsClient.EmptyDatabaseError)) {
-        lazy.console.error(
-          "Failed to delete Translations language files.",
-          error
-        );
-      }
-    }
+    await client.attachments.deleteAll();
 
     try {
       const records = await client.get({

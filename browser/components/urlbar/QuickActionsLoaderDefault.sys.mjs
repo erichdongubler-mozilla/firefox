@@ -275,12 +275,9 @@ const DEFAULT_ACTIONS = {
     icon: "chrome://browser/skin/translations.svg",
     label: "quickactions-translate",
     isVisible: () => {
-      return (
-        lazy.TranslationsParent.AIFeature.isEnabled &&
-        Services.prefs.getBoolPref(
-          "browser.translations.quickAction.enabled",
-          false
-        )
+      return Services.prefs.getBoolPref(
+        "browser.translations.quickAction.enabled",
+        false
       );
     },
     onPick: async () => {
