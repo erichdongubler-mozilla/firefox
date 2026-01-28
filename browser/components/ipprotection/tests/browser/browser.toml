@@ -17,6 +17,8 @@ prefs = [
 
 ["browser_guardian_client.js"]
 
+["browser_ipprotection_alert_manager.js"]
+
 ["browser_ipprotection_confirmation_hints_site_exclusion.js"]
 
 ["browser_ipprotection_content.js"]

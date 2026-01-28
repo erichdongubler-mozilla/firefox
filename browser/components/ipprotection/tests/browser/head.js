@@ -17,6 +17,10 @@ const { IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs"
 );
 
+const { IPProtectionAlertManager } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ipprotection/IPProtectionAlertManager.sys.mjs"
+);
+
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs"
 );

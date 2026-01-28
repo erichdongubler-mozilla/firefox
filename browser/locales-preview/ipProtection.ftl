@@ -165,4 +165,19 @@ ip-protection-bandwidth-left-mb = { $usageLeft } MB of { $maxUsage } GB left
 
 ip-protection-bandwidth-hit-for-the-month = You’ve used all { $maxUsage } GB of your VPN data. Access will reset next month.
 ip-protection-bandwidth-help-text = Resets to { $maxUsage } GB on the first of every month.
+
+## IP Protection alerts
+
+vpn-paused-alert-title = VPN paused
+
+# Variables
+#   $maxUsage (number) - The maximum amount of data a user can use in a month (in GB)
+vpn-paused-alert-body = You’ve used all { $maxUsage } GB of your VPN data. VPN access will reset next month.
+
+vpn-paused-alert-close-tabs-button = Close all tabs
+vpn-paused-alert-continue-wo-vpn-button = Continue without VPN
+
+vpn-error-alert-title = VPN isn’t working right now.
+vpn-error-alert-body = Try again later.
+
 ##
