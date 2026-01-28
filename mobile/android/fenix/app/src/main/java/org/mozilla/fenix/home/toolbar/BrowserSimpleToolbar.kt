@@ -150,7 +150,7 @@ private fun initialActions(): List<Action> {
 }
 
 @Composable
-private fun SimpleBrowserToolbarPreview(actions: List<Action>, theme: Theme = Theme.getTheme()) {
+private fun SimpleBrowserToolbarPreview(actions: List<Action>, theme: Theme) {
     val store = BrowserToolbarStore(
         initialState = BrowserToolbarState(
             displayState = DisplayState(browserActionsEnd = actions),

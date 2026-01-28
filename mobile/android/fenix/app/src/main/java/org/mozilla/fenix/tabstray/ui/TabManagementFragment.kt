@@ -94,7 +94,7 @@ import org.mozilla.fenix.tabstray.ui.animation.defaultTransitionSpec
 import org.mozilla.fenix.tabstray.ui.animation.popTransitionSpec
 import org.mozilla.fenix.tabstray.ui.tabsearch.TabSearchScreen
 import org.mozilla.fenix.tabstray.ui.tabstray.TabsTray
-import org.mozilla.fenix.tabstray.ui.theme.getTabManagerTheme
+import org.mozilla.fenix.tabstray.ui.theme.TabManagerThemeProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemeManager
 import org.mozilla.fenix.utils.Settings
@@ -250,7 +250,7 @@ class TabManagementFragment : DialogFragment() {
                 }
             }
 
-            FirefoxTheme(theme = getTabManagerTheme(page = state.selectedPage)) {
+            FirefoxTheme(theme = TabManagerThemeProvider(selectedPage = state.selectedPage).provideTheme()) {
                 val navBarColor = MaterialTheme.colorScheme.surfaceContainerHigh.toArgb()
                 val statusBarColor = MaterialTheme.colorScheme.surface.toArgb()
 

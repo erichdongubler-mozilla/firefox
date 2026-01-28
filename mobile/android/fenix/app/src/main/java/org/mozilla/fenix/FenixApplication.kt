@@ -15,6 +15,7 @@ import android.os.SystemClock
 import android.util.Log.INFO
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.runtime.Composable
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
@@ -112,6 +113,10 @@ import org.mozilla.fenix.session.VisibilityLifecycleCallback
 import org.mozilla.fenix.settings.doh.DefaultDohSettingsProvider
 import org.mozilla.fenix.settings.doh.DohSettingsProvider
 import org.mozilla.fenix.startupCrash.StartupCrashActivity
+import org.mozilla.fenix.theme.DefaultThemeProvider
+import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.Theme.Private
+import org.mozilla.fenix.theme.ThemeProvider
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wallpapers.Wallpaper
@@ -128,7 +133,7 @@ private const val BYTES_TO_MEGABYTES_CONVERSION = 1024.0 * 1024.0
  * Installs [CrashReporter], initializes [Glean] in fenix builds and setup [Megazord] in the main process.
  */
 @Suppress("Registered", "TooManyFunctions", "LargeClass")
-open class FenixApplication : LocaleAwareApplication(), Provider {
+open class FenixApplication : LocaleAwareApplication(), Provider, ThemeProvider {
     init {
         // [TIMER] Record startup timestamp as early as reasonable with some degree of consistency.
         //
@@ -1116,6 +1121,15 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
     open fun downloadWallpapers() {
         GlobalScope.launch {
             components.useCases.wallpaperUseCases.initialize()
+        }
+    }
+
+    @Composable
+    override fun provideTheme(): Theme {
+        return if (components.appStore.state.mode.isPrivate) {
+            Private
+        } else {
+            DefaultThemeProvider.provideTheme()
         }
     }
 }
