@@ -4,7 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* Implementation of the Intl.RelativeTimeFormat proposal. */
+/* Intl.RelativeTimeFormat implementation. */
 
 #include "builtin/intl/RelativeTimeFormat.h"
 
@@ -15,13 +15,15 @@
 #include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/LanguageTag.h"
 #include "builtin/intl/LocaleNegotiation.h"
+#include "builtin/intl/ParameterNegotiation.h"
+#include "builtin/intl/UsingEnum.h"
 #include "gc/GCContext.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/Printer.h"
 #include "js/PropertySpec.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
-#include "vm/PlainObject.h"  // js::PlainObject
+#include "vm/PlainObject.h"
 #include "vm/StringType.h"
 
 #include "vm/NativeObject-inl.h"
@@ -58,6 +60,9 @@ const JSClass& RelativeTimeFormatObject::protoClass_ = PlainObject::class_;
 static bool relativeTimeFormat_supportedLocalesOf(JSContext* cx, unsigned argc,
                                                   Value* vp);
 
+static bool relativeTimeFormat_resolvedOptions(JSContext* cx, unsigned argc,
+                                               Value* vp);
+
 static bool relativeTimeFormat_toSource(JSContext* cx, unsigned argc,
                                         Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -71,8 +76,7 @@ static const JSFunctionSpec relativeTimeFormat_static_methods[] = {
 };
 
 static const JSFunctionSpec relativeTimeFormat_methods[] = {
-    JS_SELF_HOSTED_FN("resolvedOptions",
-                      "Intl_RelativeTimeFormat_resolvedOptions", 0, 0),
+    JS_FN("resolvedOptions", relativeTimeFormat_resolvedOptions, 0, 0),
     JS_SELF_HOSTED_FN("format", "Intl_RelativeTimeFormat_format", 2, 0),
     JS_SELF_HOSTED_FN("formatToParts", "Intl_RelativeTimeFormat_formatToParts",
                       2, 0),
@@ -98,9 +102,42 @@ const ClassSpec RelativeTimeFormatObject::classSpec_ = {
     ClassSpec::DontDefineConstructor,
 };
 
+static constexpr std::string_view StyleToString(
+    RelativeTimeFormatOptions::Style style) {
+#ifndef USING_ENUM
+  using enum RelativeTimeFormatOptions::Style;
+#else
+  USING_ENUM(RelativeTimeFormatOptions::Style, Long, Short, Narrow);
+#endif
+  switch (style) {
+    case Long:
+      return "long";
+    case Short:
+      return "short";
+    case Narrow:
+      return "narrow";
+  }
+  MOZ_CRASH("invalid relative time format style");
+}
+
+static constexpr std::string_view NumericToString(
+    RelativeTimeFormatOptions::Numeric numeric) {
+#ifndef USING_ENUM
+  using enum RelativeTimeFormatOptions::Numeric;
+#else
+  USING_ENUM(RelativeTimeFormatOptions::Numeric, Always, Auto);
+#endif
+  switch (numeric) {
+    case Always:
+      return "always";
+    case Auto:
+      return "auto";
+  }
+  MOZ_CRASH("invalid relative time format numeric");
+}
+
 /**
- * RelativeTimeFormat constructor.
- * Spec: ECMAScript 402 API, RelativeTimeFormat, 1.1
+ * Intl.RelativeTimeFormat ( [ locales [ , options ] ] )
  */
 static bool RelativeTimeFormat(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -111,7 +148,7 @@ static bool RelativeTimeFormat(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Step 2 (Inlined 9.1.14, OrdinaryCreateFromConstructor).
-  RootedObject proto(cx);
+  Rooted<JSObject*> proto(cx);
   if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_RelativeTimeFormat,
                                           &proto)) {
     return false;
@@ -124,30 +161,197 @@ static bool RelativeTimeFormat(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  HandleValue locales = args.get(0);
-  HandleValue options = args.get(1);
+  // Step 3. (Inlined ResolveOptions)
 
-  // Step 3.
-  if (!intl::InitializeObject(cx, relativeTimeFormat,
-                              cx->names().InitializeRelativeTimeFormat, locales,
-                              options)) {
+  // ResolveOptions, step 1.
+  Rooted<LocalesList> requestedLocales(cx, cx);
+  if (!CanonicalizeLocaleList(cx, args.get(0), &requestedLocales)) {
     return false;
   }
 
+  Rooted<ArrayObject*> requestedLocalesArray(
+      cx, LocalesListToArray(cx, requestedLocales));
+  if (!requestedLocalesArray) {
+    return false;
+  }
+  relativeTimeFormat->setRequestedLocales(requestedLocalesArray);
+
+  auto rtfOptions = cx->make_unique<RelativeTimeFormatOptions>();
+  if (!rtfOptions) {
+    return false;
+  }
+
+  if (args.hasDefined(1)) {
+    // ResolveOptions, steps 2-3.
+    Rooted<JSObject*> options(cx, JS::ToObject(cx, args[1]));
+    if (!options) {
+      return false;
+    }
+
+    // ResolveOptions, step 4.
+    LocaleMatcher matcher;
+    if (!GetLocaleMatcherOption(cx, options, &matcher)) {
+      return false;
+    }
+
+    // ResolveOptions, step 5.
+    //
+    // This implementation only supports the "lookup" locale matcher, therefore
+    // the "localeMatcher" option doesn't need to be stored.
+
+    // ResolveOptions, step 6.
+    Rooted<JSLinearString*> numberingSystem(cx);
+    if (!GetUnicodeExtensionOption(cx, options,
+                                   UnicodeExtensionKey::NumberingSystem,
+                                   &numberingSystem)) {
+      return false;
+    }
+    if (numberingSystem) {
+      relativeTimeFormat->setNumberingSystem(numberingSystem);
+    }
+
+    // ResolveOptions, step 7. (Not applicable)
+
+    // ResolveOptions, step 8. (Performed in ResolveRelativeTimeFormat)
+
+    // ResolveOptions, step 9. (Return)
+
+    // Step 4. (Not applicable when ResolveOptions is inlined.)
+
+    // Steps 5-9. (Performed in ResolveLocale)
+
+    // Steps 10-11.
+    static constexpr auto styles =
+        MapOptions<StyleToString>(RelativeTimeFormatOptions::Style::Long,
+                                  RelativeTimeFormatOptions::Style::Short,
+                                  RelativeTimeFormatOptions::Style::Narrow);
+    if (!GetStringOption(cx, options, cx->names().style, styles,
+                         RelativeTimeFormatOptions::Style::Long,
+                         &rtfOptions->style)) {
+      return false;
+    }
+
+    // Steps 12-13.
+    static constexpr auto numerics =
+        MapOptions<NumericToString>(RelativeTimeFormatOptions::Numeric::Always,
+                                    RelativeTimeFormatOptions::Numeric::Auto);
+    if (!GetStringOption(cx, options, cx->names().numeric, numerics,
+                         RelativeTimeFormatOptions::Numeric::Always,
+                         &rtfOptions->numeric)) {
+      return false;
+    }
+  }
+  relativeTimeFormat->setOptions(rtfOptions.release());
+  AddCellMemory(relativeTimeFormat, sizeof(RelativeTimeFormatOptions),
+                MemoryUse::IntlOptions);
+
+  // Steps 14-17. (Not applicable in our implementation.)
+
+  // Step 18.
   args.rval().setObject(*relativeTimeFormat);
   return true;
 }
 
 void js::RelativeTimeFormatObject::finalize(JS::GCContext* gcx, JSObject* obj) {
-  if (mozilla::intl::RelativeTimeFormat* rtf =
-          obj->as<RelativeTimeFormatObject>().getRelativeTimeFormatter()) {
-    intl::RemoveICUCellMemory(gcx, obj,
-                              RelativeTimeFormatObject::EstimatedMemoryUse);
+  auto* rtf = &obj->as<RelativeTimeFormatObject>();
+
+  if (auto* options = rtf->getOptions()) {
+    gcx->delete_(obj, options, MemoryUse::IntlOptions);
+  }
+
+  if (auto* formatter = rtf->getRelativeTimeFormatter()) {
+    RemoveICUCellMemory(gcx, obj, RelativeTimeFormatObject::EstimatedMemoryUse);
 
     // This was allocated using `new` in mozilla::intl::RelativeTimeFormat,
     // so we delete here.
-    delete rtf;
+    delete formatter;
   }
+}
+
+/**
+ * Resolve the actual locale to finish initialization of the RelativeTimeFormat.
+ */
+static bool ResolveLocale(
+    JSContext* cx, Handle<RelativeTimeFormatObject*> relativeTimeFormat) {
+  // Return if the locale was already resolved.
+  if (relativeTimeFormat->isLocaleResolved()) {
+    return true;
+  }
+
+  Rooted<ArrayObject*> requestedLocales(
+      cx, &relativeTimeFormat->getRequestedLocales()->as<ArrayObject>());
+
+  // %Intl.RelativeTimeFormat%.[[RelevantExtensionKeys]] is « "nu" ».
+  mozilla::EnumSet<UnicodeExtensionKey> relevantExtensionKeys{
+      UnicodeExtensionKey::NumberingSystem,
+  };
+
+  // Initialize locale options from constructor arguments.
+  Rooted<LocaleOptions> localeOptions(cx);
+  if (auto* nu = relativeTimeFormat->getNumberingSystem()) {
+    localeOptions.setUnicodeExtension(UnicodeExtensionKey::NumberingSystem, nu);
+  }
+
+  // Use the default locale data.
+  auto localeData = LocaleData::Default;
+
+  // Resolve the actual locale.
+  Rooted<ResolvedLocale> resolved(cx);
+  if (!ResolveLocale(cx, AvailableLocaleKind::RelativeTimeFormat,
+                     requestedLocales, localeOptions, relevantExtensionKeys,
+                     localeData, &resolved)) {
+    return false;
+  }
+
+  // Finish initialization by setting the actual locale and numbering system.
+  auto* locale = resolved.toLocale(cx);
+  if (!locale) {
+    return false;
+  }
+  relativeTimeFormat->setLocale(locale);
+
+  auto nu = resolved.extension(UnicodeExtensionKey::NumberingSystem);
+  MOZ_ASSERT(nu, "resolved numbering system is non-null");
+  relativeTimeFormat->setNumberingSystem(nu);
+
+  MOZ_ASSERT(relativeTimeFormat->isLocaleResolved(),
+             "locale successfully resolved");
+  return true;
+}
+
+static auto ToRelativeTimeFormatOptionsStyle(
+    RelativeTimeFormatOptions::Style style) {
+#ifndef USING_ENUM
+  using enum mozilla::intl::RelativeTimeFormatOptions::Style;
+#else
+  USING_ENUM(mozilla::intl::RelativeTimeFormatOptions::Style, Long, Short,
+             Narrow);
+#endif
+  switch (style) {
+    case RelativeTimeFormatOptions::Style::Long:
+      return Long;
+    case RelativeTimeFormatOptions::Style::Short:
+      return Short;
+    case RelativeTimeFormatOptions::Style::Narrow:
+      return Narrow;
+  }
+  MOZ_CRASH("invalid relative time format style");
+}
+
+static auto ToRelativeTimeFormatOptionsNumeric(
+    RelativeTimeFormatOptions::Numeric numeric) {
+#ifndef USING_ENUM
+  using enum mozilla::intl::RelativeTimeFormatOptions::Numeric;
+#else
+  USING_ENUM(mozilla::intl::RelativeTimeFormatOptions::Numeric, Always, Auto);
+#endif
+  switch (numeric) {
+    case RelativeTimeFormatOptions::Numeric::Always:
+      return Always;
+    case RelativeTimeFormatOptions::Numeric::Auto:
+      return Auto;
+  }
+  MOZ_CRASH("invalid relative time format numeric");
 }
 
 /**
@@ -156,95 +360,42 @@ void js::RelativeTimeFormatObject::finalize(JS::GCContext* gcx, JSObject* obj) {
  */
 static mozilla::intl::RelativeTimeFormat* NewRelativeTimeFormatter(
     JSContext* cx, Handle<RelativeTimeFormatObject*> relativeTimeFormat) {
-  RootedValue value(cx);
-  RootedObject internals(cx, intl::GetInternalsObject(cx, relativeTimeFormat));
-  if (!internals) {
+  if (!ResolveLocale(cx, relativeTimeFormat)) {
     return nullptr;
   }
+  auto rtfOptions = *relativeTimeFormat->getOptions();
 
   // ICU expects numberingSystem as a Unicode locale extensions on locale.
 
-  JS::RootedVector<intl::UnicodeExtensionKeyword> keywords(cx);
-
-  if (!GetProperty(cx, internals, internals, cx->names().numberingSystem,
-                   &value)) {
+  JS::RootedVector<UnicodeExtensionKeyword> keywords(cx);
+  if (!keywords.emplaceBack("nu", relativeTimeFormat->getNumberingSystem())) {
     return nullptr;
   }
 
-  {
-    JSLinearString* numberingSystem = value.toString()->ensureLinear(cx);
-    if (!numberingSystem) {
-      return nullptr;
-    }
-
-    if (!keywords.emplaceBack("nu", numberingSystem)) {
-      return nullptr;
-    }
-  }
-
-  UniqueChars locale = intl::FormatLocale(cx, internals, keywords);
+  Rooted<JSLinearString*> localeStr(cx, relativeTimeFormat->getLocale());
+  auto locale = FormatLocale(cx, localeStr, keywords);
   if (!locale) {
     return nullptr;
   }
 
-  if (!GetProperty(cx, internals, internals, cx->names().style, &value)) {
+  mozilla::intl::RelativeTimeFormatOptions options = {
+      .style = ToRelativeTimeFormatOptionsStyle(rtfOptions.style),
+      .numeric = ToRelativeTimeFormatOptionsNumeric(rtfOptions.numeric),
+  };
+
+  auto result =
+      mozilla::intl::RelativeTimeFormat::TryCreate(locale.get(), options);
+  if (result.isErr()) {
+    ReportInternalError(cx, result.unwrapErr());
     return nullptr;
   }
-
-  using RelativeTimeFormatOptions = mozilla::intl::RelativeTimeFormatOptions;
-  RelativeTimeFormatOptions options;
-  {
-    JSLinearString* style = value.toString()->ensureLinear(cx);
-    if (!style) {
-      return nullptr;
-    }
-
-    if (StringEqualsLiteral(style, "short")) {
-      options.style = RelativeTimeFormatOptions::Style::Short;
-    } else if (StringEqualsLiteral(style, "narrow")) {
-      options.style = RelativeTimeFormatOptions::Style::Narrow;
-    } else {
-      MOZ_ASSERT(StringEqualsLiteral(style, "long"));
-      options.style = RelativeTimeFormatOptions::Style::Long;
-    }
-  }
-
-  if (!GetProperty(cx, internals, internals, cx->names().numeric, &value)) {
-    return nullptr;
-  }
-
-  {
-    JSLinearString* numeric = value.toString()->ensureLinear(cx);
-    if (!numeric) {
-      return nullptr;
-    }
-
-    if (StringEqualsLiteral(numeric, "auto")) {
-      options.numeric = RelativeTimeFormatOptions::Numeric::Auto;
-    } else {
-      MOZ_ASSERT(StringEqualsLiteral(numeric, "always"));
-      options.numeric = RelativeTimeFormatOptions::Numeric::Always;
-    }
-  }
-
-  using RelativeTimeFormat = mozilla::intl::RelativeTimeFormat;
-  mozilla::Result<mozilla::UniquePtr<RelativeTimeFormat>,
-                  mozilla::intl::ICUError>
-      result = RelativeTimeFormat::TryCreate(locale.get(), options);
-
-  if (result.isOk()) {
-    return result.unwrap().release();
-  }
-
-  intl::ReportInternalError(cx, result.unwrapErr());
-  return nullptr;
+  return result.unwrap().release();
 }
 
 static mozilla::intl::RelativeTimeFormat* GetOrCreateRelativeTimeFormat(
     JSContext* cx, Handle<RelativeTimeFormatObject*> relativeTimeFormat) {
   // Obtain a cached RelativeDateTimeFormatter object.
-  mozilla::intl::RelativeTimeFormat* rtf =
-      relativeTimeFormat->getRelativeTimeFormatter();
+  auto* rtf = relativeTimeFormat->getRelativeTimeFormatter();
   if (rtf) {
     return rtf;
   }
@@ -255,8 +406,8 @@ static mozilla::intl::RelativeTimeFormat* GetOrCreateRelativeTimeFormat(
   }
   relativeTimeFormat->setRelativeTimeFormatter(rtf);
 
-  intl::AddICUCellMemory(relativeTimeFormat,
-                         RelativeTimeFormatObject::EstimatedMemoryUse);
+  AddICUCellMemory(relativeTimeFormat,
+                   RelativeTimeFormatObject::EstimatedMemoryUse);
   return rtf;
 }
 
@@ -375,6 +526,75 @@ bool js::intl_FormatRelativeTime(JSContext* cx, unsigned argc, Value* vp) {
 
   args.rval().setString(str);
   return true;
+}
+
+static bool IsRelativeTimeFormat(Handle<JS::Value> v) {
+  return v.isObject() && v.toObject().is<RelativeTimeFormatObject>();
+}
+
+/**
+ * Intl.RelativeTimeFormat.prototype.resolvedOptions ( )
+ */
+static bool relativeTimeFormat_resolvedOptions(JSContext* cx,
+                                               const CallArgs& args) {
+  Rooted<RelativeTimeFormatObject*> relativeTimeFormat(
+      cx, &args.thisv().toObject().as<RelativeTimeFormatObject>());
+
+  if (!ResolveLocale(cx, relativeTimeFormat)) {
+    return false;
+  }
+  auto rtfOptions = *relativeTimeFormat->getOptions();
+
+  // Step 3.
+  Rooted<IdValueVector> options(cx, cx);
+
+  // Step 4.
+  if (!options.emplaceBack(NameToId(cx->names().locale),
+                           StringValue(relativeTimeFormat->getLocale()))) {
+    return false;
+  }
+
+  auto* style = NewStringCopy<CanGC>(cx, StyleToString(rtfOptions.style));
+  if (!style) {
+    return false;
+  }
+  if (!options.emplaceBack(NameToId(cx->names().style), StringValue(style))) {
+    return false;
+  }
+
+  auto* numeric = NewStringCopy<CanGC>(cx, NumericToString(rtfOptions.numeric));
+  if (!numeric) {
+    return false;
+  }
+  if (!options.emplaceBack(NameToId(cx->names().numeric),
+                           StringValue(numeric))) {
+    return false;
+  }
+
+  if (!options.emplaceBack(
+          NameToId(cx->names().numberingSystem),
+          StringValue(relativeTimeFormat->getNumberingSystem()))) {
+    return false;
+  }
+
+  // Step 5.
+  auto* result = NewPlainObjectWithUniqueNames(cx, options);
+  if (!result) {
+    return false;
+  }
+  args.rval().setObject(*result);
+  return true;
+}
+
+/**
+ * Intl.RelativeTimeFormat.prototype.resolvedOptions ( )
+ */
+static bool relativeTimeFormat_resolvedOptions(JSContext* cx, unsigned argc,
+                                               Value* vp) {
+  // Steps 1-2.
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsRelativeTimeFormat,
+                              relativeTimeFormat_resolvedOptions>(cx, args);
 }
 
 /**
