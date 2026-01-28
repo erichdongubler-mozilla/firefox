@@ -70,6 +70,7 @@ mod logic;
 mod memory_test;
 mod net;
 mod process;
+mod send_ping;
 mod settings;
 mod std;
 mod thread_bound;
@@ -85,6 +86,7 @@ fn main() {
     match ::std::env::args_os().nth(1) {
         Some(s) if s == "--analyze" => analyze::main(),
         Some(s) if s == "--memtest" => memory_test::main(),
+        Some(s) if s == "--send-ping" => send_ping::main(),
         _ => report_main(),
     }
 }
@@ -266,7 +268,9 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
         //
         // When we are testing, glean will already be initialized (if needed).
         #[cfg(not(test))]
-        let _glean_handle = glean::init(&config).context("failed to acquire Glean store")?;
+        let _glean_handle = glean::InitOptions::from_config(&config)
+            .init()
+            .context("failed to acquire Glean store")?;
 
         logic::ReportCrash::new(config.clone(), extra)?.run()
     }

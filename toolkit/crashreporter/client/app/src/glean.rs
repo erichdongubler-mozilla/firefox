@@ -13,45 +13,63 @@ const APP_ID: &str = if cfg!(mock) {
 };
 const APP_DISPLAY_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// Initialize glean based on the given configuration.
-///
-/// When mocking, this should be called on a thread where the mock data is present.
-#[cfg_attr(test, allow(dead_code))]
-pub fn init(cfg: &Config) -> std::io::Result<crashping::GleanHandle> {
-    init_glean(cfg).initialize()
+/// Glean initialization options.
+pub struct InitOptions {
+    pub data_dir: ::std::path::PathBuf,
+    pub locale: Option<String>,
 }
 
-fn init_glean(cfg: &Config) -> crashping::InitGlean {
-    let mut init_glean = crashping::InitGlean::new(
-        glean_data_dir(cfg),
-        APP_ID,
-        crashping::ClientInfoMetrics {
-            app_build: buildid().unwrap_or(APP_DISPLAY_VERSION).into(),
-            app_display_version: APP_DISPLAY_VERSION.into(),
-            channel: None,
-            locale: cfg.strings.as_ref().map(|s| s.locale()),
-        },
-    );
-
-    init_glean.configuration.uploader = Some(Box::new(uploader::Uploader::new()));
-
-    if cfg!(mock) {
-        init_glean.configuration.server_endpoint =
-            Some("https://incoming.glean.example.com".to_owned());
+impl InitOptions {
+    /// Initialize glean based on the given configuration.
+    pub fn from_config(cfg: &Config) -> Self {
+        let locale = cfg.strings.as_ref().map(|s| s.locale());
+        let data_dir = cfg.data_dir().to_owned();
+        #[cfg(mock)]
+        let data_dir = (&data_dir).into();
+        InitOptions { data_dir, locale }
     }
 
-    init_glean
-}
+    /// Initialize glean.
+    ///
+    /// When mocking, this should be called on a thread where the mock data is present.
+    pub fn init(self) -> std::io::Result<crashping::GleanHandle> {
+        self.init_glean().initialize()
+    }
 
-#[cfg(not(mock))]
-fn glean_data_dir(cfg: &Config) -> ::std::path::PathBuf {
-    cfg.data_dir().join("glean")
-}
+    /// Initialize glean for tests.
+    #[cfg(test)]
+    fn test_init(self) {
+        self.init_glean().test_reset_glean(true)
+    }
 
-#[cfg(mock)]
-fn glean_data_dir(_cfg: &Config) -> ::std::path::PathBuf {
-    // Use a (non-mocked) temp directory since glean won't access our mocked API.
-    ::std::env::temp_dir().join("crashreporter-mock/glean")
+    fn init_glean(self) -> crashping::InitGlean {
+        let mut data_dir = if cfg!(mock) {
+            // Use a (non-mocked) temp directory since glean won't access our mocked API.
+            ::std::env::temp_dir().join("crashreporter-mock")
+        } else {
+            self.data_dir
+        };
+        data_dir.push("glean");
+
+        let mut init_glean = crashping::InitGlean::new(
+            data_dir,
+            APP_ID,
+            crashping::ClientInfoMetrics {
+                app_build: buildid().unwrap_or(APP_DISPLAY_VERSION).into(),
+                app_display_version: APP_DISPLAY_VERSION.into(),
+                channel: None,
+                locale: self.locale,
+            },
+        );
+        init_glean.configuration.uploader = Some(Box::new(uploader::Uploader::new()));
+
+        if cfg!(mock) {
+            init_glean.configuration.server_endpoint =
+                Some("https://incoming.glean.example.com".to_owned());
+        }
+
+        init_glean
+    }
 }
 
 mod uploader {
@@ -123,8 +141,7 @@ mod test {
             static GLOBAL_LOCK: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 
             let lock = GLOBAL_LOCK.lock().unwrap();
-
-            init_glean(cfg).test_reset_glean(true);
+            InitOptions::from_config(cfg).test_init();
             GleanTest { _guard: lock }
         }
     }
