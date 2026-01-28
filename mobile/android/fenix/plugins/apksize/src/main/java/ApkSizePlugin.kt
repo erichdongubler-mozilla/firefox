@@ -2,43 +2,71 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.BuiltArtifact
+import com.android.build.api.variant.BuiltArtifactsLoader
+import com.android.build.gradle.AppPlugin
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.tasks.Input
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
+import org.gradle.kotlin.dsl.withType
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.nio.file.Files
-import java.nio.file.Paths
 
+/**
+ * This plugin generates a [ApkSizeTask] for each variant of the target
+ * project dependant on the APK output artifacts.
+ */
 class ApkSizePlugin : Plugin<Project> {
-    override fun apply(project: Project) = Unit
+    override fun apply(project: Project) {
+        project.plugins.withType<AppPlugin>().configureEach {
+            val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
+            androidComponents.onVariants { variant ->
+                val taskName = "apkSize${variant.name.capitalize()}"
+                val task = project.tasks.register(taskName, ApkSizeTask::class.java)
+                task.configure {
+                    artifactsDirectory.set(variant.artifacts.get(SingleArtifact.APK))
+                    artifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
+                }
+            }
+        }
+    }
 }
 
 /**
  * Gradle task for determining the size of APKs and logging them in a perfherder compatible format.
  */
-open class ApkSizeTask : DefaultTask() {
+abstract class ApkSizeTask : DefaultTask() {
     /**
-     * Name of the build variant getting built.
+     * Directory containing APKs that get built for the build variant.
      */
-    @Input
-    var variantName: String? = null
+    @get:InputDirectory
+    abstract val artifactsDirectory: DirectoryProperty
 
     /**
-     * List of APKs that get build for the build variant.
+     * The apk directory has a metadata file indicating relevant files
+     * and this loader processes that to give us the all the splits the
+     * form the abstract artifact.
      */
-    @Input
-    var apks: List<String>? = null
-
-    private val buildDir = project.layout.buildDirectory.get().asFile
+    @get:Internal
+    abstract val artifactsLoader: Property<BuiltArtifactsLoader>
 
     @TaskAction
     fun logApkSize() {
-        val apkSizes = determineApkSizes()
-        val json = buildPerfherderJson(apkSizes)
+        val builtArtifacts = artifactsLoader.get().load(artifactsDirectory.get())
+            ?: throw RuntimeException("Cannot load APK metadata")
+
+        val variantName = builtArtifacts.variantName.capitalize()
+        val apkSizes = determineApkSizes(builtArtifacts.elements)
+        val json = buildPerfherderJson(variantName, apkSizes)
 
         val isAutomation = System.getenv("MOZ_AUTOMATION") == "1"
         val uploadPath = System.getenv("MOZ_PERFHERDER_UPLOAD")
@@ -50,16 +78,10 @@ open class ApkSizeTask : DefaultTask() {
         }
     }
 
-    private fun determineApkSizes(): Map<String, Long> {
-        val variantOutputPath = variantName?.removePrefix("fenix")?.lowercase()
-        val basePath = listOf(
-            "$buildDir", "outputs", "apk", "fenix", variantOutputPath
-        ).joinToString(File.separator)
-
-        return requireNotNull(apks).associateWith { apk ->
-            val rawPath = "$basePath${File.separator}$apk"
-            val path = Paths.get(rawPath)
-            Files.size(path)
+    private fun determineApkSizes(artifacts: Collection<BuiltArtifact>): Map<String, Long> {
+        return artifacts.associate {
+            val file = File(it.outputFile)
+            file.name to Files.size(file.toPath())
         }
     }
 
@@ -88,7 +110,7 @@ open class ApkSizeTask : DefaultTask() {
      * }
      * ```
      */
-    private fun buildPerfherderJson(apkSize: Map<String, Long>): JSONObject {
+    private fun buildPerfherderJson(variantName: String, apkSize: Map<String, Long>): JSONObject {
         val data = JSONObject()
 
         val framework = JSONObject()
@@ -104,7 +126,7 @@ open class ApkSizeTask : DefaultTask() {
         suite.put("alertChangeType", "absolute")
         suite.put("alertThreshold", 1024 * 1024)
 
-        if (variantName?.contains("debug", ignoreCase = true) == true) {
+        if (variantName.contains("debug", ignoreCase = true)) {
             suite.put("shouldAlert", false)
         }
 

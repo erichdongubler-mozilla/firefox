@@ -23,7 +23,6 @@ buildscript {
 }
 
 plugins {
-    id 'ApkSizePlugin'
     id "mozac.ConfigPlugin"
     alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.detekt)
