@@ -1429,6 +1429,10 @@ setting-group[groupid="aiFeatures"] {
   --select-max-width: fit-content;
 }
 
+setting-group[groupid="aiFeatures"] {
+  --select-max-width: fit-content;
+}
+
 #translations-manage-install-list {
   height: 220px;
   overflow: auto;

@@ -129,6 +129,4 @@ describe("settings ai features", () => {
       "AIWindowItem is hidden when feature enabled"
     );
   });
-
-  // TODO: Add tests for aiFeaturesAIWindowGroup when Model and Insight options are added
 });
