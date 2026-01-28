@@ -8,7 +8,6 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.json.JSONArray
-import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 import java.nio.file.Files
@@ -39,12 +38,8 @@ open class ApkSizeTask : DefaultTask() {
     @TaskAction
     fun logApkSize() {
         val apkSizes = determineApkSizes()
-        if (apkSizes.isEmpty()) {
-            println("Couldn't determine APK sizes for perfherder")
-            return
-        }
+        val json = buildPerfherderJson(apkSizes)
 
-        val json = buildPerfherderJson(apkSizes) ?: return
         val isAutomation = System.getenv("MOZ_AUTOMATION") == "1"
         val uploadPath = System.getenv("MOZ_PERFHERDER_UPLOAD")
         if (isAutomation && uploadPath != null) {
@@ -63,16 +58,9 @@ open class ApkSizeTask : DefaultTask() {
 
         return requireNotNull(apks).associateWith { apk ->
             val rawPath = "$basePath${File.separator}$apk"
-
-            try {
-                val path = Paths.get(rawPath)
-                Files.size(path)
-            } catch (t: Throwable) {
-                println("Could not determine size of $apk ($rawPath)")
-                t.printStackTrace()
-                0
-            }
-        }.filter { (_, size) -> size > 0 }
+            val path = Paths.get(rawPath)
+            Files.size(path)
+        }
     }
 
     /**
@@ -100,47 +88,40 @@ open class ApkSizeTask : DefaultTask() {
      * }
      * ```
      */
-    private fun buildPerfherderJson(apkSize: Map<String, Long>): JSONObject? {
-        return try {
-            val data = JSONObject()
+    private fun buildPerfherderJson(apkSize: Map<String, Long>): JSONObject {
+        val data = JSONObject()
 
-            val framework = JSONObject()
-            framework.put("name", "build_metrics")
-            data.put("framework", framework)
+        val framework = JSONObject()
+        framework.put("name", "build_metrics")
+        data.put("framework", framework)
 
-            val suites = JSONArray()
+        val suites = JSONArray()
 
-            val suite = JSONObject()
-            suite.put("name", "apk-size-$variantName")
-            suite.put("value", getSummarySize(apkSize))
-            suite.put("lowerIsBetter", true)
-            suite.put("alertChangeType", "absolute")
-            suite.put("alertThreshold", 1024 * 1024)
+        val suite = JSONObject()
+        suite.put("name", "apk-size-$variantName")
+        suite.put("value", getSummarySize(apkSize))
+        suite.put("lowerIsBetter", true)
+        suite.put("alertChangeType", "absolute")
+        suite.put("alertThreshold", 1024 * 1024)
 
-            // Debug variants do not have alerts
-            if (variantName?.contains("debug", ignoreCase = true) == true) {
-                suite.put("shouldAlert", false)
-            }
-
-            val subtests = JSONArray()
-            apkSize.forEach { (apk, size) ->
-                val subtest = JSONObject()
-                subtest.put("name", apk)
-                subtest.put("value", size)
-                subtests.put(subtest)
-            }
-            suite.put("subtests", subtests)
-
-            suites.put(suite)
-
-            data.put("suites", suites)
-
-            data
-        } catch (e: JSONException) {
-            println("Couldn't generate perfherder JSON")
-            e.printStackTrace()
-            null
+        if (variantName?.contains("debug", ignoreCase = true) == true) {
+            suite.put("shouldAlert", false)
         }
+
+        val subtests = JSONArray()
+        apkSize.forEach { (apk, size) ->
+            val subtest = JSONObject()
+            subtest.put("name", apk)
+            subtest.put("value", size)
+            subtests.put(subtest)
+        }
+        suite.put("subtests", subtests)
+
+        suites.put(suite)
+
+        data.put("suites", suites)
+
+        return data
     }
 }
 
