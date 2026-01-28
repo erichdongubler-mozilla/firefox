@@ -37,7 +37,7 @@
  */
 .spectrum-color-preview {
   --overlay-color: transparent;
-  border: 1px solid transparent;
+  border: 1px solid color(srgb 0.5 0.5 0.5 / 0.5);
   border-radius: 50%;
   box-sizing: border-box;
   width: 25px;
@@ -50,10 +50,6 @@
   :root[forced-colors-active] & {
     border-color: CanvasText;
   }
-}
-
-.spectrum-color-preview.high-luminance {
-  border-color: #ccc;
 }
 
 .spectrum-slider-container {
