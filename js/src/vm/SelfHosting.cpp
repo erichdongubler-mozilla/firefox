@@ -24,7 +24,9 @@
 #include "builtin/Array.h"
 #include "builtin/BigInt.h"
 #ifdef JS_HAS_INTL_API
+#  include "builtin/intl/Collator.h"
 #  include "builtin/intl/DateTimeFormat.h"
+#  include "builtin/intl/DurationFormat.h"
 #  include "builtin/intl/IntlObject.h"
 #  include "builtin/intl/Locale.h"
 #  include "builtin/intl/NumberFormat.h"
@@ -1842,17 +1844,25 @@ static const JSFunctionSpec intrinsic_functions[] = {
 // Intrinsics and standard functions used by Intl API implementation.
 #ifdef JS_HAS_INTL_API
     JS_FN("intl_BestAvailableLocale", intl_BestAvailableLocale, 3, 0),
+    JS_FN("intl_CallCollatorMethodIfWrapped",
+          CallNonGenericSelfhostedMethod<Is<CollatorObject>>, 2, 0),
     JS_FN("intl_CallDateTimeFormatMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<DateTimeFormatObject>>, 2, 0),
+    JS_FN("intl_CallDurationFormatMethodIfWrapped",
+          CallNonGenericSelfhostedMethod<Is<DurationFormatObject>>, 2, 0),
     JS_FN("intl_CallNumberFormatMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<NumberFormatObject>>, 2, 0),
     JS_FN("intl_CallPluralRulesMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<PluralRulesObject>>, 2, 0),
     JS_FN("intl_CallSegmentIteratorMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<SegmentIteratorObject>>, 2, 0),
+    JS_FN("intl_CallSegmenterMethodIfWrapped",
+          CallNonGenericSelfhostedMethod<Is<SegmenterObject>>, 2, 0),
     JS_FN("intl_CallSegmentsMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<SegmentsObject>>, 2, 0),
+    JS_FN("intl_CompareStrings", intl_CompareStrings, 3, 0),
     JS_FN("intl_CreateSegmentIterator", intl_CreateSegmentIterator, 1, 0),
+    JS_FN("intl_CreateSegmentsObject", intl_CreateSegmentsObject, 2, 0),
     JS_FN("intl_DefaultTimeZone", intrinsic_DefaultTimeZone, 0, 0),
     JS_FN("intl_FindNextSegmentBoundaries", intl_FindNextSegmentBoundaries, 1,
           0),
@@ -1862,9 +1872,15 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("intl_FormatNumber", intl_FormatNumber, 3, 0),
     JS_FN("intl_FormatNumberRange", intl_FormatNumberRange, 4, 0),
     JS_FN("intl_GetPluralCategories", intl_GetPluralCategories, 1, 0),
+    JS_INLINABLE_FN("intl_GuardToCollator",
+                    intrinsic_GuardToBuiltin<CollatorObject>, 1, 0,
+                    IntlGuardToCollator),
     JS_INLINABLE_FN("intl_GuardToDateTimeFormat",
                     intrinsic_GuardToBuiltin<DateTimeFormatObject>, 1, 0,
                     IntlGuardToDateTimeFormat),
+    JS_INLINABLE_FN("intl_GuardToDurationFormat",
+                    intrinsic_GuardToBuiltin<DurationFormatObject>, 1, 0,
+                    IntlGuardToDurationFormat),
     JS_INLINABLE_FN("intl_GuardToNumberFormat",
                     intrinsic_GuardToBuiltin<NumberFormatObject>, 1, 0,
                     IntlGuardToNumberFormat),
@@ -1874,6 +1890,9 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_INLINABLE_FN("intl_GuardToSegmentIterator",
                     intrinsic_GuardToBuiltin<SegmentIteratorObject>, 1, 0,
                     IntlGuardToSegmentIterator),
+    JS_INLINABLE_FN("intl_GuardToSegmenter",
+                    intrinsic_GuardToBuiltin<SegmenterObject>, 1, 0,
+                    IntlGuardToSegmenter),
     JS_INLINABLE_FN("intl_GuardToSegments",
                     intrinsic_GuardToBuiltin<SegmentsObject>, 1, 0,
                     IntlGuardToSegments),
@@ -1895,6 +1914,8 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("intl_availableMeasurementUnits", intl_availableMeasurementUnits, 0,
           0),
 #  endif
+    JS_FN("intl_isIgnorePunctuation", intl_isIgnorePunctuation, 1, 0),
+    JS_FN("intl_isUpperCaseFirst", intl_isUpperCaseFirst, 1, 0),
     JS_FN("intl_resolveDateTimeFormatComponents",
           intl_resolveDateTimeFormatComponents, 3, 0),
 #endif  // JS_HAS_INTL_API

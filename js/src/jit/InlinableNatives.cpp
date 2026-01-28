@@ -7,7 +7,9 @@
 #include "jit/InlinableNatives.h"
 
 #ifdef JS_HAS_INTL_API
+#  include "builtin/intl/Collator.h"
 #  include "builtin/intl/DateTimeFormat.h"
+#  include "builtin/intl/DurationFormat.h"
 #  include "builtin/intl/NumberFormat.h"
 #  include "builtin/intl/PluralRules.h"
 #  include "builtin/intl/Segmenter.h"
@@ -39,20 +41,28 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
   switch (native) {
 #ifdef JS_HAS_INTL_API
     // Intl natives.
+    case InlinableNative::IntlGuardToCollator:
+      return &CollatorObject::class_;
     case InlinableNative::IntlGuardToDateTimeFormat:
       return &DateTimeFormatObject::class_;
+    case InlinableNative::IntlGuardToDurationFormat:
+      return &DurationFormatObject::class_;
     case InlinableNative::IntlGuardToNumberFormat:
       return &NumberFormatObject::class_;
     case InlinableNative::IntlGuardToPluralRules:
       return &PluralRulesObject::class_;
+    case InlinableNative::IntlGuardToSegmenter:
+      return &SegmenterObject::class_;
     case InlinableNative::IntlGuardToSegments:
       return &SegmentsObject::class_;
     case InlinableNative::IntlGuardToSegmentIterator:
       return &SegmentIteratorObject::class_;
 #else
+    case InlinableNative::IntlGuardToCollator:
     case InlinableNative::IntlGuardToDateTimeFormat:
     case InlinableNative::IntlGuardToNumberFormat:
     case InlinableNative::IntlGuardToPluralRules:
+    case InlinableNative::IntlGuardToSegmenter:
     case InlinableNative::IntlGuardToSegments:
     case InlinableNative::IntlGuardToSegmentIterator:
       MOZ_CRASH("Intl API disabled");
@@ -157,9 +167,12 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
       // RNG state is per-realm.
       return false;
 
+    case InlinableNative::IntlGuardToCollator:
     case InlinableNative::IntlGuardToDateTimeFormat:
+    case InlinableNative::IntlGuardToDurationFormat:
     case InlinableNative::IntlGuardToNumberFormat:
     case InlinableNative::IntlGuardToPluralRules:
+    case InlinableNative::IntlGuardToSegmenter:
     case InlinableNative::IntlGuardToSegments:
     case InlinableNative::IntlGuardToSegmentIterator:
     case InlinableNative::IsRegExpObject:
