@@ -26,7 +26,9 @@
 #include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/LanguageTag.h"
 #include "builtin/intl/LocaleNegotiation.h"
+#include "builtin/intl/ParameterNegotiation.h"
 #include "builtin/intl/StringAsciiChars.h"
+#include "builtin/intl/UsingEnum.h"
 #include "builtin/String.h"
 #include "js/Conversions.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
@@ -43,6 +45,7 @@
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
+using namespace js::intl;
 using namespace mozilla::intl::LanguageTagLimits;
 
 const JSClass LocaleObject::class_ = {
@@ -234,69 +237,82 @@ class SepKeywordIterator {
   }
 };
 
-/**
- * 9.2.10 GetOption ( options, property, type, values, fallback )
- *
- * If the requested property is present and not-undefined, set the result string
- * to |ToString(value)|. Otherwise set the result string to nullptr.
- */
-static bool GetStringOption(JSContext* cx, HandleObject options,
-                            Handle<PropertyName*> name,
-                            MutableHandle<JSLinearString*> string) {
-  // Step 1.
-  RootedValue option(cx);
-  if (!GetProperty(cx, options, options, name, &option)) {
-    return false;
+enum class LocaleHourCycle { H11, H12, H23, H24 };
+
+static constexpr std::string_view HourCycleToString(LocaleHourCycle hourCycle) {
+#ifndef USING_ENUM
+  using enum LocaleHourCycle;
+#else
+  USING_ENUM(LocaleHourCycle, H11, H12, H23, H24);
+#endif
+  switch (hourCycle) {
+    case H11:
+      return "h11";
+    case H12:
+      return "h12";
+    case H23:
+      return "h23";
+    case H24:
+      return "h24";
   }
-
-  // Step 2.
-  JSLinearString* linear = nullptr;
-  if (!option.isUndefined()) {
-    // Steps 2.a-b, 2.d (not applicable).
-
-    // Steps 2.c, 2.e.
-    JSString* str = ToString(cx, option);
-    if (!str) {
-      return false;
-    }
-    linear = str->ensureLinear(cx);
-    if (!linear) {
-      return false;
-    }
-  }
-
-  // Step 3.
-  string.set(linear);
-  return true;
+  MOZ_CRASH("invalid locale hour cycle");
 }
 
-/**
- * 9.2.10 GetOption ( options, property, type, values, fallback )
- *
- * If the requested property is present and not-undefined, set the result string
- * to |ToString(ToBoolean(value))|. Otherwise set the result string to nullptr.
- */
-static bool GetBooleanOption(JSContext* cx, HandleObject options,
-                             Handle<PropertyName*> name,
-                             MutableHandle<JSLinearString*> string) {
-  // Step 1.
-  RootedValue option(cx);
-  if (!GetProperty(cx, options, options, name, &option)) {
-    return false;
+static JSLinearString* ToUnicodeValue(JSContext* cx,
+                                      LocaleHourCycle hourCycle) {
+#ifndef USING_ENUM
+  using enum LocaleHourCycle;
+#else
+  USING_ENUM(LocaleHourCycle, H11, H12, H23, H24);
+#endif
+  switch (hourCycle) {
+    case H11:
+      return cx->names().h11;
+    case H12:
+      return cx->names().h12;
+    case H23:
+      return cx->names().h23;
+    case H24:
+      return cx->names().h24;
   }
+  MOZ_CRASH("invalid locale hour cycle");
+}
 
-  // Step 2.
-  JSLinearString* linear = nullptr;
-  if (!option.isUndefined()) {
-    // Steps 2.a, 2.c-d (not applicable).
+enum class LocaleCaseFirst { Upper, Lower, False };
 
-    // Steps 2.c, 2.e.
-    linear = BooleanToString(cx, ToBoolean(option));
+static constexpr std::string_view CaseFirstToString(LocaleCaseFirst caseFirst) {
+#ifndef USING_ENUM
+  using enum LocaleCaseFirst;
+#else
+  USING_ENUM(LocaleCaseFirst, False, Lower, Upper);
+#endif
+  switch (caseFirst) {
+    case False:
+      return "false";
+    case Lower:
+      return "lower";
+    case Upper:
+      return "upper";
   }
+  MOZ_CRASH("invalid locale case first");
+}
 
-  // Step 3.
-  string.set(linear);
-  return true;
+static JSLinearString* ToUnicodeValue(JSContext* cx,
+                                      LocaleCaseFirst caseFirst) {
+#ifndef USING_ENUM
+  using enum LocaleCaseFirst;
+#else
+  USING_ENUM(LocaleCaseFirst, False, Lower, Upper);
+#endif
+  switch (caseFirst) {
+    case False:
+      return cx->names().false_;
+    case Lower:
+      return cx->names().lower;
+    case Upper:
+      return cx->names().upper;
+  }
+  MOZ_CRASH("invalid locale case first");
 }
 
 /**
@@ -616,144 +632,84 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
     // Step 14.
     JS::RootedVector<intl::UnicodeExtensionKeyword> keywords(cx);
 
-    // Step 15.
+    // Steps 15-17.
     Rooted<JSLinearString*> calendar(cx);
-    if (!GetStringOption(cx, options, cx->names().calendar, &calendar)) {
+    if (!GetUnicodeExtensionOption(cx, options, UnicodeExtensionKey::Calendar,
+                                   &calendar)) {
       return false;
     }
-
-    // Steps 16-17.
     if (calendar) {
-      bool isValid;
-      if (!IsValidUnicodeExtensionValue(cx, calendar, &isValid)) {
-        return false;
-      }
-
-      if (!isValid) {
-        if (UniqueChars str = QuoteString(cx, calendar, '"')) {
-          JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
-                                    JSMSG_INVALID_OPTION_VALUE, "calendar",
-                                    str.get());
-        }
-        return false;
-      }
-
       if (!keywords.emplaceBack("ca", calendar)) {
         return false;
       }
     }
 
-    // Step 18.
+    // Steps 18-20.
     Rooted<JSLinearString*> collation(cx);
-    if (!GetStringOption(cx, options, cx->names().collation, &collation)) {
+    if (!GetUnicodeExtensionOption(cx, options, UnicodeExtensionKey::Collation,
+                                   &collation)) {
       return false;
     }
-
-    // Steps 19-20.
     if (collation) {
-      bool isValid;
-      if (!IsValidUnicodeExtensionValue(cx, collation, &isValid)) {
-        return false;
-      }
-
-      if (!isValid) {
-        if (UniqueChars str = QuoteString(cx, collation, '"')) {
-          JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
-                                    JSMSG_INVALID_OPTION_VALUE, "collation",
-                                    str.get());
-        }
-        return false;
-      }
-
       if (!keywords.emplaceBack("co", collation)) {
         return false;
       }
     }
 
-    // Step 21 (without validation).
-    Rooted<JSLinearString*> hourCycle(cx);
-    if (!GetStringOption(cx, options, cx->names().hourCycle, &hourCycle)) {
+    // Step 21.
+    static constexpr auto hourCycles = MapOptions<HourCycleToString>(
+        LocaleHourCycle::H11, LocaleHourCycle::H12, LocaleHourCycle::H23,
+        LocaleHourCycle::H24);
+    mozilla::Maybe<LocaleHourCycle> hourCycle{};
+    if (!GetStringOption(cx, options, cx->names().hourCycle, hourCycles,
+                         &hourCycle)) {
       return false;
     }
 
-    // Steps 21-22.
+    // Step 22.
     if (hourCycle) {
-      if (!StringEqualsLiteral(hourCycle, "h11") &&
-          !StringEqualsLiteral(hourCycle, "h12") &&
-          !StringEqualsLiteral(hourCycle, "h23") &&
-          !StringEqualsLiteral(hourCycle, "h24")) {
-        if (UniqueChars str = QuoteString(cx, hourCycle, '"')) {
-          JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
-                                    JSMSG_INVALID_OPTION_VALUE, "hourCycle",
-                                    str.get());
-        }
-        return false;
-      }
-
-      if (!keywords.emplaceBack("hc", hourCycle)) {
+      if (!keywords.emplaceBack("hc", ToUnicodeValue(cx, *hourCycle))) {
         return false;
       }
     }
 
-    // Step 23 (without validation).
-    Rooted<JSLinearString*> caseFirst(cx);
-    if (!GetStringOption(cx, options, cx->names().caseFirst, &caseFirst)) {
+    // Step 23.
+    static constexpr auto caseFirsts = MapOptions<CaseFirstToString>(
+        LocaleCaseFirst::Upper, LocaleCaseFirst::Lower, LocaleCaseFirst::False);
+    mozilla::Maybe<LocaleCaseFirst> caseFirst{};
+    if (!GetStringOption(cx, options, cx->names().caseFirst, caseFirsts,
+                         &caseFirst)) {
       return false;
     }
 
-    // Steps 23-24.
+    // Step 24.
     if (caseFirst) {
-      if (!StringEqualsLiteral(caseFirst, "upper") &&
-          !StringEqualsLiteral(caseFirst, "lower") &&
-          !StringEqualsLiteral(caseFirst, "false")) {
-        if (UniqueChars str = QuoteString(cx, caseFirst, '"')) {
-          JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
-                                    JSMSG_INVALID_OPTION_VALUE, "caseFirst",
-                                    str.get());
-        }
-        return false;
-      }
-
-      if (!keywords.emplaceBack("kf", caseFirst)) {
+      if (!keywords.emplaceBack("kf", ToUnicodeValue(cx, *caseFirst))) {
         return false;
       }
     }
 
     // Steps 25-26.
-    Rooted<JSLinearString*> numeric(cx);
+    mozilla::Maybe<bool> numeric{};
     if (!GetBooleanOption(cx, options, cx->names().numeric, &numeric)) {
       return false;
     }
 
     // Step 27.
     if (numeric) {
-      if (!keywords.emplaceBack("kn", numeric)) {
+      if (!keywords.emplaceBack("kn", BooleanToString(cx, *numeric))) {
         return false;
       }
     }
 
-    // Step 28.
+    // Steps 28-30.
     Rooted<JSLinearString*> numberingSystem(cx);
-    if (!GetStringOption(cx, options, cx->names().numberingSystem,
-                         &numberingSystem)) {
+    if (!GetUnicodeExtensionOption(cx, options,
+                                   UnicodeExtensionKey::NumberingSystem,
+                                   &numberingSystem)) {
       return false;
     }
-
-    // Steps 29-30.
     if (numberingSystem) {
-      bool isValid;
-      if (!IsValidUnicodeExtensionValue(cx, numberingSystem, &isValid)) {
-        return false;
-      }
-      if (!isValid) {
-        if (UniqueChars str = QuoteString(cx, numberingSystem, '"')) {
-          JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
-                                    JSMSG_INVALID_OPTION_VALUE,
-                                    "numberingSystem", str.get());
-        }
-        return false;
-      }
-
       if (!keywords.emplaceBack("nu", numberingSystem)) {
         return false;
       }
