@@ -1241,14 +1241,14 @@ export const NimbusTestUtils = {
    *
    * @param {Record<Phase, number>?} options.migrationState
    *        The value that should be set for the Nimbus migration prefs. If
-   *        not provided, the pref will be unset.
+   *        not provided, {@link NimbusTestUtils.migrationState.LATEST} will be used.
    *
    *        Required if {@link options.storePath} is also provided.
    *
    *        Most tests will want to use either
-   *        `NimbusTestUtils.migrationState.UNMIGRATED` or
-   *        `NimbusTestUtils.migrationState.LATEST`, depending on whether or not
-   *        they are writing to the `NimbusEnrollments` database table.
+   *        {@link NimbusTestUtils.migrationState.UNMIGRATED} or
+   *        {@link NimbusTestUtils.migrationState.LATEST}, depending on whether
+   *        or not they are writing to the `NimbusEnrollments` database table.
    *
    * @throws {Error} If the the arguments to this function are not consistent.
    *
@@ -1262,7 +1262,7 @@ export const NimbusTestUtils = {
     secureExperiments,
     clearTelemetry = false,
     features,
-    migrationState,
+    migrationState = undefined,
   } = {}) {
     if (storePath && typeof migrationState === "undefined") {
       throw new Error("setupTest: storePath requires migrationState");
@@ -1299,13 +1299,15 @@ export const NimbusTestUtils = {
       )
       .resolves(0);
 
-    if (migrationState) {
-      for (const [phase, value] of Object.entries(migrationState)) {
-        Services.prefs.setIntPref(
-          lazy.NimbusMigrations.NIMBUS_MIGRATION_PREFS[phase],
-          value
-        );
-      }
+    if (typeof migrationState === "undefined") {
+      migrationState = NimbusTestUtils.migrationState.LATEST;
+    }
+
+    for (const [phase, value] of Object.entries(migrationState)) {
+      Services.prefs.setIntPref(
+        lazy.NimbusMigrations.NIMBUS_MIGRATION_PREFS[phase],
+        value
+      );
     }
 
     const ctx = {

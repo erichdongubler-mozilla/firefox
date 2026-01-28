@@ -83,6 +83,7 @@ async function setupTest({
   const { initExperimentAPI, ...ctx } = await NimbusTestUtils.setupTest({
     init: false,
     clearTelemetry: true,
+    migrationState: NimbusTestUtils.migrationState.UNMIGRATED,
     ...args,
   });
 
