@@ -475,6 +475,7 @@
         "parameters": [
           {
             "name": "details",
+            "optional": true,
             "$ref": "Details"
           }
         ]

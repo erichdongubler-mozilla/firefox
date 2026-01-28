@@ -38,6 +38,58 @@ add_task(async function test_action_onClicked() {
   await extension.unload();
 });
 
+add_task(async function test_action_isEnabled() {
+  const extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      manifest_version: 3,
+      action: {},
+    },
+    async background() {
+      browser.test.assertTrue(
+        await browser.action.isEnabled(),
+        "action.isEnabled() true by default"
+      );
+
+      const [tab] = await browser.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      await browser.action.disable(tab.id);
+
+      browser.test.assertTrue(
+        await browser.action.isEnabled(),
+        "action.isEnabled() still true despite disable() for tab"
+      );
+
+      // Chrome has isEnabled(integer) instead of isEnabled(object).
+      // https://github.com/w3c/webextensions/issues/463#issuecomment-2197389135
+      // Firefox and Safari do not accept integers.
+      browser.test.assertThrows(
+        () => browser.action.isEnabled(tab.id),
+        "Incorrect argument types for action.isEnabled.",
+        "action.isEnabled(tabId) not supported"
+      );
+
+      browser.test.assertFalse(
+        await browser.action.isEnabled({ tabId: tab.id }),
+        "action.isEnabled({ tabId }) matches disable(tabId) call"
+      );
+
+      await browser.action.disable();
+      browser.test.assertFalse(
+        await browser.action.isEnabled(),
+        "action.isEnabled() returns false after disabling globally"
+      );
+
+      browser.test.sendMessage("done");
+    },
+  });
+
+  await extension.startup();
+  await extension.awaitMessage("done");
+  await extension.unload();
+});
+
 </script>
 
 </body>
