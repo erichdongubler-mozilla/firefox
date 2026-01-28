@@ -5,6 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/SharedThreadPool.h"
+
+#include "mozilla/AppShutdown.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/Services.h"
@@ -17,6 +20,13 @@
 #include "nsIObserverService.h"
 #include "nsIThreadManager.h"
 #include "nsThreadPool.h"
+#include "nsTHashMap.h"
+#include "nsXPCOMCIDInternal.h"
+
+static mozilla::LazyLogModule sSharedThreadPoolLog("SharedThreadPool");
+
+#define STP_LOG(level, msg, ...) \
+  MOZ_LOG_FMT(sSharedThreadPoolLog, level, msg, ##__VA_ARGS__)
 
 namespace mozilla {
 
@@ -44,21 +54,14 @@ SharedThreadPoolShutdownObserver::Observe(nsISupports* aSubject,
                                           const char* aTopic,
                                           const char16_t* aData) {
   MOZ_RELEASE_ASSERT(!strcmp(aTopic, "xpcom-shutdown-threads"));
-#ifdef EARLY_BETA_OR_EARLIER
-  {
+  if (MOZ_LOG_TEST(sSharedThreadPoolLog, LogLevel::Info)) {
     ReentrantMonitorAutoEnter mon(*sMonitor);
     if (!sPools->IsEmpty()) {
-      nsAutoCString str;
       for (const auto& key : sPools->Keys()) {
-        str.AppendPrintf("\"%s\" ", nsAutoCString(key).get());
+        STP_LOG(LogLevel::Info, "Waiting for shutdown {}", key);
       }
-      printf_stderr(
-          "SharedThreadPool in xpcom-shutdown-threads. Waiting for "
-          "pools %s\n",
-          str.get());
     }
   }
-#endif
   SharedThreadPool::SpinUntilEmpty();
   sMonitor = nullptr;
   sPools = nullptr;
@@ -104,6 +107,8 @@ already_AddRefed<SharedThreadPool> SharedThreadPool::Get(
           if (NS_FAILED(pool->EnsureThreadLimitIsAtLeast(aThreadLimit))) {
             NS_WARNING("Failed to set limits on thread pool");
           }
+          STP_LOG(LogLevel::Debug, "Existing {} found for {}",
+                  fmt::ptr(pool.get()), aName);
         } else {
           nsCOMPtr<nsIThreadPool> threadPool(CreateThreadPool(aName));
           if (NS_WARN_IF(!threadPool)) {
@@ -130,6 +135,8 @@ already_AddRefed<SharedThreadPool> SharedThreadPool::Get(
           }
 
           entry.Insert(pool.get());
+          STP_LOG(LogLevel::Debug, "New {} created for {}",
+                  fmt::ptr(pool.get()), aName);
         }
 
         return pool.forget();
@@ -175,7 +182,9 @@ NS_IMPL_QUERY_INTERFACE(SharedThreadPool, nsIThreadPool, nsIEventTarget)
 SharedThreadPool::SharedThreadPool(const nsCString& aName, nsIThreadPool* aPool)
     : mName(aName), mPool(aPool), mRefCnt(0) {}
 
-SharedThreadPool::~SharedThreadPool() = default;
+SharedThreadPool::~SharedThreadPool() {
+  STP_LOG(LogLevel::Debug, "{} destroyed", fmt::ptr(this));
+}
 
 nsresult SharedThreadPool::EnsureThreadLimitIsAtLeast(uint32_t aLimit) {
   // We limit the number of threads that we use. Note that we
@@ -219,3 +228,5 @@ static already_AddRefed<nsIThreadPool> CreateThreadPool(
 }
 
 }  // namespace mozilla
+
+#undef STP_LOG
