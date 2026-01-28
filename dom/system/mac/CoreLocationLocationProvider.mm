@@ -100,6 +100,11 @@ static void LogLocationPermissionState() {
   console->LogStringMessage(NS_ConvertUTF8toUTF16([message UTF8String]).get());
   LOGD("%s", [message UTF8String]);
 
+  // Telemetry will store up to 16 different error codes.
+  nsAutoCString errorCodeStr;
+  errorCodeStr.AppendInt(static_cast<int32_t>([aError code]));
+  glean::geolocation::macos_error_code.Get(errorCodeStr).Add();
+
   // The CL provider does not fallback to GeoIP, so use
   // NetworkGeolocationProvider for this. The concept here is: on error, hand
   // off geolocation to MLS, which will then report back a location or error.

@@ -384,6 +384,12 @@ void GCLocProviderPriv::DBusProxyError(const GError* aGError,
   GQuark gdbusDomain = G_DBUS_ERROR;
   int error = GeolocationPositionError_Binding::POSITION_UNAVAILABLE;
   if (aGError) {
+    // Telemetry will store up to 16 different error codes.
+    nsAutoCString errorCodeStr;
+    errorCodeStr.AppendInt(aGError->code);
+    glean::geolocation::geoclue_error_code.Get(errorCodeStr).Add();
+    GCL_LOG(Info, "GeoClue error (%d): %s", aGError->code, aGError->message);
+
     if (g_error_matches(aGError, gdbusDomain, G_DBUS_ERROR_TIMEOUT) ||
         g_error_matches(aGError, gdbusDomain, G_DBUS_ERROR_TIMED_OUT)) {
       error = GeolocationPositionError_Binding::TIMEOUT;

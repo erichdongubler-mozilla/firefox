@@ -33,6 +33,11 @@ extern LazyLogModule gWindowsLocationProviderLog;
 #define LOGI(...) \
   MOZ_LOG(gWindowsLocationProviderLog, LogLevel::Info, (__VA_ARGS__))
 
+// Use string lookup since dual_labeled_counter does not yet support enums.
+static void AddFailureTelemetry(const nsACString& aReason) {
+  glean::geolocation::windows_failure.Get("winrt"_ns, aReason).Add();
+}
+
 HRESULT
 WindowsRuntimeLocationChild::OnPositionChanged(
     const ComPtr<IGeolocator>& aGeolocator,
@@ -131,9 +136,6 @@ HRESULT
 WindowsRuntimeLocationChild::OnStatusChanged(
     const ComPtr<IGeolocator>& aGeolocator,
     const ComPtr<IStatusChangedEventArgs>& aArgs) {
-  // When registering event, REPORT_INITIALIZING is fired at first.
-  // Then, when the location is found, REPORT_RUNNING is fired.
-  // We ignore those messages.
   PositionStatus status;
   HRESULT hr = aArgs->get_Status(&status);
   if (FAILED(hr)) {
@@ -148,7 +150,11 @@ WindowsRuntimeLocationChild::OnStatusChanged(
   uint16_t err;
   switch (status) {
     case PositionStatus::PositionStatus_Disabled:
+      AddFailureTelemetry("permission denied"_ns);
+      err = GeolocationPositionError_Binding::PERMISSION_DENIED;
+      break;
     case PositionStatus::PositionStatus_NotAvailable:
+      AddFailureTelemetry("not supported"_ns);
       err = GeolocationPositionError_Binding::POSITION_UNAVAILABLE;
       break;
     default:
@@ -189,6 +195,7 @@ mozilla::ipc::IPCResult WindowsRuntimeLocationChild::Startup() {
         "WindowsRuntimeLocationChild(%p) failed to create Geolocator. "
         "HRESULT=%08lx",
         this, hr);
+    AddFailureTelemetry("creation error"_ns);
     return IPC_OK();
   }
 
@@ -199,6 +206,7 @@ mozilla::ipc::IPCResult WindowsRuntimeLocationChild::Startup() {
         "WindowsRuntimeLocationChild(%p) failed to get IGeolocator interface. "
         "HRESULT=%08lx",
         this, hr);
+    AddFailureTelemetry("unexpected error"_ns);
     return IPC_OK();
   }
 
@@ -228,6 +236,7 @@ mozilla::ipc::IPCResult WindowsRuntimeLocationChild::RegisterForReport() {
   });
 
   if (!mGeolocator) {
+    AddFailureTelemetry("unexpected error"_ns);
     return IPC_OK();
   }
 
@@ -235,6 +244,7 @@ mozilla::ipc::IPCResult WindowsRuntimeLocationChild::RegisterForReport() {
       mHighAccuracy ? PositionAccuracy::PositionAccuracy_High
                     : PositionAccuracy::PositionAccuracy_Default);
   if (FAILED(hr)) {
+    AddFailureTelemetry("unexpected error"_ns);
     return IPC_OK();
   }
 
@@ -249,6 +259,7 @@ mozilla::ipc::IPCResult WindowsRuntimeLocationChild::RegisterForReport() {
       }).Get(),
       &mPositionChangedToken);
   if (FAILED(hr)) {
+    AddFailureTelemetry("failed to register"_ns);
     return IPC_OK();
   }
 
@@ -262,13 +273,16 @@ mozilla::ipc::IPCResult WindowsRuntimeLocationChild::RegisterForReport() {
   if (FAILED(hr)) {
     mGeolocator->remove_PositionChanged(mPositionChangedToken);
     mPositionChangedToken.value = 0;
+    AddFailureTelemetry("failed to register"_ns);
     return IPC_OK();
   }
 
   glean::geolocation::geolocation_service
       .EnumGet(glean::geolocation::GeolocationServiceLabel::eSystem)
       .Add();
-  LOGI("WindowsLocationChild::RecvRegisterForReport successfully registered");
+  LOGI(
+      "WindowsRuntimeLocationChild::RecvRegisterForReport successfully "
+      "registered");
   sendFailOnError.release();
   return IPC_OK();
 }
