@@ -231,7 +231,6 @@ firefox_desktop_pings = [
     "dom/security/pings.yaml",
     "services/fxaccounts/pings.yaml",
     "services/sync/pings.yaml",
-    "toolkit/components/crashes/pings.yaml",
     "toolkit/components/nimbus/pings.yaml",
     "toolkit/components/reportbrokensite/pings.yaml",
     "toolkit/components/telemetry/pings.yaml",
@@ -242,7 +241,6 @@ firefox_desktop_pings = [
 # Pings that are sent by the Firefox Desktop Background Update Task
 # Order is lexicographical, enforced by t/c/glean/tests/pytest/test_yaml_indices.py
 background_update_pings = [
-    "toolkit/components/crashes/pings.yaml",
     "toolkit/mozapps/update/pings.yaml",
     "toolkit/mozapps/update/shared_pings.yaml",
 ]
@@ -251,7 +249,6 @@ background_update_pings = [
 # Order is lexicographical, enforced by t/c/glean/tests/pytest/test_yaml_indices.py
 background_tasks_pings = [
     "toolkit/components/backgroundtasks/pings.yaml",
-    "toolkit/components/crashes/pings.yaml",
     "toolkit/components/nimbus/pings.yaml",
     "toolkit/mozapps/defaultagent/pings.yaml",
 ]
