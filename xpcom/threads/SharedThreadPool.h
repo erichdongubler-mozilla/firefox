@@ -81,15 +81,15 @@ class SharedThreadPool final : public nsIThreadPool {
   using nsIEventTarget::Dispatch;
 
   NS_IMETHOD RegisterShutdownTask(nsITargetShutdownTask* task) override {
-    return NS_ERROR_NOT_IMPLEMENTED;
+    return !mPool ? NS_ERROR_UNEXPECTED : mPool->RegisterShutdownTask(task);
   }
 
   NS_IMETHOD UnregisterShutdownTask(nsITargetShutdownTask* task) override {
-    return NS_ERROR_NOT_IMPLEMENTED;
+    return !mPool ? NS_ERROR_UNEXPECTED : mPool->UnregisterShutdownTask(task);
   }
 
   NS_IMETHOD IsOnCurrentThread(bool* _retval) override {
-    return !mPool ? NS_ERROR_NULL_POINTER : mPool->IsOnCurrentThread(_retval);
+    return !mPool ? NS_ERROR_UNEXPECTED : mPool->IsOnCurrentThread(_retval);
   }
 
   NS_IMETHOD_(bool) IsOnCurrentThreadInfallible() override {
@@ -99,7 +99,9 @@ class SharedThreadPool final : public nsIThreadPool {
   // Creates necessary statics. Called once at startup.
   static void InitStatics();
 
-  NS_IMETHOD_(FeatureFlags) GetFeatures() override { return SUPPORTS_BASE; }
+  NS_IMETHOD_(FeatureFlags) GetFeatures() override {
+    return SUPPORTS_SHUTDOWN_TASKS | SUPPORTS_SHUTDOWN_TASK_DISPATCH;
+  }
 
  private:
   explicit SharedThreadPool(nsIThreadPool* aPool);
