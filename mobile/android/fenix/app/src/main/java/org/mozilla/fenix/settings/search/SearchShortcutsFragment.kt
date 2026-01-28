@@ -19,6 +19,7 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 
 /**
  * A [Fragment] that allows user to select what search engine shortcuts will be visible in the quick
@@ -42,7 +43,7 @@ class SearchShortcutsFragment : Fragment(R.layout.fragment_search_shortcuts) {
 
         binding.root.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         binding.root.setContent {
-            FirefoxTheme {
+            FirefoxTheme(theme = Theme.getTheme(allowPrivateTheme = true)) {
                 SearchEngineShortcuts(
                     getString(R.string.preferences_category_engines_in_search_menu),
                     requireComponents.core.store,
