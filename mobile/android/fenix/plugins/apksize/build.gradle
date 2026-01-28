@@ -9,7 +9,7 @@ plugins {
 layout.buildDirectory.set(file("${gradle.mozconfig.topobjdir}/gradle/build/mobile/android/fenix/plugins/apksize"))
 
 dependencies {
-    implementation "org.json:json:20210307"
+    implementation "org.json:json:20250517"
     implementation libs.android.gradle.plugin
 }
 
