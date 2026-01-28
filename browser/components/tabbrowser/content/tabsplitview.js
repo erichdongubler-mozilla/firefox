@@ -284,12 +284,8 @@
         }
       }
 
-      if (this.hasActiveTab) {
-        this.#activate();
-        gBrowser.setIsSplitViewActive(true, this.#tabs);
-      } else if (isSessionRestore) {
-        this.#activate();
-      }
+      this.#activate();
+      gBrowser.setIsSplitViewActive(this.hasActiveTab, this.#tabs);
     }
 
     /**
