@@ -8,6 +8,7 @@
 #include "GeolocationPosition.h"
 #include "MLSFallback.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/Logging.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
 #include "mozilla/glean/DomGeolocationMetrics.h"
@@ -29,6 +30,12 @@
 using namespace mozilla;
 
 #define kDefaultAccuracy kCLLocationAccuracyNearestTenMeters
+
+static LazyLogModule gCoreLocationProviderLog("CoreLocation");
+#define LOGD(...) \
+  MOZ_LOG(gCoreLocationProviderLog, LogLevel::Debug, (__VA_ARGS__))
+#define LOGI(...) \
+  MOZ_LOG(gCoreLocationProviderLog, LogLevel::Info, (__VA_ARGS__))
 
 @interface LocationDelegate : NSObject <CLLocationManagerDelegate> {
   CoreLocationLocationProvider* mProvider;
@@ -62,6 +69,7 @@ using namespace mozilla;
       stringByAppendingString:[aError localizedDescription]];
 
   console->LogStringMessage(NS_ConvertUTF8toUTF16([message UTF8String]).get());
+  LOGD("%s", [message UTF8String]);
 
   // The CL provider does not fallback to GeoIP, so use
   // NetworkGeolocationProvider for this. The concept here is: on error, hand
@@ -188,6 +196,10 @@ CoreLocationLocationProvider::Startup() {
   // guaranteed
   [mCLObjects->mLocationManager stopUpdatingLocation];
   [mCLObjects->mLocationManager startUpdatingLocation];
+  glean::geolocation::geolocation_service
+      .EnumGet(glean::geolocation::GeolocationServiceLabel::eSystem)
+      .Add();
+  LOGI("CoreLocationLocationProvider requested location updates.");
   return NS_OK;
 }
 
@@ -216,6 +228,7 @@ CoreLocationLocationProvider::Shutdown() {
     mMLSFallbackProvider = nullptr;
   }
 
+  LOGI("CoreLocationLocationProvider stopped location updates.");
   return NS_OK;
 }
 
