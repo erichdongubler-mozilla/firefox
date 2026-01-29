@@ -401,6 +401,23 @@ bool ScriptPreloader::WillWriteScripts() {
   return !mDataPrepared && (XRE_IsParentProcess() || mChildActor);
 }
 
+bool ScriptPreloader::Active() const {
+  if (!mCacheInitialized) {
+    return false;
+  }
+
+  if (!mStartupFinished) {
+    return true;
+  }
+
+  if (StaticPrefs::javascript_options_force_preloader_active() &&
+      xpc::IsInAutomation()) {
+    return true;
+  }
+
+  return false;
+}
+
 Result<nsCOMPtr<nsIFile>, nsresult> ScriptPreloader::GetCacheFile(
     const nsAString& suffix) {
   NS_ENSURE_TRUE(mProfD, Err(NS_ERROR_NOT_INITIALIZED));
