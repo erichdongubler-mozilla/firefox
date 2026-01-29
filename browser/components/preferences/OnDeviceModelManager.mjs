@@ -101,20 +101,44 @@ export const OnDeviceModelManager = {
    * Get an {@link AIFeature} for a feature id.
    *
    * @param {OnDeviceModelFeaturesEnum} feature
-   * @returns {AIFeature}
+   * @returns {typeof AIFeature}
    */
   getAIFeature(feature) {
     switch (feature) {
       case OnDeviceModelFeatures.KeyPoints:
+        // @ts-expect-error: LinkPreview implements more than AIFeature
         return lazy.LinkPreview;
       case OnDeviceModelFeatures.PdfAltText:
         return lazy.PdfJsGuessAltTextFeature;
       case OnDeviceModelFeatures.TabGroups:
+        // @ts-expect-error: SmartTabGroupingManager implements more than AIFeature
         return lazy.SmartTabGroupingManager;
       case OnDeviceModelFeatures.Translations:
         return lazy.TranslationsFeature;
       case OnDeviceModelFeatures.SidebarChatbot:
         return lazy.GenAI;
+      default:
+        throw new Error(`Unknown feature "${feature}"`);
+    }
+  },
+
+  /**
+   * Get the feature pref to store default/available/blocked user selection.
+   *
+   * @param {OnDeviceModelFeaturesEnum} feature
+   */
+  getFeaturePref(feature) {
+    switch (feature) {
+      case OnDeviceModelFeatures.KeyPoints:
+        return "browser.ai.control.linkPreviewKeyPoints";
+      case OnDeviceModelFeatures.PdfAltText:
+        return "browser.ai.control.pdfjsAltText";
+      case OnDeviceModelFeatures.TabGroups:
+        return "browser.ai.control.smartTabGroups";
+      case OnDeviceModelFeatures.Translations:
+        return "browser.ai.control.translations";
+      case OnDeviceModelFeatures.SidebarChatbot:
+        return "browser.ai.control.sidebarChatbot";
       default:
         throw new Error(`Unknown feature "${feature}"`);
     }
@@ -153,6 +177,7 @@ export const OnDeviceModelManager = {
    * @param {OnDeviceModelFeaturesEnum} feature The feature key to reset.
    */
   async reset(feature) {
+    Services.prefs.clearUserPref(this.getFeaturePref(feature));
     return this.getAIFeature(feature).reset();
   },
 
@@ -162,6 +187,7 @@ export const OnDeviceModelManager = {
    * @param {OnDeviceModelFeaturesEnum} feature The feature key to enable.
    */
   async enable(feature) {
+    Services.prefs.setStringPref(this.getFeaturePref(feature), "enabled");
     return this.getAIFeature(feature).enable();
   },
 
@@ -171,6 +197,7 @@ export const OnDeviceModelManager = {
    * @param {OnDeviceModelFeaturesEnum} feature The feature key to disable.
    */
   async disable(feature) {
+    Services.prefs.setStringPref(this.getFeaturePref(feature), "blocked");
     return this.getAIFeature(feature).disable();
   },
 };

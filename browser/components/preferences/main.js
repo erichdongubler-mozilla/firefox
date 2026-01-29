@@ -165,6 +165,7 @@ Preferences.addAll([
   { id: "layout.css.always_underline_links", type: "bool" },
   { id: "layout.spellcheckDefault", type: "int" },
   { id: "accessibility.tabfocus", type: "int" },
+
   { id: "browser.ml.linkPreview.enabled", type: "bool" },
   { id: "browser.ml.linkPreview.optin", type: "bool" },
   { id: "browser.ml.linkPreview.longPress", type: "bool" },
@@ -505,6 +506,7 @@ Preferences.addSetting(
     },
   })
 );
+
 Preferences.addSetting({
   id: "linkPreviewEnabled",
   pref: "browser.ml.linkPreview.enabled",
@@ -514,6 +516,7 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "linkPreviewKeyPoints",
   pref: "browser.ml.linkPreview.optin",
+  // LinkPreview.canShowKeyPoints depends on the global genai pref.
   // @ts-ignore bug 1996860
   visible: () => LinkPreview.canShowKeyPoints,
 });
@@ -1641,8 +1644,8 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "tabGroupSuggestions",
   pref: "browser.tabs.groups.smart.userEnabled",
-  deps: ["smartTabGroups", "tabGroups"],
-  visible: ({ tabGroups, smartTabGroups }) =>
+  deps: ["tabGroups", "smartTabGroups"],
+  visible: ({ smartTabGroups, tabGroups }) =>
     !!tabGroups.value &&
     !!smartTabGroups.value &&
     Services.locale.appLocaleAsBCP47.startsWith("en"),
