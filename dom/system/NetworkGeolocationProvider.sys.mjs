@@ -357,7 +357,7 @@ NetworkGeolocationProvider.prototype = {
 
     let result;
     try {
-      result = await this.makeRequest(url, wifiData);
+      result = await this.fetchLocation(url, wifiData);
       lazy.log.info(
         `geo provider reported: ${result.location.lng}:${result.location.lat}`
       );
@@ -383,7 +383,7 @@ NetworkGeolocationProvider.prototype = {
     }
   },
 
-  async makeRequest(url, wifiData) {
+  async fetchLocation(url, wifiData) {
     this.onStatus(false, "xhr-start");
 
     let fetchController = new AbortController();
@@ -403,17 +403,17 @@ NetworkGeolocationProvider.prototype = {
       Services.prefs.getIntPref("geo.provider.network.timeout")
     );
 
-    let req = await fetch(url, fetchOpts);
+    let response = await fetch(url, fetchOpts);
     lazy.clearTimeout(timeoutId);
 
-    if (!req.ok) {
+    if (!response.ok) {
       throw new Error(
-        `The geolocation provider returned a non-ok status ${req.status}`,
-        { cause: await req.text() }
+        `The geolocation provider returned a non-ok status ${response.status}`,
+        { cause: await response.text() }
       );
     }
 
-    let result = req.json();
+    let result = response.json();
     return result;
   },
 };
