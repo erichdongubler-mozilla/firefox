@@ -112,6 +112,7 @@ const Template = ({
   disabledOption,
   hiddenOption,
   withSeparator,
+  inputLayout,
 }) => html`
   <div style="width:300px">
     <moz-select
@@ -122,6 +123,7 @@ const Template = ({
       data-l10n-id=${l10nId}
       support-page=${ifDefined(supportPage || null)}
       accesskey=${ifDefined(accessKey || null)}
+      inputlayout=${ifDefined(inputLayout)}
       class=${classMap({ "text-truncated-ellipsis": ellipsized })}
     >
       ${hasSlottedDescription
@@ -162,6 +164,7 @@ Default.args = {
   disabledOption: false,
   hiddenOption: false,
   withSeparator: false,
+  inputLayout: null,
 };
 
 export const WithIcon = Template.bind({});
@@ -251,4 +254,32 @@ export const WithSeparator = Template.bind({});
 WithSeparator.args = {
   ...Default.args,
   withSeparator: true,
+};
+
+export const InlineEndLayout = Template.bind({});
+InlineEndLayout.args = {
+  ...Default.args,
+  inputLayout: "inline-end",
+};
+
+export const InlineEndWithDescription = Template.bind({});
+InlineEndWithDescription.args = {
+  ...Default.args,
+  inputLayout: "inline-end",
+  l10nId: "moz-select-description",
+};
+
+export const InlineEndWithSupportLink = Template.bind({});
+InlineEndWithSupportLink.args = {
+  ...Default.args,
+  inputLayout: "inline-end",
+  l10nId: "moz-select-description",
+  supportPage: "support-page",
+};
+
+export const InlineEndDisabled = Template.bind({});
+InlineEndDisabled.args = {
+  ...Default.args,
+  inputLayout: "inline-end",
+  disabled: true,
 };
