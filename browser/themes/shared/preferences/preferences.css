@@ -1448,7 +1448,7 @@ setting-group[groupid="aiFeatures"] {
   border-inline-color: transparent;
 }
 
-#aiControlsDefault {
+#aiControlDefaultToggle {
   --toggle-width: 40px;
   --toggle-height: 20px;
 }

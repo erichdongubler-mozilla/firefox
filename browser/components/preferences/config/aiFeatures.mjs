@@ -533,6 +533,7 @@ SettingGroupManager.registerGroups({
             control: "moz-toggle",
             controlAttrs: {
               headinglevel: 2,
+              inputlayout: "inline-end",
             },
             options: [
               {
@@ -580,6 +581,9 @@ SettingGroupManager.registerGroups({
                     id: "aiControlTranslationsSelect",
                     l10nId: "preferences-ai-controls-translations-control",
                     control: "moz-select",
+                    controlAttrs: {
+                      inputlayout: "inline-end",
+                    },
                     options: [
                       ...AI_CONTROL_OPTIONS.filter(
                         opt => opt.value != AiControlStates.enabled
@@ -604,6 +608,9 @@ SettingGroupManager.registerGroups({
                     id: "aiControlPdfjsAltTextSelect",
                     l10nId: "preferences-ai-controls-pdfjs-control",
                     control: "moz-select",
+                    controlAttrs: {
+                      inputlayout: "inline-end",
+                    },
                     supportPage: "pdf-alt-text",
                     options: [...AI_CONTROL_OPTIONS],
                   },
@@ -617,6 +624,9 @@ SettingGroupManager.registerGroups({
                     l10nId:
                       "preferences-ai-controls-tab-group-suggestions-control",
                     control: "moz-select",
+                    controlAttrs: {
+                      inputlayout: "inline-end",
+                    },
                     supportPage: "how-use-ai-enhanced-tab-groups",
                     options: [...AI_CONTROL_OPTIONS],
                   },
@@ -629,6 +639,9 @@ SettingGroupManager.registerGroups({
                     id: "aiControlLinkPreviewKeyPointsSelect",
                     l10nId: "preferences-ai-controls-key-points-control",
                     control: "moz-select",
+                    controlAttrs: {
+                      inputlayout: "inline-end",
+                    },
                     supportPage: "use-link-previews-firefox",
                     options: [...AI_CONTROL_OPTIONS],
                   },
@@ -678,6 +691,9 @@ SettingGroupManager.registerGroups({
                 id: "aiControlSidebarChatbotSelect",
                 l10nId: "preferences-ai-controls-sidebar-chatbot-control",
                 control: "moz-select",
+                controlAttrs: {
+                  inputlayout: "inline-end",
+                },
                 options: [
                   {
                     l10nId: "preferences-ai-controls-state-available",
