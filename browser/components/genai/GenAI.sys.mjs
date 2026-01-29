@@ -1332,7 +1332,8 @@ export const GenAI = {
   get isManagedByPolicy() {
     return (
       Services.prefs.prefIsLocked(PREF_CHAT_ENABLED) ||
-      Services.prefs.prefIsLocked(PREF_CHAT_PROVIDER)
+      Services.prefs.prefIsLocked(PREF_CHAT_PROVIDER) ||
+      Services.prefs.prefIsLocked("browser.ml.chat.page")
     );
   },
 
