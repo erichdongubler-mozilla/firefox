@@ -137,13 +137,15 @@ export class SettingPane extends MozLitElement {
 
   render() {
     return html`
-      <moz-page-header
-        data-l10n-id=${this.config.l10nId}
-        .iconSrc=${this.config.iconSrc}
-        .backButton=${this.isSubPane}
-        @navigate-back=${this.goBack}
-      ></moz-page-header>
-      ${this.config.groupIds.map(groupId => this.groupTemplate(groupId))}
+      <section>
+        <moz-page-header
+          data-l10n-id=${this.config.l10nId}
+          .iconSrc=${this.config.iconSrc}
+          .backButton=${this.isSubPane}
+          @navigate-back=${this.goBack}
+        ></moz-page-header>
+        ${this.config.groupIds.map(groupId => this.groupTemplate(groupId))}
+      </section>
     `;
   }
 }
