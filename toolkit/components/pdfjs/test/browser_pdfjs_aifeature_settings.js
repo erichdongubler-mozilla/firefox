@@ -48,8 +48,8 @@ add_task(function test_isEnabled_with_pref() {
   clearGuessAltTextPrefs();
 
   Assert.ok(
-    !PdfJsGuessAltTextFeature.isEnabled,
-    "With no user prefs set, isEnabled should be false"
+    PdfJsGuessAltTextFeature.isEnabled,
+    "With no user prefs set, isEnabled should be true"
   );
 
   Services.prefs.setBoolPref(PREF_ENABLED, true);
