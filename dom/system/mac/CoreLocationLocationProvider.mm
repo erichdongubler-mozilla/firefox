@@ -37,6 +37,30 @@ static LazyLogModule gCoreLocationProviderLog("CoreLocation");
 #define LOGI(...) \
   MOZ_LOG(gCoreLocationProviderLog, LogLevel::Info, (__VA_ARGS__))
 
+static void LogLocationPermissionState() {
+  CLAuthorizationStatus authStatus = [CLLocationManager authorizationStatus];
+  const char* authStatusStr = "Unknown";
+  switch (authStatus) {
+    case kCLAuthorizationStatusNotDetermined:
+      authStatusStr = "NotDetermined";
+      break;
+    case kCLAuthorizationStatusRestricted:
+      authStatusStr = "Restricted";
+      break;
+    case kCLAuthorizationStatusDenied:
+      authStatusStr = "Denied";
+      break;
+    case kCLAuthorizationStatusAuthorizedAlways:
+      authStatusStr = "AuthorizedAlways";
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown CLAuthorizationStatus");
+      break;
+  }
+
+  LOGD("Authorization status: %s (code: %d)", authStatusStr, (int)authStatus);
+}
+
 @interface LocationDelegate : NSObject <CLLocationManagerDelegate> {
   CoreLocationLocationProvider* mProvider;
 }
@@ -46,6 +70,9 @@ static LazyLogModule gCoreLocationProviderLog("CoreLocation");
        didFailWithError:(NSError*)aError;
 - (void)locationManager:(CLLocationManager*)aManager
      didUpdateLocations:(NSArray*)locations;
+- (void)locationManagerDidChangeAuthorization:(CLLocationManager*)aManager;
+- (void)locationManagerDidPauseLocationUpdates:(CLLocationManager*)aManager;
+- (void)locationManagerDidResumeLocationUpdates:(CLLocationManager*)aManager;
 
 @end
 
@@ -64,6 +91,8 @@ static LazyLogModule gCoreLocationProviderLog("CoreLocation");
       do_GetService(NS_CONSOLESERVICE_CONTRACTID);
 
   NS_ENSURE_TRUE_VOID(console);
+
+  LogLocationPermissionState();
 
   NSString* message = [@"Failed to acquire position: "
       stringByAppendingString:[aError localizedDescription]];
@@ -119,7 +148,21 @@ static LazyLogModule gCoreLocationProviderLog("CoreLocation");
         .Add();
   }
 
+  LOGD("Location updated.");
   mProvider->Update(geoPosition);
+}
+
+- (void)locationManagerDidChangeAuthorization:(CLLocationManager*)aManager {
+  LOGD("Authorization changed");
+  LogLocationPermissionState();
+}
+
+- (void)locationManagerDidPauseLocationUpdates:(CLLocationManager*)aManager {
+  LOGD("Paused location updates");
+}
+
+- (void)locationManagerDidResumeLocationUpdates:(CLLocationManager*)aManager {
+  LOGD("Resumed location updates");
 }
 @end
 
