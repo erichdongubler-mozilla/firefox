@@ -226,8 +226,7 @@ struct FeatureImplementationStatus {
         return implemented(WGPUWEBGPU_FEATURE_FLOAT32_FILTERABLE);
 
       case dom::GPUFeatureName::Float32_blendable:
-        return unimplemented(
-            "https://bugzilla.mozilla.org/show_bug.cgi?id=1931630");
+        return implemented(WGPUWEBGPU_FEATURE_FLOAT32_BLENDABLE);
 
       case dom::GPUFeatureName::Clip_distances:
         return unimplemented(
