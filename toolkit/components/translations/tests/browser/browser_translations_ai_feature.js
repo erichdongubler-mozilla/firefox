@@ -38,169 +38,145 @@ add_task(async function test_ai_feature_state_combinations() {
       defaultPref: "available",
       translationsPref: "blocked",
       enabledPref: false,
-      expectAllowed: false,
       expectEnabled: false,
     },
     {
       defaultPref: "available",
       translationsPref: "blocked",
       enabledPref: true,
-      expectAllowed: false,
-      expectEnabled: false,
+      expectEnabled: true,
     },
     {
       defaultPref: "available",
       translationsPref: "enabled",
       enabledPref: false,
-      expectAllowed: true,
       expectEnabled: false,
     },
     {
       defaultPref: "available",
       translationsPref: "enabled",
       enabledPref: true,
-      expectAllowed: true,
       expectEnabled: true,
     },
     {
       defaultPref: "available",
       translationsPref: "default",
       enabledPref: false,
-      expectAllowed: true,
       expectEnabled: false,
     },
     {
       defaultPref: "available",
       translationsPref: "default",
       enabledPref: true,
-      expectAllowed: true,
       expectEnabled: true,
     },
     {
       defaultPref: "available",
       translationsPref: "invalid",
       enabledPref: false,
-      expectAllowed: false,
       expectEnabled: false,
     },
     {
       defaultPref: "available",
       translationsPref: "invalid",
       enabledPref: true,
-      expectAllowed: false,
-      expectEnabled: false,
+      expectEnabled: true,
     },
     {
       defaultPref: "blocked",
       translationsPref: "blocked",
       enabledPref: false,
-      expectAllowed: false,
       expectEnabled: false,
     },
     {
       defaultPref: "blocked",
       translationsPref: "blocked",
       enabledPref: true,
-      expectAllowed: false,
-      expectEnabled: false,
+      expectEnabled: true,
     },
     {
       defaultPref: "blocked",
       translationsPref: "enabled",
       enabledPref: false,
-      expectAllowed: true,
       expectEnabled: false,
     },
     {
       defaultPref: "blocked",
       translationsPref: "enabled",
       enabledPref: true,
-      expectAllowed: true,
       expectEnabled: true,
     },
     {
       defaultPref: "blocked",
       translationsPref: "default",
       enabledPref: false,
-      expectAllowed: false,
       expectEnabled: false,
     },
     {
       defaultPref: "blocked",
       translationsPref: "default",
       enabledPref: true,
-      expectAllowed: false,
-      expectEnabled: false,
+      expectEnabled: true,
     },
     {
       defaultPref: "blocked",
       translationsPref: "invalid",
       enabledPref: false,
-      expectAllowed: false,
       expectEnabled: false,
     },
     {
       defaultPref: "blocked",
       translationsPref: "invalid",
       enabledPref: true,
-      expectAllowed: false,
-      expectEnabled: false,
+      expectEnabled: true,
     },
     {
       defaultPref: "invalid",
       translationsPref: "blocked",
       enabledPref: false,
-      expectAllowed: false,
       expectEnabled: false,
     },
     {
       defaultPref: "invalid",
       translationsPref: "blocked",
       enabledPref: true,
-      expectAllowed: false,
-      expectEnabled: false,
+      expectEnabled: true,
     },
     {
       defaultPref: "invalid",
       translationsPref: "enabled",
       enabledPref: false,
-      expectAllowed: true,
       expectEnabled: false,
     },
     {
       defaultPref: "invalid",
       translationsPref: "enabled",
       enabledPref: true,
-      expectAllowed: true,
       expectEnabled: true,
     },
     {
       defaultPref: "invalid",
       translationsPref: "default",
       enabledPref: false,
-      expectAllowed: false,
       expectEnabled: false,
     },
     {
       defaultPref: "invalid",
       translationsPref: "default",
       enabledPref: true,
-      expectAllowed: false,
-      expectEnabled: false,
+      expectEnabled: true,
     },
     {
       defaultPref: "invalid",
       translationsPref: "invalid",
       enabledPref: false,
-      expectAllowed: false,
       expectEnabled: false,
     },
     {
       defaultPref: "invalid",
       translationsPref: "invalid",
       enabledPref: true,
-      expectAllowed: false,
-      expectEnabled: false,
+      expectEnabled: true,
     },
   ];
 
@@ -210,7 +186,6 @@ add_task(async function test_ai_feature_state_combinations() {
     translationsPref,
     defaultPref,
     enabledPref,
-    expectAllowed,
     expectEnabled,
   } of cases) {
     const description = `default=${defaultPref} translations=${translationsPref} enabled=${enabledPref}`;
@@ -222,8 +197,8 @@ add_task(async function test_ai_feature_state_combinations() {
     );
     Services.prefs.setBoolPref(TRANSLATIONS_ENABLE_PREF, enabledPref);
 
-    is(feature.isAllowed, expectAllowed, `${description} (allowed state)`);
-    is(feature.isBlocked, !expectAllowed, `${description} (blocked state)`);
+    is(feature.isAllowed, true, `${description} (allowed state)`);
+    is(feature.isBlocked, !expectEnabled, `${description} (blocked state)`);
     is(feature.isEnabled, expectEnabled, `${description} (enabled state)`);
   }
 

@@ -11,11 +11,13 @@ const XPCOMUtils = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 ).XPCOMUtils;
 const lazy = XPCOMUtils.declareLazy({
+  GenAI: "resource:///modules/GenAI.sys.mjs",
   LinkPreview: "moz-src:///browser/components/genai/LinkPreview.sys.mjs",
   PdfJsGuessAltTextFeature: "resource://pdf.js/PdfJsAIFeature.sys.mjs",
   SmartTabGroupingManager:
     "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
-  // TranslationsFeature: "chrome://global/content/translations/TranslationsFeature.sys.mjs",
+  TranslationsFeature:
+    "chrome://global/content/translations/TranslationsFeature.sys.mjs",
 });
 
 /**
@@ -26,6 +28,7 @@ const OnDeviceModelFeatures = Object.freeze({
   KeyPoints: "keypoints",
   PdfAltText: "pdfalttext",
   Translations: "translations",
+  SidebarChatbot: "sidebarchatbot",
 });
 
 /** @type {Record<OnDeviceModelFeaturesEnum, string[]>} */
@@ -46,6 +49,10 @@ const FeaturePrefs = Object.freeze({
     "browser.tabs.groups.smart.optin",
   ],
   [OnDeviceModelFeatures.Translations]: ["browser.translations.enable"],
+  [OnDeviceModelFeatures.SidebarChatbot]: [
+    "browser.ml.chat.provider",
+    "browser.ml.chat.enabled",
+  ],
 });
 
 export const OnDeviceModelManager = {
@@ -105,16 +112,9 @@ export const OnDeviceModelManager = {
       case OnDeviceModelFeatures.TabGroups:
         return lazy.SmartTabGroupingManager;
       case OnDeviceModelFeatures.Translations:
-        // TODO: (bug 2010922) Use TranslationsFeature instead of this stub
-        // return lazy.TranslationsFeature;
-        return {
-          isBlocked: false,
-          isAllowed: true,
-          isEnabled: false,
-          reset() {},
-          enable() {},
-          disable() {},
-        };
+        return lazy.TranslationsFeature;
+      case OnDeviceModelFeatures.SidebarChatbot:
+        return lazy.GenAI;
       default:
         throw new Error(`Unknown feature "${feature}"`);
     }
