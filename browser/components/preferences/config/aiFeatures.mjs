@@ -293,6 +293,7 @@ Preferences.addSetting({
 
 SettingGroupManager.registerGroups({
   aiControlsDescription: {
+    card: "never",
     items: [
       {
         id: "aiControlsDescription",
@@ -334,6 +335,7 @@ SettingGroupManager.registerGroups({
     ],
   },
   aiStatesDescription: {
+    card: "never",
     items: [
       {
         id: "aiStatesDescription",
@@ -368,6 +370,7 @@ SettingGroupManager.registerGroups({
     ],
   },
   aiFeatures: {
+    card: "always",
     items: [
       {
         id: "blockAiGroup",
