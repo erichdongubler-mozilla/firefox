@@ -13,6 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ActivityStream: "resource://newtab/lib/ActivityStream.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
+  ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   TelemetryReportingPolicy:
     "resource://gre/modules/TelemetryReportingPolicy.sys.mjs",
 });
@@ -184,12 +185,27 @@ export const AboutNewTab = {
 
     const addonInitted = redirector.promiseBuiltInAddonInitialized;
 
-    await Promise.all([trainhopFeatureReady, addonInitted]);
+    // The ProfileAge function itself returns a Promise, which resolves to the
+    // underlying accessor, and the created getter on that accessor also returns
+    // a Promise. This construct gives us a Promise that ultimately resolves
+    // to the created timestamp.
+    const profileCreatedAccessorReady = lazy
+      .ProfileAge()
+      .then(accessor => accessor.created);
+
+    const [createdTimestamp] = await Promise.all([
+      profileCreatedAccessorReady,
+      trainhopFeatureReady,
+      addonInitted,
+    ]);
+    const createdInstant = createdTimestamp
+      ? Temporal.Instant.fromEpochMilliseconds(createdTimestamp)
+      : null;
 
     lazy.AboutNewTabResourceMapping.scheduleUpdateTrainhopAddonState();
 
     try {
-      this.activityStream = new lazy.ActivityStream();
+      this.activityStream = new lazy.ActivityStream(createdInstant);
       Glean.newtab.activityStreamCtorSuccess.set(true);
     } catch (error) {
       // Send Activity Stream loading failure telemetry
