@@ -3,6 +3,17 @@
 
 "use strict";
 
+const TEST_CHAT_PROVIDER_URL = "http://mochi.test:8888/";
+
+function mockSidebarChatbotUrls(providerControl) {
+  let options = providerControl.inputEl.querySelectorAll("option");
+  for (let option of options) {
+    if (option.value.startsWith("https://")) {
+      option.value = TEST_CHAT_PROVIDER_URL;
+    }
+  }
+}
+
 describe("settings ai features", () => {
   let doc, win;
 
@@ -33,7 +44,10 @@ describe("settings ai features", () => {
 
   it("can change the chatbot provider value", async () => {
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.ml.chat.provider", ""]],
+      set: [
+        ["browser.ml.chat.provider", ""],
+        ["browser.ai.control.sidebarChatbot", "available"],
+      ],
     });
 
     const categoryButton = doc.getElementById("category-ai-features");
@@ -46,6 +60,7 @@ describe("settings ai features", () => {
     await openAiFeaturePanel();
 
     const providerControl = doc.getElementById("aiControlSidebarChatbotSelect");
+    mockSidebarChatbotUrls(providerControl);
     Assert.ok(providerControl, "control exists");
     Assert.ok(
       BrowserTestUtils.isVisible(providerControl),
@@ -67,17 +82,115 @@ describe("settings ai features", () => {
     EventUtils.sendKey("space");
     await pickerOpened;
     EventUtils.sendKey("down");
+    EventUtils.sendKey("down");
     EventUtils.sendKey("return");
     await settingChanged;
 
-    Assert.notEqual(providerControl.value, "available", "Provider changed");
-    Assert.notEqual(
+    Assert.equal(
+      providerControl.value,
+      TEST_CHAT_PROVIDER_URL,
+      "Provider enabled"
+    );
+    Assert.equal(
       Services.prefs.getStringPref("browser.ml.chat.provider"),
-      "available",
-      "Pref is not empty"
+      TEST_CHAT_PROVIDER_URL,
+      "Chatbot provider is set"
     );
 
     await gBrowser.ownerGlobal.SidebarController.hide();
+  });
+
+  it("can change the chatbot provider from blocked", async () => {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.ml.chat.provider", ""],
+        ["browser.ai.control.sidebarChatbot", "available"],
+      ],
+    });
+
+    const categoryButton = doc.getElementById("category-ai-features");
+    Assert.ok(categoryButton, "category exists");
+    Assert.ok(
+      BrowserTestUtils.isVisible(categoryButton),
+      "category is visible"
+    );
+
+    await openAiFeaturePanel();
+
+    let providerControl = doc.getElementById("aiControlSidebarChatbotSelect");
+    Assert.ok(providerControl, "control exists");
+    Assert.ok(
+      BrowserTestUtils.isVisible(providerControl),
+      "control is visible"
+    );
+    Assert.equal(
+      Services.prefs.getStringPref("browser.ml.chat.provider"),
+      "",
+      "Pref is empty"
+    );
+
+    Assert.equal(providerControl.value, "available", "No provider set");
+
+    // Set chatbot to Blocked
+    let settingChanged = waitForSettingChange(providerControl.setting);
+    providerControl.focus();
+    let pickerOpened = BrowserTestUtils.waitForSelectPopupShown(
+      win.docShell.chromeEventHandler.ownerGlobal
+    );
+    EventUtils.sendKey("space");
+    await pickerOpened;
+    EventUtils.sendKey("down");
+    EventUtils.sendKey("return");
+    await settingChanged;
+
+    Assert.equal(providerControl.value, "blocked", "Provider blocked");
+    Assert.equal(
+      Services.prefs.getStringPref("browser.ml.chat.provider"),
+      "",
+      "Chatbot provider is empty"
+    );
+
+    // Refresh the page
+    await openPreferencesViaOpenPreferencesAPI("ai", { leaveOpen: true });
+
+    // Verify it's still blocked
+    providerControl = doc.getElementById("aiControlSidebarChatbotSelect");
+    mockSidebarChatbotUrls(providerControl);
+    Assert.equal(providerControl.value, "blocked", "Provider blocked");
+    Assert.equal(
+      Services.prefs.getStringPref("browser.ml.chat.provider"),
+      "",
+      "Chatbot provider is empty"
+    );
+
+    // Change the selection to a chatbot
+    settingChanged = waitForSettingChange(providerControl.setting);
+    providerControl.focus();
+    pickerOpened = BrowserTestUtils.waitForSelectPopupShown(
+      win.docShell.chromeEventHandler.ownerGlobal
+    );
+    EventUtils.sendKey("space");
+    await pickerOpened;
+    EventUtils.sendKey("down");
+    EventUtils.sendKey("return");
+    await settingChanged;
+
+    Assert.equal(
+      providerControl.value,
+      TEST_CHAT_PROVIDER_URL,
+      "Provider enabled"
+    );
+    Assert.equal(
+      Services.prefs.getStringPref("browser.ml.chat.provider"),
+      TEST_CHAT_PROVIDER_URL,
+      "Chatbot provider is set"
+    );
+
+    // Calling openPreferencesViaOpenPreferencesAPI again opened a blank tab
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+
+    await gBrowser.ownerGlobal.SidebarController.hide();
+    await SpecialPowers.popPrefEnv();
   });
 
   it("hides AI Window when preferences not enabled", async () => {

@@ -383,8 +383,8 @@ Preferences.addSetting(
       }
       if (inputVal) {
         // Enable the chatbot sidebar so it can be used with this provider.
-        deps.chatbotProvider.value = inputVal;
         OnDeviceModelManager.enable(this.feature);
+        deps.chatbotProvider.value = inputVal;
       }
       return AiControlStates.enabled;
     },
