@@ -488,6 +488,81 @@ describe("settings ai features", () => {
       BrowserTestUtils.removeTab(generalTab);
     });
 
+    it("hides Translations setting when globally blocked via AI Controls toggle", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["browser.ai.control.default", "available"],
+          ["browser.ai.control.translations", "default"],
+          ["browser.translations.enable", true],
+          ["browser.settings-redesign.enable", false],
+        ],
+      });
+
+      let aiControlsTab = gBrowser.selectedTab;
+      await openAiFeaturePanel();
+
+      await new Promise(resolve => open_preferences(resolve));
+      let generalTab = gBrowser.selectedTab;
+      let generalDoc = gBrowser.selectedBrowser.contentDocument;
+      let generalWin = generalDoc.ownerGlobal;
+
+      let translationsSetting = generalWin.Preferences.getSetting(
+        "legacyTranslationsVisible"
+      );
+      let translationsGroup = generalDoc.getElementById("translationsGroup");
+      Assert.ok(
+        BrowserTestUtils.isVisible(translationsGroup),
+        "Translations group is visible"
+      );
+
+      gBrowser.selectedTab = aiControlsTab;
+      const toggle = doc.getElementById("aiControlDefaultToggle");
+      const dialogEl = doc.querySelector("block-ai-confirmation-dialog");
+      await dialogEl.updateComplete;
+      let dialogShown = BrowserTestUtils.waitForEvent(
+        dialogEl.dialog,
+        "toggle"
+      );
+      EventUtils.synthesizeMouseAtCenter(toggle.buttonEl, {}, win);
+      await dialogShown;
+      Assert.ok(dialogEl.dialog.open, "Dialog is open");
+      await waitForSettingChange(translationsSetting, () =>
+        EventUtils.synthesizeMouseAtCenter(dialogEl.confirmButton, {}, win)
+      );
+
+      gBrowser.selectedTab = generalTab;
+      Assert.ok(
+        !BrowserTestUtils.isVisible(translationsGroup),
+        "Translations group is hidden after blocking"
+      );
+
+      // Explicitly enable Translations while globally blocked
+      gBrowser.selectedTab = aiControlsTab;
+      const translationsSelect = doc.getElementById(
+        "aiControlTranslationsSelect"
+      );
+      translationsSelect.scrollIntoView();
+      await waitForAnimationFrame();
+      translationsSelect.focus();
+      let pickerOpened = BrowserTestUtils.waitForSelectPopupShown(
+        win.docShell.chromeEventHandler.ownerGlobal
+      );
+      EventUtils.sendKey("space");
+      await pickerOpened;
+      await waitForSettingChange(translationsSetting, () => {
+        EventUtils.sendKey("up");
+        EventUtils.sendKey("return");
+      });
+
+      gBrowser.selectedTab = generalTab;
+      Assert.ok(
+        BrowserTestUtils.isVisible(translationsGroup),
+        "Translations group is visible after explicitly enabling"
+      );
+
+      BrowserTestUtils.removeTab(generalTab);
+    });
+
     it("shows settings when unblocked via global toggle", async () => {
       await SpecialPowers.pushPrefEnv({
         set: [

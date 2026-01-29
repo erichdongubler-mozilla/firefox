@@ -230,8 +230,15 @@ Preferences.addSetting({
  * @param {string} options.pref Pref id for the state
  * @param {OnDeviceModelFeaturesEnum} options.feature Feature id for removing models
  * @param {boolean} [options.supportsEnabled] If the feature supports the "enabled" state
+ * @param {SettingConfig['getControlConfig']} [options.getControlConfig] A getControlConfig implementation.
  */
-function makeAiControlSetting({ id, pref, feature, supportsEnabled = true }) {
+function makeAiControlSetting({
+  id,
+  pref,
+  feature,
+  supportsEnabled = true,
+  getControlConfig,
+}) {
   Preferences.addSetting({
     id,
     pref,
@@ -288,6 +295,7 @@ function makeAiControlSetting({ id, pref, feature, supportsEnabled = true }) {
     visible() {
       return OnDeviceModelManager.isAllowed(feature);
     },
+    getControlConfig,
   });
 }
 makeAiControlSetting({
@@ -295,6 +303,13 @@ makeAiControlSetting({
   pref: "browser.ai.control.translations",
   feature: OnDeviceModelManager.features.Translations,
   supportsEnabled: false,
+  getControlConfig(config, _, setting) {
+    let isBlocked = setting.value == AiControlStates.blocked;
+    let moreSettingsLink = config.options.at(-1);
+    moreSettingsLink.hidden = isBlocked;
+    config.supportPage = isBlocked ? "website-translation" : null;
+    return config;
+  },
 });
 makeAiControlSetting({
   id: "aiControlPdfjsAltTextSelect",
