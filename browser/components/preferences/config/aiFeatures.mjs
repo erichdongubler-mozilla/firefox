@@ -31,7 +31,27 @@ Preferences.addSetting({ id: "aiControlsDescription" });
 Preferences.addSetting({ id: "blockAiGroup" });
 Preferences.addSetting({ id: "blockAiDescription" });
 Preferences.addSetting({ id: "onDeviceFieldset" });
-Preferences.addSetting({ id: "onDeviceGroup" });
+Preferences.addSetting({
+  id: "onDeviceGroup",
+  deps: [
+    "aiControlTranslationsSelect",
+    "aiControlPdfjsAltTextSelect",
+    "aiControlSmartTabGroupsSelect",
+    "aiControlLinkPreviewKeyPointsSelect",
+  ],
+  getControlConfig(config, deps) {
+    for (let option of config.options) {
+      let control = option.items[0];
+      if (control.id in deps) {
+        option.controlAttrs = option.controlAttrs || {};
+        option.controlAttrs.class = deps[control.id].visible
+          ? ""
+          : "setting-hidden";
+      }
+    }
+    return config;
+  },
+});
 Preferences.addSetting({ id: "aiStatesDescription" });
 Preferences.addSetting({ id: "sidebarChatbotFieldset" });
 Preferences.addSetting({
