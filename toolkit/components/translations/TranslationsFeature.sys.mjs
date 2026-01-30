@@ -10,6 +10,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
  * @property {typeof console} console
  * @property {typeof import("chrome://global/content/translations/TranslationsUtils.mjs").TranslationsUtils} TranslationsUtils
  * @property {typeof import("chrome://global/content/ml/EngineProcess.sys.mjs").EngineProcess} EngineProcess
+ * @property {typeof import("chrome://global/content/translations/TranslationsTelemetry.sys.mjs").TranslationsTelemetry} TranslationsTelemetry
  * @property {boolean} translationsEnabledPref
  */
 
@@ -20,6 +21,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TranslationsUtils:
     "chrome://global/content/translations/TranslationsUtils.mjs",
   EngineProcess: "chrome://global/content/ml/EngineProcess.sys.mjs",
+  TranslationsTelemetry:
+    "chrome://global/content/translations/TranslationsTelemetry.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "console", () => {
@@ -66,6 +69,7 @@ export class TranslationsFeature extends AIFeature {
 
     Services.prefs.setStringPref(AI_CONTROL_TRANSLATIONS_PREF, "enabled");
     Services.prefs.setBoolPref(TRANSLATIONS_ENABLE_PREF, true);
+    lazy.TranslationsTelemetry.onFeatureEnable();
   }
 
   /**
@@ -87,6 +91,7 @@ export class TranslationsFeature extends AIFeature {
       lazy.EngineProcess.destroyTranslationsEngine(),
       TranslationsFeature.#deleteAllArtifacts(),
     ]);
+    lazy.TranslationsTelemetry.onFeatureDisable();
   }
 
   /**
@@ -108,6 +113,7 @@ export class TranslationsFeature extends AIFeature {
       lazy.EngineProcess.destroyTranslationsEngine(),
       TranslationsFeature.#deleteAllArtifacts(),
     ]);
+    lazy.TranslationsTelemetry.onFeatureReset();
   }
 
   /**
