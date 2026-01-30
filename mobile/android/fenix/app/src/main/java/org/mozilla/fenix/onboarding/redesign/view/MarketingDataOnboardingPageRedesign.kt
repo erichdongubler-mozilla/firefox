@@ -68,7 +68,7 @@ fun MarketingDataOnboardingPageRedesign(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        elevation = CardDefaults.cardElevation(if (state.shouldShowElevation) 6.dp else 0.dp),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),

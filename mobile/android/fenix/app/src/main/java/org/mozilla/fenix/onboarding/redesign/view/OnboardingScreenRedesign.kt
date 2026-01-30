@@ -24,6 +24,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -307,72 +308,70 @@ private fun OnboardingContent(
     onMarketingDataContinueClick: (allowMarketingDataCollection: Boolean) -> Unit,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val boxWithConstraintsScope = this
-        val isSmallPhoneScreen = boxWithConstraintsScope.maxHeight <= SMALL_SCREEN_MAX_HEIGHT
+        val layout = getOnboardingLayout(this)
 
-        val isLargeScreen = LocalContext.current.isLargeScreenSize()
-        val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+        OnboardingBackground(
+            isVisible = !isNonLargeScreenLandscape(
+                isLargeScreen = layout.isLarge,
+                isLandscape = layout.isLandscape,
+            ),
+            isSolidBackground = layout.isSmall,
+        )
 
-        val pagerWidth = pageContentWidth(boxWithConstraintsScope, isLargeScreen, isSmallPhoneScreen, isLandscape)
-        val pagerHeight = pageContentHeight(boxWithConstraintsScope, isLargeScreen, isSmallPhoneScreen, isLandscape)
+            Column(
+                modifier = Modifier.systemBarsPadding(),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                if (!layout.isSmall) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
 
-        val pagePeekWidth = ((maxWidth - pagerWidth) / 2).coerceAtLeast(8.dp)
-        val paddingValue = if (!isLargeScreen && isLandscape) 0.dp else pagePeekWidth
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(layout.pagerHeight),
+                    userScrollEnabled = pagerState.currentPage != 0, // Disable scroll for the Terms of Use card.
+                    contentPadding = layout.contentPadding,
+                    pageSize = PageSize.Fill,
+                    beyondViewportPageCount = 2,
+                    pageSpacing = pageSpacing(layout.isLarge, layout.isSmall, layout.pagePeekWidth),
+                    key = { pagesToDisplay[it].type },
+                    overscrollEffect = null,
+                ) { pageIndex ->
+                    // protect against a rare case where the user goes to the marketing screen at the same
+                    // moment it gets removed by [MarketingPageRemovalSupport]
+                    val pageUiState = pagesToDisplay.getOrElse(pageIndex) { pagesToDisplay[it.dec()] }
+                    val onboardingPageState = mapToOnboardingPageState(
+                        onboardingPageUiData = pageUiState,
+                        onMakeFirefoxDefaultClick = onMakeFirefoxDefaultClick,
+                        onMakeFirefoxDefaultSkipClick = onMakeFirefoxDefaultSkipClick,
+                        onSignInButtonClick = onSignInButtonClick,
+                        onSignInSkipClick = onSignInSkipClick,
+                        onNotificationPermissionButtonClick = onNotificationPermissionButtonClick,
+                        onNotificationPermissionSkipClick = onNotificationPermissionSkipClick,
+                        onAddFirefoxWidgetClick = onAddFirefoxWidgetClick,
+                        onAddFirefoxWidgetSkipClick = onSkipFirefoxWidgetClick,
+                        onCustomizeToolbarButtonClick = onCustomizeToolbarButtonClick,
+                        onTermsOfServiceButtonClick = onAgreeAndConfirmTermsOfService,
+                        shouldShowElevation = !layout.isSmall,
+                    )
 
-        if (!isNonLargeScreenLandscape(isLargeScreen, isLandscape)) {
-            GradientBackground()
-        }
+                    OnboardingPageForType(
+                        type = pageUiState.type,
+                        state = onboardingPageState,
+                        onboardingStore = onboardingStore,
+                        termsOfServiceEventHandler = termsOfServiceEventHandler,
+                        onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
+                        onMarketingOptInToggle = onMarketingOptInToggle,
+                        onMarketingDataContinueClick = onMarketingDataContinueClick,
+                    )
+                }
 
-        Column(
-            modifier = Modifier.systemBarsPadding(),
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Spacer(Modifier.weight(1f))
+                if (!layout.isSmall) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
 
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(pagerHeight),
-                userScrollEnabled = pagerState.currentPage != 0, // Disable scroll for the Terms of Use card.
-                contentPadding = PaddingValues(horizontal = paddingValue),
-                pageSize = PageSize.Fill,
-                beyondViewportPageCount = 2,
-                pageSpacing = pageSpacing(isLargeScreen, isSmallPhoneScreen, pagePeekWidth),
-                key = { pagesToDisplay[it].type },
-                overscrollEffect = null,
-            ) { pageIndex ->
-                // protect against a rare case where the user goes to the marketing screen at the same
-                // moment it gets removed by [MarketingPageRemovalSupport]
-                val pageUiState = pagesToDisplay.getOrElse(pageIndex) { pagesToDisplay[it.dec()] }
-                val onboardingPageState = mapToOnboardingPageState(
-                    onboardingPageUiData = pageUiState,
-                    onMakeFirefoxDefaultClick = onMakeFirefoxDefaultClick,
-                    onMakeFirefoxDefaultSkipClick = onMakeFirefoxDefaultSkipClick,
-                    onSignInButtonClick = onSignInButtonClick,
-                    onSignInSkipClick = onSignInSkipClick,
-                    onNotificationPermissionButtonClick = onNotificationPermissionButtonClick,
-                    onNotificationPermissionSkipClick = onNotificationPermissionSkipClick,
-                    onAddFirefoxWidgetClick = onAddFirefoxWidgetClick,
-                    onAddFirefoxWidgetSkipClick = onSkipFirefoxWidgetClick,
-                    onCustomizeToolbarButtonClick = onCustomizeToolbarButtonClick,
-                    onTermsOfServiceButtonClick = onAgreeAndConfirmTermsOfService,
-                )
-
-                OnboardingPageForType(
-                    type = pageUiState.type,
-                    state = onboardingPageState,
-                    onboardingStore = onboardingStore,
-                    termsOfServiceEventHandler = termsOfServiceEventHandler,
-                    onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
-                    onMarketingOptInToggle = onMarketingOptInToggle,
-                    onMarketingDataContinueClick = onMarketingDataContinueClick,
-                )
-            }
-
-            Spacer(Modifier.weight(1f))
-
-            if (!isSmallPhoneScreen) {
                 PagerIndicator(
                     pagerState = pagerState,
                     leaveTrail = true,
@@ -383,16 +382,22 @@ private fun OnboardingContent(
             }
         }
     }
-}
 
 @Composable
-private fun GradientBackground() {
+private fun OnboardingBackground(isVisible: Boolean, isSolidBackground: Boolean) {
+    if (!isVisible) return
+
     val colors = if (isSystemInDarkTheme()) GradientColors.darkMode else GradientColors.nonDarkMode
+    val backgroundModifier = if (isSolidBackground) {
+        Modifier.background(color = MaterialTheme.colorScheme.surface)
+    } else {
+        Modifier.background(brush = Brush.verticalGradient(colors = colors))
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(brush = Brush.verticalGradient(colors = colors)),
+            .then(backgroundModifier),
     )
 }
 
@@ -464,6 +469,45 @@ private fun OnboardingPageForType(
             logger.error("Unsupported page type: $type used for onboarding redesign.")
         }
     }
+}
+
+@Composable
+private fun getOnboardingLayout(scope: BoxWithConstraintsScope): OnboardingLayout {
+    val context = LocalContext.current
+    val config = LocalConfiguration.current
+    val isSmall = scope.maxHeight <= SMALL_SCREEN_MAX_HEIGHT
+    val isLarge = context.isLargeScreenSize()
+    val isLandscape = config.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    val pagerWidth = pageContentWidth(
+        scope = scope,
+        isLandscape = isLandscape,
+        isSmallScreen = isSmall,
+        isLargeScreen = isLarge,
+    )
+    val pagerHeight = pageContentHeight(
+        scope = scope,
+        isLargeScreen = isLarge,
+        isSmallScreen = isSmall,
+        isLandscape = isLandscape,
+    )
+
+    val peek = ((scope.maxWidth - pagerWidth) / 2).coerceAtLeast(8.dp)
+
+    val padding = when {
+        isSmall && !isLandscape -> PaddingValues(0.dp)
+        !isLarge && isLandscape -> PaddingValues(0.dp)
+        else -> PaddingValues(horizontal = peek)
+    }
+
+    return OnboardingLayout(
+        pagerHeight = pagerHeight,
+        contentPadding = padding,
+        pagePeekWidth = peek,
+        isSmall = isSmall,
+        isLarge = isLarge,
+        isLandscape = isLandscape,
+    )
 }
 
 private object PageContentLayout {
@@ -550,8 +594,20 @@ private fun minWidth(
 private fun isNonLargeScreenLandscape(isLargeScreen: Boolean, isLandscape: Boolean) =
     (isLandscape && !isLargeScreen)
 
-private fun pageSpacing(isLargeScreen: Boolean, isSmallScreen: Boolean, pagePeekWidth: Dp) =
-    if (isLargeScreen || isSmallScreen) pagePeekWidth else 8.dp
+private fun pageSpacing(isLargeScreen: Boolean, isSmallScreen: Boolean, pagePeekWidth: Dp) = when {
+    isLargeScreen -> pagePeekWidth
+    isSmallScreen -> 0.dp
+    else -> 8.dp
+}
+
+private data class OnboardingLayout(
+    val pagerHeight: Dp,
+    val contentPadding: PaddingValues,
+    val pagePeekWidth: Dp,
+    val isSmall: Boolean,
+    val isLarge: Boolean,
+    val isLandscape: Boolean,
+)
 
 // *** Code below used for previews only *** //
 
