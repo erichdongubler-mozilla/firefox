@@ -623,7 +623,10 @@ export class TranslationsParent extends JSWindowActorParent {
       return;
     }
 
+    // On Android there is no gBrowser, but there is effectively only one tab visible
+    // at a time, so treat Android as always having the selected tab.
     const isSelectedTab =
+      AppConstants.platform === "android" ||
       browser === browser.ownerGlobal?.gBrowser?.selectedBrowser;
 
     if (tabState.needsReloadBeforeTranslation && isSelectedTab) {
