@@ -6,6 +6,8 @@ support-files = [
   "!/toolkit/components/translations/tests/browser/translations-test.mjs",
 ]
 
+["browser_translations_full_page_ai_feature_app_menu.js"]
+
 ["browser_translations_full_page_intersection_content_eager.js"]
 
 ["browser_translations_full_page_intersection_find_bar.js"]
