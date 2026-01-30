@@ -1502,8 +1502,12 @@ class FullPageTranslationsTestUtils {
    */
   static async waitForAllPendingTranslationsToComplete(runInPage) {
     await runInPage(async ({ waitForCondition }) => {
-      const translationsChild =
-        content.windowGlobalChild.getActor("Translations");
+      let translationsChild;
+      try {
+        translationsChild = content.windowGlobalChild.getActor("Translations");
+      } catch {
+        return;
+      }
 
       while (
         translationsChild.translatedDoc?.hasPendingTranslationRequests() ||
@@ -1533,8 +1537,12 @@ class FullPageTranslationsTestUtils {
    */
   static async assertNoElementsAreObservedForContentIntersection(runInPage) {
     await runInPage(async ({ waitForCondition }) => {
-      const translationsChild =
-        content.windowGlobalChild.getActor("Translations");
+      let translationsChild;
+      try {
+        translationsChild = content.windowGlobalChild.getActor("Translations");
+      } catch {
+        return;
+      }
 
       await waitForCondition(
         () =>
@@ -1553,8 +1561,12 @@ class FullPageTranslationsTestUtils {
    */
   static async assertNoElementsAreObservedForAttributeIntersection(runInPage) {
     await runInPage(async ({ waitForCondition }) => {
-      const translationsChild =
-        content.windowGlobalChild.getActor("Translations");
+      let translationsChild;
+      try {
+        translationsChild = content.windowGlobalChild.getActor("Translations");
+      } catch {
+        return;
+      }
 
       await waitForCondition(
         () =>
