@@ -332,6 +332,20 @@ macosx1500-aarch64/debug:
     test-sets:
         - macosx1500-aarch64-tests
         - macosx1500-64-jittests
+        - webgpu
+
+# # TODO: How implement this?
+# macosx1500-64-devedition/opt:
+#     build-platform: macosx64-devedition/opt
+#     build-signing-label: repackage-macosx64-devedition/opt
+#     test-sets:
+#         - webgpu
+
+macosx1500-aarch64/opt:
+    build-platform: macosx64-aarch64/opt
+    build-signing-label: repackage-macosx64-aarch64/opt
+    test-sets:
+        - webgpu
 
 macosx1500-aarch64-shippable/opt:
     build-platform: macosx64-shippable/opt
@@ -340,6 +354,7 @@ macosx1500-aarch64-shippable/opt:
         - macosx1500-64-jittests
         - macosx1500-64-tests
         - macosx1500-64-perftests
+        - webgpu
 
 macosx1470-64-nightlyasrelease/opt:
     build-platform: macosx64-nightlyasrelease/opt
@@ -355,28 +370,24 @@ macosx1470-64-shippable/opt:
         - macosx64-talos
         - talos-profiling
         - macosx1470-64-tests
-        - webgpu
         - web-platform-tests-backlog
 
 macosx1470-64-devedition/opt:
     build-platform: macosx64-devedition/opt
     test-sets:
         - macosx1470-64-tests
-        - webgpu
 
 macosx1470-64/opt:
     build-platform: macosx64/opt
     test-sets:
         - macosx1470-64-tests
         - web-platform-tests-backlog
-        - webgpu
         - browsertime
 
 macosx1470-64/debug:
     build-platform: macosx64/debug
     test-sets:
         - macosx1470-64-tests
-        - webgpu
 
 macosx1015-64-shippable-qr/opt:
     build-platform: macosx64-shippable/opt
