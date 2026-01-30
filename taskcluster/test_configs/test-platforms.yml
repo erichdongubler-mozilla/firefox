@@ -312,6 +312,12 @@ macosx1500-aarch64/debug:
         - macosx1500-64-jittests
         - webgpu
 
+macosx1500-aarch64/opt:
+    build-platform: macosx64-aarch64/opt
+    build-signing-label: repackage-macosx64-aarch64/opt
+    test-sets:
+        - webgpu
+
 macosx1500-aarch64-shippable/opt:
     build-platform: macosx64-shippable/opt
     build-signing-label: repackage-macosx64-shippable/opt
