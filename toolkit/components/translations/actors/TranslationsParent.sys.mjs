@@ -253,65 +253,52 @@ const VERIFY_SIGNATURES_FROM_FS = false;
  */
 
 /**
- * The state that is stored per a "top" ChromeWindow. This "top" ChromeWindow is the JS
- * global associated with a browser window. Some state is unique to a browser window, and
- * using the top ChromeWindow is a unique key that ensures the state will be unique to
- * that browser window.
+ * The state that is stored per tab.
  *
- * See BrowsingContext.webidl for information on the "top"
  * See the TranslationsParent JSDoc for more information on the state management.
  */
-class StatePerTopChromeWindow {
+class StatePerTab {
   /**
-   * The storage backing for the states.
+   * A mapping from the browser element to the state for this tab.
    *
-   * @type {WeakMap<ChromeWindow, StatePerTopChromeWindow>}
+   * @type {WeakMap<object, StatePerTab>}
    */
   static #states = new WeakMap();
 
   /**
    * When reloading the page, store the language pair that needs translating.
    *
-   * @type {null | LanguagePair}
+   * @type {LanguagePair | null}
    */
   translateOnPageReload = null;
-
-  /**
-   * The page may auto-translate due to user settings. On a page restore, always
-   * skip the page restore logic.
-   *
-   * @type {boolean}
-   */
-  isPageRestored = false;
 
   /**
    * Remember the detected languages on a page reload. This will keep the translations
    * button from disappearing and reappearing, which causes the button to lose focus.
    *
-   * @type {LangTags | null} previousDetectedLanguages
+   * @type {LangTags | null}
    */
-  previousDetectedLanguages = null;
-
-  static #id = 0;
-  /**
-   * @param {ChromeWindow} topChromeWindow
-   */
-  constructor(topChromeWindow) {
-    this.id = StatePerTopChromeWindow.#id++;
-    StatePerTopChromeWindow.#states.set(topChromeWindow, this);
-  }
+  detectedLanguages = null;
 
   /**
-   * @param {ChromeWindow} topChromeWindow
-   * @returns {StatePerTopChromeWindow}
+   * The page may auto-translate due to user settings. On a page restore, always
+   * skip the logic that would cause an immediate auto re-translation.
+   *
+   * @type {boolean}
    */
-  static getOrCreate(topChromeWindow) {
-    let state = StatePerTopChromeWindow.#states.get(topChromeWindow);
+  skipAutoTranslate = false;
+
+  /**
+   * @param {object} browser
+   * @returns {StatePerTab}
+   */
+  static getOrCreate(browser) {
+    let state = StatePerTab.#states.get(browser);
     if (state) {
       return state;
     }
-    state = new StatePerTopChromeWindow(topChromeWindow);
-    StatePerTopChromeWindow.#states.set(topChromeWindow, state);
+    state = new StatePerTab();
+    StatePerTab.#states.set(browser, state);
     return state;
   }
 }
@@ -324,7 +311,7 @@ class StatePerTopChromeWindow {
  * Care must be taken for the life cycle of the state management and data caching. The
  * following examples use a fictitious `myState` property to show how state can be stored.
  *
- * There is only 1 TranslationsParent static class in the parent process. At this
+ * There is only one TranslationsParent static class in the parent process. At this
  * layer it is safe to store things like translation models and general browser
  * configuration as these don't change across browser windows. This is accessed like
  * `TranslationsParent.myState`
@@ -336,26 +323,30 @@ class StatePerTopChromeWindow {
  * abstraction, like `this.getWindowState().myState`. This layer also consists of a
  * `FullPageTranslationsPanel` instance per top ChromeWindow (at least on Desktop).
  *
- * The final layer consists of the multiple tabs and navigation history inside of a
- * ChromeWindow. Data for this layer is safe to store on the TranslationsParent instance,
- * like `this.myState`.
+ * The final layer consists of the TranslationsParent actor instances, which exist per tab
+ * and are recreated on page reload. Data for this layer is safe to store on the
+ * TranslationsParent instance, like `this.myState`. However, any data related to the actor
+ * instance that needs to persist between page loads or navigation should be stored in the
+ * StatePerTab map.
  *
  * Below is an ascii diagram of this relationship.
  *
  *   ┌─────────────────────────────────────────────────────────────────────────────┐
  *   │                           static TranslationsParent                         │
  *   └─────────────────────────────────────────────────────────────────────────────┘
- *                  |                                       |
- *                  v                                       v
+ *                    |                                         |
+ *                    v                                         v
  * ┌──────────────────────────────────────┐   ┌──────────────────────────────────────┐
  * │         top ChromeWindow             │   │        top ChromeWindow              │
  * │ (FullPageTranslationsPanel instance) │   │ (FullPageTranslationsPanel instance) │
+ * │ + (Translations URL Button instance) │   │ + (Translations URL Button instance) │
  * └──────────────────────────────────────┘   └──────────────────────────────────────┘
  *             |               |       |                |              |       |
  *             v               v       v                v              v       v
  *   ┌────────────────────┐ ┌─────┐ ┌─────┐  ┌────────────────────┐ ┌─────┐ ┌─────┐
  *   │ TranslationsParent │ │ ... │ │ ... │  │ TranslationsParent │ │ ... │ │ ... │
  *   │  (actor instance)  │ │     │ │     │  │  (actor instance)  │ │     │ │     │
+ *   │   + StatePerTab    │ │     │ │     │  │   + StatePerTab    │ │     │ │     │
  *   └────────────────────┘ └─────┘ └─────┘  └────────────────────┘ └─────┘ └─────┘
  */
 export class TranslationsParent extends JSWindowActorParent {
@@ -568,28 +559,18 @@ export class TranslationsParent extends JSWindowActorParent {
     return this.#findBar;
   }
 
-  /**
-   * There is only one static TranslationsParent for all of the top ChromeWindows.
-   * The top ChromeWindow maps to the user's conception of a window such as when you hit
-   * cmd+n or ctrl+n.
-   *
-   * @returns {StatePerTopChromeWindow}
-   */
-  getWindowState() {
-    const state = StatePerTopChromeWindow.getOrCreate(
-      this.browsingContext.top.embedderWindowGlobal
-    );
-    return state;
-  }
-
   actorCreated() {
-    this.innerWindowId = this.browsingContext.top.embedderElement.innerWindowID;
-    const windowState = this.getWindowState();
+    const browser = this.browsingContext.top.embedderElement;
+    this.innerWindowId = browser.innerWindowID;
+    const tabState = StatePerTab.getOrCreate(browser);
+
+    // Restore detected languages from the tab state (survives page reloads).
+    const previousDetectedLanguages = tabState.detectedLanguages;
+
     this.languageState = new TranslationsLanguageState(
       this,
-      windowState.previousDetectedLanguages
+      previousDetectedLanguages
     );
-    windowState.previousDetectedLanguages = null;
 
     this.#boundObserve = this.#observe.bind(this);
     Services.obs.addObserver(
@@ -597,10 +578,10 @@ export class TranslationsParent extends JSWindowActorParent {
       TOPIC_MAYBE_UPDATE_USER_LANG_TAG
     );
 
-    if (windowState.translateOnPageReload) {
+    if (tabState.translateOnPageReload) {
       // The actor was recreated after a page reload, start the translation.
-      const languagePair = windowState.translateOnPageReload;
-      windowState.translateOnPageReload = null;
+      const languagePair = tabState.translateOnPageReload;
+      tabState.translateOnPageReload = null;
 
       lazy.console.log(
         `Translating on a page reload from "${lazy.TranslationsUtils.serializeLanguagePair(languagePair)}".`
@@ -612,7 +593,6 @@ export class TranslationsParent extends JSWindowActorParent {
       );
     }
 
-    const browser = this.browsingContext.top.embedderElement;
     if (browser) {
       this.#registerFindBarEventListeners(browser);
     }
@@ -1836,10 +1816,11 @@ export class TranslationsParent extends JSWindowActorParent {
    * @returns {boolean}
    */
   #maybeAutoTranslate(langTags) {
-    const windowState = this.getWindowState();
-    if (windowState.isPageRestored) {
+    const browser = this.browsingContext.top.embedderElement;
+    const tabState = StatePerTab.getOrCreate(browser);
+    if (tabState.skipAutoTranslate) {
       // The user clicked the restore button. Respect it for one page load.
-      windowState.isPageRestored = false;
+      tabState.skipAutoTranslate = false;
 
       // Skip this auto-translation.
       return false;
@@ -3469,8 +3450,10 @@ export class TranslationsParent extends JSWindowActorParent {
     if (this.languageState.requestedLanguagePair) {
       // This page has already been translated, restore it and translate it
       // again once the actor has been recreated.
-      const windowState = this.getWindowState();
-      windowState.translateOnPageReload = languagePair;
+      const browser = this.browsingContext.top.embedderElement;
+      const tabState = StatePerTab.getOrCreate(browser);
+      tabState.translateOnPageReload = languagePair;
+      tabState.detectedLanguages = this.languageState.detectedLanguages;
       this.restorePage(sourceLanguage);
     } else {
       const { docLangTag } = this.languageState.detectedLanguages;
@@ -3553,15 +3536,14 @@ export class TranslationsParent extends JSWindowActorParent {
    */
   restorePage() {
     TranslationsParent.telemetry().onRestorePage();
-    // Skip auto-translate for one page load.
-    const windowState = this.getWindowState();
-    windowState.isPageRestored = true;
+    // Skip auto-translate for one page load and preserve detected languages.
+    const browser = this.browsingContext.embedderElement;
+    const tabState = StatePerTab.getOrCreate(browser);
+    tabState.skipAutoTranslate = true;
+    tabState.detectedLanguages = this.languageState.detectedLanguages;
     this.languageState.hasVisibleChange = false;
     this.languageState.requestedLanguagePair = null;
-    windowState.previousDetectedLanguages =
-      this.languageState.detectedLanguages;
 
-    const browser = this.browsingContext.embedderElement;
     browser.reload();
   }
 
