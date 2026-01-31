@@ -24,6 +24,7 @@ ChromeUtils.defineLazyGetter(
   () => new Localization(["browser/genai.ftl"])
 );
 const PREF_CHAT_ENABLED = "browser.ml.chat.enabled";
+const PREF_CHAT_PAGE = "browser.ml.chat.page";
 const PREF_CHAT_PROVIDER = "browser.ml.chat.provider";
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -57,7 +58,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.ml.chat.openSidebarOnProviderChange",
   true
 );
-XPCOMUtils.defineLazyPreferenceGetter(lazy, "chatPage", "browser.ml.chat.page");
+XPCOMUtils.defineLazyPreferenceGetter(lazy, "chatPage", PREF_CHAT_PAGE);
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "chatPageMenuBadge",
@@ -1322,7 +1323,7 @@ export const GenAI = {
   },
 
   get isEnabled() {
-    return lazy.chatEnabled && (lazy.chatProvider != "" || lazy.chatPage);
+    return (lazy.chatEnabled && lazy.chatProvider != "") || lazy.chatPage;
   },
 
   get isAllowed() {
@@ -1333,23 +1334,26 @@ export const GenAI = {
     return (
       Services.prefs.prefIsLocked(PREF_CHAT_ENABLED) ||
       Services.prefs.prefIsLocked(PREF_CHAT_PROVIDER) ||
-      Services.prefs.prefIsLocked("browser.ml.chat.page")
+      Services.prefs.prefIsLocked(PREF_CHAT_PAGE)
     );
   },
 
   async reset() {
     Services.prefs.clearUserPref(PREF_CHAT_ENABLED);
+    Services.prefs.clearUserPref(PREF_CHAT_PAGE);
     Services.prefs.clearUserPref(PREF_CHAT_PROVIDER);
   },
 
   async enable() {
     Services.prefs.setBoolPref(PREF_CHAT_ENABLED, true);
+    Services.prefs.setBoolPref(PREF_CHAT_PAGE, true);
     // We don't know what to set browser.ml.chat.provider to, so really we'll be
     // "available" unless it's set elsewhere.
   },
 
   async disable() {
     Services.prefs.setBoolPref(PREF_CHAT_ENABLED, false);
+    Services.prefs.setBoolPref(PREF_CHAT_PAGE, false);
     Services.prefs.clearUserPref(PREF_CHAT_PROVIDER);
   },
 };

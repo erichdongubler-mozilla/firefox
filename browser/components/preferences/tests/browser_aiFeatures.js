@@ -45,6 +45,7 @@ describe("settings ai features", () => {
   it("can change the chatbot provider value", async () => {
     await SpecialPowers.pushPrefEnv({
       set: [
+        ["browser.ml.chat.page", false],
         ["browser.ml.chat.provider", ""],
         ["browser.ai.control.sidebarChatbot", "available"],
       ],
@@ -73,6 +74,11 @@ describe("settings ai features", () => {
     );
 
     Assert.equal(providerControl.value, "available", "No provider set");
+    Assert.equal(
+      Services.prefs.getBoolPref("browser.ml.chat.page"),
+      false,
+      "Chatbot page is disabled"
+    );
 
     const settingChanged = waitForSettingChange(providerControl.setting);
     providerControl.focus();
@@ -96,6 +102,11 @@ describe("settings ai features", () => {
       TEST_CHAT_PROVIDER_URL,
       "Chatbot provider is set"
     );
+    Assert.equal(
+      Services.prefs.getBoolPref("browser.ml.chat.page"),
+      true,
+      "Chatbot page is enabled"
+    );
 
     await gBrowser.ownerGlobal.SidebarController.hide();
   });
@@ -103,6 +114,7 @@ describe("settings ai features", () => {
   it("can change the chatbot provider from blocked", async () => {
     await SpecialPowers.pushPrefEnv({
       set: [
+        ["browser.ml.chat.page", false],
         ["browser.ml.chat.provider", ""],
         ["browser.ai.control.sidebarChatbot", "available"],
       ],
@@ -149,6 +161,11 @@ describe("settings ai features", () => {
       "",
       "Chatbot provider is empty"
     );
+    Assert.equal(
+      Services.prefs.getBoolPref("browser.ml.chat.page"),
+      false,
+      "Chatbot page stays disabled when blocked"
+    );
 
     // Refresh the page
     await openPreferencesViaOpenPreferencesAPI("ai", { leaveOpen: true });
@@ -161,6 +178,11 @@ describe("settings ai features", () => {
       Services.prefs.getStringPref("browser.ml.chat.provider"),
       "",
       "Chatbot provider is empty"
+    );
+    Assert.equal(
+      Services.prefs.getBoolPref("browser.ml.chat.page"),
+      false,
+      "Chatbot page stays disabled when blocked"
     );
 
     // Change the selection to a chatbot
@@ -184,6 +206,11 @@ describe("settings ai features", () => {
       Services.prefs.getStringPref("browser.ml.chat.provider"),
       TEST_CHAT_PROVIDER_URL,
       "Chatbot provider is set"
+    );
+    Assert.equal(
+      Services.prefs.getBoolPref("browser.ml.chat.page"),
+      true,
+      "Chatbot page is enabled"
     );
 
     // Calling openPreferencesViaOpenPreferencesAPI again opened a blank tab
