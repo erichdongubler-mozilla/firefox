@@ -32,9 +32,9 @@
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Εισαγωγή όρων αναζήτησης</string>
   <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description">Οι ανοικτές καρτέλες σας θα εμφανίζονται εδώ.</string>
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Οι ανοικτές καρτέλες σας θα εμφανίζονται εδώ.</string>
   <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description">Οι ιδιωτικές καρτέλες σας θα εμφανίζονται εδώ.</string>
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Οι ιδιωτικές καρτέλες σας θα εμφανίζονται εδώ.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Ιδιωτική περιήγηση</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -54,7 +54,7 @@
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Τέλος λειτουργίας πολλαπλής επιλογής</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description">Αποθήκευση επιλεγμένων καρτελών στη συλλογή</string>
+  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Αποθήκευση επιλεγμένων καρτελών στη συλλογή</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Λάβετε καρτέλες από οποιαδήποτε συσκευή</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -208,7 +208,7 @@
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Επεκτάσεις</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header">Έχετε εγκαταστήσει επεκτάσεις, αλλά δεν τις έχετε ενεργοποιήσει</string>
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Έχετε εγκαταστήσει επεκτάσεις, αλλά δεν τις έχετε ενεργοποιήσει</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Διαχείριση επεκτάσεων</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -308,11 +308,11 @@
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Πλοήγηση</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description">Κλείσιμο φύλλου μενού επεκτάσεων</string>
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Κλείσιμο φύλλου μενού επεκτάσεων</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description">Κλείσιμο φύλλου μενού αποθήκευσης</string>
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Κλείσιμο φύλλου μενού αποθήκευσης</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description">Κλείσιμο φύλλου μενού εργαλείων</string>
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Κλείσιμο φύλλου μενού εργαλείων</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Κλείσιμο φύλλου μενού προσαρμοσμένων καρτελών</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -434,6 +434,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: επιλογή μηχανής αναζήτησης</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">Το %1$s διαγράφηκε από το ιστορικό</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Διαγραφή καταχώρησης ιστορικού</string>
   <!--
     Home onboarding
 
@@ -1481,8 +1485,16 @@
   <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Δοκιμάστε λειτουργίες και ιδέες πριν γίνουν διαθέσιμες σε όλους.</string>
   <!-- Title of the Studies data preference -->
   <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Εγκατάσταση και εκτέλεση μελετών</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Αποδοχή μελετών για λειτουργίες</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Μάθετε περισσότερα</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Αποδοχή απομακρυσμένων βελτιώσεων</string>
   <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
   <string name="remote_improvements_learn_more">Μάθετε περισσότερα</string>
   <!-- Title for remote improvements preference in Advanced settings -->
@@ -1521,17 +1533,17 @@
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Προσθήκη ιδιωτικής καρτέλας</string>
   <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content">Ιδιωτικη</string>
+  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Ιδιωτικη</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync">Συγχρονισμός</string>
+  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Συγχρονισμός</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Αναζήτηση καρτελών</string>
   <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share">Κοινή χρήση όλων των καρτελών</string>
+  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Κοινή χρήση όλων των καρτελών</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Πρόσφατα κλεισμένες καρτέλες</string>
   <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources">Έκλεισαν πρόσφατα</string>
+  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Έκλεισαν πρόσφατα</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Ρυθμίσεις λογαριασμού</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1547,11 +1559,11 @@
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Ακύρωση</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark">Αποθήκευση</string>
+  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Αποθήκευση</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Προσθήκη επιλεγμένων καρτελών στους σελιδοδείκτες</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close">Κλείσιμο</string>
+  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Κλείσιμο</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Κλείσιμο επιλεγμένων καρτελών</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1559,7 +1571,7 @@
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Προσθήκη σε συλλογή</string>
   <!-- Content description for tabs tray multiselect share button -->
-  <string name="tab_tray_multiselect_share_content_description">Κοινή χρήση επιλεγμένων καρτελών</string>
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Κοινή χρήση επιλεγμένων καρτελών</string>
   <!-- Content description for tabs tray multiselect menu -->
   <string name="tab_tray_multiselect_menu_content_description">Μενού επιλεγμένων καρτελών</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
@@ -1703,6 +1715,12 @@
   <string name="download_delete_multi_select_dialog_confirm">Διαγραφή</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Ακύρωση</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Μετονομασία αρχείου</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Όνομα</string>
+  <string name="download_rename_dialog_confirm_button">Αποθήκευση</string>
+  <string name="download_rename_dialog_cancel_button">Ακύρωση</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Σε εξέλιξη</string>
   <!--
@@ -2802,6 +2820,20 @@
   <string name="saved_logins_sort_strategy_last_used">Τελευταία χρήση</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Μενού ταξινόμησης κωδικών πρόσβασης</string>
+  <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">Μάσκες email</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">Πρόταση μασκών email</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Αποκρύψτε το πραγματικό σας email για να προστατέψετε τα εισερχόμενά σας από ανεπιθύμητα μηνύματα. Ορισμένοι ιστότοποι δεν υποστηρίζουν μάσκες email.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Μάθετε περισσότερα</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">Διαχείριση μασκών email</string>
   <!--
     Autofill
 
