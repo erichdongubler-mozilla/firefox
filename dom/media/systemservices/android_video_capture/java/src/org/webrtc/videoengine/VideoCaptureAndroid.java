@@ -111,7 +111,7 @@ public class VideoCaptureAndroid implements CameraVideoCapturer.CameraEventsHand
 
     if (this.native_capturer != 0) {
       Log.d(TAG, "startCapture: already started");
-      return false;
+      return true;
     }
 
     cameraVideoCapturer.startCapture(width, height, max_mfps);
@@ -136,7 +136,7 @@ public class VideoCaptureAndroid implements CameraVideoCapturer.CameraEventsHand
 
     if (native_capturer == 0) {
       Log.d(TAG, "stopCapture: wasn't started");
-      return false;
+      return true;
     }
 
     native_capturer = 0;
