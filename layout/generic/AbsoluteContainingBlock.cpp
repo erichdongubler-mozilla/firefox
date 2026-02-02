@@ -1641,6 +1641,10 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     aKidFrame->DidReflow(aPresContext, &kidReflowInput);
 
     [&]() {
+      const auto position = aKidFrame->GetPosition();
+      if (!firstTryNormalPosition) {
+        firstTryNormalPosition = Some(position);
+      }
       if (!aAnchorPosResolutionCache) {
         return;
       }
@@ -1660,12 +1664,8 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
             aAnchorPosResolutionCache->mDefaultAnchorCache);
       }();
       // Apply the hypothetical scroll offset.
-      const auto position = aKidFrame->GetPosition();
       // Set initial scroll position. TODO(dshin, bug 1987962): Need
       // additional work for remembered scroll offset here.
-      if (!firstTryNormalPosition) {
-        firstTryNormalPosition = Some(position);
-      }
       aKidFrame->SetProperty(nsIFrame::NormalPositionProperty(), position);
       if (offset != nsPoint{}) {
         aKidFrame->SetPosition(position - offset);
@@ -1735,14 +1735,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       }
     }
 
-    // Try with the next  fallback.
+    // Try with the next fallback.
     aKidFrame->AddStateBits(NS_FRAME_IS_DIRTY);
     aStatus.Reset();
   } while (true);
 
   [&]() {
-    if (!isOverflowingCB || !aAnchorPosResolutionCache ||
-        !firstTryNormalPosition) {
+    if (!isOverflowingCB || !firstTryNormalPosition) {
       return;
     }
     // We gave up applying fallbacks. Recover previous values, if changed, and
@@ -1756,9 +1755,11 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       aKidFrame->SetProperty(nsIFrame::NormalPositionProperty(),
                              normalPosition);
     }
-    const auto position =
-        normalPosition -
-        aAnchorPosResolutionCache->mReferenceData->mDefaultScrollShift;
+    auto position = normalPosition;
+    if (aAnchorPosResolutionCache) {
+      position -=
+          aAnchorPosResolutionCache->mReferenceData->mDefaultScrollShift;
+    }
     const auto oldPosition = aKidFrame->GetPosition();
     if (position == oldPosition) {
       return;
