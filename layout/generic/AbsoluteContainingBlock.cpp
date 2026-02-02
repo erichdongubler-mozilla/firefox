@@ -1470,10 +1470,9 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       const auto* placeholderContainer =
           GetPlaceholderContainer(kidReflowInput.mFrame);
 
-      if (!iInsetAuto || kidReflowInput.mFlags.mIAnchorCenter) {
+      if (!iInsetAuto) {
         MOZ_ASSERT(
-            !kidReflowInput.mFlags.mIOffsetsNeedCSSAlign ||
-                kidReflowInput.mFlags.mIAnchorCenter,
+            !kidReflowInput.mFlags.mIOffsetsNeedCSSAlign,
             "Non-auto inline inset but requires CSS alignment for static "
             "position?");
         auto alignOffset = OffsetToAlignedStaticPos(
@@ -1490,9 +1489,8 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
             cbSize.ISize(outerWM) -
             (offsets.IStart(outerWM) + kidMarginBox.ISize(outerWM));
       }
-      if (!bInsetAuto || kidReflowInput.mFlags.mBAnchorCenter) {
-        MOZ_ASSERT(!kidReflowInput.mFlags.mBOffsetsNeedCSSAlign ||
-                       kidReflowInput.mFlags.mBAnchorCenter,
+      if (!bInsetAuto) {
+        MOZ_ASSERT(!kidReflowInput.mFlags.mBOffsetsNeedCSSAlign,
                    "Non-auto block inset but requires CSS alignment for static "
                    "position?");
         auto alignOffset = OffsetToAlignedStaticPos(
