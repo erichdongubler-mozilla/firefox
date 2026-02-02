@@ -1320,6 +1320,19 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
       NS_ERROR("Failed to get user's SID.");
       LOG_E("Failed to get user's SID. %lx", ::GetLastError());
     }
+
+    // Required for GetUserGeoID, which is used to get timezone information.
+    bool geoRuleSet =
+        config->AllowRegistryRead(L"HKEY_CURRENT_USER") ==
+            sandbox::SBOX_ALL_OK &&
+        config->AllowRegistryRead(
+            L"HKEY_CURRENT_USER\\Control Panel\\International\\Geo") ==
+            sandbox::SBOX_ALL_OK;
+    if (!geoRuleSet) {
+      NS_ERROR("Failed to add rule for International Geo.");
+      LOG_E("Failed (ResultCode %d) to add rule for International Geo.",
+            result);
+    }
   }
 }
 
