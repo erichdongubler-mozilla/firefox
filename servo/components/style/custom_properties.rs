@@ -892,6 +892,7 @@ fn parse_declaration_value_block<'i, 't>(
                                 first_token_type: first,
                                 last_token_type: last,
                             });
+                            input_end_position = Some(input.position());
                         } else {
                             let state = input.state();
                             // We still need to consume the rest of the potentially-unclosed
@@ -903,9 +904,9 @@ fn parse_declaration_value_block<'i, 't>(
                                 references,
                                 missing_closing_characters,
                             )?;
+                            input_end_position = Some(input.position());
                             input.reset(&state);
                         }
-                        input_end_position = Some(input.position());
                         Ok(fallback)
                     })?;
                     if input_end_position.unwrap() == input.position() {
