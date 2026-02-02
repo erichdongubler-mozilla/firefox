@@ -1022,7 +1022,6 @@ void AbsoluteContainingBlock::ResolveAutoMarginsAfterLayout(
   }
 
   aKidReflowInput.SetComputedLogicalMargin(outerWM, aMargin);
-  aKidReflowInput.SetComputedLogicalOffsets(outerWM, aOffsets);
 
   nsMargin* propValue =
       aKidReflowInput.mFrame->GetProperty(nsIFrame::UsedMarginProperty());
