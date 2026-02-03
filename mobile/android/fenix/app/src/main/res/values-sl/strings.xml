@@ -611,6 +611,8 @@
   <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">Nadaljuj</string>
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">Ne zdaj</string>
+  <!-- Terms of use (ToU) onboarding subtitle. -->
+  <string name="nova_onboarding_tou_subtitle" tools:ignore="UnusedResources">Hiter, varen in ne bo vas prodal.\nBrskanje je pravkar postalo še boljše.</string>
   <!--
     Terms of use (ToU) onboarding body line one.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
@@ -634,6 +636,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text" tools:ignore="UnusedResources">Nastavitve</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Poslovite se od vsiljivih sledilcev</string>
+  <!-- "Set to default" onboarding subtitle. -->
+  <string name="nova_onboarding_set_to_default_subtitle" tools:ignore="UnusedResources">Ščitimo vaše podatke in samodejno preprečujemo podjetjem, da bi vohunila za vašimi kliki.</string>
   <!-- "Set to default" onboarding button. -->
   <string name="nova_onboarding_set_to_default_button" tools:ignore="UnusedResources">Nastavi kot privzeti brskalnik</string>
   <!-- Toolbar selection onboarding title. -->
@@ -652,6 +656,8 @@
   <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Temna</string>
   <!-- Sync onboarding title. -->
   <string name="nova_onboarding_sync_title" tools:ignore="UnusedResources">Hitro nadaljujte, kjer ste ostali</string>
+  <!-- Sync onboarding subtitle. -->
+  <string name="nova_onboarding_sync_subtitle" tools:ignore="UnusedResources">V trenutku si prenesite zaznamke, gesla in druge podatke na katerokoli napravo. Vaši osebni podatki so zavarovani s šifriranjem.</string>
   <!-- Sync onboarding button. -->
   <string name="nova_onboarding_sync_button" tools:ignore="UnusedResources">Začni s sinhronizacijo</string>
   <!-- Marketing onboarding title. -->
@@ -1714,6 +1720,12 @@
   <string name="download_delete_multi_select_dialog_confirm">Izbriši</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Prekliči</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Preimenovanje datoteke</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Ime</string>
+  <string name="download_rename_dialog_confirm_button">Shrani</string>
+  <string name="download_rename_dialog_cancel_button">Prekliči</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">V teku</string>
   <!--
@@ -2815,6 +2827,20 @@
   <string name="saved_logins_sort_strategy_last_used">Času zadnje uporabe</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Meni za razvrščanje gesel</string>
+  <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">E-poštne maske</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">Predlagaj e-poštne maske</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Zakrijte svoj pravi e-poštni naslov in zaščitite nabiralnik pred vsiljeno pošto. Nekatera spletna mesta e-poštnih mask ne podpirajo.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Več o tem</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">Upravljanje e-poštnih mask</string>
   <!--
     Autofill
 
