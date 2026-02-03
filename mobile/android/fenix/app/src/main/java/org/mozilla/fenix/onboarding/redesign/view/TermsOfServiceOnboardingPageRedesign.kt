@@ -111,27 +111,13 @@ private fun Header(pageState: OnboardingPageState) {
         style = MaterialTheme.typography.headlineMedium,
     )
 
-    Spacer(Modifier.height(10.dp))
+    Spacer(Modifier.height(20.dp))
 
-    pageState.termsOfService?.let { Subheader(it) }
+    pageState.termsOfService?.subheaderOneText?.let { SubHeader(it) }
 }
 
 @Composable
-private fun Subheader(termsOfService: OnboardingTermsOfService) {
-    with(termsOfService) {
-        Spacer(Modifier.height(10.dp))
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            subheaderOneText?.let { SubHeaderText(it) }
-        }
-    }
-}
-
-@Composable
-private fun SubHeaderText(text: String) {
+private fun SubHeader(text: String) {
     Text(
         text = text,
         style = FirefoxTheme.typography.body2.copy(
@@ -200,7 +186,7 @@ private fun BodyLinkText(
     )
 }
 
-private fun String.updateFirstPlaceholder(text: String) = replace("%1\$s", text)
+private fun String.updateFirstPlaceholder(text: String) = replace($$"%1$s", text)
 
 // *** Code below used for previews only *** //
 
