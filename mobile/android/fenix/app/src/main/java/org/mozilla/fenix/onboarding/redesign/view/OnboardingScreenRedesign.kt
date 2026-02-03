@@ -353,10 +353,12 @@ private fun OnboardingContent(
 
                 PagerIndicator(
                     pagerState = pagerState,
-                    leaveTrail = true,
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .padding(bottom = 16.dp),
+                    activeColor = MaterialTheme.colorScheme.onPrimary,
+                    inactiveColor = MaterialTheme.colorScheme.surfaceVariant,
+                    leaveTrail = true,
                 )
             }
         }
