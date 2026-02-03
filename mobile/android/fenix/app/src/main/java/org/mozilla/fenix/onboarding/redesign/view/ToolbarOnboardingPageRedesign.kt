@@ -336,11 +336,11 @@ private fun OnboardingPagePreview() {
             onboardingStore = OnboardingStore(),
             pageState = OnboardingPageState(
                 imageRes = R.drawable.ic_onboarding_customize_toolbar,
-                title = stringResource(id = R.string.onboarding_redesign_customize_toolbar_title),
-                description = stringResource(id = R.string.onboarding_customize_toolbar_description),
+                title = stringResource(id = R.string.nova_onboarding_toolbar_selection_title),
+                description = "", // Unused in redesign
                 primaryButton = Action(
                     text = stringResource(
-                        id = R.string.onboarding_redesign_continue_button,
+                        id = R.string.nova_onboarding_continue_button,
                     ),
                     onClick = {},
                 ),
@@ -348,12 +348,12 @@ private fun OnboardingPagePreview() {
                     ToolbarOption(
                         toolbarType = ToolbarOptionType.TOOLBAR_TOP,
                         imageRes = R.drawable.ic_onboarding_top_toolbar,
-                        label = stringResource(R.string.onboarding_customize_toolbar_top_option),
+                        label = stringResource(R.string.nova_onboarding_toolbar_selection_top_label),
                     ),
                     ToolbarOption(
                         toolbarType = ToolbarOptionType.TOOLBAR_BOTTOM,
                         imageRes = R.drawable.ic_onboarding_bottom_toolbar,
-                        label = stringResource(R.string.onboarding_customize_toolbar_bottom_option),
+                        label = stringResource(R.string.nova_onboarding_toolbar_selection_bottom_label),
                     ),
                 ),
                 onRecordImpressionEvent = {},

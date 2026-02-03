@@ -113,11 +113,11 @@ private fun Header(pageState: OnboardingPageState) {
 
     Spacer(Modifier.height(10.dp))
 
-    pageState.termsOfService?.let { Subheaders(it) }
+    pageState.termsOfService?.let { Subheader(it) }
 }
 
 @Composable
-private fun Subheaders(termsOfService: OnboardingTermsOfService) {
+private fun Subheader(termsOfService: OnboardingTermsOfService) {
     with(termsOfService) {
         Spacer(Modifier.height(10.dp))
 
@@ -126,8 +126,6 @@ private fun Subheaders(termsOfService: OnboardingTermsOfService) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             subheaderOneText?.let { SubHeaderText(it) }
-            subheaderTwoText?.let { SubHeaderText(it) }
-            subheaderThreeText?.let { SubHeaderText(it) }
         }
     }
 }
@@ -217,25 +215,23 @@ private fun OnboardingPagePreview() {
     FirefoxTheme {
         TermsOfServiceOnboardingPageRedesign(
             pageState = OnboardingPageState(
-                title = stringResource(id = R.string.onboarding_redesign_tou_title),
+                title = stringResource(id = R.string.nova_onboarding_tou_title),
                 description = "",
                 termsOfService = OnboardingTermsOfService(
-                    subheaderOneText = stringResource(id = R.string.onboarding_redesign_tou_subheader_one),
-                    subheaderTwoText = stringResource(id = R.string.onboarding_redesign_tou_subheader_two),
-                    subheaderThreeText = stringResource(id = R.string.onboarding_redesign_tou_subheader_three),
-                    lineOneText = stringResource(id = R.string.onboarding_redesign_tou_body_one),
-                    lineOneLinkText = stringResource(id = R.string.onboarding_redesign_tou_body_one_link_text),
+                    subheaderOneText = stringResource(id = R.string.nova_onboarding_tou_subtitle),
+                    lineOneText = stringResource(id = R.string.nova_onboarding_tou_body_line_1),
+                    lineOneLinkText = stringResource(id = R.string.nova_onboarding_tou_body_line_1_link_text),
                     lineOneLinkUrl = "URL",
-                    lineTwoText = stringResource(id = R.string.onboarding_redesign_tou_body_two),
-                    lineTwoLinkText = stringResource(id = R.string.onboarding_redesign_tou_body_two_link_text),
+                    lineTwoText = stringResource(id = R.string.nova_onboarding_tou_body_line_2),
+                    lineTwoLinkText = stringResource(id = R.string.nova_onboarding_tou_body_line_2_link_text),
                     lineTwoLinkUrl = "URL",
-                    lineThreeText = stringResource(id = R.string.onboarding_redesign_tou_body_three),
-                    lineThreeLinkText = stringResource(id = R.string.onboarding_redesign_tou_body_three_link_text),
+                    lineThreeText = stringResource(id = R.string.nova_onboarding_tou_body_line_3),
+                    lineThreeLinkText = stringResource(id = R.string.nova_onboarding_tou_body_line_3_link_text),
                 ),
-                imageRes = R.drawable.ic_firefox,
+                imageRes = R.drawable.nova_onboarding_tou,
                 primaryButton = Action(
                     text = stringResource(
-                        id = R.string.onboarding_redesign_tou_agree_and_continue_button_label,
+                        id = R.string.nova_onboarding_continue_button,
                     ),
                     onClick = {},
                 ),
