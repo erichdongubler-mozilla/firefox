@@ -1370,7 +1370,7 @@ pref("browser.preferences.experimental.hidden", false);
 // Whether we show the "More from Mozilla" section.
 pref("browser.preferences.moreFromMozilla", true);
 // Whether we show the "AI Controls" pane.
-pref("browser.preferences.aiControls", false);
+pref("browser.preferences.aiControls", true);
 
 // Used by settings to track whether the user customized advanced
 // performance settings. Not used directly elsewhere.
