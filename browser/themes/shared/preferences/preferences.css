@@ -1432,11 +1432,15 @@ setting-group[groupid="aiFeatures"] {
 
 setting-group[groupid="aiFeatures"] {
   --select-max-width: fit-content;
+
+  > moz-card > moz-fieldset::part(inputs) {
+    gap: var(--space-xlarge);
+  }
 }
 
 #blockAiGroup {
   @media not (prefers-contrast) {
-    --block-ai-background-color: light-dark(color-mix(in srgb, currentColor 2%, transparent), color-mix(in srgb, currentColor 5%, transparent));
+    --block-ai-background-color: light-dark(color-mix(in srgb, currentColor 3%, transparent), color-mix(in srgb, currentColor 5%, transparent));
     background-color: var(--block-ai-background-color);
   }
 }
