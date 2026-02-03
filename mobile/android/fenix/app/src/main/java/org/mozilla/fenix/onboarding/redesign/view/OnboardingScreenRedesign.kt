@@ -7,7 +7,6 @@ package org.mozilla.fenix.onboarding.redesign.view
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -36,10 +35,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.paint
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -77,25 +77,6 @@ import org.mozilla.fenix.utils.isLargeScreenSize
  */
 private val SMALL_SCREEN_MAX_HEIGHT = 480.dp
 private val logger: Logger = Logger("OnboardingScreenRedesign")
-
-/**
- * The colors used for the gradient background.
- */
-private object GradientColors {
-    val nonDarkMode = listOf(
-        Color(0xFFF5C1BD), // light pink (top)
-        Color(0xFFED8043), // orange
-        Color(0xFFEB691D), // deeper orange-red
-        Color(0xFFE00B1D), // strong red (bottom)
-    )
-
-    val darkMode = listOf(
-        Color(0xFF9B7AE0), // soft violet (top)
-        Color(0xFF7B4FC9), // medium purple
-        Color(0xFF4A289A), // deep purple
-        Color(0xFF2E1468), // darkest purple (bottom)
-    )
-}
 
 /**
  * A screen for displaying onboarding.
@@ -385,11 +366,13 @@ private fun OnboardingContent(
 private fun OnboardingBackground(isVisible: Boolean, isSolidBackground: Boolean) {
     if (!isVisible) return
 
-    val colors = if (isSystemInDarkTheme()) GradientColors.darkMode else GradientColors.nonDarkMode
     val backgroundModifier = if (isSolidBackground) {
         Modifier.background(color = MaterialTheme.colorScheme.surface)
     } else {
-        Modifier.background(brush = Brush.verticalGradient(colors = colors))
+        Modifier.paint(
+            painter = painterResource(R.drawable.nova_onboarding_background),
+            contentScale = ContentScale.Crop,
+        )
     }
 
     Box(
@@ -661,7 +644,7 @@ private fun touPageUIData() = OnboardingPageUiData(
         lineThreeText = stringResource(id = R.string.nova_onboarding_tou_body_line_3),
         lineThreeLinkText = stringResource(id = R.string.nova_onboarding_tou_body_line_3_link_text),
     ),
-    imageRes = R.drawable.ic_firefox,
+    imageRes = R.drawable.nova_onboarding_tou,
     primaryButtonLabel = stringResource(
         id = R.string.nova_onboarding_continue_button,
     ),

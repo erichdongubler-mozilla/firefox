@@ -182,7 +182,7 @@ private fun MarketingDataOnboardingPagePreview() {
     FirefoxTheme {
         MarketingDataOnboardingPageRedesign(
             state = OnboardingPageState(
-                imageRes = R.drawable.ic_onboarding_marketing_redesign,
+                imageRes = R.drawable.nova_onboarding_marketing,
                 title = stringResource(id = R.string.nova_onboarding_marketing_title),
                 description = "", // NB: not used in the redesign
                 primaryButton = Action(

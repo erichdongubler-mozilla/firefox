@@ -39,6 +39,8 @@ import org.mozilla.fenix.onboarding.view.OnboardingTermsOfService
 import org.mozilla.fenix.onboarding.view.OnboardingTermsOfServiceEventHandler
 import org.mozilla.fenix.theme.FirefoxTheme
 
+private val TOU_IMAGE_HEIGHT = 200.dp
+
 /**
  * A Composable for displaying the terms of service onboarding page content.
  *
@@ -98,9 +100,7 @@ private fun Header(pageState: OnboardingPageState) {
     Image(
         painter = painterResource(id = pageState.imageRes),
         contentDescription = null, // Decorative image only.
-        modifier = Modifier
-            .height(IconSize.heightDp)
-            .width(IconSize.widthDp),
+        modifier = Modifier.height(TOU_IMAGE_HEIGHT),
     )
 
     Spacer(Modifier.height(20.dp))
@@ -201,11 +201,6 @@ private fun BodyLinkText(
 }
 
 private fun String.updateFirstPlaceholder(text: String) = replace("%1\$s", text)
-
-private object IconSize {
-    val heightDp = 60.dp
-    val widthDp = 58.dp
-}
 
 // *** Code below used for previews only *** //
 

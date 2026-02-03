@@ -149,7 +149,7 @@ features:
               enabled: false
               title: nova_onboarding_tou_title
               ordering: 0
-              image-res: ic_firefox
+              image-res: nova_onboarding_tou
               primary-button-label: nova_onboarding_continue_button
               extra-data:
                 term-of-service-data:
@@ -195,7 +195,6 @@ features:
               card-type: add-search-widget
               title: nova_onboarding_add_search_widget_title
               body: nova_onboarding_add_search_widget_subtitle
-              image-res: ic_onboarding_search_widget
               ordering: 10
               primary-button-label: nova_onboarding_add_search_widget_button
               secondary-button-label: nova_onboarding_negative_button
@@ -234,7 +233,6 @@ features:
               card-type: notification-permission
               title: nova_onboarding_notifications_title
               body: nova_onboarding_notifications_subtitle
-              image-res: ic_notification_permission
               ordering: 20
               primary-button-label: nova_onboarding_notifications_button
               secondary-button-label: nova_onboarding_negative_button
@@ -281,7 +279,6 @@ features:
               enabled: false
               title: nova_onboarding_toolbar_selection_title
               body: onboarding_customize_toolbar_description
-              image-res: ic_onboarding_customize_toolbar
               ordering: 35
               primary-button-label: nova_onboarding_continue_button
               extra-data:
@@ -311,7 +308,7 @@ features:
               card-type: marketing-data
               enabled: false
               title: nova_onboarding_marketing_title
-              image-res: ic_onboarding_marketing_redesign
+              image-res: nova_onboarding_marketing
               ordering: 40
               primary-button-label: nova_onboarding_continue_button
               extra-data:
@@ -325,6 +322,7 @@ features:
           cards:
             terms-of-service:
               title: nova_onboarding_tou_title
+              image-res: nova_onboarding_tou
               primary-button-label: nova_onboarding_continue_button
               extra-data:
                 term-of-service-data:
@@ -362,7 +360,6 @@ features:
 
             toolbar-placement:
               title: nova_onboarding_toolbar_selection_title
-              image-res: ic_onboarding_customize_toolbar
               primary-button-label: onboarding_redesign_continue_button
               extra-data:
                 customization-toolbar-data:
@@ -375,7 +372,7 @@ features:
 
             marketing:
               title: nova_onboarding_marketing_title
-              image-res: ic_onboarding_marketing_redesign
+              image-res: nova_onboarding_marketing
               primary-button-label: nova_onboarding_continue_button
               extra-data:
                 marketing-data:
