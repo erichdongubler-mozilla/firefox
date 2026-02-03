@@ -5,6 +5,8 @@
 package org.mozilla.fenix.onboarding.redesign.view
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,10 +21,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
@@ -40,6 +45,11 @@ import org.mozilla.fenix.onboarding.view.OnboardingTermsOfServiceEventHandler
 import org.mozilla.fenix.theme.FirefoxTheme
 
 private val TOU_IMAGE_HEIGHT = 200.dp
+
+private val kitImageResources = listOf(
+    R.drawable.nova_onboarding_tou,
+    R.drawable.nova_onboarding_tou_2,
+)
 
 /**
  * A Composable for displaying the terms of service onboarding page content.
@@ -97,10 +107,22 @@ fun TermsOfServiceOnboardingPageRedesign(
 
 @Composable
 private fun Header(pageState: OnboardingPageState) {
+    val currentImageIndex = remember { mutableIntStateOf(0) }
+    val currentImageRes = kitImageResources[currentImageIndex.intValue]
+
     Image(
-        painter = painterResource(id = pageState.imageRes),
+        painter = painterResource(id = currentImageRes),
         contentDescription = null, // Decorative image only.
-        modifier = Modifier.height(TOU_IMAGE_HEIGHT),
+        modifier = Modifier
+            .height(TOU_IMAGE_HEIGHT)
+            .clickable(
+                role = Role.Button,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null, // Prevents onClick press/ripple animation
+            ) {
+                currentImageIndex.intValue =
+                    nextCyclicImageIndex(currentImageIndex.intValue, kitImageResources.size)
+            },
     )
 
     Spacer(Modifier.height(20.dp))
@@ -115,6 +137,15 @@ private fun Header(pageState: OnboardingPageState) {
 
     pageState.termsOfService?.subheaderOneText?.let { SubHeader(it) }
 }
+
+/**
+ * Advances the image index to the next item, wrapping back to the start when the end of the list
+ * is reached. This ensures the index always stays within valid bounds.
+ */
+private fun nextCyclicImageIndex(
+    currentImageIndex: Int,
+    imageResourcesSize: Int,
+) = (currentImageIndex + 1) % imageResourcesSize
 
 @Composable
 private fun SubHeader(text: String) {
