@@ -139,7 +139,7 @@ class BlockAiConfirmationDialog extends MozLitElement {
         rel="stylesheet"
         href="chrome://browser/content/preferences/config/block-ai-confirmation-dialog.css"
       />
-      <dialog>
+      <dialog aria-labelledby="heading" aria-describedby="content">
         <div class="dialog-header">
           <img
             class="dialog-header-icon"
@@ -147,11 +147,12 @@ class BlockAiConfirmationDialog extends MozLitElement {
             alt=""
           />
           <h2
+            id="heading"
             class="text-box-trim-start"
             data-l10n-id="preferences-ai-controls-block-confirmation-heading"
           ></h2>
         </div>
-        <div class="dialog-body">
+        <div id="content" class="dialog-body">
           <p
             data-l10n-id="preferences-ai-controls-block-confirmation-description"
           ></p>
