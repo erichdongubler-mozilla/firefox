@@ -697,6 +697,14 @@ features:
         type: Boolean
         default: false
 
+  homepage-opening-screen-default:
+    description: Configure the default option for the homepage opening screen.
+    variables:
+      default-option:
+        description: The default option for the homepage opening screen.
+        type: OpeningScreenOption
+        default: homepage-four-hours
+
   unified-trust-panel:
     description: Enables the unified trust panel.
     variables:
@@ -1121,3 +1129,16 @@ types:
             Uses the following copy:
             - Title: "A note from Firefox"
             - Learn more: "You can learn more here."
+
+    OpeningScreenOption:
+      description: The types of different experiment branches for the opening screen.
+      variants:
+        homepage:
+          description:
+            Uses the homepage as the opening screen.
+        last-tab:
+          description:
+            Uses the last tab as the opening screen.
+        homepage-four-hours:
+          description:
+            Uses the homepage after four hours of inactivity as the opening screen.

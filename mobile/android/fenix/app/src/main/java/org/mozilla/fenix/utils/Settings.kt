@@ -63,6 +63,7 @@ import org.mozilla.fenix.nimbus.CookieBannersSection
 import org.mozilla.fenix.nimbus.DefaultBrowserPrompt
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.HomeScreenSection
+import org.mozilla.fenix.nimbus.OpeningScreenOption
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
@@ -847,13 +848,16 @@ class Settings(
         default = 0L,
     )
 
+    private val openingScreenDefault: OpeningScreenOption
+        get() = FxNimbus.features.homepageOpeningScreenDefault.value().defaultOption
+
     /**
      * Indicates if the user has selected the option to start on the home screen after
      * four hours of inactivity.
      */
     var openHomepageAfterFourHoursOfInactivity by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_start_on_home_after_four_hours),
-        default = true,
+        default = { openingScreenDefault == OpeningScreenOption.HOMEPAGE_FOUR_HOURS },
     )
 
     /**
@@ -861,7 +865,7 @@ class Settings(
      */
     var alwaysOpenTheHomepageWhenOpeningTheApp by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_start_on_home_always),
-        default = false,
+        default = { openingScreenDefault == OpeningScreenOption.HOMEPAGE },
     )
 
     /**
@@ -870,7 +874,7 @@ class Settings(
      */
     var alwaysOpenTheLastTabWhenOpeningTheApp by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_start_on_home_never),
-        default = false,
+        default = { openingScreenDefault == OpeningScreenOption.LAST_TAB },
     )
 
     /**
