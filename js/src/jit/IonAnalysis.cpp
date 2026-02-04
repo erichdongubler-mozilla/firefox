@@ -5285,7 +5285,7 @@ bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
             otherIter = FindObjectToIteratorUse(SkipIterObjectUnbox(receiver));
           }
 
-          if (!otherIter || !otherIter->block()->dominates(ins->block())) {
+          if (!otherIter || !otherIter->dominates(ins)) {
             continue;
           }
         }
