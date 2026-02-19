@@ -81,6 +81,9 @@ style = "tag"
 prefix = "WGPU"
 renaming_overrides_prefixing = true
 exclude = [
+	"dispatch_data_create",
+	"dispatch_release",
+	# "AnyObject",
 	"LoadOpDontCare",
 	"Option_AdapterId",
 	"Option_BufferId",
