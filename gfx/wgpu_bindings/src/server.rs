@@ -145,7 +145,6 @@ pub extern "C" fn wgpu_server_new(owner: WebGPUParentPtr) -> *mut Global {
 
     let dx12_shader_compiler = wgt::Dx12Compiler::DynamicDxc {
         dxc_path: "dxcompiler.dll".into(),
-        max_shader_model: wgt::DxcShaderModel::V6_6,
     };
 
     let global = wgc::global::Global::new(
@@ -157,6 +156,7 @@ pub extern "C" fn wgpu_server_new(owner: WebGPUParentPtr) -> *mut Global {
                 gl: wgt::GlBackendOptions {
                     gles_minor_version: wgt::Gles3MinorVersion::Automatic,
                     fence_behavior: wgt::GlFenceBehavior::Normal,
+                    debug_fns: wgt::GlDebugFns::Auto,
                 },
                 dx12: wgt::Dx12BackendOptions {
                     shader_compiler: dx12_shader_compiler,
@@ -507,6 +507,7 @@ unsafe fn adapter_request_device(
                     None,
                     &enabled_extensions,
                     desc.required_features,
+                    &global.adapter_limits(self_id), // TODO: Is this correct?
                     &desc.memory_hints,
                     family_info.queue_family_index,
                     0,
