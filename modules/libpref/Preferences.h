@@ -502,6 +502,8 @@ class Preferences final : public nsIPrefService,
                                       const char* const* aPrefs, void* aClosure,
                                       MatchKind aMatchKind);
 
+  static uint32_t UnregisterCallbacksForBranch(nsPrefBranch* aBranch);
+
   template <typename T>
   static nsresult RegisterCallbackImpl(PrefChangedFunc aCallback, T& aPref,
                                        void* aClosure, MatchKind aMatchKind,
