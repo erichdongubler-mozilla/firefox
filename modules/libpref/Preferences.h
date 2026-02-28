@@ -428,6 +428,8 @@ class Preferences final : public nsIPrefService,
   static void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                                      PrefsSizes& aSizes);
 
+  static uint32_t GetCallbackCount();
+
   static void HandleDirty();
 
   // Explicitly choosing synchronous or asynchronous (if allowed) preferences
