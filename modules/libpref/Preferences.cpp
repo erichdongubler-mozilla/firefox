@@ -25,7 +25,6 @@
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/glean/LibprefMetrics.h"
 #include "mozilla/HashFunctions.h"
-#include "mozilla/IdleTaskRunner.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/HelperMacros.h"
 #include "mozilla/Logging.h"
@@ -146,8 +145,6 @@ using ipc::FileDescriptor;
     }
 
 #endif  // DEBUG
-
-static mozilla::LazyLogModule sPrefLog("Preferences");
 
 // Forward declarations.
 namespace mozilla::StaticPrefs {
@@ -1432,10 +1429,6 @@ class CallbackNode {
     return mDomain;
   }
 
-  const char* DomainForLog() const {
-    return mDomain.is<nsCString>() ? mDomain.as<nsCString>().get() : "(multi)";
-  }
-
   PrefChangedFunc Func() const { return mFunc; }
   void ClearFunc() { mFunc = nullptr; }
 
@@ -1572,9 +1565,6 @@ static void AddAccessCount(const char* aPrefName) {}
 // These are only used during the call to NotifyCallbacks().
 static bool gCallbacksInProgress = false;
 static bool gShouldCleanupDeadNodes = false;
-
-// IdleTaskRunner for sweeping expired weak observer callbacks.
-static StaticRefPtr<mozilla::IdleTaskRunner> sSweepRunner;
 
 class PrefsHashIter {
   using Iterator = decltype(HashTable()->modIter());
@@ -2019,9 +2009,6 @@ static void NotifyCallbacks(const nsCString& aPrefName,
   for (CallbackNode* node = gFirstCallback; node; node = node->Next()) {
     if (node->Func()) {
       if (node->Matches(aPrefName)) {
-        MOZ_LOG(sPrefLog, LogLevel::Debug,
-                ("NotifyCallbacks: pref='%s' -> domain='%s'", aPrefName.get(),
-                 node->DomainForLog()));
         (node->Func())(aPrefName.get(), node->Data());
       }
     }
@@ -2182,20 +2169,20 @@ class PrefCallback : public PLDHashEntryHdr {
 
   static PLDHashNumber HashKey(const PrefCallback* aKey) {
     uint32_t hash = HashString(aKey->mDomain);
-    // For weak callbacks, use the weak reference proxy as identity
-    // (each observer gets a unique proxy that outlives the observer).
-    if (aKey->IsWeak()) {
-      return AddToHash(hash, aKey->mWeakRef.get());
-    }
-    return AddToHash(hash, aKey->mStrongRef.get());
+    return AddToHash(hash, aKey->mCanonical);
   }
 
  public:
   // Create a PrefCallback with a strong reference to its observer.
   PrefCallback(const nsACString& aDomain, nsIObserver* aObserver,
                nsPrefBranch* aBranch)
-      : mDomain(aDomain), mBranch(aBranch), mStrongRef(aObserver) {
+      : mDomain(aDomain),
+        mBranch(aBranch),
+        mWeakRef(nullptr),
+        mStrongRef(aObserver) {
     MOZ_COUNT_CTOR(PrefCallback);
+    nsCOMPtr<nsISupports> canonical = do_QueryInterface(aObserver);
+    mCanonical = canonical;
   }
 
   // Create a PrefCallback with a weak reference to its observer.
@@ -2203,8 +2190,11 @@ class PrefCallback : public PLDHashEntryHdr {
                nsPrefBranch* aBranch)
       : mDomain(aDomain),
         mBranch(aBranch),
-        mWeakRef(do_GetWeakReference(aObserver)) {
+        mWeakRef(do_GetWeakReference(aObserver)),
+        mStrongRef(nullptr) {
     MOZ_COUNT_CTOR(PrefCallback);
+    nsCOMPtr<nsISupports> canonical = do_QueryInterface(aObserver);
+    mCanonical = canonical;
   }
 
   // This is explicitly not a copy constructor.
@@ -2212,7 +2202,8 @@ class PrefCallback : public PLDHashEntryHdr {
       : mDomain(aCopy->mDomain),
         mBranch(aCopy->mBranch),
         mWeakRef(aCopy->mWeakRef),
-        mStrongRef(aCopy->mStrongRef) {
+        mStrongRef(aCopy->mStrongRef),
+        mCanonical(aCopy->mCanonical) {
     MOZ_COUNT_CTOR(PrefCallback);
   }
 
@@ -2222,16 +2213,28 @@ class PrefCallback : public PLDHashEntryHdr {
   MOZ_COUNTED_DTOR(PrefCallback)
 
   bool KeyEquals(const PrefCallback* aKey) const {
-    if (!mDomain.Equals(aKey->mDomain)) {
+    // We want to be able to look up a weakly-referencing PrefCallback after
+    // its observer has died so we can remove it from the table. Once the
+    // callback's observer dies, its canonical pointer is stale -- in
+    // particular, we may have allocated a new observer in the same spot in
+    // memory! So we can't just compare canonical pointers to determine whether
+    // aKey refers to the same observer as this.
+    //
+    // Our workaround is based on the way we use this hashtable: When we ask
+    // the hashtable to remove a PrefCallback whose weak reference has expired,
+    // we use as the key for removal the same object as was inserted into the
+    // hashtable. Thus we can say that if one of the keys' weak references has
+    // expired, the two keys are equal iff they're the same object.
+
+    if (IsExpired() || aKey->IsExpired()) {
+      return this == aKey;
+    }
+
+    if (mCanonical != aKey->mCanonical) {
       return false;
     }
-    // For weak callbacks, compare the weak reference proxy objects.
-    // Each observer has a unique proxy that outlives the observer, so
-    // this is safe even if the observer's address is reused.
-    if (IsWeak()) {
-      return mWeakRef == aKey->mWeakRef;
-    }
-    return mStrongRef == aKey->mStrongRef;
+
+    return mDomain.Equals(aKey->mDomain);
   }
 
   PrefCallback* GetKey() const { return const_cast<PrefCallback*>(this); }
@@ -2279,6 +2282,9 @@ class PrefCallback : public PLDHashEntryHdr {
   nsWeakPtr mWeakRef;
   nsCOMPtr<nsIObserver> mStrongRef;
 
+  // We need a canonical nsISupports pointer, per bug 578392.
+  nsISupports* mCanonical;
+
   bool IsWeak() const { return !!mWeakRef; }
 };
 
@@ -2296,7 +2302,6 @@ class nsPrefBranch final : public nsIPrefBranch,
   nsPrefBranch() = delete;
 
   static void NotifyObserver(const char* aNewpref, void* aData);
-  static void SweepExpiredWeakObservers();
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
@@ -2321,6 +2326,8 @@ class nsPrefBranch final : public nsIPrefBranch,
                                      const nsACString& aValue);
   nsresult CheckSanityOfStringLength(const char* aPrefName,
                                      const uint32_t aLength);
+
+  void RemoveExpiredCallback(PrefCallback* aCallback);
 
   PrefName GetPrefName(const char* aPrefName) const {
     return GetPrefName(nsDependentCString(aPrefName));
@@ -3035,33 +3042,14 @@ nsPrefBranch::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
-// Schedule an idle sweep of expired weak observer callbacks. This is purely
-// a memory optimization — expired callbacks are inert (notifications skip
-// them and they do not keep alive anything else), so there is no urgency.
-static void MaybeScheduleExpiredWeakObserverSweep() {
-  if (sSweepRunner) {
-    return;
-  }
-  PROFILER_MARKER_UNTYPED("ScheduleWeakObserverSweep", OTHER);
-  static const TimeDuration kMaxDelay = TimeDuration::FromSeconds(2);
-  static const TimeDuration kMinBudget = TimeDuration::FromMilliseconds(15);
-  sSweepRunner = IdleTaskRunner::Create(
-      [](TimeStamp aDeadline) {
-        nsPrefBranch::SweepExpiredWeakObservers();
-        sSweepRunner = nullptr;
-        return true;
-      },
-      "SweepExpiredWeakObservers"_ns, TimeDuration(), kMaxDelay, kMinBudget,
-      false, nullptr);
-}
-
 /* static */
 void nsPrefBranch::NotifyObserver(const char* aNewPref, void* aData) {
   PrefCallback* pCallback = (PrefCallback*)aData;
 
   nsCOMPtr<nsIObserver> observer = pCallback->GetObserver();
   if (!observer) {
-    MaybeScheduleExpiredWeakObserverSweep();
+    // The observer has expired.  Let's remove this callback.
+    pCallback->GetPrefBranch()->RemoveExpiredCallback(pCallback);
     return;
   }
 
@@ -3090,19 +3078,18 @@ size_t nsPrefBranch::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 }
 
 void nsPrefBranch::FreeObserverList() {
-  // Clearing mObservers may release the last strong reference to observers,
-  // whose destructors may call RemoveObserver() re-entrantly. We set
-  // mFreeingObserverList to suppress those calls, both to avoid modifying
-  // mObservers during Clear() and to avoid redundant UnregisterCallback walks
-  // (the bulk removal is already handled by UnregisterCallbacksForBranch).
+  // We need to prevent anyone from modifying mObservers while we're iterating
+  // over it. In particular, some clients will call RemoveObserver() when
+  // they're removed and destructed via the iterator; we set
+  // mFreeingObserverList to keep those calls from touching mObservers.
   mFreeingObserverList = true;
-
-  // Remove all callback nodes for this branch in a single pass through the
-  // global callback list, instead of one pass per observer.
-  DebugOnly<uint32_t> removed = Preferences::UnregisterCallbacksForBranch(this);
-  MOZ_ASSERT(removed == mObservers.Count(),
-             "Callback list and mObservers are out of sync");
-  mObservers.Clear();
+  for (auto iter = mObservers.Iter(); !iter.Done(); iter.Next()) {
+    auto callback = iter.UserData();
+    Preferences::UnregisterCallback(nsPrefBranch::NotifyObserver,
+                                    callback->GetDomain(), callback,
+                                    Preferences::PrefixMatch);
+    iter.Remove();
+  }
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   if (observerService) {
@@ -3110,6 +3097,11 @@ void nsPrefBranch::FreeObserverList() {
   }
 
   mFreeingObserverList = false;
+}
+
+void nsPrefBranch::RemoveExpiredCallback(PrefCallback* aCallback) {
+  MOZ_ASSERT(aCallback->IsExpired());
+  mObservers.Remove(aCallback);
 }
 
 nsresult nsPrefBranch::GetDefaultFromPropertiesFile(const char* aPrefName,
@@ -3146,27 +3138,6 @@ nsPrefBranch::PrefName nsPrefBranch::GetPrefName(
   }
 
   return PrefName(mPrefRoot + aPrefName);
-}
-
-// static
-void nsPrefBranch::SweepExpiredWeakObservers() {
-  MOZ_ASSERT(!gCallbacksInProgress);
-
-  CallbackNode* prev_node = nullptr;
-  CallbackNode* node = gFirstCallback;
-
-  while (node) {
-    if (node->Func() == nsPrefBranch::NotifyObserver) {
-      auto* pCallback = static_cast<PrefCallback*>(node->Data());
-      if (pCallback->IsExpired()) {
-        pCallback->GetPrefBranch()->mObservers.Remove(pCallback);
-        node = pref_RemoveCallbackNode(node, prev_node);
-        continue;
-      }
-    }
-    prev_node = node;
-    node = node->Next();
-  }
 }
 
 //----------------------------------------------------------------------------
@@ -3569,15 +3540,6 @@ void Preferences::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
           ->SizeOfIncludingThis(aMallocSizeOf);
 }
 
-/* static */
-uint32_t Preferences::GetCallbackCount() {
-  uint32_t count = 0;
-  for (CallbackNode* node = gFirstCallback; node; node = node->Next()) {
-    count++;
-  }
-  return count;
-}
-
 class PreferenceServiceReporter final : public nsIMemoryReporter {
   ~PreferenceServiceReporter() = default;
 
@@ -3932,10 +3894,7 @@ already_AddRefed<Preferences> Preferences::GetInstanceForService() {
 }
 
 /* static */
-bool Preferences::IsServiceAvailable() {
-  MOZ_ASSERT(NS_IsMainThread());
-  return !!sPreferences;
-}
+bool Preferences::IsServiceAvailable() { return !!sPreferences; }
 
 /* static */
 bool Preferences::InitStaticMembers() {
@@ -3956,13 +3915,8 @@ bool Preferences::InitStaticMembers() {
 
 /* static */
 void Preferences::Shutdown() {
-  MOZ_ASSERT(NS_IsMainThread());
   if (!sShutdown) {
     sShutdown = true;  // Don't create the singleton instance after here.
-    if (sSweepRunner) {
-      sSweepRunner->Cancel();
-      sSweepRunner = nullptr;
-    }
     sPreferences = nullptr;
     StaticPrefs::ShutdownAlwaysPrefs();
   }
@@ -4129,7 +4083,6 @@ void Preferences::InitializeUserPrefs() {
 
 /* static */
 void Preferences::FinishInitializingUserPrefs() {
-  MOZ_ASSERT(NS_IsMainThread());
   sPreferences->NotifyServiceObservers(NS_PREFSERVICE_READ_TOPIC_ID);
 }
 
@@ -5644,23 +5597,12 @@ nsresult Preferences::AddWeakObserver(nsIObserver* aObserver,
                                       const nsACString& aPref) {
   MOZ_ASSERT(aObserver);
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
-
-  // Periodically schedule a sweep of expired weak observers, in case
-  // observers expire without triggering a notification.
-  static uint32_t sWeakRegistrationsSinceSweep = 0;
-  static constexpr uint32_t kSweepInterval = 512;
-  if (!sSweepRunner && ++sWeakRegistrationsSinceSweep >= kSweepInterval) {
-    sWeakRegistrationsSinceSweep = 0;
-    MaybeScheduleExpiredWeakObserverSweep();
-  }
-
   return sPreferences->mRootBranch->AddObserver(aPref, aObserver, true);
 }
 
 /* static */
 nsresult Preferences::RemoveObserver(nsIObserver* aObserver,
                                      const nsACString& aPref) {
-  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aObserver);
   if (sShutdown) {
     MOZ_ASSERT(!sPreferences);
@@ -5712,7 +5654,6 @@ nsresult Preferences::AddWeakObservers(nsIObserver* aObserver,
 /* static */
 nsresult Preferences::RemoveObservers(nsIObserver* aObserver,
                                       const char* const* aPrefs) {
-  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aObserver);
   if (sShutdown) {
     MOZ_ASSERT(!sPreferences);
@@ -5733,7 +5674,6 @@ nsresult Preferences::RegisterCallbackImpl(PrefChangedFunc aCallback,
                                            T& aPrefNode, void* aData,
                                            MatchKind aMatchKind,
                                            bool aIsPriority) {
-  MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG(aCallback);
 
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
@@ -5810,7 +5750,6 @@ template <typename T>
 nsresult Preferences::UnregisterCallbackImpl(PrefChangedFunc aCallback,
                                              T& aPrefNode, void* aData,
                                              MatchKind aMatchKind) {
-  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCallback);
   if (sShutdown) {
     MOZ_ASSERT(!sPreferences);
@@ -5857,37 +5796,6 @@ nsresult Preferences::UnregisterCallbacks(PrefChangedFunc aCallback,
                                           const char* const* aPrefs,
                                           void* aData, MatchKind aMatchKind) {
   return UnregisterCallbackImpl(aCallback, aPrefs, aData, aMatchKind);
-}
-
-/* static */
-uint32_t Preferences::UnregisterCallbacksForBranch(nsPrefBranch* aBranch) {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (sShutdown || !sPreferences) {
-    return 0;
-  }
-
-  uint32_t removedCount = 0;
-  CallbackNode* node = gFirstCallback;
-  CallbackNode* prev_node = nullptr;
-
-  while (node) {
-    if (node->Func() == nsPrefBranch::NotifyObserver &&
-        static_cast<PrefCallback*>(node->Data())->GetPrefBranch() == aBranch) {
-      ++removedCount;
-      if (gCallbacksInProgress) {
-        node->ClearFunc();
-        gShouldCleanupDeadNodes = true;
-        prev_node = node;
-        node = node->Next();
-      } else {
-        node = pref_RemoveCallbackNode(node, prev_node);
-      }
-    } else {
-      prev_node = node;
-      node = node->Next();
-    }
-  }
-  return removedCount;
 }
 
 template <typename T>

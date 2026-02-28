@@ -428,8 +428,6 @@ class Preferences final : public nsIPrefService,
   static void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                                      PrefsSizes& aSizes);
 
-  static uint32_t GetCallbackCount();
-
   static void HandleDirty();
 
   // Explicitly choosing synchronous or asynchronous (if allowed) preferences
@@ -501,8 +499,6 @@ class Preferences final : public nsIPrefService,
   static nsresult UnregisterCallbacks(PrefChangedFunc aCallback,
                                       const char* const* aPrefs, void* aClosure,
                                       MatchKind aMatchKind);
-
-  static uint32_t UnregisterCallbacksForBranch(nsPrefBranch* aBranch);
 
   template <typename T>
   static nsresult RegisterCallbackImpl(PrefChangedFunc aCallback, T& aPref,
