@@ -615,11 +615,11 @@ function push_repo {
   # must not abandon each other's patches.
   # Turn  Needs Review D624: No bug, Automated HSTS ...
   # into D624
-  ALL_DIFFS=$($ARC list | grep "Needs Review" | grep -E "${BRANCH} repo-update")
+  ALL_DIFFS=$($ARC list | grep "Needs Review" | grep -E "${BRANCH} repo-update" || true)
   if [ "${DO_HSTS}" == "true" ] || [ "${DO_HPKP}" == "true" ]; then
-    OLDER_DIFFS=$(echo "${ALL_DIFFS}" | grep -E "HSTS|HPKP")
+    OLDER_DIFFS=$(echo "${ALL_DIFFS}" | grep -E "HSTS|HPKP" || true)
   else
-    OLDER_DIFFS=$(echo "${ALL_DIFFS}" | grep -vE "HSTS|HPKP")
+    OLDER_DIFFS=$(echo "${ALL_DIFFS}" | grep -vE "HSTS|HPKP" || true)
   fi
   for diff in $(echo "${OLDER_DIFFS}" | awk 'match($0, /D[0-9]+[^: ]/) { print substr($0, RSTART, RLENGTH)  }')
   do
