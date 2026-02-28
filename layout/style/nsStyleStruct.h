@@ -1557,8 +1557,10 @@ struct StyleAnimation {
   StyleAnimationIterationCount mIterationCount{1.0f};
   StyleAnimationComposition mComposition = StyleAnimationComposition::Replace;
   StyleAnimationTimeline mTimeline = StyleAnimationTimeline::Auto();
-  StyleAnimationRangeStart mRangeStart;
-  StyleAnimationRangeEnd mRangeEnd;
+  StyleAnimationRangeStart mRangeStart{StyleTimelineRangeName::Normal,
+                                       LengthPercentage::FromPercentage(0.0f)};
+  StyleAnimationRangeEnd mRangeEnd{StyleTimelineRangeName::Normal,
+                                   LengthPercentage::FromPercentage(1.0f)};
 };
 
 struct StyleScrollTimeline {
