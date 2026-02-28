@@ -12877,7 +12877,7 @@
 # calls only for certain domains (ignored if above pref is true).
 - name: media.devices.enumerate.legacy.allowlist
   type: String
-  value: "slack.com,*.slack.com,riverside.fm,*.riverside.fm"
+  value: "slack.com,*.slack.com,riverside.fm,*.riverside.fm,riverside.com,*.riverside.com"
   mirror: never
 
 # WebRTC prefs follow
