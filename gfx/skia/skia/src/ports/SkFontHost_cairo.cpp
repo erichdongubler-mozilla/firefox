@@ -23,11 +23,16 @@
 #include <memory>
 
 #include <ft2build.h>
-#include <ftxf86.h>
-#include <t1tables.h>
-#include <tttables.h>
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
+#include FT_TRUETYPE_TABLES_H
+#include FT_TYPE1_TABLES_H
+
+#ifdef FT_FONT_FORMATS_H
+#include FT_FONT_FORMATS_H
+#else
+#include FT_XFREE86_H
+#endif
 
 // for FT_GlyphSlot_Embolden
 #ifdef FT_SYNTHESIS_H
