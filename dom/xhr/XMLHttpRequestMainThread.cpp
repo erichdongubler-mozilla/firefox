@@ -3808,13 +3808,23 @@ void XMLHttpRequestMainThread::HandleProgressTimerCallback() {
                             mUploadTotal);
     }
   } else {
-    FireReadystatechangeEvent();
-    DispatchProgressEvent(this, Events::progress, mLoadTransferred, mLoadTotal);
+    // Don't fire events when state is UNSENT. This can happen if abort() was
+    // called and changed the state to UNSENT, but this timer callback was
+    // already queued. Per spec, readystatechange doesn't fire when changing to
+    // UNSENT, and progress events only fire during data transmission.
+    if (mState != XMLHttpRequest_Binding::UNSENT) {
+      FireReadystatechangeEvent();
+      DispatchProgressEvent(this, Events::progress, mLoadTransferred,
+                            mLoadTotal);
+    }
   }
 
   mProgressSinceLastProgressEvent = false;
 
-  StartProgressEventTimer();
+  // Don't restart the timer if we're in UNSENT state.
+  if (mState != XMLHttpRequest_Binding::UNSENT) {
+    StartProgressEventTimer();
+  }
 }
 
 void XMLHttpRequestMainThread::StopProgressEventTimer() {
