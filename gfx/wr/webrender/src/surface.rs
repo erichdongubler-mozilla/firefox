@@ -699,7 +699,7 @@ impl SurfaceBuilder {
                                     }
                                 }
                             }
-                            CommandBufferBuilderKind::Simple { render_task_id: ref mut parent_task_id, .. } => {
+                            CommandBufferBuilderKind::Simple { render_task_id: ref mut parent_task_id, root_task_id: ref parent_root_task_id, .. } => {
                                 let parent_task = rg_builder.get_task_mut(*parent_task_id);
 
                                 // Get info about the parent tile task location and params
@@ -742,6 +742,19 @@ impl SurfaceBuilder {
                                     new_task_id,
                                     *parent_task_id,
                                 );
+
+                                // If the parent is a chained surface (e.g. a CSS blur or drop-shadow
+                                // filter), its filter pass (root_task_id) reads from the same texture
+                                // as parent_task_id. Ensure it executes after new_task_id has written
+                                // post-backdrop-capture content (e.g. backdrop-filter children) to
+                                // that texture, otherwise those primitives will be missing from the
+                                // filter output.
+                                if let Some(root_task_id) = *parent_root_task_id {
+                                    rg_builder.add_dependency(
+                                        root_task_id,
+                                        new_task_id,
+                                    );
+                                }
 
                                 // Update the surface builder with the now current target for future primitives
                                 *parent_task_id = new_task_id;

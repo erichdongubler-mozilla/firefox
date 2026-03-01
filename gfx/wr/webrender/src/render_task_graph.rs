@@ -472,6 +472,9 @@ impl RenderTaskGraphBuilder {
         for (pass_id, pass) in graph.passes.iter_mut().enumerate().rev() {
             assert!(self.textures_to_free.is_empty());
 
+            // Phase 1: Allocate all tasks in this pass to surfaces. Existing
+            // tasks propagate their free_after to the surface via min so that
+            // the surface stays alive until the last reader is done.
             for task_id in &pass.task_ids {
 
                 let task_location = graph.tasks[task_id.index as usize].location.clone();
@@ -611,6 +614,10 @@ impl RenderTaskGraphBuilder {
                             RenderTaskLocation::Dynamic { texture_id, rect, .. } => {
                                 assert_eq!(existing_size, rect.size());
 
+                                let existing_fa = graph.tasks[task_id.index as usize].free_after;
+                                let surface = self.active_surfaces.get_mut(&texture_id).unwrap();
+                                surface.free_after = surface.free_after.min(existing_fa);
+
                                 let kind = graph.tasks[parent_task_id.index as usize].kind.target_kind();
                                 let mut task_ids = memory.new_vec();
                                 task_ids.push(*task_id);
@@ -652,8 +659,12 @@ impl RenderTaskGraphBuilder {
                         panic!("bug: encountered an already allocated task");
                     }
                 }
+            }
 
-                // Return the shared surfaces from this pass
+            // Phase 2: Check surface free_after to decide which textures to
+            // free. The surface's free_after is the min across all tasks on it,
+            // including Existing tasks that updated it above.
+            for task_id in &pass.task_ids {
                 let task = &graph.tasks[task_id.index as usize];
                 for child_id in &task.children {
                     let child_task = &graph.tasks[child_id.index as usize];
@@ -661,9 +672,8 @@ impl RenderTaskGraphBuilder {
                         RenderTaskLocation::Unallocated { .. } |
                         RenderTaskLocation::Existing { .. } => panic!("bug: must be allocated"),
                         RenderTaskLocation::Dynamic { texture_id, .. } => {
-                            // If this task can be freed after this pass, include it in the
-                            // unique set of textures to be returned to the render target pool below.
-                            if child_task.free_after == PassId(pass_id) {
+                            let surface = self.active_surfaces.get(&texture_id).unwrap();
+                            if surface.free_after == PassId(pass_id) {
                                 self.textures_to_free.insert(texture_id);
                             }
                         }
@@ -928,10 +938,7 @@ fn assign_free_pass(
                     child_task.free_after = child_task.free_after.min(render_on);
                 }
             }
-            RenderTaskLocation::Existing { parent_task_id, .. } => {
-                let parent_task = &mut graph.tasks[parent_task_id.index as usize];
-                parent_task.free_after = PassId::INVALID;
-
+            RenderTaskLocation::Existing { .. } => {
                 let child_task = &mut graph.tasks[child_id.index as usize];
 
                 if child_task.free_after != PassId::INVALID {
