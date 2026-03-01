@@ -5293,7 +5293,7 @@
       {
         "platforms": ["all"],
         "only_channels": ["nightly"],
-        "ua_string": ["Safari"],
+        "ua_string": ["Chrome"],
         "content_scripts": {
           "all_frames": true,
           "js": ["bug1994562-shim-mstp-mstg-on-window.js"]
@@ -5302,7 +5302,7 @@
       {
         "platforms": ["all"],
         "only_channels": ["nightly"],
-        "ua_string": ["Safari"],
+        "ua_string": ["Chrome"],
         "content_scripts": {
           "all_frames": true,
           "js": ["bug1913599-shim-createencodedstreams.js"]
@@ -5311,7 +5311,7 @@
       {
         "platforms": ["all"],
         "only_channels": ["nightly"],
-        "ua_string": ["Safari"],
+        "ua_string": ["Chrome"],
         "content_scripts": {
           "all_frames": true,
           "js": ["bug1902507-nofrozenicecandidatepairstats.js"]
