@@ -157,8 +157,14 @@ class OpenTabsInSplitView extends MozLitElement {
         !this.currentSplitView)
     ) {
       // If there are no unpinned, unsplit tabs to display or about:opentabs
-      // is opened outside of a split view, open about:newtab instead
-      this.getWindow().openTrustedLinkIn(BROWSER_NEW_TAB_URL, "current");
+      // is opened outside of a split view, open about:newtab instead.
+      //
+      // Given this is still during the initialization, wait for the
+      // next microtask checkpoint.
+      queueMicrotask(() => {
+        this.getWindow().openTrustedLinkIn(BROWSER_NEW_TAB_URL, "current");
+      });
+      return null;
     }
     return html`
       <link
