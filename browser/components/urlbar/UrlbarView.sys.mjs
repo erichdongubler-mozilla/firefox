@@ -230,16 +230,10 @@ export class UrlbarView {
    *   instead of adding to the input value.
    */
   shouldSpaceActivateSelectedElement() {
-    // We want SPACE to activate result menu always.
-    if (this.selectedElement?.dataset.name == "result-menu") {
-      return true;
-    }
-
     // We want SPACE to activate buttons only.
     if (this.selectedElement?.getAttribute("role") != "button") {
       return false;
     }
-
     // Make sure the input field is empty, otherwise the user might want to add
     // a space to the current search string. As it stands, selecting a button
     // should always clear the input field, so this is just an extra safeguard.
