@@ -424,6 +424,19 @@ export class AIWindow extends MozLitElement {
   }
 
   /**
+   * Update the smartbar input
+   *
+   * @param {string} value The value to update the input with
+   */
+  updateInput(value) {
+    if (!this.#smartbar) {
+      return;
+    }
+
+    this.#smartbar.value = value;
+  }
+
+  /**
    * Loads conversation starter prompts from the generator and renders them.
    * In sidebar mode, uses LLM-generated prompts based on tab context and memories.
    * In fullpage mode, uses static prompts based on tab count.
@@ -678,6 +691,18 @@ export class AIWindow extends MozLitElement {
       }
 
       this.submitFollowUp(value, contextMentions);
+      this.#dispatchChromeEvent(
+        "ai-window:smartbar-input",
+        this.#getAIWindowEventOptions("")
+      );
+    } else if (
+      this.mode === SIDEBAR &&
+      (action === "navigate" || action === "search")
+    ) {
+      this.#dispatchChromeEvent(
+        "ai-window:sidebar-navigating",
+        this.#getAIWindowEventOptions()
+      );
     }
   };
 
