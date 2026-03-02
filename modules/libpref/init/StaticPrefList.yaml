@@ -3754,17 +3754,6 @@
   value: true
   mirror: always
 
-# ModelContext API
-- name: dom.modelcontext.enabled
-  type: bool
-  value: false
-  mirror: always
-
-- name: dom.modelcontext.testing.enabled
-  type: bool
-  value: false
-  mirror: always
-
 # Enable ParentNode.moveBefore().
 - name: dom.movebefore.enabled
   type: bool

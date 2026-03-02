@@ -59,7 +59,6 @@ DIRS += [
     "media",
     "midi",
     "mls",
-    "modelcontext",
     "notification",
     "power",
     "push",
