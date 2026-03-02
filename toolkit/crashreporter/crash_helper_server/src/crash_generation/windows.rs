@@ -31,6 +31,8 @@ use windows_sys::Win32::{
     },
 };
 
+pub(crate) type PlatformData = ();
+
 impl CrashGenerator {
     pub(crate) fn generate_wer_minidump(
         &self,

@@ -17,9 +17,8 @@ use thiserror::Error;
 use windows_sys::Win32::System::Diagnostics::Debug::{CONTEXT, EXCEPTION_RECORD};
 
 use crate::{
-    breakpad::Pid,
-    ipc_connector::{AncillaryData, CONNECTOR_ANCILLARY_DATA_LEN},
-    BreakpadString, GeckoChildId,
+    breakpad::Pid, ipc_connector::CONNECTOR_ANCILLARY_DATA_LEN,
+    platform::CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN, AncillaryData, BreakpadString, GeckoChildId,
 };
 
 #[derive(Debug, Error)]
@@ -749,17 +748,18 @@ impl Message for RegisterChildProcess {
 
     fn decode(
         _data: Vec<u8>,
-        mut ancillary_data: Vec<AncillaryData>,
+        ancillary_data: Vec<AncillaryData>,
     ) -> Result<RegisterChildProcess, MessageError> {
+        let mut iter = ancillary_data.into_iter();
         #[cfg(any(target_os = "ios", target_os = "macos"))]
         let ancillary_data: [AncillaryData; CONNECTOR_ANCILLARY_DATA_LEN] = {
-            let receive_right = ancillary_data.pop().ok_or(MessageError::MissingAncillary)?;
-            let send_right = ancillary_data.pop().ok_or(MessageError::MissingAncillary)?;
+            let send_right = iter.next().ok_or(MessageError::MissingAncillary)?;
+            let receive_right = iter.next().ok_or(MessageError::MissingAncillary)?;
             [send_right, receive_right]
         };
         #[cfg(not(any(target_os = "ios", target_os = "macos")))]
         let ancillary_data: [AncillaryData; CONNECTOR_ANCILLARY_DATA_LEN] =
-            [ancillary_data.pop().ok_or(MessageError::MissingAncillary)?];
+            [iter.next().ok_or(MessageError::MissingAncillary)?];
 
         Ok(RegisterChildProcess { ancillary_data })
     }
@@ -831,14 +831,21 @@ pub struct ChildProcessRendezVousReply {
     pub dumpable: bool,
     pub child_pid: Pid,
     pub id: GeckoChildId,
+    pub ancillary_data: [AncillaryData; CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN],
 }
 
 impl ChildProcessRendezVousReply {
-    pub fn new(dumpable: bool, child_pid: Pid, id: GeckoChildId) -> ChildProcessRendezVousReply {
+    pub fn new(
+        dumpable: bool,
+        child_pid: Pid,
+        id: GeckoChildId,
+        ancillary_data: [AncillaryData; CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN],
+    ) -> ChildProcessRendezVousReply {
         ChildProcessRendezVousReply {
             dumpable,
             child_pid,
             id,
+            ancillary_data,
         }
     }
 }
@@ -853,7 +860,7 @@ impl Message for ChildProcessRendezVousReply {
     }
 
     fn ancillary_data_len(&self) -> usize {
-        0
+        CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN
     }
 
     fn encode(self) -> (Bytes, Bytes, Vec<AncillaryData>) {
@@ -864,14 +871,17 @@ impl Message for ChildProcessRendezVousReply {
         payload.put_pid_ne(self.child_pid);
         payload.put_i32_ne(self.id);
 
-        (header, payload.freeze(), vec![])
+        (header, payload.freeze(), self.ancillary_data.into())
     }
 
     fn decode(
         data: Vec<u8>,
         ancillary_data: Vec<AncillaryData>,
     ) -> Result<ChildProcessRendezVousReply, MessageError> {
-        if !ancillary_data.is_empty() {
+        #[allow(clippy::absurd_extreme_comparisons)]
+        if ancillary_data.len() < CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN {
+            return Err(MessageError::MissingAncillary);
+        } else if ancillary_data.len() > CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN {
             return Err(MessageError::UnexpectedAncillaryData);
         }
 
@@ -879,11 +889,13 @@ impl Message for ChildProcessRendezVousReply {
         let dumpable = data.try_get_u8()? != 0;
         let child_pid = data.try_get_pid_ne()?;
         let id = data.try_get_i32_ne()?;
+        let ancillary_data = ancillary_data.try_into().unwrap();
 
         Ok(ChildProcessRendezVousReply {
             dumpable,
             child_pid,
             id,
+            ancillary_data,
         })
     }
 }
