@@ -1777,7 +1777,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     // However, as import maps could be only inline scripts by now, the
     // 'preparation-time document check' will never fail for import maps.
     // So we simply call 'register an import map' here.
-    mModuleLoader->RegisterImportMap(std::move(importMap));
+    mModuleLoader->RegisterImportMap(std::move(importMap), request);
     return false;
   }
 

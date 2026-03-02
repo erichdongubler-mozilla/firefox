@@ -1624,25 +1624,23 @@ UniquePtr<ImportMap> ModuleLoaderBase::ParseImportMap(
   return ImportMap::ParseString(jsapi.cx(), text, aRequest->BaseURL(), warning);
 }
 
-void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap) {
+void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap,
+                                         ScriptLoadRequest* aRequest) {
+  LOG(("RegisterImportMap"));
+
   // Check for aImportMap is done in ScriptLoader.
   MOZ_ASSERT(aImportMap);
 
   // https://html.spec.whatwg.org/multipage/webappapis.html#register-an-import-map
   // The step 1(report the exception if there's an error) is done in
   // ParseImportMap.
-  //
-  // Step 2. Assert: global's import map is an empty import map.
-  // Impl note: The default import map from the spec is an empty import map, but
-  // from the implementation it defaults to nullptr, so we check if the global's
-  // import map is null here.
-  //
-  // Also see
-  // https://html.spec.whatwg.org/multipage/webappapis.html#empty-import-map
-  MOZ_ASSERT(!mImportMap);
 
-  // Step 3. Set global's import map to result's import map.
-  mImportMap = std::move(aImportMap);
+  if (!ImportMap::IsMultipleImportMapsSupported()) {
+    MOZ_ASSERT(!mImportMap);
+    mImportMap = std::move(aImportMap);
+  } else {
+    ReportWarningHelper warning{mLoader, aRequest};
+  }
 
   // Any import resolution has been invalidated by the addition of the import
   // map. If speculative preloading is currently fetching any modules then
