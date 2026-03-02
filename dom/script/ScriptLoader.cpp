@@ -1179,7 +1179,7 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
     aRequest->NoCacheEntryFound(aReferrerPolicy, aFetchOptions, aURI);
     LOG(
         ("ScriptLoader (%p): Created LoadedScript (%p) for "
-         "ScriptLoadRequest(%p) %s.",
+         "ScriptLoadRequest(%p) because inline %s.",
          this, aRequest->getLoadedScript(), aRequest,
          aRequest->URI()->GetSpecOrDefault().get()));
     return;
@@ -1206,7 +1206,7 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
     aRequest->NoCacheEntryFound(aReferrerPolicy, aFetchOptions, aURI);
     LOG(
         ("ScriptLoader (%p): Created LoadedScript (%p) for "
-         "ScriptLoadRequest(%p) %s.",
+         "ScriptLoadRequest(%p) because cache is not found %s.",
          this, aRequest->getLoadedScript(), aRequest,
          aRequest->URI()->GetSpecOrDefault().get()));
     return;
@@ -1246,7 +1246,7 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
       aRequest->NoCacheEntryFound(aReferrerPolicy, aFetchOptions, aURI);
       LOG(
           ("ScriptLoader (%p): Created LoadedScript (%p) for "
-           "ScriptLoadRequest(%p) %s.",
+           "ScriptLoadRequest(%p) because content policy violation %s.",
            this, aRequest->getLoadedScript(), aRequest,
            aRequest->URI()->GetSpecOrDefault().get()));
       return;
