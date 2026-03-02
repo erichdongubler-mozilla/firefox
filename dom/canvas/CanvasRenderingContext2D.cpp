@@ -6567,9 +6567,11 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
     return NS_ERROR_DOM_SYNTAX_ERR;
   }
 
-  JS::Rooted<JSObject*> darray(aCx, JS_NewUint8ClampedArray(aCx, len.value()));
-  if (!darray) {
-    return NS_ERROR_OUT_OF_MEMORY;
+  ErrorResult error;
+  JS::Rooted<JSObject*> darray(
+      aCx, Uint8ClampedArray::Create(aCx, this, len.value(), error));
+  if (error.Failed()) {
+    return error.StealNSResult();
   }
 
   if (mZero) {
