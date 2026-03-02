@@ -3620,6 +3620,13 @@ CanonicalBrowsingContext::GetBounceTrackingState() {
   return mWebProgress->GetBounceTrackingState();
 }
 
+already_AddRefed<nsIScopedPrefs> CanonicalBrowsingContext::GetScopedPrefs() {
+  if (!mWebProgress) {
+    return nullptr;
+  }
+  return mWebProgress->ScopedPrefs();
+}
+
 bool CanonicalBrowsingContext::CanOpenModalPicker() {
   if (!mozilla::StaticPrefs::browser_disable_pickers_background_tabs()) {
     return true;
