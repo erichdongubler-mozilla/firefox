@@ -4303,7 +4303,6 @@ function AdBannerContextMenu({
 
 
 const PREF_PROMO_CARD_DISMISSED = "discoverystream.promoCard.visible";
-const DEFAULT_PROMO_URL = "https://addons.mozilla.org/firefox/collections/4757633/b4d5649fb087446aa05add5f0258c3/";
 
 /**
  * The PromoCard component displays a promotional message.
@@ -4312,9 +4311,6 @@ const DEFAULT_PROMO_URL = "https://addons.mozilla.org/firefox/collections/475763
 
 const PromoCard = () => {
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
-  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
-  const trainhopConfigPromoCardUrl = prefs.trainhopConfig?.promoCard?.url;
-  const promoUrl = typeof trainhopConfigPromoCardUrl === "string" && trainhopConfigPromoCardUrl ? trainhopConfigPromoCardUrl : DEFAULT_PROMO_URL;
   const onCtaClick = (0,external_React_namespaceObject.useCallback)(() => {
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.PROMO_CARD_CLICK
@@ -4355,17 +4351,17 @@ const PromoCard = () => {
     alt: ""
   })), /*#__PURE__*/external_React_default().createElement("span", {
     className: "promo-card-title",
-    "data-l10n-id": "newtab-promo-card-title-addons"
+    "data-l10n-id": "newtab-promo-card-title"
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "promo-card-body",
-    "data-l10n-id": "newtab-promo-card-body-addons"
+    "data-l10n-id": "newtab-promo-card-body"
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "promo-card-cta-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("a", {
-    href: promoUrl,
+    href: "https://support.mozilla.org/kb/sponsor-privacy",
+    "data-l10n-id": "newtab-promo-card-cta",
     target: "_blank",
     rel: "noreferrer",
-    "data-l10n-id": "newtab-promo-card-cta-addons",
     onClick: onCtaClick
   }))));
 };
@@ -4426,8 +4422,7 @@ const AdBanner = ({
       height: undefined
     };
   };
-  const nimbusPromoCardTrainhopEnabled = prefs.trainhopConfig?.promoCard?.enabled;
-  const promoCardEnabled = spoc.format === "billboard" && (nimbusPromoCardTrainhopEnabled || prefs[PREF_PROMOCARD_ENABLED]) && prefs[PREF_PROMOCARD_VISIBLE];
+  const promoCardEnabled = spoc.format === "billboard" && prefs[PREF_PROMOCARD_ENABLED] && prefs[PREF_PROMOCARD_VISIBLE];
   const sectionsEnabled = prefs[AdBanner_PREF_SECTIONS_ENABLED];
   const ohttpEnabled = prefs[AdBanner_PREF_OHTTP_UNIFIED_ADS];
   const showAdReporting = prefs[PREF_REPORT_ADS_ENABLED];

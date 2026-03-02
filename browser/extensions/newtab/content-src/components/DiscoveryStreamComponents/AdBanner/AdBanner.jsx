@@ -54,11 +54,9 @@ export const AdBanner = ({
       height: undefined,
     };
   };
-  const nimbusPromoCardTrainhopEnabled =
-    prefs.trainhopConfig?.promoCard?.enabled;
   const promoCardEnabled =
     spoc.format === "billboard" &&
-    (nimbusPromoCardTrainhopEnabled || prefs[PREF_PROMOCARD_ENABLED]) &&
+    prefs[PREF_PROMOCARD_ENABLED] &&
     prefs[PREF_PROMOCARD_VISIBLE];
 
   const sectionsEnabled = prefs[PREF_SECTIONS_ENABLED];

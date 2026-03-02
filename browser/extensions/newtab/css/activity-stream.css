@@ -8628,20 +8628,26 @@ hr {
 .promo-card-wrapper:hover {
   background: var(--newtab-background-color-secondary);
 }
-.promo-card-wrapper .promo-card-inner {
-  display: flex;
-  flex: 1;
-  gap: var(--space-medium);
-  align-items: stretch;
-  flex-direction: column;
-}
 .promo-card-wrapper .promo-card-title {
   display: block;
   font-size: var(--font-size-medium);
   font-weight: var(--heading-font-weight);
+  margin-block: var(--space-medium);
+}
+.promo-card-wrapper .promo-card-title::before {
+  content: "";
+  display: inline-block;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  background-image: url("chrome://branding/content/icon32.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  margin-inline-end: var(--space-small);
+  vertical-align: middle;
 }
 .promo-card-wrapper .promo-card-body {
   display: block;
+  margin-block: 0 var(--space-medium);
 }
 .promo-card-wrapper .promo-card-dismiss-button {
   position: absolute;
@@ -8650,8 +8656,9 @@ hr {
   margin: 0;
 }
 .promo-card-wrapper .promo-card-cta-wrapper {
-  margin-block-start: auto;
-  align-self: flex-end;
+  display: flex;
+  width: 100%;
+  justify-content: end;
 }
 .promo-card-wrapper .img-wrapper {
   height: 132px;
@@ -8660,15 +8667,13 @@ hr {
 
 @media (min-width: 1698px) {
   .ds-card-grid .promo-card-wrapper {
-    display: flex;
-    flex-direction: column;
+    display: block;
   }
 }
 
 @media (min-width: 1390px) {
   .ds-section-wrapper .promo-card-wrapper {
-    display: flex;
-    flex-direction: column;
+    display: block;
   }
 }
 
