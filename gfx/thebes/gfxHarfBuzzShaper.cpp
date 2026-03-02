@@ -20,6 +20,10 @@
 
 #include <algorithm>
 
+extern "C" {
+hb_unicode_funcs_t* mozilla_harfbuzz_glue_set_up_unicode_funcs();
+}
+
 #define FloatToFixed(f) (65536 * (f))
 #define FixedToFloat(f) ((f) * (1.0 / 65536.0))
 // Right shifts of negative (signed) integers are undefined, as are overflows
@@ -1132,69 +1136,6 @@ static hb_position_t HBGetHKerning(hb_font_t* font, void* font_data,
   return fcd->mShaper->GetHKerning(first_glyph, second_glyph);
 }
 
-/*
- * HarfBuzz unicode property callbacks
- */
-
-static hb_codepoint_t HBGetMirroring(hb_unicode_funcs_t* ufuncs,
-                                     hb_codepoint_t aCh, void* user_data) {
-  return intl::UnicodeProperties::CharMirror(aCh);
-}
-
-static hb_unicode_general_category_t HBGetGeneralCategory(
-    hb_unicode_funcs_t* ufuncs, hb_codepoint_t aCh, void* user_data) {
-  return hb_unicode_general_category_t(GetGeneralCategory(aCh));
-}
-
-static hb_script_t HBGetScript(hb_unicode_funcs_t* ufuncs, hb_codepoint_t aCh,
-                               void* user_data) {
-  return hb_script_t(
-      GetScriptTagForCode(intl::UnicodeProperties::GetScriptCode(aCh)));
-}
-
-static hb_unicode_combining_class_t HBGetCombiningClass(
-    hb_unicode_funcs_t* ufuncs, hb_codepoint_t aCh, void* user_data) {
-  return hb_unicode_combining_class_t(
-      intl::UnicodeProperties::GetCombiningClass(aCh));
-}
-
-static hb_bool_t HBUnicodeCompose(hb_unicode_funcs_t* ufuncs, hb_codepoint_t a,
-                                  hb_codepoint_t b, hb_codepoint_t* ab,
-                                  void* user_data) {
-  char32_t ch = intl::String::ComposePairNFC(a, b);
-  if (ch > 0) {
-    *ab = ch;
-    return true;
-  }
-
-  return false;
-}
-
-static hb_bool_t HBUnicodeDecompose(hb_unicode_funcs_t* ufuncs,
-                                    hb_codepoint_t ab, hb_codepoint_t* a,
-                                    hb_codepoint_t* b, void* user_data) {
-#if defined(MOZ_WIDGET_ANDROID) && !defined(NIGHTLY_BUILD)
-  // Hack for the SamsungDevanagari font, bug 1012365:
-  // support U+0972 by decomposing it.
-  if (ab == 0x0972) {
-    *a = 0x0905;
-    *b = 0x0945;
-    return true;
-  }
-#endif
-
-  char32_t decomp[2] = {0};
-  if (intl::String::DecomposeRawNFD(ab, decomp)) {
-    if (decomp[1] || decomp[0] != ab) {
-      *a = decomp[0];
-      *b = decomp[1];
-      return true;
-    }
-  }
-
-  return false;
-}
-
 static void AddOpenTypeFeature(uint32_t aTag, uint32_t aValue, void* aUserArg) {
   nsTArray<hb_feature_t>* features =
       static_cast<nsTArray<hb_feature_t>*>(aUserArg);
@@ -1256,20 +1197,7 @@ bool gfxHarfBuzzShaper::Initialize() {
   }();
 
   static hb_unicode_funcs_t* sHBUnicodeFuncs = [] {
-    auto* funcs = hb_unicode_funcs_create(hb_unicode_funcs_get_empty());
-    hb_unicode_funcs_set_mirroring_func(funcs, HBGetMirroring, nullptr,
-                                        nullptr);
-    hb_unicode_funcs_set_script_func(funcs, HBGetScript, nullptr, nullptr);
-    hb_unicode_funcs_set_general_category_func(funcs, HBGetGeneralCategory,
-                                               nullptr, nullptr);
-    hb_unicode_funcs_set_combining_class_func(funcs, HBGetCombiningClass,
-                                              nullptr, nullptr);
-    hb_unicode_funcs_set_compose_func(funcs, HBUnicodeCompose, nullptr,
-                                      nullptr);
-    hb_unicode_funcs_set_decompose_func(funcs, HBUnicodeDecompose, nullptr,
-                                        nullptr);
-    hb_unicode_funcs_make_immutable(funcs);
-    return funcs;
+    return mozilla_harfbuzz_glue_set_up_unicode_funcs();
   }();
 
   gfxFontEntry* entry = mFont->GetFontEntry();

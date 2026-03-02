@@ -68,6 +68,18 @@ notes = "The dependencies on tokio-reactor and tokio-threadpools are just a hack
 criteria = "safe-to-run"
 notes = "Used for fuzzing."
 
+[policy.harfbuzz]
+audit-as-crates-io = true
+notes = "Patched version of upstream to fix Android build"
+
+[policy.harfbuzz-sys]
+audit-as-crates-io = true
+notes = "Patched version of upstream to remove bundled HarfBuzz"
+
+[policy.harfbuzz-traits]
+audit-as-crates-io = true
+notes = "Vendored with harfbuzz to avoid duplicates"
+
 [policy.http3server]
 criteria = "safe-to-run"
 notes = "Used for testing."
@@ -85,6 +97,14 @@ audit-as-crates-io = true
 notes = "Patched version of upstream"
 
 [policy.icu_normalizer_data]
+audit-as-crates-io = true
+notes = "Patched version of upstream"
+
+[policy.icu_properties]
+audit-as-crates-io = true
+notes = "Patched version of upstream"
+
+[policy.icu_properties_data]
 audit-as-crates-io = true
 notes = "Patched version of upstream"
 
@@ -512,6 +532,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.gpu-descriptor-types]]
 version = "0.1.1"
+criteria = "safe-to-deploy"
+
+[[exemptions.harfbuzz-sys]]
+version = "0.6.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.hashlink]]

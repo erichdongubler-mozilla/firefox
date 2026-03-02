@@ -82,32 +82,6 @@ TEST(IntlString, ComposePairNFC)
             U'\U0001109A');
 }
 
-TEST(IntlString, DecomposeRawNFD)
-{
-  char32_t buf[2];
-  // Non-decomposable character
-  ASSERT_EQ(String::DecomposeRawNFD(U'a', buf), 0);
-  // Singleton decomposition
-  ASSERT_EQ(String::DecomposeRawNFD(U'\u212A', buf), 1);
-  ASSERT_EQ(buf[0], U'K');
-  // Simple accented letter
-  ASSERT_EQ(String::DecomposeRawNFD(U'ä', buf), 2);
-  ASSERT_EQ(buf[0], U'a');
-  ASSERT_EQ(buf[1], U'\u0308');
-  // Double-accented letter decomposes by only one level
-  ASSERT_EQ(String::DecomposeRawNFD(U'ǟ', buf), 2);
-  ASSERT_EQ(buf[0], U'ä');
-  ASSERT_EQ(buf[1], U'\u0304');
-  // Non-starter can decompose, but will not recompose (see above)
-  ASSERT_EQ(String::DecomposeRawNFD(U'\u0344', buf), 2);
-  ASSERT_EQ(buf[0], U'\u0308');
-  ASSERT_EQ(buf[1], U'\u0301');
-  // Supplementary-plane letter with decomposition
-  ASSERT_EQ(String::DecomposeRawNFD(U'\U0001109A', buf), 2);
-  ASSERT_EQ(buf[0], U'\U00011099');
-  ASSERT_EQ(buf[1], U'\U000110BA');
-}
-
 TEST(IntlString, IsCased)
 {
   ASSERT_TRUE(String::IsCased(U'a'));

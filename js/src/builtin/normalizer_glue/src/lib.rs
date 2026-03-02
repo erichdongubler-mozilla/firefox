@@ -287,3 +287,22 @@ fn normalize_latin1(form: NormalizationForm, input: &[u8], buffer: &mut Buffer) 
     debug_assert!(r.is_ok());
     true
 }
+
+// The items below are not used by SpiderMonkey but are offered through headers that
+// are supposed to work in SpiderMonkey.
+
+#[no_mangle]
+pub unsafe extern "C" fn mozilla_canonical_composition(a: u32, b: u32) -> u32 {
+    icu_normalizer::properties::CanonicalCompositionBorrowed::new()
+        .compose(
+            char::from_u32(a).unwrap_or('\u{0}'),
+            char::from_u32(b).unwrap_or('\u{0}'),
+        )
+        .unwrap_or('\u{0}')
+        .into()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn mozilla_canonical_combining_class(c: u32) -> u8 {
+    icu_normalizer::properties::CanonicalCombiningClassMapBorrowed::new().get32_u8(c)
+}
