@@ -1929,7 +1929,10 @@ void HTMLInputElement::GetValueAsDate(JSContext* aCx,
                                       JS::MutableHandle<JSObject*> aObject,
                                       ErrorResult& aRv) {
   aObject.set(nullptr);
-  if (!IsDateTimeInputType(mType)) {
+  // valueAsDate does not apply to datetime-local:
+  // https://html.spec.whatwg.org/#local-date-and-time-state-(type=datetime-local):dom-input-valueasdate
+  if (!IsDateTimeInputType(mType) ||
+      mType == FormControlType::InputDatetimeLocal) {
     return;
   }
 
@@ -1985,17 +1988,6 @@ void HTMLInputElement::GetValueAsDate(JSContext* aCx,
 
       break;
     }
-    case FormControlType::InputDatetimeLocal: {
-      uint32_t year, month, day, timeInMs;
-      nsAutoString value;
-      GetNonFileValueInternal(value);
-      if (!ParseDateTimeLocal(value, &year, &month, &day, &timeInMs)) {
-        return;
-      }
-
-      time.emplace(JS::TimeClip(JS::MakeDate(year, month - 1, day, timeInMs)));
-      break;
-    }
     default:
       break;
   }
@@ -2015,7 +2007,10 @@ void HTMLInputElement::GetValueAsDate(JSContext* aCx,
 void HTMLInputElement::SetValueAsDate(JSContext* aCx,
                                       JS::Handle<JSObject*> aObj,
                                       ErrorResult& aRv) {
-  if (!IsDateTimeInputType(mType)) {
+  // valueAsDate does not apply to datetime-local:
+  // https://html.spec.whatwg.org/#local-date-and-time-state-(type=datetime-local):dom-input-valueasdate
+  if (!IsDateTimeInputType(mType) ||
+      mType == FormControlType::InputDatetimeLocal) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
