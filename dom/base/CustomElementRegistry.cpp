@@ -513,8 +513,11 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CustomElementRegistry)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-CustomElementRegistry::CustomElementRegistry(nsPIDOMWindowInner* aWindow)
-    : mWindow(aWindow), mIsCustomDefinitionRunning(false) {
+CustomElementRegistry::CustomElementRegistry(nsPIDOMWindowInner* aWindow,
+                                             bool aIsScoped)
+    : mWindow(aWindow),
+      mIsCustomDefinitionRunning(false),
+      mIsScoped(aIsScoped) {
   MOZ_ASSERT(aWindow);
 
   mozilla::HoldJSObjects(this);
@@ -522,6 +525,15 @@ CustomElementRegistry::CustomElementRegistry(nsPIDOMWindowInner* aWindow)
 
 CustomElementRegistry::~CustomElementRegistry() {
   mozilla::DropJSObjects(this);
+}
+
+// https://html.spec.whatwg.org/#dom-customelementregistry
+already_AddRefed<CustomElementRegistry> CustomElementRegistry::Constructor(
+    const GlobalObject& aGlobal) {
+  nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(aGlobal.GetAsSupports());
+  // The new CustomElementRegistry() constructor steps are to set this's is
+  // scoped to true.
+  return MakeAndAddRef<CustomElementRegistry>(win, true);
 }
 
 NS_IMETHODIMP

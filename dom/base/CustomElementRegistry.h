@@ -348,7 +348,8 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(CustomElementRegistry)
 
  public:
-  explicit CustomElementRegistry(nsPIDOMWindowInner* aWindow);
+  explicit CustomElementRegistry(nsPIDOMWindowInner* aWindow,
+                                 bool aIsScoped = false);
 
  private:
   class RunCustomElementCreationCallback : public mozilla::Runnable {
@@ -374,6 +375,13 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
   };
 
  public:
+  /**
+   * Constructing a CustomElementRegistry
+   * https://html.spec.whatwg.org/#dom-customelementregistry
+   */
+  static already_AddRefed<CustomElementRegistry> Constructor(
+      const GlobalObject& aGlobal);
+
   /**
    * Looking up a custom element definition.
    * https://html.spec.whatwg.org/#look-up-a-custom-element-definition
@@ -461,6 +469,8 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
     elements->Insert(elem);
   }
 
+  bool IsScoped() const { return mIsScoped; }
+
   void TraceDefinitions(JSTracer* aTrc);
 
  private:
@@ -515,6 +525,10 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
 
   // It is used to prevent reentrant invocations of element definition.
   bool mIsCustomDefinitionRunning;
+
+  // Used to check when the registry has been constructed via script
+  // https://html.spec.whatwg.org/#is-scoped
+  bool mIsScoped;
 
  private:
   int32_t InferNamespace(JSContext* aCx, JS::Handle<JSObject*> constructor);
