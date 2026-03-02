@@ -474,8 +474,6 @@ export class PrefsFeed {
     this._setStringPref(values, "discoverystream.spocs-endpoint", "");
     this._setStringPref(values, "discoverystream.spocs-endpoint-query", "");
     this._setStringPref(values, "newNewtabExperience.colors", "");
-    this._setBoolPref(values, "search.useHandoffComponent", false);
-    this._setBoolPref(values, "externalComponents.enabled", false);
 
     // Set the initial state of all prefs in redux
     this.store.dispatch(

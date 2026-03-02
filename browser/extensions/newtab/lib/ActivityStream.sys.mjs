@@ -117,9 +117,6 @@ const PREF_IMAGE_PROXY_ENABLED =
 
 const PREF_IMAGE_PROXY_ENABLED_STORE = "discoverystream.imageProxy.enabled";
 
-const PREF_SHOULD_ENABLE_EXTERNAL_COMPONENTS_FEED =
-  "browser.newtabpage.activity-stream.externalComponents.enabled";
-
 export const PREF_DEFAULT_VALUE_TOPSITES_ENABLED = true;
 export const PREF_DEFAULT_VALUE_TOPSTORIES_ENABLED = true;
 
@@ -1685,15 +1682,7 @@ const FEEDS_DATA = [
     name: "externalcomponentsfeed",
     factory: () => new lazy.ExternalComponentsFeed(),
     title: "Handles updating the registry of external components",
-    getValue() {
-      // This feed should only be enabled on versions of the app that have the
-      // AboutNewTabComponents module. Those versions of the app have this
-      // preference set to true.
-      return Services.prefs.getBoolPref(
-        PREF_SHOULD_ENABLE_EXTERNAL_COMPONENTS_FEED,
-        false
-      );
-    },
+    value: true,
   },
 ];
 

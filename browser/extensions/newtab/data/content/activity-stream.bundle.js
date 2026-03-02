@@ -155,10 +155,8 @@ for (const type of [
   "DISCOVERY_STREAM_TOPICS_LOADING",
   "DISCOVERY_STREAM_USER_EVENT",
   "DOWNLOAD_CHANGED",
-  "FAKE_FOCUS_SEARCH",
   "FILL_SEARCH_TERM",
   "FOLLOW_SECTION",
-  "HANDOFF_SEARCH_TO_AWESOMEBAR",
   "HIDE_PERSONALIZE",
   "HIDE_TOAST_MESSAGE",
   "INFERRED_PERSONALIZATION_MODEL_UPDATE",
@@ -7208,10 +7206,8 @@ function Search(prevState = INITIAL_STATE.Search, action) {
   switch (action.type) {
     case actionTypes.DISABLE_SEARCH:
       return Object.assign({ ...prevState, disable: true });
-    case actionTypes.FAKE_FOCUS_SEARCH:
-      return Object.assign({ ...prevState, fakeFocus: true });
     case actionTypes.SHOW_SEARCH:
-      return Object.assign({ ...prevState, disable: false, fakeFocus: false });
+      return Object.assign({ ...prevState, disable: false });
     default:
       return prevState;
   }
@@ -15433,182 +15429,19 @@ function ExternalComponentWrapper({
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* globals ContentSearchHandoffUIController */
-
-/**
- * @backward-compat { version 148 }
- *
- * Temporary dual implementation to support train hopping. The old handoff UI
- * is kept alongside the new contentSearchHandoffUI.mjs custom element until
- * the module lands on all channels. Controlled by the pref
- * browser.newtabpage.activity-stream.search.useHandoffComponent.
- * Remove the old implementation and the pref once this ships to Release.
- */
 
 
 
-
-
-
-class _Search extends (external_React_default()).PureComponent {
-  constructor(props) {
-    super(props);
-    this.onSearchHandoffClick = this.onSearchHandoffClick.bind(this);
-    this.onSearchHandoffPaste = this.onSearchHandoffPaste.bind(this);
-    this.onSearchHandoffDrop = this.onSearchHandoffDrop.bind(this);
-    this.onInputMountHandoff = this.onInputMountHandoff.bind(this);
-    this.onSearchHandoffButtonMount = this.onSearchHandoffButtonMount.bind(this);
-  }
-  handleEvent(event) {
-    // Also track search events with our own telemetry
-    if (event.detail.type === "Search") {
-      this.props.dispatch(actionCreators.UserEvent({
-        event: "SEARCH"
-      }));
-    }
-  }
-  doSearchHandoff(text) {
-    this.props.dispatch(actionCreators.OnlyToMain({
-      type: actionTypes.HANDOFF_SEARCH_TO_AWESOMEBAR,
-      data: {
-        text
-      }
-    }));
-    this.props.dispatch({
-      type: actionTypes.FAKE_FOCUS_SEARCH
-    });
-    this.props.dispatch(actionCreators.UserEvent({
-      event: "SEARCH_HANDOFF"
-    }));
-    if (text) {
-      this.props.dispatch({
-        type: actionTypes.DISABLE_SEARCH
-      });
-    }
-  }
-  onSearchHandoffClick(event) {
-    // When search hand-off is enabled, we render a big button that is styled to
-    // look like a search textbox. If the button is clicked, we style
-    // the button as if it was a focused search box and show a fake cursor but
-    // really focus the awesomebar without the focus styles ("hidden focus").
-    event.preventDefault();
-    this.doSearchHandoff();
-  }
-  onSearchHandoffPaste(event) {
-    event.preventDefault();
-    this.doSearchHandoff(event.clipboardData.getData("Text"));
-  }
-  onSearchHandoffDrop(event) {
-    event.preventDefault();
-    let text = event.dataTransfer.getData("text");
-    if (text) {
-      this.doSearchHandoff(text);
-    }
-  }
-  componentDidMount() {
-    const {
-      caretBlinkCount,
-      caretBlinkTime,
-      "search.useHandoffComponent": useHandoffComponent,
-      "externalComponents.enabled": useExternalComponents
-    } = this.props.Prefs.values;
-    if (useExternalComponents) {
-      // Nothing to do - the external component will have set the caret
-      // values itself.
-      return;
-    }
-    if (useHandoffComponent) {
-      const {
-        handoffUI
-      } = this;
-      if (handoffUI) {
-        // If caret blink count isn't defined, use the default infinite behavior for animation
-        handoffUI.style.setProperty("--caret-blink-count", caretBlinkCount > -1 ? caretBlinkCount : "infinite");
-
-        // Apply custom blink rate if set, else fallback to default (567ms on/off --> 1134ms total)
-        handoffUI.style.setProperty("--caret-blink-time", caretBlinkTime > 0 ? `${caretBlinkTime * 2}ms` : `${1134}ms`);
-      }
-    } else {
-      const caret = this.fakeCaret;
-      if (caret) {
-        // If caret blink count isn't defined, use the default infinite behavior for animation
-        caret.style.setProperty("--caret-blink-count", caretBlinkCount > -1 ? caretBlinkCount : "infinite");
-
-        // Apply custom blink rate if set, else fallback to default (567ms on/off --> 1134ms total)
-        caret.style.setProperty("--caret-blink-time", caretBlinkTime > 0 ? `${caretBlinkTime * 2}ms` : `${1134}ms`);
-      }
-    }
-  }
-  onInputMountHandoff(input) {
-    if (input) {
-      // The handoff UI controller helps us set the search icon and reacts to
-      // changes to default engine to keep everything in sync.
-      this._handoffSearchController = new ContentSearchHandoffUIController();
-    }
-  }
-  onSearchHandoffButtonMount(button) {
-    // Keep a reference to the button for use during "paste" event handling.
-    this._searchHandoffButton = button;
-  }
-
-  /*
-   * Do not change the ID on the input field, as legacy newtab code
-   * specifically looks for the id 'newtab-search-text' on input fields
-   * in order to execute searches in various tests
-   */
+class Search_Search extends (external_React_default()).PureComponent {
   render() {
-    const useHandoffComponent = this.props.Prefs.values["search.useHandoffComponent"];
-    const useExternalComponents = this.props.Prefs.values["externalComponents.enabled"];
-    if (useHandoffComponent) {
-      if (useExternalComponents) {
-        return /*#__PURE__*/external_React_default().createElement("div", {
-          className: "search-wrapper"
-        }, this.props.showLogo && /*#__PURE__*/external_React_default().createElement(Logo, null), /*#__PURE__*/external_React_default().createElement(ExternalComponentWrapper, {
-          type: "SEARCH",
-          className: "search-inner-wrapper"
-        }));
-      }
-      return /*#__PURE__*/external_React_default().createElement("div", {
-        className: "search-wrapper"
-      }, this.props.showLogo && /*#__PURE__*/external_React_default().createElement(Logo, null), /*#__PURE__*/external_React_default().createElement("div", {
-        className: "search-inner-wrapper"
-      }, /*#__PURE__*/external_React_default().createElement("content-search-handoff-ui", {
-        ref: el => {
-          this.handoffUI = el;
-        }
-      })));
-    }
-    const wrapperClassName = ["search-wrapper", this.props.disable && "search-disabled", this.props.fakeFocus && "fake-focus"].filter(v => v).join(" ");
     return /*#__PURE__*/external_React_default().createElement("div", {
-      className: wrapperClassName
-    }, this.props.showLogo && /*#__PURE__*/external_React_default().createElement(Logo, null), /*#__PURE__*/external_React_default().createElement("div", {
+      className: "search-wrapper"
+    }, this.props.showLogo && /*#__PURE__*/external_React_default().createElement(Logo, null), /*#__PURE__*/external_React_default().createElement(ExternalComponentWrapper, {
+      type: "SEARCH",
       className: "search-inner-wrapper"
-    }, /*#__PURE__*/external_React_default().createElement("button", {
-      className: "search-handoff-button",
-      ref: this.onSearchHandoffButtonMount,
-      onClick: this.onSearchHandoffClick,
-      tabIndex: "-1"
-    }, /*#__PURE__*/external_React_default().createElement("div", {
-      className: "fake-textbox"
-    }), /*#__PURE__*/external_React_default().createElement("input", {
-      type: "search",
-      className: "fake-editable",
-      tabIndex: "-1",
-      "aria-hidden": "true",
-      onDrop: this.onSearchHandoffDrop,
-      onPaste: this.onSearchHandoffPaste,
-      ref: this.onInputMountHandoff
-    }), /*#__PURE__*/external_React_default().createElement("div", {
-      className: "fake-caret",
-      ref: el => {
-        this.fakeCaret = el;
-      }
-    }))));
+    }));
   }
 }
-const Search_Search = (0,external_ReactRedux_namespaceObject.connect)(state => ({
-  Prefs: state.Prefs
-}))(_Search);
 ;// CONCATENATED MODULE: ./content-src/components/Weather/Weather.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -17059,18 +16892,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     __webpack_require__.g.addEventListener("keydown", this.handleOnKeyDown);
     const prefs = this.props.Prefs.values;
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
-    if (!prefs["externalComponents.enabled"]) {
-      if (prefs["search.useHandoffComponent"]) {
-        // Dynamically import the contentSearchHandoffUI module, but don't worry
-        // about webpacking this one.
-        import(/* webpackIgnore: true */"chrome://browser/content/contentSearchHandoffUI.mjs");
-      } else {
-        const scriptURL = "chrome://browser/content/contentSearchHandoffUI.js";
-        const scriptEl = document.createElement("script");
-        scriptEl.src = scriptURL;
-        document.head.appendChild(scriptEl);
-      }
-    }
     if (this.props.document.visibilityState === Base_VISIBLE) {
       this.onVisible();
     } else {
