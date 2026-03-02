@@ -2,30 +2,28 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.mozilla.fenix.tabstray
+package org.mozilla.fenix.tabstray.redux.reducer
 
 import mozilla.components.browser.state.state.createTab
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
-import org.mozilla.fenix.tabstray.redux.reducer.DEFAULT_SYNCED_TABS_EXPANDED_STATE
-import org.mozilla.fenix.tabstray.redux.reducer.TabsTrayReducer
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.tabstray.syncedtabs.generateFakeTab
 import org.mozilla.fenix.tabstray.syncedtabs.getFakeSyncedTabList
+import kotlin.collections.listOf
 
 class TabsTrayStoreReducerTest {
 
     @Test
     fun `WHEN UpdateInactiveTabs THEN inactive tabs are added`() {
-        val inactiveTabs = listOf(
-            createTab("https://mozilla.org"),
-        )
+        val inactiveTabs = listOf(TabsTrayItem.Tab(tabData = createTab("https://mozilla.org")))
         val initialState = TabsTrayState()
         val expectedState = initialState.copy(inactiveTabs = inactiveTabs)
 
@@ -55,9 +53,7 @@ class TabsTrayStoreReducerTest {
 
     @Test
     fun `WHEN UpdateNormalTabs THEN normal tabs are added`() {
-        val normalTabs = listOf(
-            createTab("https://mozilla.org"),
-        )
+        val normalTabs = listOf(TabsTrayItem.Tab(tabData = createTab("https://mozilla.org")))
         val initialState = TabsTrayState()
         val expectedState = initialState.copy(normalTabs = normalTabs)
 
@@ -71,9 +67,7 @@ class TabsTrayStoreReducerTest {
 
     @Test
     fun `WHEN UpdatePrivateTabs THEN private tabs are added`() {
-        val privateTabs = listOf(
-            createTab("https://mozilla.org", private = true),
-        )
+        val privateTabs = listOf(TabsTrayItem.Tab(tabData = createTab("https://mozilla.org", private = true)))
         val initialState = TabsTrayState()
         val expectedState = initialState.copy(privateTabs = privateTabs)
 
@@ -269,12 +263,10 @@ class TabsTrayStoreReducerTest {
 
     @Test
     fun `WHEN the user leaves search THEN tab search state is reset to defaults`() {
-        val initialTab = createTab("https://mozilla.org")
-
         val initialState = TabsTrayState(
             tabSearchState = TabSearchState(
                 query = "mozilla",
-                searchResults = listOf(initialTab),
+                searchResults = listOf(TabsTrayItem.Tab(tabData = createTab("https://mozilla.org"))),
             ),
         )
 

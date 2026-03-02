@@ -26,10 +26,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.ui.inactivetabs.InactiveTabsList
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -47,8 +47,8 @@ private val EmptyPageWidth = 170.dp
  * @param inactiveTabsExpanded Whether the Inactive Tabs section is expanded.
  * @param displayTabsInGrid Whether the normal and private tabs should be displayed in a grid.
  * @param onTabClose Invoked when the user clicks to close a tab.
- * @param onTabClick Invoked when the user clicks on a tab.
- * @param onTabLongClick Invoked when the user long clicks a tab.
+ * @param onItemClick Invoked when the user clicks on a tab.
+ * @param onItemLongClick Invoked when the user long clicks a tab.
  * @param shouldShowInactiveTabsAutoCloseDialog Whether the inactive tabs auto close dialog should be displayed.
  * @param onInactiveTabsHeaderClick Invoked when the user clicks on the inactive tabs section header.
  * @param onDeleteAllInactiveTabsClick Invoked when the user clicks on the delete all inactive tabs button.
@@ -70,23 +70,23 @@ private val EmptyPageWidth = 170.dp
 @Composable
 @Suppress("LongParameterList")
 internal fun NormalTabsPage(
-    normalTabs: List<TabSessionState>,
-    inactiveTabs: List<TabSessionState>,
+    normalTabs: List<TabsTrayItem>,
+    inactiveTabs: List<TabsTrayItem.Tab>,
     selectedTabId: String?,
     selectionMode: TabsTrayState.Mode,
     inactiveTabsExpanded: Boolean,
     displayTabsInGrid: Boolean,
-    onTabClose: (TabSessionState) -> Unit,
-    onTabClick: (TabSessionState) -> Unit,
-    onTabLongClick: (TabSessionState) -> Unit,
+    onTabClose: (TabsTrayItem.Tab) -> Unit,
+    onItemClick: (TabsTrayItem) -> Unit,
+    onItemLongClick: (TabsTrayItem) -> Unit,
     shouldShowInactiveTabsAutoCloseDialog: (Int) -> Boolean,
     onInactiveTabsHeaderClick: (Boolean) -> Unit,
     onDeleteAllInactiveTabsClick: () -> Unit,
     onInactiveTabsAutoCloseDialogShown: () -> Unit,
     onInactiveTabAutoCloseDialogCloseButtonClick: () -> Unit,
     onEnableInactiveTabAutoCloseClick: () -> Unit,
-    onInactiveTabClick: (TabSessionState) -> Unit,
-    onInactiveTabClose: (TabSessionState) -> Unit,
+    onInactiveTabClick: (TabsTrayItem.Tab) -> Unit,
+    onInactiveTabClose: (TabsTrayItem.Tab) -> Unit,
     onMove: (String, String?, Boolean) -> Unit,
     shouldShowInactiveTabsCFR: () -> Boolean,
     onInactiveTabsCFRShown: () -> Unit,
@@ -142,8 +142,8 @@ internal fun NormalTabsPage(
             selectionMode = selectionMode,
             modifier = Modifier.testTag(TabsTrayTestTag.NORMAL_TABS_LIST),
             onTabClose = onTabClose,
-            onTabClick = onTabClick,
-            onTabLongClick = onTabLongClick,
+            onItemClick = onItemClick,
+            onItemLongClick = onItemLongClick,
             header = optionalInactiveTabsHeader,
             onTabDragStart = onTabDragStart,
             onMove = onMove,

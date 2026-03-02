@@ -13,6 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.middleware.TabSearchNavigationMiddleware
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
@@ -35,7 +36,9 @@ class TabSearchScreenTest {
                 tabSearchState = TabSearchState(
                     query = "mozilla",
                     listOf(
-                        createTab(url = "www.mozilla.com", id = "1"),
+                        TabsTrayItem.Tab(
+                            tabData = createTab(url = "www.mozilla.com", id = "1"),
+                        ),
                     ),
                 ),
             ),

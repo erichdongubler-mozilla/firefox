@@ -21,4 +21,8 @@ class TabsTrayStore(
     initialState,
     TabsTrayReducer::reduce,
     middlewares,
-)
+) {
+    init {
+        dispatch(TabsTrayAction.InitAction)
+    }
+}

@@ -4,7 +4,7 @@
 
 package org.mozilla.fenix.tabstray.redux.action
 
-import mozilla.components.browser.state.state.TabSessionState
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.state.TabSearchState
 
 /**
@@ -26,7 +26,7 @@ sealed interface TabSearchAction : TabsTrayAction {
      * @property results The complete list of open tabs that match the current query.
      */
     data class SearchResultsUpdated(
-        val results: List<TabSessionState>,
+        val results: List<TabsTrayItem>,
     ) : TabSearchAction
 
     /**
@@ -34,5 +34,5 @@ sealed interface TabSearchAction : TabsTrayAction {
      *
      * @property tab The tab selected by the user.
      */
-    data class SearchResultClicked(val tab: TabSessionState) : TabSearchAction
+    data class SearchResultClicked(val tab: TabsTrayItem) : TabSearchAction
 }

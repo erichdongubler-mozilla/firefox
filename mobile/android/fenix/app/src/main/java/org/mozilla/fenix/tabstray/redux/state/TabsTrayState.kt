@@ -4,8 +4,8 @@
 
 package org.mozilla.fenix.tabstray.redux.state
 
-import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.lib.state.State
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 
@@ -31,10 +31,10 @@ import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 data class TabsTrayState(
     val selectedPage: Page = Page.NormalTabs,
     val mode: Mode = Mode.Normal,
-    val inactiveTabs: List<TabSessionState> = emptyList(),
+    val inactiveTabs: List<TabsTrayItem.Tab> = emptyList(),
     val inactiveTabsExpanded: Boolean = false,
-    val normalTabs: List<TabSessionState> = emptyList(),
-    val privateTabs: List<TabSessionState> = emptyList(),
+    val normalTabs: List<TabsTrayItem> = emptyList(),
+    val privateTabs: List<TabsTrayItem> = emptyList(),
     val syncedTabs: List<SyncedTabsListItem> = emptyList(),
     val syncing: Boolean = false,
     val selectedTabId: String? = null,
@@ -52,7 +52,7 @@ data class TabsTrayState(
         /**
          * A set of selected tabs which we would want to perform an action on.
          */
-        open val selectedTabs = emptySet<TabSessionState>()
+        open val selectedTabs = emptySet<TabsTrayItem>()
 
         /**
          * The default mode the tabs list is in.
@@ -63,7 +63,7 @@ data class TabsTrayState(
          * The multi-select mode that the tabs list is in containing the set of currently
          * selected tabs.
          */
-        data class Select(override val selectedTabs: Set<TabSessionState>) : Mode()
+        data class Select(override val selectedTabs: Set<TabsTrayItem>) : Mode()
     }
 
     /**

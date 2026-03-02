@@ -9,10 +9,6 @@ import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,7 +19,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -41,11 +36,9 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.RadioCheckmark
 import mozilla.components.support.base.utils.MAX_URI_LENGTH
-import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.DismissibleItemBackground
 import org.mozilla.fenix.compose.SwipeToDismissBox2
@@ -54,6 +47,7 @@ import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.compose.thumbnailImageData
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
 import org.mozilla.fenix.tabstray.ui.sharedTabTransition
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -67,31 +61,31 @@ private val ThumbnailHeight = 68.dp
  * List item used to display a tab that supports clicks,
  * long clicks, multiselection, and media controls.
  *
- * @param tab The given tab to be render as view a grid item.
+ * @param tab The given tab to render as list item.
  * @param modifier [Modifier] to be applied to the tab list item content.
- * @param isSelected Indicates if the item should be render as selected.
- * @param multiSelectionEnabled Indicates if the item should be render with multi selection options,
+ * @param isSelected Indicates if the item should be rendered as selected.
+ * @param multiSelectionEnabled Indicates if the item should be rendered with multi selection options,
  * enabled.
- * @param multiSelectionSelected Indicates if the item should be render as multi selection selected
+ * @param multiSelectionSelected Indicates if the item should be rendered as multi selection selected
  * option.
- * @param shouldClickListen Whether or not the item should stop listening to click events.
- * @param swipingEnabled Whether or not the item is swipeable.
- * @param onCloseClick Callback to handle the click event of the close button.
- * @param onClick Callback to handle when item is clicked.
- * @param onLongClick Optional callback to handle when item is long clicked.
+ * @param shouldClickListen Whether the item should stop listening to click events.
+ * @param swipingEnabled Whether the item is swipeable.
+ * @param onCloseClick Invoked when the close button is clicked.
+ * @param onClick Invoked when the item is clicked.
+ * @param onLongClick Invoked when the item is long clicked.
  */
 @Composable
-fun TabListItem(
-    tab: TabSessionState,
+fun TabListTabItem(
+    tab: TabsTrayItem.Tab,
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
     multiSelectionEnabled: Boolean = false,
     multiSelectionSelected: Boolean = false,
     shouldClickListen: Boolean = true,
     swipingEnabled: Boolean = true,
-    onCloseClick: (tab: TabSessionState) -> Unit,
-    onClick: (tab: TabSessionState) -> Unit,
-    onLongClick: ((tab: TabSessionState) -> Unit)? = null,
+    onCloseClick: (TabsTrayItem.Tab) -> Unit,
+    onClick: (TabsTrayItem) -> Unit,
+    onLongClick: ((TabsTrayItem) -> Unit)? = null,
 ) {
     val decayAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay()
     val density = LocalDensity.current
@@ -132,18 +126,18 @@ fun TabListItem(
     }
 }
 
-@Suppress("LongMethod", "LongParameterList")
+@Suppress("LongParameterList")
 @Composable
 private fun TabContent(
-    tab: TabSessionState,
+    tab: TabsTrayItem.Tab,
     isSelected: Boolean,
     multiSelectionEnabled: Boolean,
     multiSelectionSelected: Boolean,
     shouldClickListen: Boolean,
     modifier: Modifier = Modifier,
-    onCloseClick: (tab: TabSessionState) -> Unit,
-    onClick: (tab: TabSessionState) -> Unit,
-    onLongClick: ((tab: TabSessionState) -> Unit)? = null,
+    onCloseClick: (TabsTrayItem.Tab) -> Unit,
+    onClick: (TabsTrayItem) -> Unit,
+    onLongClick: ((TabsTrayItem) -> Unit)? = null,
 ) {
     val contentBackgroundColor = if (isSelected) {
         MaterialTheme.colorScheme.primaryContainer
@@ -153,35 +147,16 @@ private fun TabContent(
         MaterialTheme.colorScheme.surfaceContainerLowest
     }
 
-    // Used to propagate the ripple effect to the whole tab
-    val interactionSource = remember { MutableInteractionSource() }
-
-    val clickableModifier = if (onLongClick == null) {
-        Modifier.clickable(
-            enabled = shouldClickListen,
-            interactionSource = interactionSource,
-            indication = ripple(
-                color = clickableColor(),
-            ),
-            onClick = { onClick(tab) },
-        )
-    } else {
-        Modifier.combinedClickable(
-            enabled = shouldClickListen,
-            interactionSource = interactionSource,
-            indication = ripple(
-                color = clickableColor(),
-            ),
-            onLongClick = { onLongClick(tab) },
-            onClick = { onClick(tab) },
-        )
-    }
-
     Row(
         modifier = modifier
             .fillMaxWidth()
             .background(contentBackgroundColor)
-            .then(clickableModifier)
+            .tabItemClickable(
+                tab = tab,
+                enabled = shouldClickListen,
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
             .padding(start = 16.dp, top = 8.dp, bottom = 8.dp)
             .testTag(TabsTrayTestTag.TAB_ITEM_ROOT)
             .semantics {
@@ -197,7 +172,7 @@ private fun TabContent(
                 .weight(weight = 1f),
         ) {
             Text(
-                text = tab.toDisplayTitle().take(MAX_URI_LENGTH),
+                text = tab.tabData.toDisplayTitle().take(MAX_URI_LENGTH),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = FirefoxTheme.typography.body1,
                 overflow = TextOverflow.Ellipsis,
@@ -205,7 +180,7 @@ private fun TabContent(
             )
 
             Text(
-                text = tab.content.url.toShortUrl(),
+                text = tab.tabData.content.url.toShortUrl(),
                 color = MaterialTheme.colorScheme.secondary,
                 style = FirefoxTheme.typography.body2,
                 overflow = TextOverflow.Ellipsis,
@@ -224,7 +199,7 @@ private fun TabContent(
                     painter = painterResource(id = iconsR.drawable.mozac_ic_cross_24),
                     contentDescription = stringResource(
                         id = R.string.close_tab_title,
-                        tab.toDisplayTitle(),
+                        tab.tabData.toDisplayTitle(),
                     ),
                     tint = MaterialTheme.colorScheme.secondary,
                 )
@@ -238,21 +213,15 @@ private fun TabContent(
     }
 }
 
-@Composable
-private fun clickableColor() = when (isSystemInDarkTheme()) {
-    true -> PhotonColors.White
-    false -> PhotonColors.Black
-}
-
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun Thumbnail(
-    tab: TabSessionState,
+    tab: TabsTrayItem.Tab,
 ) {
     val density = LocalDensity.current
     val thumbnailSize = with(density) { ThumbnailWidth.toPx() }.toInt()
     TabThumbnail(
-        tabThumbnailImageData = tab.thumbnailImageData(),
+        tabThumbnailImageData = tab.tabData.thumbnailImageData(),
         thumbnailSizePx = thumbnailSize,
         modifier = Modifier
             .sharedTabTransition(tabId = tab.id)
@@ -320,14 +289,16 @@ private class TabListItemParameterProvider : PreviewParameterProvider<TabListIte
 
 @Composable
 @PreviewLightDark
-private fun TabListItemPreview(
+private fun TabListTabItemPreview(
     @PreviewParameter(TabListItemParameterProvider::class) tabListItemState: TabListItemPreviewState,
 ) {
     FirefoxTheme {
-        TabListItem(
-            tab = createTab(
-                url = tabListItemState.url,
-                title = tabListItemState.title,
+        TabListTabItem(
+            tab = TabsTrayItem.Tab(
+                tabData = createTab(
+                    url = tabListItemState.url,
+                    title = tabListItemState.title,
+                ),
             ),
             isSelected = tabListItemState.isSelected,
             onCloseClick = {},

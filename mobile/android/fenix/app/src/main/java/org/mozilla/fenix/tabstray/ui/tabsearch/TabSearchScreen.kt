@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalFocusManager
@@ -51,13 +52,13 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.map
-import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.searchbar.TopSearchBar
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
 import org.mozilla.fenix.tabstray.redux.action.TabSearchAction
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
@@ -165,10 +166,10 @@ fun TabSearchScreen(
  */
 @Composable
 private fun TabSearchResults(
-    searchResults: List<TabSessionState>,
+    searchResults: List<TabsTrayItem>,
     query: String,
     modifier: Modifier = Modifier,
-    onSearchResultClicked: (TabSessionState) -> Unit,
+    onSearchResultClicked: (TabsTrayItem) -> Unit,
 ) {
     val listState = rememberLazyListState()
 
@@ -179,7 +180,6 @@ private fun TabSearchResults(
     }
 
     val lastIndex = searchResults.lastIndex
-    val maxWidth = FirefoxTheme.layout.size.containerMaxWidth
 
     LazyColumn(
         state = listState,
@@ -190,13 +190,7 @@ private fun TabSearchResults(
         itemsIndexed(
             items = searchResults,
             key = { _, tab -> tab.id },
-        ) { index, tab ->
-            val tabUrl = tab.content.url.toShortUrl()
-            val faviconPainter = tab.content.icon?.run {
-                prepareToDraw()
-                BitmapPainter(asImageBitmap())
-            }
-
+        ) { index, tabItem ->
             val itemShape = when {
                 lastIndex == 0 ->
                     RoundedCornerShape(SearchResultsCornerRadius)
@@ -214,25 +208,47 @@ private fun TabSearchResults(
                     RoundedCornerShape(0.dp)
             }
 
-            BasicTabListItem(
-                title = tab.toDisplayTitle(),
-                url = tabUrl,
-                modifier = Modifier
-                    .clip(itemShape)
-                    .widthIn(max = maxWidth)
-                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                    .testTag(tag = TabsTrayTestTag.TAB_ITEM_ROOT),
-                faviconPainter = faviconPainter,
-                onClick = { onSearchResultClicked(tab) },
-            )
+            when (tabItem) {
+                is TabsTrayItem.Tab -> TabItemSearchResult(
+                    tab = tabItem,
+                    shape = itemShape,
+                    onSearchResultClicked = onSearchResultClicked,
+                )
+                TabsTrayItem.TabGroup -> {}
+            }
 
             if (index < lastIndex) {
                 HorizontalDivider(
-                    modifier = Modifier.widthIn(max = maxWidth),
+                    modifier = Modifier.widthIn(max = FirefoxTheme.layout.size.containerMaxWidth),
                 )
             }
         }
     }
+}
+
+@Composable
+private fun TabItemSearchResult(
+    tab: TabsTrayItem.Tab,
+    shape: Shape,
+    onSearchResultClicked: (TabsTrayItem) -> Unit,
+) {
+    val tabUrl = tab.tabData.content.url.toShortUrl()
+    val faviconPainter = tab.tabData.content.icon?.run {
+        prepareToDraw()
+        BitmapPainter(asImageBitmap())
+    }
+
+    BasicTabListItem(
+        title = tab.tabData.toDisplayTitle(),
+        url = tabUrl,
+        modifier = Modifier
+            .clip(shape)
+            .widthIn(max = FirefoxTheme.layout.size.containerMaxWidth)
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+            .testTag(tag = TabsTrayTestTag.TAB_ITEM_ROOT),
+        faviconPainter = faviconPainter,
+        onClick = { onSearchResultClicked(tab) },
+    )
 }
 
 /**
@@ -274,27 +290,37 @@ private fun EmptyTabSearchResults(
 
 private class TabSearchParameterProvider : PreviewParameterProvider<TabsTrayState> {
     private val searchResults = listOf(
-        createTab(
-            url = "mozilla.org",
-            id = "1",
-            title = "Mozilla",
+        TabsTrayItem.Tab(
+            tabData = createTab(
+                url = "mozilla.org",
+                id = "1",
+                title = "Mozilla",
+            ),
         ),
-        createTab(
-            url = "maps.google.com",
-            id = "2",
-            title = "Google Maps",
+        TabsTrayItem.Tab(
+            tabData = createTab(
+                url = "maps.google.com",
+                id = "2",
+                title = "Google Maps",
+            ),
         ),
-        createTab(
-            url = "google.com/maps/place/Mozilla+Toronto/@43.6472856,-79.3944129,17z/",
-            id = "3",
-            title = "Long Google Maps URL",
+        TabsTrayItem.Tab(
+            tabData = createTab(
+                url = "google.com/maps/place/Mozilla+Toronto/@43.6472856,-79.3944129,17z/",
+                id = "3",
+                title = "Long Google Maps URL",
+            ),
         ),
     )
 
     private val manySearchResults = buildList {
         repeat(4) { index ->
             searchResults.forEach { tab ->
-                add(tab.copy(id = "${tab.id}-$index"))
+                add(
+                    TabsTrayItem.Tab(
+                        tabData = tab.tabData.copy(id = "${tab.id}-$index"),
+                    ),
+                )
             }
         }
     }

@@ -7,10 +7,9 @@ package org.mozilla.fenix.tabstray.redux.middleware
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import mozilla.components.browser.state.state.TabSessionState
-import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.action.TabSearchAction
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
@@ -49,9 +48,11 @@ class TabSearchMiddleware(
                         emptyList()
                     } else {
                         val (matchingHomepage, matchingNonHomepage) =
-                            tabs.filter { it.contains(text = query) }
-                                .sortedByDescending { it.lastAccess }
-                                .partition { it.isHomepage() }
+                            tabs
+                                .filterIsInstance<TabsTrayItem.Tab>()
+                                .filter { it.contains(text = query) }
+                                .sortedByDescending { it.tabData.lastAccess }
+                                .partition { it.isHomepageItem }
 
                         // If the results contain homepages, only display one homepage result
                         val homeTab = matchingHomepage.take(1)
@@ -67,13 +68,5 @@ class TabSearchMiddleware(
 
             else -> {} // no-op
         }
-    }
-
-    private fun TabSessionState.contains(text: String): Boolean {
-        return content.url.contains(text, ignoreCase = true) || content.title.contains(text, ignoreCase = true)
-    }
-
-    private fun TabSessionState.isHomepage(): Boolean {
-        return content.url.equals(ABOUT_HOME_URL, ignoreCase = true)
     }
 }

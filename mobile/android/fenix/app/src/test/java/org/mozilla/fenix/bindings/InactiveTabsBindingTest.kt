@@ -26,9 +26,6 @@ class InactiveTabsBindingTest {
     lateinit var tabsTrayStore: TabsTrayStore
     lateinit var appStore: AppStore
 
-    private val tabId1 = "1"
-    private val tab1 = createTab(url = tabId1, id = tabId1)
-
     @Test
     fun `WHEN inactiveTabsExpanded changes THEN tabs tray action dispatched with update`() = runTest(testDispatcher) {
         appStore = AppStore(
@@ -39,7 +36,6 @@ class InactiveTabsBindingTest {
         tabsTrayStore = spy(
             TabsTrayStore(
                 TabsTrayState(
-                    inactiveTabs = listOf(tab1),
                     inactiveTabsExpanded = false,
                 ),
             ),
