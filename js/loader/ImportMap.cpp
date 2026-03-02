@@ -387,6 +387,12 @@ static bool GetOwnProperty(JSContext* aCx, Handle<JSObject*> aObj,
   return true;
 }
 
+// static
+bool ImportMap::IsMultipleImportMapsSupported() {
+  return NS_IsMainThread() &&
+         mozilla::StaticPrefs::dom_multiple_import_maps_enabled();
+}
+
 // https://html.spec.whatwg.org/multipage/webappapis.html#parse-an-import-map-string
 // static
 UniquePtr<ImportMap> ImportMap::ParseString(

@@ -72,6 +72,14 @@ class ImportMap {
         mIntegrity(std::move(aIntegrity)) {}
 
   /**
+   * A helper function to get the "dom.multiple_import_maps.enabled" pref.
+   * The pref's type is of non-atomic, which can be only accessed on the main
+   * thread.
+   * If this function is called from a non-main thread, it safely returns false.
+   */
+  static bool IsMultipleImportMapsSupported();
+
+  /**
    * Parse the JSON string from the Import map script.
    * This function will throw a TypeError if there's any invalid key or value in
    * the JSON text according to the spec.

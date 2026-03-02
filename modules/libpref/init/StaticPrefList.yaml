@@ -3766,6 +3766,12 @@
   value: true
   mirror: always
 
+# Enable mutiple import maps.
+- name: dom.multiple_import_maps.enabled
+  type: bool
+  value: false
+  mirror: always
+
 # Limit of location change caused by content scripts in a time span per
 # BrowsingContext. This includes calls to History and Location APIs.
 - name: dom.navigation.navigationRateLimit.count
