@@ -345,6 +345,19 @@ JS_PUBLIC_API void JS::SetModulePreload(JSObject* module, bool isPreload) {
 }
 #endif
 
+JS_PUBLIC_API void JS::ResetPreloadedModule(JSObject* module) {
+  MOZ_RELEASE_ASSERT(!ModuleIsLinked(module));
+  MOZ_ASSERT(module->is<ModuleObject>());
+
+  auto& moduleObj = module->as<ModuleObject>();
+  if (!moduleObj.hasCyclicModuleFields()) {
+    return;
+  }
+  MOZ_ASSERT(moduleObj.isPreload());
+  moduleObj.setStatus(ModuleStatus::New);
+  moduleObj.loadedModules().clear();
+}
+
 JS_PUBLIC_API bool JS::ModuleLink(JSContext* cx, Handle<JSObject*> moduleArg) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);

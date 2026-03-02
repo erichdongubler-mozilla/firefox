@@ -1178,7 +1178,8 @@ void ModuleObject::setStatus(ModuleStatus newStatus) {
   // Note that under OOM conditions we can fail the module linking process even
   // after modules have been marked as linked.
   MOZ_ASSERT((status() <= ModuleStatus::Linked &&
-              newStatus == ModuleStatus::Unlinked) ||
+              (newStatus == ModuleStatus::Unlinked ||
+               newStatus == ModuleStatus::New)) ||
                  newStatus > status(),
              "New module status inconsistent with current status");
 

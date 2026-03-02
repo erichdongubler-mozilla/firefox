@@ -707,6 +707,9 @@ class ModuleScript final : public LoadedScript {
   bool ForPreload() const { return mForPreload; }
   bool HadImportMap() const { return mHadImportMap; }
 
+  // This is used to reset the module graph information which happened during
+  // preload.
+  void ResetPreload();
   void Shutdown();
 
   void UnlinkModuleRecord();

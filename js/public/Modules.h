@@ -254,6 +254,14 @@ extern JS_PUBLIC_API bool IsCyclicModule(JSObject* module);
 extern JS_PUBLIC_API void SetModulePreload(JSObject* module, bool isPreload);
 #endif
 
+/**
+ * Set module status to New and clear the [[LoadedModules]] slot and in a Cycloc
+ * Module.
+ * Used to reset modules that were preloaded earlier, in case the resolution of
+ * their specifiers may have changed.
+ */
+extern JS_PUBLIC_API void ResetPreloadedModule(JSObject* module);
+
 /*
  * Perform the ModuleLink operation on the given source text module record.
  *

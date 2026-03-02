@@ -504,4 +504,19 @@ ResolvedModuleSet* ModuleScript::GetPreloadedResolvedSet() {
   return mPreloadedResolvedSet.get();
 }
 
+void ModuleScript::ResetPreload() {
+  MOZ_ASSERT(mForPreload);
+  if (mModuleRecord) {
+    ResetPreloadedModule(mModuleRecord);
+  }
+
+  if (HasParseError()) {
+    mParseError = UndefinedValue();
+  }
+
+  if (HasErrorToRethrow()) {
+    mErrorToRethrow = UndefinedValue();
+  }
+}
+
 }  // namespace JS::loader
