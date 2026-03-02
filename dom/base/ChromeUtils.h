@@ -207,10 +207,12 @@ class ChromeUtils {
 
   static void InvalidateResourceCache(GlobalObject& aGlobal, ErrorResult& aRv);
 
-  static void GetCachedJavaScriptSource(
-      GlobalObject& aGlobal, const nsACString& aKey, const nsACString& aURI,
-      const nsACString& aNonce, const nsACString& aHintCharset,
-      JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv);
+  static void GetCachedJavaScriptSource(GlobalObject& aGlobal,
+                                        const nsACString& aKey,
+                                        const nsACString& aURI,
+                                        const nsACString& aHintCharset,
+                                        JS::MutableHandle<JS::Value> aRetval,
+                                        ErrorResult& aRv);
 
   static void ClearBfcacheByPrincipal(GlobalObject& aGlobal,
                                       nsIPrincipal* aPrincipal,

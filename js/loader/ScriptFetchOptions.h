@@ -80,7 +80,9 @@ class ScriptFetchOptions {
     }
 
     // NOTE: mParserMetadata can be ignored.
-    return mCORSMode == other->mCORSMode && mNonce == other->mNonce &&
+    //       mNonce is checked only in the main fetch step, which doesn't
+    //       happen for the cached response.
+    return mCORSMode == other->mCORSMode &&
            mFetchPriority == other->mFetchPriority;
   }
 

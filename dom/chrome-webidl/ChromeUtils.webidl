@@ -291,8 +291,8 @@ namespace ChromeUtils {
    * Returns an empty string if the cache is not found.
    *
    * The key parameter should be the data parameter passed to the
-   * http-on-resource-cache-response observer notification, and uri, nonce,
-   * and hintCharset parameters should be extracted from the channel
+   * http-on-resource-cache-response observer notification, and uri and
+   * hintCharset parameters should be extracted from the channel
    * of the notification.
    * nonce and hintCharset should be empty strings if they're not set for the
    * channel.
@@ -309,7 +309,7 @@ namespace ChromeUtils {
    */
   [Throws]
   any getCachedJavaScriptSource(UTF8String key, UTF8String uri,
-                                UTF8String nonce, UTF8String hintCharset);
+                                UTF8String hintCharset);
 
   /**
    * Clears the bfcache (backward-forward cache)

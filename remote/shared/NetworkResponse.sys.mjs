@@ -76,18 +76,15 @@ export class NetworkResponse {
 
     // Bug 2018237: This should be done only when there's data collector.
     if (memoryCacheKey) {
-      let nonce = "";
       let charset = "";
       const httpChannel = channel.QueryInterface(Ci.nsIHttpChannel);
       if (httpChannel) {
-        nonce = httpChannel.loadInfo.cspNonce || "";
         charset = httpChannel.classicScriptHintCharset || "";
       }
 
       const text = ChromeUtils.getCachedJavaScriptSource(
         memoryCacheKey,
         channel.URI.spec,
-        nonce,
         charset
       );
       if (text !== undefined) {

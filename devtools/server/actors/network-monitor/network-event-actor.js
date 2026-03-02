@@ -453,7 +453,6 @@ class NetworkEventActor extends Actor {
         const text = ChromeUtils.getCachedJavaScriptSource(
           data.key,
           this._resource.url,
-          data.nonce,
           data.charset
         );
         if (text !== undefined) {
@@ -519,15 +518,12 @@ class NetworkEventActor extends Actor {
   }
 
   addMemoryCacheData(channel, memoryCacheKey) {
-    let nonce = "",
-      charset = "";
+    let charset = "";
     if (channel instanceof Ci.nsIHttpChannel) {
-      nonce = channel.loadInfo.cspNonce || "";
       charset = channel.classicScriptHintCharset || "";
     }
     this._memoryCacheData = {
       key: memoryCacheKey,
-      nonce,
       charset,
     };
   }

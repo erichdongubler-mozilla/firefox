@@ -46,7 +46,6 @@ class ScriptHashKey : public PLDHashEntryHdr {
         mKind(aKey.mKind),
         mCORSMode(aKey.mCORSMode),
         mReferrerPolicy(aKey.mReferrerPolicy),
-        mNonce(aKey.mNonce),
         mHintCharset(aKey.mHintCharset) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
@@ -61,7 +60,6 @@ class ScriptHashKey : public PLDHashEntryHdr {
         mKind(std::move(aKey.mKind)),
         mCORSMode(std::move(aKey.mCORSMode)),
         mReferrerPolicy(std::move(aKey.mReferrerPolicy)),
-        mNonce(std::move(aKey.mNonce)),
         mHintCharset(std::move(aKey.mHintCharset)) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
@@ -79,14 +77,14 @@ class ScriptHashKey : public PLDHashEntryHdr {
   // Create a key which can be used only for lookup.
   // aKey is the result of ToStringForLookup.
   static Maybe<ScriptHashKey> FromStringsForLookup(
-      const nsACString& aKey, const nsACString& aURI, const nsACString& aNonce,
+      const nsACString& aKey, const nsACString& aURI,
       const nsACString& aHintCharset);
 
  private:
   ScriptHashKey(nsIURI* aURI, nsIPrincipal* aPartitionPrincipal,
                 JS::loader::ScriptKind aKind, CORSMode aCORSMode,
                 mozilla::dom::ReferrerPolicy aReferrerPolicy,
-                const nsString& aNonce, const nsString& aHintCharset)
+                const nsString& aHintCharset)
       : PLDHashEntryHdr(),
         mURI(aURI),
         mPartitionPrincipal(aPartitionPrincipal),
@@ -94,7 +92,6 @@ class ScriptHashKey : public PLDHashEntryHdr {
         mKind(aKind),
         mCORSMode(aCORSMode),
         mReferrerPolicy(aReferrerPolicy),
-        mNonce(aNonce),
         mHintCharset(aHintCharset) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
@@ -149,8 +146,6 @@ class ScriptHashKey : public PLDHashEntryHdr {
   const JS::loader::ScriptKind mKind;
   const CORSMode mCORSMode;
   const mozilla::dom::ReferrerPolicy mReferrerPolicy;
-
-  const nsString mNonce;
 
   // charset attribute for classic script.
   // module always use UTF-8.
@@ -258,7 +253,6 @@ class SharedScriptCache final
 
   static bool GetCachedScriptSource(JSContext* aCx, const nsACString& aKey,
                                     const nsACString& aURI,
-                                    const nsACString& aNonce,
                                     const nsACString& aHintCharset,
                                     JS::MutableHandle<JS::Value> aRetval);
 

@@ -36,8 +36,7 @@ ScriptHashKey::ScriptHashKey(
       mLoaderPrincipal(aLoader->LoaderPrincipal()),
       mKind(aRequest->mKind),
       mCORSMode(aFetchOptions->mCORSMode),
-      mReferrerPolicy(aReferrerPolicy),
-      mNonce(aFetchOptions->mNonce) {
+      mReferrerPolicy(aReferrerPolicy) {
   if (mKind == JS::loader::ScriptKind::eClassic) {
     if (aRequest->GetScriptLoadContext()->HasScriptElement()) {
       aRequest->GetScriptLoadContext()->GetHintCharset(mHintCharset);
@@ -81,10 +80,6 @@ bool ScriptHashKey::KeyEquals(const ScriptHashKey& aKey) const {
   }
 
   if (mReferrerPolicy != aKey.mReferrerPolicy) {
-    return false;
-  }
-
-  if (mNonce != aKey.mNonce) {
     return false;
   }
 
@@ -166,7 +161,7 @@ void ScriptHashKey::ToStringForLookup(nsACString& aResult) {
 
 /* static */
 Maybe<ScriptHashKey> ScriptHashKey::FromStringsForLookup(
-    const nsACString& aKey, const nsACString& aURI, const nsACString& aNonce,
+    const nsACString& aKey, const nsACString& aURI,
     const nsACString& aHintCharset) {
   if (aKey.Length() < 22) {
     return Nothing();
@@ -239,7 +234,7 @@ Maybe<ScriptHashKey> ScriptHashKey::FromStringsForLookup(
   }
 
   return Some(ScriptHashKey(uri, partitionPrincipal, kind, corsMode,
-                            referrerPolicy, NS_ConvertUTF8toUTF16(aNonce),
+                            referrerPolicy,
                             NS_ConvertUTF8toUTF16(aHintCharset)));
 }
 
@@ -337,15 +332,14 @@ void SharedScriptCache::Invalidate() {
 /* static */
 bool SharedScriptCache::GetCachedScriptSource(
     JSContext* aCx, const nsACString& aKey, const nsACString& aURI,
-    const nsACString& aNonce, const nsACString& aHintCharset,
-    JS::MutableHandle<JS::Value> aRetval) {
+    const nsACString& aHintCharset, JS::MutableHandle<JS::Value> aRetval) {
   if (!sSingleton) {
     aRetval.setUndefined();
     return true;
   }
 
   Maybe<ScriptHashKey> maybeKey =
-      ScriptHashKey::FromStringsForLookup(aKey, aURI, aNonce, aHintCharset);
+      ScriptHashKey::FromStringsForLookup(aKey, aURI, aHintCharset);
   if (!maybeKey) {
     aRetval.setUndefined();
     return true;
