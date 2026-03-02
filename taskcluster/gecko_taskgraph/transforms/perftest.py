@@ -426,3 +426,13 @@ def set_perftest_attributes(config, jobs):
 
 # Apply platform restrictions for perftest jobs failing on Ubuntu 24.04
 transforms.add(linux_perf_platform_restrictions.restrict_perftest_to_1804)
+
+
+@transforms.add
+def hide_cmd_exe_window_on_windows(config, jobs):
+    for job in jobs:
+        platform = job.get("platform", "")
+        if platform.startswith("windows"):
+            worker = job.setdefault("worker", {})
+            worker["hide-cmd-window"] = True
+        yield job
