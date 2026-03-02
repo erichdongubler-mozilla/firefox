@@ -1082,25 +1082,15 @@ nsSocketTransportService::CreateUnixDomainAbstractAddressTransport(
 
 NS_IMETHODIMP
 nsSocketTransportService::OnDispatchedEvent() {
-#ifndef XP_WIN
-  // On windows poll can hang and this became worse when we introduced the
-  // patch for bug 698882 (see also bug 1292181), therefore we reverted the
-  // behavior on windows to be as before bug 698882, e.g. write to the socket
-  // also if an event dispatch is on the socket thread and writing to the
-  // socket for each event.
+  // This check is redundant to one done inside ::Signal(), but we can do it
+  // here and skip obtaining the lock - given that this is a relatively common
+  // occurrence its worth the redundant code.
   if (OnSocketThread()) {
-    // this check is redundant to one done inside ::Signal(), but
-    // we can do it here and skip obtaining the lock - given that
-    // this is a relatively common occurance its worth the
-    // redundant code
     SOCKET_LOG(("OnDispatchedEvent Same Thread Skip Signal\n"));
     return NS_OK;
   }
-#else
+#ifdef XP_WIN
   if (gIOService->IsNetTearingDown()) {
-    // Poll can hang sometimes. If we are in shutdown, we are going to
-    // start a watchdog. If we do not exit poll within
-    // REPAIR_POLLABLE_EVENT_TIME signal a pollable event again.
     StartPollWatchdog();
   }
 #endif
@@ -1899,7 +1889,7 @@ void nsSocketTransportService::StartPollWatchdog() {
 void nsSocketTransportService::DoPollRepair() {
   MutexAutoLock lock(mLock);
   if (mPolling && mPollableEvent) {
-    mPollableEvent->Signal();
+    mPollableEvent->Signal(/* aForce = */ true);
   } else if (mPollRepairTimer) {
     mPollRepairTimer->Cancel();
   }

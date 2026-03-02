@@ -22,7 +22,7 @@ class PollableEvent {
   ~PollableEvent();
 
   // Signal/Clear return false only if they fail
-  bool Signal();
+  bool Signal(bool aForce = false);
   // This is called only when we get non-null out_flags for the socket pair
   bool Clear();
   bool Valid() { return mWriteFD && mReadFD; }
