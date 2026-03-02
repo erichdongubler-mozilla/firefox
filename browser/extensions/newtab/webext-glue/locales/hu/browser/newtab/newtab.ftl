@@ -52,7 +52,7 @@ newtab-search-box-input =
     .placeholder = Keresés a weben
     .aria-label = Keresés a weben
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = Keresőszolgáltatás hozzáadása
 newtab-topsites-add-shortcut-header = Új gyorskereső
@@ -72,6 +72,11 @@ newtab-topsites-url-validation = Érvényes webcím szükséges
 newtab-topsites-image-url-label = Egyéni kép webcíme
 newtab-topsites-use-image-link = Egyéni kép használata…
 newtab-topsites-image-validation = A kép betöltése nem sikerült. Próbáljon meg egy másik webcímet.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Szöveg törlése
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 

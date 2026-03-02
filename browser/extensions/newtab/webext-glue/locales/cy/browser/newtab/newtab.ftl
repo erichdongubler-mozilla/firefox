@@ -52,7 +52,7 @@ newtab-search-box-input =
     .placeholder = Chwilio'r we
     .aria-label = Chwilio'r we
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = Ychwanegu Peiriant Chwilio
 newtab-topsites-add-shortcut-header = Llwybr Byr Newydd
@@ -72,6 +72,11 @@ newtab-topsites-url-validation = Mae angen URL Ddilys
 newtab-topsites-image-url-label = URL Delwedd Gyfaddas
 newtab-topsites-use-image-link = Defnyddio delwedd gyfaddas…
 newtab-topsites-image-validation = Methodd y ddelwedd â llwytho. Defnyddiwch URL gwahanol.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Clirio testun
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 

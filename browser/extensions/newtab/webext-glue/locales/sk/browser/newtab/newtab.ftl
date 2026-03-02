@@ -52,7 +52,7 @@ newtab-search-box-input =
     .placeholder = Vyhľadávanie na webe
     .aria-label = Vyhľadávanie na webe
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = Pridať vyhľadávací modul
 newtab-topsites-add-shortcut-header = Nová skratka
@@ -72,6 +72,11 @@ newtab-topsites-url-validation = Vyžaduje sa platná adresa URL
 newtab-topsites-image-url-label = Adresa URL vlastného obrázka
 newtab-topsites-use-image-link = Použiť vlastný obrázok…
 newtab-topsites-image-validation = Obrázok sa nepodarilo načítať. Skúste inú adresu URL.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Vymazať text
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 

@@ -52,7 +52,7 @@ newtab-search-box-input =
     .placeholder = Eheka ñandutípe
     .aria-label = Eheka ñandutípe
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = Embojuaju hekaha
 newtab-topsites-add-shortcut-header = Mbopya’eha pyahu
@@ -72,6 +72,11 @@ newtab-topsites-url-validation = Oñeikotevẽ URL oiko porãva
 newtab-topsites-image-url-label = URL ra’ãnga ñemomba’etepyre
 newtab-topsites-use-image-link = Ta’ãnga ñemomba’etepyre…
 newtab-topsites-image-validation = Ta’ãnga nehenyhẽkuái. Eiporu peteĩ URL iñambuéva.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Emopotĩ moñe’ẽrã
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 

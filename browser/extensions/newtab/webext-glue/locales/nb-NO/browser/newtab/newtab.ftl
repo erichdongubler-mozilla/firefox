@@ -52,7 +52,7 @@ newtab-search-box-input =
     .placeholder = Søk på nettet
     .aria-label = Søk på nettet
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = Legg til søkemotor
 newtab-topsites-add-shortcut-header = Ny snarvei
@@ -72,6 +72,11 @@ newtab-topsites-url-validation = Gyldig URL er nødvendig
 newtab-topsites-image-url-label = Egendefinert bilde-URL
 newtab-topsites-use-image-link = Bruk et egendefinert bilde…
 newtab-topsites-image-validation = Kunne ikke lese inn bildet. Prøv en annen URL.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Fjern tekst
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 

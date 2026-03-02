@@ -52,7 +52,7 @@ newtab-search-box-input =
     .placeholder = Das Web durchsuchen
     .aria-label = Das Web durchsuchen
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = Suchmaschine hinzufügen
 newtab-topsites-add-shortcut-header = Neue Verknüpfung
@@ -72,6 +72,11 @@ newtab-topsites-url-validation = Gültige Adresse erforderlich
 newtab-topsites-image-url-label = Adresse von benutzerdefinierter Grafik
 newtab-topsites-use-image-link = Eine benutzerdefinierte Grafik verwenden…
 newtab-topsites-image-validation = Grafik konnte nicht geladen werden. Verwenden Sie eine andere Adresse.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Text löschen
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 

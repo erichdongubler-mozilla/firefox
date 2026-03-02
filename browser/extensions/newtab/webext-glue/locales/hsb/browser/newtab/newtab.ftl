@@ -52,7 +52,7 @@ newtab-search-box-input =
     .placeholder = Web přepytać
     .aria-label = Web přepytać
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = Pytawu přidać
 newtab-topsites-add-shortcut-header = Nowe zwjazanje
@@ -72,6 +72,11 @@ newtab-topsites-url-validation = Płaćiwy URL trěbny
 newtab-topsites-image-url-label = URL swójskeho wobraza
 newtab-topsites-use-image-link = Swójski wobraz wužiwać…
 newtab-topsites-image-validation = Wobraz njeda so začitać. Spytajće druhi URL.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Tekst zhašeć
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 

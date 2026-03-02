@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = Pertsonalizatu
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = Baztertu
+    .aria-label = Baztertu
 
 ## Search box component.
 
@@ -49,7 +52,7 @@ newtab-search-box-input =
     .placeholder = Bilatu webean
     .aria-label = Bilatu webean
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = Gehitu bilaketa-motorra
 newtab-topsites-add-shortcut-header = Lasterbide berria
@@ -69,6 +72,11 @@ newtab-topsites-url-validation = Baliozko URLa behar da
 newtab-topsites-image-url-label = Irudi pertsonalizatuaren URLa
 newtab-topsites-use-image-link = Erabili irudi pertsonalizatua…
 newtab-topsites-image-validation = Ezin da irudia kargatu. Saiatu beste URL batekin.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Garbitu testua
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 

@@ -52,7 +52,7 @@ newtab-search-box-input =
     .placeholder = 搜尋 Web
     .aria-label = 搜尋 Web
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = 新增搜尋引擎
 newtab-topsites-add-shortcut-header = 新增捷徑
@@ -72,6 +72,11 @@ newtab-topsites-url-validation = 請輸入有效的網址
 newtab-topsites-image-url-label = 自訂圖片網址
 newtab-topsites-use-image-link = 使用自訂圖片…
 newtab-topsites-image-validation = 圖片載入失敗，請改用不同網址。
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = 清除文字
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 

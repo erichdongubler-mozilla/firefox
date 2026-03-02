@@ -52,7 +52,7 @@ newtab-search-box-input =
     .placeholder = Tìm kiếm trên mạng
     .aria-label = Tìm kiếm trên mạng
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = Thêm công cụ tìm kiếm
 newtab-topsites-add-shortcut-header = Lối tắt mới
@@ -72,6 +72,11 @@ newtab-topsites-url-validation = Yêu cầu URL hợp lệ
 newtab-topsites-image-url-label = Hình ảnh Tuỳ chỉnh URL
 newtab-topsites-use-image-link = Sử dụng hình ảnh tùy chỉnh…
 newtab-topsites-image-validation = Không tải được hình ảnh. Hãy thử một URL khác.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Xoá văn bản
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 

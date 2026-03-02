@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = Personalizar
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = Ocultar
+    .aria-label = Ocultar
 
 ## Search box component.
 
@@ -49,7 +52,7 @@ newtab-search-box-input =
     .placeholder = Buscar en la web
     .aria-label = Buscar en la web
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = Añadir motor de búsqueda
 newtab-topsites-add-shortcut-header = Nuevo atajo
@@ -69,6 +72,11 @@ newtab-topsites-url-validation = URL válida requerida
 newtab-topsites-image-url-label = URL de imagen personalizada
 newtab-topsites-use-image-link = Utilizar una imagen personalizada…
 newtab-topsites-image-validation = Falló la carga de la imagen. Prueba una URL diferente.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Limpiar texto
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 

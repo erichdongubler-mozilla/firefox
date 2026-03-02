@@ -52,7 +52,7 @@ newtab-search-box-input =
     .placeholder = Web’de ara
     .aria-label = Web’de ara
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = Arama motoru ekle
 newtab-topsites-add-shortcut-header = Yeni kısayol
@@ -72,6 +72,11 @@ newtab-topsites-url-validation = Geçerli bir adres gerekli
 newtab-topsites-image-url-label = Özel resim adresi
 newtab-topsites-use-image-link = Özel resim kullan…
 newtab-topsites-image-validation = Resim yüklenemedi. Başka bir adres deneyin.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Metni temizle
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 
