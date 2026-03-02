@@ -379,12 +379,12 @@ if (SECURITY_PRIVACY_STATUS_CARD_ENABLED) {
       id: "trackerCount",
       cachedValue: null,
       async loadTrackerCount(emitChange) {
-        const now = Date.now();
-        const aMonthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        const aMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         /** @type {{ getResultByName: (_: string) => number }[]} */
         const events = await lazy.TrackingDBService.getEventsByDateRange(
-          now,
-          aMonthAgo
+          aMonthAgo,
+          now
         );
 
         const total = events.reduce((acc, day) => {
