@@ -49,7 +49,7 @@ class TabSearchStateTest {
     fun `WHEN query is not empty AND searchResults is not empty THEN showNoResults is false`() {
         val state = TabSearchState(
             query = "Mozilla",
-            searchResults = listOf(TabsTrayItem.Tab(tabData = createTab("mozilla.org", id = "mozilla"))),
+            searchResults = listOf(TabsTrayItem.Tab(tab = createTab("mozilla.org", id = "mozilla"))),
         )
 
         assertFalse(state.showNoResults)

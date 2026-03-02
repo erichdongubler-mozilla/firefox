@@ -19,7 +19,7 @@ class DefaultTabManagerInteractorTest {
     private val controller: TabManagerController = mockk(relaxed = true)
     private val interactor = DefaultTabManagerInteractor(controller)
 
-    private val testTab = TabsTrayItem.Tab(tabData = createTab(id = "testTabId", url = "url"))
+    private val testTab = TabsTrayItem.Tab(tab = createTab(id = "testTabId", url = "url"))
 
         @Test
     fun `WHEN user selects a new browser tab THEN the Interactor delegates to the controller`() {

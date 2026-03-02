@@ -54,7 +54,6 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.support.utils.ext.isLandscape
 import org.mozilla.fenix.R
@@ -66,6 +65,7 @@ import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
 import org.mozilla.fenix.tabstray.browser.compose.detectGridPressAndDragGestures
 import org.mozilla.fenix.tabstray.browser.compose.detectListPressAndDrag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.ui.tabitems.GridItemThumbnailPadding
 import org.mozilla.fenix.tabstray.ui.tabitems.TabGridTabItem
@@ -140,7 +140,7 @@ fun TabLayout(
     var selectedTabIndex = 0
     selectedTabId?.let {
         tabs.forEachIndexed { index, tab ->
-            if (tab is TabsTrayItem.Tab && tab.tabData.id == selectedTabId) {
+            if (tab is TabsTrayItem.Tab && tab.id == selectedTabId) {
                 selectedTabIndex = index
                 return@forEachIndexed
             }
@@ -618,11 +618,9 @@ private fun generateFakeTabsList(
     tabCount: Int = 10,
     isPrivate: Boolean = false,
 ): List<TabsTrayItem> = List(tabCount) { index ->
-        TabsTrayItem.Tab(
-            tabData = createTab(
-                id = "tabId$index-$isPrivate",
-                url = "www.mozilla.com",
-                private = isPrivate,
-            ),
+        createTab(
+            id = "tabId$index-$isPrivate",
+            url = "www.mozilla.com",
+            private = isPrivate,
         )
     }

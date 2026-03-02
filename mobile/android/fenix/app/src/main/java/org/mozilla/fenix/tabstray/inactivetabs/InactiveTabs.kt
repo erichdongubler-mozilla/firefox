@@ -38,7 +38,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.cfr.CFRPopup
 import mozilla.components.compose.cfr.CFRPopupLayout
@@ -48,7 +47,7 @@ import org.mozilla.fenix.compose.list.ExpandableListHeader
 import org.mozilla.fenix.compose.list.FaviconListItem
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
-import org.mozilla.fenix.tabstray.ext.toDisplayTitle
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
@@ -122,14 +121,14 @@ fun InactiveTabsList(
 
                 Column {
                     inactiveTabs.forEach { tab ->
-                        val tabUrl = tab.tabData.content.url.toShortUrl()
-                        val faviconPainter = tab.tabData.content.icon?.run {
+                        val tabUrl = tab.url.toShortUrl()
+                        val faviconPainter = tab.icon?.run {
                             prepareToDraw()
                             BitmapPainter(asImageBitmap())
                         }
 
                         FaviconListItem(
-                            label = tab.tabData.toDisplayTitle(),
+                            label = tab.title,
                             url = tabUrl,
                             description = tabUrl,
                             faviconPainter = faviconPainter,
@@ -337,6 +336,6 @@ private fun InactiveTabsListPreview() {
 
 private fun generateFakeInactiveTabsList(): List<TabsTrayItem.Tab> =
     listOf(
-        TabsTrayItem.Tab(tabData = createTab("www.mozilla.com")),
-        TabsTrayItem.Tab(tabData = createTab("www.google.com")),
+        createTab("www.mozilla.com"),
+        createTab("www.example.com"),
     )

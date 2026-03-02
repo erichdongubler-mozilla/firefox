@@ -9,8 +9,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.Dp
-import mozilla.components.browser.state.state.TabSessionState
 import org.mozilla.fenix.R
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.state.Page
 
 /**
@@ -21,7 +21,7 @@ internal interface TabManagerAnimationHelper {
     /**
      * The currently-selected tab. Null otherwise.
      */
-    val selectedTab: TabSessionState?
+    val selectedTab: TabsTrayItem.Tab?
 
     /**
      * Whether the Tab Manager transition animations are enabled.
@@ -50,9 +50,9 @@ internal interface TabManagerAnimationHelper {
      * Invoked to trigger the transition from the Tab Manager UI to the fullscreen thumbnail of the
      * provided [tab].
      *
-     * @param tab The [TabSessionState] of the tab being transitioned to.
+     * @param tab The [TabsTrayItem.Tab] of the tab being transitioned to.
      */
-    fun transitionToThumbnail(tab: TabSessionState)
+    fun transitionToThumbnail(tab: TabsTrayItem.Tab)
 
     /**
      * Invoked to trigger the transition from the Tab Manager UI to the fullscreen thumbnail of the selected tab.
@@ -74,9 +74,9 @@ sealed interface TabManagerAnimationState {
      * [TabManagerAnimationState] indicating the transition from the Tab Manager to the fullscreen thumbnail
      * during the shared element transition.
      *
-     * @property tab The [TabSessionState] used to obtain the thumbnail bitmap.
+     * @property tab The [TabsTrayItem.Tab] used to obtain the thumbnail bitmap.
      */
-    data class TabManagerToThumbnail(val tab: TabSessionState) : TabManagerAnimationState
+    data class TabManagerToThumbnail(val tab: TabsTrayItem.Tab) : TabManagerAnimationState
 
     /**
      * [TabManagerAnimationState] indicating the transition from the fullscreen thumbnail to the Tab Manager
@@ -98,7 +98,7 @@ sealed interface TabManagerAnimationState {
  */
 @Suppress("LongParameterList")
 class DefaultTabManagerAnimationHelper(
-    override val selectedTab: TabSessionState?,
+    override val selectedTab: TabsTrayItem.Tab?,
     override val animationsEnabled: Boolean,
     private val initialPage: Page,
     private val previousDestinationId: Int?,
@@ -114,9 +114,9 @@ class DefaultTabManagerAnimationHelper(
         // Do not transition when there is no selected tab.
         selectedTab == null -> false
         // Do not transition when the selected tab is Private but the Tab Manager is opening to the Normal page.
-        selectedTab.content.private && initialPage == Page.NormalTabs -> false
+        selectedTab.private && initialPage == Page.NormalTabs -> false
         // Do not transition when the selected tab is Normal but the Tab Manager is opening to the Private page.
-        !selectedTab.content.private && initialPage == Page.PrivateTabs -> false
+        !selectedTab.private && initialPage == Page.PrivateTabs -> false
         // Do not transition when the Tab Manager is opened from the Homescreen and HNT is disabled.
         previousDestinationId == R.id.homeFragment && homepageAsANewTabEnabled -> true
         // Always transition from the Browser.
@@ -159,7 +159,7 @@ class DefaultTabManagerAnimationHelper(
         state = TabManagerAnimationState.ThumbnailToTabManager
     }
 
-    override fun transitionToThumbnail(tab: TabSessionState) {
+    override fun transitionToThumbnail(tab: TabsTrayItem.Tab) {
         state = TabManagerAnimationState.TabManagerToThumbnail(tab = tab)
     }
 }

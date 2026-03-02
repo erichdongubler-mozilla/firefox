@@ -36,7 +36,6 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.RadioCheckmark
 import mozilla.components.support.base.utils.MAX_URI_LENGTH
 import org.mozilla.fenix.R
@@ -44,11 +43,10 @@ import org.mozilla.fenix.compose.DismissibleItemBackground
 import org.mozilla.fenix.compose.SwipeToDismissBox2
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.compose.TabThumbnail
-import org.mozilla.fenix.compose.thumbnailImageData
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
-import org.mozilla.fenix.tabstray.ext.toDisplayTitle
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.ui.sharedTabTransition
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.browser.tabstray.R as tabstrayR
@@ -172,7 +170,7 @@ private fun TabContent(
                 .weight(weight = 1f),
         ) {
             Text(
-                text = tab.tabData.toDisplayTitle().take(MAX_URI_LENGTH),
+                text = tab.title.take(MAX_URI_LENGTH),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = FirefoxTheme.typography.body1,
                 overflow = TextOverflow.Ellipsis,
@@ -180,7 +178,7 @@ private fun TabContent(
             )
 
             Text(
-                text = tab.tabData.content.url.toShortUrl(),
+                text = tab.url.toShortUrl(),
                 color = MaterialTheme.colorScheme.secondary,
                 style = FirefoxTheme.typography.body2,
                 overflow = TextOverflow.Ellipsis,
@@ -199,7 +197,7 @@ private fun TabContent(
                     painter = painterResource(id = iconsR.drawable.mozac_ic_cross_24),
                     contentDescription = stringResource(
                         id = R.string.close_tab_title,
-                        tab.tabData.toDisplayTitle(),
+                        tab.title,
                     ),
                     tint = MaterialTheme.colorScheme.secondary,
                 )
@@ -221,7 +219,7 @@ private fun Thumbnail(
     val density = LocalDensity.current
     val thumbnailSize = with(density) { ThumbnailWidth.toPx() }.toInt()
     TabThumbnail(
-        tabThumbnailImageData = tab.tabData.thumbnailImageData(),
+        tabThumbnailImageData = tab.toThumbnailImageData(),
         thumbnailSizePx = thumbnailSize,
         modifier = Modifier
             .sharedTabTransition(tabId = tab.id)
@@ -294,11 +292,9 @@ private fun TabListTabItemPreview(
 ) {
     FirefoxTheme {
         TabListTabItem(
-            tab = TabsTrayItem.Tab(
-                tabData = createTab(
-                    url = tabListItemState.url,
-                    title = tabListItemState.title,
-                ),
+            tab = createTab(
+                url = tabListItemState.url,
+                title = tabListItemState.title,
             ),
             isSelected = tabListItemState.isSelected,
             onCloseClick = {},

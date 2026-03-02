@@ -27,12 +27,12 @@ class TabSearchMiddlewareTest {
     @Test
     fun `WHEN SearchQueryChanged on NormalTabs THEN search results include matching normal and inactive tabs`() = runTest {
         val expectedNormalTabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.org")),
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.com")),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.org")),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.com")),
         )
-        val otherNormalTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "example.com")))
-        val expectedInactiveTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "support.mozilla.org")))
-        val otherInactiveTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "example2.com")))
+        val otherNormalTabs = listOf(TabsTrayItem.Tab(tab = createTab(url = "example.com")))
+        val expectedInactiveTabs = listOf(TabsTrayItem.Tab(tab = createTab(url = "support.mozilla.org")))
+        val otherInactiveTabs = listOf(TabsTrayItem.Tab(tab = createTab(url = "example2.com")))
 
         val store = TabsTrayStore(
             middlewares = listOf(
@@ -58,10 +58,10 @@ class TabSearchMiddlewareTest {
     @Test
     fun `WHEN SearchQueryChanged on PrivateTabs THEN search results include matching private tabs only`() = runTest {
         val expectedPrivateTabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.com", private = true)),
-            TabsTrayItem.Tab(tabData = createTab(url = "developer.mozilla.org", private = true)),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.com", private = true)),
+            TabsTrayItem.Tab(tab = createTab(url = "developer.mozilla.org", private = true)),
         )
-        val otherPrivateTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "example.com", private = true)))
+        val otherPrivateTabs = listOf(TabsTrayItem.Tab(tab = createTab(url = "example.com", private = true)))
 
         val store = TabsTrayStore(
             middlewares = listOf(
@@ -84,17 +84,17 @@ class TabSearchMiddlewareTest {
 
     @Test
     fun `WHEN SearchQueryChanged with multiple words in query on NormalTabs THEN search results include matching normal and inactive tabs`() = runTest {
-        val expectedNormalTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "mozilla.org", title = "Mozilla Homepage")))
+        val expectedNormalTabs = listOf(TabsTrayItem.Tab(tab = createTab(url = "mozilla.org", title = "Mozilla Homepage")))
         val otherNormalTabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.com", title = "Mozilla Example")),
-            TabsTrayItem.Tab(tabData = createTab(url = "example.com", title = "example title")),
-            TabsTrayItem.Tab(tabData = createTab(url = "example2.com", title = "example 2 title")),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.com", title = "Mozilla Example")),
+            TabsTrayItem.Tab(tab = createTab(url = "example.com", title = "example title")),
+            TabsTrayItem.Tab(tab = createTab(url = "example2.com", title = "example 2 title")),
         )
         val expectedInactiveTabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "support.mozilla.org", title = "Mozilla Homepage - Support")),
+            TabsTrayItem.Tab(tab = createTab(url = "support.mozilla.org", title = "Mozilla Homepage - Support")),
         )
         val otherInactiveTabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "inactive.com", title = "example 3 title")),
+            TabsTrayItem.Tab(tab = createTab(url = "inactive.com", title = "example 3 title")),
         )
 
         val store = TabsTrayStore(
@@ -121,12 +121,12 @@ class TabSearchMiddlewareTest {
     @Test
     fun `WHEN SearchQueryChanged with multiple words in query on PrivateTabs THEN search results include matching private tabs only`() = runTest {
         val expectedPrivateTabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.org", title = "Mozilla Homepage", private = true)),
-            TabsTrayItem.Tab(tabData = createTab(url = "support.mozilla.org", title = "Mozilla Homepage - Support", private = true)),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.org", title = "Mozilla Homepage", private = true)),
+            TabsTrayItem.Tab(tab = createTab(url = "support.mozilla.org", title = "Mozilla Homepage - Support", private = true)),
         )
         val otherPrivateTabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.com", title = "Mozilla example", private = true)),
-            TabsTrayItem.Tab(tabData = createTab(url = "example.com", title = "example title", private = true)),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.com", title = "Mozilla example", private = true)),
+            TabsTrayItem.Tab(tab = createTab(url = "example.com", title = "example title", private = true)),
         )
 
         val store = TabsTrayStore(
@@ -150,10 +150,10 @@ class TabSearchMiddlewareTest {
 
     @Test
     fun `WHEN SearchQueryChanged on NormalTabs THEN search results match query in title for both normal and inactive tabs`() = runTest {
-        val expectedNormalTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "example.com", title = "Mozilla Homepage")))
-        val otherNormalTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "example2.com", title = "Unrelated title")))
-        val expectedInactiveTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "inactive-example.com", title = "Mozilla Inactive Tab")))
-        val otherInactiveTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "inactive-example2.com", title = "Another title")))
+        val expectedNormalTabs = listOf(TabsTrayItem.Tab(tab = createTab(url = "example.com", title = "Mozilla Homepage")))
+        val otherNormalTabs = listOf(TabsTrayItem.Tab(tab = createTab(url = "example2.com", title = "Unrelated title")))
+        val expectedInactiveTabs = listOf(TabsTrayItem.Tab(tab = createTab(url = "inactive-example.com", title = "Mozilla Inactive Tab")))
+        val otherInactiveTabs = listOf(TabsTrayItem.Tab(tab = createTab(url = "inactive-example2.com", title = "Another title")))
 
         val store = TabsTrayStore(
             middlewares = listOf(
@@ -179,10 +179,10 @@ class TabSearchMiddlewareTest {
     @Test
     fun `WHEN SearchQueryChanged on PrivateTabs THEN search results match query in title even if url does not contain it`() = runTest {
         val expectedPrivateTabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.org", title = "Mozilla Homepage", private = true)),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.org", title = "Mozilla Homepage", private = true)),
         )
         val otherPrivateTabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "example.com", title = "example title", private = true)),
+            TabsTrayItem.Tab(tab = createTab(url = "example.com", title = "example title", private = true)),
         )
 
         val store = TabsTrayStore(
@@ -207,10 +207,10 @@ class TabSearchMiddlewareTest {
     @Test
     fun `WHEN SearchQueryChanged with empty query on NormalTabs THEN search results are empty`() = runTest {
         val normalTabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.org")),
-            TabsTrayItem.Tab(tabData = createTab(url = "example.com")),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.org")),
+            TabsTrayItem.Tab(tab = createTab(url = "example.com")),
         )
-        val inactiveTabs = listOf(TabsTrayItem.Tab(tabData = createTab(url = "mozilla.com")))
+        val inactiveTabs = listOf(TabsTrayItem.Tab(tab = createTab(url = "mozilla.com")))
 
         val store = TabsTrayStore(
             middlewares = listOf(
@@ -236,8 +236,8 @@ class TabSearchMiddlewareTest {
     @Test
     fun `WHEN SearchQueryChanged with empty query on PrivateTabs THEN search results are empty`() = runTest {
         val privateTabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.com", private = true)),
-            TabsTrayItem.Tab(tabData = createTab(url = "example.com", private = true)),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.com", private = true)),
+            TabsTrayItem.Tab(tab = createTab(url = "example.com", private = true)),
         )
 
         val store = TabsTrayStore(
@@ -263,8 +263,8 @@ class TabSearchMiddlewareTest {
     @Test
     fun `WHEN SearchQueryChanged with whitespace only query on PrivateTabs THEN search results are empty`() = runTest {
         val privateTabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.com", private = true)),
-            TabsTrayItem.Tab(tabData = createTab(url = "example.com", private = true)),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.com", private = true)),
+            TabsTrayItem.Tab(tab = createTab(url = "example.com", private = true)),
         )
 
         val store = TabsTrayStore(
@@ -288,16 +288,16 @@ class TabSearchMiddlewareTest {
 
     @Test
     fun `WHEN SearchQueryChanged AND multiple about home tabs match THEN only the most recently accessed about home tab is included`() = runTest {
-        val aboutHomeOld = TabsTrayItem.Tab(tabData = createTab(url = ABOUT_HOME_URL, title = "Homepage", lastAccess = 10L))
-        val aboutHomeNew = TabsTrayItem.Tab(tabData = createTab(url = ABOUT_HOME_URL, title = "Homepage", lastAccess = 20L))
-        val aboutHomeNewest = TabsTrayItem.Tab(tabData = createTab(url = ABOUT_HOME_URL, title = "Homepage", lastAccess = 30L))
+        val aboutHomeOld = TabsTrayItem.Tab(tab = createTab(url = ABOUT_HOME_URL, title = "Homepage", lastAccess = 10L))
+        val aboutHomeNew = TabsTrayItem.Tab(tab = createTab(url = ABOUT_HOME_URL, title = "Homepage", lastAccess = 20L))
+        val aboutHomeNewest = TabsTrayItem.Tab(tab = createTab(url = ABOUT_HOME_URL, title = "Homepage", lastAccess = 30L))
 
         val matchingNonHomepage = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.org/home")),
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.org", title = "Homepage")),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.org/home")),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.org", title = "Homepage")),
         )
         val nonMatching = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "example.com")),
+            TabsTrayItem.Tab(tab = createTab(url = "example.com")),
         )
 
         val store = TabsTrayStore(
@@ -323,10 +323,10 @@ class TabSearchMiddlewareTest {
 
     @Test
     fun `WHEN SearchQueryChanged AND about home tabs do not match query THEN no about home tabs are included`() = runTest {
-        val aboutHomeOld = TabsTrayItem.Tab(tabData = createTab(url = ABOUT_HOME_URL, title = "Homepage", lastAccess = 10L))
-        val aboutHomeNew = TabsTrayItem.Tab(tabData = createTab(url = ABOUT_HOME_URL, title = "Homepage", lastAccess = 20L))
+        val aboutHomeOld = TabsTrayItem.Tab(tab = createTab(url = ABOUT_HOME_URL, title = "Homepage", lastAccess = 10L))
+        val aboutHomeNew = TabsTrayItem.Tab(tab = createTab(url = ABOUT_HOME_URL, title = "Homepage", lastAccess = 20L))
 
-        val matchingNonHomepage = listOf(TabsTrayItem.Tab(tabData = createTab(url = "mozilla.org")))
+        val matchingNonHomepage = listOf(TabsTrayItem.Tab(tab = createTab(url = "mozilla.org")))
 
         val store = TabsTrayStore(
             middlewares = listOf(
@@ -350,9 +350,9 @@ class TabSearchMiddlewareTest {
 
     @Test
     fun `WHEN SearchQueryChanged AND single about home tab matches THEN it is included`() = runTest {
-        val aboutHome = TabsTrayItem.Tab(tabData = createTab(url = ABOUT_HOME_URL, title = "Homepage", lastAccess = 42L))
+        val aboutHome = TabsTrayItem.Tab(tab = createTab(url = ABOUT_HOME_URL, title = "Homepage", lastAccess = 42L))
         val matchingNonHomepage = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.org/home")),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.org/home")),
         )
 
         val store = TabsTrayStore(

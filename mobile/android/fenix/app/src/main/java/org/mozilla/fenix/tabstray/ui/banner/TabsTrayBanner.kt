@@ -47,14 +47,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Banner
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
-import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
@@ -537,8 +536,8 @@ private fun TabsTrayBannerMultiselectPreview() {
     TabsTrayBannerPreviewRoot(
         selectMode = Mode.Select(
             selectedTabs = setOf(
-                TabsTrayItem.Tab(tabData = createTab("www.mozilla.com")),
-                TabsTrayItem.Tab(tabData = createTab("www.mozilla.com")),
+                createTab("www.mozilla.com"),
+                createTab("www.mozilla.com"),
             ),
         ),
     )

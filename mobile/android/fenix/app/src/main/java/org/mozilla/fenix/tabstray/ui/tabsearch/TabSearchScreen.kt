@@ -52,14 +52,13 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.map
-import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.searchbar.TopSearchBar
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
-import org.mozilla.fenix.tabstray.ext.toDisplayTitle
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.action.TabSearchAction
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.middleware.TabSearchMiddleware
@@ -232,14 +231,14 @@ private fun TabItemSearchResult(
     shape: Shape,
     onSearchResultClicked: (TabsTrayItem) -> Unit,
 ) {
-    val tabUrl = tab.tabData.content.url.toShortUrl()
-    val faviconPainter = tab.tabData.content.icon?.run {
+    val tabUrl = tab.url.toShortUrl()
+    val faviconPainter = tab.icon?.run {
         prepareToDraw()
         BitmapPainter(asImageBitmap())
     }
 
     BasicTabListItem(
-        title = tab.tabData.toDisplayTitle(),
+        title = tab.title,
         url = tabUrl,
         modifier = Modifier
             .clip(shape)
@@ -290,38 +289,26 @@ private fun EmptyTabSearchResults(
 
 private class TabSearchParameterProvider : PreviewParameterProvider<TabsTrayState> {
     private val searchResults = listOf(
-        TabsTrayItem.Tab(
-            tabData = createTab(
-                url = "mozilla.org",
-                id = "1",
-                title = "Mozilla",
-            ),
+        createTab(
+            url = "mozilla.org",
+            id = "1",
+            title = "Mozilla",
         ),
-        TabsTrayItem.Tab(
-            tabData = createTab(
-                url = "maps.google.com",
-                id = "2",
-                title = "Google Maps",
-            ),
+        createTab(
+            url = "maps.google.com",
+            id = "2",
+            title = "Google Maps",
         ),
-        TabsTrayItem.Tab(
-            tabData = createTab(
-                url = "google.com/maps/place/Mozilla+Toronto/@43.6472856,-79.3944129,17z/",
-                id = "3",
-                title = "Long Google Maps URL",
-            ),
+        createTab(
+            url = "google.com/maps/place/Mozilla+Toronto/@43.6472856,-79.3944129,17z/",
+            id = "3",
+            title = "Long Google Maps URL",
         ),
     )
 
     private val manySearchResults = buildList {
         repeat(4) { index ->
-            searchResults.forEach { tab ->
-                add(
-                    TabsTrayItem.Tab(
-                        tabData = tab.tabData.copy(id = "${tab.id}-$index"),
-                    ),
-                )
-            }
+            searchResults.forEach { tab -> add(tab.copy(id = "${tab.id}-$index")) }
         }
     }
 

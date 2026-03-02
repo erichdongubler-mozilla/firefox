@@ -53,7 +53,6 @@ import org.mozilla.fenix.tabstray.browser.InactiveTabsController
 import org.mozilla.fenix.tabstray.browser.TabsTrayFabController
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.ext.isActiveDownload
-import org.mozilla.fenix.tabstray.ext.isNormalTab
 import org.mozilla.fenix.tabstray.ext.isSelect
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
@@ -387,7 +386,7 @@ class DefaultTabManagerController(
      */
     @VisibleForTesting
     internal fun deleteMultipleTabs(tabs: Collection<TabsTrayItem>) {
-        val isPrivate = tabs.filterIsInstance<TabsTrayItem.Tab>().any { it.tabData.content.private }
+        val isPrivate = tabs.filterIsInstance<TabsTrayItem.Tab>().any { it.private }
 
         // If user closes all the tabs from selected tabs page dismiss tray and navigate home.
         if (tabs.size == browserStore.state.getNormalOrPrivateTabs(isPrivate).size) {
@@ -434,7 +433,7 @@ class DefaultTabManagerController(
     }
 
     override fun handleBookmarkSelectedTabsClicked() {
-        val tabs = tabsTrayStore.state.mode.selectedTabs.filterIsInstance<TabsTrayItem.Tab>().map { it.tabData }
+        val tabs = tabsTrayStore.state.mode.selectedTabs.filterIsInstance<TabsTrayItem.Tab>()
 
         tabsTrayStore.dispatch(TabsTrayAction.BookmarkSelectedTabs(tabCount = tabs.size))
 
@@ -455,8 +454,8 @@ class DefaultTabManagerController(
                 tabs.forEach { tab ->
                     bookmarksStorage.addItem(
                         parentGuid = parentNode!!.guid,
-                        url = tab.content.url,
-                        title = tab.content.title,
+                        url = tab.url,
+                        title = tab.title,
                         position = null,
                     )
                 }
@@ -483,8 +482,9 @@ class DefaultTabManagerController(
     }
 
     @VisibleForTesting
-    internal fun showCollectionsDialog(tabs: Collection<TabsTrayItem>) {
-        val transformedTabs = tabs.filterIsInstance<TabsTrayItem.Tab>().map { it.tabData }
+    internal fun showCollectionsDialog(tabs: Collection<TabsTrayItem.Tab>) {
+        val tabIds = tabs.map { it.id }
+        val transformedTabs = browserStore.state.tabs.filter { it.id in tabIds }
         CollectionsDialog(
             storage = collectionStorage,
             sessionList = transformedTabs,
@@ -515,12 +515,12 @@ class DefaultTabManagerController(
     }
 
     override fun handleShareSelectedTabsClicked() {
-        val tabs = tabsTrayStore.state.mode.selectedTabs.filterIsInstance<TabsTrayItem.Tab>().map { it.tabData }
+        val tabs = tabsTrayStore.state.mode.selectedTabs.filterIsInstance<TabsTrayItem.Tab>()
 
         TabsTray.shareSelectedTabs.record(TabsTray.ShareSelectedTabsExtra(tabCount = tabs.size))
 
         val data = tabs.map {
-            ShareData(url = it.content.url, title = it.content.title)
+            ShareData(url = it.url, title = it.title)
         }
         val directions = TabManagementFragmentDirections.actionGlobalShareFragment(
             data = data.toTypedArray(),
@@ -564,8 +564,7 @@ class DefaultTabManagerController(
 
     override fun handleTabLongClick(tab: TabsTrayItem): Boolean {
         return if (tab is TabsTrayItem.Tab &&
-            tab.tabData.isNormalTab() &&
-            tabsTrayStore.state.mode.selectedTabs.isEmpty()
+            !tab.private && tabsTrayStore.state.mode.selectedTabs.isEmpty()
         ) {
             Collections.longPress.record(NoExtras())
             tabsTrayStore.dispatch(TabsTrayAction.AddSelectTab(tab))
@@ -584,7 +583,7 @@ class DefaultTabManagerController(
                 appStore.dispatch(
                     AppAction.BrowsingModeManagerModeChanged(
                         mode = BrowsingMode.fromBoolean(
-                            tab.tabData.content.private,
+                            tab.private,
                         ),
                     ),
                 )

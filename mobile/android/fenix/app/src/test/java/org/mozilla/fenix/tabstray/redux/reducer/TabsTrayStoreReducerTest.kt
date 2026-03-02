@@ -23,7 +23,7 @@ class TabsTrayStoreReducerTest {
 
     @Test
     fun `WHEN UpdateInactiveTabs THEN inactive tabs are added`() {
-        val inactiveTabs = listOf(TabsTrayItem.Tab(tabData = createTab("https://mozilla.org")))
+        val inactiveTabs = listOf(TabsTrayItem.Tab(tab = createTab("https://mozilla.org")))
         val initialState = TabsTrayState()
         val expectedState = initialState.copy(inactiveTabs = inactiveTabs)
 
@@ -53,7 +53,7 @@ class TabsTrayStoreReducerTest {
 
     @Test
     fun `WHEN UpdateNormalTabs THEN normal tabs are added`() {
-        val normalTabs = listOf(TabsTrayItem.Tab(tabData = createTab("https://mozilla.org")))
+        val normalTabs = listOf(TabsTrayItem.Tab(tab = createTab("https://mozilla.org")))
         val initialState = TabsTrayState()
         val expectedState = initialState.copy(normalTabs = normalTabs)
 
@@ -67,7 +67,7 @@ class TabsTrayStoreReducerTest {
 
     @Test
     fun `WHEN UpdatePrivateTabs THEN private tabs are added`() {
-        val privateTabs = listOf(TabsTrayItem.Tab(tabData = createTab("https://mozilla.org", private = true)))
+        val privateTabs = listOf(TabsTrayItem.Tab(tab = createTab("https://mozilla.org", private = true)))
         val initialState = TabsTrayState()
         val expectedState = initialState.copy(privateTabs = privateTabs)
 
@@ -266,7 +266,7 @@ class TabsTrayStoreReducerTest {
         val initialState = TabsTrayState(
             tabSearchState = TabSearchState(
                 query = "mozilla",
-                searchResults = listOf(TabsTrayItem.Tab(tabData = createTab("https://mozilla.org"))),
+                searchResults = listOf(TabsTrayItem.Tab(tab = createTab("https://mozilla.org"))),
             ),
         )
 

@@ -43,7 +43,6 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.storage.sync.TabEntry
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.snackbar.Snackbar
@@ -51,7 +50,7 @@ import mozilla.components.compose.base.snackbar.SnackbarVisuals
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
-import org.mozilla.fenix.tabstray.ext.isNormalTab
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
@@ -393,12 +392,12 @@ private fun TabsTrayPreview(
                 tabsTrayStore.dispatch(TabsTrayAction.PageSelected(page))
             },
             onTabClose = { tab ->
-                if (tab.tabData.isNormalTab()) {
-                    val newTabs = tabsTrayStore.state.normalTabs - tab
-                    tabsTrayStore.dispatch(TabsTrayAction.UpdateNormalTabs(newTabs))
-                } else {
+                if (tab.private) {
                     val newTabs = tabsTrayStore.state.privateTabs - tab
                     tabsTrayStore.dispatch(TabsTrayAction.UpdatePrivateTabs(newTabs))
+                } else {
+                    val newTabs = tabsTrayStore.state.normalTabs - tab
+                    tabsTrayStore.dispatch(TabsTrayAction.UpdateNormalTabs(newTabs))
                 }
 
                 scope.launch {
@@ -493,21 +492,17 @@ private fun TabsTrayPreview(
             onInactiveTabsCFRDismiss = {},
             shouldShowLockPbmBanner = false,
             onOpenNewNormalTabClicked = {
-                val newTab = TabsTrayItem.Tab(
-                    tabData = createTab(
-                        url = "www.mozilla.com",
-                        private = false,
-                    ),
+                val newTab = createTab(
+                    url = "www.mozilla.com",
+                    private = false,
                 )
                 val allTabs = tabsTrayStore.state.normalTabs + newTab
                 tabsTrayStore.dispatch(TabsTrayAction.UpdateNormalTabs(allTabs))
             },
             onOpenNewPrivateTabClicked = {
-                val newTab = TabsTrayItem.Tab(
-                    tabData = createTab(
-                        url = "www.mozilla.com",
-                        private = true,
-                    ),
+                val newTab = createTab(
+                    url = "www.mozilla.com",
+                    private = true,
                 )
                 val allTabs = tabsTrayStore.state.privateTabs + newTab
                 tabsTrayStore.dispatch(TabsTrayAction.UpdatePrivateTabs(allTabs))
@@ -598,12 +593,10 @@ private fun generateFakeTabsList(
     isPrivate: Boolean = false,
 ): List<TabsTrayItem.Tab> =
     List(tabCount) { index ->
-        TabsTrayItem.Tab(
-            tabData = createTab(
-                id = "tabId$index-$isPrivate",
-                url = "www.mozilla.com",
-                private = isPrivate,
-            ),
+        createTab(
+            id = "tabId$index-$isPrivate",
+            url = "www.mozilla.com",
+            private = isPrivate,
         )
     }
 

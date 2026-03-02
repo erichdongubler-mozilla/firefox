@@ -44,7 +44,6 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.RadioCheckmark
 import mozilla.components.compose.base.RadioCheckmarkColors
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
@@ -54,10 +53,9 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissBox2
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.compose.TabThumbnail
-import org.mozilla.fenix.compose.thumbnailImageData
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
-import org.mozilla.fenix.tabstray.ext.toDisplayTitle
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.ui.sharedTabTransition
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
@@ -220,7 +218,7 @@ private fun Header(
         Spacer(modifier = Modifier.width(4.dp))
 
         Text(
-            text = tab.tabData.toDisplayTitle().take(MAX_URI_LENGTH),
+            text = tab.title.take(MAX_URI_LENGTH),
             modifier = Modifier.weight(1f),
             color = if (isSelected) {
                 MaterialTheme.colorScheme.onPrimary
@@ -249,7 +247,7 @@ private fun TabIcon(
     tab: TabsTrayItem.Tab,
     isSelected: Boolean,
 ) {
-    val icon = tab.tabData.content.icon
+    val icon = tab.icon
     if (icon != null) {
         icon.prepareToDraw()
         Image(
@@ -257,7 +255,7 @@ private fun TabIcon(
             contentDescription = null,
             modifier = Modifier.size(TabHeaderFaviconSize),
         )
-    } else if (tab.tabData.content.url == ABOUT_HOME_URL) {
+    } else if (tab.url == ABOUT_HOME_URL) {
         Image(
             painter = painterResource(id = R.drawable.ic_firefox),
             contentDescription = null,
@@ -330,7 +328,7 @@ private fun CloseButton(
             painter = painterResource(id = iconsR.drawable.mozac_ic_cross_20),
             contentDescription = stringResource(
                 id = R.string.close_tab_title,
-                tab.tabData.toDisplayTitle(),
+                tab.title,
             ),
             tint = if (isSelected) {
                 MaterialTheme.colorScheme.onPrimary
@@ -354,12 +352,6 @@ val gridItemAspectRatio: Float
         0.8f
     }
 
-/**
- * Thumbnail specific for the [TabGridTabItem], which can be selected.
- *
- * @param tab Tab, containing the thumbnail to be displayed.
- * @param size Size of the thumbnail.
- */
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun Thumbnail(
@@ -367,7 +359,7 @@ private fun Thumbnail(
     size: Int,
 ) {
     TabThumbnail(
-        tabThumbnailImageData = tab.tabData.thumbnailImageData(),
+        tabThumbnailImageData = tab.toThumbnailImageData(),
         thumbnailSizePx = size,
         modifier = Modifier
             .semantics(mergeDescendants = true) {
@@ -437,11 +429,9 @@ private fun TabGridItemPreview(
 ) {
     FirefoxTheme {
         TabContent(
-            tab = TabsTrayItem.Tab(
-                tabData = createTab(
-                    url = tabGridItemState.url,
-                    title = tabGridItemState.title,
-                ),
+            tab = createTab(
+                url = tabGridItemState.url,
+                title = tabGridItemState.title,
             ),
             thumbnailSize = 108,
             isSelected = tabGridItemState.isSelected,

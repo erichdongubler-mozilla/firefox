@@ -42,7 +42,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.cfr.CFRPopup
 import mozilla.components.compose.cfr.CFRPopupLayout
@@ -51,7 +50,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.ExpandableListHeader
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
-import org.mozilla.fenix.tabstray.ext.toDisplayTitle
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.ui.tabitems.BasicTabListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
@@ -122,14 +121,14 @@ fun InactiveTabsList(
             )
 
             inactiveTabs.forEachIndexed { index, tab ->
-                val tabUrl = tab.tabData.content.url.toShortUrl()
-                val faviconPainter = tab.tabData.content.icon?.run {
+                val tabUrl = tab.url.toShortUrl()
+                val faviconPainter = tab.icon?.run {
                     prepareToDraw()
                     BitmapPainter(asImageBitmap())
                 }
 
                 BasicTabListItem(
-                    title = tab.tabData.toDisplayTitle(),
+                    title = tab.title,
                     url = tabUrl,
                     faviconPainter = faviconPainter,
                     onClick = { onTabClick(tab) },
@@ -340,12 +339,8 @@ private fun InactiveTabsListPreview() {
         Box(Modifier.background(MaterialTheme.colorScheme.surface)) {
             InactiveTabsList(
                 inactiveTabs = listOf(
-                    TabsTrayItem.Tab(
-                        tabData = createTab(url = "www.mozilla.com"),
-                    ),
-                    TabsTrayItem.Tab(
-                        tabData = createTab(url = "www.example.com"),
-                    ),
+                    createTab(url = "www.mozilla.com"),
+                    createTab(url = "www.example.com"),
                 ),
                 expanded = expanded,
                 showAutoCloseDialog = showAutoClosePrompt,

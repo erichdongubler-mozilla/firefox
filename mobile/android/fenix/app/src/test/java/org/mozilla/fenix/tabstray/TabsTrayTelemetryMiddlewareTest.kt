@@ -190,8 +190,8 @@ class TabsTrayTelemetryMiddlewareTest {
         TestCase.assertNull(TabSearch.resultClicked.testGetValue())
 
         val tabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab(url = "mozilla.com")),
-            TabsTrayItem.Tab(tabData = createTab(url = "developer.mozilla.org")),
+            TabsTrayItem.Tab(tab = createTab(url = "mozilla.com")),
+            TabsTrayItem.Tab(tab = createTab(url = "developer.mozilla.org")),
         )
         store.dispatch(TabSearchAction.SearchResultsUpdated(results = tabs))
 

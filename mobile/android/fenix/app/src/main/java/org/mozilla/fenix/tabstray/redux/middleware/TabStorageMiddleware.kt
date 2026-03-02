@@ -64,14 +64,17 @@ class TabStorageMiddleware(
                 val initialTabData = transformTabData(tabData = initialTabData)
                 store.dispatch(TabsTrayAction.TabDataUpdateReceived(tabStorageUpdate = initialTabData))
 
-                // Set up the Browser store listener
-                scope.launch {
+                // Set up the tab data observer and set the Flow collection to the lifetime of main scope
+                mainScope.launch {
                     tabDataFlow
                         .distinctUntilChanged(areEquivalent = ::areStatesEquivalent)
                         .collect { state ->
-                            val tabData = transformTabData(tabData = state)
-                            mainScope.launch {
-                                store.dispatch(TabsTrayAction.TabDataUpdateReceived(tabStorageUpdate = tabData))
+                            scope.launch {
+                                val tabData = transformTabData(tabData = state)
+
+                                mainScope.launch {
+                                    store.dispatch(TabsTrayAction.TabDataUpdateReceived(tabStorageUpdate = tabData))
+                                }
                             }
                         }
                 }
@@ -89,10 +92,10 @@ class TabStorageMiddleware(
 
         tabData.tabs.forEach { tab ->
             when {
-                tab.content.private -> privateTabs.add(TabsTrayItem.Tab(tabData = tab))
+                tab.content.private -> privateTabs.add(TabsTrayItem.Tab(tab = tab))
                 inactiveTabsEnabled && !tab.isActive(maxActiveTime = maxActiveTime) ->
-                    inactiveTabs.add(TabsTrayItem.Tab(tabData = tab))
-                else -> normalTabs.add(TabsTrayItem.Tab(tabData = tab))
+                    inactiveTabs.add(TabsTrayItem.Tab(tab = tab))
+                else -> normalTabs.add(TabsTrayItem.Tab(tab = tab))
             }
         }
 

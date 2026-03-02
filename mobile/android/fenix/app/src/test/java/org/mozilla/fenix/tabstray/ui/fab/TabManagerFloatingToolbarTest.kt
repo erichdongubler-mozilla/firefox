@@ -39,8 +39,8 @@ class TabManagerFloatingToolbarTest {
     val composeTestRule = createComposeRule()
 
     private val testTabs = listOf(
-        TabsTrayItem.Tab(tabData = createTab(url = "https://www.google.com", id = "a")),
-        TabsTrayItem.Tab(tabData = createTab(url = "https://www.duckduckgo.com", id = "b")),
+        TabsTrayItem.Tab(tab = createTab(url = "https://www.google.com", id = "a")),
+        TabsTrayItem.Tab(tab = createTab(url = "https://www.duckduckgo.com", id = "b")),
     )
 
     @Test

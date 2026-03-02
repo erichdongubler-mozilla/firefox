@@ -19,7 +19,7 @@ class TabSearchNavigationMiddlewareTest {
     fun `WHEN SearchResultClicked THEN invoke onSearchResultSelected with clicked tab`() = runTest {
         var receivedTab: TabsTrayItem? = null
 
-        val clickedTab = TabsTrayItem.Tab(tabData = createTab(url = "https://mozilla.org"))
+        val clickedTab = TabsTrayItem.Tab(tab = createTab(url = "https://mozilla.org"))
 
         val store = TabsTrayStore(
             initialState = TabsTrayState(),

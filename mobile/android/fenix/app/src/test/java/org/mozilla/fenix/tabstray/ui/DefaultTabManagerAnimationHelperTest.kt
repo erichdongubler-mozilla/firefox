@@ -7,13 +7,13 @@ package org.mozilla.fenix.tabstray.ui
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import mozilla.components.browser.state.state.TabSessionState
-import mozilla.components.browser.state.state.createTab
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.R
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.state.Page
 
 private val ToolbarHeight = 10.dp
@@ -211,7 +211,7 @@ class DefaultTabManagerAnimationHelperTest {
         assertEquals(transitionTab, actualTab)
     }
 
-    private fun createHelperThatTransitions(selectedTab: TabSessionState) = createHelper(
+    private fun createHelperThatTransitions(selectedTab: TabsTrayItem.Tab) = createHelper(
         selectedTab = selectedTab,
         previousDestinationId = R.id.browserFragment,
     )
@@ -225,7 +225,7 @@ class DefaultTabManagerAnimationHelperTest {
     )
 
     private fun createHelper(
-        selectedTab: TabSessionState? = null,
+        selectedTab: TabsTrayItem.Tab? = null,
         initialPage: Page = Page.NormalTabs,
         previousDestinationId: Int? = null,
         homepageAsANewTabEnabled: Boolean = false,

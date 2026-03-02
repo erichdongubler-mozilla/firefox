@@ -51,7 +51,7 @@ class TabSearchMiddleware(
                             tabs
                                 .filterIsInstance<TabsTrayItem.Tab>()
                                 .filter { it.contains(text = query) }
-                                .sortedByDescending { it.tabData.lastAccess }
+                                .sortedByDescending { it.lastAccess }
                                 .partition { it.isHomepageItem }
 
                         // If the results contain homepages, only display one homepage result

@@ -43,6 +43,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.plus
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.compose.base.modifier.thenConditional
@@ -83,7 +84,6 @@ import org.mozilla.fenix.tabstray.controller.TabManagerController
 import org.mozilla.fenix.tabstray.controller.TabManagerInteractor
 import org.mozilla.fenix.tabstray.data.TabData
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
-import org.mozilla.fenix.tabstray.ext.isNormalTab
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.middleware.TabSearchMiddleware
@@ -184,6 +184,7 @@ class TabManagementFragment : DialogFragment() {
                         inactiveTabsEnabled = requireComponents.settings.inactiveTabsAreEnabled,
                         initialTabData = TabData(browserState = requireComponents.core.store.stateFlow.value),
                         tabDataFlow = requireComponents.core.store.stateFlow.map { TabData(browserState = it) },
+                        mainScope = lifecycleScope,
                     ),
                 ),
             )
@@ -782,7 +783,7 @@ class TabManagementFragment : DialogFragment() {
     /**
      * @param selectedPage: The currently selected [TabsTray] [Page]
      * @param mode: The current [TabsTrayState] operating mode
-     * @param tabState: The selected [TabSessionState]
+     * @param tabState: The selected [TabsTrayItem.Tab]
      * The TabsTray transition animation should be performed if enabled in settings,
      * if the selected tab is on the current active tab page,
      * and the current TabsTray mode is the default (normal) mode (e.g., not a special select mode).
@@ -805,8 +806,8 @@ class TabManagementFragment : DialogFragment() {
      * the selected page is normal and the tab is normal.  Returns false otherwise.
      */
     private fun tabMatchesPage(selectedPage: Page, tabState: TabsTrayItem.Tab?): Boolean {
-        return (selectedPage == Page.NormalTabs && tabState?.tabData?.isNormalTab() == true) ||
-                (selectedPage == Page.PrivateTabs && tabState?.tabData?.content?.private == true)
+        return (selectedPage == Page.NormalTabs && tabState?.private == false) ||
+                (selectedPage == Page.PrivateTabs && tabState?.private == true)
     }
 
     /**

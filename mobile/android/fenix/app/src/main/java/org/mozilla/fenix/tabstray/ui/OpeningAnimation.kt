@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.trace
 import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.compose.TabThumbnailImageData
-import org.mozilla.fenix.compose.thumbnailImageData
 import org.mozilla.fenix.tabstray.TabsTrayTraceTag.TRACE_NAME_ANIMATION_TAB_MANAGER_TO_THUMBNAIL
 import org.mozilla.fenix.tabstray.TabsTrayTraceTag.TRACE_NAME_ANIMATION_THUMBNAIL_TO_TAB_MANAGER
 import kotlin.math.min
@@ -162,7 +161,7 @@ internal fun TabManagerTransitionLayout(
                     is TabManagerAnimationState.TabManagerToThumbnail -> {
                         trace(TRACE_NAME_ANIMATION_TAB_MANAGER_TO_THUMBNAIL) {
                             TabManagerSharedElementThumbnail(
-                                tabThumbnailImageData = targetState.tab.thumbnailImageData(),
+                                tabThumbnailImageData = targetState.tab.toThumbnailImageData(),
                                 transitionPaddingValues = tabManagerAnimationHelper.transitionPaddingValues,
                             )
                         }

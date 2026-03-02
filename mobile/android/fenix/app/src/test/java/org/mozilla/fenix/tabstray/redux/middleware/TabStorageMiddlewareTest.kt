@@ -10,6 +10,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import mozilla.components.browser.state.state.createTab
@@ -114,14 +115,14 @@ class TabStorageMiddlewareTest {
                     initialTabData = tabFlow.value,
                     tabDataFlow = tabFlow,
                     scope = backgroundScope,
-                    mainScope = this,
+                    mainScope = backgroundScope,
                 ),
             ),
         )
 
         tabFlow.emit(initialState.copy(selectedTabId = expectedTabId))
 
-        yield()
+        runCurrent()
         advanceUntilIdle()
 
         assertEquals(expectedTabId, store.state.selectedTabId)
@@ -142,14 +143,14 @@ class TabStorageMiddlewareTest {
                     initialTabData = tabFlow.value,
                     tabDataFlow = tabFlow,
                     scope = backgroundScope,
-                    mainScope = this,
+                    mainScope = backgroundScope,
                 ),
             ),
         )
 
         tabFlow.emit(initialState.copy(selectedTabId = expectedTab.id, tabs = initialState.tabs + expectedTab))
 
-        yield()
+        runCurrent()
         advanceUntilIdle()
 
         assertEquals(expectedTab.id, store.state.selectedTabId)
@@ -170,14 +171,14 @@ class TabStorageMiddlewareTest {
                     initialTabData = tabFlow.value,
                     tabDataFlow = tabFlow,
                     scope = backgroundScope,
-                    mainScope = this,
+                    mainScope = backgroundScope,
                 ),
             ),
         )
 
         tabFlow.emit(initialState.copy(selectedTabId = expectedTab.id, tabs = initialState.tabs + expectedTab))
 
-        yield()
+        runCurrent()
         advanceUntilIdle()
 
         assertEquals(expectedTab.id, store.state.selectedTabId)
@@ -198,14 +199,14 @@ class TabStorageMiddlewareTest {
                     initialTabData = tabFlow.value,
                     tabDataFlow = tabFlow,
                     scope = backgroundScope,
-                    mainScope = this,
+                    mainScope = backgroundScope,
                 ),
             ),
         )
 
         tabFlow.emit(initialState.copy(selectedTabId = expectedTab.id, tabs = initialState.tabs + expectedTab))
 
-        yield()
+        runCurrent()
         advanceUntilIdle()
 
         assertEquals(expectedTab.id, store.state.selectedTabId)

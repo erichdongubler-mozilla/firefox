@@ -17,8 +17,8 @@ class TabSearchReducerTest {
     @Test
     fun `WHEN SearchQueryChanged THEN tab search query is updated`() {
         val tabs = listOf(
-            TabsTrayItem.Tab(tabData = createTab("https://example.com")),
-            TabsTrayItem.Tab(tabData = createTab("https://mozilla.org")),
+            TabsTrayItem.Tab(tab = createTab("https://example.com")),
+            TabsTrayItem.Tab(tab = createTab("https://mozilla.org")),
         )
 
         val initialState = TabsTrayState(
@@ -52,8 +52,8 @@ class TabSearchReducerTest {
             ),
         )
 
-        val firstTab = TabsTrayItem.Tab(tabData = createTab("https://mozilla.org"))
-        val secondTab = TabsTrayItem.Tab(tabData = createTab("https://developer.mozilla.org"))
+        val firstTab = TabsTrayItem.Tab(tab = createTab("https://mozilla.org"))
+        val secondTab = TabsTrayItem.Tab(tab = createTab("https://developer.mozilla.org"))
         val results = listOf(firstTab, secondTab)
 
         val resultState = TabSearchActionReducer.reduce(
@@ -72,8 +72,8 @@ class TabSearchReducerTest {
 
     @Test
     fun `WHEN search results are updated with empty list THEN the state reflects an empty results list`() {
-        val firstTab = TabsTrayItem.Tab(tabData = createTab("https://mozilla.org"))
-        val secondTab = TabsTrayItem.Tab(tabData = createTab("https://developer.mozilla.org"))
+        val firstTab = TabsTrayItem.Tab(tab = createTab("https://mozilla.org"))
+        val secondTab = TabsTrayItem.Tab(tab = createTab("https://developer.mozilla.org"))
         val results = listOf(firstTab, secondTab)
 
         val initialState = TabsTrayState(
@@ -95,7 +95,7 @@ class TabSearchReducerTest {
 
     @Test
     fun `WHEN SearchResultClicked THEN state is unchanged`() {
-        val tab = TabsTrayItem.Tab(tabData = createTab("https://mozilla.org"))
+        val tab = TabsTrayItem.Tab(tab = createTab("https://mozilla.org"))
         val initialState = TabsTrayState(
             tabSearchState = TabSearchState(
                 query = "mozilla",
