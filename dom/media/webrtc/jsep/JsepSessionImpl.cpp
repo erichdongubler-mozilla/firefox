@@ -862,6 +862,13 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
       continue;
     }
 
+    // If the transceiver has been stopped, but we receive an enabled msection
+    // for that transceiver, don't try to resurrect the dead transceiver.
+    if (transceiver->IsStopped()) {
+      JSEP_SET_ERROR("Transceiver for level " << i << " has been stopped.");
+      return dom::PCError::OperationError;
+    }
+
     bool hasOwnTransport = mSdpHelper.OwnsTransport(
         msection, bundledMids,
         (type == kJsepSdpOffer) ? sdp::kOffer : sdp::kAnswer);
