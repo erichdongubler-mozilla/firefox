@@ -535,14 +535,14 @@ class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS MOZ_GSL_OWNER Maybe
 
   /* Returns the contents of this Maybe<T> by pointer. Unsafe unless |isSome()|.
    */
-  T* ptr();
+  constexpr T* ptr();
   constexpr const T* ptr() const;
 
   /*
    * Returns the contents of this Maybe<T> by pointer. If |isNothing()|,
    * returns the default value provided.
    */
-  T* ptrOr(T* aDefault) {
+  constexpr T* ptrOr(T* aDefault) {
     if (isSome()) {
       return ptr();
     }
@@ -561,7 +561,7 @@ class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS MOZ_GSL_OWNER Maybe
    * returns the value returned from the function or functor provided.
    */
   template <typename F>
-  T* ptrOrFrom(F&& aFunc) {
+  constexpr T* ptrOrFrom(F&& aFunc) {
     if (isSome()) {
       return ptr();
     }
@@ -569,7 +569,7 @@ class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS MOZ_GSL_OWNER Maybe
   }
 
   template <typename F>
-  const T* ptrOrFrom(F&& aFunc) const {
+  constexpr const T* ptrOrFrom(F&& aFunc) const {
     if (isSome()) {
       return ptr();
     }
@@ -992,7 +992,7 @@ constexpr T Maybe<T>::value() const&& {
 }
 
 template <typename T>
-T* Maybe<T>::ptr() {
+constexpr T* Maybe<T>::ptr() {
   MOZ_RELEASE_ASSERT(isSome());
   return &ref();
 }
