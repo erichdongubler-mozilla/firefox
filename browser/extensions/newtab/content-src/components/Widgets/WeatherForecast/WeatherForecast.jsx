@@ -337,7 +337,7 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
             />
           )}
           <panel-item
-            data-l10n-id="newtab-weather-menu-hide-weather-v2"
+            data-l10n-id="newtab-widget-menu-hide"
             onClick={handleHideWeather}
           />
           <panel-item

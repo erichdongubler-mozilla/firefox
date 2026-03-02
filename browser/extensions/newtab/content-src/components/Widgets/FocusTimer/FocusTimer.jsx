@@ -722,7 +722,7 @@ export const FocusTimer = ({
               }}
             />
             <panel-item
-              data-l10n-id="newtab-widget-timer-menu-hide"
+              data-l10n-id="newtab-widget-menu-hide"
               onClick={() => {
                 batch(() => {
                   handlePrefUpdate("widgets.focusTimer.enabled", false);

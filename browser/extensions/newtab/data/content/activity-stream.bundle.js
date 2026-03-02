@@ -11942,7 +11942,7 @@ function Lists({
     "data-l10n-id": "newtab-widget-lists-menu-copy",
     onClick: () => handleCopyListToClipboard()
   }), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-widget-lists-menu-hide",
+    "data-l10n-id": "newtab-widget-menu-hide",
     onClick: () => handleHideLists()
   }), /*#__PURE__*/external_React_default().createElement("panel-item", {
     className: "learn-more",
@@ -12772,7 +12772,7 @@ const FocusTimer = ({
       handlePrefUpdate("widgets.focusTimer.showSystemNotifications", !showSystemNotifications);
     }
   }), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-widget-timer-menu-hide",
+    "data-l10n-id": "newtab-widget-menu-hide",
     onClick: () => {
       (0,external_ReactRedux_namespaceObject.batch)(() => {
         handlePrefUpdate("widgets.focusTimer.enabled", false);
@@ -13246,7 +13246,7 @@ function WeatherForecast({
       "data-l10n-id": "newtab-weather-menu-change-weather-display-simple",
       onClick: () => handleChangeDisplay("simple")
     }), /*#__PURE__*/external_React_default().createElement("panel-item", {
-      "data-l10n-id": "newtab-weather-menu-hide-weather-v2",
+      "data-l10n-id": "newtab-widget-menu-hide",
       onClick: handleHideWeather
     }), /*#__PURE__*/external_React_default().createElement("panel-item", {
       "data-l10n-id": "newtab-weather-menu-learn-more",
@@ -16108,7 +16108,7 @@ class _Weather extends (external_React_default()).PureComponent {
       onClick: () => this.handleChangeDisplay("simple")
     }), /*#__PURE__*/external_React_default().createElement("panel-item", {
       id: "weather-menu-hide",
-      "data-l10n-id": "newtab-weather-menu-hide-weather-v2",
+      "data-l10n-id": "newtab-widget-menu-hide",
       onClick: this.handleHideWeather
     }), /*#__PURE__*/external_React_default().createElement("panel-item", {
       id: "weather-menu-learn-more",

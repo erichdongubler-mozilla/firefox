@@ -803,7 +803,7 @@ function Lists({
             onClick={() => handleCopyListToClipboard()}
           ></panel-item>
           <panel-item
-            data-l10n-id="newtab-widget-lists-menu-hide"
+            data-l10n-id="newtab-widget-menu-hide"
             onClick={() => handleHideLists()}
           ></panel-item>
           <panel-item

@@ -629,7 +629,7 @@ export class _Weather extends React.PureComponent {
           )}
           <panel-item
             id="weather-menu-hide"
-            data-l10n-id="newtab-weather-menu-hide-weather-v2"
+            data-l10n-id="newtab-widget-menu-hide"
             onClick={this.handleHideWeather}
           />
           <panel-item

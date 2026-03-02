@@ -212,9 +212,7 @@ describe("<WeatherForecast>", () => {
 
       assert.ok(
         wrapper
-          .find(
-            "panel-item[data-l10n-id='newtab-weather-menu-hide-weather-v2']"
-          )
+          .find("panel-item[data-l10n-id='newtab-widget-menu-hide']")
           .exists()
       );
 
@@ -414,7 +412,7 @@ describe("<WeatherForecast>", () => {
       );
 
       const hideWeatherItem = wrapper.find(
-        "panel-item[data-l10n-id='newtab-weather-menu-hide-weather-v2']"
+        "panel-item[data-l10n-id='newtab-widget-menu-hide']"
       );
       hideWeatherItem.props().onClick();
 
