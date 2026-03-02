@@ -1240,6 +1240,65 @@ void ModuleLoaderBase::MovePreloadedSetToResolvedSet(
   ms->ReleasePreloadedResolvedSet();
 }
 
+// If the module script is preloaded, reset the [[LoadedModules]]
+//
+void ModuleLoaderBase::ResetPreloadedModule(nsIURI* aURI) {
+  MOZ_ASSERT(aURI);
+  ModuleMapKey key(aURI, ModuleType::JavaScript);
+  if (!IsModuleFetched(key)) {
+    return;
+  }
+
+  RefPtr<ModuleScript> ms;
+  MOZ_ALWAYS_TRUE(mFetchedModules.Get(key, getter_AddRefs(ms)));
+  if (!ms->ForPreload()) {
+    return;
+  }
+
+  LOG(
+      ("ModuleLoaderBase::ResetPreloadedModule: module script (%p) reset "
+       "preloaded info",
+       ms.get()));
+  ms->ResetPreload();
+}
+
+// This is called before registering an import map, so we clear the remaing
+// mPreloads from the ScriptLoader
+void ModuleLoaderBase::ClearPreloadedModuleGraph(
+    ModuleLoadRequest* aRootRequest) {
+  MOZ_ASSERT(ImportMap::IsMultipleImportMapsSupported());
+  MOZ_ASSERT(aRootRequest);
+  MOZ_ASSERT(aRootRequest->mLoadContext->IsPreload());
+  LOG(("ScriptLoadRequest (%p): ClearPreloadedModuleGraph", aRootRequest));
+
+  ModuleScript* ms = aRootRequest->mModuleScript;
+  if (!ms) {
+    return;
+  }
+
+  // If the preloaded request has a module script which has been used previously
+  // in another preloaed module graph, which has been reused and is a normal
+  // load now, we don't need to reset its data anymore.
+  if (!ms->ForPreload()) {
+    return;
+  }
+
+  ms->ResetPreload();
+
+  if (!ms->HasPreloadedResolvedSet()) {
+    return;
+  }
+
+  ResolvedModuleSet* set = ms->GetPreloadedResolvedSet();
+  for (auto iter = set->iter(); !iter.done(); iter.next()) {
+    nsCOMPtr<nsIURI> uri = iter.get()->TakeResult();
+    MOZ_ASSERT(uri);
+    ResetPreloadedModule(uri);
+  }
+  set->clear();
+  ms->ReleasePreloadedResolvedSet();
+}
+
 void ModuleLoaderBase::StartFetchingModuleDependencies(
     ModuleLoadRequest* aRequest) {
   if (aRequest->IsCanceled()) {
