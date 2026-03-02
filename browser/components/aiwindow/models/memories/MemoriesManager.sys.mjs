@@ -24,7 +24,8 @@ import {
   INTENTS,
   HISTORY as SOURCE_HISTORY,
   CONVERSATION as SOURCE_CONVERSATION,
-  PREF_GENERATE_MEMORIES,
+  PREF_GENERATE_MEMORIES_FROM_HISTORY,
+  PREF_GENERATE_MEMORIES_FROM_CONVERSATION,
 } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs";
 import {
   getFormattedMemoryAttributeList,
@@ -671,22 +672,39 @@ export class MemoriesManager {
   }
 
   /**
-   * Helper returns true if memories generation should be enabled.
+   * Helper returns true if memories generation from sources (either browsing history / conversation)
+   * should be enabled.
    *
    * Gating logic for all schedulers:
    * - browser.smartwindow.enabled pref
-   * - memories-specific pref
+   * - memories-from-source specific pref (history / conversation)
    * - and whether any AIWindow is currently active
    *
    * If window APIs are not available (or throw), this falls back to false.
+   *
+   * @param {string} source - either SOURCE_HISTORY or SOURCE_CONVERSATION.
+   * @return {boolean}
    */
-  static shouldEnableMemoriesSchedulers() {
+  static shouldEnableMemoriesFromSchedulers(source) {
     // Pref checks
     const aiWindowEnabled = AIWindow.isAIWindowEnabled();
-    const memoriesEnabled = Services.prefs.getBoolPref(
-      PREF_GENERATE_MEMORIES,
-      false
-    );
+    let memoriesEnabled;
+    if (source === SOURCE_HISTORY) {
+      memoriesEnabled = Services.prefs.getBoolPref(
+        PREF_GENERATE_MEMORIES_FROM_HISTORY,
+        false
+      );
+    } else if (source === SOURCE_CONVERSATION) {
+      memoriesEnabled = Services.prefs.getBoolPref(
+        PREF_GENERATE_MEMORIES_FROM_CONVERSATION,
+        false
+      );
+    } else {
+      throw new TypeError(
+        `Invalid source passed to shouldEnableMemoriesFromSchedulers: ${source}`
+      );
+    }
+
     const hasConsent = AIWindowAccountAuth.hasToSConsent;
 
     if (!aiWindowEnabled || !memoriesEnabled || !hasConsent) {

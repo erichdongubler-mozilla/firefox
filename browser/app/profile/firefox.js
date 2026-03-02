@@ -2268,7 +2268,11 @@ pref("browser.ml.pageAssist.enabled", false);
 pref("browser.smartwindow.apiKey", '');
 pref("browser.smartwindow.enabled", false);
 pref("browser.smartwindow.endpoint", "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1");
+//TODO(Bug 2017608) - to be cleaned up by Frontend when uis are updated.
 pref("browser.smartwindow.memories", true);
+pref("browser.smartwindow.memories.generateFromHistory", true);
+pref("browser.smartwindow.memories.generateFromConversation", true);
+pref("browser.smartwindow.memoriesLogLevel", "Warn");
 pref("browser.smartwindow.firstrun.autoAdvanceMS", 3000);
 pref("browser.smartwindow.firstrun.hasCompleted", false);
 pref("browser.smartwindow.showThemesNotice", true);
@@ -2281,7 +2285,6 @@ pref("browser.smartwindow.firstrun.explainerURL", "https://www.firefox.com/en-US
 pref("browser.smartwindow.chatHistory.loglevel", "Error");
 pref("browser.smartwindow.chatStore.loglevel", "Error");
 pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
-pref("browser.smartwindow.memoriesLogLevel", "Warn");
 
 // Block insecure active content on https pages
 pref("security.mixed_content.block_active_content", true);

@@ -79,7 +79,10 @@ export const INTENTS_LIST = [
 
 // if generate memories is enabled. This is used by
 // - MemoriesScheduler
-export const PREF_GENERATE_MEMORIES = "browser.smartwindow.memories";
+export const PREF_GENERATE_MEMORIES_FROM_HISTORY =
+  "browser.smartwindow.memories.generateFromHistory";
+export const PREF_GENERATE_MEMORIES_FROM_CONVERSATION =
+  "browser.smartwindow.memories.generateFromConversation";
 
 // Number of latest sessions to check drift
 export const DRIFT_EVAL_DELTA_COUNT = 3;
