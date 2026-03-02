@@ -2906,6 +2906,14 @@ class Settings(
     )
 
     /**
+     * Whether the Tab Groups feature is enabled.
+     */
+    var tabGroupsEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_tab_groups),
+        default = { DefaultTabManagementFeatureHelper.tabGroupsEnabled },
+    )
+
+    /**
      * Whether the Native Share Sheet feature is enabled.
      */
     var nativeShareSheetEnabled by booleanPreference(

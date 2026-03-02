@@ -142,6 +142,9 @@
     <!-- Label for toggling the Tab Search feature -->
     <string name="preferences_tab_search_feature" translatable="false">Enable Tab Search</string>
 
+    <!-- Label for toggling the Tab Groups feature -->
+    <string name="preferences_tab_groups_feature" translatable="false">Enable Tab Groups</string>
+
     <!-- Label for toggling the Tab Manager opening animation -->
     <string name="preferences_tab_manager_opening_animation" translatable="false">Enable Tab Manager opening animation</string>
 
