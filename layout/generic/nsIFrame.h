@@ -2412,6 +2412,8 @@ class nsIFrame : public nsQueryFrame {
     // Do not return content in native anonymous subtree (if the frame is in a
     // native anonymous subtree, the method may return content in same subtree).
     IGNORE_NATIVE_ANONYMOUS_SUBTREE = 1 << 2,
+    // Allow returning replaced elements
+    INCLUDE_REPLACED = 1 << 3,
   };
   /**
    * This function calculates the content offsets for selection relative to

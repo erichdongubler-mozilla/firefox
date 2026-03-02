@@ -14683,8 +14683,8 @@ already_AddRefed<nsDOMCaretPosition> Document::CaretPositionFromPoint(
     return nullptr;
   }
 
-  nsIFrame::ContentOffsets offsets =
-      ptFrame->GetContentOffsetsFromPoint(adjustedPoint);
+  nsIFrame::ContentOffsets offsets = ptFrame->GetContentOffsetsFromPoint(
+      adjustedPoint, nsIFrame::INCLUDE_REPLACED | nsIFrame::SKIP_HIDDEN);
 
   nsCOMPtr<nsINode> node = offsets.content;
   uint32_t offset = offsets.offset;
@@ -14730,11 +14730,46 @@ already_AddRefed<nsDOMCaretPosition> Document::CaretPositionFromPoint(
     node = node->GetParentNode();
   }
 
+  if (node && node->IsContent()) {
+    // Use offset of 0 if the returned node hides its contents via
+    // content-visibility.
+    nsIFrame* frame = node->AsContent()->GetPrimaryFrame();
+    if (frame && frame->HidesContent()) {
+      offset = 0;
+    }
+  }
+
   RefPtr<nsDOMCaretPosition> aCaretPos = new nsDOMCaretPosition(node, offset);
   if (nodeIsAnonymous) {
     aCaretPos->SetAnonymousContentNode(anonNode);
   }
   return aCaretPos.forget();
+}
+
+already_AddRefed<nsRange> Document::CaretRangeFromPoint(int32_t aX,
+                                                        int32_t aY) {
+  RefPtr<nsDOMCaretPosition> caretPos = CaretPositionFromPoint(
+      float(aX), float(aY), CaretPositionFromPointOptions());
+  if (!caretPos) {
+    return nullptr;
+  }
+
+  nsINode* node = caretPos->GetOffsetNode();
+  uint32_t offset = caretPos->Offset();
+  if (node->IsTextControlElement()) {
+    // Don't use the text offset within the textarea/input element.
+    // For these, a Range offset refers to the child index,
+    // *not* the character position.
+    offset = 0;
+  }
+
+  RefPtr<nsRange> range =
+      nsRange::Create(node, offset, node, offset, mozilla::IgnoreErrors());
+  if (!range) {
+    return nullptr;
+  }
+
+  return range.forget();
 }
 
 bool Document::IsPotentiallyScrollable(HTMLBodyElement* aBody) {

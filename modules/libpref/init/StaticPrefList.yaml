@@ -2618,6 +2618,12 @@
   value: false
   mirror: always
 
+# Similar to caretPositionFromPoint, but non-standard.
+- name: dom.caretRangeFromPoint.enabled
+  type: bool
+  value: true
+  mirror: always
+
 # HTML specification says the level should be 5
 # https://html.spec.whatwg.org/#timer-initialisation-steps
 - name: dom.clamp.timeout.nesting.level

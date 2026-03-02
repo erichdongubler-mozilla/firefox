@@ -3701,6 +3701,12 @@ class Document : public nsINode,
   already_AddRefed<nsDOMCaretPosition> CaretPositionFromPoint(
       float aX, float aY, const CaretPositionFromPointOptions& aOptions);
 
+  /**
+   * Wrapper around CaretPositionFromPoint that returns Range instead of
+   * CaretPosition.
+   */
+  already_AddRefed<nsRange> CaretRangeFromPoint(int32_t aX, int32_t aY);
+
   Element* GetScrollingElement();
   // A way to check whether a given element is what would get returned from
   // GetScrollingElement.  It can be faster than comparing to the return value

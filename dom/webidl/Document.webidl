@@ -356,6 +356,9 @@ dictionary CaretPositionFromPointOptions {
 partial interface Document {
     CaretPosition? caretPositionFromPoint(float x, float y, optional CaretPositionFromPointOptions options = {});
 
+    [Pref="dom.caretRangeFromPoint.enabled"]
+    Range? caretRangeFromPoint(optional long x = 0, optional long y = 0);
+
     readonly attribute Element? scrollingElement;
 };
 
