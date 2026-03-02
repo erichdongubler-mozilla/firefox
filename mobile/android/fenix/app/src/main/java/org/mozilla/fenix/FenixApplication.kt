@@ -69,7 +69,7 @@ import mozilla.components.support.ktx.android.content.runOnlyInMainProcess
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.remotesettings.GlobalRemoteSettingsDependencyProvider
 import mozilla.components.support.rusthttp.RustHttpConfig
-import mozilla.components.support.utils.BrowsersCache
+import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.RunWhenReadyQueue
 import mozilla.components.support.utils.logElapsedTime
 import mozilla.components.support.webextensions.WebExtensionSupport
@@ -304,7 +304,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
 
         setDayNightTheme()
         components.strictMode.enableStrictMode(true)
-        warmBrowsersCache()
 
         initializeWebExtensionSupport()
 
@@ -762,15 +761,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
-    private fun warmBrowsersCache() {
-        // We avoid blocking the main thread for BrowsersCache on startup by loading it on
-        // background thread.
-        GlobalScope.launch(Dispatchers.Default) {
-            BrowsersCache.all(this@FenixApplication)
-        }
-    }
-
     private fun initializeRemoteSettingsSupport() {
         GlobalRemoteSettingsDependencyProvider.initialize(components.remoteSettingsService.value)
         components.remoteSettingsSyncScheduler.registerForSync()
@@ -859,7 +849,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             components.core.engine,
             settings,
         ),
-        browsersCache: BrowsersCache = BrowsersCache,
         mozillaProductDetector: MozillaProductDetector = MozillaProductDetector,
     ) {
         setPreferenceMetrics(settings, dohSettingsProvider)
@@ -871,7 +860,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 setTermsOfUseStartUpMetrics(settings)
             }
 
-            defaultBrowser.set(browsersCache.all(applicationContext).isDefaultBrowser)
+            defaultBrowser.set(Browsers.isDefaultBrowser(applicationContext))
             mozillaProductDetector.getMozillaBrowserDefault(applicationContext)?.also {
                 defaultMozBrowser.set(it)
             }

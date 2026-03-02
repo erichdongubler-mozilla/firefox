@@ -9,7 +9,7 @@ import android.util.AttributeSet
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import com.google.android.material.switchmaterial.SwitchMaterial
-import mozilla.components.support.utils.BrowsersCache
+import mozilla.components.support.utils.Browsers
 import org.mozilla.fenix.R
 
 class DefaultBrowserPreference @JvmOverloads constructor(
@@ -31,7 +31,6 @@ class DefaultBrowserPreference @JvmOverloads constructor(
     }
 
     fun updateSwitch() {
-        val browsers = BrowsersCache.all(context)
-        switchView?.isChecked = browsers.isDefaultBrowser
+        switchView?.isChecked = Browsers.isDefaultBrowser(context)
     }
 }

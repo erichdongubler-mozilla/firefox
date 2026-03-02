@@ -21,7 +21,7 @@ import mozilla.components.lib.crash.service.GleanCrashReporterService
 import mozilla.components.lib.crash.service.socorro.MozillaSocorroService
 import mozilla.components.lib.crash.store.CrashReportOption
 import mozilla.components.support.ktx.android.content.isMainProcess
-import mozilla.components.support.utils.BrowsersCache
+import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.RunWhenReadyQueue
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.mozilla.fenix.BuildConfig
@@ -161,7 +161,7 @@ class Analytics(
         DefaultMetricsStorage(
             context = context,
             settings = context.settings(),
-            checkDefaultBrowser = { BrowsersCache.all(context).isDefaultBrowser },
+            checkDefaultBrowser = { Browsers.isDefaultBrowser(context) },
         )
     }
 

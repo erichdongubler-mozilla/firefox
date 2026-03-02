@@ -22,6 +22,7 @@ import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.feature.addons.migration.DefaultSupportedAddonsChecker
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.BrowsersCache
+import mozilla.components.support.utils.DefaultBrowserUtils
 import mozilla.components.support.utils.ext.packageManagerWrapper
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -133,7 +134,7 @@ class FenixApplicationTest {
         every { application.packageManager } returns packageManager
         @Suppress("DEPRECATION")
         every { packageManager.getInstallerPackageName(any()) } returns expectedAppInstallSource
-        every { browsersCache.all(any()).isDefaultBrowser } returns true
+        DefaultBrowserUtils.setAsDefaultBrowser(testContext.packageName)
         every { mozillaProductDetector.getMozillaBrowserDefault(any()) } returns expectedAppName
         every { mozillaProductDetector.getInstalledMozillaProducts(any()) } returns listOf(expectedAppName)
         every { settings.adjustCampaignId } returns "ID"
@@ -202,7 +203,6 @@ class FenixApplicationTest {
             browserStore = browserStore,
             settings = settings,
             dohSettingsProvider,
-            browsersCache = browsersCache,
             mozillaProductDetector = mozillaProductDetector,
         )
 
@@ -269,7 +269,6 @@ class FenixApplicationTest {
         application.setStartupMetrics(
             browserStore = browserStore,
             settings = settings,
-            browsersCache = browsersCache,
             mozillaProductDetector = mozillaProductDetector,
         )
 
@@ -290,7 +289,6 @@ class FenixApplicationTest {
             application.setStartupMetrics(
                 browserStore = browserStore,
                 settings = settings,
-                browsersCache = browsersCache,
                 mozillaProductDetector = mozillaProductDetector,
             )
 
@@ -313,7 +311,6 @@ class FenixApplicationTest {
             application.setStartupMetrics(
                 browserStore = browserStore,
                 settings = settings,
-                browsersCache = browsersCache,
                 mozillaProductDetector = mozillaProductDetector,
             )
 

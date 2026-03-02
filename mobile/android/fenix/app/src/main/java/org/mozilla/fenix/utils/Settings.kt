@@ -34,7 +34,7 @@ import mozilla.components.support.ktx.android.content.longPreference
 import mozilla.components.support.ktx.android.content.stringPreference
 import mozilla.components.support.ktx.android.content.stringSetPreference
 import mozilla.components.support.locale.LocaleManager
-import mozilla.components.support.utils.BrowsersCache
+import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.ext.PackageManagerCompatHelper
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.mozilla.experiments.nimbus.NimbusEventStore
@@ -1157,8 +1157,7 @@ class Settings(
      * G5+).
      */
     fun isDefaultBrowserBlocking(): Boolean {
-        val browsers = BrowsersCache.all(appContext)
-        return browsers.isDefaultBrowser
+        return Browsers.isDefaultBrowser(appContext)
     }
 
     var reEngagementNotificationShown by booleanPreference(

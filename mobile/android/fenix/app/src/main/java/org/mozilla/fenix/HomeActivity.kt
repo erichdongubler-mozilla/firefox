@@ -75,6 +75,7 @@ import mozilla.components.support.ktx.android.content.share
 import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import mozilla.components.support.locale.LocaleAwareAppCompatActivity
 import mozilla.components.support.utils.BootUtils
+import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.BrowsersCache
 import mozilla.components.support.utils.BuildManufacturerChecker
 import mozilla.components.support.utils.SafeIntent
@@ -645,7 +646,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     @VisibleForTesting
     internal fun maybeShowSetAsDefaultBrowserPrompt(
         shouldShowSetAsDefaultPrompt: Boolean = settings().shouldShowSetAsDefaultPrompt(),
-        isDefaultBrowser: Boolean = BrowsersCache.all(applicationContext).isDefaultBrowser,
+        isDefaultBrowser: Boolean = Browsers.isDefaultBrowser(applicationContext),
         isTheCorrectBuildVersion: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q,
     ) {
         if (shouldShowSetAsDefaultPrompt && !isDefaultBrowser && isTheCorrectBuildVersion) {
