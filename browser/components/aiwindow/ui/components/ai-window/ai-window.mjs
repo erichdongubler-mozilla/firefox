@@ -77,7 +77,10 @@ ChromeUtils.defineLazyGetter(lazy, "log", function () {
 
 const FULLPAGE = "fullpage";
 const SIDEBAR = "sidebar";
-const PREF_MEMORIES = "browser.smartwindow.memories";
+const PREF_MEMORIES_CONVERSATION =
+  "browser.smartwindow.memories.generateFromConversation";
+const PREF_MEMORIES_HISTORY =
+  "browser.smartwindow.memories.generateFromHistory";
 const TAB_FAVICON_CHAT =
   "chrome://browser/content/aiwindow/assets/ask-icon.svg";
 const PREF_CHAT_INTERACTION_COUNT = "browser.smartwindow.chat.interactionCount";
@@ -102,6 +105,10 @@ export class AIWindow extends MozLitElement {
   #conversation;
   #memoriesButton = null;
   #memoriesToggled = null;
+
+  get #memoriesIconShown() {
+    return this.memoriesConversationPref || this.memoriesHistoryPref;
+  }
   #visibilityChangeHandler;
   #starters = [];
   #smartbarResizeObserver = null;
@@ -171,9 +178,10 @@ export class AIWindow extends MozLitElement {
       return;
     }
 
-    this.#memoriesButton.disabled = !this.memoriesPref;
+    this.#memoriesButton.show = this.#memoriesIconShown;
     this.#memoriesButton.pressed =
-      this.memoriesPref && (this.#memoriesToggled ?? this.memoriesPref);
+      this.#memoriesIconShown &&
+      (this.#memoriesToggled ?? this.#memoriesIconShown);
   }
 
   /**
@@ -201,9 +209,16 @@ export class AIWindow extends MozLitElement {
 
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
-      "memoriesPref",
-      PREF_MEMORIES,
-      null,
+      "memoriesConversationPref",
+      PREF_MEMORIES_CONVERSATION,
+      true,
+      () => this.#syncMemoriesButtonUI()
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "memoriesHistoryPref",
+      PREF_MEMORIES_HISTORY,
+      true,
       () => this.#syncMemoriesButtonUI()
     );
 
@@ -458,7 +473,8 @@ export class AIWindow extends MozLitElement {
         }));
 
         // Get memories setting from user preferences
-        const memoriesEnabled = this.#memoriesToggled ?? this.memoriesPref;
+        const memoriesEnabled =
+          this.#memoriesToggled ?? this.#memoriesIconShown;
 
         const sidebarStarters = await lazy
           .generateConversationStartersSidebar(contextTabs, 2, memoriesEnabled)
@@ -738,7 +754,7 @@ export class AIWindow extends MozLitElement {
    */
   #createUserRoleOpts(contextMentions) {
     return new lazy.UserRoleOpts({
-      memoriesEnabled: this.#memoriesToggled ?? this.memoriesPref,
+      memoriesEnabled: this.#memoriesToggled ?? this.#memoriesIconShown,
       memoriesFlagSource:
         this.#memoriesToggled == null
           ? lazy.MEMORIES_FLAG_SOURCE.GLOBAL
@@ -1308,7 +1324,7 @@ export class AIWindow extends MozLitElement {
       await this.#fetchAIResponse(userMsg.content.body, {
         skipUserDispatch: true,
         memoriesEnabled:
-          withMemories ?? this.#memoriesToggled ?? this.memoriesPref,
+          withMemories ?? this.#memoriesToggled ?? this.#memoriesIconShown,
       });
     } catch (e) {
       console.error("ai-window: retry failed", e);

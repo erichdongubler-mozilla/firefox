@@ -50,11 +50,13 @@ smart-window-model-custom-save =
 
 ai-window-memories-section =
     .label = Memories
-    .description = Manage what Smart Window learns from your activity.
+    .description = { -brand-short-name } can learn from your activity to create memories, which are used to personalize responses.
 
-ai-window-learn-from-activity =
-    .label = Learn from your activity
-    .description = Smart Window can use your browsing and chat activity to create memories and personalize responses.
+ai-window-learn-from-chat-activity =
+    .label = Learn from chats in Smart Window
+
+ai-window-learn-from-browsing-activity =
+    .label = Learn from browsing in Classic and Smart Windows
 
 ai-window-manage-memories-button =
     .label = Manage memories

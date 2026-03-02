@@ -82,26 +82,51 @@ describe("settings ai features / Smart Window memories", () => {
     return { MemoryStore, memories: [memoryOne, memoryTwo] };
   }
 
-  it("toggles Learn from activity and shows correct empty states", async () => {
+  it("toggles chat and browsing memory controls and shows correct empty states", async () => {
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.smartwindow.memories", false]],
+      set: [
+        ["browser.smartwindow.memories.generateFromConversation", false],
+        ["browser.smartwindow.memories.generateFromHistory", false],
+      ],
     });
 
     await openSmartWindowPanel();
 
-    const learnFromActivity = doc.getElementById("learnFromActivity");
-    Assert.ok(!learnFromActivity.checked, "Checkbox is unchecked initially");
+    const chatCheckbox = doc.getElementById("learnFromChatActivity");
+    Assert.ok(!chatCheckbox.checked, "Chat checkbox is unchecked initially");
 
-    learnFromActivity.scrollIntoView();
-    EventUtils.synthesizeMouseAtCenter(learnFromActivity.labelEl, {}, win);
-    await learnFromActivity.updateComplete;
+    chatCheckbox.scrollIntoView();
+    EventUtils.synthesizeMouseAtCenter(chatCheckbox.labelEl, {}, win);
+    await chatCheckbox.updateComplete;
 
     Assert.ok(
-      Services.prefs.getBoolPref("browser.smartwindow.memories"),
-      "Preference is now true"
+      Services.prefs.getBoolPref(
+        "browser.smartwindow.memories.generateFromConversation"
+      ),
+      "Chat preference is now true"
     );
-    Assert.ok(learnFromActivity.checked, "Checkbox is now checked");
+    Assert.ok(chatCheckbox.checked, "Chat checkbox is now checked");
 
+    const browsingCheckbox = doc.getElementById("learnFromBrowsingActivity");
+    Assert.ok(
+      !browsingCheckbox.checked,
+      "Browsing checkbox is unchecked initially"
+    );
+
+    browsingCheckbox.scrollIntoView();
+    EventUtils.synthesizeMouseAtCenter(browsingCheckbox.labelEl, {}, win);
+    await browsingCheckbox.updateComplete;
+
+    Assert.ok(
+      Services.prefs.getBoolPref(
+        "browser.smartwindow.memories.generateFromHistory"
+      ),
+      "Browsing preference is now true"
+    );
+    Assert.ok(browsingCheckbox.checked, "Browsing checkbox is now checked");
+
+    // Verify manage memories pane shows learning-off empty state when both
+    // memory generation prefs are disabled.
     const manageButton = doc.getElementById("manageMemoriesButton");
     manageButton.scrollIntoView();
     const paneLoaded = waitForPaneChange("manageMemories");
@@ -116,7 +141,10 @@ describe("settings ai features / Smart Window memories", () => {
     );
 
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.smartwindow.memories", false]],
+      set: [
+        ["browser.smartwindow.memories.generateFromConversation", false],
+        ["browser.smartwindow.memories.generateFromHistory", false],
+      ],
     });
 
     const memoriesList = doc.getElementById("memoriesList");
@@ -137,7 +165,10 @@ describe("settings ai features / Smart Window memories", () => {
 
   it("renders and deletes memory items", async () => {
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.smartwindow.memories", true]],
+      set: [
+        ["browser.smartwindow.memories.generateFromConversation", true],
+        ["browser.smartwindow.memories.generateFromHistory", true],
+      ],
     });
 
     const { MemoryStore, memories } = await populateMemories();

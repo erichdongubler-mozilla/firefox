@@ -2268,8 +2268,6 @@ pref("browser.ml.pageAssist.enabled", false);
 pref("browser.smartwindow.apiKey", '');
 pref("browser.smartwindow.enabled", false);
 pref("browser.smartwindow.endpoint", "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1");
-//TODO(Bug 2017608) - to be cleaned up by Frontend when uis are updated.
-pref("browser.smartwindow.memories", true);
 pref("browser.smartwindow.memories.generateFromHistory", true);
 pref("browser.smartwindow.memories.generateFromConversation", true);
 pref("browser.smartwindow.memoriesLogLevel", "Warn");
