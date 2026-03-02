@@ -12,6 +12,7 @@
 #include "MediaTrackListener.h"
 #include "MockCubeb.h"
 #include "gtest/gtest.h"
+#include "mozilla/SyncRunnable.h"
 #include "mozilla/gtest/WaitFor.h"
 #include "nsJSEnvironment.h"
 
@@ -160,6 +161,14 @@ class TestDecodedStream : public Test {
     NS_ProcessPendingEvents(nullptr);
     // Process the shutdown runnable.
     NS_ProcessPendingEvents(nullptr);
+
+    // Ensure the proxy release of AudioCallbackDriver has been processed on the
+    // CubebOperation thread, as it holds a reference to the graph.
+    RefPtr cubebOpsThread = CubebUtils::GetCubebOperationThread();
+    SyncRunnable::DispatchToThread(
+        cubebOpsThread,
+        NS_NewRunnableFunction("TestDecodedStream AudioCallbackDriver release",
+                               [] {}));
 
     // Graph should be shut down.
     ASSERT_TRUE(mGraph->OnGraphThreadOrNotRunning())
