@@ -1171,6 +1171,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.hideAllToast.enabled",
+    {
+      title: "Shows a toast when all widgets are hidden via the X button",
+      value: false,
+    },
+  ],
+  [
     "improvesearch.noDefaultSearchTile",
     {
       title: "Remove tiles that are the same as the default search",

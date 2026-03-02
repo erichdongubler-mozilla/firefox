@@ -544,6 +544,8 @@ newtab-report-cancel = Cancel
 newtab-report-submit = Submit
 newtab-toast-thanks-for-reporting =
     .message = Thank you for reporting this.
+newtab-toast-widgets-hidden =
+    .message = Select the pencil icon to add widgets back anytime.
 
 ## Strings for task / to-do list productivity widget
 

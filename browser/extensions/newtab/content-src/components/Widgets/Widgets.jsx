@@ -26,6 +26,7 @@ const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED =
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
 const PREF_WIDGETS_SYSTEM_MAXIMIZED = "widgets.system.maximized";
 const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
+const PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED = "widgets.hideAllToast.enabled";
 const WIDGETS_FEEDBACK_URL =
   "https://connect.mozilla.org/t5/discussions/feedback-welcome-for-new-tab-widgets-now-available-via-firefox/td-p/108354";
 
@@ -84,6 +85,9 @@ function Widgets() {
   const feedbackEnabled =
     prefs.trainhopConfig?.widgets?.feedbackEnabled ||
     prefs[PREF_WIDGETS_FEEDBACK_ENABLED];
+  const hideAllToastEnabled =
+    prefs.trainhopConfig?.widgets?.hideAllToastEnabled ||
+    prefs[PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED];
   const feedbackUrl =
     prefs.trainhopConfig?.widgets?.feedbackUrl ?? WIDGETS_FEEDBACK_URL;
 
@@ -208,6 +212,18 @@ function Widgets() {
               widget_size: widgetSize,
             },
           })
+        );
+      }
+
+      if (hideAllToastEnabled) {
+        dispatch(
+          ac.OnlyToOneContent(
+            {
+              type: at.SHOW_TOAST_MESSAGE,
+              data: { toastId: "hideWidgetsToast", showNotifications: true },
+            },
+            "ActivityStream:Content"
+          )
         );
       }
     });
