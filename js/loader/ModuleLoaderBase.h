@@ -452,6 +452,8 @@ class ModuleLoaderBase : public nsISupports {
 
   ResolvedModuleSet* GetResolvedModuleSet();
 
+  void MovePreloadedSetToResolvedSet(ModuleLoadRequest* aRootRequest);
+
   // Returns true if the module for given module key is already fetched.
   bool IsModuleFetched(const ModuleMapKey& key) const;
 
@@ -548,6 +550,8 @@ class ModuleLoaderBase : public nsISupports {
       mozilla::UniquePtr<SpecifierResolutionRecord> aRecord,
       LoadedScript* aScript = nullptr,
       Handle<Value> aHostDefined = UndefinedHandleValue);
+
+  void ResetPreloadFlag(nsIURI* aURI);
 
  protected:
   void SetModuleFetchStarted(ModuleLoadRequest* aRequest);

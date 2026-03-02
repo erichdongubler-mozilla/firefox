@@ -1868,6 +1868,15 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
     return nullptr;
   }
 
+  if (StaticPrefs::dom_multiple_import_maps_enabled()) {
+    // During preload, the resolved module specifiers are stored in the module
+    // script. Now the preload request is reused, so adding the resolved
+    // specifiers into the global's resolved module set.
+    if (request->IsModuleRequest()) {
+      mModuleLoader->MovePreloadedSetToResolvedSet(request->AsModuleRequest());
+    }
+  }
+
   // Report any errors that we skipped while preloading.
   ReportPreloadErrorsToConsole(request);
 
