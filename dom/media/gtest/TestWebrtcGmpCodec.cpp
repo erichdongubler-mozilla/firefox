@@ -16,6 +16,7 @@ using testing::AtLeast;
 using testing::Eq;
 using testing::Ge;
 using testing::Gt;
+using testing::InSequence;
 using testing::Property;
 using testing::Test;
 
@@ -224,5 +225,54 @@ TEST_F(TestWebrtcGmpVideoEncoder, ReUse) {
                        &types),
       WEBRTC_VIDEO_CODEC_OK);
   EXPECT_EQ(WaitForResolve(donePromise), true);
+}
+
+TEST_F(TestWebrtcGmpVideoEncoder, TrackedFrameDrops) {
+  using Result = webrtc::EncodedImageCallback::Result;
+  // Tell the fakeopenh264 plugin to drop some allocated input frames without
+  // telling us. It will drop every fifth input frame. This shall get tracked
+  // as frame drops.
+  mCodecSettings.SetFrameDropEnabled(true);
+  mEncoder->InitEncode(&mCodecSettings, mSettings);
+  WaitFor(*mEncoder->InitPluginEvent());
+
+  Monitor m(__func__);
+  size_t numEvents = 0;
+  const auto handleEvent = ([&] {
+    MonitorAutoLock lock(m);
+    ++numEvents;
+    lock.Notify();
+  });
+  MockEncodedImageCallback callback;
+  {
+    InSequence s;
+    EXPECT_CALL(callback, OnEncodedImage(_, _)).Times(4).WillRepeatedly([&] {
+      handleEvent();
+      return Result(Result::OK);
+    });
+    EXPECT_CALL(
+        callback,
+        OnDroppedFrame(MockEncodedImageCallback::DropReason::kDroppedByEncoder))
+        .WillOnce(handleEvent);
+  }
+  mEncoder->RegisterEncodeCompleteCallback(&callback);
+
+  constexpr uint32_t ntpTime = 55;
+  std::vector<webrtc::VideoFrameType> types = {
+      webrtc::VideoFrameType::kVideoFrameKey};
+  for (uint8_t i = 0; i < 5; ++i) {
+    EXPECT_EQ(
+        mEncoder->Encode(webrtc::VideoFrame::Builder()
+                             .set_ntp_time_ms(ntpTime * (i + 1))
+                             .set_video_frame_buffer(CreateBlackFrame(
+                                 mCodecSettings.width, mCodecSettings.height))
+                             .build(),
+                         &types),
+        WEBRTC_VIDEO_CODEC_OK);
+    MonitorAutoLock lock(m);
+    while (numEvents <= i) {
+      lock.Wait();
+    }
+  }
 }
 }  // namespace mozilla
