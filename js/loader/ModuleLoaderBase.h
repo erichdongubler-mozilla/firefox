@@ -26,6 +26,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "ResolvedModuleSet.h"
 #include "ResolveResult.h"
 
 class nsIConsoleReportCollector;
@@ -116,6 +117,10 @@ class ScriptLoaderInterface : public nsISupports {
   }
 
   virtual void MaybeUpdateDiskCache() {}
+
+  // Import map is supported if the global implements 'Windows'.
+  // See https://html.spec.whatwg.org/#concept-global-import-map
+  virtual bool IsImportMapSupported() const { return false; }
 };
 
 class ModuleMapKey : public PLDHashEntryHdr {
@@ -280,6 +285,8 @@ class ModuleLoaderBase : public nsISupports {
 
   mozilla::UniquePtr<ImportMap> mImportMap;
 
+  mozilla::UniquePtr<ResolvedModuleSet> mResolvedModuleSet;
+
   virtual ~ModuleLoaderBase();
 
 #ifdef DEBUG
@@ -441,6 +448,8 @@ class ModuleLoaderBase : public nsISupports {
                        nsIConsoleReportCollector* aReporter,
                        mozilla::dom::SRIMetadata* aMetadataOut);
 
+  ResolvedModuleSet* GetResolvedModuleSet();
+
   // Returns true if the module for given module key is already fetched.
   bool IsModuleFetched(const ModuleMapKey& key) const;
 
@@ -521,6 +530,17 @@ class ModuleLoaderBase : public nsISupports {
   bool ModuleMapContainsURL(const ModuleMapKey& key) const;
   bool IsModuleFetching(const ModuleMapKey& key) const;
   void WaitForModuleFetch(ModuleLoadRequest* aRequest);
+
+  void AddToGlobalResolvedSet(
+      mozilla::UniquePtr<SpecifierResolutionRecord> aRecord);
+
+  // https://html.spec.whatwg.org/#add-module-to-resolved-module-set
+  // The aScript and aHostDefined arguments are for determining if this is
+  // resolved during preloading.
+  void AddToResolvedModuleSet(
+      mozilla::UniquePtr<SpecifierResolutionRecord> aRecord,
+      LoadedScript* aScript = nullptr,
+      Handle<Value> aHostDefined = UndefinedHandleValue);
 
  protected:
   void SetModuleFetchStarted(ModuleLoadRequest* aRequest);

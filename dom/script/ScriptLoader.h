@@ -652,6 +652,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       ScriptLoadRequest* aRequest, const char* aMessageName,
       const nsTArray<nsString>& aParams = nsTArray<nsString>()) const override;
 
+  bool IsImportMapSupported() const override { return true; }
+
   void ReportPreloadErrorsToConsole(ScriptLoadRequest* aRequest);
 
   nsIConsoleReportCollector* GetConsoleReportCollector() const override {

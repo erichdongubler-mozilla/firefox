@@ -10,6 +10,7 @@
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/JSON.h"                  // JS_ParseJSON
 #include "js/PropertyDescriptor.h"    // JS::PropertyDescriptor
+#include "mozilla/StaticPrefs_dom.h"
 #include "LoadedScript.h"
 #include "ModuleLoaderBase.h"  // ScriptLoaderInterface
 #include "nsContentUtils.h"
@@ -42,9 +43,12 @@ void ReportWarningHelper::Report(const char* aMessageName,
   mLoader->ReportWarningToConsole(mRequest, aMessageName, aParams);
 }
 
+using ResolveURLLikeResult =
+    mozilla::Result<mozilla::NotNull<nsCOMPtr<nsIURI>>, ResolveError>;
+
 // https://html.spec.whatwg.org/multipage/webappapis.html#resolving-a-url-like-module-specifier
-static ResolveResult ResolveURLLikeModuleSpecifier(const nsAString& aSpecifier,
-                                                   nsIURI* aBaseURL) {
+static ResolveURLLikeResult ResolveURLLikeModuleSpecifier(
+    const nsAString& aSpecifier, nsIURI* aBaseURL) {
   nsCOMPtr<nsIURI> uri;
   nsresult rv;
 
@@ -719,6 +723,16 @@ static mozilla::Result<nsCOMPtr<nsIURI>, ResolveError> ResolveImportsMatch(
   return nsCOMPtr<nsIURI>(nullptr);
 }
 
+static UniquePtr<SpecifierResolutionRecord> CreateResolutionRecord(
+    ScriptLoaderInterface* aLoader, nsCString& aSerializedBaseURL,
+    nsString& aNormalizedSpecifier, nsIURI* aAsURL, nsIURI* aResult) {
+  bool isURLLike = !!aAsURL;
+  bool isSpecial = aAsURL ? IsSpecialScheme(aAsURL) : false;
+
+  return mozilla::MakeUnique<SpecifierResolutionRecord>(
+      aSerializedBaseURL, aNormalizedSpecifier, aResult, isURLLike, isSpecial);
+}
+
 // https://html.spec.whatwg.org/multipage/webappapis.html#resolve-a-module-specifier
 // static
 ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
@@ -802,10 +816,17 @@ ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
 
   // 13. If result is not null, then:
   if (result) {
-    // 2. Return result.
     LOG(("ResolveModuleSpecifier returns result: %s",
          result->GetSpecOrDefault().get()));
-    return WrapNotNull(result);
+    // 1. Add module to resolved module set given settingsObject,
+    //    serializedBaseURL, normalizedSpecifier, and asURL.
+    //
+    // Impl note: Implemented in the caller(ModuleLoaderBase), as we need to
+    // store the result if this resolution is for preload.
+
+    // 2. Return result.
+    return CreateResolutionRecord(aLoader, serializedBaseURL,
+                                  normalizedSpecifier, asURL, result);
   }
 
   LOG(("ResolveModuleSpecifier failed to resolve specifier: %s",
