@@ -2,9 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+use crate::cms::QcmsCms;
 use jxl::api::{
-    JxlBitstreamInput, JxlColorType, JxlDataFormat, JxlDecoderInner, JxlDecoderOptions,
-    JxlOutputBuffer, JxlPixelFormat, ProcessingResult,
+    JxlBitstreamInput, JxlColorEncoding, JxlColorProfile, JxlColorType, JxlDataFormat,
+    JxlDecoderInner, JxlDecoderOptions, JxlOutputBuffer, JxlPixelFormat, ProcessingResult,
 };
 use jxl::headers::extra_channels::ExtraChannel;
 
@@ -41,7 +42,16 @@ impl JxlApiDecoder {
     pub fn new(metadata_only: bool, premultiply: bool) -> Self {
         let mut options = JxlDecoderOptions::default();
         options.premultiply_output = premultiply;
-        let inner = JxlDecoderInner::new(options);
+        options.cms = Some(Box::new(QcmsCms) as Box<dyn jxl::api::JxlCms>);
+
+        let mut inner = JxlDecoderInner::new(options);
+
+        // Request gamma-encoded sRGB output for proper display
+        let srgb_output =
+            JxlColorProfile::Simple(JxlColorEncoding::srgb(/* grayscale */ false));
+        inner
+            .set_output_color_profile(srgb_output)
+            .expect("Simple sRGB profile should always be valid");
 
         Self {
             inner,
@@ -76,6 +86,8 @@ impl JxlApiDecoder {
         })
     }
 
+    /// Process JXL data. Pass output_buffer once frame_ready is true.
+    /// Returns Ok(true) when frame_ready changes state.
     pub fn process_data(
         &mut self,
         data: &mut impl JxlBitstreamInput,
