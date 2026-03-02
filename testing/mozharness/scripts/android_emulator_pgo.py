@@ -31,6 +31,7 @@ PAGES = [
     "blueprint/elements.html",
     "js-input/3d-thingy.html",
     "js-input/crypto-otp.html",
+    "js-input/collator_bench.html",
     "js-input/normalizer_bench.html",
     "js-input/sunspider/3d-cube.html",
     "js-input/sunspider/3d-morph.html",
