@@ -213,40 +213,23 @@ class OutOfLineCode : public TempObject {
   // All other registers must be explicitly saved and restored by the OOL code
   // before being used.
 
-  virtual void generate(MacroAssembler* masm) = 0;
+  virtual void generate(MacroAssembler* masm, BaseCompiler* bc) = 0;
 };
 
-class OutOfLineAbortingTrap : public OutOfLineCode {
-  Trap trap_;
-  TrapSiteDesc desc_;
-
- public:
-  OutOfLineAbortingTrap(Trap trap, const TrapSiteDesc& desc)
-      : trap_(trap), desc_(desc) {}
-
-  virtual void generate(MacroAssembler* masm) override {
-    masm->wasmTrap(trap_, desc_);
-    MOZ_ASSERT(!rejoin()->bound());
-  }
-};
-
-class OutOfLineResumableTrap : public OutOfLineCode {
+class OutOfLineTrap : public OutOfLineCode {
   Trap trap_;
   TrapSiteDesc desc_;
   wasm::StackMap* stackMap_;
-  wasm::StackMaps* stackMaps_;
 
  public:
-  OutOfLineResumableTrap(Trap trap, const TrapSiteDesc& desc,
-                         wasm::StackMap* stackMap, wasm::StackMaps* stackMaps)
-      : trap_(trap), desc_(desc), stackMap_(stackMap), stackMaps_(stackMaps) {}
+  OutOfLineTrap(Trap trap, const TrapSiteDesc& desc, wasm::StackMap* stackMap)
+      : trap_(trap), desc_(desc), stackMap_(stackMap) {}
 
-  virtual void generate(MacroAssembler* masm) override {
-    masm->wasmTrap(trap_, desc_);
-    if (stackMap_ && !stackMaps_->add(masm->currentOffset(), stackMap_)) {
-      masm->setOOM();
+  virtual void generate(MacroAssembler* masm, BaseCompiler* bc) override {
+    bc->trap(trap_, desc_, stackMap_);
+    if (rejoin()) {
+      masm->jump(rejoin());
     }
-    masm->jump(rejoin());
   }
 };
 
@@ -264,7 +247,7 @@ bool BaseCompiler::generateOutOfLineCode() {
       continue;
     }
     ool->bind(&fr, &masm);
-    ool->generate(&masm);
+    ool->generate(&masm, this);
   }
 
   return !masm.oom();
@@ -583,17 +566,16 @@ bool BaseCompiler::beginFunction() {
   }
 
   OutOfLineCode* oolStackOverflowTrap =
-      addOutOfLineCode(new (alloc_) OutOfLineAbortingTrap(
+      addOutOfLineCode(new (alloc_) OutOfLineTrap(
           Trap::StackOverflow,
-          TrapSiteDesc(BytecodeOffset(func_.lineOrBytecode))));
+          TrapSiteDesc(BytecodeOffset(func_.lineOrBytecode)), nullptr));
   if (!oolStackOverflowTrap) {
     return false;
   }
   fr.checkStack(ABINonArgReg0, ABINonArgReg1, oolStackOverflowTrap->entry());
 
-  OutOfLineCode* oolInterruptTrap = addOutOfLineCode(
-      new (alloc_) OutOfLineResumableTrap(Trap::CheckInterrupt, trapSiteDesc(),
-                                          functionEntryStackMap, stackMaps_));
+  OutOfLineCode* oolInterruptTrap = addOutOfLineCode(new (alloc_) OutOfLineTrap(
+      Trap::CheckInterrupt, trapSiteDesc(), functionEntryStackMap));
   if (!oolInterruptTrap) {
     return false;
   }
@@ -1128,7 +1110,7 @@ class OutOfLineRequestTierUp : public OutOfLineCode {
       : instance_(instance),
         scratch_(scratch),
         lastOpcodeOffset_(lastOpcodeOffset) {}
-  virtual void generate(MacroAssembler* masm) override {
+  virtual void generate(MacroAssembler* masm, BaseCompiler* bc) override {
     // Generate:
     //
     // [optionally, if `instance_` != InstanceReg: swap(instance_, InstanceReg)]
@@ -2071,8 +2053,12 @@ bool BaseCompiler::callIndirect(uint32_t funcTypeIndex, uint32_t tableIndex,
   CallSiteDesc desc(bytecodeOffset(), CallSiteKind::Indirect);
   CalleeDesc callee =
       CalleeDesc::wasmTable(codeMeta_, table, tableIndex, callIndirectId);
-  OutOfLineCode* oob = addOutOfLineCode(
-      new (alloc_) OutOfLineAbortingTrap(Trap::OutOfBounds, trapSiteDesc()));
+  StackMap* oobTrapStackMap;
+  if (!createAbortingOutOfLineTrapStackMap(&oobTrapStackMap)) {
+    return false;
+  }
+  OutOfLineCode* oob = addOutOfLineCode(new (alloc_) OutOfLineTrap(
+      Trap::OutOfBounds, trapSiteDesc(), oobTrapStackMap));
   if (!oob) {
     return false;
   }
@@ -2103,8 +2089,12 @@ bool BaseCompiler::callIndirect(uint32_t funcTypeIndex, uint32_t tableIndex,
 
   Label* nullCheckFailed = nullptr;
 #ifndef WASM_HAS_HEAPREG
-  OutOfLineCode* nullref = addOutOfLineCode(new (alloc_) OutOfLineAbortingTrap(
-      Trap::IndirectCallToNull, trapSiteDesc()));
+  StackMap* nullTrapStackMap;
+  if (!createAbortingOutOfLineTrapStackMap(&nullTrapStackMap)) {
+    return false;
+  }
+  OutOfLineCode* nullref = addOutOfLineCode(new (alloc_) OutOfLineTrap(
+      Trap::IndirectCallToNull, trapSiteDesc(), nullTrapStackMap));
   if (!nullref) {
     return false;
   }
@@ -2123,7 +2113,7 @@ bool BaseCompiler::callIndirect(uint32_t funcTypeIndex, uint32_t tableIndex,
 
 class OutOfLineUpdateCallRefMetrics : public OutOfLineCode {
  public:
-  virtual void generate(MacroAssembler* masm) override {
+  virtual void generate(MacroAssembler* masm, BaseCompiler* bc) override {
     // Call the stub pointed to by Instance::updateCallRefMetricsStub, then
     // rejoin.  See "Register management" in BaseCompiler::updateCallRefMetrics
     // for details of register management.
@@ -2611,7 +2601,7 @@ class OutOfLineTruncateCheckF32OrF64ToI32 : public OutOfLineCode {
                                       TrapSiteDesc trapSiteDesc)
       : src(src), dest(dest), flags(flags), trapSiteDesc(trapSiteDesc) {}
 
-  virtual void generate(MacroAssembler* masm) override {
+  virtual void generate(MacroAssembler* masm, BaseCompiler* bc) override {
     if (src.tag == AnyReg::F32) {
       masm->oolWasmTruncateCheckF32ToI32(src.f32(), dest, flags, trapSiteDesc,
                                          rejoin());
@@ -2669,7 +2659,7 @@ class OutOfLineTruncateCheckF32OrF64ToI64 : public OutOfLineCode {
                                       TrapSiteDesc trapSiteDesc)
       : src(src), dest(dest), flags(flags), trapSiteDesc(trapSiteDesc) {}
 
-  virtual void generate(MacroAssembler* masm) override {
+  virtual void generate(MacroAssembler* masm, BaseCompiler* bc) override {
     if (src.tag == AnyReg::F32) {
       masm->oolWasmTruncateCheckF32ToI64(src.f32(), dest, flags, trapSiteDesc,
                                          rejoin());
@@ -8957,8 +8947,12 @@ bool BaseCompiler::emitRefCast(bool nullable) {
 
   RegRef ref = popRef();
 
+  StackMap* trapStackMap;
+  if (!createAbortingOutOfLineTrapStackMap(&trapStackMap)) {
+    return false;
+  }
   OutOfLineCode* ool = addOutOfLineCode(
-      new (alloc_) OutOfLineAbortingTrap(Trap::BadCast, trapSiteDesc()));
+      new (alloc_) OutOfLineTrap(Trap::BadCast, trapSiteDesc(), trapStackMap));
   if (!ool) {
     return false;
   }
