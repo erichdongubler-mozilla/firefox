@@ -839,6 +839,11 @@ static bool ValidateTypes(JSContext* cx, const ValTypeVector& src) {
 
 JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
                                          const FuncType& type) {
+  if (!JSPromiseIntegrationAvailable(cx)) {
+    JS_ReportErrorASCII(cx, "JS-PI is not enabled");
+    return nullptr;
+  }
+
   if (!ValidateTypes(cx, type.args()) || !ValidateTypes(cx, type.results())) {
     return nullptr;
   }

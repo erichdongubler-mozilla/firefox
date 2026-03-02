@@ -5493,6 +5493,11 @@ bool WasmSuspendingObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 static bool WebAssembly_promising(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  if (!JSPromiseIntegrationAvailable(cx)) {
+    JS_ReportErrorASCII(cx, "JS-PI is not enabled");
+    return false;
+  }
+
   if (!args.requireAtLeast(cx, "WebAssembly.promising", 1)) {
     return false;
   }
