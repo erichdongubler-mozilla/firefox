@@ -11,6 +11,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/URIUtils.h"  // for ParamTraits<nsIURI*>
 #include "mozilla/net/Cookie.h"
@@ -315,6 +316,9 @@ void CookieStoreParent::GetRequestOnMainThread(
 
   nsTArray<CookieStruct> list;
 
+  bool hasBothPartitionedAndUnpartitioned =
+      aPartitionedOriginAttributes.isSome();
+
   for (const OriginAttributes& attrs : attrsList) {
     nsTArray<RefPtr<Cookie>> cookies;
     service->GetCookiesFromHost(baseDomain, attrs, cookies);
@@ -339,6 +343,14 @@ void CookieStoreParent::GetRequestOnMainThread(
       }
 
       if (!net::CookieCommons::PathMatches(cookie->Path(), aPath)) {
+        continue;
+      }
+
+      // Skipping sending TCP cookies when the page has StorageAccess if
+      // configured so that CHIPS doesn't affect TCP.
+      if (!StaticPrefs::network_cookie_CHIPS_affectsTCP() &&
+          hasBothPartitionedAndUnpartitioned &&
+          !attrs.mPartitionKey.IsEmpty() && !cookie->RawIsPartitioned()) {
         continue;
       }
 

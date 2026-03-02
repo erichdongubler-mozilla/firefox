@@ -13650,6 +13650,13 @@
   value: true
   mirror: always
 
+# Whether TCP cookies also appear when unpartitioned cookies are queried
+# at the same time.
+- name: network.cookie.CHIPS.affectsTCP
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Updated to match the target count when we migrate the unpartitioned CHIPS
 # cookies to their first-party partition.
 - name: network.cookie.CHIPS.lastMigrateDatabase
