@@ -1413,7 +1413,8 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
 
     // https://html.spec.whatwg.org/multipage/webappapis.html#fetch-a-module-script-tree
     // Step 1. Disallow further import maps given settings object.
-    if (request->IsModuleRequest()) {
+    if (request->IsModuleRequest() &&
+        !StaticPrefs::dom_multiple_import_maps_enabled()) {
       LOG(("ScriptLoadRequest (%p): Disallow further import maps.",
            request.get()));
       mModuleLoader->DisallowImportMaps();
@@ -1706,10 +1707,14 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
 
   request->SetBaseURL(mDocument->GetDocBaseURI());
 
+  const bool multiImportMapsEnabled =
+      StaticPrefs::dom_multiple_import_maps_enabled();
   if (request->IsModuleRequest()) {
-    // https://html.spec.whatwg.org/multipage/webappapis.html#fetch-an-inline-module-script-graph
-    // Step 1. Disallow further import maps given settings object.
-    mModuleLoader->DisallowImportMaps();
+    if (!multiImportMapsEnabled) {
+      // https://html.spec.whatwg.org/multipage/webappapis.html#fetch-an-inline-module-script-graph
+      // Step 1. Disallow further import maps given settings object.
+      mModuleLoader->DisallowImportMaps();
+    }
 
     ModuleLoadRequest* modReq = request->AsModuleRequest();
     if (aElement->GetParserCreated() != NOT_FROM_PARSER) {
@@ -1732,13 +1737,16 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
   }
 
   if (request->IsImportMapRequest()) {
-    // https://html.spec.whatwg.org/multipage/scripting.html#prepare-the-script-element
-    // Step 31.2 type is "importmap":
-    //   Impl note: Step 1 is done above before creating a ScriptLoadRequest.
-    MOZ_ASSERT(mModuleLoader->IsImportMapAllowed());
+    if (!multiImportMapsEnabled) {
+      // https://html.spec.whatwg.org/multipage/scripting.html#prepare-the-script-element
+      // Step 31.2 type is "importmap":
+      //   Impl note: Step 1 is done above before creating a ScriptLoadRequest.
+      MOZ_ASSERT(mModuleLoader->IsImportMapAllowed());
 
-    //   Step 2. Set el's relevant global object's import maps allowed to false.
-    mModuleLoader->DisallowImportMaps();
+      //   Step 2. Set el's relevant global object's import maps allowed to
+      //   false.
+      mModuleLoader->DisallowImportMaps();
+    }
 
     //   Step 3. Let result be the result of creating an import map parse result
     //   given source text and base URL.
