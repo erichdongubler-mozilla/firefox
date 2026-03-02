@@ -141,6 +141,7 @@ export default class IPProtectionStatusCard extends MozLitElement {
           data-l10n-id=${buttonL10nId}
           @click=${this.handleButtonClick}
           ?disabled=${buttonDisabled}
+          closemenu="none"
         ></moz-button>
       </ipprotection-status-box>
     `;
