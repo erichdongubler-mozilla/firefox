@@ -534,6 +534,10 @@ class ModuleLoaderBase : public nsISupports {
   bool IsModuleFetching(const ModuleMapKey& key) const;
   void WaitForModuleFetch(ModuleLoadRequest* aRequest);
 
+  void AddToPreloadedResolvedSet(
+      ModuleLoadRequest* aRootRequest,
+      mozilla::UniquePtr<SpecifierResolutionRecord> aRecord);
+
   void AddToGlobalResolvedSet(
       mozilla::UniquePtr<SpecifierResolutionRecord> aRecord);
 

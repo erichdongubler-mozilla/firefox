@@ -1141,9 +1141,30 @@ static void AddToResolvedSet(ResolvedModuleSet* aSet,
   MOZ_ALWAYS_TRUE(aSet->add(ptr, std::move(aRecord)));
 }
 
+void ModuleLoaderBase::AddToPreloadedResolvedSet(
+    ModuleLoadRequest* aRootRequest,
+    UniquePtr<SpecifierResolutionRecord> aRecord) {
+  MOZ_ASSERT(aRootRequest);
+  MOZ_ASSERT(aRootRequest->mModuleScript);
+
+  ResolvedModuleSet* set =
+      aRootRequest->mModuleScript->GetPreloadedResolvedSet();
+  MOZ_ASSERT(set);
+  AddToResolvedSet(set, std::move(aRecord));
+}
+
 void ModuleLoaderBase::AddToGlobalResolvedSet(
     UniquePtr<SpecifierResolutionRecord> aRecord) {
   AddToResolvedSet(GetResolvedModuleSet(), std::move(aRecord));
+}
+
+static ModuleLoadRequest* GetPreloadRootModuleRequest(
+    JS::Handle<JS::Value> aHostDefined) {
+  MOZ_ASSERT(!aHostDefined.isUndefined());
+  ModuleLoadRequest* parent =
+      static_cast<ModuleLoadRequest*>(aHostDefined.toPrivate());
+  MOZ_ASSERT(parent);
+  return parent->GetRootModule();
 }
 
 void ModuleLoaderBase::AddToResolvedModuleSet(
@@ -1151,6 +1172,14 @@ void ModuleLoaderBase::AddToResolvedModuleSet(
     Handle<Value> aHostDefined) {
   // 2. If global does not implement Window, then return.
   if (!mLoader->IsImportMapSupported()) {
+    return;
+  }
+
+  bool isPreloadModule = aScript && aScript->IsModuleScript() &&
+                         aScript->AsModuleScript()->ForPreload();
+  if (isPreloadModule) {
+    RefPtr<ModuleLoadRequest> root = GetPreloadRootModuleRequest(aHostDefined);
+    AddToPreloadedResolvedSet(root, std::move(aRecord));
     return;
   }
 

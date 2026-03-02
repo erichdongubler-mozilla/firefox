@@ -482,4 +482,12 @@ void ModuleScript::SetErrorToRethrow(const Value& aError) {
 void ModuleScript::SetForPreload(bool aValue) { mForPreload = aValue; }
 void ModuleScript::SetHadImportMap(bool aValue) { mHadImportMap = aValue; }
 
+ResolvedModuleSet* ModuleScript::GetPreloadedResolvedSet() {
+  if (!mPreloadedResolvedSet) {
+    mPreloadedResolvedSet = mozilla::MakeUnique<ResolvedModuleSet>();
+  }
+
+  return mPreloadedResolvedSet.get();
+}
+
 }  // namespace JS::loader
