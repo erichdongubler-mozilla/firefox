@@ -458,15 +458,13 @@ var FullScreen = {
     // shiftSize is sent from Cocoa widget code as a very precise double. We
     // don't need that kind of precision in our CSS.
     shiftSize = shiftSize.toFixed(2);
-    gNavToolbox.classList.toggle("fullscreen-with-menubar", shiftSize > 0);
-
-    let transform = shiftSize > 0 ? `translateY(${shiftSize}px)` : "";
-    gNavToolbox.style.transform = transform;
-    gURLBar.style.transform = gURLBar.hasAttribute("breakout") ? transform : "";
+    let translate = shiftSize > 0 ? `0 ${shiftSize}px` : "";
+    document.body.style.translate = translate;
+    gURLBar.style.translate = gURLBar.hasAttribute("breakout") ? translate : "";
     let searchbar = document.getElementById("searchbar-new");
     if (searchbar) {
-      searchbar.style.transform = searchbar.hasAttribute("breakout")
-        ? transform
+      searchbar.style.translate = searchbar.hasAttribute("breakout")
+        ? translate
         : "";
     }
     if (shiftSize > 0) {
