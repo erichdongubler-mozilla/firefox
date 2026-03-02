@@ -2574,7 +2574,7 @@ class Settings(
      */
     var shakeToSummarizeFeatureFlagEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_shake_to_summarize),
-        default = Config.channel.isDebug,
+        default = { FxNimbus.features.shakeToSummarize.value().enabled },
     )
 
     /**
