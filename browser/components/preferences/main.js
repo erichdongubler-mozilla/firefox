@@ -4062,6 +4062,7 @@ SettingGroupManager.registerGroups({
       {
         id: "dohBox",
         control: "moz-box-group",
+        controlAttrs: { searchkeywords: "doh trr" },
         items: [
           {
             id: "dohModeBoxItem",
