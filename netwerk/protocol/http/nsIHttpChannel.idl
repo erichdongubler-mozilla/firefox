@@ -153,7 +153,7 @@ interface nsIHttpChannel : nsIIdentChannel
      * @throws NS_ERROR_FAILURE if called during visitRequestHeaders.
      */
     [must_use] void setRequestHeader(in ACString aHeader,
-                                     in AUTF8String aValue,
+                                     in ACString aValue,
                                      in boolean aMerge);
 
     /**
@@ -331,7 +331,7 @@ interface nsIHttpChannel : nsIIdentChannel
      *         VisitOriginalResponseHeaders or getOriginalResponseHeader.
      */
     [must_use] void setResponseHeader(in ACString header,
-                                      in AUTF8String value,
+                                      in ACString value,
                                       in boolean merge);
 
     /**

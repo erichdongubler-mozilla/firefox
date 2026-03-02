@@ -80,7 +80,6 @@ add_task(async function test_non_ascii_header() {
     },
   });
   Assert.equal(headerValue1, "ä");
-
   info(buf1);
 
   // Second request with different non-ASCII header
@@ -95,37 +94,4 @@ add_task(async function test_non_ascii_header() {
   let protocol2 = req2.protocolVersion;
   Assert.strictEqual(protocol2, "h3", `Using ${protocol2}`);
   Assert.equal(req2.responseStatus, 200);
-
-  let headerValue2;
-  chan2.visitRequestHeaders({
-    visitHeader(name, value) {
-      if (name === "x-panel-title") {
-        headerValue2 = value;
-      }
-    },
-  });
-  Assert.equal(headerValue2, "ö");
-
-  // Third request with chinese characters
-  let chan3 = makeChan(`https://foo.example.com:${h2Port}/100`);
-  chan3.setRequestHeader("x-panel-title", "你好世界", false);
-
-  let [req3] = await channelOpenPromise(
-    chan3,
-    CL_IGNORE_CL | CL_ALLOW_UNKNOWN_CL
-  );
-
-  let headerValue3;
-  chan3.visitRequestHeaders({
-    visitHeader(name, value) {
-      if (name === "x-panel-title") {
-        headerValue3 = value;
-      }
-    },
-  });
-  Assert.equal(headerValue3, "你好世界");
-
-  let protocol3 = req3.protocolVersion;
-  Assert.strictEqual(protocol3, "h3", `Using ${protocol3}`);
-  Assert.equal(req3.responseStatus, 200);
 });
