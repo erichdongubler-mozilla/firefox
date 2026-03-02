@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.168
- * pdfjsBuild = e5656e430
+ * pdfjsVersion = 5.5.211
+ * pdfjsBuild = afa8a07a2
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -13581,7 +13581,6 @@ class Lexer {
   }
   getNumber() {
     let ch = this.currentChar;
-    let eNotation = false;
     let divideBy = 0;
     let sign = 1;
     if (ch === 0x2d) {
@@ -13611,19 +13610,13 @@ class Lexer {
       throw new FormatError(msg);
     }
     let baseValue = ch - 0x30;
-    let powerValue = 0;
-    let powerValueSign = 1;
     while ((ch = this.nextChar()) >= 0) {
       if (ch >= 0x30 && ch <= 0x39) {
         const currentDigit = ch - 0x30;
-        if (eNotation) {
-          powerValue = powerValue * 10 + currentDigit;
-        } else {
-          if (divideBy !== 0) {
-            divideBy *= 10;
-          }
-          baseValue = baseValue * 10 + currentDigit;
+        if (divideBy !== 0) {
+          divideBy *= 10;
         }
+        baseValue = baseValue * 10 + currentDigit;
       } else if (ch === 0x2e) {
         if (divideBy === 0) {
           divideBy = 1;
@@ -13632,24 +13625,12 @@ class Lexer {
         }
       } else if (ch === 0x2d) {
         warn("Badly formatted number: minus sign in the middle");
-      } else if (ch === 0x45 || ch === 0x65) {
-        ch = this.peekChar();
-        if (ch === 0x2b || ch === 0x2d) {
-          powerValueSign = ch === 0x2d ? -1 : 1;
-          this.nextChar();
-        } else if (ch < 0x30 || ch > 0x39) {
-          break;
-        }
-        eNotation = true;
       } else {
         break;
       }
     }
     if (divideBy !== 0) {
       baseValue /= divideBy;
-    }
-    if (eNotation) {
-      baseValue *= 10 ** (powerValueSign * powerValue);
     }
     return sign * baseValue;
   }
@@ -32007,19 +31988,17 @@ function toNumberArray(arr) {
 }
 class PDFFunction {
   static getSampleArray(size, outputSize, bps, stream) {
-    let i, ii;
-    let length = 1;
-    for (i = 0, ii = size.length; i < ii; i++) {
-      length *= size[i];
+    let length = outputSize;
+    for (const s of size) {
+      length *= s;
     }
-    length *= outputSize;
     const array = new Array(length);
     let codeSize = 0;
     let codeBuf = 0;
     const sampleMul = 1.0 / (2.0 ** bps - 1);
     const strBytes = stream.getBytes((length * bps + 7) / 8);
     let strIdx = 0;
-    for (i = 0; i < length; i++) {
+    for (let i = 0; i < length; i++) {
       while (codeSize < bps) {
         codeBuf <<= 8;
         codeBuf |= strBytes[strIdx++];
@@ -32187,14 +32166,8 @@ class PDFFunction {
           break;
         }
       }
-      let dmin = domain[0];
-      if (i > 0) {
-        dmin = bounds[i - 1];
-      }
-      let dmax = domain[1];
-      if (i < bounds.length) {
-        dmax = bounds[i];
-      }
+      const dmin = i > 0 ? bounds[i - 1] : domain[0];
+      const dmax = i < length ? bounds[i] : domain[1];
       const rmin = encode[2 * i];
       const rmax = encode[2 * i + 1];
       tmpBuf[0] = dmin === dmax ? rmin : rmin + (v - dmin) * (rmax - rmin) / (dmax - dmin);
@@ -32245,17 +32218,7 @@ class PDFFunction {
       const stack = evaluator.execute(input);
       const stackIndex = stack.length - numOutputs;
       for (i = 0; i < numOutputs; i++) {
-        value = stack[stackIndex + i];
-        let bound = range[i * 2];
-        if (value < bound) {
-          value = bound;
-        } else {
-          bound = range[i * 2 + 1];
-          if (value > bound) {
-            value = bound;
-          }
-        }
-        output[i] = value;
+        output[i] = MathClamp(stack[stackIndex + i], range[i * 2], range[i * 2 + 1]);
       }
       if (cache_available > 0) {
         cache_available--;
@@ -62374,7 +62337,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "5.5.168";
+    const workerVersion = "5.5.211";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }

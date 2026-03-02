@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.168
- * pdfjsBuild = e5656e430
+ * pdfjsVersion = 5.5.211
+ * pdfjsBuild = afa8a07a2
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -8556,7 +8556,7 @@ class PDFViewer {
   #viewerAlert = null;
   #copiedPageViews = null;
   constructor(options) {
-    const viewerVersion = "5.5.168";
+    const viewerVersion = "5.5.211";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -10641,7 +10641,8 @@ const PDFViewerApplication = {
         abortSignal,
         enableHWA,
         enableSplitMerge: AppOptions.get("enableSplitMerge"),
-        manageMenu: appConfig.viewsManager.manageMenu
+        manageMenu: appConfig.viewsManager.manageMenu,
+        addFileButton: appConfig.viewsManager.viewsManagerAddFileButton
       });
       renderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
     }

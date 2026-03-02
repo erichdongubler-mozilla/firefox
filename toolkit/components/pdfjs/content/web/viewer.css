@@ -4880,6 +4880,7 @@ button.hasPopupMenu{
   --sidebar-width:230px;
   --sidebar-min-width:min-content;
   --sidebar-max-width:50vw;
+  --sidebar-block-padding:8px;
 
   --text-color:light-dark(#15141a, #fbfbfe);
   --button-fg:var(--text-color);
@@ -4980,9 +4981,9 @@ button.hasPopupMenu{
   padding-bottom:16px;
   flex-direction:column;
   align-items:flex-start;
+  inset-block-start:calc(100% + var(--sidebar-block-padding));
   height:calc(
-    var(--viewer-container-height) - var(--toolbar-height) -
-      var(--doorhanger-height)
+    var(--viewer-container-height) - 2 * var(--sidebar-block-padding)
   );
   position:absolute;
 
@@ -5051,10 +5052,11 @@ button.hasPopupMenu{
     background-color:var(--header-bg);
 
     .viewsManagerLabel{
-      flex:1 0 0;
+      flex:0;
       color:var(--text-color);
       text-align:center;
       height:fit-content;
+      width:fit-content;
       user-select:none;
 
       font:menu;
@@ -5142,6 +5144,8 @@ button.hasPopupMenu{
       }
 
       #viewsManagerAddFileButton{
+        visibility:hidden;
+
         background:var(--button-no-bg);
         width:32px;
         height:32px;
@@ -5349,7 +5353,7 @@ button.hasPopupMenu{
       align-items:center;
       justify-content:space-evenly;
       padding:20px 32px;
-      gap:20px;
+      gap:44px;
       width:100%;
       box-sizing:border-box;
       position:relative;
@@ -5410,12 +5414,15 @@ button.hasPopupMenu{
       }
 
       > .thumbnail{
+        --input-dim:16px;
+        --gap-between-input-and-thumbnail:16px;
+
         display:inline-flex;
-        justify-content:center;
+        justify-content:flex-end;
         align-items:center;
         flex-direction:row-reverse;
-        gap:16px;
-        width:auto;
+        gap:var(--gap-between-input-and-thumbnail);
+        width:190px;
         height:auto;
         position:relative;
         scroll-margin-top:20px;
@@ -5463,6 +5470,9 @@ button.hasPopupMenu{
 
         > input{
           margin:0;
+          width:var(--input-dim);
+          height:var(--input-dim);
+          accent-color:var(--indicator-color);
         }
 
         > .thumbnailImageContainer{

@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.168
- * pdfjsBuild = e5656e430
+ * pdfjsVersion = 5.5.211
+ * pdfjsBuild = afa8a07a2
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -1351,10 +1351,9 @@ function getPdfFilenameFromUrl(url, defaultFilename = "document.pdf") {
       let decoded = decodeURIComponent(name);
       if (decoded.includes("/")) {
         decoded = stripPath(decoded);
-        if (decoded.test(/^\.pdf$/i)) {
-          return decoded;
+        if (/^\.pdf$/i.test(decoded)) {
+          return name;
         }
-        return name;
       }
       return decoded;
     } catch {
@@ -13406,7 +13405,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.5.168",
+    apiVersion: "5.5.211",
     data,
     password,
     disableAutoFetch,
@@ -15033,8 +15032,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.5.168";
-const build = "e5656e430";
+const version = "5.5.211";
+const build = "afa8a07a2";
 
 ;// ./src/display/editor/color_picker.js
 

@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.168
- * pdfjsBuild = e5656e430
+ * pdfjsVersion = 5.5.211
+ * pdfjsBuild = afa8a07a2
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -4622,7 +4622,6 @@ class PasswordPrompt {
 ;// ./web/base_tree_viewer.js
 
 
-const TREEITEM_OFFSET_TOP = -100;
 const TREEITEM_SELECTED_CLASS = "selected";
 class BaseTreeViewer {
   constructor(options) {
@@ -4718,7 +4717,12 @@ class BaseTreeViewer {
     }
     this._l10n.resume();
     this._updateCurrentTreeItem(treeItem);
-    this.container.scrollTo(treeItem.offsetLeft, treeItem.offsetTop + TREEITEM_OFFSET_TOP);
+    treeItem.scrollIntoView({
+      behavior: "instant",
+      block: "center",
+      inline: "center",
+      container: "nearest"
+    });
   }
 }
 
@@ -8506,14 +8510,16 @@ class PDFThumbnailView extends RenderableView {
     imageContainer.tabIndex = -1;
     imageContainer.draggable = false;
     imageContainer.setAttribute("page-number", id);
+    imageContainer.setAttribute("data-l10n-id", "pdfjs-thumb-page-title1");
+    imageContainer.setAttribute("data-l10n-args", this.#getPageL10nArgs(true));
     const image = this.image = document.createElement("img");
     imageContainer.append(image);
     if (enableSplitMerge) {
       const checkbox = this.checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.tabIndex = -1;
-      checkbox.setAttribute("data-l10n-id", "pdfjs-thumb-page-checkbox");
-      checkbox.setAttribute("data-l10n-args", this.#pageL10nArgs);
+      checkbox.setAttribute("data-l10n-id", "pdfjs-thumb-page-checkbox1");
+      checkbox.setAttribute("data-l10n-args", this.#getPageL10nArgs());
       thumbnailContainer.append(checkbox);
       this.pasteButton = null;
     }
@@ -8688,8 +8694,8 @@ class PDFThumbnailView extends RenderableView {
     reducedCanvas.toBlob(resolve);
     const blob = await promise;
     image.src = URL.createObjectURL(blob);
-    imageContainer.setAttribute("data-l10n-id", "pdfjs-thumb-page-canvas");
-    imageContainer.setAttribute("data-l10n-args", this.#pageL10nArgs);
+    image.setAttribute("data-l10n-id", "pdfjs-thumb-page-canvas");
+    image.setAttribute("data-l10n-args", this.#getPageL10nArgs());
     imageContainer.classList.remove("missingThumbnailImage");
     if (!FeatureTest.isOffscreenCanvasSupported) {
       reducedCanvas.width = reducedCanvas.height = 0;
@@ -8816,15 +8822,17 @@ class PDFThumbnailView extends RenderableView {
     ctx.drawImage(reducedImage, 0, 0, reducedWidth, reducedHeight, 0, 0, canvas.width, canvas.height);
     return canvas;
   }
-  get #pageL10nArgs() {
+  #getPageL10nArgs(hasTotal = false) {
     return JSON.stringify({
-      page: this.pageLabel ?? this.id
+      page: this.pageLabel ?? this.id,
+      total: hasTotal ? this.linkService.pagesCount : undefined
     });
   }
   setPageLabel(label) {
     this.pageLabel = typeof label === "string" ? label : null;
-    this.imageContainer.setAttribute("data-l10n-args", this.#pageL10nArgs);
-    this.checkbox?.setAttribute("data-l10n-args", this.#pageL10nArgs);
+    this.imageContainer.setAttribute("data-l10n-args", this.#getPageL10nArgs(true));
+    this.image.setAttribute("data-l10n-args", this.#getPageL10nArgs());
+    this.checkbox?.setAttribute("data-l10n-args", this.#getPageL10nArgs());
   }
 }
 
@@ -8869,6 +8877,9 @@ class PDFThumbnailViewer {
   #copiedThumbnails = null;
   #copiedPageNumbers = null;
   #isCut = false;
+  #isOneColumnView = false;
+  #scrollableContainerWidth = 0;
+  #scrollableContainerHeight = 0;
   constructor({
     container,
     eventBus,
@@ -8880,7 +8891,8 @@ class PDFThumbnailViewer {
     abortSignal,
     enableHWA,
     enableSplitMerge,
-    manageMenu
+    manageMenu,
+    addFileButton
   }) {
     this.scrollableContainer = container.parentElement;
     this.container = container;
@@ -9345,13 +9357,22 @@ class PDFThumbnailViewer {
     this.#manageSaveAsButton.disabled = this.#manageDeleteButton.disabled = this.#manageCopyButton.disabled = this.#manageCutButton.disabled = !enable;
   }
   #moveDraggedContainer(dx, dy) {
-    this.#draggedImageOffsetX += dx;
-    this.#draggedImageOffsetY += dy;
+    if (this.#isOneColumnView) {
+      dx = 0;
+    }
+    if (this.#draggedImageX + dx < 0 || this.#draggedImageX + this.#draggedImageWidth + dx > this.#scrollableContainerWidth) {
+      dx = 0;
+    }
+    if (this.#draggedImageY + dy < 0 || this.#draggedImageY + this.#draggedImageHeight + dy > this.#scrollableContainerHeight) {
+      dy = 0;
+    }
     this.#draggedImageX += dx;
     this.#draggedImageY += dy;
+    this.#draggedImageOffsetX += dx;
+    this.#draggedImageOffsetY += dy;
     this.#draggedContainer.style.translate = `${this.#draggedImageOffsetX}px ${this.#draggedImageOffsetY}px`;
     if (this.#draggedImageY + this.#draggedImageHeight > this.#currentScrollBottom) {
-      this.scrollableContainer.scrollTop = Math.min(this.scrollableContainer.scrollTop + PIXELS_TO_SCROLL_WHEN_DRAGGING, this.scrollableContainer.scrollHeight);
+      this.scrollableContainer.scrollTop = Math.min(this.scrollableContainer.scrollTop + PIXELS_TO_SCROLL_WHEN_DRAGGING, this.#scrollableContainerHeight);
     } else if (this.#draggedImageY < this.#currentScrollTop) {
       this.scrollableContainer.scrollTop = Math.max(this.scrollableContainer.scrollTop - PIXELS_TO_SCROLL_WHEN_DRAGGING, 0);
     }
@@ -9451,6 +9472,11 @@ class PDFThumbnailViewer {
       lastSpace: (positionsLastX.at(-1) - lastRightX) / 2,
       bbox
     };
+    this.#isOneColumnView = positionsX.length === 1;
+    ({
+      clientWidth: this.#scrollableContainerWidth,
+      scrollHeight: this.#scrollableContainerHeight
+    } = this.scrollableContainer);
   }
   #addEventListeners() {
     this.eventBus.on("resize", ({
@@ -9550,7 +9576,7 @@ class PDFThumbnailViewer {
         clientY: clickY,
         pointerId: dragPointerId
       } = e;
-      if (this.#pagesMapper.copiedPageNumbers?.length > 0 || !isNaN(this.#lastDraggedOverIndex) || !draggedImage.classList.contains("thumbnailImageContainer")) {
+      if (e.button !== 0 || this.#pagesMapper.copiedPageNumbers?.length > 0 || !isNaN(this.#lastDraggedOverIndex) || !draggedImage.classList.contains("thumbnailImageContainer")) {
         return;
       }
       const thumbnail = draggedImage.parentElement;
@@ -9562,8 +9588,12 @@ class PDFThumbnailViewer {
       let prevDragY = clickY;
       let prevScrollTop = this.scrollableContainer.scrollTop;
       const scaleFactor = PDFThumbnailViewer.#getScaleFactor(draggedImage);
-      this.#draggedImageOffsetX = ((scaleFactor - 1) * e.layerX + draggedImage.offsetLeft) / scaleFactor;
       this.#draggedImageOffsetY = ((scaleFactor - 1) * e.layerY + draggedImage.offsetTop) / scaleFactor;
+      if (this.#isOneColumnView) {
+        this.#draggedImageOffsetX = draggedImage.offsetLeft + (scaleFactor - 1) * 0.5 * draggedImage.offsetWidth / scaleFactor;
+      } else {
+        this.#draggedImageOffsetX = ((scaleFactor - 1) * e.layerX + draggedImage.offsetLeft) / scaleFactor;
+      }
       this.#draggedImageX = thumbnail.offsetLeft + this.#draggedImageOffsetX;
       this.#draggedImageY = thumbnail.offsetTop + this.#draggedImageOffsetY;
       this.#draggedImageWidth = draggedImage.offsetWidth / scaleFactor;
@@ -9574,10 +9604,10 @@ class PDFThumbnailViewer {
           clientY: y,
           pointerId
         } = ev;
-        if (pointerId !== dragPointerId || Math.abs(x - clickX) <= DRAG_THRESHOLD_IN_PIXELS && Math.abs(y - clickY) <= DRAG_THRESHOLD_IN_PIXELS) {
-          return;
-        }
         if (isNaN(this.#lastDraggedOverIndex)) {
+          if (pointerId !== dragPointerId || Math.abs(x - clickX) <= DRAG_THRESHOLD_IN_PIXELS && Math.abs(y - clickY) <= DRAG_THRESHOLD_IN_PIXELS) {
+            return;
+          }
           this.#onStartDragging(thumbnail);
           const stopDragging = (_e, isDropping = false) => {
             this.#onStopDragging(isDropping);
@@ -9631,6 +9661,13 @@ class PDFThumbnailViewer {
           });
           window.addEventListener("wheel", stopEvent, {
             passive: false,
+            signal
+          });
+          window.addEventListener("keydown", kEv => {
+            if (kEv.key === "Escape" && !isNaN(this.#lastDraggedOverIndex)) {
+              stopDragging(kEv);
+            }
+          }, {
             signal
           });
         }
@@ -9733,16 +9770,28 @@ class PDFThumbnailViewer {
     if (positionsY[yPos] <= y && y < (positionsY[yPos + 1] ?? Infinity) && xArray[xPos] <= x && x < (xArray[xPos + 1] ?? Infinity)) {
       return null;
     }
-    yPos = binarySearchFirstItem(positionsY, cy => y < cy) - 1;
-    xArray = yPos === positionsY.length - 1 && positionsLastX.length > 0 ? positionsLastX : positionsX;
-    xPos = Math.max(0, binarySearchFirstItem(xArray, cx => x < cx) - 1);
-    if (yPos < 0) {
-      if (xPos <= 0) {
-        xPos = -1;
+    let index;
+    yPos = binarySearchFirstItem(positionsY, cy => y < cy);
+    if (this.#isOneColumnView) {
+      index = yPos - 1;
+    } else {
+      if (yPos === positionsY.length) {
+        yPos = positionsY.length - 1;
+      } else {
+        const dist1 = Math.abs(positionsY[yPos - 1] - y);
+        const dist2 = Math.abs(positionsY[yPos] - y);
+        yPos = dist1 < dist2 ? yPos - 1 : yPos;
       }
-      yPos = 0;
+      xArray = yPos === positionsY.length - 1 && positionsLastX.length > 0 ? positionsLastX : positionsX;
+      xPos = binarySearchFirstItem(xArray, cx => x < cx) - 1;
+      if (yPos < 0) {
+        if (xPos <= 0) {
+          xPos = -1;
+        }
+        yPos = 0;
+      }
+      index = MathClamp(yPos * positionsX.length + xPos, -1, this._thumbnails.length - 1);
     }
-    const index = MathClamp(yPos * positionsX.length + xPos, -1, this._thumbnails.length - 1);
     if (index === lastDraggedOverIndex) {
       return null;
     }
@@ -12407,7 +12456,7 @@ class PDFViewer {
   #viewerAlert = null;
   #copiedPageViews = null;
   constructor(options) {
-    const viewerVersion = "5.5.168";
+    const viewerVersion = "5.5.211";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -15627,6 +15676,7 @@ class ViewsManager extends Sidebar {
       outlinesView,
       attachmentsView,
       layersView,
+      viewsManagerAddFileButton,
       viewsManagerCurrentOutlineButton,
       viewsManagerSelectorButton,
       viewsManagerSelectorOptions,
@@ -15659,6 +15709,7 @@ class ViewsManager extends Sidebar {
     this.outlinesView = outlinesView;
     this.attachmentsView = attachmentsView;
     this.layersView = layersView;
+    this.viewsManagerAddFileButton = viewsManagerAddFileButton;
     this.viewsManagerCurrentOutlineButton = viewsManagerCurrentOutlineButton;
     this.viewsManagerHeaderLabel = viewsManagerHeaderLabel;
     this.viewsManagerStatus = viewsManagerStatus;
@@ -15738,6 +15789,7 @@ class ViewsManager extends Sidebar {
         return;
     }
     this.viewsManagerStatus.hidden = view !== SidebarView.THUMBS;
+    this.viewsManagerAddFileButton.hidden = view !== SidebarView.THUMBS;
     this.viewsManagerCurrentOutlineButton.hidden = view !== SidebarView.OUTLINE;
     this.viewsManagerHeaderLabel.setAttribute("data-l10n-id", ViewsManager.#l10nDescription[titleL10nId] || "");
     this.active = view;
@@ -16263,7 +16315,8 @@ const PDFViewerApplication = {
         abortSignal,
         enableHWA,
         enableSplitMerge: AppOptions.get("enableSplitMerge"),
-        manageMenu: appConfig.viewsManager.manageMenu
+        manageMenu: appConfig.viewsManager.manageMenu,
+        addFileButton: appConfig.viewsManager.viewsManagerAddFileButton
       });
       renderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
     }
