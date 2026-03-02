@@ -5393,8 +5393,12 @@ export class UrlbarInput extends HTMLElement {
   }
 
   _on_beforeinput(event) {
-    if (event.data && this._keyDownEnterDeferred) {
+    if (
       // Ignore char key input while processing enter key.
+      (event.data && this._keyDownEnterDeferred) ||
+      // Ignore space key while the result menu will be activated by space.
+      (event.data == " " && this.view.shouldSpaceActivateSelectedElement())
+    ) {
       event.preventDefault();
     }
   }
