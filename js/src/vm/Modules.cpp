@@ -338,6 +338,13 @@ JS_PUBLIC_API bool JS::IsCyclicModule(JSObject* module) {
   return module->as<ModuleObject>().hasCyclicModuleFields();
 }
 
+#ifdef DEBUG
+JS_PUBLIC_API void JS::SetModulePreload(JSObject* module, bool isPreload) {
+  MOZ_ASSERT(module->is<ModuleObject>());
+  module->as<ModuleObject>().setPreload(isPreload);
+}
+#endif
+
 JS_PUBLIC_API bool JS::ModuleLink(JSContext* cx, Handle<JSObject*> moduleArg) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);

@@ -395,6 +395,9 @@ class ModuleObject : public NativeObject {
     CyclicModuleFieldsSlot,
     // `SyntheticModuleFields` if a synthetic module. Otherwise `undefined`.
     SyntheticModuleFieldsSlot,
+#ifdef DEBUG
+    PreloadSlot,
+#endif
     SlotCount
   };
 
@@ -500,6 +503,11 @@ class ModuleObject : public NativeObject {
 
   void initAsyncSlots(JSContext* cx, bool hasTopLevelAwait,
                       Handle<ListObject*> asyncParentModules);
+
+#ifdef DEBUG
+  void setPreload(bool isPreload);
+  bool isPreload() const;
+#endif
 
  private:
   static const JSClassOps classOps_;

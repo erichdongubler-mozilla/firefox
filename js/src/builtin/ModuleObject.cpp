@@ -1342,6 +1342,16 @@ void ModuleObject::setMetaObject(JSObject* obj) {
   cyclicModuleFields()->metaObject = obj;
 }
 
+#ifdef DEBUG
+void ModuleObject::setPreload(bool isPreload) {
+  setReservedSlot(PreloadSlot, BooleanValue(isPreload));
+}
+
+bool ModuleObject::isPreload() const {
+  return getReservedSlot(PreloadSlot).toBoolean();
+}
+#endif
+
 /* static */
 void ModuleObject::trace(JSTracer* trc, JSObject* obj) {
   ModuleObject& module = obj->as<ModuleObject>();

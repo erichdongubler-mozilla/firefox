@@ -1055,8 +1055,8 @@ nsresult ModuleLoaderBase::CreateModuleScript(ModuleLoadRequest* aRequest) {
     moduleScript->SetModuleRecord(module);
   }
 
-  LOG(("ScriptLoadRequest (%p):   module script == %p", aRequest,
-       aRequest->mModuleScript.get()));
+  LOG(("ScriptLoadRequest (%p):   module script == %p ForPreload %d", aRequest,
+       aRequest->mModuleScript.get(), aRequest->mModuleScript->ForPreload()));
 
   return rv;
 }

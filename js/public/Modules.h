@@ -246,6 +246,14 @@ extern JS_PUBLIC_API Value GetModulePrivate(JSObject* module);
  */
 extern JS_PUBLIC_API bool IsCyclicModule(JSObject* module);
 
+#ifdef DEBUG
+/**
+ * A helper function to set the isPreload flag on the ModuleObject.
+ * The flag will be verified later when ResetPreloadedModule is called.
+ */
+extern JS_PUBLIC_API void SetModulePreload(JSObject* module, bool isPreload);
+#endif
+
 /*
  * Perform the ModuleLink operation on the given source text module record.
  *
