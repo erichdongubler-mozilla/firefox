@@ -9522,18 +9522,21 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
                          (hasTextDirectives &&
                           aState.mCurrentURIHasRef != aState.mNewURIHasRef));
 
+    // We enqueue the hashchange event first before dispatching popstate,
+    // differing from the spec.
+    // See: https://github.com/whatwg/html/issues/12190
+    if (doHashchange) {
+      // Note that currentURI hasn't changed because it's on the
+      // stack, so we can just use it directly as the old URI.
+      win->DispatchAsyncHashchange(currentURI, newURI);
+    }
+
     if (aState.mHistoryNavBetweenSameDoc || doHashchange) {
       win->DispatchSyncPopState();
     }
 
     if (needsScrollPosUpdate && win->HasActiveDocument()) {
       SetCurScrollPosEx(bx, by);
-    }
-
-    if (doHashchange) {
-      // Note that currentURI hasn't changed because it's on the
-      // stack, so we can just use it directly as the old URI.
-      win->DispatchAsyncHashchange(currentURI, newURI);
     }
   }
 

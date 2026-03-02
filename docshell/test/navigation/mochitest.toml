@@ -234,6 +234,8 @@ skip-if = [
   "os == 'android' && os_version == '14' && arch == 'x86_64' && opt && fission", # Bug 1982945
 ]
 
+["test_hashchange_popstate_event_order.html"]
+
 ["test_load_history_entry.html"]
 
 ["test_meta_refresh.html"]
