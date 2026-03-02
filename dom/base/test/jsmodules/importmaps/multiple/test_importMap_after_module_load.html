@@ -1,10 +1,18 @@
 <!DOCTYPE html>
 <head>
   <meta charset=utf-8>
-  <title>Test import map should be rejected.</title>
+  <title>Test a top-level module load before and after an import map</title>
 </head>
 <body onload='testLoaded()'>
 <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+
+<script>var result;</script>
+
+<!--This is a module load before the import map tag-->
+<!--It will import "./module_simpleExport.mjs", which makes "module_simpleExport.mjs"-->
+<!--as a resolved module.-->
+<script src="./module_simpleImport.mjs" type="module">
+</script>
 
 <script>
 // eslint-disable-next-line no-unused-vars
@@ -20,19 +28,6 @@ let listener = {
   }
 };
 console.registerListener(listener);
-</script>
-
-<!--Note: This test should be replaced by-->
-<!--test_importMap_between_inline_modules.html when the pref-->
-<!--"dom.multiple_import_maps.enabled" is turned on.-->
-
-<!--There is an inline module before the import map tag, so the import map-->
-<!--cannot be accepted according to the spec.-->
-<!--And because the import map is rejected, so the module specifier-->
-<!--"./module_simpleExport.mjs" won't be remapped to-->
-<!--"./scope1/module_simpleExport.mjs".-->
-
-<script type="module">
 </script>
 
 <script type="importmap" onerror='importMapError()'>
@@ -53,19 +48,12 @@ console.registerListener(listener);
     hasError = true;
   }
 
-  // If the multiple import maps is supported, the import map will be accepted,
-  // otherwise it is ignored.
-  const pref = SpecialPowers.getBoolPref("dom.multiple_import_maps.enabled");
-  const expectedValue = pref ? 84 : 42;
-  const onerrorExpected = !pref;
-  const msgExpected = !pref;
-
   // eslint-disable-next-line no-unused-vars
   function testLoaded() {
     import("./module_simpleExport.mjs").then((ns) => {
-      ok(ns.x == expectedValue, 'Check simple imported value result: ' + ns.x);
-      ok(hasError == onerrorExpected, "onerror of the import map should be called.");
-      ok(gotMsg == msgExpected, "Should have got the console warning.");
+      ok(ns.x == 42, 'Check simple imported value result: ' + ns.x);
+      ok(!hasError, "onerror of the import map shouldn't be called.");
+      ok(gotMsg, "Should have got the console warning.");
     }).catch((e) => {
       ok(false, "throws " + e);
     }).then(() => {

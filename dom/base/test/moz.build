@@ -28,6 +28,7 @@ TEST_DIRS += [
     "gtest",
     "jsmodules",
     "jsmodules/importmaps",
+    "jsmodules/importmaps/multiple",
     "useractivation",
     "meta_viewport",
 ]

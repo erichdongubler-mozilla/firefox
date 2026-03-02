@@ -1,16 +1,10 @@
 <!DOCTYPE html>
 <head>
   <meta charset=utf-8>
-  <title>Test the 2nd import map should be rejected.</title>
+  <title>Test the 2nd import map should be accepted.</title>
 </head>
 <body onload='testLoaded()'>
 <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
-
-<!--
-  Note: This test should be replaced by
-  test_multipleimportMaps.html when the pref
-  "dom.multiple_import_maps.enabled" is turned on.
--->
 
 <script>
 // eslint-disable-next-line no-unused-vars
@@ -31,16 +25,22 @@ console.registerListener(listener);
 <script type="importmap" onerror='importMapError1()'>
 {
   "imports": {
-    "./module_simpleExport.mjs": "./scope1/module_simpleExport.mjs"
+    "./export.mjs": "./module_simpleExport.mjs"
   }
 }
 </script>
 
-<!--The 2nd import map should be rejected.-->
+<!--
+The 2nd import map:
+The first entry "./module_simpleExport.mjs" will be ignored due to conflict with
+the first import map.
+The second entry will be merged.
+-->
 <script type="importmap" onerror='importMapError2()'>
 {
   "imports": {
-    "./module_simpleExport.mjs": "./scope1/module_simpleExport.mjs"
+    "./export.mjs": "./module_simpleExport_2.mjs",
+    "simple": "./module_simpleExport.mjs"
   }
 }
 </script>
@@ -59,18 +59,17 @@ console.registerListener(listener);
     hasError = true;
   }
 
-  // If the multiple import maps is supported, the import map will be accepted,
-  // otherwise it is ignored.
-  const pref = SpecialPowers.getBoolPref("dom.multiple_import_maps.enabled");
-  const onerrorExpected = !pref;
-  const msgExpected = !pref;
-
   // eslint-disable-next-line no-unused-vars
   function testLoaded() {
-    import("./module_simpleExport.mjs").then((ns) => {
-      ok(ns.x == 84, 'Check simple imported value result: ' + ns.x);
-      ok(hasError == onerrorExpected , "onerror of the import map should be called.");
+    import("./export.mjs").then((ns) => {
+      ok(ns.x == 42, 'Check export.mjs imported value result: ' + ns.x);
+      ok(!hasError, "onerror of the 2nd import map shouldn't be called.");
+
+      // There should be a warning for the conflict in the 2nd import map.
       ok(gotMsg, "Should have got the console warning.");
+      return import("simple");
+    }).then((ns) => {
+      ok(ns.x == 42, 'Check simple imported value result: ' + ns.x);
     }).catch((e) => {
       ok(false, "throws " + e);
     }).then(() => {
