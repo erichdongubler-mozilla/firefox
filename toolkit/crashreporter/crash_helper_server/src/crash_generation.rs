@@ -14,17 +14,10 @@ use super::{
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod linux;
 #[cfg(any(target_os = "android", target_os = "linux"))]
-pub(crate) use linux::{get_auxv_info, PlatformData};
+pub(crate) use linux::get_auxv_info;
 
 #[cfg(target_os = "windows")]
 mod windows;
-#[cfg(target_os = "windows")]
-pub(crate) use windows::PlatformData;
-
-#[cfg(any(target_os = "ios", target_os = "macos"))]
-mod mach;
-#[cfg(any(target_os = "ios", target_os = "macos"))]
-pub(crate) use mach::PlatformData;
 
 use anyhow::Result;
 use crash_annotations::{

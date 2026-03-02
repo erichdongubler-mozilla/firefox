@@ -4,13 +4,13 @@
 
 use anyhow::{bail, Result};
 use crash_helper_common::{
-    messages::{self, ChildProcessRendezVousReply, Header, Message},
+    messages::{self, Header, Message},
     AncillaryData, GeckoChildId, IPCConnector, IPCConnectorKey, IPCEvent, IPCListener, IPCQueue,
     Pid,
 };
 use std::{collections::HashMap, ffi::OsString, process, rc::Rc};
 
-use crate::crash_generation::{CrashGenerator, PlatformData};
+use crate::crash_generation::CrashGenerator;
 
 #[derive(PartialEq)]
 pub enum IPCServerState {
@@ -58,11 +58,6 @@ struct IPCConnection {
     /// will be the `pid`` of the connected process and the `id` will be the
     /// Gecko-assigned child ID for child proceses or 0 for the main process.
     process: Option<ProcessId>,
-    #[allow(dead_code)]
-    /// Platform-specific data associated with this connection. Currently used
-    /// on macOS/iOS to store the send right to the mach task on the other end
-    /// of this connection.
-    platform_data: Option<PlatformData>,
 }
 
 pub(crate) struct IPCServer {
@@ -90,9 +85,6 @@ impl IPCServer {
                 connector,
                 endpoint: IPCEndpoint::Parent,
                 process: Some(ProcessId::for_parent(client_pid)),
-                // TODO: This needs to be populated when we move main process
-                // crash generation OOP.
-                platform_data: None,
             },
         );
 
@@ -111,7 +103,6 @@ impl IPCServer {
                             connector,
                             endpoint: IPCEndpoint::External,
                             process: None,
-                            platform_data: None,
                         },
                     );
                 }
@@ -210,7 +201,6 @@ impl IPCServer {
                             connector,
                             endpoint: IPCEndpoint::Child,
                             process: Some(ProcessId::for_child(reply.child_pid, reply.id)),
-                            platform_data: get_platform_data(reply)?,
                         },
                     );
                 }
@@ -265,27 +255,5 @@ impl IPCServer {
         }
 
         None
-    }
-}
-
-fn get_platform_data(
-    #[allow(unused)] child_rendezvous: ChildProcessRendezVousReply,
-) -> Result<Option<PlatformData>> {
-    #[cfg(not(any(target_os = "ios", target_os = "macos")))]
-    {
-        Ok(None)
-    }
-    #[cfg(any(target_os = "ios", target_os = "macos"))]
-    {
-        // HACK: For some reason `.into_iter()` doesn't work here, it yields
-        // references instead of owned objects so I have to go through an array
-        // to take hold of the send right.
-        let mut vector: Vec<AncillaryData> = child_rendezvous.ancillary_data.into();
-        let ancillary_data = vector.pop().unwrap();
-        if let crash_helper_common::MachPortRight::Send(task_right) = ancillary_data {
-            Ok(Some(task_right))
-        } else {
-            bail!("Wrong right has been provided");
-        }
     }
 }

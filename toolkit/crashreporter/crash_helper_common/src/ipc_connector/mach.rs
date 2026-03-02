@@ -26,7 +26,7 @@ use crate::{
     messages::{self, Message, MessageError},
     platform::{
         mach::{mach_msg_send, AsRawPort, MachMessageWrapper, ReceiveRight, SendRight},
-        MachPortRight, PlatformError,
+        OwnedRight, PlatformError,
     },
     ProcessHandle,
 };
@@ -59,7 +59,7 @@ unsafe extern "C" {
 
 const MACH_NOTIFY_NO_SENDERS: c_int = 0o106;
 
-pub type AncillaryData = MachPortRight;
+pub type AncillaryData = OwnedRight;
 pub const CONNECTOR_ANCILLARY_DATA_LEN: usize = 2;
 
 #[repr(C)]
@@ -91,10 +91,10 @@ impl IPCConnector {
         ancillary_data: [AncillaryData; CONNECTOR_ANCILLARY_DATA_LEN],
     ) -> Result<IPCConnector, IPCError> {
         let mut iter = ancillary_data.into_iter();
-        let MachPortRight::Send(send) = iter.next().unwrap() else {
+        let OwnedRight::Send(send) = iter.next().unwrap() else {
             return Err(IPCError::InvalidAncillary);
         };
-        let MachPortRight::Receive(recv) = iter.next().unwrap() else {
+        let OwnedRight::Receive(recv) = iter.next().unwrap() else {
             return Err(IPCError::InvalidAncillary);
         };
 
@@ -276,10 +276,7 @@ impl IPCConnector {
     }
 
     pub fn into_ancillary(self) -> [AncillaryData; CONNECTOR_ANCILLARY_DATA_LEN] {
-        [
-            MachPortRight::Send(self.send),
-            MachPortRight::Receive(self.recv),
-        ]
+        [OwnedRight::Send(self.send), OwnedRight::Receive(self.recv)]
     }
 
     pub fn into_raw_connector(self) -> RawIPCConnector {
@@ -347,15 +344,12 @@ impl IPCConnector {
 
         for (i, right) in rights.into_iter().enumerate() {
             descriptors[i] = match right {
-                MachPortRight::Receive(recv) => mach_msg_port_descriptor_t::new(
+                OwnedRight::Receive(recv) => mach_msg_port_descriptor_t::new(
                     recv.into_raw_port(),
                     MACH_MSG_TYPE_MOVE_RECEIVE,
                 ),
-                MachPortRight::Send(send) => {
+                OwnedRight::Send(send) => {
                     mach_msg_port_descriptor_t::new(send.into_raw_port(), MACH_MSG_TYPE_MOVE_SEND)
-                }
-                MachPortRight::SendRef(send_ref) => {
-                    mach_msg_port_descriptor_t::new(send_ref.as_raw_port(), MACH_MSG_TYPE_COPY_SEND)
                 }
             };
         }
@@ -387,15 +381,15 @@ impl IPCConnector {
             let right = match descriptor.disposition as u32 {
                 MACH_MSG_TYPE_MOVE_RECEIVE => {
                     // SAFETY: This disposition denotes that this is a valid receive right
-                    MachPortRight::Receive(unsafe { ReceiveRight::from_raw_port(name) })
+                    OwnedRight::Receive(unsafe { ReceiveRight::from_raw_port(name) })
                 }
                 MACH_MSG_TYPE_MOVE_SEND => {
                     // SAFETY: This disposition denotes that this is a valid send right
-                    MachPortRight::Send(unsafe { SendRight::from_raw_port(name) })
+                    OwnedRight::Send(unsafe { SendRight::from_raw_port(name) })
                 }
                 MACH_MSG_TYPE_COPY_SEND => {
                     // SAFETY: This disposition denotes that this is a valid send right
-                    MachPortRight::Send(unsafe { SendRight::from_raw_port(name) })
+                    OwnedRight::Send(unsafe { SendRight::from_raw_port(name) })
                 }
                 _ => return Err(IPCError::InvalidAncillary),
             };
