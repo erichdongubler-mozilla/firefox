@@ -63,5 +63,8 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
 // Wait for the thread to terminate
 SamplerThread::~SamplerThread() { /* Noop */ }
 void SamplerThread::Stop(PSLockRef aLock) { mSampler.Disable(aLock); }
+void SamplerThread::SleepMicro(uint32_t aMicroseconds) {
+  MOZ_CRASH("Not reachable because we never spawn SamplerThread");
+}
 }  // namespace baseprofiler
 }  // namespace mozilla

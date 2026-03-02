@@ -58,3 +58,20 @@ SamplerThread::~SamplerThread() {
                               SamplingState::JustStopped);
 }
 void SamplerThread::Stop(PSLockRef aLock) { mSampler.Disable(aLock); }
+void SamplerThread::SleepMicro(uint32_t aMicroseconds) {
+  MOZ_CRASH("Not reachable because we never spawn SamplerThread");
+}
+static RunningTimes GetProcessRunningTimesDiff(
+    PSLockRef aLock, RunningTimes& aPreviousRunningTimesToBeUpdated) {
+  MOZ_CRASH("Not reachable because we never spawn SamplerThread");
+}
+static RunningTimes GetThreadRunningTimesDiff(
+    PSLockRef aLock,
+    ThreadRegistration::UnlockedRWForLockedProfiler& aThreadData) {
+  MOZ_CRASH("Not reachable because we never spawn SamplerThread");
+}
+static void DiscardSuspendedThreadRunningTimes(
+    PSLockRef aLock,
+    ThreadRegistration::UnlockedRWForLockedProfiler& aThreadData) {
+  MOZ_CRASH("Not reachable because we never spawn SamplerThread");
+}
