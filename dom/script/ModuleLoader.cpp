@@ -498,6 +498,9 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateRequest(
     MOZ_ASSERT(root);
     LoadContextBase* loadContext = root->mLoadContext;
     context->mScriptMode = loadContext->AsWindowContext()->mScriptMode;
+    if (loadContext->AsWindowContext()->mIsPreload) {
+      context->mIsPreload = true;
+    }
     kind = ModuleLoadRequest::Kind::StaticImport;
   }
 

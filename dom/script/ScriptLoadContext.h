@@ -286,7 +286,7 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   bool mInCompilingList;  // True if we are in mOffThreadCompilingRequests.
   bool mWasCompiledOMT;   // True if the script has been compiled off main
                           // thread.
-  // Set on scripts and top level modules.
+  // Set on preloading scripts or modules.
   bool mIsPreload;
 
   // For preload requests, we defer reporting errors to the console until the
