@@ -263,39 +263,4 @@ export const AIWindowUI = {
     const nodes = this._getSidebarElements(win);
     return nodes ? nodes.chromeDoc.getElementById(this.BROWSER_ID) : null;
   },
-
-  /**
-   * Updates the sidebar input with the specified value.
-   *
-   * @param {Window} win
-   * @param {string} value The new input value
-   */
-  updateSidebarInput(win, value) {
-    if (!this.isSidebarOpen(win)) {
-      return;
-    }
-
-    const aiWindowEl = this._getSidebarAiWindow(win);
-    if (!aiWindowEl) {
-      return;
-    }
-
-    aiWindowEl.updateInput(value);
-  },
-
-  /**
-   * Gets the sidebar instance of the ai-window component
-   *
-   * @param {Window} win
-   *
-   * @private
-   */
-  _getSidebarAiWindow(win) {
-    if (!this.isSidebarOpen(win)) {
-      return null;
-    }
-
-    const aiWindowBrowser = win.document.getElementById(this.BROWSER_ID);
-    return aiWindowBrowser.contentDocument.querySelector("ai-window");
-  },
 };
