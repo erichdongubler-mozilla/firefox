@@ -55,7 +55,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         }
 
         args.preferenceToScrollTo?.let {
-            scrollToPreference(it)
+            scrollToPreferenceWithHighlight(it)
         }
 
         requirePreference<Preference>(R.string.pref_key_remote_settings_server).summary =
