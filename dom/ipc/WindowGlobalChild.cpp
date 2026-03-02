@@ -7,8 +7,10 @@
 #include "mozilla/dom/WindowGlobalChild.h"
 
 #include "GeckoProfiler.h"
+#include "Navigator.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
@@ -24,7 +26,11 @@
 #include "mozilla/dom/JSActorService.h"
 #include "mozilla/dom/JSWindowActorBinding.h"
 #include "mozilla/dom/JSWindowActorChild.h"
+#include "mozilla/dom/ModelContext.h"
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
+#include "mozilla/dom/Promise-inl.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SecurityPolicyViolationEvent.h"
 #include "mozilla/dom/SessionStoreRestoreData.h"
 #include "mozilla/dom/WindowContext.h"
@@ -44,6 +50,7 @@
 #include "nsScriptSecurityManager.h"
 #include "nsSerializationHelper.h"
 #include "nsURLHelper.h"
+#include "xpcpublic.h"
 
 using namespace mozilla::ipc;
 using namespace mozilla::dom::ipc;
@@ -628,6 +635,109 @@ IPCResult WindowGlobalChild::RecvProcessCloseRequest(
       manager->ProcessCloseRequest();
     }
   }
+  return IPC_OK();
+}
+
+IPCResult WindowGlobalChild::RecvGetModelContextTools(
+    GetModelContextToolsResolver&& aResolver) {
+  if (!IsCurrentGlobal()) {
+    aResolver(std::make_tuple(NS_ERROR_DOM_INVALID_ACCESS_ERR,
+                              nsTArray<IPCModelContextToolDefinition>()));
+    return IPC_OK();
+  }
+
+  if (!BrowsingContext()->IsTop()) {
+    aResolver(std::make_tuple(NS_ERROR_DOM_INVALID_ACCESS_ERR,
+                              nsTArray<IPCModelContextToolDefinition>()));
+    return IPC_OK();
+  }
+
+  nsTArray<IPCModelContextToolDefinition> tools;
+  if (nsGlobalWindowInner* win = GetWindowGlobal()) {
+    if (Navigator* nav = win->Navigator()) {
+      if (ModelContext* mc = nav->ModelContext()) {
+        mc->GetIPCToolDefinitions(tools);
+      }
+    }
+  }
+
+  aResolver(std::make_tuple(NS_OK, std::move(tools)));
+  return IPC_OK();
+}
+
+IPCResult WindowGlobalChild::RecvInvokeModelContextTool(
+    const nsCString& aToolName, NotNull<StructuredCloneData*> aInput,
+    InvokeModelContextToolResolver&& aResolver) {
+  if (!IsCurrentGlobal()) {
+    aResolver(std::make_tuple(
+        CopyableErrorResult(NS_ERROR_DOM_INVALID_ACCESS_ERR), nullptr));
+    return IPC_OK();
+  }
+
+  if (!BrowsingContext()->IsTop()) {
+    aResolver(std::make_tuple(
+        CopyableErrorResult(NS_ERROR_DOM_INVALID_ACCESS_ERR), nullptr));
+    return IPC_OK();
+  }
+
+  nsGlobalWindowInner* win = GetWindowGlobal();
+  Navigator* nav = win ? win->Navigator() : nullptr;
+  RefPtr<ModelContext> mc = nav ? nav->ModelContext() : nullptr;
+  if (!mc) {
+    aResolver(std::make_tuple(
+        CopyableErrorResult(NS_ERROR_DOM_INVALID_ACCESS_ERR), nullptr));
+    return IPC_OK();
+  }
+
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(win)) {
+    aResolver(std::make_tuple(CopyableErrorResult(NS_ERROR_FAILURE), nullptr));
+    return IPC_OK();
+  }
+  JSContext* cx = jsapi.cx();
+
+  JS::Rooted<JS::Value> inputVal(cx);
+  IgnoredErrorResult deserializeRv;
+  aInput->Read(cx, &inputVal, deserializeRv);
+  if (deserializeRv.Failed()) {
+    aResolver(std::make_tuple(CopyableErrorResult(NS_ERROR_DOM_DATA_CLONE_ERR),
+                              nullptr));
+    return IPC_OK();
+  }
+
+  ErrorResult rv;
+  RefPtr<Promise> domPromise = mc->InvokeToolInternal(
+      cx, NS_ConvertUTF8toUTF16(aToolName), inputVal, rv);
+  if (!domPromise) {
+    aResolver(std::make_tuple(CopyableErrorResult(std::move(rv)), nullptr));
+    return IPC_OK();
+  }
+
+  domPromise->AddCallbacksWithCycleCollectedArgs(
+      [aResolver](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult&) {
+        RefPtr<StructuredCloneData> cloneData =
+            MakeRefPtr<StructuredCloneData>();
+        ErrorResult rv;
+        cloneData->Write(aCx, aValue, rv);
+        if (rv.Failed()) {
+          aResolver(std::make_tuple(CopyableErrorResult(rv), nullptr));
+          return;
+        }
+        aResolver(std::make_tuple(CopyableErrorResult(), std::move(cloneData)));
+      },
+      [aResolver](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult&) {
+        RefPtr<StructuredCloneData> cloneData =
+            MakeRefPtr<StructuredCloneData>();
+        IgnoredErrorResult rv;
+        cloneData->Write(aCx, aValue, rv);
+        if (rv.Failed()) {
+          aResolver(
+              std::make_tuple(CopyableErrorResult(NS_ERROR_FAILURE), nullptr));
+          return;
+        }
+        aResolver(std::make_tuple(CopyableErrorResult(NS_ERROR_FAILURE),
+                                  std::move(cloneData)));
+      });
   return IPC_OK();
 }
 
