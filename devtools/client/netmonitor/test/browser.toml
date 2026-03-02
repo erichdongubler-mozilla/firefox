@@ -339,6 +339,8 @@ fail-if = [
 
 ["browser_net_leak_on_tab_close.js"]
 
+["browser_net_non_ascii_headers.js"]
+
 ["browser_net_offline_mode.js"]
 
 ["browser_net_open_in_debugger.js"]
