@@ -38,6 +38,7 @@
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/CSSRuleBinding.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/SVGElementBinding.h"
@@ -267,10 +268,9 @@ nsresult SVGElement::CopyInnerTo(mozilla::dom::Element* aDest) {
 
 void SVGElement::DidAnimateClass() {
   // For Servo, snapshot the element before we change it.
-  PresShell* presShell = OwnerDoc()->GetPresShell();
-  if (presShell) {
-    if (nsPresContext* presContext = presShell->GetPresContext()) {
-      presContext->RestyleManager()->ClassAttributeWillBeChangedBySMIL(this);
+  if (auto* doc = GetComposedDoc()) {
+    if (auto* pc = doc->GetPresContext()) {
+      pc->RestyleManager()->ClassAttributeWillBeChangedBySMIL(this);
     }
   }
 
@@ -285,12 +285,6 @@ void SVGElement::DidAnimateClass() {
   UpdateSubtreeBloomFilterForClass(mClassAnimAttr.get());
   UpdateSubtreeBloomFilterForAttribute(nsGkAtoms::_class);
   PropagateBloomFilterToParents();
-
-  // FIXME(emilio): This re-selector-matches, but we do the snapshot stuff right
-  // above... Is this needed anymore?
-  if (presShell) {
-    presShell->RestyleForAnimation(this, RestyleHint::RESTYLE_SELF);
-  }
   DidAnimateAttribute(kNameSpaceID_None, nsGkAtoms::_class);
 }
 
