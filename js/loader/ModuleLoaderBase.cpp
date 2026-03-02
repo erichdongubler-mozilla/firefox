@@ -1833,7 +1833,8 @@ void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap,
   // The step 1(report the exception if there's an error) is done in
   // ParseImportMap.
 
-  if (!ImportMap::IsMultipleImportMapsSupported()) {
+  bool multiImportMapsEnabled = ImportMap::IsMultipleImportMapsSupported();
+  if (!multiImportMapsEnabled) {
     MOZ_ASSERT(!mImportMap);
     mImportMap = std::move(aImportMap);
   } else {
@@ -1845,42 +1846,50 @@ void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap,
     MOZ_ASSERT(mImportMap);
   }
 
-  // Any import resolution has been invalidated by the addition of the import
-  // map. If speculative preloading is currently fetching any modules then
+  // If speculative preloading is currently fetching any modules then
   // cancel their requests and remove them from the map.
   //
   // The cancelled requests will still complete later so we have to check this
   // in SetModuleFetchFinishedAndGetWaitingRequests.
-  for (const auto& entry : mFetchingModules) {
-    LoadingRequest* loadingRequest = entry.GetData();
-    MOZ_DIAGNOSTIC_ASSERT(loadingRequest->mRequest->mLoadContext->IsPreload());
+  mFetchingModules.RemoveIf([](auto& iter) {
+    LoadingRequest* loadingRequest = iter.Data();
+    bool isPreload = loadingRequest->mRequest->mLoadContext->IsPreload();
+    if (!isPreload) {
+      return false;
+    }
+
     loadingRequest->mRequest->Cancel();
     for (const auto& request : loadingRequest->mWaiting) {
       MOZ_DIAGNOSTIC_ASSERT(request->mLoadContext->IsPreload());
       request->Cancel();
     }
-  }
-  mFetchingModules.Clear();
+    return true;
+  });
 
-  // If speculative preloading has added modules to the module map, remove
-  // them.
-  for (const auto& entry : mFetchedModules) {
-    ModuleScript* script = entry.GetData();
-    if (script) {
-      MOZ_DIAGNOSTIC_ASSERT(
-          script->ForPreload(),
-          "Non-preload module loads should block import maps");
-      MOZ_DIAGNOSTIC_ASSERT(!script->HadImportMap(),
-                            "Only one import map can be registered");
+  // When the pref of multiple import maps is enabled, for preloaded and fetched
+  // module scripts, the module graphs have been cleared in
+  // ClearPreloadedModuleGraph.
+  if (!multiImportMapsEnabled) {
+    // If speculative preloading has added modules to the module map, remove
+    // them.
+    for (const auto& entry : mFetchedModules) {
+      ModuleScript* script = entry.GetData();
+      if (script) {
+        MOZ_DIAGNOSTIC_ASSERT(
+            script->ForPreload(),
+            "Non-preload module loads should block import maps");
+        MOZ_DIAGNOSTIC_ASSERT(!script->HadImportMap(),
+                              "Only one import map can be registered");
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
-      if (JSObject* module = script->ModuleRecord()) {
-        MOZ_DIAGNOSTIC_ASSERT(!ModuleIsLinked(module));
-      }
+        if (JSObject* module = script->ModuleRecord()) {
+          MOZ_DIAGNOSTIC_ASSERT(!ModuleIsLinked(module));
+        }
 #endif
-      script->Shutdown();
+        script->Shutdown();
+      }
     }
+    mFetchedModules.Clear();
   }
-  mFetchedModules.Clear();
 }
 
 void ModuleLoaderBase::CopyModulesTo(ModuleLoaderBase* aDest) {
