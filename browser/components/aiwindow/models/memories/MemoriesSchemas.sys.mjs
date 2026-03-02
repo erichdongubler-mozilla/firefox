@@ -20,6 +20,7 @@ export const INITIAL_MEMORIES_SCHEMA = {
       "score",
       "reasoning",
       "evidence",
+      "entities",
     ],
     properties: {
       category: {
@@ -56,6 +57,13 @@ export const INITIAL_MEMORIES_SCHEMA = {
             },
           },
         },
+      },
+
+      entities: {
+        type: "array",
+        minItems: 0,
+        maxItems: 3,
+        items: { type: "string", minLength: 1 },
       },
     },
   },

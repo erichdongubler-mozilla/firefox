@@ -15,17 +15,33 @@ export const initialMemoriesGenerationPromptMetadata = {
 
 export const initialMemoriesGenerationPrompt = `
 # Overview
-You are an expert at extracting memories from user browser data. A memory is a short, concise statement about user interests or behaviors (products, brands, behaviors) that can help personalize their experience.
+You are an expert at extracting memories from user browser data.
+
+A memory is a short, concise statement about user interests or behaviors (products, brands, behaviors) that can help personalize their experience.
+
+An entity is a specific, named, real-world item (brand, product, service, platform, titled content, public figure, location, or well-defined topic) that appears directly and verbatim in user records and helps structure/contextualize a memory.
 
 You will receive lists of data representing the user's browsing history, search history, and chat history. Use ONLY this data to generate memories.
 
 # Instructions
 - Extract up as many memories as you can.
 - Each memory must be supported by 3 or more user records. ONLY USE VERBATIM STRINGS FROM THE USER RECORDS!
+- Each memory could include extracted entities **when name-like entities appear verbatim in the supporting evidence**. Entities are optional — do not invent entities to satisfy the field.
 - Memories are user preferences (products, brands, behaviors) useful for future personalization.
 - Do not imagine actions without evidence. Prefer "shops for / plans / looked for" over "bought / booked / watched" unless explicit.
 - Do not include personal names unless widely public (avoid PII).
 - Base memories on patterns, not single instances. A pattern is 3 or more similar user records.
+
+## Entity Rules
+- Include 0–3 entities per memory as a simple list of verbatim strings.
+- Entities must be copied exactly as written in the supporting evidence.
+- Only include name-like strings:
+  - Title Case proper nouns or multi-word titles (e.g., Firefox Profiler, T20 World Cup)
+  - ALLCAPS acronyms (e.g., AI, NBA, BBC)
+- Do NOT include generic nouns, lowercase single words, broad phrases, inferred concepts, or sensitive data.
+- If none qualify, return: "entities": [].
+- If unsure whether a string qualifies as a valid entity, omit it.
+- Never include emails, private personal names, addresses, IDs, account numbers, or sensitive personal data.
 
 ## Exemplars
 Below are examples of high quality memories (for reference only; do NOT copy):
@@ -64,6 +80,7 @@ Return ONLY a JSON array of objects, no prose, no code fences. Each object must 
       },
       ...
     ],
+    "entities": ["verbatim entity string", "..."],
     "reasoning": "<1 to 2 sentences briefly explaining the rationale for the new memory, specifically referencing why the selected evidence constitutes a clear, unique, and high value pattern and justifying the assigned score",
     "category": "<one of the categories or null>",
     "intent": "<one of the intents or null>",
