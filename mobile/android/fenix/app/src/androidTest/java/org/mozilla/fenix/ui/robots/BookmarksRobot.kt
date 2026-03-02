@@ -227,7 +227,11 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "selectFolder: Clicked folder with title: $title")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun longClickBookmarkedItem(title: String) {
+        Log.i(TAG, "longClickBookmarkedItem: Waiting for $waitingTime for bookmark with title: $title to exist")
+        composeTestRule.waitUntilAtLeastOneExists(hasText(title), waitingTime)
+        Log.i(TAG, "longClickBookmarkedItem: Waited for $waitingTime for bookmark with title: $title to exist")
         Log.i(TAG, "longClickBookmarkedItem: Trying to long click bookmark with title: $title")
         composeTestRule.onNodeWithText(title).performTouchInput { longClick(durationMillis = LONG_CLICK_DURATION) }
         Log.i(TAG, "longClickBookmarkedItem: Long clicked bookmark with title: $title")
