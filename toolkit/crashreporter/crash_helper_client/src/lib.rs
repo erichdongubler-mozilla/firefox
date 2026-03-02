@@ -16,7 +16,6 @@ use std::os::windows::io::OwnedHandle;
 use std::{
     ffi::{c_char, CString, OsString},
     hint::spin_loop,
-    process,
     ptr::null_mut,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -404,9 +403,8 @@ pub unsafe extern "C" fn crash_helper_rendezvous(raw_connector: RawIPCConnector,
 
     let join_handle = thread::spawn(move || {
         if let Ok(message) = connector.recv_reply::<messages::ChildProcessRendezVous>() {
-            let res = CrashHelperClient::prepare_for_minidump(message.crash_helper_pid);
-            let message = messages::ChildProcessRendezVousReply::new(res, process::id() as Pid, id);
-            if connector.send_message(message).is_ok() {
+            let reply = CrashHelperClient::prepare_for_minidump(message.crash_helper_pid, id);
+            if connector.send_message(reply).is_ok() {
                 assert!(
                     CHILD_IPC_ENDPOINT
                         .set(Box::new(connector.into_raw_connector()))
