@@ -633,6 +633,16 @@ static nsTArray<ColorStop> ComputeColorStopsForItems(
                                     : stops[i - 1].mPosition;
       position = std::max(position, previousPosition);
     }
+
+    constexpr float reasonablyLargeFloat = static_cast<float>(1 << 30);
+    // Clamping the stop positions to a reasonable range to make rendering
+    // backend happy.
+    // FLT_MAX won't work because the position natually needs to calculate diff,
+    // if we choose FLT_MAX, N and N - N1 position may not have difference and
+    // will causing rendering errors again.
+    position = std::clamp(static_cast<float>(position), -reasonablyLargeFloat,
+                          reasonablyLargeFloat);
+
     auto stopColor = GetSpecifiedColor(stop, *aComputedStyle);
     stops.AppendElement(
         ColorStop(position, stop.IsInterpolationHint(), stopColor));
