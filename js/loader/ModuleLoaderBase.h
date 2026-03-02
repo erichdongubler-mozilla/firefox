@@ -442,6 +442,8 @@ class ModuleLoaderBase : public nsISupports {
     return true;
   }
 
+  ImportMap* GetImportMap() { return mImportMap.get(); }
+
   // Returns whether there has been an entry in the import map
   // for the given aURI.
   bool GetImportMapSRI(nsIURI* aURI, nsIURI* aSourceURI,
@@ -490,6 +492,7 @@ class ModuleLoaderBase : public nsISupports {
 
  private:
   friend class JS::loader::ModuleLoadRequest;
+  friend class JS::loader::ImportMap;
 
   static ModuleLoaderBase* GetCurrentModuleLoader(JSContext* aCx);
   static LoadedScript* GetLoadedScriptOrNull(Handle<JSScript*> aReferrer);
