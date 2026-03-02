@@ -6,12 +6,10 @@
 #ifndef Telemetry_Comms_h_
 #define Telemetry_Comms_h_
 
-#include <type_traits>
 #include "ipc/IPCMessageUtils.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TelemetryProcessEnums.h"
-#include "mozilla/TelemetryHistogramEnums.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Variant.h"
 #include "mozilla/ParamTraits_TiedFields.h"
@@ -19,6 +17,9 @@
 
 namespace mozilla {
 namespace Telemetry {
+
+// Histogram accumulation types.
+enum HistogramID : uint32_t;
 
 struct HistogramAccumulation {
   mozilla::Telemetry::HistogramID mId;
@@ -100,36 +101,17 @@ struct DiscardedData {
 namespace IPC {
 
 template <>
-struct ParamTraits<mozilla::Telemetry::HistogramID>
-    : public ContiguousEnumSerializer<
-          mozilla::Telemetry::HistogramID,
-          mozilla::Telemetry::HistogramID::A11Y_CONSUMERS,
-          mozilla::Telemetry::HistogramID::HistogramCount> {};
-
-static_assert(
-    static_cast<std::underlying_type_t<mozilla::Telemetry::HistogramID>>(
-        mozilla::Telemetry::HistogramID::A11Y_CONSUMERS) == 0,
-    "Update ParamTraits<HistogramID> implementation");
-
-template <>
-struct ParamTraits<mozilla::Telemetry::ScalarActionType>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::Telemetry::ScalarActionType,
-          mozilla::Telemetry::ScalarActionType::eAdd,
-          mozilla::Telemetry::ScalarActionType::eSetMaximum> {};
-
-template <>
 struct ParamTraits<mozilla::Telemetry::HistogramAccumulation> {
   typedef mozilla::Telemetry::HistogramAccumulation paramType;
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mId);
+    aWriter->WriteUInt32(aParam.mId);
     WriteParam(aWriter, aParam.mSample);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &aResult->mId) ||
-        !ReadParam(aReader, &aResult->mSample)) {
+    if (!aReader->ReadUInt32(reinterpret_cast<uint32_t*>(&(aResult->mId))) ||
+        !ReadParam(aReader, &(aResult->mSample))) {
       return false;
     }
 
@@ -142,15 +124,15 @@ struct ParamTraits<mozilla::Telemetry::KeyedHistogramAccumulation> {
   typedef mozilla::Telemetry::KeyedHistogramAccumulation paramType;
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mId);
+    aWriter->WriteUInt32(aParam.mId);
     WriteParam(aWriter, aParam.mSample);
     WriteParam(aWriter, aParam.mKey);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &aResult->mId) ||
-        !ReadParam(aReader, &aResult->mSample) ||
-        !ReadParam(aReader, &aResult->mKey)) {
+    if (!aReader->ReadUInt32(reinterpret_cast<uint32_t*>(&(aResult->mId))) ||
+        !ReadParam(aReader, &(aResult->mSample)) ||
+        !ReadParam(aReader, &(aResult->mKey))) {
       return false;
     }
 
@@ -167,9 +149,9 @@ struct ParamTraits<mozilla::Telemetry::ScalarAction> {
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
     // Write the message type
-    WriteParam(aWriter, aParam.mId);
+    aWriter->WriteUInt32(aParam.mId);
     WriteParam(aWriter, aParam.mDynamic);
-    WriteParam(aWriter, aParam.mActionType);
+    WriteParam(aWriter, static_cast<uint32_t>(aParam.mActionType));
 
     if (aParam.mData.isNothing()) {
       MOZ_CRASH("There is no data in the ScalarAction.");
@@ -199,9 +181,10 @@ struct ParamTraits<mozilla::Telemetry::ScalarAction> {
   static bool Read(MessageReader* aReader, paramType* aResult) {
     // Read the scalar ID and the scalar type.
     uint32_t scalarType = 0;
-    if (!ReadParam(aReader, &aResult->mId) ||
-        !ReadParam(aReader, &aResult->mDynamic) ||
-        !ReadParam(aReader, &aResult->mActionType) ||
+    if (!aReader->ReadUInt32(reinterpret_cast<uint32_t*>(&(aResult->mId))) ||
+        !ReadParam(aReader, reinterpret_cast<bool*>(&(aResult->mDynamic))) ||
+        !ReadParam(aReader,
+                   reinterpret_cast<uint32_t*>(&(aResult->mActionType))) ||
         !ReadParam(aReader, &scalarType)) {
       return false;
     }
@@ -253,9 +236,9 @@ struct ParamTraits<mozilla::Telemetry::KeyedScalarAction> {
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
     // Write the message type
-    WriteParam(aWriter, aParam.mId);
+    aWriter->WriteUInt32(static_cast<uint32_t>(aParam.mId));
     WriteParam(aWriter, aParam.mDynamic);
-    WriteParam(aWriter, aParam.mActionType);
+    WriteParam(aWriter, static_cast<uint32_t>(aParam.mActionType));
     WriteParam(aWriter, aParam.mKey);
 
     if (aParam.mData.isNothing()) {
@@ -287,10 +270,11 @@ struct ParamTraits<mozilla::Telemetry::KeyedScalarAction> {
   static bool Read(MessageReader* aReader, paramType* aResult) {
     // Read the scalar ID and the scalar type.
     uint32_t scalarType = 0;
-    if (!ReadParam(aReader, &aResult->mId) ||
-        !ReadParam(aReader, &aResult->mDynamic) ||
-        !ReadParam(aReader, &aResult->mActionType) ||
-        !ReadParam(aReader, &aResult->mKey) ||
+    if (!aReader->ReadUInt32(reinterpret_cast<uint32_t*>(&(aResult->mId))) ||
+        !ReadParam(aReader, reinterpret_cast<bool*>(&(aResult->mDynamic))) ||
+        !ReadParam(aReader,
+                   reinterpret_cast<uint32_t*>(&(aResult->mActionType))) ||
+        !ReadParam(aReader, &(aResult->mKey)) ||
         !ReadParam(aReader, &scalarType)) {
       return false;
     }
@@ -345,11 +329,11 @@ struct ParamTraits<mozilla::Telemetry::DynamicScalarDefinition> {
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &aResult->type) ||
-        !ReadParam(aReader, &aResult->dataset) ||
-        !ReadParam(aReader, &aResult->expired) ||
-        !ReadParam(aReader, &aResult->keyed) ||
-        !ReadParam(aReader, &aResult->name)) {
+    if (!ReadParam(aReader, reinterpret_cast<uint32_t*>(&(aResult->type))) ||
+        !ReadParam(aReader, reinterpret_cast<uint32_t*>(&(aResult->dataset))) ||
+        !ReadParam(aReader, reinterpret_cast<bool*>(&(aResult->expired))) ||
+        !ReadParam(aReader, reinterpret_cast<bool*>(&(aResult->keyed))) ||
+        !ReadParam(aReader, &(aResult->name))) {
       return false;
     }
     return true;
