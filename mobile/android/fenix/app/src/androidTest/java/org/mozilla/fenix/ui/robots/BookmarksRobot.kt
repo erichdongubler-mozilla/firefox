@@ -253,7 +253,11 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
+        @OptIn(ExperimentalTestApi::class)
         fun openThreeDotMenu(bookmarkedItem: String, interact: ThreeDotMenuBookmarksRobot.() -> Unit): ThreeDotMenuBookmarksRobot.Transition {
+            Log.i(TAG, "openThreeDotMenu: Waiting for $waitingTime for the bookmarked item $bookmarkedItem three dot button to exist")
+            composeTestRule.waitUntilAtLeastOneExists(hasContentDescription("Item Menu for $bookmarkedItem"), waitingTime)
+            Log.i(TAG, "openThreeDotMenu: Waited for $waitingTime for the bookmarked item $bookmarkedItem three dot button to exist")
             Log.i(TAG, "openThreeDotMenu: Trying to click three dot button for bookmark item: $bookmarkedItem")
             composeTestRule.threeDotMenuButton(bookmarkedItem).performClick()
             Log.i(TAG, "openThreeDotMenu: Clicked three dot button for bookmark item: $bookmarkedItem")
