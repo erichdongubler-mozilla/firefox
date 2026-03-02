@@ -34,7 +34,9 @@ SIGNING_FORMATS = {
 transforms = TransformSequence()
 
 
-def generate_partials_artifacts(job, release_history, platform, locale=None):
+def generate_partials_artifacts(
+    job, release_history, platform, upstream_kind, locale=None
+):
     artifact_prefix = get_artifact_prefix(job)
     if locale:
         artifact_prefix = f"{artifact_prefix}/{locale}"
@@ -45,7 +47,7 @@ def generate_partials_artifacts(job, release_history, platform, locale=None):
 
     upstream_artifacts = [
         {
-            "taskId": {"task-reference": "<partials>"},
+            "taskId": {"task-reference": f"<{upstream_kind}>"},
             "taskType": "partials",
             "paths": [f"{artifact_prefix}/{path}" for path, version in artifacts],
             "formats": ["gcp_prod_autograph_hash_only_mar384"],
@@ -104,7 +106,11 @@ def make_task_description(config, jobs):
         build_platform = attributes.get("build_platform")
         if config.kind == "partials-signing":
             upstream_artifacts = generate_partials_artifacts(
-                dep_job, config.params["release_history"], build_platform, locale
+                dep_job,
+                config.params["release_history"],
+                build_platform,
+                dep_job.kind,
+                locale,
             )
         else:
             upstream_artifacts = generate_complete_artifacts(dep_job, config.kind)

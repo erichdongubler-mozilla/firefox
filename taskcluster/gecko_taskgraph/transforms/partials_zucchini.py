@@ -115,8 +115,6 @@ def make_task_description(config, tasks):
         )
 
         task["treeherder"] = inherit_treeherder_from_dep(task, dep_task)
-        # TODO: Reset this to tier 1 once D272679 is landed
-        task["treeherder"]["tier"] = 3
         task["treeherder"]["symbol"] = f"pz({locale or 'N'})"
 
         yield task
