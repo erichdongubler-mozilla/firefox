@@ -53,7 +53,7 @@ class AppLinksUseCases(
     private val context: Context,
     private var launchInApp: () -> Boolean = { false },
     private val alwaysDeniedSchemes: AlwaysDeniedSchemes = AlwaysDeniedSchemes(ALWAYS_DENY_SCHEMES),
-    private val installedBrowsers: Browsers = BrowsersCache.all(context),
+    private val installedBrowsers: () -> Browsers = { BrowsersCache.all(context) },
 ) {
     @Suppress(
         "QueryPermissionsNeeded", // We expect our browsers to have the QUERY_ALL_PACKAGES permission
@@ -107,7 +107,7 @@ class AppLinksUseCases(
             val isAppIntentHttpOrHttps = redirectData.appIntent?.data?.isHttpOrHttps ?: false
             val isEngineSupportedScheme = ENGINE_SUPPORTED_SCHEMES.contains(url.toUri().scheme)
             val isBrowserRedirect = redirectData.resolveInfo?.activityInfo?.packageName?.let { packageName ->
-                installedBrowsers.isInstalled(packageName)
+                installedBrowsers().isInstalled(packageName)
             } ?: false
 
             val appName = redirectData.resolveInfo?.let { resolveInfo ->
