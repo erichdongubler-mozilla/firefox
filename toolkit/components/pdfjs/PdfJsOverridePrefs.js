@@ -35,3 +35,9 @@
   pref("pdfjs.enableHWA", true);
 
 #endif
+
+#if defined(EARLY_BETA_OR_EARLIER)
+
+  pref("pdfjs.enableOptimizedPartialRendering", true);
+
+#endif
