@@ -2646,6 +2646,22 @@ JS::InstantiateOptions::InstantiateOptions() {
   }
 }
 
+#ifdef DEBUG
+void JS::InstantiateOptions::assertDefault() const {
+  MOZ_ASSERT(skipFilenameValidation == false);
+  MOZ_ASSERT(hideScriptFromDebugger == false);
+  MOZ_ASSERT(deferDebugMetadata == false);
+  if (coverage::IsLCovEnabled()) {
+    MOZ_ASSERT(eagerDelazificationStrategy_ ==
+               DelazificationOption::ParseEverythingEagerly);
+  } else {
+    MOZ_ASSERT(eagerDelazificationStrategy_ ==
+               DelazificationOption::OnDemandOnly);
+  }
+  MOZ_ASSERT(eagerBaselineStrategy_ == EagerBaselineOption::None);
+}
+#endif
+
 CompileOptions& CompileOptions::setIntroductionInfoToCaller(
     JSContext* cx, const char* introductionType,
     MutableHandle<JSScript*> introductionScript) {
