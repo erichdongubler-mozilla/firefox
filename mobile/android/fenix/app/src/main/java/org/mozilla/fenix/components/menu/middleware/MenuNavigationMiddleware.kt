@@ -88,7 +88,7 @@ class MenuNavigationMiddleware(
 
         next(action)
 
-        scope.launch(Dispatchers.Main) {
+        scope.launch {
             when (action) {
                 is MenuAction.Navigate.MozillaAccount -> {
                     when (action.accountState) {
