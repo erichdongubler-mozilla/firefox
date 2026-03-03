@@ -139,10 +139,14 @@ void WMFDecoderModule::Init() {
         WmfDecoderModuleMarkerAndLog("WMFInit Decoder Failed",
                                      "%s failed with code 0x%lx",
                                      EnumValueToString(type), hr);
-        if (hr == WINCODEC_ERR_COMPONENTNOTFOUND &&
-            type == WMFStreamType::AV1) {
-          WmfDecoderModuleMarkerAndLog("No AV1 extension",
-                                       "Lacking of AV1 extension");
+        if (hr == WINCODEC_ERR_COMPONENTNOTFOUND) {
+          if (type == WMFStreamType::AV1) {
+            WmfDecoderModuleMarkerAndLog("No AV1 extension",
+                                         "Lacking of AV1 extension");
+          } else if (type == WMFStreamType::HEVC) {
+            WmfDecoderModuleMarkerAndLog("No HEVC extension",
+                                         "Lacking of HEVC extension");
+          }
           sLackOfExtensionTypes += type;
         }
       }

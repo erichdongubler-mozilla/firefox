@@ -131,6 +131,9 @@
 #include "mozilla/extensions/StreamFilterParent.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/gfxVars.h"
+#ifdef MOZ_WMF
+#  include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
+#endif
 #include "mozilla/glean/DomMetrics.h"
 #include "mozilla/glean/GleanPings.h"
 #include "mozilla/glean/IpcMetrics.h"
@@ -1523,6 +1526,16 @@ void ContentParent::BroadcastMediaCodecsSupportedUpdate(
 
   // Merge incoming support with existing support list from other locations
   media::MCSInfo::AddSupport(aSupported);
+
+#ifdef MOZ_WMF
+  if (aSupported.contains(media::MediaCodecsSupport::AV1LackOfExtension)) {
+    glean::media::wmf_codec_no_extension.Get("av1"_ns).Set(true);
+  }
+  if (aSupported.contains(media::MediaCodecsSupport::HEVCLackOfExtension)) {
+    glean::media::wmf_codec_no_extension.Get("hevc"_ns).Set(true);
+  }
+#endif
+
   auto fullSupport = media::MCSInfo::GetSupport();
 
   // Generate + save FULL support string for display in about:support
