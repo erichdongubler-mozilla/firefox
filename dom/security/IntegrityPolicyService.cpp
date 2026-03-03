@@ -293,6 +293,9 @@ void dom::IntegrityPolicyService::ReportViolation(
     case IntegrityPolicy::DestinationType::Style:
       destination = "style"_ns;
       break;
+    case IntegrityPolicy::DestinationType::Image:
+      destination = "image"_ns;
+      break;
   }
 
   nsTArray<nsCString> enforcementEndpoints;

@@ -9,6 +9,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/RequestBinding.h"
+#include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/SFVService.h"
 #include "nsCOMPtr.h"
@@ -24,8 +25,6 @@ static LazyLogModule sIntegrityPolicyLogModule("IntegrityPolicy");
   MOZ_LOG_FMT(sIntegrityPolicyLogModule, LogLevel::Debug, fmt, ##__VA_ARGS__)
 
 namespace mozilla::dom {
-
-IntegrityPolicy::~IntegrityPolicy() = default;
 
 RequestDestination ContentTypeToDestination(nsContentPolicyType aType) {
   // From SecFetch.cpp
@@ -132,14 +131,17 @@ Result<IntegrityPolicy::Sources, nsresult> ParseSources(
   return result;
 }
 
-/* static */
-Result<IntegrityPolicy::Destinations, nsresult> ParseDestinations(
-    nsISFVDictionary* aDict) {
+Result<IntegrityPolicy::Destinations, nsresult>
+IntegrityPolicy::ParseDestinations(nsISFVDictionary* aDict, bool aIsWAICT) {
   // blocked destinations, a list of destinations, initially empty.
 
   nsCOMPtr<nsISFVItemOrInnerList> iil;
   nsresult rv = aDict->Get("blocked-destinations"_ns, getter_AddRefs(iil));
   if (NS_FAILED(rv)) {
+    // Required in WAICT.
+    if (aIsWAICT) {
+      return Err(rv);
+    }
     return IntegrityPolicy::Destinations();
   }
 
@@ -159,6 +161,8 @@ Result<IntegrityPolicy::Destinations, nsresult> ParseDestinations(
       if (StaticPrefs::security_integrity_policy_stylesheet_enabled()) {
         result += IntegrityPolicy::DestinationType::Style;
       }
+    } else if (aIsWAICT && destination.EqualsLiteral("image")) {
+      result += IntegrityPolicy::DestinationType::Image;
     } else {
       LOG("ParseDestinations: Unknown destination: {}", destination.get());
       // Unknown destination, we don't know how to handle it
@@ -169,8 +173,8 @@ Result<IntegrityPolicy::Destinations, nsresult> ParseDestinations(
   return result;
 }
 
-/* static */
-Result<nsTArray<nsCString>, nsresult> ParseEndpoints(nsISFVDictionary* aDict) {
+Result<nsTArray<nsCString>, nsresult> IntegrityPolicy::ParseEndpoints(
+    nsISFVDictionary* aDict) {
   // endpoints, a list of strings, initially empty.
   nsCOMPtr<nsISFVItemOrInnerList> iil;
   nsresult rv = aDict->Get("endpoints"_ns, getter_AddRefs(iil));
@@ -238,7 +242,7 @@ nsresult IntegrityPolicy::ParseHeaders(const nsACString& aHeader,
     }
 
     // 4. If dictionary["blocked-destinations"] exists:
-    auto destinationsResult = ParseDestinations(dict);
+    auto destinationsResult = ParseDestinations(dict, /* aIsWAICT */ false);
     if (destinationsResult.isErr()) {
       LOG("[{}] Failed to parse destinations for {} header.",
           static_cast<void*>(policy),
