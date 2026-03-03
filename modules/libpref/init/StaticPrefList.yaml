@@ -15094,12 +15094,6 @@
   value: false
   mirror: always
 
-# If we should wait for captive portal confirmation before enabling TRR
-- name: network.trr.wait-for-portal
-  type: RelaxedAtomicBool
-  value: false
-  mirror: always
-
 # If we should wait for TRR service confirmation to complete before enabling
 # TRR for lookups when fallback is enabled. Confirmation is always skipped when
 # global mode is TRR-only (no fallback).
