@@ -68,42 +68,6 @@ bool BestAvailableLocale(JSContext* cx, AvailableLocaleKind availableLocales,
                          JS::Handle<JSLinearString*> locale,
                          JS::MutableHandle<JSLinearString*> result);
 
-class LookupMatcherResult final {
-  JSLinearString* locale_ = nullptr;
-  JSLinearString* extension_ = nullptr;
-
- public:
-  LookupMatcherResult() = default;
-  LookupMatcherResult(JSLinearString* locale, JSLinearString* extension)
-      : locale_(locale), extension_(extension) {}
-
-  auto* locale() const { return locale_; }
-  auto* extension() const { return extension_; }
-
-  // Helper methods for WrappedPtrOperations.
-  auto localeDoNotUse() const { return &locale_; }
-  auto extensionDoNotUse() const { return &extension_; }
-
-  // Trace implementation.
-  void trace(JSTracer* trc);
-};
-
-/**
- * Compares a BCP 47 language priority list against the set of locales in
- * availableLocales and determines the best available language to meet the
- * request. Options specified through Unicode extension subsequences are
- * ignored in the lookup, but information about such subsequences is returned
- * separately.
- *
- * This variant is based on the Lookup algorithm of RFC 4647 section 3.4.
- *
- * Spec: ECMAScript Internationalization API Specification, 9.2.3.
- * Spec: RFC 4647, section 3.4.
- */
-bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
-                   JS::Handle<ArrayObject*> locales,
-                   JS::MutableHandle<LookupMatcherResult> result);
-
 /**
  * Locale data selection for ResolveLocale.
  */
@@ -249,24 +213,6 @@ JSLinearString* ComputeDefaultLocale(JSContext* cx);
 }  // namespace js::intl
 
 namespace js {
-
-template <typename Wrapper>
-class WrappedPtrOperations<intl::LookupMatcherResult, Wrapper> {
-  const auto& container() const {
-    return static_cast<const Wrapper*>(this)->get();
-  }
-
- public:
-  JS::Handle<JSLinearString*> locale() const {
-    return JS::Handle<JSLinearString*>::fromMarkedLocation(
-        container().localeDoNotUse());
-  }
-
-  JS::Handle<JSLinearString*> extension() const {
-    return JS::Handle<JSLinearString*>::fromMarkedLocation(
-        container().extensionDoNotUse());
-  }
-};
 
 template <typename Wrapper>
 class WrappedPtrOperations<intl::LocaleOptions, Wrapper> {
