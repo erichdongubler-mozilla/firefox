@@ -21,7 +21,7 @@ add_task(
         expected: [
           [
             AboutTranslationsTestUtils.Events.TranslationComplete,
-            AboutTranslationsTestUtils.AnyEventDetail,
+            { translationId: 1 },
           ],
           [AboutTranslationsTestUtils.Events.CopyButtonEnabled],
         ],

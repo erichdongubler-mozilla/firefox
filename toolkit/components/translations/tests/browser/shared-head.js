@@ -4197,8 +4197,6 @@ async function destroyTranslationsEngine() {
 }
 
 class AboutTranslationsTestUtils {
-  static AnyEventDetail = Symbol("AboutTranslationsTestUtils.AnyEventDetail");
-
   /**
    * A collection of custom events that the about:translations document may dispatch.
    */
@@ -4787,9 +4785,6 @@ class AboutTranslationsTestUtils {
 
       for (const [eventName, expectedDetail] of expected) {
         const actualDetail = await expectedEventWaiters[eventName];
-        if (expectedDetail === AboutTranslationsTestUtils.AnyEventDetail) {
-          continue;
-        }
         is(
           JSON.stringify(actualDetail ?? {}),
           JSON.stringify(expectedDetail ?? {}),
