@@ -179,9 +179,16 @@ export class InterestFeatures {
    * @param {number} inValue Value computed by model for the feature.
    * @returns Quantized value. A value between 0 and number of thresholds specified (inclusive)
    */
-  applyThresholds(inValue) {
+  applyThresholds(inValue, overrideValue = null) {
     if (!this.thresholds) {
       return inValue;
+    }
+    if (
+      Number.isFinite(overrideValue) &&
+      overrideValue >= 0 &&
+      overrideValue <= this.thresholds.length
+    ) {
+      return overrideValue;
     }
     for (let k = 0; k < this.thresholds.length; k++) {
       if (inValue < this.thresholds[k]) {
@@ -293,6 +300,20 @@ export class FeatureModel {
       modelType: json.model_type,
       privateFeatures: json.private_features ?? null,
     });
+  }
+
+  getInterestFeaturesSupported() {
+    /**
+     * Returns the number of discrete values for each feature in the model, based on the thresholds specified.
+     * This is used for a debugging UI
+     */
+    const output = {};
+    for (const [name, feature] of Object.entries(this.interestVectorModel)) {
+      if (feature.thresholds) {
+        output[name] = { numValues: feature.thresholds.length + 1 };
+      }
+    }
+    return output;
   }
 
   supportsCoarseInterests() {
@@ -413,18 +434,23 @@ export class FeatureModel {
    *
    * @param {object} valueDict of all values in model
    * @param {boolean} applyDifferentialPrivacy whether to apply differential privacy as well as thresholding.
+   * @param {object} coarseValueDictionary Optional dictionary of values to use for thresholding instead of the valueDict. This is used for testing purposes to apply thresholding based on a different set of values, such as the original un-noised values when applying thresholding to a differentially private vector.
    */
-  applyThresholding(valueDict, applyDifferentialPrivacy = false) {
+  applyThresholding(
+    valueDict,
+    applyDifferentialPrivacy = false,
+    coarseValueDictionary = null
+  ) {
     for (const key of Object.keys(valueDict)) {
       if (key in this.interestVectorModel) {
         valueDict[key] = this.interestVectorModel[key].applyThresholds(
           valueDict[key],
-          applyDifferentialPrivacy
+          coarseValueDictionary ? coarseValueDictionary[key] : null
         );
         if (applyDifferentialPrivacy) {
           valueDict[key] = this.interestVectorModel[
             key
-          ].applyDifferentialPrivacy(valueDict[key], applyDifferentialPrivacy);
+          ].applyDifferentialPrivacy(valueDict[key]);
         }
       }
     }
@@ -488,6 +514,7 @@ export class FeatureModel {
     model_id = "unknown",
     condensePrivateValues = true,
     timeZoneOffset,
+    debugOverrideCoarseValueDictionary = null,
   }) {
     let inferredInterests = divideDict(clicks, impressions);
 
@@ -506,8 +533,11 @@ export class FeatureModel {
       if (timeZoneOffset && "timeZoneOffset" in this.interestVectorModel) {
         coarseValues.timeZoneOffset = timeZoneOffset;
       }
-      this.applyThresholding(coarseValues, false);
-
+      this.applyThresholding(
+        coarseValues,
+        false,
+        debugOverrideCoarseValueDictionary
+      );
       resultObject.coarseInferredInterests = { ...coarseValues, model_id };
     }
 
@@ -529,8 +559,11 @@ export class FeatureModel {
       ) {
         coarsePrivateValues.timeZoneOffset = timeZoneOffset;
       }
-      this.applyThresholding(coarsePrivateValues, true);
-
+      this.applyThresholding(
+        coarsePrivateValues,
+        true,
+        debugOverrideCoarseValueDictionary
+      );
       if (condensePrivateValues) {
         resultObject.coarsePrivateInferredInterests = {
           // Key order preserved in Gecko

@@ -37,6 +37,9 @@ const PREF_SYSTEM_INFERRED_PERSONALIZATION =
 const PREF_SYSTEM_INFERRED_MODEL_OVERRIDE =
   "discoverystream.sections.personalization.inferred.model.override";
 
+const DEBUG_OVERRIDE_COARSE_VALUE_DICTIONARY_KEY =
+  "debug_override_interest_values";
+
 function timeMSToSeconds(timeMS) {
   return Math.round(timeMS / 1000);
 }
@@ -123,6 +126,70 @@ export class InferredPersonalizationFeed {
     return inferredModel;
   }
 
+  /**
+   * Saves overridden interest feature values for the developer debugging UI.
+   *
+   * This method stores a map of feature keys to override values, which are used
+   * to replace values in the computed interest vector for testing and debugging
+   * purposes. Passing `null` or `undefined` clears all overrides.
+   *
+   * @param {{ [key: string]: number }} [overrides]
+   *    A dictionary mapping feature names to their overridden numeric values.
+   * @returns {Promise<void>}
+   */
+  async setDebuggingInterestFeaturesOverride(overrides) {
+    await this.cache.set(
+      DEBUG_OVERRIDE_COARSE_VALUE_DICTIONARY_KEY,
+      overrides || {}
+    );
+  }
+
+  /**
+   * Returns metadata describing which interest features support debugging overrides.
+   *
+   * Each entry in the returned object is keyed by feature name and contains:
+   *  - `numValues`: The number of possible values the feature can take (typically 0–3).
+   *  - `currentValue`: The feature’s value from the current interest vector, if applicable.
+   *  - `overrideValue`: The currently applied override value for the feature, if any.
+   *
+   * This information is primarily used by developer-facing tooling to inspect
+   * and manipulate interest features during testing.
+   *
+   * @returns {Promise<{
+   *   [featureName: string]: {
+   *     numValues: number,
+   *     currentValue?: number,
+   *     overrideValue?: number
+   *   }
+   * }>}
+   */
+  async getDebuggingInterestFeaturesSupported() {
+    const inferredModel = await this.getInferredModelData();
+    if (!inferredModel || !inferredModel.model_data) {
+      return {};
+    }
+    const features = inferredModel.getInterestFeaturesSupported();
+    const interestVector = await this.cache.get("interest_vector");
+    const coarseInterests = interestVector?.data?.coarseInferredInterests || {};
+    if (interestVector) {
+      Object.keys(features).forEach(featureName => {
+        if (featureName in coarseInterests) {
+          features[featureName].currentValue = coarseInterests[featureName];
+        }
+      });
+    }
+    const debugOverrides = await this.cache.get(
+      DEBUG_OVERRIDE_COARSE_VALUE_DICTIONARY_KEY,
+      {}
+    );
+    for (const featureName in debugOverrides) {
+      if (featureName in features) {
+        features[featureName].overrideValue = debugOverrides[featureName];
+      }
+    }
+    return features;
+  }
+
   async generateInterestVector() {
     const inferredModel = await this.getInferredModelData();
     if (!inferredModel || !inferredModel.model_data) {
@@ -166,6 +233,10 @@ export class InferredPersonalizationFeed {
       });
 
       if (model.modelType === MODEL_TYPE.CTR) {
+        const debugOverrideCoarseValueDictionary = await this.cache.get(
+          DEBUG_OVERRIDE_COARSE_VALUE_DICTIONARY_KEY,
+          {}
+        );
         // eslint-disable-next-line no-unused-vars
         const { model_id, ...clickTotals } = interests.inferredInterests;
         const inferredInterests = model.computeCTRInterestVectors({
@@ -173,6 +244,7 @@ export class InferredPersonalizationFeed {
           impressions: ivImpressions,
           model_id: inferredModel.model_id,
           timeZoneOffset: lazy.NewTabUtils.getUtcOffset(),
+          debugOverrideCoarseValueDictionary,
         });
         return inferredInterests;
       }
