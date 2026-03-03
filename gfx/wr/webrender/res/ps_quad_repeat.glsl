@@ -84,7 +84,14 @@ vec4 pattern_fragment(vec4 color) {
         color *= 0.0;
     }
 
-    // In normalized pixel coordinates.
+    // At this point repeated_uv does a linear ramp over the whole span of each repetition,
+    // which includes the spacing area. It is equal to zero at the beginning of the repetition
+    // and one at the end of the spacing area just before the next repetition.
+    // What we need is for the the ramp to be equal to one just before the spacing area.
+    // This is what dividing by the spacing threshold achives.
+    repeated_uv /= v_spacing_threshold;
+
+    // Now express repeated_uv in pixels and clamp it to the source's sample bounds.
     repeated_uv = repeated_uv * uv_size + v_uv_bounds.xy;
     repeated_uv = max(repeated_uv, v_uv_sample_bounds.xy);
     repeated_uv = min(repeated_uv, v_uv_sample_bounds.zw);
