@@ -6205,7 +6205,7 @@
     },
     "interventions": [
       {
-        "platforms": ["all"],
+        "not_platforms": ["linux"],
         "content_scripts": {
           "all_frames": true,
           "js": ["bug2006036-fbo.fubon.com-unblock-firefox.js"]
