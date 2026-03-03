@@ -129,8 +129,19 @@ bool HTMLImageElement::Complete() {
     return true;
   }
 
-  if (!mCurrentRequest || mPendingRequest || mPendingImageLoadTask) {
+  if (mPendingRequest || mPendingImageLoadTask) {
     return false;
+  }
+
+  if (!mCurrentRequest) {
+    // mCurrentRequest can be null in the following two cases:
+    //   * This image has loading="lazy" attribute and the request hasn't yet
+    //     started
+    //   * The image fails to start loading, due to the URL being invalid or
+    //     the load getting blocked
+    // The former case should return complete==false, and the latter case
+    // should return complete==true.
+    return !mLazyLoading;
   }
 
   uint32_t status;
