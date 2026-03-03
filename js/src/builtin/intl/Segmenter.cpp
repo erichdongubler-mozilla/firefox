@@ -609,7 +609,7 @@ static bool ResolveLocale(JSContext* cx, Handle<SegmenterObject*> segmenter) {
 
   // Resolve the actual locale.
   Rooted<ResolvedLocale> resolved(cx);
-  if (!ResolveLocale(cx, AvailableLocaleKind::ListFormat, requestedLocales,
+  if (!ResolveLocale(cx, AvailableLocaleKind::Segmenter, requestedLocales,
                      localeOptions, relevantExtensionKeys, localeData,
                      &resolved)) {
     return false;
