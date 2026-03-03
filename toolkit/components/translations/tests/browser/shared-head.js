@@ -4547,6 +4547,81 @@ class AboutTranslationsTestUtils {
   }
 
   /**
+   * Navigates to a new hash URL in the current about:translations document.
+   *
+   * @param {object}  [options={}]
+   * @param {string}  [options.sourceLanguage] - Value for the "src" hash parameter.
+   * @param {string}  [options.targetLanguage] - Value for the "trg" hash parameter.
+   * @param {string}  [options.sourceText]     - Value for the "text" hash parameter.
+   * @returns {Promise<void>}
+   */
+  async updateCurrentPageHash({
+    sourceLanguage,
+    targetLanguage,
+    sourceText,
+  } = {}) {
+    const searchParams = new URLSearchParams();
+
+    if (sourceLanguage) {
+      searchParams.set("src", sourceLanguage);
+    }
+
+    if (targetLanguage) {
+      searchParams.set("trg", targetLanguage);
+    }
+
+    if (sourceText) {
+      searchParams.set("text", sourceText);
+    }
+
+    const hashString = searchParams.toString();
+    const hash = hashString || "src=detect";
+    const url = new URL("about:translations");
+    url.hash = hash;
+    logAction(url);
+
+    await this.#setCurrentPageHash(hash);
+  }
+
+  /**
+   * Clears the hash in the current about:translations document.
+   *
+   * @returns {Promise<void>}
+   */
+  async clearCurrentPageHash() {
+    const url = new URL("about:translations");
+    logAction(url);
+    await this.#setCurrentPageHash("");
+  }
+
+  /**
+   * Updates the hash in the current about:translations document and waits for a hashchange.
+   *
+   * @param {string} hash
+   * @returns {Promise<void>}
+   */
+  async #setCurrentPageHash(hash) {
+    await this.#runInPage(
+      async (_, { hash }) => {
+        const { window } = content;
+        const nextHash = hash ? `#${hash}` : "";
+
+        if (window.location.hash === nextHash) {
+          return;
+        }
+
+        const hashChange = new Promise(resolve => {
+          window.addEventListener("hashchange", resolve, { once: true });
+        });
+
+        window.location.hash = hash;
+        await hashChange;
+      },
+      { hash }
+    );
+  }
+
+  /**
    * Sets a new delay timer for the throttle on reacting to input.
    *
    * @param {number} ms - The delay milliseconds.
