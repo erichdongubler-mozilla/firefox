@@ -46,7 +46,7 @@ const proxyNativeShellService = {
 };
 
 sinon.stub(ShellService, "shellService").value(proxyNativeShellService);
-sinon.stub(ShellService, "createWindowsIcon").resolves();
+sinon.stub(ShellService, "writeShortcutIcon").resolves();
 
 registerCleanupFunction(() => {
   sinon.restore();

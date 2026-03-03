@@ -127,7 +127,7 @@ async function createTaskbarIcon(aTaskbarTab, aIcon) {
 
   await IOUtils.makeDirectory(iconFile.parent.path);
 
-  await lazy.ShellService.createWindowsIcon(iconFile, aIcon);
+  await lazy.ShellService.writeShortcutIcon(iconFile, aIcon);
 
   return iconFile;
 }
@@ -242,6 +242,8 @@ function sanitizeFilename(aWantedName, { allowDirectoryNames = false } = {}) {
 function getIconFile(aTaskbarTab) {
   let iconPath = lazy.TaskbarTabsUtils.getTaskbarTabsFolder();
   iconPath.append("icons");
-  iconPath.append(aTaskbarTab.id + ".ico");
+  iconPath.append(
+    aTaskbarTab.id + "." + lazy.ShellService.shortcutIconType.extension
+  );
   return iconPath;
 }

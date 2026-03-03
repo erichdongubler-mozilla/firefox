@@ -21,8 +21,8 @@ XPCOMUtils.defineLazyServiceGetters(this, {
 // We want to mock the native XPCOM interfaces of the initialized
 // `ShellService.shellService`, but those interfaces are frozen. Instead we
 // proxy `ShellService.shellService` and mock it.
-let gCreateWindowsIcon = ShellService.createWindowsIcon;
-let gOverrideWindowsIconFileOnce;
+let gWriteShortcutIcon = ShellService.writeShortcutIcon;
+let gOverrideIconFileOnce;
 const kMockNativeShellService = {
   ...ShellService.shellService,
   createShortcut: sinon.stub().resolves("dummy_path"),
@@ -37,11 +37,11 @@ const kMockNativeShellService = {
 sinon.stub(ShellService, "shellService").value(kMockNativeShellService);
 
 sinon
-  .stub(ShellService, "createWindowsIcon")
+  .stub(ShellService, "writeShortcutIcon")
   .callsFake(async (aIconFile, aImgContainer) => {
-    if (gOverrideWindowsIconFileOnce) {
-      await gCreateWindowsIcon(gOverrideWindowsIconFileOnce, aImgContainer);
-      gOverrideWindowsIconFileOnce = null;
+    if (gOverrideIconFileOnce) {
+      await gWriteShortcutIcon(gOverrideIconFileOnce, aImgContainer);
+      gOverrideIconFileOnce = null;
     }
   });
 
@@ -77,7 +77,7 @@ add_setup(async () => {
 
 function shellPinCalled(aTaskbarTab) {
   ok(
-    ShellService.createWindowsIcon.calledOnce,
+    ShellService.writeShortcutIcon.calledOnce,
     `Icon creation should have been called.`
   );
   ok(
@@ -120,7 +120,7 @@ async function testWrittenIconFile(aIconFile) {
   const data = await IOUtils.read(aIconFile.path);
   const imgContainer = imgTools.decodeImageFromArrayBuffer(
     data.buffer,
-    "image/vnd.microsoft.icon"
+    ShellService.shortcutIconType.mimeType
   );
   equal(
     imgContainer.width,
@@ -154,7 +154,7 @@ registry.on(TaskbarTabsRegistry.events.patched, patchedSpy);
 function getTempFile() {
   let path = do_get_tempdir();
   let filename = Services.uuid.generateUUID().toString().slice(1, -1);
-  path.append(filename + ".ico");
+  path.append(filename + "." + ShellService.shortcutIconType.extension);
   return path;
 }
 
@@ -162,13 +162,13 @@ add_task(async function test_pin_saves_raster_icon() {
   sinon.resetHistory();
 
   let iconFile = getTempFile();
-  gOverrideWindowsIconFileOnce = iconFile;
+  gOverrideIconFileOnce = iconFile;
 
   let img = await TaskbarTabsUtils._imageFromLocalURI(gPngFavicon);
   await TaskbarTabsPin.pinTaskbarTab(taskbarTab, registry, img);
 
   equal(
-    ShellService.createWindowsIcon.firstCall.args[1],
+    ShellService.writeShortcutIcon.firstCall.args[1],
     img,
     "The image that is saved should be the correct image"
   );
@@ -182,13 +182,13 @@ add_task(async function test_pin_saves_vector_icon() {
   sinon.resetHistory();
 
   let iconFile = getTempFile();
-  gOverrideWindowsIconFileOnce = iconFile;
+  gOverrideIconFileOnce = iconFile;
 
   let img = await TaskbarTabsUtils._imageFromLocalURI(gSvgFavicon);
   await TaskbarTabsPin.pinTaskbarTab(taskbarTab, registry, img);
 
   equal(
-    ShellService.createWindowsIcon.firstCall.args[1],
+    ShellService.writeShortcutIcon.firstCall.args[1],
     img,
     "The image that is saved should be the correct image"
   );

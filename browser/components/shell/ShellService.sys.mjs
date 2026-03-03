@@ -600,6 +600,18 @@ let ShellServiceInternal = {
     }
   },
 
+  get shortcutIconType() {
+    if (AppConstants.platform === "win") {
+      return { extension: "ico", mimeType: "image/vnd.microsoft.icon" };
+    }
+
+    if (AppConstants.platform === "linux") {
+      return { extension: "png", mimeType: "image/png" };
+    }
+
+    throw new Error("Shortcut icons are not supported on this platform");
+  },
+
   /**
    * This function can be used to convert compatible image formats into icons
    * compatible with the createShortcut function.
@@ -607,16 +619,10 @@ let ShellServiceInternal = {
    * @param {nsIFile} file - The file to write to.
    * @param {imgIContainer} imgContainer - The container holding the image.
    */
-  async createWindowsIcon(file, imgContainer) {
-    if (AppConstants.platform !== "win") {
-      throw new Error(
-        "createWindowsIcon is not supported on non-Windows platforms"
-      );
-    }
-
+  async writeShortcutIcon(file, imgContainer) {
     let stream = lazy.imgTools.encodeScaledImage(
       imgContainer,
-      "image/vnd.microsoft.icon",
+      ShellService.shortcutIconType.mimeType,
       256,
       256
     );

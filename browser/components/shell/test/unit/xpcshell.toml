@@ -13,6 +13,7 @@ run-if = [
 ["test_writeShortcutIcon.js"]
 run-if = [
   "os == 'win'",
+  "os == 'linux'",
 ]
 support-files = [
   "../../../places/tests/browser/favicon-normal16.png",
