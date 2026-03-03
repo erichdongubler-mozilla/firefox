@@ -81,7 +81,8 @@ extern size_t gPageSize;
 #endif
 
 // Return the smallest pagesize multiple that is >= s.
-#define PAGE_CEILING(s) (((s) + gPageSizeMask) & ~gPageSizeMask)
+#define PAGE_CEILING(s) \
+  (((s) + mozilla::gPageSizeMask) & ~mozilla::gPageSizeMask)
 #define REAL_PAGE_CEILING(s) (((s) + gRealPageSizeMask) & ~gRealPageSizeMask)
 
 #define PAGES_PER_REAL_PAGE_CEILING(s) \
