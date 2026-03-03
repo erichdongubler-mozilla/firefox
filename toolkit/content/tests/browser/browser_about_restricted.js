@@ -101,9 +101,7 @@ add_task(async function test_correct_error_message() {
   ok(browser.isRemoteBrowser, "Browser should be remote.");
   await ContentTask.spawn(
     browser,
-    {
-      whyIsAlways: true,
-    },
+    { whyIsAlways: true },
     validateErrorPageContents
   );
   BrowserTestUtils.removeTab(tab);
@@ -126,9 +124,7 @@ add_task(async function test_correct_error_message() {
   ok(browser.isRemoteBrowser, "Browser should be remote.");
   await ContentTask.spawn(
     browser,
-    {
-      whyIsAlways: false,
-    },
+    { whyIsAlways: false },
     validateErrorPageContents
   );
   BrowserTestUtils.removeTab(tab);
@@ -431,11 +427,7 @@ add_task(async function test_same_origin_navigation() {
   await doneLoading;
   await ContentTask.spawn(
     browser,
-    {
-      whyIsAlways: true,
-      host: ADULT_URL_HOST,
-      errorSourceURL: ADULT_URL,
-    },
+    { whyIsAlways: true, host: ADULT_URL_HOST, errorSourceURL: ADULT_URL },
     validateErrorPageContents
   );
 

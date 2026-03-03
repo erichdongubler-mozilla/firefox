@@ -27,7 +27,7 @@ add_task(async function () {
           "Shistory's current index should be 0 because we haven't purged history yet"
         );
       } else {
-        await ContentTask.spawn(browser, null, () => {
+        await SpecialPowers.spawn(browser, [], () => {
           var sh = content.window.docShell.QueryInterface(Ci.nsIWebNavigation)
             .sessionHistory.legacySHistory;
           is(
@@ -69,7 +69,7 @@ add_task(async function () {
         is(sh.index, -1);
         is(sh.requestedIndex, -1);
       } else {
-        await ContentTask.spawn(browser, null, () => {
+        await SpecialPowers.spawn(browser, [], () => {
           var sh = content.window.docShell.QueryInterface(Ci.nsIWebNavigation)
             .sessionHistory.legacySHistory;
           is(sh.count, 0, "We should not save any entries in session history");

@@ -851,9 +851,9 @@ function openContextMenuAndGetAllItems(inspector, options) {
  */
 async function waitUntilVisitedState(tab, selectors) {
   await asyncWaitUntil(async () => {
-    const hasVisitedState = await ContentTask.spawn(
+    const hasVisitedState = await SpecialPowers.spawn(
       tab.linkedBrowser,
-      selectors,
+      [selectors],
       args => {
         // ElementState::VISITED
         const ELEMENT_STATE_VISITED = 1 << 18;

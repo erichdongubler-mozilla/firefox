@@ -162,7 +162,7 @@ add_task(async function test_multiple_dialogs() {
   );
 
   // Navigate the parent frame:
-  await ContentTask.spawn(tab.linkedBrowser, [], () =>
+  await SpecialPowers.spawn(tab.linkedBrowser, [], () =>
     content.eval("location.href = 'mailto:help@example.com'")
   );
 

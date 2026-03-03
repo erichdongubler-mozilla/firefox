@@ -472,9 +472,9 @@ async function runTestsList(tests) {
       ok(test.file.exists(), `${test.file.path} exists`);
     }
 
-    let result = await ContentTask.spawn(
+    let result = await SpecialPowers.spawn(
       test.browser,
-      test.file.path,
+      [test.file.path],
       test.func
     );
 

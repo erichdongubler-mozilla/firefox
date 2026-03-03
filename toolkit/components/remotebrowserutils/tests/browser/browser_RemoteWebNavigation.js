@@ -39,8 +39,8 @@ add_task(async function test_referrer() {
 
   await SpecialPowers.spawn(
     browser,
-    [[DUMMY1, DUMMY2]],
-    function ([dummy1, dummy2]) {
+    [DUMMY1, DUMMY2],
+    function (dummy1, dummy2) {
       function getExpectedReferrer(referrer) {
         let defaultPolicy = Services.prefs.getIntPref(
           "network.http.referer.defaultPolicy"
@@ -97,8 +97,8 @@ add_task(async function test_history() {
   if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
     await SpecialPowers.spawn(
       browser,
-      [[DUMMY1, DUMMY2]],
-      function ([dummy1, dummy2]) {
+      [DUMMY1, DUMMY2],
+      function (dummy1, dummy2) {
         let history =
           docShell.browsingContext.childSessionHistory.legacySHistory;
 
@@ -145,8 +145,8 @@ add_task(async function test_flags() {
     if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
       return SpecialPowers.spawn(
         browser,
-        [[DUMMY2, count, index]],
-        function ([dummy2, count, index]) {
+        [DUMMY2, count, index],
+        function (dummy2, count, index) {
           let history =
             docShell.browsingContext.childSessionHistory.legacySHistory;
           is(history.count, count, "Should be one history item");

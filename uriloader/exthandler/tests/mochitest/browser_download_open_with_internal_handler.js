@@ -159,7 +159,7 @@ add_task(async function test_check_open_with_internal_handler() {
       "pdf.js should be opened in an adjacent tab"
     );
 
-    await ContentTask.spawn(newTab.linkedBrowser, null, async () => {
+    await SpecialPowers.spawn(newTab.linkedBrowser, [], async () => {
       await ContentTaskUtils.waitForCondition(
         () => content.document.readyState == "complete"
       );
@@ -448,7 +448,7 @@ add_task(async function test_check_open_with_external_then_internal() {
     info("waiting for new tab to open");
     let newTab = await newTabPromise;
 
-    await ContentTask.spawn(newTab.linkedBrowser, null, async () => {
+    await SpecialPowers.spawn(newTab.linkedBrowser, [], async () => {
       await ContentTaskUtils.waitForCondition(
         () => content.document.readyState == "complete"
       );

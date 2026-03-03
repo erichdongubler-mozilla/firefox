@@ -133,8 +133,8 @@ function promiseWebAuthnMakeCredential(
 ) {
   return ContentTask.spawn(
     tab.linkedBrowser,
-    [attestation, residentKey, extensions],
-    ([attestation, residentKey, extensions]) => {
+    { attestation, residentKey, extensions },
+    function ({ attestation, residentKey, extensions }) {
       const cose_alg_ECDSA_w_SHA256 = -7;
 
       let challenge = content.crypto.getRandomValues(new Uint8Array(16));
@@ -179,8 +179,8 @@ function promiseWebAuthnMakeCredential(
 function promiseWebAuthnGetAssertion(tab, key_handle = null, extensions = {}) {
   return ContentTask.spawn(
     tab.linkedBrowser,
-    [key_handle, extensions],
-    ([key_handle, extensions]) => {
+    { key_handle, extensions },
+    function ({ key_handle, extensions }) {
       let challenge = content.crypto.getRandomValues(new Uint8Array(16));
       if (key_handle == null) {
         key_handle = content.crypto.getRandomValues(new Uint8Array(16));
@@ -220,8 +220,8 @@ function promiseWebAuthnGetAssertionDiscoverable(
 ) {
   return ContentTask.spawn(
     tab.linkedBrowser,
-    [extensions, mediation],
-    ([extensions, mediation]) => {
+    { extensions, mediation },
+    function ({ extensions, mediation }) {
       let challenge = content.crypto.getRandomValues(new Uint8Array(16));
 
       let publicKey = {

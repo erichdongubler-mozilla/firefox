@@ -72,9 +72,13 @@ async function testCopyPaste(isPrivate) {
   let browser = tab.linkedBrowser;
 
   // Sanitize environment
-  await ContentTask.spawn(browser, SHORT_STRING_NO_CACHE, async shortStr => {
-    await content.navigator.clipboard.writeText(shortStr);
-  });
+  await SpecialPowers.spawn(
+    browser,
+    [SHORT_STRING_NO_CACHE],
+    async shortStr => {
+      await content.navigator.clipboard.writeText(shortStr);
+    }
+  );
 
   let initialFdCount = getClipboardCacheFDCount();
 

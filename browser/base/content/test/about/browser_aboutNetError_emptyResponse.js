@@ -48,7 +48,7 @@ add_task(async function test_net_empty_response_copy() {
   await pageLoaded;
 
   Assert.ok("Loaded empty server response.");
-  await ContentTask.spawn(browser, null, async () => {
+  await SpecialPowers.spawn(browser, [], async () => {
     await ContentTaskUtils.waitForCondition(
       () => content?.document?.querySelector("net-error-card"),
       "Wait for empty-response copy to render"

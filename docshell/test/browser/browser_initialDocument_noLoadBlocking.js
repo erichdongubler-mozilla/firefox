@@ -40,7 +40,7 @@ add_task(async function test_extension_cannot_block_initial_load() {
   const url = "https://example.com/";
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
 
-  await ContentTask.spawn(tab.linkedBrowser, [url], async function (url) {
+  await SpecialPowers.spawn(tab.linkedBrowser, [url], async function (url) {
     Assert.equal(content.location.href, url, "Correct content document");
 
     const scriptEvaluated = new Promise(

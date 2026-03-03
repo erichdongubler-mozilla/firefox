@@ -190,9 +190,9 @@ async function promiseBrowserContentUnloaded(browser) {
     });
   });
 
-  await ContentTask.spawn(
+  await SpecialPowers.spawn(
     browser,
-    MSG_WINDOW_DESTROYED,
+    [MSG_WINDOW_DESTROYED],
     MSG_WINDOW_DESTROYED => {
       let innerWindowId = this.content.windowGlobalChild.innerWindowId;
       let observer = subject => {

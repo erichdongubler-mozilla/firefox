@@ -1996,7 +1996,9 @@ add_task(async function test_select_input_text() {
     ].concat(LOGIN_FILL_ITEMS),
     {
       *preCheckContextMenuFn() {
-        yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+        yield SpecialPowers.spawn(
+          gBrowser.selectedBrowser,
+          [], function*() {
           let doc = content.document;
           let win = doc.defaultView;
           win.getSelection().removeAllRanges();
@@ -2032,7 +2034,9 @@ add_task(async function test_select_input_text_password() {
     ].concat(LOGIN_FILL_ITEMS),
     {
       *preCheckContextMenuFn() {
-        yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+        yield SpecialPowers.spawn(
+          gBrowser.selectedBrowser,
+          [], function*() {
           let doc = content.document;
           let win = doc.defaultView;
           win.getSelection().removeAllRanges();
@@ -2041,7 +2045,9 @@ add_task(async function test_select_input_text_password() {
         });
       },
       *postCheckContextMenuFn() {
-        yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+        yield SpecialPowers.spawn(
+          gBrowser.selectedBrowser,
+          [], function*() {
           let win = content.document.defaultView;
           win.getSelection().removeAllRanges();
         });

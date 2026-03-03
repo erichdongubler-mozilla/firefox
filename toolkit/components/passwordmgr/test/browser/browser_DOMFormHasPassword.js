@@ -102,7 +102,7 @@ function task(contentIds) {
 
 add_task(async function test_disconnectedInputs() {
   const tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser));
-  await ContentTask.spawn(tab.linkedBrowser, [], async () => {
+  await ContentTask.spawn(tab.linkedBrowser, null, async () => {
     const unexpectedEvent = evt => {
       Assert.ok(
         false,

@@ -190,11 +190,7 @@ async function getFormSubmitResponseResult(
   // default selectors are for the response page produced by formsubmit.sjs
   let fieldValues = await ContentTask.spawn(
     browser,
-    {
-      resultURL,
-      usernameSelector: username,
-      passwordSelector: password,
-    },
+    { resultURL, usernameSelector: username, passwordSelector: password },
     async function ({ resultURL, usernameSelector, passwordSelector }) {
       await ContentTaskUtils.waitForCondition(() => {
         return (
@@ -710,7 +706,7 @@ async function fillGeneratedPasswordFromOpenACPopup(
 
   let inputEventPromise = ContentTask.spawn(
     browser,
-    [passwordInputSelector],
+    passwordInputSelector,
     async function waitForInput(inputSelector) {
       let passwordInput = content.document.querySelector(inputSelector);
       await ContentTaskUtils.waitForEvent(
@@ -897,7 +893,7 @@ async function changeContentInputValue(
   shouldBlur = true
 ) {
   await SimpleTest.promiseFocus(browser.ownerGlobal);
-  let oldValue = await ContentTask.spawn(browser, [selector], function (sel) {
+  let oldValue = await ContentTask.spawn(browser, selector, function (sel) {
     return content.document.querySelector(sel).value;
   });
 
