@@ -45,8 +45,7 @@ static const DelegateInfo sPermissionsMap[] = {
     {"microphone", u"microphone", DelegatePolicy::eDelegateUseFeaturePolicy},
     {"screen", u"display-capture", DelegatePolicy::eDelegateUseFeaturePolicy},
     {"xr", u"xr-spatial-tracking", DelegatePolicy::eDelegateUseFeaturePolicy},
-    {"loopback-network", u"loopback-network",
-     DelegatePolicy::eDelegateUseFeaturePolicy},
+    {"localhost", u"localhost", DelegatePolicy::eDelegateUseFeaturePolicy},
     {"local-network", u"local-network",
      DelegatePolicy::eDelegateUseFeaturePolicy},
 

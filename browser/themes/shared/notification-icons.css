@@ -93,7 +93,7 @@
   }
 }
 
-.loopback-network-icon {
+.localhost-icon {
   list-style-image: url(chrome://browser/skin/notification-icons/local-host.svg);
 
   &.blocked-permission-icon {

@@ -7,7 +7,6 @@
 #include "mozilla/dom/Permissions.h"
 
 #include "PermissionUtils.h"
-#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_permissions.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/MidiPermissionStatus.h"
@@ -101,23 +100,6 @@ RefPtr<PermissionStatus> CreatePermissionStatus(
         aRv.ThrowTypeError(
             "'microphone' (value of 'name' member of PermissionDescriptor) is "
             "not a valid value for enumeration PermissionName.");
-        return nullptr;
-      }
-      return new PermissionStatus(aGlobal, rootDesc.mName);
-    case PermissionName::Loopback_network:
-      if (!StaticPrefs::network_lna_blocking()) {
-        aRv.ThrowTypeError(
-            "'loopback-network' (value of 'name' member of "
-            "PermissionDescriptor) is not a valid value for enumeration "
-            "PermissionName.");
-        return nullptr;
-      }
-      return new PermissionStatus(aGlobal, rootDesc.mName);
-    case PermissionName::Local_network:
-      if (!StaticPrefs::network_lna_blocking()) {
-        aRv.ThrowTypeError(
-            "'local-network' (value of 'name' member of PermissionDescriptor) "
-            "is not a valid value for enumeration PermissionName.");
         return nullptr;
       }
       return new PermissionStatus(aGlobal, rootDesc.mName);

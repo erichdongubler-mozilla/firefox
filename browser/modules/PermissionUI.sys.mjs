@@ -169,13 +169,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   300000
 );
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "lnaTemporaryPermissionExpireTimeMs",
-  "network.lna.temporary_permission_expire_time_ms",
-  24 * 3600 * 1000 // 24 hours
-);
-
 /**
  * PermissionPrompt should be subclassed by callers that
  * want to display prompts to the user. See each method and property
@@ -247,14 +240,6 @@ class PermissionPrompt {
    * permissions. If undefined, it defaults to the browser.currentURI.
    */
   get temporaryPermissionURI() {
-    return undefined;
-  }
-
-  /**
-   * Custom expiration time in milliseconds for temporary permissions.
-   * If undefined, uses the default from SitePermissions.temporaryPermissionExpireTime.
-   */
-  get temporaryPermissionExpireTimeMS() {
     return undefined;
   }
 
@@ -562,8 +547,7 @@ class PermissionPrompt {
                 this.permissionKey,
                 promptAction.action,
                 lazy.SitePermissions.SCOPE_TEMPORARY,
-                this.browser,
-                this.temporaryPermissionExpireTimeMS
+                this.browser
               );
             }
 
@@ -579,8 +563,7 @@ class PermissionPrompt {
               this.permissionKey,
               promptAction.action,
               lazy.SitePermissions.SCOPE_TEMPORARY,
-              this.browser,
-              this.temporaryPermissionExpireTimeMS
+              this.browser
             );
           }
         },
@@ -1124,11 +1107,6 @@ class LNAPermissionPromptBase extends PermissionPromptForRequest {
     super.allow(choices);
   }
 
-  get temporaryPermissionExpireTimeMS() {
-    // LNA temporary permissions have a custom expiration time (default 24 hours)
-    return lazy.lnaTemporaryPermissionExpireTimeMs;
-  }
-
   #startTimeoutTimer() {
     this.#clearTimeoutTimer();
 
@@ -1178,13 +1156,13 @@ class LNAPermissionPromptBase extends PermissionPromptForRequest {
  * @param request (nsIContentPermissionRequest)
  *        The request for a permission from content.
  */
-class LoopbackNetworkPermissionPrompt extends LNAPermissionPromptBase {
+class LocalHostPermissionPrompt extends LNAPermissionPromptBase {
   get type() {
-    return "loopback-network";
+    return "localhost";
   }
 
   get permissionKey() {
-    return "loopback-network";
+    return "localhost";
   }
 
   get popupOptions() {
@@ -1203,6 +1181,12 @@ class LoopbackNetworkPermissionPrompt extends LNAPermissionPromptBase {
       ),
     };
 
+    if (this.request.isRequestDelegatedToUnsafeThirdParty) {
+      // Second name should be the third party origin
+      options.secondName = this.getPrincipalName(this.request.principal);
+      options.checkbox = { show: false };
+    }
+
     if (options.checkbox.show) {
       options.checkbox.label = lazy.gBrowserBundle.GetStringFromName(
         "localhost.remember2"
@@ -1213,11 +1197,11 @@ class LoopbackNetworkPermissionPrompt extends LNAPermissionPromptBase {
   }
 
   get notificationID() {
-    return "loopback-network";
+    return "localhost";
   }
 
   get anchorID() {
-    return "loopback-network-notification-icon";
+    return "localhost-notification-icon";
   }
 
   get message() {
@@ -1517,6 +1501,12 @@ class LocalNetworkPermissionPrompt extends LNAPermissionPromptBase {
         this.browser.ownerGlobal
       ),
     };
+
+    if (this.request.isRequestDelegatedToUnsafeThirdParty) {
+      // Second name should be the third party origin
+      options.secondName = this.getPrincipalName(this.request.principal);
+      options.checkbox = { show: false };
+    }
 
     if (options.checkbox.show) {
       options.checkbox.label = lazy.gBrowserBundle.GetStringFromName(
@@ -1899,7 +1889,7 @@ export const PermissionUI = {
   PersistentStoragePermissionPrompt,
   MIDIPermissionPrompt,
   StorageAccessPermissionPrompt,
-  LoopbackNetworkPermissionPrompt,
+  LocalHostPermissionPrompt,
   LocalNetworkPermissionPrompt,
   getSiteCategory,
 };

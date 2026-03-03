@@ -151,10 +151,7 @@ add_task(async function test_captivePortalTab_noLnaPrompt() {
   );
   await BrowserTestUtils.waitForCondition(
     () =>
-      PopupNotifications.getNotification(
-        "loopback-network",
-        portalTab.linkedBrowser
-      ),
+      PopupNotifications.getNotification("localhost", portalTab.linkedBrowser),
     "Waiting for localhost prompt"
   );
 

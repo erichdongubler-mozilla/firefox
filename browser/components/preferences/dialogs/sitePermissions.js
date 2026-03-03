@@ -53,7 +53,7 @@ const sitePermissionsL10n = {
     window: "permissions-site-autoplay-window2",
     description: "permissions-site-autoplay-desc",
   },
-  "loopback-network": {
+  localhost: {
     window: "permissions-site-localhost-window",
     description: "permissions-site-localhost-desc",
     disableLabel: "permissions-site-localhost-disable-label",

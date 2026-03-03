@@ -1213,9 +1213,8 @@ let gPermissions = {
       exactHostMatch: true,
     },
 
-    "loopback-network": {
+    localhost: {
       exactHostMatch: true,
-      labelID: "localhost",
       get disabled() {
         return !SitePermissions.localNetworkAccessPermissionsEnabled;
       },

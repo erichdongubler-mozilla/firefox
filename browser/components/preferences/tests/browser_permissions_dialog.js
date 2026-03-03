@@ -639,8 +639,8 @@ add_task(async function addSpeakerPermission() {
 
 add_task(async function testLocalNetworkAccessPermissionVisibility() {
   let enabled = Services.prefs.getBoolPref("network.lna.blocking", false);
-  let loopbackNetworkSettingsButton = gBrowser.contentDocument.getElementById(
-    "loopbackNetworkSettingsButton"
+  let localHostSettingsButton = gBrowser.contentDocument.getElementById(
+    "localHostSettingsButton"
   );
   let localNetworkSettingsButton = gBrowser.contentDocument.getElementById(
     "localNetworkSettingsButton"
@@ -652,13 +652,13 @@ add_task(async function testLocalNetworkAccessPermissionVisibility() {
     "localhost permissions visible"
   );
   Assert.equal(
-    BrowserTestUtils.isVisible(loopbackNetworkSettingsButton),
+    BrowserTestUtils.isVisible(localHostSettingsButton),
     enabled,
     "localhost permissions visible"
   );
 
   let changeLocalHostButton = waitForSettingControlChange(
-    loopbackNetworkSettingsButton
+    localHostSettingsButton
   );
   let changeLocalNetworkButton = waitForSettingControlChange(
     localNetworkSettingsButton
@@ -671,7 +671,7 @@ add_task(async function testLocalNetworkAccessPermissionVisibility() {
   await changeLocalNetworkButton;
 
   Assert.equal(
-    BrowserTestUtils.isVisible(loopbackNetworkSettingsButton),
+    BrowserTestUtils.isVisible(localHostSettingsButton),
     enabled,
     "localhost permissions toggle"
   );
