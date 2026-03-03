@@ -4,7 +4,7 @@
 "use strict";
 
 const HOMEPAGE_PREF = "browser.startup.homepage";
-const DEFAULT_HOMEPAGE_URL = "about:home";
+const BLANK_HOMEPAGE_URL = "chrome://browser/content/blanktab.html";
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -15,9 +15,9 @@ add_setup(async function () {
   });
 });
 
-add_task(async function test_adding_single_custom_url() {
+add_task(async function test_adding_multiple_custom_urls() {
   await SpecialPowers.pushPrefEnv({
-    set: [[HOMEPAGE_PREF, DEFAULT_HOMEPAGE_URL]],
+    set: [[HOMEPAGE_PREF, BLANK_HOMEPAGE_URL]],
   });
 
   let { win, doc, tab } = await openCustomHomepageSubpage();
@@ -37,20 +37,42 @@ add_task(async function test_adding_single_custom_url() {
 
   input.focus();
   EventUtils.sendString("https://example.com", win);
-
   await TestUtils.waitForTick();
-
   addButton.click();
 
   await TestUtils.waitForCondition(
     () => Services.prefs.getStringPref(HOMEPAGE_PREF) === "https://example.com",
-    "Pref should be updated with the new URL"
+    "First URL added"
   );
 
-  let boxItems = doc.querySelectorAll(
-    "moz-box-item[data-url='https://example.com']"
+  input.focus();
+  input.select();
+  EventUtils.sendString("https://test.org", win);
+  await TestUtils.waitForTick();
+  addButton.click();
+
+  await TestUtils.waitForCondition(
+    () =>
+      Services.prefs.getStringPref(HOMEPAGE_PREF) ===
+      "https://example.com|https://test.org",
+    "Second URL added"
   );
-  is(boxItems.length, 1, "URL appears in the list");
+
+  input.focus();
+  input.select();
+  EventUtils.sendString("https://mozilla.org", win);
+  await TestUtils.waitForTick();
+  addButton.click();
+
+  await TestUtils.waitForCondition(
+    () =>
+      Services.prefs.getStringPref(HOMEPAGE_PREF) ===
+      "https://example.com|https://test.org|https://mozilla.org",
+    "Third URL added"
+  );
+
+  let boxItems = doc.querySelectorAll("moz-box-item[data-url]");
+  is(boxItems.length, 3, "All three URLs appear in the list");
 
   await BrowserTestUtils.removeTab(tab);
 });

@@ -154,11 +154,15 @@ skip-if = [
 
 ["browser_fluent.js"]
 
+["browser_homepage_custom_homepage_add_multiple_urls.js"]
+
 ["browser_homepage_custom_homepage_add_urls.js"]
 
 ["browser_homepage_custom_homepage_bookmark.js"]
 
 ["browser_homepage_custom_homepage_current_pages.js"]
+
+["browser_homepage_custom_homepage_empty_state.js"]
 
 ["browser_homepage_custom_homepage_manage_urls.js"]
 
