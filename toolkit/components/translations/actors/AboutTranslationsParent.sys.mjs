@@ -142,20 +142,6 @@ export class AboutTranslationsParent extends JSWindowActorParent {
       case "AboutTranslations:GetEnabledState": {
         return lazy.TranslationsParent.AIFeature.isEnabled;
       }
-      case "AboutTranslations:OpenSupportPage": {
-        const browser = this.browsingContext.top.embedderElement;
-        browser.ownerGlobal.openTrustedLinkIn(
-          "https://support.mozilla.org/kb/website-translation",
-          "tab",
-          {
-            forceForeground: true,
-            triggeringPrincipal:
-              Services.scriptSecurityManager.getSystemPrincipal(),
-          }
-        );
-
-        return undefined;
-      }
       case "AboutTranslations:Telemetry": {
         const { telemetryFunctionName, telemetryData } = data;
         const aboutTranslationsTelemetry =
