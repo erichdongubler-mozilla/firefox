@@ -536,8 +536,7 @@
       this.setSplitViewActive(!!this.#splitViewPanels.length);
     }
 
-    setSplitViewActive(updatedValue) {
-      let isActive = gBrowser.selectedTab.splitview && updatedValue;
+    setSplitViewActive(isActive) {
       this.toggleAttribute("splitview", isActive);
       this.splitViewSplitter.hidden = !isActive;
       const selectedPanel = this.selectedPanel;

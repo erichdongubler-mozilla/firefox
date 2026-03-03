@@ -1,7 +1,3 @@
-const { TabGroupTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TabGroupTestUtils.sys.mjs"
-);
-
 const LOCALE_LTR = "ltr";
 const LOCALE_RTL = "rtl";
 
@@ -178,15 +174,4 @@ function triggerClickOn(target, options) {
   }
   EventUtils.synthesizeMouseAtCenter(target, options);
   return promise;
-}
-
-/**
- * Removes a tab group (along with its tabs). Resolves when the tab group
- * is gone.
- *
- * @param {MozTabbrowserTabGroup} group
- * @returns {Promise<void>}
- */
-async function removeTabGroup(group) {
-  return TabGroupTestUtils.removeTabGroup(group);
 }

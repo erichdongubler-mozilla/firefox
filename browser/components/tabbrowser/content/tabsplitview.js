@@ -230,7 +230,10 @@
     /**
      * Remove Split View tabs from the content area.
      */
-    #deactivate() {
+    #deactivate(skipHidePanels = false) {
+      if (!skipHidePanels) {
+        gBrowser.hideSplitViewPanels(this.#tabs);
+      }
       updateUrlbarButton.arm();
       this.container.dispatchEvent(
         new CustomEvent("TabSplitViewDeactivate", {
@@ -414,7 +417,7 @@
       if (this.hasActiveTab) {
         this.#activate();
       } else {
-        this.#deactivate();
+        this.#deactivate(true);
       }
     }
   }
