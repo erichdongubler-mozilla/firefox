@@ -15,6 +15,7 @@ import {
   getFailedCertificatesAsPEMString,
   handleNSSFailure,
   recordSecurityUITelemetry,
+  getFilePath,
   gOffline,
   retryThis,
   VPN_ACTIVE,
@@ -328,6 +329,7 @@ export class NetErrorCard extends MozLitElement {
       cssClass: getCSSClass(),
       domainMismatchNames: this.domainMismatchNames,
       offline: gOffline,
+      filePath: getFilePath(),
     });
 
     if (errorConfig.customNetError) {
