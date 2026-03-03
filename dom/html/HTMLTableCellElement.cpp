@@ -128,10 +128,6 @@ bool HTMLTableCellElement::ParseAttribute(int32_t aNamespaceID,
     }
     if (aAttribute == nsGkAtoms::rowspan) {
       aResult.ParseClampedNonNegativeInt(aValue, 1, 0, MAX_ROWSPAN);
-      // quirks mode does not honor the special html 4 value of 0
-      if (aResult.GetIntegerValue() == 0 && InNavQuirksMode(OwnerDoc())) {
-        aResult.SetTo(1, &aValue);
-      }
       return true;
     }
     if (aAttribute == nsGkAtoms::height) {
