@@ -27,6 +27,7 @@ import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
  * @property tabSearchEnabled  Whether the tab search feature is enabled.
  * @property backStack The navigation history of the Tab Manager feature.
  * @property expandedSyncedTabs The list of expansion states for the syncedTabs.
+ * @property tabGroupFormState The state of the tab group edit form.
  */
 data class TabsTrayState(
     val selectedPage: Page = Page.NormalTabs,
@@ -42,6 +43,7 @@ data class TabsTrayState(
     val tabSearchEnabled: Boolean = false,
     val backStack: List<TabManagerNavDestination> = listOf(TabManagerNavDestination.Root),
     val expandedSyncedTabs: List<Boolean> = emptyList(),
+    val tabGroupFormState: TabGroupFormState? = null,
 ) : State {
 
     /**
