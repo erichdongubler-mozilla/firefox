@@ -291,7 +291,6 @@ class AboutTranslations {
     this.#maybeRequestTranslation();
 
     document.body.style.visibility = "visible";
-    this.#setInitialFocus();
   }
 
   /**
@@ -1031,7 +1030,6 @@ class AboutTranslations {
       this.#showMainUserInterface();
       this.#updateSourceSectionClearButtonVisibility();
       this.#requestSectionHeightsUpdate({ scheduleCallback: false });
-      this.#setInitialFocus();
       dispatchTestEvent("AboutTranslationsTest:LanguageLoadRetrySucceeded");
     } catch (error) {
       AT_logError(error);
@@ -1672,19 +1670,6 @@ class AboutTranslations {
     }
 
     return this.#translator.matchesLanguagePair(selectedLanguagePair);
-  }
-
-  /**
-   * Sets the initial focus on the most appropriate UI element based on the context.
-   */
-  #setInitialFocus() {
-    const { targetLanguageSelector, sourceSectionTextArea } = this.elements;
-
-    if (targetLanguageSelector.value === "") {
-      targetLanguageSelector.focus();
-    } else {
-      sourceSectionTextArea.focus();
-    }
   }
 
   /**
