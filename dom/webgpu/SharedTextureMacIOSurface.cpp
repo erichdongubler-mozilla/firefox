@@ -8,7 +8,6 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/MacIOSurface.h"
 #include "mozilla/layers/GpuFenceMTLSharedEvent.h"
-#include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/webgpu/WebGPUParent.h"
 
 namespace mozilla::webgpu {
@@ -80,24 +79,23 @@ SharedTextureMacIOSurface::ToSurfaceDescriptor() {
 }
 
 void SharedTextureMacIOSurface::GetSnapshot(const ipc::Shmem& aDestShmem,
-                                            const gfx::IntSize& aSize) {
+                                            size_t aDestStride) {
   if (!mSurface->Lock()) {
     gfxCriticalNoteOnce << "Failed to lock MacIOSurface";
     return;
   }
 
   const size_t bytesPerRow = mSurface->GetBytesPerRow();
-  const uint32_t stride = layers::ImageDataSerializer::ComputeRGBStride(
-      gfx::SurfaceFormat::B8G8R8A8, aSize.width);
   uint8_t* src = (uint8_t*)mSurface->GetBaseAddress();
   uint8_t* dst = aDestShmem.get<uint8_t>();
 
-  MOZ_ASSERT(stride * aSize.height <= aDestShmem.Size<uint8_t>());
+  // note that this might still copy some padding bytes
+  const size_t min_stride = std::min(bytesPerRow, aDestStride);
 
-  for (int y = 0; y < aSize.height; y++) {
-    memcpy(dst, src, stride);
+  for (uint32_t y = 0; y < mHeight; y++) {
+    memcpy(dst, src, min_stride);
     src += bytesPerRow;
-    dst += stride;
+    dst += aDestStride;
   }
 
   mSurface->Unlock();

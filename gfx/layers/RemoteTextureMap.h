@@ -239,7 +239,8 @@ class RemoteTextureOwnerClient final {
                         const RemoteTextureOwnerId aOwnerId);
   void GetLatestBufferSnapshot(const RemoteTextureOwnerId aOwnerId,
                                const mozilla::ipc::Shmem& aDestShmem,
-                               const gfx::IntSize& aSize);
+                               const gfx::IntSize& aDestSize,
+                               size_t aDestStride);
   UniquePtr<TextureData> GetRecycledTextureData(
       const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat,
       TextureType aTextureType,
@@ -298,7 +299,8 @@ class RemoteTextureMap {
   void GetLatestBufferSnapshot(const RemoteTextureOwnerId aOwnerId,
                                const base::ProcessId aForPid,
                                const mozilla::ipc::Shmem& aDestShmem,
-                               const gfx::IntSize& aSize);
+                               const gfx::IntSize& aDestSize,
+                               size_t aDestStride);
 
   void RegisterTextureOwner(
       const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid,

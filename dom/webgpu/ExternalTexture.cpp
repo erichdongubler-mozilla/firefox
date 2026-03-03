@@ -550,7 +550,9 @@ ExternalTextureSourceHost::CreateFromBufferDesc(
         .bytes_per_row = &stride,
         .rows_per_image = nullptr,
     };
-    const Span<uint8_t> slice = buffer.to(size.height * stride);
+    const auto len = CheckedInt<size_t>(size.height) * stride;
+    MOZ_RELEASE_ASSERT(len.isValid());
+    const Span<uint8_t> slice = buffer.to(len.value());
     const ffi::WGPUFfiSlice_u8 data{
         .data = slice.data(),
         .length = slice.size(),

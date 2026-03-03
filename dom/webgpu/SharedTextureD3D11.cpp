@@ -11,7 +11,6 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
 #include "mozilla/layers/FenceD3D11.h"
-#include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/webgpu/WebGPUParent.h"
 
 namespace mozilla::webgpu {
@@ -157,7 +156,7 @@ Maybe<layers::SurfaceDescriptor> SharedTextureD3D11::ToSurfaceDescriptor() {
 }
 
 void SharedTextureD3D11::GetSnapshot(const ipc::Shmem& aDestShmem,
-                                     const gfx::IntSize& aSize) {
+                                     size_t aDestStride) {
   RefPtr<ID3D11Device> device;
   mTexture->GetDevice(getter_AddRefs(device));
   if (!device) {
@@ -202,18 +201,17 @@ void SharedTextureD3D11::GetSnapshot(const ipc::Shmem& aDestShmem,
     return;
   }
 
-  const uint32_t stride = layers::ImageDataSerializer::ComputeRGBStride(
-      gfx::SurfaceFormat::B8G8R8A8, aSize.width);
   uint8_t* src = static_cast<uint8_t*>(map.pData);
   uint8_t* dst = aDestShmem.get<uint8_t>();
 
-  MOZ_ASSERT(stride * aSize.height <= aDestShmem.Size<uint8_t>());
-  MOZ_ASSERT(map.RowPitch >= stride);
+  const size_t src_stride = static_cast<size_t>(map.RowPitch);
+  // note that this might still copy some padding bytes
+  const size_t min_stride = std::min(src_stride, aDestStride);
 
-  for (int y = 0; y < aSize.height; y++) {
-    memcpy(dst, src, stride);
-    src += map.RowPitch;
-    dst += stride;
+  for (uint32_t y = 0; y < mHeight; y++) {
+    memcpy(dst, src, min_stride);
+    src += src_stride;
+    dst += aDestStride;
   }
   deviceContext->Unmap(cpuTexture, 0);
 }

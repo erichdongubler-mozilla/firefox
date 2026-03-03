@@ -41,8 +41,7 @@ class SharedTexture {
 
   virtual Maybe<layers::SurfaceDescriptor> ToSurfaceDescriptor() = 0;
 
-  virtual void GetSnapshot(const ipc::Shmem& aDestShmem,
-                           const gfx::IntSize& aSize) {}
+  virtual void GetSnapshot(const ipc::Shmem& aDestShmem, size_t aDestStride) {}
 
   virtual SharedTextureDMABuf* AsSharedTextureDMABuf() { return nullptr; }
 

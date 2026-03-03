@@ -34,8 +34,7 @@ class SharedTextureMacIOSurface final : public SharedTexture {
 
   Maybe<layers::SurfaceDescriptor> ToSurfaceDescriptor() override;
 
-  void GetSnapshot(const ipc::Shmem& aDestShmem,
-                   const gfx::IntSize& aSize) override;
+  void GetSnapshot(const ipc::Shmem& aDestShmem, size_t aDestStride) override;
 
   SharedTextureMacIOSurface* AsSharedTextureMacIOSurface() override {
     return this;
