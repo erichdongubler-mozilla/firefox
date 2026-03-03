@@ -22,7 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,9 +34,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
@@ -45,7 +43,6 @@ import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.BottomSheetHandle
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
-import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -68,10 +65,6 @@ fun EditTabGroupBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val formState by tabsTrayStore.tabGroupFormStateFlow.collectAsState(
-        initial = tabsTrayStore.state.tabGroupFormState ?: return,
-    )
-
     LaunchedEffect(Unit) {
         if (!sheetState.isVisible) {
             sheetState.show()
@@ -80,12 +73,8 @@ fun EditTabGroupBottomSheet(
 
     BottomSheet(
         sheetState = sheetState,
-        formState = formState,
-        onTabGroupNameChange = { newName ->
-            tabsTrayStore.dispatch(TabGroupAction.NameChanged(newName))
-        },
         onDismissRequest = {
-            tabsTrayStore.dispatch(TabGroupAction.FormDismissed)
+            tabsTrayStore.dispatch(TabGroupAction.Dismiss)
         },
         onConfirmSave = {
             tabsTrayStore.dispatch(TabGroupAction.SaveClicked)
@@ -97,8 +86,6 @@ fun EditTabGroupBottomSheet(
 @Composable
 private fun BottomSheet(
     sheetState: SheetState,
-    formState: TabGroupFormState,
-    onTabGroupNameChange: (String) -> Unit,
     onDismissRequest: () -> Unit,
     onConfirmSave: () -> Unit,
 ) {
@@ -114,38 +101,22 @@ private fun BottomSheet(
             )
         },
     ) {
-        EditTabGroupContent(
-            formState = formState,
-            onTabGroupNameChange = onTabGroupNameChange,
+        CreateTabGroupContent(
             onConfirmSave = onConfirmSave,
         )
     }
 }
 
 @Composable
-private fun EditTabGroupContent(
-    formState: TabGroupFormState,
-    onTabGroupNameChange: (String) -> Unit,
+private fun CreateTabGroupContent(
     onConfirmSave: () -> Unit,
 ) {
-    val title =
-        if (formState.inEditState) {
-            stringResource(R.string.edit_tab_group_title)
-        } else {
-            stringResource(R.string.create_tab_group_title)
-        }
-
-    val defaultName = stringResource(
-        R.string.create_tab_group_form_default_name,
-        formState.nextTabGroupNumber,
-    )
-    val initialName = formState.getInitialName(defaultName)
-
+    val defaultName = stringResource(R.string.create_tab_group_default_name)
     var tabGroupName by remember {
         mutableStateOf(
             TextFieldValue(
-                text = initialName,
-                selection = TextRange(0, initialName.length),
+                text = defaultName,
+                selection = TextRange(0, defaultName.length),
             ),
         )
     }
@@ -163,7 +134,7 @@ private fun EditTabGroupContent(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = title,
+                text = stringResource(R.string.create_tab_group_title),
                 modifier = Modifier.weight(1f).padding(start = 24.dp),
                 style = FirefoxTheme.typography.headline7,
             )
@@ -184,10 +155,7 @@ private fun EditTabGroupContent(
         ) {
             TabGroupNameTextField(
                 tabGroupName = tabGroupName,
-                onTabGroupNameChange = { newName ->
-                    tabGroupName = newName
-                    onTabGroupNameChange(newName.text)
-                },
+                onTabGroupNameChange = { tabGroupName = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp, vertical = 16.dp),
@@ -218,8 +186,8 @@ private fun TabGroupNameTextField(
         onValueChange = onTabGroupNameChange,
         label = {
             Text(
-                text = stringResource(R.string.tab_group_name_label),
-                style = FirefoxTheme.typography.caption,
+                text = stringResource(R.string.create_tab_group_name_label),
+                style = MaterialTheme.typography.labelMedium,
             )
         },
         singleLine = true,
@@ -230,55 +198,14 @@ private fun TabGroupNameTextField(
     )
 }
 
-private class TabGroupFormStateParameterProvider : PreviewParameterProvider<TabGroupFormState> {
-    val data = listOf(
-        Pair(
-            "Create tab group",
-            TabGroupFormState(
-                tabGroupId = null,
-                name = "",
-                nextTabGroupNumber = 1,
-                edited = false,
-            ),
-        ),
-        Pair(
-            "Edit tab group",
-            TabGroupFormState(
-                tabGroupId = "1",
-                name = "Test group",
-                edited = false,
-            ),
-        ),
-        Pair(
-            "Edit tab group with blank name",
-            TabGroupFormState(
-                tabGroupId = "1",
-                name = "",
-                edited = true,
-            ),
-        ),
-    )
-
-    override fun getDisplayName(index: Int): String {
-        return data[index].first
-    }
-
-    override val values: Sequence<TabGroupFormState>
-        get() = data.map { it.second }.asSequence()
-}
-
-@PreviewLightDark
+@Preview
 @Composable
-private fun EditTabGroupContentPreview(
-    @PreviewParameter(TabGroupFormStateParameterProvider::class) formState: TabGroupFormState,
+private fun CreateTabGroupContentPreview(
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
-    FirefoxTheme {
+    FirefoxTheme(theme) {
         Surface {
-            EditTabGroupContent(
-                formState = formState,
-                onConfirmSave = {},
-                onTabGroupNameChange = {},
-            )
+            CreateTabGroupContent(onConfirmSave = {})
         }
     }
 }
@@ -289,20 +216,13 @@ private fun EditTabGroupContentPreview(
 private fun EditTabGroupBottomSheetPreview(
     @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
-    val tabsTrayStore = remember {
-        TabsTrayStore(
-            initialState = TabsTrayState(
-                tabGroupFormState = TabGroupFormState(
-                    tabGroupId = null,
-                    name = "",
-                    nextTabGroupNumber = 1,
-                    edited = false,
-                ),
-            ),
-        )
-    }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     FirefoxTheme(theme) {
-        EditTabGroupBottomSheet(tabsTrayStore = tabsTrayStore)
+        BottomSheet(
+            sheetState = sheetState,
+            onDismissRequest = {},
+            onConfirmSave = {},
+        )
     }
 }

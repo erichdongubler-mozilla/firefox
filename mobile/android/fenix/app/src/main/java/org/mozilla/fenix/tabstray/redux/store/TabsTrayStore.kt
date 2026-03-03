@@ -4,13 +4,10 @@
 
 package org.mozilla.fenix.tabstray.redux.store
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.mapNotNull
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.reducer.TabsTrayReducer
-import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 
 /**
@@ -25,8 +22,6 @@ class TabsTrayStore(
     TabsTrayReducer::reduce,
     middlewares,
 ) {
-    val tabGroupFormStateFlow: Flow<TabGroupFormState> = stateFlow.mapNotNull { it.tabGroupFormState }
-
     init {
         dispatch(TabsTrayAction.InitAction)
     }

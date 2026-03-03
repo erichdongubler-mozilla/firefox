@@ -89,15 +89,12 @@ internal object TabsTrayReducer {
                 }
             }
             is TabsTrayAction.SyncedTabsHeaderToggled -> handleSyncedTabHeaderToggle(state, action)
+            is TabGroupAction -> state
             is TabsTrayAction.TabDataUpdateReceived -> state.copy(
                 selectedTabId = action.tabStorageUpdate.selectedTabId,
                 normalTabs = action.tabStorageUpdate.normalTabs,
                 inactiveTabs = action.tabStorageUpdate.inactiveTabs,
                 privateTabs = action.tabStorageUpdate.privateTabs,
-            )
-            is TabGroupAction -> TabGroupActionReducer.reduce(
-                state = state,
-                action = action,
             )
         }
     }
