@@ -55,6 +55,7 @@ firebase-messaging = "25.0.1"
 installreferrer = "2.2"
 ksp = "2.3.6"
 material = "1.13.0"
+mlkit-prompt = "1.0.0-beta1"
 osslicenses-plugin = "0.10.10"
 play-integrity = "1.6.0"
 play-review = "2.0.2"
@@ -218,7 +219,7 @@ ksp-symbol-processing-aa = { module = "com.google.devtools.ksp:symbol-processing
 ksp-symbol-processing-aa-embeddable = { module = "com.google.devtools.ksp:symbol-processing-aa-embeddable", version.ref = "ksp" }
 ksp-symbol-processing-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 ksp-symbol-processing-common-deps = { module = "com.google.devtools.ksp:symbol-processing-common-deps", version.ref = "ksp" }
-mlkit-prompt = { module = "com.google.mlkit:genai-prompt", version = "1.0.0-alpha1" }
+mlkit-prompt = { module = "com.google.mlkit:genai-prompt", version.ref = "mlkit-prompt" }
 osslicenses-plugin = { module = "com.google.android.gms:oss-licenses-plugin", version.ref = "osslicenses-plugin" }
 play-integrity = { module = "com.google.android.play:integrity", version.ref = "play-integrity" }
 play-review = { module = "com.google.android.play:review", version.ref = "play-review" }
