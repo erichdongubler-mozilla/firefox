@@ -29,15 +29,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DumpCreditCards: "resource://tps/modules/formautofill.sys.mjs",
   DumpHistory: "resource://tps/modules/history.sys.mjs",
   DumpPasswords: "resource://tps/modules/passwords.sys.mjs",
-  FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   FormData: "resource://tps/modules/forms.sys.mjs",
   FormValidator: "resource://services-sync/engines/forms.sys.mjs",
   HistoryEntry: "resource://tps/modules/history.sys.mjs",
-  JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
   Livemark: "resource://tps/modules/bookmarks.sys.mjs",
   Log: "resource://gre/modules/Log.sys.mjs",
   Logger: "resource://tps/logger.sys.mjs",
-  NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   Password: "resource://tps/modules/passwords.sys.mjs",
   PasswordValidator: "resource://services-sync/engines/passwords.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
@@ -50,15 +47,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   WEAVE_VERSION: "resource://services-sync/constants.sys.mjs",
   Weave: "resource://services-sync/main.sys.mjs",
   extensionStorageSync: "resource://gre/modules/ExtensionStorageSync.sys.mjs",
-});
-
-ChromeUtils.defineLazyGetter(lazy, "fileProtocolHandler", () => {
-  let fileHandler = Services.io.getProtocolHandler("file");
-  return fileHandler.QueryInterface(Ci.nsIFileProtocolHandler);
-});
-
-ChromeUtils.defineLazyGetter(lazy, "gTextDecoder", () => {
-  return new TextDecoder();
 });
 
 // Options for wiping data during a sync
@@ -981,68 +969,6 @@ export var TPS = {
     await this.RunNextTestAction();
   },
 
-  _getFileRelativeToSourceRoot(testFileURL, relativePath) {
-    let file = lazy.fileProtocolHandler.getFileFromURLSpec(testFileURL);
-    let root = file.parent.parent.parent.parent.parent; // <root>/services/sync/tests/tps/test_foo.js // <root>/services/sync/tests/tps // <root>/services/sync/tests // <root>/services/sync // <root>/services // <root>
-    root.appendRelativePath(relativePath);
-    root.normalize();
-    return root;
-  },
-
-  _pingValidator: null,
-
-  // Default ping validator that always says the ping passes. This should be
-  // overridden unless the `testing.tps.skipPingValidation` pref is true.
-  get pingValidator() {
-    return this._pingValidator
-      ? this._pingValidator
-      : {
-          validate() {
-            lazy.Logger.logInfo(
-              "Not validating ping -- disabled by pref or failure to load schema"
-            );
-            return { valid: true, errors: [] };
-          },
-        };
-  },
-
-  // Attempt to load the sync_ping_schema.json and initialize `this.pingValidator`
-  // based on the source of the tps file. Assumes that it's at "../unit/sync_ping_schema.json"
-  // relative to the directory the tps test file (testFile) is contained in.
-  _tryLoadPingSchema(testFile) {
-    if (Services.prefs.getBoolPref("testing.tps.skipPingValidation", false)) {
-      return;
-    }
-    try {
-      let schemaFile = this._getFileRelativeToSourceRoot(
-        testFile,
-        "services/sync/tests/unit/sync_ping_schema.json"
-      );
-
-      let stream = Cc[
-        "@mozilla.org/network/file-input-stream;1"
-      ].createInstance(Ci.nsIFileInputStream);
-
-      stream.init(
-        schemaFile,
-        lazy.FileUtils.MODE_RDONLY,
-        lazy.FileUtils.PERMS_FILE,
-        0
-      );
-
-      let bytes = lazy.NetUtil.readInputStream(stream, stream.available());
-      let schema = JSON.parse(lazy.gTextDecoder.decode(bytes));
-      lazy.Logger.logInfo("Successfully loaded schema");
-
-      this._pingValidator = new lazy.JsonSchema.Validator(schema);
-    } catch (e) {
-      this.DumpError(
-        `Failed to load ping schema relative to "${testFile}".`,
-        e
-      );
-    }
-  },
-
   /**
    * Runs a single test phase.
    *
@@ -1124,9 +1050,6 @@ export var TPS = {
         let profileToClean = this._currentPhase.slice("cleanup-".length);
         this.phases[this._currentPhase] = profileToClean;
         this.Phase(this._currentPhase, [[this.Cleanup]]);
-      } else {
-        // Don't bother doing this for cleanup phases.
-        this._tryLoadPingSchema(file);
       }
       let this_phase = this._phaselist[this._currentPhase];
 
@@ -1211,24 +1134,6 @@ export var TPS = {
             `Telemetry missed syncs: Saw ${this._syncsReportedViaTelemetry}, should have >= ${this._syncCount}.`
           );
         }
-      }
-      if (!record.syncs.length) {
-        // Note: we're overwriting submit, so this is called even for pings that
-        // may have no data (which wouldn't be submitted to telemetry and would
-        // fail validation).
-        return;
-      }
-      // Our ping may have some undefined values, which we rely on JSON stripping
-      // out as part of the ping submission - but our validator fails with them,
-      // so round-trip via JSON here to avoid that.
-      record = JSON.parse(JSON.stringify(record));
-      const result = this.pingValidator.validate(record);
-      if (!result.valid) {
-        // Note that we already logged the record.
-        this.DumpError(
-          "Sync ping validation failed with errors: " +
-            JSON.stringify(result.errors)
-        );
       }
     };
   },

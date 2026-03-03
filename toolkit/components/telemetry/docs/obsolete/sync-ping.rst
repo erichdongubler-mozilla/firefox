@@ -1,6 +1,6 @@
 
-"sync" ping
-===========
+"sync" ping (obsolete)
+======================
 
 This is an aggregated format that contains information about each sync that occurred during a timeframe. It is submitted every 12 hours, and on browser shutdown, but only if the ``syncs`` property would not be empty. The ping does not contain the environment block, nor the clientId or profileGroupId.
 
