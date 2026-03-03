@@ -18,8 +18,7 @@ class PolicyContainerArgs;
 
 namespace mozilla::dom {
 class Document;
-class IntegrityPolicyWAICT;
-}  // namespace mozilla::dom
+}
 
 #define NS_POLICYCONTAINER_CONTRACTID "@mozilla.org/policycontainer;1"
 
@@ -38,7 +37,7 @@ class PolicyContainer : public nsIPolicyContainer {
   NS_DECL_NSISERIALIZABLE
   NS_DECL_NSIPOLICYCONTAINER
 
-  PolicyContainer();
+  PolicyContainer() = default;
 
   static void ToArgs(const PolicyContainer* aPolicy,
                      mozilla::ipc::PolicyContainerArgs& aArgs);
@@ -72,17 +71,9 @@ class PolicyContainer : public nsIPolicyContainer {
   static nsIIntegrityPolicy* GetIntegrityPolicy(
       const nsIPolicyContainer* aPolicyContainer);
 
-  // == WAICT Integrity Policy ===
-  // TODO(Bug 2017658): Support WAICT in workers
-  mozilla::dom::IntegrityPolicyWAICT* GetIntegrityPolicyWAICT() const;
-  void SetIntegrityPolicyWAICT(mozilla::dom::IntegrityPolicyWAICT* aPolicy);
-  static mozilla::dom::IntegrityPolicyWAICT* GetIntegrityPolicyWAICT(
-      const nsIPolicyContainer* aPolicyContainer);
-
  private:
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIIntegrityPolicy> mIntegrityPolicy;
-  RefPtr<mozilla::dom::IntegrityPolicyWAICT> mIntegrityPolicyWAICT;
 
  protected:
   virtual ~PolicyContainer();

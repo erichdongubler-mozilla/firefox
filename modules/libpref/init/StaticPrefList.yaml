@@ -18104,16 +18104,6 @@
   value: false
   mirror: always
 
-- name: security.waict.enabled
-  type: RelaxedAtomicBool
-  value: false
-  mirror: always
-
-- name: security.waict.downgrade_protection.enable
-  type: RelaxedAtomicBool
-  value: false
-  mirror: always
-
 # Which mechanism the secret decoder ring should use for encryption. Decryption
 # can always happen with all mechanisms.
 # 0 - DES3_CBC

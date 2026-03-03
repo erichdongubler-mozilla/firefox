@@ -87,15 +87,6 @@ interface CSPViolationReportBody : ReportBody {
   readonly attribute unsigned long? columnNumber;
 };
 
-enum IntegrityViolationReason {
-  "manifest_unavailable",
-  "invalid_manifest",
-  "invalid_transparency_proof",
-  "untrusted_transparency_proof",
-  "missing_from_manifest",
-  "no_manifest_match",
-};
-
 // https://w3c.github.io/webappsec-subresource-integrity/#report-violations
 [Exposed=Window, Pref="dom.reporting.enabled"]
 interface IntegrityViolationReportBody : ReportBody {
@@ -104,9 +95,6 @@ interface IntegrityViolationReportBody : ReportBody {
   readonly attribute UTF8String blockedURL;
   readonly attribute UTF8String destination;
   readonly attribute boolean    reportOnly;
-  // TODO: Move this to a new interface.
-  [Pref="security.waict.enabled"]
-  readonly attribute IntegrityViolationReason? reason;
 };
 
 // Used internally to process the JSON

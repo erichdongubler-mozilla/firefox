@@ -10,14 +10,9 @@
 #include "mozilla/EnumSet.h"
 #include "mozilla/EnumTypeTraits.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/MozPromise.h"
-#include "mozilla/dom/WAICTManifestBinding.h"
-#include "nsHashKeys.h"
 #include "nsIContentPolicy.h"
 #include "nsIIntegrityPolicy.h"
 #include "nsTArray.h"
-#include "nsTHashMap.h"
-#include "nsTHashSet.h"
 
 #define NS_INTEGRITYPOLICY_CONTRACTID "@mozilla.org/integritypolicy;1"
 
@@ -29,8 +24,6 @@ namespace ipc {
 class IntegrityPolicyArgs;
 }  // namespace ipc
 namespace dom {
-
-class Document;
 
 class IntegrityPolicy : public nsIIntegrityPolicy {
  public:
@@ -47,7 +40,7 @@ class IntegrityPolicy : public nsIIntegrityPolicy {
   enum class SourceType : uint8_t { Inline };
 
   // Trimmed down version of dom::RequestDestination
-  enum class DestinationType : uint8_t { Script, Style, Image };
+  enum class DestinationType : uint8_t { Script, Style };
 
   using Sources = EnumSet<SourceType>;
   using Destinations = EnumSet<DestinationType>;
@@ -76,14 +69,8 @@ class IntegrityPolicy : public nsIIntegrityPolicy {
   static bool Equals(const IntegrityPolicy* aPolicy,
                      const IntegrityPolicy* aOtherPolicy);
 
-  static Result<IntegrityPolicy::Destinations, nsresult> ParseDestinations(
-      nsISFVDictionary* aDict, bool aIsWAICT);
-
-  static Result<nsTArray<nsCString>, nsresult> ParseEndpoints(
-      nsISFVDictionary* aDict);
-
  protected:
-  virtual ~IntegrityPolicy() = default;
+  virtual ~IntegrityPolicy();
 
  private:
   class Entry final {
@@ -112,7 +99,6 @@ class IntegrityPolicy : public nsIIntegrityPolicy {
   Maybe<Entry> mEnforcement;
   Maybe<Entry> mReportOnly;
 };
-
 }  // namespace dom
 
 template <>
@@ -124,7 +110,7 @@ struct MaxEnumValue<dom::IntegrityPolicy::SourceType> {
 template <>
 struct MaxEnumValue<dom::IntegrityPolicy::DestinationType> {
   static constexpr unsigned int value =
-      static_cast<unsigned int>(dom::IntegrityPolicy::DestinationType::Image);
+      static_cast<unsigned int>(dom::IntegrityPolicy::DestinationType::Script);
 };
 
 }  // namespace mozilla

@@ -29,9 +29,6 @@ class Decoder;
 
 namespace dom {
 
-#ifdef NIGHTLY_BUILD
-class ResourceHasher;
-#endif
 class ScriptLoader;
 class SRICheckDataVerifier;
 
@@ -85,9 +82,6 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
  private:
   virtual ~ScriptLoadHandler();
 
-  nsresult DoOnStreamComplete(nsIChannel* aChannel, nsresult aStatus,
-                              uint32_t aDataLength, const uint8_t* aData);
-
   /*
    * Discover the charset by looking at the stream data, the script tag, and
    * other indicators.  Returns true if charset has been discovered.
@@ -139,11 +133,6 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
 
   // Flipped to true after calling NotifyStart the first time
   bool mPreloadStartNotified = false;
-
-#ifdef NIGHTLY_BUILD
-  // Resource hasher for WAICT.
-  RefPtr<mozilla::dom::ResourceHasher> mResourceHasher;
-#endif
 };
 
 }  // namespace dom

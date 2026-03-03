@@ -48,7 +48,6 @@
 #include "nsIXULAppInfo.h"
 #include "nsICookieService.h"
 #include "nsIObserverService.h"
-#include "nsISiteIntegrityService.h"
 #include "nsISiteSecurityService.h"
 #include "nsIStreamConverterService.h"
 #include "nsCRT.h"
@@ -861,16 +860,6 @@ bool nsHttpHandler::IsAcceptableEncoding(const char* enc, bool isSecure) {
   LOG(("nsHttpHandler::IsAceptableEncoding %s https=%d %d\n", enc, isSecure,
        rv));
   return rv;
-}
-
-nsISiteIntegrityService* nsHttpHandler::GetSiteIntegrityService() {
-  if (!mSiteIntegrityService) {
-    nsCOMPtr<nsISiteIntegrityService> service;
-    service = mozilla::components::SiteIntegrity::Service();
-    mSiteIntegrityService = new nsMainThreadPtrHolder<nsISiteIntegrityService>(
-        "nsHttpHandler::mSiteIntegrityService", service);
-  }
-  return mSiteIntegrityService;
 }
 
 nsISiteSecurityService* nsHttpHandler::GetSSService() {

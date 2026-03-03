@@ -97,7 +97,6 @@ WEBIDL_FILES = [
     "TreeContentView.webidl",
     "TreeView.webidl",
     "UserInteraction.webidl",
-    "WAICTManifest.webidl",
     "WebCompat.webidl",
     "WebExtensionContentScript.webidl",
     "WebExtensionPolicy.webidl",

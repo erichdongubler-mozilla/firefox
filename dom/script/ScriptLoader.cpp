@@ -53,9 +53,6 @@
 #include "mozilla/dom/DocumentInlines.h"  // Document::GetPresContext
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FetchPriority.h"
-#ifdef NIGHTLY_BUILD
-#  include "mozilla/dom/IntegrityPolicyWAICT.h"
-#endif
 #include "mozilla/dom/JSExecutionUtils.h"  // mozilla::dom::Compile, mozilla::dom::InstantiateStencil, mozilla::dom::EvaluationExceptionToNSResult
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/RequestBinding.h"
@@ -344,18 +341,6 @@ nsIPrincipal* ScriptLoader::PartitionedPrincipal() const {
 bool ScriptLoader::ShouldBypassCache() const {
   return mDocument && nsContentUtils::ShouldBypassSubResourceCache(mDocument);
 }
-
-#ifdef NIGHTLY_BUILD
-bool ScriptLoader::WAICTHandlesScripts() const {
-  if (!mDocument) {
-    return false;
-  }
-  auto* policy =
-      PolicyContainer::GetIntegrityPolicyWAICT(mDocument->GetPolicyContainer());
-  return policy &&
-         policy->ShouldHandle(IntegrityPolicy::DestinationType::Script);
-}
-#endif
 
 void ScriptLoader::RegisterContentScriptModuleLoader(ModuleLoader* aLoader) {
   MOZ_ASSERT(aLoader);
@@ -999,12 +984,6 @@ nsresult ScriptLoader::StartLoadInternal(
   if (!scriptGlobal) {
     return NS_ERROR_FAILURE;
   }
-
-#ifdef NIGHTLY_BUILD
-  if (WAICTHandlesScripts()) {
-    aRequest->mFetchSourceOnly = true;
-  }
-#endif
 
   ScriptLoader::PrepareCacheInfoChannel(channel, aRequest);
 
@@ -1858,12 +1837,6 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
   if (aScriptKind != request->mKind) {
     return nullptr;
   }
-
-#ifdef NIGHTLY_BUILD
-  if (WAICTHandlesScripts()) {
-    return nullptr;
-  }
-#endif
 
   // Found preloaded request. Note that a script-inserted script can steal a
   // preload!
@@ -2822,15 +2795,6 @@ ScriptLoader::DiskCacheStrategy ScriptLoader::GetDiskCacheStrategy() {
 void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
   using mozilla::TimeDuration;
   using mozilla::TimeStamp;
-
-#ifdef NIGHTLY_BUILD
-  // For WAICT we always need to be able to hash the script source,
-  // which might not be possible when caching only the stencil.
-  if (WAICTHandlesScripts()) {
-    aRequest->MarkNotCacheable();
-    return;
-  }
-#endif
 
   if (aRequest->GetScriptLoadContext()->mIsInline) {
     LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: Inline script",

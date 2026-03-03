@@ -7,7 +7,6 @@
 #include "mozilla/dom/IntegrityViolationReportBody.h"
 
 #include "mozilla/JSONWriter.h"
-#include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ReportingBinding.h"
 
 namespace mozilla::dom {
@@ -15,13 +14,12 @@ namespace mozilla::dom {
 IntegrityViolationReportBody::IntegrityViolationReportBody(
     nsIGlobalObject* aGlobal, const nsACString& aDocumentURL,
     const nsACString& aBlockedURL, const nsACString& aDestination,
-    const bool aReportOnly, const Nullable<IntegrityViolationReason> aReason)
+    const bool aReportOnly)
     : ReportBody(aGlobal),
       mDocumentURL(aDocumentURL),
       mBlockedURL(aBlockedURL),
       mDestination(aDestination),
-      mReportOnly(aReportOnly),
-      mReason(aReason) {}
+      mReportOnly(aReportOnly) {}
 
 IntegrityViolationReportBody::~IntegrityViolationReportBody() = default;
 
@@ -45,20 +43,11 @@ void IntegrityViolationReportBody::GetDestination(
 
 bool IntegrityViolationReportBody::ReportOnly() const { return mReportOnly; }
 
-Nullable<IntegrityViolationReason> IntegrityViolationReportBody::GetReason()
-    const {
-  return mReason;
-}
-
 void IntegrityViolationReportBody::ToJSON(JSONWriter& aJSONWriter) const {
   aJSONWriter.StringProperty("documentURL", mDocumentURL);
   aJSONWriter.StringProperty("blockedURL", mBlockedURL);
   aJSONWriter.StringProperty("destination", mDestination);
   aJSONWriter.BoolProperty("reportOnly", mReportOnly);
-  if (!mReason.IsNull()) {
-    nsAutoCString reason{GetEnumString(mReason.Value())};
-    aJSONWriter.StringProperty("reason", reason);
-  }
 }
 
 }  // namespace mozilla::dom

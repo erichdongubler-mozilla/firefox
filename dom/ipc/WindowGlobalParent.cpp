@@ -76,7 +76,6 @@
 #include "nsIPromptCollection.h"
 #include "nsISessionStoreFunctions.h"
 #include "nsISharePicker.h"
-#include "nsISiteIntegrityService.h"
 #include "nsITimer.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsIURIMutator.h"
@@ -1451,24 +1450,6 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvSetDocumentDomain(
   }
 
   mDocumentPrincipal->SetDomain(aDomain);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult WindowGlobalParent::RecvSetSiteIntegrityProtected(
-    NotNull<nsIURI*> aSourceURI, uint64_t aMaxAge) {
-  nsCOMPtr<nsISiteIntegrityService> service =
-      do_GetService("@mozilla.org/security/integrity;1");
-  if (!service) {
-    return IPC_OK();
-  }
-
-  OriginAttributes originAttributes =
-      DocumentPrincipal()->OriginAttributesRef();
-  StoragePrincipalHelper::UpdateOriginAttributesForNetworkState(
-      aSourceURI, originAttributes);
-
-  (void)service->SetProtected(aSourceURI, originAttributes, aMaxAge);
-
   return IPC_OK();
 }
 

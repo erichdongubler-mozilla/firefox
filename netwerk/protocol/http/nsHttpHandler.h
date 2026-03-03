@@ -48,7 +48,6 @@ class nsICancelable;
 class nsICookieService;
 class nsIIOService;
 class nsIRequestContextService;
-class nsISiteIntegrityService;
 class nsISiteSecurityService;
 class nsIStreamConverterService;
 
@@ -354,7 +353,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   //
   [[nodiscard]] nsresult GetIOService(nsIIOService** result);
   nsICookieService* GetCookieService();  // not addrefed
-  nsISiteIntegrityService* GetSiteIntegrityService();
   nsISiteSecurityService* GetSSService();
 
   // Called by the channel synchronously during asyncOpen
@@ -563,7 +561,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   // cached services
   nsMainThreadPtrHandle<nsIIOService> mIOService;
   nsMainThreadPtrHandle<nsICookieService> mCookieService;
-  nsMainThreadPtrHandle<nsISiteIntegrityService> mSiteIntegrityService;
   nsMainThreadPtrHandle<nsISiteSecurityService> mSSService;
 
   // the authentication credentials cache
