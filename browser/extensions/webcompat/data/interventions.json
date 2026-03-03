@@ -3223,7 +3223,16 @@
       },
       {
         "platforms": ["windows"],
-        "ua_string": ["Chrome_with_FxQuantum"]
+        "content_scripts": {
+          "js": ["bug1902520-keisan.nta.go.jp-ua-override.js"]
+        }
+      },
+      {
+        "platforms": ["linux"],
+        "only_channels": ["nightly"],
+        "content_scripts": {
+          "js": ["bug1902520-keisan.nta.go.jp-ua-override.js"]
+        }
       }
     ]
   },
