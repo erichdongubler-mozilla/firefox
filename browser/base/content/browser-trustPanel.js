@@ -425,6 +425,18 @@ class TrustPanel {
       "hidden",
       !this.anyDetected
     );
+
+    this.#updateAttribute(
+      document.getElementById("trustpanel-toggle-section"),
+      "disabled",
+      !ContentBlockingAllowList.canHandle(window.gBrowser.selectedBrowser)
+    );
+    this.#updateAttribute(
+      document.getElementById("trustpanel-toggle"),
+      "disabled",
+      !ContentBlockingAllowList.canHandle(window.gBrowser.selectedBrowser)
+    );
+
     await this.#updateBlockerView();
   }
 
@@ -1440,7 +1452,12 @@ class TrustPanel {
   #enablePopupToggles() {
     // Enables all toggles in the protections panel
     this.#popup.querySelectorAll("moz-toggle").forEach(toggle => {
-      toggle.removeAttribute("disabled");
+      if (
+        toggle.id != "trustpanel-toggle" ||
+        ContentBlockingAllowList.canHandle(window.gBrowser.selectedBrowser)
+      ) {
+        toggle.removeAttribute("disabled");
+      }
       toggle.removeEventListener("pointerdown", this.#resetToggleReference);
     });
   }
