@@ -2823,7 +2823,7 @@ set_config(
 
 @depends(moz_debug, target)
 def want_stl_hardening(debug, target):
-    return debug or target.os == "OSX"
+    return debug or target.os in ("WINNT", "OSX")
 
 
 option(
