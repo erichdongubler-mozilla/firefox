@@ -16,6 +16,5 @@ prefs = [
 ["browser_description_general.js"]
 
 ["browser_name_general.js"]
-skip-if = ["true"] # Bug 2020094
 
 ["browser_name_markup.js"]
