@@ -320,7 +320,7 @@ add_task(
 );
 
 // @todo Bug 2014929
-// Navigating back to AI Window URL closes the sidebar
+// Navigating back to Smart Window URL closes the sidebar
 add_task(async function test_navigate_back_to_aiwindow_closes_sidebar() {
   const sb = lazy.sinon.createSandbox();
 
@@ -357,7 +357,7 @@ add_task(async function test_navigate_back_to_aiwindow_closes_sidebar() {
       "Sidebar should be open after navigating away"
     );
 
-    // Navigate back to AI Window URL
+    // Navigate back to Smart Window URL
     loaded = BrowserTestUtils.browserLoaded(browser);
     BrowserTestUtils.startLoadingURIString(browser, AIWINDOW_URL);
     await loaded;
@@ -366,7 +366,7 @@ add_task(async function test_navigate_back_to_aiwindow_closes_sidebar() {
     await new Promise(resolve => win.setTimeout(resolve, 100));
     Assert.ok(
       !AIWindowUI.isSidebarOpen(win),
-      "Sidebar should close when navigating back to AI Window URL"
+      "Sidebar should close when navigating back to Smart Window URL"
     );
 
     await BrowserTestUtils.closeWindow(win);
@@ -789,7 +789,7 @@ add_task(async function test_sidebar_state_after_multiple_navigations() {
 
     Assert.ok(
       !AIWindowUI.isSidebarOpen(win),
-      "Sidebar should be closed on AI Window URL"
+      "Sidebar should be closed on Smart Window URL"
     );
 
     // Navigate away - sidebar should open because conversation has messages
@@ -802,14 +802,14 @@ add_task(async function test_sidebar_state_after_multiple_navigations() {
       "Sidebar should open when navigating away with active conversation"
     );
 
-    // Navigate back to AI Window URL - sidebar should close
+    // Navigate back to Smart Window URL - sidebar should close
     loaded = BrowserTestUtils.browserLoaded(browser);
     BrowserTestUtils.startLoadingURIString(browser, AIWINDOW_URL);
     await loaded;
     await new Promise(resolve => win.setTimeout(resolve, 100));
     Assert.ok(
       !AIWindowUI.isSidebarOpen(win),
-      "Sidebar should close when returning to AI Window URL"
+      "Sidebar should close when returning to Smart Window URL"
     );
 
     // Navigate away again - sidebar should open again
@@ -827,3 +827,121 @@ add_task(async function test_sidebar_state_after_multiple_navigations() {
     sb.restore();
   }
 }).skip();
+
+// When Smart Window loads without a pending conversation, it stamps its
+// conversation ID on the host XUL browser element so that navigating away
+// and back can recover the conversation.
+add_task(async function test_data_conversation_id_stamped_on_initial_load() {
+  let win;
+  try {
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+    await TestUtils.waitForCondition(
+      () => browser.hasAttribute("data-conversation-id"),
+      "data-conversation-id should be stamped on the host browser after initial load"
+    );
+
+    Assert.ok(
+      browser.getAttribute("data-conversation-id"),
+      "data-conversation-id should be a non-empty string"
+    );
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+// The data-conversation-id attribute on the XUL host browser persists through
+// content navigation since it lives on the chrome element, not in the content
+// document.
+add_task(
+  async function test_data_conversation_id_persists_through_navigation() {
+    let win, tab;
+    try {
+      win = await openAIWindow();
+      const browser = win.gBrowser.selectedBrowser;
+      tab = win.gBrowser.selectedTab;
+
+      await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+      await TestUtils.waitForCondition(
+        () => browser.hasAttribute("data-conversation-id"),
+        "data-conversation-id should be stamped on initial load"
+      );
+
+      const convId = browser.getAttribute("data-conversation-id");
+
+      const loaded = BrowserTestUtils.browserLoaded(browser);
+      BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
+      await loaded;
+
+      Assert.equal(
+        browser.getAttribute("data-conversation-id"),
+        convId,
+        "data-conversation-id should persist on the host browser after navigating away"
+      );
+    } finally {
+      if (tab) {
+        await BrowserTestUtils.removeTab(tab);
+      }
+      await BrowserTestUtils.closeWindow(win);
+    }
+  }
+);
+
+// After navigating away from the Smart Window and pressing back, the Smart Window
+// reloads and looks up the conversation using the ID preserved on the host
+// browser element.
+add_task(async function test_back_navigation_restores_conversation() {
+  const sb = lazy.sinon.createSandbox();
+  let win, tab;
+
+  try {
+    const mockConversation = createMockConversation();
+    sb.stub(ChatStore, "findConversationById").resolves(mockConversation);
+
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    tab = win.gBrowser.selectedTab;
+
+    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+    // Stamp the mock ID to simulate a saved conversation in this tab.
+    browser.setAttribute("data-conversation-id", mockConversation.id);
+
+    win.dispatchEvent(
+      new win.CustomEvent("ai-window:opened-conversation", {
+        detail: {
+          mode: "fullpage",
+          conversationId: mockConversation.id,
+          tab,
+        },
+      })
+    );
+
+    let loaded = BrowserTestUtils.browserLoaded(browser);
+    BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
+    await loaded;
+
+    loaded = BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+    win.gBrowser.goBack();
+    await loaded;
+
+    await TestUtils.waitForCondition(
+      () => ChatStore.findConversationById.calledWith(mockConversation.id),
+      "findConversationById should be called with the preserved ID after back navigation"
+    );
+
+    Assert.ok(
+      ChatStore.findConversationById.calledWith(mockConversation.id),
+      "Conversation should be looked up by the preserved ID after back navigation"
+    );
+  } finally {
+    if (tab) {
+      await BrowserTestUtils.removeTab(tab);
+    }
+    await BrowserTestUtils.closeWindow(win);
+    sb.restore();
+  }
+});
