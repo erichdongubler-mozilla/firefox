@@ -61,18 +61,11 @@ ArrayObject* LocalesListToArray(JSContext* cx, JS::Handle<LocalesList> locales);
  * returns the best available match -- or |nullptr| if no match was found.
  * Uses the fallback mechanism of RFC 4647, section 3.4.
  *
- * The set of available locales consulted doesn't necessarily include the
- * default locale or any generalized forms of it (e.g. "de" is a more-general
- * form of "de-CH"). If you want to be sure to consider the default local and
- * its generalized forms (you usually will), pass the default locale as the
- * value of |defaultLocale|; otherwise pass |nullptr|.
- *
  * Spec: ECMAScript Internationalization API Specification, 9.2.2.
  * Spec: RFC 4647, section 3.4.
  */
 bool BestAvailableLocale(JSContext* cx, AvailableLocaleKind availableLocales,
                          JS::Handle<JSLinearString*> locale,
-                         JS::Handle<JSLinearString*> defaultLocale,
                          JS::MutableHandle<JSLinearString*> result);
 
 class LookupMatcherResult final {

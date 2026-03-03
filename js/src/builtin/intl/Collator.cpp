@@ -505,7 +505,7 @@ static bool ResolveLocale(JSContext* cx, Handle<CollatorObject*> collator) {
     // through a fallback (da), we need to get the actual data locale first.
     Rooted<JSLinearString*> dataLocale(cx);
     if (!BestAvailableLocale(cx, AvailableLocaleKind::Collator,
-                             resolved.dataLocale(), nullptr, &dataLocale)) {
+                             resolved.dataLocale(), &dataLocale)) {
       return false;
     }
     MOZ_ASSERT(dataLocale);

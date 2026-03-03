@@ -229,19 +229,16 @@ static JS::Result<JSLinearString*> BestAvailableLocale(
   }
 }
 
-// 9.2.2 BestAvailableLocale ( availableLocales, locale )
-//
-// Carries an additional third argument in our implementation to provide the
-// default locale. See the doc-comment in the header file.
+/**
+ * 9.2.2 BestAvailableLocale ( availableLocales, locale )
+ */
 bool js::intl::BestAvailableLocale(JSContext* cx,
                                    AvailableLocaleKind availableLocales,
                                    Handle<JSLinearString*> locale,
-                                   Handle<JSLinearString*> defaultLocale,
                                    MutableHandle<JSLinearString*> result) {
   JSLinearString* res;
   JS_TRY_VAR_OR_RETURN_FALSE(
-      cx, res,
-      BestAvailableLocale(cx, availableLocales, locale, defaultLocale));
+      cx, res, ::BestAvailableLocale(cx, availableLocales, locale, nullptr));
   if (res) {
     result.set(res);
   } else {
@@ -312,8 +309,8 @@ static bool LookupSupportedLocales(
     JSLinearString* availableLocale;
     JS_TRY_VAR_OR_RETURN_FALSE(
         cx, availableLocale,
-        BestAvailableLocale(cx, availableLocales, noExtensionsLocale,
-                            defaultLocale));
+        ::BestAvailableLocale(cx, availableLocales, noExtensionsLocale,
+                              defaultLocale));
 
     // Step 2.c.
     if (availableLocale) {
@@ -490,8 +487,8 @@ bool js::intl::LookupMatcher(JSContext* cx,
     // Step 2.b.
     JS_TRY_VAR_OR_RETURN_FALSE(
         cx, availableLocale,
-        BestAvailableLocale(cx, availableLocales, noExtensionsLocale,
-                            defaultLocale));
+        ::BestAvailableLocale(cx, availableLocales, noExtensionsLocale,
+                              defaultLocale));
 
     // Step 2.c.
     if (availableLocale) {
@@ -942,7 +939,7 @@ static JSLinearString* DefaultCollationCaseFirst(
   // a fallback (da), we need to get the actual locale before we can call
   // |sharedIntlData.isUpperCaseFirst|.
   Rooted<JSLinearString*> actualLocale(cx);
-  if (!BestAvailableLocale(cx, AvailableLocaleKind::Collator, locale, nullptr,
+  if (!BestAvailableLocale(cx, AvailableLocaleKind::Collator, locale,
                            &actualLocale)) {
     return nullptr;
   }
@@ -1355,14 +1352,14 @@ JSLinearString* js::intl::ComputeDefaultLocale(JSContext* cx) {
   Rooted<JSLinearString*> supportedCollator(cx);
   JS_TRY_VAR_OR_RETURN_NULL(
       cx, supportedCollator,
-      BestAvailableLocale(cx, AvailableLocaleKind::Collator, candidate,
-                          nullptr));
+      ::BestAvailableLocale(cx, AvailableLocaleKind::Collator, candidate,
+                            nullptr));
 
   Rooted<JSLinearString*> supportedDateTimeFormat(cx);
   JS_TRY_VAR_OR_RETURN_NULL(
       cx, supportedDateTimeFormat,
-      BestAvailableLocale(cx, AvailableLocaleKind::DateTimeFormat, candidate,
-                          nullptr));
+      ::BestAvailableLocale(cx, AvailableLocaleKind::DateTimeFormat, candidate,
+                            nullptr));
 
 #ifdef DEBUG
   // Note: We don't test the supported locales of the remaining Intl service
@@ -1379,7 +1376,7 @@ JSLinearString* js::intl::ComputeDefaultLocale(JSContext* cx) {
        }) {
     JSLinearString* supported;
     JS_TRY_VAR_OR_RETURN_NULL(
-        cx, supported, BestAvailableLocale(cx, kind, candidate, nullptr));
+        cx, supported, ::BestAvailableLocale(cx, kind, candidate, nullptr));
 
     MOZ_ASSERT(!!supported == !!supportedDateTimeFormat);
     MOZ_ASSERT_IF(supported, EqualStrings(supported, supportedDateTimeFormat));
