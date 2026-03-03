@@ -63,7 +63,6 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   IPCResult RecvOnTransportAndData(const nsresult& aChannelStatus,
                                    const nsresult& aTransportStatus,
                                    const uint64_t& aOffset,
-                                   const uint32_t& aCount,
                                    const nsACString& aData,
                                    const bool& aDataFromSocketProcess,
                                    const TimeStamp& aOnDataAvailableStart);

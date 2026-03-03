@@ -61,8 +61,7 @@ class GIOChannelChild final : public PGIOChannelChild,
                                              const URIParams& aURI) override;
   mozilla::ipc::IPCResult RecvOnDataAvailable(const nsresult& aChannelStatus,
                                               const nsACString& aData,
-                                              const uint64_t& aOffset,
-                                              const uint32_t& aCount) override;
+                                              const uint64_t& aOffset) override;
   mozilla::ipc::IPCResult RecvOnStopRequest(
       const nsresult& aChannelStatus) override;
   mozilla::ipc::IPCResult RecvFailedAsyncOpen(
@@ -74,8 +73,7 @@ class GIOChannelChild final : public PGIOChannelChild,
                         const nsACString& aContentType,
                         const nsACString& aEntityID, const URIParams& aURI);
   void DoOnDataAvailable(const nsresult& aChannelStatus,
-                         const nsACString& aData, const uint64_t& aOffset,
-                         const uint32_t& aCount);
+                         const nsACString& aData, const uint64_t& aOffset);
   void DoOnStopRequest(const nsresult& aChannelStatus);
   void DoFailedAsyncOpen(const nsresult& aStatusCode);
   void DoDeleteSelf();

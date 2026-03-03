@@ -200,12 +200,12 @@ void GIOChannelChild::DoOnStartRequest(const nsresult& aChannelStatus,
 
 mozilla::ipc::IPCResult GIOChannelChild::RecvOnDataAvailable(
     const nsresult& aChannelStatus, const nsACString& aData,
-    const uint64_t& aOffset, const uint32_t& aCount) {
+    const uint64_t& aOffset) {
   LOG(("GIOChannelChild::RecvOnDataAvailable [this=%p]\n", this));
   mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
       this, [self = UnsafePtr<GIOChannelChild>(this), aChannelStatus,
-             aData = nsCString(aData), aOffset, aCount]() {
-        self->DoOnDataAvailable(aChannelStatus, aData, aOffset, aCount);
+             aData = nsCString(aData), aOffset]() {
+        self->DoOnDataAvailable(aChannelStatus, aData, aOffset);
       }));
 
   return IPC_OK();
@@ -213,8 +213,7 @@ mozilla::ipc::IPCResult GIOChannelChild::RecvOnDataAvailable(
 
 void GIOChannelChild::DoOnDataAvailable(const nsresult& aChannelStatus,
                                         const nsACString& aData,
-                                        const uint64_t& aOffset,
-                                        const uint32_t& aCount) {
+                                        const uint64_t& aOffset) {
   LOG(("GIOChannelChild::DoOnDataAvailable [this=%p]\n", this));
 
   if (!mCanceled && NS_SUCCEEDED(mStatus)) {
@@ -231,16 +230,15 @@ void GIOChannelChild::DoOnDataAvailable(const nsresult& aChannelStatus,
   // support only reading part of the data, allowing later calls to read the
   // rest.
   nsCOMPtr<nsIInputStream> stringStream;
-  nsresult rv =
-      NS_NewByteInputStream(getter_AddRefs(stringStream),
-                            Span(aData).To(aCount), NS_ASSIGNMENT_DEPEND);
+  nsresult rv = NS_NewByteInputStream(getter_AddRefs(stringStream), Span(aData),
+                                      NS_ASSIGNMENT_DEPEND);
   if (NS_FAILED(rv)) {
     Cancel(rv);
     return;
   }
 
   AutoEventEnqueuer ensureSerialDispatch(mEventQ);
-  rv = mListener->OnDataAvailable(this, stringStream, aOffset, aCount);
+  rv = mListener->OnDataAvailable(this, stringStream, aOffset, aData.Length());
   if (NS_FAILED(rv)) {
     Cancel(rv);
   }

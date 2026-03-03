@@ -41,8 +41,7 @@ class GeckoViewContentChannelChild final
 
   mozilla::ipc::IPCResult RecvOnDataAvailable(const nsresult& aChannelStatus,
                                               const nsACString& aData,
-                                              const uint64_t& aOffset,
-                                              const uint32_t& aCount);
+                                              const uint64_t& aOffset);
 
   mozilla::ipc::IPCResult RecvOnStopRequest(const nsresult& aChannelStatus);
 
@@ -63,7 +62,7 @@ class GeckoViewContentChannelChild final
                         const nsCString& aEntityID, nsIURI* aURI);
 
   void DoOnDataAvailable(const nsresult& aChannelStatus, const nsCString& aData,
-                         const uint64_t& aOffset, const uint32_t& aCount);
+                         const uint64_t& aOffset);
 
   void DoOnStopRequest(const nsresult& aChannelStatus);
 

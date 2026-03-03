@@ -211,14 +211,13 @@ IPCResult HttpBackgroundChannelChild::RecvOnStartRequest(
 
 IPCResult HttpBackgroundChannelChild::RecvOnTransportAndData(
     const nsresult& aChannelStatus, const nsresult& aTransportStatus,
-    const uint64_t& aOffset, const uint32_t& aCount, const nsACString& aData,
+    const uint64_t& aOffset, const nsACString& aData,
     const bool& aDataFromSocketProcess,
     const TimeStamp& aOnDataAvailableStart) {
   RefPtr<HttpBackgroundChannelChild> self = this;
   std::function<void()> callProcessOnTransportAndData =
-      [self, aChannelStatus, aTransportStatus, aOffset, aCount,
-       data = nsCString(aData), aDataFromSocketProcess,
-       aOnDataAvailableStart]() {
+      [self, aChannelStatus, aTransportStatus, aOffset, data = nsCString(aData),
+       aDataFromSocketProcess, aOnDataAvailableStart]() {
         LOG(
             ("HttpBackgroundChannelChild::RecvOnTransportAndData [this=%p, "
              "aDataFromSocketProcess=%d, mFirstODASource=%d]\n",
@@ -246,15 +245,14 @@ IPCResult HttpBackgroundChannelChild::RecvOnTransportAndData(
         }
 
         self->mChannelChild->ProcessOnTransportAndData(
-            aChannelStatus, aTransportStatus, aOffset, aCount, data,
+            aChannelStatus, aTransportStatus, aOffset, data,
             aOnDataAvailableStart);
       };
 
   // Bug 1641336: Race only happens if the data is from socket process.
   if (IsWaitingOnStartRequest()) {
-    LOG(("  > pending until OnStartRequest [offset=%" PRIu64 " count=%" PRIu32
-         "]\n",
-         aOffset, aCount));
+    LOG(("  > pending until OnStartRequest [offset=%" PRIu64 " count=%zu]\n",
+         aOffset, aData.Length()));
 
     mQueuedRunnables.AppendElement(NS_NewRunnableFunction(
         "HttpBackgroundChannelChild::RecvOnTransportAndData",

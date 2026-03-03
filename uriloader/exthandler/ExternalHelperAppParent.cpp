@@ -114,7 +114,7 @@ mozilla::ipc::IPCResult ExternalHelperAppParent::RecvOnStartRequest(
 }
 
 mozilla::ipc::IPCResult ExternalHelperAppParent::RecvOnDataAvailable(
-    const nsACString& data, const uint64_t& offset, const uint32_t& count) {
+    const nsACString& data, const uint64_t& offset) {
   if (NS_FAILED(mStatus)) {
     return IPC_OK();
   }
@@ -123,9 +123,10 @@ mozilla::ipc::IPCResult ExternalHelperAppParent::RecvOnDataAvailable(
 
   nsCOMPtr<nsIInputStream> stringStream;
   DebugOnly<nsresult> rv = NS_NewByteInputStream(
-      getter_AddRefs(stringStream), Span(data).To(count), NS_ASSIGNMENT_DEPEND);
+      getter_AddRefs(stringStream), Span(data), NS_ASSIGNMENT_DEPEND);
   NS_ASSERTION(NS_SUCCEEDED(rv), "failed to create dependent string!");
-  mStatus = mListener->OnDataAvailable(this, stringStream, offset, count);
+  mStatus =
+      mListener->OnDataAvailable(this, stringStream, offset, data.Length());
 
   return IPC_OK();
 }

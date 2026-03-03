@@ -125,7 +125,7 @@ GeckoViewContentChannelParent::OnDataAvailable(nsIRequest* aRequest,
   nsresult channelStatus = NS_OK;
   mChannel->GetStatus(&channelStatus);
 
-  (void)SendOnDataAvailable(channelStatus, data, aOffset, aCount);
+  (void)SendOnDataAvailable(channelStatus, data, aOffset);
 
   return NS_OK;
 }

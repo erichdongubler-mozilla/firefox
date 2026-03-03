@@ -227,7 +227,7 @@ bool HttpBackgroundChannelParent::OnTransportAndData(
        aOnDataAvailableStart](const nsDependentCSubstring& aData,
                               uint64_t aOffset, uint32_t aCount) {
         return self->SendOnTransportAndData(aChannelStatus, aTransportStatus,
-                                            aOffset, aCount, aData, false,
+                                            aOffset, aData, false,
                                             aOnDataAvailableStart);
       };
 

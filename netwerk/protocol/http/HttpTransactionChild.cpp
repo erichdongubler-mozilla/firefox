@@ -275,7 +275,7 @@ HttpTransactionChild::OnDataAvailable(nsIRequest* aRequest,
           const nsDependentCSubstring& aData, uint64_t aOffset,
           uint32_t aCount) {
         return self->mDataBridgeParent->SendOnTransportAndData(
-            aOffset, aCount, aData, TimeStamp::Now());
+            aOffset, aData, TimeStamp::Now());
       };
 
   LOG(("  ODA to content process"));

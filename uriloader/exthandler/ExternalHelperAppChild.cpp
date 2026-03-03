@@ -41,7 +41,7 @@ ExternalHelperAppChild::OnDataAvailable(nsIRequest* request,
       return rv;
     }
 
-    if (NS_WARN_IF(!SendOnDataAvailable(data, offset, toRead))) {
+    if (NS_WARN_IF(!SendOnDataAvailable(data, offset))) {
       return NS_ERROR_UNEXPECTED;
     }
 

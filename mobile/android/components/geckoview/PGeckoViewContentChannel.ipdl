@@ -32,8 +32,7 @@ child:
                        nsIURI aURI);
   async OnDataAvailable(nsresult channelStatus,
                         nsCString data,
-                        uint64_t offset,
-                        uint32_t count);
+                        uint64_t offset);
   async OnStopRequest(nsresult channelStatus);
   async OnAsyncOpenFailed(nsresult aResult);
   async DeleteSelf();

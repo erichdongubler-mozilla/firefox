@@ -241,7 +241,6 @@ class HttpChannelChild final : public PHttpChannelChild,
   void ProcessOnTransportAndData(const nsresult& aChannelStatus,
                                  const nsresult& aTransportStatus,
                                  const uint64_t& aOffset,
-                                 const uint32_t& aCount,
                                  const nsACString& aData,
                                  const TimeStamp& aOnDataAvailableStartTime);
   void ProcessOnStopRequest(const nsresult& aChannelStatus,
@@ -448,8 +447,7 @@ class HttpChannelChild final : public PHttpChannelChild,
                       const nsHttpHeaderArray& aRequestHeaders,
                       const HttpChannelOnStartRequestArgs& aArgs);
   void OnTransportAndData(const nsresult& channelStatus, const nsresult& status,
-                          const uint64_t& offset, const uint32_t& count,
-                          const nsACString& data);
+                          const uint64_t& offset, const nsACString& data);
   void OnStopRequest(const nsresult& channelStatus,
                      const ResourceTimingStructArgs& timing,
                      const nsHttpHeaderArray& aResponseTrailers);

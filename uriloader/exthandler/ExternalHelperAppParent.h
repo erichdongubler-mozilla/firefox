@@ -67,8 +67,7 @@ class ExternalHelperAppParent
   mozilla::ipc::IPCResult RecvOnStartRequest(
       const nsACString& entityID) override;
   mozilla::ipc::IPCResult RecvOnDataAvailable(const nsACString& data,
-                                              const uint64_t& offset,
-                                              const uint32_t& count) override;
+                                              const uint64_t& offset) override;
   mozilla::ipc::IPCResult RecvOnStopRequest(const nsresult& code) override;
 
   bool WasFileChannel() override { return mWasFileChannel; }

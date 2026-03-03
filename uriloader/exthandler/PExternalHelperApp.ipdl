@@ -16,7 +16,7 @@ protocol PExternalHelperApp
 
 parent:
   async OnStartRequest(nsCString entityID);
-  async OnDataAvailable(nsCString data, uint64_t offset, uint32_t count);
+  async OnDataAvailable(nsCString data, uint64_t offset);
   async OnStopRequest(nsresult code);
 
 child:

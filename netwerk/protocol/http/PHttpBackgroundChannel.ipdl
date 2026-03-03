@@ -35,7 +35,6 @@ child:
   async OnTransportAndData(nsresult  channelStatus,
                            nsresult  transportStatus,
                            uint64_t  offset,
-                           uint32_t  count,
                            nsCString data,
                            bool dataFromSocketProcess,
                            TimeStamp onDataAvailableStart);
