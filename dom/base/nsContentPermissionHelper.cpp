@@ -75,15 +75,15 @@ ContentPermissionRequestParent::ContentPermissionRequestParent(
     Element* aElement, nsIPrincipal* aPrincipal,
     nsIPrincipal* aTopLevelPrincipal,
     const bool aHasValidTransientUserGestureActivation,
-    const bool aIsRequestDelegatedToUnsafeThirdParty) {
+    const bool aIsRequestDelegatedToUnsafeThirdParty)
+    : mPrincipal(aPrincipal),
+      mTopLevelPrincipal(aTopLevelPrincipal),
+      mElement(aElement),
+      mHasValidTransientUserGestureActivation(
+          aHasValidTransientUserGestureActivation),
+      mIsRequestDelegatedToUnsafeThirdParty(
+          aIsRequestDelegatedToUnsafeThirdParty) {
   MOZ_COUNT_CTOR(ContentPermissionRequestParent);
-
-  mPrincipal = aPrincipal;
-  mTopLevelPrincipal = aTopLevelPrincipal;
-  mElement = aElement;
-  mHasValidTransientUserGestureActivation =
-      aHasValidTransientUserGestureActivation;
-  mIsRequestDelegatedToUnsafeThirdParty = aIsRequestDelegatedToUnsafeThirdParty;
 }
 
 ContentPermissionRequestParent::~ContentPermissionRequestParent() {
