@@ -10,8 +10,13 @@
 
 #include <algorithm>
 #include <limits>
+#include <string>
+#include <tuple>
+#include <utility>
 
+#include "unicode/unumberformatter.h"
 #include "unicode/unumberrangeformatter.h"
+#include "unicode/utypes.h"
 
 namespace mozilla::intl {
 
