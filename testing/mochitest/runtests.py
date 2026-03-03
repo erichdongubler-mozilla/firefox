@@ -387,16 +387,16 @@ def killPid(pid, log):
                 p.send_signal(signal.SIGTERM)
             gone, alive = psutil.wait_procs(children, timeout=30)
             for p in gone:
-                log.info("psutil found pid %s dead" % p.pid)
+                log.info(f"psutil found pid {p.pid} dead")
             for p in alive:
-                log.info("failed to kill pid %d after 30s" % p.pid)
+                log.info(f"failed to kill pid {p.pid} after 30s")
         except Exception as e:
-            log.info("Error: Failed to kill process %d: %s" % (pid, str(e)))
+            log.info(f"Error: Failed to kill process {pid}: {str(e)}")
     else:
         try:
             os.kill(pid, getattr(signal, "SIGKILL", signal.SIGTERM))
         except Exception as e:
-            log.info("Failed to kill process %d: %s" % (pid, str(e)))
+            log.info(f"Failed to kill process {pid}: {str(e)}")
 
 
 if mozinfo.isWin:
@@ -484,14 +484,8 @@ class MochitestServer:
             shutdownServer = "127.0.0.1"
         else:
             shutdownServer = self.webServer
-        self.shutdownURL = "http://%(server)s:%(port)s/server/shutdown" % {
-            "server": shutdownServer,
-            "port": self.httpPort,
-        }
-        self.debugURL = "http://%(server)s:%(port)s/server/debug?2" % {
-            "server": shutdownServer,
-            "port": self.httpPort,
-        }
+        self.shutdownURL = f"http://{shutdownServer}:{self.httpPort}/server/shutdown"
+        self.debugURL = f"http://{shutdownServer}:{self.httpPort}/server/debug?2"
         self.testPrefix = "undefined"
 
         if options.get("httpdPath"):
@@ -540,22 +534,18 @@ class MochitestServer:
         if mozinfo.isWin:
             env["PATH"] = env["PATH"] + ";" + str(self._xrePath)
 
+        profilePath = self._profileDir.replace("\\", "\\\\")
+        httpdPath = self._httpdPath.replace("\\", "\\\\")
         args = [
             "-g",
             self._xrePath,
             "-e",
-            "const _PROFILE_PATH = '%(profile)s'; const _SERVER_PORT = '%(port)s'; "
-            "const _SERVER_ADDR = '%(server)s'; const _TEST_PREFIX = %(testPrefix)s; "
-            "const _DISPLAY_RESULTS = %(displayResults)s; "
-            "const _HTTPD_PATH = '%(httpdPath)s';"
-            % {
-                "httpdPath": self._httpdPath.replace("\\", "\\\\"),
-                "profile": self._profileDir.replace("\\", "\\\\"),
-                "port": self.httpPort,
-                "server": self.webServer,
-                "testPrefix": self.testPrefix,
-                "displayResults": str(self._keep_open).lower(),
-            },
+            f"const _PROFILE_PATH = '{profilePath}'; "
+            f"const _SERVER_PORT = '{self.httpPort}'; "
+            f"const _SERVER_ADDR = '{self.webServer}'; "
+            f"const _TEST_PREFIX = {self.testPrefix}; "
+            f"const _DISPLAY_RESULTS = {str(self._keep_open).lower()}; "
+            f"const _HTTPD_PATH = '{httpdPath}'; ",
             "-f",
             os.path.join(SCRIPT_DIR, "server.js"),
         ]
@@ -567,7 +557,7 @@ class MochitestServer:
         if MOCHITEST_SERVER_LOGGING and "MOZ_UPLOAD_DIR" in os.environ:
             server_logfile_path = os.path.join(
                 os.environ["MOZ_UPLOAD_DIR"],
-                "mochitest-server-%d.txt" % MochitestServer.instance_count,
+                f"mochitest-server-{MochitestServer.instance_count}.txt",
             )
             self.server_logfile = open(server_logfile_path, "w")
             self._process = subprocess.Popen(
@@ -584,9 +574,9 @@ class MochitestServer:
                 cwd=SCRIPT_DIR,
                 env=env,
             )
-        self._log.info("%s : launching %s" % (self.__class__.__name__, command))
+        self._log.info(f"{self.__class__.__name__} : launching {command}")
         pid = self._process.pid
-        self._log.info("runtests.py | Server pid: %d" % pid)
+        self._log.info(f"runtests.py | Server pid: {pid}")
         if MOCHITEST_SERVER_LOGGING and "MOZ_UPLOAD_DIR" in os.environ:
             self._log.info("runtests.py enabling server debugging...")
             i = 0
@@ -596,7 +586,7 @@ class MochitestServer:
                         self._log.info(c.read().decode("utf-8"))
                     break
                 except Exception as e:
-                    self._log.info("exception when enabling debugging: %s" % str(e))
+                    self._log.info(f"exception when enabling debugging: {str(e)}")
                     time.sleep(1)
                     i += 1
 
@@ -622,7 +612,7 @@ class MochitestServer:
             with closing(urlopen(self.shutdownURL)) as c:
                 self._log.info(c.read().decode("utf-8"))
         except Exception:
-            self._log.info("Failed to stop web server on %s" % self.shutdownURL)
+            self._log.info(f"Failed to stop web server on {self.shutdownURL}")
             traceback.print_exc()
         finally:
             if self.server_logfile is not None:
@@ -680,7 +670,7 @@ class WebSocketServer:
             cmd, cwd=SCRIPT_DIR, env=env, stderr=subprocess.DEVNULL
         )
         pid = self._process.pid
-        self._log.info("runtests.py | Websocket server pid: %d" % pid)
+        self._log.info(f"runtests.py | Websocket server pid: {pid}")
 
     def stop(self):
         if self._process is not None:
@@ -709,24 +699,21 @@ class SSLTunnel:
             if match:
                 customcert = match.group("nickname")
                 config.write(
-                    "listen:%s:%s:%s:%s\n"
-                    % (loc.host, loc.port, self.sslPort, customcert)
+                    f"listen:{loc.host}:{loc.port}:{self.sslPort}:{customcert}\n"
                 )
 
             match = self.clientAuthRE.match(option)
             if match:
                 clientauth = match.group("clientauth")
                 config.write(
-                    "clientauth:%s:%s:%s:%s\n"
-                    % (loc.host, loc.port, self.sslPort, clientauth)
+                    f"clientauth:{loc.host}:{loc.port}:{self.sslPort}:{clientauth}\n"
                 )
 
             match = self.redirRE.match(option)
             if match:
                 redirhost = match.group("redirhost")
                 config.write(
-                    "redirhost:%s:%s:%s:%s\n"
-                    % (loc.host, loc.port, self.sslPort, redirhost)
+                    f"redirhost:{loc.host}:{loc.port}:{self.sslPort}:{redirhost}\n"
                 )
 
             if option in (
@@ -738,23 +725,21 @@ class SSLTunnel:
                 "3des",
                 "failHandshake",
             ):
-                config.write(
-                    "%s:%s:%s:%s\n" % (option, loc.host, loc.port, self.sslPort)
-                )
+                config.write(f"{option}:{loc.host}:{loc.port}:{self.sslPort}\n")
 
     def buildConfig(self, locations, public=None):
         """Create the ssltunnel configuration file"""
         configFd, self.configFile = tempfile.mkstemp(prefix="ssltunnel", suffix=".cfg")
         with os.fdopen(configFd, "w") as config:
             config.write("httpproxy:1\n")
-            config.write("certdbdir:%s\n" % self.certPath)
-            config.write("forward:127.0.0.1:%s\n" % self.httpPort)
+            config.write(f"certdbdir:{self.certPath}\n")
+            config.write(f"forward:127.0.0.1:{self.httpPort}\n")
 
             wsserver = self.webServer
             if self.webServer == "10.0.2.2":
                 wsserver = "127.0.0.1"
 
-            config.write("websocketserver:%s:%s\n" % (wsserver, self.webSocketPort))
+            config.write(f"websocketserver:{wsserver}:{self.webSocketPort}\n")
             # Use "*" to tell ssltunnel to listen on the public ip
             # address instead of the loopback address 127.0.0.1. This
             # may have the side-effect of causing firewall warnings on
@@ -765,7 +750,7 @@ class SSLTunnel:
             # which run on the same host as ssltunnel may use the
             # loopback address.
             listen_address = "*" if public else "127.0.0.1"
-            config.write("listen:%s:%s:pgoserver\n" % (listen_address, self.sslPort))
+            config.write(f"listen:{listen_address}:{self.sslPort}:pgoserver\n")
 
             for loc in locations:
                 if loc.scheme == "https" and "nocert" not in loc.options:
@@ -780,14 +765,14 @@ class SSLTunnel:
             ssltunnel += ".exe"
         if not os.path.exists(ssltunnel):
             self.log.error(
-                "INFO | runtests.py | expected to find ssltunnel at %s" % ssltunnel
+                f"INFO | runtests.py | expected to find ssltunnel at {ssltunnel}"
             )
             sys.exit(1)
 
         env = test_environment(xrePath=self.xrePath, log=self.log)
         env["LD_LIBRARY_PATH"] = self.xrePath
         self.process = subprocess.Popen([ssltunnel, self.configFile], env=env)
-        self.log.info("runtests.py | SSL tunnel pid: %d" % self.process.pid)
+        self.log.info(f"runtests.py | SSL tunnel pid: {self.process.pid}")
 
     def stop(self):
         """Stops the SSL Tunnel and cleans up"""
@@ -903,7 +888,7 @@ def findTestMediaDevices(log):
         "num-buffers=1",
         "!",
         "v4l2sink",
-        "device=%s" % device,
+        f"device={device}",
     ])
     info["video"] = {"name": name, "process": process}
     info["speaker"] = {"name": "44100Hz Null Output"}
@@ -1077,9 +1062,9 @@ class MochitestDesktop:
             if options.autorun:
                 self.urlOpts.append("autorun=1")
             if options.timeout:
-                self.urlOpts.append("timeout=%d" % options.timeout)
+                self.urlOpts.append(f"timeout={options.timeout}")
             if options.maxTimeouts:
-                self.urlOpts.append("maxTimeouts=%d" % options.maxTimeouts)
+                self.urlOpts.append(f"maxTimeouts={options.maxTimeouts}")
             if not options.keep_open:
                 self.urlOpts.append("closeWhenDone=1")
             if options.logFile:
@@ -1092,9 +1077,9 @@ class MochitestDesktop:
                     "consoleLevel=" + encodeURIComponent(options.consoleLevel)
                 )
             if options.startAt:
-                self.urlOpts.append("startAt=%s" % options.startAt)
+                self.urlOpts.append(f"startAt={options.startAt}")
             if options.endAt:
-                self.urlOpts.append("endAt=%s" % options.endAt)
+                self.urlOpts.append(f"endAt={options.endAt}")
             if options.shuffle:
                 self.urlOpts.append("shuffle=1")
             if "MOZ_HIDE_RESULTS_TABLE" in env and env["MOZ_HIDE_RESULTS_TABLE"] == "1":
@@ -1102,7 +1087,7 @@ class MochitestDesktop:
             if options.runUntilFailure:
                 self.urlOpts.append("runUntilFailure=1")
             if options.repeat:
-                self.urlOpts.append("repeat=%d" % options.repeat)
+                self.urlOpts.append(f"repeat={options.repeat}")
             if len(options.test_paths) == 1 and os.path.isfile(
                 os.path.join(
                     self.oldcwd,
@@ -1111,14 +1096,13 @@ class MochitestDesktop:
                     options.test_paths[0],
                 )
             ):
-                self.urlOpts.append(
-                    "testname=%s" % "/".join([self.TEST_PATH, options.test_paths[0]])
-                )
+                testname = "/".join([self.TEST_PATH, options.test_paths[0]])
+                self.urlOpts.append(f"testname={testname}")
             if options.manifestFile:
-                self.urlOpts.append("manifestFile=%s" % options.manifestFile)
+                self.urlOpts.append(f"manifestFile={options.manifestFile}")
             if options.failureFile:
                 self.urlOpts.append(
-                    "failureFile=%s" % self.getFullPath(options.failureFile)
+                    f"failureFile={self.getFullPath(options.failureFile)}"
                 )
             if options.runSlower:
                 self.urlOpts.append("runSlower=true")
@@ -1126,8 +1110,7 @@ class MochitestDesktop:
                 self.urlOpts.append("debugOnFailure=true")
             if options.dumpOutputDirectory:
                 self.urlOpts.append(
-                    "dumpOutputDirectory=%s"
-                    % encodeURIComponent(options.dumpOutputDirectory)
+                    f"dumpOutputDirectory={encodeURIComponent(options.dumpOutputDirectory)}"
                 )
             if options.dumpAboutMemoryAfterTest:
                 self.urlOpts.append("dumpAboutMemoryAfterTest=true")
@@ -1136,7 +1119,7 @@ class MochitestDesktop:
             if options.debugger or options.jsdebugger:
                 self.urlOpts.append("interactiveDebugger=true")
             if options.jscov_dir_prefix:
-                self.urlOpts.append("jscovDirPrefix=%s" % options.jscov_dir_prefix)
+                self.urlOpts.append(f"jscovDirPrefix={options.jscov_dir_prefix}")
             if options.cleanupCrashes:
                 self.urlOpts.append("cleanupCrashes=true")
             if "MOZ_XORIGIN_MOCHITEST" in env and env["MOZ_XORIGIN_MOCHITEST"] == "1":
@@ -1307,7 +1290,7 @@ class MochitestDesktop:
 
         if options.pidFile != "":
             with open(options.pidFile + ".xpcshell.pid", "w") as f:
-                f.write("%s" % self.server._process.pid)
+                f.write(str(self.server._process.pid))
 
     def startWebsocketProcessBridge(self, options):
         """Create a websocket server that can launch various processes that
@@ -1322,8 +1305,7 @@ class MochitestDesktop:
         ]
         self.websocketProcessBridge = subprocess.Popen(command, cwd=SCRIPT_DIR)
         self.log.info(
-            "runtests.py | websocket/process bridge pid: %d"
-            % self.websocketProcessBridge.pid
+            f"runtests.py | websocket/process bridge pid: {self.websocketProcessBridge.pid}"
         )
 
         # ensure the server is up, wait for at most ten seconds
@@ -1391,10 +1373,10 @@ class MochitestDesktop:
         # We try to find the node executable in the path given to us by the user in
         # the MOZ_NODE_PATH environment variable
         nodeBin = os.getenv("MOZ_NODE_PATH", None)
-        self.log.info("Use MOZ_NODE_PATH at %s" % (nodeBin))
+        self.log.info(f"Use MOZ_NODE_PATH at {nodeBin}")
         if not nodeBin and build:
             nodeBin = build.substs.get("NODEJS")
-            self.log.info("Use build node at %s" % (nodeBin))
+            self.log.info(f"Use build node at {nodeBin}")
         return nodeBin
 
     def startHttp2Server(self, options):
@@ -1468,7 +1450,7 @@ class MochitestDesktop:
         if self.server is not None:
             self.server.ensureReady(self.SERVER_STARTUP_TIMEOUT)
 
-        self.log.info("use http3 server: %d" % options.useHttp3Server)
+        self.log.info(f"use http3 server: {options.useHttp3Server}")
         self.http3Server = None
         self.http2Server = None
         self.dohServer = None
@@ -1544,7 +1526,7 @@ class MochitestDesktop:
                 dest = os.path.join(options.profilePath, os.path.basename(abspath))
                 shutil.copytree(abspath, dest)
             else:
-                self.log.warning("runtests.py | Failed to copy %s to profile" % abspath)
+                self.log.warning(f"runtests.py | Failed to copy {abspath} to profile")
 
     def getChromeTestDir(self, options):
         dir = os.path.join(os.path.abspath("."), SCRIPT_DIR) + "/"
@@ -1558,20 +1540,18 @@ class MochitestDesktop:
             # Register chrome directory.
             chrometestDir = self.getChromeTestDir(options)
             manifestFile.write(
-                "content mochitests %s contentaccessible=yes\n" % chrometestDir
+                f"content mochitests {chrometestDir} contentaccessible=yes\n"
             )
             manifestFile.write(
-                "content mochitests-any %s contentaccessible=yes remoteenabled=yes\n"
-                % chrometestDir
+                f"content mochitests-any {chrometestDir} contentaccessible=yes remoteenabled=yes\n"
             )
             manifestFile.write(
-                "content mochitests-content %s contentaccessible=yes remoterequired=yes\n"
-                % chrometestDir
+                f"content mochitests-content {chrometestDir} contentaccessible=yes remoterequired=yes\n"
             )
 
             if options.testingModulesDir is not None:
                 manifestFile.write(
-                    "resource testing-common file:///%s\n" % options.testingModulesDir
+                    f"resource testing-common file:///{options.testingModulesDir}\n"
                 )
         if options.store_chrome_manifest:
             shutil.copyfile(manifest, options.store_chrome_manifest)
@@ -1772,8 +1752,7 @@ toolbar#nav-bar {
 
             if not self.isTest(options, tp):
                 self.log.warning(
-                    "Warning: %s from manifest %s is not a valid test"
-                    % (test["name"], test["manifest"])
+                    f"Warning: {test['name']} from manifest {test['manifest']} is not a valid test"
                 )
                 continue
 
@@ -1884,7 +1863,7 @@ toolbar#nav-bar {
             with open(options.dump_tests, "w") as dumpFile:
                 dumpFile.write(json.dumps({"active_tests": paths}))
 
-            self.log.info("Dumping active_tests to %s file." % options.dump_tests)
+            self.log.info(f"Dumping active_tests to {options.dump_tests} file.")
             sys.exit()
 
         # Add missing manifests with empty test lists so they appear in
@@ -1928,9 +1907,7 @@ toolbar#nav-bar {
                 manifest = TestManifest([masterPath], strict=False)
             else:
                 manifest = None
-                self.log.warning(
-                    "TestManifest masterPath %s does not exist" % masterPath
-                )
+                self.log.warning(f"TestManifest masterPath {masterPath} does not exist")
 
         return manifest
 
@@ -2093,7 +2070,7 @@ toolbar#nav-bar {
 
     def killNamedProc(self, pname, orphans=True):
         """Kill processes matching the given command name"""
-        self.log.info("Checking for %s processes..." % pname)
+        self.log.info(f"Checking for {pname} processes...")
 
         if HAVE_PSUTIL:
             for proc in psutil.process_iter():
@@ -2101,14 +2078,12 @@ toolbar#nav-bar {
                     if proc.name() == pname:
                         procd = proc.as_dict(attrs=["pid", "ppid", "name", "username"])
                         if proc.ppid() == 1 or not orphans:
-                            self.log.info("killing %s" % procd)
+                            self.log.info(f"killing {procd}")
                             killPid(proc.pid, self.log)
                         else:
-                            self.log.info("NOT killing %s (not an orphan?)" % procd)
+                            self.log.info(f"NOT killing {procd} (not an orphan?)")
                 except Exception as e:
-                    self.log.info(
-                        "Warning: Unable to kill process %s: %s" % (pname, str(e))
-                    )
+                    self.log.info(f"Warning: Unable to kill process {pname}: {str(e)}")
                     # may not be able to access process info for all processes
                     continue
         else:
@@ -2129,12 +2104,11 @@ toolbar#nav-bar {
                     ppid = int(parts[1])
                     if parts[2] == pname:
                         if ppid == 1 or not orphans:
-                            self.log.info("killing %s (pid %d)" % (pname, pid))
+                            self.log.info(f"killing {pname} (pid {pid})")
                             killPid(pid, self.log)
                         else:
                             self.log.info(
-                                "NOT killing %s (pid %d) (not an orphan?)"
-                                % (pname, pid)
+                                f"NOT killing {pname} (pid {pid}) (not an orphan?)"
                             )
 
             mozprocess.run_and_wait(
@@ -2270,14 +2244,14 @@ toolbar#nav-bar {
             options.dohServerPort = self.findFreePort(socket.SOCK_STREAM)
             options.http3ServerPort = self.findFreePort(socket.SOCK_DGRAM)
             proxyOptions["dohServerPort"] = options.dohServerPort
-            self.log.info("use doh server at port: %d" % options.dohServerPort)
-            self.log.info("use http3 server at port: %d" % options.http3ServerPort)
+            self.log.info(f"use doh server at port: {options.dohServerPort}")
+            self.log.info(f"use http3 server at port: {options.http3ServerPort}")
         elif options.useHttp2Server:
             options.dohServerPort = self.findFreePort(socket.SOCK_STREAM)
             options.http2ServerPort = self.findFreePort(socket.SOCK_STREAM)
             proxyOptions["dohServerPort"] = options.dohServerPort
-            self.log.info("use doh server at port: %d" % options.dohServerPort)
-            self.log.info("use http2 server at port: %d" % options.http2ServerPort)
+            self.log.info(f"use doh server at port: {options.dohServerPort}")
+            self.log.info(f"use http2 server at port: {options.http2ServerPort}")
         return proxyOptions
 
     def merge_base_profiles(self, options, category):
@@ -2304,7 +2278,7 @@ toolbar#nav-bar {
 
         # values to use when interpolating preferences
         interpolation = {
-            "server": "%s:%s" % (options.webServer, options.httpPort),
+            "server": f"{options.webServer}:{options.httpPort}",
         }
 
         for profile in base_profiles:
@@ -2321,7 +2295,7 @@ toolbar#nav-bar {
             condprof_copy,
             ignore=shutil.ignore_patterns("lock"),
         )
-        self.log.info("Created a conditioned-profile copy: %s" % condprof_copy)
+        self.log.info(f"Created a conditioned-profile copy: {condprof_copy}")
         return condprof_copy
 
     def downloadConditionedProfile(self, profile_scenario, app):
@@ -2417,7 +2391,7 @@ toolbar#nav-bar {
             except Exception as e:
                 self.log.info(
                     "Caught exception while removing key4.db"
-                    "during setup of conditioned profile: %s" % e
+                    f"during setup of conditioned profile: {e}"
                 )
 
         # Create the profile
@@ -2559,8 +2533,7 @@ toolbar#nav-bar {
                     os.remove(options.pidFile + ".xpcshell.pid")
             except Exception:
                 self.log.warning(
-                    "cleaning up pidfile '%s' was unsuccessful from the test harness"
-                    % options.pidFile
+                    f"cleaning up pidfile '{options.pidFile}' was unsuccessful from the test harness"
                 )
         options.manifestFile = None
 
@@ -2600,7 +2573,7 @@ toolbar#nav-bar {
         Also attempts to obtain a screenshot before killing the process
         if specified.
         """
-        self.log.info("Killing process: %s" % processPID)
+        self.log.info(f"Killing process: {processPID}")
         if dump_screen:
             self.dumpScreen(utilityPath)
 
@@ -2628,7 +2601,7 @@ toolbar#nav-bar {
                 rv = [p.pid for p in psutil.Process(parent_pid).children()]
                 self.log.info(str(rv))
             except psutil.NoSuchProcess:
-                self.log.warning("Failed to lookup children of pid %d" % parent_pid)
+                self.log.warning(f"Failed to lookup children of pid {parent_pid}")
 
         rv = set(rv)
         pid_re = re.compile(r"==> process \d+ launched child process (\d+)")
@@ -2644,25 +2617,25 @@ toolbar#nav-bar {
         """Look for hung processes"""
 
         if not os.path.exists(processLog):
-            self.log.info("Automation Error: PID log not found: %s" % processLog)
+            self.log.info(f"Automation Error: PID log not found: {processLog}")
             # Whilst no hung process was found, the run should still display as
             # a failure
             return True
 
         # scan processLog for zombies
-        self.log.info("zombiecheck | Reading PID log: %s" % processLog)
+        self.log.info(f"zombiecheck | Reading PID log: {processLog}")
         processList = self.extract_child_pids(processLog)
         # kill zombies
         foundZombie = False
         for processPID in processList:
             self.log.info(
-                "zombiecheck | Checking for orphan process with PID: %d" % processPID
+                f"zombiecheck | Checking for orphan process with PID: {processPID}"
             )
             if isPidAlive(processPID):
                 foundZombie = True
                 self.log.error(
                     "TEST-UNEXPECTED-FAIL | zombiecheck | child process "
-                    "%d still alive after shutdown" % processPID
+                    f"{processPID} still alive after shutdown"
                 )
                 self.killAndGetStack(
                     processPID, utilityPath, debuggerInfo, dump_screen=not debuggerInfo
@@ -2677,7 +2650,7 @@ toolbar#nav-bar {
             for proc in psutil.process_iter():
                 try:
                     if "firefox" in proc.name():
-                        firefoxes = "%s%s\n" % (firefoxes, proc.as_dict(attrs=attrs))
+                        firefoxes = f"{firefoxes}{proc.as_dict(attrs=attrs)}\n"
                 except Exception:
                     # may not be able to access process info for all processes
                     continue
@@ -2757,7 +2730,7 @@ toolbar#nav-bar {
         if valgrindPath:
             self.log.info(
                 "runtests.py | Running on Valgrind.  "
-                + "Using timeout of %d seconds." % timeout
+                + f"Using timeout of {timeout} seconds."
             )
 
         # copy env so we don't munge the caller's environment
@@ -2872,9 +2845,9 @@ toolbar#nav-bar {
                     outputTimeout=timeout,
                 )
                 proc = runner.process_handler
-                self.log.info("runtests.py | Application pid: %d" % proc.pid)
+                self.log.info(f"runtests.py | Application pid: {proc.pid}")
 
-                gecko_id = "GECKO(%d)" % proc.pid
+                gecko_id = f"GECKO({proc.pid})"
                 self.log.process_start(gecko_id)
                 self.message_logger.gecko_id = gecko_id
             except PermissionError:
@@ -2896,8 +2869,7 @@ toolbar#nav-bar {
                     for addon_path in self.staged_addons:
                         if not os.path.isdir(addon_path):
                             self.log.error(
-                                "TEST-UNEXPECTED-FAIL | invalid setup: missing extension at %s"
-                                % addon_path
+                                f"TEST-UNEXPECTED-FAIL | invalid setup: missing extension at {addon_path}"
                             )
                             return 1, self.lastTestSeen
                         temp_addon_path = create_zip(addon_path)
@@ -2957,7 +2929,7 @@ toolbar#nav-bar {
                 # no need to keep return code 137, 245, etc.
                 status = 1
                 self.message_logger.dump_buffered()
-                msg = "application terminated with exit code %s" % status
+                msg = f"application terminated with exit code {status}"
                 # self.message_logger.is_test_running indicates we need to send a test_end
                 if crashAsPass and self.message_logger.is_test_running:
                     # this works for browser-chrome, mochitest-plain has status=0
@@ -2989,8 +2961,7 @@ toolbar#nav-bar {
                 )
 
             self.log.info(
-                "runtests.py | Application ran for: %s"
-                % str(datetime.now() - startTime)
+                f"runtests.py | Application ran for: {str(datetime.now() - startTime)}"
             )
 
             # Do a final check for zombie child processes.
@@ -3036,7 +3007,7 @@ toolbar#nav-bar {
                     "source": "mochitest",
                     "time": int(time.time() * 1000),
                     "test": self.lastTestSeen,
-                    "message": "application terminated with exit code %s" % status,
+                    "message": f"application terminated with exit code {status}",
                 }
 
                 # for looping scenarios (like --restartAfterFailure), document the test
@@ -3421,20 +3392,17 @@ toolbar#nav-bar {
             ]
         else:
             steps = [
-                ("1. Run each test %d times in one browser." % VERIFY_REPEAT, step1),
+                (f"1. Run each test {VERIFY_REPEAT} times in one browser.", step1),
                 (
-                    "2. Run each test %d times in a new browser each time."
-                    % VERIFY_REPEAT_SINGLE_BROWSER,
+                    f"2. Run each test {VERIFY_REPEAT_SINGLE_BROWSER} times in a new browser each time.",
                     step2,
                 ),
                 (
-                    "3. Run each test %d times in one browser, in chaos mode."
-                    % VERIFY_REPEAT,
+                    f"3. Run each test {VERIFY_REPEAT} times in one browser, in chaos mode.",
                     step3,
                 ),
                 (
-                    "4. Run each test %d times in a new browser each time, "
-                    "in chaos mode." % VERIFY_REPEAT_SINGLE_BROWSER,
+                    f"4. Run each test {VERIFY_REPEAT_SINGLE_BROWSER} times in a new browser each time, in chaos mode.",
                     step4,
                 ),
             ]
@@ -3454,7 +3422,7 @@ toolbar#nav-bar {
                 )
                 break
             self.log.info(":::")
-            self.log.info('::: Running test verification step "%s"...' % descr)
+            self.log.info(f'::: Running test verification step "{descr}"...')
             self.log.info(":::")
             result = step()
             if result != 0:
@@ -3473,9 +3441,9 @@ toolbar#nav-bar {
             self.log.info("::: " + test["path"])
         self.log.info(":::")
         for descr in sorted(stepResults.keys()):
-            self.log.info("::: %s : %s" % (descr, stepResults[descr]))
+            self.log.info(f"::: {descr} : {stepResults[descr]}")
         self.log.info(":::")
-        self.log.info("::: Test verification %s" % finalResult)
+        self.log.info(f"::: Test verification {finalResult}")
         self.log.info(":::")
 
         return 0
@@ -3656,17 +3624,17 @@ toolbar#nav-bar {
         if options.flavor == "browser":
             print("TEST-INFO | checking window state")
             print("Browser Chrome Test Summary")
-            print("\tPassed: %s" % self.countpass)
-            print("\tFailed: %s" % self.countfail)
-            print("\tTodo: %s" % self.counttodo)
-            print("\tMode: %s" % e10s_mode)
+            print(f"\tPassed: {self.countpass}")
+            print(f"\tFailed: {self.countfail}")
+            print(f"\tTodo: {self.counttodo}")
+            print(f"\tMode: {e10s_mode}")
             print("*** End BrowserChrome Test Results ***")
         else:
             print("0 INFO TEST-START | Shutdown")
-            print("1 INFO Passed:  %s" % self.countpass)
-            print("2 INFO Failed:  %s" % self.countfail)
-            print("3 INFO Todo:    %s" % self.counttodo)
-            print("4 INFO Mode:    %s" % e10s_mode)
+            print(f"1 INFO Passed:  {self.countpass}")
+            print(f"2 INFO Failed:  {self.countfail}")
+            print(f"3 INFO Todo:    {self.counttodo}")
+            print(f"4 INFO Mode:    {e10s_mode}")
             print("5 INFO SimpleTest FINISHED")
 
         if os.getenv("MOZ_AUTOMATION") and self.perfherder_data:
@@ -3695,7 +3663,7 @@ toolbar#nav-bar {
 
             profiler_logger = get_proxy_logger("profiler")
             profiler_logger.info("Shutdown performance profiling was enabled")
-            profiler_logger.info("Profile saved locally to: %s" % profile_path)
+            profiler_logger.info(f"Profile saved locally to: {profile_path}")
 
             if options.profilerSaveOnly or options.profiler:
                 # Only do the extra work of symbolicating and viewing the profile if
@@ -3992,8 +3960,7 @@ toolbar#nav-bar {
             "source": "mochitest",
             "time": int(time.time() * 1000),
             "test": self.lastTestSeen,
-            "message": "application timed out after %d seconds with no output"
-            % int(timeout),
+            "message": f"application timed out after {timeout} seconds with no output",
         }
 
         # for looping scenarios (like --restartAfterFailure), document the test
@@ -4017,13 +3984,13 @@ toolbar#nav-bar {
                 "Attempting to start the profiler to help with diagnosing the hang."
             )
             profiler_logger.info(
-                "Sending SIGUSR1 to pid %d start the profiler." % browser_pid
+                f"Sending SIGUSR1 to pid {browser_pid} start the profiler."
             )
             os.kill(browser_pid, signal.SIGUSR1)
             profiler_logger.info("Waiting 10s to capture a profile...")
             time.sleep(10)
             profiler_logger.info(
-                "Sending SIGUSR2 to pid %d stop the profiler." % browser_pid
+                f"Sending SIGUSR2 to pid {browser_pid} stop the profiler."
             )
             os.kill(browser_pid, signal.SIGUSR2)
             # We trigger `killPid` further down in this function, which will
@@ -4047,13 +4014,13 @@ toolbar#nav-bar {
             # Sanity check that we actually have a MOZ_UPLOAD_DIR
             if "MOZ_UPLOAD_DIR" in os.environ:
                 profiler_logger.info(
-                    "Symbolicating profile in %s" % os.environ["MOZ_UPLOAD_DIR"]
+                    f"Symbolicating profile in {os.environ['MOZ_UPLOAD_DIR']}"
                 )
                 profile_path = "{}/profile_0_{}.json".format(
                     os.environ["MOZ_UPLOAD_DIR"], browser_pid
                 )
-                profiler_logger.info("Looking inside symbols dir: %s)" % symbolsPath)
-                profiler_logger.info("Symbolicating profile: %s" % profile_path)
+                profiler_logger.info(f"Looking inside symbols dir: {symbolsPath})")
+                profiler_logger.info(f"Symbolicating profile: {profile_path}")
                 symbolicate_profile_json(profile_path, symbolsPath)
         else:
             profiler_logger.info(
@@ -4061,13 +4028,13 @@ toolbar#nav-bar {
             )
 
         child_pids = self.extract_child_pids(processLog, browser_pid)
-        self.log.info("Found child pids: %s" % child_pids)
+        self.log.info(f"Found child pids: {child_pids}")
 
         if HAVE_PSUTIL:
             try:
                 browser_proc = [psutil.Process(browser_pid)]
             except Exception:
-                self.log.info("Failed to get proc for pid %d" % browser_pid)
+                self.log.info(f"Failed to get proc for pid {browser_pid}")
                 browser_proc = []
             try:
                 child_procs = [psutil.Process(pid) for pid in child_pids]
@@ -4080,17 +4047,17 @@ toolbar#nav-bar {
                 )
             gone, alive = psutil.wait_procs(child_procs, timeout=30)
             for p in gone:
-                self.log.info("psutil found pid %s dead" % p.pid)
+                self.log.info(f"psutil found pid {p.pid} dead")
             for p in alive:
-                self.log.warning("failed to kill pid %d after 30s" % p.pid)
+                self.log.warning(f"failed to kill pid {p.pid} after 30s")
             self.killAndGetStack(
                 browser_pid, utilityPath, debuggerInfo, dump_screen=not debuggerInfo
             )
             gone, alive = psutil.wait_procs(browser_proc, timeout=30)
             for p in gone:
-                self.log.info("psutil found pid %s dead" % p.pid)
+                self.log.info(f"psutil found pid {p.pid} dead")
             for p in alive:
-                self.log.warning("failed to kill pid %d after 30s" % p.pid)
+                self.log.warning(f"failed to kill pid {p.pid} after 30s")
         else:
             self.log.error(
                 "psutil not available! Will wait 30s before "
