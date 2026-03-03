@@ -1172,11 +1172,15 @@ void AltSvcCache::UpdateAltServiceMapping(
   caps |= ci->GetAnonymous() ? NS_HTTP_LOAD_ANONYMOUS : 0;
   caps |= NS_HTTP_ERROR_SOFTLY;
 
+  if (StaticPrefs::network_http_happy_eyeballs_enabled()) {
+    ci->SetHappyEyeballsEnabled(true);
+  }
+
   if (map->HTTPS()) {
     LOG(
         ("AltSvcCache::UpdateAltServiceMapping %p validation via "
-         "speculative connect started\n",
-         this));
+         "speculative connect started http3=%d\n",
+         this, map->IsHttp3()));
     // for https resources we only establish a connection
     nsCOMPtr<nsIInterfaceRequestor> callbacks = new AltSvcOverride(aCallbacks);
     RefPtr<AltSvcMappingValidator> validator = new AltSvcMappingValidator(map);

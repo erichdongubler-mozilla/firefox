@@ -16015,6 +16015,11 @@
   value: true
   mirror: always
 
+- name: network.http.happy_eyeballs_enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # If true, it will include extra tags to be sniffed by nsUnknownDecoder
 # These tags were previously sniffed by Firefox for legacy/webcompat but
 # are not part of the MIME sniffing spec.
