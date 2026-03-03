@@ -827,3 +827,63 @@ add_task(async function test_sidebar_state_after_multiple_navigations() {
     sb.restore();
   }
 }).skip();
+
+// Switching to classic mode tears down tab state management
+add_task(async function test_classic_mode_disables_tab_state_events() {
+  const sb = lazy.sinon.createSandbox();
+
+  let win, newTab;
+  try {
+    const mockConversation = createMockConversation();
+    sb.stub(ChatStore, "findConversationById").resolves(mockConversation);
+
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    const originalTab = win.gBrowser.selectedTab;
+
+    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+    win.dispatchEvent(
+      new win.CustomEvent("ai-window:opened-conversation", {
+        detail: {
+          mode: "fullpage",
+          conversationId: mockConversation.id,
+          tab: originalTab,
+        },
+      })
+    );
+
+    const loaded = BrowserTestUtils.browserLoaded(browser);
+    BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
+    await loaded;
+
+    await TestUtils.waitForCondition(
+      () => AIWindowUI.isSidebarOpen(win),
+      "Sidebar should open in smart mode"
+    );
+
+    AIWindow.toggleAIWindow(win, false);
+
+    Assert.ok(
+      !AIWindowUI.isSidebarOpen(win),
+      "Sidebar should be closed after switching to Classic Window"
+    );
+
+    newTab = await BrowserTestUtils.openNewForegroundTab(
+      win.gBrowser,
+      "about:blank"
+    );
+    await BrowserTestUtils.switchTab(win.gBrowser, originalTab);
+
+    await new Promise(resolve => win.setTimeout(resolve, 100));
+
+    Assert.ok(
+      !AIWindowUI.isSidebarOpen(win),
+      "Sidebar should remain closed in Classic Window after tab switch"
+    );
+  } finally {
+    await BrowserTestUtils.removeTab(newTab);
+    await BrowserTestUtils.closeWindow(win);
+    sb.restore();
+  }
+});

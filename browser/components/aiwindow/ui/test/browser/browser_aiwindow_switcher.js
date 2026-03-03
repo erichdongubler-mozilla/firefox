@@ -102,8 +102,8 @@ add_task(async function test_switch_to_classic_window() {
     ],
   });
 
-  if (!document.documentElement.hasAttribute("ai-window")) {
-    document.documentElement.setAttribute("ai-window", "");
+  if (!AIWindow.isAIWindowActive(window)) {
+    AIWindow.toggleAIWindow(window, true);
   }
 
   let button = document.getElementById("ai-window-toggle");
@@ -362,23 +362,22 @@ add_task(async function test_onAccountLogout_switches_windows() {
       ["browser.search.suggest.enabled", false],
       ["browser.urlbar.suggest.searches", false],
       ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
-      ["browser.aiwindow.enabled", true],
+      ["browser.smartwindow.enabled", true],
+      ["browser.smartwindow.firstrun.hasCompleted", true],
     ],
   });
 
-  document.documentElement.setAttribute("ai-window", "");
-  Assert.ok(
-    AIWindow.isAIWindowActive(window),
-    "Window should start in AI mode"
-  );
+  const win = await openAIWindow();
+  Assert.ok(AIWindow.isAIWindowActive(win), "Window should start in AI mode");
 
   AIWindow._onAccountLogout();
 
   Assert.ok(
-    !AIWindow.isAIWindowActive(window),
+    !AIWindow.isAIWindowActive(win),
     "Window should switch to classic mode after logout"
   );
 
+  await BrowserTestUtils.closeWindow(win);
   await SpecialPowers.popPrefEnv();
 });
 
