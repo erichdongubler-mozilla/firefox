@@ -2545,13 +2545,14 @@ static void AddCommonAnnotations(AnnotationTable& aAnnotations) {
   const time_t crashTime = time(nullptr);
   nsAutoCString crashTimeStr;
   crashTimeStr.AppendInt(static_cast<uint64_t>(crashTime));
-  aAnnotations[Annotation::CrashTime] = crashTimeStr;
+  aAnnotations[Annotation::CrashTime] = std::move(crashTimeStr);
 
   if (inactiveStateStart) {
     nsAutoCString inactiveDuration;
     inactiveDuration.AppendInt(
         static_cast<uint64_t>(crashTime - inactiveStateStart));
-    aAnnotations[Annotation::LastInteractionDuration] = inactiveDuration;
+    aAnnotations[Annotation::LastInteractionDuration] =
+        std::move(inactiveDuration);
   }
 
   // ToSeconds preserves the full precision of the TimeDuration. It is assumed
@@ -2560,7 +2561,7 @@ static void AddCommonAnnotations(AnnotationTable& aAnnotations) {
       (TimeStamp::NowLoRes() - TimeStamp::ProcessCreation()).ToSeconds();
   nsAutoCString uptimeStr;
   uptimeStr.AppendFloat(uptimeTS);
-  aAnnotations[Annotation::UptimeTS] = uptimeStr;
+  aAnnotations[Annotation::UptimeTS] = std::move(uptimeStr);
 }
 
 nsresult SetGarbageCollecting(bool collecting) {
@@ -3507,7 +3508,7 @@ bool TakeMinidumpForChild(GeckoChildID aChildId, nsIFile** dump,
   AddSharedAnnotations(aAnnotations);
 
   if (error.Length() > 0) {
-    aAnnotations[Annotation::DumperError] = error;
+    aAnnotations[Annotation::DumperError] = std::move(error);
   }
 
   return true;

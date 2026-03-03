@@ -1185,7 +1185,7 @@ void nsFormFillController::StartControllingInput(Element* aElement) {
     return;
   }
 
-  mFocusedPopup = popup;
+  mFocusedPopup = std::move(popup);
 
   aElement->AddMutationObserverUnlessExists(this);
   mControlledElement = aElement;

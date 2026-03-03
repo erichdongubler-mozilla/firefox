@@ -3027,7 +3027,7 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
     addIsBaseline(key, isBaseline);
     fpOverrides = service->mFingerprintingOverrides.MaybeGet(key);
     if (fpOverrides) {
-      result = fpOverrides;
+      result = std::move(fpOverrides);
     }
 
     return result;
@@ -3076,7 +3076,7 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
   addIsBaseline(key, isBaseline);
   fpOverrides = service->mFingerprintingOverrides.MaybeGet(key);
   if (fpOverrides) {
-    result = fpOverrides;
+    result = std::move(fpOverrides);
   }
 
   return result;
