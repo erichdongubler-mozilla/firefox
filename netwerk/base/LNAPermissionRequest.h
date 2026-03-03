@@ -43,6 +43,7 @@ class LNAPermissionRequest final : public dom::ContentPermissionRequestBase {
  private:
   ~LNAPermissionRequest() = default;
   nsCOMPtr<nsILoadInfo> mLoadInfo;
+  RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
   PermissionPromptCallback mPermissionPromptCallback;
   bool mPromptWasShown = false;
 };
