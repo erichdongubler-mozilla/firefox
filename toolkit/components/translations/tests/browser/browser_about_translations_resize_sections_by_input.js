@@ -129,6 +129,16 @@ add_task(async function test_about_translations_resize_by_input() {
     }
   );
 
+  {
+    const { sourceSectionHeight, targetSectionHeight } =
+      await aboutTranslationsTestUtils.getSectionHeights();
+    is(
+      sourceSectionHeight,
+      targetSectionHeight,
+      "Expected section heights to match after expanding the source input."
+    );
+  }
+
   info(
     "The text areas should expand again if the translated output is taller than the input."
   );
@@ -159,6 +169,16 @@ add_task(async function test_about_translations_resize_by_input() {
     targetLanguage: "en",
     sourceText: largeExpandingInput,
   });
+
+  {
+    const { sourceSectionHeight, targetSectionHeight } =
+      await aboutTranslationsTestUtils.getSectionHeights();
+    is(
+      sourceSectionHeight,
+      targetSectionHeight,
+      "Expected section heights to match after the translation completes."
+    );
+  }
 
   info(
     "The text areas should reduce their size if the content height is reduced."
@@ -200,6 +220,16 @@ add_task(async function test_about_translations_resize_by_input() {
     sourceText: halfLargeExpandingInput,
   });
 
+  {
+    const { sourceSectionHeight, targetSectionHeight } =
+      await aboutTranslationsTestUtils.getSectionHeights();
+    is(
+      sourceSectionHeight,
+      targetSectionHeight,
+      "Expected section heights to match after reducing the input size."
+    );
+  }
+
   info(
     "The text areas should reset to default height when all content is removed."
   );
@@ -224,6 +254,16 @@ add_task(async function test_about_translations_resize_by_input() {
       await aboutTranslationsTestUtils.setSourceTextAreaValue("");
     }
   );
+
+  {
+    const { sourceSectionHeight, targetSectionHeight } =
+      await aboutTranslationsTestUtils.getSectionHeights();
+    is(
+      sourceSectionHeight,
+      targetSectionHeight,
+      "Expected section heights to match after clearing the input."
+    );
+  }
 
   await aboutTranslationsTestUtils.assertSourceTextArea({
     showsPlaceholder: true,
