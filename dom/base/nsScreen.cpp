@@ -12,7 +12,6 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/widget/ScreenManager.h"
 #include "nsCOMPtr.h"
-#include "nsContentUtils.h"
 #include "nsDeviceContext.h"
 #include "nsGlobalWindowInner.h"
 #include "nsGlobalWindowOuter.h"
@@ -126,6 +125,17 @@ CSSIntRect nsScreen::GetAvailRect() {
     if (NS_WARN_IF(!context)) {
       return {};
     }
+
+    if (nsPIDOMWindowInner* owner = GetOwnerWindow()) {
+      if (Document* doc = owner->GetExtantDoc()) {
+        AutoTArray<nsString, 1> params;
+        params.AppendElement(
+            u"https://support.mozilla.org/kb/firefox-protection-against-fingerprinting"_ns);
+        doc->WarnOnceAbout(Document::eScreenFingerprintingProtection, false,
+                           params);
+      }
+    }
+
     return nsRFPService::GetSpoofedScreenAvailSize(
         context->GetRect(), context->GetFullZoom(), IsFullscreen());
   }
