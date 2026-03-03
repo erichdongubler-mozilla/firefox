@@ -245,17 +245,11 @@ static bool InitializeCollator(JSContext* cx, Handle<CollatorObject*> collator,
                                Handle<JS::Value> locales,
                                Handle<JS::Value> optionsValue) {
   // Steps 4-5.
-  Rooted<LocalesList> requestedLocales(cx, cx);
-  if (!CanonicalizeLocaleList(cx, locales, &requestedLocales)) {
+  auto* requestedLocales = CanonicalizeLocaleList(cx, locales);
+  if (!requestedLocales) {
     return false;
   }
-
-  Rooted<ArrayObject*> requestedLocalesArray(
-      cx, LocalesListToArray(cx, requestedLocales));
-  if (!requestedLocalesArray) {
-    return false;
-  }
-  collator->setRequestedLocales(requestedLocalesArray);
+  collator->setRequestedLocales(requestedLocales);
 
   CollatorOptions colOptions{};
 

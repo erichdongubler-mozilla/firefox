@@ -1284,8 +1284,8 @@ bool js::intl::ResolveLocale(
   return true;
 }
 
-ArrayObject* js::intl::LocalesListToArray(JSContext* cx,
-                                          Handle<LocalesList> locales) {
+static ArrayObject* LocalesListToArray(JSContext* cx,
+                                       Handle<LocalesList> locales) {
   auto* array = NewDenseFullyAllocatedArray(cx, locales.length());
   if (!array) {
     return nullptr;
@@ -1314,6 +1314,16 @@ ArrayObject* js::intl::SupportedLocalesOf(JSContext* cx,
   }
 
   return LocalesListToArray(cx, supportedLocales);
+}
+
+ArrayObject* js::intl::CanonicalizeLocaleList(JSContext* cx,
+                                              Handle<Value> locales) {
+  Rooted<LocalesList> requestedLocales(cx, cx);
+  if (!CanonicalizeLocaleList(cx, locales, &requestedLocales)) {
+    return nullptr;
+  }
+
+  return LocalesListToArray(cx, requestedLocales);
 }
 
 /**

@@ -537,17 +537,11 @@ static bool CreateDateTimeFormat(
   // Steps 2-4. (Inlined ResolveOptions)
 
   // ResolveOptions, step 1.
-  Rooted<LocalesList> requestedLocales(cx, cx);
-  if (!CanonicalizeLocaleList(cx, locales, &requestedLocales)) {
+  auto* requestedLocales = CanonicalizeLocaleList(cx, locales);
+  if (!requestedLocales) {
     return false;
   }
-
-  Rooted<ArrayObject*> requestedLocalesArray(
-      cx, LocalesListToArray(cx, requestedLocales));
-  if (!requestedLocalesArray) {
-    return false;
-  }
-  dateTimeFormat->setRequestedLocales(requestedLocalesArray);
+  dateTimeFormat->setRequestedLocales(requestedLocales);
 
   auto dtfOptions = DateTimeFormatOptions{
       .required = required,

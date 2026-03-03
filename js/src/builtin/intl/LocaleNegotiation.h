@@ -54,7 +54,13 @@ using LocalesList = JS::StackGCVector<JSLinearString*>;
 bool CanonicalizeLocaleList(JSContext* cx, JS::Handle<JS::Value> locales,
                             JS::MutableHandle<LocalesList> result);
 
-ArrayObject* LocalesListToArray(JSContext* cx, JS::Handle<LocalesList> locales);
+/**
+ * Canonicalizes a locale list.
+ *
+ * Spec: ECMAScript Internationalization API Specification, 9.2.1.
+ */
+ArrayObject* CanonicalizeLocaleList(JSContext* cx,
+                                    JS::Handle<JS::Value> locales);
 
 /**
  * Compares a BCP 47 language tag against the locales in availableLocales and
