@@ -11,6 +11,8 @@
 // See constants in src/pattern/mod.rs.
 #define SHADER_MODE_COLOR 0
 #define SHADER_MODE_TEXTURE 1
+#define MAP_TO_PRIMITIVE 0
+#define MAP_TO_SEGMENT 1
 
 #ifdef WR_VERTEX_SHADER
 
@@ -28,7 +30,12 @@ void pattern_vertex(PrimitiveInfo info) {
         // See comment in `add_composite_prim`.
         v_color = vec4(1.0);
 
-        vec2 f = (info.local_pos - info.segment.rect.p0) / rect_size(info.segment.rect);
+        RectWithEndpoint pattern_rect = info.local_prim_rect;
+        if (info.pattern_input.y == MAP_TO_SEGMENT) {
+            pattern_rect = info.segment.rect;
+        }
+
+        vec2 f = (info.local_pos - pattern_rect.p0) / rect_size(pattern_rect);
         vs_init_sample_color0(f, info.segment.uv_rect);
     }
 

@@ -1617,7 +1617,7 @@ fn add_composite_prim(
             PatternKind::ColorOrTexture,
             PatternShaderInput(
                 crate::pattern::TEXTURED_SHADER_MODE_TEXTURE,
-                0,
+                crate::pattern::TEXTURED_SHADER_MAP_TO_SEGMENT,
             ),
             RenderTaskId::INVALID,
             prim_instance_index,
@@ -1739,7 +1739,7 @@ pub fn prepare_clip_task(
         ClipItemKind::BoxShadow { .. } => {
             panic!("bug: box-shadow clips not expected on non-legacy rect/quads");
         }
-        ClipItemKind::Image { rect, .. } => {
+        ClipItemKind::Image { .. } => {
             let transform_id = transforms.gpu.get_id_with_post_scale(
                 clip_item.spatial_node_index,
                 raster_spatial_node_index,
@@ -1760,8 +1760,8 @@ pub fn prepare_clip_task(
             for tile in clip_store.visible_mask_tiles(&clip_instance) {
                 let prim_address = write_layout_prim_blocks(
                     gpu_buffer,
-                    &rect,
-                    &rect,
+                    &tile.tile_rect,
+                    &tile.tile_rect,
                     pattern.base_color,
                     pattern.texture_input.task_id,
                     &[QuadSegment {

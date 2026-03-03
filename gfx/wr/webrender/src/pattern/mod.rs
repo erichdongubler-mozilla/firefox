@@ -126,7 +126,7 @@ impl Pattern {
             kind: PatternKind::ColorOrTexture,
             shader_input: PatternShaderInput(
                 TEXTURED_SHADER_MODE_TEXTURE,
-                0,
+                TEXTURED_SHADER_MAP_TO_PRIMITIVE,
             ),
             texture_input: PatternTextureInput::new(src_task),
             base_color: ColorF::WHITE,
@@ -137,3 +137,8 @@ impl Pattern {
 
 pub const TEXTURED_SHADER_MODE_COLOR: i32 = 0;
 pub const TEXTURED_SHADER_MODE_TEXTURE: i32 = 1;
+
+// In the texture mode, whether to map the texture to the primitive's local rect
+// or segment rect.
+pub const TEXTURED_SHADER_MAP_TO_PRIMITIVE: i32 = 0;
+pub const TEXTURED_SHADER_MAP_TO_SEGMENT: i32 = 1;
