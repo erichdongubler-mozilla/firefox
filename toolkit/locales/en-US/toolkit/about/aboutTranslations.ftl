@@ -13,7 +13,6 @@ about-translations-learn-more-link = Learn more
 about-translations-unsupported-info-message =
   .heading = Translation isn’t available on this device.
   .message = Try switching to a different device.
-about-translations-unsupported-info-button = Learn more
 
 # An error message displayed when the language list fails to load.
 about-translations-language-load-error-message =
