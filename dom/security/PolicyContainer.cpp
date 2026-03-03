@@ -7,6 +7,7 @@
 #include "PolicyContainer.h"
 
 #include "mozilla/dom/IntegrityPolicy.h"
+#include "mozilla/dom/IntegrityPolicyWAICT.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsIClassInfoImpl.h"
@@ -16,6 +17,7 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
+PolicyContainer::PolicyContainer() = default;
 PolicyContainer::~PolicyContainer() = default;
 
 constexpr static uint32_t kPolicyContainerSerializationVersion = 1;
@@ -81,6 +83,9 @@ PolicyContainer::Write(nsIObjectOutputStream* aStream) {
   rv = NS_WriteOptionalCompoundObject(aStream, mIntegrityPolicy,
                                       NS_GET_IID(nsIIntegrityPolicy), true);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  // TODO(Bug 2017654): (De)Serialize the WAICT state as part of the
+  // Policy-Container
 
   return NS_OK;
 }
@@ -174,6 +179,8 @@ bool PolicyContainer::Equals(const PolicyContainer* aContainer,
     return false;
   }
 
+  // TODO(Bug 2017654): Handle equality for WAICT.
+
   return true;
 }
 
@@ -207,6 +214,23 @@ nsIIntegrityPolicy* PolicyContainer::GetIntegrityPolicy(
     return nullptr;
   }
   return PolicyContainer::Cast(aPolicyContainer)->GetIntegrityPolicy();
+}
+
+// == WAICT Integrity Policy ==
+void PolicyContainer::SetIntegrityPolicyWAICT(IntegrityPolicyWAICT* aPolicy) {
+  mIntegrityPolicyWAICT = aPolicy;
+}
+
+IntegrityPolicyWAICT* PolicyContainer::GetIntegrityPolicyWAICT() const {
+  return mIntegrityPolicyWAICT;
+}
+
+IntegrityPolicyWAICT* PolicyContainer::GetIntegrityPolicyWAICT(
+    const nsIPolicyContainer* aPolicyContainer) {
+  if (!aPolicyContainer) {
+    return nullptr;
+  }
+  return PolicyContainer::Cast(aPolicyContainer)->GetIntegrityPolicyWAICT();
 }
 
 NS_IMETHODIMP PolicyContainer::GetCsp(nsIContentSecurityPolicy** aCsp) {

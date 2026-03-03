@@ -19,6 +19,7 @@ EXPORTS.mozilla.dom += [
     "FramingChecker.h",
     "IntegrityPolicy.h",
     "IntegrityPolicyService.h",
+    "IntegrityPolicyWAICT.h",
     "nsContentSecurityManager.h",
     "nsContentSecurityUtils.h",
     "nsCSPContext.h",
@@ -31,10 +32,12 @@ EXPORTS.mozilla.dom += [
     "PolicyContainer.h",
     "PolicyTokenizer.h",
     "ReferrerInfo.h",
+    "ResourceHasher.h",
     "SecFetch.h",
     "SRICheck.h",
     "SRILogHelper.h",
     "SRIMetadata.h",
+    "WAICTUtils.h",
 ]
 
 EXPORTS += [
@@ -51,6 +54,7 @@ UNIFIED_SOURCES += [
     "FramingChecker.cpp",
     "IntegrityPolicy.cpp",
     "IntegrityPolicyService.cpp",
+    "IntegrityPolicyWAICT.cpp",
     "nsContentSecurityManager.cpp",
     "nsContentSecurityUtils.cpp",
     "nsCSPContext.cpp",
@@ -63,9 +67,11 @@ UNIFIED_SOURCES += [
     "PolicyContainer.cpp",
     "PolicyTokenizer.cpp",
     "ReferrerInfo.cpp",
+    "ResourceHasher.cpp",
     "SecFetch.cpp",
     "SRICheck.cpp",
     "SRIMetadata.cpp",
+    "WAICTUtils.cpp",
 ]
 
 include("/ipc/chromium/chromium-config.mozbuild")
