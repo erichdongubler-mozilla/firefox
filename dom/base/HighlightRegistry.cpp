@@ -12,6 +12,7 @@
 #include "mozilla/CompactPair.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/HighlightBinding.h"
+#include "mozilla/dom/HighlightRegistryBinding.h"
 #include "nsAtom.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsFrameSelection.h"
@@ -243,6 +244,11 @@ bool HighlightRegistry::Delete(const nsAString& aKey, ErrorResult& aRv) {
   highlight->RemoveFromHighlightRegistry(*this, *highlightNameAtom);
   return true;
 }
+
+// https://drafts.csswg.org/css-highlight-api-1/#dom-highlightregistry-highlightsfrompoint
+void HighlightRegistry::HighlightsFromPoint(
+    float aX, float aY, const HighlightsFromPointOptions& aOptions,
+    nsTArray<HighlightHitResult>& aResult) {}
 
 RefPtr<nsFrameSelection> HighlightRegistry::GetFrameSelection() {
   return RefPtr<nsFrameSelection>(

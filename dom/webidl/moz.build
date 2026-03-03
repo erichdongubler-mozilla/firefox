@@ -651,6 +651,7 @@ WEBIDL_FILES = [
     "GleanPings.webidl",
     "Headers.webidl",
     "Highlight.webidl",
+    "HighlightRegistry.webidl",
     "History.webidl",
     "HTMLAllCollection.webidl",
     "HTMLAnchorElement.webidl",
