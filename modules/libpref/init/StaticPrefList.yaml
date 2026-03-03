@@ -3670,7 +3670,7 @@
 # Media element pseudo-classes
 - name: dom.media.pseudo-classes.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
   rust: true
 
