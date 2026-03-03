@@ -419,6 +419,7 @@ UNIFIED_SOURCES += [
     "ipc/VideoBridgeParent.cpp",
     "LayersTypes.cpp",
     "MemoryPressureObserver.cpp",
+    "NativeLayer.cpp",
     "NativeLayerCommandQueue.cpp",
     "opengl/CompositingRenderTargetOGL.cpp",
     "opengl/CompositorOGL.cpp",

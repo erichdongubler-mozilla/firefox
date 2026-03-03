@@ -20,6 +20,7 @@ namespace mozilla {
 
 namespace gl {
 class GLContext;
+class MozFramebuffer;
 }  // namespace gl
 
 namespace wr {
@@ -257,6 +258,49 @@ class NativeLayer {
 
  protected:
   virtual ~NativeLayer() = default;
+};
+
+// Utility classes for NativeLayerRootSnapshotter (NLRS) profiler screenshots.
+
+class RenderSourceNLRS : public profiler_screenshots::RenderSource {
+ public:
+  explicit RenderSourceNLRS(UniquePtr<gl::MozFramebuffer>&& aFramebuffer);
+  auto& FB() { return *mFramebuffer; }
+
+ protected:
+  UniquePtr<gl::MozFramebuffer> mFramebuffer;
+};
+
+class DownscaleTargetNLRS : public profiler_screenshots::DownscaleTarget {
+ public:
+  DownscaleTargetNLRS(gl::GLContext* aGL,
+                      UniquePtr<gl::MozFramebuffer>&& aFramebuffer);
+  already_AddRefed<profiler_screenshots::RenderSource> AsRenderSource()
+      override {
+    return do_AddRef(mRenderSource);
+  };
+  bool DownscaleFrom(profiler_screenshots::RenderSource* aSource,
+                     const gfx::IntRect& aSourceRect,
+                     const gfx::IntRect& aDestRect) override;
+
+ protected:
+  RefPtr<gl::GLContext> mGL;
+  RefPtr<RenderSourceNLRS> mRenderSource;
+};
+
+class AsyncReadbackBufferNLRS
+    : public profiler_screenshots::AsyncReadbackBuffer {
+ public:
+  AsyncReadbackBufferNLRS(gl::GLContext* aGL, const gfx::IntSize& aSize,
+                          GLuint aBufferHandle);
+  void CopyFrom(profiler_screenshots::RenderSource* aSource) override;
+  bool MapAndCopyInto(gfx::DataSourceSurface* aSurface,
+                      const gfx::IntSize& aReadSize) override;
+
+ protected:
+  virtual ~AsyncReadbackBufferNLRS();
+  RefPtr<gl::GLContext> mGL;
+  GLuint mBufferHandle = 0;
 };
 
 }  // namespace layers
