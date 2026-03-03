@@ -254,8 +254,7 @@ HttpTransactionChild::OnDataAvailable(nsIRequest* aRequest,
     nsHttp::SendFunc<nsCString> sendFunc =
         [self = UnsafePtr<HttpTransactionChild>(this)](
             const nsCString& aData, uint64_t aOffset, uint32_t aCount) {
-          return self->SendOnDataAvailable(aData, aOffset, aCount,
-                                           TimeStamp::Now());
+          return self->SendOnDataAvailable(aData, aOffset, TimeStamp::Now());
         };
 
     LOG(("  ODA to parent process"));
@@ -296,7 +295,7 @@ HttpTransactionChild::OnDataAvailable(nsIRequest* aRequest,
             nsHttp::SendFunc<nsCString> sendFunc =
                 [self](const nsCString& aData, uint64_t aOffset,
                        uint32_t aCount) {
-                  return self->SendOnDataAvailable(aData, aOffset, aCount,
+                  return self->SendOnDataAvailable(aData, aOffset,
                                                    TimeStamp::Now());
                 };
 

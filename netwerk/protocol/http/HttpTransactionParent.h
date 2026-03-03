@@ -60,7 +60,7 @@ class HttpTransactionParent final : public PHttpTransactionParent,
       const int64_t& aProgressMax,
       Maybe<NetworkAddressArg>&& aNetworkAddressArg);
   mozilla::ipc::IPCResult RecvOnDataAvailable(
-      const nsCString& aData, const uint64_t& aOffset, const uint32_t& aCount,
+      const nsCString& aData, const uint64_t& aOffset,
       const TimeStamp& aOnDataAvailableStartTime);
   mozilla::ipc::IPCResult RecvOnStopRequest(
       const nsresult& aStatus, const bool& aResponseIsComplete,
@@ -115,7 +115,6 @@ class HttpTransactionParent final : public PHttpTransactionParent,
       nsHttpConnectionInfo* aConnInfo,
       const nsILoadInfo::IPAddressSpace& aTargetIPAddressSpace);
   void DoOnDataAvailable(const nsCString& aData, const uint64_t& aOffset,
-                         const uint32_t& aCount,
                          const TimeStamp& aOnDataAvailableStartTime);
   void DoOnStopRequest(
       const nsresult& aStatus, const bool& aResponseIsComplete,

@@ -65,7 +65,6 @@ parent:
                           NetworkAddressArg? networkAddressArg);
   async OnDataAvailable(nsCString data,
                         uint64_t  offset,
-                        uint32_t  count,
                         TimeStamp onDataAvailableStart);
   async OnStopRequest(nsresult status,
                       bool responseIsComplete,
