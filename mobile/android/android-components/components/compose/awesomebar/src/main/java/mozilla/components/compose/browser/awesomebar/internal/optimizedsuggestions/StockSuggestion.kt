@@ -25,7 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,6 +40,7 @@ import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.compose.base.theme.privateColorPalette
 import mozilla.components.compose.base.theme.success
+import mozilla.components.compose.browser.awesomebar.R
 import mozilla.components.compose.browser.awesomebar.internal.utils.StockSuggestionDataProvider
 import mozilla.components.compose.browser.awesomebar.internal.utils.StockSuggestionPreviewModel
 import mozilla.components.concept.awesomebar.AwesomeBar.ChangePercent
@@ -66,11 +69,9 @@ internal fun StockSuggestion(
             ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val changePercentColor = when (changePercent) {
-                is ChangePercent.Positive -> MaterialTheme.colorScheme.success
-                is ChangePercent.Negative -> MaterialTheme.colorScheme.error
-                is ChangePercent.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
-            }
+            val changePercentColor = getChangePercentColor(changePercent)
+            val changeDescription = getChangeDescription(changePercent)
+            val changePercentText = "${changePercent.value}%"
 
             StocksSuggestionIcon(
                 changePercent = changePercent,
@@ -80,7 +81,10 @@ internal fun StockSuggestion(
             Column(
                 modifier = Modifier
                     .padding(start = 8.dp, end = 16.dp)
-                    .weight(1f),
+                    .weight(1f)
+                    .clearAndSetSemantics {
+                        this.contentDescription = "$ticker. $changeDescription. $name. $index"
+                    },
             ) {
                 Row {
                     Text(
@@ -117,11 +121,12 @@ internal fun StockSuggestion(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "${changePercent.value}%",
+                    text = changePercentText,
                     style = AcornTheme.typography.headline7,
                     maxLines = 1,
                     textAlign = TextAlign.End,
                     color = changePercentColor,
+                    modifier = modifier.clearAndSetSemantics {},
                 )
             }
         }
@@ -161,6 +166,28 @@ private fun StocksSuggestionIcon(
             )
         }
     }
+}
+
+@Composable
+private fun getChangePercentColor(changePercent: ChangePercent): Color = when (changePercent) {
+    is ChangePercent.Positive -> MaterialTheme.colorScheme.success
+    is ChangePercent.Negative -> MaterialTheme.colorScheme.error
+    is ChangePercent.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
+}
+
+@Composable
+private fun getChangeDescription(changePercent: ChangePercent): String = when (changePercent) {
+    is ChangePercent.Positive -> stringResource(
+        R.string.mozac_browser_awesomebar_stock_suggestion_increase,
+        changePercent.value.drop(1),
+    )
+
+    is ChangePercent.Negative -> stringResource(
+        R.string.mozac_browser_awesomebar_stock_suggestion_decrease,
+        changePercent.value.drop(1),
+    )
+
+    is ChangePercent.Neutral -> stringResource(R.string.mozac_browser_awesomebar_stock_suggestion_no_change)
 }
 
 @PreviewLightDark
