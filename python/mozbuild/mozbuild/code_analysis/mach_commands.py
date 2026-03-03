@@ -337,23 +337,23 @@ def check(
 
     # Split in several chunks to avoid hitting Python's limit of 100 groups in re
     compile_db = json.loads(open(_compile_db).read())
-    total = 0
     import re
 
     chunk_size = 50
+
+    sources = []
+
     for offset in range(0, len(source), chunk_size):
-        source_chunks = [
-            re.escape(f) for f in source[offset : offset + chunk_size].copy()
-        ]
+        source_chunks = [f for f in source[offset : offset + chunk_size]]
         name_re = re.compile("(" + ")|(".join(source_chunks) + ")")
         for f in compile_db:
             if name_re.search(f["file"]):
-                total = total + 1
+                sources.append(f["file"])
 
     # Filter source to remove excluded files
-    source = _generate_path_list(command_context, source, verbose=verbose)
+    source = _generate_path_list(command_context, sources, verbose=verbose)
 
-    if not total or not source:
+    if not sources or not source:
         command_context.log(
             logging.WARNING,
             "static-analysis",
@@ -369,7 +369,7 @@ def check(
         command_context.topsrcdir,
         command_context.topobjdir,
         get_clang_tidy_config(command_context).checks_with_data,
-        total,
+        len(sources),
     )
 
     footer = StaticAnalysisFooter(command_context.log_manager.terminal, monitor)
