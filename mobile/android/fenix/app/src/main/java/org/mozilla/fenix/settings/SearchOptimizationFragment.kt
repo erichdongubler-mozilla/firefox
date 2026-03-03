@@ -24,35 +24,76 @@ class SearchOptimizationFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.search_optimization_preferences, rootKey)
 
+        val settings = requireContext().settings()
+        val isFeatureEnabled = settings.isSearchOptimizationEnabled
+        val childPreferences = listOf(
+            ChildPreferenceConfig(
+                preference = R.string.pref_key_search_optimization_stocks,
+                isChecked = settings.shouldShowSearchOptimizationStockCard,
+                onDisable = { settings.shouldShowSearchOptimizationStockCard = false },
+            ),
+            ChildPreferenceConfig(
+                preference = R.string.pref_key_search_optimization_sports,
+                isChecked = settings.shouldShowSearchOptimizationSportCard,
+                onDisable = { settings.shouldShowSearchOptimizationSportCard = false },
+            ),
+        )
+
         requirePreference<SwitchPreference>(R.string.pref_key_search_optimization_feature).apply {
-            isChecked = context.settings().isSearchOptimizationEnabled
+            isChecked = isFeatureEnabled
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
                 (newValue as? Boolean)?.let { newOption ->
-                    context.settings().isSearchOptimizationEnabled = newOption
-                    requirePreference<SwitchPreference>(R.string.pref_key_search_optimization_stocks).apply {
-                        isEnabled = newOption
-                        summary = when (newOption) {
-                            true -> null
-                            false -> getString(R.string.preferences_debug_settings_search_optimization_stock_summary)
-                        }
-                        if (!newOption && isChecked) {
-                            isChecked = false
-                            context.settings().shouldShowSearchOptimizationStockCard = false
-                        }
+                    settings.isSearchOptimizationEnabled = newOption
+                    childPreferences.forEach { config ->
+                        updateChildPreference(config.preference, newOption, config.onDisable)
                     }
                 }
                 true
             }
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_search_optimization_stocks).apply {
-            isEnabled = context.settings().isSearchOptimizationEnabled
-            isChecked = context.settings().shouldShowSearchOptimizationStockCard
-            summary = when (context.settings().isSearchOptimizationEnabled) {
+        childPreferences.forEach { config ->
+            setupChildPreference(config.preference, isFeatureEnabled, config.isChecked)
+        }
+    }
+
+    private fun updateChildPreference(
+        preference: Int,
+        isFeatureEnabled: Boolean,
+        onDisable: () -> Unit,
+    ) {
+        requirePreference<SwitchPreference>(preference).apply {
+            isEnabled = isFeatureEnabled
+            summary = when (isFeatureEnabled) {
                 true -> null
-                false -> getString(R.string.preferences_debug_settings_search_optimization_stock_summary)
+                false -> getString(R.string.preferences_debug_settings_search_optimization_card_summary)
+            }
+            if (!isFeatureEnabled && isChecked) {
+                isChecked = false
+                onDisable()
+            }
+        }
+    }
+
+    private fun setupChildPreference(
+        preference: Int,
+        isFeatureEnabled: Boolean,
+        isChecked: Boolean,
+    ) {
+        requirePreference<SwitchPreference>(preference).apply {
+            isEnabled = isFeatureEnabled
+            this.isChecked = isChecked
+            summary = when (isFeatureEnabled) {
+                true -> null
+                false -> getString(R.string.preferences_debug_settings_search_optimization_card_summary)
             }
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
     }
+
+    private data class ChildPreferenceConfig(
+        val preference: Int,
+        val isChecked: Boolean,
+        val onDisable: () -> Unit,
+    )
 }
