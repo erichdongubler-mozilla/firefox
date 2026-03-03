@@ -21,7 +21,6 @@ export class WebsiteChipContainer extends MozLitElement {
   static properties = {
     websites: { type: Array },
     chipType: { type: String },
-    removable: { type: Boolean },
   };
 
   constructor() {
@@ -29,7 +28,6 @@ export class WebsiteChipContainer extends MozLitElement {
     /** @type {ContextWebsite[]} */
     this.websites = [];
     this.chipType = "context-chip";
-    this.removable = false;
   }
 
   #onRemoveWebsite(website, event) {
@@ -64,7 +62,6 @@ export class WebsiteChipContainer extends MozLitElement {
                 .label=${website.label}
                 .href=${website.url}
                 .iconSrc=${website.iconSrc ?? ""}
-                .removable=${this.removable}
                 @ai-website-chip:remove=${e =>
                   this.#onRemoveWebsite(website, e)}
               ></ai-website-chip>

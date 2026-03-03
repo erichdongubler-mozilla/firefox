@@ -9,20 +9,18 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
  * A website chip component for tagging and displaying websites.
  *
  * Two types:
- * - in-line: Supports empty state with "@" symbol + "Tag a tab or site" placeholder
+ * - in-line: Not removable, supports empty state with "@" symbol + "Tag a tab or site" placeholder
  *   - default: favicon + text
  *   - hover: favicon + text (identical to default)
  *   - empty: "@" symbol + "Tag a tab or site" text
- * - context-chip: No empty state support
+ * - context-chip: Removable, no empty state support
  *   - default: favicon + text
- *   - hover (removable): remove button + text
- *   - hover (non-removable): favicon + text (identical to default)
+ *   - hover: remove button + text
  *
  * @property {string} type - Type of chip: "in-line" or "context-chip"
  * @property {string} label - The text content of the chip
  * @property {string} iconSrc - Favicon or icon URL
  * @property {string} href - URL for the link (used with context-chip type)
- * @property {boolean} removable - Whether the chip shows a remove button on hover (default false)
  */
 export class AIWebsiteChip extends MozLitElement {
   static properties = {
@@ -30,7 +28,6 @@ export class AIWebsiteChip extends MozLitElement {
     label: { type: String },
     iconSrc: { type: String },
     href: { type: String },
-    removable: { type: Boolean },
   };
 
   constructor() {
@@ -39,7 +36,6 @@ export class AIWebsiteChip extends MozLitElement {
     this.label = "";
     this.iconSrc = "";
     this.href = "";
-    this.removable = false;
   }
 
   get #isEmpty() {
@@ -47,7 +43,7 @@ export class AIWebsiteChip extends MozLitElement {
   }
 
   get #isRemovable() {
-    return this.removable;
+    return this.type === "context-chip";
   }
 
   #handleClick() {
@@ -79,15 +75,8 @@ export class AIWebsiteChip extends MozLitElement {
     let iconTemplate;
     if (isEmpty) {
       iconTemplate = html`<span class="chip-at">@</span>`;
-    } else {
-      iconTemplate = html`<img
-        class="chip-icon"
-        src=${this.iconSrc || "chrome://global/skin/icons/defaultFavicon.svg"}
-        @error=${e => {
-          e.target.src = "chrome://global/skin/icons/defaultFavicon.svg";
-        }}
-        alt=""
-      />`;
+    } else if (this.iconSrc) {
+      iconTemplate = html`<img class="chip-icon" src=${this.iconSrc} alt="" />`;
     }
 
     const removeButton = isRemovable

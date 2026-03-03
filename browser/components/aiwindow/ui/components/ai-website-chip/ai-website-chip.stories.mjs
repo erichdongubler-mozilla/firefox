@@ -22,9 +22,6 @@ export default {
     href: {
       control: "text",
     },
-    removable: {
-      control: "boolean",
-    },
   },
   parameters: {
     fluent: `
@@ -35,13 +32,12 @@ aiwindow-website-chip-remove-button =
   },
 };
 
-const Template = ({ type, label, iconSrc, href, removable }) => html`
+const Template = ({ type, label, iconSrc, href }) => html`
   <ai-website-chip
     .type=${type}
     .label=${label}
     .iconSrc=${iconSrc}
     .href=${href || ""}
-    .removable=${removable ?? false}
   ></ai-website-chip>
 `;
 
@@ -75,7 +71,6 @@ ContextChip.args = {
   type: "context-chip",
   label: "example.com",
   iconSrc: "chrome://branding/content/icon16.png",
-  removable: true,
 };
 
 export const MixedCollection = () => html`
@@ -91,7 +86,6 @@ export const MixedCollection = () => html`
       label="example.com"
       iconSrc="chrome://branding/content/about-logo.svg"
       href="https://example.com"
-      .removable=${true}
     ></ai-website-chip>
   </div>
 `;
