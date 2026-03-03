@@ -88,5 +88,8 @@ if CONFIG["USE_LIBZ_RS"]:
 if CONFIG["MOZ_JXL"]:
     gkrust_features += ["jxl_decoder"]
 
+if CONFIG["MOZ_BUILD_APP"] == "browser" and CONFIG["OS_ARCH"] == "WINNT":
+    gkrust_features += ["shell_windows"]
+
 # This must remain last.
 gkrust_features = ["gkrust-shared/%s" % f for f in gkrust_features]
