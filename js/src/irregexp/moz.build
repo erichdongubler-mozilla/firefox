@@ -36,6 +36,7 @@ UNIFIED_SOURCES += [
     "RegExpAPI.cpp",
     "RegExpShim.cpp",
     "util/UnicodeShim.cpp",
+    "util/ZoneShimFFI.cpp",
 ]
 SOURCES += [
     "imported/regexp-ast.cc",

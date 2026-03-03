@@ -3700,6 +3700,7 @@ dependencies = [
  "icu_capi",
  "mozglue-static",
  "normalizer_glue",
+ "properties_glue",
  "unicode-bidi-ffi",
 ]
 
@@ -5858,6 +5859,15 @@ name = "profiling"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "74605f360ce573babfe43964cbe520294dcb081afbf8c108fc6e23036b4da2df"
+
+[[package]]
+name = "properties_glue"
+version = "0.1.0"
+dependencies = [
+ "icu_casemap",
+ "icu_collections",
+ "icu_properties",
+]
 
 [[package]]
 name = "prost"

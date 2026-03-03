@@ -18,6 +18,7 @@ gluesmith = { path = "../../fuzz-tests/gluesmith", optional = true }
 icu_capi = { version = "2.1", optional = true, default-features= false, features = ["any_provider", "compiled_data", "segmenter", "calendar"] }
 unicode-bidi-ffi = { path = "../../../../intl/bidi/rust/unicode-bidi-ffi" }
 normalizer_glue = { path = "../../builtin/normalizer_glue" }
+properties_glue = { path = "../../irregexp/properties_glue" }
 
 [features]
 simd-accel = ['encoding_c/simd-accel']

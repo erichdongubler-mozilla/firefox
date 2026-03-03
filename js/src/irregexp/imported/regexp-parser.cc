@@ -8,6 +8,8 @@
 #include "irregexp/imported/regexp-macro-assembler.h"
 #include "irregexp/imported/regexp.h"
 
+#include "js/properties_glue.h"
+
 #ifdef V8_INTL_SUPPORT
 #include "unicode/uniset.h"
 #include "unicode/unistr.h"
@@ -2063,7 +2065,7 @@ bool LookupSpecialPropertyValueName(const char* name,
     return LookupPropertyValueName(UCHAR_GENERAL_CATEGORY, "Unassigned",
                                    !negate, result, nullptr, flags, zone);
   } else {
-    return false;
+    return mozilla_properties_glue_add_property_ranges(static_cast<void*>(result), static_cast<void*>(zone), name, negate, IsUnicodeSets(flags) && IsIgnoreCase(flags));
   }
   return true;
 }
