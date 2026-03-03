@@ -9657,7 +9657,7 @@
 # setup and teardown between each task.
 - name: javascript.options.batch_microtask_execution
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # Whether to treat "ducktyped" error objects like `{message: "<message>", fileName: "foo", lineNumber: 1}`
