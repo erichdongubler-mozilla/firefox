@@ -496,6 +496,8 @@ class nsHttpChannel final : public HttpBaseChannel,
    */
   [[nodiscard]] nsresult ProcessHSTSHeader(nsITransportSecurityInfo* aSecInfo);
 
+  [[nodiscard]] nsresult ProcessWAICTHeader();
+
   void InvalidateCacheEntryForLocation(const char* location);
   void AssembleCacheKey(const char* spec, uint32_t postID, nsACString& key);
   [[nodiscard]] nsresult CreateNewURI(const char* loc, nsIURI** newURI);

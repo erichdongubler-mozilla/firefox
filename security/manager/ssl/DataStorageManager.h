@@ -22,6 +22,7 @@ class DataStorageManager final : public nsIDataStorageManager {
   bool mAlternateServicesCreated = false;
   bool mClientAuthRememberListCreated = false;
   bool mSiteSecurityServiceStateCreated = false;
+  bool mSiteIntegrityServiceStateCreated = false;
 };
 
 }  // namespace mozilla

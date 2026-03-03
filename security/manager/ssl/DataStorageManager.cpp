@@ -58,6 +58,14 @@ DataStorageManager::Get(nsIDataStorageManager::DataStorage aDataStorage,
       // space by limiting values to 24 bytes.
       valueLength = 24;
       break;
+    case nsIDataStorageManager::SiteIntegrityServiceState:
+      if (mSiteIntegrityServiceStateCreated) {
+        return NS_ERROR_ALREADY_INITIALIZED;
+      }
+      mSiteIntegrityServiceStateCreated = true;
+      filename.Assign(u"SiteIntegrityServiceState"_ns);
+      // XXX find valueLength limit
+      break;
     default:
       return NS_ERROR_INVALID_ARG;
   }

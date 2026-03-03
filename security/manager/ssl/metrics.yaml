@@ -52,6 +52,20 @@ data_storage:
       - dkeeler@mozilla.com
     expires: never
     unit: entries
+  site_integrity_service_state:
+    type: quantity
+    description:
+      The number of entries stored in the SiteIntegrityServiceState nsIDataStorage
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1873080
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1873080
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - dkeeler@mozilla.com
+    expires: never
+    unit: entries
 
 tls:
   certificate_verifications:
