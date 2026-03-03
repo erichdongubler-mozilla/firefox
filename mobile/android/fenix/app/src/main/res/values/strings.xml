@@ -3444,7 +3444,9 @@
     <!-- The button text to add tabs to the private tab group in the tab creation tool. -->
     <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Add to private tabs</string>
 
-    <!-- Microsurvey -->
+    <!-- Microsurvey
+        Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+        platform and have no persistent reference in code -->
     <!-- Prompt view -->
     <!-- The microsurvey prompt title. Note: The word "Firefox" should NOT be translated -->
     <string name="micro_survey_prompt_title" tools:ignore="BrandUsage,UnusedResources">Help us make Firefox better. It only takes a minute.</string>
@@ -3477,6 +3479,16 @@
     <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">I don’t use search on Firefox</string>
     <!-- Option for likert scale -->
     <string name="likert_scale_option_8" tools:ignore="UnusedResources">I don’t use sync</string>
+    <!-- Option for likert scale -->
+    <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">It’s slow or buggy</string>
+    <!-- Option for likert scale -->
+    <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Features are hard to find or missing</string>
+    <!-- Option for likert scale -->
+    <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">It’s confusing or hard to use</string>
+    <!-- Option for likert scale -->
+    <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">It’s okay, but not better than other browsers</string>
+    <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+    <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">I plan to keep using Firefox</string>
     <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
     <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Help make printing in Firefox better. It only takes a sec</string>
     <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3491,6 +3503,8 @@
     <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">How satisfied are you with the search experience in Firefox?</string>
     <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
     <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">How satisfied are you with the sync experience in Firefox?</string>
+    <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+    <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Help us improve Firefox. Which best describes your experience so far?</string>
     <!-- Accessibility -->
     <!-- Content description for the survey application icon. Note: The word "Firefox" should NOT be translated.  -->
     <string name="microsurvey_app_icon_content_description" tools:ignore="BrandUsage">Firefox logo</string>
