@@ -252,14 +252,14 @@ pub fn prepare_repeatable_quad(
         return;
     }
 
-    let repeated_rect = LayoutRect::from_origin_and_size(
+    let pattern_rect = LayoutRect::from_origin_and_size(
         local_rect.min,
-        stretch_size + tile_spacing,
+        stretch_size,
     );
 
     let scales = map_prim_to_raster.scale_factors();
-    let pattern_transform = ScaleOffset::from_scale(scales.into()).then_scale(device_pixel_scale.0);
-    let surface_rect: DeviceRect = pattern_transform.map_rect(&repeated_rect);
+    let mut indirect_transform = ScaleOffset::from_scale(scales.into()).then_scale(device_pixel_scale.0);
+    let mut surface_rect: DeviceRect = indirect_transform.map_rect(&pattern_rect);
 
     // TODO: If the source pattern is an image, we can repeat it directly using the
     // repeat shader, without an extra render task. The image primitive has not been
@@ -270,7 +270,8 @@ pub fn prepare_repeatable_quad(
     // want to avoid the extra render task if it is large.
     let num_repetitions = local_rect.area() / stretch_size.area();
     let repeat_using_a_shader = src_task_id.is_some()
-        || (num_repetitions > 16.0 && surface_rect.area() < 1024.0 * 1024.0);
+        || (num_repetitions > 16.0 && surface_rect.width() < 1024.0 && surface_rect.height() < 1024.0)
+        || (num_repetitions > 64.0 && surface_rect.area() < 1024.0 * 1024.0);
 
     if repeat_using_a_shader {
         let (src_task_id, opaque) = match src_task_id {
@@ -279,13 +280,20 @@ pub fn prepare_repeatable_quad(
                 // The source is not an image. Make it one by rendering
                 // the pattern in a render task.
 
+                adjust_indirect_pattern_resolution(
+                    &pattern_rect,
+                    2048.0,
+                    &mut surface_rect,
+                    &mut indirect_transform,
+                );
+
                 let Some(task_id) = prepare_indirect_pattern(
                     prim_spatial_node_index,
                     pic_context.raster_spatial_node_index,
-                    local_rect,
-                    local_rect,
+                    &pattern_rect,
+                    &pattern_rect,
                     &surface_rect,
-                    Some(&pattern_transform),
+                    Some(&indirect_transform),
                     DevicePixelScale::identity(),
                     GpuTransformId::IDENTITY,
                     &pattern,
@@ -475,20 +483,16 @@ pub fn prepare_border_image_nine_patch(
         // for the pattern's coordinate space. On the other hand it means that we have
         // to handle large source patterns and potentially down-scale them.
 
-        // Down-scale until the pattern's fits into 2048 pixels on each axis.
         let mut indirect_transform = base_indirect_transform;
-        let mut w = stretch_size.width * indirect_transform.scale.x;
-        let mut h = stretch_size.height * indirect_transform.scale.y;
-        while w > 2048.0 {
-            indirect_transform.scale.x *= 0.5;
-            w *= 0.5;
-        }
-        while h > 2048.0 {
-            indirect_transform.scale.y *= 0.5;
-            h *= 0.5;
-        }
+        let mut surface_rect = indirect_transform.map_rect(&pattern_rect);
 
-        let surface_rect = indirect_transform.map_rect(&pattern_rect);
+        adjust_indirect_pattern_resolution(
+            &pattern_rect,
+            2048.0,
+            &mut surface_rect,
+            &mut indirect_transform,
+        );
+
         let Some(task_id) = prepare_indirect_pattern(
             prim_spatial_node_index,
             pic_context.raster_spatial_node_index,
@@ -1370,6 +1374,47 @@ fn get_prim_render_strategy(
     QuadRenderStrategy::Tiled {
         x_tiles,
         y_tiles,
+    }
+}
+
+/// Adjust the transform and device rect until the latter fits the provided
+/// maximum size.
+/// Also ensure that near-zero size tasks do are at least
+fn adjust_indirect_pattern_resolution(
+    local_rect: &LayoutRect,
+    max_device_size: f32,
+    device_rect: &mut DeviceRect,
+    indirect_transform: &mut ScaleOffset,
+) {
+    // This catches invalid cases such as NaNs or zeroes that would have caused us
+    // to loop forever.
+    let valid = local_rect.width() > 0.0
+        && local_rect.height() > 0.0
+        && indirect_transform.scale.x != 0.0
+        && indirect_transform.scale.y != 0.0;
+
+    if !valid {
+        return;
+    }
+
+    // Down-scale until the render task fits in the provided maximum size.
+    while device_rect.width() > max_device_size {
+        indirect_transform.scale.x *= 0.5;
+        *device_rect = indirect_transform.map_rect(local_rect);
+    }
+    while device_rect.height() > max_device_size {
+        indirect_transform.scale.y *= 0.5;
+        *device_rect = indirect_transform.map_rect(local_rect);
+    }
+
+    // Up-scale until the render task size rounds to at least one pixel.
+    while device_rect.width() <= 0.5 {
+        indirect_transform.scale.x *= 2.0;
+        *device_rect = indirect_transform.map_rect(local_rect);
+    }
+    while device_rect.height() <= 0.5 {
+        indirect_transform.scale.y *= 2.0;
+        *device_rect = indirect_transform.map_rect(local_rect);
     }
 }
 

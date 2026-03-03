@@ -65,6 +65,7 @@ fuzzy(255,1652) == repeat-conic-negative.yaml repeat-conic-ref.yaml
 fuzzy(1,83164) == tiling-linear-1.yaml tiling-linear-1-ref.yaml
 fuzzy(1,46293) == tiling-linear-2.yaml tiling-linear-2-ref.yaml
 fuzzy(1,62154) == tiling-linear-3.yaml tiling-linear-3-ref.yaml
+== tiling-linear-downscale.yaml tiling-linear-downscale-ref.yaml
 
 fuzzy(1,30) fuzzy-if(platform(win),1,7548) == tiling-radial-1.yaml tiling-radial-1-ref.yaml
 fuzzy(1,10) == tiling-radial-2.yaml tiling-radial-2-ref.yaml
