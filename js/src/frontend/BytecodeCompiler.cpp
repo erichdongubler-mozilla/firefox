@@ -1337,6 +1337,10 @@ ModuleObject* frontend::CompileModule(JSContext* cx, FrontendContext* fc,
 
 static bool InstantiateLazyFunction(JSContext* cx, CompilationInput& input,
                                     const CompilationStencil& stencil) {
+  MOZ_ASSERT(
+      input.options.eagerBaselineStrategy() == JS::EagerBaselineOption::None,
+      "No current support for eager baseline during delazifications.");
+
   mozilla::DebugOnly<uint32_t> lazyFlags =
       static_cast<uint32_t>(input.immutableFlags());
 
