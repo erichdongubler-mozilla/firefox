@@ -774,6 +774,46 @@ class MOZ_STACK_CLASS StatefulMicroTask {
   CycleCollectedJSContext* mCCJS;
 };
 
+void ExtractIncumbentAndSchedulingState(
+    JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
+    JS::Handle<JSObject*> aHostDefinedData, nsIGlobalObject** aIncumbentGlobal,
+    WebTaskSchedulingState** aSchedulingState) {
+  MOZ_ASSERT(aIncumbentGlobal && aSchedulingState);
+  MOZ_ASSERT(!*aIncumbentGlobal && !*aSchedulingState);
+
+  if (aHostDefinedData) {
+    MOZ_RELEASE_ASSERT(JS::GetClass(aHostDefinedData.get()) ==
+                       &sHostDefinedDataClass);
+    JS::Value incumbentGlobalVal =
+        JS::GetReservedSlot(aHostDefinedData, INCUMBENT_SETTING_SLOT);
+    // hostDefinedData is only created when incumbent global exists.
+    MOZ_ASSERT(incumbentGlobalVal.isObject());
+    *aIncumbentGlobal = xpc::NativeGlobal(&incumbentGlobalVal.toObject());
+
+    JS::Value state =
+        JS::GetReservedSlot(aHostDefinedData, SCHEDULING_STATE_SLOT);
+    if (!state.isUndefined()) {
+      *aSchedulingState =
+          static_cast<WebTaskSchedulingState*>(state.toPrivate());
+    }
+  } else {
+    // There are two possible causes for aHostDefinedData to be missing.
+    //   1. It's optimized out, the SpiderMonkey expects the embedding to
+    //   retrieve it on their own.
+    //   2. It's the special case for debugger usage.
+    //
+    // MG:XXX: The handling of incumbent global can be made appreciably more
+    // harmonious through co-evolution with the JS engine, but I have tried to
+    // avoid doing too much divergence for now.
+    JSObject* incumbentGlobalJS =
+        aMicroTask.get().MaybeGetHostDefinedGlobalFromJSMicroTask();
+    MOZ_ASSERT_IF(incumbentGlobalJS, !js::IsWrapper(incumbentGlobalJS));
+    if (incumbentGlobalJS) {
+      *aIncumbentGlobal = xpc::NativeGlobal(incumbentGlobalJS);
+    }
+  }
+}
+
 /* static */
 void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
                     JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
@@ -831,36 +871,8 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
   // Promises carry along a web-task scheduling state as well.
   WebTaskSchedulingState* schedulingState = nullptr;
 
-  if (hostDefinedData) {
-    MOZ_RELEASE_ASSERT(JS::GetClass(hostDefinedData.get()) ==
-                       &sHostDefinedDataClass);
-    JS::Value incumbentGlobalVal =
-        JS::GetReservedSlot(hostDefinedData, INCUMBENT_SETTING_SLOT);
-    // hostDefinedData is only created when incumbent global exists.
-    MOZ_ASSERT(incumbentGlobalVal.isObject());
-    incumbentGlobal = xpc::NativeGlobal(&incumbentGlobalVal.toObject());
-
-    JS::Value state =
-        JS::GetReservedSlot(hostDefinedData, SCHEDULING_STATE_SLOT);
-    if (!state.isUndefined()) {
-      schedulingState = static_cast<WebTaskSchedulingState*>(state.toPrivate());
-    }
-  } else {
-    // There are two possible causes for hostDefinedData to be missing.
-    //   1. It's optimized out, the SpiderMonkey expects the embedding to
-    //   retrieve it on their own.
-    //   2. It's the special case for debugger usage.
-    //
-    // MG:XXX: The handling of incumbent global can be made appreciably more
-    // harmonious through co-evolution with the JS engine, but I have tried to
-    // avoid doing too much divergence for now.
-    JSObject* incumbentGlobalJS =
-        aMicroTask.get().MaybeGetHostDefinedGlobalFromJSMicroTask();
-    MOZ_ASSERT_IF(incumbentGlobalJS, !js::IsWrapper(incumbentGlobalJS));
-    if (incumbentGlobalJS) {
-      incumbentGlobal = xpc::NativeGlobal(incumbentGlobalJS);
-    }
-  }
+  ExtractIncumbentAndSchedulingState(aMicroTask, hostDefinedData,
+                                     &incumbentGlobal, &schedulingState);
 
   {
     const bool isMainThread = NS_IsMainThread();
