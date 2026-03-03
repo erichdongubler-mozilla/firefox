@@ -141,6 +141,13 @@ class AbstractRange : public nsISupports,
   void GetClientRectsAndTexts(mozilla::dom::ClientRectsAndTexts& aResult,
                               ErrorResult& aErr);
   /**
+   * Invokes aCallback.AddRect() for each client rect of this range.
+   * Layout must have been flushed by the caller.
+   */
+  void CollectClientRects(mozilla::RectCallback& aCallback,
+                          bool aClampToEdge = true) const;
+
+  /**
    * This helper function gets rects and correlated text for the given range.
    * @param aTextList optional where nullptr = don't retrieve text
    */
