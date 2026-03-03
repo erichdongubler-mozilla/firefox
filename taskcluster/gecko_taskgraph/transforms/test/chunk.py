@@ -189,7 +189,7 @@ def resolve_dynamic_chunks(config, tasks):
             yield task
             continue
 
-        all_runtimes = get_runtimes(task["test-platform"], task["suite"])
+        all_runtimes = get_runtimes(task["test-platform"], task["test-name"])
         runtimes = {
             m: r
             for m, r in all_runtimes.items()
@@ -243,7 +243,7 @@ def split_chunks(config, tasks):
 
             manifests = task["test-manifests"]
             chunked_manifests = chunk_manifests(
-                task["suite"],
+                task["test-name"],
                 task["test-platform"],
                 task["chunks"],
                 manifests["active"],

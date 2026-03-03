@@ -273,63 +273,56 @@ def chunk_manifests(suite, platform, chunks, manifests):
         A list of length `chunks` where each item contains a list of manifests
         that run in that chunk.
     """
-    if "web-platform-tests" not in suite:
-        all_runtimes = get_runtimes(platform, suite)
+    all_runtimes = get_runtimes(platform, suite)
 
-        # Build runtimes dict, handling manifest includes
-        # Manifest names can be "manifest.toml" or "manifest.toml:included.toml"
-        runtimes = {}
-        for manifest in manifests:
-            total_runtime = 0
-            found = False
+    # Build runtimes dict, handling manifest includes
+    # Manifest names can be "manifest.toml" or "manifest.toml:included.toml"
+    runtimes = {}
+    for manifest in manifests:
+        total_runtime = 0
+        found = False
 
-            # Direct match
-            if manifest in all_runtimes:
-                total_runtime += all_runtimes[manifest]
-                found = True
+        # Direct match
+        if manifest in all_runtimes:
+            total_runtime += all_runtimes[manifest]
+            found = True
 
-            # Also check for included manifests (manifest.toml:*)
-            if manifest.endswith(".toml"):
-                manifest_prefix = manifest + ":"
-                for runtime_key, runtime_value in all_runtimes.items():
-                    if runtime_key.startswith(manifest_prefix):
-                        total_runtime += runtime_value
-                        found = True
+        # Also check for included manifests (manifest.toml:*)
+        if manifest.endswith(".toml"):
+            manifest_prefix = manifest + ":"
+            for runtime_key, runtime_value in all_runtimes.items():
+                if runtime_key.startswith(manifest_prefix):
+                    total_runtime += runtime_value
+                    found = True
 
-            if found:
-                runtimes[manifest] = total_runtime
+        if found:
+            runtimes[manifest] = total_runtime
 
-        # Log if some manifests are missing runtime data
-        manifests_without_data = [m for m in manifests if m not in runtimes]
-        if manifests_without_data and len(runtimes) > 0:
-            missing_list = ", ".join(manifests_without_data[:5])
-            if len(manifests_without_data) > 5:
-                missing_list += f" ... and {len(manifests_without_data) - 5} more"
-            logger.warning(
-                f"chunk_manifests({suite}, {platform}): Missing runtime data for {len(manifests_without_data)}/{len(manifests)} manifests: {missing_list}"
-            )
+    # Log if some manifests are missing runtime data
+    manifests_without_data = [m for m in manifests if m not in runtimes]
+    if manifests_without_data and len(runtimes) > 0:
+        missing_list = ", ".join(manifests_without_data[:5])
+        if len(manifests_without_data) > 5:
+            missing_list += f" ... and {len(manifests_without_data) - 5} more"
+        logger.warning(
+            f"chunk_manifests({suite}, {platform}): Missing runtime data for {len(manifests_without_data)}/{len(manifests)} manifests: {missing_list}"
+        )
 
-        # Separate manifests with 0 runtime from those with real data.
-        # When we fall back to a similar platform's data, some manifests may
-        # not exist in that fallback configuration and end up with 0ms.
-        # Spread them evenly across chunks to limit the damage when they
-        # actually take significant time.
-        zero_runtime_manifests = sorted(m for m in manifests if runtimes.get(m, 0) == 0)
-        nonzero_manifests = [m for m in manifests if runtimes.get(m, 0) != 0]
+    # Separate manifests with 0 runtime from those with real data.
+    # When we fall back to a similar platform's data, some manifests may
+    # not exist in that fallback configuration and end up with 0ms.
+    # Spread them evenly across chunks to limit the damage when they
+    # actually take significant time.
+    zero_runtime_manifests = sorted(m for m in manifests if runtimes.get(m, 0) == 0)
+    nonzero_manifests = [m for m in manifests if runtimes.get(m, 0) != 0]
 
-        cbr = chunk_by_runtime(None, chunks, runtimes)
-        chunked = [c for _, c in cbr.get_chunked_manifests(nonzero_manifests)]
+    cbr = chunk_by_runtime(None, chunks, runtimes)
+    chunked = [c for _, c in cbr.get_chunked_manifests(nonzero_manifests)]
 
-        for i, m in enumerate(zero_runtime_manifests):
-            chunked[i % chunks].append(m)
+    for i, m in enumerate(zero_runtime_manifests):
+        chunked[i % chunks].append(m)
 
-        return chunked
-
-    # Keep track of test paths for each chunk, and the runtime information.
-    # Spread out the test manifests evenly across all chunks.
-    sorted_manifests = sorted(manifests)
-    chunked_manifests = [sorted_manifests[c::chunks] for c in range(chunks)]
-    return chunked_manifests
+    return chunked
 
 
 class BaseManifestLoader(metaclass=ABCMeta):
