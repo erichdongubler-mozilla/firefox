@@ -3486,6 +3486,7 @@ SettingGroupManager.registerGroups({
   cookiesAndSiteData: {
     l10nId: "cookies-site-data-group",
     headingLevel: 2,
+    subcategory: "sitedata",
     items: [
       {
         id: "clearSiteDataButton",
@@ -4021,6 +4022,7 @@ SettingGroupManager.registerGroups({
       {
         id: "popupPolicy",
         l10nId: "permissions-block-popups2",
+        subcategory: "permissions-block-popups",
         items: [
           {
             id: "popupPolicyButton",
