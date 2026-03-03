@@ -701,7 +701,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
       padding: 6px 12px;
       color: var(--button-text-color);
       background-color: var(--button-background-color);
-      font-size: 0.8em;
       font-weight: var(--font-weight-semibold);
 
       &:hover {
