@@ -78,6 +78,7 @@ dap_ffi = { path = "../../../components/dap/ffi" }
 data-encoding-ffi = { path = "../../../../dom/fs/parent/rust/data-encoding-ffi" }
 binary_http = { path = "../../../../netwerk/protocol/http/binary_http" }
 oblivious_http = { path = "../../../../netwerk/protocol/http/oblivious_http" }
+happy_eyeballs_glue = { path = "../../../../netwerk/protocol/http/happy_eyeballs_glue" }
 
 abridged_certs = { path = "../../../../security/manager/ssl/abridged_certs" }
 cert_storage = { path = "../../../../security/manager/ssl/cert_storage" }
