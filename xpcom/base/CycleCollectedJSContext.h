@@ -181,7 +181,7 @@ class MOZ_STACK_CLASS MustConsumeMicroTask {
 
   // Get the execution global for this task without
   // consuming the contents.
-  JSObject* GetExecutionGlobalFromJSMicroTask(JSContext* aCx) const {
+  JSObject* GetExecutionGlobalFromJSMicroTask() const {
     MOZ_ASSERT(IsJSMicroTask());
     JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
     MOZ_ASSERT(task);
