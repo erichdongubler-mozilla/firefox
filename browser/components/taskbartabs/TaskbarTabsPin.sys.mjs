@@ -39,11 +39,13 @@ export const TaskbarTabsPin = {
 
       let shortcut = await createShortcut(aTaskbarTab, iconPath, aRegistry);
 
-      await lazy.ShellService.pinShortcutToTaskbar(
-        aTaskbarTab.id,
-        "Programs",
-        shortcut
-      );
+      if (AppConstants.platform === "win") {
+        await lazy.ShellService.pinShortcutToTaskbar(
+          aTaskbarTab.id,
+          "Programs",
+          shortcut
+        );
+      }
       Glean.webApp.pin.record({ result: "Success" });
     } catch (e) {
       lazy.logConsole.error(`An error occurred while pinning: ${e.message}`);
@@ -68,7 +70,9 @@ export const TaskbarTabsPin = {
       let relativePath = aTaskbarTab.shortcutRelativePath;
 
       try {
-        lazy.ShellService.unpinShortcutFromTaskbar("Programs", relativePath);
+        if (AppConstants.platform === "win") {
+          lazy.ShellService.unpinShortcutFromTaskbar("Programs", relativePath);
+        }
       } catch (e) {
         lazy.logConsole.error(`Failed to unpin shortcut: ${e.message}`);
         unpinError = e;
