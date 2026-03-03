@@ -6748,10 +6748,6 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
   if (IsWaylandPopup()) {
     NativeMoveResizeWaylandPopup(aMoved, aResized);
   } else {
-    // x and y give the position of the window manager frame top-left.
-    if (aMoved) {
-      gtk_window_move(GTK_WINDOW(mShell), moveResizeRect.x, moveResizeRect.y);
-    }
     if (aResized) {
       gtk_window_resize(GTK_WINDOW(mShell), moveResizeRect.width,
                         moveResizeRect.height);
@@ -6761,6 +6757,10 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
         gtk_widget_set_size_request(GTK_WIDGET(mShell), moveResizeRect.width,
                                     moveResizeRect.height);
       }
+    }
+    // x and y give the position of the window manager frame top-left.
+    if (aMoved) {
+      gtk_window_move(GTK_WINDOW(mShell), moveResizeRect.x, moveResizeRect.y);
     }
   }
 
