@@ -136,7 +136,29 @@
         ></moz-button>
       </div>
       <div id="about-translations-empty-section"></div>
-      <div id="about-translations-target-section" tabindex="-1">
+      <div id="about-translations-target-section">
+        <moz-message-bar
+          id="about-translations-translation-error-message"
+          type="error"
+          role="alert"
+          hidden
+        >
+          <div slot="message">
+            <div>
+              <strong
+                data-l10n-id="about-translations-translation-error-heading"
+              ></strong>
+              <span
+                id="about-translations-translation-error-subtext"
+                data-l10n-id="about-translations-translation-error-subtext"
+              ></span>
+            </div>
+            <moz-button
+              id="about-translations-translation-error-button"
+              data-l10n-id="about-translations-translation-error-button"
+            ></moz-button>
+          </div>
+        </moz-message-bar>
         <textarea
           id="about-translations-target-textarea"
           class="about-translations-textarea"

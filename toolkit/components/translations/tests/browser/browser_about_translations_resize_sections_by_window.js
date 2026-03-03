@@ -370,6 +370,16 @@ add_task(
       }
     );
 
+    {
+      const { sourceSectionHeight, targetSectionHeight } =
+        await aboutTranslationsTestUtils.getSectionHeights();
+      is(
+        sourceSectionHeight,
+        targetSectionHeight,
+        "Expected section heights to match after returning to horizontal orientation."
+      );
+    }
+
     await cleanup();
   }
 );

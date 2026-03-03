@@ -271,6 +271,8 @@ class AboutTranslations {
    *   targetLanguageSelector: HTMLElement,
    *   targetSection: HTMLElement,
    *   targetSectionTextArea: HTMLTextAreaElement,
+   *   translationErrorButton: HTMLElement,
+   *   translationErrorMessage: HTMLElement,
    *   unsupportedInfoMessage: HTMLElement,
    * }}
    */
@@ -322,6 +324,12 @@ class AboutTranslations {
       ),
       targetSectionTextArea: /** @type {HTMLTextAreaElement} */ (
         document.getElementById("about-translations-target-textarea")
+      ),
+      translationErrorButton: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-translation-error-button")
+      ),
+      translationErrorMessage: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-translation-error-message")
       ),
       unsupportedInfoMessage: /** @type {HTMLElement} */ (
         document.getElementById("about-translations-unsupported-info-message")
@@ -437,7 +445,8 @@ class AboutTranslations {
       sourceSectionTextArea,
       swapLanguagesButton,
       targetLanguageSelector,
-      targetSection,
+      translationErrorButton,
+      translationErrorMessage,
     } = this.elements;
 
     copyButton.addEventListener("click", this.#onCopyButton);
@@ -464,9 +473,13 @@ class AboutTranslations {
       "change",
       this.#onTargetLanguageInput
     );
-    targetSection.addEventListener(
+    translationErrorButton.addEventListener(
+      "click",
+      this.#onTranslationErrorRetry
+    );
+    translationErrorMessage.addEventListener(
       "pointerdown",
-      this.#onTargetSectionPointerDown
+      this.#onTargetMessageBarPointerDown
     );
     window.addEventListener("resize", this.#onResize);
     window.visualViewport.addEventListener("resize", this.#onResize);
@@ -508,7 +521,7 @@ class AboutTranslations {
   #onSwapLanguagesButton = () => {
     this.#disableSwapLanguagesButton();
     this.#maybeSwapLanguages();
-    this.#maybeRequestTranslation();
+    this.#maybeRequestTranslation({ allowFromErrorState: true });
   };
 
   /**
@@ -525,7 +538,7 @@ class AboutTranslations {
       return;
     }
 
-    this.#maybeRequestTranslation();
+    this.#maybeRequestTranslation({ allowFromErrorState: true });
   };
 
   /**
@@ -533,7 +546,7 @@ class AboutTranslations {
    */
   #onTargetLanguageInput = () => {
     this.#disableSwapLanguagesButton();
-    this.#maybeRequestTranslation();
+    this.#maybeRequestTranslation({ allowFromErrorState: true });
   };
 
   /**
@@ -559,17 +572,23 @@ class AboutTranslations {
   };
 
   /**
-   * Handles pointerdown events within the target section.
+   * Handles pointerdown events within the target message bar.
    *
-   * Focuses the section when the event occurs on empty space.
+   * Focuses the target section when the event occurs on non-interactive content.
    */
-  #onTargetSectionPointerDown = event => {
-    if (event.target?.closest?.("textarea, moz-button")) {
+  #onTargetMessageBarPointerDown = event => {
+    if (event.target?.closest?.("moz-button")) {
       return;
     }
 
-    event.preventDefault();
     this.elements.targetSection.focus();
+  };
+
+  /**
+   * Handles retry clicks from the translation error message.
+   */
+  #onTranslationErrorRetry = () => {
+    this.#maybeRequestTranslation({ allowFromErrorState: true });
   };
 
   /**
@@ -658,6 +677,36 @@ class AboutTranslations {
     unsupportedInfoMessage.style.display = "none";
 
     languageLoadErrorMessage.style.display = "flex";
+  }
+
+  /**
+   * Shows the translation error message in the target section.
+   */
+  #showTranslationErrorMessage() {
+    const { targetSection, translationErrorMessage } = this.elements;
+    if (!translationErrorMessage.hidden) {
+      return;
+    }
+
+    targetSection.classList.add("has-translation-error");
+    translationErrorMessage.hidden = false;
+    this.#disableSwapLanguagesButton();
+    this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+  }
+
+  /**
+   * Hides the translation error message in the target section.
+   */
+  #hideTranslationErrorMessage() {
+    const { targetSection, translationErrorMessage } = this.elements;
+    if (translationErrorMessage.hidden) {
+      return;
+    }
+
+    targetSection.classList.remove("has-translation-error");
+    translationErrorMessage.hidden = true;
+    this.#updateSwapLanguagesButtonEnabledState();
+    this.#requestSectionHeightsUpdate({ scheduleCallback: false });
   }
 
   /**
@@ -881,6 +930,11 @@ class AboutTranslations {
    * values of the language selectors.
    */
   #updateSwapLanguagesButtonEnabledState() {
+    if (!this.elements.translationErrorMessage.hidden) {
+      this.#disableSwapLanguagesButton();
+      return;
+    }
+
     if (this.#selectedLanguagePairIsSwappable()) {
       this.#enableSwapLanguagesButton();
     } else {
@@ -1382,6 +1436,11 @@ class AboutTranslations {
 
   /**
    * Requests translation on a debounce timer, only if the UI conditions are correct to do so.
+   *
+   * @param {object} [options]
+   * @param {boolean} [options.allowFromErrorState=false]
+   *   Allow a translation request when a translation error message is visible, such as retrying
+   *   after a failure or switching languages while an error is showing.
    */
   #maybeRequestTranslation = debounce({
     /**
@@ -1390,10 +1449,12 @@ class AboutTranslations {
      * there is a short break, or enough events have happened that it's worth sending
      * in a new translation request.
      */
-    onDebounce: async () => {
+    onDebounce: async ({ allowFromErrorState = false } = {}) => {
       if (!this.#isFeatureEnabled) {
         return;
       }
+
+      let translationId = null;
 
       try {
         this.#updateURLFromUI();
@@ -1414,16 +1475,26 @@ class AboutTranslations {
             "dir",
             AT_getScriptDirection(AT_getAppLocale())
           );
+          this.#hideTranslationErrorMessage();
           return;
         }
 
         if (this.#isDetectedLanguageUnsupported()) {
           this.#updateSwapLanguagesButtonEnabledState();
           this.#setTargetText("");
+          this.#hideTranslationErrorMessage();
           return;
         }
 
-        const translationId = ++this.#translationId;
+        if (
+          !this.elements.translationErrorMessage.hidden &&
+          !allowFromErrorState
+        ) {
+          return;
+        }
+
+        translationId = ++this.#translationId;
+        this.#hideTranslationErrorMessage();
         this.#maybeDisplayTranslatingPlaceholder();
 
         await this.#ensureTranslatorMatchesSelectedLanguagePair();
@@ -1459,6 +1530,7 @@ class AboutTranslations {
         );
 
         this.#setTargetText(translatedText, { isTranslationResult: true });
+        this.#hideTranslationErrorMessage();
         this.#updateSwapLanguagesButtonEnabledState();
         document.dispatchEvent(
           new CustomEvent("AboutTranslationsTest:TranslationComplete", {
@@ -1470,6 +1542,12 @@ class AboutTranslations {
         AT_log(`Translation done in ${duration / 1000} seconds`);
       } catch (error) {
         AT_logError(error);
+        if (translationId === null || translationId !== this.#translationId) {
+          return;
+        }
+        this.#setTargetText("");
+        this.#showTranslationErrorMessage();
+        this.#updateSwapLanguagesButtonEnabledState();
       }
     },
 
