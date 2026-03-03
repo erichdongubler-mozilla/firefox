@@ -177,8 +177,8 @@ add_task(async function () {
     if (name == "csp") {
       await SpecialPowers.spawn(browser.browsingContext, [], async function () {
         is(
-          content.document.querySelector("img").complete,
-          false,
+          content.document.querySelector("img").naturalWidth,
+          0,
           "img was blocked"
         );
         is(
