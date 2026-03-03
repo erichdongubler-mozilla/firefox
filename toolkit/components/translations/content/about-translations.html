@@ -125,6 +125,34 @@
       </moz-select>
 
       <div id="about-translations-source-section">
+        <moz-message-bar
+          id="about-translations-detected-language-unsupported-message"
+          type="info"
+          role="alert"
+          class="about-translations-section-message"
+          hidden
+        >
+          <div
+            slot="message"
+            class="about-translations-section-message-content"
+          >
+            <div>
+              <strong
+                id="about-translations-detected-language-unsupported-heading"
+              ></strong>
+              <span
+                class="about-translations-section-message-subtext"
+                data-l10n-id="about-translations-detected-language-unsupported-subtext"
+              ></span>
+            </div>
+            <a
+              id="about-translations-detected-language-unsupported-learn-more-link"
+              is="moz-support-link"
+              class="about-translations-section-message-action"
+              support-page="website-translation"
+            ></a>
+          </div>
+        </moz-message-bar>
         <textarea
           id="about-translations-source-textarea"
           class="about-translations-textarea"
