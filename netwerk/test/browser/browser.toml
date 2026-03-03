@@ -261,6 +261,13 @@ support-files = [
   "page_with_non_trackers.html",
   "page_with_non_trackers.html^headers^",
   "fetch_from_tracker.sjs",
+  "lna_feature_policy_parent.html",
+  "lna_feature_policy_iframe_same_origin.html",
+  "lna_feature_policy_iframe_cross_origin.html",
+  "lna_feature_policy_nested.html",
+]
+skip-if = [
+  "verify", # bug 1988614 - timeouts
 ]
 
 ["browser_test_local_network_trackers.js"]
