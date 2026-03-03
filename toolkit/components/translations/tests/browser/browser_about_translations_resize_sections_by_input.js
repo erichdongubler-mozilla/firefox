@@ -44,6 +44,10 @@ add_task(async function test_about_translations_no_resize_for_small_input() {
     {
       expected: [
         [
+          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+          { sourceText: "Hello world" },
+        ],
+        [
           AboutTranslationsTestUtils.Events.TranslationRequested,
           { translationId: 1 },
         ],
@@ -105,6 +109,10 @@ add_task(async function test_about_translations_resize_by_input() {
   await aboutTranslationsTestUtils.assertEvents(
     {
       expected: [
+        [
+          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+          { sourceText: largeExpandingInput },
+        ],
         [
           AboutTranslationsTestUtils.Events.TranslationRequested,
           { translationId: 1 },
@@ -187,6 +195,10 @@ add_task(async function test_about_translations_resize_by_input() {
     {
       expected: [
         [
+          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+          { sourceText: halfLargeExpandingInput },
+        ],
+        [
           AboutTranslationsTestUtils.Events.TranslationRequested,
           { translationId: 2 },
         ],
@@ -236,6 +248,10 @@ add_task(async function test_about_translations_resize_by_input() {
   await aboutTranslationsTestUtils.assertEvents(
     {
       expected: [
+        [
+          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+          { sourceText: "" },
+        ],
         [
           AboutTranslationsTestUtils.Events.SectionHeightsChanged,
           {

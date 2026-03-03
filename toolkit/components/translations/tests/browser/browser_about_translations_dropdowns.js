@@ -150,6 +150,10 @@ add_task(
             AboutTranslationsTestUtils.Events.DetectedLanguageUpdated,
             { language: "es" },
           ],
+          [
+            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+            { sourceText: "Hola mundo, ¿cómo estás?" },
+          ],
         ],
       },
       async () => {

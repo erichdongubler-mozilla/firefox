@@ -42,6 +42,10 @@ add_task(
       {
         expected: [
           [
+            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+            { sourceText: expandingInput },
+          ],
+          [
             AboutTranslationsTestUtils.Events.TranslationRequested,
             { translationId: 1 },
           ],
@@ -177,6 +181,10 @@ add_task(
     await aboutTranslationsTestUtils.assertEvents(
       {
         expected: [
+          [
+            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+            { sourceText: expandingInput },
+          ],
           [
             AboutTranslationsTestUtils.Events.TranslationRequested,
             { translationId: 1 },

@@ -14,9 +14,21 @@
 import { Translator } from "chrome://global/content/translations/Translator.mjs";
 
 /**
- * Allows tests to override the delay milliseconds so that they can run faster.
+ * This is the delay for the set of throttled reactions to input in the source text area.
+ * These actions will trigger at most once every 200 milliseconds while the source text area is receiving input.
+ *
+ * Applying this on the window allows tests to override the delay milliseconds for throttled input handling.
  */
-window.DEBOUNCE_DELAY = 200;
+window.THROTTLE_DELAY = 200;
+
+/**
+ * This is the delay for the set of debounced reactions to input in the source text area.
+ * These actions will trigger 400 milliseconds after the final text-area input.
+ * Further input to the text area within the 400ms window will reset this timer.
+ *
+ * Applying this on the window allows tests to override the delay milliseconds for debounced input handling.
+ */
+window.DEBOUNCE_DELAY = 400;
 
 /**
  * The default duration, in milliseconds, that the copy button remains in the "copied" state
@@ -236,6 +248,7 @@ class AboutTranslations {
     this.#updateTargetScriptDirection();
     this.#updateSourceSectionClearButtonVisibility();
     this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+    this.#updateURLFromUI();
     this.#maybeRequestTranslation();
 
     document.body.style.visibility = "visible";
@@ -521,6 +534,7 @@ class AboutTranslations {
   #onSwapLanguagesButton = () => {
     this.#disableSwapLanguagesButton();
     this.#maybeSwapLanguages();
+    this.#updateURLFromUI();
     this.#maybeRequestTranslation({ allowFromErrorState: true });
   };
 
@@ -538,6 +552,7 @@ class AboutTranslations {
       return;
     }
 
+    this.#updateURLFromUI();
     this.#maybeRequestTranslation({ allowFromErrorState: true });
   };
 
@@ -546,6 +561,7 @@ class AboutTranslations {
    */
   #onTargetLanguageInput = () => {
     this.#disableSwapLanguagesButton();
+    this.#updateURLFromUI();
     this.#maybeRequestTranslation({ allowFromErrorState: true });
   };
 
@@ -554,7 +570,7 @@ class AboutTranslations {
    */
   #onSourceTextInput = () => {
     this.#updateSourceSectionClearButtonVisibility();
-    this.#maybeRequestTranslation();
+    this.#handleSourceTextInput();
   };
 
   /**
@@ -1435,124 +1451,16 @@ class AboutTranslations {
   }
 
   /**
-   * Requests translation on a debounce timer, only if the UI conditions are correct to do so.
-   *
-   * @param {object} [options]
-   * @param {boolean} [options.allowFromErrorState=false]
-   *   Allow a translation request when a translation error message is visible, such as retrying
-   *   after a failure or switching languages while an error is showing.
+   * Schedules reactions to input in the source text area in three categories
+   * with different considerations for the timing in which the actions are triggered.
    */
-  #maybeRequestTranslation = debounce({
+  #handleSourceTextInput = scheduleInputHandling({
     /**
-     * Debounce the translation requests so that the worker doesn't fire for every
-     * single keyboard input, but instead the keyboard events are ignored until
-     * there is a short break, or enough events have happened that it's worth sending
-     * in a new translation request.
+     * These actions happen every time input is received to the source text area.
+     *
+     * These actions should be cheap to call, and of high importance: things that we
+     * likely want to react to immediately, such as clearing the entirety of the text.
      */
-    onDebounce: async ({ allowFromErrorState = false } = {}) => {
-      if (!this.#isFeatureEnabled) {
-        return;
-      }
-
-      let translationId = null;
-
-      try {
-        this.#updateURLFromUI();
-
-        this.#requestSectionHeightsUpdate({ scheduleCallback: false });
-
-        await this.#maybeUpdateDetectedSourceLanguage();
-
-        const sourceText = this.#getSourceText();
-        const selectedLanguagePair = this.#getSelectedLanguagePair();
-
-        if (!sourceText || !selectedLanguagePair) {
-          // The conditions for translation are not met.
-          this.#setTargetText("");
-          this.#destroyTranslator();
-          this.#updateSwapLanguagesButtonEnabledState();
-          this.elements.targetSectionTextArea.setAttribute(
-            "dir",
-            AT_getScriptDirection(AT_getAppLocale())
-          );
-          this.#hideTranslationErrorMessage();
-          return;
-        }
-
-        if (this.#isDetectedLanguageUnsupported()) {
-          this.#updateSwapLanguagesButtonEnabledState();
-          this.#setTargetText("");
-          this.#hideTranslationErrorMessage();
-          return;
-        }
-
-        if (
-          !this.elements.translationErrorMessage.hidden &&
-          !allowFromErrorState
-        ) {
-          return;
-        }
-
-        translationId = ++this.#translationId;
-        this.#hideTranslationErrorMessage();
-        this.#maybeDisplayTranslatingPlaceholder();
-
-        await this.#ensureTranslatorMatchesSelectedLanguagePair();
-        if (translationId !== this.#translationId) {
-          // This translation request is no longer relevant.
-          return;
-        }
-
-        document.dispatchEvent(
-          new CustomEvent("AboutTranslationsTest:TranslationRequested", {
-            detail: { translationId },
-          })
-        );
-
-        const startTime = performance.now();
-        const translationRequest = this.#translator.translate(
-          sourceText,
-          AT_isHtmlTranslation()
-        );
-
-        const translatedText = await translationRequest;
-        if (translationId !== this.#translationId) {
-          // This translation request is no longer relevant.
-          return;
-        }
-
-        performance.measure(
-          `AboutTranslations: Translate ${selectedLanguagePair.sourceLanguage} → ${selectedLanguagePair.targetLanguage} with ${sourceText.length} characters.`,
-          {
-            start: startTime,
-            end: performance.now(),
-          }
-        );
-
-        this.#setTargetText(translatedText, { isTranslationResult: true });
-        this.#hideTranslationErrorMessage();
-        this.#updateSwapLanguagesButtonEnabledState();
-        document.dispatchEvent(
-          new CustomEvent("AboutTranslationsTest:TranslationComplete", {
-            detail: { translationId },
-          })
-        );
-
-        const duration = performance.now() - startTime;
-        AT_log(`Translation done in ${duration / 1000} seconds`);
-      } catch (error) {
-        AT_logError(error);
-        if (translationId === null || translationId !== this.#translationId) {
-          return;
-        }
-        this.#setTargetText("");
-        this.#showTranslationErrorMessage();
-        this.#updateSwapLanguagesButtonEnabledState();
-      }
-    },
-
-    // Mark the events so that they show up in the Firefox Profiler. This makes it handy
-    // to visualize the debouncing behavior.
     doEveryTime: () => {
       if (!this.#isFeatureEnabled) {
         return;
@@ -1565,11 +1473,170 @@ class AboutTranslations {
 
       if (!sourceText) {
         this.#setTargetText("");
+
+        if (this.#isDetectLanguageSelected()) {
+          this.#resetDetectLanguageOptionText();
+          this.elements.sourceSectionTextArea.setAttribute(
+            "dir",
+            AT_getScriptDirection(AT_getAppLocale())
+          );
+        }
+
+        this.#updateURLFromUI();
+        this.#updateSwapLanguagesButtonEnabledState();
       }
 
       this.#updateSourceScriptDirection();
     },
+
+    /**
+     * These actions are throttled, such that they occur frequently while the text area is receiving input,
+     * but they will not occur every time the text area receives input.
+     *
+     * These actions may be more expensive to call than do-every-time actions, but are still necessary for
+     * making the UI appear fluid and reactive to input, such as updating the height of the sections, or
+     * updating the detected language of the text.
+     */
+    onThrottle: async () => {
+      if (!this.#isFeatureEnabled) {
+        return;
+      }
+
+      try {
+        this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+        await this.#maybeUpdateDetectedSourceLanguage();
+      } catch (error) {
+        AT_logError(error);
+      }
+    },
+
+    /**
+     * These actions are debounced, such that they occur only when active input to the text area has stopped
+     * for a determined amount of time.
+     *
+     * These are the most expensive actions to call, such as requesting translations, which we should only invoke
+     * when we're reasonably certain that the user has completed their source-text input for the moment.
+     */
+    onDebounce: async () => {
+      const sourceText = this.#getSourceText();
+      document.dispatchEvent(
+        new CustomEvent("AboutTranslationsTest:SourceTextInputDebounced", {
+          detail: { sourceText },
+        })
+      );
+      if (sourceText) {
+        this.#updateURLFromUI();
+      }
+      await this.#maybeRequestTranslation();
+    },
   });
+
+  /**
+   * Requests translation when the UI conditions are met.
+   *
+   * @param {object} [options]
+   * @param {boolean} [options.allowFromErrorState=false]
+   *   Allow a translation request when a translation error message is visible, such as retrying
+   *   after a failure or switching languages while an error is showing.
+   * @returns {Promise<void>}
+   */
+  async #maybeRequestTranslation({ allowFromErrorState = false } = {}) {
+    if (!this.#isFeatureEnabled) {
+      return;
+    }
+
+    let translationId = null;
+
+    try {
+      await this.#maybeUpdateDetectedSourceLanguage();
+
+      const sourceText = this.#getSourceText();
+      const selectedLanguagePair = this.#getSelectedLanguagePair();
+
+      if (!sourceText || !selectedLanguagePair) {
+        // The conditions for translation are not met.
+        this.#setTargetText("");
+        this.#destroyTranslator();
+        this.#updateSwapLanguagesButtonEnabledState();
+        this.elements.targetSectionTextArea.setAttribute(
+          "dir",
+          AT_getScriptDirection(AT_getAppLocale())
+        );
+        this.#hideTranslationErrorMessage();
+        return;
+      }
+
+      if (this.#isDetectedLanguageUnsupported()) {
+        this.#updateSwapLanguagesButtonEnabledState();
+        this.#setTargetText("");
+        this.#hideTranslationErrorMessage();
+        return;
+      }
+
+      if (
+        !this.elements.translationErrorMessage.hidden &&
+        !allowFromErrorState
+      ) {
+        return;
+      }
+
+      translationId = ++this.#translationId;
+      this.#hideTranslationErrorMessage();
+      this.#maybeDisplayTranslatingPlaceholder();
+
+      await this.#ensureTranslatorMatchesSelectedLanguagePair();
+      if (translationId !== this.#translationId) {
+        // This translation request is no longer relevant.
+        return;
+      }
+
+      document.dispatchEvent(
+        new CustomEvent("AboutTranslationsTest:TranslationRequested", {
+          detail: { translationId },
+        })
+      );
+
+      const startTime = performance.now();
+      const translationRequest = this.#translator.translate(
+        sourceText,
+        AT_isHtmlTranslation()
+      );
+
+      const translatedText = await translationRequest;
+      if (translationId !== this.#translationId) {
+        // This translation request is no longer relevant.
+        return;
+      }
+
+      performance.measure(
+        `AboutTranslations: Translate ${selectedLanguagePair.sourceLanguage} → ${selectedLanguagePair.targetLanguage} with ${sourceText.length} characters.`,
+        {
+          start: startTime,
+          end: performance.now(),
+        }
+      );
+
+      this.#setTargetText(translatedText, { isTranslationResult: true });
+      this.#hideTranslationErrorMessage();
+      this.#updateSwapLanguagesButtonEnabledState();
+      document.dispatchEvent(
+        new CustomEvent("AboutTranslationsTest:TranslationComplete", {
+          detail: { translationId },
+        })
+      );
+
+      const duration = performance.now() - startTime;
+      AT_log(`Translation done in ${duration / 1000} seconds`);
+    } catch (error) {
+      AT_logError(error);
+      if (translationId === null || translationId !== this.#translationId) {
+        return;
+      }
+      this.#setTargetText("");
+      this.#showTranslationErrorMessage();
+      this.#updateSwapLanguagesButtonEnabledState();
+    }
+  }
 
   /**
    * Requests that the heights of each section is updated to at least match its content.
@@ -2001,50 +2068,46 @@ function requestTranslationsPort(languagePair) {
 }
 
 /**
- * Debounce a function so that it is only called after some wait time with no activity.
- * This is good for grouping text entry via keyboard.
+ * Creates an input handler that runs callbacks immediately, on a throttle interval,
+ * and after input has been idle for a debounce delay.
  *
  * @param {object} settings
- * @param {Function} settings.onDebounce
  * @param {Function} settings.doEveryTime
+ *   Runs for every input event.
+ * @param {Function} settings.onThrottle
+ *   Runs at most once per throttle interval while input continues.
+ * @param {Function} settings.onDebounce
+ *   Runs once after input has been idle for the debounce delay.
  * @returns {Function}
  */
-function debounce({ onDebounce, doEveryTime }) {
+function scheduleInputHandling({ doEveryTime, onThrottle, onDebounce }) {
   /** @type {number | null} */
-  let timeoutId = null;
-  let lastDispatch = null;
+  let debounceTimeoutId = null;
+
+  /** @type {Promise<void> | null} */
+  let throttlePromise = null;
+
+  /** @type {object[]} */
+  let latestArgs = [];
 
   return (...args) => {
+    latestArgs = args;
     doEveryTime(...args);
 
-    const now = Date.now();
-    if (lastDispatch === null) {
-      // This is the first call to the function.
-      lastDispatch = now;
+    if (!throttlePromise) {
+      const { promise, resolve } = Promise.withResolvers();
+      throttlePromise = promise
+        .then(() => onThrottle(...latestArgs))
+        .finally(() => {
+          throttlePromise = null;
+        });
+      setTimeout(resolve, window.THROTTLE_DELAY);
     }
 
-    const timeLeft = lastDispatch + window.DEBOUNCE_DELAY - now;
-
-    // Always discard the old timeout, either the function will run, or a new
-    // timer will be scheduled.
-    clearTimeout(timeoutId);
-
-    if (timeLeft <= 0) {
-      // It's been long enough to go ahead and call the function.
-      timeoutId = null;
-      lastDispatch = null;
-      onDebounce(...args);
-      return;
-    }
-
-    // Re-set the timeout with the current time left.
-    clearTimeout(timeoutId);
-
-    timeoutId = setTimeout(() => {
-      // Timeout ended, call the function.
-      timeoutId = null;
-      lastDispatch = null;
-      onDebounce(...args);
-    }, timeLeft);
+    clearTimeout(debounceTimeoutId);
+    debounceTimeoutId = setTimeout(() => {
+      debounceTimeoutId = null;
+      onDebounce(...latestArgs);
+    }, window.DEBOUNCE_DELAY);
   };
 }
