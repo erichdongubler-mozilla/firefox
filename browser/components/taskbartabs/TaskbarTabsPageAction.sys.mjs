@@ -38,10 +38,12 @@ export const TaskbarTabsPageAction = {
     let isPopupWindow = !aWindow.toolbar.visible;
     let isPrivate = lazy.PrivateBrowsingUtils.isWindowPrivate(aWindow);
     let isWin32 = AppConstants.platform === "win";
+    let isLinux = AppConstants.platform === "linux";
     let isMsix =
       isWin32 && Services.sysinfo.getProperty("hasWinPackageId", false); // Bug 1979190
 
-    if (isPopupWindow || isPrivate || !isWin32 || isMsix) {
+    let isSupportedPlatform = (isWin32 || isLinux) && !isMsix;
+    if (isPopupWindow || isPrivate || !isSupportedPlatform) {
       lazy.logConsole.info("Not initializing Taskbar Tabs Page Action.");
       return;
     }
