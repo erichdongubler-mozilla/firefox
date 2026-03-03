@@ -88,6 +88,7 @@ import org.mozilla.fenix.components.menu.store.MenuStore
 import org.mozilla.fenix.components.menu.store.SummarizationMenuState
 import org.mozilla.fenix.components.menu.store.TranslationInfo
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
+import org.mozilla.fenix.components.share.ShareSheetLauncherImpl
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
 import org.mozilla.fenix.ext.openToBrowser
@@ -360,6 +361,15 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 scope = coroutineScope,
                                 customTab = customTab,
                                 webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
+                                shareSheetLauncher = ShareSheetLauncherImpl(
+                                    browserStore = browserStore,
+                                    navController = findNavController(),
+                                    onDismiss = {
+                                        lifecycleScope.launch(Dispatchers.Main) {
+                                            this@MenuDialogFragment.dismiss()
+                                        }
+                                    },
+                                ),
                             ),
                             MenuTelemetryMiddleware(
                                 accessPoint = args.accesspoint,
