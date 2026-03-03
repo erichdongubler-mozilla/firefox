@@ -1,6 +1,6 @@
 import pytest
 
-URL = "https://products.franmar.com/collections/consumer-products/"
+URL = "https://give.umrelief.org/give/480879/#!/donation/checkout"
 
 
 @pytest.mark.only_platforms("android")

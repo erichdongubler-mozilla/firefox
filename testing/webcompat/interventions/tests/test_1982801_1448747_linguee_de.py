@@ -1,6 +1,8 @@
 import pytest
 
-URL = "https://products.franmar.com/collections/consumer-products/"
+URL = (
+    "https://www.linguee.de/deutsch-englisch/uebersetzung/einen%20schnitt%20machen.html"
+)
 
 
 @pytest.mark.only_platforms("android")

@@ -1,6 +1,6 @@
 import pytest
 
-URL = "https://products.franmar.com/collections/consumer-products/"
+URL = "https://www.themusiclab.org/quizzes/miq"
 
 
 @pytest.mark.only_platforms("android")
