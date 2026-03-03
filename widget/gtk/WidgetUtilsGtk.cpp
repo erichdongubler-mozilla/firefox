@@ -415,6 +415,9 @@ RefPtr<FocusRequestPromise> RequestWaylandFocusPromise() {
     return nullptr;
   }
   wl_surface* surface = gdk_wayland_window_get_wl_surface(gdkWindow);
+  if (!surface) {
+    return nullptr;
+  }
 
   RefPtr<FocusRequestPromise::Private> transferPromise =
       new FocusRequestPromise::Private(__func__);
