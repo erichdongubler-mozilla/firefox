@@ -10382,9 +10382,14 @@ var TabContextMenu = {
     let contextSeparateSplitView = document.getElementById(
       "context_separateSplitView"
     );
+    let contextReverseSplitView = document.getElementById(
+      "context_reverseSplitView"
+    );
     let hasSplitViewTab = this.contextTabs.some(tab => tab.splitview);
     contextMoveTabToNewSplitView.hidden = !splitViewEnabled || hasSplitViewTab;
     contextSeparateSplitView.hidden = !splitViewEnabled || !hasSplitViewTab;
+    contextReverseSplitView.hidden =
+      !splitViewEnabled || !hasSplitViewTab || this.multiselected;
     if (splitViewEnabled) {
       contextMoveTabToNewSplitView.removeAttribute("data-l10n-id");
       contextMoveTabToNewSplitView.setAttribute(
@@ -10925,6 +10930,10 @@ var TabContextMenu = {
     splitviews.forEach(splitview =>
       gBrowser.unsplitTabs(splitview, "menu_separate")
     );
+  },
+
+  reverseSplitView() {
+    this.contextTab.splitview?.reverseTabs("menu");
   },
 
   addNewBadge(menuItem) {
