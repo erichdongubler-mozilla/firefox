@@ -201,7 +201,7 @@ class SessionStorageObserverChild final : public PSessionStorageObserverChild {
 
  public:
   void AssertIsOnOwningThread() const {
-    NS_ASSERT_OWNINGTHREAD(LocalStorageCacheChild);
+    NS_ASSERT_OWNINGTHREAD(SessionStorageObserverChild);
   }
 
  private:
@@ -239,7 +239,7 @@ class SessionStorageCacheChild final
 
  public:
   void AssertIsOnOwningThread() const {
-    NS_ASSERT_OWNINGTHREAD(SesionStoragManagerChild);
+    NS_ASSERT_OWNINGTHREAD(SessionStorageCacheChild);
   }
 
  private:
@@ -274,7 +274,7 @@ class SessionStorageManagerChild final
 
  public:
   void AssertIsOnOwningThread() const {
-    NS_ASSERT_OWNINGTHREAD(SesionStoragManagerChild);
+    NS_ASSERT_OWNINGTHREAD(SessionStorageManagerChild);
   }
 
  private:
