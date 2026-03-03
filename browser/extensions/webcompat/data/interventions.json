@@ -5281,7 +5281,7 @@
       }
     ]
   },
-  "1902507": {
+  "1902507_1": {
     "label": "riverside.com/riverside.fm",
     "bugs": {
       "1902507": {
@@ -5293,7 +5293,6 @@
       {
         "platforms": ["all"],
         "only_channels": ["nightly"],
-        "ua_string": ["Safari"],
         "content_scripts": {
           "all_frames": true,
           "js": ["bug1994562-shim-mstp-mstg-on-window.js"]
@@ -5302,7 +5301,6 @@
       {
         "platforms": ["all"],
         "only_channels": ["nightly"],
-        "ua_string": ["Safari"],
         "content_scripts": {
           "all_frames": true,
           "js": ["bug1913599-shim-createencodedstreams.js"]
@@ -5311,7 +5309,6 @@
       {
         "platforms": ["all"],
         "only_channels": ["nightly"],
-        "ua_string": ["Safari"],
         "content_scripts": {
           "all_frames": true,
           "js": ["bug1902507-nofrozenicecandidatepairstats.js"]
@@ -5320,11 +5317,48 @@
       {
         "platforms": ["all"],
         "only_channels": ["nightly"],
-        "ua_string": ["Safari"],
         "content_scripts": {
           "all_frames": true,
           "js": ["bug1902507-ssrcmsid.js"]
         }
+      }
+    ]
+  },
+  "1902507_2": {
+    "label": "riverside.com/riverside.fm studio",
+    "bugs": {
+      "1902507": {
+        "issue": "broken-meetings",
+        "matches": [
+          "https://riverside.fm/studio*",
+          "https://riverside.com/studio*"
+        ]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "only_channels": ["nightly"],
+        "ua_string": ["Safari"]
+      }
+    ]
+  },
+  "1902507_3": {
+    "label": "riverside.com/riverside.fm dashboard",
+    "bugs": {
+      "1902507": {
+        "issue": "broken-login",
+        "matches": [
+          "https://riverside.fm/dashboard*",
+          "https://riverside.com/dashboard*"
+        ]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "only_channels": ["nightly"],
+        "ua_string": ["Chrome"]
       }
     ]
   },
