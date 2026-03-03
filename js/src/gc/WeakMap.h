@@ -8,8 +8,8 @@
 #define gc_WeakMap_h
 
 #include "mozilla/Atomics.h"
-#include "mozilla/LinkedList.h"
 
+#include "ds/SlimLinkedList.h"
 #include "gc/AllocKind.h"
 #include "gc/Barrier.h"
 #include "gc/Marking.h"
@@ -120,7 +120,7 @@ using WeakMapColors = HashMap<WeakMapBase*, js::gc::CellColor,
 
 // Common base class for all WeakMap specializations, used for calling
 // subclasses' GC-related methods.
-class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
+class WeakMapBase : public SlimLinkedListElement<WeakMapBase> {
   friend class js::GCMarker;
 
  public:

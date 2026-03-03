@@ -21,9 +21,9 @@ WeakMapBase::WeakMapBase(JSObject* memOf, Zone* zone)
   MOZ_ASSERT(!IsMarked(mapColor()));
 
   if (isSystem()) {
-    zone->gcSystemWeakMaps().insertFront(this);
+    zone->gcSystemWeakMaps().pushFront(this);
   } else {
-    zone->gcUserWeakMaps().insertFront(this);
+    zone->gcUserWeakMaps().pushFront(this);
   }
 
   if (zone->isGCMarking()) {
@@ -227,7 +227,7 @@ void Zone::sweepWeakMaps(JSTracer* trc) {
           AutoLockSweepingLock lock(trc->runtime());
           m->clearAndCompact();
         }
-        m->removeFrom(*list);
+        list->remove(m);
       }
       m = next;
     }

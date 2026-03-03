@@ -179,6 +179,13 @@ WeakMap<K, V, AP>::~WeakMap() {
                   !IsInsideNursery(gc::ToMarkable(value)));
   }
 #endif
+
+  // This is necessary because debugger weak maps can get destroyed before
+  // weakmap sweeping proper.
+  if (isInList()) {
+    MOZ_ASSERT(isSystem());
+    zone()->gcSystemWeakMaps().remove(this);
+  }
 }
 
 // If the entry is live, ensure its key and value are marked. Also make sure the
