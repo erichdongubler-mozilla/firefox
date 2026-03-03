@@ -1007,9 +1007,11 @@ void PerfSpewer::saveWasmCodeDebugInfo(uintptr_t base,
 
 void PerfSpewer::saveJSProfile(JitCode* code, UniqueChars& desc,
                                JSScript* script) {
-  MOZ_ASSERT(PerfEnabled());
   MOZ_ASSERT(code && desc);
   AutoLockPerfSpewer lock;
+  if (!PerfEnabled()) {
+    return;
+  }
   JS::JitCodeRecord* maybeProfilerRecord = nullptr;
   if (!MaybeCreateProfilerEntry(lock, maybeProfilerRecord)) {
     return;  // Allocation failure.
@@ -1021,9 +1023,11 @@ void PerfSpewer::saveJSProfile(JitCode* code, UniqueChars& desc,
 
 void PerfSpewer::saveWasmProfile(uintptr_t base, size_t size,
                                  UniqueChars& desc) {
-  MOZ_ASSERT(PerfEnabled());
   MOZ_ASSERT(desc);
   AutoLockPerfSpewer lock;
+  if (!PerfEnabled()) {
+    return;
+  }
   JS::JitCodeRecord* maybeProfilerRecord = nullptr;
   if (!MaybeCreateProfilerEntry(lock, maybeProfilerRecord)) {
     return;  // Allocation failure.
