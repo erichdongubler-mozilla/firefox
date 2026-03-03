@@ -54,7 +54,6 @@
 #include "mozilla/dom/MIDIOptionsBinding.h"
 #include "mozilla/dom/MediaCapabilities.h"
 #include "mozilla/dom/MediaSession.h"
-#include "mozilla/dom/ModelContext.h"
 #include "mozilla/dom/NavigatorLogin.h"
 #include "mozilla/dom/Permissions.h"
 #include "mozilla/dom/PrivateAttribution.h"
@@ -157,7 +156,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Navigator)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWebGpu)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocks)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLogin)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mModelContext)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPrivateAttribution)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mUserActivation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWakeLock)
@@ -249,8 +247,6 @@ void Navigator::Invalidate() {
   }
 
   mLogin = nullptr;
-
-  mModelContext = nullptr;
 
   mPrivateAttribution = nullptr;
 
@@ -2313,13 +2309,6 @@ NavigatorLogin* Navigator::Login() {
     mLogin = new NavigatorLogin(GetWindow());
   }
   return mLogin;
-}
-
-dom::ModelContext* Navigator::ModelContext() {
-  if (!mModelContext) {
-    mModelContext = new dom::ModelContext(GetWindow());
-  }
-  return mModelContext;
 }
 
 dom::PrivateAttribution* Navigator::PrivateAttribution() {
