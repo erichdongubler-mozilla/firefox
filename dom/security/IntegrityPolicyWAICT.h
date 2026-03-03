@@ -9,6 +9,7 @@
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/IntegrityPolicy.h"
+#include "mozilla/dom/ReportingBinding.h"
 #include "mozilla/dom/WAICTManifestBinding.h"
 #include "nsCOMPtr.h"
 #include "nsHashKeys.h"
@@ -70,6 +71,9 @@ class IntegrityPolicyWAICT : public nsIStreamLoaderObserver {
   void ReportMessage(uint32_t aErrorFlags, const nsACString& aCategory,
                      const char* aMessageName,
                      const nsTArray<nsString>& aParams);
+  void ReportViolation(nsIURI* aURI,
+                       IntegrityPolicy::DestinationType aDestination,
+                       IntegrityViolationReason aReason) const;
 
   nsWeakPtr mDocument;
   nsCOMPtr<nsIURI> mDocumentURI;

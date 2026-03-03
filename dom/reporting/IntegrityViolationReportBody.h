@@ -9,17 +9,17 @@
 
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/ReportBody.h"
-#include "mozilla/dom/SecurityPolicyViolationEvent.h"
+#include "mozilla/dom/ReportingBinding.h"
 
 namespace mozilla::dom {
 
 class IntegrityViolationReportBody final : public ReportBody {
  public:
-  IntegrityViolationReportBody(nsIGlobalObject* aGlobal,
-                               const nsACString& aDocumentURL,
-                               const nsACString& aBlockedURL,
-                               const nsACString& aDestination,
-                               const bool aReportOnly);
+  IntegrityViolationReportBody(
+      nsIGlobalObject* aGlobal, const nsACString& aDocumentURL,
+      const nsACString& aBlockedURL, const nsACString& aDestination,
+      const bool aReportOnly,
+      const Nullable<IntegrityViolationReason> aReason = nullptr);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -32,6 +32,8 @@ class IntegrityViolationReportBody final : public ReportBody {
 
   bool ReportOnly() const;
 
+  Nullable<IntegrityViolationReason> GetReason() const;
+
  protected:
   void ToJSON(JSONWriter& aJSONWriter) const override;
 
@@ -42,6 +44,7 @@ class IntegrityViolationReportBody final : public ReportBody {
   const nsCString mBlockedURL;
   const nsCString mDestination;
   const bool mReportOnly;
+  const Nullable<IntegrityViolationReason> mReason;
 };
 
 }  // namespace mozilla::dom
