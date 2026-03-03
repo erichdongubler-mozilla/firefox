@@ -213,7 +213,7 @@ nsRegion TestNodeBase<T>::GetRegion() {
 
 template <class T>
 void TestNodeBase<T>::SetRegion(nsRegion aRegion) {
-  mRegion = aRegion;
+  mRegion = std::move(aRegion);
 }
 
 template <class T>

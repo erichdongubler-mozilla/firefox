@@ -103,7 +103,7 @@ std::shared_ptr<SharedSurface> SwapChainPresenter::SwapBackBuffer(
     mBackBuffer->EndWrite();
   }
   auto old = mBackBuffer;
-  mBackBuffer = back;
+  mBackBuffer = std::move(back);
   if (mBackBuffer) {
     mBackBuffer->BeginWrite();
   }

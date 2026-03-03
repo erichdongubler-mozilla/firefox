@@ -1908,16 +1908,16 @@ void FilterNodeTableTransferSoftware::SetAttribute(uint32_t aIndex,
   std::vector<Float> table(aFloat, aFloat + aSize);
   switch (aIndex) {
     case ATT_TABLE_TRANSFER_TABLE_R:
-      mTableR = table;
+      mTableR = std::move(table);
       break;
     case ATT_TABLE_TRANSFER_TABLE_G:
-      mTableG = table;
+      mTableG = std::move(table);
       break;
     case ATT_TABLE_TRANSFER_TABLE_B:
-      mTableB = table;
+      mTableB = std::move(table);
       break;
     case ATT_TABLE_TRANSFER_TABLE_A:
-      mTableA = table;
+      mTableA = std::move(table);
       break;
     default:
       MOZ_CRASH("GFX: FilterNodeTableTransferSoftware::SetAttribute");
@@ -1966,16 +1966,16 @@ void FilterNodeDiscreteTransferSoftware::SetAttribute(uint32_t aIndex,
   std::vector<Float> discrete(aFloat, aFloat + aSize);
   switch (aIndex) {
     case ATT_DISCRETE_TRANSFER_TABLE_R:
-      mTableR = discrete;
+      mTableR = std::move(discrete);
       break;
     case ATT_DISCRETE_TRANSFER_TABLE_G:
-      mTableG = discrete;
+      mTableG = std::move(discrete);
       break;
     case ATT_DISCRETE_TRANSFER_TABLE_B:
-      mTableB = discrete;
+      mTableB = std::move(discrete);
       break;
     case ATT_DISCRETE_TRANSFER_TABLE_A:
-      mTableA = discrete;
+      mTableA = std::move(discrete);
       break;
     default:
       MOZ_CRASH("GFX: FilterNodeDiscreteTransferSoftware::SetAttribute");
