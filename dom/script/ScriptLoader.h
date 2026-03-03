@@ -176,6 +176,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   bool ShouldBypassCache() const;
 
+#ifdef NIGHTLY_BUILD
+  // The return value depends on the Integrity-Policy-WAICT-v1 header and
+  // doesn't change after the document started loading.
+  bool WAICTHandlesScripts() const;
+#endif
+
   template <typename T>
   bool HasLoaded(const T& aKey) {
     // NOTE: ScriptLoader doesn't cache pending/loading requests, and
