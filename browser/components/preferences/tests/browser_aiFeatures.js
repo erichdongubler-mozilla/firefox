@@ -30,6 +30,34 @@ add_setup(async function setupPrefs() {
 });
 
 describe("settings ai features", () => {
+  it("shows New badge on Smart Window fieldset", async () => {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.smartwindow.enabled", true]],
+    });
+
+    await withPrefsPane("ai", async doc => {
+      const fieldset = doc.getElementById("smartWindowFieldset");
+      Assert.ok(fieldset, "smartWindowFieldset exists");
+
+      await fieldset.updateComplete;
+
+      Assert.equal(
+        fieldset.badge,
+        "new",
+        "fieldset badge property is set to new"
+      );
+
+      const badge = fieldset.shadowRoot.querySelector("moz-badge");
+      Assert.ok(
+        BrowserTestUtils.isVisible(badge),
+        "moz-badge is visible on Smart Window fieldset"
+      );
+      Assert.equal(badge.getAttribute("type"), "new", "badge has type new");
+    });
+
+    await SpecialPowers.popPrefEnv();
+  });
+
   it("shows Smart Window activate when preferences enabled and user has not given consent", async () => {
     await SpecialPowers.pushPrefEnv({
       set: [["browser.smartwindow.enabled", true]],
