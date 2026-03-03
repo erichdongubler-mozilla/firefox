@@ -37,7 +37,6 @@ import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.History
 import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.NimbusComponents
 import org.mozilla.fenix.components.UseCases
@@ -240,7 +239,9 @@ class FenixSearchMiddleware(
         val showPrivatePrompt = with(store.state) {
             !settings.showSearchSuggestionsInPrivateOnboardingFinished &&
                     appStore.state.mode.isPrivate &&
-                    !isSearchSuggestionsFeatureEnabled() && !showSearchShortcuts &&
+                    settings.shouldShowSearchSuggestions &&
+                    !settings.shouldShowSearchSuggestionsInPrivate &&
+                    !showSearchShortcuts &&
                     query.isNotBlank() && url != query
         }
 
@@ -483,19 +484,5 @@ class FenixSearchMiddleware(
                 }
             },
         )
-    }
-
-    /**
-     * Check whether search suggestions should be shown in the AwesomeBar.
-     *
-     * @return `true` if search suggestions should be shown `false` otherwise.
-     */
-    @VisibleForTesting
-    internal fun isSearchSuggestionsFeatureEnabled(): Boolean {
-        return when (appStore.state.mode) {
-            BrowsingMode.Normal -> settings.shouldShowSearchSuggestions
-            BrowsingMode.Private ->
-                settings.shouldShowSearchSuggestions && settings.shouldShowSearchSuggestionsInPrivate
-        }
     }
 }

@@ -304,6 +304,19 @@ class FenixSearchMiddlewareTest {
     }
 
     @Test
+    fun `GIVEN browsing mode is private and search suggestions not allowed WHEN the query is not empty THEN don't show the private suggestions banner`() {
+        val privateAppStore = AppStore(AppState(mode = BrowsingMode.Private))
+        val (_, store) = buildMiddlewareAndAddToSearchStore(appStore = privateAppStore)
+        every { settings.showSearchSuggestionsInPrivateOnboardingFinished } returns false
+        every { settings.shouldShowSearchSuggestions } returns false
+        every { settings.shouldShowSearchSuggestionsInPrivate } returns false
+
+        store.dispatch(SearchFragmentAction.UpdateQuery("test"))
+
+        assertFalse(store.state.showSearchSuggestionsHint)
+    }
+
+    @Test
     fun `GIVEN browsing mode is private and suggestions in private mode not allowed WHEN the query is not empty THEN show the private suggestions banner`() {
         val privateAppStore = AppStore(AppState(mode = BrowsingMode.Private))
         val (_, store) = buildMiddlewareAndAddToSearchStore(appStore = privateAppStore)
