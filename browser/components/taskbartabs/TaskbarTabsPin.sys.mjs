@@ -3,6 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
 let lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -77,8 +79,20 @@ export const TaskbarTabsPin = {
       lazy.logConsole.debug(`Deleting ${relativePath}`);
       lazy.logConsole.debug(`Deleting ${iconFile.path}`);
 
+      let deleteShortcut = Promise.resolve();
+      if (relativePath && AppConstants.platform === "win") {
+        deleteShortcut = lazy.ShellService.deleteShortcut(
+          "Programs",
+          relativePath
+        );
+      } else if (relativePath && AppConstants.platform === "linux") {
+        deleteShortcut = lazy.ShellService.deleteLinuxDesktopEntry(
+          relativePath.replace(/\.desktop$/, "")
+        );
+      }
+
       await Promise.all([
-        lazy.ShellService.deleteShortcut("Programs", relativePath).then(() => {
+        deleteShortcut.then(() => {
           // Only update if that didn't throw an error.
           aRegistry.patchTaskbarTab(aTaskbarTab, {
             shortcutRelativePath: null,
@@ -143,40 +157,63 @@ async function createTaskbarIcon(aTaskbarTab, aIcon) {
 async function createShortcut(aTaskbarTab, aFileIcon, aRegistry) {
   lazy.logConsole.info("Creating Taskbar Tabs shortcut.");
 
-  let { relativePath, description } = await generateShortcutInfo(aTaskbarTab);
-  lazy.logConsole.debug(
-    `Using shortcut path relative to Programs folder: ${relativePath}`
-  );
-
   let targetfile = Services.dirsvc.get("XREExeF", Ci.nsIFile);
   let profileFolder = Services.dirsvc.get("ProfD", Ci.nsIFile);
 
-  await lazy.ShellService.createShortcut(
-    targetfile,
-    [
-      "-taskbar-tab",
-      aTaskbarTab.id,
-      "-new-window",
-      aTaskbarTab.startUrl, // In case Taskbar Tabs is disabled, provide fallback url.
-      "-profile",
-      profileFolder.path,
-      "-container",
-      aTaskbarTab.userContextId,
-    ],
-    description,
-    aFileIcon,
-    0,
-    aTaskbarTab.id, // AUMID
-    "Programs",
-    relativePath
-  );
+  let args = [
+    "-taskbar-tab",
+    aTaskbarTab.id,
+    "-new-window",
+    aTaskbarTab.startUrl, // In case Taskbar Tabs is disabled, provide fallback url.
+    "-profile",
+    profileFolder.path,
+    "-container",
+    aTaskbarTab.userContextId.toString(),
+  ];
 
-  // Only update if that didn't throw an error.
-  aRegistry.patchTaskbarTab(aTaskbarTab, {
-    shortcutRelativePath: relativePath,
-  });
+  if (AppConstants.platform === "win") {
+    let { relativePath, description } = await generateShortcutInfo(aTaskbarTab);
+    lazy.logConsole.debug(
+      `Using shortcut path relative to Programs folder: ${relativePath}`
+    );
 
-  return relativePath;
+    await lazy.ShellService.createShortcut(
+      targetfile,
+      args,
+      description,
+      aFileIcon,
+      0,
+      aTaskbarTab.id, // AUMID
+      "Programs",
+      relativePath
+    );
+
+    // Only update if that didn't throw an error.
+    aRegistry.patchTaskbarTab(aTaskbarTab, {
+      shortcutRelativePath: relativePath,
+    });
+
+    return relativePath;
+  }
+
+  if (AppConstants.platform === "linux") {
+    let appId = "org.mozilla.firefox.webapp-" + aTaskbarTab.id;
+    await lazy.ShellService.createLinuxDesktopEntry(
+      appId,
+      aTaskbarTab.name,
+      args,
+      aFileIcon.path
+    );
+
+    let relativePath = appId + ".desktop";
+    aRegistry.patchTaskbarTab(aTaskbarTab, {
+      shortcutRelativePath: relativePath,
+    });
+
+    return relativePath;
+  }
+
+  throw new Error("Don't know how to create a shortcut on this platform");
 }
 
 /**

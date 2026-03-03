@@ -24,6 +24,9 @@ support-files = [
 ["test_taskbarTabs_pin.js"]
 run-if = ["os == 'win'"]
 
+["test_taskbarTabs_pinLinux.js"]
+run-if = ["os == 'linux'"]
+
 ["test_taskbarTabs_utils.js"]
 support-files = [
     "../../../places/tests/browser/favicon-normal16.png",
