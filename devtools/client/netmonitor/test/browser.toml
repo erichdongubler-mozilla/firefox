@@ -80,6 +80,7 @@ support-files = [
   "sjs_long-polling-server.sjs",
   "sjs_search-test-server.sjs",
   "sjs_method-test-server.sjs",
+  "sjs_no-response-server.sjs",
   "sjs_set-cookie-same-site.sjs",
   "sjs_simple-test-server.sjs",
   "sjs_simple-unsorted-cookies-test-server.sjs",
@@ -376,6 +377,8 @@ skip-if = [
 ]
 
 ["browser_net_post-data-json-payloads.js"]
+
+["browser_net_post-data-no-response.js"]
 
 ["browser_net_post-data-raw-payloads-with-upload-stream-headers.js"]
 
