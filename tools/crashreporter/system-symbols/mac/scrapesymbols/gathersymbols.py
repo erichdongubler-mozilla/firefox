@@ -57,22 +57,25 @@ def get_archs(filename, platform=sys.platform):
     Find the list of architectures present in a Mach-O file, or a single-element
     list on non-OS X.
     """
-    architectures = []
+    architectures = set()
     output = subprocess.check_output(
         ["file", "-Lb", filename], encoding="utf-8", errors="replace"
     )
-    for string in output.split(" "):
+    # Only parse the first line of "file" output (the summary line).
+    line = output.splitlines()[0] if output else ""
+
+    for string in line.split():  # split on any whitespace
         cleaned = string.strip("[]():,")
         if cleaned == "arm64e":
-            architectures.append("arm64e")
+            architectures.add("arm64e")
         elif cleaned == "x86_64_haswell":
-            architectures.append("x86_64h")
+            architectures.add("x86_64h")
         elif cleaned == "x86_64":
-            architectures.append("x86_64")
+            architectures.add("x86_64")
         elif cleaned == "i386":
-            architectures.append("i386")
+            architectures.add("i386")
 
-    return architectures
+    return list(architectures)
 
 
 def server_has_file(filename):
