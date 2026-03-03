@@ -1034,33 +1034,41 @@ class Client:
                     return found
                 await asyncio.sleep(polling_interval)
 
-    async def await_popup(self, url=None):
+    async def await_popup(self, url=None, timeout=15):
         if not hasattr(self, "popup_preload_script"):
             self.popup_preload_script = await self.make_preload_script(
                 """
-                    window.__popups = [];
-                    window.wrappedJSObject.open = function(url) {
-                        window.__popups.push(url);
+                    const win = window.wrappedJSObject;
+                    win.__popups = new win.Array();
+                    win.open = function(url) {
+                        win.__popups.push(url);
                     }
                 """,
                 "popup_detector",
             )
         return self.popup_preload_script.run(
-            """(url) => new Promise(done => {
+            """(url, timeout) => new Promise(done => {
+                    let attempts = timeout;
                     const to = setInterval(() => {
-                        if (url === undefined && window.__popups.length) {
+                        const { __popups } = window.wrappedJSObject;
+                        if (url === undefined && __popups.length) {
                             clearInterval(to);
-                            return done(window.__popups[0]);
+                            return done(true);
                         }
-                        const found = window.__popups.find(u => u.includes(url));
+                        const found = __popups.find(u => u.includes(url));
                         if (found !== undefined) {
                             clearInterval(to);
-                            done(found);
+                            done(true);
+                        }
+                        if (!--attempts) {
+                            clearInterval(to);
+                            done(false);
                         }
                     }, 1000);
                })
             """,
             url,
+            timeout,
             await_promise=True,
         )
 
@@ -1571,8 +1579,12 @@ class Client:
         coords = self.get_element_screen_position(img)
         coords = [coords[0] + 50, coords[1] + 100]
         await self.apz_move(coords=coords)
-        await self.stall(0.5)
-        old_x = float(get_zoom_x())
+        for _ in range(5):
+            try:
+                old_x = float(get_zoom_x())
+                break
+            except TypeError:
+                await self.stall(0.5)
 
         for i in range(20):
             coords = [coords[0] + 10, coords[1]]
