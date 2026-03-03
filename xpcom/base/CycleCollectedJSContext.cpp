@@ -803,26 +803,14 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
   JS::RootedTuple<JSObject*, JSObject*, JSObject*, JSObject*> roots(aCx);
 
-  JS::RootedField<JSObject*, 0> maybePromise(
-      roots, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
-
-  // User Input State propagation.
-  auto state = maybePromise
-                   ? JS::GetPromiseUserInputEventHandlingState(maybePromise)
-                   : JS::PromiseUserInputEventHandlingState::DontCare;
-  bool propagate =
-      state ==
-      JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
-  AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
-
   // We need a callback global to execute in.
-  JS::RootedField<JSObject*, 1> callbackGlobal(
+  JS::RootedField<JSObject*, 0> callbackGlobal(
       roots, aMicroTask.get().GetExecutionGlobalFromJSMicroTask(aCx));
   if (!callbackGlobal) {
     return;
   }
 
-  JS::RootedField<JSObject*, 2> hostDefinedData(roots);
+  JS::RootedField<JSObject*, 1> hostDefinedData(roots);
   // Don't run if we fail to unwrap the host defined data, as that
   // would indicate the target realm is gone.
   if (!aMicroTask.get().MaybeGetHostDefinedDataFromJSMicroTask(
@@ -831,7 +819,7 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
   }
 
   // We do however still need to run if we can't unwrap the stack
-  JS::RootedField<JSObject*, 3> allocStack(roots);
+  JS::RootedField<JSObject*, 2> allocStack(roots);
   (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(&allocStack);
 
   // We may have an incumbent global to deal with.
@@ -874,13 +862,6 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
     }
   }
 
-  if (incumbentGlobal) {
-    // https://wicg.github.io/scheduling-apis/#sec-patches-html-hostcalljobcallback
-    // 2. Set event loop’s current scheduling state to
-    // callback.[[HostDefined]].[[SchedulingState]].
-    incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
-  }
-
   {
     const bool isMainThread = NS_IsMainThread();
 
@@ -919,18 +900,37 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
         autoIncumbentScript.emplace(incumbentGlobal);
       }
 
+      // At this point we will definitely consume the task, so we
+      // no longer need the scope exit.
+      ignoreMicroTasks.release();
+
       MOZ_ASSERT(aCx == aes.cx());
+
+      JSAutoRealm ar(aCx, callbackGlobal);
 
       Maybe<JS::AutoSetAsyncStackForNewCalls> asyncStackSetter;
       if (allocStack) {
         asyncStackSetter.emplace(aCx, allocStack, reason);
       }
 
-      JSAutoRealm ar(aCx, callbackGlobal);
+      JS::RootedField<JSObject*, 3> maybePromise(
+          roots, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
 
-      // At this point we will definitely consume the task, so we
-      // no longer need the scope exit.
-      ignoreMicroTasks.release();
+      // User Input State propagation.
+      auto state = maybePromise
+                       ? JS::GetPromiseUserInputEventHandlingState(maybePromise)
+                       : JS::PromiseUserInputEventHandlingState::DontCare;
+      bool propagate =
+          state ==
+          JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
+      AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
+
+      if (incumbentGlobal) {
+        // https://wicg.github.io/scheduling-apis/#sec-patches-html-hostcalljobcallback
+        // 2. Set event loop’s current scheduling state to
+        // callback.[[HostDefined]].[[SchedulingState]].
+        incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
+      }
 
       // Note: We're dropping the return value on the floor here, however
       // cleanup and exception handling are done as part of the CallSetup
