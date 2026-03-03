@@ -404,3 +404,10 @@ partial interface Navigator {
 partial interface Navigator {
   [SameObject] readonly attribute NavigatorLogin login;
 };
+
+// Model Context API
+[SecureContext]
+partial interface Navigator {
+  [SameObject, Pref="dom.modelcontext.enabled"]
+  readonly attribute ModelContext modelContext;
+};
