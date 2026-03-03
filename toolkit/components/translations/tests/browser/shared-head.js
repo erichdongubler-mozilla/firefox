@@ -197,8 +197,11 @@ async function loadNewPage(browser, url) {
  * opens up about:translations, and passes the test requirements into the content process.
  *
  * @param {object} [options={}]
- * @param {boolean} [options.disabled]
- *        When true, ensures that Translations is disabled via pref before opening the page.
+ * @param {boolean} [options.featureEnabled=true]
+ *        Whether Translations starts enabled before opening the page.
+ * @param {boolean} [options.lockEnabledState=false]
+ *        When true, locks the prefs that govern the Translations feature enabled state as
+ *        though they were controlled by an enterprise policy before opening the page.
  * @param {Array<{fromLang: string, toLang: string}>} [options.languagePairs=LANGUAGE_PAIRS]
  *        Language pairs that should be available in Remote Settings mocks.
  * @param {Array<[string, any]>} [options.prefs]
@@ -216,7 +219,8 @@ async function loadNewPage(browser, url) {
  * }>}
  */
 async function openAboutTranslations({
-  disabled,
+  featureEnabled = true,
+  lockEnabledState = false,
   languagePairs = LANGUAGE_PAIRS,
   prefs,
   autoDownloadFromRemoteSettings = false,
@@ -234,7 +238,9 @@ async function openAboutTranslations({
   await SpecialPowers.pushPrefEnv({
     set: [
       // Enabled by default.
-      ["browser.translations.enable", !disabled],
+      ["browser.translations.enable", featureEnabled],
+      ["browser.ai.control.default", "available"],
+      ["browser.ai.control.translations", "default"],
       ["browser.translations.logLevel", "All"],
       ["browser.translations.mostRecentTargetLanguages", ""],
       ["dom.events.testing.asyncClipboard", true],
@@ -242,6 +248,18 @@ async function openAboutTranslations({
       ...(prefs ?? []),
     ],
   });
+  const lockedFeaturePrefs = [];
+
+  if (!featureEnabled) {
+    await TranslationsParent.AIFeature.disable();
+  }
+
+  if (lockEnabledState) {
+    for (const pref of ["browser.ai.control.translations"]) {
+      Services.prefs.lockPref(pref);
+      lockedFeaturePrefs.push(pref);
+    }
+  }
 
   /**
    * Collect any relevant selectors for the page here.
@@ -272,6 +290,8 @@ async function openAboutTranslations({
       "moz-button#about-translations-translation-error-button",
     unsupportedInfoMessage:
       "moz-message-bar#about-translations-unsupported-info-message",
+    policyDisabledInfoMessage:
+      "moz-message-bar#about-translations-policy-disabled-info-message",
     languageLoadErrorMessage:
       "moz-message-bar#about-translations-language-load-error-message",
     languageLoadErrorButton:
@@ -343,9 +363,9 @@ async function openAboutTranslations({
   );
 
   let originalCopyButtonResetDelay;
+  await aboutTranslationsTestUtils.waitForReady();
 
-  if (!disabled) {
-    await aboutTranslationsTestUtils.waitForReady();
+  if (featureEnabled) {
     await aboutTranslationsTestUtils.setThrottleDelay(25);
 
     const isTranslationEngineSupported =
@@ -399,6 +419,11 @@ async function openAboutTranslations({
 
       await removeMocks();
       await EngineProcess.destroyTranslationsEngine();
+      for (const pref of lockedFeaturePrefs) {
+        if (Services.prefs.prefIsLocked(pref)) {
+          Services.prefs.unlockPref(pref);
+        }
+      }
 
       await SpecialPowers.popPrefEnv();
       TestTranslationsTelemetry.cleanup();
@@ -4382,6 +4407,38 @@ class AboutTranslationsTestUtils {
     static ClearTargetText = "AboutTranslationsTest:ClearTargetText";
 
     /**
+     * Event fired when the unsupported info message is shown.
+     *
+     * @type {string}
+     */
+    static UnsupportedInfoMessageShown =
+      "AboutTranslationsTest:UnsupportedInfoMessageShown";
+
+    /**
+     * Event fired when the unsupported info message is hidden.
+     *
+     * @type {string}
+     */
+    static UnsupportedInfoMessageHidden =
+      "AboutTranslationsTest:UnsupportedInfoMessageHidden";
+
+    /**
+     * Event fired when the policy-disabled info message is shown.
+     *
+     * @type {string}
+     */
+    static PolicyDisabledInfoMessageShown =
+      "AboutTranslationsTest:PolicyDisabledInfoMessageShown";
+
+    /**
+     * Event fired when the policy-disabled info message is hidden.
+     *
+     * @type {string}
+     */
+    static PolicyDisabledInfoMessageHidden =
+      "AboutTranslationsTest:PolicyDisabledInfoMessageHidden";
+
+    /**
      * Event fired when the language-load error message is shown.
      *
      * @type {string}
@@ -6201,6 +6258,7 @@ class AboutTranslationsTestUtils {
    * @param {boolean} [options.detectedLanguageUnsupportedMessage=false]
    * @param {boolean} [options.translationErrorMessage=false]
    * @param {boolean} [options.unsupportedInfoMessage=false]
+   * @param {boolean} [options.policyDisabledInfoMessage=false]
    * @param {boolean} [options.languageLoadErrorMessage=false]
    * @returns {Promise<void>}
    */
@@ -6217,6 +6275,7 @@ class AboutTranslationsTestUtils {
     detectedLanguageUnsupportedMessage = false,
     translationErrorMessage = false,
     unsupportedInfoMessage = false,
+    policyDisabledInfoMessage = false,
     languageLoadErrorMessage = false,
   } = {}) {
     // This helps the test visually render at each step without significantly slowing test speed.
@@ -6276,6 +6335,9 @@ class AboutTranslationsTestUtils {
           ),
           unsupportedInfoMessage: isElementVisible(
             selectors.unsupportedInfoMessage
+          ),
+          policyDisabledInfoMessage: isElementVisible(
+            selectors.policyDisabledInfoMessage
           ),
           languageLoadErrorMessage: isElementVisible(
             selectors.languageLoadErrorMessage
@@ -6340,6 +6402,11 @@ class AboutTranslationsTestUtils {
         unsupportedInfoMessage,
         visibilityMap.unsupportedInfoMessage,
         "unsupported info message"
+      );
+      assertVisibility(
+        policyDisabledInfoMessage,
+        visibilityMap.policyDisabledInfoMessage,
+        "policy-disabled info message"
       );
       assertVisibility(
         languageLoadErrorMessage,

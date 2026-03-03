@@ -142,6 +142,9 @@ export class AboutTranslationsParent extends JSWindowActorParent {
       case "AboutTranslations:GetEnabledState": {
         return lazy.TranslationsParent.AIFeature.isEnabled;
       }
+      case "AboutTranslations:IsEnabledStateManagedByPolicy": {
+        return lazy.TranslationsParent.AIFeature.isManagedByPolicy;
+      }
       case "AboutTranslations:Telemetry": {
         const { telemetryFunctionName, telemetryData } = data;
         const aboutTranslationsTelemetry =

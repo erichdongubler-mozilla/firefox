@@ -148,6 +148,7 @@ export class AboutTranslationsChild extends JSWindowActorChild {
       "AT_logError",
       "AT_getAppLocale",
       "AT_getSupportedLanguages",
+      "AT_isEnabledStateManagedByPolicy",
       "AT_isTranslationEngineSupported",
       "AT_isHtmlTranslation",
       "AT_isInAutomation",
@@ -224,6 +225,24 @@ export class AboutTranslationsChild extends JSWindowActorChild {
   AT_isTranslationEngineSupported() {
     return this.#convertToContentPromise(
       this.sendQuery("AboutTranslations:IsTranslationsEngineSupported")
+    );
+  }
+
+  /**
+   * Returns true if the enabled state is managed by an enterprise policy, otherwise false.
+   *
+   * When false, the user may freely enable or disable the Translations feature.
+   * When true, the enabled state cannot be changed by the user at run time.
+   *
+   * Note that it is possible for a policy to enforce that the feature is "disabled and immutable,"
+   * such that the user cannot turn the feature on, as well as "enabled and immutable," such that
+   * the user cannot turn the feature off.
+   *
+   * @returns {Promise<boolean>}
+   */
+  AT_isEnabledStateManagedByPolicy() {
+    return this.#convertToContentPromise(
+      this.sendQuery("AboutTranslations:IsEnabledStateManagedByPolicy")
     );
   }
 
