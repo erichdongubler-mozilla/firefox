@@ -1210,5 +1210,11 @@ Http3Stats HttpConnectionUDP::GetStats() {
   return mHttp3Session->GetStats();
 }
 
+void HttpConnectionUDP::SetDontExclude() {
+  if (mHttp3Session) {
+    mHttp3Session->SetDontExclude();
+  }
+}
+
 }  // namespace net
 }  // namespace mozilla

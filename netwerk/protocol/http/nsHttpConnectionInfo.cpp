@@ -426,6 +426,41 @@ nsHttpConnectionInfo::CloneAndAdoptHTTPSSVCRecord(
   return clone.forget();
 }
 
+already_AddRefed<nsHttpConnectionInfo>
+nsHttpConnectionInfo::CloneAndAdoptPortAndAlpn(
+    uint16_t aPort,
+    happy_eyeballs::ConnectionAttemptHttpVersions aProtocol) const {
+  // See TlsHandshaker::SetupNPNList, "http/1.1" and "h2" are added
+  // automatically, so we only need to set "h3".
+  nsAutoCString alpnStr(
+      aProtocol == happy_eyeballs::ConnectionAttemptHttpVersions::H3
+          ? "h3"_ns
+          : EmptyCString());
+  int32_t port = aPort != 0 ? aPort : mOriginPort;
+  RefPtr<nsHttpConnectionInfo> clone = new nsHttpConnectionInfo(
+      mOrigin, port, alpnStr, mUsername, mProxyInfo, mOriginAttributes,
+      mEndToEndSSL,
+      aProtocol == happy_eyeballs::ConnectionAttemptHttpVersions::H3,
+      mWebTransport);
+
+  clone->SetAnonymous(GetAnonymous());
+  clone->SetPrivate(GetPrivate());
+  clone->SetInsecureScheme(GetInsecureScheme());
+  clone->SetNoSpdy(GetNoSpdy());
+  clone->SetBeConservative(GetBeConservative());
+  clone->SetAnonymousAllowClientCert(GetAnonymousAllowClientCert());
+  clone->SetFallbackConnection(GetFallbackConnection());
+  clone->SetTlsFlags(GetTlsFlags());
+  clone->SetIsTrrServiceChannel(GetIsTrrServiceChannel());
+  clone->SetTRRMode(GetTRRMode());
+  clone->SetIPv4Disabled(GetIPv4Disabled());
+  clone->SetIPv6Disabled(GetIPv6Disabled());
+  clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
+
+  // IPHints and echConfig are handled in HappyEyeballsConnectionAttempt.
+  return clone.forget();
+}
+
 /* static */
 void nsHttpConnectionInfo::SerializeHttpConnectionInfo(
     nsHttpConnectionInfo* aInfo, HttpConnectionInfoCloneArgs& aArgs) {

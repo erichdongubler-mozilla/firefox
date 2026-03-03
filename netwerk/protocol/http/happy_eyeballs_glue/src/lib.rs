@@ -10,7 +10,7 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 use std::ptr;
 use std::time::Instant;
 use thin_vec::ThinVec;
-use xpcom::{AtomicRefcnt, RefCounted, RefPtr};
+use xpcom::{AtomicRefcnt, RefCounted};
 
 #[cfg(not(windows))]
 use libc::{AF_INET, AF_INET6};
@@ -52,7 +52,7 @@ pub extern "C" fn create(
         ..Default::default()
     };
 
-    let happy_eyeballs = match happy_eyeballs::HappyEyeballs::new_with_network_config(
+    let raw_ptr = match happy_eyeballs::HappyEyeballs::new_with_network_config(
         origin_str.as_str(),
         port,
         network_config,
@@ -64,13 +64,9 @@ pub extern "C" fn create(
         Err(_) => return NS_ERROR_UNEXPECTED,
     };
 
-    match unsafe { RefPtr::from_raw(happy_eyeballs) } {
-        Some(ptr) => {
-            ptr.forget(result);
-            NS_OK
-        }
-        None => NS_ERROR_UNEXPECTED,
-    }
+    unsafe { addref(raw_ptr as *const _) };
+    *result = raw_ptr;
+    NS_OK
 }
 
 #[no_mangle]

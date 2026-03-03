@@ -19,7 +19,7 @@ class SpeculativeTransaction : public NullHttpTransaction {
  public:
   SpeculativeTransaction(nsHttpConnectionInfo* aConnInfo,
                          nsIInterfaceRequestor* aCallbacks, uint32_t aCaps,
-                         std::function<void(bool)>&& aCallback = nullptr);
+                         std::function<void(nsresult)>&& aCallback = nullptr);
 
   already_AddRefed<SpeculativeTransaction> CreateWithNewConnInfo(
       nsHttpConnectionInfo* aConnInfo);
@@ -55,7 +55,7 @@ class SpeculativeTransaction : public NullHttpTransaction {
   Maybe<bool> mAllow1918;
 
   bool mTriedToWrite = false;
-  std::function<void(bool)> mCloseCallback;
+  std::function<void(nsresult)> mCloseCallback;
   RefPtr<HTTPSRecordResolver> mResolver;
 };
 
@@ -63,7 +63,7 @@ class FallbackTransaction : public SpeculativeTransaction {
  public:
   FallbackTransaction(nsHttpConnectionInfo* aConnInfo,
                       nsIInterfaceRequestor* aCallbacks, uint32_t aCaps,
-                      std::function<void(bool)>&& aCallback)
+                      std::function<void(nsresult)>&& aCallback)
       : SpeculativeTransaction(aConnInfo, aCallbacks, aCaps,
                                std::move(aCallback)) {}
 

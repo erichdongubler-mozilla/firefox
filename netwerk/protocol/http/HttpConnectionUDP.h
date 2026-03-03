@@ -105,6 +105,8 @@ class HttpConnectionUDP final : public HttpConnectionBase,
 
   void OnConnected();
 
+  void SetDontExclude() override;
+
  private:
   nsresult InitCommon(nsIUDPSocket* aSocket, const NetAddr& aPeerAddr,
                       nsIInterfaceRequestor* callbacks, uint32_t caps,
