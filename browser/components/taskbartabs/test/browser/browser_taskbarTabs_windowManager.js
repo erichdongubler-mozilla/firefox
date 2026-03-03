@@ -4,6 +4,7 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
   TaskbarTabsUtils: "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs",
@@ -164,13 +165,20 @@ add_task(async function test_window_aumid() {
   is(
     TaskbarTabsUtils.getTaskbarTabIdFromWindow(winOpen),
     taskbarTab1.id,
-    "The window's `tasbkartab` attribute should match the Taskbar Tab ID when opened."
+    "The window's `taskbartab` attribute should match the Taskbar Tab ID when opened."
   );
   is(
-    WinTaskbar.getGroupIdForWindow(winOpen),
-    taskbarTab1.id,
-    "The window AUMID should match the Taskbar Tab ID when opened."
+    winOpen.document.documentElement.getAttribute("windowclass"),
+    "org.mozilla.firefox.webapp-" + taskbarTab1.id,
+    "The window's `windowclass` attribute should match the Taskbar Tab ID when opened."
   );
+  if (AppConstants.platform === "win") {
+    is(
+      WinTaskbar.getGroupIdForWindow(winOpen),
+      taskbarTab1.id,
+      "The window AUMID should match the Taskbar Tab ID when opened."
+    );
+  }
 
   let tab1_adopted = await BrowserTestUtils.addTab(window.gBrowser, url1.spec);
   windowPromise = BrowserTestUtils.waitForNewWindow();
@@ -180,13 +188,20 @@ add_task(async function test_window_aumid() {
   is(
     TaskbarTabsUtils.getTaskbarTabIdFromWindow(winReplace),
     taskbarTab1.id,
-    "The window's `tasbkartab` attribute should match the Taskbar Tab ID when a tab was replaced with a Tasbkar Tab window."
+    "The window's `taskbartab` attribute should match the Taskbar Tab ID when a tab was replaced with a Taskbar Tab window."
   );
   is(
-    WinTaskbar.getGroupIdForWindow(winReplace),
-    taskbarTab1.id,
-    "The window AUMID should match the Taskbar Tab ID when a tab was replaced with a Tasbkar Tab window."
+    winOpen.document.documentElement.getAttribute("windowclass"),
+    "org.mozilla.firefox.webapp-" + taskbarTab1.id,
+    "The window's `windowclass` attribute should match the Taskbar Tab ID when opened."
   );
+  if (AppConstants.platform === "win") {
+    is(
+      WinTaskbar.getGroupIdForWindow(winReplace),
+      taskbarTab1.id,
+      "The window AUMID should match the Taskbar Tab ID when a tab was replaced with a Taskbar Tab window."
+    );
+  }
 
   await Promise.all([
     BrowserTestUtils.closeWindow(winOpen),

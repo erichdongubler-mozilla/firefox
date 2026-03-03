@@ -157,6 +157,10 @@ var gBrowserInit = {
       if (extraOptions.hasKey("taskbartab")) {
         let taskbarTabId = extraOptions.getPropertyAsAString("taskbartab");
         window.document.documentElement.setAttribute(
+          "windowclass",
+          "org.mozilla.firefox.webapp-" + taskbarTabId
+        );
+        window.document.documentElement.setAttribute(
           "taskbartab",
           taskbarTabId
         );
