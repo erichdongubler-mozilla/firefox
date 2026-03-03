@@ -44,7 +44,6 @@ async function setupStatusCardTest(
       pass: makePass(),
       usage: makeUsage(),
     },
-    usageInfo: null,
   });
   await IPPEnrollAndEntitleManager.refetchEntitlement();
 

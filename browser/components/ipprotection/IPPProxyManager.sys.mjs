@@ -263,10 +263,17 @@ class IPPProxyManagerSingleton extends EventTarget {
       return this.#activatingPromise;
     }
 
+    if (this.#state === IPPProxyStates.PAUSED) {
+      await this.refreshUsage();
+      if (this.#state === IPPProxyStates.PAUSED) {
+        // Still paused after refreshing usage, cannot start.
+        return { started: false };
+      }
+    }
+
     if (
       this.#state === IPPProxyStates.NOT_READY ||
-      this.#state === IPPProxyStates.ERROR ||
-      this.#state === IPPProxyStates.PAUSED
+      this.#state === IPPProxyStates.ERROR
     ) {
       return { started: false };
     }
@@ -359,7 +366,8 @@ class IPPProxyManagerSingleton extends EventTarget {
       if (usage) {
         this.#setUsage(usage);
         if (this.#usage.remaining <= 0) {
-          this.pause();
+          this.#pass = null;
+          this.#setState(IPPProxyStates.PAUSED);
           return false;
         }
       }
@@ -440,43 +448,24 @@ class IPPProxyManagerSingleton extends EventTarget {
       userAction,
       duration: String(sessionLength),
     });
-    this.updateState();
+    if (this.#state === IPPProxyStates.PAUSED) {
+      this.#setState(IPPProxyStates.NOT_READY);
+    } else {
+      this.#setState(IPPProxyStates.READY);
+    }
   }
 
   /**
-   * Stop any connections and reset the pass and usage if the user has changed.
+   * Stop any connections and reset the pass if the user has changed.
    */
   async reset() {
     this.#pass = null;
-    this.#usage = null;
-    if (this.#usageRefreshAbortController) {
-      this.#usageRefreshAbortController.abort();
-      this.#usageRefreshAbortController = null;
-    }
-    lazy.IPPStartupCache.storeUsageInfo(null);
     if (
       this.#state === IPPProxyStates.ACTIVE ||
-      this.#state === IPPProxyStates.ACTIVATING ||
-      this.#state === IPPProxyStates.PAUSED ||
-      this.#state === IPPProxyStates.ERROR
+      this.#state === IPPProxyStates.ACTIVATING
     ) {
-      // Stop as a user action to reset userEnabled and record the correct metrics.
-      await this.stop(true /* userAction */);
+      await this.stop();
     }
-  }
-
-  /**
-   * Move to the PAUSED state and close the connection,
-   * but leave the channel filter in place if state was ACTIVE.
-   *
-   * Usage refresh will still be attempted at the reset time.
-   */
-  pause() {
-    this.#pass = null;
-    this.#connection?.uninitialize();
-    lazy.clearTimeout(this.#rotationTimer);
-    this.#rotationTimer = 0;
-    this.#setState(IPPProxyStates.PAUSED);
   }
 
   async #handleEvent(_event) {
@@ -578,7 +567,9 @@ class IPPProxyManagerSingleton extends EventTarget {
     if (usage) {
       this.#setUsage(usage);
       if (this.#usage.remaining <= 0) {
-        this.pause();
+        this.#pass = null;
+        this.#connection.uninitialize();
+        this.#setState(IPPProxyStates.PAUSED);
         return null;
       }
     }
@@ -620,7 +611,22 @@ class IPPProxyManagerSingleton extends EventTarget {
       return;
     }
     this.#setUsage(newUsage);
-    this.updateState();
+    switch (this.#state) {
+      case IPPProxyStates.ACTIVE:
+        if (newUsage.remaining <= 0) {
+          this.#setState(IPPProxyStates.PAUSED);
+          this.#connection?.uninitialize();
+        }
+        break;
+      case IPPProxyStates.NOT_READY:
+        if (newUsage.remaining > 0) {
+          this.#setState(IPPProxyStates.READY);
+        }
+        break;
+      default:
+        // No state change needed
+        break;
+    }
   }
 
   #handleProxyErrorEvent(event) {
@@ -653,17 +659,14 @@ class IPPProxyManagerSingleton extends EventTarget {
       return;
     }
 
-    if (lazy.IPProtectionService.state !== lazy.IPProtectionStates.READY) {
-      this.#setState(IPPProxyStates.NOT_READY);
-      return;
+    if (lazy.IPProtectionService.state === lazy.IPProtectionStates.READY) {
+      if (!this.#usage || this.#usage.remaining > 0) {
+        this.#setState(IPPProxyStates.READY);
+        return;
+      }
     }
 
-    if (this.#usage && this.#usage.remaining <= 0) {
-      this.#setState(IPPProxyStates.PAUSED);
-      return;
-    }
-
-    this.#setState(IPPProxyStates.READY);
+    this.#setState(IPPProxyStates.NOT_READY);
   }
 
   /**
@@ -692,7 +695,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     this.#usage = usage;
     const now = Temporal.Now.instant();
     const daysUntilReset = now.until(usage.reset).total("days");
-    lazy.logConsole.debug("ProxyUsage:", {
+    lazy.logConsole.debug("ProxyPass:", {
       usage: `${usage.remaining} / ${usage.max}`,
       resetsIn: `${daysUntilReset.toFixed(1)} days`,
     });
