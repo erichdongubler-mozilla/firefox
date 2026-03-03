@@ -69,6 +69,12 @@ def pytest_generate_tests(metafunc):
     if "disable_speechrecognition" in marks:
         otherargs["disable_speechrecognition"] = True
 
+    if "enable_standard_captureStream" in marks:
+        otherargs["enable_standard_captureStream"] = True
+
+    if "disable_standard_captureStream" in marks:
+        otherargs["disable_standard_captureStream"] = True
+
     if "enable_webkit_fill_available" in marks:
         otherargs["enable_webkit_fill_available"] = True
 
@@ -101,11 +107,17 @@ async def test_config(request, driver):
         "actual_platform_required": params.get("actual_platform_required", False),
         "enable_moztransform": params.get("enable_moztransform", False),
         "enable_speechrecognition": params.get("enable_speechrecognition", False),
+        "enable_standard_captureStream": params.get(
+            "enable_standard_captureStream", False
+        ),
         "enable_webkit_fill_available": params.get(
             "enable_webkit_fill_available", False
         ),
         "disable_moztransform": params.get("disable_moztransform", False),
         "disable_speechrecognition": params.get("disable_speechrecognition", False),
+        "disable_standard_captureStream": params.get(
+            "disable_standard_captureStream", False
+        ),
         "disable_webkit_fill_available": params.get(
             "disable_webkit_fill_available", False
         ),
