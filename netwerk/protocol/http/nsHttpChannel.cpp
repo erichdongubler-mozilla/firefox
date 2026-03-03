@@ -96,9 +96,10 @@
 #include "nsIPrompt.h"
 #include "nsInputStreamPump.h"
 #include "nsURLHelper.h"
+#include "nsISiteIntegrityService.h"
+#include "nsISiteSecurityService.h"
 #include "nsISocketTransport.h"
 #include "nsIStreamConverterService.h"
-#include "nsISiteSecurityService.h"
 #include "nsIURIMutator.h"
 #include "nsString.h"
 #include "nsStringStream.h"
@@ -1352,6 +1353,11 @@ nsresult nsHttpChannel::HandleOverrideResponse() {
         httpParent->SetCookieChanges(std::move(cookieChanges));
       }
     }
+  }
+
+  rv = ProcessWAICTHeader();
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
   rv = ProcessSecurityHeaders();
@@ -2802,6 +2808,73 @@ nsresult nsHttpChannel::ProcessHSTSHeader(nsITransportSecurityInfo* aSecInfo) {
   return NS_OK;
 }
 
+// https://github.com/rozbb/waict-integrity-draft/
+nsresult nsHttpChannel::ProcessWAICTHeader() {
+#ifdef NIGHTLY_BUILD
+  if (!StaticPrefs::security_waict_downgrade_protection_enable()) {
+    return NS_OK;
+  }
+
+  // The WAICT header is only relevant for document loads.
+  ExtContentPolicyType type = mLoadInfo->GetExternalContentPolicyType();
+  if (type != ExtContentPolicy::TYPE_DOCUMENT &&
+      type != ExtContentPolicy::TYPE_SUBDOCUMENT) {
+    return NS_OK;
+  }
+
+  nsISiteIntegrityService* integrityService =
+      gHttpHandler->GetSiteIntegrityService();
+  NS_ENSURE_TRUE(integrityService, NS_ERROR_OUT_OF_MEMORY);
+
+  // Unlike HSTS, WAICT is supported for HTTP as well, so we need to use the
+  // correct helper.
+  OriginAttributes originAttributes;
+  if (mURI->SchemeIs("https")) {
+    if (NS_WARN_IF(!StoragePrincipalHelper::GetOriginAttributesForHTTPSRR(
+            this, originAttributes))) {
+      return NS_ERROR_FAILURE;
+    }
+  } else {
+    if (NS_WARN_IF(!StoragePrincipalHelper::GetOriginAttributesForHSTS(
+            this, originAttributes))) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  nsAutoCString headerValue;
+  nsresult rv =
+      mResponseHead->GetHeader(nsHttp::Integrity_Policy_WAICT, headerValue);
+  if (rv == NS_ERROR_NOT_AVAILABLE || headerValue.IsEmpty()) {
+    LOG(
+        ("nsHttpChannel: No Integrity-Policy-WAICT header, checking if URI is "
+         "protected.\n"));
+
+    bool isProtected = false;
+    rv = integrityService->IsProtectedURI(mURI, originAttributes, &isProtected);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    if (isProtected) {
+      LOG(
+          ("nsHttpChannel: URI is protected but missing WAICT header, "
+           "aborting load.\n"));
+      Cancel(NS_ERROR_CORRUPTED_CONTENT);
+      DoNotifyListener();
+      return NS_ERROR_CORRUPTED_CONTENT;
+    }
+
+    LOG(("nsHttpChannel: URI is not protected, continuing load.\n"));
+    return NS_OK;
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+#endif
+
+  return NS_OK;
+}
+
 /**
  * Decide whether or not to remember Strict-Transport-Security, and whether
  * or not to enforce channel integrity.
@@ -3159,9 +3232,14 @@ nsresult nsHttpChannel::ContinueProcessResponse1(
       }
     }
 
+    rv = ProcessWAICTHeader();
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
     // Given a successful connection, process any STS or PKP data that's
     // relevant.
-    nsresult rv = ProcessSecurityHeaders();
+    rv = ProcessSecurityHeaders();
     if (NS_FAILED(rv)) {
       NS_WARNING("ProcessSTSHeader failed, continuing load.");
     }

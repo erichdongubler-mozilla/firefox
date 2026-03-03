@@ -19,6 +19,7 @@ interface nsIDataStorageManager : nsISupports {
     AlternateServices,
     ClientAuthRememberList,
     SiteSecurityServiceState,
+    SiteIntegrityServiceState,
   };
 
   nsIDataStorage get(in nsIDataStorageManager_DataStorage dataStorage);

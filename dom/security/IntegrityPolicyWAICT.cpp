@@ -321,6 +321,15 @@ NS_IMETHODIMP IntegrityPolicyWAICT::OnStreamComplete(nsIStreamLoader* aLoader,
 
   MOZ_LOG_FMT(gWaictLog, LogLevel::Debug, "Manifest validation successful");
 
+  if (StaticPrefs::security_waict_downgrade_protection_enable() && mEnforce &&
+      mDocumentURI) {
+    if (RefPtr<Document> doc = do_QueryReferent(mDocument)) {
+      if (WindowGlobalChild* wgc = doc->GetWindowGlobalChild()) {
+        wgc->SendSetSiteIntegrityProtected(WrapNotNull(mDocumentURI), mMaxAge);
+      }
+    }
+  }
+
   if (manifest.mHashes.WasPassed()) {
     MOZ_ASSERT(mHashes.IsEmpty());
     nsCOMPtr<nsIURI> uri;

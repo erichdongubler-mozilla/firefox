@@ -206,6 +206,8 @@ parent:
 
   async SetDocumentDomain(nsIURI aDomain);
 
+  async SetSiteIntegrityProtected(nsIURI aSourceURI, uint64_t aMaxAge);
+
   async Destroy();
 
   async ReloadWithHttpsOnlyException();
