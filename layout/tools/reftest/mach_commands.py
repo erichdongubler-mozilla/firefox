@@ -261,6 +261,8 @@ def run_crashtest(command_context, **kwargs):
 
 
 def _run_reftest(command_context, **kwargs):
+    from output import ReftestFormatter
+
     kwargs["topsrcdir"] = command_context.topsrcdir
     process_test_objects(kwargs)
 
@@ -270,15 +272,12 @@ def _run_reftest(command_context, **kwargs):
         if os.environ.get("MOZ_REFTEST_VERBOSE"):
             level = "debug"
         format_args = {"level": level}
-        default_format = command_context._mach_context.settings["test"]["format"]
-        log = setup_logging(
-            "mach-reftest", kwargs, {default_format: sys.stdout}, format_args
-        )
+        log = setup_logging("mach-reftest", kwargs, {"tbpl": sys.stdout}, format_args)
         kwargs["log"] = log
         created_logger = True
         for handler in log.handlers:
             if isinstance(handler, StreamHandler):
-                handler.formatter.inner.summary_on_shutdown = True
+                handler.formatter.inner = ReftestFormatter()
         log.add_handler(ResourceHandler(command_context))
 
     reftest = command_context._spawn(ReftestRunner)
