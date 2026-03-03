@@ -37,8 +37,12 @@ body {
 }
 
 /* Urlbar */
-#urlbar:not([open]) > .urlbar-background {
-  border-radius: var(--border-radius-circle);
+#urlbar:not([open]) {
+  > .urlbar-background,
+  #identity-icon-box,
+  #urlbar-searchmode-switcher {
+    border-radius: var(--border-radius-circle);
+  }
 }
 
 /* Tab preview thumbnail */
