@@ -122,7 +122,7 @@ bool GIOChannelParent::DoAsyncOpen(const URIParams& aURI,
     return SendFailedAsyncOpen(rv);
   }
 
-  mChannel = chan;
+  mChannel = std::move(chan);
 
   nsIChannel* gioChan = static_cast<nsIChannel*>(mChannel.get());
 

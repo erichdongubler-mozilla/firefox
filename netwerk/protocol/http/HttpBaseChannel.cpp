@@ -4568,7 +4568,7 @@ already_AddRefed<nsILoadInfo> HttpBaseChannel::CloneLoadInfoForRedirect(
                "docshell and necko should have the same "
                "geckoViewSessionContextId attribute");
 
-    attrs = docShellAttrs;
+    attrs = std::move(docShellAttrs);
     attrs.SetFirstPartyDomain(true, aNewURI);
     newLoadInfo->SetOriginAttributes(attrs);
 

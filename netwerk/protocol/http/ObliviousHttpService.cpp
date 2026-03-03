@@ -130,7 +130,7 @@ void ObliviousHttpService::ReadPrefs(const nsACString& whichPref) {
       return;
     }
     auto trrConfig = mTRRConfig.Lock();
-    trrConfig->mRelayURI = relayURI;
+    trrConfig->mRelayURI = std::move(relayURI);
   }
 
   if (whichPref.Equals(kTRRohttpConfigURIPref) ||

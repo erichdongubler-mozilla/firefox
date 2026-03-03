@@ -1365,7 +1365,7 @@ LoadInfo::SetScriptableOriginAttributes(
     return NS_ERROR_INVALID_ARG;
   }
 
-  mOriginAttributes = attrs;
+  mOriginAttributes = std::move(attrs);
   return NS_OK;
 }
 

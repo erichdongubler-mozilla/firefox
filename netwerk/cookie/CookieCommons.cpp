@@ -901,7 +901,7 @@ CookieCommons::CheckGlobalAndRetrieveCookiePrincipals(
           workerPrivate->GetPartitionedPrincipal();
       if (partitionedPrincipal && !partitionedPrincipal->OriginAttributesRef()
                                        .mPartitionKey.IsEmpty()) {
-        cookiePartitionedPrincipal = partitionedPrincipal;
+        cookiePartitionedPrincipal = std::move(partitionedPrincipal);
       }
     }
   } else {

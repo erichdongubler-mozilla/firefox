@@ -99,7 +99,7 @@ NS_IMETHODIMP HTTPSRecordResolver::OnLookupComplete(nsICancelable* aRequest,
       return InvokeCallback();
     }
 
-    mHTTPSRecord = record;
+    mHTTPSRecord = std::move(record);
 
     // Waiting for the address record.
     if (mCnameRequest) {
@@ -125,7 +125,7 @@ NS_IMETHODIMP HTTPSRecordResolver::OnLookupComplete(nsICancelable* aRequest,
       return InvokeCallback();
     }
 
-    mAddrRecord = addrRecord;
+    mAddrRecord = std::move(addrRecord);
     // Waiting for the HTTPS record.
     if (mHTTPSRecordRequest) {
       return NS_OK;

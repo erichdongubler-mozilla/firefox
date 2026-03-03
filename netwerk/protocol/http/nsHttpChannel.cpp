@@ -2645,7 +2645,7 @@ nsresult nsHttpChannel::CallOnStartRequest() {
                  "the child process directly. We MUST NOT apply content "
                  "converter in this case.");
       mListener = listener;
-      mCompressListener = listener;
+      mCompressListener = std::move(listener);
 
       StoreHasAppliedConversion(true);
     }
@@ -3722,7 +3722,7 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
         LOG_DICTIONARIES(("Installed nsHTTPCompressConv %p without cache tee",
                           listener.get()));
         mListener = listener;
-        mCompressListener = listener;
+        mCompressListener = std::move(listener);
         StoreHasAppliedConversion(true);
       } else {
         LOG_DICTIONARIES(("Didn't install decompressor without cache tee"));
@@ -6608,7 +6608,7 @@ nsresult nsHttpChannel::DoInstallCacheListener(bool aSaveDecompressed,
       LOG_DICTIONARIES(
           ("Installed nsHTTPCompressConv %p before tee", listener.get()));
       mListener = listener;
-      mCompressListener = listener;
+      mCompressListener = std::move(listener);
       StoreHasAppliedConversion(true);
 
     } else {
@@ -7734,7 +7734,7 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
   StoreIsPending(true);
   StoreWasOpened(true);
 
-  mListener = listener;
+  mListener = std::move(listener);
 
   if (nsIOService::UseSocketProcess() &&
       !gIOService->IsSocketProcessLaunchComplete()) {

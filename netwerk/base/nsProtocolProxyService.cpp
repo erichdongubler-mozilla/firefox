@@ -1586,7 +1586,7 @@ nsresult nsProtocolProxyService::AsyncResolveInternal(
     nsCOMPtr<nsISystemProxySettings> sp2 =
         do_GetService(NS_SYSTEMPROXYSETTINGS_CONTRACTID);
     if (sp2 != mSystemProxySettings) {
-      mSystemProxySettings = sp2;
+      mSystemProxySettings = std::move(sp2);
       ResetPACThread();
     }
   }

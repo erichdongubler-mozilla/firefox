@@ -802,8 +802,8 @@ nsresult nsAtomicFileOutputStream::DoOpen() {
     // nsFileOutputStream::DoOpen will work on the temporary file, so we
     // prepare it and place it in mOpenParams.localFile.
     mOpenParams.localFile = tempResult;
-    mTempFile = tempResult;
-    mTargetFile = file;
+    mTempFile = std::move(tempResult);
+    mTargetFile = std::move(file);
     rv = nsFileOutputStream::DoOpen();
   }
   return rv;

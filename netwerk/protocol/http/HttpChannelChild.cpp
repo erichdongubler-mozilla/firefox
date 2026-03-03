@@ -1576,7 +1576,7 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvReportLNAToConsole(
   if (triggeringPrincipal) {
     nsCOMPtr<nsIURI> principalURI = triggeringPrincipal->GetURI();
     if (principalURI) {
-      sourceURI = principalURI;
+      sourceURI = std::move(principalURI);
     }
   }
 
@@ -2383,7 +2383,7 @@ nsresult HttpChannelChild::AsyncOpenInternal(nsIStreamListener* aListener) {
   }
   StoreIsPending(true);
   StoreWasOpened(true);
-  mListener = listener;
+  mListener = std::move(listener);
 
   if (mCanceled) {
     // We may have been canceled already, either by on-modify-request

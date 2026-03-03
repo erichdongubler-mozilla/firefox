@@ -681,7 +681,7 @@ nsBaseChannel::AsyncOpen(nsIStreamListener* aListener) {
   // via the StreamListener methods.  However, since
   // this typically introduces a reference cycle between this and the listener,
   // we need to be sure to break the reference if this method does not succeed.
-  mListener = listener;
+  mListener = std::move(listener);
 
   // This method assigns mPump as a side-effect.  We need to clear mPump if
   // this method fails.
