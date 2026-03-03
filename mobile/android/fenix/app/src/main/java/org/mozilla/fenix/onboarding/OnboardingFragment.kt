@@ -27,8 +27,6 @@ import mozilla.components.service.nimbus.evalJexlSafe
 import mozilla.components.service.nimbus.messaging.use
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.ktx.android.view.tryDisableEdgeToEdge
-import mozilla.components.support.ktx.android.view.tryEnableEnterEdgeToEdge
 import mozilla.components.support.utils.Browsers
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.R
@@ -191,9 +189,6 @@ class OnboardingFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (requireContext().settings().useOnboardingRedesign) {
-            activity?.tryEnableEnterEdgeToEdge()
-        }
         hideToolbar()
     }
 
@@ -209,9 +204,6 @@ class OnboardingFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (requireContext().settings().useOnboardingRedesign) {
-            activity?.tryDisableEdgeToEdge()
-        }
         if (!isLargeScreenSize()) {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
