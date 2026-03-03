@@ -214,6 +214,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void DecrementActiveConnCount(HttpConnectionBase*);
 
  private:
+  friend class ConnectionAttemptPool;
   friend class DnsAndConnectSocket;
   friend class PendingTransactionInfo;
 

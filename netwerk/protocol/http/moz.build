@@ -109,6 +109,8 @@ UNIFIED_SOURCES += [
     "CapsuleDecoder.cpp",
     "CapsuleEncoder.cpp",
     "CapsuleParser.cpp",
+    "ConnectionAttempt.cpp",
+    "ConnectionAttemptPool.cpp",
     "ConnectionDiagnostics.cpp",
     "ConnectionEntry.cpp",
     "ConnectionHandle.cpp",
