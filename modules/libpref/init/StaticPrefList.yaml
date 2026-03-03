@@ -9653,6 +9653,12 @@
   mirror: always
   set_spidermonkey_pref: always
 
+# Attempt to dispatch multiple microtasks without doing a full
+# setup and teardown between each task.
+- name: javascript.options.batch_microtask_execution
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
 
 # Whether to treat "ducktyped" error objects like `{message: "<message>", fileName: "foo", lineNumber: 1}`
 # as real Error objects during exception handling.
