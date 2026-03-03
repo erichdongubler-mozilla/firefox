@@ -1369,6 +1369,9 @@ pref("network.manage-offline-status", true);
 // timeout for local network access prompts
 pref("network.lna.prompt.timeout", 300000); // 5 minutes
 
+// expiration time for temporary local network access permissions
+pref("network.lna.temporary_permission_expire_time_ms", 86400000); // 24 hours
+
 // We want to make sure mail URLs are handled externally...
 pref("network.protocol-handler.external.mailto", true); // for mail
 
