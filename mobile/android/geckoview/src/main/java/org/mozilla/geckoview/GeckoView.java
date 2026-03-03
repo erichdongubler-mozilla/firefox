@@ -739,13 +739,6 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
     addWindowInsetsListener(KEYBOARD_WINDOW_INSETS_LISTENER, mDisplay);
     attachWindowInsetsListener(getActivityFromContext(getContext()));
     GeckoAppShell.setDisplayId(getDisplay().getDisplayId());
-
-    if (mSession != null) {
-      final GeckoRuntime runtime = mSession.getRuntime();
-      if (runtime != null) {
-        runtime.orientationChanged();
-      }
-    }
   }
 
   @Override

@@ -1655,7 +1655,16 @@ public class GeckoAppShell {
    * @param displayId The display id.
    */
   public static void setDisplayId(final int displayId) {
+    final boolean isDisplayIdChanged = sDisplayId != displayId;
     sDisplayId = displayId;
+
+    if (isDisplayIdChanged) {
+      if (GeckoScreenOrientation.getInstance().update()) {
+        // refreshScreenInfo is already called.
+        return;
+      }
+      ScreenManagerHelper.refreshScreenInfo();
+    }
   }
 
   @WrapForJNI(calledFrom = "any")
