@@ -19,6 +19,7 @@
 #include "nsGlobalWindowInner.h"
 #include "nsJSUtils.h"
 #include "nsScriptError.h"
+#include "xpcpublic.h"
 
 using namespace mozilla::dom;
 
@@ -118,6 +119,25 @@ nsScriptErrorWithStack::GetStackGlobal(
     JS::MutableHandle<JS::Value> aStackGlobal) {
   aStackGlobal.setObjectOrNull(mStackGlobal);
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsScriptErrorWithStack::InitWithWindowID(
+    const nsAString& message, const nsACString& sourceName, uint32_t lineNumber,
+    uint32_t columnNumber, uint32_t flags, const nsACString& category,
+    uint64_t aInnerWindowID, bool aFromChromeContext) {
+  // If we don't have a window ID but the stack global is a window, use its
+  // ID so ClearMessagesForWindowID can clean up this error when the window
+  // is destroyed.
+  if (!aInnerWindowID && mStackGlobal) {
+    nsGlobalWindowInner* stackWin = xpc::WindowGlobalOrNull(mStackGlobal);
+    if (stackWin) {
+      aInnerWindowID = stackWin->WindowID();
+    }
+  }
+  return nsScriptErrorBase::InitWithWindowID(
+      message, sourceName, lineNumber, columnNumber, flags, category,
+      aInnerWindowID, aFromChromeContext);
 }
 
 NS_IMETHODIMP

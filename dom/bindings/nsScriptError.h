@@ -110,6 +110,12 @@ class nsScriptErrorWithStack : public nsScriptErrorBase {
 
   NS_IMETHOD GetStack(JS::MutableHandle<JS::Value>) override;
   NS_IMETHOD GetStackGlobal(JS::MutableHandle<JS::Value>) override;
+  NS_IMETHOD InitWithWindowID(const nsAString& message,
+                              const nsACString& sourceName, uint32_t lineNumber,
+                              uint32_t columnNumber, uint32_t flags,
+                              const nsACString& category,
+                              uint64_t aInnerWindowID,
+                              bool aFromChromeContext) override;
   NS_IMETHOD ToString(nsACString& aResult) override;
 
  private:
