@@ -119,9 +119,10 @@ enum PromiseCombinatorElementFunctionSlots {
   // It's also used to represent the [[AlreadyCalled]] flag: we set this slot to
   // UndefinedValue when [[AlreadyCalled]] is set to true in the spec.
   //
-  // The onRejected functions for Promise.allSettled have a NullValue stored in
-  // this slot. In this case the slot shouldn't be used because the
-  // [[AlreadyCalled]] state must be shared by the two functions.
+  // The onRejected functions for Promise.allSettled and Promise.allSettledKeyed
+  // have a NullValue stored in this slot. In this case the slot shouldn't be
+  // used because the [[AlreadyCalled]] state must be shared by the two
+  // functions.
   PromiseCombinatorElementFunctionSlot_Data
 };
 
@@ -4332,13 +4333,23 @@ static JSFunction* NewPromiseCombinatorElementFunction(
  *
  * Steps 1-4.
  *
+ * Await Dictionary Proposal
+ *
+ * PerformPromiseAllKeyed ( promises, constructor, resultCapability,
+ *                          promiseResolve )
+ * https://tc39.es/proposal-await-dictionary/#sec-performpromiseallkeyed
+ *
+ * Step 6.b.vi.1-2.
+ * Step 6.b.ix.2.a-b.
+ *
  * Common implementation for Promise combinator element functions to check if
  * they've already been called.
  */
+template <typename DataHolderT>
 static bool PromiseCombinatorElementFunctionAlreadyCalled(
-    const CallArgs& args, MutableHandle<PromiseCombinatorDataHolder*> data,
-    uint32_t* index) {
+    const CallArgs& args, MutableHandle<DataHolderT*> data, uint32_t* index) {
   // Step 1. Let F be the active function object.
+  // (implicit for PerformPromiseAllKeyed)
   JSFunction* fn = &args.callee().as<JSFunction>();
 
   // Promise.{all,any} functions
@@ -4346,19 +4357,23 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
   // Promise.allSettled functions
   // Step 2. Let alreadyCalled be F.[[AlreadyCalled]].
   // Step 3. If alreadyCalled.[[Value]] is true, return undefined.
+  // PerformPromiseAllKeyed
+  // Step 6.b.vi.1 / Step 6.b.ix.2.a.
+  //   If alreadyCalled.[[Value]] is true, return undefined.
   //
   // We use the existence of the data holder as a signal for whether the Promise
   // combinator element function was already called. Upon resolution, it's reset
   // to `undefined`.
   //
-  // For Promise.allSettled, the [[AlreadyCalled]] state must be shared by the
-  // two functions, so we always use the resolve function's state.
+  // For Promise.allSettled and Promise.allSettledKeyed, the [[AlreadyCalled]]
+  // state must be shared by the two functions, so we always use the resolve
+  // function's state.
 
   constexpr size_t indexOrResolveFuncSlot =
       PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc;
   if (fn->getExtendedSlot(indexOrResolveFuncSlot).isObject()) {
-    // This is a reject function for Promise.allSettled. Get the corresponding
-    // resolve function.
+    // This is a reject function for Promise.allSettled and
+    // Promise.allSettledKeyed. Get the corresponding resolve function.
     Value slotVal = fn->getExtendedSlot(indexOrResolveFuncSlot);
     fn = &slotVal.toObject().as<JSFunction>();
   }
@@ -4370,12 +4385,15 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
     return true;
   }
 
-  data.set(&dataVal.toObject().as<PromiseCombinatorDataHolder>());
+  data.set(&dataVal.toObject().as<DataHolderT>());
 
   // Promise.{all,any} functions
   // Step 3. Set F.[[AlreadyCalled]] to true.
   // Promise.allSettled functions
   // Step 4. Set alreadyCalled.[[Value]] to true.
+  // PerformPromiseAllKeyed
+  // Step 6.b.vi.2 / Step 6.b.ix.2.b.
+  //   Set alreadyCalled.[[Value]] to true.
   fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
                       UndefinedValue());
 
@@ -4383,6 +4401,8 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
   // Step 4. Let index be F.[[Index]].
   // Promise.allSettled functions
   // Step 5. Let index be F.[[Index]].
+  // PerformPromiseAllKeyed
+  // (implicit)
   int32_t idx = fn->getExtendedSlot(indexOrResolveFuncSlot).toInt32();
   MOZ_ASSERT(idx >= 0);
   *index = uint32_t(idx);
@@ -4498,7 +4518,8 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
   // Steps 1-4.
   Rooted<PromiseCombinatorDataHolder*> data(cx);
   uint32_t index;
-  if (PromiseCombinatorElementFunctionAlreadyCalled(args, &data, &index)) {
+  if (PromiseCombinatorElementFunctionAlreadyCalled<
+          PromiseCombinatorDataHolder>(args, &data, &index)) {
     args.rval().setUndefined();
     return true;
   }
@@ -4749,7 +4770,8 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   // Steps 1-5.
   Rooted<PromiseCombinatorDataHolder*> data(cx);
   uint32_t index;
-  if (PromiseCombinatorElementFunctionAlreadyCalled(args, &data, &index)) {
+  if (PromiseCombinatorElementFunctionAlreadyCalled<
+          PromiseCombinatorDataHolder>(args, &data, &index)) {
     args.rval().setUndefined();
     return true;
   }
@@ -4965,7 +4987,8 @@ static bool PromiseAnyRejectElementFunction(JSContext* cx, unsigned argc,
   // Steps 1-4.
   Rooted<PromiseCombinatorDataHolder*> data(cx);
   uint32_t index;
-  if (PromiseCombinatorElementFunctionAlreadyCalled(args, &data, &index)) {
+  if (PromiseCombinatorElementFunctionAlreadyCalled<
+          PromiseCombinatorDataHolder>(args, &data, &index)) {
     args.rval().setUndefined();
     return true;
   }
@@ -5314,20 +5337,13 @@ static bool PromiseAllKeyedResolveElementFunction(JSContext* cx, unsigned argc,
         //              index, keys, values, resultCapability, and
         //              remainingElementsCount and performs the following steps
         //              when called:
-        JSFunction* resolveFunc = NewNativeFunction(
-            cx, PromiseAllKeyedResolveElementFunction, 1, nullptr,
-            gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
+        // Step 6.b.v. Let alreadyCalled be the Record { [[Value]]: false }.
+        JSFunction* resolveFunc = NewPromiseCombinatorElementFunction(
+            cx, PromiseAllKeyedResolveElementFunction, dataHolder, index,
+            UndefinedHandleValue);
         if (!resolveFunc) {
           return false;
         }
-
-        resolveFunc->setExtendedSlot(
-            PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
-            Int32Value(index));
-
-        // Step 6.b.v. Let alreadyCalled be the Record { [[Value]]: false }.
-        resolveFunc->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
-                                     ObjectValue(*dataHolder));
 
         resolveFunVal.setObject(*resolveFunc);
 
@@ -5372,20 +5388,14 @@ static bool PromiseAllSettledKeyedRejectElementFunction(JSContext* cx,
         //              index, keys, values, resultCapability, and
         //              remainingElementsCount and performs the following steps
         //              when called:
-        JSFunction* resolveFunc = NewNativeFunction(
-            cx, PromiseAllSettledKeyedResolveElementFunction, 1, nullptr,
-            gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
+        // Step 6.b.v. Let alreadyCalled be the Record { [[Value]]: false }.
+        JSFunction* resolveFunc = NewPromiseCombinatorElementFunction(
+            cx, PromiseAllSettledKeyedResolveElementFunction, dataHolder, index,
+            UndefinedHandleValue);
         if (!resolveFunc) {
           return false;
         }
 
-        resolveFunc->setExtendedSlot(
-            PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
-            Int32Value(index));
-
-        // Step 6.b.v. Let alreadyCalled be the Record { [[Value]]: false }.
-        resolveFunc->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
-                                     ObjectValue(*dataHolder));
         resolveFunVal.setObject(*resolveFunc);
 
         // Step 6.b.ix.2. Let onRejected be a new Abstract Closure with
@@ -5393,18 +5403,12 @@ static bool PromiseAllSettledKeyedRejectElementFunction(JSContext* cx,
         //                keys, values, resultCapability, and
         //                remainingElementsCount and performs the following
         //                steps when called:
-        JSFunction* rejectFunc = NewNativeFunction(
-            cx, PromiseAllSettledKeyedRejectElementFunction, 1, nullptr,
-            gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
+        JSFunction* rejectFunc = NewPromiseCombinatorElementFunction(
+            cx, PromiseAllSettledKeyedRejectElementFunction, dataHolder, index,
+            resolveFunVal);
         if (!rejectFunc) {
           return false;
         }
-
-        rejectFunc->setExtendedSlot(
-            PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
-            Int32Value(index));
-        rejectFunc->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
-                                    ObjectValue(*dataHolder));
 
         rejectFunVal.setObject(*rejectFunc);
         return true;
@@ -5425,8 +5429,8 @@ static bool PromiseAllSettledKeyedRejectElementFunction(JSContext* cx,
  *                          promiseResolve )
  * https://tc39.es/proposal-await-dictionary/#sec-performpromiseallkeyed
  *
- * Step 6.b.vi. - Promise.allKeyed Resolve Element Functions
- * Step 6.b.vi. - Promise.allSettledKeyed Resolve Element Functions
+ * Step 6.b.vi. - Promise.allKeyed Resolve Element Functions, and
+ *                Promise.allSettledKeyed Resolve Element Functions
  * Step 6.b.ix.2. - Promise.allSettledKeyed Reject Element Functions
  *
  * Template function that handles common logic for all keyed combinator
@@ -5438,32 +5442,16 @@ static bool PromiseKeyedElementFunction(JSContext* cx, unsigned argc, Value* vp,
                                         ProcessValueFn&& processValue) {
   CallArgs args = CallArgsFromVp(argc, vp);
   JS::Handle<JS::Value> xVal = args.get(0);
-  JSFunction* fn = &args.callee().as<JSFunction>();
 
-  constexpr size_t indexOrResolveFuncSlot =
-      PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc;
-  MOZ_RELEASE_ASSERT(fn->getExtendedSlot(indexOrResolveFuncSlot).isInt32());
-
-  const Value& dataVal =
-      fn->getExtendedSlot(PromiseCombinatorElementFunctionSlot_Data);
-
-  // Step 6.b.vi.1 / Step 6.b.ix.2.a. If alreadyCalled.[[Value]] is true,
-  // return undefined.
-  if (dataVal.isUndefined()) {
+  // Step 6.b.vi.1-2.
+  // Step 6.b.ix.2.a-b.
+  JS::Rooted<PromiseCombinatorKeyedDataHolder*> data(cx);
+  uint32_t index;
+  if (PromiseCombinatorElementFunctionAlreadyCalled<
+          PromiseCombinatorKeyedDataHolder>(args, &data, &index)) {
     args.rval().setUndefined();
     return true;
   }
-
-  JS::Rooted<PromiseCombinatorKeyedDataHolder*> data(
-      cx, &dataVal.toObject().as<PromiseCombinatorKeyedDataHolder>());
-
-  // Step 6.b.vi.2 / Step 6.b.ix.2.b. Set alreadyCalled.[[Value]] to true.
-  fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
-                      UndefinedValue());
-
-  int32_t idx = fn->getExtendedSlot(indexOrResolveFuncSlot).toInt32();
-  MOZ_ASSERT(idx >= 0);
-  uint32_t index = uint32_t(idx);
 
   // Variant-specific processing: process the value before storing.
   // For allKeyed: just use the value directly
