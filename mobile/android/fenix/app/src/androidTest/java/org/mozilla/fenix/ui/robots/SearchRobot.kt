@@ -48,8 +48,10 @@ import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.SPEECH_RECOGNITION
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
+import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
 import org.mozilla.fenix.helpers.SessionLoadedIdlingResource
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
@@ -486,19 +488,13 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyTranslatedNavigationToolbarHint: Verified that the translated toolbar has: $toolbarHintString as a hint")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun verifyTypedToolbarText(expectedText: String, exists: Boolean) {
+        Log.i(TAG, "verifyTypedToolbarText: Waiting for $waitingTime until the edit mode toolbar search box exists")
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag(ADDRESSBAR_SEARCH_BOX), waitingTime)
+        Log.i(TAG, "verifyTypedToolbarText: Waited for $waitingTime until the edit mode toolbar search box exists")
         Log.i(TAG, "verifyTypedToolbarText: Verifying that text '$expectedText' exists?: $exists")
-
-        val editToolbar = this@SearchRobot.composeTestRule.onNode(
-            hasTestTag(ADDRESSBAR_SEARCH_BOX) and hasText(expectedText),
-            useUnmergedTree = true,
-        )
-
-        when (exists) {
-            true -> editToolbar.assertIsDisplayed()
-            false -> editToolbar.assertIsNotDisplayed()
-        }
-
+        assertUIObjectExists(itemWithResIdContainingText(ADDRESSBAR_SEARCH_BOX, expectedText), exists = exists)
         Log.i(TAG, "verifyTypedToolbarText: Verification successful.")
     }
 
