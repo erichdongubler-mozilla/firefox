@@ -399,7 +399,7 @@ class TErrorResult {
 
   // Check whether the TErrorResult says to just throw whatever is on
   // the JSContext already.
-  bool IsJSContextException() const {
+  bool IsJSContextException() {
     return ErrorCode() == NS_ERROR_INTERNAL_ERRORRESULT_EXCEPTION_ON_JSCONTEXT;
   }
 
@@ -479,9 +479,11 @@ class TErrorResult {
 
   friend struct IPC::ParamTraits<TErrorResult>;
   friend struct IPC::ParamTraits<ErrorResult>;
+  void SerializeMessage(IPC::MessageWriter* aWriter) const;
+  bool DeserializeMessage(IPC::MessageReader* aReader);
 
-  void SerializeErrorResult(IPC::MessageWriter* aWriter) const;
-  bool DeserializeErrorResult(IPC::MessageReader* aReader);
+  void SerializeDOMExceptionInfo(IPC::MessageWriter* aWriter) const;
+  bool DeserializeDOMExceptionInfo(IPC::MessageReader* aReader);
 
   // Helper method that creates a new Message for this TErrorResult,
   // and returns the arguments array from that Message.
