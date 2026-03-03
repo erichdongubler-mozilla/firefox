@@ -1588,6 +1588,11 @@ fn add_composite_prim(
 ) {
     assert!(!segments.is_empty());
 
+    // Note: At the primitive level we specify an invalid task ID here, which
+    // may look suspicious since we are using the textured shader. However each
+    // segment comes with its own render task id, and that's what the batching
+    // code uses.
+
     let composite_prim_address = write_device_prim_blocks(
         &mut frame_state.frame_gpu_data.f32,
         rect,
@@ -1610,7 +1615,10 @@ fn add_composite_prim(
     frame_state.push_cmd(
         &PrimitiveCommand::quad(
             PatternKind::ColorOrTexture,
-            PatternShaderInput::default(),
+            PatternShaderInput(
+                crate::pattern::TEXTURED_SHADER_MODE_TEXTURE,
+                0,
+            ),
             RenderTaskId::INVALID,
             prim_instance_index,
             composite_prim_address,

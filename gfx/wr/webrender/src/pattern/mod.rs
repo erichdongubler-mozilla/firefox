@@ -111,7 +111,10 @@ impl Pattern {
     pub fn color(color: ColorF) -> Self {
         Pattern {
             kind: PatternKind::ColorOrTexture,
-            shader_input: PatternShaderInput::default(),
+            shader_input: PatternShaderInput(
+                TEXTURED_SHADER_MODE_COLOR,
+                0,
+            ),
             texture_input: PatternTextureInput::default(),
             base_color: color,
             is_opaque: color.a >= 1.0,
@@ -121,10 +124,16 @@ impl Pattern {
     pub fn texture(src_task: RenderTaskId, is_opaque: bool) -> Self {
         Pattern {
             kind: PatternKind::ColorOrTexture,
-            shader_input: PatternShaderInput::default(),
+            shader_input: PatternShaderInput(
+                TEXTURED_SHADER_MODE_TEXTURE,
+                0,
+            ),
             texture_input: PatternTextureInput::new(src_task),
             base_color: ColorF::WHITE,
             is_opaque,
         }
     }
 }
+
+pub const TEXTURED_SHADER_MODE_COLOR: i32 = 0;
+pub const TEXTURED_SHADER_MODE_TEXTURE: i32 = 1;

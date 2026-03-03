@@ -9,7 +9,7 @@ use crate::batch::{AlphaBatchBuilder, AlphaBatchContainer, BatchTextures};
 use crate::batch::{ClipBatcher, BatchBuilder, INVALID_SEGMENT_INDEX, ClipMaskInstanceList};
 use crate::render_task::{SubTask, RectangleClipSubTask, ImageClipSubTask};
 use crate::command_buffer::{CommandBufferList, QuadFlags};
-use crate::pattern::{PatternKind, PatternShaderInput};
+use crate::pattern::{Pattern, PatternKind, PatternShaderInput};
 use crate::segment::EdgeMask;
 use crate::spatial_tree::SpatialTree;
 use crate::clip::ClipStore;
@@ -950,9 +950,11 @@ fn add_image_clip_task_to_batch(
     // input.
     let segment_index = 0;
 
+    let pattern = Pattern::texture(task.src_task, false);
+
     quad::add_to_batch(
-        PatternKind::ColorOrTexture,
-        PatternShaderInput::default(),
+        pattern.kind,
+        pattern.shader_input,
         masked_task_address,
         task.quad_transform_id,
         task.quad_address,
