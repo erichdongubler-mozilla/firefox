@@ -497,7 +497,9 @@ void AbstractRange::RegisterSelection(Selection& aSelection) {
   }
   bool isFirstSelection = mSelections.IsEmpty();
   mSelections.AppendElement(&aSelection);
-  if (isFirstSelection && !mRegisteredClosestCommonInclusiveAncestor) {
+  const bool isValidRange = !IsStaticRange() || AsStaticRange()->IsValid();
+  if (isFirstSelection && !mRegisteredClosestCommonInclusiveAncestor &&
+      isValidRange) {
     nsINode* commonAncestor = GetClosestCommonInclusiveAncestor(
         StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()
             ? AllowRangeCrossShadowBoundary::Yes
@@ -1035,6 +1037,20 @@ AbstractRange::GetAllowCrossShadowBoundaryClientRects(bool aClampToEdge,
                                                       bool aFlushLayout) {
   return GetClientRectsInner(AllowRangeCrossShadowBoundary::Yes, aClampToEdge,
                              aFlushLayout);
+}
+
+void AbstractRange::CollectClientRects(RectCallback& aCallback,
+                                       bool aClampToEdge) const {
+  if (!mIsPositioned) {
+    return;
+  }
+  CollectClientRectsAndText(
+      &aCallback, nullptr, const_cast<AbstractRange*>(this),
+      mStart.GetContainer(),
+      *mStart.Offset(RangeBoundary::OffsetFilter::kValidOffsets),
+      mEnd.GetContainer(),
+      *mEnd.Offset(RangeBoundary::OffsetFilter::kValidOffsets), aClampToEdge,
+      /* aFlushLayout */ false);
 }
 
 already_AddRefed<DOMRectList> AbstractRange::GetClientRectsInner(
