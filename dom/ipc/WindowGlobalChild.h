@@ -208,6 +208,15 @@ class WindowGlobalChild final : public WindowGlobalActor,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvProcessCloseRequest(
       const MaybeDiscarded<dom::BrowsingContext>& aFrameContext);
 
+  mozilla::ipc::IPCResult RecvGetModelContextTools(
+      GetModelContextToolsResolver&& aResolver);
+
+  // TODO: Use MOZ_CAN_RUN_SCRIPT when it gains IPDL support (bug 1539864)
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  mozilla::ipc::IPCResult RecvInvokeModelContextTool(
+      const nsCString& aToolName, NotNull<StructuredCloneData*> aInput,
+      InvokeModelContextToolResolver&& aResolver);
+
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
  private:
