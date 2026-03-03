@@ -98,8 +98,16 @@ NumberFormatterSkeleton::NumberFormatterSkeleton(
     return;
   }
 
-  if (!signDisplay(options.mSignDisplay)) {
-    return;
+  if (options.mStyle == NumberFormatOptions::Style::Currency &&
+      std::get<NumberFormatOptions::CurrencySign>(*options.mCurrency) ==
+          NumberFormatOptions::CurrencySign::Accounting) {
+    if (!accountingSignDisplay(options.mSignDisplay)) {
+      return;
+    }
+  } else {
+    if (!signDisplay(options.mSignDisplay)) {
+      return;
+    }
   }
 
   if (!roundingMode(options.mRoundingMode)) {
@@ -309,13 +317,23 @@ bool NumberFormatterSkeleton::signDisplay(
       return appendToken(u"sign-except-zero");
     case NumberFormatOptions::SignDisplay::Negative:
       return appendToken(u"sign-negative");
-    case NumberFormatOptions::SignDisplay::Accounting:
+  }
+  MOZ_ASSERT_UNREACHABLE("unexpected sign display type");
+  return false;
+}
+
+bool NumberFormatterSkeleton::accountingSignDisplay(
+    NumberFormatOptions::SignDisplay display) {
+  switch (display) {
+    case NumberFormatOptions::SignDisplay::Auto:
       return appendToken(u"sign-accounting");
-    case NumberFormatOptions::SignDisplay::AccountingAlways:
+    case NumberFormatOptions::SignDisplay::Always:
       return appendToken(u"sign-accounting-always");
-    case NumberFormatOptions::SignDisplay::AccountingExceptZero:
+    case NumberFormatOptions::SignDisplay::Never:
+      return appendToken(u"sign-never");
+    case NumberFormatOptions::SignDisplay::ExceptZero:
       return appendToken(u"sign-accounting-except-zero");
-    case NumberFormatOptions::SignDisplay::AccountingNegative:
+    case NumberFormatOptions::SignDisplay::Negative:
       return appendToken(u"sign-accounting-negative");
   }
   MOZ_ASSERT_UNREACHABLE("unexpected sign display type");

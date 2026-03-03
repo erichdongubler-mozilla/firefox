@@ -4,6 +4,7 @@
 #ifndef intl_components_NumberFormat_h_
 #define intl_components_NumberFormat_h_
 #include <string_view>
+#include <tuple>
 #include <utility>
 
 #include "mozilla/intl/ICU4CGlue.h"
@@ -69,7 +70,11 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
     Name,
     NarrowSymbol,
   };
-  Maybe<std::pair<std::string_view, CurrencyDisplay>> mCurrency;
+  enum class CurrencySign {
+    Standard,
+    Accounting,
+  };
+  Maybe<std::tuple<std::string_view, CurrencyDisplay, CurrencySign>> mCurrency;
 
   /**
    * Set the fraction digits settings. |min| can be zero, |max| must be
@@ -149,10 +154,6 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
     Always,
     ExceptZero,
     Negative,
-    Accounting,
-    AccountingAlways,
-    AccountingExceptZero,
-    AccountingNegative,
   } mSignDisplay = SignDisplay::Auto;
 
   /**

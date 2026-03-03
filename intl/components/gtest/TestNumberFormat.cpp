@@ -72,7 +72,8 @@ TEST(IntlNumberFormat, Currency)
   NumberFormatOptions options;
   options.mStyle = NumberFormatOptions::Style::Currency;
   options.mCurrency =
-      Some(std::make_pair("MXN", NumberFormatOptions::CurrencyDisplay::Symbol));
+      Some(std::make_tuple("MXN", NumberFormatOptions::CurrencyDisplay::Symbol,
+                           NumberFormatOptions::CurrencySign::Standard));
   UniquePtr<NumberFormat> nf =
       NumberFormat::TryCreate("es-MX", options).unwrap();
   TestBuffer<char> buf8;

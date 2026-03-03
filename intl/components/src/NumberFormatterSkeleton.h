@@ -98,6 +98,8 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
   [[nodiscard]] bool notation(NumberFormatOptions::Notation style);
 
   [[nodiscard]] bool signDisplay(NumberFormatOptions::SignDisplay display);
+  [[nodiscard]] bool accountingSignDisplay(
+      NumberFormatOptions::SignDisplay display);
 
   [[nodiscard]] bool roundingIncrement(uint32_t increment, uint32_t mnfd,
                                        uint32_t mxfd, bool stripTrailingZero);
