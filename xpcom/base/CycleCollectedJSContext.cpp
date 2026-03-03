@@ -818,6 +818,8 @@ void MaybeGetFlowMarker(
     JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
     mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly>&
         terminatingMarker) {
+  // Avoid the overhead of GetFlowIdFromJSMicroTask in the common case
+  // of not having the profiler enabled.
   if (profiler_is_active_and_unpaused() &&
       profiler_feature_active(ProfilerFeature::Flows)) {
     uint64_t flowId = 0;
@@ -897,11 +899,6 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
   auto ignoreMicroTasks = mozilla::MakeScopeExit(
       [&aMicroTask]() { aMicroTask.get().IgnoreJSMicroTask(); });
 
-  // Avoid the overhead of GetFlowIdFromJSMicroTask in the common case
-  // of not having the profiler enabled.
-  mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly> terminatingMarker;
-  MaybeGetFlowMarker(aMicroTask, terminatingMarker);
-
   JS::RootedTuple<JSObject*, JSObject*, JSObject*> roots(aCx);
 
   JS::RootedField<JSObject*, 0> callbackGlobal(roots);
@@ -970,6 +967,10 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
     bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
     AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
+
+    // Inform the profiler about the flow for this microtask.
+    mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly> terminatingMarker;
+    MaybeGetFlowMarker(aMicroTask, terminatingMarker);
 
     if (incumbentGlobal) {
       // https://wicg.github.io/scheduling-apis/#sec-patches-html-hostcalljobcallback
