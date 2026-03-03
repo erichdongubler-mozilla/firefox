@@ -29,7 +29,6 @@ class ConnectionHandle : public nsAHttpConnection {
 
   explicit ConnectionHandle(HttpConnectionBase* conn) : mConn(conn) {}
   void Reset() { mConn = nullptr; }
-  HttpConnectionBase* Conn() { return mConn.get(); }
 
  private:
   virtual ~ConnectionHandle();

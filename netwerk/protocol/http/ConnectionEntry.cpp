@@ -29,6 +29,7 @@ ConnectionEntry::~ConnectionEntry() {
 
   MOZ_ASSERT(!mIdleConns.Length());
   MOZ_ASSERT(!mActiveConns.Length());
+  MOZ_DIAGNOSTIC_ASSERT(!mDnsAndConnectSockets.Length());
   MOZ_ASSERT(!PendingQueueLength());
   MOZ_ASSERT(!UrgentStartQueueLength());
   MOZ_ASSERT(!mDoNotDestroy);
@@ -44,17 +45,6 @@ ConnectionEntry::ConnectionEntry(nsHttpConnectionInfo* ci)
       mDoNotDestroy(false) {
   LOG(("ConnectionEntry::ConnectionEntry this=%p key=%s", this,
        ci->HashKey().get()));
-  mConnectionAttemptPool = new ConnectionAttemptPool(this);
-}
-
-bool ConnectionEntry::HasActiveH3Connection() const {
-  for (const auto& conn : mActiveConns) {
-    if (conn->UsingHttp3()) {
-      return true;
-    }
-  }
-
-  return mConnectionAttemptPool->UnconnectedUDPConnsLength() > 0;
 }
 
 bool ConnectionEntry::AvailableForDispatchNow() {
@@ -66,13 +56,56 @@ bool ConnectionEntry::AvailableForDispatchNow() {
          nullptr;
 }
 
-void ConnectionEntry::RemoveConnectionAttempt(ConnectionAttempt* sock,
-                                              bool abandon) {
-  mConnectionAttemptPool->RemoveConnectionAttempt(sock, abandon);
+uint32_t ConnectionEntry::UnconnectedDnsAndConnectSockets() const {
+  uint32_t unconnectedDnsAndConnectSockets = 0;
+  for (uint32_t i = 0; i < mDnsAndConnectSockets.Length(); ++i) {
+    if (!mDnsAndConnectSockets[i]->HasConnected()) {
+      ++unconnectedDnsAndConnectSockets;
+    }
+  }
+  return unconnectedDnsAndConnectSockets;
 }
 
-void ConnectionEntry::CloseAllConnectionAttempts() {
-  mConnectionAttemptPool->CloseAllConnectionAttempts();
+void ConnectionEntry::InsertIntoDnsAndConnectSockets(
+    DnsAndConnectSocket* sock) {
+  mDnsAndConnectSockets.AppendElement(sock);
+  gHttpHandler->ConnMgr()->IncreaseNumDnsAndConnectSockets();
+}
+
+void ConnectionEntry::RemoveDnsAndConnectSocket(DnsAndConnectSocket* dnsAndSock,
+                                                bool abandon) {
+  if (abandon) {
+    dnsAndSock->Abandon();
+  }
+  if (mDnsAndConnectSockets.RemoveElement(dnsAndSock)) {
+    gHttpHandler->ConnMgr()->DecreaseNumDnsAndConnectSockets();
+  }
+
+  if (!UnconnectedDnsAndConnectSockets()) {
+    // perhaps this reverted RestrictConnections()
+    // use the PostEvent version of processpendingq to avoid
+    // altering the pending q vector from an arbitrary stack
+    nsresult rv = gHttpHandler->ConnMgr()->ProcessPendingQ(mConnInfo);
+    if (NS_FAILED(rv)) {
+      LOG(
+          ("ConnectionEntry::RemoveDnsAndConnectSocket\n"
+           "    failed to process pending queue\n"));
+    }
+  }
+}
+
+void ConnectionEntry::CloseAllDnsAndConnectSockets() {
+  for (const auto& dnsAndSock : mDnsAndConnectSockets) {
+    dnsAndSock->Abandon();
+    gHttpHandler->ConnMgr()->DecreaseNumDnsAndConnectSockets();
+  }
+  mDnsAndConnectSockets.Clear();
+  nsresult rv = gHttpHandler->ConnMgr()->ProcessPendingQ(mConnInfo);
+  if (NS_FAILED(rv)) {
+    LOG(
+        ("ConnectionEntry::CloseAllDnsAndConnectSockets\n"
+         "    failed to process pending queue\n"));
+  }
 }
 
 void ConnectionEntry::DisallowHttp2() {
@@ -97,12 +130,12 @@ void ConnectionEntry::DisallowHttp2() {
 }
 
 void ConnectionEntry::DontReuseHttp3Conn() {
-  // If we have any HTTP/3 connections, we want to go ahead and close them when
+  MOZ_ASSERT(mConnInfo->IsHttp3());
+
+  // If we have any spdy connections, we want to go ahead and close them when
   // they're done so we can free up some connections.
   for (uint32_t i = 0; i < mActiveConns.Length(); ++i) {
-    if (mActiveConns[i]->UsingHttp3()) {
-      mActiveConns[i]->DontReuse();
-    }
+    mActiveConns[i]->DontReuse();
   }
 
   // Can't coalesce if we're not using http3
@@ -209,7 +242,7 @@ bool ConnectionEntry::RestrictConnections() {
     // was found in the same state through a coalescing hash
     LOG(
         ("ConnectionEntry::RestrictConnections %p %s restricted due to "
-         "AvailableForDispatchNow()==true\n",
+         "active >=h2\n",
          this, mConnInfo->HashKey().get()));
     return true;
   }
@@ -220,7 +253,7 @@ bool ConnectionEntry::RestrictConnections() {
 
   bool doRestrict = mConnInfo->FirstHopSSL() &&
                     StaticPrefs::network_http_http2_enabled() && mUsingSpdy &&
-                    (mConnectionAttemptPool->Length() || mActiveConns.Length());
+                    (mDnsAndConnectSockets.Length() || mActiveConns.Length());
 
   // If there are no restrictions, we are done
   if (!doRestrict) {
@@ -229,7 +262,7 @@ bool ConnectionEntry::RestrictConnections() {
 
   // If the restriction is based on a tcp handshake in progress
   // let that connect and then see if it was SPDY or not
-  if (mConnectionAttemptPool->UnconnectedConnectionAttempts()) {
+  if (UnconnectedDnsAndConnectSockets()) {
     return true;
   }
 
@@ -266,8 +299,7 @@ uint32_t ConnectionEntry::TotalActiveConnections() const {
   // Exclude DnsAndConnectSocket's that has already created a usable connection.
   // This prevents the limit being stuck on ipv6 connections that
   // eventually time out after typical 21 seconds of no ACK+SYN reply.
-  return mActiveConns.Length() +
-         mConnectionAttemptPool->UnconnectedConnectionAttempts();
+  return mActiveConns.Length() + UnconnectedDnsAndConnectSockets();
 }
 
 size_t ConnectionEntry::UrgentStartQueueLength() {
@@ -491,9 +523,11 @@ static void CheckForTrafficForConns(nsTArray<RefPtr<ConnType>>& aConns,
 }
 
 void ConnectionEntry::VerifyTraffic() {
-  CheckForTrafficForConns(mPendingConns, true);
-  // Iterate the idle connections and unmark them for traffic checks.
-  CheckForTrafficForConns(mIdleConns, false);
+  if (!mConnInfo->IsHttp3()) {
+    CheckForTrafficForConns(mPendingConns, true);
+    // Iterate the idle connections and unmark them for traffic checks.
+    CheckForTrafficForConns(mIdleConns, false);
+  }
 
   uint32_t numConns = mActiveConns.Length();
   if (numConns) {
@@ -581,15 +615,30 @@ void ConnectionEntry::MakeAllDontReuseExcept(HttpConnectionBase* conn) {
 
   // Cancel any other pending connections - their associated transactions
   // are in the pending queue and will be dispatched onto this new connection
-  CloseAllConnectionAttempts();
+  CloseAllDnsAndConnectSockets();
 }
 
 bool ConnectionEntry::FindConnToClaim(
     PendingTransactionInfo* pendingTransInfo) {
   nsHttpTransaction* trans = pendingTransInfo->Transaction();
 
-  if (mConnectionAttemptPool->FindConnToClaim(pendingTransInfo)) {
-    return true;
+  for (const auto& dnsAndSock : mDnsAndConnectSockets) {
+    if (dnsAndSock->AcceptsTransaction(trans) && dnsAndSock->Claim()) {
+      pendingTransInfo->RememberDnsAndConnectSocket(dnsAndSock);
+      // We've found a speculative connection or a connection that
+      // is free to be used in the DnsAndConnectSockets list.
+      // A free to be used connection is a connection that was
+      // open for a concrete transaction, but that trunsaction
+      // ended up using another connection.
+      LOG(
+          ("ConnectionEntry::FindConnToClaim [ci = %s]\n"
+           "Found a speculative or a free-to-use DnsAndConnectSocket\n",
+           mConnInfo->HashKey().get()));
+
+      // return OK because we have essentially opened a new connection
+      // by converting a speculative DnsAndConnectSockets to general use
+      return true;
+    }
   }
 
   // consider null transactions that are being used to drive the ssl handshake
@@ -627,8 +676,7 @@ bool ConnectionEntry::MakeFirstActiveSpdyConnDontReuse() {
 
 // Return an active h2 or h3 connection
 // that can be directly activated or null.
-HttpConnectionBase* ConnectionEntry::GetH2orH3ActiveConn(bool aNoHttp2,
-                                                         bool aNoHttp3) {
+HttpConnectionBase* ConnectionEntry::GetH2orH3ActiveConn() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   HttpConnectionBase* experienced = nullptr;
@@ -648,19 +696,6 @@ HttpConnectionBase* ConnectionEntry::GetH2orH3ActiveConn(bool aNoHttp2,
     }
   }
 
-  auto allowedToReturn = [](HttpConnectionBase* aConn, bool aNoHttp2,
-                            bool aNoHttp3) {
-    if (aConn->UsingHttp3() && aNoHttp3) {
-      return false;
-    }
-
-    if (aConn->UsingSpdy() && aNoHttp2) {
-      return false;
-    }
-
-    return true;
-  };
-
   // if that worked, cleanup anything else and exit
   if (experienced) {
     for (uint32_t index = 0; index < activeLen; ++index) {
@@ -676,9 +711,6 @@ HttpConnectionBase* ConnectionEntry::GetH2orH3ActiveConn(bool aNoHttp2,
          "found an active experienced connection %p in native connection "
          "entry\n",
          this, mConnInfo->HashKey().get(), experienced));
-    if (!allowedToReturn(experienced, aNoHttp2, aNoHttp3)) {
-      return nullptr;
-    }
     return experienced;
   }
 
@@ -688,9 +720,6 @@ HttpConnectionBase* ConnectionEntry::GetH2orH3ActiveConn(bool aNoHttp2,
          "found an active but inexperienced connection %p in native connection "
          "entry\n",
          this, mConnInfo->HashKey().get(), noExperience));
-    if (!allowedToReturn(noExperience, aNoHttp2, aNoHttp3)) {
-      return nullptr;
-    }
     return noExperience;
   }
 
@@ -757,6 +786,10 @@ void ConnectionEntry::ClosePendingConnections() {
 
 void ConnectionEntry::PruneNoTraffic() {
   LOG(("  pruning no traffic [ci=%s]\n", mConnInfo->HashKey().get()));
+  if (mConnInfo->IsHttp3()) {
+    return;
+  }
+
   uint32_t numConns = mActiveConns.Length();
   if (numConns) {
     // Walk the list backwards to allow us to remove entries easily.
@@ -779,13 +812,17 @@ void ConnectionEntry::PruneNoTraffic() {
 uint32_t ConnectionEntry::TimeoutTick() {
   uint32_t timeoutTickNext = 3600;  // 1hr
 
+  if (mConnInfo->IsHttp3()) {
+    return timeoutTickNext;
+  }
+
   LOG(
       ("ConnectionEntry::TimeoutTick() this=%p host=%s "
        "idle=%zu active=%zu"
        " dnsAndSock-len=%zu pending=%zu"
        " urgentStart pending=%zu\n",
        this, mConnInfo->Origin(), IdleConnectionsLength(), ActiveConnsLength(),
-       mConnectionAttemptPool->Length(), PendingQueueLength(),
+       mDnsAndConnectSockets.Length(), PendingQueueLength(),
        UrgentStartQueueLength()));
 
   // First call the tick handler for each active connection.
@@ -799,8 +836,30 @@ uint32_t ConnectionEntry::TimeoutTick() {
   }
 
   // Now check for any stalled DnsAndConnectSockets.
-  mConnectionAttemptPool->TimeoutTick();
-  if (mConnectionAttemptPool->Length()) {
+  if (mDnsAndConnectSockets.Length()) {
+    TimeStamp currentTime = TimeStamp::Now();
+    double maxConnectTime_ms = gHttpHandler->ConnectTimeout();
+
+    for (const auto& dnsAndSock : Reversed(mDnsAndConnectSockets)) {
+      double delta = dnsAndSock->Duration(currentTime);
+      // If the socket has timed out, close it so the waiting
+      // transaction will get the proper signal.
+      if (delta > maxConnectTime_ms) {
+        LOG(("Force timeout of DnsAndConnectSocket to %s after %.2fms.\n",
+             mConnInfo->HashKey().get(), delta));
+        dnsAndSock->CloseTransports(NS_ERROR_NET_TIMEOUT);
+      }
+
+      // If this DnsAndConnectSocket hangs around for 5 seconds after we've
+      // closed() it then just abandon the socket.
+      if (delta > maxConnectTime_ms + 5000) {
+        LOG(("Abandon DnsAndConnectSocket to %s after %.2fms.\n",
+             mConnInfo->HashKey().get(), delta));
+        RemoveDnsAndConnectSocket(dnsAndSock, true);
+      }
+    }
+  }
+  if (mDnsAndConnectSockets.Length()) {
     timeoutTickNext = 1;
   }
 
@@ -850,14 +909,27 @@ HttpRetParams ConnectionEntry::GetConnectionData() {
     info.SetHTTPProtocolVersion(mIdleConns[i]->Version());
     data.idle.AppendElement(info);
   }
-  mConnectionAttemptPool->GetConnectionData(data);
+  for (uint32_t i = 0; i < mDnsAndConnectSockets.Length(); i++) {
+    DnsAndConnectSockets dnsAndSock{};
+    dnsAndSock.speculative = mDnsAndConnectSockets[i]->IsSpeculative();
+    data.dnsAndSocks.AppendElement(dnsAndSock);
+  }
+  if (mConnInfo->IsHttp3()) {
+    data.httpVersion = "HTTP/3"_ns;
+  } else if (mUsingSpdy) {
+    data.httpVersion = "HTTP/2"_ns;
+  } else {
+    data.httpVersion = "HTTP <= 1.1"_ns;
+  }
   data.ssl = mConnInfo->EndToEndSSL();
   return data;
 }
 
 Http3ConnectionStatsParams ConnectionEntry::GetHttp3ConnectionStatsData() {
   Http3ConnectionStatsParams data;
-
+  if (!mConnInfo->IsHttp3()) {
+    return data;
+  }
   data.host = mConnInfo->Origin();
   data.port = mConnInfo->OriginPort();
 
@@ -918,10 +990,10 @@ bool ConnectionEntry::RemoveTransFromPendingQ(nsHttpTransaction* aTrans) {
   }
 
   // Abandon all DnsAndConnectSockets belonging to the given transaction.
-  nsWeakPtr tmp = pendingTransInfo->ForgetConnectionAttemptAndActiveConn();
-  RefPtr<ConnectionAttempt> sock = do_QueryReferent(tmp);
-  if (sock) {
-    RemoveConnectionAttempt(sock, true);
+  nsWeakPtr tmp = pendingTransInfo->ForgetDnsAndConnectSocketAndActiveConn();
+  RefPtr<DnsAndConnectSocket> dnsAndSock = do_QueryReferent(tmp);
+  if (dnsAndSock) {
+    RemoveDnsAndConnectSocket(dnsAndSock, true);
   }
   return true;
 }
@@ -944,7 +1016,7 @@ void ConnectionEntry::MaybeUpdateEchConfig(nsHttpConnectionInfo* aConnInfo) {
   // If echConfig is changed, we should close all DnsAndConnectSockets and idle
   // connections. This is to make sure the new echConfig will be used for the
   // next connection.
-  CloseAllConnectionAttempts();
+  CloseAllDnsAndConnectSockets();
   CloseIdleConnections();
 }
 
@@ -1007,8 +1079,30 @@ nsresult ConnectionEntry::CreateDnsAndConnectSocket(
     nsAHttpTransaction* trans, uint32_t caps, bool speculative,
     bool urgentStart, bool allow1918,
     PendingTransactionInfo* pendingTransInfo) {
-  return mConnectionAttemptPool->StartConnectionEstablishment(
-      this, trans, caps, speculative, urgentStart, allow1918, pendingTransInfo);
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  MOZ_ASSERT((speculative && !pendingTransInfo) ||
+             (!speculative && pendingTransInfo));
+
+  RefPtr<DnsAndConnectSocket> sock =
+      new DnsAndConnectSocket(mConnInfo, trans, caps, speculative, urgentStart);
+
+  if (speculative) {
+    sock->SetAllow1918(allow1918);
+  }
+
+  nsresult rv = sock->Init(this);
+  if (NS_FAILED(rv)) {
+    sock->Abandon();
+    return rv;
+  }
+
+  InsertIntoDnsAndConnectSockets(sock);
+
+  if (pendingTransInfo && sock->Claim()) {
+    pendingTransInfo->RememberDnsAndConnectSocket(sock);
+  }
+
+  return NS_OK;
 }
 
 bool ConnectionEntry::AllowToRetryDifferentIPFamilyForHttp3(nsresult aError) {
@@ -1016,9 +1110,6 @@ bool ConnectionEntry::AllowToRetryDifferentIPFamilyForHttp3(nsresult aError) {
       ("ConnectionEntry::AllowToRetryDifferentIPFamilyForHttp3 %p "
        "error=%" PRIx32,
        this, static_cast<uint32_t>(aError)));
-  if (mConnInfo->GetHappyEyeballsEnabled()) {
-    return false;
-  }
   if (!mConnInfo->IsHttp3() && !mConnInfo->IsHttp3ProxyConnection()) {
     MOZ_ASSERT(false, "Should not be called for non Http/3 connection");
     return false;

@@ -479,7 +479,6 @@ struct HttpConnectionInfoCloneArgs
   uint64_t webTransportId;
   bool hasIPHintAddress;
   nsCString echConfig;
-  bool happyEyeballsEnabled;
   ProxyInfoCloneArgs[] proxyInfo;
 };
 

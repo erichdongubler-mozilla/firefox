@@ -299,8 +299,6 @@ class Http3Session final : public Http3SessionBase,
       PRIntervalTime aRtt, bool aIsExtendedCONNECT);
   void SetIsInTunnel() { mIsInTunnel = true; }
 
-  void SetDontExclude() { mDontExclude = true; }
-
  private:
   ~Http3Session();
 

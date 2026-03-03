@@ -237,10 +237,6 @@ void TlsHandshaker::EarlyDataDone() {
 void TlsHandshaker::FinishNPNSetup(bool handshakeSucceeded,
                                    bool hasSecurityInfo) {
   LOG(("TlsHandshaker::FinishNPNSetup mOwner=%p", mOwner.get()));
-  if (!mOwner) {
-    return;
-  }
-
   mNPNComplete = true;
 
   mOwner->PostProcessNPNSetup(handshakeSucceeded, hasSecurityInfo,

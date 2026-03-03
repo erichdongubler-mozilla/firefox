@@ -143,7 +143,6 @@ extern crate dap_ffi;
 extern crate data_encoding_ffi;
 
 extern crate binary_http;
-extern crate happy_eyeballs_glue;
 extern crate mls_gk;
 extern crate oblivious_http;
 

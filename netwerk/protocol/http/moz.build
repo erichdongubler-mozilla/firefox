@@ -109,18 +109,14 @@ UNIFIED_SOURCES += [
     "CapsuleDecoder.cpp",
     "CapsuleEncoder.cpp",
     "CapsuleParser.cpp",
-    "ConnectionAttempt.cpp",
-    "ConnectionAttemptPool.cpp",
     "ConnectionDiagnostics.cpp",
     "ConnectionEntry.cpp",
-    "ConnectionEstablisher.cpp",
     "ConnectionHandle.cpp",
     "DnsAndConnectSocket.cpp",
     "EarlyHintPreconnect.cpp",
     "EarlyHintPreloader.cpp",
     "EarlyHintRegistrar.cpp",
     "EarlyHintsService.cpp",
-    "HappyEyeballsConnectionAttempt.cpp",
     "Http2Compression.cpp",
     "Http2Session.cpp",
     "Http2Stream.cpp",
@@ -249,8 +245,6 @@ EXTRA_JS_MODULES += [
     "ObliviousHTTP.sys.mjs",
     "WellKnownOpportunisticUtils.sys.mjs",
 ]
-
-DIRS += ["happy_eyeballs_glue"]
 
 XPCOM_MANIFESTS += [
     "components.conf",

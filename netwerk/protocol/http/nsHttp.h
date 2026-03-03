@@ -179,9 +179,6 @@ inline bool IsHttp3(SupportedAlpnRank aRank) {
 // Need to be used together with NS_HTTP_CONNECT_ONLY
 #define NS_HTTP_TLS_TUNNEL (1 << 29)
 
-// When set, we use HappyEyeballsConnectionAttempt to establish connection.
-#define NS_HTTP_USE_HAPPY_EYEBALLS (1 << 30)
-
 #define NS_HTTP_TRR_FLAGS_FROM_MODE(x) ((static_cast<uint32_t>(x) & 3) << 19)
 
 #define NS_HTTP_TRR_MODE_FROM_FLAGS(x) \

@@ -60,7 +60,6 @@ class TlsHandshaker : public nsITlsHandshakeCallbackListener {
   void SetNPNComplete() { mNPNComplete = true; }
   void NotifyClose() {
     mTlsHandshakeComplitionPending = false;
-    mNPNComplete = true;
     mOwner = nullptr;
   }
 

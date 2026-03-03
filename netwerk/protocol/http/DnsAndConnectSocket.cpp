@@ -39,8 +39,8 @@ namespace mozilla {
 namespace net {
 
 //////////////////////// DnsAndConnectSocket
-NS_IMPL_ADDREF_INHERITED(DnsAndConnectSocket, ConnectionAttempt)
-NS_IMPL_RELEASE_INHERITED(DnsAndConnectSocket, ConnectionAttempt)
+NS_IMPL_ADDREF(DnsAndConnectSocket)
+NS_IMPL_RELEASE(DnsAndConnectSocket)
 
 NS_INTERFACE_MAP_BEGIN(DnsAndConnectSocket)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
@@ -66,7 +66,11 @@ DnsAndConnectSocket::DnsAndConnectSocket(nsHttpConnectionInfo* ci,
                                          nsAHttpTransaction* trans,
                                          uint32_t caps, bool speculative,
                                          bool urgentStart)
-    : ConnectionAttempt(ci, trans, caps, speculative, urgentStart) {
+    : mTransaction(trans),
+      mCaps(caps),
+      mSpeculative(speculative),
+      mUrgentStart(urgentStart),
+      mConnInfo(ci) {
   MOZ_ASSERT(ci && trans, "constructor with null arguments");
   LOG(("Creating DnsAndConnectSocket [this=%p trans=%p ent=%s key=%s]\n", this,
        trans, mConnInfo->Origin(), mConnInfo->HashKey().get()));
@@ -298,7 +302,7 @@ nsresult DnsAndConnectSocket::SetupEvent(SetupEvents event) {
     RefPtr<ConnectionEntry> ent =
         gHttpHandler->ConnMgr()->FindConnectionEntry(mConnInfo);
     if (ent) {
-      ent->RemoveConnectionAttempt(this, false);
+      ent->RemoveDnsAndConnectSocket(this, false);
     }
     return rv;
   }
@@ -848,6 +852,12 @@ DnsAndConnectSocket::GetInterface(const nsIID& iid, void** result) {
   return NS_ERROR_NO_INTERFACE;
 }
 
+bool DnsAndConnectSocket::AcceptsTransaction(nsHttpTransaction* trans) {
+  // When marked as urgent start, only accept urgent start marked transactions.
+  // Otherwise, accept any kind of transaction.
+  return !mUrgentStart || (trans->Caps() & nsIClassOfService::UrgentStart);
+}
+
 bool DnsAndConnectSocket::Claim() {
   if (mSpeculative) {
     mSpeculative = false;
@@ -889,6 +899,14 @@ bool DnsAndConnectSocket::Claim() {
   }
 
   return false;
+}
+
+void DnsAndConnectSocket::Unclaim() {
+  MOZ_ASSERT(!mSpeculative && !mFreeToUse);
+  // We will keep the backup-timer running. Most probably this halfOpen will
+  // be used by a transaction from which this transaction took the halfOpen.
+  // (this is happening because of the transaction priority.)
+  mFreeToUse = true;
 }
 
 void DnsAndConnectSocket::CloseTransports(nsresult error) {

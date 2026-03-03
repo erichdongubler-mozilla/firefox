@@ -24,23 +24,26 @@ class PendingTransactionInfo final : public ARefBase {
   // a connection in TLS handshake phase.
   bool IsAlreadyClaimedInitializingConn();
 
-  // This function return a weak poointer to ConnectionAttempt.
+  // This function return a weak poointer to DnsAndConnectSocket.
   // The pointer is used by the caller(ConnectionEntry) to remove the
-  // ConnectionAttempt from the internal list. PendingTransactionInfo
+  // DnsAndConnectSocket from the internal list. PendingTransactionInfo
   // cannot perform this opereation.
-  [[nodiscard]] nsWeakPtr ForgetConnectionAttemptAndActiveConn();
+  [[nodiscard]] nsWeakPtr ForgetDnsAndConnectSocketAndActiveConn();
 
-  // Remember associated ConnectionAttempt.
-  void RememberConnectionAttempt(ConnectionAttempt* sock);
+  // Remember associated DnsAndConnectSocket.
+  void RememberDnsAndConnectSocket(DnsAndConnectSocket* sock);
   // Similar as above, but for a ActiveConn that is performing a TLS handshake
   // and has only a NullTransaction associated.
   bool TryClaimingActiveConn(HttpConnectionBase* conn);
+  // It is similar as above, but in tihs case the halfOpen is made for this
+  // PendingTransactionInfo and it is already claimed.
+  void AddDnsAndConnectSocket(DnsAndConnectSocket* sock);
 
   nsHttpTransaction* Transaction() const { return mTransaction; }
 
  private:
   RefPtr<nsHttpTransaction> mTransaction;
-  nsWeakPtr mConnectionAttempt;
+  nsWeakPtr mDnsAndSock;
   nsWeakPtr mActiveConn;
 
   ~PendingTransactionInfo();
