@@ -1305,7 +1305,9 @@ static mozilla::intl::NumberFormat* NewNumberFormat(
     JSContext* cx, Handle<DurationFormatObject*> durationFormat,
     TemporalUnit unit, DurationStyle style) {
   // Step 4.h.i.
-  mozilla::intl::NumberFormatOptions options{};
+  mozilla::intl::NumberFormatOptions options = {
+      .mStyle = mozilla::intl::NumberFormatOptions::Style::Unit,
+  };
 
   // Step 4.h.ii.
   if (NextUnitFractional(durationFormat, unit)) {

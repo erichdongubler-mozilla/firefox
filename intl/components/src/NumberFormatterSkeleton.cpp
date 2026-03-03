@@ -17,18 +17,32 @@ namespace mozilla::intl {
 
 NumberFormatterSkeleton::NumberFormatterSkeleton(
     const NumberFormatOptions& options) {
-  if (options.mCurrency.isSome()) {
-    if (!currency(options.mCurrency->first) ||
-        !currencyDisplay(options.mCurrency->second)) {
-      return;
+  switch (options.mStyle) {
+    case NumberFormatOptions::Style::Decimal:
+      break;
+    case NumberFormatOptions::Style::Percent: {
+      if (!percent()) {
+        return;
+      }
+      break;
     }
-  } else if (options.mUnit.isSome()) {
-    if (!unit(options.mUnit->first) || !unitDisplay(options.mUnit->second)) {
-      return;
+    case NumberFormatOptions::Style::Currency: {
+      MOZ_ASSERT(options.mCurrency);
+
+      if (!currency(std::get<std::string_view>(*options.mCurrency)) ||
+          !currencyDisplay(std::get<NumberFormatOptions::CurrencyDisplay>(
+              *options.mCurrency))) {
+        return;
+      }
+      break;
     }
-  } else if (options.mPercent) {
-    if (!percent()) {
-      return;
+    case NumberFormatOptions::Style::Unit: {
+      MOZ_ASSERT(options.mUnit);
+
+      if (!unit(options.mUnit->first) || !unitDisplay(options.mUnit->second)) {
+        return;
+      }
+      break;
     }
   }
 

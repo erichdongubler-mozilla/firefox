@@ -70,6 +70,7 @@ TEST(IntlNumberFormat, SignificantDigits)
 TEST(IntlNumberFormat, Currency)
 {
   NumberFormatOptions options;
+  options.mStyle = NumberFormatOptions::Style::Currency;
   options.mCurrency =
       Some(std::make_pair("MXN", NumberFormatOptions::CurrencyDisplay::Symbol));
   UniquePtr<NumberFormat> nf =
@@ -88,6 +89,7 @@ TEST(IntlNumberFormat, Currency)
 TEST(IntlNumberFormat, Unit)
 {
   NumberFormatOptions options;
+  options.mStyle = NumberFormatOptions::Style::Unit;
   options.mUnit = Some(std::make_pair("meter-per-second",
                                       NumberFormatOptions::UnitDisplay::Long));
   UniquePtr<NumberFormat> nf =

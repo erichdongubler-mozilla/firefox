@@ -1646,15 +1646,12 @@ static std::string_view UnitName(const NumberFormatUnitOptions::Unit& unit,
 static void SetNumberFormatUnitOptions(
     const NumberFormatUnitOptions& unitOptions,
     MozNumberFormatOptions& options) {
-  switch (unitOptions.style) {
-    case NumberFormatUnitOptions::Style::Decimal: {
-      return;
-    }
+  options.mStyle = unitOptions.style;
 
-    case NumberFormatUnitOptions::Style::Percent: {
-      options.mPercent = true;
+  switch (unitOptions.style) {
+    case NumberFormatUnitOptions::Style::Decimal:
+    case NumberFormatUnitOptions::Style::Percent:
       return;
-    }
 
     case NumberFormatUnitOptions::Style::Currency: {
       static constexpr size_t CurrencyLength = 3;

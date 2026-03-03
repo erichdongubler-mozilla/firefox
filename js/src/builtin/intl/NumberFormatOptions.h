@@ -67,7 +67,7 @@ struct NumberFormatDigitOptions {
 };
 
 struct NumberFormatUnitOptions {
-  enum class Style : int8_t { Decimal, Percent, Currency, Unit };
+  using Style = mozilla::intl::NumberFormatOptions::Style;
   Style style = Style::Decimal;
 
   using CurrencyDisplay = mozilla::intl::NumberFormatOptions::CurrencyDisplay;

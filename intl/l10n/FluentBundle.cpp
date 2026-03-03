@@ -241,8 +241,11 @@ ffi::RawNumberFormatter* FluentBuiltInNumberFormatterCreate(
   NumberFormatOptions options;
   switch (aOptions->style) {
     case ffi::FluentNumberStyleRaw::Decimal:
+      options.mStyle = NumberFormatOptions::Style::Decimal;
       break;
     case ffi::FluentNumberStyleRaw::Currency: {
+      options.mStyle = NumberFormatOptions::Style::Currency;
+
       std::string currency = aOptions->currency.get();
       switch (aOptions->currency_display) {
         case ffi::FluentNumberCurrencyDisplayStyleRaw::Symbol:
@@ -263,7 +266,7 @@ ffi::RawNumberFormatter* FluentBuiltInNumberFormatterCreate(
       }
     } break;
     case ffi::FluentNumberStyleRaw::Percent:
-      options.mPercent = true;
+      options.mStyle = NumberFormatOptions::Style::Percent;
       break;
     default:
       MOZ_ASSERT_UNREACHABLE();

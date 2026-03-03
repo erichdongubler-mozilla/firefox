@@ -25,18 +25,38 @@ struct PluralRulesOptions;
 
 /**
  * Configure NumberFormat options.
- * The supported display styles are:
- *   * Decimal (default)
- *   * Currency (controlled by mCurrency)
- *   * Unit (controlled by mUnit)
- *   * Percent (controlled by mPercent)
- *
- * Only one of mCurrency, mUnit or mPercent should be set. If none are set,
- * the number will formatted as a decimal.
  *
  * https://github.com/unicode-org/icu/blob/master/docs/userguide/format_parse/numbers/skeletons.md#unit
  */
 struct MOZ_STACK_CLASS NumberFormatOptions {
+  /**
+   * Display style.
+   *
+   * https://github.com/unicode-org/icu/blob/master/docs/userguide/format_parse/numbers/skeletons.md#unit
+   * https://github.com/unicode-org/icu/blob/master/docs/userguide/format_parse/numbers/skeletons.md#scale
+   */
+  enum class Style {
+    /**
+     * Display a decimal number.
+     */
+    Decimal,
+
+    /**
+     * Display a percent number.
+     */
+    Percent,
+
+    /**
+     * Display a currency amount.
+     */
+    Currency,
+
+    /**
+     * Display a unit amount.
+     */
+    Unit,
+  } mStyle = Style::Decimal;
+
   /**
    * Display a currency amount. |currency| must be a three-letter currency code.
    *
@@ -84,14 +104,6 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
    */
   enum class UnitDisplay { Short, Narrow, Long };
   Maybe<std::pair<std::string_view, UnitDisplay>> mUnit;
-
-  /**
-   * Display a percent number.
-   *
-   * https://github.com/unicode-org/icu/blob/master/docs/userguide/format_parse/numbers/skeletons.md#unit
-   * https://github.com/unicode-org/icu/blob/master/docs/userguide/format_parse/numbers/skeletons.md#scale
-   */
-  bool mPercent = false;
 
   /**
    * Set to true to strip trailing zeros after the decimal point for integer
