@@ -3109,7 +3109,7 @@ JS_PUBLIC_API bool JS::AddPromiseReactionsIgnoringUnhandledRejection(
 }
 
 JS_PUBLIC_API JS::PromiseUserInputEventHandlingState
-JS::GetPromiseUserInputEventHandlingState(JS::HandleObject promiseObj_) {
+JS::GetPromiseUserInputEventHandlingState(JSObject* promiseObj_) {
   PromiseObject* promise = promiseObj_->maybeUnwrapIf<PromiseObject>();
   if (!promise) {
     return JS::PromiseUserInputEventHandlingState::DontCare;

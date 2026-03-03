@@ -873,6 +873,18 @@ static bool CanRunJSCallback(nsIGlobalObject* aGlobalObject,
   return true;
 }
 
+bool ShouldPropagateUserInputEventHandlingState(
+    JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
+  JSObject* maybePromise = aMicroTask.get().MaybeGetPromiseFromJSMicroTask();
+
+  // User Input State propagation.
+  auto state = maybePromise
+                   ? JS::GetPromiseUserInputEventHandlingState(maybePromise)
+                   : JS::PromiseUserInputEventHandlingState::DontCare;
+  return state ==
+         JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
+}
+
 /* static */
 void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
                     JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
@@ -890,7 +902,7 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
   mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly> terminatingMarker;
   MaybeGetFlowMarker(aMicroTask, terminatingMarker);
 
-  JS::RootedTuple<JSObject*, JSObject*, JSObject*, JSObject*> roots(aCx);
+  JS::RootedTuple<JSObject*, JSObject*, JSObject*> roots(aCx);
 
   JS::RootedField<JSObject*, 0> callbackGlobal(roots);
   JS::RootedField<JSObject*, 1> hostDefinedData(roots);
@@ -956,16 +968,7 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
       asyncStackSetter.emplace(aCx, allocStack, reason);
     }
 
-    JS::RootedField<JSObject*, 3> maybePromise(
-        roots, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
-
-    // User Input State propagation.
-    auto state = maybePromise
-                     ? JS::GetPromiseUserInputEventHandlingState(maybePromise)
-                     : JS::PromiseUserInputEventHandlingState::DontCare;
-    bool propagate =
-        state ==
-        JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
+    bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
     AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
 
     if (incumbentGlobal) {
