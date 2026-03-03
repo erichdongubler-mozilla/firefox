@@ -13,6 +13,8 @@
 //
 // Note: "GP" is short for "Gecko Profiler".
 
+// Keep this in sync with moz.build to compile the right shared-libraries-XXX.cc
+
 #undef GP_PLAT_x86_android
 #undef GP_PLAT_amd64_android
 #undef GP_PLAT_arm_android
