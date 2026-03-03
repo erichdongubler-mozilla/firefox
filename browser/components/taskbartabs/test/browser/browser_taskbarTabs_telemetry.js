@@ -282,21 +282,19 @@ add_task(async function testUsageTimeMetricSingleWindow() {
   Services.fog.testResetFOG();
 
   const win = await gWindowManager.openWindow(taskbarTab);
-  let promise;
+
+  // Focus that window if it wasn't already focused.
+  await SimpleTest.promiseFocus(win);
 
   // Take focus away from that window.
-  promise = BrowserTestUtils.waitForEvent(window, "focus");
-  window.focus();
-  await promise;
+  await SimpleTest.promiseFocus(window);
 
   // ...and give it back.
-  promise = BrowserTestUtils.waitForEvent(win, "focus");
-  win.focus();
-  await promise;
+  await SimpleTest.promiseFocus(win);
 
   // now close it.
   await BrowserTestUtils.closeWindow(win);
-  window.focus(); // for good measure
+  await SimpleTest.promiseFocus(window); // for good measure
 
   const snapshot = Glean.webApp.usageTime.testGetValue();
   is(snapshot.count, 2, "Two separate intervals should be made");
