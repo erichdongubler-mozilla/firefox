@@ -1156,13 +1156,13 @@ class LNAPermissionPromptBase extends PermissionPromptForRequest {
  * @param request (nsIContentPermissionRequest)
  *        The request for a permission from content.
  */
-class LocalHostPermissionPrompt extends LNAPermissionPromptBase {
+class LoopbackNetworkPermissionPrompt extends LNAPermissionPromptBase {
   get type() {
-    return "localhost";
+    return "loopback-network";
   }
 
   get permissionKey() {
-    return "localhost";
+    return "loopback-network";
   }
 
   get popupOptions() {
@@ -1197,11 +1197,11 @@ class LocalHostPermissionPrompt extends LNAPermissionPromptBase {
   }
 
   get notificationID() {
-    return "localhost";
+    return "loopback-network";
   }
 
   get anchorID() {
-    return "localhost-notification-icon";
+    return "loopback-network-notification-icon";
   }
 
   get message() {
@@ -1889,7 +1889,7 @@ export const PermissionUI = {
   PersistentStoragePermissionPrompt,
   MIDIPermissionPrompt,
   StorageAccessPermissionPrompt,
-  LocalHostPermissionPrompt,
+  LoopbackNetworkPermissionPrompt,
   LocalNetworkPermissionPrompt,
   getSiteCategory,
 };

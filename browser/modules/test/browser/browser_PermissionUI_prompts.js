@@ -25,7 +25,7 @@ add_task(async function test_geo_permission_prompt_local_file() {
 
 // Tests that localhost permission prompt works as expected
 add_task(async function test_localhost_permission_prompt() {
-  await testPrompt(PermissionUI.LocalHostPermissionPrompt);
+  await testPrompt(PermissionUI.LoopbackNetworkPermissionPrompt);
 });
 
 // Tests that local-network permission prompt works as expected

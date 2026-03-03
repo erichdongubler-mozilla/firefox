@@ -244,13 +244,13 @@ add_task(async function test_lna_prompt_behavior() {
     );
   }
 
-  // Public -> Local test (localhost permission)
+  // Public -> Local test (loopback-network permission)
   Services.prefs.setCharPref(
     "network.lna.address_space.public.override",
     "127.0.0.1:4443"
   );
   for (const test of testCases) {
-    await runPromptedLnaTest(test, "public", "localhost");
+    await runPromptedLnaTest(test, "public", "loopback-network");
   }
 
   // Public -> Private (local-network permission)
@@ -309,7 +309,7 @@ add_task(async function test_lna_cancellation_during_prompt() {
   clickDoorhangerButton(
     PROMPT_ALLOW_BUTTON,
     gBrowser.selectedBrowser,
-    "localhost"
+    "loopback-network"
   );
 
   // Close the first tab now that we're done with it
@@ -326,7 +326,9 @@ add_task(async function test_lna_cancellation_during_prompt() {
 });
 
 add_task(async function test_lna_top_level_navigation_bypass() {
-  info("Testing that top-level navigation to localhost bypasses LNA checks");
+  info(
+    "Testing that top-level navigation to loopback-network bypasses LNA checks"
+  );
 
   // Set up LNA to trigger for localhost connections and enable top-level navigation bypass
   await SpecialPowers.pushPrefEnv({
@@ -383,7 +385,7 @@ add_task(async function test_lna_top_level_navigation_bypass() {
     // Verify that no LNA permission prompt appeared
     // If our fix works correctly, there should be no popup notification
     let popup = PopupNotifications.getNotification(
-      "localhost",
+      "loopback-network",
       tab.linkedBrowser
     );
     ok(
@@ -438,7 +440,7 @@ add_task(async function test_lna_top_level_navigation_disabled() {
 
     // Verify that LNA permission prompt did appear
     let popup = PopupNotifications.getNotification(
-      "localhost",
+      "loopback-network",
       tab.linkedBrowser
     );
     ok(popup, "LNA permission prompt should appear when bypass is disabled");
@@ -447,7 +449,7 @@ add_task(async function test_lna_top_level_navigation_disabled() {
     clickDoorhangerButton(
       PROMPT_ALLOW_BUTTON,
       gBrowser.selectedBrowser,
-      "localhost"
+      "loopback-network"
     );
 
     // Wait for navigation to complete after permission granted
@@ -509,8 +511,8 @@ add_task(async function test_lna_websocket_preference() {
     await SpecialPowers.pushPrefEnv({
       set: [
         ["network.lna.websocket.enabled", true], // Enable WebSocket LNA checks
-        ["network.localhost.prompt.testing", true],
-        ["network.localhost.prompt.testing.allow", false],
+        ["network.loopback-network.prompt.testing", true],
+        ["network.loopback-network.prompt.testing.allow", false],
       ],
     });
 
@@ -575,7 +577,7 @@ add_task(async function test_lna_prompt_timeout() {
 
     // Verify prompt is visible
     let popup = PopupNotifications.getNotification(
-      "localhost",
+      "loopback-network",
       tab.linkedBrowser
     );
     ok(popup, "LNA permission prompt should be visible");
@@ -627,13 +629,17 @@ add_task(async function test_lna_prompt_telemetry() {
   // Verify telemetry was recorded
   let metricValue =
     await Glean.networking.localNetworkAccessPromptsShown.localhost.testGetValue();
-  is(metricValue, 1, "Should record telemetry when localhost prompt is shown");
+  is(
+    metricValue,
+    1,
+    "Should record telemetry when loopback-network prompt is shown"
+  );
 
   // Grant permission
   clickDoorhangerButton(
     PROMPT_ALLOW_BUTTON,
     gBrowser.selectedBrowser,
-    "localhost"
+    "loopback-network"
   );
 
   // Wait for permission to be saved
@@ -695,13 +701,17 @@ add_task(async function test_lna_prompt_telemetry_deny() {
   // Verify telemetry was recorded
   let metricValue =
     await Glean.networking.localNetworkAccessPromptsShown.localhost.testGetValue();
-  is(metricValue, 1, "Should record telemetry when localhost prompt is shown");
+  is(
+    metricValue,
+    1,
+    "Should record telemetry when loopback-network prompt is shown"
+  );
 
   // Deny permission
   clickDoorhangerButton(
     PROMPT_NOT_NOW_BUTTON,
     gBrowser.selectedBrowser,
-    "localhost"
+    "loopback-network"
   );
 
   await promise1;

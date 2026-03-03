@@ -3941,7 +3941,7 @@ SettingGroupManager.registerGroups({
             },
           },
           {
-            id: "localHostSettingsButton",
+            id: "loopbackNetworkSettingsButton",
             control: "moz-box-button",
             l10nId: "permissions-localhost2",
             controlAttrs: {

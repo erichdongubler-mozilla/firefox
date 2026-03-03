@@ -41,7 +41,7 @@ add_task(async function testGetAllPermissionDetailsForBrowser() {
 
   SitePermissions.setForPrincipal(
     principal,
-    "localhost",
+    "loopback-network",
     SitePermissions.ALLOW,
     SitePermissions.SCOPE_SESSION
   );
@@ -103,9 +103,11 @@ add_task(async function testGetAllPermissionDetailsForBrowser() {
   });
 
   if (LOCAL_NETWORK_ACCESS_ENABLED) {
-    let localhost = permissions.find(({ id }) => id === "localhost");
-    Assert.deepEqual(localhost, {
-      id: "localhost",
+    let loopbackNetwork = permissions.find(
+      ({ id }) => id === "loopback-network"
+    );
+    Assert.deepEqual(loopbackNetwork, {
+      id: "loopback-network",
       label: "Access this device",
       state: SitePermissions.ALLOW,
       scope: SitePermissions.SCOPE_SESSION,
@@ -139,7 +141,7 @@ add_task(async function testGetAllPermissionDetailsForBrowser() {
   SitePermissions.removeFromPrincipal(principal, "cookie");
   SitePermissions.removeFromPrincipal(principal, "popup");
   SitePermissions.removeFromPrincipal(principal, "geo");
-  SitePermissions.removeFromPrincipal(principal, "localhost");
+  SitePermissions.removeFromPrincipal(principal, "loopback-network");
   SitePermissions.removeFromPrincipal(principal, "local-network");
   SitePermissions.removeFromPrincipal(principal, "shortcuts");
 

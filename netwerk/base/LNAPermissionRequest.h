@@ -11,7 +11,8 @@
 #include "nsPIDOMWindow.h"
 
 namespace mozilla::net {
-static constexpr nsLiteralCString LOCAL_HOST_PERMISSION_KEY = "localhost"_ns;
+static constexpr nsLiteralCString LOOPBACK_NETWORK_PERMISSION_KEY =
+    "loopback-network"_ns;
 static constexpr nsLiteralCString LOCAL_NETWORK_PERMISSION_KEY =
     "local-network"_ns;
 
