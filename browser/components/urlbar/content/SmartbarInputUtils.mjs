@@ -10,6 +10,8 @@ import { createMentionsPlugin } from "chrome://browser/content/multilineeditor/p
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AIWindowUI:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
   MENTION_TYPE:
     "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs",
   SkippableTimer: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
@@ -343,6 +345,8 @@ export function createEditor(inputElement) {
     container.querySelector("smartwindow-panel-list")
   );
   panelList.placeholderL10nId = "smartbar-mentions-list-no-results-label";
+  panelList.sidebarMode =
+    window.browsingContext?.embedderElement?.id === lazy.AIWindowUI.BROWSER_ID;
 
   const mentionsPlugin = setupMentionsPlugin(editorElement, panelList);
   editorElement.plugins = [mentionsPlugin];
