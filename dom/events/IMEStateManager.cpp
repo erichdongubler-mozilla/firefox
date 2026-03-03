@@ -1340,15 +1340,11 @@ void IMEStateManager::OnReFocus(nsPresContext& aPresContext,
       MOZ_ASSERT(textControlElement);
       if (textControlElement &&
           textControlElement->IsSingleLineTextControlOrTextArea()) {
-        nsTextControlFrame* const boundFrame =
-            textControlElement->GetTextControlState()->GetBoundFrame();
-        MOZ_ASSERT(!boundFrame);
         MOZ_LOG(
             sISMLog, LogLevel::Warning,
             ("  OnReFocus(), Temporarily disabling IME for the focused element "
              "because probably the TextControlState could not return "
-             "TextEditor (textControlFrame: %p, textEditor: %p)",
-             boundFrame,
+             "TextEditor (textEditor: %p)",
              textControlElement->GetTextControlState()->GetExtantTextEditor()));
       }
     } else {
