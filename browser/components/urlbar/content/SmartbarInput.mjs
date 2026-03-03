@@ -2482,10 +2482,12 @@ export class SmartbarInput extends HTMLElement {
     resetSearchState = true,
     event,
   } = {}) {
-    // When mentions panel is open, skip queries triggered by input events
-    // since the mentions plugin will handle querying providers directly.
+    // When mentions panel is open, skip queries triggered by input events and
+    // close the suggestions view. The mentions plugin will handle querying
+    // providers directly.
     const isHandlingMentions = this.inputField.isHandlingMentions;
     if (isHandlingMentions && event) {
+      this.view.close();
       return;
     }
 
@@ -5492,6 +5494,13 @@ export class SmartbarInput extends HTMLElement {
       }
     }
 
+    // Suppress queries when there are inline mentions.
+    if (this.inputField.hasMention) {
+      this.suppressStartQuery();
+    } else if (!this._permanentlySuppressStartQuery) {
+      this.unsuppressStartQuery();
+    }
+
     if (!value) {
       this.#updateSmartbarCTAButton();
     }
@@ -5803,17 +5812,6 @@ export class SmartbarInput extends HTMLElement {
       // bar but we should not untrim in that case.
       this._untrimOnFocusAfterKeydown = !this.focused;
       return;
-    }
-
-    // When mentions panel is open don’t let key navigation select urlbar results.
-    if (this.inputField.isHandlingMentions) {
-      if (
-        event.keyCode === KeyEvent.DOM_VK_TAB ||
-        event.keyCode === KeyEvent.DOM_VK_DOWN ||
-        event.keyCode === KeyEvent.DOM_VK_UP
-      ) {
-        return;
-      }
     }
 
     if (

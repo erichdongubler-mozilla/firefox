@@ -277,8 +277,20 @@ function setupMentionsPlugin(editorElement, panelList) {
   editorElement.addEventListener("keydown", handleEditorKeyDown, {
     capture: true,
   });
-  Object.defineProperty(editorElement, "isHandlingMentions", {
-    get: () => isHandlingMentions,
+
+  /**
+   * Adds the following properties to `editorElement`:
+   *
+   * @property {boolean} isHandlingMentions - Whether the mentions panel is open
+   * @property {boolean} hasMention - Whether the editor has inline mentions
+   */
+  Object.defineProperties(editorElement, {
+    isHandlingMentions: {
+      get: () => isHandlingMentions,
+    },
+    hasMention: {
+      get: () => plugin.mentions.hasMention(),
+    },
   });
 
   return plugin;

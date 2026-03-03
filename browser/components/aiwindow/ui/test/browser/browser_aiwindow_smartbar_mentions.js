@@ -224,22 +224,8 @@ add_task(async function test_mentions_insert_on_enter() {
   const browser = win.gBrowser.selectedBrowser;
   await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
-  const waitPanel = SpecialPowers.spawn(browser, [], async () => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    const smartbar = aiWindowElement.shadowRoot.querySelector(
-      "#ai-window-smartbar"
-    );
-    const panelList = smartbar.querySelector("smartwindow-panel-list");
-    const panel = panelList.shadowRoot.querySelector("panel-list");
-
-    await ContentTaskUtils.waitForMutationCondition(
-      panel,
-      { childList: true, subtree: true },
-      () => panel.querySelector("panel-item:not(.panel-section-header)")
-    );
-  });
   await typeInSmartbar(browser, "@");
-  await waitPanel;
+  await waitForMentionsOpen(browser);
 
   await BrowserTestUtils.synthesizeKey("KEY_ArrowDown", {}, browser);
   await BrowserTestUtils.synthesizeKey("KEY_Enter", {}, browser);
@@ -721,3 +707,104 @@ add_task(
     await BrowserTestUtils.closeWindow(win);
   }
 );
+
+add_task(async function test_suggestions_closes_when_mentions_panel_opens() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+  await promiseSmartbarSuggestionsOpen(browser, () =>
+    typeInSmartbar(browser, "test")
+  );
+
+  await typeInSmartbar(browser, " @");
+  await waitForMentionsOpen(browser);
+
+  await promiseSmartbarSuggestionsClose(browser);
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(
+  async function test_suggestions_reopens_after_mentions_trigger_removed() {
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+    await typeInSmartbar(browser, "test @");
+    await waitForMentionsOpen(browser);
+
+    await promiseSmartbarSuggestionsClose(browser);
+
+    await promiseSmartbarSuggestionsOpen(browser, async () => {
+      await BrowserTestUtils.synthesizeKey("KEY_Backspace", {}, browser);
+    });
+
+    await BrowserTestUtils.closeWindow(win);
+  }
+);
+
+add_task(async function test_suggestions_hidden_when_inline_mentions_exists() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+  await typeInSmartbar(browser, "@");
+  await waitForPanelOpen(browser);
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    const smartbar = aiWindowElement.shadowRoot.querySelector(
+      "#ai-window-smartbar"
+    );
+    const panelList = smartbar.querySelector("smartwindow-panel-list");
+    const panel = panelList.shadowRoot.querySelector("panel-list");
+    const firstItem = panel.querySelector(
+      "panel-item:not(.panel-section-header)"
+    );
+    firstItem.click();
+  });
+
+  await waitForMentionInserted(browser);
+  await typeInSmartbar(browser, " test query");
+
+  await promiseSmartbarSuggestionsClose(browser);
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_suggestions_show_after_inline_mentions_removed() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+  const mentionsOpen = waitForMentionsOpen(browser);
+  await typeInSmartbar(browser, "test @");
+  await mentionsOpen;
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    const smartbar = aiWindowElement.shadowRoot.querySelector(
+      "#ai-window-smartbar"
+    );
+    const panelList = smartbar.querySelector("smartwindow-panel-list");
+    const panel = panelList.shadowRoot.querySelector("panel-list");
+    const firstItem = panel.querySelector(
+      "panel-item:not(.panel-section-header)"
+    );
+    firstItem.click();
+  });
+
+  await waitForMentionInserted(browser);
+  await BrowserTestUtils.synthesizeKey("KEY_Backspace", {}, browser);
+
+  await promiseSmartbarSuggestionsOpen(browser, async () => {
+    await BrowserTestUtils.synthesizeKey("KEY_Backspace", {}, browser);
+  });
+
+  await BrowserTestUtils.closeWindow(win);
+});

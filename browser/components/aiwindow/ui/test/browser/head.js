@@ -79,7 +79,6 @@ async function typeInSmartbar(browser, text) {
  *
  * @param {MozBrowser} browser - The browser element
  * @param {Function} openFn - A function that should trigger the view opening
- * @returns {Promise} A promise that resolves when the view is open
  */
 async function promiseSmartbarSuggestionsOpen(browser, openFn) {
   if (!openFn) {
@@ -97,14 +96,11 @@ async function promiseSmartbarSuggestionsOpen(browser, openFn) {
     if (smartbar.view.isOpen) {
       return;
     }
-    await new Promise(resolve => {
-      smartbar.controller.addListener({
-        onViewOpen() {
-          smartbar.controller.removeListener(this);
-          resolve();
-        },
-      });
-    });
+    await ContentTaskUtils.waitForMutationCondition(
+      smartbar,
+      { attributes: true },
+      () => smartbar.hasAttribute("open")
+    );
   });
   await openFn();
   await opened;
@@ -114,7 +110,6 @@ async function promiseSmartbarSuggestionsOpen(browser, openFn) {
  * Waits for the Smartbar suggestions view to close.
  *
  * @param {MozBrowser} browser - The browser element
- * @returns {Promise} A promise that resolves when the view is closed
  */
 async function promiseSmartbarSuggestionsClose(browser) {
   await SpecialPowers.spawn(browser, [], async () => {
@@ -126,15 +121,11 @@ async function promiseSmartbarSuggestionsClose(browser) {
     if (!smartbar.view.isOpen) {
       return;
     }
-
-    await new Promise(resolve => {
-      smartbar.controller.addListener({
-        onViewClose() {
-          smartbar.controller.removeListener(this);
-          resolve();
-        },
-      });
-    });
+    await ContentTaskUtils.waitForMutationCondition(
+      smartbar,
+      { attributes: true },
+      () => !smartbar.hasAttribute("open")
+    );
   });
 }
 
