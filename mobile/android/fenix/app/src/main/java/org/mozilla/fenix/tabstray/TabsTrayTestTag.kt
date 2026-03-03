@@ -46,6 +46,16 @@ internal object TabsTrayTestTag {
     const val TAB_ITEM_CLOSE = "$TAB_ITEM_ROOT.close"
     const val TAB_ITEM_THUMBNAIL = "$TAB_ITEM_ROOT.thumbnail"
 
+    // Group Items
+    private const val TAB_GROUP_ROOT = "$TABS_TRAY.tabGroups"
+    private const val TAB_GROUP_THUMBNAIL_ROOT = "$TAB_GROUP_ROOT.thumbnail"
+    const val TAB_GROUP_THUMBNAIL_FIRST = "$TAB_GROUP_THUMBNAIL_ROOT.1"
+    const val TAB_GROUP_THUMBNAIL_SECOND = "$TAB_GROUP_THUMBNAIL_ROOT.2"
+    const val TAB_GROUP_THUMBNAIL_THIRD = "$TAB_GROUP_THUMBNAIL_ROOT.3"
+    const val TAB_GROUP_THUMBNAIL_FOURTH = "$TAB_GROUP_THUMBNAIL_ROOT.4"
+    const val TAB_GROUP_TITLE = "$TAB_GROUP_ROOT.title"
+    const val TAB_GROUP_THREE_DOT_BUTTON = "$TAB_GROUP_ROOT.threeDotButton"
+
     // Bottom app bar
     const val TAB_SEARCH_ICON = "$TABS_TRAY.tabSearchIcon"
 }

@@ -85,14 +85,17 @@ private val EmphasizedEasing: Easing = Easing { fraction -> emphasized.getInterp
  *
  */
 private typealias TabManagerAnimationTransitionScope = AnimatedContentTransitionScope<TabManagerAnimationState>
+
 private val TabManagerTransitionSpec: TabManagerAnimationTransitionScope.() -> ContentTransform = {
     when (targetState) {
-        is TabManagerAnimationState.TabManagerToThumbnail -> scaleIn( // Thumbnail bounds enter spec
+        is TabManagerAnimationState.TabManagerToThumbnail -> scaleIn(
+            // Thumbnail bounds enter spec
             tween(
                 durationMillis = DURATION_ENTER,
                 easing = EmphasizedDecelerateEasing,
             ),
-        ) togetherWith fadeOut( // Tab manager exit spec
+        ) togetherWith fadeOut(
+            // Tab manager exit spec
             tween(
                 durationMillis = DURATION_EXIT,
                 easing = EmphasizedAccelerateEasing,
@@ -103,13 +106,16 @@ private val TabManagerTransitionSpec: TabManagerAnimationTransitionScope.() -> C
                 easing = EmphasizedEasing,
             )
         }
-        TabManagerAnimationState.ThumbnailToTabManager -> fadeIn( // Tab manager enter spec
+
+        TabManagerAnimationState.ThumbnailToTabManager -> fadeIn(
+            // Tab manager enter spec
             tween(
                 durationMillis = DURATION_ENTER,
                 easing = EmphasizedDecelerateEasing,
                 delayMillis = SHARED_ELEMENT_DELAY,
             ),
-        ) togetherWith scaleOut( // Thumbnail exit spec
+        ) togetherWith scaleOut(
+            // Thumbnail exit spec
             tween(
                 durationMillis = DURATION_EXIT,
                 easing = EmphasizedAccelerateEasing,
@@ -166,6 +172,7 @@ internal fun TabManagerTransitionLayout(
                             )
                         }
                     }
+
                     TabManagerAnimationState.ThumbnailToTabManager -> {
                         trace(TRACE_NAME_ANIMATION_THUMBNAIL_TO_TAB_MANAGER) {
                             DisposableEffect(Unit) {

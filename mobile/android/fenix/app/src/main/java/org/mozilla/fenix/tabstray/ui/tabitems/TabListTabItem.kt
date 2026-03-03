@@ -112,9 +112,11 @@ fun TabListTabItem(
     ) {
         TabContent(
             tab = tab,
-            isSelected = isSelected,
-            multiSelectionEnabled = multiSelectionEnabled,
-            multiSelectionSelected = multiSelectionSelected,
+            selectionState = TabsTrayItemSelectionState(
+                isSelected = multiSelectionSelected,
+                isFocused = isSelected,
+                multiSelectEnabled = multiSelectionEnabled,
+            ),
             shouldClickListen = shouldClickListen,
             modifier = modifier,
             onCloseClick = onCloseClick,
@@ -128,18 +130,16 @@ fun TabListTabItem(
 @Composable
 private fun TabContent(
     tab: TabsTrayItem.Tab,
-    isSelected: Boolean,
-    multiSelectionEnabled: Boolean,
-    multiSelectionSelected: Boolean,
+    selectionState: TabsTrayItemSelectionState,
     shouldClickListen: Boolean,
     modifier: Modifier = Modifier,
     onCloseClick: (TabsTrayItem.Tab) -> Unit,
     onClick: (TabsTrayItem) -> Unit,
     onLongClick: ((TabsTrayItem) -> Unit)? = null,
 ) {
-    val contentBackgroundColor = if (isSelected) {
+    val contentBackgroundColor = if (selectionState.isFocused) {
         MaterialTheme.colorScheme.primaryContainer
-    } else if (multiSelectionSelected) {
+    } else if (selectionState.isSelected) {
         MaterialTheme.colorScheme.surfaceContainerHigh
     } else {
         MaterialTheme.colorScheme.surfaceContainerLowest
@@ -150,15 +150,17 @@ private fun TabContent(
             .fillMaxWidth()
             .background(contentBackgroundColor)
             .tabItemClickable(
-                tab = tab,
-                enabled = shouldClickListen,
-                onClick = onClick,
-                onLongClick = onLongClick,
+                clickHandler = TabsTrayItemClickHandler(
+                    enabled = shouldClickListen,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                ),
+                clickedItem = tab,
             )
             .padding(start = 16.dp, top = 8.dp, bottom = 8.dp)
             .testTag(TabsTrayTestTag.TAB_ITEM_ROOT)
             .semantics {
-                selected = isSelected
+                selected = selectionState.isFocused
             },
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -186,7 +188,7 @@ private fun TabContent(
             )
         }
 
-        if (!multiSelectionEnabled) {
+        if (!selectionState.multiSelectEnabled) {
             IconButton(
                 onClick = { onCloseClick(tab) },
                 modifier = Modifier
@@ -204,7 +206,7 @@ private fun TabContent(
             }
         } else {
             RadioCheckmark(
-                isSelected = multiSelectionSelected,
+                isSelected = selectionState.isSelected,
                 modifier = Modifier.padding(end = 16.dp),
             )
         }

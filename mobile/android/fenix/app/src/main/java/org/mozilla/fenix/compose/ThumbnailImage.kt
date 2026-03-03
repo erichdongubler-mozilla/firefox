@@ -102,7 +102,16 @@ fun ThumbnailImage(
     fallbackContent: @Composable () -> Unit,
 ) {
     if (inComposePreview) {
-        Box(modifier = modifier)
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_japan_onboarding_favicon),
+                contentDescription = null,
+                modifier = modifier
+                    .size(FallbackIconSize),
+                contentScale = contentScale,
+                alignment = alignment,
+            )
+        }
     } else {
         trace(TabsTrayTraceTag.TRACE_THUMBNAIL_IMAGE_CREATION) {
             var state by remember { mutableStateOf(ThumbnailImageState(null, false)) }

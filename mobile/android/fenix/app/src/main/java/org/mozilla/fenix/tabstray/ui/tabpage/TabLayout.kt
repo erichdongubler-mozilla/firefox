@@ -67,9 +67,9 @@ import org.mozilla.fenix.tabstray.browser.compose.detectListPressAndDrag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
-import org.mozilla.fenix.tabstray.ui.tabitems.GridItemThumbnailPadding
 import org.mozilla.fenix.tabstray.ui.tabitems.TabGridTabItem
 import org.mozilla.fenix.tabstray.ui.tabitems.TabListTabItem
+import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
 import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.math.max
@@ -316,9 +316,11 @@ private fun LazyGridItemScope.TabGridItemContent(
                 TabGridTabItem(
                     tab = tab,
                     thumbnailSizePx = thumbnailSizePx,
-                    isSelected = isSelected,
-                    multiSelectionEnabled = isInMultiSelectMode,
-                    multiSelectionSelected = isMultiSelected,
+                    selectionState = TabsTrayItemSelectionState(
+                        isFocused = isSelected,
+                        isSelected = isMultiSelected,
+                        multiSelectEnabled = isInMultiSelectMode,
+                    ),
                     shouldClickListen = reorderState.draggingItemKey != tab.id,
                     swipeState = swipeState,
                     onCloseClick = onTabClose,
@@ -342,7 +344,7 @@ private val BoxWithConstraintsScope.thumbnailSizePx: Int
     get() {
         val density = LocalDensity.current
         val totalSpacing = horizontalGridPadding * (numberOfGridColumns - 1) +
-                GridItemThumbnailPadding * numberOfGridColumns * 2
+                FirefoxTheme.layout.space.static50 * numberOfGridColumns * 2
         val thumbnailWidth = constraints.maxWidth - with(density) { totalSpacing.roundToPx() }
         val thumbnailHeight = (thumbnailWidth / gridItemAspectRatio).toInt()
         return max(thumbnailWidth, thumbnailHeight)
