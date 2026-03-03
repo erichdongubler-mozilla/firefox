@@ -574,14 +574,16 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
   nsAutoCString dateHeader;
   CookieCommons::GetServerDateHeader(aChannel, dateHeader);
 
+  int64_t currentTimeInUsec =
+      CookieCommons::GetCurrentTimeInUSecFromChannel(aChannel);
+
   // process each cookie in the header
   CookieParser cookieParser(crc, aHostURI);
 
   cookieParser.Parse(baseDomain, requireHostMatch, cookieStatus, cookieHeader,
                      dateHeader, true, isForeignAndNotAddon, mustBePartitioned,
                      storagePrincipalOriginAttributes.IsPrivateBrowsing(),
-                     loadInfo->GetIsOn3PCBExceptionList(),
-                     CookieCommons::GetCurrentTimeInUSecFromChannel(aChannel));
+                     loadInfo->GetIsOn3PCBExceptionList(), currentTimeInUsec);
 
   if (!cookieParser.ContainsCookie()) {
     return NS_OK;
@@ -618,7 +620,6 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
       Cookie::Create(cookieParser.CookieData(), cookieOriginAttributes);
   MOZ_ASSERT(cookie);
 
-  int64_t currentTimeInUsec = PR_Now();
   cookie->SetLastAccessedInUSec(currentTimeInUsec);
   cookie->SetCreationTimeInUSec(
       Cookie::GenerateUniqueCreationTimeInUSec(currentTimeInUsec));
