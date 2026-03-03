@@ -105,14 +105,24 @@ function shellPinCalled(aTaskbarTab) {
   );
 }
 
-function shellUnpinCalled() {
+function shellUnpinCalled(aShortcutRelativePath) {
   ok(
     kMockNativeShellService.deleteShortcut.calledOnce,
     `Unpin from taskbar should have been called.`
   );
+  Assert.equal(
+    kMockNativeShellService.deleteShortcut.firstCall.args[1],
+    aShortcutRelativePath,
+    "shortcutRelativePath was deleted."
+  );
   ok(
     kMockNativeShellService.unpinShortcutFromTaskbar.calledOnce,
     `Unpin from taskbar should have been called.`
+  );
+  Assert.equal(
+    kMockNativeShellService.unpinShortcutFromTaskbar.firstCall.args[1],
+    aShortcutRelativePath,
+    "shortcutRelativePath was deleted."
   );
 }
 
@@ -305,12 +315,18 @@ add_task(async function test_pin_location_lnk_extension() {
 });
 
 add_task(async function test_unpin() {
-  sinon.resetHistory();
-  await TaskbarTabsPin.unpinTaskbarTab(taskbarTab, registry);
+  const exampleUrl = Services.io.newURI("https://example.com");
+  const tt = createTaskbarTab(registry, exampleUrl, 0);
+  registry.patchTaskbarTab(tt, {
+    shortcutRelativePath: "somewhere else\\shortcut name.lnk",
+  });
 
-  shellUnpinCalled();
+  sinon.resetHistory();
+  await TaskbarTabsPin.unpinTaskbarTab(tt, registry);
+
+  shellUnpinCalled("somewhere else\\shortcut name.lnk");
   Assert.equal(
-    taskbarTab.shortcutRelativePath,
+    tt.shortcutRelativePath,
     null,
     "Shortcut relative path was removed from the taskbar tab"
   );

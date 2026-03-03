@@ -63,7 +63,7 @@ export const TaskbarTabsPin = {
     try {
       lazy.logConsole.info("Unpinning Taskbar Tab from the taskbar.");
 
-      let { relativePath } = await generateShortcutInfo(aTaskbarTab);
+      let relativePath = aTaskbarTab.shortcutRelativePath;
 
       try {
         lazy.ShellService.unpinShortcutFromTaskbar("Programs", relativePath);
