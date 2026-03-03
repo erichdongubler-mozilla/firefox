@@ -540,8 +540,6 @@ export const AIWindow = {
       } else {
         // Close sidebar when switching back to classic window if it is open
         lazy.AIWindowUI.closeSidebar(win);
-        this._aiWindowTabStateManagers.get(win).uninit();
-        this._aiWindowTabStateManagers.delete(win);
       }
     }
   },

@@ -58,6 +58,9 @@ export class AIWindowTabStatesManager {
   /**
    * Adds event listeners needed to manage tab states
    *
+   * @todo Bug 2016552
+   * Handle classic/smartwindow switches to toggle event listeners
+   *
    * @param {ChromeWindow} win
    *
    * @private
@@ -76,22 +79,6 @@ export class AIWindowTabStatesManager {
 
     this.#setUpInitialTabs();
     this.#addWindowEventListeners();
-  }
-
-  /**
-   * Removes all event listeners and cleans up state.
-   */
-  uninit() {
-    const tabContainer = this.#window.gBrowser.tabContainer;
-    tabContainer.removeEventListener("TabOpen", this);
-    tabContainer.removeEventListener("TabSelect", this);
-    tabContainer.removeEventListener("TabClose", this);
-
-    this.#window.gBrowser.removeTabsProgressListener(this.#tabsListener);
-    this.#removeWindowEventListeners();
-    this.#tabsListener = null;
-    this.#tabStates = null;
-    this.#selectedTab = null;
   }
 
   /**
@@ -119,36 +106,6 @@ export class AIWindowTabStatesManager {
     );
 
     this.#window.addEventListener(
-      "ai-window:sidebar-toggle",
-      this.#onSidebarToggle
-    );
-  }
-
-  /**
-   * Remove event listeners from the window for ai-window:* events
-   */
-  #removeWindowEventListeners() {
-    this.#window.removeEventListener(
-      "ai-window:smartbar-input",
-      this.#onSmartbarInput
-    );
-
-    this.#window.removeEventListener(
-      "ai-window:connected",
-      this.#onAIWindowConnected
-    );
-
-    this.#window.removeEventListener(
-      "ai-window:opened-conversation",
-      this.#onConversationOpened
-    );
-
-    this.#window.removeEventListener(
-      "ai-window:clear-conversation",
-      this.#onConversationCleared
-    );
-
-    this.#window.removeEventListener(
       "ai-window:sidebar-toggle",
       this.#onSidebarToggle
     );
