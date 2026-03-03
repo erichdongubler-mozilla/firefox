@@ -80,6 +80,7 @@ const ACTION_VERIFY_NOT = "verify-not";
 
 const OBSERVER_TOPICS = [
   "fxaccounts:onlogin",
+  "fxaccounts:onverified",
   "fxaccounts:onlogout",
   "profile-before-change",
   "weave:service:tracking-started",
@@ -174,8 +175,8 @@ export var TPS = {
 
       switch (topic) {
         case "profile-before-change":
-          OBSERVER_TOPICS.forEach(function (topic) {
-            Services.obs.removeObserver(this, topic);
+          OBSERVER_TOPICS.forEach(function (aTopic) {
+            Services.obs.removeObserver(this, aTopic);
           }, this);
 
           lazy.Logger.close();
@@ -248,8 +249,19 @@ export var TPS = {
           break;
 
         case "fxaccounts:onlogin":
-          // A user signed in - for TPS that always means sync - so configure
-          // that.
+          // User logged in but sync keys may not be ready yet (OAuth still in progress)
+          lazy.Logger.logInfo(
+            `User logged in via ${topic}, OAuth flow in progress...`
+          );
+          break;
+
+        case "fxaccounts:onverified":
+          // User verification status changed from false to true - configure sync
+          // Note: This only fires when verification status CHANGES from false to true.
+          // For pre-verified accounts, this event won't fire at all.
+          lazy.Logger.logInfo(
+            `User verified via ${topic}, configuring sync...`
+          );
           lazy.Weave.Service.configure().catch(e => {
             this.DumpError("Configuring sync failed.", e);
           });
@@ -1343,9 +1355,48 @@ export var TPS = {
       return;
     }
 
+    // Configure FxA staging server if requested
+    if (this.config.fxaStaging) {
+      const STAGING_ROOT = "https://accounts.stage.mozaws.net";
+      Services.prefs.setStringPref(
+        "identity.fxaccounts.autoconfig.uri",
+        STAGING_ROOT
+      );
+      lazy.Logger.logInfo("Using FxA staging autoconfig: " + STAGING_ROOT);
+    } else {
+      Services.prefs.clearUserPref("identity.fxaccounts.autoconfig.uri");
+    }
+
+    if (this.config.autoCreateAccount) {
+      await lazy.Authentication.createAndVerifyAccount(
+        this.config.fx_account.username,
+        this.config.fx_account.password,
+        this.config.fxaApiUrl
+      );
+    }
+
     lazy.Logger.logInfo("Setting client credentials and login.");
+    // wait for setup-complete before calling signIn()
+    let setupCompleteWaiter = this.promiseObserver(
+      "weave:service:setup-complete"
+    );
     await lazy.Authentication.signIn(this.config.fx_account);
-    await this.waitForSetupComplete();
+
+    // fxaccounts:onverified only fires when verification status CHANGES from false to true,
+    // so for pre-verified accounts we need to check and call configure() ourselves.
+    const user = await lazy.Authentication.getSignedInUser();
+    if (user && user.verified) {
+      lazy.Logger.logInfo(
+        "User is verified (pre-verified account), configuring sync..."
+      );
+      await lazy.Weave.Service.configure();
+    } else {
+      lazy.Logger.logInfo(
+        "User not yet verified, waiting for fxaccounts:onverified to configure sync..."
+      );
+    }
+
+    await setupCompleteWaiter;
     lazy.Logger.AssertEqual(
       lazy.Weave.Status.service,
       lazy.STATUS_OK,
@@ -1401,7 +1452,25 @@ export var TPS = {
     lazy.Logger.logInfo("Wiping data from server.");
 
     await this.Login();
-    await lazy.Weave.Service.login();
+    if (!lazy.Weave.Service.storageURL) {
+      lazy.Logger.logInfo(
+        "No storage node assigned yet, attempting sync login before wipe"
+      );
+      try {
+        await lazy.Weave.Service.login();
+      } catch (error) {
+        lazy.Logger.logInfo(
+          "Sync login before wipe failed: " + (error?.message || error)
+        );
+      }
+    }
+
+    if (!lazy.Weave.Service.storageURL) {
+      throw new Error(
+        "Cannot wipe server: no storage node assigned after sync login"
+      );
+    }
+
     await lazy.Weave.Service.wipeServer();
   },
 
