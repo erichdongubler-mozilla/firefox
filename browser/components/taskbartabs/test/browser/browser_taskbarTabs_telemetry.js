@@ -4,6 +4,7 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   FileTestUtils: "resource://testing-common/FileTestUtils.sys.mjs",
   TaskbarTabsRegistry:
     "resource:///modules/taskbartabs/TaskbarTabsRegistry.sys.mjs",
@@ -109,11 +110,11 @@ add_task(async function testPinMetricSuccess() {
 
 add_task(async function testPinMetricFail() {
   await testPinMetricCustom("Pin fail!");
-});
+}).skip(AppConstants.platform !== "win"); // Pinning shortcuts is Windows-only.
 
 add_task(async function testPinMetricInvalid() {
   await testPinMetricCustom(undefined, "Unknown exception");
-});
+}).skip(AppConstants.platform !== "win"); // Pinning shortcuts is Windows-only.
 
 async function testUnpinMetricCustom(
   aUnpinResult,
@@ -159,7 +160,7 @@ add_task(async function testPinAndUnpinMetric_UnpinSuccessDeleteSuccess() {
 
 add_task(async function testPinAndUnpinMetric_UnpinFailDeleteSuccess() {
   await testUnpinMetricCustom("Unpin fail!", null);
-});
+}).skip(AppConstants.platform !== "win"); // Unpinning shortcuts is Windows-only.
 
 add_task(async function testPinAndUnpinMetric_UnpinSuccessDeleteFail() {
   await testUnpinMetricCustom(null, "Deletion fail!");
@@ -167,11 +168,11 @@ add_task(async function testPinAndUnpinMetric_UnpinSuccessDeleteFail() {
 
 add_task(async function testPinAndUnpinMetric_UnpinSuccessDeleteFail() {
   await testUnpinMetricCustom("Unpin fail!", "Deletion fail!");
-});
+}).skip(AppConstants.platform !== "win"); // Unpinning shortcuts is Windows-only.
 
 add_task(async function testPinAndUnpinMetric_UnpinInvalid() {
   await testUnpinMetricCustom(undefined, null, "Unknown exception", null);
-});
+}).skip(AppConstants.platform !== "win"); // Unpinning shortcuts is Windows-only.
 
 add_task(async function testPinAndUnpinMetric_DeleteInvalid() {
   await testUnpinMetricCustom(null, undefined, null, "Unknown exception");

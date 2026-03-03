@@ -294,7 +294,7 @@ add_task(async function testWindowIconSet() {
   await check(win, "replaceTabWithWindow (explicit)");
 
   wm.testOnlyMockUIUtils(null);
-});
+}).skip(AppConstants.platform !== "win"); // The window icon is only set on Windows.
 
 add_task(async function test_taskbarTab_persistence() {
   const wm = new TaskbarTabsWindowManager();
@@ -394,4 +394,4 @@ add_task(async function test_taskbarTab_persistence() {
     BrowserTestUtils.closeWindow(win1),
     BrowserTestUtils.closeWindow(win2),
   ]);
-});
+}).skip(AppConstants.platform === "linux"); // We can't control the window position on Linux.

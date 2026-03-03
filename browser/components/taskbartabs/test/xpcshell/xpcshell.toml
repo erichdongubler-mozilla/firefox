@@ -3,6 +3,7 @@ firefox-appdir = "browser"
 head = "head.js"
 run-if = [
   "os == 'win'",
+  "os == 'linux'",
 ]
 
 ["test_TaskbarTabsRegistry.js"]
