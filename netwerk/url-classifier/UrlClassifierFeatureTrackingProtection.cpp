@@ -7,7 +7,6 @@
 #include "UrlClassifierFeatureTrackingProtection.h"
 
 #include "mozilla/AntiTrackingUtils.h"
-#include "mozilla/ScopedPrefs.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "ChannelClassifierService.h"
 #include "nsIChannel.h"
@@ -85,26 +84,19 @@ UrlClassifierFeatureTrackingProtection::MaybeCreate(nsIChannel* aChannel) {
       ("UrlClassifierFeatureTrackingProtection::MaybeCreate - channel %p",
        aChannel));
 
-#ifdef ANDROID  // TODO(Bug 2005278): keep behavior between platforms consistent
   nsCOMPtr<nsILoadContext> loadContext;
   NS_QueryNotificationCallbacks(aChannel, loadContext);
   if (!loadContext) {
     // Some channels don't have a loadcontext, check the global tracking
     // protection preference.
-    if (!ScopedPrefs::BoolPrefScoped(
-            ScopedPrefs::PRIVACY_TRACKINGPROTECTION_ENABLED, aChannel)) {
+    if (!StaticPrefs::privacy_trackingprotection_enabled() &&
+        !(NS_UsePrivateBrowsing(aChannel) &&
+          StaticPrefs::privacy_trackingprotection_pbmode_enabled())) {
       return nullptr;
     }
   } else if (!loadContext->UseTrackingProtection()) {
     return nullptr;
   }
-#else   // !ANDROID
-  // Always check tracking protection pref on desktop
-  if (!ScopedPrefs::BoolPrefScoped(
-          ScopedPrefs::PRIVACY_TRACKINGPROTECTION_ENABLED, aChannel)) {
-    return nullptr;
-  }
-#endif  // ANDROID
 
   RefPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   bool isThirdParty = loadInfo->GetIsThirdPartyContextToTopWindow();

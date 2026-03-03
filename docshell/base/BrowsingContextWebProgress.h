@@ -5,7 +5,6 @@
 #ifndef mozilla_dom_BrowsingContextWebProgress_h
 #define mozilla_dom_BrowsingContextWebProgress_h
 
-#include "nsIScopedPrefs.h"
 #include "nsIWebProgress.h"
 #include "nsIWebProgressListener.h"
 #include "nsTObserverArray.h"
@@ -64,7 +63,6 @@ class BrowsingContextWebProgress final : public nsIWebProgress,
   void SetLoadType(uint32_t aLoadType) { mLoadType = aLoadType; }
 
   already_AddRefed<BounceTrackingState> GetBounceTrackingState();
-  already_AddRefed<nsIScopedPrefs> ScopedPrefs();
 
   // Drops our reference to BounceTrackingState. This is used when the feature
   // gets disabled.
@@ -104,10 +102,6 @@ class BrowsingContextWebProgress final : public nsIWebProgress,
   bool mIsLoadingDocument = false;
 
   RefPtr<mozilla::BounceTrackingState> mBounceTrackingState;
-
-  // Allow overriding some prefs for the lifetime of a particular tab
-  // one per TopBrowsingContext
-  nsCOMPtr<nsIScopedPrefs> mScopedPrefs;
 };
 
 }  // namespace mozilla::dom

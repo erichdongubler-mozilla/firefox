@@ -42,14 +42,7 @@ NS_INTERFACE_MAP_END
 
 BrowsingContextWebProgress::BrowsingContextWebProgress(
     CanonicalBrowsingContext* aBrowsingContext)
-    : mCurrentBrowsingContext(aBrowsingContext) {
-  if (aBrowsingContext->IsTop()) {
-    mScopedPrefs = new mozilla::ScopedPrefs();
-  } else {
-    // inherit top scoped prefs from top browsing context
-    mScopedPrefs = aBrowsingContext->Top()->GetWebProgress()->mScopedPrefs;
-  }
-}
+    : mCurrentBrowsingContext(aBrowsingContext) {}
 
 BrowsingContextWebProgress::~BrowsingContextWebProgress() = default;
 
@@ -215,10 +208,6 @@ BrowsingContextWebProgress::GetBounceTrackingState() {
 
 void BrowsingContextWebProgress::DropBounceTrackingState() {
   mBounceTrackingState = nullptr;
-}
-
-already_AddRefed<nsIScopedPrefs> BrowsingContextWebProgress::ScopedPrefs() {
-  return do_AddRef(mScopedPrefs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
