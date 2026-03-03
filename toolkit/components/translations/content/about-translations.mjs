@@ -265,13 +265,11 @@ class AboutTranslations {
    *   mainUserInterface: HTMLElement,
    *   sourceLanguageSelector: HTMLElement,
    *   sourceSection: HTMLElement,
-   *   sourceSectionActionsColumn: HTMLElement,
    *   sourceSectionClearButton: HTMLElement,
    *   sourceSectionTextArea: HTMLTextAreaElement,
    *   swapLanguagesButton: HTMLElement,
    *   targetLanguageSelector: HTMLElement,
    *   targetSection: HTMLElement,
-   *   targetSectionActionsRow: HTMLElement,
    *   targetSectionTextArea: HTMLTextAreaElement,
    *   unsupportedInfoMessage: HTMLElement,
    * }}
@@ -307,9 +305,6 @@ class AboutTranslations {
       sourceSection: /** @type {HTMLElement} */ (
         document.getElementById("about-translations-source-section")
       ),
-      sourceSectionActionsColumn: /** @type {HTMLElement} */ (
-        document.getElementById("about-translations-source-actions")
-      ),
       sourceSectionClearButton: /** @type {HTMLElement} */ (
         document.getElementById("about-translations-clear-button")
       ),
@@ -324,9 +319,6 @@ class AboutTranslations {
       ),
       targetSection: /** @type {HTMLElement} */ (
         document.getElementById("about-translations-target-section")
-      ),
-      targetSectionActionsRow: /** @type {HTMLElement} */ (
-        document.getElementById("about-translations-target-actions")
       ),
       targetSectionTextArea: /** @type {HTMLTextAreaElement} */ (
         document.getElementById("about-translations-target-textarea")
@@ -440,13 +432,12 @@ class AboutTranslations {
       copyButton,
       learnMoreLink,
       sourceLanguageSelector,
-      sourceSectionActionsColumn,
+      sourceSection,
       sourceSectionClearButton,
       sourceSectionTextArea,
       swapLanguagesButton,
       targetLanguageSelector,
-      targetSectionActionsRow,
-      targetSectionTextArea,
+      targetSection,
     } = this.elements;
 
     copyButton.addEventListener("click", this.#onCopyButton);
@@ -455,9 +446,9 @@ class AboutTranslations {
       "change",
       this.#onSourceLanguageInput
     );
-    sourceSectionActionsColumn.addEventListener(
+    sourceSection.addEventListener(
       "pointerdown",
-      this.#onSourceSectionActionsPointerDown
+      this.#onSourceSectionPointerDown
     );
     sourceSectionClearButton.addEventListener(
       "click",
@@ -468,24 +459,14 @@ class AboutTranslations {
       this.#onSourceSectionClearButtonMouseDown
     );
     sourceSectionTextArea.addEventListener("input", this.#onSourceTextInput);
-    sourceSectionTextArea.addEventListener(
-      "focus",
-      this.#onSourceTextAreaFocus
-    );
-    sourceSectionTextArea.addEventListener("blur", this.#onSourceTextAreaBlur);
     swapLanguagesButton.addEventListener("click", this.#onSwapLanguagesButton);
     targetLanguageSelector.addEventListener(
       "change",
       this.#onTargetLanguageInput
     );
-    targetSectionTextArea.addEventListener(
-      "focus",
-      this.#onTargetTextAreaFocus
-    );
-    targetSectionTextArea.addEventListener("blur", this.#onTargetTextAreaBlur);
-    targetSectionActionsRow.addEventListener(
+    targetSection.addEventListener(
       "pointerdown",
-      this.#onTargetSectionActionsPointerDown
+      this.#onTargetSectionPointerDown
     );
     window.addEventListener("resize", this.#onResize);
     window.visualViewport.addEventListener("resize", this.#onResize);
@@ -500,14 +481,11 @@ class AboutTranslations {
 
   /**
    * Handles mousedown on the source section clear button.
+   *
+   * Prevents the button from taking focus when clicked.
    */
   #onSourceSectionClearButtonMouseDown = event => {
-    if (this.elements.sourceSection.classList.contains("focus-section")) {
-      // When the source section has a focus outline, clicking the clear button will cause the outline
-      // to disappear and then reappear since clicking the clear button re-focuses the source section.
-      // We should just avoid the outline flash all together when the source section is focused.
-      event.preventDefault();
-    }
+    event.preventDefault();
   };
 
   /**
@@ -567,14 +545,12 @@ class AboutTranslations {
   };
 
   /**
-   * Handles pointerdown events within the source section's actions column.
+   * Handles pointerdown events within the source section.
    *
-   * Clicking empty space within the column should behave as though the
-   * textarea was clicked, but clicking the clear button should preserve
-   * the default behavior.
+   * Focuses the textarea when the event occurs on empty space.
    */
-  #onSourceSectionActionsPointerDown = event => {
-    if (event.target?.closest?.("#about-translations-clear-button")) {
+  #onSourceSectionPointerDown = event => {
+    if (event.target?.closest?.("textarea, moz-button")) {
       return;
     }
 
@@ -583,50 +559,17 @@ class AboutTranslations {
   };
 
   /**
-   * Handles focusing the source section by outlining the entire section.
-   */
-  #onSourceTextAreaFocus = () => {
-    this.elements.sourceSection.classList.add("focus-section");
-  };
-
-  /**
-   * Handles blur events on the source section's text area.
-   */
-  #onSourceTextAreaBlur = () => {
-    this.elements.sourceSection.classList.remove("focus-section");
-  };
-
-  /**
-   * Handles pointerdown events within the target section's actions row.
+   * Handles pointerdown events within the target section.
    *
-   * Clicking empty space within the actions row should behave as though
-   * the textarea was clicked, but clicking a specific action, such as the
-   * copy button, should have the default behavior for that element.
+   * Focuses the section when the event occurs on empty space.
    */
-  #onTargetSectionActionsPointerDown = event => {
-    if (event.target?.closest?.("#about-translations-copy-button")) {
-      // The copy button was clicked: preserve the default behavior.
+  #onTargetSectionPointerDown = event => {
+    if (event.target?.closest?.("textarea, moz-button")) {
       return;
     }
 
-    // Empty space within the actions row was clicked: focus the text area.
     event.preventDefault();
-    this.elements.targetSectionTextArea.focus();
-  };
-
-  /**
-   * Handles the custom effects for focusing the target section's text area,
-   * which should outline the entire section, instead of only the text area.
-   */
-  #onTargetTextAreaFocus = () => {
-    this.elements.targetSection.classList.add("focus-section");
-  };
-
-  /**
-   * Handles the custom effects for blur events on the target section's text area.
-   */
-  #onTargetTextAreaBlur = () => {
-    this.elements.targetSection.classList.remove("focus-section");
+    this.elements.targetSection.focus();
   };
 
   /**
@@ -1721,8 +1664,8 @@ class AboutTranslations {
       sourceSection,
       sourceSectionTextArea,
       targetSection,
-      targetSectionActionsRow,
       targetSectionTextArea,
+      translationErrorMessage,
     } = this.elements;
 
     const sourceSectionHeightBefore = Number.parseFloat(
@@ -1737,14 +1680,14 @@ class AboutTranslations {
     sourceSectionTextArea.style.height = "auto";
     targetSectionTextArea.style.height = "auto";
 
-    const targetActionsHeight =
-      targetSectionActionsRow.getBoundingClientRect().height;
+    const translationErrorHeight =
+      translationErrorMessage?.getBoundingClientRect().height ?? 0;
     const minSectionHeight = AboutTranslations.#maxInteger(
       this.#getMinHeight(sourceSection),
       this.#getMinHeight(targetSection)
     );
     const targetSectionContentHeight =
-      targetSectionTextArea.scrollHeight + targetActionsHeight;
+      targetSectionTextArea.scrollHeight + translationErrorHeight;
     const maxContentHeight = AboutTranslations.#maxInteger(
       sourceSectionTextArea.scrollHeight,
       targetSectionContentHeight,
@@ -1757,7 +1700,7 @@ class AboutTranslations {
     const maxSectionHeight = maxContentHeight + sectionBorderHeight;
     const maxSectionHeightPixels = `${maxSectionHeight}px`;
     const targetSectionTextAreaHeightPixels = `${Math.max(
-      maxContentHeight - targetActionsHeight,
+      maxContentHeight - translationErrorHeight,
       0
     )}px`;
     const sourceSectionHeightChange = this.#getSectionHeightChange(
@@ -1795,8 +1738,8 @@ class AboutTranslations {
       sourceSection,
       sourceSectionTextArea,
       targetSection,
-      targetSectionActionsRow,
       targetSectionTextArea,
+      translationErrorMessage,
     } = this.elements;
 
     const sourceSectionHeightBefore = Number.parseFloat(
@@ -1811,8 +1754,8 @@ class AboutTranslations {
     sourceSectionTextArea.style.height = "auto";
     targetSectionTextArea.style.height = "auto";
 
-    const targetActionsHeight =
-      targetSectionActionsRow.getBoundingClientRect().height;
+    const translationErrorHeight =
+      translationErrorMessage?.getBoundingClientRect().height ?? 0;
     const sourceMinHeight = this.#getMinHeight(sourceSection);
     const targetMinHeight = this.#getMinHeight(targetSection);
     const sourceContentHeight = AboutTranslations.#maxInteger(
@@ -1820,7 +1763,7 @@ class AboutTranslations {
       sourceMinHeight
     );
     const targetContentHeight = AboutTranslations.#maxInteger(
-      targetSectionTextArea.scrollHeight + targetActionsHeight,
+      targetSectionTextArea.scrollHeight + translationErrorHeight,
       targetMinHeight
     );
     const sourceSectionHeight =
@@ -1828,7 +1771,7 @@ class AboutTranslations {
     const targetSectionHeight =
       targetContentHeight + this.#getBorderAndPaddingHeight(targetSection);
     const targetSectionTextAreaHeightPixels = `${Math.max(
-      targetContentHeight - targetActionsHeight,
+      targetContentHeight - translationErrorHeight,
       0
     )}px`;
     const sourceSectionHeightChange = this.#getSectionHeightChange(
