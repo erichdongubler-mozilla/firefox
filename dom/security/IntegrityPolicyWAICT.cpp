@@ -54,6 +54,9 @@ bool IntegrityPolicyWAICT::MaybeCheckResourceIntegrity(
 
   // If manifest failed to load/validate, decision depends on mode
   if (!mManifestValid) {
+    ReportViolation(aURI, aDestination,
+                    IntegrityViolationReason::Invalid_manifest);
+
     if (mEnforce) {
       MOZ_LOG_FMT(
           gWaictLog, LogLevel::Warning,
@@ -86,6 +89,8 @@ bool IntegrityPolicyWAICT::MaybeCheckResourceIntegrity(
                                        NS_ConvertUTF8toUTF16(aHash)};
           ReportMessage(nsIScriptError::errorFlag, "WAICT"_ns,
                         "WAICTHashMismatch", params);
+          ReportViolation(aURI, aDestination,
+                          IntegrityViolationReason::No_manifest_match);
           return !mEnforce;
         }
 
@@ -117,6 +122,8 @@ bool IntegrityPolicyWAICT::MaybeCheckResourceIntegrity(
                                NS_ConvertUTF8toUTF16(aHash)};
   ReportMessage(nsIScriptError::errorFlag, "WAICT"_ns,
                 "WAICTResourceNotInManifest", params);
+  ReportViolation(aURI, aDestination,
+                  IntegrityViolationReason::Missing_from_manifest);
   return !mEnforce;
 }
 
@@ -421,6 +428,56 @@ void IntegrityPolicyWAICT::ReportMessage(uint32_t aErrorFlags,
   nsContentUtils::ReportToConsole(aErrorFlags, aCategory, doc,
                                   nsContentUtils::eSECURITY_PROPERTIES,
                                   aMessageName, aParams);
+}
+
+void IntegrityPolicyWAICT::ReportViolation(
+    nsIURI* aURI, IntegrityPolicy::DestinationType aDestination,
+    IntegrityViolationReason aReason) const {
+  nsCOMPtr<Document> doc = do_QueryReferent(mDocument);
+  if (!doc) {
+    return;
+  }
+
+  nsPIDOMWindowInner* window = doc->GetInnerWindow();
+  if (NS_WARN_IF(!window)) {
+    return;
+  }
+  nsCOMPtr<nsIGlobalObject> global = window->AsGlobal();
+
+  if (NS_WARN_IF(!mDocumentURI)) {
+    return;
+  }
+
+  nsAutoCString documentURL;
+  ReportingUtils::StripURL(mDocumentURI, documentURL);
+  NS_ConvertUTF8toUTF16 documentURLUTF16(documentURL);
+
+  nsAutoCString blockedURL;
+  ReportingUtils::StripURL(aURI, blockedURL);
+
+  nsAutoCString destination;
+  switch (aDestination) {
+    case IntegrityPolicy::DestinationType::Script:
+      destination = "script"_ns;
+      break;
+    case IntegrityPolicy::DestinationType::Style:
+      destination = "style"_ns;
+      break;
+    case IntegrityPolicy::DestinationType::Image:
+      destination = "image"_ns;
+      break;
+  }
+
+  for (const nsCString& endpoint : mEndpoints) {
+    RefPtr<IntegrityViolationReportBody> body =
+        new IntegrityViolationReportBody(global, documentURL, blockedURL,
+                                         destination, !mEnforce,
+                                         Nullable(aReason));
+
+    ReportingUtils::Report(global, nsGkAtoms::integrity_violation,
+                           NS_ConvertUTF8toUTF16(endpoint), documentURLUTF16,
+                           body);
+  }
 }
 
 }  // namespace mozilla::dom
