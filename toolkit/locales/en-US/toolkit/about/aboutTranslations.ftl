@@ -19,6 +19,12 @@ about-translations-policy-disabled-info-message =
   .heading = Translations aren’t available for your organization
   .message = This is a policy set by your administrator.
 
+# An info message displayed when translations are disabled but can still be unblocked.
+about-translations-feature-blocked-info-message =
+  .heading = To translate text, unblock this feature
+  .message = It looks like you updated AI controls to block this feature. Unblock any time to start using it.
+about-translations-feature-blocked-unblock-button = Unblock
+
 # An error message displayed when the language list fails to load.
 about-translations-language-load-error-message =
   .heading = Couldn’t load languages.
