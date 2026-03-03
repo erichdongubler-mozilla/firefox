@@ -1255,16 +1255,15 @@ bool nsHttpConnectionMgr::ProcessPendingQForEntry(nsHttpConnectionInfo* ci) {
 bool nsHttpConnectionMgr::AtActiveConnectionLimit(ConnectionEntry* ent,
                                                   uint32_t caps) {
   nsHttpConnectionInfo* ci = ent->mConnInfo;
-  uint32_t totalCount = ent->TotalActiveConnections();
-
-  if (ci->IsHttp3() || ci->IsHttp3ProxyConnection()) {
-    if (ci->GetWebTransport()) {
-      // TODO: implement this properly in bug 1815735.
-      return false;
-    }
-    return totalCount > 0;
+  if (ci->GetWebTransport()) {
+    // TODO: implement this properly in bug 1815735.
+    return false;
+  }
+  if (ent->HasActiveH3Connection()) {
+    return true;
   }
 
+  uint32_t totalCount = ent->TotalActiveConnections();
   uint32_t maxPersistConns = MaxPersistConnections(ent);
 
   LOG(
@@ -2141,14 +2140,9 @@ HttpConnectionBase* nsHttpConnectionMgr::GetH2orH3ActiveConn(
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(ent);
 
-  bool isHttp3 = ent->IsHttp3() || ent->IsHttp3ProxyConnection();
-  // First look at ent. If protocol that ent provides is no forbidden,
-  // i.e. ent use HTTP3 and !aNoHttp3 or en uses HTTP over TCP and !aNoHttp2.
-  if ((!aNoHttp3 && isHttp3) || (!aNoHttp2 && !isHttp3)) {
-    HttpConnectionBase* conn = ent->GetH2orH3ActiveConn();
-    if (conn) {
-      return conn;
-    }
+  HttpConnectionBase* conn = ent->GetH2orH3ActiveConn(aNoHttp2, aNoHttp3);
+  if (conn) {
+    return conn;
   }
 
   nsHttpConnectionInfo* ci = ent->mConnInfo;
