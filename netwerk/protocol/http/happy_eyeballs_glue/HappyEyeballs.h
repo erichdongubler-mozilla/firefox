@@ -13,16 +13,21 @@
 namespace mozilla {
 namespace net {
 
-class HappyEyeballsAPI final {
+class HappyEyeballs final {
  public:
   static nsresult Init(HappyEyeballs** aHappyEyeballs,
                        const nsACString& aOrigin, uint16_t aPort,
-                       const nsTArray<AltSvc>* aAltSvc = nullptr) {
-    nsTArray<AltSvc> emptyAltSvc;
-    const nsTArray<AltSvc>* altSvcPtr = aAltSvc ? aAltSvc : &emptyAltSvc;
-    return happy_eyeballs_new((const HappyEyeballs**)aHappyEyeballs, &aOrigin,
-                              aPort, altSvcPtr);
+                       const nsTArray<happy_eyeballs::AltSvc>* aAltSvc) {
+    return happy_eyeballs::create((const HappyEyeballs**)aHappyEyeballs,
+                                  &aOrigin, aPort, aAltSvc);
   }
+
+  void AddRef() { happy_eyeballs::addref(this); }
+  void Release() { happy_eyeballs::release(this); }
+
+ private:
+  HappyEyeballs() = delete;
+  ~HappyEyeballs() = delete;
 };
 
 }  // namespace net

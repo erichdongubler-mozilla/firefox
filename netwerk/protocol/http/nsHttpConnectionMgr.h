@@ -101,7 +101,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void ReportSpdyConnection(nsHttpConnection*, bool usingSpdy,
                             bool disallowHttp3);
 
-  void ReportHttp3Connection(HttpConnectionBase*);
+  void ReportHttp3Connection(HttpConnectionBase* conn,
+                             ConnectionEntry* entry = nullptr);
 
   bool GetConnectionData(nsTArray<HttpRetParams>*);
   bool GetHttp3ConnectionStatsData(nsTArray<Http3ConnectionStatsParams>*);
@@ -182,6 +183,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   //-------------------------------------------------------------------------
 
   [[nodiscard]] bool ProcessPendingQForEntry(nsHttpConnectionInfo*);
+  void ProcessPendingQForEntry(ConnectionEntry*);
 
   // public, so that the SPDY/http2 seesions can activate
   void ActivateTimeoutTick();
@@ -216,7 +218,10 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
  private:
   friend class ConnectionAttemptPool;
   friend class DnsAndConnectSocket;
+  friend class HappyEyeballsConnectionAttempt;
   friend class PendingTransactionInfo;
+  friend class ConnectionEstablisher;
+  friend class TCPConnectionEstablisher;
 
   //-------------------------------------------------------------------------
   // NOTE: these members may be accessed from any thread (use mReentrantMonitor)

@@ -646,6 +646,24 @@ nsresult nsHttpConnectionMgr::UpdateParam(nsParamName name, uint16_t value) {
                    static_cast<int32_t>(param), nullptr);
 }
 
+void nsHttpConnectionMgr::ProcessPendingQForEntry(ConnectionEntry* aEntry) {
+  LOG(("nsHttpConnectionMgr::ProcessPendingQForEntry [aEntry=%p]\n", aEntry));
+  RefPtr<ConnectionEntry> entry = aEntry;
+  NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+      "nsHttpConnectionMgr::ProcessPendingQForEntry",
+      [self = RefPtr{this}, entry]() {
+        if (!self->ProcessPendingQForEntry(entry, false)) {
+          // if we reach here, it means that we couldn't dispatch a transaction
+          // for the specified connection info.  walk the connection table...
+          for (const auto& ent : self->mCT.Values()) {
+            if (self->ProcessPendingQForEntry(ent.get(), false)) {
+              break;
+            }
+          }
+        }
+      }));
+}
+
 nsresult nsHttpConnectionMgr::ProcessPendingQ(nsHttpConnectionInfo* aCI) {
   LOG(("nsHttpConnectionMgr::ProcessPendingQ [ci=%s]\n", aCI->HashKey().get()));
   RefPtr<nsHttpConnectionInfo> ci;
@@ -873,7 +891,8 @@ void nsHttpConnectionMgr::UpdateCoalescingForNewConn(
   MOZ_ASSERT(newConn);
   MOZ_ASSERT(newConn->ConnectionInfo());
   MOZ_ASSERT(ent);
-  MOZ_ASSERT(mCT.GetWeak(newConn->ConnectionInfo()->HashKey()) == ent);
+  MOZ_ASSERT_IF(!newConn->ConnectionInfo()->GetHappyEyeballsEnabled(),
+                mCT.GetWeak(newConn->ConnectionInfo()->HashKey()) == ent);
   LOG(("UpdateCoalescingForNewConn newConn=%p aNoHttp3=%d", newConn, aNoHttp3));
   if (newConn->ConnectionInfo()->GetWebTransport()) {
     LOG(("Don't coalesce a WebTransport conn %p", newConn));
@@ -971,6 +990,10 @@ void nsHttpConnectionMgr::ReportSpdyConnection(nsHttpConnection* conn,
   if (!conn->ConnectionInfo()) {
     return;
   }
+  if (conn->IsRacing()) {
+    // We are not sure if this connection will be used or not. Don't report it.
+    return;
+  }
   ConnectionEntry* ent = mCT.GetWeak(conn->ConnectionInfo()->HashKey());
   if (!ent || !usingSpdy) {
     return;
@@ -1004,13 +1027,20 @@ void nsHttpConnectionMgr::ReportSpdyConnection(nsHttpConnection* conn,
   }
 }
 
-void nsHttpConnectionMgr::ReportHttp3Connection(HttpConnectionBase* conn) {
+void nsHttpConnectionMgr::ReportHttp3Connection(HttpConnectionBase* conn,
+                                                ConnectionEntry* entry) {
+  LOG(("nsHttpConnectionMgr::ReportHttp3Connection conn=%p", conn));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   if (!conn->ConnectionInfo()) {
     return;
   }
-  ConnectionEntry* ent = mCT.GetWeak(conn->ConnectionInfo()->HashKey());
+  ConnectionEntry* ent =
+      entry ? entry : mCT.GetWeak(conn->ConnectionInfo()->HashKey());
   if (!ent) {
+    return;
+  }
+  if (conn->IsRacing()) {
+    // We are not sure if this connection will be used or not. Don't report it.
     return;
   }
 
@@ -2194,7 +2224,7 @@ void nsHttpConnectionMgr::AbortAndCloseAllConnections(int32_t, ARefBase*) {
     ent->CancelAllTransactions(NS_ERROR_ABORT);
 
     // Close all half open tcp connections.
-    ent->CloseAllDnsAndConnectSockets();
+    ent->CloseAllConnectionAttempts();
 
     MOZ_ASSERT(!ent->mDoNotDestroy);
     iter.Remove();
