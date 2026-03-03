@@ -62,11 +62,16 @@ add_task(async function test_about_translations_dropdown_initialization() {
 
 add_task(
   async function test_about_translations_dropdown_initialization_failure() {
-    // Simulate a getSupportedLanguages error only for the next call.
+    // Simulate getSupportedLanguages errors on initial load and the first retry.
     const realGetSupportedLanguages = TranslationsParent.getSupportedLanguages;
+    let remainingFailures = 2;
     TranslationsParent.getSupportedLanguages = () => {
+      if (remainingFailures > 0) {
+        remainingFailures -= 1;
+        throw new Error("Simulating getSupportedLanguagesError()");
+      }
       TranslationsParent.getSupportedLanguages = realGetSupportedLanguages;
-      throw new Error("Simulating getSupportedLanguagesError()");
+      return realGetSupportedLanguages();
     };
 
     const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
@@ -89,6 +94,62 @@ add_task(
       sourceSectionTextArea: false,
       targetSectionTextArea: false,
       unsupportedInfoMessage: false,
+    });
+
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        expected: [
+          [AboutTranslationsTestUtils.Events.LanguageLoadRetryStarted],
+          [AboutTranslationsTestUtils.Events.LanguageLoadRetryFailed],
+        ],
+      },
+      async () => {
+        await aboutTranslationsTestUtils.clickLanguageLoadErrorButton();
+      }
+    );
+
+    await aboutTranslationsTestUtils.assertIsVisible({
+      pageHeader: true,
+      languageLoadErrorMessage: true,
+      mainUserInterface: false,
+      sourceLanguageSelector: false,
+      targetLanguageSelector: false,
+      copyButton: false,
+      swapLanguagesButton: false,
+      sourceSectionTextArea: false,
+      targetSectionTextArea: false,
+      unsupportedInfoMessage: false,
+    });
+
+    await aboutTranslationsTestUtils.assertEvents(
+      {
+        expected: [
+          [AboutTranslationsTestUtils.Events.LanguageLoadRetryStarted],
+          [AboutTranslationsTestUtils.Events.LanguageLoadRetrySucceeded],
+        ],
+      },
+      async () => {
+        await aboutTranslationsTestUtils.clickLanguageLoadErrorButton();
+      }
+    );
+
+    await aboutTranslationsTestUtils.assertIsVisible({
+      pageHeader: true,
+      languageLoadErrorMessage: false,
+      mainUserInterface: true,
+      sourceLanguageSelector: true,
+      targetLanguageSelector: true,
+      copyButton: true,
+      swapLanguagesButton: true,
+      sourceSectionTextArea: true,
+      targetSectionTextArea: true,
+      unsupportedInfoMessage: false,
+    });
+    await aboutTranslationsTestUtils.assertSourceLanguageSelector({
+      value: "detect",
+    });
+    await aboutTranslationsTestUtils.assertTargetLanguageSelector({
+      value: "",
     });
 
     await cleanup();

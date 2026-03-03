@@ -274,6 +274,8 @@ async function openAboutTranslations({
       "moz-message-bar#about-translations-unsupported-info-message",
     languageLoadErrorMessage:
       "moz-message-bar#about-translations-language-load-error-message",
+    languageLoadErrorButton:
+      "button#about-translations-language-load-error-button",
   };
 
   // Start the tab at a blank page.
@@ -4378,6 +4380,46 @@ class AboutTranslationsTestUtils {
      * @type {string}
      */
     static ClearTargetText = "AboutTranslationsTest:ClearTargetText";
+
+    /**
+     * Event fired when the language-load error message is shown.
+     *
+     * @type {string}
+     */
+    static LanguageLoadErrorMessageShown =
+      "AboutTranslationsTest:LanguageLoadErrorMessageShown";
+
+    /**
+     * Event fired when the language-load error message is hidden.
+     *
+     * @type {string}
+     */
+    static LanguageLoadErrorMessageHidden =
+      "AboutTranslationsTest:LanguageLoadErrorMessageHidden";
+
+    /**
+     * Event fired when the language-load retry flow starts.
+     *
+     * @type {string}
+     */
+    static LanguageLoadRetryStarted =
+      "AboutTranslationsTest:LanguageLoadRetryStarted";
+
+    /**
+     * Event fired when the language-load retry flow succeeds.
+     *
+     * @type {string}
+     */
+    static LanguageLoadRetrySucceeded =
+      "AboutTranslationsTest:LanguageLoadRetrySucceeded";
+
+    /**
+     * Event fired when the language-load retry flow fails.
+     *
+     * @type {string}
+     */
+    static LanguageLoadRetryFailed =
+      "AboutTranslationsTest:LanguageLoadRetryFailed";
   };
 
   /** @type {object} */
@@ -4775,6 +4817,23 @@ class AboutTranslationsTestUtils {
       await this.#runInPage(selectors => {
         const button = content.document.querySelector(
           selectors.translationErrorButton
+        );
+        button.click();
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  /**
+   * Clicks the language-load error retry button in the about:translations UI.
+   */
+  async clickLanguageLoadErrorButton() {
+    logAction();
+    try {
+      await this.#runInPage(selectors => {
+        const button = content.document.querySelector(
+          selectors.languageLoadErrorButton
         );
         button.click();
       });
