@@ -113,6 +113,11 @@ class FirefoxWebDriver(WebDriver):
         elif test_config.get("disable_speechrecognition"):
             prefs["media.webspeech.recognition.enable"] = False
 
+        if test_config.get("enable_standard_captureStream"):
+            prefs["media.captureStream.enabled"] = True
+        elif test_config.get("disable_standard_captureStream"):
+            prefs["media.captureStream.enabled"] = False
+
         if test_config.get("enable_webkit_fill_available"):
             prefs["layout.css.webkit-fill-available.enabled"] = True
         elif test_config.get("disable_webkit_fill_available"):
