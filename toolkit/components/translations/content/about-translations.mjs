@@ -286,6 +286,7 @@ class AboutTranslations {
    *   detectedLanguageUnsupportedHeading: HTMLElement,
    *   detectedLanguageUnsupportedLearnMoreLink: HTMLAnchorElement,
    *   detectedLanguageUnsupportedMessage: HTMLElement,
+   *   languageLoadErrorButton: HTMLElement,
    *   languageLoadErrorMessage: HTMLElement,
    *   learnMoreLink: HTMLAnchorElement,
    *   mainUserInterface: HTMLElement,
@@ -331,6 +332,9 @@ class AboutTranslations {
         document.getElementById(
           "about-translations-detected-language-unsupported-message"
         )
+      ),
+      languageLoadErrorButton: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-language-load-error-button")
       ),
       languageLoadErrorMessage: /** @type {HTMLElement} */ (
         document.getElementById(
@@ -481,6 +485,7 @@ class AboutTranslations {
     const {
       copyButton,
       detectedLanguageUnsupportedMessage,
+      languageLoadErrorButton,
       sourceLanguageSelector,
       sourceSectionClearButton,
       sourceSectionTextArea,
@@ -491,6 +496,10 @@ class AboutTranslations {
     } = this.elements;
 
     copyButton.addEventListener("click", this.#onCopyButton);
+    languageLoadErrorButton.addEventListener(
+      "click",
+      this.#onLanguageLoadErrorRetry
+    );
     sourceLanguageSelector.addEventListener(
       "change",
       this.#onSourceLanguageInput
@@ -524,6 +533,14 @@ class AboutTranslations {
     window.addEventListener("resize", this.#onResize);
     window.visualViewport.addEventListener("resize", this.#onResize);
   }
+
+  /**
+   * Handles retry clicks from the language-load error message.
+   */
+  #onLanguageLoadErrorRetry = event => {
+    event.preventDefault();
+    void this.#retryLanguageLoad();
+  };
 
   /**
    * Handles mousedown on the source section clear button.
@@ -671,14 +688,10 @@ class AboutTranslations {
    * Shows the main UI and hides any stand-alone message bars.
    */
   #showMainUserInterface() {
-    const {
-      unsupportedInfoMessage,
-      languageLoadErrorMessage,
-      mainUserInterface,
-    } = this.elements;
+    const { unsupportedInfoMessage, mainUserInterface } = this.elements;
 
-    unsupportedInfoMessage.style.display = "none";
-    languageLoadErrorMessage.style.display = "none";
+    unsupportedInfoMessage.hidden = true;
+    this.#setLanguageLoadErrorMessageVisible(false);
 
     mainUserInterface.style.display = "grid";
   }
@@ -687,32 +700,109 @@ class AboutTranslations {
    * Shows the message that translations are not supported in the current environment.
    */
   #showUnsupportedInfoMessage() {
-    const {
-      unsupportedInfoMessage,
-      languageLoadErrorMessage,
-      mainUserInterface,
-    } = this.elements;
+    const { unsupportedInfoMessage, mainUserInterface } = this.elements;
 
     mainUserInterface.style.display = "none";
-    languageLoadErrorMessage.style.display = "none";
+    this.#setLanguageLoadErrorMessageVisible(false);
 
-    unsupportedInfoMessage.style.display = "flex";
+    unsupportedInfoMessage.hidden = false;
   }
 
   /**
    * Shows the message that the list of languages could not be loaded.
    */
   #showLanguageLoadErrorMessage() {
-    const {
-      unsupportedInfoMessage,
-      languageLoadErrorMessage,
-      mainUserInterface,
-    } = this.elements;
+    const { unsupportedInfoMessage, mainUserInterface } = this.elements;
 
     mainUserInterface.style.display = "none";
-    unsupportedInfoMessage.style.display = "none";
+    unsupportedInfoMessage.hidden = true;
 
-    languageLoadErrorMessage.style.display = "flex";
+    this.#setLanguageLoadErrorMessageVisible(true);
+  }
+
+  /**
+   * Shows or hides the language-load error message and notifies tests when the
+   * visibility changes.
+   *
+   * @param {boolean} visible
+   */
+  #setLanguageLoadErrorMessageVisible(visible) {
+    const { languageLoadErrorMessage } = this.elements;
+    const isVisible = !languageLoadErrorMessage.hidden;
+
+    if (isVisible === visible) {
+      return;
+    }
+
+    languageLoadErrorMessage.hidden = !visible;
+    document.dispatchEvent(
+      new CustomEvent(
+        visible
+          ? "AboutTranslationsTest:LanguageLoadErrorMessageShown"
+          : "AboutTranslationsTest:LanguageLoadErrorMessageHidden"
+      )
+    );
+  }
+
+  /**
+   * Resets the source and target language selectors before reloading languages.
+   */
+  #resetLanguageSelectorsForReload() {
+    const {
+      detectLanguageOption,
+      sourceLanguageSelector,
+      targetLanguageSelector,
+    } = this.elements;
+
+    for (const option of sourceLanguageSelector.querySelectorAll(
+      "moz-option"
+    )) {
+      if (option !== detectLanguageOption) {
+        option.remove();
+      }
+    }
+
+    for (const option of targetLanguageSelector.querySelectorAll(
+      "moz-option"
+    )) {
+      if (option.getAttribute("value") !== "") {
+        option.remove();
+      }
+    }
+  }
+
+  /**
+   * Retries loading languages and restores the UI when the data is available.
+   */
+  async #retryLanguageLoad() {
+    const { languageLoadErrorButton } = this.elements;
+    languageLoadErrorButton.setAttribute("disabled", "true");
+    document.dispatchEvent(
+      new CustomEvent("AboutTranslationsTest:LanguageLoadRetryStarted")
+    );
+
+    try {
+      this.#resetLanguageSelectorsForReload();
+      await this.#setupLanguageSelectors();
+      await this.#updateUIFromURL();
+      this.#updateSourceScriptDirection();
+      this.#updateTargetScriptDirection();
+      this.#showMainUserInterface();
+      this.#updateSourceSectionClearButtonVisibility();
+      this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+      this.#setInitialFocus();
+      document.dispatchEvent(
+        new CustomEvent("AboutTranslationsTest:LanguageLoadRetrySucceeded")
+      );
+    } catch (error) {
+      AT_logError(error);
+      this.#showLanguageLoadErrorMessage();
+      document.dispatchEvent(
+        new CustomEvent("AboutTranslationsTest:LanguageLoadRetryFailed")
+      );
+    } finally {
+      languageLoadErrorButton.removeAttribute("disabled");
+    }
   }
 
   /**
