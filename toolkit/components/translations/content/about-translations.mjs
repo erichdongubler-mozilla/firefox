@@ -103,11 +103,18 @@ class AboutTranslations {
    * The BCP-47 language tag of the currently detected language.
    *
    * Defaults to an empty string if the detect-language option is not selected,
-   * or if the detector was not confident enough to determine a language tag.
+   * or if the detector did not determine a language tag.
    *
    * @type {string}
    */
   #detectedLanguage = "";
+
+  /**
+   * The display name of the currently detected language.
+   *
+   * @type {string}
+   */
+  #detectedLanguageDisplayName = "";
 
   /**
    * The translator for the current language pair.
@@ -276,6 +283,9 @@ class AboutTranslations {
    * @returns {{
    *   copyButton: HTMLElement,
    *   detectLanguageOption: HTMLElement,
+   *   detectedLanguageUnsupportedHeading: HTMLElement,
+   *   detectedLanguageUnsupportedLearnMoreLink: HTMLAnchorElement,
+   *   detectedLanguageUnsupportedMessage: HTMLElement,
    *   languageLoadErrorMessage: HTMLElement,
    *   learnMoreLink: HTMLAnchorElement,
    *   mainUserInterface: HTMLElement,
@@ -304,6 +314,22 @@ class AboutTranslations {
       detectLanguageOption: /** @type {HTMLElement} */ (
         document.getElementById(
           "about-translations-detect-language-label-option"
+        )
+      ),
+      detectedLanguageUnsupportedHeading: /** @type {HTMLElement} */ (
+        document.getElementById(
+          "about-translations-detected-language-unsupported-heading"
+        )
+      ),
+      detectedLanguageUnsupportedLearnMoreLink:
+        /** @type {HTMLAnchorElement} */ (
+          document.getElementById(
+            "about-translations-detected-language-unsupported-learn-more-link"
+          )
+        ),
+      detectedLanguageUnsupportedMessage: /** @type {HTMLElement} */ (
+        document.getElementById(
+          "about-translations-detected-language-unsupported-message"
         )
       ),
       languageLoadErrorMessage: /** @type {HTMLElement} */ (
@@ -454,8 +480,8 @@ class AboutTranslations {
   #initializeEventListeners() {
     const {
       copyButton,
+      detectedLanguageUnsupportedMessage,
       sourceLanguageSelector,
-      sourceSection,
       sourceSectionClearButton,
       sourceSectionTextArea,
       swapLanguagesButton,
@@ -469,9 +495,9 @@ class AboutTranslations {
       "change",
       this.#onSourceLanguageInput
     );
-    sourceSection.addEventListener(
+    detectedLanguageUnsupportedMessage.addEventListener(
       "pointerdown",
-      this.#onSourceSectionPointerDown
+      this.#onSourceMessageBarPointerDown
     );
     sourceSectionClearButton.addEventListener(
       "click",
@@ -548,6 +574,7 @@ class AboutTranslations {
 
     this.#updateURLFromUI();
     this.#maybeRequestTranslation({ allowFromErrorState: true });
+    this.#updateDetectedLanguageUnsupportedMessage();
   };
 
   /**
@@ -568,17 +595,16 @@ class AboutTranslations {
   };
 
   /**
-   * Handles pointerdown events within the source section.
+   * Handles pointerdown events within the source message bar.
    *
-   * Focuses the textarea when the event occurs on empty space.
+   * Focuses the source section when the event occurs on non-interactive content.
    */
-  #onSourceSectionPointerDown = event => {
-    if (event.target?.closest?.("textarea, moz-button")) {
+  #onSourceMessageBarPointerDown = event => {
+    if (event.target?.closest?.("a")) {
       return;
     }
 
-    event.preventDefault();
-    this.elements.sourceSectionTextArea.focus();
+    this.elements.sourceSection.focus();
   };
 
   /**
@@ -690,6 +716,52 @@ class AboutTranslations {
   }
 
   /**
+   * Shows the message that the detected language is not yet supported.
+   */
+  #showDetectedLanguageUnsupportedMessage() {
+    const {
+      detectedLanguageUnsupportedHeading,
+      detectedLanguageUnsupportedMessage,
+    } = this.elements;
+
+    const languageLabel =
+      this.#detectedLanguageDisplayName || this.#detectedLanguage;
+    if (languageLabel) {
+      document.l10n.setAttributes(
+        detectedLanguageUnsupportedHeading,
+        "about-translations-detected-language-unsupported-heading",
+        { language: languageLabel }
+      );
+    } else {
+      document.l10n.setAttributes(
+        detectedLanguageUnsupportedHeading,
+        "about-translations-detected-language-unsupported-heading-unknown"
+      );
+    }
+
+    detectedLanguageUnsupportedMessage.hidden = false;
+    this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+    document.l10n
+      .translateFragment(detectedLanguageUnsupportedMessage)
+      .then(() => {
+        this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+      });
+  }
+
+  /**
+   * Hides the message that the detected language is not yet supported.
+   */
+  #hideDetectedLanguageUnsupportedMessage() {
+    const { detectedLanguageUnsupportedMessage } = this.elements;
+    if (detectedLanguageUnsupportedMessage.hidden) {
+      return;
+    }
+
+    detectedLanguageUnsupportedMessage.hidden = true;
+    this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+  }
+
+  /**
    * Shows the translation error message in the target section.
    */
   #showTranslationErrorMessage() {
@@ -717,6 +789,24 @@ class AboutTranslations {
     translationErrorMessage.hidden = true;
     this.#updateSwapLanguagesButtonEnabledState();
     this.#requestSectionHeightsUpdate({ scheduleCallback: false });
+  }
+
+  /**
+   * Updates the detected-language unsupported message based on the current state.
+   */
+  #updateDetectedLanguageUnsupportedMessage() {
+    const sourceText = this.#getSourceText();
+    if (!sourceText || !this.#isDetectLanguageSelected()) {
+      this.#hideDetectedLanguageUnsupportedMessage();
+      return;
+    }
+
+    if (!this.#detectedLanguage || this.#isDetectedLanguageUnsupported()) {
+      this.#showDetectedLanguageUnsupportedMessage();
+      return;
+    }
+
+    this.#hideDetectedLanguageUnsupportedMessage();
   }
 
   /**
@@ -803,6 +893,7 @@ class AboutTranslations {
 
     if (detectedLanguage) {
       const displayName = await AT_getDisplayName(detectedLanguage);
+      this.#detectedLanguageDisplayName = displayName;
       this.#populateDetectLanguageOption({ detectedLanguage, displayName });
       sourceSectionTextArea.setAttribute(
         "dir",
@@ -852,6 +943,7 @@ class AboutTranslations {
   #resetDetectLanguageOptionText() {
     const { detectLanguageOption } = this.elements;
     this.#detectedLanguage = "";
+    this.#detectedLanguageDisplayName = "";
     detectLanguageOption.removeAttribute("language");
     document.l10n.setAttributes(
       detectLanguageOption,
@@ -1106,8 +1198,8 @@ class AboutTranslations {
       return "";
     }
 
-    const { language, confident } = await AT_identifyLanguage(sourceText);
-    if (!confident) {
+    const { language } = await AT_identifyLanguage(sourceText);
+    if (!language) {
       return "";
     }
 
@@ -1478,6 +1570,7 @@ class AboutTranslations {
 
         this.#updateURLFromUI();
         this.#updateSwapLanguagesButtonEnabledState();
+        this.#hideDetectedLanguageUnsupportedMessage();
       }
 
       this.#updateSourceScriptDirection();
@@ -1499,6 +1592,7 @@ class AboutTranslations {
       try {
         this.#requestSectionHeightsUpdate({ scheduleCallback: false });
         await this.#maybeUpdateDetectedSourceLanguage();
+        this.#updateDetectedLanguageUnsupportedMessage();
       } catch (error) {
         AT_logError(error);
       }
@@ -1543,6 +1637,7 @@ class AboutTranslations {
 
     try {
       await this.#maybeUpdateDetectedSourceLanguage();
+      this.#updateDetectedLanguageUnsupportedMessage();
 
       const sourceText = this.#getSourceText();
       const selectedLanguagePair = this.#getSelectedLanguagePair();
@@ -1800,6 +1895,7 @@ class AboutTranslations {
    */
   #synchronizeSectionsToMaxContentHeight() {
     const {
+      detectedLanguageUnsupportedMessage,
       sourceSection,
       sourceSectionTextArea,
       targetSection,
@@ -1819,16 +1915,20 @@ class AboutTranslations {
     sourceSectionTextArea.style.height = "auto";
     targetSectionTextArea.style.height = "auto";
 
+    const detectedLanguageUnsupportedHeight =
+      detectedLanguageUnsupportedMessage?.getBoundingClientRect().height ?? 0;
     const translationErrorHeight =
       translationErrorMessage?.getBoundingClientRect().height ?? 0;
     const minSectionHeight = AboutTranslations.#maxInteger(
       this.#getMinHeight(sourceSection),
       this.#getMinHeight(targetSection)
     );
+    const sourceSectionContentHeight =
+      sourceSectionTextArea.scrollHeight + detectedLanguageUnsupportedHeight;
     const targetSectionContentHeight =
       targetSectionTextArea.scrollHeight + translationErrorHeight;
     const maxContentHeight = AboutTranslations.#maxInteger(
-      sourceSectionTextArea.scrollHeight,
+      sourceSectionContentHeight,
       targetSectionContentHeight,
       minSectionHeight
     );
@@ -1838,6 +1938,10 @@ class AboutTranslations {
     );
     const maxSectionHeight = maxContentHeight + sectionBorderHeight;
     const maxSectionHeightPixels = `${maxSectionHeight}px`;
+    const sourceSectionTextAreaHeightPixels = `${Math.max(
+      maxContentHeight - detectedLanguageUnsupportedHeight,
+      0
+    )}px`;
     const targetSectionTextAreaHeightPixels = `${Math.max(
       maxContentHeight - translationErrorHeight,
       0
@@ -1854,7 +1958,7 @@ class AboutTranslations {
     sourceSection.style.height = maxSectionHeightPixels;
     targetSection.style.height = maxSectionHeightPixels;
 
-    sourceSectionTextArea.style.height = "100%";
+    sourceSectionTextArea.style.height = sourceSectionTextAreaHeightPixels;
     targetSectionTextArea.style.height = targetSectionTextAreaHeightPixels;
 
     this.#dispatchSectionHeightsChangedEvent({
@@ -1874,6 +1978,7 @@ class AboutTranslations {
    */
   #resizeSectionsToIndividualContentHeights() {
     const {
+      detectedLanguageUnsupportedMessage,
       sourceSection,
       sourceSectionTextArea,
       targetSection,
@@ -1893,12 +1998,14 @@ class AboutTranslations {
     sourceSectionTextArea.style.height = "auto";
     targetSectionTextArea.style.height = "auto";
 
+    const detectedLanguageUnsupportedHeight =
+      detectedLanguageUnsupportedMessage?.getBoundingClientRect().height ?? 0;
     const translationErrorHeight =
       translationErrorMessage?.getBoundingClientRect().height ?? 0;
     const sourceMinHeight = this.#getMinHeight(sourceSection);
     const targetMinHeight = this.#getMinHeight(targetSection);
     const sourceContentHeight = AboutTranslations.#maxInteger(
-      sourceSectionTextArea.scrollHeight,
+      sourceSectionTextArea.scrollHeight + detectedLanguageUnsupportedHeight,
       sourceMinHeight
     );
     const targetContentHeight = AboutTranslations.#maxInteger(
@@ -1909,6 +2016,10 @@ class AboutTranslations {
       sourceContentHeight + this.#getBorderAndPaddingHeight(sourceSection);
     const targetSectionHeight =
       targetContentHeight + this.#getBorderAndPaddingHeight(targetSection);
+    const sourceSectionTextAreaHeightPixels = `${Math.max(
+      sourceContentHeight - detectedLanguageUnsupportedHeight,
+      0
+    )}px`;
     const targetSectionTextAreaHeightPixels = `${Math.max(
       targetContentHeight - translationErrorHeight,
       0
@@ -1924,7 +2035,7 @@ class AboutTranslations {
 
     sourceSection.style.height = `${sourceSectionHeight}px`;
     targetSection.style.height = `${targetSectionHeight}px`;
-    sourceSectionTextArea.style.height = "100%";
+    sourceSectionTextArea.style.height = sourceSectionTextAreaHeightPixels;
     targetSectionTextArea.style.height = targetSectionTextAreaHeightPixels;
 
     this.#dispatchSectionHeightsChangedEvent({

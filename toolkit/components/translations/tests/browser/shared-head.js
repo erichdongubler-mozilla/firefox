@@ -253,6 +253,12 @@ async function openAboutTranslations({
     targetLanguageSelector: "moz-select#about-translations-target-select",
     detectLanguageOption:
       "moz-option#about-translations-detect-language-label-option",
+    detectedLanguageUnsupportedHeading:
+      "#about-translations-detected-language-unsupported-heading",
+    detectedLanguageUnsupportedLearnMoreLink:
+      "a#about-translations-detected-language-unsupported-learn-more-link",
+    detectedLanguageUnsupportedMessage:
+      "moz-message-bar#about-translations-detected-language-unsupported-message",
     swapLanguagesButton: "moz-button#about-translations-swap-languages-button",
     sourceSection: "div#about-translations-source-section",
     sourceSectionTextArea: "textarea#about-translations-source-textarea",
@@ -4851,6 +4857,39 @@ class AboutTranslationsTestUtils {
   }
 
   /**
+   * Waits for the detected-language unsupported message to match the requested visibility.
+   *
+   * @param {object} options
+   * @param {boolean} [options.visible=true]
+   * @returns {Promise<void>}
+   */
+  async waitForDetectedLanguageUnsupportedMessage({ visible = true } = {}) {
+    try {
+      await this.#runInPage(
+        (selectors, { visible }) => {
+          const { document } = content;
+          const message = document.querySelector(
+            selectors.detectedLanguageUnsupportedMessage
+          );
+          if (!message) {
+            throw new Error(
+              "Could not find the detected-language unsupported message."
+            );
+          }
+          return ContentTaskUtils.waitForMutationCondition(
+            message,
+            { attributes: true, attributeFilter: ["hidden"] },
+            () => message.hidden === !visible
+          );
+        },
+        { visible }
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  /**
    * Asserts that expected AboutTranslations events fire (with optional details)
    * and that unexpected events do not fire during as a result of the given callback.
    *
@@ -5295,6 +5334,138 @@ class AboutTranslationsTestUtils {
         detectLanguageAttribute,
         detectedLanguage,
         `Expected detect-language option "language" attribute to be "${detectedLanguage}", but got "${detectLanguageAttribute}".`
+      );
+    }
+  }
+
+  /**
+   * Asserts properties of the detected-language unsupported message.
+   *
+   * @param {object} options
+   * @param {boolean} [options.visible]
+   * @param {boolean} [options.sourceTextAreaVisible]
+   * @param {boolean} [options.targetTextAreaVisible]
+   * @param {string} [options.learnMoreSupportPage]
+   * @returns {Promise<void>}
+   */
+  async assertDetectedLanguageUnsupportedMessage({
+    visible,
+    sourceTextAreaVisible,
+    targetTextAreaVisible,
+    learnMoreSupportPage,
+  } = {}) {
+    await doubleRaf(document);
+
+    let pageResult = {};
+    try {
+      pageResult = await this.#runInPage(selectors => {
+        const { document, window } = content;
+        const isElementVisible = selector => {
+          const element = document.querySelector(selector);
+          if (element?.offsetParent === null) {
+            return false;
+          }
+
+          const computedStyle = window.getComputedStyle(element);
+          if (!computedStyle) {
+            return false;
+          }
+
+          const { display, visibility } = computedStyle;
+          return !(display === "none" || visibility === "hidden");
+        };
+
+        const message = document.querySelector(
+          selectors.detectedLanguageUnsupportedMessage
+        );
+        const heading = document.querySelector(
+          selectors.detectedLanguageUnsupportedHeading
+        );
+        const link = document.querySelector(
+          selectors.detectedLanguageUnsupportedLearnMoreLink
+        );
+
+        return {
+          messageExists: Boolean(message),
+          headingExists: Boolean(heading),
+          linkExists: Boolean(link),
+          messageVisible: isElementVisible(
+            selectors.detectedLanguageUnsupportedMessage
+          ),
+          sourceTextAreaVisible: isElementVisible(
+            selectors.sourceSectionTextArea
+          ),
+          targetTextAreaVisible: isElementVisible(
+            selectors.targetSectionTextArea
+          ),
+          learnMoreSupportPage: link?.getAttribute("support-page") ?? "",
+        };
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+
+    const {
+      messageExists,
+      headingExists,
+      linkExists,
+      messageVisible,
+      sourceTextAreaVisible: actualSourceTextAreaVisible,
+      targetTextAreaVisible: actualTargetTextAreaVisible,
+      learnMoreSupportPage: actualLearnMoreSupportPage,
+    } = pageResult;
+
+    ok(
+      messageExists,
+      "Expected detected-language unsupported message to be present."
+    );
+    ok(headingExists, "Expected unsupported message heading to be present.");
+    ok(
+      linkExists,
+      "Expected unsupported message learn-more link to be present."
+    );
+
+    if (visible !== undefined) {
+      visible
+        ? ok(
+            messageVisible,
+            "Expected detected-language unsupported message to be visible."
+          )
+        : ok(
+            !messageVisible,
+            "Expected detected-language unsupported message to be hidden."
+          );
+    }
+
+    if (sourceTextAreaVisible !== undefined) {
+      sourceTextAreaVisible
+        ? ok(
+            actualSourceTextAreaVisible,
+            "Expected source textarea to be visible."
+          )
+        : ok(
+            !actualSourceTextAreaVisible,
+            "Expected source textarea to be hidden."
+          );
+    }
+
+    if (targetTextAreaVisible !== undefined) {
+      targetTextAreaVisible
+        ? ok(
+            actualTargetTextAreaVisible,
+            "Expected target textarea to be visible."
+          )
+        : ok(
+            !actualTargetTextAreaVisible,
+            "Expected target textarea to be hidden."
+          );
+    }
+
+    if (learnMoreSupportPage !== undefined) {
+      is(
+        actualLearnMoreSupportPage,
+        learnMoreSupportPage,
+        `Expected unsupported message learn-more support-page to be "${learnMoreSupportPage}", but got "${actualLearnMoreSupportPage}".`
       );
     }
   }
@@ -5865,6 +6036,7 @@ class AboutTranslationsTestUtils {
    * @param {boolean} [options.swapLanguagesButton=false]
    * @param {boolean} [options.sourceSectionTextArea=false]
    * @param {boolean} [options.targetSectionTextArea=false]
+   * @param {boolean} [options.detectedLanguageUnsupportedMessage=false]
    * @param {boolean} [options.translationErrorMessage=false]
    * @param {boolean} [options.unsupportedInfoMessage=false]
    * @param {boolean} [options.languageLoadErrorMessage=false]
@@ -5880,6 +6052,7 @@ class AboutTranslationsTestUtils {
     swapLanguagesButton = false,
     sourceSectionTextArea = false,
     targetSectionTextArea = false,
+    detectedLanguageUnsupportedMessage = false,
     translationErrorMessage = false,
     unsupportedInfoMessage = false,
     languageLoadErrorMessage = false,
@@ -5932,6 +6105,9 @@ class AboutTranslationsTestUtils {
           ),
           targetSectionTextArea: isElementVisible(
             selectors.targetSectionTextArea
+          ),
+          detectedLanguageUnsupportedMessage: isElementVisible(
+            selectors.detectedLanguageUnsupportedMessage
           ),
           translationErrorMessage: isElementVisible(
             selectors.translationErrorMessage
@@ -5987,6 +6163,11 @@ class AboutTranslationsTestUtils {
         targetSectionTextArea,
         visibilityMap.targetSectionTextArea,
         "target textarea"
+      );
+      assertVisibility(
+        detectedLanguageUnsupportedMessage,
+        visibilityMap.detectedLanguageUnsupportedMessage,
+        "detected-language unsupported message"
       );
       assertVisibility(
         translationErrorMessage,
