@@ -10,6 +10,8 @@ import "chrome://browser/content/aiwindow/components/assistant-message-footer.mj
 import "chrome://browser/content/aiwindow/components/chat-assistant-error.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/chat-assistant-loader.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/website-chip-container.mjs";
 
 /**
  * A custom element for managing AI Chat Content
@@ -222,6 +224,7 @@ export class AIChatContent extends MozLitElement {
     this.conversationState[ordinal] = {
       role: "user",
       body: content.body,
+      contextMentions: content.contextMentions,
       convId,
       ordinal,
     };
@@ -238,7 +241,11 @@ export class AIChatContent extends MozLitElement {
 
     this.#dispatchAction("retry-after-error", {
       ...lastMessage,
-      content: { type: "text", body: lastMessage.body },
+      content: {
+        type: "text",
+        body: lastMessage.body,
+        contextMentions: lastMessage.contextMentions,
+      },
     });
   }
 
@@ -341,6 +348,11 @@ export class AIChatContent extends MozLitElement {
     }
     return html`
       <div class=${`chat-bubble chat-bubble-${msg.role}`}>
+        ${msg.role === "user" && msg.contextMentions?.length
+          ? html`<website-chip-container
+              .websites=${msg.contextMentions}
+            ></website-chip-container>`
+          : nothing}
         <ai-chat-message
           .message=${msg.body}
           .role=${msg.role}
