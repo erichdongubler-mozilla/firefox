@@ -292,6 +292,10 @@ async function openAboutTranslations({
       "moz-message-bar#about-translations-unsupported-info-message",
     policyDisabledInfoMessage:
       "moz-message-bar#about-translations-policy-disabled-info-message",
+    featureBlockedInfoMessage:
+      "moz-message-bar#about-translations-feature-blocked-info-message",
+    unblockFeatureButton:
+      "moz-button#about-translations-feature-blocked-unblock-button",
     languageLoadErrorMessage:
       "moz-message-bar#about-translations-language-load-error-message",
     languageLoadErrorButton:
@@ -4977,6 +4981,23 @@ class AboutTranslationsTestUtils {
   }
 
   /**
+   * Clicks the feature-blocked "unblock" button in the about:translations UI.
+   */
+  async clickUnblockFeatureButton() {
+    logAction();
+    try {
+      await this.#runInPage(selectors => {
+        const button = content.document.querySelector(
+          selectors.unblockFeatureButton
+        );
+        button.click();
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  /**
    * Waits for the specified AboutTranslations event to fire, then returns its detail payload.
    * Rejects if the event doesn’t fire within the given time limit.
    *
@@ -6261,6 +6282,7 @@ class AboutTranslationsTestUtils {
    * @param {boolean} [options.translationErrorMessage=false]
    * @param {boolean} [options.unsupportedInfoMessage=false]
    * @param {boolean} [options.policyDisabledInfoMessage=false]
+   * @param {boolean} [options.featureBlockedInfoMessage=false]
    * @param {boolean} [options.languageLoadErrorMessage=false]
    * @returns {Promise<void>}
    */
@@ -6278,6 +6300,7 @@ class AboutTranslationsTestUtils {
     translationErrorMessage = false,
     unsupportedInfoMessage = false,
     policyDisabledInfoMessage = false,
+    featureBlockedInfoMessage = false,
     languageLoadErrorMessage = false,
   } = {}) {
     // This helps the test visually render at each step without significantly slowing test speed.
@@ -6340,6 +6363,9 @@ class AboutTranslationsTestUtils {
           ),
           policyDisabledInfoMessage: isElementVisible(
             selectors.policyDisabledInfoMessage
+          ),
+          featureBlockedInfoMessage: isElementVisible(
+            selectors.featureBlockedInfoMessage
           ),
           languageLoadErrorMessage: isElementVisible(
             selectors.languageLoadErrorMessage
@@ -6409,6 +6435,11 @@ class AboutTranslationsTestUtils {
         policyDisabledInfoMessage,
         visibilityMap.policyDisabledInfoMessage,
         "policy-disabled info message"
+      );
+      assertVisibility(
+        featureBlockedInfoMessage,
+        visibilityMap.featureBlockedInfoMessage,
+        "feature-blocked info message"
       );
       assertVisibility(
         languageLoadErrorMessage,

@@ -148,6 +148,7 @@ export class AboutTranslationsChild extends JSWindowActorChild {
       "AT_logError",
       "AT_getAppLocale",
       "AT_getSupportedLanguages",
+      "AT_enableTranslationsFeature",
       "AT_isEnabledStateManagedByPolicy",
       "AT_isTranslationEngineSupported",
       "AT_isHtmlTranslation",
@@ -243,6 +244,17 @@ export class AboutTranslationsChild extends JSWindowActorChild {
   AT_isEnabledStateManagedByPolicy() {
     return this.#convertToContentPromise(
       this.sendQuery("AboutTranslations:IsEnabledStateManagedByPolicy")
+    );
+  }
+
+  /**
+   * Enables the Translations feature.
+   *
+   * @returns {Promise<void>}
+   */
+  AT_enableTranslationsFeature() {
+    return this.#convertToContentPromise(
+      this.sendQuery("AboutTranslations:EnableTranslationsFeature")
     );
   }
 
