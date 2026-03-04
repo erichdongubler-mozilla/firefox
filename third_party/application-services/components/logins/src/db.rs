@@ -306,6 +306,50 @@ impl LoginDb {
         Ok(())
     }
 
+    pub fn record_breach(
+        &self,
+        guid: &str,
+        timestamp: i64,
+        encdec: &dyn EncryptorDecryptor,
+    ) -> Result<()> {
+        let existing = match self.get_by_id(guid)? {
+            Some(e) => e.decrypt(encdec)?,
+            None => return Err(Error::NoSuchRecord(guid.to_owned())),
+        };
+        let is_potentially_vulnerable_password =
+            self.is_potentially_vulnerable_password(guid, encdec)?;
+
+        let tx = self.unchecked_transaction()?;
+        self.ensure_local_overlay_exists(guid)?;
+        self.mark_mirror_overridden(guid)?;
+        self.execute_cached(
+            "UPDATE loginsL
+             SET timeOfLastBreach = :now_millis
+             WHERE guid = :guid",
+            named_params! {
+                ":now_millis": timestamp,
+                ":guid": guid,
+            },
+        )?;
+        if !is_potentially_vulnerable_password {
+            let encrypted_password_bytes = encdec
+                .encrypt(existing.password.as_bytes().into())
+                .map_err(|e| Error::EncryptionFailed(format!("{e} (encrypting password)")))?;
+            let encrypted_password =
+                std::str::from_utf8(&encrypted_password_bytes).map_err(|e| {
+                    Error::EncryptionFailed(format!("{e} (encrypting password: data not utf8)"))
+                })?;
+            self.execute_cached(
+                "INSERT INTO breachesL (encryptedPassword) VALUES (:encrypted_password)",
+                named_params! {
+                    ":encrypted_password": encrypted_password,
+                },
+            )?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
     /// Records passwords in the breachesL table for password reuse detection.
     ///
     /// Encrypts and stores passwords, automatically filtering out duplicates.
@@ -448,11 +492,35 @@ impl LoginDb {
         Ok(!vulnerable.is_empty())
     }
 
+    pub fn is_potentially_breached(&self, guid: &str) -> Result<bool> {
+        let is_potentially_breached: bool = self.db.query_row(
+            "SELECT EXISTS(SELECT 1 FROM loginsL WHERE guid = :guid AND timeOfLastBreach IS NOT NULL AND timeOfLastBreach > timePasswordChanged)",
+            named_params! { ":guid": guid },
+            |row| row.get(0),
+        )?;
+        Ok(is_potentially_breached)
+    }
+
     pub fn reset_all_breaches(&self) -> Result<()> {
         let tx = self.unchecked_transaction()?;
+        self.execute_cached(
+            "UPDATE loginsL
+             SET timeOfLastBreach = NULL
+             WHERE timeOfLastBreach IS NOT NULL",
+            [],
+        )?;
         self.execute_cached("DELETE FROM breachesL", [])?;
         tx.commit()?;
         Ok(())
+    }
+
+    pub fn is_breach_alert_dismissed(&self, id: &str) -> Result<bool> {
+        let is_breach_alert_dismissed: bool = self.db.query_row(
+            "SELECT EXISTS(SELECT 1 FROM loginsL WHERE guid = :guid AND timeOfLastBreach < timeLastBreachAlertDismissed)",
+            named_params! { ":guid": id },
+            |row| row.get(0),
+        )?;
+        Ok(is_breach_alert_dismissed)
     }
 
     /// Records that the user dismissed the breach alert for a login using the current time.
@@ -502,6 +570,7 @@ impl LoginDb {
                 timeCreated,
                 timeLastUsed,
                 timePasswordChanged,
+                timeOfLastBreach,
                 timeLastBreachAlertDismissed,
                 local_modified,
                 is_deleted,
@@ -518,6 +587,7 @@ impl LoginDb {
                 :time_created,
                 :time_last_used,
                 :time_password_changed,
+                :time_of_last_breach,
                 :time_last_breach_alert_dismissed,
                 :local_modified,
                 0, -- is_deleted
@@ -539,6 +609,7 @@ impl LoginDb {
                 ":time_last_used": login.meta.time_last_used,
                 ":time_password_changed": login.meta.time_password_changed,
                 ":local_modified": login.meta.time_created,
+                ":time_of_last_breach": login.meta.time_of_last_breach,
                 ":time_last_breach_alert_dismissed": login.meta.time_last_breach_alert_dismissed,
                 ":sec_fields": login.sec_fields,
                 ":guid": login.guid(),
@@ -607,6 +678,7 @@ impl LoginDb {
                         time_password_changed: now_ms,
                         time_last_used: now_ms,
                         times_used: 1,
+                        time_of_last_breach: None,
                         time_last_breach_alert_dismissed: None,
                     },
                 }
@@ -620,6 +692,12 @@ impl LoginDb {
     /// Normally, you will use `add_many` instead, and AS Logins will take care of the metadata (setting timestamps, generating an ID) itself.
     /// However, in some cases, this method is necessary, for example when migrating data from another store that already contains the metadata.
     ///
+    /// # Breach Password Collection
+    ///
+    /// This method automatically collects passwords from logins with known breaches and records them
+    /// in the breachesL table for password reuse detection. A password is collected if:
+    /// - `time_of_last_breach` is set (login has a known breach)
+    /// - `time_password_changed <= time_of_last_breach` (password hasn't been changed since breach)
     pub fn add_many_with_meta(
         &self,
         entries_with_meta: Vec<LoginEntryWithMeta>,
@@ -627,10 +705,16 @@ impl LoginDb {
     ) -> Result<Vec<Result<EncryptedLogin>>> {
         let tx = self.unchecked_transaction()?;
         let mut results = vec![];
+        let mut potentially_vulnerable_passwords = vec![];
         for entry_with_meta in entries_with_meta {
             let guid = Guid::from_string(entry_with_meta.meta.id.clone());
             match self.fixup_and_check_for_dupes(&guid, entry_with_meta.entry, encdec) {
                 Ok(new_entry) => {
+                    if let Some(time_of_last_breach) = entry_with_meta.meta.time_of_last_breach {
+                        if entry_with_meta.meta.time_password_changed <= time_of_last_breach {
+                            potentially_vulnerable_passwords.push(new_entry.password.clone());
+                        }
+                    }
                     let sec_fields = SecureLoginFields {
                         username: new_entry.username,
                         password: new_entry.password,
@@ -657,6 +741,10 @@ impl LoginDb {
             }
         }
 
+        if !potentially_vulnerable_passwords.is_empty() {
+            self.insert_potentially_vulnerable_passwords(potentially_vulnerable_passwords, encdec)?;
+        }
+
         tx.commit()?;
 
         Ok(results)
@@ -678,6 +766,7 @@ impl LoginDb {
                 time_password_changed: now_ms,
                 time_last_used: now_ms,
                 times_used: 1,
+                time_of_last_breach: None,
                 time_last_breach_alert_dismissed: None,
             },
         };
@@ -754,6 +843,7 @@ impl LoginDb {
                 time_password_changed,
                 time_last_used: now_ms,
                 times_used: existing.times_used + 1,
+                time_of_last_breach: None,
                 time_last_breach_alert_dismissed: None,
             },
             fields: LoginFields {
@@ -1208,6 +1298,7 @@ pub mod test_utils {
                 timePasswordChanged,
                 timeCreated,
 
+                timeOfLastBreach,
                 timeLastBreachAlertDismissed,
 
                 guid
@@ -1227,6 +1318,7 @@ pub mod test_utils {
                 :time_password_changed,
                 :time_created,
 
+                :time_of_last_breach,
                 :time_last_breach_alert_dismissed,
 
                 :guid
@@ -1246,6 +1338,7 @@ pub mod test_utils {
             ":time_last_used": login.meta.time_last_used,
             ":time_password_changed": login.meta.time_password_changed,
             ":time_created": login.meta.time_created,
+            ":time_of_last_breach": login.meta.time_of_last_breach,
             ":time_last_breach_alert_dismissed": login.meta.time_last_breach_alert_dismissed,
             ":guid": login.guid_str(),
         })?;
@@ -1554,6 +1647,7 @@ mod tests {
             time_password_changed: now_ms + 100,
             time_last_used: now_ms + 10,
             times_used: 42,
+            time_of_last_breach: None,
             time_last_breach_alert_dismissed: None,
         };
 
@@ -1572,6 +1666,66 @@ mod tests {
             .expect("should get a record");
 
         assert_eq!(fetched.meta, meta);
+    }
+
+    #[test]
+    fn test_add_with_meta_breach_password_collection() {
+        ensure_initialized();
+        let db = LoginDb::open_in_memory();
+        let now_ms = util::system_time_ms_i64(SystemTime::now());
+
+        // Login with breach after password change - should be collected
+        let guid1 = Guid::random();
+        let login1 = LoginEntryWithMeta {
+            entry: LoginEntry {
+                origin: "https://example1.com".into(),
+                http_realm: Some("https://example1.com".into()),
+                username: "user1".into(),
+                password: "breached-password".into(),
+                ..Default::default()
+            },
+            meta: LoginMeta {
+                id: guid1.to_string(),
+                time_created: now_ms,
+                time_password_changed: now_ms + 50,
+                time_last_used: now_ms,
+                times_used: 1,
+                time_of_last_breach: Some(now_ms + 100), // breach after password change
+                time_last_breach_alert_dismissed: None,
+            },
+        };
+
+        // Login with breach before password change - should NOT be collected
+        let guid2 = Guid::random();
+        let login2 = LoginEntryWithMeta {
+            entry: LoginEntry {
+                origin: "https://example2.com".into(),
+                http_realm: Some("https://example2.com".into()),
+                username: "user2".into(),
+                password: "safe-password".into(),
+                ..Default::default()
+            },
+            meta: LoginMeta {
+                id: guid2.to_string(),
+                time_created: now_ms,
+                time_password_changed: now_ms + 200,
+                time_last_used: now_ms,
+                times_used: 1,
+                time_of_last_breach: Some(now_ms + 100), // breach before password change
+                time_last_breach_alert_dismissed: None,
+            },
+        };
+
+        db.add_many_with_meta(vec![login1, login2], &*TEST_ENCDEC)
+            .expect("should add logins");
+
+        // Verify that only breached-password is in breachesL
+        assert!(db
+            .is_potentially_vulnerable_password(guid1.as_ref(), &*TEST_ENCDEC)
+            .unwrap());
+        assert!(!db
+            .is_potentially_vulnerable_password(guid2.as_ref(), &*TEST_ENCDEC)
+            .unwrap());
     }
 
     #[test]
@@ -1647,6 +1801,7 @@ mod tests {
             time_password_changed: now_ms + 100,
             time_last_used: now_ms + 10,
             times_used: 42,
+            time_of_last_breach: None,
             time_last_breach_alert_dismissed: None,
         };
 
@@ -1780,7 +1935,6 @@ mod tests {
 
     #[test]
     fn test_get_by_base_domain_invalid() {
-        ensure_initialized();
         check_good_bad(
             vec!["https://example.com"],
             vec![],
@@ -1791,7 +1945,6 @@ mod tests {
 
     #[test]
     fn test_get_by_base_domain() {
-        ensure_initialized();
         check_good_bad(
             vec![
                 "https://example.com",
@@ -1815,7 +1968,6 @@ mod tests {
 
     #[test]
     fn test_get_by_base_domain_punicode() {
-        ensure_initialized();
         // punycode! This is likely to need adjusting once we normalize
         // on insert.
         check_good_bad(
@@ -1830,7 +1982,6 @@ mod tests {
 
     #[test]
     fn test_get_by_base_domain_ipv4() {
-        ensure_initialized();
         check_good_bad(
             vec!["http://127.0.0.1", "https://127.0.0.1:8000"],
             vec!["https://127.0.0.0", "https://example.com"],
@@ -1841,7 +1992,6 @@ mod tests {
 
     #[test]
     fn test_get_by_base_domain_ipv6() {
-        ensure_initialized();
         check_good_bad(
             vec!["http://[::1]", "https://[::1]:8000"],
             vec!["https://[0:0:0:0:0:0:1:1]", "https://example.com"],
@@ -1935,7 +2085,7 @@ mod tests {
     }
 
     #[test]
-    fn test_breach_alert_dismissal() {
+    fn test_breach_alerts() {
         ensure_initialized();
         let db = LoginDb::open_in_memory();
         let login = db
@@ -1951,12 +2101,89 @@ mod tests {
             )
             .unwrap();
         // initial state
+        assert!(login.meta.time_of_last_breach.is_none());
+        assert!(!db.is_potentially_breached(&login.meta.id).unwrap());
         assert!(login.meta.time_last_breach_alert_dismissed.is_none());
+
+        // Wait and use a time that's definitely after password was changed
+        thread::sleep(time::Duration::from_millis(50));
+        let breach_time = util::system_time_ms_i64(SystemTime::now());
+        db.record_breach(&login.meta.id, breach_time, &*TEST_ENCDEC)
+            .unwrap();
+        assert!(db.is_potentially_breached(&login.meta.id).unwrap());
+        let login1 = db.get_by_id(&login.meta.id).unwrap().unwrap();
+        assert!(login1.meta.time_of_last_breach.is_some());
 
         // dismiss
         db.record_breach_alert_dismissal(&login.meta.id).unwrap();
-        let login1 = db.get_by_id(&login.meta.id).unwrap().unwrap();
-        assert!(login1.meta.time_last_breach_alert_dismissed.is_some());
+        let login2 = db.get_by_id(&login.meta.id).unwrap().unwrap();
+        assert!(login2.meta.time_last_breach_alert_dismissed.is_some());
+
+        // reset
+        db.reset_all_breaches().unwrap();
+        assert!(!db.is_potentially_breached(&login.meta.id).unwrap());
+        let login3 = db.get_by_id(&login.meta.id).unwrap().unwrap();
+        assert!(login3.meta.time_of_last_breach.is_none());
+
+        // Wait and use a time that's definitely after password was changed
+        thread::sleep(time::Duration::from_millis(50));
+        let breach_time = util::system_time_ms_i64(SystemTime::now());
+        db.record_breach(&login.meta.id, breach_time, &*TEST_ENCDEC)
+            .unwrap();
+        assert!(db.is_potentially_breached(&login.meta.id).unwrap());
+
+        // now change password
+        db.update(
+            &login.meta.id.clone(),
+            LoginEntry {
+                password: "changed-password".into(),
+                ..login.clone().decrypt(&*TEST_ENCDEC).unwrap().entry()
+            },
+            &*TEST_ENCDEC,
+        )
+        .unwrap();
+        // not breached anymore
+        assert!(!db.is_potentially_breached(&login.meta.id).unwrap());
+    }
+
+    #[test]
+    fn test_breach_alert_fields_not_overwritten_by_update() {
+        ensure_initialized();
+        let db = LoginDb::open_in_memory();
+        let login = db
+            .add(
+                LoginEntry {
+                    origin: "https://www.example.com".into(),
+                    http_realm: Some("https://www.example.com".into()),
+                    username: "user1".into(),
+                    password: "password1".into(),
+                    ..Default::default()
+                },
+                &*TEST_ENCDEC,
+            )
+            .unwrap();
+        assert!(!db.is_potentially_breached(&login.meta.id).unwrap());
+
+        // Wait and use a time that's definitely after password was changed
+        thread::sleep(time::Duration::from_millis(50));
+        let breach_time = util::system_time_ms_i64(SystemTime::now());
+        db.record_breach(&login.meta.id, breach_time, &*TEST_ENCDEC)
+            .unwrap();
+        assert!(db.is_potentially_breached(&login.meta.id).unwrap());
+
+        // change some fields
+        db.update(
+            &login.meta.id.clone(),
+            LoginEntry {
+                username_field: "changed-username-field".into(),
+                ..login.clone().decrypt(&*TEST_ENCDEC).unwrap().entry()
+            },
+            &*TEST_ENCDEC,
+        )
+        .unwrap();
+
+        // breach still present
+        assert!(db.is_potentially_breached(&login.meta.id).unwrap());
     }
 
     #[test]
@@ -1976,10 +2203,19 @@ mod tests {
             )
             .unwrap();
 
-        let dismiss_time = login.meta.time_password_changed + 1000;
+        // Record a breach that happened after password was created
+        // Use a timestamp that's definitely after the login's timePasswordChanged
+        let breach_time = login.meta.time_password_changed + 1000;
+        db.record_breach(&login.meta.id, breach_time, &*TEST_ENCDEC)
+            .unwrap();
+        assert!(db.is_potentially_breached(&login.meta.id).unwrap());
+
+        // Dismiss with a specific timestamp after the breach
+        let dismiss_time = breach_time + 500;
         db.record_breach_alert_dismissal_time(&login.meta.id, dismiss_time)
             .unwrap();
 
+        // Verify the exact timestamp was stored
         let retrieved = db
             .get_by_id(&login.meta.id)
             .unwrap()
@@ -1990,6 +2226,15 @@ mod tests {
             retrieved.time_last_breach_alert_dismissed,
             Some(dismiss_time)
         );
+
+        // Verify the breach alert is considered dismissed
+        assert!(db.is_breach_alert_dismissed(&login.meta.id).unwrap());
+
+        // Test that dismissing before the breach time means it's not dismissed
+        let earlier_dismiss_time = breach_time - 100;
+        db.record_breach_alert_dismissal_time(&login.meta.id, earlier_dismiss_time)
+            .unwrap();
+        assert!(!db.is_breach_alert_dismissed(&login.meta.id).unwrap());
     }
 
     #[test]
@@ -2307,12 +2552,13 @@ mod tests {
                 .unwrap();
             assert_eq!(vulnerable.len(), 0);
 
-            // Record "shared_password" as a vulnerable password
-            db.record_potentially_vulnerable_passwords(
-                vec!["shared_password".into()],
-                &*TEST_ENCDEC,
-            )
-            .unwrap();
+            // Mark login1 as breached
+            let breach_time = util::system_time_ms_i64(SystemTime::now());
+            db.record_breach(&login1.meta.id, breach_time, &*TEST_ENCDEC)
+                .unwrap();
+
+            // login1 should be recognized as breached
+            assert!(db.is_potentially_breached(&login1.meta.id).unwrap());
 
             // login2 should be recognized as vulnerable (same password as breached login1)
             assert!(db
@@ -2366,7 +2612,8 @@ mod tests {
                 )
                 .unwrap();
 
-            db.record_potentially_vulnerable_passwords(vec!["password123".into()], &*TEST_ENCDEC)
+            let breach_time = util::system_time_ms_i64(SystemTime::now());
+            db.record_breach(&login.meta.id, breach_time, &*TEST_ENCDEC)
                 .unwrap();
 
             // Verify that breachesL has an entry
@@ -2396,6 +2643,9 @@ mod tests {
                 .are_potentially_vulnerable_passwords(&[&login.meta.id], &*TEST_ENCDEC)
                 .unwrap();
             assert_eq!(vulnerable.len(), 0);
+
+            // And the login should no longer be breached
+            assert!(!db.is_potentially_breached(&login.meta.id).unwrap());
         }
 
         #[test]
@@ -2429,7 +2679,8 @@ mod tests {
                 )
                 .unwrap();
 
-            db.record_potentially_vulnerable_passwords(vec!["password_A".into()], &*TEST_ENCDEC)
+            let breach_time = util::system_time_ms_i64(SystemTime::now());
+            db.record_breach(&login1.meta.id, breach_time, &*TEST_ENCDEC)
                 .unwrap();
 
             // login2 has a different password → not vulnerable

@@ -2576,6 +2576,7 @@
               "default": "Google Lens"
             },
             "excludePartnerCodeFromTelemetry": true,
+            "isNewUntil": "2025-12-01",
             "params": [
               {
                 "name": "ep",
@@ -2588,9 +2589,9 @@
       },
       "id": "7ace4aa1-e762-4f4b-87b9-b23b3c3a930b",
       "identifier": "google",
-      "last_modified": 1772114960790,
+      "last_modified": 1761573989454,
       "recordType": "engine",
-      "schema": 1772064008248,
+      "schema": 1761358547622,
       "variants": [
         {
           "environment": {
@@ -3430,9 +3431,9 @@
       },
       "id": "bb836721-7be9-4de6-ac18-520189a69076",
       "identifier": "perplexity",
-      "last_modified": 1772114960787,
+      "last_modified": 1763654608996,
       "recordType": "engine",
-      "schema": 1772067581442,
+      "schema": 1763604941875,
       "variants": [
         {
           "environment": {
@@ -3441,7 +3442,29 @@
               "firefox",
               "firefox-ios"
             ]
-          }
+          },
+          "isNewUntil": "2025-10-21",
+          "subVariants": [
+            {
+              "environment": {
+                "applications": [
+                  "firefox"
+                ],
+                "minVersion": "143.0a1"
+              },
+              "urls": {
+                "trending": {
+                  "base": "https://www.perplexity.ai/rest/autosuggest/list-trending-suggest",
+                  "params": [
+                    {
+                      "name": "lang",
+                      "value": "{acceptLanguages}"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
         },
         {
           "environment": {
@@ -8386,5 +8409,5 @@
       "schema": 1707824831520
     }
   ],
-  "timestamp": 1772114960790
+  "timestamp": 1764082724032
 }

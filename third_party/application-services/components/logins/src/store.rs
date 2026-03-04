@@ -179,6 +179,11 @@ impl LoginStore {
     }
 
     #[handle_error(Error)]
+    pub fn is_potentially_breached(&self, id: &str) -> ApiResult<bool> {
+        self.lock_db()?.is_potentially_breached(id)
+    }
+
+    #[handle_error(Error)]
     pub fn are_potentially_vulnerable_passwords(&self, ids: Vec<String>) -> ApiResult<Vec<String>> {
         // Note: Vec<&str> is not supported with UDL, so we receive Vec<String> and convert
         let db = self.lock_db()?;
@@ -199,8 +204,19 @@ impl LoginStore {
     }
 
     #[handle_error(Error)]
+    pub fn record_breach(&self, id: &str, timestamp: i64) -> ApiResult<()> {
+        let db = self.lock_db()?;
+        db.record_breach(id, timestamp, db.encdec.as_ref())
+    }
+
+    #[handle_error(Error)]
     pub fn reset_all_breaches(&self) -> ApiResult<()> {
         self.lock_db()?.reset_all_breaches()
+    }
+
+    #[handle_error(Error)]
+    pub fn is_breach_alert_dismissed(&self, id: &str) -> ApiResult<bool> {
+        self.lock_db()?.is_breach_alert_dismissed(id)
     }
 
     #[handle_error(Error)]
