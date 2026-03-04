@@ -8,7 +8,9 @@
 
 #include "NavigationPrecommitController.h"
 #include "fmt/format.h"
+#include "jsapi.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/CycleCollectedUniquePtr.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -40,6 +42,7 @@
 #include "nsIStructuredCloneContainer.h"
 #include "nsIXULRuntime.h"
 #include "nsNetUtil.h"
+#include "nsTHashtable.h"
 
 mozilla::LazyLogModule gNavigationAPILog("NavigationAPI");
 
@@ -74,7 +77,7 @@ static void InitNavigationResult(NavigationResult& aResult,
   }
 }
 
-NavigationTracker::NavigationTracker(
+NavigationAPIMethodTracker::NavigationAPIMethodTracker(
     Navigation* aNavigationObject, const Maybe<nsID> aKey,
     const JS::Value& aInfo, nsIStructuredCloneContainer* aSerializedState,
     NavigationHistoryEntry* aCommittedToEntry, Promise* aCommittedPromise,
@@ -90,13 +93,15 @@ NavigationTracker::NavigationTracker(
   mozilla::HoldJSObjects(this);
 }
 
-NavigationTracker::~NavigationTracker() { mozilla::DropJSObjects(this); }
+NavigationAPIMethodTracker::~NavigationAPIMethodTracker() {
+  mozilla::DropJSObjects(this);
+}
 
 // https://html.spec.whatwg.org/#navigation-api-method-tracker-clean-up
-void NavigationTracker::CleanUp() { Navigation::CleanUp(this); }
+void NavigationAPIMethodTracker::CleanUp() { Navigation::CleanUp(this); }
 
 // https://html.spec.whatwg.org/#notify-about-the-committed-to-entry
-void NavigationTracker::NotifyAboutCommittedToEntry(
+void NavigationAPIMethodTracker::NotifyAboutCommittedToEntry(
     NavigationHistoryEntry* aNHE) {
   MOZ_DIAGNOSTIC_ASSERT(mCommittedPromise);
   // Step 1
@@ -104,7 +109,7 @@ void NavigationTracker::NotifyAboutCommittedToEntry(
   if (mSerializedState) {
     // Step 2
     aNHE->SetNavigationAPIState(mSerializedState);
-    // At this point, navigationTracker's serialized state is no longer needed.
+    // At this point, apiMethodTracker's serialized state is no longer needed.
     // We drop it do now for efficiency.
     mSerializedState = nullptr;
   }
@@ -112,7 +117,7 @@ void NavigationTracker::NotifyAboutCommittedToEntry(
 }
 
 // https://html.spec.whatwg.org/#resolve-the-finished-promise
-void NavigationTracker::ResolveFinishedPromise() {
+void NavigationAPIMethodTracker::ResolveFinishedPromise() {
   MOZ_DIAGNOSTIC_ASSERT(mFinishedPromise);
   // Step 1
   MOZ_DIAGNOSTIC_ASSERT(mCommittedToEntry);
@@ -123,7 +128,7 @@ void NavigationTracker::ResolveFinishedPromise() {
 }
 
 // https://html.spec.whatwg.org/#reject-the-finished-promise
-void NavigationTracker::RejectFinishedPromise(
+void NavigationAPIMethodTracker::RejectFinishedPromise(
     JS::Handle<JS::Value> aException) {
   MOZ_DIAGNOSTIC_ASSERT(mFinishedPromise);
   MOZ_DIAGNOSTIC_ASSERT(mCommittedPromise);
@@ -136,8 +141,8 @@ void NavigationTracker::RejectFinishedPromise(
 }
 
 // https://html.spec.whatwg.org/#navigation-api-method-tracker-derived-result
-void NavigationTracker::CreateResult(JSContext* aCx,
-                                     NavigationResult& aResult) {
+void NavigationAPIMethodTracker::CreateResult(JSContext* aCx,
+                                              NavigationResult& aResult) {
   // A navigation API method tracker-derived result for a navigation API
   // method tracker is a NavigationResult dictionary instance given by the
   // following steps:
@@ -154,29 +159,28 @@ void NavigationTracker::CreateResult(JSContext* aCx,
   InitNavigationResult(aResult, mCommittedPromise, mFinishedPromise);
 }
 
-bool NavigationTracker::IsHandled() const {
-  return this != mNavigationObject->mOngoingNavigationTracker && mKey &&
-         !mNavigationObject->mUpcomingTraverseNavigationTrackers.Contains(
-             *mKey);
+bool NavigationAPIMethodTracker::IsHandled() const {
+  return this != mNavigationObject->mOngoingAPIMethodTracker && mKey &&
+         !mNavigationObject->mUpcomingTraverseAPIMethodTrackers.Contains(*mKey);
 }
 
-NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(NavigationTracker,
+NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(NavigationAPIMethodTracker,
                                          (mNavigationObject, mSerializedState,
                                           mCommittedToEntry, mCommittedPromise,
                                           mFinishedPromise),
                                          (mInfo))
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationTracker)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationAPIMethodTracker)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationTracker)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationTracker)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationAPIMethodTracker)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationAPIMethodTracker)
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(Navigation, DOMEventTargetHelper, mEntries,
                                    mOngoingNavigateEvent, mTransition,
-                                   mActivation, mOngoingNavigationTracker,
-                                   mUpcomingTraverseNavigationTrackers);
+                                   mActivation, mOngoingAPIMethodTracker,
+                                   mUpcomingTraverseAPIMethodTrackers);
 NS_IMPL_ADDREF_INHERITED(Navigation, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(Navigation, DOMEventTargetHelper)
 
@@ -396,20 +400,17 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
   }
 
   // Step 8.
-  if (mOngoingNavigationTracker) {
+  if (mOngoingAPIMethodTracker) {
     RefPtr<NavigationHistoryEntry> currentEntry = GetCurrentEntry();
-    mOngoingNavigationTracker->NotifyAboutCommittedToEntry(currentEntry);
+    mOngoingAPIMethodTracker->NotifyAboutCommittedToEntry(currentEntry);
   }
 
   for (auto& entry : disposedEntries) {
     entry->ResetIndexForDisposal();
   }
 
-  RefPtr ongoingNavigateEvent = mOngoingNavigateEvent;
-  RefPtr ongoingNavigationTracker = mOngoingNavigationTracker;
-
+  // Steps 9-12.
   {
-    // Steps 9-12.
     nsAutoMicroTask mt;
     AutoEntryScript aes(GetOwnerGlobal(),
                         "UpdateEntriesForSameDocumentNavigation");
@@ -429,402 +430,6 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
       event->SetTarget(entry);
       entry->DispatchEvent(*event);
     }
-
-    if (ongoingNavigateEvent) {
-      RunNavigateEventHandlerSteps(ongoingNavigateEvent,
-                                   ongoingNavigationTracker);
-    }
-  }
-}
-
-static bool Equals(nsIURI* aURI, nsIURI* aOtherURI) {
-  bool equals = false;
-  return aURI && aOtherURI && NS_SUCCEEDED(aURI->Equals(aOtherURI, &equals)) &&
-         equals;
-}
-
-static void LogEvent(Event* aEvent, NavigateEvent* aOngoingEvent,
-                     const nsACString& aReason) {
-  if (!MOZ_LOG_TEST(gNavigationAPILog, LogLevel::Debug)) {
-    return;
-  }
-
-  nsAutoString eventType;
-  aEvent->GetType(eventType);
-
-  nsTArray<nsCString> log = {nsCString(aReason),
-                             NS_ConvertUTF16toUTF8(eventType)};
-
-  if (aEvent->Cancelable()) {
-    log.AppendElement("cancelable");
-  }
-
-  if (aOngoingEvent) {
-    log.AppendElement(fmt::format("{}", aOngoingEvent->NavigationType()));
-
-    if (RefPtr<NavigationDestination> destination =
-            aOngoingEvent->Destination()) {
-      log.AppendElement(destination->GetURL()->GetSpecOrDefault());
-    }
-
-    if (aOngoingEvent->HashChange()) {
-      log.AppendElement("hashchange"_ns);
-    }
-  }
-
-  LOG_FMTD("{}", fmt::join(log.begin(), log.end(), std::string_view{" "}));
-}
-
-// https://html.spec.whatwg.org/#resume-applying-the-traverse-history-step
-static void ResumeApplyTheHistoryStep(
-    SessionHistoryInfo* aTarget, BrowsingContext* aTraversable,
-    UserNavigationInvolvement aUserInvolvement) {
-  MOZ_DIAGNOSTIC_ASSERT(aTraversable->IsTop());
-  auto* childSHistory = aTraversable->GetChildSessionHistory();
-  // Since we've already called #checking-if-unloading-is-canceled, we here pass
-  // checkForCancelation set to false.
-  childSHistory->AsyncGo(aTarget->NavigationKey(), aTraversable,
-                         /* aRequireUserInteraction */ false,
-                         /* aUserActivation */ false,
-                         /* aCheckForCancelation */ false, [](auto) {});
-}
-
-struct NavigationWaitForAllScope final : public nsISupports,
-                                         public SupportsWeakPtr {
-  NavigationWaitForAllScope(Navigation* aNavigation,
-                            NavigationTracker* aNavigationTracker,
-                            NavigateEvent* aEvent,
-                            NavigationDestination* aDestination)
-      : mNavigation(aNavigation),
-        mNavigationTracker(aNavigationTracker),
-        mEvent(aEvent),
-        mDestination(aDestination) {}
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(NavigationWaitForAllScope)
-  RefPtr<Navigation> mNavigation;
-  RefPtr<NavigationTracker> mNavigationTracker;
-  RefPtr<NavigateEvent> mEvent;
-  RefPtr<NavigationDestination> mDestination;
-
- private:
-  ~NavigationWaitForAllScope() {}
-
- public:
-  // https://html.spec.whatwg.org/#process-navigate-event-handler-failure
-  MOZ_CAN_RUN_SCRIPT void ProcessNavigateEventHandlerFailure(
-      JS::Handle<JS::Value> aRejectionReason) {
-    // To process navigate event handler failure given a NavigateEvent object
-    // event and a reason:
-    LogEvent(mEvent, mEvent, "Rejected"_ns);
-
-    // 1. If event's relevant global object's associated Document is not fully
-    //    active, then return.
-    if (RefPtr document = mEvent->GetDocument();
-        !document || !document->IsFullyActive()) {
-      return;
-    }
-
-    // 2. If event's abort controller's signal is aborted, then return.
-    if (AbortSignal* signal = mEvent->Signal(); signal->Aborted()) {
-      return;
-    }
-
-    // 3. Assert: event is event's relevant global object's navigation API's
-    //    ongoing navigate event.
-    MOZ_DIAGNOSTIC_ASSERT(mEvent == mNavigation->mOngoingNavigateEvent);
-
-    // 4. If event's interception state is not "intercepted", then finish event
-    //    given false.
-    RefPtr event = mEvent;
-    if (mEvent->InterceptionState() !=
-        NavigateEvent::InterceptionState::Intercepted) {
-      event->Finish(false);
-    }
-
-    // 5. Abort event given reason.
-    if (AutoJSAPI jsapi; !NS_WARN_IF(!jsapi.Init(mEvent->GetParentObject()))) {
-      RefPtr navigation = mNavigation;
-      navigation->AbortNavigateEvent(jsapi.cx(), event, aRejectionReason);
-    }
-  }
-  // https://html.spec.whatwg.org/#commit-a-navigate-event
-  MOZ_CAN_RUN_SCRIPT void CommitNavigateEvent() {
-    // 1. Let navigation be event's target.
-    // Omitted since Navigation is part of this's state.
-
-    // 3. If event's relevant global object's associated Document is not fully
-    //    active, then return.
-    RefPtr document = mEvent->GetDocument();
-    if (!document || !document->IsFullyActive()) {
-      return;
-    }
-    // 2. Let navigable be event's relevant global object's navigable.
-    RefPtr<nsDocShell> docShell = nsDocShell::Cast(document->GetDocShell());
-    Maybe<BrowsingContext&> navigable =
-        ToMaybeRef(mNavigation->GetOwnerWindow()).andThen([](auto& aWindow) {
-          return ToMaybeRef(aWindow.GetBrowsingContext());
-        });
-    // 4. If event's abort controller's signal is aborted, then return.
-    if (AbortSignal* signal = mEvent->Signal(); signal->Aborted()) {
-      return;
-    }
-
-    // 6. Let endResultIsSameDocument be true if event's interception state is
-    //    not "none" or event's destination's is same document is true.
-    const bool endResultIsSameDocument =
-        mEvent->InterceptionState() != NavigateEvent::InterceptionState::None ||
-        mDestination->SameDocument();
-
-    // 7. Prepare to run script given navigation's relevant settings object.
-    // This runs step 12 when going out of scope.
-    nsAutoMicroTask mt;
-
-    // 9. If event's interception state is not "none":
-    if (mEvent->InterceptionState() != NavigateEvent::InterceptionState::None) {
-      // The copy of the active session history info might be stale at this
-      // point, so make sure to update that. This is not a spec step, but a side
-      // effect of SHIP owning the session history entries making Navigation API
-      // keep copies for its purposes. Should navigation get aborted at this
-      // point, all we've done is eagerly stored scroll positions.
-      if (RefPtr current = mNavigation->GetCurrentEntry()) {
-        nsPoint scrollPos = docShell->GetCurScrollPos();
-        current->SessionHistoryInfo()->SetScrollPosition(scrollPos.x,
-                                                         scrollPos.y);
-      }
-
-      // 5. Set event's interception state to "committed".
-      // See https://github.com/whatwg/html/issues/11830 for this change.
-      mEvent->SetInterceptionState(NavigateEvent::InterceptionState::Committed);
-      // 9.1 Switch on event's navigationType:
-      switch (mEvent->NavigationType()) {
-        case NavigationType::Push:
-        case NavigationType::Replace:
-          // Run the URL and history update steps given event's relevant
-          // global object's associated Document and event's destination's
-          // URL, with serializedData set to event's classic history API
-          // state and historyHandling set to event's navigationType.
-          if (docShell) {
-            nsCOMPtr<nsIURI> destinationURI = mDestination->GetURL();
-            nsCOMPtr<nsIURI> documentURI = document->GetDocumentURI();
-            nsCOMPtr<nsIStructuredCloneContainer> state =
-                mEvent->ClassicHistoryAPIState();
-            docShell->UpdateURLAndHistory(
-                document, destinationURI, state,
-                *NavigationUtils::NavigationHistoryBehavior(
-                    mEvent->NavigationType()),
-                documentURI, Equals(destinationURI, documentURI));
-          }
-          break;
-        case NavigationType::Reload:
-          // Update the navigation API entries for a same-document navigation
-          // given navigation, navigable's active session history entry, and
-          // "reload".
-          if (docShell) {
-            RefPtr navigation = mNavigation;
-            navigation->UpdateEntriesForSameDocumentNavigation(
-                docShell->GetActiveSessionHistoryInfo(),
-                mEvent->NavigationType());
-          }
-          break;
-        case NavigationType::Traverse:
-          if (auto* entry = mDestination->GetEntry()) {
-            // 1. Set navigation's suppress normal scroll restoration during
-            //    ongoing navigation to true.
-            mNavigation
-                ->mSuppressNormalScrollRestorationDuringOngoingNavigation =
-                true;
-            // 2. Let userInvolvement be "none".
-            // 3. If event's userInitiated is true, then set userInvolvement to
-            // "activation".
-            UserNavigationInvolvement userInvolvement =
-                mEvent->UserInitiated() ? UserNavigationInvolvement::Activation
-                                        : UserNavigationInvolvement::None;
-            // 4. Append the following session history traversal steps to
-            //    navigable's traversable navigable:
-            // 4.1 Resume applying the traverse history step given event's
-            //     destination's entry's session history entry's step,
-            //     navigable's traversable navigable, and userInvolvement.
-            ResumeApplyTheHistoryStep(entry->SessionHistoryInfo(),
-                                      navigable->Top(), userInvolvement);
-
-            // This is not in the spec, but both Chrome and Safari does this or
-            // something similar.
-            MOZ_ASSERT(entry->Index() >= 0);
-            mNavigation->SetCurrentEntryIndex(entry->SessionHistoryInfo());
-          }
-          break;
-        default:
-          break;
-      }
-    }
-    // 8. If navigation's transition is not null, then resolve navigation's
-    //    transition's committed promise with undefined.
-    // Steps 8 and 9 are swapped to have a consistent promise behavior
-    // (see https://github.com/whatwg/html/issues/11842)
-    if (mNavigation->mTransition) {
-      mNavigation->mTransition->Committed()->MaybeResolveWithUndefined();
-    }
-
-    // 10. If endResultIsSameDocument is true:
-    if (endResultIsSameDocument) {
-      return;
-    }
-
-    if (mNavigationTracker && mNavigation->mOngoingNavigationTracker) {
-      // In contrast to spec we add a check that we're still the ongoing
-      // tracker. If we're not, then we've already been cleaned up.
-      MOZ_DIAGNOSTIC_ASSERT(mNavigationTracker ==
-                            mNavigation->mOngoingNavigationTracker);
-      // Step 11
-      mNavigationTracker->CleanUp();
-      mNavigation->mOngoingNavigateEvent = nullptr;
-    } else {
-      // It needs to be ensured that the ongoing navigate event is cleared in
-      // every code path (e.g. for download events), so that we don't keep
-      // intermediate state around.
-      // See also https://github.com/whatwg/html/issues/11802
-      mNavigation->mOngoingNavigateEvent = nullptr;
-    }
-  }
-
-  MOZ_CAN_RUN_SCRIPT void CommitNavigateEventSuccessSteps() {
-    LogEvent(mEvent, mEvent, "Success"_ns);
-
-    // 1. If event's relevant global object is not fully active, then abort
-    //    these steps.
-    RefPtr document = mEvent->GetDocument();
-    if (!document || !document->IsFullyActive()) {
-      return;
-    }
-
-    // 2. If event's abort controller's signal is aborted, then abort these
-    //    steps.
-    if (AbortSignal* signal = mEvent->Signal(); signal->Aborted()) {
-      return;
-    }
-
-    // 3. Assert: event equals navigation's ongoing navigate event.
-    MOZ_DIAGNOSTIC_ASSERT(mEvent == mNavigation->mOngoingNavigateEvent);
-
-    // 4. Set navigation's ongoing navigate event to null.
-    mNavigation->mOngoingNavigateEvent = nullptr;
-
-    // 5. Finish event given true.
-    RefPtr event = mEvent;
-    event->Finish(true);
-
-    // 6. If apiMethodTracker is non-null, then resolve the finished promise for
-    // apiMethodTracker.
-    if (mNavigationTracker) {
-      mNavigationTracker->ResolveFinishedPromise();
-    }
-
-    // 7. Fire an event named navigatesuccess at navigation.
-    RefPtr navigation = mNavigation;
-    navigation->FireEvent(u"navigatesuccess"_ns);
-
-    // 8. If navigation's transition is not null, then resolve navigation's
-    //    transition's finished promise with undefined.
-    if (mNavigation->mTransition) {
-      mNavigation->mTransition->Finished()->MaybeResolveWithUndefined();
-    }
-    // 9. Set navigation's transition to null.
-    mNavigation->mTransition = nullptr;
-  }
-};
-
-NS_IMPL_CYCLE_COLLECTION_WEAK_PTR(NavigationWaitForAllScope, mNavigation,
-                                  mNavigationTracker, mEvent, mDestination)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationWaitForAllScope)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationWaitForAllScope)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationWaitForAllScope)
-
-void Navigation::RunNavigateEventHandlerSteps(
-    NavigateEvent* aNavigateEvent, NavigationTracker* aNavigationTracker) {
-  // 10.1 Let promisesList be an empty list.
-  AutoTArray<RefPtr<Promise>, 16> promiseList;
-
-  RefPtr event = aNavigateEvent;
-  RefPtr tracker = aNavigationTracker;
-
-  // 10.2 For each handler of event's navigation handler list:
-  for (auto& handler : event->NavigationHandlerList().Clone()) {
-    // 10.2.1 Append the result of invoking handler with an empty
-    //        arguments list to promisesList.
-    RefPtr promise = MOZ_KnownLive(handler)->Call();
-    if (promise) {
-      promiseList.AppendElement(promise);
-    }
-  }
-
-  // 10.3 If promisesList's size is 0, then set promisesList to « a promise
-  //      resolved with undefined ».
-  //
-  // We skip this step, because #wait-for-all already handles this.
-
-  nsCOMPtr globalObject = GetOwnerGlobal();
-  // 10.4 Wait for all of promisesList, with the following success steps:
-  RefPtr destination = event->Destination();
-  RefPtr scope =
-      MakeRefPtr<NavigationWaitForAllScope>(this, tracker, event, destination);
-
-  // If the committed promise in the api method tracker hasn't resolved yet,
-  // we can't run neither of the success nor failure steps. To handle that
-  // we set up a callback for when that resolves. This differs from how spec
-  // performs these steps, since spec can perform more of
-  // #apply-the-history-steps in a synchronous way.
-  auto cancelSteps =
-      [weakScope = WeakPtr(scope)](JS::Handle<JS::Value> aRejectionReason)
-          MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-            // If weakScope is null we've been cycle collected
-            if (weakScope) {
-              RefPtr scope = weakScope.get();
-              scope->ProcessNavigateEventHandlerFailure(aRejectionReason);
-            }
-          };
-  auto successSteps =
-      [weakScope = WeakPtr(scope)](const Span<JS::Heap<JS::Value>>&)
-          MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-            // If weakScope is null we've been cycle collected
-            if (weakScope) {
-              RefPtr scope = weakScope.get();
-              scope->CommitNavigateEventSuccessSteps();
-            }
-          };
-
-  if (tracker && !StaticPrefs::dom_navigation_api_internal_method_tracker()) {
-    // Promise::WaitForAll marks all promises as handled, but since we're
-    // delaying wait for all one microtask, we need to manually mark them
-    // here.
-    for (auto& promise : promiseList) {
-      (void)promise->SetAnyPromiseIsHandled();
-    }
-
-    LOG_FMTD("Waiting for committed");
-    tracker->CommittedPromise()->AddCallbacksWithCycleCollectedArgs(
-        [successSteps, cancelSteps](JSContext*, JS::Handle<JS::Value>,
-                                    ErrorResult&,
-                                    nsIGlobalObject* aGlobalObject,
-                                    const Span<RefPtr<Promise>>& aPromiseList,
-                                    NavigationWaitForAllScope* aScope)
-            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-              Promise::WaitForAll(aGlobalObject, aPromiseList, successSteps,
-                                  cancelSteps, aScope);
-            },
-        [](JSContext*, JS::Handle<JS::Value>, ErrorResult&, nsIGlobalObject*,
-           const Span<RefPtr<Promise>>&, NavigationWaitForAllScope*) {},
-        nsCOMPtr(globalObject),
-        nsTArray<RefPtr<Promise>>(std::move(promiseList)),
-        RefPtr<NavigationWaitForAllScope>(scope));
-  } else {
-    LOG_FMTD("No API method tracker, not waiting for committed");
-    // If we don't have an navigationTracker we can immediately start
-    // waiting for the promise list.
-    Promise::WaitForAll(globalObject, promiseList, successSteps, cancelSteps,
-                        scope);
   }
 }
 
@@ -991,9 +596,9 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
   // 11. Let apiMethodTracker be the result of setting up a navigate API method
   //     tracker for this given info and serializedState.
   JS::Rooted<JS::Value> info(aCx, aOptions.mInfo);
-  RefPtr<NavigationTracker> navigationTracker =
-      SetUpNavigateReloadNavigationTracker(info, serializedState);
-  MOZ_ASSERT(navigationTracker);
+  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
+      SetUpNavigateReloadAPIMethodTracker(info, serializedState);
+  MOZ_ASSERT(apiMethodTracker);
 
   // 12. Navigate document's node navigable to urlRecord using document, with
   //     historyHandling set to options["history"], navigationAPIState set to
@@ -1005,11 +610,11 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
   bc->Navigate(urlRecord, document, *document->NodePrincipal(),
                /* per spec, error handling defaults to false */ IgnoreErrors(),
                aOptions.mHistory, /* aNeedsCompletelyLoadedDocument */ false,
-               serializedState, navigationTracker);
+               serializedState, apiMethodTracker);
 
   // 13. Return a navigation API method tracker-derived result for
   //     apiMethodTracker.
-  navigationTracker->CreateResult(aCx, aResult);
+  apiMethodTracker->CreateResult(aCx, aResult);
 }
 
 // https://html.spec.whatwg.org/#performing-a-navigation-api-traversal
@@ -1062,7 +667,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
   //    return a navigation API method tracker-derived result for navigation's
   //    upcoming traverse API method trackers[key].
   if (auto maybeTracker =
-          mUpcomingTraverseNavigationTrackers.MaybeGet(aKey).valueOr(nullptr)) {
+          mUpcomingTraverseAPIMethodTrackers.MaybeGet(aKey).valueOr(nullptr)) {
     maybeTracker->CreateResult(aCx, aResult);
     return;
   }
@@ -1072,7 +677,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
 
   // 8. Let apiMethodTracker be the result of adding an upcoming traverse API
   //    method tracker for navigation given key and info.
-  RefPtr navigationTracker = AddUpcomingTraverseNavigationTracker(aKey, info);
+  RefPtr apiMethodTracker = AddUpcomingTraverseAPIMethodTracker(aKey, info);
 
   // 9. Let navigable be document's node navigable.
   RefPtr<BrowsingContext> navigable = document->GetBrowsingContext();
@@ -1084,11 +689,11 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
 
   // 13. Return a navigation API method tracker-derived result for
   //     apiMethodTracker.
-  navigationTracker->CreateResult(aCx, aResult);
+  apiMethodTracker->CreateResult(aCx, aResult);
 
   // 12. Append the following session history traversal steps to traversable:
   auto* childSHistory = traversable->GetChildSessionHistory();
-  auto performNavigationTraversalSteps = [navigationTracker](nsresult aResult) {
+  auto performNavigationTraversalSteps = [apiMethodTracker](nsresult aResult) {
     // 12.3 If targetSHE is navigable's active session history entry,
     //      then abort these steps.
     if (NS_SUCCEEDED(aResult)) {
@@ -1096,13 +701,13 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
     }
 
     // See https://github.com/whatwg/html/issues/12176
-    if (navigationTracker->IsHandled()) {
+    if (apiMethodTracker->IsHandled()) {
       return;
     }
 
     AutoJSAPI jsapi;
     if (NS_WARN_IF(!jsapi.Init(
-            navigationTracker->mNavigationObject->GetParentObject()))) {
+            apiMethodTracker->mNavigationObject->GetParentObject()))) {
       return;
     }
 
@@ -1140,7 +745,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
     JS::Rooted<JS::Value> rootedExceptionValue(jsapi.cx());
     MOZ_ALWAYS_TRUE(
         ToJSValue(jsapi.cx(), std::move(rv), &rootedExceptionValue));
-    navigationTracker->RejectFinishedPromise(rootedExceptionValue);
+    apiMethodTracker->RejectFinishedPromise(rootedExceptionValue);
   };
 
   // 12.4 Let result be the result of applying the traverse history step given
@@ -1201,20 +806,20 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
   JS::Rooted<JS::Value> info(aCx, aOptions.mInfo);
   // 8. Let apiMethodTracker be the result of setting up a reload API method
   //    tracker for this given info and serializedState.
-  RefPtr<NavigationTracker> navigationTracker =
-      SetUpNavigateReloadNavigationTracker(info, serializedState);
-  MOZ_ASSERT(navigationTracker);
+  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
+      SetUpNavigateReloadAPIMethodTracker(info, serializedState);
+  MOZ_ASSERT(apiMethodTracker);
   // 9. Reload document's node navigable with navigationAPIState set to
   //    serializedState and navigationAPIMethodTracker set to apiMethodTracker.
   RefPtr docShell = nsDocShell::Cast(document->GetDocShell());
   MOZ_ASSERT(docShell);
   docShell->ReloadNavigable(Some(WrapNotNullUnchecked(aCx)),
                             nsIWebNavigation::LOAD_FLAGS_NONE, serializedState,
-                            UserNavigationInvolvement::None, navigationTracker);
+                            UserNavigationInvolvement::None, apiMethodTracker);
 
   // 10. Return a navigation API method tracker-derived result for
   //     apiMethodTracker.
-  navigationTracker->CreateResult(aCx, aResult);
+  apiMethodTracker->CreateResult(aCx, aResult);
 }
 
 // https://html.spec.whatwg.org/#dom-navigation-traverseto
@@ -1388,7 +993,7 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
     Element* aSourceElement, FormData* aFormDataEntryList,
     nsIStructuredCloneContainer* aNavigationAPIState,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
-    NavigationTracker* aNavigationTrackerForNavigateOrReload) {
+    NavigationAPIMethodTracker* aApiMethodTrackerForNavigateOrReload) {
   // 1. Let document be navigation's relevant global object's associated
   //    Document.
   RefPtr document = GetAssociatedDocument();
@@ -1399,10 +1004,10 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
 
   // 3. If navigation has entries and events disabled, and
   //    apiMethodTrackerForNavigateOrReload is not null:
-  if (HasEntriesAndEventsDisabled() && aNavigationTrackerForNavigateOrReload) {
+  if (HasEntriesAndEventsDisabled() && aApiMethodTrackerForNavigateOrReload) {
     // 3.1. Set apiMethodTrackerForNavigateOrReload's pending to false.
-    aNavigationTrackerForNavigateOrReload->MarkAsNotPending();
-    aNavigationTrackerForNavigateOrReload = nullptr;
+    aApiMethodTrackerForNavigateOrReload->MarkAsNotPending();
+    aApiMethodTrackerForNavigateOrReload = nullptr;
   }
 
   // 4. If document is not fully active, then return false.
@@ -1427,7 +1032,7 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
       aUserInvolvement.valueOr(UserNavigationInvolvement::None), aSourceElement,
       aFormDataEntryList, aClassicHistoryAPIState,
       /* aDownloadRequestFilename */ VoidString(),
-      aNavigationTrackerForNavigateOrReload);
+      aApiMethodTrackerForNavigateOrReload);
 }
 
 // https://html.spec.whatwg.org/#fire-a-download-request-navigate-event
@@ -1486,6 +1091,12 @@ static bool EqualsExceptRef(nsIURI* aURI, nsIURI* aOtherURI) {
          equalsExceptRef;
 }
 
+static bool Equals(nsIURI* aURI, nsIURI* aOtherURI) {
+  bool equals = false;
+  return aURI && aOtherURI && NS_SUCCEEDED(aURI->Equals(aOtherURI, &equals)) &&
+         equals;
+}
+
 static bool HasRef(nsIURI* aURI) {
   bool hasRef = false;
   aURI->GetHasRef(&hasRef);
@@ -1509,6 +1120,38 @@ static bool HasIdenticalFragment(nsIURI* aURI, nsIURI* aOtherURI) {
   }
 
   return ref.Equals(otherRef);
+}
+
+static void LogEvent(Event* aEvent, NavigateEvent* aOngoingEvent,
+                     const nsACString& aReason) {
+  if (!MOZ_LOG_TEST(gNavigationAPILog, LogLevel::Debug)) {
+    return;
+  }
+
+  nsAutoString eventType;
+  aEvent->GetType(eventType);
+
+  nsTArray<nsCString> log = {nsCString(aReason),
+                             NS_ConvertUTF16toUTF8(eventType)};
+
+  if (aEvent->Cancelable()) {
+    log.AppendElement("cancelable");
+  }
+
+  if (aOngoingEvent) {
+    log.AppendElement(fmt::format("{}", aOngoingEvent->NavigationType()));
+
+    if (RefPtr<NavigationDestination> destination =
+            aOngoingEvent->Destination()) {
+      log.AppendElement(destination->GetURL()->GetSpecOrDefault());
+    }
+
+    if (aOngoingEvent->HashChange()) {
+      log.AppendElement("hashchange"_ns);
+    }
+  }
+
+  LOG_FMTD("{}", fmt::join(log.begin(), log.end(), std::string_view{" "}));
 }
 
 nsresult Navigation::FireEvent(const nsAString& aName) {
@@ -1557,14 +1200,361 @@ nsresult Navigation::FireErrorEvent(const nsAString& aName,
   return rv.StealNSResult();
 }
 
-already_AddRefed<NavigationTracker> CreateInternalTracker(
+// https://html.spec.whatwg.org/#resume-applying-the-traverse-history-step
+static void ResumeApplyTheHistoryStep(
+    SessionHistoryInfo* aTarget, BrowsingContext* aTraversable,
+    UserNavigationInvolvement aUserInvolvement) {
+  MOZ_DIAGNOSTIC_ASSERT(aTraversable->IsTop());
+  auto* childSHistory = aTraversable->GetChildSessionHistory();
+  // Since we've already called #checking-if-unloading-is-canceled, we here pass
+  // checkForCancelation set to false.
+  childSHistory->AsyncGo(aTarget->NavigationKey(), aTraversable,
+                         /* aRequireUserInteraction */ false,
+                         /* aUserActivation */ false,
+                         /* aCheckForCancelation */ false, [](auto) {});
+}
+
+struct NavigationWaitForAllScope final : public nsISupports,
+                                         public SupportsWeakPtr {
+  NavigationWaitForAllScope(Navigation* aNavigation,
+                            NavigationAPIMethodTracker* aApiMethodTracker,
+                            NavigateEvent* aEvent,
+                            NavigationDestination* aDestination)
+      : mNavigation(aNavigation),
+        mAPIMethodTracker(aApiMethodTracker),
+        mEvent(aEvent),
+        mDestination(aDestination) {}
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(NavigationWaitForAllScope)
+  RefPtr<Navigation> mNavigation;
+  RefPtr<NavigationAPIMethodTracker> mAPIMethodTracker;
+  RefPtr<NavigateEvent> mEvent;
+  RefPtr<NavigationDestination> mDestination;
+
+ private:
+  ~NavigationWaitForAllScope() {}
+
+ public:
+  // https://html.spec.whatwg.org/#process-navigate-event-handler-failure
+  MOZ_CAN_RUN_SCRIPT void ProcessNavigateEventHandlerFailure(
+      JS::Handle<JS::Value> aRejectionReason) {
+    // To process navigate event handler failure given a NavigateEvent object
+    // event and a reason:
+    LogEvent(mEvent, mEvent, "Rejected"_ns);
+
+    // 1. If event's relevant global object's associated Document is not fully
+    //    active, then return.
+    if (RefPtr document = mEvent->GetDocument();
+        !document || !document->IsFullyActive()) {
+      return;
+    }
+
+    // 2. If event's abort controller's signal is aborted, then return.
+    if (AbortSignal* signal = mEvent->Signal(); signal->Aborted()) {
+      return;
+    }
+
+    // 3. Assert: event is event's relevant global object's navigation API's
+    //    ongoing navigate event.
+    MOZ_DIAGNOSTIC_ASSERT(mEvent == mNavigation->mOngoingNavigateEvent);
+
+    // 4. If event's interception state is not "intercepted", then finish event
+    //    given false.
+    RefPtr event = mEvent;
+    if (mEvent->InterceptionState() !=
+        NavigateEvent::InterceptionState::Intercepted) {
+      event->Finish(false);
+    }
+
+    // 5. Abort event given reason.
+    if (AutoJSAPI jsapi; !NS_WARN_IF(!jsapi.Init(mEvent->GetParentObject()))) {
+      RefPtr navigation = mNavigation;
+      navigation->AbortNavigateEvent(jsapi.cx(), event, aRejectionReason);
+    }
+  }
+  // https://html.spec.whatwg.org/#commit-a-navigate-event
+  MOZ_CAN_RUN_SCRIPT void CommitNavigateEvent() {
+    // 1. Let navigation be event's target.
+    // Omitted since Navigation is part of this's state.
+
+    // 3. If event's relevant global object's associated Document is not fully
+    //    active, then return.
+    RefPtr document = mEvent->GetDocument();
+    if (!document || !document->IsFullyActive()) {
+      return;
+    }
+    // 2. Let navigable be event's relevant global object's navigable.
+    nsDocShell* docShell = nsDocShell::Cast(document->GetDocShell());
+    Maybe<BrowsingContext&> navigable =
+        ToMaybeRef(mNavigation->GetOwnerWindow()).andThen([](auto& aWindow) {
+          return ToMaybeRef(aWindow.GetBrowsingContext());
+        });
+    // 4. If event's abort controller's signal is aborted, then return.
+    if (AbortSignal* signal = mEvent->Signal(); signal->Aborted()) {
+      return;
+    }
+
+    // 6. Let endResultIsSameDocument be true if event's interception state is
+    //    not "none" or event's destination's is same document is true.
+    const bool endResultIsSameDocument =
+        mEvent->InterceptionState() != NavigateEvent::InterceptionState::None ||
+        mDestination->SameDocument();
+
+    // 7. Prepare to run script given navigation's relevant settings object.
+    // This runs step 12 when going out of scope.
+    nsAutoMicroTask mt;
+
+    // 9. If event's interception state is not "none":
+    if (mEvent->InterceptionState() != NavigateEvent::InterceptionState::None) {
+      // The copy of the active session history info might be stale at this
+      // point, so make sure to update that. This is not a spec step, but a side
+      // effect of SHIP owning the session history entries making Navigation API
+      // keep copies for its purposes. Should navigation get aborted at this
+      // point, all we've done is eagerly stored scroll positions.
+      if (RefPtr current = mNavigation->GetCurrentEntry()) {
+        nsPoint scrollPos = docShell->GetCurScrollPos();
+        current->SessionHistoryInfo()->SetScrollPosition(scrollPos.x,
+                                                         scrollPos.y);
+      }
+
+      // 5. Set event's interception state to "committed".
+      // See https://github.com/whatwg/html/issues/11830 for this change.
+      mEvent->SetInterceptionState(NavigateEvent::InterceptionState::Committed);
+      // 9.1 Switch on event's navigationType:
+      switch (mEvent->NavigationType()) {
+        case NavigationType::Push:
+        case NavigationType::Replace:
+          // Run the URL and history update steps given event's relevant
+          // global object's associated Document and event's destination's
+          // URL, with serializedData set to event's classic history API
+          // state and historyHandling set to event's navigationType.
+          if (docShell) {
+            docShell->UpdateURLAndHistory(
+                document, mDestination->GetURL(),
+                mEvent->ClassicHistoryAPIState(),
+                *NavigationUtils::NavigationHistoryBehavior(
+                    mEvent->NavigationType()),
+                document->GetDocumentURI(),
+                Equals(mDestination->GetURL(), document->GetDocumentURI()));
+          }
+          break;
+        case NavigationType::Reload:
+          // Update the navigation API entries for a same-document navigation
+          // given navigation, navigable's active session history entry, and
+          // "reload".
+          if (docShell) {
+            mNavigation->UpdateEntriesForSameDocumentNavigation(
+                docShell->GetActiveSessionHistoryInfo(),
+                mEvent->NavigationType());
+          }
+          break;
+        case NavigationType::Traverse:
+          if (auto* entry = mDestination->GetEntry()) {
+            // 1. Set navigation's suppress normal scroll restoration during
+            //    ongoing navigation to true.
+            mNavigation
+                ->mSuppressNormalScrollRestorationDuringOngoingNavigation =
+                true;
+            // 2. Let userInvolvement be "none".
+            // 3. If event's userInitiated is true, then set userInvolvement to
+            // "activation".
+            UserNavigationInvolvement userInvolvement =
+                mEvent->UserInitiated() ? UserNavigationInvolvement::Activation
+                                        : UserNavigationInvolvement::None;
+            // 4. Append the following session history traversal steps to
+            //    navigable's traversable navigable:
+            // 4.1 Resume applying the traverse history step given event's
+            //     destination's entry's session history entry's step,
+            //     navigable's traversable navigable, and userInvolvement.
+            ResumeApplyTheHistoryStep(entry->SessionHistoryInfo(),
+                                      navigable->Top(), userInvolvement);
+
+            // This is not in the spec, but both Chrome and Safari does this or
+            // something similar.
+            MOZ_ASSERT(entry->Index() >= 0);
+            mNavigation->SetCurrentEntryIndex(entry->SessionHistoryInfo());
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    // 8. If navigation's transition is not null, then resolve navigation's
+    //    transition's committed promise with undefined.
+    // Steps 8 and 9 are swapped to have a consistent promise behavior
+    // (see https://github.com/whatwg/html/issues/11842)
+    if (mNavigation->mTransition) {
+      mNavigation->mTransition->Committed()->MaybeResolveWithUndefined();
+    }
+
+    // 10. If endResultIsSameDocument is true:
+    if (endResultIsSameDocument) {
+      // 10.1 Let promisesList be an empty list.
+      AutoTArray<RefPtr<Promise>, 16> promiseList;
+
+      if (StaticPrefs::dom_navigation_api_internal_method_tracker()) {
+        promiseList.AppendElement(mAPIMethodTracker->CommittedPromise());
+      }
+
+      // 10.2 For each handler of event's navigation handler list:
+      for (auto& handler : mEvent->NavigationHandlerList().Clone()) {
+        // 10.2.1 Append the result of invoking handler with an empty
+        //        arguments list to promisesList.
+        RefPtr promise = MOZ_KnownLive(handler)->Call();
+        if (promise) {
+          promiseList.AppendElement(promise);
+        }
+      }
+      // 10.3 If promisesList's size is 0, then set promisesList to « a promise
+      //      resolved with undefined ».
+      nsCOMPtr globalObject = mNavigation->GetOwnerGlobal();
+      if (promiseList.IsEmpty()) {
+        RefPtr promise = Promise::CreateResolvedWithUndefined(
+            globalObject, IgnoredErrorResult());
+        if (promise) {
+          promiseList.AppendElement(promise);
+        }
+      }
+
+      // 10.4 Wait for all of promisesList, with the following success steps:
+
+      // If the committed promise in the api method tracker hasn't resolved yet,
+      // we can't run neither of the success nor failure steps. To handle that
+      // we set up a callback for when that resolves. This differs from how spec
+      // performs these steps, since spec can perform more of
+      // #apply-the-history-steps in a synchronous way.
+      auto cancelSteps =
+          [weakScope = WeakPtr(this)](JS::Handle<JS::Value> aRejectionReason)
+              MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                // If weakScope is null we've been cycle collected
+                if (weakScope) {
+                  RefPtr scope = weakScope.get();
+                  scope->ProcessNavigateEventHandlerFailure(aRejectionReason);
+                }
+              };
+      auto successSteps =
+          [weakScope = WeakPtr(this)](const Span<JS::Heap<JS::Value>>&)
+              MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                // If weakScope is null we've been cycle collected
+                if (weakScope) {
+                  RefPtr scope = weakScope.get();
+                  scope->CommitNavigateEventSuccessSteps();
+                }
+              };
+      if (mAPIMethodTracker &&
+          !StaticPrefs::dom_navigation_api_internal_method_tracker()) {
+        // Promise::WaitForAll marks all promises as handled, but since we're
+        // delaying wait for all one microtask, we need to manually mark them
+        // here.
+        for (auto& promise : promiseList) {
+          (void)promise->SetAnyPromiseIsHandled();
+        }
+
+        LOG_FMTD("Waiting for committed");
+        mAPIMethodTracker->CommittedPromise()
+            ->AddCallbacksWithCycleCollectedArgs(
+                [successSteps, cancelSteps](
+                    JSContext*, JS::Handle<JS::Value>, ErrorResult&,
+                    nsIGlobalObject* aGlobalObject,
+                    const Span<RefPtr<Promise>>& aPromiseList,
+                    NavigationWaitForAllScope* aScope)
+                    MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                      Promise::WaitForAll(aGlobalObject, aPromiseList,
+                                          successSteps, cancelSteps, aScope);
+                    },
+                [](JSContext*, JS::Handle<JS::Value>, ErrorResult&,
+                   nsIGlobalObject*, const Span<RefPtr<Promise>>&,
+                   NavigationWaitForAllScope*) {},
+                nsCOMPtr(globalObject),
+                nsTArray<RefPtr<Promise>>(std::move(promiseList)),
+                RefPtr<NavigationWaitForAllScope>(this));
+      } else {
+        LOG_FMTD("No API method tracker, not waiting for committed");
+        // If we don't have an apiMethodTracker we can immediately start waiting
+        // for the promise list.
+        Promise::WaitForAll(globalObject, promiseList, successSteps,
+                            cancelSteps, this);
+      }
+    } else if (mAPIMethodTracker && mNavigation->mOngoingAPIMethodTracker) {
+      // In contrast to spec we add a check that we're still the ongoing
+      // tracker. If we're not, then we've already been cleaned up.
+      MOZ_DIAGNOSTIC_ASSERT(mAPIMethodTracker ==
+                            mNavigation->mOngoingAPIMethodTracker);
+      // Step 11
+      mAPIMethodTracker->CleanUp();
+      mNavigation->mOngoingNavigateEvent = nullptr;
+    } else {
+      // It needs to be ensured that the ongoing navigate event is cleared in
+      // every code path (e.g. for download events), so that we don't keep
+      // intermediate state around.
+      // See also https://github.com/whatwg/html/issues/11802
+      mNavigation->mOngoingNavigateEvent = nullptr;
+    }
+  }
+
+  MOZ_CAN_RUN_SCRIPT void CommitNavigateEventSuccessSteps() {
+    LogEvent(mEvent, mEvent, "Success"_ns);
+
+    // 1. If event's relevant global object is not fully active, then abort
+    //    these steps.
+    RefPtr document = mEvent->GetDocument();
+    if (!document || !document->IsFullyActive()) {
+      return;
+    }
+
+    // 2. If event's abort controller's signal is aborted, then abort these
+    //    steps.
+    if (AbortSignal* signal = mEvent->Signal(); signal->Aborted()) {
+      return;
+    }
+
+    // 3. Assert: event equals navigation's ongoing navigate event.
+    MOZ_DIAGNOSTIC_ASSERT(mEvent == mNavigation->mOngoingNavigateEvent);
+
+    // 4. Set navigation's ongoing navigate event to null.
+    mNavigation->mOngoingNavigateEvent = nullptr;
+
+    // 5. Finish event given true.
+    RefPtr event = mEvent;
+    event->Finish(true);
+
+    // 6. If apiMethodTracker is non-null, then resolve the finished promise for
+    // apiMethodTracker.
+    if (mAPIMethodTracker) {
+      mAPIMethodTracker->ResolveFinishedPromise();
+    }
+
+    // 7. Fire an event named navigatesuccess at navigation.
+    RefPtr navigation = mNavigation;
+    navigation->FireEvent(u"navigatesuccess"_ns);
+
+    // 8. If navigation's transition is not null, then resolve navigation's
+    //    transition's finished promise with undefined.
+    if (mNavigation->mTransition) {
+      mNavigation->mTransition->Finished()->MaybeResolveWithUndefined();
+    }
+    // 9. Set navigation's transition to null.
+    mNavigation->mTransition = nullptr;
+  }
+};
+
+NS_IMPL_CYCLE_COLLECTION_WEAK_PTR(NavigationWaitForAllScope, mNavigation,
+                                  mAPIMethodTracker, mEvent, mDestination)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationWaitForAllScope)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
+NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationWaitForAllScope)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationWaitForAllScope)
+
+already_AddRefed<NavigationAPIMethodTracker> CreateInternalTracker(
     Navigation* aNavigation) {
   RefPtr committedPromise =
       Promise::CreateInfallible(aNavigation->GetOwnerGlobal());
   (void)committedPromise->SetAnyPromiseIsHandled();
   RefPtr finishedPromise = Promise::CreateResolvedWithUndefined(
       aNavigation->GetOwnerGlobal(), IgnoreErrors());
-  return MakeAndAddRef<NavigationTracker>(
+  return MakeAndAddRef<NavigationAPIMethodTracker>(
       aNavigation, Nothing(), JS::UndefinedHandleValue,
       /* aSerializedState */ nullptr,
       /* aCommittedToEntry */ nullptr, committedPromise, finishedPromise);
@@ -1578,16 +1568,16 @@ bool Navigation::InnerFireNavigateEvent(
     FormData* aFormDataEntryList,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
     const nsAString& aDownloadRequestFilename,
-    NavigationTracker* aNavigationTracker) {
+    NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
   nsCOMPtr<nsIGlobalObject> globalObject = GetOwnerGlobal();
-  RefPtr navigationTracker = aNavigationTracker;
+  RefPtr apiMethodTracker = aNavigationAPIMethodTracker;
 
   // Step 1
   if (HasEntriesAndEventsDisabled()) {
     // Step 1.1 to step 1.3
-    MOZ_DIAGNOSTIC_ASSERT(!mOngoingNavigationTracker);
-    MOZ_DIAGNOSTIC_ASSERT(mUpcomingTraverseNavigationTrackers.IsEmpty());
-    MOZ_DIAGNOSTIC_ASSERT(!aNavigationTracker);
+    MOZ_DIAGNOSTIC_ASSERT(!mOngoingAPIMethodTracker);
+    MOZ_DIAGNOSTIC_ASSERT(mUpcomingTraverseAPIMethodTrackers.IsEmpty());
+    MOZ_DIAGNOSTIC_ASSERT(!aNavigationAPIMethodTracker);
 
     // Step 1.5
     return true;
@@ -1596,34 +1586,34 @@ bool Navigation::InnerFireNavigateEvent(
   RootedDictionary<NavigateEventInit> init(RootingCx());
 
   // Step 2
-  MOZ_DIAGNOSTIC_ASSERT(!mOngoingNavigationTracker);
+  MOZ_DIAGNOSTIC_ASSERT(!mOngoingAPIMethodTracker);
 
   // Step 3
   Maybe<nsID> destinationKey;
   if (auto* destinationEntry = aDestination->GetEntry()) {
     // Step 3.1
-    MOZ_DIAGNOSTIC_ASSERT(!aNavigationTracker);
+    MOZ_DIAGNOSTIC_ASSERT(!aNavigationAPIMethodTracker);
     // Step 3.2
     destinationKey.emplace(destinationEntry->Key());
     // Step 3.3
     MOZ_DIAGNOSTIC_ASSERT(!destinationKey->Equals(nsID{}));
     // Step 3.4, 3.4.2
     if (auto entry =
-            mUpcomingTraverseNavigationTrackers.Extract(*destinationKey)) {
+            mUpcomingTraverseAPIMethodTrackers.Extract(*destinationKey)) {
       // Step 3.4.1
-      navigationTracker = std::move(*entry);
+      apiMethodTracker = std::move(*entry);
     }
   }
   // Step 4
-  if (navigationTracker) {
-    navigationTracker->MarkAsNotPending();
+  if (apiMethodTracker) {
+    apiMethodTracker->MarkAsNotPending();
   } else if (StaticPrefs::dom_navigation_api_internal_method_tracker()) {
-    navigationTracker = CreateInternalTracker(this);
+    apiMethodTracker = CreateInternalTracker(this);
   }
 
   // This step is currently missing in the spec. See
   // https://github.com/whatwg/html/issues/11816
-  mOngoingNavigationTracker = navigationTracker;
+  mOngoingAPIMethodTracker = apiMethodTracker;
 
   // Step 5
   Maybe<BrowsingContext&> navigable =
@@ -1663,8 +1653,8 @@ bool Navigation::InnerFireNavigateEvent(
   init.mDownloadRequest = aDownloadRequestFilename;
 
   // Step 14
-  if (navigationTracker) {
-    init.mInfo = navigationTracker->mInfo;
+  if (apiMethodTracker) {
+    init.mInfo = apiMethodTracker->mInfo;
   }
 
   // Step 15
@@ -1756,7 +1746,7 @@ bool Navigation::InnerFireNavigateEvent(
     MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
   }
 
-  RefPtr scope = MakeRefPtr<NavigationWaitForAllScope>(this, navigationTracker,
+  RefPtr scope = MakeRefPtr<NavigationWaitForAllScope>(this, apiMethodTracker,
                                                        event, aDestination);
   // Step 30
   if (event->NavigationPrecommitHandlerList().IsEmpty()) {
@@ -1817,31 +1807,33 @@ NavigationHistoryEntry* Navigation::FindNavigationHistoryEntry(
 }
 
 // https://html.spec.whatwg.org/#navigation-api-method-tracker-clean-up
-/* static */ void Navigation::CleanUp(NavigationTracker* aNavigationTracker) {
+/* static */ void Navigation::CleanUp(
+    NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
   // Step 1
-  RefPtr<Navigation> navigation = aNavigationTracker->mNavigationObject;
+  RefPtr<Navigation> navigation =
+      aNavigationAPIMethodTracker->mNavigationObject;
 
   auto needsTraverse =
       MakeScopeExit([navigation]() { navigation->UpdateNeedsTraverse(); });
 
   // Step 2
-  if (navigation->mOngoingNavigationTracker == aNavigationTracker) {
-    navigation->mOngoingNavigationTracker = nullptr;
+  if (navigation->mOngoingAPIMethodTracker == aNavigationAPIMethodTracker) {
+    navigation->mOngoingAPIMethodTracker = nullptr;
 
     return;
   }
 
   // Step 3.1
-  Maybe<nsID> key = aNavigationTracker->mKey;
+  Maybe<nsID> key = aNavigationAPIMethodTracker->mKey;
 
   // Step 3.2
   MOZ_DIAGNOSTIC_ASSERT(key);
 
   // Step 3.3
   MOZ_DIAGNOSTIC_ASSERT(
-      navigation->mUpcomingTraverseNavigationTrackers.Contains(*key));
+      navigation->mUpcomingTraverseAPIMethodTrackers.Contains(*key));
 
-  navigation->mUpcomingTraverseNavigationTrackers.Remove(*key);
+  navigation->mUpcomingTraverseAPIMethodTrackers.Remove(*key);
 }
 
 void Navigation::SetCurrentEntryIndex(const SessionHistoryInfo* aTargetInfo) {
@@ -1923,8 +1915,8 @@ void Navigation::AbortNavigateEvent(JSContext* aCx, const NavigateEvent* aEvent,
 
   // 5. If navigation's ongoing API method tracker is non-null, then reject the
   //    finished promise for apiMethodTracker with error.
-  if (mOngoingNavigationTracker) {
-    mOngoingNavigationTracker->RejectFinishedPromise(aReason);
+  if (mOngoingAPIMethodTracker) {
+    mOngoingAPIMethodTracker->RejectFinishedPromise(aReason);
   }
 
   // 6. Fire an event named navigateerror at navigation using ErrorEvent, with
@@ -1948,16 +1940,15 @@ void Navigation::AbortNavigateEvent(JSContext* aCx, const NavigateEvent* aEvent,
 // https://html.spec.whatwg.org/#inform-the-navigation-api-about-child-navigable-destruction
 void Navigation::InformAboutChildNavigableDestruction(JSContext* aCx) {
   // Step 3
-  auto traversalNavigationTrackers =
-      mUpcomingTraverseNavigationTrackers.Clone();
+  auto traversalAPIMethodTrackers = mUpcomingTraverseAPIMethodTrackers.Clone();
 
   // Step 4
-  for (const auto& navigationTracker : traversalNavigationTrackers.Values()) {
+  for (auto& apiMethodTracker : traversalAPIMethodTrackers.Values()) {
     ErrorResult rv;
     rv.ThrowAbortError("Navigable removed");
     JS::Rooted<JS::Value> rootedExceptionValue(aCx);
     MOZ_ALWAYS_TRUE(ToJSValue(aCx, std::move(rv), &rootedExceptionValue));
-    navigationTracker->RejectFinishedPromise(rootedExceptionValue);
+    apiMethodTracker->RejectFinishedPromise(rootedExceptionValue);
   }
 }
 
@@ -1999,8 +1990,8 @@ void Navigation::UpdateNeedsTraverse() {
   }
 
   // We need traverse if we have any method tracker.
-  bool needsTraverse = mOngoingNavigationTracker ||
-                       !mUpcomingTraverseNavigationTrackers.IsEmpty();
+  bool needsTraverse =
+      mOngoingAPIMethodTracker || !mUpcomingTraverseAPIMethodTrackers.IsEmpty();
 
   // We need traverse if we have any event handlers.
   if (EventListenerManager* eventListenerManager =
@@ -2032,7 +2023,8 @@ void Navigation::LogHistory() const {
 }
 
 // https://html.spec.whatwg.org/#set-up-a-navigate/reload-api-method-tracker
-RefPtr<NavigationTracker> Navigation::SetUpNavigateReloadNavigationTracker(
+RefPtr<NavigationAPIMethodTracker>
+Navigation::SetUpNavigateReloadAPIMethodTracker(
     JS::Handle<JS::Value> aInfo,
     nsIStructuredCloneContainer* aSerializedState) {
   // To set up a navigate/reload API method tracker given a Navigation
@@ -2046,18 +2038,19 @@ RefPtr<NavigationTracker> Navigation::SetUpNavigateReloadNavigationTracker(
   MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
 
   // 3. Return a new navigation API method tracker with:
-  RefPtr<NavigationTracker> navigationTracker =
-      MakeAndAddRef<NavigationTracker>(
+  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
+      MakeAndAddRef<NavigationAPIMethodTracker>(
           this, /* aKey */ Nothing{}, aInfo, aSerializedState,
           /* aCommittedToEntry */ nullptr, committedPromise, finishedPromise,
           /* aPending */ !HasEntriesAndEventsDisabled());
 
-  return navigationTracker;
+  return apiMethodTracker;
 }
 
 // https://html.spec.whatwg.org/#add-an-upcoming-traverse-api-method-tracker
-RefPtr<NavigationTracker> Navigation::AddUpcomingTraverseNavigationTracker(
-    const nsID& aKey, JS::Handle<JS::Value> aInfo) {
+RefPtr<NavigationAPIMethodTracker>
+Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
+                                                JS::Handle<JS::Value> aInfo) {
   // To add an upcoming traverse API method tracker given a Navigation
   // navigation, a string destinationKey, and a JavaScript value info:
   // 1. Let committedPromise and finishedPromise be new promises created in
@@ -2069,22 +2062,22 @@ RefPtr<NavigationTracker> Navigation::AddUpcomingTraverseNavigationTracker(
   MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
 
   // 3. Let apiMethodTracker be a new navigation API method tracker with:
-  RefPtr<NavigationTracker> navigationTracker =
-      MakeAndAddRef<NavigationTracker>(this, Some(aKey), aInfo,
-                                       /* aSerializedState */ nullptr,
-                                       /* aCommittedToEntry */ nullptr,
-                                       committedPromise, finishedPromise,
-                                       /* aPending */ false);
+  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
+      MakeAndAddRef<NavigationAPIMethodTracker>(
+          this, Some(aKey), aInfo,
+          /* aSerializedState */ nullptr,
+          /* aCommittedToEntry */ nullptr, committedPromise, finishedPromise,
+          /* aPending */ false);
 
   // 4. Set navigation's upcoming traverse API method trackers[destinationKey]
   //    to apiMethodTracker.
-  RefPtr upcomingTracker = mUpcomingTraverseNavigationTrackers.InsertOrUpdate(
-      aKey, navigationTracker);
+  RefPtr methodTracker =
+      mUpcomingTraverseAPIMethodTrackers.InsertOrUpdate(aKey, apiMethodTracker);
 
   UpdateNeedsTraverse();
 
   // 5. Return apiMethodTracker.
-  return upcomingTracker;
+  return methodTracker;
 }
 
 // https://html.spec.whatwg.org/#update-document-for-history-step-application
@@ -2151,11 +2144,11 @@ void Navigation::CreateNavigationActivationFrom(
 }
 
 // https://html.spec.whatwg.org/#dom-navigationprecommitcontroller-redirect
-void Navigation::SetSerializedStateIntoOngoingNavigationTracker(
+void Navigation::SetSerializedStateIntoOngoingAPIMethodTracker(
     nsIStructuredCloneContainer* aSerializedState) {
-  MOZ_DIAGNOSTIC_ASSERT(mOngoingNavigationTracker);
+  MOZ_DIAGNOSTIC_ASSERT(mOngoingAPIMethodTracker);
   // This is step 10.3 of NavigationPrecommitController.redirect()
-  mOngoingNavigationTracker->SetSerializedState(aSerializedState);
+  mOngoingAPIMethodTracker->SetSerializedState(aSerializedState);
 }
 
 }  // namespace mozilla::dom

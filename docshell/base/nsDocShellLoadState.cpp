@@ -1500,12 +1500,14 @@ void nsDocShellLoadState::SetNavigationAPIState(
       static_cast<nsStructuredCloneContainer*>(aNavigationAPIState);
 }
 
-NavigationTracker* nsDocShellLoadState::GetNavigationTracker() const {
-  return mNavigationTracker;
+NavigationAPIMethodTracker* nsDocShellLoadState::GetNavigationAPIMethodTracker()
+    const {
+  return mNavigationAPIMethodTracker;
 }
 
-void nsDocShellLoadState::SetNavigationTracker(NavigationTracker* aTracker) {
-  mNavigationTracker = aTracker;
+void nsDocShellLoadState::SetNavigationAPIMethodTracker(
+    NavigationAPIMethodTracker* aTracker) {
+  mNavigationAPIMethodTracker = aTracker;
 }
 
 NavigationType nsDocShellLoadState::GetNavigationType() const {

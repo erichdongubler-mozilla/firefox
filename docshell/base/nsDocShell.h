@@ -53,7 +53,7 @@ class ClientSource;
 class EventTarget;
 class WindowGlobalChild;
 enum class NavigationHistoryBehavior : uint8_t;
-struct NavigationTracker;
+struct NavigationAPIMethodTracker;
 class SessionHistoryInfo;
 struct LoadingSessionHistoryInfo;
 struct Wireframe;
@@ -1198,7 +1198,6 @@ class nsDocShell final : public nsDocLoader,
    * @param aCurrentURI the current URI we're working with.  Might be null.
    * @param aEqualURIs whether the two URIs involved are equal.
    */
-  MOZ_CAN_RUN_SCRIPT
   nsresult UpdateURLAndHistory(
       mozilla::dom::Document* aDocument, nsIURI* aNewURI,
       nsIStructuredCloneContainer* aData,
@@ -1229,7 +1228,8 @@ class nsDocShell final : public nsDocLoader,
       nsIStructuredCloneContainer* aNavigationAPIState = nullptr,
       mozilla::dom::UserNavigationInvolvement aUserInvolvement =
           mozilla::dom::UserNavigationInvolvement::None,
-      mozilla::dom::NavigationTracker* aNavigationTracker = nullptr);
+      mozilla::dom::NavigationAPIMethodTracker* aNavigationAPIMethodTracker =
+          nullptr);
 
  private:
   MOZ_CAN_RUN_SCRIPT

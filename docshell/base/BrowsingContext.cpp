@@ -2461,13 +2461,12 @@ BrowsingContext::CheckURLAndCreateLoadState(nsIURI* aURI,
 // https://html.spec.whatwg.org/#navigate
 // In its current state, this method is not closely following the spec.
 // https://bugzil.la/1974717 tracks the work to align this method with the spec.
-void BrowsingContext::Navigate(nsIURI* aURI, Document* aSourceDocument,
-                               nsIPrincipal& aSubjectPrincipal,
-                               ErrorResult& aRv,
-                               NavigationHistoryBehavior aHistoryHandling,
-                               bool aNeedsCompletelyLoadedDocument,
-                               nsIStructuredCloneContainer* aNavigationAPIState,
-                               dom::NavigationTracker* aNavigationTracker) {
+void BrowsingContext::Navigate(
+    nsIURI* aURI, Document* aSourceDocument, nsIPrincipal& aSubjectPrincipal,
+    ErrorResult& aRv, NavigationHistoryBehavior aHistoryHandling,
+    bool aNeedsCompletelyLoadedDocument,
+    nsIStructuredCloneContainer* aNavigationAPIState,
+    dom::NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
   MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, "Navigate to {} as {}", *aURI,
               aHistoryHandling);
   CallerType callerType = aSubjectPrincipal.IsSystemPrincipal()
@@ -2520,7 +2519,7 @@ void BrowsingContext::Navigate(nsIURI* aURI, Document* aSourceDocument,
   loadState->SetLoadFlags(nsIWebNavigation::LOAD_FLAGS_NONE);
   loadState->SetFirstParty(true);
   loadState->SetNavigationAPIState(aNavigationAPIState);
-  loadState->SetNavigationTracker(aNavigationTracker);
+  loadState->SetNavigationAPIMethodTracker(aNavigationAPIMethodTracker);
 
   rv = LoadURI(loadState);
   if (NS_WARN_IF(NS_FAILED(rv))) {
