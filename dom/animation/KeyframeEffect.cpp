@@ -927,7 +927,7 @@ void KeyframeEffect::UpdateTarget(Element* aElement,
     }
   }
 
-  mTarget = std::move(newTarget);
+  mTarget = newTarget;
 
   if (mTarget) {
     UpdateTargetRegistration();

@@ -3752,7 +3752,7 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
     ClientUsageArray clientUsages;
     QM_TRY(MOZ_TO_RESULT(clientUsages.Deserialize(clientUsagesText)));
 
-    fullOriginMetadata.mClientUsages = std::move(clientUsages);
+    fullOriginMetadata.mClientUsages = clientUsages;
   } else {
     fullOriginMetadata.mQuotaVersion = kNoQuotaVersion;
     fullOriginMetadata.mOriginUsage = 0;
@@ -9402,7 +9402,7 @@ nsresult StorageOperationBase::OriginProps::Init(
 
   mLeafName = leafName;
   mSpec = spec;
-  mAttrs = std::move(attrs);
+  mAttrs = attrs;
   mOriginalSuffix = originalSuffix;
   mPersistenceType.init(persistenceType);
   if (result == OriginParser::ObsoleteOrigin) {

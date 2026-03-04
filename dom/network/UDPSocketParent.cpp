@@ -191,7 +191,7 @@ nsresult UDPSocketParent::BindInternal(const nsCString& aHost,
     return rv;
   }
 
-  mSocket = std::move(sock);
+  mSocket = sock;
 
   return NS_OK;
 }

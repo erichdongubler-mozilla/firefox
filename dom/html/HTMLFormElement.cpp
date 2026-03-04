@@ -1825,7 +1825,7 @@ nsresult HTMLFormElement::AddElementToTableInternal(
         nsCOMPtr<nsISupports> listSupports = do_QueryObject(list);
 
         // Replace the element with the list.
-        entry.Data() = std::move(listSupports);
+        entry.Data() = listSupports;
       } else {
         // There's already a list in the hash, add the child to the list.
         MOZ_ASSERT(nsCOMPtr<RadioNodeList>(do_QueryInterface(entry.Data())));

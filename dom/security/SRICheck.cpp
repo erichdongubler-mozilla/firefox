@@ -198,7 +198,7 @@ nsresult SRICheckDataVerifier::EnsureCryptoHash() {
   nsresult rv = NS_NewCryptoHash(mHashType, getter_AddRefs(cryptoHash));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mCryptoHash = std::move(cryptoHash);
+  mCryptoHash = cryptoHash;
   return NS_OK;
 }
 

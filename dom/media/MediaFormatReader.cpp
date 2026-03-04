@@ -3103,7 +3103,7 @@ void MediaFormatReader::OnSeekFailed(TrackType aTrack,
       } else {
         mFallbackSeekTime.reset();
       }
-      mPendingSeekTime = std::move(nextSeekTime);
+      mPendingSeekTime = nextSeekTime;
       DoAudioSeek();
       return;
     }

@@ -331,7 +331,7 @@ nsMemoryInfoDumper::DumpGCAndCCLogsToFile(
   if (aDumpAllTraces) {
     nsCOMPtr<nsICycleCollectorListener> allTracesLogger;
     logger->AllTraces(getter_AddRefs(allTracesLogger));
-    logger = std::move(allTracesLogger);
+    logger = allTracesLogger;
   }
 
   nsCOMPtr<nsICycleCollectorLogSink> logSink;
@@ -357,7 +357,7 @@ nsMemoryInfoDumper::DumpGCAndCCLogsToSink(bool aDumpAllTraces,
   if (aDumpAllTraces) {
     nsCOMPtr<nsICycleCollectorListener> allTracesLogger;
     logger->AllTraces(getter_AddRefs(allTracesLogger));
-    logger = std::move(allTracesLogger);
+    logger = allTracesLogger;
   }
 
   logger->SetLogSink(aSink);

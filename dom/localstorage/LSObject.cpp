@@ -321,8 +321,8 @@ nsresult LSObject::CreateForWindow(nsPIDOMWindowInner* aWindow,
   object->mPrincipalInfo = std::move(principalInfo);
   object->mStoragePrincipalInfo = std::move(storagePrincipalInfo);
   object->mPrivateBrowsingId = privateBrowsingId;
-  object->mClientId = std::move(clientId);
-  object->mClientPrincipalInfo = std::move(clientPrincipalInfo);
+  object->mClientId = clientId;
+  object->mClientPrincipalInfo = clientPrincipalInfo;
   object->mOrigin = origin;
   object->mOriginKey = originKey;
   object->mDocumentURI = documentURI;
@@ -419,7 +419,7 @@ nsresult LSObject::CreateForPrincipal(nsPIDOMWindowInner* aWindow,
   object->mPrincipalInfo = std::move(principalInfo);
   object->mStoragePrincipalInfo = std::move(storagePrincipalInfo);
   object->mPrivateBrowsingId = aPrivate ? 1 : 0;
-  object->mClientId = std::move(clientId);
+  object->mClientId = clientId;
   object->mOrigin = origin;
   object->mOriginKey = originKey;
   object->mDocumentURI = aDocumentURI;

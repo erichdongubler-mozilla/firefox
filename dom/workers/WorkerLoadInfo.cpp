@@ -378,7 +378,7 @@ WorkerLoadInfo::InterfaceRequestor::InterfaceRequestor(
       callbacks->GetInterface(NS_GET_IID(nsILoadContext),
                               getter_AddRefs(baseContext));
     }
-    mOuterRequestor = std::move(callbacks);
+    mOuterRequestor = callbacks;
   }
 
   mLoadContext = new LoadContext(aPrincipal, baseContext);

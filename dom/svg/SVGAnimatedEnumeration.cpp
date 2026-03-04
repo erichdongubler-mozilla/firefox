@@ -162,7 +162,7 @@ nsresult SVGAnimatedEnumeration::SMILEnum::ValueFromString(
       if (valAtom == mapping->mKey) {
         SMILValue val(SMILEnumType::Singleton());
         val.mU.mUint = mapping->mVal;
-        aValue = std::move(val);
+        aValue = val;
         return NS_OK;
       }
       mapping++;

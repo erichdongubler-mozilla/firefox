@@ -9821,7 +9821,7 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
           : ((msg == eMouseDown || msg == eMouseUp) ? 1 : 0);
   mouseOrPointerEvent.mFlags.mIsSynthesizedForTests =
       aOptions.mIsDOMEventSynthesized;
-  mouseOrPointerEvent.mExitFrom = std::move(exitFrom);
+  mouseOrPointerEvent.mExitFrom = exitFrom;
   mouseOrPointerEvent.mCallbackId = notifier.SaveCallback();
 
   nsPresContext* presContext = aPresShell->GetPresContext();

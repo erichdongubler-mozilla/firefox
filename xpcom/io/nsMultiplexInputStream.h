@@ -79,7 +79,7 @@ class nsMultiplexInputStream final : public nsIMultiplexInputStream,
         nsresult rv = NS_NewBufferedInputStream(getter_AddRefs(bufferedStream),
                                                 mBufferedStream.forget(), 4096);
         NS_ENSURE_SUCCESS(rv, rv);
-        mBufferedStream = std::move(bufferedStream);
+        mBufferedStream = bufferedStream;
       }
 
       mAsyncStream = do_QueryInterface(mBufferedStream);

@@ -505,7 +505,7 @@ RefPtr<ClientOpPromise> ClientOpenWindow(
   nsCOMPtr<nsIURI> nullPrincipalURI = NullPrincipal::CreateURI(nullptr);
   nsCOMPtr<nsIPrincipal> initialPrincipal =
       NullPrincipal::Create(principal->OriginAttributesRef(), nullPrincipalURI);
-  openInfo->mPrincipalToInheritForAboutBlank = std::move(initialPrincipal);
+  openInfo->mPrincipalToInheritForAboutBlank = initialPrincipal;
   openInfo->mIsRemote = true;
 
   RefPtr<BrowsingContext> bc;

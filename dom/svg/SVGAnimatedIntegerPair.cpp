@@ -191,7 +191,7 @@ nsresult SVGAnimatedIntegerPair::SMILIntegerPair::ValueFromString(
   SMILValue val(SVGIntegerPairSMILType::Singleton());
   val.mU.mIntPair[0] = values[0];
   val.mU.mIntPair[1] = values[1];
-  aValue = std::move(val);
+  aValue = val;
 
   return NS_OK;
 }

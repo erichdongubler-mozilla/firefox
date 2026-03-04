@@ -311,7 +311,7 @@ static nsresult DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   if (addonPrincipal) {
     // call CheckLoadURIWithPrincipal() as below to continue other checks, but
     // with the addon principal.
-    triggeringPrincipal = std::move(addonPrincipal);
+    triggeringPrincipal = addonPrincipal;
   }
 
   // Only call CheckLoadURIWithPrincipal() using the TriggeringPrincipal and not

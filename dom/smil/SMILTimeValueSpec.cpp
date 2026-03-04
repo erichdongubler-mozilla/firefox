@@ -59,7 +59,7 @@ nsresult SMILTimeValueSpec::SetSpec(const nsAString& aStringSpec,
   if (!SMILParserUtils::ParseTimeValueSpecParams(aStringSpec, params))
     return NS_ERROR_FAILURE;
 
-  mParams = std::move(params);
+  mParams = params;
 
   // According to SMIL 3.0:
   //   The special value "indefinite" does not yield an instance time in the

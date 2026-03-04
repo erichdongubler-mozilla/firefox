@@ -488,7 +488,7 @@ void ResponsiveImageDescriptors::AddDescriptor(const nsAString& aDescriptor) {
             nsContentUtils::ParseHTMLFloatingPointNumber(valueStr)) {
       if (*possibleDensity >= 0.0 && mWidth.isNothing() &&
           mDensity.isNothing() && mFutureCompatHeight.isNothing()) {
-        mDensity = std::move(possibleDensity);
+        mDensity = possibleDensity;
       } else {
         // Valid density descriptor, but height or width or density were already
         // seen, or it parsed to less than zero, which is an error per spec

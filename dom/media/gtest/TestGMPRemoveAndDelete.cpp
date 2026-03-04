@@ -468,5 +468,5 @@ void GMPRemoveTest::GeneratePlugin() {
 
   EXPECT_OK(origDir->GetPath(mOriginalPath));
   EXPECT_OK(tmpDir->GetPath(mTmpPath));
-  mTmpDir = std::move(tmpDir);
+  mTmpDir = tmpDir;
 }

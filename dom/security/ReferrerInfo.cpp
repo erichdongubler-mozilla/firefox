@@ -1400,13 +1400,13 @@ nsresult ReferrerInfo::ComputeReferrer(nsIHttpChannel* aChannel) {
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-    referrer = std::move(userSpoofReferrer);
+    referrer = userSpoofReferrer;
   }
 
   // strip away any userpass; we don't want to be giving out passwords ;-)
   // This is required by Referrer Policy stripping algorithm.
   nsCOMPtr<nsIURI> exposableURI = nsIOService::CreateExposableURI(referrer);
-  referrer = std::move(exposableURI);
+  referrer = exposableURI;
 
   // Don't send referrer when the request is cross-origin and policy is
   // "same-origin".

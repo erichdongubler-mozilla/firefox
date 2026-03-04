@@ -3186,7 +3186,7 @@ static nsresult GetTopImpl(nsGlobalWindowOuter* aWin, nsIURI* aURIBeingLoaded,
           // result after computing it the first time.
           if (BasePrincipal::Cast(p->GetPrincipal())
                   ->AddonAllowsLoad(uri, true)) {
-            parent = std::move(prevParent);
+            parent = prevParent;
             break;
           }
         }

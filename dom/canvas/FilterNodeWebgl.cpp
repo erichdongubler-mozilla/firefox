@@ -867,16 +867,16 @@ void FilterNodeTableTransferWebgl::SetAttribute(uint32_t aIndex,
   std::vector<Float> table(aValues, aValues + aSize);
   switch (aIndex) {
     case ATT_TABLE_TRANSFER_TABLE_R:
-      mTableR = std::move(table);
+      mTableR = table;
       break;
     case ATT_TABLE_TRANSFER_TABLE_G:
-      mTableG = std::move(table);
+      mTableG = table;
       break;
     case ATT_TABLE_TRANSFER_TABLE_B:
-      mTableB = std::move(table);
+      mTableB = table;
       break;
     case ATT_TABLE_TRANSFER_TABLE_A:
-      mTableA = std::move(table);
+      mTableA = table;
       break;
     default:
       MOZ_ASSERT(false);

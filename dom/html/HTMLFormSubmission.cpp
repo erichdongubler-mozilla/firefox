@@ -464,7 +464,7 @@ nsresult FSMultipartFormData::AddNameBlobPair(const nsAString& aName,
                                    fileStream.forget(), 8192);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    fileStream = std::move(bufferedStream);
+    fileStream = bufferedStream;
   }
 
   AddDataChunk(nameStr, filename, contentType, fileStream, size);

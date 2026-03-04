@@ -139,9 +139,7 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
         NS_ERROR("Bad AudioBufferSourceNodeEngine Int32Parameter");
     }
   }
-  void SetBuffer(AudioChunk&& aBuffer) override {
-    mBuffer = std::move(aBuffer);
-  }
+  void SetBuffer(AudioChunk&& aBuffer) override { mBuffer = aBuffer; }
 
   bool BegunResampling() { return mBeginProcessing == -TRACK_TIME_MAX; }
 

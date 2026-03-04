@@ -73,7 +73,7 @@ void AnimationEffect::SetSpecifiedTiming(TimingParams&& aTiming) {
     return;
   }
 
-  mTiming = std::move(aTiming);
+  mTiming = aTiming;
 
   UpdateNormalizedTiming();
 

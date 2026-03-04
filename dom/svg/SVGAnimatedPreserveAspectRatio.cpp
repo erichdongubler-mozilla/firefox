@@ -203,7 +203,7 @@ nsresult SMILPreserveAspectRatio::ValueFromString(
 
   SMILValue val(SMILEnumType::Singleton());
   val.mU.mUint = PackPreserveAspectRatio(par);
-  aValue = std::move(val);
+  aValue = val;
   return NS_OK;
 }
 

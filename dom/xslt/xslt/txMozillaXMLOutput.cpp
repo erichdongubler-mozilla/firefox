@@ -324,7 +324,7 @@ nsresult txMozillaXMLOutput::endElement() {
     mNonAddedNode = nullptr;
   }
 
-  mCurrentNode = std::move(parent);
+  mCurrentNode = parent;
 
   mTableState =
       static_cast<TableState>(NS_PTR_TO_INT32(mTableStateStack.pop()));

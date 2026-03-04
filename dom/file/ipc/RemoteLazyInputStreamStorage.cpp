@@ -160,7 +160,7 @@ void RemoteLazyInputStreamStorage::GetStream(const nsID& aID, uint64_t aStart,
       return;
     }
 
-    data->mInputStream = std::move(replacementStream);
+    data->mInputStream = replacementStream;
   }
 
   // Now it's the right time to apply a slice if needed.
