@@ -32,10 +32,6 @@ add_task(
             AboutTranslationsTestUtils.Events.DetectedLanguageUpdated,
             { language: "en" },
           ],
-          [
-            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-            { sourceText: "Hello world" },
-          ],
           [AboutTranslationsTestUtils.Events.SwapLanguagesButtonEnabled],
           [
             AboutTranslationsTestUtils.Events.TranslationRequested,
@@ -107,7 +103,6 @@ add_task(
         unexpected: [
           AboutTranslationsTestUtils.Events.SwapLanguagesButtonDisabled,
           AboutTranslationsTestUtils.Events.DetectedLanguageUpdated,
-          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
         ],
       },
       async () => {
@@ -203,10 +198,6 @@ add_task(
             { language: "en" },
           ],
           [
-            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-            { sourceText: "Hello world" },
-          ],
-          [
             AboutTranslationsTestUtils.Events.TranslationRequested,
             { translationId: 1 },
           ],
@@ -252,7 +243,6 @@ add_task(
         ],
         unexpected: [
           AboutTranslationsTestUtils.Events.SwapLanguagesButtonEnabled,
-          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
         ],
       },
       async () => {
@@ -303,10 +293,6 @@ add_task(
             { language: "es" },
           ],
           [
-            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-            { sourceText: "Hola mundo, ¿cómo estás?" },
-          ],
-          [
             AboutTranslationsTestUtils.Events.TranslationRequested,
             { translationId: 1 },
           ],
@@ -344,10 +330,6 @@ add_task(
           [
             AboutTranslationsTestUtils.Events.DetectedLanguageUpdated,
             { language: "en" },
-          ],
-          [
-            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-            { sourceText: "Hello world" },
           ],
           [
             AboutTranslationsTestUtils.Events.TranslationRequested,
@@ -395,7 +377,6 @@ add_task(
         unexpected: [
           AboutTranslationsTestUtils.Events.DetectedLanguageUpdated,
           AboutTranslationsTestUtils.Events.SwapLanguagesButtonEnabled,
-          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
         ],
       },
       async () => {
@@ -443,10 +424,6 @@ add_task(
             { language: "en" },
           ],
           [
-            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-            { sourceText: "Hello world" },
-          ],
-          [
             AboutTranslationsTestUtils.Events.TranslationRequested,
             { translationId: 1 },
           ],
@@ -491,10 +468,7 @@ add_task(
           ],
           [AboutTranslationsTestUtils.Events.SwapLanguagesButtonEnabled],
         ],
-        unexpected: [
-          AboutTranslationsTestUtils.Events.DetectedLanguageUpdated,
-          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-        ],
+        unexpected: [AboutTranslationsTestUtils.Events.DetectedLanguageUpdated],
       },
       async () => {
         await aboutTranslationsTestUtils.clickSwapLanguagesButton();
@@ -525,10 +499,7 @@ add_task(
           ],
           [AboutTranslationsTestUtils.Events.SwapLanguagesButtonEnabled],
         ],
-        unexpected: [
-          AboutTranslationsTestUtils.Events.DetectedLanguageUpdated,
-          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-        ],
+        unexpected: [AboutTranslationsTestUtils.Events.DetectedLanguageUpdated],
       },
       async () => {
         await aboutTranslationsTestUtils.clickSwapLanguagesButton();

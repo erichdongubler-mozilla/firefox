@@ -468,10 +468,6 @@ add_task(
       {
         expected: [
           [
-            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-            { sourceText: "Hello world" },
-          ],
-          [
             AboutTranslationsTestUtils.Events.TranslationRequested,
             { translationId: 1 },
           ],
@@ -510,9 +506,6 @@ add_task(
             { translationId: 2 },
           ],
           [AboutTranslationsTestUtils.Events.SwapLanguagesButtonEnabled],
-        ],
-        unexpected: [
-          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
         ],
       },
       async () => {

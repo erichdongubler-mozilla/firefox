@@ -52,10 +52,6 @@ add_task(
       {
         expected: [
           [
-            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-            { sourceText: "Hello world" },
-          ],
-          [
             AboutTranslationsTestUtils.Events.TranslationRequested,
             { translationId: 1 },
           ],
@@ -112,10 +108,7 @@ add_task(
           ],
           [AboutTranslationsTestUtils.Events.ShowTranslatingPlaceholder],
         ],
-        unexpected: [
-          AboutTranslationsTestUtils.Events.TranslationComplete,
-          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-        ],
+        unexpected: [AboutTranslationsTestUtils.Events.TranslationComplete],
       },
       async () => {
         info("Swap languages to Arabic source and English target");

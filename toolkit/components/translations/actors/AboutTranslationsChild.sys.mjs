@@ -86,10 +86,6 @@ export class AboutTranslationsChild extends JSWindowActorChild {
     }
   }
 
-  RPMGetFormatURLPref(formatURL) {
-    return Services.urlFormatter.formatURLPref(formatURL);
-  }
-
   /**
    * @param {object} detail
    */
@@ -155,8 +151,8 @@ export class AboutTranslationsChild extends JSWindowActorChild {
       "AT_identifyLanguage",
       "AT_getDisplayName",
       "AT_getScriptDirection",
+      "AT_openSupportPage",
       "AT_telemetry",
-      "RPMGetFormatURLPref",
     ];
     for (const name of fns) {
       Cu.exportFunction(this[name].bind(this), window, { defineAs: name });
@@ -188,6 +184,13 @@ export class AboutTranslationsChild extends JSWindowActorChild {
    */
   AT_getAppLocale() {
     return Services.locale.appLocaleAsBCP47;
+  }
+
+  /**
+   * Opens the trusted link to the official Translations support page.
+   */
+  AT_openSupportPage() {
+    this.sendAsyncMessage("AboutTranslations:OpenSupportPage");
   }
 
   /**

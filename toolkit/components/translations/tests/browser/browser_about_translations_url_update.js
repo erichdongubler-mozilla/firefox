@@ -73,10 +73,6 @@ add_task(async function test_about_translations_url_src_param_updates() {
     {
       expected: [
         [
-          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-          { sourceText: "Hello world" },
-        ],
-        [
           AboutTranslationsTestUtils.Events.URLUpdatedFromUI,
           {
             sourceLanguage: "ko",

@@ -338,31 +338,6 @@ async function openAboutTranslations({
 
   if (!disabled) {
     await aboutTranslationsTestUtils.waitForReady();
-    await aboutTranslationsTestUtils.setThrottleDelay(25);
-
-    const isTranslationEngineSupported =
-      TranslationsParent.getIsTranslationsEngineSupported();
-
-    if (isTranslationEngineSupported) {
-      // Consume any debounce event from startup so that test cases
-      // will only receive debounce events from within the test task.
-      await aboutTranslationsTestUtils.setDebounceDelay(0);
-      await aboutTranslationsTestUtils.assertEvents(
-        {
-          expected: [
-            [
-              AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-              { sourceText: "" },
-            ],
-          ],
-        },
-        async () => {
-          await aboutTranslationsTestUtils.setSourceTextAreaValue("");
-        }
-      );
-    }
-
-    await aboutTranslationsTestUtils.setDebounceDelay(100);
 
     if (requireManualCopyButtonReset !== undefined) {
       await aboutTranslationsTestUtils.setManualCopyButtonResetEnabled(
@@ -4273,12 +4248,6 @@ class AboutTranslationsTestUtils {
       "AboutTranslationsTest:ShowTranslatingPlaceholder";
 
     /**
-     * Event fired when the debounce-delay action triggers after input to the source text.
-     */
-    static SourceTextInputDebounced =
-      "AboutTranslationsTest:SourceTextInputDebounced";
-
-    /**
      * Event fired after the URL has been updated from UI interactions.
      *
      * @type {string}
@@ -4496,27 +4465,6 @@ class AboutTranslationsTestUtils {
     await loadNewPage(this.#browser, url.href);
 
     await this.waitForReady();
-  }
-
-  /**
-   * Sets a new delay timer for the throttle on reacting to input.
-   *
-   * @param {number} ms - The delay milliseconds.
-   * @returns {Promise<void>}
-   */
-  async setThrottleDelay(ms) {
-    logAction(ms);
-    try {
-      await this.#runInPage(
-        (_, { ms }) => {
-          const { window } = content;
-          Cu.waiveXrays(window).THROTTLE_DELAY = ms;
-        },
-        { ms }
-      );
-    } catch (error) {
-      AboutTranslationsTestUtils.#reportTestFailure(error);
-    }
   }
 
   /**

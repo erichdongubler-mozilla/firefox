@@ -4,9 +4,10 @@
 "use strict";
 
 /**
- * This test case ensures source text input is translated on the debounce schedule.
+ * This test case ensures that new inputs to the source text area are only picked
+ * up once every cycle of the debounce delay.
  */
-add_task(async function test_about_translations_scheduling() {
+add_task(async function test_about_translations_debounce() {
   const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations({
     languagePairs: [
       { fromLang: "en", toLang: "fr" },
@@ -17,10 +18,6 @@ add_task(async function test_about_translations_scheduling() {
   await aboutTranslationsTestUtils.assertEvents(
     {
       expected: [
-        [
-          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-          { sourceText: "Hello world" },
-        ],
         [
           AboutTranslationsTestUtils.Events.TranslationRequested,
           { translationId: 1 },
@@ -60,32 +57,28 @@ add_task(async function test_about_translations_scheduling() {
       unexpected: [
         AboutTranslationsTestUtils.Events.URLUpdatedFromUI,
         AboutTranslationsTestUtils.Events.TranslationRequested,
-        AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
       ],
     },
     async () => {
-      info("Temporarily increasing the debounce delay to ten seconds.");
-      await aboutTranslationsTestUtils.setDebounceDelay(10_000);
+      info("Temporarily increasing the debounce delay to one second.");
+      const oneSecondDelay = 1000;
+      await aboutTranslationsTestUtils.setDebounceDelay(oneSecondDelay);
       await aboutTranslationsTestUtils.setSourceTextAreaValue(
         "This text should not be translated"
       );
 
-      info("Waiting after updating the text.");
+      info("Waiting half a second after updating the text.");
       // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, oneSecondDelay / 2));
     }
   );
 
-  info("Restoring the debounce delay to 100ms.");
-  await aboutTranslationsTestUtils.setDebounceDelay(100);
+  info("Restoring the debounce delay to 200ms.");
+  await aboutTranslationsTestUtils.setDebounceDelay(200);
 
   await aboutTranslationsTestUtils.assertEvents(
     {
       expected: [
-        [
-          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-          { sourceText: "This text will be translated" },
-        ],
         [
           AboutTranslationsTestUtils.Events.URLUpdatedFromUI,
           {

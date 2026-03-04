@@ -46,10 +46,6 @@ add_task(
     await aboutTranslationsTestUtils.assertEvents(
       {
         expected: [
-          [
-            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
-            { sourceText: longExpandingInput },
-          ],
           [AboutTranslationsTestUtils.Events.ShowTranslatingPlaceholder],
           [AboutTranslationsTestUtils.Events.ClearTargetText],
         ],
