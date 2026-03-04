@@ -32,6 +32,14 @@ interface AndroidFileUtils {
     fun getTreeDocumentId(uri: Uri): String?
 
     /**
+     * Extracts the user-friendly display name of the directory represented by the given tree URI.
+     *
+     * @param uri The tree URI to query for a display name.
+     * @return The display name of the directory, or null if the name cannot be resolved.
+     */
+    fun getTreeUriName(uri: Uri): String?
+
+    /**
      * Checks if the application holds persisted read and write permissions for a given content URI.
      *
      * @param uri The URI to check for permissions.

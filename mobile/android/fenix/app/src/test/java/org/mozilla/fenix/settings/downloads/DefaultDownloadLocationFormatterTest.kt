@@ -101,13 +101,72 @@ class DefaultDownloadLocationFormatterTest {
     }
 
     @Test
-    fun `Given a non-tree content URI, When getFriendlyPath is called, Then it should use the last path segment`() {
-        val contentUri = "content://media/external/downloads/123"
-        val fakeAndroidFileUtils = FakeAndroidFileUtils(getTreeDocumentId = { contentUri })
+    fun `GIVEN a cloud provider URI with a generic name, WHEN getFriendlyPath is called, THEN it should format with the provider name`() {
+        val cloudUri = "content://org.nextcloud.documents/tree/004803b794aac0ea1813c190f2191c54%2F1"
+
+        val fakeAndroidFileUtils = FakeAndroidFileUtils(
+            getTreeUriName = { "/" },
+        )
         val formatter = DefaultDownloadLocationFormatter(fakeAndroidFileUtils)
 
-        val friendlyPath = formatter.getFriendlyPath(contentUri)
+        val friendlyPath = formatter.getFriendlyPath(cloudUri)
 
-        assertEquals("~/123", friendlyPath)
+        assertEquals("/Nextcloud", friendlyPath)
+    }
+
+    @Test
+    fun `GIVEN a cloud URI with a specific folder name, WHEN getFriendlyPath is called, THEN it should use that folder name`() {
+        val cloudUri = "content://org.nextcloud.documents/tree/folder_id"
+
+        val fakeAndroidFileUtils = FakeAndroidFileUtils(
+            getTreeUriName = { "Invoices" },
+        )
+        val formatter = DefaultDownloadLocationFormatter(fakeAndroidFileUtils)
+
+        val friendlyPath = formatter.getFriendlyPath(cloudUri)
+
+        assertEquals("/Nextcloud/Invoices", friendlyPath)
+    }
+
+    @Test
+    fun `GIVEN a cloud URI returning a numeric ID, WHEN getFriendlyPath is called, THEN it should fallback to provider name`() {
+        val cloudUri = "content://com.microsoft.skydrive.content.external/tree/12345"
+
+        val fakeAndroidFileUtils = FakeAndroidFileUtils(
+            getTreeUriName = { "12345" },
+        )
+        val formatter = DefaultDownloadLocationFormatter(fakeAndroidFileUtils)
+
+        val friendlyPath = formatter.getFriendlyPath(cloudUri)
+
+        assertEquals("/OneDrive", friendlyPath)
+    }
+
+    @Test
+    fun `GIVEN an unknown cloud provider, WHEN getFriendlyPath is called, THEN it should extract name from authority`() {
+        val unknownProviderUri = "content://com.unknown.provider/tree/root"
+
+        val fakeAndroidFileUtils = FakeAndroidFileUtils(
+            getTreeUriName = { "/" },
+        )
+        val formatter = DefaultDownloadLocationFormatter(fakeAndroidFileUtils)
+
+        val friendlyPath = formatter.getFriendlyPath(unknownProviderUri)
+
+        assertEquals("/com.unknown.provider", friendlyPath)
+    }
+
+    @Test
+    fun `GIVEN a content URI that returns null name and has no authority, WHEN getFriendlyPath is called, THEN it should return Cloud fallback`() {
+        val weirdUri = "content://invalid-authority"
+
+        val fakeAndroidFileUtils = FakeAndroidFileUtils(
+            getTreeUriName = { null },
+        )
+        val formatter = DefaultDownloadLocationFormatter(fakeAndroidFileUtils)
+
+        val friendlyPath = formatter.getFriendlyPath(weirdUri)
+
+        assertEquals("/invalid-authority", friendlyPath)
     }
 }

@@ -688,6 +688,7 @@ dependencies {
     implementation libs.play.services.ads.id
     implementation libs.protobuf.javalite
     implementation libs.sentry
+    implementation libs.androidx.documentfile
 
     debugImplementation libs.androidx.compose.ui.tooling
     debugImplementation libs.leakcanary

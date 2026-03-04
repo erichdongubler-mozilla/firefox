@@ -8,6 +8,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
+import androidx.documentfile.provider.DocumentFile
 import java.io.File
 
 /**
@@ -27,6 +28,8 @@ class DefaultAndroidFileUtils(
     override fun isTreeUri(uri: Uri): Boolean = DocumentsContract.isTreeUri(uri)
 
     override fun getTreeDocumentId(uri: Uri): String? = DocumentsContract.getTreeDocumentId(uri)
+
+    override fun getTreeUriName(uri: Uri): String? = DocumentFile.fromTreeUri(context, uri)?.name
 
     override fun hasUriPermission(uri: Uri): Boolean {
         val persistedPermissions = context.contentResolver.persistedUriPermissions
