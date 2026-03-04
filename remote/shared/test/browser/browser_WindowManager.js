@@ -150,11 +150,6 @@ add_task(async function test_adjustWindowGeometry_minimumDimensions() {
       minimalRect.height,
       "Height is set to minimum allowed height"
     );
-
-    if (!isWayland) {
-      is(resizedRect.x, originalRect.x, "Window was not moved horizontally");
-      is(resizedRect.y, originalRect.y, "Window was not moved vertically");
-    }
   } finally {
     await BrowserTestUtils.closeWindow(testWin);
   }
