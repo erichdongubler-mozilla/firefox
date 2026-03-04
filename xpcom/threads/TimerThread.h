@@ -52,9 +52,11 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
             CreateEvent(nullptr, FALSE, FALSE, nullptr),
             CreateWaitableTimerEx(nullptr, nullptr, 0, TIMER_ALL_ACCESS)
           }} {
-      // These are MOZ_RELEASE_ASSERT's because, if we fail to create any of
-      // those objects, we have no way to continue.
-      MOZ_RELEASE_ASSERT(GetHiResTimer() != nullptr);
+      // These are MOZ_RELEASE_ASSERT's because, if we fail to create either of
+      // those objects, we have no way to continue. GetHiResTimer() is not
+      // checked and could possibly be nullptr on old-enough versions of Windows
+      // that don't support high-res timers. We allow this and fall back to
+      // lo-res timers in that case.
       MOZ_RELEASE_ASSERT(GetEvent() != nullptr);
       MOZ_RELEASE_ASSERT(GetLoResTimer() != nullptr);
     }
@@ -64,8 +66,10 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
       MOZ_ASSERT(b0 != 0);
       [[maybe_unused]] const BOOL b1 = CloseHandle(GetEvent());
       MOZ_ASSERT(b1 != 0);
-      [[maybe_unused]] const BOOL b2 = CloseHandle(GetHiResTimer());
-      MOZ_ASSERT(b2 != 0);
+      if (GetHiResTimer()) {
+        [[maybe_unused]] const BOOL b2 = CloseHandle(GetHiResTimer());
+        MOZ_ASSERT(b2 != 0);
+      }
     }
 
     MOZ_ALWAYS_INLINE void Lock() MOZ_CAPABILITY_ACQUIRE() { mMutex.Lock(); }
@@ -114,7 +118,7 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
       const LARGE_INTEGER duration{
           .QuadPart = static_cast<int64_t>(aDuration_us) * -10LL};
 
-      if (aTolerance_ms <= sHiResThreshold_ms) {
+      if (aTolerance_ms <= sHiResThreshold_ms && GetHiResTimer()) {
         WaitHiRes(&duration);
       } else {
         WaitLoRes(&duration, aTolerance_ms);
