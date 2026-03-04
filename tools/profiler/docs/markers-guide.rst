@@ -618,6 +618,9 @@ The arguments is a string that may refer to marker data within braces:
 
 * ``{marker.name}``: Marker name.
 * ``{marker.data.X}``: Type-specific data, as streamed with property name "X" from ``StreamJSONMarkerData`` (e.g., ``aWriter.IntProperty("X", a number);``
+* ``{marker.data.X ? 'yes' : 'no'}``: Ternary expression — renders the first string when the field is truthy,
+  or the second string when it is falsy (null, undefined, 0, false, or empty string).
+  Only ``marker.data.*`` fields are supported as the condition, and both branches must be single-quoted string literals.
 
 For example, here's how to set the Marker Chart label to show the marker name and the
 ``myBytes`` number of bytes:
@@ -626,6 +629,13 @@ For example, here's how to set the Marker Chart label to show the marker name an
 
     // …
         static constexpr const char* ChartLabel = "{marker.name} – {marker.data.myBytes}";
+
+Ternary expressions can be combined with regular field lookups. For instance, a label could conditionally show an icon when a request was canceled:
+
+.. code-block:: cpp
+
+    // …
+        static constexpr const char* TableLabel = "{marker.data.canceled ? '❌' : ''} {marker.data.delay}";
 
 profiler.firefox.com will apply the label with the data in a consistent manner. For
 example, with this label definition, it could display marker information like the
