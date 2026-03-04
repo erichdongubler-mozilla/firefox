@@ -54,10 +54,6 @@
         "issue": "broken-interactive-elements",
         "matches": ["*://*.franmar.com/*"]
       },
-      "1944009": {
-        "issue": "broken-interactive-elements",
-        "matches": ["*://*.iledefrance-mobilites.fr/*"]
-      },
       "1944010": {
         "issue": "broken-interactive-elements",
         "matches": ["*://*.lafoodbank.org/*"]
