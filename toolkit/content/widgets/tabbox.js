@@ -573,10 +573,52 @@
       this.toggleAttribute("splitview", isActive);
       this.splitViewSplitter.hidden = !isActive;
       const selectedPanel = this.selectedPanel;
+
+      /**
+       * Check whether `node` follows `a` in DOM order, and optionally
+       * precedes `b`.
+       *
+       * @param {Node} node - The node to test.
+       * @param {Node} a - `node` must follow this element.
+       * @param {Node} [b] - If provided, `node` must also precede this element.
+       * @returns {boolean}
+       */
+      const isBetween = (node, a, b = null) => {
+        const isAfterA = Boolean(
+          node.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_PRECEDING
+        );
+        if (!b) {
+          return isAfterA;
+        }
+        const isBeforeB = Boolean(
+          node.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING
+        );
+        return isAfterA && isBeforeB;
+      };
+
       if (isActive) {
-        // Place splitter after first panel, so that it can be resized.
+        // Ensure panels are in the correct DOM order so that focus moves
+        // as expected when tabbing across a splitview
         const firstPanel = document.getElementById(this.splitViewPanels[0]);
-        firstPanel?.after(this.#splitViewSplitter);
+        const secondPanel = document.getElementById(this.splitViewPanels[1]);
+        if (firstPanel && secondPanel) {
+          // Does secondPanel follow firstPanel? Move firstPanel before secondPanel if necessary
+          if (
+            !(
+              firstPanel.compareDocumentPosition(secondPanel) &
+              Node.DOCUMENT_POSITION_FOLLOWING
+            )
+          ) {
+            firstPanel.parentElement.moveBefore(firstPanel, secondPanel);
+          }
+        }
+        // Ensure the splitter is in-between the panels
+        if (
+          firstPanel &&
+          !isBetween(this.#splitViewSplitter, firstPanel, secondPanel)
+        ) {
+          firstPanel.after(this.#splitViewSplitter);
+        }
       }
       // Ensure that selected index stays up to date, in case the splitter
       // offsets it.
