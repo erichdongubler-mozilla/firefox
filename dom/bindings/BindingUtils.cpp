@@ -2329,17 +2329,42 @@ bool DictionaryBase::ParseJSON(JSContext* aCx, const nsAString& aJSON,
   return JS_ParseJSON(aCx, aJSON.BeginReading(), aJSON.Length(), aVal);
 }
 
+bool DictionaryBase::ParseJSON(JSContext* aCx, const nsACString& aJSON,
+                               JS::MutableHandle<JS::Value> aVal) {
+  if (aJSON.IsEmpty()) {
+    return true;
+  }
+  if (IsAscii(aJSON)) {
+    return JS_ParseJSON(
+        aCx, reinterpret_cast<const JS::Latin1Char*>(aJSON.BeginReading()),
+        aJSON.Length(), aVal);
+  }
+  nsAutoString utf16;
+  if (!CopyUTF8toUTF16(aJSON, utf16, fallible)) {
+    return false;
+  }
+  return JS_ParseJSON(aCx, utf16.BeginReading(), utf16.Length(), aVal);
+}
+
+static bool AppendJSONToString(const char16_t* aJSONData, uint32_t aDataLength,
+                               void* aString) {
+  nsAString* string = static_cast<nsAString*>(aString);
+  string->Append(aJSONData, aDataLength);
+  return true;
+}
+
 bool DictionaryBase::StringifyToJSON(JSContext* aCx, JS::Handle<JSObject*> aObj,
                                      nsAString& aJSON) const {
   return JS::ToJSONMaybeSafely(aCx, aObj, AppendJSONToString, &aJSON);
 }
 
-/* static */
-bool DictionaryBase::AppendJSONToString(const char16_t* aJSONData,
-                                        uint32_t aDataLength, void* aString) {
-  nsAString* string = static_cast<nsAString*>(aString);
-  string->Append(aJSONData, aDataLength);
-  return true;
+bool DictionaryBase::StringifyToJSON(JSContext* aCx, JS::Handle<JSObject*> aObj,
+                                     nsACString& aJSON) const {
+  nsAutoString json;
+  if (!StringifyToJSON(aCx, aObj, json)) {
+    return false;
+  }
+  return CopyUTF16toUTF8(json, aJSON, fallible);
 }
 
 void UpdateReflectorGlobal(JSContext* aCx, JS::Handle<JSObject*> aObjArg,

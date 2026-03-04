@@ -17872,11 +17872,11 @@ class CGDictionary(CGThing):
             body=body,
         )
 
-    def initFromJSONMethod(self):
+    def initFromJSONMethod(self, string):
         return ClassMethod(
             "Init",
             "bool",
-            [Argument("const nsAString&", "aJSON")],
+            [Argument(f"const {string}&", "aJSON")],
             body=dedent(
                 """
                 AutoJSAPI jsapi;
@@ -17896,11 +17896,11 @@ class CGDictionary(CGThing):
             ),
         )
 
-    def toJSONMethod(self):
+    def toJSONMethod(self, string):
         return ClassMethod(
             "ToJSON",
             "bool",
-            [Argument("nsAString&", "aJSON")],
+            [Argument(f"{string}&", "aJSON")],
             body=dedent(
                 """
                 AutoJSAPI jsapi;
@@ -18220,13 +18220,15 @@ class CGDictionary(CGThing):
 
         canBeRepresentedAsJSON = self.dictionarySafeToJSONify(d)
         if canBeRepresentedAsJSON and d.getExtendedAttribute("GenerateInitFromJSON"):
-            methods.append(self.initFromJSONMethod())
+            methods.append(self.initFromJSONMethod("nsAString"))
+            methods.append(self.initFromJSONMethod("nsACString"))
 
         if d.needsConversionToJS:
             methods.append(self.toObjectInternalMethod())
 
         if canBeRepresentedAsJSON and d.getExtendedAttribute("GenerateToJSON"):
-            methods.append(self.toJSONMethod())
+            methods.append(self.toJSONMethod("nsAString"))
+            methods.append(self.toJSONMethod("nsACString"))
 
         methods.append(self.traceDictionaryMethod())
 

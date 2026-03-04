@@ -1918,11 +1918,12 @@ These methods will initialize the dictionary from `val` by following WebIDL's
 
 ### `[GenerateInitFromJSON]`
 
-When set on a dictionary it will add an `Init` method to the generated C++
-class with the following signature:
+When set on a dictionary it will add `Init` methods to the generated C++
+class with the following signatures:
 
 ``` cpp
 bool Init(const nsAString& aJSON);
+bool Init(const nsACString& aJSON);
 ```
 
 This extended attribute will only have an effect if all of the types of the
@@ -1941,11 +1942,12 @@ extended attribute.
 
 ### `[GenerateToJSON]`
 
-When set on a dictionary it will add a `ToJSON` method to the generated C++
-class with the following signature:
+When set on a dictionary it will add `ToJSON` methods to the generated C++
+class with the following signatures:
 
 ``` cpp
 bool ToJSON(nsAString& aJSON);
+bool ToJSON(nsACString& aJSON);
 ```
 
 The method will generate a JSON representation of the dictionary members' values
