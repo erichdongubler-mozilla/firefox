@@ -21,6 +21,7 @@
     />
     <link rel="localization" href="branding/brand.ftl" />
     <link rel="localization" href="toolkit/global/mozMessageBar.ftl" />
+    <link rel="localization" href="toolkit/global/mozSupportLink.ftl" />
     <link rel="localization" href="toolkit/about/aboutTranslations.ftl" />
     <script
       type="module"
@@ -49,11 +50,14 @@
         ></h1>
       </div>
       <div id="about-translations-description">
-        <span data-l10n-id="about-translations-description"></span>
+        <span
+          id="about-translations-description-text"
+          data-l10n-id="about-translations-description"
+        ></span>
         <a
           id="about-translations-learn-more-link"
           is="moz-support-link"
-          data-l10n-id="about-translations-learn-more-link"
+          href="#"
           support-page="website-translation"
         ></a>
       </div>

@@ -9,9 +9,12 @@
 /* global AT_getAppLocale, AT_getSupportedLanguages, AT_log, AT_getScriptDirection,
    AT_getDisplayName, AT_logError, AT_createTranslationsPort, AT_isHtmlTranslation,
    AT_isTranslationEngineSupported, AT_isInAutomation, AT_identifyLanguage,
-   AT_openSupportPage, AT_telemetry */
+   AT_telemetry */
 
 import { Translator } from "chrome://global/content/translations/Translator.mjs";
+
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-support-link.mjs";
 
 /**
  * This is the delay for the set of throttled reactions to input in the source text area.
@@ -451,7 +454,6 @@ class AboutTranslations {
   #initializeEventListeners() {
     const {
       copyButton,
-      learnMoreLink,
       sourceLanguageSelector,
       sourceSection,
       sourceSectionClearButton,
@@ -463,7 +465,6 @@ class AboutTranslations {
     } = this.elements;
 
     copyButton.addEventListener("click", this.#onCopyButton);
-    learnMoreLink.addEventListener("click", this.#onLearnMoreLink);
     sourceLanguageSelector.addEventListener(
       "change",
       this.#onSourceLanguageInput
@@ -497,13 +498,6 @@ class AboutTranslations {
     window.addEventListener("resize", this.#onResize);
     window.visualViewport.addEventListener("resize", this.#onResize);
   }
-
-  /**
-   * Handles clicks on the learn-more link.
-   */
-  #onLearnMoreLink = () => {
-    AT_openSupportPage();
-  };
 
   /**
    * Handles mousedown on the source section clear button.
