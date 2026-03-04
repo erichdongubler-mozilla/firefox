@@ -65,6 +65,7 @@ using EditablePointOption = HTMLEditUtils::EditablePointOption;
 using EditablePointOptions = HTMLEditUtils::EditablePointOptions;
 using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
+using TreatInvisibleLineBreakAs = HTMLEditUtils::TreatInvisibleLineBreakAs;
 
 template nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
     const AutoTArray<EditorInlineStyleAndValue, 1>& aStylesToSet,
@@ -503,7 +504,8 @@ nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
             }
             // We shouldn't wrap invisible text node in new inline element.
             if (node->IsText() &&
-                !HTMLEditUtils::IsVisibleTextNode(*node->AsText())) {
+                !HTMLEditUtils::IsVisibleTextNode(
+                    *node->AsText(), TreatInvisibleLineBreakAs::Visible)) {
               continue;
             }
             arrayOfContentsAroundRange.AppendElement(*node->AsContent());
@@ -789,7 +791,8 @@ bool HTMLEditor::AutoInlineStyleSetter::ElementIsGoodContainerToSetStyle(
         return false;  // Assume any elements visible.
       }
       if (Text* text = Text::FromNode(previousSibling)) {
-        if (HTMLEditUtils::IsVisibleTextNode(*text)) {
+        if (HTMLEditUtils::IsVisibleTextNode(
+                *text, TreatInvisibleLineBreakAs::Visible)) {
           return false;
         }
         continue;
@@ -798,14 +801,15 @@ bool HTMLEditor::AutoInlineStyleSetter::ElementIsGoodContainerToSetStyle(
     for (nsIContent* nextSibling = aStyledElement.GetNextSibling(); nextSibling;
          nextSibling = nextSibling->GetNextSibling()) {
       if (nextSibling->IsElement()) {
-        if (!HTMLEditUtils::IsInvisibleBRElement(*nextSibling)) {
+        if (!HTMLEditUtils::IsBRElementFollowedByBlockBoundary(*nextSibling)) {
           return false;
         }
         continue;  // The invisible <br> element may be followed by a child
                    // block, let's continue to check it.
       }
       if (Text* text = Text::FromNode(nextSibling)) {
-        if (HTMLEditUtils::IsVisibleTextNode(*text)) {
+        if (HTMLEditUtils::IsVisibleTextNode(
+                *text, TreatInvisibleLineBreakAs::Visible)) {
           return false;
         }
         continue;
@@ -1948,7 +1952,7 @@ HTMLEditor::AutoInlineStyleSetter::ExtendOrShrinkRangeToApplyTheStyle(
     const WSScanResult nextContentData =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
             {WSRunScanner::Option::OnlyEditableNodes}, range.EndRef());
-    if (nextContentData.ReachedInvisibleBRElement() &&
+    if (nextContentData.ReachedBRElementFollowedByBlockBoundary() &&
         nextContentData.BRElementPtr()->GetParentElement() &&
         HTMLEditUtils::IsInlineContent(
             *nextContentData.BRElementPtr()->GetParentElement(),
@@ -3052,7 +3056,8 @@ nsresult HTMLEditor::GetInlinePropertyBase(const EditorInlineStyle& aStyle,
 
       // just ignore any non-editable nodes
       if (!EditorUtils::IsEditableContent(*textNode, EditorType::HTML) ||
-          !HTMLEditUtils::IsVisibleTextNode(*textNode)) {
+          !HTMLEditUtils::IsVisibleTextNode(
+              *textNode, TreatInvisibleLineBreakAs::Visible)) {
         continue;
       }
 

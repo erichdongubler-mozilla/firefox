@@ -636,8 +636,8 @@ class EditorDOMPointBase final {
    * mOffset may be invalidated.
    */
   template <typename ContainerType>
-  void Set(ContainerType* aContainer, uint32_t aOffset) {
-    mParent = aContainer;
+  void Set(const ContainerType* aContainer, uint32_t aOffset) {
+    mParent = const_cast<ContainerType*>(aContainer);
     mChild = nullptr;
     mOffset = mozilla::Some(aOffset);
     mIsChildInitialized = false;

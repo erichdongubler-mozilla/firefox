@@ -121,6 +121,7 @@ class MOZ_STACK_CLASS WSScanResult final {
                aReason != WSType::NonCollapsibleCharacters &&
                aReason != WSType::PreformattedLineBreak);
     AssertIfInvalidData(aScanner);
+    MaybeSetEditingHost(aScanner);
   }
   WSScanResult(const WSRunScanner& aScanner, ScanDirection aScanDirection,
                const EditorDOMPoint& aPoint, WSType aReason)
@@ -129,6 +130,21 @@ class MOZ_STACK_CLASS WSScanResult final {
         mReason(aReason),
         mDirection(aScanDirection) {
     AssertIfInvalidData(aScanner);
+    MaybeSetEditingHost(aScanner);
+  }
+
+  WSScanResult(WSScanResult&& aResult, EditorLineBreak&& aIgnoredLineBreak,
+               const Element& aEditingHost)
+      : WSScanResult(std::forward<WSScanResult>(aResult)) {
+    MOZ_ASSERT(ReachedBlockBoundary());
+    mIgnoredLineBreak.emplace(std::forward<EditorLineBreak>(aIgnoredLineBreak));
+    // If an editing host is specified and the reached content is outside the
+    // editing host, we should store the editing host to make the method
+    // returning the reached point to return a point in the editing host.
+    Element* const contentEditingHost = mContent->GetEditingHost();
+    if (contentEditingHost && contentEditingHost != &aEditingHost) {
+      mEditingHost = const_cast<Element*>(&aEditingHost);
+    }
   }
 
   static WSScanResult Error() { return WSScanResult(WSType::UnexpectedError); }
@@ -233,7 +249,10 @@ class MOZ_STACK_CLASS WSScanResult final {
 
   /**
    * PointAtReachedContent() returns the position of found visible content or
-   * reached block element.
+   * reached block element. Note that the returned point may be outside the
+   * editing host if WSRunScanner::Option::OnlyEditableNodes is not specified
+   * and the ancestor limiter is not specified or specified outside the editing
+   * host.
    */
   template <typename EditorDOMPointType>
   EditorDOMPointType PointAtReachedContent() const {
@@ -248,29 +267,98 @@ class MOZ_STACK_CLASS WSScanResult final {
                    : EditorDOMPointType(mContent,
                                         std::max(mOffset.valueOr(1), 1u) - 1);
       default:
+        MOZ_ASSERT_IF(mContent == mEditingHost, !ReachedCurrentBlockBoundary());
+        MOZ_ASSERT_IF(mContent == mEditingHost,
+                      !ReachedInlineEditingHostBoundary());
         return EditorDOMPointType(mContent);
     }
   }
 
   /**
+   * Similar to PointAtReachedContent(), but return a boundary point of the
+   * editing host if the reached content is outside of the editing host.
+   */
+  template <typename EditorDOMPointType>
+  EditorDOMPointType PointAtReachedContentOrEditingHostBoundary() const {
+    if (mEditingHost) {
+      MOZ_ASSERT(mContent);
+      MOZ_ASSERT_IF(mContent == mEditingHost, !ReachedCurrentBlockBoundary());
+      MOZ_ASSERT_IF(mContent == mEditingHost,
+                    !ReachedInlineEditingHostBoundary());
+      return mDirection == ScanDirection::Forward
+                 ? EditorDOMPointType::AtEndOf(*mEditingHost)
+                 : EditorDOMPointType(mEditingHost, 0u);
+    }
+    return PointAtReachedContent<EditorDOMPointType>();
+  }
+
+  /**
    * PointAfterReachedContent() returns the next position of found visible
-   * content or reached block element.
+   * content or reached block element. Note that the returned point may be
+   * outside the editing host if WSRunScanner::Option::OnlyEditableNodes is not
+   * specified and the ancestor limiter is not specified or specified outside
+   * the editing host.
    */
   template <typename EditorDOMPointType>
   EditorDOMPointType PointAfterReachedContent() const {
     MOZ_ASSERT(mContent);
+    MOZ_ASSERT_IF(mContent == mEditingHost, !ReachedCurrentBlockBoundary());
+    MOZ_ASSERT_IF(mContent == mEditingHost,
+                  !ReachedInlineEditingHostBoundary());
     return PointAtReachedContent<EditorDOMPointType>()
         .template NextPointOrAfterContainer<EditorDOMPointType>();
   }
 
   /**
+   * Similar to PointAfterReachedContent(), but return a boundary point of the
+   * editing host if the reached content is outside of the editing host.
+   */
+  template <typename EditorDOMPointType>
+  EditorDOMPointType PointAfterReachedContentOrEditingHostBoundary() const {
+    if (mEditingHost) {
+      MOZ_ASSERT(mContent);
+      MOZ_ASSERT_IF(mContent == mEditingHost, !ReachedCurrentBlockBoundary());
+      MOZ_ASSERT_IF(mContent == mEditingHost,
+                    !ReachedInlineEditingHostBoundary());
+      return mDirection == ScanDirection::Forward
+                 ? EditorDOMPointType::AtEndOf(*mEditingHost)
+                 : EditorDOMPointType(mEditingHost, 0u);
+    }
+    return PointAfterReachedContent<EditorDOMPointType>();
+  }
+
+  /**
    * Return the next position of found visible content node.  So, this should
-   * not be used if it reached a visible character middle of a `Text`.
+   * not be used if it reached a visible character middle of a `Text`. Note that
+   * the returned point may be outside the editing host if
+   * WSRunScanner::Option::OnlyEditableNodes is not specified and the ancestor
+   * limiter is not specified or specified outside the editing host.
    */
   template <typename EditorDOMPointType>
   EditorDOMPointType PointAfterReachedContentNode() const {
     MOZ_ASSERT(mContent);
+    MOZ_ASSERT_IF(mContent == mEditingHost, !ReachedCurrentBlockBoundary());
+    MOZ_ASSERT_IF(mContent == mEditingHost,
+                  !ReachedInlineEditingHostBoundary());
     return EditorDOMPointType::After(*mContent);
+  }
+
+  /**
+   * Similar to PointAfterReachedContentNode(), but return a boundary point of
+   * the editing host if the reached content is outside of the editing host.
+   */
+  template <typename EditorDOMPointType>
+  EditorDOMPointType PointAfterReachedContentNodeOrEditingHostBoundary() const {
+    MOZ_ASSERT(mContent);
+    if (mEditingHost) {
+      MOZ_ASSERT_IF(mContent == mEditingHost, !ReachedCurrentBlockBoundary());
+      MOZ_ASSERT_IF(mContent == mEditingHost,
+                    !ReachedInlineEditingHostBoundary());
+      return mDirection == ScanDirection::Forward
+                 ? EditorDOMPointType::AtEndOf(*mEditingHost)
+                 : EditorDOMPointType(mEditingHost, 0u);
+    }
+    return PointAfterReachedContentNode<EditorDOMPointType>();
   }
 
   /**
@@ -394,13 +482,13 @@ class MOZ_STACK_CLASS WSScanResult final {
    * The scanner reached a <br> element.
    */
   bool ReachedBRElement() const { return mReason == WSType::BRElement; }
-  bool ReachedVisibleBRElement() const {
+  bool ReachedBRElementNotFollowedByBlockBoundary() const {
     return ReachedBRElement() &&
-           HTMLEditUtils::IsVisibleBRElement(*BRElementPtr());
+           !HTMLEditUtils::IsBRElementFollowedByBlockBoundary(*BRElementPtr());
   }
-  bool ReachedInvisibleBRElement() const {
+  bool ReachedBRElementFollowedByBlockBoundary() const {
     return ReachedBRElement() &&
-           HTMLEditUtils::IsInvisibleBRElement(*BRElementPtr());
+           HTMLEditUtils::IsBRElementFollowedByBlockBoundary(*BRElementPtr());
   }
 
   bool ReachedPreformattedLineBreak() const {
@@ -478,6 +566,15 @@ class MOZ_STACK_CLASS WSScanResult final {
     }
   }
 
+  /**
+   * Return a reference to editor line break which was ignored at scanning.
+   * If there is, it means that the line break is unnecessary. Note that the
+   * invisible line break may be outside the editing host.
+   */
+  [[nodiscard]] const Maybe<EditorLineBreak>& MaybeIgnoredLineBreak() const {
+    return mIgnoredLineBreak;
+  }
+
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const ScanDirection& aDirection) {
     return aStream << (aDirection == ScanDirection::Backward
@@ -493,12 +590,18 @@ class MOZ_STACK_CLASS WSScanResult final {
       return aStream << " }";
     }
     return aStream << ", mContent: " << aResult.mContent
+                   << ", mEditingHost: " << aResult.mEditingHost
+                   << "< mIgnoredLineBreak: " << aResult.mIgnoredLineBreak
                    << ", mOffset: " << aResult.mOffset
                    << ", mDirection: " << aResult.mDirection << " }";
   }
 
  private:
+  void MaybeSetEditingHost(const WSRunScanner& aScanner);
+
   nsCOMPtr<nsIContent> mContent;
+  RefPtr<Element> mEditingHost;
+  Maybe<EditorLineBreak> mIgnoredLineBreak;
   Maybe<uint32_t> mOffset;
   WSType mReason = WSType::NotInitialized;
   ScanDirection mDirection = ScanDirection::Backward;
@@ -1180,13 +1283,15 @@ class MOZ_STACK_CLASS WSRunScanner final {
       return mStart.IsEmptyInlineContainerElement();
     }
     bool StartsFromBRElement() const { return mStart.IsBRElement(); }
-    bool StartsFromVisibleBRElement() const {
+    bool StartsFromBRElementNotFollowedByBlockBoundary() const {
       return StartsFromBRElement() &&
-             HTMLEditUtils::IsVisibleBRElement(*GetStartReasonContent());
+             !HTMLEditUtils::IsBRElementFollowedByBlockBoundary(
+                 static_cast<HTMLBRElement&>(*GetStartReasonContent()));
     }
-    bool StartsFromInvisibleBRElement() const {
+    bool StartsFromBRElementFollowedByBlockBoundary() const {
       return StartsFromBRElement() &&
-             HTMLEditUtils::IsInvisibleBRElement(*GetStartReasonContent());
+             HTMLEditUtils::IsBRElementFollowedByBlockBoundary(
+                 static_cast<HTMLBRElement&>(*GetStartReasonContent()));
     }
     bool StartsFromPreformattedLineBreak() const {
       return mStart.IsPreformattedLineBreak();
@@ -1212,20 +1317,23 @@ class MOZ_STACK_CLASS WSRunScanner final {
       return mEnd.IsEmptyInlineContainerElement();
     }
     bool EndsByBRElement() const { return mEnd.IsBRElement(); }
-    bool EndsByVisibleBRElement() const {
+    bool EndsByBRElementNotFollowedByBlockBoundary() const {
       return EndsByBRElement() &&
-             HTMLEditUtils::IsVisibleBRElement(*GetEndReasonContent());
+             !HTMLEditUtils::IsBRElementFollowedByBlockBoundary(
+                 static_cast<HTMLBRElement&>(*GetEndReasonContent()));
     }
-    bool EndsByInvisibleBRElement() const {
+    bool EndsByBRElementFollowedByBlockBoundary() const {
       return EndsByBRElement() &&
-             HTMLEditUtils::IsInvisibleBRElement(*GetEndReasonContent());
+             HTMLEditUtils::IsBRElementFollowedByBlockBoundary(
+                 static_cast<HTMLBRElement&>(*GetEndReasonContent()));
     }
     bool EndsByPreformattedLineBreak() const {
       return mEnd.IsPreformattedLineBreak();
     }
-    bool EndsByInvisiblePreformattedLineBreak() const {
+    bool EndsByPreformattedLineBreakFollowedByBlockBoundary() const {
       return mEnd.IsPreformattedLineBreak() &&
-             HTMLEditUtils::IsInvisiblePreformattedNewLine(mEnd.PointRef());
+             HTMLEditUtils::IsPreformattedLineBreakFollowedByBlockBoundary(
+                 mEnd.PointRef(), HTMLEditUtils::SkipWhiteSpaceStyleCheck::Yes);
     }
     bool EndsByCurrentBlockBoundary() const {
       return mEnd.IsCurrentBlockBoundary();
@@ -1640,6 +1748,25 @@ class MOZ_STACK_CLASS WSRunScanner final {
   friend class WhiteSpaceVisibilityKeeper;
   friend class WSScanResult;
 };
+
+inline void WSScanResult::MaybeSetEditingHost(const WSRunScanner& aScanner) {
+  if (!mContent ||
+      aScanner.ScanOptions().contains(
+          WSRunScanner::Option::OnlyEditableNodes) ||
+      MOZ_UNLIKELY(!aScanner.mScanStartPoint.IsInContentNode()) ||
+      !HTMLEditUtils::IsSimplyEditableNode(
+          *aScanner.mScanStartPoint.GetContainer())) {
+    return;
+  }
+  Element* const editingHost =
+      aScanner.mScanStartPoint.ContainerAs<nsIContent>()->GetEditingHost();
+  if (editingHost) {
+    Element* const contentEditingHost = mContent->GetEditingHost();
+    if (editingHost != contentEditingHost) {
+      mEditingHost = editingHost;
+    }
+  }
+}
 
 }  // namespace mozilla
 

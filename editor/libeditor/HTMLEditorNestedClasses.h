@@ -1550,9 +1550,9 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler::
    * boundaries between joining blocks.  If they won't be joined, this
    * collapses the range to aCaretPoint.
    */
-  [[nodiscard]] nsresult ComputeRangeToDelete(const HTMLEditor& aHTMLEditor,
-                                              const EditorDOMPoint& aCaretPoint,
-                                              nsRange& aRangeToDelete) const;
+  [[nodiscard]] nsresult ComputeRangeToDelete(
+      const HTMLEditor& aHTMLEditor, const EditorDOMPoint& aCaretPoint,
+      nsRange& aRangeToDelete, const Element& aEditingHost) const;
 
   /**
    * Join inclusive ancestor block elements which are found by preceding

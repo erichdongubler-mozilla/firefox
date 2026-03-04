@@ -3407,10 +3407,13 @@ class HTMLEditor final : public EditorBase,
    *                                    content.
    *                                    If you deleted something, this should be
    *                                    end of the deleted range.
+   * @param aEditingHost                The editing host containing
+   * aNextOrAfterModifiedPoint.
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   EnsureNoFollowingUnnecessaryLineBreak(
-      const EditorDOMPoint& aNextOrAfterModifiedPoint);
+      const EditorDOMPoint& aNextOrAfterModifiedPoint,
+      const Element& aEditingHost);
 
   /**
    * IndentAsSubAction() indents the content around Selection.

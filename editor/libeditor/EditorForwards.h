@@ -44,6 +44,7 @@ enum class CollectChildrenOption;              // HTMLEditUtils.h
 enum class EditAction;                         // mozilla/EditAction.h
 enum class EditorCommandParamType : uint16_t;  // mozilla/EditorCommands.h
 enum class EditSubAction : int32_t;            // mozilla/EditAction.h
+enum class PaddingForEmptyBlock;               // EditorLineBreak.h
 enum class ParagraphSeparator;                 // mozilla/HTMLEditor.h
 enum class SpecifiedStyle : uint8_t;           // mozilla/PendingStyles.h
 enum class StopTracking : bool;                // mozilla/SelectionState.h

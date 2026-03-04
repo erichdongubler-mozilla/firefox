@@ -33,6 +33,7 @@ namespace mozilla {
 using namespace dom;
 
 using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
+using TreatInvisibleLineBreakAs = HTMLEditUtils::TreatInvisibleLineBreakAs;
 
 Result<EditorDOMPoint, nsresult>
 WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement(
@@ -1730,7 +1731,8 @@ nsresult WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter(
     }
     // If the preceding Text is collapsed and invisible, we should delete it
     // and keep deleting preceding invisible white-spaces.
-    if (!HTMLEditUtils::IsVisibleTextNode(*followingTextNode)) {
+    if (!HTMLEditUtils::IsVisibleTextNode(
+            *followingTextNode, TreatInvisibleLineBreakAs::Invisible)) {
       nsIContent* emptyInlineContent =
           HTMLEditUtils::GetMostDistantAncestorEditableEmptyInlineElement(
               *followingTextNode, BlockInlineCheck::UseComputedDisplayStyle);
@@ -1816,7 +1818,8 @@ nsresult WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore(
     }
     // If the preceding Text is collapsed and invisible, we should delete it
     // and keep deleting preceding invisible white-spaces.
-    if (!HTMLEditUtils::IsVisibleTextNode(*precedingTextNode)) {
+    if (!HTMLEditUtils::IsVisibleTextNode(
+            *precedingTextNode, TreatInvisibleLineBreakAs::Invisible)) {
       nsIContent* emptyInlineContent =
           HTMLEditUtils::GetMostDistantAncestorEditableEmptyInlineElement(
               *precedingTextNode, BlockInlineCheck::UseComputedDisplayStyle);

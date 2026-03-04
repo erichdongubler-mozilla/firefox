@@ -441,7 +441,11 @@ GetPointAtFirstContentOfLineOrParentHTMLBlockIfFirstContentOfBlock(
                 LeafNodeOption::TreatChildBlockAsLeafNode},
                aBlockInlineCheck, &aAncestorLimiter);
        previousEditableContent && previousEditableContent->GetParentNode() &&
-       !HTMLEditUtils::IsVisibleBRElement(*previousEditableContent) &&
+       (!previousEditableContent->IsHTMLElement(nsGkAtoms::br) ||
+        // FIXME: We're scanning backward so that it does not make sense to
+        // check the following thing continuously.
+        HTMLEditUtils::IsBRElementFollowedByBlockBoundary(
+            static_cast<HTMLBRElement&>(*previousEditableContent))) &&
        !HTMLEditUtils::IsBlockElement(*previousEditableContent,
                                       aBlockInlineCheck);
        previousEditableContent =
@@ -564,8 +568,10 @@ GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
       // invisible if it's immediately before a block boundary.  In such
       // case, we should return the block boundary.
       Element* maybeNonEditableBlockElement = nullptr;
-      if (HTMLEditUtils::IsInvisiblePreformattedNewLine(
-              atNextPreformattedNewLine, &maybeNonEditableBlockElement) &&
+      if (HTMLEditUtils::IsPreformattedLineBreakFollowedByBlockBoundary(
+              atNextPreformattedNewLine,
+              HTMLEditUtils::SkipWhiteSpaceStyleCheck::Yes, nullptr,
+              &maybeNonEditableBlockElement) &&
           maybeNonEditableBlockElement) {
         // If the block is a parent of the editing host, let's return end
         // of editing host.
@@ -630,8 +636,10 @@ GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
       // invisible if it's immediately before a block boundary.  In such
       // case, we should return the block boundary.
       Element* maybeNonEditableBlockElement = nullptr;
-      if (HTMLEditUtils::IsInvisiblePreformattedNewLine(
-              atFirstPreformattedNewLine, &maybeNonEditableBlockElement) &&
+      if (HTMLEditUtils::IsPreformattedLineBreakFollowedByBlockBoundary(
+              atFirstPreformattedNewLine,
+              HTMLEditUtils::SkipWhiteSpaceStyleCheck::Yes, nullptr,
+              &maybeNonEditableBlockElement) &&
           maybeNonEditableBlockElement) {
         // If the block is a parent of the editing host, let's return end
         // of editing host.
@@ -656,8 +664,11 @@ GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
     if (NS_WARN_IF(!point.IsSet())) {
       break;
     }
-    if (HTMLEditUtils::IsVisibleBRElement(*nextEditableContent)) {
-      break;
+    if (HTMLBRElement* const nextBRElement =
+            HTMLBRElement::FromNode(*nextEditableContent)) {
+      if (!HTMLEditUtils::IsBRElementFollowedByBlockBoundary(*nextBRElement)) {
+        break;
+      }
     }
   }
 
@@ -1025,7 +1036,8 @@ nsresult AutoClonedRangeArray::CollectEditTargetNodes(
            Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
         if (const Text* text = aOutArrayOfContents[index]->GetAsText()) {
           // Don't select empty text except to empty block
-          if (!HTMLEditUtils::IsVisibleTextNode(*text)) {
+          if (!HTMLEditUtils::IsVisibleTextNode(
+                  *text, HTMLEditUtils::TreatInvisibleLineBreakAs::Visible)) {
             aOutArrayOfContents.RemoveElementAt(index);
           }
         }

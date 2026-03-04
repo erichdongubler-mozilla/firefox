@@ -1194,7 +1194,10 @@ HTMLEditor::AutoInsertParagraphHandler::HandleAtEndOfHeadingElement(
 bool HTMLEditor::AutoInsertParagraphHandler::
     IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(
         const dom::HTMLBRElement* aBRElement) {
-  return !aBRElement || HTMLEditUtils::IsInvisibleBRElement(*aBRElement) ||
+  return !aBRElement ||
+         HTMLEditUtils::IsBRElementFollowedByBlockBoundary(*aBRElement) ||
+         // XXX It's odd to check the <br> element's flag. It may be wrong if
+         // the web app moved the <br> or changed the preceding conent.
          EditorUtils::IsPaddingBRElementForEmptyLastLine(*aBRElement);
 }
 
@@ -1317,7 +1320,7 @@ HTMLEditor::AutoInsertParagraphHandler::GetBetterPointToSplitParagraph(
     WSScanResult nextVisibleThing =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
             {}, aCandidatePointToSplit, &aBlockElementToSplit);
-    if (nextVisibleThing.ReachedInvisibleBRElement()) {
+    if (nextVisibleThing.ReachedBRElementFollowedByBlockBoundary()) {
       nextVisibleThing =
           WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
               {},

@@ -785,6 +785,8 @@ nsresult HTMLEditor::EnsureCaretNotAfterInvisibleBRElement(
     return NS_OK;
   }
 
+  // FIXME: We should check invisible preformatted linefeed too.
+
   nsIContent* previousBRElement = HTMLEditUtils::GetPreviousLeafContent(
       atSelectionStart, {}, BlockInlineCheck::UseComputedDisplayStyle,
       &aEditingHost);
@@ -792,7 +794,8 @@ nsresult HTMLEditor::EnsureCaretNotAfterInvisibleBRElement(
       !previousBRElement->GetParent() ||
       !EditorUtils::IsEditableContent(*previousBRElement->GetParent(),
                                       EditorType::HTML) ||
-      !HTMLEditUtils::IsInvisibleBRElement(*previousBRElement)) {
+      !HTMLEditUtils::IsBRElementFollowedByBlockBoundary(
+          static_cast<HTMLBRElement&>(*previousBRElement))) {
     return NS_OK;
   }
 
@@ -1105,7 +1108,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       // caret position explicitly.
       insertEmptyTextResult.IgnoreCaretPointSuggestion();
       nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
-          insertEmptyTextResult.EndOfInsertedTextRef());
+          insertEmptyTextResult.EndOfInsertedTextRef(), *editingHost);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
@@ -1175,7 +1178,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       }
       InsertTextResult unwrappedReplaceTextResult = replaceTextResult.unwrap();
       nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
-          unwrappedReplaceTextResult.EndOfInsertedTextRef());
+          unwrappedReplaceTextResult.EndOfInsertedTextRef(), *editingHost);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
@@ -1488,7 +1491,8 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       mLastCollapsibleWhiteSpaceAppendedTextNode =
           currentPoint.ContainerAs<Text>();
     }
-    nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(currentPoint);
+    nsresult rv =
+        EnsureNoFollowingUnnecessaryLineBreak(currentPoint, *editingHost);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
       return Err(rv);
@@ -2616,7 +2620,8 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
   {
     AutoTrackDOMPoint trackPointToPutCaret(RangeUpdaterRef(),
                                            &newCaretPosition);
-    nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(newCaretPosition);
+    nsresult rv =
+        EnsureNoFollowingUnnecessaryLineBreak(newCaretPosition, aEditingHost);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
       return Err(rv);
@@ -8987,7 +8992,8 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
         previousEditableContent->IsHTMLElement(nsGkAtoms::br)) {
       // If it's an invisible `<br>` element, we need to insert a padding
       // `<br>` element for making empty line have one-line height.
-      if (HTMLEditUtils::IsInvisibleBRElement(*previousEditableContent) &&
+      if (HTMLEditUtils::IsBRElementFollowedByBlockBoundary(
+              *previousEditableContent) &&
           !EditorUtils::IsPaddingBRElementForEmptyLastLine(
               *previousEditableContent)) {
         AutoEditorDOMPointChildInvalidator lockOffset(point);
