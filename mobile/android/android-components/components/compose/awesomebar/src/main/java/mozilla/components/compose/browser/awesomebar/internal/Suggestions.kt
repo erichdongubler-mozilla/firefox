@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.parcelize.Parcelize
 import mozilla.components.compose.browser.awesomebar.AwesomeBarColors
 import mozilla.components.compose.browser.awesomebar.AwesomeBarOrientation
+import mozilla.components.compose.browser.awesomebar.internal.optimizedsuggestions.StockSuggestion
 import mozilla.components.concept.awesomebar.AwesomeBar
 
 @Suppress("LongParameterList")
@@ -31,7 +32,7 @@ internal fun Suggestions(
     suggestions: Map<AwesomeBar.SuggestionProviderGroup, List<AwesomeBar.SuggestionItem>>,
     colors: AwesomeBarColors,
     orientation: AwesomeBarOrientation,
-    onSuggestionClicked: (AwesomeBar.SuggestionProviderGroup, AwesomeBar.Suggestion) -> Unit,
+    onSuggestionClicked: (AwesomeBar.SuggestionProviderGroup, AwesomeBar.SuggestionItem) -> Unit,
     onAutoComplete: (AwesomeBar.SuggestionProviderGroup, AwesomeBar.Suggestion) -> Unit,
     onRemoveClicked: (AwesomeBar.SuggestionProviderGroup, AwesomeBar.Suggestion) -> Unit,
     onVisibilityStateUpdated: (AwesomeBar.VisibilityState) -> Unit,
@@ -47,7 +48,7 @@ internal fun Suggestions(
     ) {
         suggestions.forEach { (group, suggestions) ->
             val title = group.title
-            if (suggestions.isNotEmpty() && !title.isNullOrEmpty()) {
+            if (suggestions.isNotEmpty() && !title.isNullOrEmpty() && group.displayTitle) {
                 item(ItemKey.SuggestionGroup(group.id)) {
                     SuggestionGroup(title, colors)
                 }
@@ -67,7 +68,18 @@ internal fun Suggestions(
                             onAutoComplete = { onAutoComplete(group, suggestion) },
                             onRemoveClicked = { onRemoveClicked(group, suggestion) },
                         )
-                    } else -> Unit
+                    }
+
+                    is AwesomeBar.StockSuggestion -> {
+                        StockSuggestion(
+                            onClick = { onSuggestionClicked(group, suggestion) },
+                            ticker = suggestion.ticker,
+                            name = suggestion.name,
+                            index = suggestion.index,
+                            lastPrice = suggestion.lastPrice,
+                            changePercent = suggestion.changePercToday,
+                        )
+                    }
                 }
             }
         }

@@ -7,6 +7,7 @@ package mozilla.components.concept.awesomebar
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.view.View
+import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion.Flag
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion.Flag.BOOKMARK
 import java.util.UUID
 
@@ -187,6 +188,11 @@ interface AwesomeBar {
          * A callback to be executed when the suggestion was clicked by the user.
          */
         val onSuggestionClicked: (() -> Unit)?
+
+        /**
+         * A set of [Flag] values for this [Suggestion].
+         */
+        val flags: Set<Flag>
     }
 
     /**
@@ -223,7 +229,7 @@ interface AwesomeBar {
         val icon: Bitmap? = null,
         val indicatorIcon: Drawable? = null,
         val chips: List<Chip> = emptyList(),
-        val flags: Set<Flag> = emptySet(),
+        override val flags: Set<Flag> = emptySet(),
         override val onSuggestionClicked: (() -> Unit)? = null,
         val onChipClicked: ((Chip) -> Unit)? = null,
         val onRemovalClicked: (() -> Unit)? = null,
@@ -278,6 +284,7 @@ interface AwesomeBar {
      * @property index The stock index or exchange where the stock is listed (e.g., "NASDAQ", "NYSE").
      * @property lastPrice The ask price from the most recent quote for this ticker.
      * @property changePercToday The percentage change since the previous day.
+     * @property flags A set of [Flag] values for this [Suggestion].
      */
     data class StockSuggestion(
         override val provider: SuggestionProvider,
@@ -290,6 +297,7 @@ interface AwesomeBar {
         val index: String,
         val lastPrice: String,
         val changePercToday: ChangePercent,
+        override val flags: Set<Flag> = emptySet(),
     ) : SuggestionItem
 
     /**
@@ -308,6 +316,11 @@ interface AwesomeBar {
          * A header title for grouping the suggestions.
          **/
         fun groupTitle(): String? = null
+
+        /**
+         * Display the header title for grouping the suggestions.
+         **/
+        fun displayGroupTitle(): Boolean = true
 
         /**
          * Fired when the user starts interacting with the awesome bar by entering text in the toolbar.
@@ -367,6 +380,7 @@ interface AwesomeBar {
      * in the AwesomeBar suggestions. Group having the highest integer value will have the highest priority.
      * @property title An optional title for this group. The title may be rendered by an AwesomeBar
      * implementation.
+     * @property displayTitle display the above title.
      * @property limit The maximum number of suggestions that will be shown in this group.
      * @property id A unique ID for this group (uses a generated UUID by default)
      */
@@ -374,6 +388,7 @@ interface AwesomeBar {
         val providers: List<SuggestionProvider>,
         var priority: Int = 0,
         val title: String? = null,
+        val displayTitle: Boolean = true,
         val limit: Int = Integer.MAX_VALUE,
         val id: String = UUID.randomUUID().toString(),
     )

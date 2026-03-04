@@ -264,7 +264,11 @@ class SearchSuggestionsProvidersBuilder(
 
         if (state.showStocksSuggestions) {
             providersToAdd.add(
-                StocksOnlineSuggestionProvider(MockedStocksSuggestionDataSource()),
+                StocksOnlineSuggestionProvider(
+                    searchUseCase = searchUseCase,
+                    dataSource = MockedStocksSuggestionDataSource(),
+                    suggestionsHeader = suggestionsStringsProvider.firefoxSuggestOnlineHeader,
+                ),
             )
         }
 

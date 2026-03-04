@@ -10,6 +10,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.awesomebar.AwesomeBar
+import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -36,6 +37,7 @@ class StocksOnlineSuggestionProviderTest {
         )
 
         provider = StocksOnlineSuggestionProvider(
+            searchUseCase = mock(),
             dataSource = fakeDataSource,
             suggestionsHeader = null,
             maxNumberOfSuggestions = DEFAULT_STOCK_SUGGESTION_LIMIT,
@@ -83,6 +85,7 @@ class StocksOnlineSuggestionProviderTest {
         val localDataSource = FakeStocksSuggestionDataSource(results = manyResults)
 
         val limitedProvider = StocksOnlineSuggestionProvider(
+            searchUseCase = mock(),
             dataSource = localDataSource,
             suggestionsHeader = null,
             maxNumberOfSuggestions = 1,
@@ -98,6 +101,7 @@ class StocksOnlineSuggestionProviderTest {
     @Test
     fun `id is stable per instance`() = runTest {
         val p = StocksOnlineSuggestionProvider(
+            searchUseCase = mock(),
             dataSource = FakeStocksSuggestionDataSource(results = listOf(sampleStockItem())),
             suggestionsHeader = null,
             maxNumberOfSuggestions = 1,
@@ -116,6 +120,7 @@ class StocksOnlineSuggestionProviderTest {
     fun `cancellation before delay prevents data source call`() = runTest {
         val localDataSource = FakeStocksSuggestionDataSource(results = listOf(sampleStockItem()))
         val cancellableProvider = StocksOnlineSuggestionProvider(
+            searchUseCase = mock(),
             dataSource = localDataSource,
             suggestionsHeader = null,
             maxNumberOfSuggestions = 1,

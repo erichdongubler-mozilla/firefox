@@ -7,6 +7,7 @@ package mozilla.components.feature.awesomebar.provider
 import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.delay
 import mozilla.components.concept.awesomebar.AwesomeBar
+import mozilla.components.feature.search.SearchUseCases
 import java.text.NumberFormat
 import java.util.Locale
 import java.util.UUID
@@ -22,6 +23,7 @@ const val ARTIFICIAL_DELAY = 350L
  * @property maxNumberOfSuggestions the maximum number of suggestions to be provided.
  */
 class StocksOnlineSuggestionProvider(
+    private val searchUseCase: SearchUseCases.SearchUseCase,
     private val dataSource: AwesomeBar.StocksSuggestionDataSource,
     private val suggestionsHeader: String? = null,
     @get:VisibleForTesting internal val maxNumberOfSuggestions: Int = DEFAULT_STOCK_SUGGESTION_LIMIT,
@@ -31,6 +33,10 @@ class StocksOnlineSuggestionProvider(
 
     override fun groupTitle(): String? {
         return suggestionsHeader
+    }
+
+    override fun displayGroupTitle(): Boolean {
+        return false
     }
 
     private val trailingCurrencyRegex = Regex("""([A-Z]{3})\s*$""")
@@ -59,7 +65,9 @@ class StocksOnlineSuggestionProvider(
 
         return if (hasRequiredFields && formattedLastPrice != null && parsedChange != null) {
             AwesomeBar.StockSuggestion(
+                onSuggestionClicked = { searchUseCase.invoke(query) },
                 provider = this@StocksOnlineSuggestionProvider,
+                score = Int.MAX_VALUE,
                 query = query,
                 ticker = ticker,
                 name = name,

@@ -83,7 +83,7 @@ class SearchSuggestionProviderTest {
                 verify(useCase, never()).invoke(anyString(), any(), any())
 
                 // Chips should be shown at the top of the awesomebar suggestions
-                assertNull(suggestions.firstOrNull { it.score != Int.MAX_VALUE })
+                assertNull(suggestions.firstOrNull { it.score != (Int.MAX_VALUE - 1) })
 
                 CollectionProcessor.withFactCollection { facts ->
                     suggestion.onChipClicked!!.invoke(suggestion.chips[6])

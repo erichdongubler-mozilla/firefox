@@ -13,6 +13,7 @@ import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.searchEngines
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
+import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.awesomebar.AwesomeBar.GroupedSuggestion
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion
 import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionProvider
@@ -421,7 +422,7 @@ sealed class SearchFragmentAction : Action {
      * Action indicating a suggestion was clicked.
      */
     data class SuggestionClicked(
-        val suggestion: Suggestion,
+        val suggestion: AwesomeBar.SuggestionItem,
     ) : SearchFragmentAction()
 
     /**
