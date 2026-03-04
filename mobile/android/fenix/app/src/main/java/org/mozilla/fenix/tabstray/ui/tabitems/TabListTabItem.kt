@@ -47,7 +47,6 @@ import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
-import org.mozilla.fenix.tabstray.ui.sharedTabTransition
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.browser.tabstray.R as tabstrayR
 import mozilla.components.ui.icons.R as iconsR
@@ -224,7 +223,6 @@ private fun Thumbnail(
         tabThumbnailImageData = tab.toThumbnailImageData(),
         thumbnailSizePx = thumbnailSize,
         modifier = Modifier
-            .sharedTabTransition(tabId = tab.id)
             .size(
                 width = ThumbnailWidth,
                 height = ThumbnailHeight,

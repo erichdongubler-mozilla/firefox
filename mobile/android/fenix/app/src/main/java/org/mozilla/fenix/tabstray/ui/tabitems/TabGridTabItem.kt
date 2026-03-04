@@ -52,7 +52,6 @@ import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
-import org.mozilla.fenix.tabstray.ui.sharedTabTransition
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
@@ -341,7 +340,6 @@ private fun Thumbnail(
             .semantics(mergeDescendants = true) {
                 testTag = TabsTrayTestTag.TAB_ITEM_THUMBNAIL
             }
-            .sharedTabTransition(tabId = tab.id)
             .fillMaxSize(),
         shape = ThumbnailShape,
     )
