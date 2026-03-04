@@ -10560,13 +10560,6 @@
   mirror: always
   rust: true
 
-# Enable revert-rule: https://drafts.csswg.org/css-cascade-5/#revert-rule-keyword
-- name: layout.css.revert-rule.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-  rust: true
-
 # Is CSS error reporting enabled?
 - name: layout.css.report_errors
   type: bool
