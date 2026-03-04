@@ -260,6 +260,10 @@ async function openAboutTranslations({
     targetSectionTextArea: "textarea#about-translations-target-textarea",
     clearButton: "moz-button#about-translations-clear-button",
     copyButton: "moz-button#about-translations-copy-button",
+    translationErrorMessage:
+      "moz-message-bar#about-translations-translation-error-message",
+    translationErrorButton:
+      "moz-button#about-translations-translation-error-button",
     unsupportedInfoMessage:
       "moz-message-bar#about-translations-unsupported-info-message",
     languageLoadErrorMessage:
@@ -4707,6 +4711,23 @@ class AboutTranslationsTestUtils {
   }
 
   /**
+   * Clicks the translation error retry button in the about:translations UI.
+   */
+  async clickTranslationErrorButton() {
+    logAction();
+    try {
+      await this.#runInPage(selectors => {
+        const button = content.document.querySelector(
+          selectors.translationErrorButton
+        );
+        button.click();
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  /**
    * Waits for the specified AboutTranslations event to fire, then returns its detail payload.
    * Rejects if the event doesn’t fire within the given time limit.
    *
@@ -4744,6 +4765,37 @@ class AboutTranslationsTestUtils {
     );
 
     return detail;
+  }
+
+  /**
+   * Waits for the translation error message to match the requested visibility.
+   *
+   * @param {object} options
+   * @param {boolean} [options.visible=true]
+   * @returns {Promise<void>}
+   */
+  async waitForTranslationErrorMessage({ visible = true } = {}) {
+    try {
+      await this.#runInPage(
+        (selectors, { visible }) => {
+          const { document } = content;
+          const message = document.querySelector(
+            selectors.translationErrorMessage
+          );
+          if (!message) {
+            throw new Error("Could not find the translation error message.");
+          }
+          return ContentTaskUtils.waitForMutationCondition(
+            message,
+            { attributes: true, attributeFilter: ["hidden"] },
+            () => message.hidden === !visible
+          );
+        },
+        { visible }
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
   }
 
   /**
@@ -4957,6 +5009,128 @@ class AboutTranslationsTestUtils {
         scriptDirection,
         `Expected target textarea "dir" attribute to be "${scriptDirection}", but got "${actualScriptDirection}".`
       );
+    }
+  }
+
+  /**
+   * Asserts properties of the translation error message.
+   *
+   * @param {object} options
+   * @param {boolean} [options.visible]
+   * @param {boolean} [options.retryButtonEnabled]
+   * @param {boolean} [options.targetTextAreaVisible]
+   * @param {boolean} [options.hasErrorClass]
+   * @returns {Promise<void>}
+   */
+  async assertTranslationErrorMessage({
+    visible,
+    retryButtonEnabled,
+    targetTextAreaVisible,
+    hasErrorClass,
+  } = {}) {
+    await doubleRaf(document);
+
+    let pageResult = {};
+    try {
+      pageResult = await this.#runInPage(selectors => {
+        const { document, window } = content;
+        const isElementVisible = selector => {
+          const element = document.querySelector(selector);
+          if (element?.offsetParent === null) {
+            return false;
+          }
+
+          const computedStyle = window.getComputedStyle(element);
+          if (!computedStyle) {
+            return false;
+          }
+
+          const { display, visibility } = computedStyle;
+          return !(display === "none" || visibility === "hidden");
+        };
+
+        const message = document.querySelector(
+          selectors.translationErrorMessage
+        );
+        const retryButton = document.querySelector(
+          selectors.translationErrorButton
+        );
+        const targetSection = document.querySelector(selectors.targetSection);
+
+        return {
+          messageExists: Boolean(message),
+          retryButtonExists: Boolean(retryButton),
+          targetSectionExists: Boolean(targetSection),
+          messageVisible: isElementVisible(selectors.translationErrorMessage),
+          targetTextAreaVisible: isElementVisible(
+            selectors.targetSectionTextArea
+          ),
+          retryButtonDisabled: retryButton?.hasAttribute("disabled") ?? true,
+          hasErrorClass:
+            targetSection?.classList.contains("has-translation-error") ?? false,
+        };
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+
+    const {
+      messageExists,
+      retryButtonExists,
+      targetSectionExists,
+      messageVisible,
+      retryButtonDisabled,
+      targetTextAreaVisible: actualTargetTextAreaVisible,
+      hasErrorClass: actualHasErrorClass,
+    } = pageResult;
+
+    ok(messageExists, "Expected translation error message to be present.");
+    ok(retryButtonExists, "Expected translation error button to be present.");
+    ok(targetSectionExists, "Expected target section to be present.");
+
+    if (visible !== undefined) {
+      visible
+        ? ok(
+            messageVisible,
+            "Expected translation error message to be visible."
+          )
+        : ok(
+            !messageVisible,
+            "Expected translation error message to be hidden."
+          );
+    }
+
+    if (retryButtonEnabled !== undefined) {
+      retryButtonEnabled
+        ? ok(
+            !retryButtonDisabled,
+            "Expected translation error button to be enabled."
+          )
+        : ok(
+            retryButtonDisabled,
+            "Expected translation error button to be disabled."
+          );
+    }
+
+    if (targetTextAreaVisible !== undefined) {
+      targetTextAreaVisible
+        ? ok(
+            actualTargetTextAreaVisible,
+            "Expected target textarea to be visible."
+          )
+        : ok(
+            !actualTargetTextAreaVisible,
+            "Expected target textarea to be hidden."
+          );
+    }
+
+    if (hasErrorClass !== undefined) {
+      hasErrorClass
+        ? ok(actualHasErrorClass, "Expected target section error styling.")
+        : ok(
+            !actualHasErrorClass,
+            "Expected target section error styling to be removed."
+          );
     }
   }
 
@@ -5639,6 +5813,7 @@ class AboutTranslationsTestUtils {
    * @param {boolean} [options.swapLanguagesButton=false]
    * @param {boolean} [options.sourceSectionTextArea=false]
    * @param {boolean} [options.targetSectionTextArea=false]
+   * @param {boolean} [options.translationErrorMessage=false]
    * @param {boolean} [options.unsupportedInfoMessage=false]
    * @param {boolean} [options.languageLoadErrorMessage=false]
    * @returns {Promise<void>}
@@ -5653,6 +5828,7 @@ class AboutTranslationsTestUtils {
     swapLanguagesButton = false,
     sourceSectionTextArea = false,
     targetSectionTextArea = false,
+    translationErrorMessage = false,
     unsupportedInfoMessage = false,
     languageLoadErrorMessage = false,
   } = {}) {
@@ -5705,6 +5881,9 @@ class AboutTranslationsTestUtils {
           targetSectionTextArea: isElementVisible(
             selectors.targetSectionTextArea
           ),
+          translationErrorMessage: isElementVisible(
+            selectors.translationErrorMessage
+          ),
           unsupportedInfoMessage: isElementVisible(
             selectors.unsupportedInfoMessage
           ),
@@ -5756,6 +5935,11 @@ class AboutTranslationsTestUtils {
         targetSectionTextArea,
         visibilityMap.targetSectionTextArea,
         "target textarea"
+      );
+      assertVisibility(
+        translationErrorMessage,
+        visibilityMap.translationErrorMessage,
+        "translation error message"
       );
       assertVisibility(
         unsupportedInfoMessage,

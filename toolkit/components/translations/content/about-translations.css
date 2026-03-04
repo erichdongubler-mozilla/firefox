@@ -140,6 +140,25 @@ body {
   &:has(moz-button:focus) {
     outline: none;
   }
+
+  &.has-translation-error > #about-translations-target-textarea {
+    visibility: hidden;
+  }
+}
+
+#about-translations-translation-error-message {
+  --message-bar-border-radius: 0;
+  --message-bar-border-width: 0;
+  padding-inline: var(--space-xsmall);
+  border-block-end: var(--border-width) solid var(--border-color);
+}
+
+#about-translations-translation-error-subtext {
+  display: block;
+}
+
+#about-translations-translation-error-button {
+  margin-block-start: var(--space-large);
 }
 
 .about-translations-textarea {

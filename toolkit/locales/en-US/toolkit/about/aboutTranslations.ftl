@@ -21,6 +21,11 @@ about-translations-language-load-error-message =
   .message = Check your internet connection and try again.
 about-translations-language-load-error-button = Try again
 
+# An error message displayed when a translation request fails.
+about-translations-translation-error-heading = There was a problem translating
+about-translations-translation-error-subtext = Please try again.
+about-translations-translation-error-button = Try again
+
 # Placeholder text shown in the source-language text area when the user has not typed any text.
 about-translations-input-placeholder =
   .placeholder = Add text to translate
