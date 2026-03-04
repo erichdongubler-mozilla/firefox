@@ -121,13 +121,6 @@ void HTMLTextAreaElement::Select() {
   SetSelectionRange(0, UINT32_MAX, Optional<nsAString>(), IgnoreErrors());
 }
 
-void HTMLTextAreaElement::SelectAll() {
-  MOZ_ASSERT(mState);
-  mState->SetSelectionRange(0, UINT32_MAX, Optional<nsAString>(),
-                            IgnoreErrors(),
-                            TextControlState::ScrollAfterSelection::No);
-}
-
 enum class Wrap {
   Off,
   Hard,
@@ -260,9 +253,6 @@ void HTMLTextAreaElement::SetValueChanged(bool aValueChanged) {
 
   bool previousValue = mValueChanged;
   mValueChanged = aValueChanged;
-  if (!aValueChanged && !mState->IsEmpty()) {
-    mState->EmptyValue();
-  }
   if (mValueChanged == previousValue) {
     return;
   }
@@ -390,10 +380,17 @@ bool HTMLTextAreaElement::IsDisabledForEvents(WidgetEvent* aEvent) {
   return IsElementDisabledForEvents(aEvent, GetPrimaryFrame());
 }
 
+MOZ_CAN_RUN_SCRIPT_BOUNDARY
 void HTMLTextAreaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   aVisitor.mCanHandle = false;
   if (IsDisabledForEvents(aVisitor.mEvent)) {
     return;
+  }
+
+  if (NeedToInitializeEditorForEvent(aVisitor)) {
+    // FIXME(bug 2020902): This is rather evil. Remove
+    // CAN_RUN_SCRIPT_BOUNDARY when removing this.
+    mState->EnsureEditorInitialized();
   }
 
   // Don't dispatch a second select event if we are already handling
@@ -449,6 +446,7 @@ nsresult HTMLTextAreaElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   }
   if (aVisitor.mEvent->mMessage == eFocus) {
     GetValueInternal(mFocusedValue);
+    TextControlElement::OnFocus(*aVisitor.mEvent);
   }
   return NS_OK;
 }
@@ -597,11 +595,7 @@ nsresult HTMLTextAreaElement::Reset() {
   GetDefaultValue(resetVal, IgnoreErrors());
   SetValueChanged(false);
   SetUserInteracted(false);
-
-  nsresult rv = SetValueInternal(resetVal, ValueSetterOption::ByInternalAPI);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
+  return SetValueInternal(resetVal, ValueSetterOption::ByInternalAPI);
 }
 
 NS_IMETHODIMP
@@ -851,6 +845,9 @@ void HTMLTextAreaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     } else if (aName == nsGkAtoms::maxlength) {
       UpdateTooLongValidityState();
       UpdateValidityElementStates(aNotify);
+      if (auto* editor = GetExtantTextEditor()) {
+        editor->SetMaxTextLength(UsedMaxLength());
+      }
     } else if (aName == nsGkAtoms::minlength) {
       UpdateTooShortValidityState();
       UpdateValidityElementStates(aNotify);

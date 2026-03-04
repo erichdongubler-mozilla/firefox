@@ -1002,7 +1002,6 @@ class HTMLInputElement final : public TextControlElement,
 
   void ResultForDialogSubmit(nsAString& aResult) override;
 
-  MOZ_CAN_RUN_SCRIPT void SelectAll();
   bool IsImage() const {
     return AttrValueIs(kNameSpaceID_None, nsGkAtoms::type, nsGkAtoms::image,
                        eIgnoreCase);
