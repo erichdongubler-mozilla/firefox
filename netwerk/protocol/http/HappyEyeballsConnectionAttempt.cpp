@@ -817,12 +817,12 @@ nsresult HappyEyeballsConnectionAttempt::OnHTTPSRecord(nsIDNSRecord* aRecord,
     happy_eyeballs::ServiceInfo svcInfo;
     (void)svcbRecord->GetPriority(&svcInfo.priority);
     (void)svcbRecord->GetName(svcInfo.target_name);
+    svcInfo.port = svcbRecord->GetPort().valueOr(0);
 
     nsTArray<RefPtr<nsISVCParam>> values;
     (void)svcbRecord->GetValues(values);
 
     nsTArray<nsCString> alpn;
-    uint16_t port = 0;
     nsTArray<RefPtr<nsINetAddr>> ipv4Hint;
     nsTArray<RefPtr<nsINetAddr>> ipv6Hint;
 
@@ -837,11 +837,6 @@ nsresult HappyEyeballsConnectionAttempt::OnHTTPSRecord(nsIDNSRecord* aRecord,
         }
         case SvcParamKeyNoDefaultAlpn:
           break;
-        case SvcParamKeyPort: {
-          nsCOMPtr<nsISVCParamPort> portParam = do_QueryInterface(value);
-          (void)portParam->GetPort(&port);
-          break;
-        }
         case SvcParamKeyIpv4Hint: {
           nsCOMPtr<nsISVCParamIPv4Hint> ipv4Param = do_QueryInterface(value);
           (void)ipv4Param->GetIpv4Hint(ipv4Hint);

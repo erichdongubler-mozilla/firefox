@@ -7,7 +7,7 @@ license = "MPL-2.0"
 description = "FFI glue layer between happy-eyeballs Rust crate and Firefox's C++ networking stack"
 
 [dependencies]
-happy-eyeballs = { branch = "main", git = "https://github.com/mozilla/happy-eyeballs" }
+happy-eyeballs = { tag = "v0.1.0", git = "https://github.com/mozilla/happy-eyeballs" }
 log = "0.4"
 nserror = { path = "../../../../xpcom/rust/nserror" }
 nsstring = { path = "../../../../xpcom/rust/nsstring" }

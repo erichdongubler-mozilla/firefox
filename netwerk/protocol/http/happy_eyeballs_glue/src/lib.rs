@@ -275,6 +275,12 @@ impl HappyEyeballs {
                 ipv6_vec.push(ipv6);
             }
 
+            let port = if svc_info.port == 0 {
+                None
+            } else {
+                Some(svc_info.port)
+            };
+
             infos.push(happy_eyeballs::ServiceInfo {
                 priority: svc_info.priority,
                 target_name: target,
@@ -282,6 +288,7 @@ impl HappyEyeballs {
                 ech_config: ech,
                 ipv4_hints: ipv4_vec,
                 ipv6_hints: ipv6_vec,
+                port,
             });
         }
 
@@ -456,6 +463,7 @@ impl From<happy_eyeballs::HttpVersion> for ConnectionAttemptHttpVersions {
 #[repr(C)]
 pub struct ServiceInfo {
     pub priority: u16,
+    pub port: u16,
     pub target_name: nsCString,
     pub alpn_protocols: ThinVec<HttpVersion>,
     pub ech_config: ThinVec<u8>,
