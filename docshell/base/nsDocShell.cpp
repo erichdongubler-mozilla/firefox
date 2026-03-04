@@ -14706,6 +14706,10 @@ bool nsDocShell::GetIsAttemptingToNavigate() {
     }
   }
 
+  if (mOngoingNavigation == Some(OngoingNavigation::NavigationID)) {
+    return true;
+  }
+
   return mCheckingSessionHistory;
 }
 
