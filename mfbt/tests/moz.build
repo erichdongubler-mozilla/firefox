@@ -13,7 +13,6 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"]:
 # to testing/cppunittest.toml.
 CppUnitTests(
     [
-        "TestAlgorithm",
         "TestArray",
         "TestArrayUtils",
         "TestAtomicBitfields",

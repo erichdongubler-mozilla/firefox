@@ -16,18 +16,6 @@
 
 namespace mozilla {
 
-// Like C++20's `std::any_of`.
-template <typename Iter, typename Pred>
-constexpr bool AnyOf(Iter aFirst, Iter aLast, Pred aPred) {
-  for (; aFirst != aLast; ++aFirst) {
-    if (aPred(*aFirst)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 namespace detail {
 template <typename Transform, typename SrcIter>
 using ArrayElementTransformType = typename std::invoke_result_t<

@@ -10,7 +10,6 @@
 #include <iterator>
 
 #include "NonCustomCSSPropertyId.h"
-#include "mozilla/Algorithm.h"
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -640,12 +639,12 @@ constexpr const nsStaticAtom* const kURLAttributesSVG[] = {nsGkAtoms::href,
 static_assert(std::all_of(std::begin(kURLAttributesSVG),
                           std::end(kURLAttributesSVG),
                           [](auto aURLAttributeSVG) {
-                            return AnyOf(std::begin(kAttributesSVG),
-                                         std::end(kAttributesSVG),
-                                         [&](auto aAttributeSVG) {
-                                           return aAttributeSVG ==
-                                                  aURLAttributeSVG;
-                                         });
+                            return std::any_of(std::begin(kAttributesSVG),
+                                               std::end(kAttributesSVG),
+                                               [&](auto aAttributeSVG) {
+                                                 return aAttributeSVG ==
+                                                        aURLAttributeSVG;
+                                               });
                           }));
 
 const nsStaticAtom* const kElementsMathML[] = {

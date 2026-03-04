@@ -2,8 +2,6 @@
 
 ["ShowSSEConfig"]
 
-["TestAlgorithm"]
-
 ["TestArm64Disassembler"]
 run-if = [
   "os == 'win' && arch == 'aarch64'",

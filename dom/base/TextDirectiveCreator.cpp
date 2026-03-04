@@ -6,6 +6,8 @@
 
 #include "TextDirectiveCreator.h"
 
+#include <algorithm>
+
 #include "AbstractRange.h"
 #include "Document.h"
 #include "StaticRange.h"
@@ -743,7 +745,7 @@ TextDirectiveCreator::CheckAllCombinations(
     TEXT_FRAGMENT_LOG("Checking candidate ({},{}). Score: {}",
                       firstExtendedToWordBoundary, secondExtendedToWordBoundary,
                       costFunctionValue);
-    const bool isInvalid = AnyOf(
+    const bool isInvalid = std::any_of(
         aExactWordLengths.begin(), aExactWordLengths.end(),
         [firstExtended = firstExtendedToWordBoundary,
          secondExtended = secondExtendedToWordBoundary](

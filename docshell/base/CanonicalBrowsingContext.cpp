@@ -6,6 +6,8 @@
 
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 
+#include <algorithm>
+
 #include "ContentAnalysis.h"
 #include "ErrorList.h"
 #include "mozilla/CheckedInt.h"
@@ -666,14 +668,14 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
     if (StaticPrefs::dom_navigation_api_strict_enabled()) {
       // https://bugzil.la/1989045
       MOZ_DIAGNOSTIC_ASSERT(
-          mozilla::AnyOf(loadingInfo->mContiguousEntries.begin(),
-                         loadingInfo->mContiguousEntries.end(), pred),
+          std::any_of(loadingInfo->mContiguousEntries.begin(),
+                      loadingInfo->mContiguousEntries.end(), pred),
           "The target entry now needs to be a part of the contiguous list of "
           "entries.");
     } else {
       MOZ_ASSERT(
-          mozilla::AnyOf(loadingInfo->mContiguousEntries.begin(),
-                         loadingInfo->mContiguousEntries.end(), pred),
+          std::any_of(loadingInfo->mContiguousEntries.begin(),
+                      loadingInfo->mContiguousEntries.end(), pred),
           "The target entry now needs to be a part of the contiguous list of "
           "entries.");
     }
