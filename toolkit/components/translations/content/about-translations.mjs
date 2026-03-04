@@ -34,20 +34,25 @@ window.THROTTLE_DELAY = 200;
 window.DEBOUNCE_DELAY = 400;
 
 /**
- * The default duration, in milliseconds, that the copy button remains in the "copied" state
- * before reverting back to its default state.
+ * This is the default duration, in milliseconds, that the copy button remains
+ * in the "copied" state before reverting back to its default state.
+ *
+ * Based on WCAG standards, a minimum of 5 seconds should be maintained to
+ * avoid blinking, and to provide enough time for users to notice the change
+ * of the copy button's state.
  */
-window.COPY_BUTTON_RESET_DELAY = 1500;
+const COPY_BUTTON_RESET_DELAY_DEFAULT = 5_000;
 
 /**
- * Tests can set this to true to manually trigger copy button resets.
+ * This is the duration, in milliseconds, that the copy button remains in the
+ * "copied" state before reverting back to its default state for users who
+ * prefer reduced motion.
  *
- * When enabled, the copy button will remain in its copied state until tests
- * call {@link AboutTranslations.testResetCopyButton}.
- *
- * @type {boolean}
+ * https://www.w3.org/WAI/WCAG22/Understanding/timing-adjustable.html
  */
-window.testManualCopyButtonReset = false;
+const COPY_BUTTON_RESET_DELAY_REDUCED_MOTION = 20_000;
+
+window.COPY_BUTTON_RESET_DELAY = COPY_BUTTON_RESET_DELAY_DEFAULT;
 
 /**
  * Limits how long the "text" parameter can be in the URL.
@@ -167,6 +172,22 @@ class AboutTranslations {
    * @type {number | null}
    */
   #copyButtonResetTimeoutId = null;
+
+  /**
+   * An optional delay override for resetting the copy button.
+   *
+   * This is intended for automated tests that need deterministic timing.
+   *
+   * @type {number | null}
+   */
+  #copyButtonResetDelayOverride = null;
+
+  /**
+   * Whether manual copy button resets are enabled for automated tests.
+   *
+   * @type {boolean}
+   */
+  #isManualCopyButtonResetEnabled = false;
 
   /**
    * The orientation of the page's content.
@@ -1399,13 +1420,6 @@ class AboutTranslations {
   #showCopyButtonCopiedState() {
     const { copyButton } = this.elements;
 
-    if (this.#copyButtonResetTimeoutId !== null) {
-      // If there was a previously set timeout id, then we need to clear it to restart the timer.
-      // This occurs when the button is clicked a subsequent time when it is already in the "copied" state.
-      window.clearTimeout(this.#copyButtonResetTimeoutId);
-      this.#copyButtonResetTimeoutId = null;
-    }
-
     copyButton.classList.add("copied");
     copyButton.iconSrc = "chrome://global/skin/icons/check.svg";
 
@@ -1415,11 +1429,7 @@ class AboutTranslations {
     );
     dispatchTestEvent("AboutTranslationsTest:CopyButtonShowCopied");
 
-    if (!window.testManualCopyButtonReset) {
-      this.#copyButtonResetTimeoutId = window.setTimeout(() => {
-        this.#resetCopyButton();
-      }, window.COPY_BUTTON_RESET_DELAY);
-    }
+    this.#maybeScheduleCopyButtonReset();
   }
 
   /**
@@ -1447,6 +1457,45 @@ class AboutTranslations {
   }
 
   /**
+   * Returns the copy button reset delay based on user preferences and test overrides.
+   *
+   * @returns {number}
+   */
+  #getCopyButtonResetDelay() {
+    if (this.#copyButtonResetDelayOverride !== null) {
+      window.COPY_BUTTON_RESET_DELAY = this.#copyButtonResetDelayOverride;
+      return this.#copyButtonResetDelayOverride;
+    }
+
+    const defaultCopyButtonResetDelay = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
+      ? COPY_BUTTON_RESET_DELAY_REDUCED_MOTION
+      : COPY_BUTTON_RESET_DELAY_DEFAULT;
+
+    window.COPY_BUTTON_RESET_DELAY = defaultCopyButtonResetDelay;
+    return defaultCopyButtonResetDelay;
+  }
+
+  /**
+   * Schedules resetting the copy button back to its default state.
+   */
+  #maybeScheduleCopyButtonReset() {
+    if (this.#isManualCopyButtonResetEnabled) {
+      return;
+    }
+
+    if (this.#copyButtonResetTimeoutId !== null) {
+      window.clearTimeout(this.#copyButtonResetTimeoutId);
+      this.#copyButtonResetTimeoutId = null;
+    }
+
+    this.#copyButtonResetTimeoutId = window.setTimeout(() => {
+      this.#resetCopyButton();
+    }, this.#getCopyButtonResetDelay());
+  }
+
+  /**
    * Manually resets the state of the copy button.
    * This function is only expected to be called by automated tests.
    */
@@ -1455,11 +1504,38 @@ class AboutTranslations {
       throw new Error("Test-only function called outside of automation.");
     }
 
-    if (!window.testManualCopyButtonReset) {
+    if (!this.#isManualCopyButtonResetEnabled) {
       throw new Error("Unexpected call to testResetCopyButton.");
     }
 
     this.#resetCopyButton();
+  }
+
+  /**
+   * Enables or disables manual copy button resets for automated tests.
+   *
+   * @param {boolean} enabled
+   */
+  testSetManualCopyButtonResetEnabled(enabled) {
+    if (!AT_isInAutomation()) {
+      throw new Error("Test-only function called outside of automation.");
+    }
+
+    this.#isManualCopyButtonResetEnabled = enabled;
+  }
+
+  /**
+   * Sets or clears the copy button reset delay override for automated tests.
+   *
+   * @param {number | null} delayMs
+   */
+  testSetCopyButtonResetDelayOverride(delayMs) {
+    if (!AT_isInAutomation()) {
+      throw new Error("Test-only function called outside of automation.");
+    }
+
+    this.#copyButtonResetDelayOverride = delayMs;
+    this.#getCopyButtonResetDelay();
   }
 
   /**
