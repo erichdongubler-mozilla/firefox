@@ -731,6 +731,50 @@ TEST(MoofParser, overflow_tfdt)
   EXPECT_FALSE(parser.RebuildFragmentedIndex(byteRanges));
 }
 
+// 1833896.mp4 has mdhd timescale 0xF800001E (4,160,749,598 as uint32_t).
+// This exceeds INT32_MAX. ISO 14496-12 defines mdhd timescale as unsigned
+// int(32), so values > INT32_MAX are spec-compliant and not clamped.
+// With such a large timescale, consecutive samples with small tick values
+// (0-72) all map to 0 microseconds, producing duplicate timestamps.
+TEST(MP4Metadata, DuplicateTimestampsWithLargeTimescale)
+{
+  nsTArray<uint8_t> buffer = ReadTestFile("1833896.mp4");
+  ASSERT_FALSE(buffer.IsEmpty());
+  RefPtr<ByteStream> stream =
+      new TestStream(buffer.Elements(), buffer.Length());
+
+  MP4Metadata metadata(stream);
+  ASSERT_EQ(NS_OK, metadata.Parse());
+  ASSERT_EQ(1u, metadata.GetNumberTracks(TrackInfo::kVideoTrack).Ref());
+
+  MP4Metadata::ResultAndTrackInfo trackInfo =
+      metadata.GetTrackInfo(TrackInfo::kVideoTrack, 0);
+  ASSERT_TRUE(!!trackInfo.Ref());
+
+  uint32_t timescale = trackInfo.Ref()->mTimeScale;
+  EXPECT_GT(timescale, uint32_t(INT32_MAX))
+      << "Timescale should be preserved as-is (not clamped)";
+
+  MP4Metadata::ResultAndIndice indices =
+      metadata.GetTrackIndice(trackInfo.Ref()->mTrackId);
+  ASSERT_TRUE(!!indices.Ref());
+  ASSERT_GT(indices.Ref()->Length(), 1u);
+
+  MP4SampleIndex::Indice first{};
+  ASSERT_TRUE(indices.Ref()->GetIndice(0, first));
+  MP4SampleIndex::Indice second{};
+  ASSERT_TRUE(indices.Ref()->GetIndice(1, second));
+
+  ASSERT_NE(first.start_composition, second.start_composition);
+
+  media::TimeUnit t1(CheckedInt64(first.start_composition), int64_t(timescale));
+  media::TimeUnit t2(CheckedInt64(second.start_composition),
+                     int64_t(timescale));
+  EXPECT_EQ(t1.ToMicroseconds(), t2.ToMicroseconds())
+      << "Large timescale causes consecutive samples to have duplicate "
+         "microsecond timestamps";
+}
+
 uint8_t media_gtest_video_init_mp4[] = {
     0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d,
     0x00, 0x00, 0x00, 0x01, 0x69, 0x73, 0x6f, 0x6d, 0x61, 0x76, 0x63, 0x31,
@@ -797,6 +841,41 @@ uint8_t media_gtest_video_init_mp4[] = {
     0x00};
 
 const uint32_t media_gtest_video_init_mp4_len = 745;
+
+// Patch the inline init segment's mdhd timescale to 0xF800001E and verify
+// MoofParser preserves it. ISO 14496-12 defines mdhd timescale as unsigned
+// int(32), so values > INT32_MAX are spec-compliant.
+TEST(MoofParser, LargeTimescalePreserved)
+{
+  nsTArray<uint8_t> buffer;
+  buffer.AppendElements(media_gtest_video_init_mp4,
+                        media_gtest_video_init_mp4_len);
+
+  // mdhd timescale is at byte offset 292: "mdhd" type at 276, then +4
+  // version/flags, +4 creation time, +4 modification time, +4 = timescale.
+  const size_t kMdhdTimescaleOffset = 292;
+  ASSERT_EQ(buffer[kMdhdTimescaleOffset + 0], 0x00);
+  ASSERT_EQ(buffer[kMdhdTimescaleOffset + 1], 0x00);
+  ASSERT_EQ(buffer[kMdhdTimescaleOffset + 2], 0x75);
+  ASSERT_EQ(buffer[kMdhdTimescaleOffset + 3], 0x30);
+
+  buffer[kMdhdTimescaleOffset + 0] = 0xF8;
+  buffer[kMdhdTimescaleOffset + 1] = 0x00;
+  buffer[kMdhdTimescaleOffset + 2] = 0x00;
+  buffer[kMdhdTimescaleOffset + 3] = 0x1E;
+
+  RefPtr<ByteStream> stream =
+      new TestStream(buffer.Elements(), buffer.Length());
+
+  const uint32_t videoTrackId = 1;
+  MoofParser parser(stream, AsVariant(videoTrackId), false);
+  const MediaByteRangeSet byteRanges(
+      MediaByteRange(0, int64_t(buffer.Length())));
+  parser.RebuildFragmentedIndex(byteRanges);
+
+  EXPECT_EQ(parser.mMdhd.mTimescale, 0xF800001Eu)
+      << "Timescale > INT32_MAX should be preserved as-is";
+}
 
 TEST(MP4Metadata, EmptyCTTS)
 {
