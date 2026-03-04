@@ -1271,11 +1271,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
 
     mozilla::ipc::IPCResult added = parentDoc->AddChildDoc(doc, aParentID);
     if (!added) {
-#  ifdef DEBUG
       return added;
-#  else
-      return IPC_OK();
-#  endif
     }
 
 #  ifdef XP_WIN
@@ -1312,11 +1308,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
             bridge->GetEmbedderAccessibleDoc()) {
       mozilla::ipc::IPCResult added = embedderDoc->AddChildDoc(bridge);
       if (!added) {
-#  ifdef DEBUG
         return added;
-#  else
-        return IPC_OK();
-#  endif
       }
     }
     return IPC_OK();
