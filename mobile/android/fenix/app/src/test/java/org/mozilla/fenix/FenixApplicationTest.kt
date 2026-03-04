@@ -22,9 +22,9 @@ import mozilla.components.concept.engine.webextension.DisabledFlags
 import mozilla.components.concept.engine.webextension.Metadata
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.feature.addons.migration.DefaultSupportedAddonsChecker
+import mozilla.components.support.test.robolectric.DefaultBrowserUtils
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.BrowsersCache
-import mozilla.components.support.utils.DefaultBrowserUtils
 import mozilla.components.support.utils.ext.packageManagerWrapper
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package mozilla.components.support.utils
+package mozilla.components.support.test.robolectric
 
 import android.app.role.RoleManager
 import android.content.Intent
@@ -11,9 +11,10 @@ import android.content.pm.ResolveInfo
 import android.os.Build
 import android.os.Process
 import androidx.core.net.toUri
-import mozilla.components.support.utils.Browsers.Companion.SAMPLE_BROWSER_HTTP_URL
 import org.robolectric.shadows.ShadowPackageManager
 import org.robolectric.shadows.ShadowRoleManager
+
+private const val SAMPLE_BROWSER_HTTP_URL = "http://www.mozilla.org/index.html"
 
 /**
  * Helper methods related to the default browser functionalities from `support.utils`.

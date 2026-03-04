@@ -10,6 +10,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.ResolveInfo
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import mozilla.components.support.test.robolectric.DefaultBrowserUtils
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.Browsers.Companion.SAMPLE_BROWSER_HTTP_URL
 import org.junit.Assert.assertEquals

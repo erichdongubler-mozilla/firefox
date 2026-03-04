@@ -47,7 +47,6 @@ dependencies {
 
     testFixturesImplementation platform(libs.androidx.compose.bom)
     testFixturesImplementation libs.androidx.compose.runtime.saveable
-    testFixturesImplementation libs.robolectric
 }
 
 apply from: '../../../common-config.gradle'
