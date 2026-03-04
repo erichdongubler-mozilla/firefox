@@ -134,6 +134,9 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       case eCSSProperty_scroll_padding_top:
         return aValue < 0;
 
+      case eCSSProperty_font_weight:
+        return aValue < 1 || aValue > 1000;
+
       default:
         return false;
     }
