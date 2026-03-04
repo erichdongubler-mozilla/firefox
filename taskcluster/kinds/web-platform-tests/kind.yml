@@ -370,8 +370,7 @@ tasks:
         # (though we're working on reducing this!)
         # Devs would love ~10-15m runs, but we don't want to be more than
         # 50% overhead, so let's aim for 15m (20m debug)
-        chunks: dynamic
-        default-chunks:
+        chunks:
             by-test-platform:
                 linux2204.*/debug.*: 25
                 linux2204.*: 20
@@ -408,8 +407,7 @@ tasks:
         treeherder-symbol: W(webgpu-long)
         virtualization: virtual-with-gpu
         tier: 2
-        chunks: dynamic
-        default-chunks: 2
+        chunks: 2
         max-run-time: 5400  # 90m
         variants: []  # We don't need sw or nofis testing.
         run-on-projects:
@@ -437,8 +435,7 @@ tasks:
         # (though we're working on reducing this!)
         # Devs would love ~10-15m runs, but we don't want to be more than
         # 50% overhead, so let's aim for 15m (20m debug)
-        chunks: dynamic
-        default-chunks:
+        chunks:
             by-test-platform:
                 linux2204.*-64.*: 20
                 macosx.*: 25
@@ -475,8 +472,7 @@ tasks:
         treeherder-symbol: W(webgpu-backlog-long)
         virtualization: virtual-with-gpu
         tier: 3
-        chunks: dynamic
-        default-chunks:
+        chunks:
             by-test-platform:
                 macosx.*: 5
                 windows.*-64.*: 6
