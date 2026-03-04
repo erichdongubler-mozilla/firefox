@@ -83,10 +83,10 @@ testSelectAndSerialize(
     range.setEnd(end, 0);
     return range;
   },
-  "First\nSecond\nThird",
+  "First\nSecond\n",
   "<div id=\"start\">First</div>\n" +
     "    <div>Second</div>\n" +
-    "    <div id=\"end\">Third</div>"
+    "    <div id=\"end\"></div>"
 );
 
 testSelectAndSerialize(
@@ -121,10 +121,10 @@ testSelectAndSerialize(
     range.setEnd(end, 0);
     return range;
   },
-  "First\nSecond\nThird-1",
+  "First\nSecond\n",
   "<div id=\"start\">First</div>\n" +
     "    <div>Second</div>\n" +
-    "    <div><div><div id=\"end\">Third-1</div></div></div>"
+    "    <div><div><div id=\"end\"></div></div></div>"
 );
 
 testSelectAndSerialize(
@@ -160,10 +160,10 @@ testSelectAndSerialize(
     SpecialPowers.wrap(range).setEndAllowCrossShadowBoundary(end, 0);
     return range;
   },
-  "First\nSecond\nThird-1",
+  "First\nSecond\n",
   "<div id=\"start\">First</div>\n" +
     "    <div>Second</div>\n" +
-    "    <div id=\"host\"><div id=\"end\">Third-1</div></div>"
+    "    <div id=\"host\"><div id=\"end\"></div></div>"
 );
 
 testSelectAndSerialize(
@@ -199,12 +199,12 @@ testSelectAndSerialize(
     range.setEnd(end, 0);
     return range;
   },
-  "First\nSecond\nThird-1",
+  "First\nSecond\n",
   "<div id=\"start\">First</div>\n" +
     "    <div>Second</div>\n" +
     "    <div id=\"host\"><slot>\n" +
     "      \n" +
-    "      <div><div id=\"end\">Third-1</div></div></slot></div>"
+    "      <div><div id=\"end\"></div></div></slot></div>"
 );
 
 testSelectAndSerialize(
