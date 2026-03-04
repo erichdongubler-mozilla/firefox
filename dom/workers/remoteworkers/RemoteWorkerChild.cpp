@@ -21,6 +21,7 @@
 #include "mozilla/dom/FetchEventOpProxyChild.h"
 #include "mozilla/dom/IndexedDatabaseManager.h"
 #include "mozilla/dom/MessagePort.h"
+#include "mozilla/dom/OffThreadCSPContext.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/RemoteWorkerTypes.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
@@ -30,7 +31,6 @@
 #include "mozilla/dom/ServiceWorkerShutdownState.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/SharedWorkerOp.h"
-#include "mozilla/dom/WorkerCSPContext.h"
 #include "mozilla/dom/WorkerError.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
@@ -305,8 +305,8 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
           clientInfo.ref().GetPolicyContainerArgs();
       if (policyContainerArgs.isSome() && policyContainerArgs->csp().isSome()) {
         info.mCSP = CSPInfoToCSP(*policyContainerArgs->csp(), nullptr);
-        mozilla::Result<UniquePtr<WorkerCSPContext>, nsresult> ctx =
-            WorkerCSPContext::CreateFromCSP(info.mCSP);
+        mozilla::Result<UniquePtr<OffThreadCSPContext>, nsresult> ctx =
+            OffThreadCSPContext::CreateFromCSP(info.mCSP);
         if (ctx.isErr()) {
           return ctx.unwrapErr();
         }

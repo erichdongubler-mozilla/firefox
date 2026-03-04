@@ -961,7 +961,7 @@ class WorkerPrivate final
     return mLoadInfo.mCSPContext->CSPInfo();
   }
 
-  WorkerCSPContext* GetCSPContext() const {
+  OffThreadCSPContext* GetCSPContext() const {
     return mLoadInfo.mCSPContext.get();
   }
 

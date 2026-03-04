@@ -12,8 +12,8 @@
 #include "mozilla/StorageAccess.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ChannelInfo.h"
+#include "mozilla/dom/OffThreadCSPContext.h"
 #include "mozilla/dom/ServiceWorkerRegistrationDescriptor.h"
-#include "mozilla/dom/WorkerCSPContext.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsIInterfaceRequestor.h"
@@ -70,7 +70,7 @@ struct WorkerLoadInfoData {
   nsCOMPtr<nsIScriptContext> mScriptContext;
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
-  UniquePtr<WorkerCSPContext> mCSPContext;
+  UniquePtr<OffThreadCSPContext> mCSPContext;
 
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsILoadGroup> mLoadGroup;

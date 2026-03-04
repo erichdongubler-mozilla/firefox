@@ -12,6 +12,7 @@
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/RegisterWorkletBindings.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/WorkletBinding.h"
@@ -60,11 +61,17 @@ WorkletImpl::WorkletImpl(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal)
   mShouldResistFingerprinting = aWindow->AsGlobal()->ShouldResistFingerprinting(
       RFPTarget::IsAlwaysEnabledForPrecompute);
 
-  RefPtr<dom::Document> doc = nsGlobalWindowInner::Cast(aWindow)->GetDocument();
-  if (doc) {
+  if (RefPtr<dom::Document> doc =
+          nsGlobalWindowInner::Cast(aWindow)->GetDocument()) {
     mIsPrivateBrowsing = doc->IsInPrivateBrowsing();
     mOverriddenFingerprintingSettings =
         doc->GetOverriddenFingerprintingSettings();
+
+    if (auto* policy = PolicyContainer::Cast(doc->GetPolicyContainer())) {
+      ipc::PolicyContainerArgs policyContainer;
+      PolicyContainer::ToArgs(policy, policyContainer);
+      mPolicyContainer = Some(std::move(policyContainer));
+    }
   }
 }
 
@@ -114,6 +121,16 @@ dom::WorkletGlobalScope* WorkletImpl::GetGlobalScope() {
   return mGlobalScope;
 }
 
+dom::OffThreadCSPContext* WorkletImpl::GetCSPContext() {
+  dom::WorkletThread::AssertIsOnWorkletThread();
+
+  if (!mCSPContext && mPolicyContainer && mPolicyContainer->csp().isSome()) {
+    ipc::CSPInfo cspInfo(mPolicyContainer->csp().ref());
+    mCSPContext = MakeUnique<dom::OffThreadCSPContext>(std::move(cspInfo));
+  }
+  return mCSPContext.get();
+}
+
 void WorkletImpl::NotifyWorkletFinished() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -127,6 +144,7 @@ void WorkletImpl::NotifyWorkletFinished() {
                              [self = RefPtr<WorkletImpl>(this)]() {
                                self->mFinishedOnExecutionThread = true;
                                self->mGlobalScope = nullptr;
+                               self->mCSPContext = nullptr;
                              }));
 
   mTerminated = true;

@@ -555,12 +555,12 @@ MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION bool ContentSecurityPolicyAllows(
       return true;
     }
 
-    if (WorkerCSPContext* ctx = worker->GetCSPContext()) {
+    if (OffThreadCSPContext* ctx = worker->GetCSPContext()) {
       evalOK = ctx->IsEvalAllowed(reportViolation);
     }
     violationType = nsIContentSecurityPolicy::VIOLATION_TYPE_EVAL;
   } else {
-    if (WorkerCSPContext* ctx = worker->GetCSPContext()) {
+    if (OffThreadCSPContext* ctx = worker->GetCSPContext()) {
       evalOK = ctx->IsWasmEvalAllowed(reportViolation);
     }
 

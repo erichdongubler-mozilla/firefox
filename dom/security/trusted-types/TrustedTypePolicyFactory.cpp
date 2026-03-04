@@ -157,7 +157,7 @@ auto TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
     if (NS_WARN_IF(rv.Failed())) {
       rv.SuppressException();
     }
-    if (WorkerCSPContext* ctx = workerPrivate->GetCSPContext()) {
+    if (OffThreadCSPContext* ctx = workerPrivate->GetCSPContext()) {
       for (const UniquePtr<const nsCSPPolicy>& policy : ctx->Policies()) {
         if (shouldBlock(policy.get())) {
           result = PolicyCreation::Blocked;

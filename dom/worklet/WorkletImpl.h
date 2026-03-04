@@ -12,6 +12,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/OriginTrials.h"
+#include "mozilla/dom/OffThreadCSPContext.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsRFPService.h"
 
@@ -68,6 +69,7 @@ class WorkletImpl {
 
   // Execution thread only.
   dom::WorkletGlobalScope* GetGlobalScope();
+  dom::OffThreadCSPContext* GetCSPContext();
 
   // Any thread.
 
@@ -78,6 +80,9 @@ class WorkletImpl {
   }
   nsIPrincipal* Principal() const { return mPrincipal; }
   const ipc::PrincipalInfo& PrincipalInfo() const { return mPrincipalInfo; }
+  const Maybe<ipc::PolicyContainerArgs>& PolicyContainer() const {
+    return mPolicyContainer;
+  }
 
   const Maybe<nsID>& GetAgentClusterId() const { return mAgentClusterId; }
 
@@ -109,6 +114,7 @@ class WorkletImpl {
   // Modified only in constructor.
   ipc::PrincipalInfo mPrincipalInfo;
   nsCOMPtr<nsIPrincipal> mPrincipal;
+  Maybe<ipc::PolicyContainerArgs> mPolicyContainer;
 
   const WorkletLoadInfo mWorkletLoadInfo;
 
@@ -118,6 +124,7 @@ class WorkletImpl {
 
   // Execution thread only.
   RefPtr<dom::WorkletGlobalScope> mGlobalScope;
+  UniquePtr<dom::OffThreadCSPContext> mCSPContext;
   bool mFinishedOnExecutionThread : 1;
 
   Maybe<nsID> mAgentClusterId;
