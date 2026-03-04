@@ -24,98 +24,6 @@
 
 using namespace mozilla;
 
-#ifdef XP_WIN
-// Include Windows header required for enabling high-precision timers.
-#  include <windows.h>
-#  include <mmsystem.h>
-
-// WindowsTimerFrequencyManager manages adjusting the Windows timer resolution
-// based on whether we're on battery power and the current process priority.
-class WindowsTimerFrequencyManager {
- public:
-  explicit WindowsTimerFrequencyManager(
-      const hal::ProcessPriority processPriority)
-      : mTimerPeriodEvalInterval(
-            TimeDuration::FromSeconds(kTimerPeriodEvalIntervalSec)),
-        mNextTimerPeriodEval(TimeStamp::Now() + mTimerPeriodEvalInterval),
-        mLastTimePeriodSet(ComputeDesiredTimerPeriod(processPriority)),
-        mAdjustTimerPeriod(
-            StaticPrefs::timer_auto_increase_timer_resolution()) {
-    if (mAdjustTimerPeriod) {
-      timeBeginPeriod(mLastTimePeriodSet);
-    }
-  }
-
-  ~WindowsTimerFrequencyManager() {
-    // About to shut down - let's finish off the last time period that we set.
-    if (mAdjustTimerPeriod) {
-      timeEndPeriod(mLastTimePeriodSet);
-    }
-  }
-
-  void Update(const TimeStamp now, const hal::ProcessPriority processPriority) {
-    if (now >= mNextTimerPeriodEval) {
-      const UINT newTimePeriod = ComputeDesiredTimerPeriod(processPriority);
-      if (newTimePeriod != mLastTimePeriodSet) {
-        if (mAdjustTimerPeriod) {
-          timeEndPeriod(mLastTimePeriodSet);
-          timeBeginPeriod(newTimePeriod);
-        }
-        mLastTimePeriodSet = newTimePeriod;
-      }
-      mNextTimerPeriodEval = now + mTimerPeriodEvalInterval;
-    }
-  }
-
- private:
-  const TimeDuration mTimerPeriodEvalInterval;
-  TimeStamp mNextTimerPeriodEval;
-  UINT mLastTimePeriodSet;
-
-  // If this is false, we will perform all of the logic but will stop short of
-  // actually changing the timer period.
-  const bool mAdjustTimerPeriod;
-
-  // kTimerPeriodEvalIntervalSec is the minimum amount of time that must pass
-  // before we will consider changing the timer period again.
-  static constexpr float kTimerPeriodEvalIntervalSec = 2.0f;
-
-  static constexpr UINT kTimerPeriodHiRes = 1;
-  static constexpr UINT kTimerPeriodLowRes = 16;
-
-  // Helper functions to determine what Windows timer resolution to target.
-  static constexpr UINT GetDesiredTimerPeriod(const bool aOnBatteryPower,
-                                              const bool aLowProcessPriority) {
-    const bool useLowResTimer = aOnBatteryPower || aLowProcessPriority;
-    return useLowResTimer ? kTimerPeriodLowRes : kTimerPeriodHiRes;
-  }
-
-  static constexpr void StaticUnitTests() {
-    static_assert(GetDesiredTimerPeriod(true, false) == kTimerPeriodLowRes);
-    static_assert(GetDesiredTimerPeriod(false, true) == kTimerPeriodLowRes);
-    static_assert(GetDesiredTimerPeriod(true, true) == kTimerPeriodLowRes);
-    static_assert(GetDesiredTimerPeriod(false, false) == kTimerPeriodHiRes);
-  }
-
-  static UINT ComputeDesiredTimerPeriod(
-      const hal::ProcessPriority processPriority) {
-    const bool lowPriorityProcess =
-        processPriority < hal::PROCESS_PRIORITY_FOREGROUND;
-
-    // NOTE: Using short-circuiting here to avoid call to GetSystemPowerStatus()
-    // when we know that that result will not affect the final result. (As
-    // confirmed by the static_assert's above, onBatteryPower does not affect
-    // the result when the lowPriorityProcess is true.)
-    SYSTEM_POWER_STATUS status;
-    const bool onBatteryPower = !lowPriorityProcess &&
-                                GetSystemPowerStatus(&status) &&
-                                (status.ACLineStatus == 0);
-
-    return GetDesiredTimerPeriod(onBatteryPower, lowPriorityProcess);
-  }
-};
-#endif
-
 // Uncomment the following line to enable runtime stats during development.
 // #define TIMERS_RUNTIME_STATS
 
@@ -266,8 +174,6 @@ TimerObserverRunnable::Run() {
     observerService->AddObserver(mObserver, "suspend_process_notification",
                                  false);
     observerService->AddObserver(mObserver, "resume_process_notification",
-                                 false);
-    observerService->AddObserver(mObserver, "ipc:process-priority-changed",
                                  false);
   }
   return NS_OK;
@@ -849,11 +755,6 @@ TimerThread::Run() {
 
   TelemetryQueue telemetryQueue;
 
-#ifdef XP_WIN
-  WindowsTimerFrequencyManager wTFM{
-      mCachedPriority.load(std::memory_order_relaxed)};
-#endif
-
   while (!mShutdown) {
     const bool chaosModeActive =
         ChaosMode::isActive(ChaosFeature::TimerScheduling);
@@ -910,10 +811,6 @@ TimerThread::Run() {
           MOZ_LOG(GetTimerLog(), LogLevel::Debug,
                   ("waiting for %f\n", waitFor.ToMilliseconds()));
       }
-
-#ifdef XP_WIN
-      wTFM.Update(now, mCachedPriority.load(std::memory_order_relaxed));
-#endif
     } else {
       mIntendedWakeupTime = TimeStamp{};
       // Sleep for 0.1 seconds while not firing timers.
@@ -1269,18 +1166,8 @@ void TimerThread::DoAfterSleep() {
 }
 
 NS_IMETHODIMP
-TimerThread::Observe(nsISupports* aSubject, const char* aTopic,
-                     const char16_t* aData) {
-  if (strcmp(aTopic, "ipc:process-priority-changed") == 0) {
-    nsCOMPtr<nsIPropertyBag2> props = do_QueryInterface(aSubject);
-    MOZ_ASSERT(props != nullptr);
-
-    int32_t priority = static_cast<int32_t>(hal::PROCESS_PRIORITY_UNKNOWN);
-    props->GetPropertyAsInt32(u"priority"_ns, &priority);
-    mCachedPriority.store(static_cast<hal::ProcessPriority>(priority),
-                          std::memory_order_relaxed);
-  }
-
+TimerThread::Observe(nsISupports* /*aSubject*/, const char* aTopic,
+                     const char16_t* /*aData*/) {
   if (StaticPrefs::timer_ignore_sleep_wake_notifications()) {
     return NS_OK;
   }
