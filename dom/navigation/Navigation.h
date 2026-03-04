@@ -142,8 +142,13 @@ class Navigation final : public DOMEventTargetHelper {
   void UpdateForReactivation(SessionHistoryInfo* aReactivatedEntry);
 
   // https://html.spec.whatwg.org/multipage/nav-history-apis.html#update-the-navigation-api-entries-for-a-same-document-navigation
+  MOZ_CAN_RUN_SCRIPT
   void UpdateEntriesForSameDocumentNavigation(
       SessionHistoryInfo* aDestinationSHE, NavigationType aNavigationType);
+
+  MOZ_CAN_RUN_SCRIPT
+  void RunNavigateEventHandlerSteps(NavigateEvent* aNavigateEvent,
+                                    NavigationTracker* aNavigationTracker);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
