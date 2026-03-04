@@ -2671,6 +2671,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageMediaCodec(
   }
 
   auto listener = MakeUnique<CompositeListener>(this);
+  MOZ_ASSERT(!mFrameMap.Contains(listener.get()));
   mFrameMap.Insert(listener.get(), frame);
   img->RegisterSetCurrentCallback(std::move(listener));
 
