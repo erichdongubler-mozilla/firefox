@@ -75,7 +75,11 @@ TEST(BufferMediaResource, ReadFromCache_NegativeCount_ShouldFail)
   RefPtr<MediaResource> res = new BufferMediaResource(buf, sizeof(buf));
 
   char out[4] = {0};
-  nsresult rv = res->ReadFromCache(out, 0, static_cast<uint32_t>(-1));
+  // Prevent constant propagation leading to a warning/error on older GCC, that
+  // thinks we're doing a 4GB memcpy into a 4 byte array.
+  // ReadFromCache has an early return that prevents the copy.
+  volatile uint32_t count = static_cast<uint32_t>(-1);
+  nsresult rv = res->ReadFromCache(out, 0, count);
 
   EXPECT_NE(rv, NS_OK);
 }
