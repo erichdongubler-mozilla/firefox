@@ -2408,11 +2408,7 @@ pref("browser.translations.enable", true);
 pref("browser.translations.select.enable", true);
 
 // Enable the Translations QuickAction in the URL bar.
-#ifdef NIGHTLY_BUILD
-  pref("browser.translations.quickAction.enabled", true);
-#else
-  pref("browser.translations.quickAction.enabled", false);
-#endif
+pref("browser.translations.quickAction.enabled", true);
 
 // Telemetry settings.
 // Determines if Telemetry pings can be archived locally.
