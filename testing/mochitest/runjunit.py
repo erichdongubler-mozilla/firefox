@@ -88,10 +88,7 @@ class JUnitTestRunner(MochitestDesktop):
         self.cleanup()
         self.device.clear_logcat()
         self.build_profile()
-        if self.startServers(self.options, debuggerInfo=None, public=True) is False:
-            raise RuntimeError(
-                "Failed to start servers: a required port is already in use"
-            )
+        self.startServers(self.options, debuggerInfo=None, public=True)
         self.log.debug("Servers started")
 
     def collectLogcatForCurrentTest(self):
