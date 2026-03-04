@@ -72,15 +72,11 @@ body {
 }
 
 #about-translations-main-user-interface {
-  display: grid;
+  display: none;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: var(--space-medium);
   width: min(var(--AT-content-width), var(--AT-content-max));
   margin: 0 auto;
-}
-
-#about-translations-main-user-interface[hidden] {
-  display: none;
 }
 
 .about-translations-select {

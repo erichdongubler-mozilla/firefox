@@ -14,11 +14,6 @@ about-translations-unsupported-info-message =
   .heading = Translation isn’t available on this device.
   .message = Try switching to a different device.
 
-# An info message displayed when translations are disabled and locked by enterprise policy.
-about-translations-policy-disabled-info-message =
-  .heading = Translations aren’t available for your organization
-  .message = This is a policy set by your administrator.
-
 # An error message displayed when the language list fails to load.
 about-translations-language-load-error-message =
   .heading = Couldn’t load languages.

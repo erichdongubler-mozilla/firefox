@@ -9,7 +9,7 @@
 /* global AT_getAppLocale, AT_getSupportedLanguages, AT_log, AT_getScriptDirection,
    AT_getDisplayName, AT_logError, AT_createTranslationsPort, AT_isHtmlTranslation,
    AT_isTranslationEngineSupported, AT_isInAutomation, AT_identifyLanguage,
-   AT_telemetry, AT_isEnabledStateManagedByPolicy */
+   AT_telemetry */
 
 import { Translator } from "chrome://global/content/translations/Translator.mjs";
 
@@ -281,7 +281,6 @@ class AboutTranslations {
       return;
     }
 
-    this.#showMainUserInterface();
     this.#updateSourceScriptDirection();
     this.#updateTargetScriptDirection();
     this.#updateSourceSectionClearButtonVisibility();
@@ -295,20 +294,12 @@ class AboutTranslations {
 
   /**
    * Disables the feature and clears any active translations.
-   *
-   * @returns {Promise<void>}
    */
-  async onFeatureDisabled() {
+  onFeatureDisabled() {
     // Ensure any active translation request becomes stale.
     this.#translationId += 1;
     this.#isFeatureEnabled = false;
     this.#destroyTranslator();
-
-    const isManagedByPolicy = await AT_isEnabledStateManagedByPolicy();
-    if (isManagedByPolicy) {
-      this.#showPolicyDisabledInfoMessage();
-      return;
-    }
 
     document.body.style.visibility = "hidden";
   }
@@ -326,7 +317,6 @@ class AboutTranslations {
    *   languageLoadErrorMessage: HTMLElement,
    *   learnMoreLink: HTMLAnchorElement,
    *   mainUserInterface: HTMLElement,
-   *   policyDisabledInfoMessage: HTMLElement,
    *   sourceLanguageSelector: HTMLElement,
    *   sourceSection: HTMLElement,
    *   sourceSectionClearButton: HTMLElement,
@@ -383,11 +373,6 @@ class AboutTranslations {
       ),
       mainUserInterface: /** @type {HTMLElement} */ (
         document.getElementById("about-translations-main-user-interface")
-      ),
-      policyDisabledInfoMessage: /** @type {HTMLElement} */ (
-        document.getElementById(
-          "about-translations-policy-disabled-info-message"
-        )
       ),
       sourceLanguageSelector: /** @type {HTMLElement} */ (
         document.getElementById("about-translations-source-select")
@@ -745,132 +730,58 @@ class AboutTranslations {
    * Shows the main UI and hides any stand-alone message bars.
    */
   #showMainUserInterface() {
-    const {
-      unsupportedInfoMessage,
-      policyDisabledInfoMessage,
-      languageLoadErrorMessage,
-      mainUserInterface,
-    } = this.elements;
+    const { unsupportedInfoMessage, mainUserInterface } = this.elements;
 
-    this.#setStandaloneMessageVisible(unsupportedInfoMessage, false);
-    this.#setStandaloneMessageVisible(policyDisabledInfoMessage, false);
-    this.#setStandaloneMessageVisible(languageLoadErrorMessage, false);
+    unsupportedInfoMessage.hidden = true;
+    this.#setLanguageLoadErrorMessageVisible(false);
 
-    mainUserInterface.hidden = false;
+    mainUserInterface.style.display = "grid";
   }
 
   /**
    * Shows the message that translations are not supported in the current environment.
    */
   #showUnsupportedInfoMessage() {
-    const { unsupportedInfoMessage } = this.elements;
-    this.#showStandaloneMessage(unsupportedInfoMessage);
-  }
+    const { unsupportedInfoMessage, mainUserInterface } = this.elements;
 
-  /**
-   * Shows the message that translations are unavailable due to enterprise policy.
-   */
-  #showPolicyDisabledInfoMessage() {
-    const { policyDisabledInfoMessage } = this.elements;
-    this.#showStandaloneMessage(policyDisabledInfoMessage);
-  }
+    mainUserInterface.style.display = "none";
+    this.#setLanguageLoadErrorMessageVisible(false);
 
-  /**
-   * Shows one standalone message bar and hides the main UI.
-   *
-   * @param {HTMLElement} messageBar
-   */
-  #showStandaloneMessage(messageBar) {
-    const {
-      unsupportedInfoMessage,
-      policyDisabledInfoMessage,
-      languageLoadErrorMessage,
-      mainUserInterface,
-    } = this.elements;
-
-    mainUserInterface.hidden = true;
-
-    for (const standaloneMessage of [
-      unsupportedInfoMessage,
-      policyDisabledInfoMessage,
-      languageLoadErrorMessage,
-    ]) {
-      this.#setStandaloneMessageVisible(
-        standaloneMessage,
-        standaloneMessage === messageBar
-      );
-    }
-
-    document.body.style.visibility = "visible";
+    unsupportedInfoMessage.hidden = false;
   }
 
   /**
    * Shows the message that the list of languages could not be loaded.
    */
   #showLanguageLoadErrorMessage() {
-    const { languageLoadErrorMessage } = this.elements;
-    this.#showStandaloneMessage(languageLoadErrorMessage);
+    const { unsupportedInfoMessage, mainUserInterface } = this.elements;
+
+    mainUserInterface.style.display = "none";
+    unsupportedInfoMessage.hidden = true;
+
+    this.#setLanguageLoadErrorMessageVisible(true);
   }
 
   /**
-   * Shows or hides a standalone message and notifies tests when the
+   * Shows or hides the language-load error message and notifies tests when the
    * visibility changes.
    *
-   * @param {HTMLElement} messageBar
    * @param {boolean} visible
    */
-  #setStandaloneMessageVisible(messageBar, visible) {
-    const isVisible = !messageBar.hidden;
+  #setLanguageLoadErrorMessageVisible(visible) {
+    const { languageLoadErrorMessage } = this.elements;
+    const isVisible = !languageLoadErrorMessage.hidden;
 
     if (isVisible === visible) {
       return;
     }
 
-    messageBar.hidden = !visible;
-    const eventNames =
-      this.#getStandaloneMessageVisibilityEventNames(messageBar);
-    if (!eventNames) {
-      return;
-    }
-
-    dispatchTestEvent(visible ? eventNames.shown : eventNames.hidden);
-  }
-
-  /**
-   * Returns test events for standalone message visibility changes.
-   *
-   * @param {HTMLElement} messageBar
-   * @returns {{ shown: string, hidden: string } | null}
-   */
-  #getStandaloneMessageVisibilityEventNames(messageBar) {
-    const {
-      unsupportedInfoMessage,
-      policyDisabledInfoMessage,
-      languageLoadErrorMessage,
-    } = this.elements;
-
-    if (messageBar === unsupportedInfoMessage) {
-      return {
-        shown: "AboutTranslationsTest:UnsupportedInfoMessageShown",
-        hidden: "AboutTranslationsTest:UnsupportedInfoMessageHidden",
-      };
-    }
-
-    if (messageBar === policyDisabledInfoMessage) {
-      return {
-        shown: "AboutTranslationsTest:PolicyDisabledInfoMessageShown",
-        hidden: "AboutTranslationsTest:PolicyDisabledInfoMessageHidden",
-      };
-    }
-
-    if (messageBar === languageLoadErrorMessage) {
-      return {
-        shown: "AboutTranslationsTest:LanguageLoadErrorMessageShown",
-        hidden: "AboutTranslationsTest:LanguageLoadErrorMessageHidden",
-      };
-    }
-
-    return null;
+    languageLoadErrorMessage.hidden = !visible;
+    dispatchTestEvent(
+      visible
+        ? "AboutTranslationsTest:LanguageLoadErrorMessageShown"
+        : "AboutTranslationsTest:LanguageLoadErrorMessageHidden"
+    );
   }
 
   /**
@@ -2305,7 +2216,7 @@ async function setFeatureEnabledState(enabled) {
   if (enabled) {
     await window.aboutTranslations.onFeatureEnabled();
   } else {
-    await window.aboutTranslations.onFeatureDisabled();
+    window.aboutTranslations.onFeatureDisabled();
   }
 
   if (initialEnabledStateApplied) {

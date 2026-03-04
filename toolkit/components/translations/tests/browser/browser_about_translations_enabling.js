@@ -3,6 +3,12 @@
 
 "use strict";
 
+const AI_PREFS = [
+  ["browser.translations.enable", false],
+  ["browser.ai.control.default", "blocked"],
+  ["browser.ai.control.translations", "blocked"],
+];
+
 const HIDDEN_UI = {
   pageHeader: false,
   mainUserInterface: false,
@@ -13,7 +19,6 @@ const HIDDEN_UI = {
   sourceSectionTextArea: false,
   targetSectionTextArea: false,
   unsupportedInfoMessage: false,
-  policyDisabledInfoMessage: false,
   languageLoadErrorMessage: false,
 };
 
@@ -27,7 +32,6 @@ const VISIBLE_UI = {
   sourceSectionTextArea: true,
   targetSectionTextArea: true,
   unsupportedInfoMessage: false,
-  policyDisabledInfoMessage: false,
   languageLoadErrorMessage: false,
 };
 
@@ -38,8 +42,13 @@ add_task(
   async function test_about_translations_ai_feature_toggle_from_disabled() {
     const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
       {
-        featureEnabled: false,
+        disabled: true,
         autoDownloadFromRemoteSettings: true,
+        prefs: [
+          ["browser.translations.enable", false],
+          ["browser.ai.control.default", "blocked"],
+          ["browser.ai.control.translations", "blocked"],
+        ],
       }
     );
 
@@ -86,7 +95,7 @@ add_task(
   async function test_about_translations_ai_feature_toggle_from_enabled() {
     const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations(
       {
-        featureEnabled: true,
+        disabled: false,
         autoDownloadFromRemoteSettings: true,
         prefs: [
           ["browser.translations.enable", true],
@@ -144,34 +153,6 @@ add_task(async function test_about_translations_engine_unsupported() {
   await aboutTranslationsTestUtils.assertIsVisible({
     pageHeader: true,
     unsupportedInfoMessage: true,
-    policyDisabledInfoMessage: false,
-    mainUserInterface: false,
-    sourceLanguageSelector: false,
-    targetLanguageSelector: false,
-    copyButton: false,
-    swapLanguagesButton: false,
-    sourceSectionTextArea: false,
-    targetSectionTextArea: false,
-    languageLoadErrorMessage: false,
-  });
-
-  await cleanup();
-});
-
-/**
- * Checks that a policy-locked disabled feature shows the policy info message.
- */
-add_task(async function test_about_translations_feature_blocked_by_policy() {
-  const { aboutTranslationsTestUtils, cleanup } = await openAboutTranslations({
-    featureEnabled: false,
-    lockEnabledState: true,
-    autoDownloadFromRemoteSettings: true,
-  });
-
-  await aboutTranslationsTestUtils.assertIsVisible({
-    pageHeader: true,
-    unsupportedInfoMessage: false,
-    policyDisabledInfoMessage: true,
     mainUserInterface: false,
     sourceLanguageSelector: false,
     targetLanguageSelector: false,
