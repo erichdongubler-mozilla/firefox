@@ -19,6 +19,7 @@ clippy:
         - gfx/wr/peek-poke/peek-poke-derive/
         - gfx/wr/webrender_build/
         - gfx/wr/wr_malloc_size_of/
+        - image/rust/jxl/
         # - intl/bidi/rust/unicode-bidi-ffi/
         - intl/l10n/rust/fluent-ffi/
         - intl/l10n/rust/l10nregistry-ffi/
