@@ -383,10 +383,6 @@ class AboutTranslations {
     await this.#setupLanguageSelectors();
     await this.#updateUIFromURL();
 
-    // Even though we just updated the UI from the URL, this will
-    // clear any invalid parameters that may have been passed in the URL.
-    this.#updateURLFromUI();
-
     this.#updateSourceScriptDirection();
     this.#updateTargetScriptDirection();
 
@@ -1170,10 +1166,10 @@ class AboutTranslations {
     const hadValueBefore = Boolean(sourceSectionTextArea.value);
 
     sourceSectionTextArea.value = value;
-    sourceSectionTextArea.dispatchEvent(new Event("input"));
 
-    this.#maybeUpdateDetectedSourceLanguage();
     this.#updateSourceScriptDirection();
+    this.#maybeUpdateDetectedSourceLanguage();
+    this.#updateSourceSectionClearButtonVisibility();
     this.#requestSectionHeightsUpdate({ scheduleCallback: false });
 
     if (!value && hadValueBefore) {
@@ -1181,6 +1177,8 @@ class AboutTranslations {
         new CustomEvent("AboutTranslationsTest:ClearSourceText")
       );
     }
+
+    sourceSectionTextArea.dispatchEvent(new Event("input"));
   }
 
   /**
