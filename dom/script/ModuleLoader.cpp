@@ -403,13 +403,15 @@ nsresult ModuleLoader::CompileCssModule(
     nsCOMPtr<nsPIDOMWindowInner> window =
         do_QueryInterface(aRequest->GetGlobalObject());
     if (!window) {
-      error.ThrowNotSupportedError("Not supported when there is no document");
+      error.ThrowNotSupportedError(
+          "CSS module scripts not supported when there is no window");
       return;
     }
 
     Document* constructorDocument = window->GetExtantDoc();
     if (!constructorDocument) {
-      error.ThrowNotSupportedError("Not supported when there is no document");
+      error.ThrowNotSupportedError(
+          "CSS module scripts not supported when there is no document");
       return;
     }
 

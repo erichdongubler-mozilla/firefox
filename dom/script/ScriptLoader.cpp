@@ -4908,6 +4908,14 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
     // When loading a module, only responses with an expected MIME type are
     // acceptable.
     if (!MimeTypeMatchesExpectedModuleType(aChannel, request->mModuleType)) {
+      if (LOG_ENABLED()) {
+        nsAutoCString spec;
+        uri->GetAsciiSpec(spec);
+        LOG(
+            ("ScriptLoadRequest (%p): MimeTypeMatchesExpectedModuleType check "
+             "failed for: %s",
+             aRequest, spec.get()));
+      }
       return NS_ERROR_FAILURE;
     }
 
