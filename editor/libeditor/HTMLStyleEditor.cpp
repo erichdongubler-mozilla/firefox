@@ -75,11 +75,11 @@ template nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
     const Element& aEditingHost);
 
 template nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
-    AutoClonedRangeArray& aRanges,
-    const AutoTArray<EditorInlineStyleAndValue, 1>& aStylesToSet);
+    AutoClonedRangeArray&, const AutoTArray<EditorInlineStyleAndValue, 1>&,
+    const Element&);
 template nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
-    AutoClonedRangeArray& aRanges,
-    const AutoTArray<EditorInlineStyleAndValue, 32>& aStylesToSet);
+    AutoClonedRangeArray&, const AutoTArray<EditorInlineStyleAndValue, 32>&,
+    const Element&);
 
 nsresult HTMLEditor::SetInlinePropertyAsAction(nsStaticAtom& aProperty,
                                                nsStaticAtom* aAttribute,
@@ -309,7 +309,8 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
   AutoClonedSelectionRangeArray selectionRanges(SelectionRef());
-  nsresult rv = SetInlinePropertiesAroundRanges(selectionRanges, aStylesToSet);
+  nsresult rv = SetInlinePropertiesAroundRanges(selectionRanges, aStylesToSet,
+                                                aEditingHost);
   if (NS_FAILED(rv)) {
     NS_WARNING("HTMLEditor::SetInlinePropertiesAroundRanges() failed");
     return rv;
@@ -327,7 +328,8 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
 template <size_t N>
 nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
     AutoClonedRangeArray& aRanges,
-    const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet) {
+    const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet,
+    const Element& aEditingHost) {
   MOZ_ASSERT(!aRanges.HasSavedRanges());
   for (const EditorInlineStyleAndValue& styleToSet : aStylesToSet) {
     AutoInlineStyleSetter inlineStyleSetter(styleToSet);
@@ -368,7 +370,8 @@ nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
           }
         }
         Result<EditorRawDOMRange, nsresult> rangeOrError =
-            inlineStyleSetter.ExtendOrShrinkRangeToApplyTheStyle(*this, range);
+            inlineStyleSetter.ExtendOrShrinkRangeToApplyTheStyle(*this, range,
+                                                                 aEditingHost);
         if (MOZ_UNLIKELY(rangeOrError.isErr())) {
           NS_WARNING(
               "HTMLEditor::ExtendOrShrinkRangeToApplyTheStyle() failed, but "
@@ -1932,7 +1935,8 @@ EditorRawDOMRange HTMLEditor::AutoInlineStyleSetter::
 
 Result<EditorRawDOMRange, nsresult>
 HTMLEditor::AutoInlineStyleSetter::ExtendOrShrinkRangeToApplyTheStyle(
-    const HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange) const {
+    const HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange,
+    const Element& aEditingHost) const {
   if (NS_WARN_IF(!aRange.IsPositioned())) {
     return Err(NS_ERROR_FAILURE);
   }
@@ -1949,15 +1953,21 @@ HTMLEditor::AutoInlineStyleSetter::ExtendOrShrinkRangeToApplyTheStyle(
   // range to contain the <br> element.
   EditorDOMRange range(aRange);
   if (range.EndRef().IsInContentNode()) {
-    const WSScanResult nextContentData =
-        WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            {WSRunScanner::Option::OnlyEditableNodes}, range.EndRef());
-    if (nextContentData.ReachedBRElementFollowedByBlockBoundary() &&
-        nextContentData.BRElementPtr()->GetParentElement() &&
+    const WSScanResult nextThing =
+        HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
+            range.EndRef(),
+            // We don't want to wrap only the padding line break into the new
+            // styled element.
+            PaddingForEmptyBlock::Unnecessary, aEditingHost);
+    if (nextThing.MaybeIgnoredLineBreak().isSome() &&
+        nextThing.MaybeIgnoredLineBreak()->IsInclusiveDescendantOf(
+            aEditingHost) &&
+        nextThing.MaybeIgnoredLineBreak()->ContentRef().GetParentElement() &&
         HTMLEditUtils::IsInlineContent(
-            *nextContentData.BRElementPtr()->GetParentElement(),
+            *nextThing.MaybeIgnoredLineBreak()->ContentRef().GetParentElement(),
             BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
-      range.SetEnd(EditorDOMPoint::After(*nextContentData.BRElementPtr()));
+      range.SetEnd(
+          nextThing.MaybeIgnoredLineBreak()->After<EditorRawDOMPoint>());
       MOZ_ASSERT(range.EndRef().IsSet());
       commonAncestor = range.GetClosestCommonInclusiveAncestor();
       if (NS_WARN_IF(!commonAncestor)) {

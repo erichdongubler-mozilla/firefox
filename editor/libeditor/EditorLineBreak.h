@@ -428,6 +428,12 @@ class CreateLineBreakResult final : public CaretPoint {
   explicit CreateLineBreakResult(CreateElementResult&& aCreateElementResult)
       : CaretPoint(aCreateElementResult.UnwrapCaretPoint()),
         mLineBreak(Some(aCreateElementResult.UnwrapNewNode())) {}
+  explicit CreateLineBreakResult(CreateElementResult&& aCreateElementResult,
+                                 EditorDOMPoint&& aCaretPoint)
+      : CaretPoint(std::forward<EditorDOMPoint>(aCaretPoint)),
+        mLineBreak(Some(aCreateElementResult.UnwrapNewNode())) {
+    aCreateElementResult.IgnoreCaretPointSuggestion();
+  }
 
   [[nodiscard]] static CreateLineBreakResult NotHandled() {
     return CreateLineBreakResult();

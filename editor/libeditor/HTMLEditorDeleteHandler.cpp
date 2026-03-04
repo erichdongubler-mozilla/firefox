@@ -3644,7 +3644,6 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
   MOZ_ASSERT(
       aRangeToDelete.GetStartContainer()->AsContent()->GetEditingHost() ==
       aRangeToDelete.GetEndContainer()->AsContent()->GetEditingHost());
-  MOZ_ASSERT(!mLeftContent == !mRightContent);
   MOZ_ASSERT_IF(mLeftContent, mLeftContent->IsElement());
   MOZ_ASSERT_IF(mLeftContent,
                 aRangeToDelete.GetStartContainer()->IsInclusiveDescendantOf(
@@ -3757,14 +3756,22 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
       return Err(rv);
     }
   }
-  const auto& pointToPutCaret =
-      !nsIEditor::DirectionIsBackspace(aDirectionAndAmount) ||
-              (aHTMLEditor.TopLevelEditSubActionDataRef()
-                   .mDidDeleteEmptyParentBlocks &&
-               (aHTMLEditor.GetEditAction() == EditAction::eDrop ||
-                aHTMLEditor.GetEditAction() == EditAction::eDeleteByDrag))
-          ? rangeToCleanUp.StartRef()
-          : rangeToCleanUp.EndRef();
+  const auto& pointToPutCaret = [&]() -> const EditorDOMPoint& {
+    // If we delete left or right block, we want to collapse selection to the
+    // remaining block.
+    if (!mLeftContent != !mRightContent) {
+      return mLeftContent ? rangeToCleanUp.StartRef() : rangeToCleanUp.EndRef();
+    }
+    // Otherwise, we should consider the caret position from the deleting
+    // direction.
+    return !nsIEditor::DirectionIsBackspace(aDirectionAndAmount) ||
+                   (aHTMLEditor.TopLevelEditSubActionDataRef()
+                        .mDidDeleteEmptyParentBlocks &&
+                    (aHTMLEditor.GetEditAction() == EditAction::eDrop ||
+                     aHTMLEditor.GetEditAction() == EditAction::eDeleteByDrag))
+               ? rangeToCleanUp.StartRef()
+               : rangeToCleanUp.EndRef();
+  }();
   rv = aHTMLEditor.CollapseSelectionTo(pointToPutCaret);
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::CollapseSelectionTo() failed");

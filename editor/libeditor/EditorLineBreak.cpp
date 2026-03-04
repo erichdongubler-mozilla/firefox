@@ -6,6 +6,8 @@
 #include "EditorLineBreak.h"
 
 #include "HTMLEditUtils.h"
+#include "WSRunScanner.h"
+#include "mozilla/dom/AncestorIterator.h"
 
 namespace mozilla {
 

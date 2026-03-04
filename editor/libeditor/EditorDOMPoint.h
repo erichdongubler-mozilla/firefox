@@ -11,6 +11,7 @@
 #include "mozilla/EditorForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
+#include "mozilla/ToString.h"
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"  // for Selection::InterlinePosition
@@ -1461,6 +1462,10 @@ class EditorDOMPointBase final {
     return aStream;
   }
 
+  friend inline auto format_as(const SelfType& aDOMPoint) {
+    return ToString(aDOMPoint);
+  }
+
  private:
   void EnsureChild() {
     if (mIsChildInitialized) {
@@ -1824,6 +1829,10 @@ class EditorDOMRangeBase final {
               << " }";
     }
     return aStream;
+  }
+
+  friend inline auto format_as(const SelfType& aRange) {
+    return ToString(aRange);
   }
 
  private:

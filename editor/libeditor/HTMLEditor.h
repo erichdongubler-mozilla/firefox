@@ -1638,7 +1638,7 @@ class HTMLEditor final : public EditorBase,
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult>
   InsertPaddingBRElementToMakeEmptyLineVisibleIfNeeded(
-      const EditorDOMPoint& aPointToInsert);
+      const EditorDOMPoint& aPointToInsert, const Element& aEditingHost);
 
   /**
    * Insert a padding <br> if aPoint is in an empty block.
@@ -3469,7 +3469,8 @@ class HTMLEditor final : public EditorBase,
   template <size_t N>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SetInlinePropertiesAroundRanges(
       AutoClonedRangeArray& aRanges,
-      const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet);
+      const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet,
+      const Element& aEditingHost);
 
   /**
    * RemoveInlinePropertiesAsSubAction() removes specified styles from
