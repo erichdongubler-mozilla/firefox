@@ -1,6 +1,6 @@
 import pytest
 
-URL = "https://products.franmar.com/collections/consumer-products/"
+URL = "https://secure.lafoodbank.org/site/Donation2?df_id=5468&mfc_pref=T&5468.donation=form1"
 
 
 @pytest.mark.only_platforms("android")
