@@ -6080,36 +6080,6 @@ class AboutTranslationsTestUtils {
   }
 
   /**
-   * Returns the current selected-browser session history entry count.
-   *
-   * @returns {number}
-   */
-  getHistoryLength() {
-    try {
-      return this.#browser.browsingContext?.sessionHistory?.count ?? NaN;
-    } catch (error) {
-      AboutTranslationsTestUtils.#reportTestFailure(error);
-    }
-
-    return NaN;
-  }
-
-  /**
-   * Asserts that the content-page history length matches the expected value.
-   *
-   * @param {object} options
-   * @param {number} options.expectedLength
-   */
-  assertHistoryLength({ expectedLength }) {
-    const actualLength = this.getHistoryLength();
-    is(
-      actualLength,
-      expectedLength,
-      "Expected history length to match the expected length."
-    );
-  }
-
-  /**
    * Asserts visibility of each element based on the provided options.
    *
    * @param {object}  options

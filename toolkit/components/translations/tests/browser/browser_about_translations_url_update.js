@@ -30,7 +30,6 @@ add_task(async function test_about_translations_url_src_param_updates() {
     targetLanguage: "",
     sourceText: "",
   });
-  const initialHistoryLength = aboutTranslationsTestUtils.getHistoryLength();
 
   await aboutTranslationsTestUtils.assertEvents(
     {
@@ -50,9 +49,6 @@ add_task(async function test_about_translations_url_src_param_updates() {
     targetLanguage: "",
     sourceText: "",
   });
-  aboutTranslationsTestUtils.assertHistoryLength({
-    expectedLength: initialHistoryLength,
-  });
 
   await aboutTranslationsTestUtils.assertEvents(
     {
@@ -71,9 +67,6 @@ add_task(async function test_about_translations_url_src_param_updates() {
     sourceLanguage: "ko",
     targetLanguage: "ja",
     sourceText: "",
-  });
-  aboutTranslationsTestUtils.assertHistoryLength({
-    expectedLength: initialHistoryLength,
   });
 
   await aboutTranslationsTestUtils.assertEvents(
@@ -110,9 +103,6 @@ add_task(async function test_about_translations_url_src_param_updates() {
     sourceLanguage: "ko",
     targetLanguage: "ja",
     sourceText: "Hello world",
-  });
-  aboutTranslationsTestUtils.assertHistoryLength({
-    expectedLength: initialHistoryLength,
   });
   await aboutTranslationsTestUtils.assertTranslatedText({
     sourceLanguage: "ko",
@@ -155,9 +145,6 @@ add_task(async function test_about_translations_url_src_param_updates() {
     targetLanguage: "ja",
     sourceText: "Hello world",
   });
-  aboutTranslationsTestUtils.assertHistoryLength({
-    expectedLength: initialHistoryLength,
-  });
   await aboutTranslationsTestUtils.assertTranslatedText({
     detectedLanguage: "en",
     targetLanguage: "ja",
@@ -191,9 +178,6 @@ add_task(async function test_about_translations_url_src_param_updates() {
     targetLanguage: "",
     sourceText: "Hello world",
   });
-  aboutTranslationsTestUtils.assertHistoryLength({
-    expectedLength: initialHistoryLength,
-  });
   await aboutTranslationsTestUtils.assertTargetTextArea({
     showsPlaceholder: true,
   });
@@ -220,9 +204,6 @@ add_task(async function test_about_translations_url_src_param_updates() {
     sourceLanguage: "detect",
     targetLanguage: "",
     sourceText: "",
-  });
-  aboutTranslationsTestUtils.assertHistoryLength({
-    expectedLength: initialHistoryLength,
   });
   await aboutTranslationsTestUtils.assertTargetTextArea({
     showsPlaceholder: true,
