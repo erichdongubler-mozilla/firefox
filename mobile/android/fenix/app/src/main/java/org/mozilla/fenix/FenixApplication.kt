@@ -32,6 +32,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import mozilla.appservices.autofill.AutofillApiException
+import mozilla.components.browser.state.action.SearchAction.SearchConfigurationAvailabilityChanged
 import mozilla.components.browser.state.action.SystemAction
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.store.BrowserStore
@@ -762,8 +763,26 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     }
 
     private fun initializeRemoteSettingsSupport() {
-        GlobalRemoteSettingsDependencyProvider.initialize(components.remoteSettingsService.value)
+        GlobalRemoteSettingsDependencyProvider.initialize(
+            remoteSettingsService = components.remoteSettingsService.value,
+            onRemoteCollectionsUpdated = ::setupRefreshingSearchEngines,
+        )
         components.remoteSettingsSyncScheduler.registerForSync()
+    }
+
+    @VisibleForTesting
+    internal fun setupRefreshingSearchEngines(
+        updatedCollections: List<String>,
+        browserStore: BrowserStore = components.core.store,
+    ) {
+        val searchRelatedCollections = listOf(
+            "search-config-v2",
+            "search-config-overrides-v2",
+            "search-config-icons",
+        )
+        if (searchRelatedCollections.any { it in updatedCollections }) {
+            browserStore.dispatch(SearchConfigurationAvailabilityChanged(true))
+        }
     }
 
     @Suppress("ForbiddenComment")

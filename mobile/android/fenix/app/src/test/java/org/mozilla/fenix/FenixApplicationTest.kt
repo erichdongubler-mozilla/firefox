@@ -14,6 +14,8 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode
 import mozilla.components.concept.engine.webextension.DisabledFlags
@@ -316,4 +318,49 @@ class FenixApplicationTest {
 
             assertEquals("Test", Preferences.etpCustomCookiesSelection.testGetValue())
         }
+
+    @Test
+    fun `WHEN the search configuration is updated in remote settings THEN set a new search configuration being available`() {
+        val browserStore = BrowserStore(
+            BrowserState(
+                search = SearchState(
+                    isNewSearchConfigurationAvailable = false,
+                ),
+            ),
+        )
+
+        application.setupRefreshingSearchEngines(listOf("search-config-v2"), browserStore)
+
+        assertTrue(browserStore.state.search.isNewSearchConfigurationAvailable)
+    }
+
+    @Test
+    fun `WHEN the search configuration overrides are updated in remote settings THEN set a new search configuration being available`() {
+        val browserStore = BrowserStore(
+            BrowserState(
+                search = SearchState(
+                    isNewSearchConfigurationAvailable = false,
+                ),
+            ),
+        )
+
+        application.setupRefreshingSearchEngines(listOf("search-config-overrides-v2"), browserStore)
+
+        assertTrue(browserStore.state.search.isNewSearchConfigurationAvailable)
+    }
+
+    @Test
+    fun `WHEN the search engine icons are updated in remote settings THEN set a new search configuration being available`() {
+        val browserStore = BrowserStore(
+            BrowserState(
+                search = SearchState(
+                    isNewSearchConfigurationAvailable = false,
+                ),
+            ),
+        )
+
+        application.setupRefreshingSearchEngines(listOf("search-config-icons"), browserStore)
+
+        assertTrue(browserStore.state.search.isNewSearchConfigurationAvailable)
+    }
 }
