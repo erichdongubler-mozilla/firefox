@@ -210,6 +210,7 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
     // Create the element for the remote client.
     let clientItem = document.createXULElement("label");
     clientItem.setAttribute("id", labelId);
+    clientItem.className = "subview-subheader";
     clientItem.setAttribute("itemtype", "client");
     clientItem.setAttribute(
       "tooltiptext",

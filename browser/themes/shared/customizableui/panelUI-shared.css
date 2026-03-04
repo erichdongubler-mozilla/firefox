@@ -741,18 +741,9 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 
 #PanelUI-fxa-cta-menu,
 #PanelUI-fxa-menu-services {
-  .fxa-cta-button {
-    margin: var(--space-xsmall);
+  .fxa-cta-button label {
+    margin: 0;
   }
-}
-
-.PanelUI-fxa-menu-section-title,
-.PanelUI-remotetabs-clientcontainer > label[itemtype="client"] {
-  /* FIXME: these elements should use the subview-subheader class */
-  color: var(--text-color-deemphasized);
-  font-size: 0.9em;
-  margin-top: 6px;
-  margin-bottom: 2px;
 }
 
 #appMenu-fxa-status2 {
@@ -969,9 +960,9 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 }
 
 .ctaMenuLogo {
-  width: 16px;
-  height: 16px;
-  margin-inline-start: 5px;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  margin-inline-end: var(--space-xsmall);
 }
 
 #PanelUI-fxa-menu-monitor-button {
