@@ -366,6 +366,7 @@ async function openAboutTranslations({
     autoDownloadFromRemoteSettings
   );
 
+  let originalCopyButtonResetDelay;
   await aboutTranslationsTestUtils.waitForReady();
 
   if (featureEnabled) {
@@ -400,6 +401,8 @@ async function openAboutTranslations({
         requireManualCopyButtonReset
       );
     } else if (copyButtonResetDelay !== undefined) {
+      originalCopyButtonResetDelay =
+        await aboutTranslationsTestUtils.getCopyButtonResetDelay();
       await aboutTranslationsTestUtils.setCopyButtonResetDelay(
         copyButtonResetDelay
       );
@@ -410,7 +413,11 @@ async function openAboutTranslations({
     aboutTranslationsTestUtils,
     async cleanup() {
       await aboutTranslationsTestUtils.setManualCopyButtonResetEnabled(false);
-      await aboutTranslationsTestUtils.clearCopyButtonResetDelayOverride();
+      if (originalCopyButtonResetDelay) {
+        await aboutTranslationsTestUtils.setCopyButtonResetDelay(
+          originalCopyButtonResetDelay
+        );
+      }
       await loadBlankPage();
       BrowserTestUtils.removeTab(tab);
 
@@ -4836,11 +4843,7 @@ class AboutTranslationsTestUtils {
       await this.#runInPage(
         (_, { delayMs }) => {
           const { window } = content;
-          const aboutTranslations = Cu.waiveXrays(window).aboutTranslations;
-          if (!aboutTranslations) {
-            throw new Error("aboutTranslations instance is unavailable.");
-          }
-          aboutTranslations.testSetCopyButtonResetDelayOverride(delayMs);
+          Cu.waiveXrays(window).COPY_BUTTON_RESET_DELAY = delayMs;
         },
         { delayMs: ms }
       );
@@ -4850,21 +4853,21 @@ class AboutTranslationsTestUtils {
   }
 
   /**
-   * Clears any copy button reset delay override.
+   * Returns the current copy button reset delay applied within the page.
+   *
+   * @returns {Promise<number>}
    */
-  async clearCopyButtonResetDelayOverride() {
+  async getCopyButtonResetDelay() {
     try {
-      await this.#runInPage(() => {
+      return await this.#runInPage(() => {
         const { window } = content;
-        const aboutTranslations = Cu.waiveXrays(window).aboutTranslations;
-        if (!aboutTranslations) {
-          throw new Error("aboutTranslations instance is unavailable.");
-        }
-        aboutTranslations.testSetCopyButtonResetDelayOverride(null);
+        return Cu.waiveXrays(window).COPY_BUTTON_RESET_DELAY;
       });
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
+
+    return NaN;
   }
 
   /**
@@ -4881,11 +4884,7 @@ class AboutTranslationsTestUtils {
       await this.#runInPage(
         (_, { enabled }) => {
           const { window } = content;
-          const aboutTranslations = Cu.waiveXrays(window).aboutTranslations;
-          if (!aboutTranslations) {
-            throw new Error("aboutTranslations instance is unavailable.");
-          }
-          aboutTranslations.testSetManualCopyButtonResetEnabled(enabled);
+          Cu.waiveXrays(window).testManualCopyButtonReset = enabled;
         },
         { enabled }
       );
