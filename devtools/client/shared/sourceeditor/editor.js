@@ -2580,6 +2580,58 @@ class Editor extends EventEmitter {
   }
 
   /**
+   * Retrieve variables declared in the expression from the CodeMirror state, in order
+   * to display them in the autocomplete popup.
+   *
+   * @returns Array
+   */
+  async getExpressionVariables() {
+    const cm = editors.get(this);
+    const variables = [];
+
+    if (this.config.cm6) {
+      const { codemirrorLanguage } = this.#CodeMirror6;
+      const cursorLocation = this.getSelectionCursor();
+      const line = cm.state.doc.line(cursorLocation.from.line);
+      const tokPos = line.from + cursorLocation.from.ch;
+
+      await lezerUtils.walkTree(cm, codemirrorLanguage, {
+        filterSet: lezerUtils.nodeTypeSets.variables,
+        enterVisitor: node => {
+          if (node.from <= tokPos && node.to >= tokPos) {
+            variables.push(cm.state.doc.sliceString(node.from, node.to));
+          }
+        },
+        walkFrom: line.from,
+        walkTo: line.to,
+      });
+    } else {
+      const { state } = cm.getTokenAt(cm.getCursor());
+      if (state.context) {
+        for (let c = state.context; c; c = c.prev) {
+          for (let v = c.vars; v; v = v.next) {
+            if (v.name) {
+              variables.push(v.name);
+            }
+          }
+        }
+      }
+
+      const keys = ["localVars", "globalVars"];
+      for (const key of keys) {
+        if (state[key]) {
+          for (let v = state[key]; v; v = v.next) {
+            if (v.name) {
+              variables.push(v.name);
+            }
+          }
+        }
+      }
+    }
+    return variables;
+  }
+
+  /**
    * Replaces whatever is in the text area with the contents of
    * the 'value' argument.
    *

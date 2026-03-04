@@ -495,13 +495,10 @@ class JSTerm extends Component {
             return "CodeMirror.Pass";
           },
 
-          "Ctrl-Space": () => {
+          "Ctrl-Space": async () => {
             if (!this.autocompletePopup.isOpen) {
-              this.props.autocompleteUpdate(
-                true,
-                null,
-                this._getExpressionVariables()
-              );
+              const variables = await this.editor.getExpressionVariables();
+              this.props.autocompleteUpdate(true, null, variables);
               return null;
             }
 
@@ -930,42 +927,9 @@ class JSTerm extends Component {
   }
 
   /**
-   * Retrieve variable declared in the expression from the CodeMirror state, in order
-   * to display them in the autocomplete popup.
-   */
-  _getExpressionVariables() {
-    const cm = this.editor.codeMirror;
-    const { state } = cm.getTokenAt(cm.getCursor());
-    const variables = [];
-
-    if (state.context) {
-      for (let c = state.context; c; c = c.prev) {
-        for (let v = c.vars; v; v = v.next) {
-          if (v.name) {
-            variables.push(v.name);
-          }
-        }
-      }
-    }
-
-    const keys = ["localVars", "globalVars"];
-    for (const key of keys) {
-      if (state[key]) {
-        for (let v = state[key]; v; v = v.next) {
-          if (v.name) {
-            variables.push(v.name);
-          }
-        }
-      }
-    }
-
-    return variables;
-  }
-
-  /**
    * The editor "changes" event handler.
    */
-  _onEditorChanges(cm, changes) {
+  async _onEditorChanges(cm, changes) {
     const value = this._getValue();
 
     if (this.lastInputValue !== value) {
@@ -979,7 +943,8 @@ class JSTerm extends Component {
         !isJsTermChangeOnly &&
         (this.props.autocomplete || this.hasAutocompletionSuggestion())
       ) {
-        this.autocompleteUpdate(false, null, this._getExpressionVariables());
+        const variables = await this.editor.getExpressionVariables();
+        this.autocompleteUpdate(false, null, variables);
       }
       this.lastInputValue = value;
       this.terminalInputChanged(value);
