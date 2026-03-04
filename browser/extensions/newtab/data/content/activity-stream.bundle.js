@@ -15227,6 +15227,7 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
     }, /*#__PURE__*/external_React_default().createElement("button", {
       className: `${activationWindowClass} personalize-button`,
       "data-l10n-id": "newtab-customize-panel-icon-button",
+      "aria-haspopup": "dialog",
       onClick: () => this.props.onOpen(),
       onKeyDown: e => {
         if (e.key === "Enter") {

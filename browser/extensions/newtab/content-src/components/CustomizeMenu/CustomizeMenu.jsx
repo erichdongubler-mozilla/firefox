@@ -56,6 +56,7 @@ export class _CustomizeMenu extends React.PureComponent {
           <button
             className={`${activationWindowClass} personalize-button`}
             data-l10n-id="newtab-customize-panel-icon-button"
+            aria-haspopup="dialog"
             onClick={() => this.props.onOpen()}
             onKeyDown={e => {
               if (e.key === "Enter") {
