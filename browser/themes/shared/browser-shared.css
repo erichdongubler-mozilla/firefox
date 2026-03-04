@@ -1385,8 +1385,13 @@ popupnotificationcontent {
 
 #ai-window-toggle {
   list-style-image: url("chrome://branding/content/icon32.png");
-  padding-inline-end: var(--space-small);
   border-radius: var(--border-radius-medium);
+  padding-inline-end: var(--space-small);
+
+  /* Toggle button should only have padding-inline-end if #PanelUI-button both visible and rendered next to it */
+  :root:not([aiwindow-first-run]) &:has(+ #PanelUI-button) {
+    padding: 0 var(--toolbarbutton-outer-padding);
+  }
 
   /* Toggle button icon is designed to be slightly larger at 20px */
   > .toolbarbutton-icon {
@@ -1451,13 +1456,16 @@ popupnotificationcontent {
   #urlbar-container,
   #nav-bar-customization-target > *:not(#sidebar-button),
   #nav-bar-overflow-button,
-  #PanelUI-button,
   #smartwindow-ask-button {
     visibility: hidden;
   }
 
   /* immersive view styles exclusive for first run */
   &[aiwindow-first-run] {
+    #PanelUI-button {
+      display: none;
+    }
+
     #TabsToolbar > .toolbar-items {
       opacity: 0.2;
       pointer-events: none;

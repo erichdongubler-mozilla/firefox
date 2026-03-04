@@ -69,8 +69,8 @@ export const AIWindow = {
     if (!this._windowStates.has(win)) {
       this._windowStates.set(win, {});
       this.initializeAITabsToolbar(win);
+      this._updateToolbarButtonPositions(win);
       this._initializeAskButtonOnToolbox(win);
-      this._updateWindowSwitcherPosition(win);
     }
 
     if (
@@ -89,6 +89,7 @@ export const AIWindow = {
 
     ChromeUtils.defineLazyGetter(AIWindow, "chatStore", () => lazy.ChatStore);
     Services.obs.addObserver(this, lazy.ONLOGOUT_NOTIFICATION);
+    Services.obs.addObserver(this, "tabstrip-orientation-change");
     this._initialized = true;
 
     // On startup/restart, if the first window initialized is an
@@ -103,12 +104,15 @@ export const AIWindow = {
       return;
     }
     Services.obs.removeObserver(this, lazy.ONLOGOUT_NOTIFICATION);
+    Services.obs.removeObserver(this, "tabstrip-orientation-change");
     this._initialized = false;
   },
 
   observe(_subject, topic) {
     if (topic === lazy.ONLOGOUT_NOTIFICATION) {
       this._onAccountLogout();
+    } else if (topic === "tabstrip-orientation-change") {
+      this._onTabstripOrientationChange();
     }
   },
 
@@ -171,14 +175,18 @@ export const AIWindow = {
     return aiWindowElement.classList.contains("chat-active");
   },
 
-  _onAIWindowEnabledPrefChange() {
+  _forEachWindow(callback) {
     ChromeUtils.nondeterministicGetWeakMapKeys(this._windowStates).forEach(
       win => {
         if (win && !win.closed) {
-          this._updateButtonVisibility(win);
+          callback(win);
         }
       }
     );
+  },
+
+  _onAIWindowEnabledPrefChange() {
+    this._forEachWindow(win => this._updateButtonVisibility(win));
   },
 
   _updateButtonVisibility(win) {
@@ -189,28 +197,32 @@ export const AIWindow = {
     }
   },
 
-  _onVerticalTabsPrefChange() {
-    ChromeUtils.nondeterministicGetWeakMapKeys(this._windowStates).forEach(
-      win => {
-        if (win && !win.closed) {
-          this._updateWindowSwitcherPosition(win);
-        }
-      }
-    );
+  _onTabstripOrientationChange() {
+    this._forEachWindow(win => this._updateToolbarButtonPositions(win));
   },
 
-  _updateWindowSwitcherPosition(win) {
+  _updateToolbarButtonPositions(win, { isToggling = false } = {}) {
     const modeSwitcherButton = win.document.getElementById("ai-window-toggle");
+    const hamburgerMenu = win.document.getElementById("PanelUI-button");
 
     const targetToolbar = win.document.getElementById(
       this.verticalTabsEnabled ? "nav-bar" : "TabsToolbar"
     );
-
     const titlebarContainer = targetToolbar.querySelector(
       ".titlebar-buttonbox-container"
     );
 
-    titlebarContainer.before(modeSwitcherButton);
+    titlebarContainer.after(modeSwitcherButton);
+
+    if (this.isAIWindowActive(win) || this.verticalTabsEnabled) {
+      modeSwitcherButton.after(hamburgerMenu);
+    } else if (isToggling) {
+      // Restore hamburger menu to its original position in nav-bar.
+      const postTabsSpacer = win.document
+        .getElementById("nav-bar")
+        .querySelector('.titlebar-spacer[type="post-tabs"]');
+      postTabsSpacer.before(hamburgerMenu);
+    }
   },
 
   /*
@@ -525,6 +537,7 @@ export const AIWindow = {
       win.document.documentElement.toggleAttribute("ai-window");
 
       this._reconcileNewTabPages(win, previousNewTabURL);
+      this._updateToolbarButtonPositions(win, { isToggling: true });
       this._initializeAskButtonOnToolbox(win);
       Services.obs.notifyObservers(win, "ai-window-state-changed");
 
@@ -682,6 +695,5 @@ XPCOMUtils.defineLazyPreferenceGetter(
   AIWindow,
   "verticalTabsEnabled",
   "sidebar.verticalTabs",
-  false,
-  AIWindow._onVerticalTabsPrefChange.bind(AIWindow)
+  false
 );
