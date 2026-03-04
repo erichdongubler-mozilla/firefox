@@ -321,15 +321,10 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
   }
 
   /**
-   * Checks if we're running the Alpha variant based on
-   * available features
+   * Checks if the entitlement exists and it contains a UUID
    */
-  get isAlpha() {
-    return (
-      !this.#entitlement?.autostart &&
-      !this.#entitlement?.website_inclusion &&
-      !this.#entitlement?.location_controls
-    );
+  get hasEntitlementUid() {
+    return !!this.#entitlement?.uid;
   }
 
   /**

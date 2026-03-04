@@ -490,46 +490,22 @@ export class ProxyPass extends EventTarget {
  * Immutable after creation.
  */
 export class Entitlement {
-  /** True if the User may Use the Autostart feature  */
-  autostart = false;
-  /** The date the entitlement was added to the user */
-  created_at = new Date();
-  /** True if the User has a limited bandwidth */
-  limited_bandwidth = false;
-  /** True if the User may Use the location controls */
-  location_controls = false;
   /** True if the User has any valid subscription plan to the Mozilla VPN (not firefox VPN) */
   subscribed = false;
   /** The Guardian User ID */
   uid = 0;
-  /** True if the User has website inclusion */
-  website_inclusion = false;
   /** The maximum number of bytes allowed for the user */
   maxBytes = BigInt(0);
 
   constructor(
     args = {
-      autostart: false,
-      created_at: new Date().toISOString(),
-      limited_bandwidth: false,
-      location_controls: false,
       subscribed: false,
       uid: 0,
-      website_inclusion: false,
       maxBytes: "0",
     }
   ) {
-    const parsed = Date.parse(args.created_at);
-    if (isNaN(parsed)) {
-      throw new TypeError("created_at is not a valid date string");
-    }
-    this.autostart = args.autostart;
-    this.limited_bandwidth = args.limited_bandwidth;
-    this.location_controls = args.location_controls;
-    this.website_inclusion = args.website_inclusion;
     this.subscribed = args.subscribed;
     this.uid = args.uid;
-    this.created_at = new Date(parsed);
     this.maxBytes = BigInt(args.maxBytes);
     Object.freeze(this);
   }
@@ -556,30 +532,11 @@ export class Entitlement {
       title: "Entitlement",
       type: "object",
       properties: {
-        autostart: {
-          type: "boolean",
-          description: "True if the User may Use the Autostart feature",
-        },
-        created_at: {
-          type: "string",
-          description: "The date the entitlement was added to the user",
-          format: "date-time", // ISO 8601
-          pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
-        },
-        limited_bandwidth: {
-          type: "boolean",
-        },
-        location_controls: {
-          type: "boolean",
-        },
         subscribed: {
           type: "boolean",
         },
         uid: {
           type: "integer",
-        },
-        website_inclusion: {
-          type: "boolean",
         },
         maxBytes: {
           type: "string",
@@ -587,16 +544,7 @@ export class Entitlement {
             "A BigInt string representing the maximum number of bytes allowed for the user",
         },
       },
-      required: [
-        "autostart",
-        "created_at",
-        "limited_bandwidth",
-        "location_controls",
-        "subscribed",
-        "uid",
-        "website_inclusion",
-        "maxBytes",
-      ],
+      required: ["subscribed", "uid", "maxBytes"],
       additionalProperties: true,
     };
   }
@@ -605,7 +553,6 @@ export class Entitlement {
     return JSON.stringify({
       ...this,
       maxBytes: this.maxBytes.toString(),
-      created_at: this.created_at.toISOString(),
     });
   }
 }

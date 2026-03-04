@@ -112,8 +112,6 @@ export class IPProtectionPanel {
    *  The location country code
    * @property {"generic-error" | "network-error" | ""} error
    *  The error type as a string if an error occurred, or empty string if there are no errors.
-   * @property {boolean} isAlpha
-   *  True if we're running the Alpha variant, else false.
    * @property {boolean} hasUpgraded
    *  True if a Mozilla VPN subscription is linked to the user's Mozilla account.
    * @property {string} onboardingMessage
@@ -207,7 +205,6 @@ export class IPProtectionPanel {
         lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE,
       location: lazy.EGRESS_LOCATION_ENABLED ? DEFAULT_EGRESS_LOCATION : null,
       error: "",
-      isAlpha: lazy.IPPEnrollAndEntitleManager.isAlpha,
       hasUpgraded: lazy.IPPEnrollAndEntitleManager.hasUpgraded,
       onboardingMessage: "",
       bandwidthWarning: false,

@@ -94,21 +94,11 @@ add_task(async function test_fetchUserInfo() {
   const DEFAULT_OK_RESPONSE = {
     subscribed: true,
     uid: 42,
-    created_at: "2023-01-01T12:00:00.000Z",
-    limited_bandwidth: false,
-    location_controls: false,
-    autostart: false,
-    website_inclusion: false,
     maxBytes: "1073741824",
   };
   const DEFAULT_EXPECTED_VALUES = {
     subscribed: true,
     uid: 42,
-    created_at: "2023-01-01T12:00:00.000Z",
-    limited_bandwidth: false,
-    location_controls: false,
-    autostart: false,
-    website_inclusion: false,
     maxBytes: BigInt(1073741824),
   };
 
@@ -124,94 +114,6 @@ add_task(async function test_fetchUserInfo() {
         validEntitlement: true,
         entitlement: {
           ...DEFAULT_EXPECTED_VALUES,
-        },
-      },
-    },
-    {
-      name: "Alpha experiment",
-      sends: ok({
-        ...DEFAULT_OK_RESPONSE,
-        type: "alpha",
-      }),
-      expects: {
-        status: 200,
-        error: null,
-        validEntitlement: true,
-        entitlement: {
-          ...DEFAULT_EXPECTED_VALUES,
-          website_inclusion: false,
-        },
-      },
-    },
-    {
-      name: "Beta experiment",
-      sends: ok({
-        ...DEFAULT_OK_RESPONSE,
-        autostart: true,
-        limited_bandwidth: false,
-        location_controls: false,
-        website_inclusion: true,
-        type: "beta",
-      }),
-      expects: {
-        status: 200,
-        error: null,
-        validEntitlement: true,
-        entitlement: {
-          ...DEFAULT_EXPECTED_VALUES,
-          autostart: true,
-          limited_bandwidth: false,
-          location_controls: false,
-          website_inclusion: true,
-        },
-      },
-    },
-    {
-      name: "gamma experiment",
-      sends: ok({
-        ...DEFAULT_OK_RESPONSE,
-        autostart: true,
-        limited_bandwidth: false,
-        location_controls: true,
-        subscribed: true,
-        website_inclusion: false,
-        type: "gamma",
-      }),
-      expects: {
-        status: 200,
-        error: null,
-        validEntitlement: true,
-        entitlement: {
-          ...DEFAULT_EXPECTED_VALUES,
-          autostart: true,
-          limited_bandwidth: false,
-          location_controls: true,
-          subscribed: true,
-          website_inclusion: false,
-        },
-      },
-    },
-    {
-      name: "Delta experiment",
-      sends: ok({
-        ...DEFAULT_OK_RESPONSE,
-        autostart: true,
-        limited_bandwidth: true,
-        location_controls: true,
-        subscribed: true,
-        website_inclusion: true,
-        type: "delta",
-      }),
-      expects: {
-        status: 200,
-        error: null,
-        validEntitlement: true,
-        entitlement: {
-          ...DEFAULT_EXPECTED_VALUES,
-          autostart: true,
-          limited_bandwidth: true,
-          location_controls: true,
-          website_inclusion: true,
         },
       },
     },
@@ -238,11 +140,7 @@ add_task(async function test_fetchUserInfo() {
       sends: ok({
         subscribed: "true", // Incorrect type: should be boolean
         uid: "42", // Incorrect type: should be number
-        created_at: 1234567890, // Incorrect type: should be string
-        limited_bandwidth: "false", // Incorrect type: should be boolean
-        location_controls: "true", // Incorrect type: should be boolean
-        autostart: "true", // Incorrect type: should be boolean
-        website_inclusion: "false", // Incorrect type: should be boolean
+        maxBytes: 1234567890, // Incorrect type: should be string
       }),
       expects: {
         status: 200,
@@ -281,22 +179,11 @@ add_task(async function test_fetchUserInfo() {
             `${name}: entitlement should not be null`
           );
           for (const key of Object.keys(expects.entitlement)) {
-            // Special case the date case, all others can check equality directly
-            if (key === "created_at") {
-              Assert.equal(
-                new Date(entitlement.created_at).toISOString(),
-                new Date(
-                  Date.parse(expects.entitlement.created_at)
-                ).toISOString(),
-                `${name}: entitlement.created_at should match`
-              );
-            } else {
-              Assert.equal(
-                entitlement[key],
-                expects.entitlement[key],
-                `${name}: entitlement.${key} should match`
-              );
-            }
+            Assert.equal(
+              entitlement[key],
+              expects.entitlement[key],
+              `${name}: entitlement.${key} should match`
+            );
           }
         } else {
           Assert.equal(
@@ -893,12 +780,6 @@ add_task(async function test_entitlement_toString_schema_validation() {
       Assert.equal(
         actual.toString(),
         expected.toString(),
-        `${key} matches after round-trip`
-      );
-    } else if (key === "created_at") {
-      Assert.equal(
-        actual.toISOString(),
-        expected.toISOString(),
         `${key} matches after round-trip`
       );
     } else {

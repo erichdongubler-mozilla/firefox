@@ -121,13 +121,8 @@ add_task(async function test_IPPStartupCache_enabled() {
   // Store and retrieve a valid entitlement
   {
     const originalEntitlement = new Entitlement({
-      autostart: true,
-      created_at: "2024-01-15T10:30:00.000Z",
-      limited_bandwidth: false,
-      location_controls: true,
       subscribed: true,
       uid: 12345,
-      website_inclusion: false,
       maxBytes: "1000000000",
     });
 
@@ -168,12 +163,6 @@ add_task(async function test_IPPStartupCache_enabled() {
       const actual = retrievedEntitlement[key];
       if (typeof expected === "bigint") {
         Assert.equal(actual.toString(), expected.toString(), `${key} matches`);
-      } else if (key === "created_at") {
-        Assert.equal(
-          actual.toISOString(),
-          expected.toISOString(),
-          `${key} matches`
-        );
       } else {
         Assert.equal(actual, expected, `${key} matches`);
       }
