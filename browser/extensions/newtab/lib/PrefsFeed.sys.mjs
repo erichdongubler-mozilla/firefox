@@ -49,28 +49,6 @@ const TOP_SITES_USER_VALUE_TEMP_PREF =
   "activationWindow.temp.topSitesUserValue";
 const TOP_STORIES_USER_VALUE_TEMP_PREF =
   "activationWindow.temp.topStoriesUserValue";
-const PREF_DEFAULTS = [
-  { type: "bool", key: "logowordmark.alwaysVisible", defaultValue: false },
-  { type: "bool", key: "feeds.section.topstories", defaultValue: false },
-  { type: "bool", key: "discoverystream.enabled", defaultValue: false },
-  {
-    type: "bool",
-    key: "discoverystream.hardcoded-basic-layout",
-    defaultValue: false,
-  },
-  { type: "string", key: "discoverystream.spocs-endpoint", defaultValue: "" },
-  {
-    type: "string",
-    key: "discoverystream.spocs-endpoint-query",
-    defaultValue: "",
-  },
-  {
-    type: "string",
-    key: "discoverystream.sections.personalization.inferred.debug.override",
-    defaultValue: "",
-  },
-  { type: "string", key: "newNewtabExperience.colors", defaultValue: "" },
-];
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   return console.createInstance({
@@ -489,13 +467,13 @@ export class PrefsFeed {
       lazy.NimbusFeatures.newtabWidgets.getAllVariables() || {};
     values.trainhopConfig = this._getTrainhopConfig();
     values.adsBackendConfig = this._getAdsBackendFeatures();
-    for (const { type, key, defaultValue } of PREF_DEFAULTS) {
-      if (type === "bool") {
-        this._setBoolPref(values, key, defaultValue);
-      } else if (type === "string") {
-        this._setStringPref(values, key, defaultValue);
-      }
-    }
+    this._setBoolPref(values, "logowordmark.alwaysVisible", false);
+    this._setBoolPref(values, "feeds.section.topstories", false);
+    this._setBoolPref(values, "discoverystream.enabled", false);
+    this._setBoolPref(values, "discoverystream.hardcoded-basic-layout", false);
+    this._setStringPref(values, "discoverystream.spocs-endpoint", "");
+    this._setStringPref(values, "discoverystream.spocs-endpoint-query", "");
+    this._setStringPref(values, "newNewtabExperience.colors", "");
 
     // Set the initial state of all prefs in redux
     this.store.dispatch(
