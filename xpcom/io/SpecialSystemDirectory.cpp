@@ -418,7 +418,7 @@ static nsresult GetUnixXDGUserDirectory(SystemDirectories aSystemDirectory,
 
     // fallback to HOME only if HOME/Desktop doesn't exist
     if (!exists) {
-      file = home;
+      file = std::move(home);
     }
   } else {
     // no fallback for the other XDG dirs
