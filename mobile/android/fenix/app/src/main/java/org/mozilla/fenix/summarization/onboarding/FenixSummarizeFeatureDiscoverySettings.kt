@@ -7,26 +7,17 @@ package org.mozilla.fenix.summarization.onboarding
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import mozilla.components.feature.summarize.settings.SummarizationFeatureSettings
 import org.mozilla.fenix.utils.Settings
 
 /**
  * Discovery settings for the summarize feature. It's a wrapper around [org.mozilla.fenix.utils.Settings] for easier
  * testing and narrowed API
  */
-class FenixSummarizationFeatureConfiguration(
+class FenixSummarizeFeatureDiscoverySettings(
     private val settings: Settings,
-) : SummarizationFeatureDiscoveryConfiguration, SummarizationFeatureSettings {
+) : SummarizeFeatureDiscoverySettings {
     override val canShowFeature: Boolean
         get() = settings.shakeToSummarizeFeatureFlagEnabled && settings.shakeToSummarizeFeatureUserPreference
-
-    override var summarizePagesEnabled: Boolean
-        get() = canShowFeature
-        set(value) { settings.shakeToSummarizeFeatureUserPreference = value }
-
-    override var shakeToSummarizeEnabled: Boolean
-        get() = settings.shakeGestureEnabled
-        set(value) { settings.shakeGestureEnabled = value }
 
     override val showMenuItem: Boolean
         get() = canShowFeature

@@ -179,9 +179,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     }
 
     private fun setupShakeDetection() {
-        if (!(requireComponents.core.summarizeFeatureSettings.canShowFeature &&
-                requireComponents.core.summarizeFeatureSettings.shakeToSummarizeEnabled)
-        ) {
+        if (!requireComponents.core.summarizeFeatureDiscoverySettings.canShowFeature) {
             return
         }
 

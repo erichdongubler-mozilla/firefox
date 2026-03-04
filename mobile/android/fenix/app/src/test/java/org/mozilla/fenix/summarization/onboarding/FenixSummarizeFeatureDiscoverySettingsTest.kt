@@ -15,9 +15,9 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.utils.Settings
 
 @RunWith(AndroidJUnit4::class)
-class FenixSummarizationFeatureConfigurationTest {
+class FenixSummarizeFeatureDiscoverySettingsTest {
     private lateinit var testSettings: Settings
-    private lateinit var discoverySettings: FenixSummarizationFeatureConfiguration
+    private lateinit var discoverySettings: FenixSummarizeFeatureDiscoverySettings
 
     @Before
     fun setUp() {
@@ -26,7 +26,7 @@ class FenixSummarizationFeatureConfigurationTest {
             packageName = "package-name",
             isBenchmarkBuild = false,
         )
-        discoverySettings = FenixSummarizationFeatureConfiguration(
+        discoverySettings = FenixSummarizeFeatureDiscoverySettings(
             settings = testSettings,
         )
     }

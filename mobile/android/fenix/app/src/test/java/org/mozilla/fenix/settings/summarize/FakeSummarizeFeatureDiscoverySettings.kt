@@ -6,25 +6,21 @@ package org.mozilla.fenix.settings.summarize
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import mozilla.components.feature.summarize.settings.SummarizationFeatureSettings
-import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
+import org.mozilla.fenix.summarization.onboarding.SummarizeFeatureDiscoverySettings
 
 /**
- * Fake [SummarizationFeatureDiscoveryConfiguration] and [SummarizationFeatureSettings] for testing
+ * Fake [SummarizeFeatureDiscoverySettings] for testing
  */
-class FakeSummarizationFeatureConfiguration(
+class FakeSummarizeFeatureDiscoverySettings(
     var expectedToolbarMenuButtonHighlight: Boolean = false,
-) : SummarizationFeatureDiscoveryConfiguration, SummarizationFeatureSettings {
+) : SummarizeFeatureDiscoverySettings {
 
     var menuItemExposureCount: Int = 0
     var menuOverflowInteractionCount: Int = 0
     var toolbarOverflowMenuInteractionCount: Int = 0
 
     override var canShowFeature: Boolean = true
-    override var summarizePagesEnabled: Boolean = true
-    override var shakeToSummarizeEnabled: Boolean = true
-
     override var shouldHighlightMenuItem: Boolean = true
     override var showMenuItem: Boolean = true
     override var shouldHighlightOverflowMenuItem: Boolean = true
