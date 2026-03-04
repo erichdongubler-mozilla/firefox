@@ -28,8 +28,6 @@ support-files = [
 
 ["browser_about_translations_copy_button_functionality.js"]
 
-["browser_about_translations_detected_language_unsupported.js"]
-
 ["browser_about_translations_directions.js"]
 
 ["browser_about_translations_dropdowns.js"]
