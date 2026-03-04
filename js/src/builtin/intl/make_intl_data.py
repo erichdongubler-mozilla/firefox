@@ -1984,7 +1984,6 @@ def updateCLDRLangTags(args):
     with open(test_file, mode="w", encoding="utf-8", newline="") as f:
         println = partial(print, file=f)
 
-        println("// |reftest| skip-if(!this.hasOwnProperty('Intl'))")
         writeCLDRLanguageTagLikelySubtagsTest(println, data, url)
 
 
@@ -2766,7 +2765,6 @@ def generateTzDataTestLinks(tzdataDir, version, ignoreFactory, testDir):
     ) as f:
         println = partial(print, file=f)
 
-        println('// |reftest| skip-if(!this.hasOwnProperty("Intl"))')
         println("")
         println(generatedFileWarning)
         println(tzdataVersionComment.format(version))
@@ -2816,8 +2814,6 @@ def generateTzDataTestVersion(tzdataDir, version, testDir):
     ) as f:
         println = partial(print, file=f)
 
-        println('// |reftest| skip-if(!this.hasOwnProperty("Intl"))')
-        println("")
         println(generatedFileWarning)
         println(tzdataVersionComment.format(version))
         println(f"""const tzdata = "{version}";""")
@@ -2849,8 +2845,6 @@ def generateTzDataTestCanonicalZones(tzdataDir, version, ignoreFactory, testDir)
     ) as f:
         println = partial(print, file=f)
 
-        println('// |reftest| skip-if(!this.hasOwnProperty("Intl"))')
-        println("")
         println(generatedFileWarning)
         println(tzdataVersionComment.format(version))
 
@@ -3552,8 +3546,6 @@ def writeUnitTestFiles(all_units, sanctioned_units):
         with open(file_path, mode="w", encoding="utf-8", newline="") as f:
             println = partial(print, file=f)
 
-            println('// |reftest| skip-if(!this.hasOwnProperty("Intl"))')
-            println("")
             println(generatedFileWarning)
             println("")
 
