@@ -1874,7 +1874,11 @@ void TextControlState::SetSelectionRange(uint32_t aStart, uint32_t aEnd,
       return;
     }
     if (aScroll == ScrollAfterSelection::Yes) {
-      mTextCtrlElement->ScrollSelectionIntoViewAsync();
+      // frame could be gone if selection listeners flushed layout for example.
+      if (nsTextControlFrame* frame =
+              do_QueryFrame(mTextCtrlElement->GetPrimaryFrame())) {
+        frame->ScrollSelectionIntoViewAsync();
+      }
     }
     return;
   }
