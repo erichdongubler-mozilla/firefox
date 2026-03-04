@@ -144,9 +144,6 @@ namespace mozilla::dom {
               NS_ORIGINAL_INDETERMINATE_VALUE | NS_PRE_HANDLE_BLUR_EVENT | \
               NS_IN_SUBMIT_CLICK))
 
-// whether textfields should be selected once focused:
-//  -1: no, 1: yes, 0: uninitialized
-static int32_t gSelectTextFieldOnFocus;
 UploadLastDir* HTMLInputElement::gUploadLastDir;
 
 static constexpr nsAttrValue::EnumTableEntry kInputTypeTable[] = {
@@ -1485,6 +1482,9 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       needValidityUpdate = true;
     } else if (aName == nsGkAtoms::maxlength) {
       UpdateTooLongValidityState();
+      if (auto* editor = GetExtantTextEditor()) {
+        editor->SetMaxTextLength(UsedMaxLength());
+      }
       needValidityUpdate = true;
     } else if (aName == nsGkAtoms::minlength) {
       UpdateTooShortValidityState();
@@ -3273,16 +3273,6 @@ void HTMLInputElement::Select() {
   SelectAll();
 }
 
-void HTMLInputElement::SelectAll() {
-  if (TextControlState* state = GetEditorState()) {
-    // Directly call TextControlState::SetSelectionRange because
-    // HTMLInputElement::SetSelectionRange only applies to fewer types
-    state->SetSelectionRange(0, UINT32_MAX, Optional<nsAString>(),
-                             IgnoreErrors(),
-                             TextControlState::ScrollAfterSelection::No);
-  }
-}
-
 bool HTMLInputElement::NeedToInitializeEditorForEvent(
     EventChainPreVisitor& aVisitor) const {
   // We only need to initialize the editor for single line input controls
@@ -3296,19 +3286,7 @@ bool HTMLInputElement::NeedToInitializeEditorForEvent(
     return false;
   }
 
-  switch (aVisitor.mEvent->mMessage) {
-    case eVoidEvent:
-    case eMouseMove:
-    case eMouseEnterIntoWidget:
-    case eMouseExitFromWidget:
-    case eMouseOver:
-    case eMouseOut:
-    case eScrollPortUnderflow:
-    case eScrollPortOverflow:
-      return false;
-    default:
-      return true;
-  }
+  return TextControlElement::NeedToInitializeEditorForEvent(aVisitor);
 }
 
 bool HTMLInputElement::IsDisabledForEvents(WidgetEvent* aEvent) {
@@ -3352,6 +3330,7 @@ static SpinnerDirection SpinnerDirectionForEvent(const WidgetEvent& aEvent,
   return SpinnerDirection::None;
 }
 
+MOZ_CAN_RUN_SCRIPT_BOUNDARY
 void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   // Do not process any DOM events if the element is disabled
   aVisitor.mCanHandle = false;
@@ -3361,8 +3340,10 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 
   // Initialize the editor if needed.
   if (NeedToInitializeEditorForEvent(aVisitor)) {
-    if (nsTextControlFrame* tcf = do_QueryFrame(GetPrimaryFrame())) {
-      tcf->EnsureEditorInitialized();
+    if (auto* state = GetTextControlState()) {
+      // FIXME(bug 2020902): This is rather evil. Remove
+      // CAN_RUN_SCRIPT_BOUNDARY when removing this.
+      state->EnsureEditorInitialized();
     }
   }
 
@@ -3730,22 +3711,6 @@ void HTMLInputElement::StepNumberControlForUserEvent(int32_t aDirection) {
                             ValueSetterOption::SetValueChanged});
 }
 
-static bool SelectTextFieldOnFocus() {
-  if (!gSelectTextFieldOnFocus) {
-    int32_t selectTextfieldsOnKeyFocus = -1;
-    nsresult rv =
-        LookAndFeel::GetInt(LookAndFeel::IntID::SelectTextfieldsOnKeyFocus,
-                            &selectTextfieldsOnKeyFocus);
-    if (NS_FAILED(rv)) {
-      gSelectTextFieldOnFocus = -1;
-    } else {
-      gSelectTextFieldOnFocus = selectTextfieldsOnKeyFocus != 0 ? 1 : -1;
-    }
-  }
-
-  return gSelectTextFieldOnFocus == 1;
-}
-
 bool HTMLInputElement::ShouldPreventDOMActivateDispatch(
     EventTarget* aOriginalTarget) {
   /*
@@ -3936,33 +3901,8 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
       switch (aVisitor.mEvent->mMessage) {
         case eFocus: {
-          // see if we should select the contents of the textbox. This happens
-          // for text and password fields when the field was focused by the
-          // keyboard or a navigation, the platform allows it, and it wasn't
-          // just because we raised a window.
-          //
-          // While it'd usually make sense, we don't do this for JS callers
-          // because it causes some compat issues, see bug 1712724 for example.
-          nsFocusManager* fm = nsFocusManager::GetFocusManager();
-          if (fm && IsSingleLineTextControl(false) &&
-              !aVisitor.mEvent->AsFocusEvent()->mFromRaise &&
-              SelectTextFieldOnFocus()) {
-            if (Document* document = GetComposedDoc()) {
-              uint32_t lastFocusMethod =
-                  fm->GetLastFocusMethod(document->GetWindow());
-              const bool shouldSelectAllOnFocus = [&] {
-                if (lastFocusMethod & nsIFocusManager::FLAG_BYMOVEFOCUS) {
-                  return true;
-                }
-                if (lastFocusMethod & nsIFocusManager::FLAG_BYJS) {
-                  return false;
-                }
-                return bool(lastFocusMethod & nsIFocusManager::FLAG_BYKEY);
-              }();
-              if (shouldSelectAllOnFocus) {
-                SelectAll();
-              }
-            }
+          if (IsSingleLineTextControl(false)) {
+            TextControlElement::OnFocus(*aVisitor.mEvent);
           }
           break;
         }
