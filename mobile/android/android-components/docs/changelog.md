@@ -8,6 +8,9 @@ permalink: /changelog/
 * **support-utils**
   * The `Browsers().isDefaultBrowser()` method has been removed in favor of a more performant version available as a `Browsers.isDefaultBrowser()` static method. [Bug 2008662](https://bugzilla.mozilla.org/show_bug.cgi?id=2008662)
 
+* **service-firefox-accounts**
+  * ⚠️ **Breaking change**: Removed `currentDeviceId` and `sessionToken` from `mozilla.components.service.fxa.store.Account`.
+
 # 149.0
 * **lib-state**
   * ⚠️ **Breaking change**: Removed the composableStore API from `ComposeExtensions.kt` in favor of the newer one from `StoreProvider.kt`. [Bug 2017822](https://bugzilla.mozilla.org/show_bug.cgi?id=2017822)
