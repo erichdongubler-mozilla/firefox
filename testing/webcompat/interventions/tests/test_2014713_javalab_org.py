@@ -12,12 +12,8 @@ async def can_move_car(client):
     coords = [coords[0] + 20, coords[1] + 20]
 
     # get rid of hand icon and screenshot
-    await client.apz_down(coords=coords)
-    coords = [coords[0] + 2, coords[1] + 2]
-    await client.apz_move(coords=coords)
-    await client.stall(0.025)
-    await client.apz_up(coords=coords)
-    await client.stall(0.5)
+    await client.apz_click(coords=coords)
+    await client.stall(1)
     pre = canvas.screenshot()
 
     # drag around and see if the screenshot changes

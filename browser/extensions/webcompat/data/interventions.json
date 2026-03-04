@@ -34,6 +34,10 @@
   "1448747": {
     "label": "FastClick breakage",
     "bugs": {
+      "1829947": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://*.arcsivr.com/*"]
+      },
       "1901449": {
         "issue": "broken-interactive-elements",
         "matches": ["*://teikiyoyaku.tokyu.co.jp/*"]
@@ -54,6 +58,10 @@
         "issue": "broken-interactive-elements",
         "matches": ["*://*.franmar.com/*"]
       },
+      "1944009": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://*.iledefrance-mobilites.fr/*"]
+      },
       "1944010": {
         "issue": "broken-interactive-elements",
         "matches": ["*://*.lafoodbank.org/*"]
@@ -61,6 +69,10 @@
       "1944015": {
         "issue": "broken-interactive-elements",
         "matches": ["*://*.lawnmowerpartsworld.com/*"]
+      },
+      "1944018": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://*.oregonfoodbank.org/*"]
       },
       "1944019": {
         "issue": "broken-interactive-elements",
@@ -85,6 +97,10 @@
       "1944027": {
         "issue": "broken-interactive-elements",
         "matches": ["*://rutamayacoffee.com/*"]
+      },
+      "1944029": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://weaversofireland.com/*"]
       },
       "1968640": {
         "issue": "broken-interactive-elements",
@@ -1084,8 +1100,7 @@
           "*://cdk.fairgocasinowins.com/*",
           "*://cdk.fairgo-pokies.com/*",
           "*://cdk.fgwinners.com/*",
-          "*://cdk.play-fg.com/*",
-          "*://cdk.fairg0games.club/*"
+          "*://cdk.play-fg.com/*"
         ]
       },
       "1902493": {
@@ -1422,6 +1437,23 @@
         "platforms": ["android"],
         "content_scripts": {
           "js": ["bug1847971-ebay.com-barcode-scanner.js"]
+        }
+      }
+    ]
+  },
+  "1848713": {
+    "label": "cleanrider.com",
+    "bugs": {
+      "1848713": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://*.cleanrider.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "css": ["bug1848713-cleanrider.com-slider.css"]
         }
       }
     ]
@@ -3223,16 +3255,7 @@
       },
       {
         "platforms": ["windows"],
-        "content_scripts": {
-          "js": ["bug1902520-keisan.nta.go.jp-ua-override.js"]
-        }
-      },
-      {
-        "platforms": ["linux"],
-        "only_channels": ["nightly"],
-        "content_scripts": {
-          "js": ["bug1902520-keisan.nta.go.jp-ua-override.js"]
-        }
+        "ua_string": ["Chrome_with_FxQuantum"]
       }
     ]
   },
@@ -3670,6 +3693,23 @@
         "platforms": ["android"],
         "content_scripts": {
           "css": ["bug1924334-neopets.com-fix-content-width.css"]
+        }
+      }
+    ]
+  },
+  "1925276": {
+    "label": "xtralife.com",
+    "bugs": {
+      "1925276": {
+        "issue": "broken-layout",
+        "matches": ["*://www.xtralife.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "content_scripts": {
+          "css": ["bug1925276-xtralife.com-fix-search-results.css"]
         }
       }
     ]
@@ -4771,15 +4811,6 @@
     "interventions": [
       {
         "platforms": ["all"],
-        "max_version": 148,
-        "content_scripts": {
-          "js": ["bug1963270-app.kosmi.io-unprefix-mozCaptureStream.js"]
-        }
-      },
-      {
-        "platforms": ["all"],
-        "min_version": 149,
-        "pref_check": { "media.captureStream.enabled": false },
         "content_scripts": {
           "js": ["bug1963270-app.kosmi.io-unprefix-mozCaptureStream.js"]
         }
@@ -4899,6 +4930,24 @@
         "platforms": ["all"],
         "content_scripts": {
           "css": ["bug1968198-metacritic.com-fix-release-year-filter.css"]
+        }
+      }
+    ]
+  },
+  "1969165": {
+    "label": "appointments.mpi.mb.ca",
+    "bugs": {
+      "1969165": {
+        "issue": "page-fails-to-load",
+        "matches": ["*://appointments.mpi.mb.ca/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "skip_if": ["getWeekInfo_defined"],
+        "content_scripts": {
+          "js": ["bug196916-mpi.mb.ca-polyfill-getWeekInfo.js"]
         }
       }
     ]
@@ -6155,7 +6204,7 @@
     },
     "interventions": [
       {
-        "not_platforms": ["linux"],
+        "platforms": ["all"],
         "content_scripts": {
           "all_frames": true,
           "js": ["bug2006036-fbo.fubon.com-unblock-firefox.js"]

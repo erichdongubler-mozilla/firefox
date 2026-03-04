@@ -35,19 +35,3 @@ async def test_enabled(client):
 @pytest.mark.without_interventions
 async def test_disabled(client):
     assert await is_blocked(client)
-
-
-@pytest.mark.only_platforms("linux")
-@pytest.mark.only_channels("nightly")
-@pytest.mark.asyncio
-@pytest.mark.with_interventions
-async def test_enabled_linux(client):
-    assert not await is_blocked(client)
-
-
-@pytest.mark.only_platforms("linux")
-@pytest.mark.only_channels("nightly")
-@pytest.mark.asyncio
-@pytest.mark.without_interventions
-async def test_disabled_linux(client):
-    assert await is_blocked(client)

@@ -11,7 +11,6 @@ this.aboutConfigPrefs = class AboutConfigPrefsChildAPI extends ExtensionAPI {
     [
       "layout.css.prefixes.transforms",
       "layout.css.webkit-fill-available.enabled",
-      "media.captureStream.enabled",
       "media.webspeech.recognition.enable",
       "timer.auto_increase_timer_resolution",
     ].concat(

@@ -6,7 +6,6 @@ SUPPORTED_CSS = "#id_no"
 UNSUPPORTED_TEXT = "Unsupported Browser"
 
 
-@pytest.mark.skip_platforms("linux")
 @pytest.mark.asyncio
 @pytest.mark.with_interventions
 async def test_enabled(client):
@@ -16,7 +15,6 @@ async def test_enabled(client):
     assert not client.find_text(UNSUPPORTED_TEXT, is_displayed=True)
 
 
-@pytest.mark.skip_platforms("linux")
 @pytest.mark.asyncio
 @pytest.mark.without_interventions
 async def test_disabled(client):
