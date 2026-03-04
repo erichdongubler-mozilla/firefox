@@ -57,8 +57,12 @@ class BufferMediaResource
       return NS_ERROR_FAILURE;
     }
 
-    uint32_t bytes = std::min(mLength - static_cast<uint32_t>(aOffset), aCount);
-    memcpy(aBuffer, mBuffer + aOffset, bytes);
+    if (AssertedCast<uint64_t>(aOffset) + AssertedCast<uint64_t>(aCount) >
+        mLength) {
+      return NS_ERROR_FAILURE;
+    }
+
+    memcpy(aBuffer, mBuffer + aOffset, aCount);
     return NS_OK;
   }
 
