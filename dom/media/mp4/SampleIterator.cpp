@@ -449,9 +449,7 @@ MP4SampleIndex::MP4SampleIndex(const IndiceWrapper& aIndices,
     int64_t lastOffset = 0;
     for (size_t i = 0; i < aIndices.Length(); i++) {
       Indice indice{};
-      int64_t timescale =
-          mMoofParser ? AssertedCast<int64_t>(mMoofParser->mMvhd.mTimescale)
-                      : aTimeScale;
+      int64_t timescale = static_cast<int64_t>(aTimeScale);
       if (!aIndices.GetIndice(i, indice)) {
         // Out of index?
         return;
