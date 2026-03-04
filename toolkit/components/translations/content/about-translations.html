@@ -127,34 +127,30 @@
           data-l10n-id="about-translations-input-placeholder"
           spellcheck="false"
         ></textarea>
-        <div id="about-translations-source-actions">
-          <moz-button
-            id="about-translations-clear-button"
-            type="ghost icon"
-            data-l10n-id="about-translations-clear-button"
-            tabindex="-1"
-            hidden
-          ></moz-button>
-        </div>
+        <moz-button
+          id="about-translations-clear-button"
+          type="ghost icon"
+          data-l10n-id="about-translations-clear-button"
+          tabindex="-1"
+          hidden
+        ></moz-button>
       </div>
       <div id="about-translations-empty-section"></div>
-      <div id="about-translations-target-section">
+      <div id="about-translations-target-section" tabindex="-1">
         <textarea
           id="about-translations-target-textarea"
           class="about-translations-textarea"
           data-l10n-id="about-translations-output-placeholder"
           readonly
         ></textarea>
-        <div id="about-translations-target-actions">
-          <moz-button
-            id="about-translations-copy-button"
-            type="ghost"
-            iconSrc="chrome://global/skin/icons/edit-copy.svg"
-            data-l10n-id="about-translations-copy-button-default"
-            data-l10n-attrs="label"
-            disabled
-          ></moz-button>
-        </div>
+        <moz-button
+          id="about-translations-copy-button"
+          type="ghost"
+          iconSrc="chrome://global/skin/icons/edit-copy.svg"
+          data-l10n-id="about-translations-copy-button-default"
+          data-l10n-attrs="label"
+          disabled
+        ></moz-button>
       </div>
     </section>
   </body>
