@@ -501,24 +501,36 @@ private fun BookmarksState.handleListMenuAction(action: BookmarksListMenuAction)
         is BookmarksListMenuAction.Folder.DeleteClicked -> copy(
             bookmarksDeletionDialogState = DeletionDialogState.LoadingCount(listOf(action.folder.guid)),
         )
-        BookmarksListMenuAction.MultiSelect.MoveClicked -> copy(
-            bookmarksSelectFolderState = BookmarksSelectFolderState(
-                outerSelectionGuid = currentFolder.guid,
-            ),
-            bookmarksMultiselectMoveState = MultiselectMoveState(
-                guidsToMove = selectedItems.map { it.guid },
-                destination = currentFolder.guid,
-            ),
-        )
+        is BookmarksListMenuAction.Bookmark.MoveClicked -> copy(
+            selectedItems = listOf(action.bookmark),
+        ).handleMoveClicked()
+        is BookmarksListMenuAction.Folder.MoveClicked -> copy(
+            selectedItems = listOf(action.folder),
+        ).handleMoveClicked()
+        BookmarksListMenuAction.MultiSelect.MoveClicked -> this.handleMoveClicked()
         is BookmarksListMenuAction.SelectAll -> copy(selectedItems = bookmarkItems)
         is BookmarksListMenuAction.SortMenu -> handleSortMenuAction(action)
         else -> this
     }.let { updatedState ->
         when (action) {
-            is BookmarksListMenuAction.MultiSelect -> updatedState.copy(
+            is BookmarksListMenuAction.MultiSelect,
+            is BookmarksListMenuAction.Bookmark.MoveClicked,
+            is BookmarksListMenuAction.Folder.MoveClicked,
+            -> updatedState.copy(
                 selectedItems = listOf(),
                 recursiveSelectedCount = null,
             )
             else -> updatedState
         }
     }
+
+private fun BookmarksState.handleMoveClicked(): BookmarksState =
+    copy(
+        bookmarksSelectFolderState = BookmarksSelectFolderState(
+            outerSelectionGuid = currentFolder.guid,
+        ),
+        bookmarksMultiselectMoveState = MultiselectMoveState(
+            guidsToMove = selectedItems.map { it.guid },
+            destination = currentFolder.guid,
+        ),
+    )

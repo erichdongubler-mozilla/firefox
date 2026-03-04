@@ -1510,8 +1510,10 @@ private fun BookmarkListItemMenu(
             onClick = { store.dispatch(BookmarksListMenuAction.Bookmark.EditClicked(bookmark)) },
         ),
         MenuItem.TextItem(
-            text = Text.Resource(R.string.bookmark_menu_copy_button),
-            onClick = { store.dispatch(BookmarksListMenuAction.Bookmark.CopyClicked(bookmark)) },
+            text = Text.Resource(R.string.bookmark_menu_move_button),
+            onClick = {
+                store.dispatch(BookmarksListMenuAction.Bookmark.MoveClicked(bookmark))
+            },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_share_button),
@@ -1553,6 +1555,12 @@ private fun BookmarkListFolderMenu(
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_edit_button),
             onClick = { store.dispatch(BookmarksListMenuAction.Folder.EditClicked(folder)) },
+        ),
+        MenuItem.TextItem(
+            text = Text.Resource(R.string.bookmark_menu_move_button),
+            onClick = {
+                store.dispatch(BookmarksListMenuAction.Folder.MoveClicked(folder))
+            },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_open_all_in_tabs_button),

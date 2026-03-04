@@ -337,9 +337,8 @@ class BookmarksTest : TestSetup() {
         }
     }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833694
     @Test
-    fun copyBookmarkURLTest() {
+    fun moveBookmarkTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
         createBookmarkItem(defaultWebPage.url.toString(), defaultWebPage.title, null)
@@ -347,13 +346,18 @@ class BookmarksTest : TestSetup() {
         homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickBookmarksButton {
+            createFolder(bookmarkFolderName)
+            verifyFolderTitle(bookmarkFolderName)
+            verifyBookmarkTitle(defaultWebPage.title)
         }.openThreeDotMenu(defaultWebPage.title) {
-        }.clickCopy {
-            waitForBookmarksSnackBarToBeGone(snackbarText = "URL copied")
-        }.goBackToBrowserScreen {
-        }.openNavigationToolbar {
-        }.visitLinkFromClipboard {
-            verifyUrl(defaultWebPage.url.toString())
+        }.clickMove {
+            expandSelectableFolder("Bookmarks")
+            selectFolder(bookmarkFolderName)
+            navigateUp()
+            verifyFolderTitle(bookmarkFolderName)
+            verifyBookmarkFolderDescription(numberOfBookmarksInFolder = "1")
+            selectFolder(bookmarkFolderName)
+            verifyBookmarkTitle(defaultWebPage.title)
         }
     }
 

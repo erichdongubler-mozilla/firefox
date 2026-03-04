@@ -13,7 +13,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.core.content.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
@@ -115,7 +114,6 @@ class BookmarkFragment : Fragment() {
                             BookmarksMiddleware(
                                 lifecycleScope = lifecycleScope,
                                 bookmarksStorage = requireContext().bookmarkStorage,
-                                clipboardManager = requireActivity().getSystemService(),
                                 addNewTabUseCase = requireComponents.useCases.tabsUseCases.addTab,
                                 fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
                                 useNewSearchUX = settings().shouldUseComposableToolbar,

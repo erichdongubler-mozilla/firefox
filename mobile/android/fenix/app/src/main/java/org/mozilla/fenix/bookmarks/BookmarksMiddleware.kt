@@ -4,8 +4,6 @@
 
 package org.mozilla.fenix.bookmarks
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ensureActive
@@ -29,7 +27,6 @@ private const val WARN_OPEN_ALL_SIZE = 15
  * A middleware for handling side-effects in response to [BookmarksAction]s.
  *
  * @param bookmarksStorage Storage layer for reading and writing bookmarks.
- * @param clipboardManager For copying bookmark URLs.
  * @param addNewTabUseCase For opening tabs from menus.
  * @param fenixBrowserUseCases [FenixBrowserUseCases] used for loading the bookmark URLs.
  * @param useNewSearchUX Whether to use the new integrated search UX or navigate to a separate search screen.
@@ -53,7 +50,6 @@ private const val WARN_OPEN_ALL_SIZE = 15
 @Suppress("LongParameterList", "LargeClass")
 internal class BookmarksMiddleware(
     private val bookmarksStorage: BookmarksStorage,
-    private val clipboardManager: ClipboardManager?,
     private val addNewTabUseCase: TabsUseCases.AddNewTabUseCase,
     private val fenixBrowserUseCases: FenixBrowserUseCases,
     private val useNewSearchUX: Boolean,
@@ -658,11 +654,6 @@ internal class BookmarksMiddleware(
                 getNavController().navigate(BookmarksDestinations.EDIT_BOOKMARK)
             }
 
-            is BookmarksListMenuAction.Bookmark.CopyClicked -> {
-                val urlClipData = ClipData.newPlainText(bookmark.url, bookmark.url)
-                clipboardManager?.setPrimaryClip(urlClipData)
-            }
-
             is BookmarksListMenuAction.Bookmark.ShareClicked -> {
                 shareBookmarks(listOf(bookmark))
             }
@@ -716,7 +707,10 @@ internal class BookmarksMiddleware(
                 getNavController().navigate(BookmarksDestinations.EDIT_BOOKMARK)
             }
 
-            BookmarksListMenuAction.MultiSelect.MoveClicked -> {
+            is BookmarksListMenuAction.Bookmark.MoveClicked,
+            is BookmarksListMenuAction.Folder.MoveClicked,
+            BookmarksListMenuAction.MultiSelect.MoveClicked,
+            -> {
                 getNavController().navigate(BookmarksDestinations.SELECT_FOLDER)
             }
 

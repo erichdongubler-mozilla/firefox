@@ -163,8 +163,8 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
                 BookmarksManagement.shared.record(NoExtras())
             }
 
-            is BookmarksListMenuAction.Bookmark.CopyClicked -> {
-                BookmarksManagement.copied.record(NoExtras())
+            is BookmarksListMenuAction.Bookmark.MoveClicked -> {
+                BookmarksManagement.moved.record(NoExtras())
             }
 
             is BookmarksListMenuAction.Bookmark.DeleteClicked,
@@ -190,6 +190,10 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
                     MetricsUtils.BookmarkAction.OPEN,
                     LIST_SCREEN_METRIC_SOURCE,
                 )
+            }
+
+            is BookmarksListMenuAction.Folder.MoveClicked -> {
+                BookmarksManagement.moved.record(NoExtras())
             }
 
             is BookmarksListMenuAction.Folder.EditClicked,

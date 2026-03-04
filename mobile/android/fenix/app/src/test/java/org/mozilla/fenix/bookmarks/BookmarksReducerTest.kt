@@ -1350,6 +1350,40 @@ class BookmarksReducerTest {
         assertTrue(result.selectedItems.isEmpty())
     }
 
+    @Test
+    fun `GIVEN a bookmark WHEN move is clicked THEN move state is set and selection is cleared`() {
+        val items = listOf(generateBookmark())
+        val currentFolder = BookmarkItem.Folder("Bookmarks", "parent", null)
+        val state = BookmarksState.default.copy(
+            bookmarkItems = items,
+            currentFolder = currentFolder,
+        )
+
+        val result = bookmarksReducer(state, BookmarksListMenuAction.Bookmark.MoveClicked(items[0]))
+
+        assertTrue(result.selectedItems.isEmpty())
+        assertEquals(listOf(items[0].guid), result.bookmarksMultiselectMoveState?.guidsToMove)
+        assertEquals(currentFolder.guid, result.bookmarksMultiselectMoveState?.destination)
+        assertEquals(currentFolder.guid, result.bookmarksSelectFolderState?.outerSelectionGuid)
+    }
+
+    @Test
+    fun `GIVEN a folder WHEN move is clicked THEN move state is set and selection is cleared`() {
+        val items = listOf(generateFolder())
+        val currentFolder = BookmarkItem.Folder("Bookmarks", "parent", null)
+        val state = BookmarksState.default.copy(
+            bookmarkItems = items,
+            currentFolder = currentFolder,
+        )
+
+        val result = bookmarksReducer(state, BookmarksListMenuAction.Folder.MoveClicked(items[0]))
+
+        assertTrue(result.selectedItems.isEmpty())
+        assertEquals(listOf(items[0].guid), result.bookmarksMultiselectMoveState?.guidsToMove)
+        assertEquals(currentFolder.guid, result.bookmarksMultiselectMoveState?.destination)
+        assertEquals(currentFolder.guid, result.bookmarksSelectFolderState?.outerSelectionGuid)
+    }
+
     private fun generateBookmark(
         num: Int = 0,
         url: String = "url",

@@ -1346,19 +1346,6 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `WHEN copy clicked in bookmark item menu THEN copy bookmark url to clipboard`() = runTest {
-        val url = "url"
-        val bookmarkItem = BookmarkItem.Bookmark(url = url, title = "title", previewImageUrl = url, guid = "guid", position = null)
-        val middleware = buildMiddleware(this)
-        val store = middleware.makeStore()
-        testScheduler.advanceUntilIdle()
-
-        store.dispatch(BookmarksListMenuAction.Bookmark.CopyClicked(bookmarkItem))
-
-        verify(clipboardManager).setPrimaryClip(any())
-    }
-
-    @Test
     fun `WHEN share clicked in bookmark item menu THEN share the bookmark`() = runTest {
         var sharedBookmarks: List<BookmarkItem.Bookmark> = emptyList()
         shareBookmarks = { shareData ->
@@ -1911,6 +1898,30 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
+    fun `GIVEN a folder WHEN move is clicked in overflow menu THEN navigate to folder selection`() = runTest {
+        val tree = generateBookmarkTree()
+        `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
+        `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
+        val middleware = buildMiddleware(this)
+        val store = middleware.makeStore()
+
+        store.dispatch(BookmarksListMenuAction.Folder.MoveClicked(BookmarkItem.Folder("Folder 1", "guid1", position = 0u)))
+        verify(navController).navigate(BookmarksDestinations.SELECT_FOLDER)
+    }
+
+    @Test
+    fun `GIVEN a bookmark WHEN move is clicked in overflow menu THEN navigate to folder selection`() = runTest {
+        val tree = generateBookmarkTree()
+        `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
+        `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
+        val middleware = buildMiddleware(this)
+        val store = middleware.makeStore()
+
+        store.dispatch(BookmarksListMenuAction.Bookmark.MoveClicked(BookmarkItem.Bookmark("item url 0", "item title 0", "null", "item guid 0", 0u)))
+        verify(navController).navigate(BookmarksDestinations.SELECT_FOLDER)
+    }
+
+    @Test
     fun `WHEN first bookmarks sync is complete THEN reload the bookmarks list`() = runTest {
         val syncedGuid = "sync"
         val tree = generateBookmarkTree()
@@ -2323,7 +2334,6 @@ class BookmarksMiddlewareTest {
         reportResultGlobally: (BookmarksGlobalResultReport) -> Unit = {},
     ) = BookmarksMiddleware(
         bookmarksStorage = bookmarksStorage,
-        clipboardManager = clipboardManager,
         addNewTabUseCase = addNewTabUseCase,
         fenixBrowserUseCases = fenixBrowserUseCases,
         useNewSearchUX = useNewSearchUX,
