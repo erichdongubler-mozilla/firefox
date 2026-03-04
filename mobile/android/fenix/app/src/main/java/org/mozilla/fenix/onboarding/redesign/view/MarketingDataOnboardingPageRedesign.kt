@@ -126,7 +126,7 @@ fun MarketingDataOnboardingPageRedesign(
         }
     }
 
-    LaunchedEffect(state) {
+    LaunchedEffect(Unit) {
         state.onRecordImpressionEvent()
     }
 }

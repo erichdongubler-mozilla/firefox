@@ -118,7 +118,7 @@ fun ToolbarOnboardingPageRedesign(
         }
     }
 
-    LaunchedEffect(pageState) {
+    LaunchedEffect(Unit) {
         pageState.onRecordImpressionEvent()
     }
 }

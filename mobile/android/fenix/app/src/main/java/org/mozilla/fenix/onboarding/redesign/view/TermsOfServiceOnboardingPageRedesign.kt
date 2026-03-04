@@ -133,7 +133,7 @@ fun TermsOfServiceOnboardingPageRedesign(
         }
     }
 
-    LaunchedEffect(pageState) {
+    LaunchedEffect(Unit) {
         pageState.onRecordImpressionEvent()
     }
 }

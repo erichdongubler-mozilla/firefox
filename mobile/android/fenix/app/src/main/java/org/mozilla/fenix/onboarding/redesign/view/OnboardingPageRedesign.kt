@@ -59,7 +59,7 @@ fun OnboardingPageRedesign(
 ) {
     CardView(pageState, isSmallDevice)
 
-    LaunchedEffect(pageState) {
+    LaunchedEffect(Unit) {
         pageState.onRecordImpressionEvent()
     }
 }
