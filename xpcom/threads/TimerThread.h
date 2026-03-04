@@ -18,14 +18,127 @@
 
 #include "mozilla/Monitor.h"
 #include "mozilla/ProfilerUtils.h"
+#include "mozilla/Span.h"
+
+#if defined(XP_WIN)
+#  include <windows.h>
+#endif
 
 // Enable this to compute lots of interesting statistics and print them out when
 // PrintStatistics() is called.
 #define TIMER_THREAD_STATISTICS 0
 
 class TimerThread final : public mozilla::Runnable, public nsIObserver {
+ private:
+#if defined(XP_WIN)
+  // HiResWindowsMonitor is a simple (Windows-only) implementaton of a monitor
+  // that uses a high-res Windows timer object and a Windows event object (along
+  // with a mutex) as its synchronization primitives.
+  class MOZ_CAPABILITY("monitor") HiResWindowsMonitor final {
+   public:
+    explicit HiResWindowsMonitor(const char* aName)
+        : mMutex(aName),
+          mHandles{
+              { CreateWaitableTimerEx(nullptr, nullptr,
+                                      CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
+                                      TIMER_ALL_ACCESS),
+                CreateEvent(nullptr, FALSE, FALSE, nullptr) }} {
+      MOZ_RELEASE_ASSERT(GetTimer() != nullptr);
+      MOZ_RELEASE_ASSERT(GetEvent() != nullptr);
+    }
+
+    ~HiResWindowsMonitor() {
+      [[maybe_unused]] const BOOL b0 = CloseHandle(GetEvent());
+      MOZ_ASSERT(b0 != 0);
+      [[maybe_unused]] const BOOL b1 = CloseHandle(GetTimer());
+      MOZ_ASSERT(b1 != 0);
+    }
+
+    MOZ_ALWAYS_INLINE void Lock() MOZ_CAPABILITY_ACQUIRE() { mMutex.Lock(); }
+
+    MOZ_ALWAYS_INLINE void Unlock() MOZ_CAPABILITY_RELEASE() {
+      mMutex.Unlock();
+    }
+
+    // Sleep until notified.
+    void Wait() MOZ_REQUIRES(this) {
+      Unlock();
+      WaitForSingleObject(GetEvent(), INFINITE);
+      Lock();
+    }
+
+    // Sleep for the specified number of microseconds or until notified.
+    void Wait(const uint64_t aDuration_us) MOZ_REQUIRES(this) {
+      // duration needs to be in "hundreds of nanoseconds", negative indicates
+      // value is relative rather than absolute
+      const LARGE_INTEGER duration{
+          .QuadPart = static_cast<int64_t>(aDuration_us) * -10LL};
+      const BOOL b = SetWaitableTimerEx(GetTimer(), &duration, 0, nullptr,
+                                        nullptr, nullptr, 0);
+      MOZ_RELEASE_ASSERT(b != 0);
+      mMutex.AssertCurrentThreadOwns();
+      Unlock();
+      const mozilla::Span<const HANDLE, 2> handles{GetHandles()};
+      WaitForMultipleObjects(handles.size(), handles.data(), FALSE, INFINITE);
+      Lock();
+    }
+
+    // Sleep for the specified number of microseconds or until notified.
+    // Negative waits are clamped to zero.
+    MOZ_ALWAYS_INLINE void Wait(const double aDuration_us) MOZ_REQUIRES(this) {
+      Wait(static_cast<uint64_t>(std::max(aDuration_us, 0.0)));
+    }
+
+    // Sleep for the specified duration or until notified. Negative waits are
+    // clamped to zero.
+    void Wait(mozilla::TimeDuration aDuration) MOZ_REQUIRES(this) {
+      if (aDuration != TimeDuration::Forever()) {
+        Wait(aDuration.ToMicroseconds());
+      } else {
+        Wait();
+      }
+    }
+
+    // Wake one thread waiting on the monitor.
+    MOZ_ALWAYS_INLINE void Notify() {
+      const BOOL b = SetEvent(GetEvent());
+      MOZ_RELEASE_ASSERT(b != 0);
+    }
+
+    void AssertCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(this) {
+      mMutex.AssertCurrentThreadOwns();
+    }
+
+    void AssertNotCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(!this) {
+      mMutex.AssertNotCurrentThreadOwns();
+    }
+
+   private:
+    // Convenience functions for accessing the handles and not having to
+    // remember which is which.
+    MOZ_ALWAYS_INLINE HANDLE GetTimer() const { return mHandles[0]; }
+    MOZ_ALWAYS_INLINE HANDLE GetEvent() const { return mHandles[1]; }
+
+    MOZ_ALWAYS_INLINE mozilla::Span<const HANDLE, 2> GetHandles() const {
+      return mozilla::Span<const HANDLE, 2>{mHandles}.Subspan<0, 2>();
+    }
+
+    mozilla::Mutex mMutex;
+    std::array<HANDLE, 2> mHandles;
+  };
+
+  typedef HiResWindowsMonitor TimerThreadMonitor;
+
+#else
+  typedef mozilla::Monitor TimerThreadMonitor;
+#endif
+
+  using TimerThreadMonitorAutoLock =
+      mozilla::MonitorAutoLockBase<TimerThreadMonitor>;
+  using TimerThreadMonitorAutoUnlock =
+      mozilla::MonitorAutoUnlockBase<TimerThreadMonitor>;
+
  public:
-  typedef mozilla::Monitor Monitor;
   typedef mozilla::MutexAutoLock MutexAutoLock;
   typedef mozilla::TimeStamp TimeStamp;
   typedef mozilla::TimeDuration TimeDuration;
@@ -75,7 +188,7 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   // (optional) ThreadWrapper::sMutex ->
   // (optional) nsTimerImpl::mMutex   ->
   // TimerThread::mMonitor
-  Monitor mMonitor;
+  TimerThreadMonitor mMonitor;
 
   bool mShutdown MOZ_GUARDED_BY(mMonitor);
   bool mWaiting MOZ_GUARDED_BY(mMonitor);

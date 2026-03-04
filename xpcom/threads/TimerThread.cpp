@@ -145,7 +145,7 @@ TimerThread::~TimerThread() {
 
 #if TIMER_THREAD_STATISTICS
   {
-    MonitorAutoLock lock(mMonitor);
+    TimerThreadMonitorAutoLock lock(mMonitor);
     PrintStatistics();
   }
 #endif
@@ -512,7 +512,7 @@ nsresult TimerThread::Shutdown() {
   nsTArray<Entry> timers;
   {
     // lock scope
-    MonitorAutoLock lock(mMonitor);
+    TimerThreadMonitorAutoLock lock(mMonitor);
 
     mShutdown = true;
 
@@ -743,7 +743,7 @@ void TimerThread::Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor) {
 
 NS_IMETHODIMP
 TimerThread::Run() {
-  MonitorAutoLock lock(mMonitor);
+  TimerThreadMonitorAutoLock lock(mMonitor);
 
   mProfilerThreadId = profiler_current_thread_id();
 
@@ -833,7 +833,7 @@ TimerThread::Run() {
 
 nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
                                const MutexAutoLock& aProofOfLock) {
-  MonitorAutoLock lock(mMonitor);
+  TimerThreadMonitorAutoLock lock(mMonitor);
   AUTO_TIMERS_STATS(TimerThread_AddTimer);
 
   if (mShutdown) {
@@ -906,7 +906,7 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
 
 nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
                                   const MutexAutoLock& aProofOfLock) {
-  MonitorAutoLock lock(mMonitor);
+  TimerThreadMonitorAutoLock lock(mMonitor);
   AUTO_TIMERS_STATS(TimerThread_RemoveTimer);
 
   // Remove the timer from our array.  Tell callers that aTimer was not found
@@ -959,7 +959,7 @@ nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
 
 TimeStamp TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault,
                                                         uint32_t aSearchBound) {
-  MonitorAutoLock lock(mMonitor);
+  TimerThreadMonitorAutoLock lock(mMonitor);
   AUTO_TIMERS_STATS(TimerThread_FindNextFireTimeForCurrentThread);
 
   for (const Entry& entry : mTimers) {
@@ -1135,7 +1135,7 @@ void TimerThread::PostTimerEvent(Entry& aPostMe) {
   RefPtr<nsTimerEvent> lockedEventPtr = ::new (KnownNotNull, p)
       nsTimerEvent(timer.forget(), aPostMe.mTimerSeq, mProfilerThreadId);
   {
-    MonitorAutoUnlock unlock(mMonitor);
+    TimerThreadMonitorAutoUnlock unlock(mMonitor);
     // Ensure references are released while we're unlocked.
     nsCOMPtr<nsIEventTarget> target = lockedTargetPtr.forget();
     RefPtr<nsTimerEvent> event = lockedEventPtr.forget();
@@ -1147,14 +1147,14 @@ void TimerThread::PostTimerEvent(Entry& aPostMe) {
 
 void TimerThread::DoBeforeSleep() {
   // Mainthread
-  MonitorAutoLock lock(mMonitor);
+  TimerThreadMonitorAutoLock lock(mMonitor);
   mSleeping = true;
 }
 
 // Note: wake may be notified without preceding sleep notification
 void TimerThread::DoAfterSleep() {
   // Mainthread
-  MonitorAutoLock lock(mMonitor);
+  TimerThreadMonitorAutoLock lock(mMonitor);
   mSleeping = false;
 
   // Wake up the timer thread to re-process the array to ensure the sleep delay
@@ -1184,7 +1184,7 @@ TimerThread::Observe(nsISupports* /*aSubject*/, const char* aTopic,
 }
 
 uint32_t TimerThread::AllowedEarlyFiringMicroseconds() {
-  MonitorAutoLock lock(mMonitor);
+  TimerThreadMonitorAutoLock lock(mMonitor);
   return mAllowedEarlyFiringMicroseconds;
 }
 
@@ -1364,7 +1364,7 @@ NS_IMPL_ISUPPORTS(nsReadOnlyTimer, nsITimer)
 nsresult TimerThread::GetTimers(nsTArray<RefPtr<nsITimer>>& aRetVal) {
   nsTArray<RefPtr<nsTimerImpl>> timers;
   {
-    MonitorAutoLock lock(mMonitor);
+    TimerThreadMonitorAutoLock lock(mMonitor);
     for (const auto& entry : mTimers) {
       nsTimerImpl* timer = entry.mTimerImpl;
       if (!timer) {
