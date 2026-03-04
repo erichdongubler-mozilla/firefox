@@ -3100,7 +3100,7 @@ void HTMLInputElement::RadioSetChecked(bool aNotify, bool aUpdateOtherElement) {
     // It’s possible for multiple radio input to have their checkedness set to
     // true, so we need to deselect all of them.
     VisitGroup([](HTMLInputElement* aRadio) {
-      aRadio->SetCheckedInternal(false, true);
+      aRadio->SetCheckedInternal(false, true, false);
       return true;
     });
   }
@@ -3207,7 +3207,8 @@ void HTMLInputElement::UpdateIndeterminateState(bool aNotify) {
   SetStates(ElementState::INDETERMINATE, indeterminate, aNotify);
 }
 
-void HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify) {
+void HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify,
+                                          bool aUpdateRadioGroup) {
   // Set the value
   mChecked = aChecked;
 
@@ -3223,7 +3224,7 @@ void HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify) {
 
   // Notify all radios in the group that value has changed, this is to let
   // radios to have the chance to update its states, e.g., :indeterminate.
-  if (mType == FormControlType::InputRadio) {
+  if (mType == FormControlType::InputRadio && aUpdateRadioGroup) {
     UpdateRadioGroupState();
   }
 }

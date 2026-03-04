@@ -1023,9 +1023,12 @@ class HTMLInputElement final : public TextControlElement,
 
   /**
    * Actually set checked and notify the frame of the change.
-   * @param aValue the value of checked to set
+   * @param aChecked the value of checked to set
+   * @param aUpdateRadioGroup whether to update the whole radio group
+   *                          for :indeterminate, etc.
    */
-  void SetCheckedInternal(bool aValue, bool aNotify);
+  void SetCheckedInternal(bool aChecked, bool aNotify,
+                          bool aUpdateRadioGroup = true);
 
   void RadioSetChecked(bool aNotify, bool aUpdateOtherElement);
   void SetCheckedChanged(bool aCheckedChanged);
