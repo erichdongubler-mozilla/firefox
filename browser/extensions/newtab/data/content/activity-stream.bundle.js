@@ -2134,6 +2134,7 @@ const LinkMenuOptions = {
         event_source: "CONTEXT_MENU",
       },
     }),
+    userEvent: "SECTION_UNFOLLOW",
   }),
   ManageSponsoredContent: () => ({
     id: "newtab-menu-manage-sponsored-content",
