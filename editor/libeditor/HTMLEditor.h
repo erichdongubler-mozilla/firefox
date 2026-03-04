@@ -1946,21 +1946,24 @@ class HTMLEditor final : public EditorBase,
    *                            style, this method will set `style` attribute to
    *                            moving node or creating new <span> element.
    * @param aRemoveIfCommentNode
-   *                            If yes, this removes a comment node instead of
-   *                            moving it to the destination.  Note that this
-   *                            does not remove comment nodes in moving nodes
-   *                            because it requires additional scan.
+   *                            If yes, this removes invisible nodes such as
+   *                            comment nodes, empty inline containers (even if
+   *                            it has border, etc) instead of moving it to the
+   *                            destination.  Note that this does not remove
+   *                            invisible descendants in containers which have
+   *                            visible nodes because it requires additional
+   *                            scan.
    */
   enum class PreserveWhiteSpaceStyle { No, Yes };
   friend std::ostream& operator<<(
       std::ostream& aStream,
       const PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle);
-  enum class RemoveIfCommentNode { No, Yes };
+  enum class RemoveIfInvisibleNode { No, Yes };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<MoveNodeResult, nsresult>
   MoveNodeOrChildrenWithTransaction(
       nsIContent& aContentToMove, const EditorDOMPoint& aPointToInsert,
       PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle,
-      RemoveIfCommentNode aRemoveIfCommentNode);
+      RemoveIfInvisibleNode aRemoveIfInvisibleNode);
 
   /**
    * CanMoveNodeOrChildren() returns true if
@@ -1986,16 +1989,19 @@ class HTMLEditor final : public EditorBase,
    *                            style, this method will set `style` attribute to
    *                            moving node or creating new <span> element.
    * @param aRemoveIfCommentNode
-   *                            If yes, this removes a comment node instead of
-   *                            moving it to the destination.  Note that this
-   *                            does not remove comment nodes in moving nodes
-   *                            because it requires additional scan.
+   *                            If yes, this removes invisible nodes such as
+   *                            comment nodes, empty inline containers (even if
+   *                            it has border, etc) instead of moving it to the
+   *                            destination.  Note that this does not remove
+   *                            invisible descendants in containers which have
+   *                            visible nodes because it requires additional
+   *                            scan.
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<MoveNodeResult, nsresult>
   MoveChildrenWithTransaction(Element& aElement,
                               const EditorDOMPoint& aPointToInsert,
                               PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle,
-                              RemoveIfCommentNode aRemoveIfCommentNode);
+                              RemoveIfInvisibleNode aRemoveIfInvisibleNode);
 
   /**
    * CanMoveChildren() returns true if `MoveChildrenWithTransaction()` can move

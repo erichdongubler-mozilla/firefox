@@ -221,6 +221,10 @@ class MOZ_STACK_CLASS WSScanResult final {
            HTMLEditUtils::ElementIsEditableRoot(*ElementPtr());
   }
 
+  [[nodiscard]] bool ReachedOutsideEditingHost() const {
+    return !!mEditingHost;
+  }
+
   /**
    * Offset_Deprecated() returns meaningful value only when
    * InVisibleOrCollapsibleCharacters() returns true or the scanner reached to
@@ -359,6 +363,71 @@ class MOZ_STACK_CLASS WSScanResult final {
                  : EditorDOMPointType(mEditingHost, 0u);
     }
     return PointAfterReachedContentNode<EditorDOMPointType>();
+  }
+
+  /**
+   * Return the point of the reached block boundary. If reached current block
+   * boundary, return its inner boundary. Otherwise, its outer boundary.
+   */
+  template <typename EditorDOMPointType>
+  EditorDOMPointType PointAtReachedBlockBoundary() const {
+    MOZ_ASSERT(ReachedBlockBoundary());
+    if (mDirection == ScanDirection::Forward) {
+      return ReachedCurrentBlockBoundary()
+                 ? EditorDOMPointType::AtEndOf(*mContent)
+                 : EditorDOMPointType(mContent);
+    }
+    return ReachedCurrentBlockBoundary() ? EditorDOMPointType(mContent, 0u)
+                                         : EditorDOMPointType::After(*mContent);
+  }
+
+  /**
+   * Similar to PointAtReachedBlockBoundary() but the block is outside the
+   * editing host, return the point at the editing host boundary.
+   */
+  template <typename EditorDOMPointType>
+  EditorDOMPointType PointAtReachedBlockBoundaryOrEditingHostBoundary() const {
+    MOZ_ASSERT(ReachedBlockBoundary());
+    if (mEditingHost) {
+      return mDirection == ScanDirection::Forward
+                 ? EditorDOMPointType::AtEndOf(*mEditingHost)
+                 : EditorDOMPointType(mEditingHost, 0u);
+    }
+    return PointAtReachedBlockBoundary<EditorDOMPointType>();
+  }
+
+  /**
+   * Return the point of the reached line boundary. I.e., start or end of the
+   * line content, i.e., if scanned forward and reached a line break, return the
+   * point of the line break, not after the line break.
+   */
+  template <typename EditorDOMPointType>
+  EditorDOMPointType PointAtReachedLineBoundary() const {
+    MOZ_ASSERT(ReachedLineBoundary());
+    if (ReachedBlockBoundary()) {
+      return PointAtReachedBlockBoundary<EditorDOMPointType>();
+    }
+    if (mDirection == ScanDirection::Forward) {
+      return PointAtReachedContent<EditorDOMPointType>();
+    }
+    return PointAfterReachedContent<EditorDOMPointType>();
+  }
+
+  /**
+   * Similar to PointAtReachedLineBoundary() but if the line boundary is outside
+   * the editing host, return the editing host boundary.
+   */
+  template <typename EditorDOMPointType>
+  EditorDOMPointType PointAtReachedLineBoundaryOrEditingHostBoundary() const {
+    MOZ_ASSERT(ReachedLineBoundary());
+    if (ReachedBlockBoundary()) {
+      return PointAtReachedBlockBoundaryOrEditingHostBoundary<
+          EditorDOMPointType>();
+    }
+    if (mDirection == ScanDirection::Forward) {
+      return PointAtReachedContentOrEditingHostBoundary<EditorDOMPointType>();
+    }
+    return PointAfterReachedContentOrEditingHostBoundary<EditorDOMPointType>();
   }
 
   /**

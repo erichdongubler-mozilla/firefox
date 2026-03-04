@@ -1039,7 +1039,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
   [[nodiscard]] Result<EditorRawDOMRange, nsresult> ExtendOrShrinkRangeToDelete(
       const HTMLEditor& aHTMLEditor,
       const LimitersAndCaretData& aLimitersAndCaretData,
-      const EditorDOMRangeType& aRangeToDelete) const;
+      const EditorDOMRangeType& aRangeToDelete,
+      const Element& aEditingHost) const;
 
   /**
    * Extend the start boundary of aRangeToDelete to contain ancestor inline

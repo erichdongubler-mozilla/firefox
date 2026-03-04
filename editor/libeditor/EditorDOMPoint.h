@@ -1706,6 +1706,13 @@ class EditorDOMRangeBase final {
     mEnd.Clear();
   }
 
+  inline void AssertBoundariesAreSetAndValid() const {
+    NS_WARNING_ASSERTION(mStart.IsSetAndValid(), ToString(mStart).c_str());
+    MOZ_ASSERT(mStart.IsSetAndValid());
+    NS_WARNING_ASSERTION(mEnd.IsSetAndValid(), ToString(mEnd).c_str());
+    MOZ_ASSERT(mEnd.IsSetAndValid());
+  }
+
   const PointType& StartRef() const { return mStart; }
   const PointType& EndRef() const { return mEnd; }
 
