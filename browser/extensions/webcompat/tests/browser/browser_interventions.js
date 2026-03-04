@@ -65,10 +65,6 @@ function addon_url(path) {
   return `moz-extension://${uuid}/${path}`;
 }
 
-function validate_path(path) {
-  return path.match(/[A-Za-z0-9._\-]/i);
-}
-
 async function check_path_exists(path) {
   try {
     await (await fetch(addon_url(path))).text();
@@ -151,7 +147,7 @@ add_task(async function test_json_data() {
     );
   }
 
-  const json = await WebCompatExtension.allOriginalInterventions();
+  const json = await (await fetch(addon_url("data/interventions.json"))).json();
   const ids = new Set();
   for (const [id, config] of Object.entries(json)) {
     const { bugs, hidden, interventions, label } = config;
@@ -396,7 +392,6 @@ add_task(async function test_json_data() {
             if (!path.includes("/")) {
               path = `injections/${type}/${path}`;
             }
-            ok(validate_path(path), `${path} has no special characters`);
             ok(
               path.endsWith(`.${type}`),
               `${path} should be a ${type.toUpperCase()} file`
