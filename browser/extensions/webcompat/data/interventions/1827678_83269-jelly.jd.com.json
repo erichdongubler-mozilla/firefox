@@ -1,0 +1,15 @@
+{
+  "label": "jelly.jd.com",
+  "bugs": {
+    "1899051": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://jelly.jd.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "ua_string": ["add_Chrome"]
+    }
+  ]
+}
