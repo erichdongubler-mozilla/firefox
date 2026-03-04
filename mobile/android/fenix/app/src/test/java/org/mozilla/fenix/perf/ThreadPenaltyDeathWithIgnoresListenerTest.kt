@@ -88,6 +88,24 @@ class ThreadPenaltyDeathWithIgnoresListenerTest {
     }
 
     @Test
+    fun `GIVEN we're on a Xiaomi WHEN provided the MultiLangHelper violation THEN it will be ignored and logged`() {
+        every { mockManufacturerChecker.isXiaomi() } returns true
+
+        every { violation.stackTrace } returns getXiaomiMultiLangHelperStackTrace()
+        listener.onThreadViolation(violation)
+
+        verify { logger.debug("Ignoring StrictMode ThreadPolicy violation", violation) }
+    }
+
+    @Test(expected = RuntimeException::class)
+    fun `GIVEN we're not on a Xiaomi WHEN provided the MultiLangHelper violation THEN we throw an exception`() {
+        every { mockManufacturerChecker.isXiaomi() } returns false
+
+        every { violation.stackTrace } returns getXiaomiMultiLangHelperStackTrace()
+        listener.onThreadViolation(violation)
+    }
+
+    @Test
     fun `WHEN violation is null THEN we don't throw an exception`() {
         listener.onThreadViolation(null)
     }
@@ -100,4 +118,7 @@ class ThreadPenaltyDeathWithIgnoresListenerTest {
 
     private fun getInstrumentationHooksStackTrace() =
         StackTraces.getStackTraceFromLogcat("InstrumentationHooksLogcat.txt")
+
+    private fun getXiaomiMultiLangHelperStackTrace() =
+        StackTraces.getStackTraceFromLogcat("XiaomiMultiLangHelperLogcat.txt")
 }
