@@ -41,6 +41,10 @@ add_task(
           [AboutTranslationsTestUtils.Events.ClearSourceText],
           [AboutTranslationsTestUtils.Events.SourceTextClearButtonHidden],
           [AboutTranslationsTestUtils.Events.ClearTargetText],
+          [
+            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+            { sourceText: "" },
+          ],
           [AboutTranslationsTestUtils.Events.CopyButtonDisabled],
         ],
         unexpected: [
@@ -104,6 +108,10 @@ add_task(
           [AboutTranslationsTestUtils.Events.ClearSourceText],
           [AboutTranslationsTestUtils.Events.SourceTextClearButtonHidden],
           [AboutTranslationsTestUtils.Events.ClearTargetText],
+          [
+            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+            { sourceText: "" },
+          ],
         ],
         unexpected: [
           AboutTranslationsTestUtils.Events.CopyButtonEnabled,

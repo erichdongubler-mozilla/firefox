@@ -22,6 +22,10 @@ add_task(async function test_about_translations_translate_error_retry_cycle() {
   await aboutTranslationsTestUtils.assertEvents(
     {
       expected: [
+        [
+          AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+          { sourceText: "This is a test." },
+        ],
         [AboutTranslationsTestUtils.Events.ShowTranslatingPlaceholder],
         [AboutTranslationsTestUtils.Events.ClearTargetText],
       ],
@@ -137,6 +141,10 @@ add_task(
     await aboutTranslationsTestUtils.assertEvents(
       {
         expected: [
+          [
+            AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+            { sourceText: "Switching languages." },
+          ],
           [AboutTranslationsTestUtils.Events.ShowTranslatingPlaceholder],
           [AboutTranslationsTestUtils.Events.ClearTargetText],
         ],
