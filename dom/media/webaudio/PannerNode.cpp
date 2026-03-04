@@ -394,6 +394,9 @@ JSObject* PannerNode::WrapObject(JSContext* aCx,
 // Those three functions are described in the spec.
 float PannerNodeEngine::LinearGainFunction(double aDistance) {
   double clampedRollof = std::clamp(mRolloffFactor, 0.0, 1.0);
+  if (mMaxDistance <= mRefDistance) {
+    return AssertedCast<float>(1.0 - clampedRollof);
+  }
   return AssertedCast<float>(
       1.0 - clampedRollof *
                 (std::max(std::min(aDistance, mMaxDistance), mRefDistance) -
