@@ -814,4 +814,19 @@ object AppAndSystemHelper {
     suspend fun disableDebugDrawer() = withContext(Dispatchers.IO) {
         DefaultDebugSettingsRepository(context = appContext, writeScope = this).setDebugDrawerEnabled(false)
     }
+
+    fun setScreenOrientation(
+        composeTestRule: AndroidComposeTestRule<HomeActivityIntentTestRule, HomeActivity>,
+        orientation: Int,
+    ) {
+        Log.i(TAG, "setScreenOrientation: Setting orientation to $orientation.")
+        composeTestRule.activity.requestedOrientation = orientation
+        Log.i(TAG, "setScreenOrientation: Waiting for device to be idle for $waitingTime ms")
+        mDevice.waitForIdle(waitingTime)
+        Log.i(TAG, "setScreenOrientation: Waited for device to be idle for $waitingTime ms")
+        Log.i(TAG, "setScreenOrientation: Waiting for the compose test rule to be idle.")
+        composeTestRule.waitForIdle()
+        Log.i(TAG, "setScreenOrientation: Waited for the compose test rule to be idle.")
+        Log.i(TAG, "setScreenOrientation: Orientation set to $orientation.")
+    }
 }

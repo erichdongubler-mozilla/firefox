@@ -7,6 +7,7 @@
 package org.mozilla.fenix.ui
 
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.hardware.camera2.CameraManager
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
@@ -28,6 +29,7 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.AppAndSystemHelper.enableOrDisableBackGestureNavigationOnDevice
 import org.mozilla.fenix.helpers.AppAndSystemHelper.grantSystemPermission
+import org.mozilla.fenix.helpers.AppAndSystemHelper.setScreenOrientation
 import org.mozilla.fenix.helpers.AppAndSystemHelper.verifyKeyboardVisibility
 import org.mozilla.fenix.helpers.DataGenerationHelper.createCustomTabIntent
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
@@ -49,6 +51,7 @@ import org.mozilla.fenix.helpers.TestHelper.verifyLightThemeApplied
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.clickContextMenuItem
 import org.mozilla.fenix.ui.robots.customTabScreen
 import org.mozilla.fenix.ui.robots.homeScreen
@@ -722,7 +725,7 @@ class NavigationToolbarTest : TestSetup() {
     fun verifySearchBarItemsTest() {
         navigationToolbar(composeTestRule) {
             verifyDefaultSearchEngine("Google")
-            verifySearchBarPlaceholder()
+            verifySearchBarPlaceholder("Search or enter address")
         }.clickURLBar {
             verifyKeyboardVisibility(isExpectedToBeVisible = true)
             verifyScanButton(isDisplayed = true)
@@ -809,7 +812,7 @@ class NavigationToolbarTest : TestSetup() {
     fun verifyTheToolbarItemsTest() {
         navigationToolbar(composeTestRule) {
             verifyDefaultSearchEngine("Google")
-            verifySearchBarPlaceholder()
+            verifySearchBarPlaceholder("Search or enter address")
             verifyTheTabCounter("0")
             verifyTheMainMenuButton()
         }
@@ -817,7 +820,7 @@ class NavigationToolbarTest : TestSetup() {
         }.togglePrivateBrowsingMode()
         navigationToolbar(composeTestRule) {
             verifyDefaultSearchEngine("Google")
-            verifySearchBarPlaceholder()
+            verifySearchBarPlaceholder("Search or enter address")
             verifyTheTabCounter("0", isPrivateBrowsingEnabled = true)
             verifyTheMainMenuButton()
         }
@@ -968,5 +971,76 @@ class NavigationToolbarTest : TestSetup() {
                 verifyExistingOpenTabs(defaultWebPage.title)
             }
         }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333173
+    @Test
+    fun verifyHomepageItemsWithTabStripLandscapeTest() {
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickShowTabBarToggle()
+            scrollToTheScrollToHideToolbarOption()
+            selectExpandedToolbarLayout()
+        }.goBack {
+        }.goBack(composeTestRule) {
+            verifyToolbarPosition(bottomPosition = false)
+        }
+
+        setScreenOrientation(composeTestRule, ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+
+        homeScreen(composeTestRule) {
+            verifyToolbarPosition(bottomPosition = false)
+        }
+        navigationToolbar(composeTestRule) {
+            verifyDefaultSearchEngine("Google")
+            verifySearchBarPlaceholder("Search or enter address")
+            verifyTheTabCounter("0")
+            verifyTheMainMenuButton()
+        }
+        setScreenOrientation(composeTestRule, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333201
+    @Test
+    fun verifyTheTabStripUILandscapeTest() {
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
+
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickShowTabBarToggle()
+            scrollToTheScrollToHideToolbarOption()
+            selectExpandedToolbarLayout()
+        }.goBack {
+        }.goBack(composeTestRule) {
+        }
+
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(defaultWebPage.url) {
+            verifyPageContent(defaultWebPage.content)
+        }
+
+        setScreenOrientation(composeTestRule, ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+        browserScreen(composeTestRule) {
+            verifyUrl(defaultWebPage.url.toString())
+            verifyETPShieldIconIsDisplayed(composeTestRule)
+        }
+        homeScreen(composeTestRule) {
+            verifyToolbarPosition(bottomPosition = false)
+        }
+        navigationToolbar(composeTestRule) {
+            verifyTheTabStripOpenTab("Test_Page_1")
+            verifyTheTabStripCloseTabButton("Test_Page_1")
+            verifyTheBackButton()
+            verifyTheForwardButton()
+            verifyTheRefreshButton()
+            verifyTheNewTabButton(false)
+            verifyTheTabCounter("1")
+            verifyTheMainMenuButton()
+        }
+        setScreenOrientation(composeTestRule, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
     }
 }

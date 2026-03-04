@@ -112,7 +112,7 @@ class SearchTest : TestSetup() {
     fun verifySearchBarItemsTest() {
         navigationToolbar(composeTestRule) {
             verifyDefaultSearchEngine("Google")
-            verifySearchBarPlaceholder()
+            verifySearchBarPlaceholder("Search or enter address")
         }.clickURLBar {
             verifyKeyboardVisibility(isExpectedToBeVisible = true)
             verifyScanButton(isDisplayed = true)
@@ -156,7 +156,7 @@ class SearchTest : TestSetup() {
                 exitMenu()
             }
             navigationToolbar(composeTestRule) {
-                verifySearchBarPlaceholder()
+                verifySearchBarPlaceholder("Search or enter address")
             }
         }
     }

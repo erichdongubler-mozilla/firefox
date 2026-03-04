@@ -185,7 +185,7 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
             ),
         )
 
-    fun verifySearchBarPlaceholder() {
+    fun verifySearchBarPlaceholder(string: String) {
         Log.i(TAG, "verifySearchBarPlaceholder: Trying to verify that the search bar place holder is \"Search or enter address\"")
         composeTestRule.onNodeWithTag(ADDRESSBAR_URL_BOX).assert(hasContentDescription("Search or enter address"))
         Log.i(TAG, "verifySearchBarPlaceholder: Verified that the search bar place holder is \"Search or enter address\"")
@@ -371,6 +371,23 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyTheTabStripCloseTabButton: Trying to verify close button for tab in tab strip is displayed")
         composeTestRule.onNodeWithContentDescription("Close tab $tabName").assertIsDisplayed()
         Log.i(TAG, "verifyTheTabStripCloseTabButton: Verified close button for tab in tab strip is displayed")
+    }
+
+    fun verifyTheBackButton() {
+        Log.i(TAG, "verifyTheBackButton: Trying to verify that the \"Back\" nav bar button is displayed in landscape mode.")
+        composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
+        Log.i(TAG, "verifyTheBackButton: Verified that the \"Back\" nav bar button is displayed in landscape mode.")
+    }
+
+    fun verifyTheForwardButton() {
+        Log.i(TAG, "verifyTheForwardButton: Trying to verify that the \"Forward\" nav bar button is displayed in landscape mode.")
+        composeTestRule.onNodeWithContentDescription("Forward").assertIsDisplayed()
+        Log.i(TAG, "verifyTheForwardButton: Verified that the \"Forward\" nav bar button is displayed in landscape mode.")
+    }
+    fun verifyTheRefreshButton() {
+        Log.i(TAG, "verifyTheRefreshButton: Trying to verify that the \"Refresh\" nav bar button is displayed in landscape mode.")
+        composeTestRule.onNodeWithContentDescription("Refresh").assertIsDisplayed()
+        Log.i(TAG, "verifyTheRefreshButton: Verified that the \"Refresh\" nav bar button is displayed in landscape mode.")
     }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
