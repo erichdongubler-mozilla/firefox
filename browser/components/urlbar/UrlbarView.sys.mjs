@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 /**
@@ -939,22 +938,10 @@ export class UrlbarView {
       detail: { target: anchor },
     });
 
-    if (AppConstants.platform == "macosx") {
-      // `openPopup(anchor)` doesn't use a native context menu, which is very
-      // noticeable on Mac. Use `openPopup()` with x and y coords instead. See
-      // bug 1831760 and bug 1710459.
-      let rect = getBoundsWithoutFlushing(anchor);
-      this.resultMenu.openPopup(null, {
-        x: rect.x,
-        y: rect.y + rect.height,
-        triggerEvent: event,
-      });
-    } else {
-      this.resultMenu.openPopup(anchor, {
-        position: "bottomright topright",
-        triggerEvent: event,
-      });
-    }
+    this.resultMenu.openPopup(anchor, {
+      position: "bottomright topright",
+      triggerEvent: event,
+    });
 
     anchor.toggleAttribute("open", true);
     let listener = event => {
