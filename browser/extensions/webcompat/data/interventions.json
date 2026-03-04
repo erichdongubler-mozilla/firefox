@@ -1442,23 +1442,6 @@
       }
     ]
   },
-  "1848713": {
-    "label": "cleanrider.com",
-    "bugs": {
-      "1848713": {
-        "issue": "broken-interactive-elements",
-        "matches": ["*://*.cleanrider.com/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "content_scripts": {
-          "css": ["bug1848713-cleanrider.com-slider.css"]
-        }
-      }
-    ]
-  },
   "1848849": {
     "label": "theaa.com",
     "bugs": {
