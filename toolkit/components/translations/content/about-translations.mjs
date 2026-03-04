@@ -59,6 +59,20 @@ const URL_MAX_TEXT_LENGTH = 5000;
  * @typedef {import("../translations").SupportedLanguages} SupportedLanguages
  */
 
+/**
+ * Dispatches a custom event used only by automated tests.
+ *
+ * @param {string} type
+ * @param {object} [detail]
+ */
+function dispatchTestEvent(type, detail) {
+  if (!AT_isInAutomation()) {
+    return;
+  }
+
+  document.dispatchEvent(new CustomEvent(type, { detail }));
+}
+
 class AboutTranslations {
   /**
    * The set of languages that are supported by the Translations feature.
@@ -403,11 +417,9 @@ class AboutTranslations {
     const orientationChanged = orientationAtStart !== this.#pageOrientation;
 
     if (orientationChanged) {
-      document.dispatchEvent(
-        new CustomEvent("AboutTranslationsTest:PageOrientationChanged", {
-          detail: { orientation: this.#pageOrientation },
-        })
-      );
+      dispatchTestEvent("AboutTranslationsTest:PageOrientationChanged", {
+        orientation: this.#pageOrientation,
+      });
     }
 
     return orientationChanged;
@@ -735,12 +747,10 @@ class AboutTranslations {
     }
 
     languageLoadErrorMessage.hidden = !visible;
-    document.dispatchEvent(
-      new CustomEvent(
-        visible
-          ? "AboutTranslationsTest:LanguageLoadErrorMessageShown"
-          : "AboutTranslationsTest:LanguageLoadErrorMessageHidden"
-      )
+    dispatchTestEvent(
+      visible
+        ? "AboutTranslationsTest:LanguageLoadErrorMessageShown"
+        : "AboutTranslationsTest:LanguageLoadErrorMessageHidden"
     );
   }
 
@@ -777,9 +787,7 @@ class AboutTranslations {
   async #retryLanguageLoad() {
     const { languageLoadErrorButton } = this.elements;
     languageLoadErrorButton.setAttribute("disabled", "true");
-    document.dispatchEvent(
-      new CustomEvent("AboutTranslationsTest:LanguageLoadRetryStarted")
-    );
+    dispatchTestEvent("AboutTranslationsTest:LanguageLoadRetryStarted");
 
     try {
       this.#resetLanguageSelectorsForReload();
@@ -791,15 +799,11 @@ class AboutTranslations {
       this.#updateSourceSectionClearButtonVisibility();
       this.#requestSectionHeightsUpdate({ scheduleCallback: false });
       this.#setInitialFocus();
-      document.dispatchEvent(
-        new CustomEvent("AboutTranslationsTest:LanguageLoadRetrySucceeded")
-      );
+      dispatchTestEvent("AboutTranslationsTest:LanguageLoadRetrySucceeded");
     } catch (error) {
       AT_logError(error);
       this.#showLanguageLoadErrorMessage();
-      document.dispatchEvent(
-        new CustomEvent("AboutTranslationsTest:LanguageLoadRetryFailed")
-      );
+      dispatchTestEvent("AboutTranslationsTest:LanguageLoadRetryFailed");
     } finally {
       languageLoadErrorButton.removeAttribute("disabled");
     }
@@ -998,11 +1002,9 @@ class AboutTranslations {
     }
 
     if (previousDetectedLanguage !== detectedLanguage) {
-      document.dispatchEvent(
-        new CustomEvent("AboutTranslationsTest:DetectedLanguageUpdated", {
-          detail: { language: detectedLanguage },
-        })
-      );
+      dispatchTestEvent("AboutTranslationsTest:DetectedLanguageUpdated", {
+        language: detectedLanguage,
+      });
     }
   }
 
@@ -1097,9 +1099,7 @@ class AboutTranslations {
     }
 
     swapLanguagesButton.disabled = true;
-    document.dispatchEvent(
-      new CustomEvent("AboutTranslationsTest:SwapLanguagesButtonDisabled")
-    );
+    dispatchTestEvent("AboutTranslationsTest:SwapLanguagesButtonDisabled");
   }
 
   /**
@@ -1112,9 +1112,7 @@ class AboutTranslations {
     }
 
     swapLanguagesButton.disabled = false;
-    document.dispatchEvent(
-      new CustomEvent("AboutTranslationsTest:SwapLanguagesButtonEnabled")
-    );
+    dispatchTestEvent("AboutTranslationsTest:SwapLanguagesButtonEnabled");
   }
 
   /**
@@ -1161,7 +1159,7 @@ class AboutTranslations {
     const eventName = shouldEnable
       ? "AboutTranslationsTest:CopyButtonEnabled"
       : "AboutTranslationsTest:CopyButtonDisabled";
-    document.dispatchEvent(new CustomEvent(eventName));
+    dispatchTestEvent(eventName);
   }
 
   /**
@@ -1184,9 +1182,7 @@ class AboutTranslations {
       copyButton,
       "about-translations-copy-button-copied"
     );
-    document.dispatchEvent(
-      new CustomEvent("AboutTranslationsTest:CopyButtonShowCopied")
-    );
+    dispatchTestEvent("AboutTranslationsTest:CopyButtonShowCopied");
 
     if (!window.testManualCopyButtonReset) {
       this.#copyButtonResetTimeoutId = window.setTimeout(() => {
@@ -1216,9 +1212,7 @@ class AboutTranslations {
       copyButton,
       "about-translations-copy-button-default"
     );
-    document.dispatchEvent(
-      new CustomEvent("AboutTranslationsTest:CopyButtonReset")
-    );
+    dispatchTestEvent("AboutTranslationsTest:CopyButtonReset");
   }
 
   /**
@@ -1334,14 +1328,10 @@ class AboutTranslations {
 
     if (shouldShow && isHidden) {
       sourceSectionClearButton.hidden = false;
-      document.dispatchEvent(
-        new CustomEvent("AboutTranslationsTest:SourceTextClearButtonShown")
-      );
+      dispatchTestEvent("AboutTranslationsTest:SourceTextClearButtonShown");
     } else if (shouldHide && isShown) {
       sourceSectionClearButton.hidden = true;
-      document.dispatchEvent(
-        new CustomEvent("AboutTranslationsTest:SourceTextClearButtonHidden")
-      );
+      dispatchTestEvent("AboutTranslationsTest:SourceTextClearButtonHidden");
     }
   }
 
@@ -1362,9 +1352,7 @@ class AboutTranslations {
     this.#requestSectionHeightsUpdate({ scheduleCallback: false });
 
     if (!value && hadValueBefore) {
-      document.dispatchEvent(
-        new CustomEvent("AboutTranslationsTest:ClearSourceText")
-      );
+      dispatchTestEvent("AboutTranslationsTest:ClearSourceText");
     }
 
     sourceSectionTextArea.dispatchEvent(new Event("input"));
@@ -1382,9 +1370,7 @@ class AboutTranslations {
     this.elements.targetSectionTextArea.value = value;
 
     if (!value) {
-      document.dispatchEvent(
-        new CustomEvent("AboutTranslationsTest:ClearTargetText")
-      );
+      dispatchTestEvent("AboutTranslationsTest:ClearTargetText");
     }
 
     this.#updateTargetScriptDirection();
@@ -1431,9 +1417,7 @@ class AboutTranslations {
       AT_getScriptDirection(AT_getAppLocale())
     );
 
-    document.dispatchEvent(
-      new CustomEvent("AboutTranslationsTest:ShowTranslatingPlaceholder")
-    );
+    dispatchTestEvent("AboutTranslationsTest:ShowTranslatingPlaceholder");
   }
 
   /**
@@ -1528,11 +1512,11 @@ class AboutTranslations {
 
     window.location.hash = params;
 
-    document.dispatchEvent(
-      new CustomEvent("AboutTranslationsTest:URLUpdatedFromUI", {
-        detail: { sourceLanguage, targetLanguage, sourceText },
-      })
-    );
+    dispatchTestEvent("AboutTranslationsTest:URLUpdatedFromUI", {
+      sourceLanguage,
+      targetLanguage,
+      sourceText,
+    });
   }
 
   /**
@@ -1697,11 +1681,9 @@ class AboutTranslations {
      */
     onDebounce: async () => {
       const sourceText = this.#getSourceText();
-      document.dispatchEvent(
-        new CustomEvent("AboutTranslationsTest:SourceTextInputDebounced", {
-          detail: { sourceText },
-        })
-      );
+      dispatchTestEvent("AboutTranslationsTest:SourceTextInputDebounced", {
+        sourceText,
+      });
       if (sourceText) {
         this.#updateURLFromUI();
       }
@@ -1769,11 +1751,9 @@ class AboutTranslations {
         return;
       }
 
-      document.dispatchEvent(
-        new CustomEvent("AboutTranslationsTest:TranslationRequested", {
-          detail: { translationId },
-        })
-      );
+      dispatchTestEvent("AboutTranslationsTest:TranslationRequested", {
+        translationId,
+      });
 
       const startTime = performance.now();
       const translationRequest = this.#translator.translate(
@@ -1798,11 +1778,9 @@ class AboutTranslations {
       this.#setTargetText(translatedText, { isTranslationResult: true });
       this.#hideTranslationErrorMessage();
       this.#updateSwapLanguagesButtonEnabledState();
-      document.dispatchEvent(
-        new CustomEvent("AboutTranslationsTest:TranslationComplete", {
-          detail: { translationId },
-        })
-      );
+      dispatchTestEvent("AboutTranslationsTest:TranslationComplete", {
+        translationId,
+      });
 
       const duration = performance.now() - startTime;
       AT_log(`Translation done in ${duration / 1000} seconds`);
@@ -1964,14 +1942,10 @@ class AboutTranslations {
       return;
     }
 
-    document.dispatchEvent(
-      new CustomEvent("AboutTranslationsTest:SectionHeightsChanged", {
-        detail: {
-          sourceSectionHeightChange: sourceSectionHeightChange ?? "unchanged",
-          targetSectionHeightChange: targetSectionHeightChange ?? "unchanged",
-        },
-      })
-    );
+    dispatchTestEvent("AboutTranslationsTest:SectionHeightsChanged", {
+      sourceSectionHeightChange: sourceSectionHeightChange ?? "unchanged",
+      targetSectionHeightChange: targetSectionHeightChange ?? "unchanged",
+    });
   }
 
   /**
@@ -2202,11 +2176,7 @@ async function setFeatureEnabledState(enabled) {
   }
 
   if (initialEnabledStateApplied) {
-    document.dispatchEvent(
-      new CustomEvent("AboutTranslationsTest:EnabledStateChanged", {
-        detail: { enabled },
-      })
-    );
+    dispatchTestEvent("AboutTranslationsTest:EnabledStateChanged", { enabled });
   }
 
   initialEnabledStateApplied = true;
