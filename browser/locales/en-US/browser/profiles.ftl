@@ -89,7 +89,7 @@ restored-profile-page-learn-more = Learn more
 
 # Variables
 #   $profilename (String) - The name of the profile.
-delete-profile-page-title = Delete { $profilename } profile
+delete-profile-page-title-2 = Delete “{ $profilename }” profile
 
 # Variables
 #   $profilename (String) - The name of the profile.
