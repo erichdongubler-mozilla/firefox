@@ -80,6 +80,7 @@
                 "./src/stun/addrs-bsd.h",
                 "./src/stun/addrs-netlink.cpp",
                 "./src/stun/addrs-netlink.h",
+                "./src/stun/addrs-netlink-wireless.cpp",
                 "./src/stun/addrs-win32.cpp",
                 "./src/stun/addrs-win32.h",
                 "./src/stun/nr_socket_turn.cpp",

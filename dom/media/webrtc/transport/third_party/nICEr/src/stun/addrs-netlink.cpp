@@ -56,8 +56,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Work around an Android NDK < r8c bug */
 #undef __unused
 #else
-#include <linux/if.h> /* struct ifreq, IFF_POINTTOPOINT */
-#include <linux/wireless.h> /* struct iwreq */
 #include <linux/ethtool.h> /* struct ethtool_cmd */
 #include <linux/sockios.h> /* SIOCETHTOOL */
 #endif /* ANDROID */
@@ -69,6 +67,12 @@ struct netlinkrequest {
 };
 
 static const int kMaxReadSize = 4096;
+
+// stun_convert_netlink_wireless is defined in
+// dom/media/webrtc/transport/third_party/nICEr/src/stun/addrs-netlink-wireless.cpp
+// It is moved to avoid a conflict in cpp builds between the headers
+// net/if.h and linux/if.h (included by linux/wireless.h)
+void stun_convert_netlink_wireless(nr_local_addr *addr, int s);
 
 static void set_ifname(nr_local_addr *addr, struct ifaddrmsg* msg) {
   assert(sizeof(addr->addr.ifname) > IF_NAMESIZE);
@@ -146,7 +150,6 @@ stun_convert_netlink(nr_local_addr *addr, struct ifaddrmsg *address_msg, struct 
 #if defined(LINUX) && !defined(ANDROID)
   struct ethtool_cmd ecmd;
   struct ifreq ifr;
-  struct iwreq wrq;
   int e;
   int s = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -170,13 +173,7 @@ stun_convert_netlink(nr_local_addr *addr, struct ifaddrmsg *address_msg, struct 
 #endif
   }
 
-  (void)strlcpy(wrq.ifr_name, addr->addr.ifname, sizeof(wrq.ifr_name));
-  e = ioctl(s, SIOCGIWRATE, &wrq);
-  if (e == 0)
-  {
-    addr->interface.type = NR_INTERFACE_TYPE_WIFI;
-    addr->interface.estimated_speed = wrq.u.bitrate.value / 1000;
-  }
+  stun_convert_netlink_wireless(addr, s);
 
   close(s);
 
