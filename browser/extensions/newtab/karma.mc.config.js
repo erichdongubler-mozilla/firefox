@@ -323,20 +323,17 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
-            /**
-             * TODO: Bug 1985362 - Write SectionsMgmtPanel Unit Tests
-             */
             "content-src/components/CustomizeMenu/SectionsMgmtPanel/*.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
+              statements: 86,
+              lines: 76,
+              functions: 86,
+              branches: 76,
             },
             "content-src/components/CustomizeMenu/ContentSection/*.jsx": {
-              statements: 65,
-              lines: 65,
-              functions: 99,
-              branches: 56,
+              statements: 82,
+              lines: 82,
+              functions: 100,
+              branches: 67,
             },
             "content-src/components/CustomizeMenu/**/*.jsx": {
               statements: 68,
