@@ -1468,6 +1468,8 @@
     <string name="tab_manager_multiselect_menu_item_share">Share</string>
     <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
     <string name="tab_manager_multiselect_menu_item_add_to_collection">Add to collection</string>
+    <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+    <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Add to group</string>
     <!-- Content description for tabs tray multiselect share button -->
     <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Share selected tabs</string>
     <!-- Content description for tabs tray multiselect menu -->

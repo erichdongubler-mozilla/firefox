@@ -228,6 +228,7 @@ fun TabsTray(
                 statusBarHeight = statusBarHeight,
                 shouldShowTabAutoCloseBanner = shouldShowTabAutoCloseBanner,
                 shouldShowLockPbmBanner = shouldShowLockPbmBanner,
+                shouldShowAddToTabGroupButton = tabsTrayState.tabGroupsEnabled,
                 scrollBehavior = topAppBarScrollBehavior,
                 onTabPageIndicatorClicked = onTabPageClick,
                 onSaveToCollectionClick = onSaveToCollectionClick,
@@ -243,6 +244,7 @@ fun TabsTray(
                 onExitSelectModeClick = {
                     tabsTrayStore.dispatch(TabsTrayAction.ExitSelectMode)
                 },
+                onAddToTabGroup = {},
             )
         },
         floatingActionButton = {
@@ -582,6 +584,7 @@ private data class TabsTrayPreviewModel(
     val syncedTabs: List<SyncedTabsListItem> = emptyList(),
     val inactiveTabsExpanded: Boolean = false,
     val showInactiveTabsAutoCloseDialog: Boolean = false,
+    val shouldShowAddToTabGroupButton: Boolean = false,
     val showTabAutoCloseBanner: Boolean = false,
     val isPbmLocked: Boolean = false,
     val isSignedIn: Boolean = true,

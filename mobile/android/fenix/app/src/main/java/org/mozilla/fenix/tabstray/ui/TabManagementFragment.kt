@@ -174,6 +174,7 @@ class TabManagementFragment : DialogFragment() {
                     mode = initialMode,
                     inactiveTabsExpanded = initialInactiveExpanded,
                     tabSearchEnabled = requireComponents.settings.tabSearchEnabled,
+                    tabGroupsEnabled = requireContext().settings().tabGroupsEnabled,
                 ),
                 middlewares = listOf(
                     TabsTrayTelemetryMiddleware(requireComponents.nimbus.events),
