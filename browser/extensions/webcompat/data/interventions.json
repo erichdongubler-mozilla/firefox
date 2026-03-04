@@ -86,10 +86,6 @@
         "issue": "broken-interactive-elements",
         "matches": ["*://rutamayacoffee.com/*"]
       },
-      "1944029": {
-        "issue": "broken-interactive-elements",
-        "matches": ["*://weaversofireland.com/*"]
-      },
       "1968640": {
         "issue": "broken-interactive-elements",
         "matches": ["*://shop.ticket-center-hohenschwangau.de/*"]
