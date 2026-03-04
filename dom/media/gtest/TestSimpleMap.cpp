@@ -55,19 +55,14 @@ TEST(SimpleMapTest, DuplicateKeys)
   ASSERT_EQ(map.Count(), size_t(0));
 }
 
-TEST(SimpleMapTest, Find)
+TEST(SimpleMapTest, Contains)
 {
   SimpleMap<int, nsCString> map;
 
   ASSERT_FALSE(map.Contains(1));
   map.Insert(1, "one"_ns);
   ASSERT_TRUE(map.Contains(1));
-
-  nsCString value;
-  ASSERT_TRUE(map.Find(1, value));
-  ASSERT_TRUE(value.EqualsLiteral("one"));
-  ASSERT_FALSE(map.Contains(1));  // Find also removes the element.
-  ASSERT_FALSE(map.Find(2, value));
+  ASSERT_FALSE(map.Contains(2));
 }
 
 TEST(SimpleMapTest, Take)
@@ -110,24 +105,20 @@ TEST(SimpleMapTest, Clear)
   ASSERT_EQ(map.Count(), size_t(0));
 }
 
-TEST(SimpleMapTest, ForEach)
+TEST(SimpleMapTest, ClearWithCallback)
 {
   SimpleMap<int, nsCString> map;
 
   map.Insert(1, "one"_ns);
   map.Insert(2, "two"_ns);
   map.Insert(3, "three"_ns);
-  Maybe<nsCString> taken = map.Take(1);
-  ASSERT_TRUE(taken.isSome());
-  ASSERT_TRUE(taken.ref().EqualsLiteral("one"));
-  ASSERT_EQ(map.Count(), size_t(2));
 
   nsTArray<int> keys;
-  map.ForEach(
-      [&](int key, const nsCString& value) { keys.AppendElement(key); });
+  map.Clear([&](int key, const nsCString& value) { keys.AppendElement(key); });
 
-  ASSERT_EQ(keys.Length(), size_t(2));
-  ASSERT_TRUE(keys.Contains(2) && keys.Contains(3));
+  ASSERT_EQ(map.Count(), size_t(0));
+  ASSERT_EQ(keys.Length(), size_t(3));
+  ASSERT_TRUE(keys.Contains(1) && keys.Contains(2) && keys.Contains(3));
 }
 
 }  // namespace mozilla

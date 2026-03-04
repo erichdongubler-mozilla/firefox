@@ -348,7 +348,9 @@ class FFmpegVideoDecoder<LIBAV_VER>
     // Retrieve duration from the given ts.
     // We use the first entry found matching this ts (this is done to
     // handle damaged file with multiple frames with the same ts)
-    if (!mInputInfo.Find(GetFrameInputKey(aFrame), aEntry)) {
+    if (Maybe<InputInfo> v = mInputInfo.Take(GetFrameInputKey(aFrame))) {
+      aEntry = v.extract();
+    } else {
       NS_WARNING("Unable to retrieve input info from map");
       // dts are probably incorrectly reported ; so clear the map as we're
       // unlikely to find them in the future anyway. This also guards

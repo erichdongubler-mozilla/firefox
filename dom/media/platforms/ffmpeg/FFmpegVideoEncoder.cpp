@@ -786,9 +786,9 @@ FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(AVPacket* aPacket) {
   // microsecond for now.
   data->mTime = media::TimeUnit::FromMicroseconds(aPacket->pts);
 #ifdef MOZ_FFMPEG_ENCODER_USE_DURATION_MAP
-  int64_t duration;
-  if (mUseDurationMap && mDurationMap.Find(aPacket->pts, duration)) {
-    data->mDuration = media::TimeUnit::FromMicroseconds(duration);
+  Maybe<int64_t> duration;
+  if (mUseDurationMap && (duration = mDurationMap.Take(aPacket->pts))) {
+    data->mDuration = media::TimeUnit::FromMicroseconds(*duration);
   } else
 #endif
   {

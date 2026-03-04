@@ -804,9 +804,8 @@ void ChromiumCDMChild::ReturnOutput(WidevineVideoFrame& aFrame) {
                       aFrame.Stride(cdm::kVPlane)};
   output.mTimestamp() = aFrame.Timestamp();
 
-  uint64_t duration = 0;
-  if (mFrameDurations.Find(aFrame.Timestamp(), duration)) {
-    output.mDuration() = duration;
+  if (Maybe<uint64_t> duration = mFrameDurations.Take(aFrame.Timestamp())) {
+    output.mDuration() = *duration;
   }
 
   CDMBuffer* base = reinterpret_cast<CDMBuffer*>(aFrame.FrameBuffer());

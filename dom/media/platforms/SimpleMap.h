@@ -57,17 +57,6 @@ class SimpleMap {
     mMap.AppendElement(std::make_pair(aKey, aValue));
   }
 
-  // Sets aValue matching aKey and remove it from the map if found.
-  // The element returned is the first one found.
-  // Returns true if found, false otherwise.
-  bool Find(const K& aKey, V& aValue) {
-    if (Maybe<V> v = Take(aKey)) {
-      aValue = v.extract();
-      return true;
-    }
-    return false;
-  }
-
   // Take the value matching aKey and remove it from the map if found.
   Maybe<V> Take(const K& aKey) {
     Policy guard(mLock);
@@ -108,15 +97,6 @@ class SimpleMap {
       aCallback(element.first, element.second);
     }
     mMap.Clear();
-  }
-
-  // Iterate through all elements of the map and call the function F.
-  template <typename F>
-  void ForEach(F&& aCallback) {
-    Policy guard(mLock);
-    for (const auto& element : mMap) {
-      aCallback(element.first, element.second);
-    }
   }
 
   // Return the number of elements in the map.
