@@ -122,7 +122,7 @@ TEST(TestFileSystemHelpers_Registered, Operator_Assign_Copy)
   {
     Registered<TestObject> testObject1(MakeRefPtr<TestObject>(2, 2));
     Registered<TestObject> testObject2;
-    testObject2 = testObject1;
+    testObject2 = std::move(testObject1);
   }
 }
 

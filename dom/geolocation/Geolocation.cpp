@@ -789,7 +789,7 @@ nsresult nsGeolocationService::Init() {
         do_GetService(NS_GEOLOCATION_PROVIDER_CONTRACTID);
 
     if (geoTestProvider) {
-      mProvider = geoTestProvider;
+      mProvider = std::move(geoTestProvider);
     }
   }
 

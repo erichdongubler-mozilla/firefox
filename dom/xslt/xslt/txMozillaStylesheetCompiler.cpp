@@ -260,7 +260,7 @@ txStylesheetSink::OnStartRequest(nsIRequest* aRequest) {
                                   NS_ISUPPORTS_CAST(nsIParser*, mParser),
                                   getter_AddRefs(converter));
       if (NS_SUCCEEDED(rv)) {
-        mListener = converter;
+        mListener = std::move(converter);
       }
     }
   }

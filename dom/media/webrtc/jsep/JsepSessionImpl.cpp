@@ -452,7 +452,7 @@ void JsepSessionImpl::AddExtmap(SdpMediaSection* msection) {
 
   if (!extensions.empty()) {
     SdpExtmapAttributeList* extmap = new SdpExtmapAttributeList;
-    extmap->mExtmaps = extensions;
+    extmap->mExtmaps = std::move(extensions);
     msection->GetAttributeList().SetAttribute(extmap);
   }
 }

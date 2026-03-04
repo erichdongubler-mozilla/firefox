@@ -1948,7 +1948,7 @@ class HTMLMediaElement::ChannelLoader final {
     // Else the channel must be open and starting to download. If it encounters
     // a non-catastrophic failure, it will set a new task to continue loading
     // another candidate.  It's safe to set it as mChannel now.
-    mChannel = channel;
+    mChannel = std::move(channel);
 
     // loadListener will be unregistered either on shutdown or when
     // OnStartRequest for the channel we just opened fires.

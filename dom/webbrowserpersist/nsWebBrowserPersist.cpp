@@ -818,14 +818,14 @@ NS_IMETHODIMP nsWebBrowserPersist::OnStartRequest(nsIRequest* request) {
       nsresult rv = CalculateAndAppendFileExt(
           data->mFile, channel, data->mOriginalLocation, uriWithExt);
       if (NS_SUCCEEDED(rv)) {
-        data->mFile = uriWithExt;
+        data->mFile = std::move(uriWithExt);
       }
 
       // now make filename conformant and unique
       nsCOMPtr<nsIURI> uniqueFilenameURI;
       rv = CalculateUniqueFilename(data->mFile, uniqueFilenameURI);
       if (NS_SUCCEEDED(rv)) {
-        data->mFile = uniqueFilenameURI;
+        data->mFile = std::move(uniqueFilenameURI);
       }
 
       // The URIData entry is pointing to the old unfixed URI, so we need
@@ -2575,7 +2575,7 @@ nsresult nsWebBrowserPersist::SaveSubframeContent(
   NS_ENSURE_SUCCESS(rv, rv);
 
   // Store the updated uri to the frame
-  aData->mFile = frameURI;
+  aData->mFile = std::move(frameURI);
   aData->mSubFrameExt.Truncate();  // we already put this in frameURI
 
   return NS_OK;

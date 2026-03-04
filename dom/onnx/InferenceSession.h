@@ -32,7 +32,7 @@ class InferenceSession final : public nsISupports, public nsWrapperCache {
   explicit InferenceSession(GlobalObject& aGlobal) {
     nsCOMPtr<nsIGlobalObject> global =
         do_QueryInterface(aGlobal.GetAsSupports());
-    mGlobal = global;
+    mGlobal = std::move(global);
     mCtx = aGlobal.Context();
   }
 

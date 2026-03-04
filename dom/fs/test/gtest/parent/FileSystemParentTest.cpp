@@ -81,7 +81,7 @@ void FileSystemParentTest::GetStaticDatabaseUsage(
                 conn, GetTestOriginMetadata());
           }));
 
-  aDatabaseUsage = databaseUsage;
+  aDatabaseUsage = std::move(databaseUsage);
 }
 
 void FileSystemParentTest::EnsureDataManager() {
@@ -187,7 +187,7 @@ void FileSystemParentTest::GetDatabaseUsage(quota::UsageInfo& aDatabaseUsage) {
         QM_TRY_RETURN(databaseManager->GetUsage());
       }));
 
-  aDatabaseUsage = databaseUsage;
+  aDatabaseUsage = std::move(databaseUsage);
 }
 
 void FileSystemParentTest::UpdateDatabaseUsage(const FileId& aFileId) {

@@ -148,7 +148,7 @@ RemoteLazyInputStream::RemoteLazyInputStream(RemoteLazyInputStreamChild* aActor,
                        getter_AddRefs(stream));
     if (stream) {
       mState = eRunning;
-      mInnerStream = stream;
+      mInnerStream = std::move(stream);
     }
   }
 }

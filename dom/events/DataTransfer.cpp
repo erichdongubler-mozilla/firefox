@@ -863,7 +863,7 @@ void DataTransfer::GetExternalClipboardFormats(const bool& aPlainTextOnly,
     if (rv == NS_ERROR_CONTENT_BLOCKED) {
       // Use the empty snapshot created in
       // GetClipboardDataSnapshotWithContentAnalysisSync()
-      mClipboardDataSnapshot = clipboardDataSnapshot;
+      mClipboardDataSnapshot = std::move(clipboardDataSnapshot);
     }
     return;
   }
@@ -878,7 +878,7 @@ void DataTransfer::GetExternalClipboardFormats(const bool& aPlainTextOnly,
     }
   }
 
-  mClipboardDataSnapshot = clipboardDataSnapshot;
+  mClipboardDataSnapshot = std::move(clipboardDataSnapshot);
 }
 
 /* static */

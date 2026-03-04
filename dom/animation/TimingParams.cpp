@@ -98,7 +98,7 @@ TimingParams TimingParams::FromEffectTiming(
     return result;
   }
 
-  result.mDuration = duration;
+  result.mDuration = std::move(duration);
   result.mDelay = TimeDuration::FromMilliseconds(aEffectTiming.mDelay);
   result.mEndDelay = TimeDuration::FromMilliseconds(aEffectTiming.mEndDelay);
   result.mIterations = aEffectTiming.mIterations;
@@ -157,7 +157,7 @@ TimingParams TimingParams::MergeOptionalEffectTiming(
   // Assign values
 
   if (aEffectTiming.mDuration.WasPassed()) {
-    result.mDuration = duration;
+    result.mDuration = std::move(duration);
   }
   if (aEffectTiming.mDelay.WasPassed()) {
     result.mDelay =
@@ -180,7 +180,7 @@ TimingParams TimingParams::MergeOptionalEffectTiming(
     result.mFill = aEffectTiming.mFill.Value();
   }
   if (aEffectTiming.mEasing.WasPassed()) {
-    result.mFunction = easing;
+    result.mFunction = std::move(easing);
   }
 
   result.Update();

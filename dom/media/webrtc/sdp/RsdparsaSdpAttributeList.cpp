@@ -1293,7 +1293,7 @@ void RsdparsaSdpAttributeList::LoadCandidate(RustAttributeList* attributeList) {
 
   auto candidates =
       MakeUnique<SdpMultiStringAttribute>(SdpAttribute::kCandidateAttribute);
-  candidates->mValues = candidatesStrings;
+  candidates->mValues = std::move(candidatesStrings);
 
   SetAttribute(candidates.release());
 }

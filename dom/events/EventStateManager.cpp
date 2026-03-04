@@ -2900,7 +2900,7 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
   }
 
   // Reset mCurretTargetContent to what it was
-  mCurrentTargetContent = targetBeforeEvent;
+  mCurrentTargetContent = std::move(targetBeforeEvent);
 
   // Now flush all pending notifications, for better responsiveness
   // while dragging.
@@ -5844,7 +5844,7 @@ void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
   }
 
   // reset mCurretTargetContent to what it was
-  mCurrentTargetContent = targetBeforeEvent;
+  mCurrentTargetContent = std::move(targetBeforeEvent);
 }
 
 OverOutElementsWrapper* EventStateManager::GetWrapperByEventID(
@@ -6019,7 +6019,7 @@ void EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
   }
 
   // reset mCurretTargetContent to what it was
-  mCurrentTargetContent = targetBeforeEvent;
+  mCurrentTargetContent = std::move(targetBeforeEvent);
 
   // Now flush all pending notifications, for better responsiveness.
   FlushLayout(aPresContext);

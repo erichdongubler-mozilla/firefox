@@ -40,7 +40,7 @@ auto OriginParser::ParseOrigin(const nsACString& aOrigin, nsCString& aSpec,
 
   OriginParser parser(originNoSuffix);
 
-  *aAttrs = originAttributes;
+  *aAttrs = std::move(originAttributes);
   return parser.Parse(aSpec);
 }
 

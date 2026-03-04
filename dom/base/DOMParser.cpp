@@ -189,7 +189,7 @@ already_AddRefed<Document> DOMParser::ParseFromStream(nsIInputStream* aStream,
       return nullptr;
     }
 
-    stream = bufferedStream;
+    stream = std::move(bufferedStream);
   }
 
   nsCOMPtr<Document> document = SetUpDocument(

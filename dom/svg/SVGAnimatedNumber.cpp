@@ -161,7 +161,7 @@ nsresult SVGAnimatedNumber::SMILNumber::ValueFromString(
 
   SMILValue val(SMILFloatType::Singleton());
   val.mU.mDouble = value;
-  aValue = val;
+  aValue = std::move(val);
 
   return NS_OK;
 }

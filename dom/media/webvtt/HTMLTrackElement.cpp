@@ -377,7 +377,7 @@ void HTMLTrackElement::LoadResource(RefPtr<WebVTTListener>&& aWebVTTListener) {
           SetReadyState(TextTrackReadyState::FailedToLoad);
           return;
         }
-        mChannel = channel;
+        mChannel = std::move(channel);
       });
   doc->Dispatch(runnable.forget());
 }

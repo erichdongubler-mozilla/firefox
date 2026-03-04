@@ -683,7 +683,7 @@ uint32_t ID3Parser::Parse(BufferReader* aReader) {
   uint32_t size = ParseInternal(aReader);
   if (!size) {
     // next ID3 is invalid, so revert the header.
-    mHeader = prevHeader;
+    mHeader = std::move(prevHeader);
     return size;
   }
 
