@@ -1510,7 +1510,9 @@ class AboutTranslations {
       params.append("text", sourceText);
     }
 
-    window.location.hash = params;
+    const url = new URL(window.location.href);
+    url.hash = params.toString();
+    window.location.replace(url.href);
 
     dispatchTestEvent("AboutTranslationsTest:URLUpdatedFromUI", {
       sourceLanguage,
