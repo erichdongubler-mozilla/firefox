@@ -139,7 +139,8 @@ export class WeatherFeed {
     // @backward-compat { version 149 }
     // MerinoClient.fetchWeatherReport() and MerinoClient.fetchHourlyForecast() were introduced in 149 Nightly.
     // The fetchHelperUntil_149() does not use the function.
-    if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") >= 0) {
+    // Starting from 148, TemporaryMerinoClientShim backports these methods so the new path is safe there too.
+    if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "148.0a1") >= 0) {
       const { suggestions, hourlyForecasts } = await this._fetchHelper();
       this.suggestions = suggestions;
       this.hourlyForecasts = hourlyForecasts;
