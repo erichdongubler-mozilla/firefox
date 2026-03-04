@@ -31,11 +31,15 @@ import mozilla.components.support.ktx.android.view.toScope
  * [Store].
  */
 @MainThread
-fun <S : State, A : Action> Fragment.consumeFrom(store: Store<S, A>, block: (S) -> Unit) {
+fun <S : State, A : Action> Fragment.consumeFrom(
+    store: Store<S, A>,
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    block: (S) -> Unit,
+) {
     val fragment = this
     val view = checkNotNull(view) { "Fragment has no view yet. Call from onViewCreated()." }
 
-    val scope = view.toScope()
+    val scope = view.toScope(mainDispatcher = mainDispatcher)
     val channel = store.channel(owner = this)
 
     scope.launch {
