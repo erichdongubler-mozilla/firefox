@@ -21,6 +21,7 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.requirePreference
+import org.mozilla.fenix.settings.scrollToPreferenceWithHighlight
 
 /**
  * A [androidx.preference.PreferenceFragmentCompat] that displays settings related to downloads.
@@ -86,7 +87,7 @@ class DownloadsSettingsFragment : PreferenceFragmentCompat() {
         showToolbar(getString(R.string.preferences_downloads))
         updateDownloadsLocationSummary()
         args.preferenceToScrollTo?.let {
-            scrollToPreference(it)
+            scrollToPreferenceWithHighlight(it)
         }
     }
 

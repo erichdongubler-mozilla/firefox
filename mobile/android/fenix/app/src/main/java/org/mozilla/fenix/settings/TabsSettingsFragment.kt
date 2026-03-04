@@ -47,7 +47,7 @@ class TabsSettingsFragment : PreferenceFragmentCompat() {
 
         setupPreferences()
         args.preferenceToScrollTo?.let {
-            scrollToPreference(it)
+            scrollToPreferenceWithHighlight(it)
         }
     }
 

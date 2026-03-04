@@ -39,7 +39,7 @@ class OpenLinksInAppsFragment : PreferenceFragmentCompat() {
 
         setupPreferences()
         args.preferenceToScrollTo?.let {
-            scrollToPreference(it)
+            scrollToPreferenceWithHighlight(it)
         }
     }
 

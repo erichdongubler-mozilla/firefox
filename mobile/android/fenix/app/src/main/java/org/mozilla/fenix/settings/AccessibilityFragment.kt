@@ -85,7 +85,7 @@ class AccessibilityFragment : PreferenceFragmentCompat() {
         textSizePreference.setIsSliderEnabled(!requireContext().settings().shouldUseAutoSize)
 
         args.preferenceToScrollTo?.let {
-            scrollToPreference(it)
+            scrollToPreferenceWithHighlight(it)
         }
     }
 
