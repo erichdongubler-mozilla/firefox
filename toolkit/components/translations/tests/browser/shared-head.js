@@ -254,7 +254,9 @@ async function openAboutTranslations({
     detectLanguageOption:
       "moz-option#about-translations-detect-language-label-option",
     swapLanguagesButton: "moz-button#about-translations-swap-languages-button",
+    sourceSection: "div#about-translations-source-section",
     sourceSectionTextArea: "textarea#about-translations-source-textarea",
+    targetSection: "div#about-translations-target-section",
     targetSectionTextArea: "textarea#about-translations-target-textarea",
     clearButton: "moz-button#about-translations-clear-button",
     copyButton: "moz-button#about-translations-copy-button",
@@ -4956,6 +4958,41 @@ class AboutTranslationsTestUtils {
         `Expected target textarea "dir" attribute to be "${scriptDirection}", but got "${actualScriptDirection}".`
       );
     }
+  }
+
+  /**
+   * Returns the current pixel heights for the source and target sections.
+   *
+   * @returns {Promise<{ sourceSectionHeight: number, targetSectionHeight: number }>}
+   */
+  async getSectionHeights() {
+    await doubleRaf(document);
+
+    let pageResult = {
+      sourceSectionHeight: NaN,
+      targetSectionHeight: NaN,
+    };
+
+    try {
+      pageResult = await this.#runInPage(selectors => {
+        const { document } = content;
+        const sourceSection = document.querySelector(selectors.sourceSection);
+        const targetSection = document.querySelector(selectors.targetSection);
+
+        return {
+          sourceSectionHeight: Math.round(
+            sourceSection.getBoundingClientRect().height
+          ),
+          targetSectionHeight: Math.round(
+            targetSection.getBoundingClientRect().height
+          ),
+        };
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+
+    return pageResult;
   }
 
   /**
