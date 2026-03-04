@@ -83,16 +83,6 @@ nrappkit copyright:
 #ifndef test_nr_socket_
 #define test_nr_socket_
 
-extern "C" {
-#include "transport_addr.h"
-}
-
-#include "nr_socket_prsock.h"
-
-extern "C" {
-#include "nr_socket.h"
-}
-
 #include <list>
 #include <map>
 #include <set>
@@ -100,7 +90,10 @@ extern "C" {
 
 #include "mediapacket.h"
 #include "mozilla/UniquePtr.h"
+#include "nr_socket.h"
+#include "nr_socket_prsock.h"
 #include "prinrval.h"
+#include "transport_addr.h"
 
 namespace mozilla {
 

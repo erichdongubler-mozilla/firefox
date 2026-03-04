@@ -47,11 +47,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "nsNetCID.h"
 
 // nICEr includes
-extern "C" {
 #include "ice_util.h"
 #include "nr_api.h"
 #include "transport_addr.h"
-}
 
 // Local includes
 #include "logging.h"

@@ -8,12 +8,10 @@
 
 #include <cstddef>
 
-extern "C" {
 // clang-format off
 #include "r_errors.h"
 #include "async_wait.h"
 // clang-format on
-}
 
 #include <vector>
 

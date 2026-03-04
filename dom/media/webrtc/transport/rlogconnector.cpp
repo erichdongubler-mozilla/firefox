@@ -9,6 +9,8 @@
 
 #include "rlogconnector.h"
 
+#include <csi_platform.h>
+
 #include <cstdarg>
 #include <deque>
 #include <string>
@@ -19,13 +21,8 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Sprintf.h"
-
-extern "C" {
-#include <csi_platform.h>
-
 #include "r_log.h"
 #include "registry.h"
-}
 
 /* Matches r_dest_vlog type defined in r_log.h */
 static int ringbuffer_vlog(int facility, int level, const char* format,

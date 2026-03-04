@@ -41,14 +41,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "gtest/gtest.h"
 #include "gtest_utils.h"
-
-extern "C" {
 #include "ice_ctx.h"
 #include "ice_peer_ctx.h"
-#include "nICEr/src/net/transport_addr.h"
-}
-
 #include "mtransport_test_utils.h"
+#include "nICEr/src/net/transport_addr.h"
 #include "nricectx.h"
 #include "nricemediastream.h"
 #include "runnable_utils.h"

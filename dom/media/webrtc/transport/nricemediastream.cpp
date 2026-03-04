@@ -48,7 +48,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "nsThreadUtils.h"
 
 // nICEr includes
-extern "C" {
 // clang-format off
 #include "nr_api.h"
 #include "transport_addr.h"
@@ -57,7 +56,6 @@ extern "C" {
 #include "ice_candidate.h"
 #include "ice_handler.h"
 // clang-format on
-}
 
 // Local includes
 #include "nricectx.h"

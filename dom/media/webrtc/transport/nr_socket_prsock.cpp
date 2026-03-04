@@ -149,17 +149,15 @@ nrappkit copyright:
 #  endif
 #endif
 
-extern "C" {
 #include "async_wait.h"
 #include "nr_api.h"
 #include "nr_socket.h"
 #include "nr_socket_local.h"
-#include "stun_hint.h"
-}
 #include "nr_socket_proxy_config.h"
 #include "nr_socket_prsock.h"
 #include "nr_socket_tcp.h"
 #include "simpletokenbucket.h"
+#include "stun_hint.h"
 #include "test_nr_socket.h"
 
 // Implement the nsISupports ref counting

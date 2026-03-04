@@ -65,10 +65,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "prio.h"
 
 // nICEr includes
-extern "C" {
 #include "async_wait.h"
 #include "transport_addr.h"
-}
 
 // Stub declaration for nICEr type
 typedef struct nr_socket_vtbl_ nr_socket_vtbl;

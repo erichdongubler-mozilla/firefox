@@ -8,12 +8,10 @@
 
 #include "rlogconnector.h"
 
-extern "C" {
 // clang-format off
 #include "registry.h"
 #include "r_log.h"
 // clang-format on
-}
 
 #define GTEST_HAS_RTTI 0
 #include <deque>

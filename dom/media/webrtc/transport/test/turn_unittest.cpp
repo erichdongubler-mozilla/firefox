@@ -52,7 +52,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_TURN
 
 // nICEr includes
-extern "C" {
 // clang-format off
 #include "nr_api.h"
 #include "transport_addr.h"
@@ -63,7 +62,6 @@ extern "C" {
 #include "stun_client_ctx.h"
 #include "turn_client_ctx.h"
 // clang-format on
-}
 
 #include "nricectx.h"
 

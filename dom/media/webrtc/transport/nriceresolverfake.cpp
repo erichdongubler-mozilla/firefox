@@ -43,7 +43,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "mozilla/Assertions.h"
 #include "prio.h"
 
-extern "C" {
 // clang-format off
 #include "async_wait.h"
 #include "async_timer.h"
@@ -51,7 +50,6 @@ extern "C" {
 #include "r_macros.h"
 #include "transport_addr.h"
 // clang-format on
-}
 
 #include "nr_socket_prsock.h"
 #include "nriceresolverfake.h"

@@ -45,14 +45,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "nspr.h"
 #include "prnetdb.h"
 
-extern "C" {
 // clang-format off
 #include "nr_api.h"
 #include "async_timer.h"
 #include "nr_resolver.h"
 #include "transport_addr.h"
 // clang-format on
-}
 
 #include "mozilla/net/DNS.h"  // TODO(jib@mozilla.com) down here because bug 848578
 #include "nr_socket_prsock.h"

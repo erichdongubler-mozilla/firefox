@@ -57,7 +57,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "runnable_utils.h"
 
 // nICEr includes
-extern "C" {
 // clang-format off
 #include "nr_api.h"
 #include "registry.h"
@@ -75,7 +74,6 @@ extern "C" {
 #include "ice_ctx.h"
 #include "ice_candidate.h"
 // clang-format on
-}
 
 // Local includes
 #include "mozilla/Base64.h"

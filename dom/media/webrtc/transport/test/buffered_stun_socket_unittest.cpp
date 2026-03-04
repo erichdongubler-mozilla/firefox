@@ -6,16 +6,13 @@
 
 // Original author: ekr@rtfm.com
 
-extern "C" {
+#include "dummysocket.h"
 #include "nr_api.h"
 #include "nr_socket.h"
 #include "nr_socket_buffered_stun.h"
-#include "transport_addr.h"
-}
-
-#include "dummysocket.h"
 #include "nr_socket_prsock.h"
 #include "stun_msg.h"
+#include "transport_addr.h"
 
 #define GTEST_HAS_RTTI 0
 #include "gtest/gtest.h"
