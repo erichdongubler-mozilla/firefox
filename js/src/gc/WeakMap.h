@@ -8,6 +8,7 @@
 #define gc_WeakMap_h
 
 #include "mozilla/Atomics.h"
+#include "mozilla/Maybe.h"
 
 #include "ds/SlimLinkedList.h"
 #include "gc/AllocKind.h"
@@ -142,6 +143,8 @@ class WeakMapBase : public SlimLinkedListElement<WeakMapBase> {
   static void unmarkZone(JS::Zone* zone);
 #ifdef DEBUG
   static void checkZoneUnmarked(JS::Zone* zone);
+#else
+  static void checkZoneUnmarked(JS::Zone* zone) {}
 #endif
 
   // Check all weak maps in a zone that have been marked as live in this garbage
@@ -205,7 +208,9 @@ class WeakMapBase : public SlimLinkedListElement<WeakMapBase> {
 
   gc::CellColor mapColor() const { return gc::CellColor(uint32_t(mapColor_)); }
   void setMapColor(gc::CellColor newColor) { mapColor_ = uint32_t(newColor); }
-  bool markMap(gc::MarkColor markColor);
+
+  // Attempt to mark the map and return the old color if successful.
+  mozilla::Maybe<gc::CellColor> markMap(gc::MarkColor markColor);
 
   void setHasNurseryEntries();
 

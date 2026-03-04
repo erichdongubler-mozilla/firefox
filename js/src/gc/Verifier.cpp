@@ -671,7 +671,7 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 
   for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
     WeakMapBase::unmarkZone(zone);
-    MOZ_ASSERT(zone->gcEphemeronEdges().empty(), "unmarkZone clears the map");
+    WeakMapBase::checkZoneUnmarked(zone);
   }
 
   WeakMapBase::restoreMarkedWeakMaps(markedWeakMaps);

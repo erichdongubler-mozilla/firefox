@@ -198,6 +198,7 @@ Zone::~Zone() {
 
   MOZ_ASSERT(gcSystemWeakMaps().isEmpty());
   MOZ_ASSERT(gcUserWeakMaps().isEmpty());
+  MOZ_ASSERT(gcMarkedUserWeakMaps().isEmpty());
   MOZ_ASSERT(objectsWithWeakPointers.ref().empty());
 
   JSRuntime* rt = runtimeFromAnyThread();

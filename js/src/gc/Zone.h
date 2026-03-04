@@ -467,6 +467,9 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
       gcSystemWeakMaps_;
   js::MainThreadOrGCTaskData<js::SlimLinkedList<js::WeakMapBase>>
       gcUserWeakMaps_;
+  // During marking this holds user weak maps that have been marked.
+  js::MainThreadOrGCTaskData<js::SlimLinkedList<js::WeakMapBase>>
+      gcMarkedUserWeakMaps_;
 
   // The set of compartments in this zone.
   using CompartmentVector =
@@ -787,6 +790,9 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   }
   js::SlimLinkedList<js::WeakMapBase>& gcUserWeakMaps() {
     return gcUserWeakMaps_.ref();
+  }
+  js::SlimLinkedList<js::WeakMapBase>& gcMarkedUserWeakMaps() {
+    return gcMarkedUserWeakMaps_.ref();
   }
 
   bool gcUserWeakMapsMayHaveKeyDelegates() const {
