@@ -9,7 +9,7 @@
 /* global AT_getAppLocale, AT_getSupportedLanguages, AT_log, AT_getScriptDirection,
    AT_getDisplayName, AT_logError, AT_createTranslationsPort, AT_isHtmlTranslation,
    AT_isTranslationEngineSupported, AT_isInAutomation, AT_identifyLanguage,
-   AT_telemetry, AT_isEnabledStateManagedByPolicy, AT_enableTranslationsFeature */
+   AT_telemetry, AT_isEnabledStateManagedByPolicy */
 
 import { Translator } from "chrome://global/content/translations/Translator.mjs";
 
@@ -282,7 +282,6 @@ class AboutTranslations {
     }
 
     this.#showMainUserInterface();
-    this.#setMainUserInterfaceEnabled(true);
     this.#updateSourceScriptDirection();
     this.#updateTargetScriptDirection();
     this.#updateSourceSectionClearButtonVisibility();
@@ -311,7 +310,7 @@ class AboutTranslations {
       return;
     }
 
-    this.#showFeatureBlockedInfoMessage();
+    document.body.style.visibility = "hidden";
   }
 
   /**
@@ -323,8 +322,6 @@ class AboutTranslations {
    *   detectedLanguageUnsupportedHeading: HTMLElement,
    *   detectedLanguageUnsupportedLearnMoreLink: HTMLAnchorElement,
    *   detectedLanguageUnsupportedMessage: HTMLElement,
-   *   featureBlockedInfoMessage: HTMLElement,
-   *   unblockFeatureButton: HTMLElement,
    *   languageLoadErrorButton: HTMLElement,
    *   languageLoadErrorMessage: HTMLElement,
    *   learnMoreLink: HTMLAnchorElement,
@@ -371,16 +368,6 @@ class AboutTranslations {
       detectedLanguageUnsupportedMessage: /** @type {HTMLElement} */ (
         document.getElementById(
           "about-translations-detected-language-unsupported-message"
-        )
-      ),
-      featureBlockedInfoMessage: /** @type {HTMLElement} */ (
-        document.getElementById(
-          "about-translations-feature-blocked-info-message"
-        )
-      ),
-      unblockFeatureButton: /** @type {HTMLElement} */ (
-        document.getElementById(
-          "about-translations-feature-blocked-unblock-button"
         )
       ),
       languageLoadErrorButton: /** @type {HTMLElement} */ (
@@ -527,8 +514,8 @@ class AboutTranslations {
     this.#resetDetectLanguageOptionText();
     sourceLanguageSelector.value = "detect";
     targetLanguageSelector.value = "";
-    this.#setElementEnabled(sourceLanguageSelector, true);
-    this.#setElementEnabled(targetLanguageSelector, true);
+    sourceLanguageSelector.disabled = false;
+    targetLanguageSelector.disabled = false;
   }
 
   /**
@@ -538,7 +525,6 @@ class AboutTranslations {
     const {
       copyButton,
       detectedLanguageUnsupportedMessage,
-      unblockFeatureButton,
       languageLoadErrorButton,
       sourceLanguageSelector,
       sourceSectionClearButton,
@@ -550,10 +536,6 @@ class AboutTranslations {
     } = this.elements;
 
     copyButton.addEventListener("click", this.#onCopyButton);
-    unblockFeatureButton.addEventListener(
-      "click",
-      this.#onUnblockFeatureButton
-    );
     languageLoadErrorButton.addEventListener(
       "click",
       this.#onLanguageLoadErrorRetry
@@ -599,22 +581,6 @@ class AboutTranslations {
   #onLanguageLoadErrorRetry = event => {
     event.preventDefault();
     void this.#retryLanguageLoad();
-  };
-
-  /**
-   * Handles clicks on the unblock button in the feature-blocked message.
-   */
-  #onUnblockFeatureButton = async () => {
-    const { unblockFeatureButton } = this.elements;
-    unblockFeatureButton.setAttribute("disabled", "true");
-
-    try {
-      await AT_enableTranslationsFeature();
-    } catch (error) {
-      AT_logError(error);
-    } finally {
-      unblockFeatureButton.removeAttribute("disabled");
-    }
   };
 
   /**
@@ -779,73 +745,18 @@ class AboutTranslations {
    * Shows the main UI and hides any stand-alone message bars.
    */
   #showMainUserInterface() {
-    const { mainUserInterface } = this.elements;
-
-    for (const messageBar of this.#getTopLevelMessageBars()) {
-      this.#setTopLevelMessageBarVisible(messageBar, false);
-    }
-
-    mainUserInterface.hidden = false;
-  }
-
-  /**
-   * Enables or disables the controls in the main UI.
-   *
-   * @param {boolean} enabled
-   */
-  #setMainUserInterfaceEnabled(enabled) {
     const {
-      copyButton,
-      sourceLanguageSelector,
-      sourceSectionClearButton,
-      sourceSectionTextArea,
-      swapLanguagesButton,
-      targetLanguageSelector,
-      targetSectionTextArea,
-      translationErrorButton,
+      unsupportedInfoMessage,
+      policyDisabledInfoMessage,
+      languageLoadErrorMessage,
+      mainUserInterface,
     } = this.elements;
 
-    for (const element of [
-      sourceLanguageSelector,
-      targetLanguageSelector,
-      sourceSectionTextArea,
-      targetSectionTextArea,
-      sourceSectionClearButton,
-      translationErrorButton,
-    ]) {
-      this.#setElementEnabled(element, enabled);
-    }
+    this.#setStandaloneMessageVisible(unsupportedInfoMessage, false);
+    this.#setStandaloneMessageVisible(policyDisabledInfoMessage, false);
+    this.#setStandaloneMessageVisible(languageLoadErrorMessage, false);
 
-    // These buttons depend on contextual UI state, so they are handled separately.
-    // They will always be disabled when we are disabling the UI, but they are only
-    // conditionally re-enabled based on the context within the UI itself.
-    if (!enabled) {
-      swapLanguagesButton.disabled = true;
-      copyButton.disabled = true;
-    } else {
-      this.#updateSwapLanguagesButtonEnabledState();
-    }
-  }
-
-  /**
-   * Sets an element's enabled state.
-   *
-   * We need to do it this way until the moz-select web component properly
-   * reflects the disabled attribute on the top-level custom element.
-   *
-   * @param {HTMLElement} element
-   * @param {boolean} enabled
-   */
-  #setElementEnabled(element, enabled) {
-    if ("disabled" in element) {
-      element.disabled = !enabled;
-    }
-
-    if (enabled) {
-      element.removeAttribute("disabled");
-    } else {
-      element.setAttribute("disabled", "true");
-    }
+    mainUserInterface.hidden = false;
   }
 
   /**
@@ -853,7 +764,7 @@ class AboutTranslations {
    */
   #showUnsupportedInfoMessage() {
     const { unsupportedInfoMessage } = this.elements;
-    this.#showTopLevelMessageBar(unsupportedInfoMessage);
+    this.#showStandaloneMessage(unsupportedInfoMessage);
   }
 
   /**
@@ -861,50 +772,33 @@ class AboutTranslations {
    */
   #showPolicyDisabledInfoMessage() {
     const { policyDisabledInfoMessage } = this.elements;
-    this.#showTopLevelMessageBar(policyDisabledInfoMessage);
+    this.#showStandaloneMessage(policyDisabledInfoMessage);
   }
 
   /**
-   * Returns all top-level message bars.
-   *
-   * @returns {HTMLElement[]}
-   */
-  #getTopLevelMessageBars() {
-    const {
-      featureBlockedInfoMessage,
-      unsupportedInfoMessage,
-      policyDisabledInfoMessage,
-      languageLoadErrorMessage,
-    } = this.elements;
-
-    return [
-      unsupportedInfoMessage,
-      policyDisabledInfoMessage,
-      languageLoadErrorMessage,
-      featureBlockedInfoMessage,
-    ];
-  }
-
-  /**
-   * Shows a top-level message bar and updates the main UI visibility.
+   * Shows one standalone message bar and hides the main UI.
    *
    * @param {HTMLElement} messageBar
    */
-  #showTopLevelMessageBar(messageBar) {
-    const { featureBlockedInfoMessage, mainUserInterface } = this.elements;
+  #showStandaloneMessage(messageBar) {
+    const {
+      unsupportedInfoMessage,
+      policyDisabledInfoMessage,
+      languageLoadErrorMessage,
+      mainUserInterface,
+    } = this.elements;
 
-    for (const topLevelMessageBar of this.#getTopLevelMessageBars()) {
-      this.#setTopLevelMessageBarVisible(
-        topLevelMessageBar,
-        topLevelMessageBar === messageBar
+    mainUserInterface.hidden = true;
+
+    for (const standaloneMessage of [
+      unsupportedInfoMessage,
+      policyDisabledInfoMessage,
+      languageLoadErrorMessage,
+    ]) {
+      this.#setStandaloneMessageVisible(
+        standaloneMessage,
+        standaloneMessage === messageBar
       );
-    }
-
-    if (messageBar === featureBlockedInfoMessage) {
-      mainUserInterface.hidden = false;
-      this.#setMainUserInterfaceEnabled(false);
-    } else {
-      mainUserInterface.hidden = true;
     }
 
     document.body.style.visibility = "visible";
@@ -915,25 +809,17 @@ class AboutTranslations {
    */
   #showLanguageLoadErrorMessage() {
     const { languageLoadErrorMessage } = this.elements;
-    this.#showTopLevelMessageBar(languageLoadErrorMessage);
+    this.#showStandaloneMessage(languageLoadErrorMessage);
   }
 
   /**
-   * Shows the message that the feature is blocked but can be unblocked.
-   */
-  #showFeatureBlockedInfoMessage() {
-    const { featureBlockedInfoMessage } = this.elements;
-    this.#showTopLevelMessageBar(featureBlockedInfoMessage);
-  }
-
-  /**
-   * Shows or hides a top-level message bar and notifies tests when the
+   * Shows or hides a standalone message and notifies tests when the
    * visibility changes.
    *
    * @param {HTMLElement} messageBar
    * @param {boolean} visible
    */
-  #setTopLevelMessageBarVisible(messageBar, visible) {
+  #setStandaloneMessageVisible(messageBar, visible) {
     const isVisible = !messageBar.hidden;
 
     if (isVisible === visible) {
@@ -942,7 +828,7 @@ class AboutTranslations {
 
     messageBar.hidden = !visible;
     const eventNames =
-      this.#getTopLevelMessageBarVisibilityEventNames(messageBar);
+      this.#getStandaloneMessageVisibilityEventNames(messageBar);
     if (!eventNames) {
       return;
     }
@@ -951,12 +837,12 @@ class AboutTranslations {
   }
 
   /**
-   * Returns test events for top-level message bar visibility changes.
+   * Returns test events for standalone message visibility changes.
    *
    * @param {HTMLElement} messageBar
    * @returns {{ shown: string, hidden: string } | null}
    */
-  #getTopLevelMessageBarVisibilityEventNames(messageBar) {
+  #getStandaloneMessageVisibilityEventNames(messageBar) {
     const {
       unsupportedInfoMessage,
       policyDisabledInfoMessage,
