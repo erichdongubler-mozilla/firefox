@@ -20,12 +20,18 @@ CSPViolationReportBody::CSPViolationReportBody(
       mReferrer(aEvent.mReferrer),
       mEffectiveDirective(aEvent.mEffectiveDirective),
       mOriginalPolicy(aEvent.mOriginalPolicy),
-      mSourceFile(NS_ConvertUTF16toUTF8(aEvent.mSourceFile)),
+      mSourceFile(aEvent.mSourceFile.IsEmpty()
+                      ? VoidCString()
+                      : NS_ConvertUTF16toUTF8(aEvent.mSourceFile)),
       mSample(aEvent.mSample),
       mDisposition(aEvent.mDisposition),
       mStatusCode(aEvent.mStatusCode),
-      mLineNumber(Nullable<uint32_t>(aEvent.mLineNumber)),
-      mColumnNumber(Nullable<uint32_t>(aEvent.mColumnNumber)) {}
+      mLineNumber(aEvent.mSourceFile.IsEmpty()
+                      ? Nullable<uint32_t>()
+                      : Nullable<uint32_t>(aEvent.mLineNumber)),
+      mColumnNumber(aEvent.mSourceFile.IsEmpty()
+                        ? Nullable<uint32_t>()
+                        : Nullable<uint32_t>(aEvent.mColumnNumber)) {}
 
 CSPViolationReportBody::~CSPViolationReportBody() = default;
 
