@@ -13818,7 +13818,7 @@
 # If we should attempt to race the cache with network for non-SSD drives (Windows only).
 - name: network.http.rcwn.race_with_non_ssd
   type: bool
-  value: true
+  value: false
   mirror: always
 
 - name: network.http.rcwn.cache_queue_normal_threshold
