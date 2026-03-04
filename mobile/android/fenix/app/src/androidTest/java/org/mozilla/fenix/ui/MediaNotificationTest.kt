@@ -87,7 +87,6 @@ class MediaNotificationTest : TestSetup() {
 
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(audioTestPage.url) {
-            mDevice.waitForIdle()
             clickPageObject(composeTestRule, MatcherHelper.itemWithText("Play"))
             assertPlaybackState(browserStore, MediaSession.PlaybackState.PLAYING)
         }.openNotificationShade {
