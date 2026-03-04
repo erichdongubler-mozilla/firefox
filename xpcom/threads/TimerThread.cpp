@@ -571,11 +571,11 @@ struct IntervalComparator {
 
 }  // namespace
 
-TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
+TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
   mMonitor.AssertCurrentThreadOwns();
 
   if (mTimers.IsEmpty()) {
-    return TimeStamp{};
+    return {{}, {}};
   }
 
   // The first timer should be non-canceled and we rely on that here.
@@ -585,18 +585,19 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   // the same wake-up with mTimers[0] and use its timeout as our target wake-up
   // time.
 
+  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
+  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
+
   // bundleWakeup is when we should wake up in order to be able to fire all of
   // the timers in our selected bundle. It will always be the timeout of the
   // last timer in the bundle.
   TimeStamp bundleWakeup = mTimers[0].mTimeout;
 
   // cutoffTime is the latest that we can wake up for the timers currently
-  // accepted into the bundle. These needs to be updated as we go through the
+  // accepted into the bundle. This needs to be updated as we go through the
   // list because later timers may have more strict delay tolerances.
-  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
-  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
   TimeStamp cutoffTime =
       bundleWakeup + ComputeAcceptableFiringDelay(mTimers[0].mDelay,
                                                   minTimerDelay, maxTimerDelay);
@@ -619,10 +620,9 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
     // This timer can be included in the bundle. Update bundleWakeup and
     // cutoffTime.
     bundleWakeup = curTimerDue;
-    cutoffTime = std::min(
-        curTimerDue + ComputeAcceptableFiringDelay(
-                          curEntry.mDelay, minTimerDelay, maxTimerDelay),
-        cutoffTime);
+    const TimeDuration timerDelay = ComputeAcceptableFiringDelay(
+        curEntry.mDelay, minTimerDelay, maxTimerDelay);
+    cutoffTime = std::min(curTimerDue + timerDelay, cutoffTime);
     MOZ_ASSERT(bundleWakeup <= cutoffTime);
   }
 
@@ -630,7 +630,7 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
              ComputeAcceptableFiringDelay(mTimers[0].mDelay, minTimerDelay,
                                           maxTimerDelay));
 
-  return bundleWakeup;
+  return {bundleWakeup, cutoffTime - bundleWakeup};
 }
 
 TimeDuration TimerThread::ComputeAcceptableFiringDelay(
@@ -731,7 +731,8 @@ class TelemetryQueue {
   size_t mQueuedTimersFiredCount = 0;
 };
 
-void TimerThread::Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor) {
+void TimerThread::Wait(TimeDuration aWaitFor, TimeDuration aTolerance)
+    MOZ_REQUIRES(mMonitor) {
   mWaiting = true;
   mNotified = false;
   {
@@ -759,7 +760,7 @@ TimerThread::Run() {
     const bool chaosModeActive =
         ChaosMode::isActive(ChaosFeature::TimerScheduling);
 
-    TimeDuration waitFor;
+    TimeDuration waitFor, waitTolerance;
     if (!mSleeping) {
       // Determine how early we are going to allow timers to fire. In chaos mode
       // we mess with this a little bit.
@@ -785,8 +786,9 @@ TimerThread::Run() {
       }
 
       // Determine when we should wake up.
-      const TimeStamp wakeupTime = ComputeWakeupTimeFromTimers();
+      const auto [wakeupTime, wakeupTolerance] = ComputeWakeupTimeFromTimers();
       mIntendedWakeupTime = wakeupTime;
+      waitTolerance = wakeupTolerance;
 
       // About to sleep - let's make note of how many timers we processed and
       // see if we should send out a new batch of telemetry.
@@ -819,9 +821,14 @@ TimerThread::Run() {
         milliseconds = ChaosMode::randomUint32LessThan(200);
       }
       waitFor = TimeDuration::FromMilliseconds(milliseconds);
+
+      // Don't need to wake up precisely when "sleeping"
+      static constexpr double sWaitToleranceWhenSleeping_ms = 32.0;
+      waitTolerance =
+          TimeDuration::FromMilliseconds(sWaitToleranceWhenSleeping_ms);
     }
 
-    Wait(waitFor);
+    Wait(waitFor, waitTolerance);
 
 #if TIMER_THREAD_STATISTICS
     CollectWakeupStatistics();

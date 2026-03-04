@@ -250,12 +250,20 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 
   void PostTimerEvent(Entry& aPostMe) MOZ_REQUIRES(mMonitor);
 
+  // WakeupTime encompasses both a point in time at which we should wake up and
+  // tolerance for how much that wake-up can be delayed.
+  struct WakeupTime {
+    const TimeStamp mWakeupTime;
+    const TimeDuration mDelayTolerance;
+  };
+
   // Computes and returns when we should next try to wake up in order to handle
   // the triggering of the timers in mTimers.
   // If mTimers is empty, returns a null TimeStamp. If mTimers is not empty,
   // returns the timeout of the last timer that can be bundled with the first
-  // timer in mTimers.
-  TimeStamp ComputeWakeupTimeFromTimers() const MOZ_REQUIRES(mMonitor);
+  // timer in mTimers along with a tolerance indicating the most that we can be
+  // delayed and not violate the tolerances of any of the timers in the bundle.
+  WakeupTime ComputeWakeupTimeFromTimers() const MOZ_REQUIRES(mMonitor);
 
   // Computes how late a timer can acceptably fire.
   // timerDuration is the duration of the timer whose delay we are calculating.
@@ -277,7 +285,8 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 
   // Suspends thread execution using mMonitor.Wait(waitFor). Also sets and
   // clears a few flags before and after.
-  void Wait(TimeDuration aWaitFor) MOZ_REQUIRES(mMonitor);
+  void Wait(TimeDuration aWaitFor, TimeDuration aTolerance)
+      MOZ_REQUIRES(mMonitor);
 
   // mTimers is sorted by timeout, followed by a unique sequence number.
   // Some entries are for cancelled entries, but remain in sorted order based
