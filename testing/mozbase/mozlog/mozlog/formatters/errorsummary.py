@@ -26,6 +26,7 @@ class ErrorSummaryFormatter(BaseFormatter):
             }
         )
         self.test_time_divisor = 1
+        self.test_time_divisor_group = None
         self.line_count = 0
         self.dump_passing_tests = False
 
@@ -133,13 +134,15 @@ class ErrorSummaryFormatter(BaseFormatter):
             threads = extra.get("threads")
             if threads and threads > 1:
                 self.test_time_divisor = threads
+                self.test_time_divisor_group = group
 
     def group_end(self, item):
         group = item["name"]
         if group in self.manifest_groups and not self.groups[group]["all_skipped"]:
             self.groups[group]["group_end"] = item["time"]
-        elif group not in self.manifest_groups:
+        elif group == self.test_time_divisor_group:
             self.test_time_divisor = 1
+            self.test_time_divisor_group = None
 
     def test_start(self, item):
         test = self._clean_test_name(item["test"])
