@@ -2364,7 +2364,7 @@ void nsFrameLoader::GetURL(nsString& aURL, nsIPrincipal** aTriggeringPrincipal,
             do_QueryObject(mOwnerContent)) {
       nsCOMPtr<nsIPrincipal> srcPrincipal = frame->GetSrcTriggeringPrincipal();
       if (srcPrincipal) {
-        triggeringPrincipal = srcPrincipal;
+        triggeringPrincipal = std::move(srcPrincipal);
         nsCOMPtr<nsIExpandedPrincipal> ep =
             do_QueryInterface(triggeringPrincipal);
         if (ep) {

@@ -63,7 +63,7 @@ class PerformanceEventTiming final
   bool HasKnownInteractionId() const { return mInteractionId.isSome(); }
 
   void SetInteractionId(Maybe<uint64_t> aInteractionId) {
-    mInteractionId = aInteractionId;
+    mInteractionId = std::move(aInteractionId);
   }
 
   void SetInteractionId(uint64_t aInteractionId) {

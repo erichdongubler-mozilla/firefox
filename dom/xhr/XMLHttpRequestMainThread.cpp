@@ -1654,7 +1654,7 @@ void XMLHttpRequestMainThread::Open(const nsACString& aMethod,
   DisconnectDoneNotifier();
   mFlagSend = false;
   mRequestMethod.Assign(method);
-  mRequestURL = parsedURL;
+  mRequestURL = std::move(parsedURL);
   mFlagSynchronous = !aAsync;
   mAuthorRequestHeaders.Clear();
   ResetResponse();

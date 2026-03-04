@@ -789,7 +789,7 @@ void Animation::Reverse(ErrorResult& aRv) {
   // If Play() threw, restore state and don't report anything to mutation
   // observers.
   if (aRv.Failed()) {
-    mPendingPlaybackRate = originalPendingPlaybackRate;
+    mPendingPlaybackRate = std::move(originalPendingPlaybackRate);
   }
 
   // Play(), above, unconditionally calls PostUpdate so we don't need to do

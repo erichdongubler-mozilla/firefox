@@ -50,7 +50,7 @@ struct JSSettings {
       return true;
     }
     if (gcSettings[index].value != aValue) {
-      gcSettings[index].value = aValue;
+      gcSettings[index].value = std::move(aValue);
       return true;
     }
     return false;

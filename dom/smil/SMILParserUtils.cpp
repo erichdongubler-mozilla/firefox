@@ -396,7 +396,7 @@ bool ParseElementBaseTimeValueSpec(const nsAString& aSpec,
   if (!ParseOptionalOffset(tokenEnd, end, &result.mOffset) || tokenEnd != end) {
     return false;
   }
-  aResult = result;
+  aResult = std::move(result);
   return true;
 }
 

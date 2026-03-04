@@ -154,7 +154,7 @@ nsresult SVGAnimatedBoolean::SMILBool::ValueFromString(
 
   SMILValue val(SMILBoolType::Singleton());
   val.mU.mBool = value;
-  aValue = val;
+  aValue = std::move(val);
 
   return NS_OK;
 }

@@ -138,7 +138,7 @@ nsresult SVGAnimatedInteger::SMILInteger::ValueFromString(
 
   SMILValue smilVal(SMILIntegerType::Singleton());
   smilVal.mU.mInt = val;
-  aValue = smilVal;
+  aValue = std::move(smilVal);
   return NS_OK;
 }
 

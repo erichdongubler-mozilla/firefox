@@ -994,7 +994,7 @@ nsresult FetchDriver::HttpFetch(
 
   // Step 4 onwards of "HTTP Fetch" is handled internally by Necko.
 
-  mChannel = chan;
+  mChannel = std::move(chan);
   return NS_OK;
 }
 

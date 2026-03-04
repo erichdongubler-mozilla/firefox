@@ -750,7 +750,7 @@ void HTMLImageElement::LoadSelectedImage(bool aAlwaysLoad,
                    triggeringPrincipal);
   }
 
-  mLastSelectedSource = selectedSource;
+  mLastSelectedSource = std::move(selectedSource);
   mCurrentDensity = currentDensity;
 
   if (NS_FAILED(rv)) {
