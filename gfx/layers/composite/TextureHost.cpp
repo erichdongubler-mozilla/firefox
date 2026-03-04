@@ -277,21 +277,11 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
           switch (desc.type()) {
             case BufferDescriptor::TYCbCrDescriptor: {
               const YCbCrDescriptor& ycbcr = desc.get_YCbCrDescriptor();
-              if (!gfx::IntRect(gfx::IntPoint(), ycbcr.ySize())
-                       .Contains(ycbcr.display())) {
-                NS_ERROR("YCbCr display rect exceeds Y plane dimensions!");
-                return nullptr;
-              }
-              auto croppedCbCr = ImageDataSerializer::GetCroppedCbCrSize(ycbcr);
-              if (croppedCbCr.width > ycbcr.cbCrSize().width ||
-                  croppedCbCr.height > ycbcr.cbCrSize().height) {
-                NS_ERROR("YCbCr display rect exceeds CbCr plane dimensions!");
-                return nullptr;
-              }
               reqSize = ImageDataSerializer::ComputeYCbCrBufferSize(
-                  ycbcr.ySize(), ycbcr.yStride(), ycbcr.cbCrSize(),
-                  ycbcr.cbCrStride(), ycbcr.yOffset(), ycbcr.cbOffset(),
-                  ycbcr.crOffset(), ycbcr.colorDepth());
+                  ycbcr.display(), ycbcr.ySize(), ycbcr.yStride(),
+                  ycbcr.cbCrSize(), ycbcr.cbCrStride(), ycbcr.yOffset(),
+                  ycbcr.cbOffset(), ycbcr.crOffset(), ycbcr.colorDepth(),
+                  ycbcr.chromaSubsampling());
               break;
             }
             case BufferDescriptor::TRGBDescriptor: {

@@ -79,24 +79,12 @@ already_AddRefed<Image> RemoteImageHolder::DeserializeImage(
     const YCbCrDescriptor& descriptor = sdBuffer.desc().get_YCbCrDescriptor();
 
     size_t descriptorSize = ImageDataSerializer::ComputeYCbCrBufferSize(
-        descriptor.ySize(), descriptor.yStride(), descriptor.cbCrSize(),
-        descriptor.cbCrStride(), descriptor.yOffset(), descriptor.cbOffset(),
-        descriptor.crOffset(), descriptor.colorDepth());
+        descriptor.display(), descriptor.ySize(), descriptor.yStride(),
+        descriptor.cbCrSize(), descriptor.cbCrStride(), descriptor.yOffset(),
+        descriptor.cbOffset(), descriptor.crOffset(), descriptor.colorDepth(),
+        descriptor.chromaSubsampling());
     if (NS_WARN_IF(descriptorSize == 0 || descriptorSize > bufferSize)) {
       MOZ_ASSERT_UNREACHABLE("Buffer too small to fit descriptor!");
-      return nullptr;
-    }
-
-    if (!IntRect(IntPoint(), descriptor.ySize())
-             .Contains(descriptor.display())) {
-      MOZ_ASSERT_UNREACHABLE("YCbCr display rect exceeds Y plane dimensions!");
-      return nullptr;
-    }
-
-    auto croppedCbCr = ImageDataSerializer::GetCroppedCbCrSize(descriptor);
-    if (croppedCbCr.width > descriptor.cbCrSize().width ||
-        croppedCbCr.height > descriptor.cbCrSize().height) {
-      MOZ_ASSERT_UNREACHABLE("YCbCr chroma dimensions exceed CbCr plane size!");
       return nullptr;
     }
 
