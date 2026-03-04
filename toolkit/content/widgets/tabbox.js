@@ -13,6 +13,7 @@
 
   let imports = {};
   ChromeUtils.defineESModuleGetters(imports, {
+    DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
     ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   });
 
@@ -256,6 +257,8 @@
   customElements.define("deck", MozDeck);
 
   class MozTabpanels extends MozDeck {
+    static SPLIT_VIEW_RESIZE_THROTTLE_MS = 300;
+
     /**
      * Panels that are currently within an active Split View.
      *
@@ -297,6 +300,7 @@
         }
       }
     });
+    #splitViewSplitterKeysDown = new Set();
 
     static #SPLIT_VIEW_PANEL_EVENTS = Object.freeze([
       "click",
@@ -309,9 +313,15 @@
       this._tabbox = null;
     }
 
+    connectedCallback() {
+      super.connectedCallback();
+      window.addEventListener("SplitViewRemoved", this);
+    }
+
     disconnectedCallback() {
       super.disconnectedCallback();
       this.#splitViewSplitterObserver.disconnect();
+      window.removeEventListener("SplitViewRemoved", this);
     }
 
     #recordSplitViewResizeTelemetry() {
@@ -332,6 +342,10 @@
     }
 
     handleEvent(e) {
+      if (e.type === "SplitViewRemoved") {
+        this.#unthrottleSplitViewResizing();
+        return;
+      }
       const browser =
         e.currentTarget.tagName === "browser"
           ? e.currentTarget
@@ -372,35 +386,51 @@
 
     get splitViewSplitter() {
       if (!this.#splitViewSplitter) {
-        const splitter = document.createXULElement("splitter");
-        splitter.className = "split-view-splitter";
-        splitter.setAttribute("resizebefore", "sibling");
-        splitter.setAttribute("resizeafter", "none");
-        splitter.setAttribute("tabindex", "0");
-        splitter.setAttribute("role", "separator");
-        splitter.setAttribute("data-l10n-id", "tab-splitview-splitter");
-        this.#splitViewSplitter = splitter;
-        this.#splitterWasDragging = false;
-        splitter.addEventListener("command", () => {
-          gBrowser.activeSplitView.resetRightPanelWidth();
-
-          // wait for the layout flush before doing any measuring
-          if (!this._splitterPendingUpdate) {
-            this._splitterPendingUpdate = window
-              .promiseDocumentFlushed(() => {})
-              .then(() => {
-                this.updateSplitterAriaAttributes(
-                  !!this.#splitViewPanels.length
-                );
-                this.#recordSplitViewResizeTelemetry();
-              });
-          }
-        });
-        this.#splitViewSplitterObserver.observe(splitter, {
-          attributeFilter: ["state"],
-        });
+        this.#splitViewSplitter = this.#createSplitViewSplitter();
       }
       return this.#splitViewSplitter;
+    }
+
+    #createSplitViewSplitter() {
+      const splitter = document.createXULElement("splitter");
+      splitter.className = "split-view-splitter";
+      splitter.setAttribute("resizebefore", "sibling");
+      splitter.setAttribute("resizeafter", "none");
+      splitter.setAttribute("tabindex", "0");
+      splitter.setAttribute("role", "separator");
+      splitter.setAttribute("data-l10n-id", "tab-splitview-splitter");
+      this.#splitterWasDragging = false;
+      splitter.addEventListener("command", () => {
+        gBrowser.activeSplitView.resetRightPanelWidth();
+
+        // wait for the layout flush before doing any measuring
+        if (!this._splitterPendingUpdate) {
+          this._splitterPendingUpdate = window
+            .promiseDocumentFlushed(() => {})
+            .then(() => {
+              this.updateSplitterAriaAttributes(!!this.#splitViewPanels.length);
+              this.#recordSplitViewResizeTelemetry();
+            });
+        }
+      });
+      this.#splitViewSplitterObserver.observe(splitter, {
+        attributeFilter: ["state"],
+      });
+      splitter.addEventListener("keydown", e => {
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+          this.#splitViewSplitterKeysDown.add(e.key);
+          this.#throttleSplitViewResizing();
+        }
+      });
+      splitter.addEventListener("keyup", e => {
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+          this.#splitViewSplitterKeysDown.delete(e.key);
+          if (!this.#splitViewSplitterKeysDown.size) {
+            this.#unthrottleSplitViewResizing();
+          }
+        }
+      });
+      return splitter;
     }
 
     updateSplitterAriaAttributes(isActive) {
@@ -555,6 +585,50 @@
     setSplitViewPanelActive(isActive, panel) {
       const panelEl = document.getElementById(panel);
       panelEl?.classList.toggle("split-view-panel-active", isActive);
+    }
+
+    #throttleSplitViewResizing() {
+      if (!this._splitViewRenderTask || this._splitViewRenderTask.isFinalized) {
+        this.#freezeSplitViewBrowsers();
+        this._splitViewRenderTask = new imports.DeferredTask(
+          () => {
+            this.#unfreezeSplitViewBrowsers();
+            // Wait for repaint before re-freezing browsers.
+            return new Promise(resolve =>
+              requestAnimationFrame(() =>
+                Services.tm.dispatchToMainThread(() => {
+                  this.#freezeSplitViewBrowsers();
+                  resolve();
+                })
+              )
+            );
+          },
+          MozTabpanels.SPLIT_VIEW_RESIZE_THROTTLE_MS,
+          0
+        );
+      }
+      this._splitViewRenderTask.arm();
+    }
+
+    async #unthrottleSplitViewResizing() {
+      if (this._splitViewRenderTask && !this._splitViewRenderTask.isFinalized) {
+        await this._splitViewRenderTask.finalize();
+      }
+      this.#unfreezeSplitViewBrowsers();
+    }
+
+    #freezeSplitViewBrowsers() {
+      for (const browser of gBrowser.splitViewBrowsers) {
+        browser.preserveLayers(true);
+        browser.docShellIsActive = false;
+      }
+    }
+
+    #unfreezeSplitViewBrowsers() {
+      for (const browser of gBrowser.splitViewBrowsers) {
+        browser.docShellIsActive = true;
+        browser.preserveLayers(false);
+      }
     }
   }
 

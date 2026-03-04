@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["sidebar.verticalTabs", true]],
@@ -33,12 +37,23 @@ async function checkSplitViewPanelVisible(tab, isVisible) {
   );
 }
 
-function dragSplitter(deltaX, splitter) {
+async function waitForSplitterMoved(splitter) {
+  const valueBefore = splitter.getAttribute("aria-valuenow");
+  await BrowserTestUtils.waitForMutationCondition(
+    splitter,
+    { attributes: true, attributeFilter: ["aria-valuenow"] },
+    () => splitter.getAttribute("aria-valuenow") != valueBefore
+  );
+}
+
+async function dragSplitter(deltaX, splitter) {
+  const movedPromise = waitForSplitterMoved(splitter);
   AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   EventUtils.synthesizeMouseAtCenter(splitter, { type: "mousedown" });
   EventUtils.synthesizeMouse(splitter, deltaX, 0, { type: "mousemove" });
   EventUtils.synthesizeMouse(splitter, 0, 0, { type: "mouseup" });
   AccessibilityUtils.resetEnv();
+  await movedPromise;
 }
 
 add_task(async function test_splitViewCreateAndAddTabs() {
@@ -284,7 +299,7 @@ add_task(async function test_resize_split_view_panels() {
   const rightPanel = document.getElementById(tab2.linkedPanel);
   const originalLeftWidth = leftPanel.getBoundingClientRect().width;
   const originalRightWidth = rightPanel.getBoundingClientRect().width;
-  dragSplitter(-100, tabpanels.splitViewSplitter);
+  await dragSplitter(-100, tabpanels.splitViewSplitter);
   Assert.less(
     leftPanel.getBoundingClientRect().width,
     originalLeftWidth,
@@ -312,7 +327,7 @@ add_task(async function test_resize_split_view_panels() {
 
   info("Reverse split view panels and resize.");
   splitView.reverseTabs();
-  dragSplitter(-100, tabpanels.splitViewSplitter);
+  await dragSplitter(-100, tabpanels.splitViewSplitter);
   await BrowserTestUtils.waitForMutationCondition(
     leftPanel,
     { attributeFilter: ["width"] },
@@ -331,6 +346,66 @@ add_task(async function test_resize_split_view_panels() {
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
+});
+
+add_task(async function test_resize_throttled_for_keyboard() {
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+  await BrowserTestUtils.switchTab(gBrowser, tab1);
+
+  info("Activate split view.");
+  const splitView = gBrowser.addTabSplitView([tab1, tab2]);
+  const { tabpanels } = gBrowser;
+  const splitter = tabpanels.splitViewSplitter;
+  await BrowserTestUtils.waitForMutationCondition(
+    tabpanels,
+    { childList: true },
+    () => tabpanels.querySelector(".split-view-splitter")
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    splitter,
+    { attributes: true },
+    () => BrowserTestUtils.isVisible(splitter)
+  );
+
+  splitter.focus();
+  Assert.equal(document.activeElement, splitter, "Splitter should be focused");
+
+  const [browser] = gBrowser.splitViewBrowsers;
+  const docShellIsActiveProp = sinon.spy(browser, "docShellIsActive", ["set"]);
+
+  info("Move the splitter to the left using keyboard.");
+  let movedPromise = waitForSplitterMoved(splitter);
+  EventUtils.synthesizeKey("KEY_ArrowLeft", { type: "keydown" });
+  await movedPromise;
+  EventUtils.synthesizeKey("KEY_ArrowLeft", { type: "keyup" });
+
+  Assert.ok(
+    docShellIsActiveProp.set.calledWith(false),
+    "Rendering was paused at least once."
+  );
+  Assert.ok(
+    docShellIsActiveProp.set.calledWith(true),
+    "Rendering was resumed at least once."
+  );
+  docShellIsActiveProp.set.resetHistory();
+
+  info("Move the splitter to the right using keyboard.");
+  movedPromise = waitForSplitterMoved(splitter);
+  EventUtils.synthesizeKey("KEY_ArrowRight", { type: "keydown" });
+  await movedPromise;
+  EventUtils.synthesizeKey("KEY_ArrowRight", { type: "keyup" });
+
+  Assert.ok(
+    docShellIsActiveProp.set.calledWith(false),
+    "Rendering was paused at least once."
+  );
+  Assert.ok(
+    docShellIsActiveProp.set.calledWith(true),
+    "Rendering was resumed at least once."
+  );
+
+  splitView.close();
 });
 
 add_task(async function test_click_findbar_to_select_panel() {
