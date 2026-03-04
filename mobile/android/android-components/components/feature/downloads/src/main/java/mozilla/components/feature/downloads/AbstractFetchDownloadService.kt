@@ -23,10 +23,11 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -60,6 +61,8 @@ import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.sanitizeURL
 import mozilla.components.support.ktx.kotlinx.coroutines.throttleLatest
+import mozilla.components.support.utils.DateTimeProvider
+import mozilla.components.support.utils.DefaultDateTimeProvider
 import mozilla.components.support.utils.DownloadFileUtils
 import mozilla.components.support.utils.ext.registerReceiverCompat
 import mozilla.components.support.utils.ext.stopForegroundCompat
@@ -83,7 +86,10 @@ abstract class AbstractFetchDownloadService : Service() {
 
     protected abstract val notificationsDelegate: NotificationsDelegate
 
-    private val notificationUpdateScope = MainScope()
+    protected open val mainDispatcher: CoroutineDispatcher = Dispatchers.Main
+    protected open val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+
+    protected open val notificationUpdateScope by lazy { CoroutineScope(mainDispatcher + SupervisorJob()) }
 
     protected abstract val httpClient: Client
 
@@ -105,6 +111,8 @@ abstract class AbstractFetchDownloadService : Service() {
 
     protected abstract val downloadFileWriter: DownloadFileWriter
 
+    protected open val dateTimeProvider: DateTimeProvider = DefaultDateTimeProvider()
+
     // TODO Move this to browser store and make immutable:
     // https://github.com/mozilla-mobile/android-components/issues/7050
     internal data class DownloadJobState(
@@ -116,7 +124,8 @@ abstract class AbstractFetchDownloadService : Service() {
         var downloadDeleted: Boolean = false,
         var notifiedStopped: Boolean = false,
         var lastNotificationUpdate: Long = 0L,
-        var createdTime: Long = System.currentTimeMillis(),
+        var dateTimeProvider: DateTimeProvider = DefaultDateTimeProvider(),
+        var createdTime: Long = dateTimeProvider.currentTimeMillis(),
     ) {
         internal fun canUpdateNotification(): Boolean {
             return isUnderNotificationUpdateLimit() && !notifiedStopped
@@ -133,7 +142,7 @@ abstract class AbstractFetchDownloadService : Service() {
         }
 
         internal fun getSecondsSinceTheLastNotificationUpdate(): Long {
-            return (System.currentTimeMillis() - lastNotificationUpdate) / 1000
+            return (dateTimeProvider.currentTimeMillis() - lastNotificationUpdate) / 1000
         }
     }
 
@@ -176,8 +185,8 @@ abstract class AbstractFetchDownloadService : Service() {
                         )
                         if (!fileExists) {
                             currentDownloadJobState.lastNotificationUpdate =
-                                System.currentTimeMillis()
-                            currentDownloadJobState.createdTime = System.currentTimeMillis()
+                                dateTimeProvider.currentTimeMillis()
+                            currentDownloadJobState.createdTime = dateTimeProvider.currentTimeMillis()
                             currentDownloadJobState.notifiedStopped = false
 
                             setDownloadJobStatus(currentDownloadJobState, FAILED)
@@ -186,7 +195,7 @@ abstract class AbstractFetchDownloadService : Service() {
                         } else {
                             setDownloadJobStatus(currentDownloadJobState, DOWNLOADING)
 
-                            currentDownloadJobState.job = CoroutineScope(IO).launch {
+                            currentDownloadJobState.job = CoroutineScope(ioDispatcher).launch {
                                 startDownloadJob(currentDownloadJobState)
                             }
                         }
@@ -203,11 +212,11 @@ abstract class AbstractFetchDownloadService : Service() {
 
                     ACTION_TRY_AGAIN -> {
                         removeNotification(context, currentDownloadJobState)
-                        currentDownloadJobState.lastNotificationUpdate = System.currentTimeMillis()
-                        currentDownloadJobState.createdTime = System.currentTimeMillis()
+                        currentDownloadJobState.lastNotificationUpdate = dateTimeProvider.currentTimeMillis()
+                        currentDownloadJobState.createdTime = dateTimeProvider.currentTimeMillis()
                         setDownloadJobStatus(currentDownloadJobState, DOWNLOADING)
 
-                        currentDownloadJobState.job = CoroutineScope(IO).launch {
+                        currentDownloadJobState.job = CoroutineScope(ioDispatcher).launch {
                             startDownloadJob(currentDownloadJobState)
                         }
 
@@ -313,7 +322,7 @@ abstract class AbstractFetchDownloadService : Service() {
         store.dispatch(DownloadAction.UpdateDownloadAction(downloadJobState.state))
 
         if (actualStatus == DOWNLOADING) {
-            downloadJobState.job = CoroutineScope(IO).launch {
+            downloadJobState.job = CoroutineScope(ioDispatcher).launch {
                 startDownloadJob(downloadJobState)
             }
         }
@@ -334,9 +343,9 @@ abstract class AbstractFetchDownloadService : Service() {
     @VisibleForTesting
     internal fun cancelDownloadJob(
         currentDownloadJobState: DownloadJobState,
-        coroutineScope: CoroutineScope = CoroutineScope(IO),
+        coroutineScope: CoroutineScope = CoroutineScope(ioDispatcher),
     ) {
-        currentDownloadJobState.lastNotificationUpdate = System.currentTimeMillis()
+        currentDownloadJobState.lastNotificationUpdate = dateTimeProvider.currentTimeMillis()
         setDownloadJobStatus(
             currentDownloadJobState,
             CANCELLED,
@@ -400,7 +409,7 @@ abstract class AbstractFetchDownloadService : Service() {
     internal fun updateDownloadNotification(
         latestUIStatus: Status,
         download: DownloadJobState,
-        scope: CoroutineScope = CoroutineScope(IO),
+        scope: CoroutineScope = CoroutineScope(ioDispatcher),
     ) {
         val notification = when (latestUIStatus) {
             DOWNLOADING -> DownloadNotification.createOngoingDownloadNotification(
@@ -434,7 +443,7 @@ abstract class AbstractFetchDownloadService : Service() {
             }
             CANCELLED -> {
                 removeNotification(context, download)
-                download.lastNotificationUpdate = System.currentTimeMillis()
+                download.lastNotificationUpdate = dateTimeProvider.currentTimeMillis()
                 null
             }
             INITIATED -> null
@@ -445,7 +454,7 @@ abstract class AbstractFetchDownloadService : Service() {
                 notificationId = download.foregroundServiceId,
                 notification = it,
             )
-            download.lastNotificationUpdate = System.currentTimeMillis()
+            download.lastNotificationUpdate = dateTimeProvider.currentTimeMillis()
         }
     }
 
@@ -506,7 +515,7 @@ abstract class AbstractFetchDownloadService : Service() {
     @VisibleForTesting
     internal fun addToDownloadSystemDatabaseCompat(
         download: DownloadState,
-        scope: CoroutineScope = CoroutineScope(IO),
+        scope: CoroutineScope = CoroutineScope(ioDispatcher),
     ) {
         if (!shouldUseScopedStorage()) {
             val fileName = download.fileName
@@ -779,7 +788,7 @@ abstract class AbstractFetchDownloadService : Service() {
 
         val throttleUpdateDownload = throttleLatest<Long>(
             PROGRESS_UPDATE_INTERVAL,
-            coroutineScope = CoroutineScope(IO),
+            coroutineScope = CoroutineScope(ioDispatcher),
         ) { copiedBytes ->
             val newState = downloadJobState.state.copy(currentBytesCopied = copiedBytes)
             updateDownloadState(newState)
