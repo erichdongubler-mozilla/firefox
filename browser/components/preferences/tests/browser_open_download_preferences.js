@@ -166,7 +166,7 @@ add_task(async function handleInternallyPreferenceWorks() {
     waitForStateStop: true,
   });
 
-  await ContentTask.spawn(loadingTab.linkedBrowser, null, async () => {
+  await SpecialPowers.spawn(loadingTab.linkedBrowser, [], async () => {
     await ContentTaskUtils.waitForCondition(
       () => content.document.readyState == "complete"
     );
