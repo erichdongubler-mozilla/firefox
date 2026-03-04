@@ -2604,7 +2604,7 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
 
   if (!marker->incrementalWeakMapMarkingEnabled) {
     ForAllWeakMapsInZone(this, [marker](WeakMapBase* map) {
-      if (IsMarked(map->mapColor())) {
+      if (map->isMarked()) {
         (void)map->markEntries(marker);
       }
     });

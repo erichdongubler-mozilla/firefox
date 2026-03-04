@@ -13,6 +13,7 @@
 #include "ds/SlimLinkedList.h"
 #include "gc/AllocKind.h"
 #include "gc/Barrier.h"
+#include "gc/Cell.h"
 #include "gc/Marking.h"
 #include "gc/Tracer.h"
 #include "gc/ZoneAllocator.h"
@@ -208,6 +209,8 @@ class WeakMapBase : public SlimLinkedListElement<WeakMapBase> {
 
   gc::CellColor mapColor() const { return gc::CellColor(uint32_t(mapColor_)); }
   void setMapColor(gc::CellColor newColor) { mapColor_ = uint32_t(newColor); }
+
+  bool isMarked() const { return gc::IsMarked(mapColor()); }
 
   // Attempt to mark the map and return the old color if successful.
   mozilla::Maybe<gc::CellColor> markMap(gc::MarkColor markColor);

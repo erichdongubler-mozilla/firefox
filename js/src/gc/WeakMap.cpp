@@ -18,7 +18,7 @@ using namespace js::gc;
 WeakMapBase::WeakMapBase(JSObject* memOf, Zone* zone)
     : memberOf(memOf), zone_(zone) {
   MOZ_ASSERT_IF(memberOf, memberOf->compartment()->zone() == zone);
-  MOZ_ASSERT(!IsMarked(mapColor()));
+  MOZ_ASSERT(!isMarked());
 
   if (zone->isGCMarking()) {
     setMapColor(CellColor::Black);
@@ -27,7 +27,7 @@ WeakMapBase::WeakMapBase(JSObject* memOf, Zone* zone)
   SlimLinkedList<WeakMapBase>* list;
   if (isSystem()) {
     list = &zone->gcSystemWeakMaps();
-  } else if (IsMarked(mapColor())) {
+  } else if (isMarked()) {
     list = &zone->gcMarkedUserWeakMaps();
   } else {
     list = &zone->gcUserWeakMaps();
@@ -145,7 +145,7 @@ bool WeakMapBase::checkMarkingForZone(JS::Zone* zone) {
 
   bool ok = true;
   ForAllWeakMapsInZone(zone, [&ok](WeakMapBase* map) {
-    if (IsMarked(map->mapColor()) && !map->checkMarking()) {
+    if (map->isMarked() && !map->checkMarking()) {
       ok = false;
     }
   });
@@ -167,7 +167,7 @@ bool WeakMapBase::markZoneIteratively(JS::Zone* zone, GCMarker* marker) {
 
   bool markedAny = false;
   ForAllWeakMapsInZone(zone, [&](WeakMapBase* map) {
-    if (IsMarked(map->mapColor()) && map->markEntries(marker)) {
+    if (map->isMarked() && map->markEntries(marker)) {
       markedAny = true;
     }
   });
@@ -234,7 +234,7 @@ void Zone::sweepWeakMaps(JSTracer* trc) {
   WeakMapBase* weakmap = gcSystemWeakMaps().getFirst();
   while (weakmap) {
     WeakMapBase* next = weakmap->getNext();
-    if (IsMarked(weakmap->mapColor())) {
+    if (weakmap->isMarked()) {
       // Sweep live map to remove dead entries.
       weakmap->traceWeakEdgesDuringSweeping(trc);
       // Unmark swept weak map.
@@ -251,7 +251,7 @@ void Zone::sweepWeakMaps(JSTracer* trc) {
 
   // Sweep marked user weakmaps.
   for (WeakMapBase* weakmap : gcMarkedUserWeakMaps()) {
-    MOZ_ASSERT(IsMarked(weakmap->mapColor()));
+    MOZ_ASSERT(weakmap->isMarked());
     MOZ_ASSERT(weakmap->memberOf->isMarkedAny());
     // Sweep live map to remove dead entries.
     weakmap->traceWeakEdgesDuringSweeping(trc);
@@ -265,7 +265,7 @@ void Zone::sweepWeakMaps(JSTracer* trc) {
   // memory without explicit free.
 #ifdef DEBUG
   for (WeakMapBase* weakmap : gcUserWeakMaps()) {
-    MOZ_ASSERT(!IsMarked(weakmap->mapColor()));
+    MOZ_ASSERT(!weakmap->isMarked());
     MOZ_ASSERT(!weakmap->memberOf->isMarkedAny());
   }
 #endif
@@ -303,7 +303,7 @@ void WeakMapBase::restoreMarkedWeakMaps(WeakMapColors& markedWeakMaps) {
   for (WeakMapColors::Range r = markedWeakMaps.all(); !r.empty();
        r.popFront()) {
     WeakMapBase* map = r.front().key();
-    MOZ_ASSERT(!IsMarked(map->mapColor()));
+    MOZ_ASSERT(!map->isMarked());
 
     Zone* zone = map->zone();
     MOZ_ASSERT(zone->isGCMarking());
