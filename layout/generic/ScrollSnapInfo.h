@@ -7,6 +7,7 @@
 #ifndef mozilla_layout_ScrollSnapInfo_h_
 #define mozilla_layout_ScrollSnapInfo_h_
 
+#include "mozilla/AppUnits.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ScrollSnapTargetId.h"
 #include "mozilla/ScrollTypes.h"
@@ -114,7 +115,10 @@ struct ScrollSnapInfo {
     // Returns true if |aPoint| is a valid snap position in this range.
     bool IsValid(nscoord aPoint, nscoord aSnapportSize) const {
       MOZ_ASSERT(End() - Start() > aSnapportSize);
-      return Start() <= aPoint && aPoint <= End() - aSnapportSize;
+      const nscoord tolerance = StaticPrefs::layout_disable_pixel_alignment()
+                                    ? 0
+                                    : CSSPixel::ToAppUnits(CSSCoord(0.5f));
+      return Start() <= aPoint && aPoint <= End() - aSnapportSize + tolerance;
     }
   };
   // An array of the range that the target element is larger than the snapport
