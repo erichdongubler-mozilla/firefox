@@ -438,6 +438,8 @@ skip-if = [
 
 ["test_ext_idle.js"]
 
+["test_ext_import_attributes.js"]
+
 ["test_ext_incognito.js"]
 run-if = [
   "appname != 'thunderbird'",

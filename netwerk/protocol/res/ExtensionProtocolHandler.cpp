@@ -545,6 +545,7 @@ nsresult ExtensionProtocolHandler::SubstituteChannel(nsIURI* aURI,
           nsCOMPtr<nsIRequest> request(origChannel);
           return RequestOrCancelable(WrapNotNull(request));
         });
+    channel->SetContentType("text/css"_ns);
   } else if (readyPromise) {
     size_t matchIdx;
     if (BinarySearchIf(
@@ -570,6 +571,7 @@ nsresult ExtensionProtocolHandler::SubstituteChannel(nsIURI* aURI,
           nsCOMPtr<nsIRequest> request(origChannel);
           return RequestOrCancelable(WrapNotNull(request));
         });
+    SetContentType(aURI, channel);
   } else {
     return NS_OK;
   }
