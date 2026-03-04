@@ -272,10 +272,6 @@ class MOZ_STACK_CLASS CallSetup {
   // ErrorResult it was handed.
   BindingCallContext& GetCallContext() { return *mCallContext; }
 
-  static nsIGlobalObject* GetActiveGlobalObjectForCall(
-      JS::Handle<JSObject*> callbackOrGlobal, bool aIsMainThread,
-      bool aIsJSImplementedWebIDL, ErrorResult& aRv);
-
  private:
   CallSetup(CallbackObjectBase* aCallback, ErrorResult& aRv,
             const char* aExecutionReason,
@@ -292,6 +288,10 @@ class MOZ_STACK_CLASS CallSetup {
   CallSetup(const CallSetup&) = delete;
 
   bool ShouldRethrowException(JS::Handle<JS::Value> aException);
+
+  static nsIGlobalObject* GetActiveGlobalObjectForCall(
+      JS::Handle<JSObject*> callbackOrGlobal, bool aIsMainThread,
+      bool aIsJSImplementedWebIDL, ErrorResult& aRv);
 
   static bool CheckBeforeExecution(nsIGlobalObject* aGlobalObject,
                                    JSObject* aCallbackOrGlobal,

@@ -557,7 +557,7 @@ enum class PromiseUserInputEventHandlingState {
  * is a wrapper that can't safely be unwrapped.
  */
 extern JS_PUBLIC_API PromiseUserInputEventHandlingState
-GetPromiseUserInputEventHandlingState(JSObject* promise);
+GetPromiseUserInputEventHandlingState(JS::HandleObject promise);
 
 /**
  * Sets the given Promise's activation behavior state flag per above as a

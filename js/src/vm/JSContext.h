@@ -185,7 +185,6 @@ struct MicroTaskQueueSet {
 
   JS::GenericMicroTask popFront();
   JS::GenericMicroTask popDebugFront();
-  JS::GenericMicroTask peekFront();
 
   bool empty() { return microTaskQueue.empty() && debugMicroTaskQueue.empty(); }
 
