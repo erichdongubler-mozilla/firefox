@@ -737,7 +737,11 @@ void TimerThread::Wait(TimeDuration aWaitFor, TimeDuration aTolerance)
   mNotified = false;
   {
     AUTO_PROFILER_MARKER("TimerThread::Wait", OTHER);
+#if defined(XP_WIN)
+    mMonitor.Wait(aWaitFor, aTolerance);
+#else
     mMonitor.Wait(aWaitFor);
+#endif
   }
   mWaiting = false;
 }
@@ -816,6 +820,8 @@ TimerThread::Run() {
     } else {
       mIntendedWakeupTime = TimeStamp{};
       // Sleep for 0.1 seconds while not firing timers.
+      // NOTE: Re-evaluate this behavior. Why do we wake up ten times a second
+      // to do nothing?
       uint32_t milliseconds = 100;
       if (chaosModeActive) {
         milliseconds = ChaosMode::randomUint32LessThan(200);
