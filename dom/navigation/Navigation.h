@@ -34,22 +34,23 @@ struct NavigationResult;
 class SessionHistoryInfo;
 
 // https://html.spec.whatwg.org/#navigation-api-method-tracker
-struct NavigationAPIMethodTracker final : public nsISupports {
+struct NavigationTracker final : public nsISupports {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(NavigationAPIMethodTracker)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(NavigationTracker)
 
-  NavigationAPIMethodTracker(Navigation* aNavigationObject,
-                             const Maybe<nsID> aKey, const JS::Value& aInfo,
-                             nsIStructuredCloneContainer* aSerializedState,
-                             NavigationHistoryEntry* aCommittedToEntry,
-                             Promise* aCommittedPromise,
-                             Promise* aFinishedPromise, bool aPending = false);
+  NavigationTracker(Navigation* aNavigationObject, const Maybe<nsID> aKey,
+                    const JS::Value& aInfo,
+                    nsIStructuredCloneContainer* aSerializedState,
+                    NavigationHistoryEntry* aCommittedToEntry,
+                    Promise* aCommittedPromise, Promise* aFinishedPromise,
+                    bool aPending = false);
 
   // Mark this tracker as no longer pending (promoted to ongoing).
   void MarkAsNotPending() { mPending = false; }
 
   void CleanUp();
   void NotifyAboutCommittedToEntry(NavigationHistoryEntry* aNHE);
+  void CommitNavigateEvent();
   void ResolveFinishedPromise();
   void RejectFinishedPromise(JS::Handle<JS::Value> aException);
   void CreateResult(JSContext* aCx, NavigationResult& aResult);
@@ -67,7 +68,7 @@ struct NavigationAPIMethodTracker final : public nsISupports {
   JS::Heap<JS::Value> mInfo;
 
  private:
-  ~NavigationAPIMethodTracker();
+  ~NavigationTracker();
 
   bool mPending;
   RefPtr<nsIStructuredCloneContainer> mSerializedState;
@@ -165,8 +166,7 @@ class Navigation final : public DOMEventTargetHelper {
       Element* aSourceElement, FormData* aFormDataEntryList,
       nsIStructuredCloneContainer* aNavigationAPIState,
       nsIStructuredCloneContainer* aClassicHistoryAPIState,
-      NavigationAPIMethodTracker* aApiMethodTrackerForNavigateOrReload =
-          nullptr);
+      NavigationTracker* aNavigationTrackerForNavigateOrReload = nullptr);
 
   MOZ_CAN_RUN_SCRIPT bool FireDownloadRequestNavigateEvent(
       JSContext* aCx, nsIURI* aDestinationURL,
@@ -197,14 +197,14 @@ class Navigation final : public DOMEventTargetHelper {
       SessionHistoryInfo* aPreviousEntryForActivation,
       NavigationType aNavigationType);
 
-  void SetSerializedStateIntoOngoingAPIMethodTracker(
+  void SetSerializedStateIntoOngoingNavigationTracker(
       nsIStructuredCloneContainer* aSerializedState);
 
  private:
-  friend struct NavigationAPIMethodTracker;
+  friend struct NavigationTracker;
   friend struct NavigationWaitForAllScope;
-  using UpcomingTraverseAPIMethodTrackers =
-      nsTHashMap<nsIDHashKey, RefPtr<NavigationAPIMethodTracker>>;
+  using UpcomingTraverseNavigationTrackers =
+      nsTHashMap<nsIDHashKey, RefPtr<NavigationTracker>>;
 
   ~Navigation() = default;
 
@@ -226,16 +226,16 @@ class Navigation final : public DOMEventTargetHelper {
       FormData* aFormDataEntryList,
       nsIStructuredCloneContainer* aClassicHistoryAPIState,
       const nsAString& aDownloadRequestFilename,
-      NavigationAPIMethodTracker* aNavigationAPIMethodTracker = nullptr);
+      NavigationTracker* aNavigationTracker = nullptr);
 
   NavigationHistoryEntry* FindNavigationHistoryEntry(
       const SessionHistoryInfo& aSessionHistoryInfo) const;
 
-  RefPtr<NavigationAPIMethodTracker> SetUpNavigateReloadAPIMethodTracker(
+  RefPtr<NavigationTracker> SetUpNavigateReloadNavigationTracker(
       JS::Handle<JS::Value> aInfo,
       nsIStructuredCloneContainer* aSerializedState);
 
-  RefPtr<NavigationAPIMethodTracker> AddUpcomingTraverseAPIMethodTracker(
+  RefPtr<NavigationTracker> AddUpcomingTraverseNavigationTracker(
       const nsID& aKey, JS::Handle<JS::Value> aInfo);
 
   void SetEarlyErrorResult(JSContext* aCx, NavigationResult& aResult,
@@ -256,7 +256,7 @@ class Navigation final : public DOMEventTargetHelper {
   CreateSerializedStateAndMaybeSetEarlyErrorResult(
       JSContext* aCx, const JS::Value& aState, NavigationResult& aResult) const;
 
-  static void CleanUp(NavigationAPIMethodTracker* aNavigationAPIMethodTracker);
+  static void CleanUp(NavigationTracker* aNavigationTracker);
 
   void SetCurrentEntryIndex(const SessionHistoryInfo* aTargetInfo);
 
@@ -287,10 +287,10 @@ class Navigation final : public DOMEventTargetHelper {
   bool mSuppressNormalScrollRestorationDuringOngoingNavigation = false;
 
   // https://html.spec.whatwg.org/multipage/nav-history-apis.html#ongoing-api-method-tracker
-  RefPtr<NavigationAPIMethodTracker> mOngoingAPIMethodTracker;
+  RefPtr<NavigationTracker> mOngoingNavigationTracker;
 
   // https://html.spec.whatwg.org/multipage/nav-history-apis.html#upcoming-traverse-api-method-trackers
-  UpcomingTraverseAPIMethodTrackers mUpcomingTraverseAPIMethodTrackers;
+  UpcomingTraverseNavigationTrackers mUpcomingTraverseNavigationTrackers;
 
   // https://html.spec.whatwg.org/#concept-navigation-transition
   RefPtr<NavigationTransition> mTransition;

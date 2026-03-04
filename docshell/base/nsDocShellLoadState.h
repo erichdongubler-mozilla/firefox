@@ -35,7 +35,7 @@ class OriginAttributes;
 namespace dom {
 class FormData;
 class DocShellLoadStateInit;
-struct NavigationAPIMethodTracker;
+struct NavigationTracker;
 }  // namespace dom
 }  // namespace mozilla
 
@@ -446,10 +446,8 @@ class nsDocShellLoadState final {
   // This is used to pass the navigation API method tracker through the
   // navigation pipeline for navigate().
   // See https://html.spec.whatwg.org/#navigation-api-method-tracker
-  mozilla::dom::NavigationAPIMethodTracker* GetNavigationAPIMethodTracker()
-      const;
-  void SetNavigationAPIMethodTracker(
-      mozilla::dom::NavigationAPIMethodTracker* aTracker);
+  mozilla::dom::NavigationTracker* GetNavigationTracker() const;
+  void SetNavigationTracker(mozilla::dom::NavigationTracker* aTracker);
 
   // This is used as the parameter for https://html.spec.whatwg.org/#navigate
   mozilla::dom::NavigationType GetNavigationType() const;
@@ -749,7 +747,7 @@ class nsDocShellLoadState final {
 
   RefPtr<nsStructuredCloneContainer> mNavigationAPIState;
 
-  RefPtr<mozilla::dom::NavigationAPIMethodTracker> mNavigationAPIMethodTracker;
+  RefPtr<mozilla::dom::NavigationTracker> mNavigationTracker;
 
   RefPtr<mozilla::dom::FormData> mFormDataEntryList;
 
