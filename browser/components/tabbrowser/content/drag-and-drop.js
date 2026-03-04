@@ -2343,6 +2343,9 @@
         // When dragging tab(s) over an ungrouped tab, signal to the user
         // that dropping the tab(s) will create a new tab group.
         let shouldCreateGroupOnDrop =
+          Services.prefs.getBoolPref(
+            "browser.tabs.dragDrop.createGroup.enabled"
+          ) &&
           !movingTabsSet.has(dropElement) &&
           (isTab(dropElement) || isSplitViewWrapper(dropElement)) &&
           !dropElement?.group &&
