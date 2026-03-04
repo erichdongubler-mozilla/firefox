@@ -34,10 +34,6 @@
   "1448747": {
     "label": "FastClick breakage",
     "bugs": {
-      "1829947": {
-        "issue": "broken-interactive-elements",
-        "matches": ["*://*.arcsivr.com/*"]
-      },
       "1901449": {
         "issue": "broken-interactive-elements",
         "matches": ["*://teikiyoyaku.tokyu.co.jp/*"]
