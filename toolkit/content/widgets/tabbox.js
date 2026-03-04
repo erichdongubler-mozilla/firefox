@@ -459,15 +459,18 @@
         // Sometimes dragging the splitter produces a panel width attribute which exceeds
         // the max width, so lets get our own measurment. This may end up at the previous
         // frames width
-        const currentWidth =
-          window.windowUtils.getBoundsWithoutFlushing(controlledPanel).width;
+        const currentWidth = Math.floor(
+          window.windowUtils.getBoundsWithoutFlushing(controlledPanel).width
+        );
+        const storedWidth = Number(controlledPanel.getAttribute("width"));
+        if (storedWidth != currentWidth) {
+          controlledPanel.setAttribute("width", currentWidth);
+          controlledPanel.style.width = currentWidth + "px";
+        }
 
         splitter.setAttribute("aria-valuemin", String(minWidth));
         splitter.setAttribute("aria-valuemax", String(maxWidth));
-        splitter.setAttribute(
-          "aria-valuenow",
-          String(Math.floor(currentWidth))
-        );
+        splitter.setAttribute("aria-valuenow", String(currentWidth));
       } else {
         splitter.removeAttribute("aria-controls");
         splitter.removeAttribute("aria-valuenow");
