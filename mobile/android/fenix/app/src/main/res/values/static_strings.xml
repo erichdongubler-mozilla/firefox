@@ -25,6 +25,11 @@
     <!-- Secret Settings Strings -->
     <!-- Label for the secret settings preference -->
     <string name="preferences_debug_settings">Secret Settings</string>
+
+    <!-- Label for the secret settings homepage preference category -->
+    <string name="homepage_debug_settings_homepage_category_title">Homepage</string>
+    <string name="homepage_debug_settings_homepage_category_key">homepage</string>
+
     <!-- Label for the secret settings preference -->
     <string name="preferences_debug_info" translatable="false">Secret Debug Info</string>
     <!-- Label for remote settings server preference -->
