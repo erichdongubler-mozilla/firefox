@@ -730,58 +730,109 @@ class AboutTranslations {
    * Shows the main UI and hides any stand-alone message bars.
    */
   #showMainUserInterface() {
-    const { unsupportedInfoMessage, mainUserInterface } = this.elements;
+    const {
+      unsupportedInfoMessage,
+      languageLoadErrorMessage,
+      mainUserInterface,
+    } = this.elements;
 
-    unsupportedInfoMessage.hidden = true;
-    this.#setLanguageLoadErrorMessageVisible(false);
+    this.#setStandaloneMessageVisible(unsupportedInfoMessage, false);
+    this.#setStandaloneMessageVisible(languageLoadErrorMessage, false);
 
-    mainUserInterface.style.display = "grid";
+    mainUserInterface.hidden = false;
   }
 
   /**
    * Shows the message that translations are not supported in the current environment.
    */
   #showUnsupportedInfoMessage() {
-    const { unsupportedInfoMessage, mainUserInterface } = this.elements;
+    const { unsupportedInfoMessage } = this.elements;
+    this.#showStandaloneMessage(unsupportedInfoMessage);
+  }
 
-    mainUserInterface.style.display = "none";
-    this.#setLanguageLoadErrorMessageVisible(false);
+  /**
+   * Shows one standalone message bar and hides the main UI.
+   *
+   * @param {HTMLElement} messageBar
+   */
+  #showStandaloneMessage(messageBar) {
+    const {
+      unsupportedInfoMessage,
+      languageLoadErrorMessage,
+      mainUserInterface,
+    } = this.elements;
 
-    unsupportedInfoMessage.hidden = false;
+    mainUserInterface.hidden = true;
+
+    for (const standaloneMessage of [
+      unsupportedInfoMessage,
+      languageLoadErrorMessage,
+    ]) {
+      this.#setStandaloneMessageVisible(
+        standaloneMessage,
+        standaloneMessage === messageBar
+      );
+    }
+
+    document.body.style.visibility = "visible";
   }
 
   /**
    * Shows the message that the list of languages could not be loaded.
    */
   #showLanguageLoadErrorMessage() {
-    const { unsupportedInfoMessage, mainUserInterface } = this.elements;
-
-    mainUserInterface.style.display = "none";
-    unsupportedInfoMessage.hidden = true;
-
-    this.#setLanguageLoadErrorMessageVisible(true);
+    const { languageLoadErrorMessage } = this.elements;
+    this.#showStandaloneMessage(languageLoadErrorMessage);
   }
 
   /**
-   * Shows or hides the language-load error message and notifies tests when the
+   * Shows or hides a standalone message and notifies tests when the
    * visibility changes.
    *
+   * @param {HTMLElement} messageBar
    * @param {boolean} visible
    */
-  #setLanguageLoadErrorMessageVisible(visible) {
-    const { languageLoadErrorMessage } = this.elements;
-    const isVisible = !languageLoadErrorMessage.hidden;
+  #setStandaloneMessageVisible(messageBar, visible) {
+    const isVisible = !messageBar.hidden;
 
     if (isVisible === visible) {
       return;
     }
 
-    languageLoadErrorMessage.hidden = !visible;
-    dispatchTestEvent(
-      visible
-        ? "AboutTranslationsTest:LanguageLoadErrorMessageShown"
-        : "AboutTranslationsTest:LanguageLoadErrorMessageHidden"
-    );
+    messageBar.hidden = !visible;
+    const eventNames =
+      this.#getStandaloneMessageVisibilityEventNames(messageBar);
+    if (!eventNames) {
+      return;
+    }
+
+    dispatchTestEvent(visible ? eventNames.shown : eventNames.hidden);
+  }
+
+  /**
+   * Returns test events for standalone message visibility changes.
+   *
+   * @param {HTMLElement} messageBar
+   * @returns {{ shown: string, hidden: string } | null}
+   */
+  #getStandaloneMessageVisibilityEventNames(messageBar) {
+    const { unsupportedInfoMessage, languageLoadErrorMessage } = this.elements;
+
+    if (messageBar === unsupportedInfoMessage) {
+      return {
+        shown: "AboutTranslationsTest:UnsupportedInfoMessageShown",
+        hidden: "AboutTranslationsTest:UnsupportedInfoMessageHidden",
+      };
+    }
+
+    if (messageBar === languageLoadErrorMessage) {
+      return {
+        shown: "AboutTranslationsTest:LanguageLoadErrorMessageShown",
+        hidden: "AboutTranslationsTest:LanguageLoadErrorMessageHidden",
+      };
+    }
+
+    return null;
   }
 
   /**
