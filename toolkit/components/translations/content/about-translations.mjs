@@ -199,19 +199,6 @@ class AboutTranslations {
   #updateSectionHeightsTimeoutId = null;
 
   /**
-   * This set contains hash values that to be assigned to the URL from user
-   * interaction with the UI. When this occurs, we want to ignore the "hashchange"
-   * event, since the URL did not change externally.
-   *
-   * When "hashchange" fires and the active URL hash is not a member of this set,
-   * then it means the user may have modified the URL outside of the page UI, and
-   * we will need to update the UI from the URL.
-   *
-   * @type {Set<string>}
-   */
-  #urlHashesFromUIState = new Set();
-
-  /**
    * Returns the maximum of the given numbers, rounded up.
    *
    * @param  {...number} numbers
@@ -452,7 +439,7 @@ class AboutTranslations {
     );
 
     await this.#setupLanguageSelectors();
-    this.#updateUIFromURL();
+    await this.#updateUIFromURL();
 
     this.#updateSourceScriptDirection();
     this.#updateTargetScriptDirection();
@@ -555,7 +542,6 @@ class AboutTranslations {
       "pointerdown",
       this.#onTargetMessageBarPointerDown
     );
-    window.addEventListener("hashchange", this.#onHashChange);
     window.addEventListener("resize", this.#onResize);
     window.visualViewport.addEventListener("resize", this.#onResize);
   }
@@ -711,22 +697,6 @@ class AboutTranslations {
   };
 
   /**
-   * Handles hash changes that come from URL bar navigation.
-   */
-  #onHashChange = event => {
-    const urlHash = new URL(event.newURL).hash.slice(1);
-
-    if (this.#urlHashesFromUIState.has(urlHash)) {
-      // This hash change came from the UI updating the URL.
-      // The UI doesn't need to react to this hash change.
-      this.#urlHashesFromUIState.delete(urlHash);
-      return;
-    }
-
-    this.#updateUIFromURL();
-  };
-
-  /**
    * Shows the main UI and hides any stand-alone message bars.
    */
   #showMainUserInterface() {
@@ -822,7 +792,7 @@ class AboutTranslations {
     try {
       this.#resetLanguageSelectorsForReload();
       await this.#setupLanguageSelectors();
-      this.#updateUIFromURL();
+      await this.#updateUIFromURL();
       this.#updateSourceScriptDirection();
       this.#updateTargetScriptDirection();
       this.#showMainUserInterface();
@@ -1488,19 +1458,17 @@ class AboutTranslations {
    * Reads the current URL hash and updates the UI to reflect the parameters.
    * Invalid parameters are ignored.
    */
-  #updateUIFromURL() {
+  async #updateUIFromURL() {
     const supportedLanguages = this.#supportedLanguages;
-    const urlParams = new URLSearchParams(window.location.hash.slice(1));
+    const urlParams = new URLSearchParams(window.location.href.split("#")[1]);
     const sourceLanguage = urlParams.get("src");
     const targetLanguage = urlParams.get("trg");
     const sourceText = urlParams.get("text") ?? "";
     const { sourceLanguageSelector, targetLanguageSelector } = this.elements;
 
-    sourceLanguageSelector.value = "detect";
-    targetLanguageSelector.value = "";
-
-    if (
-      sourceLanguage !== "detect" &&
+    if (sourceLanguage === "detect") {
+      await this.#maybeUpdateDetectedSourceLanguage();
+    } else if (
       supportedLanguages.sourceLanguages.some(
         ({ langTagKey }) => langTagKey === sourceLanguage
       )
@@ -1542,19 +1510,9 @@ class AboutTranslations {
       params.append("text", sourceText);
     }
 
-    const hashFromUIState = params.toString();
-    const currentHash = window.location.hash.slice(1);
-    if (hashFromUIState !== currentHash) {
-      const url = new URL(window.location.href);
-      url.hash = hashFromUIState;
-      this.#urlHashesFromUIState.add(hashFromUIState);
-      try {
-        window.location.replace(url.href);
-      } catch (error) {
-        this.#urlHashesFromUIState.delete(hashFromUIState);
-        throw error;
-      }
-    }
+    const url = new URL(window.location.href);
+    url.hash = params.toString();
+    window.location.replace(url.href);
 
     dispatchTestEvent("AboutTranslationsTest:URLUpdatedFromUI", {
       sourceLanguage,

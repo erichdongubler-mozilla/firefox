@@ -38,8 +38,6 @@ support-files = [
 
 ["browser_about_translations_flip_lexical_shortlist.js"]
 
-["browser_about_translations_hash_updates.js"]
-
 ["browser_about_translations_resize_sections_by_input.js"]
 
 ["browser_about_translations_resize_sections_by_window.js"]
