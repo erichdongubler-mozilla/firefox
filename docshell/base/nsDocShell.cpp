@@ -4028,7 +4028,7 @@ nsresult nsDocShell::ReloadNavigable(
     mozilla::Maybe<NotNull<JSContext*>> aCx, uint32_t aReloadFlags,
     nsIStructuredCloneContainer* aNavigationAPIState,
     UserNavigationInvolvement aUserInvolvement,
-    NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
+    NavigationTracker* aNavigationTracker) {
   if (!IsNavigationAllowed()) {
     return NS_OK;  // JS may not handle returning of an error code
   }
@@ -4079,8 +4079,7 @@ nsresult nsDocShell::ReloadNavigable(
             /* aIsSameDocument */ false, Some(aUserInvolvement),
             /* aSourceElement*/ nullptr, /* aFormDataEntryList */ nullptr,
             destinationNavigationAPIState,
-            /* aClassiCHistoryAPIState */ nullptr,
-            aNavigationAPIMethodTracker)) {
+            /* aClassiCHistoryAPIState */ nullptr, aNavigationTracker)) {
       return NS_OK;
     }
   }
@@ -9067,14 +9066,14 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       if (jsapi.Init(window)) {
         RefPtr<Element> sourceElement = aLoadState->GetSourceElement();
         // Step 4
-        RefPtr apiMethodTracker = aLoadState->GetNavigationAPIMethodTracker();
+        RefPtr navigationTracker = aLoadState->GetNavigationTracker();
         bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
             jsapi.cx(), aLoadState->GetNavigationType(), newURI,
             /* aIsSameDocument */ true,
             Some(aLoadState->UserNavigationInvolvement()), sourceElement,
             /* aFormDataEntryList */ nullptr,
             /* aNavigationAPIState */ destinationNavigationAPIState,
-            /* aClassicHistoryAPIState */ nullptr, apiMethodTracker);
+            /* aClassicHistoryAPIState */ nullptr, navigationTracker);
 
         // Step 5
         if (!shouldContinue) {
@@ -9917,13 +9916,13 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
           nsCOMPtr<nsIURI> destinationURL = aLoadState->URI();
           // Step 21.4
-          RefPtr apiMethodTracker = aLoadState->GetNavigationAPIMethodTracker();
+          RefPtr navigationTracker = aLoadState->GetNavigationTracker();
           bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
               jsapi.cx(), aLoadState->GetNavigationType(), destinationURL,
               /* aIsSameDocument */ false,
               Some(aLoadState->UserNavigationInvolvement()), sourceElement,
               formData, navigationAPIStateForFiring,
-              /* aClassicHistoryAPIState */ nullptr, apiMethodTracker);
+              /* aClassicHistoryAPIState */ nullptr, navigationTracker);
 
           // Step 21.5
           if (!shouldContinue) {

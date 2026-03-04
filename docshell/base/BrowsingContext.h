@@ -78,7 +78,7 @@ class Sequence;
 class SessionHistoryInfo;
 class SessionStorageManager;
 class StructuredCloneHolder;
-struct NavigationAPIMethodTracker;
+struct NavigationTracker;
 class WindowContext;
 class WindowGlobalChild;
 struct WindowPostMessageOptions;
@@ -477,14 +477,13 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   nsresult InternalLoad(nsDocShellLoadState* aLoadState);
 
-  void Navigate(
-      nsIURI* aURI, Document* aSourceDocument, nsIPrincipal& aSubjectPrincipal,
-      ErrorResult& aRv,
-      NavigationHistoryBehavior aHistoryHandling =
-          NavigationHistoryBehavior::Auto,
-      bool aNeedsCompletelyLoadedDocument = false,
-      nsIStructuredCloneContainer* aNavigationAPIState = nullptr,
-      dom::NavigationAPIMethodTracker* aNavigationAPIMethodTracker = nullptr);
+  void Navigate(nsIURI* aURI, Document* aSourceDocument,
+                nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv,
+                NavigationHistoryBehavior aHistoryHandling =
+                    NavigationHistoryBehavior::Auto,
+                bool aNeedsCompletelyLoadedDocument = false,
+                nsIStructuredCloneContainer* aNavigationAPIState = nullptr,
+                dom::NavigationTracker* aNavigationTracker = nullptr);
 
   // Removes the root document for this BrowsingContext tree from the BFCache,
   // if it is cached, and returns true if it was.
