@@ -4323,6 +4323,7 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
     const EditorDOMPoint& aNextOrAfterModifiedPoint,
     const Element& aEditingHost) {
   MOZ_ASSERT(aNextOrAfterModifiedPoint.IsInContentNode());
+  MOZ_ASSERT(aNextOrAfterModifiedPoint.IsSetAndValid());
 
   // If the point is in a mailcite in plaintext mail composer (it is a <span>
   // styled as block), we should not treat its padding <br> as unnecessary

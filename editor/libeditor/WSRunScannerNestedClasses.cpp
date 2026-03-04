@@ -260,6 +260,13 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
             : WSType::InlineEditingHostBoundary);
   }
 
+  if (previousLeafContentOrBlock->GetShadowRootForSelection()) [[unlikely]] {
+    // If the leaf content is has a shadow root, we should treat the element is
+    // an atomic content.
+    return BoundaryData(aPoint, *previousLeafContentOrBlock,
+                        WSType::SpecialContent);
+  }
+
   if (HTMLEditUtils::IsBlockElement(
           *previousLeafContentOrBlock,
           UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck))) {
@@ -432,6 +439,13 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
             aAncestorLimiter, UseComputedDisplayStyleIfAuto(blockInlineCheck))
             ? WSType::CurrentBlockBoundary
             : WSType::InlineEditingHostBoundary);
+  }
+
+  if (nextLeafContentOrBlock->GetShadowRootForSelection()) [[unlikely]] {
+    // If the leaf content is has a shadow root, we should treat the element is
+    // an atomic content.
+    return BoundaryData(aPoint, *nextLeafContentOrBlock,
+                        WSType::SpecialContent);
   }
 
   if (HTMLEditUtils::IsBlockElement(
@@ -920,7 +934,7 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetInclusiveNextCharPoint(
     if (!child ||
         HTMLEditUtils::IsBlockElement(
             *child, UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) ||
-        ((!aOptions.contains(Option::IgnoreEmptyInlineContainers) ||
+        ((aOptions.contains(Option::StopAtAnyEmptyInlineContainers) ||
           !HTMLEditUtils::IsContainerNode(*child)) &&
          HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*child))) {
       return aPoint.template To<EditorRawDOMPoint>();
@@ -943,7 +957,7 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetInclusiveNextCharPoint(
     if (HTMLEditUtils::IsBlockElement(
             *leafContent,
             UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) ||
-        ((!aOptions.contains(Option::IgnoreEmptyInlineContainers) ||
+        ((aOptions.contains(Option::StopAtAnyEmptyInlineContainers) ||
           !HTMLEditUtils::IsContainerNode(*leafContent)) &&
          HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*leafContent))) {
       return EditorRawDOMPoint();
@@ -998,7 +1012,7 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetInclusiveNextCharPoint(
           HTMLEditUtils::IsBlockElement(
               *nextContent,
               UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) ||
-          ((!aOptions.contains(Option::IgnoreEmptyInlineContainers) ||
+          ((aOptions.contains(Option::StopAtAnyEmptyInlineContainers) ||
             !HTMLEditUtils::IsContainerNode(*nextContent)) &&
            HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*nextContent))) {
         break;  // Reached end of current runs.
@@ -1045,7 +1059,7 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetPreviousCharPoint(
         HTMLEditUtils::IsBlockElement(
             *previousChild,
             UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) ||
-        ((!aOptions.contains(Option::IgnoreEmptyInlineContainers) ||
+        ((aOptions.contains(Option::StopAtAnyEmptyInlineContainers) ||
           !HTMLEditUtils::IsContainerNode(*previousChild)) &&
          HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*previousChild))) {
       return aPoint.template To<EditorRawDOMPoint>();
@@ -1069,7 +1083,7 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetPreviousCharPoint(
     if (HTMLEditUtils::IsBlockElement(
             *leafContent,
             UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) ||
-        ((!aOptions.contains(Option::IgnoreEmptyInlineContainers) ||
+        ((aOptions.contains(Option::StopAtAnyEmptyInlineContainers) ||
           !HTMLEditUtils::IsContainerNode(*leafContent)) &&
          HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*leafContent))) {
       return EditorRawDOMPoint();
@@ -1127,7 +1141,7 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetPreviousCharPoint(
           HTMLEditUtils::IsBlockElement(
               *previousContent,
               UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) ||
-          ((!aOptions.contains(Option::IgnoreEmptyInlineContainers) ||
+          ((aOptions.contains(Option::StopAtAnyEmptyInlineContainers) ||
             !HTMLEditUtils::IsContainerNode(*previousContent)) &&
            HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*previousContent))) {
         break;  // Reached start of current runs.

@@ -1302,6 +1302,63 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
     return rv;
   }
 
+  const auto MaybeComputeRangeBetweenCaretAndBlockBoundary =
+      [&](const EditorRawDOMPoint& aAtBlockBoundary,
+          const OwningNonNull<nsRange>& aOutRange) MOZ_NEVER_INLINE_DEBUG {
+        nsFrameSelection* const frameSelection =
+            aHTMLEditor.SelectionRef().GetFrameSelection();
+        if (NS_WARN_IF(!frameSelection)) {
+          return NS_ERROR_NOT_AVAILABLE;
+        }
+        // If the range is collapsed, we don't need to delete anything.
+        if (aAtBlockBoundary == aWSRunScannerAtCaret.ScanStartRef()) {
+          return NS_SUCCESS_DOM_NO_OPERATION;
+        }
+        // If the range contains only invisible whitespaces, we don't need
+        // to delete them.
+        constexpr WSRunScanner::Options options = {
+            WSRunScanner::Option::StopAtAnyEmptyInlineContainers,
+            WSRunScanner::Option::StopAtComment};
+        const WSScanResult scanResult =
+            nsIEditor::DirectionIsBackspace(aDirectionAndAmount)
+                ? WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+                      options, aWSRunScannerAtCaret.ScanStartRef(),
+                      &aEditingHost)
+                : WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+                      options, aWSRunScannerAtCaret.ScanStartRef());
+        if (scanResult.ReachedBlockBoundary()) {
+          return NS_SUCCESS_DOM_NO_OPERATION;
+        }
+        const EditorRawDOMRange rangeToDelete =
+            aAtBlockBoundary.IsBefore(aWSRunScannerAtCaret.ScanStartRef())
+                ? EditorRawDOMRange(aAtBlockBoundary,
+                                    aWSRunScannerAtCaret.ScanStartRef())
+                : EditorRawDOMRange(aWSRunScannerAtCaret.ScanStartRef(),
+                                    aAtBlockBoundary);
+        AutoClonedSelectionRangeArray rangesToDelete(
+            rangeToDelete, LimitersAndCaretData(*frameSelection));
+        nsresult rv = ComputeRangesToDeleteNonCollapsedRanges(
+            aHTMLEditor, aDirectionAndAmount, rangesToDelete,
+            SelectionWasCollapsed::Yes, aEditingHost);
+        if (NS_FAILED(rv)) {
+          NS_WARNING(
+              "AutoDeleteRangeHandler::"
+              "ComputeRangesToDeleteNonCollapsedRanges() failed");
+          return rv;
+        }
+        if (rv == NS_SUCCESS_DOM_NO_OPERATION) {
+          return NS_SUCCESS_DOM_NO_OPERATION;
+        }
+        MOZ_ASSERT(rangesToDelete.Ranges().Length() == 1);
+        const RefPtr<nsRange> range = rangesToDelete.Ranges()[0];
+        rv = aOutRange->SetStartAndEnd(range->StartRef(), range->EndRef());
+        if (NS_FAILED(rv)) {
+          NS_WARNING("nsRange::SetStartAndEnd() failed");
+          return rv;
+        }
+        return NS_OK;
+      };
+
   if (aScanFromCaretPointResult.ReachedOtherBlockElement()) {
     if (NS_WARN_IF(!aScanFromCaretPointResult.ContentIsElement())) {
       return NS_ERROR_FAILURE;
@@ -1315,6 +1372,21 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
               aHTMLEditor, aDirectionAndAmount,
               *aScanFromCaretPointResult.ElementPtr(),
               aWSRunScannerAtCaret.ScanStartRef(), aWSRunScannerAtCaret)) {
+        // Even if we cannot join current line and the first/last line of the
+        // other block, there may be empty nodes which may be either visible or
+        // invisible. We need to delete them for the compatibility.
+        const EditorRawDOMPoint atOtherBlockBoundary =
+            nsIEditor::DirectionIsBackspace(aDirectionAndAmount)
+                ? EditorRawDOMPoint::After(
+                      *aScanFromCaretPointResult.ElementPtr())
+                : EditorRawDOMPoint(aScanFromCaretPointResult.ElementPtr());
+        nsresult rv = MaybeComputeRangeBetweenCaretAndBlockBoundary(
+            atOtherBlockBoundary, range);
+        if (NS_FAILED(rv)) {
+          NS_WARNING("MaybeComputeRangeBetweenCaretAndBlockBoundary() failed");
+          return rv;
+        }
+        handled |= rv == NS_OK;
         continue;
       }
       handled = true;
@@ -1342,6 +1414,22 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
               aHTMLEditor, aDirectionAndAmount,
               *aScanFromCaretPointResult.ElementPtr(),
               aWSRunScannerAtCaret.ScanStartRef(), aEditingHost)) {
+        // Even if we cannot join current line and the line immediately
+        // before/after the current block, there may be empty nodes which may be
+        // either visible or invisible. We need to delete them for the
+        // compatibility.
+        const EditorRawDOMPoint atCurrentBlockBoundary =
+            nsIEditor::DirectionIsBackspace(aDirectionAndAmount)
+                ? EditorRawDOMPoint(aScanFromCaretPointResult.ElementPtr(), 0u)
+                : EditorRawDOMPoint::AtEndOf(
+                      *aScanFromCaretPointResult.ElementPtr());
+        nsresult rv = MaybeComputeRangeBetweenCaretAndBlockBoundary(
+            atCurrentBlockBoundary, range);
+        if (NS_FAILED(rv)) {
+          NS_WARNING("MaybeComputeRangeBetweenCaretAndBlockBoundary() failed");
+          return rv;
+        }
+        handled |= rv == NS_OK;
         continue;
       }
       handled = true;
@@ -1446,6 +1534,50 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
     return EditActionResult::HandledResult();
   }
 
+  const auto MaybeDeleteContentBetweenCaretAndBlockBoundary =
+      [&](const EditorRawDOMPoint& aAtBlockBoundary)
+          MOZ_CAN_RUN_SCRIPT MOZ_NEVER_INLINE_DEBUG
+      -> Result<EditActionResult, nsresult> {
+    nsFrameSelection* const frameSelection =
+        aHTMLEditor.SelectionRef().GetFrameSelection();
+    if (NS_WARN_IF(!frameSelection)) {
+      return Err(NS_ERROR_NOT_AVAILABLE);
+    }
+    // If the range is collapsed, we don't need to delete anything.
+    if (aAtBlockBoundary == aWSRunScannerAtCaret.ScanStartRef()) {
+      return EditActionResult::IgnoredResult();
+    }
+    // If the range contains only invisible whitespaces, we don't need
+    // to delete them.
+    // FYI: This is expected by /editing/run/delete.html
+    constexpr WSRunScanner::Options options = {
+        WSRunScanner::Option::StopAtAnyEmptyInlineContainers,
+        WSRunScanner::Option::StopAtComment};
+    const WSScanResult scanResult =
+        nsIEditor::DirectionIsBackspace(aDirectionAndAmount)
+            ? WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+                  options, aWSRunScannerAtCaret.ScanStartRef(), &aEditingHost)
+            : WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+                  options, aWSRunScannerAtCaret.ScanStartRef());
+    if (scanResult.ReachedBlockBoundary()) {
+      return EditActionResult::IgnoredResult();
+    }
+    const EditorRawDOMRange rangeToDelete =
+        aAtBlockBoundary.IsBefore(aWSRunScannerAtCaret.ScanStartRef())
+            ? EditorRawDOMRange(aAtBlockBoundary,
+                                aWSRunScannerAtCaret.ScanStartRef())
+            : EditorRawDOMRange(aWSRunScannerAtCaret.ScanStartRef(),
+                                aAtBlockBoundary);
+    AutoClonedSelectionRangeArray rangesToDelete(
+        rangeToDelete, LimitersAndCaretData(*frameSelection));
+    Result<EditActionResult, nsresult> result = HandleDeleteNonCollapsedRanges(
+        aHTMLEditor, aDirectionAndAmount, nsIEditor::eStrip, rangesToDelete,
+        SelectionWasCollapsed::Yes, aEditingHost);
+    NS_WARNING_ASSERTION(result.isOk(),
+                         "HTMLEditor::HandleDeleteNonCollapsedRanges() failed");
+    return result;
+  };
+
   if (aScanFromCaretPointResult.ReachedOtherBlockElement()) {
     if (NS_WARN_IF(!aScanFromCaretPointResult.ContentIsElement())) {
       return Err(NS_ERROR_FAILURE);
@@ -1459,6 +1591,22 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
               aHTMLEditor, aDirectionAndAmount,
               *aScanFromCaretPointResult.ElementPtr(),
               aWSRunScannerAtCaret.ScanStartRef(), aWSRunScannerAtCaret)) {
+        // Even if we cannot join current line and the first/last line of the
+        // other block, there may be empty nodes which may be either visible or
+        // invisible. We need to delete them for the compatibility.
+        const EditorRawDOMPoint atOtherBlockBoundary =
+            nsIEditor::DirectionIsBackspace(aDirectionAndAmount)
+                ? EditorRawDOMPoint::After(
+                      *aScanFromCaretPointResult.ElementPtr())
+                : EditorRawDOMPoint(aScanFromCaretPointResult.ElementPtr());
+        Result<EditActionResult, nsresult> result =
+            MaybeDeleteContentBetweenCaretAndBlockBoundary(
+                atOtherBlockBoundary);
+        if (result.isErr()) [[unlikely]] {
+          NS_WARNING("MaybeDeleteContentBetweenCaretAndBlockBoundary() failed");
+          return result.propagateErr();
+        }
+        ret |= result.inspect();
         continue;
       }
       allRangesNotHandled = false;
@@ -1489,6 +1637,24 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
               aHTMLEditor, aDirectionAndAmount,
               *aScanFromCaretPointResult.ElementPtr(),
               aWSRunScannerAtCaret.ScanStartRef(), aEditingHost)) {
+        // Even if we cannot join current line and the line immediately
+        // before/after the current block, there may be empty nodes which may be
+        // either visible or invisible. We need to delete them for the
+        // compatibility.
+        // FYI: This is expected by /custom-elements/reactions/Document.html
+        const EditorRawDOMPoint atCurrentBlockBoundary =
+            nsIEditor::DirectionIsBackspace(aDirectionAndAmount)
+                ? EditorRawDOMPoint(aScanFromCaretPointResult.ElementPtr(), 0u)
+                : EditorRawDOMPoint::AtEndOf(
+                      *aScanFromCaretPointResult.ElementPtr());
+        Result<EditActionResult, nsresult> result =
+            MaybeDeleteContentBetweenCaretAndBlockBoundary(
+                atCurrentBlockBoundary);
+        if (result.isErr()) [[unlikely]] {
+          NS_WARNING("MaybeDeleteContentBetweenCaretAndBlockBoundary() failed");
+          return result.propagateErr();
+        }
+        ret |= result.inspect();
         continue;
       }
       allRangesNotHandled = false;

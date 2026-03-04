@@ -84,11 +84,14 @@ void WSScanResult::AssertIfInvalidData(const WSRunScanner& aScanner) const {
            !HTMLEditUtils::IsReplacedElement(*mContent->AsElement());
   };
   MOZ_ASSERT_IF(mReason == WSType::EmptyInlineContainerElement,
+                !mContent->GetShadowRootForSelection());
+  MOZ_ASSERT_IF(mReason == WSType::EmptyInlineContainerElement,
                 MaybeNonVoidEmptyInlineContainerElement());
   MOZ_ASSERT_IF(
       mReason == WSType::SpecialContent,
       (mContent->IsComment() || mContent->IsProcessingInstruction()) ||
           (mContent->IsText() && !mContent->IsEditable()) ||
+          mContent->GetShadowRootForSelection() ||
           (mContent->IsElement() && !mContent->IsHTMLElement(nsGkAtoms::br) &&
            !HTMLEditUtils::IsBlockElement(
                *mContent,
@@ -97,6 +100,8 @@ void WSScanResult::AssertIfInvalidData(const WSRunScanner& aScanner) const {
                    : BlockInlineCheck::UseComputedDisplayOutsideStyle) &&
            !(mContent->IsEditable() &&
              MaybeNonVoidEmptyInlineContainerElement())));
+  MOZ_ASSERT_IF(mReason == WSType::OtherBlockBoundary,
+                !mContent->GetShadowRootForSelection());
   MOZ_ASSERT_IF(
       mReason == WSType::OtherBlockBoundary,
       HTMLEditUtils::IsBlockElement(

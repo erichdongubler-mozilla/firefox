@@ -311,7 +311,18 @@ AutoClonedRangeArray::ShrinkRangesIfStartFromOrEndAfterAtomicContent(
                "Changing range in selection may cause running script");
     Result<bool, nsresult> result =
         WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
-            {WSRunScanner::Option::OnlyEditableNodes}, range);
+            {// We need to treat non-editable node in the range as an atomic
+             // content.
+             WSRunScanner::Option::OnlyEditableNodes,
+             // The range may contain an atomic content with empty inline
+             // containers and/or comment nodes which should be treated as
+             // invisible to delete content.  Therefore, we shouldn't shrink to
+             // the only visible atomic content in such case so that we need to
+             // stop scanning if the start boundary is followed by an empty
+             // container or a comment.
+             WSRunScanner::Option::StopAtAnyEmptyInlineContainers,
+             WSRunScanner::Option::StopAtComment},
+            range);
     if (result.isErr()) {
       NS_WARNING(
           "WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent() "

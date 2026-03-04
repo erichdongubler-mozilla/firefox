@@ -629,14 +629,14 @@ class MOZ_STACK_CLASS WSRunScanner final {
     ReferHTMLDefaultStyle,
     // If set, stop scanning the DOM when it reaches a `Comment` node.
     StopAtComment,
-    // If set, ignore empty inline containers such as <span></span>.
-    IgnoreEmptyInlineContainers,
-    // If set, ignore empty inline containers which is not visible.  E.g.,
-    // <span></span> is ignored but <span style="border:1px solid"></span>
-    // and <span style="border:padding 1px"></span> are not ignored.
+    // If set, stop at any empty inline containers, even when it's visible.
+    StopAtAnyEmptyInlineContainers,
+    // If set, stop ignoring visible empty inline containers such as
+    // <span style="border:1px solid"></span> or
+    // <span style="border:padding 1px"></span>.
     // XXX Currently, this does not work well if the inline container has only
     // `::before` and/or `::after` content and the frame is dirty.
-    IgnoreInvisibleInlines,
+    StopAtVisibleEmptyInlineContainers,
   };
   using Options = EnumSet<Option>;
 
@@ -675,13 +675,13 @@ class MOZ_STACK_CLASS WSRunScanner final {
     if (aOptions.contains(Option::StopAtComment)) {
       types += LeafNodeOption::TreatCommentAsLeafNode;
     }
-    if (aOptions.contains(Option::IgnoreInvisibleInlines)) {
+    if (aOptions.contains(Option::StopAtVisibleEmptyInlineContainers)) {
+      MOZ_ASSERT(!aOptions.contains(Option::StopAtAnyEmptyInlineContainers));
       types +=
           LeafNodeOptions{LeafNodeOption::IgnoreInvisibleEmptyInlineContainers,
                           LeafNodeOption::IgnoreInvisibleInlineVoidElements,
                           LeafNodeOption::IgnoreInvisibleText};
-    }
-    if (aOptions.contains(Option::IgnoreEmptyInlineContainers)) {
+    } else if (!aOptions.contains(Option::StopAtAnyEmptyInlineContainers)) {
       types += LeafNodeOptions{LeafNodeOption::IgnoreAnyEmptyInlineContainers,
                                LeafNodeOption::IgnoreEmptyText};
     }
