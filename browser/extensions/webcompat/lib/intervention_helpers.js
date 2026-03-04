@@ -210,9 +210,6 @@ const GOOGLE_TLDS = [
 
 var InterventionHelpers = {
   skip_if_functions: {
-    getWeekInfo_defined: () => {
-      return !!Intl?.Locale?.prototype?.getWeekInfo;
-    },
     InstallTrigger_defined: () => {
       return "InstallTrigger" in window;
     },
