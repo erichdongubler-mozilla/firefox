@@ -1,5 +1,3 @@
-// |reftest| skip-if(!this.hasOwnProperty("Intl"))
-
 // Test using "era" option without "year" for all possible calendars. The exact
 // formatted result is not tested, it should only be consistent with the
 // resolved options.
