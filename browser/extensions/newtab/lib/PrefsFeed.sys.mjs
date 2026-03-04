@@ -248,6 +248,15 @@ export class PrefsFeed {
       return accumulator;
     }, {});
 
+    // Bug 2021055: Write weather.display to the default branch so Nimbus sets
+    // the initial value without overriding an explicit user choice (user branch
+    // always takes precedence over the default branch).
+    if (valueObj.widgets?.weatherForecastEnabled && valueObj.weather?.display) {
+      Services.prefs
+        .getDefaultBranch(this._prefs._branchStr)
+        .setStringPref("weather.display", valueObj.weather.display);
+    }
+
     return valueObj;
   }
 
