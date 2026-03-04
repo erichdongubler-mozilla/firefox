@@ -6,8 +6,31 @@
 
 #include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/SpinEventLoopUntil.h"
+#include "nsITimer.h"
+#include "nsTArray.h"
+#include "nsIObserver.h"
+#include "nsThreadUtils.h"
+#include "nsWeakReference.h"
 
 using namespace mozilla;
+
+class TestWeakPrefObserver final : public nsIObserver,
+                                   public nsSupportsWeakReference {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) override {
+    mNotifyCount++;
+    return NS_OK;
+  }
+  int mNotifyCount = 0;
+
+ private:
+  ~TestWeakPrefObserver() = default;
+};
+
+NS_IMPL_ISUPPORTS(TestWeakPrefObserver, nsIObserver, nsISupportsWeakReference)
 
 TEST(PrefsBasics, Errors)
 {
@@ -55,4 +78,102 @@ TEST(PrefsBasics, Serialize)
       strstr(
           str.Data(),
           "I-S:56/datareporting.policy.dataSubmissionPolicyAcceptedVersion"));
+}
+
+TEST(PrefsBasics, WeakObserverIdleSweep)
+{
+  // In gtest there is no RefreshDriver to drive idle scheduling and we don't
+  // want to wait for the maximum idle delay. A repeating timer provides enough
+  // main-thread activity for the idle task machinery to find idle time.
+  nsCOMPtr<nsITimer> keepAlive = NS_NewTimer();
+  keepAlive->InitWithNamedFuncCallback(
+      [](nsITimer*, void*) {}, nullptr, 16, nsITimer::TYPE_REPEATING_SLACK,
+      "PrefsBasics.WeakObserverIdleSweep.keepAlive"_ns);
+
+  // Drain any startup-triggered sweep runner before we begin.
+  TimeStamp drainDeadline =
+      TimeStamp::Now() + TimeDuration::FromMilliseconds(100);
+  MOZ_ALWAYS_TRUE(
+      SpinEventLoopUntil("PrefsBasics.WeakObserverIdleSweep.drain"_ns,
+                         [&] { return TimeStamp::Now() >= drainDeadline; }));
+  NS_ProcessPendingEvents(nullptr);
+
+  static const char kPref[] = "test.weak.observer.sweep";
+  Preferences::SetBool(kPref, false);
+
+  uint32_t countWithObserver;
+  {
+    RefPtr<TestWeakPrefObserver> observer = new TestWeakPrefObserver();
+    nsresult rv = Preferences::AddWeakObserver(observer, kPref);
+    ASSERT_TRUE(NS_SUCCEEDED(rv));
+    countWithObserver = Preferences::GetCallbackCount();
+  }
+
+  // Observer expired, but no pref change — callback is still in the list.
+  EXPECT_EQ(Preferences::GetCallbackCount(), countWithObserver);
+
+  // Changing the pref notifies the expired observer, scheduling an idle sweep.
+  Preferences::SetBool(kPref, true);
+
+  // Spin the event loop until the idle sweep runs and removes the callback.
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
+      "PrefsBasics.WeakObserverIdleSweep"_ns,
+      [&] { return Preferences::GetCallbackCount() < countWithObserver; }));
+
+  keepAlive->Cancel();
+}
+
+TEST(PrefsBasics, WeakObserverRegistrationSweep)
+{
+  // In gtest there is no RefreshDriver to drive idle scheduling and we don't
+  // want to wait for the maximum idle delay. A repeating timer provides enough
+  // main-thread activity for the idle task machinery to find idle time.
+  nsCOMPtr<nsITimer> keepAlive = NS_NewTimer();
+  keepAlive->InitWithNamedFuncCallback(
+      [](nsITimer*, void*) {}, nullptr, 16, nsITimer::TYPE_REPEATING_SLACK,
+      "PrefsBasics.WeakObserverRegistrationSweep.keepAlive"_ns);
+
+  // Drain any pending sweep runner before we begin.
+  TimeStamp drainDeadline =
+      TimeStamp::Now() + TimeDuration::FromMilliseconds(100);
+  MOZ_ALWAYS_TRUE(
+      SpinEventLoopUntil("PrefsBasics.WeakObserverRegistrationSweep.drain"_ns,
+                         [&] { return TimeStamp::Now() >= drainDeadline; }));
+  NS_ProcessPendingEvents(nullptr);
+
+  static const char kPref[] = "test.weak.observer.regsweep";
+  Preferences::SetBool(kPref, false);
+
+  uint32_t countWithObserver;
+  {
+    RefPtr<TestWeakPrefObserver> observer = new TestWeakPrefObserver();
+    nsresult rv = Preferences::AddWeakObserver(observer, kPref);
+    ASSERT_TRUE(NS_SUCCEEDED(rv));
+    countWithObserver = Preferences::GetCallbackCount();
+  }
+
+  // Observer expired, but callback is still in the list.
+  EXPECT_EQ(Preferences::GetCallbackCount(), countWithObserver);
+
+  // Register 512 weak observers to hit the periodic sweep threshold.
+  // Keep them alive during registration to avoid address reuse causing
+  // duplicate keys in the observer hashtable.
+  static constexpr uint32_t kSweepInterval = 512;
+  nsTArray<RefPtr<TestWeakPrefObserver>> observers(kSweepInterval);
+  for (uint32_t i = 0; i < kSweepInterval; i++) {
+    observers.AppendElement(new TestWeakPrefObserver());
+    Preferences::AddWeakObserver(observers.LastElement(), kPref);
+  }
+  EXPECT_EQ(Preferences::GetCallbackCount(),
+            countWithObserver + kSweepInterval);
+
+  // Let all observers expire at once.
+  observers.Clear();
+
+  // Spin the event loop until the sweep removes all expired callbacks.
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
+      "PrefsBasics.WeakObserverRegistrationSweep"_ns,
+      [&] { return Preferences::GetCallbackCount() < countWithObserver; }));
+
+  keepAlive->Cancel();
 }
