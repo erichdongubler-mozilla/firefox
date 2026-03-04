@@ -61,7 +61,7 @@ class CopyDownloadFeatureTest {
     fun setup() {
         // Effectively reset context mock
         context = spy(testContext)
-        doReturn(temporaryFolder.newFolder()).`when`(context).cacheDir
+        doReturn(temporaryFolder.root).`when`(context).cacheDir
     }
 
     @Test
@@ -116,13 +116,17 @@ class CopyDownloadFeatureTest {
     fun `cleanupCache should delete all files from the cache directory`() = runTest(testDispatcher) {
         val copyFeature = createFeature()
         val cacheDir = copyFeature.getMediaShareCacheDirectory()
-        File(cacheDir, "testFile").createNewFile()
 
-        assertTrue(cacheDir.listFiles()?.isNotEmpty() == true)
+        val testFile = File(cacheDir, "testFile")
+        testFile.createNewFile()
+
+        assertTrue("File was created", testFile.exists())
 
         copyFeature.cleanupCache()
 
-        assertTrue(cacheDir.listFiles()?.isEmpty() == true)
+        val remainingFiles = cacheDir.listFiles()?.toList() ?: emptyList()
+
+        assertTrue("Cache not empty. Found: $remainingFiles", remainingFiles.isEmpty())
     }
 
     @Test
