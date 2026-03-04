@@ -265,14 +265,14 @@ class AboutTranslations {
    *   mainUserInterface: HTMLElement,
    *   sourceLanguageSelector: HTMLElement,
    *   sourceSection: HTMLElement,
+   *   sourceSectionActionsColumn: HTMLElement,
    *   sourceSectionClearButton: HTMLElement,
    *   sourceSectionTextArea: HTMLTextAreaElement,
    *   swapLanguagesButton: HTMLElement,
    *   targetLanguageSelector: HTMLElement,
    *   targetSection: HTMLElement,
+   *   targetSectionActionsRow: HTMLElement,
    *   targetSectionTextArea: HTMLTextAreaElement,
-   *   translationErrorButton: HTMLElement,
-   *   translationErrorMessage: HTMLElement,
    *   unsupportedInfoMessage: HTMLElement,
    * }}
    */
@@ -307,6 +307,9 @@ class AboutTranslations {
       sourceSection: /** @type {HTMLElement} */ (
         document.getElementById("about-translations-source-section")
       ),
+      sourceSectionActionsColumn: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-source-actions")
+      ),
       sourceSectionClearButton: /** @type {HTMLElement} */ (
         document.getElementById("about-translations-clear-button")
       ),
@@ -322,14 +325,11 @@ class AboutTranslations {
       targetSection: /** @type {HTMLElement} */ (
         document.getElementById("about-translations-target-section")
       ),
+      targetSectionActionsRow: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-target-actions")
+      ),
       targetSectionTextArea: /** @type {HTMLTextAreaElement} */ (
         document.getElementById("about-translations-target-textarea")
-      ),
-      translationErrorButton: /** @type {HTMLElement} */ (
-        document.getElementById("about-translations-translation-error-button")
-      ),
-      translationErrorMessage: /** @type {HTMLElement} */ (
-        document.getElementById("about-translations-translation-error-message")
       ),
       unsupportedInfoMessage: /** @type {HTMLElement} */ (
         document.getElementById("about-translations-unsupported-info-message")
@@ -382,6 +382,10 @@ class AboutTranslations {
 
     await this.#setupLanguageSelectors();
     await this.#updateUIFromURL();
+
+    // Even though we just updated the UI from the URL, this will
+    // clear any invalid parameters that may have been passed in the URL.
+    this.#updateURLFromUI();
 
     this.#updateSourceScriptDirection();
     this.#updateTargetScriptDirection();
@@ -440,13 +444,13 @@ class AboutTranslations {
       copyButton,
       learnMoreLink,
       sourceLanguageSelector,
-      sourceSection,
+      sourceSectionActionsColumn,
       sourceSectionClearButton,
       sourceSectionTextArea,
       swapLanguagesButton,
       targetLanguageSelector,
-      translationErrorButton,
-      translationErrorMessage,
+      targetSectionActionsRow,
+      targetSectionTextArea,
     } = this.elements;
 
     copyButton.addEventListener("click", this.#onCopyButton);
@@ -455,9 +459,9 @@ class AboutTranslations {
       "change",
       this.#onSourceLanguageInput
     );
-    sourceSection.addEventListener(
+    sourceSectionActionsColumn.addEventListener(
       "pointerdown",
-      this.#onSourceSectionPointerDown
+      this.#onSourceSectionActionsPointerDown
     );
     sourceSectionClearButton.addEventListener(
       "click",
@@ -468,18 +472,24 @@ class AboutTranslations {
       this.#onSourceSectionClearButtonMouseDown
     );
     sourceSectionTextArea.addEventListener("input", this.#onSourceTextInput);
+    sourceSectionTextArea.addEventListener(
+      "focus",
+      this.#onSourceTextAreaFocus
+    );
+    sourceSectionTextArea.addEventListener("blur", this.#onSourceTextAreaBlur);
     swapLanguagesButton.addEventListener("click", this.#onSwapLanguagesButton);
     targetLanguageSelector.addEventListener(
       "change",
       this.#onTargetLanguageInput
     );
-    translationErrorButton.addEventListener(
-      "click",
-      this.#onTranslationErrorRetry
+    targetSectionTextArea.addEventListener(
+      "focus",
+      this.#onTargetTextAreaFocus
     );
-    translationErrorMessage.addEventListener(
+    targetSectionTextArea.addEventListener("blur", this.#onTargetTextAreaBlur);
+    targetSectionActionsRow.addEventListener(
       "pointerdown",
-      this.#onTargetMessageBarPointerDown
+      this.#onTargetSectionActionsPointerDown
     );
     window.addEventListener("resize", this.#onResize);
     window.visualViewport.addEventListener("resize", this.#onResize);
@@ -494,11 +504,14 @@ class AboutTranslations {
 
   /**
    * Handles mousedown on the source section clear button.
-   *
-   * Prevents the button from taking focus when clicked.
    */
   #onSourceSectionClearButtonMouseDown = event => {
-    event.preventDefault();
+    if (this.elements.sourceSection.classList.contains("focus-section")) {
+      // When the source section has a focus outline, clicking the clear button will cause the outline
+      // to disappear and then reappear since clicking the clear button re-focuses the source section.
+      // We should just avoid the outline flash all together when the source section is focused.
+      event.preventDefault();
+    }
   };
 
   /**
@@ -521,7 +534,7 @@ class AboutTranslations {
   #onSwapLanguagesButton = () => {
     this.#disableSwapLanguagesButton();
     this.#maybeSwapLanguages();
-    this.#maybeRequestTranslation({ allowFromErrorState: true });
+    this.#maybeRequestTranslation();
   };
 
   /**
@@ -538,7 +551,7 @@ class AboutTranslations {
       return;
     }
 
-    this.#maybeRequestTranslation({ allowFromErrorState: true });
+    this.#maybeRequestTranslation();
   };
 
   /**
@@ -546,7 +559,7 @@ class AboutTranslations {
    */
   #onTargetLanguageInput = () => {
     this.#disableSwapLanguagesButton();
-    this.#maybeRequestTranslation({ allowFromErrorState: true });
+    this.#maybeRequestTranslation();
   };
 
   /**
@@ -558,12 +571,14 @@ class AboutTranslations {
   };
 
   /**
-   * Handles pointerdown events within the source section.
+   * Handles pointerdown events within the source section's actions column.
    *
-   * Focuses the textarea when the event occurs on empty space.
+   * Clicking empty space within the column should behave as though the
+   * textarea was clicked, but clicking the clear button should preserve
+   * the default behavior.
    */
-  #onSourceSectionPointerDown = event => {
-    if (event.target?.closest?.("textarea, moz-button")) {
+  #onSourceSectionActionsPointerDown = event => {
+    if (event.target?.closest?.("#about-translations-clear-button")) {
       return;
     }
 
@@ -572,23 +587,50 @@ class AboutTranslations {
   };
 
   /**
-   * Handles pointerdown events within the target message bar.
-   *
-   * Focuses the target section when the event occurs on non-interactive content.
+   * Handles focusing the source section by outlining the entire section.
    */
-  #onTargetMessageBarPointerDown = event => {
-    if (event.target?.closest?.("moz-button")) {
-      return;
-    }
-
-    this.elements.targetSection.focus();
+  #onSourceTextAreaFocus = () => {
+    this.elements.sourceSection.classList.add("focus-section");
   };
 
   /**
-   * Handles retry clicks from the translation error message.
+   * Handles blur events on the source section's text area.
    */
-  #onTranslationErrorRetry = () => {
-    this.#maybeRequestTranslation({ allowFromErrorState: true });
+  #onSourceTextAreaBlur = () => {
+    this.elements.sourceSection.classList.remove("focus-section");
+  };
+
+  /**
+   * Handles pointerdown events within the target section's actions row.
+   *
+   * Clicking empty space within the actions row should behave as though
+   * the textarea was clicked, but clicking a specific action, such as the
+   * copy button, should have the default behavior for that element.
+   */
+  #onTargetSectionActionsPointerDown = event => {
+    if (event.target?.closest?.("#about-translations-copy-button")) {
+      // The copy button was clicked: preserve the default behavior.
+      return;
+    }
+
+    // Empty space within the actions row was clicked: focus the text area.
+    event.preventDefault();
+    this.elements.targetSectionTextArea.focus();
+  };
+
+  /**
+   * Handles the custom effects for focusing the target section's text area,
+   * which should outline the entire section, instead of only the text area.
+   */
+  #onTargetTextAreaFocus = () => {
+    this.elements.targetSection.classList.add("focus-section");
+  };
+
+  /**
+   * Handles the custom effects for blur events on the target section's text area.
+   */
+  #onTargetTextAreaBlur = () => {
+    this.elements.targetSection.classList.remove("focus-section");
   };
 
   /**
@@ -677,36 +719,6 @@ class AboutTranslations {
     unsupportedInfoMessage.style.display = "none";
 
     languageLoadErrorMessage.style.display = "flex";
-  }
-
-  /**
-   * Shows the translation error message in the target section.
-   */
-  #showTranslationErrorMessage() {
-    const { targetSection, translationErrorMessage } = this.elements;
-    if (!translationErrorMessage.hidden) {
-      return;
-    }
-
-    targetSection.classList.add("has-translation-error");
-    translationErrorMessage.hidden = false;
-    this.#disableSwapLanguagesButton();
-    this.#requestSectionHeightsUpdate({ scheduleCallback: false });
-  }
-
-  /**
-   * Hides the translation error message in the target section.
-   */
-  #hideTranslationErrorMessage() {
-    const { targetSection, translationErrorMessage } = this.elements;
-    if (translationErrorMessage.hidden) {
-      return;
-    }
-
-    targetSection.classList.remove("has-translation-error");
-    translationErrorMessage.hidden = true;
-    this.#updateSwapLanguagesButtonEnabledState();
-    this.#requestSectionHeightsUpdate({ scheduleCallback: false });
   }
 
   /**
@@ -930,11 +942,6 @@ class AboutTranslations {
    * values of the language selectors.
    */
   #updateSwapLanguagesButtonEnabledState() {
-    if (!this.elements.translationErrorMessage.hidden) {
-      this.#disableSwapLanguagesButton();
-      return;
-    }
-
     if (this.#selectedLanguagePairIsSwappable()) {
       this.#enableSwapLanguagesButton();
     } else {
@@ -1163,10 +1170,10 @@ class AboutTranslations {
     const hadValueBefore = Boolean(sourceSectionTextArea.value);
 
     sourceSectionTextArea.value = value;
+    sourceSectionTextArea.dispatchEvent(new Event("input"));
 
-    this.#updateSourceScriptDirection();
     this.#maybeUpdateDetectedSourceLanguage();
-    this.#updateSourceSectionClearButtonVisibility();
+    this.#updateSourceScriptDirection();
     this.#requestSectionHeightsUpdate({ scheduleCallback: false });
 
     if (!value && hadValueBefore) {
@@ -1174,8 +1181,6 @@ class AboutTranslations {
         new CustomEvent("AboutTranslationsTest:ClearSourceText")
       );
     }
-
-    sourceSectionTextArea.dispatchEvent(new Event("input"));
   }
 
   /**
@@ -1436,11 +1441,6 @@ class AboutTranslations {
 
   /**
    * Requests translation on a debounce timer, only if the UI conditions are correct to do so.
-   *
-   * @param {object} [options]
-   * @param {boolean} [options.allowFromErrorState=false]
-   *   Allow a translation request when a translation error message is visible, such as retrying
-   *   after a failure or switching languages while an error is showing.
    */
   #maybeRequestTranslation = debounce({
     /**
@@ -1449,12 +1449,10 @@ class AboutTranslations {
      * there is a short break, or enough events have happened that it's worth sending
      * in a new translation request.
      */
-    onDebounce: async ({ allowFromErrorState = false } = {}) => {
+    onDebounce: async () => {
       if (!this.#isFeatureEnabled) {
         return;
       }
-
-      let translationId = null;
 
       try {
         this.#updateURLFromUI();
@@ -1475,26 +1473,16 @@ class AboutTranslations {
             "dir",
             AT_getScriptDirection(AT_getAppLocale())
           );
-          this.#hideTranslationErrorMessage();
           return;
         }
 
         if (this.#isDetectedLanguageUnsupported()) {
           this.#updateSwapLanguagesButtonEnabledState();
           this.#setTargetText("");
-          this.#hideTranslationErrorMessage();
           return;
         }
 
-        if (
-          !this.elements.translationErrorMessage.hidden &&
-          !allowFromErrorState
-        ) {
-          return;
-        }
-
-        translationId = ++this.#translationId;
-        this.#hideTranslationErrorMessage();
+        const translationId = ++this.#translationId;
         this.#maybeDisplayTranslatingPlaceholder();
 
         await this.#ensureTranslatorMatchesSelectedLanguagePair();
@@ -1530,7 +1518,6 @@ class AboutTranslations {
         );
 
         this.#setTargetText(translatedText, { isTranslationResult: true });
-        this.#hideTranslationErrorMessage();
         this.#updateSwapLanguagesButtonEnabledState();
         document.dispatchEvent(
           new CustomEvent("AboutTranslationsTest:TranslationComplete", {
@@ -1542,12 +1529,6 @@ class AboutTranslations {
         AT_log(`Translation done in ${duration / 1000} seconds`);
       } catch (error) {
         AT_logError(error);
-        if (translationId === null || translationId !== this.#translationId) {
-          return;
-        }
-        this.#setTargetText("");
-        this.#showTranslationErrorMessage();
-        this.#updateSwapLanguagesButtonEnabledState();
       }
     },
 
@@ -1742,8 +1723,8 @@ class AboutTranslations {
       sourceSection,
       sourceSectionTextArea,
       targetSection,
+      targetSectionActionsRow,
       targetSectionTextArea,
-      translationErrorMessage,
     } = this.elements;
 
     const sourceSectionHeightBefore = Number.parseFloat(
@@ -1758,14 +1739,14 @@ class AboutTranslations {
     sourceSectionTextArea.style.height = "auto";
     targetSectionTextArea.style.height = "auto";
 
-    const translationErrorHeight =
-      translationErrorMessage?.getBoundingClientRect().height ?? 0;
+    const targetActionsHeight =
+      targetSectionActionsRow.getBoundingClientRect().height;
     const minSectionHeight = AboutTranslations.#maxInteger(
       this.#getMinHeight(sourceSection),
       this.#getMinHeight(targetSection)
     );
     const targetSectionContentHeight =
-      targetSectionTextArea.scrollHeight + translationErrorHeight;
+      targetSectionTextArea.scrollHeight + targetActionsHeight;
     const maxContentHeight = AboutTranslations.#maxInteger(
       sourceSectionTextArea.scrollHeight,
       targetSectionContentHeight,
@@ -1778,7 +1759,7 @@ class AboutTranslations {
     const maxSectionHeight = maxContentHeight + sectionBorderHeight;
     const maxSectionHeightPixels = `${maxSectionHeight}px`;
     const targetSectionTextAreaHeightPixels = `${Math.max(
-      maxContentHeight - translationErrorHeight,
+      maxContentHeight - targetActionsHeight,
       0
     )}px`;
     const sourceSectionHeightChange = this.#getSectionHeightChange(
@@ -1816,8 +1797,8 @@ class AboutTranslations {
       sourceSection,
       sourceSectionTextArea,
       targetSection,
+      targetSectionActionsRow,
       targetSectionTextArea,
-      translationErrorMessage,
     } = this.elements;
 
     const sourceSectionHeightBefore = Number.parseFloat(
@@ -1832,8 +1813,8 @@ class AboutTranslations {
     sourceSectionTextArea.style.height = "auto";
     targetSectionTextArea.style.height = "auto";
 
-    const translationErrorHeight =
-      translationErrorMessage?.getBoundingClientRect().height ?? 0;
+    const targetActionsHeight =
+      targetSectionActionsRow.getBoundingClientRect().height;
     const sourceMinHeight = this.#getMinHeight(sourceSection);
     const targetMinHeight = this.#getMinHeight(targetSection);
     const sourceContentHeight = AboutTranslations.#maxInteger(
@@ -1841,7 +1822,7 @@ class AboutTranslations {
       sourceMinHeight
     );
     const targetContentHeight = AboutTranslations.#maxInteger(
-      targetSectionTextArea.scrollHeight + translationErrorHeight,
+      targetSectionTextArea.scrollHeight + targetActionsHeight,
       targetMinHeight
     );
     const sourceSectionHeight =
@@ -1849,7 +1830,7 @@ class AboutTranslations {
     const targetSectionHeight =
       targetContentHeight + this.#getBorderAndPaddingHeight(targetSection);
     const targetSectionTextAreaHeightPixels = `${Math.max(
-      targetContentHeight - translationErrorHeight,
+      targetContentHeight - targetActionsHeight,
       0
     )}px`;
     const sourceSectionHeightChange = this.#getSectionHeightChange(
