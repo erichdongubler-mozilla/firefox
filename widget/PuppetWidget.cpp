@@ -692,7 +692,7 @@ nsresult PuppetWidget::NotifyIMEOfFocusChange(
   }
 
   mIMENotificationRequestsOfParent =
-      IMENotificationRequests(IMENotificationRequests::NOTIFY_ALL);
+      IMENotificationRequests(AllIMENotificationRequests);
   RefPtr<PuppetWidget> self = this;
   mBrowserChild->SendNotifyIMEFocus(mContentCache, aIMENotification)
       ->Then(
@@ -747,8 +747,9 @@ nsresult PuppetWidget::NotifyIMEOfTextChange(
   }
 
   // BrowserParent doesn't this this to cache.  we don't send the notification
-  // if parent process doesn't request NOTIFY_TEXT_CHANGE.
-  if (mIMENotificationRequestsOfParent.WantTextChange()) {
+  // if parent process doesn't request text changes.
+  if (mIMENotificationRequestsOfParent.contains(
+          IMENotificationRequest::TextChange)) {
     mBrowserChild->SendNotifyIMETextChange(mContentCache, aIMENotification);
   } else {
     mBrowserChild->SendUpdateContentCache(mContentCache);
@@ -810,7 +811,8 @@ nsresult PuppetWidget::NotifyIMEOfPositionChange(
           !mContentCache.CacheCaretAndTextRects(this, &aIMENotification))) {
     return NS_ERROR_FAILURE;
   }
-  if (mIMENotificationRequestsOfParent.WantPositionChanged()) {
+  if (mIMENotificationRequestsOfParent.contains(
+          IMENotificationRequest::PositionChange)) {
     mBrowserChild->SendNotifyIMEPositionChange(mContentCache, aIMENotification);
   } else {
     mBrowserChild->SendUpdateContentCache(mContentCache);
@@ -1041,10 +1043,9 @@ PuppetWidget::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
 
 NS_IMETHODIMP_(IMENotificationRequests)
 PuppetWidget::GetIMENotificationRequests() {
-  return IMENotificationRequests(
-      mIMENotificationRequestsOfParent.mWantUpdates |
-      IMENotificationRequests::NOTIFY_TEXT_CHANGE |
-      IMENotificationRequests::NOTIFY_POSITION_CHANGE);
+  return mIMENotificationRequestsOfParent +
+         IMENotificationRequests{IMENotificationRequest::TextChange,
+                                 IMENotificationRequest::PositionChange};
 }
 
 NS_IMETHODIMP_(void)

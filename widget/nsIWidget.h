@@ -417,6 +417,7 @@ class nsIWidget : public nsSupportsWeakReference {
   typedef mozilla::widget::IMEEnabled IMEEnabled;
   typedef mozilla::widget::IMEMessage IMEMessage;
   typedef mozilla::widget::IMENotification IMENotification;
+  typedef mozilla::widget::IMENotificationRequest IMENotificationRequest;
   typedef mozilla::widget::IMENotificationRequests IMENotificationRequests;
   typedef mozilla::widget::IMEState IMEState;
   typedef mozilla::widget::InputContext InputContext;
