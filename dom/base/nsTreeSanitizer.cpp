@@ -6,6 +6,7 @@
 
 #include "nsTreeSanitizer.h"
 
+#include <algorithm>
 #include <iterator>
 
 #include "NonCustomCSSPropertyId.h"
@@ -636,14 +637,16 @@ constexpr const nsStaticAtom* const kAttributesSVG[] = {
 constexpr const nsStaticAtom* const kURLAttributesSVG[] = {nsGkAtoms::href,
                                                            nullptr};
 
-static_assert(AllOf(std::begin(kURLAttributesSVG), std::end(kURLAttributesSVG),
-                    [](auto aURLAttributeSVG) {
-                      return AnyOf(std::begin(kAttributesSVG),
-                                   std::end(kAttributesSVG),
-                                   [&](auto aAttributeSVG) {
-                                     return aAttributeSVG == aURLAttributeSVG;
-                                   });
-                    }));
+static_assert(std::all_of(std::begin(kURLAttributesSVG),
+                          std::end(kURLAttributesSVG),
+                          [](auto aURLAttributeSVG) {
+                            return AnyOf(std::begin(kAttributesSVG),
+                                         std::end(kAttributesSVG),
+                                         [&](auto aAttributeSVG) {
+                                           return aAttributeSVG ==
+                                                  aURLAttributeSVG;
+                                         });
+                          }));
 
 const nsStaticAtom* const kElementsMathML[] = {
     nsGkAtoms::abs,                  // abs

@@ -2,7 +2,6 @@
 
 Algorithm.h:
   functions:
-    - AllOf
     - AnyOf
     - TransformIfAbortOnErr
     - TransformAbortOnErr

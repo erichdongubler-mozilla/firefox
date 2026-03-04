@@ -14,29 +14,6 @@ static constexpr bool odd(int32_t n) { return (n & 1); }
 
 using namespace mozilla;
 
-void TestAllOf() {
-  using std::begin;
-  using std::end;
-
-  constexpr static int32_t arr1[3] = {1, 2, 3};
-  MOZ_RELEASE_ASSERT(!AllOf(begin(arr1), end(arr1), even));
-  MOZ_RELEASE_ASSERT(!AllOf(begin(arr1), end(arr1), odd));
-  static_assert(!AllOf(arr1, arr1 + std::size(arr1), even), "1-1");
-  static_assert(!AllOf(arr1, arr1 + std::size(arr1), odd), "1-2");
-
-  constexpr static int32_t arr2[3] = {1, 3, 5};
-  MOZ_RELEASE_ASSERT(!AllOf(begin(arr2), end(arr2), even));
-  MOZ_RELEASE_ASSERT(AllOf(begin(arr2), end(arr2), odd));
-  static_assert(!AllOf(arr2, arr2 + std::size(arr2), even), "2-1");
-  static_assert(AllOf(arr2, arr2 + std::size(arr2), odd), "2-2");
-
-  constexpr static int32_t arr3[3] = {2, 4, 6};
-  MOZ_RELEASE_ASSERT(AllOf(begin(arr3), end(arr3), even));
-  MOZ_RELEASE_ASSERT(!AllOf(begin(arr3), end(arr3), odd));
-  static_assert(AllOf(arr3, arr3 + std::size(arr3), even), "3-1");
-  static_assert(!AllOf(arr3, arr3 + std::size(arr3), odd), "3-2");
-}
-
 void TestAnyOf() {
   using std::begin;
   using std::end;
@@ -61,7 +38,6 @@ void TestAnyOf() {
 }
 
 int main() {
-  TestAllOf();
   TestAnyOf();
   return 0;
 }

@@ -16,18 +16,6 @@
 
 namespace mozilla {
 
-// Returns true if all elements in the range [aFirst, aLast)
-// satisfy the predicate aPred.
-template <class Iter, class Pred>
-constexpr bool AllOf(Iter aFirst, Iter aLast, Pred aPred) {
-  for (; aFirst != aLast; ++aFirst) {
-    if (!aPred(*aFirst)) {
-      return false;
-    }
-  }
-  return true;
-}
-
 // Like C++20's `std::any_of`.
 template <typename Iter, typename Pred>
 constexpr bool AnyOf(Iter aFirst, Iter aLast, Pred aPred) {
