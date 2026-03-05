@@ -37,6 +37,7 @@
 #include "mozilla/AccessibleCaretEventHub.h"
 #include "mozilla/Baseline.h"
 #include "mozilla/BasicEvents.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DisplayPortUtils.h"
 #include "mozilla/EffectCompositor.h"
@@ -7108,6 +7109,33 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromImageBitmap(
   return aImageBitmap->SurfaceFrom(aSurfaceFlags);
 }
 
+/* static */
+Maybe<IntSize> nsLayoutUtils::ComputeResizedSize(
+    const IntSize& aSrcSize, const Maybe<int32_t>& aResizeWidth,
+    const Maybe<int32_t>& aResizeHeight) {
+  int32_t dstWidth = aResizeWidth.valueOr(0);
+  int32_t dstHeight = aResizeHeight.valueOr(0);
+  if (!dstWidth && !dstHeight) {
+    return Some(aSrcSize);
+  }
+  if (!dstWidth) {
+    CheckedInt<int32_t> checked =
+        CheckedInt<int32_t>(aSrcSize.width) * dstHeight;
+    if (!checked.isValid()) {
+      return Nothing();
+    }
+    dstWidth = NSToIntCeil(checked.value() / double(aSrcSize.height));
+  } else if (!dstHeight) {
+    CheckedInt<int32_t> checked =
+        CheckedInt<int32_t>(aSrcSize.height) * dstWidth;
+    if (!checked.isValid()) {
+      return Nothing();
+    }
+    dstHeight = NSToIntCeil(checked.value() / double(aSrcSize.width));
+  }
+  return Some(IntSize(dstWidth, dstHeight));
+}
+
 SurfaceFromElementResult nsLayoutUtils::SurfaceFromElement(
     nsIImageLoadingContent* aElement, const Maybe<int32_t>& aResizeWidth,
     const Maybe<int32_t>& aResizeHeight, uint32_t aSurfaceFlags,
@@ -7220,7 +7248,19 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromElement(
       imgHeight = kFallbackIntrinsicHeightInPixels;
     }
   }
-  result.mSize = result.mIntrinsicSize = IntSize(imgWidth, imgHeight);
+  result.mIntrinsicSize = IntSize(imgWidth, imgHeight);
+
+  // For vector images, rasterize at the resize dimensions so that
+  // createImageBitmap with resizeWidth/resizeHeight produces a sharp result
+  // instead of upscaling a small raster.
+  if (imgContainer->GetType() == imgIContainer::TYPE_VECTOR &&
+      (aResizeWidth.isSome() || aResizeHeight.isSome())) {
+    result.mSize =
+        ComputeResizedSize(result.mIntrinsicSize, aResizeWidth, aResizeHeight)
+            .valueOr(result.mIntrinsicSize);
+  } else {
+    result.mSize = result.mIntrinsicSize;
+  }
 
   if (!noRasterize || imgContainer->GetType() == imgIContainer::TYPE_RASTER) {
     result.mSourceSurface =
