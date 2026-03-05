@@ -5365,16 +5365,19 @@ var gMainPane = {
         });
 
         // Start reading the correct value from the disk
-        this.readUpdateAutoPref().then(async () => {
-          // Wait for update auto pref to be set before reading the
-          // backgroundUpdate preference
-          if (this.isBackgroundUpdateUIAvailable()) {
-            document.getElementById("backgroundUpdate").hidden = false;
-
-            // Start reading the background update pref's value from the disk.
+        this.readUpdateAutoPref()
+          .then(async () => {
+            // Wait for update auto pref to be set before reading the
+            // backgroundUpdate preference
             await this.readBackgroundUpdatePref();
-          }
-        });
+          })
+          .catch(async error => {
+            console.error("Error reading Updater preferences: " + error);
+          });
+
+        if (this.isBackgroundUpdateUIAvailable()) {
+          document.getElementById("backgroundUpdate").hidden = false;
+        }
       }
 
       if (AppConstants.platform == "win") {
