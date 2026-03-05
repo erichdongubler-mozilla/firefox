@@ -845,7 +845,7 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
   // We need a callback global to execute in.
   JS::RootedField<JSObject*, 0> callbackGlobal(
-      roots, aMicroTask.get().GetExecutionGlobalFromJSMicroTask(aCx));
+      roots, aMicroTask.get().GetExecutionGlobalFromJSMicroTask());
   if (!callbackGlobal) {
     return;
   }
@@ -967,10 +967,9 @@ MustConsumeMicroTask DequeueNextDebuggerMicroTask(JSContext* aCx) {
   return MustConsumeMicroTask(JS::DequeueNextDebuggerMicroTask(aCx));
 }
 
-static bool IsSuppressed(JSContext* aCx,
-                         JS::Handle<MustConsumeMicroTask> task) {
+static bool IsSuppressed(JS::Handle<MustConsumeMicroTask> task) {
   if (task.get().IsJSMicroTask()) {
-    JSObject* jsGlobal = task.get().GetExecutionGlobalFromJSMicroTask(aCx);
+    JSObject* jsGlobal = task.get().GetExecutionGlobalFromJSMicroTask();
     if (!jsGlobal) {
       return false;
     }
@@ -1048,7 +1047,7 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
     // No need to check Suppressed if there aren't ongoing sync operations nor
     // pending mSuppressedMicroTasks.s
     if ((IsInSyncOperation() || mSuppressedMicroTaskList) &&
-        IsSuppressed(cx, job)) {
+        IsSuppressed(job)) {
       // Microtasks in worker shall never be suppressed.
       // Otherwise, the micro tasks queue will be replaced later with
       // all suppressed tasks in mDebuggerMicroTaskQueue unexpectedly.
