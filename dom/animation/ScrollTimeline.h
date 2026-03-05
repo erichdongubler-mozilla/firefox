@@ -171,6 +171,9 @@ class ScrollTimeline : public AnimationTimeline,
     return mSource.mElement;
   }
 
+  bool SourceMatches(const Element* aElement,
+                     const PseudoStyleRequest& aPseudoRequest) const;
+
   // A helper to get the physical orientation of this scroll-timeline.
   layers::ScrollDirection Axis() const;
 
