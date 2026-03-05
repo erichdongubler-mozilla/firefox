@@ -2373,14 +2373,6 @@ class nsLayoutUtils {
                               aSurfaceFlags, target);
   }
 
-  // Computes the target size for a resize operation given the source size
-  // and optional resize dimensions. If only one dimension is given, the other
-  // is computed to preserve the aspect ratio. Returns Nothing on overflow.
-  static mozilla::Maybe<mozilla::gfx::IntSize> ComputeResizedSize(
-      const mozilla::gfx::IntSize& aSrcSize,
-      const mozilla::Maybe<int32_t>& aResizeWidth,
-      const mozilla::Maybe<int32_t>& aResizeHeight);
-
   // There are a bunch of callers of SurfaceFromElement.  Just mark it as
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static mozilla::SurfaceFromElementResult SurfaceFromElement(

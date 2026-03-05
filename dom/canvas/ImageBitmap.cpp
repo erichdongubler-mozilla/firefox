@@ -306,28 +306,37 @@ static already_AddRefed<DataSourceSurface> ScaleDataSourceSurface(
   const int bytesPerPixel = BytesPerPixel(format);
 
   const IntSize srcSize = aSurface->GetSize();
-  Maybe<int32_t> resizeWidth;
-  Maybe<int32_t> resizeHeight;
-  if (aOptions.mResizeWidth.WasPassed()) {
-    CheckedInt<int32_t> checked(aOptions.mResizeWidth.Value());
-    if (!checked.isValid()) {
-      return nullptr;
-    }
-    resizeWidth.emplace(checked.value());
-  }
-  if (aOptions.mResizeHeight.WasPassed()) {
-    CheckedInt<int32_t> checked(aOptions.mResizeHeight.Value());
-    if (!checked.isValid()) {
-      return nullptr;
-    }
-    resizeHeight.emplace(checked.value());
-  }
-  Maybe<IntSize> maybeDstSize =
-      nsLayoutUtils::ComputeResizedSize(srcSize, resizeWidth, resizeHeight);
-  if (!maybeDstSize) {
+  int32_t tmp;
+
+  CheckedInt<int32_t> checked;
+  CheckedInt<int32_t> dstWidth(
+      aOptions.mResizeWidth.WasPassed() ? aOptions.mResizeWidth.Value() : 0);
+  CheckedInt<int32_t> dstHeight(
+      aOptions.mResizeHeight.WasPassed() ? aOptions.mResizeHeight.Value() : 0);
+
+  if (!dstWidth.isValid() || !dstHeight.isValid()) {
     return nullptr;
   }
-  const IntSize dstSize = *maybeDstSize;
+
+  if (!dstWidth.value()) {
+    checked = srcSize.width * dstHeight;
+    if (!checked.isValid()) {
+      return nullptr;
+    }
+
+    tmp = ceil(checked.value() / double(srcSize.height));
+    dstWidth = tmp;
+  } else if (!dstHeight.value()) {
+    checked = srcSize.height * dstWidth;
+    if (!checked.isValid()) {
+      return nullptr;
+    }
+
+    tmp = ceil(checked.value() / double(srcSize.width));
+    dstHeight = tmp;
+  }
+
+  const IntSize dstSize(dstWidth.value(), dstHeight.value());
   const int32_t dstStride = dstSize.width * bytesPerPixel;
 
   // Create a new SourceSurface.
