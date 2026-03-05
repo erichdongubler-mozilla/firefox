@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.211
- * pdfjsBuild = afa8a07a2
+ * pdfjsVersion = 5.5.247
+ * pdfjsBuild = 9f8f303b1
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -995,10 +995,10 @@ class Dict {
     return this._map.get(key);
   }
   getKeys() {
-    return [...this._map.keys()];
+    return this._map.keys();
   }
   getRawValues() {
-    return [...this._map.values()];
+    return this._map.values();
   }
   getRawEntries() {
     return this._map.entries();
@@ -1097,8 +1097,8 @@ class Dict {
   }
   clone() {
     const dict = new Dict(this.xref);
-    for (const key of this.getKeys()) {
-      dict.set(key, this.getRaw(key));
+    for (const [key, rawVal] of this.getRawEntries()) {
+      dict.set(key, rawVal);
     }
     return dict;
   }
@@ -1552,15 +1552,14 @@ function collectActions(xref, dict, eventType) {
       if (!(additionalActions instanceof Dict)) {
         continue;
       }
-      for (const key of additionalActions.getKeys()) {
+      for (const [key, rawActionDict] of additionalActions.getRawEntries()) {
         const action = eventType[key];
         if (!action) {
           continue;
         }
-        const actionDict = additionalActions.getRaw(key);
         const parents = new RefSet();
         const list = [];
-        _collectJS(actionDict, xref, list, parents);
+        _collectJS(rawActionDict, xref, list, parents);
         if (list.length > 0) {
           actions[action] = list;
         }
@@ -36886,7 +36885,7 @@ class PartialEvaluator {
     }
     if (baseEncodingName === "WinAnsiEncoding" && nonEmbeddedFont && properties.name?.charCodeAt(0) >= 0xb7) {
       const fontName = properties.name;
-      const chineseFontNames = ["\xCB\xCE\xCC\xE5", "\xBA\xDA\xCC\xE5", "\xBF\xAC\xCC\xE5", "\xB7\xC2\xCB\xCE", "\xBF\xAC\xCC\xE5_GB2312", "\xB7\xC2\xCB\xCE_GB2312", "\xC1\xA5\xCA\xE9", "\xD0\xC2\xCB\xCE"];
+      const chineseFontNames = ["\xCB\xCE\xCC\xE5", "\xBA\xDA\xCC\xE5", "\xBF\xAC\xCC\xE5", "\xB7\xC2\xCB\xCE", "\xBF\xAC\xCC\xE5_GB2312", "\xB7\xC2\xCB\xCE_GB2312", "\xC1\xA5\xCA\xE9", "\xD0\xC2\xCB\xCE", "\xB7\xC2\xCB\xCE\xCC\xE5", "\xD0\xA1\xB1\xEA\xCB\xCE"];
       if (chineseFontNames.includes(fontName)) {
         baseEncodingName = null;
         properties.defaultEncoding = "Adobe-GB1-UCS2";
@@ -53949,9 +53948,9 @@ class WidgetAnnotation extends Annotation {
       return;
     }
     const dict = new Dict(xref);
-    for (const key of originalDict.getKeys()) {
+    for (const [key, rawVal] of originalDict.getRawEntries()) {
       if (key !== "AP") {
-        dict.set(key, originalDict.getRaw(key));
+        dict.set(key, rawVal);
       }
     }
     if (flags !== undefined) {
@@ -54084,8 +54083,8 @@ class WidgetAnnotation extends Annotation {
       const newFont = resources.getRaw("Font");
       if (this._fieldResources.mergedResources.has("Font")) {
         const oldFont = this._fieldResources.mergedResources.get("Font");
-        for (const key of newFont.getKeys()) {
-          oldFont.set(key, newFont.getRaw(key));
+        for (const [key, rawVal] of newFont.getRawEntries()) {
+          oldFont.set(key, rawVal);
         }
       } else {
         this._fieldResources.mergedResources.set("Font", newFont);
@@ -54701,7 +54700,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       this.data.fieldValue = asValue;
     }
     const yes = this.data.fieldValue !== null && this.data.fieldValue !== "Off" ? this.data.fieldValue : "Yes";
-    const exportValues = this._decodeFormValue(normalAppearance.getKeys());
+    const exportValues = this._decodeFormValue([...normalAppearance.getKeys()]);
     if (exportValues.length === 0) {
       exportValues.push("Off", yes);
     } else if (exportValues.length === 1) {
@@ -62337,7 +62336,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "5.5.211";
+    const workerVersion = "5.5.247";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
