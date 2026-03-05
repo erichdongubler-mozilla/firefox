@@ -12,10 +12,8 @@ const URL =
   "http://mochi.test:8888/browser/docshell/test/browser/file_bug670318.html";
 
 async function LegacySHTest(browser) {
-  await SpecialPowers.spawn(browser, [URL], async function (url) {
-    let history = this.content.docShell.QueryInterface(
-      Ci.nsIWebNavigation
-    ).sessionHistory;
+  await ContentTask.spawn(browser, URL, async function (URL) {
+    let history = docShell.QueryInterface(Ci.nsIWebNavigation).sessionHistory;
     let count = 0;
 
     let testDone = {};
@@ -23,11 +21,17 @@ async function LegacySHTest(browser) {
       testDone.resolve = resolve;
     });
 
-    const testListener = {
+    // Since listener implements nsISupportsWeakReference, we are
+    // responsible for keeping it alive so that the GC doesn't clear
+    // it before the test completes. We do this by anchoring the listener
+    // to the message manager, and clearing it just before the test
+    // completes.
+    this._testListener = {
+      owner: this,
       OnHistoryNewEntry(aNewURI) {
         info("OnHistoryNewEntry " + aNewURI.spec + ", " + count);
-        if (aNewURI.spec == url && 5 == ++count) {
-          content.addEventListener(
+        if (aNewURI.spec == URL && 5 == ++count) {
+          addEventListener(
             "load",
             function onLoad() {
               Assert.less(
@@ -40,7 +44,11 @@ async function LegacySHTest(browser) {
             { capture: true, once: true }
           );
 
-          history.legacySHistory.removeSHistoryListener(testListener);
+          history.legacySHistory.removeSHistoryListener(
+            this.owner._testListener
+          );
+          delete this.owner._testListener;
+          this.owner = null;
           content.setTimeout(() => {
             content.location.reload();
           }, 0);
@@ -63,8 +71,8 @@ async function LegacySHTest(browser) {
       ]),
     };
 
-    history.legacySHistory.addSHistoryListener(testListener);
-    content.location = url;
+    history.legacySHistory.addSHistoryListener(this._testListener);
+    content.location = URL;
 
     await testDone.promise;
   });
@@ -83,12 +91,27 @@ async function SHIPTest(browser) {
     async OnHistoryNewEntry(aNewURI) {
       if (aNewURI.spec == URL && 5 == ++count) {
         history.removeSHistoryListener(listener);
-        let loaded = BrowserTestUtils.browserLoaded(browser);
-        SpecialPowers.spawn(browser, [], () => {
-          content.location.reload();
+        await ContentTask.spawn(browser, null, () => {
+          return new Promise(resolve => {
+            addEventListener(
+              "load",
+              () => {
+                let history = docShell.QueryInterface(
+                  Ci.nsIWebNavigation
+                ).sessionHistory;
+                Assert.less(
+                  history.index,
+                  history.count,
+                  "history.index is valid"
+                );
+                resolve();
+              },
+              { capture: true, once: true }
+            );
+
+            content.location.reload();
+          });
         });
-        await loaded;
-        Assert.less(history.index, history.count, "history.index is valid");
         testDone.resolve();
       }
     },

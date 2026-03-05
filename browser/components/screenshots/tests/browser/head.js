@@ -887,7 +887,11 @@ class ScreenshotsHelper {
   }
 
   waitForContentEventOnce(event) {
-    return BrowserTestUtils.waitForContentEvent(this.browser, event, true);
+    return ContentTask.spawn(this.browser, event, eventType => {
+      return new Promise(resolve => {
+        content.addEventListener(eventType, resolve, { once: true });
+      });
+    });
   }
 
   /**

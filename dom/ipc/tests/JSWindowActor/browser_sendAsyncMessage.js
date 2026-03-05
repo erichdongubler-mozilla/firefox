@@ -52,11 +52,11 @@ declTest("asyncMessage without both sides", {
 
 declTest("asyncMessage can transfer MessagePorts", {
   async test(browser) {
-    await SpecialPowers.spawn(browser, [], async function () {
+    await ContentTask.spawn(browser, {}, async function () {
       let child = content.windowGlobalChild;
       let actorChild = child.getActor("TestWindow");
 
-      let { port1, port2 } = new content.MessageChannel();
+      let { port1, port2 } = new MessageChannel();
       actorChild.sendAsyncMessage("messagePort", { port: port2 }, [port2]);
       let reply = await new Promise(resolve => {
         port1.onmessage = message => {

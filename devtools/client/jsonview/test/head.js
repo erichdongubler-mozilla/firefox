@@ -81,9 +81,9 @@ async function addJsonViewTab(
   await Promise.race([
     error,
     // eslint-disable-next-line no-shadow
-    SpecialPowers.spawn(
+    ContentTask.spawn(
       browser,
-      [{ appReadyState, docReadyState }],
+      { appReadyState, docReadyState },
       async function (data) {
         // Check if there is a JSONView object.
         const { JSONView } = content.wrappedJSObject;
@@ -149,9 +149,9 @@ function selectJsonViewContentTab(name) {
   info("Selecting tab: '" + name + "'");
 
   // eslint-disable-next-line no-shadow
-  return SpecialPowers.spawn(gBrowser.selectedBrowser, [name], async name => {
+  return ContentTask.spawn(gBrowser.selectedBrowser, name, async name => {
     const tabsSelector = ".tabs-menu .tabs-menu-item";
-    const targetTabSelector = `${tabsSelector}.${content.CSS.escape(name)}`;
+    const targetTabSelector = `${tabsSelector}.${CSS.escape(name)}`;
     const targetTab = content.document.querySelector(targetTabSelector);
     const targetTabIndex = Array.prototype.indexOf.call(
       content.document.querySelectorAll(tabsSelector),

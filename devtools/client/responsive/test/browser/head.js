@@ -512,32 +512,34 @@ const selectNetworkThrottling = (ui, value) =>
     selectMenuItem(ui, "#network-throttling", value),
   ]);
 
-async function getSessionHistory(browser) {
+function getSessionHistory(browser) {
   if (Services.appinfo.sessionHistoryInParent) {
     const browsingContext = browser.browsingContext;
     const uri = browsingContext.currentWindowGlobal.documentURI.displaySpec;
     const history = browsingContext.sessionHistory;
-    const documentHasChildNodes = await SpecialPowers.spawn(
+    const body = ContentTask.spawn(
       browser,
-      [],
-      function () {
-        return !!content.document.body;
+      browsingContext,
+      function (
+        // eslint-disable-next-line no-shadow
+        browsingContext
+      ) {
+        const docShell = browsingContext.docShell.QueryInterface(
+          Ci.nsIWebNavigation
+        );
+        return docShell.document.body;
       }
     );
     const { SessionHistory } = ChromeUtils.importESModule(
       "resource://gre/modules/sessionstore/SessionHistory.sys.mjs"
     );
-    return SessionHistory.collectFromParent(
-      uri,
-      documentHasChildNodes,
-      history
-    );
+    return SessionHistory.collectFromParent(uri, body, history);
   }
-  return SpecialPowers.spawn(browser, [], function () {
+  return ContentTask.spawn(browser, null, function () {
     const { SessionHistory } = ChromeUtils.importESModule(
       "resource://gre/modules/sessionstore/SessionHistory.sys.mjs"
     );
-    return SessionHistory.collect(content.docShell);
+    return SessionHistory.collect(docShell);
   });
 }
 

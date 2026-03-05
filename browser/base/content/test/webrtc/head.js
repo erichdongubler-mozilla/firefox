@@ -859,7 +859,7 @@ async function reloadFromContent() {
   await disableObserverVerification();
 
   let loadedPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () =>
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, () =>
     content.location.reload()
   );
 

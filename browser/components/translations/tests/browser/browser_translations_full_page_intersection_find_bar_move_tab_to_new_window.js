@@ -52,15 +52,11 @@ add_task(
     );
     await swapDocShellPromise;
 
-    await SpecialPowers.pushPrefEnv({
-      set: [["security.allow_eval_with_system_principal", true]],
-    });
-
     const tab2 = window2.gBrowser.selectedTab;
     function runInPage2(callback, data = {}) {
-      return SpecialPowers.spawn(
+      return ContentTask.spawn(
         tab2.linkedBrowser,
-        [{ contentData: data, callbackSource: callback.toString() }],
+        { contentData: data, callbackSource: callback.toString() },
         function ({ contentData, callbackSource }) {
           const TranslationsTest = ChromeUtils.importESModule(
             "chrome://mochitests/content/browser/toolkit/components/translations/tests/browser/translations-test.mjs"
@@ -111,8 +107,6 @@ add_task(
       }
     );
 
-    await SpecialPowers.popPrefEnv();
-
     await cleanup();
     await BrowserTestUtils.closeWindow(window2);
   }
@@ -135,10 +129,7 @@ add_task(
     // Moving a tab to a new window with the findbar open appears to modify this pref.
     // Pushing it to a pref env ensures that a failure will not be reported due to the pref changing.
     await SpecialPowers.pushPrefEnv({
-      set: [
-        ["accessibility.typeaheadfind.flashBar", 0],
-        ["security.allow_eval_with_system_principal", true],
-      ],
+      set: [["accessibility.typeaheadfind.flashBar", 0]],
     });
 
     await FullPageTranslationsTestUtils.assertTranslationsButton(
@@ -177,9 +168,9 @@ add_task(
 
     const tab2 = window2.gBrowser.selectedTab;
     function runInPage2(callback, data = {}) {
-      return SpecialPowers.spawn(
+      return ContentTask.spawn(
         tab2.linkedBrowser,
-        [{ contentData: data, callbackSource: callback.toString() }],
+        { contentData: data, callbackSource: callback.toString() },
         function ({ contentData, callbackSource }) {
           const TranslationsTest = ChromeUtils.importESModule(
             "chrome://mochitests/content/browser/toolkit/components/translations/tests/browser/translations-test.mjs"
