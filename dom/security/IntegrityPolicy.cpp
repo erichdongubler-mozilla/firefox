@@ -428,11 +428,8 @@ constexpr static const uint32_t kIntegrityPolicySerializationVersion = 1;
 
 NS_IMETHODIMP
 IntegrityPolicy::Read(nsIObjectInputStream* aStream) {
-  nsresult rv;
-
   uint32_t version;
-  rv = aStream->Read32(&version);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(aStream->Read32(&version));
 
   if (version != kIntegrityPolicySerializationVersion) {
     LOG("IntegrityPolicy::Read: Unsupported version: {}", version);
@@ -441,36 +438,31 @@ IntegrityPolicy::Read(nsIObjectInputStream* aStream) {
 
   for (const bool& isRO : {false, true}) {
     bool hasPolicy;
-    rv = aStream->ReadBoolean(&hasPolicy);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(aStream->ReadBoolean(&hasPolicy));
 
     if (!hasPolicy) {
       continue;
     }
 
     uint32_t sources;
-    rv = aStream->Read32(&sources);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(aStream->Read32(&sources));
 
     Sources sourcesSet;
     sourcesSet.deserialize(sources);
 
     uint32_t destinations;
-    rv = aStream->Read32(&destinations);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(aStream->Read32(&destinations));
 
     Destinations destinationsSet;
     destinationsSet.deserialize(destinations);
 
     uint32_t endpointsLen;
-    rv = aStream->Read32(&endpointsLen);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(aStream->Read32(&endpointsLen));
 
     nsTArray<nsCString> endpoints(endpointsLen);
     for (size_t endpointI = 0; endpointI < endpointsLen; endpointI++) {
       nsCString endpoint;
-      rv = aStream->ReadCString(endpoint);
-      NS_ENSURE_SUCCESS(rv, rv);
+      MOZ_TRY(aStream->ReadCString(endpoint));
       endpoints.AppendElement(std::move(endpoint));
     }
 
@@ -487,29 +479,22 @@ IntegrityPolicy::Read(nsIObjectInputStream* aStream) {
 
 NS_IMETHODIMP
 IntegrityPolicy::Write(nsIObjectOutputStream* aStream) {
-  nsresult rv;
-
-  rv = aStream->Write32(kIntegrityPolicySerializationVersion);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(aStream->Write32(kIntegrityPolicySerializationVersion));
 
   for (const auto& entry : {mEnforcement, mReportOnly}) {
     if (!entry) {
-      aStream->WriteBoolean(false);
+      MOZ_TRY(aStream->WriteBoolean(false));
       continue;
     }
 
-    aStream->WriteBoolean(true);
+    MOZ_TRY(aStream->WriteBoolean(true));
 
-    rv = aStream->Write32(entry->mSources.serialize());
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(aStream->Write32(entry->mSources.serialize()));
+    MOZ_TRY(aStream->Write32(entry->mDestinations.serialize()));
 
-    rv = aStream->Write32(entry->mDestinations.serialize());
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = aStream->Write32(entry->mEndpoints.Length());
+    MOZ_TRY(aStream->Write32(entry->mEndpoints.Length()));
     for (const auto& endpoint : entry->mEndpoints) {
-      rv = aStream->WriteCString(endpoint);
-      NS_ENSURE_SUCCESS(rv, rv);
+      MOZ_TRY(aStream->WriteCString(endpoint));
     }
   }
 
