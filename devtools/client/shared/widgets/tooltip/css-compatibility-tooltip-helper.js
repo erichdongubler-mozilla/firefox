@@ -15,6 +15,10 @@ loader.lazyRequireGetter(
   true
 );
 
+const { getMdnLinkParams } = ChromeUtils.importESModule(
+  "resource://devtools/shared/mdn.mjs"
+);
+
 class CssCompatibilityTooltipHelper {
   constructor() {
     this.addTab = this.addTab.bind(this);
@@ -222,7 +226,7 @@ class CssCompatibilityTooltipHelper {
       specUrl = specUrl[0];
     }
     this.#currentUrl = url
-      ? `${url}?utm_source=devtools&utm_medium=inspector-css-compatibility&utm_campaign=default`
+      ? `${url}?${getMdnLinkParams("inspector-css-compatibility")}`
       : specUrl;
     const templateNode = this.#createElement(doc, "template");
 
