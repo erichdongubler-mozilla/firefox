@@ -13,6 +13,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/StaticString.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/EventQueue.h"
 #include "mozilla/UniquePtr.h"
@@ -368,6 +369,11 @@ class TaskController {
   // If needed, schedule a round of idle processing for moz_jemalloc's
   // idle purge.
   void MayScheduleIdleMemoryCleanup();
+
+  // Request idle memory cleanup, e.g. after GC/CC completion.
+  // Unlike MayScheduleIdleMemoryCleanup, this does not check for pending
+  // tasks -- the caller knows cleanup is needed regardless.
+  void RequestIdleMemoryCleanup(StaticString aReason);
 #endif
 
  private:
