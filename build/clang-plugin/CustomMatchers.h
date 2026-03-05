@@ -160,6 +160,16 @@ AST_MATCHER(FunctionDecl, hasNoAddRefReleaseOnReturnAttr) {
   return hasCustomAttribute<moz_no_addref_release_on_return>(&Node);
 }
 
+AST_MATCHER(Decl, isInterestingForImplicitConversion) {
+  return isInterestingDeclForImplicitConversion(&Node);
+}
+
+AST_MATCHER(VarDecl, isReferenced) { return Node.isReferenced(); }
+
+AST_MATCHER(VarDecl, isParameter) {
+  return isa<ImplicitParamDecl>(Node) || isa<ParmVarDecl>(Node);
+}
+
 /// This matcher will match any function declaration that is marked as being
 /// allowed to run script.
 AST_MATCHER(FunctionDecl, hasCanRunScriptAnnotation) {
@@ -331,6 +341,18 @@ AST_MATCHER(CXXRecordDecl, hasNeedsNoVTableTypeAttr) {
   return hasCustomAttribute<moz_needs_no_vtable_type>(&Node);
 }
 
+AST_MATCHER(CXXRecordDecl, hasTrivialDestructor) {
+  return Node.hasTrivialDestructor();
+}
+
+AST_MATCHER(CXXRecordDecl, hasTrivialDefaultConstructor) {
+  return Node.hasTrivialDefaultConstructor();
+}
+
+AST_MATCHER(CXXRecordDecl, hasConstexprDefaultConstructor) {
+  return Node.hasConstexprDefaultConstructor();
+}
+
 /// This matcher will select classes which are non-memmovable
 AST_MATCHER(QualType, isNonMemMovable) {
   return NonMemMovable.hasEffectiveAnnotation(Node);
@@ -396,8 +418,11 @@ AST_MATCHER_P2(Expr, ignoreTrivialsConditional, internal::Matcher<Expr>,
 
 // We can't call this "isImplicit" since it clashes with an existing matcher in
 // clang.
-AST_MATCHER(CXXConstructorDecl, isMarkedImplicit) {
+AST_MATCHER(FunctionDecl, isMarkedImplicit) {
   return hasCustomAttribute<moz_implicit>(&Node);
+}
+AST_MATCHER(FunctionDecl, isMarkedMustOverride) {
+  return hasCustomAttribute<moz_must_override>(&Node);
 }
 
 AST_MATCHER(CXXRecordDecl, isConcreteClass) { return !Node.isAbstract(); }
@@ -417,14 +442,6 @@ AST_MATCHER(CXXConstructorDecl, isExplicitMoveConstructor) {
 
 AST_MATCHER(CXXConstructorDecl, isCompilerProvidedCopyConstructor) {
   return !Node.isUserProvided() && Node.isCopyConstructor();
-}
-
-AST_MATCHER(CallExpr, isAssertAssignmentTestFunc) {
-  static const std::string AssertName = "MOZ_AssertAssignmentTest";
-  const FunctionDecl *Method = Node.getDirectCallee();
-
-  return Method && Method->getDeclName().isIdentifier() &&
-         Method->getName() == AssertName;
 }
 
 AST_MATCHER(CallExpr, isSnprintfLikeFunc) {
