@@ -255,8 +255,10 @@ export class AIWindow extends MozLitElement {
     this.showStarters = false;
     this.showFooter = this.mode === FULLPAGE;
 
-    // Apply chat-active immediately if loading a conversation to prevent layout flash
-    if (this.#getPendingConversationId()) {
+    // Apply chat-active immediately if restoring a conversation via back navigation
+    // to prevent layout flash. Only check the attribute (not history.state) since
+    // history.state persists through refresh and could falsely match a stale ID.
+    if (this.#hostBrowser?.getAttribute("data-conversation-id")) {
       this.classList.add("chat-active");
     }
   }

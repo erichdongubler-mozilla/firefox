@@ -945,3 +945,90 @@ add_task(async function test_back_navigation_restores_conversation() {
     sb.restore();
   }
 });
+
+// chat-active should not be applied on a fresh Smart Window load where there
+// is no conversation to restore.
+add_task(async function test_chat_active_not_applied_on_fresh_load() {
+  let win;
+  try {
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+    // Wait for #loadPendingConversation to complete — the attribute being
+    // stamped is the signal that the early-return path has finished.
+    await TestUtils.waitForCondition(
+      () => browser.hasAttribute("data-conversation-id"),
+      "data-conversation-id should be stamped after initial load"
+    );
+
+    const hasChatActive = await SpecialPowers.spawn(browser, [], () =>
+      content.document
+        .querySelector("ai-window")
+        ?.classList.contains("chat-active")
+    );
+
+    Assert.ok(
+      !hasChatActive,
+      "chat-active should not be applied on a fresh load with no conversation to restore"
+    );
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+// chat-active should be applied eagerly when data-conversation-id is present
+// on the host browser, indicating a conversation is being restored via back
+// navigation.
+add_task(async function test_chat_active_applied_on_back_navigation() {
+  const sb = lazy.sinon.createSandbox();
+  let win, tab;
+
+  try {
+    const mockConversation = createMockConversation();
+    sb.stub(ChatStore, "findConversationById").resolves(mockConversation);
+
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    tab = win.gBrowser.selectedTab;
+
+    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+    browser.setAttribute("data-conversation-id", mockConversation.id);
+
+    let loaded = BrowserTestUtils.browserLoaded(browser);
+    BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
+    await loaded;
+
+    loaded = BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+    win.gBrowser.goBack();
+    await loaded;
+
+    await TestUtils.waitForCondition(
+      () =>
+        SpecialPowers.spawn(browser, [], () =>
+          content.document
+            .querySelector("ai-window")
+            ?.classList.contains("chat-active")
+        ),
+      "chat-active should be applied when data-conversation-id is present on back navigation"
+    );
+
+    const hasChatActive = await SpecialPowers.spawn(browser, [], () =>
+      content.document
+        .querySelector("ai-window")
+        ?.classList.contains("chat-active")
+    );
+
+    Assert.ok(
+      hasChatActive,
+      "chat-active should be applied when restoring a conversation via back navigation"
+    );
+  } finally {
+    if (tab) {
+      await BrowserTestUtils.removeTab(tab);
+    }
+    await BrowserTestUtils.closeWindow(win);
+    sb.restore();
+  }
+});
