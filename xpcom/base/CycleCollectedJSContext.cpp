@@ -746,6 +746,32 @@ static void MOZ_CAN_RUN_SCRIPT RunMicroTask(
   RunJSMicroTask(aCx, aMicroTask);
 }
 
+// Basically this is nsAutoMicroTask, however it takes CycleCollectedJSContext*
+// as a parameter and caches it to avoid having to two TLS gets.
+//
+// This is safe because CycleCollectedJSContext::Get will not be unset
+// until shutdown well after the last call to PerformMicroTaskCheckpoint.
+//
+// In debug builds this is asserted.
+class MOZ_STACK_CLASS StatefulMicroTask {
+ public:
+  explicit StatefulMicroTask(CycleCollectedJSContext* aCCJS) : mCCJS(aCCJS) {
+    MOZ_ASSERT(aCCJS);
+    MOZ_ASSERT(aCCJS == CycleCollectedJSContext::Get());
+
+    mCCJS->EnterMicroTask();
+  }
+
+  MOZ_CAN_RUN_SCRIPT ~StatefulMicroTask() {
+    MOZ_ASSERT(mCCJS == CycleCollectedJSContext::Get());
+
+    mCCJS->LeaveMicroTask();
+  }
+
+ private:
+  CycleCollectedJSContext* mCCJS;
+};
+
 /* static */
 void RunJSMicroTask(JSContext* aCx,
                     JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
@@ -843,33 +869,87 @@ void RunJSMicroTask(JSContext* aCx,
     incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
   }
 
-  // MG:XXX: It would be worth revisiting the design of CallSetup here to try
-  // and reduce JS microtask overheads that turn out to be superflous. For
-  // example, in at least some circumstances we end up having multiple realm
-  // changes here that don't need to happen.
-  //
-  // Similarly, IgnoredErrorResult!
-  IgnoredErrorResult rv;
-  CallSetup setup(callbackGlobal, incumbentGlobal, allocStack, rv,
-                  "promise callback" /* Some tests care about this string. */,
-                  dom::CallbackObject::eReportExceptions);
-  if (!setup.GetContext()) {
-    return;
-  }
+  {
+    IgnoredErrorResult rv;
 
-  // At this point we will definitely consume the task, so we
-  // no longer need the scope exit.
-  ignoreMicroTasks.release();
+    Maybe<AutoEntryScript> autoEntryScript;
+    Maybe<AutoIncumbentScript> autoIncumbentScript;
 
-  // Note: We're dropping the return value on the floor here, however
-  // cleanup and exception handling are done as part of the CallSetup
-  // destructor if necessary.
-  (void)aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+    Maybe<JS::Rooted<JSObject*>> rootedCallable;
+    Maybe<JS::AutoSetAsyncStackForNewCalls> asyncStackSetter;
 
-  // (The step after step 7): Set event loop’s current scheduling
-  // state to null
-  if (incumbentGlobal) {
-    incumbentGlobal->SetWebTaskSchedulingState(nullptr);
+    // Can't construct a JSAutoRealm without a JSContext either.  Also,
+    // Put mAr after mAutoEntryScript so that we exit the realm before we
+    // pop the script settings stack. Though in practice we'll often manually
+    // order those two things.
+    Maybe<JSAutoRealm> ar;
+
+    // An ErrorResult to possibly re-throw exceptions on and whether
+    // we should re-throw them.
+    IgnoredErrorResult errorResult;
+    const bool isMainThread = NS_IsMainThread();
+
+    CycleCollectedJSContext* ccjs =
+        CycleCollectedJSContext::Get();  // MG:XXX: This should get passed in!
+    MOZ_ASSERT(ccjs);
+    StatefulMicroTask smt(ccjs);
+
+    nsIGlobalObject* globalObject = CallSetup::GetActiveGlobalObjectForCall(
+        callbackGlobal, isMainThread, /*aIsJSImplementedWebIDL=*/false,
+        errorResult);
+    if (!globalObject) {
+      return;
+    }
+
+    const char* reason = "promise callback";
+
+    // CheckBeforeExecution
+    if (globalObject->IsScriptForbidden(callbackGlobal, false)) {
+      return;
+    }
+
+    if (!globalObject->HasJSGlobal()) {
+      return;
+    }
+
+    // SetupForExecution
+    AutoAllowLegacyScriptExecution exemption;
+    autoEntryScript.emplace(globalObject, reason, isMainThread);
+
+    if (incumbentGlobal) {
+      if (!incumbentGlobal->HasJSGlobal()) {
+        return;
+      }
+
+      autoIncumbentScript.emplace(incumbentGlobal);
+    }
+
+    MOZ_ASSERT(aCx == autoEntryScript->cx());
+
+    if (allocStack) {
+      asyncStackSetter.emplace(aCx, allocStack, reason);
+    }
+
+    ar.emplace(aCx, callbackGlobal);
+
+    // At this point we will definitely consume the task, so we
+    // no longer need the scope exit.
+    ignoreMicroTasks.release();
+
+    // Note: We're dropping the return value on the floor here, however
+    // cleanup and exception handling are done as part of the CallSetup
+    // destructor if necessary.
+    (void)aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+
+    // (The step after step 7): Set event loop’s current scheduling
+    // state to null
+    if (incumbentGlobal) {
+      incumbentGlobal->SetWebTaskSchedulingState(nullptr);
+    }
+
+    ar.reset();
+    autoIncumbentScript.reset();
+    autoEntryScript.reset();
   }
 }
 
