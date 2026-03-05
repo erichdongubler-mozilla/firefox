@@ -33,8 +33,9 @@ LNAPermissionRequest::LNAPermissionRequest(PermissionPromptCallback&& aCallback,
                                            const nsACString& aType)
     : dom::ContentPermissionRequestBase(
           aLoadInfo->GetLoadingPrincipal(), nullptr,
-          (aType.Equals(LOCAL_HOST_PERMISSION_KEY) ? "network.localhost"_ns
-                                                   : "network.localnetwork"_ns),
+          (aType.Equals(LOOPBACK_NETWORK_PERMISSION_KEY)
+               ? "network.loopback-network"_ns
+               : "network.localnetwork"_ns),
           aType),
       mPermissionPromptCallback(std::move(aCallback)) {
   MOZ_ASSERT(aLoadInfo);
@@ -108,7 +109,7 @@ LNAPermissionRequest::NotifyShown() {
   mPromptWasShown = true;
 
   // Record telemetry for permission prompts shown to users
-  if (mType.Equals(LOCAL_HOST_PERMISSION_KEY)) {
+  if (mType.Equals(LOOPBACK_NETWORK_PERMISSION_KEY)) {
     if (mIsRequestDelegatedToUnsafeThirdParty) {
       mozilla::glean::networking::local_network_access_prompts_shown
           .Get("localhost_cross_site"_ns)
