@@ -3809,6 +3809,9 @@ dialog:dir(rtl)::after {
   color: var(--newtab-text-primary-color);
   z-index: 3;
 }
+.discoverystream-admin .personalization-data {
+  padding-block-end: var(--space-xlarge);
+}
 .discoverystream-admin.collapsed {
   display: none;
 }
@@ -3825,6 +3828,39 @@ dialog:dir(rtl)::after {
 .discoverystream-admin .toggle-wrapper {
   margin-block: var(--space-large);
   width: 200px;
+}
+.discoverystream-admin .inferred-personalization-overrides {
+  margin-block: var(--space-large);
+}
+.discoverystream-admin .inferred-overrides-toggle-row td:first-child,
+.discoverystream-admin .inferred-overrides-refresh-row td:first-child {
+  font-weight: var(--font-weight-bold);
+}
+.discoverystream-admin .inferred-overrides-refresh {
+  display: flex;
+  align-items: center;
+  gap: var(--space-medium);
+}
+.discoverystream-admin .inferred-overrides-refresh-row td {
+  vertical-align: middle;
+}
+.discoverystream-admin .inferred-overrides-toggle-row td {
+  vertical-align: middle;
+}
+.discoverystream-admin .inferred-override-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-medium);
+}
+.discoverystream-admin .inferred-override-select {
+  min-width: 72px;
+}
+.discoverystream-admin .inferred-override-slider {
+  width: 160px;
+}
+.discoverystream-admin .inferred-override-value {
+  min-width: 2ch;
+  text-align: end;
 }
 .discoverystream-admin .details-section {
   margin-block: var(--space-large);
