@@ -363,6 +363,18 @@ nsLocalFile::GetRelativeDescriptor(nsIFile* aFromFile, nsACString& aResult) {
     return rv;
   }
 
+#ifdef XP_WIN
+  // Ignore string parsing disable prefix on Windows
+  // https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#short-vs-long-names
+  static constexpr nsLiteralString kPrefix = u"\\\\?\\"_ns;
+  if (StringBeginsWith(thisPath, kPrefix)) {
+    thisPath.Cut(0, kPrefix.Length());
+  }
+  if (StringBeginsWith(fromPath, kPrefix)) {
+    fromPath.Cut(0, kPrefix.Length());
+  }
+#endif
+
   // get raw pointer to mutable string buffer
   char16_t* thisPathPtr = thisPath.BeginWriting();
   char16_t* fromPathPtr = fromPath.BeginWriting();
