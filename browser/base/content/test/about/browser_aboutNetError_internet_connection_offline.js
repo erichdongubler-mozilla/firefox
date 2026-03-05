@@ -63,7 +63,7 @@ async function checkErrorForInvalidUriLoad_feltPrivacyToTrue(l10nId) {
     );
 
     Assert.strictEqual(
-      netErrorCard.netErrorTitleText.dataset.l10nId,
+      netErrorCard.errorTitle.dataset.l10nId,
       expectedl10nId,
       "Correct error page title is set"
     );

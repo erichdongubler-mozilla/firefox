@@ -212,7 +212,7 @@ add_task(async function checkLearnMoreLink() {
     ok(ContentTaskUtils.isVisible(learnMoreLink), "Learn More link is visible");
     is(learnMoreLink.getAttribute("href"), _baseURL + "connection-not-secure");
 
-    const titleEl = netErrorCard.certErrorBodyTitle;
+    const titleEl = netErrorCard.errorTitle;
     const actualDataL10nID = titleEl.getAttribute("data-l10n-id");
     is(
       actualDataL10nID,
@@ -220,7 +220,7 @@ add_task(async function checkLearnMoreLink() {
       "Correct error page title is set"
     );
 
-    const errorCodeEl = netErrorCard.netErrorIntro.children[0];
+    const errorCodeEl = netErrorCard.errorIntro.children[0];
     is(
       errorCodeEl.getAttribute("data-l10n-id"),
       "cert-error-ssl-connection-error",
@@ -267,14 +267,13 @@ add_task(async function checkDomainCorrectionReplacesLearnMoreLink() {
     const netErrorCard = await ContentTaskUtils.waitForCondition(
       () => doc.querySelector("net-error-card")?.wrappedJSObject
     );
-    const errorNotice =
-      netErrorCard.netErrorIntro ?? netErrorCard.certErrorIntro;
+    const errorNotice = netErrorCard.errorIntro;
     ok(ContentTaskUtils.isVisible(errorNotice), "Error text is visible");
 
     // Wait for the domain suggestion to be resolved and for the link href to be updated
     let link;
     await ContentTaskUtils.waitForCondition(() => {
-      link = netErrorCard.learnMoreLink ?? netErrorCard.netErrorLearnMoreLink;
+      link = netErrorCard.learnMoreLink;
       return (
         link &&
         link.textContent != "" &&
@@ -321,8 +320,7 @@ add_task(async function checkDnsNotFoundLearnMoreLink() {
 
     let learnMoreLink;
     await ContentTaskUtils.waitForCondition(() => {
-      learnMoreLink =
-        netErrorCard.learnMoreLink ?? netErrorCard.netErrorLearnMoreLink;
+      learnMoreLink = netErrorCard.learnMoreLink;
       return learnMoreLink && learnMoreLink.textContent != "";
     }, "Learn more link has been set");
 

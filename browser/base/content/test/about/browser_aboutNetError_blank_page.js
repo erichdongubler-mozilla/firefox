@@ -71,7 +71,7 @@ async function test_blankPage(
         const card = netErrorCard.wrappedJSObject;
         await card.getUpdateComplete();
 
-        titleEl = card.netErrorTitleText;
+        titleEl = card.errorTitle;
       } else {
         titleEl = doc.querySelector(".title-text");
 

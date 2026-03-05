@@ -155,7 +155,7 @@ export class NetErrorChild extends RemotePageChild {
         const netErrorCard =
           doc.querySelector("net-error-card").wrappedJSObject;
         if (netErrorCard) {
-          const learnMoreLink = netErrorCard.netErrorLearnMoreLink;
+          const learnMoreLink = netErrorCard.learnMoreLink;
           if (learnMoreLink) {
             learnMoreLink.href = displaySpec;
           }

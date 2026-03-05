@@ -55,19 +55,15 @@ export class NetErrorCard extends MozLitElement {
     errorCode: "#errorCode",
     advancedContainer: ".advanced-container",
     advancedButton: "#advanced-button",
-    certErrorIntro: "#certErrorIntro",
+    errorIntro: "#error-intro",
     certErrorDebugInfo: "#certificateErrorDebugInformation",
     certErrorText: "#certificateErrorText",
     viewCertificate: "#viewCertificate",
-    certErrorBodyTitle: "#certErrorBodyTitle",
+    errorTitle: "#error-title",
     returnButton: "#returnButton",
-    learnMoreLink: "#learnMoreLink",
+    learnMoreLink: "#error-learn-more-link",
     whatCanYouDo: "#whatCanYouDo",
     whyDangerous: "#fp-why-site-dangerous",
-    netErrorTitleText: "#neterror-title-text",
-    netErrorIntro: "#netErrorIntro",
-    netErrorLearnMoreLink: "#neterror-learn-more-link",
-    httpAuthIntroText: "#fp-http-auth-disabled-intro-text",
     tryAgainButton: "#tryAgainButton",
     prefResetButton: "#prefResetButton",
     tlsNotice: "#tlsVersionNotice",
@@ -349,8 +345,7 @@ export class NetErrorCard extends MozLitElement {
       return null;
     }
 
-    // Determine element ID based on error type
-    const elementId = gIsCertError ? "certErrorIntro" : "netErrorIntro";
+    const elementId = "error-intro";
 
     if (Array.isArray(config.introContent)) {
       return html`<p id=${elementId}>
@@ -368,12 +363,8 @@ export class NetErrorCard extends MozLitElement {
 
     const { dataL10nId, dataL10nArgs } = config.introContent;
 
-    // Handle NS_ERROR_BASIC_HTTP_AUTH_DISABLED special case with additional content
     if (config.errorCode === "NS_ERROR_BASIC_HTTP_AUTH_DISABLED") {
-      return html`<p
-          id="fp-http-auth-disabled-intro-text"
-          data-l10n-id=${dataL10nId}
-        ></p>
+      return html`<p id=${elementId} data-l10n-id=${dataL10nId}></p>
         ${this.hideExceptionButton
           ? html`<p
               id="fp-http-auth-disabled-secure-connection-text"
@@ -515,7 +506,7 @@ export class NetErrorCard extends MozLitElement {
               data-l10n-id=${learnMoreL10nId}
               data-l10n-args=${JSON.stringify(learnMoreL10nArgs)}
               data-telemetry-id="learn_more_link"
-              id="learnMoreLink"
+              id="error-learn-more-link"
               @click=${this.handleTelemetryClick}
             ></a>
           </p>`
@@ -632,6 +623,26 @@ export class NetErrorCard extends MozLitElement {
     return params;
   }
 
+  returnButtonTemplate() {
+    return html`<moz-button
+      type="primary"
+      data-l10n-id="fp-certerror-return-to-previous-page-recommended-button"
+      data-telemetry-id="return_button_adv"
+      id="returnButton"
+      @click=${this.handleGoBackClick}
+    ></moz-button>`;
+  }
+
+  tryAgainButtonTemplate() {
+    return html`<moz-button
+      id="tryAgainButton"
+      type="primary"
+      data-l10n-id="neterror-try-again-button"
+      data-telemetry-id="try_again_button"
+      @click=${this.handleTryAgain}
+    ></moz-button>`;
+  }
+
   customNetErrorSectionTemplate(params) {
     const {
       titleL10nId,
@@ -695,7 +706,7 @@ export class NetErrorCard extends MozLitElement {
               href=${learnMoreHref}
               data-l10n-id=${learnMoreL10nId}
               data-telemetry-id="learn_more_link"
-              id="neterror-learn-more-link"
+              id="error-learn-more-link"
               @click=${this.handleTelemetryClick}
               rel="noopener noreferrer"
               target="_blank"
@@ -704,13 +715,7 @@ export class NetErrorCard extends MozLitElement {
         : null}
       ${tryAgain
         ? html`<moz-button-group>
-            <moz-button
-              id="tryAgainButton"
-              type="primary"
-              data-l10n-id="neterror-try-again-button"
-              data-telemetry-id="try_again_button"
-              @click=${this.handleTryAgain}
-            ></moz-button>
+            ${this.tryAgainButtonTemplate()}
             ${this.showTrrSettingsButton
               ? html`<moz-button
                   id="trrSettingsButton"
@@ -724,39 +729,17 @@ export class NetErrorCard extends MozLitElement {
         : null}
       ${goBack
         ? html`<moz-button-group
-            ><moz-button
-              type="primary"
-              data-l10n-id="fp-certerror-return-to-previous-page-recommended-button"
-              data-telemetry-id="return_button_adv"
-              id="returnButton"
-              @click=${this.handleGoBackClick}
-            ></moz-button
-          ></moz-button-group>`
+            >${this.returnButtonTemplate()}</moz-button-group
+          >`
         : null}
     `;
 
-    return html`<h1 id="neterror-title-text" data-l10n-id=${titleL10nId}></h1>
+    return html`<h1 id="error-title" data-l10n-id=${titleL10nId}></h1>
       ${this.introContentTemplate()}
       ${useAdvancedSection
         ? html`<moz-button-group>
-            ${goBack
-              ? html`<moz-button
-                  type="primary"
-                  data-l10n-id="fp-certerror-return-to-previous-page-recommended-button"
-                  data-telemetry-id="return_button_adv"
-                  id="returnButton"
-                  @click=${this.handleGoBackClick}
-                ></moz-button>`
-              : null}
-            ${tryAgain
-              ? html`<moz-button
-                  id="tryAgainButton"
-                  type="primary"
-                  data-l10n-id="neterror-try-again-button"
-                  data-telemetry-id="try_again_button"
-                  @click=${this.handleTryAgain}
-                ></moz-button>`
-              : null}
+            ${goBack ? this.returnButtonTemplate() : null}
+            ${tryAgain ? this.tryAgainButtonTemplate() : null}
             <moz-button
               id="advanced-button"
               data-l10n-id=${this.advancedShowing
@@ -996,17 +979,10 @@ export class NetErrorCard extends MozLitElement {
         <div class="container">
           ${this.showCustomNetErrorCard
             ? html`${this.customNetErrorContainerTemplate()}`
-            : html`<h1 id="certErrorBodyTitle" data-l10n-id=${title}></h1>
+            : html`<h1 id="error-title" data-l10n-id=${title}></h1>
                 ${this.introContentTemplate()}
                 <moz-button-group
-                  ><moz-button
-                    type="primary"
-                    data-l10n-id="fp-certerror-return-to-previous-page-recommended-button"
-                    data-telemetry-id="return_button_adv"
-                    id="returnButton"
-                    @click=${this.handleGoBackClick}
-                  ></moz-button
-                  ><moz-button
+                  >${this.returnButtonTemplate()}<moz-button
                     id="advanced-button"
                     data-l10n-id=${this.advancedShowing
                       ? "fp-certerror-hide-advanced-button"
