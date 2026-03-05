@@ -1181,12 +1181,6 @@ class LoopbackNetworkPermissionPrompt extends LNAPermissionPromptBase {
       ),
     };
 
-    if (this.request.isRequestDelegatedToUnsafeThirdParty) {
-      // Second name should be the third party origin
-      options.secondName = this.getPrincipalName(this.request.principal);
-      options.checkbox = { show: false };
-    }
-
     if (options.checkbox.show) {
       options.checkbox.label = lazy.gBrowserBundle.GetStringFromName(
         "localhost.remember2"
@@ -1501,12 +1495,6 @@ class LocalNetworkPermissionPrompt extends LNAPermissionPromptBase {
         this.browser.ownerGlobal
       ),
     };
-
-    if (this.request.isRequestDelegatedToUnsafeThirdParty) {
-      // Second name should be the third party origin
-      options.secondName = this.getPrincipalName(this.request.principal);
-      options.checkbox = { show: false };
-    }
 
     if (options.checkbox.show) {
       options.checkbox.label = lazy.gBrowserBundle.GetStringFromName(
