@@ -557,7 +557,9 @@ struct arena_t {
   //
   // This must be called without the mLock held (it'll take the lock).
   //
-  ArenaPurgeResult Purge(PurgeCondition aCond, mozilla::PurgeStats& aStats)
+  ArenaPurgeResult Purge(PurgeCondition aCond, mozilla::PurgeStats& aStats,
+                         const mozilla::Maybe<std::function<bool()>>&
+                             aKeepGoing = mozilla::Nothing())
       MOZ_EXCLUDES(mLock);
 
   // Run Purge() in a loop. If sCallback is non-null then collect statistics and
