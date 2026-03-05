@@ -272,9 +272,27 @@ static void nr_ice_candidate_mark_done(nr_ice_candidate *cand, int state)
           nr_turn_client_get_mapped_address(cand->u.relayed.turn,
                                             &srflx->addr)) {
         r_log(LOG_ICE, LOG_WARNING, "ICE(%s)/CAND(%s): Failed to get mapped address from TURN allocate response, srflx failed.", cand->ctx->label, cand->label);
+        if (!srflx->error_code) {
+          srflx->error_code = cand->error_code;
+        }
         nr_ice_candidate_mark_done(srflx, NR_ICE_CAND_STATE_FAILED);
       } else {
+        if (state == NR_ICE_CAND_STATE_FAILED && !srflx->error_code) {
+          srflx->error_code = cand->error_code;
+        }
         nr_ice_candidate_mark_done(srflx, state);
+      }
+    }
+
+    if (state == NR_ICE_CAND_STATE_FAILED) {
+      /* Skip piggybacking srflx candidates — the relay candidate fires for them. */
+      int is_piggybacking_srflx = (cand->type == SERVER_REFLEXIVE &&
+                                   cand->u.srvrflx.relay_candidate != NULL);
+      if (!is_piggybacking_srflx) {
+        nr_ice_gather_handler *gh = cand->stream->ctx->gather_handler;
+        if (gh && gh->vtbl->candidate_error) {
+          gh->vtbl->candidate_error(gh->obj, cand->stream, cand);
+        }
       }
     }
 
@@ -729,8 +747,9 @@ int nr_ice_candidate_initialize(nr_ice_candidate *cand, NR_async_cb ready_cb, vo
 
     _status=0;
   abort:
-    if(_status && _status!=R_WOULDBLOCK)
+    if(_status && _status!=R_WOULDBLOCK) {
       nr_ice_candidate_mark_done(cand, NR_ICE_CAND_STATE_FAILED);
+    }
     return(_status);
   }
 
@@ -934,6 +953,7 @@ static void nr_ice_srvrflx_stun_finished_cb(NR_SOCKET sock, int how, void *cb_ar
 
       /* This failed, so go to the next STUN server if there is one */
       case NR_STUN_CLIENT_STATE_FAILED:
+        cand->error_code = cand->u.srvrflx.stun->error_code;
         ABORT(R_NOT_FOUND);
         break;
       default:
@@ -1003,6 +1023,9 @@ static void nr_ice_turn_allocated_cb(NR_SOCKET s, int how, void *cb_arg)
       if (cand) {
         r_log(NR_LOG_TURN, LOG_WARNING,
               "ICE-CANDIDATE(%s): nr_turn_allocated_cb failed", cand->label);
+        if (turn->state == NR_TURN_CLIENT_STATE_FAILED) {
+          cand->error_code = turn->last_error_code;
+        }
         nr_ice_candidate_mark_done(cand, NR_ICE_CAND_STATE_FAILED);
       }
     }

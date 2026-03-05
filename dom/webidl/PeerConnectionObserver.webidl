@@ -31,6 +31,7 @@ interface PeerConnectionObserver
   undefined onAddIceCandidateSuccess();
   undefined onAddIceCandidateError(PCErrorData error);
   undefined onIceCandidate(unsigned short level, DOMString mid, DOMString candidate, DOMString ufrag);
+  undefined onIceCandidateError(DOMString address, unsigned short port, DOMString url, unsigned short errorCode, DOMString errorText);
 
   /* Data channel callbacks */
   undefined notifyDataChannel(RTCDataChannel channel);

@@ -98,6 +98,10 @@ typedef struct nr_ice_gather_handler_vtbl_ {
 
   /* This media stream has finished gathering */
   int (*stream_gathered)(void* obj, nr_ice_media_stream* stream);
+
+  /* A candidate failed to gather (e.g. STUN/TURN error) */
+  int (*candidate_error)(void* obj, nr_ice_media_stream* stream,
+                         nr_ice_candidate* candidate);
 } nr_ice_gather_handler_vtbl;
 
 typedef struct nr_ice_gather_handler_ {

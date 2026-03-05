@@ -44,6 +44,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef nricemediastream_h_
 #define nricemediastream_h_
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -210,6 +211,11 @@ class NrIceMediaStream {
       SignalCandidate;  // A new ICE candidate:
   sigslot::signal2<const std::string&, NrIceMediaStream::GatheringState>
       SignalGatheringStateChange;
+
+  // address, port, url, errorCode, errorText
+  sigslot::signal6<NrIceMediaStream*, const std::string&, uint16_t,
+                   const std::string&, uint16_t, const std::string&>
+      SignalCandidateError;
 
   sigslot::signal1<NrIceMediaStream*> SignalReady;   // Candidate pair ready.
   sigslot::signal1<NrIceMediaStream*> SignalFailed;  // Candidate pair failed.

@@ -575,6 +575,9 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
   mCandidateListener = mTransportHandler->GetCandidateGathered().Connect(
       GetMainThreadSerialEventTarget(), this,
       &PeerConnectionImpl::OnCandidateFound);
+  mCandidateErrorListener = mTransportHandler->GetCandidateError().Connect(
+      GetMainThreadSerialEventTarget(), this,
+      &PeerConnectionImpl::OnCandidateError);
   mAlpnNegotiatedListener = mTransportHandler->GetAlpnNegotiated().Connect(
       GetMainThreadSerialEventTarget(), this,
       &PeerConnectionImpl::OnAlpnNegotiated);
@@ -2448,6 +2451,7 @@ PeerConnectionImpl::Close() {
   mGatheringStateChangeListener.DisconnectIfExists();
   mConnectionStateChangeListener.DisconnectIfExists();
   mCandidateListener.DisconnectIfExists();
+  mCandidateErrorListener.DisconnectIfExists();
   mAlpnNegotiatedListener.DisconnectIfExists();
   mStateChangeListener.DisconnectIfExists();
   mRtcpStateChangeListener.DisconnectIfExists();
@@ -3503,6 +3507,18 @@ void PeerConnectionImpl::OnCandidateFound(const std::string& aTransportId,
   }
   CandidateReady(aCandidateInfo.mCandidate, aTransportId,
                  aCandidateInfo.mUfrag);
+}
+
+void PeerConnectionImpl::OnCandidateError(
+    const IceCandidateErrorInfo& aErrorInfo) {
+  PC_AUTO_ENTER_API_CALL_VOID_RETURN(false);
+  STAMP_TIMECARD(mTimeCard, "Sending icecandidateerror event");
+  uint16_t errorCode = aErrorInfo.mErrorCode ? aErrorInfo.mErrorCode : 701;
+  JSErrorResult rv;
+  mPCObserver->OnIceCandidateError(ObString(aErrorInfo.mAddress.c_str()),
+                                   aErrorInfo.mPort,
+                                   ObString(aErrorInfo.mUrl.c_str()), errorCode,
+                                   ObString(aErrorInfo.mErrorText.c_str()), rv);
 }
 
 void PeerConnectionImpl::IceGatheringStateChange(

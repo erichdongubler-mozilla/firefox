@@ -156,6 +156,7 @@ interface RTCPeerConnection : EventTarget  {
   undefined close ();
   attribute EventHandler onnegotiationneeded;
   attribute EventHandler onicecandidate;
+  attribute EventHandler onicecandidateerror;
   attribute EventHandler onsignalingstatechange;
   attribute EventHandler onaddstream; // obsolete
   attribute EventHandler onaddtrack;  // obsolete

@@ -144,6 +144,7 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
 
   using MediaTransportHandler::OnAlpnNegotiated;
   using MediaTransportHandler::OnCandidate;
+  using MediaTransportHandler::OnCandidateError;
   using MediaTransportHandler::OnConnectionStateChange;
   using MediaTransportHandler::OnEncryptedSending;
   using MediaTransportHandler::OnGatheringStateChange;
@@ -159,6 +160,9 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
                         const std::string& aCandidate,
                         const std::string& aUfrag, const std::string& aMDNSAddr,
                         const std::string& aActualAddr);
+  void OnCandidateError(NrIceMediaStream* aStream, const std::string& aAddress,
+                        uint16_t aPort, const std::string& aUrl,
+                        uint16_t aErrorCode, const std::string& aErrorText);
   void OnStateChange(TransportLayer* aLayer, TransportLayer::State);
   void OnRtcpStateChange(TransportLayer* aLayer, TransportLayer::State);
   void PacketReceived(TransportLayer* aLayer, MediaPacket& aPacket);
@@ -769,6 +773,8 @@ void MediaTransportHandlerSTS::EnsureProvisionalTransport(
 
           stream->SignalCandidate.connect(
               this, &MediaTransportHandlerSTS::OnCandidateFound);
+          stream->SignalCandidateError.connect(
+              this, &MediaTransportHandlerSTS::OnCandidateError);
           stream->SignalGatheringStateChange.connect(
               this, &MediaTransportHandlerSTS::OnGatheringStateChange);
         }
@@ -1139,6 +1145,11 @@ TransportLayer::State MediaTransportHandler::GetState(
 void MediaTransportHandler::OnCandidate(const std::string& aTransportId,
                                         CandidateInfo&& aCandidateInfo) {
   mCandidateGathered.Notify(aTransportId, std::move(aCandidateInfo));
+}
+
+void MediaTransportHandler::OnCandidateError(
+    IceCandidateErrorInfo&& aErrorInfo) {
+  mCandidateError.Notify(std::move(aErrorInfo));
 }
 
 void MediaTransportHandler::OnAlpnNegotiated(const std::string& aAlpn) {
@@ -1608,6 +1619,21 @@ void MediaTransportHandlerSTS::OnCandidateFound(
   info.mActualAddress = aActualAddr;
 
   OnCandidate(aStream->GetId(), std::move(info));
+}
+
+void MediaTransportHandlerSTS::OnCandidateError(NrIceMediaStream* aStream,
+                                                const std::string& aAddress,
+                                                uint16_t aPort,
+                                                const std::string& aUrl,
+                                                uint16_t aErrorCode,
+                                                const std::string& aErrorText) {
+  IceCandidateErrorInfo info;
+  info.mAddress = aAddress;
+  info.mPort = aPort;
+  info.mUrl = aUrl;
+  info.mErrorCode = aErrorCode;
+  info.mErrorText = aErrorText;
+  OnCandidateError(std::move(info));
 }
 
 void MediaTransportHandlerSTS::OnStateChange(TransportLayer* aLayer,

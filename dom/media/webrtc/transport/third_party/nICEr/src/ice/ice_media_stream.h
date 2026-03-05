@@ -42,6 +42,8 @@ typedef struct nr_ice_stun_server_ {
   int id;
 } nr_ice_stun_server;
 
+int nr_ice_stun_server_get_url(const nr_ice_stun_server *server, int is_turn, char **urlp);
+
 typedef struct nr_ice_turn_server_ {
     nr_ice_stun_server    turn_server;
     char                 *username;

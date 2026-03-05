@@ -90,6 +90,8 @@ struct nr_ice_candidate_ {
     } relayed;
   } u;
 
+  int error_code; /* STUN error code on failure, 0 if no STUN response was received */
+
   NR_async_cb done_cb;
   void *cb_arg;
 

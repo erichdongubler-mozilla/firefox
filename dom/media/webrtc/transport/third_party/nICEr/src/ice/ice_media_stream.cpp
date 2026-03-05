@@ -1040,3 +1040,43 @@ int nr_ice_media_stream_find_pair(nr_ice_media_stream *str, nr_ice_candidate *lc
 
     return(R_NOT_FOUND);
   }
+
+int nr_ice_stun_server_get_url(const nr_ice_stun_server *server, int is_turn, char **urlp)
+  {
+    int _status;
+    char buf[320]; /* scheme + host + port + transport param */
+    const char *scheme;
+    const char *query;
+    char host_buf[256];
+    int port;
+
+    if (nr_transport_addr_get_port(&server->addr, &port))
+      ABORT(R_FAILED);
+
+    if (nr_transport_addr_get_addrstring(&server->addr, host_buf, sizeof(host_buf)))
+      ABORT(R_FAILED);
+
+    if (is_turn) {
+      scheme = server->addr.tls ? "turns" : "turn";
+    } else {
+      scheme = server->addr.tls ? "stuns" : "stun";
+    }
+
+    query = "";
+    if (server->addr.tls || server->addr.protocol == IPPROTO_TCP) {
+      query = "?transport=tcp";
+    }
+
+    if (!server->addr.fqdn[0] && server->addr.ip_version == NR_IPV6) {
+      snprintf(buf, sizeof(buf), "%s:[%s]:%d%s", scheme, host_buf, port, query);
+    } else {
+      snprintf(buf, sizeof(buf), "%s:%s:%d%s", scheme, host_buf, port, query);
+    }
+
+    if (!(*urlp = r_strdup(buf)))
+      ABORT(R_NO_MEMORY);
+
+    _status = 0;
+  abort:
+    return(_status);
+  }

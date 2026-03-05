@@ -443,6 +443,7 @@ static void nr_turn_stun_ctx_cb(NR_SOCKET s, int how, void *arg)
   nr_turn_stun_ctx *ctx = (nr_turn_stun_ctx *)arg;
 
   ctx->last_error_code = ctx->stun->error_code;
+  ctx->tctx->last_error_code = ctx->stun->error_code;
 
   switch (ctx->stun->state) {
     case NR_STUN_CLIENT_STATE_DONE:
