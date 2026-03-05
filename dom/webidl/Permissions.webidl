@@ -16,7 +16,9 @@ enum PermissionName {
   "storage-access", // Defined in https://privacycg.github.io/storage-access/#permissions-integration
   "screen-wake-lock", // Defined in https://w3c.github.io/screen-wake-lock/
   "camera",    // Defined in https://www.w3.org/TR/mediacapture-streams/#permissions-integration
-  "microphone" // Defined in https://www.w3.org/TR/mediacapture-streams/#permissions-integration
+  "microphone", // Defined in https://www.w3.org/TR/mediacapture-streams/#permissions-integration
+  "loopback-network", // Defined in https://wicg.github.io/local-network-access/#integration-with-permissions
+  "local-network" // Same as loopback-network
 };
 
 [GenerateInit]
