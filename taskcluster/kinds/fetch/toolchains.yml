@@ -803,11 +803,11 @@ dxc-src:
         revision: dc9cb8960f8d4fbb5f904eac1e3bf7f1821e4be1
 
 jj:
-    description: jj 0.29.0 source code
+    description: jj 0.38.0 source code
     fetch:
         type: git
         repo: https://github.com/jj-vcs/jj
-        revision: 94269d2e7228ff502b2116258e5ae6b3b07ec434
+        revision: 2508982cde5c7e4db0933e0b6469f9e778e71e28
 
 firefox-profiler:
     description: firefox profiler source code

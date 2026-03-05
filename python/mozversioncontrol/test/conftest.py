@@ -33,7 +33,7 @@ SETUP = {
         """
         echo "foo" > foo
         echo "bar" > bar
-        git init
+        git init -b master
         git config user.name "Testing McTesterson"
         git config user.email "<test@example.org>"
         git add *
@@ -49,7 +49,7 @@ SETUP = {
         """
         echo "foo" > foo
         echo "bar" > bar
-        git init
+        git init -b master
         git config user.name "Testing McTesterson"
         git config user.email "<test@example.org>"
         git add *
