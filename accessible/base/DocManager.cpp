@@ -438,6 +438,17 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument) {
     return nullptr;
   }
 
+  if (IPCAccessibilityActive()) {
+    nsIContent* ownerContent = aDocument->GetEmbedderElement();
+    if (ownerContent && ownerContent->IsXULElement()) {
+      // Don't create accessibles for embedded XUL documents in content process,
+      // since they are not used and we don't want to waste resources on them.
+      // We can get here when a XUL document is loaded in a <browser>, <editor>
+      // or <xul:iframe> in content process, which happens in tests.
+      return nullptr;
+    }
+  }
+
   nsIDocShell* docShell = aDocument->GetDocShell();
   if (!docShell || docShell->IsInvisible()) {
     return nullptr;
