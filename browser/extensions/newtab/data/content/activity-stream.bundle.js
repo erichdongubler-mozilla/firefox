@@ -159,6 +159,9 @@ for (const type of [
   "FOLLOW_SECTION",
   "HIDE_PERSONALIZE",
   "HIDE_TOAST_MESSAGE",
+  "INFERRED_PERSONALIZATION_DEBUG_FEATURES_REQUEST",
+  "INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE",
+  "INFERRED_PERSONALIZATION_DEBUG_OVERRIDES_SET",
   "INFERRED_PERSONALIZATION_MODEL_UPDATE",
   "INFERRED_PERSONALIZATION_REFRESH",
   "INFERRED_PERSONALIZATION_RESET",
@@ -6368,6 +6371,7 @@ const INITIAL_STATE = {
     inferredInterests: {},
     coarseInferredInterests: {},
     coarsePrivateInferredInterests: {},
+    debugFeatures: null,
   },
   Search: {
     // When search hand-off is enabled, we render a big button that is styled to
@@ -6871,6 +6875,11 @@ function InferredPersonalization(
         coarsePrivateInferredInterests:
           action.data.coarsePrivateInferredInterests,
         lastUpdated: action.data.lastUpdated,
+      };
+    case actionTypes.INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE:
+      return {
+        ...prevState,
+        debugFeatures: action.data,
       };
     case actionTypes.INFERRED_PERSONALIZATION_RESET:
       return { ...INITIAL_STATE.InferredPersonalization };

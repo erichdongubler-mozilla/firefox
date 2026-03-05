@@ -42,7 +42,7 @@ export function divideDict(numerator, denominator) {
  * The output must be decoded to back to an integer when aggregating a historgram on a server
  *
  * @param {number} x - Integer input (0 <= x < N)
- * @param {number} N - Number of values (see ablove)
+ * @param {number} N - Number of values (see above)
  * @param {number} p - Probability of keeping a 1-bit as 1 (after one-hot encoding the output)
  * @param {number} q - Probability of flipping a 0-bit to 1
  * @returns {string} - Bitstring after unary encoding and randomized response
@@ -98,8 +98,8 @@ export class DayTimeWeighting {
   /**
    * Instantiate class based on a series of day periods in the past.
    *
-   * @param {int[]} pastDays Series of number of days, indicating days ago intervals in reverse chonological order.
-   * Intervals are added: If the first value is 1 and the second is 5, then the first inteval is 0-1 and second interval is between 1 and 6.
+   * @param {int[]} pastDays Series of number of days, indicating days ago intervals in reverse chronological order.
+   * Intervals are added: If the first value is 1 and the second is 5, then the first interval is 0-1 and second interval is between 1 and 6.
    * @param {number[]} relativeWeight Relative weight of each period. Must be same length as pastDays
    */
   constructor(pastDays, relativeWeight) {
@@ -199,7 +199,7 @@ export class InterestFeatures {
   }
 
   /**
-   * Applies Differential Privacy Unary Encoding method, outputting a one-hot encoded vector with randomizaiton.
+   * Applies Differential Privacy Unary Encoding method, outputting a one-hot encoded vector with randomization.
    * Accurate historgrams of values can be computed with reasonable accuracy.
    * If the class has no or 0 p/q values set for differential privacy, then response is original number non-encoded.
    *
@@ -514,7 +514,6 @@ export class FeatureModel {
     model_id = "unknown",
     condensePrivateValues = true,
     timeZoneOffset,
-    debugOverrideCoarseValueDictionary = null,
   }) {
     let inferredInterests = divideDict(clicks, impressions);
 
