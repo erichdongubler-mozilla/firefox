@@ -62,7 +62,8 @@ class JujutsuRepository(Repository):
             jj_ws_root = Path(out.rstrip())
             jj_repo = jj_ws_root / ".jj" / "repo"
             if not jj_repo.is_dir():
-                jj_repo = Path(jj_repo.read_text())
+                # Path / absolute discards the left operand, so this handles both relative and absolute paths.
+                jj_repo = jj_repo.parent / Path(jj_repo.read_text())
         except Exception:
             raise MissingVCSInfo("cannot find jj repo")
 
