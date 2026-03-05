@@ -1117,7 +1117,10 @@ abstract class BaseBrowserFragment :
             toolbarPositionProvider = {
                 requireContext().settings().toolbarPosition
             },
-            onShow = ::onAutocompleteBarShow,
+            onShow = {
+                onAutocompleteBarShow()
+                EmailMask.promptShown.record()
+            },
             onHide = ::onAutocompleteBarHide,
         )
 
@@ -1194,6 +1197,8 @@ abstract class BaseBrowserFragment :
                     }
 
                     override suspend fun onEmailMaskClick(generatedFor: String) = withContext(IO) {
+                        EmailMask.promptClicked.record()
+
                         val relay = requireComponents.relayFeatureIntegration
                         // For this phase, we'll also use the generatedFor value for the description.
                         val created = relay.getOrCreateNewMask(generatedFor, generatedFor)
@@ -1208,6 +1213,8 @@ abstract class BaseBrowserFragment :
                             appStore.dispatch(AppAction.SnackbarAction.ShowSnackbar(errorMessage))
                             return@withContext null
                         }
+
+                        EmailMask.autofillSuccess.record()
 
                         created.fullAddress
                     }
