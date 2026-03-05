@@ -17,12 +17,28 @@ use libc::{AF_INET, AF_INET6};
 #[cfg(windows)]
 use winapi::shared::ws2def::{AF_INET, AF_INET6};
 
+#[repr(C)]
+pub enum IpPreference {
+    DualStackPreferV6 = 0,
+    DualStackPreferV4 = 1,
+}
+
+impl From<IpPreference> for happy_eyeballs::IpPreference {
+    fn from(v: IpPreference) -> Self {
+        match v {
+            IpPreference::DualStackPreferV6 => Self::DualStackPreferV6,
+            IpPreference::DualStackPreferV4 => Self::DualStackPreferV4,
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn create(
     result: &mut *const HappyEyeballs,
     origin: *const nsACString,
     port: u16,
     alt_svc: *const ThinVec<AltSvc>,
+    ip_preference: IpPreference,
 ) -> nsresult {
     *result = ptr::null_mut();
 
@@ -49,6 +65,7 @@ pub extern "C" fn create(
 
     let network_config = happy_eyeballs::NetworkConfig {
         alt_svc: alt_svc_vec,
+        ip: ip_preference.into(),
         ..Default::default()
     };
 
