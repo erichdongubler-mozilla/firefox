@@ -160,6 +160,7 @@ WARNING! This test involves background update, but background tasks are
     );
   });
 
+  await UpdateUtils.setAppUpdateAutoEnabled(true);
   await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, true);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
@@ -167,6 +168,49 @@ WARNING! This test involves background update, but background tasks are
       content.document.getElementById("backgroundUpdate").checked,
       true,
       "Externally enabling background update should check the checkbox"
+    );
+  });
+
+  await UpdateUtils.setAppUpdateAutoEnabled(false);
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    is(
+      content.document.getElementById("backgroundUpdate").checked,
+      false,
+      "Background update should be unchecked if auto update is disabled"
+    );
+  });
+
+  await UpdateUtils.setAppUpdateAutoEnabled(false);
+  // Need to toggle this twice to actually test the UI
+  await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, false);
+  await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, true);
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    is(
+      content.document.getElementById("backgroundUpdate").checked,
+      false,
+      "Externally enabling background update should not check the checkbox if auto update is disabled"
+    );
+  });
+
+  await UpdateUtils.setAppUpdateAutoEnabled(false);
+  await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, false);
+  await UpdateUtils.setAppUpdateAutoEnabled(true);
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    is(
+      content.document.getElementById("backgroundUpdate").checked,
+      false,
+      "Reenabling auto update should not check backgroundUpdate if the background update is false"
+    );
+  });
+
+  await UpdateUtils.setAppUpdateAutoEnabled(false);
+  await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, true);
+  await UpdateUtils.setAppUpdateAutoEnabled(true);
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    is(
+      content.document.getElementById("backgroundUpdate").checked,
+      true,
+      "Enabling auto update should check backgroundUpdate if the background update is true"
     );
   });
 });

@@ -6363,6 +6363,7 @@ var gMainPane = {
   },
 
   _minUpdatePrefDisableTime: 1000,
+
   /**
    * Selects the correct item in the update radio group
    */
@@ -6379,7 +6380,7 @@ var gMainPane = {
       radiogroup.value = enabled;
       radiogroup.disabled = false;
 
-      this.maybeDisableBackgroundUpdateControls();
+      await this.maybeDisableBackgroundUpdateControls();
     }
   },
 
@@ -6397,10 +6398,29 @@ var gMainPane = {
       let _disableTimeOverPromise = new Promise(r =>
         setTimeout(r, this._minUpdatePrefDisableTime)
       );
+
       radiogroup.disabled = true;
+      if (this.isBackgroundUpdateUIAvailable()) {
+        let backgroundUpdate = document.getElementById("backgroundUpdate");
+        backgroundUpdate.disabled = true;
+      }
+
       try {
         await UpdateUtils.setAppUpdateAutoEnabled(updateAutoValue);
+
+        // If the group is turned on then the background update pref
+        // needs set to the stored value, otherwise it may need to be
+        // disabled and unset.
+        if (updateAutoValue) {
+          await this.readBackgroundUpdatePref();
+        } else {
+          await this.maybeDisableBackgroundUpdateControls();
+        }
+
+        // Wait for a second to prevent the disable/enable causing the
+        // UI text to flicker.
         await _disableTimeOverPromise;
+
         radiogroup.disabled = false;
       } catch (error) {
         console.error(error);
@@ -6410,8 +6430,6 @@ var gMainPane = {
         ]);
         return;
       }
-
-      this.maybeDisableBackgroundUpdateControls();
 
       // If the value was changed to false the user should be given the option
       // to discard an update if there is one.
@@ -6435,13 +6453,22 @@ var gMainPane = {
     );
   },
 
-  maybeDisableBackgroundUpdateControls() {
+  async maybeDisableBackgroundUpdateControls() {
     if (this.isBackgroundUpdateUIAvailable()) {
       let radiogroup = document.getElementById("updateRadioGroup");
       let updateAutoEnabled = radiogroup.value == "true";
 
       // This control is only active if auto update is enabled.
-      document.getElementById("backgroundUpdate").disabled = !updateAutoEnabled;
+      let backgroundUpdate = document.getElementById("backgroundUpdate");
+      backgroundUpdate.disabled = !updateAutoEnabled;
+      if (!updateAutoEnabled) {
+        backgroundUpdate.checked = false;
+      } else {
+        let enabled = await UpdateUtils.readUpdateConfigSetting(
+          "app.update.background.enabled"
+        );
+        backgroundUpdate.checked = enabled;
+      }
     }
   },
 
@@ -6470,7 +6497,7 @@ var gMainPane = {
 
       let enabled = await UpdateUtils.readUpdateConfigSetting(prefName);
       backgroundCheckbox.checked = enabled;
-      this.maybeDisableBackgroundUpdateControls();
+      await this.maybeDisableBackgroundUpdateControls();
     }
   },
 
@@ -6492,7 +6519,7 @@ var gMainPane = {
         return;
       }
 
-      this.maybeDisableBackgroundUpdateControls();
+      await this.maybeDisableBackgroundUpdateControls();
     }
   },
 
@@ -6612,7 +6639,7 @@ var gMainPane = {
         throw new Error("Invalid preference value for app.update.auto");
       }
       document.getElementById("updateRadioGroup").value = aData;
-      this.maybeDisableBackgroundUpdateControls();
+      await this.maybeDisableBackgroundUpdateControls();
     } else if (aTopic == BACKGROUND_UPDATE_CHANGED_TOPIC) {
       if (!AppConstants.MOZ_UPDATE_AGENT) {
         return;
@@ -6622,7 +6649,8 @@ var gMainPane = {
           "Invalid preference value for app.update.background.enabled"
         );
       }
-      document.getElementById("backgroundUpdate").checked = aData == "true";
+
+      await this.maybeDisableBackgroundUpdateControls();
     }
   },
 
