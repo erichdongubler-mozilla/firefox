@@ -725,6 +725,9 @@ SuppressedMicroTaskList::~SuppressedMicroTaskList() {
   MOZ_ASSERT(mSuppressedMicroTaskRunnables.get().empty());
 };
 
+static void MOZ_CAN_RUN_SCRIPT RunJSMicroTask(
+    JSContext* aCx, JS::MutableHandle<MustConsumeMicroTask> aMicroTask);
+
 // Run a microtask. Handles both non-JS (enqueued MicroTaskRunnables) and JS
 // microtasks.
 static void MOZ_CAN_RUN_SCRIPT RunMicroTask(
@@ -740,6 +743,12 @@ static void MOZ_CAN_RUN_SCRIPT RunMicroTask(
     return;
   }
 
+  RunJSMicroTask(aCx, aMicroTask);
+}
+
+/* static */
+void RunJSMicroTask(JSContext* aCx,
+                    JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
   // After this point, if we fail to run, we
   //
   // 1. Know we have JS microtask
