@@ -45,6 +45,7 @@ const TEST_DATA = [
       {
         declaration: { "vertical-align": "text-bottom" },
         ruleIndex: 0,
+        msgId: "inactive-css-not-inline-or-tablecell",
       },
     ],
   },
@@ -54,6 +55,7 @@ const TEST_DATA = [
       {
         declaration: { "vertical-align": "sub" },
         ruleIndex: 1,
+        msgId: "inactive-css-not-inline-or-tablecell",
       },
     ],
   },
@@ -89,10 +91,12 @@ const TEST_DATA = [
         declaration: { height: "10px" },
         // The ::before rule in the pseudo-element section
         ruleIndex: 0,
+        msgId: "inactive-css-property-because-of-display",
       },
       {
         declaration: { "vertical-align": "middle" },
         ruleIndex: 2,
+        msgId: "inactive-css-not-inline-or-tablecell",
       },
     ],
   },
@@ -114,6 +118,7 @@ const TEST_DATA = [
       {
         declaration: { height: "10px" },
         ruleIndex: 0,
+        msgId: "inactive-css-property-because-of-display",
       },
     ],
   },
@@ -162,7 +167,12 @@ add_task(async function () {
   info("Set an inactive property on the element style");
   const inlineStyleRuleIndex = 1;
   await addProperty(view, inlineStyleRuleIndex, "left", "10px");
-  await checkDeclarationIsInactive(view, inlineStyleRuleIndex, {
-    left: "10px",
-  });
+  await checkDeclarationIsInactive(
+    view,
+    inlineStyleRuleIndex,
+    {
+      left: "10px",
+    },
+    "inactive-css-position-property-on-unpositioned-box"
+  );
 });

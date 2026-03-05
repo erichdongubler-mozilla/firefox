@@ -892,12 +892,19 @@ async function checkDeclarationCompatibility(
  *        The index we expect the rule to have in the rule-view.
  * @param {object} declaration
  *        An object representing the declaration e.g. { color: "red" }.
+ * @param {string} expectedMsgId
+ *        The expected inactive CSS msgId that should be displayed in the inactive CSS tooltip
  */
-async function checkDeclarationIsInactive(view, ruleIndex, declaration) {
+async function checkDeclarationIsInactive(
+  view,
+  ruleIndex,
+  declaration,
+  expectedMsgId
+) {
   const declarations = await getPropertiesForRuleIndex(view, ruleIndex);
   const [[name, value]] = Object.entries(declaration);
   const dec = `${name}:${value}`;
-  const { used, warning, icon } = declarations.get(dec);
+  const { used, warning, icon, data } = declarations.get(dec);
 
   ok(!used, `"${dec}" is inactive`);
   ok(warning, `"${dec}" has a warning`);
@@ -906,6 +913,7 @@ async function checkDeclarationIsInactive(view, ruleIndex, declaration) {
     "Icon has expected icon"
   );
   is(icon.hidden, false, "Icon is visible");
+  is(data.msgId, expectedMsgId, `"${dec}" has expected inactive CSS msgId`);
 
   await checkInteractiveTooltip(
     view,
@@ -1104,6 +1112,7 @@ async function runCSSCompatibilityTests(view, inspector, tests) {
  *                    "flex-direction": "row",
  *                  },
  *                  ruleIndex: [1, 0],
+ *                  msgId: "inactive-css-not-grid-or-flex-container-or-multicol-container",
  *                },
  *              ],
  *            },
@@ -1139,7 +1148,8 @@ async function runInactiveCSSTests(view, inspector, tests) {
         await checkDeclarationIsInactive(
           view,
           inactiveDeclaration.ruleIndex,
-          inactiveDeclaration.declaration
+          inactiveDeclaration.declaration,
+          inactiveDeclaration.msgId
         );
       }
     }
