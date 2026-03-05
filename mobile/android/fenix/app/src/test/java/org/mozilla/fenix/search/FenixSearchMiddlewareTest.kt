@@ -52,6 +52,7 @@ import org.mozilla.fenix.GleanMetrics.History
 import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.NimbusComponents
 import org.mozilla.fenix.components.UseCases
@@ -87,6 +88,7 @@ class FenixSearchMiddlewareTest {
         every { speculativeCreateSession(any(), any()) } just Runs
     }
     private val fenixBrowserUseCasesMock: FenixBrowserUseCases = mockk(relaxed = true)
+    private val browsingModeManager: BrowsingModeManager = mockk(relaxed = true)
     private val useCases: UseCases = mockk {
         every { fenixBrowserUseCases } returns fenixBrowserUseCasesMock
         every { tabsUseCases } returns mockk()
@@ -95,7 +97,7 @@ class FenixSearchMiddlewareTest {
     private val settings: Settings = mockk(relaxed = true)
     private val browserActionsCaptor = CaptureActionsMiddleware<BrowserState, BrowserAction>()
     private val searchActionsCaptor = CaptureActionsMiddleware<SearchFragmentState, SearchFragmentAction>()
-    private val appStore: AppStore = AppStore(AppState())
+    private val appStore: AppStore = mockk(relaxed = true)
     private var browserStore = BrowserStore(
         initialState = BrowserState(search = fakeSearchEnginesState()),
         middleware = listOf(browserActionsCaptor),
@@ -292,11 +294,11 @@ class FenixSearchMiddlewareTest {
 
     @Test
     fun `GIVEN browsing mode is private and suggestions in private mode not allowed WHEN the query is empty THEN don't show the private suggestions banner`() {
-        val privateAppStore = AppStore(AppState(mode = BrowsingMode.Private))
-        val (_, store) = buildMiddlewareAndAddToSearchStore(appStore = privateAppStore)
+        val (_, store) = buildMiddlewareAndAddToSearchStore()
         every { settings.showSearchSuggestionsInPrivateOnboardingFinished } returns false
         every { settings.shouldShowSearchSuggestions } returns true
         every { settings.shouldShowSearchSuggestionsInPrivate } returns false
+        every { browsingModeManager.mode } returns BrowsingMode.Private
 
         store.dispatch(SearchFragmentAction.UpdateQuery(""))
 
@@ -318,11 +320,11 @@ class FenixSearchMiddlewareTest {
 
     @Test
     fun `GIVEN browsing mode is private and suggestions in private mode not allowed WHEN the query is not empty THEN show the private suggestions banner`() {
-        val privateAppStore = AppStore(AppState(mode = BrowsingMode.Private))
-        val (_, store) = buildMiddlewareAndAddToSearchStore(appStore = privateAppStore)
+        val (_, store) = buildMiddlewareAndAddToSearchStore()
         every { settings.showSearchSuggestionsInPrivateOnboardingFinished } returns false
         every { settings.shouldShowSearchSuggestions } returns true
         every { settings.shouldShowSearchSuggestionsInPrivate } returns false
+        every { browsingModeManager.mode } returns BrowsingMode.Private
 
         store.dispatch(SearchFragmentAction.UpdateQuery("test"))
 
@@ -331,10 +333,10 @@ class FenixSearchMiddlewareTest {
 
     @Test
     fun `GIVEN browsing mode is private and user has allowed suggestions in private mode WHEN search query is different than the current URL and not empty THEN show search suggestions`() {
-        val privateAppStore = AppStore(AppState(mode = BrowsingMode.Private))
-        val (_, store) = buildMiddlewareAndAddToSearchStore(appStore = privateAppStore)
+        val (_, store) = buildMiddlewareAndAddToSearchStore()
         every { settings.shouldShowSearchSuggestions } returns true
         every { settings.shouldShowSearchSuggestionsInPrivate } returns true
+        every { browsingModeManager.mode } returns BrowsingMode.Private
 
         store.dispatch(SearchFragmentAction.UpdateQuery(store.state.url))
         assertFalse(store.state.shouldShowSearchSuggestions)
@@ -588,6 +590,7 @@ class FenixSearchMiddlewareTest {
         browserStore: BrowserStore = this.browserStore,
         toolbarStore: BrowserToolbarStore = this.toolbarStore,
         navController: NavController = this.navController,
+        browsingModeManager: BrowsingModeManager = this.browsingModeManager,
     ): FenixSearchMiddleware {
         val middleware = spyk(
             FenixSearchMiddleware(
@@ -602,6 +605,7 @@ class FenixSearchMiddlewareTest {
                 browserStore = browserStore,
                 toolbarStore = toolbarStore,
                 navController = navController,
+                browsingModeManager = browsingModeManager,
             ),
         )
         every { middleware.buildSearchSuggestionsProvider(any()) } returns mockk(relaxed = true)
