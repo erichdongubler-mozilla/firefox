@@ -854,6 +854,25 @@ static bool ExtractTaskData(JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
   return true;
 }
 
+// Return true if execution can proceed, or false if we cannot.
+static bool CanRunJSCallback(nsIGlobalObject* aGlobalObject,
+                             JSObject* aCallbackGlobal,
+                             nsIGlobalObject* aIncumbentGlobal) {
+  if (aGlobalObject->IsScriptForbidden(aCallbackGlobal, false)) {
+    return false;
+  }
+
+  if (!aGlobalObject->HasJSGlobal()) {
+    return false;
+  }
+
+  if (aIncumbentGlobal && !aIncumbentGlobal->HasJSGlobal()) {
+    return false;
+  }
+
+  return true;
+}
+
 /* static */
 void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
                     JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
@@ -908,24 +927,16 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
       return;
     }
 
-    const char* reason = "promise callback";
-
     // CheckBeforeExecution
-    if (globalObject->IsScriptForbidden(callbackGlobal, false)) {
-      return;
-    }
-
-    if (!globalObject->HasJSGlobal()) {
-      return;
-    }
-
-    if (incumbentGlobal && !incumbentGlobal->HasJSGlobal()) {
+    if (!CanRunJSCallback(globalObject, callbackGlobal, incumbentGlobal)) {
       return;
     }
 
     // At this point we will definitely consume the task, so we
     // no longer need the scope exit.
     ignoreMicroTasks.release();
+
+    const char* reason = "promise callback";
 
     // SetupForExecution
     AutoAllowLegacyScriptExecution exemption;
