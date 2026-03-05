@@ -92,11 +92,13 @@ Please note that some targeting attributes require stricter controls on the tele
 * [topFrecentSites](#topfrecentsites)
 * [totalBlockedCount](#totalblockedcount)
 * [totalBookmarksCount](#totalbookmarkscount)
+* [userActiveDaysWithHundredPlusSites](#userActiveDaysWithHundredPlusSites)
 * [userId](#userid)
 * [userMonthlyActivity](#usermonthlyactivity)
 * [userPrefersReducedMotion](#userprefersreducedmotion)
 * [useEmbeddedMigrationWizard](#useembeddedmigrationwizard)
 * [userPrefs](#userprefs)
+* [userWeekdaysActiveInLastMonth](#userWeekdaysActiveInLastMonth)
 * [usesFirefoxSync](#usesfirefoxsync)
 * [xpinstallEnabled](#xpinstallenabled)
 * [totalSearches](#totalsearches)
@@ -596,6 +598,21 @@ Total number of bookmarks.
 declare const totalBookmarksCount: number;
 ```
 
+### `userActiveDaysWithHundredPlusSites`
+The number of days in the past month where the user visited 100 or more URLs.
+Derived from [`userMonthlyActivity`](#usermonthlyactivity).
+
+#### Example
+* Has the user visited 100+ sites on at least 5 days in the past month?
+```java
+userActiveDaysWithHundredPlusSites >= 5
+```
+
+#### Definition
+```ts
+declare const userActiveDaysWithHundredPlusSites: Promise;
+```
+
 ### `usesFirefoxSync`
 
 Does the user use Firefox sync?
@@ -756,6 +773,22 @@ declare const userPrefs: {
   cfrFeatures: boolean;
   cfrAddons: boolean;
 }
+```
+
+### `userWeekdaysActiveInLastMonth`
+
+The number of days in the past month the user was active on a weekday (Monday–Friday).
+Derived from [`userMonthlyActivity`](#usermonthlyactivity).
+
+#### Examples
+* Has the user used Firefox on 2 or more weekdays in the past month?
+```java
+userWeekdaysActiveInLastMonth >= 2
+```
+
+#### Definition
+```ts
+declare const userWeekdaysActiveInLastMonth: Promise;
 ```
 
 ### `attachedFxAOAuthClients`

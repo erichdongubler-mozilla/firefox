@@ -2706,3 +2706,127 @@ add_task(async function check_backupRestoreEnabled() {
   await restoreExperiment();
   await SpecialPowers.popPrefEnv();
 });
+
+add_task(
+  async function check_userWeekdaysActiveInLastMonth_counts_only_weekdays() {
+    const sandbox = sinon.createSandbox();
+    try {
+      QueryCache.queries.UserMonthlyActivity.expire();
+      sandbox
+        .stub(NewTabUtils.activityStreamProvider, "getUserMonthlyActivity")
+        .resolves([
+          [50, "2024-01-08"], // Monday, 50 visits
+          [30, "2024-01-09"], // Tue
+          [10, "2024-01-13"], // Sat
+          [5, "2024-01-14"], // Sun
+        ]);
+      is(
+        await ASRouterTargeting.Environment.userWeekdaysActiveInLastMonth,
+        2,
+        "should count only weekday entries(2)"
+      );
+    } finally {
+      sandbox.restore();
+    }
+  }
+);
+
+add_task(async function check_userWeekdaysActiveInLastMonth_all_weekends() {
+  const sandbox = sinon.createSandbox();
+  try {
+    QueryCache.queries.UserMonthlyActivity.expire();
+    sandbox
+      .stub(NewTabUtils.activityStreamProvider, "getUserMonthlyActivity")
+      .resolves([
+        [20, "2024-01-13"], // Sat
+        [20, "2024-01-14"], // Sun
+      ]);
+    is(
+      await ASRouterTargeting.Environment.userWeekdaysActiveInLastMonth,
+      0,
+      "should return 0 when all activity is on weekends"
+    );
+  } finally {
+    sandbox.restore();
+  }
+});
+
+add_task(async function check_userWeekdaysActiveInLastMonth_emptyActivity() {
+  const sandbox = sinon.createSandbox();
+  try {
+    QueryCache.queries.UserMonthlyActivity.expire();
+    sandbox
+      .stub(NewTabUtils.activityStreamProvider, "getUserMonthlyActivity")
+      .resolves([]);
+    is(
+      await ASRouterTargeting.Environment.userWeekdaysActiveInLastMonth,
+      0,
+      "should return 0 for empty activity"
+    );
+  } finally {
+    sandbox.restore();
+  }
+});
+
+add_task(
+  async function check_userActiveDaysWithHundredPlusSites_countsDaysAtOrAbove100() {
+    const sandbox = sinon.createSandbox();
+    try {
+      QueryCache.queries.UserMonthlyActivity.expire();
+      sandbox
+        .stub(NewTabUtils.activityStreamProvider, "getUserMonthlyActivity")
+        .resolves([
+          [150, "2024-01-08"],
+          [99, "2024-01-09"],
+          [100, "2024-01-10"],
+          [50, "2024-01-11"],
+        ]);
+      is(
+        await ASRouterTargeting.Environment.userActiveDaysWithHundredPlusSites,
+        2,
+        "should count days with >= 100 URL visits"
+      );
+    } finally {
+      sandbox.restore();
+    }
+  }
+);
+
+add_task(async function check_userActiveDaysWithHundredPlusSites_none() {
+  const sandbox = sinon.createSandbox();
+  try {
+    QueryCache.queries.UserMonthlyActivity.expire();
+    sandbox
+      .stub(NewTabUtils.activityStreamProvider, "getUserMonthlyActivity")
+      .resolves([
+        [10, "2024-01-08"],
+        [99, "2024-01-09"],
+      ]);
+    is(
+      await ASRouterTargeting.Environment.userActiveDaysWithHundredPlusSites,
+      0,
+      "should return 0 when no days reach 100 visits"
+    );
+  } finally {
+    sandbox.restore();
+  }
+});
+
+add_task(
+  async function check_userActiveDaysWithHundredPlusSites_emptyActivityReturnsZero() {
+    const sandbox = sinon.createSandbox();
+    try {
+      QueryCache.queries.UserMonthlyActivity.expire();
+      sandbox
+        .stub(NewTabUtils.activityStreamProvider, "getUserMonthlyActivity")
+        .resolves([]);
+      is(
+        await ASRouterTargeting.Environment.userActiveDaysWithHundredPlusSites,
+        0,
+        "should return 0 for empty activity"
+      );
+    } finally {
+      sandbox.restore();
+    }
+  }
+);
