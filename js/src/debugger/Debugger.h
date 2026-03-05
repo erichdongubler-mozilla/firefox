@@ -358,6 +358,8 @@ class DebuggerWeakMap : private WeakMap<Referent*, Wrapper*, ZoneAllocPolicy> {
   using Ptr = typename Base::Ptr;
   using AddPtr = typename Base::AddPtr;
   using Range = typename Base::Range;
+  using Iterator = typename Base::Iterator;
+  using ModIterator = typename Base::ModIterator;
   using Lookup = typename Base::Lookup;
 
   // Expose WeakMap public interface.
@@ -373,6 +375,9 @@ class DebuggerWeakMap : private WeakMap<Referent*, Wrapper*, ZoneAllocPolicy> {
 #ifdef DEBUG
   using Base::hasEntry;
 #endif
+
+  Iterator iter() const { return Base::iter(); }
+  ModIterator modIter() { return Base::modIter(); }
 
   class Enum : public Base::Enum {
    public:
