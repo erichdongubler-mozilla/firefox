@@ -9,8 +9,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
 });
 
+requestLongerTimeout(3);
+
 add_setup(async function () {
-  // Return chat as the heuristic row
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.suggest.enabled", false]],
+  });
+
   const fakeIntentEngine = {
     run() {
       return [
@@ -20,9 +25,10 @@ add_setup(async function () {
     },
   };
 
-  sinon.stub(lazy.IntentClassifier, "_createEngine").resolves(fakeIntentEngine);
+  const originalCreateEngine = lazy.IntentClassifier._createEngine;
+  lazy.IntentClassifier._createEngine = () => Promise.resolve(fakeIntentEngine);
   registerCleanupFunction(() => {
-    sinon.restore();
+    lazy.IntentClassifier._createEngine = originalCreateEngine;
   });
 });
 
@@ -35,7 +41,7 @@ add_task(async function test_arrow_to_ask_preserves_value() {
   const browser = win.gBrowser.selectedBrowser;
   await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
-  const query = "search something interesting";
+  const query = "tell me a random fact about something";
   await promiseSmartbarSuggestionsOpen(browser, () =>
     typeInSmartbar(browser, query)
   );
@@ -46,18 +52,29 @@ add_task(async function test_arrow_to_ask_preserves_value() {
       "#ai-window-smartbar"
     );
 
-    const initialSelected = smartbar.querySelector(".urlbarView-row[selected]");
-    Assert.ok(initialSelected, "A row should be selected initially");
+    const selectedType = () =>
+      smartbar
+        .querySelector(".urlbarView-row[selected]")
+        ?.getAttribute("type");
 
+    Assert.equal(
+      selectedType(),
+      "ai_chat",
+      "Initial selection should be the AI_CHAT heuristic row"
+    );
+
+    // ArrowDown away from AI_CHAT to the next row.
     EventUtils.synthesizeKey("KEY_ArrowDown", {}, content);
+    await ContentTaskUtils.waitForCondition(
+      () => selectedType() !== "ai_chat",
+      "Selection should move away from ai_chat"
+    );
 
-    await ContentTaskUtils.waitForMutationCondition(
-      smartbar,
-      { attributes: true, subtree: true },
-      () =>
-        smartbar
-          .querySelector(".urlbarView-row[selected]")
-          ?.getAttribute("type") === "ai_chat"
+    // ArrowDown again to wrap back to the AI_CHAT row.
+    EventUtils.synthesizeKey("KEY_ArrowDown", {}, content);
+    await ContentTaskUtils.waitForCondition(
+      () => selectedType() === "ai_chat",
+      "Selection should wrap back to ai_chat"
     );
 
     Assert.equal(
@@ -88,7 +105,7 @@ add_task(async function test_click_ask_row_picks_result() {
     const browser = win.gBrowser.selectedBrowser;
     await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
-    const query = "search something interesting?";
+    const query = "tell me a random fact about something?";
     await promiseSmartbarSuggestionsOpen(browser, () =>
       typeInSmartbar(browser, query)
     );
