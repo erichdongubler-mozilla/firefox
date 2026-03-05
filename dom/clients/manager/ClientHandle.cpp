@@ -22,7 +22,7 @@ using mozilla::dom::ipc::StructuredCloneData;
 ClientHandle::~ClientHandle() { Shutdown(); }
 
 void ClientHandle::Shutdown() {
-  NS_ASSERT_OWNINGTHREAD(ClientSource);
+  NS_ASSERT_OWNINGTHREAD(ClientHandle);
   if (IsShutdown()) {
     return;
   }
@@ -167,7 +167,7 @@ RefPtr<GenericErrorResultPromise> ClientHandle::PostMessage(
 }
 
 RefPtr<GenericPromise> ClientHandle::OnDetach() {
-  NS_ASSERT_OWNINGTHREAD(ClientSource);
+  NS_ASSERT_OWNINGTHREAD(ClientHandle);
 
   if (!mDetachPromise) {
     mDetachPromise = new GenericPromise::Private(__func__);

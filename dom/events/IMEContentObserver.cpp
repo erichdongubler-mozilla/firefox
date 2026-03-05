@@ -834,7 +834,8 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
 bool IMEContentObserver::OnMouseButtonEvent(nsPresContext& aPresContext,
                                             WidgetMouseEvent& aMouseEvent) {
   if (!mIMENotificationRequests ||
-      !mIMENotificationRequests->WantMouseButtonEventOnChar()) {
+      !mIMENotificationRequests->contains(
+          IMENotificationRequest::MouseEventOnChar)) {
     return false;
   }
   if (!aMouseEvent.IsTrusted() || aMouseEvent.DefaultPrevented() ||

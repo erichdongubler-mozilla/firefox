@@ -195,13 +195,12 @@ void IMEStateManager::OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
     RefPtr<TextComposition> composition =
         sTextCompositions->GetCompositionFor(oldWidget);
     if (composition) {
-      MOZ_LOG(
-          sISMLog, LogLevel::Debug,
-          ("  OnFocusMovedBetweenBrowsers(), requesting to commit "
-           "composition to "
-           "the (previous) focused widget (would request=%s)",
-           TrueOrFalse(
-               !oldWidget->IMENotificationRequestsRef().WantDuringDeactive())));
+      MOZ_LOG(sISMLog, LogLevel::Debug,
+              ("  OnFocusMovedBetweenBrowsers(), requesting to commit "
+               "composition to "
+               "the (previous) focused widget (would request=%s)",
+               TrueOrFalse(!oldWidget->IMENotificationRequestsRef().contains(
+                   IMENotificationRequest::NotifyDuringInactive))));
       NotifyIME(REQUEST_TO_COMMIT_COMPOSITION, oldWidget,
                 composition->GetBrowserParent());
     }
@@ -748,8 +747,8 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
       // such case, sFocusedIMEWidget is perhaps nullptr).  For example, IME
       // may receive only blur notification but still has composition.
       // We need to clean up only the oldWidget's composition state here.
-      if (aPresContext ||
-          !oldWidget->IMENotificationRequestsRef().WantDuringDeactive()) {
+      if (aPresContext || !oldWidget->IMENotificationRequestsRef().contains(
+                              IMENotificationRequest::NotifyDuringInactive)) {
         MOZ_LOG(
             sISMLog, LogLevel::Info,
             ("  OnChangeFocusInternal(), requesting to commit composition to "

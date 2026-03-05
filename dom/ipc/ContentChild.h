@@ -769,6 +769,15 @@ class ContentChild final : public PContentChild,
       const MaybeDiscarded<BrowsingContext>& aContext,
       const uint32_t aStopFlags);
 
+  mozilla::ipc::IPCResult RecvDeactivateDocuments(
+      const MaybeDiscarded<BrowsingContext>& aContext);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  mozilla::ipc::IPCResult RecvReactivateDocuments(
+      const MaybeDiscarded<BrowsingContext>& aContext,
+      const Maybe<SessionHistoryInfo>& aReactivatedEntry,
+      const nsTArray<SessionHistoryInfo>& aNewSHEs,
+      const Maybe<PreviousSessionHistoryInfo>& aPreviousEntryForActivation);
+
   mozilla::ipc::IPCResult RecvRawMessage(const JSActorMessageMeta& aMeta,
                                          JSIPCValue&& aData,
                                          StructuredCloneData* aStack);

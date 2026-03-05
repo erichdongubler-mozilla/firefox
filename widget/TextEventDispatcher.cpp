@@ -511,7 +511,7 @@ void TextEventDispatcher::UpdateNotificationRequests() {
     nsCOMPtr<TextEventDispatcherListener> nativeListener =
         mWidget->GetNativeTextEventDispatcherListener();
     if (nativeListener) {
-      mIMENotificationRequests |= nativeListener->GetIMENotificationRequests();
+      mIMENotificationRequests += nativeListener->GetIMENotificationRequests();
     }
   }
 }

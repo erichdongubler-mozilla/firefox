@@ -375,7 +375,7 @@ add_task(async function test_highlight_selection() {
 
       const changePromise = BrowserTestUtils.waitForContentEvent(
         browser,
-        "annotationeditorstateschanged",
+        "editingstateschanged",
         false,
         null,
         true
@@ -437,7 +437,7 @@ add_task(async function test_comment_selection() {
 
       const changePromise = BrowserTestUtils.waitForContentEvent(
         browser,
-        "annotationeditorstateschanged",
+        "editingstateschanged",
         false,
         null,
         true

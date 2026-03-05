@@ -628,13 +628,21 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
       return loadingInfo;
     }
 
-    loadingInfo->mTriggeringEntry =
-        mActiveEntry ? Some(mActiveEntry->Info()) : Nothing();
-    MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Verbose,
-                "Triggering entry was {}.",
-                fmt::ptr(loadingInfo->mTriggeringEntry
-                             .map([](auto& entry) { return &entry; })
-                             .valueOr(nullptr)));
+    loadingInfo->mPreviousEntry =
+        PreviousSessionHistoryInfo::CreateValidatedPreviousEntry(
+            entry->Info(), ToMaybeRef(mActiveEntry.get()).map([](auto& aValue) {
+              return aValue.Info();
+            }),
+            navigationType);
+
+    MOZ_LOG_FMT(
+        gNavigationAPILog, LogLevel::Verbose, "Previous entry was {}.",
+        fmt::ptr(loadingInfo->mPreviousEntry
+                     .map([](auto& aValue) {
+                       return aValue.mSameOriginSessionHistoryInfo.ptrOr(
+                           nullptr);
+                     })
+                     .ptrOr(nullptr)));
 
     if (!existingLoadingInfo ||
         !existingLoadingInfo->mTriggeringNavigationType) {
@@ -2796,6 +2804,7 @@ void CanonicalBrowsingContext::HistoryCommitIndexAndLength() {
   CallerWillNotifyHistoryIndexAndLengthChanges caller(nullptr);
   HistoryCommitIndexAndLength(changeID, caller);
 }
+
 void CanonicalBrowsingContext::HistoryCommitIndexAndLength(
     const nsID& aChangeID,
     const CallerWillNotifyHistoryIndexAndLengthChanges& aProofOfCaller) {
@@ -2822,6 +2831,80 @@ void CanonicalBrowsingContext::HistoryCommitIndexAndLength(
   });
 
   shistory->NotifyOnHistoryCommit();
+}
+
+void CanonicalBrowsingContext::DeactivateDocuments() {
+  MOZ_DIAGNOSTIC_ASSERT(IsTop() && mozilla::BFCacheInParent() &&
+                        GetContentParent());
+  if (IsInProcess()) {
+    BrowsingContext::DeactivateDocuments();
+  } else {
+    Group()->EachParent([&](ContentParent* aContentParent) {
+      (void)aContentParent->SendDeactivateDocuments(this);
+    });
+
+    PreOrderWalk([&](BrowsingContext* aContext) {
+      aContext->Canonical()->SetIsInBFCache(/* aIsInBFCache */ true);
+      aContext->Canonical()->SetIsEnteringBFCache(
+          /* aIsEnteringBFCache */ true);
+    });
+  }
+
+  if (GetCurrentWindowGlobal() && GetCurrentWindowGlobal()->Fullscreen()) {
+    GetCurrentWindowGlobal()->ExitTopChromeDocumentFullscreen();
+  }
+}
+
+void CanonicalBrowsingContext::ReactivateDocuments(
+    SessionHistoryEntry* aEntry,
+    SessionHistoryEntry* aPreviousEntryForActivation) {
+  nsTArray<SessionHistoryInfo> topNewSHIs;
+
+  if (Navigation::IsAPIEnabled()) {
+    nsSHistory::WalkContiguousEntriesInOrder(
+        aEntry, [&topNewSHIs](auto* aContiguousEntry) {
+          if (nsCOMPtr<SessionHistoryEntry> she =
+                  do_QueryInterface(aContiguousEntry)) {
+            topNewSHIs.AppendElement(she->Info());
+          }
+          return true;
+        });
+  }
+
+  Maybe previousEntryForActivation =
+      PreviousSessionHistoryInfo::CreateValidatedPreviousEntry(
+          mActiveEntry->Info(),
+          ToMaybeRef(aPreviousEntryForActivation).map([](auto& aValue) {
+            return aValue.Info();
+          }),
+          Some(NavigationType::Traverse));
+  if (IsInProcess()) {
+    BrowsingContext::ReactivateDocuments(Some(mActiveEntry->Info()), topNewSHIs,
+                                         previousEntryForActivation);
+
+  } else {
+    Group()->EachParent([&](ContentParent* aContentParent) {
+      nsTArray<SessionHistoryInfo> newSHIs;
+      Maybe<SessionHistoryInfo> reactivatedEntry;
+      if (GetContentParent() == aContentParent && Navigation::IsAPIEnabled()) {
+        newSHIs.AppendElements(std::move(topNewSHIs));
+        reactivatedEntry.emplace(mActiveEntry->Info());
+      }
+      (void)aContentParent->SendReactivateDocuments(
+          this, reactivatedEntry, newSHIs, previousEntryForActivation);
+    });
+
+    UpdateCurrentTopByBrowserId(this);
+    PreOrderWalk([&](BrowsingContext* aContext) {
+      aContext->Canonical()->SetIsInBFCache(/* aIsInBFCache */ false);
+      aContext->Canonical()->SetIsEnteringBFCache(
+          /* aIsEnteringBFCache */ false);
+    });
+  }
+
+  if (GetCurrentWindowGlobal() && GetCurrentWindowGlobal()->Fullscreen()) {
+    GetCurrentWindowGlobal()->ExitTopChromeDocumentFullscreen();
+  }
 }
 
 void CanonicalBrowsingContext::SynchronizeLayoutHistoryState() {

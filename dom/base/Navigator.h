@@ -42,6 +42,7 @@ class ServiceWorkerContainer;
 class CredentialsContainer;
 class Clipboard;
 class LockManager;
+class ModelContext;
 class NavigatorLogin;
 class PrivateAttribution;
 class HTMLMediaElement;
@@ -217,6 +218,7 @@ class Navigator final : public nsISupports, public nsWrapperCache {
   webgpu::Instance* Gpu();
   dom::LockManager* Locks();
   NavigatorLogin* Login();
+  dom::ModelContext* ModelContext();
   dom::PrivateAttribution* PrivateAttribution();
 
   static bool Webdriver();
@@ -316,6 +318,7 @@ class Navigator final : public nsISupports, public nsWrapperCache {
   RefPtr<Promise> mSharePromise;  // Web Share API related
   RefPtr<LockManager> mLocks;
   RefPtr<NavigatorLogin> mLogin;
+  RefPtr<dom::ModelContext> mModelContext;
   RefPtr<dom::PrivateAttribution> mPrivateAttribution;
   RefPtr<dom::UserActivation> mUserActivation;
   RefPtr<dom::WakeLockJS> mWakeLock;

@@ -25,6 +25,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.Mode
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.QrScanFenixFeature
@@ -206,7 +207,6 @@ class BookmarkFragment : Fragment() {
             // Default empty store. This is not used without the composable toolbar.
             BrowserToolbarStore(BrowserToolbarState(mode = Mode.EDIT))
         }
-
         else -> fragmentStore(BrowserToolbarState(mode = Mode.EDIT)) {
             val lifecycleScope = viewLifecycleOwner.lifecycle.coroutineScope
 
@@ -215,6 +215,7 @@ class BookmarkFragment : Fragment() {
                 middleware = listOf(
                     BrowserToolbarSearchStatusSyncMiddleware(
                         appStore = requireComponents.appStore,
+                        browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                         scope = lifecycleScope,
                     ),
                     BrowserToolbarSearchMiddleware(
@@ -223,6 +224,7 @@ class BookmarkFragment : Fragment() {
                         browserStore = requireComponents.core.store,
                         components = requireComponents,
                         navController = findNavController(),
+                        browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                         settings = requireComponents.settings,
                         scope = lifecycleScope,
                     ),
@@ -238,7 +240,6 @@ class BookmarkFragment : Fragment() {
             // Default empty store. This is not used without the composable toolbar.
             SearchFragmentStore(SearchFragmentState.EMPTY)
         }
-
         else -> fragmentStore(
             createInitialSearchFragmentState(
                 context = requireContext(),
@@ -254,8 +255,8 @@ class BookmarkFragment : Fragment() {
                 initialState = it,
                 middleware = listOf(
                     BrowserToolbarToFenixSearchMapperMiddleware(
-                        appStore = requireComponents.appStore,
                         toolbarStore = toolbarStore,
+                        browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                         scope = lifecycleScope,
                     ),
                     BrowserStoreToFenixSearchMapperMiddleware(
@@ -272,6 +273,7 @@ class BookmarkFragment : Fragment() {
                         browserStore = requireComponents.core.store,
                         toolbarStore = toolbarStore,
                         navController = this@BookmarkFragment.findNavController(),
+                        browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                     ),
                 ),
             )

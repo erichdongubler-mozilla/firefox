@@ -6,7 +6,6 @@ async function check_video_decoding_state(args) {
   if (!video) {
     ok(false, "Can't get the video element!");
   }
-  info("Got video element");
 
   let isSuspended = args.suspend;
   let reload = args.reload;
@@ -21,12 +20,10 @@ async function check_video_decoding_state(args) {
 
   let state = isSuspended ? "suspended" : "resumed";
   let event = isSuspended ? "mozentervideosuspend" : "mozexitvideosuspend";
-  info(`Waiting for state ${state} from event ${event}.`);
   return new Promise(resolve => {
     video.addEventListener(
       event,
       function () {
-        info("Saw event");
         ok(true, `Video decoding is ${state}.`);
         resolve();
       },
@@ -70,9 +67,9 @@ function get_video_decoding_suspend_promise(browser, reload) {
 function get_video_decoding_resume_promise(browser) {
   let suspend = false;
   let reload = false;
-  return SpecialPowers.spawn(
+  return ContentTask.spawn(
     browser,
-    [{ suspend, reload }],
+    { suspend, reload },
     check_video_decoding_state
   );
 }
@@ -138,9 +135,6 @@ add_task(async function resume_and_suspend_background_video_decoding() {
 
   info("- select video's owner tab as foreground tab, should resume video -");
   promise = get_video_decoding_resume_promise(browser);
-  // Round-trip through the content process to ensure the event listener has
-  // been registered.
-  await SpecialPowers.spawn(browser, [], () => {});
   await BrowserTestUtils.switchTab(window.gBrowser, tab);
   await promise;
   await check_should_send_unselected_tab_hover_msg(browser);

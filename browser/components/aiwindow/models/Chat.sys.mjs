@@ -150,6 +150,7 @@ Object.assign(Chat, {
 
           const hasParams = toolParams && !!Object.keys(toolParams).length;
           const params = hasParams ? toolParams : undefined;
+          const secProps = conversation.securityProperties;
 
           if (toolName === "run_search") {
             if (!context.browsingContext) {
@@ -159,9 +160,11 @@ Object.assign(Chat, {
               return;
             }
             searchHandoffBrowser = context.browsingContext.embedderElement;
-            result = await toolFunc(params ?? {}, context);
+            result = await toolFunc(params ?? {}, context, secProps);
+          } else if (toolName === "get_page_content") {
+            result = await toolFunc(params, undefined, secProps);
           } else {
-            result = await (hasParams ? toolFunc(params) : toolFunc());
+            result = await toolFunc(params, secProps);
           }
 
           this._collectAllowedUrlsFromToolCall(

@@ -138,8 +138,6 @@ fail-if = [
 
 ["browser_rules_imported_stylesheet_edit.js"]
 
-["browser_rules_inactive_css_display-justify.js"]
-
 ["browser_rules_inactive_css_flexbox.js"]
 
 ["browser_rules_inactive_css_grid.js"]
@@ -147,6 +145,8 @@ fail-if = [
 ["browser_rules_inactive_css_inline.js"]
 
 ["browser_rules_inactive_css_split-condition.js"]
+
+["browser_rules_inactive_css_update.js"]
 
 ["browser_rules_inactive_css_visited.js"]
 

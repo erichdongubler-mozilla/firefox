@@ -864,3 +864,58 @@ add_task(async function test_open_link_in_split_view_from_container() {
     BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
   }
 });
+
+add_task(
+  async function test_open_link_in_split_view_hidden_when_in_split_view() {
+    const testPageUrl = httpURL("file_anchor_elements.html");
+
+    let tab1 = BrowserTestUtils.addTab(gBrowser, testPageUrl, {
+      skipAnimation: true,
+    });
+    await BrowserTestUtils.browserLoaded(
+      tab1.linkedBrowser,
+      false,
+      testPageUrl
+    );
+
+    let tab2 = BrowserTestUtils.addTab(gBrowser, testPageUrl, {
+      skipAnimation: true,
+    });
+    await BrowserTestUtils.browserLoaded(
+      tab2.linkedBrowser,
+      false,
+      testPageUrl
+    );
+
+    gBrowser.addTabSplitView([tab1, tab2]);
+    gBrowser.selectedTab = tab1;
+
+    const contextMenu = document.getElementById("contentAreaContextMenu");
+    let popupShown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+
+    await BrowserTestUtils.synthesizeMouseAtCenter(
+      "#a_with_href",
+      { type: "contextmenu", button: 2 },
+      tab1.linkedBrowser
+    );
+    await popupShown;
+
+    let openLinkInSplitViewItem = contextMenu.querySelector(
+      "#context-openlinkinsplitview"
+    );
+    ok(openLinkInSplitViewItem, "Open Link in Split View menu item exists");
+    ok(
+      !BrowserTestUtils.isVisible(openLinkInSplitViewItem),
+      "Open Link in Split View menu item is hidden when current tab is in a split view"
+    );
+
+    let popupHidden = BrowserTestUtils.waitForPopupEvent(contextMenu, "hidden");
+    contextMenu.hidePopup();
+    await popupHidden;
+
+    tab1.splitview.close();
+    while (gBrowser.tabs.length > 1) {
+      BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+    }
+  }
+);

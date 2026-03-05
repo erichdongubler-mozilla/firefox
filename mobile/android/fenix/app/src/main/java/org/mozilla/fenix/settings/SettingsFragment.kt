@@ -247,7 +247,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             ?.hideInitialScrollBar(viewLifecycleOwner.lifecycleScope)
 
         args.preferenceToScrollTo?.let {
-            scrollToPreference(it)
+            scrollToPreferenceWithHighlight(it)
         }
         // Consider finish of `onResume` to be the point at which we consider this fragment as 'created'.
         creatingFragment = false

@@ -33,16 +33,16 @@ RefPtr<CSSNumericValue> CSSNumericValue::Create(
 
   switch (aNumericValue.tag) {
     case StyleNumericValue::Tag::Unit: {
-      auto unitValue = aNumericValue.AsUnit();
+      const auto& unitValue = aNumericValue.AsUnit();
 
-      numericValue = CSSUnitValue::Create(aParent, unitValue);
+      numericValue = CSSUnitValue::Create(std::move(aParent), unitValue);
       break;
     }
 
     case StyleNumericValue::Tag::Sum: {
-      auto mathSum = aNumericValue.AsSum();
+      const auto& mathSum = aNumericValue.AsSum();
 
-      numericValue = CSSMathSum::Create(aParent, mathSum);
+      numericValue = CSSMathSum::Create(std::move(aParent), mathSum);
       break;
     }
   }

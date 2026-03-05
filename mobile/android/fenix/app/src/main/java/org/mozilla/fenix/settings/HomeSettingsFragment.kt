@@ -67,7 +67,7 @@ class HomeSettingsFragment : PreferenceFragmentCompat() {
         super.onResume()
         showToolbar(getString(R.string.preferences_home_2))
         args.preferenceToScrollTo?.let {
-            scrollToPreference(it)
+            scrollToPreferenceWithHighlight(it)
         }
     }
 

@@ -667,25 +667,13 @@ pref("browser.urlbar.keepPanelOpenDuringImeComposition", false);
 pref("browser.urlbar.groupLabels.enabled", true);
 
 // The Merino endpoint URL, not including parameters.
-#ifdef NIGHTLY_BUILD
-pref("browser.urlbar.merino.endpointURL", "https://prod.merino.prod.webservices.mozgcp.net/api/v1/suggest");
-#else
 pref("browser.urlbar.merino.endpointURL", "https://merino.services.mozilla.com/api/v1/suggest");
-#endif
 
 // OHTTP config URL for Merino requests
-#ifdef NIGHTLY_BUILD
-pref("browser.urlbar.merino.ohttpConfigURL", "https://prod.merino.prod.webservices.mozgcp.net/ohttp-configs");
-#else
-pref("browser.urlbar.merino.ohttpConfigURL", "");
-#endif
+pref("browser.urlbar.merino.ohttpConfigURL", "https://ohttp-gateway-merino.services.mozilla.com/ohttp-configs");
 
 // OHTTP relay URL for Merino requests
-#ifdef NIGHTLY_BUILD
 pref("browser.urlbar.merino.ohttpRelayURL", "https://ohttp-merino.mozilla.fastly-edge.com");
-#else
-pref("browser.urlbar.merino.ohttpRelayURL", "");
-#endif
 
 // Timeout for Merino fetches (ms).
 pref("browser.urlbar.merino.timeoutMs", 200);
@@ -962,7 +950,7 @@ pref("permissions.manager.defaultsUrl", "resource://app/defaults/permissions");
 pref("permissions.default.camera", 0);
 pref("permissions.default.microphone", 0);
 pref("permissions.default.geo", 0);
-pref("permissions.default.localhost", 0);
+pref("permissions.default.loopback-network", 0);
 pref("permissions.default.local-network", 0);
 pref("permissions.default.xr", 0);
 pref("permissions.default.desktop-notification", 0);
@@ -1369,6 +1357,9 @@ pref("network.manage-offline-status", true);
 
 // timeout for local network access prompts
 pref("network.lna.prompt.timeout", 300000); // 5 minutes
+
+// expiration time for temporary local network access permissions
+pref("network.lna.temporary_permission_expire_time_ms", 86400000); // 24 hours
 
 // We want to make sure mail URLs are handled externally...
 pref("network.protocol-handler.external.mailto", true); // for mail
@@ -2279,6 +2270,7 @@ pref("browser.smartwindow.firstrun.modelChoice", "");
 pref("browser.smartwindow.model", "");
 pref("browser.smartwindow.preferences.endpoint", "");
 pref("browser.smartwindow.firstrun.explainerURL", "https://www.firefox.com/en-US/smart-window/?v=product");
+pref("browser.smartwindow.checkSecurityFlags", false);
 
 // Smart Window Logging
 pref("browser.smartwindow.chatHistory.loglevel", "Error");
@@ -3527,12 +3519,8 @@ pref("browser.backup.scheduled.user-disabled", false);
 pref("browser.backup.tab-flush-timeout", 5000);
 pref("browser.backup.enabled_on.profiles", "{}");
 
-#ifdef NIGHTLY_BUILD
-  // Pref to enable the new profiles
-  pref("browser.profiles.enabled", true);
-#else
-  pref("browser.profiles.enabled", false);
-#endif
+// Pref to enable the new profiles
+pref("browser.profiles.enabled", true);
 pref("browser.profiles.profile-name.updated", false);
 // Whether to allow the user to merge profile data
 pref("browser.profiles.sync.allow-danger-merge", false);

@@ -787,6 +787,15 @@ void nsDocShellLoadState::SetSHEntry(nsISHEntry* aSHEntry) {
   }
 }
 
+void nsDocShellLoadState::SetPreviousEntryForActivation(nsISHEntry* aSHEntry) {
+  MOZ_DIAGNOSTIC_ASSERT(mSHEntry);
+  nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(aSHEntry);
+  if (mLoadingSessionHistoryInfo) {
+    mLoadingSessionHistoryInfo->mPreviousEntry =
+        Some(PreviousSessionHistoryInfo(she->Info()));
+  }
+}
+
 void nsDocShellLoadState::SetLoadingSessionHistoryInfo(
     const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo) {
   SetLoadingSessionHistoryInfo(

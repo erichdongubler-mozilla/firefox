@@ -24,7 +24,9 @@ static const nsLiteralCString kPermissionTypes[] = {
     "storage-access"_ns,
     "screen-wake-lock"_ns,
     "camera"_ns,
-    "microphone"_ns
+    "microphone"_ns,
+    "loopback-network"_ns,
+    "local-network"_ns
     // clang-format on
 };
 

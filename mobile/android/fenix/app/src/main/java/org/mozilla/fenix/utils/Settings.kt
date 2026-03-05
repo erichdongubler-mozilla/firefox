@@ -1160,40 +1160,6 @@ class Settings(
         return Browsers.isDefaultBrowser(appContext)
     }
 
-    var reEngagementNotificationShown by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_re_engagement_notification_shown),
-        default = false,
-    )
-
-    /**
-     * Check if we should set the re-engagement notification.
-     */
-    fun shouldSetReEngagementNotification(): Boolean {
-        return numberOfAppLaunches <= 1 && !reEngagementNotificationShown
-    }
-
-    /**
-     * Check if we should show the re-engagement notification.
-     */
-    fun shouldShowReEngagementNotification(): Boolean {
-        return !reEngagementNotificationShown && !isDefaultBrowserBlocking()
-    }
-
-    /**
-     * Indicates if the re-engagement notification feature is enabled
-     */
-    var reEngagementNotificationEnabled by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_re_engagement_notification_enabled),
-        default = { FxNimbus.features.reEngagementNotification.value().enabled },
-    )
-
-    /**
-     * Indicates if the re-engagement notification feature is enabled
-     */
-    val reEngagementNotificationType: Int
-        get() =
-            FxNimbus.features.reEngagementNotification.value().type
-
     val shouldUseAutoBatteryTheme by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_auto_battery_theme),
         default = false,

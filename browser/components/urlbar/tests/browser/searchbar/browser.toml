@@ -30,6 +30,8 @@ skip-if = [
 
 ["browser_searchbar_mouseNavigation.js"]
 
+["browser_searchbar_telemetry.js"]
+
 ["browser_searchbar_widths.js"]
 
 ["browser_searchmode.js"]

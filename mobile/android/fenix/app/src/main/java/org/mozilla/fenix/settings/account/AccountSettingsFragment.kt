@@ -55,6 +55,7 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.requirePreference
+import org.mozilla.fenix.settings.scrollToPreferenceWithHighlight
 import org.mozilla.fenix.settings.showCustomEditTextPreferenceDialog
 
 @SuppressWarnings("TooManyFunctions", "LargeClass")
@@ -89,7 +90,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
         super.onResume()
         showToolbar(getString(R.string.preferences_account_settings))
         args.preferenceToScrollTo?.let {
-            scrollToPreference(it)
+            scrollToPreferenceWithHighlight(it)
         }
     }
 

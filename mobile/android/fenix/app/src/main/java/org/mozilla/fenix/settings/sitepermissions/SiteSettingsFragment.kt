@@ -24,6 +24,7 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.requirePreference
+import org.mozilla.fenix.settings.scrollToPreferenceWithHighlight
 import com.google.android.material.R as materialR
 
 /**
@@ -46,7 +47,7 @@ class SiteSettingsFragment : PreferenceFragmentCompat() {
         showToolbar(getString(R.string.preferences_site_settings))
         setupPreferences()
         args.preferenceToScrollTo?.let {
-            scrollToPreference(it)
+            scrollToPreferenceWithHighlight(it)
         }
     }
 

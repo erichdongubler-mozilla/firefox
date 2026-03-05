@@ -5,6 +5,8 @@ permalink: /changelog/
 ---
 
 # 150.0 (In Development)
+* **browser-engine-gecko**
+  * 🆕 The content blocking log will now inform also of blocked cross-site cookies. [Bug 2020898](https://bugzilla.mozilla.org/show_bug.cgi?id=2020898)
 * **support-utils**
   * The `Browsers().isDefaultBrowser()` method has been removed in favor of a more performant version available as a `Browsers.isDefaultBrowser()` static method. [Bug 2008662](https://bugzilla.mozilla.org/show_bug.cgi?id=2008662)
 

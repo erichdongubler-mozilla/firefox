@@ -7,6 +7,7 @@
 #include "mozilla/dom/NavigationUtils.h"
 
 #include "mozilla/dom/NavigationBinding.h"
+#include "mozilla/dom/SessionHistoryEntry.h"
 #include "nsDocShellLoadTypes.h"
 
 namespace mozilla::dom {

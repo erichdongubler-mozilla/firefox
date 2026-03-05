@@ -721,3 +721,48 @@ TEST(TestFile, PrefixedOnWin_ComponentEndsWithPeriod)
                         /* aTestCreateUnique */ true,
                         /* aTestNormalize */ false);
 }
+
+TEST(TestFile, GetRelativePath)
+{
+  nsCOMPtr<nsIFile> base;
+  ASSERT_NS_SUCCEEDED(
+      NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(base)));
+
+  nsCOMPtr<nsIFile> child;
+  ASSERT_NS_SUCCEEDED(base->Clone(getter_AddRefs(child)));
+  ASSERT_NS_SUCCEEDED(child->AppendNative("places.sqlite"_ns));
+
+  nsAutoCString result;
+
+  // Path without \\?\ prefix: child relative to base is just the filename.
+  ASSERT_NS_SUCCEEDED(child->GetRelativePath(base, result));
+  EXPECT_STREQ(result.get(), "places.sqlite");
+
+#ifdef XP_WIN
+  // GetRelativePath strips the \\?\ prefix before comparing, so paths with
+  // and without the prefix must yield the same result.
+  nsCOMPtr<nsIFile> prefixedBase;
+  ASSERT_NS_SUCCEEDED(base->Clone(getter_AddRefs(prefixedBase)));
+  nsCOMPtr<nsILocalFileWin> winPrefixedBase = do_QueryInterface(prefixedBase);
+  ASSERT_TRUE(winPrefixedBase);
+  winPrefixedBase->SetUseDOSDevicePathSyntax(true);
+
+  nsCOMPtr<nsIFile> prefixedChild;
+  ASSERT_NS_SUCCEEDED(child->Clone(getter_AddRefs(prefixedChild)));
+  nsCOMPtr<nsILocalFileWin> winPrefixedChild = do_QueryInterface(prefixedChild);
+  ASSERT_TRUE(winPrefixedChild);
+  winPrefixedChild->SetUseDOSDevicePathSyntax(true);
+
+  // Both paths with \\?\ prefix.
+  ASSERT_NS_SUCCEEDED(prefixedChild->GetRelativePath(prefixedBase, result));
+  EXPECT_STREQ(result.get(), "places.sqlite");
+
+  // Prefixed child, unprefixed base.
+  ASSERT_NS_SUCCEEDED(prefixedChild->GetRelativePath(base, result));
+  EXPECT_STREQ(result.get(), "places.sqlite");
+
+  // Unprefixed child, prefixed base.
+  ASSERT_NS_SUCCEEDED(child->GetRelativePath(prefixedBase, result));
+  EXPECT_STREQ(result.get(), "places.sqlite");
+#endif
+}

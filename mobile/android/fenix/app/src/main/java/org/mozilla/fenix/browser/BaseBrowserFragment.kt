@@ -1117,7 +1117,10 @@ abstract class BaseBrowserFragment :
             toolbarPositionProvider = {
                 requireContext().settings().toolbarPosition
             },
-            onShow = ::onAutocompleteBarShow,
+            onShow = {
+                onAutocompleteBarShow()
+                EmailMask.promptShown.record()
+            },
             onHide = ::onAutocompleteBarHide,
         )
 
@@ -1194,6 +1197,8 @@ abstract class BaseBrowserFragment :
                     }
 
                     override suspend fun onEmailMaskClick(generatedFor: String) = withContext(IO) {
+                        EmailMask.promptClicked.record()
+
                         val relay = requireComponents.relayFeatureIntegration
                         // For this phase, we'll also use the generatedFor value for the description.
                         val created = relay.getOrCreateNewMask(generatedFor, generatedFor)
@@ -1208,6 +1213,8 @@ abstract class BaseBrowserFragment :
                             appStore.dispatch(AppAction.SnackbarAction.ShowSnackbar(errorMessage))
                             return@withContext null
                         }
+
+                        EmailMask.autofillSuccess.record()
 
                         created.fullAddress
                     }
@@ -1626,6 +1633,7 @@ abstract class BaseBrowserFragment :
         browserStore = activity.components.core.store,
         browserScreenStore = browserScreenStore,
         components = activity.components,
+        browsingModeManager = activity.browsingModeManager,
         browserAnimator = browserAnimator,
         thumbnailsFeature = { thumbnailsFeature.get() },
         readerModeController = readerModeController,
@@ -2265,7 +2273,7 @@ abstract class BaseBrowserFragment :
     @VisibleForTesting
     internal fun updateThemeForSession(session: SessionState) {
         val sessionMode = BrowsingMode.fromBoolean(session.content.private)
-        requireComponents.appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(mode = sessionMode))
+        (activity as HomeActivity).browsingModeManager.mode = sessionMode
     }
 
     /**
@@ -2428,7 +2436,7 @@ abstract class BaseBrowserFragment :
             (view as? SwipeGestureLayout)?.isSwipeEnabled = true
             (activity as? HomeActivity)?.let { homeActivity ->
                 // ExternalAppBrowserActivity exclusively handles it's own theming unless in private mode.
-                if (homeActivity !is ExternalAppBrowserActivity || requireComponents.appStore.state.mode.isPrivate) {
+                if (homeActivity !is ExternalAppBrowserActivity || homeActivity.browsingModeManager.mode.isPrivate) {
                     homeActivity.themeManager.applyStatusBarTheme(
                         homeActivity,
                         requireContext().settings().isTabStripEnabled,

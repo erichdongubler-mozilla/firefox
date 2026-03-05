@@ -304,6 +304,14 @@ export const FeatureManifest: {
                 fallbackPref: string;
                 description: string;
             };
+            novaFeatureGate: {
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+                description: string;
+            };
             exposureResults: {
                 type: string;
                 setPref: {
@@ -321,6 +329,11 @@ export const FeatureManifest: {
                 description: string;
             };
             quickSuggestAmpTopPickCharThreshold: {
+                type: string;
+                fallbackPref: string;
+                description: string;
+            };
+            quickSuggestAmpTopPickUseNovaIconSize: {
                 type: string;
                 fallbackPref: string;
                 description: string;
@@ -2013,27 +2026,6 @@ export const FeatureManifest: {
             };
         };
     };
-    "email-autocomplete-relay": {
-        description: string;
-        exposureDescription: string;
-        hasExposure: boolean;
-        owner: string;
-        variables: {
-            firstOfferVersion: {
-                type: string;
-                description: string;
-                fallbackPref: string;
-            };
-            showToAllBrowsers: {
-                type: string;
-                setPref: {
-                    branch: string;
-                    pref: string;
-                };
-                description: string;
-            };
-        };
-    };
     "address-autofill-feature": {
         description: string;
         owner: string;
@@ -2183,6 +2175,38 @@ export const FeatureManifest: {
         };
         variables: {};
     };
+    privacySecurityMessaging: {
+        description: string;
+        owner: string;
+        hasExposure: boolean;
+        exposureDescription: string;
+        variables: {
+            blockingMilestoneMessagingEnabled: {
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+                description: string;
+            };
+            blockingMilestones: {
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+                description: string;
+            };
+            blockingMilestoneUpdateInterval: {
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+                description: string;
+            };
+        };
+    };
     fullPageTranslation: {
         description: string;
         owner: string;
@@ -2214,6 +2238,21 @@ export const FeatureManifest: {
         };
     };
     selectTranslation: {
+        description: string;
+        owner: string;
+        hasExposure: boolean;
+        variables: {
+            enabled: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
+        };
+    };
+    translationsQuickAction: {
         description: string;
         owner: string;
         hasExposure: boolean;
@@ -3881,6 +3920,53 @@ export const FeatureManifest: {
         hasExposure: boolean;
         variables: {
             enabled: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
+        };
+    };
+    safeBrowsingRealTime: {
+        description: string;
+        owner: string;
+        hasExposure: boolean;
+        variables: {
+            enabled: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
+            globalCacheEnabled: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
+            simulationEnabled: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
+            simulationCacheTTLSec: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
+            simulationHitProbability: {
                 description: string;
                 type: string;
                 setPref: {
@@ -5694,6 +5780,14 @@ export const FeatureManifest: {
                 };
             };
             chipsPartitionLimitByteCapacity: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
+            chipsAffectsTCP: {
                 description: string;
                 type: string;
                 setPref: {

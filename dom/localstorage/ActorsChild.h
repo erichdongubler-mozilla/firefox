@@ -158,7 +158,7 @@ class LSRequestChild final : public PBackgroundLSRequestChild {
 
  public:
   void AssertIsOnOwningThread() const {
-    NS_ASSERT_OWNINGTHREAD(LSReqeustChild);
+    NS_ASSERT_OWNINGTHREAD(LSRequestChild);
   }
 
   bool Finishing() const;
@@ -209,7 +209,7 @@ class LSSimpleRequestChild final : public PBackgroundLSSimpleRequestChild {
 
  public:
   void AssertIsOnOwningThread() const {
-    NS_ASSERT_OWNINGTHREAD(LSSimpleReqeustChild);
+    NS_ASSERT_OWNINGTHREAD(LSSimpleRequestChild);
   }
 
  private:

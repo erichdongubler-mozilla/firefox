@@ -203,6 +203,7 @@ struct SynthesizeTouchEventData;
 struct SynthesizeTouchEventOptions;
 class TrustedHTMLOrString;
 class VoidFunction;
+class WindowContext;
 class WorkerPrivate;
 enum class ElementCallbackType;
 enum class ReferrerPolicy : uint8_t;
@@ -960,6 +961,13 @@ class nsContentUtils {
   static nsIPrincipal* GetAttrTriggeringPrincipal(
       nsIContent* aContent, const nsAString& aAttrValue,
       nsIPrincipal* aSubjectPrincipal);
+
+  /* Returns true if browser allowed to navigate aTarget BrowsingContext using
+   * aSource BrowsingContext and aDocumentPrincipal */
+  static bool CanNavigate(mozilla::dom::BrowsingContext* aSource,
+                          mozilla::dom::BrowsingContext* aTarget,
+                          nsIPrincipal* aDocumentPrincipal,
+                          bool aConsiderOpener);
 
   /**
    * Returns true if the given string is guaranteed to be treated as an absolute

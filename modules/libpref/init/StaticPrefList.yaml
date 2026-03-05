@@ -3760,6 +3760,17 @@
   value: true
   mirror: always
 
+# ModelContext API
+- name: dom.modelcontext.enabled
+  type: bool
+  value: false
+  mirror: always
+
+- name: dom.modelcontext.testing.enabled
+  type: bool
+  value: false
+  mirror: always
+
 # Enable ParentNode.moveBefore().
 - name: dom.movebefore.enabled
   type: bool
@@ -5693,7 +5704,7 @@
 # https://drafts.csswg.org/cssom-view/#dom-document-caretpositionfrompoint
 - name: dom.shadowdom.new_caretPositionFromPoint_behavior.enabled
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 - name: dom.shadowdom.referenceTarget.enabled
@@ -6058,6 +6069,18 @@
 
 # Per-domain blocklist for the previous hack.
 - name: dom.about-blank-ckeditor-hack.disabled-domains
+  type: String
+  value: ""
+  mirror: never
+
+# Whether to enable about:blank async-load workaround for GWT's RichTextArea.
+- name: dom.about-blank-gwt-hack.enabled
+  type: bool
+  value: true
+  mirror: always
+
+# Per-domain blocklist for the previous hack.
+- name: dom.about-blank-gwt-hack.disabled-domains
   type: String
   value: ""
   mirror: never
@@ -13377,9 +13400,11 @@
   mirror: always
 
 # If lazy purge is enabled, the minimum idle budget we wait for in MS.
+# This is higher than GC (5ms) and CC (2ms) so that purge defers to
+# GC/CC for idle time, preserving the dirty page reuse window.
 - name: memory.lazypurge.minimum_idle_budget
   type: uint32_t
-  value: 5
+  value: 10
   mirror: always
 
 # If lazy purge is enabled, the minimum time we wait with purge after some
@@ -15128,12 +15153,6 @@
 - name: network.trr.allow-rfc1918
   type: RelaxedAtomicBool
   value: false
-  mirror: always
-
-# When true, it only sends AAAA when the system has IPv6 connectivity
-- name: network.trr.skip-AAAA-when-not-supported
-  type: RelaxedAtomicBool
-  value: true
   mirror: always
 
 # Whether to apply split horizon mitigations when using TRR.
@@ -18113,6 +18132,11 @@
 - name: security.waict.downgrade_protection.enable
   type: RelaxedAtomicBool
   value: false
+  mirror: always
+
+- name: security.waict.allowed_image_storage
+  type: RelaxedAtomicUint32
+  value: 52428800  # 50MB
   mirror: always
 
 # Which mechanism the secret decoder ring should use for encryption. Decryption

@@ -349,7 +349,8 @@ class WeakMap : public WeakMapBase {
  public:
   using Lookup = typename Map::Lookup;
   using Entry = typename Map::Entry;
-  using Range = typename Map::Range;
+  using Iterator = typename Map::Iterator;
+  using ModIterator = typename Map::ModIterator;
 
   // Restrict the interface of HashMap::Ptr and AddPtr to remove mutable access
   // to the hash table entry which could otherwise bypass our barriers.
@@ -380,10 +381,6 @@ class WeakMap : public WeakMapBase {
     const Entry* operator->() const { return &*ptr; }
   };
 
-  struct Enum : public Map::Enum {
-    explicit Enum(WeakMap& map) : Map::Enum(map.map()) {}
-  };
-
   // Create a weak map owned by a JS object. Used for script-facing objects.
   explicit WeakMap(JSContext* cx, JSObject* memOf);
 
@@ -392,7 +389,8 @@ class WeakMap : public WeakMapBase {
 
   ~WeakMap() override;
 
-  Range all() const { return map().all(); }
+  Iterator iter() const { return map().iter(); }
+  ModIterator modIter() { return map().modIter(); }
   uint32_t count() const { return map().count(); }
   bool empty() const override { return map().empty(); }
   bool has(const Lookup& lookup) const { return map().has(lookup); }
@@ -470,14 +468,14 @@ class WeakMap : public WeakMapBase {
   }
 #endif
 
-  bool markEntry(GCMarker* marker, gc::CellColor mapColor, Enum& iter,
+  bool markEntry(GCMarker* marker, gc::CellColor mapColor, ModIterator& iter,
                  bool populateWeakKeysTable);
 
   void trace(JSTracer* trc) override;
 
   // Used by the debugger to trace cross-compartment edges.
   void traceKeys(JSTracer* trc);
-  void traceKey(JSTracer* trc, Enum& iter);
+  void traceKey(JSTracer* trc, ModIterator& iter);
 
   size_t shallowSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
 

@@ -154,6 +154,7 @@ export const toolsConfig = [
  *
  * @param {number} n
  *  Maximum number of tabs to return. Defaults to 15.
+ * @param {object} _secProps
  * @returns {Promise<Array<object>>}
  *  A promise resolving to an array of tab metadata objects, each containing:
  *  - url {string}: The tab's current URL
@@ -162,7 +163,7 @@ export const toolsConfig = [
  *  - lastAccessed {number}: Last accessed timestamp in milliseconds
  *  Tabs are sorted by most recently accessed and limited to the first n results.
  */
-export async function getOpenTabs(n = 15) {
+export async function getOpenTabs(n = 15, _secProps) {
   const tabs = [];
 
   for (const win of lazy.BrowserWindowTracker.orderedWindows) {
@@ -235,12 +236,13 @@ export async function getOpenTabs(n = 15) {
  *  Optional local ISO-8601 end timestamp (e.g. "2025-11-07T09:00:00").
  * @param {number} toolParams.historyLimit
  *  Maximum number of history results to return.
+ * @param {object} _secProps
  * @returns {Promise<object>}
  *  A promise resolving to an object with the search term and history results.
  *  Includes `count` when matches exist, a `message` when none are found, or an
  *  `error` string on failure.
  */
-export async function searchBrowsingHistory(toolParams) {
+export async function searchBrowsingHistory(toolParams, _secProps) {
   const params = toolParams && typeof toolParams === "object" ? toolParams : {};
 
   const {
@@ -312,9 +314,10 @@ export class RunSearch {
    * @param {string} toolParams.query
    * @param {object} [context]
    * @param {BrowsingContext} [context.browsingContext]
+   * @param {object} _secProps
    * @returns {Promise<string>}
    */
-  static async runSearch({ query }, context = {}) {
+  static async runSearch({ query }, context = {}, _secProps) {
     if (!query || typeof query !== "string" || !query.trim()) {
       return "Error: a non-empty search query is required.";
     }
@@ -512,26 +515,35 @@ export class GetPageContent {
    * @param {object} toolParams
    * @param {string[]} toolParams.url_list
    * @param {Set<string>} allowedUrls
+   * @param {object} securityProperties - Security flags from the conversation.
+   * @param {boolean} [securityProperties.untrusted_input]
+   * @param {boolean} [securityProperties.private_data]
    * @returns {Promise<Array<string>>}
    *  A promise resolving to a string containing the extracted page content
    *  with a descriptive header, or an error message if extraction fails.
    */
-  static async getPageContent({ url_list }, allowedUrls = new Set()) {
+  static async getPageContent(
+    { url_list },
+    allowedUrls = new Set(),
+    securityProperties = {}
+  ) {
     // Ensure `url_list` is always an array
     if (!Array.isArray(url_list)) {
       throw new Error("getPageContent now requires { url_list: [...] }");
     }
 
     const promises = url_list.map(url =>
-      GetPageContent.#processSingleURL(url, allowedUrls)
+      GetPageContent.#processSingleURL(url, allowedUrls, securityProperties)
     );
 
     // Run all fetches in parallel
     const ret_contents = await Promise.all(promises);
+    securityProperties.untrusted_input = true;
+    securityProperties.private_data = true;
     return ret_contents;
   }
 
-  static async #processSingleURL(url, allowedUrls) {
+  static async #processSingleURL(url, allowedUrls, securityProperties) {
     try {
       // Search through the allowed URLs and extract directly if exists
       if (!allowedUrls.has(url)) {
@@ -539,6 +551,16 @@ export class GetPageContent {
         // It might be a better idea to have the lifetime of the page be tied to the chat
         // while it's open, and with a "keep alive" timeout. For now it's simpler to just
         // load the page fresh every time.
+        if (
+          Services.prefs.getBoolPref(
+            "browser.smartwindow.checkSecurityFlags",
+            true
+          ) &&
+          securityProperties.untrusted_input &&
+          securityProperties.private_data
+        ) {
+          return `get_page_content is not available for ${url} when the conversation involves both untrusted input and private data.`;
+        }
         return PageExtractorParent.getHeadlessExtractor(url, pageExtractor =>
           GetPageContent.#runExtraction(
             pageExtractor,
@@ -716,7 +738,7 @@ export class GetPageContent {
   }
 }
 
-export async function getUserMemories() {
+export async function getUserMemories(_toolParams, _secProps) {
   const memories = await lazy.MemoriesManager.getAllMemories();
 
   return memories.map(memory => memory.memory_summary);

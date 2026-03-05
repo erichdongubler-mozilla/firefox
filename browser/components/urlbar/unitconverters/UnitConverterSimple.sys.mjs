@@ -173,6 +173,21 @@ const UNITS_GROUPS = [
     carat: 5000,
     ffd: 5000,
   },
+  {
+    // Speed
+    "m/s": 1,
+    "km/h": 3600 / 1000,
+    "km/hr": "km/h",
+    kph: "km/h",
+    "ft/s": M_TO_IN / 12,
+    fps: "ft/s",
+    mph: (3600 * M_TO_IN) / 63360,
+    "mi/hr": "mph",
+    "mi/h": "mph",
+    knot: 3600 / 1852,
+    kn: "knot",
+    kt: "knot",
+  },
 ];
 
 // There are some units that will be same in lower case in same unit group.

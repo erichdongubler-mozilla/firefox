@@ -25,7 +25,8 @@ CSSUnitValue::CSSUnitValue(nsCOMPtr<nsISupports> aParent, double aValue,
 // static
 RefPtr<CSSUnitValue> CSSUnitValue::Create(nsCOMPtr<nsISupports> aParent,
                                           const StyleUnitValue& aUnitValue) {
-  return MakeRefPtr<CSSUnitValue>(aParent, aUnitValue.value, aUnitValue.unit);
+  return MakeRefPtr<CSSUnitValue>(std::move(aParent), aUnitValue.value,
+                                  aUnitValue.unit);
 }
 
 JSObject* CSSUnitValue::WrapObject(JSContext* aCx,

@@ -4,17 +4,24 @@
 
 package org.mozilla.fenix.search
 
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.EnterEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ExitEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
+import mozilla.components.support.test.rule.MainLooperTestRule
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
@@ -26,6 +33,12 @@ class BrowserToolbarSearchStatusSyncMiddlewareTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
+
+    @get:Rule
+    val mainLooperRule = MainLooperTestRule()
+
+    private val appStore = AppStore()
+    private val browsingModeManager: BrowsingModeManager = mockk(relaxed = true)
 
     @Test
     fun `WHEN the toolbar exits search mode THEN synchronize search being ended for the application`() = runTest(testDispatcher) {
@@ -63,6 +76,7 @@ class BrowserToolbarSearchStatusSyncMiddlewareTest {
     @Test
     fun `GIVEN in private browsing mode WHEN search starts in the application THEN put the toolbar in search mode also`() = runTest(testDispatcher) {
         val appStore = AppStore(AppState(mode = BrowsingMode.Private))
+        every { browsingModeManager.mode } returns BrowsingMode.Private
         val (_, toolbarStore) = buildMiddlewareAndAddToSearchStore(appStore)
 
         appStore.dispatch(SearchStarted())
@@ -102,9 +116,11 @@ class BrowserToolbarSearchStatusSyncMiddlewareTest {
     }
 
     private fun buildMiddlewareAndAddToSearchStore(
-        appStore: AppStore,
+        appStore: AppStore = this.appStore,
+        browsingModeManager: BrowsingModeManager = this.browsingModeManager,
+        scope: CoroutineScope = testScope,
     ): Pair<BrowserToolbarSearchStatusSyncMiddleware, BrowserToolbarStore> {
-        val middleware = buildMiddleware(appStore)
+        val middleware = buildMiddleware(appStore, browsingModeManager, scope)
         val toolbarStore = BrowserToolbarStore(
             middleware = listOf(middleware),
         )
@@ -112,6 +128,8 @@ class BrowserToolbarSearchStatusSyncMiddlewareTest {
     }
 
     private fun buildMiddleware(
-        appStore: AppStore,
-    ) = BrowserToolbarSearchStatusSyncMiddleware(appStore, testScope)
+        appStore: AppStore = this.appStore,
+        browsingModeManager: BrowsingModeManager = this.browsingModeManager,
+        scope: CoroutineScope = testScope,
+    ) = BrowserToolbarSearchStatusSyncMiddleware(appStore, browsingModeManager, scope)
 }

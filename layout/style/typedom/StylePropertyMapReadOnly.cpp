@@ -192,7 +192,7 @@ void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
           break;
 
         case StyleTypedValue::Tag::Numeric: {
-          auto numericValue = typedValue.AsNumeric();
+          const auto& numericValue = typedValue.AsNumeric();
 
           styleValue = CSSNumericValue::Create(mParent, numericValue);
 

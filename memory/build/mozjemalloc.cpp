@@ -1293,7 +1293,9 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
 }
 #endif
 
-ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
+ArenaPurgeResult arena_t::Purge(
+    PurgeCondition aCond, PurgeStats& aStats,
+    const Maybe<std::function<bool()>>& aKeepGoing) {
   arena_chunk_t* chunk = nullptr;
 
   // The first critical section will find a chunk and mark dirty pages in it as
@@ -1376,7 +1378,10 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
   // call FinishPurgingInChunk() before returning.
   bool purged_once = false;
 
-  while (continue_purge_chunk && continue_purge_arena) {
+  // False if aKeepGoing prevents us from finishing this chunk in one go.
+  bool keep_going = true;
+
+  while (continue_purge_chunk && continue_purge_arena && keep_going) {
     // This structure is used to communicate between the two PurgePhase
     // functions.
     PurgeInfo purge_info(*this, chunk, aStats);
@@ -1424,6 +1429,10 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
 #  endif
 #endif
 
+    // Check budget outside any lock, after the madvise/decommit which is the
+    // potentially expensive operation.
+    keep_going = aKeepGoing ? (*aKeepGoing)() : true;
+
     arena_chunk_t* chunk_to_release = nullptr;
     bool arena_is_dying;
     {
@@ -1442,10 +1451,15 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
       chunk_to_release = ctr;
       continue_purge_arena = purge_info.mArena.ShouldContinuePurge(aCond);
 
-      if (!continue_purge_chunk || !continue_purge_arena) {
-        // We're going to stop purging here so update the chunk's bookkeeping.
+      if (!continue_purge_chunk || !continue_purge_arena || !keep_going) {
+        // We're going to stop (or pause) purging here so update the chunk's
+        // bookkeeping to reflect what we did (so far).
         purge_info.FinishPurgingInChunk(true, continue_purge_chunk);
-        purge_info.mArena.mIsPurgePending = false;
+        // Only clear mIsPurgePending when truly done. Otherwise the arena
+        // stays marked pending so it gets re-queued for the next purge pass.
+        if (!continue_purge_arena) {
+          purge_info.mArena.mIsPurgePending = false;
+        }
       }
     }  // MaybeMutexAutoLock
 
@@ -1482,7 +1496,7 @@ ArenaPurgeResult arena_t::PurgeLoop(PurgeCondition aCond, const char* aCaller,
   uint64_t now = aReuseGraceMS ? 0 : GetTimestampNS();
   ArenaPurgeResult pr;
   do {
-    pr = Purge(aCond, purge_stats);
+    pr = Purge(aCond, purge_stats, aKeepGoing);
     now = aReuseGraceMS ? 0 : GetTimestampNS();
   } while (
       pr == NotDone &&

@@ -339,11 +339,14 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvLoadURI(
 
   RefPtr<CanonicalBrowsingContext> targetBC = aTargetBC.get_canonical();
 
-  // FIXME: For cross-process loads, we should double check CanAccess() for the
-  // source browsing context in the parent process.
-
   if (targetBC->Group() != BrowsingContext()->Group()) {
     return IPC_FAIL(this, "Illegal cross-group BrowsingContext load");
+  }
+
+  if (!nsContentUtils::CanNavigate(BrowsingContext(), targetBC.get(),
+                                   DocumentPrincipal(), true)) {
+    return IPC_FAIL(this,
+                    "Illegal cross-process load attempt (!CanNavigate())");
   }
 
   // FIXME: We should really initiate the load in the parent before bouncing
@@ -373,11 +376,14 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvInternalLoad(
   RefPtr<CanonicalBrowsingContext> targetBC =
       aLoadState->TargetBrowsingContext().get_canonical();
 
-  // FIXME: For cross-process loads, we should double check CanAccess() for the
-  // source browsing context in the parent process.
-
   if (targetBC->Group() != BrowsingContext()->Group()) {
     return IPC_FAIL(this, "Illegal cross-group BrowsingContext load");
+  }
+
+  if (!nsContentUtils::CanNavigate(BrowsingContext(), targetBC.get(),
+                                   DocumentPrincipal(), true)) {
+    return IPC_FAIL(this,
+                    "Illegal cross-process load attempt (!CanNavigate())");
   }
 
   // FIXME: We should really initiate the load in the parent before bouncing

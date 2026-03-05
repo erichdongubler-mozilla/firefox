@@ -1286,15 +1286,24 @@ class NetworkModule extends RootBiDiModule {
     }
 
     const value = await collectedData.bytes.getBytesValue();
-    const type = collectedData.bytes.isBase64
-      ? BytesValueType.Base64
-      : BytesValueType.String;
 
     if (disown) {
       this.#removeCollectorFromData(collectedData, collector);
     }
 
-    return { bytes: this.#serializeAsBytesValue(value, type) };
+    const type = collectedData.bytes.isBase64
+      ? BytesValueType.Base64
+      : BytesValueType.String;
+
+    // The data retrieved here is already either a UTF8-decoded string or a
+    // base64 encoded binary. No need to re-apply the serializeAsBytesValue
+    // algorithm.
+    return {
+      bytes: {
+        type,
+        value,
+      },
+    };
   }
 
   /**
@@ -2863,10 +2872,7 @@ class NetworkModule extends RootBiDiModule {
   #serializeHeader(name, value) {
     return {
       name,
-      // TODO: For now, we handle all headers and cookies with the "string" type.
-      // See Bug 1835216 to add support for "base64" type and handle non-utf8
-      // values.
-      value: this.#serializeAsBytesValue(value, BytesValueType.String),
+      value: serializeAsBytesValue(value),
     };
   }
 
@@ -2907,24 +2913,6 @@ class NetworkModule extends RootBiDiModule {
       headerValue += `;SameSite=${sameSite}`;
     }
     return headerValue;
-  }
-
-  /**
-   * Serialize a value as BytesValue.
-   *
-   * Note: This does not attempt to fully implement serialize protocol bytes
-   * (https://w3c.github.io/webdriver-bidi/#serialize-protocol-bytes) as the
-   * header values read from the Channel are already serialized as strings at
-   * the moment.
-   *
-   * @param {string} value
-   *     The value to serialize.
-   */
-  #serializeAsBytesValue(value, type) {
-    return {
-      type,
-      value,
-    };
   }
 
   #startListening(event) {
@@ -3042,20 +3030,87 @@ class NetworkModule extends RootBiDiModule {
 /**
  * Deserialize a network BytesValue.
  *
- * @param {BytesValue} bytesValue
+ * @see https://w3c.github.io/webdriver-bidi/#deserialize-protocol-bytes
+ *
+ * @param {BytesValue} protocolBytes
  *     The BytesValue to deserialize.
  * @returns {string}
  *     The deserialized value.
  */
-export function deserializeBytesValue(bytesValue) {
-  const { type, value } = bytesValue;
+export function deserializeBytesValue(protocolBytes) {
+  const { type, value } = protocolBytes;
 
+  let bytes;
   if (type === BytesValueType.String) {
-    return value;
+    // If protocol bytes matches the network.StringValue production
+    // Encode values as UTF-8
+    bytes = encodeAsUTF8(value);
+  } else {
+    // Otherwise if protocol bytes matches the network.Base64Value production
+    // Let bytes be forgiving-base64 decode protocol bytes["value"].
+    bytes = atob(value);
   }
 
-  // For type === BytesValueType.Base64.
-  return atob(value);
+  return bytes;
+}
+
+/**
+ * Encode the provided value as UTF-8, working around argument limits in JS.
+ *
+ * @param {string} value
+ *     The value to encode.
+ * @return {string}
+ *     The UTF-8 encoded string.
+ */
+function encodeAsUTF8(value) {
+  const CHUNK_SIZE = 65536;
+  let result = "";
+
+  const encoder = new TextEncoder();
+  const utf8Bytes = encoder.encode(value);
+  for (let i = 0; i < utf8Bytes.length; i += CHUNK_SIZE) {
+    const chunk = utf8Bytes.slice(i, i + CHUNK_SIZE);
+    result += String.fromCharCode.apply(null, chunk);
+  }
+  return result;
+}
+
+/**
+ * Serialize a value as BytesValue.
+ *
+ * @see https://w3c.github.io/webdriver-bidi/#serialize-protocol-bytes
+ *
+ * @param {string} bytes
+ *     The value to serialize.
+ * @return {BytesValue}
+ *     The serialized value.
+ */
+function serializeAsBytesValue(bytes) {
+  let text, type;
+  try {
+    type = BytesValueType.String;
+    // Let text be UTF-8 decode without BOM or fail bytes.
+    const decoder = new TextDecoder("utf-8", {
+      fatal: true,
+      ignoreBOM: true,
+    });
+    text = decoder.decode(Uint8Array.from(bytes, c => c.charCodeAt(0)));
+  } catch (e) {
+    if (e instanceof TypeError) {
+      // If text is failure, return a map matching the network.Base64Value production,
+      type = BytesValueType.Base64;
+      // Set value to forgiving-base64 encode bytes.
+      text = btoa(bytes);
+    } else {
+      // Errors other than TypeError are unexpected and should bubble up.
+      throw e;
+    }
+  }
+
+  return {
+    type,
+    value: text,
+  };
 }
 
 export const network = NetworkModule;

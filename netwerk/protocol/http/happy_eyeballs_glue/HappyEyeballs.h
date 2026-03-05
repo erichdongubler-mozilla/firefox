@@ -17,9 +17,10 @@ class HappyEyeballs final {
  public:
   static nsresult Init(HappyEyeballs** aHappyEyeballs,
                        const nsACString& aOrigin, uint16_t aPort,
-                       const nsTArray<happy_eyeballs::AltSvc>* aAltSvc) {
+                       const nsTArray<happy_eyeballs::AltSvc>* aAltSvc,
+                       happy_eyeballs::IpPreference aPref) {
     return happy_eyeballs::create((const HappyEyeballs**)aHappyEyeballs,
-                                  &aOrigin, aPort, aAltSvc);
+                                  &aOrigin, aPort, aAltSvc, aPref);
   }
 
   void AddRef() { happy_eyeballs::addref(this); }

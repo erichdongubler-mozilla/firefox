@@ -2011,6 +2011,7 @@ internal fun ContentBlockingController.LogEntry.BlockingData.hasBlockedCookies()
     return category == Event.COOKIES_BLOCKED_BY_PERMISSION ||
         category == Event.COOKIES_BLOCKED_TRACKER ||
         category == Event.COOKIES_BLOCKED_ALL ||
+        category == Event.COOKIES_PARTITIONED_TRACKER ||
         category == Event.COOKIES_PARTITIONED_FOREIGN ||
         category == Event.COOKIES_BLOCKED_FOREIGN ||
         category == Event.COOKIES_BLOCKED_SOCIALTRACKER

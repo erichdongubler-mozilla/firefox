@@ -532,6 +532,129 @@ add_task(async function test_Chat_modelId_reads_from_pref() {
   );
 });
 
+add_task(
+  async function test_Chat_fetchWithHistory_get_page_content_sets_flags_and_only_works_once() {
+    const sb = sinon.createSandbox();
+    try {
+      let callCount = 0;
+      const fakeEngine = {
+        runWithGenerator(_options) {
+          callCount++;
+          async function* gen() {
+            if (callCount === 1) {
+              yield {
+                toolCalls: [
+                  {
+                    id: "call_gpc_001",
+                    function: {
+                      name: "get_page_content",
+                      arguments: JSON.stringify({ url: "https://example.com" }),
+                    },
+                  },
+                ],
+              };
+            } else if (callCount === 2) {
+              yield {
+                toolCalls: [
+                  {
+                    id: "call_gpc_002",
+                    function: {
+                      name: "get_page_content",
+                      arguments: JSON.stringify({ url: "https://example.com" }),
+                    },
+                  },
+                ],
+              };
+            } else {
+              yield { text: "Final answer." };
+            }
+          }
+          return gen();
+        },
+        getConfig() {
+          return {};
+        },
+      };
+
+      const getPageContentStub = sb
+        .stub(Chat.toolMap, "get_page_content")
+        .callsFake(async (_params, _allowedUrls, secProps = {}) => {
+          if (secProps.untrusted_input && secProps.private_data) {
+            return [
+              `get_page_content is not available for ${_params?.url} when the conversation involves both untrusted input and private data.`,
+            ];
+          }
+          secProps.untrusted_input = true;
+          secProps.private_data = true;
+          return ["page content"];
+        });
+      sb.stub(openAIEngine, "build").resolves(fakeEngine);
+
+      const conversation = new ChatConversation({
+        title: "flags test",
+        description: "desc",
+        pageUrl: new URL("https://www.firefox.com"),
+        pageMeta: {},
+        securityProperties: { untrusted_input: false, private_data: false },
+      });
+      conversation.addUserMessage(
+        "Get page content twice",
+        "https://www.firefox.com",
+        0
+      );
+
+      const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+      let textOutput = "";
+      for await (const chunk of Chat.fetchWithHistory(
+        conversation,
+        engineInstance
+      )) {
+        if (typeof chunk === "string") {
+          textOutput += chunk;
+        }
+      }
+
+      Assert.strictEqual(
+        conversation.securityProperties.untrusted_input,
+        true,
+        "untrusted_input should be true after get_page_content"
+      );
+      Assert.strictEqual(
+        conversation.securityProperties.private_data,
+        true,
+        "private_data should be true after get_page_content"
+      );
+      Assert.ok(
+        getPageContentStub.calledTwice,
+        "get_page_content should be called twice"
+      );
+
+      const toolResultMessages = conversation.messages.filter(
+        message => message.role === MESSAGE_ROLE.TOOL
+      );
+      Assert.equal(
+        toolResultMessages.length,
+        2,
+        "Should have two tool result messages"
+      );
+      Assert.ok(
+        String(toolResultMessages[0].content?.body).includes("page content"),
+        "First call should return actual content"
+      );
+      Assert.ok(
+        String(toolResultMessages[1].content?.body).includes("not available"),
+        "Second call should return refusal"
+      );
+      Assert.ok(
+        textOutput.includes("Final answer."),
+        "Should yield text from the final engine call"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
 add_task(async function test_Chat_fetchWithHistory_uses_modelId_from_pref() {
   const sb = sinon.createSandbox();
   try {

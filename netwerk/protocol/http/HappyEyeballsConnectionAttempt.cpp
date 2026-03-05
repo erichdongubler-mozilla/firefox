@@ -41,27 +41,8 @@ HappyEyeballsConnectionAttempt::HappyEyeballsConnectionAttempt(
   LOG(("HappyEyeballsConnectionAttempt ctor %p", this));
   if (mConnInfo->GetRoutedHost().IsEmpty()) {
     mHost = mConnInfo->GetOrigin();
-    nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
-    (void)HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
-                              static_cast<uint16_t>(mConnInfo->OriginPort()),
-                              &emptyAltSvc);
   } else {
     mHost = mConnInfo->GetRoutedHost();
-    if (mConnInfo->IsHttp3()) {
-      LOG(("HappyEyeballsConnectionAttempt for HTTP/3"));
-      nsTArray<happy_eyeballs::AltSvc> altSvcArray;
-      happy_eyeballs::AltSvc altsvc{};
-      altsvc.protocol = happy_eyeballs::HttpVersion::H3;
-      altSvcArray.AppendElement(altsvc);
-      (void)HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
-                                static_cast<uint16_t>(mConnInfo->RoutedPort()),
-                                &altSvcArray);
-    } else {
-      nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
-      (void)HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
-                                static_cast<uint16_t>(mConnInfo->RoutedPort()),
-                                &emptyAltSvc);
-    }
   }
 }
 
@@ -69,8 +50,44 @@ HappyEyeballsConnectionAttempt::~HappyEyeballsConnectionAttempt() {
   LOG(("HappyEyeballsConnectionAttempt dtor %p", this));
 }
 
+nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
+    ConnectionEntry* ent) {
+  happy_eyeballs::IpPreference ipPref =
+      happy_eyeballs::IpPreference::DualStackPreferV6;
+  if (ent->PreferenceKnown() && ent->mPreferIPv4) {
+    ipPref = happy_eyeballs::IpPreference::DualStackPreferV4;
+  }
+
+  if (mConnInfo->GetRoutedHost().IsEmpty()) {
+    nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
+    return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
+                               static_cast<uint16_t>(mConnInfo->OriginPort()),
+                               &emptyAltSvc, ipPref);
+  }
+
+  if (mConnInfo->IsHttp3()) {
+    LOG(("HappyEyeballsConnectionAttempt for HTTP/3"));
+    nsTArray<happy_eyeballs::AltSvc> altSvcArray;
+    happy_eyeballs::AltSvc altsvc{};
+    altsvc.protocol = happy_eyeballs::HttpVersion::H3;
+    altSvcArray.AppendElement(altsvc);
+    return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
+                               static_cast<uint16_t>(mConnInfo->RoutedPort()),
+                               &altSvcArray, ipPref);
+  }
+
+  nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
+  return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost,
+                             static_cast<uint16_t>(mConnInfo->RoutedPort()),
+                             &emptyAltSvc, ipPref);
+}
+
 nsresult HappyEyeballsConnectionAttempt::Init(ConnectionEntry* ent) {
   mEntry = ent;
+  nsresult rv = CreateHappyEyeballs(ent);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
   return ProcessHappyEyeballsOutput();
 }
 
@@ -238,15 +255,6 @@ HappyEyeballsConnectionAttempt::SetupDnsFlags(
       break;
   }
 
-  // TODO: let the state machine know the preference
-  /*if (ent->PreferenceKnown()) {
-    if (ent->mPreferIPv6) {
-      dnsFlags |= nsIDNSService::RESOLVE_DISABLE_IPV4;
-    } else if (ent->mPreferIPv4) {
-      dnsFlags |= nsIDNSService::RESOLVE_DISABLE_IPV6;
-    }
-  }*/
-
   // Deal with IP hints later
   /*if (ent->mConnInfo->HasIPHintAddress()) {
     nsresult rv;
@@ -381,6 +389,7 @@ void HappyEyeballsConnectionAttempt::HandleTCPConnectionResult(
   }
 
   mOutputConn = aResult.unwrap();
+  mAddrFamily = addr.raw.family;
   // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
   establisher->ClearResultConnection();
 
@@ -464,6 +473,7 @@ void HappyEyeballsConnectionAttempt::HandleUDPConnectionResult(
   }
 
   mOutputConn = aResult.unwrap();
+  mAddrFamily = addr.raw.family;
   // The ownership of connection is moved to HappyEyeballsConnectionAttempt now.
   establisher->ClearResultConnection();
 
@@ -596,6 +606,8 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
   RefPtr<HappyEyeballsConnectionAttempt> self(this);
   RefPtr<ConnectionEntry> entry(mEntry);
   MOZ_ASSERT(entry);
+
+  entry->RecordIPFamilyPreference(mAddrFamily);
 
   RefPtr<nsHttpConnection> connTCP = do_QueryObject(mOutputConn);
   if (connTCP) {

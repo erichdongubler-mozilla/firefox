@@ -590,8 +590,7 @@ tasks:
         description: "Web platform webdriver-spec run"
         schedules-component: web-platform-tests-wdspec
         treeherder-symbol: W(Wd)
-        chunks: dynamic
-        default-chunks:
+        chunks:
             by-test-platform:
                 .*-ccov.*: 6
                 .*-tsan.*: 8

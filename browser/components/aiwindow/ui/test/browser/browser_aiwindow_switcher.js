@@ -3,6 +3,15 @@
 
 "use strict";
 
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+// AI chat content loads Fluent strings asynchronously, which may not complete
+// before the test finishes. This is expected and doesn't affect test behavior.
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Missing message.*smartwindow-messages-document-title/
+);
+
 const { AIWindowUI } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs"
 );

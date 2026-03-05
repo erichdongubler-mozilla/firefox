@@ -152,7 +152,7 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
         }
 
         args.preferenceToScrollTo?.let {
-            scrollToPreference(it)
+            scrollToPreferenceWithHighlight(it)
         }
     }
 

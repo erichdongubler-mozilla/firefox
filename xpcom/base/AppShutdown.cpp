@@ -227,7 +227,7 @@ void AppShutdown::Init(AppShutdownMode aMode, int aExitCode,
   // Very early shutdowns can happen before the startup cache is even
   // initialized; don't bother initializing it during shutdown.
   if (auto* cache = scache::StartupCache::GetSingletonNoInit()) {
-    cache->MaybeInitShutdownWrite();
+    cache->MaybeKickOffShutdownWrite();
   }
 }
 
