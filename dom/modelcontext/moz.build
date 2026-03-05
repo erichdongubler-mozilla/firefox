@@ -7,18 +7,30 @@
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
+XPIDL_SOURCES += [
+    "nsIModelContextService.idl",
+]
+
+XPIDL_MODULE = "dom_modelcontext"
+
 EXPORTS.mozilla.dom += [
     "ModelContext.h",
     "ModelContextClient.h",
+    "ModelContextService.h",
 ]
 
 UNIFIED_SOURCES += [
     "ModelContext.cpp",
     "ModelContextClient.cpp",
+    "ModelContextService.cpp",
 ]
 
 IPDL_SOURCES += [
     "ModelContextTypes.ipdlh",
+]
+
+XPCOM_MANIFESTS += [
+    "components.conf",
 ]
 
 LOCAL_INCLUDES += [
