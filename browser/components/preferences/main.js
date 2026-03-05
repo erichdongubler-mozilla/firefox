@@ -6419,7 +6419,6 @@ var gMainPane = {
         // disabled and unset.
         if (updateAutoValue) {
           await this.readBackgroundUpdatePref();
-        } else {
         }
 
         // Wait for a second to prevent the disable/enable causing the
