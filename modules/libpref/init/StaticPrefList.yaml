@@ -13400,9 +13400,11 @@
   mirror: always
 
 # If lazy purge is enabled, the minimum idle budget we wait for in MS.
+# This is higher than GC (5ms) and CC (2ms) so that purge defers to
+# GC/CC for idle time, preserving the dirty page reuse window.
 - name: memory.lazypurge.minimum_idle_budget
   type: uint32_t
-  value: 5
+  value: 10
   mirror: always
 
 # If lazy purge is enabled, the minimum time we wait with purge after some
