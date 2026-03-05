@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #endif  /* end UNIX */
 #include <assert.h>
+#include <sstream>
 #include <stddef.h>
 
 #include "nr_api.h"
@@ -1013,17 +1014,16 @@ static int
 nr_stun_attr_codec_unknown_attributes_print(nr_stun_attr_info *attr_info, const char *msg, void *data)
 {
     nr_stun_attr_unknown_attributes *unknown_attributes = (nr_stun_attr_unknown_attributes*)data;
-    char type[9];
-    char str[64 + (NR_STUN_MAX_UNKNOWN_ATTRIBUTES * sizeof(type))];
-    int i;
+    std::ostringstream oss;
 
-    snprintf(str, sizeof(str), "%s %s:", msg, attr_info->name);
-    for (i = 0; i < unknown_attributes->num_attributes; ++i) {
+    oss << msg << " " << attr_info->name << ":";
+    for (int i = 0; i < unknown_attributes->num_attributes; ++i) {
+        char type[9];
         snprintf(type, sizeof(type), "%s 0x%04x", ((i>0)?",":""), unknown_attributes->attribute[i]);
-        strlcat(str, type, sizeof(str));
+        oss << type;
     }
 
-    r_log(NR_LOG_STUN, LOG_DEBUG, "%s", str);
+    r_log(NR_LOG_STUN, LOG_DEBUG, "%s", oss.str().c_str());
     return 0;
 }
 
