@@ -581,7 +581,12 @@ void ConnectionEntry::MakeAllDontReuseExcept(HttpConnectionBase* conn) {
 
   // Cancel any other pending connections - their associated transactions
   // are in the pending queue and will be dispatched onto this new connection
-  CloseAllConnectionAttempts();
+  // Skip this for fallback entries: their DnsAndConnectSockets are for
+  // FallbackTransactions whose real transactions are in the H3 entry, not
+  // here. Abandoning them would strand those transactions with no recovery.
+  if (!mConnInfo->GetFallbackConnection()) {
+    CloseAllConnectionAttempts();
+  }
 }
 
 bool ConnectionEntry::FindConnToClaim(
