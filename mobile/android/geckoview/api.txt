@@ -697,6 +697,7 @@ package org.mozilla.geckoview {
     field public static final int COOKIES_LOADED_SOCIALTRACKER = 524288;
     field public static final int COOKIES_LOADED_TRACKER = 262144;
     field public static final int COOKIES_PARTITIONED_FOREIGN = -2147483648;
+    field public static final int COOKIES_PARTITIONED_TRACKER = 2;
     field public static final int LOADED_CRYPTOMINING_CONTENT = 2097152;
     field public static final int LOADED_EMAILTRACKING_LEVEL_1_CONTENT = 8388608;
     field public static final int LOADED_EMAILTRACKING_LEVEL_2_CONTENT = 256;
