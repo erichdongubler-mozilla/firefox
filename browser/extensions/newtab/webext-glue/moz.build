@@ -45,6 +45,9 @@ FINAL_TARGET_FILES.data.content += [
 FINAL_TARGET_FILES.data.css += [
     "../css/activity-stream.css",
 ]
+FINAL_TARGET_FILES.data.css["nova"] += [
+    "../css/nova/activity-stream.css",
+]
 FINAL_TARGET_FILES.prerendered += [
     "../prerendered/activity-stream-noscripts.html",
     "../prerendered/activity-stream.html",

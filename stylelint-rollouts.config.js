@@ -149,6 +149,7 @@ module.exports = [
       "browser/extensions/newtab/content-src/styles/_icons.scss",
       "browser/extensions/newtab/content-src/styles/_mixins.scss",
       "browser/extensions/newtab/content-src/styles/_variables.scss",
+      "browser/extensions/newtab/content-src/styles/nova/activity-stream.scss",
       "browser/extensions/newtab/content-src/styles/activity-stream.scss",
       "browser/extensions/webcompat/about-compat/aboutCompat.css",
       "browser/themes/linux/browser.css",

@@ -17,6 +17,7 @@ browser.jar:
   builtin-addons/newtab/data/content/activity-stream.bundle.js (./data/content/activity-stream.bundle.js)
   builtin-addons/newtab/data/content/newtab-render.js (./data/content/newtab-render.js)
   builtin-addons/newtab/data/css/activity-stream.css (./css/activity-stream.css)
+  builtin-addons/newtab/data/css/nova/activity-stream.css (./css/nova/activity-stream.css)
   builtin-addons/newtab/prerendered/activity-stream.html (./prerendered/activity-stream.html)
 #ifndef RELEASE_OR_BETA
   builtin-addons/newtab/prerendered/activity-stream-debug.html (./prerendered/activity-stream-debug.html)
