@@ -748,66 +748,8 @@ bool WindowGlobalChild::SameOriginWithTop() {
 // Bug 1810619: Crash at null in nsDocShell::ValidateOrigin
 bool WindowGlobalChild::CanNavigate(dom::BrowsingContext* aTarget,
                                     bool aConsiderOpener) {
-  MOZ_DIAGNOSTIC_ASSERT(WindowContext()->Group() == aTarget->Group(),
-                        "A WindowGlobalChild should never try to navigate a "
-                        "BrowsingContext from another group");
-
-  auto isFileScheme = [](nsIPrincipal* aPrincipal) -> bool {
-    // NOTE: This code previously checked for a file scheme using
-    // `nsIPrincipal::GetURI()` combined with `NS_GetInnermostURI`. We no longer
-    // use GetURI, as it has been deprecated, and it makes more sense to take
-    // advantage of the pre-computed origin, which will already use the
-    // innermost URI (bug 1810619)
-    nsAutoCString origin, scheme;
-    return NS_SUCCEEDED(aPrincipal->GetOriginNoSuffix(origin)) &&
-           NS_SUCCEEDED(net_ExtractURLScheme(origin, scheme)) &&
-           scheme == "file"_ns;
-  };
-
-  // A frame can navigate itself and its own root.
-  if (aTarget == BrowsingContext() || aTarget == BrowsingContext()->Top()) {
-    return true;
-  }
-
-  // If the target frame doesn't yet have a WindowContext, start checking
-  // principals from its direct ancestor instead. It would inherit its principal
-  // from this document upon creation.
-  dom::WindowContext* initialWc = aTarget->GetCurrentWindowContext();
-  if (!initialWc) {
-    initialWc = aTarget->GetParentWindowContext();
-  }
-
-  // A frame can navigate any frame with a same-origin ancestor.
-  bool isFileDocument = isFileScheme(DocumentPrincipal());
-  for (dom::WindowContext* wc = initialWc; wc;
-       wc = wc->GetParentWindowContext()) {
-    dom::WindowGlobalChild* wgc = wc->GetWindowGlobalChild();
-    if (!wgc) {
-      continue;  // out-of process, so not same-origin.
-    }
-
-    if (DocumentPrincipal()->Equals(wgc->DocumentPrincipal())) {
-      return true;
-    }
-
-    // Not strictly equal, special case if both are file: URIs.
-    //
-    // file: URIs are considered the same domain for the purpose of frame
-    // navigation, regardless of script accessibility (bug 420425).
-    if (isFileDocument && isFileScheme(wgc->DocumentPrincipal())) {
-      return true;
-    }
-  }
-
-  // If the target is a top-level document, a frame can navigate it if it can
-  // navigate its opener.
-  if (aConsiderOpener && !aTarget->GetParent()) {
-    if (RefPtr<dom::BrowsingContext> opener = aTarget->GetOpener()) {
-      return CanNavigate(opener, false);
-    }
-  }
-
-  return false;
+  return nsContentUtils::CanNavigate(BrowsingContext(), aTarget,
+                                     DocumentPrincipal(), aConsiderOpener);
 }
 
 // FindWithName follows the rules for choosing a browsing context,
