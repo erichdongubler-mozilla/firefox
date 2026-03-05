@@ -37,10 +37,14 @@
 }
 
 .content {
+  container-type: inline-size;
+  container-name: content-grid;
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--col-width));
   gap: var(--space-medium);
   justify-content: center;
+  // Bug 1967304 - Large number (112px)
+  padding-block-start: calc(var(--space-large) * 7);
 }
 
 .content > * {

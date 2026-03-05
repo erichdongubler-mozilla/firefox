@@ -813,6 +813,8 @@ export class BaseContent extends React.PureComponent {
       DiscoveryStream.feeds.loaded;
 
     const featureClassName = [
+      // Nova helper class to target pre-Nova CSS styles
+      "classic-enabled",
       mobileDownloadPromoEnabled &&
         mobileDownloadPromoVariantABorC &&
         "has-mobile-download-promo", // Mobile download promo modal is enabled/visible

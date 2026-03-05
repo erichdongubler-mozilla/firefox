@@ -11298,6 +11298,7 @@ const PREF_WIDGETS_LISTS_MAX_LISTS = "widgets.lists.maxLists";
 const PREF_WIDGETS_LISTS_MAX_LISTITEMS = "widgets.lists.maxListItems";
 const PREF_WIDGETS_LISTS_BADGE_ENABLED = "widgets.lists.badge.enabled";
 const PREF_WIDGETS_LISTS_BADGE_LABEL = "widgets.lists.badge.label";
+const Lists_PREF_NOVA_ENABLED = "nova.enabled";
 
 // eslint-disable-next-line max-statements
 function Lists({
@@ -11881,8 +11882,11 @@ function Lists({
   const nimbusBadgeTrainhopLabel = prefs.trainhopConfig?.widgets?.listsBadgeLabel;
   const badgeEnabled = (nimbusBadgeEnabled || nimbusBadgeTrainhopEnabled) ?? prefs[PREF_WIDGETS_LISTS_BADGE_ENABLED] ?? false;
   const badgeLabel = (nimbusBadgeLabel || nimbusBadgeTrainhopLabel) ?? prefs[PREF_WIDGETS_LISTS_BADGE_LABEL] ?? "";
+
+  // @nova-cleanup(remove-pref): Remove pref check, always apply col-4 class after Nova ships
+  const novaEnabled = prefs[Lists_PREF_NOVA_ENABLED];
   return /*#__PURE__*/external_React_default().createElement("article", {
-    className: `lists ${isMaximized ? "is-maximized" : ""}`,
+    className: `lists widget ${novaEnabled ? "col-4" : ""} ${isMaximized ? "is-maximized" : ""}`,
     ref: el => {
       listsRef.current = [el];
     }
@@ -12198,6 +12202,7 @@ const FocusTimer_USER_ACTION_TYPES = {
   TIMER_TOGGLE_FOCUS: "timer_toggle_focus",
   TIMER_TOGGLE_BREAK: "timer_toggle_break"
 };
+const FocusTimer_PREF_NOVA_ENABLED = "nova.enabled";
 
 /**
  * Calculates the remaining time (in seconds) by subtracting elapsed time from the original duration
@@ -12747,8 +12752,11 @@ const FocusTimer = ({
     }));
     handleTimerInteraction();
   }
+
+  // @nova-cleanup(remove-pref): Remove pref check, always apply col-4 class after Nova ships
+  const novaEnabled = prefs[FocusTimer_PREF_NOVA_ENABLED];
   return timerData ? /*#__PURE__*/external_React_default().createElement("article", {
-    className: `focus-timer ${isMaximized ? "is-maximized" : ""}`,
+    className: `focus-timer widget ${novaEnabled ? "col-4" : ""} ${isMaximized ? "is-maximized" : ""}`,
     ref: el => {
       timerRef.current = [el];
     }
@@ -13000,6 +13008,7 @@ const WeatherForecast_USER_ACTION_TYPES = {
   LEARN_MORE: "learn_more",
   PROVIDER_LINK_CLICK: "provider_link_click"
 };
+const WeatherForecast_PREF_NOVA_ENABLED = "nova.enabled";
 function WeatherForecast({
   dispatch,
   isMaximized,
@@ -13252,8 +13261,11 @@ function WeatherForecast({
       onClick: handleLearnMore
     })));
   }
+
+  // @nova-cleanup(remove-pref): Remove pref check, always apply col-4 class after Nova ships
+  const novaEnabled = prefs[WeatherForecast_PREF_NOVA_ENABLED];
   return /*#__PURE__*/external_React_default().createElement("article", {
-    className: `weather-forecast-widget${isSmallSize ? " small-widget" : ""} ${hasError ? "forecast-error-state" : ""}`,
+    className: `weather-forecast-widget widget ${novaEnabled ? "col-4" : ""} ${isMaximized ? "is-maximized" : ""} ${isSmallSize ? " small-widget" : ""} ${hasError ? "forecast-error-state" : ""}`,
     ref: el => {
       forecastRef.current = [el];
     }
@@ -17381,7 +17393,9 @@ class BaseContent extends (external_React_default()).PureComponent {
 
     // Logic to show follow/block topic mgmt panel in Customize panel
     const mayHavePersonalizedTopicSections = sectionsPersonalizationEnabled && sectionsEnabled && sectionsCustomizeMenuPanelEnabled && DiscoveryStream.feeds.loaded;
-    const featureClassName = [mobileDownloadPromoEnabled && mobileDownloadPromoVariantABorC && "has-mobile-download-promo",
+    const featureClassName = [
+    // Nova helper class to target pre-Nova CSS styles
+    "classic-enabled", mobileDownloadPromoEnabled && mobileDownloadPromoVariantABorC && "has-mobile-download-promo",
     // Mobile download promo modal is enabled/visible
     weatherEnabled && mayHaveWeather && "has-weather",
     // Weather widget is enabled/visible

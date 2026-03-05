@@ -10,6 +10,15 @@ $ds-width: 936px;
   grid-row-gap: var(--gridRowGap);
   margin: 0 auto;
 
+  // @nova-cleanup(remove-conditional): Make grid default, remove conditional
+  .nova-enabled & {
+    display: grid;
+
+    &.ds-layout-widgets {
+      grid-template-columns: subgrid;
+    }
+  }
+
   @while $columns > 0 {
     .ds-column-#{$columns} {
       grid-column-start: auto;
@@ -70,4 +79,38 @@ $ds-width: 936px;
       }
     }
   }
+}
+
+// Nova Grid Overrides
+// @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior
+.nova-enabled .content .discovery-stream.ds-layout {
+  display: contents;
+  grid-column: 1 / -1;
+}
+
+// @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior
+.nova-enabled .content .ds-section-wrapper {
+  display: contents;
+}
+
+// Make widgets section use Nova grid instead of old DS grid
+// Use display: contents to make wrappers transparent to the grid
+// @nova-cleanup(remove-conditional): Remove .nova-enabled selector and display: contents wrappers
+.nova-enabled .ds-layout-widgets {
+  grid-column: 1 / -1;
+  display: contents;
+
+  .ds-column {
+    display: contents;
+  }
+
+  .ds-column-grid {
+    display: contents;
+  }
+
+  // The wrapper div around components
+  .ds-column-grid > div {
+    display: contents;
+  }
+
 }

@@ -3,20 +3,26 @@
 
   position: relative;
   text-decoration: none;
-  grid-column: span 1;
-  width: var(--newtab-card-width-medium);
-
-  // Match the new card width if sections are enabled
-  .has-sections-grid & {
-    width: var(--newtab-card-width-medium);
-  }
-
   border-radius: var(--border-radius-large);
   padding: var(--space-medium);
-  height: var(--newtab-card-height);
+  box-shadow: var(--box-shadow-card);
   display: flex;
   flex-direction: column;
-  box-shadow: var(--box-shadow-card);
+
+  // Classic layout (when Nova is disabled)
+  // @nova-cleanup(remove-conditional): Remove classic fixed-width/height styles after Nova ships
+  .classic-enabled & {
+    grid-column: span 1;
+    width: var(--newtab-card-grid-layout-width);
+    height: var(--newtab-card-height);
+
+    // Match the new card width if sections are enabled
+    .has-sections-grid & {
+      width: var(--newtab-card-width-medium);
+    }
+  }
+
+
 
   --weather-sunny-background-color: light-dark(var(--color-yellow-0), var(--color-yellow-90));
   --weather-cloudy-background-color: light-dark(var(--color-gray-20), var(--color-gray-80));

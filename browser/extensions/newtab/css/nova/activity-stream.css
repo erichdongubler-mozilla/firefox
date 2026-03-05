@@ -668,10 +668,13 @@ main section {
 }
 
 .content {
+  container-type: inline-size;
+  container-name: content-grid;
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--col-width));
   gap: var(--space-medium);
   justify-content: center;
+  padding-block-start: calc(var(--space-large) * 7);
 }
 
 .content > * {
@@ -3948,6 +3951,12 @@ dialog:dir(rtl)::after {
   grid-row-gap: var(--gridRowGap);
   margin: 0 auto;
 }
+.nova-enabled .discovery-stream.ds-layout {
+  display: grid;
+}
+.nova-enabled .discovery-stream.ds-layout.ds-layout-widgets {
+  grid-template-columns: subgrid;
+}
 .discovery-stream.ds-layout .ds-column-12 {
   grid-column-start: auto;
   grid-column-end: span 12;
@@ -4048,6 +4057,29 @@ dialog:dir(rtl)::after {
   text-decoration: none;
 }
 
+.nova-enabled .content .discovery-stream.ds-layout {
+  display: contents;
+  grid-column: 1/-1;
+}
+
+.nova-enabled .content .ds-section-wrapper {
+  display: contents;
+}
+
+.nova-enabled .ds-layout-widgets {
+  grid-column: 1/-1;
+  display: contents;
+}
+.nova-enabled .ds-layout-widgets .ds-column {
+  display: contents;
+}
+.nova-enabled .ds-layout-widgets .ds-column-grid {
+  display: contents;
+}
+.nova-enabled .ds-layout-widgets .ds-column-grid > div {
+  display: contents;
+}
+
 .modalOverlayOuter {
   border: none;
   box-shadow: var(--box-shadow-popup);
@@ -4090,22 +4122,34 @@ dialog:dir(rtl)::after {
 .widgets-wrapper {
   margin-inline: auto;
   padding-block-end: var(--space-large);
+}
+.classic-enabled .widgets-wrapper {
   max-width: max-content;
 }
+.nova-enabled .widgets-wrapper {
+  grid-column: 1/-1;
+  display: grid;
+  grid-template-columns: subgrid;
+}
 
-.widgets-section-container {
+.classic-enabled .widgets-section-container {
   padding-block: var(--space-xsmall) var(--space-large);
   padding-inline: var(--space-large);
   background-color: var(--button-background-color);
   border-radius: var(--border-radius-large);
 }
-.lightWallpaper .widgets-section-container, .darkWallpaper .widgets-section-container {
+.lightWallpaper .classic-enabled .widgets-section-container, .darkWallpaper .classic-enabled .widgets-section-container {
   background-color: var(--newtab-weather-background-color);
 }
 @media (prefers-contrast) {
-  .lightWallpaper .widgets-section-container, .darkWallpaper .widgets-section-container {
+  .lightWallpaper .classic-enabled .widgets-section-container, .darkWallpaper .classic-enabled .widgets-section-container {
     background-color: var(--background-color-box);
   }
+}
+.nova-enabled .widgets-section-container {
+  grid-column: 1/-1;
+  display: grid;
+  grid-template-columns: subgrid;
 }
 .widgets-section-container .widgets-title-container {
   display: flex;
@@ -4113,60 +4157,71 @@ dialog:dir(rtl)::after {
   align-items: center;
   gap: var(--space-medium);
 }
+.nova-enabled .widgets-section-container .widgets-title-container {
+  grid-column: 1/-1;
+}
 .widgets-section-container .widgets-title-container .widgets-title-container-text {
   display: inline-block;
   margin-inline-end: auto;
   position: relative;
-}
-@media (min-width: 1122px) {
-  .widgets-section-container {
-    padding-block-end: var(--space-xlarge);
-    padding-inline: var(--space-xlarge);
-  }
-}
-@media (min-width: 1122px) {
-  .has-sections-grid .widgets-section-container {
-    padding-block-end: var(--space-large);
-    padding-inline: var(--space-large);
-  }
 }
 .widgets-section-container h1 {
   font-size: var(--font-size-large);
   font-weight: var(--font-weight-bold);
 }
 
-.widgets-container {
+@media (min-width: 1122px) {
+  .classic-enabled .widgets-section-container {
+    padding-block-end: var(--space-xlarge);
+    padding-inline: var(--space-xlarge);
+  }
+}
+@media (min-width: 1122px) {
+  .has-sections-grid .classic-enabled .widgets-section-container {
+    padding-block-end: var(--space-large);
+    padding-inline: var(--space-large);
+  }
+}
+
+.nova-enabled .widgets-container {
+  grid-column: 1/-1;
+  display: grid;
+  grid-template-columns: subgrid;
+  gap: var(--space-medium);
+}
+.classic-enabled .widgets-container {
   --widgets-card-width: var(--newtab-card-grid-layout-width);
   --widgets-max-cols: 3;
   --widgets-grid-gap: var(--space-large);
   --widgets-small-card-height: var(--newtab-card-height-small);
 }
-.has-sections-grid .widgets-container {
-  --widgets-card-width: var(--newtab-card-width-medium);
-}
-.widgets-container:has(.lists), .widgets-container:has(.focus-timer) {
+.classic-enabled .widgets-container:has(.lists), .classic-enabled .widgets-container:has(.focus-timer) {
   display: grid;
   grid-template-columns: repeat(auto-fit, var(--widgets-card-width));
   gap: var(--widgets-grid-gap);
 }
 @media (min-width: 610px) {
-  .widgets-container:has(.lists), .widgets-container:has(.focus-timer) {
+  .classic-enabled .widgets-container:has(.lists), .classic-enabled .widgets-container:has(.focus-timer) {
     max-width: calc(var(--widgets-max-cols) * var(--widgets-card-width) + (var(--widgets-max-cols) - 1) * var(--widgets-grid-gap));
     justify-content: center;
   }
 }
 @media (min-width: 1122px) {
-  .widgets-container:has(.lists), .widgets-container:has(.focus-timer) {
+  .classic-enabled .widgets-container:has(.lists), .classic-enabled .widgets-container:has(.focus-timer) {
     --widgets-grid-gap: var(--space-xlarge);
   }
 }
+.classic-enabled .widgets-container .small-widget {
+  height: var(--widgets-small-card-height);
+}
+
+.classic-enabled .has-sections-grid .widgets-container {
+  --widgets-card-width: var(--newtab-card-width-medium);
+}
 @media (min-width: 1122px) {
-  .has-sections-grid .widgets-container:has(.lists), .has-sections-grid .widgets-container:has(.focus-timer) {
+  .classic-enabled .has-sections-grid .widgets-container:has(.lists), .classic-enabled .has-sections-grid .widgets-container:has(.focus-timer) {
     --widgets-grid-gap: var(--space-large);
   }
-}
-.widgets-container .small-widget {
-  height: var(--widgets-small-card-height);
 }
 
 .widgets-feedback-link {
@@ -4222,11 +4277,8 @@ dialog:dir(rtl)::after {
 .lists {
   background: var(--newtab-background-card);
   transition: opacity 0.2s ease;
-  grid-column: span 1;
-  width: var(--newtab-card-grid-layout-width);
   border-radius: var(--border-radius-large);
   padding-block-start: var(--space-medium);
-  height: var(--newtab-card-height);
   box-shadow: var(--box-shadow-card);
   position: relative;
   display: flex;
@@ -4235,7 +4287,12 @@ dialog:dir(rtl)::after {
 .lists:hover {
   background: var(--newtab-background-color-secondary);
 }
-.has-sections-grid .lists {
+.classic-enabled .lists {
+  grid-column: span 1;
+  width: var(--newtab-card-grid-layout-width);
+  height: var(--newtab-card-height);
+}
+.has-sections-grid .classic-enabled .lists {
   width: var(--newtab-card-width-medium);
 }
 .lists .confetti-canvas {
@@ -4451,11 +4508,8 @@ dialog:dir(rtl)::after {
 .focus-timer {
   background: var(--newtab-background-card);
   transition: opacity 0.2s ease;
-  grid-column: span 1;
-  width: var(--newtab-card-grid-layout-width);
   border-radius: var(--border-radius-large);
   padding-block: var(--space-medium);
-  height: var(--newtab-card-height);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4464,7 +4518,12 @@ dialog:dir(rtl)::after {
 .focus-timer:hover {
   background: var(--newtab-background-color-secondary);
 }
-.has-sections-grid .focus-timer {
+.classic-enabled .focus-timer {
+  grid-column: span 1;
+  width: var(--newtab-card-grid-layout-width);
+  height: var(--newtab-card-height);
+}
+.has-sections-grid .classic-enabled .focus-timer {
   width: var(--newtab-card-width-medium);
 }
 
@@ -4625,14 +4684,11 @@ dialog:dir(rtl)::after {
   transition: opacity 0.2s ease;
   position: relative;
   text-decoration: none;
-  grid-column: span 1;
-  width: var(--newtab-card-width-medium);
   border-radius: var(--border-radius-large);
   padding: var(--space-medium);
-  height: var(--newtab-card-height);
+  box-shadow: var(--box-shadow-card);
   display: flex;
   flex-direction: column;
-  box-shadow: var(--box-shadow-card);
   --weather-sunny-background-color: light-dark(var(--color-yellow-0), var(--color-yellow-90));
   --weather-cloudy-background-color: light-dark(var(--color-gray-20), var(--color-gray-80));
   --weather-rainy-background-color: light-dark(var(--color-blue-0), var(--color-blue-90));
@@ -4642,7 +4698,12 @@ dialog:dir(rtl)::after {
 .weather-forecast-widget:hover {
   background: var(--newtab-background-color-secondary);
 }
-.has-sections-grid .weather-forecast-widget {
+.classic-enabled .weather-forecast-widget {
+  grid-column: span 1;
+  width: var(--newtab-card-grid-layout-width);
+  height: var(--newtab-card-height);
+}
+.has-sections-grid .classic-enabled .weather-forecast-widget {
   width: var(--newtab-card-width-medium);
 }
 .weather-forecast-widget .city-wrapper {

@@ -17,6 +17,8 @@ const USER_ACTION_TYPES = {
   PROVIDER_LINK_CLICK: "provider_link_click",
 };
 
+const PREF_NOVA_ENABLED = "nova.enabled";
+
 function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
   const prefs = useSelector(state => state.Prefs.values);
   const weatherData = useSelector(state => state.Weather);
@@ -349,9 +351,12 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
     );
   }
 
+  // @nova-cleanup(remove-pref): Remove pref check, always apply col-4 class after Nova ships
+  const novaEnabled = prefs[PREF_NOVA_ENABLED];
+
   return (
     <article
-      className={`weather-forecast-widget${isSmallSize ? " small-widget" : ""} ${hasError ? "forecast-error-state" : ""}`}
+      className={`weather-forecast-widget widget ${novaEnabled ? "col-4" : ""} ${isMaximized ? "is-maximized" : ""} ${isSmallSize ? " small-widget" : ""} ${hasError ? "forecast-error-state" : ""}`}
       ref={el => {
         forecastRef.current = [el];
       }}
