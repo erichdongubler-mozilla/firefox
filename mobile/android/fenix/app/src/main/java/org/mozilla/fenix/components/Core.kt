@@ -414,7 +414,6 @@ class Core(
                             context.getString(R.string.remote_settings_server_stage) -> REMOTE_STAGE_ENDPOINT_URL
                             else -> REMOTE_PROD_ENDPOINT_URL
                         },
-                        crashReporter = crashReporter,
                     ).updateProviderList()
                 }
                 // Install the "ads" WebExtension to get the links in an partner page.

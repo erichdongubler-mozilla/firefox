@@ -354,7 +354,7 @@ class Components(private val context: Context) {
         null
     }
 
-    val fxSuggest by lazyMonitored { FxSuggest(context, remoteSettingsService.value, analytics.crashReporter) }
+    val fxSuggest by lazyMonitored { FxSuggest(context, remoteSettingsService.value) }
 
     val distributionIdManager by lazyMonitored {
         DistributionIdManager(

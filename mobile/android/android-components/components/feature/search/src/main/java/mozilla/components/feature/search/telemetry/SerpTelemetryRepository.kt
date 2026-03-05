@@ -6,7 +6,6 @@ package mozilla.components.feature.search.telemetry
 
 import androidx.annotation.VisibleForTesting
 import mozilla.appservices.remotesettings.RemoteSettingsResponse
-import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.org.json.asSequence
 import mozilla.components.support.ktx.android.org.json.toList
@@ -29,7 +28,6 @@ class SerpTelemetryRepository(
     collectionName: String,
     serverUrl: String = REMOTE_PROD_ENDPOINT_URL,
     bucketName: String = REMOTE_ENDPOINT_BUCKET_NAME,
-    crashReporter: CrashReporting? = null,
 ) {
     val logger = Logger("SerpTelemetryRepository")
     private var providerList: List<SearchProviderModel> = emptyList()
@@ -40,7 +38,6 @@ class SerpTelemetryRepository(
         bucketName = bucketName,
         collectionName = collectionName,
         storageRootDirectory = rootStorageDirectory,
-        crashReporter = crashReporter,
     )
 
     /**

@@ -201,7 +201,6 @@ projects:
     - components:concept-sync
     - components:concept-toolbar
     - components:lib-publicsuffixlist
-    - components:support-appservices
     - components:support-base
     - components:support-ktx
     - components:support-test
@@ -1443,7 +1442,6 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-firefox-accounts
-    - components:support-appservices
     - components:support-base
     - components:support-images
     - components:support-ktx
@@ -1568,7 +1566,6 @@ projects:
     - components:concept-toolbar
     - components:lib-publicsuffixlist
     - components:support-android-test
-    - components:support-appservices
     - components:support-base
     - components:support-ktx
     - components:support-test
@@ -2269,7 +2266,6 @@ projects:
     - components:concept-toolbar
     - components:feature-top-sites
     - components:lib-publicsuffixlist
-    - components:support-appservices
     - components:support-base
     - components:support-ktx
     - components:support-test
