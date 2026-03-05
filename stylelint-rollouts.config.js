@@ -323,7 +323,6 @@ module.exports = [
       "toolkit/content/widgets/moz-page-nav/moz-page-nav.css",
       "toolkit/content/widgets/moz-promo/moz-promo.css",
       "toolkit/content/widgets/moz-reorderable-list/moz-reorderable-list.css",
-      "toolkit/content/widgets/moz-select/moz-select.css",
       "toolkit/content/widgets/moz-toggle/moz-toggle.css",
       "toolkit/content/widgets/moz-visual-picker/moz-visual-picker-item.css",
       "toolkit/content/widgets/panel-list/panel-item.css",
