@@ -820,7 +820,7 @@ void ExtractIncumbentAndSchedulingState(
 void MaybeGetFlowMarker(
     JS::Handle<MustConsumeMicroTask> aMicroTask,
     mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly>&
-        terminatingMarker) {
+        aTerminatingMarker) {
   // Avoid the overhead of GetFlowIdFromJSMicroTask in the common case
   // of not having the profiler enabled.
   if (profiler_is_active_and_unpaused() &&
@@ -829,9 +829,9 @@ void MaybeGetFlowMarker(
     // Since this only returns false when the microtask won't run (dead wrapper)
     // we can elide the marker if it does fail.
     if (aMicroTask.get().GetFlowIdFromJSMicroTask(&flowId)) {
-      terminatingMarker.emplace("RunMicroTask",
-                                mozilla::baseprofiler::category::OTHER,
-                                Flow::ProcessScoped(flowId));
+      aTerminatingMarker.emplace("RunMicroTask",
+                                 mozilla::baseprofiler::category::OTHER,
+                                 Flow::ProcessScoped(flowId));
     }
   }
 }
@@ -840,22 +840,22 @@ void MaybeGetFlowMarker(
 //
 // Returns false if the task is in an unrunnable state.
 static bool ExtractTaskData(JS::Handle<MayConsumeMicroTask> aMicroTask,
-                            JS::MutableHandle<JSObject*> callbackGlobal,
-                            JS::MutableHandle<JSObject*> hostDefinedData,
-                            JS::MutableHandle<JSObject*> allocStack) {
-  callbackGlobal.set(aMicroTask.get().GetExecutionGlobalFromJSMicroTask());
-  if (!callbackGlobal) {
+                            JS::MutableHandle<JSObject*> aCallbackGlobal,
+                            JS::MutableHandle<JSObject*> aHostDefinedData,
+                            JS::MutableHandle<JSObject*> aAllocStack) {
+  aCallbackGlobal.set(aMicroTask.get().GetExecutionGlobalFromJSMicroTask());
+  if (!aCallbackGlobal) {
     return false;
   }
 
   // Don't run if we fail to unwrap the host defined data, as that
   // would indicate the target realm is gone.
   if (!aMicroTask.get().MaybeGetHostDefinedDataFromJSMicroTask(
-          hostDefinedData)) {
+          aHostDefinedData)) {
     return false;
   }
 
-  (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(allocStack);
+  (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(aAllocStack);
   return true;
 }
 
@@ -1143,9 +1143,9 @@ WontConsumeMicroTask PeekNextMicroTask(JSContext* aCx) {
   return WontConsumeMicroTask(JS::PeekNextMicroTask(aCx));
 }
 
-static bool IsSuppressed(JS::Handle<MustConsumeMicroTask> task) {
-  if (task.get().IsJSMicroTask()) {
-    JSObject* jsGlobal = task.get().GetExecutionGlobalFromJSMicroTask();
+static bool IsSuppressed(JS::Handle<MustConsumeMicroTask> aTask) {
+  if (aTask.get().IsJSMicroTask()) {
+    JSObject* jsGlobal = aTask.get().GetExecutionGlobalFromJSMicroTask();
     if (!jsGlobal) {
       return false;
     }
@@ -1153,7 +1153,7 @@ static bool IsSuppressed(JS::Handle<MustConsumeMicroTask> task) {
     return global && global->IsInSyncOperation();
   }
 
-  MicroTaskRunnable* runnable = task.get().MaybeUnwrapTaskToRunnable();
+  MicroTaskRunnable* runnable = aTask.get().MaybeUnwrapTaskToRunnable();
 
   // If it's not a JS microtask, it must be a MicroTaskRunnable,
   // and so MaybeUnwrapTaskToRunnable must return non-null.
