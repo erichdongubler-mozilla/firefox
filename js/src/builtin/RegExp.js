@@ -954,7 +954,7 @@ function RegExpSplit(string, limit) {
            "Legacy features must be enabled in optimized path");
     #endif
     // Steps 6-7.
-    unicodeMatching = !!(flags & REGEXP_UNICODE_FLAG);
+    unicodeMatching = !!(flags & REGEXP_ANY_UNICODE_MASK);
 
     // Steps 8-10.
     // If split operation is optimizable, perform non-sticky match.
@@ -970,7 +970,7 @@ function RegExpSplit(string, limit) {
     flags = ToString(rx.flags);
 
     // Steps 6-7.
-    unicodeMatching = callFunction(std_String_includes, flags, "u");
+    unicodeMatching = callFunction(std_String_includes, flags, "u") || callFunction(std_String_includes, flags, "v");
 
     // Steps 8-9.
     var newFlags;
