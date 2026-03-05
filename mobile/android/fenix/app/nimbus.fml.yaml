@@ -1037,6 +1037,13 @@ features:
         description: If true, Mozilla Ads Client is enabled.
         type: Boolean
         default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+      - channel: nightly
+        value:
+          enabled: true
 
   search-optimization-option:
     description: Feature to enable the Search Optimization cards for users on Firefox on Android.
