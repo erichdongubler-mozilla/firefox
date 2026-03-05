@@ -13,9 +13,12 @@ const { div } = require("devtools/client/shared/vendor/react-dom-factories");
 const { PluralForm } = require("resource://devtools/shared/plural-form.js");
 const { debounce } = require("resource://devtools/shared/debounce.js");
 
-function getSearchShortcut(getString) {
-  return getString("sourceSearch.search.key2");
-}
+const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
+const locale = new LocalizationHelper(
+  "devtools/client/locales/components.properties"
+);
+
+const SEARCH_IN_FILE_SHORTCUT = locale.getStr("sourceSearch.search.key2");
 
 class FileSearchBar extends Component {
   static get propTypes() {
@@ -38,7 +41,6 @@ class FileSearchBar extends Component {
       find: PropTypes.func.isRequired,
       findNext: PropTypes.func.isRequired,
       findPrev: PropTypes.func.isRequired,
-      locale: PropTypes.object.isRequired,
     };
   }
 
@@ -62,12 +64,12 @@ class FileSearchBar extends Component {
     // reduce frequency of queries
     this.doSearch = debounce(this.doSearch, 100);
 
-    const { shortcuts, locale } = this.props;
+    const { shortcuts } = this.props;
     if (!shortcuts) {
       return;
     }
 
-    shortcuts.on(getSearchShortcut(locale.getStr), this.toggleSearch);
+    shortcuts.on(SEARCH_IN_FILE_SHORTCUT, this.toggleSearch);
     shortcuts.on("Escape", this.onEscape);
   }
 
@@ -95,10 +97,10 @@ class FileSearchBar extends Component {
   }
 
   componentWillUnmount() {
-    const { shortcuts, locale } = this.props;
+    const { shortcuts } = this.props;
 
     if (shortcuts) {
-      shortcuts.off(getSearchShortcut(locale.getStr), this.toggleSearch);
+      shortcuts.off(SEARCH_IN_FILE_SHORTCUT, this.toggleSearch);
       shortcuts.off("Escape", this.onEscape);
     }
 
@@ -297,8 +299,6 @@ class FileSearchBar extends Component {
       results: { matchIndex, count, index },
     } = this.state;
 
-    const { locale } = this.props;
-
     if (query.trim() == "") {
       return "";
     }
@@ -329,7 +329,7 @@ class FileSearchBar extends Component {
   }
 
   render() {
-    const { searchInFileEnabled, searchKey, SearchInput, locale } = this.props;
+    const { searchInFileEnabled, searchKey, SearchInput } = this.props;
 
     const {
       results: { count },

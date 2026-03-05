@@ -82,7 +82,6 @@ class FileSearch extends Component {
       setCursorLocation: this.setCursorLocation,
       ...this.props,
       shortcuts: this.context.shortcuts,
-      locale: L10N,
     });
   }
 }
