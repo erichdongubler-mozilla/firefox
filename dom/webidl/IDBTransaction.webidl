@@ -21,6 +21,8 @@ enum IDBTransactionMode {
 
 [Exposed=(Window,Worker)]
 interface IDBTransaction : EventTarget {
+    readonly    attribute DOMStringList objectStoreNames;
+
     [Throws]
     readonly    attribute IDBTransactionMode mode;
 
@@ -43,9 +45,4 @@ interface IDBTransaction : EventTarget {
                 attribute EventHandler       onabort;
                 attribute EventHandler       oncomplete;
                 attribute EventHandler       onerror;
-};
-
-// This seems to be custom
-partial interface IDBTransaction {
-    readonly    attribute DOMStringList objectStoreNames;
 };
