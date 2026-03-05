@@ -26,34 +26,29 @@ NS_IMETHODIMP
 PolicyContainer::Read(nsIObjectInputStream* aStream) {
   // Currently, we don't care about the version, but we might in the future.
   uint32_t version = 0;
-  nsresult rv = aStream->Read32(&version);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(aStream->Read32(&version));
 
   if (version != kPolicyContainerSerializationVersion) {
     return NS_ERROR_FAILURE;
   }
 
-  auto ReadOptionalCSPObject = [aStream](nsISupports** aOutCSP) {
+  auto ReadOptionalCSPObject = [aStream](nsISupports** aOutCSP) -> nsresult {
     bool nonnull = false;
-    nsresult rv = aStream->ReadBoolean(&nonnull);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(aStream->ReadBoolean(&nonnull));
 
     if (nonnull) {
       nsCID cid;
-      rv = aStream->ReadID(&cid);
-      NS_ENSURE_SUCCESS(rv, rv);
+      MOZ_TRY(aStream->ReadID(&cid));
       MOZ_ASSERT(cid.Equals(nsCSPContext::GetCID()),
                  "Expected nsCSPContext CID");
 
       nsIID iid;
-      rv = aStream->ReadID(&iid);
-      NS_ENSURE_SUCCESS(rv, rv);
+      MOZ_TRY(aStream->ReadID(&iid));
       MOZ_ASSERT(iid.Equals(NS_GET_IID(nsIContentSecurityPolicy)),
                  "Expected nsIContentSecurityPolicy IID");
 
       RefPtr<nsCSPContext> csp = new nsCSPContext();
-      rv = csp->PolicyContainerRead(aStream);
-      NS_ENSURE_SUCCESS(rv, rv);
+      MOZ_TRY(csp->PolicyContainerRead(aStream));
       csp.forget(aOutCSP);
     }
 
@@ -61,28 +56,25 @@ PolicyContainer::Read(nsIObjectInputStream* aStream) {
   };
 
   nsCOMPtr<nsISupports> csp;
-  rv = ReadOptionalCSPObject(getter_AddRefs(csp));
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(ReadOptionalCSPObject(getter_AddRefs(csp)));
   mCSP = do_QueryInterface(csp);
 
   nsCOMPtr<nsISupports> integrityPolicy;
-  rv = NS_ReadOptionalObject(aStream, true, getter_AddRefs(integrityPolicy));
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(
+      NS_ReadOptionalObject(aStream, true, getter_AddRefs(integrityPolicy)));
   mIntegrityPolicy = do_QueryInterface(integrityPolicy);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 PolicyContainer::Write(nsIObjectOutputStream* aStream) {
-  aStream->Write32(kPolicyContainerSerializationVersion);
+  MOZ_TRY(aStream->Write32(kPolicyContainerSerializationVersion));
 
-  nsresult rv = NS_WriteOptionalCompoundObject(
-      aStream, mCSP, NS_GET_IID(nsIContentSecurityPolicy), true);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(NS_WriteOptionalCompoundObject(
+      aStream, mCSP, NS_GET_IID(nsIContentSecurityPolicy), true));
 
-  rv = NS_WriteOptionalCompoundObject(aStream, mIntegrityPolicy,
-                                      NS_GET_IID(nsIIntegrityPolicy), true);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(NS_WriteOptionalCompoundObject(aStream, mIntegrityPolicy,
+                                         NS_GET_IID(nsIIntegrityPolicy), true));
 
   // TODO(Bug 2017654): (De)Serialize the WAICT state as part of the
   // Policy-Container
