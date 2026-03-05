@@ -72,14 +72,14 @@ TEST_SUITES = {
         "aliases": ("mn",),
         "build_flavor": "marionette",
         "mach_command": "marionette-test",
-        "kwargs": {"tests": None},
+        "kwargs": {"tests": None, "subsuite": "integration"},
         "task_regex": ["marionette($|.*(-1|[^0-9])$)"],
     },
     "marionette-unittest": {
         "aliases": ("mnself",),
         "build_flavor": "marionette",
         "mach_command": "marionette-test",
-        "kwargs": {"tests": None},
+        "kwargs": {"tests": None, "subsuite": "unittest"},
         "task_regex": ["marionette($|.*(-1|[^0-9])$)"],
     },
     "mochitest-a11y": {

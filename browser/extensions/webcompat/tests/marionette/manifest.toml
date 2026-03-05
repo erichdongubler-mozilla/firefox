@@ -1,4 +1,5 @@
 [DEFAULT]
+subsuite = "integration"
 run-if = [
   "buildapp == 'browser'",
 ]

@@ -54,7 +54,7 @@ marionette-unittest:
     test-manifest-loader: null  # don't load in taskgraph
     mozharness:
         extra-options:
-            - --subsuite=unittest
+            - --subsuite=marionette-unittest
             - --test-manifest=unit/unit-tests.toml
 
 marionette-integration:
@@ -101,5 +101,5 @@ marionette-integration:
             default: 1
     mozharness:
         extra-options:
-            - --subsuite=integration
+            - --subsuite=marionette-integration
             - --test-manifest=integration-tests.toml
