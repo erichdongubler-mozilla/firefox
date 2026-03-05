@@ -349,7 +349,6 @@ class WeakMap : public WeakMapBase {
  public:
   using Lookup = typename Map::Lookup;
   using Entry = typename Map::Entry;
-  using Range = typename Map::Range;
   using Iterator = typename Map::Iterator;
   using ModIterator = typename Map::ModIterator;
 
@@ -382,10 +381,6 @@ class WeakMap : public WeakMapBase {
     const Entry* operator->() const { return &*ptr; }
   };
 
-  struct Enum : public Map::Enum {
-    explicit Enum(WeakMap& map) : Map::Enum(map.map()) {}
-  };
-
   // Create a weak map owned by a JS object. Used for script-facing objects.
   explicit WeakMap(JSContext* cx, JSObject* memOf);
 
@@ -394,7 +389,6 @@ class WeakMap : public WeakMapBase {
 
   ~WeakMap() override;
 
-  Range all() const { return map().all(); }
   Iterator iter() const { return map().iter(); }
   ModIterator modIter() { return map().modIter(); }
   uint32_t count() const { return map().count(); }
