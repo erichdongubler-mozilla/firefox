@@ -461,3 +461,75 @@ add_task(async function test_getPageContent_invalid_url_format() {
     sb.restore();
   }
 });
+
+add_task(
+  {
+    pref_set: [["browser.smartwindow.checkSecurityFlags", true]],
+  },
+  async function test_getPageContent_refuses_both_security_flags() {
+    const result = await GetPageContent.getPageContent(
+      { url_list: ["https://example.com"] },
+      new Set(),
+      { untrusted_input: true, private_data: true }
+    );
+    Assert.equal(result.length, 1, "Should return one message");
+    Assert.ok(
+      result[0].includes("not available"),
+      "Should return refusal message when both security flags are set"
+    );
+  }
+);
+
+add_task(
+  {
+    pref_set: [["browser.smartwindow.checkSecurityFlags", false]],
+  },
+  async function test_getPageContent_pref_disables_security_check() {
+    const sb = sinon.createSandbox();
+    try {
+      const targetUrl = "https://example.com/page";
+      const tabs = [createFakeTab(targetUrl, "Example Page")];
+      setupBrowserWindowTracker(sb, createFakeWindow(tabs));
+
+      const result = await GetPageContent.getPageContent(
+        { url_list: [targetUrl] },
+        new Set([targetUrl]),
+        { untrusted_input: true, private_data: true }
+      );
+      Assert.equal(result.length, 1, "Should return one result");
+      Assert.ok(
+        result[0].includes("Example Page"),
+        "Should return real content, not a refusal, when pref is false"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(
+  {
+    pref_set: [["browser.smartwindow.checkSecurityFlags", true]],
+  },
+  async function test_getPageContent_allows_untrusted_input_only() {
+    const sb = sinon.createSandbox();
+    try {
+      const targetUrl = "https://example.com/page";
+      const tabs = [createFakeTab(targetUrl, "Example Page")];
+      setupBrowserWindowTracker(sb, createFakeWindow(tabs));
+
+      const result = await GetPageContent.getPageContent(
+        { url_list: [targetUrl] },
+        new Set([targetUrl]),
+        { untrusted_input: true, private_data: false }
+      );
+      Assert.equal(result.length, 1, "Should return one result");
+      Assert.ok(
+        result[0].includes("Example Page"),
+        "Should return real content, not a refusal"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);

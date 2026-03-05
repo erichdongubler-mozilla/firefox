@@ -40,6 +40,7 @@ export class ChatConversation {
   createdDate;
   updatedDate;
   status;
+  securityProperties;
   #messages;
   #minNextOrdinal = 0;
   activeBranchTipMessageId;
@@ -79,6 +80,10 @@ export class ChatConversation {
 
     // NOTE: Destructuring params.status causes a linter error
     this.status = params.status || CONVERSATION_STATUS.ACTIVE;
+    this.securityProperties = params.securityProperties ?? {
+      untrusted_input: false,
+      private_data: false,
+    };
   }
 
   /**

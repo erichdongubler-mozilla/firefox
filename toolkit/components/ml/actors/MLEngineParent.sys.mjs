@@ -1145,7 +1145,6 @@ export class MLEngine {
    * @returns {object|null} The validated request, or null if blocked
    */
   #validateRequest(request) {
-    lazy.console.debug("[MLSecurity] Validating request:", request);
     return request;
   }
 
