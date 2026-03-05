@@ -1725,11 +1725,6 @@ export class SmartbarInput extends HTMLElement {
       return;
     }
 
-    // This is handled by the provider internally.
-    if (result.type == lazy.UrlbarUtils.RESULT_TYPE.AI_CHAT) {
-      return;
-    }
-
     if (
       result.providerName == lazy.UrlbarProviderGlobalActions.name &&
       this.#providesSearchMode(result)
@@ -2098,6 +2093,19 @@ export class SmartbarInput extends HTMLElement {
           checkValue: false,
         });
 
+        return;
+      }
+      case lazy.UrlbarUtils.RESULT_TYPE.AI_CHAT: {
+        this.controller.engagementEvent.record(event, {
+          result,
+          element,
+          searchString: this._lastSearchString,
+          selType: this.controller.engagementEvent.typeFromElement(
+            result,
+            element
+          ),
+        });
+        this.#clearSmartbarInput();
         return;
       }
     }
@@ -3554,6 +3562,8 @@ export class SmartbarInput extends HTMLElement {
         );
       case lazy.UrlbarUtils.RESULT_TYPE.RESTRICT:
         return result.payload.autofillKeyword + " ";
+      case lazy.UrlbarUtils.RESULT_TYPE.AI_CHAT:
+        return result.payload.query ?? "";
       case lazy.UrlbarUtils.RESULT_TYPE.TIP: {
         let value = element?.dataset.url || element?.dataset.input;
         if (value) {

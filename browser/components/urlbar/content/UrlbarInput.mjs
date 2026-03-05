@@ -3198,6 +3198,8 @@ export class UrlbarInput extends HTMLElement {
         );
       case lazy.UrlbarUtils.RESULT_TYPE.RESTRICT:
         return result.payload.autofillKeyword + " ";
+      case lazy.UrlbarUtils.RESULT_TYPE.AI_CHAT:
+        return result.payload.query ?? "";
       case lazy.UrlbarUtils.RESULT_TYPE.TIP: {
         let value = element?.dataset.url || element?.dataset.input;
         if (value) {
