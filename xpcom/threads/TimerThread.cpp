@@ -341,8 +341,6 @@ struct TimerMarker {
     }
     if (aCanceled) {
       aWriter.BoolProperty("canceled", true);
-      // Show a red 'X' as a prefix on the marker chart for canceled timers.
-      aWriter.StringProperty("prefix", "❌");
     }
 
     // The string property for the timer type is not written when the type is
@@ -370,9 +368,11 @@ struct TimerMarker {
     schema.AddKeyLabelFormat("delay", "Delay", MS::Format::Milliseconds);
     schema.AddKeyLabelFormat("ttype", "Timer Type", MS::Format::String);
     schema.AddKeyLabelFormat("canceled", "Canceled", MS::Format::String);
-    schema.AddKeyFormat("prefix", MS::Format::String, MS::PayloadFlags::Hidden);
-    schema.SetChartLabel("{marker.data.prefix} {marker.data.delay}");
-    schema.SetTableLabel("{marker.data.prefix} {marker.data.delay}");
+    // Show a red 'X' as a prefix on the marker chart for canceled timers.
+    schema.SetChartLabel(
+        "{marker.data.canceled ? '❌ ' : ''}{marker.data.delay}");
+    schema.SetTableLabel(
+        "{marker.data.canceled ? '❌ ' : ''}{marker.data.delay}");
     return schema;
   }
 };
