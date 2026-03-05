@@ -799,8 +799,12 @@ void RunJSMicroTask(JSContext* aCx,
     }
   }
 
-  JS::Rooted<JSObject*> maybePromise(
-      aCx, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
+  JS::RootedTuple<JSObject*, JSObject*, JSObject*, JSObject*> roots(aCx);
+
+  JS::RootedField<JSObject*, 0> maybePromise(
+      roots, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
+
+  // User Input State propagation.
   auto state = maybePromise
                    ? JS::GetPromiseUserInputEventHandlingState(maybePromise)
                    : JS::PromiseUserInputEventHandlingState::DontCare;
@@ -809,28 +813,34 @@ void RunJSMicroTask(JSContext* aCx,
       JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
   AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
 
-  JS::RootedTuple<JSObject*, JSObject*, JSObject*> roots(aCx);
-
-  JS::RootedField<JSObject*, 0> callbackGlobal(
+  // We need a callback global to execute in.
+  JS::RootedField<JSObject*, 1> callbackGlobal(
       roots, aMicroTask.get().GetExecutionGlobalFromJSMicroTask(aCx));
   if (!callbackGlobal) {
     return;
   }
-  JS::RootedField<JSObject*, 1> hostDefinedData(roots);
-  JS::RootedField<JSObject*, 2> allocStack(roots);
 
-  // Don't run if we fail to unwrap the host defined data.
+  JS::RootedField<JSObject*, 2> hostDefinedData(roots);
+  // Don't run if we fail to unwrap the host defined data, as that
+  // would indicate the target realm is gone.
   if (!aMicroTask.get().MaybeGetHostDefinedDataFromJSMicroTask(
           &hostDefinedData)) {
     return;
   }
 
   // We do however still need to run if we can't unwrap the stack
+  JS::RootedField<JSObject*, 3> allocStack(roots);
   (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(&allocStack);
 
+  // We may have an incumbent global to deal with.
+  //
+  // See https://github.com/whatwg/html/issues/11686 for discussion
+  // around trying to deprecate this eventually.
   nsIGlobalObject* incumbentGlobal = nullptr;
 
+  // Promises carry along a web-task scheduling state as well.
   WebTaskSchedulingState* schedulingState = nullptr;
+
   if (hostDefinedData) {
     MOZ_RELEASE_ASSERT(JS::GetClass(hostDefinedData.get()) ==
                        &sHostDefinedDataClass);
