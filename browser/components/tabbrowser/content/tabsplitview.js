@@ -232,9 +232,7 @@
      */
     #deactivate(skipHidePanels = false) {
       if (!skipHidePanels) {
-        gBrowser.hideSplitViewPanels(
-          this.#tabs.filter(tab => !tab.splitview || tab.splitview === this)
-        );
+        gBrowser.hideSplitViewPanels(this.#tabs);
       }
       updateUrlbarButton.arm();
       this.container.dispatchEvent(
@@ -342,10 +340,7 @@
      */
     unsplitTabs(trigger = null) {
       gBrowser.unsplitTabs(this, this.#isClosing ? null : trigger);
-      gBrowser.setIsSplitViewActive(
-        false,
-        this.#tabs.filter(tab => !tab.splitview || tab.splitview === this)
-      );
+      gBrowser.setIsSplitViewActive(false, this.#tabs);
     }
 
     /**
