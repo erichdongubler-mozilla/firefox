@@ -344,9 +344,9 @@
                 data-l10n-id="text-action-paste"/>
       <menuitem id="context-pdfjs-delete"
                 data-l10n-id="text-action-delete"/>
-      <menuitem id="context-pdfjs-selectall"
+      <menuitem id="context-pdfjs-select-all"
                 data-l10n-id="text-action-select-all"/>
-      <menuseparator id="context-sep-pdfjs-selectall"/>
+      <menuseparator id="context-sep-pdfjs-select-all"/>
 
       <menuitem id="context-take-screenshot"
                 data-l10n-id="main-context-menu-take-screenshot"/>
