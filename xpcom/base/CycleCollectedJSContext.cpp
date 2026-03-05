@@ -278,7 +278,7 @@ void CycleCollectedJSContext::runJobs(JSContext* aCx) {
   PerformMicroTaskCheckPoint();
 }
 
-MicroTaskRunnable* MustConsumeMicroTask::MaybeUnwrapTaskToRunnable() const {
+MicroTaskRunnable* MayConsumeMicroTask::MaybeUnwrapTaskToRunnable() const {
   if (!IsJSMicroTask()) {
     void* nonJSTask = mMicroTask.toPrivate();
     MicroTaskRunnable* task = reinterpret_cast<MicroTaskRunnable*>(nonJSTask);
@@ -775,7 +775,7 @@ class MOZ_STACK_CLASS StatefulMicroTask {
 };
 
 void ExtractIncumbentAndSchedulingState(
-    JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
+    JS::Handle<MayConsumeMicroTask> aMicroTask,
     JS::Handle<JSObject*> aHostDefinedData, nsIGlobalObject** aIncumbentGlobal,
     WebTaskSchedulingState** aSchedulingState) {
   MOZ_ASSERT(aIncumbentGlobal && aSchedulingState);
@@ -815,7 +815,7 @@ void ExtractIncumbentAndSchedulingState(
 }
 
 void MaybeGetFlowMarker(
-    JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
+    JS::Handle<MustConsumeMicroTask> aMicroTask,
     mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly>&
         terminatingMarker) {
   // Avoid the overhead of GetFlowIdFromJSMicroTask in the common case
@@ -836,7 +836,7 @@ void MaybeGetFlowMarker(
 // Extract the data required to run a task.
 //
 // Returns false if the task is in an unrunnable state.
-static bool ExtractTaskData(JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
+static bool ExtractTaskData(JS::Handle<MayConsumeMicroTask> aMicroTask,
                             JS::MutableHandle<JSObject*> callbackGlobal,
                             JS::MutableHandle<JSObject*> hostDefinedData,
                             JS::MutableHandle<JSObject*> allocStack) {
@@ -1002,6 +1002,10 @@ MustConsumeMicroTask DequeueNextRegularMicroTask(JSContext* aCx) {
 
 MustConsumeMicroTask DequeueNextDebuggerMicroTask(JSContext* aCx) {
   return MustConsumeMicroTask(JS::DequeueNextDebuggerMicroTask(aCx));
+}
+
+WontConsumeMicroTask PeekNextMicroTask(JSContext* aCx) {
+  return WontConsumeMicroTask(JS::PeekNextMicroTask(aCx));
 }
 
 static bool IsSuppressed(JS::Handle<MustConsumeMicroTask> task) {
