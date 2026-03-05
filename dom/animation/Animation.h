@@ -45,10 +45,8 @@ class Promise;
 
 // The helper struct to hold the animation-range values.
 struct AnimationRange {
-  StyleAnimationRangeStart mStart = {StyleTimelineRangeName::Normal,
-                                     LengthPercentage::FromPercentage(0.0f)};
-  StyleAnimationRangeEnd mEnd = {StyleTimelineRangeName::Normal,
-                                 LengthPercentage::FromPercentage(1.0f)};
+  StyleAnimationRangeStart mStart = StyleAnimationRangeStart::DefaultStart();
+  StyleAnimationRangeEnd mEnd = StyleAnimationRangeEnd::DefaultEnd();
   bool operator==(const AnimationRange& aOther) const {
     return mStart == aOther.mStart && mEnd == aOther.mEnd;
   }
