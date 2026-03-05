@@ -9,6 +9,27 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
+const AT = {
+  INFERRED_PERSONALIZATION_REFRESH: "INFERRED_PERSONALIZATION_REFRESH",
+  INFERRED_PERSONALIZATION_DEBUG_FEATURES_REQUEST:
+    "INFERRED_PERSONALIZATION_DEBUG_FEATURES_REQUEST",
+  INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE:
+    "INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE",
+  INFERRED_PERSONALIZATION_DEBUG_OVERRIDES_SET:
+    "INFERRED_PERSONALIZATION_DEBUG_OVERRIDES_SET",
+};
+
+function expectedBroadcast(type, data) {
+  return {
+    type,
+    data,
+    meta: {
+      from: "ActivityStream:Main",
+      to: "ActivityStream:Content",
+    },
+  };
+}
+
 /**
  * Test inferred personalization feed constructor from InferredPersonalizationFeed.sys.mjs.
  */
@@ -273,3 +294,142 @@ add_task(async function test_setAndGetDebuggingInterestFeatures_integration() {
 
   sandbox.restore();
 });
+
+add_task(
+  async function test_onAction_refresh_reloads_and_broadcasts_features() {
+    const sandbox = sinon.createSandbox();
+    sandbox
+      .stub(InferredPersonalizationFeed.prototype, "PersistentCache")
+      .returns({
+        set: () => {},
+        get: () => {},
+      });
+
+    const feed = new InferredPersonalizationFeed();
+    const dispatch = sandbox.stub();
+    feed.store = {
+      dispatch,
+      getState: () => ({
+        Prefs: {
+          values: {
+            "discoverystream.sections.personalization.inferred.user.enabled": true,
+            "discoverystream.sections.personalization.inferred.enabled": true,
+          },
+        },
+      }),
+    };
+    const features = { arts: { numValues: 4, currentValue: 1 } };
+    const resetStub = sandbox.stub(feed, "reset").resolves();
+    const loadStub = sandbox.stub(feed, "loadInterestVector").resolves();
+    sandbox
+      .stub(feed, "getDebuggingInterestFeaturesSupported")
+      .resolves(features);
+
+    await feed.onAction({ type: AT.INFERRED_PERSONALIZATION_REFRESH });
+
+    Assert.equal(
+      resetStub.callCount,
+      1,
+      "Refresh clears previous cached values"
+    );
+    Assert.equal(loadStub.callCount, 1, "Refresh recomputes inferred values");
+    deepEqual(
+      dispatch.lastCall.args[0],
+      expectedBroadcast(
+        AT.INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE,
+        features
+      ),
+      "Refresh broadcasts debug features after recompute"
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_onAction_debug_features_request_broadcasts_features() {
+    const sandbox = sinon.createSandbox();
+    sandbox
+      .stub(InferredPersonalizationFeed.prototype, "PersistentCache")
+      .returns({
+        set: () => {},
+        get: () => {},
+      });
+
+    const feed = new InferredPersonalizationFeed();
+    const dispatch = sandbox.stub();
+    feed.store = { dispatch, getState: () => ({ Prefs: { values: {} } }) };
+    const features = { arts: { numValues: 4, currentValue: 1 } };
+    sandbox
+      .stub(feed, "getDebuggingInterestFeaturesSupported")
+      .resolves(features);
+
+    await feed.onAction({
+      type: AT.INFERRED_PERSONALIZATION_DEBUG_FEATURES_REQUEST,
+    });
+
+    deepEqual(
+      dispatch.lastCall.args[0],
+      expectedBroadcast(
+        AT.INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE,
+        features
+      ),
+      "Debug feature request broadcasts current debug metadata"
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_onAction_debug_overrides_set_stores_and_rebroadcasts() {
+    const sandbox = sinon.createSandbox();
+    sandbox
+      .stub(InferredPersonalizationFeed.prototype, "PersistentCache")
+      .returns({
+        set: () => {},
+        get: () => {},
+      });
+
+    const feed = new InferredPersonalizationFeed();
+    const dispatch = sandbox.stub();
+    feed.store = { dispatch, getState: () => ({ Prefs: { values: {} } }) };
+    const overrides = { arts: 2, sports: 1 };
+    const features = {
+      arts: { numValues: 4, currentValue: 1, overrideValue: 2 },
+      sports: { numValues: 4, currentValue: 0, overrideValue: 1 },
+    };
+    const setStub = sandbox
+      .stub(feed, "setDebuggingInterestFeaturesOverride")
+      .resolves();
+    sandbox
+      .stub(feed, "getDebuggingInterestFeaturesSupported")
+      .resolves(features);
+
+    await feed.onAction({
+      type: AT.INFERRED_PERSONALIZATION_DEBUG_OVERRIDES_SET,
+      data: overrides,
+    });
+
+    Assert.equal(
+      setStub.callCount,
+      1,
+      "Overrides action stores override payload"
+    );
+    deepEqual(
+      setStub.firstCall.args[0],
+      overrides,
+      "Overrides are passed through to storage method"
+    );
+    deepEqual(
+      dispatch.lastCall.args[0],
+      expectedBroadcast(
+        AT.INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE,
+        features
+      ),
+      "Setting overrides rebroadcasts updated debug metadata"
+    );
+
+    sandbox.restore();
+  }
+);
