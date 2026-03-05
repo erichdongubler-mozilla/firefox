@@ -474,14 +474,14 @@ class WeakMap : public WeakMapBase {
   }
 #endif
 
-  bool markEntry(GCMarker* marker, gc::CellColor mapColor, Enum& iter,
+  bool markEntry(GCMarker* marker, gc::CellColor mapColor, ModIterator& iter,
                  bool populateWeakKeysTable);
 
   void trace(JSTracer* trc) override;
 
   // Used by the debugger to trace cross-compartment edges.
   void traceKeys(JSTracer* trc);
-  void traceKey(JSTracer* trc, Enum& iter);
+  void traceKey(JSTracer* trc, ModIterator& iter);
 
   size_t shallowSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
