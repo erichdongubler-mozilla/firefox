@@ -4953,6 +4953,8 @@ ErrorBoundary.defaultProps = {
  * A section that can collapse. As of bug 1710937, it can no longer collapse.
  * See bug 1727365 for follow-up work to simplify this component.
  */
+// @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
+const PREF_NOVA_ENABLED = "nova.enabled";
 class _CollapsibleSection extends (external_React_default()).PureComponent {
   constructor(props) {
     super(props);
@@ -5037,8 +5039,13 @@ class _CollapsibleSection extends (external_React_default()).PureComponent {
     const hasBeenUpdatedPreviously = this.props.Prefs.values["discoverystream.topicSelection.hasBeenUpdatedPreviously"];
     const selectedTopics = this.props.Prefs.values["discoverystream.topicSelection.selectedTopics"];
     const topicsHaveBeenPreviouslySet = hasBeenUpdatedPreviously || selectedTopics;
+    // @nova-cleanup(remove-conditional): Remove conditional class "collapsible-section"
+    const novaEnabled = this.props.Prefs.values[PREF_NOVA_ENABLED];
     return /*#__PURE__*/external_React_default().createElement("section", {
-      className: `collapsible-section ${this.props.className}${active ? " active" : ""}`
+      className: `
+          ${novaEnabled ? "" : "collapsible-section"}
+          ${this.props.className}
+          ${active ? " active" : ""}`
       // Note: data-section-id is used for web extension api tests in mozilla central
       ,
       "data-section-id": id
@@ -16736,7 +16743,8 @@ const Base_VISIBLE = "visible";
 const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const PREF_INFERRED_PERSONALIZATION_SYSTEM = "discoverystream.sections.personalization.inferred.enabled";
 const Base_PREF_INFERRED_PERSONALIZATION_USER = "discoverystream.sections.personalization.inferred.user.enabled";
-
+// @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
+const Base_PREF_NOVA_ENABLED = "nova.enabled";
 // Returns a function will not be continuously triggered when called. The
 // function will be triggered if called again after `wait` milliseconds.
 function Base_debounce(func, wait) {
@@ -17314,6 +17322,9 @@ class BaseContent extends (external_React_default()).PureComponent {
       customizeMenuVisible
     } = App;
     const prefs = props.Prefs.values;
+
+    // @nova-cleanup(remove-conditional):
+    const novaEnabled = prefs[Base_PREF_NOVA_ENABLED];
     const activeWallpaper = prefs[`newtabWallpapers.wallpaper`];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     const weatherEnabled = prefs.showWeather;
@@ -17383,6 +17394,61 @@ class BaseContent extends (external_React_default()).PureComponent {
     // If state.showDownloadHighlightOverride has value, let it override the logic
     // Otherwise, defer to OMC message display logic
     const shouldShowDownloadHighlight = this.state.showDownloadHighlightOverride ?? this.shouldShowOMCHighlight("DownloadMobilePromoHighlight");
+
+    // @nova-cleanup(remove-conditional): Remove this conditional and
+    // always render the Nova layout below. The classic render() return
+    // and all its supporting variables (featureClassName, outerClassName,
+    //  mobileDownloadPromo*, etc.) will become dead code and should
+    // be deleted — expect lint errors for unused vars.
+    if (novaEnabled) {
+      // Bug 2016230
+      // If ONLY Search or ONLY Shortcuts or ONLY Search AND Shortcuts or NO features
+      // the logo should be centered instead of left-sidebar
+      const logoShouldBeCentered = false;
+      return /*#__PURE__*/external_React_default().createElement("div", null, /*#__PURE__*/external_React_default().createElement("div", {
+        className: "container nova-enabled"
+      }, /*#__PURE__*/external_React_default().createElement("div", {
+        className: "sidebar-inline-start"
+      }, !logoShouldBeCentered && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null))), /*#__PURE__*/external_React_default().createElement("div", {
+        className: "content"
+      }, logoShouldBeCentered && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null)), prefs.showSearch && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Search_Search, Base_extends({
+        showLogo: false
+      }, props.Search))), isDiscoveryStream && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, {
+        className: "borderless-error"
+      }, /*#__PURE__*/external_React_default().createElement(DiscoveryStreamBase, {
+        locale: props.App.locale,
+        firstVisibleTimestamp: this.state.firstVisibleTimestamp,
+        placeholder: this.isSpocsOnDemandExpired
+      }))), /*#__PURE__*/external_React_default().createElement("div", {
+        className: "sidebar-inline-end"
+      }, weatherEnabled && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Weather_Weather, null)))), /*#__PURE__*/external_React_default().createElement("menu", {
+        className: "personalizeButtonWrapper"
+      }, /*#__PURE__*/external_React_default().createElement(CustomizeMenu, {
+        onClose: this.closeCustomizationMenu,
+        onOpen: this.openCustomizationMenu,
+        openPreferences: this.openPreferences,
+        setPref: this.setPref,
+        enabledSections: enabledSections,
+        enabledWidgets: enabledWidgets,
+        wallpapersEnabled: wallpapersEnabled,
+        activeWallpaper: activeWallpaper,
+        pocketRegion: pocketRegion,
+        mayHaveTopicSections: mayHavePersonalizedTopicSections,
+        mayHaveInferredPersonalization: mayHaveInferredPersonalization,
+        mayHaveWeather: mayHaveWeather,
+        mayHaveWidgets: mayHaveWidgets,
+        mayHaveTimerWidget: mayHaveTimerWidget,
+        mayHaveListsWidget: mayHaveListsWidget,
+        mayHaveWeatherForecast: prefs["widgets.system.weatherForecast.enabled"],
+        weatherDisplay: prefs["weather.display"],
+        showing: customizeMenuVisible,
+        toggleSectionsMgmtPanel: this.toggleSectionsMgmtPanel,
+        showSectionsMgmtPanel: this.state.showSectionsMgmtPanel,
+        showWidgetMgmtPanel: this.state.showWidgetMgmtPanel
+      })));
+    }
+
+    // @nova-cleanup(remove-conditional): Delete this entire classic return block along with all variables only used here
     return /*#__PURE__*/external_React_default().createElement("div", {
       className: featureClassName
     }, /*#__PURE__*/external_React_default().createElement("div", {

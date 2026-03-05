@@ -641,8 +641,75 @@ main section {
   text-decoration: none;
 }
 
-body {
-  background-color: var(--background-color-critical);
+/**
+ * Nova Grid System
+ *
+ * Layout structure:
+ * .container (full grid)
+ *   ├── .sidebar-inline-start (148px - left sidebar for logo/navigation)
+ *   ├── .content (flexible - fills remaining space with 74px columns)
+ *   └── .sidebar-inline-end (148px - right sidebar for mini widgets)
+ *
+ * Column width:
+ *   1 column = 1/4 of an IAB Medium Rectangle (MREC) = 300px ÷ 4 = 75px
+ */
+:root {
+  --mrec-width: 300px;
+  --col-width: calc(var(--mrec-width) / 4);
+  --side-col-width: calc(2 * var(--col-width));
+  --content-col-width: minmax(calc((4 * var(--col-width)) + 34px), 1fr);
+}
+
+.container {
+  display: grid;
+  grid-template-columns: var(--side-col-width) var(--content-col-width) var(--side-col-width);
+  gap: var(--space-medium);
+  margin-inline: auto;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--col-width));
+  gap: var(--space-medium);
+  justify-content: center;
+}
+
+.content > * {
+  grid-column: 1/-1;
+  container-type: inline-size;
+  container-name: component;
+}
+
+.col-1 {
+  grid-column: span 1;
+}
+
+.col-2 {
+  grid-column: span 2;
+}
+
+.col-3 {
+  grid-column: span 3;
+}
+
+.col-4 {
+  grid-column: span 4;
+}
+
+.col-8 {
+  grid-column: span 8;
+}
+
+.col-12 {
+  grid-column: span 12;
+}
+
+.col-18 {
+  grid-column: span 18;
+}
+
+.col-26 {
+  grid-column: span 26;
 }
 
 .as-error-fallback {

@@ -28,7 +28,8 @@ const PREF_INFERRED_PERSONALIZATION_SYSTEM =
   "discoverystream.sections.personalization.inferred.enabled";
 const PREF_INFERRED_PERSONALIZATION_USER =
   "discoverystream.sections.personalization.inferred.user.enabled";
-
+// @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
+const PREF_NOVA_ENABLED = "nova.enabled";
 // Returns a function will not be continuously triggered when called. The
 // function will be triggered if called again after `wait` milliseconds.
 function debounce(func, wait) {
@@ -710,6 +711,9 @@ export class BaseContent extends React.PureComponent {
     const { initialized, customizeMenuVisible } = App;
     const prefs = props.Prefs.values;
 
+    // @nova-cleanup(remove-conditional):
+    const novaEnabled = prefs[PREF_NOVA_ENABLED];
+
     const activeWallpaper = prefs[`newtabWallpapers.wallpaper`];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     const weatherEnabled = prefs.showWeather;
@@ -847,6 +851,101 @@ export class BaseContent extends React.PureComponent {
       this.state.showDownloadHighlightOverride ??
       this.shouldShowOMCHighlight("DownloadMobilePromoHighlight");
 
+    // @nova-cleanup(remove-conditional): Remove this conditional and
+    // always render the Nova layout below. The classic render() return
+    // and all its supporting variables (featureClassName, outerClassName,
+    //  mobileDownloadPromo*, etc.) will become dead code and should
+    // be deleted — expect lint errors for unused vars.
+    if (novaEnabled) {
+      // Bug 2016230
+      // If ONLY Search or ONLY Shortcuts or ONLY Search AND Shortcuts or NO features
+      // the logo should be centered instead of left-sidebar
+      const logoShouldBeCentered = false;
+
+      return (
+        <div>
+          <div className="container nova-enabled">
+            <div className="sidebar-inline-start">
+              {/* Logo */}
+              {/* TODO: Bug 2016230 - Add display logic for when to hide / display */}
+              {!logoShouldBeCentered && (
+                <ErrorBoundary>
+                  <Logo />
+                </ErrorBoundary>
+              )}
+              {/* Future: Page Nav  */}
+            </div>
+            <div className="content">
+              {/* Logo */}
+
+              {/* TODO: Bug 2016230 - Add display logic for when to hide / display */}
+              {logoShouldBeCentered && (
+                <ErrorBoundary>
+                  <Logo />
+                </ErrorBoundary>
+              )}
+
+              {/* Search */}
+              {prefs.showSearch && (
+                <ErrorBoundary>
+                  <Search showLogo={false} {...props.Search} />
+                </ErrorBoundary>
+              )}
+              {/* TODO: Break out Topsites, Widgets from DiscoveryStreamBase */}
+              {/* Shortcuts / Topsites */}
+              {/* Widgets */}
+              {/* Content Feed */}
+              {isDiscoveryStream && (
+                <ErrorBoundary className="borderless-error">
+                  <DiscoveryStreamBase
+                    locale={props.App.locale}
+                    firstVisibleTimestamp={this.state.firstVisibleTimestamp}
+                    placeholder={this.isSpocsOnDemandExpired}
+                  />
+                </ErrorBoundary>
+              )}
+            </div>
+            <div className="sidebar-inline-end">
+              {/* Mini Widgets - Weather */}
+              {weatherEnabled && (
+                <ErrorBoundary>
+                  <Weather />
+                </ErrorBoundary>
+              )}
+            </div>
+          </div>
+          <menu className="personalizeButtonWrapper">
+            <CustomizeMenu
+              onClose={this.closeCustomizationMenu}
+              onOpen={this.openCustomizationMenu}
+              openPreferences={this.openPreferences}
+              setPref={this.setPref}
+              enabledSections={enabledSections}
+              enabledWidgets={enabledWidgets}
+              wallpapersEnabled={wallpapersEnabled}
+              activeWallpaper={activeWallpaper}
+              pocketRegion={pocketRegion}
+              mayHaveTopicSections={mayHavePersonalizedTopicSections}
+              mayHaveInferredPersonalization={mayHaveInferredPersonalization}
+              mayHaveWeather={mayHaveWeather}
+              mayHaveWidgets={mayHaveWidgets}
+              mayHaveTimerWidget={mayHaveTimerWidget}
+              mayHaveListsWidget={mayHaveListsWidget}
+              mayHaveWeatherForecast={
+                prefs["widgets.system.weatherForecast.enabled"]
+              }
+              weatherDisplay={prefs["weather.display"]}
+              showing={customizeMenuVisible}
+              toggleSectionsMgmtPanel={this.toggleSectionsMgmtPanel}
+              showSectionsMgmtPanel={this.state.showSectionsMgmtPanel}
+              showWidgetMgmtPanel={this.state.showWidgetMgmtPanel}
+            />
+          </menu>
+        </div>
+      );
+    }
+
+    // @nova-cleanup(remove-conditional): Delete this entire classic return block along with all variables only used here
     return (
       <div className={featureClassName}>
         <div className="weatherWrapper">
