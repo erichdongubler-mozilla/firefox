@@ -10093,6 +10093,17 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   // If we have a saved content viewer in history, restore and show it now.
   if (aLoadState->LoadIsFromSessionHistory() &&
       (mLoadType & LOAD_CMD_HISTORY)) {
+    if (RefPtr window = GetActiveWindow()) {
+      if (RefPtr navigation = window->Navigation()) {
+        if (const LoadingSessionHistoryInfo* loadingInfo =
+                GetLoadingSessionHistoryInfo()) {
+          navigation->CreateNavigationActivationFrom(
+              loadingInfo->mPreviousEntry,
+              NavigationUtils::NavigationTypeFromLoadType(mLoadType));
+        }
+      }
+    }
+
     // https://html.spec.whatwg.org/#history-traversal:
     // To traverse the history
     // "If entry has a different Document object than the current entry, then
@@ -12315,6 +12326,9 @@ nsresult nsDocShell::UpdateURLAndHistory(
     Document* aDocument, nsIURI* aNewURI, nsIStructuredCloneContainer* aData,
     NavigationHistoryBehavior aHistoryHandling, nsIURI* aCurrentURI,
     bool aEqualURIs) {
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, "UpdateURLAndHistory {}",
+              aHistoryHandling);
+
   // Implements
   // https://html.spec.whatwg.org/multipage/history.html#url-and-history-update-steps
   MOZ_ASSERT(aHistoryHandling != NavigationHistoryBehavior::Auto);
@@ -14793,7 +14807,7 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aExpired, uint32_t aCacheKey,
         MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
                     "Before creating NavigationActivation, "
                     "triggeringEntry={}, triggeringType={}",
-                    fmt::ptr(loadingEntry->mTriggeringEntry
+                    fmt::ptr(loadingEntry->mPreviousEntry
                                  .map([](auto& entry) { return &entry; })
                                  .valueOr(nullptr)),
                     loadingEntry->mTriggeringNavigationType
@@ -14801,12 +14815,9 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aExpired, uint32_t aCacheKey,
                           return fmt::format("{}", type);
                         })
                         .valueOr("none"));
-        if (loadingEntry->mTriggeringEntry &&
-            loadingEntry->mTriggeringNavigationType) {
-          navigation->CreateNavigationActivationFrom(
-              &*loadingEntry->mTriggeringEntry,
-              *loadingEntry->mTriggeringNavigationType);
-        }
+        navigation->CreateNavigationActivationFrom(
+            loadingEntry->mPreviousEntry,
+            loadingEntry->mTriggeringNavigationType);
       }
     }
   }

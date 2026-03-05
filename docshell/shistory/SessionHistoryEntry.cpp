@@ -419,7 +419,7 @@ LoadingSessionHistoryInfo::LoadingSessionHistoryInfo(
 LoadingSessionHistoryInfo::LoadingSessionHistoryInfo(
     SessionHistoryEntry* aEntry, const LoadingSessionHistoryInfo* aInfo)
     : mInfo(aEntry->Info()),
-      mTriggeringEntry(aInfo->mTriggeringEntry),
+      mPreviousEntry(aInfo->mPreviousEntry),
       mTriggeringNavigationType(aInfo->mTriggeringNavigationType),
       mLoadId(aInfo->mLoadId),
       mLoadIsFromSessionHistory(aInfo->mLoadIsFromSessionHistory),
@@ -1605,6 +1605,43 @@ already_AddRefed<nsSHistory> SessionHistoryEntry::GetSessionHistory() {
   return nullptr;
 }
 
+/* static */
+Maybe<PreviousSessionHistoryInfo>
+PreviousSessionHistoryInfo::CreateValidatedPreviousEntry(
+    const SessionHistoryInfo& aCurrentEntry,
+    const Maybe<SessionHistoryInfo>& aPreviousEntryForActivation,
+    Maybe<NavigationType> aNavigationType) {
+  // https://html.spec.whatwg.org/#update-document-for-history-step-application
+  // Step 7 If all the following are true:
+  // * previousEntryForActivation is given;
+  // * navigationType is non-null; and
+  // * navigationType is "reload" or previousEntryForActivation's document is
+  //   not document,
+  if (!aPreviousEntryForActivation || !aNavigationType ||
+      (*aNavigationType != NavigationType::Reload &&
+       aCurrentEntry.SharesDocumentWith(*aPreviousEntryForActivation))) {
+    return Nothing();
+  }
+
+  // 7.4 Otherwise, if all the following are true:
+  //     navigationType is "replace";
+  //     previousEntryForActivation's document state's origin is same origin
+  //     with document's origin; and previousEntryForActivation's document's
+  //     initial about:blank is false,
+  // then set activation's old entry to a new NavigationHistoryEntry in
+  // navigation's relevant realm, whose session history entry is
+  // previousEntryForActivation.
+  nsCOMPtr previousURI =
+      aPreviousEntryForActivation->GetURIOrInheritedForAboutBlank();
+  nsCOMPtr currentURI = aCurrentEntry.GetURIOrInheritedForAboutBlank();
+  if (NS_FAILED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
+          currentURI, previousURI, false, false))) {
+    return Some(PreviousSessionHistoryInfo{});
+  }
+
+  return Some(PreviousSessionHistoryInfo(aPreviousEntryForActivation));
+}
+
 }  // namespace dom
 }  // namespace mozilla
 
@@ -1764,12 +1801,29 @@ bool ParamTraits<mozilla::dom::SessionHistoryInfo>::Read(
   return true;
 }
 
+void ParamTraits<mozilla::dom::PreviousSessionHistoryInfo>::Write(
+    IPC::MessageWriter* aWriter,
+    const mozilla::dom::PreviousSessionHistoryInfo& aParam) {
+  WriteParam(aWriter, aParam.mSameOriginSessionHistoryInfo);
+}
+
+bool ParamTraits<mozilla::dom::PreviousSessionHistoryInfo>::Read(
+    IPC::MessageReader* aReader,
+    mozilla::dom::PreviousSessionHistoryInfo* aResult) {
+  if (!ReadParam(aReader, &aResult->mSameOriginSessionHistoryInfo)) {
+    aReader->FatalError("Error reading fields for PreviousSessionHistoryInfo");
+    return false;
+  }
+
+  return true;
+}
+
 void ParamTraits<mozilla::dom::LoadingSessionHistoryInfo>::Write(
     IPC::MessageWriter* aWriter,
     const mozilla::dom::LoadingSessionHistoryInfo& aParam) {
   WriteParam(aWriter, aParam.mInfo);
   WriteParam(aWriter, aParam.mContiguousEntries);
-  WriteParam(aWriter, aParam.mTriggeringEntry);
+  WriteParam(aWriter, aParam.mPreviousEntry);
   WriteParam(aWriter, aParam.mTriggeringNavigationType);
   WriteParam(aWriter, aParam.mLoadId);
   WriteParam(aWriter, aParam.mLoadIsFromSessionHistory);
@@ -1783,7 +1837,7 @@ bool ParamTraits<mozilla::dom::LoadingSessionHistoryInfo>::Read(
     mozilla::dom::LoadingSessionHistoryInfo* aResult) {
   if (!ReadParam(aReader, &aResult->mInfo) ||
       !ReadParam(aReader, &aResult->mContiguousEntries) ||
-      !ReadParam(aReader, &aResult->mTriggeringEntry) ||
+      !ReadParam(aReader, &aResult->mPreviousEntry) ||
       !ReadParam(aReader, &aResult->mTriggeringNavigationType) ||
       !ReadParam(aReader, &aResult->mLoadId) ||
       !ReadParam(aReader, &aResult->mLoadIsFromSessionHistory) ||

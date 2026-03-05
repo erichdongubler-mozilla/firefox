@@ -12,6 +12,7 @@
 namespace mozilla::dom {
 enum class NavigationType : uint8_t;
 enum class NavigationHistoryBehavior : uint8_t;
+class SessionHistoryInfo;
 
 class NavigationUtils {
  public:

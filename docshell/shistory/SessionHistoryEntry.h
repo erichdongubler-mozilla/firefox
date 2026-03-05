@@ -163,7 +163,7 @@ class SessionHistoryInfo {
 
   void SetSaveLayoutStateFlag(bool aSaveLayoutStateFlag);
 
-  bool IsTransient() { return mTransient; }
+  bool IsTransient() const { return mTransient; }
   void SetTransient() { mTransient = true; }
 
   nsID& NavigationKey() { return mNavigationKey; }
@@ -248,6 +248,36 @@ class SessionHistoryInfo {
   SharedState mSharedState;
 };
 
+// This is basically a thin type for a Maybe<Maybe<SessionHistoryInfo>>, where
+// the outer maybe implies there not being a previous entry, and the inner Maybe
+// implies that there is a previous entry, but it's cross origin.
+class PreviousSessionHistoryInfo {
+ public:
+  PreviousSessionHistoryInfo() = default;
+  PreviousSessionHistoryInfo(const PreviousSessionHistoryInfo&) = default;
+  PreviousSessionHistoryInfo(PreviousSessionHistoryInfo&&) = default;
+  PreviousSessionHistoryInfo& operator=(const PreviousSessionHistoryInfo&) =
+      default;
+  PreviousSessionHistoryInfo& operator=(PreviousSessionHistoryInfo&&) = default;
+
+  explicit PreviousSessionHistoryInfo(
+      const SessionHistoryInfo& aSessionHistoryInfo)
+      : mSameOriginSessionHistoryInfo(Some(aSessionHistoryInfo)) {}
+
+  explicit PreviousSessionHistoryInfo(
+      const Maybe<SessionHistoryInfo>& aSessionHistoryInfo)
+      : mSameOriginSessionHistoryInfo(aSessionHistoryInfo) {}
+
+  // Prepare a session history info that is validated to be a previous entry for
+  // a Navigation API navigation.
+  static Maybe<PreviousSessionHistoryInfo> CreateValidatedPreviousEntry(
+      const SessionHistoryInfo& aCurrentEntry,
+      const Maybe<SessionHistoryInfo>& aPreviousEntryForActivation,
+      Maybe<NavigationType> aNavigationType);
+
+  Maybe<SessionHistoryInfo> mSameOriginSessionHistoryInfo;
+};
+
 struct LoadingSessionHistoryInfo {
   LoadingSessionHistoryInfo() = default;
   explicit LoadingSessionHistoryInfo(SessionHistoryEntry* aEntry);
@@ -265,7 +295,7 @@ struct LoadingSessionHistoryInfo {
   CopyableTArray<SessionHistoryInfo> mContiguousEntries;
 
   // The entry that triggered the navigation to this entry.
-  Maybe<SessionHistoryInfo> mTriggeringEntry;
+  Maybe<PreviousSessionHistoryInfo> mPreviousEntry;
   // The type of navigation which triggered this load.
   Maybe<NavigationType> mTriggeringNavigationType;
 
@@ -502,6 +532,15 @@ struct ParamTraits<mozilla::dom::SessionHistoryInfo> {
                     const mozilla::dom::SessionHistoryInfo& aParam);
   static bool Read(IPC::MessageReader* aReader,
                    mozilla::dom::SessionHistoryInfo* aResult);
+};
+
+// Allow sending PreviousSessionHistoryInfo objects over IPC.
+template <>
+struct ParamTraits<mozilla::dom::PreviousSessionHistoryInfo> {
+  static void Write(IPC::MessageWriter* aWriter,
+                    const mozilla::dom::PreviousSessionHistoryInfo& aParam);
+  static bool Read(IPC::MessageReader* aReader,
+                   mozilla::dom::PreviousSessionHistoryInfo* aResult);
 };
 
 // Allow sending LoadingSessionHistoryInfo objects over IPC.
