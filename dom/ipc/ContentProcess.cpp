@@ -6,6 +6,7 @@
 
 #include "ContentProcess.h"
 
+#include "js/Initialization.h"
 #include "mozilla/Preferences.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
@@ -170,6 +171,11 @@ void ContentProcess::InfallibleInit(int aArgc, char* aArgv[]) {
   // preloaded the jar(s)).
   if (!Omnijar::IsInitialized()) {
     Omnijar::ChildProcessInit(aArgc, aArgv);
+  }
+
+  Maybe<bool> disableJit = geckoargs::sDisableJit.Get(aArgc, aArgv);
+  if (disableJit && *disableJit) {
+    JS::DisableJitBackend();
   }
 
   rv = NS_InitXPCOM(nullptr, xpcomAppDir, &mDirProvider);

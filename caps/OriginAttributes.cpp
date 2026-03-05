@@ -322,6 +322,11 @@ bool OriginAttributes::PopulateFromSuffix(const nsACString& aStr) {
   return URLParams::Parse(
       Substring(aStr, 1, aStr.Length() - 1), true,
       [this](const nsACString& aName, const nsACString& aValue) {
+        if (aName.EqualsLiteral("disableJit")) {
+          // Ignore the added jit status
+          return true;
+        }
+
         if (aName.EqualsLiteral("inBrowser")) {
           if (!aValue.EqualsLiteral("1")) {
             return false;

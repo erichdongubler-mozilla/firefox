@@ -30,6 +30,9 @@
 #define WITH_COOP_COEP_REMOTE_TYPE_PREFIX "webCOOP+COEP="_ns
 #define SERVICEWORKER_REMOTE_TYPE "webServiceWorker"_ns
 
+// A flag appended to the origin suffix to disable the JIT for that process.
+#define DISABLE_JIT_REMOTE_TYPE_SUFFIX "disableJit=1"_ns
+
 // Remote type value used to represent being non-remote.
 #define NOT_REMOTE_TYPE VoidCString()
 
