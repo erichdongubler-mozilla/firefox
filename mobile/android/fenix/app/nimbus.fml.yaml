@@ -143,18 +143,6 @@ features:
           }
         }
 
-  re-engagement-notification:
-    description: A feature that shows the re-engagement notification if the user is inactive.
-    variables:
-      enabled:
-        description: If true, the re-engagement notification is shown to the inactive user.
-        type: Boolean
-        default: false
-      type:
-        description: The type of re-engagement notification that is shown to the inactive user.
-        type: Int
-        default: 0
-
   onboarding:
     description: "A feature that configures the new user onboarding page.
     Note that onboarding is a **first run** feature, and should only be modified by first run experiments."
