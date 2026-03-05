@@ -6453,7 +6453,7 @@ var gMainPane = {
     );
   },
 
-  async maybeDisableBackgroundUpdateControls() {
+  async maybeDisableBackgroundUpdateControls(backgroundControlEnabled = null) {
     if (this.isBackgroundUpdateUIAvailable()) {
       let radiogroup = document.getElementById("updateRadioGroup");
       let updateAutoEnabled = radiogroup.value == "true";
@@ -6464,16 +6464,17 @@ var gMainPane = {
       if (!updateAutoEnabled) {
         backgroundUpdate.checked = false;
       } else {
-        let enabled = await UpdateUtils.readUpdateConfigSetting(
-          "app.update.background.enabled"
-        );
-        backgroundUpdate.checked = enabled;
+        if (backgroundControlEnabled == null) {
+          backgroundControlEnabled = await UpdateUtils.readUpdateConfigSetting(
+            "app.update.background.enabled"
+          );
+        }
+        backgroundUpdate.checked = backgroundControlEnabled;
       }
     }
   },
 
   async readBackgroundUpdatePref() {
-    const prefName = "app.update.background.enabled";
     if (this.isBackgroundUpdateUIAvailable()) {
       let backgroundCheckbox = document.getElementById("backgroundUpdate");
 
@@ -6495,8 +6496,8 @@ var gMainPane = {
       // we tell the user what value this pref has.
       await BackgroundUpdate.ensureExperimentToRolloutTransitionPerformed();
 
-      let enabled = await UpdateUtils.readUpdateConfigSetting(prefName);
-      backgroundCheckbox.checked = enabled;
+      // Don't need to read the background pref unless the control is active
+      // which happens in here
       await this.maybeDisableBackgroundUpdateControls();
     }
   },
@@ -6519,7 +6520,7 @@ var gMainPane = {
         return;
       }
 
-      await this.maybeDisableBackgroundUpdateControls();
+      await this.maybeDisableBackgroundUpdateControls(backgroundUpdateEnabled);
     }
   },
 
@@ -6650,7 +6651,7 @@ var gMainPane = {
         );
       }
 
-      await this.maybeDisableBackgroundUpdateControls();
+      await this.maybeDisableBackgroundUpdateControls(aData === "true");
     }
   },
 
