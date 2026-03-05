@@ -570,6 +570,7 @@ export class nsContextMenu {
     let showSplitViews = Services.prefs.getBoolPref(
       "browser.tabs.splitView.enabled"
     );
+    let currentTabInSplitView = !!window.gBrowser?.selectedTab?.splitview;
     this.showItem("context-openlink", shouldShow && !isWindowPrivate);
     this.showItem(
       "context-openlinkprivate",
@@ -586,7 +587,10 @@ export class nsContextMenu {
       "context-previewlink",
       lazy.LinkPreview.shouldShowContextMenu(this)
     );
-    this.showItem("context-openlinkinsplitview", shouldShow && showSplitViews);
+    this.showItem(
+      "context-openlinkinsplitview",
+      shouldShow && showSplitViews && !currentTabInSplitView
+    );
   }
 
   initNavigationItems() {
