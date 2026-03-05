@@ -814,6 +814,46 @@ void ExtractIncumbentAndSchedulingState(
   }
 }
 
+void MaybeGetFlowMarker(
+    JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
+    mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly>&
+        terminatingMarker) {
+  if (profiler_is_active_and_unpaused() &&
+      profiler_feature_active(ProfilerFeature::Flows)) {
+    uint64_t flowId = 0;
+    // Since this only returns false when the microtask won't run (dead wrapper)
+    // we can elide the marker if it does fail.
+    if (aMicroTask.get().GetFlowIdFromJSMicroTask(&flowId)) {
+      terminatingMarker.emplace("RunMicroTask",
+                                mozilla::baseprofiler::category::OTHER,
+                                Flow::ProcessScoped(flowId));
+    }
+  }
+}
+
+// Extract the data required to run a task.
+//
+// Returns false if the task is in an unrunnable state.
+static bool ExtractTaskData(JS::MutableHandle<MustConsumeMicroTask> aMicroTask,
+                            JS::MutableHandle<JSObject*> callbackGlobal,
+                            JS::MutableHandle<JSObject*> hostDefinedData,
+                            JS::MutableHandle<JSObject*> allocStack) {
+  callbackGlobal.set(aMicroTask.get().GetExecutionGlobalFromJSMicroTask());
+  if (!callbackGlobal) {
+    return false;
+  }
+
+  // Don't run if we fail to unwrap the host defined data, as that
+  // would indicate the target realm is gone.
+  if (!aMicroTask.get().MaybeGetHostDefinedDataFromJSMicroTask(
+          hostDefinedData)) {
+    return false;
+  }
+
+  (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(allocStack);
+  return true;
+}
+
 /* static */
 void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
                     JS::MutableHandle<MustConsumeMicroTask> aMicroTask) {
@@ -829,38 +869,18 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
   // Avoid the overhead of GetFlowIdFromJSMicroTask in the common case
   // of not having the profiler enabled.
   mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly> terminatingMarker;
-  if (profiler_is_active_and_unpaused() &&
-      profiler_feature_active(ProfilerFeature::Flows)) {
-    uint64_t flowId = 0;
-    // Since this only returns false when the microtask won't run (dead wrapper)
-    // we can elide the marker if it does fail.
-    if (aMicroTask.get().GetFlowIdFromJSMicroTask(&flowId)) {
-      terminatingMarker.emplace("RunMicroTask",
-                                mozilla::baseprofiler::category::OTHER,
-                                Flow::ProcessScoped(flowId));
-    }
-  }
+  MaybeGetFlowMarker(aMicroTask, terminatingMarker);
 
   JS::RootedTuple<JSObject*, JSObject*, JSObject*, JSObject*> roots(aCx);
 
-  // We need a callback global to execute in.
-  JS::RootedField<JSObject*, 0> callbackGlobal(
-      roots, aMicroTask.get().GetExecutionGlobalFromJSMicroTask());
-  if (!callbackGlobal) {
-    return;
-  }
-
+  JS::RootedField<JSObject*, 0> callbackGlobal(roots);
   JS::RootedField<JSObject*, 1> hostDefinedData(roots);
-  // Don't run if we fail to unwrap the host defined data, as that
-  // would indicate the target realm is gone.
-  if (!aMicroTask.get().MaybeGetHostDefinedDataFromJSMicroTask(
-          &hostDefinedData)) {
+  JS::RootedField<JSObject*, 2> allocStack(roots);
+
+  if (!ExtractTaskData(aMicroTask, &callbackGlobal, &hostDefinedData,
+                       &allocStack)) {
     return;
   }
-
-  // We do however still need to run if we can't unwrap the stack
-  JS::RootedField<JSObject*, 2> allocStack(roots);
-  (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(&allocStack);
 
   // We may have an incumbent global to deal with.
   //
@@ -875,6 +895,8 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
   const bool isMainThread = NS_IsMainThread();
 
+  // We need to do EnterMicroTask and LeaveMicroTask (on all exit paths), so use
+  // RAII class.
   StatefulMicroTask smt(aCCJS);
 
   {
@@ -901,6 +923,10 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
       return;
     }
 
+    // At this point we will definitely consume the task, so we
+    // no longer need the scope exit.
+    ignoreMicroTasks.release();
+
     // SetupForExecution
     AutoAllowLegacyScriptExecution exemption;
     AutoEntryScript aes(globalObject, reason, isMainThread);
@@ -909,10 +935,6 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
     if (incumbentGlobal) {
       autoIncumbentScript.emplace(incumbentGlobal);
     }
-
-    // At this point we will definitely consume the task, so we
-    // no longer need the scope exit.
-    ignoreMicroTasks.release();
 
     MOZ_ASSERT(aCx == aes.cx());
 
