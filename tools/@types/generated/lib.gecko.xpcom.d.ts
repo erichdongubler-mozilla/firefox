@@ -3803,7 +3803,7 @@ interface nsIContentSecurityPolicy extends nsISerializable, Enums<typeof nsICont
 }
 
 type nsICSPEventListener = Callable<{
-  onCSPViolationEvent(aJSON: string): void;
+  onCSPViolationEvent(aJSON: string, aReportGroupName: string): void;
 }>
 
 // https://searchfox.org/mozilla-central/source/dom/interfaces/security/nsIIntegrityPolicy.idl
@@ -5435,6 +5435,7 @@ interface nsILoginManager extends nsISupports {
   modifyLogin(oldLogin: nsILoginInfo, newLoginData: nsISupports): void;
   modifyLoginAsync(oldLogin: nsILoginInfo, newLoginData: nsISupports): Promise<any>;
   recordPasswordUse(aLogin: nsILoginInfo, aPrivateContextWithoutExplicitConsent: boolean, aLoginType: string, aFilled: boolean): void;
+  recordPasswordUseAsync(aLogin: nsILoginInfo, aPrivateContextWithoutExplicitConsent: boolean, aLoginType: string, aFilled: boolean): Promise<any>;
   removeAllUserFacingLogins(): void;
   removeAllUserFacingLoginsAsync(): Promise<any>;
   removeAllLogins(): void;
@@ -5448,6 +5449,7 @@ interface nsILoginManager extends nsISupports {
   setLoginSavingEnabled(aHost: string, isEnabled: boolean): void;
   findLogins(aOrigin: string, aActionOrigin: string, aHttpRealm: string): nsILoginInfo[];
   countLogins(aOrigin: string, aActionOrigin: string, aHttpRealm: string): u32;
+  countLoginsAsync(aOrigin: string, aActionOrigin: string, aHttpRealm: string): Promise<any>;
   searchLoginsAsync(matchData: any): Promise<any>;
   searchLogins(matchData: nsIPropertyBag): nsILoginInfo[];
   getSyncID(): Promise<any>;
@@ -7223,6 +7225,7 @@ interface nsISocketTransport extends nsITransport {
   readonly effectiveTRRMode: nsIRequest.TRRMode;
   readonly trrSkipReason: nsITRRSkipReason.value;
   readonly retryDnsIfPossible: boolean;
+  readonly isTRRConnection: boolean;
 }
 
 // https://searchfox.org/mozilla-central/source/netwerk/base/nsISocketTransportService.idl
@@ -7854,6 +7857,8 @@ interface nsICookieManager extends nsISupports {
   addThirdPartyCookieBlockingExceptions(aExcpetions: nsIThirdPartyCookieExceptionEntry[]): void;
   removeThirdPartyCookieBlockingExceptions(aExceptions: nsIThirdPartyCookieExceptionEntry[]): void;
   testGet3PCBExceptions(): string[];
+  testCloseCookieDB(): void;
+  testOpenCookieDB(): void;
   maybeCapExpiry(aExpiryInMSec: i64): i64;
 }
 
@@ -9235,6 +9240,7 @@ declare enum nsIDataStorageManager_DataStorage {
   AlternateServices = 0,
   ClientAuthRememberList = 1,
   SiteSecurityServiceState = 2,
+  SiteIntegrityServiceState = 3,
 }
 
 declare global {
@@ -9294,6 +9300,7 @@ interface nsINSSComponent extends nsISupports {
   addEnterpriseIntermediate(intermediateBytes: u8[]): void;
   clearSSLExternalAndInternalSessionCache(): void;
   asyncClearSSLExternalAndInternalSessionCache(): Promise<any>;
+  readonly nssTaskQueue: nsISerialEventTarget;
 }
 
 // https://searchfox.org/mozilla-central/source/security/manager/ssl/nsINSSErrorsService.idl
@@ -9388,9 +9395,9 @@ interface nsIPKCS11Module extends nsISupports {
 // https://searchfox.org/mozilla-central/source/security/manager/ssl/nsIPKCS11ModuleDB.idl
 
 interface nsIPKCS11ModuleDB extends nsISupports {
-  deleteModule(moduleName: string): void;
-  addModule(moduleName: string, libraryFullPath: string, cryptoMechanismFlags: i32, cipherFlags: i32): void;
-  listModules(): nsISimpleEnumerator;
+  deleteModule(moduleName: string): Promise<any>;
+  addModule(moduleName: string, libraryPath: string, mechanismFlags: u32, cipherFlags: u32): Promise<any>;
+  listModules(): Promise<any>;
 }
 
 // https://searchfox.org/mozilla-central/source/security/manager/ssl/nsIPKCS11Slot.idl
@@ -9440,6 +9447,11 @@ interface nsISecurityUITelemetry extends nsISupports {
   readonly WARNING_CONFIRM_ADDON_INSTALL_CLICK_THROUGH?: 4;
   readonly WARNING_CONFIRM_POST_TO_INSECURE_FROM_SECURE?: 9;
   readonly WARNING_CONFIRM_POST_TO_INSECURE_FROM_SECURE_CLICK_THROUGH?: 10;
+}
+
+// https://searchfox.org/mozilla-central/source/security/manager/ssl/nsISiteIntegrityService.idl
+
+interface nsISiteIntegrityService extends nsISupports {
 }
 
 // https://searchfox.org/mozilla-central/source/security/manager/ssl/nsISiteSecurityService.idl
@@ -11248,12 +11260,21 @@ interface nsIClearDataService extends nsISupports {
   deleteDataFromOriginAttributesPattern(aOriginAttributesPattern: any, aCallback?: nsIClearDataCallback): void;
   deleteUserInteractionForClearingHistory(aPrincipalsWithStorage: nsIPrincipal[], aFrom?: PRTime, aCallback?: nsIClearDataCallback): void;
   cleanupAfterDeletionAtShutdown(aFlags: u32, aCallback: nsIClearDataCallback): void;
+  clearPrivateBrowsingData(aCallback: nsIClearDataCallback): void;
   hostMatchesSite(aHost: string, aOriginAttributes: any, aSchemelessSite: string, aOriginAttributesPattern?: any): boolean;
 }
 
 type nsIClearDataCallback = Callable<{
   onDataDeleted(aFailedFlags: u32): void;
 }>
+
+type nsIPBMCleanupCallback = Callable<{
+  complete(aStatus: nsresult): void;
+}>
+
+interface nsIPBMCleanupCollector extends nsISupports {
+  addPendingCleanup(): nsIPBMCleanupCallback;
+}
 
 // https://searchfox.org/mozilla-central/source/toolkit/components/contentanalysis/nsIContentAnalysis.idl
 
@@ -12345,6 +12366,7 @@ interface nsIUrlClassifierDBService extends nsISupports {
   resetDatabase(): void;
   reloadDatabase(): void;
   clearCache(): void;
+  cleanRealTimeSimulatorCache(): void;
 }
 
 // https://searchfox.org/mozilla-central/source/toolkit/components/url-classifier/nsIUrlClassifierHashCompleter.idl
@@ -12418,9 +12440,11 @@ interface nsIUrlClassifierStreamUpdater extends nsISupports {
 
 interface nsIUrlClassifierTestUtils extends nsISupports {
   makeUpdateResponseV5(aName: string, aSingleHash: u32): string;
+  makeUpdateResponseV5_32b(aName: string, aFullHash: string): string;
   makeFindFullHashResponseV5(aFullHash: string): string;
   generateLookupHash(aFragment: string): u32;
   generateFullHash(aFragment: string): string;
+  generateFullHashRaw(aFragment: string): string;
 }
 
 // https://searchfox.org/mozilla-central/source/toolkit/components/url-classifier/nsIUrlClassifierUtils.idl
@@ -14694,11 +14718,22 @@ interface nsIGeolocationProvider extends nsISupports {
 
 // https://searchfox.org/mozilla-central/source/xpcom/system/nsIHapticFeedback.idl
 
-interface nsIHapticFeedback extends nsISupports {
-  readonly ShortPress?: 0;
-  readonly LongPress?: 1;
+}  // global
 
-  performSimpleAction(isLongPress: i32): void;
+declare enum nsIHapticFeedback_HapticFeedbackType {
+  ShortPress = 0,
+  LongPress = 1,
+  TextHandleMove = 2,
+}
+
+declare global {
+
+namespace nsIHapticFeedback {
+  type HapticFeedbackType = nsIHapticFeedback_HapticFeedbackType;
+}
+
+interface nsIHapticFeedback extends nsISupports, Enums<typeof nsIHapticFeedback_HapticFeedbackType> {
+  performSimpleAction(effect: nsIHapticFeedback.HapticFeedbackType): void;
 }
 
 // https://searchfox.org/mozilla-central/source/xpcom/system/nsIPlatformInfo.idl
@@ -14865,6 +14900,7 @@ declare enum nsIEventTarget_FeatureFlags {
   SUPPORTS_BASE = 0,
   SUPPORTS_SHUTDOWN_TASKS = 1,
   SUPPORTS_SHUTDOWN_TASK_DISPATCH = 2,
+  SUPPORTS_PRIORITIZATION = 4,
 }
 
 declare global {
@@ -16082,6 +16118,7 @@ interface nsIXPCComponents_Interfaces {
   nsIPublicKeyPinningService: nsJSIID<nsIPublicKeyPinningService>;
   nsISecretDecoderRing: nsJSIID<nsISecretDecoderRing>;
   nsISecurityUITelemetry: nsJSIID<nsISecurityUITelemetry>;
+  nsISiteIntegrityService: nsJSIID<nsISiteIntegrityService>;
   nsISiteSecurityService: nsJSIID<nsISiteSecurityService, typeof nsISiteSecurityService_ResetStateBy>;
   nsITLSSocketControl: nsJSIID<nsITLSSocketControl>;
   nsITokenPasswordDialogs: nsJSIID<nsITokenPasswordDialogs>;
@@ -16202,6 +16239,8 @@ interface nsIXPCComponents_Interfaces {
   nsIClearBySiteEntry: nsJSIID<nsIClearBySiteEntry>;
   nsIClearDataService: nsJSIID<nsIClearDataService>;
   nsIClearDataCallback: nsJSIID<nsIClearDataCallback>;
+  nsIPBMCleanupCallback: nsJSIID<nsIPBMCleanupCallback>;
+  nsIPBMCleanupCollector: nsJSIID<nsIPBMCleanupCollector>;
   nsIContentAnalysisAcknowledgement: nsJSIID<nsIContentAnalysisAcknowledgement, typeof nsIContentAnalysisAcknowledgement_Result & typeof nsIContentAnalysisAcknowledgement_FinalAction>;
   nsIContentAnalysisResult: nsJSIID<nsIContentAnalysisResult>;
   nsIContentAnalysisResponse: nsJSIID<nsIContentAnalysisResponse, typeof nsIContentAnalysisResponse_Action & typeof nsIContentAnalysisResponse_CancelError>;
@@ -16490,7 +16529,7 @@ interface nsIXPCComponents_Interfaces {
   nsIGIOService: nsJSIID<nsIGIOService>;
   nsIGeolocationUpdate: nsJSIID<nsIGeolocationUpdate>;
   nsIGeolocationProvider: nsJSIID<nsIGeolocationProvider>;
-  nsIHapticFeedback: nsJSIID<nsIHapticFeedback>;
+  nsIHapticFeedback: nsJSIID<nsIHapticFeedback, typeof nsIHapticFeedback_HapticFeedbackType>;
   nsIPlatformInfo: nsJSIID<nsIPlatformInfo>;
   nsISystemInfo: nsJSIID<nsISystemInfo>;
   nsIXULAppInfo: nsJSIID<nsIXULAppInfo>;
