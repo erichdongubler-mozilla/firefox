@@ -41,7 +41,7 @@ pub fn init_from_string_and_base_url(
             None
         };
 
-        if let Ok(init) = urlpattern::UrlPatternInit::parse_constructor_string::<regex::Regex>(
+        if let Ok(init) = urlpattern::UrlPatternInit::parse_constructor_string::<SpiderMonkeyRegexp>(
             &tmp, maybe_base,
         ) {
             return Some(init.clone());
