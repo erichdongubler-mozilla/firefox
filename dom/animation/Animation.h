@@ -43,6 +43,21 @@ class CSSTransition;
 class Document;
 class Promise;
 
+// The helper struct to hold the animation-range values.
+struct AnimationRange {
+  StyleAnimationRangeStart mStart = {StyleTimelineRangeName::Normal,
+                                     LengthPercentage::FromPercentage(0.0f)};
+  StyleAnimationRangeEnd mEnd = {StyleTimelineRangeName::Normal,
+                                 LengthPercentage::FromPercentage(1.0f)};
+  bool operator==(const AnimationRange& aOther) const {
+    return mStart == aOther.mStart && mEnd == aOther.mEnd;
+  }
+  bool IsNormal() const {
+    return mStart.name == StyleTimelineRangeName::Normal &&
+           mEnd.name == StyleTimelineRangeName::Normal;
+  }
+};
+
 class Animation : public DOMEventTargetHelper,
                   public LinkedListElement<Animation> {
  protected:
@@ -113,16 +128,6 @@ class Animation : public DOMEventTargetHelper,
   void SetTimeline(AnimationTimeline* aTimeline);
   void SetTimelineNoUpdate(AnimationTimeline* aTimeline);
 
-  // The helper struct to hold the animation-range values.
-  struct AnimationRange {
-    StyleAnimationRangeStart mStart = {StyleTimelineRangeName::Normal,
-                                       LengthPercentage::FromPercentage(0.0f)};
-    StyleAnimationRangeEnd mEnd = {StyleTimelineRangeName::Normal,
-                                   LengthPercentage::FromPercentage(1.0f)};
-    bool operator==(const AnimationRange& aOther) const {
-      return mStart == aOther.mStart && mEnd == aOther.mEnd;
-    }
-  };
   const AnimationRange& GetTimelineRange() const { return mTimelineRange; }
   void SetTimelineRange(AnimationRange&& aRange);
   void SetTimelineRangeNoUpdate(AnimationRange&& aRange);
@@ -419,7 +424,7 @@ class Animation : public DOMEventTargetHelper,
   ProgressTimelinePosition AtProgressTimelineBoundary() const {
     Nullable<TimeDuration> currentTime = GetUnconstrainedCurrentTime();
     return AtProgressTimelineBoundary(
-        mTimeline ? mTimeline->TimelineDuration() : nullptr,
+        mTimeline ? mTimeline->TimelineDuration(mTimelineRange) : nullptr,
         // Set unlimited current time based on the first matching condition:
         // 1. start time is resolved:
         //    (timeline time - start time) × playback rate

@@ -57,6 +57,9 @@ class ViewTimeline final : public ScrollTimeline {
 
   void UpdateCachedCurrentTime() override;
 
+  std::pair<double, double> IntervalForAttachmentRange(
+      const AnimationRange& aStyleRange) const override;
+
  private:
   ~ViewTimeline() = default;
   ViewTimeline(Document* aDocument, const Scroller& aScroller,
@@ -69,6 +72,10 @@ class ViewTimeline final : public ScrollTimeline {
         mInset(aInset) {}
 
   Maybe<ComputedTimelineData> ComputeTimelineData() const override;
+
+  static std::pair<nscoord, nscoord> IntervalForTimelineRangeName(
+      const StyleTimelineRangeName aName,
+      const ScrollTimeline::ComputedTimelineData& aData);
 
   // The subject element.
   // 1. For view(), the subject element is the animation target.

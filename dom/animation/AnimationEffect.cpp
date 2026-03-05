@@ -356,8 +356,17 @@ void AnimationEffect::UpdateNormalizedTiming() {
 
   // Since `mAnimation` has a scroll timeline, we can be sure `GetTimeline()`
   // and `TimelineDuration()` will not return null.
+  //
+  // FIXME: Now we only call `UpdateNormalizedTiming()` when setting the timing
+  // paramenters. However, this is not enough. For view timeline, the timeline
+  // range is layout dependent, so we have to normalize the timing if any of the
+  // cached timeline data changed. We will do this in the following patches, to
+  // make sure we have use the correct duration, based on the animation
+  // attachment range.
   mNormalizedTiming.emplace(
-      mTiming.Normalize(mAnimation->GetTimeline()->TimelineDuration().Value()));
+      mTiming.Normalize(mAnimation->GetTimeline()
+                            ->TimelineDuration(mAnimation->GetTimelineRange())
+                            .Value()));
 }
 
 Nullable<TimeDuration> AnimationEffect::GetLocalTime() const {

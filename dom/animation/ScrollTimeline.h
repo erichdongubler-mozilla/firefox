@@ -149,10 +149,13 @@ class ScrollTimeline : public AnimationTimeline,
   const ScrollTimeline* AsScrollTimeline() const override { return this; }
   bool IsViewTimeline() const override { return false; }
 
-  Nullable<TimeDuration> TimelineDuration() const override {
+  Nullable<TimeDuration> TimelineDuration(
+      const AnimationRange& aRange) const override {
     // We are using this magic number for progress-based timeline duration
     // because we don't support percentage for duration.
-    return TimeDuration::FromMilliseconds(PROGRESS_TIMELINE_DURATION_MILLISEC);
+    const auto interval = IntervalForAttachmentRange(aRange);
+    return TimeDuration::FromMilliseconds((interval.second - interval.first) *
+                                          PROGRESS_TIMELINE_DURATION_MILLISEC);
   }
 
   void WillRefresh();
@@ -197,6 +200,9 @@ class ScrollTimeline : public AnimationTimeline,
                                                bool aIsVisible) override;
 
   virtual void UpdateCachedCurrentTime();
+
+  virtual std::pair<double, double> IntervalForAttachmentRange(
+      const AnimationRange& aStyleRange) const;
 
  protected:
   virtual ~ScrollTimeline();
