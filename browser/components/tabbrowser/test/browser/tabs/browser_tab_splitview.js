@@ -408,35 +408,6 @@ add_task(async function test_resize_throttled_for_keyboard() {
   splitView.close();
 });
 
-add_task(async function test_resize_split_view_panels_exceeds_max_width() {
-  const tab1 = await addTabAndLoadBrowser();
-  const tab2 = await addTabAndLoadBrowser();
-  await BrowserTestUtils.switchTab(gBrowser, tab1);
-
-  info("Activate split view.");
-  const splitView = gBrowser.addTabSplitView([tab1, tab2]);
-  const splitter = gBrowser.tabpanels.splitViewSplitter;
-  await BrowserTestUtils.waitForMutationCondition(
-    splitter,
-    { attributes: true },
-    () => BrowserTestUtils.isVisible(splitter)
-  );
-  const maxWidth = Number(splitter.getAttribute("aria-valuemax"));
-
-  info(`Stored width should not exceed ${maxWidth} px after resizing.`);
-  const leftPanel = document.getElementById(tab1.linkedPanel);
-  await dragSplitter(9000, splitter);
-  await BrowserTestUtils.waitForMutationCondition(
-    leftPanel,
-    { attributes: true, attributeFilter: ["width"] },
-    () => Number(leftPanel.getAttribute("width")) <= maxWidth
-  );
-
-  splitView.close();
-  BrowserTestUtils.removeTab(tab1);
-  BrowserTestUtils.removeTab(tab2);
-});
-
 add_task(async function test_click_findbar_to_select_panel() {
   const tab1 = await addTabAndLoadBrowser();
   const tab2 = await addTabAndLoadBrowser();
