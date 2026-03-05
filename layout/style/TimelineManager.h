@@ -8,8 +8,10 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/TimelineCollection.h"
 #include "nsStyleAutoArray.h"
+#include "nsStyleStruct.h"
 
 class nsPresContext;
 
@@ -52,7 +54,19 @@ class TimelineManager {
                        const ComputedStyle* aComputedStyle,
                        ProgressTimelineType aType);
 
+  void UpdateTimelineScopes(const dom::Element* aElement,
+                            const ComputedStyle* aComputedStyle);
+
  private:
+  struct TimelineScopeEntry {
+    RefPtr<const dom::Element> mElement;
+    nsTArray<RefPtr<nsAtom>> mNames;
+  };
+
+  // TODO(dshin, bug 2021326): Depending on general usage, this may end up being
+  // a hashmap.
+  using TimelineScopes = nsTArray<TimelineScopeEntry>;
+
   template <typename StyleType, typename TimelineType>
   void DoUpdateTimelines(nsPresContext* aPresContext, dom::Element* aElement,
                          const PseudoStyleRequest& aPseudoRequest,
@@ -65,6 +79,7 @@ class TimelineManager {
   LinkedList<TimelineCollection<dom::ScrollTimeline>>
       mScrollTimelineCollections;
   LinkedList<TimelineCollection<dom::ViewTimeline>> mViewTimelineCollections;
+  TimelineScopes mTimelineScopes;
   nsPresContext* mPresContext;
 };
 
