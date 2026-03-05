@@ -63,7 +63,7 @@ class LoadedScript : public nsIMemoryReporter {
   LoadedScript(ScriptKind aKind, mozilla::dom::ReferrerPolicy aReferrerPolicy,
                ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 
-  LoadedScript(const LoadedScript& aOther);
+  LoadedScript(const LoadedScript& aOther, ScriptFetchOptions* aFetchOptions);
 
   template <typename T, typename... Args>
   friend RefPtr<T> mozilla::MakeRefPtr(Args&&... aArgs);
@@ -83,6 +83,10 @@ class LoadedScript : public nsIMemoryReporter {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS;
   NS_DECL_NSIMEMORYREPORTER;
   NS_DECL_CYCLE_COLLECTION_CLASS(LoadedScript)
+
+  // Create a new instance from a cache, with a different aFetchOptions.
+  static already_AddRefed<LoadedScript> FromCache(
+      const LoadedScript& aScript, ScriptFetchOptions* aFetchOptions);
 
   bool IsClassicScript() const { return mKind == ScriptKind::eClassic; }
   bool IsModuleScript() const { return mKind == ScriptKind::eModule; }
@@ -679,7 +683,7 @@ class ModuleScript final : public LoadedScript {
   ModuleScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
                ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 
-  explicit ModuleScript(const LoadedScript& other);
+  ModuleScript(const LoadedScript& other, ScriptFetchOptions* aFetchOptions);
 
   template <typename T, typename... Args>
   friend RefPtr<T> mozilla::MakeRefPtr(Args&&... aArgs);
@@ -689,7 +693,8 @@ class ModuleScript final : public LoadedScript {
  public:
   // Convert between cacheable LoadedScript instance, which is used by
   // mozilla::dom::SharedScriptCache.
-  static already_AddRefed<ModuleScript> FromCache(const LoadedScript& aScript);
+  static already_AddRefed<ModuleScript> FromCache(
+      const LoadedScript& aScript, ScriptFetchOptions* aFetchOptions);
   already_AddRefed<LoadedScript> ToCache();
 
   void SetModuleRecord(Handle<JSObject*> aModuleRecord);

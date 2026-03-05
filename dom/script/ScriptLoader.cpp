@@ -1277,10 +1277,8 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
   aRequest->mNetworkMetadata = cacheResult.mNetworkMetadata;
 
   MOZ_ASSERT(cacheResult.mCompleteValue->ReferrerPolicy() == aReferrerPolicy);
-  MOZ_ASSERT(aFetchOptions->IsCompatible(
-      cacheResult.mCompleteValue->GetFetchOptions()));
 
-  aRequest->CacheEntryFound(cacheResult.mCompleteValue);
+  aRequest->CacheEntryFound(cacheResult.mCompleteValue, aFetchOptions);
   LOG(
       ("ScriptLoader (%p): Found in-memory cache LoadedScript (%p) for "
        "ScriptLoadRequest(%p) %s.",
