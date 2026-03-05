@@ -364,6 +364,10 @@ void Animation::SetTimelineRangeNoUpdate(AnimationRange&& aRange) {
   // For now, this is not exposed and is set during initialization of the CSS
   // Animations.
   mTimelineRange = std::move(aRange);
+
+  if (mEffect) {
+    mEffect->UpdateNormalizedTiming();
+  }
 }
 
 // https://drafts.csswg.org/web-animations/#set-the-animation-start-time
@@ -1843,6 +1847,14 @@ Animation::AtProgressTimelineBoundary(
                      effectiveTimelineTime, aTimelineDuration.Value()))
              ? ProgressTimelinePosition::Boundary
              : ProgressTimelinePosition::NotBoundary;
+}
+
+void Animation::UpdateNormalizedTimingForTimelineDataChange() {
+  if (!mEffect) {
+    return;
+  }
+
+  mEffect->UpdateNormalizedTiming();
 }
 
 StickyTimeDuration Animation::EffectEnd() const {

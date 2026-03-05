@@ -210,6 +210,8 @@ class ScrollTimeline : public AnimationTimeline,
   ScrollTimeline(Document* aDocument, const Scroller& aScroller,
                  StyleScrollAxis aAxis);
 
+  void TimelineDataDidChange();
+
   // The timeline data used to represent the full range of the timeline.
   struct ComputedTimelineData {
     nscoord mPosition = 0;

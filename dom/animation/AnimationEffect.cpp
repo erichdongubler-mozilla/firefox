@@ -347,26 +347,29 @@ void AnimationEffect::UpdateTiming(const OptionalEffectTiming& aTiming,
   SetSpecifiedTiming(std::move(timing));
 }
 
+// FIXME: We currently update the normalized timing eagerly, and this may cause
+// unnecessary calculation. The alternative way is to update it lazily and only
+// when needed. In order words, we could set a flag, and update the normalized
+// timing only when we need to use the normalized timing.
 void AnimationEffect::UpdateNormalizedTiming() {
   mNormalizedTiming.reset();
 
-  if (!mAnimation || !mAnimation->UsingScrollTimeline()) {
+  if (!mAnimation) {
     return;
   }
 
-  // Since `mAnimation` has a scroll timeline, we can be sure `GetTimeline()`
-  // and `TimelineDuration()` will not return null.
-  //
-  // FIXME: Now we only call `UpdateNormalizedTiming()` when setting the timing
-  // paramenters. However, this is not enough. For view timeline, the timeline
-  // range is layout dependent, so we have to normalize the timing if any of the
-  // cached timeline data changed. We will do this in the following patches, to
-  // make sure we have use the correct duration, based on the animation
-  // attachment range.
-  mNormalizedTiming.emplace(
-      mTiming.Normalize(mAnimation->GetTimeline()
-                            ->TimelineDuration(mAnimation->GetTimelineRange())
-                            .Value()));
+  const auto* timeline = mAnimation->GetTimeline();
+  // Skip time-based timeline. Only scroll timeline and view timeline update the
+  // normalized timing.
+  if (!timeline || timeline->IsMonotonicallyIncreasing()) {
+    return;
+  }
+
+  const Nullable<TimeDuration>& timelineDuration =
+      timeline->TimelineDuration(mAnimation->GetTimelineRange());
+  MOZ_ASSERT(!timelineDuration.IsNull(),
+             "We always have a timeline duration even for 0 duration");
+  mNormalizedTiming.emplace(mTiming.Normalize(timelineDuration.Value()));
 }
 
 Nullable<TimeDuration> AnimationEffect::GetLocalTime() const {

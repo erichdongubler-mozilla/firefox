@@ -101,6 +101,8 @@ static std::pair<nscoord, nscoord> ComputeInsets(
 }
 
 void ViewTimeline::UpdateCachedCurrentTime() {
+  const auto prevCachedCurrentTime = std::move(mCachedCurrentTime);
+
   mCachedCurrentTime.reset();
 
   // If no layout box, this timeline is inactive.
@@ -187,6 +189,11 @@ void ViewTimeline::UpdateCachedCurrentTime() {
               : subjectRect.x,
           subjectRect.width, sideInsets.first, sideInsets.second});
       break;
+  }
+
+  if (!prevCachedCurrentTime ||
+      prevCachedCurrentTime->IsChanged(*mCachedCurrentTime)) {
+    TimelineDataDidChange();
   }
 }
 
