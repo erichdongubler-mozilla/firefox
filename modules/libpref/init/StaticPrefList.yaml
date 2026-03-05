@@ -18127,6 +18127,11 @@
   value: false
   mirror: always
 
+- name: security.waict.allowed_image_storage
+  type: RelaxedAtomicUint32
+  value: 52428800  # 50MB
+  mirror: always
+
 # Which mechanism the secret decoder ring should use for encryption. Decryption
 # can always happen with all mechanisms.
 # 0 - DES3_CBC
