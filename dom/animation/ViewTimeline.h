@@ -53,6 +53,8 @@ class ViewTimeline final : public ScrollTimeline {
                              const PseudoStyleRequest& aPseudoRequest,
                              const StyleViewTimeline& aNew);
 
+  const Element* TimelineTargetElement() const override { return mSubject; }
+
  private:
   ~ViewTimeline() = default;
   ViewTimeline(Document* aDocument, const Scroller& aScroller,

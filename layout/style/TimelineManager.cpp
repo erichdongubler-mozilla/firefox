@@ -175,6 +175,107 @@ void TimelineManager::UpdateTimelineScopes(
   }
 }
 
+auto TimelineManager::GetTimelineScope(const dom::Element* aScopeElement,
+                                       const nsAtom* aName) const
+    -> const TimelineScopeEntry* {
+  auto it = std::find_if(mTimelineScopes.cbegin(), mTimelineScopes.cend(),
+                         [&](const auto& aEntry) {
+                           if (aEntry.mElement != aScopeElement) {
+                             return false;
+                           }
+                           return aEntry.mNames.IsEmpty() ||
+                                  std::find_if(aEntry.mNames.cbegin(),
+                                               aEntry.mNames.cend(),
+                                               [&](const auto& aScopeName) {
+                                                 return aScopeName == aName;
+                                               }) != aEntry.mNames.cend();
+                         });
+  if (it == mTimelineScopes.cend()) {
+    return nullptr;
+  }
+  return &(*it);
+}
+
+template <typename TimelineType>
+TimelineType* TimelineManager::DoGetScopedTimeline(
+    const Element* aScopeElement, const nsAtom* aName,
+    const TimelineNameMap<TimelineType>& aTimelineNameMap,
+    bool& aDuplicateFound) const {
+  const auto candidates = aTimelineNameMap.Lookup(aName);
+  if (!candidates) {
+    return nullptr;
+  }
+  aDuplicateFound = false;
+
+  auto ScopeIsValid = [&](const Element* aTimelineCandidate,
+                          const Element* aExpectedScope) {
+    const auto* e = aTimelineCandidate->GetParentElement();
+    for (; e && e != aExpectedScope; e = e->GetParentElement()) {
+      if (GetTimelineScope(e, aName)) {
+        // This timeline-scope declaring element blocks this timeline from being
+        // visible to aExpectedScope.
+        // TODO(dshin): This is a lot of linear traversals...
+        return false;
+      }
+    }
+    return e == aExpectedScope;
+  };
+
+  TimelineType* result = nullptr;
+  bool found = false;
+  for (const auto& candidate : candidates.Data()) {
+    if (!ScopeIsValid(candidate->TimelineTargetElement(), aScopeElement)) {
+      continue;
+    }
+    if (found) {
+      // See comment in `GetScopedTimeline` duplicate handling.
+      aDuplicateFound = true;
+      return nullptr;
+    }
+    found = true;
+    result = candidate;
+  }
+  return result;
+}
+
+Maybe<already_AddRefed<dom::AnimationTimeline>>
+TimelineManager::GetScopedTimeline(const dom::Element* aScopeElement,
+                                   const nsAtom* aName) const {
+  if (!GetTimelineScope(aScopeElement, aName)) {
+    return Nothing{};
+  }
+
+  bool duplicateFound = false;
+  // Search for a scroll timeline of this name.
+  auto* scrollTimeline = DoGetScopedTimeline(
+      aScopeElement, aName, mScrollTimelineNameMap, duplicateFound);
+  if (duplicateFound) {
+    return Some(nullptr);
+  }
+
+  // Also search for a view timeline of this name (See below as to why).
+  auto* viewTimeline = DoGetScopedTimeline(
+      aScopeElement, aName, mViewTimelineNameMap, duplicateFound);
+  if (duplicateFound) {
+    return Some(nullptr);
+  }
+
+  if (viewTimeline && scrollTimeline) {
+    // Both timelines exist. Unlike the non-scoped referencing rules [1], we
+    // don't care to figure out precedence, and just return the no timeline [2].
+    // [1]: https://drafts.csswg.org/scroll-animations-1/#timeline-scoping
+    // [2]: https://drafts.csswg.org/scroll-animations-1/#timeline-scope
+    return Some(nullptr);
+  }
+
+  dom::AnimationTimeline* result =
+      scrollTimeline ? scrollTimeline : viewTimeline;
+  if (result) {
+    result->AddRef();
+  }
+  return Some(result);
+}
+
 template <typename TimelineType>
 static already_AddRefed<TimelineType> PopExistingTimeline(
     nsAtom* aName, TimelineCollection<TimelineType>* aCollection) {

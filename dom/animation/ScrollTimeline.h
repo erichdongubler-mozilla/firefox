@@ -171,6 +171,10 @@ class ScrollTimeline : public AnimationTimeline,
     return mSource.mElement;
   }
 
+  virtual const Element* TimelineTargetElement() const {
+    return SourceElement();
+  }
+
   bool SourceMatches(const Element* aElement,
                      const PseudoStyleRequest& aPseudoRequest) const;
 

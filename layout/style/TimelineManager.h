@@ -21,6 +21,7 @@ struct PseudoStyleRequest;
 
 namespace dom {
 class Element;
+class AnimationTimeline;
 class ScrollTimeline;
 class ViewTimeline;
 }  // namespace dom
@@ -59,6 +60,9 @@ class TimelineManager {
   void UpdateTimelineScopes(const dom::Element* aElement,
                             const ComputedStyle* aComputedStyle);
 
+  Maybe<already_AddRefed<dom::AnimationTimeline>> GetScopedTimeline(
+      const dom::Element* aScopeElement, const nsAtom* aName) const;
+
  private:
   template <typename TimelineType>
   using Timelines = nsTArray<TimelineType*>;
@@ -76,6 +80,15 @@ class TimelineManager {
     RefPtr<const dom::Element> mElement;
     nsTArray<RefPtr<nsAtom>> mNames;
   };
+
+  const TimelineScopeEntry* GetTimelineScope(const dom::Element* aScopeElement,
+                                             const nsAtom* aName) const;
+
+  template <typename TimelineType>
+  TimelineType* DoGetScopedTimeline(
+      const dom::Element* aScopeElement, const nsAtom* aName,
+      const TimelineNameMap<TimelineType>& aTimelineNameMap,
+      bool& aDuplicateFound) const;
 
   // TODO(dshin, bug 2021326): Depending on general usage, this may end up being
   // a hashmap.
