@@ -711,6 +711,9 @@ run-if = [
 ["test_h2proxy_connection_limit.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
 
+["test_happy_eyeballs_ip_preference.js"]
+run-sequentially = ["true"] # node server exceptions dont replay well
+
 ["test_head.js"]
 
 ["test_head_request_no_response_body.js"]
