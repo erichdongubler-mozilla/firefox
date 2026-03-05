@@ -960,8 +960,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
    * Terminate a given DebuggerFrame, removing all internal state and all
    * references to the frame from the Debugger itself. If the frame is being
    * terminated while 'frames' or 'generatorFrames' are being iterated, pass a
-   * pointer to the iteration Enum to remove the entry and ensure that iteration
-   * behaves properly.
+   * pointer to the current iterator so the entry can be removed without
+   * invalidating iteration.
    *
    * The AbstractFramePtr may be omited in a call so long as it is either
    * called again later with the correct 'frame', or the frame itself has never
@@ -970,7 +970,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   static void terminateDebuggerFrame(
       JS::GCContext* gcx, Debugger* dbg, DebuggerFrame* dbgFrame,
       AbstractFramePtr frame, FrameMap::Enum* maybeFramesEnum = nullptr,
-      GeneratorWeakMap::Enum* maybeGeneratorFramesEnum = nullptr);
+      GeneratorWeakMap::ModIterator* maybeGeneratorFramesIter = nullptr);
 
   static bool updateExecutionObservabilityOfFrames(
       JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,

@@ -2757,10 +2757,9 @@ bool DebugAPI::onSingleStep(JSContext* cx) {
       }
 
       // Also count hooks set on suspended generator frames.
-      for (Debugger::GeneratorWeakMap::Range r = dbg->generatorFrames.all();
-           !r.empty(); r.popFront()) {
-        AbstractGeneratorObject& genObj = *r.front().key();
-        DebuggerFrame& frameObj = *r.front().value();
+      for (auto iter = dbg->generatorFrames.iter(); !iter.done(); iter.next()) {
+        AbstractGeneratorObject& genObj = *iter.get().key();
+        DebuggerFrame& frameObj = *iter.get().value();
         MOZ_ASSERT(&frameObj.unwrappedGenerator() == &genObj);
 
         // Live Debugger.Frames were already counted in dbg->frames loop.
@@ -4107,9 +4106,9 @@ void DebugAPI::sweepAll(JS::GCContext* gcx) {
     // Since DebugAPI::sweepAll is called after everything is marked, but before
     // anything has been finalized, this is the perfect place to drop the count.
     if (dbg->zone()->isGCSweeping()) {
-      for (Debugger::GeneratorWeakMap::Enum e(dbg->generatorFrames); !e.empty();
-           e.popFront()) {
-        DebuggerFrame* frameObj = e.front().value();
+      for (auto iter = dbg->generatorFrames.modIter(); !iter.done();
+           iter.next()) {
+        DebuggerFrame* frameObj = iter.get().value();
         if (IsAboutToBeFinalizedUnbarriered(frameObj)) {
           // If the DebuggerFrame is being finalized, that means either:
           //  1) It is not present in "frames".
@@ -4120,7 +4119,7 @@ void DebugAPI::sweepAll(JS::GCContext* gcx) {
           // removeDebuggeeGlobal below will iterate and remove the entries
           // anyway, so things will be cleaned up properly.
           Debugger::terminateDebuggerFrame(gcx, dbg, frameObj, NullFramePtr(),
-                                           nullptr, &e);
+                                           nullptr, &iter);
         }
       }
     }
@@ -4184,10 +4183,10 @@ bool DebuggerWeakMap<UnbarrieredKey, Wrapper,
                      InvisibleKeysOk>::findSweepGroupEdges(Zone* atomsZone) {
   Zone* debuggerZone = zone();
   MOZ_ASSERT(debuggerZone->isGCMarking());
-  for (Enum e(*this); !e.empty(); e.popFront()) {
-    MOZ_ASSERT(e.front().value()->zone() == debuggerZone);
+  for (auto iter = this->iter(); !iter.done(); iter.next()) {
+    MOZ_ASSERT(iter.get().value()->zone() == debuggerZone);
 
-    Zone* keyZone = e.front().key()->zone();
+    Zone* keyZone = iter.get().key()->zone();
     if (keyZone->isGCMarking() &&
         !SweepZonesInSameGroup(debuggerZone, keyZone)) {
       return false;
@@ -5152,11 +5151,11 @@ void Debugger::removeDebuggeeGlobal(JS::GCContext* gcx, GlobalObject* global,
   // table, and the Debugger.Frame finalizer will fix up the generator observer
   // counts.
   if (fromSweep == FromSweep::No) {
-    for (GeneratorWeakMap::Enum e(generatorFrames); !e.empty(); e.popFront()) {
-      AbstractGeneratorObject& genObj = *e.front().key();
+    for (auto iter = generatorFrames.modIter(); !iter.done(); iter.next()) {
+      AbstractGeneratorObject& genObj = *iter.get().key();
       if (&genObj.global() == global) {
-        terminateDebuggerFrame(gcx, this, e.front().value(), NullFramePtr(),
-                               nullptr, &e);
+        terminateDebuggerFrame(gcx, this, iter.get().value(), NullFramePtr(),
+                               nullptr, &iter);
       }
     }
   }
@@ -7192,14 +7191,14 @@ void Debugger::terminateDebuggerFrames(JSContext* cx, AbstractFramePtr frame) {
 void Debugger::terminateDebuggerFrame(
     JS::GCContext* gcx, Debugger* dbg, DebuggerFrame* dbgFrame,
     AbstractFramePtr frame, FrameMap::Enum* maybeFramesEnum,
-    GeneratorWeakMap::Enum* maybeGeneratorFramesEnum) {
+    GeneratorWeakMap::ModIterator* maybeGeneratorFramesIter) {
   // If we were not passed the frame, either we are destroying a frame early
   // on before it was inserted into the "frames" list, or else we are
   // terminating a frame from "generatorFrames" and the "frames" entries will
   // be cleaned up later on with a second call to this function.
   MOZ_ASSERT_IF(!frame, !maybeFramesEnum);
   MOZ_ASSERT_IF(!frame, dbgFrame->hasGeneratorInfo());
-  MOZ_ASSERT_IF(!dbgFrame->hasGeneratorInfo(), !maybeGeneratorFramesEnum);
+  MOZ_ASSERT_IF(!dbgFrame->hasGeneratorInfo(), !maybeGeneratorFramesIter);
 
   if (frame) {
     if (maybeFramesEnum) {
@@ -7210,8 +7209,8 @@ void Debugger::terminateDebuggerFrame(
   }
 
   if (dbgFrame->hasGeneratorInfo()) {
-    if (maybeGeneratorFramesEnum) {
-      maybeGeneratorFramesEnum->removeFront();
+    if (maybeGeneratorFramesIter) {
+      maybeGeneratorFramesIter->remove();
     } else {
       dbg->generatorFrames.remove(&dbgFrame->unwrappedGenerator());
     }
