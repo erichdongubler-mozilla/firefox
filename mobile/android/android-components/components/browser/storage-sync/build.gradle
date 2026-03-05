@@ -26,6 +26,7 @@ dependencies {
     api ComponentsDependencies.mozilla_appservices_tabs
 
     implementation project(':components:concept-toolbar')
+    implementation project(':components:support-appservices')
     implementation project(':components:support-utils')
 
     implementation ComponentsDependencies.mozilla_appservices_syncmanager

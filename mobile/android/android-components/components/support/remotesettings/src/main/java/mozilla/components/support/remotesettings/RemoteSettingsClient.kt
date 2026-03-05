@@ -24,6 +24,7 @@ import mozilla.appservices.remotesettings.RemoteSettingsConfig
 import mozilla.appservices.remotesettings.RemoteSettingsException
 import mozilla.appservices.remotesettings.RemoteSettingsRecord
 import mozilla.appservices.remotesettings.RemoteSettingsResponse
+import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.util.writeString
 import mozilla.components.support.rusterrors.reportRustError
@@ -49,6 +50,7 @@ class RemoteSettingsClient(
     private val serverUrl: String = "https://firefox.settings.services.mozilla.com",
     private val bucketName: String = "main",
     private val collectionName: String,
+    private val crashReporter: CrashReporting? = null,
 ) {
 
     private val config = RemoteSettingsConfig(
@@ -73,13 +75,14 @@ class RemoteSettingsClient(
             }
             RemoteSettingsResult.Success(serverRecords)
         } catch (e: RemoteSettingsException) {
-            Logger.error(e.message.toString())
+            Logger.error("Ignoring RemoteSettingsException exception from `fetch`", e)
             RemoteSettingsResult.NetworkFailure(e)
         } catch (e: NullPointerException) {
-            Logger.error(e.message.toString())
+            Logger.error("Ignoring NullPointer exception from `fetch`", e)
             RemoteSettingsResult.NetworkFailure(e)
         } catch (e: UniffiInternalException) {
-            Logger.error(e.toString())
+            Logger.error("Ignoring UniffiInternalException from `fetch`", e)
+            crashReporter?.submitCaughtException(e)
             RustComponentsErrorTelemetry.submitErrorPing("remote-settings-internal-error", e.toString())
             reportRustError("remote-settings-internal-error", e.toString())
             RemoteSettingsResult.NetworkFailure(e)
