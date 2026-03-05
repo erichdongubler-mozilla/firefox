@@ -58,9 +58,6 @@ export class AIWindowTabStatesManager {
   /**
    * Adds event listeners needed to manage tab states
    *
-   * @todo Bug 2016552
-   * Handle classic/smartwindow switches to toggle event listeners
-   *
    * @param {ChromeWindow} win
    *
    * @private
@@ -79,6 +76,23 @@ export class AIWindowTabStatesManager {
 
     this.#setUpInitialTabs();
     this.#addWindowEventListeners();
+  }
+
+  /**
+   * Removes all event listeners and cleans up state.
+   */
+  uninit() {
+    const tabContainer = this.#window.gBrowser.tabContainer;
+    tabContainer.removeEventListener("TabOpen", this);
+    tabContainer.removeEventListener("TabSelect", this);
+    tabContainer.removeEventListener("TabClose", this);
+
+    this.#window.gBrowser.removeTabsProgressListener(this.#tabsListener);
+    this.#removeWindowEventListeners();
+    this.#tabsListener = null;
+    this.#tabStates = null;
+    this.#selectedTab = null;
+    this.#window = null;
   }
 
   /**
@@ -111,6 +125,41 @@ export class AIWindowTabStatesManager {
     );
 
     this.#window.addEventListener(
+      "ai-window:sidebar-navigating",
+      this.#onSidebarNavigating
+    );
+  }
+
+  /**
+   * Remove event listeners from the window for ai-window:* events
+   */
+  #removeWindowEventListeners() {
+    this.#window.removeEventListener(
+      "ai-window:smartbar-input",
+      this.#onSmartbarInput
+    );
+
+    this.#window.removeEventListener(
+      "ai-window:connected",
+      this.#onAIWindowConnected
+    );
+
+    this.#window.removeEventListener(
+      "ai-window:opened-conversation",
+      this.#onConversationOpened
+    );
+
+    this.#window.removeEventListener(
+      "ai-window:clear-conversation",
+      this.#onConversationCleared
+    );
+
+    this.#window.removeEventListener(
+      "ai-window:sidebar-toggle",
+      this.#onSidebarToggle
+    );
+
+    this.#window.removeEventListener(
       "ai-window:sidebar-navigating",
       this.#onSidebarNavigating
     );
@@ -176,6 +225,10 @@ export class AIWindowTabStatesManager {
    * @private
    */
   async #onTabSelect(event) {
+    if (!this.#window) {
+      return;
+    }
+
     this.#selectedTab = event.target;
 
     const tabState = this.#getTabState(this.#selectedTab);
@@ -255,6 +308,10 @@ export class AIWindowTabStatesManager {
    * @private
    */
   #onAIWindowConnected = async event => {
+    if (!this.#window) {
+      return;
+    }
+
     const { mode, pageUrl, conversationId, tab } = event.detail;
     const tabState = this.#getTabState(tab, { mode, pageUrl, conversationId });
     const { input } = tabState.state;
@@ -302,6 +359,10 @@ export class AIWindowTabStatesManager {
    * @private
    */
   #getTabState(tab, newState = null) {
+    if (!this.#tabStates) {
+      return {};
+    }
+
     const tabState = this.#tabStates.get(tab) ?? {};
 
     if (newState) {
@@ -425,7 +486,7 @@ export class AIWindowTabStatesManager {
         locationURI,
         _flags
       ) => {
-        if (!webProgress.isTopLevel) {
+        if (!webProgress.isTopLevel || !this.#tabStates) {
           return;
         }
 
@@ -440,6 +501,13 @@ export class AIWindowTabStatesManager {
         const isSidebarOpen = lazy.AIWindowUI.isSidebarOpen(this.#window);
         const convId = tabState.state.conversationId;
         const conversation = await lazy.ChatStore.findConversationById(convId);
+
+        // Re-fetch tab state after async to avoid leak/crash if tab state is now null (e.g. closed window)
+        tabState = this.#getTabState(tab);
+        if (!tabState?.state) {
+          return;
+        }
+
         const isAiWindowUrl = locationURI.spec === lazy.AIWINDOW_URL;
 
         const needsSidebar =

@@ -23,12 +23,6 @@ const { PlacesTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PlacesTestUtils.sys.mjs"
 );
 
-add_setup(function () {
-  // Some tools only access tabs, etc. from ai windows
-  AIWindow.toggleAIWindow(window);
-  registerCleanupFunction(() => AIWindow.toggleAIWindow(window));
-});
-
 add_task(async function test_chat_streams_end_to_end() {
   const requests = [];
   await withServer(
@@ -89,16 +83,25 @@ add_task(async function test_chat_streams_end_to_end() {
 });
 
 add_task(async function test_chat_tool_call_get_open_tabs() {
+  const win = await BrowserTestUtils.openNewBrowserWindow({ aiWindow: true });
+  await BrowserTestUtils.waitForMutationCondition(
+    win.document.documentElement,
+    { attributes: true },
+    () => win.document.documentElement.hasAttribute("ai-window")
+  );
+
+  const initialTab = win.gBrowser.selectedTab;
   const tab1 = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    win.gBrowser,
     "https://example.com/one",
     true
   );
   const tab2 = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
+    win.gBrowser,
     "https://example.com/two",
     true
   );
+  BrowserTestUtils.removeTab(initialTab);
 
   try {
     await withServer(
@@ -152,6 +155,7 @@ add_task(async function test_chat_tool_call_get_open_tabs() {
   } finally {
     BrowserTestUtils.removeTab(tab1);
     BrowserTestUtils.removeTab(tab2);
+    await BrowserTestUtils.closeWindow(win);
   }
 });
 

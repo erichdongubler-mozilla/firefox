@@ -553,8 +553,23 @@ export const AIWindow = {
       } else {
         // Close sidebar when switching back to classic window if it is open
         lazy.AIWindowUI.closeSidebar(win);
+        this._uninitTabStateManager(win);
       }
     }
+  },
+
+  _uninitTabStateManager(win) {
+    const manager = this._aiWindowTabStateManagers.get(win);
+    if (!manager) {
+      return;
+    }
+    manager.uninit();
+    this._aiWindowTabStateManagers.delete(win);
+  },
+
+  unloadWindow(win) {
+    this._uninitTabStateManager(win);
+    this._windowStates.delete(win);
   },
 
   async _authorizeAndToggleWindow(win) {
