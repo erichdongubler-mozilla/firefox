@@ -5355,8 +5355,7 @@ var gMainPane = {
         // Start with no option selected since we are still reading the value
         document.getElementById("autoDesktop").removeAttribute("selected");
         document.getElementById("manualDesktop").removeAttribute("selected");
-        // Start reading the correct value from the disk
-        this.readUpdateAutoPref();
+
         setEventListener("updateRadioGroup", "command", event => {
           if (event.target.id == "backgroundUpdate") {
             this.writeBackgroundUpdatePref();
@@ -5364,11 +5363,18 @@ var gMainPane = {
             this.writeUpdateAutoPref();
           }
         });
-        if (this.isBackgroundUpdateUIAvailable()) {
-          document.getElementById("backgroundUpdate").hidden = false;
-          // Start reading the background update pref's value from the disk.
-          this.readBackgroundUpdatePref();
-        }
+
+        // Start reading the correct value from the disk
+        this.readUpdateAutoPref().then(async () => {
+          // Wait for update auto pref to be set before reading the
+          // backgroundUpdate preference
+          if (this.isBackgroundUpdateUIAvailable()) {
+            document.getElementById("backgroundUpdate").hidden = false;
+
+            // Start reading the background update pref's value from the disk.
+            await this.readBackgroundUpdatePref();
+          }
+        });
       }
 
       if (AppConstants.platform == "win") {
