@@ -96,6 +96,49 @@ add_task(async function test_storage_access_permission_prompt() {
   Services.prefs.clearUserPref("dom.storage_access.auto_grants");
 });
 
+// Tests that LNA prompts return a custom temporaryPermissionExpireTimeMS
+// while non-LNA prompts return undefined (using the default).
+add_task(async function test_lna_temporary_permission_expire_time_getter() {
+  const LNA_EXPIRE_MS = 5000;
+  await SpecialPowers.pushPrefEnv({
+    set: [["network.lna.temporary_permission_expire_time_ms", LNA_EXPIRE_MS]],
+  });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "http://example.com" },
+    async function (browser) {
+      let mockRequest = makeMockPermissionRequest(browser);
+
+      let loopbackPrompt = new PermissionUI.LoopbackNetworkPermissionPrompt(
+        mockRequest
+      );
+      Assert.equal(
+        loopbackPrompt.temporaryPermissionExpireTimeMS,
+        LNA_EXPIRE_MS,
+        "LoopbackNetworkPermissionPrompt should return LNA-specific expiry time"
+      );
+
+      let localNetPrompt = new PermissionUI.LocalNetworkPermissionPrompt(
+        mockRequest
+      );
+      Assert.equal(
+        localNetPrompt.temporaryPermissionExpireTimeMS,
+        LNA_EXPIRE_MS,
+        "LocalNetworkPermissionPrompt should return LNA-specific expiry time"
+      );
+
+      let geoPrompt = new PermissionUI.GeolocationPermissionPrompt(mockRequest);
+      Assert.equal(
+        geoPrompt.temporaryPermissionExpireTimeMS,
+        undefined,
+        "GeolocationPermissionPrompt should return undefined (uses default)"
+      );
+    }
+  );
+
+  await SpecialPowers.popPrefEnv();
+});
+
 async function testPrompt(Prompt, useLocalFile = false) {
   await BrowserTestUtils.withNewTab(
     {

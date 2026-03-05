@@ -169,6 +169,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   300000
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "lnaTemporaryPermissionExpireTimeMs",
+  "network.lna.temporary_permission_expire_time_ms",
+  24 * 3600 * 1000 // 24 hours
+);
+
 /**
  * PermissionPrompt should be subclassed by callers that
  * want to display prompts to the user. See each method and property
@@ -240,6 +247,14 @@ class PermissionPrompt {
    * permissions. If undefined, it defaults to the browser.currentURI.
    */
   get temporaryPermissionURI() {
+    return undefined;
+  }
+
+  /**
+   * Custom expiration time in milliseconds for temporary permissions.
+   * If undefined, uses the default from SitePermissions.temporaryPermissionExpireTime.
+   */
+  get temporaryPermissionExpireTimeMS() {
     return undefined;
   }
 
@@ -547,7 +562,8 @@ class PermissionPrompt {
                 this.permissionKey,
                 promptAction.action,
                 lazy.SitePermissions.SCOPE_TEMPORARY,
-                this.browser
+                this.browser,
+                this.temporaryPermissionExpireTimeMS
               );
             }
 
@@ -563,7 +579,8 @@ class PermissionPrompt {
               this.permissionKey,
               promptAction.action,
               lazy.SitePermissions.SCOPE_TEMPORARY,
-              this.browser
+              this.browser,
+              this.temporaryPermissionExpireTimeMS
             );
           }
         },
@@ -1105,6 +1122,11 @@ class LNAPermissionPromptBase extends PermissionPromptForRequest {
 
   allow(choices) {
     super.allow(choices);
+  }
+
+  get temporaryPermissionExpireTimeMS() {
+    // LNA temporary permissions have a custom expiration time (default 24 hours)
+    return lazy.lnaTemporaryPermissionExpireTimeMs;
   }
 
   #startTimeoutTimer() {
