@@ -27,6 +27,12 @@
         testHelpers.setupTests({ templateFn });
       });
 
+      add_task(async function testMozSelectProperties() {
+        await testHelpers.testCommonInputProperties("moz-select", {
+          type: "button",
+        });
+      });
+
       add_task(async function testPanelListMousedownOpensPanel() {
         let target = await testHelpers.renderTemplate();
         let select = target.querySelector("moz-select");

@@ -328,9 +328,20 @@ export default class MozSelect extends MozBaseInputElement {
    */
   panelTargetTemplate() {
     return html`<button
+      id="input"
+      name=${this.name}
+      .value=${this.value}
       class="panel-trigger"
+      type="button"
+      role="combobox"
+      aria-label=${ifDefined(this.ariaLabel)}
+      aria-description=${ifDefined(
+        this.hasDescription ? undefined : this.ariaDescription
+      )}
+      aria-describedby="description"
       aria-haspopup="menu"
       aria-expanded=${this.panelList?.open ? "true" : "false"}
+      accesskey=${ifDefined(this.accessKey)}
       @mousedown=${this.handlePanelMousedown}
       @click=${this.handlePanelClick}
       @keydown=${this.handlePanelKeydown}
