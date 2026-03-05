@@ -126,6 +126,45 @@ const PROFILE_MESSAGE_SCOPE = {
   SHARED: "shared",
 };
 
+// Location helper methods
+function isMozillaInternalPage(uri) {
+  if (uri?.scheme !== "about") {
+    return false;
+  }
+  switch (uri.filePath) {
+    case "reader":
+    case "certerror":
+    case "neterror":
+    case "httpsonlyerror":
+    case "blocked":
+    case "restricted":
+    case "tabcrashed":
+    case "framecrashed":
+      return false;
+  }
+  return true;
+}
+
+function isMozillaWebpage(uri) {
+  return ["mozilla.org", "firefox.com"].some(domain => {
+    try {
+      return Services.eTLD.getBaseDomainFromHost(uri.host) === domain;
+    } catch {
+      return false;
+    }
+  });
+}
+
+function isThirdPartyPage(uri) {
+  if (!uri) {
+    return true;
+  }
+  if (isMozillaInternalPage(uri) || isMozillaWebpage(uri)) {
+    return false;
+  }
+  return true;
+}
+
 export const MessageLoaderUtils = {
   STARTPAGE_VERSION,
   REMOTE_LOADER_CACHE_KEY: "RemoteLoaderCache",
@@ -2348,12 +2387,15 @@ export class _ASRouter {
     if (!skipLoadingMessages) {
       await this.loadMessagesFromAllProviders();
     }
-    // Implement the global `browserIsSelected` context property.
+    // Implement the global context properties.
     if (trigger && browser?.constructor.name === "MozBrowser") {
       if (!Object.prototype.hasOwnProperty.call(trigger, "context")) {
         trigger.context = {};
       }
       if (typeof trigger.context === "object") {
+        trigger.context.onThirdPartyPage = isThirdPartyPage(
+          browser.ownerGlobal.gBrowser?.currentURI
+        );
         trigger.context.isAIWindow = !!lazy.AIWindow?.isAIWindowActive?.(
           browser.ownerGlobal
         );
@@ -2362,6 +2404,7 @@ export class _ASRouter {
           browser === browser.ownerGlobal.gBrowser?.selectedBrowser;
       }
     }
+
     const timerId = Glean.messagingSystem.messageRequestTime.start();
     // Return all the messages so that it can record the Reach event
     const messages =
