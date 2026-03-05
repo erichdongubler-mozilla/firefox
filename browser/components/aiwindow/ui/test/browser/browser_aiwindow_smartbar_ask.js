@@ -53,9 +53,7 @@ add_task(async function test_arrow_to_ask_preserves_value() {
     );
 
     const selectedType = () =>
-      smartbar
-        .querySelector(".urlbarView-row[selected]")
-        ?.getAttribute("type");
+      smartbar.querySelector(".urlbarView-row[selected]")?.getAttribute("type");
 
     Assert.equal(
       selectedType(),
