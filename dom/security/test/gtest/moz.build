@@ -11,6 +11,7 @@ UNIFIED_SOURCES += [
     "TestPolicyContainer.cpp",
     "TestSecureContext.cpp",
     "TestSmartCrashTrimmer.cpp",
+    "TestWAICTManifestValidation.cpp",
 ]
 
 if CONFIG["OS_TARGET"] != "Android":
