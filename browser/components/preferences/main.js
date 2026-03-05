@@ -6420,13 +6420,16 @@ var gMainPane = {
         if (updateAutoValue) {
           await this.readBackgroundUpdatePref();
         } else {
-          await this.maybeDisableBackgroundUpdateControls();
         }
 
         // Wait for a second to prevent the disable/enable causing the
         // UI text to flicker.
         await _disableTimeOverPromise;
 
+        if (this.isBackgroundUpdateUIAvailable()) {
+          let backgroundUpdate = document.getElementById("backgroundUpdate");
+          backgroundUpdate.disabled = !updateAutoValue;
+        }
         radiogroup.disabled = false;
       } catch (error) {
         console.error(error);
@@ -6466,7 +6469,13 @@ var gMainPane = {
 
       // This control is only active if auto update is enabled.
       let backgroundUpdate = document.getElementById("backgroundUpdate");
-      backgroundUpdate.disabled = !updateAutoEnabled;
+
+      if (radiogroup.disabled) {
+        backgroundUpdate.disabled = true;
+      } else {
+        backgroundUpdate.disabled = !updateAutoEnabled;
+      }
+
       if (!updateAutoEnabled) {
         backgroundUpdate.checked = false;
       } else {
