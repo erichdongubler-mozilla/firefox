@@ -1708,8 +1708,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   // may identify anchor positioning anchor elements.
   mozilla::StyleScopedName mAnchorScope;
 
-  mozilla::StyleScopedName mTimelineScope;
-
   mozilla::Maybe<mozilla::WindowButtonType> GetWindowButtonType() const {
     if (MOZ_LIKELY(mDefaultAppearance == mozilla::StyleAppearance::None)) {
       return mozilla::Nothing();
@@ -2154,6 +2152,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
 
   mozilla::StyleViewTransitionName mViewTransitionName;
   mozilla::StyleViewTransitionClass mViewTransitionClass;
+
+  mozilla::StyleScopedName mTimelineScope;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUI {

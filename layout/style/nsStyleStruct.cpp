@@ -2300,8 +2300,7 @@ nsStyleDisplay::nsStyleDisplay()
       mWebkitLineClamp(0),
       mShapeMargin(LengthPercentage::Zero()),
       mShapeOutside(StyleShapeOutside::None()),
-      mAnchorScope(StyleScopedNameKeyword::None()),
-      mTimelineScope(StyleScopedNameKeyword::None()) {
+      mAnchorScope(StyleScopedNameKeyword::None()) {
   MOZ_COUNT_CTOR(nsStyleDisplay);
 }
 
@@ -2360,8 +2359,7 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
       mShapeMargin(aSource.mShapeMargin),
       mShapeOutside(aSource.mShapeOutside),
       mAnchorName(aSource.mAnchorName),
-      mAnchorScope(aSource.mAnchorScope),
-      mTimelineScope(aSource.mTimelineScope) {
+      mAnchorScope(aSource.mAnchorScope) {
   MOZ_COUNT_CTOR(nsStyleDisplay);
 }
 
@@ -2739,8 +2737,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(
                 mContain != aNewData.mContain ||
                 mContainerName != aNewData.mContainerName ||
                 mAnchorName != aNewData.mAnchorName ||
-                mAnchorScope != aNewData.mAnchorScope ||
-                mTimelineScope != aNewData.mTimelineScope)) {
+                mAnchorScope != aNewData.mAnchorScope)) {
     hint |= nsChangeHint_NeutralChange;
   }
 
@@ -3333,7 +3330,8 @@ nsStyleUIReset::nsStyleUIReset()
       mViewTimelineAxisCount(1),
       mViewTimelineInsetCount(1),
       mFieldSizing(StyleFieldSizing::Fixed),
-      mViewTransitionName(StyleViewTransitionName::None()) {
+      mViewTransitionName(StyleViewTransitionName::None()),
+      mTimelineScope(StyleScopedNameKeyword::None()) {
   MOZ_COUNT_CTOR(nsStyleUIReset);
 }
 
@@ -3376,7 +3374,8 @@ nsStyleUIReset::nsStyleUIReset(const nsStyleUIReset& aSource)
       mViewTimelineInsetCount(aSource.mViewTimelineInsetCount),
       mFieldSizing(aSource.mFieldSizing),
       mViewTransitionName(aSource.mViewTransitionName),
-      mViewTransitionClass(aSource.mViewTransitionClass) {
+      mViewTransitionClass(aSource.mViewTransitionClass),
+      mTimelineScope(aSource.mTimelineScope) {
   MOZ_COUNT_CTOR(nsStyleUIReset);
 }
 
@@ -3458,7 +3457,8 @@ nsChangeHint nsStyleUIReset::CalcDifference(
        mViewTimelines != aNewData.mViewTimelines ||
        mViewTimelineNameCount != aNewData.mViewTimelineNameCount ||
        mViewTimelineAxisCount != aNewData.mViewTimelineAxisCount ||
-       mViewTimelineInsetCount != aNewData.mViewTimelineInsetCount)) {
+       mViewTimelineInsetCount != aNewData.mViewTimelineInsetCount ||
+       mTimelineScope != aNewData.mTimelineScope)) {
     hint |= nsChangeHint_NeutralChange;
   }
 
