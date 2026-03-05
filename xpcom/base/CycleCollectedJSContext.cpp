@@ -870,90 +870,87 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
   // Promises carry along a web-task scheduling state as well.
   WebTaskSchedulingState* schedulingState = nullptr;
-
   ExtractIncumbentAndSchedulingState(aMicroTask, hostDefinedData,
                                      &incumbentGlobal, &schedulingState);
 
+  const bool isMainThread = NS_IsMainThread();
+
+  StatefulMicroTask smt(aCCJS);
+
   {
-    const bool isMainThread = NS_IsMainThread();
+    IgnoredErrorResult errorResult;
+    nsIGlobalObject* globalObject = CallSetup::GetActiveGlobalObjectForCall(
+        callbackGlobal, isMainThread, /*aIsJSImplementedWebIDL=*/false,
+        errorResult);
+    if (!globalObject) {
+      return;
+    }
 
-    StatefulMicroTask smt(aCCJS);
+    const char* reason = "promise callback";
 
-    {
-      IgnoredErrorResult errorResult;
-      nsIGlobalObject* globalObject = CallSetup::GetActiveGlobalObjectForCall(
-          callbackGlobal, isMainThread, /*aIsJSImplementedWebIDL=*/false,
-          errorResult);
-      if (!globalObject) {
-        return;
-      }
+    // CheckBeforeExecution
+    if (globalObject->IsScriptForbidden(callbackGlobal, false)) {
+      return;
+    }
 
-      const char* reason = "promise callback";
+    if (!globalObject->HasJSGlobal()) {
+      return;
+    }
 
-      // CheckBeforeExecution
-      if (globalObject->IsScriptForbidden(callbackGlobal, false)) {
-        return;
-      }
+    if (incumbentGlobal && !incumbentGlobal->HasJSGlobal()) {
+      return;
+    }
 
-      if (!globalObject->HasJSGlobal()) {
-        return;
-      }
+    // SetupForExecution
+    AutoAllowLegacyScriptExecution exemption;
+    AutoEntryScript aes(globalObject, reason, isMainThread);
 
-      // SetupForExecution
-      AutoAllowLegacyScriptExecution exemption;
-      AutoEntryScript aes(globalObject, reason, isMainThread);
+    Maybe<AutoIncumbentScript> autoIncumbentScript;
+    if (incumbentGlobal) {
+      autoIncumbentScript.emplace(incumbentGlobal);
+    }
 
-      Maybe<AutoIncumbentScript> autoIncumbentScript;
-      if (incumbentGlobal) {
-        if (!incumbentGlobal->HasJSGlobal()) {
-          return;
-        }
+    // At this point we will definitely consume the task, so we
+    // no longer need the scope exit.
+    ignoreMicroTasks.release();
 
-        autoIncumbentScript.emplace(incumbentGlobal);
-      }
+    MOZ_ASSERT(aCx == aes.cx());
 
-      // At this point we will definitely consume the task, so we
-      // no longer need the scope exit.
-      ignoreMicroTasks.release();
+    JSAutoRealm ar(aCx, callbackGlobal);
 
-      MOZ_ASSERT(aCx == aes.cx());
+    Maybe<JS::AutoSetAsyncStackForNewCalls> asyncStackSetter;
+    if (allocStack) {
+      asyncStackSetter.emplace(aCx, allocStack, reason);
+    }
 
-      JSAutoRealm ar(aCx, callbackGlobal);
+    JS::RootedField<JSObject*, 3> maybePromise(
+        roots, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
 
-      Maybe<JS::AutoSetAsyncStackForNewCalls> asyncStackSetter;
-      if (allocStack) {
-        asyncStackSetter.emplace(aCx, allocStack, reason);
-      }
+    // User Input State propagation.
+    auto state = maybePromise
+                     ? JS::GetPromiseUserInputEventHandlingState(maybePromise)
+                     : JS::PromiseUserInputEventHandlingState::DontCare;
+    bool propagate =
+        state ==
+        JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
+    AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
 
-      JS::RootedField<JSObject*, 3> maybePromise(
-          roots, aMicroTask.get().MaybeGetPromiseFromJSMicroTask());
+    if (incumbentGlobal) {
+      // https://wicg.github.io/scheduling-apis/#sec-patches-html-hostcalljobcallback
+      // 2. Set event loop’s current scheduling state to
+      // callback.[[HostDefined]].[[SchedulingState]].
+      incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
+    }
 
-      // User Input State propagation.
-      auto state = maybePromise
-                       ? JS::GetPromiseUserInputEventHandlingState(maybePromise)
-                       : JS::PromiseUserInputEventHandlingState::DontCare;
-      bool propagate =
-          state ==
-          JS::PromiseUserInputEventHandlingState::HadUserInteractionAtCreation;
-      AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
+    // Note: We're dropping the return value on the floor here, however
+    // cleanup and exception handling are done as part of the CallSetup
+    // destructor if necessary.
+    (void)aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
 
-      if (incumbentGlobal) {
-        // https://wicg.github.io/scheduling-apis/#sec-patches-html-hostcalljobcallback
-        // 2. Set event loop’s current scheduling state to
-        // callback.[[HostDefined]].[[SchedulingState]].
-        incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
-      }
-
-      // Note: We're dropping the return value on the floor here, however
-      // cleanup and exception handling are done as part of the CallSetup
-      // destructor if necessary.
-      (void)aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
-
-      // (The step after step 7): Set event loop’s current scheduling
-      // state to null
-      if (incumbentGlobal) {
-        incumbentGlobal->SetWebTaskSchedulingState(nullptr);
-      }
+    // (The step after step 7): Set event loop’s current scheduling
+    // state to null
+    if (incumbentGlobal) {
+      incumbentGlobal->SetWebTaskSchedulingState(nullptr);
     }
   }
 }
