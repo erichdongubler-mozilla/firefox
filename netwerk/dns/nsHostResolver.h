@@ -292,10 +292,10 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   RefPtr<mozilla::net::NetworkConnectivityService>
       mNCS;  // reference to a singleton
   mozilla::net::HostRecordQueue mQueue MOZ_GUARDED_BY(mLock);
-  mozilla::Atomic<bool> mShutdown MOZ_GUARDED_BY(mLock){true};
-  mozilla::Atomic<uint32_t> mNumIdleTasks MOZ_GUARDED_BY(mLock){0};
-  mozilla::Atomic<uint32_t> mActiveTaskCount MOZ_GUARDED_BY(mLock){0};
-  mozilla::Atomic<uint32_t> mActiveAnyThreadCount MOZ_GUARDED_BY(mLock){0};
+  mozilla::Atomic<bool> mShutdown{true};
+  mozilla::Atomic<uint32_t> mNumIdleTasks{0};
+  mozilla::Atomic<uint32_t> mActiveTaskCount{0};
+  mozilla::Atomic<uint32_t> mActiveAnyThreadCount{0};
 
   // Set the expiration time stamps appropriately.
   void PrepareRecordExpirationAddrRecord(AddrHostRecord* rec) const;

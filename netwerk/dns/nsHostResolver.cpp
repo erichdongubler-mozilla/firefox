@@ -1863,9 +1863,6 @@ void nsHostResolver::ThreadFunc() {
         .Add(1);
 
     if (RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec)) {
-      // obtain lock to check shutdown and manage inter-module telemetry
-      MutexAutoLock lock(mLock);
-
       if (!mShutdown) {
         TimeDuration elapsed = TimeStamp::Now() - startTime;
         if (NS_SUCCEEDED(status)) {
@@ -1900,7 +1897,6 @@ void nsHostResolver::ThreadFunc() {
     }
   } while (true);
 
-  MutexAutoLock lock(mLock);
   mActiveTaskCount--;
   LOG(("DNS lookup thread - queue empty, task finished.\n"));
 }
