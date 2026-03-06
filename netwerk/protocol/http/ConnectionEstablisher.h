@@ -34,6 +34,10 @@ class ConnectionEstablisher : public nsITransportEventSink,
                         uint32_t aCaps);
 
   virtual bool Start(DoneCallback&& aCallback) = 0;
+  void SetSecurityCallbacks(nsIInterfaceRequestor* aCallbacks) {
+    mSecurityCallbacks = aCallbacks;
+  }
+
   virtual void Close(nsresult aReason) = 0;
   virtual void ResetSpeculativeFlags() = 0;
   const NetAddr& Addr() const { return mAddr; }
@@ -65,6 +69,7 @@ class ConnectionEstablisher : public nsITransportEventSink,
   bool mConnectedOK = false;
 
   DoneCallback mCallback;
+  nsCOMPtr<nsIInterfaceRequestor> mSecurityCallbacks;
   RefPtr<ConnectionHandle> mHandle;
   RefPtr<HttpConnectionBase> mResultConn;
 };

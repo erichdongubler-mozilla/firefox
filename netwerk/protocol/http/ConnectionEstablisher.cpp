@@ -260,6 +260,9 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
 
 NS_IMETHODIMP
 ConnectionEstablisher::GetInterface(const nsIID& iid, void** result) {
+  if (mSecurityCallbacks) {
+    return mSecurityCallbacks->GetInterface(iid, result);
+  }
   return NS_ERROR_NO_INTERFACE;
 }
 
@@ -441,24 +444,8 @@ nsresult TCPConnectionEstablisher::CreateAndConfigureSocketTransport() {
     tmpFlags |= nsISocketTransport::BE_CONSERVATIVE;
   }
 
-  // TODO: deal with IPHints later
-  /*if (ci->HasIPHintAddress()) {
-    nsCOMPtr<nsIDNSService> dns;
-    dns = mozilla::components::DNS::Service(&rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    // The spec says: "If A and AAAA records for TargetName are locally
-    // available, the client SHOULD ignore these hints.", so we check if the DNS
-    // record is in cache before setting USE_IP_HINT_ADDRESS.
-    nsCOMPtr<nsIDNSRecord> record;
-    rv = dns->ResolveNative(mHost, nsIDNSService::RESOLVE_OFFLINE,
-                            dnsAndSock->mConnInfo->GetOriginAttributes(),
-                            getter_AddRefs(record));
-    if (NS_FAILED(rv) || !record) {
-      LOG(("Setting Socket to use IP hint address"));
-      tmpFlags |= nsISocketTransport::USE_IP_HINT_ADDRESS;
-    }
-  }*/
+  // IP hint addresses from HTTPS records are handled by the Happy Eyeballs
+  // state machine.
 
   if (!mAllow1918) {
     tmpFlags |= nsISocketTransport::DISABLE_RFC1918;
@@ -477,11 +464,9 @@ nsresult TCPConnectionEstablisher::CreateAndConfigureSocketTransport() {
   rv = socketTransport->SetEventSink(this, nullptr);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // TODO: security callbacks?
-  // rv = socketTransport->SetSecurityCallbacks(dnsAndSock);
-  // NS_ENSURE_SUCCESS(rv, rv);
+  rv = socketTransport->SetSecurityCallbacks(this);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  // TODO: set ECH later
   if (nsHttpHandler::EchConfigEnabled() &&
       !mConnInfo->GetEchConfig().IsEmpty()) {
     LOG(("Setting ECH"));

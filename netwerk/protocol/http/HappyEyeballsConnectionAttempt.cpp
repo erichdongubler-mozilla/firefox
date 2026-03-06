@@ -409,6 +409,9 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
   }
   RefPtr<TCPConnectionEstablisher> establisher = new TCPConnectionEstablisher(
       info, aAddr, mCaps, mSpeculative, mAllow1918);
+  nsCOMPtr<nsIInterfaceRequestor> callbacks;
+  mTransaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
+  establisher->SetSecurityCallbacks(callbacks);
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
     self->HandleTCPConnectionResult(std::move(aResult), establisher, aId);
