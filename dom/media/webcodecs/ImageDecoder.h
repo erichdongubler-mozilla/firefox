@@ -25,7 +25,7 @@ class MediaResult;
 namespace image {
 class AnonymousDecoder;
 class SourceBuffer;
-enum class DecoderType;
+enum class DecoderType : uint8_t;
 enum class SurfaceFlags : uint8_t;
 struct DecodeFramesResult;
 struct DecodeFrameCountResult;

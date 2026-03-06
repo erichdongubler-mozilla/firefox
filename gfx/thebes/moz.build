@@ -274,6 +274,7 @@ LOCAL_INCLUDES += [
     "/dom/media/platforms/apple",
     "/dom/xml",
     "/gfx/cairo/cairo/src",
+    "/image/encoders/jpeg",
     "/third_party/xsimd/include",
     "/widget/gtk",
 ]

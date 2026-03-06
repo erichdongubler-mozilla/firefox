@@ -209,22 +209,24 @@ nsresult ImageOps::DecodeMetadata(ImageBuffer* aBuffer,
   if (!aBuffer) {
     return nullptr;
   }
-
-  RefPtr<SourceBuffer> sourceBuffer = aBuffer->GetSourceBuffer();
-  if (NS_WARN_IF(!sourceBuffer)) {
-    return nullptr;
-  }
-
-  // Create a decoder.
   DecoderType decoderType =
       DecoderFactory::GetDecoderType(PromiseFlatCString(aMimeType).get());
+  RefPtr<SourceBuffer> buffer = aBuffer->GetSourceBuffer();
+  return DecodeToSurface(buffer, decoderType, aFlags, aSize);
+}
+
+already_AddRefed<gfx::SourceSurface> ImageOps::DecodeToSurface(
+    SourceBuffer* aSourceBuffer, DecoderType aDecoderType, uint32_t aFlags,
+    const Maybe<IntSize>& aSize /* = Nothing() */) {
+  if (NS_WARN_IF(!aSourceBuffer)) {
+    return nullptr;
+  }
   RefPtr<Decoder> decoder = DecoderFactory::CreateAnonymousDecoder(
-      decoderType, WrapNotNull(sourceBuffer), aSize,
+      aDecoderType, WrapNotNull(aSourceBuffer), aSize,
       DecoderFlags::FIRST_FRAME_ONLY, ToSurfaceFlags(aFlags));
   if (!decoder) {
     return nullptr;
   }
-
   // Run the decoder synchronously.
   RefPtr<IDecodingTask> task =
       new AnonymousDecodingTask(WrapNotNull(decoder), /* aResumable */ false);
@@ -232,19 +234,12 @@ nsresult ImageOps::DecodeMetadata(ImageBuffer* aBuffer,
   if (!decoder->GetDecodeDone() || decoder->HasError()) {
     return nullptr;
   }
-
   // Pull out the surface.
   RawAccessFrameRef frame = decoder->GetCurrentFrameRef();
   if (!frame) {
     return nullptr;
   }
-
-  RefPtr<SourceSurface> surface = frame->GetSourceSurface();
-  if (!surface) {
-    return nullptr;
-  }
-
-  return surface.forget();
+  return frame->GetSourceSurface();
 }
 
 }  // namespace mozilla::image

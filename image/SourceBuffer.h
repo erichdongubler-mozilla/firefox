@@ -400,7 +400,9 @@ class SourceBuffer final {
     Chunk(Chunk&& aOther)
         : mCapacity(aOther.mCapacity),
           mLength(aOther.mLength),
-          mData(aOther.mData) {
+          mData(aOther.mData),
+          mRealloc(aOther.mRealloc),
+          mFree(aOther.mFree) {
       aOther.mCapacity = aOther.mLength = 0;
       aOther.mData = nullptr;
     }
@@ -410,6 +412,8 @@ class SourceBuffer final {
       mCapacity = aOther.mCapacity;
       mLength = aOther.mLength;
       mData = aOther.mData;
+      mRealloc = aOther.mRealloc;
+      mFree = aOther.mFree;
       aOther.mCapacity = aOther.mLength = 0;
       aOther.mData = nullptr;
       return *this;

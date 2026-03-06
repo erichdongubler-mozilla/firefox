@@ -16531,6 +16531,13 @@
   type: RelaxedAtomicBool
   value: false
   mirror: always
+
+# Encoding quality for images. 101 means lossless, otherwise they get
+# jpeg-encoded with a particular quality.
+- name: print.skpdf.image-encoding-quality
+  type: RelaxedAtomicInt32
+  value: 101
+  mirror: always
 #endif
 
 #---------------------------------------------------------------------------

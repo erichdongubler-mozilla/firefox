@@ -33,7 +33,7 @@ class SourceBuffer;
  * The type of decoder; this is usually determined from a MIME type using
  * DecoderFactory::GetDecoderType() or ImageUtils::GetDecoderType().
  */
-enum class DecoderType {
+enum class DecoderType : uint8_t {
   PNG,
   GIF,
   JPEG,
