@@ -695,6 +695,10 @@ child:
 
     async InvalidateScriptCache();
 
+parent:
+    async UpdateScriptCacheEverHitTelemetry(uint64_t aChildId, uint32_t aRate);
+
+child:
     async SetOffline(bool offline);
     async SetConnectivity(bool connectivity);
     async SetCaptivePortalState(int32_t aState);

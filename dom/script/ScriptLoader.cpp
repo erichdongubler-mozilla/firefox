@@ -1264,6 +1264,10 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
   MOZ_ASSERT(cacheResult.mCompleteValue->ReferrerPolicy() == aReferrerPolicy);
 
   mMemoryCacheUsed++;
+  if (!cacheResult.mCompleteValue->IsEverHitFromMemoryCache()) {
+    cacheResult.mCompleteValue->SetIsEverHitFromMemoryCache();
+    mCache->OnEntryEverHit();
+  }
 
   aRequest->CacheEntryFound(cacheResult.mCompleteValue, aFetchOptions);
   LOG(
@@ -3506,6 +3510,7 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
       loadedScript->mFetchCount = 1;
     }
     mCache->Insert(*loadData);
+    mCache->OnEntryInserted();
     LOG(("ScriptLoader (%p): Inserting in-memory cache for %s.", this,
          aRequest->URI()->GetSpecOrDefault().get()));
     TRACE_FOR_TEST(aRequest, "memorycache:saved");
@@ -3723,6 +3728,10 @@ void ScriptLoader::LoadEventFired() {
 }
 
 void ScriptLoader::Destroy() {
+  if (mCache) {
+    mCache->UpdateEverHitTelemetry();
+  }
+
   if (mShutdownObserver) {
     mShutdownObserver->Unregister();
     mShutdownObserver = nullptr;

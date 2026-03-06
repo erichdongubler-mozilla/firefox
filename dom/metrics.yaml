@@ -1201,6 +1201,24 @@ dom:
     expires: never
     telemetry_mirror: h#DOM_SCRIPT_LOADING_SOURCE
 
+  script_memory_cache_ever_hit:
+    type: custom_distribution
+    description: >
+      The percentage of the stencil navigation cache entries that are
+      ever hit in the process.
+    range_min: 0
+    range_max: 100
+    bucket_count: 101
+    histogram_type: linear
+    unit: percent
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019337
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019337
+    notification_emails:
+      - tfujisawa.birchill@mozilla.com
+    expires: never
+
   blink_filesystem_used:
     type: labeled_counter
     description: >

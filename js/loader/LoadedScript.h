@@ -347,6 +347,9 @@ class LoadedScript : public nsIMemoryReporter {
   void SetTookLongInPreviousRuns() { mTookLongInPreviousRuns = true; }
   bool TookLongInPreviousRuns() const { return mTookLongInPreviousRuns; }
 
+  void SetIsEverHitFromMemoryCache() { mIsEverHitFromMemoryCache = true; }
+  bool IsEverHitFromMemoryCache() const { return mIsEverHitFromMemoryCache; }
+
   /*
    * Set the mBaseURL, based on aChannel.
    * aOriginalURI is the result of aChannel->GetOriginalURI.
@@ -450,6 +453,9 @@ class LoadedScript : public nsIMemoryReporter {
   //
   // TODO: Move this into JS::Stencil, and save to the disk cache (bug 2005128)
   uint64_t mTookLongInPreviousRuns : 1;
+
+  // Set to true if this entry is ever used in the current process.
+  uint64_t mIsEverHitFromMemoryCache : 1;
 
   RefPtr<ScriptFetchOptions> mFetchOptions;
   nsCOMPtr<nsIURI> mURI;

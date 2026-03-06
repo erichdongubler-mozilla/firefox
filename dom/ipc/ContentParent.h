@@ -934,6 +934,9 @@ class ContentParent final : public PContentParent,
 
   bool DeallocPScriptCacheParent(PScriptCacheParent* shell);
 
+  mozilla::ipc::IPCResult RecvUpdateScriptCacheEverHitTelemetry(
+      const uint64_t& aChildId, const uint32_t& aRate);
+
   already_AddRefed<PExternalHelperAppParent> AllocPExternalHelperAppParent(
       nsIURI* aUri, const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
       const nsACString& aMimeContentType, const nsACString& aContentDisposition,
