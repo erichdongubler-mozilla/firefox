@@ -88,6 +88,14 @@ class LoadedScript : public nsIMemoryReporter {
   static already_AddRefed<LoadedScript> FromCache(
       const LoadedScript& aScript, ScriptFetchOptions* aFetchOptions);
 
+  uint16_t ClampedRefCountForTelemetry() const {
+    uintptr_t count = mRefCnt.get();
+    if (count > 100) {
+      return 100;
+    }
+    return uint16_t(count);
+  }
+
   bool IsClassicScript() const { return mKind == ScriptKind::eClassic; }
   bool IsModuleScript() const { return mKind == ScriptKind::eModule; }
   bool IsEventScript() const { return mKind == ScriptKind::eEvent; }

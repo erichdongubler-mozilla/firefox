@@ -380,6 +380,19 @@ static void CollectScriptTelemetry(ScriptLoadRequest* aRequest) {
   }
 }
 
+static void AddMemoryCacheRefCountTelemetry(
+    JS::loader::LoadedScript* aLoadedScript) {
+  using namespace mozilla::glean::dom;
+
+  // Skip this function if we are not running telemetry.
+  if (!mozilla::Telemetry::CanRecordExtended()) {
+    return;
+  }
+
+  uint16_t count = aLoadedScript->ClampedRefCountForTelemetry();
+  script_memory_cache_ref_count.AccumulateSingleSample(count);
+}
+
 // Helper method for checking if the script element is an event-handler
 // This means that it has both a for-attribute and a event-attribute.
 // Also, if the for-attribute has a value that matches "\s*window\s*",
@@ -1268,6 +1281,7 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
     cacheResult.mCompleteValue->SetIsEverHitFromMemoryCache();
     mCache->OnEntryEverHit();
   }
+  AddMemoryCacheRefCountTelemetry(cacheResult.mCompleteValue);
 
   aRequest->CacheEntryFound(cacheResult.mCompleteValue, aFetchOptions);
   LOG(

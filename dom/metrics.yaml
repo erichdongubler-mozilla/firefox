@@ -1219,6 +1219,24 @@ dom:
       - tfujisawa.birchill@mozilla.com
     expires: never
 
+  script_memory_cache_ref_count:
+    type: custom_distribution
+    description: >
+      Distribution of the refCount of scripts in the stencil navigation
+      cache.
+    range_min: 1
+    range_max: 100
+    bucket_count: 100
+    histogram_type: linear
+    unit: scripts
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019337
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019337
+    notification_emails:
+      - tfujisawa.birchill@mozilla.com
+    expires: never
+
   blink_filesystem_used:
     type: labeled_counter
     description: >
