@@ -68,6 +68,9 @@ class ConnectionEstablisher : public nsITransportEventSink,
   bool mHasConnected = false;
   bool mConnectedOK = false;
 
+  TimeStamp mConnectStart;
+  TimeStamp mTcpConnectEnd;
+
   DoneCallback mCallback;
   nsCOMPtr<nsIInterfaceRequestor> mSecurityCallbacks;
   RefPtr<ConnectionHandle> mHandle;

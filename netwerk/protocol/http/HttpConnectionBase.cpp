@@ -42,6 +42,22 @@ void HttpConnectionBase::BootstrapTimings(TimingStruct times) {
   mBootstrappedTimings = times;
 }
 
+void HttpConnectionBase::SetDnsBootstrapTimings(TimeStamp domainLookupStart,
+                                                TimeStamp domainLookupEnd) {
+  mBootstrappedTimingsSet = true;
+  mBootstrappedTimings.domainLookupStart = domainLookupStart;
+  mBootstrappedTimings.domainLookupEnd = domainLookupEnd;
+}
+
+void HttpConnectionBase::SetConnectBootstrapTimings(TimeStamp connectStart,
+                                                    TimeStamp tcpConnectEnd) {
+  mBootstrappedTimingsSet = true;
+  mBootstrappedTimings.connectStart = connectStart;
+  if (!tcpConnectEnd.IsNull()) {
+    mBootstrappedTimings.tcpConnectEnd = tcpConnectEnd;
+  }
+}
+
 void HttpConnectionBase::SetSecurityCallbacks(
     nsIInterfaceRequestor* aCallbacks) {
   MutexAutoLock lock(mCallbacksLock);

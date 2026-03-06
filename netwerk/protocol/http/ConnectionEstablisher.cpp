@@ -251,6 +251,9 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
     }
 
     if (NS_SUCCEEDED(aResult) && mResultConn) {
+      if (!mConnectStart.IsNull()) {
+        mResultConn->SetConnectBootstrapTimings(mConnectStart, mTcpConnectEnd);
+      }
       cb(std::move(mResultConn));
     } else {
       cb(Err(aResult));
@@ -270,8 +273,11 @@ NS_IMETHODIMP
 ConnectionEstablisher::OnTransportStatus(nsITransport* trans, nsresult status,
                                          int64_t progress,
                                          int64_t progressMax) {
-  if (status == NS_NET_STATUS_CONNECTED_TO) {
+  if (status == NS_NET_STATUS_CONNECTING_TO) {
+    mConnectStart = TimeStamp::Now();
+  } else if (status == NS_NET_STATUS_CONNECTED_TO) {
     mConnectedOK = true;
+    mTcpConnectEnd = TimeStamp::Now();
   }
 
   return NS_OK;

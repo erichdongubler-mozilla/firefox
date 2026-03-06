@@ -122,6 +122,9 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsCOMPtr<nsITimer> mTimer;
   WeakPtr<ConnectionEntry> mEntry;
   bool mDone = false;
+
+  TimeStamp mDomainLookupStart;
+  TimeStamp mDomainLookupEnd;
 };
 
 }  // namespace net

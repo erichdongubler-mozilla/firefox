@@ -302,6 +302,12 @@ nsresult HappyEyeballsConnectionAttempt::DNSLookup(
     return NS_ERROR_UNEXPECTED;
   }
 
+  if (mDomainLookupStart.IsNull() &&
+      (aType == happy_eyeballs::DnsRecordType::A ||
+       aType == happy_eyeballs::DnsRecordType::Aaaa)) {
+    mDomainLookupStart = TimeStamp::Now();
+  }
+
   RefPtr<DnsRequestInfo> requestInfo = new DnsRequestInfo(aId, aType);
   nsCOMPtr<nsICancelable> request;
   nsresult rv = NS_OK;
@@ -612,6 +618,10 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
 
   entry->RecordIPFamilyPreference(mAddrFamily);
 
+  if (!mDomainLookupStart.IsNull()) {
+    mOutputConn->SetDnsBootstrapTimings(mDomainLookupStart, mDomainLookupEnd);
+  }
+
   RefPtr<nsHttpConnection> connTCP = do_QueryObject(mOutputConn);
   if (connTCP) {
     ProcessTCPConn(connTCP, entry);
@@ -705,6 +715,7 @@ nsresult HappyEyeballsConnectionAttempt::OnARecord(nsIDNSRecord* aRecord,
        this, static_cast<uint32_t>(status), aId));
   // TODO: we should report this only once
   if (NS_SUCCEEDED(status)) {
+    mDomainLookupEnd = TimeStamp::Now();
     mTransaction->OnTransportStatus(nullptr, NS_NET_STATUS_RESOLVED_HOST, 0);
   }
 
@@ -750,6 +761,7 @@ nsresult HappyEyeballsConnectionAttempt::OnAAAARecord(nsIDNSRecord* aRecord,
        this, static_cast<uint32_t>(status), aId));
   // TODO: we should report this only once
   if (NS_SUCCEEDED(status)) {
+    mDomainLookupEnd = TimeStamp::Now();
     mTransaction->OnTransportStatus(nullptr, NS_NET_STATUS_RESOLVED_HOST, 0);
   }
 

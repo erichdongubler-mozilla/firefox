@@ -714,6 +714,13 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 ["test_happy_eyeballs_ip_preference.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
 
+["test_happy_eyeballs_timings.js"]
+run-sequentially = ["true"] # node server exceptions dont replay well
+skip-if = [
+  "os == 'android'",
+  "os == 'win'",
+]
+
 ["test_head.js"]
 
 ["test_head_request_no_response_body.js"]

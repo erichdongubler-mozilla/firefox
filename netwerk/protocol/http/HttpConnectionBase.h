@@ -145,6 +145,10 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   void SetTrafficCategory(HttpTrafficCategory);
 
   void BootstrapTimings(TimingStruct times);
+  void SetDnsBootstrapTimings(TimeStamp domainLookupStart,
+                              TimeStamp domainLookupEnd);
+  void SetConnectBootstrapTimings(TimeStamp connectStart,
+                                  TimeStamp tcpConnectEnd);
 
   virtual bool IsPersistent() = 0;
   virtual bool IsReused() = 0;
