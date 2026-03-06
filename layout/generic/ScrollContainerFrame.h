@@ -670,17 +670,8 @@ class ScrollContainerFrame : public nsContainerFrame,
   /**
    * Determine whether it is desirable to be able to asynchronously scroll this
    * scroll frame.
-   *
-   * NonZeroScrollRangeOnly::No, this function returns true for scroll container
-   * whose overscroll-behavior properties are not default even if the container
-   * is not scrollable in the direction, overflow: hidden or it's not overflowed
-   * in the direction. In other words, NonZeroScrollRangeOnly::Yes, this
-   * functions returns false in such cases since the container is zero scroll
-   * range, thus it needs no displayport properties.
    */
-  enum class NonZeroScrollRangeOnly : bool { No, Yes };
-  bool WantAsyncScroll(NonZeroScrollRangeOnly aNonZeroScrollRangeOnly =
-                           NonZeroScrollRangeOnly::No) const;
+  bool WantAsyncScroll() const;
 
   /**
    * Returns the ScrollMetadata contributed by this frame, if there is one.
