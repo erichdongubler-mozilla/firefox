@@ -38,9 +38,9 @@ class APZEventResultTester : public APZCTreeManagerTester {
     metadata.SetScrollUpdates(scrollUpdates);
     metadata.GetMetrics().SetScrollGeneration(
         scrollUpdates.LastElement().GetGeneration());
-    apzc->NotifyLayersUpdated(metadata,
-                              LayersUpdateFlags{.mIsFirstPaint = false,
-                                                .mThisLayerTreeUpdated = true});
+    apzc->NotifyMainThreadTransaction(
+        metadata, LayersUpdateFlags{.mIsFirstPaint = false,
+                                    .mThisLayerTreeUpdated = true});
   }
 
   void CreateScrollableRootLayer() {

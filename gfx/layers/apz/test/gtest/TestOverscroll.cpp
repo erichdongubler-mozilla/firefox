@@ -674,7 +674,7 @@ TEST_F(APZCOverscrollTester, DisallowOverscrollInSingleLineTextControl) {
   metrics.SetScrollableRect(CSSRect(0, 0, 1000, 10));
   apzc->SetFrameMetrics(metrics);
   metadata.SetDisregardedDirection(Some(ScrollDirection::eVertical));
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -1517,7 +1517,7 @@ TEST_F(APZCOverscrollTester, DynamicallyLoadingContent) {
   CSSRect scrollableRect = metrics.GetScrollableRect();
   scrollableRect.height += 500;
   metrics.SetScrollableRect(scrollableRect);
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -1540,7 +1540,7 @@ TEST_F(APZCOverscrollTester, DynamicallyLoadingContent) {
   scrollableRect = metrics.GetScrollableRect();
   scrollableRect.height += 500;
   metrics.SetScrollableRect(scrollableRect);
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -2176,7 +2176,7 @@ TEST_F(APZCOverscrollTester, FillOutGutterWhilePanning) {
   metadata.SetScrollUpdates(scrollUpdates);
   metadata.GetMetrics().SetScrollGeneration(
       scrollUpdates.LastElement().GetGeneration());
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -2194,7 +2194,7 @@ TEST_F(APZCOverscrollTester, FillOutGutterWhilePanning) {
   const CSSRect& scrollableRect = metrics.GetScrollableRect();
   metrics.SetScrollableRect(scrollableRect +
                             CSSSize(0, scrollableRect.height + 10));
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -2220,7 +2220,7 @@ TEST_F(APZCOverscrollTester, FillOutGutterWhileAnimating) {
   metadata.SetScrollUpdates(scrollUpdates);
   metadata.GetMetrics().SetScrollGeneration(
       scrollUpdates.LastElement().GetGeneration());
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -2251,7 +2251,7 @@ TEST_F(APZCOverscrollTester, FillOutGutterWhileAnimating) {
   const CSSRect& scrollableRect = metrics.GetScrollableRect();
   metrics.SetScrollableRect(scrollableRect +
                             CSSSize(0, scrollableRect.height + 10));
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 
@@ -2279,7 +2279,7 @@ TEST_F(APZCOverscrollTester, ProgrammaticScroll) {
   metadata.SetScrollUpdates(scrollUpdates);
   metadata.GetMetrics().SetScrollGeneration(
       scrollUpdates.LastElement().GetGeneration());
-  apzc->NotifyLayersUpdated(
+  apzc->NotifyMainThreadTransaction(
       metadata,
       LayersUpdateFlags{.mIsFirstPaint = false, .mThisLayerTreeUpdated = true});
 

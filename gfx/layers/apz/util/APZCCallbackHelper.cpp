@@ -212,7 +212,7 @@ static DisplayPortMargins ScrollFrame(nsIContent* aContent,
     // We need to force a display port adjustment in the following paint to
     // account for a difference between the requested and actual scroll
     // offsets in repaints requested by
-    // AsyncPanZoomController::NotifyLayersUpdated.
+    // AsyncPanZoomController::NotifyMainThreadTransaction.
     displayPortMargins = DisplayPortMargins::FromAPZ(
         aRequest.GetDisplayPortMargins(), apzScrollOffset, actualScrollOffset);
   } else {

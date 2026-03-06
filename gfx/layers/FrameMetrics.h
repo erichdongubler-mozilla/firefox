@@ -557,8 +557,8 @@ struct FrameMetrics {
   // For RCD-RSF this is the width of the composition bounds ignoring
   // scrollbars. For everything else this will be the same as the width of the
   // composition bounds. Only needed for the "resolution changed" check in
-  // NotifyLayersUpdated, once that switches to using IsResolutionUpdated we can
-  // remove this.
+  // NotifyMainThreadTransaction, once that switches to using
+  // IsResolutionUpdated we can remove this.
   ParentLayerCoord mCompositionBoundsWidthIgnoringScrollbars;
 
   // The area of a scroll frame's contents that has been painted, relative to
@@ -734,7 +734,7 @@ struct FrameMetrics {
   //  - Otherwise, the following places should be updated to include them
   //    (as needed):
   //      FrameMetrics::operator ==
-  //      AsyncPanZoomController::NotifyLayersUpdated
+  //      AsyncPanZoomController::NotifyMainThreadTransaction
   //      The ParamTraits specialization in LayersMessageUtils.h
   //
   // Please add new fields above this comment.
@@ -1053,7 +1053,7 @@ struct ScrollMetadata {
   // When adding new fields to ScrollMetadata, the following places should be
   // updated to include them (as needed):
   //    1. ScrollMetadata::operator ==
-  //    2. AsyncPanZoomController::NotifyLayersUpdated
+  //    2. AsyncPanZoomController::NotifyMainThreadTransaction
   //    3. The ParamTraits specialization in LayersMessageUtils.h
   //
   // Please add new fields above this comment.

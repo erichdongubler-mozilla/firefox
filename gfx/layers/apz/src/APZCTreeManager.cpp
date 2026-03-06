@@ -1340,7 +1340,7 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
                apzc.get(), aLayer.GetLayer(), uint64_t(aLayersId),
                aMetrics.GetScrollId());
 
-    apzc->NotifyLayersUpdated(
+    apzc->NotifyMainThreadTransaction(
         aLayer.Metadata(), AsyncPanZoomController::LayersUpdateFlags{
                                .mIsFirstPaint = aLayer.IsFirstPaint(),
                                .mThisLayerTreeUpdated =

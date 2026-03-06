@@ -247,8 +247,8 @@ void APZUpdater::UpdateScrollDataAndTreeState(
               } else {
                 // Clobber the first-paint flag so that we will never run into
                 // the first-paint branch in
-                // AsyncPanZoomController::NotifyLayersUpdated even if the next
-                // transaction is a paint-skip transaction.
+                // AsyncPanZoomController::NotifyMainThreadTransaction even if
+                // the next transaction is a paint-skip transaction.
                 self->mScrollData[aOriginatingLayersId].SetIsFirstPaint(false);
               }
             }
