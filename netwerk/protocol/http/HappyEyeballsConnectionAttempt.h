@@ -11,6 +11,7 @@
 #include "nsICancelable.h"
 #include "nsIDNSListener.h"
 #include "mozilla/Result.h"
+#include "nsTHashSet.h"
 #include "happy_eyeballs_glue/HappyEyeballs.h"
 #include "ConnectionEstablisher.h"
 
@@ -76,6 +77,10 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsresult ProcessConnectionResult(const NetAddr& aAddr, nsresult aStatus,
                                    uint64_t aId);
   nsresult ProcessHappyEyeballsOutput();
+  void MaybeSendTransportStatus(nsresult aStatus,
+                                nsITransport* aTransport = nullptr,
+                                int64_t aProgress = 0);
+
   // DNS lookups
   Result<nsIDNSService::DNSFlags, nsresult> SetupDnsFlags(
       happy_eyeballs::DnsRecordType aType);
@@ -122,6 +127,7 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsCOMPtr<nsITimer> mTimer;
   WeakPtr<ConnectionEntry> mEntry;
   bool mDone = false;
+  nsTHashSet<uint32_t> mSentTransportStatuses;
 
   TimeStamp mDomainLookupStart;
   TimeStamp mDomainLookupEnd;

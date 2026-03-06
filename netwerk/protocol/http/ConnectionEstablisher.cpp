@@ -240,6 +240,7 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
   }
   mFinished = true;
 
+  mTransportStatusCallback = nullptr;
   mAddrRecord = nullptr;
 
   if (mCallback) {
@@ -278,6 +279,10 @@ ConnectionEstablisher::OnTransportStatus(nsITransport* trans, nsresult status,
   } else if (status == NS_NET_STATUS_CONNECTED_TO) {
     mConnectedOK = true;
     mTcpConnectEnd = TimeStamp::Now();
+  }
+
+  if (mTransportStatusCallback) {
+    mTransportStatusCallback(trans, status, progress);
   }
 
   return NS_OK;

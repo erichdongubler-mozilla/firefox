@@ -29,6 +29,8 @@ class ConnectionEstablisher : public nsITransportEventSink,
 
   using DoneCallback =
       std::function<void(Result<RefPtr<HttpConnectionBase>, nsresult>)>;
+  using TransportStatusCallback =
+      std::function<void(nsITransport*, nsresult, int64_t)>;
 
   ConnectionEstablisher(nsHttpConnectionInfo* aConnInfo, const NetAddr& aAddr,
                         uint32_t aCaps);
@@ -36,6 +38,9 @@ class ConnectionEstablisher : public nsITransportEventSink,
   virtual bool Start(DoneCallback&& aCallback) = 0;
   void SetSecurityCallbacks(nsIInterfaceRequestor* aCallbacks) {
     mSecurityCallbacks = aCallbacks;
+  }
+  void SetTransportStatusCallback(TransportStatusCallback&& aCallback) {
+    mTransportStatusCallback = std::move(aCallback);
   }
 
   virtual void Close(nsresult aReason) = 0;
@@ -72,6 +77,7 @@ class ConnectionEstablisher : public nsITransportEventSink,
   TimeStamp mTcpConnectEnd;
 
   DoneCallback mCallback;
+  TransportStatusCallback mTransportStatusCallback;
   nsCOMPtr<nsIInterfaceRequestor> mSecurityCallbacks;
   RefPtr<ConnectionHandle> mHandle;
   RefPtr<HttpConnectionBase> mResultConn;

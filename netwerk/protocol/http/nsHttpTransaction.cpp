@@ -569,6 +569,20 @@ void nsHttpTransaction::OnActivated() {
     }
   }
 
+  // Populate connection metadata here rather than in OnTransportStatus. With
+  // happy eyeballs, transport status events may arrive before the winning
+  // connection is assigned to the transaction, making OnTransportStatus
+  // unreliable for this purpose.
+  if (mConnection) {
+    MutexAutoLock lock(mLock);
+    mConnection->GetSelfAddr(&mSelfAddr);
+    mConnection->GetPeerAddr(&mPeerAddr);
+    mResolvedByTRR = mConnection->ResolvedByTRR();
+    mEffectiveTRRMode = mConnection->EffectiveTRRMode();
+    mTRRSkipReason = mConnection->TRRSkipReason();
+    mEchConfigUsed = mConnection->GetEchConfigUsed();
+  }
+
   mActivated = true;
   gHttpHandler->ConnMgr()->AddActiveTransaction(this);
   FinalizeConnInfo();
@@ -602,26 +616,18 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
         " progress=%" PRId64 "]\n",
         this, static_cast<uint32_t>(status), progress));
 
-  if (status == NS_NET_STATUS_CONNECTED_TO ||
-      status == NS_NET_STATUS_WAITING_FOR) {
-    if (mConnection) {
-      MutexAutoLock lock(mLock);
-      mConnection->GetSelfAddr(&mSelfAddr);
-      mConnection->GetPeerAddr(&mPeerAddr);
-      mResolvedByTRR = mConnection->ResolvedByTRR();
-      mEffectiveTRRMode = mConnection->EffectiveTRRMode();
-      mTRRSkipReason = mConnection->TRRSkipReason();
-      mEchConfigUsed = mConnection->GetEchConfigUsed();
-    }
-  }
-
   // If the timing is enabled, and we are not using a persistent connection
   // then the requestStart timestamp will be null, so we mark the timestamps
   // for domainLookupStart/End and connectStart/End
   // If we are using a persistent connection they will remain null,
   // and the correct value will be returned in Performance.
   if (GetRequestStart().IsNull()) {
-    if (status == NS_NET_STATUS_RESOLVING_HOST) {
+    if (mConnInfo && mConnInfo->GetHappyEyeballsEnabled()) {
+      // Happy eyeballs sets connection timing data directly.
+      if (status == NS_NET_STATUS_SENDING_TO) {
+        SetRequestStart(TimeStamp::Now(), true);
+      }
+    } else if (status == NS_NET_STATUS_RESOLVING_HOST) {
       SetDomainLookupStart(TimeStamp::Now(), true);
     } else if (status == NS_NET_STATUS_RESOLVED_HOST) {
       SetDomainLookupEnd(TimeStamp::Now());

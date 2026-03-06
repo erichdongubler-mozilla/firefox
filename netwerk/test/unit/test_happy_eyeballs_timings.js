@@ -70,6 +70,28 @@ async function openChannelAndGetTimings(uri) {
   chan.loadFlags = Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
 
   let timedChannel = chan.QueryInterface(Ci.nsITimedChannel);
+  let internalChannel = chan.QueryInterface(Ci.nsIHttpChannelInternal);
+
+  let transportStatuses = [];
+  let activityDistributor = Cc[
+    "@mozilla.org/network/http-activity-distributor;1"
+  ].getService(Ci.nsIHttpActivityDistributor);
+  let observer = {
+    observeActivity(aHttpChannel, aActivityType, aActivitySubtype) {
+      if (
+        aActivityType ===
+        Ci.nsIHttpActivityObserver.ACTIVITY_TYPE_SOCKET_TRANSPORT
+      ) {
+        try {
+          let otherChan = aHttpChannel.QueryInterface(Ci.nsIChannel);
+          if (otherChan.URI.spec === uri) {
+            transportStatuses.push(aActivitySubtype);
+          }
+        } catch (e) {}
+      }
+    },
+  };
+  activityDistributor.addObserver(observer);
 
   await new Promise(resolve => {
     chan.asyncOpen(
@@ -77,7 +99,9 @@ async function openChannelAndGetTimings(uri) {
     );
   });
 
-  return timedChannel;
+  activityDistributor.removeObserver(observer);
+
+  return { timedChannel, internalChannel, transportStatuses };
 }
 
 function logTimings(timedChannel) {
@@ -117,6 +141,25 @@ function assertTimingsSet(timedChannel) {
   );
 }
 
+function assertTransportStatusPresent(transportStatuses, expected) {
+  for (let status of expected) {
+    Assert.ok(
+      transportStatuses.includes(status),
+      `transport status 0x${status.toString(16)} should be present`
+    );
+  }
+}
+
+function assertTransportStatusUnique(transportStatuses, expected) {
+  for (let status of expected) {
+    Assert.equal(
+      transportStatuses.filter(s => s === status).length,
+      1,
+      `transport status 0x${status.toString(16)} should appear exactly once`
+    );
+  }
+}
+
 function assertTimingsOrder(timedChannel) {
   Assert.lessOrEqual(
     timedChannel.domainLookupStartTime,
@@ -149,13 +192,25 @@ add_task(async function test_tcp_timings_speculative_enabled() {
     answers: [{ name: host, ttl: 55, type: "AAAA", flush: false, data: "::1" }],
   });
 
-  let timedChannel = await openChannelAndGetTimings(
-    `https://${host}:${h2Server.port()}/`
-  );
+  let { timedChannel, internalChannel, transportStatuses } =
+    await openChannelAndGetTimings(`https://${host}:${h2Server.port()}/`);
 
   logTimings(timedChannel);
   assertTimingsSet(timedChannel);
   assertTimingsOrder(timedChannel);
+  Assert.ok(
+    internalChannel.remoteAddress === "127.0.0.1" ||
+      internalChannel.remoteAddress === "::1",
+    `remoteAddress should be 127.0.0.1 or ::1, got ${internalChannel.remoteAddress}`
+  );
+  let expectedStatuses = [
+    Ci.nsISocketTransport.STATUS_RESOLVING,
+    Ci.nsISocketTransport.STATUS_RESOLVED,
+    Ci.nsISocketTransport.STATUS_CONNECTING_TO,
+    Ci.nsISocketTransport.STATUS_CONNECTED_TO,
+  ];
+  assertTransportStatusPresent(transportStatuses, expectedStatuses);
+  assertTransportStatusUnique(transportStatuses, expectedStatuses);
 });
 
 add_task(async function test_tcp_timings_speculative_disabled() {
@@ -172,13 +227,25 @@ add_task(async function test_tcp_timings_speculative_disabled() {
     answers: [{ name: host, ttl: 55, type: "AAAA", flush: false, data: "::1" }],
   });
 
-  let timedChannel = await openChannelAndGetTimings(
-    `https://${host}:${h2Server.port()}/`
-  );
+  let { timedChannel, internalChannel, transportStatuses } =
+    await openChannelAndGetTimings(`https://${host}:${h2Server.port()}/`);
 
   logTimings(timedChannel);
   assertTimingsSet(timedChannel);
   assertTimingsOrder(timedChannel);
+  Assert.ok(
+    internalChannel.remoteAddress === "127.0.0.1" ||
+      internalChannel.remoteAddress === "::1",
+    `remoteAddress should be 127.0.0.1 or ::1, got ${internalChannel.remoteAddress}`
+  );
+  let expectedStatuses = [
+    Ci.nsISocketTransport.STATUS_RESOLVING,
+    Ci.nsISocketTransport.STATUS_RESOLVED,
+    Ci.nsISocketTransport.STATUS_CONNECTING_TO,
+    Ci.nsISocketTransport.STATUS_CONNECTED_TO,
+  ];
+  assertTransportStatusPresent(transportStatuses, expectedStatuses);
+  assertTransportStatusUnique(transportStatuses, expectedStatuses);
 });
 
 function assertH3Timings(timedChannel) {
@@ -223,10 +290,22 @@ function assertH3Timings(timedChannel) {
 async function do_test_h3_timings(host) {
   await resetConnections();
 
-  let timedChannel = await openChannelAndGetTimings(`https://${host}/`);
+  let { timedChannel, internalChannel, transportStatuses } =
+    await openChannelAndGetTimings(`https://${host}/`);
 
   logTimings(timedChannel);
   assertH3Timings(timedChannel);
+  Assert.equal(
+    internalChannel.remoteAddress,
+    "127.0.0.1",
+    "remoteAddress should be 127.0.0.1 for HTTP/3"
+  );
+  let expectedStatuses = [
+    Ci.nsISocketTransport.STATUS_RESOLVING,
+    Ci.nsISocketTransport.STATUS_RESOLVED,
+  ];
+  assertTransportStatusPresent(transportStatuses, expectedStatuses);
+  assertTransportStatusUnique(transportStatuses, expectedStatuses);
 }
 
 add_task(async function test_h3_timings() {
