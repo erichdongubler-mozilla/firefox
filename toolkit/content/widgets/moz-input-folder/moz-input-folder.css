@@ -11,8 +11,8 @@
 }
 
 #input {
-  min-width: var(--input-folder-min-width);
-  max-width: var(--input-folder-max-width);
+  min-width: var(--input-folder-min-width, none);
+  max-width: var(--input-folder-max-width, none);
 }
 
 .container {
