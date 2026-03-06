@@ -261,6 +261,43 @@ def get_runtimes(platform, suite_name):
     return manifest_runtimes
 
 
+def resolve_manifest_runtimes(all_runtimes, manifests):
+    """Match manifests to their runtimes, aggregating included sub-manifests.
+
+    Runtime data keys can be either "manifest.toml" for direct matches or
+    "manifest.toml:included.toml" for included sub-manifests. This function
+    aggregates both into a single runtime per parent manifest.
+
+    Args:
+        all_runtimes (dict): Raw runtime data from get_runtimes().
+        manifests (iterable): Manifest paths to look up.
+
+    Returns:
+        A dict mapping manifest paths to their total runtime in seconds.
+        Manifests with no runtime data are omitted.
+    """
+    runtimes = {}
+    for manifest in manifests:
+        total_runtime = 0
+        found = False
+
+        if manifest in all_runtimes:
+            total_runtime += all_runtimes[manifest]
+            found = True
+
+        if manifest.endswith(".toml"):
+            prefix = manifest + ":"
+            for key, value in all_runtimes.items():
+                if key.startswith(prefix):
+                    total_runtime += value
+                    found = True
+
+        if found:
+            runtimes[manifest] = total_runtime
+
+    return runtimes
+
+
 def chunk_manifests(suite, platform, chunks, manifests):
     """Run the chunking algorithm.
 
@@ -274,29 +311,7 @@ def chunk_manifests(suite, platform, chunks, manifests):
         that run in that chunk.
     """
     all_runtimes = get_runtimes(platform, suite)
-
-    # Build runtimes dict, handling manifest includes
-    # Manifest names can be "manifest.toml" or "manifest.toml:included.toml"
-    runtimes = {}
-    for manifest in manifests:
-        total_runtime = 0
-        found = False
-
-        # Direct match
-        if manifest in all_runtimes:
-            total_runtime += all_runtimes[manifest]
-            found = True
-
-        # Also check for included manifests (manifest.toml:*)
-        if manifest.endswith(".toml"):
-            manifest_prefix = manifest + ":"
-            for runtime_key, runtime_value in all_runtimes.items():
-                if runtime_key.startswith(manifest_prefix):
-                    total_runtime += runtime_value
-                    found = True
-
-        if found:
-            runtimes[manifest] = total_runtime
+    runtimes = resolve_manifest_runtimes(all_runtimes, manifests)
 
     # Log if some manifests are missing runtime data
     manifests_without_data = [m for m in manifests if m not in runtimes]
