@@ -511,6 +511,20 @@ export default class LoginList extends HTMLElement {
     );
   }
 
+  setChangePasswordURLs(changePasswordURLsByLoginGUID) {
+    this._internalUpdateMonitorData(
+      "_changePasswordURLsByLoginGUID",
+      changePasswordURLsByLoginGUID
+    );
+  }
+
+  updateChangePasswordURLs(changePasswordURLsByLoginGUID) {
+    this._internalSetMonitorData(
+      "_changePasswordURLsByLoginGUID",
+      changePasswordURLsByLoginGUID
+    );
+  }
+
   _internalSetMonitorData(
     internalMemberName,
     mapByLoginGUID,
