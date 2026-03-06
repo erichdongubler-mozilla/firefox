@@ -36,6 +36,7 @@ using gfx::IntSize;
 
 using layers::FrameMetrics;
 using layers::ScrollableLayerGuid;
+using NonZeroScrollRangeOnly = ScrollContainerFrame::NonZeroScrollRangeOnly;
 
 typedef ScrollableLayerGuid::ViewID ViewID;
 
@@ -824,7 +825,7 @@ bool DisplayPortUtils::MaybeCreateDisplayPort(
   // will get a displayport.
   MOZ_ASSERT(nsLayoutUtils::AsyncPanZoomEnabled(aScrollContainerFrame));
   if (!aBuilder->HaveScrollableDisplayPort() &&
-      aScrollContainerFrame->WantAsyncScroll()) {
+      aScrollContainerFrame->WantAsyncScroll(NonZeroScrollRangeOnly::Yes)) {
     bool haveDisplayPort = HasNonMinimalNonZeroDisplayPort(content);
     // If we don't already have a displayport, calculate and set one.
     if (!haveDisplayPort) {
@@ -838,6 +839,7 @@ bool DisplayPortUtils::MaybeCreateDisplayPort(
           ("Setting DP on first-encountered scrollId=%" PRIu64 "\n", viewId));
 
       CalculateAndSetDisplayPortMargins(aScrollContainerFrame, aRepaintMode);
+      SetZeroMarginDisplayPortOnAsyncScrollableAncestors(aScrollContainerFrame);
 #ifdef DEBUG
       haveDisplayPort = HasNonMinimalDisplayPort(content);
       MOZ_ASSERT(haveDisplayPort,

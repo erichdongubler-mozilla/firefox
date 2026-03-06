@@ -1708,7 +1708,16 @@ void ScrollContainerFrame::SetHasOutOfFlowContentInsideFilter() {
   mHasOutOfFlowContentInsideFilter = true;
 }
 
-bool ScrollContainerFrame::WantAsyncScroll() const {
+bool ScrollContainerFrame::WantAsyncScroll(
+    NonZeroScrollRangeOnly aNonZeroScrollRangeOnly) const {
+  if (!bool(aNonZeroScrollRangeOnly)) {
+    const nsStyleDisplay* disp = GetFrameForStyle()->StyleDisplay();
+    if (disp->mOverscrollBehaviorX != StyleOverscrollBehavior::Auto ||
+        disp->mOverscrollBehaviorY != StyleOverscrollBehavior::Auto) {
+      return true;
+    }
+  }
+
   ScrollStyles styles = GetScrollStyles();
 
   // First, as an optimization because getting the scrollrange is
