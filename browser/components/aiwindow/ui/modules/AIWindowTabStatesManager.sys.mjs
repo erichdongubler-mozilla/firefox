@@ -19,7 +19,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
  *   mode: string,
  *   pageUrl: URL,
  *   conversationId: string,
- *   keepSidebarOpen: boolean,
  * }} TabState
  */
 
@@ -252,6 +251,9 @@ export class AIWindowTabStatesManager {
       return;
     }
 
+    // @todo Bug 2016545
+    // Track the Ask button clicks to properly detontermine if a sidebar
+    // needs to be opened/closed for a tab
     if (tabNeedsSidebar && computedKeepSidebar) {
       const conversation = await lazy.ChatStore.findConversationById(convId);
       lazy.AIWindowUI.openSidebar(this.#window, conversation);
@@ -364,10 +366,9 @@ export class AIWindowTabStatesManager {
     const tabState = this.#tabStates.get(tab) ?? {};
 
     if (newState) {
-      const { input, mode, pageUrl, conversationId, keepSidebarOpen } =
-        tabState.state ?? {
-          input: "",
-        };
+      const { input, mode, pageUrl, conversationId } = tabState.state ?? {
+        input: "",
+      };
       delete newState.tab;
 
       tabState.state = {
@@ -375,7 +376,6 @@ export class AIWindowTabStatesManager {
         mode,
         pageUrl,
         conversationId,
-        keepSidebarOpen,
         ...newState,
       };
 
@@ -498,31 +498,46 @@ export class AIWindowTabStatesManager {
           return;
         }
 
-        const conversation = await lazy.ChatStore.findConversationById(
-          tabState.state.conversationId
-        );
+        const isSidebarOpen = lazy.AIWindowUI.isSidebarOpen(this.#window);
+        const convId = tabState.state.conversationId;
+        const conversation = await lazy.ChatStore.findConversationById(convId);
 
-        // Re-fetch tab state after async to avoid stale state
+        // Re-fetch tab state after async to avoid leak/crash if tab state is now null (e.g. closed window)
         tabState = this.#getTabState(tab);
         if (!tabState?.state) {
           return;
         }
 
         const isAiWindowUrl = locationURI.spec === lazy.AIWINDOW_URL;
-        const isSidebarOpen = lazy.AIWindowUI.isSidebarOpen(this.#window);
-        const isFullPageMode = tabState.state.mode === "fullpage";
-        const shouldKeepSidebarOpen = tabState.state.keepSidebarOpen ?? true;
 
-        if (!isFullPageMode) {
-          return;
-        }
+        const needsSidebar =
+          !isAiWindowUrl &&
+          tabState.state.mode === "fullpage" &&
+          !isSidebarOpen;
 
-        // Close sidebar when navigating to Smart window (if currently open)
-        // Open sidebar when navigating to non-Smart pages (if not already open and user hasn't closed it)
-        if (isAiWindowUrl && isSidebarOpen) {
-          lazy.AIWindowUI.closeSidebar(this.#window);
-        } else if (!isAiWindowUrl && !isSidebarOpen && shouldKeepSidebarOpen) {
+        const needsCloseSidebar =
+          isAiWindowUrl && tabState.state.mode === "fullpage" && isSidebarOpen;
+
+        if (needsSidebar) {
           lazy.AIWindowUI.openSidebar(this.#window, conversation);
+
+          // Clear the input when navigating from fullpage to sidebar
+          if (tabState.state.mode === "fullpage") {
+            tabState = this.#getTabState(tab, { input: "" });
+          }
+
+          lazy.AIWindowUI.updateSidebarInput(
+            this.#window,
+            tabState.state.input
+          );
+        } else if (needsCloseSidebar) {
+          lazy.AIWindowUI.closeSidebar(this.#window);
+        } else if (!isAiWindowUrl && isSidebarOpen) {
+          // Update sidebar input when navigating while sidebar is open
+          lazy.AIWindowUI.updateSidebarInput(
+            this.#window,
+            tabState.state.input ?? ""
+          );
         }
       },
 
