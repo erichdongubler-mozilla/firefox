@@ -236,6 +236,7 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   Element* FindShadowPseudo(PseudoStyleType) const;
   void UpdatePlaceholder(const nsAttrValue* aOldValue,
                          const nsAttrValue* aNewValue);
+  void UpdateTextEditorShadowTree();
 
   virtual ~TextControlElement() = default;
 

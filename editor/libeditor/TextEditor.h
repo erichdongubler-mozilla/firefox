@@ -601,6 +601,17 @@ class TextEditor final : public EditorBase,
     return mPasswordMaskData && mPasswordMaskData->mTimer;
   }
 
+  void ResetPasswordMaskData() {
+    if (mPasswordMaskData) {
+      mPasswordMaskData->CancelTimer(PasswordMaskData::ReleaseTimer::Yes);
+    }
+    if (IsPasswordEditor()) {
+      mPasswordMaskData = MakeUnique<PasswordMaskData>();
+    } else {
+      mPasswordMaskData = nullptr;
+    }
+  }
+
  protected:
   UniquePtr<PasswordMaskData> mPasswordMaskData;
 

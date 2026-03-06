@@ -215,6 +215,7 @@ class TextControlState final : public SupportsWeakPtr {
   MOZ_CAN_RUN_SCRIPT void DeinitSelection();
   MOZ_CAN_RUN_SCRIPT nsresult PrepareEditor();
   void InitializeKeyboardEventListeners();
+  MOZ_CAN_RUN_SCRIPT void UpdateEditorOnTypeChange();
 
   /**
    * OnEditActionHandled() is called when mTextEditor handles something

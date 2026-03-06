@@ -1096,7 +1096,12 @@ class HTMLInputElement final : public TextControlElement,
    */
   bool DoesAutocompleteApply() const;
 
-  MOZ_CAN_RUN_SCRIPT void FreeData();
+  enum class TextControlStateDisposition : bool {
+    Destroy,
+    Reuse,
+  };
+
+  MOZ_CAN_RUN_SCRIPT void FreeData(TextControlStateDisposition);
   TextControlState* GetEditorState() const;
   void EnsureEditorState();
 
@@ -1560,8 +1565,8 @@ class HTMLInputElement final : public TextControlElement,
   /**
    * Returns true if selection methods can be called on element
    */
-  bool SupportsTextSelection() const {
-    switch (mType) {
+  static bool SupportsTextSelection(FormControlType aType) {
+    switch (aType) {
       case FormControlType::InputText:
       case FormControlType::InputSearch:
       case FormControlType::InputUrl:
@@ -1572,6 +1577,8 @@ class HTMLInputElement final : public TextControlElement,
         return false;
     }
   }
+
+  bool SupportsTextSelection() const { return SupportsTextSelection(mType); }
 
   /**
    * https://html.spec.whatwg.org/#auto-directionality-form-associated-elements

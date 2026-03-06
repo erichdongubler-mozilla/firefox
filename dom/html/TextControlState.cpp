@@ -1453,6 +1453,23 @@ struct MOZ_STACK_CLASS PreDestroyer {
   RefPtr<TextEditor> mTextEditor;
 };
 
+void TextControlState::UpdateEditorOnTypeChange() {
+  if (!mEditorInitialized) {
+    return;
+  }
+  const auto oldFlags = mTextEditor->Flags();
+  auto newFlags = oldFlags;
+  if (IsPasswordTextControl()) {
+    newFlags |= nsIEditor::eEditorPasswordMask;
+  } else {
+    newFlags &= ~nsIEditor::eEditorPasswordMask;
+  }
+  if (oldFlags != newFlags) {
+    RefPtr editor = mTextEditor;
+    editor->SetFlags(newFlags);
+  }
+}
+
 nsresult TextControlState::PrepareEditor() {
   if (mEditorInitialized) {
     // Do not initialize the editor multiple times.
