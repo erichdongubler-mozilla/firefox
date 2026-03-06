@@ -9995,3 +9995,16 @@ void nsWindow::UnexportHandle() {
     }
   }
 }
+
+uint32_t nsWindow::GetMaxTouchPoints() const {
+#ifdef MOZ_WAYLAND
+  // We may want to read max touch points from GdkDevice:num-touches.
+  // But that means we need to enumerate touch GdkDevice(s) first
+  // and then query it. Not sure it's worth the effort, just return
+  // fixed value if touch device is present for now.
+  static constexpr bool sMaxTouchPoints = 5;
+  return WaylandDisplayGet()->GetTouch() ? sMaxTouchPoints : 0;
+#else
+  return 0;
+#endif
+}
