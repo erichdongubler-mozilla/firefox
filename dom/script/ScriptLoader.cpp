@@ -198,22 +198,7 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(ScriptLoader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ScriptLoader)
 
 ScriptLoader::ScriptLoader(Document* aDocument)
-    : mDocument(aDocument),
-      mParserBlockingBlockerCount(0),
-      mBlockerCount(0),
-      mNumberOfProcessors(0),
-      mTotalFullParseSize(0),
-      mPhysicalSizeOfMemory(-1),
-      mEnabled(true),
-      mDeferEnabled(false),
-      mSpeculativeOMTParsingEnabled(false),
-      mDeferCheckpointReached(false),
-      mBlockingDOMContentLoaded(false),
-      mLoadEventFired(false),
-      mGiveUpDiskCaching(false),
-      mContinueParsingDocumentAfterCurrentScript(false),
-      mHadFCPDoNotUseDirectly(false),
-      mReporter(new ConsoleReportCollector()) {
+    : mDocument(aDocument), mReporter(new ConsoleReportCollector()) {
   LOG(("ScriptLoader::ScriptLoader %p", this));
 
   mSpeculativeOMTParsingEnabled = StaticPrefs::

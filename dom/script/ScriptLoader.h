@@ -918,20 +918,20 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   nsCOMPtr<nsIScriptElement> mCurrentScript;
   nsCOMPtr<nsIScriptElement> mCurrentParserInsertedScript;
   nsTArray<RefPtr<ScriptLoader>> mPendingChildLoaders;
-  uint32_t mParserBlockingBlockerCount;
-  uint32_t mBlockerCount;
-  uint32_t mNumberOfProcessors;
-  uint32_t mTotalFullParseSize;
-  int32_t mPhysicalSizeOfMemory;
-  bool mEnabled;
-  bool mDeferEnabled;
-  bool mSpeculativeOMTParsingEnabled;
-  bool mDeferCheckpointReached;
-  bool mBlockingDOMContentLoaded;
-  bool mLoadEventFired;
-  bool mGiveUpDiskCaching;
-  bool mContinueParsingDocumentAfterCurrentScript;
-  bool mHadFCPDoNotUseDirectly;
+  uint32_t mParserBlockingBlockerCount = 0;
+  uint32_t mBlockerCount = 0;
+  uint32_t mNumberOfProcessors = 0;
+  uint32_t mTotalFullParseSize = 0;
+  int32_t mPhysicalSizeOfMemory = -1;
+  bool mEnabled = true;
+  bool mDeferEnabled = false;
+  bool mSpeculativeOMTParsingEnabled = false;
+  bool mDeferCheckpointReached = false;
+  bool mBlockingDOMContentLoaded = false;
+  bool mLoadEventFired = false;
+  bool mGiveUpDiskCaching = false;
+  bool mContinueParsingDocumentAfterCurrentScript = false;
+  bool mHadFCPDoNotUseDirectly = false;
 
   TimeDuration mMainThreadParseTime;
 
