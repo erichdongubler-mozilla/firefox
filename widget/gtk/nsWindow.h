@@ -191,7 +191,6 @@ class nsWindow final : public nsIWidget {
   void Destroy() override;
   float GetDPI() override;
   double GetDefaultScaleInternal() override;
-  uint32_t GetMaxTouchPoints() const override;
   mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() override;
   void SetModal(bool aModal) override;
   bool IsVisible() const override;
