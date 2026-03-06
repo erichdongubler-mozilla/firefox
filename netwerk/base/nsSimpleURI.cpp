@@ -429,7 +429,7 @@ nsresult nsSimpleURI::SetPathQueryRefInternal() {
     // fallible version of `NS_EscapeURL` which won't do an unnecessary copy in
     // the non-escaping case.
     nsAutoCString escapedRef;
-    if (NS_EscapeURLSpan(Ref(), esc_OnlyNonASCII | esc_Spaces, escapedRef)) {
+    if (NS_EscapeURLSpan(Ref(), esc_Ref, escapedRef)) {
       if (!mSpec.Replace(RefStart(), RefLen(), escapedRef, fallible)) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
@@ -462,8 +462,7 @@ nsresult nsSimpleURI::SetRef(const nsACString& aRef) {
   }
 
   nsAutoCString ref;
-  nsresult rv =
-      NS_EscapeURL(aRef, esc_OnlyNonASCII | esc_Spaces, ref, fallible);
+  nsresult rv = NS_EscapeURL(aRef, esc_Ref, ref, fallible);
   if (NS_FAILED(rv)) {
     return rv;
   }

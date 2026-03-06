@@ -15,9 +15,10 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=465263
   <iframe src="http://mochi.test:8888"></iframe>
   <iframe src="http://mochi.test:8888"></iframe>
   <iframe src="http://mochi.test:8888"></iframe>
+  <iframe id="about_blank_iframe"></iframe>
 </p>
 <div id="content" style="display: none">
-  
+
 </div>
 <pre id="test">
 <script type="application/javascript">
@@ -37,11 +38,19 @@ addLoadEvent(function() {
   window.frames[3].location.hash = '#foo';
   is(window.frames[3].location.href, "http://mochi.test:8888/#foo",
      "Should have only one '#' in href here too");
+
+  // Test URL-encoding of about:blank location.hash.
+  window.location.hash = "<foo> <bar>";
+  is(window.location.hash, "#%3Cfoo%3E%20%3Cbar%3E",
+     "window hash should be URL-encoded");
+  about_blank_iframe.contentWindow.location.hash = "<bar> <foo>";
+  is(about_blank_iframe.contentWindow.location.hash, "#%3Cbar%3E%20%3Cfoo%3E",
+     "iframe hash should be URL-encoded");
+  is(window.location.hash, "#%3Cfoo%3E%20%3Cbar%3E",
+     "window hash should be unchanged");
+
   SimpleTest.finish();
 });
-
-
-
 
 </script>
 </pre>
