@@ -159,9 +159,6 @@ for (const type of [
   "FOLLOW_SECTION",
   "HIDE_PERSONALIZE",
   "HIDE_TOAST_MESSAGE",
-  "INFERRED_PERSONALIZATION_DEBUG_FEATURES_REQUEST",
-  "INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE",
-  "INFERRED_PERSONALIZATION_DEBUG_OVERRIDES_SET",
   "INFERRED_PERSONALIZATION_MODEL_UPDATE",
   "INFERRED_PERSONALIZATION_REFRESH",
   "INFERRED_PERSONALIZATION_RESET",
@@ -696,25 +693,15 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.handleWeatherUpdate = this.handleWeatherUpdate.bind(this);
     this.resetBlocks = this.resetBlocks.bind(this);
     this.refreshInferredPersonalization = this.refreshInferredPersonalization.bind(this);
-    this.refreshInferredPersonalizationAndDebug = this.refreshInferredPersonalizationAndDebug.bind(this);
     this.refreshTopicSelectionCache = this.refreshTopicSelectionCache.bind(this);
-    this.requestDebugFeatures = this.requestDebugFeatures.bind(this);
-    this.setDebugOverrides = this.setDebugOverrides.bind(this);
-    this.handleDebugOverridesToggle = this.handleDebugOverridesToggle.bind(this);
-    this.handleDebugOverrideChange = this.handleDebugOverrideChange.bind(this);
-    this.handleResetAllOverrides = this.handleResetAllOverrides.bind(this);
     this.handleSectionsToggle = this.handleSectionsToggle.bind(this);
     this.toggleIABBanners = this.toggleIABBanners.bind(this);
     this.handleAllizomToggle = this.handleAllizomToggle.bind(this);
     this.sendConversionEvent = this.sendConversionEvent.bind(this);
     this.state = {
       toggledStories: {},
-      weatherQuery: "",
-      pendingOverrides: {}
+      weatherQuery: ""
     };
-  }
-  componentDidMount() {
-    this.requestDebugFeatures();
   }
   setConfigValue(configName, configValue) {
     this.props.dispatch(actionCreators.OnlyToMain({
@@ -743,94 +730,6 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.props.dispatch(actionCreators.OnlyToMain({
       type: actionTypes.INFERRED_PERSONALIZATION_REFRESH
     }));
-  }
-  refreshInferredPersonalizationAndDebug() {
-    this.refreshInferredPersonalization();
-  }
-  requestDebugFeatures() {
-    this.props.dispatch(actionCreators.OnlyToMain({
-      type: actionTypes.INFERRED_PERSONALIZATION_DEBUG_FEATURES_REQUEST
-    }));
-  }
-  setDebugOverrides(overrides) {
-    this.props.dispatch(actionCreators.OnlyToMain({
-      type: actionTypes.INFERRED_PERSONALIZATION_DEBUG_OVERRIDES_SET,
-      data: overrides
-    }));
-  }
-  getDebugFeaturesList() {
-    const {
-      debugFeatures
-    } = this.props.state.InferredPersonalization;
-    if (!debugFeatures) {
-      return [];
-    }
-    return Object.keys(debugFeatures).sort().filter(featureName => featureName !== "clicks").map(featureName => ({
-      name: featureName,
-      ...debugFeatures[featureName]
-    }));
-  }
-  getOverrideValues(features, fallbackToCurrent = false) {
-    const overrides = {};
-    for (const feature of features) {
-      let value = feature.overrideValue;
-      if (!Number.isFinite(value) && fallbackToCurrent) {
-        value = Number.isFinite(feature.currentValue) ? feature.currentValue : 0;
-      }
-      if (Number.isFinite(value)) {
-        overrides[feature.name] = value;
-      }
-    }
-    return overrides;
-  }
-  handleDebugOverridesToggle(e) {
-    const {
-      pressed
-    } = e.target;
-    const features = this.getDebugFeaturesList();
-    const currentOverrides = this.getOverrideValues(features, true);
-    if (!pressed) {
-      this.setState({
-        pendingOverrides: {
-          ...currentOverrides
-        }
-      });
-      this.setDebugOverrides(null);
-      return;
-    }
-    const overrides = Object.keys(this.state.pendingOverrides).length ? {
-      ...this.state.pendingOverrides
-    } : currentOverrides;
-    this.setDebugOverrides(overrides);
-  }
-  handleDebugOverrideChange(featureName, value) {
-    const features = this.getDebugFeaturesList();
-    const overrides = Object.keys(this.state.pendingOverrides).length ? {
-      ...this.state.pendingOverrides
-    } : this.getOverrideValues(features, true);
-    overrides[featureName] = value;
-    this.setState({
-      pendingOverrides: {
-        ...overrides
-      }
-    });
-    if (Object.keys(this.getOverrideValues(features)).length) {
-      this.setDebugOverrides(overrides);
-    }
-  }
-  handleResetAllOverrides() {
-    const features = this.getDebugFeaturesList();
-    const overrides = Object.fromEntries(features.map(({
-      name: featureName
-    }) => [featureName, 0]));
-    this.setState({
-      pendingOverrides: {
-        ...overrides
-      }
-    });
-    if (Object.keys(this.getOverrideValues(features)).length) {
-      this.setDebugOverrides(overrides);
-    }
   }
   refreshTopicSelectionCache() {
     this.props.dispatch(actionCreators.SetPref("discoverystream.topicSelection.onboarding.displayCount", 0));
@@ -1017,116 +916,10 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
   renderPersonalizationData() {
     const {
       inferredInterests,
+      coarseInferredInterests,
       coarsePrivateInferredInterests
     } = this.props.state.InferredPersonalization;
-    const hasModelOverride = Boolean(this.props.otherPrefs?.["discoverystream.sections.personalization.inferred.model.override"]);
-    return /*#__PURE__*/external_React_default().createElement("div", {
-      className: "personalization-data"
-    }, this.renderInferredPersonalizationOverrides(), hasModelOverride ? /*#__PURE__*/external_React_default().createElement("div", {
-      className: "inferred-vectors-row"
-    }, /*#__PURE__*/external_React_default().createElement("div", {
-      className: "inferred-vector-column"
-    }, /*#__PURE__*/external_React_default().createElement("div", {
-      className: "inferred-vector-title"
-    }, "Raw Interest Values"), /*#__PURE__*/external_React_default().createElement("div", {
-      className: "inferred-vector-panel"
-    }, /*#__PURE__*/external_React_default().createElement("pre", null, JSON.stringify(inferredInterests, null, 2)))), /*#__PURE__*/external_React_default().createElement("div", {
-      className: "inferred-vector-column"
-    }, /*#__PURE__*/external_React_default().createElement("div", {
-      className: "inferred-vector-title"
-    }, "Differentially Private Interest Vector", " "), /*#__PURE__*/external_React_default().createElement("div", {
-      className: "inferred-vector-panel"
-    }, /*#__PURE__*/external_React_default().createElement("pre", null, JSON.stringify(coarsePrivateInferredInterests, null, 2))))) : null);
-  }
-  renderInferredPersonalizationOverrides() {
-    const {
-      lastUpdated
-    } = this.props.state.InferredPersonalization;
-    const features = this.getDebugFeaturesList();
-    if (!features.length) {
-      return null;
-    }
-    const overrides = this.getOverrideValues(features);
-    const overridesEnabled = Object.keys(overrides).length;
-    const hasAnyNonZeroOverride = Object.values(overrides).some(value => Number.isFinite(value) && value > 0);
-    return /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
-      className: "inferred-overrides-header"
-    }, /*#__PURE__*/external_React_default().createElement("h3", {
-      className: "inferred-overrides-title"
-    }, "Inferred Personalization"), /*#__PURE__*/external_React_default().createElement("div", {
-      className: "inferred-overrides-actions"
-    }, /*#__PURE__*/external_React_default().createElement("button", {
-      className: "button",
-      onClick: this.refreshInferredPersonalizationAndDebug
-    }, "Recompute Interest Vector"), /*#__PURE__*/external_React_default().createElement("button", {
-      className: "button",
-      onClick: this.refreshCache
-    }, "Refresh Story Cache"))), /*#__PURE__*/external_React_default().createElement("div", {
-      className: "inferred-overrides-last-refreshed"
-    }, /*#__PURE__*/external_React_default().createElement("span", {
-      className: "inferred-overrides-last-refreshed-label"
-    }, "Last refreshed"), /*#__PURE__*/external_React_default().createElement("span", null, relativeTime(lastUpdated) || "(no data)")), /*#__PURE__*/external_React_default().createElement("table", {
-      className: "minimal-table inferred-personalization-overrides"
-    }, /*#__PURE__*/external_React_default().createElement("tbody", null, /*#__PURE__*/external_React_default().createElement(Row, {
-      className: "inferred-overrides-toggle-row"
-    }, /*#__PURE__*/external_React_default().createElement("td", {
-      className: "min"
-    }, "Overrides"), /*#__PURE__*/external_React_default().createElement("td", {
-      className: "min inferred-score-col"
-    }), /*#__PURE__*/external_React_default().createElement("td", null, /*#__PURE__*/external_React_default().createElement("div", {
-      className: "toggle-wrapper"
-    }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
-      id: "inferred-personalization-overrides",
-      pressed: overridesEnabled || null,
-      onToggle: this.handleDebugOverridesToggle,
-      label: "Enable overrides"
-    })))), /*#__PURE__*/external_React_default().createElement(Row, {
-      className: "inferred-overrides-refresh-row"
-    }, /*#__PURE__*/external_React_default().createElement("td", {
-      colSpan: "3"
-    }, /*#__PURE__*/external_React_default().createElement("button", {
-      className: "button",
-      disabled: hasAnyNonZeroOverride ? null : true,
-      onClick: this.handleResetAllOverrides
-    }, "Reset overrides"))), /*#__PURE__*/external_React_default().createElement(Row, {
-      className: "inferred-overrides-table-header"
-    }, /*#__PURE__*/external_React_default().createElement("td", null), /*#__PURE__*/external_React_default().createElement("td", {
-      className: "min inferred-score-col"
-    }, "Score"), /*#__PURE__*/external_React_default().createElement("td", null)), features.map(feature => {
-      const maxValue = Math.max(0, (feature.numValues || 1) - 1);
-      const currentCoarseValue = feature.currentValue;
-      const pendingValue = this.state.pendingOverrides[feature.name];
-      let displayValue = 0;
-      if (Number.isFinite(pendingValue)) {
-        displayValue = pendingValue;
-      } else if (Number.isFinite(feature.overrideValue)) {
-        displayValue = feature.overrideValue;
-      } else if (Number.isFinite(feature.currentValue)) {
-        displayValue = feature.currentValue;
-      }
-      return /*#__PURE__*/external_React_default().createElement(Row, {
-        key: feature.name,
-        className: "inferred-override-row"
-      }, /*#__PURE__*/external_React_default().createElement("td", {
-        className: "min"
-      }, feature.name), /*#__PURE__*/external_React_default().createElement("td", {
-        className: "min inferred-score-col"
-      }, Number.isFinite(currentCoarseValue) ? currentCoarseValue : "-"), /*#__PURE__*/external_React_default().createElement("td", null, /*#__PURE__*/external_React_default().createElement("div", {
-        className: "inferred-override-controls"
-      }, /*#__PURE__*/external_React_default().createElement("input", {
-        className: "inferred-override-slider",
-        type: "range",
-        min: "0",
-        max: String(maxValue),
-        step: "1",
-        value: String(displayValue),
-        disabled: !overridesEnabled,
-        "aria-label": `${feature.name} override`,
-        onChange: e => this.handleDebugOverrideChange(feature.name, Number(e.target.value))
-      }), /*#__PURE__*/external_React_default().createElement("span", {
-        className: "inferred-override-value"
-      }, displayValue))));
-    }))));
+    return /*#__PURE__*/external_React_default().createElement("div", null, " ", "Inferred Interests:", /*#__PURE__*/external_React_default().createElement("pre", null, JSON.stringify(inferredInterests, null, 2)), " Coarse Inferred Interests:", /*#__PURE__*/external_React_default().createElement("pre", null, JSON.stringify(coarseInferredInterests, null, 2)), " Coarse Inferred Interests With Differential Privacy:", /*#__PURE__*/external_React_default().createElement("pre", null, JSON.stringify(coarsePrivateInferredInterests, null, 2)));
   }
   renderFeedData(url) {
     const {
@@ -1310,6 +1103,9 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       onClick: this.idleDaily
     }, "Trigger Idle Daily"), /*#__PURE__*/external_React_default().createElement("br", null), /*#__PURE__*/external_React_default().createElement("button", {
       className: "button",
+      onClick: this.refreshInferredPersonalization
+    }, "Refresh Inferred Personalization"), /*#__PURE__*/external_React_default().createElement("br", null), /*#__PURE__*/external_React_default().createElement("button", {
+      className: "button",
       onClick: this.syncRemoteSettings
     }, "Sync Remote Settings"), " ", /*#__PURE__*/external_React_default().createElement("button", {
       className: "button",
@@ -1367,7 +1163,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       className: "large-data-container"
     }, this.renderImpressionsData()), /*#__PURE__*/external_React_default().createElement("h3", null, "Blocked Data"), /*#__PURE__*/external_React_default().createElement("div", {
       className: "large-data-container"
-    }, this.renderBlocksData()), /*#__PURE__*/external_React_default().createElement("h3", null, "Weather Data"), this.renderWeatherData(), this.renderPersonalizationData());
+    }, this.renderBlocksData()), /*#__PURE__*/external_React_default().createElement("h3", null, "Weather Data"), this.renderWeatherData(), /*#__PURE__*/external_React_default().createElement("h3", null, "Personalization Data"), this.renderPersonalizationData());
   }
 }
 class DiscoveryStreamAdminInner extends (external_React_default()).PureComponent {
@@ -6572,7 +6368,6 @@ const INITIAL_STATE = {
     inferredInterests: {},
     coarseInferredInterests: {},
     coarsePrivateInferredInterests: {},
-    debugFeatures: null,
   },
   Search: {
     // When search hand-off is enabled, we render a big button that is styled to
@@ -7076,11 +6871,6 @@ function InferredPersonalization(
         coarsePrivateInferredInterests:
           action.data.coarsePrivateInferredInterests,
         lastUpdated: action.data.lastUpdated,
-      };
-    case actionTypes.INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE:
-      return {
-        ...prevState,
-        debugFeatures: action.data,
       };
     case actionTypes.INFERRED_PERSONALIZATION_RESET:
       return { ...INITIAL_STATE.InferredPersonalization };

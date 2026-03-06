@@ -3809,9 +3809,6 @@ dialog:dir(rtl)::after {
   color: var(--newtab-text-primary-color);
   z-index: 3;
 }
-.discoverystream-admin .personalization-data {
-  padding-block-end: var(--space-xlarge);
-}
 .discoverystream-admin.collapsed {
   display: none;
 }
@@ -3828,91 +3825,6 @@ dialog:dir(rtl)::after {
 .discoverystream-admin .toggle-wrapper {
   margin-block: var(--space-large);
   width: 200px;
-}
-.discoverystream-admin .inferred-personalization-overrides {
-  margin-block: var(--space-large);
-}
-.discoverystream-admin .inferred-overrides-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-medium);
-}
-.discoverystream-admin .inferred-overrides-title {
-  margin: 0;
-}
-.discoverystream-admin .inferred-overrides-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-medium);
-}
-.discoverystream-admin .inferred-overrides-actions .button {
-  margin: 0;
-}
-.discoverystream-admin .inferred-overrides-toggle-row td:first-child {
-  font-weight: var(--font-weight-bold);
-}
-.discoverystream-admin .inferred-overrides-last-refreshed {
-  display: flex;
-  align-items: center;
-  gap: var(--space-small);
-  font-size: var(--font-size-small);
-  margin-block: var(--space-small) var(--space-medium);
-  padding-inline-start: var(--space-small);
-}
-.discoverystream-admin .inferred-overrides-last-refreshed-label {
-  font-weight: var(--font-weight-bold);
-}
-.discoverystream-admin .inferred-vectors-row {
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-xlarge);
-  margin-block-start: var(--space-xlarge);
-}
-.discoverystream-admin .inferred-vector-column {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-small);
-}
-.discoverystream-admin .inferred-vector-panel {
-  border: 1px solid var(--border-color);
-  padding: var(--space-small);
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.discoverystream-admin .inferred-vector-panel pre {
-  margin-block-start: 0;
-  flex: 1;
-  overflow: auto;
-}
-.discoverystream-admin .inferred-vector-title {
-  font-weight: var(--font-weight-bold);
-}
-.discoverystream-admin .inferred-overrides-table-header td {
-  font-weight: var(--font-weight-bold);
-}
-.discoverystream-admin .inferred-score-col {
-  width: 1%;
-  white-space: nowrap;
-  text-align: center;
-  padding-inline: 0;
-}
-.discoverystream-admin .inferred-overrides-toggle-row td {
-  vertical-align: middle;
-}
-.discoverystream-admin .inferred-override-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--space-medium);
-}
-.discoverystream-admin .inferred-override-slider {
-  width: 160px;
-}
-.discoverystream-admin .inferred-override-value {
-  min-width: 2ch;
-  text-align: end;
 }
 .discoverystream-admin .details-section {
   margin-block: var(--space-large);

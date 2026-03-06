@@ -36,8 +36,6 @@ const PREF_SYSTEM_INFERRED_PERSONALIZATION =
   "discoverystream.sections.personalization.inferred.enabled";
 const PREF_SYSTEM_INFERRED_MODEL_OVERRIDE =
   "discoverystream.sections.personalization.inferred.model.override";
-const PREF_DEBUG_OVERRIDE =
-  "discoverystream.sections.personalization.inferred.debug.override";
 
 const DEBUG_OVERRIDE_COARSE_VALUE_DICTIONARY_KEY =
   "debug_override_interest_values";
@@ -104,7 +102,7 @@ export class InferredPersonalizationFeed {
   }
 
   /**
-   * Get Inferred model raw data
+   * Get Inferrred model raw data
    *
    * @returns JSON of inferred model
    */
@@ -129,36 +127,6 @@ export class InferredPersonalizationFeed {
   }
 
   /**
-   * Gets overridden interest feature values used by the developer debugging UI.
-   *
-   * Pref values take precedence when present and valid. If the pref is missing,
-   * empty, or invalid JSON, cached override values are returned.
-   *
-   * @returns {Promise<{ [key: string]: number }>}
-   */
-  async _getDebugOverrides() {
-    const prefValue =
-      this.store?.getState?.()?.Prefs?.values?.[PREF_DEBUG_OVERRIDE];
-    if (typeof prefValue === "string" && prefValue) {
-      try {
-        const parsed = JSON.parse(prefValue);
-        if (parsed !== null) {
-          return parsed;
-        }
-      } catch (_error) {
-        console.error(
-          `${PREF_DEBUG_OVERRIDE} pref contains invalid JSON`,
-          prefValue
-        );
-      }
-    }
-    return (
-      (await this.cache.get(DEBUG_OVERRIDE_COARSE_VALUE_DICTIONARY_KEY, {})) ||
-      {}
-    );
-  }
-
-  /**
    * Saves overridden interest feature values for the developer debugging UI.
    *
    * This method stores a map of feature keys to override values, which are used
@@ -170,14 +138,6 @@ export class InferredPersonalizationFeed {
    * @returns {Promise<void>}
    */
   async setDebuggingInterestFeaturesOverride(overrides) {
-    this.store?.dispatch?.(
-      ac.SetPref(
-        PREF_DEBUG_OVERRIDE,
-        overrides === null || overrides === undefined
-          ? ""
-          : JSON.stringify(overrides)
-      )
-    );
     await this.cache.set(
       DEBUG_OVERRIDE_COARSE_VALUE_DICTIONARY_KEY,
       overrides || {}
@@ -208,8 +168,7 @@ export class InferredPersonalizationFeed {
     if (!inferredModel || !inferredModel.model_data) {
       return {};
     }
-    const model = FeatureModel.fromJSON(inferredModel.model_data);
-    const features = model.getInterestFeaturesSupported();
+    const features = inferredModel.getInterestFeaturesSupported();
     const interestVector = await this.cache.get("interest_vector");
     const coarseInterests = interestVector?.data?.coarseInferredInterests || {};
     if (interestVector) {
@@ -219,7 +178,10 @@ export class InferredPersonalizationFeed {
         }
       });
     }
-    const debugOverrides = await this._getDebugOverrides();
+    const debugOverrides = await this.cache.get(
+      DEBUG_OVERRIDE_COARSE_VALUE_DICTIONARY_KEY,
+      {}
+    );
     for (const featureName in debugOverrides) {
       if (featureName in features) {
         features[featureName].overrideValue = debugOverrides[featureName];
@@ -271,6 +233,10 @@ export class InferredPersonalizationFeed {
       });
 
       if (model.modelType === MODEL_TYPE.CTR) {
+        const debugOverrideCoarseValueDictionary = await this.cache.get(
+          DEBUG_OVERRIDE_COARSE_VALUE_DICTIONARY_KEY,
+          {}
+        );
         // eslint-disable-next-line no-unused-vars
         const { model_id, ...clickTotals } = interests.inferredInterests;
         const inferredInterests = model.computeCTRInterestVectors({
@@ -278,6 +244,7 @@ export class InferredPersonalizationFeed {
           impressions: ivImpressions,
           model_id: inferredModel.model_id,
           timeZoneOffset: lazy.NewTabUtils.getUtcOffset(),
+          debugOverrideCoarseValueDictionary,
         });
         return inferredInterests;
       }
@@ -329,20 +296,21 @@ export class InferredPersonalizationFeed {
     await this.cache.set("interest_vector", interest_vector);
     this.loaded = true;
 
-    const updateAction = {
-      type: at.INFERRED_PERSONALIZATION_UPDATE,
-      data: {
-        lastUpdated: interest_vector.lastUpdated,
-        inferredInterests: interest_vector.data.inferredInterests,
-        coarseInferredInterests: interest_vector.data.coarseInferredInterests,
-        coarsePrivateInferredInterests:
-          interest_vector.data.coarsePrivateInferredInterests,
-      },
-      meta: {
-        isStartup,
-      },
-    };
-    this.store.dispatch(ac.BroadcastToContent(updateAction));
+    this.store.dispatch(
+      ac.OnlyToMain({
+        type: at.INFERRED_PERSONALIZATION_UPDATE,
+        data: {
+          lastUpdated: interest_vector.lastUpdated,
+          inferredInterests: interest_vector.data.inferredInterests,
+          coarseInferredInterests: interest_vector.data.coarseInferredInterests,
+          coarsePrivateInferredInterests:
+            interest_vector.data.coarsePrivateInferredInterests,
+        },
+        meta: {
+          isStartup,
+        },
+      })
+    );
   }
 
   async handleDiscoveryStreamImpressionStats(action) {
@@ -541,39 +509,11 @@ export class InferredPersonalizationFeed {
         }
         break;
       case at.INFERRED_PERSONALIZATION_REFRESH:
-        if (this.isEnabled()) {
+        if (this.loaded && this.isEnabled()) {
           await this.reset();
           await this.loadInterestVector();
-          const features = await this.getDebuggingInterestFeaturesSupported();
-          this.store.dispatch(
-            ac.BroadcastToContent({
-              type: at.INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE,
-              data: features,
-            })
-          );
         }
         break;
-      case at.INFERRED_PERSONALIZATION_DEBUG_FEATURES_REQUEST: {
-        const features = await this.getDebuggingInterestFeaturesSupported();
-        this.store.dispatch(
-          ac.BroadcastToContent({
-            type: at.INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE,
-            data: features,
-          })
-        );
-        break;
-      }
-      case at.INFERRED_PERSONALIZATION_DEBUG_OVERRIDES_SET: {
-        await this.setDebuggingInterestFeaturesOverride(action.data);
-        const features = await this.getDebuggingInterestFeaturesSupported();
-        this.store.dispatch(
-          ac.BroadcastToContent({
-            type: at.INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE,
-            data: features,
-          })
-        );
-        break;
-      }
       case at.PLACES_HISTORY_CLEARED:
         await this.clearOldData(0);
         break;
