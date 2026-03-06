@@ -32,6 +32,7 @@ namespace mozilla {
 
 using namespace dom;
 
+using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
 using TreatInvisibleLineBreakAs = HTMLEditUtils::TreatInvisibleLineBreakAs;
 
@@ -2050,7 +2051,7 @@ Result<InsertTextResult, nsresult>
 WhiteSpaceVisibilityKeeper::InsertTextOrInsertOrUpdateCompositionString(
     HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
     const EditorDOMRange& aRangeToBeReplaced, InsertTextTo aInsertTextTo,
-    InsertTextFor aPurpose) {
+    InsertTextFor aPurpose, const Element& aEditingHost) {
   MOZ_ASSERT(aRangeToBeReplaced.StartRef().IsInContentNode());
   MOZ_ASSERT_IF(!EditorBase::InsertingTextForExtantComposition(aPurpose),
                 aRangeToBeReplaced.Collapsed());
@@ -2171,6 +2172,41 @@ WhiteSpaceVisibilityKeeper::InsertTextOrInsertOrUpdateCompositionString(
                 ? HTMLEditor::NormalizeSurroundingWhiteSpaces::No
                 : HTMLEditor::NormalizeSurroundingWhiteSpaces::Yes);
       }();
+
+  // Now, we prepare to insert normalized text and the text may be going to be
+  // followed by an unnecessary line break. In this case, we need to delete the
+  // unnecessary line break before inserting the new text because X (Twitter)
+  // expects the last mutation is the character data change.
+  if (!aStringToInsert.IsEmpty() &&
+      !EditorBase::InsertingTextForExtantComposition(aPurpose)) {
+    const WSScanResult nextThing =
+        HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
+            pointToInsert, PaddingForEmptyBlock::Unnecessary, aEditingHost);
+    if (nextThing.MaybeIgnoredLineBreak().isSome()) {
+      const EditorLineBreak& lineBreak =
+          nextThing.MaybeIgnoredLineBreak().ref();
+      const RefPtr<const Element> ancestorLimiterToDeleteEmptyInlines =
+          lineBreak.ContentRef().IsInclusiveDescendantOf(
+              pointToInsert.GetContainer())
+              ? pointToInsert.GetContainerOrContainerParentElement()
+              : &aEditingHost;
+      {
+        AutoTrackDOMPoint trackCurrentPoint(aHTMLEditor.RangeUpdaterRef(),
+                                            &pointToInsert);
+        Result<EditorDOMPoint, nsresult> deleteLineBreakResultOrError =
+            aHTMLEditor.DeleteLineBreakWithTransaction(
+                nextThing.MaybeIgnoredLineBreak().ref(), nsIEditor::eStrip,
+                *ancestorLimiterToDeleteEmptyInlines);
+        if (deleteLineBreakResultOrError.isErr()) [[unlikely]] {
+          NS_WARNING("HTMLEditor::DeleteLineBreakWithTransaction() failed");
+          return deleteLineBreakResultOrError.propagateErr();
+        }
+      }
+      if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc())) {
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+      }
+    }
+  }
 
   MOZ_ASSERT_IF(insertTextData.ReplaceLength(), pointToInsert.IsInTextNode());
   Result<InsertTextResult, nsresult> insertOrReplaceTextResultOrError =

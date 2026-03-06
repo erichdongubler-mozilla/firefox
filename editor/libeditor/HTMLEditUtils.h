@@ -2323,6 +2323,7 @@ class HTMLEditUtils final {
         break;
       }
       if (element->GetChildCount() > 1) {
+        // FIXME: We should check whether the each other children is empty.
         for (const nsIContent* child = element->GetFirstChild(); child;
              child = child->GetNextSibling()) {
           if (child == lastEmptyContent || child->IsComment()) {
