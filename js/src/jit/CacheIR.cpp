@@ -1754,7 +1754,7 @@ AttachDecision GetPropIRGenerator::tryAttachScriptedProxy(
     if (cacheKind_ == CacheKind::GetProp) {
       writer.megamorphicLoadSlotResult(targetObjId, id);
     } else {
-      writer.megamorphicLoadSlotByValueResult(objId, getElemKeyValueId());
+      writer.megamorphicLoadSlotByValueResult(targetObjId, getElemKeyValueId());
     }
   } else {
     uint32_t trapSlot = trapProp->slot();
