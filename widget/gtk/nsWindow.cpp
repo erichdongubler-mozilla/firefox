@@ -1937,27 +1937,6 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
         // popups are adjacent.
         return false;
       }
-      if (popup->WaylandPopupIsFirst() &&
-          popup->WaylandPopupFitsToplevelWindow() &&
-          !StaticPrefs::widget_wayland_force_move_to_rect_AtStartup()) {
-        // Avoid move-to-rect if our requested rect fits the toplevel.
-        // This serves as an optimization, but also as a workaround for
-        // https://gitlab.gnome.org/GNOME/gtk/-/issues/1986
-        //
-        // PopupType::Panel types are used for extension popups which may be
-        // resized. If such popup uses move-to-rect, we need to hide it before
-        // resize and show it again. That leads to massive flickering
-        // so use plain move if possible to avoid it.
-        //
-        // Bug 1760276 - don't use move-to-rect when popup is inside main
-        // Firefox window.
-        //
-        // Use it for first popups only due to another mutter bug
-        // https://gitlab.gnome.org/GNOME/gtk/-/issues/5089
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=1784873
-        // And so that we can move-to-rect nested popups, see below.
-        return false;
-      }
       if (!popup->WaylandPopupIsFirst() &&
           !popup->mWaylandPopupPrev->WaylandPopupIsFirst() &&
           !popup->mWaylandPopupPrev->mPopupUseMoveToRect) {
@@ -1980,11 +1959,7 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
       return true;
     }();
 
-    // We can't move popup type from xdg_popup to wl_subsurface one
-    // as it causes issues on Ubuntu 22.04 (Bug 2003045).
-    if (!popup->mPopupUseMoveToRect) {
-      popup->mPopupUseMoveToRect = useMoveToRect;
-    }
+    popup->mPopupUseMoveToRect = useMoveToRect;
 
     LOG("  popup [%p] matches layout [%d] anchored [%d] first popup [%d] use "
         "move-to-rect %d\n",
