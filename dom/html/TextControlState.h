@@ -205,7 +205,7 @@ class TextControlState final : public SupportsWeakPtr {
   void Traverse(nsCycleCollectionTraversalCallback& cb);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Unlink();
 
-  bool IsBusy() const { return !!mHandlingState || mValueTransferInProgress; }
+  bool IsBusy() const { return !!mHandlingState; }
 
   MOZ_CAN_RUN_SCRIPT TextEditor* GetTextEditor();
   TextEditor* GetExtantTextEditor() const;
@@ -213,7 +213,7 @@ class TextControlState final : public SupportsWeakPtr {
   nsFrameSelection* GetIndependentFrameSelection() const;
   nsresult InitializeSelection(PresShell*);
   MOZ_CAN_RUN_SCRIPT void DeinitSelection();
-  MOZ_CAN_RUN_SCRIPT nsresult PrepareEditor(const nsAString* aValue = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult PrepareEditor();
   void InitializeKeyboardEventListeners();
 
   /**
@@ -530,9 +530,7 @@ class TextControlState final : public SupportsWeakPtr {
 
   bool mEverInited : 1;  // Have we ever been initialized?
   bool mEditorInitialized : 1;
-  bool mValueTransferInProgress : 1;  // Whether a value is being transferred to
-                                      // the frame
-  bool mSelectionCached : 1;          // Whether mSelectionProperties is valid
+  bool mSelectionCached : 1;  // Whether mSelectionProperties is valid
 
   friend class AutoTextControlHandlingState;
   friend class PrepareEditorEvent;
