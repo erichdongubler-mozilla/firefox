@@ -808,7 +808,6 @@ WEBIDL_FILES = [
     "MimeType.webidl",
     "MimeTypeArray.webidl",
     "MLS.webidl",
-    "ModelContext.webidl",
     "MouseEvent.webidl",
     "MouseScrollEvent.webidl",
     "MozFrameLoaderOwner.webidl",

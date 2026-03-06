@@ -30,7 +30,6 @@
   "nsILoadContextInfoFactory": "loadContextInfo",
   "nsILocalStorageManager": "domStorageManager",
   "nsILoginManager": "logins",
-  "nsIModelContextService": "modelContext",
   "nsINetUtil": "io",
   "nsIObserverService": "obs",
   "nsIPermissionManager": "perms",
