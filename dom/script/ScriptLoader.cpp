@@ -1263,6 +1263,8 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
 
   MOZ_ASSERT(cacheResult.mCompleteValue->ReferrerPolicy() == aReferrerPolicy);
 
+  mMemoryCacheUsed++;
+
   aRequest->CacheEntryFound(cacheResult.mCompleteValue, aFetchOptions);
   LOG(
       ("ScriptLoader (%p): Found in-memory cache LoadedScript (%p) for "
@@ -4334,9 +4336,11 @@ nsresult ScriptLoader::OnStreamComplete(
             cacheResult.mCompleteValue->AddFetchCount();
 
             TRACE_FOR_TEST(aRequest, "memorycache:dirty:revived");
+            mMemoryCacheRevived++;
           } else {
             mCache->Evict(key);
             TRACE_FOR_TEST(aRequest, "memorycache:dirty:evicted");
+            mMemoryCacheEvictedDirty++;
           }
         }
 
@@ -4364,6 +4368,14 @@ nsresult ScriptLoader::OnStreamComplete(
         rv = SaveSRIHash(aRequest, aSRIDataVerifier);
       }
     }
+
+    if (aRequest->IsTextSource()) {
+      mLoadedFromNeckoAsText++;
+    } else if (aRequest->IsSerializedStencil()) {
+      mLoadedFromNeckoAsSerializedStencil++;
+    }
+    // NOTE: aRequest->IsCachedStencil() case is handled above by incrementing
+    //       mMemoryCacheRevived.
 
     if (NS_SUCCEEDED(rv)) {
       rv = PrepareLoadedRequest(aRequest, aChannel, aChannelStatus);

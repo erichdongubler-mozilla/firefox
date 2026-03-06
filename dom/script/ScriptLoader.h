@@ -827,6 +827,16 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   static DiskCacheStrategy GetDiskCacheStrategy();
 
+  uint16_t GetLoadedFromNeckoAsText() const { return mLoadedFromNeckoAsText; }
+  uint16_t GetLoadedFromNeckoAsSerializedStencil() const {
+    return mLoadedFromNeckoAsSerializedStencil;
+  }
+  uint16_t GetMemoryCacheUsed() const { return mMemoryCacheUsed; }
+  uint16_t GetMemoryCacheRevived() const { return mMemoryCacheRevived; }
+  uint16_t GetMemoryCacheEvictedDirty() const {
+    return mMemoryCacheEvictedDirty;
+  }
+
  private:
   // Check whether the request should be saved to the following or not:
   //   * in-memory cache as Stencil
@@ -923,6 +933,49 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   uint32_t mNumberOfProcessors = 0;
   uint32_t mTotalFullParseSize = 0;
   int32_t mPhysicalSizeOfMemory = -1;
+
+  // Telemetry data for the memory cache usage per document.
+  //
+  //   Load
+  //     |
+  //     v         YES              NO
+  //   has cache? -----> is dirty? ----> mMemoryCacheUsed++
+  //     |                 |
+  //     | NO              | YES
+  //     |                 v           YES
+  //     |               still valid? -----> mMemoryCacheRevived++
+  //     |                 |
+  //     |                 | NO
+  //     |                 v
+  //     |               mMemoryCacheEvictedDirty++
+  //     v                 |
+  //     +<----------------+
+  //     |
+  //     v       NO
+  //   is text? ----> mLoadedFromNeckoAsSerializedStencil++
+  //     |
+  //     | YES
+  //     v
+  //   mLoadedFromNeckoAsText++
+  //
+  // TotalLoads = mLoadedFromNeckoAsText +
+  //              mLoadedFromNeckoAsSerializedStencil +
+  //              mMemoryCacheUsed +
+  //              mMemoryCacheRevived
+  //
+  // SkippedIPC = mMemoryCacheUsed / TotalLoads
+  //
+  // UsedRawStencil = (mMemoryCacheUsed + mMemoryCacheRevived) / TotalLoads
+  //
+  // SkippedCompilation = (mMemoryCacheUsed + mMemoryCacheRevived +
+  //                       mLoadedFromNeckoAsSerializedStencil) / TotalLoads
+  //
+  uint16_t mLoadedFromNeckoAsText = 0;
+  uint16_t mLoadedFromNeckoAsSerializedStencil = 0;
+  uint16_t mMemoryCacheUsed = 0;
+  uint16_t mMemoryCacheRevived = 0;
+  uint16_t mMemoryCacheEvictedDirty = 0;
+
   bool mEnabled = true;
   bool mDeferEnabled = false;
   bool mSpeculativeOMTParsingEnabled = false;

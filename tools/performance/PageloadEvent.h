@@ -49,6 +49,11 @@ struct PageLoadDomainExtra;
   _(userFeatures, uint32_t)                    \
   _(usingWebdriver, bool)                      \
   _(cacheDisposition, uint32_t)                \
+  _(scriptFromNeckoText, uint32_t)             \
+  _(scriptFromNeckoSerialized, uint32_t)       \
+  _(scriptMemoryCacheUse, uint32_t)            \
+  _(scriptMemoryCacheRevived, uint32_t)        \
+  _(scriptMemoryCacheEvictedDirty, uint32_t)   \
   _(networkType, uint32_t)                     \
   _(androidAppLinkLaunchType, uint32_t)        \
   _(androidAppLinkToNavigationStart, uint32_t) \

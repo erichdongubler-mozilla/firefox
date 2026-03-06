@@ -2236,6 +2236,19 @@ void Document::AccumulatePageLoadTelemetry() {
     }
   }
 
+  if (mScriptLoader) {
+    mPageloadEventData.set_scriptFromNeckoText(
+        mScriptLoader->GetLoadedFromNeckoAsText());
+    mPageloadEventData.set_scriptFromNeckoSerialized(
+        mScriptLoader->GetLoadedFromNeckoAsSerializedStencil());
+    mPageloadEventData.set_scriptMemoryCacheUse(
+        mScriptLoader->GetMemoryCacheUsed());
+    mPageloadEventData.set_scriptMemoryCacheRevived(
+        mScriptLoader->GetMemoryCacheRevived());
+    mPageloadEventData.set_scriptMemoryCacheEvictedDirty(
+        mScriptLoader->GetMemoryCacheEvictedDirty());
+  }
+
   // Default duration is 0, use this to check for bogus negative values.
   const TimeDuration zeroDuration;
 
