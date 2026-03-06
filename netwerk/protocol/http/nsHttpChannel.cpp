@@ -9950,10 +9950,7 @@ static void RecordLNATelemetry(nsHttpChannel* aChannel, bool aLoadSuccess) {
   }
 
   uint16_t port = 0;
-  if (NS_SUCCEEDED(peerAddr.GetPort(&port))) {
-    mozilla::glean::networking::local_network_access_port
-        .AccumulateSingleSample(port);
-  }
+  peerAddr.GetPort(&port);
 
   // label format is <parentAddressSpace>_to_<targetAddressSpace>_<scheme>
   // At this point we are sure that the request is a LNA,
