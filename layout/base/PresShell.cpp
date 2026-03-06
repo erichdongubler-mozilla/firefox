@@ -12664,16 +12664,15 @@ void PresShell::EventHandler::EventTargetData::UpdateWheelEventTarget(
     return;
   }
 
-  // If dom.event.wheel-event-groups.enabled is not set or the stored
-  // event target is removed, we will not get a event target frame from the
-  // wheel transaction here.
+  // If the stored event target is removed, we will not get an event target
+  // frame from the wheel transaction here.
   nsIFrame* groupFrame = WheelTransaction::GetEventTargetFrame();
   if (!groupFrame) {
     return;
   }
 
-  // If dom.event.wheel-event-groups.enabled is set and whe have a stored
-  // event target from the wheel transaction, override the event target.
+  // If we have a stored event target from the wheel transaction, override
+  // the event target.
   SetFrameAndComputePresShellAndContent(groupFrame, aGUIEvent);
 }
 

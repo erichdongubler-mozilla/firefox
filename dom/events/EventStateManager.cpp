@@ -4389,8 +4389,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         case WheelPrefs::ACTION_NONE:
         default:
           bool allDeltaOverflown = false;
-          if (StaticPrefs::dom_event_wheel_event_groups_enabled() &&
-              (wheelEvent->mDeltaX != 0.0 || wheelEvent->mDeltaY != 0.0)) {
+          if (wheelEvent->mDeltaX != 0.0 || wheelEvent->mDeltaY != 0.0) {
             if (scrollTarget) {
               WheelTransaction::WillHandleDefaultAction(
                   wheelEvent, scrollTarget, mCurrentTarget);

@@ -190,9 +190,6 @@ class WheelTransaction {
    *
    * See https://w3c.github.io/uievents/#topmost-event-target and
    * https://w3c.github.io/uievents/#event-type-wheel for details.
-   *
-   * Note: this is only populated if dom.event.wheel-event-groups.enabled is
-   * set.
    */
   static AutoWeakFrame sEventTargetFrame;
   /**
