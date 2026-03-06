@@ -2432,16 +2432,10 @@ ScrollDirections AsyncPanZoomController::GetAllowedHandoffDirections(
   ScrollDirections result;
   RecursiveMutexAutoLock lock(mRecursiveMutex);
 
-  // In Fission there can be non-scrollable APZCs. It's unclear whether
-  // overscroll-behavior should be respected for these
-  // (see https://github.com/w3c/csswg-drafts/issues/6523) but
-  // we currently don't, to match existing practice.
-  const bool isScrollable = mX.CanScroll() || mY.CanScroll();
-  const bool isRoot = IsRootContent();
-  if ((!isScrollable && !isRoot) || mX.OverscrollBehaviorAllowsHandoff()) {
+  if (mX.OverscrollBehaviorAllowsHandoff()) {
     result += ScrollDirection::eHorizontal;
   }
-  if ((!isScrollable && !isRoot) || mY.OverscrollBehaviorAllowsHandoff()) {
+  if (mY.OverscrollBehaviorAllowsHandoff()) {
     // Bug 1902313: Block pull-to-refresh on pages with overflow-y:hidden
     // to match Chrome behaviour.
     bool blockPullToRefreshForOverflowHidden =
