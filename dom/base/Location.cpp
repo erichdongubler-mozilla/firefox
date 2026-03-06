@@ -185,12 +185,28 @@ void Location::SetHash(const nsACString& aHash, nsIPrincipal& aSubjectPrincipal,
     return;
   }
 
+  nsAutoCString currentHash;
+  aRv = uri->GetRef(currentHash);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+
   if (aHash.IsEmpty() || aHash.First() != '#') {
     aRv = NS_MutateURI(uri).SetRef("#"_ns + aHash).Finalize(uri);
   } else {
     aRv = NS_MutateURI(uri).SetRef(aHash).Finalize(uri);
   }
   if (NS_WARN_IF(aRv.Failed()) || !uri) {
+    return;
+  }
+
+  // If the new hash is the same as the current hash, then return without
+  // navigating to the anchor again. This bailout is necessary for
+  // compatibility with deployed content, which redundantly sets
+  // location.hash on scroll. https://github.com/whatwg/html/issues/7386
+  nsAutoCString newHash;
+  aRv = uri->GetRef(newHash);
+  if (NS_WARN_IF(aRv.Failed()) || newHash == currentHash) {
     return;
   }
 
