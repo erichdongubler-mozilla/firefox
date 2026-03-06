@@ -16,9 +16,6 @@
 
 #ifdef MOZ_GECKO_PROFILER
 #  include "platform.h"
-#  include "nsDirectoryServiceDefs.h"
-#  include "nsIFile.h"
-#  include "nsIFileURL.h"
 
 JSString* mozilla::ProfileGenerationAdditionalInformation::
     MaybeCreateJSStringFromSourceData(
@@ -32,48 +29,11 @@ JSString* mozilla::ProfileGenerationAdditionalInformation::
         return JS_NewStringCopyN(aCx, srcText.chars().get(), srcText.length());
       },
       [&](const ProfilerJSSourceData::RetrievableFile&) -> JSString* {
-        const char* filename = aSourceData.filePath();
-        // Keep it in sync with what ReadSourceFromFilename does.
-        const char* arrow;
-        while ((arrow = strstr(filename, " -> "))) {
-          filename = arrow + strlen(" -> ");
-        }
-
-        nsCOMPtr<nsIURI> uri;
-        if (NS_FAILED(
-                NS_NewURI(getter_AddRefs(uri), nsDependentCString(filename)))) {
-          return nullptr;
-        }
-        nsCString scheme;
-        if (NS_FAILED(uri->GetScheme(scheme))) {
-          return nullptr;
-        }
-        if (scheme.EqualsLiteral("file")) {
-          nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(uri);
-          if (!fileURL) {
-            return nullptr;
-          }
-          nsCOMPtr<nsIFile> scriptFile;
-          if (NS_FAILED(fileURL->GetFile(getter_AddRefs(scriptFile)))) {
-            return nullptr;
-          }
-          nsCOMPtr<nsIFile> greDir;
-          if (NS_FAILED(
-                  NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(greDir)))) {
-            return nullptr;
-          }
-          bool contains = false;
-          if (NS_FAILED(greDir->Contains(scriptFile, &contains)) || !contains) {
-            return nullptr;
-          }
-        }
-
         ProfilerJSSourceData retrievedData =
             js::RetrieveProfilerSourceContent(aCx, aSourceData.filePath());
         const auto& data = retrievedData.data();
-        if (!data.is<ProfilerJSSourceData::SourceTextUTF8>()) {
-          return nullptr;
-        }
+        MOZ_RELEASE_ASSERT(data.is<ProfilerJSSourceData::SourceTextUTF8>(),
+                           "Retrieved JS source has to be utf-8");
 
         const auto& srcText = data.as<ProfilerJSSourceData::SourceTextUTF8>();
         return JS_NewStringCopyN(aCx, srcText.chars().get(), srcText.length());
