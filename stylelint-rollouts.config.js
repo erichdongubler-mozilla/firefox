@@ -322,8 +322,6 @@ module.exports = [
       "toolkit/content/widgets/moz-reorderable-list/moz-reorderable-list.css",
       "toolkit/content/widgets/moz-toggle/moz-toggle.css",
       "toolkit/content/widgets/moz-visual-picker/moz-visual-picker-item.css",
-      "toolkit/content/widgets/panel-list/panel-item.css",
-      "toolkit/content/widgets/panel-list/panel-list.css",
       "toolkit/content/xul.css",
       "toolkit/crashreporter/content/crashes.css",
       "toolkit/mozapps/extensions/content/aboutaddons.css",
