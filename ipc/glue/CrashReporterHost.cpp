@@ -196,7 +196,7 @@ void CrashReporterHost::AddAnnotationU32(CrashReporter::Annotation aKey,
              "Wrong annotation type");
   nsAutoCString valueString;
   valueString.AppendInt(aValue);
-  mExtraAnnotations[aKey] = valueString;
+  mExtraAnnotations[aKey] = std::move(valueString);
 }
 
 void CrashReporterHost::AddAnnotationNSCString(CrashReporter::Annotation aKey,

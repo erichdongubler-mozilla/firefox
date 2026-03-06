@@ -597,7 +597,7 @@ nsContentTreeOwner::Blur() {
 
     // got it!(?)
     if (foundUs) {
-      appWindow = nextAppWindow;
+      appWindow = std::move(nextAppWindow);
       break;
     }
 

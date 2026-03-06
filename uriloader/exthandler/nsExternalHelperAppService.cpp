@@ -2552,7 +2552,7 @@ nsresult nsExternalAppHandler::ContinueSave(nsIFile* aNewFileLocation) {
 
   nsresult rv = NS_OK;
   nsCOMPtr<nsIFile> fileToUse = aNewFileLocation;
-  mFinalFileDestination = fileToUse;
+  mFinalFileDestination = std::move(fileToUse);
 
   // Move what we have in the final directory, but append .part
   // to it, to indicate that it's unfinished.  Do not call SetTarget on the
@@ -2613,7 +2613,7 @@ nsresult nsExternalAppHandler::ContinueSave(nsIFile* aNewFileLocation) {
           return NS_OK;
         }
 
-        mTempFile = movedFile;
+        mTempFile = std::move(movedFile);
       }
     }
   }
@@ -2674,7 +2674,7 @@ NS_IMETHODIMP nsExternalAppHandler::SetDownloadToLaunch(
 
   nsresult rv = fileToUse->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0600);
   if (NS_SUCCEEDED(rv)) {
-    mFinalFileDestination = fileToUse;
+    mFinalFileDestination = std::move(fileToUse);
     // launch the progress window now that the user has picked the desired
     // action.
     rv = CreateTransfer();

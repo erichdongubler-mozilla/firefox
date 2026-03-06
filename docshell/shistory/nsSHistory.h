@@ -227,7 +227,7 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   void SetEpoch(uint64_t aEpoch,
                 mozilla::Maybe<mozilla::dom::ContentParentId> aId) {
     mEpoch = aEpoch;
-    mEpochParentId = aId;
+    mEpochParentId = std::move(aId);
   }
 
   void LogHistory();

@@ -156,7 +156,7 @@ already_AddRefed<nsIInputStream> LoadFile(const char* aRelativePath) {
     rv = NS_NewBufferedInputStream(getter_AddRefs(bufStream),
                                    inputStream.forget(), 1024);
     ASSERT_TRUE_OR_RETURN(NS_SUCCEEDED(rv), nullptr);
-    inputStream = bufStream;
+    inputStream = std::move(bufStream);
   }
 
   return inputStream.forget();

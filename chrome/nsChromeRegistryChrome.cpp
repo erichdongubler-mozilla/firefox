@@ -480,7 +480,7 @@ void nsChromeRegistryChrome::ManifestContent(ManifestProcessingContext& cx,
 
   nsDependentCString packageName(package);
   PackageEntry* entry = mPackagesHash.GetOrInsertNew(packageName);
-  entry->baseURI = resolved;
+  entry->baseURI = std::move(resolved);
   entry->flags = flags;
 
   if (mDynamicRegistration) {

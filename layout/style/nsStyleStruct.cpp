@@ -3861,10 +3861,10 @@ IntrinsicSize ContainSizeAxes::ContainIntrinsicSize(
   IntrinsicSize result(aUncontainedSize);
   const auto wm = aFrame.GetWritingMode();
   if (Maybe<nscoord> containBSize = ContainIntrinsicBSize(aFrame)) {
-    result.BSize(wm) = containBSize;
+    result.BSize(wm) = std::move(containBSize);
   }
   if (Maybe<nscoord> containISize = ContainIntrinsicISize(aFrame)) {
-    result.ISize(wm) = containISize;
+    result.ISize(wm) = std::move(containISize);
   }
   return result;
 }

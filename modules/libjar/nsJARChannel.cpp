@@ -247,7 +247,7 @@ nsresult nsJARChannel::CreateJarInput(nsIZipReaderCache* jarCache,
     if (NS_FAILED(rv)) return rv;
 
     if (mInnerJarEntry.IsEmpty())
-      reader = outerReader;
+      reader = std::move(outerReader);
     else {
       reader = do_CreateInstance(kZipReaderCID, &rv);
       if (NS_FAILED(rv)) return rv;
@@ -1161,7 +1161,7 @@ nsJARChannel::AsyncOpen(nsIStreamListener* aListener) {
   // Initialize mProgressSink
   NS_QueryNotificationCallbacks(mCallbacks, mLoadGroup, mProgressSink);
 
-  mListener = listener;
+  mListener = std::move(listener);
   mIsPending = true;
 
   rv = LookupFile();

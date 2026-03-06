@@ -479,7 +479,7 @@ WidgetMouseOrPointerEvent MouseInput::ToWidgetEvent(nsIWidget* aWidget) const {
   event.mClickCount = clickCount;
   event.mInputSource = mInputSource;
   event.mFocusSequenceNumber = mFocusSequenceNumber;
-  event.mExitFrom = exitFrom;
+  event.mExitFrom = std::move(exitFrom);
   event.mClickEventPrevented = mPreventClickEvent;
   event.mIgnoreCapturingContent = mIgnoreCapturingContent;
   event.mSynthesizeMoveAfterDispatch = mSynthesizeMoveAfterDispatch;

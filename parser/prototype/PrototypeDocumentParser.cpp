@@ -100,7 +100,7 @@ PrototypeDocumentParser::Parse(nsIURI* aURL) {
     NS_ASSERTION(NS_SUCCEEDED(rv), "parser doesn't support nsIStreamListener");
     if (NS_FAILED(rv)) return rv;
 
-    mStreamListener = listener;
+    mStreamListener = std::move(listener);
 
     parser->Parse(mDocumentURI);
   }

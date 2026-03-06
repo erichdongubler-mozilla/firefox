@@ -40,7 +40,7 @@ class CTPolicyEnforcerTest : public ::testing::Test {
     SignedCertificateTimestamp sct;
     sct.version = SignedCertificateTimestamp::Version::V1;
     sct.timestamp = timestamp;
-    sct.leafIndex = leafIndex;
+    sct.leafIndex = std::move(leafIndex);
     Buffer logId;
     GetLogId(logId, logNo);
     sct.logId = std::move(logId);

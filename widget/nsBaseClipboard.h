@@ -212,7 +212,7 @@ class nsBaseClipboard : public nsIClipboard {
       mTransferable = aTransferable;
       mClipboardOwner = aClipboardOwner;
       mSequenceNumber = aSequenceNumber;
-      mInnerWindowId = aInnerWindowId;
+      mInnerWindowId = std::move(aInnerWindowId);
     }
     nsITransferable* GetTransferable() const { return mTransferable; }
     nsIClipboardOwner* GetClipboardOwner() const { return mClipboardOwner; }

@@ -490,7 +490,7 @@ static void SubtractFromExposedRegion(nsRegion* aExposedRegion,
   // its bounds either. Do let aExposedRegion get more complex if by doing so
   // we reduce its area by at least half.
   if (tmp.GetNumRects() <= 15 || tmp.Area() <= aExposedRegion->Area() / 2) {
-    *aExposedRegion = tmp;
+    *aExposedRegion = std::move(tmp);
   }
 }
 

@@ -1156,7 +1156,7 @@ nsIURI* nsHtml5TreeOpExecutor::GetViewSourceBaseURI() {
     } else {
       // Fail gracefully if the base URL isn't a view-source: URL.
       // Not sure if this can ever happen.
-      mViewSourceBaseURI = orig;
+      mViewSourceBaseURI = std::move(orig);
     }
   }
   return mViewSourceBaseURI;

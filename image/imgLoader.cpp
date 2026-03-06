@@ -3162,7 +3162,7 @@ ProxyListener::OnStartRequest(nsIRequest* aRequest) {
                                           toListener, nullptr,
                                           getter_AddRefs(fromListener));
           if (NS_SUCCEEDED(rv)) {
-            mDestListener = fromListener;
+            mDestListener = std::move(fromListener);
           }
         }
       }
