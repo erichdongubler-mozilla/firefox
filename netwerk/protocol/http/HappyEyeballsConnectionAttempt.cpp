@@ -140,7 +140,7 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
 
   nsresult rv = NS_OK;
 
-  while (true) {
+  while (!mDone) {
     happy_eyeballs::Output event{};
     nsTArray<uint8_t> echConfig;
     rv = happy_eyeballs::process_output(mHappyEyeballs, &event, &echConfig);
@@ -223,6 +223,8 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
         return NS_OK;
     }
   }
+
+  return NS_OK;
 }
 
 Result<nsIDNSService::DNSFlags, nsresult>
