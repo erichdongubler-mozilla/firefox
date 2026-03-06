@@ -3773,7 +3773,7 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
     if (!prop->configurable()) {
       redeclKind = "non-configurable global property";
     } else {
-      shadowedExistingProp = prop;
+      shadowedExistingProp = std::move(prop);
     }
   } else {
     // ES 15.1.11 step 5.c-d

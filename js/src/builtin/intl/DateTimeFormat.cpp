@@ -1621,7 +1621,7 @@ GetDateTimeFormat(const mozilla::intl::DateTimeFormat::ComponentsBag& options,
       formatOptions.minute = numericOption;
     }
     if (defaultOptions.contains(DateTimeField::Second)) {
-      formatOptions.second = numericOption;
+      formatOptions.second = std::move(numericOption);
     }
 
     // Step 17.c.
@@ -1877,7 +1877,7 @@ class TimeZoneChars final {
   bool init(JSContext* cx, JSLinearString* timeZone) {
     auto timeZoneOffset = TimeZoneOffsetString::from(timeZone);
     if (timeZoneOffset) {
-      timeZoneOffset_ = timeZoneOffset;
+      timeZoneOffset_ = std::move(timeZoneOffset);
       return true;
     }
     return timeZone_.initTwoByte(cx, timeZone);
