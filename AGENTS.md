@@ -1,6 +1,8 @@
 # Global instructions
 Limit the amount of comments you put in the code to a strict minimum. You should almost never add comments, except sometimes on non-trivial code, function definitions if the arguments aren't self-explanatory, and class definitions and their members.
 
+Do not remove existing comments unless they are directly related to what you are changing.
+
 The Firefox repository is very big and so it isn't advised to blindly run grep or rg commands without specifying a narrow set of directories to search. There are tools available to help, see next section.
 
 ## Tooling for Firefox work
