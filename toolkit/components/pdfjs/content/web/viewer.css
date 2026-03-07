@@ -4561,6 +4561,7 @@ button.hasPopupMenu{
     transparent 79%
   );
   --menuitem-text-active-fg:var(--menu-text-color);
+  --menuitem-active-border-color:var(--menuitem-border-color);
   --menuitem-focus-bg:color-mix(
     in srgb,
     var(--menu-text-color),
@@ -4576,6 +4577,7 @@ button.hasPopupMenu{
   --menuitem-border-radius:8px;
   --menu-backdrop-filter:none;
   --menu-text-color:light-dark(#15141a, #fbfbfe);
+  --menu-text-disabled-color:var(--menu-text-color);
   --menuitem-text-hover-fg:var(--menu-text-color);
   --menuitem-hover-bg:color-mix(
     in srgb,
@@ -4583,6 +4585,7 @@ button.hasPopupMenu{
     transparent 86%
   );
   --menuitem-hover-background-blend-mode:normal;
+  --disabled-opacity:0.62;
 
   @media screen and (forced-colors: active){
     --menu-bg:Canvas;
@@ -4590,14 +4593,18 @@ button.hasPopupMenu{
     --menu-box-shadow:none;
     --menu-backdrop-filter:none;
     --menu-text-color:ButtonText;
+    --menu-text-disabled-color:GrayText;
     --menu-border-color:CanvasText;
     --menuitem-border-color:none;
     --menuitem-hover-bg:SelectedItemText;
     --menuitem-text-hover-fg:SelectedItem;
     --menuitem-active-bg:SelectedItemText;
+    --menuitem-active-border-color:ButtonText;
     --menuitem-text-active-fg:SelectedItem;
+    --menuitem-focus-bg:ButtonFace;
     --menuitem-focus-outline-color:CanvasText;
     --menuitem-focus-border-color:none;
+    --disabled-opacity:1;
   }
 
   display:flex;
@@ -4627,7 +4634,7 @@ button.hasPopupMenu{
     align-items:center;
     list-style:none;
     width:100%;
-    height:24px;
+    height:26px;
     padding-inline:calc(var(--menu-mark-icon-size) + var(--menuitem-gap)) var(--menuitem-gap);
     gap:var(--menuitem-gap);
     box-sizing:border-box;
@@ -4649,8 +4656,12 @@ button.hasPopupMenu{
     }
 
     &:has(button:disabled){
-      opacity:0.62;
+      opacity:var(--disabled-opacity);
       pointer-events:none;
+
+      &:has(button.selected)::before{
+        background-color:var(--menu-text-disabled-color);
+      }
     }
 
     &:hover{
@@ -4671,6 +4682,7 @@ button.hasPopupMenu{
 
     &:active{
       background-color:var(--menuitem-active-bg);
+      border-color:var(--menuitem-active-border-color);
       > button > span{
         color:var(--menuitem-text-active-fg);
       }
@@ -4722,6 +4734,18 @@ button.hasPopupMenu{
         font-style:normal;
         font-weight:510;
         line-height:normal;
+      }
+
+      &:disabled{
+        pointer-events:none;
+
+        &:not(.noIcon)::before{
+          background-color:var(--menu-text-disabled-color);
+        }
+
+        > span{
+          color:var(--menu-text-disabled-color);
+        }
       }
     }
   }

@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.247
- * pdfjsBuild = 9f8f303b1
+ * pdfjsVersion = 5.5.278
+ * pdfjsBuild = d9b81b519
  */
 
 ;// ./src/scripting_api/constants.js
