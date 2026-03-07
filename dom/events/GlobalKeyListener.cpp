@@ -539,8 +539,7 @@ XULKeySetGlobalKeyListener::XULKeySetGlobalKeyListener(
 dom::Element* XULKeySetGlobalKeyListener::GetElement(bool* aIsDisabled) const {
   RefPtr<dom::Element> element = do_QueryReferent(mWeakPtrForElement);
   if (element && aIsDisabled) {
-    *aIsDisabled = element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
-                                        nsGkAtoms::_true, eCaseMatters);
+    *aIsDisabled = element->GetBoolAttr(nsGkAtoms::disabled);
   }
   return element.get();
 }
