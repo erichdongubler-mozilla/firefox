@@ -7,6 +7,7 @@ package org.mozilla.fenix.ui
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.FenixApplication
@@ -161,6 +162,7 @@ class SettingsGeneralTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/516078
+    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=2021700")
     @Test
     fun verifyFollowDeviceLanguageTest() {
         val frenchLocale = LocaleListCompat.forLanguageTags("fr")
