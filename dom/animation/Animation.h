@@ -435,6 +435,8 @@ class Animation : public DOMEventTargetHelper,
         PlaybackRateInternal());
   }
 
+  void UpdateNormalizedTimingForTimelineDataChange();
+
   void SetHiddenByContentVisibility(bool hidden);
   bool IsHiddenByContentVisibility() const {
     return mHiddenByContentVisibility;

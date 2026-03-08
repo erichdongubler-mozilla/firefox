@@ -216,6 +216,8 @@ void ScrollTimeline::ReplacePropertiesWith(
 ScrollTimeline::~ScrollTimeline() { Teardown(); }
 
 void ScrollTimeline::UpdateCachedCurrentTime() {
+  const auto prevCachedCurrentTime = std::move(mCachedCurrentTime);
+
   mCachedCurrentTime.reset();
 
   // If no layout box, this timeline is inactive.
@@ -247,6 +249,18 @@ void ScrollTimeline::UpdateCachedCurrentTime() {
       orientation == layers::ScrollDirection::eHorizontal
           ? scrollRange.width
           : scrollRange.height});
+
+  if (!prevCachedCurrentTime || mCachedCurrentTime->mMaxScrollOffset !=
+                                    prevCachedCurrentTime->mMaxScrollOffset) {
+    TimelineDataDidChange();
+  }
+}
+
+void ScrollTimeline::TimelineDataDidChange() {
+  for (auto* anim = mAnimationOrder.getFirst(); anim;
+       anim = static_cast<LinkedListElement<Animation>*>(anim)->getNext()) {
+    anim->UpdateNormalizedTimingForTimelineDataChange();
+  }
 }
 
 std::pair<double, double> ScrollTimeline::IntervalForAttachmentRange(
