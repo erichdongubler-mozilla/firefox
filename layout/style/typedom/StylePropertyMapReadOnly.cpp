@@ -188,7 +188,7 @@ void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
       switch (typedValue.tag) {
         case StyleTypedValue::Tag::Keyword:
           styleValue =
-              MakeRefPtr<CSSKeywordValue>(mParent, typedValue.AsKeyword());
+              MakeRefPtr<CSSKeywordValue>(mParent, typedValue.AsKeyword()._0);
           break;
 
         case StyleTypedValue::Tag::Numeric: {
