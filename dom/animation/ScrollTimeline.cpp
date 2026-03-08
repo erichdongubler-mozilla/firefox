@@ -125,17 +125,17 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::MakeNamed(
 }
 
 Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
-  if (!mCachedCurrentTime) {
+  const auto data = ComputeTimelineData();
+  if (!data) {
     return nullptr;
   }
 
-  const CurrentTimeData& data = mCachedCurrentTime.ref();
   // FIXME: Scroll offsets on the RTL container is complicated specifically on
   // mobile, see https://github.com/w3c/csswg-drafts/issues/12893. For now, we
   // use the absoluate value to make things simple.
-  double progress =
-      static_cast<double>(std::abs(data.mPosition) - data.mOffsets.mStart) /
-      static_cast<double>(data.mOffsets.mEnd - data.mOffsets.mStart);
+  const double progress =
+      static_cast<double>(std::abs(data->mPosition) - data->mStart) /
+      static_cast<double>(data->mEnd - data->mStart);
   return TimeDuration::FromMilliseconds(progress *
                                         PROGRESS_TIMELINE_DURATION_MILLISEC);
 }
@@ -215,17 +215,6 @@ void ScrollTimeline::ReplacePropertiesWith(
 
 ScrollTimeline::~ScrollTimeline() { Teardown(); }
 
-Maybe<ScrollTimeline::ScrollOffsets> ScrollTimeline::ComputeOffsets(
-    const ScrollContainerFrame* aScrollContainerFrame,
-    layers::ScrollDirection aOrientation) const {
-  const nsRect& scrollRange = aScrollContainerFrame->GetScrollRange();
-  nscoord range = aOrientation == layers::ScrollDirection::eHorizontal
-                      ? scrollRange.width
-                      : scrollRange.height;
-  MOZ_ASSERT(range > 0);
-  return Some(ScrollOffsets{0, range});
-}
-
 void ScrollTimeline::UpdateCachedCurrentTime() {
   mCachedCurrentTime.reset();
 
@@ -250,16 +239,22 @@ void ScrollTimeline::UpdateCachedCurrentTime() {
   }
 
   const nsPoint& scrollPosition = scrollContainerFrame->GetScrollPosition();
-  const Maybe<ScrollOffsets>& offsets =
-      ComputeOffsets(scrollContainerFrame, orientation);
-  if (!offsets) {
-    return;
-  }
+  const nsRect& scrollRange = scrollContainerFrame->GetScrollRange();
 
   mCachedCurrentTime.emplace(CurrentTimeData{
       orientation == layers::ScrollDirection::eHorizontal ? scrollPosition.x
                                                           : scrollPosition.y,
-      offsets.value()});
+      orientation == layers::ScrollDirection::eHorizontal
+          ? scrollRange.width
+          : scrollRange.height});
+}
+
+Maybe<ScrollTimeline::ComputedTimelineData>
+ScrollTimeline::ComputeTimelineData() const {
+  return mCachedCurrentTime
+             ? Some(ComputedTimelineData{mCachedCurrentTime->mPosition, 0,
+                                         mCachedCurrentTime->mMaxScrollOffset})
+             : Nothing();
 }
 
 const ScrollContainerFrame* ScrollTimeline::GetScrollContainerFrame() const {

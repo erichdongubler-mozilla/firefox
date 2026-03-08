@@ -53,6 +53,8 @@ class ViewTimeline final : public ScrollTimeline {
                              const PseudoStyleRequest& aPseudoRequest,
                              const StyleViewTimeline& aNew);
 
+  void UpdateCachedCurrentTime() override;
+
  private:
   ~ViewTimeline() = default;
   ViewTimeline(Document* aDocument, const Scroller& aScroller,
@@ -64,12 +66,7 @@ class ViewTimeline final : public ScrollTimeline {
         mSubjectPseudoType(aSubjectPseudoType),
         mInset(aInset) {}
 
-  Maybe<ScrollOffsets> ComputeOffsets(
-      const ScrollContainerFrame* aScrollContainerFrame,
-      layers::ScrollDirection aOrientation) const override;
-
-  ScrollOffsets ComputeInsets(const ScrollContainerFrame* aScrollContainerFrame,
-                              layers::ScrollDirection aOrientation) const;
+  Maybe<ComputedTimelineData> ComputeTimelineData() const override;
 
   // The subject element.
   // 1. For view(), the subject element is the animation target.
@@ -86,6 +83,21 @@ class ViewTimeline final : public ScrollTimeline {
   // value when using it. For now, in order to simplify the implementation, we
   // make |mInset| be fixed.
   StyleViewTimelineInset mInset;
+
+  struct CurrentTimeData {
+    // The basic scroll info.
+    ScrollTimeline::CurrentTimeData mScrollData;
+    // The size of the scrollport.
+    nscoord mScrollPortSize = 0;
+    // The position and size of the subject.
+    nscoord mSubjectPosition = 0;
+    nscoord mSubjectSize = 0;
+    // The used view-timeline-inset.
+    nscoord mInsetStart = 0;
+    nscoord mInsetEnd = 0;
+    // TODO: Bug 2018678. We may have to add more for sticky positioned element.
+  };
+  Maybe<CurrentTimeData> mCachedCurrentTime;
 };
 
 }  // namespace mozilla::dom
