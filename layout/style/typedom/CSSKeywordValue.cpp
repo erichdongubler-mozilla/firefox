@@ -9,6 +9,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSKeywordValueBinding.h"
 
@@ -18,6 +19,12 @@ CSSKeywordValue::CSSKeywordValue(nsCOMPtr<nsISupports> aParent,
                                  const nsACString& aValue)
     : CSSStyleValue(std::move(aParent), StyleValueType::KeywordValue),
       mValue(aValue) {}
+
+// static
+RefPtr<CSSKeywordValue> CSSKeywordValue::Create(
+    nsCOMPtr<nsISupports> aParent, const StyleKeywordValue& aKeywordValue) {
+  return MakeRefPtr<CSSKeywordValue>(std::move(aParent), aKeywordValue._0);
+}
 
 JSObject* CSSKeywordValue::WrapObject(JSContext* aCx,
                                       JS::Handle<JSObject*> aGivenProto) {

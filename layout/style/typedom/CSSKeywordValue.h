@@ -21,6 +21,7 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
+struct StyleKeywordValue;
 
 namespace dom {
 
@@ -29,6 +30,9 @@ class GlobalObject;
 class CSSKeywordValue final : public CSSStyleValue {
  public:
   CSSKeywordValue(nsCOMPtr<nsISupports> aParent, const nsACString& aValue);
+
+  static RefPtr<CSSKeywordValue> Create(nsCOMPtr<nsISupports> aParent,
+                                        const StyleKeywordValue& aKeywordValue);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
