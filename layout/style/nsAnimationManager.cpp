@@ -138,7 +138,8 @@ static void UpdateOldAnimationPropertiesWithNew(
     nsTArray<Keyframe>&& aNewKeyframes, bool aNewIsStylePaused,
     CSSAnimationProperties aOverriddenProperties,
     ServoCSSAnimationBuilder& aBuilder, dom::AnimationTimeline* aTimeline,
-    dom::CompositeOperation aNewComposite) {
+    dom::CompositeOperation aNewComposite,
+    dom::Animation::AnimationRange&& aTimelineRange) {
   bool animationChanged = false;
 
   // Update the old from the new so we can keep the original object
@@ -184,6 +185,11 @@ static void UpdateOldAnimationPropertiesWithNew(
   // the scroll-timeline object if their scrollers and axes are the same.
   if (aOld.GetTimeline() != aTimeline) {
     aOld.SetTimeline(aTimeline);
+    animationChanged = true;
+  }
+
+  if (aOld.GetTimelineRange() != aTimelineRange) {
+    aOld.SetTimelineRange(std::move(aTimelineRange));
     animationChanged = true;
   }
 
@@ -313,6 +319,10 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
   RefPtr<dom::AnimationTimeline> timeline =
       GetTimeline(aStyle.GetTimeline(animIdx), aPresContext, aTarget);
 
+  auto range =
+      dom::Animation::AnimationRange{aStyle.GetAnimationRangeStart(animIdx),
+                                     aStyle.GetAnimationRangeEnd(animIdx)};
+
   // Find the matching animation with animation name in the old list
   // of animations and remove the matched animation from the list.
   RefPtr<CSSAnimation> oldAnim =
@@ -330,7 +340,8 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
     // In order to honor what the spec said, we'd copy more data over.
     UpdateOldAnimationPropertiesWithNew(
         *oldAnim, std::move(timing), std::move(keyframes), isStylePaused,
-        oldAnim->GetOverriddenProperties(), aBuilder, timeline, composition);
+        oldAnim->GetOverriddenProperties(), aBuilder, timeline, composition,
+        std::move(range));
     return oldAnim.forget();
   }
 
@@ -349,6 +360,7 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
 
   animation->SetTimelineNoUpdate(timeline);
   animation->SetEffectNoUpdate(effect);
+  animation->SetTimelineRangeNoUpdate(std::move(range));
 
   if (isStylePaused) {
     animation->PauseFromStyle();

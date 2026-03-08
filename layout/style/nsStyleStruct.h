@@ -2097,11 +2097,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   const mozilla::StyleAnimationTimeline& GetTimeline(uint32_t aIndex) const {
     return mAnimations[aIndex % mAnimationTimelineCount].GetTimeline();
   }
-  const mozilla::StyleAnimationRangeStart& GetRangeStart(
+  const mozilla::StyleAnimationRangeStart& GetAnimationRangeStart(
       uint32_t aIndex) const {
     return mAnimations[aIndex % mAnimationRangeStartCount].GetRangeStart();
   }
-  const mozilla::StyleAnimationRangeEnd& GetRangeEnd(uint32_t aIndex) const {
+  const mozilla::StyleAnimationRangeEnd& GetAnimationRangeEnd(
+      uint32_t aIndex) const {
     return mAnimations[aIndex % mAnimationRangeEndCount].GetRangeEnd();
   }
 

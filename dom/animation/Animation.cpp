@@ -347,6 +347,25 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
   // MutationObservers::NotifyAnimationChanged(this) here.
 }
 
+void Animation::SetTimelineRange(AnimationRange&& aRange) {
+  SetTimelineRangeNoUpdate(std::move(aRange));
+  PostUpdate();
+}
+
+void Animation::SetTimelineRangeNoUpdate(AnimationRange&& aRange) {
+  if (mTimelineRange == aRange) {
+    return;
+  }
+
+  // TODO: Bug 2006262. We may have to rewrite this when adding the attribute:
+  // https://drafts.csswg.org/web-animations-2/#dom-animation-rangestart
+  // https://drafts.csswg.org/web-animations-2/#dom-animation-rangeend
+  //
+  // For now, this is not exposed and is set during initialization of the CSS
+  // Animations.
+  mTimelineRange = std::move(aRange);
+}
+
 // https://drafts.csswg.org/web-animations/#set-the-animation-start-time
 void Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime) {
   // Return early if the start time will not change. However, if we

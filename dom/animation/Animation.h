@@ -113,6 +113,20 @@ class Animation : public DOMEventTargetHelper,
   void SetTimeline(AnimationTimeline* aTimeline);
   void SetTimelineNoUpdate(AnimationTimeline* aTimeline);
 
+  // The helper struct to hold the animation-range values.
+  struct AnimationRange {
+    StyleAnimationRangeStart mStart = {StyleTimelineRangeName::Normal,
+                                       LengthPercentage::FromPercentage(0.0f)};
+    StyleAnimationRangeEnd mEnd = {StyleTimelineRangeName::Normal,
+                                   LengthPercentage::FromPercentage(1.0f)};
+    bool operator==(const AnimationRange& aOther) const {
+      return mStart == aOther.mStart && mEnd == aOther.mEnd;
+    }
+  };
+  const AnimationRange& GetTimelineRange() const { return mTimelineRange; }
+  void SetTimelineRange(AnimationRange&& aRange);
+  void SetTimelineRangeNoUpdate(AnimationRange&& aRange);
+
   Nullable<TimeDuration> GetStartTime() const { return mStartTime; }
   Nullable<double> GetStartTimeAsDouble() const;
   void SetStartTime(const Nullable<TimeDuration>& aNewStartTime);
@@ -532,6 +546,8 @@ class Animation : public DOMEventTargetHelper,
   Nullable<TimeDuration> mPreviousCurrentTime;  // Animation timescale
   double mPlaybackRate = 1.0;
   Maybe<double> mPendingPlaybackRate;
+
+  AnimationRange mTimelineRange;
 
   // A Promise that is replaced on each call to Play()
   // and fulfilled when Play() is successfully completed.
