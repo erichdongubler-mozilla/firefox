@@ -576,13 +576,6 @@ void Gecko_UpdateAnimations(const Element* aElement,
   const auto [element, pseudoRequest] =
       AnimationUtils::GetElementPseudoPair(aElement);
 
-  // Handle timeline scopes first, because our own scroll/view-linked animations
-  // may be affected.
-  if (aTasks & UpdateAnimationsTasks::TimelineScopes) {
-    presContext->TimelineManager()->UpdateTimelineScopes(element,
-                                                         aComputedData);
-  }
-
   // Handle scroll/view timelines first because CSS animations may refer to the
   // timeline defined by itself.
   if (aTasks & UpdateAnimationsTasks::ScrollTimelines) {

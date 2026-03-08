@@ -76,7 +76,6 @@ enum class UpdateAnimationsTasks : uint8_t {
   DisplayChangedFromNone = 1 << 4,
   ScrollTimelines = 1 << 5,
   ViewTimelines = 1 << 6,
-  TimelineScopes = 1 << 7,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(UpdateAnimationsTasks)
