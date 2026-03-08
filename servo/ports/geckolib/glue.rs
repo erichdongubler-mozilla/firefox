@@ -120,8 +120,7 @@ use style::properties::{
     PropertyDeclarationBlock, PropertyDeclarationId, PropertyDeclarationIdSet, PropertyId,
     ShorthandId, SourcePropertyDeclaration, StyleBuilder,
 };
-use style::properties_and_values::registry::{PropertyRegistration, PropertyRegistrationData};
-use style::properties_and_values::rule::Inherits as PropertyInherits;
+use style::properties_and_values::registry::PropertyRegistration;
 use style::rule_cache::RuleCacheConditions;
 use style::rule_tree::StrongRuleNode;
 use style::selector_parser::PseudoElementCascadeType;
@@ -147,8 +146,8 @@ use style::stylesheets::{
 };
 use style::stylist::{
     add_size_of_ua_cache, replace_parent_selector_with_implicit_scope, scope_root_candidates,
-    AuthorStylesEnabled, RuleInclusion, ScopeBoundsWithHashes, ScopeConditionId,
-    ScopeConditionReference, Stylist,
+    AuthorStylesEnabled, RegisterCustomPropertyResult, RuleInclusion, ScopeBoundsWithHashes,
+    ScopeConditionId, ScopeConditionReference, Stylist,
 };
 use style::thread_state;
 use style::traversal::resolve_style;
@@ -10050,17 +10049,6 @@ pub extern "C" fn Servo_ColorNameToRgb(name: &nsACString, out: &mut structs::nsc
     }
 }
 
-#[repr(u8)]
-pub enum RegisterCustomPropertyResult {
-    SuccessfullyRegistered,
-    InvalidName,
-    AlreadyRegistered,
-    InvalidSyntax,
-    NoInitialValue,
-    InvalidInitialValue,
-    InitialValueNotComputationallyIndependent,
-}
-
 /// https://drafts.css-houdini.org/css-properties-values-api-1/#the-registerproperty-function
 #[no_mangle]
 pub extern "C" fn Servo_RegisterCustomProperty(
@@ -10071,91 +10059,14 @@ pub extern "C" fn Servo_RegisterCustomProperty(
     inherits: bool,
     initial_value: Option<&nsACString>,
 ) -> RegisterCustomPropertyResult {
-    use self::RegisterCustomPropertyResult::*;
-    use style::custom_properties::SpecifiedValue;
-    use style::properties_and_values::rule::{PropertyRegistrationError, PropertyRuleName};
-    use style::properties_and_values::syntax::Descriptor;
-
     let mut per_doc_data = per_doc_data.borrow_mut();
     let url_data = unsafe { UrlExtraData::from_ptr_ref(&extra_data) };
     let name = unsafe { name.as_str_unchecked() };
     let syntax = unsafe { syntax.as_str_unchecked() };
     let initial_value = initial_value.map(|v| unsafe { v.as_str_unchecked() });
-
-    // If name is not a custom property name string, throw a SyntaxError and exit this algorithm.
-    let name = match style::custom_properties::parse_name(name) {
-        Ok(n) => Atom::from(n),
-        Err(()) => return InvalidName,
-    };
-
-    // If property set already contains an entry with name as its property name (compared
-    // codepoint-wise), throw an InvalidModificationError and exit this algorithm.
-    if per_doc_data
-        .stylist
-        .custom_property_script_registry()
-        .get(&name)
-        .is_some()
-    {
-        return AlreadyRegistered;
-    }
-    // Attempt to consume a syntax definition from syntax. If it returns failure, throw a
-    // SyntaxError. Otherwise, let syntax definition be the returned syntax definition.
-    let Ok(syntax) = Descriptor::from_str(syntax, /* preserve_specified = */ false) else {
-        return InvalidSyntax;
-    };
-
-    let initial_value = match initial_value {
-        Some(v) => {
-            let mut input = ParserInput::new(v);
-            let parsed = Parser::new(&mut input)
-                .parse_entirely(|input| {
-                    input.skip_whitespace();
-                    SpecifiedValue::parse(input, None, url_data).map(Arc::new)
-                })
-                .ok();
-            if parsed.is_none() {
-                return InvalidInitialValue;
-            }
-            parsed
-        },
-        None => None,
-    };
-
-    if let Err(error) =
-        PropertyRegistration::validate_initial_value(&syntax, initial_value.as_deref())
-    {
-        return match error {
-            PropertyRegistrationError::InitialValueNotComputationallyIndependent => {
-                InitialValueNotComputationallyIndependent
-            },
-            PropertyRegistrationError::InvalidInitialValue => InvalidInitialValue,
-            PropertyRegistrationError::NoInitialValue => NoInitialValue,
-        };
-    }
-
     per_doc_data
         .stylist
-        .custom_property_script_registry_mut()
-        .register(PropertyRegistration {
-            name: PropertyRuleName(name),
-            data: PropertyRegistrationData {
-                syntax,
-                inherits: if inherits {
-                    PropertyInherits::True
-                } else {
-                    PropertyInherits::False
-                },
-                initial_value,
-            },
-            url_data: url_data.clone(),
-            source_location: SourceLocation { line: 0, column: 0 },
-        });
-
-    per_doc_data
-        .stylist
-        .rebuild_initial_values_for_custom_properties();
-
-    SuccessfullyRegistered
+        .register_custom_property(url_data, name, syntax, inherits, initial_value)
 }
 
 #[repr(C)]
