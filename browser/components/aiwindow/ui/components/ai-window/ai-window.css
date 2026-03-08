@@ -30,24 +30,27 @@
     "sidebar-header"
     "browser"
     "prompts"
-    "smartbar";
-  grid-template-rows: auto 1fr auto auto;
+    "smartbar"
+    "disclaimer";
+  grid-template-rows: auto 1fr auto auto auto;
 }
 
 /* Expands browser to full height and removes prompts from grid when chat starts */
 :host(.chat-active) {
   grid-template-areas:
     "browser"
-    "smartbar";
-  grid-template-rows: 1fr auto;
+    "smartbar"
+    "disclaimer";
+  grid-template-rows: 1fr auto auto;
 }
 
 :host([mode="sidebar"].chat-active) {
   grid-template-areas:
     "sidebar-header"
     "browser"
-    "smartbar";
-  grid-template-rows: auto 1fr auto;
+    "smartbar"
+    "disclaimer";
+  grid-template-rows: auto 1fr auto auto;
 }
 
 #browser-container {
@@ -64,7 +67,7 @@
 #smartbar-wrapper {
   grid-area: smartbar;
   height: var(--smartbar-height, auto);
-  margin-block-end: var(--space-medium);
+  margin-block-end: var(--space-small);
   /* smartbar max width must be the same as the child context (ai-window-content.css) container */
   max-width: var(--smartwindow-content-max-width);
   position: relative;
@@ -74,6 +77,15 @@
 #ai-window-smartbar {
   position: absolute;
   z-index: 1;
+}
+
+.disclaimer {
+  --disclaimer-text-color: light-dark(var(--color-gray-60), var(--color-gray-30));
+  color: var(--disclaimer-text-color);
+  font-size: var(--font-size-small);
+  grid-area: disclaimer;
+  margin-block-end: var(--space-small);
+  user-select: none;
 }
 
 :host([mode="fullpage"]) #ai-window-smartbar {

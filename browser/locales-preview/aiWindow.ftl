@@ -132,6 +132,11 @@ smartwindow-footer-history =
     .aria-label = History
     .label = History
 
+## Disclaimer
+## Text displayed to user to warn user about potential mistakes.
+
+smartwindow-disclaimer = AI can make mistakes
+
 ## FirefoxView Chats
 ## Chats in this context refers to chats saved from the Smart Window Assistant
 

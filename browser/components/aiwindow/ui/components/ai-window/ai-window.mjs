@@ -97,6 +97,7 @@ export class AIWindow extends MozLitElement {
     mode: { type: String, reflect: true }, // sidebar | fullpage
     showStarters: { type: Boolean, state: true },
     showFooter: { type: Boolean, state: true },
+    showDisclaimer: { type: Boolean, state: true },
   };
 
   #browser;
@@ -254,6 +255,7 @@ export class AIWindow extends MozLitElement {
     this.mode = this.#detectModeFromContext();
     this.showStarters = false;
     this.showFooter = this.mode === FULLPAGE;
+    this.showDisclaimer = this.mode !== FULLPAGE;
 
     // Apply chat-active immediately if restoring a conversation via back navigation
     // to prevent layout flash. Only check the attribute (not history.state) since
@@ -949,6 +951,7 @@ export class AIWindow extends MozLitElement {
     }
     this.showStarters = false;
     this.showFooter = false;
+    this.showDisclaimer = true;
     this.#updateTabFavicon();
     this.#setBrowserContainerActiveState(true);
 
@@ -1217,6 +1220,7 @@ export class AIWindow extends MozLitElement {
       // if convo has messages before hiding the footer element.
       this.showFooter = false;
 
+      this.showDisclaimer = true;
       this.showStarters = false;
       const actor = this.#getAIChatContentActor();
       if (this.#browser && actor) {
@@ -1444,6 +1448,12 @@ export class AIWindow extends MozLitElement {
               @SmartWindowPrompt:prompt-selected=${this.#handlePromptSelected}
             ></smartwindow-prompts>
           `
+        : ""}
+      ${this.showDisclaimer
+        ? html`<div
+            data-l10n-id="smartwindow-disclaimer"
+            class="disclaimer"
+          ></div>`
         : ""}
       ${this.showFooter ? html`<smartwindow-footer></smartwindow-footer>` : ""}
     `;
