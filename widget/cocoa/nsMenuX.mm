@@ -1229,7 +1229,7 @@ void nsMenuX::ObserveContentInserted(dom::Document* aDocument,
       // is open. On some versions of macOS (at least macOS 15 and 26), doing so
       // will clobber the item added and the existing items after it. Recreating
       // the menu item after insertion, and every menu item after it, works
-      // around this issue.
+      // around this issue. See bug 1993731 as an example.
       RefreshMenuChildren(*child);
     }
   }

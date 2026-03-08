@@ -300,7 +300,7 @@ void NativeMenuMac::ShowMenuAnchored(nsIFrame* aClickedFrame,
   }
 
   // Let the MOZMenuOpeningCoordinator do the actual opening, so that this
-  // ShowAsAnchoredMenu call does not spawn a nested event loop, which would be
+  // ShowMenuAnchored call does not spawn a nested event loop, which would be
   // surprising to our callers.
   mOpeningHandle = [MOZMenuOpeningCoordinator.sharedInstance
       asynchronouslyOpenMenu:menu
@@ -330,7 +330,7 @@ void NativeMenuMac::ShowMenuAtPosition(nsIFrame* aClickedFrame,
   NSPoint locationOnScreen = nsCocoaUtils::GeckoPointToCocoaPoint(desktopPoint);
 
   // Let the MOZMenuOpeningCoordinator do the actual opening, so that this
-  // ShowAsContextMenu call does not spawn a nested event loop, which would be
+  // ShowMenuAtPosition call does not spawn a nested event loop, which would be
   // surprising to our callers.
   mOpeningHandle = [MOZMenuOpeningCoordinator.sharedInstance
       asynchronouslyOpenMenu:menu
