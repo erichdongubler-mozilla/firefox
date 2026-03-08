@@ -210,6 +210,22 @@ HTMLEditUtils::IsPreformattedLineBreakFollowedByCurrentBlockBoundary(
     Element**);
 
 template bool
+HTMLEditUtils::IsPreformattedLineBreakFollowingCurrentBlockBoundary(
+    const EditorDOMPoint&, SkipWhiteSpaceStyleCheck, const Element*, Element**);
+template bool
+HTMLEditUtils::IsPreformattedLineBreakFollowingCurrentBlockBoundary(
+    const EditorRawDOMPoint&, SkipWhiteSpaceStyleCheck, const Element*,
+    Element**);
+template bool
+HTMLEditUtils::IsPreformattedLineBreakFollowingCurrentBlockBoundary(
+    const EditorDOMPointInText&, SkipWhiteSpaceStyleCheck, const Element*,
+    Element**);
+template bool
+HTMLEditUtils::IsPreformattedLineBreakFollowingCurrentBlockBoundary(
+    const EditorRawDOMPointInText&, SkipWhiteSpaceStyleCheck, const Element*,
+    Element**);
+
+template bool
 HTMLEditUtils::IsPreformattedLineBreakFollowedByOtherBlockBoundary(
     const EditorDOMPoint&, SkipWhiteSpaceStyleCheck, const Element*, Element**);
 template bool
@@ -1146,6 +1162,62 @@ bool HTMLEditUtils::IsBRElementFollowedByLineBoundary(
     *aFollowingBlockBoundaryElement = followingThing.ReachedBlockBoundary()
                                           ? followingThing.ElementPtr()
                                           : nullptr;
+  }
+  return true;
+}
+
+bool HTMLEditUtils::IsBRElementFollowingCurrentBlockBoundary(
+    const dom::HTMLBRElement& aBRElement,
+    const Element* aAncestorLimiter /* = nullptr */,
+    Element** aPrecedingBlockBoundaryElement /* = nullptr */) {
+  if (aPrecedingBlockBoundaryElement) {
+    *aPrecedingBlockBoundaryElement = nullptr;
+  }
+  const WSScanResult precedingThing =
+      WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+          // Even if there is a visible empty inline elements, we can ignore
+          // them because they will be removed together when deleting something
+          // across the element.
+          {}, EditorRawDOMPoint(&aBRElement), aAncestorLimiter);
+  if (!precedingThing.ReachedCurrentBlockBoundary()) {
+    return false;
+  }
+  if (aPrecedingBlockBoundaryElement) {
+    *aPrecedingBlockBoundaryElement = precedingThing.ElementPtr();
+  }
+  return true;
+}
+
+template <typename EditorDOMPointType>
+bool HTMLEditUtils::IsPreformattedLineBreakFollowingCurrentBlockBoundary(
+    const EditorDOMPointType& aPoint,
+    SkipWhiteSpaceStyleCheck
+        aSkipWhiteSpaceStyleCheck /* = SkipWhiteSpaceStyleCheck::No */,
+    const Element* aAncestorLimiter /* = nullptr */,
+    Element** aPrecedingBlockBoundaryElement /* = nullptr */) {
+  if (aPrecedingBlockBoundaryElement) {
+    *aPrecedingBlockBoundaryElement = nullptr;
+  }
+  if (!aPoint.IsInTextNode() || aPoint.IsEndOfContainer() ||
+      !aPoint.IsCharNewLine()) {
+    return false;
+  }
+  if (aSkipWhiteSpaceStyleCheck == SkipWhiteSpaceStyleCheck::No &&
+      !EditorUtils::IsNewLinePreformatted(
+          *aPoint.template ContainerAs<Text>())) {
+    return false;
+  }
+  const WSScanResult precedingThing =
+      WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+          // Even if there is a visible empty inline elements, we can ignore
+          // them because they will be removed together when deleting something
+          // across the element.
+          {}, aPoint, aAncestorLimiter);
+  if (!precedingThing.ReachedCurrentBlockBoundary()) {
+    return false;
+  }
+  if (aPrecedingBlockBoundaryElement) {
+    *aPrecedingBlockBoundaryElement = precedingThing.ElementPtr();
   }
   return true;
 }

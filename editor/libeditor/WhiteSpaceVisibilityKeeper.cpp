@@ -2185,25 +2185,31 @@ WhiteSpaceVisibilityKeeper::InsertTextOrInsertOrUpdateCompositionString(
     if (nextThing.MaybeIgnoredLineBreak().isSome()) {
       const EditorLineBreak& lineBreak =
           nextThing.MaybeIgnoredLineBreak().ref();
-      const RefPtr<const Element> ancestorLimiterToDeleteEmptyInlines =
-          lineBreak.ContentRef().IsInclusiveDescendantOf(
-              pointToInsert.GetContainer())
-              ? pointToInsert.GetContainerOrContainerParentElement()
-              : &aEditingHost;
-      {
-        AutoTrackDOMPoint trackCurrentPoint(aHTMLEditor.RangeUpdaterRef(),
-                                            &pointToInsert);
-        Result<EditorDOMPoint, nsresult> deleteLineBreakResultOrError =
-            aHTMLEditor.DeleteLineBreakWithTransaction(
-                nextThing.MaybeIgnoredLineBreak().ref(), nsIEditor::eStrip,
-                *ancestorLimiterToDeleteEmptyInlines);
-        if (deleteLineBreakResultOrError.isErr()) [[unlikely]] {
-          NS_WARNING("HTMLEditor::DeleteLineBreakWithTransaction() failed");
-          return deleteLineBreakResultOrError.propagateErr();
+      // When user inserting content, the web app may expect that nothing
+      // extant content will be deleted. Therefore, we should preserve
+      // preformatted linefeed at least. However, we should delete it if it's a
+      // padding for empty block for the compatibility with the other browsers.
+      if (lineBreak.IsHTMLBRElement() || lineBreak.IsPaddingForEmptyBlock()) {
+        const RefPtr<const Element> ancestorLimiterToDeleteEmptyInlines =
+            lineBreak.ContentRef().IsInclusiveDescendantOf(
+                pointToInsert.GetContainer())
+                ? pointToInsert.GetContainerOrContainerParentElement()
+                : &aEditingHost;
+        {
+          AutoTrackDOMPoint trackCurrentPoint(aHTMLEditor.RangeUpdaterRef(),
+                                              &pointToInsert);
+          Result<EditorDOMPoint, nsresult> deleteLineBreakResultOrError =
+              aHTMLEditor.DeleteLineBreakWithTransaction(
+                  nextThing.MaybeIgnoredLineBreak().ref(), nsIEditor::eStrip,
+                  *ancestorLimiterToDeleteEmptyInlines);
+          if (deleteLineBreakResultOrError.isErr()) [[unlikely]] {
+            NS_WARNING("HTMLEditor::DeleteLineBreakWithTransaction() failed");
+            return deleteLineBreakResultOrError.propagateErr();
+          }
         }
-      }
-      if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc())) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+        if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc())) {
+          return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+        }
       }
     }
   }

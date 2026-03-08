@@ -940,7 +940,12 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
             .NextPointOrAfterContainer<EditorDOMPoint>();
     if (MOZ_LIKELY(afterLastInsertedContent.IsInContentNode())) {
       nsresult rv = mHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
-          afterLastInsertedContent, mEditingHost);
+          afterLastInsertedContent,
+          // When user inserting content, the web app may expect that nothing
+          // extant content will be deleted. Therefore, we should preserve
+          // preformatted linefeed at least.
+          PreservePreformattedLineBreak::Yes, PaddingForEmptyBlock::Significant,
+          mEditingHost);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");

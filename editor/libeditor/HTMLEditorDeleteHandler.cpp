@@ -766,7 +766,8 @@ Result<CaretPoint, nsresult> HTMLEditor::DeleteRangesWithTransaction(
           AutoTrackDOMPoint trackPointToInsertLineBreak(
               RangeUpdaterRef(), &pointToInsertLineBreak);
           nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
-              pointToInsertLineBreak, *editingHost);
+              pointToInsertLineBreak, PreservePreformattedLineBreak::No,
+              PaddingForEmptyBlock::Significant, *editingHost);
           if (NS_FAILED(rv)) {
             NS_WARNING(
                 "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
@@ -1970,7 +1971,8 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAtomicContent(
     AutoTrackDOMPoint trackPointToPutCaret(aHTMLEditor.RangeUpdaterRef(),
                                            &pointToPutCaret);
     nsresult rv = aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
-        pointToPutCaret, aEditingHost);
+        pointToPutCaret, PreservePreformattedLineBreak::No,
+        PaddingForEmptyBlock::Significant, aEditingHost);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
       return Err(rv);
@@ -4811,7 +4813,8 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
                 return NS_OK;
               }
               nsresult rv = aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
-                  aPoint, aEditingHost);
+                  aPoint, PreservePreformattedLineBreak::No,
+                  PaddingForEmptyBlock::Significant, aEditingHost);
               NS_WARNING_ASSERTION(
                   NS_SUCCEEDED(rv),
                   "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
@@ -5092,7 +5095,8 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::DeleteUnnecessaryNodes(
   if (MOZ_LIKELY(range.EndRef().IsInContentNode())) {
     AutoTrackDOMRange trackRange(aHTMLEditor.RangeUpdaterRef(), &range);
     nsresult rv = aHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
-        range.EndRef(), aEditingHost);
+        range.EndRef(), PreservePreformattedLineBreak::No,
+        PaddingForEmptyBlock::Significant, aEditingHost);
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
       return Err(rv);

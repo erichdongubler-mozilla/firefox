@@ -45,6 +45,23 @@ bool EditorLineBreakBase<ContentType>::IsFollowedByCurrentBlockBoundary(
                        aAncestorLimiter);
 }
 
+NS_INSTANTIATE_EDITOR_LINE_BREAK_CONST_METHOD(bool,
+                                              IsFollowingCurrentBlockBoundary,
+                                              const Element*);
+
+template <typename ContentType>
+bool EditorLineBreakBase<ContentType>::IsFollowingCurrentBlockBoundary(
+    const dom::Element* aAncestorLimiter /* = nullptr */) const {
+  return IsHTMLBRElement()
+             ? HTMLEditUtils::IsBRElementFollowingCurrentBlockBoundary(
+                   BRElementRef(), aAncestorLimiter)
+             : HTMLEditUtils::
+                   IsPreformattedLineBreakFollowingCurrentBlockBoundary(
+                       To<EditorRawDOMPoint>(),
+                       HTMLEditUtils::SkipWhiteSpaceStyleCheck::Yes,
+                       aAncestorLimiter);
+}
+
 NS_INSTANTIATE_EDITOR_LINE_BREAK_CONST_METHOD(bool, IsFollowedByLineBoundary,
                                               const Element*);
 
@@ -88,6 +105,16 @@ bool EditorLineBreakBase<ContentType>::IsFollowingAnotherLineBreak(
                    To<EditorRawDOMPoint>(),
                    HTMLEditUtils::SkipWhiteSpaceStyleCheck::Yes,
                    aAncestorLimiter);
+}
+
+NS_INSTANTIATE_EDITOR_LINE_BREAK_CONST_METHOD(bool, IsPaddingForEmptyBlock,
+                                              const Element*);
+
+template <typename ContentType>
+bool EditorLineBreakBase<ContentType>::IsPaddingForEmptyBlock(
+    const dom::Element* aAncestorLimiter /* = nullptr */) const {
+  return IsFollowedByCurrentBlockBoundary() &&
+         IsFollowingCurrentBlockBoundary();
 }
 
 NS_INSTANTIATE_EDITOR_LINE_BREAK_CONST_METHOD(bool, IsUnnecessary,

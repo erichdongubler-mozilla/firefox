@@ -266,11 +266,15 @@ class EditorLineBreakBase {
       const dom::Element* aAncestorLimiter = nullptr) const;
   [[nodiscard]] bool IsFollowedByCurrentBlockBoundary(
       const dom::Element* aAncestorLimiter = nullptr) const;
+  [[nodiscard]] bool IsFollowingCurrentBlockBoundary(
+      const dom::Element* aAncestorLimiter = nullptr) const;
   [[nodiscard]] bool IsFollowedByLineBoundary(
       const dom::Element* aAncestorLimiter = nullptr) const;
   [[nodiscard]] bool IsFollowingLineBoundary(
       const dom::Element* aAncestorLimiter = nullptr) const;
   [[nodiscard]] bool IsFollowingAnotherLineBreak(
+      const dom::Element* aAncestorLimiter = nullptr) const;
+  [[nodiscard]] bool IsPaddingForEmptyBlock(
       const dom::Element* aAncestorLimiter = nullptr) const;
   [[nodiscard]] bool IsUnnecessary(
       PaddingForEmptyBlock aPaddingForEmptyBlock,

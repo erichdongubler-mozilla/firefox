@@ -2378,8 +2378,7 @@ TEST(HTMLEditUtilsTest, BRElementPosition)
            BRElementPositionTest{u"<div><br><br></div>",
                                  "div > br + br",
                                  {LineBreakIs::FollowedByCurrentBlockBoundary,
-                                  LineBreakIs::FollowingLineBreak,
-                                  LineBreakIs::FollowingCurrentBlockBoundary},
+                                  LineBreakIs::FollowingLineBreak},
                                  true,
                                  false},
            BRElementPositionTest{u"<div><br><div><br></div></div>",
@@ -2446,6 +2445,11 @@ TEST(HTMLEditUtilsTest, BRElementPosition)
         testData.mExpectedPosition.contains(
             LineBreakIs::FollowedByCurrentBlockBoundary))
         << "IsBRElementFollowedByCurrentBlockBoundary: " << testData;
+    EXPECT_EQ(
+        HTMLEditUtils::IsBRElementFollowingCurrentBlockBoundary(*brElement),
+        testData.mExpectedPosition.contains(
+            LineBreakIs::FollowingCurrentBlockBoundary))
+        << "IsBRElementFollowingCurrentBlockBoundary: " << testData;
     EXPECT_EQ(
         HTMLEditUtils::IsBRElementFollowedByOtherBlockBoundary(*brElement),
         testData.mExpectedPosition.contains(
