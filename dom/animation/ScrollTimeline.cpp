@@ -125,17 +125,17 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::MakeNamed(
 }
 
 Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
-  const auto& data = ComputeTimelineData();
-  if (!data) {
+  if (!mCachedCurrentTime) {
     return nullptr;
   }
 
+  const CurrentTimeData& data = mCachedCurrentTime.ref();
   // FIXME: Scroll offsets on the RTL container is complicated specifically on
   // mobile, see https://github.com/w3c/csswg-drafts/issues/12893. For now, we
   // use the absoluate value to make things simple.
-  const double progress =
-      static_cast<double>(std::abs(data->mPosition) - data->mStart) /
-      static_cast<double>(data->mEnd - data->mStart);
+  double progress =
+      static_cast<double>(std::abs(data.mPosition) - data.mOffsets.mStart) /
+      static_cast<double>(data.mOffsets.mEnd - data.mOffsets.mStart);
   return TimeDuration::FromMilliseconds(progress *
                                         PROGRESS_TIMELINE_DURATION_MILLISEC);
 }
@@ -158,12 +158,6 @@ void ScrollTimeline::WillRefresh() {
 
   TickState dummyState;
   Tick(dummyState);
-}
-
-bool ScrollTimeline::SourceMatches(
-    const Element* aElement, const PseudoStyleRequest& aPseudoRequest) const {
-  return mSource.mElement == aElement &&
-         mSource.mPseudoType == aPseudoRequest.mType;
 }
 
 layers::ScrollDirection ScrollTimeline::Axis() const {
@@ -221,9 +215,18 @@ void ScrollTimeline::ReplacePropertiesWith(
 
 ScrollTimeline::~ScrollTimeline() { Teardown(); }
 
-void ScrollTimeline::UpdateCachedCurrentTime() {
-  const auto prevCachedCurrentTime = std::move(mCachedCurrentTime);
+Maybe<ScrollTimeline::ScrollOffsets> ScrollTimeline::ComputeOffsets(
+    const ScrollContainerFrame* aScrollContainerFrame,
+    layers::ScrollDirection aOrientation) const {
+  const nsRect& scrollRange = aScrollContainerFrame->GetScrollRange();
+  nscoord range = aOrientation == layers::ScrollDirection::eHorizontal
+                      ? scrollRange.width
+                      : scrollRange.height;
+  MOZ_ASSERT(range > 0);
+  return Some(ScrollOffsets{0, range});
+}
 
+void ScrollTimeline::UpdateCachedCurrentTime() {
   mCachedCurrentTime.reset();
 
   // If no layout box, this timeline is inactive.
@@ -247,53 +250,16 @@ void ScrollTimeline::UpdateCachedCurrentTime() {
   }
 
   const nsPoint& scrollPosition = scrollContainerFrame->GetScrollPosition();
-  const nsRect& scrollRange = scrollContainerFrame->GetScrollRange();
+  const Maybe<ScrollOffsets>& offsets =
+      ComputeOffsets(scrollContainerFrame, orientation);
+  if (!offsets) {
+    return;
+  }
 
   mCachedCurrentTime.emplace(CurrentTimeData{
       orientation == layers::ScrollDirection::eHorizontal ? scrollPosition.x
                                                           : scrollPosition.y,
-      orientation == layers::ScrollDirection::eHorizontal
-          ? scrollRange.width
-          : scrollRange.height});
-
-  if (!prevCachedCurrentTime || mCachedCurrentTime->mMaxScrollOffset !=
-                                    prevCachedCurrentTime->mMaxScrollOffset) {
-    TimelineDataDidChange();
-  }
-}
-
-void ScrollTimeline::TimelineDataDidChange() {
-  for (auto* anim = mAnimationOrder.getFirst(); anim;
-       anim = static_cast<LinkedListElement<Animation>*>(anim)->getNext()) {
-    anim->UpdateNormalizedTimingForTimelineDataChange();
-  }
-}
-
-std::pair<double, double> ScrollTimeline::IntervalForAttachmentRange(
-    const AnimationRange& aStyleRange) const {
-  if (!mCachedCurrentTime || aStyleRange.IsNormal()) {
-    return {0.0, 1.0};
-  }
-
-  auto computeRangeEdgeAsPercentage =
-      [&](const StyleGenericAnimationRangeValue<StyleLengthPercentage>&
-              aValue) {
-        const auto range = mCachedCurrentTime->mMaxScrollOffset;
-        return static_cast<double>(aValue.lp.Resolve(range)) /
-               static_cast<double>(range);
-      };
-  // We skip the unsupported timeline range anmes here. The spec doesn't address
-  // this but other browsers agree with this behavior now.
-  return {computeRangeEdgeAsPercentage(aStyleRange.mStart),
-          computeRangeEdgeAsPercentage(aStyleRange.mEnd)};
-};
-
-Maybe<ScrollTimeline::ComputedTimelineData>
-ScrollTimeline::ComputeTimelineData() const {
-  return mCachedCurrentTime
-             ? Some(ComputedTimelineData{mCachedCurrentTime->mPosition, 0,
-                                         mCachedCurrentTime->mMaxScrollOffset})
-             : Nothing();
+      offsets.value()});
 }
 
 const ScrollContainerFrame* ScrollTimeline::GetScrollContainerFrame() const {
