@@ -190,6 +190,80 @@ void ViewTimeline::UpdateCachedCurrentTime() {
   }
 }
 
+/* static */
+std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
+    const StyleTimelineRangeName aName,
+    const ScrollTimeline::ComputedTimelineData& aData) {
+  nscoord rangeStart = 0.0;
+  switch (aName) {
+    case StyleTimelineRangeName::None:
+    case StyleTimelineRangeName::Normal:
+    case StyleTimelineRangeName::Cover:
+      rangeStart = aData.mStart;
+      break;
+    case StyleTimelineRangeName::Contain:
+    case StyleTimelineRangeName::Entry:
+    case StyleTimelineRangeName::Exit:
+    case StyleTimelineRangeName::EntryCrossing:
+    case StyleTimelineRangeName::ExitCrossing:
+    case StyleTimelineRangeName::Scroll:
+      // TODO: Bug 2015125, Bug 2015128, Bug 2015130, Bug 2015131. Implement
+      // the other keywords.
+      break;
+  }
+
+  nscoord rangeEnd = 1.0;
+  switch (aName) {
+    case StyleTimelineRangeName::None:
+    case StyleTimelineRangeName::Normal:
+    case StyleTimelineRangeName::Cover:
+      rangeEnd = aData.mEnd;
+      break;
+    case StyleTimelineRangeName::Contain:
+    case StyleTimelineRangeName::Entry:
+    case StyleTimelineRangeName::Exit:
+    case StyleTimelineRangeName::EntryCrossing:
+    case StyleTimelineRangeName::ExitCrossing:
+    case StyleTimelineRangeName::Scroll:
+      // TODO: Bug 2015125, Bug 2015128, Bug 2015130, Bug 2015131. Implement
+      // the other keywords.
+      break;
+  }
+
+  // FIXME: Bug 2015125. Check the case for RTL for horizontal axis. Perhaps we
+  // have to swap these two values.
+  return {rangeStart, rangeEnd};
+}
+
+// TODO: Bug 2020822. We have to align the start time of animation with this
+// attachment range. Otherwise, the animation-range-start doesn't work.
+std::pair<double, double> ViewTimeline::IntervalForAttachmentRange(
+    const AnimationRange& aStyleRange) const {
+  const auto& data = ComputeTimelineData();
+  if (!data) {
+    // Return the default, [0%, 100%].
+    return {0, 1.0};
+  }
+
+  // Returns the percentage (in double) for this StyleAnimationValue based on
+  // the full timeline range (i.e. `cover` for view-timeline).
+  auto computeNamedRangeEdgeAsPercentage =
+      [&](const StyleGenericAnimationRangeValue<StyleLengthPercentage>&
+              aValue) {
+        const auto [nameStart, nameEnd] =
+            IntervalForTimelineRangeName(aValue.name, *data);
+        const auto timelineRange = data->mEnd - data->mStart;
+        const auto nameRange = nameEnd - nameStart;
+        const auto positionInNameRange =
+            nameStart + aValue.lp.Resolve(nameRange);
+        const auto positionInTimeline = positionInNameRange - data->mStart;
+        return static_cast<double>(positionInTimeline) /
+               static_cast<double>(timelineRange);
+      };
+  return {computeNamedRangeEdgeAsPercentage(aStyleRange.mStart),
+          computeNamedRangeEdgeAsPercentage(aStyleRange.mEnd)};
+}
+
 Maybe<ScrollTimeline::ComputedTimelineData> ViewTimeline::ComputeTimelineData()
     const {
   if (!mCachedCurrentTime) {

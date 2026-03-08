@@ -139,7 +139,7 @@ static void UpdateOldAnimationPropertiesWithNew(
     CSSAnimationProperties aOverriddenProperties,
     ServoCSSAnimationBuilder& aBuilder, dom::AnimationTimeline* aTimeline,
     dom::CompositeOperation aNewComposite,
-    dom::Animation::AnimationRange&& aTimelineRange) {
+    dom::AnimationRange&& aTimelineRange) {
   bool animationChanged = false;
 
   // Update the old from the new so we can keep the original object
@@ -319,9 +319,8 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
   RefPtr<dom::AnimationTimeline> timeline =
       GetTimeline(aStyle.GetTimeline(animIdx), aPresContext, aTarget);
 
-  auto range =
-      dom::Animation::AnimationRange{aStyle.GetAnimationRangeStart(animIdx),
-                                     aStyle.GetAnimationRangeEnd(animIdx)};
+  auto range = dom::AnimationRange{aStyle.GetAnimationRangeStart(animIdx),
+                                   aStyle.GetAnimationRangeEnd(animIdx)};
 
   // Find the matching animation with animation name in the old list
   // of animations and remove the matched animation from the list.

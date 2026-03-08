@@ -125,7 +125,7 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::MakeNamed(
 }
 
 Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
-  const auto data = ComputeTimelineData();
+  const auto& data = ComputeTimelineData();
   if (!data) {
     return nullptr;
   }
@@ -248,6 +248,25 @@ void ScrollTimeline::UpdateCachedCurrentTime() {
           ? scrollRange.width
           : scrollRange.height});
 }
+
+std::pair<double, double> ScrollTimeline::IntervalForAttachmentRange(
+    const AnimationRange& aStyleRange) const {
+  if (!mCachedCurrentTime || aStyleRange.IsNormal()) {
+    return {0.0, 1.0};
+  }
+
+  auto computeRangeEdgeAsPercentage =
+      [&](const StyleGenericAnimationRangeValue<StyleLengthPercentage>&
+              aValue) {
+        const auto range = mCachedCurrentTime->mMaxScrollOffset;
+        return static_cast<double>(aValue.lp.Resolve(range)) /
+               static_cast<double>(range);
+      };
+  // We skip the unsupported timeline range anmes here. The spec doesn't address
+  // this but other browsers agree with this behavior now.
+  return {computeRangeEdgeAsPercentage(aStyleRange.mStart),
+          computeRangeEdgeAsPercentage(aStyleRange.mEnd)};
+};
 
 Maybe<ScrollTimeline::ComputedTimelineData>
 ScrollTimeline::ComputeTimelineData() const {
