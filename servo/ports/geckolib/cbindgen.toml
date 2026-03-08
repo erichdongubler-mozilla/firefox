@@ -1138,6 +1138,12 @@ renaming_overrides_prefixing = true
   inline StyleGenericViewTimelineInset();
 """
 
+"GenericAnimationRangeValue" = """
+ public:
+  static StyleGenericAnimationRangeValue<LengthPercent> DefaultStart();
+  static StyleGenericAnimationRangeValue<LengthPercent> DefaultEnd();
+"""
+
 "Time" = """
  float ToSeconds() const { return seconds; }
  float ToMilliseconds() const { return seconds * 1000.0f; }
