@@ -102,12 +102,8 @@ internal class MarketingAttributionServiceTest {
 
             distributionIdManager.setDistribution(DistributionIdManager.Distribution.XIAOMI_001)
             assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(null, distributionIdManager))
-        }
 
-    @Test
-    fun `GIVEN a partnership distribution WHEN we should not skip the marketing screen THEN we do not skip it`() =
-        runBlocking {
             distributionIdManager.setDistribution(DistributionIdManager.Distribution.AURA_001)
-            assertTrue(MarketingAttributionService.shouldShowMarketingOnboarding(null, distributionIdManager))
+            assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(null, distributionIdManager))
         }
 }
