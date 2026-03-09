@@ -544,11 +544,11 @@ JS_PUBLIC_API void js::TraceGrayWrapperTargets(JSTracer* trc, Zone* zone) {
   JS::AutoSuppressGCAnalysis nogc;
 
   for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next()) {
-    for (Compartment::ObjectWrapperEnum e(comp); !e.empty(); e.popFront()) {
-      JSObject* target = e.front().key();
+    for (auto iter = comp->objectWrapperMappings(); !iter.done(); iter.next()) {
+      JSObject* target = iter.get().key();
       if (target->isMarkedGray()) {
         TraceManuallyBarrieredEdge(trc, &target, "gray CCW target");
-        MOZ_ASSERT(target == e.front().key());
+        MOZ_ASSERT(target == iter.get().key());
       }
     }
   }

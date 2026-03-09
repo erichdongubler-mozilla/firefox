@@ -814,16 +814,17 @@ void GCRuntime::dropStringWrappers() {
 
 bool Compartment::findSweepGroupEdges() {
   Zone* source = zone();
-  for (WrappedObjectCompartmentEnum e(this); !e.empty(); e.popFront()) {
-    Compartment* targetComp = e.front();
+  for (auto targetComp = wrappedObjectCompartments(); !targetComp.done();
+       targetComp.next()) {
     Zone* target = targetComp->zone();
 
     if (!target->isGCMarking() || source->hasSweepGroupEdgeTo(target)) {
       continue;
     }
 
-    for (ObjectWrapperEnum e(this, targetComp); !e.empty(); e.popFront()) {
-      JSObject* key = e.front().mutableKey();
+    for (auto iter = objectWrapperMappingsTo(targetComp); !iter.done();
+         iter.next()) {
+      JSObject* key = iter.get().key();
       MOZ_ASSERT(key->zone() == target);
 
       // Add an edge to the wrapped object's zone to ensure that the wrapper
@@ -1050,8 +1051,8 @@ static void AssertNoWrappersInGrayList(JSRuntime* rt) {
 #ifdef DEBUG
   for (CompartmentsIter c(rt); !c.done(); c.next()) {
     MOZ_ASSERT(!c->gcIncomingGrayPointers);
-    for (Compartment::ObjectWrapperEnum e(c); !e.empty(); e.popFront()) {
-      AssertNotOnGrayList(e.front().value().unbarrieredGet());
+    for (auto iter = c->objectWrapperMappings(); !iter.done(); iter.next()) {
+      AssertNotOnGrayList(iter.get().value().unbarrieredGet());
     }
   }
 #endif

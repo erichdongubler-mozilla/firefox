@@ -425,19 +425,16 @@ JS_PUBLIC_API bool js::NukeCrossCompartmentWrappers(
          target->compartment() == c.get() && NukedAllRealms(c.get()));
 
     // Iterate only the wrappers that have target compartment matched unless
-    // |nukeAll| is true. Use Maybe to avoid copying from conditionally
-    // initializing ObjectWrapperEnum.
-    mozilla::Maybe<Compartment::ObjectWrapperEnum> e;
-    if (MOZ_LIKELY(!nukeAll)) {
-      e.emplace(c, target->compartment());
-    } else {
-      e.emplace(c);
+    // |nukeAll| is true.
+    auto iter = !nukeAll ? c->objectWrapperMappingsTo(target->compartment())
+                         : c->objectWrapperMappings();
+    if (nukeAll) {
       c.get()->nukedOutgoingWrappers = true;
     }
-    for (; !e->empty(); e->popFront()) {
-      JSObject* key = e->front().key();
+    for (; !iter.done(); iter.next()) {
+      JSObject* key = iter.get().key();
 
-      AutoWrapperRooter wobj(cx, WrapperValue(*e));
+      AutoWrapperRooter wobj(cx, WrapperValue(iter));
 
       // Unwrap from the wrapped object in key instead of the wrapper, this
       // could save us a bit of time.
@@ -464,7 +461,7 @@ JS_PUBLIC_API bool js::NukeCrossCompartmentWrappers(
       }
 
       // Now this is the wrapper we want to nuke.
-      e->removeFront();
+      iter.remove();
       NukeRemovedCrossCompartmentWrapper(cx, wobj);
     }
   }
@@ -645,17 +642,17 @@ JS_PUBLIC_API bool js::RecomputeWrappers(
     }
 
     // Iterate over object wrappers, filtering appropriately.
-    for (Compartment::ObjectWrapperEnum e(c, targetFilter); !e.empty();
-         e.popFront()) {
+    for (auto iter = c->objectWrapperMappings(targetFilter); !iter.done();
+         iter.next()) {
       // Don't remap wrappers to finalization record objects. These are used
       // internally and are not exposed.
-      JSObject* wrapper = *e.front().value().unsafeGet();
+      JSObject* wrapper = *iter.get().value().unsafeGet();
       if (Wrapper::wrappedObject(wrapper)->is<FinalizationRecordObject>()) {
         continue;
       }
 
       // Add the wrapper to the list.
-      if (!toRecompute.append(WrapperValue(e))) {
+      if (!toRecompute.append(WrapperValue(iter))) {
         return false;
       }
     }
