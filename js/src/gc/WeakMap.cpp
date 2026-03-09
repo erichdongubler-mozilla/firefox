@@ -300,15 +300,14 @@ bool WeakMapBase::saveZoneMarkedWeakMaps(JS::Zone* zone,
 }
 
 void WeakMapBase::restoreMarkedWeakMaps(WeakMapColors& markedWeakMaps) {
-  for (WeakMapColors::Range r = markedWeakMaps.all(); !r.empty();
-       r.popFront()) {
-    WeakMapBase* map = r.front().key();
+  for (auto iter = markedWeakMaps.iter(); !iter.done(); iter.next()) {
+    WeakMapBase* map = iter.get().key();
     MOZ_ASSERT(!map->isMarked());
 
     Zone* zone = map->zone();
     MOZ_ASSERT(zone->isGCMarking());
 
-    CellColor color = r.front().value();
+    CellColor color = iter.get().value();
     if (IsMarked(color)) {
       map->setMapColor(color);
       if (!map->isSystem()) {

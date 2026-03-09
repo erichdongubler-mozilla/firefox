@@ -844,12 +844,12 @@ void MemoryTracker::decNonGCMemory(void* mem, size_t nbytes, MemoryUse use) {
 void MemoryTracker::fixupAfterMovingGC() {
   // Update the table after we move GC things. We don't use StableCellHasher
   // because that would create a difference between debug and release builds.
-  for (GCMap::Enum e(gcMap); !e.empty(); e.popFront()) {
-    const auto& key = e.front().key();
+  for (auto iter = gcMap.modIter(); !iter.done(); iter.next()) {
+    const auto& key = iter.get().key();
     Cell* cell = key.ptr();
     if (cell->isForwarded()) {
       cell = gc::RelocationOverlay::fromCell(cell)->forwardingAddress();
-      e.rekeyFront(Key<Cell>{cell, key.use()});
+      iter.rekey(Key<Cell>{cell, key.use()});
     }
   }
 }

@@ -208,17 +208,24 @@ inline void PreWriteBarrierDuringFlattening(JSString* str) {
 // valid and return the lookup required to get this entry from the table.
 
 template <typename Table, typename Range, typename Lookup>
-void CheckTableEntryAfterMovingGC(const Table& table, const Range& r,
-                                  const Lookup& lookup) {
+void CheckCCWTableEntryAfterMovingGC(const Table& table, const Range& r,
+                                     const Lookup& lookup) {
   auto ptr = table.lookup(lookup);
   MOZ_RELEASE_ASSERT(ptr.found() && &*ptr == &r.front());
 }
 
+template <typename Table, typename Iter, typename Lookup>
+void CheckTableEntryAfterMovingGC(const Table& table, const Iter& iter,
+                                  const Lookup& lookup) {
+  auto ptr = table.lookup(lookup);
+  MOZ_RELEASE_ASSERT(ptr.found() && &*ptr == &iter.get());
+}
+
 template <typename Table, typename F>
 void CheckTableAfterMovingGC(const Table& table, F&& checkEntryAndGetLookup) {
-  for (auto r = table.all(); !r.empty(); r.popFront()) {
-    auto lookup = checkEntryAndGetLookup(r.front());
-    CheckTableEntryAfterMovingGC(table, r, lookup);
+  for (auto iter = table.iter(); !iter.done(); iter.next()) {
+    auto lookup = checkEntryAndGetLookup(iter.get());
+    CheckTableEntryAfterMovingGC(table, iter, lookup);
   }
 }
 

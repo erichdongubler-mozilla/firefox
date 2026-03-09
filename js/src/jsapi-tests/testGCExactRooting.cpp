@@ -264,9 +264,9 @@ BEGIN_TEST(testGCRootedHashMap) {
   JS_GC(cx);
   JS_GC(cx);
 
-  for (auto r = map.all(); !r.empty(); r.popFront()) {
-    RootedObject obj(cx, r.front().value());
-    CHECK(obj->shape() == r.front().key());
+  for (auto iter = map.iter(); !iter.done(); iter.next()) {
+    RootedObject obj(cx, iter.get().value());
+    CHECK(obj->shape() == iter.get().key());
   }
 
   return true;
@@ -334,9 +334,9 @@ static bool FillMyHashMap(JSContext* cx, MutableHandle<MyHashMap> map) {
 }
 
 static bool CheckMyHashMap(JSContext* cx, Handle<MyHashMap> map) {
-  for (auto r = map.all(); !r.empty(); r.popFront()) {
-    RootedObject obj(cx, r.front().value());
-    if (obj->shape() != r.front().key()) {
+  for (auto iter = map.iter(); !iter.done(); iter.next()) {
+    RootedObject obj(cx, iter.get().value());
+    if (obj->shape() != iter.get().key()) {
       return false;
     }
   }

@@ -585,11 +585,10 @@ void GCRuntime::freeFromBackgroundThread(AutoLockHelperThreadState& lock) {
     lifoBlocks.freeAll();
 
     JS::GCContext* gcx = TlsGCContext.get();
-    for (Nursery::BufferSet::Range r = buffers.all(); !r.empty();
-         r.popFront()) {
+    for (auto iter = buffers.iter(); !iter.done(); iter.next()) {
       // Malloc memory associated with nursery objects is not tracked as these
       // are assumed to be short lived.
-      gcx->freeUntracked(r.front());
+      gcx->freeUntracked(iter.get());
     }
 
     for (auto* buffer : stringBuffers) {
