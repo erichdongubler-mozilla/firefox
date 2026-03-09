@@ -36,6 +36,7 @@ class RelayFeature(
     private val fetchTimeoutMs: Long = FETCH_TIMEOUT_MS,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
     private val dateTimeProvider: DateTimeProvider = DefaultDateTimeProvider(),
+    private val fxRelayFactory: (OAuthAccount) -> FxRelay = ::FxRelayImpl,
 ) : LifecycleAwareFeature {
 
     private val logger = Logger("RelayEligibilityFeature")
@@ -58,7 +59,7 @@ class RelayFeature(
         store.dispatch(RelayEligibilityAction.AccountLoginStatusChanged(isLoggedIn))
 
         if (authenticatedAccount != null) {
-            fxRelay = FxRelayImpl(authenticatedAccount)
+            fxRelay = fxRelayFactory(authenticatedAccount)
         }
 
         scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
@@ -132,7 +133,7 @@ class RelayFeature(
     private inner class RelayAccountObserver : AccountObserver {
         override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
             store.dispatch(RelayEligibilityAction.AccountLoginStatusChanged(true))
-            fxRelay = FxRelayImpl(account)
+            fxRelay = fxRelayFactory(account)
         }
 
         override fun onProfileUpdated(profile: Profile) {
