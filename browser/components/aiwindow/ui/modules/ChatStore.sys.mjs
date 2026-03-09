@@ -39,8 +39,6 @@ import {
   CONVERSATIONS_OLDEST,
   CONVERSATION_HISTORY,
   ESCAPE_CHAR,
-  REMOVE_ALL_SITE_URLS_FROM_MESSAGES,
-  REMOVE_SITE_URL_FROM_MESSAGES,
   getConversationMessagesSql,
   getDeleteMessagesByIdsSql,
   getDeleteEmptyConversationsSql,
@@ -189,64 +187,6 @@ class ChatStore {
       })
       .catch(e => {
         lazy.log.error("Transaction failed to execute", e.message, e.stack);
-        throw e;
-      });
-  }
-
-  /**
-   * Replaces all page_url entries with `null` for all messages .
-   * Additionally, the `page_history_deleted` column will be set to `true`.
-   *
-   */
-  async deleteAllUrlsFromMessages() {
-    await this.#ensureDatabase().catch(e => {
-      lazy.log.error(
-        "Could not ensure a database connection.",
-        e.message,
-        e.stack
-      );
-      throw e;
-    });
-
-    await this.#conn
-      .executeCached(REMOVE_ALL_SITE_URLS_FROM_MESSAGES)
-      .catch(e => {
-        lazy.log.error(
-          "Could not remove all site urls from messages",
-          e.message,
-          e.stack
-        );
-
-        throw e;
-      });
-  }
-
-  /**
-   * Replaces all page_url values that match the specific page_url with a
-   * `null` value. Additionally, the `page_history_deleted` column
-   * will be set to `true`.
-   *
-   * @param {string} page_url - A URL to remove from messages
-   */
-  async deleteUrlFromMessages(page_url) {
-    await this.#ensureDatabase().catch(e => {
-      lazy.log.error(
-        "Could not ensure a database connection.",
-        e.message,
-        e.stack
-      );
-      throw e;
-    });
-
-    await this.#conn
-      .executeCached(REMOVE_SITE_URL_FROM_MESSAGES, { page_url })
-      .catch(e => {
-        lazy.log.error(
-          `Could not remove 'page_url' entries for ${page_url}`,
-          e.message,
-          e.stack
-        );
-
         throw e;
       });
   }
