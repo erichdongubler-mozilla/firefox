@@ -108,6 +108,7 @@ add_task(function test_parseConversationRow() {
     memories_flag_source: 1,
     memories_applied: '{ "some": "memories" }',
     web_search_queries: '{ "some": "web search queries" }',
+    page_history_deleted: false,
   });
 
   const rows = parseMessageRows([testRow]);

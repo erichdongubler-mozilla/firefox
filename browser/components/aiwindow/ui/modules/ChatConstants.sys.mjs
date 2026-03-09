@@ -6,7 +6,7 @@
 /**
  * The current SQLite database schema version
  */
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 /**
  * The directory that the SQLite database lives in

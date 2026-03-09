@@ -25,6 +25,7 @@ export class ChatMessage {
   memoriesFlagSource;
   memoriesApplied;
   webSearchQueries;
+  pageHistoryDeleted;
 
   /**
    * @param {object} param
@@ -69,6 +70,8 @@ export class ChatMessage {
    * message is originally generated. If a message is edited/regenerated, the
    * edited message turns to false and the newly edited/regenerated message is
    * the only message of the revision branch set to true.
+   * @param {?boolean} param.pageHistoryDeleted - Whether pageUrl was removed due
+   * to a history removal action like Forget This Site or Delete Page
    */
   constructor({
     ordinal,
@@ -89,6 +92,7 @@ export class ChatMessage {
     modelId = null,
     revisionRootMessageId = id,
     isActiveBranch = true,
+    pageHistoryDeleted = false,
   }) {
     this.id = id;
     this.createdDate = createdDate;
@@ -108,6 +112,7 @@ export class ChatMessage {
     this.memoriesFlagSource = memoriesFlagSource;
     this.memoriesApplied = memoriesApplied;
     this.webSearchQueries = webSearchQueries;
+    this.pageHistoryDeleted = pageHistoryDeleted;
   }
 }
 

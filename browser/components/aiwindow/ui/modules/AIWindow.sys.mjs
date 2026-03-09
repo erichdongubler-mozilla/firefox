@@ -38,6 +38,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ONLOGOUT_NOTIFICATION: "resource://gre/modules/FxAccountsCommon.sys.mjs",
   PanelMultiView:
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
@@ -92,6 +93,11 @@ export const AIWindow = {
       return;
     }
 
+    lazy.PlacesUtils.observers.addListener(
+      ["page-removed", "history-cleared"],
+      this.handlePlacesEvents
+    );
+
     ChromeUtils.defineLazyGetter(AIWindow, "chatStore", () => lazy.ChatStore);
     Services.obs.addObserver(this, lazy.ONLOGOUT_NOTIFICATION);
     Services.obs.addObserver(this, "tabstrip-orientation-change");
@@ -104,12 +110,39 @@ export const AIWindow = {
     }
   },
 
+  handlePlacesEvents(events) {
+    for (const event of events) {
+      switch (event.type) {
+        case "page-removed":
+          // NOTE: event.isPartialVisistsRemoval is not mispelled, there's a typo
+          // in tools/@types/generated/lib.gecko.dom.d.ts:~2932 (interface PlacesVisitRemovedInit)
+          if (
+            event.reason == PlacesVisitRemoved.REASON_DELETED &&
+            !event.isPartialVisistsRemoval
+          ) {
+            lazy.ChatStore.deleteUrlFromMessages(event.url);
+          }
+          break;
+
+        case "history-cleared":
+          lazy.ChatStore.deleteAllUrlsFromMessages();
+          break;
+      }
+    }
+  },
+
   uninit() {
     if (!this._initialized) {
       return;
     }
     Services.obs.removeObserver(this, lazy.ONLOGOUT_NOTIFICATION);
     Services.obs.removeObserver(this, "tabstrip-orientation-change");
+
+    lazy.PlacesUtils.observers.removeListener(
+      ["page-removed", "history-cleared"],
+      this.handlePlacesEvents
+    );
+
     this._initialized = false;
   },
 
