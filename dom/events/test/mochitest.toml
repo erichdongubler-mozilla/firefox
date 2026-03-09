@@ -509,6 +509,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt && xorigin && verify-standalone",
 ]
 
+["test_dragstart_form_associated_custom_element.html"]
+
 ["test_error_events.html"]
 skip-if = [
   "os == 'android'", # TIMED_OUT
