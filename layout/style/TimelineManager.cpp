@@ -69,6 +69,42 @@ void TimelineManager::UpdateTimelines(Element* aElement,
   }
 }
 
+void TimelineManager::UpdateTimelineScopes(
+    const dom::Element* aElement, const ComputedStyle* aComputedStyle) {
+  const auto& timelineScope = aComputedStyle->StyleDisplay()->mTimelineScope;
+  auto it = std::find_if(
+      mTimelineScopes.begin(), mTimelineScopes.end(),
+      [&](const auto& aEntry) { return aEntry.mElement == aElement; });
+  if (timelineScope.value.IsNone()) {
+    // Delete the entry & we're done.
+    MOZ_ASSERT(it != mTimelineScopes.end(), "Timeline scopes out of sync");
+    mTimelineScopes.RemoveElementAt(it);
+    return;
+  }
+
+  TimelineScopeEntry* entry = nullptr;
+  if (it == mTimelineScopes.end()) {
+    // Skip the scope of the name - timeline names aren't scoped.
+    // https://github.com/w3c/csswg-drafts/issues/8135
+    entry = mTimelineScopes.AppendElement(TimelineScopeEntry{
+        aElement,
+        {},
+    });
+  } else {
+    entry = &(*it);
+    // Just clear existing names, likely not worth reusing.
+    entry->mNames.Clear();
+  }
+
+  if (!timelineScope.value.IsIdents()) {
+    // Empty list is considered `all`.
+    return;
+  }
+  for (const auto& name : timelineScope.value.AsIdents().AsSpan()) {
+    entry->mNames.AppendElement(name.AsAtom());
+  }
+}
+
 template <typename TimelineType>
 static already_AddRefed<TimelineType> PopExistingTimeline(
     nsAtom* aName, TimelineCollection<TimelineType>* aCollection) {
