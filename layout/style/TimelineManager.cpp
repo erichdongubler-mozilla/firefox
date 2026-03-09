@@ -144,7 +144,7 @@ void TimelineManager::UpdateTimelines(Element* aElement,
 
 void TimelineManager::UpdateTimelineScopes(
     const dom::Element* aElement, const ComputedStyle* aComputedStyle) {
-  const auto& timelineScope = aComputedStyle->StyleDisplay()->mTimelineScope;
+  const auto& timelineScope = aComputedStyle->StyleUIReset()->mTimelineScope;
   auto it = std::find_if(
       mTimelineScopes.begin(), mTimelineScopes.end(),
       [&](const auto& aEntry) { return aEntry.mElement == aElement; });
