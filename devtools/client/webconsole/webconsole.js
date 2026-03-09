@@ -170,14 +170,14 @@ class WebConsole extends EventEmitter {
 
   inputHasSelection() {
     const { editor } = this.jsterm || {};
-    return editor && !!editor.getSelectedText();
+    return editor && !!editor.getSelection();
   }
 
   getInputSelection() {
     if (!this.jsterm || !this.jsterm.editor) {
       return null;
     }
-    return this.jsterm.editor.getSelectedText();
+    return this.jsterm.editor.getSelection();
   }
 
   /**
