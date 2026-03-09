@@ -1551,6 +1551,7 @@ class HTMLInputElement final : public TextControlElement,
   bool mIsPreviewEnabled : 1;
   bool mHasBeenTypePassword : 1;
   bool mHasPatternAttribute : 1;
+  bool mUserChangedSinceFocus : 1;
 
  private:
   Maybe<int32_t> GetNumberInputCols() const;

@@ -1164,6 +1164,7 @@ HTMLInputElement::HTMLInputElement(already_AddRefed<dom::NodeInfo>&& aNodeInfo,
       mPickerRunning(false),
       mHasBeenTypePassword(false),
       mHasPatternAttribute(false),
+      mUserChangedSinceFocus(false),
       mRadioGroupContainer(nullptr) {
   // If size is above 512, mozjemalloc allocates 1kB, see
   // memory/build/mozjemalloc.cpp
@@ -1874,7 +1875,7 @@ void HTMLInputElement::SetValue(const nsAString& aValue, CallerType aCallerType,
         return;
       }
 
-      if (mFocusedValue.Equals(currentValue)) {
+      if (!State().HasState(ElementState::FOCUS)) {
         GetValue(mFocusedValue, aCallerType);
       }
     } else {
@@ -2811,11 +2812,17 @@ void HTMLInputElement::FireChangeEventIfNeeded() {
   if (mValueChanged) {
     SetUserInteracted(true);
   }
+  const bool changedByUser = mUserChangedSinceFocus;
+  mUserChangedSinceFocus = false;
   if (mFocusedValue.Equals(value)) {
     return;
   }
-  // Dispatch the change event.
   mFocusedValue = value;
+  if (!changedByUser) {
+    // value was changed, but only by scripts
+    return;
+  }
+  // Dispatch the change event.
   nsContentUtils::DispatchTrustedEvent(
       OwnerDoc(), static_cast<nsIContent*>(this), u"change"_ns, CanBubble::eYes,
       Cancelable::eNo);
@@ -2885,6 +2892,10 @@ nsresult HTMLInputElement::SetValueInternal(
   // read it only on chrome docs or something? That'd allow front-end code to
   // move away from xul without weird side-effects.
   const bool forcePreserveUndoHistory = mParent && mParent->IsXULElement();
+
+  if (aOptions.contains(ValueSetterOption::BySetUserInputAPI)) {
+    mUserChangedSinceFocus = true;
+  }
 
   switch (GetValueMode()) {
     case VALUE_MODE_VALUE: {
@@ -7182,6 +7193,9 @@ void HTMLInputElement::OnValueChanged(ValueChangeKind aKind,
   if (aKind != ValueChangeKind::Internal) {
     mLastValueChangeWasInteractive = aKind == ValueChangeKind::UserInteraction;
 
+    if (mLastValueChangeWasInteractive) {
+      mUserChangedSinceFocus = true;
+    }
     if (mLastValueChangeWasInteractive &&
         State().HasState(ElementState::AUTOFILL)) {
       RemoveStates(ElementState::AUTOFILL | ElementState::AUTOFILL_PREVIEW);
