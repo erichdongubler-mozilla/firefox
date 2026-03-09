@@ -100,10 +100,12 @@ export class GuardianClient {
     // we know we're done with the browser.
     const finalizerURLs = [this.#successURL, this.#enrollmentError];
     return await lazy.hiddenBrowserManager.withHiddenBrowser(async browser => {
-      aAbortSignal?.addEventListener("abort", () => {
-        browser.stop();
-        browser.remove();
-        throw new Error("aborted");
+      const aborted = new Promise((_, reject) => {
+        aAbortSignal?.addEventListener("abort", () => {
+          browser.stop();
+          browser.remove();
+          reject(new Error("aborted"));
+        });
       });
       const finalEndpoint = waitUntilURL(browser, url => {
         const urlObj = new URL(url);
@@ -139,7 +141,7 @@ export class GuardianClient {
           Services.scriptSecurityManager.createContentPrincipal(loginURI, {}),
       });
 
-      const result = await finalEndpoint;
+      const result = await Promise.race([finalEndpoint, aborted]);
       return GuardianClient._parseGuardianSuccessURL(result);
     });
   }
