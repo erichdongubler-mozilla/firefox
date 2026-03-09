@@ -26,7 +26,6 @@ codegen-units = 1
 
 [profile.debugoptimized]
 inherits = "dev"
-panic = "abort"
 overflow-checks = false
 lto = "fat"
 codegen-units = 1

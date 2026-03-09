@@ -114,17 +114,6 @@ _hb_buffer_serialize_glyphs_json (hb_buffer_t *buffer,
 
   *buf_consumed = 0;
   hb_position_t x = 0, y = 0;
-
-  /* Calculate the advance of the previous glyphs */
-  if (pos && (flags & HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES))
-  {
-    for (unsigned int i = 0; i < start; i++)
-    {
-      x += pos[i].x_advance;
-      y += pos[i].y_advance;
-    }
-  }
-
   for (unsigned int i = start; i < end; i++)
   {
     char b[1024];
@@ -162,7 +151,7 @@ _hb_buffer_serialize_glyphs_json (hb_buffer_t *buffer,
       p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"cl\":%u", info[i].cluster));
     }
 
-    if (pos && !(flags & HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS))
+    if (!(flags & HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS))
     {
       p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), ",\"dx\":%d,\"dy\":%d",
 		   x+pos[i].x_offset, y+pos[i].y_offset));
@@ -283,17 +272,6 @@ _hb_buffer_serialize_glyphs_text (hb_buffer_t *buffer,
 
   *buf_consumed = 0;
   hb_position_t x = 0, y = 0;
-
-  /* Calculate the advance of the previous glyphs */
-  if (pos && (flags & HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES))
-  {
-    for (unsigned int i = 0; i < start; i++)
-    {
-      x += pos[i].x_advance;
-      y += pos[i].y_advance;
-    }
-  }
-
   for (unsigned int i = start; i < end; i++)
   {
     char b[1024];
@@ -319,7 +297,7 @@ _hb_buffer_serialize_glyphs_text (hb_buffer_t *buffer,
       p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), "=%u", info[i].cluster));
     }
 
-    if (pos && !(flags & HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS))
+    if (!(flags & HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS))
     {
       if (x+pos[i].x_offset || y+pos[i].y_offset)
         p += hb_max (0, snprintf (p, ARRAY_LENGTH (b) - (p - b), "@%d,%d", x+pos[i].x_offset, y+pos[i].y_offset));

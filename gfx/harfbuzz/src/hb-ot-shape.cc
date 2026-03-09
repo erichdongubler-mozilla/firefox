@@ -580,8 +580,12 @@ hb_form_clusters (hb_buffer_t *buffer)
   if (!(buffer->scratch_flags & HB_BUFFER_SCRATCH_FLAG_HAS_CONTINUATIONS))
     return;
 
-  foreach_grapheme (buffer, start, end)
-    buffer->merge_grapheme_clusters (start, end);
+  if (HB_BUFFER_CLUSTER_LEVEL_IS_GRAPHEMES (buffer->cluster_level))
+    foreach_grapheme (buffer, start, end)
+      buffer->merge_clusters (start, end);
+  else
+    foreach_grapheme (buffer, start, end)
+      buffer->unsafe_to_break (start, end);
 }
 
 static void
