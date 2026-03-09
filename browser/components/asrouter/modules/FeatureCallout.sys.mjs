@@ -485,7 +485,7 @@ export class FeatureCallout {
           event.target !== this._container &&
           event.target.localName === "panel" &&
           event.target.id !== "ctrlTab-panel" &&
-          event.target.getAttribute("noautohide") !== "true"
+          !event.target.hasAttribute("noautohide")
         ) {
           this.endTour();
         }

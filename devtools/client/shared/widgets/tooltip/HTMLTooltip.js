@@ -1009,7 +1009,7 @@ class HTMLTooltip extends EventEmitter {
     panel.setAttribute("consumeoutsideclicks", false);
     panel.setAttribute("incontentshell", false);
     panel.setAttribute("noautofocus", true);
-    panel.setAttribute("noautohide", this.noAutoHide);
+    panel.toggleAttribute("noautohide", this.noAutoHide);
 
     panel.setAttribute("ignorekeys", true);
     panel.setAttribute("tooltip", "aHTMLTooltip");
