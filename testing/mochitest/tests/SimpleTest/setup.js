@@ -200,10 +200,6 @@ if (params.interactiveDebugger || params.jsdebugger || params.debugger) {
   TestRunner.interactiveDebugger = true;
 }
 
-if (params.jscovDirPrefix) {
-  TestRunner.jscovDirPrefix = params.jscovDirPrefix;
-}
-
 if (params.maxTimeouts) {
   TestRunner.maxTimeouts = params.maxTimeouts;
 }

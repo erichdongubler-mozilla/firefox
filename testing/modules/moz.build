@@ -11,7 +11,6 @@ TESTING_JS_MODULES += [
     "AppData.sys.mjs",
     "AppInfo.sys.mjs",
     "Assert.sys.mjs",
-    "CoverageUtils.sys.mjs",
     "FileTestUtils.sys.mjs",
     "ImageTestUtils.sys.mjs",
     "Mochia.js",

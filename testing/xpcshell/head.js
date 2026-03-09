@@ -596,14 +596,6 @@ function _execute_test() {
 
   _PromiseTestUtils.init();
 
-  let coverageCollector = null;
-  if (typeof _JSCOV_DIR === "string") {
-    let _CoverageCollector = ChromeUtils.importESModule(
-      "resource://testing-common/CoverageUtils.sys.mjs"
-    ).CoverageCollector;
-    coverageCollector = new _CoverageCollector(_JSCOV_DIR);
-  }
-
   let startTime = ChromeUtils.now();
 
   // _HEAD_FILES is dynamically defined by <runxpcshelltests.py>.
@@ -664,10 +656,6 @@ function _execute_test() {
     _do_main();
     _PromiseTestUtils.assertNoUncaughtRejections();
 
-    if (coverageCollector != null) {
-      coverageCollector.recordTestCoverage(_TEST_FILE[0]);
-    }
-
     if (runningInParent) {
       PerTestCoverageUtils.afterTestSync();
     }
@@ -694,10 +682,6 @@ function _execute_test() {
         extra.stack = _format_stack(e.stack);
       }
       _testLogger.error(message, extra);
-    }
-  } finally {
-    if (coverageCollector != null) {
-      coverageCollector.finalize();
     }
   }
 

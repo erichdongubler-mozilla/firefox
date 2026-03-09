@@ -316,8 +316,6 @@ function Tester(aTests, structuredLogger, aCallback) {
     this.SimpleTestOriginal[m] = this.SimpleTest[m];
   });
 
-  this._coverageCollector = null;
-
   const { XPCOMUtils } = ChromeUtils.importESModule(
     "resource://gre/modules/XPCOMUtils.sys.mjs"
   );
@@ -400,14 +398,6 @@ Tester.prototype = {
 
     if (gConfig.repeat) {
       this.repeat = gConfig.repeat;
-    }
-
-    if (gConfig.jscovDirPrefix) {
-      let coveragePath = gConfig.jscovDirPrefix;
-      let { CoverageCollector } = ChromeUtils.importESModule(
-        "resource://testing-common/CoverageUtils.sys.mjs"
-      );
-      this._coverageCollector = new CoverageCollector(coveragePath);
     }
 
     if (gConfig.debugger || gConfig.debuggerInteractive || gConfig.jsdebugger) {
@@ -970,10 +960,6 @@ Tester.prototype = {
     if (!this.currentTest) {
       this.checkWindowsState();
     } else {
-      if (this._coverageCollector) {
-        this._coverageCollector.recordTestCoverage(this.currentTest.path);
-      }
-
       this.PerTestCoverageUtils.afterTestSync();
 
       // Run cleanup functions for the current test before moving on to the
@@ -1272,9 +1258,7 @@ Tester.prototype = {
     // Make sure the window is raised before starting the next test.
     this.SimpleTest.waitForFocus(() => {
       if (this.done) {
-        if (this._coverageCollector) {
-          this._coverageCollector.finalize();
-        } else if (
+        if (
           !AppConstants.RELEASE_OR_BETA &&
           !AppConstants.DEBUG &&
           !AppConstants.MOZ_CODE_COVERAGE &&
