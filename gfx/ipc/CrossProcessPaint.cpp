@@ -134,6 +134,9 @@ PaintFragment PaintFragment::Record(dom::BrowsingContext* aBc,
   if (aFlags & CrossProcessPaintFlags::UseHighQualityScaling) {
     renderDocFlags |= RenderDocumentFlags::UseHighQualityScaling;
   }
+  if (aFlags & CrossProcessPaintFlags::ForPrinting) {
+    renderDocFlags |= RenderDocumentFlags::ForPrinting;
+  }
 
   // Perform the actual rendering
   {
@@ -305,10 +308,10 @@ bool CrossProcessPaint::Start(dom::WindowGlobalParent* aRoot,
 
 /* static */
 RefPtr<CrossProcessPaint::ResolvePromise> CrossProcessPaint::Start(
-    nsTHashSet<uint64_t>&& aDependencies) {
+    nsTHashSet<uint64_t>&& aDependencies, CrossProcessPaintFlags aFlags) {
   MOZ_ASSERT(!aDependencies.IsEmpty());
   RefPtr<CrossProcessPaint> resolver =
-      new CrossProcessPaint(1.0, dom::TabId(0), CrossProcessPaintFlags::None);
+      new CrossProcessPaint(1.0, dom::TabId(0), aFlags);
 
   RefPtr<CrossProcessPaint::ResolvePromise> promise = resolver->Init();
 

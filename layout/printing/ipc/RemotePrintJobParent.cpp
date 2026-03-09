@@ -136,7 +136,8 @@ mozilla::ipc::IPCResult RemotePrintJobParent::RecvProcessPage(
     deps.Insert(i);
   }
 
-  gfx::CrossProcessPaint::Start(std::move(deps))
+  gfx::CrossProcessPaint::Start(std::move(deps),
+                                gfx::CrossProcessPaintFlags::ForPrinting)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this}, pageSizeInPoints](

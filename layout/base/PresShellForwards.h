@@ -159,6 +159,7 @@ enum class RenderDocumentFlags {
   DrawWindowNotFlushing = 1 << 6,
   UseHighQualityScaling = 1 << 7,
   ResetViewportScrolling = 1 << 8,
+  ForPrinting = 1 << 9,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(RenderDocumentFlags)

@@ -44,6 +44,7 @@ enum class CrossProcessPaintFlags {
   DrawView = 1 << 1,
   ResetScrollPosition = 1 << 2,
   UseHighQualityScaling = 1 << 3,
+  ForPrinting = 1 << 4,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CrossProcessPaintFlags)
@@ -130,7 +131,9 @@ class CrossProcessPaint final {
                     float aScale, nscolor aBackgroundColor,
                     CrossProcessPaintFlags aFlags, dom::Promise* aPromise);
 
-  static RefPtr<ResolvePromise> Start(nsTHashSet<uint64_t>&& aDependencies);
+  static RefPtr<ResolvePromise> Start(
+      nsTHashSet<uint64_t>&& aDependencies,
+      CrossProcessPaintFlags aFlags = CrossProcessPaintFlags::None);
 
   void ReceiveFragment(dom::WindowGlobalParent* aWGP,
                        PaintFragment&& aFragment);
@@ -169,10 +172,11 @@ class CrossProcessPaint final {
     return mPromise.Ensure(__func__);
   }
 
-  // UseHighQualityScaling is the only flag that dependencies inherit, and we
-  // always want to use DrawView for dependencies.
+  // Dependencies inherit only a small subset of flags and we always want to use
+  // DrawView for dependencies.
   CrossProcessPaintFlags GetFlagsForDependencies() const {
-    return (mFlags & CrossProcessPaintFlags::UseHighQualityScaling) |
+    return (mFlags & (CrossProcessPaintFlags::UseHighQualityScaling |
+                      CrossProcessPaintFlags::ForPrinting)) |
            CrossProcessPaintFlags::DrawView;
   }
 
