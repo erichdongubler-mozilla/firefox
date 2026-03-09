@@ -3069,6 +3069,7 @@ pub extern "C" fn wr_dp_push_stacking_context(
     filter_datas: *const WrFilterData,
     filter_datas_count: usize,
     glyph_raster_space: RasterSpace,
+    sc_origin_key: SpatialTreeItemKey,
 ) -> WrSpatialId {
     debug_assert!(unsafe { !is_in_render_thread() });
 
@@ -3191,6 +3192,24 @@ pub extern "C" fn wr_dp_push_stacking_context(
             data.key,
         );
 
+        origin = LayoutPoint::zero();
+        result.id = wr_spatial_id.0;
+        assert_ne!(wr_spatial_id.0, 0);
+    } else if origin != LayoutPoint::zero() {
+        assert!(sc_origin_key != SpatialTreeItemKey::default(),
+            "sc_origin_key must be set when stacking context has non-zero origin");
+        wr_spatial_id = state.frame_builder.dl_builder.push_reference_frame(
+            origin,
+            wr_spatial_id,
+            TransformStyle::Flat,
+            PropertyBinding::Value(LayoutTransform::identity()),
+            ReferenceFrameKind::Transform {
+                is_2d_scale_translation: true,
+                should_snap: false,
+                paired_with_perspective: false,
+            },
+            sc_origin_key,
+        );
         origin = LayoutPoint::zero();
         result.id = wr_spatial_id.0;
         assert_ne!(wr_spatial_id.0, 0);

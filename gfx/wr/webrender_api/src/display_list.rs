@@ -1761,6 +1761,11 @@ impl DisplayListBuilder {
         flags: di::StackingContextFlags,
         snapshot: Option<di::SnapshotInfo>
     ) {
+        assert_eq!(
+            origin,
+            LayoutPoint::zero(),
+            "stacking context origin must be zero; use a reference frame for non-zero positions"
+        );
         let ref_frame_offset = self.rf_mapper.current_offset();
         self.push_filters(filters, filter_datas);
 

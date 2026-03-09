@@ -1262,7 +1262,7 @@ void DisplayListBuilder::End(layers::DisplayListData& aOutTransaction) {
 
 Maybe<wr::WrSpatialId> DisplayListBuilder::PushStackingContext(
     const wr::StackingContextParams& aParams, const wr::LayoutRect& aBounds,
-    const wr::RasterSpace& aRasterSpace) {
+    const wr::RasterSpace& aRasterSpace, wr::SpatialTreeItemKey aSCOriginKey) {
   WRDL_LOG(
       "PushStackingContext b=%s t=%s id=0x%" PRIx64 "\n", mWrState,
       ToString(aBounds).c_str(),
@@ -1273,7 +1273,7 @@ Maybe<wr::WrSpatialId> DisplayListBuilder::PushStackingContext(
       mWrState, aBounds, mCurrentSpaceAndClipChain.space, &aParams,
       aParams.mTransformPtr, aParams.mFilters.Elements(),
       aParams.mFilters.Length(), aParams.mFilterDatas.Elements(),
-      aParams.mFilterDatas.Length(), aRasterSpace);
+      aParams.mFilterDatas.Length(), aRasterSpace, aSCOriginKey);
 
   return spatialId.id != 0 ? Some(spatialId) : Nothing();
 }

@@ -2045,6 +2045,24 @@ impl YamlFrameReader {
                 bounds.max -= bounds.min.to_vector();
                 bounds.min = LayoutPoint::zero();
                 true
+            } else if bounds.min != LayoutPoint::zero() {
+                let parent_spatial_id = *self.spatial_id_stack.last().unwrap();
+                let reference_frame_id = dl.push_reference_frame(
+                    bounds.min,
+                    parent_spatial_id,
+                    TransformStyle::Flat,
+                    PropertyBinding::Value(LayoutTransform::identity()),
+                    ReferenceFrameKind::Transform {
+                        is_2d_scale_translation: true,
+                        should_snap: false,
+                        paired_with_perspective: false,
+                    },
+                    self.next_spatial_key(),
+                );
+                self.spatial_id_stack.push(reference_frame_id);
+                bounds.max -= bounds.min.to_vector();
+                bounds.min = LayoutPoint::zero();
+                true
             } else {
                 false
             };
