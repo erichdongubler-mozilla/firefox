@@ -1009,6 +1009,9 @@ skip-if = [
 ["test_readyState.html"]
 
 ["test_referer.html"]
+skip-if = [
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && wmfme", # Bug 2019640
+]
 
 ["test_reset_src.html"]
 
