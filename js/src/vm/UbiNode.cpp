@@ -430,9 +430,8 @@ std::pair<bool, JS::AutoCheckCannotGC> RootList::init(HandleObject debuggees) {
 
   CompartmentSet debuggeeCompartments;
 
-  for (js::WeakGlobalObjectSet::Range r = dbg->allDebuggees(); !r.empty();
-       r.popFront()) {
-    if (!debuggeeCompartments.put(r.front()->compartment())) {
+  for (auto iter = dbg->allDebuggees(); !iter.done(); iter.next()) {
+    if (!debuggeeCompartments.put(iter.get()->compartment())) {
       return {false, JS::AutoCheckCannotGC(cx)};
     }
   }
@@ -443,9 +442,8 @@ std::pair<bool, JS::AutoCheckCannotGC> RootList::init(HandleObject debuggees) {
   }
 
   // Ensure that each of our debuggee globals are in the root list.
-  for (js::WeakGlobalObjectSet::Range r = dbg->allDebuggees(); !r.empty();
-       r.popFront()) {
-    if (!addRoot(JS::ubi::Node(static_cast<JSObject*>(r.front())),
+  for (auto iter = dbg->allDebuggees(); !iter.done(); iter.next()) {
+    if (!addRoot(JS::ubi::Node(static_cast<JSObject*>(iter.get())),
                  u"debuggee global")) {
       return {false, nogc};
     }

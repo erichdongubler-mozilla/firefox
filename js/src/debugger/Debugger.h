@@ -835,7 +835,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   [[nodiscard]] bool addDebuggeeGlobal(JSContext* cx,
                                        Handle<GlobalObject*> obj);
   void removeDebuggeeGlobal(JS::GCContext* gcx, GlobalObject* global,
-                            WeakGlobalObjectSet::Enum* debugEnum,
+                            WeakGlobalObjectSet::ModIterator* debugIter,
                             FromSweep fromSweep);
 
   /*
@@ -962,7 +962,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
    */
   static void terminateDebuggerFrame(
       JS::GCContext* gcx, Debugger* dbg, DebuggerFrame* dbgFrame,
-      AbstractFramePtr frame, FrameMap::Enum* maybeFramesEnum = nullptr,
+      AbstractFramePtr frame, FrameMap::ModIterator* maybeFramesIter = nullptr,
       GeneratorWeakMap::ModIterator* maybeGeneratorFramesIter = nullptr);
 
   static bool updateExecutionObservabilityOfFrames(
@@ -1168,7 +1168,9 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   bool hasMemory() const;
   DebuggerMemory& memory() const;
 
-  WeakGlobalObjectSet::Range allDebuggees() const { return debuggees.all(); }
+  WeakGlobalObjectSet::Iterator allDebuggees() const {
+    return debuggees.iter();
+  }
 
 #ifdef DEBUG
   static bool isDebuggerCrossCompartmentEdge(JSObject* obj,
