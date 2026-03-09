@@ -27,10 +27,6 @@
 #include "nspr.h"
 #include "nsXULAppAPI.h"
 
-#if defined(MOZ_WIDGET_GTK)
-#  include "mozilla/WidgetUtilsGtk.h"
-#endif  // defined(MOZ_WIDGET_GTK)
-
 using namespace mozilla;
 
 extern bool sandboxEnabled;
@@ -249,19 +245,28 @@ nsresult nsReadConfig::openAndEvaluateJSFile(const char* aFileName,
   if (isBinDir) {
     nsCOMPtr<nsIFile> jsFile;
 #if defined(MOZ_WIDGET_GTK)
-    if (!mozilla::widget::IsRunningUnderFlatpakOrSnap()) {
-#endif  // defined(MOZ_WIDGET_GTK)
-      rv = NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(jsFile));
-#if defined(MOZ_WIDGET_GTK)
-    } else {
-      rv = NS_GetSpecialDirectory(NS_OS_SYSTEM_CONFIG_DIR,
-                                  getter_AddRefs(jsFile));
-    }
-#endif  // defined(MOZ_WIDGET_GTK)
+    bool exists;
+
+    rv =
+        NS_GetSpecialDirectory(NS_OS_SYSTEM_CONFIG_DIR, getter_AddRefs(jsFile));
     if (NS_FAILED(rv)) return rv;
 
     rv = jsFile->AppendNative(nsDependentCString(aFileName));
     if (NS_FAILED(rv)) return rv;
+
+    rv = jsFile->Exists(&exists);
+    if (NS_FAILED(rv)) return rv;
+
+    if (!exists) {
+#endif  // defined(MOZ_WIDGET_GTK)
+      rv = NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(jsFile));
+      if (NS_FAILED(rv)) return rv;
+
+      rv = jsFile->AppendNative(nsDependentCString(aFileName));
+      if (NS_FAILED(rv)) return rv;
+#if defined(MOZ_WIDGET_GTK)
+    }
+#endif  // defined(MOZ_WIDGET_GTK)
 
     rv = NS_NewLocalFileInputStream(getter_AddRefs(inStr), jsFile);
     if (NS_FAILED(rv)) return rv;
