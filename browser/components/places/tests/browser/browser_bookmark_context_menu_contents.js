@@ -31,39 +31,39 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 /**
- * Synthesize a mouse event that should open a popup, and retry if the
- * popupshown event doesn't fire within a reasonable time.
+ * Executes a task and awaits for the expected context menu panel to receive
+ * the popupshown event, retries if it doesn't fire within a reasonable time.
  * This is a workaround for test failures on Linux where the synthesized mouse
  * event is apparently lost when this is the first test to run.
  *
- * @param {DOMElement} target
- * @param {object} eventOptions
- * @param {DOMElement} popupElement
- * @returns {Promise<boolean>} true if the popupshown event was fired.
+ * @param {DOMElement} contextMenuPanel
+ * @param {Function} openingFn
+ * @returns {Promise<DOMElement>}
  */
-async function synthesizeMouseWithRetry(target, eventOptions, popupElement) {
+async function openContextMenuWithRetry(contextMenuPanel, openingFn) {
   const isLinux = Services.appinfo.OS === "Linux";
   let attempts = isLinux ? 10 : 1;
   for (let i = 0; i < attempts; i++) {
     const popupPromise = new Promise(resolve => {
       function handler() {
-        popupElement.removeEventListener("popupshown", handler);
+        contextMenuPanel.removeEventListener("popupshown", handler);
         resolve(true);
       }
-      popupElement.addEventListener("popupshown", handler);
-      // Add a timeout of 100ms, then retry if the event didn't fire.
+      contextMenuPanel.addEventListener("popupshown", handler);
+      // Wait for a timeout, then retry if the event didn't fire.
       // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
       setTimeout(() => {
-        popupElement.removeEventListener("popupshown", handler);
-        info("popupshown event did not fire within 100ms, retrying...");
+        contextMenuPanel.removeEventListener("popupshown", handler);
+        info("popupshown event did not fire in time, retrying...");
         resolve(false);
-      }, 100);
+      }, 300);
     });
-    EventUtils.synthesizeMouseAtCenter(target, eventOptions);
+    await openingFn();
     if (await popupPromise) {
-      return;
+      break;
     }
   }
+  return contextMenuPanel;
 }
 
 add_setup(async function () {
@@ -223,19 +223,21 @@ add_task(async function test_bookmark_contextmenu_contents() {
 
     let toolbarNode = getToolbarNodeForItemGuid(toolbarBookmark.guid);
 
-    let contextMenu = document.getElementById("placesContext");
     // TODO (Bug 2018551): figure out why on Linux apparently some time is
     // needed before the UI is ready to handle mouse events.
-    await synthesizeMouseWithRetry(
-      toolbarNode,
-      { button: 2, type: "contextmenu" },
-      contextMenu
+    return openContextMenuWithRetry(
+      document.getElementById("placesContext"),
+      () => {
+        EventUtils.synthesizeMouseAtCenter(
+          toolbarNode,
+          { button: 2, type: "contextmenu" },
+          toolbarNode.ownerGlobal
+        );
+      }
     );
-    return contextMenu;
   }, optionItems);
 
   let tabs = [];
-  let contextMenuOnContent;
 
   await checkContextMenu(async function () {
     info("Check context menu after opening context menu on content");
@@ -251,7 +253,9 @@ add_task(async function test_bookmark_contextmenu_contents() {
       "about:config"
     );
     tabs.push(tab);
-    contextMenuOnContent = document.getElementById("contentAreaContextMenu");
+    const contextMenuOnContent = document.getElementById(
+      "contentAreaContextMenu"
+    );
     const popupShownPromiseOnContent = BrowserTestUtils.waitForEvent(
       contextMenuOnContent,
       "popupshown"
@@ -265,19 +269,15 @@ add_task(async function test_bookmark_contextmenu_contents() {
 
     info("Check context menu on bookmark");
     const toolbarNode = getToolbarNodeForItemGuid(toolbarBookmark.guid);
-    const contextMenu = document.getElementById("placesContext");
-    const popupShownPromise = BrowserTestUtils.waitForEvent(
-      contextMenu,
-      "popupshown"
+    return openContextMenuWithRetry(
+      document.getElementById("placesContext"),
+      () => {
+        EventUtils.synthesizeMouseAtCenter(toolbarNode, {
+          button: 2,
+          type: "contextmenu",
+        });
+      }
     );
-
-    EventUtils.synthesizeMouseAtCenter(toolbarNode, {
-      button: 2,
-      type: "contextmenu",
-    });
-    await popupShownPromise;
-
-    return contextMenu;
   }, optionItems);
 
   // We need to do a thorough cleanup to avoid leaking the window of
@@ -304,21 +304,15 @@ add_task(async function test_empty_contextmenu_contents() {
   await checkContextMenu(async function () {
     let contextMenu = document.getElementById("placesContext");
     let toolbar = document.querySelector("#PlacesToolbarItems");
-    let openToolbarContextMenuPromise = BrowserTestUtils.waitForPopupEvent(
-      contextMenu,
-      "shown"
-    );
-
     // Use the end of the toolbar because the beginning (and even middle, on
     // some resolutions) might be occluded by the empty toolbar message, which
     // has a different context menu.
     let bounds = toolbar.getBoundingClientRect();
-    EventUtils.synthesizeMouse(toolbar, bounds.width - 5, 5, {
-      type: "contextmenu",
+    return openContextMenuWithRetry(contextMenu, () => {
+      EventUtils.synthesizeMouse(toolbar, bounds.width - 5, 5, {
+        type: "contextmenu",
+      });
     });
-
-    await openToolbarContextMenuPromise;
-    return contextMenu;
   }, optionItems);
 });
 
@@ -344,17 +338,12 @@ add_task(async function test_separator_contextmenu_contents() {
 
     let toolbarNode = getToolbarNodeForItemGuid(sep.guid);
     let contextMenu = document.getElementById("placesContext");
-    let popupShownPromise = BrowserTestUtils.waitForEvent(
-      contextMenu,
-      "popupshown"
-    );
-
-    EventUtils.synthesizeMouseAtCenter(toolbarNode, {
-      button: 2,
-      type: "contextmenu",
+    return openContextMenuWithRetry(contextMenu, () => {
+      EventUtils.synthesizeMouseAtCenter(toolbarNode, {
+        button: 2,
+        type: "contextmenu",
+      });
     });
-    await popupShownPromise;
-    return contextMenu;
   }, optionItems);
 });
 
@@ -383,17 +372,12 @@ add_task(async function test_folder_contextmenu_contents() {
 
     let toolbarNode = getToolbarNodeForItemGuid(folder.guid);
     let contextMenu = document.getElementById("placesContext");
-    let popupShownPromise = BrowserTestUtils.waitForEvent(
-      contextMenu,
-      "popupshown"
-    );
-
-    EventUtils.synthesizeMouseAtCenter(toolbarNode, {
-      button: 2,
-      type: "contextmenu",
+    return openContextMenuWithRetry(contextMenu, () => {
+      EventUtils.synthesizeMouseAtCenter(toolbarNode, {
+        button: 2,
+        type: "contextmenu",
+      });
     });
-    await popupShownPromise;
-    return contextMenu;
   }, optionItems);
 });
 
@@ -425,13 +409,9 @@ add_task(async function test_sidebar_folder_contextmenu_contents() {
           SidebarController.browser.contentDocument.getElementById(
             "placesContext"
           );
-        let popupShownPromise = BrowserTestUtils.waitForEvent(
-          contextMenu,
-          "popupshown"
-        );
-        synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
-        await popupShownPromise;
-        return contextMenu;
+        return openContextMenuWithRetry(contextMenu, () => {
+          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+        });
       },
       optionItems,
       SidebarController.browser.contentDocument
@@ -471,13 +451,9 @@ add_task(async function test_sidebar_multiple_folders_contextmenu_contents() {
           SidebarController.browser.contentDocument.getElementById(
             "placesContext"
           );
-        let popupShownPromise = BrowserTestUtils.waitForEvent(
-          contextMenu,
-          "popupshown"
-        );
-        synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
-        await popupShownPromise;
-        return contextMenu;
+        return openContextMenuWithRetry(contextMenu, () => {
+          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+        });
       },
       optionItems,
       SidebarController.browser.contentDocument
@@ -516,13 +492,9 @@ add_task(async function test_sidebar_bookmark_contextmenu_contents() {
           SidebarController.browser.contentDocument.getElementById(
             "placesContext"
           );
-        let popupShownPromise = BrowserTestUtils.waitForEvent(
-          contextMenu,
-          "popupshown"
-        );
-        synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
-        await popupShownPromise;
-        return contextMenu;
+        return openContextMenuWithRetry(contextMenu, () => {
+          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+        });
       },
       optionItems,
       SidebarController.browser.contentDocument
@@ -565,13 +537,9 @@ add_task(async function test_sidebar_bookmark_search_contextmenu_contents() {
           SidebarController.browser.contentDocument.getElementById(
             "placesContext"
           );
-        let popupShownPromise = BrowserTestUtils.waitForEvent(
-          contextMenu,
-          "popupshown"
-        );
-        synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
-        await popupShownPromise;
-        return contextMenu;
+        return openContextMenuWithRetry(contextMenu, () => {
+          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+        });
       },
       optionItems,
       SidebarController.browser.contentDocument
@@ -605,14 +573,10 @@ add_task(async function test_library_bookmark_contextmenu_contents() {
     await checkContextMenu(
       async bookmark => {
         let contextMenu = right.ownerDocument.getElementById("placesContext");
-        let popupShownPromise = BrowserTestUtils.waitForEvent(
-          contextMenu,
-          "popupshown"
-        );
         right.selectItems([bookmark.guid]);
-        synthesizeClickOnSelectedTreeCell(right, { type: "contextmenu" });
-        await popupShownPromise;
-        return contextMenu;
+        return openContextMenuWithRetry(contextMenu, () => {
+          synthesizeClickOnSelectedTreeCell(right, { type: "contextmenu" });
+        });
       },
       optionItems,
       right.ownerDocument
@@ -648,14 +612,10 @@ add_task(async function test_library_bookmark_search_contextmenu_contents() {
         await setSearch(searchBox, SECOND_BOOKMARK_TITLE);
 
         let contextMenu = right.ownerDocument.getElementById("placesContext");
-        let popupShownPromise = BrowserTestUtils.waitForEvent(
-          contextMenu,
-          "popupshown"
-        );
         right.selectItems([bookmark.guid]);
-        synthesizeClickOnSelectedTreeCell(right, { type: "contextmenu" });
-        await popupShownPromise;
-        return contextMenu;
+        return openContextMenuWithRetry(contextMenu, () => {
+          synthesizeClickOnSelectedTreeCell(right, { type: "contextmenu" });
+        });
       },
       optionItems,
       right.ownerDocument
@@ -688,13 +648,9 @@ add_task(async function test_sidebar_mixedselection_contextmenu_contents() {
           SidebarController.browser.contentDocument.getElementById(
             "placesContext"
           );
-        let popupShownPromise = BrowserTestUtils.waitForEvent(
-          contextMenu,
-          "popupshown"
-        );
-        synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
-        await popupShownPromise;
-        return contextMenu;
+        return openContextMenuWithRetry(contextMenu, () => {
+          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+        });
       },
       optionItems,
       SidebarController.browser.contentDocument
@@ -728,13 +684,9 @@ add_task(async function test_sidebar_multiple_bookmarks_contextmenu_contents() {
           SidebarController.browser.contentDocument.getElementById(
             "placesContext"
           );
-        let popupShownPromise = BrowserTestUtils.waitForEvent(
-          contextMenu,
-          "popupshown"
-        );
-        synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
-        await popupShownPromise;
-        return contextMenu;
+        return openContextMenuWithRetry(contextMenu, () => {
+          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+        });
       },
       optionItems,
       SidebarController.browser.contentDocument
@@ -766,13 +718,9 @@ add_task(async function test_sidebar_multiple_links_contextmenu_contents() {
             SidebarController.browser.contentDocument.getElementById(
               "placesContext"
             );
-          let popupShownPromise = BrowserTestUtils.waitForEvent(
-            contextMenu,
-            "popupshown"
-          );
-          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
-          await popupShownPromise;
-          return contextMenu;
+          return openContextMenuWithRetry(contextMenu, () => {
+            synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+          });
         },
         optionItems,
         SidebarController.browser.contentDocument
@@ -806,13 +754,9 @@ add_task(async function test_sidebar_mixed_bookmarks_contextmenu_contents() {
             SidebarController.browser.contentDocument.getElementById(
               "placesContext"
             );
-          let popupShownPromise = BrowserTestUtils.waitForEvent(
-            contextMenu,
-            "popupshown"
-          );
-          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
-          await popupShownPromise;
-          return contextMenu;
+          return openContextMenuWithRetry(contextMenu, () => {
+            synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+          });
         },
         optionItems,
         SidebarController.browser.contentDocument
@@ -834,18 +778,14 @@ add_task(async function test_library_noselection_contextmenu_contents() {
     await checkContextMenu(
       async () => {
         let contextMenu = right.ownerDocument.getElementById("placesContext");
-        let popupShownPromise = BrowserTestUtils.waitForEvent(
-          contextMenu,
-          "popupshown"
-        );
         right.selectItems([]);
-        EventUtils.synthesizeMouseAtCenter(
-          right.body,
-          { type: "contextmenu" },
-          right.ownerGlobal
-        );
-        await popupShownPromise;
-        return contextMenu;
+        return openContextMenuWithRetry(contextMenu, () => {
+          EventUtils.synthesizeMouseAtCenter(
+            right.body,
+            { type: "contextmenu" },
+            right.ownerGlobal
+          );
+        });
       },
       optionItems,
       right.ownerDocument
@@ -887,18 +827,15 @@ add_task(async function test_private_browsing_window() {
       let toolbarNode = getToolbarNodeForItemGuid(toolbarBookmark.guid, win);
 
       let contextMenu = win.document.getElementById("placesContext");
-      let popupShownPromise = BrowserTestUtils.waitForEvent(
-        contextMenu,
-        "popupshown"
-      );
-
-      EventUtils.synthesizeMouseAtCenter(
-        toolbarNode,
-        { button: 2, type: "contextmenu" },
-        win
-      );
-      await popupShownPromise;
-      return contextMenu;
+      // TODO (Bug 2018551): figure out why on Linux apparently some time is
+      // needed before the UI is ready to handle mouse events.
+      return openContextMenuWithRetry(contextMenu, () => {
+        EventUtils.synthesizeMouseAtCenter(
+          toolbarNode,
+          { button: 2, type: "contextmenu" },
+          toolbarNode.ownerGlobal
+        );
+      });
     },
     [
       ...optionItems,
@@ -921,13 +858,9 @@ add_task(async function test_private_browsing_window() {
             win.SidebarController.browser.contentDocument.getElementById(
               "placesContext"
             );
-          let popupShownPromise = BrowserTestUtils.waitForEvent(
-            contextMenu,
-            "popupshown"
-          );
-          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" }, win);
-          await popupShownPromise;
-          return contextMenu;
+          return openContextMenuWithRetry(contextMenu, () => {
+            synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+          });
         },
         optionItems,
         win.SidebarController.browser.contentDocument
@@ -949,14 +882,10 @@ add_task(async function test_private_browsing_window() {
       await checkContextMenu(
         async bookmark => {
           let contextMenu = right.ownerDocument.getElementById("placesContext");
-          let popupShownPromise = BrowserTestUtils.waitForEvent(
-            contextMenu,
-            "popupshown"
-          );
           right.selectItems([bookmark.guid]);
-          synthesizeClickOnSelectedTreeCell(right, { type: "contextmenu" });
-          await popupShownPromise;
-          return contextMenu;
+          return openContextMenuWithRetry(contextMenu, () => {
+            synthesizeClickOnSelectedTreeCell(right, { type: "contextmenu" });
+          });
         },
         optionItems,
         right.ownerDocument
