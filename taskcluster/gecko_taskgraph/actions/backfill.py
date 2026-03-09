@@ -320,6 +320,7 @@ def add_task_with_original_manifests(
 
     if label not in full_task_graph.tasks:
         label = new_label(label, full_task_graph.tasks)
+        input["label"] = label
 
     to_run = [label]
 
