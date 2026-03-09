@@ -226,6 +226,32 @@ static bool IsPathDefaultForClass(
   return _wcsicmp(exePath, pathFromReg.Data()) == 0;
 }
 
+static bool IsMsixProgIdDefaultForClass(
+    const RefPtr<IApplicationAssociationRegistration>& pAAR, LPCWSTR aClass) {
+  UniquePtr<wchar_t[]> firefoxProgId;
+  const nsresult nsr{GetMsixProgId(aClass, firefoxProgId)};
+  if (NS_FAILED(nsr)) {
+    return false;
+  }
+
+  const ASSOCIATIONTYPE queryType{aClass[0] != L'.' ? AT_URLPROTOCOL
+                                                    : AT_FILEEXTENSION};
+  LPWSTR defaultProgId;
+  const HRESULT hr{pAAR->QueryCurrentDefault(aClass, queryType, AL_EFFECTIVE,
+                                             &defaultProgId)};
+  if (FAILED(hr)) {
+    return false;
+  }
+
+  const bool isDefault{::CompareStringOrdinal(firefoxProgId.get(), -1,
+                                              defaultProgId, -1,
+                                              TRUE) == CSTR_EQUAL};
+
+  CoTaskMemFree(defaultProgId);
+
+  return isDefault;
+}
+
 NS_IMETHODIMP
 nsWindowsShellService::IsDefaultBrowser(bool aForAllTypes,
                                         bool* aIsDefaultBrowser) {
@@ -239,6 +265,18 @@ nsWindowsShellService::IsDefaultBrowser(bool aForAllTypes,
     return NS_OK;
   }
 
+  LPCWSTR httpClass{L"http"};
+  LPCWSTR htmlClass{L".html"};
+
+  if (widget::WinUtils::HasPackageIdentity()) {
+    // Firefox is running as an MSIX package
+    *aIsDefaultBrowser = IsMsixProgIdDefaultForClass(pAAR, httpClass);
+    if (*aIsDefaultBrowser && aForAllTypes) {
+      *aIsDefaultBrowser = IsMsixProgIdDefaultForClass(pAAR, htmlClass);
+    }
+    return NS_OK;
+  }
+
   wchar_t exePath[MAXPATHLEN] = L"";
   nsresult rv = BinaryPath::GetLong(exePath);
 
@@ -246,9 +284,9 @@ nsWindowsShellService::IsDefaultBrowser(bool aForAllTypes,
     return NS_OK;
   }
 
-  *aIsDefaultBrowser = IsPathDefaultForClass(pAAR, exePath, L"http");
+  *aIsDefaultBrowser = IsPathDefaultForClass(pAAR, exePath, httpClass);
   if (*aIsDefaultBrowser && aForAllTypes) {
-    *aIsDefaultBrowser = IsPathDefaultForClass(pAAR, exePath, L".html");
+    *aIsDefaultBrowser = IsPathDefaultForClass(pAAR, exePath, htmlClass);
   }
   return NS_OK;
 }
@@ -266,14 +304,20 @@ nsWindowsShellService::IsDefaultHandlerFor(
     return NS_OK;
   }
 
+  const nsString& flatClass = PromiseFlatString(aFileExtensionOrProtocol);
+
+  if (widget::WinUtils::HasPackageIdentity()) {
+    // Firefox is running as an MSIX package
+    *aIsDefaultHandlerFor = IsMsixProgIdDefaultForClass(pAAR, flatClass.get());
+    return NS_OK;
+  }
+
   wchar_t exePath[MAXPATHLEN] = L"";
   nsresult rv = BinaryPath::GetLong(exePath);
 
   if (NS_FAILED(rv)) {
     return NS_OK;
   }
-
-  const nsString& flatClass = PromiseFlatString(aFileExtensionOrProtocol);
 
   *aIsDefaultHandlerFor = IsPathDefaultForClass(pAAR, exePath, flatClass.get());
   return NS_OK;
