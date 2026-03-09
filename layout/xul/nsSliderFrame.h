@@ -101,6 +101,7 @@ class nsSliderFrame final : public nsContainerFrame {
 
   nsresult StartDrag(mozilla::dom::Event* aEvent);
   nsresult StopDrag();
+  bool ClickAndHoldActive() const;
 
   void StartAPZDrag(mozilla::WidgetGUIEvent* aEvent);
 
@@ -164,10 +165,7 @@ class nsSliderFrame final : public nsContainerFrame {
   void SuppressDisplayport();
   void UnsuppressDisplayport();
 
-  void StartRepeat() {
-    nsRepeatService::GetInstance()->Start(Notify, this, mContent->OwnerDoc(),
-                                          "nsSliderFrame"_ns);
-  }
+  void StartRepeat();
   void StopRepeat() {
     nsRepeatService::GetInstance()->Stop(Notify, this);
     mCurrentClickHoldDestination = Nothing();

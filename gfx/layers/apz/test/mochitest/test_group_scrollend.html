@@ -29,6 +29,18 @@ var smoothScrollEnabled = [
   ["general.smoothScroll.msdPhysics.enabled", false],
 ];
 
+var scrollbarPrefs = [
+  ...prefs,
+  ["ui.useOverlayScrollbars", 0],
+  ["layout.scrollbars.click_and_hold_track.continue_to_end", false],
+];
+
+var scrollbarPrefsWithHitTest = [
+  ...scrollbarPrefs,
+  ["test.events.async.enabled", true],
+  ["apz.test.logging_enabled", true],
+];
+
 var subtests = [
   {"file": "helper_basic_scrollend.html?chrome-only=true", "prefs": prefs},
   {"file": "helper_basic_scrollend.html?chrome-only=false", "prefs": prefs},
@@ -58,6 +70,10 @@ var subtests = [
         "prefs": smoothScrollDisabled},
   {"file": "helper_keyboard_scrollend.html?direction=down",
         "prefs": smoothScrollDisabled},
+  {"file": "helper_click_and_hold_scrollbar_scrollend.html",
+   "prefs": scrollbarPrefsWithHitTest},
+  {"file": "helper_click_and_hold_scrollbar_scrollend_after_snap.html",
+   "prefs": scrollbarPrefs},
 ];
 
 if (isApzEnabled()) {

@@ -4286,6 +4286,8 @@ void AsyncPanZoomController::SmoothScrollTo(
   if (ConvertDestinationToDelta(aDestination.mPosition) == ParentLayerPoint()) {
     return;
   }
+
+  StateChangeNotificationBlocker blocker(this);
   CancelAnimation();
   SetState(SMOOTH_SCROLL);
 

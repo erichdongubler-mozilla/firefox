@@ -29,6 +29,10 @@
 using namespace mozilla;
 using mozilla::dom::Element;
 
+static mozilla::LazyLogModule sScrollBarLog("apz.scrollbar");
+#define SCROLLBAR_LOG(...) \
+  MOZ_LOG(sScrollBarLog, LogLevel::Debug, (__VA_ARGS__));
+
 //
 // NS_NewScrollbarFrame
 //
@@ -479,4 +483,12 @@ void nsScrollbarFrame::AppendAnonymousContentTo(
   if (mDownBottomButton) {
     aElements.AppendElement(mDownBottomButton);
   }
+}
+
+void nsScrollbarFrame::SetButtonScrollDirectionAndUnit(
+    int32_t aDirection, mozilla::ScrollUnit aUnit) {
+  SCROLLBAR_LOG("nsScrollbarFrame(%p) setting button scroll direction=%d", this,
+                aDirection);
+  mButtonScrollDirection = aDirection;
+  mButtonScrollUnit = aUnit;
 }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width; initial-scale=1.0">
-  <title>Scrolling with mouse down on the scrollbar</title>
+  <title>Scrolling with a click and hold gesture on a scrollbar only one scrollend</title>
   <script type="application/javascript" src="apz_test_native_event_utils.js"></script>
   <script type="application/javascript" src="apz_test_utils.js"></script>
   <script src="/tests/SimpleTest/paint_listener.js"></script>
@@ -16,17 +16,38 @@
   <script type="text/javascript">
 
 async function test() {
-  var targetElement = elementForTarget(window);
-  var w = {},
+  let targetElement = elementForTarget(window);
+  let w = {},
     h = {};
-  var utils = utilsForTarget(window);
+  let utils = utilsForTarget(window);
   utils.getScrollbarSizes(targetElement, w, h);
-  var verticalScrollbarWidth = w.value;
-  var mouseX = targetElement.clientWidth + verticalScrollbarWidth / 2;
-  var mouseY = targetElement.clientHeight - 100; // 100 pixels above the bottom of the scrollbar track
+  let verticalScrollbarWidth = w.value;
+  let mouseX = targetElement.clientWidth + verticalScrollbarWidth / 2;
+  let mouseY = targetElement.clientHeight - 100; // 100 pixels above the bottom of the scrollbar track
+  let scrollendCount = 0;
+
+  window.addEventListener("scrollend", () => {
+    scrollendCount += 1;
+  });
 
   let scrollEndPromise = promiseScrollend();
 
+  let thumbReachedCursor = new Promise(resolve => {
+    window.addEventListener("scroll", (_) => {
+      // Give WebRender a chance to sample any remaining async scroll offset
+      // that affects the scrollbar position.
+      utils.advanceTimeAndRefresh(16);
+      utils.restoreNormalRefresh();
+
+      let result = hitTest({x: mouseX, y: mouseY});
+      let thumbUnderCursor = (result.hitInfo & APZHitResultFlags.SCROLLBAR_THUMB) != 0;
+      if (thumbUnderCursor) {
+        resolve();
+      }
+    })
+  });
+
+  info("mouse move");
   // Click and hold the mouse. Thumb should start scrolling towards the click location.
   await promiseNativeMouseEventWithAPZ({
     target: window,
@@ -34,6 +55,8 @@ async function test() {
     offsetY: mouseY,
     type: "mousemove",
   });
+
+  info("mouse down");
   // mouse down
   await promiseNativeMouseEventWithAPZ({
     target: window,
@@ -42,30 +65,27 @@ async function test() {
     type: "mousedown",
   });
 
-  // Wait for scrolling to complete
-  await scrollEndPromise;
+  // Wait for the thumb to reach the cursor.
+  // At this point, scrolling will stop, but we don't send a scrollend
+  // immediately because the mouse button is still down, so we are in
+  // a "scrollbar track click-and-hold" state.
+  await thumbReachedCursor;
 
   // Flush everything just to be safe
   await promiseOnlyApzControllerFlushed();
 
-  // Give WebRender a chance to sample any remaining async scroll offset
-  // that affects the scrollbar position.
-  utils.advanceTimeAndRefresh(16);
-  utils.restoreNormalRefresh();
-
-  var result = hitTest({x: mouseX, y: mouseY});
-
-  // Check that the scroll thumb is under the cursor.
-  // If the bug occurs, the thumb will scroll too far and
-  // will not be under the cursor.
-  ok((result.hitInfo & APZHitResultFlags.SCROLLBAR_THUMB) != 0, "Scrollbar thumb hit");
-
+  // Send a mouseup to stop the scroll gesture.
+  // This should trigger the scrollend which was deferred before.
   await promiseNativeMouseEventWithAPZ({
     target: window,
     offsetX: mouseX,
     offsetY: mouseY,
     type: "mouseup",
   });
+
+  await scrollEndPromise;
+
+  is(scrollendCount, 1, "We should have only fired one scrollend event");
 }
 
 // Note: on Linux, if the gtk-primary-button-warps-slider setting

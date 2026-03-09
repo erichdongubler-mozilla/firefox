@@ -194,6 +194,16 @@ void nsScrollbarButtonFrame::Notify() {
   }
 }
 
+void nsScrollbarButtonFrame::StopRepeat() {
+  nsRepeatService::GetInstance()->Stop(Notify, this);
+
+  nsScrollbarFrame* scrollbar = GetScrollbar();
+  if (!scrollbar) {
+    return;
+  }
+  scrollbar->SetButtonScrollDirectionAndUnit(0, ScrollUnit::WHOLE);
+}
+
 nsIScrollbarMediator* nsScrollbarButtonFrame::GetMediator() {
   if (auto* sb = GetScrollbar()) {
     return sb->GetScrollbarMediator();

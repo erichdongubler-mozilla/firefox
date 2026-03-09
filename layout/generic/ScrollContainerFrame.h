@@ -508,7 +508,7 @@ class ScrollContainerFrame : public nsContainerFrame,
    * main thread scrolling is used to determine best matching snap point
    * when called after a fling gesture on a trackpad or mouse wheel.
    */
-  void ScrollSnap() { return ScrollSnap(ScrollMode::SmoothMsd); }
+  void ScrollSnap() { ScrollSnap(ScrollMode::SmoothMsd); }
 
   /**
    * @note This method might destroy the frame, pres shell and other objects.
@@ -1114,6 +1114,7 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   MOZ_CAN_RUN_SCRIPT nsresult FireScrollPortEvent();
   void PostScrollEndEvent();
+  void PostOrDeferScrollEndEvent();
   MOZ_CAN_RUN_SCRIPT void FireScrollEndEvent();
   void PostOverflowEvent();
 
@@ -1183,8 +1184,8 @@ class ScrollContainerFrame : public nsContainerFrame,
     }
     return pt;
   }
-  void ScrollSnap(ScrollMode aMode);
-  void ScrollSnap(const nsPoint& aDestination,
+  bool ScrollSnap(ScrollMode aMode);
+  bool ScrollSnap(const nsPoint& aDestination,
                   ScrollMode aMode = ScrollMode::SmoothMsd);
 
   bool HasPendingScrollRestoration() const {
@@ -1264,6 +1265,7 @@ class ScrollContainerFrame : public nsContainerFrame,
                            UniquePtr<ScrollSnapTargetIds> aSnapTargetIds,
                            ScrollOrigin aOrigin = ScrollOrigin::NotSpecified);
 
+  bool SliderFrameInClickAndHold() const;
   bool HasPerspective() const { return ChildrenHavePerspective(); }
   bool HasBgAttachmentLocal() const;
   StyleDirection GetScrolledFrameDir() const;
@@ -1543,6 +1545,10 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   // Whether we need to schedule the scroll-driven animations.
   bool mMayScheduleScrollAnimations : 1;
+
+  // Whether we need to ensure a scrollend is fired at the end of a scrollbar
+  // click and hold gesture.
+  bool mScrollbarClickAndHoldScrollendPending : 1;
 
 #ifdef MOZ_WIDGET_ANDROID
   // True if this scrollable frame was vertically overflowed on the last reflow.

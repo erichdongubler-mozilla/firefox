@@ -86,10 +86,7 @@ class nsScrollbarFrame final : public nsContainerFrame,
   void MoveToNewPosition();
   int32_t GetButtonScrollDirection() const { return mButtonScrollDirection; }
   void SetButtonScrollDirectionAndUnit(int32_t aDirection,
-                                       mozilla::ScrollUnit aUnit) {
-    mButtonScrollDirection = aDirection;
-    mButtonScrollUnit = aUnit;
-  }
+                                       mozilla::ScrollUnit aUnit);
 
   // nsIAnonymousContentCreator
   nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) override;
