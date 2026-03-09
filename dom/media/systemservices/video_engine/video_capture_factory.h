@@ -33,7 +33,7 @@ class VideoCaptureFactory : webrtc::VideoCaptureOptions::Callback {
   VideoCaptureFactory();
 
   std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> CreateDeviceInfo(
-      int32_t aId, mozilla::camera::CaptureDeviceType aType);
+      mozilla::camera::CaptureDeviceType aType);
 
   struct CreateVideoCaptureResult {
     webrtc::scoped_refptr<webrtc::VideoCaptureModule> mCapturer;
@@ -43,7 +43,7 @@ class VideoCaptureFactory : webrtc::VideoCaptureOptions::Callback {
   };
 
   CreateVideoCaptureResult CreateVideoCapture(
-      int32_t aModuleId, const char* aUniqueId,
+      int32_t aCaptureId, const char* aUniqueId,
       mozilla::camera::CaptureDeviceType aType);
 
   using CameraBackendInitPromise = MozPromise<nsresult, nsresult, false>;

@@ -51,12 +51,11 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   /* Create a screen capture modules object
    */
   static DesktopCaptureImpl* Create(
-      const int32_t aModuleId, const char* aUniqueId,
+      int32_t aCaptureId, const char* aUniqueId,
       const mozilla::camera::CaptureDeviceType aType);
 
   [[nodiscard]] static std::shared_ptr<VideoCaptureModule::DeviceInfo>
-  CreateDeviceInfo(const int32_t aId,
-                   const mozilla::camera::CaptureDeviceType aType);
+  CreateDeviceInfo(const mozilla::camera::CaptureDeviceType aType);
 
   // mControlThread only.
   void RegisterCaptureDataCallback(
@@ -80,13 +79,12 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   void CaptureFrameOnThread();
   mozilla::MediaEventSource<void>* CaptureEndedEvent();
 
-  const int32_t mModuleId;
   const mozilla::TrackingId mTrackingId;
   const std::string mDeviceUniqueId;
   const mozilla::camera::CaptureDeviceType mDeviceType;
 
  protected:
-  DesktopCaptureImpl(const int32_t aId, const char* aUniqueId,
+  DesktopCaptureImpl(const int32_t aCaptureId, const char* aUniqueId,
                      const mozilla::camera::CaptureDeviceType aType);
   virtual ~DesktopCaptureImpl();
 

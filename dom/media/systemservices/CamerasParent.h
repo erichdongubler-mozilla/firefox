@@ -23,6 +23,10 @@ namespace mozilla {
 class VideoCaptureFactory;
 }
 
+namespace webrtc {
+class DesktopCaptureImpl;
+}
+
 namespace mozilla::camera {
 
 class CamerasParent;
@@ -117,6 +121,10 @@ class AggregateCapturer final
   // The id that identifies the capturer instance of the associated source
   // device in VideoEngine.
   const int mCaptureId;
+  // The capture module of the associated source.
+  const webrtc::scoped_refptr<webrtc::VideoCaptureModule> mCapturer;
+  // The desktop capture module should the associated source be a desktop one.
+  webrtc::DesktopCaptureImpl* const mDesktopCapturer = nullptr;
   // Tracking ID of the capturer for profiler markers.
   const TrackingId mTrackingId;
   // The (immutable) list of capabilities offered by the associated source
@@ -130,6 +138,8 @@ class AggregateCapturer final
   AggregateCapturer(nsISerialEventTarget* aVideoCaptureThread,
                     CaptureEngine aCapEng, VideoEngine* aEngine,
                     const nsCString& aUniqueId, int aCaptureId,
+                    webrtc::VideoCaptureModule* aCapturer,
+                    webrtc::DesktopCaptureImpl* aDesktopCapturer,
                     nsTArray<webrtc::VideoCaptureCapability>&& aCapabilities);
 
   Maybe<webrtc::VideoCaptureCapability> CombinedCapability(
