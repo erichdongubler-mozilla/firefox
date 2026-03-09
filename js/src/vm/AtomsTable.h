@@ -164,7 +164,7 @@ class AtomsTable {
 
  public:
   // An iterator used for sweeping atoms incrementally.
-  using SweepIterator = AtomSet::Enum;
+  using SweepIterator = AtomSet::ModIterator;
 
   AtomsTable();
   ~AtomsTable();

@@ -945,7 +945,7 @@ bool ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy,
 
   // Step 22.
   if (!uncheckedResultKeys.empty()) {
-    RootedId id(cx, uncheckedResultKeys.all().front());
+    RootedId id(cx, uncheckedResultKeys.iter().get());
     return js::Throw(cx, id, JSMSG_CANT_REPORT_NEW);
   }
 

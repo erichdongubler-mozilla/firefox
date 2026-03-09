@@ -5629,9 +5629,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
       scriptVector.clear();
 
       // Re-add only the innermost scripts to the results.
-      for (RealmToScriptMap::Range r = innermostForRealm.all(); !r.empty();
-           r.popFront()) {
-        if (!scriptVector.append(r.front().value())) {
+      for (auto iter = innermostForRealm.iter(); !iter.done(); iter.next()) {
+        if (!scriptVector.append(iter.get().value())) {
           return false;
         }
       }

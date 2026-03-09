@@ -3615,8 +3615,8 @@ bool InnerViewTable::sweepViewsAfterMinorGC(JSTracer* trc,
 
 size_t InnerViewTable::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
   size_t vectorSize = 0;
-  for (auto r = map.all(); !r.empty(); r.popFront()) {
-    vectorSize += r.front().value().views.sizeOfExcludingThis(mallocSizeOf);
+  for (auto iter = map.iter(); !iter.done(); iter.next()) {
+    vectorSize += iter.get().value().views.sizeOfExcludingThis(mallocSizeOf);
   }
 
   return vectorSize + map.shallowSizeOfExcludingThis(mallocSizeOf) +
