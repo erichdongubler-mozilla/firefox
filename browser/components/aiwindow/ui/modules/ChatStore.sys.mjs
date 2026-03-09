@@ -422,16 +422,17 @@ class ChatStore {
   }
 
   /**
-   * Searches for conversations where the conversation title, or the conversation
-   * contains a user message where the search string contains a partial match
-   * in the message.content.body field
+   * Searches for conversations where the conversation title or a user/assistant
+   * message contains a partial match of the search string in the
+   * message.content.body field.
    *
    * @param {string} searchString - The string to search with for conversations
    * @param {boolean} [includeMessages=true] - Whether to fetch messages for each conversation
    *
    * @returns {Array<ChatConversation>} - An array of conversations with or without messages
-   * that contain a message that matches the search string in the conversation
-   * titles
+   * that match the search string in title or message body. Each conversation may
+   * have a `matchingSnippet` property containing the raw markdown text of the
+   * first message body that matched the search string.
    */
   async search(searchString, includeMessages = true) {
     await this.#ensureDatabase().catch(e => {
@@ -455,7 +456,11 @@ class ChatStore {
       return [];
     }
 
-    const conversations = rows.map(parseConversationRow);
+    const conversations = rows.map(row => {
+      const conv = parseConversationRow(row);
+      conv.matchingSnippet = row.getResultByName("matching_snippet");
+      return conv;
+    });
 
     if (!includeMessages) {
       return conversations;

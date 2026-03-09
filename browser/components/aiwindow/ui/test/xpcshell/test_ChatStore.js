@@ -493,6 +493,75 @@ add_atomic_task(async function test_ChatStorage_search() {
   });
 });
 
+add_atomic_task(async function test_ChatStorage_search_matchingSnippet() {
+  // Title-only match: matchingSnippet should be null
+  await addConvoWithSpecificTestData(
+    new Date("1/2/2025"),
+    new URL("https://www.firefox.com"),
+    new URL("https://www.mozilla.org"),
+    "Conversation with xyzSnippetToken in title",
+    "unrelated message body"
+  );
+
+  // Body match: matchingSnippet should be populated
+  await addConvoWithSpecificTestData(
+    new Date("1/2/2025"),
+    new URL("https://www.firefox.com"),
+    new URL("https://www.mozilla.org"),
+    "Unrelated title",
+    "message body containing xyzSnippetToken"
+  );
+
+  const conversations = await gChatStore.search("xyzSnippetToken");
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.equal(conversations.length, 2, "Both conversations match");
+
+    const titleMatch = conversations.find(c =>
+      c.title.includes("xyzSnippetToken")
+    );
+    const bodyMatch = conversations.find(
+      c => !c.title.includes("xyzSnippetToken")
+    );
+
+    soft.equal(
+      titleMatch.matchingSnippet,
+      null,
+      "Title-only match has no snippet"
+    );
+    soft.ok(
+      bodyMatch.matchingSnippet?.includes("xyzSnippetToken"),
+      "Body match snippet includes the search term"
+    );
+  });
+});
+
+add_atomic_task(
+  async function test_ChatStorage_search_excludes_system_messages() {
+    const conversation = new ChatConversation({
+      createdDate: new Date("1/2/2025").getTime(),
+      updatedDate: new Date("1/2/2025").getTime(),
+    });
+    conversation.title = "Unrelated title";
+    // role 2 = SYSTEM
+    conversation.addMessage(
+      2,
+      { body: "system prompt xyzSystemToken99" },
+      null,
+      0
+    );
+    conversation.addUserMessage("unrelated user message");
+    await gChatStore.updateConversation(conversation);
+
+    const conversations = await gChatStore.search("xyzSystemToken99");
+    Assert.equal(
+      conversations.length,
+      0,
+      "System message content excluded from search"
+    );
+  }
+);
+
 add_atomic_task(async function test_ChatStorage_deleteConversationById() {
   await addBasicConvoTestData("1/1/2025", "a conversation");
 
