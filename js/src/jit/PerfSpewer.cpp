@@ -1285,7 +1285,7 @@ void js::jit::CollectPerfSpewerJitCodeProfile(JitCode* code, const char* msg) {
     }
     UniqueChars desc = JS_smprintf("%s", msg);
     if (!desc) {
-      DisablePerfSpewer();
+      DisablePerfSpewer(lock);
       return;
     }
     PerfSpewer::CollectJitCodeInfo(desc, code, maybeProfilerRecord, lock);
@@ -1307,7 +1307,7 @@ void js::jit::CollectPerfSpewerJitCodeProfile(uintptr_t base, uint64_t size,
     }
     UniqueChars desc = JS_smprintf("%s", msg);
     if (!desc) {
-      DisablePerfSpewer();
+      DisablePerfSpewer(lock);
       return;
     }
     PerfSpewer::CollectJitCodeInfo(desc, reinterpret_cast<void*>(base), size,
