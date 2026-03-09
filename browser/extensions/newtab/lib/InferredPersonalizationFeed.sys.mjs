@@ -104,7 +104,7 @@ export class InferredPersonalizationFeed {
   }
 
   /**
-   * Get Inferrred model raw data
+   * Get Inferred model raw data
    *
    * @returns JSON of inferred model
    */
@@ -329,21 +329,20 @@ export class InferredPersonalizationFeed {
     await this.cache.set("interest_vector", interest_vector);
     this.loaded = true;
 
-    this.store.dispatch(
-      ac.OnlyToMain({
-        type: at.INFERRED_PERSONALIZATION_UPDATE,
-        data: {
-          lastUpdated: interest_vector.lastUpdated,
-          inferredInterests: interest_vector.data.inferredInterests,
-          coarseInferredInterests: interest_vector.data.coarseInferredInterests,
-          coarsePrivateInferredInterests:
-            interest_vector.data.coarsePrivateInferredInterests,
-        },
-        meta: {
-          isStartup,
-        },
-      })
-    );
+    const updateAction = {
+      type: at.INFERRED_PERSONALIZATION_UPDATE,
+      data: {
+        lastUpdated: interest_vector.lastUpdated,
+        inferredInterests: interest_vector.data.inferredInterests,
+        coarseInferredInterests: interest_vector.data.coarseInferredInterests,
+        coarsePrivateInferredInterests:
+          interest_vector.data.coarsePrivateInferredInterests,
+      },
+      meta: {
+        isStartup,
+      },
+    };
+    this.store.dispatch(ac.BroadcastToContent(updateAction));
   }
 
   async handleDiscoveryStreamImpressionStats(action) {
@@ -542,9 +541,16 @@ export class InferredPersonalizationFeed {
         }
         break;
       case at.INFERRED_PERSONALIZATION_REFRESH:
-        if (this.loaded && this.isEnabled()) {
+        if (this.isEnabled()) {
           await this.reset();
           await this.loadInterestVector();
+          const features = await this.getDebuggingInterestFeaturesSupported();
+          this.store.dispatch(
+            ac.BroadcastToContent({
+              type: at.INFERRED_PERSONALIZATION_DEBUG_FEATURES_UPDATE,
+              data: features,
+            })
+          );
         }
         break;
       case at.INFERRED_PERSONALIZATION_DEBUG_FEATURES_REQUEST: {
