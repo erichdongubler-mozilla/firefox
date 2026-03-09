@@ -2169,10 +2169,9 @@ class MOZ_STACK_CLASS ModuleValidator : public ModuleValidatorShared {
     if (!codeMeta_->funcs.resize(funcImportMap_.count() + funcDefs_.length())) {
       return nullptr;
     }
-    for (FuncImportMap::Range r = funcImportMap_.all(); !r.empty();
-         r.popFront()) {
-      uint32_t funcIndex = r.front().value();
-      uint32_t funcTypeIndex = r.front().key().sigIndex();
+    for (auto iter = funcImportMap_.iter(); !iter.done(); iter.next()) {
+      uint32_t funcIndex = iter.get().value();
+      uint32_t funcTypeIndex = iter.get().key().sigIndex();
       codeMeta_->funcs[funcIndex] = FuncDesc(funcTypeIndex);
     }
     for (const Func& func : funcDefs_) {

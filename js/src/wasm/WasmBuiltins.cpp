@@ -2184,9 +2184,8 @@ bool wasm::EnsureBuiltinThunksInitialized(
     return false;
   }
 
-  for (TypedNativeToFuncPtrMap::Range r = typedNatives.all(); !r.empty();
-       r.popFront()) {
-    TypedNative typedNative = r.front().key();
+  for (auto iter = typedNatives.iter(); !iter.done(); iter.next()) {
+    TypedNative typedNative = iter.get().key();
 
     uint32_t codeRangeIndex = thunks->codeRanges.length();
     if (!thunks->typedNativeToCodeRange.putNew(typedNative, codeRangeIndex)) {
@@ -2194,7 +2193,7 @@ bool wasm::EnsureBuiltinThunksInitialized(
     }
 
     ABIFunctionType abiType = typedNative.abiType;
-    void* funcPtr = r.front().value();
+    void* funcPtr = iter.get().value();
 
     ExitReason exitReason = ExitReason::Fixed::BuiltinNative;
 
