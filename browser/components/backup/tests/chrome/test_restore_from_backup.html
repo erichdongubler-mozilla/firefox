@@ -15,6 +15,9 @@
   <link rel="stylesheet" href="chrome://mochikit/content/tests/SimpleTest/test.css"/>
   <script>
 
+    const { TestUtils } = ChromeUtils.importESModule(
+      "resource://testing-common/TestUtils.sys.mjs"
+    );
     const { BrowserTestUtils } = ChromeUtils.importESModule(
       "resource://testing-common/BrowserTestUtils.sys.mjs"
     );
@@ -50,6 +53,9 @@
       restoreFromBackup.backupServiceState = {
         ...restoreFromBackup.backupServiceState,
         backupFileToRestore: "/Some/User/Documents/Firefox Backup/backup.html",
+        backupFileInfo: {
+          date: new Date(0),
+        },
         selectableProfilesAllowed: false,
       };
       await restoreFromBackup.updateComplete;
@@ -63,6 +69,53 @@
 
       ok(true, "Detected event after pressing the restore button");
       is(event.detail.restoreType, "add", "restoreType should be add when selectableProfilesAllowed is false");
+    });
+
+    add_task(async function test_restore_disabled() {
+      let restoreFromBackup = document.getElementById("test-restore-from-backup");
+      let confirmButton = restoreFromBackup.confirmButtonEl;
+
+      restoreFromBackup.backupServiceState = {
+        ...restoreFromBackup.backupServiceState,
+        backupFileToRestore: null,
+        backupFileInfo: null,
+        selectableProfilesAllowed: false,
+      };
+      await restoreFromBackup.updateComplete;
+      ok(confirmButton?.disabled, "Restore button should be found and disabled");
+
+      restoreFromBackup.backupServiceState = {
+        ...restoreFromBackup.backupServiceState,
+        backupFileToRestore: "/Some/User/Documents/Firefox Backup/backup.html",
+      };
+      await restoreFromBackup.updateComplete;
+      ok(
+        confirmButton?.disabled,
+        "Restore button should be disabled if the backup info can't be found"
+      );
+
+      restoreFromBackup.backupServiceState = {
+        ...restoreFromBackup.backupServiceState,
+        backupFileInfo: {
+          date: new Date(0),
+        },
+      };
+      await restoreFromBackup.updateComplete;
+      is(
+        confirmButton?.disabled,
+        false,
+        "Restore button should be enabled once the backup info is found"
+      );
+
+      restoreFromBackup.backupServiceState = {
+        ...restoreFromBackup.backupServiceState,
+        backupFileToRestore: null,
+      };
+      await restoreFromBackup.updateComplete;
+      ok(
+        confirmButton?.disabled,
+        "Restore button should be disabled if the restore name isn't set, even if there's backup info"
+      );
     });
 
     /**
@@ -123,6 +176,49 @@
 
       await promise;
       ok(true, "Detected event after new file is selected");
+    });
+
+    /**
+     * Tests that missing backup file info doesn't result in another backup
+     * file info request.
+     */
+    add_task(async function test_getbackupfileinfo_from_picked_file() {
+      let restoreFromBackup = document.getElementById("test-restore-from-backup");
+      let content = document.getElementById("content");
+      let path = "/Some/User/Documents/Firefox Backup/backup-default.html";
+
+      for (let i = 0; i < 2; i++) {
+        let promise = BrowserTestUtils.waitForEvent(content, "BackupUI:GetBackupFileInfo");
+
+        let selectEvent = new CustomEvent("BackupUI:SelectNewFilepickerPath", {
+          detail: {
+            path,
+            iconURL: "chrome://global/skin/icons/document.svg"
+          }
+        });
+        restoreFromBackup.dispatchEvent(selectEvent);
+        await promise;
+
+        let inTest = true;
+        BrowserTestUtils.waitForEvent(content, "BackupUI:GetBackupFileInfo").then(() => {
+          // This lingers after the test finishes, so make sure it's a no-op.
+          // (Within this test, it should NOT be sent.)
+          ok(!inTest, "A second GetBackupFileInfo request was sent");
+        });
+
+        restoreFromBackup.backupServiceState = {
+          ...restoreFromBackup.backupServiceState,
+          backupFileToRestore: path,
+          backupFileInfo: null,
+        };
+        await restoreFromBackup.updateComplete;
+
+        // BrowserTestUtils.waitForEvent doesn't run immediately, so give it a
+        // tick.
+        await TestUtils.waitForTick();
+
+        inTest = false;
+      }
     });
 
     /**

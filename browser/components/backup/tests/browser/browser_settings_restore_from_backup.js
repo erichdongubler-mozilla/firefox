@@ -326,11 +326,6 @@ add_task(async function test_restore_in_progress() {
 
     let { restoreFromBackup, settings } =
       await initializedBackupWidgets(browser);
-    Assert.equal(
-      restoreFromBackup.filePicker.value,
-      "",
-      "File picker has no value assigned automatically"
-    );
 
     // There is a backup file, but it is not a valid one
     // we don't automatically pick it
@@ -347,6 +342,9 @@ add_task(async function test_restore_in_progress() {
     restoreFromBackup.backupServiceState = {
       ...restoreFromBackup.backupServiceState,
       backupFileToRestore: mockBackupFilePath,
+      backupFileInfo: {
+        date: new Date(0),
+      },
     };
     await restoreFromBackup.updateComplete;
 
@@ -416,6 +414,104 @@ add_task(async function test_restore_in_progress() {
     await quitObservedPromise;
 
     sandbox.restore();
+  });
+});
+
+add_task(async function test_restore_from_backup_prefills_prior_valid_backup() {
+  let dir = await IOUtils.createUniqueDirectory(
+    TEST_PROFILE_PATH,
+    "backup-dir"
+  );
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.backup.location", dir]],
+  });
+  await BackupService.get().createBackup({ profilePath: TEST_PROFILE_PATH });
+  let path = (await IOUtils.getChildren(dir))[0];
+  await SpecialPowers.popPrefEnv();
+
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    let { restoreFromBackup } = await initializedBackupWidgets(browser);
+
+    let mockBackupFile = await IOUtils.getFile(path);
+    MockFilePicker.showCallback = () => {
+      Assert.ok(true, "Filepicker shown");
+      MockFilePicker.setFiles([mockBackupFile]);
+    };
+    MockFilePicker.returnValue = MockFilePicker.returnOK;
+
+    let selectedFilePromise = BrowserTestUtils.waitForEvent(
+      restoreFromBackup,
+      "BackupUI:SelectNewFilepickerPath"
+    ).then(() =>
+      BrowserTestUtils.waitForEvent(
+        restoreFromBackup,
+        "BackupUI:StateWasUpdated"
+      )
+    );
+    restoreFromBackup.chooseButtonEl.click();
+    await selectedFilePromise;
+    await restoreFromBackup.updateComplete;
+
+    Assert.equal(
+      restoreFromBackup.filePicker.value,
+      path,
+      "The file picker should contain the expected path."
+    );
+  });
+
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    let { restoreFromBackup } = await initializedBackupWidgets(browser);
+
+    Assert.equal(
+      restoreFromBackup.filePicker.value,
+      path,
+      "The path selected before should be used."
+    );
+  });
+});
+
+add_task(async function test_restore_from_backup_displays_invalid_backup() {
+  const path = await IOUtils.createUniqueFile(TEST_PROFILE_PATH, "backup.html");
+  await IOUtils.writeUTF8(path, "");
+
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    let { restoreFromBackup } = await initializedBackupWidgets(browser);
+
+    const mockBackupFile = await IOUtils.getFile(path);
+    MockFilePicker.showCallback = () => {
+      Assert.ok(true, "Filepicker shown");
+      MockFilePicker.setFiles([mockBackupFile]);
+    };
+    MockFilePicker.returnValue = MockFilePicker.returnOK;
+
+    let selectedFilePromise = BrowserTestUtils.waitForEvent(
+      restoreFromBackup,
+      "BackupUI:SelectNewFilepickerPath"
+    ).then(() =>
+      BrowserTestUtils.waitForEvent(
+        restoreFromBackup,
+        "BackupUI:StateWasUpdated"
+      )
+    );
+    restoreFromBackup.chooseButtonEl.click();
+    await selectedFilePromise;
+    await restoreFromBackup.updateComplete;
+
+    Assert.equal(
+      restoreFromBackup.filePicker.value,
+      path,
+      "The file picker should contain the expected path."
+    );
+  });
+
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    let { restoreFromBackup } = await initializedBackupWidgets(browser);
+
+    Assert.equal(
+      restoreFromBackup.filePicker.value,
+      path,
+      "The path selected before should be used."
+    );
   });
 });
 

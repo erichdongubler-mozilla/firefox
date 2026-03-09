@@ -4786,9 +4786,10 @@ export class BackupService extends EventTarget {
       // state change observers to fire.
       this.setRecoveryError(ERRORS.NONE);
     } catch (error) {
-      // Nullify the file info when we catch errors that indicate the file is invalid
+      // If the file is invalid, then null out the info. Keep
+      // backupFileToRestore and backupFileCoarseLocation, though, to avoid
+      // blanking out the input.
       this.#_state.backupFileInfo = null;
-      this.#_state.backupFileToRestore = null;
 
       // Notify observers of the error last, after we have set the state.
       this.setRecoveryError(error.cause);

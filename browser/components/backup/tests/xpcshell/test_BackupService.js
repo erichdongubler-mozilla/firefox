@@ -1156,8 +1156,8 @@ add_task(async function test_getBackupFileInfo_error_handling() {
     );
     Assert.strictEqual(
       bs.state.backupFileToRestore,
-      null,
-      `backupFileToRestore should be cleared for error ${testError}`
+      "test-backup.html",
+      `backupFileToRestore should be kept the same`
     );
 
     sandbox.restore();

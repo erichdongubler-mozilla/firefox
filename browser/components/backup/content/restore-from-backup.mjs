@@ -36,6 +36,13 @@ export default class RestoreFromBackup extends MozLitElement {
   }
   #initializedResolvers = Promise.withResolvers();
 
+  /**
+   * It's possible if the user selected an invalid backup file that there is a
+   * filename but no info. To prevent that case from repeatedly asking for the
+   * 'missing' info, this tracks the previous filename we asked for.
+   */
+  #lastBackupInfoFilename = null;
+
   static properties = {
     _fileIconURL: { type: String },
     _restoreType: { type: String },
@@ -154,6 +161,9 @@ export default class RestoreFromBackup extends MozLitElement {
       let { path, iconURL } = event.detail;
       this._fileIconURL = iconURL;
 
+      // Check the backup info again even if it was the same file.
+      this.#lastBackupInfoFilename = null;
+
       this.#backupFileReadPromise = Promise.withResolvers();
       this.#backupFileReadPromise.promise.then(() => {
         const payload = {
@@ -210,9 +220,11 @@ export default class RestoreFromBackup extends MozLitElement {
 
   getBackupFileInfo(pathToFile = null) {
     let backupFile = pathToFile || this.backupServiceState?.backupFileToRestore;
-    if (!backupFile) {
+    if (!backupFile || this.#lastBackupInfoFilename === backupFile) {
       return;
     }
+
+    this.#lastBackupInfoFilename = backupFile;
     this.dispatchEvent(
       new CustomEvent("BackupUI:GetBackupFileInfo", {
         bubbles: true,
@@ -549,6 +561,7 @@ export default class RestoreFromBackup extends MozLitElement {
             type="primary"
             data-l10n-id=${buttonL10nId}
             ?disabled=${!this.backupServiceState?.backupFileToRestore ||
+            !this.backupServiceState?.backupFileInfo ||
             this.backupServiceState?.recoveryInProgress ||
             (this.backupServiceState?.selectableProfilesAllowed &&
               !this._restoreType)}
