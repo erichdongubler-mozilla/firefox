@@ -325,15 +325,15 @@ void IndirectBindingMap::trace(JSTracer* trc) {
     return;
   }
 
-  for (Map::Enum e(*map_); !e.empty(); e.popFront()) {
-    Binding& b = e.front().value();
+  for (auto iter = map_->modIter(); !iter.done(); iter.next()) {
+    Binding& b = iter.get().value();
     TraceEdge(trc, &b.environment, "module bindings environment");
 #ifdef DEBUG
     TraceEdge(trc, &b.targetName, "module bindings target name");
 #endif
-    mozilla::DebugOnly<jsid> prev(e.front().key());
-    TraceEdge(trc, &e.front().mutableKey(), "module bindings binding name");
-    MOZ_ASSERT(e.front().key() == prev);
+    mozilla::DebugOnly<jsid> prev(iter.get().key());
+    TraceEdge(trc, &iter.get().mutableKey(), "module bindings binding name");
+    MOZ_ASSERT(iter.get().key() == prev);
   }
 }
 
@@ -1714,8 +1714,8 @@ bool ModuleBuilder::buildTables(frontend::StencilModuleMetadata& metadata) {
     js::ReportOutOfMemory(fc_);
     return false;
   }
-  for (auto r = importEntries_.all(); !r.empty(); r.popFront()) {
-    frontend::StencilModuleEntry& entry = r.front().value();
+  for (auto iter = importEntries_.iter(); !iter.done(); iter.next()) {
+    frontend::StencilModuleEntry& entry = iter.get().value();
     metadata.importEntries.infallibleAppend(entry);
   }
 
