@@ -142,8 +142,10 @@ class FrozenAtomSet {
   }
 
   using Range = AtomSet::Range;
+  using Iterator = AtomSet::Iterator;
 
   AtomSet::Range all() const { return mSet->all(); }
+  AtomSet::Iterator iter() const { return mSet->iter(); }
 };
 
 class AtomsTable {
