@@ -452,33 +452,33 @@ void LIRGeneratorRiscv64::lowerAtomicStore64(MStoreUnboxedScalar* ins) {
   add(new (alloc()) LAtomicStore64(elements, index, value), ins);
 }
 
-void LIRGenerator::visitBox(MBox* box) {
-  MDefinition* opd = box->getOperand(0);
+void LIRGenerator::visitBox(MBox* ins) {
+  MDefinition* opd = ins->getOperand(0);
 
   // If the operand is a constant, emit near its uses.
-  if (opd->isConstant() && box->canEmitAtUses()) {
-    emitAtUses(box);
+  if (opd->isConstant() && ins->canEmitAtUses()) {
+    emitAtUses(ins);
     return;
   }
 
   if (opd->isConstant()) {
-    define(new (alloc()) LValue(opd->toConstant()->toJSValue()), box,
+    define(new (alloc()) LValue(opd->toConstant()->toJSValue()), ins,
            LDefinition(LDefinition::BOX));
   } else {
-    LBox* ins = new (alloc()) LBox(useRegisterAtStart(opd), opd->type());
-    define(ins, box, LDefinition(LDefinition::BOX));
+    define(new (alloc()) LBox(useRegisterAtStart(opd), opd->type()), ins,
+           LDefinition(LDefinition::BOX));
   }
 }
 
-void LIRGenerator::visitUnbox(MUnbox* unbox) {
-  MDefinition* box = unbox->getOperand(0);
+void LIRGenerator::visitUnbox(MUnbox* ins) {
+  MDefinition* box = ins->getOperand(0);
   MOZ_ASSERT(box->type() == MIRType::Value);
 
   LInstructionHelper<1, BOX_PIECES, 0>* lir;
-  if (IsFloatingPointType(unbox->type())) {
-    MOZ_ASSERT(unbox->type() == MIRType::Double);
+  if (IsFloatingPointType(ins->type())) {
+    MOZ_ASSERT(ins->type() == MIRType::Double);
     lir = new (alloc()) LUnboxFloatingPoint(useBoxAtStart(box));
-  } else if (unbox->fallible()) {
+  } else if (ins->fallible()) {
     // If the unbox is fallible, load the Value in a register first to
     // avoid multiple loads.
     lir = new (alloc()) LUnbox(useRegisterAtStart(box));
@@ -486,11 +486,11 @@ void LIRGenerator::visitUnbox(MUnbox* unbox) {
     lir = new (alloc()) LUnbox(useAtStart(box));
   }
 
-  if (unbox->fallible()) {
-    assignSnapshot(lir, unbox->bailoutKind());
+  if (ins->fallible()) {
+    assignSnapshot(lir, ins->bailoutKind());
   }
 
-  define(lir, unbox);
+  define(lir, ins);
 }
 
 void LIRGenerator::visitCopySign(MCopySign* ins) {
@@ -702,11 +702,11 @@ void LIRGenerator::visitAtomicTypedArrayElementBinop(
   define(lir, ins);
 }
 
-void LIRGenerator::visitReturnImpl(MDefinition* opd, bool isGenerator) {
-  MOZ_ASSERT(opd->type() == MIRType::Value);
+void LIRGenerator::visitReturnImpl(MDefinition* def, bool isGenerator) {
+  MOZ_ASSERT(def->type() == MIRType::Value);
 
   LReturn* ins = new (alloc()) LReturn(isGenerator);
-  ins->setOperand(0, useFixed(opd, JSReturnReg));
+  ins->setOperand(0, useFixed(def, JSReturnReg));
   add(ins);
 }
 
