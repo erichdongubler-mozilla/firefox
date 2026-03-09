@@ -5,9 +5,7 @@
  */
 
 import valueParser from "postcss-value-parser";
-import { getTokensTable } from "./helpers.mjs";
-
-const tokensTable = getTokensTable();
+import { tokensTable } from "../../../../toolkit/themes/shared/design-system/dist/semantic-categories.mjs";
 
 /**
  * Validates whether a given CSS property value complies with allowed design token rules.

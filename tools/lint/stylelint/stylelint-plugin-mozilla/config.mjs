@@ -5,7 +5,6 @@
  */
 
 import { createRawValuesObject } from "./helpers.mjs";
-import { SYSTEM_COLORS } from "./referenceColors.mjs";
 
 /**
  * @typedef {object} PropertyTypeConfig
@@ -19,6 +18,31 @@ import { SYSTEM_COLORS } from "./referenceColors.mjs";
  * @property {Record<string, string>} [customFixes] Map of raw values to their token replacements for autofix
  * @property {Record<string, string>} [customSuggestions] Map of raw values to their token replacements for suggested fixes
  */
+
+/**
+ * The list of system colors that are valid and intended to be used for high contrast/forced colors mode situations.
+ */
+export const SYSTEM_COLORS = [
+  "accentcolor",
+  "accentcolortext",
+  "activetext",
+  "buttonborder",
+  "buttonface",
+  "buttontext",
+  "canvas",
+  "canvastext",
+  "field",
+  "fieldtext",
+  "graytext",
+  "highlight",
+  "highlighttext",
+  "linktext",
+  "mark",
+  "marktext",
+  "selecteditem",
+  "selecteditemtext",
+  "visitedtext",
+];
 
 const customColorFixes = {
   "#000": "black",
@@ -378,7 +402,15 @@ const Space = {
 
 /** @type {PropertyTypeConfig} */
 const Size = {
-  allow: ["0", "auto", "none", "fit-content", "min-content", "max-content"],
+  allow: [
+    "0",
+    "auto",
+    "none",
+    "fit-content",
+    "min-content",
+    "max-content",
+    "stretch",
+  ],
   tokenTypes: ["size", "icon-size"],
   aliasTokenTypes: ["dimension"],
   allowUnits: true,
