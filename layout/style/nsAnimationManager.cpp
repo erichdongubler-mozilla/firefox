@@ -10,6 +10,7 @@
 
 #include <algorithm>  // std::stable_sort
 
+#include "TimelineManager.h"
 #include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/EffectCompositor.h"
@@ -18,6 +19,7 @@
 #include "mozilla/TimelineCollection.h"
 #include "mozilla/dom/AnimationEffect.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/KeyframeEffect.h"
 #include "mozilla/dom/MutationObservers.h"
@@ -218,6 +220,9 @@ static void UpdateOldAnimationPropertiesWithNew(
 static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     dom::Document* aDocument, const NonOwningAnimationTarget& aTarget,
     nsAtom* aName) {
+  auto* presContext = aDocument->GetPresContext();
+  const auto* timelineManager =
+      presContext ? presContext->TimelineManager() : nullptr;
   // A named progress timeline is referenceable in animation-timeline by:
   // 1. the declaring element itself
   // 2. that element’s descendants
@@ -242,6 +247,14 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
       if (RefPtr<ViewTimeline> timeline = collection->Lookup(aName)) {
         return timeline.forget();
       }
+    }
+
+    if (!timelineManager) {
+      continue;
+    }
+
+    if (auto scopedTimeline = timelineManager->GetScopedTimeline(e, aName)) {
+      return already_AddRefed{scopedTimeline->take()};
     }
   }
 
