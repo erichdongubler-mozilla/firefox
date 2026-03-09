@@ -343,10 +343,6 @@ class AddrHostRecord final : public nsHostRecord {
 
   void ResolveComplete() override;
 
-  // The number of times ReportUnusable() has been called in the record's
-  // lifetime.
-  uint32_t mUnusableCount = 0;
-
   // a list of addresses associated with this record that have been reported
   // as unusable. the list is kept as a set of strings to make it independent
   // of gencnt.

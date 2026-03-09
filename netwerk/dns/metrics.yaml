@@ -489,26 +489,6 @@ dns:
     expires: never
     telemetry_mirror: h#DNS_LOOKUP_ALGORITHM
 
-  blocklist_count:
-    type: custom_distribution
-    description: >
-      The number of unusable addresses reported for each record
-
-      This metric was generated to correspond to the Legacy Telemetry linear
-      histogram DNS_BLACKLIST_COUNT.
-    range_min: 1
-    range_max: 21
-    bucket_count: 20
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: DNS_BLACKLIST_COUNT
-
   trr_http_version:
     type: dual_labeled_counter
     description: >
