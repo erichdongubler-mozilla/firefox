@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use crate::android::{AndroidError, AndroidHandler};
+use crate::android::AndroidHandler;
 use crate::capabilities::{FirefoxOptions, ProfileType};
 use crate::logging;
 use crate::prefs;
@@ -14,7 +14,6 @@ use std::fs;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::time;
-use uuid::Uuid;
 use webdriver::error::{ErrorStatus, WebDriverError, WebDriverResult};
 
 /// A running Gecko instance.
@@ -55,39 +54,6 @@ impl Browser {
                         "Cannot re-assign Marionette port when connected to an existing browser"
                     );
                 }
-            }
-        }
-    }
-
-    pub(crate) fn create_file(&self, content: &[u8]) -> WebDriverResult<String> {
-        let addon_file = format!("addon-{}.xpi", Uuid::new_v4());
-        match self {
-            Browser::Remote(x) => {
-                let path = x.push_file(content, &addon_file).map_err(|e| {
-                    WebDriverError::new(
-                        ErrorStatus::UnknownError,
-                        format!("Failed to create an addon file: {}", e),
-                    )
-                })?;
-
-                Ok(path)
-            }
-            Browser::Local(_) | Browser::Existing(_) => {
-                let path = env::temp_dir().as_path().join(addon_file);
-                let mut xpi_file = fs::File::create(&path).map_err(|e| {
-                    WebDriverError::new(
-                        ErrorStatus::UnknownError,
-                        format!("Failed to create an addon file: {}", e),
-                    )
-                })?;
-                xpi_file.write_all(content).map_err(|e| {
-                    WebDriverError::new(
-                        ErrorStatus::UnknownError,
-                        format!("Failed to write data to the addon file: {}", e),
-                    )
-                })?;
-
-                Ok(path.display().to_string())
             }
         }
     }
@@ -351,10 +317,6 @@ impl RemoteBrowser {
 
     fn update_marionette_port(&mut self, port: u16) {
         self.marionette_port = port;
-    }
-
-    fn push_file(&self, content: &[u8], path: &str) -> Result<String, AndroidError> {
-        self.handler.push_as_file(content, path)
     }
 }
 

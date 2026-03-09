@@ -6,7 +6,7 @@ use crate::browser::{Browser, LocalBrowser, RemoteBrowser};
 use crate::build;
 use crate::capabilities::{FirefoxCapabilities, FirefoxOptions, ProfileType};
 use crate::command::{
-    AddonInstallParameters, AddonPath, AddonUninstallParameters, GeckoContextParameters,
+    AddonUninstallParameters, GeckoContextParameters,
     GeckoExtensionCommand, GeckoExtensionRoute,
 };
 use crate::logging;
@@ -1128,19 +1128,7 @@ impl MarionetteCommand {
                 }
                 Extension(ref extension) => match extension {
                     GetContext => (Some("Marionette:GetContext"), None),
-                    InstallAddon(x) => match x {
-                        AddonInstallParameters::AddonBase64(data) => {
-                            let addon = AddonPath {
-                                path: browser.create_file(&data.addon)?,
-                                temporary: data.temporary,
-                                allow_private_browsing: data.allow_private_browsing,
-                            };
-                            (Some("Addon:Install"), Some(addon.to_marionette()))
-                        }
-                        AddonInstallParameters::AddonPath(data) => {
-                            (Some("Addon:Install"), Some(data.to_marionette()))
-                        }
-                    },
+                    InstallAddon(x) => (Some("Addon:Install"), Some(serialize_to_map(x))),
                     SetContext(x) => (Some("Marionette:SetContext"), Some(x.to_marionette())),
                     UninstallAddon(x) => (Some("Addon:Uninstall"), Some(x.to_marionette())),
                     _ => (None, None),
@@ -1460,28 +1448,15 @@ impl MarionetteConnection {
     }
 }
 
-trait ToMarionette<T> {
-    fn to_marionette(&self) -> WebDriverResult<T>;
+fn serialize_to_map<T: Serialize>(value: &T) -> WebDriverResult<Map<String, Value>> {
+    match serde_json::to_value(value)? {
+        Value::Object(map) => Ok(map),
+        _ => unreachable!("Expected serializable struct to produce object"),
+    }
 }
 
-impl ToMarionette<Map<String, Value>> for AddonPath {
-    fn to_marionette(&self) -> WebDriverResult<Map<String, Value>> {
-        let mut data = Map::new();
-        data.insert("path".to_string(), serde_json::to_value(&self.path)?);
-        if self.temporary.is_some() {
-            data.insert(
-                "temporary".to_string(),
-                serde_json::to_value(self.temporary)?,
-            );
-        }
-        if self.allow_private_browsing.is_some() {
-            data.insert(
-                "allowPrivateBrowsing".to_string(),
-                serde_json::to_value(self.allow_private_browsing)?,
-            );
-        }
-        Ok(data)
-    }
+trait ToMarionette<T> {
+    fn to_marionette(&self) -> WebDriverResult<T>;
 }
 
 impl ToMarionette<Map<String, Value>> for AddonUninstallParameters {
