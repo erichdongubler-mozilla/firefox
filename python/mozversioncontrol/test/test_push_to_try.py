@@ -171,6 +171,15 @@ def test_push_to_try(repo, monkeypatch):
             (str(tool), "log", "-n0"),
             (
                 str(tool),
+                "bookmark",
+                "move",
+                "--from",
+                "heads(@- & bookmarks())",
+                "--to",
+                "@",
+            ),
+            (
+                str(tool),
                 "--ignore-working-copy",
                 "log",
                 "--no-graph",

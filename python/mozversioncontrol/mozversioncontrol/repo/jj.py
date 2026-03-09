@@ -500,6 +500,11 @@ class JujutsuRepository(Repository):
             # Update the jj commit with the changes we just made.
             self._snapshot()
 
+            # Tug any bookmarks from parent commit for pushing.
+            self._run(
+                "bookmark", "move", "--from", "heads(@- & bookmarks())", "--to", "@"
+            )
+
             def cleanup():
                 self._run("operation", "restore", opid)
 
