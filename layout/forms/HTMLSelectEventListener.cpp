@@ -436,6 +436,29 @@ nsresult HTMLSelectEventListener::KeyPress(dom::Event* aKeyEvent) {
 #endif
       ;
   if (isControlOrMeta && keyEvent->mCharCode != ' ') {
+    // Handle Ctrl/Cmd+A to select all options in a multiple select listbox.
+    AutoShortcutKeyCandidateArray candidates;
+    keyEvent->GetShortcutKeyCandidates(candidates);
+    const bool isSelectAll =
+        mElement->Multiple() && !mIsCombobox &&
+        std::any_of(candidates.begin(), candidates.end(),
+                    [](const ShortcutKeyCandidate& c) {
+                      return c.mCharCode == 'a' || c.mCharCode == 'A';
+                    });
+    if (isSelectAll) {
+      using OptionFlag = HTMLSelectElement::OptionFlag;
+      uint32_t numOptions = mElement->Length();
+      if (numOptions) {
+        HTMLSelectElement::OptionFlags mask = {
+            OptionFlag::IsSelected, OptionFlag::ClearAll, OptionFlag::Notify};
+        const bool wasChanged = mElement->SetOptionsSelectedByIndex(
+            0, AssertedCast<int32_t>(numOptions - 1), mask);
+        if (wasChanged) {
+          FireOnInputAndOnChange();
+        }
+      }
+      aKeyEvent->PreventDefault();
+    }
     return NS_OK;
   }
 
