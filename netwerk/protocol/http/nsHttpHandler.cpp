@@ -2775,26 +2775,24 @@ void nsHttpHandler::NotifyActiveTabLoadOptimization() {
 }
 
 TimeStamp nsHttpHandler::GetLastActiveTabLoadOptimizationHit() {
-  MutexAutoLock lock(mLastActiveTabLoadOptimizationLock);
-
-  return mLastActiveTabLoadOptimizationHit;
+  auto lastTimestamp = mLastActiveTabLoadOptimizationHit.Lock();
+  return *lastTimestamp;
 }
 
 void nsHttpHandler::SetLastActiveTabLoadOptimizationHit(TimeStamp const& when) {
-  MutexAutoLock lock(mLastActiveTabLoadOptimizationLock);
-
-  if (mLastActiveTabLoadOptimizationHit.IsNull() ||
-      (!when.IsNull() && mLastActiveTabLoadOptimizationHit < when)) {
-    mLastActiveTabLoadOptimizationHit = when;
+  if (when.IsNull()) {
+    return;
+  }
+  auto lastTimestamp = mLastActiveTabLoadOptimizationHit.Lock();
+  if (lastTimestamp->IsNull() || *lastTimestamp < when) {
+    *lastTimestamp = when;
   }
 }
 
 bool nsHttpHandler::IsBeforeLastActiveTabLoadOptimization(
     TimeStamp const& when) {
-  MutexAutoLock lock(mLastActiveTabLoadOptimizationLock);
-
-  return !mLastActiveTabLoadOptimizationHit.IsNull() &&
-         when <= mLastActiveTabLoadOptimizationHit;
+  auto lastTimestamp = mLastActiveTabLoadOptimizationHit.Lock();
+  return !lastTimestamp->IsNull() && when <= *lastTimestamp;
 }
 
 void nsHttpHandler::ExcludeHttp2OrHttp3Internal(

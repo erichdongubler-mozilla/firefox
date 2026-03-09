@@ -875,13 +875,9 @@ void HttpChannelChild::ProcessOnStopRequest(
        "aFromSocketProcess=%d]\n",
        this, aFromSocketProcess));
   MOZ_ASSERT(OnSocketThread());
-  {  // assign some of the members that would be accessed by the listeners
-     // upon getting OnDataFinished notications
-    MutexAutoLock lock(mOnDataFinishedMutex);
-    mTransferSize = aTiming.transferSize();
-    mEncodedBodySize = aTiming.encodedBodySize();
-    mDecodedBodySize = aTiming.decodedBodySize();
-  }
+  mTransferSize = aTiming.transferSize();
+  mEncodedBodySize = aTiming.encodedBodySize();
+  mDecodedBodySize = aTiming.decodedBodySize();
 
   if (StaticPrefs::network_send_OnDataFinished()) {
     mEventQ->RunOrEnqueue(new ChannelFunctionEvent(
@@ -955,7 +951,9 @@ void HttpChannelChild::OnStopRequest(
 
   nsCOMPtr<nsICompressConvStats> conv = do_QueryInterface(mCompressListener);
   if (conv) {
-    conv->GetDecodedDataLength(&mDecodedBodySize);
+    uint64_t decodedDataLength = 0;
+    conv->GetDecodedDataLength(&decodedDataLength);
+    mDecodedBodySize = decodedDataLength;
   }
 
   ResourceTimingStructArgsToTimingsStruct(aTiming, mTransactionTimings);

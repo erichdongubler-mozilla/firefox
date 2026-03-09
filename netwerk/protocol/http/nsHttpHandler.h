@@ -16,6 +16,7 @@
 #include "HttpTrafficAnalyzer.h"
 #include "EventTokenBucket.h"
 
+#include "mozilla/DataMutex.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
@@ -801,17 +802,16 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   uint32_t mProcessId{0};
 
   // The last time any of the active tab page load optimization took place.
-  // This is accessed on multiple threads, hence a lock is needed.
+  // This is accessed on multiple threads, hence a DataMutex is needed.
   // On the parent process this is updated to now every time a scheduling
   // or rate optimization related to the active/background tab is hit.
   // We carry this value through each http channel's onstoprequest notification
   // to the parent process.  On the content process then we just update this
-  // value from ipc onstoprequest arguments.  This is a sufficent way of passing
-  // it down to the content process, since the value will be used only after
-  // onstoprequest notification coming from an http channel.
-  Mutex mLastActiveTabLoadOptimizationLock{
+  // value from ipc onstoprequest arguments.  This is a sufficient way of
+  // passing it down to the content process, since the value will be used only
+  // after onstoprequest notification coming from an http channel.
+  DataMutex<TimeStamp> mLastActiveTabLoadOptimizationHit{
       "nsHttpConnectionMgr::LastActiveTabLoadOptimization"};
-  TimeStamp mLastActiveTabLoadOptimizationHit;
 
   Mutex mHttpExclusionLock MOZ_UNANNOTATED{"nsHttpHandler::HttpExclusion"};
 

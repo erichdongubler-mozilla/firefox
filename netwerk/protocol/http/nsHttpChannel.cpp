@@ -10135,7 +10135,9 @@ nsHttpChannel::OnStopRequest(nsIRequest* request, nsresult status) {
 
   nsCOMPtr<nsICompressConvStats> conv = do_QueryInterface(mCompressListener);
   if (conv) {
-    conv->GetDecodedDataLength(&mDecodedBodySize);
+    uint64_t decodedDataLength = 0;
+    conv->GetDecodedDataLength(&decodedDataLength);
+    mDecodedBodySize = decodedDataLength;
   }
 
   bool isFromNet = request == mTransactionPump;
