@@ -7,6 +7,7 @@
 #include "mozilla/dom/NumericInputTypes.h"
 
 #include "ICUUtils.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/TextControlState.h"
 #include "mozilla/dom/HTMLInputElement.h"
 
@@ -94,7 +95,20 @@ bool NumberInputType::IsValueMissing() const {
     return false;
   }
 
-  return IsValueEmpty();
+  // We shouldn't try to parse the value during shutdown, since it
+  // can access ICU stuff which gets cleaned up during shutdown.
+  if (PastShutdownPhase(ShutdownPhase::XPCOMShutdown)) {
+    return false;
+  }
+
+  // We have to return true here if the user has entered an invalid number:
+  //  User agents must not allow the user to set the value to a non-empty
+  //  string that is not a valid floating-point number.
+  // https://html.spec.whatwg.org/multipage/input.html#number-state-(type=number)
+  //  If the element is required, ..., and the element's value is the empty
+  //  string, then the element is suffering from being missing.
+  // https://html.spec.whatwg.org/multipage/input.html#the-required-attribute
+  return mInputElement->GetValueAsDecimal().isNaN();
 }
 
 bool NumberInputType::HasBadInput() const {
