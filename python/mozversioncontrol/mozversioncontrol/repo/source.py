@@ -60,6 +60,9 @@ class SrcRepository(Repository):
     def get_upstream(self):
         pass
 
+    def get_remote_url(self, remote=None, push=False):
+        return None
+
     def get_changed_files(self, diff_filter="ADM", mode="unstaged", rev=None):
         return []
 

@@ -185,6 +185,10 @@ class Repository(abc.ABC):
         """
 
     @abc.abstractmethod
+    def get_remote_url(self, remote=None, push=False):
+        """Return the URL for the specified remote."""
+
+    @abc.abstractmethod
     def get_changed_files(self, diff_filter, mode="unstaged", rev=None):
         """Return a list of files that are changed in this repository's
         working copy.
