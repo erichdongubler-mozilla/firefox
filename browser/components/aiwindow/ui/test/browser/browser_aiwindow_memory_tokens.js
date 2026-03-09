@@ -27,7 +27,6 @@ add_task(async function test_handleTokens_updates_chatMessage() {
         search: [],
         existing_memory: [],
       },
-      memoriesApplied: [],
       webSearchQueries: [],
     };
 
@@ -42,26 +41,33 @@ add_task(async function test_handleTokens_updates_chatMessage() {
     // Call the actual handleTokens method
     aiWindowElement.handleTokens(testTokens, mockMessage);
 
-    // Verify memory tokens were added to memoriesApplied
+    // Verify memory IDs are accumulated in _pendingMemoryIds, not memoriesApplied,
+    // so the "Memories used" button stays hidden until IDs are resolved post-stream.
     Assert.equal(
-      mockMessage.memoriesApplied.length,
+      mockMessage._pendingMemoryIds.length,
       3,
-      "Should have 3 memory tokens in memoriesApplied"
+      "Should have 3 memory IDs in _pendingMemoryIds"
     );
     Assert.equal(
-      mockMessage.memoriesApplied[0],
+      mockMessage._pendingMemoryIds[0],
       "user asked about cats",
-      "First memory token should match"
+      "First memory ID should match"
     );
     Assert.equal(
-      mockMessage.memoriesApplied[1],
+      mockMessage._pendingMemoryIds[1],
       "user prefers tabby cats",
-      "Second memory token should match"
+      "Second memory ID should match"
     );
     Assert.equal(
-      mockMessage.memoriesApplied[2],
+      mockMessage._pendingMemoryIds[2],
       "user has a pet cat named Fluffy",
-      "Third memory token should match"
+      "Third memory ID should match"
+    );
+
+    Assert.equal(
+      mockMessage.memoriesApplied,
+      undefined,
+      "memoriesApplied should not be set during streaming"
     );
 
     // Verify all tokens (including non-memory) were added to tokens object
@@ -81,10 +87,10 @@ add_task(async function test_handleTokens_updates_chatMessage() {
       "Search token should match"
     );
 
-    // Verify non-memory tokens were NOT added to memoriesApplied
+    // Verify non-memory tokens were NOT added to _pendingMemoryIds
     Assert.ok(
-      !mockMessage.memoriesApplied.includes("cat behavior"),
-      "Search tokens should not be in memoriesApplied"
+      !mockMessage._pendingMemoryIds.includes("cat behavior"),
+      "Search tokens should not be in _pendingMemoryIds"
     );
 
     // Verify webSearchQueries array was populated with search tokens

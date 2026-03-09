@@ -877,7 +877,8 @@ export class AIWindow extends MozLitElement {
   /**
    * Processes tokens from the AI response stream and updates the message.
    * Adds all tokens to their respective arrays in the tokens object and
-   * builds the memoriesApplied array for existing_memory tokens.
+   * builds the _pendingMemoryIds array for existing_memory tokens.
+   * IDs are resolved to full memory objects after streaming ends.
    *
    * @param {Array<{key: string, value: string}>} tokens - Array of parsed tokens from the stream
    * @param {ChatMessage} currentMessage - The message object being updated
@@ -886,9 +887,9 @@ export class AIWindow extends MozLitElement {
     tokens.forEach(({ key, value }) => {
       currentMessage.tokens[key].push(value);
 
-      // Build Applied Memories Array
       if (key === "existing_memory") {
-        currentMessage.memoriesApplied.push(value);
+        currentMessage._pendingMemoryIds ??= [];
+        currentMessage._pendingMemoryIds.push(value);
       }
 
       // Build web search queries
@@ -1030,10 +1031,6 @@ export class AIWindow extends MozLitElement {
           };
         }
 
-        if (!currentMessage.memoriesApplied) {
-          currentMessage.memoriesApplied = [];
-        }
-
         if (plainText) {
           currentMessage.content.body += plainText;
         }
@@ -1056,11 +1053,12 @@ export class AIWindow extends MozLitElement {
         this.requestUpdate?.();
       }
 
-      if (currentMessage.memoriesApplied?.length) {
+      if (currentMessage._pendingMemoryIds?.length) {
         currentMessage.memoriesApplied =
-          await lazy.MemoriesManager.getMemoriesByID(
-            currentMessage.memoriesApplied
-          );
+          await lazy.MemoriesManager.getMemoriesByID([
+            ...new Set(currentMessage._pendingMemoryIds),
+          ]);
+        delete currentMessage._pendingMemoryIds;
         this.#updateConversation();
         this.#dispatchMessageToChatContent(currentMessage);
       }
