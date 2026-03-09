@@ -52,6 +52,7 @@ features:
             "pocket-sponsored-stories": true,
             "synced-tabs": true,
             "collections": true,
+            "privacy-report": false,
           }
     defaults:
       - channel: nightly
@@ -65,6 +66,7 @@ features:
             "pocket": true,
             "synced-tabs": true,
             "collections": true,
+            "privacy-report": false,
           }
         }
   nimbus-validation:
@@ -1120,6 +1122,8 @@ types:
           description: The synced tabs section of the homepage.
         collections:
           description: The collections section of the homepage.
+        privacy-report:
+          description: The privacy report section showing trackers blocked.
 
     CookieBannersSection:
       description: The identifiers for the sections of the MR 2022.

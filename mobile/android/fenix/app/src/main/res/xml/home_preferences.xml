@@ -16,6 +16,10 @@
         android:title="@string/customize_toggle_contile" />
 
     <androidx.preference.SwitchPreference
+        android:key="@string/pref_key_privacy_report"
+        android:title="@string/customize_toggle_privacy_report" />
+
+    <androidx.preference.SwitchPreference
         android:key="@string/pref_key_recent_tabs"
         android:title="@string/customize_toggle_jump_back_in" />
 

@@ -82,6 +82,11 @@ class HomeSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = createMetricPreferenceChangeListener("contile")
         }
 
+        requirePreference<SwitchPreference>(R.string.pref_key_privacy_report).apply {
+            isChecked = fenixSettings.showPrivacyReportFeature
+            onPreferenceChangeListener = createMetricPreferenceChangeListener("privacy_report")
+        }
+
         requirePreference<SwitchPreference>(R.string.pref_key_recent_tabs).apply {
             isVisible = fenixSettings.showHomepageRecentTabsSectionToggle
             isChecked = fenixSettings.showRecentTabsFeature

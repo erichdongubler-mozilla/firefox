@@ -286,6 +286,14 @@ class Settings(
         default = { homescreenSections[HomeScreenSection.TOP_SITES] == true },
     )
 
+    /**
+     * Indicates whether or not the privacy report should be shown on the home screen.
+     */
+    var showPrivacyReportFeature by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_privacy_report),
+        default = { homescreenSections[HomeScreenSection.PRIVACY_REPORT] == true },
+    )
+
     private val homescreenSections: Map<HomeScreenSection, Boolean>
         get() = FxNimbus.features.homescreen.value().sectionsEnabled
 

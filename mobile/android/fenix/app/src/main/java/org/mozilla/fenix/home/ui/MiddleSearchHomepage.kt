@@ -183,6 +183,7 @@ private fun MiddleSearchHomepagePreview() {
                 showRecentlyVisited = true,
                 showPocketStories = true,
                 showCollections = true,
+                showPrivacyReport = true,
                 headerState = HeaderState(
                     showHeader = false,
                     wordmarkTextColor = null,

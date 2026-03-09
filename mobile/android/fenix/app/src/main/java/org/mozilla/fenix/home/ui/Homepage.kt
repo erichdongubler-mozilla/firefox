@@ -163,10 +163,12 @@ internal fun Homepage(
                                 )
                             }
 
-                            TrackersBlockedCard(
-                                trackersBlockedCount = 0,
-                                modifier = Modifier.padding(top = 16.dp),
-                            )
+                            if (showPrivacyReport) {
+                                TrackersBlockedCard(
+                                    trackersBlockedCount = 0,
+                                    modifier = Modifier.padding(top = 16.dp),
+                                )
+                            }
 
                             MaybeAddSetupChecklist(setupChecklistState, interactor)
 
@@ -504,6 +506,7 @@ private fun HomepagePreview() {
                     showRecentlyVisited = true,
                     showPocketStories = true,
                     showCollections = true,
+                    showPrivacyReport = true,
                     headerState = HeaderState(
                         showHeader = false,
                         wordmarkTextColor = null,
@@ -555,6 +558,7 @@ private fun HomepageBannerPreview() {
                     showRecentlyVisited = true,
                     showPocketStories = true,
                     showCollections = true,
+                    showPrivacyReport = true,
                     headerState = HeaderState(
                         showHeader = true,
                         wordmarkTextColor = null,
@@ -606,6 +610,7 @@ private fun HomepagePreviewCollections() {
                     showRecentlyVisited = true,
                     showPocketStories = true,
                     showCollections = true,
+                    showPrivacyReport = true,
                     headerState = HeaderState(
                         showHeader = false,
                         wordmarkTextColor = null,
@@ -657,7 +662,8 @@ private fun MinimalHomepagePreview() {
                     showRecentlyVisited = false,
                     showPocketStories = true,
                     showCollections = false,
-                    HeaderState(
+                    showPrivacyReport = true,
+                    headerState = HeaderState(
                         showHeader = false,
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(
