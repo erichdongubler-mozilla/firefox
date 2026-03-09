@@ -312,7 +312,6 @@ class Assembler : public AssemblerShared,
       va_end(va);
     }
   }
-
 #else
   MOZ_ALWAYS_INLINE void spew(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3) {}
 #endif
@@ -395,8 +394,8 @@ class Assembler : public AssemblerShared,
 
   // Determines if Label is bound and near enough so that branch instruction
   // can be used to reach it, instead of jump instruction.
-  bool is_near(Label* L);
-  bool is_near(Label* L, OffsetSize bits);
+  bool isNear(Label* L);
+  bool isNear(Label* L, OffsetSize bits);
   bool is_near_branch(Label* L);
 
   void nopAlign(int m) {
@@ -429,9 +428,9 @@ class Assembler : public AssemblerShared,
     return m_buffer.putInt(x);
   }
 
-  void instr_at_put(BufferOffset offset, Instr instr) {
+  void putInstrAt(BufferOffset offset, Instr instr) {
 #ifdef JS_DISASM_RISCV64
-    DEBUG_PRINTF("\t[instr_at_put\n");
+    DEBUG_PRINTF("\t[putInstrAt\n");
     DEBUG_PRINTF("\t%p %d \n\t", editSrc(offset), offset.getOffset());
     disassembleInstr(editSrc(offset)->InstructionBits());
     DEBUG_PRINTF("\t");
@@ -440,7 +439,7 @@ class Assembler : public AssemblerShared,
     DEBUG_PRINTF("\t]\n");
 #else
     DEBUG_PRINTF(
-        "\t[instr_at_put\n"
+        "\t[putInstrAt\n"
         "\t%p %d \n\t"
         "\t]\n",
         editSrc(offset), offset.getOffset());

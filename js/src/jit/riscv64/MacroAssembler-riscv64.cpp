@@ -3906,9 +3906,9 @@ void MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset) {
     MOZ_ASSERT(auipc_->RdValue() == jalr_->Rs1Value());
     int32_t Hi20 = (((int32_t)offset + 0x800) >> 12);
     int32_t Lo12 = (int32_t)offset << 20 >> 20;
-    instr_at_put(call, SetAuipcOffset(Hi20, auipc_->InstructionBits()));
-    instr_at_put(BufferOffset(callerOffset - 1 * sizeof(uint32_t)),
-                 SetJalrOffset(Lo12, jalr_->InstructionBits()));
+    putInstrAt(call, SetAuipcOffset(Hi20, auipc_->InstructionBits()));
+    putInstrAt(BufferOffset(callerOffset - 1 * sizeof(uint32_t)),
+               SetJalrOffset(Lo12, jalr_->InstructionBits()));
   } else {
     MOZ_CRASH();
   }
@@ -4938,7 +4938,7 @@ int32_t MacroAssemblerRiscv64::GetOffset(int32_t offset, Label* L,
 
 bool MacroAssemblerRiscv64::CalculateOffset(Label* L, OffsetSize bits,
                                             int32_t* offset) {
-  if (!is_near(L, bits)) return false;
+  if (!isNear(L, bits)) return false;
   *offset = GetOffset(*offset, L, bits);
   return true;
 }
@@ -7139,7 +7139,7 @@ CodeOffset MacroAssemblerRiscv64::BranchAndLinkShort(Label* L) {
 }
 
 CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
-  if (L->bound() && !is_near(L)) {
+  if (L->bound() && !isNear(L)) {
     return BranchAndLinkLong(L);
   }
   return BranchAndLinkShort(L);

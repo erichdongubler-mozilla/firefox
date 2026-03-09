@@ -925,7 +925,7 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
         return false;
       }
       instr = SetBranchOffset(pos.getOffset(), target_pos.getOffset(), instr);
-      instr_at_put(pos, instr);
+      putInstrAt(pos, instr);
     } break;
     case JAL: {
       MOZ_ASSERT(IsJal(instr));
@@ -933,7 +933,7 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
         return false;
       }
       instr = SetJalOffset(pos.getOffset(), target_pos.getOffset(), instr);
-      instr_at_put(pos, instr);
+      putInstrAt(pos, instr);
     } break;
     case LUI: {
       jumpChainSetTargetValueAt(
@@ -952,8 +952,8 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
         instr = SetJalOffset(pos.getOffset(), target_pos.getOffset(), instr);
         MOZ_ASSERT(IsJal(instr));
         MOZ_ASSERT(JumpOffset(instr) == offset);
-        instr_at_put(pos, instr);
-        instr_at_put(BufferOffset(pos.getOffset() + 4), kNopByte);
+        putInstrAt(pos, instr);
+        putInstrAt(BufferOffset(pos.getOffset() + 4), kNopByte);
       } else {
         MOZ_RELEASE_ASSERT(is_int32(offset + 0x800));
         MOZ_ASSERT(instruction->RdValue() ==
@@ -962,12 +962,12 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
         int32_t Lo12 = (int32_t)offset << 20 >> 20;
 
         instr_auipc = SetAuipcOffset(Hi20, instr_auipc);
-        instr_at_put(pos, instr_auipc);
+        putInstrAt(pos, instr_auipc);
 
         const int kImm31_20Mask = ((1 << 12) - 1) << 20;
         const int kImm11_0Mask = ((1 << 12) - 1);
         instr_I = (instr_I & ~kImm31_20Mask) | ((Lo12 & kImm11_0Mask) << 20);
-        instr_at_put(BufferOffset(pos.getOffset() + 4), instr_I);
+        putInstrAt(BufferOffset(pos.getOffset() + 4), instr_I);
       }
     } break;
     default:
@@ -1161,12 +1161,12 @@ void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
   }
 }
 
-bool Assembler::is_near(Label* L) {
+bool Assembler::isNear(Label* L) {
   MOZ_ASSERT(L->bound());
   return is_intn((currentOffset() - L->offset()), kJumpOffsetBits);
 }
 
-bool Assembler::is_near(Label* L, OffsetSize bits) {
+bool Assembler::isNear(Label* L, OffsetSize bits) {
   if (L == nullptr || !L->bound()) return true;
   return is_intn((currentOffset() - L->offset()), bits);
 }
