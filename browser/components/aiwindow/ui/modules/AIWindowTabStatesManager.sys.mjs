@@ -529,6 +529,8 @@ export class AIWindowTabStatesManager {
             tabState.state.input ?? ""
           );
         }
+
+        lazy.AIWindowUI.updateStarterPrompts(this.#window);
       },
 
       onStateChange() {},
