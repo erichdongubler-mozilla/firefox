@@ -11,6 +11,7 @@
 #include "jsapi.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/AutoRestore.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/CycleCollectedUniquePtr.h"
 #include "mozilla/HoldDropJSObjects.h"
@@ -19,6 +20,7 @@
 #include "mozilla/dom/CustomElementRegistryBinding.h"
 #include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/HTMLElement.h"
 #include "mozilla/dom/HTMLElementBinding.h"
@@ -730,6 +732,42 @@ void CustomElementRegistry::EnqueueLifecycleCallback(
 
   // 7. Enqueue an element on the appropriate element queue given element.
   reactionsStack->EnqueueCallbackReaction(aCustomElement, std::move(callback));
+}
+
+using ScopedRegistryMap =
+    nsRefPtrHashtable<nsPtrHashKey<nsINode>, CustomElementRegistry>;
+
+static StaticAutoPtr<ScopedRegistryMap> gScopedRegistryMap;
+
+/* static */
+already_AddRefed<CustomElementRegistry>
+CustomElementRegistry::GetScopedRegistry(nsINode& aNode) {
+  if (!gScopedRegistryMap) {
+    return nullptr;
+  }
+  RefPtr<CustomElementRegistry> registry = gScopedRegistryMap->Get(&aNode);
+  if (registry) {
+    return registry.forget();
+  }
+  return nullptr;
+}
+
+/* static */
+void CustomElementRegistry::SetScopedRegistry(
+    nsINode& aNode, CustomElementRegistry& aRegistry) {
+  MOZ_ASSERT(aRegistry.IsScoped());
+  if (!gScopedRegistryMap) {
+    gScopedRegistryMap = new ScopedRegistryMap();
+    ClearOnShutdown(&gScopedRegistryMap);
+  }
+  gScopedRegistryMap->InsertOrUpdate(&aNode, &aRegistry);
+}
+
+/* static */
+void CustomElementRegistry::RemoveScopedRegistry(nsINode& aNode) {
+  if (gScopedRegistryMap) {
+    gScopedRegistryMap->Remove(&aNode);
+  }
 }
 
 namespace {

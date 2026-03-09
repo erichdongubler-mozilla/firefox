@@ -304,6 +304,9 @@ partial interface Element {
 
   [CEReactions, Unscopable, SetterThrows]
            attribute DOMString slot;
+
+  [Pref="dom.scoped-custom-element-registries.enabled"]
+  readonly attribute CustomElementRegistry? customElementRegistry;
 };
 
 Element includes ChildNode;

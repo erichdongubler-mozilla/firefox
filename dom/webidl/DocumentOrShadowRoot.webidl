@@ -33,6 +33,9 @@ interface mixin DocumentOrShadowRoot {
   readonly attribute Element? fullscreenElement;
   [BinaryName="fullscreenElement"]
   readonly attribute Element? mozFullScreenElement;
+
+  [Pref="dom.scoped-custom-element-registries.enabled"]
+  readonly attribute CustomElementRegistry? customElementRegistry;
 };
 
 // https://drafts.csswg.org/web-animations-1/#extensions-to-the-documentorshadowroot-interface-mixin

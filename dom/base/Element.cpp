@@ -499,6 +499,29 @@ int32_t Element::TabIndex() {
   return TabIndexDefault();
 }
 
+/* static */
+void Element::TraverseCustomElementRegistry(
+    Element* aElement, nsCycleCollectionTraversalCallback& aCb) {
+  if (aElement->GetCustomElementRegistryState() ==
+      CustomElementRegistryState::Scoped) {
+    RefPtr<CustomElementRegistry> registry =
+        CustomElementRegistry::GetScopedRegistry(*aElement);
+    if (registry) {
+      NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(aCb, "scoped CustomElementRegistry");
+      aCb.NoteXPCOMChild(registry.get());
+    }
+  }
+}
+
+/* static */
+void Element::UnlinkCustomElementRegistry(Element* aElement) {
+  if (aElement->GetCustomElementRegistryState() ==
+      CustomElementRegistryState::Scoped) {
+    CustomElementRegistry::RemoveScopedRegistry(*aElement);
+    aElement->SetCustomElementRegistryState(CustomElementRegistryState::Global);
+  }
+}
+
 void Element::Focus(const FocusOptions& aOptions, CallerType aCallerType,
                     ErrorResult& aError) {
   const RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager();
@@ -536,6 +559,41 @@ void Element::SetShadowRoot(ShadowRoot* aShadowRoot) {
   MOZ_ASSERT(!aShadowRoot || !slots->mShadowRoot,
              "We shouldn't clear the shadow root without unbind first");
   slots->mShadowRoot = aShadowRoot;
+}
+
+void Element::SetCustomElementRegistry(
+    CustomElementRegistry* aCustomElementRegistry) {
+  MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
+  MOZ_ASSERT(!!aCustomElementRegistry,
+             "We shouldn't be setting a null custom element registry");
+  MOZ_ASSERT(
+      GetCustomElementRegistryState() != CustomElementRegistryState::Scoped,
+      "We shouldn't override an already assigned scoped registry");
+
+  if (aCustomElementRegistry->IsScoped()) {
+    SetCustomElementRegistryState(CustomElementRegistryState::Scoped);
+    CustomElementRegistry::SetScopedRegistry(*this, *aCustomElementRegistry);
+  } else {
+    SetCustomElementRegistryState(CustomElementRegistryState::Global);
+  }
+}
+
+/* https://dom.spec.whatwg.org/#element-custom-element-registry */
+CustomElementRegistry* Element::GetCustomElementRegistry() {
+  switch (GetCustomElementRegistryState()) {
+    case CustomElementRegistryState::Global:
+      return OwnerDoc()->GetEffectiveGlobalCustomElementRegistry();
+    case CustomElementRegistryState::Null:
+      return nullptr;
+    case CustomElementRegistryState::Scoped: {
+      RefPtr<CustomElementRegistry> registry =
+          CustomElementRegistry::GetScopedRegistry(*this);
+      MOZ_ASSERT(registry);
+      return registry;
+    }
+  }
+  MOZ_ASSERT_UNREACHABLE("Invalid CustomElementRegistryState");
+  return nullptr;
 }
 
 void Element::SetLastRememberedBSize(float aBSize) {
@@ -4513,6 +4571,25 @@ nsresult Element::CopyInnerTo(Element* aDst, ReparseAttributes aReparse) {
                                name->GetPrefix(), valueCopy, false);
       NS_ENSURE_SUCCESS(rv, rv);
     }
+  }
+
+  // https://dom.spec.whatwg.org/#clone-a-single-node
+  // Step 2.1. Let registry be node's custom element registry.
+  // Step 2.2. If registry is null, then set registry to fallbackRegistry.
+  // Step 2.3. If registry is a global custom element registry, then set
+  //           registry to document's effective global custom element registry.
+  // XXX Steps 2.1-2.3 are partially handled here by propagating registry
+  // state; the full registry resolution happens in "create an element".
+  CustomElementRegistryState state = GetCustomElementRegistryState();
+  if (state == CustomElementRegistryState::Scoped) {
+    MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
+    RefPtr<CustomElementRegistry> scopedRegistry =
+        CustomElementRegistry::GetScopedRegistry(*this);
+    aDst->SetCustomElementRegistry(scopedRegistry);
+  } else {
+    MOZ_ASSERT(state == CustomElementRegistryState::Global ||
+               StaticPrefs::dom_scoped_custom_element_registries_enabled());
+    aDst->SetCustomElementRegistryState(state);
   }
 
   // https://html.spec.whatwg.org/#enqueue-a-custom-element-upgrade-reaction

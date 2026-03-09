@@ -204,14 +204,31 @@ enum : uint32_t {
   // Document::mContentIdentifiersForLCP.
   ELEMENT_IN_CONTENT_IDENTIFIER_FOR_LCP = ELEMENT_FLAG_BIT(7),
 
+  // 2-bit field encoding the element's custom element registry state.
+  // See CustomElementRegistryState for the possible values.
+  ELEMENT_CUSTOM_ELEMENT_REGISTRY_LOW_BIT = ELEMENT_FLAG_BIT(8),
+  ELEMENT_CUSTOM_ELEMENT_REGISTRY_MASK =
+      ELEMENT_FLAG_BIT(8) | ELEMENT_FLAG_BIT(9),
+
   // Remaining bits are for subclasses
-  ELEMENT_TYPE_SPECIFIC_BITS_OFFSET = NODE_TYPE_SPECIFIC_BITS_OFFSET + 8
+  ELEMENT_TYPE_SPECIFIC_BITS_OFFSET = NODE_TYPE_SPECIFIC_BITS_OFFSET + 10
 };
 
 #undef ELEMENT_FLAG_BIT
 
 // Make sure we have space for our bits
 ASSERT_NODE_FLAGS_SPACE(ELEMENT_TYPE_SPECIFIC_BITS_OFFSET);
+
+// Encodes the custom element registry state for an element or shadow root.
+//   Global:  uses the owner document's effective global registry (initial
+//   state).
+//   Null:    explicitly opted out of all registries.
+//   Scoped:  uses a scoped registry stored in gScopedRegistryMap.
+enum class CustomElementRegistryState : uint8_t {
+  Global = 0,
+  Null = 1,
+  Scoped = 2,
+};
 
 namespace mozilla {
 enum class PseudoStyleType : uint8_t;
@@ -296,6 +313,7 @@ class Element : public FragmentOrElement {
 
   ~Element() {
     NS_ASSERTION(!HasServoData(), "expected ServoData to be cleared earlier");
+    UnlinkCustomElementRegistry(this);
   }
 
 #endif  // MOZILLA_INTERNAL_API
@@ -1648,6 +1666,32 @@ class Element : public FragmentOrElement {
 
   Element* ResolveReferenceTarget() const;
   Element* RetargetReferenceTargetForBindings(Element* aElement) const;
+
+  CustomElementRegistryState GetCustomElementRegistryState() const {
+    return static_cast<CustomElementRegistryState>(
+        (GetFlags() & ELEMENT_CUSTOM_ELEMENT_REGISTRY_MASK) /
+        ELEMENT_CUSTOM_ELEMENT_REGISTRY_LOW_BIT);
+  }
+
+  void SetCustomElementRegistryState(CustomElementRegistryState aState) {
+    UnsetFlags(ELEMENT_CUSTOM_ELEMENT_REGISTRY_MASK);
+    SetFlags(static_cast<uint32_t>(aState) *
+             ELEMENT_CUSTOM_ELEMENT_REGISTRY_LOW_BIT);
+  }
+
+  // Returns true if the element has an explicit registry set.
+  // That registry might be null.
+  bool HasCustomElementRegistry() const {
+    return GetCustomElementRegistryState() !=
+           CustomElementRegistryState::Global;
+  }
+
+  // https://dom.spec.whatwg.org/#element-custom-element-registry
+  CustomElementRegistry* GetCustomElementRegistry();
+  void SetCustomElementRegistry(CustomElementRegistry* aCustomElementRegistry);
+  static void TraverseCustomElementRegistry(
+      Element* aElement, nsCycleCollectionTraversalCallback& aCb);
+  static void UnlinkCustomElementRegistry(Element* aElement);
 
   const Maybe<float> GetLastRememberedBSize() const {
     const nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();

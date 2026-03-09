@@ -2368,6 +2368,10 @@ class Document : public nsINode,
                                        int32_t aNamespaceID,
                                        const nsAString* aIs = nullptr);
 
+  // https://dom.spec.whatwg.org/#effective-global-custom-element-registry
+  mozilla::dom::CustomElementRegistry*
+  GetEffectiveGlobalCustomElementRegistry();
+
   /**
    * Get the security info (i.e. SSL state etc) that the document got
    * from the channel/document that created the content of the

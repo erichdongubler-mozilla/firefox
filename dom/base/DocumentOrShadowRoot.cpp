@@ -12,6 +12,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/dom/AnimatableBinding.h"
+#include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/ShadowRoot.h"
@@ -754,6 +755,48 @@ void DocumentOrShadowRoot::Unlink(DocumentOrShadowRoot* tmp) {
   });
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAdoptedStyleSheets);
   tmp->mIdentifierMap.Clear();
+}
+
+void DocumentOrShadowRoot::SetCustomElementRegistry(
+    CustomElementRegistry& aRegistry) {
+  MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
+  MOZ_ASSERT(mKind == Kind::ShadowRoot,
+             "SetCustomElementRegistry should only be called on ShadowRoots");
+  ShadowRoot& root = static_cast<ShadowRoot&>(AsNode());
+  root.SetCustomElementRegistry(&aRegistry);
+}
+
+/* https://dom.spec.whatwg.org/#dom-documentorshadowroot-customelementregistry
+ */
+CustomElementRegistry* DocumentOrShadowRoot::GetCustomElementRegistry() {
+  // Step 1. If this is a document, then return this's custom element registry.
+  // TODO(2021247): Per document registries
+  if (mKind == Kind::Document) {
+    Document* doc = AsNode().AsDocument();
+    nsPIDOMWindowInner* window = doc->GetInnerWindow();
+    if (!window) {
+      return nullptr;
+    }
+    return window->CustomElements();
+  }
+
+  // Step 2. Assert: this is a ShadowRoot node.
+  MOZ_ASSERT(AsNode().IsShadowRoot());
+
+  // Step 3. Return this's custom element registry.
+  ShadowRoot* root = ShadowRoot::FromNode(AsNode());
+  MOZ_ASSERT(root);
+  if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+    return root->GetCustomElementRegistry();
+  }
+
+  // XXX Fallback when scoped registries are disabled: return the window's
+  // global registry.
+  nsPIDOMWindowInner* window = root->OwnerDoc()->GetInnerWindow();
+  if (!window) {
+    return nullptr;
+  }
+  return window->CustomElements();
 }
 
 }  // namespace mozilla::dom

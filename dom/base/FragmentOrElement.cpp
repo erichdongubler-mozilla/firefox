@@ -1384,6 +1384,10 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
     tmp->ExtendedDOMSlots()->mShadowRoot = nullptr;
   }
 
+  if (tmp->IsElement()) {
+    Element::UnlinkCustomElementRegistry(tmp->AsElement());
+  }
+
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 void FragmentOrElement::MarkNodeChildren(nsINode* aNode) {
@@ -1827,6 +1831,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(FragmentOrElement)
                            NS_CYCLE_COLLECTION_PARTICIPANT(NodeInfo));
       }
     }
+    Element::TraverseCustomElementRegistry(element, cb);
   }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
