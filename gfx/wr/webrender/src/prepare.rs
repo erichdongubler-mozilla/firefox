@@ -442,7 +442,7 @@ fn prepare_interned_prim_for_render(
                     pic_context.raster_spatial_node_index,
                 )
                 .into_fast_transform();
-            let prim_offset = prim_data.common.prim_rect.min.to_vector() - run.reference_frame_relative_offset;
+            let prim_offset = prim_instance.prim_origin.to_vector() - run.reference_frame_relative_offset;
 
             let surface = &frame_state.surfaces[pic_context.surface_index.0];
 
@@ -614,10 +614,11 @@ fn prepare_interned_prim_for_render(
                 );
             } else {
                 let prim_data = &data_stores.prim[*data_handle];
+                let prim_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
 
                 quad::prepare_quad(
                     prim_data,
-                    &prim_data.common.prim_rect,
+                    &prim_rect,
                     prim_data.common.aligned_aa_edges,
                     prim_data.common.transformed_aa_edges,
                     prim_instance_index,
@@ -679,6 +680,7 @@ fn prepare_interned_prim_for_render(
                 frame_state,
                 frame_context,
                 &mut prim_instance.vis,
+                prim_instance.prim_origin,
             );
 
             write_segment(
@@ -694,12 +696,13 @@ fn prepare_interned_prim_for_render(
         PrimitiveInstanceKind::LinearGradient { data_handle, ref mut visible_tiles_range, use_legacy_path, .. } => {
             profile_scope!("LinearGradient");
             let prim_data = &mut data_stores.linear_grad[*data_handle];
+            let prim_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
             if !*use_legacy_path {
                 if let Some(nine_patch) = &prim_data.border_nine_patch {
                     quad::prepare_border_image_nine_patch(
                         &*nine_patch,
                         prim_data,
-                        &prim_data.common.prim_rect,
+                        &prim_rect,
                         prim_data.stretch_size,
                         prim_data.common.aligned_aa_edges,
                         prim_data.common.transformed_aa_edges,
@@ -747,9 +750,10 @@ fn prepare_interned_prim_for_render(
                     None
                 };
 
+                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
                 quad::prepare_repeatable_quad(
                     prim_data,
-                    &prim_data.common.prim_rect,
+                    &local_rect,
                     prim_data.stretch_size,
                     prim_data.tile_spacing,
                     prim_data.common.aligned_aa_edges,
@@ -774,8 +778,8 @@ fn prepare_interned_prim_for_render(
             // cache with any shared template data.
             prim_data.update(frame_state);
 
-            if prim_data.stretch_size.width >= prim_data.common.prim_rect.width() &&
-                prim_data.stretch_size.height >= prim_data.common.prim_rect.height() {
+            if prim_data.stretch_size.width >= prim_data.common.prim_size.width &&
+                prim_data.stretch_size.height >= prim_data.common.prim_size.height {
 
                 prim_data.common.may_need_repetition = false;
             }
@@ -785,9 +789,10 @@ fn prepare_interned_prim_for_render(
                 // have it in the shader.
                 prim_data.common.may_need_repetition = false;
 
+                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
                 *visible_tiles_range = decompose_repeated_gradient(
                     &prim_instance.vis,
-                    &prim_data.common.prim_rect,
+                    &local_rect,
                     prim_spatial_node_index,
                     &prim_data.stretch_size,
                     &prim_data.tile_spacing,
@@ -829,8 +834,8 @@ fn prepare_interned_prim_for_render(
         PrimitiveInstanceKind::CachedLinearGradient { data_handle, ref mut visible_tiles_range, .. } => {
             profile_scope!("CachedLinearGradient");
             let prim_data = &mut data_stores.linear_grad[*data_handle];
-            prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_rect.width()
-                || prim_data.stretch_size.height < prim_data.common.prim_rect.height();
+            prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_size.width
+                || prim_data.stretch_size.height < prim_data.common.prim_size.height;
 
             // Update the template this instance references, which may refresh the GPU
             // cache with any shared template data.
@@ -839,9 +844,10 @@ fn prepare_interned_prim_for_render(
             if prim_data.tile_spacing != LayoutSize::zero() {
                 prim_data.common.may_need_repetition = false;
 
+                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
                 *visible_tiles_range = decompose_repeated_gradient(
                     &prim_instance.vis,
-                    &prim_data.common.prim_rect,
+                    &local_rect,
                     prim_spatial_node_index,
                     &prim_data.stretch_size,
                     &prim_data.tile_spacing,
@@ -861,11 +867,12 @@ fn prepare_interned_prim_for_render(
             let prim_data = &mut data_stores.radial_grad[*data_handle];
 
             if !*use_legacy_path {
+                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
                 if let Some(nine_patch) = &prim_data.border_nine_patch {
                     quad::prepare_border_image_nine_patch(
                         &*nine_patch,
                         prim_data,
-                        &prim_data.common.prim_rect,
+                        &local_rect,
                         prim_data.stretch_size,
                         prim_data.common.aligned_aa_edges,
                         prim_data.common.transformed_aa_edges,
@@ -885,7 +892,7 @@ fn prepare_interned_prim_for_render(
 
                 quad::prepare_repeatable_quad(
                     prim_data,
-                    &prim_data.common.prim_rect,
+                    &local_rect,
                     prim_data.stretch_size,
                     prim_data.tile_spacing,
                     prim_data.common.aligned_aa_edges,
@@ -906,8 +913,8 @@ fn prepare_interned_prim_for_render(
                 return;
             }
 
-            prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_rect.width()
-            || prim_data.stretch_size.height < prim_data.common.prim_rect.height();
+            prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_size.width
+            || prim_data.stretch_size.height < prim_data.common.prim_size.height;
 
             // Update the template this instane references, which may refresh the GPU
             // cache with any shared template data.
@@ -916,9 +923,10 @@ fn prepare_interned_prim_for_render(
             if prim_data.tile_spacing != LayoutSize::zero() {
                 prim_data.common.may_need_repetition = false;
 
+                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
                 *visible_tiles_range = decompose_repeated_gradient(
                     &prim_instance.vis,
-                    &prim_data.common.prim_rect,
+                    &local_rect,
                     prim_spatial_node_index,
                     &prim_data.stretch_size,
                     &prim_data.tile_spacing,
@@ -936,13 +944,14 @@ fn prepare_interned_prim_for_render(
         PrimitiveInstanceKind::ConicGradient { data_handle, ref mut visible_tiles_range, use_legacy_path, .. } => {
             profile_scope!("ConicGradient");
             let prim_data = &mut data_stores.conic_grad[*data_handle];
+            let prim_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
 
             if !*use_legacy_path {
                 if let Some(nine_patch) = &prim_data.border_nine_patch {
                     quad::prepare_border_image_nine_patch(
                         &*nine_patch,
                         prim_data,
-                        &prim_data.common.prim_rect,
+                        &prim_rect,
                         prim_data.stretch_size,
                         prim_data.common.aligned_aa_edges,
                         prim_data.common.transformed_aa_edges,
@@ -995,9 +1004,10 @@ fn prepare_interned_prim_for_render(
                     None
                 };
 
+                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
                 quad::prepare_repeatable_quad(
                     prim_data,
-                    &prim_data.common.prim_rect,
+                    &local_rect,
                     prim_data.stretch_size,
                     prim_data.tile_spacing,
                     prim_data.common.aligned_aa_edges,
@@ -1018,8 +1028,8 @@ fn prepare_interned_prim_for_render(
                 return;
             }
 
-            prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_rect.width()
-                || prim_data.stretch_size.height < prim_data.common.prim_rect.height();
+            prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_size.width
+                || prim_data.stretch_size.height < prim_data.common.prim_size.height;
 
             // Update the template this instane references, which may refresh the GPU
             // cache with any shared template data.
@@ -1028,9 +1038,10 @@ fn prepare_interned_prim_for_render(
             if prim_data.tile_spacing != LayoutSize::zero() {
                 prim_data.common.may_need_repetition = false;
 
+                let local_rect = LayoutRect::from_origin_and_size(prim_instance.prim_origin, prim_data.common.prim_size);
                 *visible_tiles_range = decompose_repeated_gradient(
                     &prim_instance.vis,
-                    &prim_data.common.prim_rect,
+                    &local_rect,
                     prim_spatial_node_index,
                     &prim_data.stretch_size,
                     &prim_data.tile_spacing,
