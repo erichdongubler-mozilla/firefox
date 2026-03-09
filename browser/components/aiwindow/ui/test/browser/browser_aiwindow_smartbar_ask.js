@@ -9,8 +9,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
 });
 
-requestLongerTimeout(3);
-
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.search.suggest.enabled", false]],
@@ -37,14 +35,16 @@ add_setup(async function () {
  * delete the typed query.
  */
 add_task(async function test_arrow_to_ask_preserves_value() {
+  info("test_arrow: opening AI window");
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;
-  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+  info("test_arrow: AI window open, typing in smartbar");
 
   const query = "tell me a random fact about something";
   await promiseSmartbarSuggestionsOpen(browser, () =>
     typeInSmartbar(browser, query)
   );
+  info("test_arrow: suggestions open, entering spawn");
 
   await SpecialPowers.spawn(browser, [query], async expectedQuery => {
     const aiWindowElement = content.document.querySelector("ai-window");
@@ -101,7 +101,6 @@ add_task(async function test_click_ask_row_picks_result() {
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
     const query = "tell me a random fact about something?";
     await promiseSmartbarSuggestionsOpen(browser, () =>

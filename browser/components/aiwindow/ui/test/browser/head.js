@@ -40,6 +40,7 @@ async function openAIWindow() {
     { attributes: true },
     () => win.document.documentElement.hasAttribute("ai-window")
   );
+  await SimpleTest.promiseFocus(win);
   return win;
 }
 
@@ -69,10 +70,17 @@ async function typeInSmartbar(browser, text) {
       () => aiWindowElement.shadowRoot?.querySelector("#ai-window-smartbar"),
       "Wait for Smartbar to be rendered"
     );
-    const editor = smartbar.querySelector("moz-multiline-editor");
-    editor.focus();
+    info("typeInSmartbar: smartbar found, calling focus()");
+    smartbar.focus();
+    await ContentTaskUtils.waitForCondition(
+      () => smartbar.matches(":focus-within"),
+      "Wait for smartbar to receive focus"
+    );
+    info("typeInSmartbar: focus received, sending string");
     EventUtils.sendString(searchText, content);
+    info("typeInSmartbar: string sent, awaiting lastQueryContextPromise");
     await smartbar.lastQueryContextPromise;
+    info("typeInSmartbar: query complete");
   });
 }
 
