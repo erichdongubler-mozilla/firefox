@@ -473,7 +473,9 @@ function formatVariables({ format, dictionary, outputReferences, formatting }) {
     remainingTokens = remainingTokens.filter(token => {
       if (
         sectionMatchers.some(m =>
-          m.test ? m.test(token.name) : token.name.startsWith(m)
+          m.test
+            ? m.test(token.name)
+            : token.name.startsWith(`${m}-`) || token.name === m
         )
       ) {
         sectionParts.push(token);
@@ -623,13 +625,10 @@ function getTokenCategoryName(tokenName, purpose) {
         return false;
       }
 
-      if (tokenName.includes(name)) {
-        return true;
-      }
+      const matchesAsSegment = n =>
+        new RegExp(`(^|-)${n}(-|$)`).test(tokenName);
 
-      return alternateNames?.some(alternateName =>
-        tokenName.includes(alternateName)
-      );
+      return matchesAsSegment(name) || alternateNames?.some(matchesAsSegment);
     }
   );
 
@@ -641,7 +640,7 @@ function getTokenCategoryName(tokenName, purpose) {
 }
 
 function getTokenCategory(filePath) {
-  const fileName = filePath.split("/").at(-1);
+  const fileName = path.basename(filePath);
   const tokenCategory = fileName.replace(".tokens.json", "");
 
   return tokenCategory;
