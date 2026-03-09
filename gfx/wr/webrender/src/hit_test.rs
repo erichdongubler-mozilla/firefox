@@ -82,6 +82,7 @@ impl HitTestClipNode {
         item: &ClipItemKey,
         interners: &Interners,
         parent: ClipNodeId,
+        spatial_node_index: SpatialNodeIndex,
     ) -> Self {
         let region = match item.kind {
             ClipItemKeyKind::Rectangle(rect, mode) => {
@@ -104,7 +105,7 @@ impl HitTestClipNode {
 
         HitTestClipNode {
             region,
-            spatial_node_index: item.spatial_node_index,
+            spatial_node_index,
             parent,
         }
     }
@@ -210,6 +211,7 @@ impl HitTestingScene {
                 &clip_item.key,
                 interners,
                 src_clip_node.parent,
+                src_clip_node.spatial_node_index,
             );
 
             self.clip_nodes.insert(clip_node_id, clip_node);

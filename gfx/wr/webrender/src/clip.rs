@@ -123,6 +123,7 @@ use std::{iter, ops, u32, mem};
 pub struct ClipTreeNode {
     pub handle: ClipDataHandle,
     pub parent: ClipNodeId,
+    pub spatial_node_index: SpatialNodeIndex,
 
     children: Vec<ClipNodeId>,
 
@@ -194,6 +195,7 @@ impl ClipTree {
                     handle: ClipDataHandle::INVALID,
                     children: Vec::new(),
                     parent: ClipNodeId::NONE,
+                    spatial_node_index: SpatialNodeIndex::INVALID,
                 }
             ],
             leaves: Vec::new(),
@@ -209,6 +211,7 @@ impl ClipTree {
             handle: ClipDataHandle::INVALID,
             children: Vec::new(),
             parent: ClipNodeId::NONE,
+            spatial_node_index: SpatialNodeIndex::INVALID,
         });
 
         self.leaves.clear();
@@ -221,20 +224,23 @@ impl ClipTree {
     /// nodes in the tree where possible
     fn add_impl(
         id: ClipNodeId,
-        clips: &[ClipDataHandle],
+        clips: &[ClipEntry],
         nodes: &mut Vec<ClipTreeNode>,
     ) -> ClipNodeId {
         if clips.is_empty() {
             return id;
         }
 
-        let handle = clips[0];
+        let ClipEntry { handle, spatial_node_index } = clips[0];
         let next_clips = &clips[1..];
 
         let node_index = nodes[id.0 as usize]
             .children
             .iter()
-            .find(|n| nodes[n.0 as usize].handle == handle)
+            .find(|n| {
+                let node = &nodes[n.0 as usize];
+                node.handle == handle && node.spatial_node_index == spatial_node_index
+            })
             .cloned();
 
         let node_index = match node_index {
@@ -246,6 +252,7 @@ impl ClipTree {
                     handle,
                     children: Vec::new(),
                     parent: id,
+                    spatial_node_index,
                 };
                 nodes.push(node);
                 node_index
@@ -264,7 +271,7 @@ impl ClipTree {
     pub fn add(
         &mut self,
         root: ClipNodeId,
-        clips: &[ClipDataHandle],
+        clips: &[ClipEntry],
     ) -> ClipNodeId {
         ClipTree::add_impl(
             root,
@@ -410,6 +417,15 @@ impl ClipTree {
     }
 }
 
+/// A reference to an interned clip paired with the spatial node that positions it.
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct ClipEntry {
+    pub handle: ClipDataHandle,
+    pub spatial_node_index: SpatialNodeIndex,
+}
+
 /// Represents a clip-chain as defined by the public API that we decompose in to
 /// the clip-tree. In future, we would like to remove this and have Gecko directly
 /// build the clip-tree.
@@ -417,7 +433,7 @@ impl ClipTree {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipChain {
     parent: Option<usize>,
-    clips: Vec<ClipDataHandle>,
+    clips: Vec<ClipEntry>,
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -427,7 +443,7 @@ pub struct ClipStackEntry {
     last_clip_chain_cache: Option<(ClipChainId, ClipNodeId)>,
 
     /// Set of clips that were already seen and included in clip_node_id
-    seen_clips: FastHashSet<ClipDataHandle>,
+    seen_clips: FastHashSet<ClipEntry>,
 
     /// The build clip_node_id for this level of the stack
     clip_node_id: ClipNodeId,
@@ -438,7 +454,7 @@ pub struct ClipStackEntry {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipTreeBuilder {
     /// Clips defined by the display list
-    clip_map: FastHashMap<ClipId, ClipDataHandle>,
+    clip_map: FastHashMap<ClipId, ClipEntry>,
 
     /// Clip-chains defined by the display list
     clip_chains: Vec<ClipChain>,
@@ -451,7 +467,7 @@ pub struct ClipTreeBuilder {
     tree: ClipTree,
 
     /// A temporary buffer stored here to avoid constant heap allocs/frees
-    clip_handles_buffer: Vec<ClipDataHandle>,
+    clip_handles_buffer: Vec<ClipEntry>,
 }
 
 impl ClipTreeBuilder {
@@ -495,8 +511,9 @@ impl ClipTreeBuilder {
         &mut self,
         id: ClipId,
         handle: ClipDataHandle,
+        spatial_node_index: SpatialNodeIndex,
     ) {
-        self.clip_map.insert(id, handle);
+        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index });
     }
 
     /// Define a new rounded rect clip
@@ -504,8 +521,9 @@ impl ClipTreeBuilder {
         &mut self,
         id: ClipId,
         handle: ClipDataHandle,
+        spatial_node_index: SpatialNodeIndex,
     ) {
-        self.clip_map.insert(id, handle);
+        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index });
     }
 
     /// Define a image mask clip
@@ -513,8 +531,9 @@ impl ClipTreeBuilder {
         &mut self,
         id: ClipId,
         handle: ClipDataHandle,
+        spatial_node_index: SpatialNodeIndex,
     ) {
-        self.clip_map.insert(id, handle);
+        self.clip_map.insert(id, ClipEntry { handle, spatial_node_index });
     }
 
     /// Define a clip-chain
@@ -594,10 +613,10 @@ impl ClipTreeBuilder {
         };
 
         self.clip_handles_buffer.clear();
-        let clip_index = self.clip_map[&clip_id];
+        let clip_entry = self.clip_map[&clip_id];
 
-        if seen_clips.insert(clip_index) {
-            self.clip_handles_buffer.push(clip_index);
+        if seen_clips.insert(clip_entry) {
+            self.clip_handles_buffer.push(clip_entry);
         }
 
         let clip_node_id = self.tree.add(
@@ -620,8 +639,8 @@ impl ClipTreeBuilder {
     /// Add clips from a given clip-chain to the set of clips for a primitive during clip-set building
     fn add_clips(
         clip_chain_index: usize,
-        seen_clips: &mut FastHashSet<ClipDataHandle>,
-        output: &mut Vec<ClipDataHandle>,
+        seen_clips: &mut FastHashSet<ClipEntry>,
+        output: &mut Vec<ClipEntry>,
         clip_chains: &[ClipChain],
     ) {
         // TODO(gw): It's possible that we may see clip outputs that include identical clips
@@ -642,9 +661,9 @@ impl ClipTreeBuilder {
             );
         }
 
-        for clip_index in clip_chain.clips.iter().rev() {
-            if seen_clips.insert(*clip_index) {
-                output.push(*clip_index);
+        for clip_entry in clip_chain.clips.iter().rev() {
+            if seen_clips.insert(*clip_entry) {
+                output.push(*clip_entry);
             }
         }
     }
@@ -681,8 +700,8 @@ impl ClipTreeBuilder {
             // to the set, so we don't get incorrect results next time `build_clip_set` is
             // called for a different clip-chain. Doing it this way rather than cloning means
             // we avoid heap allocations for each `build_clip_set` call.
-            for handle in &self.clip_handles_buffer {
-                clip_stack.seen_clips.remove(handle);
+            for entry in &self.clip_handles_buffer {
+                clip_stack.seen_clips.remove(entry);
             }
 
             let clip_node_id = self.tree.add(
@@ -704,8 +723,8 @@ impl ClipTreeBuilder {
     ) -> bool {
         let clip_chain = &self.clip_chains[clip_chain_index];
 
-        for clip_handle in &clip_chain.clips {
-            let clip_info = &interners.clip[*clip_handle];
+        for clip_entry in &clip_chain.clips {
+            let clip_info = &interners.clip[clip_entry.handle];
 
             if let ClipNodeKind::Complex = clip_info.key.kind.node_kind() {
                 return true;
@@ -787,8 +806,8 @@ impl ClipTreeBuilder {
         self.clip_handles_buffer.clear();
 
         for clip_id in extra_clips {
-            let handle = self.clip_map[clip_id];
-            self.clip_handles_buffer.push(handle);
+            let entry = self.clip_map[clip_id];
+            self.clip_handles_buffer.push(entry);
         }
 
         let node_id = self.tree.add(
@@ -831,7 +850,7 @@ impl ClipTreeBuilder {
         &mut self,
         clip_node_id: ClipNodeId,
         info: &LayoutPrimitiveInfo,
-        extra_clips: &[ClipItemKey],
+        extra_clips: &[ClipItemEntry],
         interners: &mut Interners,
     ) -> ClipLeafId {
 
@@ -842,16 +861,19 @@ impl ClipTreeBuilder {
             //           lot of primitives referencing the same clip set (e.g. dl_mutate and similar tests)
             self.clip_handles_buffer.clear();
 
-            for item in extra_clips {
+            for clip_item_entry in extra_clips {
                 // Intern this clip item, and store the handle
                 // in the clip chain node.
-                let handle = interners.clip.intern(item, || {
+                let handle = interners.clip.intern(&clip_item_entry.key, || {
                     ClipInternData {
-                        key: item.clone(),
+                        key: clip_item_entry.key.clone(),
                     }
                 });
 
-                self.clip_handles_buffer.push(handle);
+                self.clip_handles_buffer.push(ClipEntry {
+                    handle,
+                    spatial_node_index: clip_item_entry.spatial_node_index,
+                });
             }
 
             self.tree.add(
@@ -962,7 +984,6 @@ impl From<ClipItemKey> for ClipNode {
         ClipNode {
             item: ClipItem {
                 kind,
-                spatial_node_index: item.spatial_node_index,
             },
         }
     }
@@ -1005,6 +1026,7 @@ pub struct ClipNodeInstance {
     pub handle: ClipDataHandle,
     pub flags: ClipNodeFlags,
     pub visible_tiles: Option<ops::Range<usize>>,
+    pub spatial_node_index: SpatialNodeIndex,
 }
 
 impl ClipNodeInstance {
@@ -1115,6 +1137,7 @@ impl ClipSpaceConversion {
 struct ClipNodeInfo {
     conversion: ClipSpaceConversion,
     handle: ClipDataHandle,
+    spatial_node_index: SpatialNodeIndex,
 }
 
 impl ClipNodeInfo {
@@ -1139,7 +1162,7 @@ impl ClipNodeInfo {
         let is_raster_2d =
             flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM) ||
             spatial_tree
-                .get_world_viewport_transform(node.item.spatial_node_index)
+                .get_world_viewport_transform(self.spatial_node_index)
                 .is_2d_axis_aligned();
         if is_raster_2d && node.item.kind.supports_fast_path_rendering() {
             flags |= ClipNodeFlags::USE_FAST_PATH;
@@ -1235,6 +1258,7 @@ impl ClipNodeInfo {
             handle: self.handle,
             flags,
             visible_tiles,
+            spatial_node_index: self.spatial_node_index,
         })
     }
 }
@@ -1386,6 +1410,7 @@ impl ClipStore {
 
             if !add_clip_node_to_current_chain(
                 node.handle,
+                node.spatial_node_index,
                 prim_spatial_node_index,
                 pic_spatial_node_index,
                 visibility_spatial_node_index,
@@ -1411,7 +1436,6 @@ impl ClipStore {
         prim_spatial_node_index: SpatialNodeIndex,
         visibility_spatial_node_index: SpatialNodeIndex,
         spatial_tree: &SpatialTree,
-        clip_data_store: &ClipDataStore,
     ) {
         // TODO(gw): Although this does less work than set_active_clips(), it does
         //           still do some unnecessary work (such as the clip space conversion).
@@ -1424,16 +1448,16 @@ impl ClipStore {
         let clip_instances = &self
             .clip_node_instances[prim_clip_chain.clips_range.to_range()];
         for clip_instance in clip_instances {
-            let clip = &clip_data_store[clip_instance.handle];
             let conversion = ClipSpaceConversion::new(
                 prim_spatial_node_index,
-                clip.item.spatial_node_index,
+                clip_instance.spatial_node_index,
                 visibility_spatial_node_index,
                 spatial_tree,
             );
             self.active_clip_node_info.push(ClipNodeInfo {
                 handle: clip_instance.handle,
                 conversion,
+                spatial_node_index: clip_instance.spatial_node_index,
             });
         }
     }
@@ -1482,7 +1506,7 @@ impl ClipStore {
                     // Map it from local -> picture space
                     let mapper = SpaceMapper::new_with_target(
                         clip_chain.pic_spatial_node_index,
-                        clip_node.item.spatial_node_index,
+                        clip_instance.spatial_node_index,
                         PictureRect::max_rect(),
                         spatial_tree,
                     );
@@ -1506,6 +1530,7 @@ impl ClipStore {
     pub fn push_clip_instance(
         &mut self,
         handle: ClipDataHandle,
+        spatial_node_index: SpatialNodeIndex,
     ) -> ClipNodeRange {
         let first = self.clip_node_instances.len() as u32;
 
@@ -1513,6 +1538,7 @@ impl ClipStore {
             handle,
             flags: ClipNodeFlags::SAME_COORD_SYSTEM | ClipNodeFlags::SAME_SPATIAL_NODE,
             visible_tiles: None,
+            spatial_node_index,
         });
 
         ClipNodeRange {
@@ -1684,11 +1710,13 @@ impl Default for ClipStore {
     }
 }
 
-// The ClipItemKey is a hashable representation of the contents
-// of a clip item. It is used during interning to de-duplicate
-// clip nodes between frames and display lists. This allows quick
-// comparison of clip node equality by handle, and also allows
-// the uploaded GPU cache handle to be retained between display lists.
+// The ClipItemKey is a hashable representation of the geometry of
+// a clip item. It is used during interning to de-duplicate clip nodes
+// between frames and display lists. This allows quick comparison of
+// clip node equality by handle, and also allows the uploaded GPU cache
+// handle to be retained between display lists. The spatial node index
+// is intentionally excluded from the key so that clips with the same
+// geometry but different spatial positioning can share interned data.
 // TODO(gw): Maybe we should consider constructing these directly
 //           in the DL builder?
 #[derive(Copy, Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
@@ -1769,6 +1797,12 @@ impl ClipItemKeyKind {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipItemKey {
     pub kind: ClipItemKeyKind,
+}
+
+/// A clip item key paired with the spatial node that positions it, used during scene building.
+#[derive(Copy, Clone)]
+pub struct ClipItemEntry {
+    pub key: ClipItemKey,
     pub spatial_node_index: SpatialNodeIndex,
 }
 
@@ -1817,7 +1851,6 @@ pub enum ClipItemKind {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipItem {
     pub kind: ClipItemKind,
-    pub spatial_node_index: SpatialNodeIndex,
 }
 
 fn compute_box_shadow_parameters(
@@ -2328,6 +2361,7 @@ pub fn projected_rect_contains(
 // results in the entire primitive being culled out.
 fn add_clip_node_to_current_chain(
     handle: ClipDataHandle,
+    clip_spatial_node_index: SpatialNodeIndex,
     prim_spatial_node_index: SpatialNodeIndex,
     pic_spatial_node_index: SpatialNodeIndex,
     visibility_spatial_node_index: SpatialNodeIndex,
@@ -2343,7 +2377,7 @@ fn add_clip_node_to_current_chain(
     // systems of the primitive and clip node.
     let conversion = ClipSpaceConversion::new(
         prim_spatial_node_index,
-        clip_node.item.spatial_node_index,
+        clip_spatial_node_index,
         visibility_spatial_node_index,
         spatial_tree,
     );
@@ -2380,13 +2414,13 @@ fn add_clip_node_to_current_chain(
                     .coordinate_system_id;
 
                 let clip_coord_system = spatial_tree
-                    .get_spatial_node(clip_node.item.spatial_node_index)
+                    .get_spatial_node(clip_spatial_node_index)
                     .coordinate_system_id;
 
                 if pic_coord_system == clip_coord_system {
                     let mapper = SpaceMapper::new_with_target(
                         pic_spatial_node_index,
-                        clip_node.item.spatial_node_index,
+                        clip_spatial_node_index,
                         PictureRect::max_rect(),
                         spatial_tree,
                     );
@@ -2404,6 +2438,7 @@ fn add_clip_node_to_current_chain(
     clip_node_info.push(ClipNodeInfo {
         conversion,
         handle,
+        spatial_node_index: clip_spatial_node_index,
     });
 
     true

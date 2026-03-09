@@ -1127,7 +1127,7 @@ impl TileCacheInstance {
                                 // case of a pinch-zoom effect.
                                 let map = ClipSpaceConversion::new(
                                     frame_context.root_spatial_node_index,
-                                    clip_node.item.spatial_node_index,
+                                    clip_instance.spatial_node_index,
                                     frame_context.root_spatial_node_index,
                                     frame_context.spatial_tree,
                                 );
@@ -1893,7 +1893,7 @@ impl TileCacheInstance {
                 // case of a pinch-zoom effect.
                 let map = ClipSpaceConversion::new(
                     frame_context.root_spatial_node_index,
-                    clip_node.item.spatial_node_index,
+                    clip_instance.spatial_node_index,
                     frame_context.root_spatial_node_index,
                     frame_context.spatial_tree,
                 );
@@ -2777,7 +2777,7 @@ impl TileCacheInstance {
             let clip_scratch = match clip_local_rect {
                 Some(rect) => self.corners_cache.compute_to_scratch(
                     rect,
-                    clip.item.spatial_node_index,
+                    clip_instance.spatial_node_index,
                     self.spatial_node_index,
                     self.local_to_raster,
                     frame_context.spatial_tree,

@@ -4,7 +4,7 @@
 use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, ColorU, PropertyBinding};
 use api::units::*;
 use crate::border::{BorderRadiusAu};
-use crate::clip::{ClipItemKey, ClipItemKeyKind, ClipNodeId};
+use crate::clip::{ClipItemKey, ClipItemKeyKind, ClipItemEntry, ClipNodeId};
 use crate::intern::{Handle as InternHandle, InternDebug, Internable};
 use crate::prim_store::{InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData};
 use crate::prim_store::{PrimitiveInstanceKind, PrimitiveStore, RectKey};
@@ -221,12 +221,14 @@ impl<'a> SceneBuilder<'a> {
                     }
 
                     // TODO(gw): Add a fast path for ClipOut + zero border radius!
-                    clips.push(ClipItemKey {
-                        kind: ClipItemKeyKind::rounded_rect(
-                            prim_info.rect,
-                            border_radius,
-                            ClipMode::ClipOut,
-                        ),
+                    clips.push(ClipItemEntry {
+                        key: ClipItemKey {
+                            kind: ClipItemKeyKind::rounded_rect(
+                                prim_info.rect,
+                                border_radius,
+                                ClipMode::ClipOut,
+                            ),
+                        },
                         spatial_node_index,
                     });
 
@@ -234,12 +236,14 @@ impl<'a> SceneBuilder<'a> {
                 }
                 BoxShadowClipMode::Inset => {
                     if !shadow_rect.is_empty() {
-                        clips.push(ClipItemKey {
-                            kind: ClipItemKeyKind::rounded_rect(
-                                shadow_rect,
-                                shadow_radius,
-                                ClipMode::ClipOut,
-                            ),
+                        clips.push(ClipItemEntry {
+                            key: ClipItemKey {
+                                kind: ClipItemKeyKind::rounded_rect(
+                                    shadow_rect,
+                                    shadow_radius,
+                                    ClipMode::ClipOut,
+                                ),
+                            },
                             spatial_node_index,
                         });
                     }
@@ -248,12 +252,14 @@ impl<'a> SceneBuilder<'a> {
                 }
             };
 
-            clips.push(ClipItemKey {
-                kind: ClipItemKeyKind::rounded_rect(
-                    final_prim_rect,
-                    clip_radius,
-                    ClipMode::Clip,
-                ),
+            clips.push(ClipItemEntry {
+                key: ClipItemKey {
+                    kind: ClipItemKeyKind::rounded_rect(
+                        final_prim_rect,
+                        clip_radius,
+                        ClipMode::Clip,
+                    ),
+                },
                 spatial_node_index,
             });
 
@@ -273,12 +279,14 @@ impl<'a> SceneBuilder<'a> {
 
             // Add a normal clip mask to clip out the contents
             // of the surrounding primitive.
-            extra_clips.push(ClipItemKey {
-                kind: ClipItemKeyKind::rounded_rect(
-                    prim_info.rect,
-                    border_radius,
-                    prim_clip_mode,
-                ),
+            extra_clips.push(ClipItemEntry {
+                key: ClipItemKey {
+                    kind: ClipItemKeyKind::rounded_rect(
+                        prim_info.rect,
+                        border_radius,
+                        prim_clip_mode,
+                    ),
+                },
                 spatial_node_index,
             });
 
@@ -293,14 +301,16 @@ impl<'a> SceneBuilder<'a> {
             };
 
             // Create the box-shadow clip item.
-            let shadow_clip_source = ClipItemKey {
-                kind: ClipItemKeyKind::box_shadow(
-                    shadow_rect,
-                    shadow_radius,
-                    dest_rect,
-                    blur_radius,
-                    clip_mode,
-                ),
+            let shadow_clip_source = ClipItemEntry {
+                key: ClipItemKey {
+                    kind: ClipItemKeyKind::box_shadow(
+                        shadow_rect,
+                        shadow_radius,
+                        dest_rect,
+                        blur_radius,
+                        clip_mode,
+                    ),
+                },
                 spatial_node_index,
             };
 

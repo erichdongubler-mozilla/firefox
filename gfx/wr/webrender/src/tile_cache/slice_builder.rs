@@ -275,7 +275,6 @@ impl TileCacheBuilder {
         spatial_node_index: SpatialNodeIndex,
         prim_flags: PrimitiveFlags,
         spatial_tree: &SceneSpatialTree,
-        interners: &Interners,
         quality_settings: &QualitySettings,
         prim_instances: &mut Vec<PrimitiveInstance>,
         clip_tree_builder: &ClipTreeBuilder,
@@ -343,10 +342,8 @@ impl TileCacheBuilder {
                                 while current_node_id != ClipNodeId::NONE {
                                     let node = clip_tree_builder.get_node(current_node_id);
 
-                                    let clip_node_data = &interners.clip[node.handle];
-
                                     let spatial_root = find_scroll_root(
-                                        clip_node_data.key.spatial_node_index,
+                                        node.spatial_node_index,
                                         &mut self.prev_scroll_root_cache,
                                         spatial_tree,
                                         true,
@@ -557,7 +554,7 @@ fn create_tile_cache(
         let clip_node_data = &interners.clip[node.handle];
 
         // Check if this clip is in the root coord system (i.e. is axis-aligned with tile-cache)
-        let is_rcs = spatial_tree.is_root_coord_system(clip_node_data.key.spatial_node_index);
+        let is_rcs = spatial_tree.is_root_coord_system(node.spatial_node_index);
 
         let node_valid = if is_rcs {
             match clip_node_data.key.kind {

@@ -1092,7 +1092,7 @@ fn prepare_tiles(
         let clip_instance = frame_state.clip_store.get_instance_from_range(&clip_chain.clips_range, i);
         let clip_node = &interned_clips[clip_instance.handle];
 
-        clip_to_raster.set_target_spatial_node(clip_node.item.spatial_node_index, ctx.spatial_tree);
+        clip_to_raster.set_target_spatial_node(clip_instance.spatial_node_index, ctx.spatial_tree);
 
         let transform = match clip_to_raster.as_2d_scale_offset() {
             Some(transform) => transform.then_scale(device_pixel_scale.0),
@@ -1349,13 +1349,13 @@ fn get_prim_render_strategy(
 
                 let clip_prim_coords_match = spatial_tree.is_matching_coord_system(
                     prim_spatial_node_index,
-                    clip_node.item.spatial_node_index,
+                    clip_instance.spatial_node_index,
                 );
 
                 if clip_prim_coords_match {
                     let map_clip_to_prim = SpaceMapper::new_with_target(
                         prim_spatial_node_index,
-                        clip_node.item.spatial_node_index,
+                        clip_instance.spatial_node_index,
                         LayoutRect::max_rect(),
                         spatial_tree,
                     );
@@ -1424,7 +1424,6 @@ pub fn cache_key(
     spatial_tree: &SpatialTree,
     clip_chain: &ClipChainInstance,
     clip_store: &ClipStore,
-    interned_clips: &DataStore<ClipIntern>,
 ) -> Option<QuadCacheKey> {
     const CACHE_MAX_CLIPS: usize = 3;
 
@@ -1437,8 +1436,7 @@ pub fn cache_key(
     for i in 0 .. clip_chain.clips_range.count {
         let clip_instance = clip_store.get_instance_from_range(&clip_chain.clips_range, i);
         clip_uids[i as usize] = clip_instance.handle.uid().get_uid();
-        let clip_node = &interned_clips[clip_instance.handle];
-        if clip_node.item.spatial_node_index != prim_spatial_node_index {
+        if clip_instance.spatial_node_index != prim_spatial_node_index {
             return None;
         }
     }
@@ -1741,7 +1739,7 @@ pub fn prepare_clip_task(
         }
         ClipItemKind::Image { .. } => {
             let transform_id = transforms.gpu.get_id_with_post_scale(
-                clip_item.spatial_node_index,
+                clip_instance.spatial_node_index,
                 raster_spatial_node_index,
                 device_pixel_scale.get(),
                 spatial_tree,
@@ -1789,7 +1787,7 @@ pub fn prepare_clip_task(
         }
     };
 
-    let clip_spatial_node = spatial_tree.get_spatial_node(clip_item.spatial_node_index);
+    let clip_spatial_node = spatial_tree.get_spatial_node(clip_instance.spatial_node_index);
     let raster_spatial_node = spatial_tree.get_spatial_node(raster_spatial_node_index);
     let raster_clip = raster_spatial_node.coordinate_system_id == clip_spatial_node.coordinate_system_id;
 
@@ -1805,7 +1803,7 @@ pub fn prepare_clip_task(
         let clip_transform_id = transforms.gpu.get_id_with_pre_scale(
             device_pixel_scale.inverse().get(),
             raster_spatial_node_index,
-            clip_item.spatial_node_index,
+            clip_instance.spatial_node_index,
             spatial_tree,
         );
         let pattern_transform = ScaleOffset::identity();
@@ -1845,17 +1843,17 @@ pub fn prepare_clip_task(
             &[],
         );
 
-        let clip_spatial_node = spatial_tree.get_spatial_node(clip_item.spatial_node_index);
+        let clip_spatial_node = spatial_tree.get_spatial_node(clip_instance.spatial_node_index);
         let clip_transform_id = if prim_spatial_node.coordinate_system_id < clip_spatial_node.coordinate_system_id {
             transforms.gpu.get_id(
-                clip_item.spatial_node_index,
+                clip_instance.spatial_node_index,
                 prim_spatial_node_index,
                 spatial_tree,
             )
         } else {
             transforms.gpu.get_id(
                 prim_spatial_node_index,
-                clip_item.spatial_node_index,
+                clip_instance.spatial_node_index,
                 spatial_tree,
             )
         };

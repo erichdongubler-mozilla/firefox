@@ -741,7 +741,6 @@ fn prepare_interned_prim_for_render(
                         frame_context.spatial_tree,
                         &prim_instance.vis.clip_chain,
                         frame_state.clip_store,
-                        &data_stores.clip,
                     )
                 } else {
                     None
@@ -989,7 +988,6 @@ fn prepare_interned_prim_for_render(
                         frame_context.spatial_tree,
                         &prim_instance.vis.clip_chain,
                         frame_state.clip_store,
-                        &data_stores.clip,
                     )
                 } else {
                     None
@@ -1538,7 +1536,6 @@ fn update_clip_task_for_brush(
                 prim_spatial_node_index,
                 visibility_spatial_node_index,
                 &frame_context.spatial_tree,
-                &data_stores.clip,
             );
 
             let segment_clip_chain = frame_state

@@ -50,7 +50,7 @@ use api::channel::{unbounded_channel, Receiver, Sender};
 use api::units::*;
 use crate::image_tiling::simplify_repeated_primitive;
 use crate::box_shadow::BLUR_SAMPLE_SCALE;
-use crate::clip::{ClipIntern, ClipItemKey, ClipItemKeyKind, ClipStore};
+use crate::clip::{ClipIntern, ClipItemKey, ClipItemKeyKind, ClipItemEntry, ClipStore};
 use crate::clip::{ClipInternData, ClipNodeId, ClipLeafId};
 use crate::clip::{PolygonDataHandle, ClipTreeBuilder};
 use crate::gpu_types::BlurEdgeMode;
@@ -2076,7 +2076,6 @@ impl<'a> SceneBuilder<'a> {
                     spatial_node_index,
                     flags,
                     self.spatial_tree,
-                    self.interners,
                     &self.quality_settings,
                     &mut self.prim_instances,
                     &self.clip_tree_builder,
@@ -2092,7 +2091,7 @@ impl<'a> SceneBuilder<'a> {
         spatial_node_index: SpatialNodeIndex,
         clip_node_id: ClipNodeId,
         info: &LayoutPrimitiveInfo,
-        clip_items: Vec<ClipItemKey>,
+        clip_items: Vec<ClipItemEntry>,
         prim: P,
     )
     where
@@ -2121,7 +2120,7 @@ impl<'a> SceneBuilder<'a> {
         spatial_node_index: SpatialNodeIndex,
         clip_node_id: ClipNodeId,
         info: &LayoutPrimitiveInfo,
-        clip_items: Vec<ClipItemKey>,
+        clip_items: Vec<ClipItemEntry>,
         prim: P,
     )
     where
@@ -2904,7 +2903,6 @@ impl<'a> SceneBuilder<'a> {
 
         let item = ClipItemKey {
             kind: ClipItemKeyKind::image_mask(image_mask, snapped_mask_rect, polygon_handle),
-            spatial_node_index,
         };
 
         let handle = self
@@ -2919,6 +2917,7 @@ impl<'a> SceneBuilder<'a> {
         self.clip_tree_builder.define_image_mask_clip(
             new_node_id,
             handle,
+            spatial_node_index,
         );
     }
 
@@ -2938,7 +2937,6 @@ impl<'a> SceneBuilder<'a> {
 
         let item = ClipItemKey {
             kind: ClipItemKeyKind::rectangle(snapped_clip_rect, ClipMode::Clip),
-            spatial_node_index,
         };
         let handle = self
             .interners
@@ -2952,6 +2950,7 @@ impl<'a> SceneBuilder<'a> {
         self.clip_tree_builder.define_rect_clip(
             new_node_id,
             handle,
+            spatial_node_index,
         );
     }
 
@@ -2974,7 +2973,6 @@ impl<'a> SceneBuilder<'a> {
                 clip.radii,
                 clip.mode,
             ),
-            spatial_node_index,
         };
 
         let handle = self
@@ -2989,6 +2987,7 @@ impl<'a> SceneBuilder<'a> {
         self.clip_tree_builder.define_rounded_rect_clip(
             new_node_id,
             handle,
+            spatial_node_index,
         );
     }
 
@@ -3899,7 +3898,6 @@ impl<'a> SceneBuilder<'a> {
                         filter_spatial_node_index,
                         info.flags,
                         self.spatial_tree,
-                        self.interners,
                         &self.quality_settings,
                         &mut self.prim_instances,
                         &self.clip_tree_builder,
