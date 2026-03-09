@@ -376,7 +376,9 @@ class Assembler : public AssemblerShared,
 
   Register getStackPointer() const { return StackPointer; }
   void flushBuffer() {}
+#ifdef JS_DISASM_RISCV64
   static int disassembleInstr(Instr instr, bool enable_spew = false);
+#endif /* JS_DISASM_RISCV64 */
   int jumpChainTargetAt(BufferOffset pos, bool is_internal);
   static int jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
                                bool is_internal,
@@ -406,7 +408,7 @@ class Assembler : public AssemblerShared,
   virtual BufferOffset emit(Instr x) {
     MOZ_ASSERT(hasCreator());
     BufferOffset offset = m_buffer.putInt(x);
-#if defined(DEBUG) || defined(JS_JITSPEW)
+#if (defined(DEBUG) || defined(JS_JITSPEW)) && defined(JS_DISASM_RISCV64)
     if (!oom()) {
       DEBUG_PRINTF(
           "0x%" PRIx64 "(%" PRIxPTR "):",
@@ -428,6 +430,7 @@ class Assembler : public AssemblerShared,
   }
 
   void instr_at_put(BufferOffset offset, Instr instr) {
+#ifdef JS_DISASM_RISCV64
     DEBUG_PRINTF("\t[instr_at_put\n");
     DEBUG_PRINTF("\t%p %d \n\t", editSrc(offset), offset.getOffset());
     disassembleInstr(editSrc(offset)->InstructionBits());
@@ -435,6 +438,14 @@ class Assembler : public AssemblerShared,
     *reinterpret_cast<Instr*>(editSrc(offset)) = instr;
     disassembleInstr(editSrc(offset)->InstructionBits());
     DEBUG_PRINTF("\t]\n");
+#else
+    DEBUG_PRINTF(
+        "\t[instr_at_put\n"
+        "\t%p %d \n\t"
+        "\t]\n",
+        editSrc(offset), offset.getOffset());
+    *reinterpret_cast<Instr*>(editSrc(offset)) = instr;
+#endif /* JS_DISASM_RISCV64 */
   }
 
   static Condition InvertCondition(Condition);

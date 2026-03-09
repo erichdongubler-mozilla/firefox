@@ -1915,8 +1915,10 @@ void MacroAssembler::patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) {
   (*p1) = (*p1) & 0xfffff;
   (*p1) = (*p1) | ((int32_t)low_12 << 20);
 
+#ifdef JS_DISASM_RISCV64
   disassembleInstr(inst0->InstructionBits());
   disassembleInstr(inst1->InstructionBits());
+#endif /* JS_DISASM_RISCV64 */
   MOZ_ASSERT((int32_t)(inst0->Imm20UValue() << kImm20Shift) +
                  (int32_t)(inst1->Imm12Value()) ==
              imm.value);
