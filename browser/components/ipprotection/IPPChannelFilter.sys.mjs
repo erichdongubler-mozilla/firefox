@@ -194,6 +194,7 @@ export class IPPChannelFilter {
     Object.freeze(proxyInfo);
     this.proxyInfo = proxyInfo;
 
+    this.#server = server;
     this.#processPendingChannels();
   }
 
@@ -458,18 +459,12 @@ export class IPPChannelFilter {
    * @param {string} newToken - The new authentication token.
    */
   replaceAuthToken(newToken) {
-    const newInfo = lazy.ProxyService.newProxyInfo(
-      this.proxyInfo.type,
-      this.proxyInfo.host,
-      this.proxyInfo.port,
+    const proxyInfo = IPPChannelFilter.serverToProxyInfo(
       newToken,
-      IPPChannelFilter.makeIsolationKey(),
-      TRANSPARENT_PROXY_RESOLVES_HOST,
-      failOverTimeout,
-      null // Failover proxy info
+      this.#server
     );
-    Object.freeze(newInfo);
-    this.proxyInfo = newInfo;
+    Object.freeze(proxyInfo);
+    this.proxyInfo = proxyInfo;
   }
 
   /**
@@ -538,6 +533,7 @@ export class IPPChannelFilter {
   #excludedOrigins = new Set();
   #pendingChannels = [];
   #inclusionSet = new MatchPatternSet([], MATCH_PATTERN_OPTIONS);
+  #server = null;
 
   static makeIsolationKey() {
     return Math.random().toString(36).slice(2, 18).padEnd(16, "0");
