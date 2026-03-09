@@ -13,7 +13,6 @@ import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.concept.sync.Profile
 import mozilla.components.lib.state.ext.flowScoped
-import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxrelay.EmailMask
 import mozilla.components.service.fxrelay.FxRelay
 import mozilla.components.service.fxrelay.FxRelayImpl
@@ -23,6 +22,8 @@ import mozilla.components.service.fxrelay.eligibility.ext.shouldCheckStatus
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
+import mozilla.components.support.utils.DateTimeProvider
+import mozilla.components.support.utils.DefaultDateTimeProvider
 
 internal const val FETCH_TIMEOUT_MS: Long = 10_000L
 
@@ -30,10 +31,11 @@ internal const val FETCH_TIMEOUT_MS: Long = 10_000L
  * Feature for accessing Firefox Relay service.
  */
 class RelayFeature(
-    private val accountManager: FxaAccountManager,
+    private val accountManager: FxaAccountManagerDelegate,
     private val store: RelayEligibilityStore,
     private val fetchTimeoutMs: Long = FETCH_TIMEOUT_MS,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    private val dateTimeProvider: DateTimeProvider = DefaultDateTimeProvider(),
 ) : LifecycleAwareFeature {
 
     private val logger = Logger("RelayEligibilityFeature")
@@ -98,7 +100,7 @@ class RelayFeature(
                 fetchSucceeded = relayDetails != null,
                 relayPlanTier = relayDetails?.relayPlanTier,
                 totalMasksUsed = relayDetails?.totalMasksUsed ?: 0,
-                lastCheckedMs = System.currentTimeMillis(),
+                lastCheckedMs = dateTimeProvider.currentTimeMillis(),
             ),
         )
 
