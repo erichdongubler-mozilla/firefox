@@ -237,6 +237,49 @@ describe("DiscoveryStreamAdmin", () => {
         );
       });
 
+      it('should render the "Recompute Interest Vector" button', () => {
+        const recomputeButton = wrapper
+          .find("button")
+          .filterWhere(node => node.text() === "Recompute Interest Vector");
+        assert.equal(recomputeButton.length, 1);
+      });
+
+      it('should call refreshInferredPersonalizationAndDebug when "Recompute Interest Vector" is clicked', () => {
+        const recomputeButton = wrapper
+          .find("button")
+          .filterWhere(node => node.text() === "Recompute Interest Vector")
+          .first();
+        recomputeButton.simulate("click");
+        assert.calledWith(
+          dispatch,
+          ac.OnlyToMain({
+            type: at.INFERRED_PERSONALIZATION_REFRESH,
+          })
+        );
+      });
+
+      it('should render the "Refresh Story Cache" button', () => {
+        const refreshStoryCacheButton = wrapper
+          .find("button")
+          .filterWhere(node => node.text() === "Refresh Story Cache");
+        assert.equal(refreshStoryCacheButton.length, 1);
+      });
+
+      it('should call refreshCache when "Refresh Story Cache" is clicked', () => {
+        const refreshStoryCacheButton = wrapper
+          .find("button")
+          .filterWhere(node => node.text() === "Refresh Story Cache")
+          .first();
+        refreshStoryCacheButton.simulate("click");
+        assert.calledWith(
+          dispatch,
+          ac.OnlyToMain({
+            type: at.DISCOVERY_STREAM_CONFIG_CHANGE,
+            data: { enabled: true },
+          })
+        );
+      });
+
       it("should dispatch null overrides when toggle is turned off", () => {
         wrapper
           .instance()
@@ -317,7 +360,7 @@ describe("DiscoveryStreamAdmin", () => {
           />
         );
         let resetButton = wrapper
-          .find("moz-button")
+          .find("button")
           .filterWhere(node => node.text() === "Reset overrides")
           .first();
         assert.equal(resetButton.prop("disabled"), true);
@@ -343,7 +386,7 @@ describe("DiscoveryStreamAdmin", () => {
           />
         );
         resetButton = wrapper
-          .find("moz-button")
+          .find("button")
           .filterWhere(node => node.text() === "Reset overrides")
           .first();
         assert.equal(resetButton.prop("disabled"), null);

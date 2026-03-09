@@ -494,13 +494,34 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
   renderPersonalizationData() {
     const { inferredInterests, coarsePrivateInferredInterests } =
       this.props.state.InferredPersonalization;
+    const hasModelOverride = Boolean(
+      this.props.otherPrefs?.[
+        "discoverystream.sections.personalization.inferred.model.override"
+      ]
+    );
     return (
       <div className="personalization-data">
-        Inferred Interests:
-        <pre>{JSON.stringify(inferredInterests, null, 2)}</pre>
         {this.renderInferredPersonalizationOverrides()}
-        Coarse Inferred Interests With Differential Privacy:
-        <pre>{JSON.stringify(coarsePrivateInferredInterests, null, 2)}</pre>
+        {hasModelOverride ? (
+          <div className="inferred-vectors-row">
+            <div className="inferred-vector-column">
+              <div className="inferred-vector-title">Raw Interest Values</div>
+              <div className="inferred-vector-panel">
+                <pre>{JSON.stringify(inferredInterests, null, 2)}</pre>
+              </div>
+            </div>
+            <div className="inferred-vector-column">
+              <div className="inferred-vector-title">
+                Differentially Private Interest Vector{" "}
+              </div>
+              <div className="inferred-vector-panel">
+                <pre>
+                  {JSON.stringify(coarsePrivateInferredInterests, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -518,12 +539,32 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     );
     return (
       <>
-        <h3>Inferred Personalization Overrides</h3>
+        <div className="inferred-overrides-header">
+          <h3 className="inferred-overrides-title">Inferred Personalization</h3>
+          <div className="inferred-overrides-actions">
+            <button
+              className="button"
+              onClick={this.refreshInferredPersonalizationAndDebug}
+            >
+              Recompute Interest Vector
+            </button>
+            <button className="button" onClick={this.refreshCache}>
+              Refresh Story Cache
+            </button>
+          </div>
+        </div>
+        <div className="inferred-overrides-last-refreshed">
+          <span className="inferred-overrides-last-refreshed-label">
+            Last refreshed
+          </span>
+          <span>{relativeTime(lastUpdated) || "(no data)"}</span>
+        </div>
         <table className="minimal-table inferred-personalization-overrides">
           <tbody>
             <Row className="inferred-overrides-toggle-row">
               <td className="min">Overrides</td>
-              <td colSpan="2">
+              <td className="min inferred-score-col" />
+              <td>
                 <div className="toggle-wrapper">
                   <moz-toggle
                     id="inferred-personalization-overrides"
@@ -535,26 +576,20 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
               </td>
             </Row>
             <Row className="inferred-overrides-refresh-row">
-              <td className="min">Last refreshed</td>
-              <td colSpan="2">
-                <div className="inferred-overrides-refresh">
-                  <span>{relativeTime(lastUpdated) || "(no data)"}</span>
-                  <moz-button
-                    type="default"
-                    disabled={overridesEnabled ? null : true}
-                    onClick={this.refreshInferredPersonalizationAndDebug}
-                  >
-                    Refresh
-                  </moz-button>
-                  <moz-button
-                    type="default"
-                    disabled={hasAnyNonZeroOverride ? null : true}
-                    onClick={this.handleResetAllOverrides}
-                  >
-                    Reset overrides
-                  </moz-button>
-                </div>
+              <td colSpan="3">
+                <button
+                  className="button"
+                  disabled={hasAnyNonZeroOverride ? null : true}
+                  onClick={this.handleResetAllOverrides}
+                >
+                  Reset overrides
+                </button>
               </td>
+            </Row>
+            <Row className="inferred-overrides-table-header">
+              <td />
+              <td className="min inferred-score-col">Score</td>
+              <td />
             </Row>
             {features.map(feature => {
               const maxValue = Math.max(0, (feature.numValues || 1) - 1);
@@ -573,7 +608,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
               return (
                 <Row key={feature.name} className="inferred-override-row">
                   <td className="min">{feature.name}</td>
-                  <td className="min">
+                  <td className="min inferred-score-col">
                     {Number.isFinite(currentCoarseValue)
                       ? currentCoarseValue
                       : "-"}
@@ -968,7 +1003,6 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
         <div className="large-data-container">{this.renderBlocksData()}</div>
         <h3>Weather Data</h3>
         {this.renderWeatherData()}
-        <h3>Personalization Data</h3>
         {this.renderPersonalizationData()}
       </div>
     );
