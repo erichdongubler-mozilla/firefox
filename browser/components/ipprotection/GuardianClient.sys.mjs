@@ -130,10 +130,13 @@ export class GuardianClient {
       });
       const loginURL = this.#loginURL;
       loginURL.searchParams.set("experiment", aExperimentType);
-      browser.loadURI(Services.io.newURI(loginURL.href), {
-        // TODO: Make sure this is the right principal to use?
+      const loginURI = Services.io.newURI(loginURL.href);
+      if (!allowedOrigins.includes(loginURL.origin)) {
+        throw new Error(`Login URL origin ${loginURL.origin} is not allowed.`);
+      }
+      browser.loadURI(loginURI, {
         triggeringPrincipal:
-          Services.scriptSecurityManager.getSystemPrincipal(),
+          Services.scriptSecurityManager.createContentPrincipal(loginURI, {}),
       });
 
       const result = await finalEndpoint;
