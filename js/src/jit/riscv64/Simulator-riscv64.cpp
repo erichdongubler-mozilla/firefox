@@ -83,12 +83,15 @@ static void UNREACHABLE() {
   printf("UNREACHABLE instruction.\n");
   MOZ_CRASH();
 }
-#  define UNSUPPORTED()                                                \
-    std::cout << "Unrecognized instruction [@pc=0x" << std::hex        \
-              << registers_[pc] << "]: 0x" << instr_.InstructionBits() \
-              << std::endl;                                            \
-    printf("Unsupported instruction.\n");                              \
-    MOZ_CRASH();
+
+#  define UNSUPPORTED()                                                  \
+    do {                                                                 \
+      std::cout << "Unrecognized instruction [@pc=0x" << std::hex        \
+                << registers_[pc] << "]: 0x" << instr_.InstructionBits() \
+                << '\n';                                                 \
+      printf("Unsupported instruction.\n");                              \
+      MOZ_CRASH();                                                       \
+    } while (0)
 
 static char* ReadLine(const char* prompt) {
   UniqueChars result;
