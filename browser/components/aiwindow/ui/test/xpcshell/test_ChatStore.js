@@ -765,3 +765,97 @@ add_atomic_task(
     Assert.equal(null, updatedConversation);
   }
 );
+
+async function addTestMessagesForUrlDeleteTests() {
+  const conv0 = await addConvoWithSpecificTestData(
+    new Date("1/4/2025"),
+    new URL("https://www.mozilla.com"),
+    new URL("https://www.mozilla.com"),
+    "Mozilla.org conversation 1",
+    "some other message"
+  );
+  const conv1 = await addConvoWithSpecificTestData(
+    new Date("1/4/2025"),
+    new URL("https://www.firefox.com/en-US/features/private-browsing/"),
+    new URL("https://www.firefox.com/en-US/features/private-browsing/"),
+    "Mozilla.org conversation 2",
+    "some other message"
+  );
+  const conv2 = await addConvoWithSpecificTestData(
+    new Date("1/4/2025"),
+    new URL("https://www.firefox.com"),
+    new URL("https://www.firefox.com"),
+    "Mozilla.org conversation 3",
+    "some other message"
+  );
+
+  return { conv0, conv1, conv2 };
+}
+
+add_atomic_task(async function test_ChatStorage_deleteAllUrlsFromMessages() {
+  const { conv0, conv1, conv2 } = await addTestMessagesForUrlDeleteTests();
+
+  await gChatStore.deleteAllUrlsFromMessages();
+
+  const updatedConv0 = await gChatStore.findConversationById(conv0.id);
+  const updatedConv1 = await gChatStore.findConversationById(conv1.id);
+  const updatedConv2 = await gChatStore.findConversationById(conv2.id);
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.equal(
+      updatedConv0.messages[0].pageUrl,
+      null,
+      `Conversation 0 was not updated correctly: ${JSON.stringify(updatedConv0.messages)}`
+    );
+    soft.equal(
+      updatedConv0.messages[0].pageHistoryDeleted,
+      true,
+      `Conversation 0 pageHistoryDeleted was not set to true`
+    );
+
+    soft.equal(
+      updatedConv1.messages[0].pageUrl,
+      null,
+      `Conversation 1 was not updated correctly: ${JSON.stringify(updatedConv1.messages)}`
+    );
+    soft.equal(
+      updatedConv1.messages[0].pageHistoryDeleted,
+      true,
+      `Conversation 1 pageHistoryDeleted was not set to true`
+    );
+
+    soft.equal(
+      updatedConv2.messages[0].pageUrl,
+      null,
+      `Conversation 2 was not updated correctly: ${JSON.stringify(updatedConv2.messages)}`
+    );
+    soft.equal(
+      updatedConv2.messages[0].pageHistoryDeleted,
+      true,
+      `Conversation 2 pageHistoryDeleted was not set to true`
+    );
+  });
+});
+
+add_atomic_task(async function test_ChatStorage_deleteUrlFromMessages() {
+  const { conv1 } = await addTestMessagesForUrlDeleteTests();
+
+  await gChatStore.deleteUrlFromMessages(
+    "https://www.firefox.com/en-US/features/private-browsing/"
+  );
+
+  const updatedConv = await gChatStore.findConversationById(conv1.id);
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.equal(
+      updatedConv.messages[0].pageUrl,
+      null,
+      `Conversation 1 was not updated correctly: ${JSON.stringify(updatedConv.messages)}`
+    );
+    soft.equal(
+      updatedConv.messages[0].pageHistoryDeleted,
+      true,
+      `Conversation 1 pageHistoryDeleted was not set to true`
+    );
+  });
+});
