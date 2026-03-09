@@ -225,6 +225,7 @@ export class AIChatContent extends MozLitElement {
       role: "user",
       body: content.body,
       contextMentions: content.contextMentions,
+      pageUrl: content.contextPageUrl ?? null,
       convId,
       ordinal,
     };
@@ -342,15 +343,41 @@ export class AIChatContent extends MozLitElement {
     this.dispatchEvent(event);
   }
 
-  #renderMessage(msg) {
+  /**
+   * Returns the chips to display for a message, suppressing the current-tab
+   * chip when the page context hasn't changed since the previous user message.
+   *
+   * @param {object} msg - A conversationState entry.
+   * @param {string|null} lastContextPageUrl - The page URL of the preceding
+   * user message, or undefined if there is none.
+   * @returns {ContextWebsite[]}
+   */
+  #getVisibleChips(msg, lastContextPageUrl) {
+    // If this message is on the same page as the previous message,
+    // hide the page URL chip to avoid showing duplicate page context
+    if (!msg || msg.role !== "user" || !msg.contextMentions?.length) {
+      return [];
+    }
+    const currentPageUrl = msg.pageUrl;
+    const shouldHideDuplicatePageChip =
+      currentPageUrl && currentPageUrl === lastContextPageUrl;
+    if (shouldHideDuplicatePageChip) {
+      return msg.contextMentions.filter(
+        chip => URL.parse(chip.url)?.href !== currentPageUrl
+      );
+    }
+    return msg.contextMentions;
+  }
+
+  #renderMessage(msg, chips) {
     if (!msg) {
       return nothing;
     }
     return html`
       <div class=${`chat-bubble chat-bubble-${msg.role}`}>
-        ${msg.role === "user" && msg.contextMentions?.length
+        ${chips?.length
           ? html`<website-chip-container
-              .websites=${msg.contextMentions}
+              .websites=${chips}
             ></website-chip-container>`
           : nothing}
         <ai-chat-message
@@ -401,6 +428,17 @@ export class AIChatContent extends MozLitElement {
     ></chat-assistant-error>`;
   }
 
+  #renderMessages() {
+    let lastContextPageUrl;
+    return this.conversationState.map(msg => {
+      const chips = this.#getVisibleChips(msg, lastContextPageUrl);
+      if (msg?.role === "user") {
+        lastContextPageUrl = msg.pageUrl;
+      }
+      return this.#renderMessage(msg, chips);
+    });
+  }
+
   render() {
     return html`
       <link
@@ -408,9 +446,8 @@ export class AIChatContent extends MozLitElement {
         href="chrome://browser/content/aiwindow/components/ai-chat-content.css"
       />
       <div class="chat-content-wrapper">
-        ${this.conversationState.map(msg => this.#renderMessage(msg))}
-        ${this.#renderFollowUpSuggestions()} ${this.#renderLoader()}
-        ${this.#renderError()}
+        ${this.#renderMessages()} ${this.#renderFollowUpSuggestions()}
+        ${this.#renderLoader()} ${this.#renderError()}
       </div>
     `;
   }

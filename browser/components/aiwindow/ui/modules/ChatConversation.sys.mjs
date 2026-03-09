@@ -198,6 +198,10 @@ export class ChatConversation {
       content.contextMentions = userOpts.contextMentions;
     }
 
+    if (pageUrl) {
+      content.contextPageUrl = pageUrl.href;
+    }
+
     let currentTurn = this.currentTurnIndex();
     const newTurnIndex =
       this.#messages.length === 1 ? currentTurn : currentTurn + 1;

@@ -174,6 +174,7 @@ add_task(function test_ChatConversation_addUserMessage() {
       type: "text",
       body: "user to assistant msg",
       userContext: {},
+      contextPageUrl: "https://www.mozilla.com/",
     });
   });
 });
@@ -219,6 +220,29 @@ add_task(async function test_userContext_ChatConversation_addUserMessage() {
   const message = conversation.messages[0];
 
   Assert.deepEqual(message.content.userContext, userContext);
+});
+
+add_task(function test_contextPageUrl_ChatConversation_addUserMessage() {
+  const conversation = new ChatConversation({});
+
+  conversation.addUserMessage(
+    "user msg",
+    new URL("https://www.mozilla.com/page")
+  );
+
+  const message = conversation.messages[0];
+
+  Assert.equal(message.content.contextPageUrl, "https://www.mozilla.com/page");
+});
+
+add_task(function test_noContextPageUrl_ChatConversation_addUserMessage() {
+  const conversation = new ChatConversation({});
+
+  conversation.addUserMessage("user msg", null);
+
+  const message = conversation.messages[0];
+
+  Assert.ok(!("contextPageUrl" in message.content));
 });
 
 add_task(function test_ChatConversation_addAssistantMessage() {

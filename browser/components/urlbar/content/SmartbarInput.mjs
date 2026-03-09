@@ -275,6 +275,9 @@ export class SmartbarInput extends HTMLElement {
 
   #isSidebarMode = false;
 
+  /** @type {?string} */
+  #removedImplicitTabUrl = null;
+
   /**
    * @type {ContextWebsite[]}
    */
@@ -1316,7 +1319,13 @@ export class SmartbarInput extends HTMLElement {
       new CustomEvent("smartbar-commit", {
         bubbles: true,
         composed: true,
-        detail: { value: committedValue, event, action, contextMentions },
+        detail: {
+          value: committedValue,
+          event,
+          action,
+          contextMentions,
+          contextPageUrl: this.#getContextPageUrl(),
+        },
       })
     );
 
@@ -6221,6 +6230,24 @@ export class SmartbarInput extends HTMLElement {
   }
 
   /**
+   * Returns the page URL to associate with the next submitted message, or null
+   * if the implicit current-tab chip has been removed.
+   *
+   * @returns {?string}
+   */
+  #getContextPageUrl() {
+    if (!this.#isSidebarMode) {
+      return null;
+    }
+    const currentTabUrl =
+      this.window.gBrowser?.selectedTab?.linkedBrowser.currentURI?.spec;
+    if (currentTabUrl == this.#removedImplicitTabUrl) {
+      return null;
+    }
+    return currentTabUrl ?? null;
+  }
+
+  /**
    * Returns the resolved, deduped list of context websites including the
    * implicit current-tab entry when in sidebar mode.
    *
@@ -6232,11 +6259,11 @@ export class SmartbarInput extends HTMLElement {
 
     // Place the implicit current-tab website first (sidebar mode only) so the
     // "default" context is consistently visible and doesn't get pushed out by
-    // explicit chips.
+    // explicit chips, unless the user has explicitly removed it.
     if (this.#isSidebarMode) {
       const tab = this.window.gBrowser?.selectedTab;
       const url = tab?.linkedBrowser.currentURI?.spec;
-      if (url) {
+      if (url && url != this.#removedImplicitTabUrl) {
         candidates.unshift({
           type: "tab",
           url,
@@ -6333,6 +6360,7 @@ export class SmartbarInput extends HTMLElement {
    */
   setAndUpdateContextWebsites(websites) {
     this.#contextWebsites = websites;
+    this.#removedImplicitTabUrl = null;
     this.#updateContextChips();
   }
 
@@ -6351,7 +6379,13 @@ export class SmartbarInput extends HTMLElement {
     if (hasMention) {
       return;
     }
-    this.#contextWebsites = [...this.#contextWebsites, mention];
+
+    if (this.#removedImplicitTabUrl == mention.url) {
+      this.#removedImplicitTabUrl = null;
+      this.#contextWebsites = [mention, ...this.#contextWebsites];
+    } else {
+      this.#contextWebsites = [...this.#contextWebsites, mention];
+    }
     this.#updateContextChips();
   }
 
@@ -6365,7 +6399,15 @@ export class SmartbarInput extends HTMLElement {
     this.#contextWebsites = this.#contextWebsites.filter(
       site => site.url !== url
     );
-    if (this.#contextWebsites.length !== originalLength) {
+
+    const isCurrentTab =
+      this.#isSidebarMode &&
+      this.window.gBrowser.selectedTab.linkedBrowser.currentURI?.spec == url;
+    if (isCurrentTab) {
+      this.#removedImplicitTabUrl = url;
+    }
+
+    if (this.#contextWebsites.length !== originalLength || isCurrentTab) {
       this.#updateContextChips();
     }
   }
