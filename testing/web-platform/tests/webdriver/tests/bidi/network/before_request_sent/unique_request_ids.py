@@ -14,7 +14,6 @@ from webdriver.bidi import error
 @pytest.mark.asyncio
 async def test_unique_request_ids(
     bidi_session,
-    configuration,
     url,
     inline,
     setup_network_test,
@@ -43,7 +42,7 @@ async def test_unique_request_ids(
     )
 
     # Expect two events, one for the document, one for the stylesheet.
-    await wait_for_bidi_events(bidi_session, configuration, events, 2, timeout=2)
+    await wait_for_bidi_events(bidi_session, events, 2, timeout=2)
 
     # Reload the page.
     await bidi_session.browsing_context.reload(
@@ -51,7 +50,7 @@ async def test_unique_request_ids(
     )
 
     # Expect two events after reload, for the document and the stylesheet.
-    await wait_for_bidi_events(bidi_session, configuration, events, 4, timeout=2)
+    await wait_for_bidi_events(bidi_session, events, 4, timeout=2)
 
     await fetch("data:text/plain,1")
     await fetch("data:text/plain,2")
@@ -59,7 +58,7 @@ async def test_unique_request_ids(
     await fetch("data:text/plain,4")
 
     # Expect four events for data: scheme fetches.
-    await wait_for_bidi_events(bidi_session, configuration, events, 8, timeout=2)
+    await wait_for_bidi_events(bidi_session, events, 8, timeout=2)
 
     ids = list(map(lambda event: event["request"]["request"], events))
 

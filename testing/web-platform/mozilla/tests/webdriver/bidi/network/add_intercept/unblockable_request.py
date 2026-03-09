@@ -77,7 +77,6 @@ async def test_data_uri(
 @pytest.mark.asyncio
 async def test_cached_resources(
     bidi_session,
-    configuration,
     add_intercept,
     top_context,
     url,
@@ -112,11 +111,7 @@ async def test_cached_resources(
 
     # Expect two events, one for the document, one for the stylesheet.
     await wait_for_bidi_events(
-        bidi_session,
-        configuration,
-        network_events[RESPONSE_COMPLETED_EVENT],
-        3,
-        timeout=2,
+        bidi_session, network_events[RESPONSE_COMPLETED_EVENT], 3, timeout=2
     )
 
     # Add an intercept for the cached stylesheet and image.
@@ -136,11 +131,7 @@ async def test_cached_resources(
 
     # Expect two events after reload, for the document and the stylesheet.
     await wait_for_bidi_events(
-        bidi_session,
-        configuration,
-        network_events[RESPONSE_COMPLETED_EVENT],
-        6,
-        timeout=2,
+        bidi_session, network_events[RESPONSE_COMPLETED_EVENT], 6, timeout=2
     )
 
     # Assert only cached events after reload.
