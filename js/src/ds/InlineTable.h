@@ -25,7 +25,7 @@ class MOZ_STANDALONE_DEBUG InlineTable : private AllocPolicy {
  private:
   using TablePtr = typename Table::Ptr;
   using TableAddPtr = typename Table::AddPtr;
-  using TableRange = typename Table::Range;
+  using TableIterator = typename Table::Iterator;
   using Lookup = typename HashPolicy::Lookup;
 
   struct InlineArray {
@@ -35,7 +35,7 @@ class MOZ_STANDALONE_DEBUG InlineTable : private AllocPolicy {
   mozilla::Variant<InlineArray, Table> data_{InlineArray()};
 #ifdef DEBUG
   // Used to check that entries aren't added/removed while using Ptr/AddPtr or
-  // Range. Similar to HashTable::mMutationCount.
+  // Iterator. Similar to HashTable::mMutationCount.
   uint64_t mutationCount_ = 0;
 #endif
 
@@ -338,10 +338,12 @@ class MOZ_STANDALONE_DEBUG InlineTable : private AllocPolicy {
     }
   }
 
-  class Range {
+  class Iterator {
     friend class InlineTable;
 
-    mozilla::Maybe<TableRange> tableRange_;  // `Nothing` if `isInline_==true`
+   protected:
+    // tableIter_ is `Nothing` if `isInline_ == true`.
+    mozilla::Maybe<TableIterator> tableIter_;
     InlineEntry* cur_;
     InlineEntry* end_;
     bool isInline_;
@@ -350,8 +352,8 @@ class MOZ_STANDALONE_DEBUG InlineTable : private AllocPolicy {
     uint64_t mutationCount_ = 0xbadbad;
 #endif
 
-    Range(const InlineTable& table, TableRange r)
-        : tableRange_(mozilla::Some(r)),
+    Iterator(const InlineTable& table, TableIterator iter)
+        : tableIter_(mozilla::Some(iter)),
           cur_(nullptr),
           end_(nullptr),
           isInline_(false) {
@@ -362,9 +364,9 @@ class MOZ_STANDALONE_DEBUG InlineTable : private AllocPolicy {
 #endif
     }
 
-    Range(const InlineTable& table, const InlineEntry* begin,
-          const InlineEntry* end)
-        : tableRange_(mozilla::Nothing()),
+    Iterator(const InlineTable& table, const InlineEntry* begin,
+             const InlineEntry* end)
+        : tableIter_(mozilla::Nothing()),
           cur_(const_cast<InlineEntry*>(begin)),
           end_(const_cast<InlineEntry*>(end)),
           isInline_(true) {
@@ -391,34 +393,55 @@ class MOZ_STANDALONE_DEBUG InlineTable : private AllocPolicy {
     }
 
    public:
-    bool empty() const {
+    Iterator() = default;
+
+    bool done() const {
       MOZ_ASSERT(table_->mutationCount_ == mutationCount_);
-      return isInlineRange() ? cur_ == end_ : tableRange_->empty();
+      return isInlineRange() ? cur_ == end_ : tableIter_->done();
     }
 
-    Entry front() {
-      MOZ_ASSERT(!empty());
+    Entry get() {
+      MOZ_ASSERT(!done());
       MOZ_ASSERT(table_->mutationCount_ == mutationCount_);
       if (isInlineRange()) {
         return Entry(cur_);
       }
-      return Entry(&tableRange_->front());
+      return Entry(&tableIter_->get());
     }
 
-    void popFront() {
-      MOZ_ASSERT(!empty());
+    void next() {
+      MOZ_ASSERT(!done());
       MOZ_ASSERT(table_->mutationCount_ == mutationCount_);
       if (isInlineRange()) {
         bumpCurPtr();
       } else {
-        tableRange_->popFront();
+        tableIter_->next();
       }
     }
   };
 
+  class Range : public Iterator {
+    friend class InlineTable;
+
+   public:
+    Range(const InlineTable& table, TableIterator iter)
+        : Iterator(table, iter) {}
+    Range(const InlineTable& table, const InlineEntry* begin,
+          const InlineEntry* end)
+        : Iterator(table, begin, end) {}
+    bool empty() const { return this->done(); }
+    Entry front() { return this->get(); }
+    void popFront() { this->next(); }
+  };
+
   Range all() const {
-    return usingTable() ? Range(*this, table().all())
+    return usingTable() ? Range(*this, table().iter())
                         : Range(*this, inlineStart(), inlineEnd());
+  }
+
+  Iterator iter() const {
+    return usingTable() ? Iterator(*this, table().iter())
+                        : Iterator(*this, inlineStart(), inlineEnd());
   }
 };
 
@@ -492,6 +515,7 @@ class MOZ_STANDALONE_DEBUG InlineMap {
   using Ptr = typename Impl::Ptr;
   using AddPtr = typename Impl::AddPtr;
   using Range = typename Impl::Range;
+  using Iterator = typename Impl::Iterator;
   using Lookup = typename HashPolicy::Lookup;
 
   static const size_t SizeOfInlineEntries = Impl::SizeOfInlineEntries;
@@ -506,6 +530,7 @@ class MOZ_STANDALONE_DEBUG InlineMap {
   void clearAndCompact() { impl_.clearAndCompact(); }
 
   Range all() const { return impl_.all(); }
+  Iterator iter() const { return impl_.iter(); }
 
   MOZ_ALWAYS_INLINE
   Ptr lookup(const Lookup& l) { return impl_.lookup(l); }
@@ -596,6 +621,7 @@ class InlineSet {
   using Ptr = typename Impl::Ptr;
   using AddPtr = typename Impl::AddPtr;
   using Range = typename Impl::Range;
+  using Iterator = typename Impl::Iterator;
   using Lookup = typename HashPolicy::Lookup;
 
   static const size_t SizeOfInlineEntries = Impl::SizeOfInlineEntries;
@@ -610,6 +636,7 @@ class InlineSet {
   void clearAndCompact() { impl_.clearAndCompact(); }
 
   Range all() const { return impl_.all(); }
+  Iterator iter() const { return impl_.iter(); }
 
   MOZ_ALWAYS_INLINE
   Ptr lookup(const Lookup& l) { return impl_.lookup(l); }
