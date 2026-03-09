@@ -46,6 +46,10 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
         requirePreference<SwitchPreference>(R.string.pref_key_show_nonsponsored_suggestions).apply {
             isVisible = context.settings().enableFxSuggest
         }
+        requirePreference<CheckBoxPreference>(R.string.pref_key_search_optimization_cards).apply {
+            isVisible = context.settings().enableFxSuggest &&
+                    context.settings().isSearchOptimizationEnabled
+        }
         requirePreference<Preference>(R.string.pref_key_learn_about_fx_suggest).apply {
             isVisible = context.settings().enableFxSuggest
         }
@@ -140,6 +144,10 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
                     getString(R.string.app_name),
                 )
             }
+        val showSuggestionCardsPreference =
+            requirePreference<CheckBoxPreference>(R.string.pref_key_search_optimization_cards).apply {
+                isChecked = context.settings().shouldShowSearchOptimizationCards
+            }
 
         searchWidgetPreference.onPreferenceChangeListener = object : SharedPreferenceUpdater() {
             override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
@@ -167,6 +175,11 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
 
         showSponsoredSuggestionsPreference.onPreferenceChangeListener = SharedPreferenceUpdater()
         showNonSponsoredSuggestionsPreference.onPreferenceChangeListener = SharedPreferenceUpdater()
+        showSuggestionCardsPreference.onPreferenceChangeListener = SharedPreferenceUpdater()
+        showNonSponsoredSuggestionsPreference.setOnPreferenceClickListener {
+            showSuggestionCardsPreference.isEnabled = showNonSponsoredSuggestionsPreference.isChecked
+            true
+        }
     }
 
     /**

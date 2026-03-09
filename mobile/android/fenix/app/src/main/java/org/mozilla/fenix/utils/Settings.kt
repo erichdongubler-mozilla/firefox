@@ -1943,6 +1943,11 @@ class Settings(
         default = true,
     )
 
+    var shouldShowSearchOptimizationCards by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_search_optimization_cards),
+        default = { isSearchOptimizationEnabled },
+    )
+
     var shouldShowSearchOptimizationStockCard by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_search_optimization_stocks),
         default = true,

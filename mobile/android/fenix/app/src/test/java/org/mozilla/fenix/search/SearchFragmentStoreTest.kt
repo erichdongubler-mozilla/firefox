@@ -85,6 +85,7 @@ class SearchFragmentStoreTest {
         every { settings.showNonSponsoredSuggestions } returns true
         every { settings.shouldUseBottomToolbar } returns true
         every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns true
         every { settings.shouldShowSearchOptimizationStockCard } returns true
 
         val expected = EMPTY_SEARCH_FRAGMENT_STATE.copy(
@@ -151,8 +152,10 @@ class SearchFragmentStoreTest {
         every { settings.shouldShowSearchSuggestionsInPrivate } returns false
         every { settings.enableFxSuggest } returns true
         every { settings.showSponsoredSuggestions } returns true
+        every { settings.showNonSponsoredSuggestions } returns true
         every { settings.shouldUseBottomToolbar } returns true
         every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns true
         every { settings.shouldShowSearchOptimizationStockCard } returns true
 
         val expected = EMPTY_SEARCH_FRAGMENT_STATE.copy(
@@ -242,9 +245,12 @@ class SearchFragmentStoreTest {
     }
 
     @Test
-    fun `GIVEN stock cards is enabled AND search optimization is disabled WHEN the initial state is created THEN the stock card is not displayed`() {
+    fun `GIVEN non-sponsored suggestions is disabled WHEN the initial state is created THEN the stock card is not displayed`() {
         every { components.core.store.state } returns BrowserState()
-        every { settings.isSearchOptimizationEnabled } returns false
+        every { settings.enableFxSuggest } returns true
+        every { settings.showNonSponsoredSuggestions } returns false
+        every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns true
         every { settings.shouldShowSearchOptimizationStockCard } returns true
 
         val initialState = createInitialSearchFragmentState(
@@ -259,10 +265,52 @@ class SearchFragmentStoreTest {
     }
 
     @Test
-    fun `GIVEN stock cards is disabled AND search optimization is enabled WHEN the initial state is created THEN the stock card is not displayed`() {
+    fun `GIVEN search optimization is disabled WHEN the initial state is created THEN the stock card is not displayed`() {
         every { components.core.store.state } returns BrowserState()
-        every { settings.shouldShowSearchSuggestions } returns true
+        every { settings.enableFxSuggest } returns true
+        every { settings.showNonSponsoredSuggestions } returns true
+        every { settings.isSearchOptimizationEnabled } returns false
+        every { settings.shouldShowSearchOptimizationCards } returns true
+        every { settings.shouldShowSearchOptimizationStockCard } returns true
+
+        val initialState = createInitialSearchFragmentState(
+            activity,
+            components,
+            tabId = null,
+            pastedText = "pastedText",
+            searchAccessPoint = MetricsUtils.Source.ACTION,
+            isAndroidAutomotiveAvailable = false,
+        )
+        assertFalse(initialState.showStocksSuggestions)
+    }
+
+    @Test
+    fun `GIVEN suggestion cards is disabled WHEN the initial state is created THEN the stock card is not displayed`() {
+        every { components.core.store.state } returns BrowserState()
+        every { settings.enableFxSuggest } returns true
+        every { settings.showNonSponsoredSuggestions } returns true
         every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns false
+        every { settings.shouldShowSearchOptimizationStockCard } returns true
+
+        val initialState = createInitialSearchFragmentState(
+            activity,
+            components,
+            tabId = null,
+            pastedText = "pastedText",
+            searchAccessPoint = MetricsUtils.Source.ACTION,
+            isAndroidAutomotiveAvailable = false,
+        )
+        assertFalse(initialState.showStocksSuggestions)
+    }
+
+    @Test
+    fun `GIVEN stock cards is disabled WHEN the initial state is created THEN the stock card is not displayed`() {
+        every { components.core.store.state } returns BrowserState()
+        every { settings.enableFxSuggest } returns true
+        every { settings.showNonSponsoredSuggestions } returns true
+        every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns true
         every { settings.shouldShowSearchOptimizationStockCard } returns false
 
         val initialState = createInitialSearchFragmentState(
@@ -641,10 +689,57 @@ class SearchFragmentStoreTest {
     }
 
     @Test
+    fun `GIVEN non-sponsored suggestion is disabled WHEN the default search engine is selected THEN stock suggestions are not displayed`() = runTest {
+        val initialState = emptyDefaultState(showStocksSuggestions = true)
+        val store = SearchFragmentStore(initialState)
+        every { settings.enableFxSuggest } returns true
+        every { settings.showNonSponsoredSuggestions } returns false
+        every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns true
+        every { settings.shouldShowSearchOptimizationStockCard } returns true
+
+        store.dispatch(
+            SearchFragmentAction.SearchDefaultEngineSelected(
+                engine = searchEngine,
+                browsingMode = BrowsingMode.Normal,
+                settings = settings,
+            ),
+        )
+
+        assertNotSame(initialState, store.state)
+        assertFalse(store.state.showStocksSuggestions)
+    }
+
+    @Test
     fun `GIVEN search optimization is disabled WHEN the default search engine is selected THEN stock suggestions are not displayed`() = runTest {
         val initialState = emptyDefaultState(showStocksSuggestions = true)
         val store = SearchFragmentStore(initialState)
+        every { settings.enableFxSuggest } returns true
+        every { settings.showNonSponsoredSuggestions } returns true
         every { settings.isSearchOptimizationEnabled } returns false
+        every { settings.shouldShowSearchOptimizationCards } returns true
+        every { settings.shouldShowSearchOptimizationStockCard } returns true
+
+        store.dispatch(
+            SearchFragmentAction.SearchDefaultEngineSelected(
+                engine = searchEngine,
+                browsingMode = BrowsingMode.Normal,
+                settings = settings,
+            ),
+        )
+
+        assertNotSame(initialState, store.state)
+        assertFalse(store.state.showStocksSuggestions)
+    }
+
+    @Test
+    fun `GIVEN suggestion cards is disabled WHEN the default search engine is selected THEN stock suggestions are not displayed`() = runTest {
+        val initialState = emptyDefaultState(showStocksSuggestions = true)
+        val store = SearchFragmentStore(initialState)
+        every { settings.enableFxSuggest } returns true
+        every { settings.showNonSponsoredSuggestions } returns true
+        every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns false
         every { settings.shouldShowSearchOptimizationStockCard } returns true
 
         store.dispatch(
@@ -663,7 +758,10 @@ class SearchFragmentStoreTest {
     fun `GIVEN stock cards is disabled WHEN the default search engine is selected THEN stock suggestions are not displayed`() = runTest {
         val initialState = emptyDefaultState(showStocksSuggestions = true)
         val store = SearchFragmentStore(initialState)
+        every { settings.enableFxSuggest } returns true
+        every { settings.showNonSponsoredSuggestions } returns true
         every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns true
         every { settings.shouldShowSearchOptimizationStockCard } returns false
 
         store.dispatch(
@@ -694,6 +792,7 @@ class SearchFragmentStoreTest {
         every { settings.showSponsoredSuggestions } returns true
         every { settings.showNonSponsoredSuggestions } returns true
         every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns true
         every { settings.shouldShowSearchOptimizationStockCard } returns true
 
         store.dispatch(
@@ -738,6 +837,7 @@ class SearchFragmentStoreTest {
         every { settings.showSponsoredSuggestions } returns true
         every { settings.showNonSponsoredSuggestions } returns true
         every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns true
         every { settings.shouldShowSearchOptimizationStockCard } returns true
 
         store.dispatch(
@@ -784,6 +884,7 @@ class SearchFragmentStoreTest {
         every { settings.showSponsoredSuggestions } returns true
         every { settings.showNonSponsoredSuggestions } returns true
         every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns true
         every { settings.shouldShowSearchOptimizationStockCard } returns true
 
         store.dispatch(
@@ -862,6 +963,7 @@ class SearchFragmentStoreTest {
         every { settings.trendingSearchSuggestionsEnabled } returns true
         every { settings.shouldShowRecentSearchSuggestions } returns true
         every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns true
         every { settings.shouldShowSearchOptimizationStockCard } returns true
 
         store.dispatch(
@@ -909,6 +1011,7 @@ class SearchFragmentStoreTest {
         every { settings.showSponsoredSuggestions } returns true
         every { settings.showNonSponsoredSuggestions } returns true
         every { settings.isSearchOptimizationEnabled } returns true
+        every { settings.shouldShowSearchOptimizationCards } returns true
         every { settings.shouldShowSearchOptimizationStockCard } returns true
 
         store.dispatch(

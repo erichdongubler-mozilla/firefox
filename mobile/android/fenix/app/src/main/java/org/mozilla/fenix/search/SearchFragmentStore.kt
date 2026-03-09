@@ -298,8 +298,9 @@ fun createInitialSearchFragmentState(
             settings.enableFxSuggest && settings.showSponsoredSuggestions,
         showNonSponsoredSuggestions = browsingMode == BrowsingMode.Normal &&
             settings.enableFxSuggest && settings.showNonSponsoredSuggestions,
-        showStocksSuggestions = settings.isSearchOptimizationEnabled &&
-            settings.shouldShowSearchOptimizationStockCard,
+        showStocksSuggestions = settings.enableFxSuggest && settings.showNonSponsoredSuggestions &&
+                settings.isSearchOptimizationEnabled && settings.shouldShowSearchOptimizationCards &&
+                settings.shouldShowSearchOptimizationStockCard,
         showTrendingSearches = shouldShowTrendingSearchSuggestions(
             browsingMode = browsingMode,
             settings = settings,
@@ -487,8 +488,11 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                     action.settings.enableFxSuggest && action.settings.showSponsoredSuggestions,
                 showNonSponsoredSuggestions = action.browsingMode == BrowsingMode.Normal &&
                     action.settings.enableFxSuggest && action.settings.showNonSponsoredSuggestions,
-                showStocksSuggestions = action.settings.isSearchOptimizationEnabled &&
-                    action.settings.shouldShowSearchOptimizationStockCard,
+                showStocksSuggestions = action.settings.enableFxSuggest &&
+                        action.settings.showNonSponsoredSuggestions &&
+                        action.settings.isSearchOptimizationEnabled &&
+                        action.settings.shouldShowSearchOptimizationCards &&
+                        action.settings.shouldShowSearchOptimizationStockCard,
                 showAllSessionSuggestions = true,
                 showTrendingSearches = shouldShowTrendingSearchSuggestions(
                     browsingMode = action.browsingMode,

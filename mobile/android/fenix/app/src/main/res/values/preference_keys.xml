@@ -567,6 +567,7 @@
     <!--  Search Optimization Cards  -->
     <string name="pref_key_search_optimization" translatable="false">pref_key_search_optimization</string>
     <string name="pref_key_search_optimization_feature" translatable="false">pref_key_search_optimization_feature</string>
+    <string name="pref_key_search_optimization_cards" translatable="false">pref_key_search_optimization_cards</string>
     <string name="pref_key_search_optimization_stocks" translatable="false">pref_key_search_optimization_stocks</string>
     <string name="pref_key_search_optimization_flights" translatable="false">pref_key_search_optimization_flights</string>
     <string name="pref_key_search_optimization_sports" translatable="false">pref_key_search_optimization_sports</string>
