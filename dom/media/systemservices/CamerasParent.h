@@ -23,10 +23,6 @@ namespace mozilla {
 class VideoCaptureFactory;
 }
 
-namespace webrtc {
-class DesktopCaptureImpl;
-}
-
 namespace mozilla::camera {
 
 class CamerasParent;
@@ -72,11 +68,12 @@ class AggregateCapturer final
   RemoveStreamResult RemoveStream(int aStreamId);
   RemoveStreamResult RemoveStreamsFor(CamerasParent* aParent);
   Maybe<int> CaptureIdFor(int aStreamId);
-  int32_t StartStream(int aStreamId,
-                      const webrtc::VideoCaptureCapability& aCapability,
-                      const NormalizedConstraints& aConstraints,
-                      const dom::VideoResizeModeEnum& aResizeMode);
-  int32_t StopStream(int aStreamId);
+  void SetConfigurationFor(int aStreamId,
+                           const webrtc::VideoCaptureCapability& aCapability,
+                           const NormalizedConstraints& aConstraints,
+                           const dom::VideoResizeModeEnum& aResizeMode,
+                           bool aStarted);
+  Maybe<webrtc::VideoCaptureCapability> CombinedCapability();
 
   void OnCaptureEnded();
   void OnFrame(const webrtc::VideoFrame& aVideoFrame) override;
@@ -104,7 +101,7 @@ class AggregateCapturer final
     // Whether the stream has been started and not stopped. As opposed to
     // allocated and not deallocated, which controls the presence of this stream
     // altogether.
-    bool mActive{false};
+    bool mStarted{false};
     // The timestamp of the last frame sent to mParent for this stream.
     media::TimeUnit mLastFrameTime{media::TimeUnit::FromNegativeInfinity()};
   };
@@ -121,10 +118,6 @@ class AggregateCapturer final
   // The id that identifies the capturer instance of the associated source
   // device in VideoEngine.
   const int mCaptureId;
-  // The capture module of the associated source.
-  const webrtc::scoped_refptr<webrtc::VideoCaptureModule> mCapturer;
-  // The desktop capture module should the associated source be a desktop one.
-  webrtc::DesktopCaptureImpl* const mDesktopCapturer = nullptr;
   // Tracking ID of the capturer for profiler markers.
   const TrackingId mTrackingId;
   // The (immutable) list of capabilities offered by the associated source
@@ -138,14 +131,7 @@ class AggregateCapturer final
   AggregateCapturer(nsISerialEventTarget* aVideoCaptureThread,
                     CaptureEngine aCapEng, VideoEngine* aEngine,
                     const nsCString& aUniqueId, int aCaptureId,
-                    webrtc::VideoCaptureModule* aCapturer,
-                    webrtc::DesktopCaptureImpl* aDesktopCapturer,
                     nsTArray<webrtc::VideoCaptureCapability>&& aCapabilities);
-
-  Maybe<webrtc::VideoCaptureCapability> CombinedCapability(
-      const decltype(mStreams)::AutoLock& aStreamsGuard);
-
-  int32_t UpdateDevice(const Maybe<webrtc::VideoCaptureCapability>& aState);
 
   MediaEventListener mCaptureEndedListener;
 };

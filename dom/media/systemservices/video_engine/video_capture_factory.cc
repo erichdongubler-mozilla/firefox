@@ -46,7 +46,7 @@ VideoCaptureFactory::VideoCaptureFactory() {
 
 std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo>
 VideoCaptureFactory::CreateDeviceInfo(
-    mozilla::camera::CaptureDeviceType aType) {
+    int32_t aId, mozilla::camera::CaptureDeviceType aType) {
   if (aType == mozilla::camera::CaptureDeviceType::Camera) {
     std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> deviceInfo;
     mUseFakeCamera = mUseFakeCamera.orElse([] {
@@ -81,13 +81,13 @@ VideoCaptureFactory::CreateDeviceInfo(
   MOZ_ASSERT("CreateDeviceInfo NO DESKTOP CAPTURE IMPL ON ANDROID" == nullptr);
   return nullptr;
 #else
-  return webrtc::DesktopCaptureImpl::CreateDeviceInfo(aType);
+  return webrtc::DesktopCaptureImpl::CreateDeviceInfo(aId, aType);
 #endif
 }
 
 VideoCaptureFactory::CreateVideoCaptureResult
 VideoCaptureFactory::CreateVideoCapture(
-    int32_t aCaptureId, const char* aUniqueId,
+    int32_t aModuleId, const char* aUniqueId,
     mozilla::camera::CaptureDeviceType aType) {
   CreateVideoCaptureResult result;
   if (aType == mozilla::camera::CaptureDeviceType::Camera) {
@@ -113,7 +113,7 @@ VideoCaptureFactory::CreateVideoCapture(
              nullptr);
 #else
   result.mDesktopImpl =
-      webrtc::DesktopCaptureImpl::Create(aCaptureId, aUniqueId, aType);
+      webrtc::DesktopCaptureImpl::Create(aModuleId, aUniqueId, aType);
   result.mCapturer =
       webrtc::scoped_refptr<webrtc::VideoCaptureModule>(result.mDesktopImpl);
 #endif
