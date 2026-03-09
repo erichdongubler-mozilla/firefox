@@ -257,9 +257,7 @@ export class AIWindow extends MozLitElement {
     this.showFooter = this.mode === FULLPAGE;
     this.showDisclaimer = this.mode !== FULLPAGE;
 
-    // Apply chat-active immediately if restoring a conversation via back navigation
-    // to prevent layout flash. Only check the attribute (not history.state) since
-    // history.state persists through refresh and could falsely match a stale ID.
+    // Apply chat-active immediately if restoring a conversation
     if (this.#hostBrowser?.getAttribute("data-conversation-id")) {
       this.classList.add("chat-active");
     }
@@ -425,9 +423,10 @@ export class AIWindow extends MozLitElement {
 
     const conversation =
       await lazy.AIWindow.chatStore.findConversationById(conversationId);
-    if (conversation) {
-      this.openConversation(conversation);
-    }
+
+    conversation
+      ? this.openConversation(conversation)
+      : this.#resetConversationState();
 
     if (this.#hostBrowser?.hasAttribute("data-continue-streaming")) {
       this.#hostBrowser.removeAttribute("data-continue-streaming");
@@ -916,12 +915,16 @@ export class AIWindow extends MozLitElement {
     });
   };
 
-  #setBrowserContainerActiveState(isActive) {
-    const container = this.renderRoot.querySelector("#browser-container");
-    if (!container) {
-      return;
-    }
+  #resetConversationState() {
+    this.classList.remove("chat-active");
+    this.#hostBrowser?.setAttribute(
+      "data-conversation-id",
+      this.#conversation.id
+    );
+    this.#syncHistoryState();
+  }
 
+  #setBrowserContainerActiveState(isActive) {
     if (isActive) {
       this.classList.add("chat-active");
       return;
