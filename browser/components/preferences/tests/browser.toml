@@ -27,9 +27,11 @@ run-if = [
 
 ["browser_aiFeatures_chatbot.js"]
 
-["browser_aiFeatures_memories.js"]
+["browser_aiFeatures_smart_window.js"]
 
-["browser_aiFeatures_model_settings.js"]
+["browser_aiFeatures_smart_window_memories.js"]
+
+["browser_aiFeatures_smart_window_model_settings.js"]
 
 ["browser_aiFeatures_telemetry.js"]
 

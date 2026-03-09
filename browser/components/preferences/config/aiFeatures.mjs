@@ -195,6 +195,9 @@ class BlockAiConfirmationDialog extends MozLitElement {
               data-l10n-id="preferences-ai-controls-block-confirmation-key-points"
             ></li>
             <li
+              data-l10n-id="preferences-ai-controls-block-confirmation-smart-window"
+            ></li>
+            <li
               data-l10n-id="preferences-ai-controls-block-confirmation-sidebar-chatbot"
             ></li>
           </ul>
@@ -505,32 +508,47 @@ Preferences.addSetting({
   id: "smartWindowEnabled",
   pref: "browser.smartwindow.enabled",
 });
-
-Preferences.addSetting({
-  id: "smartWindowFieldset",
-  deps: ["smartWindowEnabled"],
-  visible: deps => {
-    return deps.smartWindowEnabled.value;
-  },
-});
-
-Preferences.addSetting({
-  id: "aiFeaturesSmartWindowGroup",
-});
-
 Preferences.addSetting({
   id: "smartWindowToConsentTime",
   pref: "browser.smartwindow.tos.consentTime",
 });
 
 Preferences.addSetting({
-  id: "activateSmartWindowLink",
-  deps: ["smartWindowEnabled", "smartWindowToConsentTime"],
-  visible: deps => {
-    return (
-      deps.smartWindowEnabled.value && !deps.smartWindowToConsentTime.value
+  id: "smartWindowFieldset",
+  deps: ["smartWindowEnabled"],
+  visible: deps => deps.smartWindowEnabled.value,
+});
+
+Preferences.addSetting({
+  id: "aiFeaturesSmartWindowGroup",
+});
+
+Preferences.addSetting({ id: "smartWindowControlItem" });
+makeAiControlSetting({
+  id: "aiControlSmartWindowSelect",
+  pref: "browser.ai.control.smartWindow",
+  feature: OnDeviceModelManager.features.SmartWindow,
+  getControlConfig(config) {
+    let isEnabled = OnDeviceModelManager.isEnabled(
+      OnDeviceModelManager.features.SmartWindow
     );
+
+    config.options = AI_CONTROL_OPTIONS.filter(option => {
+      if (option.value == AiControlStates.available) {
+        return !isEnabled;
+      } else if (option.value == AiControlStates.enabled) {
+        return isEnabled;
+      }
+      return true;
+    });
+    return config;
   },
+});
+Preferences.addSetting({
+  id: "activateSmartWindowLink",
+  deps: ["aiControlSmartWindowSelect"],
+  visible: deps =>
+    deps.aiControlSmartWindowSelect.value === AiControlStates.available,
   onUserClick(e) {
     e.preventDefault();
     const browser = window.browsingContext.embedderElement;
@@ -540,10 +558,9 @@ Preferences.addSetting({
 
 Preferences.addSetting({
   id: "personalizeSmartWindowButton",
-  deps: ["smartWindowEnabled", "smartWindowToConsentTime"],
-  visible: deps => {
-    return deps.smartWindowEnabled.value && deps.smartWindowToConsentTime.value;
-  },
+  deps: ["aiControlSmartWindowSelect"],
+  visible: deps =>
+    deps.aiControlSmartWindowSelect.value == AiControlStates.enabled,
   onUserClick(e) {
     e.preventDefault();
     window.gotoPref("panePersonalizeSmartWindow");
@@ -1116,6 +1133,7 @@ SettingGroupManager.registerGroups({
         id: "smartWindowFieldset",
         l10nId: "ai-window-features-group",
         control: "moz-fieldset",
+        supportPage: "smart-window",
         controlAttrs: {
           headinglevel: 2,
           badge: "new",
@@ -1125,6 +1143,21 @@ SettingGroupManager.registerGroups({
             id: "aiFeaturesSmartWindowGroup",
             control: "moz-box-group",
             items: [
+              {
+                id: "smartWindowControlItem",
+                control: "moz-box-item",
+                items: [
+                  {
+                    id: "aiControlSmartWindowSelect",
+                    l10nId: "smart-window-select-label",
+                    control: "moz-select",
+                    controlAttrs: {
+                      inputlayout: "inline-end",
+                    },
+                    options: [...AI_CONTROL_OPTIONS],
+                  },
+                ],
+              },
               {
                 id: "activateSmartWindowLink",
                 l10nId: "ai-window-activate-link",

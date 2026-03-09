@@ -9,11 +9,16 @@
  */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AIFeature } from "chrome://global/content/ml/AIFeature.sys.mjs";
 
 export const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
 const AIWINDOW_URI = Services.io.newURI(AIWINDOW_URL);
 const FIRSTRUN_URL = "chrome://browser/content/aiwindow/firstrun.html";
 const FIRSTRUN_URI = Services.io.newURI(FIRSTRUN_URL);
+const PREF_SMARTWINDOW_ENABLED = "browser.smartwindow.enabled";
+const PREF_SMARTWINDOW_CONSENT_TIME = "browser.smartwindow.tos.consentTime";
+const PREF_AI_CONTROL_SMARTWINDOW = "browser.ai.control.smartWindow";
+const PREF_AI_CONTROL_DEFAULT = "browser.ai.control.default";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -187,6 +192,9 @@ export const AIWindow = {
 
   _onAIWindowEnabledPrefChange() {
     this._forEachWindow(win => this._updateButtonVisibility(win));
+    if (!this.isAvailable) {
+      this._onAccountLogout();
+    }
   },
 
   _updateButtonVisibility(win) {
@@ -388,16 +396,16 @@ export const AIWindow = {
   },
 
   /**
-   * Is AI Window enabled
+   * Whether AI Window is allowed by the feature pref and not blocked by AI Controls.
    *
    * @returns {boolean} whether AI Window is enabled
    */
   isAIWindowEnabled() {
-    return this.AIWindowEnabled;
+    return this.isAvailable;
   },
 
   isAIWindowActiveAndEnabled(win) {
-    return this.isAIWindowActive(win) && this.AIWindowEnabled;
+    return this.isAIWindowActive(win) && this.isAIWindowEnabled();
   },
 
   /**
@@ -594,8 +602,15 @@ export const AIWindow = {
   },
 
   async launchWindow(browser, openNewWindow = false) {
-    if (!this.isAIWindowEnabled()) {
-      Services.prefs.setBoolPref("browser.smartwindow.enabled", true);
+    // Early return when Smart Window is blocked from AI Control
+    if (this.isBlocked) {
+      return false;
+    }
+
+    // if browser.smartwindow.enabled is false
+    // set the pref explicitly true
+    if (!this.isAllowed) {
+      Services.prefs.setBoolPref(PREF_SMARTWINDOW_ENABLED, true);
     }
 
     if (!browser && !openNewWindow) {
@@ -696,13 +711,120 @@ export const AIWindow = {
     let aiWindowCE = contentDocument?.querySelector("ai-window");
     return aiWindowCE?.shadowRoot.getElementById("ai-window-smartbar");
   },
+
+  // AIFeature interface implementation
+  // (see toolkit/components/ml/AIFeature.sys.mjs and
+  // browser/components/preferences/OnDeviceModelManager.mjs)
+  /**
+   * Returns the unique identifier
+   *
+   * @returns {string}
+   */
+  get id() {
+    return "smartWindow";
+  },
+
+  /**
+   * Check if the feature is blocked by AI controls
+   *
+   * @returns {boolean}
+   */
+  get isBlocked() {
+    if (this.AIControlSmartWindow === "default") {
+      return this.AIControlDefault === "blocked";
+    }
+    return this.AIControlSmartWindow === "blocked";
+  },
+
+  /**
+   * Check if the feature is enabled and the user has consented
+   *
+   * @returns {boolean}
+   */
+  get isEnabled() {
+    return (
+      this.isAvailable &&
+      Services.prefs.prefHasUserValue(PREF_SMARTWINDOW_CONSENT_TIME)
+    );
+  },
+
+  get isAvailable() {
+    return this.isAllowed && !this.isBlocked;
+  },
+
+  /**
+   * Check if the feature is allowed to be enabled
+   *
+   * @returns {boolean}
+   */
+  get isAllowed() {
+    return this.AIWindowEnabledPref;
+  },
+
+  /**
+   * Check if the feature is managed by enterprise policy
+   *
+   * @returns {boolean}
+   */
+  get isManagedByPolicy() {
+    return Services.prefs.prefIsLocked(PREF_SMARTWINDOW_ENABLED);
+  },
+
+  /**
+   * Reset the feature to available state and clear consent
+   *
+   * @returns {Promise<void>}
+   */
+  async reset() {
+    // TODO: Bug 2019981 - Remove memories
+    Services.prefs.clearUserPref(PREF_SMARTWINDOW_CONSENT_TIME);
+  },
+
+  /**
+   * Set the feature as available
+   *
+   * @returns {Promise<void>}
+   */
+  async enable() {
+    Services.prefs.setBoolPref(PREF_SMARTWINDOW_ENABLED, true);
+    Services.prefs.setStringPref(PREF_AI_CONTROL_SMARTWINDOW, "enabled");
+  },
+
+  /**
+   * Set the feature as disable
+   *
+   * @returns {Promise<void>}
+   */
+  async disable() {
+    // Leave PREF_SMARTWINDOW_ENABLED alone, since PREF_AI_CONTROL_SMARTWINDOW
+    // will block the feature anyways.
+    Services.prefs.setStringPref(PREF_AI_CONTROL_SMARTWINDOW, "blocked");
+  },
 };
+
+Object.setPrototypeOf(AIWindow, AIFeature);
 
 XPCOMUtils.defineLazyPreferenceGetter(
   AIWindow,
-  "AIWindowEnabled",
-  "browser.smartwindow.enabled",
+  "AIWindowEnabledPref",
+  PREF_SMARTWINDOW_ENABLED,
   false,
+  AIWindow._onAIWindowEnabledPrefChange.bind(AIWindow)
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  AIWindow,
+  "AIControlSmartWindow",
+  PREF_AI_CONTROL_SMARTWINDOW,
+  "default",
+  AIWindow._onAIWindowEnabledPrefChange.bind(AIWindow)
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  AIWindow,
+  "AIControlDefault",
+  PREF_AI_CONTROL_DEFAULT,
+  "available",
   AIWindow._onAIWindowEnabledPrefChange.bind(AIWindow)
 );
 

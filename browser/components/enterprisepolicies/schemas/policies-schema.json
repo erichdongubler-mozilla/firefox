@@ -881,6 +881,9 @@
         "Chatbot": {
           "type": "boolean"
         },
+        "SmartWindow": {
+          "type": "boolean"
+        },
         "LinkPreviews": {
           "type": "boolean"
         },

@@ -1085,3 +1085,20 @@ async function waitForCheckboxState(checkbox, expectedValue) {
     `Waiting for checkbox checked to be ${expectedValue}`
   );
 }
+
+/**
+ * Opens a preferences pane, passes the document to the test function,
+ * and ensures the tab is cleaned up afterwards
+ *
+ * @param {string} pane - The preferences pane to open
+ * @param {Function} testFn - Async function receiving the pane's document
+ */
+async function withPrefsPane(pane, testFn) {
+  await openPreferencesViaOpenPreferencesAPI(pane, { leaveOpen: true });
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  try {
+    await testFn(doc);
+  } finally {
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  }
+}

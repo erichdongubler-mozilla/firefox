@@ -2,15 +2,20 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+preferences-ai-controls-block-confirmation-smart-window = Smart Window
+
 ai-window-features-group =
     .label = Smart Window
-    .description = Ask questions, compare pages, and more in a separate window with a built-in assistant. Smart Window can learn as you browse, for a more personalized experience.
+    .description = Ask questions, compare pages, and get personalized suggestions with a built-in assistant.
+
+smart-window-select-label =
+    .label = Smart Window
 
 ai-window-activate-link =
     .label = Get started
 
 ai-window-personalize-button =
-    .label = Personalize Smart Window
+    .label = Smart Window settings
 
 ai-window-personalize-header =
     .heading = Smart Window
