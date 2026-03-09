@@ -195,8 +195,8 @@ class TestScript(unittest.TestCase):
     def test_chdir(self):
         self.s = script.BaseScript(initial_config_file="test/test.json")
         cwd = os.getcwd()
-        self.s.chdir("test_logs")
-        self.assertEqual(os.path.join(cwd, "test_logs"), os.getcwd(), msg="chdir error")
+        self.s.chdir(self.tmpdir)
+        self.assertEqual(self.tmpdir, os.getcwd(), msg="chdir error")
         self.s.chdir(cwd)
 
     def test_chdir_relative(self):
