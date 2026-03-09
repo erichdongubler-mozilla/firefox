@@ -1400,7 +1400,7 @@ class HomeFragment : Fragment() {
                         binding.wallpaperImageView.isVisible = true
                         lastAppliedWallpaperName = wallpaperName
                     } ?: run {
-                        if (!isActive) return@run
+                        if (!isActive) return@launch
                         with(binding.wallpaperImageView) {
                             isVisible = false
                             showSnackBar(
@@ -1420,7 +1420,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun observeWallpaperUpdates() {
-        if (wallpaperUpdatesJob?.isActive == true) return
+        if (!shouldEnableWallpaper() || wallpaperUpdatesJob?.isActive == true) return
 
         wallpaperUpdatesJob = viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
