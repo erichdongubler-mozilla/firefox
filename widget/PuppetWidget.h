@@ -298,6 +298,8 @@ class PuppetWidget final : public nsIWidget,
 
   void OnMemoryPressure(layers::MemoryPressureReason aWhy) override;
 
+  void PerformHapticFeedback(mozilla::HapticFeedbackType aType) override;
+
  private:
   void Paint();
 

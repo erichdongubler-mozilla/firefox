@@ -124,9 +124,6 @@ class nsWindow final : public nsIWidget {
   void InitEvent(mozilla::WidgetGUIEvent& event,
                  LayoutDeviceIntPoint* aPoint = nullptr);
 
-  // See nsIHapticFeedback::HapticFeedbackType for available effects.
-  void PerformHapticFeedback(int32_t aEffect);
-
   void UpdateOverscrollVelocity(const float aX, const float aY);
   void UpdateOverscrollOffset(const float aX, const float aY);
 
@@ -258,6 +255,8 @@ class nsWindow final : public nsIWidget {
 
   void DoResize(double aX, double aY, double aWidth, double aHeight,
                 bool aRepaint);
+
+  void PerformHapticFeedback(mozilla::HapticFeedbackType aType) override;
 
  protected:
   void BringToFront();

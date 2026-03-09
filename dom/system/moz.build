@@ -62,7 +62,6 @@ EXPORTS += [
 
 UNIFIED_SOURCES += [
     "nsDeviceSensors.cpp",
-    "nsHapticFeedback.cpp",
     "nsOSPermissionRequestBase.cpp",
 ]
 

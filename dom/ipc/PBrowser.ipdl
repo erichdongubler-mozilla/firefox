@@ -85,6 +85,7 @@ using struct mozilla::layers::TextureFactoryIdentifier from "mozilla/layers/Comp
 using mozilla::layers::CompositorOptions from "mozilla/layers/CompositorOptions.h";
 using mozilla::CSSToScreenScale from "Units.h";
 using mozilla::CommandInt from "mozilla/EventForwards.h";
+using mozilla::HapticFeedbackType from "nsIWidget.h";
 using nsIWidget::TouchPointerState from "nsIWidget.h";
 using nsIWidget::TouchpadGesturePhase from "nsIWidget.h";
 using nsCursor from "nsIWidget.h";
@@ -1097,6 +1098,8 @@ parent:
                           WindowGlobalInit aInit);
 
     async UpdateDropEffect(uint32_t aDragAction, uint32_t aDropEffect);
+
+    async PerformHapticFeedback(HapticFeedbackType aType);
 
 /*
  * FIXME: write protocol!

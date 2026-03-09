@@ -18,7 +18,6 @@
 #include "nsCOMPtr.h"
 #include "nsCoord.h"
 #include "nsIFrame.h"
-#include "nsIHapticFeedback.h"
 #include "nsISelectionListener.h"
 
 class nsFrameSelection;
@@ -195,7 +194,7 @@ class AccessibleCaretManager {
 
   // Provide haptic / touch feedback, primarily for selection on longpress and
   // caret dragging.
-  void ProvideHapticFeedback(nsIHapticFeedback::HapticFeedbackType aEffect);
+  void ProvideHapticFeedback(mozilla::HapticFeedbackType aType);
 
   // Get the nearest enclosing focusable frame of aFrame.
   // @return focusable frame if there is any; nullptr otherwise.

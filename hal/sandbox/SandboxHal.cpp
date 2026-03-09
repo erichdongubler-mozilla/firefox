@@ -21,8 +21,7 @@ using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::hal;
 
-namespace mozilla {
-namespace hal_sandbox {
+namespace mozilla::hal_sandbox {
 
 static bool sHalChildDestroyed = false;
 
@@ -132,10 +131,6 @@ bool SetAlarm(int32_t aSeconds, int32_t aNanoseconds) {
 
 void SetProcessPriority(int aPid, ProcessPriority aPriority) {
   MOZ_CRASH("Only the main process may set processes' priorities.");
-}
-
-void PerformHapticFeedback(int32_t aType) {
-  Hal()->SendPerformHapticFeedback(aType);
 }
 
 class HalParent : public PHalParent,
@@ -298,12 +293,6 @@ class HalParent : public PHalParent,
   void Notify(const WakeLockInformation& aWakeLockInfo) override {
     (void)SendNotifyWakeLockChange(aWakeLockInfo);
   }
-
-  virtual mozilla::ipc::IPCResult RecvPerformHapticFeedback(
-      const int32_t& aType) override {
-    hal::PerformHapticFeedback(aType);
-    return IPC_OK();
-  }
 };
 
 class HalChild : public PHalChild {
@@ -345,5 +334,4 @@ PHalChild* CreateHalChild() { return new HalChild(); }
 
 PHalParent* CreateHalParent() { return new HalParent(); }
 
-}  // namespace hal_sandbox
-}  // namespace mozilla
+}  // namespace mozilla::hal_sandbox

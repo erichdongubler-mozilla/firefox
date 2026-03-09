@@ -2576,6 +2576,19 @@ void nsWindow::DoResize(double aX, double aY, double aWidth, double aHeight,
   if (aRepaint && FindTopLevel() == nsWindow::TopWindow()) RedrawAll();
 }
 
+void nsWindow::PerformHapticFeedback(HapticFeedbackType aType) {
+  if (Destroyed()) {
+    return;
+  }
+
+  auto acc(mGeckoViewSupport.Access());
+  if (!acc) {
+    return;
+  }
+
+  acc->PerformHapticFeedback(static_cast<int32_t>(aType));
+}
+
 void nsWindow::SetSizeMode(nsSizeMode aMode) {
   if (aMode == mSizeMode) {
     return;
@@ -2920,19 +2933,6 @@ void nsWindow::InitEvent(WidgetGUIEvent& event, LayoutDeviceIntPoint* aPoint) {
   } else {
     event.mRefPoint = LayoutDeviceIntPoint(0, 0);
   }
-}
-
-void nsWindow::PerformHapticFeedback(int32_t aEffect) {
-  if (Destroyed()) {
-    return;
-  }
-
-  auto acc(mGeckoViewSupport.Access());
-  if (!acc) {
-    return;
-  }
-
-  acc->PerformHapticFeedback(aEffect);
 }
 
 void nsWindow::UpdateOverscrollVelocity(const float aX, const float aY) {

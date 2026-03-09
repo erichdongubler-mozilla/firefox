@@ -78,6 +78,14 @@ enum class WindowButtonType : uint8_t;
 struct FontRange;
 struct SwipeEventQueue;
 
+enum class HapticFeedbackType : uint8_t {
+  ShortPress = 0,
+  LongPress = 1,
+  TextHandleMove = 2,
+
+  End,  // Not a feedback type, only to mark the upper boundary
+};
+
 enum class WindowShadow : uint8_t {
   None,
   Menu,
@@ -2348,6 +2356,11 @@ class nsIWidget : public nsSupportsWeakReference {
    */
   virtual void SetWindowButtonRect(WindowButtonType aButtonType,
                                    const LayoutDeviceIntRect& aClientRect) {}
+
+  /**
+   * Provide haptic feedback for this widget.
+   */
+  virtual void PerformHapticFeedback(mozilla::HapticFeedbackType aType) {}
 
 #ifdef DEBUG
   virtual nsresult SetHiDPIMode(bool aHiDPI) {

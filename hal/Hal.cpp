@@ -421,10 +421,6 @@ const Maybe<hal::HeterogeneousCpuInfo>& GetHeterogeneousCpuInfo() {
   return hal_impl::GetHeterogeneousCpuInfo();
 }
 
-void PerformHapticFeedback(int32_t aType) {
-  PROXY_IF_SANDBOXED(PerformHapticFeedback(aType));
-}
-
 void Init() {
   MOZ_ASSERT(!sInitialized);
 

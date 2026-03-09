@@ -24,6 +24,14 @@ struct ParamTraits<mozilla::widget::ThemeChangeKind>
 };
 
 template <>
+struct ParamTraits<mozilla::HapticFeedbackType>
+    : public ContiguousEnumSerializer<mozilla::HapticFeedbackType,
+                                      mozilla::HapticFeedbackType(0),
+                                      mozilla::HapticFeedbackType::End> {
+  using IdType = std::underlying_type_t<mozilla::HapticFeedbackType>;
+};
+
+template <>
 struct ParamTraits<mozilla::LookAndFeel::IntID>
     : ContiguousEnumSerializer<mozilla::LookAndFeel::IntID,
                                mozilla::LookAndFeel::IntID(0),

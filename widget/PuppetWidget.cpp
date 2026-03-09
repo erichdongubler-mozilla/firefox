@@ -908,6 +908,12 @@ void PuppetWidget::OnMemoryPressure(layers::MemoryPressureReason aWhy) {
   }
 }
 
+void PuppetWidget::PerformHapticFeedback(mozilla::HapticFeedbackType aType) {
+  if (mBrowserChild) {
+    mBrowserChild->SendPerformHapticFeedback(aType);
+  }
+}
+
 bool PuppetWidget::NeedsPaint() {
   // e10s popups are handled by the parent process, so never should be painted
   // here
