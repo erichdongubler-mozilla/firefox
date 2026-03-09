@@ -2023,7 +2023,6 @@ impl<'a> SceneBuilder<'a> {
         PrimitiveInstance::new(
             instance_kind,
             clip_leaf_id,
-            info.rect.min,
         )
     }
 
@@ -3184,7 +3183,6 @@ impl<'a> SceneBuilder<'a> {
                                 pic_index: shadow_pic_index,
                             },
                             self.clip_tree_builder.build_for_picture(clip_node_id),
-                            LayoutPoint::zero(),
                         );
 
                         // Add the shadow primitive. This must be done before pushing this
@@ -4767,7 +4765,6 @@ fn create_prim_instance(
         clip_tree_builder.build_for_picture(
             clip_node_id,
         ),
-        LayoutPoint::zero(),
     )
 }
 
