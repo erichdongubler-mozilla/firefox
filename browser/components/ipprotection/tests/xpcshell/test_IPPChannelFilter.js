@@ -411,6 +411,149 @@ add_task(async function test_uninitialize_clears_proxyInfo() {
   );
 });
 
+add_task(async function test_replaceAuthToken_preserves_connect_protocol() {
+  const authToken = "Bearer original-token";
+  const newToken = "Bearer new-token";
+
+  const server = new Server({
+    hostname: "connect.example.com",
+    port: 443,
+    protocols: [
+      {
+        name: "connect",
+        host: "connect.example.com",
+        port: 443,
+        scheme: "https",
+      },
+    ],
+  });
+
+  const filter = new IPPChannelFilter();
+  filter.initialize(authToken, server);
+
+  Assert.equal(filter.proxyInfo.type, "https", "Should start as https");
+  const originalIsolationKey = filter.proxyInfo.connectionIsolationKey;
+
+  filter.replaceAuthToken(newToken);
+
+  Assert.equal(
+    filter.proxyInfo.type,
+    "https",
+    "Should remain https after token replacement"
+  );
+  Assert.notEqual(
+    filter.proxyInfo.connectionIsolationKey,
+    originalIsolationKey,
+    "Isolation key should change after token replacement"
+  );
+});
+
+add_task(async function test_replaceAuthToken_preserves_masque_protocol() {
+  const authToken = "Bearer original-token";
+  const newToken = "Bearer new-token";
+
+  const server = new Server({
+    hostname: "masque.example.com",
+    port: 443,
+    protocols: [
+      {
+        name: "masque",
+        host: "masque.example.com",
+        port: 443,
+        templateString: "proxy/{target_host}/{target_port}/",
+      },
+    ],
+  });
+
+  const filter = new IPPChannelFilter();
+  filter.initialize(authToken, server);
+
+  Assert.equal(filter.proxyInfo.type, "masque", "Should start as masque");
+
+  filter.replaceAuthToken(newToken);
+
+  Assert.equal(
+    filter.proxyInfo.type,
+    "masque",
+    "Should remain masque after token replacement"
+  );
+  Assert.equal(
+    filter.proxyInfo.host,
+    "masque.example.com",
+    "Host should be preserved"
+  );
+  Assert.equal(filter.proxyInfo.port, 443, "Port should be preserved");
+});
+
+add_task(
+  async function test_replaceAuthToken_preserves_masque_with_connect_fallback() {
+    const authToken = "Bearer original-token";
+    const newToken = "Bearer new-token";
+
+    const server = new Server({
+      hostname: "multi.example.com",
+      port: 443,
+      protocols: [
+        {
+          name: "masque",
+          host: "multi.example.com",
+          port: 443,
+          templateString: "proxy/{target_host}/{target_port}/",
+        },
+        {
+          name: "connect",
+          host: "multi.example.com",
+          port: 8443,
+          scheme: "https",
+        },
+      ],
+    });
+
+    const filter = new IPPChannelFilter();
+    filter.initialize(authToken, server);
+
+    Assert.equal(filter.proxyInfo.type, "masque", "Primary should be masque");
+    Assert.equal(
+      filter.proxyInfo.failoverProxy.type,
+      "https",
+      "Fallback should be https"
+    );
+
+    filter.replaceAuthToken(newToken);
+
+    Assert.equal(
+      filter.proxyInfo.type,
+      "masque",
+      "Primary should remain masque after replacement"
+    );
+    Assert.notEqual(
+      filter.proxyInfo.failoverProxy,
+      null,
+      "Fallback chain should be preserved"
+    );
+    Assert.equal(
+      filter.proxyInfo.failoverProxy.type,
+      "https",
+      "Fallback should remain https after replacement"
+    );
+    Assert.equal(
+      filter.proxyInfo.failoverProxy.host,
+      "multi.example.com",
+      "Fallback host should be preserved"
+    );
+    Assert.equal(
+      filter.proxyInfo.failoverProxy.port,
+      8443,
+      "Fallback port should be preserved"
+    );
+    Assert.equal(
+      filter.proxyInfo.connectionIsolationKey,
+      filter.proxyInfo.failoverProxy.connectionIsolationKey,
+      "Isolation key should be shared across the chain"
+    );
+  }
+);
+
 add_task(async function test_local_connections() {
   const tests = [
     ["http://localhost", true],

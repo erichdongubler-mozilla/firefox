@@ -1145,3 +1145,62 @@ add_task(async function test_scheduleCallback_long_delay_clamping() {
 
   sandbox.restore();
 });
+
+[401, 403, 407].forEach(httpStatus => {
+  add_task(async function test_handleProxyErrorEvent_triggers_rotation() {
+    info(`Running test for HTTP ${httpStatus} proxy error`);
+    let sandbox = sinon.createSandbox();
+    setupStubs(sandbox, { validProxyPass: true });
+
+    const readyEvent = waitForEvent(
+      IPProtectionService,
+      "IPProtectionService:StateChanged",
+      () => IPProtectionService.state === IPProtectionStates.READY
+    );
+
+    IPProtectionService.init();
+    await readyEvent;
+
+    const activeEvent = waitForEvent(
+      IPPProxyManager,
+      "IPPProxyManager:StateChanged",
+      () => IPPProxyManager.state === IPPProxyStates.ACTIVE
+    );
+
+    await IPPProxyManager.start();
+    await activeEvent;
+
+    const isolationKey = IPPProxyManager.isolationKey;
+
+    sandbox.restore();
+    sandbox = sinon.createSandbox();
+    setupStubs(sandbox, { validProxyPass: true });
+
+    const oldIsolationKey = IPPProxyManager.isolationKey;
+    IPPProxyManager.handleProxyErrorEvent(
+      new CustomEvent("proxy-http-error", {
+        detail: { level: "error", isolationKey, httpStatus },
+      })
+    );
+
+    await waitForEvent(
+      IPPProxyManager,
+      "IPPProxyManager:UsageChanged",
+      () => true
+    );
+
+    Assert.notEqual(
+      IPPProxyManager.isolationKey,
+      oldIsolationKey,
+      `Isolation key should change after ${httpStatus} triggers rotation`
+    );
+    Assert.equal(
+      IPPProxyManager.state,
+      IPPProxyStates.ACTIVE,
+      `Should remain active after ${httpStatus} rotation`
+    );
+
+    IPProtectionService.uninit();
+    sandbox.restore();
+  });
+});
