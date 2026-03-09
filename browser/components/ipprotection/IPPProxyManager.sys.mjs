@@ -634,16 +634,14 @@ class IPPProxyManagerSingleton extends EventTarget {
       return null;
     }
 
-    if (httpStatus !== 401) {
-      // Envoy returns a 401 if the token is rejected
-      // So for now as we only care about rotating tokens we can exit here.
-      return null;
+    if (httpStatus === 401 || httpStatus === 407 || httpStatus == 403) {
+      if (level == "error" || this.#pass?.shouldRotate()) {
+        // If this is a visible top-level error force a rotation
+        return this.rotateProxyPass();
+      }
     }
-
-    if (level == "error" || this.#pass?.shouldRotate()) {
-      // If this is a visible top-level error force a rotation
-      return this.rotateProxyPass();
-    }
+    // Envoy returns a 401 if the token is rejected
+    // So for now as we only care about rotating tokens we can exit here.
     return null;
   }
 
