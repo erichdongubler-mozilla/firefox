@@ -534,7 +534,7 @@ void WebrtcGlobalInformation::GetLogging(
 }
 
 static bool sLastAECDebug = false;
-static Maybe<nsCString> sAecDebugLogDir;
+constinit static Maybe<nsCString> sAecDebugLogDir;
 
 void WebrtcGlobalInformation::SetAecDebug(const GlobalObject& aGlobal,
                                           bool aEnable) {

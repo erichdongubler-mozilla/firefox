@@ -1632,7 +1632,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 #  include "mozilla/Monitor.h"
 #  include "mozilla/Maybe.h"
 
-static Maybe<Monitor> sAndroidMonitor;
+constinit static Maybe<Monitor> sAndroidMonitor;
 
 mozilla::Monitor& nsAccessibilityService::GetAndroidMonitor() {
   if (!sAndroidMonitor.isSome()) {

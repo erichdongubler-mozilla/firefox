@@ -254,7 +254,8 @@ class RequestingAccessKeyEventData {
   static int32_t sBrowserParentCount;
 };
 int32_t RequestingAccessKeyEventData::sBrowserParentCount = 0;
-Maybe<RequestingAccessKeyEventData::Data> RequestingAccessKeyEventData::sData;
+constinit Maybe<RequestingAccessKeyEventData::Data>
+    RequestingAccessKeyEventData::sData;
 
 namespace dom {
 

@@ -81,7 +81,7 @@ bool IMEStateManager::sInstalledMenuKeyboardListener = false;
 bool IMEStateManager::sIsGettingNewIMEState = false;
 bool IMEStateManager::sCleaningUpForStoppingIMEStateManagement = false;
 bool IMEStateManager::sIsActive = false;
-Maybe<IMEStateManager::PendingFocusedBrowserSwitchingData>
+constinit Maybe<IMEStateManager::PendingFocusedBrowserSwitchingData>
     IMEStateManager::sPendingFocusedBrowserSwitchingData;
 
 class PseudoFocusChangeRunnable : public Runnable {
