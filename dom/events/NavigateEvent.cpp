@@ -214,7 +214,7 @@ void NavigateEvent::Intercept(const NavigationInterceptOptions& aOptions,
     }
 
     // Step 9.2
-    mScrollBehavior.emplace(aOptions.mScroll.Value());
+    mScrollBehavior = Some(aOptions.mScroll.Value());
   }
 }
 
