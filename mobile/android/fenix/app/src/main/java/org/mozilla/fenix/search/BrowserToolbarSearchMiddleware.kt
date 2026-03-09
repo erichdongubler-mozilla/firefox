@@ -275,7 +275,7 @@ class BrowserToolbarSearchMiddleware(
             }
 
             is SearchQueryUpdated -> {
-                updateAutocompletions(store, action.query)
+                maybeUpdateAutocompletions(store, action.query, action.isQueryPrefilled)
                 updateSearchEndPageActions(store)
             }
 
@@ -345,7 +345,7 @@ class BrowserToolbarSearchMiddleware(
         searchEngine: SearchEngine?,
     ) {
         updateSearchSelectorMenu(store, searchEngine, browserStore.state.search.searchEngineShortcuts)
-        updateAutocompletions(store, store.state.editState.query)
+        maybeUpdateAutocompletions(store, store.state.editState.query)
         updateToolbarHint(store, searchEngine)
     }
 
@@ -410,11 +410,13 @@ class BrowserToolbarSearchMiddleware(
         else -> emptyList()
     }
 
-    private fun updateAutocompletions(
+    private fun maybeUpdateAutocompletions(
         store: Store<BrowserToolbarState, BrowserToolbarAction>,
         query: BrowserToolbarQuery,
+        shouldAvoidAutocompletions: Boolean = store.state.editState.isQueryPrefilled,
     ) {
         updateAutocompleteJob?.cancelChildren()
+        if (shouldAvoidAutocompletions) return
 
         // Update suggestions only if feature is not disabled and user is not backspacing.
         val shouldCheckForSuggestions = settings.shouldAutocompleteInAwesomebar && query.current.isNotEmpty()
