@@ -40,36 +40,27 @@ function SectionsMgmtPanel({
     sectionsList = sections[sectionsFeedName].data.sections;
   }
 
-  const [sectionsState, setSectionState] = useState(sectionPersonalization);
+  const [sectionsState, setSectionState] = useState(sectionPersonalization); // State management with useState
 
   let followedSectionsData = sectionsList.filter(
     item => sectionsState[item.sectionKey]?.isFollowed
   );
 
-  // Keys of sections currently returned by the feed .
-  const sectionListKeys = new Set(sectionsList.map(s => s.sectionKey));
-
-  // Blocked sections still present in the feed (normal case, cache not yet expired).
-  const blockedFromFeed = sectionsList.filter(
+  let blockedSectionsData = sectionsList.filter(
     item => sectionsState[item.sectionKey]?.isBlocked
   );
 
-  // Blocked sections absent from the feed (Sections not returned from merino).
-  // Reconstructed from persisted personalization data using the title
-  // stored at block-time.
-  const blockedFromPersonalization = Object.entries(sectionsState)
-    .filter(
-      ([key, val]) => val?.isBlocked && val.title && !sectionListKeys.has(key)
-    )
-    .map(([key, val]) => ({
-      sectionKey: key,
-      title: val.title,
-    }));
-
-  let blockedSectionsData = [...blockedFromFeed, ...blockedFromPersonalization];
-
   function updateCachedData() {
+    // Reset cached followed/blocked list data while panel is open
     setSectionState(sectionPersonalization);
+
+    followedSectionsData = sectionsList.filter(
+      item => sectionsState[item.sectionKey]?.isFollowed
+    );
+
+    blockedSectionsData = sectionsList.filter(
+      item => sectionsState[item.sectionKey]?.isBlocked
+    );
   }
 
   const onFollowClick = useCallback(
@@ -103,7 +94,7 @@ function SectionsMgmtPanel({
   );
 
   const onBlockClick = useCallback(
-    (sectionKey, receivedRank, title) => {
+    (sectionKey, receivedRank) => {
       dispatch(
         ac.AlsoToMain({
           type: at.SECTION_PERSONALIZATION_SET,
@@ -112,7 +103,6 @@ function SectionsMgmtPanel({
             [sectionKey]: {
               isFollowed: false,
               isBlocked: true,
-              title,
             },
           },
         })
@@ -262,7 +252,7 @@ function SectionsMgmtPanel({
               onClick={() =>
                 blocked
                   ? onUnblockClick(sectionKey, receivedRank)
-                  : onBlockClick(sectionKey, receivedRank, title)
+                  : onBlockClick(sectionKey, receivedRank)
               }
               type="default"
               index={receivedRank}

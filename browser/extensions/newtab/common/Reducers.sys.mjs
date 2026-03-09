@@ -740,11 +740,7 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
         ...prevState,
       };
     case at.DISCOVERY_STREAM_LAYOUT_RESET:
-      return {
-        ...INITIAL_STATE.DiscoveryStream,
-        config: prevState.config,
-        sectionPersonalization: prevState.sectionPersonalization,
-      };
+      return { ...INITIAL_STATE.DiscoveryStream, config: prevState.config };
     case at.DISCOVERY_STREAM_FEEDS_UPDATE:
       return {
         ...prevState,

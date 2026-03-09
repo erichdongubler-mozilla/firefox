@@ -2083,7 +2083,6 @@ const LinkMenuOptions = {
               [sectionKey]: {
                 isBlocked: true,
                 isFollowed: false,
-                title,
               },
             },
           }),
@@ -6980,11 +6979,7 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
         ...prevState,
       };
     case actionTypes.DISCOVERY_STREAM_LAYOUT_RESET:
-      return {
-        ...INITIAL_STATE.DiscoveryStream,
-        config: prevState.config,
-        sectionPersonalization: prevState.sectionPersonalization,
-      };
+      return { ...INITIAL_STATE.DiscoveryStream, config: prevState.config };
     case actionTypes.DISCOVERY_STREAM_FEEDS_UPDATE:
       return {
         ...prevState,
@@ -14044,25 +14039,15 @@ function SectionsMgmtPanel({
   if (sectionsFeedName) {
     sectionsList = sections[sectionsFeedName].data.sections;
   }
-  const [sectionsState, setSectionState] = (0,external_React_namespaceObject.useState)(sectionPersonalization);
+  const [sectionsState, setSectionState] = (0,external_React_namespaceObject.useState)(sectionPersonalization); // State management with useState
+
   let followedSectionsData = sectionsList.filter(item => sectionsState[item.sectionKey]?.isFollowed);
-
-  // Keys of sections currently returned by the feed .
-  const sectionListKeys = new Set(sectionsList.map(s => s.sectionKey));
-
-  // Blocked sections still present in the feed (normal case, cache not yet expired).
-  const blockedFromFeed = sectionsList.filter(item => sectionsState[item.sectionKey]?.isBlocked);
-
-  // Blocked sections absent from the feed (Sections not returned from merino).
-  // Reconstructed from persisted personalization data using the title
-  // stored at block-time.
-  const blockedFromPersonalization = Object.entries(sectionsState).filter(([key, val]) => val?.isBlocked && val.title && !sectionListKeys.has(key)).map(([key, val]) => ({
-    sectionKey: key,
-    title: val.title
-  }));
-  let blockedSectionsData = [...blockedFromFeed, ...blockedFromPersonalization];
+  let blockedSectionsData = sectionsList.filter(item => sectionsState[item.sectionKey]?.isBlocked);
   function updateCachedData() {
+    // Reset cached followed/blocked list data while panel is open
     setSectionState(sectionPersonalization);
+    followedSectionsData = sectionsList.filter(item => sectionsState[item.sectionKey]?.isFollowed);
+    blockedSectionsData = sectionsList.filter(item => sectionsState[item.sectionKey]?.isBlocked);
   }
   const onFollowClick = (0,external_React_namespaceObject.useCallback)((sectionKey, receivedRank) => {
     dispatch(actionCreators.AlsoToMain({
@@ -14086,15 +14071,14 @@ function SectionsMgmtPanel({
       }
     }));
   }, [dispatch, sectionPersonalization]);
-  const onBlockClick = (0,external_React_namespaceObject.useCallback)((sectionKey, receivedRank, title) => {
+  const onBlockClick = (0,external_React_namespaceObject.useCallback)((sectionKey, receivedRank) => {
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.SECTION_PERSONALIZATION_SET,
       data: {
         ...sectionPersonalization,
         [sectionKey]: {
           isFollowed: false,
-          isBlocked: true,
-          title
+          isBlocked: true
         }
       }
     }));
@@ -14212,7 +14196,7 @@ function SectionsMgmtPanel({
     }, title), /*#__PURE__*/external_React_default().createElement("div", {
       className: blocked ? "section-block blocked" : "section-block"
     }, /*#__PURE__*/external_React_default().createElement("moz-button", {
-      onClick: () => blocked ? onUnblockClick(sectionKey, receivedRank) : onBlockClick(sectionKey, receivedRank, title),
+      onClick: () => blocked ? onUnblockClick(sectionKey, receivedRank) : onBlockClick(sectionKey, receivedRank),
       type: "default",
       index: receivedRank,
       section: sectionKey,
