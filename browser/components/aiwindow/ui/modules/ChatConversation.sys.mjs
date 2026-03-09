@@ -297,7 +297,7 @@ export class ChatConversation {
       contextMentions: userOpts?.contextMentions,
     });
     if (realTimeContext) {
-      userContext[realTimeContext] = realTimeContext;
+      userContext.realTimeContext = realTimeContext;
     }
 
     if (userOpts?.memoriesEnabled) {
@@ -306,7 +306,7 @@ export class ChatConversation {
         engineInstance
       );
       if (memoriesContext) {
-        userContext[memoriesContext] = memoriesContext;
+        userContext.memoriesContext = memoriesContext;
       }
     }
     this.addUserMessage(prompt, pageUrl, userOpts, userContext);
