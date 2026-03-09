@@ -11,6 +11,8 @@ import java.io.File
 import java.net.URLDecoder
 
 private const val EXTERNAL_STORAGE_PROVIDER_AUTHORITY = "com.android.externalstorage.documents"
+private const val PRIMARY_VOLUME_ID = "primary"
+private const val DELIMITER = ":"
 
 /**
  * The default implementation of [DownloadLocationFormatter].
@@ -96,8 +98,16 @@ class DefaultDownloadLocationFormatter(
     private fun formatExternalStorageTreeUri(uri: Uri): String {
         val documentId = fileUtils.getTreeDocumentId(uri) ?: return uri.toString()
         val decodedId = URLDecoder.decode(documentId, "UTF-8")
-        val path = decodedId.substringAfter("primary:", decodedId)
-        val finalPath = path.removePrefix("Download/")
-        return "~/$finalPath"
+        val volumeId = decodedId.substringBefore(DELIMITER, "")
+        val path = decodedId.substringAfter(DELIMITER, decodedId)
+
+        val volumeName = fileUtils.getExternalStorageVolumeName(volumeId)
+        return if (volumeName.isNullOrBlank() && path.isBlank()) {
+            "~/"
+        } else if (volumeName.isNullOrBlank() || volumeId.equals(PRIMARY_VOLUME_ID, ignoreCase = true)) {
+            "~/$path"
+        } else {
+            "/$volumeName/$path"
+        }
     }
 }

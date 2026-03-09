@@ -67,8 +67,9 @@ class DefaultDownloadLocationFormatterTest {
     @Test
     fun `GIVEN an SAF tree URI inside Downloads, WHEN getFriendlyPath is called, THEN it should be formatted correctly`() {
         val treeUri = "content://com.android.externalstorage.documents/tree/primary%3AMovies"
+        val documentId = "primary:Movies"
 
-        val fakeAndroidFileUtils = FakeAndroidFileUtils(getTreeDocumentId = { treeUri })
+        val fakeAndroidFileUtils = FakeAndroidFileUtils(getTreeDocumentId = { documentId })
         val formatter = DefaultDownloadLocationFormatter(fakeAndroidFileUtils)
 
         val friendlyPath = formatter.getFriendlyPath(treeUri)
@@ -80,7 +81,8 @@ class DefaultDownloadLocationFormatterTest {
     fun `GIVEN an SAF tree URI at the root of Downloads, WHEN getFriendlyPath is called, THEN it should be formatted correctly`() {
         val treeUri =
             "content://com.android.externalstorage.documents/tree/primary%3ADownload"
-        val fakeAndroidFileUtils = FakeAndroidFileUtils(getTreeDocumentId = { treeUri })
+        val documentId = "primary:Download"
+        val fakeAndroidFileUtils = FakeAndroidFileUtils(getTreeDocumentId = { documentId })
         val formatter = DefaultDownloadLocationFormatter(fakeAndroidFileUtils)
 
         val friendlyPath = formatter.getFriendlyPath(treeUri)
@@ -92,12 +94,60 @@ class DefaultDownloadLocationFormatterTest {
     fun `GIVEN an SAF tree URI outside of Downloads, WHEN getFriendlyPath is called, THEN it should be formatted correctly`() {
         val treeUri =
             "content://com.android.externalstorage.documents/tree/primary%3ADownload"
-        val fakeAndroidFileUtils = FakeAndroidFileUtils(getTreeDocumentId = { treeUri })
+        val documentId = "primary:Download"
+        val fakeAndroidFileUtils = FakeAndroidFileUtils(getTreeDocumentId = { documentId })
         val formatter = DefaultDownloadLocationFormatter(fakeAndroidFileUtils)
 
         val friendlyPath = formatter.getFriendlyPath(treeUri)
 
         assertEquals("~/Download", friendlyPath)
+    }
+
+    @Test
+    fun `GIVEN an SAF tree URI on SD card, WHEN getFriendlyPath is called, THEN it should include SD card label`() {
+        val treeUri = "content://com.android.externalstorage.documents/tree/4077-1317%3AFenix"
+        val documentId = "4077-1317:Fenix"
+        val fakeAndroidFileUtils = FakeAndroidFileUtils(
+            getTreeDocumentId = { documentId },
+            getExternalStorageVolumeName = { "SD card" },
+        )
+        val formatter = DefaultDownloadLocationFormatter(fakeAndroidFileUtils)
+
+        val friendlyPath = formatter.getFriendlyPath(treeUri)
+
+        assertEquals("/SD card/Fenix", friendlyPath)
+    }
+
+    @Test
+    fun `GIVEN an SAF tree URI at SD card root, WHEN getFriendlyPath is called, THEN it should include only SD card label`() {
+        val treeUri =
+            "content://com.android.externalstorage.documents/tree/4077-1317%3A"
+        val documentId = "4077-1317:"
+        val fakeAndroidFileUtils = FakeAndroidFileUtils(
+            getTreeDocumentId = { documentId },
+            getExternalStorageVolumeName = { "SD card" },
+        )
+        val formatter = DefaultDownloadLocationFormatter(fakeAndroidFileUtils)
+
+        val friendlyPath = formatter.getFriendlyPath(treeUri)
+
+        assertEquals("/SD card/", friendlyPath)
+    }
+
+    @Test
+    fun `GIVEN an SAF tree URI with unknown volume label, WHEN getFriendlyPath is called, THEN it should fallback to path only`() {
+        val treeUri =
+            "content://com.android.externalstorage.documents/tree/4077-1317%3AFenix"
+        val documentId = "4077-1317:Fenix"
+        val fakeAndroidFileUtils = FakeAndroidFileUtils(
+            getTreeDocumentId = { documentId },
+            getExternalStorageVolumeName = { null },
+        )
+        val formatter = DefaultDownloadLocationFormatter(fakeAndroidFileUtils)
+
+        val friendlyPath = formatter.getFriendlyPath(treeUri)
+
+        assertEquals("~/Fenix", friendlyPath)
     }
 
     @Test

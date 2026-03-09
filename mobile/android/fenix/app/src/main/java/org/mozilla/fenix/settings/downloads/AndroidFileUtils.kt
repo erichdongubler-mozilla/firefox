@@ -45,4 +45,9 @@ interface AndroidFileUtils {
      * @param uri The URI to check for permissions.
      */
     fun hasUriPermission(uri: Uri): Boolean
+
+    /**
+     * Resolves a user-visible volume label for an external storage volume ID.
+     */
+    fun getExternalStorageVolumeName(volumeId: String): String?
 }

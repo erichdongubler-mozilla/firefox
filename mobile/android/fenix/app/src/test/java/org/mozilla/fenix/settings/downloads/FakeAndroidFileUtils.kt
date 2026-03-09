@@ -13,6 +13,7 @@ internal class FakeAndroidFileUtils(
     private val getTreeDocumentId: (Uri) -> String = { "getTreeDocumentId" },
     private val getTreeUriName: (Uri) -> String? = { "getTreeUriName" },
     private val hasUriPermission: (Uri) -> Boolean = { true },
+    private val getExternalStorageVolumeName: (String) -> String? = { null },
 ) : AndroidFileUtils {
     override val externalStorageDirectory: File
         get() = Environment.getExternalStorageDirectory()
@@ -34,5 +35,9 @@ internal class FakeAndroidFileUtils(
 
     override fun hasUriPermission(uri: Uri): Boolean {
         return hasUriPermission.invoke(uri)
+    }
+
+    override fun getExternalStorageVolumeName(volumeId: String): String? {
+        return getExternalStorageVolumeName.invoke(volumeId)
     }
 }
