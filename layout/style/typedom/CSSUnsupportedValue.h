@@ -18,6 +18,7 @@ class nsISupports;
 namespace mozilla {
 
 class DeclarationBlock;
+struct StyleUnsupportedValue;
 
 namespace dom {
 
@@ -32,6 +33,10 @@ class CSSUnsupportedValue final : public CSSStyleValue {
   CSSUnsupportedValue(nsCOMPtr<nsISupports> aParent,
                       const CSSPropertyId& aPropertyId,
                       RefPtr<DeclarationBlock> aDeclarations);
+
+  static RefPtr<CSSUnsupportedValue> Create(
+      nsCOMPtr<nsISupports> aParent, const CSSPropertyId& aPropertyId,
+      StyleUnsupportedValue&& aUnsupportedValue);
 
   const CSSPropertyId& GetPropertyId() const { return mPropertyId; }
 

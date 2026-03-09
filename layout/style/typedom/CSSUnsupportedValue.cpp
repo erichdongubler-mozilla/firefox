@@ -8,6 +8,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/DeclarationBlock.h"
+#include "mozilla/ServoStyleConsts.h"
 
 namespace mozilla::dom {
 
@@ -17,6 +18,16 @@ CSSUnsupportedValue::CSSUnsupportedValue(nsCOMPtr<nsISupports> aParent,
     : CSSStyleValue(std::move(aParent), StyleValueType::UnsupportedValue),
       mPropertyId(aPropertyId),
       mDeclarations(std::move(aDeclarations)) {}
+
+// static
+RefPtr<CSSUnsupportedValue> CSSUnsupportedValue::Create(
+    nsCOMPtr<nsISupports> aParent, const CSSPropertyId& aPropertyId,
+    StyleUnsupportedValue&& aUnsupportedValue) {
+  auto block = MakeRefPtr<DeclarationBlock>(aUnsupportedValue._0.Consume());
+
+  return MakeRefPtr<CSSUnsupportedValue>(std::move(aParent), aPropertyId,
+                                         std::move(block));
+}
 
 void CSSUnsupportedValue::ToCssTextWithProperty(
     const CSSPropertyId& aPropertyId, nsACString& aDest) const {
