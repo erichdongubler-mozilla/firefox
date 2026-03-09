@@ -30,7 +30,6 @@
 #  include "jit/riscv64/Simulator-riscv64.h"
 
 #  include "mozilla/Casting.h"
-#  include "mozilla/IntegerPrintfMacros.h"
 
 #  include <cinttypes>
 #  include <float.h>
@@ -39,13 +38,11 @@
 
 #  include "jit/AtomicOperations.h"
 #  include "jit/riscv64/Assembler-riscv64.h"
-#  include "js/Conversions.h"
 #  include "js/UniquePtr.h"
 #  include "js/Utility.h"
 #  include "threading/LockGuard.h"
 #  include "vm/JSContext.h"
 #  include "vm/Runtime.h"
-#  include "wasm/WasmInstance.h"
 #  include "wasm/WasmSignalHandlers.h"
 
 #  define I8(v) static_cast<int8_t>(v)

@@ -13,12 +13,8 @@
 //===----------------------------------------------------------------------===//
 #include "mozilla/MathAlgorithms.h"
 
-#include "gc/Marking.h"
-#include "jit/AutoWritableJitCode.h"
-#include "jit/ExecutableAllocator.h"
 #include "jit/riscv64/Assembler-riscv64.h"
-#include "jit/riscv64/disasm/Disasm-riscv64.h"
-#include "vm/Realm.h"
+
 namespace js {
 namespace jit {
 void Assembler::RecursiveLi(Register rd, int64_t imm) {

@@ -15,7 +15,6 @@
 #include "jit/JitRuntime.h"
 #include "jit/MacroAssembler.h"
 #include "jit/MoveEmitter.h"
-#include "jit/riscv64/SharedICRegisters-riscv64.h"
 #include "util/Memory.h"
 #include "util/PortableMath.h"
 #include "vm/JitActivation.h"  // jit::JitActivation

@@ -44,10 +44,7 @@
 
 #include "gc/Marking.h"
 #include "jit/AutoWritableJitCode.h"
-#include "jit/ExecutableAllocator.h"
 #include "jit/riscv64/disasm/Disasm-riscv64.h"
-#include "vm/Realm.h"
-#include "wasm/WasmFrame.h"
 
 #if defined(__linux__) && !defined(JS_SIMULATOR_RISCV64)
 #  include <sys/syscall.h>

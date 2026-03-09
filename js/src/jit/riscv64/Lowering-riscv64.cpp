@@ -11,7 +11,6 @@
 #include "jit/Lowering.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
-#include "jit/riscv64/Assembler-riscv64.h"
 
 #include "jit/shared/Lowering-shared-inl.h"
 

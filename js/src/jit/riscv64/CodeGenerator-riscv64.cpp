@@ -8,19 +8,14 @@
 
 #include "mozilla/MathAlgorithms.h"
 
-#include "builtin/Number.h"
 #include "jit/CodeGenerator.h"
 #include "jit/InlineScriptTree.h"
 #include "jit/JitRuntime.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
 #include "jit/MIRGraph.h"
-#include "vm/JSContext.h"
-#include "vm/Realm.h"
-#include "vm/Shape.h"
 
 #include "jit/shared/CodeGenerator-shared-inl.h"
-#include "vm/JSScript-inl.h"
 
 using namespace js;
 using namespace js::jit;
