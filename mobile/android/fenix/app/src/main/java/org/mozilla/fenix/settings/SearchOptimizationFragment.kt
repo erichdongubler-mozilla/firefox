@@ -30,11 +30,13 @@ class SearchOptimizationFragment : PreferenceFragmentCompat() {
             ChildPreferenceConfig(
                 preference = R.string.pref_key_search_optimization_stocks,
                 isChecked = settings.shouldShowSearchOptimizationStockCard,
+                onEnable = { settings.shouldShowSearchOptimizationStockCard = true },
                 onDisable = { settings.shouldShowSearchOptimizationStockCard = false },
             ),
             ChildPreferenceConfig(
                 preference = R.string.pref_key_search_optimization_sports,
                 isChecked = settings.shouldShowSearchOptimizationSportCard,
+                onEnable = { settings.shouldShowSearchOptimizationSportCard = true },
                 onDisable = { settings.shouldShowSearchOptimizationSportCard = false },
             ),
         )
@@ -44,8 +46,14 @@ class SearchOptimizationFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
                 (newValue as? Boolean)?.let { newOption ->
                     settings.isSearchOptimizationEnabled = newOption
-                    childPreferences.forEach { config ->
-                        updateChildPreference(config.preference, newOption, config.onDisable)
+                    childPreferences.forEachIndexed { index, config ->
+                        updateChildPreference(
+                            index = index,
+                            preference = config.preference,
+                            isFeatureEnabled = newOption,
+                            onEnable = config.onEnable,
+                            onDisable = config.onDisable,
+                        )
                     }
                 }
                 true
@@ -58,8 +66,10 @@ class SearchOptimizationFragment : PreferenceFragmentCompat() {
     }
 
     private fun updateChildPreference(
+        index: Int,
         preference: Int,
         isFeatureEnabled: Boolean,
+        onEnable: () -> Unit,
         onDisable: () -> Unit,
     ) {
         requirePreference<SwitchPreference>(preference).apply {
@@ -67,6 +77,11 @@ class SearchOptimizationFragment : PreferenceFragmentCompat() {
             summary = when (isFeatureEnabled) {
                 true -> null
                 false -> getString(R.string.preferences_debug_settings_search_optimization_card_summary)
+            }
+            // The first option is selected by default when the feature is enabled
+            if (index == 0 && isFeatureEnabled && !isChecked) {
+                isChecked = true
+                onEnable()
             }
             if (!isFeatureEnabled && isChecked) {
                 isChecked = false
@@ -94,6 +109,7 @@ class SearchOptimizationFragment : PreferenceFragmentCompat() {
     private data class ChildPreferenceConfig(
         val preference: Int,
         val isChecked: Boolean,
+        val onEnable: () -> Unit,
         val onDisable: () -> Unit,
     )
 }
