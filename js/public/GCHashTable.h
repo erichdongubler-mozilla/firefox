@@ -182,11 +182,9 @@ class WrappedPtrOperations<JS::GCHashMap<Args...>, Wrapper> {
   using AddPtr = typename Map::AddPtr;
   using Ptr = typename Map::Ptr;
   using Iterator = typename Map::Iterator;
-  using Range = typename Map::Range;
 
   Ptr lookup(const Lookup& l) const { return map().lookup(l); }
   Iterator iter() const { return map().iter(); }
-  Range all() const { return map().all(); }
   bool empty() const { return map().empty(); }
   uint32_t count() const { return map().count(); }
   size_t capacity() const { return map().capacity(); }
@@ -210,11 +208,7 @@ class MutableWrappedPtrOperations<JS::GCHashMap<Args...>, Wrapper>
  public:
   using AddPtr = typename Map::AddPtr;
   using ModIterator = typename Map::ModIterator;
-  struct Enum : public Map::Enum {
-    explicit Enum(Wrapper& o) : Map::Enum(o.map()) {}
-  };
   using Ptr = typename Map::Ptr;
-  using Range = typename Map::Range;
 
   void clear() { map().clear(); }
   void clearAndCompact() { map().clearAndCompact(); }
@@ -341,11 +335,9 @@ class WrappedPtrOperations<JS::GCHashSet<Args...>, Wrapper> {
   using Entry = typename Set::Entry;
   using Ptr = typename Set::Ptr;
   using Iterator = typename Set::Iterator;
-  using Range = typename Set::Range;
 
   Ptr lookup(const Lookup& l) const { return set().lookup(l); }
   Iterator iter() const { return set().iter(); }
-  Range all() const { return set().all(); }
   bool empty() const { return set().empty(); }
   uint32_t count() const { return set().count(); }
   size_t capacity() const { return set().capacity(); }
@@ -370,11 +362,7 @@ class MutableWrappedPtrOperations<JS::GCHashSet<Args...>, Wrapper>
   using AddPtr = typename Set::AddPtr;
   using Entry = typename Set::Entry;
   using ModIterator = typename Set::ModIterator;
-  struct Enum : public Set::Enum {
-    explicit Enum(Wrapper& o) : Set::Enum(o.set()) {}
-  };
   using Ptr = typename Set::Ptr;
-  using Range = typename Set::Range;
 
   void clear() { set().clear(); }
   void clearAndCompact() { set().clearAndCompact(); }
@@ -451,8 +439,8 @@ class WeakCache<
     iter.emplace(map.modIter());
     map.traceWeakEntries(trc, iter.ref());
 
-    // Potentially take a lock while the Enum's destructor is called as this can
-    // rehash/resize the table and access the store buffer.
+    // Potentially take a lock while the iterator's destructor is called as
+    // this can rehash/resize the table and access the store buffer.
     mozilla::Maybe<js::gc::AutoLockSweepingLock> lock;
     if (needsLock) {
       lock.emplace(trc->runtime());
@@ -511,24 +499,6 @@ class WeakCache<
     }
   };
 
-  class Range {
-    Iterator iter;
-
-   public:
-    explicit Range(Self& self) : iter(self) {}
-    bool empty() const { return iter.done(); }
-    const Entry& front() const { return iter.get(); }
-    void popFront() { return iter.next(); }
-  };
-
-  struct Enum : public Map::Enum {
-    explicit Enum(Self& cache) : Map::Enum(cache.map) {
-      // This operation is not allowed while barriers are in place as we
-      // may also need to enumerate the set for sweeping.
-      MOZ_ASSERT(!cache.barrierTracer);
-    }
-  };
-
   struct ModIterator : public Map::ModIterator {
     explicit ModIterator(Self& cache) : Map::ModIterator(cache.map) {
       // This operation is not allowed while barriers are in place as we
@@ -555,7 +525,6 @@ class WeakCache<
     return ptr;
   }
 
-  Range all() const { return Range(*const_cast<Self*>(this)); }
   Iterator iter() const { return Iterator(*const_cast<Self*>(this)); }
   ModIterator modIter() { return ModIterator(*this); }
 
@@ -666,9 +635,9 @@ class WeakCache<GCHashSet<T, HashPolicy, AllocPolicy>> final
     iter.emplace(set.modIter());
     set.traceWeakEntries(trc, iter.ref());
 
-    // Destroy the Enum, potentially rehashing or resizing the table. Since this
-    // can access the store buffer, we need to take a lock for this if we're
-    // called off main thread.
+    // Destroy the iterator, potentially rehashing or resizing the table. Since
+    // this can access the store buffer, we need to take a lock for this if
+    // we're called off main thread.
     mozilla::Maybe<js::gc::AutoLockSweepingLock> lock;
     if (needsLock) {
       lock.emplace(trc->runtime());
@@ -744,24 +713,6 @@ class WeakCache<GCHashSet<T, HashPolicy, AllocPolicy>> final
     }
   };
 
-  class Range {
-    Iterator iter;
-
-   public:
-    explicit Range(Self& self) : iter(self) {}
-    bool empty() const { return iter.done(); }
-    const Entry& front() const { return iter.get(); }
-    void popFront() { return iter.next(); }
-  };
-
-  struct Enum : public Set::Enum {
-    explicit Enum(Self& cache) : Set::Enum(cache.set) {
-      // This operation is not allowed while barriers are in place as we
-      // may also need to enumerate the set for sweeping.
-      MOZ_ASSERT(!cache.barrierTracer);
-    }
-  };
-
   struct ModIterator : public Set::ModIterator {
     explicit ModIterator(Self& cache) : Set::ModIterator(cache.set.modIter()) {
       // This operation is not allowed while barriers are in place as we
@@ -788,7 +739,6 @@ class WeakCache<GCHashSet<T, HashPolicy, AllocPolicy>> final
     return ptr;
   }
 
-  Range all() const { return Range(*const_cast<Self*>(this)); }
   Iterator iter() const { return Iterator(*const_cast<Self*>(this)); }
   ModIterator modIter() { return ModIterator(*this); }
 

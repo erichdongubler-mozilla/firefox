@@ -88,7 +88,6 @@ class NurseryAwareHashMap {
  public:
   using Lookup = typename MapType::Lookup;
   using Ptr = typename MapType::Ptr;
-  using Range = typename MapType::Range;
   using Iterator = typename MapType::Iterator;
   using ModIterator = typename MapType::ModIterator;
   using Entry = typename MapType::Entry;
@@ -102,7 +101,6 @@ class NurseryAwareHashMap {
   bool empty() const { return map.empty(); }
   Ptr lookup(const Lookup& l) const { return map.lookup(l); }
   void remove(Ptr p) { map.remove(p); }
-  Range all() const { return map.all(); }
   Iterator iter() const { return map.iter(); }
   ModIterator modIter() { return map.modIter(); }
   struct Enum : public MapType::Enum {

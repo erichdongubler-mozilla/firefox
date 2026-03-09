@@ -141,10 +141,8 @@ class FrozenAtomSet {
     return mSet->shallowSizeOfIncludingThis(mallocSizeOf);
   }
 
-  using Range = AtomSet::Range;
   using Iterator = AtomSet::Iterator;
 
-  AtomSet::Range all() const { return mSet->all(); }
   AtomSet::Iterator iter() const { return mSet->iter(); }
 };
 
