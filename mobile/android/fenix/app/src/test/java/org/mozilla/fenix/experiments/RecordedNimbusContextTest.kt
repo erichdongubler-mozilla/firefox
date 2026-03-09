@@ -19,8 +19,8 @@ import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.experiments.nimbus.Nimbus
 import org.mozilla.experiments.nimbus.internal.validateEventQueries
+import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
@@ -83,7 +83,7 @@ class RecordedNimbusContextTest {
     @Test
     fun `GIVEN an instance of RecordedNimbusContext WHEN record called THEN the value recorded to Glean should match the expected value`() {
         var recordedValue: JsonElement? = null
-        val job = Nimbus.Pings.nimbusTargetingContext.testBeforeNextSubmit {
+        val job = Pings.nimbus.testBeforeNextSubmit {
             recordedValue = GleanNimbus.recordedNimbusContext.testGetValue()
         }
 
@@ -95,7 +95,6 @@ class RecordedNimbusContextTest {
         )
         recordedContext.record()
 
-        Nimbus.Pings.nimbusTargetingContext.submit()
         job.join()
         assertNotNull(recordedValue)
         assertEquals(
