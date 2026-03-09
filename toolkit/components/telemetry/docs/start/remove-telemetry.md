@@ -273,7 +273,7 @@ then that means your _data_ is sensitive to ping scheduling and likely should be
 [Custom Ping](https://mozilla.github.io/glean/book/user/pings/custom.html).
 This is what the Addons team ended up needing with the
 ["addons" ping](https://dictionary.telemetry.mozilla.org/apps/firefox_desktop/pings/addons),
-since their analyses were sensitive to exactly how many reports of how many addons were receieved each day.
+since their analyses were sensitive to exactly how many reports of how many addons were received each day.
 Please [reach out][contact-us] for assistance.
 
 #### Histograms, Scalars, and other "main" ping probes SQL specifics
