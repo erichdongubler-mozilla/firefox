@@ -3419,8 +3419,7 @@ SettingGroupManager.registerGroups({
   ipprotection: {
     l10nId: "ip-protection-description",
     headingLevel: 2,
-    // TODO: Replace support url with finalized link (Bug 1993266)
-    supportPage: "ip-protection",
+    supportPage: "built-in-vpn",
     items: [
       {
         id: "ipProtectionNotOptedInSection",
