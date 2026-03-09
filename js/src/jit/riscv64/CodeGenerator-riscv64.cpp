@@ -1884,9 +1884,10 @@ void CodeGenerator::visitAsmJSStoreHeap(LAsmJSStoreHeap* ins) {
     if (size == 32) {
       masm.storeFloat32(ToFloatRegister(value),
                         BaseIndex(HeapReg, ptrReg, TimesOne));
-    } else
+    } else {
       masm.storeDouble(ToFloatRegister(value),
                        BaseIndex(HeapReg, ptrReg, TimesOne));
+    }
   } else {
     masm.ma_store(ToRegister(value), BaseIndex(HeapReg, ptrReg, TimesOne),
                   static_cast<LoadStoreSize>(size),

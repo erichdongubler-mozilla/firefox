@@ -208,9 +208,8 @@ void Assembler::RV_li(Register rd, int64_t imm) {
 int Assembler::RV_li_count(int64_t imm, bool is_get_temp_reg) {
   if (RecursiveLiCount(imm) > GeneralLiCount(imm, is_get_temp_reg)) {
     return GeneralLiCount(imm, is_get_temp_reg);
-  } else {
-    return RecursiveLiCount(imm);
   }
+  return RecursiveLiCount(imm);
 }
 
 void Assembler::GeneralLi(Register rd, int64_t imm) {
@@ -240,127 +239,126 @@ void Assembler::GeneralLi(Register rd, int64_t imm) {
       addi(rd, zero_reg, low_12);
     }
     return;
+  }
+  UseScratchRegisterScope temps(this);
+  BlockTrampolinePoolScope block_trampoline_pool(this, 8);
+  // 64-bit case: divide imm into two 32-bit parts, upper and lower
+  int64_t up_32 = imm >> 32;
+  int64_t low_32 = imm & 0xffffffffull;
+  Register temp_reg = rd;
+  // Check if a temporary register is available
+  if (up_32 == 0 || low_32 == 0) {
+    // No temp register is needed
   } else {
-    UseScratchRegisterScope temps(this);
-    BlockTrampolinePoolScope block_trampoline_pool(this, 8);
-    // 64-bit case: divide imm into two 32-bit parts, upper and lower
-    int64_t up_32 = imm >> 32;
-    int64_t low_32 = imm & 0xffffffffull;
-    Register temp_reg = rd;
-    // Check if a temporary register is available
-    if (up_32 == 0 || low_32 == 0) {
-      // No temp register is needed
-    } else {
-      temp_reg = temps.hasAvailable() ? temps.Acquire() : InvalidReg;
-    }
-    if (temp_reg != InvalidReg) {
-      // keep track of hardware behavior for lower part in sim_low
-      int64_t sim_low = 0;
-      // Build lower part
-      if (low_32 != 0) {
-        int64_t high_20 = ((low_32 + 0x800) >> 12);
-        int64_t low_12 = low_32 & 0xfff;
-        if (high_20) {
-          // Adjust to 20 bits for the case of overflow
-          high_20 &= 0xfffff;
-          sim_low = ((high_20 << 12) << 32) >> 32;
-          lui(rd, (int32_t)high_20);
-          if (low_12) {
-            sim_low += (low_12 << 52 >> 52) | low_12;
-            addi(rd, rd, low_12);
-          }
-        } else {
-          sim_low = low_12;
-          ori(rd, zero_reg, low_12);
-        }
-      }
-      if (sim_low & 0x100000000) {
-        // Bit 31 is 1. Either an overflow or a negative 64 bit
-        if (up_32 == 0) {
-          // Positive number, but overflow because of the add 0x800
-          ZeroExtendWord(rd, rd);
-          return;
-        }
-        // low_32 is a negative 64 bit after the build
-        up_32 = (up_32 - 0xffffffff) & 0xffffffff;
-      }
-      if (up_32 == 0) {
-        return;
-      }
-      // Build upper part in a temporary register
-      if (low_32 == 0) {
-        // Build upper part in rd
-        temp_reg = rd;
-      }
-      int64_t high_20 = (up_32 + 0x800) >> 12;
-      int64_t low_12 = up_32 & 0xfff;
+    temp_reg = temps.hasAvailable() ? temps.Acquire() : InvalidReg;
+  }
+  if (temp_reg != InvalidReg) {
+    // keep track of hardware behavior for lower part in sim_low
+    int64_t sim_low = 0;
+    // Build lower part
+    if (low_32 != 0) {
+      int64_t high_20 = ((low_32 + 0x800) >> 12);
+      int64_t low_12 = low_32 & 0xfff;
       if (high_20) {
         // Adjust to 20 bits for the case of overflow
         high_20 &= 0xfffff;
-        lui(temp_reg, (int32_t)high_20);
+        sim_low = ((high_20 << 12) << 32) >> 32;
+        lui(rd, (int32_t)high_20);
         if (low_12) {
-          addi(temp_reg, temp_reg, low_12);
+          sim_low += (low_12 << 52 >> 52) | low_12;
+          addi(rd, rd, low_12);
         }
       } else {
-        ori(temp_reg, zero_reg, low_12);
+        sim_low = low_12;
+        ori(rd, zero_reg, low_12);
       }
-      // Put it at the bgining of register
-      slli(temp_reg, temp_reg, 32);
-      if (low_32 != 0) {
-        add(rd, rd, temp_reg);
+    }
+    if (sim_low & 0x100000000) {
+      // Bit 31 is 1. Either an overflow or a negative 64 bit
+      if (up_32 == 0) {
+        // Positive number, but overflow because of the add 0x800
+        ZeroExtendWord(rd, rd);
+        return;
       }
+      // low_32 is a negative 64 bit after the build
+      up_32 = (up_32 - 0xffffffff) & 0xffffffff;
+    }
+    if (up_32 == 0) {
       return;
     }
-    // No temp register. Build imm in rd.
-    // Build upper 32 bits first in rd. Divide lower 32 bits parts and add
-    // parts to the upper part by doing shift and add.
-    // First build upper part in rd.
+    // Build upper part in a temporary register
+    if (low_32 == 0) {
+      // Build upper part in rd
+      temp_reg = rd;
+    }
     int64_t high_20 = (up_32 + 0x800) >> 12;
     int64_t low_12 = up_32 & 0xfff;
     if (high_20) {
       // Adjust to 20 bits for the case of overflow
       high_20 &= 0xfffff;
-      lui(rd, (int32_t)high_20);
+      lui(temp_reg, (int32_t)high_20);
       if (low_12) {
-        addi(rd, rd, low_12);
+        addi(temp_reg, temp_reg, low_12);
       }
     } else {
-      ori(rd, zero_reg, low_12);
+      ori(temp_reg, zero_reg, low_12);
     }
-    // upper part already in rd. Each part to be added to rd, has maximum of 11
-    // bits, and always starts with a 1. rd is shifted by the size of the part
-    // plus the number of zeros between the parts. Each part is added after the
-    // left shift.
-    uint32_t mask = 0x80000000;
-    int32_t shift_val = 0;
-    int32_t i;
-    for (i = 0; i < 32; i++) {
-      if ((low_32 & mask) == 0) {
-        mask >>= 1;
-        shift_val++;
-        if (i == 31) {
-          // rest is zero
-          slli(rd, rd, shift_val);
-        }
-        continue;
-      }
-      // The first 1 seen
-      int32_t part;
-      if ((i + 11) < 32) {
-        // Pick 11 bits
-        part = ((uint32_t)(low_32 << i) >> i) >> (32 - (i + 11));
-        slli(rd, rd, shift_val + 11);
-        ori(rd, rd, part);
-        i += 10;
-        mask >>= 11;
-      } else {
-        part = (uint32_t)(low_32 << i) >> i;
-        slli(rd, rd, shift_val + (32 - i));
-        ori(rd, rd, part);
-        break;
-      }
-      shift_val = 0;
+    // Put it at the bgining of register
+    slli(temp_reg, temp_reg, 32);
+    if (low_32 != 0) {
+      add(rd, rd, temp_reg);
     }
+    return;
+  }
+  // No temp register. Build imm in rd.
+  // Build upper 32 bits first in rd. Divide lower 32 bits parts and add
+  // parts to the upper part by doing shift and add.
+  // First build upper part in rd.
+  int64_t high_20 = (up_32 + 0x800) >> 12;
+  int64_t low_12 = up_32 & 0xfff;
+  if (high_20) {
+    // Adjust to 20 bits for the case of overflow
+    high_20 &= 0xfffff;
+    lui(rd, (int32_t)high_20);
+    if (low_12) {
+      addi(rd, rd, low_12);
+    }
+  } else {
+    ori(rd, zero_reg, low_12);
+  }
+  // upper part already in rd. Each part to be added to rd, has maximum of 11
+  // bits, and always starts with a 1. rd is shifted by the size of the part
+  // plus the number of zeros between the parts. Each part is added after the
+  // left shift.
+  uint32_t mask = 0x80000000;
+  int32_t shift_val = 0;
+  int32_t i;
+  for (i = 0; i < 32; i++) {
+    if ((low_32 & mask) == 0) {
+      mask >>= 1;
+      shift_val++;
+      if (i == 31) {
+        // rest is zero
+        slli(rd, rd, shift_val);
+      }
+      continue;
+    }
+    // The first 1 seen
+    int32_t part;
+    if ((i + 11) < 32) {
+      // Pick 11 bits
+      part = ((uint32_t)(low_32 << i) >> i) >> (32 - (i + 11));
+      slli(rd, rd, shift_val + 11);
+      ori(rd, rd, part);
+      i += 10;
+      mask >>= 11;
+    } else {
+      part = (uint32_t)(low_32 << i) >> i;
+      slli(rd, rd, shift_val + (32 - i));
+      ori(rd, rd, part);
+      break;
+    }
+    shift_val = 0;
   }
 }
 
@@ -380,68 +378,45 @@ int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
       count++;
     }
     return count;
-  } else {
-    // 64-bit case: divide imm into two 32-bit parts, upper and lower
-    int64_t up_32 = imm >> 32;
-    int64_t low_32 = imm & 0xffffffffull;
-    // Check if a temporary register is available
-    if (is_get_temp_reg) {
-      // keep track of hardware behavior for lower part in sim_low
-      int64_t sim_low = 0;
-      // Build lower part
-      if (low_32 != 0) {
-        int64_t high_20 = ((low_32 + 0x800) >> 12);
-        int64_t low_12 = low_32 & 0xfff;
-        if (high_20) {
-          // Adjust to 20 bits for the case of overflow
-          high_20 &= 0xfffff;
-          sim_low = ((high_20 << 12) << 32) >> 32;
-          count++;
-          if (low_12) {
-            sim_low += (low_12 << 52 >> 52) | low_12;
-            count++;
-          }
-        } else {
-          sim_low = low_12;
-          count++;
-        }
-      }
-      if (sim_low & 0x100000000) {
-        // Bit 31 is 1. Either an overflow or a negative 64 bit
-        if (up_32 == 0) {
-          // Positive number, but overflow because of the add 0x800
-          count += HasZbaExtension() ? /* zext.w */ 1 : /* slli; srli */ 2;
-          return count;
-        }
-        // low_32 is a negative 64 bit after the build
-        up_32 = (up_32 - 0xffffffff) & 0xffffffff;
-      }
-      if (up_32 == 0) {
-        return count;
-      }
-      int64_t high_20 = (up_32 + 0x800) >> 12;
-      int64_t low_12 = up_32 & 0xfff;
+  }
+  // 64-bit case: divide imm into two 32-bit parts, upper and lower
+  int64_t up_32 = imm >> 32;
+  int64_t low_32 = imm & 0xffffffffull;
+  // Check if a temporary register is available
+  if (is_get_temp_reg) {
+    // keep track of hardware behavior for lower part in sim_low
+    int64_t sim_low = 0;
+    // Build lower part
+    if (low_32 != 0) {
+      int64_t high_20 = ((low_32 + 0x800) >> 12);
+      int64_t low_12 = low_32 & 0xfff;
       if (high_20) {
         // Adjust to 20 bits for the case of overflow
         high_20 &= 0xfffff;
+        sim_low = ((high_20 << 12) << 32) >> 32;
         count++;
         if (low_12) {
+          sim_low += (low_12 << 52 >> 52) | low_12;
           count++;
         }
       } else {
+        sim_low = low_12;
         count++;
       }
-      // Put it at the bgining of register
-      count++;
-      if (low_32 != 0) {
-        count++;
+    }
+    if (sim_low & 0x100000000) {
+      // Bit 31 is 1. Either an overflow or a negative 64 bit
+      if (up_32 == 0) {
+        // Positive number, but overflow because of the add 0x800
+        count += HasZbaExtension() ? /* zext.w */ 1 : /* slli; srli */ 2;
+        return count;
       }
+      // low_32 is a negative 64 bit after the build
+      up_32 = (up_32 - 0xffffffff) & 0xffffffff;
+    }
+    if (up_32 == 0) {
       return count;
     }
-    // No temp register. Build imm in rd.
-    // Build upper 32 bits first in rd. Divide lower 32 bits parts and add
-    // parts to the upper part by doing shift and add.
-    // First build upper part in rd.
     int64_t high_20 = (up_32 + 0x800) >> 12;
     int64_t low_12 = up_32 & 0xfff;
     if (high_20) {
@@ -454,33 +429,55 @@ int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
     } else {
       count++;
     }
-    // upper part already in rd. Each part to be added to rd, has maximum of 11
-    // bits, and always starts with a 1. rd is shifted by the size of the part
-    // plus the number of zeros between the parts. Each part is added after the
-    // left shift.
-    uint32_t mask = 0x80000000;
-    int32_t i;
-    for (i = 0; i < 32; i++) {
-      if ((low_32 & mask) == 0) {
-        mask >>= 1;
-        if (i == 31) {
-          // rest is zero
-          count++;
-        }
-        continue;
+    // Put it at the bgining of register
+    count++;
+    if (low_32 != 0) {
+      count++;
+    }
+    return count;
+  }
+  // No temp register. Build imm in rd.
+  // Build upper 32 bits first in rd. Divide lower 32 bits parts and add
+  // parts to the upper part by doing shift and add.
+  // First build upper part in rd.
+  int64_t high_20 = (up_32 + 0x800) >> 12;
+  int64_t low_12 = up_32 & 0xfff;
+  if (high_20) {
+    // Adjust to 20 bits for the case of overflow
+    high_20 &= 0xfffff;
+    count++;
+    if (low_12) {
+      count++;
+    }
+  } else {
+    count++;
+  }
+  // upper part already in rd. Each part to be added to rd, has maximum of 11
+  // bits, and always starts with a 1. rd is shifted by the size of the part
+  // plus the number of zeros between the parts. Each part is added after the
+  // left shift.
+  uint32_t mask = 0x80000000;
+  int32_t i;
+  for (i = 0; i < 32; i++) {
+    if ((low_32 & mask) == 0) {
+      mask >>= 1;
+      if (i == 31) {
+        // rest is zero
+        count++;
       }
-      // The first 1 seen
-      if ((i + 11) < 32) {
-        // Pick 11 bits
-        count++;
-        count++;
-        i += 10;
-        mask >>= 11;
-      } else {
-        count++;
-        count++;
-        break;
-      }
+      continue;
+    }
+    // The first 1 seen
+    if ((i + 11) < 32) {
+      // Pick 11 bits
+      count++;
+      count++;
+      i += 10;
+      mask >>= 11;
+    } else {
+      count++;
+      count++;
+      break;
     }
   }
   return count;

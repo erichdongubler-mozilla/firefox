@@ -5118,10 +5118,9 @@ bool MacroAssemblerRiscv64::BranchShortCheck(int32_t offset, Label* L,
   if (!L) {
     MOZ_ASSERT(is_int13(offset));
     return BranchShortHelper(offset, nullptr, cond, rs, rt);
-  } else {
-    MOZ_ASSERT(offset == 0);
-    return BranchShortHelper(0, L, cond, rs, rt);
   }
+  MOZ_ASSERT(offset == 0);
+  return BranchShortHelper(0, L, cond, rs, rt);
 }
 
 void MacroAssemblerRiscv64::BranchShort(Label* L) { BranchShortHelper(0, L); }
@@ -5819,10 +5818,9 @@ void MacroAssemblerRiscv64::ma_sgeu(Register rd, Register rs, Operand rt) {
 static inline bool IsZero(const Operand& rt) {
   if (rt.is_reg()) {
     return rt.rm() == zero_reg;
-  } else {
-    MOZ_ASSERT(rt.is_imm());
-    return rt.immediate() == 0;
   }
+  MOZ_ASSERT(rt.is_imm());
+  return rt.immediate() == 0;
 }
 
 void MacroAssemblerRiscv64::ma_seq(Register rd, Register rs, Operand rt) {
