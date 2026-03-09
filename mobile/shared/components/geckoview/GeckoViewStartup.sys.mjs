@@ -36,6 +36,11 @@ const JSPROCESSACTORS = {
       ],
     },
   },
+  GeckoViewPush: {
+    parent: {
+      esModuleURI: "resource:///actors/GeckoViewPushParent.sys.mjs",
+    },
+  },
 };
 
 const JSWINDOWACTORS = {
