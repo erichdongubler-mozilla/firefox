@@ -50,7 +50,6 @@ class SparseBitSet {
   static constexpr size_t NumEntries = 8;
   using Map = InlineMap<uint32_t, WordType, NumEntries, DefaultHasher<uint32_t>,
                         AllocPolicy>;
-  using Range = typename Map::Range;
   Map map_;
 
   static_assert(mozilla::IsPowerOfTwo(BitsPerWord),
@@ -100,9 +99,9 @@ class SparseBitSet {
   bool empty() const { return map_.empty(); }
 
   [[nodiscard]] bool insertAll(const SparseBitSet& other) {
-    for (Range r(other.map_.all()); !r.empty(); r.popFront()) {
-      auto index = r.front().key();
-      WordType bits = r.front().value();
+    for (auto iter = other.map_.iter(); !iter.done(); iter.next()) {
+      auto index = iter.get().key();
+      WordType bits = iter.get().value();
       MOZ_ASSERT(bits);
       auto p = map_.lookupForAdd(index);
       if (p) {
@@ -130,13 +129,13 @@ class SparseBitSet<AllocPolicy, Owner>::Iterator {
 #ifdef DEBUG
   SparseBitSet& bitSet_;
 #endif
-  SparseBitSet::Range range_;
+  typename SparseBitSet::Map::Iterator iter_;
   WordType currentWord_ = 0;
   // Index of a 1-bit in the SparseBitSet. This is the value returned by
   // |*iter|.
   size_t index_ = 0;
 
-  bool done() const { return range_.empty(); }
+  bool done() const { return iter_.done(); }
 
   void skipZeroBits() {
     MOZ_ASSERT(!done());
@@ -152,10 +151,10 @@ class SparseBitSet<AllocPolicy, Owner>::Iterator {
 #ifdef DEBUG
         bitSet_(bitSet),
 #endif
-        range_(bitSet.map_.all()) {
-    if (!range_.empty()) {
-      index_ = range_.front().key() * BitsPerWord;
-      currentWord_ = range_.front().value();
+        iter_(bitSet.map_.iter()) {
+    if (!iter_.done()) {
+      index_ = iter_.get().key() * BitsPerWord;
+      currentWord_ = iter_.get().value();
       skipZeroBits();
     }
   }
@@ -172,13 +171,13 @@ class SparseBitSet<AllocPolicy, Owner>::Iterator {
     MOZ_ASSERT(!done());
     currentWord_ >>= 1;
     if (currentWord_ == 0) {
-      range_.popFront();
-      if (range_.empty()) {
+      iter_.next();
+      if (iter_.done()) {
         // Done iterating.
         return;
       }
-      index_ = range_.front().key() * BitsPerWord;
-      currentWord_ = range_.front().value();
+      index_ = iter_.get().key() * BitsPerWord;
+      currentWord_ = iter_.get().value();
     } else {
       index_++;
     }

@@ -880,8 +880,8 @@ static bool UsesExtraBindings(GlobalSharedContext* globalsc,
       continue;
     }
 
-    for (auto r = usedNameMap.all(); !r.empty(); r.popFront()) {
-      const auto& item = r.front();
+    for (auto iter = usedNameMap.iter(); !iter.done(); iter.next()) {
+      const auto& item = iter.get();
       const auto& name = item.key();
       if (bindingInfo.nameIndex != name) {
         continue;

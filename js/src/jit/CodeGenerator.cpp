@@ -17633,8 +17633,8 @@ bool CodeGenerator::link(JSContext* cx) {
   }
 
   IonScriptKey ionScriptKey(script, compilationId);
-  for (auto r(tracker.dependencies.all()); !r.empty(); r.popFront()) {
-    CompilationDependency* dep = r.front();
+  for (auto iter = tracker.dependencies.iter(); !iter.done(); iter.next()) {
+    CompilationDependency* dep = iter.get();
     if (!dep->registerDependency(cx, ionScriptKey)) {
       return false;
     }
