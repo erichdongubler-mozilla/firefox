@@ -5105,9 +5105,9 @@ bool MacroAssemblerRiscv64::BranchShortHelper(int32_t offset, Label* L,
 }
 
 // BRANCH_ARGS_CHECK checks that conditional jump arguments are correct.
-#define BRANCH_ARGS_CHECK(cond, rs, rt)                           \
-  MOZ_ASSERT((cond == Always && rs == zero && rt.rm() == zero) || \
-             (cond != Always && (rs != zero || rt.rm() != zero)))
+#define BRANCH_ARGS_CHECK(cond, rs, rt)                                 \
+  MOZ_ASSERT(((cond) == Always && (rs) == zero && (rt).rm() == zero) || \
+             ((cond) != Always && ((rs) != zero || (rt).rm() != zero)))
 
 bool MacroAssemblerRiscv64::BranchShortCheck(int32_t offset, Label* L,
                                              Condition cond, Register rs,

@@ -241,7 +241,7 @@ using sfreg_t = int64_t;
 #    define zext_xlen(x) (((reg_t)(x) << (32 - xlen)) >> (32 - xlen))
 #  endif
 
-#  define BIT(n) (0x1LL << n)
+#  define BIT(n) (0x1LL << (n))
 #  define QUIET_BIT_S(nan) (bit_cast<int32_t>(nan) & BIT(22))
 #  define QUIET_BIT_D(nan) (bit_cast<int64_t>(nan) & BIT(51))
 static inline bool isSnan(float fp) { return !QUIET_BIT_S(fp); }
