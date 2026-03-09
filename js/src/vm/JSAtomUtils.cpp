@@ -290,13 +290,13 @@ void js::TraceAtoms(JSTracer* trc) {
 }
 
 void AtomsTable::traceWeak(JSTracer* trc) {
-  for (AtomSet::Enum e(atoms); !e.empty(); e.popFront()) {
-    JSAtom* atom = e.front().unbarrieredGet();
+  for (auto iter = atoms.modIter(); !iter.done(); iter.next()) {
+    JSAtom* atom = iter.get().unbarrieredGet();
     MOZ_DIAGNOSTIC_ASSERT(atom);
     if (!TraceManuallyBarrieredWeakEdge(trc, &atom, "AtomsTable::atoms")) {
-      e.removeFront();
+      iter.remove();
     } else {
-      MOZ_ASSERT(atom == e.front().unbarrieredGet());
+      MOZ_ASSERT(atom == iter.get().unbarrieredGet());
     }
   }
 }

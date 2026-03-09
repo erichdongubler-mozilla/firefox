@@ -3591,10 +3591,10 @@ void InnerViewTable::sweepAfterMinorGC(JSTracer* trc) {
   }
 
   // Otherwise look at every map entry.
-  for (ArrayBufferViewMap::Enum e(map); !e.empty(); e.popFront()) {
-    MOZ_ASSERT(!gc::IsInsideNursery(e.front().key()));
-    if (!sweepViewsAfterMinorGC(trc, e.front().key(), e.front().value())) {
-      e.removeFront();
+  for (auto iter = map.modIter(); !iter.done(); iter.next()) {
+    MOZ_ASSERT(!gc::IsInsideNursery(iter.get().key()));
+    if (!sweepViewsAfterMinorGC(trc, iter.get().key(), iter.get().value())) {
+      iter.remove();
     }
   }
 }

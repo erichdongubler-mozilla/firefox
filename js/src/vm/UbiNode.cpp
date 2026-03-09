@@ -387,8 +387,8 @@ std::pair<bool, JS::AutoCheckCannotGC> RootList::init(
   EdgeVectorTracer tracer(cx->runtime(), &allRootEdges, wantNames);
 
   ZoneSet debuggeeZones;
-  for (auto range = debuggees.all(); !range.empty(); range.popFront()) {
-    if (!debuggeeZones.put(range.front()->zone())) {
+  for (auto iter = debuggees.iter(); !iter.done(); iter.next()) {
+    if (!debuggeeZones.put(iter.get()->zone())) {
       return {false, JS::AutoCheckCannotGC(cx)};
     }
   }

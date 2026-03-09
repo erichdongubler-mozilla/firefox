@@ -433,11 +433,11 @@ void GeckoProfilerThread::trace(JSTracer* trc) {
 }
 
 void GeckoProfilerRuntime::fixupStringsMapAfterMovingGC() {
-  for (ProfileStringMap::Enum e(strings()); !e.empty(); e.popFront()) {
-    BaseScript* script = e.front().key();
+  for (auto iter = strings().modIter(); !iter.done(); iter.next()) {
+    BaseScript* script = iter.get().key();
     if (IsForwarded(script)) {
       script = Forwarded(script);
-      e.rekeyFront(script);
+      iter.rekey(script);
     }
   }
 }
