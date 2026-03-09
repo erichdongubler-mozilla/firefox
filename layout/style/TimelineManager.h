@@ -27,17 +27,18 @@ class ViewTimeline;
 
 class TimelineManager {
  public:
-  explicit TimelineManager(nsPresContext* aPresContext)
-      : mPresContext(aPresContext) {}
+  explicit TimelineManager(nsPresContext* aPresContext);
 
   ~TimelineManager() {
     MOZ_ASSERT(!mPresContext, "Disconnect should have been called");
   }
 
   void Disconnect() {
+    mScrollTimelineNameMap.Clear();
     while (auto* head = mScrollTimelineCollections.getFirst()) {
       head->Destroy();
     }
+    mViewTimelineNameMap.Clear();
     while (auto* head = mViewTimelineCollections.getFirst()) {
       head->Destroy();
     }
@@ -58,6 +59,18 @@ class TimelineManager {
                             const ComputedStyle* aComputedStyle);
 
  private:
+  template <typename TimelineType>
+  using Timelines = nsTArray<RefPtr<TimelineType>>;
+  // Mapping from timeline names to timelines of that name. Depending on
+  // the use of `timeline-scope`, may or may not be visible from the
+  // element specifying `animation-timeline`.
+  template <typename TimelineType>
+  using TimelineNameMap =
+      nsTHashMap<RefPtr<const nsAtom>, Timelines<TimelineType>>;
+  template <typename TimelineType>
+  using TimelineTargetsIter =
+      TimelineManager::Timelines<TimelineType>::const_iterator;
+
   struct TimelineScopeEntry {
     RefPtr<const dom::Element> mElement;
     nsTArray<RefPtr<nsAtom>> mNames;
@@ -71,14 +84,49 @@ class TimelineManager {
   void DoUpdateTimelines(nsPresContext* aPresContext, dom::Element* aElement,
                          const PseudoStyleRequest& aPseudoRequest,
                          const nsStyleAutoArray<StyleType>& aStyleTimelines,
-                         size_t aTimelineCount);
+                         size_t aTimelineCount,
+                         TimelineNameMap<TimelineType>& aTimelineNameMap);
 
   template <typename T>
   void AddTimelineCollection(TimelineCollection<T>* aCollection);
 
+  // Find a timeline target in the given timeline collection matching
+  // the (pseudo) element.
+  template <typename TimelineType>
+  static TimelineTargetsIter<TimelineType> FindInTimelineTargets(
+      Timelines<TimelineType>& aTimelineTargets, const dom::Element* aElement,
+      const PseudoStyleRequest& aPseudoRequest);
+
+  // Remove given (pseudo) element's named timeline from the name map.
+  template <typename TimelineType>
+  static void RemoveTimelineTargetByName(
+      const nsAtom* aName, const dom::Element* aElement,
+      const PseudoStyleRequest& aPseudoRequest,
+      TimelineNameMap<TimelineType>& aTimelineNameMap);
+
+  // Destroy all timelines relating to the given (pseudo) element.
+  template <typename TimelineType>
+  static void TryDestroyTimeline(
+      dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest,
+      TimelineNameMap<TimelineType>& aTimelineNameMap);
+
+#ifdef DEBUG
+  // Assert that we do not have a timeline target for the given (pseudo) element
+  // in the given range.
+  template <typename TimelineType>
+  static void EnsureNoTimelineTarget(
+      const TimelineTargetsIter<TimelineType>& aStart,
+      const TimelineTargetsIter<TimelineType>& aEnd,
+      const dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest);
+#endif
+
   LinkedList<TimelineCollection<dom::ScrollTimeline>>
       mScrollTimelineCollections;
+  // Map containing all named scroll timelines, keyed by their names.
+  TimelineNameMap<dom::ScrollTimeline> mScrollTimelineNameMap;
   LinkedList<TimelineCollection<dom::ViewTimeline>> mViewTimelineCollections;
+  // Map containing all named view timelines, keyed by their names.
+  TimelineNameMap<dom::ViewTimeline> mViewTimelineNameMap;
   TimelineScopes mTimelineScopes;
   nsPresContext* mPresContext;
 };

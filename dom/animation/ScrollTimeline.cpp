@@ -160,6 +160,12 @@ void ScrollTimeline::WillRefresh() {
   Tick(dummyState);
 }
 
+bool ScrollTimeline::SourceMatches(
+    const Element* aElement, const PseudoStyleRequest& aPseudoRequest) const {
+  return mSource.mElement == aElement &&
+         mSource.mPseudoType == aPseudoRequest.mType;
+}
+
 layers::ScrollDirection ScrollTimeline::Axis() const {
   MOZ_ASSERT(mSource && mSource.mElement->GetPrimaryFrame());
 

@@ -17,13 +17,82 @@ using dom::Element;
 using dom::ScrollTimeline;
 using dom::ViewTimeline;
 
+TimelineManager::TimelineManager(nsPresContext* aPresContext)
+    : mPresContext(aPresContext) {}
+
 template <typename TimelineType>
-static void TryDestroyTimeline(Element* aElement,
-                               const PseudoStyleRequest& aPseudoRequest) {
+struct TimelineSourceMatches {
+  bool operator()(const TimelineType* aTimeline) {
+    return aTimeline->SourceMatches(mElement, mPseudoRequest);
+  }
+
+  const Element* mElement;
+  const PseudoStyleRequest& mPseudoRequest;
+};
+
+#ifdef DEBUG
+template <typename TimelineType>
+void TimelineManager::EnsureNoTimelineTarget(
+    const TimelineTargetsIter<TimelineType>& aStart,
+    const TimelineTargetsIter<TimelineType>& aEnd, const Element* aElement,
+    const PseudoStyleRequest& aPseudoRequest) {
+  const auto duplicateIt = std::find_if(
+      aStart, aEnd,
+      TimelineSourceMatches<TimelineType>{aElement, aPseudoRequest});
+  // We should have one entry of the name for each target (See
+  // `BuildTimelines`).
+  MOZ_ASSERT(duplicateIt == aEnd, "Unexpected timeline target entry?");
+}
+#endif
+
+template <typename TimelineType>
+auto TimelineManager::FindInTimelineTargets(
+    Timelines<TimelineType>& aTimelineTargets, const Element* aElement,
+    const PseudoStyleRequest& aPseudoRequest)
+    -> TimelineTargetsIter<TimelineType> {
+  return std::find_if(
+      aTimelineTargets.cbegin(), aTimelineTargets.cend(),
+      TimelineSourceMatches<TimelineType>{aElement, aPseudoRequest});
+}
+
+template <typename TimelineType>
+void TimelineManager::RemoveTimelineTargetByName(
+    const nsAtom* aName, const Element* aElement,
+    const PseudoStyleRequest& aPseudoRequest,
+    TimelineNameMap<TimelineType>& aTimelineNameMap) {
+  auto result = aTimelineNameMap.Lookup(aName);
+  if (!result) {
+    MOZ_ASSERT_UNREACHABLE("Trying to erase a non-existing timeline");
+    return;
+  }
+  auto& targets = result.Data();
+  MOZ_ASSERT(!targets.IsEmpty(), "Keeping an empty timeline list in map?");
+  auto foundIt = FindInTimelineTargets(targets, aElement, aPseudoRequest);
+  if (foundIt != targets.cend()) {
+    DebugOnly<TimelineTargetsIter<TimelineType>> afterIt =
+        targets.RemoveElementAt(foundIt);
+#ifdef DEBUG
+    EnsureNoTimelineTarget<TimelineType>(afterIt.value, targets.cend(),
+                                         aElement, aPseudoRequest);
+#endif
+  }
+  if (targets.IsEmpty()) {
+    aTimelineNameMap.Remove(aName);
+  }
+}
+
+template <typename TimelineType>
+void TimelineManager::TryDestroyTimeline(
+    Element* aElement, const PseudoStyleRequest& aPseudoRequest,
+    TimelineNameMap<TimelineType>& aTimelineNameMap) {
   auto* collection =
       TimelineCollection<TimelineType>::Get(aElement, aPseudoRequest);
   if (!collection) {
     return;
+  }
+  for (const auto& name : collection->Timelines().Keys()) {
+    RemoveTimelineTargetByName(name, aElement, aPseudoRequest,
+                               aTimelineNameMap);
   }
   collection->Destroy();
 }
@@ -47,24 +116,28 @@ void TimelineManager::UpdateTimelines(Element* aElement,
   switch (aType) {
     case ProgressTimelineType::Scroll:
       if (shouldDestroyTimelines) {
-        TryDestroyTimeline<ScrollTimeline>(aElement, aPseudoRequest);
+        TryDestroyTimeline<ScrollTimeline>(aElement, aPseudoRequest,
+                                           mScrollTimelineNameMap);
         return;
       }
       DoUpdateTimelines<StyleScrollTimeline, ScrollTimeline>(
           mPresContext, aElement, aPseudoRequest,
           aComputedStyle->StyleUIReset()->mScrollTimelines,
-          aComputedStyle->StyleUIReset()->mScrollTimelineNameCount);
+          aComputedStyle->StyleUIReset()->mScrollTimelineNameCount,
+          mScrollTimelineNameMap);
       break;
 
     case ProgressTimelineType::View:
       if (shouldDestroyTimelines) {
-        TryDestroyTimeline<ViewTimeline>(aElement, aPseudoRequest);
+        TryDestroyTimeline<ViewTimeline>(aElement, aPseudoRequest,
+                                         mViewTimelineNameMap);
         return;
       }
       DoUpdateTimelines<StyleViewTimeline, ViewTimeline>(
           mPresContext, aElement, aPseudoRequest,
           aComputedStyle->StyleUIReset()->mViewTimelines,
-          aComputedStyle->StyleUIReset()->mViewTimelineNameCount);
+          aComputedStyle->StyleUIReset()->mViewTimelineNameCount,
+          mViewTimelineNameMap);
       break;
   }
 }
@@ -122,9 +195,8 @@ static auto BuildTimelines(nsPresContext* aPresContext, Element* aElement,
                            TimelineCollection<TimelineType>* aCollection) {
   typename TimelineCollection<TimelineType>::TimelineMap result;
   // If multiple timelines are attempting to modify the same property, then the
-  // timeline closest to the end of the list of names wins.
-  // The spec doesn't mention this specifically for scroll-timeline-name and
-  // view-timeline-name, so we follow the same rule with animation-name.
+  // timeline closest to the end of the list of names wins [1].
+  // [1]: https://drafts.csswg.org/scroll-animations-1/#timeline-scoping
   for (size_t idx = 0; idx < aTimelineCount; ++idx) {
     const StyleType& timeline = aTimelines[idx];
     if (timeline.GetName() == nsGkAtoms::_empty) {
@@ -169,7 +241,8 @@ template <typename StyleType, typename TimelineType>
 void TimelineManager::DoUpdateTimelines(
     nsPresContext* aPresContext, Element* aElement,
     const PseudoStyleRequest& aPseudoRequest,
-    const nsStyleAutoArray<StyleType>& aStyleTimelines, size_t aTimelineCount) {
+    const nsStyleAutoArray<StyleType>& aStyleTimelines, size_t aTimelineCount,
+    TimelineNameMap<TimelineType>& aTimelineNameMap) {
   auto* collection =
       TimelineCollection<TimelineType>::Get(aElement, aPseudoRequest);
   if (!collection && aTimelineCount == 1 &&
@@ -185,6 +258,10 @@ void TimelineManager::DoUpdateTimelines(
 
   if (newTimelines.IsEmpty()) {
     if (collection) {
+      for (const auto& name : collection->Timelines().Keys()) {
+        RemoveTimelineTargetByName(name, aElement, aPseudoRequest,
+                                   aTimelineNameMap);
+      }
       collection->Destroy();
     }
     return;
@@ -198,8 +275,28 @@ void TimelineManager::DoUpdateTimelines(
     }
   }
 
+  for (const auto& removed : collection->Timelines().Keys()) {
+    RemoveTimelineTargetByName(removed, aElement, aPseudoRequest,
+                               aTimelineNameMap);
+  }
+
   // Replace unused timeline with new ones.
   collection->Swap(newTimelines);
+
+  for (auto addedOrExisting = collection->Timelines().ConstIter();
+       !addedOrExisting.Done(); addedOrExisting.Next()) {
+    auto& targets = aTimelineNameMap.LookupOrInsert(addedOrExisting.Key(),
+                                                    Timelines<TimelineType>{});
+    auto foundIt = FindInTimelineTargets(targets, aElement, aPseudoRequest);
+    if (foundIt != targets.cend()) {
+#ifdef DEBUG
+      EnsureNoTimelineTarget<TimelineType>(foundIt + 1, targets.cend(),
+                                           aElement, aPseudoRequest);
+#endif
+      continue;
+    }
+    targets.AppendElement(addedOrExisting.Data());
+  }
 
   // FIXME: Bug 1774060. We may have to restyle the animations which use the
   // dropped timelines. Or rely on restyling the subtree and the following
