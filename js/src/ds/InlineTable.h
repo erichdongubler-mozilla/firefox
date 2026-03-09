@@ -420,25 +420,6 @@ class MOZ_STANDALONE_DEBUG InlineTable : private AllocPolicy {
     }
   };
 
-  class Range : public Iterator {
-    friend class InlineTable;
-
-   public:
-    Range(const InlineTable& table, TableIterator iter)
-        : Iterator(table, iter) {}
-    Range(const InlineTable& table, const InlineEntry* begin,
-          const InlineEntry* end)
-        : Iterator(table, begin, end) {}
-    bool empty() const { return this->done(); }
-    Entry front() { return this->get(); }
-    void popFront() { this->next(); }
-  };
-
-  Range all() const {
-    return usingTable() ? Range(*this, table().iter())
-                        : Range(*this, inlineStart(), inlineEnd());
-  }
-
   Iterator iter() const {
     return usingTable() ? Iterator(*this, table().iter())
                         : Iterator(*this, inlineStart(), inlineEnd());
@@ -514,7 +495,6 @@ class MOZ_STANDALONE_DEBUG InlineMap {
   using Table = Map;
   using Ptr = typename Impl::Ptr;
   using AddPtr = typename Impl::AddPtr;
-  using Range = typename Impl::Range;
   using Iterator = typename Impl::Iterator;
   using Lookup = typename HashPolicy::Lookup;
 
@@ -529,7 +509,6 @@ class MOZ_STANDALONE_DEBUG InlineMap {
   void clear() { impl_.clear(); }
   void clearAndCompact() { impl_.clearAndCompact(); }
 
-  Range all() const { return impl_.all(); }
   Iterator iter() const { return impl_.iter(); }
 
   MOZ_ALWAYS_INLINE
@@ -620,7 +599,6 @@ class InlineSet {
   using Table = Set;
   using Ptr = typename Impl::Ptr;
   using AddPtr = typename Impl::AddPtr;
-  using Range = typename Impl::Range;
   using Iterator = typename Impl::Iterator;
   using Lookup = typename HashPolicy::Lookup;
 
@@ -635,7 +613,6 @@ class InlineSet {
   void clear() { impl_.clear(); }
   void clearAndCompact() { impl_.clearAndCompact(); }
 
-  Range all() const { return impl_.all(); }
   Iterator iter() const { return impl_.iter(); }
 
   MOZ_ALWAYS_INLINE
