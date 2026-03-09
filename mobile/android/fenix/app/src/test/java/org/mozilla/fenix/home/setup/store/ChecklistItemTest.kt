@@ -5,8 +5,8 @@
 package org.mozilla.fenix.home.setup.store
 
 import androidx.annotation.StringRes
-import mozilla.components.support.test.mock
-import mozilla.components.support.test.whenever
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mozilla.fenix.R
@@ -122,11 +122,11 @@ class ChecklistItemTest {
 
     @Test
     fun `WHEN collection 1 THEN getSetupChecklistCollection returns a list of the expected tasks`() {
-        val settings = mock<Settings>()
+        val settings = mockk<Settings>()
         val isCompleted = false
-        whenever(settings.isDefaultBrowserBlocking()).thenReturn(isCompleted)
-        whenever(settings.hasCompletedSetupStepExtensions).thenReturn(isCompleted)
-        whenever(settings.signedInFxaAccount).thenReturn(isCompleted)
+        every { settings.isDefaultBrowserBlocking() } returns isCompleted
+        every { settings.hasCompletedSetupStepExtensions } returns isCompleted
+        every { settings.signedInFxaAccount } returns isCompleted
 
         val result = getSetupChecklistCollection(
             settings = settings,
@@ -159,13 +159,13 @@ class ChecklistItemTest {
 
     @Test
     fun `WHEN collection 2 THEN getSetupChecklistCollection returns a list of the expected groups`() {
-        val settings = mock<Settings>()
+        val settings = mockk<Settings>(relaxed = true)
         val isCompleted = false
-        whenever(settings.isDefaultBrowserBlocking()).thenReturn(isCompleted)
-        whenever(settings.hasCompletedSetupStepExtensions).thenReturn(isCompleted)
-        whenever(settings.hasCompletedSetupStepTheme).thenReturn(isCompleted)
-        whenever(settings.hasCompletedSetupStepToolbar).thenReturn(isCompleted)
-        whenever(settings.signedInFxaAccount).thenReturn(isCompleted)
+        every { settings.isDefaultBrowserBlocking() } returns isCompleted
+        every { settings.hasCompletedSetupStepExtensions } returns isCompleted
+        every { settings.hasCompletedSetupStepTheme } returns isCompleted
+        every { settings.hasCompletedSetupStepToolbar } returns isCompleted
+        every { settings.signedInFxaAccount } returns isCompleted
 
         val result = getSetupChecklistCollection(
             settings = settings,
@@ -231,13 +231,13 @@ class ChecklistItemTest {
 
     @Test
     fun `WHEN collection 2 and tab strip enabled THEN getSetupChecklistCollection returns a list of the expected groups`() {
-        val settings = mock<Settings>()
+        val settings = mockk<Settings>(relaxed = true)
         val isCompleted = false
-        whenever(settings.isDefaultBrowserBlocking()).thenReturn(isCompleted)
-        whenever(settings.hasCompletedSetupStepExtensions).thenReturn(isCompleted)
-        whenever(settings.hasCompletedSetupStepTheme).thenReturn(isCompleted)
-        whenever(settings.hasCompletedSetupStepToolbar).thenReturn(isCompleted)
-        whenever(settings.signedInFxaAccount).thenReturn(isCompleted)
+        every { settings.isDefaultBrowserBlocking() } returns isCompleted
+        every { settings.hasCompletedSetupStepExtensions } returns isCompleted
+        every { settings.hasCompletedSetupStepTheme } returns isCompleted
+        every { settings.hasCompletedSetupStepToolbar } returns isCompleted
+        every { settings.signedInFxaAccount } returns isCompleted
 
         val result = getSetupChecklistCollection(
             settings = settings,

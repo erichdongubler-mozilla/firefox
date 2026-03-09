@@ -693,7 +693,10 @@ dependencies {
     debugImplementation libs.androidx.compose.ui.tooling
     debugImplementation libs.leakcanary
 
-    testImplementation project(':components:support-test')
+    // Exclude Mockito to prevent classpath conflicts with MockK in tests.
+    testImplementation (project(':components:support-test')) {
+        exclude group: 'org.mockito'
+    }
     testImplementation project(':components:support-test-fakes')
     testImplementation project(':components:support-test-libstate')
     testImplementation testFixtures(project(':components:support-utils'))

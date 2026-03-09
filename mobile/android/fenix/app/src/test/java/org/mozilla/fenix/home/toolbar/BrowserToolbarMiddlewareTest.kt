@@ -42,7 +42,6 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.B
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Icon.DrawableResIcon
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Text.StringResText
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
-import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.ClipboardHandler
 import org.junit.Assert.assertEquals
@@ -601,7 +600,7 @@ class BrowserToolbarMiddlewareTest {
         val (_, toolbarStore) = buildMiddlewareAndAddToStore(
             appStore = appStore,
         )
-        val newSearchEngine = SearchEngine("test", "Test", mock(), type = APPLICATION)
+        val newSearchEngine = SearchEngine("test", "Test", mockk(relaxed = true), type = APPLICATION)
 
         appStore.dispatch(SearchEngineSelected(newSearchEngine, true))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -614,8 +613,8 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN a search engine is already selected WHEN the search engine configuration changes THEN don't change the selected search engine`() {
-        val selectedSearchEngine = SearchEngine("test", "Test", mock(), type = APPLICATION)
-        val otherSearchEngine = SearchEngine("other", "Other", mock(), type = APPLICATION)
+        val selectedSearchEngine = SearchEngine("test", "Test", mockk(relaxed = true), type = APPLICATION)
+        val otherSearchEngine = SearchEngine("other", "Other", mockk(relaxed = true), type = APPLICATION)
         val appStore = AppStore(
             initialState = AppState(
                 searchState = SearchState.EMPTY.copy(

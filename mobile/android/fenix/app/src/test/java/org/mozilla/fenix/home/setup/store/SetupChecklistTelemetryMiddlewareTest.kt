@@ -4,12 +4,12 @@
 
 package org.mozilla.fenix.home.setup.store
 
+import io.mockk.mockk
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
 import mozilla.components.lib.state.Store
-import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.telemetry.glean.testing.GleanTestRule
 import org.junit.Before
@@ -144,7 +144,7 @@ class SetupChecklistTelemetryMiddlewareTest {
             isCompleted = false,
         )
 
-        val store = mock<Store<AppState, AppAction>>()
+        val store = mockk<Store<AppState, AppAction>>()
         middleware.invoke(
             store = store,
             next = {},
