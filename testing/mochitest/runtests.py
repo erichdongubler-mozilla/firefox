@@ -351,6 +351,31 @@ class MessageLogger:
         self.logger.suite_end()
 
 
+def _port_in_use(port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            s.bind(("127.0.0.1", port))
+            return False
+        except OSError:
+            return True
+
+
+def _port_diagnostic_hint(port):
+    if sys.platform == "win32":
+        return f"netstat -ano | findstr :{port}"
+    return f"lsof -i :{port}"
+
+
+def _wait_for_port_available(port, timeout=30, interval=0.5):
+    deadline = time.monotonic() + timeout
+    while _port_in_use(port):
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(interval)
+    return True
+
+
 ####################
 # PROCESS HANDLING #
 ####################
@@ -1415,6 +1440,20 @@ class MochitestDesktop:
             raise RuntimeError("Error: Unable to start DoH server")
 
     def startServers(self, options, debuggerInfo, public=None):
+        port_checks = [
+            (options.httpPort, "HTTP test server"),
+            (options.sslPort, "ssltunnel"),
+            (options.webSocketPort, "WebSocket server"),
+        ]
+        for port, name in port_checks:
+            if _port_in_use(int(port)) and not _wait_for_port_available(int(port)):
+                self.log.error(
+                    f"{name} failed to bind to port {port}. "
+                    f"Another process may already be using it "
+                    f"(check: {_port_diagnostic_hint(int(port))})."
+                )
+                return False
+
         # start servers and set ports
         # TODO: pass these values, don't set on `self`
         self.webServer = options.webServer
@@ -2833,6 +2872,17 @@ toolbar#nav-bar {
                 process_args=kp_kwargs,
             )
 
+            marionette_port = (
+                marionette_args.get("port", 2828) if marionette_args else 2828
+            )
+            if _port_in_use(marionette_port):
+                self.log.error(
+                    f"Marionette port {marionette_port} is already in use. "
+                    "Another Firefox instance may already be running "
+                    f"(check: {_port_diagnostic_hint(marionette_port)})."
+                )
+                return 1, f"port {marionette_port} already in use"
+
             # start the runner
             try:
                 runner.start(
@@ -3752,7 +3802,8 @@ toolbar#nav-bar {
 
         status = 0
         try:
-            self.startServers(options, debuggerInfo)
+            if self.startServers(options, debuggerInfo) is False:
+                return 1
 
             if options.jsconsole:
                 options.browserArgs.extend(["--jsconsole"])
