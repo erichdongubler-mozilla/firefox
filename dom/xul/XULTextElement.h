@@ -20,14 +20,12 @@ class XULTextElement final : public nsXULElement {
   MOZ_CAN_RUN_SCRIPT void SetDisabled(bool aValue) {
     SetBoolAttr(nsGkAtoms::disabled, aValue);
   }
-  void GetValue(DOMString& aValue) const {
-    GetXULAttr(nsGkAtoms::value, aValue);
-  }
+  void GetValue(DOMString& aValue) const { GetAttr(nsGkAtoms::value, aValue); }
   MOZ_CAN_RUN_SCRIPT void SetValue(const nsAString& aValue) {
     SetAttr(kNameSpaceID_None, nsGkAtoms::value, aValue, true);
   }
   void GetAccessKey(DOMString& aValue) const {
-    GetXULAttr(nsGkAtoms::accesskey, aValue);
+    GetAttr(nsGkAtoms::accesskey, aValue);
   }
   MOZ_CAN_RUN_SCRIPT void SetAccessKey(const nsAString& aValue) {
     SetAttr(kNameSpaceID_None, nsGkAtoms::accesskey, aValue, true);

@@ -591,7 +591,7 @@ bool nsSplitterFrameInner::CollectChildInfos() {
 
         // We need to check for hidden attribute too, since treecols with
         // the hidden attribute are not really hidden, just collapsed
-        if (element->GetXULBoolAttr(nsGkAtoms::fixed) ||
+        if (element->GetBoolAttr(nsGkAtoms::fixed) ||
             element->GetBoolAttr(nsGkAtoms::hidden)) {
           return false;
         }
