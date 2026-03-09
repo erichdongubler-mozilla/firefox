@@ -270,7 +270,7 @@ bool RetainedDisplayListBuilder::PreProcessDisplayList(
       const ActiveScrolledRoot* asyncAncestorASR = aAsyncAncestorASR;
       if (item->CanMoveAsync()) {
         asyncAncestor = item->Frame();
-        asyncAncestorASR = item->GetActiveScrolledRoot();
+        asyncAncestorASR = item->GetNearestScrollASR();
       }
 
       if (!PreProcessDisplayList(
