@@ -6,6 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #import <Accessibility/Accessibility.h>
+#import <ApplicationServices/ApplicationServices.h>
 
 #import "mozAccessible.h"
 #include "MOXAccessibleBase.h"
@@ -1065,16 +1066,79 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
   return relations;
 }
+- (void)maybeFireUAZoomChangeFocusEvent:(int)focusType {
+  if (!mGeckoAccessible) {
+    return;
+  }
+
+  auto bounds = mGeckoAccessible->Bounds();
+  if (bounds.IsEmpty()) {
+    if (auto parent = mGeckoAccessible->Parent()) {
+      auto parentBounds = parent->Bounds();
+      bounds.width = parentBounds.width;
+      bounds.height = parentBounds.height;
+    }
+    // UAZoom drops all events with rects that have height=0 or width=0. Ensure
+    // we don't send something empty by clamping to 1x1.
+    bounds.width = MAX(bounds.width, 1.0);
+    bounds.height = MAX(bounds.height, 1.0);
+  }
+
+  NSRect objectRect = utils::GetCocoaScreenRectForAcc(
+      self, bounds, /*aShouldUseCocoaCoords*/ false);
+
+  NSRect highlightRect = NSZeroRect;
+  if (auto* htb = mGeckoAccessible->AsHyperTextBase()) {
+    auto caretRect = htb->GetCaretRect().first;
+    highlightRect = utils::GetCocoaScreenRectForAcc(
+        self, caretRect, /*aShouldUseCocoaCoords*/ false);
+  }
+
+  NSValue* objValue = [NSValue valueWithRect:objectRect];
+  NSMutableDictionary* info =
+      [[@{@"AXRect" : objValue, @"AXFocusType" : @(focusType)} mutableCopy]
+          autorelease];
+
+  if (focusType == kUAZoomFocusTypeInsertionPoint) {
+    info[@"AXHighlightRect"] = [NSValue valueWithRect:highlightRect];
+  }
+
+  // This sends events via nsIObserverService to be consumed by our mochitests.
+  // We provide the acc to re-use the existing xpc logic and to more easily
+  // verify the event is correct, without diff'ing rects.
+  // Note the UAZoomChangeFocus call below is not associated with a
+  // mozAccessible; it takes raw rects.
+  xpcAccessibleMacEvent::FireEvent(self, @"MozUAZoomChangeFocus", info);
+
+  // Check if our desired AT is enabled before firing the
+  // event. Always fire the event for tests.
+  if (UAZoomEnabled()) {
+    UAZoomChangeFocus(
+        &objectRect,
+        focusType == kUAZoomFocusTypeInsertionPoint ? &highlightRect : NULL,
+        focusType);
+  }
+}
 
 - (void)handleAccessibleEvent:(uint32_t)eventType {
   switch (eventType) {
     case nsIAccessibleEvent::EVENT_ALERT:
       [self maybePostA11yUtilNotification];
       break;
-    case nsIAccessibleEvent::EVENT_FOCUS:
+    case nsIAccessibleEvent::EVENT_FOCUS: {
       [self moxPostNotification:
                 NSAccessibilityFocusedUIElementChangedNotification];
+
+      // Notify macOS zoom/magnifier about focus change
+      if (mGeckoAccessible->IsEditableRoot()) {
+        // If this acc is an editable root, use kUAZoomFocusTypeInsertionPoint
+        // to ensure the caret rect is sent, too.
+        [self maybeFireUAZoomChangeFocusEvent:kUAZoomFocusTypeInsertionPoint];
+      } else {
+        [self maybeFireUAZoomChangeFocusEvent:kUAZoomFocusTypeOther];
+      }
       break;
+    }
     case nsIAccessibleEvent::EVENT_MENUPOPUP_START:
       [self moxPostNotification:@"AXMenuOpened"];
       break;
@@ -1107,6 +1171,9 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
                  withUserInfo:userInfo];
       [self moxPostNotification:NSAccessibilitySelectedTextChangedNotification
                    withUserInfo:userInfo];
+
+      // Notify macOS zoom/magnifier about caret position
+      [self maybeFireUAZoomChangeFocusEvent:kUAZoomFocusTypeInsertionPoint];
       break;
     }
     case nsIAccessibleEvent::EVENT_LIVE_REGION_ADDED:
