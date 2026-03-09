@@ -140,6 +140,9 @@ class SrcRepository(Repository):
     def update(self, ref):
         pass
 
+    def push(self, remote: Optional[str] = None, ref: Optional[str] = None):
+        pass
+
     def push_to_try(
         self,
         message: str,

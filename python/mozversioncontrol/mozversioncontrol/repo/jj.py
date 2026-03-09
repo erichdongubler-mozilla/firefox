@@ -320,6 +320,17 @@ class JujutsuRepository(Repository):
             cmd.extend(paths)
         self._run(*cmd, **run_kwargs)
 
+    def push(self, remote: Optional[str] = None, ref: Optional[str] = None):
+        if ref and not remote:
+            raise ValueError("Cannot specify ref without specifying remote")
+
+        args = ["git", "push"]
+        if remote:
+            args.extend(["--remote", remote])
+        if ref:
+            args.extend(["-r", ref])
+        self._run(*args)
+
     def push_to_try(
         self,
         message: str,

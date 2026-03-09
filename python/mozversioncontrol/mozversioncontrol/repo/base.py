@@ -266,6 +266,14 @@ class Repository(abc.ABC):
         """
 
     @abc.abstractmethod
+    def push(self, remote: Optional[str] = None, ref: Optional[str] = None):
+        """Push to a remote repository.
+
+        `remote` specifies the remote to push to. If None, the default remote is used.
+        `ref` specifies the branch or ref to push. If None, the current branch/ref is used.
+        """
+
+    @abc.abstractmethod
     def push_to_try(
         self,
         message: str,

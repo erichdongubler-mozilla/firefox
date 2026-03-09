@@ -276,6 +276,17 @@ class HgRepository(Repository):
         except subprocess.CalledProcessError:
             raise MissingVCSExtension(extension)
 
+    def push(self, remote: Optional[str] = None, ref: Optional[str] = None):
+        if ref and not remote:
+            raise ValueError("Cannot specify ref without specifying remote")
+
+        args = ["push"]
+        if remote:
+            args.append(remote)
+        if ref:
+            args.extend(["-r", ref])
+        self._run(*args)
+
     def push_to_try(
         self,
         message: str,
