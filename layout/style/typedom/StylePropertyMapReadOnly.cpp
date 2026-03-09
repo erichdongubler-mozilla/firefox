@@ -207,8 +207,8 @@ void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
 
     case StylePropertyTypedValueResult::Tag::Unsupported: {
       auto propertyId = CSSPropertyId::FromIdOrCustomProperty(id, aProperty);
-      auto rawBlock = result.AsUnsupported();
-      auto block = MakeRefPtr<DeclarationBlock>(rawBlock.Consume());
+      auto block = MakeRefPtr<DeclarationBlock>(
+          std::move(result).ExtractUnsupported().Consume());
       styleValue = MakeRefPtr<CSSUnsupportedValue>(mParent, propertyId,
                                                    std::move(block));
       break;

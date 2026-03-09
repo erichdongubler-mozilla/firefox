@@ -1287,3 +1287,34 @@ renaming_overrides_prefixing = true
   inline bool IsEmpty() const;
   inline Span<const mozilla::StyleAtom> AsSpan() const;
 """
+
+"PropertyTypedValueResult" = """
+  StylePropertyTypedValueResult(StylePropertyTypedValueResult&& other)
+      : tag(other.tag) {
+    switch (tag) {
+      case Tag::None:
+        break;
+      case Tag::Unsupported:
+        ::new (&unsupported)
+            StyleUnsupported_Body(std::move(other.unsupported));
+        break;
+      case Tag::Typed:
+        ::new (&typed) StyleTyped_Body(std::move(other.typed));
+        break;
+    }
+  }
+
+  StylePropertyTypedValueResult& operator=(
+      StylePropertyTypedValueResult&& other) {
+    if (this != &other) {
+      this->~StylePropertyTypedValueResult();
+      new (this) StylePropertyTypedValueResult(std::move(other));
+    }
+    return *this;
+  }
+
+  StyleStrong<StyleLockedDeclarationBlock> ExtractUnsupported() && {
+    MOZ_DIAGNOSTIC_ASSERT(IsUnsupported());
+    return std::move(unsupported._0);
+  }
+"""

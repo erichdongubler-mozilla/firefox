@@ -5416,6 +5416,8 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyIsImportant(
 /// This is mostly because `cbindgen` currently cannot generate right bindings
 /// for `Arc<Locked<PropertyDeclarationBlock>>` inside the Rust enum.
 #[repr(C)]
+/// cbindgen:derive-tagged-enum-copy-constructor=false
+/// cbindgen:derive-tagged-enum-copy-assignment=false
 pub enum PropertyTypedValueResult {
     /// The property is not present in the declaration block.
     None,
