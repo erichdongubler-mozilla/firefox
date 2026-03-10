@@ -381,8 +381,10 @@
       const [firstTab, secondTab] = this.#tabs;
       gBrowser.moveTabBefore(secondTab, firstTab);
       this.#tabs = [secondTab, firstTab];
-      gBrowser.showSplitViewPanels(this.#tabs);
-      updateUrlbarButton.arm();
+      if (this.hasActiveTab) {
+        gBrowser.showSplitViewPanels(this.#tabs);
+        updateUrlbarButton.arm();
+      }
 
       // Record telemetry
       if (trigger) {
