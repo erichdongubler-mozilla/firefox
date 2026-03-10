@@ -7,12 +7,6 @@ const {
   Component,
   createFactory,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
-const {
-  connect,
-} = require("resource://devtools/client/shared/vendor/react-redux.js");
-const {
-  getDisplayedMessages,
-} = require("resource://devtools/client/netmonitor/src/selectors/index.js");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 const {
@@ -96,7 +90,6 @@ class ResponsePanel extends Component {
       showMessagesView: PropTypes.bool,
       defaultRawResponse: PropTypes.bool,
       setDefaultRawResponse: PropTypes.func,
-      messages: PropTypes.array.isRequired,
     };
   }
 
@@ -428,7 +421,7 @@ class ResponsePanel extends Component {
   }
 
   render() {
-    const { connector, showMessagesView, request, messages } = this.props;
+    const { connector, showMessagesView, request } = this.props;
     const { blockedReason, responseContent, url, isRedirect } = request;
     const { filterText, rawResponsePayloadDisplayed } = this.state;
 
@@ -437,16 +430,7 @@ class ResponsePanel extends Component {
       this.renderCORSBlockedReason(blockedReason);
 
     if (showMessagesView) {
-      // Render with the messages view only
-      // - If there are valid messages to view
-      // - If there is nothing to render (this will show the empty content message)
-      //
-      // Note: If there are no messages but we have content for the response
-      // (this can happen when the messages are not formatted properly), we should
-      // fallback to showing the raw response content.
-      if (messages.length || !responseContent?.content.text) {
-        return MessagesView({ connector });
-      }
+      return MessagesView({ connector });
     }
 
     if (
@@ -525,6 +509,4 @@ class ResponsePanel extends Component {
   }
 }
 
-module.exports = connect(state => ({
-  messages: getDisplayedMessages(state),
-}))(ResponsePanel);
+module.exports = ResponsePanel;
