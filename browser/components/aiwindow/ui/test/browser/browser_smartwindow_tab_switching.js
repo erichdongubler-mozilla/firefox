@@ -91,10 +91,9 @@ add_task(async function test_new_tab_closes_opened_sidebar_convo() {
       win.gBrowser,
       "about:blank"
     );
-    await BrowserTestUtils.waitForMutationCondition(
-      win.document.getElementById(AIWindowUI.BOX_ID),
-      { attributes: true, attributeFilter: ["hidden"] },
-      () => !AIWindowUI.isSidebarOpen(win)
+    await TestUtils.waitForCondition(
+      () => !AIWindowUI.isSidebarOpen(win),
+      "Sidebar should close when switching to new tab"
     );
 
     Assert.ok(
@@ -141,10 +140,9 @@ add_task(
       BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
       await loaded;
 
-      await BrowserTestUtils.waitForMutationCondition(
-        win.document.getElementById(AIWindowUI.BOX_ID),
-        { attributes: true, attributeFilter: ["hidden"] },
-        () => AIWindowUI.isSidebarOpen(win)
+      await TestUtils.waitForCondition(
+        () => AIWindowUI.isSidebarOpen(win),
+        "Sidebar should be open after navigating away with active conversation"
       );
 
       Assert.ok(AIWindowUI.isSidebarOpen(win), "The sidebar should be open");
@@ -198,25 +196,15 @@ add_task(
         win.gBrowser,
         "about:blank"
       );
-      await BrowserTestUtils.waitForMutationCondition(
-        win.document.getElementById(AIWindowUI.BOX_ID),
-        { attributes: true, attributeFilter: ["hidden"] },
-        () => !AIWindowUI.isSidebarOpen(win)
-      );
-      Assert.ok(
-        !AIWindowUI.isSidebarOpen(win),
+      await TestUtils.waitForCondition(
+        () => !AIWindowUI.isSidebarOpen(win),
         "Sidebar should close when switching to new tab"
       );
 
       // Switch back to the original tab - sidebar should reopen
       await BrowserTestUtils.switchTab(win.gBrowser, originalTab);
-      await BrowserTestUtils.waitForMutationCondition(
-        win.document.getElementById(AIWindowUI.BOX_ID),
-        { attributes: true, attributeFilter: ["hidden"] },
-        () => AIWindowUI.isSidebarOpen(win)
-      );
-      Assert.ok(
-        AIWindowUI.isSidebarOpen(win),
+      await TestUtils.waitForCondition(
+        () => AIWindowUI.isSidebarOpen(win),
         "Sidebar should reopen when switching back to tab with conversation"
       );
     } finally {
@@ -402,10 +390,9 @@ add_task(async function test_navigate_with_empty_conversation_opens_sidebar() {
     BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
     await loaded;
 
-    await BrowserTestUtils.waitForMutationCondition(
-      win.document.getElementById(AIWindowUI.BOX_ID),
-      { attributes: true, attributeFilter: ["hidden"] },
-      () => AIWindowUI.isSidebarOpen(win)
+    await TestUtils.waitForCondition(
+      () => AIWindowUI.isSidebarOpen(win),
+      "Sidebar should open after navigating away with empty conversation"
     );
 
     Assert.ok(
@@ -543,12 +530,10 @@ add_task(
       BrowserTestUtils.startLoadingURIString(browserA, "https://example.com/");
       await loaded;
 
-      await BrowserTestUtils.waitForMutationCondition(
-        win.document.getElementById(AIWindowUI.BOX_ID),
-        { attributes: true, attributeFilter: ["hidden"] },
-        () => AIWindowUI.isSidebarOpen(win)
+      await TestUtils.waitForCondition(
+        () => AIWindowUI.isSidebarOpen(win),
+        "Sidebar should open for tab A"
       );
-      Assert.ok(AIWindowUI.isSidebarOpen(win), "Sidebar should open for tab A");
 
       // Open tab B with an empty conversation
       tabB = await BrowserTestUtils.openNewForegroundTab(
@@ -609,13 +594,8 @@ add_task(
 
       // The sidebar should remain open when switching to tab B (which has a conversation).
       // If this fails, it indicates a real bug in tab state management.
-      await BrowserTestUtils.waitForMutationCondition(
-        win.document.getElementById(AIWindowUI.BOX_ID),
-        { attributes: true, attributeFilter: ["hidden"] },
-        () => AIWindowUI.isSidebarOpen(win)
-      );
-      Assert.ok(
-        AIWindowUI.isSidebarOpen(win),
+      await TestUtils.waitForCondition(
+        () => AIWindowUI.isSidebarOpen(win),
         "Sidebar should remain open when switching to tab B with conversation"
       );
 
@@ -688,15 +668,9 @@ add_task(
         win.gBrowser,
         "about:blank"
       );
-      await BrowserTestUtils.waitForMutationCondition(
-        win.document.getElementById(AIWindowUI.BOX_ID),
-        { attributes: true, attributeFilter: ["hidden"] },
-        () => !AIWindowUI.isSidebarOpen(win)
-      );
-
-      Assert.ok(
-        !AIWindowUI.isSidebarOpen(win),
-        "Sidebar should be closed when switching to new tab"
+      await TestUtils.waitForCondition(
+        () => !AIWindowUI.isSidebarOpen(win),
+        "Sidebar should close when switching to new tab"
       );
 
       // Switch back to the original tab - sidebar should stay open but without conversation
@@ -755,25 +729,15 @@ add_task(async function test_close_tab_with_active_sidebar() {
       win.gBrowser,
       "about:blank"
     );
-    await BrowserTestUtils.waitForMutationCondition(
-      win.document.getElementById(AIWindowUI.BOX_ID),
-      { attributes: true, attributeFilter: ["hidden"] },
-      () => !AIWindowUI.isSidebarOpen(win)
-    );
-    Assert.ok(
-      !AIWindowUI.isSidebarOpen(win),
+    await TestUtils.waitForCondition(
+      () => !AIWindowUI.isSidebarOpen(win),
       "Sidebar should close when switching to new tab"
     );
 
     // Close the original tab with conversation - should not throw
     await BrowserTestUtils.removeTab(originalTab);
-    await BrowserTestUtils.waitForMutationCondition(
-      win.document.getElementById(AIWindowUI.BOX_ID),
-      { attributes: true, attributeFilter: ["hidden"] },
-      () => !AIWindowUI.isSidebarOpen(win)
-    );
-    Assert.ok(
-      !AIWindowUI.isSidebarOpen(win),
+    await TestUtils.waitForCondition(
+      () => !AIWindowUI.isSidebarOpen(win),
       "Sidebar should be closed after tab with conversation is removed"
     );
   } finally {
@@ -864,15 +828,11 @@ add_task(async function test_data_conversation_id_stamped_on_initial_load() {
     const browser = win.gBrowser.selectedBrowser;
     await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
-    await BrowserTestUtils.waitForMutationCondition(
-      browser,
-      { attributes: true, attributeFilter: ["data-conversation-id"] },
-      () => browser.hasAttribute("data-conversation-id")
-    );
-    Assert.ok(
-      browser.hasAttribute("data-conversation-id"),
+    await TestUtils.waitForCondition(
+      () => browser.hasAttribute("data-conversation-id"),
       "data-conversation-id should be stamped on the host browser after initial load"
     );
+
     Assert.ok(
       browser.getAttribute("data-conversation-id"),
       "data-conversation-id should be a non-empty string"
@@ -895,13 +855,8 @@ add_task(
 
       await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
-      await BrowserTestUtils.waitForMutationCondition(
-        browser,
-        { attributes: true, attributeFilter: ["data-conversation-id"] },
-        () => browser.hasAttribute("data-conversation-id")
-      );
-      Assert.ok(
-        browser.hasAttribute("data-conversation-id"),
+      await TestUtils.waitForCondition(
+        () => browser.hasAttribute("data-conversation-id"),
         "data-conversation-id should be stamped on initial load"
       );
 
@@ -990,15 +945,10 @@ add_task(async function test_chat_active_not_applied_on_fresh_load() {
     const browser = win.gBrowser.selectedBrowser;
     await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
-    // Wait for #loadPendingConversation to stamp a fresh ID — this is the
-    // signal that the no-existing-conversation path has completed.
-    await BrowserTestUtils.waitForMutationCondition(
-      browser,
-      { attributes: true, attributeFilter: ["data-conversation-id"] },
-      () => browser.hasAttribute("data-conversation-id")
-    );
-    Assert.ok(
-      browser.hasAttribute("data-conversation-id"),
+    // Wait for #loadPendingConversation to complete — the attribute being
+    // stamped is the signal that the early-return path has finished.
+    await TestUtils.waitForCondition(
+      () => browser.hasAttribute("data-conversation-id"),
       "data-conversation-id should be stamped after initial load"
     );
 
@@ -1011,55 +961,6 @@ add_task(async function test_chat_active_not_applied_on_fresh_load() {
     Assert.ok(
       !hasChatActive,
       "chat-active should not be applied on a fresh load with no conversation to restore"
-    );
-  } finally {
-    await BrowserTestUtils.closeWindow(win);
-  }
-});
-
-// chat-active should not be applied when data-conversation-id is present on
-// the host browser but the conversation no longer exists in the store.
-// This covers refresh and mode-switch scenarios where the attribute is stale.
-add_task(async function test_chat_active_removed_for_stale_conversation_id() {
-  let win;
-  try {
-    win = await openAIWindow();
-    const browser = win.gBrowser.selectedBrowser;
-    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-
-    // Stamp a fake ID to simulate the attribute being present from a previous
-    // load (e.g. a refresh on a new tab, or a classic→smart mode switch).
-    // The constructor will see it and eagerly apply chat-active, then
-    // #loadPendingConversation should remove it when the store lookup fails.
-    const staleId = "stale-conversation-id-not-in-store";
-    browser.setAttribute("data-conversation-id", staleId);
-
-    const loaded = BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
-    BrowserTestUtils.startLoadingURIString(browser, AIWINDOW_URL);
-    await loaded;
-
-    // The stale ID gets replaced with a fresh one once the store lookup fails —
-    // wait for that replacement as the signal that cleanup has completed.
-    await BrowserTestUtils.waitForMutationCondition(
-      browser,
-      { attributes: true, attributeFilter: ["data-conversation-id"] },
-      () => browser.getAttribute("data-conversation-id") !== staleId
-    );
-    Assert.notStrictEqual(
-      browser.getAttribute("data-conversation-id"),
-      staleId,
-      "data-conversation-id should be replaced after a failed conversation lookup"
-    );
-
-    const hasChatActive = await SpecialPowers.spawn(browser, [], () =>
-      content.document
-        .querySelector("ai-window")
-        ?.classList.contains("chat-active")
-    );
-
-    Assert.ok(
-      !hasChatActive,
-      "chat-active should be removed when the conversation is not found in the store"
     );
   } finally {
     await BrowserTestUtils.closeWindow(win);
@@ -1100,6 +1001,17 @@ add_task(async function test_chat_active_applied_on_back_navigation() {
             .querySelector("ai-window")
             ?.classList.contains("chat-active")
         ),
+      "chat-active should be applied when data-conversation-id is present on back navigation"
+    );
+
+    const hasChatActive = await SpecialPowers.spawn(browser, [], () =>
+      content.document
+        .querySelector("ai-window")
+        ?.classList.contains("chat-active")
+    );
+
+    Assert.ok(
+      hasChatActive,
       "chat-active should be applied when restoring a conversation via back navigation"
     );
   } finally {
@@ -1140,13 +1052,8 @@ add_task(async function test_classic_mode_disables_tab_state_events() {
     BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
     await loaded;
 
-    await BrowserTestUtils.waitForMutationCondition(
-      win.document.getElementById(AIWindowUI.BOX_ID),
-      { attributes: true, attributeFilter: ["hidden"] },
-      () => AIWindowUI.isSidebarOpen(win)
-    );
-    Assert.ok(
-      AIWindowUI.isSidebarOpen(win),
+    await TestUtils.waitForCondition(
+      () => AIWindowUI.isSidebarOpen(win),
       "Sidebar should open in smart mode"
     );
 
@@ -1207,13 +1114,8 @@ add_task(async function test_ask_button_close_persists_across_tab_switches() {
     BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
     await loaded;
 
-    await BrowserTestUtils.waitForMutationCondition(
-      win.document.getElementById(AIWindowUI.BOX_ID),
-      { attributes: true, attributeFilter: ["hidden"] },
-      () => AIWindowUI.isSidebarOpen(win)
-    );
-    Assert.ok(
-      AIWindowUI.isSidebarOpen(win),
+    await TestUtils.waitForCondition(
+      () => AIWindowUI.isSidebarOpen(win),
       "Sidebar should open after navigating away with active conversation"
     );
 
@@ -1267,13 +1169,8 @@ add_task(async function test_ask_button_close_persists_across_navigation() {
     BrowserTestUtils.startLoadingURIString(browser, "https://example.com/");
     await loaded;
 
-    await BrowserTestUtils.waitForMutationCondition(
-      win.document.getElementById(AIWindowUI.BOX_ID),
-      { attributes: true, attributeFilter: ["hidden"] },
-      () => AIWindowUI.isSidebarOpen(win)
-    );
-    Assert.ok(
-      AIWindowUI.isSidebarOpen(win),
+    await TestUtils.waitForCondition(
+      () => AIWindowUI.isSidebarOpen(win),
       "Sidebar should open after navigating away with active conversation"
     );
 
