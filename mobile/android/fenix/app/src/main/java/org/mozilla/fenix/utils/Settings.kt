@@ -1948,7 +1948,7 @@ class Settings(
 
     var isSearchOptimizationEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_search_optimization_feature),
-        default = true,
+        default = { FxNimbus.features.searchOptimizationOption.value().enabled },
     )
 
     var shouldShowSearchOptimizationCards by booleanPreference(
@@ -1958,7 +1958,7 @@ class Settings(
 
     var shouldShowSearchOptimizationStockCard by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_search_optimization_stocks),
-        default = true,
+        default = { FxNimbus.features.searchOptimizationOption.value().showStocksCard },
     )
 
     var shouldShowSearchOptimizationFlightCard by booleanPreference(

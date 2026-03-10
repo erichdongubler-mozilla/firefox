@@ -1057,6 +1057,13 @@ features:
         description: If true, Search Optimization Sports cards are enabled.
         type: Boolean
         default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+          show-stocks-card: true
+          show-flights-card: true
+          show-sports-card: true
 
   downloads-custom-location:
     description: Feature to enable the custom download location for users on Firefox on Android.

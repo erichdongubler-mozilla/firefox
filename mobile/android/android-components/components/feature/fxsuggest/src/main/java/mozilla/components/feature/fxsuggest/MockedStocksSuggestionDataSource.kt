@@ -21,6 +21,31 @@ import mozilla.components.concept.awesomebar.AwesomeBar
  */
 class MockedStocksSuggestionDataSource : AwesomeBar.StocksSuggestionDataSource {
     override suspend fun fetch(query: String): List<AwesomeBar.StockItem> {
+        if (query.contains("QQQ stock", ignoreCase = true)) {
+            return listOf(
+                AwesomeBar.StockItem(
+                    query = "QQQ stock",
+                    name = "Invesco QQQ Trust",
+                    ticker = "QQQ",
+                    changePercToday = "+1.53",
+                    lastPrice = "$539.78 USD",
+                    exchange = "NASDAQ",
+                    imageUrl = "",
+                ),
+            )
+        } else if (query.contains("DIA stock", ignoreCase = true)) {
+            return listOf(
+                AwesomeBar.StockItem(
+                    query = "DIA stock",
+                    name = "SPDR Dow Jones ETF",
+                    ticker = "DIA",
+                    changePercToday = "0",
+                    lastPrice = "$430.80 USD",
+                    exchange = "Dow Jones",
+                    imageUrl = "",
+                ),
+            )
+        }
         return listOf(
             AwesomeBar.StockItem(
                 query = "VOO stock",
