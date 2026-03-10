@@ -32,7 +32,7 @@ extKeyUsage:[serverAuth,clientAuth,codeSigning,emailProtection
              OCSPSigning,timeStamping,tlsBinding]
 subjectAlternativeName:[<dNSName|directoryName|"ip4:"iPV4Address>,...]
 authorityInformationAccess:<OCSP URI>
-certificatePolicies:[<policy OID>,...]
+certificatePolicies:[<policy OID[/policy qualifier OID]>,...]
 nameConstraints:{permitted,excluded}:[<dNSName|directoryName>,...]
 nsCertType:sslServer
 TLSFeature:[<TLSFeature>,...]
@@ -623,15 +623,27 @@ class Certificate:
         sequence.setComponentByPosition(0, accessDescription)
         self.addExtension(rfc5280.id_pe_authorityInfoAccess, sequence, critical)
 
-    def addCertificatePolicies(self, policyOIDs, critical):
+    def addCertificatePolicies(self, policiesSpec, critical):
         policies = rfc5280.CertificatePolicies()
-        for pos, policyOID in enumerate(policyOIDs.split(",")):
+        for pos, policySpec in enumerate(policiesSpec.split(",")):
+            policyOID = policySpec
+            policyQualifierOID = None
+            if "/" in policySpec:
+                (policyOID, policyQualifierOID) = policySpec.split("/")
             policyOIDMapped = policyOID
             if policyOIDMapped == "any":
                 policyOIDMapped = "2.5.29.32.0"
             policy = rfc5280.PolicyInformation()
             policyIdentifier = rfc5280.CertPolicyId(policyOIDMapped)
             policy["policyIdentifier"] = policyIdentifier
+            if policyQualifierOID:
+                policyQualifier = rfc5280.PolicyQualifierInfo()
+                policyQualifierId = rfc5280.PolicyQualifierId(policyQualifierOID)
+                policyQualifier["policyQualifierId"] = policyQualifierId
+                policyQualifier["qualifier"] = univ.Integer(5)
+                policyQualifiers = univ.Sequence()
+                policyQualifiers.setComponentByPosition(0, policyQualifier)
+                policy["policyQualifiers"] = policyQualifiers
             policies.setComponentByPosition(pos, policy)
         self.addExtension(rfc5280.id_ce_certificatePolicies, policies, critical)
 

@@ -41,6 +41,7 @@ add_task(async function test_verify_1_qwacs() {
   await verify_1_qwacs("test_qwacs/1-qwac-qevcpw.pem", true);
 
   await verify_1_qwacs("test_qwacs/1-qwac-other-optional-qcs.pem", true);
+  await verify_1_qwacs("test_qwacs/1-qwac-unrelated-policy.pem", true);
 
   // One or more intermediates may be necessary for path building.
   await verify_1_qwacs("test_qwacs/1-qwac-via-intermediate.pem", false);
