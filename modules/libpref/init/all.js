@@ -157,7 +157,7 @@ pref("editor.htmleditor.inputevent.hack.no_dispatch_before_compositionend.addl",
 // Blocklist of domains of web apps which we should not dispatch `input` event
 // immediately after `compositionend`.
 pref("editor.texteditor.inputevent.hack.no_dispatch_after_compositionend", "");
-pref("editor.htmleditor.inputevent.hack.no_dispatch_after_compositionend", "");
+pref("editor.htmleditor.inputevent.hack.no_dispatch_after_compositionend", "www.icloud.com");
 // Pref for end-users and policy to add additional values.
 pref("editor.texteditor.inputevent.hack.no_dispatch_after_compositionend.addl", "");
 pref("editor.htmleditor.inputevent.hack.no_dispatch_after_compositionend.addl", "");
