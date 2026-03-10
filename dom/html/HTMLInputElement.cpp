@@ -4526,7 +4526,6 @@ void HTMLInputElement::SetupShadowTree(bool aNotify) {
   MOZ_ASSERT(CreatesUAShadowTree());
   MOZ_ASSERT(IsInComposedDoc());
   MOZ_ASSERT(!GetShadowRoot());
-  MOZ_ASSERT(mDoneCreating);
 
   auto uaWidget = NotifiesUAWidget();
   AttachAndSetUAShadowRoot(uaWidget,
