@@ -174,8 +174,10 @@ class nsHttpHeaderArray {
   void RemoveDuplicateHeaderValues(const nsACString& aHeaderValue,
                                    nsACString& aResult);
 
-  // All members must be copy-constructable and assignable
-  CopyableTArray<nsEntry> mHeaders;
+  // All members must be copy-constructable and assignable.
+  // 16 matches the measured median response header count
+  // (arxiv.org/abs/2402.01240).
+  CopyableAutoTArray<nsEntry, 16> mHeaders;
 
   friend struct IPC::ParamTraits<nsHttpHeaderArray>;
   friend class nsHttpRequestHead;
