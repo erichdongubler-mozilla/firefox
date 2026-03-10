@@ -2407,7 +2407,7 @@
     }
 
     updateBrowserRemoteness(aBrowser, { newFrameloader, remoteType } = {}) {
-      let isRemote = aBrowser.hasAttribute("remote");
+      let isRemote = aBrowser.getAttribute("remote") == "true";
 
       // We have to be careful with this here, as the "no remote type" is null,
       // not a string. Make sure to check only for undefined, since null is
@@ -2470,7 +2470,7 @@
         aBrowser.setAttribute("remote", "true");
         aBrowser.setAttribute("remoteType", remoteType);
       } else {
-        aBrowser.removeAttribute("remote");
+        aBrowser.setAttribute("remote", "false");
         aBrowser.removeAttribute("remoteType");
       }
 
@@ -2742,7 +2742,7 @@
             getter = () => () => this;
             break;
           case "isRemoteBrowser":
-            getter = () => browser.hasAttribute("remote");
+            getter = () => browser.getAttribute("remote") == "true";
             break;
           case "permitUnload":
             getter = () => () => ({ permitUnload: true });
