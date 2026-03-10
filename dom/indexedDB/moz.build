@@ -8,7 +8,6 @@ with Files("**"):
     BUG_COMPONENT = ("Core", "Storage: IndexedDB")
 
 MOCHITEST_MANIFESTS += [
-    "test/mochitest-intl-api.toml",
     "test/mochitest-private.toml",
     "test/mochitest-regular.toml",
 ]

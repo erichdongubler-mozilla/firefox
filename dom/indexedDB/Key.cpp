@@ -721,29 +721,7 @@ Result<Ok, nsresult> Key::EncodeAsString(const Span<const T> aInput,
 Result<Ok, nsresult> Key::EncodeLocaleString(const nsAString& aString,
                                              uint8_t aTypeOffset,
                                              const nsCString& aLocale) {
-  const int length = aString.Length();
-  if (length == 0) {
-    return Ok();
-  }
-
-  auto collResult = intl::Collator::TryCreate(aLocale.get());
-  if (collResult.isErr()) {
-    return Err(NS_ERROR_FAILURE);
-  }
-  auto collator = collResult.unwrap();
-  MOZ_ASSERT(collator);
-
-  AutoTArray<uint8_t, 128> keyBuffer;
-  MOZ_TRY(collator->GetSortKey(Span{aString}, keyBuffer)
-              .mapErr([](intl::ICUError icuError) {
-                return icuError == intl::ICUError::OutOfMemory
-                           ? NS_ERROR_OUT_OF_MEMORY
-                           : NS_ERROR_FAILURE;
-              }));
-
-  size_t sortKeyLength = keyBuffer.Length();
-  return EncodeString(Span{keyBuffer}.AsConst().First(sortKeyLength),
-                      aTypeOffset);
+  return Err(NS_ERROR_FAILURE);
 }
 
 // static

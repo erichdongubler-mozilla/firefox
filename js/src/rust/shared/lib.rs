@@ -24,3 +24,6 @@ extern crate gluesmith;
 
 #[cfg(feature = "icu4x")]
 extern crate icu_capi;
+
+#[cfg(feature = "icu4x")]
+extern crate collator_glue;

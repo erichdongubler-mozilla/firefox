@@ -8,6 +8,7 @@
 #include "mozilla/intl/Collator.h"
 #include "mozilla/intl/LocaleService.h"
 #include "nsComponentManagerUtils.h"
+#include "nsRFPService.h"
 #include "txCore.h"
 #include "txExpr.h"
 
@@ -24,24 +25,37 @@ txResultStringComparator::txResultStringComparator(bool aAscending,
   if (aUpperFirst) mSorting |= kUpperFirst;
 }
 
-nsresult txResultStringComparator::init(const nsString& aLanguage) {
-  auto result =
-      aLanguage.IsEmpty()
-          ? mozilla::intl::LocaleService::TryCreateComponent<Collator>()
-          : mozilla::intl::LocaleService::TryCreateComponentWithLocale<
-                Collator>(NS_ConvertUTF16toUTF8(aLanguage).get());
+nsresult txResultStringComparator::init(const nsACString& aLanguage,
+                                        bool aResistFingerPrinting) {
+  // TODO: Old code set sensitivity to Base, which is most likely a bug,
+  // but let's fix the bug as a distinct follow-up changeset.
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1978383
+  //
+  // TODO: The old code didn't pass through case-order:
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1862626
+  // Let's fix the bug as a distinct changeset.
+
+  mozilla::intl::CollatorOptions options{};
+  options.sensitivity = mozilla::intl::CollatorSensitivity::Base;
+
+  auto result = mozilla::intl::Collator::TryCreate(aLanguage, options);
+  if (result.isErr()) {
+    // We come here if `aLanguage` didn't parse as a language tag,
+    // including if `aLanguage` was empty. We fall back to the app
+    // locale, unless we're resisting fingerprinting, in which case
+    // we use the spoofed JS locale.
+    nsAutoCStringN<32> appLocale;
+    if (aResistFingerPrinting) {
+      appLocale.Assign(nsRFPService::GetSpoofedJSLocale());
+    } else {
+      mozilla::intl::LocaleService::GetInstance()->GetAppLocaleAsBCP47(
+          appLocale);
+    }
+    result = mozilla::intl::Collator::TryCreate(appLocale, options);
+  }
 
   NS_ENSURE_TRUE(result.isOk(), NS_ERROR_FAILURE);
-  auto collator = result.unwrap();
-
-  // Sort in a case-insensitive way, where "base" letters are considered
-  // equal, e.g: a = á, a = A, a ≠ b.
-  Collator::Options options{};
-  options.sensitivity = Collator::Sensitivity::Base;
-  auto optResult = collator->SetOptions(options);
-  NS_ENSURE_TRUE(optResult.isOk(), NS_ERROR_FAILURE);
-
-  mCollator = UniquePtr<const Collator>(collator.release());
+  mCollator = result.unwrap();
   return NS_OK;
 }
 
@@ -57,7 +71,7 @@ int txResultStringComparator::compareValues(txObject* aVal1, txObject* aVal2) {
   nsString& dval1 = *((StringValue*)aVal1)->mString;
   nsString& dval2 = *((StringValue*)aVal2)->mString;
 
-  int32_t result = mCollator->CompareStrings(dval1, dval2);
+  int32_t result = mCollator->CompareUTF16(dval1, dval2);
 
   return (mSorting & kAscending) ? result : -result;
 }

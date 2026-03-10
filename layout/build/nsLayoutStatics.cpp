@@ -28,6 +28,7 @@
 #include "mozilla/dom/ServiceWorkerRegistrar.h"
 #include "mozilla/dom/UIDirectionManager.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
+#include "mozilla/intl/AppCollator.h"
 #include "mozilla/intl/AppDateTimeFormat.h"
 #include "mozilla/intl/EncodingToLang.h"
 #include "nsAttrValue.h"
@@ -132,6 +133,8 @@ nsresult nsLayoutStatics::Initialize() {
                 1);
 
   nsresult rv;
+
+  mozilla::intl::AppCollator::Initialize();
 
   ContentParent::StartUp();
 
@@ -316,7 +319,6 @@ void nsLayoutStatics::Shutdown() {
   // Release all of our atoms
   nsRepeatService::Shutdown();
 
-  nsXULContentUtils::Finish();
   nsXULPrototypeCache::ReleaseGlobals();
 
   SVGElementFactory::Shutdown();

@@ -36,22 +36,6 @@ class Service : public mozIStorageService,
    */
   nsresult initialize();
 
-  /**
-   * Compares two strings using the Service's locale-aware collation.
-   *
-   * @param  aStr1
-   *         The string to be compared against aStr2.
-   * @param  aStr2
-   *         The string to be compared against aStr1.
-   * @param  aSensitivity
-   *         The sorting sensitivity.
-   * @return aStr1 - aStr2.  That is, if aStr1 < aStr2, returns a negative
-   *         number.  If aStr1 > aStr2, returns a positive number.  If
-   *         aStr1 == aStr2, returns 0.
-   */
-  int localeCompareStrings(const nsAString& aStr1, const nsAString& aStr2,
-                           mozilla::intl::Collator::Sensitivity aSensitivity);
-
   static already_AddRefed<Service> getSingleton();
 
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -110,13 +94,6 @@ class Service : public mozIStorageService,
   Service();
   virtual ~Service();
 
-  /**
-   * Used for 1) locking around calls when initializing connections so that we
-   * can ensure that the state of sqlite3_enable_shared_cache is sane and 2)
-   * synchronizing access to mLocaleCollation.
-   */
-  Mutex mMutex MOZ_UNANNOTATED;
-
   struct AutoVFSRegistration {
     int Init(UniquePtr<sqlite3_vfs> aVFS);
     ~AutoVFSRegistration();
@@ -151,31 +128,11 @@ class Service : public mozIStorageService,
    */
   void minimizeMemory();
 
-  /**
-   * Lazily creates and returns a collator created from the application's
-   * locale that all statements of all Connections of this Service may use.
-   * Since the collator's lifetime is that of the Service and no statement may
-   * execute outside the lifetime of the Service, this method returns a raw
-   * pointer.
-   */
-  mozilla::intl::Collator* getCollator();
-
-  /**
-   * Lazily created collator that all statements of all Connections of this
-   * Service may use.  The collator is created from the application's locale.
-   *
-   * @note The collator is not thread-safe since the options can be changed
-   * between calls. Access should be synchronized.
-   */
-  mozilla::UniquePtr<mozilla::intl::Collator> mCollator = nullptr;
-
   nsCOMPtr<nsIFile> mProfileStorageFile;
 
   nsCOMPtr<nsIMemoryReporter> mStorageSQLiteReporter;
 
   static Service* gService;
-
-  mozilla::intl::Collator::Sensitivity mLastSensitivity;
 };
 
 }  // namespace mozilla::storage
