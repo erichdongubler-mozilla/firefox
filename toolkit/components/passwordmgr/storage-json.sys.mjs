@@ -61,7 +61,8 @@ export class LoginManagerStorage_json {
     return this.__crypto;
   }
 
-  get _decryptedPotentiallyVulnerablePasswords() {
+  // Lazily decrypted cache of potentially vulnerable passwords.
+  get decryptedPotentiallyVulnerablePasswords() {
     if (!this.__decryptedPotentiallyVulnerablePasswords) {
       this._store.ensureDataReady();
       this.__decryptedPotentiallyVulnerablePasswords = [];
@@ -926,6 +927,7 @@ export class LoginManagerStorage_json {
   async addPotentiallyVulnerablePassword(login) {
     this._store.ensureDataReady();
     // this breached password is already stored
+    // note this builds the __decryptedPotentiallyVulnerablePasswords structure
     if (await this.isPotentiallyVulnerablePassword(login)) {
       return;
     }
@@ -935,10 +937,15 @@ export class LoginManagerStorage_json {
       encryptedPassword: this._crypto.encrypt(login.password),
     });
     this._store.saveSoon();
+
+    lazy.LoginHelper.notifyStorageChanged(
+      "addPotentiallyVulnerablePassword",
+      login
+    );
   }
 
   async isPotentiallyVulnerablePassword(login) {
-    return this._decryptedPotentiallyVulnerablePasswords.includes(
+    return this.decryptedPotentiallyVulnerablePasswords.includes(
       login.password
     );
   }
@@ -946,7 +953,7 @@ export class LoginManagerStorage_json {
   async arePotentiallyVulnerablePasswords(logins) {
     return logins
       .filter(l =>
-        this._decryptedPotentiallyVulnerablePasswords.includes(l.password)
+        this.decryptedPotentiallyVulnerablePasswords.includes(l.password)
       )
       .map(l => l.guid);
   }
@@ -960,6 +967,10 @@ export class LoginManagerStorage_json {
     this._store.data.potentiallyVulnerablePasswords = [];
     this._store.saveSoon();
     this.__decryptedPotentiallyVulnerablePasswords = null;
+
+    lazy.LoginHelper.notifyStorageChanged(
+      "clearAllPotentiallyVulnerablePasswords"
+    );
   }
 
   get uiBusy() {
