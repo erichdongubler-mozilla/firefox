@@ -756,11 +756,12 @@ void WebrtcVideoConduit::OnControlConfigChange() {
         maxBps = MinIgnoreZero(maxBps, mPrefMaxBitrate);
         maxBps = MinIgnoreZero(maxBps, mNegotiatedMaxBitrate);
         maxBps = MinIgnoreZero(
-            maxBps, static_cast<int>(codecConfig->mEncodingConstraints.maxBr));
+            maxBps,
+            SaturatingCast<int>(codecConfig->mEncodingConstraints.maxBr));
         if (codecConfig->mEncodings.size() == 1) {
           maxBps = MinIgnoreZero(
-              maxBps,
-              static_cast<int>(codecConfig->mEncodings[0].constraints.maxBr));
+              maxBps, SaturatingCast<int>(
+                          codecConfig->mEncodings[0].constraints.maxBr));
         }
         mEncoderConfig.max_bitrate_bps = maxBps;
 
@@ -806,8 +807,8 @@ void WebrtcVideoConduit::OnControlConfigChange() {
           int maxBps = KBPS(10000);
           maxBps = MinIgnoreZero(maxBps, mPrefMaxBitrate);
           maxBps = MinIgnoreZero(maxBps, mNegotiatedMaxBitrate);
-          maxBps = MinIgnoreZero(maxBps,
-                                 static_cast<int>(encodingConstraints.maxBr));
+          maxBps = MinIgnoreZero(
+              maxBps, SaturatingCast<int>(encodingConstraints.maxBr));
           video_stream.max_bitrate_bps = maxBps;
 
           // At this time, other values are not used until after
