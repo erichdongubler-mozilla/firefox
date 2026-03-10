@@ -171,6 +171,7 @@ ConnectionEstablisher::ConnectionEstablisher(nsHttpConnectionInfo* aConnInfo,
 
 ConnectionEstablisher::~ConnectionEstablisher() {
   LOG(("ConnectionEstablisher dtor:%p", this));
+  MaybeSetConnectingDone();
 }
 
 void ConnectionEstablisher::SetConnecting() {
@@ -240,6 +241,7 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
   }
   mFinished = true;
 
+  MaybeSetConnectingDone();
   mTransportStatusCallback = nullptr;
   mAddrRecord = nullptr;
 
@@ -502,6 +504,9 @@ nsresult TCPConnectionEstablisher::CreateAndConfigureSocketTransport() {
   mStreamOut = do_QueryInterface(sout);
 
   rv = mStreamOut->AsyncWait(this, 0, 0, nullptr);
+  if (NS_SUCCEEDED(rv)) {
+    SetConnecting();
+  }
   return rv;
 }
 
@@ -615,6 +620,8 @@ nsresult UDPConnectionEstablisher::CreateAndConfigureUDPConn() {
   if (NS_FAILED(rv)) {
     return rv;
   }
+
+  SetConnecting();
 
   rv = ActivateConnectionWithTransaction(
       connUDP,

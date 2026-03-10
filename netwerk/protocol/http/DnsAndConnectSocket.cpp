@@ -891,12 +891,12 @@ bool DnsAndConnectSocket::Claim() {
   return false;
 }
 
-void DnsAndConnectSocket::CloseTransports(nsresult error) {
+void DnsAndConnectSocket::OnTimeout() {
   if (mPrimaryTransport.mSocketTransport) {
-    mPrimaryTransport.mSocketTransport->Close(error);
+    mPrimaryTransport.mSocketTransport->Close(NS_ERROR_NET_TIMEOUT);
   }
   if (mBackupTransport.mSocketTransport) {
-    mBackupTransport.mSocketTransport->Close(error);
+    mBackupTransport.mSocketTransport->Close(NS_ERROR_NET_TIMEOUT);
   }
 }
 

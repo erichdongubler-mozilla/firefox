@@ -45,7 +45,7 @@ class ConnectionAttempt : public nsSupportsWeakReference {
   bool AcceptsTransaction(nsHttpTransaction* trans) const;
   virtual bool Claim() = 0;
   void Unclaim();
-  virtual void CloseTransports(nsresult error) = 0;
+  virtual void OnTimeout() = 0;
   virtual void PrintDiagnostics(nsCString& log) = 0;
   virtual DnsAndConnectSocket* ToDnsAndConnectSocket() { return nullptr; }
   virtual uint32_t UnconnectedUDPConnsLength() const;

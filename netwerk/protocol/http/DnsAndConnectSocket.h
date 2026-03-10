@@ -53,7 +53,7 @@ class DnsAndConnectSocket final : public ConnectionAttempt,
   nsresult Init(ConnectionEntry* ent) override;
   void Abandon() override;
   double Duration(TimeStamp epoch) override;
-  void CloseTransports(nsresult error) override;
+  void OnTimeout() override;
 
   void PrintDiagnostics(nsCString& log) override;
 
