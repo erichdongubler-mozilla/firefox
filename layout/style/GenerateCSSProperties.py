@@ -154,7 +154,7 @@ interface """
                 continue
             propId = p.original.ident
         extendedAttrs = [
-            "BindingTemplate=(%s, eCSSProperty_%s)" % (bindingTemplate, propId),
+            "BindingTemplate=(%s, NonCustomCSSPropertyId, eCSSProperty_%s)" % (bindingTemplate, propId),
             "CEReactions",
             "SetterThrows",
             "SetterNeedsSubjectPrincipal=NonSystem",

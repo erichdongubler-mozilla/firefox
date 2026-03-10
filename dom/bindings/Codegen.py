@@ -11523,9 +11523,10 @@ class CGSpecializedTemplatedGetter(CGAbstractStaticMethod):
     getter that forwards to a common template getter.
     """
 
-    def __init__(self, descriptor, attr, template, additionalArg):
+    def __init__(self, descriptor, attr, template, templateType, additionalArg):
         self.attr = attr
         self.template = template
+        self.templateType = templateType
         self.additionalArg = additionalArg
         name = "get_" + IDLToCIdentifier(attr.identifier.name)
         args = [
@@ -11545,19 +11546,16 @@ class CGSpecializedTemplatedGetter(CGAbstractStaticMethod):
         )
 
     def definition_body(self):
-        if self.additionalArg is None:
-            additionalArg = self.attr.identifier.name
-        else:
-            additionalArg = self.additionalArg
-
+        additionalArg = self.additionalArg or self.attr.identifier.name
         return fill(
             """
-            return ${namespace}::${getter}(cx, obj, void_self, args, ${additionalArg});
+            return ${namespace}::${getter}(cx, obj, void_self, args, ${ty}::${additionalArg});
             """,
             namespace=toBindingNamespace(
                 self.template.descriptor.interface.identifier.name
             ),
             getter=self.template.getter,
+            ty=self.templateType,
             additionalArg=additionalArg,
         )
 
@@ -11817,9 +11815,10 @@ class CGSpecializedTemplatedSetter(CGAbstractStaticMethod):
     setter that forwards to a common template setter.
     """
 
-    def __init__(self, descriptor, attr, template, additionalArg):
+    def __init__(self, descriptor, attr, template, templateType, additionalArg):
         self.attr = attr
         self.template = template
+        self.templateType = templateType
         self.additionalArg = additionalArg
         name = "set_" + IDLToCIdentifier(attr.identifier.name)
         args = [
@@ -11833,21 +11832,18 @@ class CGSpecializedTemplatedSetter(CGAbstractStaticMethod):
         )
 
     def definition_body(self):
-        additionalArgs = []
-        if self.additionalArg is None:
-            additionalArgs.append(self.attr.identifier.name)
-        else:
-            additionalArgs.append(self.additionalArg)
+        additionalArg = self.additionalArg or self.attr.identifier.name
 
         return fill(
             """
-            return ${namespace}::${setter}(cx, obj, void_self, args, ${additionalArgs});
+            return ${namespace}::${setter}(cx, obj, void_self, args, ${ty}::${additionalArg});
             """,
             namespace=toBindingNamespace(
                 self.template.descriptor.interface.identifier.name
             ),
             setter=self.template.setter,
-            additionalArgs=", ".join(additionalArgs),
+            ty=self.templateType,
+            additionalArg=additionalArg,
         )
 
 
@@ -17229,7 +17225,8 @@ class CGDescriptor(CGThing):
                     template = m.getExtendedAttribute("BindingTemplate")
                     if template is not None:
                         templateName = template[0][0]
-                        additionalArg = template[0][1]
+                        templateType = template[0][1]
+                        additionalArg = template[0][2]
                         if not (m.type.isPrimitive() or m.type.isString()):
                             raise TypeError(
                                 "We only support primitives or strings on templated attributes. "
@@ -17244,7 +17241,7 @@ class CGDescriptor(CGThing):
                             )
                         template = attributeTemplates.get(templateName)
                         specializedGetter = CGSpecializedTemplatedGetter(
-                            descriptor, m, template, additionalArg
+                            descriptor, m, template, templateType, additionalArg
                         )
                     else:
                         specializedGetter = CGSpecializedGetter(descriptor, m)
@@ -17262,15 +17259,12 @@ class CGDescriptor(CGThing):
                     elif descriptor.interface.hasInterfacePrototypeObject():
                         template = m.getExtendedAttribute("BindingTemplate")
                         if template is not None:
-                            if isinstance(template[0], list):
-                                templateName = template[0][0]
-                                additionalArg = template[0][1]
-                            else:
-                                templateName = template[0]
-                                additionalArg = None
+                            templateName = template[0][0]
+                            templateType = template[0][1]
+                            additionalArg = template[0][2]
                             template = attributeTemplates.get(templateName)
                             specializedSetter = CGSpecializedTemplatedSetter(
-                                descriptor, m, template, additionalArg
+                                descriptor, m, template, templateType, additionalArg
                             )
                         else:
                             specializedSetter = CGSpecializedSetter(descriptor, m)

@@ -1410,14 +1410,14 @@ implementing `MyInterface`.
 Multiple `[BindingAlias]` extended attributes can be used on a single
 attribute.
 
-### `[BindingTemplate=(name, value)]`
+### `[BindingTemplate=(name, type, value)]`
 
 This extended attribute can be specified on an attribute, and causes the getter
 and setter for this attribute to forward to a common generated implementation,
 shared with all other attributes that have a `[BindingTemplate]` with the same
 value for the `name` argument. The `TemplatedAttributes` dictionary in
 Bindings.conf needs to contain a definition for the template with the name
-`name`. The `value` will be passed as an argument when calling the common
+`name`. The argument `type::value` will be passed when calling the common
 generated implementation.
 
 This is aimed at very specialized use cases where an interface has a
