@@ -351,6 +351,7 @@ impl NeqoHttp3Conn {
         qlog_dir: &nsACString,
         provider_flags: u32,
         idle_timeout: u32,
+        fast_pto: u32,
         pmtud_enabled: bool,
         socket: Option<i64>,
     ) -> Result<RefPtr<Self>, nsresult> {
@@ -429,7 +430,7 @@ impl NeqoHttp3Conn {
             // transmitted UDP datagrams might get fragmented by the IP layer.
             && socket.as_ref().map_or(false, |s| !s.may_fragment());
 
-        let params = ConnectionParameters::default()
+        let mut params = ConnectionParameters::default()
             .versions(quic_version, version_list)
             .cc_algorithm(cc_algorithm)
             .max_data(max_data)
@@ -442,6 +443,15 @@ impl NeqoHttp3Conn {
             // MLKEM support is configured further below. By default, disable it.
             .mlkem(false)
             .pmtud(pmtud_enabled);
+
+        // 0 means "use neqo's spec-compliant default PTO scaling".
+        if fast_pto > 0 {
+            if let Ok(v) = u8::try_from(fast_pto) {
+                params = params.fast_pto(v);
+            } else {
+                debug_assert!(false, "fast_pto value {fast_pto} exceeds u8::MAX");
+            }
+        }
 
         // Set a short timeout when fuzzing.
         #[cfg(feature = "fuzzing")]
@@ -793,6 +803,7 @@ pub extern "C" fn neqo_http3conn_new(
     qlog_dir: &nsACString,
     provider_flags: u32,
     idle_timeout: u32,
+    fast_pto: u32,
     socket: i64,
     pmtud_enabled: bool,
     result: &mut *const NeqoHttp3Conn,
@@ -813,6 +824,7 @@ pub extern "C" fn neqo_http3conn_new(
         qlog_dir,
         provider_flags,
         idle_timeout,
+        fast_pto,
         pmtud_enabled,
         Some(socket),
     ) {
@@ -840,6 +852,7 @@ pub extern "C" fn neqo_http3conn_new_use_nspr_for_io(
     qlog_dir: &nsACString,
     provider_flags: u32,
     idle_timeout: u32,
+    fast_pto: u32,
     result: &mut *const NeqoHttp3Conn,
 ) -> nsresult {
     *result = ptr::null_mut();
@@ -858,6 +871,7 @@ pub extern "C" fn neqo_http3conn_new_use_nspr_for_io(
         qlog_dir,
         provider_flags,
         idle_timeout,
+        fast_pto,
         false,
         None,
     ) {
