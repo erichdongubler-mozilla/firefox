@@ -27,6 +27,7 @@
 
 #include "mozilla/Components.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/glean/WidgetCocoaMetrics.h"
 
 using namespace mozilla;
 using mozilla::dom::Element;
@@ -557,6 +558,8 @@ void nsMenuBarX::ResetNativeApplicationMenu() {
 void nsMenuBarX::SetNeedsRebuild() { mNeedsRebuild = true; }
 
 void nsMenuBarX::ApplicationMenuOpened() {
+  glean::widget::mac_application_menu_opened.Add(1);
+
   if (mNeedsRebuild) {
     if (!mMenuArray.IsEmpty()) {
       ResetNativeApplicationMenu();
