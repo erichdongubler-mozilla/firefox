@@ -954,6 +954,9 @@ class GeckoEngineSession(
                 }
             }
 
+            if (hasUserGesture) {
+                pageLoadingUrl = url
+            }
             currentUrl = url
             initialLoad = false
             initialLoadRequest = null
