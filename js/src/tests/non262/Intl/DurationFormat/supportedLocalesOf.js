@@ -143,9 +143,9 @@ assertEq(
 );
 
 
-const supported = Intl.RelativeTimeFormat.supportedLocalesOf(allLocales);
+const supported = Intl.DurationFormat.supportedLocalesOf(allLocales);
 
-// Ensure all Firefox locales are supported by Intl.RelativeTimeFormat, except
+// Ensure all Firefox locales are supported by Intl.DurationFormat, except
 // for the known unsupported locales.
 assertEqArray(
   [...new Set(allLocales).difference(new Set(supported))].sort(),
