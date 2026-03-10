@@ -57,16 +57,6 @@ settings-data-backup-restore-scheduled-off =
     .label = Restore your data
     .description = Use a { -brand-product-name } backup from another device to restore your data.
 
-## These strings are shown under the header if scheduled backups are disabled.
-
-settings-data-backup-scheduled-backups-off-restore-description = Use a { -brand-product-name } backup from another device to restore your data.
-settings-data-backup-scheduled-backups-off-restore-choose = Choose backup file…
-
-## These strings are shown under the header if scheduled backups are enabled.
-
-settings-data-backup-scheduled-backups-on-restore-description = Recover your { -brand-product-name } data back from the last time it was backed up.
-settings-data-backup-scheduled-backups-on-restore-choose = Restore…
-
 settings-sensitive-data =
     .label = Sensitive data
 settings-sensitive-data-encryption-description = Back up your passwords and payment methods, plus keep all your data safe with encryption.

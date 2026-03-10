@@ -33,7 +33,7 @@ add_task(async function test_preferences_visibility() {
       { childList: true, subtree: true },
       () => {
         return (
-          settings.shadowRoot.getElementById("restore-from-backup") &&
+          settings.shadowRoot.getElementById("backup-toggle-restore-button") &&
           settings.shadowRoot.getElementById("scheduled-backups")
         );
       }

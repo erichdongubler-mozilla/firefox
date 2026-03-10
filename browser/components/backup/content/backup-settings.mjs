@@ -38,7 +38,7 @@ export default class BackupSettings extends MozLitElement {
     return {
       scheduledBackupsButtonEl: "#backup-toggle-scheduled-button",
       archiveSectionEl: "#scheduled-backups",
-      restoreSectionEl: "#restore-from-backup",
+      restoreSectionEl: "#backup-toggle-restore-button",
       triggerBackupButtonEl: "#backup-trigger-button",
       changePasswordButtonEl: "#backup-change-password-button",
       disableBackupEncryptionEl: "disable-backup-encryption",
@@ -235,25 +235,15 @@ export default class BackupSettings extends MozLitElement {
   }
 
   restoreFromBackupTemplate() {
-    let restoreItemL10nID = this.backupServiceState.scheduledBackupsEnabled
+    let restoreL10nID = this.backupServiceState.scheduledBackupsEnabled
       ? "settings-data-backup-restore-scheduled-on"
       : "settings-data-backup-restore-scheduled-off";
 
-    let restoreButtonL10nID = this.backupServiceState.scheduledBackupsEnabled
-      ? "settings-data-backup-scheduled-backups-on-restore-choose"
-      : "settings-data-backup-scheduled-backups-off-restore-choose";
-
-    return html`<moz-box-item
-        id="restore-from-backup"
-        data-l10n-id=${restoreItemL10nID}
-      >
-        <moz-button
-          id="backup-toggle-restore-button"
-          @click=${this.handleShowRestoreDialog}
-          data-l10n-id=${restoreButtonL10nID}
-          slot="actions"
-        ></moz-button>
-      </moz-box-item>
+    return html`<moz-box-button
+        id="backup-toggle-restore-button"
+        @click=${this.handleShowRestoreDialog}
+        data-l10n-id=${restoreL10nID}
+      ></moz-box-button>
       ${this.restoreFromBackupDialogTemplate()}`;
   }
 
