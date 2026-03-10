@@ -3133,7 +3133,7 @@ static void RemoveTruncatesOnOutput(MDefinition* truncated) {
 
   for (MUseDefIterator use(truncated); use; use++) {
     MDefinition* def = use.def();
-    if (!def->isTruncateToInt32() || !def->isToNumberInt32()) {
+    if (!def->isTruncateToInt32() && !def->isToNumberInt32()) {
       continue;
     }
 
