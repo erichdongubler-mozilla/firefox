@@ -114,6 +114,11 @@ PER_PROJECT_PARAMETERS = {
         "target_tasks_method": "mozilla_central_tasks",
     },
     # git projects
+    "firefox": {
+        # TODO We'll eventually need to split this out based on tasks_for and
+        # branch, but for now just use the pull request target_tasks_method.
+        "target_tasks_method": "firefox_pull_request_tasks",
+    },
     "staging-firefox": {
         "target_tasks_method": "default",
     },

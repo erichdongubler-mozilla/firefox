@@ -1723,3 +1723,16 @@ def target_tasks_test_info_timings_periodic(full_task_graph, parameters, graph_c
         "source-test-file-metadata-test-info-mochitest-timings-periodic",
         "source-test-file-metadata-test-info-manifest-timings-periodic",
     ]
+
+
+@register_target_task("firefox_pull_request_tasks")
+def target_firefox_pull_requests(full_task_graph, parameters, graph_config):
+    if parameters["tasks_for"] != "github-pull-request":
+        return []
+
+    labels = []
+    for label, task in full_task_graph.tasks.items():
+        if task.attributes.get("code-review") or task.kind == "code-review":
+            labels.append(label)
+
+    return labels
