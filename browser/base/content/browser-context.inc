@@ -347,6 +347,15 @@
       <menuitem id="context-pdfjs-select-all"
                 data-l10n-id="text-action-select-all"/>
       <menuseparator id="context-sep-pdfjs-select-all"/>
+      <menuitem id="context-pdfjs-copy-page"
+                data-l10n-id="main-context-menu-pdfjs-copy-page"/>
+      <menuitem id="context-pdfjs-cut-page"
+                data-l10n-id="main-context-menu-pdfjs-cut-page"/>
+      <menuitem id="context-pdfjs-delete-page"
+                data-l10n-id="main-context-menu-pdfjs-delete-page"/>
+      <menuitem id="context-pdfjs-save-page"
+                data-l10n-id="main-context-menu-pdfjs-save-page"/>
+      <menuseparator id="context-sep-pdfjs-save-page"/>
 
       <menuitem id="context-take-screenshot"
                 data-l10n-id="main-context-menu-take-screenshot"/>

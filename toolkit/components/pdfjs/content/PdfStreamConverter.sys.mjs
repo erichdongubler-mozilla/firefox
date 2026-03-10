@@ -628,6 +628,7 @@ class ChromeActions {
       hasSomethingToRedo: false,
       hasSelectedEditor: false,
       hasSelectedText: false,
+      hasSelectedPages: false,
     };
     const { pdfStates } = doc;
     for (const [key, value] of Object.entries(details)) {

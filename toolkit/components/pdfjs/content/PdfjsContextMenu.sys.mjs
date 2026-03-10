@@ -31,6 +31,8 @@ export class PdfjsContextMenu {
 
   #isInPDFEditor = false;
 
+  #isInPagesEditor = false;
+
   #pdfStates = null;
 
   constructor(aContextMenu, aContext) {
@@ -38,6 +40,7 @@ export class PdfjsContextMenu {
     this.#isInPDFViewer = aContext.inPDFViewer;
     this.#pdfStates = aContext.pdfStates;
     this.#isInPDFEditor = !!this.#pdfStates?.isEditing;
+    this.#isInPagesEditor = this.#pdfStates?.hasSelectedPages;
   }
 
   initItems() {
@@ -54,6 +57,20 @@ export class PdfjsContextMenu {
       "context-sep-pdfjs-select-all",
     ]) {
       contextMenu.showItem(id, this.#isInPDFEditor);
+    }
+    for (const id of [
+      "context-pdfjs-copy-page",
+      "context-pdfjs-cut-page",
+      "context-pdfjs-delete-page",
+      "context-pdfjs-save-page",
+      "context-sep-pdfjs-save-page",
+    ]) {
+      contextMenu.showItem(id, this.#isInPagesEditor);
+    }
+
+    if (this.#isInPDFViewer && this.#isInPagesEditor) {
+      contextMenu.showItem("context-savepage", false);
+      return;
     }
 
     if (this.#isInPDFViewer && this.#isInPDFEditor) {
