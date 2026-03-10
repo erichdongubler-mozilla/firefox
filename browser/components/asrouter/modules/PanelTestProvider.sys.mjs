@@ -2782,6 +2782,17 @@ const MESSAGES = () => [
     groups: [],
   },
   {
+    id: "TEST_ASROUTER_NEWTAB_MESSAGE",
+    template: "newtab_message",
+    content: {
+      messageType: "ASRouterNewTabMessage",
+    },
+    trigger: {
+      id: "newtabMessageCheck",
+    },
+    groups: [],
+  },
+  {
     id: "UNIVERSAL_INFOBAR_WITH_EMBEDDED_LINKS",
     content: {
       text: [

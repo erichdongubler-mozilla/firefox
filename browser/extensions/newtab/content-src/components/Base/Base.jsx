@@ -21,6 +21,7 @@ import { DownloadMobilePromoHighlight } from "../DiscoveryStreamComponents/Featu
 import { WallpaperFeatureHighlight } from "../DiscoveryStreamComponents/FeatureHighlight/WallpaperFeatureHighlight";
 import { ActivationWindowMessage } from "../ActivationWindowMessage/ActivationWindowMessage";
 import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
+import { ExternalComponentWrapper } from "content-src/components/ExternalComponentWrapper/ExternalComponentWrapper";
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
@@ -1000,6 +1001,15 @@ export class BaseContent extends React.PureComponent {
             {/* Bug 1914055: Show logo regardless if search is enabled */}
             {!prefs.showSearch && !noSectionsEnabled && <Logo />}
             <div className={`body-wrapper${initialized ? " on" : ""}`}>
+              {this.shouldShowOMCHighlight("ASRouterNewTabMessage") && (
+                <MessageWrapper dispatch={this.props.dispatch}>
+                  <ExternalComponentWrapper
+                    type="ASROUTER_NEWTAB_MESSAGE"
+                    messageData={this.props.Messages.messageData}
+                    className="asrouter-newtab-message-wrapper"
+                  />
+                </MessageWrapper>
+              )}
               {this.shouldShowOMCHighlight("ActivationWindowMessage") && (
                 <MessageWrapper dispatch={this.props.dispatch}>
                   <ActivationWindowMessage

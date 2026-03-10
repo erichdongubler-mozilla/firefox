@@ -120,6 +120,7 @@ Detailed Docs
 .. toctree::
   :maxdepth: 2
 
+  asrouter-newtab-message
   building-and-testing
   debugging-docs
   frequency-caps

@@ -63,6 +63,17 @@ export class NewTabMessaging {
               tabDetails.portID
             )
           );
+          this.store.dispatch(
+            ac.OnlyToOneContent(
+              {
+                type: at.MESSAGE_TOGGLE_VISIBILITY,
+                data: {
+                  isVisible: true,
+                },
+              },
+              tabDetails.portID
+            )
+          );
         }
       }
     } else {

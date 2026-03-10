@@ -15565,6 +15565,8 @@ function Logo() {
  * @param {string} props.type - The component type to load (e.g., "SEARCH")
  * @param {string} props.className - CSS class name(s) to apply to the wrapper div
  * @param {Function} props.importModule - Function to import modules (for testing)
+ * @param {object} props.props - Properties to assign to the component, where
+ *   each key is the property name, and the value is the property value.
  */
 function ExternalComponentWrapper({
   type,
@@ -15572,7 +15574,8 @@ function ExternalComponentWrapper({
   // importFunction is declared as an arrow function here purely so that we can
   // override it for testing.
   // eslint-disable-next-line no-unsanitized/method
-  importModule = url => import(/* webpackIgnore: true */url)
+  importModule = url => import(/* webpackIgnore: true */url),
+  ...props
 }) {
   const containerRef = external_React_default().useRef(null);
   const customElementRef = external_React_default().useRef(null);
@@ -15611,6 +15614,11 @@ function ExternalComponentWrapper({
               element.style.setProperty(variable, style);
             }
           }
+          if (props) {
+            for (let [propName, propValue] of Object.entries(props)) {
+              element[propName] = propValue;
+            }
+          }
           customElementRef.current = element;
           containerRef.current.appendChild(element);
         }
@@ -15630,6 +15638,11 @@ function ExternalComponentWrapper({
       }
       l10nLinksRef.current = [];
     };
+    // props is intentionally excluded from the dependency array because it creates
+    // a new object reference on every render, which would cause the effect to
+    // re-run unnecessarily. The props are only used during initial element creation,
+    // which is guarded by the !customElementRef.current check.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, components, importModule]);
   if (error) {
     return null;
@@ -16951,6 +16964,7 @@ function Base_extends() { return Base_extends = Object.assign ? Object.assign.bi
 
 
 
+
 const Base_VISIBLE = "visible";
 const Base_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const PREF_INFERRED_PERSONALIZATION_SYSTEM = "discoverystream.sections.personalization.inferred.enabled";
@@ -17691,7 +17705,13 @@ class BaseContent extends (external_React_default()).PureComponent {
       showLogo: noSectionsEnabled || prefs["logowordmark.alwaysVisible"]
     }, props.Search)))), !prefs.showSearch && !noSectionsEnabled && /*#__PURE__*/external_React_default().createElement(Logo, null), /*#__PURE__*/external_React_default().createElement("div", {
       className: `body-wrapper${initialized ? " on" : ""}`
-    }, this.shouldShowOMCHighlight("ActivationWindowMessage") && /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
+    }, this.shouldShowOMCHighlight("ASRouterNewTabMessage") && /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
+      dispatch: this.props.dispatch
+    }, /*#__PURE__*/external_React_default().createElement(ExternalComponentWrapper, {
+      type: "ASROUTER_NEWTAB_MESSAGE",
+      messageData: this.props.Messages.messageData,
+      className: "asrouter-newtab-message-wrapper"
+    })), this.shouldShowOMCHighlight("ActivationWindowMessage") && /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
       dispatch: this.props.dispatch
     }, /*#__PURE__*/external_React_default().createElement(ActivationWindowMessage, {
       dispatch: this.props.dispatch,
