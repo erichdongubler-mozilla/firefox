@@ -11,7 +11,9 @@
             "filterType": "exclude"
         },
         "coll_tree": {
-            "filterType": "exclude"
+            "excludelist": [
+                "en_US_POSIX"
+            ]
         },
         "confusables": {
             "filterType": "exclude"

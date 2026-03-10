@@ -35,9 +35,8 @@ class CollatorObject : public NativeObject {
   static constexpr uint32_t BOUND_COMPARE_SLOT = 4;
   static constexpr uint32_t SLOT_COUNT = 5;
 
-  // Box<CollatorBorrowed> causes a request for an allocation of 72,
-  // which is rounded up to 80 inside the allocator.
-  static constexpr size_t EstimatedMemoryUse = 80;
+  // Estimated memory use for UCollator (see IcuMemoryUsage).
+  static constexpr size_t EstimatedMemoryUse = 1128;
 
   bool isLocaleResolved() const { return getFixedSlot(LOCALE_SLOT).isString(); }
 

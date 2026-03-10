@@ -42,7 +42,7 @@ class txXPathResultComparator {
 class txResultStringComparator : public txXPathResultComparator {
  public:
   txResultStringComparator(bool aAscending, bool aUpperFirst);
-  nsresult init(const nsACString& aLanguage);
+  nsresult init(const nsString& aLanguage);
 
   int compareValues(txObject* aVal1, txObject* aVal2) override;
   std::pair<mozilla::UniquePtr<txObject>, nsresult> createSortableValue(

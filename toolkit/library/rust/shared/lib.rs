@@ -5,7 +5,6 @@
 extern crate geckoservo;
 
 extern crate abridged_certs;
-extern crate app_collator_glue;
 #[cfg(feature = "cubeb-remoting")]
 extern crate audioipc2_client;
 #[cfg(feature = "cubeb-remoting")]

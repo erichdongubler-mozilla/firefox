@@ -30,7 +30,6 @@ audioipc2-client = { git = "https://github.com/mozilla/audioipc", rev = "0339c47
 audioipc2-server = { git = "https://github.com/mozilla/audioipc", rev = "0339c4732ceadbc5f54898b77498c33fff0f3f90", optional = true }
 encoding_glue = { path = "../../../../intl/encoding_glue" }
 locale_service_glue = { path = "../../../../intl/locale/rust/locale_service_glue" }
-app_collator_glue = { path = "../../../../intl/app_collator_glue" }
 authrs_bridge = { path = "../../../../dom/webauthn/authrs_bridge" }
 gkrust_utils = { path = "../../../../xpcom/rust/gkrust_utils" }
 gecko_logger = { path = "../../../../xpcom/rust/gecko_logger" }

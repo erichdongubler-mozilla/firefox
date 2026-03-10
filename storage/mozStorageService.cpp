@@ -201,7 +201,10 @@ Service::AutoVFSRegistration::~AutoVFSRegistration() {
   }
 }
 
-Service::Service() : mRegistrationMutex("Service::mRegistrationMutex") {}
+Service::Service()
+    : mMutex("Service::mMutex"),
+      mRegistrationMutex("Service::mRegistrationMutex"),
+      mLastSensitivity(mozilla::intl::Collator::Sensitivity::Base) {}
 
 Service::~Service() {
   mozilla::UnregisterWeakMemoryReporter(this);
@@ -379,6 +382,64 @@ nsresult Service::initialize() {
       StorageSQLiteDistinguishedAmount);
 
   return NS_OK;
+}
+
+int Service::localeCompareStrings(const nsAString& aStr1,
+                                  const nsAString& aStr2,
+                                  Collator::Sensitivity aSensitivity) {
+  // The mozilla::intl::Collator is not thread safe, since the Collator::Options
+  // can be changed.
+  MutexAutoLock mutex(mMutex);
+
+  Collator* collator = getCollator();
+  if (!collator) {
+    NS_ERROR("Storage service has no collation");
+    return 0;
+  }
+
+  if (aSensitivity != mLastSensitivity) {
+    Collator::Options options{};
+    options.sensitivity = aSensitivity;
+    auto result = mCollator->SetOptions(options);
+
+    if (result.isErr()) {
+      NS_WARNING("Could not configure the mozilla::intl::Collation.");
+      return 0;
+    }
+    mLastSensitivity = aSensitivity;
+  }
+
+  return collator->CompareStrings(aStr1, aStr2);
+}
+
+Collator* Service::getCollator() {
+  mMutex.AssertCurrentThreadOwns();
+
+  if (mCollator) {
+    return mCollator.get();
+  }
+
+  auto result = mozilla::intl::LocaleService::TryCreateComponent<Collator>();
+  if (result.isErr()) {
+    NS_WARNING("Could not create mozilla::intl::Collation.");
+    return nullptr;
+  }
+
+  mCollator = result.unwrap();
+
+  // Sort in a case-insensitive way, where "base" letters are considered
+  // equal, e.g: a = á, a = A, a ≠ b.
+  Collator::Options options{};
+  options.sensitivity = Collator::Sensitivity::Base;
+  auto optResult = mCollator->SetOptions(options);
+
+  if (optResult.isErr()) {
+    NS_WARNING("Could not configure the mozilla::intl::Collation.");
+    mCollator = nullptr;
+    return nullptr;
+  }
+
+  return mCollator.get();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

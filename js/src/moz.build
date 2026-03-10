@@ -330,7 +330,7 @@ if CONFIG["MOZ_VTUNE"]:
     DIRS += ["vtune"]
 
 if CONFIG["JS_HAS_INTL_API"]:
-    DIRS += ["builtin/intl", "builtin/temporal", "builtin/intl/collator_glue"]
+    DIRS += ["builtin/intl", "builtin/temporal"]
 
 CXXFLAGS += CONFIG["MOZ_ZLIB_CFLAGS"]
 

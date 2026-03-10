@@ -779,17 +779,45 @@ static bool IsSupportedCalendar(JSContext* cx, Handle<JSLinearString*> loc,
  */
 static bool IsSupportedCollation(JSContext* cx, Handle<JSLinearString*> loc,
                                  Handle<JSLinearString*> string, bool* result) {
-  StringAsciiChars locale(loc);
-  if (!locale.init(cx)) {
+  MOZ_ASSERT(StringIsAscii(string));
+
+  auto locale = EncodeLocale(cx, loc);
+  if (!locale) {
     return false;
   }
 
-  StringAsciiChars collation(string);
-  if (!collation.init(cx)) {
+  auto keywords =
+      mozilla::intl::Collator::GetBcp47KeywordValuesForLocale(locale.get());
+  if (keywords.isErr()) {
+    ReportInternalError(cx, keywords.unwrapErr());
     return false;
   }
 
-  *result = mozilla::intl::Collator::IsSupportedCollation(locale, collation);
+  for (auto keyword : keywords.unwrap()) {
+    if (keyword.isErr()) {
+      ReportInternalError(cx);
+      return false;
+    }
+    auto collation = keyword.unwrap();
+
+    // Per ECMA-402, 10.2.3, we don't include standard and search:
+    //
+    // The values "standard" and "search" must not be used as elements in any
+    // [[SortLocaleData]].[[<locale>]].[[co]] and
+    // [[SearchLocaleData]].[[<locale>]].[[co]] List.
+    static constexpr auto standard = mozilla::MakeStringSpan("standard");
+    static constexpr auto search = mozilla::MakeStringSpan("search");
+    if (collation == standard || collation == search) {
+      continue;
+    }
+
+    if (StringEqualsAscii(string, collation.data(), collation.size())) {
+      *result = true;
+      return true;
+    }
+  }
+
+  *result = false;
   return true;
 }
 

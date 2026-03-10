@@ -24,6 +24,53 @@
 
 using namespace mozilla;
 
+//------------------------------------------------------------------------
+
+const mozilla::intl::Collator* nsXULContentUtils::gCollator;
+
+//------------------------------------------------------------------------
+// Constructors n' stuff
+//
+
+nsresult nsXULContentUtils::Finish() {
+  if (gCollator) {
+    delete gCollator;
+    gCollator = nullptr;
+  }
+
+  return NS_OK;
+}
+
+const mozilla::intl::Collator* nsXULContentUtils::GetCollator() {
+  if (!gCollator) {
+    // Lazily initialize the Collator.
+    auto result = mozilla::intl::LocaleService::TryCreateComponent<
+        mozilla::intl::Collator>();
+    if (result.isErr()) {
+      NS_ERROR("couldn't create a mozilla::intl::Collator");
+      return nullptr;
+    }
+
+    auto collator = result.unwrap();
+
+    // Sort in a case-insensitive way, where "base" letters are considered
+    // equal, e.g: a = á, a = A, a ≠ b.
+    mozilla::intl::Collator::Options options{};
+    options.sensitivity = mozilla::intl::Collator::Sensitivity::Base;
+    auto optResult = collator->SetOptions(options);
+    if (optResult.isErr()) {
+      NS_ERROR("couldn't set options for mozilla::intl::Collator");
+      return nullptr;
+    }
+    gCollator = collator.release();
+  }
+
+  return gCollator;
+}
+
+//------------------------------------------------------------------------
+//
+
 nsresult nsXULContentUtils::FindChildByTag(nsIContent* aElement,
                                            int32_t aNameSpaceID, nsAtom* aTag,
                                            mozilla::dom::Element** aResult) {

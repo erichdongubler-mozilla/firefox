@@ -346,7 +346,7 @@ class SharedIntlData {
    * calling into ICU to find the upper-case first locales in that case.
    */
 
-#if DEBUG
+#if DEBUG || MOZ_SYSTEM_ICU
   LocaleSet upperCaseFirstLocales;
 
   bool upperCaseFirstInitialized = false;
@@ -366,7 +366,7 @@ class SharedIntlData {
                         bool* isUpperFirst);
 
  private:
-#if DEBUG
+#if DEBUG || MOZ_SYSTEM_ICU
   LocaleSet ignorePunctuationLocales;
 
   bool ignorePunctuationInitialized = false;
