@@ -5405,16 +5405,32 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyIsImportant(
     })
 }
 
+/// An unsupported property value used by Typed OM.
+///
+/// This corresponds to `CSSUnsupportedValue` in the Typed OM specification.
+/// The value is represented by a `Strong<LockedDeclarationBlock>` so the full
+/// declaration block can be transferred across the Rust <-> C++ boundary and
+/// associated with a specific property.
+#[repr(C)]
+pub struct UnsupportedValue(pub Strong<LockedDeclarationBlock>);
+
+impl From<Arc<Locked<PropertyDeclarationBlock>>> for UnsupportedValue {
+    fn from(block: Arc<Locked<PropertyDeclarationBlock>>) -> Self {
+        UnsupportedValue(block.into())
+    }
+}
+
 /// A FFI-friendly counterpart to [`PropertyTypedValue`].
 ///
 /// This type is returned across the Rust <-> C++ boundary. It mirrors
 /// [`PropertyTypedValue`], but with one important difference:
 ///
 /// * Internally, [`PropertyTypedValue::Unsupported`] is just a marker.
-/// * Here, `PropertyTypedValueResult::Unsupported` carries a
+/// * Here, `PropertyTypedValueResult::Unsupported` carries an
+///   `UnsupportedValue`, which in turn holds the
 ///   `Strong<LockedDeclarationBlock>`.
 /// This is mostly because `cbindgen` currently cannot generate right bindings
-/// for `Arc<Locked<PropertyDeclarationBlock>>` inside the Rust enum.
+/// for `Arc<Locked<PropertyDeclarationBlock>>` inside the Rust struct.
 #[repr(C)]
 /// cbindgen:derive-tagged-enum-copy-constructor=false
 /// cbindgen:derive-tagged-enum-copy-assignment=false
@@ -5424,10 +5440,10 @@ pub enum PropertyTypedValueResult {
 
     /// The property exists but cannot be expressed as a `TypedValue`.
     ///
-    /// Used for shorthands and other unrepresentable cases. In this case, the
-    /// full declaration block is returned so that a corresponding
-    /// `CSSUnsupportedValue` object can be created and tied to the property.
-    Unsupported(Strong<LockedDeclarationBlock>),
+    /// This occurs for shorthands and other unrepresentable cases. In this
+    /// case, an `UnsupportedValue` is returned so a `CSSUnsupportedValue`
+    /// object can be created and tied to the property.
+    Unsupported(UnsupportedValue),
 
     /// The property was successfully reified into a `TypedValue`.
     Typed(TypedValue),
