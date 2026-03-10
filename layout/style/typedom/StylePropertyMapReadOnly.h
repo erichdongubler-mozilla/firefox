@@ -25,7 +25,7 @@ class RefPtr;
 namespace mozilla {
 
 class ErrorResult;
-struct StylePropertyTypedValueResult;
+struct StylePropertyTypedValue;
 
 namespace dom {
 
@@ -88,8 +88,8 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
     explicit Declarations(CSSStyleRule* aRule)
         : mRule(aRule), mKind(Kind::Rule) {}
 
-    StylePropertyTypedValueResult Get(const nsACString& aProperty,
-                                      ErrorResult& aRv) const;
+    StylePropertyTypedValue Get(const nsACString& aProperty,
+                                ErrorResult& aRv) const;
 
     void Unlink();
 

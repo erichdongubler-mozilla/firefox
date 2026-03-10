@@ -5272,7 +5272,7 @@ impl From<Arc<Locked<PropertyDeclarationBlock>>> for UnsupportedValue {
 #[repr(C)]
 /// cbindgen:derive-tagged-enum-copy-constructor=false
 /// cbindgen:derive-tagged-enum-copy-assignment=false
-pub enum PropertyTypedValueResult {
+pub enum PropertyTypedValue {
     /// The property is not present in the declaration block.
     None,
 
@@ -5291,7 +5291,7 @@ pub enum PropertyTypedValueResult {
 pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyTypedValue(
     declarations: &LockedDeclarationBlock,
     property: &nsACString,
-    result: *mut PropertyTypedValueResult,
+    result: *mut PropertyTypedValue,
 ) -> bool {
     let property_id = get_property_id_from_property!(property, false);
 
@@ -5299,16 +5299,16 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyTypedValue(
         let typed_value = decls.property_value_to_typed(&property_id);
 
         match typed_value {
-            Err(()) => PropertyTypedValueResult::None,
+            Err(()) => PropertyTypedValue::None,
 
             Ok(None) => {
                 let global_style_data = &*GLOBAL_STYLE_DATA;
-                PropertyTypedValueResult::Unsupported(
+                PropertyTypedValue::Unsupported(
                     Arc::new(global_style_data.shared_lock.wrap(decls.clone())).into(),
                 )
             },
 
-            Ok(Some(typed_value)) => PropertyTypedValueResult::Typed(typed_value),
+            Ok(Some(typed_value)) => PropertyTypedValue::Typed(typed_value),
         }
     });
 
@@ -8485,7 +8485,7 @@ pub unsafe extern "C" fn Servo_GetResolvedValue(
 pub unsafe extern "C" fn Servo_GetComputedTypedValue(
     style: &ComputedValues,
     property: &nsACString,
-    result: *mut PropertyTypedValueResult,
+    result: *mut PropertyTypedValue,
 ) -> bool {
     let property_id = get_property_id_from_property!(property, false);
 
@@ -8523,12 +8523,12 @@ pub unsafe extern "C" fn Servo_GetComputedTypedValue(
                 },
             };
 
-            PropertyTypedValueResult::Unsupported(
+            PropertyTypedValue::Unsupported(
                 Arc::new(global_style_data.shared_lock.wrap(block)).into(),
             )
         },
 
-        Some(typed_value) => PropertyTypedValueResult::Typed(typed_value),
+        Some(typed_value) => PropertyTypedValue::Typed(typed_value),
     };
 
     true
