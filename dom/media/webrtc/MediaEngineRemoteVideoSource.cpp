@@ -254,8 +254,10 @@ nsresult MediaEngineRemoteVideoSource::Allocate(
 
   NormalizedConstraints c(aConstraints);
   const auto resizeMode = MediaConstraintsHelper::GetResizeMode(c, aPrefs);
+  const auto legacyDistanceMode =
+      mCapEngine == camera::CameraEngine ? kFitness : kFeasibility;
   const auto distanceMode =
-      resizeMode.map(&ToDistanceCalculation).valueOr(kFitness);
+      resizeMode.map(&ToDistanceCalculation).valueOr(legacyDistanceMode);
   webrtc::CaptureCapability newCapability;
   LOG("ChooseCapability(%s) for mCapability (Allocate) ++",
       ToString(distanceMode));
@@ -510,8 +512,10 @@ nsresult MediaEngineRemoteVideoSource::Reconfigure(
 
   NormalizedConstraints c(aConstraints);
   const auto resizeMode = MediaConstraintsHelper::GetResizeMode(c, aPrefs);
+  const auto legacyDistanceMode =
+      mCapEngine == camera::CameraEngine ? kFitness : kFeasibility;
   const auto distanceMode =
-      resizeMode.map(&ToDistanceCalculation).valueOr(kFitness);
+      resizeMode.map(&ToDistanceCalculation).valueOr(legacyDistanceMode);
   webrtc::CaptureCapability newCapability;
   LOG("ChooseCapability(%s) for mTargetCapability (Reconfigure) ++",
       ToString(distanceMode));
@@ -576,22 +580,17 @@ nsresult MediaEngineRemoteVideoSource::Reconfigure(
   mSettingsUpdatedByFrame->mValue = false;
   gfx::IntSize dstSize = CalculateDesiredSize(input);
   NS_DispatchToMainThread(NS_NewRunnableFunction(
-      __func__,
-      [settings = mSettings, updated = mSettingsUpdatedByFrame, dstSize,
-       framerate, resizeModeEnabled = mPrefs->mResizeModeEnabled,
-       distanceMode]() mutable {
-        const bool cropAndScale = distanceMode == kFeasibility;
+      __func__, [settings = mSettings, updated = mSettingsUpdatedByFrame,
+                 dstSize, framerate, resizeMode]() mutable {
         if (!updated->mValue) {
           settings->mWidth.Value() = dstSize.width;
           settings->mHeight.Value() = dstSize.height;
         }
         settings->mFrameRate.Value() = framerate;
-        if (resizeModeEnabled) {
-          auto resizeMode = cropAndScale ? VideoResizeModeEnum::Crop_and_scale
-                                         : VideoResizeModeEnum::None;
+        if (resizeMode) {
           settings->mResizeMode.Reset();
           settings->mResizeMode.Construct(
-              NS_ConvertASCIItoUTF16(dom::GetEnumString(resizeMode)));
+              NS_ConvertASCIItoUTF16(dom::GetEnumString(*resizeMode)));
         }
       }));
 
