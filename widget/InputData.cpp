@@ -272,6 +272,7 @@ MouseInput::MouseInput(const WidgetMouseEvent& aMouseEvent)
                 aMouseEvent.mModifiers),
       mType(MOUSE_NONE),
       mButtonType(NONE),
+      mClickCount(aMouseEvent.mClickCount),
       mInputSource(aMouseEvent.mInputSource),
       mButtons(aMouseEvent.mButtons),
       mHandledByAPZ(aMouseEvent.mFlags.mHandledByAPZ),
@@ -392,7 +393,6 @@ WidgetMouseOrPointerEvent MouseInput::ToWidgetEvent(nsIWidget* aWidget) const {
              "ToWidgetEvent<WidgetDragEvent>() for the instance");
 
   EventMessage msg = eVoidEvent;
-  uint32_t clickCount = 0;
   Maybe<WidgetMouseEvent::ExitFrom> exitFrom;
   switch (mType) {
     case MOUSE_MOVE:
@@ -400,11 +400,9 @@ WidgetMouseOrPointerEvent MouseInput::ToWidgetEvent(nsIWidget* aWidget) const {
       break;
     case MOUSE_UP:
       msg = eMouseUp;
-      clickCount = 1;
       break;
     case MOUSE_DOWN:
       msg = eMouseDown;
-      clickCount = 1;
       break;
     case MOUSE_DRAG_START:
       msg = eDragStart;
@@ -476,7 +474,7 @@ WidgetMouseOrPointerEvent MouseInput::ToWidgetEvent(nsIWidget* aWidget) const {
   event.mRefPoint = RoundedToInt(ViewAs<LayoutDevicePixel>(
       mOrigin,
       PixelCastJustification::LayoutDeviceIsScreenForUntransformedEvent));
-  event.mClickCount = clickCount;
+  event.mClickCount = mClickCount;
   event.mInputSource = mInputSource;
   event.mFocusSequenceNumber = mFocusSequenceNumber;
   event.mExitFrom = std::move(exitFrom);

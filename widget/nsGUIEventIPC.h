@@ -1197,6 +1197,7 @@ struct ParamTraits<mozilla::MouseInput> {
     WriteParam(aWriter, static_cast<const mozilla::InputData&>(aParam));
     WriteParam(aWriter, aParam.mButtonType);
     WriteParam(aWriter, aParam.mType);
+    WriteParam(aWriter, aParam.mClickCount);
     WriteParam(aWriter, aParam.mInputSource);
     WriteParam(aWriter, aParam.mButtons);
     WriteParam(aWriter, aParam.mOrigin);
@@ -1209,6 +1210,7 @@ struct ParamTraits<mozilla::MouseInput> {
     return ReadParam(aReader, static_cast<mozilla::InputData*>(aResult)) &&
            ReadParam(aReader, &aResult->mButtonType) &&
            ReadParam(aReader, &aResult->mType) &&
+           ReadParam(aReader, &aResult->mClickCount) &&
            ReadParam(aReader, &aResult->mInputSource) &&
            ReadParam(aReader, &aResult->mButtons) &&
            ReadParam(aReader, &aResult->mOrigin) &&

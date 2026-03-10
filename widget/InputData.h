@@ -318,6 +318,7 @@ class MouseInput : public InputData {
   // fields must be reflected in its ParamTraits<>, in nsGUIEventIPC.h
   MouseType mType;
   ButtonType mButtonType;
+  uint32_t mClickCount = 0;
   uint16_t mInputSource;
   int16_t mButtons;
   ScreenPoint mOrigin;
