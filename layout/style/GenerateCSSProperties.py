@@ -23,6 +23,7 @@ def props_and_deps():
               "data.py", "counted_unknown_properties.py",
               "longhands.toml", "shorthands.toml",
               "font_face_descriptors.toml", "counter_style_descriptors.toml",
+              "property_descriptors.toml",
           ]
         ])
     )

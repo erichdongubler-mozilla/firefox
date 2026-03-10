@@ -3405,7 +3405,12 @@ pub extern "C" fn Servo_PropertyRule_GetName(rule: &PropertyRule, result: &mut n
 
 #[no_mangle]
 pub extern "C" fn Servo_PropertyRule_GetSyntax(rule: &PropertyRule, result: &mut nsACString) {
-    if let Some(syntax) = rule.data.syntax.specified_string() {
+    if let Some(syntax) = rule
+        .descriptors
+        .syntax
+        .as_ref()
+        .and_then(|s| s.specified_string())
+    {
         result.assign(syntax);
     } else {
         debug_assert!(false, "Rule without specified syntax?");
@@ -3414,7 +3419,7 @@ pub extern "C" fn Servo_PropertyRule_GetSyntax(rule: &PropertyRule, result: &mut
 
 #[no_mangle]
 pub extern "C" fn Servo_PropertyRule_GetInherits(rule: &PropertyRule) -> bool {
-    rule.inherits()
+    rule.descriptors.inherits()
 }
 
 #[no_mangle]
@@ -3422,11 +3427,11 @@ pub extern "C" fn Servo_PropertyRule_GetInitialValue(
     rule: &PropertyRule,
     result: &mut nsACString,
 ) -> bool {
-    rule.data
+    rule.descriptors
         .initial_value
         .to_css(&mut CssWriter::new(result))
         .unwrap();
-    rule.data.initial_value.is_some()
+    rule.descriptors.initial_value.is_some()
 }
 
 #[no_mangle]
@@ -9939,23 +9944,31 @@ impl PropDef {
     /// Creates a PropDef from a name and a PropertyRegistration.
     pub fn new(name: Atom, property_registration: &PropertyRegistration, from_js: bool) -> Self {
         let mut syntax = nsCString::new();
-        if let Some(spec) = property_registration.data.syntax.specified_string() {
+        if let Some(spec) = property_registration
+            .descriptors
+            .syntax
+            .as_ref()
+            .and_then(|s| s.specified_string())
+        {
             syntax.assign(spec);
         } else {
             // FIXME: Descriptor::to_css should behave consistently (probably this shouldn't use
             // the ToCss trait).
             property_registration
-                .data
+                .descriptors
                 .syntax
                 .to_css(&mut CssWriter::new(&mut syntax))
                 .unwrap();
         };
-        let initial_value = property_registration.data.initial_value.to_css_cssstring();
+        let initial_value = property_registration
+            .descriptors
+            .initial_value
+            .to_css_cssstring();
         PropDef {
             name,
             syntax,
-            inherits: property_registration.data.inherits(),
-            has_initial_value: property_registration.data.initial_value.is_some(),
+            inherits: property_registration.descriptors.inherits(),
+            has_initial_value: property_registration.descriptors.initial_value.is_some(),
             initial_value,
             from_js,
         }
