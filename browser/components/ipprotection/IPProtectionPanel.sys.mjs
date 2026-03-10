@@ -475,8 +475,12 @@ export class IPProtectionPanel {
 
   /**
    * Start flow for signing in and then opening the panel on success
+   *
+   * @param {object} options
+   * @param {string} options.entrypoint
+   *  The entrypoint to pass for the sign in flow
    */
-  async startLoginFlow() {
+  async startLoginFlow({ entrypoint = "vpn_integration_panel" } = {}) {
     let window = this.#window.get();
     let browser = window.gBrowser;
 
@@ -488,7 +492,7 @@ export class IPProtectionPanel {
     this.close();
 
     const signedIn = await lazy.SpecialMessageActions.fxaSignInFlow(
-      SIGNIN_DATA,
+      { ...SIGNIN_DATA, entrypoint },
       browser
     );
     return signedIn;
@@ -496,10 +500,12 @@ export class IPProtectionPanel {
 
   /**
    * Ensure there is a signed in account and then open the panel after enrolling.
+   *
+   * @param {object} options
    */
-  async enroll() {
+  async enroll(options = {}) {
     Glean.ipprotection.getStarted.record();
-    const signedIn = await this.startLoginFlow();
+    const signedIn = await this.startLoginFlow(options);
     if (!signedIn) {
       return;
     }
@@ -770,7 +776,7 @@ export class IPProtectionPanel {
       this.initiatedUpgrade = true;
       this.close();
     } else if (event.type == "IPProtection:OptIn") {
-      this.enroll();
+      this.enroll({ entrypoint: "vpn_integration_panel" });
     } else if (
       event.type == "IPPProxyManager:StateChanged" ||
       event.type == "IPProtectionService:StateChanged" ||
