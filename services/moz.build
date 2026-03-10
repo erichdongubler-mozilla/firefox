@@ -17,15 +17,6 @@ DIRS += [
     "settings",
 ]
 
-# A bit of a chicken-and-egg situation here - MOZ_APPSERVICES_IN_TREE allows
-# us to reference files not yet in the tree. Other monorepo related patches
-# actually adds them, after which it is possible to enable the flag.
-if CONFIG["MOZ_APPSERVICES_IN_TREE"]:
-    DIRS += [
-        "app-services/megazords/full",
-        "app-services/megazords/fenix-dylib",
-    ]
-
 # The automation dir is only included in nightlies and debug
 if not CONFIG["RELEASE_OR_BETA"] or CONFIG["MOZ_DEBUG"]:
     DIRS += ["automation"]
