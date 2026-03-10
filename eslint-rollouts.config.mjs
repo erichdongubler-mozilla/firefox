@@ -348,7 +348,7 @@ export default [
       "mobile/android/**",
       "mobile/shared/**",
       "modules/**",
-      "netwerk/**",
+      "netwerk/test/**",
       "parser/htmlparser/**",
       "remote/cdp/**",
       "remote/components/**",
