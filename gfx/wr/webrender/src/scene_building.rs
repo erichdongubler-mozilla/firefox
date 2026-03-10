@@ -987,15 +987,7 @@ impl<'a> SceneBuilder<'a> {
                             continue;
                         }
 
-                        let snapshot = info.snapshot.map(|snapshot| {
-                            // Offset the snapshot area by the stacking context origin
-                            // so that the area is expressed in the same coordinate space
-                            // as the items in the stacking context.
-                            SnapshotInfo {
-                                area: snapshot.area.translate(info.origin.to_vector()),
-                                .. snapshot
-                            }
-                        });
+                        let snapshot = info.snapshot;
 
                         let composition_operations = CompositeOps::new(
                             filter_ops_for_compositing(item.filters()),
@@ -1012,7 +1004,7 @@ impl<'a> SceneBuilder<'a> {
                             info.stacking_context.clip_chain_id,
                             info.stacking_context.raster_space,
                             info.stacking_context.flags,
-                            info.ref_frame_offset + info.origin.to_vector(),
+                            info.ref_frame_offset,
                         );
 
                         let new_context = BuildContext {

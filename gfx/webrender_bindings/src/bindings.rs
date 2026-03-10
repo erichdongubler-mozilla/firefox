@@ -3140,7 +3140,7 @@ pub extern "C" fn wr_dp_push_stacking_context(
     let mut wr_spatial_id = spatial_id.to_webrender(state.pipeline_id);
     let wr_clip_id = params.clip.to_webrender(state.pipeline_id);
 
-    let mut origin = bounds.min;
+    let origin = bounds.min;
 
     // Note: 0 has special meaning in WR land, standing for ROOT_REFERENCE_FRAME.
     // However, it is never returned by `push_reference_frame`, and we need to return
@@ -3173,7 +3173,6 @@ pub extern "C" fn wr_dp_push_stacking_context(
             transform_binding.1,
         );
 
-        origin = LayoutPoint::zero();
         result.id = wr_spatial_id.0;
         assert_ne!(wr_spatial_id.0, 0);
     } else if let Some(data) = computed_ref {
@@ -3192,7 +3191,6 @@ pub extern "C" fn wr_dp_push_stacking_context(
             data.key,
         );
 
-        origin = LayoutPoint::zero();
         result.id = wr_spatial_id.0;
         assert_ne!(wr_spatial_id.0, 0);
     } else if origin != LayoutPoint::zero() {
@@ -3210,13 +3208,11 @@ pub extern "C" fn wr_dp_push_stacking_context(
             },
             sc_origin_key,
         );
-        origin = LayoutPoint::zero();
         result.id = wr_spatial_id.0;
         assert_ne!(wr_spatial_id.0, 0);
     }
 
     state.frame_builder.dl_builder.push_stacking_context(
-        origin,
         wr_spatial_id,
         params.prim_flags,
         wr_clip_id,

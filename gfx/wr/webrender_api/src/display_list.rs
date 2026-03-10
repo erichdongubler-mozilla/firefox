@@ -1280,43 +1280,14 @@ impl DisplayListBuilder {
         Self::push_iter_impl(buffer, iter);
     }
 
-    // Remap a clip/bounds from stacking context coords to reference frame relative
-    fn remap_common_coordinates_and_bounds(
-        &self,
-        common: &di::CommonItemProperties,
-        bounds: LayoutRect,
-    ) -> (di::CommonItemProperties, LayoutRect) {
-        let offset = self.rf_mapper.current_offset();
-
-        (
-            di::CommonItemProperties {
-                clip_rect: common.clip_rect.translate(offset),
-                ..*common
-            },
-            bounds.translate(offset),
-        )
-    }
-
-    // Remap a bounds from stacking context coords to reference frame relative
-    fn remap_bounds(
-        &self,
-        bounds: LayoutRect,
-    ) -> LayoutRect {
-        let offset = self.rf_mapper.current_offset();
-
-        bounds.translate(offset)
-    }
-
     pub fn push_rect(
         &mut self,
         common: &di::CommonItemProperties,
         bounds: LayoutRect,
         color: ColorF,
     ) {
-        let (common, bounds) = self.remap_common_coordinates_and_bounds(common, bounds);
-
         let item = di::DisplayItem::Rectangle(di::RectangleDisplayItem {
-            common,
+            common: *common,
             color: PropertyBinding::Value(color),
             bounds,
         });
@@ -1329,10 +1300,8 @@ impl DisplayListBuilder {
         bounds: LayoutRect,
         color: PropertyBinding<ColorF>,
     ) {
-        let (common, bounds) = self.remap_common_coordinates_and_bounds(common, bounds);
-
         let item = di::DisplayItem::Rectangle(di::RectangleDisplayItem {
-            common,
+            common: *common,
             color,
             bounds,
         });
@@ -1347,8 +1316,6 @@ impl DisplayListBuilder {
         flags: di::PrimitiveFlags,
         tag: di::ItemTag,
     ) {
-        let rect = self.remap_bounds(rect);
-
         let item = di::DisplayItem::HitTest(di::HitTestDisplayItem {
             rect,
             clip_chain_id,
@@ -1368,10 +1335,10 @@ impl DisplayListBuilder {
         color: &ColorF,
         style: di::LineStyle,
     ) {
-        let (common, area) = self.remap_common_coordinates_and_bounds(common, *area);
+        let area = *area;
 
         let item = di::DisplayItem::Line(di::LineDisplayItem {
-            common,
+            common: *common,
             area,
             wavy_line_thickness,
             orientation,
@@ -1391,10 +1358,8 @@ impl DisplayListBuilder {
         key: ImageKey,
         color: ColorF,
     ) {
-        let (common, bounds) = self.remap_common_coordinates_and_bounds(common, bounds);
-
         let item = di::DisplayItem::Image(di::ImageDisplayItem {
-            common,
+            common: *common,
             bounds,
             image_key: key,
             image_rendering,
@@ -1416,10 +1381,8 @@ impl DisplayListBuilder {
         key: ImageKey,
         color: ColorF,
     ) {
-        let (common, bounds) = self.remap_common_coordinates_and_bounds(common, bounds);
-
         let item = di::DisplayItem::RepeatingImage(di::RepeatingImageDisplayItem {
-            common,
+            common: *common,
             bounds,
             image_key: key,
             stretch_size,
@@ -1443,10 +1406,8 @@ impl DisplayListBuilder {
         color_range: di::ColorRange,
         image_rendering: di::ImageRendering,
     ) {
-        let (common, bounds) = self.remap_common_coordinates_and_bounds(common, bounds);
-
         let item = di::DisplayItem::YuvImage(di::YuvImageDisplayItem {
-            common,
+            common: *common,
             bounds,
             yuv_data,
             color_depth,
@@ -1466,11 +1427,10 @@ impl DisplayListBuilder {
         color: ColorF,
         glyph_options: Option<GlyphOptions>,
     ) {
-        let (common, bounds) = self.remap_common_coordinates_and_bounds(common, bounds);
         let ref_frame_offset = self.rf_mapper.current_offset();
 
         let item = di::DisplayItem::Text(di::TextDisplayItem {
-            common,
+            common: *common,
             bounds,
             color,
             font_key,
@@ -1536,10 +1496,8 @@ impl DisplayListBuilder {
         widths: LayoutSideOffsets,
         details: di::BorderDetails,
     ) {
-        let (common, bounds) = self.remap_common_coordinates_and_bounds(common, bounds);
-
         let item = di::DisplayItem::Border(di::BorderDisplayItem {
-            common,
+            common: *common,
             bounds,
             details,
             widths,
@@ -1560,10 +1518,8 @@ impl DisplayListBuilder {
         shadow_radius: di::BorderRadius,
         clip_mode: di::BoxShadowClipMode,
     ) {
-        let (common, box_bounds) = self.remap_common_coordinates_and_bounds(common, box_bounds);
-
         let item = di::DisplayItem::BoxShadow(di::BoxShadowDisplayItem {
-            common,
+            common: *common,
             box_bounds,
             offset,
             color,
@@ -1599,10 +1555,8 @@ impl DisplayListBuilder {
         tile_size: LayoutSize,
         tile_spacing: LayoutSize,
     ) {
-        let (common, bounds) = self.remap_common_coordinates_and_bounds(common, bounds);
-
         let item = di::DisplayItem::Gradient(di::GradientDisplayItem {
-            common,
+            common: *common,
             bounds,
             gradient,
             tile_size,
@@ -1623,10 +1577,8 @@ impl DisplayListBuilder {
         tile_size: LayoutSize,
         tile_spacing: LayoutSize,
     ) {
-        let (common, bounds) = self.remap_common_coordinates_and_bounds(common, bounds);
-
         let item = di::DisplayItem::RadialGradient(di::RadialGradientDisplayItem {
-            common,
+            common: *common,
             bounds,
             gradient,
             tile_size,
@@ -1647,10 +1599,8 @@ impl DisplayListBuilder {
         tile_size: LayoutSize,
         tile_spacing: LayoutSize,
     ) {
-        let (common, bounds) = self.remap_common_coordinates_and_bounds(common, bounds);
-
         let item = di::DisplayItem::ConicGradient(di::ConicGradientDisplayItem {
-            common,
+            common: *common,
             bounds,
             gradient,
             tile_size,
@@ -1749,7 +1699,6 @@ impl DisplayListBuilder {
 
     pub fn push_stacking_context(
         &mut self,
-        origin: LayoutPoint,
         spatial_id: di::SpatialId,
         prim_flags: di::PrimitiveFlags,
         clip_chain_id: Option<di::ClipChainId>,
@@ -1761,16 +1710,10 @@ impl DisplayListBuilder {
         flags: di::StackingContextFlags,
         snapshot: Option<di::SnapshotInfo>
     ) {
-        assert_eq!(
-            origin,
-            LayoutPoint::zero(),
-            "stacking context origin must be zero; use a reference frame for non-zero positions"
-        );
         let ref_frame_offset = self.rf_mapper.current_offset();
         self.push_filters(filters, filter_datas);
 
         let item = di::DisplayItem::PushStackingContext(di::PushStackingContextDisplayItem {
-            origin,
             spatial_id,
             snapshot,
             prim_flags,
@@ -1784,19 +1727,16 @@ impl DisplayListBuilder {
             },
         });
 
-        self.rf_mapper.push_offset(origin.to_vector());
         self.push_item(&item);
     }
 
     /// Helper for examples/ code.
     pub fn push_simple_stacking_context(
         &mut self,
-        origin: LayoutPoint,
         spatial_id: di::SpatialId,
         prim_flags: di::PrimitiveFlags,
     ) {
         self.push_simple_stacking_context_with_filters(
-            origin,
             spatial_id,
             prim_flags,
             &[],
@@ -1807,14 +1747,12 @@ impl DisplayListBuilder {
     /// Helper for examples/ code.
     pub fn push_simple_stacking_context_with_filters(
         &mut self,
-        origin: LayoutPoint,
         spatial_id: di::SpatialId,
         prim_flags: di::PrimitiveFlags,
         filters: &[di::FilterOp],
         filter_datas: &[di::FilterData],
     ) {
         self.push_stacking_context(
-            origin,
             spatial_id,
             prim_flags,
             None,
@@ -1829,7 +1767,6 @@ impl DisplayListBuilder {
     }
 
     pub fn pop_stacking_context(&mut self) {
-        self.rf_mapper.pop_offset();
         self.push_item(&di::DisplayItem::PopStackingContext);
     }
 
@@ -1847,15 +1784,10 @@ impl DisplayListBuilder {
         filters: &[di::FilterOp],
         filter_datas: &[di::FilterData],
     ) {
-        let common = di::CommonItemProperties {
-            clip_rect: self.remap_bounds(common.clip_rect),
-            ..*common
-        };
-
         self.push_filters(filters, filter_datas);
 
         let item = di::DisplayItem::BackdropFilter(di::BackdropFilterDisplayItem {
-            common,
+            common: *common,
         });
         self.push_item(&item);
     }
