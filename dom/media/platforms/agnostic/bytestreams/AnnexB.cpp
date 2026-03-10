@@ -400,6 +400,40 @@ static Result<mozilla::Ok, nsresult> ParseNALUnits(ByteWriter<BigEndian>& aBw,
 }
 
 /* static */
+RefPtr<MediaByteBuffer> AnnexB::ExtractExtraData(
+    const Span<const uint8_t>& aSpan) {
+  if (!IsAnnexB(aSpan)) {
+    return nullptr;
+  }
+
+  nsTArray<NALEntry> paramSets;
+  ParseNALEntries(aSpan, paramSets);
+
+  size_t spsIndex =
+      FindNalType(aSpan, paramSets, H264_NAL_SPS, /* aStartIndex */ 0);
+  if (spsIndex == SIZE_MAX) {
+    return nullptr;
+  }
+
+  size_t ppsIndex =
+      FindNalType(aSpan, paramSets, H264_NAL_PPS, /* aStartIndex */ 0);
+  if (ppsIndex == SIZE_MAX) {
+    return nullptr;
+  }
+
+  auto annexb = MakeRefPtr<MediaByteBuffer>();
+  const auto& spsEntry = paramSets.ElementAt(spsIndex);
+  const auto& ppsEntry = paramSets.ElementAt(ppsIndex);
+  const auto sps = aSpan.Subspan(spsEntry.mOffset, spsEntry.mSize);
+  const auto pps = aSpan.Subspan(ppsEntry.mOffset, ppsEntry.mSize);
+  annexb->AppendElements(kAnnexBDelimiter, std::size(kAnnexBDelimiter));
+  annexb->AppendElements(sps);
+  annexb->AppendElements(kAnnexBDelimiter, std::size(kAnnexBDelimiter));
+  annexb->AppendElements(pps);
+  return annexb;
+}
+
+/* static */
 RefPtr<MediaByteBuffer> AnnexB::ExtractExtraDataForAVCC(
     const Span<const uint8_t>& aSpan) {
   if (!IsAnnexB(aSpan)) {

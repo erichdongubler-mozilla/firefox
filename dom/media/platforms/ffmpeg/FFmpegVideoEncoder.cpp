@@ -742,18 +742,9 @@ FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(AVPacket* aPacket) {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
   MOZ_ASSERT(aPacket);
 
-  auto creationResult = CreateMediaRawData(aPacket);
-  if (creationResult.isErr()) {
-    return Err(creationResult.unwrapErr());
-  }
-
-  RefPtr<MediaRawData> data = creationResult.unwrap();
-
-  data->mKeyframe = (aPacket->flags & AV_PKT_FLAG_KEY) != 0;
-
   auto extradataResult = GetExtraData(aPacket);
   if (extradataResult.isOk()) {
-    data->mExtraData = extradataResult.unwrap();
+    mLastExtraData = extradataResult.unwrap();
   } else if (extradataResult.isErr()) {
     MediaResult e = extradataResult.unwrapErr();
     if (e.Code() != NS_ERROR_NOT_AVAILABLE &&
@@ -764,17 +755,48 @@ FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(AVPacket* aPacket) {
                 e.Description().get());
   }
 
-  if (mCodecID == AV_CODEC_ID_H264 &&
-      mConfig.mCodecSpecific.is<H264Specific>() &&
+  auto data = MakeRefPtr<MediaRawData>();
+  data->mKeyframe = (aPacket->flags & AV_PKT_FLAG_KEY) != 0;
+  UniquePtr<MediaRawDataWriter> writer(data->CreateWriter());
+
+  const bool isH264 =
+      mCodecID == AV_CODEC_ID_H264 && mConfig.mCodecSpecific.is<H264Specific>();
+
+#ifdef MOZ_WIDGET_ANDROID
+  // If we have an AnnexB keyframe, and we failed to extract extradata from the
+  // packet, then we know that the SPS/PPS data is missing from the data. In
+  // that case we need to prepend our cached extradata to supply it in-band.
+  //
+  // When our minimum supported Android version is >= 9, then we can just use
+  // the prepend-sps-pps-to-idr-frames parameter with AMediaFormat.
+  if (data->mKeyframe && !extradataResult.isOk() && mLastExtraData && isH264 &&
       mConfig.mCodecSpecific.as<H264Specific>().mFormat ==
-          H264BitStreamFormat::AVC &&
-      !mCodecName.Equals("libx264"_ns) && AnnexB::IsAnnexB(*data)) {
-    if (data->mExtraData) {
-      mLastExtraData = std::move(data->mExtraData);
+          H264BitStreamFormat::ANNEXB) {
+    if (!writer->Append(mLastExtraData->Elements(), mLastExtraData->Length())) {
+      return Err(
+          MediaResult(NS_ERROR_OUT_OF_MEMORY,
+                      "fail to append extradata to MediaRawData buffer"_ns));
     }
-    if (!AnnexB::ConvertSampleToAVCC(data, mLastExtraData)) {
-      return Err(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                             "Failed to convert to AVCC"_ns));
+  }
+#endif
+
+  if (!writer->Append(aPacket->data, aPacket->size)) {
+    return Err(MediaResult(NS_ERROR_OUT_OF_MEMORY,
+                           "fail to append packet to MediaRawData buffer"_ns));
+  }
+
+  // With AVC, we are expected to provide the extradata out-of-band. This will
+  // either be done as part of our conversion from AnnexB, or we will attach the
+  // extradata we cached/extracted from the packet earlier.
+  if (isH264 && mConfig.mCodecSpecific.as<H264Specific>().mFormat ==
+                    H264BitStreamFormat::AVC) {
+    if (!mCodecName.Equals("libx264"_ns) && AnnexB::IsAnnexB(*data)) {
+      if (AnnexB::ConvertSampleToAVCC(data, mLastExtraData)) {
+        return Err(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                               "Failed to convert to AVCC"_ns));
+      }
+    } else {
+      data->mExtraData = mLastExtraData;
     }
   }
 
@@ -819,17 +841,19 @@ FFmpegVideoEncoder<LIBAV_VER>::GetExtraData(AVPacket* aPacket) {
 
   // We only extract the extra data when encoding into AVCC format.
   if (mCodecID != AV_CODEC_ID_H264 ||
-      !mConfig.mCodecSpecific.is<H264Specific>() ||
-      mConfig.mCodecSpecific.as<H264Specific>().mFormat !=
-          H264BitStreamFormat::AVC) {
+      !mConfig.mCodecSpecific.is<H264Specific>()) {
     return Err(
         MediaResult(NS_ERROR_NOT_AVAILABLE, "Extra data unnecessary"_ns));
   }
 
+  const bool wantAVCC = mConfig.mCodecSpecific.as<H264Specific>().mFormat ==
+                        H264BitStreamFormat::AVC;
+
   Span<const uint8_t> packetBuf(aPacket->data,
                                 static_cast<size_t>(aPacket->size));
   if (!mCodecName.Equals("libx264"_ns) && AnnexB::IsAnnexB(packetBuf)) {
-    auto extraData = AnnexB::ExtractExtraDataForAVCC(packetBuf);
+    auto extraData = wantAVCC ? AnnexB::ExtractExtraDataForAVCC(packetBuf)
+                              : AnnexB::ExtractExtraData(packetBuf);
     if (!extraData) {
       return Err(MediaResult(NS_ERROR_NOT_AVAILABLE,
                              "Extra data missing from packet"_ns));
@@ -848,6 +872,11 @@ FFmpegVideoEncoder<LIBAV_VER>::GetExtraData(AVPacket* aPacket) {
         RESULT_DETAIL(
             "Get extra data from codec %s has not been implemented yet",
             mCodecName.get())));
+  }
+
+  if (!wantAVCC) {
+    return Err(
+        MediaResult(NS_ERROR_NOT_AVAILABLE, "Extra data unnecessary"_ns));
   }
 
   bool useGlobalHeader =
