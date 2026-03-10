@@ -37,10 +37,6 @@ bool NativeMenuSupport::ShouldUseNativeAnchoredMenus() {
   return StaticPrefs::widget_macos_native_anchored_menus();
 }
 
-bool NativeMenuSupport::ShouldUseNativeAnchoredMenulists() {
-  return StaticPrefs::widget_macos_native_anchored_menulists();
-}
-
 bool NativeMenuSupport::ShouldUseNativeContextMenus() {
   return StaticPrefs::widget_macos_native_context_menus();
 }

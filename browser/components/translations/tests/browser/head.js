@@ -2807,13 +2807,7 @@ class FullPageTranslationsTestUtils {
     const menuItem = menuPopup.querySelector(`[value="${langTag}"]`);
     await FullPageTranslationsTestUtils.waitForPanelPopupEvent(
       "popuphidden",
-      () => {
-        click(menuItem);
-        // Synthesizing a click on the menuitem isn't closing the popup
-        // as a click normally would, so this tab keypress is added to
-        // ensure the popup closes.
-        EventUtils.synthesizeKey("KEY_Tab", {}, win);
-      },
+      () => menuPopup.activateItem(menuItem),
       null /* postEventAssertion */,
       win
     );
@@ -4127,13 +4121,7 @@ class SelectTranslationsTestUtils {
       const menuItem = menuPopup.querySelector(`[value="${langTag}"]`);
       await SelectTranslationsTestUtils.waitForPanelPopupEvent(
         "popuphidden",
-        () => {
-          click(menuItem);
-          // Synthesizing a click on the menuitem isn't closing the popup
-          // as a click normally would, so this tab keypress is added to
-          // ensure the popup closes.
-          EventUtils.synthesizeKey("KEY_Tab");
-        }
+        () => menuPopup.activateItem(menuItem)
       );
 
       await SelectTranslationsTestUtils.handleDownloads(options);

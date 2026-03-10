@@ -35,8 +35,6 @@ already_AddRefed<NativeMenu> NativeMenuSupport::CreateNativePopupMenu(
 
 bool NativeMenuSupport::ShouldUseNativeAnchoredMenus() { return false; }
 
-bool NativeMenuSupport::ShouldUseNativeAnchoredMenulists() { return false; }
-
 bool NativeMenuSupport::ShouldUseNativeContextMenus() {
   return NativeMenuGtk::CanUse();
 }

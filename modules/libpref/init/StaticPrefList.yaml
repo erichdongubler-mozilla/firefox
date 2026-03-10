@@ -19439,11 +19439,6 @@
   value: true
   mirror: always
 
-- name: widget.macos.native-anchored-menulists
-  type: bool
-  value: false
-  mirror: always
-
 - name: widget.macos.native-anchored-select
   type: bool
   value: false

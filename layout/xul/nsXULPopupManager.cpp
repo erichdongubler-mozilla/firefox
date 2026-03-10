@@ -784,14 +784,6 @@ static bool ShouldUseNativeAnchoredMenus() {
 #endif
 }
 
-static bool ShouldUseNativeAnchoredMenulists() {
-#ifdef HAS_NATIVE_MENU_SUPPORT
-  return mozilla::widget::NativeMenuSupport::ShouldUseNativeAnchoredMenulists();
-#else
-  return false;
-#endif
-}
-
 static bool ShouldUseNativeContextMenus() {
 #ifdef HAS_NATIVE_MENU_SUPPORT
   return mozilla::widget::NativeMenuSupport::ShouldUseNativeContextMenus();
@@ -874,9 +866,14 @@ bool nsXULPopupManager::ShowMenuAsNativeMenu(nsIContent* aMenu,
     return false;
   }
 
-  if (!ShouldUseNativeAnchoredMenus() ||
-      (aMenu->IsXULElement(nsGkAtoms::menulist) &&
-       !ShouldUseNativeAnchoredMenulists())) {
+  RefPtr popup = &popupFrame->PopupElement();
+
+  if (!ShouldUseNativeAnchoredMenus()) {
+#ifdef XP_MACOSX
+    // When native menus are disabled, add the native="false" attribute so that
+    // CSS can be conditionally applied where necessary.
+    popup->SetAttr(kNameSpaceID_None, nsGkAtoms::native, u"false"_ns, true);
+#endif
     return false;
   }
 
@@ -885,8 +882,6 @@ bool nsXULPopupManager::ShowMenuAsNativeMenu(nsIContent* aMenu,
     return false;
   }
   CSSIntRect rect = frame->GetScreenRect();
-
-  RefPtr popup = &popupFrame->PopupElement();
   PendingPopup pendingPopup(popup, nullptr);
 
   return ShowNativeMenuInternal(

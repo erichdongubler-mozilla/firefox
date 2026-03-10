@@ -40,9 +40,6 @@ class NativeMenuSupport final {
   // Whether or not native anchored menus are enabled.
   static bool ShouldUseNativeAnchoredMenus();
 
-  // Whether or not native anchored menulists are enabled.
-  static bool ShouldUseNativeAnchoredMenulists();
-
   // Whether or not native context menus are enabled.
   static bool ShouldUseNativeContextMenus();
 };
