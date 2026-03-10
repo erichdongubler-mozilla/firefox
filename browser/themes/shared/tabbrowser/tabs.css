@@ -1281,6 +1281,7 @@ tab-group > tab-split-view-wrapper {
   padding: var(--space-xsmall);
   border-radius: var(--tab-border-radius);
   position: relative; /* prevents splitview wrappers from shifting during other drag events*/
+  -moz-window-dragging: no-drag;
 
   &[hasactivetab] {
     background-color: var(--tab-hover-background-color);
