@@ -53,6 +53,7 @@ function createMockConversation(id = "test-conv-id") {
  */
 async function waitForSidebarAIWindow(win) {
   const sidebarBrowser = win.document.getElementById(AIWindowUI.BROWSER_ID);
+  await BrowserTestUtils.browserLoaded(sidebarBrowser);
   await SpecialPowers.spawn(sidebarBrowser, [], async () => {
     await ContentTaskUtils.waitForCondition(
       () => content.document.querySelector("ai-window"),
@@ -91,18 +92,20 @@ async function submitSmartbar(browser) {
  * @returns {string|null} The smartbar value, or null if sidebar is unavailable
  */
 async function getSidebarInputValue(win) {
-  const aiWindowEl = AIWindowUI._getSidebarAiWindow(win);
-  if (!aiWindowEl) {
+  if (!AIWindowUI.isSidebarOpen(win)) {
     return null;
   }
 
-  await BrowserTestUtils.waitForCondition(
-    () => typeof aiWindowEl.shadowRoot?.querySelector === "function",
-    "AIWindow shadowRoot was not ready"
-  );
-
-  const smartbar = aiWindowEl.shadowRoot.querySelector("#ai-window-smartbar");
-  return smartbar?.value ?? "";
+  const sidebarBrowser = win.document.getElementById(AIWindowUI.BROWSER_ID);
+  return SpecialPowers.spawn(sidebarBrowser, [], async () => {
+    const aiWindowEl = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForCondition(
+      () => aiWindowEl.shadowRoot?.querySelector("#ai-window-smartbar"),
+      "Smartbar should be rendered"
+    );
+    const smartbar = aiWindowEl.shadowRoot.querySelector("#ai-window-smartbar");
+    return smartbar?.value ?? "";
+  });
 }
 
 /**

@@ -62,6 +62,7 @@ export const AIWindowUI = {
     browser.setAttribute("disablefullscreen", "true");
     browser.setAttribute("tooltip", "aHTMLTooltip");
     browser.setAttribute("src", AIWINDOW_URL);
+    browser.setAttribute("type", "content");
     stack.appendChild(browser);
     return browser;
   },
