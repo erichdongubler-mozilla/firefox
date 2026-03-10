@@ -943,6 +943,14 @@ export class LoginManagerStorage_json {
     );
   }
 
+  async arePotentiallyVulnerablePasswords(logins) {
+    return logins
+      .filter(l =>
+        this._decryptedPotentiallyVulnerablePasswords.includes(l.password)
+      )
+      .map(l => l.guid);
+  }
+
   async clearAllPotentiallyVulnerablePasswords() {
     this._store.ensureDataReady();
     if (!this._store.data.potentiallyVulnerablePasswords.length) {

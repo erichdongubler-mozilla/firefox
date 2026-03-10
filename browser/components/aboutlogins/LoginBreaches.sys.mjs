@@ -74,6 +74,9 @@ export const LoginBreaches = {
     await Services.logins.initializationPromise;
     const dismissedBreachAlertsByLoginGUID =
       await Services.logins.getBreachAlertDismissalsByLoginGUID();
+    const potentiallyVulnerablePasswords = new Set(
+      await Services.logins.arePotentiallyVulnerablePasswords(logins)
+    );
 
     // Determine potentially breached logins by checking their origin and the last time
     // they were changed. It's important to note here that we are NOT considering the
@@ -96,7 +99,7 @@ export const LoginBreaches = {
           continue;
         }
 
-        if (!(await Services.logins.isPotentiallyVulnerablePassword(login))) {
+        if (!potentiallyVulnerablePasswords.has(login.guid)) {
           await Services.logins.addPotentiallyVulnerablePassword(login);
         }
 
@@ -135,24 +138,19 @@ export const LoginBreaches = {
    */
   async getPotentiallyVulnerablePasswordsByLoginGUID(logins) {
     const vulnerablePasswordsByLoginGUID = new Map();
-    for (const login of logins) {
-      if (await Services.logins.isPotentiallyVulnerablePassword(login)) {
-        vulnerablePasswordsByLoginGUID.set(login.guid, true);
-      }
+    if (!lazy.VULNERABLE_PASSWORDS_ENABLED) {
+      return vulnerablePasswordsByLoginGUID;
+    }
+    const vulnerableGUIDs =
+      await Services.logins.arePotentiallyVulnerablePasswords(logins);
+    for (const guid of vulnerableGUIDs) {
+      vulnerablePasswordsByLoginGUID.set(guid, true);
     }
     return vulnerablePasswordsByLoginGUID;
   },
 
   async recordBreachAlertDismissal(loginGuid) {
     return Services.logins.recordBreachAlertDismissal(loginGuid);
-  },
-
-  async isVulnerablePassword(login) {
-    if (!lazy.VULNERABLE_PASSWORDS_ENABLED) {
-      return false;
-    }
-
-    return await Services.logins.isPotentiallyVulnerablePassword(login);
   },
 
   async clearAllPotentiallyVulnerablePasswords() {

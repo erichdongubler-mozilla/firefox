@@ -437,6 +437,12 @@ interface nsILoginManager : nsISupports {
   Promise getBreachAlertDismissalsByLoginGUID();
 
   /**
+   * Check which of the given logins have potentially vulnerable passwords.
+   * Returns a promise resolving to an array of GUIDs of vulnerable logins.
+   */
+  Promise arePotentiallyVulnerablePasswords(in jsval aLogins);
+
+  /**
    * Clear all potentially vulnerable password records.
    */
   Promise clearAllPotentiallyVulnerablePasswords();

@@ -570,6 +570,10 @@ LoginManager.prototype = {
     return this._storage.getBreachAlertDismissalsByLoginGUID();
   },
 
+  async arePotentiallyVulnerablePasswords(logins) {
+    return this._storage.arePotentiallyVulnerablePasswords(logins);
+  },
+
   async clearAllPotentiallyVulnerablePasswords() {
     return this._storage.clearAllPotentiallyVulnerablePasswords();
   },

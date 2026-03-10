@@ -218,6 +218,10 @@ class RustLoginsStoreAdapter {
     await this.#store.resetAllBreaches();
   }
 
+  async arePotentiallyVulnerablePasswords(ids) {
+    return this.#store.arePotentiallyVulnerablePasswords(ids);
+  }
+
   async getBreachAlertDismissalsByLoginGUID() {
     const result = {};
     for (const {
@@ -793,7 +797,7 @@ export class LoginManagerRustStorage {
   }
 
   async arePotentiallyVulnerablePasswords(logins) {
-    const ids = logins.map(l => l.guid);
+    const ids = logins.map(l => l.QueryInterface(Ci.nsILoginMetaInfo).guid);
     return this.#storageAdapter.arePotentiallyVulnerablePasswords(ids);
   }
 
