@@ -236,7 +236,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
       const nsTArray<uint8_t>& issuerSubjectPublicKeyInfoBytes,
       const nsTArray<uint8_t>& serialNumberBytes,
       const nsTArray<RefPtr<nsICRLiteTimestamp>>& crliteTimestamps,
-      bool& filterCoversCertificate);
+      mozilla::pkix::Time time, bool& filterCoversCertificate);
 
   enum EncodedResponseSource {
     ResponseIsFromNetwork = 1,

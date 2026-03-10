@@ -676,10 +676,38 @@ CRLiteTimestamp::GetTimestamp(uint64_t* aTimestamp) {
   return NS_OK;
 }
 
+static void RecordCRLiteNotCoveredCertAge(
+    const nsTArray<RefPtr<nsICRLiteTimestamp>>& timestamps, Time time) {
+  if (timestamps.IsEmpty()) {
+    return;
+  }
+  uint64_t mostRecentMs = 0;
+  for (const auto& ts : timestamps) {
+    uint64_t timestampMs = 0;
+    if (NS_SUCCEEDED(ts->GetTimestamp(&timestampMs))) {
+      mostRecentMs = std::max(mostRecentMs, timestampMs);
+    }
+  }
+  if (mostRecentMs == 0) {
+    return;
+  }
+  uint64_t timeSeconds = 0;
+  if (SecondsSinceEpochFromTime(time, &timeSeconds) != Success) {
+    return;
+  }
+  uint64_t timeMs = timeSeconds * 1000;
+  if (timeMs < mostRecentMs) {
+    return;
+  }
+  mozilla::glean::cert_verifier::crlite_not_covered_cert_age
+      .AccumulateRawDuration(TimeDuration::FromMilliseconds(
+          static_cast<double>(timeMs - mostRecentMs)));
+}
+
 Result NSSCertDBTrustDomain::CheckCRLite(
     const nsTArray<uint8_t>& issuerSubjectPublicKeyInfoBytes,
     const nsTArray<uint8_t>& serialNumberBytes,
-    const nsTArray<RefPtr<nsICRLiteTimestamp>>& timestamps,
+    const nsTArray<RefPtr<nsICRLiteTimestamp>>& timestamps, Time time,
     /*out*/ bool& filterCoversCertificate) {
   filterCoversCertificate = false;
   int16_t crliteRevocationState;
@@ -714,6 +742,7 @@ Result NSSCertDBTrustDomain::CheckCRLite(
     case nsICertStorage::STATE_NOT_COVERED:
       filterCoversCertificate = false;
       mozilla::glean::cert_verifier::crlite_status.Get("not_covered"_ns).Add(1);
+      RecordCRLiteNotCoveredCertAge(timestamps, time);
       return Success;
     case nsICertStorage::STATE_NO_FILTER:
       filterCoversCertificate = false;
@@ -820,7 +849,7 @@ Result NSSCertDBTrustDomain::CheckRevocationByCRLite(
     }
 
     return CheckCRLite(issuerSubjectPublicKeyInfoBytes, serialNumberBytes,
-                       timestamps, crliteCoversCertificate);
+                       timestamps, time, crliteCoversCertificate);
   }
 
   // When CT is enabled, we verify the signatures on all available SCTs and
@@ -862,7 +891,7 @@ Result NSSCertDBTrustDomain::CheckRevocationByCRLite(
   }
 
   return CheckCRLite(issuerSubjectPublicKeyInfoBytes, serialNumberBytes,
-                     timestamps, crliteCoversCertificate);
+                     timestamps, time, crliteCoversCertificate);
 }
 
 Result NSSCertDBTrustDomain::CheckRevocationByOCSP(

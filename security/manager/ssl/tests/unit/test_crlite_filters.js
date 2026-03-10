@@ -494,6 +494,12 @@ add_task(async function test_crlite_filters_and_check_revocation() {
     0
   );
 
+  Services.fog.testResetFOG();
+  Assert.equal(
+    null,
+    await Glean.certVerifier.crliteNotCoveredCertAge.testGetValue(),
+    "crliteNotCoveredCertAge should not be accumulated yet"
+  );
   await checkCertErrorGenericAtTime(
     certdb,
     notCoveredCert,
@@ -503,6 +509,11 @@ add_task(async function test_crlite_filters_and_check_revocation() {
     false,
     "not-covered.example.com",
     0
+  );
+  Assert.notEqual(
+    null,
+    await Glean.certVerifier.crliteNotCoveredCertAge.testGetValue(),
+    "crliteNotCoveredCertAge should have been accumulated"
   );
 
   await checkCertErrorGenericAtTime(
