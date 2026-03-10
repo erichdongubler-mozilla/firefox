@@ -60,6 +60,7 @@ class SingleDNSAddrRecord final : public nsIDNSAddrRecord {
   nsITRRSkipReason::value mTrrSkipReason = nsITRRSkipReason::TRR_UNSET;
   uint32_t mTTL = 60;
   mozilla::TimeStamp mLastUpdate = TimeStamp::Now();
+  bool mDone = false;
 };
 
 NS_IMPL_ISUPPORTS(SingleDNSAddrRecord, nsIDNSRecord, nsIDNSAddrRecord)
@@ -106,11 +107,7 @@ SingleDNSAddrRecord::GetNextAddrAsString(nsACString& aResult) {
 }
 
 NS_IMETHODIMP
-SingleDNSAddrRecord::HasMore(bool* aResult) {
-  // We always return the same and only one address.
-  *aResult = true;
-  return NS_OK;
-}
+SingleDNSAddrRecord::HasMore(bool* aResult) { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP
 SingleDNSAddrRecord::Rewind() { return NS_ERROR_NOT_IMPLEMENTED; }
@@ -147,7 +144,12 @@ SingleDNSAddrRecord::GetLastUpdate(mozilla::TimeStamp* aLastUpdate) {
 
 NS_IMETHODIMP
 SingleDNSAddrRecord::GetNextAddr(uint16_t aPort, NetAddr* aAddr) {
+  if (mDone) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   *aAddr = mAddress;
+  mDone = true;
   return NS_OK;
 }
 

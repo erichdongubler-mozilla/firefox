@@ -350,12 +350,14 @@ impl HappyEyeballs {
                 };
             }
             Some(happy_eyeballs::Output::Timer { duration, .. }) => {
-                *ret_event = Output::Timer {
-                    duration_ms: duration.as_millis().try_into().unwrap_or_else(|_| {
+                let duration_ms = match duration.as_millis() {
+                    0 => 1,
+                    ms => ms.try_into().unwrap_or_else(|_| {
                         debug_assert!(false, "duration > u64::MAX");
                         u64::MAX
                     }),
                 };
+                *ret_event = Output::Timer { duration_ms };
             }
             Some(happy_eyeballs::Output::AttemptConnection { id, endpoint }) => {
                 if let Some(ref ech) = endpoint.ech_config {

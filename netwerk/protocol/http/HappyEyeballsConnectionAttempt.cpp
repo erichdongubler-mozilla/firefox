@@ -986,6 +986,7 @@ HappyEyeballsConnectionAttempt::GetName(nsACString& aName) {
 
 void HappyEyeballsConnectionAttempt::SetupTimer(uint64_t aTimeout) {
   if (!aTimeout) {
+    MOZ_ASSERT(false, "aTimeout should not be 0");
     return;
   }
 
