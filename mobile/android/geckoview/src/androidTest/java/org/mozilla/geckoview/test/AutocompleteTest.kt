@@ -38,6 +38,17 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class AutocompleteTest : BaseSessionTest() {
+	@org.junit.Before
+    fun setup() {
+        // Ensure programmatic focus is allowed to open the autofill popup 
+        // for all tests in this class.
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf(
+                "extensions.formautofill.skipProgrammaticCheckForTests" to true,
+            ),
+        )
+    }
+
     val acceptDelay: Long = 100
 
     // This is a utility to delete previous credit card and address information.
