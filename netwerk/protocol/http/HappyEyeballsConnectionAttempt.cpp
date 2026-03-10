@@ -706,7 +706,7 @@ uint32_t HappyEyeballsConnectionAttempt::UnconnectedUDPConnsLength() const {
   return len;
 }
 
-bool HappyEyeballsConnectionAttempt::Claim() {
+bool HappyEyeballsConnectionAttempt::Claim(nsHttpTransaction* newTransaction) {
   if (mSpeculative) {
     mSpeculative = false;
     mAllow1918 = true;
@@ -719,7 +719,15 @@ bool HappyEyeballsConnectionAttempt::Claim() {
 
   if (mFreeToUse) {
     mFreeToUse = false;
-    // TODO: we should claim the socket transport
+    if (newTransaction && mTransaction &&
+        mTransaction->QueryNullTransaction()) {
+      LOG(
+          ("HappyEyeballsConnectionAttempt::Claim %p replacing null "
+           "transaction %p with %p",
+           this, mTransaction.get(), newTransaction));
+      mTransaction->Close(NS_ERROR_ABORT);
+      mTransaction = newTransaction;
+    }
     return true;
   }
 

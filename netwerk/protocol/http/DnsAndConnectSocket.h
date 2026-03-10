@@ -61,7 +61,7 @@ class DnsAndConnectSocket final : public ConnectionAttempt,
   // half-open's connection.  If this half-open is marked as urgent-start,
   // it only accepts urgent start transactions.  Call only before Claim().
   bool AcceptsTransaction(nsHttpTransaction* trans);
-  bool Claim() override;
+  bool Claim(nsHttpTransaction* newTransaction = nullptr) override;
 
   DnsAndConnectSocket* ToDnsAndConnectSocket() override { return this; }
 

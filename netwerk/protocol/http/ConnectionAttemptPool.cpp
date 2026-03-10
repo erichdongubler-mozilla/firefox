@@ -128,7 +128,7 @@ bool ConnectionAttemptPool::FindConnToClaim(
     PendingTransactionInfo* pendingTransInfo) {
   nsHttpTransaction* trans = pendingTransInfo->Transaction();
   for (const auto& sock : mAttempts) {
-    if (sock->AcceptsTransaction(trans) && sock->Claim()) {
+    if (sock->AcceptsTransaction(trans) && sock->Claim(trans)) {
       pendingTransInfo->RememberConnectionAttempt(sock);
       // We've found a speculative connection or a connection that
       // is free to be used in the mAttempts list.

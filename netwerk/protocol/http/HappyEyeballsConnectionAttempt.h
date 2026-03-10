@@ -66,7 +66,7 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   double Duration(TimeStamp epoch) override;
   void OnTimeout() override;
   void PrintDiagnostics(nsCString& log) override;
-  bool Claim() override;
+  bool Claim(nsHttpTransaction* newTransaction = nullptr) override;
   uint32_t UnconnectedUDPConnsLength() const override;
 
  private:

@@ -848,7 +848,9 @@ DnsAndConnectSocket::GetInterface(const nsIID& iid, void** result) {
   return NS_ERROR_NO_INTERFACE;
 }
 
-bool DnsAndConnectSocket::Claim() {
+// newTransaction is not used here. It's only used for
+// HappyEyeballsConnectionAttempt.
+bool DnsAndConnectSocket::Claim(nsHttpTransaction* newTransaction) {
   if (mSpeculative) {
     mSpeculative = false;
     mAllow1918 = true;
