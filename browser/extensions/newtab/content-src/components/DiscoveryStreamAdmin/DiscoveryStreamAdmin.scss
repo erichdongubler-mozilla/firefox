@@ -5,29 +5,61 @@
   // Adjust spacing for DevTools wrench icon to avoid overlapping the customize button
   inset-block-end: calc(var(--button-size-icon) + var(--space-xxlarge) + var(--space-small));
   inset-inline-end: var(--space-xlarge);
+  appearance: none;
   border: 0;
-  background: none;
-  z-index: 4;
   border-radius: var(--border-radius-small);
+  background-color: var(--button-background-color, rgba(21, 20, 26, 7%));
+  box-shadow: 0 0.8px 1.6px 0 rgba(58, 57, 68, 20%);
+  padding: calc(5 * var(--space-xxsmall));
+  z-index: 4;
+  display: flex;
+  align-items: center;
 
-  .icon-devtools {
-    background-color: var(--button-background-color, rgba(21, 20, 26, 7%));
-    background-image: url('chrome://global/skin/icons/developer.svg');
-    background-size: var(--icon-size-medium);
-    box-shadow: 0 0.8px 1.6px 0 rgba(58, 57, 68, 20%);
-    padding: calc(5 * var(--space-xsmall));
+  .lightWallpaper &,
+  .darkWallpaper & {
+    background-color: var(--newtab-weather-background-color);
+
+    @media (prefers-contrast) {
+      background-color: var(--background-color-box);
+    }
+  }
+
+  &:hover {
+    background-color: var(--newtab-button-static-hover-background);
+  }
+
+  &:active {
+    background-color: var(--newtab-button-static-active-background);
+  }
+
+  &:focus-visible {
+    @include ds-focus;
+
+    background-color: var(--newtab-button-static-active-background);
   }
 
   &:dir(rtl) {
     transform: scaleX(-1);
   }
 
-  &:hover {
-    background: var(--newtab-element-hover-color);
-  }
+  > div {
+    width: var(--icon-size-medium);
+    height: var(--icon-size-medium);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 
-  &.expanded {
-    background: $black-20;
+    > img {
+      -moz-context-properties: fill;
+      display: inline-block;
+      color: var(--icon-color);
+      fill: currentColor;
+      height: 100%;
+      object-fit: contain;
+      vertical-align: middle;
+      width: 100%;
+    }
   }
 }
 

@@ -4,7 +4,7 @@
 
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { connect } from "react-redux";
-import React, { useEffect } from "react";
+import React from "react";
 
 // Pref Constants
 const PREF_AD_SIZE_MEDIUM_RECTANGLE = "newtabAdSize.mediumRectangle";
@@ -1056,32 +1056,25 @@ export function CollapseToggle(props) {
   const { devtoolsCollapsed } = props;
   const label = `${devtoolsCollapsed ? "Expand" : "Collapse"} devtools`;
 
-  useEffect(() => {
-    // Set or remove body class depending on devtoolsCollapsed state
-    if (devtoolsCollapsed) {
-      globalThis.document.body.classList.remove("no-scroll");
-    } else {
-      globalThis.document.body.classList.add("no-scroll");
-    }
-
-    // Cleanup on unmount
-    return () => {
-      globalThis.document.body.classList.remove("no-scroll");
-    };
-  }, [devtoolsCollapsed]);
-
   return (
     <>
-      <a
-        href={devtoolsCollapsed ? "#devtools" : "#"}
+      <button
         title={label}
         aria-label={label}
         className={`discoverystream-admin-toggle ${
           devtoolsCollapsed ? "expanded" : "collapsed"
         }`}
+        onClick={() => {
+          globalThis.location.hash = devtoolsCollapsed ? "#devtools" : "";
+        }}
       >
-        <span className="icon icon-devtools" />
-      </a>
+        <div>
+          <img
+            role="presentation"
+            src="chrome://global/skin/icons/developer.svg"
+          />
+        </div>
+      </button>
       {!devtoolsCollapsed ? (
         <DiscoveryStreamAdminInner {...props} collapsed={devtoolsCollapsed} />
       ) : null}
