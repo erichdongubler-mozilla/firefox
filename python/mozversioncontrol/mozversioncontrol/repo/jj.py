@@ -52,6 +52,12 @@ class JujutsuRepository(Repository):
         super().__init__(path, tool=jj)
         self._git = GitRepository(path, git=git)
 
+        version_str = self._run_read_only("--version")
+        if match := re.search(r"(\d+\.\d+\.\d+)", version_str):
+            self._version = Version(match.group(1))
+        else:
+            raise Exception("Could not find jj version")
+
         # Find git root. Newer jj has `jj git root`, but this should support
         # older versions for now.
         out = self._run("root")
@@ -565,20 +571,16 @@ class JujutsuRepository(Repository):
         if not update_only:
             print("\nConfiguring jj...")
 
-            version_str = self._run_read_only("--version")
-            if match := re.search(r"(\d+\.\d+\.\d+)", version_str):
-                jj_version = Version(match.group(1))
-            else:
-                raise Exception("Could not find jj version")
-
-            if jj_version < MINIMUM_SUPPORTED_JJ_VERSION:
+            if self._version < MINIMUM_SUPPORTED_JJ_VERSION:
                 raise JjVersionError(
-                    f"Your version of jj ({jj_version}) is too old. "
+                    f"Your version of jj ({self._version}) is too old. "
                     f"Please upgrade to at least version '{MINIMUM_SUPPORTED_JJ_VERSION}' to ensure "
                     "full compatibility and performance."
                 )
 
-            print(f"Detected jj version `{jj_version}`, which is sufficiently modern.")
+            print(
+                f"Detected jj version `{self._version}`, which is sufficiently modern."
+            )
 
             # Only set these values if they haven't been set yet so that we
             # don't overwrite existing user preferences.
@@ -617,7 +619,7 @@ class JujutsuRepository(Repository):
             # This enables watchman if it's installed.
             if which("watchman"):
                 # Use appropriate config keys based on jj version. 0.32.0+ renamed these config keys
-                if jj_version >= Version("0.32"):
+                if self._version >= Version("0.32"):
                     # Remove deprecated config keys to prevent warnings
                     for key in [
                         "core.fsmonitor",
