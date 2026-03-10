@@ -93,7 +93,7 @@ nsAutoCString NativeLayerWayland::GetDebugTag() const {
   return tag;
 }
 nsAutoCString NativeLayerRootSnapshotterWayland::GetDebugTag() const {
-  return mLayerRender->GetDebugTag();
+  return mRootLayer->GetDebugTag();
 }
 #endif
 
@@ -269,10 +269,25 @@ NativeLayerRootWayland::CreateLayerForExternalTexture(bool aIsOpaque) {
 
 UniquePtr<NativeLayerRootSnapshotter>
 NativeLayerRootWayland::CreateSnapshotter() {
+  if (!mGL) {
+    MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
+    return nullptr;
+  }
+
   if (mSublayers.IsEmpty()) {
     return nullptr;
   }
 
+  auto snapshotter = NativeLayerRootSnapshotterWayland::Create(this, mGL);
+  if (!snapshotter) {
+    MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
+    return nullptr;
+  }
+
+  return snapshotter;
+}
+
+NativeLayerWaylandRender* NativeLayerRootWayland::GetLayerForSnapshot() {
   // For snapshotting, WebRender manages layers to either of the followings.
   // - One content layer
   // - One content layer and one debug overlay layer
@@ -287,18 +302,12 @@ NativeLayerRootWayland::CreateSnapshotter() {
   }
 
   auto* gl = layerRender->gl();
-  if (!gl) {
+  if (!gl || gl != mGL) {
     MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
     return nullptr;
   }
 
-  auto snapshotter = NativeLayerRootSnapshotterWayland::Create(layerRender, gl);
-  if (!snapshotter) {
-    MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
-    return nullptr;
-  }
-
-  return snapshotter;
+  return layerRender;
 }
 
 void NativeLayerRootWayland::AppendLayer(NativeLayer* aLayer) {
@@ -1403,18 +1412,18 @@ NativeLayerWaylandExternal::~NativeLayerWaylandExternal() {
 }
 
 /* static */ UniquePtr<NativeLayerRootSnapshotterWayland>
-NativeLayerRootSnapshotterWayland::Create(
-    NativeLayerWaylandRender* aLayerRender, gl::GLContext* aGL) {
-  MOZ_ASSERT(aLayerRender);
+NativeLayerRootSnapshotterWayland::Create(NativeLayerRootWayland* aRootLayer,
+                                          gl::GLContext* aGL) {
+  MOZ_ASSERT(aRootLayer);
   MOZ_ASSERT(aGL);
 
   return UniquePtr<NativeLayerRootSnapshotterWayland>(
-      new NativeLayerRootSnapshotterWayland(aLayerRender, aGL));
+      new NativeLayerRootSnapshotterWayland(aRootLayer, aGL));
 }
 
 NativeLayerRootSnapshotterWayland::NativeLayerRootSnapshotterWayland(
-    NativeLayerWaylandRender* aLayerRender, gl::GLContext* aGL)
-    : mLayerRender(aLayerRender), mGL(aGL) {
+    NativeLayerRootWayland* aRootLayer, gl::GLContext* aGL)
+    : mRootLayer(aRootLayer), mGL(aGL) {
   LOG("NativeLayerRootSnapshotterWayland::NativeLayerRootSnapshotterWayland()");
 }
 
@@ -1434,7 +1443,17 @@ NativeLayerRootSnapshotterWayland::GetWindowContents(
 void NativeLayerRootSnapshotterWayland::UpdateSnapshot(
     const gfx::IntSize& aSize) {
   LOG("NativeLayerRootSnapshotterWayland::UpdateSnapshot()");
+  auto* layer = mRootLayer->GetLayerForSnapshot();
+  if (!layer) {
+    return;
+  }
+
   mGL->MakeCurrent();
+
+  if (mLayerForSnapshot != layer) {
+    mSnapshot = nullptr;
+    mLayerForSnapshot = layer;
+  }
 
   if (!mSnapshot || mSnapshot->Size() != aSize) {
     mSnapshot = nullptr;
@@ -1445,7 +1464,7 @@ void NativeLayerRootSnapshotterWayland::UpdateSnapshot(
     mSnapshot = new RenderSourceNLRS(std::move(fb));
   }
 
-  mLayerRender->CopyFrontBufferToFrameBuffer(mSnapshot->FB().mFB);
+  mLayerForSnapshot->CopyFrontBufferToFrameBuffer(mSnapshot->FB().mFB);
 }
 
 bool NativeLayerRootSnapshotterWayland::ReadbackPixels(

@@ -23,6 +23,10 @@
 #include "mozilla/widget/CompositorWidget.h"
 #include "RenderCompositorRecordedFrame.h"
 
+#if defined(MOZ_WAYLAND)
+#  include "mozilla/layers/NativeLayerWayland.h"
+#endif
+
 namespace mozilla::wr {
 
 extern LazyLogModule gRenderThreadLog;
@@ -35,6 +39,11 @@ RenderCompositorLayerNative::RenderCompositorLayerNative(
   LOG("RenderCompositorLayerNative::RenderCompositorLayerNative()");
 
   MOZ_ASSERT(mNativeLayerRoot);
+#if defined(MOZ_WAYLAND)
+  if (auto* rootWayland = mNativeLayerRoot->AsNativeLayerRootWayland()) {
+    rootWayland->SetGLContext(aGL);
+  }
+#endif
 
 #if defined(XP_DARWIN) || defined(MOZ_WAYLAND)
   auto pool = RenderThread::Get()->SharedSurfacePool();

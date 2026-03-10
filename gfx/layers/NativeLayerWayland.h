@@ -65,6 +65,7 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
       RefPtr<widget::WaylandSurface> aWaylandSurface);
 
   // Overridden methods
+  NativeLayerRootWayland* AsNativeLayerRootWayland() override { return this; }
   already_AddRefed<NativeLayer> CreateLayer(
       const gfx::IntSize& aSize, bool aIsOpaque,
       SurfacePoolHandle* aSurfacePoolHandle) override;
@@ -112,6 +113,10 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
     mIsFullscreen = aIsFullscreen;
   }
 
+  NativeLayerWaylandRender* GetLayerForSnapshot();
+
+  void SetGLContext(gl::GLContext* aGL) { mGL = aGL; }
+
  private:
   ~NativeLayerRootWayland();
 
@@ -128,6 +133,8 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
 #ifdef MOZ_LOGGING
   void* mLoggingWidget = nullptr;
 #endif
+
+  RefPtr<gl::GLContext> mGL;
 
   // WaylandSurface of nsWindow (our root window).
   // This WaylandSurface is owned by nsWindow so we don't map/unmap it
@@ -396,7 +403,7 @@ class NativeLayerRootSnapshotterWayland final
     : public NativeLayerRootSnapshotter {
  public:
   static UniquePtr<NativeLayerRootSnapshotterWayland> Create(
-      NativeLayerWaylandRender* aLayerRender, gl::GLContext* aGL);
+      NativeLayerRootWayland* aRootLayer, gl::GLContext* aGL);
   virtual ~NativeLayerRootSnapshotterWayland();
 
   bool ReadbackPixels(const gfx::IntSize& aReadbackSize,
@@ -414,11 +421,12 @@ class NativeLayerRootSnapshotterWayland final
 #endif
 
  protected:
-  NativeLayerRootSnapshotterWayland(NativeLayerWaylandRender* aLayerRender,
+  NativeLayerRootSnapshotterWayland(NativeLayerRootWayland* aRootLayer,
                                     gl::GLContext* aGL);
   void UpdateSnapshot(const gfx::IntSize& aSize);
 
-  RefPtr<NativeLayerWaylandRender> mLayerRender;
+  RefPtr<NativeLayerRootWayland> mRootLayer;
+  RefPtr<NativeLayerWaylandRender> mLayerForSnapshot;
   RefPtr<gl::GLContext> mGL;
 
   // Can be null. Created and updated in UpdateSnapshot.
