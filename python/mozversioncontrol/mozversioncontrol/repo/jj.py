@@ -454,7 +454,13 @@ class JujutsuRepository(Repository):
         function that can be called to restore the repository to its original
         state prior to this function having been run.
         """
-        self._run("debug", "snapshot")  # Force a snapshot.
+
+        # Force a snapshot.
+        if self._version < Version("0.39"):
+            self._run("debug", "snapshot")
+        else:
+            self._run("util", "snapshot")
+
         # Redundant with the snapshot from the next command, but the semantics
         # of this operation depend on a snapshot happening (and it will eat
         # working-copy changes if not!), so be extra explicit here in case it
