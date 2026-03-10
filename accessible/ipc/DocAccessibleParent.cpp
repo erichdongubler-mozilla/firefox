@@ -1180,9 +1180,6 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvFocusEvent(
 
   mFocus = aID;
   mCaretRect = aCaretRect;
-#ifdef MOZ_WIDGET_COCOA
-  mFocusedAccBounds = proxy->Bounds();
-#endif
   PlatformFocusEvent(proxy);
 
   if (!nsCoreUtils::AccEventObserversExist()) {

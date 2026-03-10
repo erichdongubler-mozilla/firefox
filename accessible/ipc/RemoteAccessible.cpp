@@ -200,26 +200,6 @@ void RemoteAccessible::ApplyCache(CacheUpdateType aUpdateType,
     for (auto id : *maybeViewportCache) {
       AsDoc()->mOnScreenAccessibles.Insert(id);
     }
-#ifdef MOZ_WIDGET_COCOA
-    // If our viewport cache has updated, we've seen at least one of the
-    // following:
-    // - bounds changed for an accessible
-    // - APZ changed
-    // - text bounds changed
-    // - scroll position changed
-    // - a transform changed
-    // - the selected element in a selectable container changed
-    // This means our focused acc may have moved.
-    // XXX: Bug 1469779 probably wants this on windows too :)
-    RemoteAccessible* focusedAcc = AsDoc()->GetFocusedAcc();
-    if (focusedAcc) {
-      LayoutDeviceIntRect bounds = focusedAcc->Bounds();
-      if (bounds != AsDoc()->mFocusedAccBounds) {
-        AsDoc()->mFocusedAccBounds = bounds;
-        PlatformFocusedAccLocationChanged(focusedAcc);
-      }
-    }
-#endif
   }
 
   if (aUpdateType == CacheUpdateType::Initial) {
