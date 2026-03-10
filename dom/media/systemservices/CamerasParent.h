@@ -138,7 +138,7 @@ class AggregateCapturer final
 
 class DeliverFrameRunnable;
 
-class CamerasParent : public PCamerasParent {
+class CamerasParent final : public PCamerasParent {
  public:
   using ShutdownMozPromise = media::ShutdownBlockingTicket::ShutdownMozPromise;
 
@@ -210,18 +210,17 @@ class CamerasParent : public PCamerasParent {
   ShmemBuffer GetBuffer(int aCaptureId, size_t aSize);
 
   // helper to forward to the PBackground thread
-  virtual int DeliverFrameOverIPC(
-      CaptureEngine aCapEngine, int aCaptureId,
-      const Span<const int>& aStreamId, const TrackingId& aTrackingId,
-      Variant<ShmemBuffer, webrtc::VideoFrame>&& aBuffer,
-      const VideoFrameProperties& aProps);
+  int DeliverFrameOverIPC(CaptureEngine aCapEngine, int aCaptureId,
+                          const Span<const int>& aStreamId,
+                          const TrackingId& aTrackingId,
+                          Variant<ShmemBuffer, webrtc::VideoFrame>&& aBuffer,
+                          const VideoFrameProperties& aProps);
 
   CamerasParent();
 
- protected:
+ private:
   virtual ~CamerasParent();
 
- private:
   struct GetOrCreateCapturerResult {
     AggregateCapturer* mCapturer{};
     int mStreamId{};
