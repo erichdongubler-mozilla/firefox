@@ -87,6 +87,8 @@ support-files = [
 
 ["browser_smartwindow_content.js"]
 
+["browser_smartwindow_conversation_state.js"]
+
 ["browser_smartwindow_disclaimer.js"]
 
 ["browser_smartwindow_footer.js"]
