@@ -11,6 +11,7 @@
 #include "nsHttpConnection.h"
 #include "nsHttpTransaction.h"
 #include "nsTArray.h"
+#include "nsTHashSet.h"
 #include "nsThreadUtils.h"
 #include "nsClassHashtable.h"
 #include "mozilla/ReentrantMonitor.h"
@@ -197,6 +198,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   already_AddRefed<ConnectionEntry> FindConnectionEntry(
       const nsHttpConnectionInfo* ci);
+
+  void MaybeRemoveEntryFromPendingSet(ConnectionEntry* ent);
 
  public:
   void RegisterOriginCoalescingKey(HttpConnectionBase*, const nsACString& host,
@@ -390,6 +393,10 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   // be accessed from the socket thread.
   //
   nsRefPtrHashtable<nsCStringHashKey, ConnectionEntry> mCT;
+
+  // Subset of mCT entries that currently have non-empty pending transaction
+  // queues. Only iterated in OnMsgProcessAllSpdyPendingQ.
+  nsTHashSet<ConnectionEntry*> mPendingQEntries;
 
   // Read Timeout Tick handlers
   void TimeoutTick();

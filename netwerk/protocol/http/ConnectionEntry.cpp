@@ -34,14 +34,16 @@ ConnectionEntry::~ConnectionEntry() {
   MOZ_ASSERT(!mDoNotDestroy);
 }
 
-ConnectionEntry::ConnectionEntry(nsHttpConnectionInfo* ci)
+ConnectionEntry::ConnectionEntry(nsHttpConnectionInfo* ci,
+                                 nsTHashSet<ConnectionEntry*>& aPendingQSet)
     : mConnInfo(ci),
       mUsingSpdy(false),
       mCanUseSpdy(true),
       mPreferIPv4(false),
       mPreferIPv6(false),
       mUsedForConnection(false),
-      mDoNotDestroy(false) {
+      mDoNotDestroy(false),
+      mPendingQSet(aPendingQSet) {
   LOG(("ConnectionEntry::ConnectionEntry this=%p key=%s", this,
        ci->HashKey().get()));
   mConnectionAttemptPool = new ConnectionAttemptPool(this);
@@ -193,6 +195,7 @@ void ConnectionEntry::InsertTransaction(
   mPendingQ.InsertTransaction(pendingTransInfo,
                               aInsertAsFirstForTheSamePriority);
   pendingTransInfo->Transaction()->OnPendingQueueInserted(mConnInfo->HashKey());
+  mPendingQSet.EnsureInserted(this);
 }
 
 nsTArray<RefPtr<PendingTransactionInfo>>*
@@ -302,6 +305,13 @@ bool ConnectionEntry::RemoveFromIdleConnections(nsHttpConnection* conn) {
 
 void ConnectionEntry::CancelAllTransactions(nsresult reason) {
   mPendingQ.CancelAllTransactions(reason);
+  MaybeRemoveFromPendingSet();
+}
+
+void ConnectionEntry::MaybeRemoveFromPendingSet() {
+  if (PendingQueueIsEmpty() && UrgentStartQueueIsEmpty()) {
+    mPendingQSet.Remove(this);
+  }
 }
 
 nsresult ConnectionEntry::CloseIdleConnection(nsHttpConnection* conn) {
@@ -928,6 +938,7 @@ bool ConnectionEntry::RemoveTransFromPendingQ(nsHttpTransaction* aTrans) {
   if (sock) {
     RemoveConnectionAttempt(sock, true);
   }
+  MaybeRemoveFromPendingSet();
   return true;
 }
 

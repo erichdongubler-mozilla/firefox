@@ -10,6 +10,7 @@
 #include "PendingTransactionQueue.h"
 #include "ConnectionAttemptPool.h"
 #include "mozilla/WeakPtr.h"
+#include "nsTHashSet.h"
 
 namespace mozilla {
 namespace net {
@@ -22,7 +23,8 @@ namespace net {
 class ConnectionEntry : public SupportsWeakPtr {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ConnectionEntry)
-  explicit ConnectionEntry(nsHttpConnectionInfo* ci);
+  ConnectionEntry(nsHttpConnectionInfo* ci,
+                  nsTHashSet<ConnectionEntry*>& aPendingQSet);
 
   void ReschedTransaction(nsHttpTransaction* aTrans);
 
@@ -216,6 +218,8 @@ class ConnectionEntry : public SupportsWeakPtr {
   const HashNumber& OriginFrameHashKey();
 
  private:
+  void MaybeRemoveFromPendingSet();
+  nsTHashSet<ConnectionEntry*>& mPendingQSet;
   void InsertIntoIdleConnections_internal(nsHttpConnection* conn);
   void RemoveFromIdleConnectionsIndex(size_t inx);
   bool RemoveFromIdleConnections(nsHttpConnection* conn);

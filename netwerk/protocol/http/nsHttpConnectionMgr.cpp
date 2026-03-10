@@ -709,6 +709,7 @@ void nsHttpConnectionMgr::OnMsgClearConnectionHistory(int32_t,
         ent->DnsAndConnectSocketsLength() == 0 &&
         ent->UrgentStartQueueIsEmpty() && ent->PendingQueueIsEmpty() &&
         !ent->mDoNotDestroy) {
+      mPendingQEntries.Remove(ent.get());
       iter.Remove();
     }
   }
@@ -1266,6 +1267,7 @@ bool nsHttpConnectionMgr::ProcessPendingQForEntry(ConnectionEntry* ent,
     ent->RemoveEmptyPendingQ();
   }
 
+  MaybeRemoveEntryFromPendingSet(ent);
   return dispatchedSuccessfully;
 }
 
@@ -1966,7 +1968,7 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
 
       if (!specificEnt) {
         RefPtr<nsHttpConnectionInfo> clone(ci->Clone());
-        specificEnt = new ConnectionEntry(clone);
+        specificEnt = new ConnectionEntry(clone, mPendingQEntries);
         mCT.InsertOrUpdate(clone->HashKey(), RefPtr{specificEnt});
       }
 
@@ -2114,6 +2116,13 @@ void nsHttpConnectionMgr::DispatchSpdyPendingQ(
   pendingQ = std::move(leftovers);
 }
 
+void nsHttpConnectionMgr::MaybeRemoveEntryFromPendingSet(ConnectionEntry* ent) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  if (ent->PendingQueueIsEmpty() && ent->UrgentStartQueueIsEmpty()) {
+    mPendingQEntries.Remove(ent);
+  }
+}
+
 // This function tries to dispatch the pending h2 or h3 transactions on
 // the connection entry sent in as an argument. It will do so on the
 // active h2 or h3 connection either in that same entry or from the
@@ -2155,8 +2164,13 @@ void nsHttpConnectionMgr::ProcessSpdyPendingQ(ConnectionEntry* ent) {
 void nsHttpConnectionMgr::OnMsgProcessAllSpdyPendingQ(int32_t, ARefBase*) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG(("nsHttpConnectionMgr::OnMsgProcessAllSpdyPendingQ\n"));
-  for (const auto& entry : mCT.Values()) {
+  AutoTArray<RefPtr<ConnectionEntry>, 16> entries;
+  for (ConnectionEntry* entry : mPendingQEntries) {
+    entries.AppendElement(entry);
+  }
+  for (const auto& entry : entries) {
     ProcessSpdyPendingQ(entry.get());
+    MaybeRemoveEntryFromPendingSet(entry.get());
   }
 }
 
@@ -2230,6 +2244,7 @@ void nsHttpConnectionMgr::AbortAndCloseAllConnections(int32_t, ARefBase*) {
     iter.Remove();
   }
 
+  mPendingQEntries.Clear();
   mActiveTransactions[false].Clear();
   mActiveTransactions[true].Clear();
 }
@@ -2505,6 +2520,7 @@ void nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase*) {
           ent->PendingQueueIsEmpty() && ent->UrgentStartQueueIsEmpty() &&
           !ent->mDoNotDestroy && (!ent->mUsingSpdy || mCT.Count() > 300)) {
         LOG(("    removing empty connection entry\n"));
+        mPendingQEntries.Remove(ent.get());
         iter.Remove();
         continue;
       }
@@ -3596,7 +3612,7 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
   LOG(("GetOrCreateConnectionEntry step 3"));
   if (!specificEnt) {
     RefPtr<nsHttpConnectionInfo> clone(specificCI->Clone());
-    specificEnt = new ConnectionEntry(clone);
+    specificEnt = new ConnectionEntry(clone, mPendingQEntries);
     mCT.InsertOrUpdate(clone->HashKey(), RefPtr{specificEnt});
   }
   return specificEnt;
