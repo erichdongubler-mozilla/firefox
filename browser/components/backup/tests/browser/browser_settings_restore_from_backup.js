@@ -44,20 +44,27 @@ add_setup(async () => {
  *   Relevant widgets on the backup settings page.
  */
 async function initializedBackupWidgets(browser) {
+  // We have to end up using waitForCondition because of the racy nature
+  // of the state updates sent from the backupService. At some point, we should
+  // add a way to verifiably know when the backup settings items are available.
+  await TestUtils.waitForCondition(
+    () => browser.contentDocument.querySelector("backup-settings"),
+    "Waiting for backup-settings element to be in the DOM"
+  );
   let settings = browser.contentDocument.querySelector("backup-settings");
 
-  await settings.updateComplete;
-
-  Assert.ok(
-    settings.restoreFromBackupButtonEl,
-    "Button to restore backups should be found"
+  await TestUtils.waitForCondition(
+    () => settings.restoreFromBackupButtonEl,
+    "Waiting for restore from backup button to show up"
   );
 
   settings.restoreFromBackupButtonEl.click();
-  await settings.updateComplete;
 
+  await TestUtils.waitForCondition(
+    () => settings.restoreFromBackupEl,
+    "Waiting for restore-from-backup element to show up"
+  );
   let restoreFromBackup = settings.restoreFromBackupEl;
-  Assert.ok(restoreFromBackup, "restore-from-backup should be found");
 
   await restoreFromBackup.initializedPromise;
   return {
@@ -723,7 +730,7 @@ add_task(async function test_selectableProfilesAllowed_toggles_restore_ui() {
     sandbox.stub(SelectableProfileService, "isEnabled").get(() => false);
     bs.onUpdateProfilesEnabledState();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         restoreFromBackup.shadowRoot.querySelector(
           "moz-message-bar[type='info']"
@@ -742,7 +749,7 @@ add_task(async function test_selectableProfilesAllowed_toggles_restore_ui() {
     sandbox.stub(SelectableProfileService, "isEnabled").get(() => true);
     bs.onUpdateProfilesEnabledState();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         restoreFromBackup.shadowRoot.querySelector(
           "#restore-from-backup-type-group"
