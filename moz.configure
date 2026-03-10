@@ -606,22 +606,25 @@ include(
 
 # GNU make detection
 # ==============================================================
-option(env="MAKE", nargs=1, help="Path to GNU make")
+option(env="GMAKE", nargs=1, help="Path to GNU Make")
+
+option(env="MAKE", nargs=1, help="Path to GNU Make")
 
 
-@depends("MAKE", host)
-def possible_makes(make, host):
-    candidates = []
-    if make:
-        candidates.append(make[0])
+@depends(host)
+def possible_makes(host):
+    candidates = ["gmake", "make"]
     if host.kernel == "WINNT":
-        candidates.extend(("mozmake", "mingw32-make", "make", "gmake"))
-    else:
-        candidates.extend(("gmake", "make"))
+        candidates = ["mozmake", "mingw32-make"] + candidates
     return candidates
 
 
-gmake = check_prog("GMAKE", possible_makes, bootstrap="mozmake")
+gmake = check_prog(
+    "GMAKE",
+    possible_makes,
+    input=depends("GMAKE", "MAKE")(lambda g, m: g or m),
+    bootstrap="mozmake",
+)
 
 
 @depends(gmake)
@@ -630,7 +633,7 @@ def gmake_version(prog):
     out = check_cmd_output(prog, "--version")
     version_line = out.splitlines()[0]
     if not version_line.startswith("GNU Make"):
-        die("GNU make is required")
+        die("GNU Make is required")
     return Version(version_line[8:].strip())
 
 
