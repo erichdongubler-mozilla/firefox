@@ -12,8 +12,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * JSWindowActor to pass data between AIChatContent singleton and content pages.
  */
 export class AIChatContentParent extends JSWindowActorParent {
-  dispatchMessageToChatContent(response) {
-    this.sendAsyncMessage("AIChatContent:DispatchMessage", response);
+  dispatchMessageToChatContent(message) {
+    // Ideally we should allowlist or use a schema to validate what we send to
+    // the child process, that is bug 2022057.
+    // We can't send URL objects through IPC, so we need to remove the pageUrl
+    // property before sending the message to the child process. We don't want
+    // to change the original message object which is used elsewhere, so we
+    // do a shallow clone first:
+    message = Object.assign({}, message);
+    delete message.pageUrl;
+    this.sendAsyncMessage("AIChatContent:DispatchMessage", message);
   }
 
   dispatchTruncateToChatContent(payload) {
