@@ -27,7 +27,6 @@ pub fn main() {
     ping::CrashPing {
         extra: &extra,
         reason: reason.to_str(),
-        legacy_telemetry: None,
     }
     .send();
 

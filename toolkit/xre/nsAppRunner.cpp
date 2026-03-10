@@ -1851,14 +1851,6 @@ nsXULAppInfo::IsAnnotationValid(const nsACString& aValue, bool* aIsValid) {
 }
 
 NS_IMETHODIMP
-nsXULAppInfo::IsAnnotationAllowedForPing(const nsACString& aValue,
-                                         bool* aIsAllowed) {
-  CrashReporter::Annotation annotation = MOZ_TRY(GetCrashAnnotation(aValue));
-  *aIsAllowed = CrashReporter::IsAnnotationAllowedForPing(annotation);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsXULAppInfo::IsAnnotationAllowedForReport(const nsACString& aValue,
                                            bool* aIsAllowed) {
   CrashReporter::Annotation annotation = MOZ_TRY(GetCrashAnnotation(aValue));
