@@ -45,7 +45,12 @@
 }
 
 .smartbar > .urlbar-input-container {
-  overflow: auto;
+  /**
+   * Setting overflow `auto` or `hidden` causes layout shifts when suggestions
+   * show. Text wrapping is handled by the multiline editor’s overflow,
+   * explicitly setting to the default oveflow value.
+   */
+  overflow: visible;
   scrollbar-width: none;
   /**
    * The search mode switcher won’t be used for the Smartbar. Instead, it is
