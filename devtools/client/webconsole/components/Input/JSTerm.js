@@ -147,7 +147,6 @@ class JSTerm extends Component {
     this.hudId = this.webConsoleUI.hudId;
 
     this._onEditorChanges = this._onEditorChanges.bind(this);
-    this._onEditorBlur = this._onEditorBlur.bind(this);
     this._onEditorBeforeChange = this._onEditorBeforeChange.bind(this);
     this._onEditorKeyHandled = this._onEditorKeyHandled.bind(this);
     this.onContextMenu = this.onContextMenu.bind(this);
@@ -346,7 +345,7 @@ class JSTerm extends Component {
               return false;
             }
 
-            const isSomethingSelected = this.editor.isTextSelected();
+            const isSomethingSelected = this.editor.somethingSelected();
             const hasSuggestion = this.hasAutocompletionSuggestion();
 
             if (hasSuggestion && !isSomethingSelected) {
@@ -711,7 +710,7 @@ class JSTerm extends Component {
     // In editor mode, we only evaluate the text selection if there's one. The feature isn't
     // enabled in inline mode as it can be confusing since input is cleared when evaluating.
     const executeString = this.props.editorMode
-      ? this.editor.getSelectedText() || value
+      ? this.getSelectedText() || value
       : value;
 
     if (!executeString) {
@@ -816,6 +815,10 @@ class JSTerm extends Component {
     return this.editor.getTextBeforeCursor().length;
   }
 
+  getSelectedText() {
+    return this.editor.getSelection();
+  }
+
   /**
    * Even handler for the "beforeChange" event fired by codeMirror. This event is fired
    * when codeMirror is about to make a change to its DOM representation.
@@ -893,7 +896,7 @@ class JSTerm extends Component {
    * Even handler for the "blur" event fired by codeMirror.
    */
   _onEditorBlur(cm) {
-    if (this.editor.isTextSelected()) {
+    if (cm.somethingSelected()) {
       // If there's a selection when the input is blurred, then we remove it by setting
       // the cursor at the position that matches the start of the first selection.
       const [{ head }] = cm.listSelections();
