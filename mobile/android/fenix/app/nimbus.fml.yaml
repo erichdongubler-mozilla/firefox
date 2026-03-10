@@ -602,15 +602,6 @@ features:
         value:
           report-site-issue: false
 
-  override-user-specified-homepage-sections:
-    description: Whether to ignore the user-specified homepage section visibility settings and hide the options in the settings.
-    variables:
-      enabled:
-        description: >
-          When true, ignore the user-specified homepage section visibility settings, and hide the toggle options in the settings.
-        type: Boolean
-        default: false
-
   firefox-jp-guide-default-site:
     description: >
       This feature is for managing the visibility of the Firefox Japanese Guide default suggested site shortcut
