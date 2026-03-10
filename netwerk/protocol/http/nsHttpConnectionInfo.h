@@ -177,11 +177,6 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool GetAnonymous() const {
     return GetHashCharAt(HashKeyIndex::Anonymous) == 'A';
   }
-  void AnonymousInvertedHashKey(nsACString& aResult) const {
-    aResult = mHashKey;
-    aResult.SetCharAt(GetAnonymous() ? '.' : 'A',
-                      UnderlyingIndex(HashKeyIndex::Anonymous));
-  }
   void SetPrivate(bool priv) {
     SetHashCharAt(priv ? 'P' : '.', HashKeyIndex::Private);
   }
