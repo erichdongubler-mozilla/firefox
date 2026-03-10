@@ -15592,6 +15592,12 @@ AttachDecision UnaryArithIRGenerator::tryAttachStringInt32() {
     return AttachDecision::NoAction;
   }
 
+  // The string operand must be convertible to an int32 value.
+  int32_t unused;
+  if (!GetInt32FromStringPure(cx_, val_.toString(), &unused)) {
+    return AttachDecision::NoAction;
+  }
+
   ValOperandId valId(writer.setInputOperandId(0));
   StringOperandId stringId = writer.guardToString(valId);
   Int32OperandId intId = writer.guardStringToInt32(stringId);
@@ -16355,15 +16361,8 @@ AttachDecision BinaryArithIRGenerator::tryAttachStringInt32Arith() {
 
   // The string operand must be convertable to an int32 value.
   JSString* str = lhs_.isString() ? lhs_.toString() : rhs_.toString();
-
-  double num;
-  if (!StringToNumber(cx_, str, &num)) {
-    cx_->recoverFromOutOfMemory();
-    return AttachDecision::NoAction;
-  }
-
   int32_t unused;
-  if (!mozilla::NumberIsInt32(num, &unused)) {
+  if (!GetInt32FromStringPure(cx_, str, &unused)) {
     return AttachDecision::NoAction;
   }
 
