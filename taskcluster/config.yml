@@ -813,7 +813,7 @@ workers:
             implementation: generic-worker
             os: windows
             worker-type: '{alias}'
-        win11-64-24h2(|-gpu|-source|-large|-webgpu):
+        win11-64-24h2(|-gpu|-source|-large|-webgpu|-privileged):
             provisioner: 'gecko-t'
             implementation: generic-worker
             os: windows

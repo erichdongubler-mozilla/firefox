@@ -697,6 +697,10 @@ talos-xperf:
     treeherder-symbol: T(x)
     virtualization: virtual
     os-groups: [Administrators]
+    worker-type:
+        by-test-platform:
+            windows11-64-24h2(-shippable)?/opt: win11-64-24h2-privileged
+            default: default
     run-as-administrator:
         by-test-platform:
             windows.*32.*: false
