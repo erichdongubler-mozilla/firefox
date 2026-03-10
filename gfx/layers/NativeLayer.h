@@ -292,7 +292,7 @@ class AsyncReadbackBufferNLRS
     : public profiler_screenshots::AsyncReadbackBuffer {
  public:
   AsyncReadbackBufferNLRS(gl::GLContext* aGL, const gfx::IntSize& aSize,
-                          GLuint aBufferHandle);
+                          GLuint aBufferHandle, bool aYFlip);
   void CopyFrom(profiler_screenshots::RenderSource* aSource) override;
   bool MapAndCopyInto(gfx::DataSourceSurface* aSurface,
                       const gfx::IntSize& aReadSize) override;
@@ -301,6 +301,7 @@ class AsyncReadbackBufferNLRS
   virtual ~AsyncReadbackBufferNLRS();
   RefPtr<gl::GLContext> mGL;
   GLuint mBufferHandle = 0;
+  bool mYFlip;
 };
 
 }  // namespace layers

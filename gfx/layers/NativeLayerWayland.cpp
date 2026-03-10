@@ -1495,7 +1495,8 @@ NativeLayerRootSnapshotterWayland::CreateAsyncReadbackBuffer(
   mGL->fPixelStorei(LOCAL_GL_PACK_ALIGNMENT, 1);
   mGL->fBufferData(LOCAL_GL_PIXEL_PACK_BUFFER, bufferByteCount, nullptr,
                    LOCAL_GL_STREAM_READ);
-  return MakeAndAddRef<AsyncReadbackBufferNLRS>(mGL, aSize, bufferHandle);
+  return MakeAndAddRef<AsyncReadbackBufferNLRS>(mGL, aSize, bufferHandle,
+                                                /*bool aYFlip*/ false);
 }
 
 }  // namespace mozilla::layers

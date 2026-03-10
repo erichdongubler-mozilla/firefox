@@ -34,10 +34,12 @@ bool DownscaleTargetNLRS::DownscaleFrom(
 
 AsyncReadbackBufferNLRS::AsyncReadbackBufferNLRS(gl::GLContext* aGL,
                                                  const gfx::IntSize& aSize,
-                                                 GLuint aBufferHandle)
+                                                 GLuint aBufferHandle,
+                                                 bool aYFlip)
     : profiler_screenshots::AsyncReadbackBuffer(aSize),
       mGL(aGL),
-      mBufferHandle(aBufferHandle) {}
+      mBufferHandle(aBufferHandle),
+      mYFlip(aYFlip) {}
 
 AsyncReadbackBufferNLRS::~AsyncReadbackBufferNLRS() {
   if (mGL && mGL->MakeCurrent()) {
@@ -91,8 +93,13 @@ bool AsyncReadbackBufferNLRS::MapAndCopyInto(gfx::DataSourceSurface* aSurface,
   uint8_t* destData = map.GetData();
   int32_t destStride = map.GetStride();
   gfx::SurfaceFormat destFormat = aSurface->GetFormat();
-  SwizzleYFlipData(srcData, srcStride, gfx::SurfaceFormat::R8G8B8A8, destData,
-                   destStride, destFormat, aReadSize);
+  if (mYFlip) {
+    SwizzleYFlipData(srcData, srcStride, gfx::SurfaceFormat::R8G8B8A8, destData,
+                     destStride, destFormat, aReadSize);
+  } else {
+    SwizzleData(srcData, srcStride, gfx::SurfaceFormat::R8G8B8A8, destData,
+                destStride, destFormat, aReadSize);
+  }
 
   mGL->fUnmapBuffer(LOCAL_GL_PIXEL_PACK_BUFFER);
 
