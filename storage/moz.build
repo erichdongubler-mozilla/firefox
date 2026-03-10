@@ -77,7 +77,6 @@ UNIFIED_SOURCES += [
     "ObfuscatingVFS.cpp",
     "QuotaVFS.cpp",
     "ReadOnlyNoLockVFS.cpp",
-    "SQLCollations.cpp",
     "StorageBaseStatementInternal.cpp",
     "VacuumManager.cpp",
     "Variant.cpp",

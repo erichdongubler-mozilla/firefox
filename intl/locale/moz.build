@@ -34,6 +34,7 @@ EXPORTS += [
 ]
 
 EXPORTS.mozilla.intl += [
+    "AppCollator.h",
     "AppDateTimeFormat.h",
     "EncodingToLang.h",
     "LocaleService.h",
@@ -43,6 +44,7 @@ EXPORTS.mozilla.intl += [
 ]
 
 UNIFIED_SOURCES += [
+    "AppCollator.cpp",
     "AppDateTimeFormat.cpp",
     "EncodingToLang.cpp",
     "LocaleService.cpp",

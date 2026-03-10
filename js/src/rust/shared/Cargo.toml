@@ -19,10 +19,11 @@ icu_capi = { version = "2.1", optional = true, default-features= false, features
 unicode-bidi-ffi = { path = "../../../../intl/bidi/rust/unicode-bidi-ffi" }
 normalizer_glue = { path = "../../builtin/normalizer_glue" }
 properties_glue = { path = "../../irregexp/properties_glue" }
+collator_glue = { path = "../../builtin/intl/collator_glue", optional = true }
 
 [features]
 simd-accel = ['encoding_c/simd-accel']
-icu4x = ['icu_capi']
+icu4x = ['icu_capi', 'collator_glue']
 
 # Uncomment this to enable perf support in release mode.
 #[profile.release]

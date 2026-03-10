@@ -88,6 +88,14 @@ notes = "Used for testing."
 audit-as-crates-io = true
 notes = "Patched version of upstream"
 
+[policy.icu_collator]
+audit-as-crates-io = true
+notes = "Patched version of upstream"
+
+[policy.icu_collator_data]
+audit-as-crates-io = true
+notes = "Patched version of upstream"
+
 [policy.icu_collections]
 audit-as-crates-io = true
 notes = "Patched version of upstream"

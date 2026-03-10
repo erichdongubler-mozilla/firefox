@@ -73,15 +73,16 @@ nsresult txNodeSorter::addSortElement(Expr* aSelectExpr, Expr* aLangExpr,
     // Text comparator
 
     // Language
-    nsAutoString lang;
+    nsAutoCStringN<6> lang;
     if (aLangExpr) {
-      rv = aLangExpr->evaluateToString(aContext, lang);
+      nsAutoStringN<6> utf16lang;
+      rv = aLangExpr->evaluateToString(aContext, utf16lang);
       NS_ENSURE_SUCCESS(rv, rv);
     }
     if (lang.IsEmpty() &&
         aContext->getContextNode().OwnerDoc()->ShouldResistFingerprinting(
             RFPTarget::JSLocale)) {
-      CopyUTF8toUTF16(nsRFPService::GetSpoofedJSLocale(), lang);
+      lang.Assign(nsRFPService::GetSpoofedJSLocale());
     }
 
     // Case-order
