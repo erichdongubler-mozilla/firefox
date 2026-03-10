@@ -844,7 +844,7 @@ class Interventions {
       matches,
     };
 
-    let { all_frames, css, isolated, js, run_at } =
+    let { all_frames, css, isolated, js, match_origin_as_fallback, run_at } =
       intervention.content_scripts;
     if (!css && !js) {
       console.error(`Missing js or css for content_script in ${label}`);
@@ -859,6 +859,9 @@ class Interventions {
     }
     if (all_frames) {
       registration.allFrames = true;
+    }
+    if (match_origin_as_fallback) {
+      registration.matchOriginAsFallback = true;
     }
     if (css) {
       registration.css = css.map(item => {
