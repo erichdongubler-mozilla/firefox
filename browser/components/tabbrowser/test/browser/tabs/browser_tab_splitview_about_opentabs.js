@@ -808,7 +808,7 @@ add_task(async function test_open_link_in_split_view_from_container() {
     false,
     testPageUrl
   );
-
+  let containerIndex = containerTab.elementIndex;
   let splitViewCreated = BrowserTestUtils.waitForEvent(
     gBrowser.tabContainer,
     "SplitViewCreated"
@@ -855,6 +855,11 @@ add_task(async function test_open_link_in_split_view_from_container() {
     linkTab.splitview,
     containerTab.splitview,
     "Both tabs should be in the same split view"
+  );
+  is(
+    containerIndex,
+    linkTab.splitview.elementIndex,
+    "Splitview is created in place"
   );
 
   is(gBrowser.selectedTab, linkTab, "Link tab should be selected");

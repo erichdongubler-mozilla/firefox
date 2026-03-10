@@ -1502,7 +1502,9 @@ export class nsContextMenu {
       resolveOnNewTabCreated: browser => {
         let linkTab = win.gBrowser.getTabForBrowser(browser);
         if (linkTab && currentTab) {
-          win.gBrowser.addTabSplitView([currentTab, linkTab]);
+          win.gBrowser.addTabSplitView([currentTab, linkTab], {
+            insertBefore: currentTab,
+          });
           win.gBrowser.selectedTab = linkTab;
         }
       },
