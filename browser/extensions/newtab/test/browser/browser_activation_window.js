@@ -210,12 +210,8 @@ add_task(
 
     const prefsFeed = await getPrefsFeed();
 
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        [TOP_SITES_PREF, true],
-        [TOP_STORIES_PREF, true],
-      ],
-    });
+    Services.prefs.clearUserPref(TOP_SITES_PREF);
+    Services.prefs.clearUserPref(TOP_STORIES_PREF);
 
     await ExperimentAPI.ready();
     const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
@@ -283,18 +279,14 @@ add_task(
       return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
     },
   },
-  async function test_user_enabling_persists() {
+  async function test_user_enabling_persists_topsites() {
     const sandbox = sinon.createSandbox();
     let profileCreatedInstant = TEST_PROFILE_24H_AGO;
 
     const prefsFeed = await getPrefsFeed();
 
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        [TOP_SITES_PREF, true],
-        [TOP_STORIES_PREF, true],
-      ],
-    });
+    Services.prefs.clearUserPref(TOP_SITES_PREF);
+    Services.prefs.clearUserPref(TOP_STORIES_PREF);
 
     await ExperimentAPI.ready();
     const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
@@ -354,8 +346,8 @@ add_task(
 );
 
 /**
- * Tests that when a user explicitly disables top sites during the activation
- * window (by setting the pref to false), their choice persists after the
+ * Tests that when a user explicitly enables top stories during the activation
+ * window (by setting the pref to true), their choice persists after the
  * activation window expires.
  */
 add_task(
@@ -369,18 +361,14 @@ add_task(
       return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
     },
   },
-  async function test_user_disabling_persists() {
+  async function test_user_enabling_persists_topstories() {
     const sandbox = sinon.createSandbox();
     let profileCreatedInstant = TEST_PROFILE_24H_AGO;
 
     const prefsFeed = await getPrefsFeed();
 
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        [TOP_SITES_PREF, true],
-        [TOP_STORIES_PREF, true],
-      ],
-    });
+    Services.prefs.clearUserPref(TOP_SITES_PREF);
+    Services.prefs.clearUserPref(TOP_STORIES_PREF);
 
     await ExperimentAPI.ready();
     const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
@@ -407,6 +395,91 @@ add_task(
       /* isStartup */ true
     );
 
+    Services.prefs.setBoolPref(TOP_STORIES_PREF, true);
+
+    await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+      await ContentTaskUtils.waitForCondition(
+        () => content.document.querySelector("[data-section-id='topstories']"),
+        "Top stories should appear after user enables them"
+      );
+    });
+
+    BrowserTestUtils.removeTab(tab);
+
+    profileCreatedInstant = TEST_PROFILE_50H_AGO;
+    prefsFeed.checkForActivationWindow(TEST_NOW);
+
+    const topStoriesEnabled = Services.prefs.getBoolPref(TOP_STORIES_PREF);
+    Assert.equal(
+      topStoriesEnabled,
+      true,
+      "User's choice to enable top stories should persist"
+    );
+
+    Assert.ok(
+      !Services.prefs.prefHasUserValue(TOP_STORIES_TEMP_PREF),
+      "Temp pref should be cleared after exit"
+    );
+
+    await doExperimentCleanup();
+    sandbox.restore();
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+/**
+ * Tests that when a user explicitly disables top sites during the activation
+ * window (by setting the pref to false), their choice persists after the
+ * activation window expires.
+ */
+add_task(
+  {
+    /**
+     * @backward-compat { version 149 }
+     *
+     * The activation window mechanism is only supported in 149 onwards.
+     */
+    skip_if: () => {
+      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
+    },
+  },
+  async function test_user_disabling_persists_topsites() {
+    const sandbox = sinon.createSandbox();
+    let profileCreatedInstant = TEST_PROFILE_24H_AGO;
+
+    const prefsFeed = await getPrefsFeed();
+
+    Services.prefs.clearUserPref(TOP_SITES_PREF);
+    Services.prefs.clearUserPref(TOP_STORIES_PREF);
+
+    await ExperimentAPI.ready();
+    const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
+      enabled: true,
+      maxProfileAgeInHours: 48,
+      disableTopSites: false,
+      disableTopStories: true,
+      variant: "a",
+    });
+
+    sandbox
+      .stub(AboutNewTab.activityStream, "createdInstant")
+      .get(() => profileCreatedInstant);
+
+    const tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "about:blank"
+    );
+
+    await navigateToNewTabAndRunActivationWindowCheck(
+      tab,
+      prefsFeed,
+      TEST_NOW,
+      /* isStartup */ true
+    );
+
+    // Simulate the user enabling top sites...
+    Services.prefs.setBoolPref(TOP_SITES_PREF, true);
+    // and then deciding to disable them again.
     Services.prefs.setBoolPref(TOP_SITES_PREF, false);
 
     await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
@@ -426,6 +499,89 @@ add_task(
       topSitesEnabled,
       false,
       "User's choice to disable top sites should persist"
+    );
+
+    await doExperimentCleanup();
+    sandbox.restore();
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+/**
+ * Tests that when a user explicitly disables top stories during the activation
+ * window (by setting the pref to false), their choice persists after the
+ * activation window expires.
+ */
+add_task(
+  {
+    /**
+     * @backward-compat { version 149 }
+     *
+     * The activation window mechanism is only supported in 149 onwards.
+     */
+    skip_if: () => {
+      return Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") < 0;
+    },
+  },
+  async function test_user_disabling_persists_topstories() {
+    const sandbox = sinon.createSandbox();
+    let profileCreatedInstant = TEST_PROFILE_24H_AGO;
+
+    const prefsFeed = await getPrefsFeed();
+
+    Services.prefs.clearUserPref(TOP_SITES_PREF);
+    Services.prefs.clearUserPref(TOP_STORIES_PREF);
+
+    await ExperimentAPI.ready();
+    const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
+      enabled: true,
+      maxProfileAgeInHours: 48,
+      disableTopSites: false,
+      disableTopStories: true,
+      variant: "a",
+    });
+
+    sandbox
+      .stub(AboutNewTab.activityStream, "createdInstant")
+      .get(() => profileCreatedInstant);
+
+    const tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "about:blank"
+    );
+
+    await navigateToNewTabAndRunActivationWindowCheck(
+      tab,
+      prefsFeed,
+      TEST_NOW,
+      /* isStartup */ true
+    );
+
+    // Simulate the user enabling top stories...
+    Services.prefs.setBoolPref(TOP_STORIES_PREF, true);
+    // and then deciding to disable them again.
+    Services.prefs.setBoolPref(TOP_STORIES_PREF, false);
+
+    await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+      const topStoriesSection = content.document.querySelector(
+        "[data-section-id='topstories']"
+      );
+      Assert.ok(
+        !topStoriesSection,
+        "Top stories should be hidden during activation window"
+      );
+    });
+
+    BrowserTestUtils.removeTab(tab);
+
+    profileCreatedInstant = TEST_PROFILE_50H_AGO;
+    prefsFeed.checkForActivationWindow(TEST_NOW);
+
+    const topStoriesEnabled = Services.prefs.getBoolPref(TOP_STORIES_PREF);
+    Assert.equal(
+      topStoriesEnabled,
+      false,
+      "User's choice to disable top stories should persist"
     );
 
     await doExperimentCleanup();
@@ -457,12 +613,8 @@ add_task(
 
     const prefsFeed = await getPrefsFeed();
 
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        [TOP_SITES_PREF, true],
-        [TOP_STORIES_PREF, true],
-      ],
-    });
+    Services.prefs.clearUserPref(TOP_SITES_PREF);
+    Services.prefs.clearUserPref(TOP_STORIES_PREF);
 
     await ExperimentAPI.ready();
     const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
@@ -548,12 +700,8 @@ add_task(
 
     const prefsFeed = await getPrefsFeed();
 
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        [TOP_SITES_PREF, true],
-        [TOP_STORIES_PREF, true],
-      ],
-    });
+    Services.prefs.clearUserPref(TOP_SITES_PREF);
+    Services.prefs.clearUserPref(TOP_STORIES_PREF);
 
     await ExperimentAPI.ready();
     const doExperimentCleanup = await enrollWithActivationWindow(prefsFeed, {
@@ -621,12 +769,8 @@ add_task(
 
     const prefsFeed = await getPrefsFeed();
 
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        [TOP_SITES_PREF, true],
-        [TOP_STORIES_PREF, true],
-      ],
-    });
+    Services.prefs.clearUserPref(TOP_SITES_PREF);
+    Services.prefs.clearUserPref(TOP_STORIES_PREF);
 
     await ExperimentAPI.ready();
     const sandbox = sinon.createSandbox();
