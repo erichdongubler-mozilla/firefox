@@ -234,25 +234,20 @@ export class AIWindowTabStatesManager {
     const tabState = this.#getTabState(this.#selectedTab);
     const convId = tabState?.state?.conversationId;
     const tabUrl = this.#selectedTab.linkedBrowser.currentURI.spec;
-    const tabNeedsSidebar = tabUrl !== lazy.AIWINDOW_URL;
-    // Default computedKeepSidebar based on whether we have a conversation
-    // If we have a convId, default to keeping sidebar open; otherwise default to false
-    const computedKeepSidebar = tabState?.state?.keepSidebarOpen ?? !!convId;
-    const explicitKeepSidebar = tabState?.state?.keepSidebarOpen;
+    const isAIWindowTab = tabUrl === lazy.AIWINDOW_URL;
+    const shouldKeepSidebar = tabState?.state?.keepSidebarOpen ?? !!convId;
 
-    // If no conversation ID but we should keep sidebar open (cleared conversation case)
-    if (!convId && explicitKeepSidebar && tabNeedsSidebar) {
-      lazy.AIWindowUI.openSidebar(this.#window);
-      return;
-    }
-
-    if (!convId && !computedKeepSidebar && !tabNeedsSidebar) {
+    // AI Window tab doesn't need sidebar
+    if (isAIWindowTab) {
       lazy.AIWindowUI.closeSidebar(this.#window);
       return;
     }
 
-    if (tabNeedsSidebar && computedKeepSidebar) {
-      const conversation = await lazy.ChatStore.findConversationById(convId);
+    // Regular tab - open sidebar if we should keep it open
+    if (shouldKeepSidebar) {
+      const conversation = convId
+        ? await lazy.ChatStore.findConversationById(convId)
+        : null;
       lazy.AIWindowUI.openSidebar(this.#window, conversation);
       lazy.AIWindowUI.updateSidebarInput(
         this.#window,
