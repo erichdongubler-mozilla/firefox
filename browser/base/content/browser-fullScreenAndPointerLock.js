@@ -803,7 +803,7 @@ var FullScreen = {
   },
 
   _isRemoteBrowser(aBrowser) {
-    return gMultiProcessBrowser && aBrowser.getAttribute("remote") == "true";
+    return gMultiProcessBrowser && aBrowser.hasAttribute("remote");
   },
 
   getMouseTargetRect() {
