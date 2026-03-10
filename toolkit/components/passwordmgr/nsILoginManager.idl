@@ -416,6 +416,31 @@ interface nsILoginManager : nsISupports {
    */
   Promise ensureCurrentSyncID(in AString newSyncID);
 
+  /**
+   * Mark a login's password as potentially vulnerable (breached).
+   */
+  Promise addPotentiallyVulnerablePassword(in nsILoginInfo aLogin);
+
+  /**
+   * Check if a login's password is potentially vulnerable.
+   */
+  Promise isPotentiallyVulnerablePassword(in nsILoginInfo aLogin);
+
+  /**
+   * Record that a breach alert for a login was dismissed by the user.
+   */
+  Promise recordBreachAlertDismissal(in AString aLoginGUID);
+
+  /**
+   * Get all breach alert dismissals keyed by login GUID.
+   */
+  Promise getBreachAlertDismissalsByLoginGUID();
+
+  /**
+   * Clear all potentially vulnerable password records.
+   */
+  Promise clearAllPotentiallyVulnerablePasswords();
+
  /**
   * True when a primary password prompt is being displayed.
   */

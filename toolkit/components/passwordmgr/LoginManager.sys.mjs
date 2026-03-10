@@ -554,6 +554,26 @@ LoginManager.prototype = {
     return newSyncID;
   },
 
+  async addPotentiallyVulnerablePassword(login) {
+    return this._storage.addPotentiallyVulnerablePassword(login);
+  },
+
+  async isPotentiallyVulnerablePassword(login) {
+    return this._storage.isPotentiallyVulnerablePassword(login);
+  },
+
+  async recordBreachAlertDismissal(loginGUID) {
+    return this._storage.recordBreachAlertDismissal(loginGUID);
+  },
+
+  async getBreachAlertDismissalsByLoginGUID() {
+    return this._storage.getBreachAlertDismissalsByLoginGUID();
+  },
+
+  async clearAllPotentiallyVulnerablePasswords() {
+    return this._storage.clearAllPotentiallyVulnerablePasswords();
+  },
+
   get uiBusy() {
     return this._storage.uiBusy;
   },

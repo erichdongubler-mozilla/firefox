@@ -285,6 +285,7 @@ export class LoginManagerStorage_json {
       timeLastUsed: loginClone.timeLastUsed,
       timePasswordChanged: loginClone.timePasswordChanged,
       timesUsed: loginClone.timesUsed,
+      timeLastBreachAlertDismissed: loginClone.timeLastBreachAlertDismissed,
       syncCounter: loginClone.syncCounter,
       everSynced: loginClone.everSynced,
       encryptedUnknownFields: loginClone.unknownFields,
@@ -446,6 +447,8 @@ export class LoginManagerStorage_json {
         loginItem.timeLastUsed = newLogin.timeLastUsed;
         loginItem.timePasswordChanged = newLogin.timePasswordChanged;
         loginItem.timesUsed = newLogin.timesUsed;
+        loginItem.timeLastBreachAlertDismissed =
+          newLogin.timeLastBreachAlertDismissed;
         loginItem.encryptedUnknownFields = encUnknownFields;
         loginItem.syncCounter = newLogin.syncCounter;
         this._store.saveSoon();
@@ -504,19 +507,26 @@ export class LoginManagerStorage_json {
 
   async recordBreachAlertDismissal(loginGUID) {
     this._store.ensureDataReady();
-    const dismissedBreachAlertsByLoginGUID =
-      this._store._data.dismissedBreachAlertsByLoginGUID;
-
-    dismissedBreachAlertsByLoginGUID[loginGUID] = {
-      timeBreachAlertDismissed: new Date().getTime(),
-    };
-
-    return this._store.saveSoon();
+    const login = this._store.data.logins.find(
+      l => l.guid === loginGUID && !l.deleted
+    );
+    if (login) {
+      login.timeLastBreachAlertDismissed = Date.now();
+      this._store.saveSoon();
+    }
   }
 
-  getBreachAlertDismissalsByLoginGUID() {
+  async getBreachAlertDismissalsByLoginGUID() {
     this._store.ensureDataReady();
-    return this._store._data.dismissedBreachAlertsByLoginGUID;
+    const result = {};
+    for (const login of this._store.data.logins) {
+      if (login.timeLastBreachAlertDismissed) {
+        result[login.guid] = {
+          timeBreachAlertDismissed: login.timeLastBreachAlertDismissed,
+        };
+      }
+    }
+    return result;
   }
 
   /**
@@ -647,6 +657,8 @@ export class LoginManagerStorage_json {
         login.timesUsed = loginItem.timesUsed;
         login.syncCounter = loginItem.syncCounter;
         login.everSynced = loginItem.everSynced;
+        login.timeLastBreachAlertDismissed =
+          loginItem.timeLastBreachAlertDismissed;
 
         // Any unknown fields along for the ride
         login.unknownFields = loginItem.encryptedUnknownFields;
@@ -733,6 +745,8 @@ export class LoginManagerStorage_json {
         loginInfo.timesUsed = login.timesUsed;
         loginInfo.syncCounter = login.syncCounter;
         loginInfo.everSynced = login.everSynced;
+        loginInfo.timeLastBreachAlertDismissed =
+          login.timeLastBreachAlertDismissed;
 
         // Any unknown fields along for the ride
         loginInfo.unknownFields = login.encryptedUnknownFields;
@@ -750,7 +764,6 @@ export class LoginManagerStorage_json {
 
     this._store.data.potentiallyVulnerablePasswords = [];
     this.__decryptedPotentiallyVulnerablePasswords = null;
-    this._store.data.dismissedBreachAlertsByLoginGUID = {};
     this._store.saveSoon();
 
     lazy.LoginHelper.notifyStorageChanged("removeAllLogins", removedLogins);
@@ -910,10 +923,10 @@ export class LoginManagerStorage_json {
     return Promise.resolve(result);
   }
 
-  addPotentiallyVulnerablePassword(login) {
+  async addPotentiallyVulnerablePassword(login) {
     this._store.ensureDataReady();
     // this breached password is already stored
-    if (this.isPotentiallyVulnerablePassword(login)) {
+    if (await this.isPotentiallyVulnerablePassword(login)) {
       return;
     }
     this.__decryptedPotentiallyVulnerablePasswords.push(login.password);
@@ -924,13 +937,13 @@ export class LoginManagerStorage_json {
     this._store.saveSoon();
   }
 
-  isPotentiallyVulnerablePassword(login) {
+  async isPotentiallyVulnerablePassword(login) {
     return this._decryptedPotentiallyVulnerablePasswords.includes(
       login.password
     );
   }
 
-  clearAllPotentiallyVulnerablePasswords() {
+  async clearAllPotentiallyVulnerablePasswords() {
     this._store.ensureDataReady();
     if (!this._store.data.potentiallyVulnerablePasswords.length) {
       // No need to write to disk
