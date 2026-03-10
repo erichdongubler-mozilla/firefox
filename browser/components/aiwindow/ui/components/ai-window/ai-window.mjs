@@ -1183,7 +1183,10 @@ export class AIWindow extends MozLitElement {
     // @todo Bug2013096
     // Add way to batch these messages to the actor in one message
     this.#conversation.renderState().forEach(message => {
-      this.#dispatchMessageToActor(actor, message);
+      this.#dispatchMessageToActor(actor, {
+        ...message,
+        isPreviousMessage: true,
+      });
     });
   }
 
