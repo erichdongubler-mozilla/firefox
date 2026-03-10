@@ -67,6 +67,7 @@ export const AdditionalCTA = ({
           className={`${buttonStyle} additional-cta`}
           onClick={handleAction}
           value="additional_button"
+          data-telemetry-id={content.additional_button?.telemetryId}
           disabled={computeDisabled(content.additional_button?.disabled)}
         />
       </Localized>

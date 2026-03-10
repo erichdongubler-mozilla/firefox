@@ -567,6 +567,7 @@ const renderSingleSecondaryCTAButton = ({
     id: buttonId,
     className: buttonStyling,
     value: targetElement,
+    "data-telemetry-id": button?.telemetryId,
     disabled: computeDisabled(button?.disabled),
     onClick: shimmedHandleAction
   })), isSplitButton ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_SubmenuButton__WEBPACK_IMPORTED_MODULE_5__.SubmenuButton, {
@@ -790,7 +791,8 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       props
     } = this;
     const value = event.currentTarget.value ?? event.currentTarget.getAttribute("value");
-    const source = event.source || value;
+    const telemetryId = event.currentTarget["data-telemetry-id"] ?? event.currentTarget.getAttribute("data-telemetry-id");
+    const source = telemetryId || event.source || value;
     let action = providedAction || this.resolveActionFromContent(value, event, props);
     if (!action) {
       console.error("Failed to resolve action");
@@ -1358,6 +1360,7 @@ const ProtonScreenActionButtons = props => {
     // the action to execute from.
     ,
     value: isChecked ? "checkbox" : "primary_button",
+    "data-telemetry-id": content.primary_button?.telemetryId,
     disabled: isPrimaryDisabled(content.primary_button?.disabled),
     onClick: props.handleAction,
     "data-l10n-args": addonName ? JSON.stringify({
@@ -2231,6 +2234,7 @@ const AdditionalCTA = ({
     className: `${buttonStyle} additional-cta`,
     onClick: handleAction,
     value: "additional_button",
+    "data-telemetry-id": content.additional_button?.telemetryId,
     disabled: computeDisabled(content.additional_button?.disabled)
   })), isSplitButton ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_SubmenuButton__WEBPACK_IMPORTED_MODULE_2__.SubmenuButton, {
     content: content,
