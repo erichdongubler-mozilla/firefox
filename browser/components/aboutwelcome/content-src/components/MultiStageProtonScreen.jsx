@@ -213,7 +213,6 @@ export const ProtonScreenActionButtons = props => {
             // this.handleAction() where in the content tree it should take
             // the action to execute from.
             value={isChecked ? "checkbox" : "primary_button"}
-            data-telemetry-id={content.primary_button?.telemetryId}
             disabled={isPrimaryDisabled(content.primary_button?.disabled)}
             onClick={props.handleAction}
             data-l10n-args={

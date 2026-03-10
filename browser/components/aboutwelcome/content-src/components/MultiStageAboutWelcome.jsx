@@ -481,7 +481,6 @@ const renderSingleSecondaryCTAButton = ({
           id={buttonId}
           className={buttonStyling}
           value={targetElement}
-          data-telemetry-id={button?.telemetryId}
           disabled={computeDisabled(button?.disabled)}
           onClick={shimmedHandleAction}
         />
@@ -737,10 +736,7 @@ export class WelcomeScreen extends React.PureComponent {
     const { props } = this;
     const value =
       event.currentTarget.value ?? event.currentTarget.getAttribute("value");
-    const telemetryId =
-      event.currentTarget["data-telemetry-id"] ??
-      event.currentTarget.getAttribute("data-telemetry-id");
-    const source = telemetryId || event.source || value;
+    const source = event.source || value;
 
     let action =
       providedAction || this.resolveActionFromContent(value, event, props);

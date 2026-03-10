@@ -131,7 +131,6 @@ const BASE_MESSAGES = () => [
               },
               style: "primary",
               flow: "row",
-              telemetryId: "primary_button",
               action: {
                 type: "MULTI_ACTION",
                 navigate: true,
@@ -168,7 +167,6 @@ const BASE_MESSAGES = () => [
               },
               style: "secondary",
               flow: "row",
-              telemetryId: "secondary_button",
               action: {
                 type: "MULTI_ACTION",
                 dismiss: true,
