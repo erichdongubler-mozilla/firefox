@@ -875,9 +875,10 @@ export var PanelMultiView = class extends AssociatedToNode {
     // Panels could contain out-pf-process <browser> elements, that need to be
     // supported with a remote attribute on the panel in order to display properly.
     // See bug https://bugzilla.mozilla.org/show_bug.cgi?id=1365660
-    if (panelView.node.getAttribute("remote") == "true") {
-      this.#panel.setAttribute("remote", "true");
-    }
+    this.#panel.toggleAttribute(
+      "remote",
+      panelView.node.hasAttribute("remote")
+    );
 
     let canceled = await panelView.dispatchAsyncEvent("ViewShowing");
 
