@@ -15,7 +15,6 @@ import {
   getFailedCertificatesAsPEMString,
   handleNSSFailure,
   recordSecurityUITelemetry,
-  getFilePath,
   gOffline,
   retryThis,
   VPN_ACTIVE,
@@ -88,12 +87,14 @@ export class NetErrorCard extends MozLitElement {
 
     initializeRegistry();
 
-    let errorInfo = { errorCodeString: "" };
+    let errorInfo;
     try {
       errorInfo = gIsCertError
         ? document.getFailedCertSecurityInfo()
         : document.getNetErrorInfo();
-    } catch {}
+    } catch {
+      return false;
+    }
 
     const id = NetErrorCard.getCustomErrorID(
       errorInfo.errorCodeString || gErrorCode
@@ -308,13 +309,9 @@ export class NetErrorCard extends MozLitElement {
   }
 
   getErrorInfo() {
-    try {
-      return gIsCertError
-        ? document.getFailedCertSecurityInfo()
-        : document.getNetErrorInfo();
-    } catch {
-      return { errorCodeString: gErrorCode };
-    }
+    return gIsCertError
+      ? document.getFailedCertSecurityInfo()
+      : document.getNetErrorInfo();
   }
 
   getErrorConfig() {
@@ -327,7 +324,6 @@ export class NetErrorCard extends MozLitElement {
       cssClass: getCSSClass(),
       domainMismatchNames: this.domainMismatchNames,
       offline: gOffline,
-      filePath: getFilePath(),
     });
 
     if (errorConfig.customNetError) {
