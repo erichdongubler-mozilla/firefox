@@ -87,7 +87,7 @@ class RelayFeature(
             return
         }
 
-        val existingClient = accountManager.connectedAccount()?.relayClient() != null
+        val existingClient = accountManager.authenticatedAccount()?.relayClient() != null
         if (!existingClient) {
             logger.info("Account does not have an existing relay service.")
             return

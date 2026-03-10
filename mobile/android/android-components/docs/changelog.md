@@ -12,7 +12,6 @@ permalink: /changelog/
 
 * **service-firefox-accounts**
   * ⚠️ **Breaking change**: Removed `currentDeviceId` and `sessionToken` from `mozilla.components.service.fxa.store.Account`.
-  * Added the `FxaAccountManager.connectedAccount` method, which will return an `OAuthAccount` only if the user is in the `Connected` state.
 
 # 149.0
 * **lib-state**
