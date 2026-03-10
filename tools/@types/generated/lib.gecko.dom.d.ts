@@ -1762,6 +1762,10 @@ interface IntersectionObserverInit {
     threshold?: number | number[];
 }
 
+interface InvokeToolOptions {
+    signal?: AbortSignal;
+}
+
 interface KeySystemTrackConfiguration {
     encryptionScheme?: string | null;
     robustness?: string;
@@ -2378,6 +2382,14 @@ interface MessageEventInit extends EventInit {
     origin?: string;
     ports?: MessagePort[];
     source?: MessageEventSource | null;
+}
+
+interface ModelContextTool {
+    annotations?: ToolAnnotations;
+    description: string;
+    execute: ToolExecuteCallback;
+    inputSchema?: any;
+    name: string;
 }
 
 interface MouseEventInit extends EventModifierInit {
@@ -3476,6 +3488,14 @@ interface RTCOutboundRtpStreamStats extends RTCSentRtpStreamStats {
     totalEncodedBytesTarget?: number;
 }
 
+interface RTCPeerConnectionIceErrorEventInit extends EventInit {
+    address?: string | null;
+    errorCode: number;
+    errorText?: string;
+    port?: number | null;
+    url?: string;
+}
+
 interface RTCPeerConnectionIceEventInit extends EventInit {
     candidate?: RTCIceCandidate | null;
 }
@@ -4142,6 +4162,10 @@ interface ToggleEventInit extends EventInit {
 
 interface TogglePopoverOptions extends ShowPopoverOptions {
     force?: boolean;
+}
+
+interface ToolAnnotations {
+    readOnlyHint?: boolean;
 }
 
 interface TouchEventInit extends EventModifierInit {
@@ -6604,9 +6628,6 @@ interface CSSStyleProperties extends CSSStyleDeclaration {
     animationIterationCount: string;
     animationName: string;
     animationPlayState: string;
-    animationRange: string;
-    animationRangeEnd: string;
-    animationRangeStart: string;
     animationTimeline: string;
     animationTimingFunction: string;
     appearance: string;
@@ -8881,6 +8902,7 @@ interface Document extends Node, ARIANotifyMixin, DocumentOrShadowRoot, FontFace
     createEvent(eventInterface: "PromiseRejectionEvent"): PromiseRejectionEvent;
     createEvent(eventInterface: "RTCDTMFToneChangeEvent"): RTCDTMFToneChangeEvent;
     createEvent(eventInterface: "RTCDataChannelEvent"): RTCDataChannelEvent;
+    createEvent(eventInterface: "RTCPeerConnectionIceErrorEvent"): RTCPeerConnectionIceErrorEvent;
     createEvent(eventInterface: "RTCPeerConnectionIceEvent"): RTCPeerConnectionIceEvent;
     createEvent(eventInterface: "RTCTrackEvent"): RTCTrackEvent;
     createEvent(eventInterface: "RedirectBlockedEvent"): RedirectBlockedEvent;
@@ -9013,6 +9035,7 @@ interface DocumentL10n extends DOMLocalization {
 interface DocumentOrShadowRoot {
     readonly activeElement: Element | null;
     adoptedStyleSheets: CSSStyleSheet[];
+    readonly customElementRegistry: CustomElementRegistry | null;
     readonly fullscreenElement: Element | null;
     readonly mozFullScreenElement: Element | null;
     readonly pointerLockElement: Element | null;
@@ -9216,6 +9239,7 @@ interface Element extends Node, ARIAMixin, ARIANotifyMixin, Animatable, ChildNod
     readonly clientWidth: number;
     readonly clientWidthDouble: number;
     readonly currentCSSZoom: number;
+    readonly customElementRegistry: CustomElementRegistry | null;
     readonly firstLineBoxBSize: number;
     readonly fontSizeInflation: number;
     readonly hasVisibleScrollbars: boolean;
@@ -15522,6 +15546,31 @@ declare var MimeTypeArray: {
     isInstance: IsInstance<MimeTypeArray>;
 };
 
+/** Available only in secure contexts. */
+interface ModelContext {
+    getTools(): ModelContextTool[];
+    invokeTool(toolName: string, input?: any, options?: InvokeToolOptions): Promise<any>;
+    registerTool(tool: ModelContextTool): void;
+    unregisterTool(toolName: string): void;
+}
+
+declare var ModelContext: {
+    prototype: ModelContext;
+    new(): ModelContext;
+    isInstance: IsInstance<ModelContext>;
+};
+
+/** Available only in secure contexts. */
+interface ModelContextClient {
+    requestUserInteraction(callback: UserInteractionCallback): Promise<any>;
+}
+
+declare var ModelContextClient: {
+    prototype: ModelContextClient;
+    new(): ModelContextClient;
+    isInstance: IsInstance<ModelContextClient>;
+};
+
 interface MouseEvent extends UIEvent {
     readonly altKey: boolean;
     readonly button: number;
@@ -15978,6 +16027,7 @@ interface Navigator extends GlobalPrivacyControl, NavigatorAutomationInformation
     readonly mediaDevices: MediaDevices;
     readonly mediaSession: MediaSession;
     readonly mimeTypes: MimeTypeArray;
+    readonly modelContext: ModelContext;
     readonly mozAddonManager: AddonManager;
     readonly mozTCPSocket: LegacyMozTCPSocket;
     readonly oscpu: string;
@@ -16739,6 +16789,7 @@ interface PeerConnectionObserver {
     onCreateOfferError(error: PCErrorData): void;
     onCreateOfferSuccess(offer: string): void;
     onIceCandidate(level: number, mid: string, candidate: string, ufrag: string): void;
+    onIceCandidateError(address: string, port: number, url: string, errorCode: number, errorText: string): void;
     onPacket(level: number, type: mozPacketDumpType, sending: boolean, packet: ArrayBuffer): void;
     onSetDescriptionError(error: PCErrorData): void;
     onSetDescriptionSuccess(): void;
@@ -17772,6 +17823,7 @@ interface RTCPeerConnectionEventMap {
     "connectionstatechange": Event;
     "datachannel": Event;
     "icecandidate": Event;
+    "icecandidateerror": Event;
     "iceconnectionstatechange": Event;
     "icegatheringstatechange": Event;
     "negotiationneeded": Event;
@@ -17794,6 +17846,7 @@ interface RTCPeerConnection extends EventTarget {
     onconnectionstatechange: ((this: RTCPeerConnection, ev: Event) => any) | null;
     ondatachannel: ((this: RTCPeerConnection, ev: Event) => any) | null;
     onicecandidate: ((this: RTCPeerConnection, ev: Event) => any) | null;
+    onicecandidateerror: ((this: RTCPeerConnection, ev: Event) => any) | null;
     oniceconnectionstatechange: ((this: RTCPeerConnection, ev: Event) => any) | null;
     onicegatheringstatechange: ((this: RTCPeerConnection, ev: Event) => any) | null;
     onnegotiationneeded: ((this: RTCPeerConnection, ev: Event) => any) | null;
@@ -17846,6 +17899,20 @@ declare var RTCPeerConnection: {
     new(configuration?: RTCConfiguration): RTCPeerConnection;
     isInstance: IsInstance<RTCPeerConnection>;
     generateCertificate(keygenAlgorithm: AlgorithmIdentifier): Promise<RTCCertificate>;
+};
+
+interface RTCPeerConnectionIceErrorEvent extends Event {
+    readonly address: string | null;
+    readonly errorCode: number;
+    readonly errorText: string;
+    readonly port: number | null;
+    readonly url: string;
+}
+
+declare var RTCPeerConnectionIceErrorEvent: {
+    prototype: RTCPeerConnectionIceErrorEvent;
+    new(type: string, eventInitDict: RTCPeerConnectionIceErrorEventInit): RTCPeerConnectionIceErrorEvent;
+    isInstance: IsInstance<RTCPeerConnectionIceErrorEvent>;
 };
 
 interface RTCPeerConnectionIceEvent extends Event {
@@ -26774,6 +26841,14 @@ interface TestThrowingCallback {
     (): void;
 }
 
+interface ToolExecuteCallback {
+    (input: any, client: ModelContextClient): any;
+}
+
+interface UserInteractionCallback {
+    (): any;
+}
+
 interface ValidateAssertionCallback {
     (assertion: string, origin: string): RTCIdentityValidationResult | PromiseLike<RTCIdentityValidationResult>;
 }
@@ -27625,7 +27700,7 @@ type PCObserverStateType = "ConnectionState" | "IceConnectionState" | "IceGather
 type PanningModelType = "HRTF" | "equalpower";
 type PaymentComplete = "fail" | "success" | "unknown";
 type PaymentShippingType = "delivery" | "pickup" | "shipping";
-type PermissionName = "camera" | "geolocation" | "microphone" | "midi" | "notifications" | "persistent-storage" | "push" | "screen-wake-lock" | "storage-access";
+type PermissionName = "camera" | "geolocation" | "local-network" | "loopback-network" | "microphone" | "midi" | "notifications" | "persistent-storage" | "push" | "screen-wake-lock" | "storage-access";
 type PermissionState = "denied" | "granted" | "prompt";
 type PermitUnloadAction = "dontUnload" | "prompt" | "unload";
 type PlacesEventType = "bookmark-added" | "bookmark-guid-changed" | "bookmark-keyword-changed" | "bookmark-moved" | "bookmark-removed" | "bookmark-tags-changed" | "bookmark-time-changed" | "bookmark-title-changed" | "bookmark-url-changed" | "favicon-changed" | "history-cleared" | "none" | "page-removed" | "page-title-changed" | "page-visited" | "pages-rank-changed" | "purge-caches";

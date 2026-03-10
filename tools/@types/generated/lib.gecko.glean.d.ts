@@ -501,15 +501,13 @@ interface GleanImpl {
   }
 
   ipprotection: {
-    bandwidthUsedThreshold: GleanEventWithExtras<{ percentage?: string }>;
     clickUpgradeButton: GleanEventNoExtras;
+    enabled: GleanBoolean;
     error: GleanEventWithExtras<{ source?: string }>;
     exclusionAdded: GleanCounter;
     exclusionToggled: GleanEventWithExtras<{ excluded?: string }>;
-    paused: GleanEventWithExtras<{ wasActive?: string }>;
     removedFromToolbar: GleanEventNoExtras;
-    started: GleanEventWithExtras<{ inPrivateBrowsing?: string, userAction?: string }>;
-    stopped: GleanEventWithExtras<{ duration?: string, userAction?: string }>;
+    toggled: GleanEventWithExtras<{ duration?: string, enabled?: string, userAction?: string }>;
   }
 
   backgroundUpdate: {
@@ -1825,9 +1823,6 @@ interface GleanImpl {
     cssAnimationIterationCount: GleanCounter;
     cssAnimationName: GleanCounter;
     cssAnimationPlayState: GleanCounter;
-    cssAnimationRange: GleanCounter;
-    cssAnimationRangeEnd: GleanCounter;
-    cssAnimationRangeStart: GleanCounter;
     cssAnimationTimeline: GleanCounter;
     cssAnimationTimingFunction: GleanCounter;
     cssAppearance: GleanCounter;
@@ -2539,9 +2534,6 @@ interface GleanImpl {
     cssAnimationIterationCount: GleanCounter;
     cssAnimationName: GleanCounter;
     cssAnimationPlayState: GleanCounter;
-    cssAnimationRange: GleanCounter;
-    cssAnimationRangeEnd: GleanCounter;
-    cssAnimationRangeStart: GleanCounter;
     cssAnimationTimeline: GleanCounter;
     cssAnimationTimingFunction: GleanCounter;
     cssAppearance: GleanCounter;
@@ -3472,8 +3464,7 @@ interface GleanImpl {
     jsUseAsm: GleanCounter;
     jsWasm: GleanCounter;
     jsWasmLegacyExceptions: GleanCounter;
-    locationAncestororiginsGetter: GleanCounter;
-    locationAncestororiginsSetter: GleanCounter;
+    locationAncestororigins: GleanCounter;
     mathMlused: GleanCounter;
     mediadevicesEnumeratedevices: GleanCounter;
     mediadevicesGetdisplaymedia: GleanCounter;
@@ -3507,7 +3498,6 @@ interface GleanImpl {
     mlsStatedelete: GleanCounter;
     mlsStatedeletegroup: GleanCounter;
     navigatorMozgetusermedia: GleanCounter;
-    navigatorRequestmidiaccess: GleanCounter;
     notificationoptionsActions: GleanCounter;
     notificationoptionsBadge: GleanCounter;
     notificationoptionsImage: GleanCounter;
@@ -3531,7 +3521,6 @@ interface GleanImpl {
     pushmanagerSubscribe: GleanCounter;
     pushsubscriptionUnsubscribe: GleanCounter;
     rangeCreatecontextualfragment: GleanCounter;
-    reportingobserverConstructor: GleanCounter;
     sanitizerConstructor: GleanCounter;
     sanitizerSanitize: GleanCounter;
     schedulerPosttask: GleanCounter;
@@ -3540,9 +3529,6 @@ interface GleanImpl {
     svgsvgelementGetelementbyid: GleanCounter;
     textDirectiveNotCreated: GleanCounter;
     textDirectivePages: GleanCounter;
-    videodecoderConstructor: GleanCounter;
-    videoencoderConstructor: GleanCounter;
-    wakelockRequest: GleanCounter;
     webgpuRenderOutput: GleanCounter;
     webgpuRequestAdapter: GleanCounter;
     windowAbsoluteorientationsensor: GleanCounter;
@@ -3594,6 +3580,7 @@ interface GleanImpl {
     windowDevicemotioneventacceleration: GleanCounter;
     windowDevicemotioneventrotationrate: GleanCounter;
     windowDomerror: GleanCounter;
+    windowEncodedvideochunk: GleanCounter;
     windowEnterpictureinpictureevent: GleanCounter;
     windowExternal: GleanCounter;
     windowFederatedcredential: GleanCounter;
@@ -3607,6 +3594,14 @@ interface GleanImpl {
     windowKeyboardlayoutmap: GleanCounter;
     windowLinearaccelerationsensor: GleanCounter;
     windowMediasettingsrange: GleanCounter;
+    windowMidiaccess: GleanCounter;
+    windowMidiconnectionevent: GleanCounter;
+    windowMidiinput: GleanCounter;
+    windowMidiinputmap: GleanCounter;
+    windowMidimessageevent: GleanCounter;
+    windowMidioutput: GleanCounter;
+    windowMidioutputmap: GleanCounter;
+    windowMidiport: GleanCounter;
     windowNetworkinformation: GleanCounter;
     windowOffscreenbuffering: GleanCounter;
     windowOnbeforeinstallprompt: GleanCounter;
@@ -3617,8 +3612,7 @@ interface GleanImpl {
     windowOnselectionchange: GleanCounter;
     windowOpenEmptyUrl: GleanCounter;
     windowOpendatabase: GleanCounter;
-    windowOrientationGetter: GleanCounter;
-    windowOrientationSetter: GleanCounter;
+    windowOrientation: GleanCounter;
     windowOrientationsensor: GleanCounter;
     windowOverconstrainederror: GleanCounter;
     windowPasswordcredential: GleanCounter;
@@ -3643,6 +3637,9 @@ interface GleanImpl {
     windowPresentationrequest: GleanCounter;
     windowRelativeorientationsensor: GleanCounter;
     windowRemoteplayback: GleanCounter;
+    windowReport: GleanCounter;
+    windowReportbody: GleanCounter;
+    windowReportingobserver: GleanCounter;
     windowRtcerror: GleanCounter;
     windowRtcerrorevent: GleanCounter;
     windowRtcicetransport: GleanCounter;
@@ -3677,6 +3674,12 @@ interface GleanImpl {
     windowUsbisochronousouttransferpacket: GleanCounter;
     windowUsbisochronousouttransferresult: GleanCounter;
     windowUsbouttransferresult: GleanCounter;
+    windowUseractivation: GleanCounter;
+    windowVideocolorspace: GleanCounter;
+    windowVideodecoder: GleanCounter;
+    windowVideoencoder: GleanCounter;
+    windowVideoframe: GleanCounter;
+    windowWakelock: GleanCounter;
     windowWakelocksentinel: GleanCounter;
     windowWebkitcancelanimationframe: GleanCounter;
     windowWebkitmediastream: GleanCounter;
@@ -3824,8 +3827,7 @@ interface GleanImpl {
     jsUseAsm: GleanCounter;
     jsWasm: GleanCounter;
     jsWasmLegacyExceptions: GleanCounter;
-    locationAncestororiginsGetter: GleanCounter;
-    locationAncestororiginsSetter: GleanCounter;
+    locationAncestororigins: GleanCounter;
     mathMlused: GleanCounter;
     mediadevicesEnumeratedevices: GleanCounter;
     mediadevicesGetdisplaymedia: GleanCounter;
@@ -3859,7 +3861,6 @@ interface GleanImpl {
     mlsStatedelete: GleanCounter;
     mlsStatedeletegroup: GleanCounter;
     navigatorMozgetusermedia: GleanCounter;
-    navigatorRequestmidiaccess: GleanCounter;
     notificationoptionsActions: GleanCounter;
     notificationoptionsBadge: GleanCounter;
     notificationoptionsImage: GleanCounter;
@@ -3883,7 +3884,6 @@ interface GleanImpl {
     pushmanagerSubscribe: GleanCounter;
     pushsubscriptionUnsubscribe: GleanCounter;
     rangeCreatecontextualfragment: GleanCounter;
-    reportingobserverConstructor: GleanCounter;
     sanitizerConstructor: GleanCounter;
     sanitizerSanitize: GleanCounter;
     schedulerPosttask: GleanCounter;
@@ -3892,9 +3892,6 @@ interface GleanImpl {
     svgsvgelementGetelementbyid: GleanCounter;
     textDirectiveNotCreated: GleanCounter;
     textDirectivePages: GleanCounter;
-    videodecoderConstructor: GleanCounter;
-    videoencoderConstructor: GleanCounter;
-    wakelockRequest: GleanCounter;
     webgpuRenderOutput: GleanCounter;
     webgpuRequestAdapter: GleanCounter;
     windowAbsoluteorientationsensor: GleanCounter;
@@ -3946,6 +3943,7 @@ interface GleanImpl {
     windowDevicemotioneventacceleration: GleanCounter;
     windowDevicemotioneventrotationrate: GleanCounter;
     windowDomerror: GleanCounter;
+    windowEncodedvideochunk: GleanCounter;
     windowEnterpictureinpictureevent: GleanCounter;
     windowExternal: GleanCounter;
     windowFederatedcredential: GleanCounter;
@@ -3959,6 +3957,14 @@ interface GleanImpl {
     windowKeyboardlayoutmap: GleanCounter;
     windowLinearaccelerationsensor: GleanCounter;
     windowMediasettingsrange: GleanCounter;
+    windowMidiaccess: GleanCounter;
+    windowMidiconnectionevent: GleanCounter;
+    windowMidiinput: GleanCounter;
+    windowMidiinputmap: GleanCounter;
+    windowMidimessageevent: GleanCounter;
+    windowMidioutput: GleanCounter;
+    windowMidioutputmap: GleanCounter;
+    windowMidiport: GleanCounter;
     windowNetworkinformation: GleanCounter;
     windowOffscreenbuffering: GleanCounter;
     windowOnbeforeinstallprompt: GleanCounter;
@@ -3969,8 +3975,7 @@ interface GleanImpl {
     windowOnselectionchange: GleanCounter;
     windowOpenEmptyUrl: GleanCounter;
     windowOpendatabase: GleanCounter;
-    windowOrientationGetter: GleanCounter;
-    windowOrientationSetter: GleanCounter;
+    windowOrientation: GleanCounter;
     windowOrientationsensor: GleanCounter;
     windowOverconstrainederror: GleanCounter;
     windowPasswordcredential: GleanCounter;
@@ -3995,6 +4000,9 @@ interface GleanImpl {
     windowPresentationrequest: GleanCounter;
     windowRelativeorientationsensor: GleanCounter;
     windowRemoteplayback: GleanCounter;
+    windowReport: GleanCounter;
+    windowReportbody: GleanCounter;
+    windowReportingobserver: GleanCounter;
     windowRtcerror: GleanCounter;
     windowRtcerrorevent: GleanCounter;
     windowRtcicetransport: GleanCounter;
@@ -4029,6 +4037,12 @@ interface GleanImpl {
     windowUsbisochronousouttransferpacket: GleanCounter;
     windowUsbisochronousouttransferresult: GleanCounter;
     windowUsbouttransferresult: GleanCounter;
+    windowUseractivation: GleanCounter;
+    windowVideocolorspace: GleanCounter;
+    windowVideodecoder: GleanCounter;
+    windowVideoencoder: GleanCounter;
+    windowVideoframe: GleanCounter;
+    windowWakelock: GleanCounter;
     windowWakelocksentinel: GleanCounter;
     windowWebkitcancelanimationframe: GleanCounter;
     windowWebkitmediastream: GleanCounter;
@@ -4110,10 +4124,7 @@ interface GleanImpl {
     privateBrowsingIdbfactoryOpen: GleanCounter;
     pushmanagerSubscribe: GleanCounter;
     pushsubscriptionUnsubscribe: GleanCounter;
-    reportingobserverConstructor: GleanCounter;
     schedulerPosttask: GleanCounter;
-    videodecoderConstructor: GleanCounter;
-    videoencoderConstructor: GleanCounter;
     webgpuRequestAdapter: GleanCounter;
   }
 
@@ -4178,10 +4189,7 @@ interface GleanImpl {
     privateBrowsingIdbfactoryOpen: GleanCounter;
     pushmanagerSubscribe: GleanCounter;
     pushsubscriptionUnsubscribe: GleanCounter;
-    reportingobserverConstructor: GleanCounter;
     schedulerPosttask: GleanCounter;
-    videodecoderConstructor: GleanCounter;
-    videoencoderConstructor: GleanCounter;
     webgpuRequestAdapter: GleanCounter;
   }
 
@@ -4246,10 +4254,7 @@ interface GleanImpl {
     privateBrowsingIdbfactoryOpen: GleanCounter;
     pushmanagerSubscribe: GleanCounter;
     pushsubscriptionUnsubscribe: GleanCounter;
-    reportingobserverConstructor: GleanCounter;
     schedulerPosttask: GleanCounter;
-    videodecoderConstructor: GleanCounter;
-    videoencoderConstructor: GleanCounter;
     webgpuRequestAdapter: GleanCounter;
   }
 
@@ -4344,7 +4349,6 @@ interface GleanImpl {
     videoVisiblePlayTime: Record<string, GleanTimingDistribution>;
     videoWidevinePlayTime: GleanTimingDistribution;
     decoderBackendUsed: GleanCustomDistribution;
-    wmfCodecNoExtension: Record<"av1"|"hevc", GleanBoolean>;
   }
 
   mediaAudio: {
@@ -5264,7 +5268,6 @@ interface GleanImpl {
   dataStorage: {
     alternateServices: GleanQuantity;
     clientAuthRememberList: GleanQuantity;
-    siteIntegrityServiceState: GleanQuantity;
     siteSecurityServiceState: GleanQuantity;
   }
 
@@ -5717,7 +5720,7 @@ interface GleanImpl {
   extensionsData: {
     migrateResult: GleanEventWithExtras<{ addon_id?: string, backend?: string, data_migrated?: string, error_name?: string, has_jsonfile?: string, has_olddata?: string }>;
     migrateResultCount: Record<"failure"|"success", GleanCounter>;
-    storageLocalCorruptedReset: GleanEventWithExtras<{ addon_id?: string, after_reset?: string, is_addon_active?: string, reason?: string, reset_disabled?: string, reset_error_name?: string }>;
+    storageLocalCorruptedReset: GleanEventWithExtras<{ addon_id?: string, after_reset?: string, reason?: string, reset_disabled?: string, reset_error_name?: string }>;
     storageLocalError: GleanEventWithExtras<{ addon_id?: string, error_name?: string, method?: string }>;
     syncUsageQuotas: GleanEventWithExtras<{ addon_id?: string, backend?: string, items_count?: string, items_over_quota?: string, total_size_bytes?: string }>;
   }
@@ -5842,7 +5845,6 @@ interface GleanImpl {
     bufferSizes: GleanMemoryDistribution;
     flushDurations: GleanTimingDistribution;
     flushFailures: GleanCounter;
-    flushRejections: GleanCounter;
     replayFailures: GleanCounter;
     shutdownRegistrationFailures: GleanCounter;
   }
@@ -6493,8 +6495,6 @@ interface GleanImpl {
     audioRate: GleanQuantity;
     audioUniqueSamples: GleanQuantity;
     availHeight: GleanQuantity;
-    availLeft: GleanQuantity;
-    availTop: GleanQuantity;
     availWidth: GleanQuantity;
     buildDate: GleanQuantity;
     cameraCount: GleanQuantity;
@@ -6676,10 +6676,6 @@ interface GleanImpl {
     fontsVariantINonallowlisted: GleanString;
     fpuControlState: GleanString;
     gamepads: GleanStringList;
-    gl2Alpha: GleanString;
-    gl2AlphaSoftware: GleanString;
-    gl2Antialias: GleanString;
-    gl2AntialiasSoftware: GleanString;
     gl2ContextType: GleanString;
     gl2ContextTypeSoftware: GleanString;
     gl2Extensions: GleanText;
@@ -6710,10 +6706,6 @@ interface GleanImpl {
     gl2VersionRawSoftware: GleanString;
     gl2VertexShader: GleanString;
     gl2VertexShaderSoftware: GleanString;
-    glAlpha: GleanString;
-    glAlphaSoftware: GleanString;
-    glAntialias: GleanString;
-    glAntialiasSoftware: GleanString;
     glContextType: GleanString;
     glContextTypeSoftware: GleanString;
     glExtensions: GleanText;
