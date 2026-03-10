@@ -206,6 +206,8 @@ class FFmpegVideoDecoder<LIBAV_VER>
 #ifdef MOZ_WIDGET_ANDROID
 #  ifdef USING_MOZFFVPX
   MediaResult AllocateExtraData();
+  MediaResult AllocateH264ExtraData();
+  MediaResult AllocateHEVCExtraData();
 #  endif
   MediaResult InitMediaCodecDecoder();
   MediaResult CreateImageMediaCodec(int64_t aOffset, int64_t aPts,

@@ -2462,59 +2462,68 @@ bool FFmpegVideoDecoder<LIBAV_VER>::CanUseZeroCopyVideoFrame() const {
 #ifdef MOZ_WIDGET_ANDROID
 #  ifdef USING_MOZFFVPX
 MediaResult FFmpegVideoDecoder<LIBAV_VER>::AllocateExtraData() {
-  // Only H264 requires use to split the extradata between csd-0 and csd-1.
-  // Otherwise the NALU entries in the order that Android expects.
-  if (mCodecID != AV_CODEC_ID_H264) {
-    return FFmpegDataDecoder<LIBAV_VER>::AllocateExtraData();
-  }
-
   if (!mExtraData) {
-    FFMPEG_LOG("  H264 decoder has no extradata");
+    FFMPEG_LOG("  decoder has no extradata");
     mCodecContext->extradata_size = 0;
     return NS_OK;
   }
 
-  Span<const uint8_t> extradata(*mExtraData);
-  nsTArray<AnnexB::NALEntry> paramSets;
-  AnnexB::ParseNALEntries(extradata, paramSets);
-
-  size_t spsIndex = AnnexB::FindNalType(extradata, paramSets, H264_NAL_SPS,
-                                        /* aStartIndex */ 0);
-  if (spsIndex == SIZE_MAX) {
-    FFMPEG_LOG("  H264 extradata is missing SPS");
-    return NS_OK;
+  switch (mCodecID) {
+    case AV_CODEC_ID_H264:
+      return AllocateH264ExtraData();
+    case AV_CODEC_ID_HEVC:
+      return AllocateHEVCExtraData();
+    default:
+      break;
   }
 
-  size_t ppsIndex = AnnexB::FindNalType(extradata, paramSets, H264_NAL_PPS,
-                                        /* aStartIndex */ 0);
-  if (ppsIndex == SIZE_MAX) {
-    FFMPEG_LOG("  H264 extradata is missing PPS");
+  return FFmpegDataDecoder<LIBAV_VER>::AllocateExtraData();
+}
+
+MediaResult FFmpegVideoDecoder<LIBAV_VER>::AllocateH264ExtraData() {
+  // This will do any necessary reordering to place SPS first, then PPS.
+  size_t spsLength = 0;
+  RefPtr<MediaByteBuffer> extradata =
+      AnnexB::ConvertAVCCExtraDataToAnnexB(mExtraData, &spsLength);
+  if (!extradata || extradata->IsEmpty() || spsLength == 0) {
+    FFMPEG_LOG("  H264 extradata is missing SPS/PPS");
     return NS_OK;
-  }
-
-  const auto& spsEntry = paramSets.ElementAt(spsIndex);
-  const auto& ppsEntry = paramSets.ElementAt(ppsIndex);
-  const auto sps = extradata.Subspan(spsEntry.mOffset, spsEntry.mSize);
-  const auto pps = extradata.Subspan(ppsEntry.mOffset, ppsEntry.mSize);
-
-  CheckedInt<int> extradataSize(sps.Length());
-  extradataSize += pps.Length();
-  if (!extradataSize.isValid()) {
-    return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                       RESULT_DETAIL("SPS/PPS extradata too large"));
   }
 
   mCodecContext->extradata =
-      static_cast<uint8_t*>(mLib->av_malloc(extradataSize.value()));
+      static_cast<uint8_t*>(mLib->av_malloc(extradata->Length()));
   if (!mCodecContext->extradata) {
     return MediaResult(NS_ERROR_OUT_OF_MEMORY,
                        RESULT_DETAIL("Couldn't init ffmpeg extradata"));
   }
 
-  mCodecContext->extradata_size = extradataSize.value();
-  mCodecContext->moz_extradata_offset = sps.Length();
-  memcpy(mCodecContext->extradata, sps.Elements(), sps.Length());
-  memcpy(mCodecContext->extradata + sps.Length(), pps.Elements(), pps.Length());
+  FFMPEG_LOG("  extracted %zu bytes of H264 extradata", extradata->Length());
+  mCodecContext->extradata_size = extradata->Length();
+  mCodecContext->moz_extradata_offset = spsLength;
+  memcpy(mCodecContext->extradata, extradata->Elements(), extradata->Length());
+  return NS_OK;
+}
+
+MediaResult FFmpegVideoDecoder<LIBAV_VER>::AllocateHEVCExtraData() {
+  // This will not reorder, but we are supposed to receive this in the correct
+  // order: SPS, PPS, then VPS.
+  RefPtr<MediaByteBuffer> extradata =
+      AnnexB::ConvertHVCCExtraDataToAnnexB(mExtraData);
+  if (!extradata || extradata->IsEmpty()) {
+    FFMPEG_LOG("  HEVC extradata is missing SPS/PPS/VPS");
+    return NS_OK;
+  }
+
+  mCodecContext->extradata =
+      static_cast<uint8_t*>(mLib->av_malloc(extradata->Length()));
+  if (!mCodecContext->extradata) {
+    return MediaResult(NS_ERROR_OUT_OF_MEMORY,
+                       RESULT_DETAIL("Couldn't init ffmpeg extradata"));
+  }
+
+  FFMPEG_LOG("  extracted %zu bytes of HEVC extradata", extradata->Length());
+  mCodecContext->extradata_size = extradata->Length();
+  memcpy(mCodecContext->extradata, extradata->Elements(), extradata->Length());
   return NS_OK;
 }
 #  endif

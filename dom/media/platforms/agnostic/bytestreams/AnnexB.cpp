@@ -177,7 +177,8 @@ Result<Ok, nsresult> AnnexB::ConvertHVCCSampleToAnnexB(
 }
 
 already_AddRefed<mozilla::MediaByteBuffer> AnnexB::ConvertAVCCExtraDataToAnnexB(
-    const mozilla::MediaByteBuffer* aExtraData) {
+    const mozilla::MediaByteBuffer* aExtraData,
+    size_t* aSPSLength /* = nullptr */) {
   // AVCC 6 byte header looks like:
   //     +------+------+------+------+------+------+------+------+
   // [0] |   0  |   0  |   0  |   0  |   0  |   0  |   0  |   1  |
@@ -201,6 +202,9 @@ already_AddRefed<mozilla::MediaByteBuffer> AnnexB::ConvertAVCCExtraDataToAnnexB(
     // Append SPS then PPS
     (void)reader.ReadU8().map(
         [&](uint8_t x) { return ConvertSPSOrPPS(reader, x & 31, annexB); });
+    if (aSPSLength) {
+      *aSPSLength = annexB->Length();
+    }
     (void)reader.ReadU8().map(
         [&](uint8_t x) { return ConvertSPSOrPPS(reader, x, annexB); });
     // MP4Box adds extra bytes that we ignore. I don't know what they do.

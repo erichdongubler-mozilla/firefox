@@ -59,7 +59,8 @@ class AnnexB {
 
   // Parse an AVCC extradata and construct the Annex B sample header.
   static already_AddRefed<mozilla::MediaByteBuffer>
-  ConvertAVCCExtraDataToAnnexB(const mozilla::MediaByteBuffer* aExtraData);
+  ConvertAVCCExtraDataToAnnexB(const mozilla::MediaByteBuffer* aExtraData,
+                               size_t* aLength = nullptr);
   // Parse a HVCC extradata and construct the Annex B sample header.
   static already_AddRefed<mozilla::MediaByteBuffer>
   ConvertHVCCExtraDataToAnnexB(const mozilla::MediaByteBuffer* aExtraData);
