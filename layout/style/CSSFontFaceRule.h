@@ -25,7 +25,8 @@ class CSSFontFaceRuleDecl final : public nsICSSDeclaration {
   void IndexedGetter(uint32_t aIndex, bool& aFound,
                      nsACString& aPropName) final;
 
-  void GetPropertyValue(nsCSSFontDesc aFontDescID, nsACString& aResult) const;
+  void GetPropertyValue(FontFaceDescriptorId aDescID,
+                        nsACString& aResult) const;
 
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 

@@ -56,8 +56,6 @@ EXPORTS += [
     "nsAnimationManager.h",
     "nsChangeHint.h",
     "nsComputedDOMStyle.h",
-    "nsCSSCounterDescList.inc",
-    "nsCSSFontDescList.inc",
     "nsCSSPropertyIDSet.h",
     "nsCSSProps.h",
     "nsCSSValue.h",

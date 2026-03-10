@@ -70,20 +70,17 @@ void CSSCounterStyleRule::SetName(const nsAString& aName) {
   });
 }
 
-#define CSS_COUNTER_DESC(name_, method_)                             \
-  void CSSCounterStyleRule::Get##method_(nsACString& aValue) {       \
-    MOZ_ASSERT(aValue.IsEmpty());                                    \
-    Servo_CounterStyleRule_GetDescriptorCssText(                     \
-        mRawRule, eCSSCounterDesc_##method_, &aValue);               \
-  }                                                                  \
-  void CSSCounterStyleRule::Set##method_(const nsACString& aValue) { \
-    ModifyRule([&] {                                                 \
-      return Servo_CounterStyleRule_SetDescriptor(                   \
-          mRawRule, eCSSCounterDesc_##method_, &aValue);             \
-    });                                                              \
-  }
-#include "nsCSSCounterDescList.inc"
-#undef CSS_COUNTER_DESC
+void CSSCounterStyleRule::GetDescriptor(CounterStyleDescriptorId aDesc,
+                                        nsACString& aResult) {
+  Servo_CounterStyleRule_GetDescriptorCssText(mRawRule, aDesc, &aResult);
+}
+
+void CSSCounterStyleRule::SetDescriptor(CounterStyleDescriptorId aDesc,
+                                        const nsACString& aValue) {
+  ModifyRule([&] {
+    return Servo_CounterStyleRule_SetDescriptor(mRawRule, aDesc, &aValue);
+  });
+}
 
 /* virtual */
 size_t CSSCounterStyleRule::SizeOfIncludingThis(

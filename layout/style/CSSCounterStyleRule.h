@@ -9,6 +9,7 @@
 
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/css/Rule.h"
+#include "nsCSSProps.h"
 
 struct StyleLockedCounterStyleRule;
 
@@ -44,11 +45,8 @@ class CSSCounterStyleRule final : public css::Rule {
   void GetCssText(nsACString& aCssText) const override;
   void GetName(nsAString& aName);
   void SetName(const nsAString& aName);
-#define CSS_COUNTER_DESC(name_, method_) \
-  void Get##method_(nsACString& aValue); \
-  void Set##method_(const nsACString& aValue);
-#include "nsCSSCounterDescList.inc"
-#undef CSS_COUNTER_DESC
+  void GetDescriptor(CounterStyleDescriptorId aDesc, nsACString& aResult);
+  void SetDescriptor(CounterStyleDescriptorId aDesc, const nsACString& aValue);
 
   size_t SizeOfIncludingThis(MallocSizeOf) const final;
 

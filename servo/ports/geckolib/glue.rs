@@ -31,13 +31,16 @@ use style::color::{AbsoluteColor, ColorComponents, ColorSpace};
 use style::computed_value_flags::ComputedValueFlags;
 use style::context::ThreadLocalStyleContext;
 use style::context::{CascadeInputs, QuirksMode, SharedStyleContext, StyleContext};
-use style::counter_style;
+use style::counter_style::{self, DescriptorId as CounterStyleDescriptorId};
 use style::custom_properties::DeferFontRelativeCustomPropertyResolution;
 use style::data::{self, ElementStyles};
 use style::dom::{AttributeTracker, ShowSubtreeData, TDocument, TElement, TNode, TShadowRoot};
 use style::driver;
 use style::error_reporting::{ParseErrorReporter, SelectorWarningKind};
-use style::font_face::{self, FontFaceSourceFormat, FontFaceSourceListComponent, Source};
+use style::font_face::{
+    self, DescriptorId as FontFaceDescriptorId, FontFaceSourceFormat, FontFaceSourceListComponent,
+    Source,
+};
 use style::gecko::arc_types::{
     LockedCounterStyleRule, LockedCssRules, LockedDeclarationBlock, LockedFontFaceRule,
     LockedImportRule, LockedKeyframe, LockedKeyframesRule, LockedMediaList,
@@ -54,46 +57,19 @@ use style::gecko::url;
 use style::gecko::wrapper::{
     slow_selector_flags_from_node_selector_flags, GeckoElement, GeckoNode,
 };
-use style::gecko_bindings::bindings;
-use style::gecko_bindings::bindings::nsACString;
-use style::gecko_bindings::bindings::nsAString;
-use style::gecko_bindings::bindings::Gecko_AddPropertyToSet;
-use style::gecko_bindings::bindings::Gecko_ConstructFontFeatureValueSet;
-use style::gecko_bindings::bindings::Gecko_ConstructFontPaletteValueSet;
-use style::gecko_bindings::bindings::Gecko_HaveSeenPtr;
+use style::gecko_bindings::bindings::{
+    self, gfx::FontPaletteValueSet, gfxFontFeatureValueSet, nsACString, nsAString, nsAtom,
+    nsChangeHint, nsCompatibility, nsINode as RawGeckoNode, nsresult,
+    AnchorPosOffsetResolutionParams, AnchorPosResolutionParams, CallerType, CompositeOperation,
+    DeclarationBlockMutationClosure, Element as RawGeckoElement, GeckoFontMetrics,
+    Gecko_AddPropertyToSet, Gecko_ConstructFontFeatureValueSet, Gecko_ConstructFontPaletteValueSet,
+    Gecko_HaveSeenPtr, IterationCompositeOperation, Loader, LoaderReusableStyleSheets,
+    MallocSizeOf as GeckoMallocSizeOf, NonCustomCSSPropertyId, OriginFlags, PropertyValuePair,
+    PseudoStyleType, SeenPtrs, ServoElementSnapshotTable, ServoStyleSetSizes, ServoTraversalFlags,
+    SheetLoadData, SheetLoadDataHolder, SheetParsingMode, StyleRuleInclusion,
+    StyleSheet as DomStyleSheet, URLExtraData,
+};
 use style::gecko_bindings::structs;
-use style::gecko_bindings::structs::gfx::FontPaletteValueSet;
-use style::gecko_bindings::structs::gfxFontFeatureValueSet;
-use style::gecko_bindings::structs::nsAtom;
-use style::gecko_bindings::structs::nsCSSCounterDesc;
-use style::gecko_bindings::structs::nsCSSFontDesc;
-use style::gecko_bindings::structs::nsChangeHint;
-use style::gecko_bindings::structs::nsCompatibility;
-use style::gecko_bindings::structs::nsresult;
-use style::gecko_bindings::structs::CallerType;
-use style::gecko_bindings::structs::CompositeOperation;
-use style::gecko_bindings::structs::DeclarationBlockMutationClosure;
-use style::gecko_bindings::structs::GeckoFontMetrics;
-use style::gecko_bindings::structs::IterationCompositeOperation;
-use style::gecko_bindings::structs::Loader;
-use style::gecko_bindings::structs::LoaderReusableStyleSheets;
-use style::gecko_bindings::structs::MallocSizeOf as GeckoMallocSizeOf;
-use style::gecko_bindings::structs::NonCustomCSSPropertyId;
-use style::gecko_bindings::structs::OriginFlags;
-use style::gecko_bindings::structs::PropertyValuePair;
-use style::gecko_bindings::structs::PseudoStyleType;
-use style::gecko_bindings::structs::SeenPtrs;
-use style::gecko_bindings::structs::ServoElementSnapshotTable;
-use style::gecko_bindings::structs::ServoStyleSetSizes;
-use style::gecko_bindings::structs::ServoTraversalFlags;
-use style::gecko_bindings::structs::SheetLoadData;
-use style::gecko_bindings::structs::SheetLoadDataHolder;
-use style::gecko_bindings::structs::SheetParsingMode;
-use style::gecko_bindings::structs::StyleRuleInclusion;
-use style::gecko_bindings::structs::StyleSheet as DomStyleSheet;
-use style::gecko_bindings::structs::URLExtraData;
-use style::gecko_bindings::structs::{nsINode as RawGeckoNode, Element as RawGeckoElement};
-use style::gecko_bindings::structs::{AnchorPosOffsetResolutionParams, AnchorPosResolutionParams};
 use style::gecko_bindings::sugar::ownership::Strong;
 use style::gecko_bindings::sugar::refptr::RefPtr;
 use style::global_style_data::{
@@ -659,10 +635,6 @@ pub extern "C" fn Servo_AnimationCompose(
     computed_timing: &structs::ComputedTiming,
     iteration_composite: IterationCompositeOperation,
 ) {
-    use style::gecko_bindings::bindings::Gecko_AnimationGetBaseStyle;
-    use style::gecko_bindings::bindings::Gecko_GetPositionInSegment;
-    use style::gecko_bindings::bindings::Gecko_GetProgressFromComputedTiming;
-
     let property = match OwnedPropertyDeclarationId::from_gecko_css_property_id(css_property) {
         Some(property) if property.as_borrowed().is_animatable() => property,
         _ => return,
@@ -685,8 +657,9 @@ pub extern "C" fn Servo_AnimationCompose(
     // for this property.
     let underlying_value = if need_underlying_value {
         let previous_composed_value = value_map.get(&property).map(|v| &*v);
-        previous_composed_value
-            .or_else(|| unsafe { Gecko_AnimationGetBaseStyle(base_values, css_property).as_ref() })
+        previous_composed_value.or_else(|| unsafe {
+            bindings::Gecko_AnimationGetBaseStyle(base_values, css_property).as_ref()
+        })
     } else {
         None
     };
@@ -697,13 +670,15 @@ pub extern "C" fn Servo_AnimationCompose(
     }
 
     let last_value = unsafe { last_segment.mToValue.mServo.mRawPtr.as_ref() };
-    let progress = unsafe { Gecko_GetProgressFromComputedTiming(computed_timing) };
+    let progress = unsafe { bindings::Gecko_GetProgressFromComputedTiming(computed_timing) };
     let position = if segment.mToKey == segment.mFromKey {
         // Note: compose_animation_segment doesn't use this value
         // if segment.mFromKey == segment.mToKey, so assigning |progress| directly is fine.
         progress
     } else {
-        unsafe { Gecko_GetPositionInSegment(segment, progress, computed_timing.mBeforeFlag) }
+        unsafe {
+            bindings::Gecko_GetPositionInSegment(segment, progress, computed_timing.mBeforeFlag)
+        }
     };
 
     let result = compose_animation_segment(
@@ -3614,74 +3589,25 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetSourceLocation(
     });
 }
 
-macro_rules! apply_font_desc_list {
-    ($apply_macro:ident) => {
-        $apply_macro! {
-            valid: [
-                eCSSFontDesc_Family => family,
-                eCSSFontDesc_Style => style,
-                eCSSFontDesc_Weight => weight,
-                eCSSFontDesc_Stretch => stretch,
-                eCSSFontDesc_Src => sources,
-                eCSSFontDesc_UnicodeRange => unicode_range,
-                eCSSFontDesc_FontFeatureSettings => feature_settings,
-                eCSSFontDesc_FontVariationSettings => variation_settings,
-                eCSSFontDesc_FontLanguageOverride => language_override,
-                eCSSFontDesc_Display => display,
-                eCSSFontDesc_AscentOverride => ascent_override,
-                eCSSFontDesc_DescentOverride => descent_override,
-                eCSSFontDesc_LineGapOverride => line_gap_override,
-                eCSSFontDesc_SizeAdjust => size_adjust,
-            ]
-            invalid: [
-                eCSSFontDesc_UNKNOWN,
-                eCSSFontDesc_COUNT,
-            ]
-        }
-    };
-}
-
 #[no_mangle]
 pub unsafe extern "C" fn Servo_FontFaceRule_Length(rule: &LockedFontFaceRule) -> u32 {
-    read_locked_arc_worker(rule, |rule: &FontFaceRule| {
-        let mut result = 0;
-        macro_rules! count_values {
-            (
-                valid: [$($v_enum_name:ident => $field:ident,)*]
-                invalid: [$($i_enum_name:ident,)*]
-            ) => {
-                $(if rule.$field.is_some() {
-                    result += 1;
-                })*
-            }
-        }
-        apply_font_desc_list!(count_values);
-        result
-    })
+    read_locked_arc_worker(rule, |rule: &FontFaceRule| rule.descriptors.len() as u32)
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_FontFaceRule_IndexGetter(
+pub extern "C" fn Servo_FontFaceRule_IndexGetter(
     rule: &LockedFontFaceRule,
     index: u32,
-) -> nsCSSFontDesc {
+    out: &mut FontFaceDescriptorId,
+) -> bool {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
-        let mut count = 0;
-        macro_rules! lookup_index {
-            (
-                valid: [$($v_enum_name:ident => $field:ident,)*]
-                invalid: [$($i_enum_name:ident,)*]
-            ) => {
-                $(if rule.$field.is_some() {
-                    count += 1;
-                    if count - 1 == index {
-                        return nsCSSFontDesc::$v_enum_name;
-                    }
-                })*
-            }
+        match rule.descriptors.at(index as usize) {
+            Some(d) => {
+                *out = d;
+                true
+            },
+            None => false,
         }
-        apply_font_desc_list!(lookup_index);
-        return nsCSSFontDesc::eCSSFontDesc_UNKNOWN;
     })
 }
 
@@ -3691,14 +3617,16 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetDeclCssText(
     result: &mut nsACString,
 ) {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
-        rule.decl_to_css(result).unwrap();
+        rule.descriptors
+            .to_css(&mut CssWriter::new(result))
+            .unwrap();
     })
 }
 
 macro_rules! simple_font_descriptor_getter_impl {
     ($rule:ident, $out:ident, $field:ident, $compute:ident) => {
         read_locked_arc_worker($rule, |rule: &FontFaceRule| {
-            match rule.$field {
+            match rule.descriptors.$field {
                 None => return false,
                 Some(ref f) => *$out = f.$compute(),
             }
@@ -3712,7 +3640,7 @@ pub extern "C" fn Servo_FontFaceRule_GetFontWeight(
     rule: &LockedFontFaceRule,
     out: &mut font_face::ComputedFontWeightRange,
 ) -> bool {
-    simple_font_descriptor_getter_impl!(rule, out, weight, compute)
+    simple_font_descriptor_getter_impl!(rule, out, font_weight, compute)
 }
 
 #[no_mangle]
@@ -3720,7 +3648,7 @@ pub extern "C" fn Servo_FontFaceRule_GetFontStretch(
     rule: &LockedFontFaceRule,
     out: &mut font_face::ComputedFontStretchRange,
 ) -> bool {
-    simple_font_descriptor_getter_impl!(rule, out, stretch, compute)
+    simple_font_descriptor_getter_impl!(rule, out, font_stretch, compute)
 }
 
 #[no_mangle]
@@ -3728,7 +3656,7 @@ pub extern "C" fn Servo_FontFaceRule_GetFontStyle(
     rule: &LockedFontFaceRule,
     out: &mut font_face::ComputedFontStyleDescriptor,
 ) -> bool {
-    simple_font_descriptor_getter_impl!(rule, out, style, compute)
+    simple_font_descriptor_getter_impl!(rule, out, font_style, compute)
 }
 
 #[no_mangle]
@@ -3736,7 +3664,7 @@ pub extern "C" fn Servo_FontFaceRule_GetFontDisplay(
     rule: &LockedFontFaceRule,
     out: &mut font_face::FontDisplay,
 ) -> bool {
-    simple_font_descriptor_getter_impl!(rule, out, display, clone)
+    simple_font_descriptor_getter_impl!(rule, out, font_display, clone)
 }
 
 #[no_mangle]
@@ -3744,7 +3672,7 @@ pub extern "C" fn Servo_FontFaceRule_GetFontLanguageOverride(
     rule: &LockedFontFaceRule,
     out: &mut computed::FontLanguageOverride,
 ) -> bool {
-    simple_font_descriptor_getter_impl!(rule, out, language_override, clone)
+    simple_font_descriptor_getter_impl!(rule, out, font_language_override, clone)
 }
 
 // Returns a Percentage of -1.0 if the override descriptor is present but 'normal'
@@ -3792,7 +3720,8 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetFamilyName(
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
         // TODO(emilio): font-family is a mandatory descriptor, can't we unwrap
         // here, and remove the null-checks in Gecko?
-        rule.family
+        rule.descriptors
+            .font_family
             .as_ref()
             .map_or(ptr::null_mut(), |f| f.name.as_ptr())
     })
@@ -3805,7 +3734,7 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetUnicodeRanges(
 ) -> *const UnicodeRange {
     *out_len = 0;
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
-        let ranges = match rule.unicode_range {
+        let ranges = match rule.descriptors.unicode_range {
             Some(ref ranges) => ranges,
             None => return ptr::null(),
         };
@@ -3820,7 +3749,7 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetSources(
     out: &mut nsTArray<FontFaceSourceListComponent>,
 ) {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
-        let sources = match rule.sources {
+        let sources = match rule.descriptors.src {
             Some(ref s) => s,
             None => return,
         };
@@ -3860,7 +3789,7 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetVariationSettings(
     variations: &mut nsTArray<structs::gfxFontVariation>,
 ) {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
-        let source_variations = match rule.variation_settings {
+        let source_variations = match rule.descriptors.font_variation_settings {
             Some(ref v) => v,
             None => return,
         };
@@ -3883,7 +3812,7 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetFeatureSettings(
     features: &mut nsTArray<structs::gfxFontFeature>,
 ) {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
-        let source_features = match rule.feature_settings {
+        let source_features = match rule.descriptors.font_feature_settings {
             Some(ref v) => v,
             None => return,
         };
@@ -3903,48 +3832,26 @@ pub unsafe extern "C" fn Servo_FontFaceRule_GetFeatureSettings(
 #[no_mangle]
 pub extern "C" fn Servo_FontFaceRule_GetDescriptorCssText(
     rule: &LockedFontFaceRule,
-    desc: nsCSSFontDesc,
+    desc: FontFaceDescriptorId,
     result: &mut nsACString,
 ) {
     read_locked_arc_worker(rule, |rule: &FontFaceRule| {
-        let mut writer = CssWriter::new(result);
-        macro_rules! to_css_text {
-            (
-                valid: [$($v_enum_name:ident => $field:ident,)*]
-                invalid: [$($i_enum_name:ident,)*]
-            ) => {
-                match desc {
-                    $(
-                        nsCSSFontDesc::$v_enum_name => {
-                            if let Some(ref value) = rule.$field {
-                                value.to_css(&mut writer).unwrap();
-                            }
-                        }
-                    )*
-                    $(
-                        nsCSSFontDesc::$i_enum_name => {
-                            debug_assert!(false, "not a valid font descriptor");
-                        }
-                    )*
-                }
-            }
-        }
-        apply_font_desc_list!(to_css_text)
+        rule.descriptors.get(desc, result).unwrap();
     })
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn Servo_FontFaceRule_SetDescriptor(
+pub extern "C" fn Servo_FontFaceRule_SetDescriptor(
     rule: &LockedFontFaceRule,
-    desc: nsCSSFontDesc,
+    desc: FontFaceDescriptorId,
     value: &nsACString,
     data: *mut URLExtraData,
-    out_changed: *mut bool,
+    out_changed: &mut bool,
 ) -> bool {
-    let value = value.as_str_unchecked();
+    let value = unsafe { value.as_str_unchecked() };
     let mut input = ParserInput::new(&value);
     let mut parser = Parser::new(&mut input);
-    let url_data = UrlExtraData::from_ptr_ref(&data);
+    let url_data = unsafe { UrlExtraData::from_ptr_ref(&data) };
     let context = ParserContext::new(
         Origin::Author,
         url_data,
@@ -3957,55 +3864,23 @@ pub unsafe extern "C" fn Servo_FontFaceRule_SetDescriptor(
     );
 
     write_locked_arc_worker(rule, |rule: &mut FontFaceRule| {
-        macro_rules! to_css_text {
-            (
-                valid: [$($v_enum_name:ident => $field:ident,)*]
-                invalid: [$($i_enum_name:ident,)*]
-            ) => {
-                match desc {
-                    $(
-                        nsCSSFontDesc::$v_enum_name => {
-                            if let Ok(value) = parser.parse_entirely(|i| Parse::parse(&context, i)) {
-                                let result = Some(value);
-                                *out_changed = result != rule.$field;
-                                rule.$field = result;
-                                true
-                            } else {
-                                false
-                            }
-                        }
-                    )*
-                    $(
-                        nsCSSFontDesc::$i_enum_name => {
-                            debug_assert!(false, "not a valid font descriptor");
-                            false
-                        }
-                    )*
-                }
-            }
+        match rule.descriptors.set(desc, &context, &mut parser) {
+            Ok(changed) => {
+                *out_changed = changed;
+                true
+            },
+            Err(..) => false,
         }
-        apply_font_desc_list!(to_css_text)
     })
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn Servo_FontFaceRule_ResetDescriptor(
     rule: &LockedFontFaceRule,
-    desc: nsCSSFontDesc,
+    desc: FontFaceDescriptorId,
 ) {
     write_locked_arc_worker(rule, |rule: &mut FontFaceRule| {
-        macro_rules! reset_desc {
-            (
-                valid: [$($v_enum_name:ident => $field:ident,)*]
-                invalid: [$($i_enum_name:ident,)*]
-            ) => {
-                match desc {
-                    $(nsCSSFontDesc::$v_enum_name => rule.$field = None,)*
-                    $(nsCSSFontDesc::$i_enum_name => debug_assert!(false, "not a valid font descriptor"),)*
-                }
-            }
-        }
-        apply_font_desc_list!(reset_desc)
+        rule.descriptors.remove(desc);
     })
 }
 
@@ -4055,8 +3930,8 @@ pub unsafe extern "C" fn Servo_CounterStyleRule_GetPad(
     symbol: &mut nsString,
 ) -> bool {
     read_locked_arc(rule, |rule: &CounterStyleRule| {
-        let pad = match rule.pad() {
-            Some(pad) => pad,
+        let pad = match rule.descriptors().pad {
+            Some(ref pad) => pad,
             None => return false,
         };
         *width = pad.0.value();
@@ -4080,7 +3955,7 @@ pub unsafe extern "C" fn Servo_CounterStyleRule_GetPrefix(
     out: &mut nsString,
 ) -> bool {
     read_locked_arc(rule, |rule: &CounterStyleRule| {
-        get_symbol(rule.prefix(), out)
+        get_symbol(rule.descriptors().prefix.as_ref(), out)
     })
 }
 
@@ -4090,7 +3965,7 @@ pub unsafe extern "C" fn Servo_CounterStyleRule_GetSuffix(
     out: &mut nsString,
 ) -> bool {
     read_locked_arc(rule, |rule: &CounterStyleRule| {
-        get_symbol(rule.suffix(), out)
+        get_symbol(rule.descriptors().suffix.as_ref(), out)
     })
 }
 
@@ -4101,8 +3976,8 @@ pub unsafe extern "C" fn Servo_CounterStyleRule_GetNegative(
     suffix: &mut nsString,
 ) -> bool {
     read_locked_arc(rule, |rule: &CounterStyleRule| {
-        let negative = match rule.negative() {
-            Some(n) => n,
+        let negative = match rule.descriptors().negative {
+            Some(ref n) => n,
             None => return false,
         };
         *prefix = symbol_to_string(&negative.0);
@@ -4129,8 +4004,8 @@ pub unsafe extern "C" fn Servo_CounterStyleRule_IsInRange(
 ) -> IsOrdinalInRange {
     use style::counter_style::CounterBound;
     read_locked_arc(rule, |rule: &CounterStyleRule| {
-        let range = match rule.range() {
-            Some(r) => r,
+        let range = match rule.descriptors().range {
+            Some(ref r) => r,
             None => return IsOrdinalInRange::NoOrdinalSpecified,
         };
 
@@ -4168,8 +4043,8 @@ pub unsafe extern "C" fn Servo_CounterStyleRule_GetSymbols(
     count: &mut usize,
 ) -> *const counter_style::Symbol {
     read_locked_arc(rule, |rule: &CounterStyleRule| {
-        let symbols = match rule.symbols() {
-            Some(s) => &*s.0,
+        let symbols = match rule.descriptors().symbols {
+            Some(ref s) => &*s.0,
             None => &[],
         };
         *count = symbols.len();
@@ -4189,8 +4064,8 @@ pub unsafe extern "C" fn Servo_CounterStyleRule_GetAdditiveSymbols(
     symbols: &mut style::OwnedSlice<AdditiveSymbol>,
 ) {
     read_locked_arc(rule, |rule: &CounterStyleRule| {
-        *symbols = match rule.additive_symbols() {
-            Some(s) => {
+        *symbols = match rule.descriptors().additive_symbols {
+            Some(ref s) => {
                 s.0.iter()
                     .map(|s| AdditiveSymbol {
                         weight: s.weight.value(),
@@ -4220,8 +4095,8 @@ pub unsafe extern "C" fn Servo_CounterStyleRule_GetSpeakAs(
 ) {
     use style::counter_style::SpeakAs;
     *out = read_locked_arc(rule, |rule: &CounterStyleRule| {
-        let speak_as = match rule.speak_as() {
-            Some(s) => s,
+        let speak_as = match rule.descriptors().speak_as {
+            Some(ref s) => s,
             None => return CounterSpeakAs::None,
         };
         match *speak_as {
@@ -4300,91 +4175,50 @@ pub unsafe extern "C" fn Servo_CounterStyleRule_GetFallback(
     rule: &LockedCounterStyleRule,
 ) -> *mut nsAtom {
     read_locked_arc(rule, |rule: &CounterStyleRule| {
-        rule.fallback().map_or(ptr::null_mut(), |i| i.0 .0.as_ptr())
+        rule.descriptors()
+            .fallback
+            .as_ref()
+            .map_or(ptr::null_mut(), |i| i.0 .0.as_ptr())
     })
 }
-
-macro_rules! counter_style_descriptors {
-    {
-        valid: [
-            $($desc:ident => $getter:ident / $setter:ident,)+
-        ]
-        invalid: [
-            $($i_desc:ident,)+
-        ]
-    } => {
-        #[no_mangle]
-        pub unsafe extern "C" fn Servo_CounterStyleRule_GetDescriptorCssText(
-            rule: &LockedCounterStyleRule,
-            desc: nsCSSCounterDesc,
-            result: &mut nsACString,
-        ) {
-            let mut writer = CssWriter::new(result);
-            read_locked_arc(rule, |rule: &CounterStyleRule| {
-                match desc {
-                    $(nsCSSCounterDesc::$desc => {
-                        if let Some(value) = rule.$getter() {
-                            value.to_css(&mut writer).unwrap();
-                        }
-                    })+
-                    $(nsCSSCounterDesc::$i_desc => unreachable!(),)+
-                }
-            });
-        }
-
-        #[no_mangle]
-        pub unsafe extern "C" fn Servo_CounterStyleRule_SetDescriptor(
-            rule: &LockedCounterStyleRule,
-            desc: nsCSSCounterDesc,
-            value: &nsACString,
-        ) -> bool {
-            let value = value.as_str_unchecked();
-            let mut input = ParserInput::new(&value);
-            let mut parser = Parser::new(&mut input);
-            let url_data = dummy_url_data();
-            let context = ParserContext::new(
-                Origin::Author,
-                url_data,
-                Some(CssRuleType::CounterStyle),
-                ParsingMode::DEFAULT,
-                QuirksMode::NoQuirks,
-                /* namespaces = */ Default::default(),
-                None,
-                None,
-            );
-
-            write_locked_arc(rule, |rule: &mut CounterStyleRule| {
-                match desc {
-                    $(nsCSSCounterDesc::$desc => {
-                        match parser.parse_entirely(|i| Parse::parse(&context, i)) {
-                            Ok(value) => rule.$setter(value),
-                            Err(_) => false,
-                        }
-                    })+
-                    $(nsCSSCounterDesc::$i_desc => unreachable!(),)+
-                }
-            })
-        }
-    }
+#[no_mangle]
+pub extern "C" fn Servo_CounterStyleRule_GetDescriptorCssText(
+    rule: &LockedCounterStyleRule,
+    desc: CounterStyleDescriptorId,
+    result: &mut nsACString,
+) {
+    read_locked_arc(rule, |rule: &CounterStyleRule| {
+        rule.descriptors().get(desc, result).unwrap()
+    });
 }
 
-counter_style_descriptors! {
-    valid: [
-        eCSSCounterDesc_System => system / set_system,
-        eCSSCounterDesc_Symbols => symbols / set_symbols,
-        eCSSCounterDesc_AdditiveSymbols => additive_symbols / set_additive_symbols,
-        eCSSCounterDesc_Negative => negative / set_negative,
-        eCSSCounterDesc_Prefix => prefix / set_prefix,
-        eCSSCounterDesc_Suffix => suffix / set_suffix,
-        eCSSCounterDesc_Range => range / set_range,
-        eCSSCounterDesc_Pad => pad / set_pad,
-        eCSSCounterDesc_Fallback => fallback / set_fallback,
-        eCSSCounterDesc_SpeakAs => speak_as / set_speak_as,
-    ]
-    invalid: [
-        eCSSCounterDesc_UNKNOWN,
-        eCSSCounterDesc_COUNT,
-    ]
+#[no_mangle]
+pub extern "C" fn Servo_CounterStyleRule_SetDescriptor(
+    rule: &LockedCounterStyleRule,
+    desc: CounterStyleDescriptorId,
+    value: &nsACString,
+) -> bool {
+    let value = unsafe { value.as_str_unchecked() };
+    let mut input = ParserInput::new(&value);
+    let mut parser = Parser::new(&mut input);
+    let url_data = unsafe { dummy_url_data() };
+    let context = ParserContext::new(
+        Origin::Author,
+        url_data,
+        Some(CssRuleType::CounterStyle),
+        ParsingMode::DEFAULT,
+        QuirksMode::NoQuirks,
+        /* namespaces = */ Default::default(),
+        None,
+        None,
+    );
+
+    write_locked_arc(rule, |rule: &mut CounterStyleRule| {
+        match rule.set_descriptor(desc, &context, &mut parser) {
+            Ok(changed) => changed,
+            Err(..) => false,
+        }
+    })
 }
 
 #[no_mangle]
@@ -8594,7 +8428,7 @@ fn computed_or_resolved_value(
         Ok(longhand) => {
             return style
                 .computed_or_resolved_value(longhand, context, value)
-                .unwrap()
+                .unwrap();
         },
         Err(shorthand) => shorthand,
     };
@@ -10688,7 +10522,7 @@ impl AnchorSizeFallbackResolver for computed::Inset {
                 let side = match allowed {
                     AllowAnchorPosResolutionInCalcPercentage::Both(s) => s,
                     AllowAnchorPosResolutionInCalcPercentage::AnchorSizeOnly(_) => {
-                        return AnchorPositioningFunctionResolution::Invalid
+                        return AnchorPositioningFunctionResolution::Invalid;
                     },
                 };
                 resolve_anchor_function(f, params, side)

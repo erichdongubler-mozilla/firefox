@@ -47,9 +47,9 @@ extern "C" {
 
 #define BASIC_RULE_FUNCS_WITH_PREFIX(type_, prefix_)                        \
   StyleStrong<mozilla::Style##prefix_##type_##Rule>                         \
-      Servo_CssRules_Get##type_##RuleAt(const StyleLockedCssRules* rules,   \
-                                        uint32_t index, uint32_t* line,     \
-                                        uint32_t* column);                  \
+  Servo_CssRules_Get##type_##RuleAt(const StyleLockedCssRules* rules,       \
+                                    uint32_t index, uint32_t* line,         \
+                                    uint32_t* column);                      \
   void Servo_StyleSet_##type_##RuleChanged(                                 \
       const StylePerDocumentStyleData*, const Style##prefix_##type_##Rule*, \
       const StyleDomStyleSheet*, StyleRuleChangeKind,                       \
@@ -104,14 +104,6 @@ BASIC_RULE_FUNCS_LOCKED(NestedDeclarations)
 #undef BASIC_RULE_FUNCS_WITHOUT_GETTER_LOCKED
 #undef BASIC_RULE_FUNCS_WITHOUT_GETTER_UNLOCKED
 #undef BASIC_RULE_FUNCS_WITHOUT_GETTER_WITH_PREFIX
-
-void Servo_CounterStyleRule_GetDescriptorCssText(
-    const StyleLockedCounterStyleRule* rule, nsCSSCounterDesc desc,
-    nsACString* result);
-
-bool Servo_CounterStyleRule_SetDescriptor(
-    const StyleLockedCounterStyleRule* rule, nsCSSCounterDesc desc,
-    const nsACString* value);
 
 }  // extern "C"
 

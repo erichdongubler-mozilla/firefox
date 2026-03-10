@@ -40,10 +40,10 @@ void CSSFontFaceRuleDecl::SetRawAfterClone(
 }
 
 // helper for string GetPropertyValue and RemovePropertyValue
-void CSSFontFaceRuleDecl::GetPropertyValue(nsCSSFontDesc aFontDescID,
+void CSSFontFaceRuleDecl::GetPropertyValue(FontFaceDescriptorId aDescID,
                                            nsACString& aResult) const {
   MOZ_ASSERT(aResult.IsEmpty());
-  Servo_FontFaceRule_GetDescriptorCssText(mRawRule, aFontDescID, &aResult);
+  Servo_FontFaceRule_GetDescriptorCssText(mRawRule, aDescID, &aResult);
 }
 
 void CSSFontFaceRuleDecl::GetCssText(nsACString& aCssText) {
@@ -65,27 +65,24 @@ void CSSFontFaceRuleDecl::SetCssText(const nsACString& aCssText,
 void CSSFontFaceRuleDecl::GetPropertyValue(const nsACString& aPropName,
                                            nsACString& aResult) {
   aResult.Truncate();
-  nsCSSFontDesc descID = nsCSSProps::LookupFontDesc(aPropName);
-  if (descID != eCSSFontDesc_UNKNOWN) {
-    GetPropertyValue(descID, aResult);
+  auto descID = nsCSSProps::LookupFontDesc(aPropName);
+  if (descID) {
+    GetPropertyValue(*descID, aResult);
   }
 }
 
 void CSSFontFaceRuleDecl::RemoveProperty(const nsACString& aPropName,
                                          nsACString& aResult,
                                          ErrorResult& aRv) {
-  nsCSSFontDesc descID = nsCSSProps::LookupFontDesc(aPropName);
-  NS_ASSERTION(descID >= eCSSFontDesc_UNKNOWN && descID < eCSSFontDesc_COUNT,
-               "LookupFontDesc returned value out of range");
-
   if (ContainingRule()->IsReadOnly()) {
     return;
   }
 
   aResult.Truncate();
-  if (descID != eCSSFontDesc_UNKNOWN) {
-    GetPropertyValue(descID, aResult);
-    Servo_FontFaceRule_ResetDescriptor(mRawRule, descID);
+  auto descID = nsCSSProps::LookupFontDesc(aPropName);
+  if (descID) {
+    GetPropertyValue(*descID, aResult);
+    Servo_FontFaceRule_ResetDescriptor(mRawRule, *descID);
   }
 }
 
@@ -118,8 +115,8 @@ uint32_t CSSFontFaceRuleDecl::Length() {
 
 void CSSFontFaceRuleDecl::IndexedGetter(uint32_t aIndex, bool& aFound,
                                         nsACString& aResult) {
-  nsCSSFontDesc id = Servo_FontFaceRule_IndexGetter(mRawRule, aIndex);
-  if (id != eCSSFontDesc_UNKNOWN) {
+  FontFaceDescriptorId id = FontFaceDescriptorId::FontFamily;
+  if (Servo_FontFaceRule_IndexGetter(mRawRule, aIndex, &id)) {
     aFound = true;
     aResult.Assign(nsCSSProps::GetStringValue(id));
   } else {

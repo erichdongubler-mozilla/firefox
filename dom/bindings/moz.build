@@ -210,6 +210,11 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
         script="/layout/style/GenerateCSSProperties.py",
         entry_point="gen_position_try_descriptors_webidl",
     )
+    GeneratedFile(
+        "CSSCounterStyleRule.webidl",
+        script="/layout/style/GenerateCSSProperties.py",
+        entry_point="gen_counter_style_rule_webidl",
+    )
 
 # Old versions of GCC issue false-positive warnings about buffer overflow.
 if CONFIG["CC_TYPE"] == "gcc" and 10 <= int(CONFIG["CC_VERSION"].split(".")[0]) < 12:

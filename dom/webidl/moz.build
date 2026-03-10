@@ -398,6 +398,7 @@ with Files("WebTransport*"):
     BUG_COMPONENT = ("Core", "Networking")
 
 GENERATED_WEBIDL_FILES = [
+    "CSSCounterStyleRule.webidl",
     "CSSPageDescriptors.webidl",
     "CSSPositionTryDescriptors.webidl",
     "CSSStyleProperties.webidl",
@@ -496,7 +497,6 @@ WEBIDL_FILES = [
     "CSSColorValue.webidl",
     "CSSConditionRule.webidl",
     "CSSContainerRule.webidl",
-    "CSSCounterStyleRule.webidl",
     "CSSCustomMediaRule.webidl",
     "CSSFontFaceRule.webidl",
     "CSSFontFeatureValuesRule.webidl",
