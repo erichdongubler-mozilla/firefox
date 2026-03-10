@@ -407,17 +407,11 @@ nsresult nsHttpHeaderArray::ParseHeaderLine(const nsACString& line,
 
 void nsHttpHeaderArray::Flatten(nsACString& buf, bool pruneProxyHeaders,
                                 bool pruneTransients) {
-  uint32_t i, count = mHeaders.Length();
-  for (i = 0; i < count; ++i) {
-    const nsEntry& entry = mHeaders[i];
-    // Skip original header.
-    if (entry.variety == eVarietyResponseNetOriginal) {
-      continue;
-    }
-    // prune proxy headers if requested
-    if (pruneProxyHeaders && ((entry.header == nsHttp::Proxy_Authorization) ||
-                              (entry.header == nsHttp::Proxy_Connection))) {
-      continue;
+  auto shouldInclude = [&](const nsEntry& entry) {
+    if (entry.variety == eVarietyResponseNetOriginal) return false;
+    if (pruneProxyHeaders && (entry.header == nsHttp::Proxy_Authorization ||
+                              entry.header == nsHttp::Proxy_Connection)) {
+      return false;
     }
     if (pruneTransients &&
         (entry.value.IsEmpty() || entry.header == nsHttp::Connection ||
@@ -431,9 +425,23 @@ void nsHttpHeaderArray::Flatten(nsACString& buf, bool pruneProxyHeaders,
          // XXX this will cause problems when we start honoring
          // Cache-Control: no-cache="set-cookie", what to do?
          entry.header == nsHttp::Set_Cookie)) {
-      continue;
+      return false;
     }
+    return true;
+  };
 
+  uint32_t totalSize = 0;
+  for (const auto& entry : mHeaders) {
+    if (!shouldInclude(entry)) continue;
+    totalSize += (entry.headerNameOriginal.IsEmpty()
+                      ? entry.header.val().Length()
+                      : entry.headerNameOriginal.Length()) +
+                 2 + entry.value.Length() + 2;
+  }
+  buf.SetCapacity(buf.Length() + totalSize);
+
+  for (const auto& entry : mHeaders) {
+    if (!shouldInclude(entry)) continue;
     if (entry.headerNameOriginal.IsEmpty()) {
       buf.Append(entry.header.val());
     } else {
@@ -446,20 +454,23 @@ void nsHttpHeaderArray::Flatten(nsACString& buf, bool pruneProxyHeaders,
 }
 
 void nsHttpHeaderArray::FlattenOriginalHeader(nsACString& buf) {
-  uint32_t i, count = mHeaders.Length();
-  for (i = 0; i < count; ++i) {
-    const nsEntry& entry = mHeaders[i];
-    // Skip changed header.
-    if (entry.variety == eVarietyResponse) {
-      continue;
-    }
+  uint32_t totalSize = 0;
+  for (const auto& entry : mHeaders) {
+    if (entry.variety == eVarietyResponse) continue;
+    totalSize += (entry.headerNameOriginal.IsEmpty()
+                      ? entry.header.val().Length()
+                      : entry.headerNameOriginal.Length()) +
+                 2 + entry.value.Length() + 2;
+  }
+  buf.SetCapacity(buf.Length() + totalSize);
 
+  for (const auto& entry : mHeaders) {
+    if (entry.variety == eVarietyResponse) continue;
     if (entry.headerNameOriginal.IsEmpty()) {
       buf.Append(entry.header.val());
     } else {
       buf.Append(entry.headerNameOriginal);
     }
-
     buf.AppendLiteral(": ");
     buf.Append(entry.value);
     buf.AppendLiteral("\r\n");
