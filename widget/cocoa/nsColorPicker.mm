@@ -42,10 +42,14 @@ static unsigned int HexStrToInt(NSString* str) {
 
 @implementation NSColorPanelWrapper
 - (id)initWithPicker:(nsColorPicker*)aPicker {
+  self = [super init];
+  if (!self) {
+    return nil;
+  }
+
   mColorPicker = aPicker;
   mColorPanel = [NSColorPanel sharedColorPanel];
 
-  self = [super init];
   return self;
 }
 
@@ -111,20 +115,15 @@ nsresult nsColorPicker::InitNative(const nsTArray<nsString>& aDefaultColors) {
       HexStrToInt([str substringWithRange:NSMakeRange(3, 2)]) / 255.0;
   double blue = HexStrToInt([str substringWithRange:NSMakeRange(5, 2)]) / 255.0;
 
-  return [NSColor colorWithDeviceRed:red green:green blue:blue alpha:1.0];
+  return [NSColor colorWithSRGBRed:red green:green blue:blue alpha:1.0];
 }
 
 /* static */ void nsColorPicker::GetHexStringFromNSColor(NSColor* aColor,
                                                          nsAString& aResult) {
   CGFloat redFloat, greenFloat, blueFloat;
 
-  NSColor* color = aColor;
-  @try {
-    [color getRed:&redFloat green:&greenFloat blue:&blueFloat alpha:nil];
-  } @catch (NSException* e) {
-    color = [color colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
-    [color getRed:&redFloat green:&greenFloat blue:&blueFloat alpha:nil];
-  }
+  NSColor* color = [aColor colorUsingColorSpace:[NSColorSpace sRGBColorSpace]];
+  [color getRed:&redFloat green:&greenFloat blue:&blueFloat alpha:nil];
 
   nsCocoaUtils::GetStringForNSString(
       [NSString stringWithFormat:@"#%02x%02x%02x", (int)(redFloat * 255),
