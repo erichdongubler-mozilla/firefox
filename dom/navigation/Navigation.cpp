@@ -14,6 +14,7 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/UseCounter.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ErrorEvent.h"
@@ -35,6 +36,7 @@
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDocShell.h"
+#include "nsGkAtoms.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIMultiPartChannel.h"
 #include "nsIPrincipal.h"
@@ -200,6 +202,28 @@ JSObject* Navigation::WrapObject(JSContext* aCx,
 
 void Navigation::EventListenerAdded(nsAtom* aType) {
   UpdateNeedsTraverse();
+
+  auto counter = [aType]() -> Maybe<UseCounter> {
+    if (aType == nsGkAtoms::onnavigate) {
+      return Some(eUseCounter_custom_NavigationOnnavigate);
+    }
+    if (aType == nsGkAtoms::onnavigatesuccess) {
+      return Some(eUseCounter_custom_NavigationOnnavigatesuccess);
+    }
+    if (aType == nsGkAtoms::onnavigateerror) {
+      return Some(eUseCounter_custom_NavigationOnnavigateerror);
+    }
+    if (aType == nsGkAtoms::oncurrententrychange) {
+      return Some(eUseCounter_custom_NavigationOncurrententrychange);
+    }
+    return Nothing();
+  }();
+
+  if (counter) {
+    if (Document* doc = GetAssociatedDocument()) {
+      doc->SetUseCounter(*counter);
+    }
+  }
 
   EventTarget::EventListenerAdded(aType);
 }

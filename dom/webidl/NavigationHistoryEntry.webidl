@@ -15,7 +15,7 @@ interface NavigationHistoryEntry : EventTarget {
   readonly attribute long long index;
   readonly attribute boolean sameDocument;
 
-  [Throws] any getState();
+  [Throws, UseCounter] any getState();
 
   attribute EventHandler ondispose;
 };

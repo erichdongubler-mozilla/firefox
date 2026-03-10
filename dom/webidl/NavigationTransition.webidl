@@ -9,8 +9,8 @@
 
 [Func="Navigation::IsAPIEnabled", Exposed=Window]
 interface NavigationTransition {
-  readonly attribute NavigationType navigationType;
-  readonly attribute NavigationHistoryEntry from;
-  readonly attribute Promise<undefined> committed;
-  readonly attribute Promise<undefined> finished;
+  [UseCounter] readonly attribute NavigationType navigationType;
+  [UseCounter] readonly attribute NavigationHistoryEntry from;
+  [UseCounter] readonly attribute Promise<undefined> committed;
+  [UseCounter] readonly attribute Promise<undefined> finished;
 };

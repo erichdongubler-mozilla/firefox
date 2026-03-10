@@ -8,9 +8,9 @@
  */
 [Func="Navigation::IsAPIEnabled", Exposed=Window]
 interface NavigationPrecommitController {
-  [Throws]
+  [Throws, UseCounter]
   undefined redirect(USVString url, optional NavigationNavigateOptions options = {});
-  [Throws]
+  [Throws, UseCounter]
   undefined addHandler(NavigationInterceptHandler handler);
 };
 

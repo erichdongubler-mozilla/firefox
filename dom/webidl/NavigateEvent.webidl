@@ -17,14 +17,14 @@ interface NavigateEvent : Event {
   readonly attribute boolean userInitiated;
   readonly attribute boolean hashChange;
   readonly attribute AbortSignal signal;
-  readonly attribute FormData? formData;
-  readonly attribute DOMString? downloadRequest;
+  [UseCounter] readonly attribute FormData? formData;
+  [UseCounter] readonly attribute DOMString? downloadRequest;
   readonly attribute any info;
-  readonly attribute boolean hasUAVisualTransition;
-  readonly attribute Element? sourceElement;
+  [UseCounter] readonly attribute boolean hasUAVisualTransition;
+  [UseCounter] readonly attribute Element? sourceElement;
 
-  [Throws] undefined intercept(optional NavigationInterceptOptions options = {});
-  [Throws] undefined scroll();
+  [Throws, UseCounter] undefined intercept(optional NavigationInterceptOptions options = {});
+  [Throws, UseCounter] undefined scroll();
 };
 
 dictionary NavigateEventInit : EventInit {
