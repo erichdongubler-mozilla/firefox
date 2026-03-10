@@ -2902,6 +2902,40 @@ custom_review_prompt:
       - android-probes@mozilla.com
     expires: never
 
+  nimbus_event_recorded:
+    type: event
+    description: Logged when a Nimbus event recording is attempted after the custom review prompt is shown, capturing the result.
+    extra_keys:
+      result:
+        type: string
+        description: The outcome of the Nimbus event recording attempt. One of "success", "cancelled", or "error".
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022154
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D286857
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  record_nimbus_event_attempts:
+    type: labeled_counter
+    description: Counts Nimbus event recording attempts after the custom review prompt is shown, labeled by result.
+    labels:
+      - success
+      - cancelled
+      - error
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022154
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D286857
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
 search_shortcuts:
   selected:
     type: event
