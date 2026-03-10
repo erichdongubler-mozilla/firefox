@@ -167,10 +167,9 @@ void nsHttpConnectionInfo::BuildHashKey() {
   // corresponding data fields on the object itself, you may also need to
   // modify RebuildHashKey.
 
-  const auto keyTemplate =
-      std::string(UnderlyingIndex(HashKeyIndex::End), '.') +
-      std::string("[tlsflags0x00000000]");
-  mHashKey.Assign(keyTemplate.c_str());
+  static_assert(static_cast<uint32_t>(HashKeyIndex::End) == 11,
+                "Update dot string in BuildHashKey if HashKeyIndex changes");
+  mHashKey.AssignLiteral("...........[tlsflags0x00000000]");
 
   mHashKey.Append(keyHost);
   mHashKey.Append(':');
