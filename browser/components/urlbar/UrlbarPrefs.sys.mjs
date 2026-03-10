@@ -245,7 +245,7 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   ["merino.providers", ""],
 
   // Timeout for Merino fetches (ms).
-  ["merino.timeoutMs", 200],
+  ["merino.timeoutMs", 500],
 
   // Merino endpoint prefs to be used for weather widgets
   ["merino.weather.reportEndpointURL", ""],
