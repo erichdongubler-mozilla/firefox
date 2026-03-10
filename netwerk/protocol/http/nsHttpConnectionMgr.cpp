@@ -705,10 +705,7 @@ void nsHttpConnectionMgr::OnMsgClearConnectionHistory(int32_t,
 
   for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
     RefPtr<ConnectionEntry> ent = iter.Data();
-    if (ent->IdleConnectionsLength() == 0 && ent->ActiveConnsLength() == 0 &&
-        ent->DnsAndConnectSocketsLength() == 0 &&
-        ent->UrgentStartQueueIsEmpty() && ent->PendingQueueIsEmpty() &&
-        !ent->mDoNotDestroy) {
+    if (ent->IsEmpty()) {
       mPendingQEntries.Remove(ent.get());
       iter.Remove();
     }
@@ -2240,7 +2237,6 @@ void nsHttpConnectionMgr::AbortAndCloseAllConnections(int32_t, ARefBase*) {
     // Close all half open tcp connections.
     ent->CloseAllConnectionAttempts();
 
-    MOZ_ASSERT(!ent->mDoNotDestroy);
     iter.Remove();
   }
 
@@ -2481,15 +2477,18 @@ void nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase*) {
   // Reset mTimeOfNextWakeUp so that we can find a new shortest value.
   mTimeOfNextWakeUp = UINT64_MAX;
 
-  // check canreuse() for all idle connections plus any active connections on
-  // connection entries that are using spdy.
-  if (mNumIdleConns ||
-      (mNumActiveConns && StaticPrefs::network_http_http2_enabled())) {
-    for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
-      RefPtr<ConnectionEntry> ent = iter.Data();
+  // Prune dead connections from entries that have idle or active connections.
+  // Empty entries are always removed regardless of table size.
+  bool shouldPrune =
+      mNumIdleConns ||
+      (mNumActiveConns && StaticPrefs::network_http_http2_enabled());
 
-      LOG(("  pruning [ci=%s]\n", ent->mConnInfo->HashKey().get()));
+  for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
+    RefPtr<ConnectionEntry> ent = iter.Data();
 
+    LOG(("  pruning [ci=%s]\n", ent->mConnInfo->HashKey().get()));
+
+    if (shouldPrune) {
       // Find out how long it will take for next idle connection to not
       // be reusable anymore.
       uint32_t timeToNextExpire = ent->PruneDeadConnections();
@@ -2509,23 +2508,18 @@ void nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase*) {
       } else {
         ConditionallyStopPruneDeadConnectionsTimer();
       }
+    }
 
-      ent->RemoveEmptyPendingQ();
+    ent->RemoveEmptyPendingQ();
 
-      // If this entry is empty, we have too many entries busy then
-      // we can clean it up and restart
-      if (mCT.Count() > 125 && ent->IdleConnectionsLength() == 0 &&
-          ent->ActiveConnsLength() == 0 &&
-          ent->DnsAndConnectSocketsLength() == 0 &&
-          ent->PendingQueueIsEmpty() && ent->UrgentStartQueueIsEmpty() &&
-          !ent->mDoNotDestroy && (!ent->mUsingSpdy || mCT.Count() > 300)) {
-        LOG(("    removing empty connection entry\n"));
-        mPendingQEntries.Remove(ent.get());
-        iter.Remove();
-        continue;
-      }
+    if (ent->IsEmpty()) {
+      LOG(("    removing empty connection entry\n"));
+      mPendingQEntries.Remove(ent.get());
+      iter.Remove();
+      continue;
+    }
 
-      // Otherwise use this opportunity to compact our arrays...
+    if (shouldPrune) {
       ent->Compact();
     }
   }

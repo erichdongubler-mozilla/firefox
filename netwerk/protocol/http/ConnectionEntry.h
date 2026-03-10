@@ -153,7 +153,15 @@ class ConnectionEntry : public SupportsWeakPtr {
   // True if this connection entry has initiated a socket
   bool mUsedForConnection : 1;
 
-  bool mDoNotDestroy : 1;
+  // Returns true when the entry has no connections, no pending transactions,
+  // and no in-progress connection attempts. Used to determine whether the
+  // entry can be removed from the connection table.
+  bool IsEmpty() const {
+    return IdleConnectionsLength() == 0 && ActiveConnsLength() == 0 &&
+           DnsAndConnectSocketsLength() == 0 && PendingQueueIsEmpty() &&
+           UrgentStartQueueIsEmpty() && mPendingConns.IsEmpty() &&
+           mExtendedCONNECTConns.IsEmpty();
+  }
 
   bool IsHttp3ProxyConnection() const {
     return mConnInfo->IsHttp3ProxyConnection();
