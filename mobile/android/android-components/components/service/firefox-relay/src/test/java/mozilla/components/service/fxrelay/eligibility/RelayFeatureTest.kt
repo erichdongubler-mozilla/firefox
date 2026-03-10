@@ -312,6 +312,7 @@ class RelayFeatureTest {
         }
 
         override fun authenticatedAccount() = account
+        override fun connectedAccount() = account
     }
 
     private class FakeOAuthAccount(

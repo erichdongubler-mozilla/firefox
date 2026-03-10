@@ -27,11 +27,15 @@ interface FxaAccountManagerDelegate {
     fun unregister(observer: AccountObserver)
 
     /**
-     * Main point for interaction with an [OAuthAccount] instance.
-     * @return [OAuthAccount] if we're in an authenticated state, null otherwise. Returned [OAuthAccount]
-     * may need to be re-authenticated; consumers are expected to check [accountNeedsReauth].
+     * Get the [OAuthAccount] instance if it's not disconnected.
+     * Returned [OAuthAccount] may need to be re-authenticated; consumers are expected to check [accountNeedsReauth].
      */
     fun authenticatedAccount(): OAuthAccount?
+
+    /**
+     * Get the [OAuthAccount] instance if it's connected.
+     */
+    fun connectedAccount(): OAuthAccount?
 }
 
 /**
@@ -43,4 +47,5 @@ class DefaultFxaAccountManagerDelegate(
     override fun register(observer: AccountObserver) = accountManager.register(observer)
     override fun unregister(observer: AccountObserver) = accountManager.unregister(observer)
     override fun authenticatedAccount() = accountManager.authenticatedAccount()
+    override fun connectedAccount() = accountManager.connectedAccount()
 }
