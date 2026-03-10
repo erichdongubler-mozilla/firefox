@@ -219,8 +219,10 @@ export class AIChatContent extends MozLitElement {
 
   handleUserPromptEvent(event) {
     this.followUpSuggestions = [];
-    const { convId, content, ordinal } = event.detail;
-    this.assistantIsLoading = true;
+    const { convId, content, ordinal, isPreviousMessage } = event.detail;
+    if (!isPreviousMessage) {
+      this.assistantIsLoading = true;
+    }
     this.conversationState[ordinal] = {
       role: "user",
       body: content.body,

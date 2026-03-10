@@ -58,6 +58,44 @@ add_task(async function test_streaming_ai_response() {
 });
 
 /**
+ * Test that the loader does not show when a previous user message is dispatched
+ * (e.g. on tab select or conversation reload)
+ */
+add_task(async function test_loader_does_not_show_for_previous_user_message() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.enabled", true]],
+  });
+
+  await BrowserTestUtils.withNewTab("about:aichatcontent", async browser => {
+    const actor =
+      browser.browsingContext.currentWindowGlobal.getActor("AIChatContent");
+
+    await actor.dispatchMessageToChatContent({
+      role: "user",
+      content: { body: "Previous message" },
+      convId: "test-conv-id",
+      ordinal: 0,
+      isPreviousMessage: true,
+    });
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const contentEl = content.document.querySelector("ai-chat-content");
+      await contentEl.updateComplete;
+
+      const loaderEl = contentEl.shadowRoot.querySelector(
+        "chat-assistant-loader"
+      );
+      Assert.ok(
+        !loaderEl,
+        "Loader should not appear when replaying previous user messages"
+      );
+    });
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
  * Test if the loader shows after the user prompt is submitted
  */
 add_task(async function test_loader_shows_on_user_submit() {
