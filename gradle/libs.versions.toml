@@ -288,7 +288,7 @@ mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okhttp-urlconnection = { module = "com.squareup.okhttp3:okhttp-urlconnection", version.ref = "okhttp" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
-sentry = { module = "io.sentry:sentry-android", version.ref = "sentry" }
+sentry = { module = "io.sentry:sentry-android-core", version.ref = "sentry" }
 zxing = { module = "com.google.zxing:core", version.ref = "zxing" }
 
 [plugins]
