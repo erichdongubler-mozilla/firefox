@@ -593,6 +593,13 @@
     "comment": "See https://github.com/puppeteer/puppeteer/issues/4840"
   },
   {
+    "testIdPattern": "[page.spec] Page Page.Events.Console should work for different console API calls with group functions",
+    "platforms": ["darwin", "linux", "win32"],
+    "parameters": ["firefox", "webDriverBiDi"],
+    "expectations": ["FAIL"],
+    "comment": "See https://github.com/w3c/webdriver-bidi/issues/1097"
+  },
+  {
     "testIdPattern": "[page.spec] Page Page.addStyleTag should throw when added with content to the CSP page",
     "platforms": ["darwin", "linux", "win32"],
     "parameters": ["firefox"],
@@ -1523,13 +1530,6 @@
     "parameters": ["cdp", "chrome"],
     "expectations": ["SKIP"],
     "comment": "See https://github.com/puppeteer/puppeteer/issues/4840"
-  },
-  {
-    "testIdPattern": "[page.spec] Page Page.Events.Console should work for different console API calls with timing functions",
-    "platforms": ["darwin", "linux", "win32"],
-    "parameters": ["firefox", "webDriverBiDi"],
-    "expectations": ["FAIL"],
-    "comment": "https://bugzilla.mozilla.org/show_bug.cgi?id=1866749"
   },
   {
     "testIdPattern": "[page.spec] Page Page.newPage should open pages in a new window in maximized state",
