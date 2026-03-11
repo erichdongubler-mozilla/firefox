@@ -168,6 +168,7 @@ module.exports = function (config) {
               branches: 75,
             },
             "content-src/components/MultiStageProtonScreen.jsx": {
+              functions: 78,
               branches: 78,
             },
             // The install actions and dynamic label of the InstallButton are covered

@@ -2074,6 +2074,7 @@ export class _ASRouter {
         // If selectable profiles are enabled && the message has a
         // profile scope set, block it in all profiles
         if (
+          message &&
           lazy.ASRouterTargeting.Environment.canCreateSelectableProfiles &&
           message.profileScope === PROFILE_MESSAGE_SCOPE.SINGLE
         ) {
