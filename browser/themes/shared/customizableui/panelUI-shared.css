@@ -619,7 +619,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     height: 16px;
     -moz-context-properties: fill;
     fill: var(--warning-icon-bgcolor);
-    margin-inline-start: 10px;
+    margin-inline-start: var(--space-medium);
   }
 }
 
@@ -1189,16 +1189,11 @@ panelview .toolbarbutton-1,
   &[shortcut]::after {
     content: attr(shortcut);
     display: flex;
+    margin-inline-start: var(--space-medium);
   }
 
   &[shortcut]:not([disabled])::after {
     color: var(--text-color-deemphasized);
-  }
-
-  &[shortcut]::after,
-  .widget-overflow-list .subviewbutton-nav::after,
-  .PanelUI-subView .subviewbutton-nav::after {
-    margin-inline-start: 10px;
   }
 
   &[checked] {
@@ -1354,6 +1349,7 @@ panelview .toolbarbutton-1,
     fill: currentColor;
     fill-opacity: 0.6;
     display: flex;
+    margin-inline-start: var(--space-medium);
   }
 
   &:-moz-locale-dir(rtl)::after {
