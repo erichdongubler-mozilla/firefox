@@ -21,6 +21,7 @@ import mozilla.components.service.fxrelay.eligibility.ext.relayClient
 import mozilla.components.service.fxrelay.eligibility.ext.shouldCheckStatus
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.ktx.kotlin.extractHostUrl
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
@@ -37,6 +38,7 @@ class RelayFeature(
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
     private val dateTimeProvider: DateTimeProvider = DefaultDateTimeProvider(),
     private val fxRelayFactory: (OAuthAccount) -> FxRelay = ::FxRelayImpl,
+    private val extractHostUrl: (String) -> String = String::extractHostUrl,
 ) : LifecycleAwareFeature {
 
     private val logger = Logger("RelayEligibilityFeature")
@@ -125,7 +127,7 @@ class RelayFeature(
      * @return an email masks or `null` if the operation fails.
      */
     suspend fun getOrCreateNewMask(generatedFor: String, description: String): EmailMask? {
-        val mask = fxRelay?.createEmailMask(generatedFor, description)
+        val mask = fxRelay?.createEmailMask(extractHostUrl(generatedFor), extractHostUrl(description))
         store.dispatch(RelayEligibilityAction.UpdateLastUsed(mask))
         return mask
     }

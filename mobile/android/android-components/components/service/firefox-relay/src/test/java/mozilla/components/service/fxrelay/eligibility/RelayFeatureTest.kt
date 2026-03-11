@@ -286,6 +286,7 @@ class RelayFeatureTest {
         store = store,
         mainDispatcher = testDispatcher,
         fxRelayFactory = { fakeFxRelay },
+        extractHostUrl = { it },
     )
 
     private fun createRelayAttachedClient() = AttachedClient(
@@ -362,7 +363,7 @@ class RelayFeatureTest {
     ) : FxRelay {
         override suspend fun fetchEmailMasks() = emailMasks
         override suspend fun fetchAccountDetails() = accountDetails
-        override suspend fun createEmailMask(generatedFor: String, description: String) =
+        override suspend fun createEmailMask(generatedForHostUrl: String, descriptionHostUrl: String) =
             createdMask
     }
 }
