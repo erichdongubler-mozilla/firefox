@@ -367,6 +367,23 @@ export class FormAutofillChild extends JSWindowActorChild {
       return;
     }
 
+    const fm = Cc["@mozilla.org/focus-manager;1"].getService(
+      Ci.nsIFocusManager
+    );
+    const method = fm.getLastFocusMethod(this.contentWindow);
+    const isProgrammatic = !!(method & Ci.nsIFocusManager.FLAG_BYJS);
+    const skipCheck = Services.prefs.getBoolPref(
+      "extensions.formautofill.skipProgrammaticCheckForTests",
+      false
+    );
+
+    if (isProgrammatic && !skipCheck) {
+      this.debug(
+        "showPopupIfEmpty: Suppressing automated popup due to programmatic focus."
+      );
+      return;
+    }
+
     if (fieldName.startsWith("cc-") || AppConstants.platform === "android") {
       lazy.FormAutofillContent.showPopup();
     }
@@ -478,7 +495,6 @@ export class FormAutofillChild extends JSWindowActorChild {
 
         if (!gFormFillFocusListener) {
           gFormFillFocusListener = new FormFillFocusListener();
-
           const formFillController = Cc[
             "@mozilla.org/satchel/form-fill-controller;1"
           ].getService(Ci.nsIFormFillController);
