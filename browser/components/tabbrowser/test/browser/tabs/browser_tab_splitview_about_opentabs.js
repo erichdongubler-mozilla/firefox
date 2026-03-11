@@ -870,6 +870,54 @@ add_task(async function test_open_link_in_split_view_from_container() {
   }
 });
 
+add_task(async function test_open_link_in_split_view_hidden_on_hidden_tab() {
+  FirefoxViewHandler.openTab();
+  let fxviewTab = FirefoxViewHandler.tab;
+  await BrowserTestUtils.browserLoaded(
+    fxviewTab.linkedBrowser,
+    false,
+    "about:firefoxview"
+  );
+
+  ok(fxviewTab.hidden, "Firefox View tab is a hidden tab");
+
+  let browser = fxviewTab.linkedBrowser;
+  let doc = browser.contentWindow.document;
+
+  let openTabs = doc.querySelector("view-opentabs[slot='opentabs']");
+  await TestUtils.waitForCondition(
+    () => openTabs.viewCards?.[0]?.tabList?.rowEls?.length,
+    "Open tab rows rendered"
+  );
+
+  let firstTabLink = openTabs.viewCards[0].tabList.rowEls[0].mainEl;
+
+  const contextMenu = document.getElementById("contentAreaContextMenu");
+  let popupShown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(
+    firstTabLink,
+    { type: "contextmenu", button: 2 },
+    browser.contentWindow
+  );
+  await popupShown;
+
+  let openLinkInSplitViewItem = contextMenu.querySelector(
+    "#context-openlinkinsplitview"
+  );
+  ok(openLinkInSplitViewItem, "Open Link in Split View menu item exists");
+  ok(
+    !BrowserTestUtils.isVisible(openLinkInSplitViewItem),
+    "Open Link in Split View menu item is hidden on a hidden tab"
+  );
+
+  let popupHidden = BrowserTestUtils.waitForPopupEvent(contextMenu, "hidden");
+  contextMenu.hidePopup();
+  await popupHidden;
+
+  BrowserTestUtils.removeTab(fxviewTab);
+  FirefoxViewHandler.tab = null;
+});
+
 add_task(
   async function test_open_link_in_split_view_hidden_when_in_split_view() {
     const testPageUrl = httpURL("file_anchor_elements.html");
