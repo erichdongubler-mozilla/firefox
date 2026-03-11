@@ -2250,14 +2250,14 @@ preferences-doh-radio-default =
 
 preferences-doh-radio-custom =
     .label = Custom
-    .description = Always use secure DNS with control over your provider and fallback behavior.
+    .description = Always use secure DNS with control over your provider and fallback behavior
 
 preferences-doh-radio-off =
     .label = Off
     .description = Use your default DNS resolver
 
 preferences-doh-fallback-label =
-    .label = Always warn me if secure DNS isn’t available.
+    .label = Always warn me if secure DNS isn’t available
 
 preferences-doh-status-item-off =
     .message = DNS over HTTPS is off
