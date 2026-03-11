@@ -696,10 +696,19 @@ impl NeqoHttp3Conn {
             }
 
             // Count whether the connection exited slow start.
-            if stats.cc.slow_start_exited {
+            if let Some(cwnd) = stats.cc.slow_start_exit_cwnd {
                 glean::http_3_slow_start_exited.get("exited").add(1);
+                glean::http_3_slow_start_exit_cwnd.accumulate(cwnd as u64);
             } else {
                 glean::http_3_slow_start_exited.get("not_exited").add(1);
+            }
+
+            glean::http_3_final_cwnd.accumulate(stats.cc.cwnd as u64);
+
+            if let Some(peer_max) = stats.pmtud_peer_max_udp_payload {
+                if let Ok(v) = i64::try_from(peer_max) {
+                    glean::http_3_peer_max_udp_payload.accumulate_single_sample_signed(v);
+                }
             }
         }
 
@@ -2393,7 +2402,7 @@ pub extern "C" fn neqo_http3conn_webtransport_send_datagram(
     };
     match conn
         .conn
-        .webtransport_send_datagram(StreamId::from(session_id), data, id)
+        .webtransport_send_datagram(StreamId::from(session_id), data, id, Instant::now())
     {
         Ok(()) => NS_OK,
         Err(Http3Error::Transport(TransportError::TooMuchData)) => NS_ERROR_NOT_AVAILABLE,
@@ -2414,7 +2423,7 @@ pub extern "C" fn neqo_http3conn_connect_udp_send_datagram(
     };
     match conn
         .conn
-        .connect_udp_send_datagram(StreamId::from(session_id), data, id)
+        .connect_udp_send_datagram(StreamId::from(session_id), data, id, Instant::now())
     {
         Ok(()) => NS_OK,
         Err(Http3Error::Transport(TransportError::TooMuchData)) => NS_ERROR_NOT_AVAILABLE,

@@ -1427,7 +1427,10 @@ impl HttpServer for Http3ConnectProxyServer {
                         buf.resize(len, 0);
                         // TODO: Might overflow our current datagram buffer of 10
                         // https://github.com/mozilla/neqo/issues/2852
-                        socket.session.send_datagram(buf.as_slice(), None).unwrap();
+                        socket
+                            .session
+                            .send_datagram(buf.as_slice(), None, Instant::now())
+                            .unwrap();
                         progressed = true;
                     }
                     Poll::Ready(Err(e)) => {
