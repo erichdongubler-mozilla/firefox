@@ -75,6 +75,18 @@ Object.assign(Chat, {
     const config = engineInstance.getConfig(engineInstance.feature);
     const inferenceParams = config?.parameters || {};
 
+    /**
+     * For the first turn only, we use exactly what the user typed as the `run_search` search query.
+     * To make that work, we use a different tool definition for the first turn vs. all subsequent turns.
+     */
+    let chatToolsConfig = structuredClone(toolsConfig);
+    let isVerbatimQuery = true;
+    if (currentTurn > 0) {
+      chatToolsConfig =
+        RunSearch.setGeneratedSearchQueryDescription(chatToolsConfig);
+      isVerbatimQuery = false;
+    }
+
     const allAllowedUrls = new Set();
     let fullResponseText = "";
 
@@ -83,7 +95,7 @@ Object.assign(Chat, {
         streamOptions: { enabled: true },
         fxAccountToken,
         tool_choice: "auto",
-        tools: toolsConfig,
+        tools: chatToolsConfig,
         args: conversation.getMessagesInOpenAiFormat(),
         ...inferenceParams,
       });
@@ -144,7 +156,11 @@ Object.assign(Chat, {
         }
 
         if (toolName === "run_search") {
-          yield { searching: true, query: toolParams.query };
+          // Make sure we aren't using a generated query when we shouldn't be
+          if (isVerbatimQuery && toolParams.hasOwnProperty("query")) {
+            delete toolParams.query;
+          }
+          yield { searching: true, query: toolParams.query ?? null };
         }
 
         let result, searchHandoffBrowser;

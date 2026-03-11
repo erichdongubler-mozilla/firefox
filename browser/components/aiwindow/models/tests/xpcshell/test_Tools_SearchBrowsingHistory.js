@@ -4,6 +4,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+do_get_profile();
+
 const { searchBrowsingHistory, stripSearchBrowsingHistoryFields } =
   ChromeUtils.importESModule(
     "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"

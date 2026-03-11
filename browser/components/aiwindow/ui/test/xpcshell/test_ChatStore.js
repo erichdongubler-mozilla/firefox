@@ -203,6 +203,21 @@ add_atomic_task(async function test_ChatStorage_findConversationsByDate() {
   });
 });
 
+add_atomic_task(async function test_ChatStorage_getMostRecentMessages() {
+  await addTestDataForFindMessageByDate();
+
+  const role = -1;
+  const limit = 2;
+  const messages = await gChatStore.getMostRecentMessages(role, limit);
+
+  Assert.equal(messages.length, 2, "Should have retrieved 2 messages");
+  Assert.equal(
+    messages[0].content.content,
+    "a message in august",
+    "First message should be the latest"
+  );
+});
+
 add_atomic_task(async function test_ChatStorage_findConversationsByURL() {
   async function addTestData() {
     await addConvoWithSpecificTestData(

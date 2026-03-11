@@ -10,6 +10,10 @@
 
 import { searchBrowsingHistory as implSearchBrowsingHistory } from "moz-src:///browser/components/aiwindow/models/SearchBrowsingHistory.sys.mjs";
 import { PageExtractorParent } from "resource://gre/actors/PageExtractorParent.sys.mjs";
+import {
+  ChatStore,
+  MESSAGE_ROLE,
+} from "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -38,6 +42,47 @@ export const TOOLS = [
   RUN_SEARCH,
   GET_USER_MEMORIES,
 ];
+
+export const RUN_SEARCH_VERBATIM_QUERY_DESCRIPTION =
+  "Perform a web search using the browser's default search engine and return " +
+  "the search results page content. Use this when the user needs current web " +
+  "information that would benefit from a live search. This tool uses the current user message as the query.";
+
+export const RUN_SEARCH_GENERATED_QUERY_DESCRIPION =
+  "Perform a web search using the browser's default search engine and return " +
+  "the search results page content. Use this when the user needs current web " +
+  "information that would benefit from a live search.";
+
+const RUN_SEARCH_TOOL_CONFIG_VERBATIM_QUERY = {
+  type: "function",
+  function: {
+    name: RUN_SEARCH,
+    description: RUN_SEARCH_VERBATIM_QUERY_DESCRIPTION,
+    parameters: {
+      type: "object",
+      properties: {},
+    },
+  },
+};
+
+const RUN_SEARCH_TOOL_CONFIG_GENERATED_QUERY = {
+  type: "function",
+  function: {
+    name: RUN_SEARCH,
+    description: RUN_SEARCH_GENERATED_QUERY_DESCRIPION,
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "The search query to execute. Should be specific and search-engine optimized.",
+        },
+      },
+      required: ["query"],
+    },
+  },
+};
 
 export const toolsConfig = [
   {
@@ -112,27 +157,7 @@ export const toolsConfig = [
       },
     },
   },
-  {
-    type: "function",
-    function: {
-      name: RUN_SEARCH,
-      description:
-        "Perform a web search using the browser's default search engine and return " +
-        "the search results page content. Use this when the user needs current web " +
-        "information that would benefit from a live search.",
-      parameters: {
-        type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description:
-              "The search query to execute. Should be specific and search-engine optimized.",
-          },
-        },
-        required: ["query"],
-      },
-    },
-  },
+  RUN_SEARCH_TOOL_CONFIG_VERBATIM_QUERY,
   {
     type: "function",
     function: {
@@ -310,14 +335,68 @@ export class RunSearch {
   }
 
   /**
-   * @param {object} toolParams
-   * @param {string} toolParams.query
+   * Switches the run_search tool description to the one for verbatim queries
+   *
+   * @param {object} chatToolsConfig
+   * @returns {object}
+   */
+  static setVerbatimSearchQueryDescription(chatToolsConfig) {
+    const indexOfRunSearchConfig = chatToolsConfig.findIndex(
+      item => item.function.name === RUN_SEARCH
+    );
+    if (
+      chatToolsConfig[indexOfRunSearchConfig].function.description !=
+      RUN_SEARCH_VERBATIM_QUERY_DESCRIPTION
+    ) {
+      chatToolsConfig[indexOfRunSearchConfig] =
+        RUN_SEARCH_TOOL_CONFIG_VERBATIM_QUERY;
+    }
+    return chatToolsConfig;
+  }
+
+  /**
+   * Switches the run_search tool description to the one for generated queries
+   *
+   * @param {object} chatToolsConfig
+   * @returns {object}
+   */
+  static setGeneratedSearchQueryDescription(chatToolsConfig) {
+    const indexOfRunSearchConfig = chatToolsConfig.findIndex(
+      item => item.function.name === RUN_SEARCH
+    );
+    if (
+      chatToolsConfig[indexOfRunSearchConfig].function.description !=
+      RUN_SEARCH_GENERATED_QUERY_DESCRIPION
+    ) {
+      chatToolsConfig[indexOfRunSearchConfig] =
+        RUN_SEARCH_TOOL_CONFIG_GENERATED_QUERY;
+    }
+    return chatToolsConfig;
+  }
+
+  /**
+   * @param {object} [toolParams]
    * @param {object} [context]
    * @param {BrowsingContext} [context.browsingContext]
    * @param {object} _secProps
    * @returns {Promise<string>}
    */
-  static async runSearch({ query }, context = {}, _secProps) {
+  static async runSearch(toolParams, context = {}, _secProps) {
+    // Decide if we'll use the user message verbatim as the search query or generate one
+    let query;
+    if (toolParams.query) {
+      query = toolParams.query;
+    } else {
+      const recentUserMessages = await ChatStore.getMostRecentMessages(
+        MESSAGE_ROLE.USER,
+        1
+      );
+      if (!recentUserMessages.length) {
+        return "Error: no user messages stored to user as the search query.";
+      }
+      query = recentUserMessages[0].content.body;
+    }
+
     if (!query || typeof query !== "string" || !query.trim()) {
       return "Error: a non-empty search query is required.";
     }
@@ -738,6 +817,13 @@ export class GetPageContent {
   }
 }
 
+/**
+ * Retrieves the summaries of all saved memories
+ *
+ * @param {object} _toolParams
+ * @param {object} _secProps
+ * @returns {Promise<Array<string>>}
+ */
 export async function getUserMemories(_toolParams, _secProps) {
   const memories = await lazy.MemoriesManager.getAllMemories();
 

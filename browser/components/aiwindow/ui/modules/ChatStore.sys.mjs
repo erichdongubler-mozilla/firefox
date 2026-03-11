@@ -428,6 +428,22 @@ class ChatStore {
     return parseMessageRows(rows);
   }
 
+  /**
+   * Search for messages for the most recent messages, optionally,
+   * filter the messages by a specific message role type.
+   *
+   * This is a wrapper around findMessagesByDate that defines the largest possible start and end date range.
+   *
+   * @param {MessageRole} [role=-1] - The message role type to filter by, one of 0|1|2|3
+   * as defined by the constant MESSAGE_ROLE
+   * @param {number} [limit=-1] - The max number of messages to retrieve
+   *
+   * @returns {Array<ChatMessage>} - An array of ChatMessage entries
+   */
+  async getMostRecentMessages(role = -1, limit = 5) {
+    return this.findMessagesByDate(new Date(0), new Date(), role, limit, -1);
+  }
+
   #escapeForLike(searchString) {
     return searchString
       .replaceAll(ESCAPE_CHAR, `${ESCAPE_CHAR}${ESCAPE_CHAR}`)
