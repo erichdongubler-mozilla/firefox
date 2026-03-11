@@ -206,13 +206,6 @@ class GeckoEngine(
     }
 
     /**
-     * See [Engine.warmUp].
-     */
-    override fun warmUp() {
-        runtime.warmUp()
-    }
-
-    /**
      * Creates a new Gecko-based EngineView.
      */
     override fun createView(context: Context, attrs: AttributeSet?): EngineView {

@@ -1656,7 +1656,6 @@ class GeckoEngineSession(
         defaultSettings?.clearColor?.let { geckoSession.compositorController.clearColor = it }
 
         if (shouldOpen) {
-            runtime.warmUp()
             geckoSession.open(runtime)
         }
 

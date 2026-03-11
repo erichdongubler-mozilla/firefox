@@ -301,7 +301,6 @@ class IntentReceiverActivityTest {
     private fun attachMocks(activity: Activity) {
         every { activity.settings() } returns settings
         every { activity.components.analytics } returns mockk(relaxed = true)
-        every { activity.components.core } returns mockk(relaxed = true)
         every { activity.components.intentProcessors } returns intentProcessors
         every { activity.components.strictMode } returns TestStrictModeManager()
     }
