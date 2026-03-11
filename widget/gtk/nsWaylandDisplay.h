@@ -46,7 +46,11 @@ class nsWaylandDisplay {
  public:
   // Create nsWaylandDisplay object on top of native Wayland wl_display
   // connection.
+  // Split nsWaylandDisplay setup to constructor & Init() call
+  // to allow calls WaylandDisplayGet() from Init() where we query
+  // wayland display setup.
   explicit nsWaylandDisplay(wl_display* aDisplay);
+  void Init();
 
   static uint32_t GetLastEventSerial();
   wl_display* GetDisplay() { return mDisplay; };
@@ -135,12 +139,15 @@ class nsWaylandDisplay {
   void RequestAsyncRoundtrip();
   void WaitForAsyncRoundtrips();
 
+  void RefreshScreens();
+
   struct MonitorConfig {
     int id = 0;
     int x = 0;
     int y = 0;
     int pixelWidth = 0;
     int pixelHeight = 0;
+    bool pendingChanges = true;
     explicit MonitorConfig(int aId) : id(aId) {}
   };
 
