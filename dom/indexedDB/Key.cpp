@@ -202,18 +202,21 @@ Result<Ok, nsresult> Key::SetFromString(const nsAString& aString) {
 uint32_t Key::LengthOfEncodedBinary(const EncodedDataType* aPos,
                                     const EncodedDataType* aEnd) {
   MOZ_ASSERT(*aPos % Key::eMaxType == Key::eBinary, "Don't call me!");
+  MOZ_DIAGNOSTIC_ASSERT(aPos < aEnd);
 
-  const auto* iter = aPos + 1;
-  for (; iter < aEnd && *iter != eTerminator; ++iter) {
-    if (*iter & 0x80) {
-      ++iter;
-      // XXX if iter == aEnd now, we got a bad enconding, should we report that
-      // also in non-debug builds?
-      MOZ_ASSERT(iter < aEnd);
-    }
-  }
+  const EncodedDataType* const begin = aPos + 1;
+  const EncodedDataType* encodedSectionEnd = nullptr;
 
-  return iter - aPos - 1;
+  // Stops at aEnd if the terminator is trimmed and correctly reports end
+  (void)CalcDecodedStringySize<uint8_t>(begin, aEnd, &encodedSectionEnd);
+
+  MOZ_DIAGNOSTIC_ASSERT(encodedSectionEnd && encodedSectionEnd >= begin &&
+                        encodedSectionEnd <= aEnd);
+  MOZ_DIAGNOSTIC_ASSERT(
+      encodedSectionEnd == aEnd ||
+      (encodedSectionEnd < aEnd && *encodedSectionEnd == eTerminator));
+
+  return AssertedCast<uint32_t>(encodedSectionEnd - begin);
 }
 
 Result<Key, nsresult> Key::ToLocaleAwareKey(const nsCString& aLocale) const {

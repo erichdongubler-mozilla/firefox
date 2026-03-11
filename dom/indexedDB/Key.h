@@ -187,10 +187,13 @@ class Key {
 
   Result<Ok, nsresult> MaybeUpdateAutoIncrementKey(int64_t aKey);
 
+  using EncodedDataType = unsigned char;
+
+  static uint32_t LengthOfEncodedBinary(const EncodedDataType* aPos,
+                                        const EncodedDataType* aEnd);
+
  private:
   class MOZ_STACK_CLASS ArrayValueEncoder;
-
-  using EncodedDataType = unsigned char;
 
   const EncodedDataType* BufferStart() const {
     // TODO it would be nicer if mBuffer was also using EncodedDataType
@@ -263,9 +266,6 @@ class Key {
   static uint32_t CalcDecodedStringySize(
       const EncodedDataType* aBegin, const EncodedDataType* aEnd,
       const EncodedDataType** aOutEncodedSectionEnd);
-
-  static uint32_t LengthOfEncodedBinary(const EncodedDataType* aPos,
-                                        const EncodedDataType* aEnd);
 
   template <typename T>
   static void DecodeAsStringy(const EncodedDataType* aEncodedSectionBegin,
