@@ -3377,6 +3377,12 @@ pref("first-startup.category-tasks-enabled", true);
   pref("browser.menu.share_url.allow", false);
 #endif
 
+#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+pref("browser.shareqrcode.enabled", true);
+#else
+pref("browser.shareqrcode.enabled", false);
+#endif
+
 // Mozilla-controlled domains that are allowed to use non-standard
 // context properties for SVG images for use in the browser UI. Please
 // keep this list short. This preference (and SVG `context-` keyword support)

@@ -11,6 +11,11 @@ const APPLE_COPY_LINK = "com.apple.share.CopyLink.invite";
 
 let lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  QRCodeGenerator:
+    "moz-src:///browser/components/qrcode/QRCodeGenerator.sys.mjs",
+});
+
 XPCOMUtils.defineLazyServiceGetters(lazy, {
   WindowsUIUtils: ["@mozilla.org/windows-ui-utils;1", Ci.nsIWindowsUIUtils],
 });
@@ -121,6 +126,31 @@ class SharingUtilsCls {
     return shareURLMenuItem;
   }
 
+  async #showQRCodePanel(win, browser, url) {
+    let qrCodeDataURI = null;
+    try {
+      qrCodeDataURI = await lazy.QRCodeGenerator.generateQRCode(
+        url,
+        win.document
+      );
+    } catch (error) {
+      console.error("Failed to generate QR code:", error);
+    }
+
+    let params = {
+      url,
+      qrCodeDataURI,
+    };
+
+    win.gBrowser
+      .getTabDialogBox(browser)
+      .open(
+        "chrome://browser/content/qrcode/qrcode-dialog.html",
+        { features: "resizable=no", allowDuplicateDialogs: false },
+        params
+      );
+  }
+
   /**
    * Get the sharing data for a given DOM node.
    */
@@ -181,7 +211,14 @@ class SharingUtilsCls {
 
     if (!menuPopup.hasAttribute("data-command-listener")) {
       menuPopup.addEventListener("command", event => {
-        if (event.target.classList.contains("share-more-button")) {
+        if (event.target.classList.contains("share-qrcode-item")) {
+          let { urlToShare: url } = this.getDataToShare(node);
+          let browser = node.browserToShare?.get();
+          if (url && browser) {
+            Glean.qrcode.opened.add(1);
+            this.#showQRCodePanel(node.ownerGlobal, browser, url);
+          }
+        } else if (event.target.classList.contains("share-more-button")) {
           this.openMacSharePreferences();
         } else if (event.target.classList.contains("share-copy-link")) {
           this.copyLink(node);
@@ -201,6 +238,21 @@ class SharingUtilsCls {
         item.setAttribute("disabled", "true");
       }
       menuPopup.appendChild(item);
+    }
+
+    if (Services.prefs.getBoolPref("browser.shareqrcode.enabled", false)) {
+      let qrCodeItem = document.createXULElement("menuitem");
+      qrCodeItem.classList.add("menuitem-iconic", "share-qrcode-item");
+      document.l10n.setAttributes(qrCodeItem, "menu-file-share-qrcode");
+      qrCodeItem.setAttribute("image", "chrome://browser/skin/qrcode.svg");
+      if (!shouldEnable) {
+        qrCodeItem.setAttribute("disabled", "true");
+      }
+      menuPopup.appendChild(qrCodeItem);
+    }
+
+    if (services.length) {
+      menuPopup.appendChild(document.createXULElement("menuseparator"));
     }
 
     // Share service items

@@ -52,6 +52,13 @@ registerCleanupFunction(function () {
   MockRegistrar.unregister(mockMacSharingService);
 });
 
+const qrCodeEnabled = Services.prefs.getBoolPref(
+  "browser.shareqrcode.enabled",
+  false
+);
+// copy link + service + More, plus QR code if enabled.
+const expectedItemCount = qrCodeEnabled ? 4 : 3;
+
 /**
  * Test the "Share" item menus in the tab contextmenu on MacOSX.
  */
@@ -73,7 +80,11 @@ add_task(async function test_contextmenu_share_macosx() {
     );
     let popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
     let items = Array.from(popup.querySelectorAll("menuitem"));
-    is(items.length, 3, "There should be 3 sharing services.");
+    is(
+      items.length,
+      expectedItemCount,
+      `There should be ${expectedItemCount} menu items.`
+    );
 
     info("Click on the sharing service");
     let menuPopupClosedPromised = BrowserTestUtils.waitForPopupEvent(
@@ -112,7 +123,11 @@ add_task(async function test_contextmenu_share_macosx() {
     ok(getSharingProvidersSpy.calledTwice, "getSharingProviders called again");
     popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
     items = Array.from(popup.querySelectorAll("menuitem"));
-    is(items.length, 3, "There should be 3 sharing services.");
+    is(
+      items.length,
+      expectedItemCount,
+      `There should be ${expectedItemCount} menu items.`
+    );
     info("Click on the Copy Link item");
     let copyLinkItem = items.find(
       item => item.dataset.l10nId == "menu-share-copy-link"
@@ -134,10 +149,14 @@ add_task(async function test_contextmenu_share_macosx() {
     is(getSharingProvidersSpy.callCount, 3, "getSharingProviders called again");
     popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
     items = popup.querySelectorAll("menuitem");
-    is(items.length, 3, "There should be 3 sharing services.");
+    is(
+      items.length,
+      expectedItemCount,
+      `There should be ${expectedItemCount} menu items.`
+    );
 
     info("Click on the More item");
-    let moreMenuitem = items[2];
+    let moreMenuitem = popup.querySelector(".share-more-button");
     menuPopupClosedPromised = BrowserTestUtils.waitForPopupEvent(
       contextMenu,
       "hidden"

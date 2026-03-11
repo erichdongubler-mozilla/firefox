@@ -330,14 +330,6 @@ var allowlist = [
   {
     file: "resource://app/modules/backup/CookiesBackupResource.sys.mjs",
   },
-
-  // Bug 1996315: QR code generation modules
-  {
-    file: "moz-src:///browser/components/qrcode/QRCodeGenerator.sys.mjs",
-  },
-  {
-    file: "moz-src:///browser/components/qrcode/QRCodeWorker.sys.mjs",
-  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {

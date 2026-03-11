@@ -50,6 +50,7 @@ const lazy = XPCOMUtils.declareLazy({
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchModeSwitcher:
     "moz-src:///browser/components/urlbar/SearchModeSwitcher.sys.mjs",
+  SharingUtils: "resource:///modules/SharingUtils.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   UrlbarController:
@@ -580,6 +581,9 @@ export class UrlbarInput extends HTMLElement {
   #onContextMenuRebuilt() {
     this._initStripOnShare();
     this._initPasteAndGo();
+    if (AppConstants.platform == "macosx") {
+      this.#initShareURL();
+    }
   }
 
   addGBrowserListeners() {
@@ -4376,6 +4380,21 @@ export class UrlbarInput extends HTMLElement {
     });
 
     insertLocation.insertAdjacentElement("afterend", pasteAndGo);
+  }
+
+  #initShareURL() {
+    let contextMenu = this.querySelector("moz-input-box").menupopup;
+    let insertLocation = this.#findMenuItemLocation("cmd_selectAll");
+
+    let separator = this.document.createXULElement("menuseparator");
+    insertLocation.insertAdjacentElement("afterend", separator);
+
+    contextMenu.addEventListener("popupshowing", () => {
+      let browser = this.window.gBrowser?.selectedBrowser;
+      if (browser) {
+        lazy.SharingUtils.updateShareURLMenuItem(browser, separator);
+      }
+    });
   }
 
   /**
