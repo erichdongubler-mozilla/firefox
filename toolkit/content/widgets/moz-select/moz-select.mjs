@@ -192,6 +192,16 @@ export default class MozSelect extends MozBaseInputElement {
     if (event.button !== 0) {
       return;
     }
+    /**
+     * Bug 2017668 - This is required for the "Default search engine"
+     * and private search engine moz-selects. Otherwise, clicking on one
+     * of the select elements, using arrow keys to navigate, and then clicking
+     * on the other select element will cause focus to jump between the two
+     * moz-select elements while toggling their respective panels.
+     */
+    if (navigator.platform.includes("Mac")) {
+      this.panelTrigger?.focus();
+    }
     this.panelList?.toggle(event);
   }
 
