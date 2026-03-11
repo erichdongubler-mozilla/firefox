@@ -1227,12 +1227,14 @@ class TextInputDelegateTest : BaseSessionTest() {
                     "#input" ->
                         InputType.TYPE_CLASS_TEXT or
                             InputType.TYPE_TEXT_FLAG_AUTO_CORRECT or
-                            InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE
+                            InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE or
+                            InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT
                     else ->
                         InputType.TYPE_CLASS_TEXT or
                             InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or
                             InputType.TYPE_TEXT_FLAG_AUTO_CORRECT or
-                            InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE
+                            InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE or
+                            InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT
                 },
             ),
         )
@@ -1291,7 +1293,8 @@ class TextInputDelegateTest : BaseSessionTest() {
                             InputType.TYPE_CLASS_TEXT or
                                 InputType.TYPE_TEXT_FLAG_AUTO_CORRECT or
                                 InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE or
-                                InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                                InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or
+                                InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT
                         "#tel1" -> InputType.TYPE_CLASS_PHONE
                         "#url1" ->
                             InputType.TYPE_CLASS_TEXT or

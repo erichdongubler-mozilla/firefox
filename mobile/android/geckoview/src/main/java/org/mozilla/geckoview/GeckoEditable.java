@@ -2034,7 +2034,8 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         outAttrs.inputType = InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL;
       } else {
         // TYPE_TEXT_FLAG_IME_MULTI_LINE flag makes the fullscreen IME line wrap
-        outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE;
+        outAttrs.inputType |=
+            InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE | InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT;
       }
     }
 
