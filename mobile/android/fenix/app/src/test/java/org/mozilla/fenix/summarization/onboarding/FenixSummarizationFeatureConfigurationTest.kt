@@ -239,4 +239,78 @@ class FenixSummarizationFeatureConfigurationTest {
             testSettings.shakeToSummarizeToolbarInteractionCount.value,
         )
     }
+
+    @Test
+    fun `cfr is marked as shown if it was not previously seen before`() {
+        // GIVEN the feature flag is enabled
+        testSettings.shakeToSummarizeFeatureFlagEnabled = true
+        testSettings.shakeToSummarizeFeatureUserPreference = true
+
+        // when the cfr is shown
+        discoverySettings.cacheDiscoveryEvent(SummarizeDiscoveryEvent.CfrExposure)
+
+        // THEN the settings should be updated
+        assertTrue(
+            "CFR item should not get recorded if it is already",
+            testSettings.shakeToSummarizeToolbarCfrShown,
+        )
+    }
+
+    @Test
+    fun `toolbar cfr is not shown if the feature flag is not enabled`() {
+        // GIVEN the feature flag is NOT enabled
+        testSettings.shakeToSummarizeFeatureFlagEnabled = false
+
+        // GIVEN the feature is enabled
+        testSettings.shakeToSummarizeFeatureUserPreference = true
+
+        assertFalse(
+            "Toolbar CFR should not be shown if the feature flag is not enabled",
+            discoverySettings.shouldToolbarShowCfr,
+        )
+    }
+
+    @Test
+    fun `toolbar cfr is not shown if the user settings for the feature itself is not enabled`() {
+        // GIVEN the feature flag is enabled
+        testSettings.shakeToSummarizeFeatureFlagEnabled = true
+
+        // AND the feature is NOT enabled
+        testSettings.shakeToSummarizeFeatureUserPreference = false
+
+        assertFalse(
+            "Toolbar CFR should not be shown if the feature itself is not enabled",
+            discoverySettings.shouldToolbarShowCfr,
+        )
+    }
+
+    @Test
+    fun `toolbar cfr is shown if we have not shown it before`() {
+        // GIVEN the feature flag fully available
+        testSettings.shakeToSummarizeFeatureFlagEnabled = true
+        testSettings.shakeToSummarizeFeatureUserPreference = true
+
+        // AND we have not shown the flag before
+        testSettings.shakeToSummarizeToolbarCfrShown = false
+
+        assertTrue(
+            "Toolbar CFR should be shown if it has not been shown before",
+            discoverySettings.shouldToolbarShowCfr,
+        )
+    }
+
+    @Test
+    fun `toolbar cfr is not shown if we have shown it before even if the feature is fully available`() {
+        // GIVEN the feature flag fully available
+        testSettings.shakeToSummarizeFeatureFlagEnabled = true
+        testSettings.shakeToSummarizeFeatureUserPreference = true
+
+        // AND we have shown the flag before
+        testSettings.shakeToSummarizeToolbarCfrShown = true
+
+        assertFalse(
+            "Toolbar CFR should not be shown if it has already been shown before",
+            discoverySettings.shouldToolbarShowCfr,
+        )
+    }
 }

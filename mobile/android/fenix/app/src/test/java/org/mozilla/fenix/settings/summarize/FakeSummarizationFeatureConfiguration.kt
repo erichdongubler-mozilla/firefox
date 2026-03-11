@@ -15,9 +15,11 @@ import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
  */
 class FakeSummarizationFeatureConfiguration(
     var expectedToolbarMenuButtonHighlight: Boolean = false,
+    override var shouldToolbarShowCfr: Boolean = false,
 ) : SummarizationFeatureDiscoveryConfiguration, SummarizationFeatureSettings {
 
     var menuItemExposureCount: Int = 0
+    var cfrExposureCount: Int = 0
     var menuOverflowInteractionCount: Int = 0
     var toolbarOverflowMenuInteractionCount: Int = 0
 
@@ -37,6 +39,7 @@ class FakeSummarizationFeatureConfiguration(
             SummarizeDiscoveryEvent.MenuItemExposure -> menuItemExposureCount++
             SummarizeDiscoveryEvent.MenuOverflowInteraction -> menuOverflowInteractionCount++
             SummarizeDiscoveryEvent.ToolbarOverflowInteraction -> toolbarOverflowMenuInteractionCount++
+            SummarizeDiscoveryEvent.CfrExposure -> cfrExposureCount++
         }
     }
 }

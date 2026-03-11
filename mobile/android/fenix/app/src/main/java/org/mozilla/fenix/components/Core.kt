@@ -133,6 +133,8 @@ import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.share.DefaultSentFromFirefoxManager
 import org.mozilla.fenix.share.DefaultSentFromStorage
 import org.mozilla.fenix.share.SaveToPDFMiddleware
+import org.mozilla.fenix.summarization.eligibility.DefaultSummarizationEligibilityChecker
+import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.telemetry.TelemetryMiddleware
@@ -665,6 +667,13 @@ class Core(
      */
     val summarizeFeatureSettings: FenixSummarizationFeatureConfiguration by lazyMonitored {
         FenixSummarizationFeatureConfiguration(settings = context.components.settings)
+    }
+
+    /**
+     * Summarization eligibility checker
+     */
+    val summarizationEligibilityChecker: SummarizationEligibilityChecker by lazyMonitored {
+        DefaultSummarizationEligibilityChecker()
     }
 
     /**

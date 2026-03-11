@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.selector.findTab
@@ -194,7 +195,11 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             lifecycle.addObserver(accelerometer)
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    accelerometer.detectShakes().collect {
+                    accelerometer.detectShakes()
+                        .onStart {
+                            summarizeToolbarCfrBinding.get()?.maybeDismissCfr()
+                        }
+                        .collect {
                         findNavController().apply {
                             // We don't want to navigate to the summarization fragment if the current
                             // tab is private.

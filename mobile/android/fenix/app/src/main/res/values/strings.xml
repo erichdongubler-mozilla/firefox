@@ -328,6 +328,9 @@
          %2$s is the name of the language which the page was translated to. (For example: French) -->
     <string name="browser_toolbar_translated_successfully">Page translated from %1$s to %2$s.</string>
 
+    <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+    <string name="browser_toolbar_summarize_cfr_description">Shake your device to summarize this page in seconds. ⚡️</string>
+
     <!-- Translation Toolbar -->
     <!-- Translation toolbar label that is displayed when the current page has been translated by the translation feature.
          %1$s is the name of the language that is displayed in the original page. (For example: English)

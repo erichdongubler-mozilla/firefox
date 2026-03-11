@@ -2612,6 +2612,14 @@ class Settings(
     )
 
     /**
+     * Tracks if the user has been shown the shake to summarize toolbar CFR
+     */
+    var shakeToSummarizeToolbarCfrShown by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_summarize_toolbar_cfr_shown),
+        default = false,
+    )
+
+    /**
      * Indicates if a microsurvey should be shown to the user.
      */
     var shouldShowMicrosurveyPrompt by booleanPreference(

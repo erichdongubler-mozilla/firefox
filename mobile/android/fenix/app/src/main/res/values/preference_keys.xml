@@ -488,6 +488,8 @@
      -->
     <string name="pref_key_summarize_highlight_toolbar_interaction_count" translatable="false">pref_key_summarize_highlight_toolbar_interaction_count</string>
 
+    <!-- Summarize feature: preference key to track if the user has seen the shake to summarize toolbar CFR-->
+    <string name="pref_key_summarize_toolbar_cfr_shown" translatable="false">pref_key_summarize_toolbar_cfr_shown</string>
 
     <!-- Logins -->
     <string name="pref_key_logins_list_sort_order" translatable="false">pref_key_logins_list_sort_order</string>
