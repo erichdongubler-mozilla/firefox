@@ -581,6 +581,7 @@ add_task(async function test_context_mentions_added_smartbar_header_sidebar() {
   const win = await openAIWindow();
   AIWindowUI.toggleSidebar(win);
   const browser = win.document.getElementById("ai-window-browser");
+  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
 
   await SpecialPowers.spawn(browser, [], async () => {
     const smartbar = await ContentTaskUtils.waitForCondition(() => {
