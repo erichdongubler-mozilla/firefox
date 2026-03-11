@@ -11,6 +11,7 @@ add_task(async function () {
   await testDiv(inspector, viewDoc);
   await testNestedSpan(inspector, viewDoc);
   await testUpdatedValues(inspector, viewDoc);
+  await testRoundedValues(inspector, viewDoc);
 });
 
 async function testDiv(inspector, viewDoc) {
@@ -54,4 +55,35 @@ async function testUpdatedValues(inspector, viewDoc) {
   sizeInput.focus();
   await onFocus;
   is(sizeInput.value, "2", "font-size value is 2 after focusing");
+}
+
+async function testRoundedValues(inspector, viewDoc) {
+  await selectNode(".rounded-value", inspector);
+  const sizeInput = viewDoc.querySelector(
+    `.font-value-input[name="font-size"]`
+  );
+  is(
+    sizeInput.value,
+    "1.111111",
+    "font-size value is not rounded before focusing"
+  );
+
+  let onFocus = once(sizeInput, "focus");
+  sizeInput.focus();
+  await onFocus;
+  is(
+    sizeInput.value,
+    "1.111111",
+    "font-size value is not rounded when focused"
+  );
+
+  const onEditorUpdated = inspector.once("fonteditor-updated");
+  sizeInput.blur();
+  await onEditorUpdated;
+  is(sizeInput.value, "1.111", "font-size value is rounded when blurred");
+
+  onFocus = once(sizeInput, "focus");
+  sizeInput.focus();
+  await onFocus;
+  is(sizeInput.value, "1.111", "font-size value is rounded when focused again");
 }
