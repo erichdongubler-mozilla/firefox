@@ -717,10 +717,6 @@ export const AIWindow = {
 
     root.toggleAttribute("hide-ai-sidebar", isImmersiveView);
 
-    if (isImmersiveView) {
-      lazy.AIWindowUI.closeSidebar(win);
-    }
-
     /* sets attr only for first run for css reasons */
     const isFirstRun = currentURI.equalsExceptRef(FIRSTRUN_URI);
     root.toggleAttribute("aiwindow-first-run", isFirstRun && isImmersiveView);

@@ -23,19 +23,26 @@ async function navigateAndWait(win, url) {
 function assertSidebarHidden(win, context) {
   const box = win.document.getElementById(AIWindowUI.BOX_ID);
   const splitter = win.document.getElementById(AIWindowUI.SPLITTER_ID);
-  const isHidden = el =>
-    el.collapsed || win.getComputedStyle(el).display === "none";
 
-  Assert.ok(isHidden(box), `Box should be hidden ${context}`);
-  Assert.ok(isHidden(splitter), `Splitter should be hidden ${context}`);
+  Assert.ok(BrowserTestUtils.isHidden(box), `Box should be hidden ${context}`);
+  Assert.ok(
+    BrowserTestUtils.isHidden(splitter),
+    `Splitter should be hidden ${context}`
+  );
 }
 
 function assertSidebarVisible(win, context) {
   const box = win.document.getElementById(AIWindowUI.BOX_ID);
   const splitter = win.document.getElementById(AIWindowUI.SPLITTER_ID);
 
-  Assert.ok(!box.collapsed, `Box should be visible ${context}`);
-  Assert.ok(!splitter.collapsed, `Splitter should be visible ${context}`);
+  Assert.ok(
+    BrowserTestUtils.isVisible(box),
+    `Box should be visible ${context}`
+  );
+  Assert.ok(
+    BrowserTestUtils.isVisible(splitter),
+    `Splitter should be visible ${context}`
+  );
   Assert.equal(
     AIWindowUI.isSidebarOpen(win),
     true,
@@ -103,7 +110,7 @@ add_task(async function test_open_sidebar_immersive_view() {
     "Chrome window has the aiwindow-immersive-view attribute"
   );
 
-  await AIWindowUI.openSidebar(win);
+  AIWindowUI.openSidebar(win);
   assertSidebarHidden(win, "when openSidebar called on firstrun page");
 
   await navigateAndWait(win, "https://example.com/");

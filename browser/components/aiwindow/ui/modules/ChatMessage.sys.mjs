@@ -26,7 +26,6 @@ export class ChatMessage {
   memoriesApplied;
   webSearchQueries;
   pageHistoryDeleted;
-  tokens;
 
   /**
    * @param {object} param
@@ -86,8 +85,8 @@ export class ChatMessage {
     convId = null,
     memoriesEnabled = null,
     memoriesFlagSource = null,
-    memoriesApplied = [],
-    webSearchQueries = [],
+    memoriesApplied = null,
+    webSearchQueries = null,
     params = null,
     usage = null,
     modelId = null,
@@ -114,35 +113,6 @@ export class ChatMessage {
     this.memoriesApplied = memoriesApplied;
     this.webSearchQueries = webSearchQueries;
     this.pageHistoryDeleted = pageHistoryDeleted;
-    this.tokens = {
-      search: [],
-      existing_memory: [],
-      followup: [],
-    };
-  }
-
-  /**
-   * Processes tokens from the AI response stream and updates the message.
-   * Adds all tokens to their respective arrays in the tokens object and
-   * builds the memoriesApplied array for existing_memory tokens.
-   *
-   * @param {Array<{key: string, value: string}>} tokens - Array of parsed tokens from the stream
-   */
-  addTokens(tokens) {
-    tokens.forEach(({ key, value }) => {
-      if (Array.isArray(this.tokens[key])) {
-        this.tokens[key].push(value);
-      }
-
-      switch (key) {
-        case "existing_memory":
-          this.memoriesApplied.push(value);
-          break;
-        case "search":
-          this.webSearchQueries.push(value);
-          break;
-      }
-    });
   }
 }
 

@@ -4,6 +4,11 @@
 
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+import {
+  createParserState,
+  consumeStreamChunk,
+  flushTokenRemainder,
+} from "chrome://browser/content/aiwindow/modules/TokenStreamParser.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-prompts.mjs";
 
@@ -246,8 +251,7 @@ export class AIWindow extends MozLitElement {
     this.userPrompt = "";
     this.#browser = null;
     this.#smartbar = null;
-    this.#swapConversation(new lazy.ChatConversation({}));
-
+    this.#conversation = new lazy.ChatConversation({});
     this.mode = this.#detectModeFromContext();
     this.showStarters = false;
     this.showFooter = this.mode === FULLPAGE;
@@ -258,32 +262,6 @@ export class AIWindow extends MozLitElement {
       this.classList.add("chat-active");
     }
   }
-
-  #attachConversationListeners() {
-    if (!this.#conversation) {
-      return;
-    }
-
-    this.#conversation.on(
-      "chat-conversation:message-update",
-      this.#onMessageUpdate
-    );
-  }
-
-  #removeConversationListeners() {
-    if (!this.#conversation) {
-      return;
-    }
-
-    this.#conversation.off(
-      "chat-conversation:message-update",
-      this.#onMessageUpdate
-    );
-  }
-
-  #onMessageUpdate = (event, message) => {
-    this.#dispatchMessageToChatContent(message);
-  };
 
   /**
    * Gets the conversation id from data-conversation-id attribute
@@ -418,7 +396,6 @@ export class AIWindow extends MozLitElement {
     }
 
     // Clean up conversation
-    this.#removeConversationListeners();
     this.#conversation = null;
 
     this.ownerDocument.removeEventListener("OpenConversation", this);
@@ -883,7 +860,7 @@ export class AIWindow extends MozLitElement {
    * @private
    */
   async #addConversationTitle() {
-    if (this.#conversation.title || this.#conversation.titlePromise) {
+    if (this.#conversation.title) {
       return;
     }
 
@@ -891,7 +868,7 @@ export class AIWindow extends MozLitElement {
       m => m.role === lazy.MESSAGE_ROLE.USER
     );
 
-    this.#conversation.titlePromise = lazy.generateChatTitle(
+    const title = await lazy.generateChatTitle(
       firstUserMessage?.content?.body,
       {
         url: firstUserMessage?.pageUrl?.href || "",
@@ -899,8 +876,6 @@ export class AIWindow extends MozLitElement {
         description: this.#conversation.pageMeta?.description || "",
       }
     );
-    const title = await this.#conversation.titlePromise;
-    delete this.#conversation.titlePromise;
 
     this.#conversation.title = title;
     document.title = title;
@@ -997,7 +972,6 @@ export class AIWindow extends MozLitElement {
     if (!formattedPrompt && inputText !== false) {
       return;
     }
-
     this.showStarters = false;
     this.showFooter = false;
     this.showDisclaimer = true;
@@ -1033,27 +1007,91 @@ export class AIWindow extends MozLitElement {
         this.#conversation.addAssistantMessage("text", "", assistantRoleOpts);
       }
 
+      const stream = lazy.Chat.fetchWithHistory(
+        this.#conversation,
+        engineInstance,
+        {
+          // Use the adjacent tab's browsing context for sidebar or current for
+          // fullpage for tools that need context.
+          browsingContext:
+            this.mode === SIDEBAR
+              ? window.browsingContext.topChromeWindow.gBrowser.selectedBrowser
+                  .browsingContext
+              : window.browsingContext,
+        }
+      );
+
+      this.#updateConversation();
       this.#addConversationTitle();
 
-      await lazy.Chat.fetchWithHistory(this.#conversation, engineInstance, {
-        inputText,
-        browsingContext: this.#getBrowsingContext(),
-      });
+      const parserState = createParserState();
+      const currentMessage = this.#conversation.messages
+        .filter(
+          message =>
+            message.role === lazy.MESSAGE_ROLE.ASSISTANT &&
+            (inputText !== false || message?.content?.type === "text")
+        )
+        .at(-1);
+
+      if (inputText === false) {
+        const separator = currentMessage?.content?.body ? "\n\n" : "";
+        if (currentMessage && separator) {
+          currentMessage.content.body += separator;
+        }
+      }
+
+      for await (const chunk of stream) {
+        if (chunk && typeof chunk === "object" && "searching" in chunk) {
+          this.showSearchingIndicator(chunk.searching, chunk.query);
+          continue;
+        }
+        const { plainText, tokens } = consumeStreamChunk(chunk, parserState);
+
+        if (!currentMessage.tokens) {
+          currentMessage.tokens = {
+            search: [],
+            existing_memory: [],
+            followup: [],
+          };
+        }
+
+        if (plainText) {
+          currentMessage.content.body += plainText;
+        }
+
+        if (tokens?.length) {
+          this.handleTokens(tokens, currentMessage);
+        }
+        this.#updateConversation();
+        this.#dispatchMessageToChatContent(currentMessage);
+        this.requestUpdate?.();
+      }
+
+      // End of stream: if there was an unclosed §... treat as literal text
+      const remainder = flushTokenRemainder(parserState);
+
+      if (remainder) {
+        currentMessage.content.body += remainder;
+        this.#updateConversation();
+        this.#dispatchMessageToChatContent(currentMessage);
+        this.requestUpdate?.();
+      }
+
+      if (currentMessage._pendingMemoryIds?.length) {
+        currentMessage.memoriesApplied =
+          await lazy.MemoriesManager.getMemoriesByID([
+            ...new Set(currentMessage._pendingMemoryIds),
+          ]);
+        delete currentMessage._pendingMemoryIds;
+        this.#updateConversation();
+        this.#dispatchMessageToChatContent(currentMessage);
+      }
     } catch (e) {
       this.showSearchingIndicator(false, null);
       this.#handleError(e);
       this.requestUpdate?.();
     }
   };
-
-  #getBrowsingContext() {
-    // Use the adjacent tab's browsing context for sidebar or current for
-    // fullpage for tools that need context.
-    return this.mode === SIDEBAR
-      ? window.browsingContext.topChromeWindow.gBrowser.selectedBrowser
-          .browsingContext
-      : window.browsingContext;
-  }
 
   #handleError(error) {
     const errorMessage = error.error ?? error.metadata?.errorMessage;
@@ -1175,23 +1213,8 @@ export class AIWindow extends MozLitElement {
         pageUrl: this.#getCurrentPageUrl(),
         conversationId: this.#getDataConvId(),
         tab: topChromeWindow?.gBrowser?.selectedTab,
-        conversation: this.#conversation,
       },
     };
-  }
-
-  /**
-   * Remove the event listeners from the current conversation, update the
-   * conversation reference, and attach chat-conversation event listeners.
-   *
-   * @param {ChatConversation} conversation
-   *
-   * @private
-   */
-  #swapConversation(conversation) {
-    this.#removeConversationListeners();
-    this.#conversation = conversation;
-    this.#attachConversationListeners();
   }
 
   /**
@@ -1200,9 +1223,8 @@ export class AIWindow extends MozLitElement {
    * @param {ChatConversation} conversation
    */
   openConversation(conversation) {
-    if (conversation?.messages?.length) {
-      this.#swapConversation(conversation);
-
+    if (conversation.messages?.length) {
+      this.#conversation = conversation;
       this.#syncHistoryState();
 
       if (this.#conversation.title) {
@@ -1244,8 +1266,7 @@ export class AIWindow extends MozLitElement {
   onCreateNewChatClick() {
     // Clear conversation state. The new conversation's ID is persisted to the
     // host browser attribute and history.state so back navigation can restore it.
-    this.#swapConversation(new lazy.ChatConversation({}));
-
+    this.#conversation = new lazy.ChatConversation({});
     this.#syncHistoryState();
 
     const hostBrowser = window.browsingContext?.embedderElement;
@@ -1315,11 +1336,6 @@ export class AIWindow extends MozLitElement {
         }
       } catch {}
     }
-
-    this.#dispatchChromeEvent(
-      "ai-window:opened-conversation",
-      this.#getAIWindowEventOptions()
-    );
 
     this.#fetchAIResponse();
   }

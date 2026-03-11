@@ -283,7 +283,7 @@ add_task(
       );
 
       // Open sidebar for tab B
-      await AIWindowUI.openSidebar(win, conversationB);
+      AIWindowUI.openSidebar(win, conversationB);
       Assert.ok(
         AIWindowUI.isSidebarOpen(win),
         "Sidebar should be open for tab B"
@@ -533,7 +533,6 @@ add_task(
           detail: {
             mode: "fullpage",
             conversationId: "conv-a",
-            conversation: conversationA,
             tab: tabA,
           },
         })
@@ -570,7 +569,7 @@ add_task(
       // Give time for the conversation event to be processed before proceeding
       await TestUtils.waitForTick();
 
-      await AIWindowUI.openSidebar(win);
+      AIWindowUI.openSidebar(win);
 
       const sidebarBrowser = win.document.getElementById(AIWindowUI.BROWSER_ID);
       await TestUtils.waitForCondition(
