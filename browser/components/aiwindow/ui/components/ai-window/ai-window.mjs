@@ -462,7 +462,7 @@ export class AIWindow extends MozLitElement {
       this.#visibilityChangeHandler = () => {
         if (!doc.hidden && !this.#smartbar) {
           this.#getOrCreateSmartbar(doc, container);
-          this.#loadStarterPrompts();
+          this.loadStarterPrompts();
         }
       };
       doc.addEventListener("visibilitychange", this.#visibilityChangeHandler, {
@@ -470,7 +470,7 @@ export class AIWindow extends MozLitElement {
       });
     } else {
       this.#getOrCreateSmartbar(doc, container);
-      this.#loadStarterPrompts();
+      this.loadStarterPrompts();
     }
   }
 
@@ -492,9 +492,13 @@ export class AIWindow extends MozLitElement {
    * In sidebar mode, uses LLM-generated prompts based on tab context and memories.
    * In fullpage mode, uses static prompts based on tab count.
    *
-   * @private
+   * @param {boolean} [clear=false] Clear current starter prompts?
    */
-  async #loadStarterPrompts() {
+  async loadStarterPrompts(clear = false) {
+    if (clear) {
+      this.#renderStarterPrompts([]);
+    }
+
     if (!this.isConnected) {
       return;
     }
@@ -503,15 +507,16 @@ export class AIWindow extends MozLitElement {
       return;
     }
 
+    let starters = [];
     try {
       const gBrowser = window.browsingContext?.topChromeWindow.gBrowser;
       const tabCount = gBrowser?.tabs.length || 0;
-      let starters = await lazy.NewTabStarterGenerator.getPrompts(
-        tabCount
-      ).catch(e => {
-        lazy.log.error("[Prompts] Failed to load initial starters:", e);
-        return [];
-      });
+      starters = await lazy.NewTabStarterGenerator.getPrompts(tabCount).catch(
+        e => {
+          lazy.log.error("[Prompts] Failed to load initial starters:", e);
+          return [];
+        }
+      );
 
       if (this.mode === SIDEBAR && gBrowser) {
         // Get tab context for LLM-generated prompts
@@ -536,15 +541,11 @@ export class AIWindow extends MozLitElement {
           starters = sidebarStarters;
         }
       }
-
-      if (!starters || starters.length === 0) {
-        return;
-      }
-
-      this.#renderStarterPrompts(starters);
     } catch (e) {
-      console.error("[Prompts] Failed to load initial starters:", e);
+      lazy.log.error("[Prompts] Failed to load initial starters:", e);
     }
+
+    this.#renderStarterPrompts(starters);
   }
 
   /**
@@ -559,12 +560,9 @@ export class AIWindow extends MozLitElement {
       return;
     }
 
-    if (this.#conversation?.messages?.length) {
-      return;
-    }
-
-    this.#starters = starters;
+    this.#starters = this.#conversation?.messages?.length ? [] : starters;
     this.showStarters = !!starters.length;
+    this.requestUpdate();
   }
 
   /**
@@ -1295,7 +1293,9 @@ export class AIWindow extends MozLitElement {
     // Hide chat-active state
     this.#setBrowserContainerActiveState(false);
 
-    this.#loadStarterPrompts();
+    this.showStarters = false;
+
+    this.loadStarterPrompts();
   }
 
   showSearchingIndicator(isSearching, searchQuery) {
