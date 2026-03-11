@@ -169,6 +169,7 @@ function assertPseudoRemoved(inspector, view, numRules) {
 
 function assertPseudoPanelOpened(view) {
   info("Check the opened state of the pseudo class panel");
+  ok(!view.pseudoClassPanel.inert, "Pseudo-class panel is not inert");
   ok(!view.pseudoClassPanel.hidden, "Pseudo Class Panel Opened");
   is(
     view.pseudoClassToggle.getAttribute("aria-pressed"),
@@ -179,31 +180,18 @@ function assertPseudoPanelOpened(view) {
   for (const pseudo of PSEUDO_CLASSES) {
     const checkbox = getPseudoClassCheckbox(view, pseudo);
     ok(!checkbox.disabled, `${pseudo} checkbox is not disabled`);
-    is(
-      checkbox.getAttribute("tabindex"),
-      "0",
-      `${pseudo} checkbox has a tabindex of 0`
-    );
   }
 }
 
 function assertPseudoPanelClosed(view) {
   info("Check the closed state of the pseudo clas panel");
+  ok(view.pseudoClassPanel.inert, "Pseudo-class panel is inert");
   ok(view.pseudoClassPanel.hidden, "Pseudo Class Panel Hidden");
   is(
     view.pseudoClassToggle.getAttribute("aria-pressed"),
     "false",
     "The toggle button is not pressed"
   );
-
-  for (const pseudo of PSEUDO_CLASSES) {
-    const checkbox = getPseudoClassCheckbox(view, pseudo);
-    is(
-      checkbox.getAttribute("tabindex"),
-      "-1",
-      `${pseudo} checkbox has a tabindex of -1`
-    );
-  }
 }
 
 function assertPseudoClassCheckboxesState(view, enabled) {
