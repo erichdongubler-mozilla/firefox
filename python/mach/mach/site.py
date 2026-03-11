@@ -441,7 +441,7 @@ class MachSiteManager:
 
     def attempt_populate_optional_packages(self):
         if self._site_packages_source != SitePackagesSource.VENV:
-            pass
+            return
 
         self._virtualenv().install_optional_packages(
             self._requirements.pypi_optional_requirements
