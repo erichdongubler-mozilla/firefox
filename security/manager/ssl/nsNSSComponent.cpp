@@ -1341,6 +1341,7 @@ static nsresult InitializeNSSWithFallbacks(const nsACString& profilePath,
   srv = ::mozilla::psm::InitializeNSS(profilePath, NSSDBConfig::ReadOnly,
                                       safeModeDBConfig);
   if (srv == SECSuccess) {
+    mozilla::glean::nss::initialization_fallbacks.Get("READ_ONLY"_ns).Add(1);
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized NSS in r-o mode"));
     return NS_OK;
   }
@@ -1396,12 +1397,17 @@ static nsresult InitializeNSSWithFallbacks(const nsACString& profilePath,
       srv = ::mozilla::psm::InitializeNSS(profilePath, NSSDBConfig::ReadWrite,
                                           PKCS11DBConfig::LoadModules);
       if (srv == SECSuccess) {
+        mozilla::glean::nss::initialization_fallbacks.Get("RENAME_MODULE_DB"_ns)
+            .Add(1);
         MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized in r/w mode"));
         return NS_OK;
       }
       srv = ::mozilla::psm::InitializeNSS(profilePath, NSSDBConfig::ReadOnly,
                                           PKCS11DBConfig::LoadModules);
       if (srv == SECSuccess) {
+        mozilla::glean::nss::initialization_fallbacks
+            .Get("RENAME_MODULE_DB_READ_ONLY"_ns)
+            .Add(1);
         MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("initialized in r-o mode"));
         return NS_OK;
       }
@@ -1417,7 +1423,11 @@ static nsresult InitializeNSSWithFallbacks(const nsACString& profilePath,
                             PR_GetError());
   }
 #endif
-  return srv == SECSuccess ? NS_OK : NS_ERROR_FAILURE;
+  if (srv == SECSuccess) {
+    mozilla::glean::nss::initialization_fallbacks.Get("NO_DB_INIT"_ns).Add(1);
+    return NS_OK;
+  }
+  return NS_ERROR_FAILURE;
 }
 
 #if defined(NIGHTLY_BUILD) && !defined(ANDROID)

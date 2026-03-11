@@ -1672,3 +1672,22 @@ oskeystore:
         description: >
           The error code, converted to a string.
         type: string
+
+nss:
+  initialization_fallbacks:
+    type: labeled_counter
+    description: Count of how often various NSS initialization fallback methods are used.
+    data_sensitivity:
+     - technical
+    bugs:
+      - https://bugzilla.mozilla.org/2021456
+    data_reviews:
+      - https://bugzilla.mozilla.org/2021456
+    notification_emails:
+      - dkeeler@mozilla.com
+    expires: never
+    labels:
+     - READ_ONLY
+     - RENAME_MODULE_DB
+     - RENAME_MODULE_DB_READ_ONLY
+     - NO_DB_INIT

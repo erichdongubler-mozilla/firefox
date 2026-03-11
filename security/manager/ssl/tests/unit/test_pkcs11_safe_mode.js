@@ -9,6 +9,7 @@
 
 add_task(async function run_test() {
   do_get_profile();
+  Services.fog.initializeFOG();
 
   // Simulate starting in safe mode.
   let xulRuntime = {
@@ -62,4 +63,12 @@ add_task(async function run_test() {
     ok(/NS_ERROR_FAILURE/.test(e), "expecting NS_ERROR_FAILURE");
   }
   ok(caughtException, "addModule should throw when in safe mode");
+
+  // Though we loaded in safe mode, no NSS initialization fallbacks should have been used.
+  ok(!Glean.nss.initializationFallbacks.READ_ONLY.testGetValue());
+  ok(!Glean.nss.initializationFallbacks.RENAME_MODULE_DB.testGetValue());
+  ok(
+    !Glean.nss.initializationFallbacks.RENAME_MODULE_DB_READ_ONLY.testGetValue()
+  );
+  ok(!Glean.nss.initializationFallbacks.NO_DB_INIT.testGetValue());
 });
