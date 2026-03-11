@@ -10,6 +10,7 @@ add_task(async function () {
 
   await testDiv(inspector, viewDoc);
   await testNestedSpan(inspector, viewDoc);
+  await testUpdatedValues(inspector, viewDoc);
 });
 
 async function testDiv(inspector, viewDoc) {
@@ -33,4 +34,24 @@ async function testNestedSpan(inspector, viewDoc) {
     "36px",
     "Nested span should have computed font-size of 36px"
   );
+}
+
+async function testUpdatedValues(inspector, viewDoc) {
+  await selectNode(".updated-value", inspector);
+  const sizeInput = viewDoc.querySelector(
+    `.font-value-input[name="font-size"]`
+  );
+  is(sizeInput.value, "1", "font-size value is 1 before editing");
+
+  info("Updating style attribute in markup view");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    content.document.querySelector(".updated-value").style.fontSize = "2em";
+  });
+  await inspector.once("fonteditor-updated");
+  is(sizeInput.value, "2", "font-size value is 2 after editing");
+
+  const onFocus = once(sizeInput, "focus");
+  sizeInput.focus();
+  await onFocus;
+  is(sizeInput.value, "2", "font-size value is 2 after focusing");
 }
