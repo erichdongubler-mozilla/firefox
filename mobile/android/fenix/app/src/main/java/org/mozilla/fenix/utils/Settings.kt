@@ -298,6 +298,16 @@ class Settings(
         get() = FxNimbus.features.homescreen.value().sectionsEnabled
 
     /**
+     * Indicates if the privacy report homepage section settings should be visible.
+     * Controlled by secret settings toggle.
+     */
+    val showPrivacyReportSectionToggle: Boolean
+        get() = preferences.getBoolean(
+            appContext.getPreferenceKey(R.string.pref_key_enable_privacy_report),
+            false,
+        )
+
+    /**
      * Indicates if the recent tabs homepage section settings should be visible
      */
     val showHomepageRecentTabsSectionToggle: Boolean

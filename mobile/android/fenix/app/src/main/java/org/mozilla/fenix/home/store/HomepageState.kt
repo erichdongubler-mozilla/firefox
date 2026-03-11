@@ -247,7 +247,8 @@ internal sealed class HomepageState {
                 showPocketStories = settings.showPocketRecommendationsFeature &&
                     recommendationState.pocketStories.isNotEmpty(),
                 showCollections = settings.collections,
-                showPrivacyReport = settings.showPrivacyReportFeature,
+                showPrivacyReport = settings.showPrivacyReportSectionToggle &&
+                    settings.showPrivacyReportFeature,
                 headerState = HeaderState(
                     showHeader = settings.showHomepageHeader,
                     wordmarkTextColor = wallpaperState.textColor,
