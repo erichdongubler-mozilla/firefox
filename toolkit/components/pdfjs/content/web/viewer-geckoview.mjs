@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.278
- * pdfjsBuild = d9b81b519
+ * pdfjsVersion = 5.5.339
+ * pdfjsBuild = 98f7e859a
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -2162,7 +2162,7 @@ class ExternalServices extends BaseExternalServices {
           pdfDataRangeTransport?.onDataProgressiveDone();
           break;
         case "progress":
-          const percent = MathClamp(Math.round(args.loaded / args.total * 100), 0, 100);
+          const percent = args.total ? MathClamp(Math.round(args.loaded / args.total * 100), 0, 100) : NaN;
           viewerApp.progress(percent);
           break;
         case "complete":
@@ -2459,7 +2459,9 @@ class Sidebar {
     toggleButton.addEventListener("click", this.toggle.bind(this));
     this._isOpen = false;
     sidebar.hidden = true;
-    globalAbortSignal?.addEventListener("abort", this.destroy.bind(this));
+    globalAbortSignal?.addEventListener("abort", this.destroy.bind(this), {
+      once: true
+    });
     this.#resizeObserver = new ResizeObserver(([{
       borderBoxSize: [{
         inlineSize
@@ -4064,6 +4066,7 @@ class PDFFindController {
   #updateMatchesCountOnProgress = true;
   #visitedPagesCount = 0;
   #copiedExtractTextPromises = null;
+  #savedExtractTextPromises = null;
   constructor({
     linkService,
     eventBus,
@@ -4569,10 +4572,25 @@ class PDFFindController {
       }
       return;
     }
+    if (type === "cancelCopy") {
+      this.#copiedExtractTextPromises = null;
+      return;
+    }
+    if (type === "delete") {
+      this.#savedExtractTextPromises = this._extractTextPromises;
+    }
+    if (type === "cancelDelete") {
+      this._extractTextPromises = this.#savedExtractTextPromises;
+      return;
+    }
+    if (type === "cleanSavedData") {
+      this.#savedExtractTextPromises = null;
+      return;
+    }
     this.#onFindBarClose();
     this._dirtyMatch = true;
     const prevTextPromises = this._extractTextPromises;
-    const extractTextPromises = this._extractTextPromises.length = [];
+    const extractTextPromises = this._extractTextPromises = [];
     for (let i = 1, ii = pagesMapper.length; i <= ii; i++) {
       const prevPageNumber = pagesMapper.getPrevPageNumber(i);
       if (prevPageNumber < 0) {
@@ -8549,8 +8567,10 @@ class PDFViewer {
   #textLayerMode = TextLayerMode.ENABLE;
   #viewerAlert = null;
   #copiedPageViews = null;
+  #savedPageViews = null;
+  #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "5.5.278";
+    const viewerVersion = "5.5.339";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -9138,11 +9158,38 @@ class PDFViewer {
       }
       return;
     }
+    if (type === "cancelCopy") {
+      this.#copiedPageViews = null;
+      return;
+    }
     const isCut = type === "cut";
     if (isCut || type === "delete") {
-      for (const pageNum of pageNumbers) {
-        this._pages[pageNum - 1].deleteMe(isCut);
+      this.#savedPageViews = this._pages;
+      this.#deletedPageNumbers = pageNumbers;
+    }
+    if (type === "cancelDelete") {
+      const viewerElement = this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
+      if (viewerElement) {
+        const fragment = document.createDocumentFragment();
+        for (let i = 0, ii = this.#savedPageViews.length; i < ii; i++) {
+          const page = this.#savedPageViews[i];
+          page.updatePageNumber(i + 1);
+          fragment.append(page.div);
+        }
+        viewerElement.replaceChildren(fragment);
       }
+      this._pages = this.#savedPageViews;
+      this.#savedPageViews = null;
+      this.#deletedPageNumbers = null;
+      return;
+    }
+    if (type === "cleanSavedData") {
+      for (const pageNum of this.#deletedPageNumbers) {
+        this.#savedPageViews[pageNum - 1].deleteMe();
+      }
+      this.#savedPageViews = null;
+      this.#deletedPageNumbers = null;
+      return;
     }
     this._currentPageNumber = 0;
     const prevPages = this._pages;
@@ -9168,16 +9215,13 @@ class PDFViewer {
     }
     const viewerElement = this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
     if (viewerElement) {
-      viewerElement.replaceChildren();
       const fragment = document.createDocumentFragment();
-      for (let i = 0, ii = pagesMapper.pagesNumber; i < ii; i++) {
-        const {
-          div
-        } = newPages[i];
-        div.setAttribute("data-page-number", i + 1);
+      for (const {
+        div
+      } of newPages) {
         fragment.append(div);
       }
-      viewerElement.append(fragment);
+      viewerElement.replaceChildren(fragment);
     }
     setTimeout(() => {
       this.forceRendering();
@@ -10627,8 +10671,11 @@ const PDFViewerApplication = {
     linkService.setViewer(pdfViewer);
     pdfScriptingManager.setViewer(pdfViewer);
     if (appConfig.viewsManager?.thumbnailsView) {
+      const {
+        viewsManager
+      } = appConfig;
       this.pdfThumbnailViewer = new PDFThumbnailViewer({
-        container: appConfig.viewsManager.thumbnailsView,
+        container: viewsManager.thumbnailsView,
         eventBus,
         renderingQueue,
         linkService,
@@ -10638,8 +10685,10 @@ const PDFViewerApplication = {
         abortSignal,
         enableHWA,
         enableSplitMerge,
-        manageMenu: appConfig.viewsManager.manageMenu,
-        addFileButton: appConfig.viewsManager.viewsManagerAddFileButton
+        statusBar: viewsManager.viewsManagerStatusBar,
+        undoBar: viewsManager.viewsManagerUndoBar,
+        manageMenu: viewsManager.manageMenu,
+        addFileButton: viewsManager.viewsManagerAddFileButton
       });
       renderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
     }
@@ -10989,6 +11038,9 @@ const PDFViewerApplication = {
     }, reason => {
       if (loadingTask !== this.pdfLoadingTask) {
         return undefined;
+      }
+      if (this.loadingBar) {
+        this.loadingBar.percent ||= 0;
       }
       let key = "pdfjs-loading-error";
       if (reason instanceof InvalidPDFException) {

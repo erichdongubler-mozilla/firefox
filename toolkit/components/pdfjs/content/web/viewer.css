@@ -4954,6 +4954,7 @@ button.hasPopupMenu{
     rgb(0 98 250 / 0.08),
     rgb(0 202 219 / 0.08)
   );
+  --image-dragging-placeholder-border:var(--image-outline);
   --multiple-dragging-bg:white;
   --image-multiple-dragging-shadow:0 0 0 var(--image-border-width) var(--image-current-border-color), var(--image-border-width) var(--image-border-width) 0 calc(var(--image-border-width) / 2) var(--multiple-dragging-bg), var(--image-border-width) var(--image-border-width) 0 calc(3 * var(--image-border-width) / 2) var(--image-current-border-color);
   --image-dragging-shadow:0 0 0 var(--image-border-width) var(--image-current-border-color);
@@ -4999,6 +5000,8 @@ button.hasPopupMenu{
     --multiple-dragging-bg:Canvas;
     --multiple-dragging-indicator-bg:ButtonBorder;
     --multiple-dragging-text-color:Canvas;
+    --image-dragging-placeholder-bg:Canvas;
+    --image-dragging-placeholder-border:1px GrayText solid;
   }
 
   display:flex;
@@ -5054,10 +5057,11 @@ button.hasPopupMenu{
     }
 
     &.viewsCloseButton{
-      width:32px;
-      height:32px;
+      width:26px;
+      height:26px;
       padding:4px;
       border-radius:8px;
+      background:none;
 
       &::before{
         mask-image:var(--close-button-icon);
@@ -5230,7 +5234,7 @@ button.hasPopupMenu{
         align-self:stretch;
         background-color:var(--status-actions-bg);
 
-        > span.selected::before{
+        > span[data-l10n-args]::before{
           content:"";
           display:inline-block;
           width:var(--icon-size);
@@ -5610,6 +5614,7 @@ button.hasPopupMenu{
           &.placeholder{
             background-color:var(--image-dragging-placeholder-bg);
             box-shadow:none !important;
+            outline:var(--image-dragging-placeholder-border);
           }
 
           &.draggingThumbnail{

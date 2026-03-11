@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.278
- * pdfjsBuild = d9b81b519
+ * pdfjsVersion = 5.5.339
+ * pdfjsBuild = 98f7e859a
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -1824,6 +1824,7 @@ class PagesMapper {
   #listeners = [];
   #copiedPageIds = null;
   #copiedPageNumbers = null;
+  #savedData = null;
   get pagesNumber() {
     return this.#pagesNumber;
   }
@@ -1919,6 +1920,12 @@ class PagesMapper {
     this.#init(true);
     const pageNumberToId = this.#pageNumberToId;
     const prevIdToPageNumber = this.#idToPageNumber;
+    this.#savedData = {
+      pageNumberToId: pageNumberToId.slice(),
+      idToPageNumber: new Map(prevIdToPageNumber),
+      pageNumber: this.#pagesNumber,
+      prevPageNumbers: this.#prevPageNumbers.slice()
+    };
     this.pagesNumber -= pagesToDelete.length;
     this.#init(false);
     const newPageNumberToId = this.#pageNumberToId;
@@ -1942,6 +1949,24 @@ class PagesMapper {
       pageNumbers: pagesToDelete
     });
   }
+  cancelDelete() {
+    if (this.#savedData) {
+      this.#pageNumberToId = this.#savedData.pageNumberToId;
+      this.#idToPageNumber = this.#savedData.idToPageNumber;
+      this.pagesNumber = this.#savedData.pageNumber;
+      this.#prevPageNumbers = this.#savedData.prevPageNumbers;
+      this.#savedData = null;
+      this.#updateListeners({
+        type: "cancelDelete"
+      });
+    }
+  }
+  cleanSavedData() {
+    this.#savedData = null;
+    this.#updateListeners({
+      type: "cleanSavedData"
+    });
+  }
   copyPages(pagesToCopy) {
     this.#init(true);
     this.#copiedPageNumbers = pagesToCopy;
@@ -1949,6 +1974,13 @@ class PagesMapper {
     this.#updateListeners({
       type: "copy",
       pageNumbers: pagesToCopy
+    });
+  }
+  cancelCopy() {
+    this.#copiedPageIds = null;
+    this.#copiedPageNumbers = null;
+    this.#updateListeners({
+      type: "cancelCopy"
     });
   }
   pastePages(index) {
@@ -1973,6 +2005,7 @@ class PagesMapper {
       type: "paste"
     });
     this.#copiedPageIds = null;
+    this.#copiedPageNumbers = null;
   }
   #setPrevPageNumbers(prevIdToPageNumber, copiedPageMapping) {
     const prevPageNumbers = this.#prevPageNumbers;
@@ -2043,7 +2076,7 @@ class PagesMapper {
     return this.#pageNumberToId?.[pageNumber - 1] ?? pageNumber;
   }
   getMapping() {
-    return this.#pageNumberToId.subarray(0, this.pagesNumber);
+    return this.#pageNumberToId?.subarray(0, this.pagesNumber);
   }
 }
 
@@ -7285,9 +7318,9 @@ class FontLoader {
   }
 }
 class FontFaceObject {
+  compiledGlyphs = Object.create(null);
   #fontData;
   constructor(translatedData, inspectFont = null, extra, charProcOperatorList) {
-    this.compiledGlyphs = Object.create(null);
     this.#fontData = translatedData;
     this._inspectFont = inspectFont;
     if (extra) {
@@ -7358,13 +7391,13 @@ class FontFaceObject {
     return this.#fontData.bold;
   }
   get disableFontFace() {
-    return this.#fontData.disableFontFace ?? false;
+    return this.#fontData.disableFontFace;
   }
   set disableFontFace(value) {
     shadow(this, "disableFontFace", !!value);
   }
   get fontExtraProperties() {
-    return this.#fontData.fontExtraProperties ?? false;
+    return this.#fontData.fontExtraProperties;
   }
   get isInvalidPDFjsFont() {
     return this.#fontData.isInvalidPDFjsFont;
@@ -13416,7 +13449,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.5.278",
+    apiVersion: "5.5.339",
     data,
     password,
     disableAutoFetch,
@@ -13662,6 +13695,9 @@ class PDFDocumentProxy {
   getDownloadInfo() {
     return this._transport.downloadInfoCapability.promise;
   }
+  getRawData(data) {
+    return this._transport.getRawData(data);
+  }
   cleanup(keepLoadedFonts = false) {
     return this._transport.startCleanup(keepLoadedFonts || this.isPureXfa);
   }
@@ -13799,16 +13835,14 @@ class PDFPageProxy {
       this._stats?.time("Page Request");
       this._pumpOperatorList(intentArgs);
     }
-    const recordForDebugger = Boolean(this._pdfBug && globalThis.StepperManager?.enabled);
+    const recordForDebugger = !!(this._pdfBug && globalThis.StepperManager?.enabled);
     const shouldRecordOperations = !this.recordedBBoxes && (recordOperations || recordForDebugger);
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
       if (shouldRecordOperations) {
         const recordedBBoxes = internalRenderTask.gfx?.dependencyTracker.take();
         if (recordedBBoxes) {
-          if (internalRenderTask.stepper) {
-            internalRenderTask.stepper.setOperatorBBoxes(recordedBBoxes, internalRenderTask.gfx.dependencyTracker.takeDebugMetadata());
-          }
+          internalRenderTask.stepper?.setOperatorBBoxes(recordedBBoxes, internalRenderTask.gfx.dependencyTracker.takeDebugMetadata());
           if (recordOperations) {
             this.recordedBBoxes = recordedBBoxes;
           }
@@ -14286,6 +14320,7 @@ class WorkerTransport {
   #pageRefCache = new Map();
   #passwordCapability = null;
   #copiedPageInfo = null;
+  #savedPageInfo = null;
   constructor(messageHandler, loadingTask, networkStream, params, factory, pagesMapper) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
@@ -14323,11 +14358,31 @@ class WorkerTransport {
       }
       return;
     }
+    if (type === "cancelCopy") {
+      this.#copiedPageInfo = null;
+      return;
+    }
     if (type === "delete") {
+      this.#savedPageInfo = {
+        pageCache: new Map(this.#pageCache),
+        pagePromises: new Map(this.#pagePromises)
+      };
       for (const pageNum of pageNumbers) {
         this.#pageCache.delete(pageNum - 1);
         this.#pagePromises.delete(pageNum - 1);
       }
+    }
+    if (type === "cancelDelete") {
+      if (this.#savedPageInfo) {
+        this.#pageCache = this.#savedPageInfo.pageCache;
+        this.#pagePromises = this.#savedPageInfo.pagePromises;
+        this.#savedPageInfo = null;
+      }
+      return;
+    }
+    if (type === "cleanSavedData") {
+      this.#savedPageInfo = null;
+      return;
     }
     const newPageCache = new Map();
     const newPromiseCache = new Map();
@@ -14372,7 +14427,7 @@ class WorkerTransport {
     this.loadingTask.onProgress?.({
       loaded,
       total,
-      percent: MathClamp(Math.round(loaded / total * 100), 0, 100)
+      percent: total ? MathClamp(Math.round(loaded / total * 100), 0, 100) : NaN
     });
   }
   get annotationStorage() {
@@ -14830,6 +14885,9 @@ class WorkerTransport {
   getMarkInfo() {
     return this.messageHandler.sendWithPromise("GetMarkInfo", null);
   }
+  getRawData(data) {
+    return this.messageHandler.sendWithPromise("GetRawData", data);
+  }
   async startCleanup(keepLoadedFonts = false) {
     if (this.destroyed) {
       return;
@@ -15043,8 +15101,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.5.278";
-const build = "d9b81b519";
+const version = "5.5.339";
+const build = "98f7e859a";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -18749,7 +18807,7 @@ class AnnotationLayer {
     this.#annotationCanvasMap.clear();
   }
   getEditableAnnotations() {
-    return Array.from(this.#editableAnnotations.values());
+    return this.#editableAnnotations.values();
   }
   getEditableAnnotation(id) {
     return this.#editableAnnotations.get(id);
@@ -23106,8 +23164,7 @@ class SignatureExtractor {
       writer.write(diffs);
     }
     writer.close();
-    const buf = await new Response(cs.readable).arrayBuffer();
-    const bytes = new Uint8Array(buf);
+    const bytes = await new Response(cs.readable).bytes();
     return bytes.toBase64();
   }
   static async decompressSignature(signatureData) {
@@ -24512,8 +24569,7 @@ class AnnotationEditorLayer {
         this.getEditableAnnotation(editor.annotationElementId)?.show();
         editor.remove();
       }
-      const editables = annotationLayer.getEditableAnnotations();
-      for (const editable of editables) {
+      for (const editable of annotationLayer.getEditableAnnotations()) {
         const {
           id
         } = editable.data;

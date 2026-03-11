@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.278
- * pdfjsBuild = d9b81b519
+ * pdfjsVersion = 5.5.339
+ * pdfjsBuild = 98f7e859a
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -1412,6 +1412,35 @@ function getParentToUpdate(dict, ref, xref) {
     result.ref = ref;
   }
   return result;
+}
+function deepCompare(a, b) {
+  if (a === b) {
+    return true;
+  }
+  if (a instanceof Dict && b instanceof Dict) {
+    if (a.size !== b.size) {
+      return false;
+    }
+    for (const [key, value1] of a.getRawEntries()) {
+      const value2 = b.getRaw(key);
+      if (value2 === undefined || !deepCompare(value1, value2)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) {
+      return false;
+    }
+    for (let i = 0, ii = a.length; i < ii; i++) {
+      if (!deepCompare(a[i], b[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return false;
 }
 const ROMAN_NUMBER_MAP = ["", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM", "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC", "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
 function toRomanNumerals(number, lowerCase = false) {
@@ -27779,6 +27808,8 @@ function createNameTable(name, proto) {
   return nameTable;
 }
 class Font {
+  #charsCache = new Map();
+  #glyphCache = new Map();
   constructor(name, file, properties, evaluatorOptions) {
     this.name = name;
     this.psName = null;
@@ -27789,8 +27820,6 @@ class Font {
     this.isType3Font = properties.isType3Font;
     this.missingFile = false;
     this.cssFontInfo = properties.cssFontInfo;
-    this._charsCache = Object.create(null);
-    this._glyphCache = Object.create(null);
     let isSerifFont = !!(properties.flags & FontFlags.Serif);
     if (!isSerifFont && !properties.isSimulatedFlags) {
       const stdFontMap = getStdFontMap(),
@@ -29513,7 +29542,7 @@ class Font {
     return shadow(this, "_spaceWidth", width || this.defaultWidth);
   }
   _charToGlyph(charcode, isSpace = false) {
-    let glyph = this._glyphCache[charcode];
+    let glyph = this.#glyphCache.get(charcode);
     if (glyph?.isSpace === isSpace) {
       return glyph;
     }
@@ -29575,10 +29604,11 @@ class Font {
       }
     }
     glyph = new fonts_Glyph(charcode, fontChar, unicode, accent, width, vmetric, operatorListId, isSpace, isInFont);
-    return this._glyphCache[charcode] = glyph;
+    this.#glyphCache.set(charcode, glyph);
+    return glyph;
   }
   charsToGlyphs(chars) {
-    let glyphs = this._charsCache[chars];
+    let glyphs = this.#charsCache.get(chars);
     if (glyphs) {
       return glyphs;
     }
@@ -29604,7 +29634,8 @@ class Font {
         glyphs.push(glyph);
       }
     }
-    return this._charsCache[chars] = glyphs;
+    this.#charsCache.set(chars, glyphs);
+    return glyphs;
   }
   getCharPositions(chars) {
     const positions = [];
@@ -29625,7 +29656,7 @@ class Font {
     return positions;
   }
   get glyphCacheValues() {
-    return Object.values(this._glyphCache);
+    return this.#glyphCache.values();
   }
   encodeString(str) {
     const buffers = [];
@@ -41660,6 +41691,83 @@ class Catalog {
     }
     return shadow(this, "baseUrl", this.pdfManager.docBaseUrl);
   }
+  static #getDestFromStructElement(xref, seRef) {
+    const seDict = xref.fetchIfRef(seRef);
+    if (!(seDict instanceof Dict)) {
+      return null;
+    }
+    let pageRef = null;
+    const directPg = seDict.getRaw("Pg");
+    if (directPg instanceof Ref) {
+      pageRef = directPg;
+    }
+    if (!pageRef) {
+      const queue = [seDict];
+      while (queue.length > 0 && !pageRef) {
+        const node = queue.shift();
+        const kids = node.get("K");
+        let kidsArr;
+        if (Array.isArray(kids)) {
+          kidsArr = kids;
+        } else if (kids) {
+          kidsArr = [kids];
+        } else {
+          kidsArr = [];
+        }
+        for (const kid of kidsArr) {
+          const kidObj = xref.fetchIfRef(kid);
+          if (!(kidObj instanceof Dict)) {
+            continue;
+          }
+          const pg = kidObj.getRaw("Pg");
+          if (pg instanceof Ref) {
+            pageRef = pg;
+            break;
+          }
+          queue.push(kidObj);
+        }
+      }
+    }
+    if (!pageRef) {
+      const MAX_DEPTH = 40;
+      let current = seDict;
+      for (let depth = 0; depth < MAX_DEPTH; depth++) {
+        const parentRaw = current.getRaw("P");
+        if (!(parentRaw instanceof Ref)) {
+          break;
+        }
+        const parentDict = xref.fetchIfRef(parentRaw);
+        if (!(parentDict instanceof Dict)) {
+          break;
+        }
+        if (isName(parentDict.get("Type"), "StructTreeRoot")) {
+          break;
+        }
+        const pg = parentDict.getRaw("Pg");
+        if (pg instanceof Ref) {
+          pageRef = pg;
+          break;
+        }
+        current = parentDict;
+      }
+    }
+    if (!pageRef) {
+      return null;
+    }
+    let x = null,
+      y = null;
+    const attrs = seDict.get("A");
+    if (attrs instanceof Dict) {
+      const bboxArr = attrs.getArray("BBox");
+      if (isNumberArray(bboxArr, 4)) {
+        x = bboxArr[0];
+        y = bboxArr[3];
+      }
+    }
+    return [pageRef, {
+      name: "XYZ"
+    }, x, y, null];
+  }
   static parseDestDictionary({
     destDict,
     resultObj,
@@ -41840,6 +41948,22 @@ class Catalog {
         resultObj.dest = stringToPDFString(dest, true);
       } else if (isValidExplicitDest(dest)) {
         resultObj.dest = dest;
+      }
+    }
+    if (!resultObj.dest && !resultObj.url && !resultObj.action && !resultObj.attachment && !resultObj.setOCGState && !resultObj.resetForm) {
+      const seRef = destDict.getRaw("SE");
+      if (seRef instanceof Ref) {
+        try {
+          const seDest = Catalog.#getDestFromStructElement(destDict.xref, seRef);
+          if (seDest) {
+            resultObj.dest = seDest;
+          }
+        } catch (ex) {
+          if (ex instanceof MissingDataException) {
+            throw ex;
+          }
+          info("SE parsing failed.");
+        }
       }
     }
   }
@@ -55989,10 +56113,10 @@ class StampAnnotation extends MarkupAnnotation {
       ctx.fillRect(0, 0, width, height);
       ctx.drawImage(bitmap, 0, 0);
     }
-    const jpegBufferPromise = canvas.convertToBlob({
+    const jpegBytesPromise = canvas.convertToBlob({
       type: "image/jpeg",
       quality: 1
-    }).then(blob => blob.arrayBuffer());
+    }).then(blob => blob.bytes());
     const xobjectName = Name.get("XObject");
     const imageName = Name.get("Image");
     const image = new Dict(xref);
@@ -56025,7 +56149,7 @@ class StampAnnotation extends MarkupAnnotation {
       smask.set("Height", height);
       smaskStream = new Stream(alphaBuffer, 0, 0, smask);
     }
-    const imageStream = new Stream(await jpegBufferPromise, 0, 0, image);
+    const imageStream = new Stream(await jpegBytesPromise, 0, 0, image);
     return {
       imageStream,
       smaskStream,
@@ -58373,6 +58497,13 @@ class XRef {
 }
 
 ;// ./src/core/document.js
+/* unused harmony import specifier */ var document_Cmd;
+/* unused harmony import specifier */ var document_Name;
+/* unused harmony import specifier */ var document_Ref;
+/* unused harmony import specifier */ var document_Dict;
+
+
+
 
 
 
@@ -59799,6 +59930,71 @@ class PDFDocument {
   get annotationGlobals() {
     return shadow(this, "annotationGlobals", AnnotationFactory.createGlobals(this.pdfManager));
   }
+  async toJSObject(value, firstCall = true) {
+    throw new Error("Not implemented: toJSObject");
+  }
+}
+let _opsIdToName = null;
+function _tokenToJSObject(obj) {
+  if (obj instanceof document_Cmd) {
+    return {
+      type: "cmd",
+      value: obj.cmd
+    };
+  }
+  if (obj instanceof document_Name) {
+    return {
+      type: "name",
+      value: obj.name
+    };
+  }
+  if (obj instanceof document_Ref) {
+    return {
+      type: "ref",
+      num: obj.num,
+      gen: obj.gen
+    };
+  }
+  if (Array.isArray(obj)) {
+    return {
+      type: "array",
+      value: obj.map(_tokenToJSObject)
+    };
+  }
+  if (obj instanceof document_Dict) {
+    const result = Object.create(null);
+    for (const [key, val] of obj.getRawEntries()) {
+      result[key] = _tokenToJSObject(val);
+    }
+    return {
+      type: "dict",
+      value: result
+    };
+  }
+  if (typeof obj === "number") {
+    return {
+      type: "number",
+      value: obj
+    };
+  }
+  if (typeof obj === "string") {
+    return {
+      type: "string",
+      value: obj
+    };
+  }
+  if (typeof obj === "boolean") {
+    return {
+      type: "boolean",
+      value: obj
+    };
+  }
+  if (obj === null) {
+    return {
+      type: "null"
+    };
+  }
+  return null;
 }
 
 ;// ./src/core/pdf_manager.js
@@ -60409,8 +60605,7 @@ async function writeStream(stream, buffer, transform) {
         await writer.ready;
         await writer.close();
       }).catch(() => {});
-      const buf = await new Response(cs.readable).arrayBuffer();
-      bytes = new Uint8Array(buf);
+      bytes = await new Response(cs.readable).bytes();
       let newFilter, newParams;
       if (!filter) {
         newFilter = Name.get("FlateDecode");
@@ -60814,6 +61009,12 @@ class DocumentData {
     this.namespaces = null;
     this.structTreeAF = null;
     this.structTreePronunciationLexicon = [];
+    this.acroForm = null;
+    this.acroFormDefaultAppearance = "";
+    this.acroFormDefaultResources = null;
+    this.acroFormQ = 0;
+    this.hasSignatureAnnotations = false;
+    this.fieldToParent = new RefSetCache();
   }
 }
 class XRefWrapper {
@@ -60853,6 +61054,13 @@ class PDFEditor {
   namespaces = new Map();
   structTreeAF = [];
   structTreePronunciationLexicon = [];
+  fields = [];
+  acroFormDefaultAppearance = "";
+  acroFormDefaultResources = null;
+  acroFormNeedAppearances = false;
+  acroFormSigFlags = 0;
+  acroFormCalculationOrder = null;
+  acroFormQ = 0;
   constructor({
     useObjectStreams = true,
     title = "",
@@ -61236,6 +61444,7 @@ class PDFEditor {
     }
     this.#fixPostponedRefCopies(allDocumentData);
     await this.#mergeStructTrees(allDocumentData);
+    await this.#mergeAcroForms(allDocumentData);
     return this.writePDF();
   }
   async #collectDocumentData(documentData) {
@@ -61245,7 +61454,7 @@ class PDFEditor {
         xref
       }
     } = documentData;
-    await Promise.all([pdfManager.ensureCatalog("destinations").then(destinations => documentData.destinations = destinations), pdfManager.ensureCatalog("rawPageLabels").then(pageLabels => documentData.pageLabels = pageLabels), pdfManager.ensureCatalog("structTreeRoot").then(structTreeRoot => documentData.structTreeRoot = structTreeRoot)]);
+    await Promise.all([pdfManager.ensureCatalog("destinations").then(destinations => documentData.destinations = destinations), pdfManager.ensureCatalog("rawPageLabels").then(pageLabels => documentData.pageLabels = pageLabels), pdfManager.ensureCatalog("structTreeRoot").then(structTreeRoot => documentData.structTreeRoot = structTreeRoot), pdfManager.ensureCatalog("acroForm").then(acroForm => documentData.acroForm = acroForm)]);
     const structTreeRoot = documentData.structTreeRoot;
     if (structTreeRoot) {
       const rootDict = structTreeRoot.dict;
@@ -61279,7 +61488,8 @@ class PDFEditor {
       documentData: {
         pagesMap,
         destinations,
-        usedNamedDestinations
+        usedNamedDestinations,
+        fieldToParent
       }
     } = pageData;
     if (!annotations) {
@@ -61288,10 +61498,19 @@ class PDFEditor {
     const promises = [];
     let newAnnotations = [];
     let newIndex = 0;
+    let {
+      hasSignatureAnnotations
+    } = pageData.documentData;
     for (const annotationRef of annotations) {
       const newAnnotationIndex = newIndex++;
       promises.push(xref.fetchIfRefAsync(annotationRef).then(async annotationDict => {
         if (!isName(annotationDict.get("Subtype"), "Link")) {
+          if (isName(annotationDict.get("Subtype"), "Widget")) {
+            hasSignatureAnnotations ||= isName(annotationDict.get("FT"), "Sig");
+            const parentRef = annotationDict.get("Parent") || null;
+            annotationDict.delete("Parent");
+            fieldToParent.put(annotationRef, parentRef);
+          }
           newAnnotations[newAnnotationIndex] = annotationRef;
           return;
         }
@@ -61311,6 +61530,7 @@ class PDFEditor {
     await Promise.all(promises);
     newAnnotations = newAnnotations.filter(annot => !!annot);
     pageData.annotations = newAnnotations.length > 0 ? newAnnotations : null;
+    pageData.documentData.hasSignatureAnnotations ||= hasSignatureAnnotations;
   }
   #setPostponedRefCopies(allDocumentData) {
     for (const {
@@ -61387,6 +61607,8 @@ class PDFEditor {
       }
       const pageRef = this.newPages[i];
       const pageDict = this.xref[pageRef.num];
+      const visited = new RefSet();
+      visited.put(pageRef);
       this.#visitObject(pageDict, dict => {
         const structParent = dict.get("StructParent") ?? dict.get("StructParents");
         if (typeof structParent !== "number") {
@@ -61423,7 +61645,7 @@ class PDFEditor {
         } else {
           dict.set("StructParents", newStructParent);
         }
-      });
+      }, visited);
     }
     const {
       structTreeKids,
@@ -61662,6 +61884,305 @@ class PDFEditor {
       }
       const dest = annotDict.get("Dest");
       fixDestination(annotDict, "Dest", dest);
+    }
+  }
+  async #mergeAcroForms(allDocumentData) {
+    this.#setAcroFormDefaultBasicValues(allDocumentData);
+    this.#setAcroFormDefaultAppearance(allDocumentData);
+    this.#setAcroFormQ(allDocumentData);
+    await this.#setAcroFormDefaultResources(allDocumentData);
+    const newFields = this.fields;
+    for (const documentData of allDocumentData) {
+      let fields = documentData.acroForm?.get("Fields") || null;
+      if (!fields && documentData.fieldToParent.size > 0) {
+        fields = this.#fixFields(documentData.fieldToParent, documentData.document.xref);
+      }
+      if (Array.isArray(fields) && fields.length > 0) {
+        this.currentDocument = documentData;
+        await this.#cloneFields(newFields, fields);
+        this.currentDocument = null;
+      }
+    }
+  }
+  #setAcroFormQ(allDocumentData) {
+    let firstQ = 0;
+    let firstDocData = null;
+    for (const documentData of allDocumentData) {
+      const q = documentData.acroForm?.get("Q");
+      if (typeof q !== "number" || q === 0) {
+        continue;
+      }
+      if (firstDocData?.acroFormQ > 0) {
+        documentData.acroFormQ = q;
+        continue;
+      }
+      if (firstQ === 0) {
+        firstQ = q;
+        firstDocData = documentData;
+        continue;
+      }
+      if (q === firstQ) {
+        continue;
+      }
+      firstDocData.acroFormQ ||= firstQ;
+      documentData.acroFormQ = q;
+      firstQ = 0;
+    }
+    if (firstQ > 0) {
+      this.acroFormQ = firstQ;
+    }
+  }
+  #setAcroFormDefaultBasicValues(allDocumentData) {
+    let sigFlags = 0;
+    let needAppearances = false;
+    const calculationOrder = [];
+    for (const documentData of allDocumentData) {
+      if (!documentData.acroForm) {
+        continue;
+      }
+      const sf = documentData.acroForm.get("SigFlags");
+      if (typeof sf === "number" && documentData.hasSignatureAnnotations) {
+        sigFlags |= sf;
+      }
+      if (documentData.acroForm.get("NeedAppearances") === true) {
+        needAppearances = true;
+      }
+      const co = documentData.acroForm.get("CO") || null;
+      if (!Array.isArray(co)) {
+        continue;
+      }
+      const {
+        oldRefMapping
+      } = documentData;
+      for (const coRef of co) {
+        const newCoRef = oldRefMapping.get(coRef);
+        if (newCoRef) {
+          calculationOrder.push(newCoRef);
+        }
+      }
+    }
+    this.acroFormSigFlags = sigFlags;
+    this.acroFormNeedAppearances = needAppearances;
+    this.acroFormCalculationOrder = calculationOrder.length > 0 ? calculationOrder : null;
+  }
+  #setAcroFormDefaultAppearance(allDocumentData) {
+    let firstDA = null;
+    let firstDocData = null;
+    for (const documentData of allDocumentData) {
+      const da = documentData.acroForm?.get("DA") || null;
+      if (!da || typeof da !== "string") {
+        continue;
+      }
+      if (firstDocData?.acroFormDefaultAppearance) {
+        documentData.acroFormDefaultAppearance = da;
+        continue;
+      }
+      if (!firstDA) {
+        firstDA = da;
+        firstDocData = documentData;
+        continue;
+      }
+      if (da === firstDA) {
+        continue;
+      }
+      firstDocData.acroFormDefaultAppearance ||= firstDA;
+      documentData.acroFormDefaultAppearance = da;
+      firstDA = null;
+    }
+    if (firstDA) {
+      this.acroFormDefaultAppearance = firstDA;
+    }
+  }
+  async #setAcroFormDefaultResources(allDocumentData) {
+    let firstDR = null;
+    let firstDRRef = null;
+    let firstDocData = null;
+    for (const documentData of allDocumentData) {
+      const dr = documentData.acroForm?.get("DR") || null;
+      if (!dr || !(dr instanceof Dict)) {
+        continue;
+      }
+      if (firstDocData?.acroFormDefaultResources) {
+        documentData.acroFormDefaultResources = dr;
+        continue;
+      }
+      if (!firstDR) {
+        firstDR = dr;
+        firstDRRef = documentData.acroForm.getRaw("DR");
+        firstDocData = documentData;
+        continue;
+      }
+      if (deepCompare(firstDR, dr)) {
+        continue;
+      }
+      firstDocData.acroFormDefaultResources ||= firstDR;
+      documentData.acroFormDefaultResources = dr;
+      firstDR = null;
+      firstDRRef = null;
+    }
+    if (firstDR) {
+      this.currentDocument = firstDocData;
+      this.acroFormDefaultResources = await this.#collectDependencies(firstDRRef, true, firstDocData.document.xref);
+      this.currentDocument = null;
+    }
+  }
+  #fixFields(fieldToParent, xref) {
+    const newFields = [];
+    const processed = new RefSet();
+    for (const [fieldRef, parentRef] of fieldToParent) {
+      if (!parentRef) {
+        newFields.push(fieldRef);
+        continue;
+      }
+      let parent = parentRef;
+      let lastNonNullParent = parentRef;
+      while (true) {
+        parent = xref.fetchIfRef(parent)?.get("Parent") || null;
+        if (!parent) {
+          break;
+        }
+        lastNonNullParent = parent;
+      }
+      if (!processed.has(lastNonNullParent)) {
+        newFields.push(lastNonNullParent);
+        processed.put(lastNonNullParent);
+      }
+    }
+    return newFields;
+  }
+  async #cloneFields(newFields, fields) {
+    const processed = new RefSet();
+    const stack = [{
+      kids: fields,
+      newKids: newFields,
+      pos: 0,
+      oldParentRef: null,
+      parentRef: null,
+      parent: null
+    }];
+    const {
+      document: {
+        xref
+      },
+      oldRefMapping,
+      fieldToParent,
+      acroFormDefaultAppearance,
+      acroFormDefaultResources,
+      acroFormQ
+    } = this.currentDocument;
+    const daToFix = [];
+    const drToFix = [];
+    while (stack.length > 0) {
+      const data = stack.at(-1);
+      const {
+        kids,
+        newKids,
+        parent,
+        pos
+      } = data;
+      if (pos === kids.length) {
+        stack.pop();
+        if (newKids.length === 0 || !parent) {
+          continue;
+        }
+        const parentDict = this.xref[data.parentRef.num] = this.cloneDict(parent);
+        parentDict.delete("Parent");
+        parentDict.delete("Kids");
+        await this.#collectDependencies(parentDict, false, xref);
+        parentDict.set("Kids", newKids);
+        if (stack.length > 0) {
+          const lastData = stack.at(-1);
+          if (!lastData.parentRef && lastData.oldParentRef) {
+            const parentRef = lastData.parentRef = this.newRef;
+            parentDict.set("Parent", parentRef);
+            oldRefMapping.put(lastData.oldParentRef, parentRef);
+          }
+          lastData.newKids.push(data.parentRef);
+        }
+        continue;
+      }
+      const oldKidRef = kids[data.pos++];
+      if (!(oldKidRef instanceof Ref) || processed.has(oldKidRef)) {
+        continue;
+      }
+      processed.put(oldKidRef);
+      const kid = xref.fetchIfRef(oldKidRef);
+      if (kid.has("Kids")) {
+        const kidsArray = kid.get("Kids");
+        if (!Array.isArray(kidsArray)) {
+          continue;
+        }
+        stack.push({
+          kids: kidsArray,
+          newKids: [],
+          pos: 0,
+          oldParentRef: oldKidRef,
+          parentRef: null,
+          parent: kid
+        });
+        continue;
+      }
+      if (!fieldToParent.has(oldKidRef)) {
+        continue;
+      }
+      const newRef = oldRefMapping.get(oldKidRef);
+      if (!newRef) {
+        continue;
+      }
+      newKids.push(newRef);
+      if (!data.parentRef && data.oldParentRef) {
+        data.parentRef = this.newRef;
+        oldRefMapping.put(data.oldParentRef, data.parentRef);
+      }
+      const newKid = this.xref[newRef.num];
+      if (data.parentRef) {
+        newKid.set("Parent", data.parentRef);
+      }
+      if (acroFormDefaultAppearance && isName(newKid.get("FT"), "Tx") && !newKid.has("DA")) {
+        daToFix.push(newKid);
+      }
+      if (acroFormDefaultResources && !newKid.has("Kids") && newKid.get("AP") instanceof Dict) {
+        drToFix.push(newKid);
+      }
+      if (acroFormQ && !newKid.has("Q")) {
+        newKid.set("Q", acroFormQ);
+      }
+    }
+    for (const field of daToFix) {
+      const da = getInheritableProperty({
+        dict: field,
+        key: "DA"
+      });
+      if (!da) {
+        field.set("DA", acroFormDefaultAppearance);
+      }
+    }
+    const resourcesValuesCache = new Map();
+    for (const field of drToFix) {
+      const ap = field.get("AP");
+      for (const value of ap.getValues()) {
+        if (!(value instanceof BaseStream)) {
+          continue;
+        }
+        let resources = value.dict.getRaw("Resources");
+        if (!resources) {
+          const newResourcesRef = await resourcesValuesCache.getOrInsertComputed(acroFormDefaultResources, () => this.#cloneObject(acroFormDefaultResources, xref));
+          value.dict.set("Resources", newResourcesRef);
+          continue;
+        }
+        resources = xref.fetchIfRef(resources);
+        for (const [resKey, resValue] of acroFormDefaultResources.getRawEntries()) {
+          if (!resources.has(resKey)) {
+            let newResValue = resValue;
+            if (resValue instanceof Ref) {
+              newResValue = await this.#collectDependencies(resValue, true, xref);
+            } else if (resValue instanceof Dict || resValue instanceof BaseStream || Array.isArray(resValue)) {
+              newResValue = await resourcesValuesCache.getOrInsertComputed(resValue, () => this.#cloneObject(resValue, xref));
+            }
+            resources.set(resKey, newResValue);
+          }
+        }
+      }
     }
   }
   async #collectPageLabels() {
@@ -61962,12 +62483,39 @@ class PDFEditor {
     }
     rootDict.set("StructTreeRoot", structTreeRef);
   }
+  #makeAcroForm() {
+    if (this.fields.length === 0) {
+      return;
+    }
+    const {
+      rootDict
+    } = this;
+    const acroFormRef = this.newRef;
+    const acroForm = this.xref[acroFormRef.num] = new Dict();
+    rootDict.set("AcroForm", acroFormRef);
+    acroForm.set("Fields", this.fields);
+    if (this.acroFormNeedAppearances) {
+      acroForm.set("NeedAppearances", true);
+    }
+    if (this.acroFormSigFlags > 0) {
+      acroForm.set("SigFlags", this.acroFormSigFlags);
+    }
+    acroForm.setIfArray("CO", this.acroFormCalculationOrder);
+    acroForm.setIfDict("DR", this.acroFormDefaultResources);
+    if (this.acroFormDefaultAppearance) {
+      acroForm.set("DA", this.acroFormDefaultAppearance);
+    }
+    if (this.acroFormQ > 0) {
+      acroForm.set("Q", this.acroFormQ);
+    }
+  }
   async #makeRoot() {
     const {
       rootDict
     } = this;
     rootDict.setIfName("Type", "Catalog");
     rootDict.setIfName("Version", this.version);
+    this.#makeAcroForm();
     this.#makePageTree();
     this.#makePageLabelsTree();
     this.#makeDestinationsTree();
@@ -62331,7 +62879,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "5.5.278";
+    const workerVersion = "5.5.339";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
@@ -62400,11 +62948,15 @@ class WorkerMessageHandler {
           msgHandler: handler
         }),
         fullReader = pdfStream.getFullReader();
-      const pdfManagerCapability = Promise.withResolvers();
+      const {
+        promise,
+        resolve,
+        reject
+      } = Promise.withResolvers();
       let newPdfManager,
-        cachedChunks = [],
-        loaded = 0;
-      fullReader.headersReady.then(function () {
+        cachedChunks = [];
+      cancelXHRs = reason => pdfStream.cancelAllRequests(reason);
+      fullReader.headersReady.then(() => {
         if (!fullReader.isRangeSupported) {
           return;
         }
@@ -62415,60 +62967,54 @@ class WorkerMessageHandler {
         for (const chunk of cachedChunks) {
           newPdfManager.sendProgressiveData(chunk);
         }
-        cachedChunks = [];
-        pdfManagerCapability.resolve(newPdfManager);
+        cachedChunks = null;
+        resolve(newPdfManager);
         cancelXHRs = null;
-      }).catch(function (reason) {
-        pdfManagerCapability.reject(reason);
+      }).catch(reason => {
+        reject(reason);
         cancelXHRs = null;
       });
-      new Promise(function (resolve, reject) {
-        const readChunk = function ({
-          value,
-          done
-        }) {
-          try {
-            ensureNotTerminated();
-            if (done) {
-              if (!newPdfManager) {
-                const pdfFile = arrayBuffersToBytes(cachedChunks);
-                cachedChunks = [];
-                if (length && pdfFile.length !== length) {
-                  warn("reported HTTP length is different from actual");
-                }
-                pdfManagerArgs.source = pdfFile;
-                newPdfManager = new LocalPdfManager(pdfManagerArgs);
-                pdfManagerCapability.resolve(newPdfManager);
-              }
-              cancelXHRs = null;
-              return;
-            }
-            loaded += value.byteLength;
-            if (!fullReader.isStreamingSupported) {
-              handler.send("DocProgress", {
-                loaded,
-                total: Math.max(loaded, fullReader.contentLength || 0)
-              });
-            }
-            if (newPdfManager) {
-              newPdfManager.sendProgressiveData(value);
-            } else {
-              cachedChunks.push(value);
-            }
-            fullReader.read().then(readChunk, reject);
-          } catch (e) {
-            reject(e);
+      async function readData() {
+        let loaded = 0;
+        while (true) {
+          const {
+            value,
+            done
+          } = await fullReader.read();
+          ensureNotTerminated();
+          if (done) {
+            break;
           }
-        };
-        fullReader.read().then(readChunk, reject);
-      }).catch(function (e) {
-        pdfManagerCapability.reject(e);
+          loaded += value.byteLength;
+          if (!fullReader.isStreamingSupported) {
+            handler.send("DocProgress", {
+              loaded,
+              total: fullReader.contentLength
+            });
+          }
+          if (newPdfManager) {
+            newPdfManager.sendProgressiveData(value);
+          } else {
+            cachedChunks.push(value);
+          }
+        }
+        if (!newPdfManager) {
+          const pdfFile = arrayBuffersToBytes(cachedChunks);
+          cachedChunks = null;
+          if (length && pdfFile.length !== length) {
+            warn("reported HTTP length is different from actual");
+          }
+          pdfManagerArgs.source = pdfFile;
+          newPdfManager = new LocalPdfManager(pdfManagerArgs);
+          resolve(newPdfManager);
+        }
+        cancelXHRs = null;
+      }
+      readData().catch(reason => {
+        reject(reason);
         cancelXHRs = null;
       });
-      cancelXHRs = reason => {
-        pdfStream.cancelAllRequests(reason);
-      };
-      return pdfManagerCapability.promise;
+      return promise;
     }
     function setupDoc(data) {
       function onSuccess(doc) {
@@ -62949,10 +63495,16 @@ class WorkerMessageHandler {
     handler.on("FontFallback", function (data) {
       return pdfManager.fontFallback(data.id, handler);
     });
+    handler.on("GetRawData", async function ({
+      ref,
+      page
+    }) {
+      throw new Error("Not implemented: GetRawData");
+    });
     handler.on("Cleanup", function (data) {
       return pdfManager.cleanup(true);
     });
-    handler.on("Terminate", function (data) {
+    handler.on("Terminate", async function (data) {
       terminated = true;
       const waitOn = [];
       if (pdfManager) {
@@ -62968,10 +63520,9 @@ class WorkerMessageHandler {
         waitOn.push(task.finished);
         task.terminate();
       }
-      return Promise.all(waitOn).then(function () {
-        handler.destroy();
-        handler = null;
-      });
+      await Promise.all(waitOn);
+      handler.destroy();
+      handler = null;
     });
     handler.on("Ready", function (data) {
       setupDoc(docParams);

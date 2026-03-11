@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.278
- * pdfjsBuild = d9b81b519
+ * pdfjsVersion = 5.5.339
+ * pdfjsBuild = 98f7e859a
  */
 
 ;// ./src/scripting_api/constants.js
@@ -159,13 +159,7 @@ const FieldType = {
   time: 4
 };
 function createActionsMap(actions) {
-  const actionsMap = new Map();
-  if (actions) {
-    for (const [eventType, actionsForEvent] of Object.entries(actions)) {
-      actionsMap.set(eventType, actionsForEvent);
-    }
-  }
-  return actionsMap;
+  return new Map(actions ? Object.entries(actions) : null);
 }
 function getFieldType(actions) {
   let format = actions.get("Format");
@@ -361,6 +355,8 @@ function serializeError(error) {
     value
   };
 }
+const makeArr = () => [];
+const makeMap = () => new Map();
 
 ;// ./src/scripting_api/field.js
 
@@ -1221,8 +1217,8 @@ class AForm {
   }
   AFSimple_Calculate(cFunction, cFields) {
     const actions = {
-      AVG: args => args.reduce((acc, value) => acc + value, 0) / args.length,
-      SUM: args => args.reduce((acc, value) => acc + value, 0),
+      AVG: args => Math.sumPrecise(args) / args.length,
+      SUM: args => Math.sumPrecise(args),
       PRD: args => args.reduce((acc, value) => acc * value, 1),
       MIN: args => Math.min(...args),
       MAX: args => Math.max(...args)
@@ -2395,6 +2391,8 @@ class InfoProxyHandler {
   }
 }
 class Doc extends PDFObject {
+  #pageActions = null;
+  #otherPageActions = null;
   constructor(data) {
     super(data);
     this._expandos = globalThis;
@@ -2446,11 +2444,9 @@ class Doc extends PDFObject {
     this._zoom = data.zoom || 100;
     this._actions = createActionsMap(data.actions);
     this._globalEval = data.globalEval;
-    this._pageActions = null;
     this._userActivation = false;
     this._disablePrinting = false;
     this._disableSaving = false;
-    this._otherPageActions = null;
   }
   _initActions() {
     for (const {
@@ -2506,13 +2502,13 @@ class Doc extends PDFObject {
   }
   _dispatchPageEvent(name, actions, pageNumber) {
     if (name === "PageOpen") {
-      this._pageActions ||= new Map();
-      if (!this._pageActions.has(pageNumber)) {
-        this._pageActions.set(pageNumber, createActionsMap(actions));
+      this.#pageActions ??= new Map();
+      if (!this.#pageActions.has(pageNumber)) {
+        this.#pageActions.set(pageNumber, createActionsMap(actions));
       }
       this._pageNum = pageNumber - 1;
     }
-    for (const acts of [this._pageActions, this._otherPageActions]) {
+    for (const acts of [this.#pageActions, this.#otherPageActions]) {
       actions = acts?.get(pageNumber)?.get(name);
       if (actions) {
         for (const action of actions) {
@@ -2543,27 +2539,13 @@ class Doc extends PDFObject {
     const po = field.obj._actions.get("PageOpen");
     const pc = field.obj._actions.get("PageClose");
     if (po || pc) {
-      this._otherPageActions ||= new Map();
-      let actions = this._otherPageActions.get(field.obj._page + 1);
-      if (!actions) {
-        actions = new Map();
-        this._otherPageActions.set(field.obj._page + 1, actions);
-      }
+      this.#otherPageActions ??= new Map();
+      const actions = this.#otherPageActions.getOrInsertComputed(field.obj._page + 1, makeMap);
       if (po) {
-        let poActions = actions.get("PageOpen");
-        if (!poActions) {
-          poActions = [];
-          actions.set("PageOpen", poActions);
-        }
-        poActions.push(...po);
+        actions.getOrInsertComputed("PageOpen", makeArr).push(...po);
       }
       if (pc) {
-        let pcActions = actions.get("PageClose");
-        if (!pcActions) {
-          pcActions = [];
-          actions.set("PageClose", pcActions);
-        }
-        pcActions.push(...pc);
+        actions.getOrInsertComputed("PageClose", makeArr).push(...pc);
       }
     }
   }
