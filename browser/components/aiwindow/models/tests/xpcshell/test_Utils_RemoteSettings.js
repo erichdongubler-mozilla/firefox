@@ -2,15 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const {
-  openAIEngine,
-  MODEL_FEATURES,
-  DEFAULT_MODEL,
-  parseVersion,
-  FEATURE_MAJOR_VERSIONS,
-} = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
-);
+const { openAIEngine, MODEL_FEATURES, parseVersion, FEATURE_MAJOR_VERSIONS } =
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+  );
 
 function getVersionForFeature(feature) {
   const major = FEATURE_MAJOR_VERSIONS[feature] || 1;
@@ -133,42 +128,6 @@ add_task(async function test_loadConfig_with_user_pref_model() {
   } finally {
     sb.restore();
     Services.prefs.clearUserPref(PREF_MODEL);
-  }
-});
-
-add_task(async function test_loadConfig_no_records() {
-  Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
-  Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
-
-  const sb = sinon.createSandbox();
-  try {
-    const fakeEngine = {
-      runWithGenerator() {
-        throw new Error("not used");
-      },
-    };
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves([]),
-    });
-
-    const engine = new openAIEngine();
-
-    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
-
-    Assert.equal(
-      engine.model,
-      "qwen3-235b-a22b-instruct-2507-maas",
-      "Should fall back to default model when remote settings returns no records"
-    );
-    Assert.equal(
-      engine.feature,
-      MODEL_FEATURES.CHAT,
-      "Should set feature when remote settings returns no records"
-    );
-  } finally {
-    sb.restore();
   }
 });
 
@@ -325,61 +284,6 @@ add_task(async function test_loadConfig_custom_endpoint_without_custom_model() {
   }
 });
 
-add_task(
-  async function test_loadConfig_custom_endpoint_no_remote_settings_records() {
-    Services.prefs.setStringPref(PREF_ENDPOINT, "http://localhost:11434/v1");
-    Services.prefs.setStringPref(PREF_MODEL, "local-llama-model");
-
-    const sb = sinon.createSandbox();
-    try {
-      const engine = new openAIEngine();
-      const fakeClient = {
-        get: sb.stub().resolves([]),
-      };
-      sb.stub(openAIEngine, "getRemoteClient").returns(fakeClient);
-
-      await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
-
-      Assert.equal(
-        engine.model,
-        "local-llama-model",
-        "Should use custom model even when Remote Settings has no records"
-      );
-    } finally {
-      sb.restore();
-      Services.prefs.clearUserPref(PREF_ENDPOINT);
-      Services.prefs.clearUserPref(PREF_MODEL);
-    }
-  }
-);
-
-add_task(
-  async function test_loadConfig_no_custom_endpoint_no_remote_settings() {
-    Services.prefs.clearUserPref(PREF_ENDPOINT);
-    Services.prefs.setStringPref(PREF_MODEL, "some-model");
-
-    const sb = sinon.createSandbox();
-    try {
-      const engine = new openAIEngine();
-      const fakeClient = {
-        get: sb.stub().resolves([]),
-      };
-      sb.stub(openAIEngine, "getRemoteClient").returns(fakeClient);
-
-      await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
-
-      Assert.equal(
-        engine.model,
-        DEFAULT_MODEL[MODEL_FEATURES.CHAT],
-        "Should fall back to default model when no custom endpoint and no Remote Settings"
-      );
-    } finally {
-      sb.restore();
-      Services.prefs.clearUserPref(PREF_MODEL);
-    }
-  }
-);
-
 add_task(async function test_loadPrompt_from_remote_settings() {
   Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
   Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
@@ -406,38 +310,6 @@ add_task(async function test_loadPrompt_from_remote_settings() {
     Assert.ok(
       prompt.includes("title") || prompt.includes("conversation"),
       "Prompt should contain expected content for title generation"
-    );
-  } finally {
-    sb.restore();
-  }
-});
-
-add_task(async function test_loadPrompt_fallback_to_local() {
-  Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
-  Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
-
-  const sb = sinon.createSandbox();
-  try {
-    const fakeEngine = {
-      runWithGenerator() {
-        throw new Error("not used");
-      },
-    };
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves([]),
-    });
-
-    const engine = new openAIEngine();
-    await engine.loadConfig(MODEL_FEATURES.TITLE_GENERATION, MAJOR_VERSION_1);
-
-    const prompt = await engine.loadPrompt(MODEL_FEATURES.TITLE_GENERATION);
-
-    Assert.ok(prompt, "Prompt should fallback to local prompt");
-    Assert.ok(
-      prompt.includes("Generate a concise chat title"),
-      "Should load local prompt when remote settings has no config"
     );
   } finally {
     sb.restore();
@@ -1085,12 +957,15 @@ add_task(async function test_loadPrompt_real_time_context_date() {
     };
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves([]),
-    });
+    // sb.stub(openAIEngine, "getRemoteClient").returns({
+    //   get: sb.stub().resolves([]),
+    // });
 
     const engine = new openAIEngine();
-    await engine.loadConfig(MODEL_FEATURES.REAL_TIME_CONTEXT_DATE);
+    await engine.loadConfig(
+      MODEL_FEATURES.REAL_TIME_CONTEXT_DATE,
+      MAJOR_VERSION_1
+    );
 
     const prompt = await engine.loadPrompt(
       MODEL_FEATURES.REAL_TIME_CONTEXT_DATE
@@ -1124,12 +999,11 @@ add_task(async function test_loadPrompt_real_time_context_tab() {
     };
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves([]),
-    });
-
     const engine = new openAIEngine();
-    await engine.loadConfig(MODEL_FEATURES.REAL_TIME_CONTEXT_TAB);
+    await engine.loadConfig(
+      MODEL_FEATURES.REAL_TIME_CONTEXT_TAB,
+      MAJOR_VERSION_1
+    );
 
     const prompt = await engine.loadPrompt(
       MODEL_FEATURES.REAL_TIME_CONTEXT_TAB
@@ -1167,12 +1041,11 @@ add_task(async function test_loadPrompt_real_time_context_mentions() {
     };
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves([]),
-    });
-
     const engine = new openAIEngine();
-    await engine.loadConfig(MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS);
+    await engine.loadConfig(
+      MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS,
+      MAJOR_VERSION_1
+    );
 
     const prompt = await engine.loadPrompt(
       MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS
@@ -1202,13 +1075,10 @@ add_task(async function test_loadPrompt_conversation_suggestions() {
     };
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves([]),
-    });
-
     const engine = new openAIEngine();
     await engine.loadConfig(
-      MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER
+      MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER,
+      MAJOR_VERSION_2
     );
 
     const prompt = await engine.loadPrompt(

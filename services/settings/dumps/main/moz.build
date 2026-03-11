@@ -5,12 +5,13 @@
 if CONFIG["MOZ_BUILD_APP"] == "browser":
     # These collections are only referenced from browser/
     FINAL_TARGET_FILES.defaults.settings.main += [
+        "ai-window-prompts.json",
         "language-dictionaries.json",
         "newtab-wallpapers-v2.json",
         "search-telemetry-v2.json",
         "sites-classification.json",
         "top-sites.json",
-        "urlbar-persisted-search-terms.json",
+        "urlbar-persisted-search-terms.json"
    ]
 
 # These collections are referenced in toolkit/ or other core code, however

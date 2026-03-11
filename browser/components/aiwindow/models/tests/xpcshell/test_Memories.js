@@ -266,12 +266,14 @@ Tell me a joke about my favorite animals.`.trim(),
 
     const engineStub = sb
       .stub(openAIEngine, "_createEngine")
-      .returns(fakeEngine);
+      .resolves(fakeEngine);
+
     const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES,
+      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
       DEFAULT_ENGINE_ID,
       SERVICE_TYPES.MEMORIES
     );
+
     Assert.ok(engineStub.calledOnce, "_createEngine should be called once");
 
     const sources = { conversation: recentMessages };
@@ -351,9 +353,9 @@ add_task(async function test_generateInitialMemoriesList_happy_path() {
     };
 
     // Check that the stub was called
-    const stub = sb.stub(openAIEngine, "_createEngine").returns(fakeEngine);
+    const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
     const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES,
+      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
       DEFAULT_ENGINE_ID,
       SERVICE_TYPES.MEMORIES
     );
@@ -438,7 +440,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").returns(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );
@@ -479,7 +481,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").returns(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );
@@ -520,7 +522,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").returns(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );
@@ -607,7 +609,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").returns(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );
@@ -682,7 +684,7 @@ add_task(async function test_deduplicateMemoriesList_happy_path() {
     // Check that the stub was called
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
     const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES,
+      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
       DEFAULT_ENGINE_ID,
       SERVICE_TYPES.MEMORIES
     );
@@ -748,7 +750,7 @@ add_task(async function test_deduplicateMemoriesList_sad_path_empty_output() {
     // Check that the stub was called
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
     const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES,
+      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
       DEFAULT_ENGINE_ID,
       SERVICE_TYPES.MEMORIES
     );
@@ -789,7 +791,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );
@@ -837,7 +839,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );
@@ -885,7 +887,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );
@@ -954,7 +956,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );
@@ -1015,7 +1017,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );
@@ -1074,7 +1076,7 @@ add_task(async function test_filterSensitiveMemories_happy_path() {
     // Check that the stub was called
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
     const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES,
+      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
       DEFAULT_ENGINE_ID,
       SERVICE_TYPES.MEMORIES
     );
@@ -1131,7 +1133,7 @@ add_task(async function test_filterSensitiveMemories_sad_path_empty_output() {
     // Check that the stub was called
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
     const engine = await openAIEngine.build(
-      MODEL_FEATURES.MEMORIES,
+      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
       DEFAULT_ENGINE_ID,
       SERVICE_TYPES.MEMORIES
     );
@@ -1178,7 +1180,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );
@@ -1228,7 +1230,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );
@@ -1280,7 +1282,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );
@@ -1334,7 +1336,7 @@ add_task(
       // Check that the stub was called
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
       const engine = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
         DEFAULT_ENGINE_ID,
         SERVICE_TYPES.MEMORIES
       );

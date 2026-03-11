@@ -7,7 +7,6 @@ with Files("**"):
 
 DIRS += [
     "memories",
-    "prompts",
 ]
 
 BROWSER_CHROME_MANIFESTS += [
