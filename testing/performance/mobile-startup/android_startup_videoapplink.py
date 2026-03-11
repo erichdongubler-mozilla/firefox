@@ -257,6 +257,12 @@ class ImageAnalzer:
             ):
                 process_name = "com.android.chrome:sandboxed_process"
 
+            # Fenix process names may be tagged with "_disable_art_image_" (see
+            # bug 2005825) but that should be ignored for the process names used
+            # here.
+            if "org.mozilla.fenix" in process_name:
+                process_name = process_name.replace("_disable_art_image_", "")
+
             if process_name not in self.cpu_data.keys():
                 self.cpu_data[process_name] = {}
                 self.cpu_data[process_name]["time"] = []
