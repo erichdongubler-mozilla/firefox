@@ -537,32 +537,43 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   // thrown an error for duplicate elements/attributes by this point. The map
   // and sets can't have duplicates by definition.
 
-  // Step 5. If both config[elements] and config[replaceWithChildrenElements]
-  // exist, then the intersection of config[elements] and
-  // config[replaceWithChildrenElements] is empty.
-  if (mElements && mReplaceWithChildrenElements) {
-    for (const CanonicalElement& name : mElements->Keys()) {
-      if (mReplaceWithChildrenElements->Contains(name)) {
-        aRv.ThrowTypeError(
-            nsFmtCString("Element {} can't be in both 'elements' "
-                         "and 'replaceWithChildrenElements'.",
-                         name));
-        return;
-      }
+  // Step 11. If config["replaceWithChildrenElements"] exists:
+  if (mReplaceWithChildrenElements) {
+    // Step 11.1. If configuration["replaceWithChildrenElements"] contains «[
+    // "name" → "html", "namespace" → HTML namespace ]», then return false.
+    CanonicalElement htmlElement(nsGkAtoms::html, nsGkAtoms::nsuri_xhtml);
+    if (mReplaceWithChildrenElements->Contains(htmlElement)) {
+      aRv.ThrowTypeError(nsFmtCString(
+          "Element {} is not allowed in 'replaceWithChildrenElements'",
+          htmlElement));
+      return;
     }
-  }
 
-  // Step 6. If both config[removeElements] and
-  // config[replaceWithChildrenElements] exist, then the intersection of
-  // config[removeElements] and config[replaceWithChildrenElements] is empty.
-  if (mRemoveElements && mReplaceWithChildrenElements) {
-    for (const CanonicalElement& name : *mRemoveElements) {
-      if (mReplaceWithChildrenElements->Contains(name)) {
-        aRv.ThrowTypeError(
-            nsFmtCString("Element {} can't be in both 'removeElements' and "
-                         "'replaceWithChildrenElements'.",
-                         name));
-        return;
+    // Step 11.2. If config["elements"] exists:
+    if (mElements) {
+      // Step 11.2.1. If the intersection of config["elements"] and
+      // config["replaceWithChildrenElements"] is not empty, then return false.
+      for (const CanonicalElement& name : mElements->Keys()) {
+        if (mReplaceWithChildrenElements->Contains(name)) {
+          aRv.ThrowTypeError(
+              nsFmtCString("Element {} can't be in both 'elements' "
+                           "and 'replaceWithChildrenElements'.",
+                           name));
+          return;
+        }
+      }
+    } else {
+      // Step 11.3. Otherwise:
+      // Step 11.3.1. If the intersection of config["removeElements"] and
+      // config["replaceWithChildrenElements"] is not empty, then return false.
+      for (const CanonicalElement& name : *mRemoveElements) {
+        if (mReplaceWithChildrenElements->Contains(name)) {
+          aRv.ThrowTypeError(
+              nsFmtCString("Element {} can't be in both 'removeElements' and "
+                           "'replaceWithChildrenElements'.",
+                           name));
+          return;
+        }
       }
     }
   }
@@ -1620,14 +1631,12 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
       // and if configuration["replaceWithChildrenElements"] contains
       // elementName:
       if (mReplaceWithChildrenElements &&
-          mReplaceWithChildrenElements->Contains(*elementName) &&
-          // Temporary fix for Bug 2004112
-          // To be specified by https://github.com/WICG/sanitizer-api/issues/365
-          !!child->GetParent()) {
+          mReplaceWithChildrenElements->Contains(*elementName)) {
         // Note: This follows nsTreeSanitizer by first inserting the
         // child's children in place of the current child and then
         // continueing the sanitization from the first inserted grandchild.
         nsCOMPtr<nsIContent> parent = child->GetParent();
+        MOZ_DIAGNOSTIC_ASSERT(parent);
         nsCOMPtr<nsIContent> firstChild = child->GetFirstChild();
         nsCOMPtr<nsIContent> newChild = firstChild;
         for (; newChild; newChild = child->GetFirstChild()) {
