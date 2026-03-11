@@ -223,13 +223,13 @@ bool WindowFeatures::Tokenize(const nsACString& aFeatures) {
 void WindowFeatures::Stringify(nsAutoCString& aOutput) {
   MOZ_ASSERT(aOutput.IsEmpty());
 
-  for (auto r = tokenizedFeatures_.all(); !r.empty(); r.popFront()) {
+  for (auto iter = tokenizedFeatures_.iter(); !iter.done(); iter.next()) {
     if (!aOutput.IsEmpty()) {
       aOutput.Append(',');
     }
 
-    const nsCString& name = r.front().key();
-    const nsCString& value = r.front().value();
+    const nsCString& name = iter.get().key();
+    const nsCString& value = iter.get().value();
 
     aOutput.Append(name);
 
