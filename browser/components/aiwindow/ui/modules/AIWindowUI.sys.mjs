@@ -285,21 +285,6 @@ export const AIWindowUI = {
   },
 
   /**
-   * Triggers updating the starter prompts in the sidebar window if it
-   * is already opened.
-   *
-   * @param {Window} win
-   */
-  updateStarterPrompts(win) {
-    const sidebarAiWindow = this._getSidebarAiWindow(win);
-    if (!sidebarAiWindow) {
-      return;
-    }
-
-    sidebarAiWindow.loadStarterPrompts(true);
-  },
-
-  /**
    * Gets the sidebar instance of the ai-window component
    *
    * @param {Window} win
@@ -312,6 +297,6 @@ export const AIWindowUI = {
     }
 
     const aiWindowBrowser = win.document.getElementById(this.BROWSER_ID);
-    return aiWindowBrowser.contentDocument.querySelector("ai-window:defined");
+    return aiWindowBrowser?.contentDocument?.querySelector("ai-window");
   },
 };

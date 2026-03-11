@@ -278,7 +278,7 @@ export class AIWindowTabStatesManager {
    * @private
    */
   #addTabState(tab) {
-    this.#tabStates.set(tab, { state: {} });
+    this.#tabStates.set(tab, { state: null });
   }
 
   /**
@@ -486,8 +486,6 @@ export class AIWindowTabStatesManager {
         const browser = webProgress.browsingContext?.embedderElement;
         const tab = this.#window.gBrowser.getTabForBrowser(browser);
         let tabState = this.#tabStates.get(tab);
-
-        lazy.AIWindowUI.updateStarterPrompts(this.#window);
 
         if (!tabState || !tabState?.state?.conversationId) {
           return;
