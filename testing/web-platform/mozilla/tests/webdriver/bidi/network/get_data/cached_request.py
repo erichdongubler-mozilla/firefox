@@ -8,12 +8,13 @@ from tests.bidi.network import (
 )
 from webdriver.bidi import error
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.mark.parametrize(
     "use_collector",
     [True, False],
 )
-@pytest.mark.asyncio
 async def test_cached_stylesheet(
     bidi_session,
     configuration,

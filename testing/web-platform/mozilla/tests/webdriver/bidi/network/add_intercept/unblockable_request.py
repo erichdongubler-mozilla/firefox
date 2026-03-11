@@ -12,8 +12,9 @@ from tests.bidi.network import (
     get_next_event_for_url,
 )
 
+pytestmark = pytest.mark.asyncio
 
-@pytest.mark.asyncio
+
 async def test_data_uri(
     bidi_session,
     add_intercept,
@@ -74,7 +75,6 @@ async def test_data_uri(
     )
 
 
-@pytest.mark.asyncio
 async def test_cached_resources(
     bidi_session,
     configuration,
