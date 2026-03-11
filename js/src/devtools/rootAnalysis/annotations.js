@@ -442,6 +442,13 @@ function isUnsafeStorage(typeName)
     return typeName.startsWith('UniquePtr<');
 }
 
+function getTypeNameAttributes(typeName, typeInfo) {
+    let attrs = 0;
+    if (typeName in typeInfo.GCSuppressors)
+        attrs = attrs | ATTR_GC_SUPPRESSED;
+    return attrs;
+}
+
 // Returns a Fld access (where ret.Exp[0] is the expr being constructed into and
 // ret.Field has the Maybe<T> type) if the edge represents the constexpr default
 // Maybe constructor. Returns undefined if the edge is anything else.
@@ -508,7 +515,7 @@ function assignEdgeIsMaybeConstructor(edge) {
 // If edge is a constructor invocation, return whatever attributes that
 // constructor implies for its scope, together with the variable that was
 // constructed. Else return undefined.
-function matchConstructorEdge(ffg, edge)
+function matchConstructorEdge(typeInfo, edge)
 {
     if (edge.Kind == "Assign") {
         const fld = assignEdgeIsMaybeConstructor(edge);
@@ -517,7 +524,7 @@ function matchConstructorEdge(ffg, edge)
             if (!constructed) {
                 return;
             }
-            const attrs = ffg.getAttrsForTypeName(fld.Field.FieldCSU.Type.Name);
+            const attrs = getTypeNameAttributes(fld.Field.FieldCSU.Type.Name, typeInfo);
             return { attrs, constructed };
         }
 
@@ -561,7 +568,7 @@ function matchConstructorEdge(ffg, edge)
     if (m[1] != type_stem)
         return;
 
-    const attrs = ffg.getAttrsForTypeName(typeName);
+    const attrs = getTypeNameAttributes(typeName, typeInfo);
     const constructed = edge.PEdgeCallInstance.Exp;
     return { attrs, constructed };
 }
@@ -576,7 +583,7 @@ function matchConstructorEdge(ffg, edge)
 // Note that WebIDL callbacks can also invoke JS code, but our code generator
 // produces regular C++ code and so does not need any annotations. (There will
 // be a call to JS::Call() or similar.)
-function virtualCanRunJS(typeInfo, csu, field)
+function virtualCanRunJS(csu, field)
 {
     const tags = typeInfo.OtherFieldTags;
     const iface = tags[csu]

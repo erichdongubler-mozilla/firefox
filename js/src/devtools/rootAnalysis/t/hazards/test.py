@@ -143,21 +143,6 @@ assert "bw1" not in haz_vars
 assert "bw2" in haz_vars
 assert "bw3" not in haz_vars
 assert "d" in haz_vars
-assert "cw1" in haz_vars
-
-ti = test.load_typeInfo()
-single = ti["SingleGCField"]
-assert "Cell" in single
-scope = "_Z19partial_assignmentsv::"
-assert (scope + "A") in single
-assert (scope + "B") in single
-assert (scope + "C") not in single  # Two Cell*
-assert (scope + "Aw") in single
-assert (scope + "Bw") in single
-assert (scope + "D") not in single  # 3 x struct A
-assert (scope + "Cw") not in single
-assert (scope + "TwoPointers") not in single
-assert (scope + "PairOfPointers") not in single
 
 # lambda tests.
 

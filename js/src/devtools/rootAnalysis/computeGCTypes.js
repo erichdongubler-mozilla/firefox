@@ -497,18 +497,6 @@ function addGCPointer(typeName)
     pendingGCTypes.push([typeName, '<pointer-annotation>', '(annotation)', 1, 0]);
 }
 
-// This will be a table of all types that have a single field containing any GC
-// pointers. The values will be the type of that field.
-var singleFieldTypes = {};
-
-// Initialize with the base GC types and pointer types. We only really care
-// about the pointer types, but for a field that is a pointer to a GC type, it's
-// useful to have the base type in the table.
-for (const [typeName, reason, _] of pendingGCTypes) {
-  singleFieldTypes[typeName] = reason;
-}
-
-// Recursively mark all GC types and GC pointer types.
 for (const pending of pendingGCTypes) {
     markGCType(...pending);
 }
@@ -549,7 +537,7 @@ function getGCPointerFieldType(type) {
 // it to any type that contains a single GC pointer. If that field is
 // overwritten, then the whole previous value can be treated as dead for the
 // purposes of the static rooting hazard analysis.
-function populateSinglePointerFieldTable(table, csu, decl) {
+function checkSingleGCPointer(csu, decl) {
     if (!(csu in gcPointers)) return;
 
     let singleGCPointerField;
@@ -566,65 +554,28 @@ function populateSinglePointerFieldTable(table, csu, decl) {
     }
 
     if (singleGCPointerField) {
-        table[csu] = singleGCPointerField;
+        typeInfo.SingleGCField[csu] = singleGCPointerField;
     }
 }
 
-// Scan through all types and collect a table of the ones that have a single
-// field containing 1 or more GC pointers. The table will be a map from a type
-// to the type of its single pointer-containing field.
 for (var csuIndex = minStream; csuIndex <= maxStream; csuIndex++) {
     var csuData = xdb.read_key(csuIndex);
     var data = xdb.read_entry(csuData);
     var decl = JSON.parse(data.readString())[0];
     const csu = csuData.readString();
-    populateSinglePointerFieldTable(singleFieldTypes, csu, decl);
+    checkSingleGCPointer(csu, decl);
     xdb.free_string(csuData);
     xdb.free_string(data);
 }
 
-// The table will include types with multiple GC pointers within a single field.
-// Example:
-//
-//   struct TwoPointers {
-//     JSObject* one;
-//     JSObject* two;
-//   };
-//   struct Bundled {
-//     TwoPointers pair;
-//     int nonPointer;
-//   };
-//
-// `TwoPointers` will not be in the table, because it contains multiple fields
-// containing GC pointers. `Bundled` *will* be in the table, because it only
-// contains a single field with GC pointer(s).
-//
-
-// We can strip out the unwanted entries by looking at each type and checking
-// whether its single pointer-containing field is itself in the table, and
-// discarding such entries if not. This is a recursive process; other types may
-// need to be discarded. To make this efficient, invert the table so that we can
-// propagate discards.
-var reversed = {};
-var discards = []; // Also collect the top level of discards.
-for (const [type, pointerFieldType] of Object.entries(singleFieldTypes)) {
-    const containers = (reversed[pointerFieldType] ||= []);
-    containers.push(type);
-    if (!pointerFieldType.endsWith("annotation>") && !(pointerFieldType in singleFieldTypes)) {
-        discards.push(type);
+// SingleGCField does not have the "base" GC types (Cell, JSObject, etc.) as
+// values, only as keys. Add them so that we can check field accesses against a
+// comprehensive list of valid candidates.
+for (const typeName of Object.values(typeInfo.SingleGCField)) {
+    if (!(typeName in typeInfo.SingleGCField)) {
+        typeInfo.SingleGCField[typeName] = (typeName in gcTypes) ? "<GC type>" : "<GC pointer>";
     }
 }
-
-while (discards.length > 0) {
-    const dead = discards.pop();
-    delete singleFieldTypes[dead];
-    if (dead in reversed) {
-        discards.push(...reversed[dead]);
-        delete reversed[dead]; // Avoid cycles
-    }
-}
-
-typeInfo.SingleGCField = singleFieldTypes;
 
 // Call a function for a type and every type that contains the type in a field
 // or as a base class (which internally is pretty much the same thing --
