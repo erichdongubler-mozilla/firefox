@@ -492,36 +492,44 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
   }
 
   renderPersonalizationData() {
-    const { inferredInterests, coarsePrivateInferredInterests } =
-      this.props.state.InferredPersonalization;
-    const hasModelOverride = Boolean(
+    const {
+      inferredInterests,
+      coarseInferredInterests,
+      coarsePrivateInferredInterests,
+    } = this.props.state.InferredPersonalization;
+    const inferredPersonalizationEnabled = Boolean(
       this.props.otherPrefs?.[
-        "discoverystream.sections.personalization.inferred.model.override"
+        "discoverystream.sections.personalization.inferred.enabled"
       ]
     );
+    const hasModelData =
+      inferredInterests !== undefined ||
+      coarseInferredInterests !== undefined ||
+      coarsePrivateInferredInterests !== undefined;
+    if (!inferredPersonalizationEnabled || !hasModelData) {
+      return null;
+    }
     return (
       <div className="personalization-data">
         {this.renderInferredPersonalizationOverrides()}
-        {hasModelOverride ? (
-          <div className="inferred-vectors-row">
-            <div className="inferred-vector-column">
-              <div className="inferred-vector-title">Raw Interest Values</div>
-              <div className="inferred-vector-panel">
-                <pre>{JSON.stringify(inferredInterests, null, 2)}</pre>
-              </div>
-            </div>
-            <div className="inferred-vector-column">
-              <div className="inferred-vector-title">
-                Differentially Private Interest Vector{" "}
-              </div>
-              <div className="inferred-vector-panel">
-                <pre>
-                  {JSON.stringify(coarsePrivateInferredInterests, null, 2)}
-                </pre>
-              </div>
+        <div className="inferred-vectors-row">
+          <div className="inferred-vector-column">
+            <div className="inferred-vector-title">Raw Interest Values</div>
+            <div className="inferred-vector-panel">
+              <pre>{JSON.stringify(inferredInterests, null, 2)}</pre>
             </div>
           </div>
-        ) : null}
+          <div className="inferred-vector-column">
+            <div className="inferred-vector-title">
+              Differentially Private Interest Vector{" "}
+            </div>
+            <div className="inferred-vector-panel">
+              <pre>
+                {JSON.stringify(coarsePrivateInferredInterests, null, 2)}
+              </pre>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

@@ -1017,12 +1017,17 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
   renderPersonalizationData() {
     const {
       inferredInterests,
+      coarseInferredInterests,
       coarsePrivateInferredInterests
     } = this.props.state.InferredPersonalization;
-    const hasModelOverride = Boolean(this.props.otherPrefs?.["discoverystream.sections.personalization.inferred.model.override"]);
+    const inferredPersonalizationEnabled = Boolean(this.props.otherPrefs?.["discoverystream.sections.personalization.inferred.enabled"]);
+    const hasModelData = inferredInterests !== undefined || coarseInferredInterests !== undefined || coarsePrivateInferredInterests !== undefined;
+    if (!inferredPersonalizationEnabled || !hasModelData) {
+      return null;
+    }
     return /*#__PURE__*/external_React_default().createElement("div", {
       className: "personalization-data"
-    }, this.renderInferredPersonalizationOverrides(), hasModelOverride ? /*#__PURE__*/external_React_default().createElement("div", {
+    }, this.renderInferredPersonalizationOverrides(), /*#__PURE__*/external_React_default().createElement("div", {
       className: "inferred-vectors-row"
     }, /*#__PURE__*/external_React_default().createElement("div", {
       className: "inferred-vector-column"
@@ -1036,7 +1041,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       className: "inferred-vector-title"
     }, "Differentially Private Interest Vector", " "), /*#__PURE__*/external_React_default().createElement("div", {
       className: "inferred-vector-panel"
-    }, /*#__PURE__*/external_React_default().createElement("pre", null, JSON.stringify(coarsePrivateInferredInterests, null, 2))))) : null);
+    }, /*#__PURE__*/external_React_default().createElement("pre", null, JSON.stringify(coarsePrivateInferredInterests, null, 2))))));
   }
   renderInferredPersonalizationOverrides() {
     const {

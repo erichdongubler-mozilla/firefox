@@ -225,6 +225,7 @@ describe("DiscoveryStreamAdmin", () => {
             otherPrefs={{
               "discoverystream.contextualContent.selectedFeed": "foo",
               "discoverystream.contextualContent.feeds": "foo, bar",
+              "discoverystream.sections.personalization.inferred.enabled": true,
             }}
             state={{
               DiscoveryStream: state,
@@ -345,6 +346,7 @@ describe("DiscoveryStreamAdmin", () => {
             otherPrefs={{
               "discoverystream.contextualContent.selectedFeed": "foo",
               "discoverystream.contextualContent.feeds": "foo, bar",
+              "discoverystream.sections.personalization.inferred.enabled": true,
             }}
             state={{
               DiscoveryStream: state,
@@ -371,6 +373,7 @@ describe("DiscoveryStreamAdmin", () => {
             otherPrefs={{
               "discoverystream.contextualContent.selectedFeed": "foo",
               "discoverystream.contextualContent.feeds": "foo, bar",
+              "discoverystream.sections.personalization.inferred.enabled": true,
             }}
             state={{
               DiscoveryStream: state,
