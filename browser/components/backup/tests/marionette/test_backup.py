@@ -226,9 +226,8 @@ class BackupTest(MarionetteTestCase):
         self.marionette.start_session()
         self.marionette.set_context("chrome")
 
-        # Ensure that all postRecovery actions have completed, and that
-        # encryption is enabled.
-        encryptionEnabled = self.marionette.execute_async_script(
+        # Ensure that all postRecovery actions have completed.
+        self.marionette.execute_async_script(
             """
           const { BackupService } = ChromeUtils.importESModule("resource:///modules/backup/BackupService.sys.mjs");
           let bs = BackupService.get();
@@ -239,13 +238,9 @@ class BackupTest(MarionetteTestCase):
           let [outerResolve] = arguments;
           (async () => {
             await bs.postRecoveryComplete;
-
-            await bs.loadEncryptionState();
-            return bs.state.encryptionEnabled;
           })().then(outerResolve);
         """
         )
-        self.assertTrue(encryptionEnabled)
 
         self.verify_recovered_test_cookie()
         self.verify_recovered_test_login()

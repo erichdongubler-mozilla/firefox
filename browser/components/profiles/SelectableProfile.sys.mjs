@@ -582,7 +582,6 @@ export class SelectableProfile {
       await backupServiceInstance.recoverFromSnapshotFolderIntoSelectableProfile(
         result.stagingPath,
         true, // shouldLaunch
-        encState, // encState
         this // copiedProfile
       );
 

@@ -3019,16 +3019,6 @@ export class BackupService extends EventTarget {
         recoveryCode
       );
 
-      let encState = null;
-      if (recoveryCode) {
-        // We were passed a recovery code and made it to this line. That implies
-        // that the backup was encrypted, and the recovery code was the correct
-        // one to decrypt it. We now generate a new ArchiveEncryptionState with
-        // that recovery code to write into the recovered profile.
-        ({ instance: encState } =
-          await lazy.ArchiveEncryptionState.initialize(recoveryCode));
-      }
-
       const RECOVERY_FOLDER_DEST_PATH = PathUtils.join(
         profilePath,
         BackupService.PROFILE_FOLDER_NAME,
@@ -3096,7 +3086,6 @@ export class BackupService extends EventTarget {
             await this.recoverFromSnapshotFolderIntoSelectableProfile(
               RECOVERY_FOLDER_DEST_PATH,
               shouldLaunchOrQuit,
-              encState,
               null,
               profileRootPath,
               manifest,
@@ -3107,7 +3096,6 @@ export class BackupService extends EventTarget {
             RECOVERY_FOLDER_DEST_PATH,
             shouldLaunchOrQuit,
             profileRootPath,
-            encState,
             manifest
           );
         }
@@ -3327,36 +3315,6 @@ export class BackupService extends EventTarget {
   }
 
   /**
-   * If the encState exists, write the encrypted state object to the
-   * ARCHIVE_ENCRYPTION_STATE_FILE.
-   *
-   * @param {ArchiveEncryptionState|null} encState Set if the backup being
-   *   recovered was encrypted. This implies that the profile being recovered
-   *   was configured to create encrypted backups. This ArchiveEncryptionState
-   *   is therefore needed to generate the ARCHIVE_ENCRYPTION_STATE_FILE for
-   *   the recovered profile (since the original ARCHIVE_ENCRYPTION_STATE_FILE
-   *   was intentionally not backed up, as the recovery device might have a
-   *   different OSKeyStore secret).
-   * @param {string} profilePath The path of the newly recovered profile
-   */
-  async #maybeWriteEncryptedStateObject(encState, profilePath) {
-    if (encState) {
-      // The backup we're recovering was originally encrypted, meaning that
-      // the recovered profile is configured to create encrypted backups. Our
-      // caller passed us a _new_ ArchiveEncryptionState generated for this
-      // device with the backup's recovery code so that we can serialize the
-      // ArchiveEncryptionState for the recovered profile.
-      let encStatePath = PathUtils.join(
-        profilePath,
-        BackupService.PROFILE_FOLDER_NAME,
-        BackupService.ARCHIVE_ENCRYPTION_STATE_FILE
-      );
-      let encStateObject = await encState.serialize();
-      await IOUtils.writeJSON(encStatePath, encStateObject);
-    }
-  }
-
-  /**
    * Write the post recovery data to the newly recovered profile.
    *
    * @param {object} postRecoveryData An object containing post recovery data
@@ -3401,13 +3359,6 @@ export class BackupService extends EventTarget {
    *   profile directory should be created. If not provided, the default
    *   profile root directory will be used. This is primarily meant for
    *   testing.
-   * @param {ArchiveEncryptionState} [encState=null]
-   *   Set if the backup being recovered was encrypted. This implies that the
-   *   profile being recovered was configured to create encrypted backups. This
-   *   ArchiveEncryptionState is therefore needed to generate the
-   *   ARCHIVE_ENCRYPTION_STATE_FILE for the recovered profile (since the
-   *   original ARCHIVE_ENCRYPTION_STATE_FILE was intentionally not backed up,
-   *   as the recovery device might have a different OSKeyStore secret).
    * @param {object} [manifest=null]
    *   If we've already read and validated the manifest, we can avoid redoing that work
    *   by passing this in as a parameter.
@@ -3420,7 +3371,6 @@ export class BackupService extends EventTarget {
     recoveryPath,
     shouldLaunch = false,
     profileRootPath = null,
-    encState = null,
     manifest = null
   ) {
     lazy.logConsole.debug("Recovering from backup at ", recoveryPath);
@@ -3463,11 +3413,6 @@ export class BackupService extends EventTarget {
           },
         };
       } catch {}
-
-      await this.#maybeWriteEncryptedStateObject(
-        encState,
-        profile.rootDir.path
-      );
 
       await this.#writePostRecoveryData(postRecovery, profile.rootDir.path);
 
@@ -3534,13 +3479,6 @@ export class BackupService extends EventTarget {
    *   An optional argument that specifies whether an instance of the app
    *   should be launched with the newly recovered profile after recovery is
    *   complete.
-   * @param {ArchiveEncryptionState} [encState=null]
-   *   Set if the backup being recovered was encrypted. This implies that the
-   *   profile being recovered was configured to create encrypted backups. This
-   *   ArchiveEncryptionState is therefore needed to generate the
-   *   ARCHIVE_ENCRYPTION_STATE_FILE for the recovered profile (since the
-   *   original ARCHIVE_ENCRYPTION_STATE_FILE was intentionally not backed up,
-   *   as the recovery device might have a different OSKeyStore secret).
    * @param {SelectableProfile} [copiedProfile=null]
    *   If the profile we are recovering is a "copied" profile, we don't want to
    *   inherit the client ID as this profile will be a new profile in the
@@ -3563,7 +3501,6 @@ export class BackupService extends EventTarget {
   async recoverFromSnapshotFolderIntoSelectableProfile(
     recoveryPath,
     shouldLaunch = false,
-    encState = null,
     copiedProfile = null,
     profileRootPath = null,
     manifest = null,
@@ -3598,8 +3535,6 @@ export class BackupService extends EventTarget {
         recoveryPath,
         profile.path
       );
-
-      await this.#maybeWriteEncryptedStateObject(encState, profile.path);
 
       await this.#writePostRecoveryData(postRecovery, profile.path);
 
