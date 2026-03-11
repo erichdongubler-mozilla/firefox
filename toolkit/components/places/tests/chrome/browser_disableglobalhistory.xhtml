@@ -22,6 +22,8 @@
   function expectUseGlobalHistory(id, expected) {
     let browser = document.getElementById(id);
     /* eslint-disable-next-line no-shadow */
+    // TODO: Switch to SpecialPowers.spawn
+// eslint-disable-next-line mozilla/reject-contenttask-spawn
     return ContentTask.spawn(browser, {id, expected}, function({id, expected}) {
       Assert.equal(docShell.browsingContext.useGlobalHistory, expected,
                    "Got the right useGlobalHistory state in the docShell of " + id);

@@ -645,6 +645,8 @@ async function testOpenPDFPreview({
         info("waiting for downloadsLoaded");
         await downloadsLoaded;
 
+        // TODO: Switch to SpecialPowers.spawn
+        // eslint-disable-next-line mozilla/reject-contenttask-spawn
         await ContentTask.spawn(
           browser,
           [expected.downloadCount],

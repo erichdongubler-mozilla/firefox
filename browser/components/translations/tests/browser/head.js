@@ -72,6 +72,8 @@ async function addTab(url, message, win = window) {
      * @returns {Promise<void>}
      */
     runInPage(callback, data = {}) {
+      // TODO: Switch to SpecialPowers.spawn
+      // eslint-disable-next-line mozilla/reject-contenttask-spawn
       return ContentTask.spawn(
         tab.linkedBrowser,
         { contentData: data, callbackSource: callback.toString() }, // Data to inject.

@@ -188,6 +188,8 @@ async function getFormSubmitResponseResult(
   { username = "#user", password = "#pass" } = {}
 ) {
   // default selectors are for the response page produced by formsubmit.sjs
+  // TODO: Switch to SpecialPowers.spawn
+  // eslint-disable-next-line mozilla/reject-contenttask-spawn
   let fieldValues = await ContentTask.spawn(
     browser,
     { resultURL, usernameSelector: username, passwordSelector: password },
@@ -704,6 +706,8 @@ async function fillGeneratedPasswordFromOpenACPopup(
     return item && !EventUtils.isHidden(item);
   }, "Waiting for item to become visible");
 
+  // TODO: Switch to SpecialPowers.spawn
+  // eslint-disable-next-line mozilla/reject-contenttask-spawn
   let inputEventPromise = ContentTask.spawn(
     browser,
     passwordInputSelector,
@@ -893,6 +897,8 @@ async function changeContentInputValue(
   shouldBlur = true
 ) {
   await SimpleTest.promiseFocus(browser.ownerGlobal);
+  // TODO: Switch to SpecialPowers.spawn
+  // eslint-disable-next-line mozilla/reject-contenttask-spawn
   let oldValue = await ContentTask.spawn(browser, selector, function (sel) {
     return content.document.querySelector(sel).value;
   });
@@ -902,6 +908,8 @@ async function changeContentInputValue(
     return;
   }
   info(`changeContentInputValue: from "${oldValue}" to "${str}"`);
+  // TODO: Switch to SpecialPowers.spawn
+  // eslint-disable-next-line mozilla/reject-contenttask-spawn
   await ContentTask.spawn(
     browser,
     { selector, str, shouldBlur },

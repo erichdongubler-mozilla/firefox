@@ -39,6 +39,8 @@ const FEATURE_BLOCKED_UI = {
  * @param {boolean} enabled
  */
 async function assertMainUserInterfaceEnabledState(enabled) {
+  // TODO: Switch to SpecialPowers.spawn
+  // eslint-disable-next-line mozilla/reject-contenttask-spawn
   const controlStates = await ContentTask.spawn(
     gBrowser.selectedBrowser,
     {},

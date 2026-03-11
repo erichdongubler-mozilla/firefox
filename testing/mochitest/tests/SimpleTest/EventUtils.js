@@ -1712,6 +1712,8 @@ function synthesizeAndWaitNativeMouseMove(
       resolve();
     });
   });
+  // TODO: Switch to SpecialPowers.spawn
+  // eslint-disable-next-line mozilla/reject-contenttask-spawn
   let eventReceivedPromise = ContentTask.spawn(
     browser,
     [aOffsetX, aOffsetY],
@@ -1883,6 +1885,8 @@ function synthesizeAndWaitKey(
     });
   });
   // eslint-disable-next-line no-shadow
+  // TODO: Switch to SpecialPowers.spawn
+  // eslint-disable-next-line mozilla/reject-contenttask-spawn
   let keyReceivedPromise = ContentTask.spawn(browser, keyCode, keyCode => {
     return new Promise(resolve => {
       addEventListener("keyup", function onKeyEvent(e) {

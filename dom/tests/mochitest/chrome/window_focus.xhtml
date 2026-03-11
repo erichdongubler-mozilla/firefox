@@ -1535,6 +1535,8 @@ function doFrameHistoryTests()
   let firstLocation = "https://example.org/chrome/dom/tests/mochitest/chrome/child_focus_frame.html";
   frame.src = firstLocation;
   loaded.then(() => {
+    // TODO: Switch to SpecialPowers.spawn
+// eslint-disable-next-line mozilla/reject-contenttask-spawn
     return ContentTask.spawn(frame, {}, () => {
       let fm = Cc["@mozilla.org/focus-manager;1"].getService(Ci.nsIFocusManager);
       let t20 = content.document.getElementById("t20");
@@ -1556,6 +1558,8 @@ function doFrameHistoryTests()
   }).then(({ location, persisted }) => {
     is(location, firstLocation, "should go back to the right page");
     ok(persisted, "test relies on BFCache");
+    // TODO: Switch to SpecialPowers.spawn
+// eslint-disable-next-line mozilla/reject-contenttask-spawn
     return ContentTask.spawn(frame, {}, () => {
       let fm = Cc["@mozilla.org/focus-manager;1"].getService(Ci.nsIFocusManager);
       let t20 = content.document.getElementById("t20");

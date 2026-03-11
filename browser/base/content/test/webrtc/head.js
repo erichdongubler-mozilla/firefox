@@ -345,6 +345,8 @@ function promiseMessage(
   browser = gBrowser.selectedBrowser
 ) {
   let startTime = ChromeUtils.now();
+  // TODO: Switch to SpecialPowers.spawn
+  // eslint-disable-next-line mozilla/reject-contenttask-spawn
   let promise = ContentTask.spawn(
     browser,
     [aMessage, aCount],

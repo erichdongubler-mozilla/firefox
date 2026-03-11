@@ -347,6 +347,8 @@ async function openAboutTranslations({
   };
 
   const runInPage = (callback, data = {}) => {
+    // TODO: Switch to SpecialPowers.spawn
+    // eslint-disable-next-line mozilla/reject-contenttask-spawn
     return ContentTask.spawn(
       tab.linkedBrowser,
       { selectors, contentData: data, callbackSource: callback.toString() }, // Data to inject.
@@ -3056,6 +3058,8 @@ async function loadTestPage({
      * @type {RunInPageFn}
      */
     runInPage(callback, data = {}) {
+      // TODO: Switch to SpecialPowers.spawn
+      // eslint-disable-next-line mozilla/reject-contenttask-spawn
       return ContentTask.spawn(
         tab.linkedBrowser,
         { contentData: data, callbackSource: callback.toString() }, // Data to inject.
