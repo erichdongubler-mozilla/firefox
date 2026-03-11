@@ -580,7 +580,11 @@ export const AIWindow = {
       this._reconcileNewTabPages(win, previousNewTabURL);
       this._updateToolbarButtonPositions(win, { isToggling: true });
       this._initializeAskButtonOnToolbox(win);
-      Services.obs.notifyObservers(win, "ai-window-state-changed");
+      Services.obs.notifyObservers(
+        win,
+        "ai-window-state-changed",
+        isTogglingToAIWindow ? "smart" : "classic"
+      );
 
       if (isTogglingToAIWindow) {
         if (!this._aiWindowTabStateManagers.has(win)) {

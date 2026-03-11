@@ -2834,11 +2834,16 @@ export class UrlbarInput extends HTMLElement {
 
   /**
    * @param {{wrappedJSObject: SearchEngine}} subject
-   * @param {"browser-search-engine-modified"} topic
+   * @param {"browser-search-engine-modified"|"ai-window-state-changed"} topic
    * @param {string} data
    */
   observe(subject, topic, data) {
     switch (topic) {
+      case "ai-window-state-changed":
+        if (subject == this.window && data == "classic") {
+          this.#updateLayoutBreakout();
+        }
+        break;
       case lazy.SearchUtils.TOPIC_ENGINE_MODIFIED: {
         let engine = subject.wrappedJSObject;
         switch (data) {
@@ -2941,6 +2946,7 @@ export class UrlbarInput extends HTMLElement {
       lazy.SearchUtils.TOPIC_ENGINE_MODIFIED,
       true
     );
+    Services.obs.addObserver(this._observer, "ai-window-state-changed", true);
   }
 
   _removeObservers() {
@@ -2949,6 +2955,7 @@ export class UrlbarInput extends HTMLElement {
         this._observer,
         lazy.SearchUtils.TOPIC_ENGINE_MODIFIED
       );
+      Services.obs.removeObserver(this._observer, "ai-window-state-changed");
       this._observer = null;
     }
   }
