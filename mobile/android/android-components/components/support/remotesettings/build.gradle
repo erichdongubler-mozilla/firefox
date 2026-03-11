@@ -24,7 +24,6 @@ android {
 }
 
 dependencies {
-    implementation project(':components:concept-base')
     implementation project(':components:support-appservices')
     implementation project(':components:support-base')
     implementation project(':components:support-ktx')

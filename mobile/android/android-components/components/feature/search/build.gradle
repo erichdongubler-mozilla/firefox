@@ -28,7 +28,6 @@ android {
 dependencies {
     implementation project(':components:browser-icons')
     implementation project(':components:browser-state')
-    implementation project(':components:concept-base')
     implementation project(':components:concept-engine')
     implementation project(":components:feature-tabs")
     implementation project(':components:service-location')

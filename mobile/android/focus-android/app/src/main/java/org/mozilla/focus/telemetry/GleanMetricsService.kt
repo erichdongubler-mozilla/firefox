@@ -145,7 +145,6 @@ class GleanMetricsService(
                         } else {
                             REMOTE_STAGE_ENDPOINT_URL
                         },
-                        crashReporter = components.crashReporter,
                     ).updateProviderList()
                 }
                 installSearchTelemetryExtensions(components, providerList)

@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.withContext
-import mozilla.appservices.errorsupport.RustComponentsErrorTelemetry
 import mozilla.appservices.places.PlacesReaderConnection
 import mozilla.appservices.places.PlacesWriterConnection
 import mozilla.appservices.places.uniffi.PlacesApiException
@@ -161,9 +160,7 @@ abstract class PlacesStorage(
             logger.warn("Ignoring PlacesApiException while running $operation", e)
         } catch (e: UniffiInternalException) {
             logger.error("Ignoring internal uniffi places exception when running $operation", e)
-            crashReporter?.submitCaughtException(e)
-            reportRustError("places-internal-error", e.toString())
-            RustComponentsErrorTelemetry.submitErrorPing("places-internal-error", e.toString())
+            reportRustError("places-internal-error", e)
         }
     }
 
@@ -196,9 +193,7 @@ abstract class PlacesStorage(
             default
         } catch (e: UniffiInternalException) {
             logger.error("Ignoring internal uniffi places exception when running $operation", e)
-            crashReporter?.submitCaughtException(e)
-            reportRustError("places-internal-error", e.toString())
-            RustComponentsErrorTelemetry.submitErrorPing("places-internal-error", e.toString())
+            reportRustError("places-internal-error", e)
             default
         }
     }

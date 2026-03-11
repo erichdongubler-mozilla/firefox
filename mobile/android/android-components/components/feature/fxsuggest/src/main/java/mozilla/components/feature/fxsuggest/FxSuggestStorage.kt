@@ -10,7 +10,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.withContext
-import mozilla.appservices.errorsupport.RustComponentsErrorTelemetry
 import mozilla.appservices.remotesettings.RemoteSettingsServer
 import mozilla.appservices.suggest.SuggestApiException
 import mozilla.appservices.suggest.SuggestIngestionConstraints
@@ -130,9 +129,7 @@ class FxSuggestStorage(
             default
         } catch (e: UniffiInternalException) {
             Logger.error("Ignoring internal exception from `$name`", e)
-            RustComponentsErrorTelemetry.submitErrorPing("suggest-internal-error", e.toString())
-            reportRustError("suggest-internal-error", e.toString())
-            crashReporter?.submitCaughtException(e)
+            reportRustError("suggest-internal-error", e)
             default
         }
     }
