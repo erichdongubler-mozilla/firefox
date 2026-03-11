@@ -3123,7 +3123,6 @@ static bool PrimitiveToObject(JSContext* cx, MutableHandleValue vp) {
 bool JSStructuredCloneReader::startRead(MutableHandleValue vp,
                                         ShouldAtomizeStrings atomizeStrings) {
   uint32_t tag, data;
-  bool alreadAppended = false;
 
   AutoCheckRecursionLimit recursion(in.context());
   if (!recursion.check(in.context())) {
@@ -3298,18 +3297,10 @@ bool JSStructuredCloneReader::startRead(MutableHandleValue vp,
 
     case SCTAG_SHARED_ARRAY_BUFFER_OBJECT:
     case SCTAG_GROWABLE_SHARED_ARRAY_BUFFER_OBJECT:
-      if (!readSharedArrayBuffer(StructuredDataType(tag), vp)) {
-        return false;
-      }
-      alreadAppended = true;
-      break;
+      return readSharedArrayBuffer(StructuredDataType(tag), vp);
 
     case SCTAG_SHARED_WASM_MEMORY_OBJECT:
-      if (!readSharedWasmMemory(data, vp)) {
-        return false;
-      }
-      alreadAppended = true;
-      break;
+      return readSharedWasmMemory(data, vp);
 
     case SCTAG_TYPED_ARRAY_OBJECT_V2: {
       // readTypedArray adds the array to allObjs.
@@ -3430,11 +3421,11 @@ bool JSStructuredCloneReader::startRead(MutableHandleValue vp,
       }
       vp.setObject(*obj);
       allObjs[placeholderIndex].set(vp);
-      alreadAppended = true;
+      return true;
     }
   }
 
-  if (!alreadAppended && vp.isObject() && !allObjs.append(vp)) {
+  if (vp.isObject() && !allObjs.append(vp)) {
     return false;
   }
 
