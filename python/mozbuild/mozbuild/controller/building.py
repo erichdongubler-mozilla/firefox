@@ -53,7 +53,7 @@ RE_BUILD_OUTPUT = re.compile(
     |(?P<error_summary>^\d+\s+errors?\s+generated\.)
     |(?P<make_error>make(?:\[\d+\])?\s*:\s*\*\*\*)
     |(?P<nsis_warning_block>^\d+\s+warnings?:)
-    |(?P<error_block>^error:(?:\[e\d+\])?:?\s?)
+    |(?P<error_block>^error(?:\[e\d+\])?:\s?)
     |(?P<warning_standalone>^warning:\s+mkdir\s)
     |(?P<warning_num>^warning\s+\d+:)
     |(?P<warning_block>^warning:\s?)
