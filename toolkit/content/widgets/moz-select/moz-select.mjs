@@ -165,7 +165,10 @@ export default class MozSelect extends MozBaseInputElement {
    * Handles the panel being hidden and returns focus to the trigger button.
    */
   handlePanelHidden() {
-    this.panelTrigger?.focus();
+    let active = document.activeElement;
+    if (!active || active === document.body || active === this) {
+      this.panelTrigger?.focus();
+    }
   }
 
   /**
