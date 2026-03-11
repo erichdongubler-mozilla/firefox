@@ -448,6 +448,8 @@ def test_backfill_task_chunk_not_found(mocker, run_action, get_artifact):
     assert task_def["payload"]["env"]["MOZHARNESS_TEST_PATHS"] == json.dumps(
         original_manifests
     )
+    assert task_def["metadata"]["name"] == "test-linux-wpt-9"
+    assert task_def["extra"]["treeherder"]["symbol"] == "wpt9-abc123-bk"
 
 
 def test_confirm_failures(mocker, responses, run_action, get_artifact):
