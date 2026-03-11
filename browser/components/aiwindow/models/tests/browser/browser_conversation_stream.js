@@ -23,13 +23,6 @@ const { PlacesTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PlacesTestUtils.sys.mjs"
 );
 
-function getLastAssistantResponse(conversation) {
-  return conversation.messages
-    .filter(m => m.role == MESSAGE_ROLE.ASSISTANT)
-    .filter(m => m.content.type === "text")
-    .at(-1);
-}
-
 add_task(async function test_chat_streams_end_to_end() {
   const requests = [];
   await withServer(
@@ -47,15 +40,22 @@ add_task(async function test_chat_streams_end_to_end() {
         pageMeta: {},
       });
       conversation.addUserMessage("Please say hello", "https://example.com", 0);
-      conversation.addAssistantMessage("text", "");
 
       // withServer sets up the mock HTTP server, so use the real engine
       const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
 
-      await Chat.fetchWithHistory(conversation, engineInstance);
+      let responseText = "";
+      for await (const chunk of Chat.fetchWithHistory(
+        conversation,
+        engineInstance
+      )) {
+        if (typeof chunk === "string") {
+          responseText += chunk;
+        }
+      }
 
       Assert.equal(
-        getLastAssistantResponse(conversation).content.body,
+        responseText,
         "Hello from mock server.",
         "Assistant text streams end to end"
       );
@@ -117,14 +117,21 @@ add_task(async function test_chat_tool_call_get_open_tabs() {
           pageMeta: {},
         });
         conversation.addUserMessage("List tabs", "https://example.com", 0);
-        conversation.addAssistantMessage("text", "");
 
         const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
 
-        await Chat.fetchWithHistory(conversation, engineInstance);
+        let responseText = "";
+        for await (const chunk of Chat.fetchWithHistory(
+          conversation,
+          engineInstance
+        )) {
+          if (typeof chunk === "string") {
+            responseText += chunk;
+          }
+        }
 
         Assert.equal(
-          getLastAssistantResponse(conversation).content.body,
+          responseText,
           "Here are your tabs.",
           "Assistant should stream follow-up text"
         );
@@ -176,14 +183,21 @@ add_task(async function test_chat_tool_call_search_browsing_history() {
           pageMeta: {},
         });
         conversation.addUserMessage("Search history", "https://example.com", 0);
-        conversation.addAssistantMessage("text", "");
 
         const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
 
-        await Chat.fetchWithHistory(conversation, engineInstance);
+        let responseText = "";
+        for await (const chunk of Chat.fetchWithHistory(
+          conversation,
+          engineInstance
+        )) {
+          if (typeof chunk === "string") {
+            responseText += chunk;
+          }
+        }
 
         Assert.equal(
-          getLastAssistantResponse(conversation).content.body,
+          responseText,
           "History ready.",
           "Assistant should stream follow-up text"
         );
@@ -228,14 +242,21 @@ add_task(async function test_chat_tool_call_get_page_content() {
           pageMeta: {},
         });
         conversation.addUserMessage("Read page", "https://example.com", 0);
-        conversation.addAssistantMessage("text", "");
 
         const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
 
-        await Chat.fetchWithHistory(conversation, engineInstance);
+        let responseText = "";
+        for await (const chunk of Chat.fetchWithHistory(
+          conversation,
+          engineInstance
+        )) {
+          if (typeof chunk === "string") {
+            responseText += chunk;
+          }
+        }
 
         Assert.equal(
-          getLastAssistantResponse(conversation).content.body,
+          responseText,
           "Content ready.",
           "Assistant should stream follow-up text"
         );
@@ -309,14 +330,21 @@ add_task(async function test_chat_tool_call_get_user_memories() {
           "https://example.com",
           0
         );
-        conversation.addAssistantMessage("text", "");
 
         const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
 
-        await Chat.fetchWithHistory(conversation, engineInstance);
+        let responseText = "";
+        for await (const chunk of Chat.fetchWithHistory(
+          conversation,
+          engineInstance
+        )) {
+          if (typeof chunk === "string") {
+            responseText += chunk;
+          }
+        }
 
         Assert.equal(
-          getLastAssistantResponse(conversation).content.body,
+          responseText,
           "Memories ready.",
           "Assistant should stream follow-up text"
         );
