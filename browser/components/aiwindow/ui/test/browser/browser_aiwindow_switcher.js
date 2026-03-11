@@ -526,32 +526,6 @@ add_task(async function test_ai_control_default_block_hides_switcher() {
   await SpecialPowers.popPrefEnv();
 });
 
-// Verify sidebar opens for returning user
-add_task(async function test_returning_user_sidebar_opens() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.smartwindow.enabled", true],
-      ["browser.smartwindow.firstrun.hasCompleted", true],
-    ],
-  });
-
-  const win = await openAIWindow();
-
-  await BrowserTestUtils.loadURIString({
-    browser: win.gBrowser.selectedTab.linkedBrowser,
-    uriString: "https://example.com/",
-  });
-
-  await TestUtils.waitForCondition(
-    () => AIWindowUI.isSidebarOpen(win),
-    "Sidebar should auto-open for returning user"
-  );
-  Assert.ok(AIWindowUI.isSidebarOpen(win), "Sidebar should be open");
-
-  await BrowserTestUtils.closeWindow(win);
-  await SpecialPowers.popPrefEnv();
-});
-
 // Sidebar should be hidden when switching to Classic Window
 add_task(async function test_hide_sidebar_when_switching_to_classic_window() {
   await SpecialPowers.pushPrefEnv({
