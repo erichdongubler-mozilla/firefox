@@ -4,6 +4,8 @@
 
 //! FFI glue layer between happy-eyeballs Rust crate and Firefox's C++ networking stack.
 
+mod profiler;
+
 use nserror::{nsresult, NS_ERROR_INVALID_ARG, NS_ERROR_UNEXPECTED, NS_OK};
 use nsstring::{nsACString, nsCString};
 use std::net::{Ipv4Addr, Ipv6Addr};
@@ -74,10 +76,17 @@ pub extern "C" fn create(
         port,
         network_config,
     ) {
-        Ok(he) => Box::into_raw(Box::new(HappyEyeballs {
-            refcnt: unsafe { AtomicRefcnt::new() },
-            inner: he,
-        })),
+        Ok(he) => {
+            let mut boxed = Box::new(HappyEyeballs {
+                refcnt: unsafe { AtomicRefcnt::new() },
+                inner: he,
+                profiler: profiler::Profiler::new(0, origin_str),
+            });
+            boxed
+                .profiler
+                .set_flow_id(std::ptr::from_ref(&boxed.refcnt) as u64);
+            Box::into_raw(boxed)
+        }
         Err(_) => return NS_ERROR_UNEXPECTED,
     };
 
@@ -185,10 +194,12 @@ pub extern "C" fn process_output(
 pub struct HappyEyeballs {
     refcnt: AtomicRefcnt,
     inner: happy_eyeballs::HappyEyeballs,
+    profiler: profiler::Profiler,
 }
 
 impl HappyEyeballs {
     fn process_dns_response_a(&mut self, id: u64, net_addrs: &ThinVec<NetAddr>) -> nsresult {
+        let id: happy_eyeballs::Id = id.into();
         let mut addrs = Vec::with_capacity(net_addrs.len());
         for na in net_addrs.iter() {
             let family =
@@ -202,17 +213,17 @@ impl HappyEyeballs {
             addrs.push(ipv4);
         }
 
+        self.profiler.dns_response_a(id, &addrs);
+
         let result = happy_eyeballs::DnsResult::A(Ok(addrs));
-        let input = happy_eyeballs::Input::DnsResult {
-            id: id.into(),
-            result,
-        };
+        let input = happy_eyeballs::Input::DnsResult { id, result };
         self.inner.process_input(input, Instant::now());
 
         NS_OK
     }
 
     fn process_dns_response_aaaa(&mut self, id: u64, net_addrs: &ThinVec<NetAddr>) -> nsresult {
+        let id: happy_eyeballs::Id = id.into();
         let mut addrs = Vec::with_capacity(net_addrs.len());
         for na in net_addrs.iter() {
             let family =
@@ -227,11 +238,10 @@ impl HappyEyeballs {
             addrs.push(ipv6);
         }
 
+        self.profiler.dns_response_aaaa(id, &addrs);
+
         let result = happy_eyeballs::DnsResult::Aaaa(Ok(addrs));
-        let input = happy_eyeballs::Input::DnsResult {
-            id: id.into(),
-            result,
-        };
+        let input = happy_eyeballs::Input::DnsResult { id, result };
         self.inner.process_input(input, Instant::now());
 
         NS_OK
@@ -242,6 +252,7 @@ impl HappyEyeballs {
         id: u64,
         service_infos: &ThinVec<ServiceInfo>,
     ) -> nsresult {
+        let id: happy_eyeballs::Id = id.into();
         let mut infos = Vec::new();
 
         for svc_info in service_infos {
@@ -309,27 +320,26 @@ impl HappyEyeballs {
             });
         }
 
+        self.profiler.dns_response_https(id, &infos);
+
         let result = happy_eyeballs::DnsResult::Https(Ok(infos));
-        let input = happy_eyeballs::Input::DnsResult {
-            id: id.into(),
-            result,
-        };
+        let input = happy_eyeballs::Input::DnsResult { id, result };
         self.inner.process_input(input, Instant::now());
 
         NS_OK
     }
 
     fn process_connection_result(&mut self, id: u64, status: nsresult) -> nsresult {
+        let id: happy_eyeballs::Id = id.into();
+        self.profiler.connection_result(id, status == NS_OK);
+
         let result = if status == NS_OK {
             Ok(())
         } else {
             Err(format!("connection failed: 0x{:08x}", status.0))
         };
 
-        let input = happy_eyeballs::Input::ConnectionResult {
-            id: id.into(),
-            result,
-        };
+        let input = happy_eyeballs::Input::ConnectionResult { id, result };
         self.inner.process_input(input, Instant::now());
 
         NS_OK
@@ -344,6 +354,7 @@ impl HappyEyeballs {
                 hostname: _hostname,
                 record_type,
             }) => {
+                self.profiler.dns_query_started(id);
                 *ret_event = Output::SendDnsQuery {
                     id: id.into(),
                     record_type: record_type.into(),
@@ -360,6 +371,7 @@ impl HappyEyeballs {
                 *ret_event = Output::Timer { duration_ms };
             }
             Some(happy_eyeballs::Output::AttemptConnection { id, endpoint }) => {
+                self.profiler.connection_attempt_started(id, &endpoint);
                 if let Some(ref ech) = endpoint.ech_config {
                     ech_config.extend_from_slice(ech);
                 }
