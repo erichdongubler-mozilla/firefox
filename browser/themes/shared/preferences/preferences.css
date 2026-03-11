@@ -11,9 +11,9 @@
    * "Settings" will become our h1 and everything will drop down a level so our
    * h1s become h2s, h2s become h3s, etc.
    */
-  --heading-font-size-xlarge: var(--font-size-xlarge);
-  --heading-font-size-large: var(--font-size-large);
-  --heading-font-size-medium: var(--font-size-medium);
+  --font-size-heading-xlarge: var(--font-size-xlarge);
+  --font-size-heading-large: var(--font-size-large);
+  --font-size-heading-medium: var(--font-size-medium);
   --select-max-width: 20rem;
   user-select: text;
 }
@@ -594,7 +594,7 @@ html|dialog,
 }
 
 .dialogTitle {
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
   text-align: center;
   user-select: none;
 }
@@ -1596,9 +1596,9 @@ setting-group[groupid="aiStatesDescription"] {
 
 #addresses-list-header,
 #payments-list-header {
-  --box-label-font-weight: var(--heading-font-weight);
+  --box-label-font-weight: var(--font-weight-heading);
 }
 
 .box-header-bold {
-  --box-label-font-weight: var(--heading-font-weight);
+  --box-label-font-weight: var(--font-weight-heading);
 }

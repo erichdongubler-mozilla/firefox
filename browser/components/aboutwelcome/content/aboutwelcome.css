@@ -413,7 +413,7 @@ div#feature-callout.hidden {
   color: inherit;
 }
 #feature-callout .screen[pos=callout] .welcome-text h1 {
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
 }
 #feature-callout .screen[pos=callout] .welcome-text .inline-icon-container {
   display: flex;
@@ -1434,7 +1434,7 @@ html {
 .onboardingContainer .screen[pos=center].addons-picker .addon-container .addon-title {
   margin: 10px 0 3px;
   font-size: 16px;
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
 }
 .onboardingContainer .screen[pos=center].addons-picker .addon-container .addon-description {
   margin: 2px 0 10px;
@@ -1993,7 +1993,7 @@ html {
   max-width: 450px;
 }
 .onboardingContainer .screen[pos=split][fullscreen] .section-secondary .message-text.hero-text h1 {
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
   font-size: 80px;
   margin: 0;
   width: 100%;
@@ -2003,7 +2003,7 @@ html {
   font-size: 20px;
   margin: 0;
   margin-block-start: 24px;
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
   width: 100%;
 }
 .onboardingContainer .screen[pos=split][fullscreen] .section-secondary .message-text.simple {
@@ -2014,7 +2014,7 @@ html {
   max-width: 450px;
 }
 .onboardingContainer .screen[pos=split][fullscreen] .section-secondary .message-text.simple h1 {
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
   font-size: 84px;
   margin: 0;
   width: 100%;
@@ -2077,7 +2077,7 @@ html {
 }
 .onboardingContainer .screen[pos=split][fullscreen] .addons-picker-container .addon-container .addon-rows-container .addon-row .addon-author-details .addon-title {
   font-size: 16px;
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
 }
 .onboardingContainer .screen[pos=split][fullscreen] .addons-picker-container .addon-container .addon-rows-container .addon-row .addon-author-details .addon-author {
   font-size: 12px;
@@ -2671,7 +2671,7 @@ html {
 }
 .onboardingContainer .welcome-text h1 {
   font-size: 24px;
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
   margin: 0 6px;
   letter-spacing: -0.02em;
   outline: none;
@@ -3322,7 +3322,7 @@ html {
 }
 .onboardingContainer .tile-title {
   font-size: 24px;
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
   margin-block: 0;
 }
 .onboardingContainer .tile-title:not(:last-child) {

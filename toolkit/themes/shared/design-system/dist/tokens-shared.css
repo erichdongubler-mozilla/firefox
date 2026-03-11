@@ -318,16 +318,16 @@
     --focus-outline-offset: 2px;
     --focus-outline-width: 2px;
 
+    /** font-size **/
+    --font-size-heading-medium: var(--font-size-large);
+    --font-size-heading-large: var(--font-size-xlarge);
+    --font-size-heading-xlarge: var(--font-size-xxlarge);
+
     /** font-weight **/
     --font-weight: normal;
     --font-weight-bold: 700;
+    --font-weight-heading: var(--font-weight-semibold);
     --font-weight-semibold: 600;
-
-    /** heading **/
-    --heading-font-size-medium: var(--font-size-large);
-    --heading-font-size-large: var(--font-size-xlarge);
-    --heading-font-size-xlarge: var(--font-size-xxlarge);
-    --heading-font-weight: var(--font-weight-semibold);
 
     /** icon **/
     --icon-color: light-dark(var(--color-gray-70), var(--color-gray-05));

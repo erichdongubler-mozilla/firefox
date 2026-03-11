@@ -1298,7 +1298,7 @@
       padding: var(--space-xlarge);
 
       > .urlbarView-row-body-top > .urlbarView-row-body-top-no-wrap > .urlbarView-title {
-        font-weight: var(--heading-font-weight);
+        font-weight: var(--font-weight-heading);
       }
     }
   }
@@ -1519,7 +1519,7 @@
 
   > .urlbarView-realtime-description {
     > .urlbarView-realtime-description-top > .urlbarView-yelpRealtime-title {
-      font-weight: var(--heading-font-weight);
+      font-weight: var(--font-weight-heading);
     }
 
     > .urlbarView-realtime-description-bottom {

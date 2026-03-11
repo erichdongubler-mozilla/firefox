@@ -308,7 +308,7 @@
         .title {
           -webkit-line-clamp: 3;
           font-size: var(--font-size-large);
-          font-weight: var(--heading-font-weight);
+          font-weight: var(--font-weight-heading);
           margin-block: 0 var(--space-small);
         }
 
@@ -437,7 +437,7 @@
     .section-title {
       @include wallpaper-contrast-fix;
 
-      font-weight: var(--heading-font-weight);
+      font-weight: var(--font-weight-heading);
       font-size: var(--font-size-xlarge);
       color: var(--newtab-contextual-text-primary-color);
       margin-block: 0;

@@ -75,6 +75,17 @@
           "default": "unset"
         }
       }
+    },
+    "heading": {
+      "xlarge": {
+        "value": "{font.size.xxlarge}"
+      },
+      "large": {
+        "value": "{font.size.xlarge}"
+      },
+      "medium": {
+        "value": "{font.size.large}"
+      }
     }
   },
   "weight": {
@@ -86,6 +97,9 @@
     },
     "bold": {
       "value": 700
+    },
+    "heading": {
+      "value": "{font.weight.semibold}"
     }
   }
 }

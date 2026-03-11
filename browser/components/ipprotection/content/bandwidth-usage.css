@@ -17,8 +17,8 @@
 
 #bandwidth-header {
   margin: 0;
-  font-weight: var(--heading-font-weight);
-  font-size: var(--heading-font-size-medium);
+  font-weight: var(--font-weight-heading);
+  font-size: var(--font-size-heading-medium);
 }
 
 #usage-help-text {

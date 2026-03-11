@@ -37,7 +37,7 @@
 .tab-preview-title {
   overflow: hidden;
   -webkit-line-clamp: 2;
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
 }
 
 .tab-preview-uri {

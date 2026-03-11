@@ -941,7 +941,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 
 #fxa-menu-header-description {
   color: var(--text-color-deemphasized);
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
   text-wrap: wrap;
 }
 
@@ -1877,7 +1877,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   .protections-popup-message-title {
     display: grid;
     font-size: 1.3em;
-    font-weight: var(--heading-font-weight);
+    font-weight: var(--font-weight-heading);
     line-height: 1.4em;
     margin: 14px 0 0;
     grid-column-start: 1;
@@ -1960,7 +1960,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
 .PanelUI-profiler-description-title {
   font-size: 1.3em;
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
   margin-block: 2px;
 }
 
@@ -2106,7 +2106,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 }
 
 #reset-pbm-panel-header > description {
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
 }
 
 #reset-pbm-panel-checkbox {

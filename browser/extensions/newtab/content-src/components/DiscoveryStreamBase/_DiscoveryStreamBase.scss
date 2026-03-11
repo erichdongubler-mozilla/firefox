@@ -53,7 +53,7 @@ $ds-width: 936px;
 .ds-layout .section-title span {
   color: var(--newtab-contextual-text-primary-color);
   font-size: $section-title-font-size;
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
 
   // Contrast fix for users who have wallpapers set
   @include wallpaper-contrast-fix;

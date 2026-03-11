@@ -198,7 +198,7 @@ html|select:where(:not([size], [multiple])) {
 }
 
 .header {
-  font-weight: var(--heading-font-weight);
+  font-weight: var(--font-weight-heading);
 }
 
 .indent {
