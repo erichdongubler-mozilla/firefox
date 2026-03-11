@@ -4157,18 +4157,21 @@ std::tuple<JS::SliceBudget, JS::SliceBudget> GCRuntime::budgetConcurrentMarking(
     return {SliceBudget(WorkBudget(work)), SliceBudget(WorkBudget(work))};
   }
 
-  // For time budgets, after a few slices try to perform an increasing amount of
-  // marking on the main thread. This ensures we don't get bogged down bouncing
-  // things we can't mark concurrently between the helper thread and the main
-  // thread.
+  // Try to ensure we don't get bogged down bouncing things we can't mark
+  // concurrently between the helper thread and the main thread. If the helper
+  // thread has run out of work and we're several slices in, try to perform an
+  // increasing amount of marking on the main thread.
   //
   // TODO: Investigate better heuristics for this. We could check whether the
   // background thread ran out of work in which case we may be nearly finished.
 
   const size_t MarkOnMainThreadAfterSlices = 5;
-  if (requestedBudget.isTimeBudget() &&
+  const double MainThreadMarkTimePerSlice = 0.5;
+  if (sliceReason == JS::GCReason::BG_TASK_FINISHED &&
+      requestedBudget.isTimeBudget() &&
       markSliceCount > MarkOnMainThreadAfterSlices) {
-    double millis = 1.0 * (markSliceCount - MarkOnMainThreadAfterSlices);
+    double millis = MainThreadMarkTimePerSlice *
+                    (markSliceCount - MarkOnMainThreadAfterSlices);
     TimeDuration remaining = requestedBudget.deadline() - TimeStamp::Now();
     millis = std::min(millis, remaining.ToMilliseconds());
     if (millis > 0.0) {
@@ -4192,6 +4195,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
 
   bool destroyingRuntime = (reason == JS::GCReason::DESTROY_RUNTIME);
 
+  sliceReason = reason;
   initialState = incrementalState;
   isIncremental = !budget.isUnlimited();
   useBackgroundThreads = ShouldUseBackgroundThreads(isIncremental, reason);

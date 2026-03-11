@@ -1240,6 +1240,9 @@ class GCRuntime {
   /* The initial GC reason, taken from the first slice. */
   MainThreadData<JS::GCReason> initialReason;
 
+  /* The GC reason for the current slice. */
+  MainThreadData<JS::GCReason> sliceReason;
+
   /*
    * The current incremental GC phase. This is also used internally in
    * non-incremental GC.
