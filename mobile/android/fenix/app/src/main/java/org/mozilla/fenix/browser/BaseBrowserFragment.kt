@@ -43,9 +43,9 @@ import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.Dispatchers.Main
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
@@ -1196,7 +1196,7 @@ abstract class BaseBrowserFragment :
                         context.settings().shouldShowEmailMaskCfr = false
                     }
 
-                    override suspend fun onEmailMaskClick(generatedFor: String) = withContext(IO) {
+                    override suspend fun onEmailMaskClick(generatedFor: String) = withContext(Dispatchers.IO) {
                         EmailMask.promptClicked.record()
 
                         val relay = requireComponents.relayFeatureIntegration
@@ -1439,7 +1439,7 @@ abstract class BaseBrowserFragment :
 
         closeFindInPageBarOnNavigation(store)
 
-        store.flowScoped(viewLifecycleOwner, Main) { flow ->
+        store.flowScoped(viewLifecycleOwner, Dispatchers.Main) { flow ->
             flow.mapNotNull { state -> state.findTabOrCustomTabOrSelectedTab(customTabSessionId) }
                 .distinctUntilChangedBy { tab -> tab.content.pictureInPictureEnabled }
                 .collect { tab -> pipModeChanged(tab) }
@@ -1739,8 +1739,11 @@ abstract class BaseBrowserFragment :
         context.settings().incrementSecureWarningCount()
     }
 
-    private fun closeFindInPageBarOnNavigation(store: BrowserStore) {
-        consumeFlow(store) { flow ->
+    private fun closeFindInPageBarOnNavigation(
+        store: BrowserStore,
+        mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    ) {
+        consumeFlow(store, mainDispatcher = mainDispatcher) { flow ->
             flow.mapNotNull { state ->
                 state.findCustomTabOrSelectedTab(customTabSessionId)
             }
@@ -1964,8 +1967,12 @@ abstract class BaseBrowserFragment :
     ): List<ContextMenuCandidate>
 
     @VisibleForTesting
-    internal fun observeRestoreComplete(store: BrowserStore, navController: NavController) {
-        consumeFlow(store) { flow ->
+    internal fun observeRestoreComplete(
+        store: BrowserStore,
+        navController: NavController,
+        mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    ) {
+        consumeFlow(store, mainDispatcher = mainDispatcher) { flow ->
             flow.map { state -> state.restoreComplete }
                 .distinctUntilChanged()
                 .collect { restored ->
@@ -1983,8 +1990,12 @@ abstract class BaseBrowserFragment :
     }
 
     @VisibleForTesting
-    internal fun observeTabSelection(store: BrowserStore, isCustomTabSession: Boolean) {
-        consumeFlow(store) { flow ->
+    internal fun observeTabSelection(
+        store: BrowserStore,
+        isCustomTabSession: Boolean,
+        mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    ) {
+        consumeFlow(store, mainDispatcher = mainDispatcher) { flow ->
             flow.distinctUntilChangedBy {
                 it.selectedTabId
             }
@@ -2004,8 +2015,11 @@ abstract class BaseBrowserFragment :
 
     @VisibleForTesting
     @Suppress("ComplexCondition")
-    internal fun observeTabSource(store: BrowserStore) {
-        consumeFlow(store) { flow ->
+    internal fun observeTabSource(
+        store: BrowserStore,
+        mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    ) {
+        consumeFlow(store, mainDispatcher = mainDispatcher) { flow ->
             flow.mapNotNull { state ->
                 state.selectedTab
             }
@@ -2255,7 +2269,7 @@ abstract class BaseBrowserFragment :
      */
     private fun showQuickSettingsDialog() {
         val tab = getCurrentTab() ?: return
-        viewLifecycleOwner.lifecycleScope.launch(Main) {
+        viewLifecycleOwner.lifecycleScope.launch {
             val sitePermissions: SitePermissions? = tab.content.url.getOrigin()?.let { origin ->
                 val storage = requireComponents.core.permissionStorage
                 storage.findSitePermissionsBy(origin, tab.content.private)
@@ -2288,7 +2302,7 @@ abstract class BaseBrowserFragment :
         return requireComponents.core.store.state.findCustomTabOrSelectedTab(customTabSessionId)
     }
 
-    private suspend fun bookmarkTapped(sessionUrl: String, sessionTitle: String) = withContext(IO) {
+    private suspend fun bookmarkTapped(sessionUrl: String, sessionTitle: String) = withContext(Dispatchers.IO) {
         val bookmarksStorage = requireComponents.core.bookmarksStorage
         val existing = bookmarksStorage
             .getBookmarksWithUrl(sessionUrl)
@@ -2297,7 +2311,7 @@ abstract class BaseBrowserFragment :
 
         if (existing != null) {
             // Bookmark exists, go to edit fragment
-            withContext(Main) {
+            withContext(Dispatchers.Main) {
                 nav(
                     R.id.browserFragment,
                     BrowserFragmentDirections.actionGlobalBookmarkEditFragment(existing.guid, true),
@@ -2351,7 +2365,7 @@ abstract class BaseBrowserFragment :
                     },
                 )
             } catch (e: PlacesApiException.UrlParseFailed) {
-                withContext(Main) {
+                withContext(Dispatchers.Main) {
                     view?.let {
                         Snackbar.make(
                             snackBarParentView = binding.dynamicSnackbarContainer,
@@ -2660,7 +2674,7 @@ abstract class BaseBrowserFragment :
             password = password,
         )
         var saveLoginJob: Deferred<Unit>? = null
-        lifecycleScope.launch(IO) {
+        lifecycleScope.launch(Dispatchers.IO) {
             saveLoginJob = async {
                 try {
                     passwordsStorage.add(loginToSave)
