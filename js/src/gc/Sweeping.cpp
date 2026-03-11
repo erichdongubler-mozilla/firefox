@@ -1318,10 +1318,20 @@ IncrementalProgress GCRuntime::markGrayRootsInCurrentGroup(
 
 IncrementalProgress GCRuntime::markGray(JS::GCContext* gcx,
                                         SliceBudget& budget) {
+  if (marker().isDrained()) {
+    return Finished;
+  }
+
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK);
 
-  // TODO: Support concurrent marking for gray marking.
-  if (markSynchronously(budget, useParallelMarking) == NotFinished) {
+  auto [mainThreadBudget, helperThreadBudget] = budgetConcurrentMarking(budget);
+
+  if (markSynchronously(mainThreadBudget, useParallelMarking) == NotFinished) {
+    MOZ_ASSERT(hasMarkingWork());
+    MOZ_ASSERT(isIncremental);
+    MOZ_ASSERT(safeToYield);
+
+    maybeStartConcurrentMarking(helperThreadBudget);
     return NotFinished;
   }
 
@@ -1911,6 +1921,7 @@ IncrementalProgress GCRuntime::markDuringSweeping(JS::GCContext* gcx,
                                                   SliceBudget& budget) {
   MOZ_ASSERT(markTask.isIdle());
 
+  // If we can mark in parallel with sweeping on the main thread we do that.
   if (markOnBackgroundThreadDuringSweeping) {
     if (!marker().isDrained() || hasDelayedMarking()) {
       AutoLockHelperThreadState lock;
@@ -1921,8 +1932,21 @@ IncrementalProgress GCRuntime::markDuringSweeping(JS::GCContext* gcx,
     return Finished;  // This means don't yield to the mutator here.
   }
 
+  // Otherwise the marking needs to happen before we do any more sweeping. If
+  // concurrent marking is enabled then |mainThreadBudget| may be empty and
+  // we will yield and do the marking concurrently with the mutator.
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK);
-  return markSynchronously(budget, useParallelMarking);
+
+  auto [mainThreadBudget, helperThreadBudget] = budgetConcurrentMarking(budget);
+
+  markSynchronously(mainThreadBudget, useParallelMarking);
+
+  if (hasMarkingWork()) {
+    maybeStartConcurrentMarking(helperThreadBudget);
+    return NotFinished;
+  }
+
+  return Finished;
 }
 
 void GCRuntime::beginSweepPhase(JS::GCReason reason, AutoGCSession& session) {
@@ -1953,6 +1977,8 @@ void GCRuntime::beginSweepPhase(JS::GCReason reason, AutoGCSession& session) {
   dropStringWrappers();
 
   groupZonesForSweeping(reason);
+
+  markSliceCount = 0;  // Number of marking slices per zone group swept.
 
   sweepActions->assertFinished();
 }
@@ -2018,19 +2044,11 @@ void js::gc::BackgroundMarkTask::run(AutoLockHelperThreadState& lock) {
 }
 
 void js::gc::BackgroundMarkTask::pause() {
-  MOZ_ASSERT(isConcurrent);
-
-  // We never have a time budget when we do this, so it doesn't matter that we
-  // don't update the deadline.
-  MOZ_ASSERT(budget.isUnlimited() || budget.isWorkBudget());
   MOZ_ASSERT(!interruptRequest);
-
   interruptRequest = true;
 }
 
 void js::gc::BackgroundMarkTask::unpause() {
-  MOZ_ASSERT(isConcurrent);
-
   // This may still be true if we ran out of work before checking whether we
   // were interrupted.
   interruptRequest = false;
@@ -2669,13 +2687,34 @@ class js::gc::AutoUpdateBarriersForSweeping {
   GCRuntime* gc;
 };
 
-IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
+IncrementalProgress GCRuntime::sweepPhase(SliceBudget& budget) {
   MOZ_ASSERT(preparedForSweepInThisSlice);
   MOZ_ASSERT_IF(storeBuffer().isEnabled(),
                 !storeBuffer().mayHavePointersToDeadCells());
 
+  // The first time we enter the sweep phase we must not yield to the mutator
+  // until we've started sweeping a sweep group but in that case the stack must
+  // be empty already.
+  MOZ_ASSERT(initialState <= State::Sweep);
+
+  bool isFirstSweepSlice = initialState < State::Sweep;
+#ifdef DEBUG
+  if (isFirstSweepSlice) {
+    assertNoMarkingWork();
+  }
+#endif
+
   AutoMajorGCProfilerEntry s(this);
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP);
+
+  markSliceCount++;
+
+  finishAnyConcurrentMarking(budget);
+  if (!isFirstSweepSlice && budget.isOverBudget()) {
+    auto [_, helperThreadBudget] = budgetConcurrentMarking(budget);
+    maybeStartConcurrentMarking(helperThreadBudget);
+    return NotFinished;
+  }
 
   JS::GCContext* gcx = rt->gcContext();
   AutoSetThreadIsSweeping threadIsSweeping(gcx);
@@ -2683,33 +2722,24 @@ IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
 
   // Drain the mark stack, possibly in a parallel task if we're in a part of
   // sweeping that allows it.
-  //
-  // The first time we enter the sweep phase we must not yield to the mutator
-  // until we've starting sweeping a sweep group but in that case the stack must
-  // be empty already.
 
-  MOZ_ASSERT(initialState <= State::Sweep);
-  bool startOfSweeping = initialState < State::Sweep;
+  if (markDuringSweeping(gcx, budget) == Finished) {
+    // Don't trigger pre-barriers when sweeping or finalizing.
+    AutoUpdateBarriersForSweeping updateBarriers(this);
 
-  if (startOfSweeping) {
-    assertNoMarkingWork();
-  } else {
-    if (markDuringSweeping(gcx, budget) == NotFinished) {
-      return NotFinished;
+    // Then continue running sweep actions.
+
+    SweepAction::Args args{this, gcx, budget};
+    IncrementalProgress sweepProgress = sweepActions->run(args);
+
+    markTask.pause();
+    joinBackgroundMarkTask();
+    markTask.unpause();
+
+    if (sweepProgress == Finished) {
+      MOZ_ASSERT(!hasMarkingWork());
+      return Finished;
     }
-  }
-
-  // Don't trigger pre-barriers when sweeping or finalizing.
-  AutoUpdateBarriersForSweeping updateBarriers(this);
-
-  // Then continue running sweep actions.
-
-  SweepAction::Args args{this, gcx, budget};
-  IncrementalProgress sweepProgress = sweepActions->run(args);
-  IncrementalProgress markProgress = joinBackgroundMarkTask();
-
-  if (sweepProgress == Finished && markProgress == Finished) {
-    return Finished;
   }
 
   MOZ_ASSERT(isIncremental);

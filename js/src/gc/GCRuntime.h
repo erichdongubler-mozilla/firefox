@@ -961,7 +961,7 @@ class GCRuntime {
   void sweepWeakRefs();
   IncrementalProgress endSweepingSweepGroup(JS::GCContext* gcx,
                                             JS::SliceBudget& budget);
-  IncrementalProgress performSweepActions(JS::SliceBudget& sliceBudget);
+  IncrementalProgress sweepPhase(JS::SliceBudget& sliceBudget);
   void startSweepingAtomsTable();
   IncrementalProgress sweepAtomsTable(JS::GCContext* gcx,
                                       JS::SliceBudget& budget);
@@ -1263,8 +1263,8 @@ class GCRuntime {
   MainThreadData<bool> safeToYield;
 
   // Whether to do any marking caused by barriers on a background thread during
-  // incremental sweeping, while also sweeping zones which have finished
-  // marking.
+  // an incremental sweep slice, in parallel with sweeping zones which have
+  // finished marking.
   MainThreadData<bool> markOnBackgroundThreadDuringSweeping;
 
   // Whether any sweeping and decommitting will run on a separate GC helper

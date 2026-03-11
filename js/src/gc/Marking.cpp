@@ -1450,7 +1450,11 @@ bool GCMarker::processMainThreadBuffers(SliceBudget& budget) {
   }
 
   if (!grayMainThreadBuffer_.ref().empty()) {
-    AutoSetMarkColor autoSetGray(*this, MarkColor::Gray);
+    // Allow pushing gray marking even if there is still black marking
+    // work. This reduces the amount of handshaking between the main thread and
+    // the marking thread.
+    AutoSetMarkColor autoSetGray(*this, MarkColor::Gray,
+                                 AllowGrayMarkingBeforeEndOfBlackMarking::Yes);
     if (!processMainThreadBuffer(grayMainThreadBuffer_.ref(), budget)) {
       return false;
     }
@@ -1465,6 +1469,13 @@ bool GCMarker::processMainThreadBuffer(MainThreadBuffer& buffer,
                                        SliceBudget& budget) {
   while (!buffer.empty()) {
     JS::GCCellPtr cell = buffer.popCopy();
+
+    MOZ_ASSERT(cell.asCell()->isMarkedAtLeast(markColor()));
+    if (markColor() == MarkColor::Gray && cell.asCell()->isMarkedBlack()) {
+      // We subsequently marked this black so we can skip marking it gray.
+      continue;
+    }
+
     if (cell.is<JSObject>()) {
       JSObject* obj = &cell.as<JSObject>();
       const JSClass* clasp = obj->getClass();

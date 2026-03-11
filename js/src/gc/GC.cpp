@@ -3362,12 +3362,9 @@ inline bool GCRuntime::canMarkConcurrently() const {
   MOZ_ASSERT(state() >= gc::State::MarkRoots);
 
 #ifdef JS_GC_CONCURRENT_MARKING
-#  if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
-  // OOM testing limits the engine to using a single helper thread.
-  if (oom::simulator.targetThread() == THREAD_TYPE_GCPARALLEL) {
+  if (!isIncremental) {
     return false;
   }
-#  endif
 
 #  ifdef DEBUG
   if (!getTestMarkQueue().empty()) {
@@ -3861,7 +3858,7 @@ static const char* MajorGCStateToLabel(State state) {
     case State::Mark:
       return "js::GCRuntime::markUntilBudgetExhausted";
     case State::Sweep:
-      return "js::GCRuntime::performSweepActions";
+      return "js::GCRuntime::sweepPhase";
     case State::Compact:
       return "js::GCRuntime::compactPhase";
     default:
@@ -4322,7 +4319,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
         prepareForSweepSlice(reason);
       }
 
-      if (performSweepActions(budget) == NotFinished) {
+      if (sweepPhase(budget) == NotFinished) {
         break;
       }
 
@@ -4430,9 +4427,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
 
 #ifdef DEBUG
   MOZ_ASSERT(safeToYield);
-  for (auto& marker : markers) {
-    MOZ_ASSERT(marker->markColor() == MarkColor::Black);
-  }
+  MOZ_ASSERT(marker().markColor() == MarkColor::Black);
   MOZ_ASSERT(!rt->gcContext()->hasJitCodeToPoison());
 #endif
 }
@@ -4454,6 +4449,7 @@ bool GCRuntime::hasForegroundWork() const {
       // We yield in the Prepare state after starting unmarking.
       return !unmarkTask.wasStarted();
     case State::Mark:
+    case State::Sweep:
 #ifdef JS_GC_CONCURRENT_MARKING
       return !isBackgroundMarking();
 #else
