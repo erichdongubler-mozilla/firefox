@@ -59,7 +59,7 @@
 
     initializePopover() {
       if (this.supportsPopover() && !this.hasAttribute("popover")) {
-        this.setAttribute("popover", "manual");
+        this.setAttribute("popover", "auto");
       }
     }
 
@@ -114,6 +114,13 @@
           triggeringEvent.inputSource == MouseEvent.MOZ_SOURCE_UNKNOWN ||
           triggeringEvent.code == "ArrowRight" ||
           triggeringEvent.code == "ArrowLeft");
+
+      if (this.supportsPopover()) {
+        const autohideDisabled = this.hasServices()
+          ? Services.prefs.getBoolPref("ui.popup.disable_autohide", false)
+          : false;
+        this.setAttribute("popover", autohideDisabled ? "manual" : "auto");
+      }
 
       // Bug 2010864 - We need to set `open` to true before calling this.onShow()
       // when the panel-list supports popover, otherwise the panel
@@ -363,11 +370,11 @@
       document.addEventListener("mousedown", this);
       // Hide if focus changes and the panel isn't in focus.
       document.addEventListener("focusin", this);
-      // Reset or focus tracking, we treat the first focusin differently.
+      // Reset for focus tracking, we treat the first focusin differently.
       this.focusHasChanged = false;
-      // Hide on resize, scroll or losing window focus.
-      window.addEventListener("resize", this);
+      // Hide on resize, scroll or losing window focus
       window.addEventListener("scroll", this, { capture: true });
+      window.addEventListener("resize", this);
       window.addEventListener("blur", this);
       if (this.parentIsXULPanel()) {
         this.parentElement.addEventListener("popuphidden", this);
@@ -400,15 +407,11 @@
         : e.target.closest && e.target.closest("panel-list") == this;
 
       switch (e.type) {
-        case "scroll":
         case "resize":
-          // Popover panels live in the top layer and remain visible during scroll,
-          // so we don't close them. Note: This means the panel may become visually
-          // disconnected from its anchor after scrolling.
-          if (inPanelList || this.supportsPopover()) {
-            break;
+        case "scroll":
+          if (!inPanelList) {
+            this.hide();
           }
-          this.hide();
           break;
         case "blur":
         case "popuphidden":
@@ -598,7 +601,6 @@
 
     async onShow() {
       this.sendEvent("showing");
-      this.addHideListeners();
 
       if (this.lastAnchorNode?.hasSubmenu) {
         await this.setSubmenuAlign();
@@ -619,6 +621,11 @@
           console.error("Failed to show popover:", ex);
         }
       }
+
+      // Register hide listeners after the popover is shown, so that a second
+      // panel-list opening doesn't have conflicting document-level event
+      // handlers with a first panel-list that hasn't been auto-dismissed yet.
+      this.addHideListeners();
 
       // Always reset this regardless of how the panel list is opened
       // so the first child will be focusable.

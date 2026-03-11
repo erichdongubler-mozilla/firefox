@@ -95,6 +95,16 @@ export default class MozSelect extends MozBaseInputElement {
     }
   }
 
+  updated() {
+    if (
+      this.panelTrigger &&
+      this.panelList &&
+      this.panelTrigger.popoverTargetElement !== this.panelList
+    ) {
+      this.panelTrigger.popoverTargetElement = this.panelList;
+    }
+  }
+
   /**
    * Gets the icon source for the currently selected option.
    *
@@ -192,8 +202,10 @@ export default class MozSelect extends MozBaseInputElement {
    * @param {MouseEvent} event - The click event.
    */
   handlePanelClick(event) {
-    // Only handle keyboard-initiated clicks; mouse clicks are handled by mousedown
-    // event.detail is 0 for keyboard clicks, >0 for mouse clicks
+    // Only handle keyboard-initiated clicks. Mouse clicks are handled
+    // by mousedown. event.detail is 0 for keyboard clicks, >0 for
+    // mouse clicks.
+    event.preventDefault();
     if (event.detail === 0) {
       this.panelList?.toggle(event);
     }
