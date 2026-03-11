@@ -200,12 +200,6 @@ public final class SessionTextInput {
       final View view = session.getTextInput().getView();
       final InputMethodManager imm = getInputMethodManager(view);
       if (imm != null) {
-        if (view.hasFocus() && !imm.isActive(view)) {
-          // Marshmallow workaround: The view has focus but it is not the active
-          // view for the input method. (Bug 1211848)
-          view.clearFocus();
-          view.requestFocus();
-        }
         imm.showSoftInput(view, 0);
       }
     }
