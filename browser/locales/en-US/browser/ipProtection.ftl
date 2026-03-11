@@ -137,9 +137,6 @@ ip-protection-description =
   .description = Built-in VPN to enhance your privacy while browsing on { -brand-short-name }.
 ip-protection-learn-more = Learn more
 
-ip-protection-site-exceptions =
-  .label = Site specific settings
-
 # Variables:
 #   $maxUsage (number) - The bandwidth limit of free VPN, in GB
 ip-protection-not-opted-in-2 =
@@ -176,7 +173,7 @@ ip-protection-exclusions-desc = Use VPN for all websites except ones on this lis
 
 ## IP Protection Bandwidth
 
-ip-protection-bandwidth-header = Monthly VPN data
+ip-protection-bandwidth-header-1 = Monthly data limit
 
 # Variables
 #   $usageLeft (number) - The amount of data a user has left in a month (in GB)
