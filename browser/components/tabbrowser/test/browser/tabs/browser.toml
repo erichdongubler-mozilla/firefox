@@ -208,6 +208,9 @@ skip-if = [
 ["browser_long_data_url_label_truncation.js"]
 tags = "vertical-tabs"
 
+["browser_tab_label_character_cap.js"]
+tags = "vertical-tabs"
+
 ["browser_middle_click_new_tab_button_loads_clipboard.js"]
 tags = "vertical-tabs"
 fail-if =  [
@@ -594,9 +597,6 @@ skip-if = [
 
 ["browser_tab_groups_telemetry.js"]
 
-["browser_tab_label_character_cap.js"]
-tags = "vertical-tabs"
-
 ["browser_tab_label_during_reload.js"]
 tags = "vertical-tabs"
 
@@ -627,8 +627,6 @@ tags = "vertical-tabs"
 ["browser_tab_move_to_new_window_reload.js"]
 tags = "vertical-tabs"
 
-["browser_tab_note_preview.js"]
-
 ["browser_tab_play.js"]
 tags = "vertical-tabs"
 
@@ -638,6 +636,8 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 2010318
 ]
 
+["browser_tab_note_preview.js"]
+
 ["browser_tab_splitview.js"]
 
 ["browser_tab_splitview_about_opentabs.js"]
@@ -645,8 +645,6 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 2014213
 ]
 
-
-["browser_tab_splitview_alt_click.js"]
 
 ["browser_tab_splitview_contextmenu.js"]
 skip-if = [
