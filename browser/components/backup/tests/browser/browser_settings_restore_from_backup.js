@@ -628,6 +628,7 @@ add_task(async function test_restore_backup_file_info_display() {
         deviceName: mockDeviceName,
         isEncrypted: false,
       },
+      recoveryErrorCode: 0,
     };
     await restoreFromBackup.updateComplete;
 
@@ -641,7 +642,7 @@ add_task(async function test_restore_backup_file_info_display() {
 
     Assert.equal(
       fileInfoSpan.getAttribute("data-l10n-id"),
-      "backup-file-creation-metadata",
+      "backup-file-creation-metadata2",
       "Should have the correct l10n id"
     );
 

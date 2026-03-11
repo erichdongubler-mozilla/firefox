@@ -266,9 +266,10 @@
     });
 
     /**
-     * Tests that a top level error message is displayed if there is an error restoring from backup.
+     * Tests that file errors are shown inline below the file picker
+     * instead of as a top level moz-message-bar.
      */
-    add_task(async function test_error_condition() {
+    add_task(async function test_file_error_inline() {
       let restoreFromBackup = document.getElementById("test-restore-from-backup");
 
       ok(!restoreFromBackup.errorMessageEl, "No error message should be displayed");
@@ -281,7 +282,30 @@
       await restoreFromBackup.updateComplete;
 
       is(restoreFromBackup.backupServiceState.recoveryErrorCode, ERRORS.CORRUPTED_ARCHIVE, "Recovery error code should be set");
-      ok(restoreFromBackup.errorMessageEl, "Error message should be displayed");
+      ok(!restoreFromBackup.errorMessageEl, "No top level error message should be displayed for file errors");
+
+      let inlineError = restoreFromBackup.shadowRoot.querySelector("#backup-generic-file-error");
+      ok(inlineError, "Inline file error should be displayed");
+
+      let textarea = restoreFromBackup.shadowRoot.querySelector("#backup-filepicker-input");
+      is(textarea.getAttribute("aria-invalid"), "true", "File picker should be marked as invalid");
+    });
+
+    /**
+     * Tests that a top level error message is displayed for non-file recovery errors.
+     */
+    add_task(async function test_non_file_error_condition() {
+      let restoreFromBackup = document.getElementById("test-restore-from-backup");
+
+      restoreFromBackup.backupServiceState = {
+        ...restoreFromBackup.backupServiceState,
+        recoveryErrorCode: ERRORS.RECOVERY_FAILED
+      };
+
+      await restoreFromBackup.updateComplete;
+
+      is(restoreFromBackup.backupServiceState.recoveryErrorCode, ERRORS.RECOVERY_FAILED, "Recovery error code should be set");
+      ok(restoreFromBackup.errorMessageEl, "Top level error message should be displayed for non-file errors");
     });
 
     /**
@@ -494,7 +518,7 @@
         "#restore-from-backup-backup-found-info"
       );
       ok(backupInfo, "Should show backup info when backup file is found");
-      is(backupInfo.getAttribute("data-l10n-id"), "backup-file-creation-metadata",
+      is(backupInfo.getAttribute("data-l10n-id"), "backup-file-creation-metadata2",
         "Should have correct l10n id for backup info");
 
       // Test that when embedded in about:welcome, if an error occurs,

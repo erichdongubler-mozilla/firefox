@@ -65,6 +65,15 @@ export default class RestoreFromBackup extends MozLitElement {
     return this.backupServiceState?.recoveryErrorCode === ERRORS.UNAUTHORIZED;
   }
 
+  get isFileError() {
+    const code = this.backupServiceState?.recoveryErrorCode;
+    return (
+      code === ERRORS.CORRUPTED_ARCHIVE ||
+      code === ERRORS.UNSUPPORTED_BACKUP_VERSION ||
+      code === ERRORS.UNSUPPORTED_APPLICATION
+    );
+  }
+
   constructor() {
     super();
     this._fileIconURL = "";
@@ -358,7 +367,7 @@ export default class RestoreFromBackup extends MozLitElement {
   renderBackupFileInfo(backupFileInfo) {
     return html`<p
       id="restore-from-backup-backup-found-info"
-      data-l10n-id="backup-file-creation-metadata"
+      data-l10n-id="backup-file-creation-metadata2"
       data-l10n-args=${JSON.stringify({
         profileName: backupFileInfo.profileName ?? "",
         machineName: backupFileInfo.deviceName ?? "",
@@ -370,11 +379,10 @@ export default class RestoreFromBackup extends MozLitElement {
   renderBackupFileStatus() {
     const { backupFileInfo, recoveryErrorCode } = this.backupServiceState || {};
 
-    // We have errors and are embedded in about:welcome
     if (
       recoveryErrorCode &&
       !this.isIncorrectPassword &&
-      this.aboutWelcomeEmbedded
+      (this.isFileError || this.aboutWelcomeEmbedded)
     ) {
       return this.genericFileErrorTemplate();
     }
@@ -397,13 +405,15 @@ export default class RestoreFromBackup extends MozLitElement {
     }
     return html`
       <fieldset id="backup-restore-controls">
-        <a
-          id="restore-from-backup-support-link"
-          slot="support-link"
-          is="moz-support-link"
-          support-page="firefox-backup"
-          data-l10n-id="restore-from-backup-support-link1"
-        ></a>
+        <div>
+          <a
+            id="restore-from-backup-support-link"
+            slot="support-link"
+            is="moz-support-link"
+            support-page="firefox-backup"
+            data-l10n-id="restore-from-backup-support-link1"
+          ></a>
+        </div>
         <fieldset id="backup-filepicker-controls">
           <label
             id="backup-filepicker-label"
@@ -463,16 +473,14 @@ export default class RestoreFromBackup extends MozLitElement {
     );
     const backupFileName = this.backupServiceState?.backupFileToRestore || "";
 
-    // Determine the ID of the element that will be rendered by renderBackupFileStatus()
-    // to reference with aria-describedby
-    let describedBy = "";
     const { backupFileInfo, recoveryErrorCode } = this.backupServiceState || {};
-
-    if (
-      this.aboutWelcomeEmbedded &&
+    const hasInlineFileError =
       recoveryErrorCode &&
-      !this.isIncorrectPassword
-    ) {
+      !this.isIncorrectPassword &&
+      (this.isFileError || this.aboutWelcomeEmbedded);
+
+    let describedBy = "";
+    if (hasInlineFileError) {
       describedBy = "backup-generic-file-error";
     } else if (!backupFileInfo) {
       describedBy = "restore-from-backup-no-backup-file-link";
@@ -488,6 +496,7 @@ export default class RestoreFromBackup extends MozLitElement {
         .value=${backupFileName}
         style=${styles}
         @input=${this.handleTextareaResize}
+        aria-invalid=${String(!!hasInlineFileError)}
         aria-describedby=${describedBy}
         data-l10n-id="restore-from-backup-filepicker-input"
       ></textarea>
@@ -593,7 +602,8 @@ export default class RestoreFromBackup extends MozLitElement {
 
   errorTemplate() {
     // We handle incorrect password errors in the password input
-    if (this.isIncorrectPassword) {
+    // and file errors inline below the file picker
+    if (this.isIncorrectPassword || this.isFileError) {
       return null;
     }
 
@@ -610,7 +620,6 @@ export default class RestoreFromBackup extends MozLitElement {
   }
 
   genericFileErrorTemplate() {
-    // We handle incorrect password errors in the password input
     if (this.isIncorrectPassword) {
       return null;
     }
