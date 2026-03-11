@@ -7,6 +7,14 @@ const { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
 
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
+const { openAIEngine } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+);
+
 /**
  * Start an HTTP server that serves HTML content.
  *
@@ -263,9 +271,14 @@ async function withServer(serverOptions, task) {
     set: [["browser.smartwindow.endpoint", `http://localhost:${port}/v1`]],
   });
 
+  const getFxAccountTokenStub = sinon
+    .stub(openAIEngine, "getFxAccountToken")
+    .resolves("mock-fxa-token");
+
   try {
     await task({ port });
   } finally {
+    getFxAccountTokenStub.restore();
     await SpecialPowers.popPrefEnv();
     await stopMockOpenAI(server);
   }

@@ -149,6 +149,14 @@ add_task(async function test_error_status() {
       );
 
       await testErrorScenario(
+        { error: 4 },
+        "smartwindow-assistant-error-account-header",
+        null,
+        "smartwindow-signin-btn",
+        "aiChatError:sign-in"
+      );
+
+      await testErrorScenario(
         { error: "server_error" },
         "smartwindow-assistant-error-generic-header",
         null,

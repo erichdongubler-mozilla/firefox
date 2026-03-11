@@ -137,7 +137,7 @@ add_task(async function test_Chat_fetchWithHistory_streams_and_forwards_args() {
     };
 
     sb.stub(openAIEngine, "build").resolves(fakeEngine);
-    // sb.stub(Chat, "_getFxAccountToken").resolves("mock_token");
+    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
 
     const conversation = new ChatConversation({
       title: "chat title",
@@ -223,7 +223,7 @@ add_task(async function test_Chat_fetchWithHistory_handles_tool_calls() {
     Chat.toolMap.test_tool = sb.stub().resolves("tool result");
 
     sb.stub(openAIEngine, "build").resolves(fakeEngine);
-    // sb.stub(Chat, "_getFxAccountToken").resolves("mock_token");
+    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
 
     const conversation = new ChatConversation({
       title: "chat title",
@@ -299,7 +299,7 @@ add_task(
       };
 
       sb.stub(openAIEngine, "build").resolves(fakeEngine);
-      // sb.stub(Chat, "_getFxAccountToken").resolves("mock_token");
+      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "chat title",
@@ -369,7 +369,7 @@ add_task(
       Chat.toolMap.test_tool = sb.stub().resolves("should not be called");
 
       sb.stub(openAIEngine, "build").resolves(fakeEngine);
-      // sb.stub(Chat, "_getFxAccountToken").resolves("mock_token");
+      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "chat title",
@@ -447,6 +447,7 @@ add_task(
 
       sb.stub(Chat.toolMap, "get_open_tabs").resolves([]);
       sb.stub(openAIEngine, "build").resolves(fakeEngine);
+      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "chat title",
@@ -589,6 +590,7 @@ add_task(
           return ["page content"];
         });
       sb.stub(openAIEngine, "build").resolves(fakeEngine);
+      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
         title: "flags test",
@@ -687,6 +689,7 @@ add_task(async function test_Chat_fetchWithHistory_uses_modelId_from_pref() {
     const createEngineStub = sb
       .stub(openAIEngine, "_createEngine")
       .resolves(fakeEngineInstance);
+    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
 
     const conversation = new ChatConversation({
       title: "chat title",

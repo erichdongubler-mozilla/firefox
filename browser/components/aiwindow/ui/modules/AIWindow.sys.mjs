@@ -635,32 +635,52 @@ export const AIWindow = {
   },
 
   async launchWindow(browser, openNewWindow = false) {
-    // Early return when Smart Window is blocked from AI Control
-    if (this.isBlocked) {
+    try {
+      // Early return when Smart Window is blocked from AI Control
+      if (this.isBlocked) {
+        return false;
+      }
+
+      // if browser.smartwindow.enabled is false
+      // set the pref explicitly true
+      if (!this.isAllowed) {
+        Services.prefs.setBoolPref(PREF_SMARTWINDOW_ENABLED, true);
+      }
+
+      if (!browser && !openNewWindow) {
+        return false;
+      }
+
+      if (!openNewWindow) {
+        return this._authorizeAndToggleWindow(browser.ownerGlobal);
+      }
+
+      const isAuthorized = await lazy.AIWindowAccountAuth.canAccessAIWindow();
+      const windowPromise = lazy.BrowserWindowTracker.promiseOpenWindow({
+        aiWindow: isAuthorized,
+        openerWindow: browser?.ownerGlobal,
+      });
+
+      return this._authorizeAndToggleWindow(await windowPromise);
+    } catch (e) {
+      console.error("Error launching AI window:", e);
       return false;
     }
+  },
 
-    // if browser.smartwindow.enabled is false
-    // set the pref explicitly true
-    if (!this.isAllowed) {
-      Services.prefs.setBoolPref(PREF_SMARTWINDOW_ENABLED, true);
-    }
-
-    if (!browser && !openNewWindow) {
+  /**
+   * Launches the FxA sign-in auth flow for the given browser.
+   *
+   * @param {Browser} browser
+   * @returns {Promise<boolean>} Whether the user signed in successfully
+   */
+  async launchSignInFlow(browser) {
+    try {
+      return await lazy.AIWindowAccountAuth.promptSignIn(browser);
+    } catch (e) {
+      console.error("Error launching sign-in flow:", e);
       return false;
     }
-
-    if (!openNewWindow) {
-      return this._authorizeAndToggleWindow(browser.ownerGlobal);
-    }
-
-    const isAuthorized = await lazy.AIWindowAccountAuth.canAccessAIWindow();
-    const windowPromise = lazy.BrowserWindowTracker.promiseOpenWindow({
-      aiWindow: isAuthorized,
-      openerWindow: browser?.ownerGlobal,
-    });
-
-    return this._authorizeAndToggleWindow(await windowPromise);
   },
 
   /**

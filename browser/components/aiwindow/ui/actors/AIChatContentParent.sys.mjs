@@ -58,6 +58,10 @@ export class AIChatContentParent extends JSWindowActorParent {
         this.#handleOpenLink(data);
         break;
 
+      case "AIChatContent:AccountSignIn":
+        this.#handleAccountSignIn();
+        break;
+
       default:
         console.warn(`AIChatContentParent received unknown message: ${name}`);
         break;
@@ -112,6 +116,23 @@ export class AIChatContentParent extends JSWindowActorParent {
       }
     } catch (e) {
       console.warn("Could not open link from AI Window chat", e);
+    }
+  }
+
+  async #handleAccountSignIn() {
+    const browser = this.browsingContext.topChromeWindow.gBrowser;
+    const success = await lazy.AIWindow.launchSignInFlow(browser);
+    if (success) {
+      this.#handleRetryAfterError();
+    }
+  }
+
+  #handleRetryAfterError() {
+    try {
+      const aiWindow = this.#getAIWindowElement();
+      aiWindow.handleFooterAction({ action: "retry-after-error" });
+    } catch (e) {
+      console.warn("Could not handle Retry from AI Window chat", e);
     }
   }
 

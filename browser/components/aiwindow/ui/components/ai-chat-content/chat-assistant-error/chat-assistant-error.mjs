@@ -14,6 +14,7 @@ const ERROR_CODES = {
   BUDGET_EXCEEDED: 1,
   RATE_LIMIT_EXCEEDED: 2,
   CHAT_MAX_LENGTH: 3,
+  ACCOUNT_ERROR: 4,
 };
 
 /**
@@ -43,6 +44,14 @@ export class ChatAssistantError extends MozLitElement {
 
   openNewChat() {
     const event = new CustomEvent("aiChatError:new-chat", {
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
+  }
+
+  openAccountSignIn() {
+    const event = new CustomEvent("aiChatError:sign-in", {
       bubbles: true,
       composed: true,
     });
@@ -96,6 +105,16 @@ export class ChatAssistantError extends MozLitElement {
           body: "smartwindow-assistant-error-budget-body",
         };
         this.actionButton = null;
+        break;
+
+      case ERROR_CODES.ACCOUNT_ERROR:
+        this.errorText = {
+          header: "smartwindow-assistant-error-account-header",
+        };
+        this.actionButton = {
+          label: "smartwindow-signin-btn",
+          action: this.openAccountSignIn.bind(this),
+        };
         break;
 
       default:

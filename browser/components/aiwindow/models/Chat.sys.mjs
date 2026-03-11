@@ -62,6 +62,12 @@ Object.assign(Chat, {
    */
   async fetchWithHistory(conversation, engineInstance, context = {}) {
     const fxAccountToken = await openAIEngine.getFxAccountToken();
+    if (!fxAccountToken) {
+      console.error("fetchWithHistory Account Token null or undefined");
+      const fxaError = new Error("FxA token unavailable");
+      fxaError.error = 4; // ACCOUNT_ERROR: triggers FxA sign-in prompt in the UI
+      throw fxaError;
+    }
 
     const toolRoleOpts = new ToolRoleOpts(this.modelId);
     const currentTurn = conversation.currentTurnIndex();

@@ -92,6 +92,11 @@ export class AIChatContent extends MozLitElement {
       "aiChatError:new-chat",
       this.openNewChatAfterError.bind(this)
     );
+
+    this.addEventListener(
+      "aiChatError:sign-in",
+      this.openAccountSignInAfterError.bind(this)
+    );
   }
 
   /**
@@ -369,6 +374,14 @@ export class AIChatContent extends MozLitElement {
       );
     }
     return msg.contextMentions;
+  }
+
+  openAccountSignInAfterError() {
+    const event = new CustomEvent("AIChatContent:AccountSignIn", {
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
   }
 
   #renderMessage(msg, chips) {

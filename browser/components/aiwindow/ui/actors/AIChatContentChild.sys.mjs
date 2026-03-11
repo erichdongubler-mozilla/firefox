@@ -37,6 +37,7 @@ export class AIChatContentChild extends JSWindowActorChild {
     "AIChatContent:DispatchAction",
     "AIChatContent:OpenLink",
     "AIChatContent:DispatchNewChat",
+    "AIChatContent:AccountSignIn",
   ]);
 
   /**
@@ -80,6 +81,10 @@ export class AIChatContentChild extends JSWindowActorChild {
 
       case "AIChatContent:OpenLink":
         this.sendAsyncMessage("AIChatContent:OpenLink", event.detail);
+        break;
+
+      case "AIChatContent:AccountSignIn":
+        this.sendAsyncMessage("AIChatContent:AccountSignIn", event.detail);
         break;
 
       default:

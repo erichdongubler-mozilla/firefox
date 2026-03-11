@@ -360,9 +360,14 @@ async function withServer(serverOptions, task) {
     set: [["browser.smartwindow.endpoint", `http://localhost:${port}/v1`]],
   });
 
+  const getFxAccountTokenStub = sinon
+    .stub(openAIEngine, "getFxAccountToken")
+    .resolves("mock-fxa-token");
+
   try {
     await task({ port });
   } finally {
+    getFxAccountTokenStub.restore();
     await SpecialPowers.popPrefEnv();
     await stopMockOpenAI(server);
   }

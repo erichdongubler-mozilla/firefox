@@ -8,6 +8,7 @@ smartwindow-messages-document-title = Smart window chat messages
 
 smartwindow-assistant-error-generic-header = Something went wrong. Please try again.
 smartwindow-assistant-error-budget-header = You’ve reached today’s chat limit.
+smartwindow-assistant-error-account-header = To use Smart Window, you’ll need to sign in.
 
 ## TODO: ET timezone should be replaced before rolling to other locales: https://bugzilla.mozilla.org/show_bug.cgi?id=2017944
 
@@ -16,6 +17,7 @@ smartwindow-assistant-error-many-requests-header = Please wait a moment and try 
 smartwindow-assistant-error-max-length-header = It’s time to start a new chat. This one’s reached its length limit.
 smartwindow-retry-btn = Try Again
 smartwindow-clear-btn = New chat
+smartwindow-signin-btn = Sign in
 
 ## Assistant Message footer
 

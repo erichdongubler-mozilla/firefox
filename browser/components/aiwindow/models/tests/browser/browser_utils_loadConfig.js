@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { openAIEngine, MODEL_FEATURES } = ChromeUtils.importESModule(
+const { MODEL_FEATURES } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
