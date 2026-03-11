@@ -349,10 +349,6 @@ export class IPProtectionPanel {
       this.initiatedUpgrade = false;
     }
 
-    if (!this.state.unauthenticated) {
-      lazy.IPPProxyManager.refreshUsage();
-    }
-
     this.#updateSiteData();
 
     this.setState({
