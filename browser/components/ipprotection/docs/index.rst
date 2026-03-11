@@ -14,5 +14,6 @@ See the following pages for details on components, preferences, and the state ma
 .. toctree::
 
    Components
+   Constants
    Preferences
    StateMachine
