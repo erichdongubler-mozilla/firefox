@@ -886,6 +886,9 @@ nsresult mozJSModuleLoader::GetScriptForLocation(
   // ScriptPreloader::NoteScript needs to be called unconditionally, to
   // reflect the usage into the next session's cache.
   ScriptPreloader::GetSingleton().NoteStencil(nativePath, cachePath, stencil);
+  if (ScriptPreloader::GetSingleton().Active()) {
+    storeIntoStartupCache = false;
+  }
 
   // Write to startup cache only when we didn't have any cache for the script
   // and compiled it.
