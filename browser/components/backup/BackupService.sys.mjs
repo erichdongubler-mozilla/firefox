@@ -4592,7 +4592,7 @@ export class BackupService extends EventTarget {
     const oldBackupFile = this.#_state.lastBackupFileName;
     const isScheduledBackupsEnabled = lazy.scheduledBackupsPref;
 
-    let { backupPromise, resolve } = Promise.withResolvers();
+    let { promise, resolve } = Promise.withResolvers();
     ChromeUtils.idleDispatch(async () => {
       lazy.logConsole.debug(
         "idleDispatch fired. Attempting to create a backup."
@@ -4602,9 +4602,13 @@ export class BackupService extends EventTarget {
         oldBackupFilePath = PathUtils.join(lazy.backupDirPref, oldBackupFile);
       }
 
+      let possibleArchivePath = "";
+
       try {
         if (isScheduledBackupsEnabled) {
-          await this.createBackup({ reason });
+          ({ archivePath: possibleArchivePath } = await this.createBackup({
+            reason,
+          }));
         }
       } catch (e) {
         lazy.logConsole.debug(
@@ -4621,7 +4625,11 @@ export class BackupService extends EventTarget {
         }
       } finally {
         // Now delete the old backup file, if it exists
-        if (deletePreviousBackup && oldBackupFilePath) {
+        if (
+          deletePreviousBackup &&
+          oldBackupFilePath &&
+          oldBackupFilePath != possibleArchivePath
+        ) {
           lazy.logConsole.log(
             "Attempting to delete last backup file at ",
             oldBackupFilePath
@@ -4630,11 +4638,11 @@ export class BackupService extends EventTarget {
             ignoreAbsent: true,
             retryReadonly: true,
           });
-          resolve();
         }
+        resolve();
       }
     });
-    return backupPromise;
+    return promise;
   }
 
   /**
