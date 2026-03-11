@@ -38,6 +38,7 @@ support-files = [
 
 ["test_attrgetownerelement05.html"]
 
+["test_createAttributeNS01.html"]
 
 ["test_createAttributeNS02.html"]
 
