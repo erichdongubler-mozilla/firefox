@@ -102,7 +102,9 @@ class MozillaPrinter : public EmptyTestEventListener {
     JsonEscape(nsDependentCString(aTestPartResult.summary()), message);
     if (aTestPartResult.failed()) {
       nsCString file;
-      JsonEscape(nsDependentCString(aTestPartResult.file_name()), file);
+      if (const char* fileName = aTestPartResult.file_name()) {
+        JsonEscape(nsDependentCString(fileName), file);
+      }
       MOZ_LOG_ACTION("test_status",
                      ",\"test\":\"%s\",\"subtest\":\"\","
                      "\"status\":\"FAIL\",\"expected\":\"PASS\","
