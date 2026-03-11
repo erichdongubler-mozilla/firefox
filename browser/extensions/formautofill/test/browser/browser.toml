@@ -1,10 +1,5 @@
 [DEFAULT]
 head = "head.js"
-
-prefs = [
-  "extensions.formautofill.skipProgrammaticCheckForTests=true",
-]
-
 support-files = [
   "./fathom/**",
   "../fixtures/autocomplete_basic.html",
