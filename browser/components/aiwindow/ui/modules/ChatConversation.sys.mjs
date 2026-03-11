@@ -26,12 +26,27 @@ import {
   UserRoleOpts,
 } from "./ChatMessage.sys.mjs";
 
+import { EventEmitter } from "resource://gre/modules/EventEmitter.sys.mjs";
+import {
+  consumeStreamChunk,
+  createParserState,
+  flushTokenRemainder,
+} from "chrome://browser/content/aiwindow/modules/TokenStreamParser.mjs";
+
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  ChatStore:
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs",
+  MemoriesManager:
+    "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
+});
+
 const CHAT_ROLES = [MESSAGE_ROLE.USER, MESSAGE_ROLE.ASSISTANT];
 
 /**
  * A conversation containing messages.
  */
-export class ChatConversation {
+export class ChatConversation extends EventEmitter {
   id;
   title;
   description;
@@ -69,6 +84,8 @@ export class ChatConversation {
       messages = [],
     } = params;
 
+    super();
+
     this.id = id;
     this.title = title;
     this.description = description;
@@ -84,6 +101,81 @@ export class ChatConversation {
       untrusted_input: false,
       private_data: false,
     };
+  }
+
+  async handleChunk(chunk, currentMessage, parserState) {
+    let update = false;
+
+    const { plainText, tokens } = consumeStreamChunk(chunk, parserState);
+    if (plainText) {
+      currentMessage.content.body += plainText;
+      update = true;
+    }
+
+    if (tokens) {
+      currentMessage.addTokens(tokens);
+      update = true;
+    }
+
+    if (update) {
+      this.emit("chat-conversation:message-update", currentMessage);
+
+      await lazy.ChatStore.updateConversation(this);
+    }
+  }
+
+  async receiveResponse(stream) {
+    const parserState = createParserState();
+    const currentMessage = this.#getCurrentAssistantResponse();
+
+    if (currentMessage?.content?.body) {
+      currentMessage.content.body += "\n\n";
+    }
+
+    let pendingToolCalls = null;
+    let fullResponseText = "";
+
+    for await (const chunk of stream) {
+      if (chunk.text) {
+        fullResponseText += chunk.text;
+        await this.handleChunk(chunk.text, currentMessage, parserState);
+      }
+
+      if (chunk?.toolCalls?.length) {
+        pendingToolCalls = chunk.toolCalls;
+      }
+    }
+
+    const remainder = flushTokenRemainder(parserState);
+    if (remainder) {
+      currentMessage.content.body += remainder;
+      this.emit("chat-conversation:message-update", currentMessage);
+    }
+
+    if (currentMessage._pendingMemoryIds?.length) {
+      currentMessage.memoriesApplied =
+        await lazy.MemoriesManager.getMemoriesByID(
+          ...new Set(currentMessage._pendingMemoryIds)
+        );
+
+      delete currentMessage._pendingMemoryIds;
+
+      this.emit("chat-conversation:message-update", currentMessage);
+    }
+
+    await lazy.ChatStore.updateConversation(this);
+
+    return { pendingToolCalls, fullResponseText };
+  }
+
+  #getCurrentAssistantResponse() {
+    return this.messages
+      .filter(
+        message =>
+          message.role === MESSAGE_ROLE.ASSISTANT &&
+          message?.content?.type === "text"
+      )
+      .at(-1);
   }
 
   /**

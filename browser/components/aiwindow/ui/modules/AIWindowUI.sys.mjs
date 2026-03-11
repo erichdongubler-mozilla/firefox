@@ -14,6 +14,7 @@ export const AIWindowUI = {
   SPLITTER_ID: "ai-window-splitter",
   BROWSER_ID: "ai-window-browser",
   STACK_CLASS: "ai-window-browser-stack",
+  AI_WINDOW_ELEMENT_TIMEOUT: 1500,
 
   /**
    * @param {Window} win
@@ -75,13 +76,13 @@ export const AIWindowUI = {
     if (!nodes) {
       return false;
     }
-    return !nodes.box.hidden;
+    return !nodes.box.collapsed;
   },
 
   _showSidebarElements(box, splitter) {
-    box.hidden = false;
-    splitter.hidden = false;
-    box.parentElement.hidden = false;
+    box.collapsed = false;
+    splitter.collapsed = false;
+    box.parentElement.collapsed = false;
   },
 
   /**
@@ -109,7 +110,7 @@ export const AIWindowUI = {
    * @param {Window} win
    * @param {ChatConversation} conversation The conversation to open in the sidebar
    */
-  openSidebar(win, conversation) {
+  async openSidebar(win, conversation) {
     const nodes = this._getSidebarElements(win);
     if (!nodes) {
       return;
@@ -127,14 +128,57 @@ export const AIWindowUI = {
       aiBrowser.removeAttribute("data-conversation-id");
     }
 
-    const contentDoc = aiBrowser.contentDocument;
-    if (contentDoc && aiBrowser.contentWindow) {
-      contentDoc.dispatchEvent(
-        new aiBrowser.contentWindow.CustomEvent("OpenConversation", {
-          detail: conversation,
-        })
-      );
+    if (!aiBrowser.contentDocument || !aiBrowser.contentWindow) {
+      return;
     }
+
+    const aiWindowElement = await this.getAiWindowElement(win, aiBrowser);
+    if (!aiWindowElement) {
+      return;
+    }
+
+    if (conversation) {
+      aiWindowElement.openConversation(conversation);
+      return;
+    }
+
+    aiWindowElement.onCreateNewChatClick();
+  },
+
+  /**
+   * Gets the ai-window element from the sidebar browser. If the ai-window
+   * element is not available yet because the sidebrowser was just created
+   * the function will await for the ai-window:connected event in order to
+   * retrieve the initialized ai-window Lit component.
+   *
+   * @param {Window} win
+   * @param {XULElement} aiBrowser
+   *
+   * @returns {Promise<AIWindow>} The sidebar AIWindow component
+   */
+  async getAiWindowElement(win, aiBrowser) {
+    const aiWindowElement =
+      aiBrowser.contentDocument?.querySelector("ai-window:defined");
+    if (aiWindowElement) {
+      return aiWindowElement;
+    }
+
+    return await Promise.race([
+      new Promise(resolve =>
+        win.setTimeout(resolve, AIWindowUI.AI_WINDOW_ELEMENT_TIMEOUT, null)
+      ),
+      new Promise(resolve => {
+        function handler() {
+          const el =
+            aiBrowser.contentDocument?.querySelector("ai-window:defined");
+          if (el) {
+            win.removeEventListener("ai-window:connected", handler);
+            resolve(el);
+          }
+        }
+        win.addEventListener("ai-window:connected", handler);
+      }),
+    ]);
   },
 
   /**
@@ -148,12 +192,8 @@ export const AIWindowUI = {
     }
     const { box, splitter } = this._getSidebarElements(win);
 
-    // @todo Bug2012536
-    // Test behavior of hidden vs collapsed with the intent that
-    // the document doesn't get unloaded so that the document isn't
-    // constantly being reloaded as result of tab switches
-    box.hidden = true;
-    splitter.hidden = true;
+    box.collapsed = true;
+    splitter.collapsed = true;
     this._setAskButtonStyle(win, false);
 
     // Dispatch event to notify tab state manager that sidebar was toggled
@@ -180,9 +220,9 @@ export const AIWindowUI = {
     }
     const { chromeDoc, box, splitter } = nodes;
 
-    if (!box.hidden) {
-      box.hidden = true;
-      splitter.hidden = true;
+    if (!box.collapsed) {
+      box.collapsed = true;
+      splitter.collapsed = true;
       this._setAskButtonStyle(win, false);
 
       // Dispatch event to notify tab state manager that sidebar was toggled

@@ -59,9 +59,8 @@ Object.assign(Chat, {
    * @param {openAIEngine} engineInstance
    * @param {object} [context]
    * @param {BrowsingContext} [context.browsingContext]
-   * @yields {string} Assistant text chunks
    */
-  async *fetchWithHistory(conversation, engineInstance, context = {}) {
+  async fetchWithHistory(conversation, engineInstance, context = {}) {
     const fxAccountToken = await openAIEngine.getFxAccountToken();
 
     const toolRoleOpts = new ToolRoleOpts(this.modelId);
@@ -86,16 +85,11 @@ Object.assign(Chat, {
       let pendingToolCalls = null;
 
       try {
-        for await (const chunk of streamModelResponse()) {
-          if (chunk?.text) {
-            fullResponseText += chunk.text;
-            yield chunk.text;
-          }
-
-          if (chunk?.toolCalls?.length) {
-            pendingToolCalls = chunk.toolCalls;
-          }
-        }
+        const response = await conversation.receiveResponse(
+          streamModelResponse()
+        );
+        fullResponseText = response.fullResponseText;
+        pendingToolCalls = response.pendingToolCalls;
       } catch (err) {
         console.error("fetchWithHistory streaming error:", err);
         throw err;
@@ -135,10 +129,6 @@ Object.assign(Chat, {
           };
           conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
           continue;
-        }
-
-        if (toolName === "run_search") {
-          yield { searching: true, query: toolParams.query };
         }
 
         let result, searchHandoffBrowser;
