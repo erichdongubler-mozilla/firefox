@@ -17,11 +17,12 @@
   grid-template-areas:
     "browser"
     "."
+    "heading"
     "smartbar"
     "prompts"
     "."
     "footer";
-  grid-template-rows: 0 1fr auto auto 1fr auto;
+  grid-template-rows: 0 1fr auto auto auto 1fr auto;
   align-content: stretch;
 }
 
@@ -150,6 +151,14 @@ moz-button.new-chat-icon-button::part(button) {
   color: var(--smartbar-button-text-color);
   font-size: var(--button-font-size);
   font-weight: var(--font-weight);
+}
+
+smartwindow-heading {
+  grid-area: heading;
+}
+
+:host(.chat-active) smartwindow-heading {
+  display: none;
 }
 
 smartwindow-footer {

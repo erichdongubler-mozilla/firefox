@@ -83,7 +83,7 @@ add_task(async function test_switch_to_ai_window() {
 
   let iconListImage = window.getComputedStyle(button)["list-style-image"];
   Assert.ok(
-    iconListImage.includes("ai-window.svg"),
+    iconListImage.includes("smart-window-simplified.svg"),
     "Button icon should change to AI Window icon"
   );
 

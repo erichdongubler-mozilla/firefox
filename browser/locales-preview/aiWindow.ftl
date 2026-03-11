@@ -6,6 +6,7 @@
 
 appmenuitem-new-ai-window =
     .label = New smart window
+    .value = New smart window
 
 appmenuitem-new-classic-window =
     .label = New classic window
@@ -22,6 +23,8 @@ menu-history-chats =
 menu-history-chats-recent =
     .label = Recent Chats
 
+smartwindow-fullpage-heading = Smart Window
+
 smartwindow-document-title = New Tab
 
 ## Smart Window Toggle Button
@@ -35,6 +38,7 @@ ai-window-toggleview-switch-classic =
 
 ai-window-toggleview-switch-ai =
     .label = Smart Window
+    .value = Smart Window
 
 ai-window-toggleview-switch-private =
     .label = Private Window

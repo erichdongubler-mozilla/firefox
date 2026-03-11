@@ -181,7 +181,6 @@
   skin/classic/browser/fxa/monitor.svg                         (../shared/fxa/monitor.svg)
 
   skin/classic/browser/add-circle-fill.svg            (../shared/icons/add-circle-fill.svg)
-  skin/classic/browser/ai-window.svg                  (../shared/icons/ai-window.svg)
   skin/classic/browser/back.svg                       (../shared/icons/back.svg)
   skin/classic/browser/bookmark.svg                   (../shared/icons/bookmark.svg)
   skin/classic/browser/bookmark-12.svg                (../shared/icons/bookmark-12.svg)
@@ -240,6 +239,8 @@
   skin/classic/browser/sidebar-expanded-right.svg     (../shared/icons/sidebar-expanded-right.svg)
   skin/classic/browser/sidebars.svg                   (../shared/icons/sidebars.svg)
   skin/classic/browser/sidebars-right.svg             (../shared/icons/sidebars-right.svg)
+  skin/classic/browser/smart-window.svg               (../shared/icons/smart-window.svg)
+  skin/classic/browser/smart-window-simplified.svg    (../shared/icons/smart-window-simplified.svg)
   skin/classic/browser/sort.svg                       (../shared/icons/sort.svg)
   skin/classic/browser/split-view-left-16.svg         (../shared/icons/split-view-left-16.svg)
   skin/classic/browser/split-view-right-16.svg        (../shared/icons/split-view-right-16.svg)

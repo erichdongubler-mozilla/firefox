@@ -627,7 +627,8 @@ export class AIWindow extends MozLitElement {
       toggleButton = doc.createElement("moz-button");
       toggleButton.id = "smartbar-toggle-button";
       toggleButton.type = "primary";
-      toggleButton.iconSrc = "chrome://browser/skin/ai-window.svg";
+      toggleButton.iconSrc =
+        "chrome://browser/skin/smart-window-simplified.svg";
       toggleButton.setAttribute(
         "data-l10n-id",
         "smartwindow-switch-to-smart-window"
@@ -1462,6 +1463,9 @@ export class AIWindow extends MozLitElement {
               @click=${this.onCreateNewChatClick}
             ></moz-button>
           </div>`
+        : ""}
+      ${this.mode === FULLPAGE
+        ? html`<smartwindow-heading></smartwindow-heading>`
         : ""}
       <div id="browser-container"></div>
       ${this.showStarters
