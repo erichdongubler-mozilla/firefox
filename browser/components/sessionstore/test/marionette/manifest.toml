@@ -1,6 +1,6 @@
 [DEFAULT]
 subsuite = "integration"
-tags = "local"
+tags = "local os_integration"
 
 ["test_log_files.py"]
 

@@ -3,5 +3,6 @@ run-if = [
   "buildapp == 'browser'",
 ]
 subsuite = "integration"
+tags = "os_integration"
 
 ["test_ping_submitted.py"]

@@ -1,6 +1,6 @@
 [DEFAULT]
 subsuite = "integration"
-tags = "inc-origin-init"
+tags = "inc-origin-init os_integration"
 
 ["test_cacheapi_encryption_PBM.py"]
 

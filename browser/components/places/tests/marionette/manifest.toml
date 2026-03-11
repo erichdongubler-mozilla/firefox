@@ -3,5 +3,6 @@ run-if = [
   "buildapp == 'browser'",
 ]
 subsuite = "integration"
+tags = "os_integration"
 
 ["test_reopen_from_library.py"]
