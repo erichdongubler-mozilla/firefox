@@ -4,6 +4,7 @@
 
 //! Gecko profiler state.
 
+#[cfg(feature = "enabled")]
 use crate::gecko_bindings::structs::ThreadProfilingFeatures;
 
 /// Whether the Gecko profiler is currently active.
@@ -16,12 +17,20 @@ use crate::gecko_bindings::structs::ThreadProfilingFeatures;
 ///
 /// This implementation must be kept in sync with
 /// `mozilla::profiler::detail::RacyFeatures::IsActive`.
+#[cfg(feature = "enabled")]
 #[inline]
 pub fn is_active() -> bool {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
 
     let active_and_features = get_active_and_features();
     (active_and_features & detail::RacyFeatures_Active) != 0
+}
+
+/// Always false when MOZ_GECKO_PROFILER is not defined.
+#[cfg(not(feature = "enabled"))]
+#[inline]
+pub fn is_active() -> bool {
+    false
 }
 
 /// Whether the Gecko profiler is currently active and unpaused.
@@ -34,6 +43,7 @@ pub fn is_active() -> bool {
 ///
 /// This implementation must be kept in sync with
 /// `mozilla::profiler::detail::RacyFeatures::IsActiveAndUnpaused`.
+#[cfg(feature = "enabled")]
 #[inline]
 pub fn is_active_and_unpaused() -> bool {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
@@ -41,6 +51,13 @@ pub fn is_active_and_unpaused() -> bool {
     let active_and_features = get_active_and_features();
     (active_and_features & detail::RacyFeatures_Active) != 0
         && (active_and_features & detail::RacyFeatures_Paused) == 0
+}
+
+/// Always false when MOZ_GECKO_PROFILER is not defined.
+#[cfg(not(feature = "enabled"))]
+#[inline]
+pub fn is_active_and_unpaused() -> bool {
+    false
 }
 
 /// Whether the Gecko Profiler can accept markers.
@@ -53,6 +70,7 @@ pub fn is_active_and_unpaused() -> bool {
 ///
 /// This implementation must be kept in sync with
 /// ProfilerMarkers.h:profiler_thread_is_being_profiled_for_markers
+#[cfg(feature = "enabled")]
 #[inline]
 pub fn current_thread_is_being_profiled_for_markers() -> bool {
     current_thread_is_being_profiled(ThreadProfilingFeatures::Markers)
@@ -60,7 +78,15 @@ pub fn current_thread_is_being_profiled_for_markers() -> bool {
         || is_perfetto_tracing()
 }
 
+/// Always false when MOZ_GECKO_PROFILER is not defined.
+#[cfg(not(feature = "enabled"))]
+#[inline]
+pub fn current_thread_is_being_profiled_for_markers() -> bool {
+    false
+}
+
 /// Returns the value of atomic `RacyFeatures::sActiveAndFeatures` from the C++ side.
+#[cfg(feature = "enabled")]
 #[inline]
 fn get_active_and_features() -> u32 {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
@@ -81,6 +107,7 @@ fn get_active_and_features() -> u32 {
 
 /// This implementation must be kept in sync with
 /// `mozilla::profiler::detail::RacyFeatures::IsETWCollecting`.
+#[cfg(feature = "enabled")]
 #[inline]
 fn is_etw_collecting_markers() -> bool {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
@@ -91,6 +118,7 @@ fn is_etw_collecting_markers() -> bool {
 
 /// This implementation must be kept in sync with
 /// `mozilla::profiler::detail::RacyFeatures::IsPerfettoTracing`.
+#[cfg(feature = "enabled")]
 #[inline]
 fn is_perfetto_tracing() -> bool {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
@@ -101,6 +129,7 @@ fn is_perfetto_tracing() -> bool {
 
 /// This implementation must be kept in sync with
 /// `ProfilerThreadState.h:profiler_thread_is_being_profiled`
+#[cfg(feature = "enabled")]
 #[inline]
 fn current_thread_is_being_profiled(thread_profiling_features: ThreadProfilingFeatures) -> bool {
     if !is_active_and_unpaused() {

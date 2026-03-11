@@ -20,7 +20,9 @@
 #include "nsIOService.h"
 #include "nsIGlobalObject.h"
 #include "nsIXPConnect.h"
-#include "GeckoProfilerReporter.h"
+#ifdef MOZ_GECKO_PROFILER
+#  include "GeckoProfilerReporter.h"
+#endif
 #if defined(XP_UNIX) || defined(MOZ_DMD)
 #  include "nsMemoryInfoDumper.h"
 #endif
@@ -1756,9 +1758,11 @@ nsMemoryReporterManager::Init() {
     mStrongEternalReporters->AppendElement(new DeadlockDetectorReporter());
 #endif
 
+#ifdef MOZ_GECKO_PROFILER
     // We have to register this here rather than in profiler_init() because
     // profiler_init() runs prior to nsMemoryReporterManager's creation.
     mStrongEternalReporters->AppendElement(new GeckoProfilerReporter());
+#endif
 
 #ifdef MOZ_DMD
     mStrongEternalReporters->AppendElement(new mozilla::dmd::DMDReporter());

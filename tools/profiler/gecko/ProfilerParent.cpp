@@ -6,8 +6,10 @@
 
 #include "ProfilerParent.h"
 
-#include "nsProfiler.h"
-#include "platform.h"
+#ifdef MOZ_GECKO_PROFILER
+#  include "nsProfiler.h"
+#  include "platform.h"
+#endif
 
 #include "GeckoProfiler.h"
 #include "ProfilerControl.h"
@@ -35,6 +37,7 @@ Endpoint<PProfilerChild> ProfilerParent::CreateForProcess(
     base::ProcessId aOtherPid) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   Endpoint<PProfilerChild> child;
+#ifdef MOZ_GECKO_PROFILER
   Endpoint<PProfilerParent> parent;
   nsresult rv = PProfiler::CreateEndpoints(&parent, &child);
 
@@ -48,9 +51,12 @@ Endpoint<PProfilerChild> ProfilerParent::CreateForProcess(
   }
 
   actor->Init();
+#endif
 
   return child;
 }
+
+#ifdef MOZ_GECKO_PROFILER
 
 class ProfilerParentTracker;
 
@@ -463,13 +469,13 @@ void ProfileBufferGlobalController::HandleChunkManagerNonFinalUpdate(
 
   mReleasedTotalBytes = mReleasedTotalBytes - destroyedReleased + newlyReleased;
 
-#ifdef DEBUG
+#  ifdef DEBUG
   size_t totalReleased = 0;
   for (const TimeStampAndBytesAndPid& item : mReleasedChunksByTime) {
     totalReleased += item.mBytes;
   }
   MOZ_ASSERT(mReleasedTotalBytes == totalReleased);
-#endif  // DEBUG
+#  endif  // DEBUG
 
   std::vector<ProfileBufferControlledChunkManager::ChunkMetadata> toDestroy;
   while (mUnreleasedTotalBytes + mReleasedTotalBytes > mMaximumBytes &&
@@ -719,14 +725,18 @@ void ProfilerParent::Init() {
 
   (void)SendStop();
 }
+#endif  // MOZ_GECKO_PROFILER
 
 ProfilerParent::~ProfilerParent() {
   MOZ_COUNT_DTOR(ProfilerParent);
 
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+#ifdef MOZ_GECKO_PROFILER
   ProfilerParentTracker::StopTracking(this);
+#endif
 }
 
+#ifdef MOZ_GECKO_PROFILER
 /* static */
 nsTArray<ProfilerParent::SingleProcessProfilePromiseAndChildPid>
 ProfilerParent::GatherProfiles() {
@@ -987,5 +997,7 @@ void ProfilerParent::ActorDestroy(ActorDestroyReason aActorDestroyReason) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   mDestroyed = true;
 }
+
+#endif
 
 }  // namespace mozilla

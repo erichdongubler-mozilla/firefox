@@ -333,8 +333,9 @@ void CacheIOThread::ThreadFunc() {
         MakeRefPtr<ThreadEventQueue>(MakeUnique<mozilla::EventQueue>());
     nsCOMPtr<nsIThread> xpcomThread =
         nsThreadManager::get().CreateCurrentThread(queue);
-
+#if defined(MOZ_GECKO_PROFILER)
     profiler_register_thread("Cache2 I/O", &stackTop);
+#endif
 
     threadInternal = do_QueryInterface(xpcomThread);
     if (threadInternal) threadInternal->SetObserver(this);
@@ -402,11 +403,10 @@ void CacheIOThread::ThreadFunc() {
 #endif
   }  // lock
 
-  if (threadInternal) {
-    threadInternal->SetObserver(nullptr);
-  }
-
+  if (threadInternal) threadInternal->SetObserver(nullptr);
+#if defined(MOZ_GECKO_PROFILER)
   profiler_unregister_thread();
+#endif
 }
 
 void CacheIOThread::LoopOneLevel(uint32_t aLevel) {

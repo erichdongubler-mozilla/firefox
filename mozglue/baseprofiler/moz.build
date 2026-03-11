@@ -9,75 +9,76 @@
 # specific code).
 # All exported headers now prefixed with "Base" to avoid #include name clashes.
 
-DEFINES["IMPL_MFBT"] = True
-EXPORTS += [
-    "public/BaseProfilingStack.h",
-]
-UNIFIED_SOURCES += [
-    "core/PageInformation.cpp",
-    "core/platform.cpp",
-    "core/ProfileBuffer.cpp",
-    "core/ProfileBufferEntry.cpp",
-    "core/ProfiledThreadData.cpp",
-    "core/ProfileJSONWriter.cpp",
-    "core/ProfilerBacktrace.cpp",
-    "core/ProfilerMarkers.cpp",
-    "core/ProfilingCategory.cpp",
-    "core/ProfilingStack.cpp",
-    "core/RegisteredThread.cpp",
-]
-
-# Keep in sync with PlatformMacros.h
-if (
-    (
-        CONFIG["OS_TARGET"] == "Android"
-        and CONFIG["TARGET_CPU"] in ("aarch64", "arm", "x86", "x86_64")
-    )
-    or (
-        CONFIG["OS_TARGET"] == "Linux"
-        and CONFIG["TARGET_CPU"] in ("aarch64", "arm", "x86", "x86_64", "mips64")
-    )
-    or (
-        CONFIG["OS_TARGET"] == "FreeBSD"
-        and CONFIG["TARGET_CPU"] in ("aarch64", "x86_64")
-    )
-):
-    # These files cannot be built in unified mode because of name clashes with mozglue headers on Android.
-    SOURCES += [
-        "core/shared-libraries-linux.cc",
+if CONFIG["MOZ_GECKO_PROFILER"]:
+    DEFINES["IMPL_MFBT"] = True
+    EXPORTS += [
+        "public/BaseProfilingStack.h",
     ]
-    if CONFIG["TARGET_CPU"] == "arm":
-        SOURCES += [
-            "core/EHABIStackWalk.cpp",
-        ]
-elif CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_CPU"] in (
-    "aarch64",
-    "x86_64",
-):
     UNIFIED_SOURCES += [
-        "core/shared-libraries-macos.cc",
-    ]
-elif CONFIG["OS_TARGET"] == "WINNT" and CONFIG["TARGET_CPU"] in (
-    "aarch64",
-    "x86",
-    "x86_64",
-):
-    SOURCES += [
-        "core/shared-libraries-win32.cc",
-    ]
-else:
-    SOURCES += [
-        "core/shared-libraries-noop.cc",
+        "core/PageInformation.cpp",
+        "core/platform.cpp",
+        "core/ProfileBuffer.cpp",
+        "core/ProfileBufferEntry.cpp",
+        "core/ProfiledThreadData.cpp",
+        "core/ProfileJSONWriter.cpp",
+        "core/ProfilerBacktrace.cpp",
+        "core/ProfilerMarkers.cpp",
+        "core/ProfilingCategory.cpp",
+        "core/ProfilingStack.cpp",
+        "core/RegisteredThread.cpp",
     ]
 
-LOCAL_INCLUDES += [
-    "/mozglue/baseprofiler/core/",
-    "/mozglue/linker",
-]
+    # Keep in sync with PlatformMacros.h
+    if (
+        (
+            CONFIG["OS_TARGET"] == "Android"
+            and CONFIG["TARGET_CPU"] in ("aarch64", "arm", "x86", "x86_64")
+        )
+        or (
+            CONFIG["OS_TARGET"] == "Linux"
+            and CONFIG["TARGET_CPU"] in ("aarch64", "arm", "x86", "x86_64", "mips64")
+        )
+        or (
+            CONFIG["OS_TARGET"] == "FreeBSD"
+            and CONFIG["TARGET_CPU"] in ("aarch64", "x86_64")
+        )
+    ):
+        # These files cannot be built in unified mode because of name clashes with mozglue headers on Android.
+        SOURCES += [
+            "core/shared-libraries-linux.cc",
+        ]
+        if CONFIG["TARGET_CPU"] == "arm":
+            SOURCES += [
+                "core/EHABIStackWalk.cpp",
+            ]
+    elif CONFIG["OS_TARGET"] == "Darwin" and CONFIG["TARGET_CPU"] in (
+        "aarch64",
+        "x86_64",
+    ):
+        UNIFIED_SOURCES += [
+            "core/shared-libraries-macos.cc",
+        ]
+    elif CONFIG["OS_TARGET"] == "WINNT" and CONFIG["TARGET_CPU"] in (
+        "aarch64",
+        "x86",
+        "x86_64",
+    ):
+        SOURCES += [
+            "core/shared-libraries-win32.cc",
+        ]
+    else:
+        SOURCES += [
+            "core/shared-libraries-noop.cc",
+        ]
 
-if CONFIG["OS_TARGET"] == "Android":
-    DEFINES["ANDROID_NDK_MAJOR_VERSION"] = CONFIG["ANDROID_NDK_MAJOR_VERSION"]
-    DEFINES["ANDROID_NDK_MINOR_VERSION"] = CONFIG["ANDROID_NDK_MINOR_VERSION"]
+    LOCAL_INCLUDES += [
+        "/mozglue/baseprofiler/core/",
+        "/mozglue/linker",
+    ]
+
+    if CONFIG["OS_TARGET"] == "Android":
+        DEFINES["ANDROID_NDK_MAJOR_VERSION"] = CONFIG["ANDROID_NDK_MAJOR_VERSION"]
+        DEFINES["ANDROID_NDK_MINOR_VERSION"] = CONFIG["ANDROID_NDK_MINOR_VERSION"]
 
 GeneratedFile(
     "public/ProfilingCategoryList.h",
