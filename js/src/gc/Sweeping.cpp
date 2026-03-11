@@ -911,7 +911,7 @@ bool GCRuntime::findSweepGroupEdges() {
   return DebugAPI::findSweepGroupEdges(rt);
 }
 
-void GCRuntime::groupZonesForSweeping(JS::GCReason reason) {
+void GCRuntime::groupZonesForSweeping() {
 #ifdef DEBUG
   for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
     MOZ_ASSERT(zone->gcSweepGroupEdges().empty());
@@ -1949,7 +1949,7 @@ IncrementalProgress GCRuntime::markDuringSweeping(JS::GCContext* gcx,
   return Finished;
 }
 
-void GCRuntime::beginSweepPhase(JS::GCReason reason, AutoGCSession& session) {
+void GCRuntime::beginSweepPhase(AutoGCSession& session) {
   /*
    * Sweep phase.
    *
@@ -1976,7 +1976,7 @@ void GCRuntime::beginSweepPhase(JS::GCReason reason, AutoGCSession& session) {
   AssertNoWrappersInGrayList(rt);
   dropStringWrappers();
 
-  groupZonesForSweeping(reason);
+  groupZonesForSweeping();
 
   markSliceCount = 0;  // Number of marking slices per zone group swept.
 
@@ -2637,7 +2637,7 @@ bool GCRuntime::initSweepActions() {
   return sweepActions != nullptr;
 }
 
-void GCRuntime::prepareForSweepSlice(JS::GCReason reason) {
+void GCRuntime::prepareForSweepSlice() {
   // Work that must be done at the start of each slice where we sweep.
   //
   // Since this must happen at the start of the slice, it must be called in
@@ -2646,7 +2646,7 @@ void GCRuntime::prepareForSweepSlice(JS::GCReason reason) {
 
   // Clear out whole cell store buffer entries to unreachable cells.
   if (storeBuffer().mayHavePointersToDeadCells()) {
-    collectNurseryFromMajorGC(reason);
+    collectNurseryFromMajorGC(sliceReason);
   }
 
   // Trace wrapper rooters before marking if we might start sweeping in

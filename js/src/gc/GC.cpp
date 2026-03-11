@@ -2601,7 +2601,6 @@ void GCRuntime::purgeRuntime() {
 
 bool GCRuntime::shouldPreserveJITCode(Realm* realm,
                                       const TimeStamp& currentTime,
-                                      JS::GCReason reason,
                                       bool canAllocateMoreCode,
                                       bool isActiveCompartment) {
   // During shutdown, we must clean everything up, for the sake of leak
@@ -2646,7 +2645,7 @@ bool GCRuntime::shouldPreserveJITCode(Realm* realm,
   }
 
   // GC Invoked via a testing function.
-  if (reason == JS::GCReason::DEBUG_GC) {
+  if (sliceReason == JS::GCReason::DEBUG_GC) {
     return true;
   }
 
@@ -2739,14 +2738,14 @@ static bool ShouldUseBackgroundThreads(bool isIncremental,
   return shouldUse;
 }
 
-void GCRuntime::startCollection(JS::GCReason reason) {
+void GCRuntime::startCollection() {
   checkGCStateNotInUse();
   MOZ_ASSERT_IF(
       isShuttingDown(),
       isShutdownGC() ||
-          reason == JS::GCReason::XPCONNECT_SHUTDOWN /* Bug 1650075 */);
+          sliceReason == JS::GCReason::XPCONNECT_SHUTDOWN /* Bug 1650075 */);
 
-  initialReason = reason;
+  initialReason = sliceReason;
   isCompacting = shouldCompact();
   rootsRemoved = false;
   sweepGroupIndex = 0;
@@ -2801,8 +2800,7 @@ static bool ShouldCollectZone(Zone* zone, JS::GCReason reason) {
   return zone->isGCScheduled();
 }
 
-bool GCRuntime::prepareZonesForCollection(JS::GCReason reason,
-                                          bool* isFullOut) {
+bool GCRuntime::prepareZonesForCollection(bool* isFullOut) {
 #ifdef DEBUG
   /* Assert that zone state is as we expect */
   for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
@@ -2819,7 +2817,7 @@ bool GCRuntime::prepareZonesForCollection(JS::GCReason reason,
 
   for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
     /* Set up which zones will be collected. */
-    bool shouldCollect = ShouldCollectZone(zone, reason);
+    bool shouldCollect = ShouldCollectZone(zone, sliceReason);
     if (shouldCollect) {
       any = true;
       zone->changeGCState(this, Zone::NoGC, Zone::Prepare);
@@ -2944,10 +2942,10 @@ void GCRuntime::purgePendingWrapperPreservationBuffersForShrinkingGC() {
   }
 }
 
-bool GCRuntime::beginPreparePhase(JS::GCReason reason, AutoGCSession& session) {
+bool GCRuntime::beginPreparePhase(AutoGCSession& session) {
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::PREPARE);
 
-  if (!prepareZonesForCollection(reason, &isFull.ref())) {
+  if (!prepareZonesForCollection(&isFull.ref())) {
     return false;
   }
 
@@ -2971,7 +2969,7 @@ bool GCRuntime::beginPreparePhase(JS::GCReason reason, AutoGCSession& session) {
    * Bug 1650075: When we start passing GCOptions::Shutdown for
    * GCReason::XPCONNECT_SHUTDOWN GCs we can remove the extra check.
    */
-  if (!isShutdownGC() && reason != JS::GCReason::XPCONNECT_SHUTDOWN) {
+  if (!isShutdownGC() && sliceReason != JS::GCReason::XPCONNECT_SHUTDOWN) {
     StartOffThreadCompressionsOnGC(rt, isShrinkingGC());
   }
 
@@ -3023,7 +3021,7 @@ void BackgroundUnmarkTask::unmark() {
   }
 }
 
-void GCRuntime::endPreparePhase(JS::GCReason reason) {
+void GCRuntime::endPreparePhase() {
   MOZ_ASSERT(unmarkTask.isIdle());
 
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
@@ -3053,7 +3051,7 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
       if (r->shouldTraceGlobal() || !r->zone()->isGCScheduled()) {
         c->gcState.maybeAlive = true;
       }
-      if (shouldPreserveJITCode(r, currentTime, reason, canAllocateMoreCode,
+      if (shouldPreserveJITCode(r, currentTime, canAllocateMoreCode,
                                 isActiveCompartment)) {
         r->zone()->setPreservingCode(true);
       }
@@ -3089,7 +3087,7 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
   // even if there's nothing in the nursery. Record the number of the minor GC
   // so we can check whether we need to wait for it to finish or whether a
   // subsequent minor GC already did this.
-  collectNurseryFromMajorGC(reason);
+  collectNurseryFromMajorGC(sliceReason);
   initialMinorGCNumber = minorGCNumber;
 
   {
@@ -3645,7 +3643,7 @@ static bool IsEmergencyGC(JS::GCReason reason) {
          reason == JS::GCReason::MEM_PRESSURE;
 }
 
-void GCRuntime::finishCollection(JS::GCReason reason) {
+void GCRuntime::finishCollection() {
   assertBackgroundSweepingFinished();
 
   MOZ_ASSERT(!hasDelayedMarking());
@@ -3661,7 +3659,7 @@ void GCRuntime::finishCollection(JS::GCReason reason) {
 
   maybeStopPretenuring();
 
-  if (IsEmergencyGC(reason)) {
+  if (IsEmergencyGC(sliceReason)) {
     waitBackgroundFreeEnd();
   }
 
@@ -4219,10 +4217,10 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
 
   switch (incrementalState) {
     case State::NotActive:
-      startCollection(reason);
+      startCollection();
 
       incrementalState = State::Prepare;
-      if (!beginPreparePhase(reason, session)) {
+      if (!beginPreparePhase(session)) {
         incrementalState = State::NotActive;
         break;
       }
@@ -4254,7 +4252,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
       [[fallthrough]];
 
     case State::MarkRoots:
-      endPreparePhase(reason);
+      endPreparePhase();
 
       {
         AutoGCSession commitSession(this, JS::HeapState::Idle);
@@ -4274,7 +4272,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
     case State::Mark:
       if (!preparedForSweepInThisSlice &&
           mightSweepInThisSlice(budget.isUnlimited())) {
-        prepareForSweepSlice(reason);
+        prepareForSweepSlice();
       }
 
       if (markPhase(budget) == NotFinished) {
@@ -4314,13 +4312,13 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
       incrementalState = State::Sweep;
       lastMarkSlice = false;
 
-      beginSweepPhase(reason, session);
+      beginSweepPhase(session);
 
       [[fallthrough]];
 
     case State::Sweep:
       if (initialState == State::Sweep) {
-        prepareForSweepSlice(reason);
+        prepareForSweepSlice();
       }
 
       if (sweepPhase(budget) == NotFinished) {
@@ -4401,7 +4399,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
         }
 
         nursery().joinSweepTask();
-        if (compactPhase(reason, budget, session) == NotFinished) {
+        if (compactPhase(budget, session) == NotFinished) {
           break;
         }
 
@@ -4424,7 +4422,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
       [[fallthrough]];
 
     case State::Finish:
-      finishCollection(reason);
+      finishCollection();
       incrementalState = State::NotActive;
       break;
   }
