@@ -273,6 +273,7 @@
      */
     #splitViewSplitter = null;
     #splitterWasDragging = false;
+    #splitterAriaUpdateTask = null;
     #splitViewSplitterObserver = new MutationObserver(() => {
       const splitterState = this.#splitViewSplitter.getAttribute("state");
       if (splitterState === "dragging") {
@@ -281,23 +282,12 @@
       } else {
         const wasDragging = this.#splitterWasDragging;
         this.#splitterWasDragging = false;
-
-        if (!this._splitterPendingUpdate) {
-          // wait for the layout flush before doing any measuring
-          this._splitterPendingUpdate = window
-            .promiseDocumentFlushed(() => {})
-            .then(() => {
-              this.updateSplitterAriaAttributes(!!this.#splitViewPanels.length);
-
-              // Record telemetry when drag resize completes
-              if (wasDragging) {
-                this.#recordSplitViewResizeTelemetry();
-              }
-            })
-            .finally(() => {
-              this._splitterPendingUpdate = null;
-            });
+        if (wasDragging) {
+          window.promiseDocumentFlushed(() =>
+            this.#recordSplitViewResizeTelemetry()
+          );
         }
+        this.#splitterAriaUpdateTask.arm();
       }
     });
     #splitViewSplitterKeysDown = new Set();
@@ -315,12 +305,17 @@
 
     connectedCallback() {
       super.connectedCallback();
+      this.#splitterAriaUpdateTask = new imports.DeferredTask(
+        () => this.updateSplitterAriaAttributes(),
+        0
+      );
       window.addEventListener("SplitViewRemoved", this);
     }
 
     disconnectedCallback() {
       super.disconnectedCallback();
       this.#splitViewSplitterObserver.disconnect();
+      this.#splitterAriaUpdateTask.finalize();
       window.removeEventListener("SplitViewRemoved", this);
     }
 
@@ -402,16 +397,10 @@
       this.#splitterWasDragging = false;
       splitter.addEventListener("command", () => {
         gBrowser.activeSplitView.resetRightPanelWidth();
-
-        // wait for the layout flush before doing any measuring
-        if (!this._splitterPendingUpdate) {
-          this._splitterPendingUpdate = window
-            .promiseDocumentFlushed(() => {})
-            .then(() => {
-              this.updateSplitterAriaAttributes(!!this.#splitViewPanels.length);
-              this.#recordSplitViewResizeTelemetry();
-            });
-        }
+        window.promiseDocumentFlushed(() =>
+          this.#recordSplitViewResizeTelemetry()
+        );
+        this.#splitterAriaUpdateTask.arm();
       });
       this.#splitViewSplitterObserver.observe(splitter, {
         attributeFilter: ["state"],
@@ -433,9 +422,7 @@
       return splitter;
     }
 
-    updateSplitterAriaAttributes(isActive) {
-      delete this._splitterPendingUpdate;
-
+    async updateSplitterAriaAttributes() {
       // avoid triggering the splitter's creation here if it doesnt already exist
       const splitter = this.#splitViewSplitter;
       if (!splitter) {
@@ -443,15 +430,17 @@
       }
       // The splitter is actively controlling the size of the left/first panel
       const controlledPanel =
-        isActive &&
-        this.splitViewPanels.length &&
+        this.#splitViewPanels.length &&
         document.getElementById(this.splitViewPanels[0]);
       if (controlledPanel) {
         splitter.setAttribute("aria-controls", controlledPanel.id);
 
         // gather the min, max and current widths to update the aria attributes
-        const { width: containerWidth } =
-          window.windowUtils.getBoundsWithoutFlushing(this);
+        const [containerWidth, currentWidth] =
+          await window.promiseDocumentFlushed(() => [
+            this.clientWidth,
+            controlledPanel.clientWidth,
+          ]);
         const minWidth = parseFloat(getComputedStyle(controlledPanel).minWidth);
         // We can reuse the controlled panel's minWidth to calculate maxWidth as it should be
         // the same as the 2nd panel in the splitview
@@ -459,15 +448,17 @@
         // Sometimes dragging the splitter produces a panel width attribute which exceeds
         // the max width, so lets get our own measurment. This may end up at the previous
         // frames width
-        const currentWidth =
-          window.windowUtils.getBoundsWithoutFlushing(controlledPanel).width;
+        if (controlledPanel.hasAttribute("width")) {
+          const storedWidth = Number(controlledPanel.getAttribute("width"));
+          if (storedWidth != currentWidth) {
+            controlledPanel.setAttribute("width", currentWidth);
+            controlledPanel.style.width = currentWidth + "px";
+          }
+        }
 
         splitter.setAttribute("aria-valuemin", String(minWidth));
         splitter.setAttribute("aria-valuemax", String(maxWidth));
-        splitter.setAttribute(
-          "aria-valuenow",
-          String(Math.floor(currentWidth))
-        );
+        splitter.setAttribute("aria-valuenow", String(currentWidth));
       } else {
         splitter.removeAttribute("aria-controls");
         splitter.removeAttribute("aria-valuenow");
@@ -622,7 +613,7 @@
       // offsets it.
       this.selectedPanel = selectedPanel;
       // Update aria attributes
-      this.updateSplitterAriaAttributes(isActive);
+      this.#splitterAriaUpdateTask.arm();
     }
 
     setSplitViewPanelActive(isActive, panel) {

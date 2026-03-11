@@ -6,6 +6,10 @@ add_setup(() =>
   })
 );
 
+registerCleanupFunction(() =>
+  Services.prefs.clearUserPref("browser.tabs.splitview.hasUsed")
+);
+
 /* Test that
  * the splitter in a split view is focusable
  * arrow keys correctly move the splitter and cause panels to resize
@@ -47,6 +51,11 @@ add_task(async function test_SplitterKeyboardA11Y() {
     splitter.getAttribute("role"),
     "separator",
     "The splitter has the separator role"
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    splitter,
+    { attributes: true, attributeFilter: ["aria-controls"] },
+    () => splitter.hasAttribute("aria-controls")
   );
   Assert.equal(
     splitter.getAttribute("aria-controls"),
@@ -110,6 +119,13 @@ add_task(async function test_SplitterKeyboardA11Y() {
   const splitView2 = gBrowser.addTabSplitView([tab3, tab4], {
     insertBefore: tab3,
   });
+  await BrowserTestUtils.waitForMutationCondition(
+    splitter,
+    { attributes: true, attributeFilter: ["aria-controls"] },
+    () =>
+      splitter.hasAttribute("aria-controls") &&
+      splitter.getAttribute("aria-controls") !== leftPanel.id
+  );
   let controlledPanelId = splitter.getAttribute("aria-controls");
   Assert.equal(
     controlledPanelId,
@@ -131,6 +147,14 @@ add_task(async function test_SplitterKeyboardA11Y() {
   );
 
   splitView.close();
+  await BrowserTestUtils.waitForMutationCondition(
+    splitter,
+    { attributes: true },
+    () =>
+      !splitter.hasAttribute("aria-valuemin") &&
+      !splitter.hasAttribute("aria-valuemax") &&
+      !splitter.hasAttribute("aria-valuenow")
+  );
   Assert.ok(!splitter.ariaValueMin, "The aria-valuemin attribute was removed");
   Assert.ok(!splitter.ariaValueMax, "aria-valuemax attribute was removed");
   Assert.ok(!splitter.ariaValueNow, "aria-valuenow attribute was removed");

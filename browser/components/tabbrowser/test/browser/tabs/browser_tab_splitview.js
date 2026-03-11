@@ -408,6 +408,28 @@ add_task(async function test_resize_throttled_for_keyboard() {
   splitView.close();
 });
 
+add_task(async function test_resize_split_view_panels_exceeds_max_width() {
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+  await BrowserTestUtils.switchTab(gBrowser, tab1);
+
+  info("Activate split view.");
+  const splitView = gBrowser.addTabSplitView([tab1, tab2]);
+  const splitter = gBrowser.tabpanels.splitViewSplitter;
+
+  const leftPanel = document.getElementById(tab1.linkedPanel);
+  await dragSplitter(9000, splitter);
+  Assert.lessOrEqual(
+    Number(leftPanel.getAttribute("width")),
+    Number(splitter.getAttribute("aria-valuemax")),
+    "Stored width should not exceed max width after resizing."
+  );
+
+  splitView.close();
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+});
+
 add_task(async function test_click_findbar_to_select_panel() {
   const tab1 = await addTabAndLoadBrowser();
   const tab2 = await addTabAndLoadBrowser();
@@ -785,4 +807,41 @@ add_task(async function test_move_splitview_to_end_and_start() {
   for (let tab of [tab1, tab2, tab3, tab4]) {
     BrowserTestUtils.removeTab(tab);
   }
+});
+
+add_task(async function test_width_preserved_between_splitviews() {
+  info("Create four tabs for two split view pairings.");
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+  const tab3 = await addTabAndLoadBrowser();
+  const tab4 = await addTabAndLoadBrowser();
+
+  info("Create two split views [1, 2] and [3, 4].");
+  const splitView1 = gBrowser.addTabSplitView([tab1, tab2]);
+  const splitView2 = gBrowser.addTabSplitView([tab3, tab4]);
+
+  info("Switch to tab 1 to activate the first split view.");
+  await BrowserTestUtils.switchTab(gBrowser, tab1);
+  await checkSplitViewPanelVisible(tab1, true);
+
+  const panel1 = document.getElementById(tab1.linkedPanel);
+  const originalWidth = panel1.getBoundingClientRect().width;
+
+  info("Switch to tab 3 to activate the second split view.");
+  await BrowserTestUtils.switchTab(gBrowser, tab3);
+  await checkSplitViewPanelVisible(tab1, false);
+  await checkSplitViewPanelVisible(tab3, true);
+
+  info("Switch back to tab 1.");
+  await BrowserTestUtils.switchTab(gBrowser, tab1);
+  await checkSplitViewPanelVisible(tab1, true);
+
+  Assert.equal(
+    panel1.getBoundingClientRect().width,
+    originalWidth,
+    "Panel 1 width is unchanged after switching between split views."
+  );
+
+  splitView1.close();
+  splitView2.close();
 });
