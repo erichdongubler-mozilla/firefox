@@ -399,7 +399,6 @@ with Files("WebTransport*"):
 
 GENERATED_WEBIDL_FILES = [
     "CSSCounterStyleRule.webidl",
-    "CSSFontFaceDescriptors.webidl",
     "CSSPageDescriptors.webidl",
     "CSSPositionTryDescriptors.webidl",
     "CSSStyleProperties.webidl",

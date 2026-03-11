@@ -232,8 +232,6 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "CSSCounterStyleRule", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "CSSFontFaceDescriptors", insecureContext: true },
-  // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "CSSFontFaceRule", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "CSSFontFeatureValuesRule", insecureContext: true },

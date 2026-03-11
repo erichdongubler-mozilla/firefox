@@ -211,11 +211,6 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
         entry_point="gen_position_try_descriptors_webidl",
     )
     GeneratedFile(
-        "CSSFontFaceDescriptors.webidl",
-        script="/layout/style/GenerateCSSProperties.py",
-        entry_point="gen_font_face_descriptors_webidl",
-    )
-    GeneratedFile(
         "CSSCounterStyleRule.webidl",
         script="/layout/style/GenerateCSSProperties.py",
         entry_point="gen_counter_style_rule_webidl",
