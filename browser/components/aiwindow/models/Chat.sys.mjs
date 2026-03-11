@@ -59,9 +59,8 @@ Object.assign(Chat, {
    * @param {openAIEngine} engineInstance
    * @param {object} [context]
    * @param {BrowsingContext} [context.browsingContext]
-   * @yields {string} Assistant text chunks
    */
-  async *fetchWithHistory(conversation, engineInstance, context = {}) {
+  async fetchWithHistory(conversation, engineInstance, context = {}) {
     const fxAccountToken = await openAIEngine.getFxAccountToken();
     if (!fxAccountToken) {
       console.error("fetchWithHistory Account Token null or undefined");
@@ -104,16 +103,11 @@ Object.assign(Chat, {
       let pendingToolCalls = null;
 
       try {
-        for await (const chunk of streamModelResponse()) {
-          if (chunk?.text) {
-            fullResponseText += chunk.text;
-            yield chunk.text;
-          }
-
-          if (chunk?.toolCalls?.length) {
-            pendingToolCalls = chunk.toolCalls;
-          }
-        }
+        const response = await conversation.receiveResponse(
+          streamModelResponse()
+        );
+        fullResponseText = response.fullResponseText;
+        pendingToolCalls = response.pendingToolCalls;
       } catch (err) {
         console.error("fetchWithHistory streaming error:", err);
         throw err;
@@ -155,12 +149,13 @@ Object.assign(Chat, {
           continue;
         }
 
-        if (toolName === "run_search") {
-          // Make sure we aren't using a generated query when we shouldn't be
-          if (isVerbatimQuery && toolParams.hasOwnProperty("query")) {
-            delete toolParams.query;
-          }
-          yield { searching: true, query: toolParams.query ?? null };
+        // Make sure we aren't using a generated query when we shouldn't be
+        if (
+          toolName === "run_search" &&
+          isVerbatimQuery &&
+          toolParams.hasOwnProperty("query")
+        ) {
+          delete toolParams.query;
         }
 
         let result, searchHandoffBrowser;
