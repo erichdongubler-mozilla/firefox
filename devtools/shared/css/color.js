@@ -6,9 +6,11 @@
 
 const COLOR_UNIT_PREF = "devtools.defaultColorUnit";
 const SPECIALVALUES = new Set([
-  ...InspectorUtils.getCSSWideKeywords(),
   "currentcolor",
+  "initial",
+  "inherit",
   "transparent",
+  "unset",
 ]);
 
 /**

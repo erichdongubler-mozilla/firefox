@@ -257,7 +257,7 @@ class TooltipsOverlay {
       type === VIEW_NODE_FONT_TYPE
     ) {
       const value = prop.value.toLowerCase();
-      if (!InspectorUtils.getCSSWideKeywords().includes(value)) {
+      if (value !== "inherit" && value !== "unset" && value !== "initial") {
         tooltipType = TOOLTIP_FONTFAMILY_TYPE;
       }
     }

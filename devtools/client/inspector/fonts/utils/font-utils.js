@@ -64,7 +64,7 @@ module.exports = {
    */
   parseFontVariationAxes(string) {
     let axes = {};
-    const keywords = InspectorUtils.getCSSWideKeywords();
+    const keywords = ["initial", "normal", "inherit", "unset"];
 
     if (!string || keywords.includes(string.trim())) {
       return axes;
