@@ -632,7 +632,18 @@ public final class GeckoRuntime implements Parcelable {
       return;
     }
 
-    GeckoProcessManager.getInstance().preload(GeckoProcessType.CONTENT);
+    // Preload any child processes we need as soon as we want to display any web page.
+    GeckoProcessManager.getInstance()
+        .preload(
+            // The GPU process is the child process we need first.
+            GeckoProcessType.GPU,
+            // We also usually need two content processes: One for the tab contents,
+            // and one for the WebExtension process. If our embedder doesn't use web
+            // extensions, the second content process can still be useful once a
+            // second GeckoSession is started.
+            GeckoProcessType.CONTENT,
+            GeckoProcessType.CONTENT);
+
     sHasWarmedUpChildProcesses = true;
   }
 
