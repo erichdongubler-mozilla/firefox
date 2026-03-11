@@ -13,8 +13,6 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
-#include "mozilla/dom/CSSKeywordValue.h"
-#include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSStyleRule.h"
 #include "mozilla/dom/CSSStyleValue.h"
 #include "mozilla/dom/Element.h"
@@ -173,50 +171,9 @@ void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
     return;
   }
 
-  // XXX Move the creation of CSSStyleValue to a dedicated class for example
-  // CSSStyleValueFactory and eventually split the handling of tags into
-  // separate methods to make the code more readable and accessible for
-  // CSSStyleValue::Parse. See bug 2004057
-
-  RefPtr<CSSStyleValue> styleValue;
-
-  switch (value.tag) {
-    case StylePropertyTypedValue::Tag::Typed: {
-      const auto& typedValue = value.AsTyped();
-
-      switch (typedValue.tag) {
-        case StyleTypedValue::Tag::Keyword: {
-          const auto& keywordValue = typedValue.AsKeyword();
-
-          styleValue = CSSKeywordValue::Create(mParent, keywordValue);
-
-          break;
-        }
-
-        case StyleTypedValue::Tag::Numeric: {
-          const auto& numericValue = typedValue.AsNumeric();
-
-          styleValue = CSSNumericValue::Create(mParent, numericValue);
-
-          break;
-        }
-      }
-      break;
-    }
-
-    case StylePropertyTypedValue::Tag::Unsupported: {
-      auto propertyId = CSSPropertyId::FromIdOrCustomProperty(id, aProperty);
-      auto unsupportedValue = std::move(value).ExtractUnsupported();
-
-      styleValue = CSSUnsupportedValue::Create(mParent, propertyId,
-                                               std::move(unsupportedValue));
-
-      break;
-    }
-
-    case StylePropertyTypedValue::Tag::None:
-      break;
-  }
+  RefPtr<CSSStyleValue> styleValue = CSSStyleValue::Create(
+      mParent, CSSPropertyId::FromIdOrCustomProperty(id, aProperty),
+      std::move(value));
 
   if (styleValue) {
     aRetVal.SetAsCSSStyleValue() = std::move(styleValue);
