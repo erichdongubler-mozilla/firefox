@@ -135,6 +135,7 @@ Preferences.addAll([
   { id: "browser.ctrlTab.sortByRecentlyUsed", type: "bool" },
   { id: "browser.tabs.hoverPreview.enabled", type: "bool" },
   { id: "browser.tabs.hoverPreview.showThumbnails", type: "bool" },
+  { id: "browser.tabs.dragDrop.createGroup.enabled", type: "bool" },
   { id: "browser.tabs.groups.enabled", type: "bool" },
   { id: "browser.tabs.groups.smart.userEnabled", type: "bool" },
   { id: "browser.tabs.groups.smart.enabled", type: "bool" },
@@ -2030,6 +2031,10 @@ Preferences.addSetting({
       Services.locale.appLocaleAsBCP47.startsWith("en")
     );
   },
+});
+Preferences.addSetting({
+  id: "tabGroupDragToCreate",
+  pref: "browser.tabs.dragDrop.createGroup.enabled",
 });
 if (AppConstants.platform === "win") {
   /**
@@ -4291,6 +4296,10 @@ SettingGroupManager.registerGroups({
           {
             id: "tabGroupSuggestions",
             l10nId: "settings-tabs-show-group-and-tab-suggestions",
+          },
+          {
+            id: "tabGroupDragToCreate",
+            l10nId: "settings-tabs-drag-to-create-tab-groups",
           },
           {
             id: "showTabsInTaskbar",

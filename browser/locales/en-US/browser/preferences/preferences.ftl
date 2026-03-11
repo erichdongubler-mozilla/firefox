@@ -307,6 +307,8 @@ settings-tabs-show-image-in-preview =
     .label = Show an image preview when you hover on a tab
     .accessKey = h
 
+settings-tabs-drag-to-create-tab-groups =
+    .label = Drag tabs together to create tab groups
 
 browser-layout-header2 =
     .label = Browser Layout
