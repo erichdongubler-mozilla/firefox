@@ -20,17 +20,22 @@ import androidx.compose.runtime.Composable
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
+import androidx.emoji2.text.DefaultEmojiCompatConfig
+import androidx.emoji2.text.EmojiCompat
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration.Builder
 import androidx.work.Configuration.Provider
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mozilla.appservices.autofill.AutofillApiException
 import mozilla.components.browser.state.action.SearchAction.SearchConfigurationAvailabilityChanged
 import mozilla.components.browser.state.action.SystemAction
@@ -163,6 +168,8 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     var visibilityLifecycleCallback: VisibilityLifecycleCallback? = null
         private set
 
+    protected val applicationScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    protected val ioDispatcher = Dispatchers.IO
     override fun onCreate() {
         super.onCreate()
         initializeFenixProcess()
@@ -278,6 +285,10 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         initializeNimbus()
 
         ProfilerMarkerFactProcessor.create { components.core.engine.profiler }.register()
+
+        applicationScope.launch {
+            initializeEmojiCompat()
+        }
 
         // Ensure the Engine instance is initialized such that it can receive commands. Note
         // that full initialization is typically running off-thread and it may be a while
@@ -1183,6 +1194,46 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             Private
         } else {
             DefaultThemeProvider.provideTheme()
+        }
+    }
+
+    /**
+     * Initializes EmojiCompat manually on a background thread.
+     *
+     * By initializing manually, we avoid the startup penalty associated with the default
+     * EmojiCompat initializer's ContentProvider. [DefaultEmojiCompatConfig] is used to
+     * automatically find a compatible font provider (such as Google Play Services).
+     *
+     * @param dispatcher The [CoroutineDispatcher] on which the initialization will occur.
+     * Defaults to [ioDispatcher].
+     */
+    private suspend fun initializeEmojiCompat(dispatcher: CoroutineDispatcher = ioDispatcher) {
+        withContext(dispatcher) {
+            // If the device has no compatible provider (e.g. no Play Services), config will be null.
+            val config = DefaultEmojiCompatConfig.create(applicationContext) ?: return@withContext
+
+            config.setReplaceAll(true)
+
+            config.registerInitCallback(
+                object : EmojiCompat.InitCallback() {
+                    override fun onInitialized() {
+                        Log.log(
+                            tag = "EmojiCompat",
+                            message = "EmojiCompat initialization completed",
+                        )
+                    }
+
+                    override fun onFailed(throwable: Throwable?) {
+                        Log.log(
+                            tag = "EmojiCompat",
+                            throwable = throwable,
+                            message = "EmojiCompat initialization failed",
+                        )
+                    }
+                },
+            )
+
+            EmojiCompat.init(config)
         }
     }
 }
