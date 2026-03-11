@@ -4276,6 +4276,13 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
     return;
   }
 
+  // SessionStoreFunctions.sys.mjs may be missing at runtime in xpcshell tests:
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=2018078#c3
+  if (spec.EqualsLiteral(
+          "resource:///modules/sessionstore/SessionStoreFunctions.sys.mjs")) {
+    return;
+  }
+
   if (xpc::IsInAutomation()) {
 #ifdef DEBUG
     if (NS_IsMainThread()) {
