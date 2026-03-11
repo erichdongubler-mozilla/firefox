@@ -605,6 +605,17 @@ void partial_assignments() {
   struct D {
     A as[3];
   } d;
+  struct Cw {
+    B b1;
+    B b2;
+  } cw1;
+  struct TwoPointers {
+    Cw bar;
+  } twop;
+  struct PairOfPointers {
+    struct TwoPointers two;
+    int nonPointer;
+  } pair;
 
   a1.cell = makecell();
   a2.cell = makecell();
@@ -623,6 +634,8 @@ void partial_assignments() {
   d.as[0].cell = makecell();
   d.as[1].cell = makecell();
   d.as[2].cell = makecell();
+  cw1.b1.a.cell = makecell();
+  cw1.b2.a.cell = makecell();
 
   GC();
 
@@ -643,6 +656,7 @@ void partial_assignments() {
   bw3.b = B{A{makecell(), 7},
             nullptr};  // no hazard for bw3 - whole nested struct reassigned
   d.as[1].cell = makecell();  // hazard for d - other elements are still live
+  cw1.b1 = B{A{makecell(), 7}, nullptr};  // hazard for cw1, cw1.b2 still live
 
   usecell(a1.cell);
   usecell(a2.cell);
@@ -659,6 +673,8 @@ void partial_assignments() {
   usecell(bw2.b.a.cell);
   usecell(bw3.b.a.cell);
   usecell(d.as[0].cell);
+  usecell(cw1.b1.a.cell);
+  usecell(cw1.b2.a.cell);
 }
 
 void closure() {
