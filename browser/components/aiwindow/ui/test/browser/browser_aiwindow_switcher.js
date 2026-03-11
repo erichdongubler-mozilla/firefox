@@ -526,6 +526,60 @@ add_task(async function test_ai_control_default_block_hides_switcher() {
   await SpecialPowers.popPrefEnv();
 });
 
+// Custom homepage tabs should be reconciled when toggling to AI Window
+add_task(async function test_reconcile_custom_homepage_on_toggle() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      ["browser.smartwindow.firstrun.hasCompleted", true],
+      ["browser.startup.homepage", "https://example.com|https://example.org"],
+    ],
+  });
+
+  const restoreSignIn = skipSignIn();
+  const win = await openAIWindow();
+
+  // Toggle to classic first so we can load custom homepage URLs
+  AIWindow.toggleAIWindow(win, false);
+
+  const tab1 = await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "https://example.com/"
+  );
+  const tab2 = await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "https://example.org/"
+  );
+
+  // Toggle to AI Window - custom homepage tabs should be reconciled
+  AIWindow.toggleAIWindow(win, true);
+
+  await TestUtils.waitForCondition(
+    () => tab1.linkedBrowser.currentURI.spec === AIWINDOW_URL,
+    "Tab with first custom homepage URL should be reconciled to Smart Window URL"
+  );
+  await TestUtils.waitForCondition(
+    () => tab2.linkedBrowser.currentURI.spec === AIWINDOW_URL,
+    "Tab with second custom homepage URL should be reconciled to Smart Window URL"
+  );
+
+  Assert.equal(
+    tab1.linkedBrowser.currentURI.spec,
+    AIWINDOW_URL,
+    "First custom homepage tab should now show Smart Window"
+  );
+  Assert.equal(
+    tab2.linkedBrowser.currentURI.spec,
+    AIWINDOW_URL,
+    "Second custom homepage tab should now show Smart Window"
+  );
+
+  await BrowserTestUtils.removeTab(tab1);
+  await BrowserTestUtils.removeTab(tab2);
+  restoreSignIn();
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+});
 // Sidebar should be hidden when switching to Classic Window
 add_task(async function test_hide_sidebar_when_switching_to_classic_window() {
   await SpecialPowers.pushPrefEnv({

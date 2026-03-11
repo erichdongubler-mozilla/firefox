@@ -29,6 +29,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AIWindowMenu:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowMenu.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
+  HomePage: "resource:///modules/HomePage.sys.mjs",
   AIWindowUI:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
   ChatStore:
@@ -176,11 +177,16 @@ export const AIWindow = {
     return false;
   },
 
-  _reconcileNewTabPages(win, previousNewTabURL) {
+  _reconcileNewTabPages(win, newTabPref, homePagePref) {
     const newTabURI = Services.io.newURI(win.BROWSER_NEW_TAB_URL);
-    const oldTabURI = Services.io.newURI(previousNewTabURL);
     const aboutNewTabURI = Services.io.newURI("about:newtab");
     const aboutHomeURI = Services.io.newURI("about:home");
+
+    const newTabPrefURI = Services.io.newURI(newTabPref);
+    const homePagePrefURIs = lazy.HomePage.parseCustomHomepageURLs(
+      homePagePref
+    ).map(url => Services.io.newURI(url));
+
     const triggeringPrincipal =
       Services.scriptSecurityManager.getSystemPrincipal();
 
@@ -193,9 +199,10 @@ export const AIWindow = {
       const currentURI = browser.currentURI;
 
       if (
-        currentURI.equalsExceptRef(oldTabURI) ||
+        currentURI.equalsExceptRef(newTabPrefURI) ||
         currentURI.equalsExceptRef(aboutNewTabURI) ||
-        currentURI.equalsExceptRef(aboutHomeURI)
+        currentURI.equalsExceptRef(aboutHomeURI) ||
+        homePagePrefURIs.some(uri => currentURI.equalsExceptRef(uri))
       ) {
         if (this._hasActiveChatInBrowser(browser)) {
           continue;
@@ -573,11 +580,15 @@ export const AIWindow = {
     if (isActive != isTogglingToAIWindow) {
       lazy.NewTabPagePreloading.removePreloadedBrowser(win);
 
-      const previousNewTabURL = win.BROWSER_NEW_TAB_URL;
+      const newTabPref = win.BROWSER_NEW_TAB_URL;
+      const homePagePref = Services.prefs.getStringPref(
+        "browser.startup.homepage",
+        ""
+      );
 
       win.document.documentElement.toggleAttribute("ai-window");
 
-      this._reconcileNewTabPages(win, previousNewTabURL);
+      this._reconcileNewTabPages(win, newTabPref, homePagePref);
       this._updateToolbarButtonPositions(win, { isToggling: true });
       this._initializeAskButtonOnToolbox(win);
       Services.obs.notifyObservers(
