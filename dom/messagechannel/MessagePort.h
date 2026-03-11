@@ -147,10 +147,9 @@ class MessagePort final : public DOMEventTargetHelper {
     // We are not fully entangled yet but are already closed.
     eStateEntanglingForClose,
 
-    // When entangled() is received we send all the messages in the
-    // mMessagesForTheOtherPort to the actor and we change the state to
-    // StateEntangled. At this point the port is entangled with the other. We
-    // send and receive messages.
+    // When entangled() is received we change the state to StateEntangled.
+    // At this point the port is entangled with the other.
+    // We send and receive messages.
     // If the port queue is not enabled, the received messages are stored in
     // the mMessages.
     eStateEntangled,
@@ -214,7 +213,6 @@ class MessagePort final : public DOMEventTargetHelper {
   RefPtr<RefMessageBodyService> mRefMessageBodyService;
 
   nsTArray<NotNull<RefPtr<SharedMessageBody>>> mMessages;
-  nsTArray<NotNull<RefPtr<SharedMessageBody>>> mMessagesForTheOtherPort;
 
   UniquePtr<MessagePortIdentifier> mIdentifier;
 

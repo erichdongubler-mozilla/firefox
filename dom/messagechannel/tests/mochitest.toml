@@ -10,6 +10,7 @@ support-files = [
   "sharedWorker2_messageChannel.js",
   "iframe_messageChannel_sharedWorker2.html",
   "!/dom/events/test/event_leak_utils.js",
+  "worker_messageChannel_atomics_wait.js",
 ]
 
 ["test_event_listener_leaks.html"]
@@ -20,6 +21,8 @@ skip-if = [
 ]
 
 ["test_messageChannel.html"]
+
+["test_messageChannel_atomics_wait.html"]
 
 ["test_messageChannel_any.html"]
 
