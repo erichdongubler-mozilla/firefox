@@ -207,6 +207,9 @@
 // AXMaxValue
 - (id _Nullable)moxMaxValue;
 
+// AXBrailleRoleDescription
+- (NSString* _Nullable)moxARIABrailleRoleDescription;
+
 // Webkit also implements the following:
 // // AXCaretBrowsingEnabled
 // - (NSString* _Nullable)moxCaretBrowsingEnabled;

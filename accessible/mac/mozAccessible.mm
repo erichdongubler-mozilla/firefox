@@ -160,6 +160,12 @@ using namespace mozilla::a11y;
     return groupPos.setSize == 0;
   }
 
+  if (selector == @selector(moxARIABrailleRoleDescription)) {
+    NSString* brailleRoleDescription =
+        utils::GetAccAttr(self, nsGkAtoms::aria_brailleroledescription);
+    return [brailleRoleDescription length] == 0;
+  }
+
   if (selector == @selector(moxExpanded)) {
     return [self stateWithMask:states::EXPANDABLE] == 0;
   }
@@ -743,6 +749,10 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 - (NSNumber*)moxARIASetSize {
   GroupPos groupPos = mGeckoAccessible->GroupPosition();
   return @(groupPos.setSize);
+}
+
+- (NSString*)moxARIABrailleRoleDescription {
+  return utils::GetAccAttr(self, nsGkAtoms::aria_brailleroledescription);
 }
 
 - (NSString*)moxARIARelevant {
