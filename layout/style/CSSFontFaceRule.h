@@ -25,8 +25,9 @@ class CSSFontFaceRuleDecl final : public nsICSSDeclaration {
   void IndexedGetter(uint32_t aIndex, bool& aFound,
                      nsACString& aPropName) final;
 
-  void GetPropertyValue(FontFaceDescriptorId aDescID,
-                        nsACString& aResult) const;
+  void GetDescriptor(FontFaceDescriptorId aDescID, nsACString& aResult) const;
+  void SetDescriptor(FontFaceDescriptorId aDescID, const nsACString& aValue,
+                     ErrorResult& aRv);
 
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 
@@ -70,7 +71,7 @@ class CSSFontFaceRule final : public css::Rule {
   // WebIDL interface
   StyleCssRuleType Type() const final;
   void GetCssText(nsACString& aCssText) const final;
-  nsICSSDeclaration* Style();
+  CSSFontFaceRuleDecl* Style() { return &mDecl; }
 
   // Methods of mozilla::css::Rule
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const final;

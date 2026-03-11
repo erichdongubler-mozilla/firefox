@@ -7,8 +7,8 @@
 #include "mozilla/dom/CSSFontFaceRule.h"
 
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSFontFaceDescriptorsBinding.h"
 #include "mozilla/dom/CSSFontFaceRuleBinding.h"
-#include "mozilla/dom/CSSStyleDeclarationBinding.h"
 #include "nsCSSProps.h"
 
 using namespace mozilla;
@@ -39,9 +39,8 @@ void CSSFontFaceRuleDecl::SetRawAfterClone(
   mRawRule = std::move(aRaw);
 }
 
-// helper for string GetPropertyValue and RemovePropertyValue
-void CSSFontFaceRuleDecl::GetPropertyValue(FontFaceDescriptorId aDescID,
-                                           nsACString& aResult) const {
+void CSSFontFaceRuleDecl::GetDescriptor(FontFaceDescriptorId aDescID,
+                                        nsACString& aResult) const {
   MOZ_ASSERT(aResult.IsEmpty());
   Servo_FontFaceRule_GetDescriptorCssText(mRawRule, aDescID, &aResult);
 }
@@ -65,9 +64,8 @@ void CSSFontFaceRuleDecl::SetCssText(const nsACString& aCssText,
 void CSSFontFaceRuleDecl::GetPropertyValue(const nsACString& aPropName,
                                            nsACString& aResult) {
   aResult.Truncate();
-  auto descID = nsCSSProps::LookupFontDesc(aPropName);
-  if (descID) {
-    GetPropertyValue(*descID, aResult);
+  if (auto descID = nsCSSProps::LookupFontDesc(aPropName)) {
+    GetDescriptor(*descID, aResult);
   }
 }
 
@@ -79,9 +77,8 @@ void CSSFontFaceRuleDecl::RemoveProperty(const nsACString& aPropName,
   }
 
   aResult.Truncate();
-  auto descID = nsCSSProps::LookupFontDesc(aPropName);
-  if (descID) {
-    GetPropertyValue(*descID, aResult);
+  if (auto descID = nsCSSProps::LookupFontDesc(aPropName)) {
+    GetDescriptor(*descID, aResult);
     Servo_FontFaceRule_ResetDescriptor(mRawRule, *descID);
   }
 }
@@ -97,16 +94,23 @@ void CSSFontFaceRuleDecl::SetProperty(const nsACString& aPropName,
                                       const nsACString& aPriority,
                                       nsIPrincipal* aSubjectPrincipal,
                                       ErrorResult& aRv) {
-  // FIXME(heycam): If we are changing unicode-range, then a FontFace object
-  // representing this rule must have its mUnicodeRange value invalidated.
+  if (auto descID = nsCSSProps::LookupFontDesc(aPropName)) {
+    SetDescriptor(*descID, aValue, aRv);
+  }
+}
 
+void CSSFontFaceRuleDecl::SetDescriptor(FontFaceDescriptorId aDescID,
+                                        const nsACString& aValue,
+                                        ErrorResult& aRv) {
   if (ContainingRule()->IsReadOnly()) {
     return;
   }
 
+  // FIXME(heycam): If we are changing unicode-range, then a FontFace object
+  // representing this rule must have its mUnicodeRange value invalidated.
   // bug 443978
   aRv.ThrowNotSupportedError(
-      "Can't set properties on CSSFontFaceRule declarations");
+      "Can't set descriptor on CSSFontFaceRule declarations");
 }
 
 uint32_t CSSFontFaceRuleDecl::Length() {
@@ -136,9 +140,7 @@ nsISupports* CSSFontFaceRuleDecl::GetParentObject() const {
 
 JSObject* CSSFontFaceRuleDecl::WrapObject(JSContext* cx,
                                           JS::Handle<JSObject*> aGivenProto) {
-  // If this changes to use a different type, remove the 'concrete'
-  // annotation from CSSStyleDeclaration.
-  return CSSStyleDeclaration_Binding::Wrap(cx, this, aGivenProto);
+  return CSSFontFaceDescriptors_Binding::Wrap(cx, this, aGivenProto);
 }
 
 // -------------------------------------------
@@ -205,8 +207,6 @@ void CSSFontFaceRule::GetCssText(nsACString& aCssText) const {
   aCssText.Truncate();
   Servo_FontFaceRule_GetCssText(Raw(), &aCssText);
 }
-
-nsICSSDeclaration* CSSFontFaceRule::Style() { return &mDecl; }
 
 /* virtual */
 size_t CSSFontFaceRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
