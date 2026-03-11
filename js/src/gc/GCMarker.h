@@ -513,6 +513,8 @@ class GCMarker {
   void setMarkColor(gc::MarkColor newColor);
   friend class js::gc::AutoSetMarkColor;
 
+  void swapMarkStacks();
+
   template <typename Tracer>
   void setMarkingStateAndTracer(MarkingState prev, MarkingState next);
 
@@ -705,20 +707,30 @@ inline bool IsConcurrentMarkingTracer(JSTracer* trc) {
 
 namespace gc {
 
+enum class AllowGrayMarkingBeforeEndOfBlackMarking : bool {
+  No = false,
+  Yes = true
+};
+
 /*
  * Temporarily change the mark color while this class is on the stack.
  *
- * During incremental sweeping this also transitions zones in the
- * current sweep group into the Mark or MarkGray state as appropriate.
+ * For efficiency reasons we don't normally allow gray marking while there is
+ * black marking work to do, since we might end up marking the same things
+ * twice. If you really need this you can pass a parameter to allow it.
  */
 class MOZ_RAII AutoSetMarkColor {
   GCMarker& marker_;
   MarkColor initialColor_;
 
  public:
-  AutoSetMarkColor(GCMarker& marker, MarkColor newColor)
+  AutoSetMarkColor(GCMarker& marker, MarkColor newColor,
+                   AllowGrayMarkingBeforeEndOfBlackMarking allowGrayMarking =
+                       AllowGrayMarkingBeforeEndOfBlackMarking::No)
       : marker_(marker), initialColor_(marker.markColor()) {
-    marker_.setMarkColor(newColor);
+    MOZ_ASSERT_IF(newColor == MarkColor::Gray && !bool(allowGrayMarking),
+                  !marker.hasBlackEntries());
+    marker.setMarkColor(newColor);
   }
 
   AutoSetMarkColor(GCMarker& marker, CellColor newColor)
