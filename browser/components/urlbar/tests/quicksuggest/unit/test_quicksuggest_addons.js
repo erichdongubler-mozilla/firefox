@@ -452,8 +452,8 @@ add_task(async function merinoIsTopPick() {
   });
 });
 
-// Tests the "Not relevant" command: a dismissed suggestion shouldn't be added.
-add_task(async function notRelevant() {
+// Tests the "Dismiss" command: a dismissed suggestion shouldn't be added.
+add_task(async function dismiss() {
   // Disable Merino suggestions to make this task simpler.
   UrlbarPrefs.set("quicksuggest.online.enabled", false);
 
@@ -461,7 +461,7 @@ add_task(async function notRelevant() {
     result: makeExpectedResult({
       suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
     }),
-    command: "not_relevant",
+    command: "dismiss",
     feature: QuickSuggest.getFeature("AddonSuggestions"),
     queriesForDismissals: [
       {
