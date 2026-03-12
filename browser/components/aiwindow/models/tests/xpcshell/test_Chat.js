@@ -40,6 +40,13 @@ registerCleanupFunction(() => {
   }
 });
 
+function getLastAssistantResponse(conversation) {
+  return conversation.messages
+    .filter(m => m.role == MESSAGE_ROLE.ASSISTANT)
+    .filter(m => m.content.type === "text")
+    .at(-1);
+}
+
 add_task(async function test_Chat_real_tools_are_registered() {
   Assert.strictEqual(
     typeof Chat.toolMap.get_open_tabs,
@@ -151,22 +158,15 @@ add_task(async function test_Chat_fetchWithHistory_streams_and_forwards_args() {
       0
     );
     conversation.addUserMessage("Hi there", "https://www.firefox.com", 0);
+    conversation.addAssistantMessage("text", "");
 
     // Build engine
     const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
-    // Collect streamed output
-    let acc = "";
-    for await (const chunk of Chat.fetchWithHistory(
-      conversation,
-      engineInstance
-    )) {
-      if (typeof chunk === "string") {
-        acc += chunk;
-      }
-    }
+
+    await Chat.fetchWithHistory(conversation, engineInstance);
 
     Assert.equal(
-      acc,
+      getLastAssistantResponse(conversation).content.body,
       "Hello from fake engine!",
       "Should concatenate streamed chunks"
     );
@@ -236,18 +236,11 @@ add_task(async function test_Chat_fetchWithHistory_handles_tool_calls() {
       "https://www.firefox.com",
       0
     );
+    conversation.addAssistantMessage("text", "");
 
     // Build engine
     const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
-    let textOutput = "";
-    for await (const chunk of Chat.fetchWithHistory(
-      conversation,
-      engineInstance
-    )) {
-      if (typeof chunk === "string") {
-        textOutput += chunk;
-      }
-    }
+    await Chat.fetchWithHistory(conversation, engineInstance);
 
     const toolCalls = conversation.messages.filter(
       message =>
@@ -256,8 +249,8 @@ add_task(async function test_Chat_fetchWithHistory_handles_tool_calls() {
     );
 
     Assert.equal(
-      textOutput,
-      "I'll help you with that. Tool executed successfully!",
+      getLastAssistantResponse(conversation).content.body,
+      "I'll help you with that. \n\nTool executed successfully!",
       "Should yield text from both model calls"
     );
     Assert.equal(toolCalls.length, 1, "Should have one tool call");
@@ -308,16 +301,12 @@ add_task(
         pageMeta: {},
       });
       conversation.addUserMessage("Hi", "https://www.firefox.com", 0);
+      conversation.addAssistantMessage("text", "");
 
       // Build engine
       const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
       const consume = async () => {
-        for await (const _chunk of Chat.fetchWithHistory(
-          conversation,
-          engineInstance
-        )) {
-          void _chunk;
-        }
+        await Chat.fetchWithHistory(conversation, engineInstance);
       };
 
       await Assert.rejects(
@@ -382,21 +371,14 @@ add_task(
         "https://www.firefox.com",
         0
       );
+      conversation.addAssistantMessage("text", "");
 
       const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
-      let textOutput = "";
-      for await (const chunk of Chat.fetchWithHistory(
-        conversation,
-        engineInstance
-      )) {
-        if (typeof chunk === "string") {
-          textOutput += chunk;
-        }
-      }
+      await Chat.fetchWithHistory(conversation, engineInstance);
 
       Assert.equal(
-        textOutput,
-        "Using tool with bad args: Done.",
+        getLastAssistantResponse(conversation).content.body,
+        "Using tool with bad args: \n\nDone.",
         "Should yield text from both calls"
       );
       Assert.ok(
@@ -460,17 +442,10 @@ add_task(
         "https://www.firefox.com",
         0
       );
+      conversation.addAssistantMessage("text", "");
 
       const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
-      let textOutput = "";
-      for await (const chunk of Chat.fetchWithHistory(
-        conversation,
-        engineInstance
-      )) {
-        if (typeof chunk === "string") {
-          textOutput += chunk;
-        }
-      }
+      await Chat.fetchWithHistory(conversation, engineInstance);
 
       // Find the assistant message with tool_calls
       const assistantToolCallMessage = conversation.messages.find(
@@ -494,8 +469,8 @@ add_task(
         "Tool should be called once even with empty args"
       );
       Assert.equal(
-        textOutput,
-        "Calling tool with no args: Tool completed.",
+        getLastAssistantResponse(conversation).content.body,
+        "Calling tool with no args: \n\nTool completed.",
         "Should yield text from both calls"
       );
     } finally {
@@ -604,17 +579,10 @@ add_task(
         "https://www.firefox.com",
         0
       );
+      conversation.addAssistantMessage("text", "");
 
       const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
-      let textOutput = "";
-      for await (const chunk of Chat.fetchWithHistory(
-        conversation,
-        engineInstance
-      )) {
-        if (typeof chunk === "string") {
-          textOutput += chunk;
-        }
-      }
+      await Chat.fetchWithHistory(conversation, engineInstance);
 
       Assert.strictEqual(
         conversation.securityProperties.untrusted_input,
@@ -648,7 +616,9 @@ add_task(
         "Second call should return refusal"
       );
       Assert.ok(
-        textOutput.includes("Final answer."),
+        getLastAssistantResponse(conversation).content.body.includes(
+          "Final answer."
+        ),
         "Should yield text from the final engine call"
       );
     } finally {
@@ -697,10 +667,10 @@ add_task(async function test_Chat_fetchWithHistory_uses_modelId_from_pref() {
       pageUrl: new URL("https://www.firefox.com"),
       pageMeta: {},
     });
+    conversation.addAssistantMessage("text", "");
 
     const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
-    const generator = Chat.fetchWithHistory(conversation, engineInstance);
-    await generator.next();
+    await Chat.fetchWithHistory(conversation, engineInstance);
 
     Assert.ok(
       createEngineStub.calledOnce,

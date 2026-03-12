@@ -19,6 +19,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
  *   mode: string,
  *   pageUrl: URL,
  *   conversationId: string,
+ *   keepSidebarOpen: boolean,
+ *   conversation: ChatConversation,
  * }} TabState
  */
 
@@ -53,6 +55,24 @@ export class AIWindowTabStatesManager {
 
   constructor(win) {
     this.#init(win);
+  }
+
+  /**
+   * Get the tab associated with a particular conversation, if there is one.
+   *
+   * @param {string} conversationId
+   *
+   * @returns {?MozTabbrowserTab}
+   */
+  getConversationTab(conversationId) {
+    const tabs = [...this.#window.gBrowser.tabs];
+    const tab = tabs.find(t => {
+      const tabState = this.#tabStates.get(t);
+
+      return tabState && tabState.state.conversationId === conversationId;
+    });
+
+    return tab;
   }
 
   /**
@@ -236,6 +256,7 @@ export class AIWindowTabStatesManager {
     const tabUrl = this.#selectedTab.linkedBrowser.currentURI.spec;
     const isAIWindowTab = tabUrl === lazy.AIWINDOW_URL;
     const shouldKeepSidebar = tabState?.state?.keepSidebarOpen ?? !!convId;
+    const conversation = tabState?.state?.conversation;
 
     // AI Window tab doesn't need sidebar
     if (isAIWindowTab) {
@@ -245,9 +266,6 @@ export class AIWindowTabStatesManager {
 
     // Regular tab - open sidebar if we should keep it open
     if (shouldKeepSidebar) {
-      const conversation = convId
-        ? await lazy.ChatStore.findConversationById(convId)
-        : null;
       lazy.AIWindowUI.openSidebar(this.#window, conversation);
       lazy.AIWindowUI.updateSidebarInput(
         this.#window,
@@ -358,18 +376,21 @@ export class AIWindowTabStatesManager {
     const tabState = this.#tabStates.get(tab) ?? {};
 
     if (newState) {
-      const { input, mode, pageUrl, conversationId, keepSidebarOpen } =
-        tabState.state ?? {
-          input: "",
-        };
+      // Remove tab reference so a strong reference to the
+      // tab is not stored in the value of the WeakMap
       delete newState.tab;
 
+      const oldState = tabState.state ?? { input: "" };
+      // Set input to "" if oldState.mode is fullpage so the input
+      // is empty when the fullpage mode swaps to sidebar mode. We
+      // don't need to track the input state for fullpage mode so
+      // it stays empty until it's in sidebar mode.
+      const oldInput = oldState.mode === "fullpage" ? "" : oldState.input;
+
+      // Overlay the newState to override the oldState values
       tabState.state = {
-        input: mode === "fullpage" ? "" : input,
-        mode,
-        pageUrl,
-        conversationId,
-        keepSidebarOpen,
+        ...oldState,
+        input: oldInput,
         ...newState,
       };
 
@@ -396,13 +417,13 @@ export class AIWindowTabStatesManager {
    * @param {TabStateEvent} event
    */
   #onConversationOpened = event => {
-    const { mode, conversationId, tab } = event.detail;
-    const currentTabState = this.#getTabState(tab);
+    const { mode, conversationId, tab, conversation } = event.detail;
 
     this.#getTabState(tab, {
       mode,
+      conversation,
       conversationId,
-      keepSidebarOpen: currentTabState?.state?.keepSidebarOpen ?? true,
+      keepSidebarOpen: true,
     });
   };
 
@@ -491,16 +512,6 @@ export class AIWindowTabStatesManager {
           return;
         }
 
-        const conversation = await lazy.ChatStore.findConversationById(
-          tabState.state.conversationId
-        );
-
-        // Re-fetch tab state after async to avoid stale state
-        tabState = this.#getTabState(tab);
-        if (!tabState?.state) {
-          return;
-        }
-
         const isAiWindowUrl = locationURI.spec === lazy.AIWINDOW_URL;
         const isSidebarOpen = lazy.AIWindowUI.isSidebarOpen(this.#window);
         const isFullPageMode = tabState.state.mode === "fullpage";
@@ -514,7 +525,10 @@ export class AIWindowTabStatesManager {
           !isSidebarOpen &&
           shouldKeepSidebarOpen
         ) {
-          lazy.AIWindowUI.openSidebar(this.#window, conversation);
+          lazy.AIWindowUI.openSidebar(
+            this.#window,
+            tabState.state.conversation
+          );
           tabState = this.#getTabState(tab, { input: "" });
         }
 
