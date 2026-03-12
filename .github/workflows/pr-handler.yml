@@ -18,6 +18,7 @@ on:
 env:
   ALLOWED_TEAM: lando-github-pilot
   ALLOWED_PATHS: |
+    gradle/
     mobile/android/android-components
     mobile/android/fenix
     mobile/android/focus-android
