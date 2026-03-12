@@ -5437,6 +5437,16 @@ void ScrollContainerFrame::PostScrollEndEvent() {
     return;
   }
 
+  // If this is the rood document and is not an iframe, we may need to post
+  // a scrollend event to the VisualViewport.
+  if (mIsRoot && PresContext()->IsRootContentDocumentCrossProcess() &&
+      PresShell()->IsVisualViewportOffsetSet()) {
+    if (auto* window = nsGlobalWindowInner::Cast(
+            PresContext()->Document()->GetInnerWindow())) {
+      window->VisualViewport()->PostScrollEndEvent();
+    }
+  }
+
   // The ScrollEndEvent constructor registers itself.
   mScrollEndEvent = new ScrollEndEvent(this);
 }

@@ -41,6 +41,12 @@ var scrollbarPrefsWithHitTest = [
   ["apz.test.logging_enabled", true],
 ];
 
+var touchGesturePrefs = [
+  ...prefs,
+  ["apz.touch_start_tolerance", "0.0"],
+  ["apz.fling_min_velocity_threshold", "10000"],
+];
+
 var subtests = [
   {"file": "helper_basic_scrollend.html?chrome-only=true", "prefs": prefs},
   {"file": "helper_basic_scrollend.html?chrome-only=false", "prefs": prefs},
@@ -48,6 +54,7 @@ var subtests = [
   {"file": "helper_scrollend_bubbles.html?scroll-target=element", "prefs": prefs},
   {"file": "helper_main_thread_smooth_scroll_scrollend.html", "prefs": prefs},
   {"file": "helper_pan_with_no_scroll.html", "prefs": prefs},
+  {"file": "helper_visual_viewport_scrollend.html", "prefs": touchGesturePrefs},
   {"file": "helper_scrollend_bubbles.html?scroll-target=document",
         "prefs": smoothScrollDisabled},
   {"file": "helper_scrollend_bubbles.html?scroll-target=element",
