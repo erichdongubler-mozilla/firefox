@@ -3951,6 +3951,53 @@ GeckoDriver.prototype.setPermission = async function (cmd) {
 };
 
 /**
+ * Gets the properties for this accessibility node.
+ *
+ * @param {object} cmd
+ * @param {string} cmd.parameters.id
+ *     Id of the accessibility node for which the properties will be returned.
+ *
+ * @returns {object}
+ *     The properties for this accessibility node
+ */
+GeckoDriver.prototype.getAccessibilityPropertiesForAccessibilityNode =
+  async function (cmd) {
+    lazy.assert.open(this.getBrowsingContext());
+    await this._handleUserPrompts();
+
+    const id = lazy.assert.string(
+      cmd.parameters.id,
+      lazy.pprint`Expected "id" to be a string, got ${cmd.parameters.id}`
+    );
+    return this.getActor().getAccessibilityPropertiesForAccessibilityNode(id);
+  };
+
+/**
+ * Gets the accessibility properties for this DOM element.
+ *
+ * @param {object} cmd
+ * @param {string} cmd.parameters.id
+ *     Web element reference ID to the element for which the accessibility
+ *     properties will be returned.
+ *
+ * @returns {object}
+ *     The Accessibility properties for this element
+ */
+GeckoDriver.prototype.getAccessibilityPropertiesForElement = async function (
+  cmd
+) {
+  lazy.assert.open(this.getBrowsingContext());
+  await this._handleUserPrompts();
+
+  const id = lazy.assert.string(
+    cmd.parameters.id,
+    lazy.pprint`Expected "id" to be a string, got ${cmd.parameters.id}`
+  );
+  const webEl = lazy.WebElement.fromUUID(id).toJSON();
+  return this.getActor().getAccessibilityPropertiesForElement(webEl);
+};
+
+/**
  * Determines the Accessibility label for this element.
  *
  * @param {object} cmd
@@ -4000,7 +4047,11 @@ GeckoDriver.prototype.getComputedRole = async function (cmd) {
 GeckoDriver.prototype.commands = {
   // Marionette service
   "Marionette:AcceptConnections": GeckoDriver.prototype.acceptConnections,
+  "Marionette:GetAccessibilityPropertiesForAccessibilityNode":
+    GeckoDriver.prototype.getAccessibilityPropertiesForAccessibilityNode,
   "Marionette:GetContext": GeckoDriver.prototype.getContext,
+  "Marionette:GetAccessibilityPropertiesForElement":
+    GeckoDriver.prototype.getAccessibilityPropertiesForElement,
   "Marionette:GetScreenOrientation": GeckoDriver.prototype.getScreenOrientation,
   "Marionette:GetWindowType": GeckoDriver.prototype.getWindowType,
   "Marionette:Quit": GeckoDriver.prototype.quit,
