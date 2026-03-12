@@ -1923,21 +1923,6 @@ nsIContent* nsINode::GetChildAt_Deprecated(uint32_t aIndex) const {
   return child;
 }
 
-nsINode* nsINode::GetChildAtInFlatTree(uint32_t aIndex) const {
-  if (const auto* slot = HTMLSlotElement::FromNode(this)) {
-    const auto& assignedNodes = slot->AssignedNodes();
-    if (!assignedNodes.IsEmpty()) {
-      if (aIndex >= assignedNodes.Length()) {
-        return nullptr;
-      }
-      return assignedNodes[aIndex];
-    }
-  } else if (auto* shadowRoot = GetShadowRoot()) {
-    return shadowRoot->GetChildAtInFlatTree(aIndex);
-  }
-  return GetChildAt_Deprecated(aIndex);
-}
-
 int32_t nsINode::ComputeIndexOf_Deprecated(
     const nsINode* aPossibleChild) const {
   Maybe<uint32_t> maybeIndex = ComputeIndexOf(aPossibleChild);
@@ -2045,15 +2030,6 @@ Maybe<uint32_t> nsINode::ComputeIndexInParentContent() const {
 bool nsINode::MaybeParentCachesComputedIndex() const {
   nsINode* parent = GetParentNode();
   return parent && parent->MaybeCachesComputedIndex();
-}
-
-uint32_t nsINode::GetFlatTreeChildCount() const {
-  return FlattenedChildIterator::GetLength(this);
-}
-
-Maybe<uint32_t> nsINode::ComputeFlatTreeIndexOf(
-    const nsINode* aPossibleChild) const {
-  return FlattenedChildIterator::GetIndexOf(this, aPossibleChild);
 }
 
 static already_AddRefed<nsINode> GetNodeFromNodeOrString(
@@ -4169,21 +4145,33 @@ ShadowRoot* nsINode::GetShadowRootForSelection() const {
   }
 
   ShadowRoot* shadowRoot = GetShadowRoot();
-  if (!shadowRoot) {
+  return shadowRoot && shadowRoot->IsContentShadowRoot() ? shadowRoot : nullptr;
+}
+
+HTMLSlotElement* nsINode::GetAsHTMLSlotElementIfFilled() {
+  return const_cast<HTMLSlotElement*>(
+      static_cast<const nsINode*>(this)->GetAsHTMLSlotElementIfFilled());
+}
+
+const HTMLSlotElement* nsINode::GetAsHTMLSlotElementIfFilled() const {
+  const HTMLSlotElement* slot = HTMLSlotElement::FromNode(this);
+  return !slot || slot->AssignedNodes().IsEmpty() ? nullptr : slot;
+}
+
+HTMLSlotElement* nsINode::GetAsHTMLSlotElementIfFilledForSelection() {
+  return const_cast<HTMLSlotElement*>(
+      static_cast<const nsINode*>(this)
+          ->GetAsHTMLSlotElementIfFilledForSelection());
+}
+
+const HTMLSlotElement* nsINode::GetAsHTMLSlotElementIfFilledForSelection()
+    const {
+  const HTMLSlotElement* const slot = GetAsHTMLSlotElementIfFilled();
+  if (!slot || slot->AssignedNodes().IsEmpty()) {
     return nullptr;
   }
-
-  // ie. <details> and <video>
-  if (shadowRoot->IsUAWidget()) {
-    return nullptr;
-  }
-
-  // ie. <use> element
-  if (IsElement() && !AsElement()->CanAttachShadowDOM()) {
-    return nullptr;
-  }
-
-  return shadowRoot;
+  const ShadowRoot* const shadowRoot = slot->GetContainingShadow();
+  return !shadowRoot || shadowRoot->IsContentShadowRoot() ? slot : nullptr;
 }
 
 void nsINode::QueueAncestorRevealingAlgorithm() {

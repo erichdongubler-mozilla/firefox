@@ -311,6 +311,12 @@ class nsIContent : public nsINode {
   }
 
   /**
+   * Gets the assigned slot associated with this content if and only if the
+   * shadow tree should be handled for selection.
+   */
+  mozilla::dom::HTMLSlotElement* GetAssignedSlotForSelection() const;
+
+  /**
    * Sets the assigned slot associated with this content.
    *
    * @param aSlot The assigned slot.

@@ -19,6 +19,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/ScrollStyles.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/ChildIterator.h"
 #include "nsCOMPtr.h"
 #include "nsFrameManager.h"
 #include "nsIAnonymousContentCreator.h"
@@ -49,8 +50,6 @@ namespace dom {
 
 class CharacterData;
 class Text;
-class FlattenedChildIterator;
-
 }  // namespace dom
 }  // namespace mozilla
 

@@ -11,73 +11,161 @@
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsContentUtils.h"
 #include "nsIAnonymousContentCreator.h"
+#include "nsIContentInlines.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 
 namespace mozilla::dom {
 
-FlattenedChildIterator::FlattenedChildIterator(const nsIContent* aParent,
-                                               bool aStartAtBeginning)
-    : mParent(aParent), mOriginalParent(aParent), mIsFirst(aStartAtBeginning) {
-  if (!mParent->IsElement()) {
-    // TODO(emilio): I think it probably makes sense to only allow constructing
-    // FlattenedChildIterators with Element.
+#define NS_INSTANTIATE_CHILD_ITERATOR_METHOD(aResult, aMethod, ...)            \
+  template aResult ChildIteratorBase<ChildIterFor::DOM>::aMethod(__VA_ARGS__); \
+  template aResult ChildIteratorBase<ChildIterFor::FlatForSelection>::aMethod( \
+      __VA_ARGS__);                                                            \
+  template aResult ChildIteratorBase<ChildIterFor::Flat>::aMethod(__VA_ARGS__);
+
+#define NS_INSTANTIATE_CHILD_ITERATOR_CONST_METHOD(aResult, aMethod, ...)      \
+  template aResult ChildIteratorBase<ChildIterFor::DOM>::aMethod(__VA_ARGS__)  \
+      const;                                                                   \
+  template aResult ChildIteratorBase<ChildIterFor::FlatForSelection>::aMethod( \
+      __VA_ARGS__) const;                                                      \
+  template aResult ChildIteratorBase<ChildIterFor::Flat>::aMethod(__VA_ARGS__) \
+      const;
+
+NS_INSTANTIATE_CHILD_ITERATOR_METHOD(, ChildIteratorBase, const nsINode*, bool);
+
+template <ChildIterFor aFor>
+ChildIteratorBase<aFor>::ChildIteratorBase(const nsINode* aParentNode,
+                                           bool aStartAtBeginning)
+    : mParentNode(aParentNode),
+      mOriginalParentNode(aParentNode),
+      mIsFirst(aStartAtBeginning) {
+  if constexpr (aFor == ChildIterFor::DOM) {
     return;
   }
 
-  if (ShadowRoot* shadow = mParent->AsElement()->GetShadowRoot()) {
-    mParent = shadow;
+  if (!mParentNode->IsElement()) {
+    return;
+  }
+
+  if (const ShadowRoot* const shadowRoot =
+          IgnoresNonContentShadow()
+              ? mParentNode->AsElement()->GetShadowRootForSelection()
+              : mParentNode->AsElement()->GetShadowRoot()) {
+    mParentNode = shadowRoot;
     mShadowDOMInvolved = true;
     return;
   }
 
-  if (const auto* slot = HTMLSlotElement::FromNode(mParent)) {
-    if (!slot->AssignedNodes().IsEmpty()) {
-      mParentAsSlot = slot;
-      if (!aStartAtBeginning) {
-        mIndexInInserted = slot->AssignedNodes().Length();
-      }
-      mShadowDOMInvolved = true;
+  if (const auto* const slot =
+          IgnoresNonContentShadow()
+              ? mParentNode->GetAsHTMLSlotElementIfFilledForSelection()
+              : mParentNode->GetAsHTMLSlotElementIfFilled()) {
+    MOZ_ASSERT(!slot->AssignedNodes().IsEmpty());
+    mParentNodeAsSlot = slot;
+    if (!aStartAtBeginning) {
+      mIndexInInserted = slot->AssignedNodes().Length();
     }
+    mShadowDOMInvolved = true;
   }
 }
 
-uint32_t FlattenedChildIterator::GetLength(const nsINode* aParent) {
-  if (const auto* element = Element::FromNode(aParent)) {
-    if (const auto* slot = HTMLSlotElement::FromNode(element)) {
+NS_INSTANTIATE_CHILD_ITERATOR_METHOD(uint32_t, GetLength, const nsINode*);
+
+// static
+template <ChildIterFor aFor>
+uint32_t ChildIteratorBase<aFor>::GetLength(const nsINode* aParent) {
+  if (!aParent->IsContainerNode()) {
+    return aParent->Length();
+  }
+  MOZ_ASSERT(!aParent->IsCharacterData());
+  if constexpr (aFor != ChildIterFor::DOM) {
+    if (const auto* slot =
+            IgnoresNonContentShadow()
+                ? aParent->GetAsHTMLSlotElementIfFilledForSelection()
+                : aParent->GetAsHTMLSlotElementIfFilled()) {
       if (uint32_t len = slot->AssignedNodes().Length()) {
         return len;
       }
-    } else if (auto* shadowRoot = element->GetShadowRoot()) {
+    }
+    if (const ShadowRoot* const shadowRoot =
+            IgnoresNonContentShadow() ? aParent->GetShadowRootForSelection()
+                                      : aParent->GetShadowRoot()) {
       return shadowRoot->GetChildCount();
     }
   }
   return aParent->GetChildCount();
 }
 
-Maybe<uint32_t> FlattenedChildIterator::GetIndexOf(
+NS_INSTANTIATE_CHILD_ITERATOR_METHOD(Maybe<uint32_t>, GetIndexOf,
+                                     const nsINode*, const nsINode*);
+
+// static
+template <ChildIterFor aFor>
+Maybe<uint32_t> ChildIteratorBase<aFor>::GetIndexOf(
     const nsINode* aParent, const nsINode* aPossibleChild) {
-  if (const auto* element = Element::FromNode(aParent)) {
-    if (const auto* slot = HTMLSlotElement::FromNode(element)) {
+  if constexpr (aFor != ChildIterFor::DOM) {
+    if (const auto* slot =
+            IgnoresNonContentShadow()
+                ? aParent->GetAsHTMLSlotElementIfFilledForSelection()
+                : aParent->GetAsHTMLSlotElementIfFilled()) {
       const Span assigned = slot->AssignedNodes();
-      if (!assigned.IsEmpty()) {
-        auto index = assigned.IndexOf(aPossibleChild);
-        if (index == assigned.npos) {
-          return Nothing();
-        }
-        return Some(index);
+      MOZ_ASSERT(!assigned.IsEmpty());
+      const auto index = assigned.IndexOf(aPossibleChild);
+      if (index == decltype(assigned)::npos) {
+        return Nothing();
       }
-    } else if (auto* shadowRoot = element->GetShadowRoot()) {
+      return Some(index);
+    }
+    if (const ShadowRoot* const shadowRoot =
+            IgnoresNonContentShadow() ? aParent->GetShadowRootForSelection()
+                                      : aParent->GetShadowRoot()) {
       return shadowRoot->ComputeIndexOf(aPossibleChild);
     }
   }
   return aParent->ComputeIndexOf(aPossibleChild);
 }
 
-nsIContent* FlattenedChildIterator::GetNextChild() {
+NS_INSTANTIATE_CHILD_ITERATOR_METHOD(nsIContent*, GetChildAt, const nsINode*,
+                                     uint32_t);
+
+// static
+template <ChildIterFor aFor>
+nsIContent* ChildIteratorBase<aFor>::GetChildAt(const nsINode* aParent,
+                                                uint32_t aIndex) {
+  if (!aParent->IsContainerNode()) {
+    return nullptr;
+  }
+  MOZ_ASSERT(!aParent->IsCharacterData());
+  if constexpr (aFor != ChildIterFor::DOM) {
+    if (const auto* slot =
+            IgnoresNonContentShadow()
+                ? aParent->GetAsHTMLSlotElementIfFilledForSelection()
+                : aParent->GetAsHTMLSlotElementIfFilled()) {
+      const Span assigned = slot->AssignedNodes();
+      MOZ_ASSERT(!assigned.IsEmpty());
+      if (assigned.Length() <= aIndex) {
+        return nullptr;
+      }
+      nsIContent* const child = nsIContent::FromNode(assigned[aIndex]);
+      MOZ_ASSERT(child);
+      return child;
+    }
+    if (const ShadowRoot* const shadowRoot =
+            IgnoresNonContentShadow() ? aParent->GetShadowRootForSelection()
+                                      : aParent->GetShadowRoot()) {
+      return shadowRoot->GetChildAt_Deprecated(aIndex);
+    }
+  }
+  return aParent->GetChildAt_Deprecated(aIndex);
+}
+
+NS_INSTANTIATE_CHILD_ITERATOR_METHOD(nsIContent*, GetNextChild);
+
+template <ChildIterFor aFor>
+nsIContent* ChildIteratorBase<aFor>::GetNextChild() {
   // If we're already in the inserted-children array, look there first
-  if (mParentAsSlot) {
-    const Span assignedNodes = mParentAsSlot->AssignedNodes();
+  if (mParentNodeAsSlot) {
+    const Span assignedNodes = mParentNodeAsSlot->AssignedNodes();
     if (mIsFirst) {
       mIsFirst = false;
       MOZ_ASSERT(mIndexInInserted == 0);
@@ -94,7 +182,7 @@ nsIContent* FlattenedChildIterator::GetNextChild() {
   }
 
   if (mIsFirst) {  // at the beginning of the child list
-    mChild = mParent->GetFirstChild();
+    mChild = mParentNode->GetFirstChild();
     mIsFirst = false;
   } else if (mChild) {  // in the middle of the child list
     mChild = mChild->GetNextSibling();
@@ -103,8 +191,11 @@ nsIContent* FlattenedChildIterator::GetNextChild() {
   return mChild;
 }
 
-bool FlattenedChildIterator::Seek(const nsIContent* aChildToFind) {
-  if (!mParentAsSlot && aChildToFind->GetParent() == mParent &&
+NS_INSTANTIATE_CHILD_ITERATOR_METHOD(bool, Seek, const nsIContent*);
+
+template <ChildIterFor aFor>
+bool ChildIteratorBase<aFor>::Seek(const nsIContent* aChildToFind) {
+  if (!mParentNodeAsSlot && aChildToFind->GetParentNode() == mParentNode &&
       !aChildToFind->IsRootOfNativeAnonymousSubtree()) {
     // Fast path: just point ourselves to aChildToFind, which is a
     // normal DOM child of ours.
@@ -116,7 +207,7 @@ bool FlattenedChildIterator::Seek(const nsIContent* aChildToFind) {
 
   // Can we add more fast paths here based on whether the parent of aChildToFind
   // is a This version can take shortcuts that the two-argument version
-  // can't, so can be faster (and in fact cshadow insertion point or content
+  // can't, so can be faster (and in fact shadow insertion point or content
   // insertion point?
 
   // It would be nice to assert that we find aChildToFind, but bz thinks that
@@ -131,12 +222,15 @@ bool FlattenedChildIterator::Seek(const nsIContent* aChildToFind) {
   return false;
 }
 
-nsIContent* FlattenedChildIterator::GetPreviousChild() {
+NS_INSTANTIATE_CHILD_ITERATOR_METHOD(nsIContent*, GetPreviousChild);
+
+template <ChildIterFor aFor>
+nsIContent* ChildIteratorBase<aFor>::GetPreviousChild() {
   if (mIsFirst) {  // at the beginning of the child list
     return nullptr;
   }
-  if (mParentAsSlot) {
-    const Span assignedNodes = mParentAsSlot->AssignedNodes();
+  if (mParentNodeAsSlot) {
+    const Span assignedNodes = mParentNodeAsSlot->AssignedNodes();
     MOZ_ASSERT(mIndexInInserted <= assignedNodes.Length());
     if (mIndexInInserted == 0) {
       mIsFirst = true;
@@ -148,7 +242,7 @@ nsIContent* FlattenedChildIterator::GetPreviousChild() {
   if (mChild) {  // in the middle of the child list
     mChild = mChild->GetPreviousSibling();
   } else {  // at the end of the child list
-    mChild = mParent->GetLastChild();
+    mChild = mParentNode->GetLastChild();
   }
   if (!mChild) {
     mIsFirst = true;
@@ -156,6 +250,71 @@ nsIContent* FlattenedChildIterator::GetPreviousChild() {
 
   return mChild;
 }
+
+NS_INSTANTIATE_CHILD_ITERATOR_METHOD(nsINode*, GetParentNodeOf,
+                                     const nsIContent&);
+
+// static
+template <ChildIterFor aFor>
+nsINode* ChildIteratorBase<aFor>::GetParentNodeOf(const nsIContent& aChild) {
+  if constexpr (aFor == ChildIterFor::DOM) {
+    return aChild.GetParentNode();
+  }
+  // FYI: Don't return ShadowRoot as parent of aChild. If the parent node of
+  // aChild is a ShadowRoot, return the host instead.  Otherwise, if this is
+  // called with the result of a previous call of this and the result is a
+  // ShadowRoot, this will return nullptr and the caller cannot climb up the
+  // tree. For example, callers may want to do:
+  //
+  //  while (child != limiter) {
+  //    auto* parent = ChildIteratorBase<aFor>::GetParentNodeOf(child);
+  //    MOZ_ASSERT(parent); // Fails if child is a ShadowRoot
+  //    ChildIteratorBase<aFor> iter(parent);
+  //    MOZ_ALWAYS_TRUE(iter.Seek(child));
+  //    child = parent;
+  //  }
+  else if constexpr (aFor == ChildIterFor::FlatForSelection) {
+    HTMLSlotElement* const assignedSlot = aChild.GetAssignedSlotForSelection();
+    nsINode* const parentNode = aChild.GetParentNode();
+    // If the parent node is a shadow host and aChild is a child of the host and
+    // not assigned to any <slot>, ChildIteratorBase<ChildIterFor::DOM> should
+    // be used instead because ChildIteratorBase<ChildIterFor::FlatForSelection>
+    // will handle the children of the ShadowRoot so that Seek() will fail if
+    // searching aChild with it.
+    // FYI: GetFlattenedTreeParentNodeForSelection() may return ShadowRoot.
+    // Therefore, we need to handle it here. We should fix it in bug 2014622
+    // later.
+    if (MOZ_UNLIKELY(
+            !parentNode ||
+            (!assignedSlot && parentNode->GetShadowRootForSelection()))) {
+      return nullptr;
+    }
+    return aChild.GetFlattenedTreeParentNodeForSelection();
+  } else if constexpr (aFor == ChildIterFor::Flat) {
+    HTMLSlotElement* const assignedSlot = aChild.GetAssignedSlot();
+    nsINode* const parentNode = aChild.GetParentNode();
+    // If the parent node is a shadow host and aChild is a child of the host and
+    // not assigned to any <slot>, ChildIteratorBase<ChildIterFor::DOM> should
+    // be used instead because ChildIteratorBase<ChildIterFor::Flat> will handle
+    // the children of the ShadowRoot so that Seek() will fail if searching
+    // aChild with it.
+    // FYI: GetFlattenedTreeParentNode() won't return ShadowRoot. However, this
+    // will be merged to the above block with using new template API. Therefore,
+    // this block does the same thing for now to make it clearer that the patch
+    // does not change the behavior.
+    if (MOZ_UNLIKELY(!parentNode ||
+                     (!assignedSlot && parentNode->GetShadowRoot()))) {
+      return nullptr;
+    }
+    return aChild.GetFlattenedTreeParentNode();
+  } else {
+    MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE(
+        "Handle the new ChildIterFor value!");
+  }
+}
+
+#undef NS_INSTANTIATE_CHILD_ITERATOR_METHOD
+#undef NS_INSTANTIATE_CHILD_ITERATOR_CONST_METHOD
 
 nsIContent* AllChildrenIterator::Get() const {
   switch (mPhase) {
@@ -323,6 +482,11 @@ nsIContent* AllChildrenIterator::GetPreviousChild() {
 
   mPhase = Phase::AtBegin;
   return nullptr;
+}
+
+// static
+nsINode* StyleChildrenIterator::GetParentNodeOf(const nsIContent& aChild) {
+  return aChild.GetFlattenedTreeParentNodeForStyle();
 }
 
 }  // namespace mozilla::dom

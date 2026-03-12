@@ -98,6 +98,7 @@ class EventHandlerNonNull;
 template <typename T>
 class FlatTreeAncestorsOfTypeIterator;
 class HTMLDialogElement;
+class HTMLSlotElement;
 template <typename T>
 class InclusiveAncestorsOfTypeIterator;
 template <typename T>
@@ -665,6 +666,35 @@ class nsINode : public mozilla::dom::EventTarget {
     return nullptr;
   }
 
+  /**
+   * Return this node as HTMLSlotElement if this an HTMLSlotElement which has
+   * some assigned nodes.
+   */
+  [[nodiscard]] mozilla::dom::HTMLSlotElement* GetAsHTMLSlotElementIfFilled();
+
+  /**
+   * Return this node as HTMLSlotElement if this an HTMLSlotElement which has
+   * some assigned nodes.
+   */
+  [[nodiscard]] const mozilla::dom::HTMLSlotElement*
+  GetAsHTMLSlotElementIfFilled() const;
+
+  /**
+   * Return this node as HTMLSlotElement if this an HTMLSlotElement which has
+   * some assigned nodes.  However, if its containing shadow root is anonymous
+   * one, this returns nullptr.
+   */
+  [[nodiscard]] mozilla::dom::HTMLSlotElement*
+  GetAsHTMLSlotElementIfFilledForSelection();
+
+  /**
+   * Return this node as HTMLSlotElement if this an HTMLSlotElement which  has
+   * some assigned nodes.  However, if its containing shadow root is anonymous
+   * one, this returns nullptr.
+   */
+  [[nodiscard]] const mozilla::dom::HTMLSlotElement*
+  GetAsHTMLSlotElementIfFilledForSelection() const;
+
   /*
    * Return whether the node is a ProcessingInstruction node.
    */
@@ -706,6 +736,9 @@ class nsINode : public mozilla::dom::EventTarget {
   /** Get the number of flat tree children */
   uint32_t GetFlatTreeChildCount() const;
 
+  /** Get the number of flat tree children for selection */
+  uint32_t GetFlatTreeForSelectionChildCount() const;
+
   /**
    * NOTE: this function is going to be removed soon (hopefully!) Don't use it
    * in new code.
@@ -716,8 +749,21 @@ class nsINode : public mozilla::dom::EventTarget {
    */
   nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const;
 
-  /** Get the child at aIndex in flat tree **/
-  nsINode* GetChildAtInFlatTree(uint32_t aIndex) const;
+  /**
+   * Return a child of the shadow root if there is, an assigned node if this is
+   * a non-empty <slot> or a child of this node.
+   */
+  nsIContent* GetChildAtInFlatTree(uint32_t aIndex) const;
+
+  /**
+   * Similar to GetChildAtInFlatTree().  However, this does not treat a
+   * non-content shadow tree's host element like <detail>, <video> or SVG <use>
+   * as a shadow host.  I.e., if the element has a non-content shadow, this
+   * returns a child of this node instead.  Similary, this is a <slot> element
+   * of a non-content shadow like in <details>, this does not return an assigned
+   * node to the <slot>.
+   */
+  nsIContent* GetChildAtInFlatTreeForSelection(uint32_t aIndex) const;
 
   /**
    * Get the index of a child within this content.
@@ -747,6 +793,20 @@ class nsINode : public mozilla::dom::EventTarget {
    *         result in Nothing.
    */
   mozilla::Maybe<uint32_t> ComputeFlatTreeIndexOf(
+      const nsINode* aPossibleChild) const;
+
+  /**
+   * Get the index of a child within this content's flat tree children for
+   * selection.
+   *
+   * @param aPossibleChild the child to get the index of.
+   * @return the index of the child, or Nothing if not a child.  Note that if
+   *         the child is in a shadow tree but it should be ignored for
+   *         selection, this returns the simple DOM index of aPossibleChild.
+   *         Be aware that anonymous children (e.g. a <div> child of an <input>
+   *         element) will result in Nothing.
+   */
+  mozilla::Maybe<uint32_t> ComputeFlatTreeForSelectionIndexOf(
       const nsINode* aPossibleChild) const;
 
   /**
@@ -1187,7 +1247,7 @@ class nsINode : public mozilla::dom::EventTarget {
   nsIContent* DoGetShadowHost() const;
 
  public:
-  nsINode* GetParentOrShadowHostNode() const {
+  [[nodiscard]] nsINode* GetParentOrShadowHostNode() const {
     if (MOZ_LIKELY(mParent)) {
       return mParent;
     }
@@ -1218,12 +1278,13 @@ class nsINode : public mozilla::dom::EventTarget {
    * scroll frame.
    */
   inline nsINode* GetFlattenedTreeParentNodeForStyle() const;
+  inline nsIContent* GetFlattenedTreeParentForStyle() const;
 
   /**
    * Similar to GetFlattenedTreeParentNode, it does two things differently
    *   1. For contents that are not in the flattened tree, use its
    *   parent rather than nullptr.
-   *   2. For contents that are slotted into a UA shadow tree, use its
+   *   2. For contents that are slotted into a non-content shadow tree, use its
    *   parent rather than the slot element.
    */
   inline nsINode* GetFlattenedTreeParentNodeForSelection() const;
@@ -1843,9 +1904,61 @@ class nsINode : public mozilla::dom::EventTarget {
 
   nsINodeList* ChildNodes();
 
+  /**
+   * Return the first child of this.
+   */
   nsIContent* GetFirstChild() const { return mFirstChild; }
 
+  /**
+   * Return the last child of this.
+   */
   nsIContent* GetLastChild() const;
+
+  /**
+   * Return the first child in the flattened tree.
+   * - If this is a <slot> whose assigned nodes list is not empty, this returns
+   * the first item in the list.
+   * - If this is a <slot> whose assigned nodes list is empty, this returns
+   * the first child.
+   * - If this is a shadow host element, this returns the first child of the
+   * attached `ShadowRoot`.
+   */
+  nsIContent* GetFlattenedTreeFirstChild() const;
+
+  /**
+   * Return the last child in the flattened tree.
+   * - If this is a <slot> whose assigned nodes list is not empty, this returns
+   * the last item in the list.
+   * - If this is a <slot> whose assigned nodes list is empty, this returns
+   * the last child.
+   * - If this is a shadow host element, this returns the last child of the
+   * attached `ShadowRoot`.
+   */
+  nsIContent* GetFlattenedTreeLastChild() const;
+
+  /**
+   * Return the first child in the flattened tree for selection, i.e., this
+   * does not handle assigned slot for non-content shadow root.
+   * - If this is a <slot> whose assigned nodes list is not empty, this returns
+   * the first item in the list.
+   * - If this is a <slot> whose assigned nodes list is empty, this returns
+   * the first child.
+   * - If this is a shadow host element, this returns the first child of the
+   * attached `ShadowRoot`.
+   */
+  nsIContent* GetFlattenedTreeFirstChildForSelection() const;
+
+  /**
+   * Return the last child in the flattened tree for selection, i.e., this
+   * does not handle assigned slot for non-content shadow root.
+   * - If this is a <slot> whose assigned nodes list is not empty, this returns
+   * the last item in the list.
+   * - If this is a <slot> whose assigned nodes list is empty, this returns
+   * the last child.
+   * - If this is a shadow host element, this returns the last child of the
+   * attached `ShadowRoot`.
+   */
+  nsIContent* GetFlattenedTreeLastChildForSelection() const;
 
   /**
    * Implementation is in Document.h, because it needs to cast from
@@ -1925,8 +2038,39 @@ class nsINode : public mozilla::dom::EventTarget {
   void LookupNamespaceURI(const nsAString& aNamespacePrefix,
                           nsAString& aNamespaceURI);
 
+  /**
+   * Return the next sibling of this in the child list.
+   */
   nsIContent* GetNextSibling() const { return mNextSibling; }
+
+  /**
+   * Return the previous sibling of this in the child list.
+   * FYI: This is a bit slower than GetNextSibling() so that you should use
+   * GetNextSibling() if you want to walk all children in a node.
+   */
   nsIContent* GetPreviousSibling() const;
+
+  /**
+   * Return the next/previous sibling in the flattened tree (for selection).
+   *
+   * These methods need to compute the index of this if this is assigned to a
+   * <slot>. Therefore, they may work slow. Therefore, these shorthands are
+   * deleted to realize the cost. You should use FlattenedChildIterator instead.
+   * For example:
+   *
+   * FlattenedChildIterator iter(
+   *   FlattenedChildIterator::GetParentNodeOf(node));
+   * iter.Seek(node);
+   * auto* nextSibling = iter.GetNextChild();
+   *
+   * or if you want only the next sibling, you can do:
+   *
+   * auto* nextSibling = FlattenedChildIterator::GetNextChild(child);
+   */
+  nsIContent* GetFlattenedTreeNextSibling() const = delete;
+  nsIContent* GetFlattenedTreePreviousSibling() const = delete;
+  nsIContent* GetFlattenedTreeNextSiblingForSelection() const = delete;
+  nsIContent* GetFlattenedTreePreviousSiblingForSelection() const = delete;
 
   /**
    * Return true if the node is being removed from the parent, it means that

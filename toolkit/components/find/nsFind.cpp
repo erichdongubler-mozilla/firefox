@@ -9,6 +9,7 @@
 #include "nsFind.h"
 #include "mozilla/Likely.h"
 #include "nsIContent.h"
+#include "nsIContentInlines.h"  // Is required by TreeIterator.h
 #include "nsINode.h"
 #include "nsIFrame.h"
 #include "nsIFormControl.h"

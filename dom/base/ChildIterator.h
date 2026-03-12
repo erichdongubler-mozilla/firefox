@@ -10,24 +10,48 @@
 #include <stdint.h>
 
 #include "nsIContent.h"
-#include "nsIContentInlines.h"
-
-class nsIContent;
 
 namespace mozilla::dom {
 
-// Iterates over the flattened children of a node, that is, the regular DOM
-// child nodes of a given DOM node, with assigned nodes as slot children, and
-// shadow host children replaced by their shadow root.
+// FIXME: Merge with TreeKind.
+enum class ChildIterFor {
+  // The simplest DOM, won't get ShadowRoot from the parent.
+  DOM,
+  // The flattened tree. Treat the shadow root children as the children of the
+  // host element. And the children of a shadow host element which are assigned
+  // to a <slot> are treated as the children of the <slot>. However, the
+  // non-content shadow trees are ignored. E.g., the children of <details> are
+  // treated as the direct children of the <details> instead of children of the
+  // assigned <slot> in the non-content ShadowRoot.
+  FlatForSelection,
+  // Similar to FlatForSelection, treat non-content shadow trees too. E.g., the
+  // shadow of <details>, <video>, and SVG <use>.
+  Flat,
+};
+
+template <ChildIterFor>
+class ChildIteratorBase;
+
+using ChildIterator = ChildIteratorBase<ChildIterFor::DOM>;
+using FlattenedChildIteratorForSelection =
+    ChildIteratorBase<ChildIterFor::FlatForSelection>;
+using FlattenedChildIterator = ChildIteratorBase<ChildIterFor::Flat>;
+
+// Iterates over the children of aParent in the specified type of tree.
 //
 // The iterator can be initialized to start at the end by providing false for
 // aStartAtBeginning in order to start iterating in reverse from the last child.
-class FlattenedChildIterator {
- public:
-  explicit FlattenedChildIterator(const nsIContent* aParent,
-                                  bool aStartAtBeginning = true);
+template <ChildIterFor aFor>
+class ChildIteratorBase {
+  constexpr static bool IgnoresNonContentShadow() {
+    return aFor != ChildIterFor::Flat;
+  }
 
-  nsIContent* GetNextChild();
+ public:
+  explicit ChildIteratorBase(const nsINode* aParentNode,
+                             bool aStartAtBeginning = true);
+
+  [[nodiscard]] nsIContent* GetNextChild();
 
   // Looks for aChildToFind respecting insertion points until aChildToFind is
   // found.  This can be O(1) instead of O(N) in many cases.
@@ -35,31 +59,95 @@ class FlattenedChildIterator {
 
   // Returns the current target of this iterator (which might be an explicit
   // child of the node, or a node assigned to a slot.
-  nsIContent* Get() const { return mChild; }
+  [[nodiscard]] nsIContent* Get() const { return mChild; }
 
   // Returns the original parent we were initialized with.
-  const nsIContent* Parent() const { return mOriginalParent; }
+  [[nodiscard]] const nsINode* ParentNode() const {
+    return mOriginalParentNode;
+  }
 
   // The inverse of GetNextChild. Properly steps in and out of insertion
   // points.
-  nsIContent* GetPreviousChild();
+  [[nodiscard]] nsIContent* GetPreviousChild();
 
-  bool ShadowDOMInvolved() const { return mShadowDOMInvolved; }
+  [[nodiscard]] bool ShadowDOMInvolved() const { return mShadowDOMInvolved; }
 
-  static uint32_t GetLength(const nsINode* aParent);
-  static Maybe<uint32_t> GetIndexOf(const nsINode* aParent,
-                                    const nsINode* aPossibleChild);
+  [[nodiscard]] static uint32_t GetLength(const nsINode* aParent);
+  [[nodiscard]] static Maybe<uint32_t> GetIndexOf(
+      const nsINode* aParent, const nsINode* aPossibleChild);
+  [[nodiscard]] static nsIContent* GetChildAt(const nsINode* aParent,
+                                              uint32_t aIndex);
+  [[nodiscard]] static nsIContent* GetFirstChild(const nsINode* aParent) {
+    return ChildIteratorBase(aParent).GetNextChild();
+  }
+  [[nodiscard]] static nsIContent* GetLastChild(const nsINode* aParent) {
+    return ChildIteratorBase(aParent, false).GetPreviousChild();
+  }
+
+  /**
+   * Return the next sibling of aChild in the tree. If this handles flattened
+   * tree and aChild is assigned to a <slot>, this needs to compute the index
+   * first to get the next assigned node. Therefore, this may be slow. If you
+   * need to get the next siblings continuously, you should not use this static
+   * method to avoid to compute the index for the each further call.
+   */
+  [[nodiscard]] static nsIContent* GetNextChild(const nsIContent* aChild) {
+    MOZ_ASSERT(aChild);
+    nsINode* const parentNode = GetParentNodeOf(*aChild);
+    if (!parentNode) {
+      return nullptr;
+    }
+    ChildIteratorBase iter(parentNode);
+    return iter.Seek(aChild) ? iter.GetNextChild() : nullptr;
+  }
+
+  /**
+   * Return the previous sibling of aChild in the tree. If this handles
+   * flattened tree and aChild is assigned to a <slot>, this needs to compute
+   * the index first to get the previous assigned node. Therefore, this may be
+   * slow. If you need to get the previous siblings continuously, you should not
+   * use this static method to avoid to compute the index for the each further
+   * call.
+   */
+  [[nodiscard]] static nsIContent* GetPreviousChild(const nsIContent* aChild) {
+    MOZ_ASSERT(aChild);
+    nsINode* const parentNode = GetParentNodeOf(*aChild);
+    if (!parentNode) {
+      return nullptr;
+    }
+    ChildIteratorBase iter(parentNode);
+    return iter.Seek(aChild) ? iter.GetPreviousChild() : nullptr;
+  }
+
+  /**
+   * Return the parent node to get the siblings of aChild. This won't return a
+   * ShadowRoot even if aChild is a child of a ShadowRoot. Instead, this returns
+   * the host element in that case. Therefore, you can use this to iterate
+   * siblings of inclusive ancestors like doing this:
+   *
+   * nsIContent* child = aChild;
+   * for (nsIContent* parent = ChildIteratorBase<aFor>::GetParentNodeOf(child);
+   *      parent; parent = ChildIteratorBase<aFor>::GetParentNodeOf(child)) {
+   *   ChildIteratorBase<aFor> iter(parent);
+   *   MOZ_ALWAYS_TRUE(iter.Seek(child));
+   *   // Do something.
+   *   child = parent;
+   * }
+   *
+   * The Seek() should never fail if it fails, this has a bug.
+   */
+  [[nodiscard]] static nsINode* GetParentNodeOf(const nsIContent& aChild);
 
  protected:
   // The parent of the children being iterated. For shadow hosts this will point
   // to its shadow root.
-  const nsIContent* mParent;
+  const nsINode* mParentNode;
 
   // If parent is a slot element with assigned slots, this points to the parent
   // as HTMLSlotElement, otherwise, it's null.
-  const HTMLSlotElement* mParentAsSlot = nullptr;
+  const HTMLSlotElement* mParentNodeAsSlot = nullptr;
 
-  const nsIContent* mOriginalParent = nullptr;
+  const nsINode* mOriginalParentNode = nullptr;
 
   // The current child.
   nsIContent* mChild = nullptr;
@@ -111,6 +199,8 @@ class AllChildrenIterator : private FlattenedChildIterator {
   // Returns the current target the iterator is at, or null if the iterator
   // doesn't point to any child node (either eAtBegin or eAtEnd phase).
   nsIContent* Get() const;
+
+  const nsIContent* Parent() const { return ParentNode()->AsContent(); }
 
   // Seeks the given node in children of a parent element, starting from
   // the current iterator's position, and sets the iterator at the given child
@@ -173,11 +263,6 @@ class AllChildrenIterator : private FlattenedChildIterator {
 class MOZ_NEEDS_MEMMOVABLE_MEMBERS StyleChildrenIterator
     : private AllChildrenIterator {
  public:
-  static nsIContent* GetParent(const nsIContent& aContent) {
-    nsINode* node = aContent.GetFlattenedTreeParentNodeForStyle();
-    return node && node->IsContent() ? node->AsContent() : nullptr;
-  }
-
   explicit StyleChildrenIterator(const nsIContent* aContent,
                                  bool aStartAtBeginning = true)
       : AllChildrenIterator(
@@ -200,6 +285,8 @@ class MOZ_NEEDS_MEMMOVABLE_MEMBERS StyleChildrenIterator
   using AllChildrenIterator::GetNextChild;
   using AllChildrenIterator::GetPreviousChild;
   using AllChildrenIterator::Seek;
+
+  [[nodiscard]] static nsINode* GetParentNodeOf(const nsIContent& aChild);
 };
 
 }  // namespace mozilla::dom

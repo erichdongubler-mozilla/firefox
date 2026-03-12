@@ -21,6 +21,7 @@
 #include "mozilla/TextControlElement.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/AbstractRange.h"
+#include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/Comment.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentType.h"
@@ -1235,8 +1236,8 @@ nsDocumentEncoder::RangeSerializer::SerializeNodePartiallyContainedInRange(
   return NS_OK;
 }
 
-static nsINode* GetChildAtInFlatTreeForSelection(const nsINode& aNode,
-                                                 const uint32_t aIndex) {
+static nsIContent* GetChildAtInFlatTreeForSelection(const nsINode& aNode,
+                                                    const uint32_t aIndex) {
   if (ShadowRoot* shadowRoot = aNode.GetShadowRoot()) {
     if (shadowRoot->IsUAWidget()) {
       return aNode.GetChildAt_Deprecated(aIndex);
@@ -1261,12 +1262,10 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeChildrenOfContent(
     return NS_OK;
   }
 
-  nsINode* childAsNode =
+  nsIContent* child =
       mAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes
           ? GetChildAtInFlatTreeForSelection(aContent, aStartOffset)
           : aContent.GetChildAt_Deprecated(aStartOffset);
-
-  MOZ_ASSERT_IF(childAsNode, childAsNode->IsContent());
 
   auto GetNextSibling = [this, &aContent](
                             nsINode* aCurrentNode,
@@ -1284,22 +1283,22 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeChildrenOfContent(
     return aCurrentNode->GetNextSibling();
   };
 
-  for (size_t j = aStartOffset; childAsNode && j < aEndOffset; ++j) {
+  for (size_t j = aStartOffset; child && j < aEndOffset; ++j) {
     nsresult rv{NS_OK};
     const bool isFirstOrLastNodeToSerialize =
         j == aStartOffset || j == aEndOffset - 1;
     if (isFirstOrLastNodeToSerialize) {
-      rv = SerializeRangeNodes(aRange, childAsNode, aDepth + 1);
+      rv = SerializeRangeNodes(aRange, child, aDepth + 1);
     } else {
       rv = mNodeSerializer.SerializeToStringRecursive(
-          childAsNode, NodeSerializer::SerializeRoot::eYes);
+          child, NodeSerializer::SerializeRoot::eYes);
     }
 
     if (NS_FAILED(rv)) {
       return rv;
     }
 
-    childAsNode = GetNextSibling(childAsNode, j);
+    child = GetNextSibling(child, j);
   }
 
   return NS_OK;
@@ -2494,24 +2493,25 @@ bool nsHTMLCopyEncoder::ChildIsFirstNode(const RawRangeBoundary& aPoint) {
     return !aContent.TextIsOnlyWhitespace();
   };
   if (aPoint.GetTreeKind() == TreeKind::Flat) {
-    if (const HTMLSlotElement* slot =
-            HTMLSlotElement::FromNode(aPoint.GetContainer())) {
-      const auto assignedNodes = slot->AssignedNodes();
-      if (!assignedNodes.IsEmpty()) {
-        for (const uint32_t offset : Reversed(IntegerRange(*aPoint.Offset(
-                 RawRangeBoundary::OffsetFilter::kValidOrInvalidOffsets)))) {
-          nsIContent* const sibling =
-              nsIContent::FromNode(assignedNodes[offset]);
-          if (sibling && ChildIsSignificant(*sibling)) {
-            return false;
-          }
-        }
-        return true;
+    FlattenedChildIteratorForSelection iter(aPoint.GetContainer());
+    if (!iter.Seek(aPoint.GetChildAtOffset())) {
+      return false;
+    }
+    for (nsIContent* sibling = iter.GetPreviousChild(); sibling;
+         sibling = iter.GetPreviousChild()) {
+      if (ChildIsSignificant(*sibling)) {
+        return false;
       }
     }
+    return true;
   }
-  for (nsIContent* sibling = aPoint.GetPreviousSiblingOfChildAtOffset();
-       sibling; sibling = sibling->GetPreviousSibling()) {
+
+  ChildIterator iter(aPoint.GetContainer());
+  if (!iter.Seek(aPoint.GetChildAtOffset())) {
+    return false;
+  }
+  for (nsIContent* sibling = iter.GetPreviousChild(); sibling;
+       sibling = iter.GetPreviousChild()) {
     if (ChildIsSignificant(*sibling)) {
       return false;
     }
@@ -2521,7 +2521,13 @@ bool nsHTMLCopyEncoder::ChildIsFirstNode(const RawRangeBoundary& aPoint) {
 
 bool nsHTMLCopyEncoder::ChildIsLastNode(const RawRangeBoundary& aPoint) {
   MOZ_ASSERT(aPoint.IsSet());
-  MOZ_ASSERT_IF(!aPoint.IsEndOfContainer(), aPoint.GetChildAtOffset());
+  MOZ_ASSERT(!aPoint.GetContainer()->IsCharacterData());
+
+  if (aPoint.IsEndOfContainer()) {
+    return true;
+  }
+
+  MOZ_ASSERT(aPoint.GetChildAtOffset());
 
   // need to check if any nodes after us are really visible.
   // Mike wrote something for me along these lines in nsSelectionController,
@@ -2537,29 +2543,24 @@ bool nsHTMLCopyEncoder::ChildIsLastNode(const RawRangeBoundary& aPoint) {
     return !aContent.TextIsOnlyWhitespace();
   };
   if (aPoint.GetTreeKind() == TreeKind::Flat) {
-    if (const HTMLSlotElement* slot =
-            HTMLSlotElement::FromNode(aPoint.GetContainer())) {
-      const auto assignedNodes = slot->AssignedNodes();
-      if (!assignedNodes.IsEmpty()) {
-        const uint32_t length = assignedNodes.Length();
-        const uint32_t nextOffset = *aPoint.Offset(
-            RawRangeBoundary::OffsetFilter::kValidOrInvalidOffsets);
-        if (nextOffset >= length) {
-          return true;
-        }
-        for (const uint32_t offset : IntegerRange(nextOffset, length)) {
-          nsIContent* const sibling =
-              nsIContent::FromNode(assignedNodes[offset]);
-          if (sibling && ChildIsSignificant(*sibling)) {
-            return false;
-          }
-        }
-        return true;
+    FlattenedChildIteratorForSelection iter(aPoint.GetContainer());
+    if (!iter.Seek(aPoint.GetChildAtOffset())) {
+      return false;
+    }
+    for (nsIContent* sibling = iter.Get(); sibling;
+         sibling = iter.GetNextChild()) {
+      if (ChildIsSignificant(*sibling)) {
+        return false;
       }
     }
+    return true;
   }
-  for (nsIContent* sibling = aPoint.GetChildAtOffset(); sibling;
-       sibling = sibling->GetNextSibling()) {
+  ChildIterator iter(aPoint.GetContainer());
+  if (!iter.Seek(aPoint.GetChildAtOffset())) {
+    return false;
+  }
+  for (nsIContent* sibling = iter.Get(); sibling;
+       sibling = iter.GetNextChild()) {
     if (ChildIsSignificant(*sibling)) {
       return false;
     }

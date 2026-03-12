@@ -7,6 +7,7 @@
 #ifndef nsIContentInlines_h
 #define nsIContentInlines_h
 
+#include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLSlotElement.h"
@@ -77,7 +78,7 @@ static inline nsINode* GetFlattenedTreeParentNode(const nsINode* aNode) {
   }
 
   // Use GetShadowRootForSelection for the selection case such that
-  // if the content is slotted into a UA shadow tree, use
+  // if the content is slotted into a non-content shadow tree, use
   // the parent of content as the flattened tree parent (instead of
   // the slot element).
   const nsINode* shadowRootForParent =
@@ -96,19 +97,39 @@ static inline nsINode* GetFlattenedTreeParentNode(const nsINode* aNode) {
     MOZ_ASSERT(aType == nsINode::eForSelection);
     // When aType is nsINode::eForSelection, we use the parent of the
     // content even if it's not assigned to any slot.
+    // XXX I think this should be handled by the caller if this returns nullptr
+    // because using this result means that the caller handles it without
+    // understanding the situation. And this is inconsistent behavior from the
+    // <slot> case below.
     return parent;
   }
 
   if (parentAsContent->IsInShadowTree()) {
+    // If the parent is a <slot> and its assigned nodes list is empty, we're
+    // fallback content which is active, otherwise we are not part of the flat
+    // tree.
     if (auto* slot = mozilla::dom::HTMLSlotElement::FromNode(parentAsContent)) {
-      // If the assigned nodes list is empty, we're fallback content which is
-      // active, otherwise we are not part of the flat tree.
-      return slot->AssignedNodes().IsEmpty() ? parent : nullptr;
+      if constexpr (aType == nsINode::eForSelection) {
+        const mozilla::dom::ShadowRoot* const shadowRoot =
+            slot->GetContainingShadow();
+        if (shadowRoot && !shadowRoot->IsContentShadowRoot()) {
+          // The <slot> is not a part of the flat tree for selection. Even if
+          // the <slot> does not have assigned nodes, we the node is not a part
+          // of the flattened tree for selection.
+          slot = nullptr;
+        }
+      }
+      if (slot) {
+        return slot->AssignedNodes().IsEmpty() ? slot : nullptr;
+      }
     }
 
-    if (auto* shadowRoot =
+    if (auto* const shadowRoot =
             mozilla::dom::ShadowRoot::FromNode(parentAsContent)) {
-      return shadowRoot->GetHost();
+      if (aType != nsINode::eForSelection ||
+          shadowRoot->IsContentShadowRoot()) {
+        return shadowRoot->GetHost();
+      }
     }
   }
 
@@ -138,8 +159,65 @@ inline nsINode* nsINode::GetFlattenedTreeParentNodeForStyle() const {
   return ::GetFlattenedTreeParentNode<nsINode::eForStyle>(this);
 }
 
+inline nsIContent* nsINode::GetFlattenedTreeParentForStyle() const {
+  return nsIContent::FromNodeOrNull(GetFlattenedTreeParentNodeForStyle());
+}
+
 inline nsINode* nsINode::GetFlattenedTreeParentNodeForSelection() const {
   return ::GetFlattenedTreeParentNode<nsINode::eForSelection>(this);
+}
+
+inline nsIContent* nsINode::GetFlattenedTreeFirstChild() const {
+  return mozilla::dom::FlattenedChildIterator::GetFirstChild(this);
+}
+
+inline nsIContent* nsINode::GetFlattenedTreeFirstChildForSelection() const {
+  return mozilla::dom::FlattenedChildIteratorForSelection::GetFirstChild(this);
+}
+
+inline nsIContent* nsINode::GetFlattenedTreeLastChild() const {
+  return mozilla::dom::FlattenedChildIterator::GetLastChild(this);
+}
+
+inline nsIContent* nsINode::GetFlattenedTreeLastChildForSelection() const {
+  return mozilla::dom::FlattenedChildIteratorForSelection::GetLastChild(this);
+}
+
+inline uint32_t nsINode::GetFlatTreeChildCount() const {
+  if (!IsContainerNode()) {
+    return 0;
+  }
+  MOZ_ASSERT(!IsCharacterData());
+  return mozilla::dom::FlattenedChildIterator::GetLength(this);
+}
+
+inline uint32_t nsINode::GetFlatTreeForSelectionChildCount() const {
+  if (!IsContainerNode()) {
+    return 0;
+  }
+  MOZ_ASSERT(!IsCharacterData());
+  return mozilla::dom::FlattenedChildIteratorForSelection::GetLength(this);
+}
+
+inline mozilla::Maybe<uint32_t> nsINode::ComputeFlatTreeIndexOf(
+    const nsINode* aPossibleChild) const {
+  return mozilla::dom::FlattenedChildIterator::GetIndexOf(this, aPossibleChild);
+}
+
+inline mozilla::Maybe<uint32_t> nsINode::ComputeFlatTreeForSelectionIndexOf(
+    const nsINode* aPossibleChild) const {
+  return mozilla::dom::FlattenedChildIteratorForSelection::GetIndexOf(
+      this, aPossibleChild);
+}
+
+inline nsIContent* nsINode::GetChildAtInFlatTree(uint32_t aIndex) const {
+  return mozilla::dom::FlattenedChildIterator::GetChildAt(this, aIndex);
+}
+
+inline nsIContent* nsINode::GetChildAtInFlatTreeForSelection(
+    uint32_t aIndex) const {
+  return mozilla::dom::FlattenedChildIteratorForSelection::GetChildAt(this,
+                                                                      aIndex);
 }
 
 inline bool nsINode::NodeOrAncestorHasDirAuto() const {
