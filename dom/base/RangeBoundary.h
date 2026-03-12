@@ -405,7 +405,7 @@ class RangeBoundaryBase {
     }
     // If we're pointing a child node, let's recompute the point in the non-flat
     // tree from the child node.
-    if (nsIContent* const child = GetChildAtOffset()) {
+    if (RawRefType* const child = GetChildAtOffset()) {
       return FromChild(*child, TreeKind::DOM);
     }
     // Otherwise, we're pointing the end of the container in the flat tree.
@@ -442,10 +442,14 @@ class RangeBoundaryBase {
         mSetBy(RangeBoundarySetBy::Ref),
         mTreeKind(aTreeKind) {}
 
-  // Convert from RawRangeBoundary or RangeBoundary.
+  // Convert from another RangeBoundaryBase type.
   template <typename PT, typename RT,
-            typename = std::enable_if_t<!std::is_const_v<RawParentType> ||
-                                        std::is_const_v<PT>>>
+            typename = std::enable_if_t<
+                // It's fine to convert to ConstRawRangeBoundary from any types
+                std::is_const_v<RawParentType> ||
+                // It's possible to convert to non-const RangeBoundary only from
+                // non-const types.
+                !std::is_const_v<PT>>>
   RangeBoundaryBase(const RangeBoundaryBase<PT, RT>& aOther,
                     RangeBoundarySetBy aSetBy)
       : mParent(aOther.mParent),
