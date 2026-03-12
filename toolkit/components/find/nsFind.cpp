@@ -632,8 +632,8 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
     mNodeIndexCache = &localCache;
   }
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  auto cmp =
-      nsContentUtils::ComparePoints(aStartPoint, aEndPoint, mNodeIndexCache);
+  auto cmp = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+      aStartPoint, aEndPoint, mNodeIndexCache);
   MOZ_DIAGNOSTIC_ASSERT(cmp, "Start and end points in different trees?");
   MOZ_DIAGNOSTIC_ASSERT(*cmp != 1, "Start point must not be after end point");
 #endif
@@ -832,7 +832,7 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
 
     // Have we gone past the endpoint yet? If we have, and we're not in the
     // middle of a match, return.
-    if (auto cmp = nsContentUtils::ComparePoints(
+    if (auto cmp = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
             RawRangeBoundary(state.GetCurrentNode(), findex), endPoint,
             mNodeIndexCache)) {
       if ((mFindBackward && *cmp < 0) || (!mFindBackward && *cmp > 0)) {

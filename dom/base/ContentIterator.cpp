@@ -43,14 +43,16 @@ static bool ComparePostMode(const RawRangeBoundary& aStart,
   RawRangeBoundary afterNode(parent, content);
   const auto isStartLessThanAfterNode = [&]() {
     const Maybe<int32_t> startComparedToAfterNode =
-        nsContentUtils::ComparePoints(aStart, afterNode);
+        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(aStart,
+                                                                    afterNode);
     return !NS_WARN_IF(!startComparedToAfterNode) &&
            (*startComparedToAfterNode < 0);
   };
 
   const auto isAfterNodeLessOrEqualToEnd = [&]() {
     const Maybe<int32_t> afterNodeComparedToEnd =
-        nsContentUtils::ComparePoints(afterNode, aEnd);
+        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(afterNode,
+                                                                    aEnd);
     return !NS_WARN_IF(!afterNodeComparedToEnd) &&
            (*afterNodeComparedToEnd <= 0);
   };
@@ -70,14 +72,16 @@ static bool ComparePreMode(const RawRangeBoundary& aStart,
 
   const auto isStartLessOrEqualToBeforeNode = [&]() {
     const Maybe<int32_t> startComparedToBeforeNode =
-        nsContentUtils::ComparePoints(aStart, beforeNode);
+        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(aStart,
+                                                                    beforeNode);
     return !NS_WARN_IF(!startComparedToBeforeNode) &&
            (*startComparedToBeforeNode <= 0);
   };
 
   const auto isBeforeNodeLessThanEndNode = [&]() {
     const Maybe<int32_t> beforeNodeComparedToEnd =
-        nsContentUtils::ComparePoints(beforeNode, aEnd);
+        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(beforeNode,
+                                                                    aEnd);
     return !NS_WARN_IF(!beforeNodeComparedToEnd) &&
            (*beforeNodeComparedToEnd < 0);
   };

@@ -891,15 +891,19 @@ int16_t nsRange::ComparePoint(const nsINode& aContainer, uint32_t aOffset,
 
   MOZ_ASSERT(point.IsSetAndValid());
 
-  if (Maybe<int32_t> order = nsContentUtils::ComparePoints(
-          point, aAllowCrossShadowBoundary ? MayCrossShadowBoundaryStartRef()
-                                           : StartRef());
+  if (Maybe<int32_t> order =
+          nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+              point, aAllowCrossShadowBoundary
+                         ? MayCrossShadowBoundaryStartRef()
+                         : StartRef());
       order && *order <= 0) {
     return int16_t(*order);
   }
-  if (Maybe<int32_t> order = nsContentUtils::ComparePoints(
-          aAllowCrossShadowBoundary ? MayCrossShadowBoundaryEndRef() : EndRef(),
-          point);
+  if (Maybe<int32_t> order =
+          nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+              aAllowCrossShadowBoundary ? MayCrossShadowBoundaryEndRef()
+                                        : EndRef(),
+              point);
       order && *order == -1) {
     return 1;
   }
@@ -929,11 +933,14 @@ bool nsRange::IntersectsNode(nsINode& aNode, ErrorResult& aRv) {
     return false;
   }
 
-  const Maybe<int32_t> startOrder = nsContentUtils::ComparePoints(
-      mStart, RawRangeBoundary(parent, aNode.AsContent(), *nodeIndex + 1u));
+  const Maybe<int32_t> startOrder =
+      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+          mStart, RawRangeBoundary(parent, aNode.AsContent(), *nodeIndex + 1u));
   if (startOrder && (*startOrder < 0)) {
-    const Maybe<int32_t> endOrder = nsContentUtils::ComparePoints(
-        RawRangeBoundary(parent, aNode.GetPreviousSibling(), *nodeIndex), mEnd);
+    const Maybe<int32_t> endOrder =
+        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+            RawRangeBoundary(parent, aNode.GetPreviousSibling(), *nodeIndex),
+            mEnd);
     return endOrder && (*endOrder < 0);
   }
 
@@ -1843,10 +1850,12 @@ void nsRange::CutContents(DocumentFragment** aFragment,
       // has a common ancestor with start and end, hence both have to be
       // comparable to it.
       if (doctype &&
-          *nsContentUtils::ComparePointsWithIndices(
-              startRef.GetContainer(), startOffset, doctype, 0) < 0 &&
-          *nsContentUtils::ComparePointsWithIndices(
-              doctype, 0, endRef.GetContainer(), endOffset) < 0) {
+          *nsContentUtils::ComparePointsWithIndices<
+              TreeKind::ShadowIncludingDOM>(startRef.GetContainer(),
+                                            startOffset, doctype, 0) < 0 &&
+          *nsContentUtils::ComparePointsWithIndices<
+              TreeKind::ShadowIncludingDOM>(doctype, 0, endRef.GetContainer(),
+                                            endOffset) < 0) {
         aRv.ThrowHierarchyRequestError("Start or end position isn't valid.");
         return;
       }
@@ -2158,7 +2167,8 @@ int16_t nsRange::CompareBoundaryPoints(uint16_t aHow,
   }
 
   const Maybe<int32_t> order =
-      nsContentUtils::ComparePoints(ourBoundary, otherBoundary);
+      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+          ourBoundary, otherBoundary);
 
   // `this` and `aOtherRange` share the same root and ourBoundary, otherBoundary
   // correspond to some of their boundaries. Hence, ourBoundary and
