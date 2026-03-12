@@ -220,6 +220,16 @@ inline nsIContent* nsINode::GetChildAtInFlatTreeForSelection(
                                                                       aIndex);
 }
 
+inline mozilla::dom::ShadowRoot* nsINode::GetContainingShadowForSelection()
+    const {
+  if (!IsInShadowTree()) {
+    return nullptr;
+  }
+  mozilla::dom::ShadowRoot* const shadowRoot =
+      AsContent()->GetContainingShadow();
+  return shadowRoot && shadowRoot->IsContentShadowRoot() ? shadowRoot : nullptr;
+}
+
 inline bool nsINode::NodeOrAncestorHasDirAuto() const {
   return AncestorHasDirAuto() || (IsElement() && AsElement()->HasDirAuto());
 }

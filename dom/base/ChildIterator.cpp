@@ -48,18 +48,14 @@ ChildIteratorBase<aKind>::ChildIteratorBase(const nsINode* aParentNode,
   }
 
   if (const ShadowRoot* const shadowRoot =
-          ShouldIgnoreNonContentShadow<aKind>()
-              ? mParentNode->AsElement()->GetShadowRootForSelection()
-              : mParentNode->AsElement()->GetShadowRoot()) {
+          mParentNode->AsElement()->GetShadowRoot<aKind>()) {
     mParentNode = shadowRoot;
     mShadowDOMInvolved = true;
     return;
   }
 
   if (const auto* const slot =
-          ShouldIgnoreNonContentShadow<aKind>()
-              ? mParentNode->GetAsHTMLSlotElementIfFilledForSelection()
-              : mParentNode->GetAsHTMLSlotElementIfFilled()) {
+          mParentNode->GetAsHTMLSlotElementIfFilled<aKind>()) {
     MOZ_ASSERT(!slot->AssignedNodes().IsEmpty());
     mParentNodeAsSlot = slot;
     if (!aStartAtBeginning) {
@@ -79,18 +75,12 @@ uint32_t ChildIteratorBase<aKind>::GetLength(const nsINode* aParent) {
   }
   MOZ_ASSERT(!aParent->IsCharacterData());
   if constexpr (aKind != TreeKind::DOM) {
-    if (const auto* slot =
-            ShouldIgnoreNonContentShadow<aKind>()
-                ? aParent->GetAsHTMLSlotElementIfFilledForSelection()
-                : aParent->GetAsHTMLSlotElementIfFilled()) {
+    if (const auto* slot = aParent->GetAsHTMLSlotElementIfFilled<aKind>()) {
       if (uint32_t len = slot->AssignedNodes().Length()) {
         return len;
       }
     }
-    if (const ShadowRoot* const shadowRoot =
-            ShouldIgnoreNonContentShadow<aKind>()
-                ? aParent->GetShadowRootForSelection()
-                : aParent->GetShadowRoot()) {
+    if (const ShadowRoot* const shadowRoot = aParent->GetShadowRoot<aKind>()) {
       return shadowRoot->GetChildCount();
     }
   }
@@ -105,10 +95,7 @@ template <TreeKind aKind>
 Maybe<uint32_t> ChildIteratorBase<aKind>::GetIndexOf(
     const nsINode* aParent, const nsINode* aPossibleChild) {
   if constexpr (aKind != TreeKind::DOM) {
-    if (const auto* slot =
-            ShouldIgnoreNonContentShadow<aKind>()
-                ? aParent->GetAsHTMLSlotElementIfFilledForSelection()
-                : aParent->GetAsHTMLSlotElementIfFilled()) {
+    if (const auto* slot = aParent->GetAsHTMLSlotElementIfFilled<aKind>()) {
       const Span assigned = slot->AssignedNodes();
       MOZ_ASSERT(!assigned.IsEmpty());
       const auto index = assigned.IndexOf(aPossibleChild);
@@ -117,10 +104,7 @@ Maybe<uint32_t> ChildIteratorBase<aKind>::GetIndexOf(
       }
       return Some(index);
     }
-    if (const ShadowRoot* const shadowRoot =
-            ShouldIgnoreNonContentShadow<aKind>()
-                ? aParent->GetShadowRootForSelection()
-                : aParent->GetShadowRoot()) {
+    if (const ShadowRoot* const shadowRoot = aParent->GetShadowRoot<aKind>()) {
       return shadowRoot->ComputeIndexOf(aPossibleChild);
     }
   }
@@ -139,10 +123,7 @@ nsIContent* ChildIteratorBase<aKind>::GetChildAt(const nsINode* aParent,
   }
   MOZ_ASSERT(!aParent->IsCharacterData());
   if constexpr (aKind != TreeKind::DOM) {
-    if (const auto* slot =
-            ShouldIgnoreNonContentShadow<aKind>()
-                ? aParent->GetAsHTMLSlotElementIfFilledForSelection()
-                : aParent->GetAsHTMLSlotElementIfFilled()) {
+    if (const auto* slot = aParent->GetAsHTMLSlotElementIfFilled<aKind>()) {
       const Span assigned = slot->AssignedNodes();
       MOZ_ASSERT(!assigned.IsEmpty());
       if (assigned.Length() <= aIndex) {
@@ -152,10 +133,7 @@ nsIContent* ChildIteratorBase<aKind>::GetChildAt(const nsINode* aParent,
       MOZ_ASSERT(child);
       return child;
     }
-    if (const ShadowRoot* const shadowRoot =
-            ShouldIgnoreNonContentShadow<aKind>()
-                ? aParent->GetShadowRootForSelection()
-                : aParent->GetShadowRoot()) {
+    if (const ShadowRoot* const shadowRoot = aParent->GetShadowRoot<aKind>()) {
       return shadowRoot->GetChildAt_Deprecated(aIndex);
     }
   }
@@ -276,40 +254,21 @@ nsINode* ChildIteratorBase<aKind>::GetParentNodeOf(const nsIContent& aChild) {
   //    MOZ_ALWAYS_TRUE(iter.Seek(child));
   //    child = parent;
   //  }
-  else if constexpr (aKind == TreeKind::FlatForSelection) {
-    HTMLSlotElement* const assignedSlot = aChild.GetAssignedSlotForSelection();
+  else if constexpr (aKind == TreeKind::FlatForSelection ||
+                     aKind == TreeKind::Flat) {
+    HTMLSlotElement* const assignedSlot = aChild.GetAssignedSlot<aKind>();
     nsINode* const parentNode = aChild.GetParentNode();
     // If the parent node is a shadow host and aChild is a child of the host and
     // not assigned to any <slot>, ChildIteratorBase<TreeKind::DOM> should
-    // be used instead because ChildIteratorBase<TreeKind::FlatForSelection>
-    // will handle the children of the ShadowRoot so that Seek() will fail if
-    // searching aChild with it.
-    // FYI: GetFlattenedTreeParentNodeForSelection() may return ShadowRoot.
-    // Therefore, we need to handle it here. We should fix it in bug 2014622
-    // later.
-    if (MOZ_UNLIKELY(
-            !parentNode ||
-            (!assignedSlot && parentNode->GetShadowRootForSelection()))) {
-      return nullptr;
-    }
-    return aChild.GetFlattenedTreeParentNodeForSelection();
-  } else if constexpr (aKind == TreeKind::Flat) {
-    HTMLSlotElement* const assignedSlot = aChild.GetAssignedSlot();
-    nsINode* const parentNode = aChild.GetParentNode();
-    // If the parent node is a shadow host and aChild is a child of the host and
-    // not assigned to any <slot>, ChildIteratorBase<TreeKind::DOM> should be
-    // used instead because ChildIteratorBase<TreeKind::Flat> will handle the
-    // children of the ShadowRoot so that Seek() will fail if searching aChild
-    // with it.
-    // FYI: GetFlattenedTreeParentNode() won't return ShadowRoot. However, this
-    // will be merged to the above block with using new template API. Therefore,
-    // this block does the same thing for now to make it clearer that the patch
-    // does not change the behavior.
+    // be used instead because ChildIteratorBase<aKind> will handle the children
+    // of the ShadowRoot so that Seek() will fail if searching aChild with it.
+    // FYI: GetParentNodeSkippingShadowRoot<TreeKind::FlatForSelection>() may
+    // return ShadowRoot. This should be fixed in bug 2012637.
     if (MOZ_UNLIKELY(!parentNode ||
-                     (!assignedSlot && parentNode->GetShadowRoot()))) {
+                     (!assignedSlot && parentNode->GetShadowRoot<aKind>()))) {
       return nullptr;
     }
-    return aChild.GetFlattenedTreeParentNode();
+    return aChild.GetParentNode<aKind>();
   } else {
     MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Handle the new TreeKind value!");
   }

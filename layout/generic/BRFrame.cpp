@@ -18,6 +18,7 @@
 #include "nsFontMetrics.h"
 #include "nsGkAtoms.h"
 #include "nsHTMLParts.h"
+#include "nsIContentInlines.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsLineLayout.h"

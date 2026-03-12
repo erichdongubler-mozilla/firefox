@@ -30,6 +30,7 @@
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
+#include "nsIContentInlines.h"
 #include "nsTHashtable.h"
 #include "nsWrapperCacheInlines.h"
 

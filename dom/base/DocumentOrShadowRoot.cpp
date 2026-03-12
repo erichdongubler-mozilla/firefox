@@ -19,6 +19,7 @@
 #include "mozilla/dom/StyleSheetList.h"
 #include "nsContentUtils.h"
 #include "nsFocusManager.h"
+#include "nsIContentInlines.h"
 #include "nsIFormControl.h"
 #include "nsLayoutUtils.h"
 #include "nsNameSpaceManager.h"
