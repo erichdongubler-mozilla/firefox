@@ -879,6 +879,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
       const Element& aEditingHost);
 
  private:
+  enum class ComputeRangeFor : bool { GetTargetRanges, ToDeleteTheRange };
+
   [[nodiscard]] bool IsHandlingRecursively() const {
     return mParent != nullptr;
   }
@@ -1042,7 +1044,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
       const HTMLEditor& aHTMLEditor,
       const LimitersAndCaretData& aLimitersAndCaretData,
       const EditorDOMRangeType& aRangeToDelete,
-      const Element& aEditingHost) const;
+      SelectionWasCollapsed aSelectionWasCollapsed,
+      ComputeRangeFor aComputeRangeFor, const Element& aEditingHost) const;
 
   /**
    * Extend the start boundary of aRangeToDelete to contain ancestor inline
@@ -1073,7 +1076,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
    */
   [[nodiscard]] static EditorRawDOMRange
   GetRangeToAvoidDeletingAllListItemsIfSelectingAllOverListElements(
-      const EditorRawDOMRange& aRangeToDelete);
+      const EditorRawDOMRange& aRangeToDelete,
+      ComputeRangeFor aComputeRangeFor);
 
   /**
    * DeleteUnnecessaryNodes() removes unnecessary nodes around aRange.
@@ -1349,7 +1353,6 @@ HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner final {
                         nsIEditor::EDirection aDirectionAndAmount,
                         const EditorDOMPoint& aCaretPoint,
                         const Element& aEditingHost);
-  enum class ComputeRangeFor : bool { GetTargetRanges, ToDeleteTheRange };
   nsresult ComputeRangeToDeleteLineBreak(
       const HTMLEditor& aHTMLEditor, nsRange& aRangeToDelete,
       const Element& aEditingHost, ComputeRangeFor aComputeRangeFor) const;
