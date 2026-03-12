@@ -6,6 +6,7 @@ These linked pages contain design documents for the DOM implementation in Gecko.
 .. toctree::
    :maxdepth: 1
 
+   handling_shadowDOM
    ipc/index
    navigation/index
    push/index
