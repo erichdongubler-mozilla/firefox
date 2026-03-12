@@ -3,6 +3,8 @@ subsuite = "unittest"
 
 ["test_accessibility.py"]
 
+["test_accessibility_properties.py"]
+
 ["test_actions_key.py"]
 
 ["test_actions_pointer.py"]
