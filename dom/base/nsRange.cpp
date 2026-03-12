@@ -1831,10 +1831,8 @@ void nsRange::CutContents(DocumentFragment** aFragment,
 
   // `GetCommonAncestorContainer()` above ensures the range is positioned, hence
   // there have to be valid offsets. Fix them in startRef/endRef right now.
-  const uint32_t startOffset =
-      *startRef.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
-  const uint32_t endOffset =
-      *endRef.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
+  (void)startRef.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
+  (void)endRef.Offset(RangeBoundary::OffsetFilter::kValidOffsets);
 
   if (retval) {
     // For extractContents(), abort early if there's a doctype (bug 719533).
@@ -1843,21 +1841,30 @@ void nsRange::CutContents(DocumentFragment** aFragment,
     nsCOMPtr<Document> commonAncestorDocument =
         do_QueryInterface(commonAncestor);
     if (commonAncestorDocument) {
-      RefPtr<DocumentType> doctype = commonAncestorDocument->GetDoctype();
-
-      // `GetCommonAncestorContainer()` above ensured the range is positioned.
-      // Hence, start and end are both set and valid. If available, `doctype`
-      // has a common ancestor with start and end, hence both have to be
-      // comparable to it.
-      if (doctype &&
-          *nsContentUtils::ComparePointsWithIndices<
-              TreeKind::ShadowIncludingDOM>(startRef.GetContainer(),
-                                            startOffset, doctype, 0) < 0 &&
-          *nsContentUtils::ComparePointsWithIndices<
-              TreeKind::ShadowIncludingDOM>(doctype, 0, endRef.GetContainer(),
-                                            endOffset) < 0) {
-        aRv.ThrowHierarchyRequestError("Start or end position isn't valid.");
-        return;
+      if (const DocumentType* const doctype =
+              commonAncestorDocument->GetDoctype()) {
+        // `GetCommonAncestorContainer()` above ensured the range is positioned.
+        // Hence, start and end are both set and valid. If available, `doctype`
+        // has a common ancestor with start and end, hence both have to be
+        // comparable to it.
+        const RawRangeBoundary startRefInDOM =
+            startRef.AsRaw().AsRangeBoundaryInDOMTree();
+        const RawRangeBoundary endRefInDOM =
+            endRef.AsRaw().AsRangeBoundaryInDOMTree();
+        const ConstRawRangeBoundary startOfDocType(
+            doctype, 0u, RangeBoundarySetBy::Offset, TreeKind::DOM);
+        // When we fail to convert the point in a flattened tree to a point in
+        // the DOM, it's in a shadow which cannot appear before the DocType
+        // node.
+        if (startRefInDOM.IsSet() &&
+            *nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+                startRefInDOM, startOfDocType) < 0 &&
+            (!endRefInDOM.IsSet() ||
+             *nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+                 startOfDocType, endRefInDOM) < 0)) {
+          aRv.ThrowHierarchyRequestError("Start or end position isn't valid.");
+          return;
+        }
       }
     }
   }
