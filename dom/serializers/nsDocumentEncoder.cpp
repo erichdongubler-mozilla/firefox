@@ -1236,16 +1236,6 @@ nsDocumentEncoder::RangeSerializer::SerializeNodePartiallyContainedInRange(
   return NS_OK;
 }
 
-static nsIContent* GetChildAtInFlatTreeForSelection(const nsINode& aNode,
-                                                    const uint32_t aIndex) {
-  if (ShadowRoot* shadowRoot = aNode.GetShadowRoot()) {
-    if (shadowRoot->IsUAWidget()) {
-      return aNode.GetChildAt_Deprecated(aIndex);
-    }
-  }
-  return aNode.GetChildAtInFlatTree(aIndex);
-}
-
 nsresult nsDocumentEncoder::RangeSerializer::SerializeChildrenOfContent(
     nsIContent& aContent, uint32_t aStartOffset, uint32_t aEndOffset,
     const nsRange* aRange, int32_t aDepth) {
@@ -1264,7 +1254,7 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeChildrenOfContent(
 
   nsIContent* child =
       mAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes
-          ? GetChildAtInFlatTreeForSelection(aContent, aStartOffset)
+          ? aContent.GetChildAtInFlatTreeForSelection(aStartOffset)
           : aContent.GetChildAt_Deprecated(aStartOffset);
 
   auto GetNextSibling = [this, &aContent](
@@ -2334,15 +2324,9 @@ Maybe<uint32_t> nsHTMLCopyEncoder::ComputeIndexOfContent(
   MOZ_ASSERT(aParent);
   MOZ_ASSERT(aChild);
 
-  if (aTreeKind == TreeKind::DOM) {
-    return aParent->ComputeIndexOf(aChild);
-  }
-  // If the parent of the container has a shadow root which is for <use> or a
-  // UI widget, we shouldn't treat it as a shadow host.
-  if (aParent->GetShadowRoot() && !aParent->GetShadowRootForSelection()) {
-    return aParent->ComputeIndexOf(aChild);
-  }
-  return aParent->ComputeFlatTreeIndexOf(aChild);
+  return aTreeKind == TreeKind::DOM
+             ? aParent->ComputeIndexOf(aChild)
+             : aParent->ComputeFlatTreeForSelectionIndexOf(aChild);
 }
 
 Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetParentPoint(

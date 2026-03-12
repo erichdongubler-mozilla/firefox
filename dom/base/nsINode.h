@@ -329,18 +329,36 @@ class nsNodeWeakReference final : public nsIWeakReference {
 
 enum class TreeKind : uint8_t {
   // The simplest DOM, won't get ShadowRoot from the parent.
+  // FYI: This is a good TreeKind for the cases which won't cross Shadow DOM
+  // boundaries. E.g., for the editor.
   DOM,
   // Treat attached ShadowRoot as a child before its first child. However,
   // non-content shadow is ignored because they must have <slot>s to use the
   // direct child of the host, but in this mode, <slot> is treated as not having
   // assigned nodes.
+  // FYI: This is a good TreeKind for comparing the range boundaries of
+  // TreeKind::DOM.
+  // NOTE: When comparing 2 points with nsContentUtils::ComparePoints or its
+  // relatives in the shadow including DOM, the points may be treated as in the
+  // simple DOM tree because a point is in a shadow host is a valid point for
+  // RangeBoundaryBase.  Therefore, they can compare points across shadow DOM
+  // boundaries but they also may compare children of a shadow host which are
+  // replaced with the shadow root in the shadow including DOM.
   ShadowIncludingDOM,
   // Handle the flattened tree which assigned nodes of <slot> are treated as
   // children of the <slot>. However, the non-content shadows are ignored and
   // treat the host as not a shadow host.
+  // Treat a shadow DOM host as having the shadow root children as its
+  // children. However, non-content shadow is ignored because they must have
+  // <slot>s to use the direct child of the host, but in this mode, <slot> is
+  // treated as not having assigned nodes.
+  // FYI: This is a good TreeKind for DOM Selection it that may cross the shadow
+  // DOM boundaries.
   FlatForSelection,
   // Similar to FlatForSelection, treat non-content shadow trees too. E.g., the
   // shadow of <details>, <video>, and SVG <use>.
+  // FYI: This is a good TreeKind for the cases which need to work with the
+  // visual order and/or any visible nodes. E.g., for the layout module.
   Flat,
 };
 

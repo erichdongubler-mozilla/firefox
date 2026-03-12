@@ -54,6 +54,14 @@ class ChildIteratorBase {
   // points.
   [[nodiscard]] nsIContent* GetPreviousChild();
 
+  [[nodiscard]] nsIContent* GetFirstChild() {
+    mIsFirst = true;
+    mChild = nullptr;
+    mIndexInInserted = 0;
+    return GetNextChild();
+  }
+  [[nodiscard]] nsIContent* GetLastChild();
+
   [[nodiscard]] bool ShadowDOMInvolved() const { return mShadowDOMInvolved; }
 
   [[nodiscard]] static uint32_t GetLength(const nsINode* aParent);

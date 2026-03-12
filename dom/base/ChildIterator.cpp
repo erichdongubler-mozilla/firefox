@@ -232,6 +232,18 @@ nsIContent* ChildIteratorBase<aKind>::GetPreviousChild() {
   return mChild;
 }
 
+NS_INSTANTIATE_CHILD_ITERATOR_METHOD(nsIContent*, GetLastChild);
+
+template <TreeKind aKind>
+nsIContent* ChildIteratorBase<aKind>::GetLastChild() {
+  mIsFirst = false;
+  mChild = nullptr;
+  if (mParentNodeAsSlot) {
+    mIndexInInserted = mParentNodeAsSlot->AssignedNodes().Length();
+  }
+  return GetPreviousChild();
+}
+
 NS_INSTANTIATE_CHILD_ITERATOR_METHOD(nsINode*, GetParentNodeOf,
                                      const nsIContent&);
 
