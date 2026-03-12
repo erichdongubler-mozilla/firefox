@@ -4,8 +4,7 @@ support-files = [
 ]
 prefs = [
   # Disable APZ since the native key event hits an assertion of bug 1867732.
-  "layers.async-pan-zoom.enabled=false",
-  "apz.paint_skipping.enabled=false"
+  "apz.popups_without_remote.enabled=false"
 ]
 
 ["browser_result_menu_activate_by_space.js"]
