@@ -244,17 +244,6 @@ enum EventNameType {
   EventNameType_All = 0xFFFF
 };
 
-enum class TreeKind : uint8_t { DOM, ShadowIncludingDOM, Flat };
-
-inline std::ostream& operator<<(std::ostream& aStream, TreeKind aTreeKind) {
-  constexpr static const char* sNames[] = {
-      "DOM",
-      "ShadowIncludingDOM",
-      "Flat",
-  };
-  return aStream << sNames[static_cast<uint8_t>(aTreeKind)];
-}
-
 enum class SerializeShadowRoots : uint8_t { Yes, No };
 
 struct EventNameMapping {
@@ -516,14 +505,15 @@ class nsContentUtils {
       nsTArray<mozilla::Maybe<uint32_t>>& aAncestorOffsets);
 
   /*
-   * Similar as the GetInclusiveAncestorsAndOffsets method, but for flat tree.
+   * Similar as the GetInclusiveAncestorsAndOffsets method, but for flat tree
+   * for selection.
    *
    * When the current content is a ShadowRoot, the offset of it from
    * its ancestor (the host element) will be Nothing().
    *
    * The UAWidget won't be included in the ancestor list.
    */
-  static nsresult GetFlattenedTreeAncestorsAndOffsets(
+  static nsresult GetFlattenedTreeAncestorsAndOffsetsForSelection(
       nsINode* aNode, uint32_t aOffset, nsTArray<nsIContent*>& aAncestorNodes,
       nsTArray<mozilla::Maybe<uint32_t>>& aAncestorOffsets);
 

@@ -380,8 +380,9 @@ class IsItemInRangeComparator {
                             const nsINode* aNode2, const uint32_t aOffset2,
                             nsContentUtils::NodeIndexCache* aCache) {
       if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-        return nsContentUtils::ComparePointsWithIndices<TreeKind::Flat>(
-            aNode1, aOffset1, aNode2, aOffset2, aCache);
+        return nsContentUtils::ComparePointsWithIndices<
+            TreeKind::FlatForSelection>(aNode1, aOffset1, aNode2, aOffset2,
+                                        aCache);
       }
       return nsContentUtils::ComparePointsWithIndices<
           TreeKind::ShadowIncludingDOM>(aNode1, aOffset1, aNode2, aOffset2,
@@ -495,7 +496,7 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
                                 const RangeBoundary& aBoundary2,
                                 nsContentUtils::NodeIndexCache* aCache) {
           if (StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()) {
-            return nsContentUtils::ComparePoints<TreeKind::Flat>(
+            return nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
                 aBoundary1, aBoundary2, aCache);
           }
           return nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(

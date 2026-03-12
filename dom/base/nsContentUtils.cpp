@@ -540,6 +540,10 @@ INSTANTIATE_METHOD_FOR_CONST_RANGE_BOUNDARY_REFS(Maybe<int32_t>,
                                                  nsContentUtils::ComparePoints,
                                                  TreeKind::Flat,
                                                  NodeIndexCache*);
+INSTANTIATE_METHOD_FOR_CONST_RANGE_BOUNDARY_REFS(Maybe<int32_t>,
+                                                 nsContentUtils::ComparePoints,
+                                                 TreeKind::FlatForSelection,
+                                                 NodeIndexCache*);
 
 #undef INSTANTIATE_METHOD_FOR_CONST_RANGE_BOUNDARY_REFS
 #undef INSTANTIATE_METHOD_FOR_TREEKIND_TEMPLATE_PARAM
@@ -797,7 +801,8 @@ static nsINode* GetParentFuncForComparison(const nsINode* aNode) {
   if constexpr (aKind == TreeKind::DOM) {
     return aNode->GetParentNode();
   }
-  if constexpr (aKind == TreeKind::Flat) {
+  // TODO: Do right things for Flat and FlatForSelection
+  if constexpr (ShouldHandleAssignedNodesOnSlot<aKind>()) {
     if (aNode->IsContent() && aNode->AsContent()->GetAssignedSlot()) {
       return aNode->GetFlattenedTreeParentNodeForSelection();
     }
@@ -921,7 +926,8 @@ class MOZ_STACK_CLASS CommonAncestors final {
       }
 
       bool found = false;
-      if constexpr (aKind == TreeKind::Flat) {
+      // TODO: Do right things for Flat and FlatForSelection
+      if constexpr (ShouldHandleAssignedNodesOnSlot<aKind>()) {
         if (auto* slot = HTMLSlotElement::FromNode(mClosestCommonAncestor)) {
           auto span = slot->AssignedNodes();
           found = span.IndexOf(child) != span.npos;
@@ -3342,14 +3348,14 @@ static inline Maybe<uint32_t> ComputeFlatTreeIndexOfForSelection(
   return aParent->ComputeFlatTreeIndexOf(aPossibleChild);
 }
 
-nsresult nsContentUtils::GetFlattenedTreeAncestorsAndOffsets(
+nsresult nsContentUtils::GetFlattenedTreeAncestorsAndOffsetsForSelection(
     nsINode* aNode, uint32_t aOffset, nsTArray<nsIContent*>& aAncestorNodes,
     nsTArray<Maybe<uint32_t>>& aAncestorOffsets) {
   return GetInclusiveAncestorsAndOffsetsHelper(
       aNode, aOffset, aAncestorNodes, aAncestorOffsets,
       [](nsIContent* aContent) -> nsIContent* {
         return nsIContent::FromNodeOrNull(
-            GetParentFuncForComparison<TreeKind::Flat>(aContent));
+            GetParentFuncForComparison<TreeKind::FlatForSelection>(aContent));
       },
       [](nsIContent* aParent, nsIContent* aChild) {
         // GetParentFuncForComparison() with TreeKind::Flat ignores the
@@ -3441,7 +3447,8 @@ Maybe<int32_t> nsContentUtils::CompareChildNodes(
     return Some(-1);
   }
 
-  if constexpr (aKind == TreeKind::Flat) {
+  // TODO: Do right things for Flat and FlatForSelection
+  if constexpr (ShouldHandleAssignedNodesOnSlot<aKind>()) {
     if (AreNodesInSameSlot(aChild1, aChild2)) {
       // They differ at slot, so use their position in slot
       const auto* slot = aChild1->AsContent()->GetAssignedSlot();
@@ -3614,8 +3621,9 @@ Maybe<int32_t> nsContentUtils::CompareChildOffsetAndChildNode(
   const nsINode* parentNode = GetParentFuncForComparison<aKind>(&aChild2);
   MOZ_ASSERT(parentNode);
 
+  // TODO: Do right things for Flat and FlatForSelection
   const uint32_t parentNodeChildCount = [parentNode]() -> uint32_t {
-    if constexpr (aKind == TreeKind::Flat) {
+    if constexpr (ShouldHandleAssignedNodesOnSlot<aKind>()) {
       if (const HTMLSlotElement* slot = HTMLSlotElement::FromNode(parentNode)) {
         return slot->AssignedNodes().Length();
       }
@@ -3629,7 +3637,7 @@ Maybe<int32_t> nsContentUtils::CompareChildOffsetAndChildNode(
 
 #ifdef DEBUG
   bool isFlatAndSlotted = false;
-  if constexpr (aKind == TreeKind::Flat) {
+  if constexpr (ShouldHandleAssignedNodesOnSlot<aKind>()) {
     if (const HTMLSlotElement* slot = HTMLSlotElement::FromNode(parentNode)) {
       MOZ_ASSERT(!slot->AssignedNodes().IsEmpty());
       isFlatAndSlotted = true;
@@ -3641,7 +3649,7 @@ Maybe<int32_t> nsContentUtils::CompareChildOffsetAndChildNode(
 #endif
 
   const nsIContent& firstChild = [parentNode]() -> const nsIContent& {
-    if constexpr (aKind == TreeKind::Flat) {
+    if constexpr (ShouldHandleAssignedNodesOnSlot<aKind>()) {
       if (const HTMLSlotElement* slot = HTMLSlotElement::FromNode(parentNode)) {
         MOZ_ASSERT(slot->AssignedNodes()[0]->IsContent());
         return *(slot->AssignedNodes()[0]->AsContent());
@@ -3656,7 +3664,7 @@ Maybe<int32_t> nsContentUtils::CompareChildOffsetAndChildNode(
 
   MOZ_ASSERT_IF(!isFlatAndSlotted, parentNode->GetLastChild());
   const nsIContent& lastChild = [parentNode]() -> const nsIContent& {
-    if constexpr (aKind == TreeKind::Flat) {
+    if constexpr (ShouldHandleAssignedNodesOnSlot<aKind>()) {
       if (const HTMLSlotElement* slot = HTMLSlotElement::FromNode(parentNode)) {
         auto assigned = slot->AssignedNodes();
         return *assigned[assigned.Length() - 1]->AsContent();
@@ -13134,8 +13142,11 @@ nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(
 
 template int32_t nsContentUtils::CompareTreePosition<TreeKind::DOM>(
     const nsINode*, const nsINode*, const nsINode*, NodeIndexCache*);
-template int32_t nsContentUtils::CompareTreePosition<TreeKind::Flat>(
-    const nsINode*, const nsINode*, const nsINode*, NodeIndexCache*);
 template int32_t
 nsContentUtils::CompareTreePosition<TreeKind::ShadowIncludingDOM>(
+    const nsINode*, const nsINode*, const nsINode*, NodeIndexCache*);
+template int32_t
+nsContentUtils::CompareTreePosition<TreeKind::FlatForSelection>(
+    const nsINode*, const nsINode*, const nsINode*, NodeIndexCache*);
+template int32_t nsContentUtils::CompareTreePosition<TreeKind::Flat>(
     const nsINode*, const nsINode*, const nsINode*, NodeIndexCache*);

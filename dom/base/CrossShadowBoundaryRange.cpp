@@ -59,8 +59,8 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(CrossShadowBoundaryRange)
 
 NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_INTERRUPTABLE_LAST_RELEASE(
     CrossShadowBoundaryRange,
-    DoSetRange(RawRangeBoundary(TreeKind::Flat),
-               RawRangeBoundary(TreeKind::Flat), nullptr, nullptr),
+    DoSetRange(RawRangeBoundary(TreeKind::FlatForSelection),
+               RawRangeBoundary(TreeKind::FlatForSelection), nullptr, nullptr),
     AbstractRange::MaybeCacheToReuse(*this))
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CrossShadowBoundaryRange)
@@ -188,9 +188,10 @@ void CrossShadowBoundaryRange::ContentWillBeRemoved(nsIContent* aChild,
       // We're only interested if our boundary reference was removed, otherwise
       // we can just invalidate the offset.
       if (aChild == aBoundary.Ref()) {
-        return Some(RawRangeBoundary::FromChild(*aChild, TreeKind::Flat));
+        return Some(
+            RawRangeBoundary::FromChild(*aChild, TreeKind::FlatForSelection));
       }
-      RawRangeBoundary newBoundary(TreeKind::Flat);
+      RawRangeBoundary newBoundary(TreeKind::FlatForSelection);
       newBoundary.CopyFrom(aBoundary, RangeBoundarySetBy::Ref);
       newBoundary.InvalidateOffset();
       return Some(newBoundary);

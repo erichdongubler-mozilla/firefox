@@ -1099,8 +1099,8 @@ nsIContent* ContentSubtreeIterator::DetermineFirstContent() const {
   // we have a range that does not fully contain any node.
   const Maybe<bool> isNodeContainedInRange =
       IterAllowCrossShadowBoundary()
-          ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*firstCandidate,
-                                                               mRange)
+          ? RangeUtils::IsNodeContainedInRange<TreeKind::FlatForSelection>(
+                *firstCandidate, mRange)
           : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
                 *firstCandidate, mRange);
   MOZ_ALWAYS_TRUE(isNodeContainedInRange);
@@ -1218,8 +1218,8 @@ nsIContent* ContentSubtreeIterator::DetermineLastContent() const {
 
   const Maybe<bool> isNodeContainedInRange =
       IterAllowCrossShadowBoundary()
-          ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*lastCandidate,
-                                                               mRange)
+          ? RangeUtils::IsNodeContainedInRange<TreeKind::FlatForSelection>(
+                *lastCandidate, mRange)
           : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
                 *lastCandidate, mRange);
   MOZ_ALWAYS_TRUE(isNodeContainedInRange);
@@ -1343,7 +1343,8 @@ nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
   // sanity check: aNode is itself in the range
   Maybe<bool> isNodeContainedInRange =
       IterAllowCrossShadowBoundary()
-          ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*aNode, mRange)
+          ? RangeUtils::IsNodeContainedInRange<TreeKind::FlatForSelection>(
+                *aNode, mRange)
           : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
                 *aNode, mRange);
 
@@ -1375,8 +1376,8 @@ nsIContent* ContentSubtreeIterator::GetTopAncestorInRange(
 
     isNodeContainedInRange =
         IterAllowCrossShadowBoundary()
-            ? RangeUtils::IsNodeContainedInRange<TreeKind::Flat>(*parent,
-                                                                 mRange)
+            ? RangeUtils::IsNodeContainedInRange<TreeKind::FlatForSelection>(
+                  *parent, mRange)
             : RangeUtils::IsNodeContainedInRange<TreeKind::ShadowIncludingDOM>(
                   *parent, mRange);
 

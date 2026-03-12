@@ -413,7 +413,7 @@ nsresult AbstractRange::SetStartAndEndInternal(
       aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
       StaticPrefs::dom_shadowdom_selection_across_boundary_enabled();
   const Maybe<int32_t> pointOrder =
-      useFlatTree ? nsContentUtils::ComparePoints<TreeKind::Flat>(
+      useFlatTree ? nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
                         aStartBoundary, aEndBoundary)
                   : nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
                         aStartBoundary, aEndBoundary);

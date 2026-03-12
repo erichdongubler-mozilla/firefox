@@ -13,39 +13,23 @@
 
 namespace mozilla::dom {
 
-// FIXME: Merge with TreeKind.
-enum class ChildIterFor {
-  // The simplest DOM, won't get ShadowRoot from the parent.
-  DOM,
-  // The flattened tree. Treat the shadow root children as the children of the
-  // host element. And the children of a shadow host element which are assigned
-  // to a <slot> are treated as the children of the <slot>. However, the
-  // non-content shadow trees are ignored. E.g., the children of <details> are
-  // treated as the direct children of the <details> instead of children of the
-  // assigned <slot> in the non-content ShadowRoot.
-  FlatForSelection,
-  // Similar to FlatForSelection, treat non-content shadow trees too. E.g., the
-  // shadow of <details>, <video>, and SVG <use>.
-  Flat,
-};
-
-template <ChildIterFor>
+template <TreeKind>
 class ChildIteratorBase;
 
-using ChildIterator = ChildIteratorBase<ChildIterFor::DOM>;
+using ChildIterator = ChildIteratorBase<TreeKind::DOM>;
 using FlattenedChildIteratorForSelection =
-    ChildIteratorBase<ChildIterFor::FlatForSelection>;
-using FlattenedChildIterator = ChildIteratorBase<ChildIterFor::Flat>;
+    ChildIteratorBase<TreeKind::FlatForSelection>;
+using FlattenedChildIterator = ChildIteratorBase<TreeKind::Flat>;
 
 // Iterates over the children of aParent in the specified type of tree.
 //
 // The iterator can be initialized to start at the end by providing false for
 // aStartAtBeginning in order to start iterating in reverse from the last child.
-template <ChildIterFor aFor>
+template <TreeKind aKind>
 class ChildIteratorBase {
-  constexpr static bool IgnoresNonContentShadow() {
-    return aFor != ChildIterFor::Flat;
-  }
+  static_assert(aKind != TreeKind::ShadowIncludingDOM,
+                "It's unclear what should do when the parent is a shadow host "
+                "in this TreeKind so that we don't support it");
 
  public:
   explicit ChildIteratorBase(const nsINode* aParentNode,
@@ -126,9 +110,9 @@ class ChildIteratorBase {
    * siblings of inclusive ancestors like doing this:
    *
    * nsIContent* child = aChild;
-   * for (nsIContent* parent = ChildIteratorBase<aFor>::GetParentNodeOf(child);
-   *      parent; parent = ChildIteratorBase<aFor>::GetParentNodeOf(child)) {
-   *   ChildIteratorBase<aFor> iter(parent);
+   * for (nsIContent* parent = ChildIteratorBase<aKind>::GetParentNodeOf(child);
+   *      parent; parent = ChildIteratorBase<aKind>::GetParentNodeOf(child)) {
+   *   ChildIteratorBase<aKind> iter(parent);
    *   MOZ_ALWAYS_TRUE(iter.Seek(child));
    *   // Do something.
    *   child = parent;
