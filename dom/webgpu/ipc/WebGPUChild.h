@@ -48,8 +48,8 @@ struct PendingRequestAdapterPromise {
 struct PendingRequestDevicePromise {
   RefPtr<dom::Promise> promise;
   RawId device_id;
-  RawId queue_id;
   nsString label;
+  RawId queue_id;
   RefPtr<Adapter> adapter;
   RefPtr<SupportedFeatures> features;
   RefPtr<SupportedLimits> limits;
