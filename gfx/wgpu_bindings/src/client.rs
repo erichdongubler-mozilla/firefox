@@ -512,12 +512,18 @@ pub struct FfiDeviceDescriptor<'a> {
     pub label: Option<&'a nsACString>,
     pub required_features: wgt::FeaturesWebGPU,
     pub required_limits: wgt::Limits,
+    pub default_queue: FfiQueueDescriptor<'a>,
 }
 
 #[repr(C)]
 pub struct DeviceQueueId {
     device: id::DeviceId,
     queue: id::QueueId,
+}
+
+#[repr(C)]
+pub struct FfiQueueDescriptor<'a> {
+    pub label: Option<&'a nsACString>,
 }
 
 #[no_mangle]
@@ -538,6 +544,9 @@ pub extern "C" fn wgpu_client_request_device(
         label,
         required_features,
         required_limits: desc.required_limits.clone(),
+        default_queue: wgt::QueueDescriptor {
+            label: wgpu_string(desc.default_queue.label),
+        },
         memory_hints: wgt::MemoryHints::MemoryUsage,
         // The content process is untrusted, so this value is ignored
         // by the GPU process. The GPU process overwrites this with

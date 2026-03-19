@@ -649,6 +649,7 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
     ffiDesc.label = aDesc.mLabel;
     ffiDesc.required_features = featureBits;
     ffiDesc.required_limits = deviceLimits;
+    ffiDesc.default_queue.label = aDesc.mDefaultQueue.mLabel;
 
     ffi::WGPUDeviceQueueId ids =
         ffi::wgpu_client_request_device(GetClient(), GetId(), &ffiDesc);
