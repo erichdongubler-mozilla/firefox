@@ -646,6 +646,7 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
     RefPtr<SupportedLimits> limits = new SupportedLimits(this, deviceLimits);
 
     ffi::WGPUFfiDeviceDescriptor ffiDesc = {};
+    ffiDesc.label = aDesc.mLabel;
     ffiDesc.required_features = featureBits;
     ffiDesc.required_limits = deviceLimits;
 
