@@ -127,6 +127,7 @@ void wgpu_child_resolve_request_device_promise(WGPUWebGPUChildPtr aChild,
                    pending_promise.limits, pending_promise.adapter_info,
                    pending_promise.lost_promise);
     device->SetLabel(pending_promise.label);
+    device->mQueue->SetLabel(pending_promise.queue_label);
     promise::MaybeResolve(std::move(pending_promise.promise),
                           std::move(device));
   } else {

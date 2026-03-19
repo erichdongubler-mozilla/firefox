@@ -50,6 +50,7 @@ struct PendingRequestDevicePromise {
   RawId device_id;
   nsString label;
   RawId queue_id;
+  nsString queue_label;
   RefPtr<Adapter> adapter;
   RefPtr<SupportedFeatures> features;
   RefPtr<SupportedLimits> limits;
