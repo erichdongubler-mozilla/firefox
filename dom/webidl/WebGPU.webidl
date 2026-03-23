@@ -1056,7 +1056,7 @@ interface mixin GPUBindingCommandsMixin {
         optional sequence<GPUBufferDynamicOffset> dynamicOffsets = []);
     [Throws]
     undefined setBindGroup(GPUIndex32 index, GPUBindGroup? bindGroup,
-        [AllowShared] Uint32Array dynamicOffsetsData,
+        [AllowLarge, AllowShared] Uint32Array dynamicOffsetsData,
         GPUSize64 dynamicOffsetsDataStart,
         GPUSize32 dynamicOffsetsDataLength);
 };
@@ -1220,6 +1220,8 @@ dictionary GPUQueueDescriptor
          : GPUObjectDescriptorBase {
 };
 
+typedef ([AllowLarge, AllowShared] ArrayBuffer or [AllowLarge, AllowShared] ArrayBufferView) WebGPUAllowSharedBufferSource;
+
 [Func="mozilla::webgpu::Instance::PrefEnabled",
  Exposed=(Window, Worker), SecureContext]
 interface GPUQueue {
@@ -1232,14 +1234,14 @@ interface GPUQueue {
     undefined writeBuffer(
         GPUBuffer buffer,
         GPUSize64 bufferOffset,
-        AllowSharedBufferSource data,
+        WebGPUAllowSharedBufferSource data,
         optional GPUSize64 dataOffset = 0,
         optional GPUSize64 size);
 
     [Throws]
     undefined writeTexture(
         GPUTexelCopyTextureInfo destination,
-        AllowSharedBufferSource data,
+        WebGPUAllowSharedBufferSource data,
         GPUTexelCopyBufferLayout dataLayout,
         GPUExtent3D size);
 

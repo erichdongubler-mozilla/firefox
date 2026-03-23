@@ -144,7 +144,9 @@ already_AddRefed<dom::Promise> Queue::OnSubmittedWorkDone(ErrorResult& aRv) {
 
 void Queue::WriteBuffer(
     const Buffer& aBuffer, uint64_t aBufferOffset,
-    const dom::MaybeSharedArrayBufferOrMaybeSharedArrayBufferView& aData,
+    const dom::
+        AllowLargeMaybeSharedArrayBufferOrAllowLargeMaybeSharedArrayBufferView&
+            aData,
     uint64_t aDataOffset, const dom::Optional<uint64_t>& aSize,
     ErrorResult& aRv) {
   if (!aBuffer.GetId()) {
@@ -272,7 +274,9 @@ static CheckedInt<size_t> ComputeApproxSize(
 
 void Queue::WriteTexture(
     const dom::GPUTexelCopyTextureInfo& aDestination,
-    const dom::MaybeSharedArrayBufferOrMaybeSharedArrayBufferView& aData,
+    const dom::
+        AllowLargeMaybeSharedArrayBufferOrAllowLargeMaybeSharedArrayBufferView&
+            aData,
     const dom::GPUTexelCopyBufferLayout& aDataLayout,
     const dom::GPUExtent3D& aSize, ErrorResult& aRv) {
   ffi::WGPUTexelCopyTextureInfo copyView = {};

@@ -13,6 +13,7 @@
 namespace mozilla {
 class ErrorResult;
 namespace dom {
+class AllowLargeMaybeSharedArrayBufferOrAllowLargeMaybeSharedArrayBufferView;
 class RangeEnforcedUnsignedLongSequenceOrGPUExtent3DDict;
 template <typename T>
 class Optional;
@@ -47,15 +48,21 @@ class Queue final : public nsWrapperCache,
 
   already_AddRefed<dom::Promise> OnSubmittedWorkDone(ErrorResult& aRv);
 
-  void WriteBuffer(const Buffer& aBuffer, uint64_t aBufferOffset,
-                   const dom::AllowSharedBufferSource& data,
-                   uint64_t aDataOffset, const dom::Optional<uint64_t>& aSize,
-                   ErrorResult& aRv);
+  void WriteBuffer(
+      const Buffer& aBuffer, uint64_t aBufferOffset,
+      const dom::
+          AllowLargeMaybeSharedArrayBufferOrAllowLargeMaybeSharedArrayBufferView&
+              aData,
+      uint64_t aDataOffset, const dom::Optional<uint64_t>& aSize,
+      ErrorResult& aRv);
 
-  void WriteTexture(const dom::GPUTexelCopyTextureInfo& aDestination,
-                    const dom::AllowSharedBufferSource& data,
-                    const dom::GPUTexelCopyBufferLayout& aDataLayout,
-                    const dom::GPUExtent3D& aSize, ErrorResult& aRv);
+  void WriteTexture(
+      const dom::GPUTexelCopyTextureInfo& aDestination,
+      const dom::
+          AllowLargeMaybeSharedArrayBufferOrAllowLargeMaybeSharedArrayBufferView&
+              aData,
+      const dom::GPUTexelCopyBufferLayout& aDataLayout,
+      const dom::GPUExtent3D& aSize, ErrorResult& aRv);
 
   void CopyExternalImageToTexture(
       const dom::GPUCopyExternalImageSourceInfo& aSource,
