@@ -137,7 +137,9 @@ pub extern "C" fn wgpu_server_new(owner: WebGPUParentPtr) -> *mut Global {
         wgt::Backends::from_comma_list(&backends_pref)
     };
 
-    let mut instance_flags = wgt::InstanceFlags::from_build_config().with_env();
+    let mut instance_flags = (wgt::InstanceFlags::from_build_config()
+        | wgt::InstanceFlags::AUTOMATIC_TIMESTAMP_NORMALIZATION)
+        .with_env();
     if !static_prefs::pref!("dom.webgpu.hal-labels") {
         instance_flags.insert(wgt::InstanceFlags::DISCARD_HAL_LABELS);
     }
