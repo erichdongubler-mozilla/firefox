@@ -275,6 +275,10 @@ REGISTERED_DEFINES = {
     "ANGLE_DISPATCH_LIBRARY": True,
     "ANGLE_EGL_LIBRARY_NAME": False,
     "ANGLE_ENABLE_CONTEXT_MUTEX": True,
+    "ANGLE_MESA_EGL_LIBRARY_NAME": True,
+    "ANGLE_MESA_GLESV2_LIBRARY_NAME": True,
+    "ANGLE_VULKAN_SECONDARIES_EGL_LIBRARY_NAME": True,
+    "ANGLE_VULKAN_SECONDARIES_GLESV2_LIBRARY_NAME": True,
     "ANGLE_ENABLE_APPLE_WORKAROUNDS": True,
     "ANGLE_ENABLE_CONTEXT_MUTEX": True,
     "ANGLE_ENABLE_D3D11": True,
@@ -288,6 +292,8 @@ REGISTERED_DEFINES = {
     "ANGLE_ENABLE_GLSL": True,
     "ANGLE_ENABLE_HLSL": True,
     "ANGLE_ENABLE_SHARE_CONTEXT_LOCK": True,
+    "ANGLE_ENABLE_SHARED_CONTEXT_MUTEX": True,
+    #"ANGLE_ENABLE_WGPU": False,
     "ANGLE_GENERATE_SHADER_DEBUG_INFO": True,
     "ANGLE_GLESV2_LIBRARY_NAME": True,
     "ANGLE_HAS_ASTCENC": True,
@@ -361,6 +367,7 @@ REGISTERED_DEFINES = {
     "_CRT_RAND_S": True,
     "_CRT_SECURE_NO_DEPRECATE": True,
     "_DEBUG": False,
+    "_LIBCPP_HARDENING_MODE": True,
     "_HAS_EXCEPTIONS": True,
     "_HAS_ITERATOR_DEBUGGING": False,
     "_LIBCPP_HARDENING_MODE": True,
@@ -453,15 +460,16 @@ def export_target(target_full_name) -> Set[str]:
 
     def fixup_paths(listt):
         for x in set(listt):
-            assert x.startswith("//"), x
-            yield "../../checkout/" + x[2:]
+            if x.startswith("//"):
+              assert x.startswith("//"), x
+              yield "../../checkout/" + x[2:]
 
     sources_by_config: Dict[str, List[str]] = {}
     extras: Dict[str, str] = dict()
     for x in fixup_paths(flat["sources"]):
         # print(' '*5, x)
         (b, e) = x.rsplit(".", 1)
-        if e in ["h", "hpp", "y", "l", "inc", "inl"]:
+        if e in ["h", "hpp", "y", "l", "inc", "inl", "in", "man", "cmake", "py", "json", "xml"]:
             continue
         elif e in ["cpp", "cc", "c"]:
             if b.endswith("_win") or b.endswith("_win32"):
