@@ -1,0 +1,37 @@
+From acfe46b7f1d827c8f89e531dd9e53cf89cae224b Mon Sep 17 00:00:00 2001
+From: Jamie Nicol <jnicol@mozilla.com>
+Date: Tue, 5 May 2026 10:25:18 +0100
+Subject: [PATCH] Restore support for building shader translator on macOS 10.15
+
+This (partially) reverts upstream ANGLE commit
+d28c6adf936bb811b5eb992919a0df88624eed3f.
+
+Upstream ANGLE no longer supports macOS < 12, but Firefox still needs
+to support 10.15.
+---
+ src/common/apple_platform_utils.mm | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/src/common/apple_platform_utils.mm b/src/common/apple_platform_utils.mm
+index 09abd085d1..19a41701ca 100644
+--- a/src/common/apple_platform_utils.mm
++++ b/src/common/apple_platform_utils.mm
+@@ -125,8 +125,13 @@ bool IsMetalRendererAvailable()
+ #if defined(ANGLE_PLATFORM_MACOS) || defined(ANGLE_PLATFORM_MACCATALYST)
+ bool GetMacosMachineModel(std::string *outMachineModel)
+ {
+-    io_service_t platformExpert = IOServiceGetMatchingService(
+-        kIOMainPortDefault, IOServiceMatching("IOPlatformExpertDevice"));
++#    if TARGET_OS_OSX && __MAC_OS_X_VERSION_MIN_REQUIRED < 120000
++    const mach_port_t mainPort = kIOMasterPortDefault;
++#    else
++    const mach_port_t mainPort = kIOMainPortDefault;
++#    endif
++    io_service_t platformExpert =
++        IOServiceGetMatchingService(mainPort, IOServiceMatching("IOPlatformExpertDevice"));
+ 
+     if (platformExpert == IO_OBJECT_NULL)
+     {
+-- 
+2.54.0
+
