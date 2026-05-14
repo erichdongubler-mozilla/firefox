@@ -3,16 +3,6 @@
 
 "use strict";
 
-// In the Settings Redesign, profiles is a subpane of paneSync (not paneGeneral)
-// and the privacy-pane "profiles" data-collection note moved to the
-// permissionsData pane. Detect the mode once and branch navigation below.
-const SRD_ENABLED = Services.prefs.getBoolPref(
-  "browser.settings-redesign.enabled",
-  false
-);
-const PROFILES_PARENT_PANE = SRD_ENABLED ? "paneSync" : "paneGeneral";
-const PROFILES_PRIVACY_NOTE_PANE = SRD_ENABLED ? "permissionsData" : "privacy";
-
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
@@ -65,7 +55,7 @@ add_task(async function testHiddenWhenDisabled() {
     set: [["browser.profiles.enabled", false]],
   });
 
-  await openPreferencesViaOpenPreferencesAPI(PROFILES_PARENT_PANE, {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
@@ -79,7 +69,7 @@ add_task(async function testHiddenWhenDisabled() {
 });
 
 add_task(async function testEnabled() {
-  await openPreferencesViaOpenPreferencesAPI(PROFILES_PARENT_PANE, {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
@@ -91,16 +81,11 @@ add_task(async function testEnabled() {
   ok(profilesCategory, "The category exists");
   ok(BrowserTestUtils.isVisible(profilesCategory), "The category is visible");
 
-  // Verify the Learn More link exists and points to the right place. In the
-  // Settings Redesign the setting-group wraps its <moz-fieldset> in a
-  // <moz-card>, so query for the fieldset directly to stay mode-agnostic.
+  // Verify the Learn More link exists and points to the right place.
   let profilesSettingGroup = doc.querySelector(
     "setting-group[groupid='profiles']"
-  );
-  let profilesFieldset =
-    profilesSettingGroup.querySelector("moz-fieldset") ??
-    profilesSettingGroup.firstElementChild;
-  let learnMore = profilesFieldset.shadowRoot.querySelector(
+  ).firstElementChild;
+  let learnMore = profilesSettingGroup.shadowRoot.querySelector(
     "a[is='moz-support-link']"
   );
   Assert.equal(
@@ -132,7 +117,7 @@ add_task(async function testEnabled() {
 });
 
 add_task(async function subpaneContentsWithOneProfile() {
-  await openPreferencesViaOpenPreferencesAPI(PROFILES_PARENT_PANE, {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
@@ -187,7 +172,7 @@ add_task(async function copyProfile() {
   await initGroupDatabase();
   await SelectableProfileService.createNewProfile(false);
 
-  await openPreferencesViaOpenPreferencesAPI(PROFILES_PARENT_PANE, {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
@@ -266,7 +251,7 @@ add_task(async function copyProfile() {
 // Tests for the small addition to the privacy section
 add_task(async function testPrivacyInfoEnabled() {
   ok(SelectableProfileService.isEnabled, "service should be enabled");
-  await openPreferencesViaOpenPreferencesAPI(PROFILES_PRIVACY_NOTE_PANE, {
+  await openPreferencesViaOpenPreferencesAPI("privacy", {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
@@ -308,7 +293,7 @@ add_task(async function testPrivacyInfoHiddenWhenDisabled() {
 
   ok(!SelectableProfileService.isEnabled, "service should not be enabled");
 
-  await openPreferencesViaOpenPreferencesAPI(PROFILES_PRIVACY_NOTE_PANE, {
+  await openPreferencesViaOpenPreferencesAPI("privacy", {
     leaveOpen: true,
   });
   let profilesNote = gBrowser.contentDocument.getElementById(
@@ -336,7 +321,7 @@ add_task(async function testReactivateProfileGroupID() {
     set: [["datareporting.healthreport.uploadEnabled", true]],
   });
 
-  await openPreferencesViaOpenPreferencesAPI(PROFILES_PRIVACY_NOTE_PANE, {
+  await openPreferencesViaOpenPreferencesAPI("privacy", {
     leaveOpen: true,
   });
   let checkbox = gBrowser.contentDocument.getElementById(

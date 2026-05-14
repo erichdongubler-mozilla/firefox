@@ -29,7 +29,6 @@ import { SettingControl } from "chrome://browser/content/preferences/widgets/set
  * @property {boolean} [hiddenFromSearch]
  * Whether this group should be hidden from search.
  * @property {boolean} [hidden] Whether this group should be visible.
- * @property {string} [subcategory] Value for the `data-subcategory` attribute, used as a scroll target.
  */
 /** @typedef {SettingElementConfig & SettingGroupConfigExtensions} SettingGroupConfig */
 
@@ -123,11 +122,6 @@ export class SettingGroup extends SettingElement {
     }
     if (this.config?.hidden !== undefined) {
       this.toggleAttribute(HiddenAttr.Self, this.config.hidden);
-    }
-    if (this.config?.subcategory) {
-      this.setAttribute("data-subcategory", this.config.subcategory);
-    } else if (this.config) {
-      this.removeAttribute("data-subcategory");
     }
   }
 

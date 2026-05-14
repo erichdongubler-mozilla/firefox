@@ -168,7 +168,6 @@ async function testChromePasswordHelper(
       wizard,
       "MigrationWizard:DoneMigration"
     );
-    await new Promise(r => prefsWin.requestAnimationFrame(r));
 
     let shadow = wizard.openOrClosedShadowRoot;
 

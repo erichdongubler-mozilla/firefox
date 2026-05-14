@@ -17,7 +17,9 @@ tags = "os_integration"
 ["browser_about_settings.js"]
 
 ["browser_advanced_update.js"]
-run-if = ["updater"]
+run-if = [
+  "updater",
+]
 
 ["browser_appearance_pane.js"]
 
@@ -34,9 +36,7 @@ run-if = ["updater"]
 ["browser_bug1020245_openPreferences_to_paneContent.js"]
 
 ["browser_bug1184989_prevent_scrolling_when_preferences_flipped.js"]
-support-files = [
-  "browser_bug1184989_prevent_scrolling_when_preferences_flipped.xhtml",
-]
+support-files = ["browser_bug1184989_prevent_scrolling_when_preferences_flipped.xhtml"]
 
 ["browser_bug1579418.js"]
 
@@ -51,16 +51,16 @@ support-files = [
 ["browser_extension_controlled.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Linux: bug 1613530
-  "os == 'win' && ccov",                                                                    # Windows: bug 1437051
+  "os == 'win' && ccov", # Windows: bug 1437051
   "tsan",
 ]
 
 ["browser_fluent.js"]
 
 ["browser_keyboardfocus.js"]
-run-if = ["os == 'mac'"]
-
-["browser_legacy_pane_mappings.js"]
+run-if = [
+  "os == 'mac'",
+]
 
 ["browser_no_id_collision_between_categories_and_mainPane.js"]
 
@@ -71,14 +71,21 @@ run-if = ["os == 'mac'"]
 ["browser_spotlight.js"]
 
 ["browser_subdialogs.js"]
-support-files = ["subdialog.xhtml", "subdialog2.xhtml"]
+support-files = [
+  "subdialog.xhtml",
+  "subdialog2.xhtml",
+]
 
 ["browser_tabs_open_external_next_to_active_tab.js"]
 
 ["browser_updates_managed_by_os.js"]
 
 ["browser_windows_launch_on_login.js"]
-run-if = ["os == 'win' && !msix"]
+run-if = [
+  "os == 'win' && !msix",
+]
 
 ["browser_windows_launch_on_login_msix.js"]
-run-if = ["os == 'win' && msix"]
+run-if = [
+  "os == 'win' && msix",
+]

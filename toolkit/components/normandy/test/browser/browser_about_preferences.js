@@ -6,11 +6,8 @@ const TELEMETRY_UPLOAD_PREF = "datareporting.healthreport.uploadEnabled";
 function withPrivacyPrefs() {
   return function (testFunc) {
     return async args =>
-      BrowserTestUtils.withNewTab(
-        Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)
-          ? "about:preferences#permissionsData"
-          : "about:preferences#privacy",
-        async browser => testFunc({ ...args, browser })
+      BrowserTestUtils.withNewTab("about:preferences#privacy", async browser =>
+        testFunc({ ...args, browser })
       );
   };
 }
