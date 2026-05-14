@@ -285,13 +285,11 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
     }
 
     const auto& srcRect = surface->GetRect();
-    if (presContext->Type() != nsPresContext::eContext_Print ||
-        !canvas->GetMozPrintCallback() ||
-        !dt.TryToReplaySurface(surface, destRect, Rect(srcRect))) {
-      dt.DrawSurface(
-          surface, destRect, Rect(srcRect),
-          DrawSurfaceOptions(nsLayoutUtils::GetSamplingFilterForFrame(f)));
-    }
+    dt.DrawSurface(
+        surface, destRect,
+        Rect(float(srcRect.X()), float(srcRect.Y()), float(srcRect.Width()),
+             float(srcRect.Height())),
+        DrawSurfaceOptions(nsLayoutUtils::GetSamplingFilterForFrame(f)));
 
     renderer->FireDidTransactionCallback();
     renderer->ResetDirty();
