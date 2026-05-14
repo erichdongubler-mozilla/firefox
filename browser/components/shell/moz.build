@@ -41,6 +41,10 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     SOURCES += [
         "nsGNOMEShellService.cpp",
     ]
+    LOCAL_INCLUDES += [
+        "/widget",
+        "/widget/gtk",  # for nsWindow
+    ]
     if CONFIG["MOZ_ENABLE_DBUS"]:
         SOURCES += [
             "nsGNOMEShellDBusHelper.cpp",
