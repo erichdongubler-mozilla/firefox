@@ -71,6 +71,9 @@ skip-if = [
 
 ["browser_bookmarks_bar_button.js"]
 
+["browser_coenrolling_messaging_features.js"]
+tags = "remote-settings"
+
 ["browser_feature_callout.js"]
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1796720
@@ -95,3 +98,4 @@ skip-if = [
 https_first_disabled = true
 
 ["browser_trigger_messagesLoaded.js"]
+tags = "remote-settings"

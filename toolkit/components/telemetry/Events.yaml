@@ -1201,6 +1201,7 @@ messaging_experiments:
       "spotlight",
       "featureCallout",
       "fxms_bmb_button",
+      "fxms_message",
       "fxms_message_1",
       "fxms_message_2",
       "fxms_message_3",
@@ -1240,9 +1241,8 @@ messaging_experiments:
     notification_emails: ["omc-core@mozilla.com"]
     expiry_version: "never"
     extra_keys:
-      branches: >
-        A semicolon separated string for all the qualified branch ID(s).
-        e.g. "control;variant_01;treatment_02".
+      branches: The slug for the branch the message came from.
+      message_id: The ID of the message that triggered this reach event.
   targeting:
     objects:
       - attribute_error

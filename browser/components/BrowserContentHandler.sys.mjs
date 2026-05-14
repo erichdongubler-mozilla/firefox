@@ -990,9 +990,10 @@ nsBrowserContentHandler.prototype = {
     if (overridePage == "" && prefb.prefHasUserValue(ONCE_PREF)) {
       try {
         // Show if we haven't passed the expiration or there's no expiration
-        const { expire, url } = JSON.parse(
-          Services.urlFormatter.formatURLPref(ONCE_PREF)
+        let { expire, url, feature_id, slug } = JSON.parse(
+          prefb.getStringPref(ONCE_PREF)
         );
+        url = Services.urlFormatter.formatURL(url);
         if (!(Date.now() > expire)) {
           // Only set allowed urls as override pages
           overridePage = url
@@ -1014,7 +1015,9 @@ nsBrowserContentHandler.prototype = {
                 )
             )
             .join("|");
-
+          if (feature_id && slug) {
+            lazy.NimbusFeatures[feature_id]?.recordExposureEvent({ slug });
+          }
           // Be noisy as properly configured urls should be unchanged
           if (overridePage != url) {
             console.error(`Mismatched once urls: ${url}`);

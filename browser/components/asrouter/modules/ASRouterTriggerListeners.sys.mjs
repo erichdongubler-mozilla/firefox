@@ -1881,4 +1881,24 @@ export const ASRouterTriggerListeners = new Map([
       },
     },
   ],
+  [
+    "messagesLoaded",
+    {
+      /**
+       * This trigger does not actually listen for any events. It's triggered
+       * imperatively by ASRouter when messages are loaded. It is mainly
+       * intended to provide a baseline for reach experiments, since almost
+       * everyone will trigger it very quickly. We track its state here, because
+       * we don't want it to fire if there aren't any messages using it.
+       */
+      id: "messagesLoaded",
+      initialized: false,
+      init() {
+        this.initialized = true;
+      },
+      uninit() {
+        this.initialized = false;
+      },
+    },
+  ],
 ]);
