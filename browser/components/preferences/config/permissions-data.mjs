@@ -499,6 +499,7 @@ Preferences.addSetting(
 SettingGroupManager.registerGroups({
   permissions: {
     id: "permissions",
+    subcategory: "permissions",
     l10nId: "permissions-header3",
     headingLevel: 2,
     items: [
