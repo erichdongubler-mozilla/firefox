@@ -20,9 +20,12 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.Mode
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.share.DefaultShareSheetLauncher
+import org.mozilla.fenix.components.share.isSystemShareSheetSupported
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.bookmarkStorage
 import org.mozilla.fenix.ext.nav
@@ -86,12 +89,22 @@ class EditBookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                     },
                                     navigateToImportDialog = {},
                                     shareBookmarks = { bookmarks ->
-                                        navController.nav(
-                                            R.id.bookmarkFragment,
-                                            BookmarkFragmentDirections.actionGlobalShareFragment(
-                                                data = bookmarks.asShareDataArray(),
-                                            ),
-                                        )
+                                        if (settings().nativeShareSheetEnabled && isSystemShareSheetSupported) {
+                                            DefaultShareSheetLauncher(
+                                                navController = navController,
+                                                homeActivityClass = HomeActivity::class.java,
+                                                scope = viewLifecycleOwner.lifecycleScope,
+                                            ).showSystemShareSheet(
+                                                items = bookmarks.asShareDataArray().toList(),
+                                            )
+                                        } else {
+                                            navController.nav(
+                                                R.id.bookmarkFragment,
+                                                BookmarkFragmentDirections.actionGlobalShareFragment(
+                                                    data = bookmarks.asShareDataArray(),
+                                                ),
+                                            )
+                                        }
                                     },
                                     showTabsTray = { },
                                     resolveFolderTitle = {
