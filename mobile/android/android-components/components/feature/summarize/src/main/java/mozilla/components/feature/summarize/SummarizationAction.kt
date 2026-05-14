@@ -33,9 +33,6 @@ data object ShakeConsentRequested : SummarizationAction
 /**  */
 sealed interface LlmProviderAction : SummarizationAction {
 
-    /** The LLM provider failed to initialize. */
-    data class ProviderFailed(val exception: Llm.Exception) : LlmProviderAction
-
     /** The LLM provider has been made available */
     data object ProviderAvailable : LlmProviderAction
 
@@ -46,7 +43,7 @@ sealed interface LlmProviderAction : SummarizationAction {
 /**
  * There was a failure in summarizing content from the current page.
  */
-data class SummarizationFailed(val throwable: Throwable) : SummarizationAction
+data class SummarizationFailed(val exception: Llm.Exception) : SummarizationAction
 
 /**
  * We've requested a response from a Llm.

@@ -80,7 +80,7 @@ class SummarizationTelemetryMiddleware(
             }
             is ContentExtracted -> handleExtractedContent(action.content)
             is SummarizationCompleted -> recordSummarizationCompleted()
-            is SummarizationFailed -> recordSummarizationCompleted(success = false, action.throwable.errorType)
+            is SummarizationFailed -> recordSummarizationCompleted(success = false, action.exception.errorType)
             is ViewDismissed -> {
                 AiSummarize.closed.record(
                     AiSummarize.ClosedExtra(
@@ -174,4 +174,4 @@ class SummarizationTelemetryMiddleware(
     }
 }
 
-private val Throwable.errorType get() = (this as? Llm.Exception)?.errorCode?.value?.toString()
+private val Llm.Exception.errorType get() = this.errorCode.value.toString()
