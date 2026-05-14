@@ -7456,6 +7456,12 @@ dialog:dir(rtl)::after {
   border-radius: var(--border-radius-medium);
   box-shadow: var(--box-shadow-level-4);
 }
+.nova-enabled .clocks-widget .clocks-search-no-results {
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+  padding-inline: var(--space-small);
+  padding-block: var(--space-xsmall);
+}
 .nova-enabled .clocks-widget .clocks-nickname-input {
   min-inline-size: 0;
   inline-size: 100%;

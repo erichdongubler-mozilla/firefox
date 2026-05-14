@@ -176,6 +176,13 @@
     box-shadow: var(--box-shadow-level-4);
   }
 
+  .clocks-search-no-results {
+    color: var(--text-color-deemphasized);
+    font-size: var(--font-size-small);
+    padding-inline: var(--space-small);
+    padding-block: var(--space-xsmall);
+  }
+
   .clocks-nickname-input {
     min-inline-size: 0;
     inline-size: 100%;

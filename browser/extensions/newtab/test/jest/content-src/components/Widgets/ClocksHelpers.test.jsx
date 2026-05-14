@@ -240,6 +240,23 @@ describe("getClockFormDerivedState", () => {
     });
   });
 
+  it("keeps the dropdown open with no filtered results for an unmatched query", () => {
+    expect(
+      getClockFormDerivedState({
+        canAddClock: true,
+        clockSearchQuery: "zzz",
+        clockSelectedTimeZone: "",
+        isEditingClock: false,
+        supportedTimeZones,
+      })
+    ).toMatchObject({
+      canAddSelectedClock: false,
+      filteredTimeZones: [],
+      resolvedClockTimeZone: "",
+      showLocationDropdown: true,
+    });
+  });
+
   it("allows edits even when no add slots are open", () => {
     expect(
       getClockFormDerivedState({

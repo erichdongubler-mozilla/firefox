@@ -180,30 +180,40 @@ export function AddClockForm({
             role="listbox"
             data-l10n-id="newtab-clock-widget-search-results"
           >
-            {filteredTimeZones.map((timeZone, index) => (
+            {filteredTimeZones.length ? (
+              filteredTimeZones.map((timeZone, index) => (
+                <div
+                  id={`clocks-result-${index}`}
+                  className="clocks-search-result"
+                  key={timeZone}
+                  onClick={() => handleSelectLocation(timeZone)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleSelectLocation(timeZone);
+                    }
+                  }}
+                  role="option"
+                  aria-selected={timeZone === selectedTimeZone}
+                  tabIndex={0}
+                >
+                  <span className="clocks-search-result-city">
+                    {getCityFromTimeZone(timeZone)}
+                  </span>
+                  <span className="clocks-search-result-timezone">
+                    {timeZone}
+                  </span>
+                </div>
+              ))
+            ) : (
               <div
-                id={`clocks-result-${index}`}
-                className="clocks-search-result"
-                key={timeZone}
-                onClick={() => handleSelectLocation(timeZone)}
-                onKeyDown={e => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleSelectLocation(timeZone);
-                  }
-                }}
+                className="clocks-search-no-results"
                 role="option"
-                aria-selected={timeZone === selectedTimeZone}
-                tabIndex={0}
-              >
-                <span className="clocks-search-result-city">
-                  {getCityFromTimeZone(timeZone)}
-                </span>
-                <span className="clocks-search-result-timezone">
-                  {timeZone}
-                </span>
-              </div>
-            ))}
+                aria-disabled="true"
+                aria-selected="false"
+                data-l10n-id="newtab-clock-widget-search-no-results"
+              />
+            )}
           </div>
         )}
       </div>

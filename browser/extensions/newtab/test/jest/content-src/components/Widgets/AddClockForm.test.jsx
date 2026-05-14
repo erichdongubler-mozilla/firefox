@@ -181,6 +181,25 @@ describe("<AddClockForm>", () => {
       // No selection yet — aria-activedescendant should not point anywhere.
       expect(input.hasAttribute("aria-activedescendant")).toBe(false);
     });
+
+    it("renders a no-results message inside the listbox when the query matches nothing", () => {
+      const { container } = renderForm();
+      setSearchValue(container, "zzz");
+      const listbox = container.querySelector("#clocks-search-results");
+      expect(listbox).toBeInTheDocument();
+      expect(listbox.getAttribute("role")).toBe("listbox");
+      expect(
+        container.querySelector(".clocks-search-result")
+      ).not.toBeInTheDocument();
+      const empty = listbox.querySelector(".clocks-search-no-results");
+      expect(empty).toBeInTheDocument();
+      expect(empty.getAttribute("role")).toBe("option");
+      expect(empty.getAttribute("aria-disabled")).toBe("true");
+      expect(empty.getAttribute("aria-selected")).toBe("false");
+      expect(empty.getAttribute("data-l10n-id")).toBe(
+        "newtab-clock-widget-search-no-results"
+      );
+    });
   });
 
   describe("submit", () => {

@@ -16899,7 +16899,7 @@ function AddClockForm({
     className: "clocks-search-results",
     role: "listbox",
     "data-l10n-id": "newtab-clock-widget-search-results"
-  }, filteredTimeZones.map((timeZone, index) => /*#__PURE__*/external_React_default().createElement("div", {
+  }, filteredTimeZones.length ? filteredTimeZones.map((timeZone, index) => /*#__PURE__*/external_React_default().createElement("div", {
     id: `clocks-result-${index}`,
     className: "clocks-search-result",
     key: timeZone,
@@ -16917,7 +16917,13 @@ function AddClockForm({
     className: "clocks-search-result-city"
   }, getCityFromTimeZone(timeZone)), /*#__PURE__*/external_React_default().createElement("span", {
     className: "clocks-search-result-timezone"
-  }, timeZone))))), /*#__PURE__*/external_React_default().createElement("moz-input-text", {
+  }, timeZone))) : /*#__PURE__*/external_React_default().createElement("div", {
+    className: "clocks-search-no-results",
+    role: "option",
+    "aria-disabled": "true",
+    "aria-selected": "false",
+    "data-l10n-id": "newtab-clock-widget-search-no-results"
+  }))), /*#__PURE__*/external_React_default().createElement("moz-input-text", {
     className: "clocks-nickname-input",
     "data-l10n-id": "newtab-clock-widget-input-nickname",
     id: "clocks-nickname-input",
