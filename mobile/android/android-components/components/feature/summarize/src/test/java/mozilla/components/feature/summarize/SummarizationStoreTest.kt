@@ -179,7 +179,7 @@ class SummarizationStoreTest {
 
     @Test
     fun `if the page extractor fails, the failure is forwarded as a summarization failure`() = runTest {
-        val failureThrowable = PageContentExtractor.Exception()
+        val failureThrowable = PageContentExtractor.Exception(NullPointerException())
         val provider = FakeCloudProvider(llm = FakeLlm.successful)
         val store = SummarizationStore(
             initialState = Inert(true),
@@ -325,7 +325,7 @@ class SummarizationStoreTest {
 
     @Test
     fun `dismissing an error screen transitions to the ErrorDismissed finished state`() = runTest {
-        val failureThrowable = PageContentExtractor.Exception()
+        val failureThrowable = PageContentExtractor.Exception(NullPointerException())
         val provider = FakeCloudProvider(llm = FakeLlm.successful)
         val store = SummarizationStore(
             initialState = Inert(true),

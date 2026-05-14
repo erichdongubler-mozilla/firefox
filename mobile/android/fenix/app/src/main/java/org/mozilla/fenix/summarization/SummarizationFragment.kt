@@ -26,6 +26,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.suspendCancellableCoroutine
 import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.pageextraction.ContentParams
 import mozilla.components.feature.summarize.SummarizationState
@@ -66,7 +67,7 @@ private fun EngineSession?.asPageContentExtractor(): PageContentExtractor = { op
                     continuation.resume(content)
                 },
                 onException = { error ->
-                    continuation.resumeWithException(PageContentExtractor.Exception())
+                    continuation.resumeWithException(PageContentExtractor.Exception(error))
                 },
             )
         }
@@ -88,7 +89,7 @@ private fun EngineSession?.asPageMetadataExtractor(): PageMetadataExtractor = {
                     )
                 },
                 onException = { error ->
-                    continuation.resumeWithException(PageMetadataExtractor.Exception())
+                    continuation.resumeWithException(PageMetadataExtractor.Exception(error))
                 },
             )
         }
@@ -111,8 +112,9 @@ private fun Context.getConnectionType(): ConnectionType {
  */
 class SummarizationFragment : BottomSheetDialogFragment() {
     private val args by navArgs<SummarizationFragmentArgs>()
+    private val currentTab: TabSessionState? get() = requireComponents.core.store.state.selectedTab
+    private val isEngineAvailable: Boolean get() = currentTab?.engineState?.engineSession != null
     private val storeViewModel: SummarizationStoreViewModel by viewModels {
-        val currentTab = requireComponents.core.store.state.selectedTab
         val engineSession = currentTab?.engineState?.engineSession
         val provider = requireComponents.llm.mlpaProvider
         val title = currentTab?.toDisplayTitle() ?: ""
@@ -131,6 +133,15 @@ class SummarizationFragment : BottomSheetDialogFragment() {
         )
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // if we're recreating the backstack while resuming, we need to check that the tab hasn't been killed in the
+        // background
+        if (savedInstanceState != null && !isEngineAvailable) {
+            dismiss()
+        }
+    }
+
     override fun onStart() {
         super.onStart()
         val bottomSheet = dialog?.findViewById<View>(materialR.id.design_bottom_sheet)
@@ -145,7 +156,7 @@ class SummarizationFragment : BottomSheetDialogFragment() {
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
-        storeViewModel.store.dispatch(ViewDismissed)
+        storeViewModel.store.dispatch(ViewDismissed(isEngineAvailable))
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =

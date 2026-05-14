@@ -147,12 +147,25 @@ class SummarizationTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `WHEN ViewDismissed is dispatched THEN summarization_closed is recorded`() {
+    fun `WHEN ViewDismissed is dispatched with engine available THEN summarization_closed is recorded with correct extra`() {
         assertNull(AiSummarize.closed.testGetValue())
 
-        invokeMiddleware(ViewDismissed)
+        invokeMiddleware(ViewDismissed(true))
 
         assertNotNull(AiSummarize.closed.testGetValue())
+        val extras = AiSummarize.closed.testGetValue()!!.first().extra!!
+        assertEquals("true", extras["engine_available"])
+    }
+
+    @Test
+    fun `WHEN ViewDismissed is dispatched with engine unavailable THEN summarization_closed is recorded with correct extra`() {
+        assertNull(AiSummarize.closed.testGetValue())
+
+        invokeMiddleware(ViewDismissed(false))
+
+        assertNotNull(AiSummarize.closed.testGetValue())
+        val extras = AiSummarize.closed.testGetValue()!!.first().extra!!
+        assertEquals("false", extras["engine_available"])
     }
 
     @Test
@@ -162,7 +175,7 @@ class SummarizationTelemetryMiddlewareTest {
         invokeMiddleware(
             SummarizationRequested(LlmProvider.Info(nameRes = 99)),
         )
-        invokeMiddleware(ViewDismissed)
+        invokeMiddleware(ViewDismissed(true))
 
         val extras = AiSummarize.closed.testGetValue()!!.first().extra!!
         assertEquals("99", extras["model"])
@@ -193,7 +206,7 @@ class SummarizationTelemetryMiddlewareTest {
         assertNull(AiSummarize.consentDisplayed.testGetValue())
 
         every { store.state } returns SummarizationState.ShakeConsentRequired
-        invokeMiddleware(ViewDismissed)
+        invokeMiddleware(ViewDismissed(true))
 
         val extras = AiSummarize.consentDisplayed.testGetValue()!!.first().extra!!
         assertEquals("false", extras["agreed"])
@@ -204,7 +217,7 @@ class SummarizationTelemetryMiddlewareTest {
         assertNull(AiSummarize.consentDisplayed.testGetValue())
 
         every { store.state } returns SummarizationState.Inert(initializedWithShake = false)
-        invokeMiddleware(ViewDismissed)
+        invokeMiddleware(ViewDismissed(true))
 
         assertNull(AiSummarize.consentDisplayed.testGetValue())
     }

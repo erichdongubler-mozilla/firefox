@@ -19,7 +19,7 @@ interface SummarizationAction : Action
 data object ViewAppeared : SummarizationAction
 
 /** The Summarization Screen View was Dismissed */
-data object ViewDismissed : SummarizationAction
+data class ViewDismissed(val isEngineAvailable: Boolean) : SummarizationAction
 
 /** The user tapped the settings cog. */
 data object SettingsClicked : SummarizationAction

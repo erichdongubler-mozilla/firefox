@@ -81,10 +81,11 @@ class SummarizationTelemetryMiddleware(
             is ContentExtracted -> handleExtractedContent(action.content)
             is SummarizationCompleted -> recordSummarizationCompleted()
             is SummarizationFailed -> recordSummarizationCompleted(success = false, action.throwable.errorType)
-            ViewDismissed -> {
+            is ViewDismissed -> {
                 AiSummarize.closed.record(
                     AiSummarize.ClosedExtra(
                         model = sessionTelemetry.model,
+                        engineAvailable = action.isEngineAvailable,
                     ),
                 )
 

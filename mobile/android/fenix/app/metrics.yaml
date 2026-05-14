@@ -15428,10 +15428,15 @@ ai_summarize:
       model:
         description: The name of the model used for summarization.
         type: string
+      engine_available:
+        description: Whether the engine was available while ending this summarization.
+        type: boolean
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2025523
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039112
     data_reviews:
       - https://phabricator.services.mozilla.com/D289882
+      - https://phabricator.services.mozilla.com/D300181
     data_sensitivity:
       - interaction
     notification_emails:

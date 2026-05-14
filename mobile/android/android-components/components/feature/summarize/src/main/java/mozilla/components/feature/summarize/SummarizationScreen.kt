@@ -308,7 +308,11 @@ private class SummarizationStatePreviewProvider : PreviewParameterProvider<Summa
         SummarizationState.ShakeConsentRequired,
         SummarizationState.ShakeConsentWithDownloadRequired,
         SummarizationState.Error(SummarizationError.ContentTooLong),
-        SummarizationState.Error(SummarizationError.SummarizationFailed(PageMetadataExtractor.Exception())),
+        SummarizationState.Error(
+            SummarizationError.SummarizationFailed(
+                PageMetadataExtractor.Exception(NullPointerException()),
+            ),
+        ),
     )
 }
 
