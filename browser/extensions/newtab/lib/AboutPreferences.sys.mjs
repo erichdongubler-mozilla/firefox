@@ -164,6 +164,25 @@ export class AboutPreferences {
     if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
       const { SettingGroupManager } = window;
 
+      // We observe 2 signals that about:settings is loading - the
+      // PREFERENCES_LOADED_EVENT and PREFERENCES_LOADED_EVENT_SUBPANE
+      // observer notifications. The first is fired anytime about:settings
+      // is loaded directly. The second (and not the first) fires if loading
+      // about:preferences#customHomepage. We handle those cases by observing
+      // both, and checking to see if the "homepage" settings group was already
+      // registered. If so, we take that as a sign that we don't need to
+      // re-register and then we bail out.
+      try {
+        if (SettingGroupManager.get("homepage")) {
+          // The homepage group has already been registered for this load of
+          // about:settings, so no need to do it again. Bail out.
+          return;
+        }
+      } catch (e) {
+        // We didn't find the homepage settings group registered. That's okay,
+        // we'll register the group(s) now - that's what we're here for.
+      }
+
       this._registerPreferences(window);
 
       SettingGroupManager.registerGroups({

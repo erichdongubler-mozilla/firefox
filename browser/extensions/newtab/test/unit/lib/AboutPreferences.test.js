@@ -150,12 +150,22 @@ describe("AboutPreferences Feed", () => {
 
     describe("when browser.settings-redesign.enabled is true", () => {
       let registerGroups;
+      let getSettingGroup;
 
       beforeEach(() => {
         sandbox.stub(Services.prefs, "getBoolPref").returns(true);
         registerGroups = sandbox.stub();
+        getSettingGroup = sandbox.stub();
+        getSettingGroup
+          .withArgs("homepage")
+          .onFirstCall()
+          .throws(new Error("Not yet registered"));
+        getSettingGroup.withArgs("homepage").onSecondCall().returns(true);
         // SettingGroupManager lives on the preferences window object.
-        globals.set("SettingGroupManager", { registerGroups });
+        globals.set("SettingGroupManager", {
+          registerGroups,
+          get: getSettingGroup,
+        });
         // Stub the setup methods so we can focus on the routing logic in observe().
         sandbox.stub(instance, "_registerPreferences");
         sandbox.stub(instance, "_setupHomepageGroup").returns({});
@@ -180,6 +190,14 @@ describe("AboutPreferences Feed", () => {
 
         assert.notCalled(renderPreferenceSection);
         assert.notCalled(toggleRestoreDefaults);
+      });
+
+      it("should not register a second time when observe fires again for the same window", async () => {
+        await instance.observe(window, PREFERENCES_LOADED_EVENT);
+        await instance.observe(window, PREFERENCES_LOADED_EVENT_SUBPANE);
+
+        assert.calledOnce(instance._registerPreferences);
+        assert.calledOnce(registerGroups);
       });
     });
   });
