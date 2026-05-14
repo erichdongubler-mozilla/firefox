@@ -7096,7 +7096,7 @@ void AsyncPanZoomController::ScrollSnapToDestination() {
 Maybe<CSSSnapDestination>
 AsyncPanZoomController::MaybeAdjustDeltaForScrollSnapping(
     ScrollUnit aUnit, ScrollSnapFlags aSnapFlags, ParentLayerPoint& aDelta,
-    CSSPoint& aStartPosition) {
+    const CSSPoint& aStartPosition) {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   CSSToParentLayerScale zoom = Metrics().GetZoom();
   if (zoom == CSSToParentLayerScale(0)) {
@@ -7108,7 +7108,6 @@ AsyncPanZoomController::MaybeAdjustDeltaForScrollSnapping(
   if (Maybe<CSSSnapDestination> snapDestination =
           FindSnapPointNear(destination, aUnit, aSnapFlags)) {
     aDelta = (snapDestination->mPosition - aStartPosition) * zoom;
-    aStartPosition = snapDestination->mPosition;
     return snapDestination;
   }
   return Nothing();
@@ -7117,7 +7116,7 @@ AsyncPanZoomController::MaybeAdjustDeltaForScrollSnapping(
 Maybe<CSSSnapDestination>
 AsyncPanZoomController::MaybeAdjustDeltaForScrollSnappingOnWheelInput(
     const ScrollWheelInput& aEvent, ParentLayerPoint& aDelta,
-    CSSPoint& aStartPosition) {
+    const CSSPoint& aStartPosition) {
   // Note that this MaybeAdjustDeltaForScrollSnappingOnWheelInput also gets
   // called for pan gestures at least on older Mac and Windows. In such cases
   // `aEvent.mDeltaType` is `SCROLLDELTA_PIXEL` which should be filtered out by
