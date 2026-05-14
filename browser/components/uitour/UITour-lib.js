@@ -802,20 +802,15 @@ if (typeof Mozilla == "undefined") {
 
   /**
    * @param {string} pane - Pane to open/switch the preferences to.
-   * Valid values match fragments on about:preferences and are subject to change e.g.:
+   * Valid values are the keys of CONFIG_PANES in preferences.js and the
+   * legacy names in LegacyPaneMappings.mjs (which are remapped automatically
+   * when browser.settings-redesign.enabled is true).
    *
-   * For the Preferences:
-   *
-   * - general
-   * - applications
-   * - sync
-   * - privacy
-   * - advanced
-   *
-   * To open to the options of sending telemetry, health report, crash reports,
-   * that is, the privacy pane > reports on the preferences.
-   * Please call `Mozilla.UITour.openPreferences("privacy-reports")`.
-   * UITour would do route mapping automatically.
+   * To open the options for sending telemetry, the health report, and
+   * crash reports, call `Mozilla.UITour.openPreferences("privacy-reports")`.
+   * UITour handles the route mapping automatically. These settings live
+   * in the Privacy pane under the legacy UI and in the Permissions and Data
+   * pane under the settings-redesign UI.
    *
    * @since 42
    */
