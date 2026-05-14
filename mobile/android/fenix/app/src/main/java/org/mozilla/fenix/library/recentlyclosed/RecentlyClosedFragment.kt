@@ -26,13 +26,16 @@ import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStor
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.RecentlyClosedTabs
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.share.DefaultShareSheetLauncher
 import org.mozilla.fenix.databinding.FragmentRecentlyClosedTabsBinding
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.setTextColor
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.library.LibraryPageFragment
 import androidx.appcompat.R as appcompatR
@@ -125,6 +128,12 @@ class RecentlyClosedFragment :
             recentlyClosedStore = recentlyClosedFragmentStore,
             tabsUseCases = requireComponents.useCases.tabsUseCases,
             recentlyClosedTabsStorage = requireComponents.core.recentlyClosedTabsStorage.value,
+            settings = requireContext().settings(),
+            shareSheetLauncher = DefaultShareSheetLauncher(
+                navController = findNavController(),
+                homeActivityClass = HomeActivity::class.java,
+                scope = viewLifecycleOwner.lifecycleScope,
+            ),
             lifecycleScope = lifecycleScope,
             openToBrowser = { url -> openItem(url) },
         )
