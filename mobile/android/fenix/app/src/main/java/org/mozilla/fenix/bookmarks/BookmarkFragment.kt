@@ -36,6 +36,8 @@ import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
+import org.mozilla.fenix.components.share.DefaultShareSheetLauncher
+import org.mozilla.fenix.components.share.isSystemShareSheetSupported
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.bookmarkStorage
 import org.mozilla.fenix.ext.hideToolbar
@@ -158,12 +160,24 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                     )
                                 },
                                 shareBookmarks = { bookmarks ->
-                                    navController.nav(
-                                        R.id.bookmarkFragment,
-                                        BookmarkFragmentDirections.actionGlobalShareFragment(
-                                            data = bookmarks.asShareDataArray(),
-                                        ),
-                                    )
+                                    if (requireContext().settings().nativeShareSheetEnabled &&
+                                        isSystemShareSheetSupported
+                                    ) {
+                                        DefaultShareSheetLauncher(
+                                            navController = navController,
+                                            homeActivityClass = HomeActivity::class.java,
+                                            scope = viewLifecycleOwner.lifecycleScope,
+                                        ).showSystemShareSheet(
+                                            items = bookmarks.asShareDataArray().toList(),
+                                        )
+                                    } else {
+                                        navController.nav(
+                                            R.id.bookmarkFragment,
+                                            BookmarkFragmentDirections.actionGlobalShareFragment(
+                                                data = bookmarks.asShareDataArray(),
+                                            ),
+                                        )
+                                    }
                                 },
                                 showTabsTray = ::showTabTray,
                                 resolveFolderTitle = {
