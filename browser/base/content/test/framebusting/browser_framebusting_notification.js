@@ -173,10 +173,15 @@ async function checkToolbarManageSettings() {
   const blockedPopupOptions = document.getElementById("blockedPopupOptions");
   const manageSettingsItem = blockedPopupOptions.children[1];
 
-  const promise = BrowserTestUtils.waitForLocationChange(
-    gBrowser,
-    "about:preferences#privacy"
-  );
+  // editPopupSettings opens "privacy-permissions-block-popups", which the
+  // Settings Redesign LegacyPaneMappings shim routes to permissionsData.
+  const expectedUrl = Services.prefs.getBoolPref(
+    "browser.settings-redesign.enabled",
+    false
+  )
+    ? "about:preferences#permissionsData"
+    : "about:preferences#privacy";
+  const promise = BrowserTestUtils.waitForLocationChange(gBrowser, expectedUrl);
 
   info("Clicking manage settings item...");
   manageSettingsItem.click();
