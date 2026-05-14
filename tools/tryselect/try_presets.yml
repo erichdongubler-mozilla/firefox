@@ -346,17 +346,30 @@ wpt-linux-opt:
 media-full:
     selector: fuzzy
     description: >-
-        Runs tests that exercise media playback and WebRTC code.
+        Runs tests that exercise media playback, WebRTC, EME, WebCodecs and
+        Media Source code. Covers mochitest-media (media-subsuite plain
+        mochitests under dom/media, including webcodecs, webaudio, webrtc),
+        mochitest-browser-media, WPT testharness and crashtest tasks (for
+        media/encrypted-media/webcodecs/webrtc/mediacapture specs), desktop
+        reftest (dom/media reftests), crashtest (dom/media crashtests),
+        and gtest (media C++ unit tests). The intersect_query keeps only
+        debug, asan and tsan builds, so opt and shippable variants are
+        dropped and try cycles run cheaper without losing the correctness
+        signal a media change needs. Push opt-only via a separate preset
+        (or via autoland) when validating timing-sensitive changes.
     query:
         - "mochitest-media !dfpi !nofis"
         - "mochitest-media android !spi !swr !lite"
-        - "mochitest-browser-chrome !dfpi !nofis !a11y"
         - "mochitest-browser-media"
-        - "web-platform-tests !dfpi !nofis !shippable"
+        - "web-platform-tests !dfpi !nofis !wdspec"
         - "web-platform-tests android !wdspec !spi !swr !lite"
         - "crashtest !wdspec !nofis"
         - "crashtest android !wdspec !spi !swr !lite"
+        - "reftest !nofis"
+        - "reftest android !spi !swr !lite"
         - "'gtest"
+    intersect_query:
+        - "'debug | '-asan | '-tsan"
 
 mochitest-bc:
     description: >-
