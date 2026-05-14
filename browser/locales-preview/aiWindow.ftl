@@ -253,3 +253,10 @@ smart-window-confirm-close-tabs =
         [one] Close { $count } tab
        *[other] Close { $count } tabs
     }
+
+## Smart Window new tab promo
+
+smart-window-default-promo-heading = Make Smart Window your default?
+smart-window-default-promo-message = { -brand-short-name } will open in Smart Window every time.
+smart-window-default-promo-primary-button = Set as default
+smart-window-default-promo-additional-button = Not now

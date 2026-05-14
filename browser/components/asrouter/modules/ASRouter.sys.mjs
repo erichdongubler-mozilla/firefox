@@ -44,6 +44,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PanelTestProvider: "resource:///modules/asrouter/PanelTestProvider.sys.mjs",
   RemoteL10n: "resource:///modules/asrouter/RemoteL10n.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
+  SmartWindowNewTabPromo:
+    "resource:///modules/asrouter/SmartWindowNewTabPromo.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
@@ -1679,6 +1681,9 @@ export class _ASRouter {
         break;
       case "menu_message":
         lazy.MenuMessage.showMenuMessage(browser, message, trigger, force);
+        break;
+      case "smart_window_newtab_promo":
+        lazy.SmartWindowNewTabPromo.showPromo(browser, message, trigger, force);
         break;
       case "newtab_message": {
         let targetBrowser = force ? null : browser;

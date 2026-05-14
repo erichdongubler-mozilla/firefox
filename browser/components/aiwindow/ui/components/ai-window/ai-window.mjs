@@ -6,6 +6,8 @@ import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-prompts.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/smartwindow-promo.mjs";
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -167,6 +169,7 @@ export class AIWindow extends MozLitElement {
     mode: { type: String, reflect: true }, // sidebar | fullpage
     showStarters: { type: Boolean, state: true },
     showFooter: { type: Boolean, state: true },
+    promoMessage: { type: Object, state: true },
     showDisclaimer: { type: Boolean, state: true },
     isGenerating: { type: Boolean, state: true },
   };
@@ -362,6 +365,7 @@ export class AIWindow extends MozLitElement {
     this.mode = this.#detectModeFromContext();
     this.showStarters = false;
     this.showFooter = this.mode === MODE.FULLPAGE;
+    this.promoMessage = null;
     this.showDisclaimer = this.mode !== MODE.FULLPAGE;
     this.isGenerating = false;
 
@@ -2258,6 +2262,18 @@ export class AIWindow extends MozLitElement {
     }
   }
 
+  #footerTemplate() {
+    if (!this.showFooter) {
+      return "";
+    }
+    if (this.promoMessage) {
+      return html`<smartwindow-promo
+        .message=${this.promoMessage}
+      ></smartwindow-promo>`;
+    }
+    return html`<smartwindow-footer></smartwindow-footer>`;
+  }
+
   render() {
     return html`
       <link rel="stylesheet" href="chrome://global/content/widgets.css" />
@@ -2339,7 +2355,7 @@ export class AIWindow extends MozLitElement {
             ></a>
           </div>`
         : ""}
-      ${this.showFooter ? html`<smartwindow-footer></smartwindow-footer>` : ""}
+      ${this.#footerTemplate()}
       <div
         class="sr-only"
         aria-live="polite"
