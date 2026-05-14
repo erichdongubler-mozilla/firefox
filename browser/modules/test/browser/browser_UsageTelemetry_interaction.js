@@ -961,65 +961,100 @@ add_task(async function preferences() {
     ? "sync-pane-loaded"
     : "privacy-pane-loaded";
   let finalPrefPaneLoaded = TestUtils.topicObserved(finalPaneEvent, () => true);
-  await BrowserTestUtils.withNewTab("about:preferences", async () => {
-    await finalPrefPaneLoaded;
+  // In the Settings Redesign, browserRestoreSession moves to paneHome and
+  // contentBlockingLearnMore is no longer a standalone learn-more link.
+  // Branch the click targets and assertions on the active mode so the test
+  // exercises the live widget in each.
+  const srdEnabled = Services.prefs.getBoolPref(
+    "browser.settings-redesign.enabled"
+  );
+  await BrowserTestUtils.withNewTab(
+    srdEnabled ? "about:preferences#home" : "about:preferences",
+    async () => {
+      await finalPrefPaneLoaded;
 
-    resetGleanEvents();
+      resetGleanEvents();
 
-    await BrowserTestUtils.synthesizeMouseAtCenter(
-      "#browserRestoreSession",
-      {},
-      gBrowser.selectedBrowser.browsingContext
-    );
+      await BrowserTestUtils.synthesizeMouseAtCenter(
+        // Until the general pane's markup is removed this id is duplicated.
+        srdEnabled
+          ? "[data-category='paneHome'] #browserRestoreSession"
+          : "#browserRestoreSession",
+        {},
+        gBrowser.selectedBrowser.browsingContext
+      );
+      await BrowserTestUtils.synthesizeMouseAtCenter(
+        "#category-search",
+        {},
+        gBrowser.selectedBrowser.browsingContext
+      );
 
-    await BrowserTestUtils.synthesizeMouseAtCenter(
-      "#category-search",
-      {},
-      gBrowser.selectedBrowser.browsingContext
-    );
+      await BrowserTestUtils.synthesizeMouseAtCenter(
+        "#category-privacy",
+        {},
+        gBrowser.selectedBrowser.browsingContext
+      );
 
-    await BrowserTestUtils.synthesizeMouseAtCenter(
-      "#category-privacy",
-      {},
-      gBrowser.selectedBrowser.browsingContext
-    );
-    await BrowserTestUtils.waitForCondition(() =>
-      gBrowser.selectedBrowser.contentDocument.getElementById(
-        "contentBlockingLearnMore"
-      )
-    );
+      // contentBlockingLearnMore was the legacy "Learn more" link on the
+      // privacy pane; the redesign replaces it with the etpStatusAdvancedButton
+      // on the same pane.
+      const privacyClickId = srdEnabled
+        ? "etpStatusAdvancedButton"
+        : "contentBlockingLearnMore";
+      await BrowserTestUtils.waitForCondition(
+        () =>
+          gBrowser.selectedBrowser.contentDocument.getElementById(
+            privacyClickId
+          ),
+        `${privacyClickId} is rendered`
+      );
 
-    const onLearnMoreOpened = BrowserTestUtils.waitForNewTab(gBrowser);
-    gBrowser.selectedBrowser.contentDocument
-      .getElementById("contentBlockingLearnMore")
-      .scrollIntoView();
-    await BrowserTestUtils.synthesizeMouseAtCenter(
-      "#contentBlockingLearnMore",
-      {},
-      gBrowser.selectedBrowser.browsingContext
-    );
-    await onLearnMoreOpened;
-    gBrowser.removeCurrentTab();
+      let openedTabPromise;
+      if (!srdEnabled) {
+        // The legacy contentBlockingLearnMore opens a SUMO tab; the SRD
+        // etpStatusAdvancedButton navigates to a subpane in place.
+        openedTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
+      }
+      gBrowser.selectedBrowser.contentDocument
+        .getElementById(privacyClickId)
+        .scrollIntoView();
+      await BrowserTestUtils.synthesizeMouseAtCenter(
+        `#${privacyClickId}`,
+        {},
+        gBrowser.selectedBrowser.browsingContext
+      );
+      if (openedTabPromise) {
+        await openedTabPromise;
+        gBrowser.removeCurrentTab();
+      }
 
-    let events = Glean.browserUsage.interaction
-      .testGetValue()
-      .map(e => [e.extra.source, e.extra.widget_id]);
-    Assert.deepEqual(
-      [
-        ["preferences_paneGeneral", "browserRestoreSession"],
-        ["preferences_panePrivacy", "contentBlockingLearnMore"],
-      ],
-      events
-    );
-    assertInteractionData({
-      preferencesPaneGeneral: {
-        browserRestoreSession: 1,
-      },
-      preferencesPanePrivacy: {
-        contentBlockingLearnMore: 1,
-      },
-    });
-  });
+      let events = Glean.browserUsage.interaction
+        .testGetValue()
+        .map(e => [e.extra.source, e.extra.widget_id]);
+      Assert.deepEqual(
+        [
+          [
+            srdEnabled ? "preferences_paneHome" : "preferences_paneGeneral",
+            "browserRestoreSession",
+          ],
+          [
+            "preferences_panePrivacy",
+            srdEnabled ? "etpStatusAdvancedButton" : "contentBlockingLearnMore",
+          ],
+        ],
+        events
+      );
+      assertInteractionData({
+        [srdEnabled ? "preferencesPaneHome" : "preferencesPaneGeneral"]: {
+          browserRestoreSession: 1,
+        },
+        preferencesPanePrivacy: {
+          [srdEnabled ? "etpStatusAdvancedButton" : "contentBlockingLearnMore"]:
+            1,
+        },
+      });
+    }
+  );
 });
 
 /**

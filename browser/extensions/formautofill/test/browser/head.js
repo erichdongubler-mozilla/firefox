@@ -62,7 +62,16 @@ const EDIT_ADDRESS_DIALOG_URL =
   "chrome://formautofill/content/editAddress.xhtml";
 const EDIT_CREDIT_CARD_DIALOG_URL =
   "chrome://formautofill/content/editCreditCard.xhtml";
-const PRIVACY_PREF_URL = "about:preferences#privacy";
+// FormAutofill's autocomplete footer + prompts open
+// openPreferences("privacy-payment-methods-autofill"/"privacy-address-autofill"),
+// which the Settings Redesign LegacyPaneMappings shim routes to the
+// passwordsAutofill pane. Pick the matching URL for the active mode.
+const PRIVACY_PREF_URL = Services.prefs.getBoolPref(
+  "browser.settings-redesign.enabled",
+  false
+)
+  ? "about:preferences#passwordsAutofill"
+  : "about:preferences#privacy";
 
 const HTTP_TEST_PATH = "/browser/browser/extensions/formautofill/test/browser/";
 const BASE_URL = "http://mochi.test:8888" + HTTP_TEST_PATH;
