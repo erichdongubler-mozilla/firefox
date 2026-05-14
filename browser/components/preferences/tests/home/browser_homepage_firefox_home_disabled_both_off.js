@@ -26,6 +26,12 @@ add_setup(async function () {
       [WEATHER_SYSTEM_PREF, true],
       ["browser.newtabpage.activity-stream.widgets.system.enabled", true],
       ["browser.newtabpage.activity-stream.feeds.system.topstories", true],
+      // manageTopics needs this pref to be on, and the default varies
+      // by region and language.
+      [
+        "browser.newtabpage.activity-stream.discoverystream.sections.enabled",
+        true,
+      ],
     ],
   });
 });
@@ -64,6 +70,19 @@ async function assertSectionDisabled(win) {
 add_task(async function test_firefox_home_disabled_when_both_off() {
   let { win, tab } = await openHomePreferences();
   await assertSectionDisabled(win);
+
+  let manageTopicsControl = getSettingControl("manageTopics", win);
+  ok(
+    !manageTopicsControl || BrowserTestUtils.isHidden(manageTopicsControl),
+    "manageTopics box link is hidden when Firefox Home is not active"
+  );
+  let chooseWallpaperControl = getSettingControl("chooseWallpaper", win);
+  ok(
+    !chooseWallpaperControl ||
+      BrowserTestUtils.isHidden(chooseWallpaperControl),
+    "chooseWallpaper box link is hidden when Firefox Home is not active"
+  );
+
   BrowserTestUtils.removeTab(tab);
 });
 

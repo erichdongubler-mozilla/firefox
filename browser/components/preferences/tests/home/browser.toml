@@ -2,9 +2,7 @@
 prefs = [
   "browser.settings-redesign.enabled=false",
 ]
-support-files = [
-  "head.js",
-]
+support-files = ["head.js"]
 tags = "os_integration"
 
 ["browser_homepage_custom_homepage_add_multiple_urls.js"]

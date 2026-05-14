@@ -987,23 +987,26 @@ export class AboutPreferences {
       id: "manageTopics",
       deps: [
         "sectionsEnabled",
-        "topicLabelsEnabled",
         "sectionsPersonalizationEnabled",
         "sectionsCustomizeMenuPanelEnabled",
         "stories",
+        ...firefoxHomeDeps,
       ],
-      visible: ({
-        sectionsEnabled,
-        topicLabelsEnabled,
-        sectionsPersonalizationEnabled,
-        sectionsCustomizeMenuPanelEnabled,
-        stories,
-      }) =>
-        sectionsEnabled.value &&
-        topicLabelsEnabled.value &&
-        sectionsPersonalizationEnabled.value &&
-        sectionsCustomizeMenuPanelEnabled.value &&
-        stories.value,
+      visible: deps => {
+        const {
+          sectionsEnabled,
+          sectionsPersonalizationEnabled,
+          sectionsCustomizeMenuPanelEnabled,
+          stories,
+        } = deps;
+        return (
+          firefoxHomeActive(deps) &&
+          sectionsEnabled.value &&
+          sectionsPersonalizationEnabled.value &&
+          sectionsCustomizeMenuPanelEnabled.value &&
+          stories.value
+        );
+      },
     });
 
     // Support Firefox: sponsored content
@@ -1066,10 +1069,12 @@ export class AboutPreferences {
       pref: "browser.newtabpage.activity-stream.section.highlights.includeDownloads",
     });
 
-    // Not hidden when Firefox Home is off — the wallpaper link remains
-    // visible regardless of the homepage setting.
+    // Hidden when Firefox Home is off — the wallpaper page only applies when
+    // Firefox Home is the active destination for new windows or new tabs.
     Preferences.addSetting({
       id: "chooseWallpaper",
+      deps: firefoxHomeDeps,
+      visible: deps => firefoxHomeActive(deps),
     });
 
     return {
