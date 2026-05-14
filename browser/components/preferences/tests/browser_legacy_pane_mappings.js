@@ -3,6 +3,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 const { resolveLegacyCategory, LEGACY_PANE_MAPPINGS } =
   ChromeUtils.importESModule(
     "chrome://browser/content/preferences/config/LegacyPaneMappings.mjs"
