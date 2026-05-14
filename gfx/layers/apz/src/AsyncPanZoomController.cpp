@@ -2744,7 +2744,7 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(
         // the desired physics. Note that SmoothMsdScrollTo() will re-use an
         // existing smooth scroll animation if there is one.
         APZC_LOG("%p wheel scrolling to snap point %s\n", this,
-                 ToString(startPosition).c_str());
+                 ToString(snapDestination->mPosition).c_str());
         SmoothScrollTo(std::move(*snapDestination), ScrollTriggeredByScript::No,
                        ScrollAnimationKind::SmoothMsd, ViewportType::Visual,
                        ScrollOrigin::NotSpecified, GetFrameTime().Time());
@@ -7074,14 +7074,13 @@ void AsyncPanZoomController::ScrollSnapToDestination() {
                                             snapFlags, predictedDelta,
                                             startPosition)) {
     APZC_LOG(
-        "%p fling snapping.  friction: %f velocity: %f, %f "
-        "predictedDelta: %f, %f position: %f, %f "
-        "snapDestination: %f, %f\n",
-        this, friction, velocity.x.value, velocity.y.value,
-        predictedDelta.x.value, predictedDelta.y.value,
-        Metrics().GetVisualScrollOffset().x.value,
-        Metrics().GetVisualScrollOffset().y.value, startPosition.x.value,
-        startPosition.y.value);
+        "%p fling snapping.  friction: %f velocity: %s "
+        "predictedDelta: %s position: %s "
+        "snapDestination: %s",
+        this, friction, ToString(velocity).c_str(),
+        ToString(predictedDelta).c_str(),
+        ToString(Metrics().GetVisualScrollOffset()).c_str(),
+        ToString(snapDestination->mPosition).c_str());
 
     // Ensure that any queued transform-end due to a pan-end is not
     // sent. Instead rely on the transform-end sent due to the
