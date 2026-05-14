@@ -577,7 +577,6 @@ export class UrlbarView {
     this.#previousTabToSearchEngine = null;
 
     this.input.removeAttribute("open");
-    this.input.endLayoutExtend();
 
     // Search Tips can open the view without the Urlbar being focused. If the
     // tip is ignored (e.g. the page content is clicked or the window loses
@@ -1208,7 +1207,6 @@ export class UrlbarView {
 
     this.input.toggleAttribute("suppress-focus-border", true);
     this.input.toggleAttribute("open", true);
-    this.input.startLayoutExtend();
 
     this.window.addEventListener("resize", this);
     this.window.addEventListener("blur", this);
