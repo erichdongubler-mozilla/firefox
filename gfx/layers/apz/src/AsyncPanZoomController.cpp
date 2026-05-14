@@ -7082,10 +7082,12 @@ void AsyncPanZoomController::ScrollSnapToDestination() {
         ToString(Metrics().GetVisualScrollOffset()).c_str(),
         ToString(snapDestination->mPosition).c_str());
 
-    // Ensure that any queued transform-end due to a pan-end is not
-    // sent. Instead rely on the transform-end sent due to the
-    // scroll snap animation.
-    SetDelayedTransformEnd(false);
+    if (snapDestination->mPosition != startPosition) {
+      // If a scroll snap animation will occur, cancel any transform-end
+      // that may be currently queued, and rely on the transform-end sent
+      // at the end of the scroll snap animation.
+      SetDelayedTransformEnd(false);
+    }
 
     SmoothScrollTo(std::move(*snapDestination), ScrollTriggeredByScript::No,
                    ScrollAnimationKind::SmoothMsd, ViewportType::Visual,
