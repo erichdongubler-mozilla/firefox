@@ -20,6 +20,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -36,6 +37,7 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.addons.showSnackBar
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.components.share.DefaultShareSheetLauncher
 import org.mozilla.fenix.databinding.FragmentHistoryMetadataGroupBinding
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
@@ -105,6 +107,11 @@ class HistoryMetadataGroupFragment :
                 fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
                 navController = findNavController(),
                 settings = requireComponents.settings,
+                shareSheetLauncher = DefaultShareSheetLauncher(
+                    navController = findNavController(),
+                    homeActivityClass = HomeActivity::class.java,
+                    scope = viewLifecycleOwner.lifecycleScope,
+                ),
                 scope = CoroutineScope(Dispatchers.IO),
                 searchTerm = args.title,
                 deleteSnackbar = ::deleteSnackbar,

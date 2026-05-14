@@ -6,6 +6,7 @@ package org.mozilla.fenix.library.historymetadata.controller
 
 import android.content.Context
 import androidx.navigation.NavController
+import androidx.navigation.NavDirections
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -35,6 +36,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.share.ShareSheetLauncher
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.directionsEq
@@ -46,6 +48,7 @@ import org.mozilla.fenix.library.historymetadata.HistoryMetadataGroupFragmentDir
 import org.mozilla.fenix.library.historymetadata.HistoryMetadataGroupFragmentStore
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import kotlin.test.assertNotNull
 import org.mozilla.fenix.GleanMetrics.History as GleanHistory
 
@@ -64,6 +67,7 @@ class HistoryMetadataGroupControllerTest {
     private val fenixBrowserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
     private val navController: NavController = mockk(relaxed = true)
     private val settings: Settings = mockk(relaxed = true)
+    private val shareSheetLauncher: ShareSheetLauncher = mockk(relaxed = true)
     private val historyStorage: PlacesHistoryStorage = mockk(relaxed = true)
 
     private val appStore: AppStore = AppStore()
@@ -203,6 +207,45 @@ class HistoryMetadataGroupControllerTest {
             navController.navigate(
                 directionsEq(HistoryMetadataGroupFragmentDirections.actionGlobalShareFragment(data)),
             )
+        }
+    }
+
+    @Config(sdk = [34])
+    @Test
+    fun `GIVEN native share sheet is enabled AND device supports it WHEN share is invoked THEN launch the system share sheet`() {
+        every { settings.nativeShareSheetEnabled } returns true
+
+        controller.handleShare(setOf(mozillaHistoryMetadataItem, firefoxHistoryMetadataItem))
+
+        verify { shareSheetLauncher.showSystemShareSheet(items = any(), isPrivate = any()) }
+        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
+    }
+
+    @Config(sdk = [33])
+    @Test
+    fun `GIVEN native share sheet is enabled AND device does not support it WHEN share is invoked THEN navigate to share fragment`() {
+        every { settings.nativeShareSheetEnabled } returns true
+
+        controller.handleShare(setOf(mozillaHistoryMetadataItem, firefoxHistoryMetadataItem))
+
+        val data = arrayOf(
+            ShareData(
+                title = mozillaHistoryMetadataItem.title,
+                url = mozillaHistoryMetadataItem.url,
+            ),
+            ShareData(
+                title = firefoxHistoryMetadataItem.title,
+                url = firefoxHistoryMetadataItem.url,
+            ),
+        )
+
+        verify {
+            navController.navigate(
+                directionsEq(HistoryMetadataGroupFragmentDirections.actionGlobalShareFragment(data)),
+            )
+        }
+        verify(exactly = 0) {
+            shareSheetLauncher.showSystemShareSheet(items = any(), isPrivate = any())
         }
     }
 
@@ -365,6 +408,7 @@ class HistoryMetadataGroupControllerTest {
             fenixBrowserUseCases = fenixBrowserUseCases,
             navController = navController,
             settings = settings,
+            shareSheetLauncher = shareSheetLauncher,
             scope = TestScope(testDispatcher),
             searchTerm = searchTerm,
             deleteSnackbar = deleteSnackbar,
