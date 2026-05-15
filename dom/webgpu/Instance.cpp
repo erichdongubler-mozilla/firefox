@@ -31,7 +31,7 @@ GPU_IMPL_CYCLE_COLLECTION(WGSLLanguageFeatures, mParent)
 
 GPU_IMPL_CYCLE_COLLECTION(Instance, mGlobal, mWgslLanguageFeatures)
 
-/* static */ bool Instance::PrefEnabled(JSContext* aCx, JSObject* aObj) {
+/* static */ bool Instance::PrefEnabled() {
   if (!StaticPrefs::dom_webgpu_enabled()) {
     return false;
   }

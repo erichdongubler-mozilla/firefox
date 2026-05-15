@@ -26,6 +26,7 @@
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/webgpu/Instance.h"
 #include "nsContentUtils.h"
 #include "nsGfxCIID.h"
 #include "nsICanvasRenderingContextInternal.h"
@@ -584,7 +585,7 @@ bool GetCanvasContextType(const nsAString& str,
     }
   }
 
-  if (gfxVars::AllowWebGPU()) {
+  if (webgpu::Instance::PrefEnabled() && gfxVars::AllowWebGPU()) {
     if (str.EqualsLiteral("webgpu")) {
       *out_type = dom::CanvasContextType::WebGPU;
       return true;

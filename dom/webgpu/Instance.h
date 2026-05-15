@@ -54,7 +54,10 @@ class Instance final : public nsWrapperCache {
 
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
-  static bool PrefEnabled(JSContext* aCx, JSObject* aObj);
+  static bool PrefEnabled();
+  static bool PrefEnabled(JSContext* aCx, JSObject* aObj) {
+    return PrefEnabled();
+  }
   static bool ExternalTexturePrefEnabled(JSContext* aCx, JSObject* aObj);
 
   static already_AddRefed<Instance> Create(nsIGlobalObject* aGlobal);
