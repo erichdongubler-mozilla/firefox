@@ -925,6 +925,17 @@ export class BackupService extends EventTarget {
   #wasRestorePreviouslyDisabled = false;
 
   /**
+   * Identifies the UI that triggered the most recent call to
+   * setScheduledBackups(). Read once by onUpdateScheduledBackups() when the
+   * pref change actually flips state (in either direction), at which point it
+   * is reset to "unknown" so a subsequent direct pref flip does not inherit a
+   * stale source.
+   *
+   * @type {string}
+   */
+  #scheduledBackupsToggleSource = "unknown";
+
+  /**
    * Called when prefs or other conditions relevant to the status of the backup
    * service change. Unlike #observer, this does not wait for an idle tick.
    *
@@ -4076,8 +4087,14 @@ export class BackupService extends EventTarget {
    * Sets browser.backup.scheduled.enabled to true or false.
    *
    * @param { boolean } shouldEnableScheduledBackups true if scheduled backups should be enabled. Else, false.
+   * @param { string } [source] Identifies the UI that is toggling scheduled
+   * backups, in either direction. "preferences" is used for the main backup
+   * settings page. If toggled by a message, use the message ID. Recorded to
+   * the scheduler_toggle_source metric, paired with scheduler_enabled.
    */
-  setScheduledBackups(shouldEnableScheduledBackups) {
+  setScheduledBackups(shouldEnableScheduledBackups, source = "unknown") {
+    this.#scheduledBackupsToggleSource = source || "unknown";
+
     Services.prefs.setBoolPref(
       SCHEDULED_BACKUPS_ENABLED_PREF_NAME,
       shouldEnableScheduledBackups
@@ -4126,6 +4143,12 @@ export class BackupService extends EventTarget {
       } else {
         Glean.browserBackup.toggleOff.record();
       }
+      Glean.browserBackup.schedulerToggleSource.set(
+        this.#scheduledBackupsToggleSource
+      );
+      // Reset the source to "unknown" so a subsequent toggle does not inherit
+      // a stale source.
+      this.#scheduledBackupsToggleSource = "unknown";
 
       lazy.logConsole.debug(
         "Updating scheduled backups",

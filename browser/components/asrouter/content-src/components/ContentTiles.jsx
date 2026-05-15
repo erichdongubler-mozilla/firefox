@@ -371,6 +371,7 @@ export const ContentTiles = props => {
                 handleAction={props.handleAction}
                 isEncryptedBackup={content.isEncryptedBackup}
                 options={tile.options}
+                messageId={props.messageId}
               />
             )}
             {tile.type === "fx_backup_password" && (
@@ -378,6 +379,7 @@ export const ContentTiles = props => {
                 handleAction={props.handleAction}
                 isEncryptedBackup={content.isEncryptedBackup}
                 options={tile.options}
+                messageId={props.messageId}
               />
             )}
             {tile.type === "confirmation-checklist" && tile.data && (

@@ -1703,7 +1703,8 @@ const EmbeddedMigrationWizard = ({
 const EmbeddedFxBackupOptIn = ({
   handleAction,
   isEncryptedBackup,
-  options
+  options,
+  messageId
 }) => {
   const backupRef = (0,external_React_namespaceObject.useRef)(null);
   const {
@@ -1772,6 +1773,7 @@ const EmbeddedFxBackupOptIn = ({
 
   return /*#__PURE__*/external_React_default().createElement("turn-on-scheduled-backups", {
     ref: backupRef,
+    source: messageId,
     "hide-headers": "",
     "hide-password-input": !isEncryptedBackup || hide_password_input ? "" : undefined,
     "hide-secondary-button": !isEncryptedBackup || hide_secondary_button ? "" : undefined,
@@ -1956,7 +1958,6 @@ const EmbeddedBrowserInner = ({
     }
     const browserEl = document.createXULElement("browser");
     const remoteType = window.AWPredictRemoteType({
-      browserEl,
       url
     });
     const attributes = [["disableglobalhistory", "true"], ["type", "content"], ["remote", "true"], ["maychangeremoteness", "true"], ["nodefaultsrc", "true"], ["remoteType", remoteType]];
@@ -2478,11 +2479,13 @@ const ContentTiles = props => {
     }), tile.type === "fx_backup_file_path" && /*#__PURE__*/external_React_default().createElement(EmbeddedFxBackupOptIn, {
       handleAction: props.handleAction,
       isEncryptedBackup: content.isEncryptedBackup,
-      options: tile.options
+      options: tile.options,
+      messageId: props.messageId
     }), tile.type === "fx_backup_password" && /*#__PURE__*/external_React_default().createElement(EmbeddedFxBackupOptIn, {
       handleAction: props.handleAction,
       isEncryptedBackup: content.isEncryptedBackup,
-      options: tile.options
+      options: tile.options,
+      messageId: props.messageId
     }), tile.type === "confirmation-checklist" && tile.data && /*#__PURE__*/external_React_default().createElement(ConfirmationChecklist, {
       content: tile.data,
       handleAction: props.handleAction

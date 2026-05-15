@@ -8,6 +8,7 @@ export const EmbeddedFxBackupOptIn = ({
   handleAction,
   isEncryptedBackup,
   options,
+  messageId,
 }) => {
   const backupRef = useRef(null);
   const {
@@ -79,6 +80,7 @@ export const EmbeddedFxBackupOptIn = ({
   return (
     <turn-on-scheduled-backups
       ref={backupRef}
+      source={messageId}
       hide-headers={""}
       hide-password-input={
         !isEncryptedBackup || hide_password_input ? "" : undefined

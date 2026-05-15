@@ -80,4 +80,22 @@ describe("EmbeddedFxBackupOptIn", () => {
 
     wrapper.unmount();
   });
+
+  it("forwards messageId to the source attribute on the embedded widget", () => {
+    const wrapper = mount(
+      <EmbeddedFxBackupOptIn
+        isEncryptedBackup={false}
+        options={{ hide_password_input: false }}
+        messageId="BROWSER_BACKUP_OPTIN_SPOTLIGHT"
+      />
+    );
+    const el = getFxBackupComponent(wrapper);
+
+    assert.strictEqual(
+      el.getAttribute("source"),
+      "BROWSER_BACKUP_OPTIN_SPOTLIGHT"
+    );
+
+    wrapper.unmount();
+  });
 });

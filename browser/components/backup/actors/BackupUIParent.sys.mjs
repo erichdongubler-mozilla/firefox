@@ -143,7 +143,7 @@ export class BackupUIParent extends JSWindowActorParent {
       return await this.#triggerCreateBackup({ reason: "manual" });
     } else if (message.name == "EnableScheduledBackups") {
       try {
-        let { parentDirPath, password } = message.data;
+        let { parentDirPath, password, source } = message.data;
         if (parentDirPath) {
           await this.#bs.setParentDirPath(parentDirPath);
         }
@@ -158,7 +158,7 @@ export class BackupUIParent extends JSWindowActorParent {
           await this.#bs.enableEncryption(password);
           Glean.browserBackup.passwordAdded.record();
         }
-        this.#bs.setScheduledBackups(true);
+        this.#bs.setScheduledBackups(true, source);
       } catch (e) {
         lazy.logConsole.error(`Failed to enable scheduled backups`, e);
         return { success: false, errorCode: e.cause || lazy.ERRORS.UNKNOWN };
@@ -168,8 +168,9 @@ export class BackupUIParent extends JSWindowActorParent {
       this.#triggerCreateBackup({ reason: "first" });
       return { success: true };
     } else if (message.name == "DisableScheduledBackups") {
+      let { source } = message.data;
       await this.#bs.cleanupBackupFiles();
-      this.#bs.setScheduledBackups(false);
+      this.#bs.setScheduledBackups(false, source);
     } else if (message.name == "ShowFilepicker") {
       let { win, filter, existingBackupPath } = message.data;
 

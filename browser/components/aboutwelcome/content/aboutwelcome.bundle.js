@@ -2905,11 +2905,13 @@ const ContentTiles = props => {
     }), tile.type === "fx_backup_file_path" && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedFxBackupOptIn__WEBPACK_IMPORTED_MODULE_8__.EmbeddedFxBackupOptIn, {
       handleAction: props.handleAction,
       isEncryptedBackup: content.isEncryptedBackup,
-      options: tile.options
+      options: tile.options,
+      messageId: props.messageId
     }), tile.type === "fx_backup_password" && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedFxBackupOptIn__WEBPACK_IMPORTED_MODULE_8__.EmbeddedFxBackupOptIn, {
       handleAction: props.handleAction,
       isEncryptedBackup: content.isEncryptedBackup,
-      options: tile.options
+      options: tile.options,
+      messageId: props.messageId
     }), tile.type === "confirmation-checklist" && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ConfirmationChecklist__WEBPACK_IMPORTED_MODULE_11__.ConfirmationChecklist, {
       content: tile.data,
       handleAction: props.handleAction
@@ -3883,7 +3885,8 @@ __webpack_require__.r(__webpack_exports__);
 const EmbeddedFxBackupOptIn = ({
   handleAction,
   isEncryptedBackup,
-  options
+  options,
+  messageId
 }) => {
   const backupRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const {
@@ -3952,6 +3955,7 @@ const EmbeddedFxBackupOptIn = ({
 
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("turn-on-scheduled-backups", {
     ref: backupRef,
+    source: messageId,
     "hide-headers": "",
     "hide-password-input": !isEncryptedBackup || hide_password_input ? "" : undefined,
     "hide-secondary-button": !isEncryptedBackup || hide_secondary_button ? "" : undefined,

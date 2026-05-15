@@ -215,6 +215,7 @@ export default class BackupSettings extends MozLitElement {
       @close=${this.handleTurnOnScheduledBackupsDialogClose}
     >
       <turn-on-scheduled-backups
+        source="preferences"
         defaultlabel=${fileName}
         defaultpath=${path}
         defaulticonurl=${iconURL}
@@ -225,7 +226,9 @@ export default class BackupSettings extends MozLitElement {
 
   turnOffScheduledBackupsDialogTemplate() {
     return html`<dialog id="turn-off-scheduled-backups-dialog">
-      <turn-off-scheduled-backups></turn-off-scheduled-backups>
+      <turn-off-scheduled-backups
+        source="preferences"
+      ></turn-off-scheduled-backups>
     </dialog>`;
   }
 
