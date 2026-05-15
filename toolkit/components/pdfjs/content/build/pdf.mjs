@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.82
- * pdfjsBuild = 7f151c777
+ * pdfjsVersion = 6.0.96
+ * pdfjsBuild = cd4fd7563
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -539,16 +539,14 @@ class FeatureTest {
     return shadow(this, "isCanvasFilterSupported", ctx?.filter !== undefined);
   }
   static get isAlphaColorInputSupported() {
-    return shadow(this, "isAlphaColorInputSupported", (() => {
-      if (typeof document === "undefined") {
-        return false;
-      }
-      const input = document.createElement("input");
-      input.type = "color";
-      input.setAttribute("alpha", "");
-      input.value = "#ff000080";
-      return input.value !== "#ff0000";
-    })());
+    if (typeof document === "undefined") {
+      return shadow(this, "isAlphaColorInputSupported", false);
+    }
+    const input = document.createElement("input");
+    input.type = "color";
+    input.setAttribute("alpha", "");
+    input.value = "#ff000080";
+    return shadow(this, "isAlphaColorInputSupported", input.value !== "#ff0000");
   }
 }
 class Util {
@@ -14008,7 +14006,7 @@ class TextLayer {
     let ctx = this.#canvasContexts.get(lang ||= "");
     if (!ctx) {
       const canvas = document.createElement("canvas");
-      canvas.className = "hiddenCanvasElement";
+      canvas.style.cssText = "position:absolute;top:0;left:0;width:0;height:0;display:none";
       canvas.lang = lang;
       document.body.append(canvas);
       ctx = canvas.getContext("2d", {
@@ -14165,7 +14163,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.82",
+    apiVersion: "6.0.96",
     data,
     password,
     disableAutoFetch,
@@ -15793,8 +15791,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.82";
-const build = "7f151c777";
+const version = "6.0.96";
+const build = "cd4fd7563";
 
 ;// ./src/display/editor/color_picker.js
 

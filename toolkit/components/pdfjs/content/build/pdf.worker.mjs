@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.82
- * pdfjsBuild = 7f151c777
+ * pdfjsVersion = 6.0.96
+ * pdfjsBuild = cd4fd7563
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -533,22 +533,11 @@ class FeatureTest {
     let ctx;
     if (this.isOffscreenCanvasSupported) {
       ctx = new OffscreenCanvas(1, 1).getContext("2d");
-    } else if (typeof document !== "undefined") {
-      ctx = document.createElement("canvas").getContext("2d");
     }
     return shadow(this, "isCanvasFilterSupported", ctx?.filter !== undefined);
   }
   static get isAlphaColorInputSupported() {
-    return shadow(this, "isAlphaColorInputSupported", (() => {
-      if (typeof document === "undefined") {
-        return false;
-      }
-      const input = document.createElement("input");
-      input.type = "color";
-      input.setAttribute("alpha", "");
-      input.value = "#ff000080";
-      return input.value !== "#ff0000";
-    })());
+    return shadow(this, "isAlphaColorInputSupported", false);
   }
 }
 class Util {
@@ -62306,7 +62295,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "6.0.82";
+    const workerVersion = "6.0.96";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
