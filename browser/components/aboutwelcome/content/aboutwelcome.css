@@ -356,6 +356,7 @@ div#feature-callout.hidden {
   --transition: none;
   height: auto;
   transform: none;
+  background: none;
 }
 #feature-callout .screen:dir(rtl) {
   transform: none;

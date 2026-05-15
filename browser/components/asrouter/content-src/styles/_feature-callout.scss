@@ -144,6 +144,9 @@
     // use a different approach to flipping to avoid the fuzzy aliasing that
     // transform causes.
     transform: none;
+
+    // Override the background for sharp arrow corners
+    background: none;
   }
 
   .screen {
