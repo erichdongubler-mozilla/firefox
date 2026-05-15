@@ -2921,7 +2921,7 @@ static CaretInfo GetCaretContentAndBounds(
   // focused element will have multi-line content.
   nsIFrame* frame = aElement->GetPrimaryFrame();
   if (frame) {
-    RefPtr<nsCaret> caret = frame->PresShell()->GetCaret();
+    RefPtr<nsCaret> caret = frame->PresShell()->GetActiveCaret();
     if (caret && caret->IsVisible()) {
       nsRect rect;
       if (nsIFrame* textFrame = caret->GetGeometry(&rect)) {
