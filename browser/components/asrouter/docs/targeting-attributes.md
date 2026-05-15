@@ -1388,3 +1388,23 @@ declare const isNonStubFirstRun: boolean;
 ### `experimentsLoaded`
 
 Boolean that's true once Nimbus has loaded remote experiments from Remote Settings at least once. Returns true if experiments are disabled. This generally shouldn't be used outside of the splash screen.
+
+### `crashCount`
+
+The total number of crashes the user has experienced, as recorded in the [dump files corresponding to submitted crashes](https://searchfox.org/firefox-main/source/toolkit/components/crashes/CrashManager.in.sys.mjs#297-322). This targeting is only available for Mac and Windows users; Linux users will always return a `crashCount` of 0.
+
+#### Definition
+
+```ts
+declare const crashCount: Promise<number>;
+```
+
+### `daysSinceLastCrash`
+
+The number of days since the most recent crash, as recorded in the [dump files corresponding to submitted crashes](https://searchfox.org/firefox-main/source/toolkit/components/crashes/CrashManager.in.sys.mjs#297-322). If there are no recorded crashes, returns `null`. This targeting is only available for Mac and Windows users; Linux users will always return null for `daysSinceLastCrash`.
+
+#### Definition
+
+```ts
+declare const daysSinceLastCrash: Promise<number|null>;
+```

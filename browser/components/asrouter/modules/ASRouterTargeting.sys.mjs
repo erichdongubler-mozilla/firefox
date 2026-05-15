@@ -479,6 +479,19 @@ export const QueryCache = {
         },
       }
     ),
+    crashData: new CachedTargetingGetter(
+      "getCrashData",
+      null,
+      FRECENT_SITES_UPDATE_INTERVAL,
+      {
+        async getCrashData() {
+          if (!Services.crashmanager) {
+            return [];
+          }
+          return Services.crashmanager.submittedDumps();
+        },
+      }
+    ),
   },
 };
 
@@ -1518,6 +1531,33 @@ const TargetingGetters = {
       );
       return false;
     }
+  },
+
+  /**
+   * The total number of crashes the user has experienced, as recorded in the
+   * dump files corresponding to submitted crashes.
+   *
+   * @returns {Promise<number>}
+   */
+  get crashCount() {
+    return QueryCache.getters.crashData.get().then(crashes => crashes.length);
+  },
+
+  /**
+   * The number of days since the most recent crash, as recorded in the dump
+   * files corresponding to submitted crashes. If there are no recorded
+   * crashes, returns `null`.
+   *
+   * @returns {Promise<number|null>}
+   */
+  get daysSinceLastCrash() {
+    return QueryCache.getters.crashData.get().then(crashes => {
+      if (!crashes.length) {
+        return null;
+      }
+      const mostRecent = Math.max(...crashes.map(c => c.date));
+      return Math.floor((Date.now() - mostRecent) / (24 * 60 * 60 * 1000));
+    });
   },
 };
 
