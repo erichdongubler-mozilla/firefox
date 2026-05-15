@@ -22,6 +22,17 @@ interface TabInteractionHandler {
      * @param targetKey: Key of target item
      */
     fun onDrop(sourceKey: String, targetKey: String)
+
+    /**
+     * Called when a tab drag ends without taking an action.
+     */
+    fun onDragCancel()
+
+    /**
+     * Called when a drag starts
+     * @param preserveSelectMode: Whether select mode should be preserved on a drag.
+     */
+    fun onDragStart(preserveSelectMode: Boolean)
 }
 
 /**
@@ -33,6 +44,14 @@ object NoOpTabInteractionHandler : TabInteractionHandler {
     }
 
     override fun onDrop(sourceKey: String, targetKey: String) {
+        // no op
+    }
+
+    override fun onDragCancel() {
+        // no op
+    }
+
+    override fun onDragStart(preserveSelectMode: Boolean) {
         // no op
     }
 }

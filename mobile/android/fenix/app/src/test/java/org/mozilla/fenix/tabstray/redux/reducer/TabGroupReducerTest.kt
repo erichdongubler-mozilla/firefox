@@ -614,13 +614,22 @@ class TabGroupReducerTest {
     }
 
     @Test
-    fun `WHEN the user completes a drag and drop action then the state is unchanged`() {
-        val initialState = TabsTrayState()
+    fun `WHEN the user completes a drag and drop action THEN the normal tabs page focus indicator is re-enabled`() {
+        val initialState = TabsTrayState(
+            normalTabsState = TabsTrayState.NormalTabsState(
+                itemFocusIndicatorEnabled = false,
+            ),
+        )
+        val expectedState = initialState.copy(
+            normalTabsState = initialState.normalTabsState.copy(
+                itemFocusIndicatorEnabled = true,
+            ),
+        )
         val resultState = TabGroupActionReducer.reduce(
             state = TabsTrayState(),
             action = TabGroupAction.DragAndDropCompleted(sourceId = "54321", destinationId = "12345"),
         )
-        assertEquals(expected = initialState, actual = resultState)
+        assertEquals(expected = expectedState, actual = resultState)
     }
 
     @Test

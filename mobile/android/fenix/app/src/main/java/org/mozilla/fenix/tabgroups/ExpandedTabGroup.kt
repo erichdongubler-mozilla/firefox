@@ -101,11 +101,11 @@ fun ExpandedTabGroup(
             onTabClose = onTabClose,
             onItemClick = onItemClick,
             onItemLongClick = { item -> }, // Ignore long click
-            onTabDragStart = { }, // Ignore drags
             onDeleteTabGroupClick = { }, // Ignore tab group deletes
             onEditTabGroupClick = { }, // Ignore tab group edits
             onCloseTabGroupClick = { }, // Ignore tab group closes
             contentPadding = PaddingValues(0.dp), // TabLayout should not have its own content padding inside this view
+            focusEnabled = true, // Drag and drop is not possible in this view, so focus should never be suppressed
         )
     }
 }

@@ -80,14 +80,11 @@ internal fun PrivateTabsPage(
                 onTabClose = onTabClose,
                 onItemClick = onItemClick,
                 onItemLongClick = onItemLongClick,
-                onTabDragStart = {
-                    // Because we don't currently support selection mode for private tabs,
-                    // there's no need to exit selection mode when dragging tabs.
-                },
                 onDeleteTabGroupClick = {},
                 onEditTabGroupClick = {},
                 onCloseTabGroupClick = {},
                 dragAndDropEnabled = false,
+                focusEnabled = true, // Drag and drop is not possible, so there's no reason to hide the focus state
             )
         }
     }

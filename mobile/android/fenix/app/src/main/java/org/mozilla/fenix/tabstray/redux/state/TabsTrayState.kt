@@ -117,11 +117,13 @@ data class TabsTrayState(
      * @property items The list of open [TabsTrayItem]s on the Normal page.
      * @property selectedItemIndex The index of the selected normal item.
      * @property tabCount The total number of open Normal tabs, including inactive tabs and the tabs within tab groups.
+     * @property itemFocusIndicatorEnabled Whether the focus indicator may be shown on the Normal tabs page.
      */
     data class NormalTabsState(
         val items: List<TabsTrayItem> = emptyList(),
         val selectedItemIndex: Int = 0,
         val tabCount: Int = 0,
+        val itemFocusIndicatorEnabled: Boolean = true,
     )
 
     /**

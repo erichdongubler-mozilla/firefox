@@ -56,7 +56,11 @@ object TabGroupActionReducer {
             is TabGroupAction.CloseTabGroupClicked -> state.copy(
                 backStack = listOf(TabManagerNavDestination.Root),
             )
-            is TabGroupAction.DragAndDropCompleted -> state
+            is TabGroupAction.DragAndDropCompleted -> state.copy(
+                normalTabsState = state.normalTabsState.copy(
+                    itemFocusIndicatorEnabled = true,
+                ),
+            )
             is TabGroupAction.TabClosed -> reduceTabClosed(state, action)
             is TabGroupAction.CloseTabAndDeleteGroupConfirmed -> state.copy(
                 backStack = state.backStack.popDeleteTabGroupFlow(),

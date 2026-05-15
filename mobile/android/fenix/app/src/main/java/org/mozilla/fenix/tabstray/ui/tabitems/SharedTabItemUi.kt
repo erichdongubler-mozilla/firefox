@@ -278,7 +278,7 @@ const val LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit
 @Composable
 @ReadOnlyComposable
 fun tabItemConditionalBorder(selectionState: TabsTrayItemSelectionState): BorderStroke? {
-    return if (selectionState.isFocused) {
+    return if (selectionState.isFocused && selectionState.focusEnabled) {
         tabItemBorderFocused()
     } else {
         null
@@ -298,13 +298,13 @@ fun tabItemBorderFocused(): BorderStroke {
  * Applies tab list item styling, provided the shape information.
  *
  * @param tabShapeInfo The list item shape and clipping behavior.
- * @param tab The tab item.
+ * @param selectionState the selection state of the item in the tabstray.
  */
 // todo (Bug 2032255): add a border on hovered when drag and drop for tab groups is added
 @Composable
 fun Modifier.tabListItemShapeStyling(
     tabShapeInfo: TabListShapeInfo,
-    tab: TabsTrayItem,
+    selectionState: TabsTrayItemSelectionState,
 ): Modifier {
     return this
         .thenConditional(
@@ -316,7 +316,7 @@ fun Modifier.tabListItemShapeStyling(
                 border = tabItemBorderFocused(),
                 shape = tabShapeInfo.borderShape,
             ),
-            { tab.isFocused },
+            { selectionState.isFocused && selectionState.focusEnabled },
         )
 }
 
@@ -333,12 +333,24 @@ fun tabGridItemContainerColor(selectionState: TabsTrayItemSelectionState): Color
 }
 
 /**
+ * Object holding alpha values for tab items
+ */
+object Alpha {
+    const val TAB_ITEM_GRID_DRAGGED = 0.7f
+    const val TAB_ITEM_NO_INTERACTION = 1f
+}
+
+/**
  * Animates the tab item's alpha value to be slightly transparent when it is dragged.
  */
 @Composable
 private fun tabItemAnimatedAlpha(interactionState: TabItemInteractionState): State<Float> {
     return animateFloatAsState(
-        targetValue = if (interactionState.isDragged) { 0.7f } else { 1f },
+        targetValue = if (interactionState.isDragged) {
+            Alpha.TAB_ITEM_GRID_DRAGGED
+        } else {
+            Alpha.TAB_ITEM_NO_INTERACTION
+        },
     )
 }
 
@@ -369,26 +381,28 @@ fun Modifier.tabItemInteractionAnimation(interactionState: TabItemInteractionSta
 
     return this
         .thenConditional(
-            Modifier.drawBehind({
-                // A Stroke rect is centered on the shape edge, which will spill outside the drawing area
-                // To make the border match other tabs, we must inset by half the stroke width, and adjust the size
-                val inset = borderSize.toPx() / 2
-                val shapeOffset = Offset(x = inset, y = inset)
-                val shapeSize = Size(this.size.width - shapeOffset.x * 2, this.size.height - shapeOffset.y * 2)
-                drawRoundRect(
-                    color = backdropColor,
-                    topLeft = shapeOffset,
-                    size = shapeSize,
-                    cornerRadius = CornerRadius(cornerSize.toPx()),
-                )
-                drawRoundRect(
-                    color = backdropBorder,
-                    topLeft = shapeOffset,
-                    size = shapeSize,
-                    cornerRadius = CornerRadius(cornerSize.toPx()),
-                    style = Stroke(width = borderSize.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-                )
-            }),
+            Modifier.drawBehind(
+                {
+                    // A Stroke rect is centered on the shape edge, which will spill outside the drawing area
+                    // To make the border match other tabs, we must inset by half the stroke width, and adjust the size
+                    val inset = borderSize.toPx() / 2
+                    val shapeOffset = Offset(x = inset, y = inset)
+                    val shapeSize = Size(this.size.width - shapeOffset.x * 2, this.size.height - shapeOffset.y * 2)
+                    drawRoundRect(
+                        color = backdropColor,
+                        topLeft = shapeOffset,
+                        size = shapeSize,
+                        cornerRadius = CornerRadius(cornerSize.toPx()),
+                    )
+                    drawRoundRect(
+                        color = backdropBorder,
+                        topLeft = shapeOffset,
+                        size = shapeSize,
+                        cornerRadius = CornerRadius(cornerSize.toPx()),
+                        style = Stroke(width = borderSize.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+                    )
+                },
+            ),
             { interactionState.isHoveredByItem },
         )
         .graphicsLayer(alpha = tabItemAlpha, scaleX = tabItemScale, scaleY = tabItemScale)

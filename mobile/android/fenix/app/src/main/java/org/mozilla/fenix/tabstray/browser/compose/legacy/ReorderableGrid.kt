@@ -38,6 +38,7 @@ import androidx.compose.ui.zIndex
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
+import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
 
 /**
  * Remember the reordering state for reordering grid items.
@@ -45,16 +46,16 @@ import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
  * @param gridState State of the grid.
  * @param onMove Callback to be invoked when switching between two items.
  * @param ignoredItems List of keys for non-draggable items.
+ * @param tabInteractionHandler The tab interaction handler for moves, drops, and drag events.
  * @param onLongPress Optional callback to be invoked when long pressing an item.
- * @param onExitLongPress Optional callback to be invoked when the item is dragged after long press.
  */
 @Composable
 fun createGridReorderState(
     gridState: LazyGridState,
     onMove: (LazyGridItemInfo, LazyGridItemInfo) -> Unit,
     ignoredItems: List<Any>,
+    tabInteractionHandler: TabInteractionHandler,
     onLongPress: (LazyGridItemInfo) -> Unit = {},
-    onExitLongPress: () -> Unit = {},
 ): GridReorderState {
     val scope = rememberCoroutineScope()
     val touchSlop = LocalViewConfiguration.current.touchSlop
@@ -68,7 +69,7 @@ fun createGridReorderState(
             ignoredItems = ignoredItems,
             onLongPress = onLongPress,
             hapticFeedback = hapticFeedback,
-            onExitLongPress = onExitLongPress,
+            tabInteractionHandler = tabInteractionHandler,
         )
     }
     return state
@@ -83,8 +84,8 @@ fun createGridReorderState(
  * @param touchSlop Distance in pixels the user can wander until we consider they started dragging.
  * @param onMove Callback to be invoked when switching between two items.
  * @param onLongPress Optional callback to be invoked when long pressing an item.
- * @param onExitLongPress Optional callback to be invoked when the item is dragged after long press.
  * @param ignoredItems List of keys for non-draggable items.
+ * @param tabInteractionHandler The tab interaction handler for moves, drops, and drag events.
  */
 class GridReorderState internal constructor(
     private val gridState: LazyGridState,
@@ -93,8 +94,8 @@ class GridReorderState internal constructor(
     private val touchSlop: Float,
     private val onMove: (LazyGridItemInfo, LazyGridItemInfo) -> Unit,
     private val onLongPress: (LazyGridItemInfo) -> Unit = {},
-    private val onExitLongPress: () -> Unit = {},
     private val ignoredItems: List<Any> = emptyList(),
+    private val tabInteractionHandler: TabInteractionHandler,
 ) {
     internal var draggingItemKey by mutableStateOf<GridItemKey?>(null)
         private set
@@ -132,7 +133,6 @@ class GridReorderState internal constructor(
                 onLongPress(it)
             }
             draggingItemInitialOffset = it.offset.toOffset()
-            moved = !shouldLongPress
         }
     }
 
@@ -155,9 +155,12 @@ class GridReorderState internal constructor(
         draggingItemCumulatedOffset = Offset.Zero
         draggingItemKey = null
         draggingItemInitialOffset = Offset.Zero
+        if (moved) {
+            tabInteractionHandler.onDragCancel()
+        }
     }
 
-    internal fun onDrag(offset: Offset) {
+    internal fun onDrag(offset: Offset, preserveSelectMode: Boolean) {
         draggingItemCumulatedOffset += offset
 
         if (draggingItemLayoutInfo == null) {
@@ -166,7 +169,8 @@ class GridReorderState internal constructor(
         val draggingItem = draggingItemLayoutInfo ?: return
 
         if (!moved && draggingItemCumulatedOffset.getDistance() > touchSlop) {
-            onExitLongPress()
+            tabInteractionHandler.onDragStart(preserveSelectMode)
+            moved = true
         }
         val startOffset = draggingItem.offset.toOffset() + draggingItemOffset
         val endOffset = Offset(
@@ -287,29 +291,31 @@ private fun LazyGridState.findItem(offset: Offset) =
  *
  * @param gridState State of the grid.
  * @param reorderState Grid reordering state used for dragging callbacks.
- * @param shouldLongPressToDrag Whether or not an item should be long pressed to start the dragging gesture.
+ * @param isInMultiSelectMode Whether or not multi-select mode is active for the grid being reordered.
  */
 fun Modifier.detectGridPressAndDragGestures(
     gridState: LazyGridState,
     reorderState: GridReorderState,
-    shouldLongPressToDrag: Boolean,
-): Modifier = pointerInput(gridState, shouldLongPressToDrag) {
-    if (shouldLongPressToDrag) {
-        detectDragGesturesAfterLongPress(
-            onDragStart = { offset -> reorderState.onTouchSlopPassed(offset, true) },
+    isInMultiSelectMode: Boolean,
+): Modifier = pointerInput(gridState, isInMultiSelectMode) {
+    // In multi-select mode, drag gestures will be detected without a long press and the reorder state
+    // will attempt to preserve the select mode state.
+    if (isInMultiSelectMode) {
+        detectDragGestures(
+            onDragStart = { offset -> reorderState.onTouchSlopPassed(offset, false) },
             onDrag = { change, dragAmount ->
                 change.consume()
-                reorderState.onDrag(dragAmount)
+                reorderState.onDrag(offset = dragAmount, preserveSelectMode = true)
             },
             onDragEnd = reorderState::onDragInterrupted,
             onDragCancel = reorderState::onDragInterrupted,
         )
     } else {
-        detectDragGestures(
-            onDragStart = { offset -> reorderState.onTouchSlopPassed(offset, false) },
+        detectDragGesturesAfterLongPress(
+            onDragStart = { offset -> reorderState.onTouchSlopPassed(offset, true) },
             onDrag = { change, dragAmount ->
                 change.consume()
-                reorderState.onDrag(dragAmount)
+                reorderState.onDrag(offset = dragAmount, preserveSelectMode = false)
             },
             onDragEnd = reorderState::onDragInterrupted,
             onDragCancel = reorderState::onDragInterrupted,

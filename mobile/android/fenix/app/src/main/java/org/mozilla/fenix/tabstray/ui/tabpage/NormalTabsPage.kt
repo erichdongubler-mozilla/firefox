@@ -52,6 +52,7 @@ private val EmptyPageWidth = 170.dp
  * @param dragAndDropEnabled Whether the grid supports dragging and dropping for tab groups.
  * @param tabInteractionHandler Handles tab interactions, such as moves and drag and drop.
  * @param trackersBlockedCount The number of trackers blocked to display in the footer card.
+ * @param focusEnabled Whether the focus indicator is enabled.
  * @param onTabClose Invoked when the user clicks to close a tab.
  * @param onItemClick Invoked when the user clicks on a tab.
  * @param onItemLongClick Invoked when the user long clicks a tab.
@@ -70,7 +71,6 @@ private val EmptyPageWidth = 170.dp
  * @param onInactiveTabsCFRShown Invoked when the inactive tabs CFR is displayed.
  * @param onInactiveTabsCFRClick Invoked when the inactive tabs CFR is clicked.
  * @param onInactiveTabsCFRDismiss Invoked when the inactive tabs CFR is dismissed.
- * @param onTabDragStart Invoked when a tab drag has been started.
  * @param onDeleteTabGroupClick Invoked when the user clicks on delete tab group.
  * @param onEditTabGroupClick Invoked when the user clicks to edit a tab group.
  * @param onCloseTabGroupClick Invoked when the user clicks to close a tab group.
@@ -87,6 +87,7 @@ internal fun NormalTabsPage(
     dragAndDropEnabled: Boolean,
     tabInteractionHandler: TabInteractionHandler,
     trackersBlockedCount: Int? = null,
+    focusEnabled: Boolean,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
     onItemLongClick: (TabsTrayItem) -> Unit,
@@ -102,7 +103,6 @@ internal fun NormalTabsPage(
     onInactiveTabsCFRShown: () -> Unit,
     onInactiveTabsCFRClick: () -> Unit,
     onInactiveTabsCFRDismiss: () -> Unit,
-    onTabDragStart: () -> Unit,
     onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
@@ -154,11 +154,11 @@ internal fun NormalTabsPage(
             onItemClick = onItemClick,
             onItemLongClick = onItemLongClick,
             header = optionalInactiveTabsHeader,
-            onTabDragStart = onTabDragStart,
             onDeleteTabGroupClick = onDeleteTabGroupClick,
             onEditTabGroupClick = onEditTabGroupClick,
             onCloseTabGroupClick = onCloseTabGroupClick,
             tabInteractionHandler = tabInteractionHandler,
+            focusEnabled = focusEnabled,
         )
     } else {
         EmptyNormalTabsPage(trackersBlockedCount = trackersBlockedCount)

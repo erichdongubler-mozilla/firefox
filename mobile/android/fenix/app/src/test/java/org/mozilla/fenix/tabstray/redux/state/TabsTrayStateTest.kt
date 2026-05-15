@@ -80,13 +80,19 @@ class TabsTrayStateTest {
 
     @Test
     fun `GIVEN the user is on the Normal tabs page without tabs WHEN in the Tab Manager THEN the search icon is disabled`() {
-        val state = TabsTrayState(selectedPage = Page.NormalTabs, normalTabsState = TabsTrayState.NormalTabsState(items = emptyList()))
+        val state = TabsTrayState(
+            selectedPage = Page.NormalTabs,
+            normalTabsState = TabsTrayState.NormalTabsState(items = emptyList()),
+        )
         assertFalse(state.searchIconEnabled)
     }
 
     @Test
     fun `GIVEN the user is on the Normal tabs page with tabs WHEN in the Tab Manager THEN the search icon is enabled`() {
-        val state = TabsTrayState(selectedPage = Page.NormalTabs, normalTabsState = TabsTrayState.NormalTabsState(items = listOf(createTab(url = ""))))
+        val state = TabsTrayState(
+            selectedPage = Page.NormalTabs,
+            normalTabsState = TabsTrayState.NormalTabsState(items = listOf(createTab(url = ""))),
+        )
         assertTrue(state.searchIconEnabled)
     }
 
@@ -128,5 +134,11 @@ class TabsTrayStateTest {
         val expectedBackStack = initialBackStack
 
         assertEquals(expectedBackStack, actualBackStack)
+    }
+
+    @Test
+    fun `WHEN tabs tray is initialized focus state is enabled by default for normal tabs`() {
+        val initialState = TabsTrayState()
+        assertTrue(initialState.normalTabsState.itemFocusIndicatorEnabled)
     }
 }

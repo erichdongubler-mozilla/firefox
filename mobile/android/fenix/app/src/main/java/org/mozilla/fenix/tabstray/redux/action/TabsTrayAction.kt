@@ -160,13 +160,25 @@ sealed interface TabsTrayAction : Action {
     /**
      * [TabsTrayAction] Fired when a reorder is requested from a TabsTray gesture.
      *
-     * @property sourceId: The id of the item being reordered
-     * @property destinationId: The id of the reorder target
-     * @property placeAfter: Whether to place the item before or after the target
+     * @property sourceId The id of the item being reordered
+     * @property destinationId The id of the reorder target
+     * @property placeAfter Whether to place the item before or after the target
      */
     data class ReorderTabsTrayItem(
         val sourceId: String,
         val destinationId: String?,
         val placeAfter: Boolean,
     ) : TabsTrayAction, TabsStorageAction
+
+    /**
+     * [TabsTrayAction] fired when a tab drag is started from the tabs tray.
+     *
+     * @property preserveSelectMode Whether select mode should be preserved on a drag.
+     */
+    data class TabDragStart(val preserveSelectMode: Boolean) : TabsTrayAction
+
+    /**
+     * [TabsTrayAction] fired when a tab drag is cancelled from the tabs tray.
+     */
+    object TabDragCancel : TabsTrayAction
 }

@@ -12,7 +12,9 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toOffset
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -299,7 +301,7 @@ class InteractableGridTest {
         )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), false)
-        reorderState.onDrag(Offset(20f, 0f)) // 20 to the right
+        reorderState.onDrag(offset = Offset(20f, 0f), preserveSelectMode = false) // 20 to the right
         reorderState.onDragEnd()
 
         verify { handler.onDrop("key1", "key2") }
@@ -331,7 +333,7 @@ class InteractableGridTest {
         )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), false)
-        reorderState.onDrag(Offset(50f, 0f)) // 50 to the right
+        reorderState.onDrag(offset = Offset(50f, 0f), preserveSelectMode = false) // 50 to the right
         reorderState.onDragEnd()
 
         verify { handler.onMove("key1", "key2", true) }
@@ -363,7 +365,7 @@ class InteractableGridTest {
         )
 
         reorderState.onTouchSlopPassed(draggedItemOffset.toOffset(), false)
-        reorderState.onDrag(Offset(-10f, 0f)) // 10 to the left
+        reorderState.onDrag(offset = Offset(-10f, 0f), preserveSelectMode = false) // 10 to the left
         reorderState.onDragEnd()
 
         verify { handler.onMove("key2", "key1", false) }
@@ -380,6 +382,126 @@ class InteractableGridTest {
         assertEquals(InteractionState.None, reorderState.hoveredItem)
         assertNull(reorderState.highlightedRect)
         assertEquals(InteractionMode.None, reorderState.interactionMode)
+    }
+
+    @Test
+    fun `GIVEN a drag is in progress and the dragged item is not visible when onDragEnd is called THEN onDragCancelled is called`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        // val targetItemOffset = IntOffset(10, 0)
+        val draggedItemOffset = IntOffset(30, 0)
+        val reorderState = fakeGridReorderState(
+            mockGridState(
+                mockItems = listOf(
+                    mockk<LazyGridItemInfo> {
+                        every { key } returns "key2"
+                        every { index } returns 1
+                        every { size } returns IntSize(10, 10)
+                        every { offset } returns draggedItemOffset
+                    },
+                ),
+            ),
+            handler = handler,
+        )
+
+        reorderState.onTouchSlopPassed(draggedItemOffset.toOffset(), false)
+        reorderState.onDrag(offset = Offset(50f, 50f), preserveSelectMode = false)
+        reorderState.onDragEnd()
+
+        verify { handler.onDragCancel() }
+    }
+
+    @Test
+    fun `WHEN an item is dragged GIVEN preserveSelectMode is true THEN onDragStart is called with the same flag`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = IntOffset(10, 0)
+        val targetItemOffset = IntOffset(30, 0)
+        val reorderState = fakeGridReorderState(
+            mockGridState(
+                mockItems = listOf(
+                    mockk<LazyGridItemInfo> {
+                        every { key } returns "key1"
+                        every { index } returns 1
+                        every { size } returns IntSize(10, 10)
+                        every { offset } returns dragItemOffset
+                    },
+                    mockk<LazyGridItemInfo> {
+                        every { key } returns "key2"
+                        every { index } returns 1
+                        every { size } returns IntSize(10, 10)
+                        every { offset } returns targetItemOffset
+                    },
+                ),
+            ),
+            handler = handler,
+        )
+
+        reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), true)
+        reorderState.onDrag(offset = Offset(50f, 0f), preserveSelectMode = true) // 50 to the right
+
+        verify { handler.onDragStart(true) }
+    }
+
+    @Test
+    fun `WHEN an item is dragged GIVEN preserveSelectMode is false THEN onDragStart is called with the same flag`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = IntOffset(10, 0)
+        val targetItemOffset = IntOffset(30, 0)
+        val reorderState = fakeGridReorderState(
+            mockGridState(
+                mockItems = listOf(
+                    mockk<LazyGridItemInfo> {
+                        every { key } returns "key1"
+                        every { index } returns 1
+                        every { size } returns IntSize(10, 10)
+                        every { offset } returns dragItemOffset
+                    },
+                    mockk<LazyGridItemInfo> {
+                        every { key } returns "key2"
+                        every { index } returns 1
+                        every { size } returns IntSize(10, 10)
+                        every { offset } returns targetItemOffset
+                    },
+                ),
+            ),
+            handler = handler,
+        )
+
+        reorderState.onTouchSlopPassed(dragItemOffset.toOffset(), false)
+        reorderState.onDrag(Offset(50f, 0f), preserveSelectMode = false) // 50 to the right
+
+        verify { handler.onDragStart(false) }
+    }
+
+    @Test
+    fun `WHEN a drag is cancelled THEN the handler is invoked with a drag cancel call`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = IntOffset(10, 0)
+        val targetItemOffset = IntOffset(30, 0)
+        val reorderState = fakeGridReorderState(
+            mockGridState(
+                mockItems = listOf(
+                    mockk<LazyGridItemInfo> {
+                        every { key } returns "key1"
+                        every { index } returns 1
+                        every { size } returns IntSize(10, 10)
+                        every { offset } returns dragItemOffset
+                    },
+                    mockk<LazyGridItemInfo> {
+                        every { key } returns "key2"
+                        every { index } returns 1
+                        every { size } returns IntSize(10, 10)
+                        every { offset } returns targetItemOffset
+                    },
+                ),
+            ),
+            handler = handler,
+        )
+
+        reorderState.onTouchSlopPassed(offset = dragItemOffset.toOffset(), shouldLongPress = false)
+        reorderState.onDrag(offset = Offset(50f, 50f), preserveSelectMode = false)
+        reorderState.onDragCancelled()
+
+        verify { handler.onDragCancel() }
     }
 
     private fun mockGridItem(mockItemKey: String = "key"): LazyGridItemInfo {
@@ -406,6 +528,8 @@ class InteractableGridTest {
                     every { totalItemsCount } returns totalItems
                     every { mainAxisItemSpacing } returns 10
                     every { beforeContentPadding } returns 10
+                    every { viewportStartOffset } returns 0
+                    every { viewportEndOffset } returns 10
                 }
             every { isScrollInProgress } returns false
         }
@@ -422,8 +546,9 @@ class InteractableGridTest {
             touchSlop = 0f,
             ignoredItems = emptyList(),
             onLongPress = { _ -> },
-            hapticFeedback = mockk<HapticFeedback>(),
-            onExitLongPress = { },
+            hapticFeedback = mockk<HapticFeedback> {
+                every { performHapticFeedback(any()) } just Runs
+            },
             dragAndDropEnabled = true,
         )
     }

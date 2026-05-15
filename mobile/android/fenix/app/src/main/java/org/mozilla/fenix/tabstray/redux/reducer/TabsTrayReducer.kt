@@ -65,6 +65,11 @@ internal object TabsTrayReducer {
             is TabsTrayAction.UpdatePbmLockStatus ->
                 state.copy(privateBrowsing = state.privateBrowsing.copy(isLocked = action.isLocked))
 
+            // Drag actions
+            is TabsTrayAction.TabDragStart,
+            is TabsTrayAction.TabDragCancel,
+                -> handleTabDragActions(state = state, action = action)
+
             is TabsTrayAction.TabAutoCloseDialogShown,
             is TabsTrayAction.ShareAllNormalTabs,
             is TabsTrayAction.ShareAllPrivateTabs,
@@ -81,6 +86,31 @@ internal object TabsTrayReducer {
         }
 
         return newState
+    }
+
+    private fun handleTabDragActions(state: TabsTrayState, action: TabsTrayAction): TabsTrayState {
+        return when (action) {
+            is TabsTrayAction.TabDragStart ->
+                state.copy(
+                    normalTabsState = state.normalTabsState.copy(
+                        itemFocusIndicatorEnabled = false,
+                    ),
+                    mode = if (state.mode is TabsTrayState.Mode.Select && !action.preserveSelectMode) {
+                        TabsTrayState.Mode.Normal
+                    } else {
+                        state.mode
+                    },
+                )
+
+            is TabsTrayAction.TabDragCancel ->
+                state.copy(
+                    normalTabsState = state.normalTabsState.copy(
+                        itemFocusIndicatorEnabled = true,
+                    ),
+                )
+
+            else -> state
+        }
     }
 
     private fun handleSelectionModeActions(state: TabsTrayState, action: TabsTrayAction): TabsTrayState {
@@ -102,6 +132,7 @@ internal object TabsTrayReducer {
                     selectedTabGroups = state.mode.selectedTabGroups,
                 ),
             )
+
             is TabsTrayAction.RemoveSelectTab -> {
                 val selectedTabs = state.mode.selectedTabs - action.tab
                 state.copy(

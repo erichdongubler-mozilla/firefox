@@ -61,7 +61,6 @@ private const val ELEVATION_NO_INTERACTION = 0f
  * @param tabInteractionHandler Handlers tab interactions such as moves and drag and drop.
  * @param ignoredItems List of keys for non-draggable items.
  * @param onLongPress Optional callback to be invoked when long pressing an item.
- * @param onExitLongPress Optional callback to be invoked when the item is dragged after long press.
  * @param dragAndDropEnabled Whether drag and drop should be considered in the list of candidates.  Note that
  * this is trivially true, but if we use this grid for other pages, the setting is available.
  */
@@ -71,7 +70,6 @@ fun createGridInteractionState(
     tabInteractionHandler: TabInteractionHandler,
     ignoredItems: List<Any>,
     onLongPress: (LazyGridItemInfo) -> Unit = {},
-    onExitLongPress: () -> Unit = {},
     dragAndDropEnabled: Boolean = true,
 ): GridInteractionState {
     val scope = rememberCoroutineScope()
@@ -86,7 +84,6 @@ fun createGridInteractionState(
             ignoredItems = ignoredItems,
             onLongPress = onLongPress,
             hapticFeedback = hapticFeedback,
-            onExitLongPress = onExitLongPress,
             dragAndDropEnabled = dragAndDropEnabled,
         )
     }
@@ -104,7 +101,6 @@ fun createGridInteractionState(
  * as a candidate for interaction when computing the most likely gesture candidate.
  * @param tabInteractionHandler Handlers tab interactions such as moves and drag and drop.
  * @param onLongPress Optional callback to be invoked when long pressing an item.
- * @param onExitLongPress Optional callback to be invoked when the item is dragged after long press.
  * @param ignoredItems List of keys for non-draggable items.
  */
 class GridInteractionState internal constructor(
@@ -115,7 +111,6 @@ class GridInteractionState internal constructor(
     private val dragAndDropEnabled: Boolean,
     private val tabInteractionHandler: TabInteractionHandler,
     private val onLongPress: (LazyGridItemInfo) -> Unit = {},
-    private val onExitLongPress: () -> Unit = {},
     private val ignoredItems: List<Any> = emptyList(),
 ) {
     internal var gridLayoutCoordinates: LayoutCoordinates? = null
@@ -173,7 +168,6 @@ class GridInteractionState internal constructor(
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 onLongPress(item)
             }
-            moved = !shouldLongPress
         }
     }
 
@@ -208,11 +202,17 @@ class GridInteractionState internal constructor(
 
             is InteractionMode.Scroll, is InteractionMode.None -> {
                 // No action is taken
+                if (moved) {
+                    tabInteractionHandler.onDragCancel()
+                }
             }
         }
     }
 
     internal fun onDragCancelled() {
+        if (moved) {
+            tabInteractionHandler.onDragCancel()
+        }
         resetState()
     }
 
@@ -251,7 +251,6 @@ class GridInteractionState internal constructor(
         moved = false
         scrollJob?.cancel()
         scrollJob = null
-        // onExitLongPress()
     }
 
     private fun handleReorderingModeOnDrag(mode: InteractionMode.Reordering) {
@@ -293,10 +292,10 @@ class GridInteractionState internal constructor(
         }
     }
 
-    internal fun onDrag(offset: Offset) {
+    internal fun onDrag(offset: Offset, preserveSelectMode: Boolean) {
         draggedItem = draggedItem.incrementCumulatedOffset(offset)
         if (!moved && draggedItem.cumulatedOffset.getDistance() > touchSlop) {
-            onExitLongPress()
+            tabInteractionHandler.onDragStart(preserveSelectMode)
             moved = true
         }
 
@@ -661,28 +660,30 @@ private fun LazyGridState.findItem(offset: Offset) =
 /**
  * Detects press, long press and drag gestures.
  * @param reorderState Grid reordering state used for dragging callbacks.
- * @param shouldLongPressToDrag Whether or not an item should be long pressed to start the dragging gesture.
+ * @param isInMultiSelectMode Whether or not multi-select mode is active for the grid being reordered
  */
 fun Modifier.detectGridPressAndDragGestures(
     reorderState: GridInteractionState,
-    shouldLongPressToDrag: Boolean,
-): Modifier = pointerInput(shouldLongPressToDrag) {
-    if (shouldLongPressToDrag) {
-        detectDragGesturesAfterLongPress(
-            onDragStart = { offset -> reorderState.onTouchSlopPassed(offset, true) },
+    isInMultiSelectMode: Boolean,
+): Modifier = pointerInput(isInMultiSelectMode) {
+    // In multi-select mode, drag gestures will be detected without a long press and the reorder state
+    // will attempt to preserve the select mode state.
+    if (isInMultiSelectMode) {
+        detectDragGestures(
+            onDragStart = { offset -> reorderState.onTouchSlopPassed(offset, false) },
             onDrag = { change, dragAmount ->
                 change.consume()
-                reorderState.onDrag(dragAmount)
+                reorderState.onDrag(offset = dragAmount, preserveSelectMode = true)
             },
             onDragEnd = reorderState::onDragEnd,
             onDragCancel = reorderState::onDragCancelled,
         )
     } else {
-        detectDragGestures(
-            onDragStart = { offset -> reorderState.onTouchSlopPassed(offset, false) },
+        detectDragGesturesAfterLongPress(
+            onDragStart = { offset -> reorderState.onTouchSlopPassed(offset, true) },
             onDrag = { change, dragAmount ->
                 change.consume()
-                reorderState.onDrag(dragAmount)
+                reorderState.onDrag(offset = dragAmount, preserveSelectMode = false)
             },
             onDragEnd = reorderState::onDragEnd,
             onDragCancel = reorderState::onDragCancelled,
