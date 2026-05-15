@@ -209,10 +209,6 @@ ${
     `;
   }
 
-  static get observedAttributes() {
-    return ["open"];
-  }
-
   /**
    * @type {DocumentFragment=}
    *
@@ -473,18 +469,6 @@ ${
         new CustomEvent("smartbar-initialized", { bubbles: true })
       );
     });
-  }
-
-  attributeChangedCallback(attribute, _oldValue, _newValue) {
-    if (attribute != "open") {
-      return;
-    }
-
-    if (this.view.isOpen) {
-      this.startLayoutExtend();
-    } else {
-      this.endLayoutExtend();
-    }
   }
 
   connectedCallback() {

@@ -190,10 +190,6 @@ ${
     return document.importNode(UrlbarInput.#fragment, true);
   }
 
-  static get observedAttributes() {
-    return ["focused", "open"];
-  }
-
   /**
    * @type {DocumentFragment=}
    *
@@ -411,29 +407,6 @@ ${
     // The engine name is not known yet, but update placeholder anyway to
     // reflect value of keyword.enabled or set the searchbar placeholder.
     this._setPlaceholder(null);
-  }
-
-  attributeChangedCallback(attribute, _oldValue, _newValue) {
-    if (attribute != "focused" && attribute != "open") {
-      return;
-    }
-
-    if (!Services.prefs.getBoolPref("browser.nova.enabled", false)) {
-      if (attribute == "open") {
-        if (this.view.isOpen) {
-          this.startLayoutExtend();
-        } else {
-          this.endLayoutExtend();
-        }
-      }
-      return;
-    }
-
-    if (this.focused || this.view.isOpen) {
-      this.startLayoutExtend();
-    } else {
-      this.endLayoutExtend();
-    }
   }
 
   connectedCallback() {
@@ -2946,24 +2919,20 @@ ${
       // already expanded.
       return;
     }
-
-    if (
-      !this.view.isOpen &&
-      !Services.prefs.getBoolPref("browser.nova.enabled", false)
-    ) {
+    if (!this.view.isOpen) {
       return;
     }
 
     this.#updateTextboxPosition();
 
-    this.toggleAttribute("breakout-extend", true);
+    this.setAttribute("breakout-extend", "true");
 
     // Enable the animation only after the first extend call to ensure it
     // doesn't run when opening a new window.
     if (!this.hasAttribute("breakout-extend-animate")) {
       this.window.promiseDocumentFlushed(() => {
         this.window.requestAnimationFrame(() => {
-          this.toggleAttribute("breakout-extend-animate", true);
+          this.setAttribute("breakout-extend-animate", "true");
         });
       });
     }
@@ -2973,18 +2942,11 @@ ${
     // If reduce motion is enabled, we want to collapse the Urlbar here so the
     // user sees only sees two states: not expanded, and expanded with the view
     // open.
-    if (!this.hasAttribute("breakout-extend")) {
+    if (!this.hasAttribute("breakout-extend") || this.view.isOpen) {
       return;
     }
 
-    if (
-      this.view.isOpen &&
-      !Services.prefs.getBoolPref("browser.nova.enabled", false)
-    ) {
-      return;
-    }
-
-    this.toggleAttribute("breakout-extend", false);
+    this.removeAttribute("breakout-extend");
     this.#updateTextboxPosition();
   }
 
@@ -3286,14 +3248,10 @@ ${
   }
 
   #updateTextboxPosition() {
-    if (
-      !this.view.isOpen &&
-      !Services.prefs.getBoolPref("browser.nova.enabled", false)
-    ) {
+    if (!this.view.isOpen) {
       this.style.top = "";
       return;
     }
-
     this.style.top = px(
       this.parentNode.getBoxQuads({
         ignoreTransforms: true,
