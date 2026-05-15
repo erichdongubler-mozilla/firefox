@@ -766,7 +766,6 @@ SettingGroupManager.registerGroups({
   },
   cookiesAndSiteData2: {
     inProgress: true,
-    subcategory: "sitedata",
     l10nId: "sitedata-heading",
     iconSrc: "chrome://browser/skin/controlcenter/3rdpartycookies.svg",
     headingLevel: 2,
@@ -1012,7 +1011,6 @@ SettingGroupManager.registerGroups({
     ],
   },
   dnsOverHttps: {
-    subcategory: "dnsOverHttps",
     l10nId: "dns-over-https-group2",
     supportPage: "dns-over-https",
     headingLevel: 1,
@@ -1096,7 +1094,6 @@ SettingGroupManager.registerGroups({
   },
   etpStatus: {
     inProgress: true,
-    subcategory: "etpStatus",
     headingLevel: 2,
     l10nId: "preferences-etp-status-header",
     supportPage: "enhanced-tracking-protection",
@@ -1390,7 +1387,6 @@ SettingGroupManager.registerGroups({
     ],
   },
   ipprotection: {
-    subcategory: "vpn",
     l10nId: "ip-protection-description-1",
     headingLevel: 2,
     supportPage: "built-in-vpn",

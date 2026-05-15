@@ -173,7 +173,6 @@ const FORM_AUTOFILL_CONFIG = {
   payments: {
     l10nId: "payments-group",
     headingLevel: 2,
-    subcategory: "payment-methods-autofill credit-card-autofill",
     items: [
       {
         id: "saveAndFillPayments",
@@ -203,7 +202,6 @@ const FORM_AUTOFILL_CONFIG = {
   addresses: {
     l10nId: "addresses-group",
     headingLevel: 2,
-    subcategory: "addresses-autofill address-autofill",
     items: [
       {
         id: "saveAndFillAddresses",
