@@ -574,6 +574,9 @@ def select_tasks_to_lambda(config, tasks):
         if "treeherder" in lt_task:
             group, symbol = split_symbol(lt_task["treeherder"]["symbol"])
             lt_task["treeherder"]["symbol"] = join_symbol(group, f"{symbol}-LT")
+            lt_task["treeherder"]["platform"] = lt_task["treeherder"][
+                "platform"
+            ].replace("-a55-", "-a55-lt-")
         return redirect_to_lt(lt_task)
 
     for task in tasks:
