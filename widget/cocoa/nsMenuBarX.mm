@@ -585,6 +585,7 @@ void nsMenuBarX::ApplicationMenuOpened() {
     mNeedsRebuild = false;
   }
 
+#ifdef MOZ_BUILD_APP_IS_BROWSER
   // Only show if Set as Default Browser item if Nimbus allows.
   if (NimbusFeatures::GetBool("macAppMenuSetAsDefault"_ns, "shown"_ns, false)) {
     bool isDefaultBrowser = false;
@@ -603,6 +604,7 @@ void nsMenuBarX::ApplicationMenuOpened() {
     // Nimbus wants it hidden
     [[mApplicationMenuDelegate setAsDefaultMenuItem] setHidden:true];
   }
+#endif
 }
 
 bool nsMenuBarX::PerformKeyEquivalent(NSEvent* aEvent) {
@@ -895,6 +897,7 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
       itemBeingAdded = nil;
     }
 
+#ifdef MOZ_BUILD_APP_IS_BROWSER
     // Add the Set As Default menu item
     itemBeingAdded = CreateNativeAppMenuItem(
         aMenu, u"menu_setAsDefault"_ns, @selector(menuItemHit:),
@@ -906,6 +909,7 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
       [itemBeingAdded release];
       itemBeingAdded = nil;
     }
+#endif
 
     // Add separator after Preferences menu
     if (addPrefsSeparator) {

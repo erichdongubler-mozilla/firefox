@@ -174,3 +174,6 @@ OS_LIBS += [
 ]
 
 SPHINX_TREES["/widget/cocoa"] = "docs"
+
+if CONFIG["MOZ_BUILD_APP"] == "browser":
+    DEFINES["MOZ_BUILD_APP_IS_BROWSER"] = True
