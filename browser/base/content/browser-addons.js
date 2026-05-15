@@ -1485,9 +1485,14 @@ var gXPInstallObserver = {
         if (isSitePermissionAddon) {
           // Restrict this to site permission add-ons for now pending a decision
           // from product about how to approach this for extensions.
+          const permissionType =
+            installInfo.installs[0].addon.sitePermissions?.[0];
           declineActions.push(
             buildNotificationAction(neverAllowAndReportMsg, () => {
-              AMTelemetry.recordSuspiciousSiteEvent({ displayURI });
+              AMTelemetry.recordSuspiciousSiteEvent({
+                displayURI,
+                permissionType,
+              });
               neverAllowCallback();
             })
           );

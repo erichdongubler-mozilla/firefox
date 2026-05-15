@@ -464,6 +464,9 @@ addons_manager:
       suspicious_site:
         description: The domain of the site that was reported.
         type: string
+      permission_type:
+        description: The permission that the site was requesting.
+        type: string
     expires: 154
 
   compatibility_check_enabled:

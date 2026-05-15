@@ -312,7 +312,7 @@ add_task(async function testRequestPort() {
   );
 
   Assert.deepEqual(
-    [{ suspicious_site: "example.com" }],
+    [{ suspicious_site: "example.com", permission_type: "serial" }],
     AddonTestUtils.getAMGleanEvents("reportSuspiciousSite"),
     "Expected Glean event recorded."
   );
