@@ -246,7 +246,7 @@ const CONFIG_PANES = Object.freeze({
     visible: () => srdSectionPrefs.all,
   },
   ai: {
-    l10nId: "preferences-ai-controls-header",
+    l10nId: "preferences-ai-controls-header2",
     iconSrc: "chrome://global/skin/icons/highlights.svg",
     groupIds: ["aiControlsDescription", "aiFeatures", "aiStatesDescription"],
     module: "chrome://browser/content/preferences/config/aiFeatures.mjs",
@@ -254,7 +254,7 @@ const CONFIG_PANES = Object.freeze({
       Services.prefs.getBoolPref("browser.preferences.aiControls", false),
   },
   downloads: {
-    l10nId: "pane-downloads",
+    l10nId: "pane-downloads2",
     iconSrc: "chrome://browser/skin/downloads/downloads.svg",
     groupIds: ["downloads", "applications"],
     module: "chrome://browser/content/preferences/config/downloads.mjs",
@@ -316,7 +316,7 @@ const CONFIG_PANES = Object.freeze({
     replaces: "home",
   },
   languages: {
-    l10nId: "preferences-languages-header",
+    l10nId: "preferences-languages-header2",
     iconSrc: "chrome://browser/skin/translations.svg",
     groupIds: [
       "browserLanguage",
@@ -533,7 +533,7 @@ function init_all() {
   );
   let categorySync = document.getElementById("category-sync");
   if (redesignEnabled) {
-    categorySync.setAttribute("data-l10n-id", "pane-account-sync-title");
+    categorySync.setAttribute("data-l10n-id", "pane-account-sync-title2");
     categorySync.iconSrc = "chrome://browser/skin/fxa/avatar-empty.svg";
     categorySync.hidden = false;
   } else if (accountsEnabled) {

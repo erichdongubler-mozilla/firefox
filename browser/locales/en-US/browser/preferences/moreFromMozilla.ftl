@@ -4,7 +4,8 @@
 
 ## These strings are used in the about:preferences moreFromMozilla page
 
-more-from-moz-title = More from { -vendor-short-name }
+more-from-moz-title2 = More from { -vendor-short-name }
+  .title = More from { -vendor-short-name }
 more-from-moz-page-header =
     .heading = More from { -vendor-short-name }
 more-from-moz-category =

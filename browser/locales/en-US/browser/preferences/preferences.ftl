@@ -56,30 +56,25 @@ category-list =
     .aria-label = Categories
 
 pane-general-title = General
-category-general =
-    .tooltiptext = { pane-general-title }
 
 pane-home-title = Home
-category-home =
-    .tooltiptext = { pane-home-title }
 
-pane-home-startup-title = Home and startup
+pane-home-startup-title2 = Home and startup
+  .title = Home and startup
 
-pane-search-title = Search
-category-search =
-    .tooltiptext = { pane-search-title }
+pane-search-title2 = Search
+  .title = Search
 
-pane-privacy-title2 = Privacy and security
+pane-privacy-title3 = Privacy and security
+  .title = Privacy and security
+
 pane-privacy-section =
     .heading = Privacy and security
 
 pane-sync-title3 = Sync
-category-sync3 =
-    .tooltiptext = { pane-sync-title3 }
 
-pane-ai-controls-title = AI controls
-category-ai-controls =
-    .tooltiptext = { pane-ai-controls-title }
+pane-ai-controls-title2 = AI controls
+  .title = AI controls
 
 pane-about-firefox-title = About { -brand-short-name }
   .title = { pane-about-firefox-title }
@@ -87,33 +82,36 @@ pane-about-firefox-title = About { -brand-short-name }
 pane-appearance-title = Appearance
   .title = { pane-appearance-title }
 
-pane-downloads-title = Downloads
-pane-downloads =
-    .heading = { pane-downloads-title }
+pane-downloads-title2 = Downloads
+  .title = Downloads
+
+pane-downloads2 =
+    .heading = { pane-downloads-title2 }
 
 pane-accessibility-title = Accessibility
   .title = { pane-accessibility-title }
 
-pane-languages-title = Languages
-category-languages =
-    .tooltiptext = { pane-languages-title }
+pane-languages-title2 = Languages
+  .title = Languages
 
-preferences-languages-header =
-    .heading = { pane-languages-title }
+preferences-languages-header2 =
+    .heading = { pane-languages-title2 }
 
-settings-pane-labs-title = { -firefoxlabs-brand-name }
+settings-pane-labs-title2 = { -firefoxlabs-brand-name }
+  .title = { -firefoxlabs-brand-name }
+
 settings-pane-labs-header =
     .heading = { -firefoxlabs-brand-name }
-settings-category-labs =
-    .tooltiptext = { -firefoxlabs-brand-name }
 pane-experimental-description4 = Give our experimental features a try! They’re in development and evolving, which could impact how { -brand-short-name } works. We only receive data about your use of these features if you have <a data-l10n-name="data-collection">technical and interaction data</a> turned on.
 
 pane-experimental-reset =
   .label = Restore Defaults
   .accesskey = R
 
-help-button-label = { -brand-short-name } support
-addons-button-label = Extensions and themes
+help-button-label2 = { -brand-short-name } support
+  .title = { -brand-short-name } support
+addons-button-label2 = Extensions and themes
+  .title = Extensions and themes
 
 focus-search =
     .key = f
@@ -241,8 +239,8 @@ preferences-copy-profile-button = Copy
 tabs-browsing-section =
   .heading = Tabs and browsing
 
-pane-tabs-browsing-title = Tabs and browsing
-  .title = { pane-tabs-browsing-title }
+pane-tabs-browsing-title2 = Tabs and browsing
+  .title = Tabs and browsing
 
 tabs-group-header2 =
   .label = Tabs
@@ -1343,7 +1341,8 @@ containers-remove-button =
 account-sync-section =
     .heading = Account and sync
 
-pane-account-sync-title = Account and sync
+pane-account-sync-title2 = Account and sync
+    .title = Account and sync
 
 sync-group-label =
     .label = Sync
@@ -1804,9 +1803,8 @@ address-moz-box-item =
   .label = { $name }
   .description = { $address }
 
-category-passwords-autofill =
-    .tooltiptext = Passwords and autofill settings
-pane-passwords-autofill-title = Passwords and autofill
+pane-passwords-autofill-title2 = Passwords and autofill
+  .title = Passwords and autofill
 preferences-passwords-autofill-header =
    .heading = Passwords and autofill
 
@@ -2082,7 +2080,8 @@ tracking-manage-exceptions =
 permissions-data-section =
     .heading = Permissions and data
 
-pane-permissions-data-title = Permissions and data
+pane-permissions-data-title2 = Permissions and data
+  .title = Permissions and data
 
 permissions-header3 =
     .label = Permissions
@@ -2512,8 +2511,8 @@ motion-and-link-group =
 
 ## AI controls page
 
-preferences-ai-controls-header =
-    .heading = { pane-ai-controls-title }
+preferences-ai-controls-header2 =
+    .heading = { pane-ai-controls-title2 }
 
 preferences-ai-controls-description = You always have a choice in { -brand-short-name }, including whether to use features enhanced with AI. More controls coming soon.
 
