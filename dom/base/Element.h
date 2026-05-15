@@ -2535,13 +2535,11 @@ class Element : public FragmentOrElement {
 #endif
 
  protected:
-  enum class ReparseAttributes { No, Yes };
   /**
    * Copy attributes and state to another element
    * @param aDest the object to copy to
    */
-  nsresult CopyInnerTo(Element* aDest,
-                       ReparseAttributes = ReparseAttributes::Yes);
+  nsresult CopyInnerTo(Element* aDest);
 
   /**
    * Some event handler content attributes have a different name (e.g. different

@@ -154,14 +154,10 @@ nsresult nsGenericHTMLElement::CopyInnerTo(Element* aDst) {
   MOZ_ASSERT(!aDst->GetUncomposedDoc(),
              "Should not CopyInnerTo an Element in a document");
 
-  auto reparse = aDst->OwnerDoc() == OwnerDoc() ? ReparseAttributes::No
-                                                : ReparseAttributes::Yes;
-  nsresult rv = Element::CopyInnerTo(aDst, reparse);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(Element::CopyInnerTo(aDst));
 
   // cloning a node must retain its internal nonce slot
-  nsString* nonce = static_cast<nsString*>(GetProperty(nsGkAtoms::nonce));
-  if (nonce) {
+  if (auto* nonce = static_cast<nsString*>(GetProperty(nsGkAtoms::nonce))) {
     static_cast<nsGenericHTMLElement*>(aDst)->SetNonce(*nonce);
   }
   return NS_OK;

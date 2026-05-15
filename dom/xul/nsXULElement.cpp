@@ -288,18 +288,11 @@ NS_INTERFACE_MAP_END_INHERITING(nsStyledElement)
 nsresult nsXULElement::Clone(mozilla::dom::NodeInfo* aNodeInfo,
                              nsINode** aResult) const {
   *aResult = nullptr;
-
-  RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
-  RefPtr<nsXULElement> element = Construct(ni.forget());
-
-  nsresult rv = const_cast<nsXULElement*>(this)->CopyInnerTo(
-      element, ReparseAttributes::No);
-  NS_ENSURE_SUCCESS(rv, rv);
-
+  RefPtr<nsXULElement> element = Construct(do_AddRef(aNodeInfo));
+  MOZ_TRY(const_cast<nsXULElement*>(this)->CopyInnerTo(element));
   // Note that we're _not_ copying mControllers.
-
   element.forget(aResult);
-  return rv;
+  return NS_OK;
 }
 
 //----------------------------------------------------------------------
