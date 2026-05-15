@@ -1150,6 +1150,7 @@ SettingGroupManager.registerGroups({
   },
   firefoxSuggest: {
     id: "locationBarGroup",
+    subcategory: "firefoxSuggest",
     items: [
       {
         id: "locationBarGroupHeader",
