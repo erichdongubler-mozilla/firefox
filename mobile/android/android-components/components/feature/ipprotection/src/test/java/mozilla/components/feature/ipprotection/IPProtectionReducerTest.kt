@@ -119,4 +119,68 @@ class IPProtectionReducerTest {
             iPProtectionReducer(defaultState, IPProtectionAction.EngineStateChanged(info)),
         )
     }
+
+    @Test
+    fun `WHEN ProxyActiveShown is dispatched THEN proxyActiveShown is true`() {
+        assertEquals(
+            defaultState.copy(proxyActiveShown = true),
+            iPProtectionReducer(defaultState, IPProtectionAction.ProxyActiveShown),
+        )
+    }
+
+    @Test
+    fun `WHEN proxy becomes active and proxyActiveShown was true THEN proxyActiveShown is preserved`() {
+        val state = defaultState.copy(proxyActiveShown = true)
+        val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_ACTIVE)
+        assertEquals(
+            state.copy(
+                serviceStatus = ServiceState.Ready,
+                proxyStatus = Authorized.Active,
+                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+            ),
+            iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info)),
+        )
+    }
+
+    @Test
+    fun `WHEN proxy becomes activating and proxyActiveShown was true THEN proxyActiveShown is preserved`() {
+        val state = defaultState.copy(proxyActiveShown = true)
+        val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_ACTIVATING)
+        assertEquals(
+            state.copy(
+                serviceStatus = ServiceState.Ready,
+                proxyStatus = Authorized.Activating,
+                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+            ),
+            iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info)),
+        )
+    }
+
+    @Test
+    fun `WHEN proxy becomes idle and proxyActiveShown was true THEN proxyActiveShown is reset`() {
+        val state = defaultState.copy(proxyActiveShown = true)
+        val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_READY)
+        assertEquals(
+            defaultState.copy(
+                serviceStatus = ServiceState.Ready,
+                proxyStatus = Authorized.Idle,
+                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+            ),
+            iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info)),
+        )
+    }
+
+    @Test
+    fun `WHEN proxy errors and proxyActiveShown was true THEN proxyActiveShown is reset`() {
+        val state = defaultState.copy(proxyActiveShown = true)
+        val info = StateInfo(serviceState = ServiceState.Ready, proxyState = PROXY_STATE_ERROR)
+        assertEquals(
+            defaultState.copy(
+                serviceStatus = ServiceState.Ready,
+                proxyStatus = Authorized.ConnectionError,
+                accountState = defaultState.accountState.copy(status = AccountStatus.Ready),
+            ),
+            iPProtectionReducer(state, IPProtectionAction.EngineStateChanged(info)),
+        )
+    }
 }

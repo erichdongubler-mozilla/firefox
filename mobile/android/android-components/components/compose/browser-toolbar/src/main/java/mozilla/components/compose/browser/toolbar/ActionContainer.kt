@@ -116,6 +116,7 @@ fun ActionContainer(
                             text = stringResource(action.textResId),
                             contentDescription = stringResource(action.contentDescriptionResId),
                             highlighted = action.highlighted,
+                            animated = action.animated,
                             onClick = action.onClick,
                             onInteraction = onInteraction,
                         )

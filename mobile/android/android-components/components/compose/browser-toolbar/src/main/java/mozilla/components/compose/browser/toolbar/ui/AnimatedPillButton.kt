@@ -43,11 +43,11 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import mozilla.components.compose.base.badge.BadgedIcon
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction
@@ -66,6 +66,7 @@ const val ANIMATION_DELAY_MILLIS = 400L
  * @param overlayIcon A smaller optional icon overlaid at the bottom-end of [icon].
  * @param text The label text shown initially beside the icon.
  * @param contentDescription Accessibility content description for the button.
+ * @param animated Whether to animate the collapsing transition or present in 'post-animation' state.
  * @param highlighted Whether a highlight badge should be drawn on top of [icon].
  * @param onClick Interaction dispatched when the button is tapped.
  * @param onInteraction Callback for dispatching [BrowserToolbarEvent]s to the store.
@@ -76,6 +77,7 @@ internal fun AnimatedPillButton(
     overlayIcon: Drawable? = null,
     text: String,
     contentDescription: String,
+    animated: Boolean = true,
     highlighted: Boolean = false,
     onClick: BrowserToolbarInteraction,
     onInteraction: (BrowserToolbarEvent) -> Unit,
@@ -84,30 +86,22 @@ internal fun AnimatedPillButton(
     val view = LocalView.current
     val density = LocalDensity.current
     var fullWidthPx by remember { mutableIntStateOf(0) }
-    val widthFraction = remember { Animatable(1f) }
-    val textAlpha = remember { Animatable(1f) }
+    val contractionProgress = remember { Animatable(if (animated) 1f else 0f) }
 
     // We use a single background color for both the pill and overlay background so that they match.
     val containerColor = lerp(
         MaterialTheme.colorScheme.surfaceDim,
         MaterialTheme.colorScheme.surfaceBright,
-        widthFraction.value,
+        contractionProgress.value,
     )
 
     LaunchedEffect(fullWidthPx) {
         if (fullWidthPx == 0) return@LaunchedEffect
         delay(ANIMATION_DELAY_MILLIS)
-        launch { textAlpha.animateTo(0f, tween(durationMillis = FADE_OUT_DURATION_MILLIS)) }
-        widthFraction.animateTo(0f, tween(durationMillis = FADE_OUT_DURATION_MILLIS))
+        contractionProgress.animateTo(0f, tween(durationMillis = FADE_OUT_DURATION_MILLIS))
     }
 
-    val collapsedWidthDp = 40.dp
-    val animatedWidthDp = if (fullWidthPx > 0) {
-        val collapsedPx = with(density) { collapsedWidthDp.toPx() }
-        with(density) { (collapsedPx + (fullWidthPx - collapsedPx) * widthFraction.value).toDp() }
-    } else {
-        Dp.Unspecified
-    }
+    val animatedWidthDp = animatedWidth(fullWidthPx, COLLAPSED_WIDTH, contractionProgress.value, density)
 
     Box(
         contentAlignment = Alignment.Center,
@@ -147,7 +141,7 @@ internal fun AnimatedPillButton(
 
             Text(
                 text = text,
-                modifier = Modifier.alpha(textAlpha.value),
+                modifier = Modifier.alpha(contractionProgress.value),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.tertiary,
                 maxLines = 1,
@@ -155,6 +149,20 @@ internal fun AnimatedPillButton(
             )
         }
     }
+}
+
+private val COLLAPSED_WIDTH = 40.dp
+
+private fun animatedWidth(
+    fullWidthPx: Int,
+    collapsedWidthDp: Dp,
+    contractionProgress: Float,
+    density: Density,
+) = if (fullWidthPx > 0) {
+    val collapsedPx = with(density) { collapsedWidthDp.toPx() }
+    with(density) { (collapsedPx + (fullWidthPx - collapsedPx) * contractionProgress).toDp() }
+} else {
+    Dp.Unspecified
 }
 
 /**

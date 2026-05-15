@@ -42,6 +42,11 @@ sealed class IPProtectionAction : Action {
      * Reports that the account is ready to be used.
      */
     data class AccountReady(val firstEnrollment: Boolean) : IPProtectionAction()
+
+    /**
+     * Reports that the proxy-active status has been shown to the user.
+     */
+    data object ProxyActiveShown : IPProtectionAction()
 }
 
 /**

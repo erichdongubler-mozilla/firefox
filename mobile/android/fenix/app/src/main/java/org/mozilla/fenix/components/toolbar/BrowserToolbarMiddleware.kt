@@ -63,6 +63,7 @@ import mozilla.components.concept.engine.permission.SitePermissionsStorage
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.concept.storage.BookmarksStorage
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.session.SessionUseCases
@@ -1356,9 +1357,12 @@ class BrowserToolbarMiddleware(
                 overlayResId = iconsR.drawable.mozac_ic_globe_24,
                 textResId = R.string.ip_protection_toolbar_pill_label,
                 contentDescriptionResId = R.string.ip_protection_toolbar_pill_description,
+                animated = !ipProtectionStore.state.proxyActiveShown,
                 highlighted = highlighted,
                 onClick = onClick,
-            )
+            ).also {
+                ipProtectionStore.dispatch(IPProtectionAction.ProxyActiveShown)
+            }
         } else {
             ActionButtonRes(
                 drawableResId = drawableResId,

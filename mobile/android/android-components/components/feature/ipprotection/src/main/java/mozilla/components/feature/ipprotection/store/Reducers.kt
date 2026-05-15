@@ -53,15 +53,25 @@ internal fun iPProtectionReducer(
             state.accountState.status
         }
 
+        val newProxyStatus = action.info.asProxyStatus()
+        // We reset the shown status when it has been shown AND
+        // the status is no longer Active or Activating.
+        val newProxyActiveShown = if (state.proxyActiveShown) {
+            newProxyStatus == Authorized.Active || newProxyStatus == Authorized.Activating
+        } else {
+            false
+        }
+
         state.copy(
             remainingDataBytes = action.info.remaining,
             maxDataBytes = action.info.max,
             resetDate = action.info.resetTime,
-            proxyStatus = action.info.asProxyStatus(),
+            proxyStatus = newProxyStatus,
             serviceStatus = action.info.serviceState,
             accountState = state.accountState.copy(
                 status = newAccountStatus,
             ),
+            proxyActiveShown = newProxyActiveShown,
             activate = newActivate,
         )
     }
@@ -143,6 +153,10 @@ internal fun iPProtectionReducer(
         }
 
         state
+    }
+
+    is IPProtectionAction.ProxyActiveShown -> {
+        state.copy(proxyActiveShown = true)
     }
 
     is InternalAction -> internalReducer(state, action)
