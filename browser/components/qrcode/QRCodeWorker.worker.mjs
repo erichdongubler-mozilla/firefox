@@ -19,62 +19,8 @@ const FINDER_OUTER_CORNER_RADIUS_FACTOR = 1.2;
 const FINDER_INNER_CORNER_RADIUS_FACTOR = 0.6;
 // Minimum logo size in QR modules - below this the logo is too small to recognize.
 const MIN_LOGO_MODULE_SPAN = 6;
-// Maximum logo size in QR modules - keeps the logo within the H-level error correction budget.
+// Maximum logo size in QR modules - keeps the logo within the M-level error correction budget.
 const MAX_LOGO_MODULE_SPAN = 8;
-// Format information is a 15-bit string reserved adjacent to each finder
-// pattern (ISO/IEC 18004 §7.9). Column/row FINDER_SIZE + 1 (= 8) is where
-// those bits are placed.
-const FORMAT_INFO_BITS = 15;
-// Version information is an 18-bit string stored in two 6×3 blocks for QR
-// version 7 and above (ISO/IEC 18004 §7.10).
-const VERSION_INFO_BITS = 18;
-const VERSION_INFO_MIN_VERSION = 7;
-// The version information blocks begin VERSION_INFO_BLOCK_OFFSET modules from
-// the right and bottom edges of the symbol.
-const VERSION_INFO_BLOCK_OFFSET = 11;
-// Alignment pattern center coordinates by QR version (1-indexed), from ISO/IEC 18004 Table E.1.
-const PATTERN_POSITION_TABLE = [
-  [],
-  [6, 18],
-  [6, 22],
-  [6, 26],
-  [6, 30],
-  [6, 34],
-  [6, 22, 38],
-  [6, 24, 42],
-  [6, 26, 46],
-  [6, 28, 50],
-  [6, 30, 54],
-  [6, 32, 58],
-  [6, 34, 62],
-  [6, 26, 46, 66],
-  [6, 26, 48, 70],
-  [6, 26, 50, 74],
-  [6, 30, 54, 78],
-  [6, 30, 56, 82],
-  [6, 30, 58, 86],
-  [6, 34, 62, 90],
-  [6, 28, 50, 72, 94],
-  [6, 26, 50, 74, 98],
-  [6, 30, 54, 78, 102],
-  [6, 28, 54, 80, 106],
-  [6, 32, 58, 84, 110],
-  [6, 30, 58, 86, 114],
-  [6, 34, 62, 90, 118],
-  [6, 26, 50, 74, 98, 122],
-  [6, 30, 54, 78, 102, 126],
-  [6, 26, 52, 78, 104, 130],
-  [6, 30, 56, 82, 108, 134],
-  [6, 34, 60, 86, 112, 138],
-  [6, 30, 58, 86, 114, 142],
-  [6, 34, 62, 90, 118, 146],
-  [6, 30, 54, 78, 102, 126, 150],
-  [6, 24, 50, 76, 102, 128, 154],
-  [6, 28, 54, 80, 106, 132, 158],
-  [6, 32, 58, 84, 110, 136, 162],
-  [6, 26, 54, 82, 110, 138, 166],
-  [6, 30, 58, 86, 114, 142, 170],
-];
 
 /**
  * QRCode Worker Implementation
@@ -143,7 +89,6 @@ class QRCodeWorkerImpl {
         const offsetY = dotY - placement.centerY;
         if (
           placement.showLogo &&
-          !placement.reservedMatrix[row][col] &&
           Math.hypot(offsetX, offsetY) <
             placement.clearRadius + CELL_SIZE * DOT_RADIUS_FACTOR
         ) {
@@ -231,208 +176,10 @@ class QRCodeWorkerImpl {
    * @returns {number} Logo size in pixels.
    */
   #getPreferredLogoSize(canvasSize) {
-    // 18% of canvas width is a design choice: large enough to be recognisable
-    // without exceeding the H-level error correction budget.
+    // 18% of canvas width is a design choice: large enough to be recognizable
+    // without exceeding the M-level error correction budget.
     const desiredLogoSize = Math.round(canvasSize * 0.18);
     return Math.min(desiredLogoSize, MAX_LOGO_MODULE_SPAN * CELL_SIZE);
-  }
-
-  /**
-   * Builds a boolean matrix marking every QR structural cell that must not be
-   * obscured: finder patterns, separators, timing patterns, alignment patterns,
-   * and format/version information.
-   *
-   * @param {number} dotCount
-   * @returns {boolean[][]}
-   */
-  #createReservedMatrix(dotCount) {
-    // QR version: modules = 17 + 4*version (ISO/IEC 18004 §6.1).
-    const version = (dotCount - 17) / 4;
-    const reservedMatrix = Array.from({ length: dotCount }, () =>
-      Array(dotCount).fill(false)
-    );
-    const mark = (row, col) => {
-      if (row >= 0 && row < dotCount && col >= 0 && col < dotCount) {
-        reservedMatrix[row][col] = true;
-      }
-    };
-
-    // Finder patterns (top-left, top-right, bottom-left) plus their 1-module
-    // separator borders: sweep -1..FINDER_SIZE in each axis around the pattern origin.
-    for (const [startRow, startCol] of [
-      [0, 0],
-      [0, dotCount - FINDER_SIZE],
-      [dotCount - FINDER_SIZE, 0],
-    ]) {
-      for (let rowOffset = -1; rowOffset <= FINDER_SIZE; rowOffset++) {
-        for (let colOffset = -1; colOffset <= FINDER_SIZE; colOffset++) {
-          mark(startRow + rowOffset, startCol + colOffset);
-        }
-      }
-    }
-
-    // Timing patterns on row and column FINDER_SIZE - 1, between the finder zones.
-    for (
-      let index = FINDER_SIZE + 1;
-      index < dotCount - (FINDER_SIZE + 1);
-      index++
-    ) {
-      mark(index, FINDER_SIZE - 1);
-      mark(FINDER_SIZE - 1, index);
-    }
-
-    // Alignment patterns: 5×5 squares (±2 from center), skipping cells already
-    // occupied by finder patterns (ISO/IEC 18004 Table E.1).
-    const alignmentPositions = PATTERN_POSITION_TABLE[version - 1] ?? [];
-    for (const row of alignmentPositions) {
-      for (const col of alignmentPositions) {
-        if (reservedMatrix[row][col]) {
-          continue;
-        }
-        for (let rowOffset = -2; rowOffset <= 2; rowOffset++) {
-          for (let colOffset = -2; colOffset <= 2; colOffset++) {
-            mark(row + rowOffset, col + colOffset);
-          }
-        }
-      }
-    }
-
-    // Format information: FORMAT_INFO_BITS-bit string placed in two copies around
-    // the top-left finder pattern and one copy each near the other two
-    // (ISO/IEC 18004 §7.9). Index FINDER_SIZE - 1 is skipped on the vertical
-    // strip (timing pattern cell).
-    const formatInfoColRow = FINDER_SIZE + 1;
-    for (let index = 0; index < FORMAT_INFO_BITS; index++) {
-      if (index < FINDER_SIZE - 1) {
-        mark(index, formatInfoColRow);
-      } else if (index < FINDER_SIZE + 1) {
-        mark(index + 1, formatInfoColRow);
-      } else {
-        mark(dotCount - FORMAT_INFO_BITS + index, formatInfoColRow);
-      }
-
-      if (index < FINDER_SIZE + 1) {
-        mark(formatInfoColRow, dotCount - index - 1);
-      } else if (index < FINDER_SIZE + 2) {
-        mark(formatInfoColRow, FORMAT_INFO_BITS - index);
-      } else {
-        mark(formatInfoColRow, FORMAT_INFO_BITS - 1 - index);
-      }
-    }
-
-    mark(dotCount - (FINDER_SIZE + 1), formatInfoColRow);
-
-    // Version information: VERSION_INFO_BITS-bit string in two 6×3 blocks for
-    // version VERSION_INFO_MIN_VERSION+ (ISO/IEC 18004 §7.10). Blocks sit
-    // VERSION_INFO_BLOCK_OFFSET modules from the right/bottom edges.
-    if (version >= VERSION_INFO_MIN_VERSION) {
-      for (let index = 0; index < VERSION_INFO_BITS; index++) {
-        mark(
-          Math.floor(index / 3),
-          (index % 3) + dotCount - VERSION_INFO_BLOCK_OFFSET
-        );
-        mark(
-          (index % 3) + dotCount - VERSION_INFO_BLOCK_OFFSET,
-          Math.floor(index / 3)
-        );
-      }
-    }
-
-    return reservedMatrix;
-  }
-
-  /**
-   * Returns all module positions sorted by distance from the QR code centre,
-   * nearest first.
-   *
-   * @param {number} dotCount
-   * @returns {{ row: number, col: number, distance: number }[]}
-   */
-  #sortedCenterCandidates(dotCount) {
-    const midpoint = (dotCount - 1) / 2;
-    const candidates = [];
-    for (let row = 0; row < dotCount; row++) {
-      for (let col = 0; col < dotCount; col++) {
-        candidates.push({
-          col,
-          row,
-          distance: (row - midpoint) ** 2 + (col - midpoint) ** 2,
-        });
-      }
-    }
-    candidates.sort((a, b) => a.distance - b.distance);
-    return candidates;
-  }
-
-  /**
-   * Returns the first candidate cell where the logo fits, or null if none found.
-   *
-   * @param {{ row: number, col: number }[]} candidates - Sorted centre candidates.
-   * @param {number} dotCount
-   * @param {number} logoSize - Logo size in pixels.
-   * @param {boolean[][]} reservedMatrix
-   * @returns {{ row: number, col: number } | null}
-   */
-  #findLogoCenterCell(candidates, dotCount, logoSize, reservedMatrix) {
-    for (const candidate of candidates) {
-      if (this.#logoFitsAtCell(candidate, dotCount, logoSize, reservedMatrix)) {
-        return candidate;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Returns true if the logo can be placed centred on centerCell without
-   * overlapping any reserved structural module.
-   *
-   * @param {{ row: number, col: number }} centerCell
-   * @param {number} dotCount
-   * @param {number} logoSize - Logo size in pixels.
-   * @param {boolean[][]} reservedMatrix
-   * @returns {boolean}
-   */
-  #logoFitsAtCell(centerCell, dotCount, logoSize, reservedMatrix) {
-    const halfLogoSize = logoSize / 2;
-    const halfLogoDots = halfLogoSize / CELL_SIZE;
-    const suppressionRadius = halfLogoSize + CELL_SIZE * DOT_RADIUS_FACTOR;
-    const maxOffset = Math.ceil(suppressionRadius / CELL_SIZE);
-
-    if (
-      centerCell.row + 0.5 - halfLogoDots < 0 ||
-      centerCell.col + 0.5 - halfLogoDots < 0 ||
-      centerCell.row + 0.5 + halfLogoDots > dotCount ||
-      centerCell.col + 0.5 + halfLogoDots > dotCount
-    ) {
-      return false;
-    }
-
-    for (
-      let row = Math.max(0, centerCell.row - maxOffset);
-      row <= Math.min(dotCount - 1, centerCell.row + maxOffset);
-      row++
-    ) {
-      for (
-        let col = Math.max(0, centerCell.col - maxOffset);
-        col <= Math.min(dotCount - 1, centerCell.col + maxOffset);
-        col++
-      ) {
-        if (!reservedMatrix[row][col]) {
-          continue;
-        }
-
-        const offsetX = (col - centerCell.col) * CELL_SIZE;
-        const offsetY = (row - centerCell.row) * CELL_SIZE;
-        if (
-          Math.hypot(offsetX, offsetY) < suppressionRadius ||
-          (Math.abs(offsetX) < halfLogoSize && Math.abs(offsetY) < halfLogoSize)
-        ) {
-          return false;
-        }
-      }
-    }
-
-    return true;
   }
 
   /**
@@ -443,13 +190,14 @@ class QRCodeWorkerImpl {
     if (!QR || !QR.encodeToMatrix) {
       throw new Error("QRCode library not available in worker");
     }
-    const { matrix, dotCount } = QR.encodeToMatrix(url, "H");
+    const { matrix, dotCount } = QR.encodeToMatrix(url, "M");
     return { matrix, dotCount };
   }
 
   /**
-   * Finds the best position and size for the logo in a QR code of dotCount
-   * modules, avoiding all structural reserved areas.
+   * Returns the logo placement, always centered on the canvas. Modules under
+   * the logo are cleared at draw time; M-level error correction absorbs the
+   * loss.
    *
    * @param {number} dotCount
    * @param {number} [margin]
@@ -457,42 +205,15 @@ class QRCodeWorkerImpl {
    */
   getLogoPlacement(dotCount, margin = this.#getMargin()) {
     const canvasSize = this.#getCanvasSize(dotCount, margin);
-    const reservedMatrix = this.#createReservedMatrix(dotCount);
     const preferredLogoSize = this.#getPreferredLogoSize(canvasSize);
     const minimumLogoSize = MIN_LOGO_MODULE_SPAN * CELL_SIZE;
-    let logoSize = Math.max(preferredLogoSize, minimumLogoSize);
-    let centerCell = null;
-
-    const candidates = this.#sortedCenterCandidates(dotCount);
-    while (logoSize >= minimumLogoSize && !centerCell) {
-      centerCell = this.#findLogoCenterCell(
-        candidates,
-        dotCount,
-        logoSize,
-        reservedMatrix
-      );
-      if (!centerCell) {
-        logoSize -= CELL_SIZE / 2;
-      }
-    }
-
-    if (!centerCell) {
-      return {
-        centerX: Math.floor(canvasSize / 2),
-        centerY: Math.floor(canvasSize / 2),
-        clearRadius: 0,
-        logoSize: minimumLogoSize,
-        reservedMatrix,
-        showLogo: false,
-      };
-    }
+    const logoSize = Math.max(preferredLogoSize, minimumLogoSize);
 
     return {
-      centerX: margin + (centerCell.col + 0.5) * CELL_SIZE,
-      centerY: margin + (centerCell.row + 0.5) * CELL_SIZE,
+      centerX: canvasSize / 2,
+      centerY: canvasSize / 2,
       clearRadius: logoSize / 2,
       logoSize,
-      reservedMatrix,
       showLogo: true,
     };
   }
@@ -501,10 +222,10 @@ class QRCodeWorkerImpl {
    * Generate a complete QR code PNG with the Firefox logo composited in the
    * worker. Returns a data URI ready for display or saving.
    *
-   * Tries H-level error correction first. If the URL is too long to fit,
-   * falls back through Q, M, L. The logo is only shown at H-level, which
-   * has enough redundancy to survive the logo overlay without making the
-   * code undecodable.
+   * Defaults to M-level error correction (matching Chrome): denser modules
+   * than H, with enough headroom for the centered logo. Falls back to L for
+   * URLs that don't fit at M, hiding the logo since L's ~7% error-correction
+   * budget is too narrow to spare.
    *
    * @param {string} url
    * @param {boolean} [showLogo=true]
@@ -512,7 +233,7 @@ class QRCodeWorkerImpl {
    */
   async generateFullQRCode(url, showLogo = true) {
     let matrix, dotCount, ecLevel;
-    for (const level of ["H", "Q", "M", "L"]) {
+    for (const level of ["M", "L"]) {
       try {
         ({ matrix, dotCount } = QR.encodeToMatrix(url, level));
         ecLevel = level;
@@ -525,7 +246,7 @@ class QRCodeWorkerImpl {
     }
     const margin = this.#getMargin();
     const placement = this.getLogoPlacement(dotCount, margin);
-    if (ecLevel !== "H" || !showLogo) {
+    if (ecLevel !== "M" || !showLogo) {
       placement.showLogo = false;
     }
     const size = this.#getCanvasSize(dotCount, margin);

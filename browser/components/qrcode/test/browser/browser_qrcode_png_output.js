@@ -13,13 +13,131 @@ const { QRCodeWorker } = ChromeUtils.importESModule(
 const CELL_SIZE = 20;
 const MARGIN = 4 * CELL_SIZE;
 const DOT_RADIUS_FACTOR = 0.4;
+const FINDER_SIZE = 7;
 const MIN_LOGO_MODULE_SPAN = 6;
 const TEST_URL = "https://mozilla.org";
 const LONG_TEST_URL =
   "https://www.cnet.com/home/kitchen-and-household/keep-these-7-devices-far-away-from-extension-cords-or-power-strips/?utm_source=firefox-newtab-en-us";
-// Exceeds H-level error correction capacity (~1273 bytes at version 40),
-// forcing a fallback to a lower EC level that cannot support logo overlay.
-const TOO_LONG_FOR_H_LEVEL_URL = "https://example.com/?" + "a".repeat(1400);
+// Exceeds M-level capacity at version 40, forcing fallback to L (no logo).
+const TOO_LONG_FOR_M_LEVEL_URL = "https://example.com/?" + "a".repeat(2400);
+
+// Alignment-pattern centers per QR version (ISO/IEC 18004 Table E.1),
+// indexed by version - 1.
+const ALIGNMENT_POSITION_TABLE = [
+  [],
+  [6, 18],
+  [6, 22],
+  [6, 26],
+  [6, 30],
+  [6, 34],
+  [6, 22, 38],
+  [6, 24, 42],
+  [6, 26, 46],
+  [6, 28, 50],
+  [6, 30, 54],
+  [6, 32, 58],
+  [6, 34, 62],
+  [6, 26, 46, 66],
+  [6, 26, 48, 70],
+  [6, 26, 50, 74],
+  [6, 30, 54, 78],
+  [6, 30, 56, 82],
+  [6, 30, 58, 86],
+  [6, 34, 62, 90],
+  [6, 28, 50, 72, 94],
+  [6, 26, 50, 74, 98],
+  [6, 30, 54, 78, 102],
+  [6, 28, 54, 80, 106],
+  [6, 32, 58, 84, 110],
+  [6, 30, 58, 86, 114],
+  [6, 34, 62, 90, 118],
+  [6, 26, 50, 74, 98, 122],
+  [6, 30, 54, 78, 102, 126],
+  [6, 26, 52, 78, 104, 130],
+  [6, 30, 56, 82, 108, 134],
+  [6, 34, 60, 86, 112, 138],
+  [6, 30, 58, 86, 114, 142],
+  [6, 34, 62, 90, 118, 146],
+  [6, 30, 54, 78, 102, 126, 150],
+  [6, 24, 50, 76, 102, 128, 154],
+  [6, 28, 54, 80, 106, 132, 158],
+  [6, 32, 58, 84, 110, 136, 162],
+  [6, 26, 54, 82, 110, 138, 166],
+  [6, 30, 58, 86, 114, 142, 170],
+];
+
+// Marks every QR function module: finders, separators, timing, alignment,
+// format and version info.
+function getFunctionModuleMask(dotCount) {
+  const version = (dotCount - 17) / 4;
+  const mask = Array.from({ length: dotCount }, () =>
+    Array(dotCount).fill(false)
+  );
+  const mark = (row, col) => {
+    if (row >= 0 && row < dotCount && col >= 0 && col < dotCount) {
+      mask[row][col] = true;
+    }
+  };
+
+  // Finder patterns (top-left, top-right, bottom-left) plus 1-module separators.
+  for (const [startRow, startCol] of [
+    [0, 0],
+    [0, dotCount - FINDER_SIZE],
+    [dotCount - FINDER_SIZE, 0],
+  ]) {
+    for (let rowOffset = -1; rowOffset <= FINDER_SIZE; rowOffset++) {
+      for (let colOffset = -1; colOffset <= FINDER_SIZE; colOffset++) {
+        mark(startRow + rowOffset, startCol + colOffset);
+      }
+    }
+  }
+
+  // Timing patterns on row/column 6, between the finder zones.
+  for (
+    let index = FINDER_SIZE + 1;
+    index < dotCount - (FINDER_SIZE + 1);
+    index++
+  ) {
+    mark(index, FINDER_SIZE - 1);
+    mark(FINDER_SIZE - 1, index);
+  }
+
+  // Alignment patterns: 5×5 squares centered on each (row, col) pair, skipping
+  // any whose center falls inside a finder pattern.
+  const alignmentPositions = ALIGNMENT_POSITION_TABLE[version - 1] ?? [];
+  for (const row of alignmentPositions) {
+    for (const col of alignmentPositions) {
+      if (mask[row][col]) {
+        continue;
+      }
+      for (let rowOffset = -2; rowOffset <= 2; rowOffset++) {
+        for (let colOffset = -2; colOffset <= 2; colOffset++) {
+          mark(row + rowOffset, col + colOffset);
+        }
+      }
+    }
+  }
+
+  // Format information: 15-bit strips on row/column 8 alongside each finder.
+  for (let i = 0; i <= FINDER_SIZE + 1; i++) {
+    mark(FINDER_SIZE + 1, i);
+    mark(i, FINDER_SIZE + 1);
+    mark(FINDER_SIZE + 1, dotCount - 1 - i);
+    mark(dotCount - 1 - i, FINDER_SIZE + 1);
+  }
+
+  // Version information: two 6×3 blocks for version 7+.
+  if (version >= 7) {
+    for (let i = 0; i < 6; i++) {
+      for (let j = 0; j < 3; j++) {
+        mark(i, dotCount - 11 + j);
+        mark(dotCount - 11 + j, i);
+      }
+    }
+  }
+
+  return mask;
+}
 
 async function renderToSamplingCanvas(url) {
   const dataURI = await QRCodeGenerator.generateQRCode(url);
@@ -139,9 +257,8 @@ add_task(async function test_qrcode_png_no_logo() {
 });
 
 add_task(async function test_qrcode_png_logo_clear_zone() {
-  // Use the raw matrix to identify which modules are actually dark within the
-  // clear zone for this URL. This ensures the test is meaningful: we only assert on
-  // positions that would have rendered as dots if the clear zone weren't applied.
+  // Only assert on modules that would have rendered dark without the clear zone,
+  // so the suppression check is relevant.
   const worker = new QRCodeWorker();
   let matrix, dotCount, placement;
   try {
@@ -161,7 +278,7 @@ add_task(async function test_qrcode_png_logo_clear_zone() {
   const suppressedModules = [];
   for (let row = 0; row < dotCount; row++) {
     for (let col = 0; col < dotCount; col++) {
-      if (!matrix[row][col] || placement.reservedMatrix[row][col]) {
+      if (!matrix[row][col]) {
         continue;
       }
       const dotX = MARGIN + (col + 0.5) * CELL_SIZE;
@@ -207,12 +324,9 @@ add_task(async function test_qrcode_png_logo_is_rendered() {
 
   const { getPixel } = await renderToSamplingCanvas(TEST_URL);
 
-  // Sample a grid of points inside the logo area. The clear zone leaves those
-  // pixels white when the logo fails to load. Any logo — colorful or
-  // monochrome — will paint at least some non-white pixels over that area.
-  // 0.3 keeps samples well inside the circular artwork and away from the white
-  // corners of the square bounding box (the Firefox logo is a circle in a
-  // square; sampling near 0.5 could land in a transparent/white corner).
+  // Sample inside the logo: the clear zone is white when no logo paints, so any
+  // rendered logo leaves non-white pixels here. 0.3 stays inside the circular
+  // artwork. Sampling near 0.5 risks the transparent corners of the bounding box.
   const sampleRadius = placement.logoSize * 0.3;
   const steps = 5;
   let nonWhitePixels = 0;
@@ -233,7 +347,39 @@ add_task(async function test_qrcode_png_logo_is_rendered() {
   );
 });
 
-add_task(async function test_qrcode_png_long_url_center_alignment_pattern() {
+add_task(async function test_qrcode_png_logo_is_centered() {
+  // Logo must sit at the canvas center for every URL length; earlier revisions
+  // shifted it to dodge the central alignment pattern.
+  for (const url of [TEST_URL, LONG_TEST_URL]) {
+    const worker = new QRCodeWorker();
+    let dotCount, placement;
+    try {
+      ({ dotCount } = await worker.generateQRMatrix(url));
+      placement = await worker.getLogoPlacement(dotCount, MARGIN);
+    } finally {
+      await worker.terminate();
+    }
+
+    Assert.ok(placement.showLogo, `url=${url}: logo should render`);
+
+    const canvasSize = dotCount * CELL_SIZE + 2 * MARGIN;
+    Assert.equal(
+      placement.centerX,
+      canvasSize / 2,
+      `url=${url}: logo centerX must equal canvas center`
+    );
+    Assert.equal(
+      placement.centerY,
+      canvasSize / 2,
+      `url=${url}: logo centerY must equal canvas center`
+    );
+  }
+});
+
+add_task(async function test_qrcode_png_long_url_clears_center() {
+  // At versions with a central alignment pattern the logo paints over it.
+  // Every dark module under the clear radius must render white; M-level EC
+  // recovers the lost data.
   const worker = new QRCodeWorker();
   let matrix, dotCount, placement;
   try {
@@ -243,79 +389,46 @@ add_task(async function test_qrcode_png_long_url_center_alignment_pattern() {
     await worker.terminate();
   }
 
-  Assert.ok(placement.showLogo, "Long test URL should still render a logo");
-  Assert.greaterOrEqual(
-    placement.logoSize,
-    MIN_LOGO_MODULE_SPAN * CELL_SIZE,
-    "Long-URL logo should stay at or above the minimum viable size"
-  );
-
-  // Find the alignment pattern center nearest the QR code midpoint by looking for
-  // a dark reserved cell (outside finder zones) surrounded by a full 5x5 reserved block.
-  const isInFinderZone = (r, c) =>
-    (r < 8 && c < 8) ||
-    (r < 8 && c >= dotCount - 8) ||
-    (r >= dotCount - 8 && c < 8);
-  const mid = (dotCount - 1) / 2;
-  let centerRow = -1,
-    centerCol = -1,
-    bestDist = Infinity;
-  for (let row = 2; row < dotCount - 2; row++) {
-    for (let col = 2; col < dotCount - 2; col++) {
+  const { getPixel } = await renderToSamplingCanvas(LONG_TEST_URL);
+  const suppressionLimit =
+    placement.clearRadius + CELL_SIZE * DOT_RADIUS_FACTOR;
+  let suppressedDarkModules = 0;
+  for (let row = 0; row < dotCount; row++) {
+    for (let col = 0; col < dotCount; col++) {
+      if (!matrix[row][col]) {
+        continue;
+      }
+      const dotX = MARGIN + (col + 0.5) * CELL_SIZE;
+      const dotY = MARGIN + (row + 0.5) * CELL_SIZE;
       if (
-        isInFinderZone(row, col) ||
-        !matrix[row][col] ||
-        !placement.reservedMatrix[row][col]
+        Math.hypot(dotX - placement.centerX, dotY - placement.centerY) >=
+        suppressionLimit
       ) {
         continue;
       }
-      let isAlignmentCenter = true;
-      for (let dr = -2; dr <= 2 && isAlignmentCenter; dr++) {
-        for (let dc = -2; dc <= 2 && isAlignmentCenter; dc++) {
-          if (!placement.reservedMatrix[row + dr]?.[col + dc]) {
-            isAlignmentCenter = false;
-          }
-        }
-      }
-      if (!isAlignmentCenter) {
-        continue;
-      }
-      const dist = (row - mid) ** 2 + (col - mid) ** 2;
-      if (dist < bestDist) {
-        bestDist = dist;
-        centerRow = row;
-        centerCol = col;
-      }
-    }
-  }
-
-  Assert.notEqual(
-    centerRow,
-    -1,
-    "Long URL should produce a QR code with a center alignment pattern"
-  );
-
-  const { getPixel } = await renderToSamplingCanvas(LONG_TEST_URL);
-  for (let row = centerRow - 2; row <= centerRow + 2; row++) {
-    for (let col = centerCol - 2; col <= centerCol + 2; col++) {
-      Assert.equal(
-        isNearBlack(
-          getPixel(
-            MARGIN + (col + 0.5) * CELL_SIZE,
-            MARGIN + (row + 0.5) * CELL_SIZE
-          )
-        ),
-        matrix[row][col],
-        `Center alignment pattern at (${row},${col}) should be preserved`
+      suppressedDarkModules++;
+      Assert.ok(
+        !isNearBlack(getPixel(dotX, dotY)),
+        `Module under logo at (${row},${col}) must be cleared`
       );
     }
   }
+  Assert.greater(
+    suppressedDarkModules,
+    0,
+    "Sanity check: the URL must produce at least one dark module under the logo"
+  );
 });
 
-// Validates that the rendered PNG faithfully represents reserved QR dots and
-// keeps any data-dot suppression within H-level error correction capacity
-// (30%). Tests two URL lengths: short (baseline) and long (stress).
-add_task(async function test_qrcode_png_decodability() {
+// Loss must stay within M-level's ~15% EC budget (ISO/IEC 18004 §6.5.1).
+// We assert two things:
+//   1. Every module outside the logo footprint matches the source (function
+//      modules aren't EC-protected, so any corruption breaks decoding).
+//   2. Mismatches among non-function modules stay under 15%; restricting the
+//      denominator keeps quiet-zone whites from diluting the metric.
+// The central alignment pattern (versions 2+) is intentionally cleared under
+// the logo; corner finders provide orientation for a flat-screen scan.
+add_task(async function test_qrcode_png_loss_within_ec_budget() {
   const urls = [TEST_URL, LONG_TEST_URL];
 
   for (const url of urls) {
@@ -329,52 +442,61 @@ add_task(async function test_qrcode_png_decodability() {
     }
 
     const { getPixel } = await renderToSamplingCanvas(url);
+    const functionMask = getFunctionModuleMask(dotCount);
+    const suppressionLimit =
+      placement.clearRadius + CELL_SIZE * DOT_RADIUS_FACTOR;
 
-    let totalDataDots = 0;
-    let dataMismatches = 0;
-    let reservedMismatches = 0;
+    let dataModuleCount = 0;
+    let clearedDataModules = 0;
 
     for (let row = 0; row < dotCount; row++) {
       for (let col = 0; col < dotCount; col++) {
         const dotX = MARGIN + (col + 0.5) * CELL_SIZE;
         const dotY = MARGIN + (row + 0.5) * CELL_SIZE;
-        const renderedDark = isNearBlack(getPixel(dotX, dotY));
+        const isFunctionModule = functionMask[row][col];
 
-        if (placement.reservedMatrix[row][col]) {
-          if (renderedDark !== matrix[row][col]) {
-            reservedMismatches++;
-          }
+        if (!isFunctionModule) {
+          dataModuleCount++;
+        }
+
+        if (isNearBlack(getPixel(dotX, dotY)) === matrix[row][col]) {
           continue;
         }
 
-        totalDataDots++;
-        if (renderedDark !== matrix[row][col]) {
-          dataMismatches++;
+        const underLogo =
+          Math.hypot(dotX - placement.centerX, dotY - placement.centerY) <
+          suppressionLimit;
+        Assert.ok(
+          underLogo,
+          `url="${url}" module at (${row},${col}) outside the logo footprint must render correctly`
+        );
+
+        if (!isFunctionModule) {
+          clearedDataModules++;
         }
       }
     }
 
-    Assert.equal(
-      reservedMismatches,
+    Assert.greater(
+      clearedDataModules,
       0,
-      `url="${url}" should preserve all reserved QR dots`
+      `url="${url}" expected the logo to clear at least one dark data module (otherwise the budget check is meaningless)`
     );
 
-    const suppressedFraction = dataMismatches / totalDataDots;
+    const dataLossFraction = clearedDataModules / dataModuleCount;
     Assert.less(
-      suppressedFraction,
-      0.3,
-      `url="${url}" changed ${(suppressedFraction * 100).toFixed(1)}% of data dots; must be under 30% for H-level error correction`
+      dataLossFraction,
+      0.15,
+      `url="${url}" cleared ${(dataLossFraction * 100).toFixed(1)}% of data modules; must be under 15% for M-level error correction`
     );
   }
 });
 
 add_task(async function test_qrcode_png_long_url_omits_logo() {
-  // URLs too long for H-level fall back to a lower EC level and the logo is
-  // omitted. Verify the full rendered output matches the reference image, which
-  // was generated with automatic EC fallback (no logo overlay).
+  // URLs too long for M-level fall back to L and omit the logo. Compare against
+  // the no-logo reference image.
   const dataURI = await QRCodeGenerator.generateQRCode(
-    TOO_LONG_FOR_H_LEVEL_URL
+    TOO_LONG_FOR_M_LEVEL_URL
   );
   const refDataURI = await loadReferenceDataURI(
     "reference-long-url-no-logo.png"

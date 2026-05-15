@@ -97,10 +97,6 @@ add_task(async function test_worker_getLogoPlacement() {
     "boolean",
     "placement should have showLogo"
   );
-  Assert.ok(
-    Array.isArray(placement.reservedMatrix),
-    "placement should have reservedMatrix"
-  );
 });
 
 add_task(async function test_worker_getLogoPlacement_small_qr() {
