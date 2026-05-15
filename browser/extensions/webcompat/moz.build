@@ -33,5 +33,9 @@ BROWSER_CHROME_MANIFESTS += [
 
 MARIONETTE_MANIFESTS += ["tests/marionette/manifest.toml"]
 
+PYTHON_UNITTEST_MANIFESTS += [
+    "python.toml",
+]
+
 with Files("**"):
     BUG_COMPONENT = ("Web Compatibility", "Tooling & Investigations")
