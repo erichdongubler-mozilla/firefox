@@ -1242,18 +1242,6 @@ SettingGroupManager.registerGroups({
           },
         ],
       },
-      {
-        id: "reloadTabsHint",
-        control: "moz-message-bar",
-        l10nId: "preferences-etp-reload-tabs-hint",
-        options: [
-          {
-            control: "moz-button",
-            l10nId: "preferences-etp-reload-tabs-hint-button",
-            slot: "actions",
-          },
-        ],
-      },
     ],
   },
   etpCustomize: {
@@ -3473,9 +3461,6 @@ Preferences.addSetting({
 
     return config;
   },
-  onUserChange() {
-    PrivacySettingHelpers.maybeNotifyUserToReload();
-  },
 });
 
 Preferences.addSetting({
@@ -3616,7 +3601,6 @@ Preferences.addSetting({
   deps: ["contentBlockingCategory"],
   onUserClick(_, { contentBlockingCategory }) {
     contentBlockingCategory.value = "standard";
-    PrivacySettingHelpers.maybeNotifyUserToReload();
   },
   disabled({ contentBlockingCategory }) {
     return (
@@ -3631,7 +3615,6 @@ Preferences.addSetting({
   deps: ["contentBlockingCategory"],
   onUserClick(_, { contentBlockingCategory }) {
     contentBlockingCategory.value = "strict";
-    PrivacySettingHelpers.maybeNotifyUserToReload();
   },
   disabled({ contentBlockingCategory }) {
     return (
