@@ -5,6 +5,7 @@
 #ifndef MOZ_WAYLAND_DISPLAY_H_
 #define MOZ_WAYLAND_DISPLAY_H_
 
+#include <time.h>
 #include "DMABufDevice.h"
 
 #include "mozilla/widget/mozwayland.h"
@@ -231,7 +232,8 @@ class nsWaylandDisplay {
 wl_display* WaylandDisplayGetWLDisplay();
 nsWaylandDisplay* WaylandDisplayGet();
 void WaylandDisplayRelease();
-void WlCompositorCrashHandler();
+void WlCompositorUnavailableHandler();
+void WlCompositorSilentDisconnectHandler(clock_t aFailureTime);
 
 }  // namespace mozilla::widget
 

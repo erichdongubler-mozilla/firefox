@@ -4938,7 +4938,10 @@ int XREMain::XRE_mainStartup(bool* aExitFlag,
       if (!disableWaylandProxy && XRE_IsParentProcess() && waylandEnabled) {
         auto* proxyLog = getenv("WAYLAND_PROXY_LOG");
         WaylandProxy::SetVerbose(proxyLog && *proxyLog);
-        WaylandProxy::SetCompositorCrashHandler(WlCompositorCrashHandler);
+        WaylandProxy::SetCompositorUnavailableHandler(
+            WlCompositorUnavailableHandler);
+        WaylandProxy::SetCompositorSilentDisconnectHandler(
+            WlCompositorSilentDisconnectHandler);
         WaylandProxy::AddState(WAYLAND_PROXY_ENABLED);
         gWaylandProxy = WaylandProxy::Create();
         if (gWaylandProxy) {

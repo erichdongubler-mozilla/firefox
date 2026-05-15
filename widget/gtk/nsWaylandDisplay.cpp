@@ -21,6 +21,9 @@
 #include "nsWindow.h"
 #include "wayland-proxy.h"
 #include "ScreenHelperGTK.h"
+#include "nsIAppStartup.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 
 #include <dlfcn.h>
 
@@ -1087,6 +1090,13 @@ MOZ_NEVER_INLINE static void WlLogHandler_XdgSurfaceBufferMismatch(
                           WaylandProxy::GetState());
 }
 
+// Timestamp of the last "still attached" message ignored by WlLogHandler.
+// Written on the main thread (libwayland event dispatch) with release ordering
+// after writing sStillAttachedMessage, so any thread that observes the
+// timestamp with acquire ordering is guaranteed to see the message too.
+static std::atomic<clock_t> sStillAttachedTime{0};
+static char sStillAttachedMessage[128];
+
 static void WlLogHandler(const char* format, va_list args) {
   char error[1000];
   VsprintfLiteral(error, format, args);
@@ -1098,7 +1108,15 @@ static void WlLogHandler(const char* format, va_list args) {
   // like "zwp_linux_dmabuf_feedback_v1@%d still attached" are exceptions on
   // Wayland and non-fatal. They are triggered in certain versions of Mesa or
   // the proprietary Nvidia driver and we don't want to crash because of them.
+  // Store the message and timestamp so ProcessFailure() can correlate this
+  // event with a subsequent silent compositor disconnect.
   if (strstr(error, "still attached")) {
+    // Sentinel: ensures a concurrent reader on the proxy thread never scans
+    // past the end of the array if a longer new string overwrites the old
+    // null terminator before placing its own.
+    sStillAttachedMessage[sizeof(sStillAttachedMessage) - 1] = '\0';
+    SprintfLiteral(sStillAttachedMessage, "%s", error);
+    sStillAttachedTime.store(clock(), std::memory_order_release);
     return;
   }
 
@@ -1172,13 +1190,41 @@ static void WlLogHandler(const char* format, va_list args) {
                           WaylandProxy::GetState());
 }
 
-void WlCompositorCrashHandler() {
-  gfxCriticalNote << "Wayland protocol error: Compositor ("
+void WlCompositorUnavailableHandler() {
+  gfxCriticalNote << "Wayland compositor unavailable ("
                   << GetDesktopEnvironmentIdentifier().get()
-                  << ") crashed, proxy: " << WaylandProxy::GetState();
-  MOZ_CRASH_UNSAFE_PRINTF("Compositor crashed (%s) proxy: %s",
-                          GetDesktopEnvironmentIdentifier().get(),
+                  << "), proxy: " << WaylandProxy::GetState()
+                  << " - scheduling graceful shutdown";
+  // Called from the WaylandProxy thread. Dispatch to the main thread to
+  // trigger a clean Firefox shutdown instead of crashing.
+  NS_DispatchToMainThread(
+      NS_NewRunnableFunction("WlCompositorUnavailableHandler", []() {
+        nsCOMPtr<nsIAppStartup> appStartup =
+            do_GetService("@mozilla.org/toolkit/app-startup;1");
+        if (appStartup) {
+          bool userAllowedQuit = true;
+          appStartup->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
+        }
+      }));
+}
+
+MOZ_NEVER_INLINE static void WlLogHandler_StillAttachedDisconnect(
+    const char* error) {
+  MOZ_CRASH_UNSAFE_PRINTF("(%s) %s Proxy: %s",
+                          GetDesktopEnvironmentIdentifier().get(), error,
                           WaylandProxy::GetState());
+}
+
+void WlCompositorSilentDisconnectHandler(clock_t aFailureTime) {
+  clock_t t = sStillAttachedTime.load(std::memory_order_acquire);
+  if (t <= aFailureTime) {
+    return;  // no still-attached event in this failure window
+  }
+  nsCString reason(sStillAttachedMessage);
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "WlCompositorSilentDisconnectHandler", [reason = std::move(reason)]() {
+        WlLogHandler_StillAttachedDisconnect(reason.get());
+      }));
 }
 
 nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
