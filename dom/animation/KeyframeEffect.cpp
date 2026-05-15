@@ -253,7 +253,7 @@ void KeyframeEffect::SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
   }
 
   mKeyframes = std::move(aKeyframes);
-  mKeyframesUseTimelineRangeOffset =
+  mKeyframesOffsetInfo =
       KeyframeUtils::ComputeMissingKeyframeOffsets(mKeyframes, aTimeline);
 
   if (mAnimation && mAnimation->IsRelevant()) {
@@ -430,7 +430,9 @@ void KeyframeEffect::UpdateProperties(const ComputedStyle* aStyle,
                                       const AnimationTimeline* aTimeline) {
   MOZ_ASSERT(aStyle);
 
-  nsTArray<AnimationProperty> properties = BuildProperties(aStyle);
+  nsTArray<AnimationProperty> properties = BuildProperties(
+      aStyle, aTimeline ? aTimeline
+                        : (mAnimation ? mAnimation->GetTimeline() : nullptr));
 
   bool propertiesChanged = mProperties != properties;
 
@@ -476,7 +478,9 @@ void KeyframeEffect::UpdateProperties(const ComputedStyle* aStyle,
 }
 
 void KeyframeEffect::UpdateBaseStyle(const ComputedStyle* aStyle) {
-  EnsureBaseStyles(aStyle, BuildProperties(aStyle), nullptr, nullptr);
+  const AnimationTimeline* timeline =
+      mAnimation ? mAnimation->GetTimeline() : nullptr;
+  EnsureBaseStyles(aStyle, BuildProperties(aStyle, timeline), nullptr, nullptr);
 }
 
 void KeyframeEffect::EnsureBaseStyles(
@@ -860,7 +864,7 @@ already_AddRefed<KeyframeEffect> KeyframeEffect::ConstructKeyframeEffect(
 }
 
 nsTArray<AnimationProperty> KeyframeEffect::BuildProperties(
-    const ComputedStyle* aStyle) {
+    const ComputedStyle* aStyle, const AnimationTimeline* aTimeline) {
   MOZ_ASSERT(aStyle);
 
   nsTArray<AnimationProperty> result;
@@ -880,7 +884,7 @@ nsTArray<AnimationProperty> KeyframeEffect::BuildProperties(
 
   result = KeyframeUtils::GetAnimationPropertiesFromKeyframes(
       keyframesCopy, mTarget.mElement, mTarget.mPseudoRequest, aStyle,
-      mEffectOptions.mComposite);
+      mEffectOptions.mComposite, aTimeline, mKeyframesOffsetInfo);
 
 #ifdef DEBUG
   MOZ_ASSERT(SpecifiedKeyframeArraysAreEqual(mKeyframes, keyframesCopy),
@@ -1256,7 +1260,25 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
   const StylePerDocumentStyleData* rawData =
       mDocument->EnsureStyleSet().RawData();
 
+  // If we don't have a timeline or the timeline is not a ViewTimeline, we
+  // shouldn't generate the missing keyframes if all keyframes are using
+  // TimelineRangeOffsets. Otherwise, we should generate the missing keyframes
+  // only if needed.
+  const auto& generatedKeyframesStatus =
+      KeyframeUtils::CheckSkippableGeneratedKeyframes(
+          mKeyframes, mAnimation ? mAnimation->GetTimeline() : nullptr,
+          mKeyframesOffsetInfo);
+
   for (const Keyframe& keyframe : mKeyframes) {
+    if (generatedKeyframesStatus.ShouldSkip(keyframe)) {
+      // FIXME: Bug 2037642. This is not correct actually for getKeyframes(). We
+      // still have to generate the missing keyframes if there are properties
+      // which are not specified in the keyframes with computed offst <= 0.0 or
+      // >= 1.0.
+      // https://drafts.csswg.org/scroll-animations-1/#named-range-keyframes
+      continue;
+    }
+
     // Set up a dictionary object for the explicit members
     BaseComputedKeyframe keyframeDict;
     if (keyframe.mOffset) {
@@ -2065,7 +2087,7 @@ double KeyframeEffect::AnimationsPlayBackRateMultiplier() const {
 
 void KeyframeEffect::MaybeUpdateKeyframeComputedOffsets(
     const AnimationTimeline* aTimeline) {
-  if (!mKeyframesUseTimelineRangeOffset) {
+  if (!mKeyframesOffsetInfo.mRangeOffset) {
     return;
   }
 
@@ -2077,8 +2099,8 @@ void KeyframeEffect::MaybeUpdateKeyframeComputedOffsets(
 
     const auto& offset = *keyframe.mOffset;
     const double oldComputedOffset = keyframe.mComputedOffset;
-    keyframe.mComputedOffset = KeyframeUtils::GetComputedOffset(
-        offset.mRangeName, offset.mPercentage, aTimeline);
+    keyframe.mComputedOffset =
+        KeyframeUtils::GetComputedOffset(offset, aTimeline);
 
     if (Keyframe::ComputedOffsetsAreDifferent(oldComputedOffset,
                                               keyframe.mComputedOffset)) {

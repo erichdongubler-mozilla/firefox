@@ -7702,6 +7702,9 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
                 } else if current_offset == 1.0 {
                     has_complete_final_keyframe = true;
                 }
+
+                // Only generated keyframes use ComputedValue.
+                keyframe.mIsGenerated = true;
             },
             KeyframesStepValue::Declarations { ref block } => {
                 let guard = block.read_with(&guard);

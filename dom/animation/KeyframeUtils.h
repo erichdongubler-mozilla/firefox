@@ -7,6 +7,7 @@
 
 #include "NonCustomCSSPropertyId.h"
 #include "js/RootingAPI.h"                 // For JS::Handle
+#include "mozilla/Keyframe.h"              // For KeyframesOffsetHasAny
 #include "mozilla/KeyframeEffectParams.h"  // For CompositeOperation
 #include "nsTArrayForwardDeclare.h"        // For nsTArray
 
@@ -19,7 +20,6 @@ class ComputedStyle;
 struct CSSPropertyId;
 
 class ErrorResult;
-struct Keyframe;
 struct PropertyStyleAnimationValuePair;
 struct PseudoStyleRequest;
 
@@ -76,22 +76,21 @@ class KeyframeUtils {
    *
    * @param aKeyframes The set of keyframes to adjust.
    * @param aTimeline The animation timeline.
-   * @return True if there are any keyframes uses TimelineRangeOffset.
+   * @return The preprocess info for quickly checking the keyframes whether they
+   *   use timeline range offsets or percentage offset.
    */
-  static bool ComputeMissingKeyframeOffsets(
+  static KeyframesOffsetHasAny ComputeMissingKeyframeOffsets(
       nsTArray<Keyframe>& aKeframes, const dom::AnimationTimeline* aTimeline);
 
   /**
    * Calculate the computed offset for view timelines.
    *
-   * @param aRangeName The timeline range name of the specified keyframe offset.
-   * @param aPercentage The percentage of the specified keyframe offset.
+   * @param aOffset The timeline range offset of the specified keyframe offset.
    * @param aTimeline The animation timeline.
    * @return The computed offset for |aOffset|. It returns unresolved offset if
    *   the timeline isn't ViewTimeline.
    */
-  static double GetComputedOffset(const StyleTimelineRangeName aRangeName,
-                                  const double aPercentage,
+  static double GetComputedOffset(const Keyframe::OffsetType& aOffset,
                                   const dom::AnimationTimeline* aTimeline);
 
   /**
@@ -106,13 +105,18 @@ class KeyframeUtils {
    * @param aEffectComposite The composite operation specified on the effect.
    *   For any keyframes in |aKeyframes| that do not specify a composite
    *   operation, this value will be used.
+   * @param aTimeline The associated timeline.
+   * @param aOffsetHasAny Whether the keyframes use timeline range offsets or
+   *   percentage offsets.
    * @return The set of animation properties. If an error occurs, the returned
    *   array will be empty.
    */
   static nsTArray<AnimationProperty> GetAnimationPropertiesFromKeyframes(
       const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
       const PseudoStyleRequest& aPseudoRequest, const ComputedStyle* aStyle,
-      dom::CompositeOperation aEffectComposite);
+      dom::CompositeOperation aEffectComposite,
+      const dom::AnimationTimeline* aTimeline,
+      const KeyframesOffsetHasAny& aOffsetHasAny);
 
   /**
    * Check if the property or, for shorthands, one or more of
@@ -124,6 +128,30 @@ class KeyframeUtils {
    * @return true if |aProperty| is animatable.
    */
   static bool IsAnimatableProperty(const CSSPropertyId& aProperty);
+
+  /**
+   * Check if we should skip the generated keyframes.
+   * FIXME: Bug 2037642. Update or drop if we generate the missing keyframes
+   * lazily.
+   *
+   * @param aKeyframes The sequence of keyframes.
+   * @param aTimeline The animation timeline.
+   * @param aOffsetHasAny The preprocessed info for the offsets in |aKeyframes|.
+   * @return The skippable status for the generated initial and final keyframes.
+   */
+  struct GeneratedKeyframesStatus {
+    bool mSkipGeneratedInitial = false;
+    bool mSkipGeneratedFinal = false;
+    bool ShouldSkip(const Keyframe& aKeyframe) const {
+      return aKeyframe.mIsGenerated &&
+             ((aKeyframe.mComputedOffset == 0.0 && mSkipGeneratedInitial) ||
+              (aKeyframe.mComputedOffset == 1.0 && mSkipGeneratedFinal));
+    }
+  };
+  static GeneratedKeyframesStatus CheckSkippableGeneratedKeyframes(
+      const nsTArray<Keyframe>& aKeyframes,
+      const dom::AnimationTimeline* aTimeline,
+      const KeyframesOffsetHasAny& aOffsetHasAny);
 };
 
 }  // namespace mozilla

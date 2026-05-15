@@ -272,10 +272,10 @@ nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
 }
 
 /* static */
-bool KeyframeUtils::ComputeMissingKeyframeOffsets(
+KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
     nsTArray<Keyframe>& aKeyframes, const dom::AnimationTimeline* aTimeline) {
   if (aKeyframes.IsEmpty()) {
-    return false;
+    return {false, false};
   }
 
   // We intentionally maintain a special array of keyframes with double offset
@@ -287,39 +287,43 @@ bool KeyframeUtils::ComputeMissingKeyframeOffsets(
   nsTArray<Keyframe*> keyframesWithDoubleOrNullOffsets;
 
   bool hasTimelineRangeOffset = false;
+  bool hasNullOrPercentageOffset = false;
 
   // 1. The 1st pass. We try to resolve the computed offset from offset if
   // provided.
   for (Keyframe& keyframe : aKeyframes) {
     const auto& offset = keyframe.mOffset;
     if (!offset) {
+      hasNullOrPercentageOffset = true;
       keyframesWithDoubleOrNullOffsets.AppendElement(&keyframe);
       continue;
     }
 
     if (offset->IsPercentageOffset()) {
+      if (!keyframe.mIsGenerated) {
+        hasNullOrPercentageOffset = true;
+      }
       keyframesWithDoubleOrNullOffsets.AppendElement(&keyframe);
       keyframe.mComputedOffset = offset->mPercentage;
       continue;
     }
 
     hasTimelineRangeOffset = true;
-    keyframe.mComputedOffset =
-        GetComputedOffset(offset->mRangeName, offset->mPercentage, aTimeline);
+    keyframe.mComputedOffset = GetComputedOffset(offset.ref(), aTimeline);
   }
 
   // 2. The 2nd pass. Follow the spec to compute the missing offsets.
   DoComputeMissingKeyframeOffsets(keyframesWithDoubleOrNullOffsets);
 
-  return hasTimelineRangeOffset;
+  return {hasTimelineRangeOffset, hasNullOrPercentageOffset};
 }
 
 /* static */
 double KeyframeUtils::GetComputedOffset(
-    const StyleTimelineRangeName aRangeName, const double aPercentage,
+    const Keyframe::OffsetType& aOffset,
     const dom::AnimationTimeline* aTimeline) {
-  MOZ_ASSERT(aRangeName != StyleTimelineRangeName::None &&
-                 aRangeName != StyleTimelineRangeName::Normal,
+  MOZ_ASSERT(aOffset.mRangeName != StyleTimelineRangeName::None &&
+                 aOffset.mRangeName != StyleTimelineRangeName::Normal,
              "This is only for keyframe selector with timeline range name");
 
   if (!aTimeline || !aTimeline->IsViewTimeline()) {
@@ -327,7 +331,8 @@ double KeyframeUtils::GetComputedOffset(
   }
 
   const dom::ViewTimeline* vt = aTimeline->AsViewTimeline();
-  const auto result = vt->MapKeyframeOffsetToOffset(aRangeName, aPercentage);
+  const auto result =
+      vt->MapKeyframeOffsetToOffset(aOffset.mRangeName, aOffset.mPercentage);
 
   // FIXME: Bug 2039090. We should apply animation-range to get the correct
   // computed offset.
@@ -339,7 +344,9 @@ double KeyframeUtils::GetComputedOffset(
 nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
     const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
     const PseudoStyleRequest& aPseudoRequest, const ComputedStyle* aStyle,
-    dom::CompositeOperation aEffectComposite) {
+    dom::CompositeOperation aEffectComposite,
+    const dom::AnimationTimeline* aTimeline,
+    const KeyframesOffsetHasAny& aOffsetHasAny) {
   nsTArray<AnimationProperty> result;
 
   const nsTArray<ComputedKeyframeValues> computedValues =
@@ -353,11 +360,27 @@ nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
   MOZ_ASSERT(aKeyframes.Length() == computedValues.Length(),
              "Array length mismatch");
 
+  // If we don't have a timeline or the timeline is not a ViewTimeline, we
+  // shouldn't generate the missing keyframes if all keyframes are using
+  // TimelineRangeOffsets. Otherwise, we should generate the missing keyframes
+  // only if needed.
+  const auto& generatedKeyframesStatus =
+      CheckSkippableGeneratedKeyframes(aKeyframes, aTimeline, aOffsetHasAny);
+
   nsTArray<KeyframeValueEntry> entries(aKeyframes.Length());
 
   const size_t len = aKeyframes.Length();
   for (size_t i = 0; i < len; ++i) {
     const Keyframe& frame = aKeyframes[i];
+    // Skip the generated initial or final keyframe if it is not needed.
+    if (generatedKeyframesStatus.ShouldSkip(frame)) {
+      // FIXME: Bug 2037642. We may need a better way to handle this.
+      // For now, we just skip the entire generated keyframes. This is fine for
+      // building the propertie segments because we still fill the missing
+      // values at 0% and 100% in BuildSegmentsFromValueEntries().
+      continue;
+    }
+
     if (frame.IsRangedKeyframe() && std::isnan(frame.mComputedOffset)) {
       // This may happen if the animation doesn't associate with a view
       // timeline, or the timeline is inactive. We just skip this keyframe.
@@ -392,6 +415,47 @@ bool KeyframeUtils::IsAnimatableProperty(const CSSPropertyId& aProperty) {
     return false;
   }
   return Servo_Property_IsAnimatable(&aProperty);
+}
+
+/* static */
+KeyframeUtils::GeneratedKeyframesStatus
+KeyframeUtils::CheckSkippableGeneratedKeyframes(
+    const nsTArray<Keyframe>& aKeyframes,
+    const dom::AnimationTimeline* aTimeline,
+    const KeyframesOffsetHasAny& aOffsetHasAny) {
+  if (!aTimeline || !aTimeline->IsViewTimeline()) {
+    // The timeline range offsets are not supported for
+    // null/doucment-timeline/scroll-timeline, so we shouldn't generate the
+    // initial/final keyframes if there is no percentage/null offset.
+    return {!aOffsetHasAny.mNonRangeOffset, !aOffsetHasAny.mNonRangeOffset};
+  }
+
+  // The quick check if we don't have timeline range offsets in |aKeyframes|.
+  if (!aOffsetHasAny.mRangeOffset) {
+    return {false, false};
+  }
+
+  bool skipInitial = false;
+  bool skipFinal = false;
+  for (const auto& keyframe : aKeyframes) {
+    // Note: The generated keyframe is always percentage offset so this should
+    // skip it as as well.
+    if (!keyframe.IsRangedKeyframe() || std::isnan(keyframe.mComputedOffset)) {
+      continue;
+    }
+
+    // It is possible that these attachment points are outside the active
+    // interval of the animation; in these cases the automatic from (0%) and to
+    // (100%) keyframes are only generated for properties that don’t have
+    // keyframes at or earlier than 0% or at or after 100% (respectively).
+    // https://drafts.csswg.org/scroll-animations-1/#named-range-keyframes
+    if (keyframe.mComputedOffset <= 0.0) {
+      skipInitial = true;
+    } else if (keyframe.mComputedOffset >= 1.0) {
+      skipFinal = true;
+    }
+  }
+  return {skipInitial, skipFinal};
 }
 
 // ------------------------------------------------------------------
