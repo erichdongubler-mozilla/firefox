@@ -253,7 +253,7 @@ void KeyframeEffect::SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
   }
 
   mKeyframes = std::move(aKeyframes);
-  KeyframeUtils::ComputeMissingKeyframeOffsets(mKeyframes);
+  KeyframeUtils::ComputeMissingKeyframeOffsets(mKeyframes, aTimeline);
 
   if (mAnimation && mAnimation->IsRelevant()) {
     MutationObservers::NotifyAnimationChanged(mAnimation);

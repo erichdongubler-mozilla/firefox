@@ -4,6 +4,7 @@
 
 #include "ViewTimeline.h"
 
+#include "mozilla/Keyframe.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/ElementInlines.h"
@@ -336,13 +337,41 @@ std::pair<nscoord, nscoord> ViewTimeline::IntervalForTimelineRangeName(
       return {0, mCachedCurrentTime->mScrollData.mMaxScrollOffset};
   }
 
-  MOZ_ASSERT_UNREACHABLE("All cases should be hanlded.");
+  MOZ_ASSERT_UNREACHABLE("All cases should be handled.");
   // Use cover as the default value. However, we shouldn't be here.
   return {alignedSubjectStartViewEnd, alignedSubjectEndViewStart};
 }
 
-// TODO: Bug 2020822. We have to align the start time of animation with this
-// attachment range. Otherwise, the animation-range-start doesn't work.
+// Calculate the offset (as a percentage) for a pair of range name and offset,
+// based on the full timeline range (i.e. `cover` for view-timeline).
+template <typename F>
+double ViewTimeline::ComputeOffsetToTimelineRange(
+    const StyleTimelineRangeName& aName,
+    const ScrollTimeline::ComputedTimelineData& aData,
+    F&& aFuncToResolveValue) const {
+  const auto [nameStart, nameEnd] =
+      IntervalForTimelineRangeName(aName, aData);
+  const auto timelineRange = aData.mEnd - aData.mStart;
+  const auto nameRange = nameEnd - nameStart;
+  const auto positionInNameRange =
+      nameStart + aFuncToResolveValue(nameRange);
+  const auto positionInTimeline = positionInNameRange - aData.mStart;
+  return static_cast<double>(positionInTimeline) /
+         static_cast<double>(timelineRange);
+}
+
+Maybe<double> ViewTimeline::MapKeyframeOffsetToOffset(
+    const StyleTimelineRangeName aName, const double aPercentage) const {
+  const auto& data = ComputeTimelineData();
+  if (!data) {
+    return Nothing();
+  }
+
+  return Some(ComputeOffsetToTimelineRange(
+      aName, *data,
+      [&](const nscoord aBasis) { return aPercentage * aBasis; }));
+}
+
 std::pair<double, double> ViewTimeline::IntervalForAttachmentRange(
     const AnimationRange& aStyleRange) const {
   const auto& data = ComputeTimelineData();
@@ -356,15 +385,9 @@ std::pair<double, double> ViewTimeline::IntervalForAttachmentRange(
   auto computeNamedRangeEdgeAsPercentage =
       [&](const StyleGenericAnimationRangeValue<StyleLengthPercentage>&
               aValue) {
-        const auto [nameStart, nameEnd] =
-            IntervalForTimelineRangeName(aValue.name, *data);
-        const auto timelineRange = data->mEnd - data->mStart;
-        const auto nameRange = nameEnd - nameStart;
-        const auto positionInNameRange =
-            nameStart + aValue.lp.Resolve(nameRange);
-        const auto positionInTimeline = positionInNameRange - data->mStart;
-        return static_cast<double>(positionInTimeline) /
-               static_cast<double>(timelineRange);
+        return ComputeOffsetToTimelineRange(
+            aValue.name, *data,
+            [&](const nscoord aBasis) { return aValue.lp.Resolve(aBasis); });
       };
   return {computeNamedRangeEdgeAsPercentage(aStyleRange.mStart),
           computeNamedRangeEdgeAsPercentage(aStyleRange.mEnd)};

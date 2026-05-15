@@ -9,6 +9,7 @@
 
 namespace mozilla {
 class ScrollContainerFrame;
+struct TimelineRangeOffset;
 }  // namespace mozilla
 
 namespace mozilla::dom {
@@ -52,6 +53,7 @@ class ViewTimeline final : public ScrollTimeline {
   Nullable<double> GetEndOffset() const;
 
   bool IsViewTimeline() const override { return true; }
+  const ViewTimeline* AsViewTimeline() const override { return this; }
 
   void ReplacePropertiesWith(Element* aSubjectElement,
                              const PseudoStyleRequest& aPseudoRequest,
@@ -61,6 +63,9 @@ class ViewTimeline final : public ScrollTimeline {
 
   std::pair<double, double> IntervalForAttachmentRange(
       const AnimationRange& aStyleRange) const override;
+
+  Maybe<double> MapKeyframeOffsetToOffset(const StyleTimelineRangeName aName,
+                                          const double aPercentage) const;
 
   NonOwningAnimationTarget TimelineTarget() const override {
     return NonOwningAnimationTarget{mSubject,
@@ -83,6 +88,12 @@ class ViewTimeline final : public ScrollTimeline {
   std::pair<nscoord, nscoord> IntervalForTimelineRangeName(
       const StyleTimelineRangeName aName,
       const ScrollTimeline::ComputedTimelineData& aData) const;
+
+  template <typename F>
+  double ComputeOffsetToTimelineRange(
+      const StyleTimelineRangeName& aName,
+      const ScrollTimeline::ComputedTimelineData& aData,
+      F&& aFuncToResolveValue) const;
 
   // The subject element.
   // 1. For view(), the subject element is the animation target.
