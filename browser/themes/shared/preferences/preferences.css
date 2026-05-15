@@ -242,26 +242,13 @@ radio {
   margin: 4px 0;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
-@media not -moz-pref("browser.settings-redesign.enabled") {
-  .spotlight:not(setting-group:has(> moz-card)) {
-    background-color: color-mix(in srgb, var(--color-accent-primary) 15%, transparent);
-    outline: var(--border-color-selected) 1px dotted;
-    animation: fade-out 0.5s ease-out 2s forwards;
-    /* Show the border to spotlight the components in high-contrast mode. */
-    border: 1px solid transparent;
-    border-radius: var(--border-radius-xsmall);
-  }
-}
-
-/* stylelint-disable-next-line media-query-no-invalid */
-@media -moz-pref("browser.settings-redesign.enabled") {
-  .spotlight:not(setting-group:has(> moz-card)) {
-    outline: var(--border-color-selected) 2px solid;
-    outline-offset: var(--space-small);
-    animation: fade-out 0.5s ease-out 2s forwards;
-    border-radius: var(--border-radius-large);
-  }
+.spotlight:not(setting-group:has(> moz-card)) {
+  background-color: color-mix(in srgb, var(--color-accent-primary) 15%, transparent);
+  outline: var(--border-color-selected) 1px dotted;
+  animation: fade-out 0.5s ease-out 2s forwards;
+  /* Show the border to spotlight the components in high-contrast mode. */
+  border: 1px solid transparent;
+  border-radius: var(--border-radius-xsmall);
 }
 
 setting-group:has(> moz-card).spotlight {

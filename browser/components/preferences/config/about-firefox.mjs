@@ -475,7 +475,6 @@ SettingGroupManager.registerGroups({
   updates: {
     l10nId: "update-application-heading",
     iconSrc: "chrome://browser/skin/update-badge.svg",
-    subcategory: "update-state",
     headingLevel: 2,
     items: [
       {

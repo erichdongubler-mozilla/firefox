@@ -92,15 +92,34 @@ export default class SecurityPrivacyCard extends MozLitElement {
 
   /**
    * Scrolling to an element in about:preferences is non-trivial because the fragment is controlled
-   * by the panel manager. This is just a clean abstraction to hand a callback off to another site.
+   * by the panel manager. So we need this logic.
    *
    * @param {string} panelHash - the ID of the panel the element we want to scroll to lives on
-   * @param {string} subcategory - the ID of the subcategory to scroll to and highliht
+   * @param {string} targetId - the ID of the element to scroll to
    * @returns {Function} a callback that will perform the scroll
    */
-  #spotlightSubcategoryOnPane(panelHash, subcategory) {
+  #scrollToTargetOnPanel(panelHash, targetId) {
     return function () {
-      document.location.hash = panelHash + "-" + subcategory;
+      // This actually scrolls to the target ID, if it exists.
+      // It looks in the document first, then the shadowRoot for that ID.
+      const scrollIntoView = () => {
+        let target = document.getElementById(targetId);
+        if (!target) {
+          target = this.shadowRoot.getElementById(targetId);
+        }
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth" });
+        }
+      };
+      if (panelHash !== undefined && document.location.hash != panelHash) {
+        // If we are given a panel to go to, and we aren't already there,
+        // switch to that panel and when it is shown, scrollIntoView.
+        document.addEventListener("paneshown", scrollIntoView, { once: true });
+        document.location.hash = panelHash;
+      } else {
+        // Here we are already on the panel, so we can just scroll straight to it.
+        scrollIntoView();
+      }
     };
   }
 
@@ -110,7 +129,7 @@ export default class SecurityPrivacyCard extends MozLitElement {
       return;
     }
     accordion.expanded = true;
-    this.#spotlightSubcategoryOnPane("#privacy", "security-warning-card")();
+    this.#scrollToTargetOnPanel("#privacy", "warningCard")();
   }
 
   getStatusImage() {
@@ -182,10 +201,7 @@ export default class SecurityPrivacyCard extends MozLitElement {
             <small
               data-l10n-id=${L10N_IDS.strictEnabledLabel}
               id="strictEnabled"
-              @click=${this.#spotlightSubcategoryOnPane(
-                "#etp",
-                "etp-strict-control"
-              )}
+              @click=${this.#scrollToTargetOnPanel("#privacy", "etpStatusCard")}
             >
               <a data-l10n-name="strict-tracking-protection" href=""></a
             ></small>
@@ -200,10 +216,7 @@ export default class SecurityPrivacyCard extends MozLitElement {
             <small
               data-l10n-id=${L10N_IDS.customEnabledLabel}
               id="customEnabled"
-              @click=${this.#spotlightSubcategoryOnPane(
-                "#etp",
-                "etp-custom-control"
-              )}
+              @click=${this.#scrollToTargetOnPanel("#privacy", "etpStatusCard")}
             >
               <a data-l10n-name="custom-tracking-protection" href=""></a
             ></small>
@@ -244,11 +257,7 @@ export default class SecurityPrivacyCard extends MozLitElement {
               ></small>
             </p>
             <moz-box-link
-              href=""
-              @click=${this.#spotlightSubcategoryOnPane(
-                "#about",
-                "update-state"
-              )}
+              @click=${this.#scrollToTargetOnPanel("#general", "updateApp")}
               data-l10n-id=${L10N_IDS.updateButtonLabel}
             ></moz-box-link>
           </div>
@@ -267,11 +276,8 @@ export default class SecurityPrivacyCard extends MozLitElement {
               ></small>
             </p>
             <moz-box-link
-              href=""
-              @click=${this.#spotlightSubcategoryOnPane(
-                "#about",
-                "update-state"
-              )}
+              href="javascript:void(0)"
+              @click=${this.#scrollToTargetOnPanel("#general", "updateApp")}
               data-l10n-id=${L10N_IDS.updateButtonLabel}
             ></moz-box-link>
           </div>
