@@ -600,7 +600,7 @@ int32_t HyperTextAccessible::CaretOffset() const {
 }
 
 std::pair<LayoutDeviceIntRect, nsIWidget*> HyperTextAccessible::GetCaretRect() {
-  RefPtr<nsCaret> caret = mDoc->PresShellPtr()->GetCaret();
+  RefPtr<nsCaret> caret = mDoc->PresShellPtr()->GetOriginalCaret();
   NS_ENSURE_TRUE(caret, {});
 
   bool isVisible = caret->IsVisible();

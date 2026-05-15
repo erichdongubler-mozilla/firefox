@@ -192,7 +192,7 @@ class EditorBase : public nsIEditor,
 
   PresShell* GetPresShell() const;
   nsPresContext* GetPresContext() const;
-  already_AddRefed<nsCaret> GetCaret() const;
+  already_AddRefed<nsCaret> GetCaretForSelection() const;
 
   already_AddRefed<nsIWidget> GetWidget() const;
 
