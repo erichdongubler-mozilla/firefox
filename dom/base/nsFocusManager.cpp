@@ -983,6 +983,25 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   MOZ_ASSERT(aDocument);
   MOZ_ASSERT(aContent);
 
+  if (auto* startingPoint = aDocument->GetFocusNavigationStartingPoint()) {
+    bool isFlatTreeAncestor = false;
+    for (nsIContent* ancestor :
+         startingPoint->InclusiveFlatTreeAncestorsOfType<nsIContent>()) {
+      if (ancestor == aContent) {
+        isFlatTreeAncestor = true;
+        break;
+      }
+    }
+    // Fix up sequential focus navigation starting point when its ancestor is
+    // removed. But if we are moving aContent with moveBefore and the focus
+    // navigation starting point is inside it, then we don't need to do
+    // anything.
+    if (isFlatTreeAncestor &&
+        (!aInfo.mNewParent || aDocument->WasFocusedElementRemoved())) {
+      aDocument->SetFocusNavigationStartingPoint(aContent, true);
+    }
+  }
+
   if (aInfo.mNewParent) {
     // Handled upon insertion in ContentAppended/Inserted.
     return NS_OK;
@@ -1054,25 +1073,6 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   RefPtr previousFocusedElement = previousFocusedElementPtr;
   RefPtr window = windowPtr;
 
-  // XXX: This is a temporary fix to avoid regressions with sequential
-  //      focus navigation. (But maybe this should still happen when caret
-  //      browsing is enabled?) See bug 2034851.
-  // detachingShadow check is needed because e.g. the UA shadow root is detached
-  // and reattached when an <input> is moved with moveBefore. So this function
-  // will be called on the shadow root while the <input> is in an intermediate
-  // state, which would cause issues if we move the selection there.
-  if (!detachingShadow &&
-      !previousFocusedElement->IsInNativeAnonymousSubtree()) {
-    if (RefPtr selection = window->GetSelection()) {
-      // Move selection here so that focus navigation continues normally.
-      selection->SetAncestorLimiter(nullptr);
-      DebugOnly<nsresult> rv =
-          selection->CollapseInLimiter(previousFocusedElement, 0);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "Selection::CollapseInLimiter failed.");
-    }
-  }
-
   RefPtr<Element> newFocusedElement =
       detachingShadow && focusWithinElement->IsHTMLElement(nsGkAtoms::input)
           ? focusWithinElement
@@ -1141,6 +1141,9 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   }
 
   if (!newFocusedElement) {
+    // Set sequential focus navigation starting point so that focus navigation
+    // continues from the location of the previously focused element.
+    aDocument->SetFocusNavigationStartingPoint(aContent, true);
     NotifyFocusStateChange(previousFocusedElement, nullptr, 0,
                            /* aGettingFocus = */ false, false);
   } else {
@@ -2519,6 +2522,9 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
   bool sendBlurEvent =
       element && element->IsInComposedDoc() && !IsNonFocusableRoot(element);
   if (element) {
+    // Set focus navigation starting point, so that focus navigation still
+    // continues from element.
+    element->OwnerDoc()->SetFocusNavigationStartingPoint(element);
     if (sendBlurEvent) {
       NotifyFocusStateChange(element, aElementToFocus, 0, false, false);
     }
@@ -2940,6 +2946,12 @@ void nsFocusManager::Focus(
     RefPtr<Element> focusedElement = mFocusedElement;
     UpdateCaret(aFocusChanged && !(aFlags & FLAG_BYMOUSE), aIsNewDocument,
                 focusedElement);
+  }
+
+  if (mFocusedElement) {
+    // Don't need focus navigation starting point anymore,
+    // since an element is focused.
+    mFocusedElement->OwnerDoc()->SetFocusNavigationStartingPoint(nullptr);
   }
 }
 
@@ -3484,6 +3496,23 @@ void nsFocusManager::GetSelectionLocation(Document* aDocument,
   NS_IF_ADDREF(*aEndContent = end);
 }
 
+// Gets next sibling of aContent in the flat tree,
+// or its parent's next sibling if it has none, etc.
+static nsIContent* GetFlatTreeNextNonDescendant(nsIContent& aContent) {
+  nsIContent* content = &aContent;
+  for (nsIContent* parent = aContent.GetFlattenedTreeParent(); parent;
+       content = parent, parent = content->GetFlattenedTreeParent()) {
+    FlattenedChildIterator iterator(parent);
+    if (NS_WARN_IF(!iterator.Seek(content))) {
+      return nullptr;
+    }
+    if (auto* sibling = iterator.GetNextChild()) {
+      return sibling;
+    }
+  }
+  return nullptr;
+}
+
 nsresult nsFocusManager::DetermineElementToMoveFocus(
     nsPIDOMWindowOuter* aWindow, nsIContent* aStartContent, int32_t aType,
     bool aNoParentTraversal, bool aNavigateByKey, nsIContent** aNextContent) {
@@ -3646,9 +3675,30 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
       // Otherwise, for content shells, start from the location of the caret.
       nsCOMPtr<nsIDocShell> docShell = aWindow->GetDocShell();
       if (docShell && docShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
+        startContent = doc->GetFocusNavigationStartingPoint();
+        bool considerStartContent = true;
+        if (aType != MOVEFOCUS_CARET && !forDocumentNavigation &&
+            startContent) {
+          if (doc->WasFocusedElementRemoved()) {
+            startContent = GetFlatTreeNextNonDescendant(*startContent);
+            considerStartContent = forward;
+          } else {
+            considerStartContent = false;
+          }
+        }
         nsCOMPtr<nsIContent> endSelectionContent;
-        GetSelectionLocation(doc, presShell, getter_AddRefs(startContent),
-                             getter_AddRefs(endSelectionContent));
+        if (!startContent) {
+          GetSelectionLocation(doc, presShell, getter_AddRefs(startContent),
+                               getter_AddRefs(endSelectionContent));
+        }
+        // If starting from a focusable and tabbable element, we want to make it
+        // focused rather than next/previous one.
+        if (considerStartContent && startContent && startContent->IsElement() &&
+            startContent->GetPrimaryFrame() &&
+            startContent->GetPrimaryFrame()->IsFocusable().IsTabbable()) {
+          NS_ADDREF(*aNextContent = startContent);
+          return NS_OK;
+        }
         // If the selection is on the rootElement, then there is no selection
         if (startContent == rootElement) {
           startContent = nullptr;
@@ -3666,31 +3716,10 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
         }
 
         if (startContent) {
-          // when starting from a selection, we always want to find the next or
-          // previous element in the document. So the tabindex on elements
-          // should be ignored.
+          // when not starting from focused element, we always want to find the
+          // next or previous element in the document. So the tabindex on
+          // elements should be ignored.
           ignoreTabIndex = true;
-          // If selection starts from a focusable and tabbable element, we want
-          // to make it focused rather than next/previous one.
-          if (startContent->IsElement() && startContent->GetPrimaryFrame() &&
-              startContent->GetPrimaryFrame()->IsFocusable().IsTabbable()) {
-            startContent =
-                forward ? (startContent->GetPreviousSibling()
-                               ? startContent->GetPreviousSibling()
-                               // We don't need to get previous leaf node
-                               // because it may be too far from
-                               // startContent. We just want the previous
-                               // node immediately before startContent.
-                               : startContent->GetParent())
-                        // We want the next node immdiately after startContent.
-                        // Therefore, we don't want its first child.
-                        : startContent->GetNextNonChildNode();
-            // If we reached the root element, we should treat it as there is no
-            // selection as same as above.
-            if (startContent == rootElement) {
-              startContent = nullptr;
-            }
-          }
         }
       }
 

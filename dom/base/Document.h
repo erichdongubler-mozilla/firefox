@@ -3636,6 +3636,14 @@ class Document : public nsINode,
   HTMLCollection* Anchors();
   TimeStamp LastFocusTime() const;
   void SetLastFocusTime(const TimeStamp& aFocusTime);
+
+  void SetFocusNavigationStartingPoint(nsIContent* aContent,
+                                       bool aWillBeRemoved = false);
+  nsIContent* GetFocusNavigationStartingPoint() const {
+    return mFocusNavigationStartingPoint;
+  }
+  bool WasFocusedElementRemoved() const { return mWasFocusedElementRemoved; }
+
   // Event handlers are all on nsINode already
   bool MozSyntheticDocument() const { return IsSyntheticDocument(); }
   Element* GetCurrentScript();
@@ -4959,6 +4967,12 @@ class Document : public nsINode,
   // container for per-context fonts (downloadable, SVG, etc.)
   RefPtr<FontFaceSet> mFontFaceSet;
 
+  // Points to the focus navigation starting point if the focused element is
+  // removed or becomes non-focusable, so that focus navigation isn't reset when
+  // that happens.
+  // https://html.spec.whatwg.org/#sequential-focus-navigation-starting-point
+  RefPtr<nsIContent> mFocusNavigationStartingPoint;
+
   // Last time this document or a one of its sub-documents was focused.  If
   // focus has never occurred then mLastFocusTime.IsNull() will be true.
   TimeStamp mLastFocusTime;
@@ -5300,6 +5314,11 @@ class Document : public nsINode,
 
   // Cached value of dom.image.sizes_auto.enabled
   const bool mAutoSizesEnabled : 1;
+
+  // If false, mFocusNavigationStartingPoint is the previously-focused element.
+  // If true, mFocusNavigationStartingPoint is the previously-focused element's
+  // previous sibling in the flat tree.
+  bool mWasFocusedElementRemoved : 1;
 
   // The fingerprinting protections overrides for this document. The value will
   // override the default enabled fingerprinting protections for this document.

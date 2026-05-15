@@ -1405,21 +1405,10 @@ bool PresShell::FixUpFocus() {
   if (NS_WARN_IF(!window)) {
     return false;
   }
-  // XXX: This is a temporary fix to avoid regressions with sequential
-  //      focus navigation. (But maybe this should still happen when caret
-  //      browsing is enabled?) See bug 2034851.
-  // Don't move document selection to native anonymous subtree.
-  if (RefPtr element = fm->GetFocusedElement();
-      element && !element->IsInNativeAnonymousSubtree()) {
-    RefPtr selection = window->GetSelection();
-    if (MOZ_LIKELY(selection)) {
-      // Move selection to the element so that focus navigation starts from
-      // there.
-      selection->SetAncestorLimiter(nullptr);
-      DebugOnly<nsresult> rv = selection->CollapseInLimiter(element, 0);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "Selection::CollapseInLimiter failed.");
-    }
+  if (auto* element = fm->GetFocusedElement()) {
+    // Set focus navigation starting point, so that focus navigation still
+    // starts from this element.
+    element->OwnerDoc()->SetFocusNavigationStartingPoint(element);
   }
   fm->ClearFocus(window);
   return true;

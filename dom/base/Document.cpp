@@ -149,6 +149,7 @@
 #include "mozilla/dom/CSSCustomPropertyRegisteredEvent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/CanvasRenderingContextHelper.h"
+#include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/ChromeObserver.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/ClientState.h"
@@ -1389,6 +1390,7 @@ Document::Document(const char* aContentType,
       mClipboardCopyTriggered(false),
       mHasBeenRevealed(false),
       mAutoSizesEnabled(StaticPrefs::dom_image_sizes_auto_enabled()),
+      mWasFocusedElementRemoved(false),
       mXMLDeclarationBits(0),
       mOnloadBlockCount(0),
       mWriteLevel(0),
@@ -2500,6 +2502,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCachedAncestorOrigins)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDisplayDocument)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFontFaceSet)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFocusNavigationStartingPoint)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReadyForIdle)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentL10n)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFragmentDirective)
@@ -2654,6 +2657,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mElementsObservedForLastRememberedSize);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveEditContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFaceSet)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mFocusNavigationStartingPoint)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadyForIdle)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentL10n)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFragmentDirective)
@@ -6736,6 +6740,36 @@ void Document::SetLastFocusTime(const TimeStamp& aFocusTime) {
   MOZ_DIAGNOSTIC_ASSERT(mLastFocusTime.IsNull() ||
                         aFocusTime >= mLastFocusTime);
   mLastFocusTime = aFocusTime;
+}
+
+void Document::SetFocusNavigationStartingPoint(nsIContent* aContent,
+                                               bool aWillBeRemoved) {
+  mWasFocusedElementRemoved = aWillBeRemoved;
+  if (!aWillBeRemoved) {
+    mFocusNavigationStartingPoint = aContent;
+    return;
+  }
+  if (!aContent) {
+    mFocusNavigationStartingPoint = nullptr;
+    return;
+  }
+
+  // If aContent will be removed, we set the focus navigation starting point to
+  // its previous sibling in the flat tree, or its parent's previous sibling
+  // if it has none, etc.
+  for (nsIContent* parent = aContent->GetFlattenedTreeParent(); parent;
+       aContent = parent, parent = aContent->GetFlattenedTreeParent()) {
+    FlattenedChildIterator iterator(parent);
+    if (NS_WARN_IF(!iterator.Seek(aContent))) {
+      mFocusNavigationStartingPoint = nullptr;
+      return;
+    }
+    if (auto* sibling = iterator.GetPreviousChild()) {
+      mFocusNavigationStartingPoint = sibling;
+      return;
+    }
+  }
+  mFocusNavigationStartingPoint = nullptr;
 }
 
 void Document::GetReferrer(nsACString& aReferrer) const {
