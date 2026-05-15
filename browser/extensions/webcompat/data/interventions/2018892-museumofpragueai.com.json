@@ -6,14 +6,17 @@
       "matches": ["*://demo.museumofpragueai.com/chatbot/*"]
     }
   },
+  "css": {
+    "hide_mic_icon": "#micBtn { display: none; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
       "pref_check": {
         "media.webspeech.recognition.enable": false
       },
+      "css": ["hide_mic_icon"],
       "content_scripts": {
-        "css": ["bug2018892-museumofpragueai.com-hide-mic-icon.css"],
         "js": ["define_SpeechRecognition.js"]
       }
     }

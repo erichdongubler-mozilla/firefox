@@ -21,12 +21,13 @@
       ]
     }
   },
+  "css": {
+    "fix_trending_scrollbar": ".trending__list { scrollbar-width: thin; scrollbar-color: var(--trending-scrollbar-color) var(--trending-scrollbar-background-color); }"
+  },
   "interventions": [
     {
       "platforms": ["desktop"],
-      "content_scripts": {
-        "css": ["bug1886293-futurePLC-sites-trending_scrollbars.css"]
-      }
+      "css": ["fix_trending_scrollbar"]
     }
   ]
 }

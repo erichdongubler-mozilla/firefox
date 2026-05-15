@@ -1,17 +1,18 @@
 {
-  "label": "africanews.com",
+  "label": "locator.dhl.com",
   "bugs": {
     "1898915": {
       "issue": "unsupported-warning",
       "matches": ["*://locator.dhl.com/*"]
     }
   },
+  "css": {
+    "hide_browser_notice": "[app-unsupported-browsers] { display: none !important; }"
+  },
   "interventions": [
     {
       "platforms": ["desktop"],
-      "content_scripts": {
-        "css": ["bug1898915-locator.dhl.com-hide-unsupported.css"]
-      }
+      "css": ["hide_browser_notice"]
     }
   ]
 }

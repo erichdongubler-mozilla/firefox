@@ -6,12 +6,13 @@
       "matches": ["*://snowplowmap.a2gov.org/*"]
     }
   },
+  "css": {
+    "fix_ticker_performance": "#ticker-tape { white-space: nowrap; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug2012760-snowplowmap.a2gov.org-fix-ticker-performance.css"]
-      }
+      "css": ["fix_ticker_performance"]
     }
   ]
 }
