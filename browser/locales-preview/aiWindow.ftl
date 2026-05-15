@@ -143,6 +143,13 @@ aiwindow-firstrun-memories-checkbox-browsing = Browsing across { -brand-product-
 aiwindow-firstrun-memories-update-settings = Update in settings anytime.
 aiwindow-firstrun-memories-no-create = Got it. Smart Window won’t create memories. Update in settings anytime.
 
+## Firstrun set as default onboarding
+
+aiwindow-firstrun-default-title = Make Smart Window your go-to
+aiwindow-firstrun-default-subtitle = Browse, search, and ask in one place. You can still open Private and Classic Windows when you want.
+aiwindow-firstrun-default-checkbox-label = Always open { -brand-product-name } in Smart Window
+aiwindow-firstrun-default-checkbox-description = Switch in settings anytime
+
 ## Ask Toolbar Button
 
 smartwindow-ask-button =

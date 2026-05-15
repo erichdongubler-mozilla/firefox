@@ -607,7 +607,7 @@ smart_window:
   onboarding_memories_navigate:
     type: event
     description: |
-      Recorded when user clicks done on the memories onboarding screen
+      Recorded when user clicks next on the memories onboarding screen
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2032998
     data_reviews:
@@ -634,6 +634,57 @@ smart_window:
           Comma-separated list of memory checkbox ids the user had selected
           when clicking done, for example: 'memories-chats,memories-browsing'.
           Empty string if the user deselects all options
+        type: string
+    expires: never
+
+  onboarding_setdefault_navigate:
+    type: event
+    description: |
+      Recorded when user clicks done on the set default onboarding screen
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037220
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037220
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+
+  onboarding_setdefault_settings:
+    type: event
+    description: |
+      Records set default checklist selections made by user on the set default onboarding screen
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037220
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037220
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    extra_keys:
+      source:
+        description: >
+          Comma-separated list of set default checkbox ids the user had selected
+          when clicking done, for example: 'set-default-window'.
+          Empty string if the user deselects all options
+        type: string
+    expires: never
+
+  onboarding_back_navigate:
+    type: event
+    description: |
+      Recorded when user clicks back on an onboarding screen
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037220
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037220
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    extra_keys:
+      message_id:
+        description: >
+          Identifier of the onboarding screen the user navigated back from
         type: string
     expires: never
 

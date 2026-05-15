@@ -30,6 +30,7 @@ browser.jar:
   content/browser/aiwindow/assets/model-choice-1.svg                (assets/model-choice-1.svg)
   content/browser/aiwindow/assets/model-choice-2.svg                (assets/model-choice-2.svg)
   content/browser/aiwindow/assets/model-choice-3.svg                (assets/model-choice-3.svg)
+  content/browser/aiwindow/assets/set-default-onboarding.svg        (assets/set-default-onboarding.svg)
   content/browser/aiwindow/firstrun.html                            (content/firstrun.html)
   content/browser/aiwindow/firstrun.css                             (content/firstrun.css)
   content/browser/aiwindow/firstrun.js                              (content/firstrun.js)
