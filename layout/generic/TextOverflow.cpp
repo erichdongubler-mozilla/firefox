@@ -817,7 +817,7 @@ bool TextOverflow::CanHaveOverflowMarkers(nsBlockFrame* aBlockFrame,
   }
 
   // Inhibit the markers if a descendant content owns the caret.
-  RefPtr<nsCaret> caret = aBlockFrame->PresShell()->GetActiveCaret();
+  RefPtr<nsCaret> caret = aBlockFrame->PresShell()->GetCaret();
   if (caret && caret->IsVisible()) {
     RefPtr<dom::Selection> domSelection = caret->GetSelection();
     if (domSelection) {

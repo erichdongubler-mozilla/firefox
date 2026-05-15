@@ -475,12 +475,16 @@ TextInputSelectionController::SetCaretReadOnly(bool aReadOnly) {
   if (!presShell) {
     return NS_ERROR_FAILURE;
   }
+  RefPtr<nsCaret> caret = presShell->GetCaret();
+  if (!caret) {
+    return NS_ERROR_FAILURE;
+  }
 
   if (!mFrameSelection) {
     return NS_ERROR_FAILURE;
   }
 
-  presShell->SetCaretReadOnly(aReadOnly);
+  caret->SetCaretReadOnly(aReadOnly);
   return NS_OK;
 }
 
@@ -499,7 +503,7 @@ TextInputSelectionController::GetCaretVisible(bool* _retval) {
   if (!presShell) {
     return NS_ERROR_FAILURE;
   }
-  RefPtr<nsCaret> caret = presShell->GetOriginalCaret();
+  RefPtr<nsCaret> caret = presShell->GetCaret();
   if (!caret) {
     return NS_ERROR_FAILURE;
   }
@@ -518,7 +522,12 @@ TextInputSelectionController::SetCaretVisibilityDuringSelection(
   if (!presShell) {
     return NS_ERROR_FAILURE;
   }
-  presShell->SetCaretVisibilityDuringSelection(aVisibility);
+  RefPtr<nsCaret> caret = presShell->GetCaret();
+  if (!caret) {
+    return NS_ERROR_FAILURE;
+  }
+
+  caret->SetVisibilityDuringSelection(aVisibility);
   return NS_OK;
 }
 
@@ -1466,7 +1475,7 @@ nsresult TextControlState::InitializeSelection(PresShell* aPresShell) {
   //      to its internal array.
   Selection* selection = mSelCon->GetSelection(SelectionType::eNormal);
   if (selection) {
-    RefPtr<nsCaret> caret = aPresShell->GetOriginalCaret();
+    RefPtr<nsCaret> caret = aPresShell->GetCaret();
     if (caret) {
       selection->AddSelectionListener(caret);
     }

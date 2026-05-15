@@ -3344,7 +3344,7 @@ nsresult nsFocusManager::SetCaretVisible(PresShell* aPresShell, bool aVisible,
   // When browsing with caret, make sure caret is visible after new focus
   // Return early if there is no caret. This can happen for the testcase
   // for bug 308025 where a window is closed in a blur handler.
-  RefPtr<nsCaret> caret = aPresShell->GetOriginalCaret();
+  RefPtr<nsCaret> caret = aPresShell->GetCaret();
   if (!caret) {
     return NS_OK;
   }

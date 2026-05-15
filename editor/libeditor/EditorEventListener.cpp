@@ -960,7 +960,7 @@ void EditorEventListener::InitializeDragDropCaret() {
   // See nsCaret::IsVisible().
   mCaret->SetVisibilityDuringSelection(true);
 
-  presShell->SetActiveCaret(mCaret);
+  presShell->SetCaret(mCaret);
 }
 
 void EditorEventListener::CleanupDragDropCaret() {
@@ -972,7 +972,7 @@ void EditorEventListener::CleanupDragDropCaret() {
 
   RefPtr<PresShell> presShell = GetPresShell();
   if (presShell) {
-    presShell->RestoreOriginalCaret();
+    presShell->RestoreCaret();
   }
 
   mCaret->Terminate();

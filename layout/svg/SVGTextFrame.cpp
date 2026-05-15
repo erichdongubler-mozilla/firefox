@@ -3211,7 +3211,7 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
   aContext.Multiply(canvasTMForChildren);
   gfxMatrix currentMatrix = aContext.CurrentMatrixDouble();
 
-  RefPtr<nsCaret> caret = presContext->PresShell()->GetActiveCaret();
+  RefPtr<nsCaret> caret = presContext->PresShell()->GetCaret();
   nsIFrame* caretFrame = caret->GetPaintGeometry();
 
   gfxContextAutoSaveRestore ctxSR;

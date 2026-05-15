@@ -1179,7 +1179,7 @@ uint32_t nsDisplayListBuilder::GetImageDecodeFlags() const {
 }
 
 nsCaret* nsDisplayListBuilder::GetCaret() {
-  RefPtr<nsCaret> caret = CurrentPresShellState()->mPresShell->GetActiveCaret();
+  RefPtr<nsCaret> caret = CurrentPresShellState()->mPresShell->GetCaret();
   return caret;
 }
 
@@ -1269,7 +1269,7 @@ void nsDisplayListBuilder::EnterPresShell(const nsIFrame* aReferenceFrame,
   }
 
   state->mCaretFrame = [&]() -> nsIFrame* {
-    RefPtr<nsCaret> caret = state->mPresShell->GetActiveCaret();
+    RefPtr<nsCaret> caret = state->mPresShell->GetCaret();
     nsIFrame* currentCaret = caret->GetPaintGeometry(&mCaretRect);
     if (!currentCaret) {
       return nullptr;

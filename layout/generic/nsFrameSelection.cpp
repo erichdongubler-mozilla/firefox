@@ -509,7 +509,7 @@ nsresult nsFrameSelection::DesiredCaretPos::FetchPos(
     return NS_OK;
   }
 
-  RefPtr<nsCaret> caret = aPresShell.GetActiveCaret();
+  RefPtr<nsCaret> caret = aPresShell.GetCaret();
   if (!caret) {
     return NS_ERROR_NULL_POINTER;
   }
@@ -664,7 +664,7 @@ void nsFrameSelection::SetCaretBidiLevelAndMaybeSchedulePaint(
   mCaret.mBidiLevel = aLevel;
 
   RefPtr<nsCaret> caret;
-  if (mPresShell && (caret = mPresShell->GetActiveCaret())) {
+  if (mPresShell && (caret = mPresShell->GetCaret())) {
     caret->SchedulePaint();
   }
 }

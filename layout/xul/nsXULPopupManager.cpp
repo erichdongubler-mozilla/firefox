@@ -1161,7 +1161,7 @@ static void CheckCaretDrawingState() {
       return;
     }
 
-    RefPtr<nsCaret> caret = presShell->GetActiveCaret();
+    RefPtr<nsCaret> caret = presShell->GetCaret();
     if (!caret) {
       return;
     }

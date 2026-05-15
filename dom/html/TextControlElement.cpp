@@ -341,7 +341,7 @@ void TextControlElement::ShowSelection() {
   if (!ps) {
     return;
   }
-  RefPtr<nsCaret> caret = ps->GetOriginalCaret();
+  RefPtr<nsCaret> caret = ps->GetCaret();
   if (!caret) {
     return;
   }
