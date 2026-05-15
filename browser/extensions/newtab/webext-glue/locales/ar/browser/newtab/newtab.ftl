@@ -706,6 +706,7 @@ newtab-widget-section-hide-all-button =
 newtab-widget-section-menu-button =
     .title = قائمة الويدجات
     .aria-label = افتح قائمة الويدجات
+newtab-widget-section-menu-manage = أدر الويدجات
 newtab-widget-section-menu-hide-all = أخفِ الويدجات
 newtab-widget-section-menu-learn-more = اطّلع على المزيد
 newtab-widget-section-feedback = أخبرنا برأيك

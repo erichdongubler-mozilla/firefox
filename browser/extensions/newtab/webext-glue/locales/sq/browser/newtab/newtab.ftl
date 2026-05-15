@@ -716,6 +716,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimizoji widget-et
     .aria-label = Tkurri krejt widget-et sa madhësia kompakte
+newtab-widget-section-menu-manage = Administroni widget-e
 newtab-widget-section-feedback = Tregonani si ju duket
 
 ## Strings introduced by the Nova redesign of the Timer widget

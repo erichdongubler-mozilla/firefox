@@ -739,6 +739,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Ба ҳадди ақал сохтани виҷетҳо
     .aria-label = Ҳамаи виҷетҳои худро то андозаи хурд шакл созед
+newtab-widget-section-menu-manage = Идоракунии виҷетҳо
 
 ## Strings introduced by the Nova redesign of the Timer widget
 

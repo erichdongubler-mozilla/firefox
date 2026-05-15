@@ -803,6 +803,7 @@ newtab-widget-section-minimize =
 newtab-widget-section-menu-button =
     .title = Widgets poravoha
     .aria-label = Embojuruja widgets poravoha
+newtab-widget-section-menu-manage = Eñangareko widgets
 newtab-widget-section-menu-hide-all = Eñomi widgets
 newtab-widget-section-menu-learn-more = Eikuaave
 newtab-widget-section-feedback = Ja’e mba’épa opensa

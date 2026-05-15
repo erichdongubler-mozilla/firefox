@@ -802,6 +802,7 @@ newtab-widget-section-minimize =
 newtab-widget-section-menu-button =
     .title = Meniu de widgeturi
     .aria-label = Deschide meniul de widgeturi
+newtab-widget-section-menu-manage = Gestionează widgeturile
 newtab-widget-section-menu-hide-all = Ascunde widgeturile
 newtab-widget-section-menu-learn-more = Află mai multe
 newtab-widget-section-feedback = Spune-ne ce părere ai

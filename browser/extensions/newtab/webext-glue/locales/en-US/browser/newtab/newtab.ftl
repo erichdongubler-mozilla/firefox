@@ -659,6 +659,7 @@ newtab-widget-section-menu-button =
 newtab-widget-add-widgets-button =
     .aria-label = Add widget
     .title = Add widget
+newtab-widget-section-menu-manage = Manage widgets
 newtab-widget-section-menu-hide-all = Hide widgets
 newtab-widget-section-menu-learn-more = Learn more
 newtab-widget-section-feedback = Tell us what you think
@@ -739,6 +740,7 @@ newtab-widget-timer-menu-learn-more = Learn more
 ## Sports widget
 
 newtab-sports-widget-menu-follow-teams = Follow teams
+newtab-sports-widget-menu-view-schedule = View schedule
 newtab-sports-widget-menu-view-upcoming = View upcoming
 newtab-sports-widget-menu-view-results = View results
 # Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.

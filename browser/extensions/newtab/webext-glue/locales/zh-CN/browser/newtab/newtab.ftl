@@ -798,6 +798,7 @@ newtab-widget-section-minimize =
 newtab-widget-section-menu-button =
     .title = 小组件菜单
     .aria-label = 打开小组件菜单
+newtab-widget-section-menu-manage = 管理小组件
 newtab-widget-section-menu-hide-all = 隐藏小组件
 newtab-widget-section-menu-learn-more = 详细了解
 newtab-widget-section-feedback = 告诉我们您的想法
@@ -891,6 +892,8 @@ newtab-sports-widget-view-schedule =
     .label = 查看赛程
 newtab-sports-widget-follow-teams =
     .label = 关注球队
+newtab-sports-widget-view-matches =
+    .label = 查看比赛
 # Variables:
 #   $number (number) - Maximum number of teams a user can choose to follow in the team selection state
 newtab-sports-widget-follow-teams-title = 最多可关注 { $number } 支球队

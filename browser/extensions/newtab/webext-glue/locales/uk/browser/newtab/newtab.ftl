@@ -720,6 +720,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Згорнути віджети
     .aria-label = Згорнути всі віджети до компактного розміру
+newtab-widget-section-menu-manage = Керувати віджетами
 
 ## Strings introduced by the Nova redesign of the Timer widget
 

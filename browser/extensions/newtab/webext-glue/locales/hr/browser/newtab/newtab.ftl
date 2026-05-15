@@ -757,6 +757,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Smanji widgete
     .aria-label = Smanji sve widgete na kompaktnu veličinu
+newtab-widget-section-menu-manage = Upravljaj widgetima
 newtab-widget-section-feedback = Reci nam svoje mišljenje
 
 ## Strings introduced by the Nova redesign of the Timer widget

@@ -468,6 +468,7 @@ newtab-widget-section-title = ویجتا
 newtab-widget-section-hide-all-button =
     .title = بؽڌار کردن ویجتا
     .aria-label = بؽڌار کردن پوی ویجتا
+newtab-widget-section-menu-manage = دؽوۉداری ویجتا
 
 ## Strings introduced by the Nova redesign of the Timer widget
 

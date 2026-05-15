@@ -169,6 +169,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -371,6 +372,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -569,6 +571,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -771,6 +774,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -998,6 +1002,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -1214,6 +1219,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -1409,6 +1415,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -1611,6 +1618,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -1697,6 +1705,7 @@
           "newtab-sports-widget-menu-follow-teams",
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -1916,6 +1925,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -2117,6 +2127,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -2318,6 +2329,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -2520,6 +2532,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -2724,6 +2737,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -2926,6 +2940,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -2966,6 +2981,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
@@ -3095,6 +3111,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -3206,6 +3223,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -3387,6 +3405,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -3586,6 +3605,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -3790,6 +3810,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -3992,6 +4013,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -4196,6 +4218,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -4398,6 +4421,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -4553,6 +4577,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -4809,6 +4834,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -4927,6 +4953,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -5133,6 +5160,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -5339,6 +5367,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -5466,6 +5495,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -5551,6 +5581,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -5662,6 +5693,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -5713,6 +5745,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-size-large",
           "newtab-widget-size-medium",
           "newtab-widget-size-small",
@@ -5881,6 +5914,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -6080,6 +6114,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -6263,6 +6298,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -6462,6 +6498,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -6658,6 +6695,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -6857,6 +6895,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -7066,6 +7105,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -7271,6 +7311,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -7311,6 +7352,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
@@ -7324,6 +7366,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
@@ -7375,6 +7418,7 @@
           "newtab-sports-widget-menu-follow-teams",
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -7425,42 +7469,15 @@
     },
     "de": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "dsb": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "el": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "en-CA": {
       "errors": null,
@@ -7495,6 +7512,7 @@
           "newtab-sports-widget-key-date-range",
           "newtab-sports-widget-key-dates",
           "newtab-sports-widget-menu-key-dates",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-sports-widget-quarter-finals",
           "newtab-sports-widget-round-16",
@@ -7510,16 +7528,7 @@
     },
     "en-GB": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "en-US": {
       "errors": null,
@@ -7530,6 +7539,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
@@ -7542,14 +7552,7 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-sports-widget-view-matches",
           "newtab-wallpaper-feature-highlight-subtitle",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right",
           "newtab-widget-timer-celebration-message-break",
           "newtab-widget-timer-running-focus"
         ]
@@ -7560,6 +7563,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
@@ -7573,6 +7577,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-sports-widget-view-matches",
           "newtab-widget-add-widgets-button",
@@ -7584,16 +7589,7 @@
     },
     "es-MX": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "et": {
       "errors": null,
@@ -7743,6 +7739,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -7942,6 +7939,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -7979,57 +7977,7 @@
     },
     "eu": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-clock-widget-add-clock-form",
-          "newtab-clock-widget-button-add",
-          "newtab-clock-widget-button-add-clock",
-          "newtab-clock-widget-button-back",
-          "newtab-clock-widget-button-cancel",
-          "newtab-clock-widget-button-edit-clock",
-          "newtab-clock-widget-button-remove-clock",
-          "newtab-clock-widget-button-save",
-          "newtab-clock-widget-edit-clock-form",
-          "newtab-clock-widget-input-nickname",
-          "newtab-clock-widget-label-your-clocks",
-          "newtab-clock-widget-menu-button",
-          "newtab-clock-widget-menu-edit",
-          "newtab-clock-widget-menu-hide",
-          "newtab-clock-widget-menu-learn-more",
-          "newtab-clock-widget-menu-switch-to-12h",
-          "newtab-clock-widget-menu-switch-to-24h",
-          "newtab-clock-widget-search-location-input",
-          "newtab-clock-widget-search-results",
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-key-date",
-          "newtab-sports-widget-key-date-range",
-          "newtab-sports-widget-key-dates",
-          "newtab-sports-widget-now",
-          "newtab-sports-widget-quarter-finals",
-          "newtab-sports-widget-round-16",
-          "newtab-sports-widget-round-32",
-          "newtab-sports-widget-runner-up",
-          "newtab-sports-widget-view-matches",
-          "newtab-sports-widget-world-cup-champions",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-lists-celebration-headline",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right",
-          "newtab-widget-timer-celebration-heading-break",
-          "newtab-widget-timer-celebration-heading-focus",
-          "newtab-widget-timer-celebration-message-break",
-          "newtab-widget-timer-celebration-message-focus",
-          "newtab-widget-timer-decrease-min",
-          "newtab-widget-timer-increase-min",
-          "newtab-widget-timer-mode-group",
-          "newtab-widget-timer-pause-aria",
-          "newtab-widget-timer-running-break",
-          "newtab-widget-timer-running-focus",
-          "newtab-widget-timer-spinbutton-name",
-          "newtab-widget-timer-start-aria"
-        ]
-      }
+      "missing": null
     },
     "fa": {
       "errors": null,
@@ -8176,6 +8124,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -8345,6 +8294,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -8539,6 +8489,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -8741,6 +8692,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -8781,8 +8733,8 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
-          "newtab-sports-widget-view-matches",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
           "newtab-widget-menu-move-left",
@@ -8792,16 +8744,7 @@
     },
     "fr": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "frp": {
       "errors": null,
@@ -9002,6 +8945,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -9217,6 +9161,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -9327,6 +9272,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -9378,6 +9324,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-size-large",
           "newtab-widget-size-medium",
           "newtab-widget-size-small",
@@ -9399,16 +9346,7 @@
     },
     "fy-NL": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "ga-IE": {
       "errors": null,
@@ -9584,6 +9522,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -9789,6 +9728,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -9972,6 +9912,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -10171,6 +10112,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -10285,6 +10227,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -10358,6 +10301,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -10420,6 +10364,7 @@
           "newtab-sports-widget-key-date-range",
           "newtab-sports-widget-key-dates",
           "newtab-sports-widget-menu-key-dates",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-sports-widget-quarter-finals",
           "newtab-sports-widget-round-16",
@@ -10597,6 +10542,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -10799,6 +10745,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -11032,6 +10979,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -11248,6 +11196,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -11290,13 +11239,7 @@
           "newtab-discovery-empty-section-topstories-content",
           "newtab-discovery-empty-section-topstories-header",
           "newtab-discovery-empty-section-topstories-timed-out",
-          "newtab-menu-show-privacy-info",
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
+          "newtab-menu-show-privacy-info"
         ]
       }
     },
@@ -11458,6 +11401,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -11648,6 +11592,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -11739,6 +11684,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -11793,22 +11739,14 @@
     },
     "hsb": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "hu": {
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
@@ -11827,7 +11765,6 @@
           "newtab-activation-window-message-values-focus-message",
           "newtab-clock-widget-add-clock-form",
           "newtab-clock-widget-button-add",
-          "newtab-clock-widget-button-add-clock",
           "newtab-clock-widget-button-back",
           "newtab-clock-widget-button-cancel",
           "newtab-clock-widget-button-edit-clock",
@@ -11874,6 +11811,7 @@
           "newtab-sports-widget-live",
           "newtab-sports-widget-menu-follow-teams",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -11899,7 +11837,6 @@
           "newtab-weather-change-location-search-use-current",
           "newtab-weather-opt-in-choose-location",
           "newtab-weather-opt-in-headline",
-          "newtab-widget-add-widgets-button",
           "newtab-widget-lists-input-menu-edit2",
           "newtab-widget-lists-name-label-checklist",
           "newtab-widget-menu-change-size",
@@ -12072,6 +12009,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -12271,6 +12209,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -12308,16 +12247,7 @@
     },
     "ia": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "id": {
       "errors": null,
@@ -12409,6 +12339,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -12476,6 +12407,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -12581,6 +12513,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -12634,6 +12567,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -12657,14 +12591,7 @@
     },
     "it": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "ixl": {
       "errors": null,
@@ -12828,6 +12755,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -13030,6 +12958,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -13098,6 +13027,7 @@
           "newtab-sports-widget-key-date-range",
           "newtab-sports-widget-key-dates",
           "newtab-sports-widget-menu-key-dates",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-sports-widget-quarter-finals",
           "newtab-sports-widget-round-16",
@@ -13144,6 +13074,7 @@
           "newtab-sports-widget-key-date-range",
           "newtab-sports-widget-key-dates",
           "newtab-sports-widget-menu-key-dates",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-sports-widget-quarter-finals",
           "newtab-sports-widget-round-16",
@@ -13162,6 +13093,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
@@ -13268,6 +13200,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -13384,6 +13317,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -13412,16 +13346,7 @@
     },
     "kk": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "km": {
       "errors": null,
@@ -13589,6 +13514,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -13781,6 +13707,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -13987,6 +13914,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -14193,6 +14121,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -14230,16 +14159,7 @@
     },
     "ko": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "ks": {
       "errors": null,
@@ -14440,6 +14360,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -14656,6 +14577,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -14890,6 +14812,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -15106,6 +15029,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -15305,6 +15229,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -15507,6 +15432,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -15690,6 +15616,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -15889,6 +15816,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -16072,6 +16000,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -16271,6 +16200,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -16469,6 +16399,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -16671,6 +16602,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -16840,6 +16772,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -16946,6 +16879,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -17152,6 +17086,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -17355,6 +17290,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -17540,6 +17476,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -17739,6 +17676,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -17946,6 +17884,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -18153,6 +18092,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -18352,6 +18292,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -18556,6 +18497,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -18699,6 +18641,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -18809,6 +18752,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -19006,6 +18950,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -19208,6 +19153,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -19412,6 +19358,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -19614,6 +19561,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -19821,6 +19769,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -20023,6 +19972,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -20060,16 +20010,7 @@
     },
     "nb-NO": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "ne-NP": {
       "errors": null,
@@ -20242,6 +20183,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -20445,6 +20387,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -20482,29 +20425,11 @@
     },
     "nl": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "nn-NO": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "oc": {
       "errors": null,
@@ -20641,6 +20566,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -20760,6 +20686,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -20959,6 +20886,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -21163,6 +21091,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -21203,6 +21132,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
@@ -21408,6 +21338,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -21623,6 +21554,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -21663,6 +21595,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
@@ -21676,6 +21609,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
@@ -21734,6 +21668,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -21853,6 +21788,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -21904,6 +21840,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-size-large",
           "newtab-widget-size-medium",
           "newtab-widget-size-small",
@@ -21956,6 +21893,7 @@
           "newtab-sports-widget-key-date-range",
           "newtab-sports-widget-key-dates",
           "newtab-sports-widget-menu-key-dates",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-sports-widget-quarter-finals",
           "newtab-sports-widget-round-16",
@@ -21971,16 +21909,7 @@
     },
     "ru": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "sat": {
       "errors": null,
@@ -22120,6 +22049,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -22226,6 +22156,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -22330,6 +22261,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -22555,6 +22487,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -22757,6 +22690,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -22940,6 +22874,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -23139,6 +23074,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -23320,6 +23256,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -23493,6 +23430,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -23533,6 +23471,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-sports-widget-view-matches",
           "newtab-widget-add-widgets-button",
@@ -23680,6 +23619,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -23789,6 +23729,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -23873,6 +23814,7 @@
           "newtab-sports-widget-live",
           "newtab-sports-widget-menu-follow-teams",
           "newtab-sports-widget-menu-key-dates",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -24113,6 +24055,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -24329,6 +24272,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -24429,6 +24373,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -24498,6 +24443,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
@@ -24508,16 +24454,7 @@
     },
     "sv-SE": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "sw": {
       "errors": null,
@@ -24718,6 +24655,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -24934,6 +24872,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -25117,6 +25056,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -25316,6 +25256,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -25515,6 +25456,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -25717,6 +25659,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -25895,6 +25838,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -26057,6 +26001,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -26152,6 +26097,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -26211,6 +26157,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-widget-add-widgets-button",
           "newtab-widget-menu-move",
@@ -26371,6 +26318,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -26570,6 +26518,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -26607,17 +26556,7 @@
     },
     "tr": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-sports-widget-view-matches",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     },
     "trs": {
       "errors": null,
@@ -26781,6 +26720,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -26983,6 +26923,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -27083,6 +27024,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -27301,6 +27243,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -27500,6 +27443,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -27686,6 +27630,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -27883,6 +27828,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -27923,6 +27869,7 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
           "newtab-sports-widget-view-matches",
           "newtab-widget-add-widgets-button",
@@ -28131,6 +28078,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -28347,6 +28295,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -28581,6 +28530,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -28797,6 +28747,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -29031,6 +28982,7 @@
           "newtab-sports-widget-menu-key-dates",
           "newtab-sports-widget-menu-learn-more",
           "newtab-sports-widget-menu-view-results",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-menu-view-upcoming",
           "newtab-sports-widget-no-live-data",
           "newtab-sports-widget-now",
@@ -29247,6 +29199,7 @@
           "newtab-widget-section-menu-button",
           "newtab-widget-section-menu-hide-all",
           "newtab-widget-section-menu-learn-more",
+          "newtab-widget-section-menu-manage",
           "newtab-widget-section-minimize",
           "newtab-widget-section-title",
           "newtab-widget-size-large",
@@ -29287,8 +29240,8 @@
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-sports-widget-back-button",
+          "newtab-sports-widget-menu-view-schedule",
           "newtab-sports-widget-now",
-          "newtab-sports-widget-view-matches",
           "newtab-wallpaper-feature-highlight-title",
           "newtab-widget-add-widgets-button",
           "newtab-widget-lists-celebration-headline",
@@ -29301,16 +29254,7 @@
     },
     "zh-TW": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-sports-widget-back-button",
-          "newtab-sports-widget-now",
-          "newtab-widget-add-widgets-button",
-          "newtab-widget-menu-move",
-          "newtab-widget-menu-move-left",
-          "newtab-widget-menu-move-right"
-        ]
-      }
+      "missing": null
     }
   },
   "message_dates": {
@@ -29509,6 +29453,7 @@
     "newtab-sports-widget-menu-key-dates": "2026-05-06T12:09:34",
     "newtab-sports-widget-menu-learn-more": "2026-04-29T04:32:49",
     "newtab-sports-widget-menu-view-results": "2026-04-29T04:32:49",
+    "newtab-sports-widget-menu-view-schedule": "2026-05-13T19:39:32",
     "newtab-sports-widget-menu-view-upcoming": "2026-04-29T04:32:49",
     "newtab-sports-widget-no-live-data": "2026-04-29T04:32:49",
     "newtab-sports-widget-now": "2026-05-12T00:14:57",
@@ -29725,6 +29670,7 @@
     "newtab-widget-section-menu-button": "2026-04-17T14:36:20",
     "newtab-widget-section-menu-hide-all": "2026-04-17T14:36:20",
     "newtab-widget-section-menu-learn-more": "2026-04-17T14:36:20",
+    "newtab-widget-section-menu-manage": "2026-05-12T23:07:25",
     "newtab-widget-section-minimize": "2025-11-19T10:24:48",
     "newtab-widget-section-title": "2025-11-19T10:24:48",
     "newtab-widget-size-large": "2026-04-03T13:23:49",
@@ -29760,7 +29706,7 @@
   },
   "meta": {
     "repository": "https://github.com/mozilla-l10n/firefox-l10n.git",
-    "revision": "c6cbe7640879f00992892d45a6f082dc1a4fdec6",
-    "updated": "2026-05-13T15:28:10.060929"
+    "revision": "4263163221a036d771a91ec6c50c118109de21d8",
+    "updated": "2026-05-15T16:19:04.651946"
   }
 }

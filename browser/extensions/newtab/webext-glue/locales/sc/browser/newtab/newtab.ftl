@@ -714,6 +714,7 @@ newtab-widget-menu-hide = Cua su widget
 newtab-widget-section-hide-all-button =
     .title = Cua is widgets
     .aria-label = Cua totu is widgets
+newtab-widget-section-menu-manage = Gesti is widgets
 newtab-widget-section-feedback = Nara·nos ite nde pensas
 
 ## Strings introduced by the Nova redesign of the Timer widget

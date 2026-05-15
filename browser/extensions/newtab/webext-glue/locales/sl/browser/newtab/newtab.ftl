@@ -773,6 +773,7 @@ newtab-widget-section-minimize =
 newtab-widget-section-menu-button =
     .title = Meni Pripomočki
     .aria-label = Odpri meni pripomočkov
+newtab-widget-section-menu-manage = Upravljanje pripomočkov
 newtab-widget-section-menu-hide-all = Skrij pripomočke
 newtab-widget-section-menu-learn-more = Več o tem
 newtab-widget-section-feedback = Povejte nam svoje mnenje

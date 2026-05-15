@@ -810,6 +810,7 @@ newtab-widget-section-minimize =
 newtab-widget-section-menu-button =
     .title = Pienoisohjelmien valikko
     .aria-label = Avaa pienoisohjelmien valikko
+newtab-widget-section-menu-manage = Hallitse pienoisohjelmia
 newtab-widget-section-menu-hide-all = Piilota pienoisohjelmat
 newtab-widget-section-menu-learn-more = Lue lisää
 newtab-widget-section-feedback = Kerro meille mielipiteesi
@@ -913,6 +914,8 @@ newtab-sports-widget-view-schedule =
     .label = Näytä aikataulu
 newtab-sports-widget-follow-teams =
     .label = Seuraa joukkueita
+newtab-sports-widget-view-matches =
+    .label = Näytä ottelut
 # Variables:
 #   $number (number) - Maximum number of teams a user can choose to follow in the team selection state
 newtab-sports-widget-follow-teams-title =
