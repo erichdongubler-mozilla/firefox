@@ -225,9 +225,6 @@ static void DistributeRange(const Range<Keyframe*>& aRange);
 
 static void DoComputeMissingKeyframeOffsets(nsTArray<Keyframe*>& aKeyframes);
 
-static double GetComputedOffset(const Keyframe::OffsetType& aOffset,
-                                const dom::AnimationTimeline* aTimeline);
-
 // ------------------------------------------------------------------
 //
 // Public API
@@ -275,10 +272,10 @@ nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
 }
 
 /* static */
-void KeyframeUtils::ComputeMissingKeyframeOffsets(
+bool KeyframeUtils::ComputeMissingKeyframeOffsets(
     nsTArray<Keyframe>& aKeyframes, const dom::AnimationTimeline* aTimeline) {
   if (aKeyframes.IsEmpty()) {
-    return;
+    return false;
   }
 
   // We intentionally maintain a special array of keyframes with double offset
@@ -288,6 +285,8 @@ void KeyframeUtils::ComputeMissingKeyframeOffsets(
   // This part is not specced so we borrow the idea from other browsers, i.e.
   // the missing keyframe offsets are calculated only from double offset.
   nsTArray<Keyframe*> keyframesWithDoubleOrNullOffsets;
+
+  bool hasTimelineRangeOffset = false;
 
   // 1. The 1st pass. We try to resolve the computed offset from offset if
   // provided.
@@ -304,11 +303,36 @@ void KeyframeUtils::ComputeMissingKeyframeOffsets(
       continue;
     }
 
-    keyframe.mComputedOffset = GetComputedOffset(*offset, aTimeline);
+    hasTimelineRangeOffset = true;
+    keyframe.mComputedOffset =
+        GetComputedOffset(offset->mRangeName, offset->mPercentage, aTimeline);
   }
 
   // 2. The 2nd pass. Follow the spec to compute the missing offsets.
   DoComputeMissingKeyframeOffsets(keyframesWithDoubleOrNullOffsets);
+
+  return hasTimelineRangeOffset;
+}
+
+/* static */
+double KeyframeUtils::GetComputedOffset(
+    const StyleTimelineRangeName aRangeName, const double aPercentage,
+    const dom::AnimationTimeline* aTimeline) {
+  MOZ_ASSERT(aRangeName != StyleTimelineRangeName::None &&
+                 aRangeName != StyleTimelineRangeName::Normal,
+             "This is only for keyframe selector with timeline range name");
+
+  if (!aTimeline || !aTimeline->IsViewTimeline()) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+
+  const dom::ViewTimeline* vt = aTimeline->AsViewTimeline();
+  const auto result = vt->MapKeyframeOffsetToOffset(aRangeName, aPercentage);
+
+  // FIXME: Bug 2039090. We should apply animation-range to get the correct
+  // computed offset.
+
+  return result ? result.value() : std::numeric_limits<double>::quiet_NaN();
 }
 
 /* static */
@@ -334,8 +358,7 @@ nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
   const size_t len = aKeyframes.Length();
   for (size_t i = 0; i < len; ++i) {
     const Keyframe& frame = aKeyframes[i];
-    if (frame.mOffset && frame.mOffset->IsTimelineRangeOffset() &&
-        std::isnan(frame.mComputedOffset)) {
+    if (frame.IsRangedKeyframe() && std::isnan(frame.mComputedOffset)) {
       // This may happen if the animation doesn't associate with a view
       // timeline, or the timeline is inactive. We just skip this keyframe.
       continue;
@@ -1262,33 +1285,6 @@ static void DoComputeMissingKeyframeOffsets(nsTArray<Keyframe*>& aKeyframes) {
     DistributeRange(Range<Keyframe*>(keyframeA, keyframeB + 1));
     keyframeA = keyframeB;
   }
-}
-
-/**
- * Calculate the computed offset for view timelines. It returns unresolved
- * offset if the timeline isn't ViewTimeline.
- *
- * @param aOffset The specified keyframe offset.
- * @param aTimeline The animation timeline.
- */
-static double GetComputedOffset(const Keyframe::OffsetType& aOffset,
-                                const dom::AnimationTimeline* aTimeline) {
-  MOZ_ASSERT(aOffset.mRangeName != StyleTimelineRangeName::None &&
-             aOffset.mRangeName != StyleTimelineRangeName::Normal,
-             "This is only for keyframe selector with timeline range name");
-
-  if (!aTimeline || !aTimeline->IsViewTimeline()) {
-    return std::numeric_limits<double>::quiet_NaN();
-  }
-
-  const dom::ViewTimeline* vt = aTimeline->AsViewTimeline();
-  const auto result =
-      vt->MapKeyframeOffsetToOffset(aOffset.mRangeName, aOffset.mPercentage);
-
-  // FIXME: Bug 2039090. We should apply animation-range to get the correct
-  // computed offset.
-
-  return result ? result.value() : std::numeric_limits<double>::quiet_NaN();
 }
 
 }  // namespace mozilla

@@ -342,6 +342,7 @@ void ScrollTimeline::TimelineDataDidChange() {
   for (auto* anim = mAnimationOrder.getFirst(); anim;
        anim = static_cast<LinkedListElement<Animation>*>(anim)->getNext()) {
     anim->UpdateNormalizedTimingForTimelineDataChange();
+    anim->MaybeUpdateKeyframeComputedOffsets();
   }
 }
 

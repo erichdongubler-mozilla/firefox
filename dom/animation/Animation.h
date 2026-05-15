@@ -434,6 +434,7 @@ class Animation : public DOMEventTargetHelper,
   }
 
   void UpdateNormalizedTimingForTimelineDataChange();
+  void MaybeUpdateKeyframeComputedOffsets();
 
   void SetHiddenByContentVisibility(bool hidden);
   bool IsHiddenByContentVisibility() const {

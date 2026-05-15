@@ -253,7 +253,8 @@ void KeyframeEffect::SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
   }
 
   mKeyframes = std::move(aKeyframes);
-  KeyframeUtils::ComputeMissingKeyframeOffsets(mKeyframes, aTimeline);
+  mKeyframesUseTimelineRangeOffset =
+      KeyframeUtils::ComputeMissingKeyframeOffsets(mKeyframes, aTimeline);
 
   if (mAnimation && mAnimation->IsRelevant()) {
     MutationObservers::NotifyAnimationChanged(mAnimation);
@@ -1265,8 +1266,7 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
       }
     }
     if (std::isnan(keyframe.mComputedOffset)) {
-      MOZ_ASSERT(keyframe.mOffset && keyframe.mOffset->IsTimelineRangeOffset(),
-                 "Invalid computed offset");
+      MOZ_ASSERT(keyframe.IsRangedKeyframe(), "Invalid computed offset");
       // FIXME: Bug 2039388. This may happen if the associated timeline doesn't
       // support this timeline range name, or the layout is not ready so we
       // cannot resolve the timeline range name. This is not specced so we use
@@ -2061,6 +2061,38 @@ double KeyframeEffect::AnimationsPlayBackRateMultiplier() const {
     return presContext->AnimationsPlayBackRateMultiplier();
   }
   return 1.0;
+}
+
+void KeyframeEffect::MaybeUpdateKeyframeComputedOffsets(
+    const AnimationTimeline* aTimeline) {
+  if (!mKeyframesUseTimelineRangeOffset) {
+    return;
+  }
+
+  bool needsRebuildProperties = false;
+  for (auto& keyframe : mKeyframes) {
+    if (!keyframe.IsRangedKeyframe()) {
+      continue;
+    }
+
+    const auto& offset = *keyframe.mOffset;
+    const double oldComputedOffset = keyframe.mComputedOffset;
+    keyframe.mComputedOffset = KeyframeUtils::GetComputedOffset(
+        offset.mRangeName, offset.mPercentage, aTimeline);
+
+    if (Keyframe::ComputedOffsetsAreDifferent(oldComputedOffset,
+                                              keyframe.mComputedOffset)) {
+      needsRebuildProperties = true;
+    }
+  }
+
+  if (needsRebuildProperties && mTarget) {
+    RefPtr<const ComputedStyle> computedStyle =
+        GetTargetComputedStyle(Flush::None);
+    if (computedStyle) {
+      UpdateProperties(computedStyle, aTimeline);
+    }
+  }
 }
 
 }  // namespace dom

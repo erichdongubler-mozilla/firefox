@@ -356,9 +356,11 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
   }
   mTimeline = aTimeline;
   mTimelineName = aTimelineName;
-  // Update the normalized timing because we are using the new timeline.
+  // Update the normalized timing and keyframe timeline range ofset because we
+  // are using the new timeline.
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();
+    MaybeUpdateKeyframeComputedOffsets();
   }
 
   // 9. Perform the steps corresponding to the first matching condition from the
@@ -455,6 +457,7 @@ void Animation::SetTimelineRangeNoUpdate(AnimationRange&& aRange) {
 
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();
+    MaybeUpdateKeyframeComputedOffsets();
   }
 }
 
@@ -2015,6 +2018,14 @@ void Animation::UpdateNormalizedTimingForTimelineDataChange() {
   }
 
   mEffect->UpdateNormalizedTiming();
+}
+
+void Animation::MaybeUpdateKeyframeComputedOffsets() {
+  if (!mEffect || !mEffect->AsKeyframeEffect()) {
+    return;
+  }
+
+  mEffect->AsKeyframeEffect()->MaybeUpdateKeyframeComputedOffsets(mTimeline);
 }
 
 StickyTimeDuration Animation::EffectEnd() const {

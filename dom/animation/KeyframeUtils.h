@@ -18,11 +18,13 @@ struct AnimationProperty;
 class ComputedStyle;
 struct CSSPropertyId;
 
-enum class PseudoStyleType : uint8_t;
 class ErrorResult;
 struct Keyframe;
 struct PropertyStyleAnimationValuePair;
 struct PseudoStyleRequest;
+
+enum class PseudoStyleType : uint8_t;
+enum class StyleTimelineRangeName : uint8_t;
 
 namespace dom {
 class AnimationTimeline;
@@ -73,9 +75,24 @@ class KeyframeUtils {
    * https://drafts.csswg.org/web-animations-1/#compute-missing-keyframe-offsets
    *
    * @param aKeyframes The set of keyframes to adjust.
+   * @param aTimeline The animation timeline.
+   * @return True if there are any keyframes uses TimelineRangeOffset.
    */
-  static void ComputeMissingKeyframeOffsets(
+  static bool ComputeMissingKeyframeOffsets(
       nsTArray<Keyframe>& aKeframes, const dom::AnimationTimeline* aTimeline);
+
+  /**
+   * Calculate the computed offset for view timelines.
+   *
+   * @param aRangeName The timeline range name of the specified keyframe offset.
+   * @param aPercentage The percentage of the specified keyframe offset.
+   * @param aTimeline The animation timeline.
+   * @return The computed offset for |aOffset|. It returns unresolved offset if
+   *   the timeline isn't ViewTimeline.
+   */
+  static double GetComputedOffset(const StyleTimelineRangeName aRangeName,
+                                  const double aPercentage,
+                                  const dom::AnimationTimeline* aTimeline);
 
   /**
    * Converts an array of Keyframe objects into an array of AnimationProperty

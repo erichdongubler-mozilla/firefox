@@ -66,6 +66,17 @@ struct Keyframe {
   Keyframe& operator=(const Keyframe& aOther) = default;
   Keyframe& operator=(Keyframe&& aOther) = default;
 
+  static bool ComputedOffsetsAreDifferent(const double aFirst,
+                                          const double aSecond) {
+    // `aFirst != aSecond` is always true if one of them is NaN, so we have to
+    // filter out the case if both are NaN,
+    return aFirst != aSecond && !(std::isnan(aFirst) && std::isnan(aSecond));
+  }
+
+  bool IsRangedKeyframe() const {
+    return mOffset && mOffset->IsTimelineRangeOffset();
+  }
+
   struct OffsetType {
     // If mRangeName is StyleTimelineRangeName::None, this is a percentage
     // offset. Otherwise, this is a TimelineRangeOffset (i.e. the offset with
