@@ -4508,8 +4508,7 @@ bool nsContentUtils::IsValidShadowHostName(nsAtom* aName,
          aName == nsGkAtoms::h5 || aName == nsGkAtoms::h6 ||
          aName == nsGkAtoms::header || aName == nsGkAtoms::main ||
          aName == nsGkAtoms::nav || aName == nsGkAtoms::p ||
-         aName == nsGkAtoms::section || aName == nsGkAtoms::search ||
-         aName == nsGkAtoms::span;
+         aName == nsGkAtoms::section || aName == nsGkAtoms::span;
 }
 
 // static
