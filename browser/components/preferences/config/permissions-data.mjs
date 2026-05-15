@@ -741,7 +741,7 @@ SettingGroupManager.registerGroups({
             id: "automaticallySubmitCrashesBox",
             l10nId: "data-collection-backlogged-crash-reports",
             subcategory: "reports",
-            supportPage: "crash-report",
+            supportPage: "crash-reports",
           },
         ],
       },
