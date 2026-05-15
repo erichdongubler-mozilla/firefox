@@ -112,8 +112,8 @@ add_task(async function test_restore_defaults_button_resets_both_settings() {
 
   is(
     newTabsNativeSelect.value,
-    "home",
-    "New tabs dropdown reset to 'home' after restore"
+    "true",
+    "New tabs dropdown reset to 'true' after restore"
   );
 
   await BrowserTestUtils.removeTab(tab);

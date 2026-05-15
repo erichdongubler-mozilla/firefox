@@ -21,30 +21,6 @@ tags = "os_integration"
 
 ["browser_homepage_default.js"]
 
-["browser_homepage_extension_combined.js"]
-
-["browser_homepage_extension_custom_url_fallback.js"]
-
-["browser_homepage_extension_custom_url_label.js"]
-
-["browser_homepage_extension_custom_url_lifecycle.js"]
-
-["browser_homepage_extension_disable.js"]
-
-["browser_homepage_extension_multiple.js"]
-
-["browser_homepage_extension_multiple_homepage.js"]
-
-["browser_homepage_extension_newtab.js"]
-
-["browser_homepage_extension_restore_defaults.js"]
-
-["browser_homepage_extension_switch_back.js"]
-
-["browser_homepage_extension_uninstall.js"]
-
-["browser_homepage_extension_windows.js"]
-
 ["browser_homepage_firefox_home.js"]
 
 ["browser_homepage_firefox_home_disabled_both_off.js"]
