@@ -9,6 +9,21 @@ const TOKEN_LABELS = {
   FOLLOWUP: "followup",
 };
 
+// Deterministic fallback normalization for follow-up suggestions. Token/tag
+// extraction can leave whitespace artifacts ("sentence ."), and the model
+// sometimes emits a trailing period or other terminal punctuation that we
+// don't want to render in the suggestion chips.
+function normalizeFollowUp(value) {
+  if (!value) {
+    return "";
+  }
+  return value
+    .replace(/[.!?…]+\s*$/u, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/ ([.,!?…;:])/g, "$1");
+}
+
 /**
  * @import { ContextWebsite } from "chrome://browser/content/urlbar/SmartbarInput.mjs"
  */
@@ -171,8 +186,16 @@ export class ChatMessage {
    */
   addTokens(tokens) {
     tokens.forEach(({ key, value }) => {
+      let storedValue = value;
+      if (key == TOKEN_LABELS.FOLLOWUP) {
+        storedValue = normalizeFollowUp(value);
+        if (!storedValue) {
+          return;
+        }
+      }
+
       if (Array.isArray(this.tokens[key])) {
-        this.tokens[key].push(value);
+        this.tokens[key].push(storedValue);
       }
 
       switch (key) {
@@ -183,7 +206,7 @@ export class ChatMessage {
           this.webSearchQueries.push(value);
           break;
         case TOKEN_LABELS.FOLLOWUP:
-          this.followUpSuggestions.push(value);
+          this.followUpSuggestions.push(storedValue);
       }
     });
   }
