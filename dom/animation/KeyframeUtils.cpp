@@ -334,7 +334,8 @@ nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
     const Keyframe& frame = aKeyframes[i];
     if (frame.mOffset && frame.mOffset->IsTimelineRangeOffset() &&
         std::isnan(frame.mComputedOffset)) {
-      // FIXME: Bug 1824875. Resolve the TimelineRangeOffset.
+      // This may happen if the animation doesn't associate with a view
+      // timeline, or the timeline is inactive. We just skip this keyframe.
       continue;
     }
     for (auto& value : computedValues[i]) {
@@ -798,8 +799,8 @@ static void AppendFinalSegment(AnimationProperty* aAnimationProperty,
 // becase we don't support implicit keyframes).
 static AnimationProperty* HandleMissingInitialKeyframe(
     nsTArray<AnimationProperty>& aResult, const KeyframeValueEntry& aEntry) {
-  MOZ_ASSERT(aEntry.mOffset != 0.0f,
-             "The offset of the entry should not be 0.0");
+  MOZ_ASSERT(aEntry.mOffset > 0.0f,
+             "The offset of the entry should be larger than 0.0");
 
   AnimationProperty* result = aResult.AppendElement();
   result->mProperty = aEntry.mProperty;
@@ -812,8 +813,8 @@ static AnimationProperty* HandleMissingInitialKeyframe(
 static void HandleMissingFinalKeyframe(
     nsTArray<AnimationProperty>& aResult, const KeyframeValueEntry& aEntry,
     AnimationProperty* aCurrentAnimationProperty) {
-  MOZ_ASSERT(aEntry.mOffset != 1.0f,
-             "The offset of the entry should not be 1.0");
+  MOZ_ASSERT(aEntry.mOffset < 1.0f,
+             "The offset of the entry should be smaller than 1.0");
 
   // If |aCurrentAnimationProperty| is nullptr, that means this is the first
   // entry for the property, we have to append a new AnimationProperty for this
@@ -822,9 +823,9 @@ static void HandleMissingFinalKeyframe(
     aCurrentAnimationProperty = aResult.AppendElement();
     aCurrentAnimationProperty->mProperty = aEntry.mProperty;
 
-    // If we have only one entry whose offset is neither 1 nor 0 for this
+    // If we have only one entry whose offset is neither >= 1 nor <= 0 for this
     // property, we need to append the initial segment as well.
-    if (aEntry.mOffset != 0.0f) {
+    if (aEntry.mOffset > 0.0f) {
       AppendInitialSegment(aCurrentAnimationProperty, aEntry);
     }
   }
@@ -863,12 +864,12 @@ static void BuildSegmentsFromValueEntries(
   // be used for reverse and forward filling.
   //
   // Typically, for each property in |aEntries|, we expect there to be at least
-  // one KeyframeValueEntry with offset 0.0, and at least one with offset 1.0.
-  // However, since it is possible that when building |aEntries|, the call to
-  // StyleAnimationValue::ComputeValues might fail, this can't be guaranteed.
-  // Furthermore, if additive animation is disabled, the following loop takes
-  // care to identify properties that lack a value at offset 0.0/1.0 and drops
-  // those properties from |aResult|.
+  // one KeyframeValueEntry with offset <= 0.0, and at least one with offset
+  // >= 1.0. However, since it is possible that when building |aEntries|, the
+  // call to StyleAnimationValue::ComputeValues might fail, this can't be
+  // guaranteed. Furthermore, if additive animation is disabled, the following
+  // loop takes care to identify properties that lack a value at offset 0.0/1.0
+  // and drops those properties from |aResult|.
 
   CSSPropertyId lastProperty(eCSSProperty_UNKNOWN);
   AnimationProperty* animationProperty = nullptr;
@@ -879,12 +880,12 @@ static void BuildSegmentsFromValueEntries(
     // If we've reached the end of the array of entries, synthesize a final (and
     // initial) segment if necessary.
     if (i + 1 == n) {
-      if (aEntries[i].mOffset != 1.0f) {
+      if (aEntries[i].mOffset < 1.0f) {
         HandleMissingFinalKeyframe(aResult, aEntries[i], animationProperty);
-      } else if (aEntries[i].mOffset == 1.0f && !animationProperty) {
-        // If the last entry with offset 1 and no animation property, that means
-        // it is the only entry for this property so append a single segment
-        // from 0 offset to |aEntry[i].offset|.
+      } else if (aEntries[i].mOffset >= 1.0f && !animationProperty) {
+        // If the last entry with offset >= 1 and no animation property, that
+        // means it is the only entry for this property so append a single
+        // segment from 0 offset to |aEntry[i].offset|.
         (void)HandleMissingInitialKeyframe(aResult, aEntries[i]);
       }
       animationProperty = nullptr;
@@ -896,7 +897,7 @@ static void BuildSegmentsFromValueEntries(
         "Each entry should specify a valid property");
 
     // No keyframe for this property at offset 0.
-    if (aEntries[i].mProperty != lastProperty && aEntries[i].mOffset != 0.0f) {
+    if (aEntries[i].mProperty != lastProperty && aEntries[i].mOffset > 0.0f) {
       // If we don't support additive animation we can't fill in the missing
       // keyframes and we should just skip this property altogether. Since the
       // entries are sorted by offset for a given property, and since we don't
@@ -913,8 +914,9 @@ static void BuildSegmentsFromValueEntries(
     }
 
     // Skip this entry if the next entry has the same offset except for initial
-    // and final ones. We will handle missing keyframe in the next loop
-    // if the property is changed on the next entry.
+    // and final ones. (This includes offset less than 0.0 or larger than 1.0).
+    // We will handle missing keyframe in the next loop if the property is
+    // changed on the next entry.
     if (aEntries[i].mProperty == aEntries[i + 1].mProperty &&
         aEntries[i].mOffset == aEntries[i + 1].mOffset &&
         aEntries[i].mOffset != 1.0f && aEntries[i].mOffset != 0.0f) {
@@ -924,7 +926,7 @@ static void BuildSegmentsFromValueEntries(
 
     // No keyframe for this property at offset 1.
     if (aEntries[i].mProperty != aEntries[i + 1].mProperty &&
-        aEntries[i].mOffset != 1.0f) {
+        aEntries[i].mOffset < 1.0f) {
       HandleMissingFinalKeyframe(aResult, aEntries[i], animationProperty);
       // Move on to new property.
       animationProperty = nullptr;
@@ -934,10 +936,11 @@ static void BuildSegmentsFromValueEntries(
 
     // Starting from i + 1, determine the next [i, j] interval from which to
     // generate a segment. Basically, j is i + 1, but there are some special
-    // cases for offset 0 and 1, so we need to handle them specifically.
+    // cases for offset == |minCurrentPropertyOffset| and
+    // |maxCurrentPropertyOffset|, so we need to handle them specifically.
     // Note: From this moment, we make sure [i + 1] is valid and
-    //       there must be an initial entry (i.e. mOffset = 0.0) and
-    //       a final entry (i.e. mOffset = 1.0). Besides, all the entries
+    //       there must be an initial entry (i.e. mOffset <= 0.0) and
+    //       a final entry (i.e. mOffset >= 1.0). Besides, all the entries
     //       with the same offsets except for initial/final ones are filtered
     //       out already.
     size_t j = i + 1;
@@ -968,7 +971,7 @@ static void BuildSegmentsFromValueEntries(
     // If we've moved on to a new property, create a new AnimationProperty
     // to insert segments into.
     if (aEntries[i].mProperty != lastProperty) {
-      MOZ_ASSERT(aEntries[i].mOffset == 0.0f);
+      MOZ_ASSERT(aEntries[i].mOffset <= 0.0f);
       MOZ_ASSERT(!animationProperty);
       animationProperty = aResult.AppendElement();
       animationProperty->mProperty = aEntries[i].mProperty;
