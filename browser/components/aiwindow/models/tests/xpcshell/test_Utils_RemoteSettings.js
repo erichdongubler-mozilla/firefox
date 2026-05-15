@@ -951,7 +951,7 @@ add_task(async function test_loadConfig_with_additional_components() {
     const fakeRecords = [
       {
         feature: "memories-initial-generation-system",
-        version: "1.0",
+        version: "2.0",
         model: "test-model",
         is_default: true,
         prompts: "System prompt for memory generation",
@@ -961,7 +961,7 @@ add_task(async function test_loadConfig_with_additional_components() {
       },
       {
         feature: "memories-initial-generation-user",
-        version: "1.0",
+        version: "2.0",
         model: "test-model",
         prompts: "User prompt for memory generation",
       },
@@ -1278,7 +1278,7 @@ add_task(async function test_build_uses_service_type_and_purpose_from_config() {
     const fakeRecords = [
       {
         feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        version: "1.0",
+        version: "2.0",
         model: "test-model",
         prompts: "Test prompt",
         is_default: true,
