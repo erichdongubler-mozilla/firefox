@@ -2700,7 +2700,9 @@ const MultiStageProtonScreen = props => {
     ariaRole: props.ariaRole,
     aboveButtonStepsIndicator: props.aboveButtonStepsIndicator,
     requireAction: props.requireAction,
-    isWideScreen: isWideScreen
+    isWideScreen: isWideScreen,
+    animationsPaused: props.animationsPaused,
+    toggleAnimationsPaused: props.toggleAnimationsPaused
   });
 };
 const ProtonScreenActionButtons = props => {
@@ -3019,11 +3021,45 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       totalNumberOfScreens: total
     }));
   }
+
+  // We consider a screen to have animated content when it includes both
+  // default and _static versions of its background image or hero_image url.
+  // The pause toggle swaps the rendered asset to the _static asset when activated.
+  // Without _both_ default and static, there is nothing for the toggle to
+  // switch to, so we don't render the toggle button at all.
+  hasAnimatedContent(content) {
+    return !!(content.background && content.background_static || content.hero_image?.url && content.hero_image?.static_url);
+  }
+  getEffectiveBackground(content) {
+    return this.props.animationsPaused && content.background_static ? content.background_static : content.background;
+  }
+  getEffectiveHeroImageUrl(content) {
+    if (!content.hero_image) {
+      return null;
+    }
+    return this.props.animationsPaused && content.hero_image.static_url ? content.hero_image.static_url : content.hero_image.url;
+  }
+  renderAnimationPlayPauseButton() {
+    const {
+      toggleAnimationsPaused
+    } = this.props;
+    const paused = !!this.props.animationsPaused;
+    const labelId = paused ? "onboarding-animation-play-button" : "onboarding-animation-pause-button";
+    return /*#__PURE__*/external_React_default().createElement("button", {
+      className: `animation-play-pause-button${paused ? " paused" : ""}`,
+      type: "button",
+      "aria-pressed": paused,
+      "data-l10n-id": labelId,
+      onClick: toggleAnimationsPaused
+    });
+  }
   renderSecondarySection(content) {
+    const background = this.getEffectiveBackground(content);
+    const heroImageUrl = this.getEffectiveHeroImageUrl(content);
     return /*#__PURE__*/external_React_default().createElement("div", {
       className: `section-secondary ${content.hide_secondary_section ? "with-secondary-section-hidden" : ""}`,
-      style: content.background ? {
-        background: content.background,
+      style: background ? {
+        background,
         "--mr-secondary-background-position-y": content.split_narrow_bkg_position
       } : {}
     }, content.dismiss_button && content.reverse_split ? this.renderDismissButton() : null, /*#__PURE__*/external_React_default().createElement(Localized, {
@@ -3032,8 +3068,8 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       className: "sr-only image-alt",
       role: "img"
     })), content.hero_image ? /*#__PURE__*/external_React_default().createElement(HeroImage, {
-      url: content.hero_image.url
-    }) : this.renderHeroText(content.hero_text));
+      url: heroImageUrl
+    }) : this.renderHeroText(content.hero_text), this.hasAnimatedContent(content) ? this.renderAnimationPlayPauseButton() : null);
   }
   renderHeroText(hero_text) {
     if (!hero_text) {
@@ -3191,12 +3227,12 @@ class ProtonScreen extends (external_React_default()).PureComponent {
     }) : null, includeNoodles ? this.renderNoodles() : null, content.more_button ? this.renderMoreButton() : null, content.dismiss_button && !content.reverse_split ? this.renderDismissButton() : null, /*#__PURE__*/external_React_default().createElement("div", {
       className: `main-content ${hideStepsIndicator ? "no-steps" : ""}`,
       style: {
-        background: content.background && isCenterPosition ? content.background : null,
+        background: isCenterPosition && this.getEffectiveBackground(content) ? this.getEffectiveBackground(content) : null,
         width: content.width && content.position !== "split" ? content.width : null,
         paddingBlock: content.split_content_padding_block ? content.split_content_padding_block : null,
         paddingInline: content.split_content_padding_inline ? content.split_content_padding_inline : null
       }
-    }, content.logo && !content.fullscreen ? this.renderPicture(content.logo) : null, isRtamo && !content.fullscreen ? this.renderRTAMOIcon(addonType, this.props.themeScreenshots, this.props.addonIconURL) : null, /*#__PURE__*/external_React_default().createElement("div", {
+    }, isCenterPosition && this.hasAnimatedContent(content) ? this.renderAnimationPlayPauseButton() : null, content.logo && !content.fullscreen ? this.renderPicture(content.logo) : null, isRtamo && !content.fullscreen ? this.renderRTAMOIcon(addonType, this.props.themeScreenshots, this.props.addonIconURL) : null, /*#__PURE__*/external_React_default().createElement("div", {
       className: "main-content-inner",
       id: "mainContentInner",
       style: combinedStyles
@@ -3463,6 +3499,13 @@ const MultiStageAboutWelcome = props => {
   // structured like this: { screenId: { textareaId: { value, isValid } } }
   const [textInputs, setTextInputs] = (0,external_React_namespaceObject.useState)({});
 
+  // Whether animated backgrounds/illustrations are paused for this session.
+  // Defaults to paused when the user has prefers-reduced-motion: reduce set,
+  // so we never autoplay motion for those users. The toggle stays consistent
+  // among screens once the user interacts with it.
+  const [animationsPaused, setAnimationsPaused] = (0,external_React_namespaceObject.useState)(() => typeof window !== "undefined" && typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false);
+  const toggleAnimationsPaused = () => setAnimationsPaused(prev => !prev);
+
   // Get the active theme so the rendering code can make it selected
   // by default.
   const [activeTheme, setActiveTheme] = (0,external_React_namespaceObject.useState)(null);
@@ -3596,7 +3639,9 @@ const MultiStageAboutWelcome = props => {
       addonURL: props.addonURL,
       addonIconURL: props.addonIconURL,
       themeScreenshots: props.themeScreenshots,
-      isRtamo: currentScreen.content.isRtamo
+      isRtamo: currentScreen.content.isRtamo,
+      animationsPaused: animationsPaused,
+      toggleAnimationsPaused: toggleAnimationsPaused
     }) : null;
   })));
 };
@@ -4147,7 +4192,9 @@ class WelcomeScreen extends (external_React_default()).PureComponent {
       addonURL: this.props.addonURL,
       addonIconURL: this.props.addonIconURL,
       themeScreenshots: this.props.themeScreenshots,
-      isRtamo: this.props.content.isRtamo
+      isRtamo: this.props.content.isRtamo,
+      animationsPaused: this.props.animationsPaused,
+      toggleAnimationsPaused: this.props.toggleAnimationsPaused
     });
   }
 }

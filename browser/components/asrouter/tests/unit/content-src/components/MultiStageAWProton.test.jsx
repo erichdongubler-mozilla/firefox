@@ -95,6 +95,175 @@ describe("MultiStageAboutWelcomeProton module", () => {
       assert.equal(wrapper.find("main").prop("pos"), "split");
     });
 
+    describe("animation play/pause button", () => {
+      const ANIMATED_BG = "url(chrome://example/anim.svg) center / cover";
+      const STATIC_BG = "url(chrome://example/static.svg) center / cover";
+      const ANIMATED_HERO = "chrome://example/hero-anim.svg";
+      const STATIC_HERO = "chrome://example/hero-static.svg";
+
+      it("should not render the toggle when no static fallback is provided", () => {
+        const wrapper = mount(
+          <MultiStageProtonScreen
+            content={{
+              position: "split",
+              background: ANIMATED_BG,
+              hero_image: { url: ANIMATED_HERO },
+            }}
+          />
+        );
+        assert.isFalse(
+          wrapper.find("button.animation-play-pause-button").exists()
+        );
+      });
+
+      it("should not render the toggle when only a static background is provided", () => {
+        const wrapper = mount(
+          <MultiStageProtonScreen
+            content={{
+              position: "split",
+              background_static: STATIC_BG,
+            }}
+          />
+        );
+        assert.isFalse(
+          wrapper.find("button.animation-play-pause-button").exists()
+        );
+      });
+
+      it("should not render the toggle when only a static hero_image is provided", () => {
+        const wrapper = mount(
+          <MultiStageProtonScreen
+            content={{
+              position: "split",
+              hero_image: { static_url: STATIC_HERO },
+            }}
+          />
+        );
+        assert.isFalse(
+          wrapper.find("button.animation-play-pause-button").exists()
+        );
+      });
+
+      it("should render the toggle when a static background fallback is provided", () => {
+        const wrapper = mount(
+          <MultiStageProtonScreen
+            content={{
+              position: "split",
+              background: ANIMATED_BG,
+              background_static: STATIC_BG,
+            }}
+          />
+        );
+        const button = wrapper.find("button.animation-play-pause-button");
+        assert.isTrue(button.exists());
+        assert.equal(button.prop("aria-pressed"), false);
+        assert.equal(
+          button.prop("data-l10n-id"),
+          "onboarding-animation-pause-button"
+        );
+      });
+
+      it("should render the toggle when a static hero_image fallback is provided", () => {
+        const wrapper = mount(
+          <MultiStageProtonScreen
+            content={{
+              position: "split",
+              hero_image: { url: ANIMATED_HERO, static_url: STATIC_HERO },
+            }}
+          />
+        );
+        assert.isTrue(
+          wrapper.find("button.animation-play-pause-button").exists()
+        );
+      });
+
+      it("should swap background and hero_image to static fallbacks when paused", () => {
+        const wrapper = mount(
+          <MultiStageProtonScreen
+            content={{
+              position: "split",
+              background: ANIMATED_BG,
+              background_static: STATIC_BG,
+              hero_image: { url: ANIMATED_HERO, static_url: STATIC_HERO },
+            }}
+            animationsPaused={true}
+            toggleAnimationsPaused={() => {}}
+          />
+        );
+        assert.equal(
+          wrapper.find("div.section-secondary").prop("style").background,
+          STATIC_BG
+        );
+        assert.equal(wrapper.find(".hero-image img").prop("src"), STATIC_HERO);
+        const button = wrapper.find("button.animation-play-pause-button");
+        assert.isTrue(button.hasClass("paused"));
+        assert.equal(button.prop("aria-pressed"), true);
+        assert.equal(
+          button.prop("data-l10n-id"),
+          "onboarding-animation-play-button"
+        );
+      });
+
+      it("should use the animated assets when playing", () => {
+        const wrapper = mount(
+          <MultiStageProtonScreen
+            content={{
+              position: "split",
+              background: ANIMATED_BG,
+              background_static: STATIC_BG,
+              hero_image: { url: ANIMATED_HERO, static_url: STATIC_HERO },
+            }}
+            animationsPaused={false}
+            toggleAnimationsPaused={() => {}}
+          />
+        );
+        assert.equal(
+          wrapper.find("div.section-secondary").prop("style").background,
+          ANIMATED_BG
+        );
+        assert.equal(
+          wrapper.find(".hero-image img").prop("src"),
+          ANIMATED_HERO
+        );
+      });
+
+      it("should invoke toggleAnimationsPaused on click", () => {
+        const toggle = sinon.stub();
+        const wrapper = mount(
+          <MultiStageProtonScreen
+            content={{
+              position: "split",
+              background: ANIMATED_BG,
+              background_static: STATIC_BG,
+            }}
+            animationsPaused={false}
+            toggleAnimationsPaused={toggle}
+          />
+        );
+        wrapper.find("button.animation-play-pause-button").simulate("click");
+        assert.calledOnce(toggle);
+      });
+
+      it("should render the toggle inside main-content for center-position screens", () => {
+        const wrapper = mount(
+          <MultiStageProtonScreen
+            content={{
+              position: "center",
+              background: ANIMATED_BG,
+              background_static: STATIC_BG,
+              title: "test",
+            }}
+          />
+        );
+        assert.isFalse(wrapper.find(".section-secondary").exists());
+        assert.isTrue(
+          wrapper
+            .find(".main-content > button.animation-play-pause-button")
+            .exists()
+        );
+      });
+    });
+
     it("should render with no secondary section for center positioned screens", () => {
       const SCREEN_PROPS = {
         content: {

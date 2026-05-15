@@ -3262,4 +3262,72 @@ html {
     padding: var(--space-xlarge) 30px;
     margin-block: 0 var(--space-xlarge);
   }
+
+  // Toggle that controls animated illustrations/backgrounds. Required for
+  // WCAG 2.2.2 whenever a screen includes animated illustrations. The button
+  // auto-appears whenever the screen provides a static fallback asset and
+  // toggles the rendered src/background to that static asset when paused.
+  .animation-play-pause-button {
+    position: absolute;
+    inset-block-end: var(--space-large);
+    inset-inline-start: var(--space-large);
+    min-width: auto;
+    min-height: var(--button-min-height);
+    padding: var(--button-padding);
+    margin: 0;
+    box-sizing: border-box;
+    border: var(--border-width) solid var(--border-color-transparent);
+    border-radius: var(--button-border-radius);
+    background-color: var(--background-color-canvas);
+    color: var(--text-color);
+    font-size: var(--button-font-size);
+    font-weight: var(--button-font-weight);
+    -moz-context-properties: fill;
+    fill: currentColor;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      flex-shrink: 0;
+      width: var(--icon-size-small);
+      height: var(--icon-size-small);
+      background: url('chrome://global/skin/media/pause-fill.svg') no-repeat center / contain;
+    }
+
+    &.paused::before {
+      background-image: url('chrome://global/skin/media/play-fill.svg');
+    }
+
+    &:hover {
+      background-color: color-mix(
+        in srgb,
+        var(--background-color-canvas),
+        currentColor 14%
+      );
+    }
+
+    &:active {
+      background-color: color-mix(
+        in srgb,
+        var(--background-color-canvas),
+        currentColor 22%
+      );
+    }
+
+    &:focus-visible {
+      outline: var(--focus-outline);
+      outline-offset: var(--focus-outline-offset);
+    }
+  }
+
+  // Center-position screens place the button inside .main-content, which is
+  // not otherwise a positioning container. Promote it only when the button
+  // is actually present so we don't disturb existing screens.
+  .main-content:has(> .animation-play-pause-button) {
+    position: relative;
+  }
 }

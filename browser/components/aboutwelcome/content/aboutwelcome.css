@@ -4035,3 +4035,49 @@ html {
   padding: var(--space-xlarge) 30px;
   margin-block: 0 var(--space-xlarge);
 }
+.onboardingContainer .animation-play-pause-button {
+  position: absolute;
+  inset-block-end: var(--space-large);
+  inset-inline-start: var(--space-large);
+  min-width: auto;
+  min-height: var(--button-min-height);
+  padding: var(--button-padding);
+  margin: 0;
+  box-sizing: border-box;
+  border: var(--border-width) solid var(--border-color-transparent);
+  border-radius: var(--button-border-radius);
+  background-color: var(--background-color-canvas);
+  color: var(--text-color);
+  font-size: var(--button-font-size);
+  font-weight: var(--button-font-weight);
+  -moz-context-properties: fill;
+  fill: currentColor;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+}
+.onboardingContainer .animation-play-pause-button::before {
+  content: "";
+  display: inline-block;
+  flex-shrink: 0;
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+  background: url("chrome://global/skin/media/pause-fill.svg") no-repeat center/contain;
+}
+.onboardingContainer .animation-play-pause-button.paused::before {
+  background-image: url("chrome://global/skin/media/play-fill.svg");
+}
+.onboardingContainer .animation-play-pause-button:hover {
+  background-color: color-mix(in srgb, var(--background-color-canvas), currentColor 14%);
+}
+.onboardingContainer .animation-play-pause-button:active {
+  background-color: color-mix(in srgb, var(--background-color-canvas), currentColor 22%);
+}
+.onboardingContainer .animation-play-pause-button:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
+}
+.onboardingContainer .main-content:has(> .animation-play-pause-button) {
+  position: relative;
+}

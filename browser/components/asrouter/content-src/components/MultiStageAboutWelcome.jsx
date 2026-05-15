@@ -222,6 +222,17 @@ export const MultiStageAboutWelcome = props => {
   // structured like this: { screenId: { textareaId: { value, isValid } } }
   const [textInputs, setTextInputs] = useState({});
 
+  // Whether animated backgrounds/illustrations are paused for this session.
+  // Defaults to paused when the user has prefers-reduced-motion: reduce set,
+  // so we never autoplay motion for those users. The toggle stays consistent
+  // among screens once the user interacts with it.
+  const [animationsPaused, setAnimationsPaused] = useState(() =>
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false
+  );
+  const toggleAnimationsPaused = () => setAnimationsPaused(prev => !prev);
+
   // Get the active theme so the rendering code can make it selected
   // by default.
   const [activeTheme, setActiveTheme] = useState(null);
@@ -389,6 +400,8 @@ export const MultiStageAboutWelcome = props => {
               addonIconURL={props.addonIconURL}
               themeScreenshots={props.themeScreenshots}
               isRtamo={currentScreen.content.isRtamo}
+              animationsPaused={animationsPaused}
+              toggleAnimationsPaused={toggleAnimationsPaused}
             />
           ) : null;
         })}
@@ -1028,6 +1041,8 @@ export class WelcomeScreen extends React.PureComponent {
         addonIconURL={this.props.addonIconURL}
         themeScreenshots={this.props.themeScreenshots}
         isRtamo={this.props.content.isRtamo}
+        animationsPaused={this.props.animationsPaused}
+        toggleAnimationsPaused={this.props.toggleAnimationsPaused}
       />
     );
   }
