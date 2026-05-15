@@ -83,7 +83,7 @@ class NavigationButtonsIntegration(
         toolbar.addNavigationAction(forwardButton)
 
         val reloadOrStopButton = BrowserToolbar.TwoStateButton(
-            primaryImage = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_stop)!!,
+            primaryImage = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_cross_24)!!,
             secondaryImage = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_arrow_clockwise_24)!!,
             primaryContentDescription = context.getString(R.string.content_description_stop),
             secondaryContentDescription = context.getString(R.string.content_description_reload),
