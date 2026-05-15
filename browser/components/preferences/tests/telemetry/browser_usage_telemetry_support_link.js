@@ -7,6 +7,11 @@ const { TelemetryTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TelemetryTestUtils.sys.mjs"
 );
 
+const telemetryKey = `browser.ui.interaction.preferences_${DEFAULT_PANE}`;
+const defaultPaneMetric = SRD_PREF_VALUE
+  ? Glean.browserUiInteraction.preferencesPaneSync
+  : Glean.browserUiInteraction.preferencesPaneGeneral;
+
 let resetTelemetry = async () => {
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
@@ -18,14 +23,11 @@ registerCleanupFunction(async () => {
 
 async function assertSupportLinkInteraction(linkId, expectedCount) {
   await TestUtils.waitForCondition(
-    () =>
-      Glean.browserUiInteraction.preferencesPaneGeneral?.[
-        linkId
-      ]?.testGetValue() == expectedCount,
+    () => defaultPaneMetric?.[linkId]?.testGetValue() == expectedCount,
     "wait for metric to be recorded"
   );
   Assert.equal(
-    Glean.browserUiInteraction.preferencesPaneGeneral[linkId].testGetValue(),
+    defaultPaneMetric[linkId].testGetValue(),
     expectedCount,
     `support link click should have been counted ${expectedCount} time(s)`
   );
@@ -39,10 +41,9 @@ async function createSettingWithSupportLink(doc, win, settingId, config) {
   });
 
   let testGroup = doc.createElement("setting-group");
-  testGroup.setAttribute("data-category", "paneGeneral");
+  testGroup.setAttribute("data-category", DEFAULT_PANE);
   testGroup.config = { items: [config] };
   testGroup.getSetting = win.Preferences.getSetting.bind(win.Preferences);
-  // doc.body.append(testGroup);
   doc.getElementById("mainPrefPane").append(testGroup);
   testGroup.scrollIntoView();
 
@@ -64,9 +65,7 @@ async function activateSupportLinkAndVerifyTelemetry(
     supportLink.focus();
     EventUtils.synthesizeKey("KEY_Enter", {}, win);
   } else {
-    // debugger;
     EventUtils.synthesizeMouseAtCenter(supportLink, {}, win);
-    // EventUtils.synthesizeMouse(supportLink, {}, win);
   }
 
   let tab = await linkClickPromise;
@@ -74,20 +73,13 @@ async function activateSupportLinkAndVerifyTelemetry(
   BrowserTestUtils.removeTab(tab);
 
   let snapshot = TelemetryTestUtils.getProcessScalars("parent", true, true);
-  TelemetryTestUtils.assertKeyedScalar(
-    snapshot,
-    "browser.ui.interaction.preferences_paneGeneral",
-    linkId,
-    1
-  );
+  TelemetryTestUtils.assertKeyedScalar(snapshot, telemetryKey, linkId, 1);
 
   await assertSupportLinkInteraction(linkId, 1);
 }
 
 add_task(async function testSupportLinkTelemetry() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
-    leaveOpen: true,
-  });
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, { leaveOpen: true });
   await resetTelemetry();
 
   const doc = gBrowser.contentDocument;
@@ -124,9 +116,7 @@ add_task(async function testSupportLinkTelemetry() {
 });
 
 add_task(async function testSupportLinkWithIdOverride() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
-    leaveOpen: true,
-  });
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, { leaveOpen: true });
   await resetTelemetry();
 
   const doc = gBrowser.contentDocument;

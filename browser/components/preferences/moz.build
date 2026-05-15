@@ -34,6 +34,7 @@ BROWSER_CHROME_MANIFESTS += [
     "tests/siteData/browser.toml",
     "tests/sync/browser-srd.toml",
     "tests/sync/browser.toml",
+    "tests/telemetry/browser-srd.toml",
     "tests/telemetry/browser.toml",
 ]
 MOCHITEST_CHROME_MANIFESTS += ["tests/chrome/chrome.toml"]
