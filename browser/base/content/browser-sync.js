@@ -2278,6 +2278,13 @@ var gSync = {
   },
 
   _appendSendTabSignedOut(fragment, createDeviceNodeFn, contextMenuType) {
+    let entryPoint = {
+      toolbar: "send-tab-toolbar-icon",
+      link: "send-tab-link-context-menu",
+      page: "send-tab-page-context-menu",
+      tab: "send-tab-tab-context-menu",
+    }[contextMenuType];
+
     let signInLabel;
     if (contextMenuType == "link") {
       signInLabel = this.fluentStrings.formatValueSync(
@@ -2298,7 +2305,7 @@ var gSync = {
     signInMenuItem.classList.add("sync-menuitem");
     signInMenuItem.addEventListener(
       "command",
-      async () => await this.openSignInAgainPage(contextMenuType),
+      async () => await this.openSignInAgainPage(entryPoint),
       true
     );
     fragment.appendChild(signInMenuItem);
