@@ -191,7 +191,6 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   bool mProfileDBExists;
   int64_t mProfileDBFileSize;
   PRTime mProfileDBModifiedTime;
-  nsCString mIniStatus;
 
   // A background task queue for the async flushing operations.
   nsCOMPtr<nsISerialEventTarget> mAsyncQueue;
