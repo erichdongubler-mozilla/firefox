@@ -3470,7 +3470,7 @@ static ReturnAbortOnError HandleDetectedDowngrade(
     profileName.Append("-" MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL));
 #  endif
     nsCOMPtr<nsIToolkitProfile> newProfile;
-    rv = aProfileSvc->CreateUniqueProfile(nullptr, profileName,
+    rv = aProfileSvc->CreateUniqueProfile(nullptr, profileName, "downgrade"_ns,
                                           getter_AddRefs(newProfile));
     NS_ENSURE_SUCCESS(rv, rv);
     rv = aProfileSvc->SetDefaultProfile(newProfile);

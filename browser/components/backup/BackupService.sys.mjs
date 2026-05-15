@@ -3530,7 +3530,9 @@ export class BackupService extends EventTarget {
       );
       let profile = profileSvc.createUniqueProfile(
         profileRootPath ? await IOUtils.getDirectory(profileRootPath) : null,
-        manifest.meta.profileName
+        manifest.meta.profileName,
+        // This is transient and will be overwritten when times.json is copied over.
+        "backup"
       );
 
       let postRecovery = await this.#recoverResources(
@@ -3675,7 +3677,9 @@ export class BackupService extends EventTarget {
       }
       let profile = await lazy.SelectableProfileService.createNewProfile(
         false,
-        existingProfilePath
+        existingProfilePath,
+        // This is transient and will be overwritten when times.json is copied over.
+        "backup"
       );
 
       let postRecovery = await this.#recoverResources(
@@ -3683,6 +3687,11 @@ export class BackupService extends EventTarget {
         recoveryPath,
         profile.path
       );
+
+      if (copiedProfile) {
+        let profileAge = await lazy.ProfileAge(profile.path);
+        await profileAge.recordProfileCopied();
+      }
 
       let isLegacyBackup = manifest.meta?.isSelectableProfile === false;
 

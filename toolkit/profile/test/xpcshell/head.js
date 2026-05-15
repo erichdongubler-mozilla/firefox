@@ -662,3 +662,15 @@ function checkStartupReason(expected = undefined) {
     expected
   );
 }
+
+async function checkProfileSource(profile, expectedSource) {
+  let timesFile = profile.rootDir.clone();
+  timesFile.append("times.json");
+  let times = await IOUtils.readJSON(timesFile.path);
+
+  Assert.equal(
+    times.source,
+    expectedSource,
+    "Profile source should be correct"
+  );
+}

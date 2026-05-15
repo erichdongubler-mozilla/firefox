@@ -170,7 +170,7 @@ add_task(async function subpaneContentsWithOneProfile() {
 add_task(async function copyProfile() {
   // Add an additional profile, then load the subpane, and the copy section should be visible.
   await initGroupDatabase();
-  await SelectableProfileService.createNewProfile(false);
+  await SelectableProfileService.createNewProfile(false, null, "tests");
 
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,

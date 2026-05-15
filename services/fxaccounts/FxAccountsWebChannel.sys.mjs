@@ -333,7 +333,11 @@ FxAccountsWebChannel.prototype = {
             await this._helpers.promptProfileSyncWarningIfNeeded(data);
           switch (result.action) {
             case "create-profile":
-              lazy.SelectableProfileService.createNewProfile();
+              lazy.SelectableProfileService.createNewProfile(
+                true,
+                null,
+                "sync-warning"
+              );
               response.data = { ok: false };
               break;
             case "switch-profile":

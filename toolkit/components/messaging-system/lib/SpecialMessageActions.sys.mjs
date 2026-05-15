@@ -641,7 +641,11 @@ export const SpecialMessageActions = {
   },
 
   async createAndOpenProfile() {
-    await lazy.SelectableProfileService.createNewProfile();
+    await lazy.SelectableProfileService.createNewProfile(
+      true,
+      null,
+      "asrouter"
+    );
   },
 
   async submitOnboardingOptOutPing() {

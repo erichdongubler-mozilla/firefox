@@ -285,3 +285,61 @@ profiles:
     send_in_pings:
       - metrics
       - update
+
+  source:
+    type: string
+    description: |
+      The original creation source of the profile:
+        firstrun-created-default
+          Matches the meaning in startup.profile_selection_reason
+        firstrun-skipped-default
+          Matches the meaning in startup.profile_selection_reason
+        restart-skipped-default
+          Matches the meaning in startup.profile_selection_reason
+        cmdline
+          Created by the --createprofile command line argument
+        downgrade
+          Created from the profile downgrade UI
+        legacy
+          Created to support versions of Firefox prior to 47
+        aboutprofiles
+          Created from about:profiles
+        profile-manager
+          Created from the legacy startup profile manager
+        selector-startup
+          Created from the selectable profiles profile selector during startup
+        selector-runtime
+          Created from the selectable profiles profile selector at runtime
+        profiles-panel
+          Created from the profiles panel in the application menu
+        main-menu
+          Created from the OS main menu
+        replace-last
+          Created when deleting the last profile in the group of selectable profiles
+        reset
+          Created by profile reset
+        backup
+          Created by restoring a profile from a backup
+        copy
+          Created by copying a profile from the selectable profiles UI
+        sync-warning
+          Created when warning the user about signing into a different account
+        asrouter
+          Created from the messaging system.
+        backgroundtasks
+          A profile created for a background task
+        unknown
+          The profile was created without supplying a source
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026972
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026972
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - dtownsend@mozilla.com
+    expires: never
+    send_in_pings:
+      - metrics
+      - first-startup
+      - new-profile

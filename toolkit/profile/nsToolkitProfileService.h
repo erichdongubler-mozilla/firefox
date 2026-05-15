@@ -112,7 +112,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService,
 
   nsresult Init();
 
-  nsresult CreateTimesInternal(nsIFile* profileDir);
+  nsresult CreateTimesInternal(nsIFile* profileDir, const nsACString& aSource);
   void GetProfileByDir(nsIFile* aRootDir, nsIFile* aLocalDir,
                        nsToolkitProfile** aResult);
   already_AddRefed<nsToolkitProfile> GetProfileByStoreID(
@@ -125,11 +125,13 @@ class nsToolkitProfileService final : public nsIToolkitProfileService,
                                             bool* aResult);
   bool IsSnapEnvironment();
   bool UseLegacyProfiles();
-  nsresult CreateDefaultProfile(nsToolkitProfile** aResult);
+  nsresult CreateDefaultProfile(const nsACString& aSource,
+                                nsToolkitProfile** aResult);
   nsresult CreateUniqueProfile(nsIFile* aRootDir, const nsACString& aNamePrefix,
+                               const nsACString& aSource,
                                nsToolkitProfile** aResult);
   nsresult CreateProfile(nsIFile* aRootDir, const nsACString& aName,
-                         nsToolkitProfile** aResult);
+                         const nsACString& aSource, nsToolkitProfile** aResult);
   already_AddRefed<nsToolkitProfile> GetProfileByName(const nsACString& aName);
   void SetNormalDefault(nsToolkitProfile* aProfile);
   already_AddRefed<nsToolkitProfile> GetDefaultProfile();

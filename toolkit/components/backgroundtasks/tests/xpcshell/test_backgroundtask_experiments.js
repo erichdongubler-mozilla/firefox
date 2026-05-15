@@ -56,7 +56,8 @@ add_setup(async () => {
   taskProfD.append("test_backgroundtask_experiments_task");
   taskProfile = profileService.createUniqueProfile(
     taskProfD,
-    "test_backgroundtask_experiments_task"
+    "test_backgroundtask_experiments_task",
+    "tests"
   );
 
   registerCleanupFunction(() => {
