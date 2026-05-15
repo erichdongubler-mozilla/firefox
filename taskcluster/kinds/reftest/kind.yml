@@ -105,10 +105,6 @@ tasks:
             by-test-platform:
                 .*windows.*: win11-64-25h2
                 default: default
-        test-manifest-loader:
-            by-test-platform:
-                linux.*64-tsan(-qr)?/opt: default
-                default: null  # don't load tests in the taskgraph
         chunks:
             by-test-platform:
                 linux.*64-tsan(-qr)?/opt: dynamic
@@ -185,7 +181,6 @@ tasks:
             by-test-platform:
                 .*windows.*: win11-64-25h2
                 default: default
-        test-manifest-loader: null  # don't load tests in the taskgraph
         chunks: 1
         variants:
             - no-fission
@@ -369,7 +364,7 @@ tasks:
                 .*windows.*: win11-64-25h2
                 default: default
         chunks: 2
-        test-manifest-loader: null  # don't load tests in the taskgraph
+
         variants:
             - no-fission
             - no-gpu-process
