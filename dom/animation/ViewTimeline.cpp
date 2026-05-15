@@ -349,12 +349,10 @@ double ViewTimeline::ComputeOffsetToTimelineRange(
     const StyleTimelineRangeName& aName,
     const ScrollTimeline::ComputedTimelineData& aData,
     F&& aFuncToResolveValue) const {
-  const auto [nameStart, nameEnd] =
-      IntervalForTimelineRangeName(aName, aData);
+  const auto [nameStart, nameEnd] = IntervalForTimelineRangeName(aName, aData);
   const auto timelineRange = aData.mEnd - aData.mStart;
   const auto nameRange = nameEnd - nameStart;
-  const auto positionInNameRange =
-      nameStart + aFuncToResolveValue(nameRange);
+  const auto positionInNameRange = nameStart + aFuncToResolveValue(nameRange);
   const auto positionInTimeline = positionInNameRange - aData.mStart;
   return static_cast<double>(positionInTimeline) /
          static_cast<double>(timelineRange);
