@@ -51,6 +51,10 @@ run-if = ["os == 'mac'"]
 
 ["test_new_default.js"]
 
+["test_new_profile_ping_sent.js"]
+
+["test_new_profile_ping_skipped.js"]
+
 ["test_previous_dedicated.js"]
 
 ["test_profile_descriptor_and_localdir.js"]

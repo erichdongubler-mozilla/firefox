@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/glean/GleanPings.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/HelperMacros.h"
@@ -96,6 +97,7 @@ using namespace mozilla;
 #define INSTALL_PREFIX "Install"
 #define INSTALL_PREFIX_LENGTH 7
 #define STORE_ID_PREF "toolkit.profiles.storeID"
+#define NEW_PROFILE_PREF "toolkit.profiles.newProfileSubmitted"
 
 struct KeyValue {
   KeyValue(const char* aKey, const char* aValue) : key(aKey), value(aValue) {}
@@ -673,7 +675,8 @@ nsToolkitProfileLock::~nsToolkitProfileLock() {
 
 nsToolkitProfileService* nsToolkitProfileService::gService = nullptr;
 
-NS_IMPL_ISUPPORTS(nsToolkitProfileService, nsIToolkitProfileService)
+NS_IMPL_ISUPPORTS(nsToolkitProfileService, nsIToolkitProfileService,
+                  nsIObserver)
 
 nsToolkitProfileService::nsToolkitProfileService()
     : mStartupProfileSelected(false),
@@ -734,6 +737,23 @@ void nsToolkitProfileService::CompleteStartup() {
     glean::startup::profiles_ini_status.Set(mIniStatus);
   }
 
+  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+
+  if (observerService && prefs) {
+    bool submitted = false;
+    if (NS_FAILED(prefs->GetBoolPref(NEW_PROFILE_PREF, &submitted))) {
+      submitted = false;
+    }
+
+    if (!submitted) {
+      observerService->AddObserver(this, "quit-application", false);
+      // To allow testing from xpcshell
+      observerService->AddObserver(this, "test-quit-application", false);
+    }
+  }
+
   if (mMaybeLockProfile) {
     nsCOMPtr<nsIToolkitShellService> shell =
         do_GetService(NS_TOOLKITSHELLSERVICE_CONTRACTID);
@@ -752,6 +772,26 @@ void nsToolkitProfileService::CompleteStartup() {
       }
     }
   }
+}
+
+NS_IMETHODIMP
+nsToolkitProfileService::Observe(nsISupports* aSubject, const char* aTopic,
+                                 const char16_t* aData) {
+  // Currently only called for "quit-application"
+  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+  if (prefs) {
+    bool submitted = false;
+    if (NS_FAILED(prefs->GetBoolPref(NEW_PROFILE_PREF, &submitted))) {
+      submitted = false;
+    }
+
+    if (!submitted) {
+      glean_pings::NewProfile.Submit();
+      prefs->SetBoolPref(NEW_PROFILE_PREF, true);
+    }
+  }
+
+  return NS_OK;
 }
 
 // Tests whether the passed profile was last used by this install.

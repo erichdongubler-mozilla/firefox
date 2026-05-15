@@ -238,6 +238,7 @@ firefox_desktop_pings = [
     "toolkit/components/telemetry/pings.yaml",
     "toolkit/modules/pings.yaml",
     "toolkit/mozapps/update/shared_pings.yaml",
+    "toolkit/profile/pings.yaml",
 ]
 
 # Pings that are sent by the Firefox Desktop Background Update Task

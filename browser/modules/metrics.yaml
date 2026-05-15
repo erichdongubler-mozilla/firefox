@@ -125,6 +125,7 @@ browser.engagement:
       - rtestard@mozilla.com
     send_in_pings:
       - metrics
+      - new-profile
     expires: never
     telemetry_mirror: BROWSER_ENGAGEMENT_PROFILE_COUNT
 
@@ -415,6 +416,9 @@ installation.first_seen:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1811374
     data_sensitivity:
       - technical
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - rtestard@mozilla.com
       - application-update-telemetry-alerts@mozilla.com
@@ -432,6 +436,9 @@ installation.first_seen:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1811374
     data_sensitivity:
       - technical
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - rtestard@mozilla.com
       - application-update-telemetry-alerts@mozilla.com
@@ -449,6 +456,9 @@ installation.first_seen:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1811374
     data_sensitivity:
       - technical
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - rtestard@mozilla.com
       - application-update-telemetry-alerts@mozilla.com
@@ -465,6 +475,9 @@ installation.first_seen:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1811374
     data_sensitivity:
       - technical
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - rtestard@mozilla.com
       - application-update-telemetry-alerts@mozilla.com
@@ -481,6 +494,9 @@ installation.first_seen:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1811374
     data_sensitivity:
       - technical
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - rtestard@mozilla.com
       - application-update-telemetry-alerts@mozilla.com
@@ -497,6 +513,9 @@ installation.first_seen:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1811374
     data_sensitivity:
       - technical
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - rtestard@mozilla.com
       - application-update-telemetry-alerts@mozilla.com
@@ -513,6 +532,9 @@ installation.first_seen:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1811374
     data_sensitivity:
       - technical
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - rtestard@mozilla.com
       - application-update-telemetry-alerts@mozilla.com
@@ -529,6 +551,9 @@ installation.first_seen:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1811374
     data_sensitivity:
       - technical
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - rtestard@mozilla.com
       - application-update-telemetry-alerts@mozilla.com
@@ -546,6 +571,9 @@ installation.first_seen:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1811374
     data_sensitivity:
       - technical
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - rtestard@mozilla.com
       - application-update-telemetry-alerts@mozilla.com
@@ -563,6 +591,9 @@ installation.first_seen:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1811374
     data_sensitivity:
       - technical
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - rtestard@mozilla.com
       - application-update-telemetry-alerts@mozilla.com
@@ -580,6 +611,9 @@ installation.first_seen:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1811374
     data_sensitivity:
       - technical
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - rtestard@mozilla.com
       - application-update-telemetry-alerts@mozilla.com

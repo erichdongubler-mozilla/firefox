@@ -74,6 +74,7 @@ startup:
     send_in_pings:
       - metrics
       - baseline
+      - new-profile
     no_lint:
       - BASELINE_PING
 
@@ -97,6 +98,9 @@ startup:
       - https://bugzil.la/1958163
       - https://bugzil.la/1994608
       - https://bugzil.la/2010455
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - dtownsend@mozilla.com
       - jhirsch@mozilla.com
@@ -151,6 +155,9 @@ startup:
       - https://bugzil.la/1958163
       - https://bugzil.la/1994608
       - https://bugzil.la/2010455
+    send_in_pings:
+      - metrics
+      - new-profile
     notification_emails:
       - dtownsend@mozilla.com
       - jhirsch@mozilla.com
@@ -208,6 +215,7 @@ profiles:
       - xdg_config
     send_in_pings:
       - metrics
+      - new-profile
 
   reset_date:
     type: quantity

@@ -657,4 +657,8 @@ function checkStartupReason(expected = undefined) {
     Glean.startup.profileSelectionReason.testGetValue("baseline"),
     expected
   );
+  Assert.equal(
+    Glean.startup.profileSelectionReason.testGetValue("new-profile"),
+    expected
+  );
 }
