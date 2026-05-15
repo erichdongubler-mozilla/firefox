@@ -84,10 +84,8 @@ EXPORTS.mozilla += [
 ]
 
 EXPORTS.mozilla.psm += [
-    "EnabledSignatureSchemes.h",
     "IPCClientCertsChild.h",
     "IPCClientCertsParent.h",
-    "PSMIPCUtils.h",
     "SelectTLSClientAuthCertChild.h",
     "SelectTLSClientAuthCertParent.h",
     "TransportSecurityInfo.h",
