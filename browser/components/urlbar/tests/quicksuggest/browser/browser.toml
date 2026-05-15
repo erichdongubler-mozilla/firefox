@@ -9,7 +9,10 @@ support-files = [
   "searchSuggestionEngine.sjs",
   "subdialog.xhtml",
 ]
-prefs = ["browser.bookmarks.testing.skipDefaultBookmarksImport=true"]
+prefs = [
+  "browser.bookmarks.testing.skipDefaultBookmarksImport=true",
+  "layout.css.attr.enabled=true",
+]
 
 ["browser_quicksuggest.js"]
 
