@@ -164,7 +164,7 @@ function Lists({
   const [newTask, setNewTask] = useState("");
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [pendingNewList, setPendingNewList] = useState(null);
+  const [isCreatingNewList, setIsCreatingNewList] = useState(false);
   const [showCompactCompleted, setShowCompactCompleted] = useState(false);
   const selectedList = useMemo(() => lists[selected], [lists, selected]);
 
@@ -214,7 +214,7 @@ function Lists({
   const handleSelectList = useCallback(
     listId => {
       setIsEditing(false);
-      setPendingNewList(null);
+      setIsCreatingNewList(false);
       dispatch(
         ac.AlsoToMain({
           type: at.WIDGETS_LISTS_CHANGE_SELECTED,
@@ -337,14 +337,6 @@ function Lists({
       reorderNode?.removeEventListener("reorder", handleReorder);
     };
   }, [reorderLists]);
-
-  // effect that enables editing new list name only after store has been hydrated
-  useEffect(() => {
-    if (selected === pendingNewList) {
-      setIsEditing(true);
-      setPendingNewList(null);
-    }
-  }, [selected, pendingNewList]);
 
   useEffect(() => {
     if (isAddingTask) {
@@ -555,6 +547,61 @@ function Lists({
 
   function handleListNameSave(newLabel) {
     const trimmedLabel = newLabel.trimEnd();
+
+    if (isCreatingNewList) {
+      setIsCreatingNewList(false);
+
+      if (!trimmedLabel) {
+        handleListInteraction();
+        return;
+      }
+
+      const id = crypto.randomUUID();
+      const newLists = {
+        ...lists,
+        [id]: {
+          label: trimmedLabel,
+          tasks: [],
+          completed: [],
+        },
+      };
+
+      batch(() => {
+        dispatch(
+          ac.AlsoToMain({
+            type: at.WIDGETS_LISTS_UPDATE,
+            data: { lists: newLists },
+          })
+        );
+        dispatch(
+          ac.AlsoToMain({
+            type: at.WIDGETS_LISTS_CHANGE_SELECTED,
+            data: id,
+          })
+        );
+        dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_LISTS_USER_EVENT,
+            data: { userAction: USER_ACTION_TYPES.LIST_CREATE },
+          })
+        );
+        const telemetryData = {
+          widget_name: "lists",
+          widget_source: "widget",
+          user_action: USER_ACTION_TYPES.LIST_CREATE,
+          widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
+        };
+        dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_USER_EVENT,
+            data: telemetryData,
+          })
+        );
+      });
+      handleListInteraction();
+      return;
+    }
+
     if (trimmedLabel && trimmedLabel !== selectedList?.label) {
       const updatedLists = {
         ...lists,
@@ -595,92 +642,14 @@ function Lists({
   }
 
   function handleCreateNewList() {
-    const id = crypto.randomUUID();
-    const newLists = {
-      ...lists,
-      [id]: {
-        label: "",
-        tasks: [],
-        completed: [],
-      },
-    };
-
-    batch(() => {
-      dispatch(
-        ac.AlsoToMain({
-          type: at.WIDGETS_LISTS_UPDATE,
-          data: { lists: newLists },
-        })
-      );
-      dispatch(
-        ac.AlsoToMain({
-          type: at.WIDGETS_LISTS_CHANGE_SELECTED,
-          data: id,
-        })
-      );
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_LISTS_USER_EVENT,
-          data: { userAction: USER_ACTION_TYPES.LIST_CREATE },
-        })
-      );
-      const telemetryData = {
-        widget_name: "lists",
-        widget_source: "widget",
-        user_action: USER_ACTION_TYPES.LIST_CREATE,
-        widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
-      };
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: telemetryData,
-        })
-      );
-    });
-    setPendingNewList(id);
+    setIsCreatingNewList(true);
+    setIsEditing(true);
     handleListInteraction();
   }
 
   function handleCancelNewList() {
-    // If current list is new and has no label/tasks, remove it
-    if (!selectedList?.label && selectedList?.tasks?.length === 0) {
-      const updatedLists = { ...lists };
-      delete updatedLists[selected];
-
-      const listKeys = Object.keys(updatedLists);
-      const key = listKeys[listKeys.length - 1];
-      batch(() => {
-        dispatch(
-          ac.AlsoToMain({
-            type: at.WIDGETS_LISTS_UPDATE,
-            data: { lists: updatedLists },
-          })
-        );
-        dispatch(
-          ac.AlsoToMain({
-            type: at.WIDGETS_LISTS_CHANGE_SELECTED,
-            data: key,
-          })
-        );
-        dispatch(
-          ac.OnlyToMain({
-            type: at.WIDGETS_LISTS_USER_EVENT,
-            data: { userAction: USER_ACTION_TYPES.LIST_DELETE },
-          })
-        );
-        const telemetryData = {
-          widget_name: "lists",
-          widget_source: "widget",
-          user_action: USER_ACTION_TYPES.LIST_DELETE,
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
-        };
-        dispatch(
-          ac.OnlyToMain({
-            type: at.WIDGETS_USER_EVENT,
-            data: telemetryData,
-          })
-        );
-      });
+    if (isCreatingNewList) {
+      setIsCreatingNewList(false);
     }
 
     handleListInteraction();
@@ -987,7 +956,8 @@ function Lists({
       ) : null}
       <div className="lists-header">
         <EditableText
-          value={lists[selected]?.label || ""}
+          key={`${selected}-${isCreatingNewList ? "draft" : "saved"}`}
+          value={isCreatingNewList ? "" : lists[selected]?.label || ""}
           onSave={handleListNameSave}
           isEditing={isEditing}
           setIsEditing={setIsEditing}
@@ -995,7 +965,12 @@ function Lists({
           type="list"
           maxLength={30}
           ariaLabelL10nId="newtab-widget-lists-menu-edit2"
-          dataL10nId={listNamePlaceholder}
+          saveOnBlur={!isCreatingNewList}
+          dataL10nId={
+            isCreatingNewList
+              ? "newtab-widget-lists-name-placeholder-new2"
+              : listNamePlaceholder
+          }
         >
           {renderListSwitcherOrTitle({
             currentListsCount,
@@ -1362,6 +1337,7 @@ function EditableText({
   dataL10nId = null,
   ariaLabelL10nId = null,
   maxLength = 100,
+  saveOnBlur = true,
 }) {
   const [tempValue, setTempValue] = useState(value);
   const inputRef = useRef(null);
@@ -1393,6 +1369,15 @@ function EditableText({
   }
 
   function handleOnBlur() {
+    if (!saveOnBlur) {
+      if (tempValue.trim()) {
+        return;
+      }
+      setIsEditing(false);
+      onCancel?.();
+      return;
+    }
+
     onSave(tempValue.trim());
     setIsEditing(false);
   }

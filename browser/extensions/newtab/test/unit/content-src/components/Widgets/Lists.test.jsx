@@ -701,15 +701,46 @@ describe("<Lists>", () => {
     assert.equal(editableInput.prop("data-l10n-attrs"), "aria-label");
   });
 
-  it("should create a new list and dispatch update and select list actions", () => {
-    const createListBtn = wrapper.find("panel-item").at(1); // assumes "Create a new list" is at index 1
+  it("opens draft list editing without creating a list yet", () => {
+    const createListBtn = wrapper.find("panel-item.create-list").at(0);
     createListBtn.props().onClick();
+
+    wrapper.update();
+
+    assert.equal(dispatch.callCount, 0);
+    assert.equal(wrapper.find("input.edit-list").length, 1);
+    assert.equal(
+      wrapper.find("input.edit-list").prop("data-l10n-id"),
+      "newtab-widget-lists-name-placeholder-new2"
+    );
+    assert.equal(
+      wrapper.find("input.edit-list").prop("data-l10n-attrs"),
+      "placeholder,aria-label"
+    );
+  });
+
+  it("creates and selects a new list after confirming a non-empty draft name", () => {
+    sandbox.stub(crypto, "randomUUID").returns("new-list-id");
+
+    const createListBtn = wrapper.find("panel-item.create-list").at(0);
+    createListBtn.props().onClick();
+    wrapper.update();
+
+    const editableInput = wrapper.find("input.edit-list");
+    editableInput.simulate("change", { target: { value: "Groceries" } });
+    editableInput.simulate("keyDown", { key: "Enter" });
+
     assert.equal(dispatch.callCount, 4);
     assert.equal(dispatch.getCall(0).args[0].type, at.WIDGETS_LISTS_UPDATE);
+    assert.equal(
+      dispatch.getCall(0).args[0].data.lists["new-list-id"].label,
+      "Groceries"
+    );
     assert.equal(
       dispatch.getCall(1).args[0].type,
       at.WIDGETS_LISTS_CHANGE_SELECTED
     );
+    assert.equal(dispatch.getCall(1).args[0].data, "new-list-id");
 
     // Verify old telemetry event
     const [oldTelemetryEvent] = dispatch.getCall(2).args;
@@ -723,6 +754,33 @@ describe("<Lists>", () => {
     assert.equal(newTelemetryEvent.data.widget_source, "widget");
     assert.equal(newTelemetryEvent.data.user_action, "list_create");
     assert.equal(newTelemetryEvent.data.widget_size, "medium");
+  });
+
+  it("does not create a list when draft creation is cancelled with Escape", () => {
+    const createListBtn = wrapper.find("panel-item.create-list").at(0);
+    createListBtn.props().onClick();
+    wrapper.update();
+
+    wrapper.find("input.edit-list").simulate("keyDown", { key: "Escape" });
+    wrapper.update();
+
+    assert.ok(dispatch.notCalled);
+    assert.equal(wrapper.find("input.edit-list").length, 0);
+  });
+
+  it("keeps a draft list name when blurred without pressing Enter", () => {
+    const createListBtn = wrapper.find("panel-item.create-list").at(0);
+    createListBtn.props().onClick();
+    wrapper.update();
+
+    const editableInput = wrapper.find("input.edit-list");
+    editableInput.simulate("change", { target: { value: "Groceries" } });
+    editableInput.simulate("blur");
+    wrapper.update();
+
+    assert.ok(dispatch.notCalled);
+    assert.equal(wrapper.find("input.edit-list").length, 1);
+    assert.equal(wrapper.find("input.edit-list").prop("value"), "Groceries");
   });
 
   it("should copy the current list to clipboard with correct formatting", () => {
@@ -1056,74 +1114,6 @@ describe("<Lists>", () => {
       false,
       "Expected add icon not to be greyed when under limit"
     );
-  });
-
-  it("should cancel creating a new list when Escape key is pressed", () => {
-    const newListId = "new-list-id";
-
-    // Provide a fallback list so CHANGE_SELECTED has somewhere to go after delete
-    const stateWithEmptyAndFallback = {
-      ...mockState,
-      ListsWidget: {
-        selected: newListId,
-        lists: {
-          [newListId]: { label: "", tasks: [], completed: [] }, // empty "new" list
-          "test-list": { label: "test", tasks: [], completed: [] }, // fallback
-        },
-      },
-    };
-
-    const localWrapper = mount(
-      <WrapWithProvider state={stateWithEmptyAndFallback}>
-        <Lists
-          dispatch={dispatch}
-          handleUserInteraction={handleUserInteraction}
-        />
-      </WrapWithProvider>
-    );
-
-    const editableText = localWrapper.find("EditableText").at(0);
-
-    assert.ok(editableText.exists());
-    editableText.props().setIsEditing(true);
-    localWrapper.update();
-
-    let editableInput = localWrapper.find("input.edit-list");
-    assert.ok(editableInput.exists());
-
-    // Press Escape to cancel new-list creation
-    editableInput.simulate("keyDown", { key: "Escape" });
-    localWrapper.update();
-
-    // Test dispatches from handleCancelNewList
-    const types = dispatch.getCalls().map(call => call.args[0].type);
-    assert.include(
-      types,
-      at.WIDGETS_LISTS_UPDATE,
-      "Expected update dispatch on cancel"
-    );
-    assert.include(
-      types,
-      at.WIDGETS_LISTS_CHANGE_SELECTED,
-      "Expected selected list to change after cancel"
-    );
-    assert.include(
-      types,
-      at.WIDGETS_LISTS_USER_EVENT,
-      "Expected telemetry event on cancel"
-    );
-
-    const listsState = localWrapper.find(Provider).prop("store").getState()
-      .ListsWidget.lists;
-    assert.strictEqual(
-      Object.keys(listsState).length,
-      2,
-      "expected total lists count to remain as 2 (no new list created on cancel)"
-    );
-
-    // After cancelling, the input should be gone (editing ended / list removed)
-    editableInput = localWrapper.find("input.edit-list");
-    assert.strictEqual(editableInput.exists(), false);
   });
 });
 

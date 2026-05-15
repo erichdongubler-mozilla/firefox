@@ -12561,7 +12561,7 @@ function Lists({
   const [newTask, setNewTask] = (0,external_React_namespaceObject.useState)("");
   const [isAddingTask, setIsAddingTask] = (0,external_React_namespaceObject.useState)(false);
   const [isEditing, setIsEditing] = (0,external_React_namespaceObject.useState)(false);
-  const [pendingNewList, setPendingNewList] = (0,external_React_namespaceObject.useState)(null);
+  const [isCreatingNewList, setIsCreatingNewList] = (0,external_React_namespaceObject.useState)(false);
   const [showCompactCompleted, setShowCompactCompleted] = (0,external_React_namespaceObject.useState)(false);
   const selectedList = (0,external_React_namespaceObject.useMemo)(() => lists[selected], [lists, selected]);
   const novaEnabled = prefs[Lists_PREF_NOVA_ENABLED];
@@ -12600,7 +12600,7 @@ function Lists({
   const handleListInteraction = (0,external_React_namespaceObject.useCallback)(() => handleUserInteraction("lists"), [handleUserInteraction]);
   const handleSelectList = (0,external_React_namespaceObject.useCallback)(listId => {
     setIsEditing(false);
-    setPendingNewList(null);
+    setIsCreatingNewList(false);
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.WIDGETS_LISTS_CHANGE_SELECTED,
       data: listId
@@ -12692,14 +12692,6 @@ function Lists({
       reorderNode?.removeEventListener("reorder", handleReorder);
     };
   }, [reorderLists]);
-
-  // effect that enables editing new list name only after store has been hydrated
-  (0,external_React_namespaceObject.useEffect)(() => {
-    if (selected === pendingNewList) {
-      setIsEditing(true);
-      setPendingNewList(null);
-    }
-  }, [selected, pendingNewList]);
   (0,external_React_namespaceObject.useEffect)(() => {
     if (isAddingTask) {
       inputRef.current?.focus();
@@ -12885,6 +12877,52 @@ function Lists({
   }
   function handleListNameSave(newLabel) {
     const trimmedLabel = newLabel.trimEnd();
+    if (isCreatingNewList) {
+      setIsCreatingNewList(false);
+      if (!trimmedLabel) {
+        handleListInteraction();
+        return;
+      }
+      const id = crypto.randomUUID();
+      const newLists = {
+        ...lists,
+        [id]: {
+          label: trimmedLabel,
+          tasks: [],
+          completed: []
+        }
+      };
+      (0,external_ReactRedux_namespaceObject.batch)(() => {
+        dispatch(actionCreators.AlsoToMain({
+          type: actionTypes.WIDGETS_LISTS_UPDATE,
+          data: {
+            lists: newLists
+          }
+        }));
+        dispatch(actionCreators.AlsoToMain({
+          type: actionTypes.WIDGETS_LISTS_CHANGE_SELECTED,
+          data: id
+        }));
+        dispatch(actionCreators.OnlyToMain({
+          type: actionTypes.WIDGETS_LISTS_USER_EVENT,
+          data: {
+            userAction: USER_ACTION_TYPES.LIST_CREATE
+          }
+        }));
+        const telemetryData = {
+          widget_name: "lists",
+          widget_source: "widget",
+          user_action: USER_ACTION_TYPES.LIST_CREATE,
+          widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
+        };
+        dispatch(actionCreators.OnlyToMain({
+          type: actionTypes.WIDGETS_USER_EVENT,
+          data: telemetryData
+        }));
+      });
+      handleListInteraction();
+      return;
+    }
     if (trimmedLabel && trimmedLabel !== selectedList?.label) {
       const updatedLists = {
         ...lists,
@@ -12922,83 +12960,13 @@ function Lists({
     }
   }
   function handleCreateNewList() {
-    const id = crypto.randomUUID();
-    const newLists = {
-      ...lists,
-      [id]: {
-        label: "",
-        tasks: [],
-        completed: []
-      }
-    };
-    (0,external_ReactRedux_namespaceObject.batch)(() => {
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WIDGETS_LISTS_UPDATE,
-        data: {
-          lists: newLists
-        }
-      }));
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WIDGETS_LISTS_CHANGE_SELECTED,
-        data: id
-      }));
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_LISTS_USER_EVENT,
-        data: {
-          userAction: USER_ACTION_TYPES.LIST_CREATE
-        }
-      }));
-      const telemetryData = {
-        widget_name: "lists",
-        widget_source: "widget",
-        user_action: USER_ACTION_TYPES.LIST_CREATE,
-        widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
-      };
-      dispatch(actionCreators.OnlyToMain({
-        type: actionTypes.WIDGETS_USER_EVENT,
-        data: telemetryData
-      }));
-    });
-    setPendingNewList(id);
+    setIsCreatingNewList(true);
+    setIsEditing(true);
     handleListInteraction();
   }
   function handleCancelNewList() {
-    // If current list is new and has no label/tasks, remove it
-    if (!selectedList?.label && selectedList?.tasks?.length === 0) {
-      const updatedLists = {
-        ...lists
-      };
-      delete updatedLists[selected];
-      const listKeys = Object.keys(updatedLists);
-      const key = listKeys[listKeys.length - 1];
-      (0,external_ReactRedux_namespaceObject.batch)(() => {
-        dispatch(actionCreators.AlsoToMain({
-          type: actionTypes.WIDGETS_LISTS_UPDATE,
-          data: {
-            lists: updatedLists
-          }
-        }));
-        dispatch(actionCreators.AlsoToMain({
-          type: actionTypes.WIDGETS_LISTS_CHANGE_SELECTED,
-          data: key
-        }));
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_LISTS_USER_EVENT,
-          data: {
-            userAction: USER_ACTION_TYPES.LIST_DELETE
-          }
-        }));
-        const telemetryData = {
-          widget_name: "lists",
-          widget_source: "widget",
-          user_action: USER_ACTION_TYPES.LIST_DELETE,
-          widget_size: widgetsMayBeMaximized ? widgetSize : "medium"
-        };
-        dispatch(actionCreators.OnlyToMain({
-          type: actionTypes.WIDGETS_USER_EVENT,
-          data: telemetryData
-        }));
-      });
+    if (isCreatingNewList) {
+      setIsCreatingNewList(false);
     }
     handleListInteraction();
   }
@@ -13241,7 +13209,8 @@ function Lists({
   }) : null, /*#__PURE__*/external_React_default().createElement("div", {
     className: "lists-header"
   }, /*#__PURE__*/external_React_default().createElement(EditableText, {
-    value: lists[selected]?.label || "",
+    key: `${selected}-${isCreatingNewList ? "draft" : "saved"}`,
+    value: isCreatingNewList ? "" : lists[selected]?.label || "",
     onSave: handleListNameSave,
     isEditing: isEditing,
     setIsEditing: setIsEditing,
@@ -13249,7 +13218,8 @@ function Lists({
     type: "list",
     maxLength: 30,
     ariaLabelL10nId: "newtab-widget-lists-menu-edit2",
-    dataL10nId: listNamePlaceholder
+    saveOnBlur: !isCreatingNewList,
+    dataL10nId: isCreatingNewList ? "newtab-widget-lists-name-placeholder-new2" : listNamePlaceholder
   }, renderListSwitcherOrTitle({
     currentListsCount,
     lists,
@@ -13519,7 +13489,8 @@ function EditableText({
   type,
   dataL10nId = null,
   ariaLabelL10nId = null,
-  maxLength = 100
+  maxLength = 100,
+  saveOnBlur = true
 }) {
   const [tempValue, setTempValue] = (0,external_React_namespaceObject.useState)(value);
   const inputRef = (0,external_React_namespaceObject.useRef)(null);
@@ -13546,6 +13517,14 @@ function EditableText({
     }
   }
   function handleOnBlur() {
+    if (!saveOnBlur) {
+      if (tempValue.trim()) {
+        return;
+      }
+      setIsEditing(false);
+      onCancel?.();
+      return;
+    }
     onSave(tempValue.trim());
     setIsEditing(false);
   }
