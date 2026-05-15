@@ -142,7 +142,7 @@ function getProducts() {
     },
     {
       id: "mozilla-new-products",
-      l10nId: "more-from-moz-new-products-card",
+      l10nId: "more-from-moz-new-products-card2",
       region: "global",
       link: {
         l10nId: "more-from-moz-new-products-box-link",
