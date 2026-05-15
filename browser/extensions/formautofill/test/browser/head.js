@@ -900,7 +900,7 @@ async function clickAddressDoorhangerButton(buttonType, subType) {
   const notification = getNotification();
   let button;
   if (buttonType == EDIT_ADDRESS_BUTTON) {
-    button = notification.querySelector(`#${AddressSaveDoorhanger.editLinkId}`);
+    button = AddressSaveDoorhanger.editButton(notification);
   } else if (buttonType == ADDRESS_MENU_BUTTON) {
     const menu = AutofillDoorhanger.menuButton(notification);
     const menupopup = AutofillDoorhanger.menuPopup(notification);
@@ -1060,9 +1060,7 @@ function fillEditDoorhanger(record) {
   for (const [key, value] of Object.entries(record)) {
     const id = AddressEditDoorhanger.getInputId(key);
     const element = notification.querySelector(`#${id}`);
-    if (element) {
-      element.value = value;
-    }
+    element.value = value;
   }
 }
 
