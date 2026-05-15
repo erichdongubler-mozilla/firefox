@@ -1038,7 +1038,7 @@ private fun RootEmptyContent(
     showBookmarksImport: Boolean,
 ) {
     Image(
-        painter = painterResource(iconsR.drawable.mozac_ic_kit_bookmarks_empty_state),
+        painter = painterResource(R.drawable.ic_kit_bookmarks_empty_state),
         modifier = Modifier.width(204.dp).height(182.dp),
         contentDescription = null,
     )
