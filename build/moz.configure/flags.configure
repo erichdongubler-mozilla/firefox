@@ -111,6 +111,9 @@ add_addrsig_flag = depends(c_compiler, when=target_is_android)(
 # Make sure that path separators are consistent in cross builds.
 check_and_add_flag("-ffile-reproducible", when=target_is_windows)
 
+# Use absolute paths for diagnostics if supported.
+check_and_add_flag("-fdiagnostics-absolute-paths")
+
 @depends(
     c_compiler,
     extra_toolchain_flags,
