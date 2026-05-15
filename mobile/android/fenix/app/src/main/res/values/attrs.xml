@@ -17,6 +17,8 @@
     <attr name="actionPrimaryDisabled" format="reference" />
 
     <!-- Text -->
+    <!-- Disabled text -->
+    <attr name="textDisabled" format="reference" />
     <!-- Text Inverted/On Color -->
     <attr name="textOnColorPrimary" format="reference" />
     <!-- Action Primary disabled text -->

@@ -74,6 +74,8 @@
     <color name="fx_mobile_action_color_secondary">@color/photonDarkGrey05</color>
 
     <!-- Text -->
+    <!-- Disabled text -->
+    <color name="fx_mobile_text_color_disabled">@color/photonLightGrey05A40</color>
     <!-- Text Inverted/On Color -->
     <color name="fx_mobile_text_color_oncolor_primary">@color/photonLightGrey05</color>
     <!-- Text Inverted/On Color -->
