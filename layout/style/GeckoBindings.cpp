@@ -864,12 +864,16 @@ bool Gecko_LookupAttrValue(const Element* aElement, nsAtom& aNamespace,
     attrNameSpace = nsNameSpaceManager::GetInstance()->GetNameSpaceID(
         &aNamespace, nsContentUtils::IsChromeDoc(aElement->OwnerDoc()));
   }
-  if (aName.IsAsciiLowercase() || !aElement->OwnerDoc()->IsHTMLDocument()) {
-    return aElement->GetAttr(attrNameSpace, &aName, aResult);
+  // All attribute names on HTML elements in HTML docs match
+  // ASCII-case-insensitively. See note in:
+  // https://html.spec.whatwg.org/multipage/dom.html#custom-data-attribute
+  if (!aName.IsAsciiLowercase() && aElement->OwnerDoc()->IsHTMLDocument() &&
+      aElement->IsHTMLElement()) {
+    RefPtr<nsAtom> lowercaseName(&aName);
+    ToLowerCaseASCII(lowercaseName);
+    return aElement->GetAttr(attrNameSpace, lowercaseName, aResult);
   }
-  RefPtr<nsAtom> lowercaseName(&aName);
-  ToLowerCaseASCII(lowercaseName);
-  return aElement->GetAttr(attrNameSpace, lowercaseName, aResult);
+  return aElement->GetAttr(attrNameSpace, &aName, aResult);
 }
 
 template <typename Implementor>
