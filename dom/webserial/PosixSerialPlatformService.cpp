@@ -83,6 +83,24 @@ static bool IsRealSerialPort(const char* aDevpath) {
   return isReal;
 }
 
+#ifdef XP_MACOSX
+// macOS exposes built-in serial ports used for WiFi debugging and kernel
+// debugging via IOKit. They are not useful targets for WebSerial, so
+// hide them from enumeration. Bluetooth ports are intentionally not filtered.
+static bool IsMacOSSystemSerialPort(const char* aDevicePath) {
+  static constexpr const char* kSystemPortPaths[] = {
+      "/dev/tty.wlan-debug",
+      "/dev/tty.debug-console",
+  };
+  for (const char* p : kSystemPortPaths) {
+    if (strcmp(aDevicePath, p) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif
+
 PosixSerialPlatformService::PosixSerialPlatformService()
 #ifdef XP_LINUX
     : mMonitor(nullptr),
@@ -1366,6 +1384,14 @@ bool PosixSerialPlatformService::ExtractDeviceInfo(
   char devicePath[PATH_MAX];
   if (!CFStringGetCString((CFStringRef)pathRef, devicePath, sizeof(devicePath),
                           kCFStringEncodingUTF8)) {
+    return false;
+  }
+
+  if (IsMacOSSystemSerialPort(devicePath)) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+            ("PosixSerialPlatformService[%p]::ExtractDeviceInfo filtering "
+             "macOS system port: %s",
+             this, devicePath));
     return false;
   }
 
