@@ -8,6 +8,7 @@
       "type": "stdio",
       "command": "./mach",
       "args": [
+        "--quiet",
         "npx",
         "@mozilla/firefox-devtools-mcp-moz",
         "--pref",
