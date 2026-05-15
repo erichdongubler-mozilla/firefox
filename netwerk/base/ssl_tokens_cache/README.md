@@ -54,6 +54,17 @@ Expired records are discarded lazily on `Get()`, not proactively, so the
 on-disk snapshot may contain tokens that have already expired. These are
 filtered out during loading.
 
+## Decoder
+
+A Python script for inspecting `ssl_tokens_cache.bin` files from a Firefox
+profile is available at `tools/netwerk/decode_ssl_tokens_cache.py`:
+
+```
+python3 tools/netwerk/decode_ssl_tokens_cache.py ~/path/to/ssl_tokens_cache.bin
+python3 tools/netwerk/decode_ssl_tokens_cache.py -v ...   # show cert chain subjects
+python3 tools/netwerk/decode_ssl_tokens_cache.py -vv ...  # also hexdump token bytes
+```
+
 ## Typical sizes
 
 - Token: ~200 bytes
@@ -67,9 +78,13 @@ filtered out during loading.
 - Cache written: asynchronously on `application-background` (e.g. when the
   user switches away from Firefox on Android, before any OOM kill); on
   `idle-daily`; and via an `nsIAsyncShutdownBlocker` on `ProfileBeforeChange`
-  (off the main thread). `SSLTokensCache::Shutdown()` (called by
-  `nsIOService`) provides a synchronous fallback for test environments where
-  the async shutdown service is unavailable.
+  (off the main thread). The blocker is registered on `profile-after-change`
+  (sent by `nsXREDirProvider::DoStartup()` once the profile is loaded)
+  because the AsyncShutdown service is not yet registered when
+  `SSLTokensCache::Init()` runs. `SSLTokensCache::Shutdown()` (called by
+  `nsIOService` on `profile-change-net-teardown`) provides a synchronous
+  fallback for test environments where the async shutdown service is
+  unavailable.
 - Cache written atomically: data → `ssl_tokens_cache.tmp` → rename to
   `ssl_tokens_cache.bin`.
 - Cache deleted: when `SSLTokensCache::Clear()` is called (e.g. "Clear All

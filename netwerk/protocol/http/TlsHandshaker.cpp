@@ -257,6 +257,20 @@ void TlsHandshaker::Check0RttEnabled(nsITLSSocketControl* ssl) {
 
   m0RTTChecked = true;
 
+  // If a session token was loaded, a PSK was offered in the ClientHello.
+  // Notify the transaction so recovery (restart + token eviction) works if
+  // the server rejects the PSK. Do this before the proxy early-return below,
+  // since PSK resumption happens at the TLS layer regardless of proxying and
+  // its failure mode is the same.
+  bool resumptionTokenPresent = false;
+  if (NS_SUCCEEDED(ssl->GetResumptionTokenPresent(&resumptionTokenPresent)) &&
+      resumptionTokenPresent) {
+    RefPtr<nsAHttpTransaction> transaction = mOwner->Transaction();
+    if (transaction) {
+      (void)transaction->Do0RTT(/*aCanSendEarlyData=*/false);
+    }
+  }
+
   if (mConnInfo->UsingProxy()) {
     return;
   }
@@ -270,19 +284,6 @@ void TlsHandshaker::Check0RttEnabled(nsITLSSocketControl* ssl) {
         ("TlsHandshaker::Check0RttEnabled %p - "
          "early selected alpn not available",
          mOwner.get()));
-    // If a session token was loaded, a PSK was offered in the ClientHello
-    // even though no early data was sent (server didn't advertise
-    // max_early_data_size). Notify the transaction so it can retry if the
-    // server rejects the PSK; this is a no-op on fresh handshakes where no
-    // token was present.
-    bool resumptionTokenPresent = false;
-    if (NS_SUCCEEDED(ssl->GetResumptionTokenPresent(&resumptionTokenPresent)) &&
-        resumptionTokenPresent) {
-      RefPtr<nsAHttpTransaction> transaction = mOwner->Transaction();
-      if (transaction) {
-        (void)transaction->Do0RTT(/*aCanSendEarlyData=*/false);
-      }
-    }
   } else {
     mOwner->ChangeConnectionState(ConnectionState::ZERORTT);
     LOG1(

@@ -271,6 +271,33 @@ OriginAttributes SSLTokensCache::OAFromPeerId(const nsACString& aPeerId) {
 }
 
 // static
+nsCString SSLTokensCache::SetupPersistenceLocked(uint32_t& aLoadGen) {
+  sLock.AssertCurrentThreadOwns();
+  MOZ_ASSERT(gInstance);
+  MOZ_ASSERT(!gInstance->mBackingFile);
+
+  nsCOMPtr<nsIFile> profileDir;
+  if (NS_FAILED(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
+                                       getter_AddRefs(profileDir)))) {
+    return ""_ns;
+  }
+  profileDir->Clone(getter_AddRefs(gInstance->mBackingFile));
+  gInstance->mBackingFile->AppendNative("ssl_tokens_cache.bin"_ns);
+
+  nsCOMPtr<nsISerialEventTarget> writeQueue;
+  NS_CreateBackgroundTaskQueue("SslTokensCachePersist",
+                               getter_AddRefs(writeQueue));
+  gInstance->mWriteTaskQueue = writeQueue;
+
+  gInstance->mLoadStartTime = TimeStamp::Now();
+  aLoadGen = gInstance->mLoadGeneration;
+
+  nsAutoString widePath;
+  gInstance->mBackingFile->GetPath(widePath);
+  return NS_ConvertUTF16toUTF8(widePath);
+}
+
+// static
 nsresult SSLTokensCache::Init() {
   MOZ_ASSERT(NS_IsMainThread());
   nsCString backgroundLoadPath;
@@ -297,72 +324,26 @@ nsresult SSLTokensCache::Init() {
       return NS_OK;
     }
 
-    // Both the parent and the socket process register for idle/background
-    // notifications to trigger DoWrite():
-    //   Parent: DoWrite() writes to disk.
-    //   Socket: DoWrite() serializes and sends the cache to the parent via IPC.
+    // Both processes observe idle/background to trigger DoWrite(). The parent
+    // also observes profile-after-change to finish setup once ProfD is
+    // available.
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
       obs->AddObserver(gInstance, "application-background", false);
       obs->AddObserver(gInstance, "idle-daily", false);
+      if (XRE_IsParentProcess()) {
+        obs->AddObserver(gInstance, "profile-after-change", false);
+      }
     }
 
     if (!XRE_IsParentProcess()) {
       return NS_OK;
     }
 
-    nsCOMPtr<nsIFile> profileDir;
-    if (NS_FAILED(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
-                                         getter_AddRefs(profileDir)))) {
-      return NS_OK;
-    }
-    profileDir->Clone(getter_AddRefs(gInstance->mBackingFile));
-    gInstance->mBackingFile->AppendNative("ssl_tokens_cache.bin"_ns);
-
-    nsCOMPtr<nsISerialEventTarget> writeQueue;
-    NS_CreateBackgroundTaskQueue("SslTokensCachePersist",
-                                 getter_AddRefs(writeQueue));
-    gInstance->mWriteTaskQueue = writeQueue;
-
-    // Register an async shutdown blocker on ProfileBeforeChange so the cache
-    // is written off the main thread before the profile is torn down.
-    // SSLTokensCache::Shutdown() (called by nsIOService) is the fallback for
-    // environments (e.g. xpcshell tests) where the async shutdown service is
-    // unavailable.
-    nsCOMPtr<nsIAsyncShutdownService> svc =
-        components::AsyncShutdown::Service();
-    if (svc) {
-      nsCOMPtr<nsIAsyncShutdownClient> client;
-      svc->GetProfileBeforeChange(getter_AddRefs(client));
-      if (client) {
-        // mShutdownBarrier is guarded by sLock; assign under the lock.
-        gInstance->mShutdownBarrier = client;
-        client->AddBlocker(gInstance, NS_LITERAL_STRING_FROM_CSTRING(__FILE__),
-                           __LINE__, u""_ns);
-      }
-    }
-
-    gInstance->mLoadStartTime = TimeStamp::Now();
-    loadGen = gInstance->mLoadGeneration;
-
-    nsAutoString widePath;
-    gInstance->mBackingFile->GetPath(widePath);
-    backgroundLoadPath = NS_ConvertUTF16toUTF8(widePath);
+    backgroundLoadPath = SetupPersistenceLocked(loadGen);
   }  // sLock released before dispatching
 
-  NS_DispatchBackgroundTask(
-      NS_NewRunnableFunction("SSLTokensCache::LoadPersisted",
-                             [path = std::move(backgroundLoadPath), loadGen]() {
-                               nsAutoLowPriorityIO lowPriorityIO;
-
-                               SSLTokensCache::LoadCtx ctx{loadGen};
-                               ssl_tokens_cache_read(
-                                   &path, PR_Now(),
-                                   SSLTokensCache::LoadCallback, &ctx);
-                               SSLTokensCache::OnLoadCompleteNotify(ctx.count);
-                             }),
-      NS_DISPATCH_EVENT_MAY_BLOCK);
-
+  DispatchLoad(std::move(backgroundLoadPath), loadGen);
   return NS_OK;
 }
 
@@ -370,6 +351,7 @@ nsresult SSLTokensCache::Init() {
 nsresult SSLTokensCache::Shutdown() {
   RefPtr<SSLTokensCache> instance;
   nsCOMPtr<nsIObserverService> obs;
+  bool blockerRegistered = false;
   {
     StaticMutexAutoLock lock(sLock);
 
@@ -380,26 +362,17 @@ nsresult SSLTokensCache::Shutdown() {
     UnregisterWeakMemoryReporter(gInstance);
     instance = gInstance;
     obs = mozilla::services::GetObserverService();
-    // Do not null gInstance yet — DoWrite calls SerializeSnapshotLocked,
-    // which requires gInstance to be set.
+    blockerRegistered = gInstance->mShutdownBarrier != nullptr;
   }
 
+  // With no blocker, BlockShutdown will never fire: write synchronously
+  // (test environments only) and clear gInstance now. Otherwise leave
+  // gInstance set so BlockShutdown -> DoWrite -> SerializeSnapshotLocked
+  // can build the snapshot; RemoveShutdownBlocker nulls it afterward.
+  if (!blockerRegistered) {
 #ifdef ENABLE_TESTS
-  // Synchronous fallback write for test environments that lack the
-  // async-shutdown service and thus never trigger BlockShutdown(). Guard on
-  // mWriteTaskQueue being null so we don't race with a BlockShutdown write
-  // task in environments that do have the async-shutdown service.
-  // mWriteTaskQueue is guarded by sLock; check it under a fresh lock scope
-  // since DoWrite takes sLock internally.
-  if ([&] {
-        StaticMutexAutoLock lock(sLock);
-        return !instance->mWriteTaskQueue;
-      }()) {
     instance->DoWrite(true);
-  }
 #endif
-
-  {
     StaticMutexAutoLock lock(sLock);
     gInstance = nullptr;
   }
@@ -407,9 +380,9 @@ nsresult SSLTokensCache::Shutdown() {
   if (obs && instance) {
     obs->RemoveObserver(instance, "application-background");
     obs->RemoveObserver(instance, "idle-daily");
-  }
-  if (instance) {
-    instance->RemoveShutdownBlocker();
+    if (XRE_IsParentProcess()) {
+      obs->RemoveObserver(instance, "profile-after-change");
+    }
   }
   return NS_OK;
 }
@@ -1000,6 +973,23 @@ void SSLTokensCache::DoWrite(bool aSynchronous) {
 }
 
 // static
+void SSLTokensCache::DispatchLoad(nsCString aPath, uint32_t aLoadGen) {
+  if (aPath.IsEmpty()) {
+    return;
+  }
+  NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction("SSLTokensCache::LoadPersisted",
+                             [path = std::move(aPath), aLoadGen]() {
+                               nsAutoLowPriorityIO lowPriorityIO;
+                               LoadCtx ctx{aLoadGen};
+                               ssl_tokens_cache_read(&path, PR_Now(),
+                                                     LoadCallback, &ctx);
+                               OnLoadCompleteNotify(ctx.count);
+                             }),
+      NS_DISPATCH_EVENT_MAY_BLOCK);
+}
+
+// static
 void SSLTokensCache::OnLoadCompleteNotify(uint32_t aCount) {
   mozilla::glean::network::ssl_token_cache_persistence_records_loaded.Add(
       AssertedCast<int32_t>(aCount));
@@ -1222,7 +1212,29 @@ SSLTokensCache::Observe(nsISupports* aSubject, const char* aTopic,
                         const char16_t* aData) {
   if (!strcmp(aTopic, "application-background") ||
       !strcmp(aTopic, "idle-daily")) {
+    LOG(("SSLTokensCache::Observe [topic=%s]", aTopic));
     DoWrite(false);
+  } else if (!strcmp(aTopic, "profile-after-change")) {
+    MOZ_ASSERT(XRE_IsParentProcess());
+    LOG(("SSLTokensCache::Observe [topic=profile-after-change]"));
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (!obs) {
+      return NS_OK;
+    }
+    obs->RemoveObserver(this, "profile-after-change");
+
+    // ProfD may not have been available at Init() time (e.g. xpcshell); finish
+    // setup and load the persisted file now that it is guaranteed to exist.
+    nsCString loadPath;
+    uint32_t loadGen = 0;
+    {
+      StaticMutexAutoLock lock(sLock);
+      if (gInstance && !gInstance->mBackingFile) {
+        loadPath = SetupPersistenceLocked(loadGen);
+      }
+    }
+    DispatchLoad(std::move(loadPath), loadGen);
+    RegisterShutdownBlocker();
   }
   return NS_OK;
 }
@@ -1231,6 +1243,8 @@ SSLTokensCache::Observe(nsISupports* aSubject, const char* aTopic,
 
 NS_IMETHODIMP
 SSLTokensCache::BlockShutdown(nsIAsyncShutdownClient* /* aClient */) {
+  LOG(("SSLTokensCache::BlockShutdown"));
+
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(XRE_IsParentProcess());
   nsCOMPtr<nsISerialEventTarget> taskQueue;
@@ -1243,60 +1257,42 @@ SSLTokensCache::BlockShutdown(nsIAsyncShutdownClient* /* aClient */) {
     return NS_OK;
   }
 
-  // Helper that dispatches the actual disk write to the background queue
-  // and then removes the shutdown blocker on the main thread once done.
+  // Deserialize socket tokens (if any) then write; both run on the same serial
+  // queue for atomicity. The blocker keeps the main thread alive until done.
   RefPtr<SSLTokensCache> self = this;
-  auto doWriteAndRelease = [taskQueue, self]() {
-    InvokeAsync(taskQueue.get(), "SSLTokensCache::BlockShutdown::DoWrite",
-                [self]() {
-                  self->DoWrite(true);
-                  NS_DispatchToMainThread(NS_NewRunnableFunction(
-                      "SSLTokensCache::RemoveShutdownBlocker",
-                      [self]() { self->RemoveShutdownBlocker(); }));
-                  return GenericPromise::CreateAndResolve(true, __func__);
-                });
+  auto writeAndRelease = [taskQueue, self](mozilla::ipc::ByteBuf aBuf) {
+    InvokeAsync(
+        taskQueue.get(), __func__,
+        [self, buf = std::move(aBuf)]() {
+          if (buf.mLen > 0) {
+            SSLTokensCache::DeserializeFromIPC(Span(buf.mData, buf.mLen));
+          }
+          self->DoWrite(true);
+          return GenericPromise::CreateAndResolve(true, __func__);
+        })
+        ->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [self](bool) { self->RemoveShutdownBlocker(); },
+            [self](nsresult) { self->RemoveShutdownBlocker(); });
   };
 
-  // If the socket process is alive, request a final token flush before writing
-  // so the persisted file reflects the most recent handshake data.
+  // If the socket process is alive, flush its token cache first so the
+  // persisted file reflects the most recent handshake data.
   RefPtr<SocketProcessParent> socketParent =
       SocketProcessParent::GetSingleton();
-  if (socketParent && socketParent->CanSend()) {
-    socketParent->SendFlushSSLTokensCache()->Then(
-        GetMainThreadSerialEventTarget(), __func__,
-        [doWriteAndRelease](mozilla::ipc::ByteBuf&& aBuf) {
-          // Empty response (null gInstance on socket side, or OOM) — skip
-          // deserialization and write whatever the parent already has.
-          if (aBuf.mLen == 0) {
-            doWriteAndRelease();
-            return;
-          }
-          // Deserialize off the main thread to avoid racing concurrent
-          // background serialization tasks (both paths go through the Rust
-          // STATE mutex, but clear+deserialize must be atomic w.r.t. any
-          // concurrent serialize). Chain the disk write after completion.
-          // If the background pool is winding down, fall back to
-          // doWriteAndRelease without the flush to avoid a shutdown hang.
-          nsresult rv = NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-              "SSLTokensCache::DeserializeFromFlush",
-              [doWriteAndRelease, buf = std::move(aBuf)]() {
-                SSLTokensCache::DeserializeFromIPC(Span(buf.mData, buf.mLen));
-                NS_DispatchToMainThread(NS_NewRunnableFunction(
-                    "SSLTokensCache::DoWriteAfterFlush",
-                    [doWriteAndRelease]() { doWriteAndRelease(); }));
-              }));
-          if (NS_FAILED(rv)) {
-            doWriteAndRelease();
-          }
-        },
-        [doWriteAndRelease](mozilla::ipc::ResponseRejectReason) {
-          // Socket process gone — write whatever the parent has.
-          doWriteAndRelease();
-        });
+  if (!socketParent || !socketParent->CanSend()) {
+    writeAndRelease(mozilla::ipc::ByteBuf{});
     return NS_OK;
   }
 
-  doWriteAndRelease();
+  socketParent->SendFlushSSLTokensCache()->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [writeAndRelease](mozilla::ipc::ByteBuf&& aBuf) {
+        writeAndRelease(std::move(aBuf));
+      },
+      [writeAndRelease](mozilla::ipc::ResponseRejectReason) {
+        writeAndRelease(mozilla::ipc::ByteBuf{});
+      });
   return NS_OK;
 }
 
@@ -1312,11 +1308,44 @@ SSLTokensCache::GetState(nsIPropertyBag** aState) {
   return NS_OK;
 }
 
+void SSLTokensCache::RegisterShutdownBlocker() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(XRE_IsParentProcess());
+  {
+    // No-op if Shutdown() already ran.
+    StaticMutexAutoLock lock(sLock);
+    if (!gInstance || !gInstance->mWriteTaskQueue) {
+      return;
+    }
+  }
+  // sLock is intentionally released before the AsyncShutdown calls below:
+  // Service() and AddBlocker may run JS, which mustn't happen under sLock.
+  nsCOMPtr<nsIAsyncShutdownService> svc = components::AsyncShutdown::Service();
+  if (!svc) {
+    return;
+  }
+  nsCOMPtr<nsIAsyncShutdownClient> client;
+  svc->GetProfileBeforeChange(getter_AddRefs(client));
+  if (!client) {
+    return;
+  }
+  {
+    StaticMutexAutoLock lock(sLock);
+    mShutdownBarrier = client;
+  }
+  LOG(("SSLTokensCache::RegisterShutdownBlocker"));
+  client->AddBlocker(this, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__,
+                     u""_ns);
+}
+
 void SSLTokensCache::RemoveShutdownBlocker() {
   nsCOMPtr<nsIAsyncShutdownClient> barrier;
   {
     StaticMutexAutoLock lock(sLock);
     barrier = std::move(mShutdownBarrier);
+    // Shutdown() left gInstance set so BlockShutdown could write; tear it
+    // down now that the blocker is releasing.
+    gInstance = nullptr;
   }
   if (barrier) {
     barrier->RemoveBlocker(this);

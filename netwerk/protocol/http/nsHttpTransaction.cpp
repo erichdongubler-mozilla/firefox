@@ -1977,7 +1977,9 @@ nsresult nsHttpTransaction::Restart() {
   nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mRequestStream);
   if (seekable) seekable->Seek(nsISeekableStream::NS_SEEK_SET, 0);
 
-  if (mDoNotTryEarlyData) {
+  // Evict the cached token on any resumption-related restart (0-RTT
+  // rejection or bare PSK rejection); otherwise a poisoned token loops.
+  if (mDoNotTryEarlyData || mResumptionAttempted) {
     MutexAutoLock lock(mLock);
     MaybeRemoveSSLToken(mSecurityInfo);
   }

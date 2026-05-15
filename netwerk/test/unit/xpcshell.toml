@@ -736,11 +736,35 @@ skip-if = [
   "os == 'win' && msix",
 ]
 
+["test_happy_eyeballs_h1_0rtt.js"]
+run-sequentially = ["true"] # TlsServer listens to the same port
+
+["test_happy_eyeballs_h2_0rtt.js"]
+run-sequentially = ["true"] # TlsServer listens to the same port
+
 ["test_happy_eyeballs_h2_fallback.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android'",
   "os == 'win' && msix",
+]
+
+["test_happy_eyeballs_h3_0rtt.js"]
+run-sequentially = ["true"] # http3server
+skip-if = [
+  "os == 'android' && os_version == '14' && arch == 'x86_64'", # Bug 1982955
+  "os == 'win' && os_version == '10.2009' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100' && arch == 'x86'",
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26200' && arch == 'x86'",
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'",
+]
+
+["test_happy_eyeballs_h3_0rtt_reset.js"]
+run-sequentially = ["true"] # http3server + node server
+skip-if = [
+  "os == 'android'",
+  "os == 'win'",
 ]
 
 ["test_happy_eyeballs_h3_fallback.js"]
@@ -762,30 +786,6 @@ skip-if = [
 
 ["test_happy_eyeballs_timings.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
-skip-if = [
-  "os == 'android'",
-  "os == 'win'",
-]
-
-["test_happy_eyeballs_h1_0rtt.js"]
-run-sequentially = ["true"] # TlsServer listens to the same port
-
-["test_happy_eyeballs_h2_0rtt.js"]
-run-sequentially = ["true"] # TlsServer listens to the same port
-
-["test_happy_eyeballs_h3_0rtt.js"]
-run-sequentially = ["true"] # http3server
-skip-if = [
-  "os == 'android' && os_version == '14' && arch == 'x86_64'", # Bug 1982955
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26200' && arch == 'x86'",
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'",
-]
-
-["test_happy_eyeballs_h3_0rtt_reset.js"]
-run-sequentially = ["true"] # http3server + node server
 skip-if = [
   "os == 'android'",
   "os == 'win'",
@@ -1594,6 +1594,21 @@ skip-if = [
 
 ["test_speculative_connect.js"]
 
+["test_ssl_token_cache_persist.js"]
+run-sequentially = ["true"] # tlsserver uses fixed port; profile dir must be exclusive
+# network.ssl_tokens_cache_persistence must be set here (before xpcshell
+# initialises the IO service and SSLTokensCache::Init runs) rather than
+# in the test add_setup.
+prefs = [
+  "network.ssl_tokens_cache_persistence=true",
+  "logging.SSLTokensCache=5",
+  "logging.config.sync=true",
+]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix", # Bug 2034343
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix", # Bug 2034343
+]
+
 ["test_stale-while-revalidate_loop.js"]
 
 ["test_stale-while-revalidate_max-age-0.js"]
@@ -1772,9 +1787,9 @@ skip-if = [
 
 ["test_trr_noPrefetch.js"]
 
-["test_trr_proxy.js"]
-
 ["test_trr_preemptive_proxy_auth.js"]
+
+["test_trr_proxy.js"]
 
 ["test_trr_proxy_auth.js"]
 skip-if = [

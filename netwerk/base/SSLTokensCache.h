@@ -132,8 +132,16 @@ class SSLTokensCache : public nsIMemoryReporter,
   // Bumped by Clear() to invalidate in-flight background loads.
   uint32_t mLoadGeneration MOZ_GUARDED_BY(sLock){0};
   void DoWrite(bool aSynchronous) MOZ_EXCLUDES(sLock);
-  void RemoveShutdownBlocker();
+  void RegisterShutdownBlocker() MOZ_EXCLUDES(sLock);
+  void RemoveShutdownBlocker() MOZ_EXCLUDES(sLock);
   nsCOMPtr<nsIAsyncShutdownClient> mShutdownBarrier MOZ_GUARDED_BY(sLock);
+  // Sets up gInstance's mBackingFile/mWriteTaskQueue and captures load
+  // timing. Returns the path to load on success, empty if ProfD is
+  // unavailable. Parent-process only; caller must hold sLock and have
+  // verified mBackingFile is not yet set.
+  static nsCString SetupPersistenceLocked(uint32_t& aLoadGen)
+      MOZ_REQUIRES(sLock);
+  static void DispatchLoad(nsCString aPath, uint32_t aLoadGen);
   static void OnLoadCompleteNotify(uint32_t aCount);
   // aExpectedGen: mLoadGeneration captured at load start; insertion is skipped
   // if Clear() has run since (generation mismatch).
