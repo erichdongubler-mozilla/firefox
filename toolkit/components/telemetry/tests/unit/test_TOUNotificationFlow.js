@@ -791,6 +791,55 @@ add_task(
   }
 );
 
+// Regression test for Bug 1977258: AboutNewTab.init() must set the AS
+// telemetry pref default even when TOU has not yet been accepted, so that
+// about:welcome's first-screen impression is not dropped.
+add_task(
+  skipIfNotBrowser(),
+  async function test_as_telemetry_pref_set_before_tou_acceptance() {
+    const { AboutNewTab } = ChromeUtils.importESModule(
+      "resource:///modules/AboutNewTab.sys.mjs"
+    );
+    const ACTIVITY_STREAM_TELEMETRY_PREF =
+      "browser.newtabpage.activity-stream.telemetry";
+
+    // Reset any state so we can observe AboutNewTab.init() setting the pref.
+    AboutNewTab.uninit();
+    Services.prefs
+      .getDefaultBranch("")
+      .deleteBranch(ACTIVITY_STREAM_TELEMETRY_PREF);
+    Services.prefs.clearUserPref(ACTIVITY_STREAM_TELEMETRY_PREF);
+    Assert.equal(
+      Services.prefs.getPrefType(ACTIVITY_STREAM_TELEMETRY_PREF),
+      Services.prefs.PREF_INVALID,
+      "ActivityStream telemetry pref is unset before AboutNewTab.init()"
+    );
+
+    sinon.stub(Policy, "showModal").returns(true);
+    const doCleanup = await enrollInPreonboardingExperiment(999);
+    TelemetryReportingPolicy.reset();
+
+    try {
+      AboutNewTab.init();
+
+      Assert.equal(
+        Services.prefs
+          .getDefaultBranch("")
+          .getBoolPref(ACTIVITY_STREAM_TELEMETRY_PREF),
+        AppConstants.MOZILLA_OFFICIAL,
+        "ActivityStream telemetry pref default is set by AboutNewTab.init()"
+      );
+    } finally {
+      AboutNewTab.uninit();
+      Services.prefs
+        .getDefaultBranch("")
+        .deleteBranch(ACTIVITY_STREAM_TELEMETRY_PREF);
+      await doCleanup();
+      sinon.restore();
+    }
+  }
+);
+
 add_task(async function test_canUpload_unblocked_by_tou_accepted() {
   // On Linux, TOU is disabled by default; stub isEligibleOnLinux to enable TOU
   if (AppConstants.platform === "linux") {
