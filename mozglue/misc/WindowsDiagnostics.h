@@ -7,7 +7,6 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
-#include "nscore.h"
 
 // Bug 1898761: NativeNt.h depends on headers that live outside mozglue/misc/
 // and are not available in SpiderMonkey builds. Until we fix this, we cannot
@@ -125,24 +124,12 @@ CollectSingleStepData(CallbackToRun aCallbackToRun,
     return WindowsDiagnosticsError::InternalFailure;
   }
 
-  auto result = WindowsDiagnosticsError::None;
-  MOZ_SEH_TRY {
-    EnableTrapFlag();
-    aCallbackToRun();
-    DisableTrapFlag();
-  }
-  MOZ_SEH_EXCEPT(::GetExceptionCode() == EXCEPTION_SINGLE_STEP
-                     ? EXCEPTION_EXECUTE_HANDLER
-                     : EXCEPTION_CONTINUE_SEARCH) {
-    // Bug 1932088: If something prevents our VEH from running, the single-step
-    // exception can get through the VEH chain. Catch it through SEH and fail
-    // cleanly.
-    result = WindowsDiagnosticsError::InternalFailure;
-  }
-
+  EnableTrapFlag();
+  aCallbackToRun();
+  DisableTrapFlag();
   ::RemoveVectoredExceptionHandler(veh);
 
-  return result;
+  return WindowsDiagnosticsError::None;
 }
 
 // This block uses nt::PEHeaders and thus depends on NativeNt.h.
