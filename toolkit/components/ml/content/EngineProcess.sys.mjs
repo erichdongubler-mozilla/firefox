@@ -176,7 +176,7 @@ export const FEATURES = {
   },
   // see browser/components/genai/LinkPreviewModel.sys.mjs
   "link-preview": {
-    engineId: "wllamapreview",
+    engineId: "link-preview",
     fluentId: "mlmodel-link-preview",
   },
   // see browser/components/aiwindow/models/IntentClassifier.sys.mjs
