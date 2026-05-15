@@ -713,14 +713,14 @@ void CustomElementRegistry::EnqueueLifecycleCallback(
   }
 
   // 5. If callbackName is "attributeChangedCallback":
-  if (aType == ElementCallbackType::eAttributeChanged) {
-    // 5.1. Let attributeName be the first element of args.
-    // 5.2. If definition's observed attributes does not contain attributeName,
-    //      then return.
-    if (!definition->mObservedAttributes.Contains(aArgs.mName)) {
-      return;
-    }
-  }
+  //    5.1. Let attributeName be the first element of args.
+  //    5.2. If definition's observed attributes does not contain attributeName,
+  //         then return.
+  // Callers must perform this check themselves before calling.
+  MOZ_ASSERT(aType != ElementCallbackType::eAttributeChanged ||
+                 definition->IsInObservedAttributeList(aArgs.mName),
+             "Caller must check IsInObservedAttributeList for "
+             "eAttributeChanged");
 
   // 6. Add a new callback reaction to element's custom element reaction queue,
   //    with callback function callback and arguments args.
