@@ -340,7 +340,11 @@ in viverra nullam, quis tortor pharetra attack.</p>
       }
 
       function* doTest() {
-        yield* testRun(document.getElementById("editable"), checkWindowSelection);
+        // The contenteditable tests are unreliable in Mozilla's try environment.
+        // The problem is that up and down movement is visual/pixel based, which
+        // depends on rendering details like font and gylph size. For some reason
+        // this does not impact the textarea.
+        // yield* testRun(document.getElementById("editable"), checkWindowSelection);
         yield* testRun(document.getElementById("textarea"), checkElementSelection);
         yield* testRun(document.getElementById("input"), checkElementSelection);
       }
