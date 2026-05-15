@@ -92,10 +92,7 @@ impl IPCServer {
             }
         };
 
-        let crash_generator = Box::new(Mutex::new(CrashGenerator::new(
-            client_handle.clone(),
-            minidump_path.clone(),
-        )));
+        let crash_generator = Box::new(Mutex::new(CrashGenerator::new(minidump_path.clone())));
 
         // SAFETY: We widen the lifetime of this crash generator reference
         // as we guarantee that the underlying object will outlive the Breakpad

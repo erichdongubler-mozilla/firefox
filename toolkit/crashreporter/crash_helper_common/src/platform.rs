@@ -44,7 +44,3 @@ macro_rules! ignore_eintr {
         }
     };
 }
-
-pub trait AsProcessReaderHandle {
-    fn as_handle(&self) -> process_reader::ProcessHandle;
-}

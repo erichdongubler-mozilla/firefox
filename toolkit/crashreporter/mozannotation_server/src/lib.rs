@@ -125,27 +125,19 @@ fn read_annotation(
         AnnotationContents::Empty => {}
         AnnotationContents::NSCStringPointer => {
             let string = copy_nscstring(reader, raw_annotation.address)?;
-            if !string.is_empty() {
-                annotation.data = AnnotationData::String(string);
-            }
+            annotation.data = AnnotationData::String(string);
         }
         AnnotationContents::CStringPointer => {
             let string = copy_null_terminated_string_pointer(reader, raw_annotation.address)?;
-            if !string.is_empty() {
-                annotation.data = AnnotationData::String(string);
-            }
+            annotation.data = AnnotationData::String(string);
         }
         AnnotationContents::CString => {
-            let string = reader.copy_null_terminated_string(raw_annotation.address)?;
-            if !string.is_empty() {
-                annotation.data = AnnotationData::String(string);
-            }
+            annotation.data =
+                AnnotationData::String(reader.copy_null_terminated_string(raw_annotation.address)?);
         }
         AnnotationContents::ByteBuffer(size) | AnnotationContents::OwnedByteBuffer(size) => {
-            if size > 0 {
-                let buffer = copy_bytebuffer(reader, raw_annotation.address, size)?;
-                annotation.data = AnnotationData::ByteBuffer(buffer);
-            }
+            let buffer = copy_bytebuffer(reader, raw_annotation.address, size)?;
+            annotation.data = AnnotationData::ByteBuffer(buffer);
         }
     };
 
