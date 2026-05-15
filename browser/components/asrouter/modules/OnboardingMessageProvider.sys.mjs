@@ -3204,7 +3204,7 @@ const BASE_MESSAGES = () => [
       id: "smartWindowNewTab",
     },
     targeting:
-      "isAIWindow && previousSessionEnd && !activeNotifications && userPrefs.cfrFeatures && ('browser.smartwindow.chat.interactionCount'|preferenceValue) > 5 && !('browser.smartwindow.isDefaultWindow' | preferenceValue)",
+      "isAIWindow && previousSessionEnd && !activeNotifications && userPrefs.cfrFeatures && ('browser.smartwindow.chat.interactionCount'|preferenceValue) > 2 && !('browser.smartwindow.isDefaultWindow' | preferenceValue)",
     frequency: {
       lifetime: 3,
     },
