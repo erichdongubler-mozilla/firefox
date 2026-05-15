@@ -88,12 +88,6 @@ browser/chrome/browser/skin/classic/browser/customize.svg
 browser/features/webcompat-reporter@mozilla.org/icons/lightbulb.svg
 chrome/toolkit/skin/classic/global/icons/lightbulb.svg
 
-# Bug 1861662 - These will be removed with new search config changes
-browser/chrome/browser/search-extensions/amazondotcn/_locales/default/messages.json
-browser/chrome/browser/search-extensions/amazondotcn/_locales/mozillaonline/messages.json
-browser/chrome/browser/search-extensions/amazondotcom/_locales/en/messages.json
-browser/chrome/browser/search-extensions/amazondotcom/_locales/us/messages.json
-
 # Bug 1895873 - Search engines with the same icon
 browser/defaults/settings/main/search-config-icons/6a83583a-f0ba-fd39-2fdb-fd2b6990ea3b
 browser/defaults/settings/main/search-config-icons/f312610a-ebfb-a106-ea92-fd643c5d3636

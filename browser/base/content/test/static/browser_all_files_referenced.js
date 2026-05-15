@@ -63,9 +63,6 @@ var gExceptionPaths = [
   // Localization file added programatically in FormAutofillUtils.sys.mjs
   "resource://gre/localization/en-US/toolkit/formautofill",
 
-  // Exclude all search-extensions because they aren't referenced by filename
-  "resource://search-extensions/",
-
   // Exclude all services-automation because they are used through webdriver
   "resource://gre/modules/services-automation/",
 
