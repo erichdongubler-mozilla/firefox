@@ -2,7 +2,6 @@
 support-files = [
   "cbor.js",
   "u2futil.js",
-  "pkijs/*",
   "get_assertion_dead_object.html",
   "empty.html",
   "/.well-known/webauthn",
