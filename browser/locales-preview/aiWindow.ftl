@@ -39,10 +39,19 @@ toolbar-button-ai-window-toggle =
 
 ai-window-toggleview-switch-classic =
     .label = Classic Window
+    .value = Classic Window
+
+ai-window-toggleview-switch-classic-description =
+    .label = Standard browsing
+    .value = Standard browsing
 
 ai-window-toggleview-switch-ai =
     .label = Smart Window
     .value = Smart Window
+
+ai-window-toggleview-switch-ai-description =
+    .label = Ask as you browse
+    .value = Ask as you browse
 
 ai-window-toggleview-switch-private =
     .label = Private Window

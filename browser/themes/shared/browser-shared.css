@@ -1477,7 +1477,6 @@ popupnotificationcontent {
 }
 
 /* AI Window Toggle Button */
-
 #ai-window-toggle {
   list-style-image: url("chrome://branding/content/icon32.png");
   border-radius: var(--border-radius-medium);
@@ -1490,21 +1489,57 @@ popupnotificationcontent {
 
   > .toolbarbutton-icon {
     padding: var(--space-small);
-    /* The design system does not have any inset box-shadow tokens. */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    box-shadow: 0 0 16px 4px var(--box-shadow-color-darker-layer-1) inset;
+
+    /* stylelint-disable-next-line media-query-no-invalid */
+    @media not -moz-pref("browser.nova.enabled") {
+      /* The design system does not have any inset box-shadow tokens. */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      box-shadow: 0 0 16px 4px var(--box-shadow-color-darker-layer-1) inset;
+    }
+
+    /* stylelint-disable-next-line media-query-no-invalid */
+    @media -moz-pref("browser.nova.enabled") {
+      --smart-window-toolbarbutton-color: color-mix(in srgb, var(--color-violet-desaturated-50) 15%, transparent);
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      border: var(--border-width) solid var(--smart-window-toolbarbutton-color);
+      --toolbarbutton-background-color-hover: var(--background-color-box);
+      --toolbarbutton-background-color-active: var(--background-color-box);
+      --toolbarbutton-outline-color: var(--smart-window-toolbarbutton-color);
+    }
   }
 
   /* Smart Window toggle */
   :root[ai-window] & {
     list-style-image: url("chrome://browser/skin/smart-window-simplified.svg");
 
+    /* stylelint-disable-next-line media-query-no-invalid */
+    @media -moz-pref("browser.nova.enabled") {
+      list-style-image: url("chrome://browser/skin/smart-window-nova.svg");
+    }
+
     > .toolbarbutton-icon {
-      /* Smart Window icon has additional 2px padding per side, to be slightly smaller than Classic Window icon when used in Switcher */
-      padding: var(--toolbarbutton-padding-inner);
-      /* The design system does not have any inset box-shadow tokens. */
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-      box-shadow: 0 0 16px 4px var(--smartwindow-toggle-shadow-color) inset;
+      /* stylelint-disable-next-line media-query-no-invalid */
+      @media not -moz-pref("browser.nova.enabled") {
+        /* Smart Window icon has additional 2px padding per side, to be slightly smaller than Classic Window icon when used in Switcher */
+        padding: var(--toolbarbutton-padding-inner);
+        /* The design system does not have any inset box-shadow tokens. */
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        box-shadow: 0 0 16px 4px var(--smartwindow-toggle-shadow-color) inset;
+      }
+
+      /* stylelint-disable-next-line media-query-no-invalid */
+      @media -moz-pref("browser.nova.enabled") {
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        box-shadow: 0 0 16px 4px var(--background-color-box) inset;
+        /* The design system does not have any outline width tokens. */
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        outline-width: var(--toolbarbutton-padding-inner-compact);
+        --toolbarbutton-background-color-hover: var(--background-color-box);
+        --toolbarbutton-background-color-active: var(--background-color-box);
+        --toolbarbutton-outline-color-hover: var(--smart-window-toolbarbutton-color);
+        --toolbarbutton-outline-color-active: var(--smart-window-toolbarbutton-color);
+        --toolbarbutton-outline-color-selected: var(--smart-window-toolbarbutton-color);
+      }
     }
   }
 }
@@ -1533,6 +1568,43 @@ popupnotificationcontent {
     height: var(--icon-size);
     margin-inline-start: auto;
   }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("browser.nova.enabled") {
+    .ai-window-switch-description {
+      display: none;
+    }
+  }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.nova.enabled") {
+    /* TODO: replace with token when available - Bug 2033070 */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    border-radius: 24px;
+
+    &[checked] {
+      background-color: var(--button-background-color-active);
+    }
+
+    #ai-window-switch-ai-badge {
+      display: none;
+    }
+
+    .toolbarbutton-icon {
+      width: var(--icon-size-large);
+      height: var(--icon-size-large);
+    }
+
+    .toolbarbutton-text {
+      padding-inline-start: var(--space-small);
+      text-align: start;
+    }
+
+    .ai-window-switch-description {
+      color: var(--text-color-deemphasized);
+      font-size: var(--font-size-small);
+    }
+  }
 }
 
 #ai-window-switch-classic {
@@ -1550,13 +1622,16 @@ popupnotificationcontent {
     display: none;
   }
 
-  & > .toolbarbutton-icon {
-    /* Smart Window icon has additional 0.125rem padding per side, to be slightly smaller than Classic Window icon when used in Switcher */
-    padding: var(--space-xxsmall);
-  }
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("browser.nova.enabled") {
+    & > .toolbarbutton-icon {
+      /* Smart Window icon has additional 0.125rem padding per side, to be slightly smaller than Classic Window icon when used in Switcher */
+      padding: var(--space-xxsmall);
+    }
 
-  & > moz-badge {
-    margin-inline-start: var(--space-medium);
+    & moz-badge {
+      margin-inline-start: var(--space-medium);
+    }
   }
 }
 
