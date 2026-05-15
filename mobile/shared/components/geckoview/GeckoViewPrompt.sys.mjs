@@ -11,6 +11,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   GeckoViewPrompter: "resource://gre/modules/GeckoViewPrompter.sys.mjs",
   GeckoViewClipboardPermission:
     "resource://gre/modules/GeckoViewClipboardPermission.sys.mjs",
+  PromptUtils: "resource://gre/modules/PromptUtils.sys.mjs",
 });
 
 const { debug, warn } = GeckoViewUtils.initLogging("GeckoViewPrompt");
@@ -763,7 +764,7 @@ class PromptDelegate {
       aAuthInfo.flags & Ci.nsIAuthInformation.CROSS_ORIGIN_SUB_RESOURCE;
 
     const username = aAuthInfo.username;
-    const authTarget = this._getAuthTarget(aChannel, aAuthInfo);
+    const authTarget = lazy.PromptUtils.getAuthTarget(aChannel, aAuthInfo);
     const { displayHost } = authTarget;
     let { realm } = authTarget;
 
@@ -807,46 +808,6 @@ class PromptDelegate {
     }
 
     return text;
-  }
-
-  _getAuthTarget(aChannel, aAuthInfo) {
-    // If our proxy is demanding authentication, don't use the
-    // channel's actual destination.
-    if (aAuthInfo.flags & Ci.nsIAuthInformation.AUTH_PROXY) {
-      if (!(aChannel instanceof Ci.nsIProxiedChannel)) {
-        throw new Error("proxy auth needs nsIProxiedChannel");
-      }
-      const info = aChannel.proxyInfo;
-      if (!info) {
-        throw new Error("proxy auth needs nsIProxyInfo");
-      }
-      // Proxies don't have a scheme, but we'll use "moz-proxy://"
-      // so that it's more obvious what the login is for.
-      const idnService = Cc["@mozilla.org/network/idn-service;1"].getService(
-        Ci.nsIIDNService
-      );
-      const displayHost =
-        "moz-proxy://" +
-        idnService.convertUTF8toACE(info.host) +
-        ":" +
-        info.port;
-      let realm = aAuthInfo.realm;
-      if (!realm) {
-        realm = displayHost;
-      }
-      return { displayHost, realm };
-    }
-
-    const displayHost =
-      aChannel.URI.scheme + "://" + aChannel.URI.displayHostPort;
-    // If a HTTP WWW-Authenticate header specified a realm, that value
-    // will be available here. If it wasn't set or wasn't HTTP, we'll use
-    // the formatted hostname instead.
-    let realm = aAuthInfo.realm;
-    if (!realm) {
-      realm = displayHost;
-    }
-    return { displayHost, realm };
   }
 }
 
