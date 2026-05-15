@@ -59,7 +59,6 @@ import org.mozilla.fenix.settings.settingssearch.SettingsSearchProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import mozilla.components.ui.icons.R as iconsR
 
 private const val HEADER_ITEM_COUNT = 2
 
@@ -261,7 +260,7 @@ private fun AIChoiceBanner(onLearnMoreClick: () -> Unit) {
         ),
         illustration = {
             Image(
-                painter = painterResource(iconsR.drawable.mozac_ic_fox_ai_on_state),
+                painter = painterResource(R.drawable.fox_ai_on_state),
                 contentDescription = null,
                 modifier = Modifier
                     .width(62.dp)

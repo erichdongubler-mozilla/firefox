@@ -211,7 +211,7 @@ private fun FirefoxLabsBanner() {
         },
         illustration = {
             Image(
-                painter = painterResource(iconsR.drawable.mozac_ic_fox_ai_on_state),
+                painter = painterResource(R.drawable.fox_ai_on_state),
                 contentDescription = null,
             )
         },
