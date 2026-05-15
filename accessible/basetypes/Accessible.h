@@ -882,10 +882,6 @@ class Accessible {
    */
   mozilla::a11y::role ARIATransformRole(mozilla::a11y::role aRole) const;
 
-  AccGenericType GenericTypes() const {
-    return static_cast<AccGenericType>(mGenericTypes);
-  }
-
  private:
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 18;
@@ -904,7 +900,7 @@ class Accessible {
       std::initializer_list<nsStaticAtom*> aRolesToSkip) const;
 
  protected:
-  AccType mType : kTypeBits;
+  uint32_t mType : kTypeBits;
   uint32_t mGenericTypes : kGenericTypesBits;
   uint8_t mRoleMapEntryIndex;
 

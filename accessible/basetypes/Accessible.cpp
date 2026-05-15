@@ -24,13 +24,13 @@ using namespace mozilla;
 using namespace mozilla::a11y;
 
 Accessible::Accessible()
-    : mType(eNoType),
+    : mType(static_cast<uint32_t>(0)),
       mGenericTypes(static_cast<uint32_t>(0)),
       mRoleMapEntryIndex(aria::NO_ROLE_MAP_ENTRY_INDEX) {}
 
 Accessible::Accessible(AccType aType, AccGenericType aGenericTypes,
                        uint8_t aRoleMapEntryIndex)
-    : mType(aType),
+    : mType(static_cast<uint32_t>(aType)),
       mGenericTypes(static_cast<uint32_t>(aGenericTypes)),
       mRoleMapEntryIndex(aRoleMapEntryIndex) {}
 
