@@ -201,8 +201,6 @@ void FocusManager::ActiveItemChanged(LocalAccessible* aItem,
     return;
   }
 
-  mActiveItem = nullptr;
-
   if (aItem && aCheckIfActive) {
     LocalAccessible* widget = aItem->ContainerWidget();
 #ifdef A11Y_LOG
