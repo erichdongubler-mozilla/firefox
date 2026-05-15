@@ -773,6 +773,7 @@ impl NeqoHttp3Conn {
                     "slow_start_exit_cwnd and slow_start_exit_reason must always be set together"
                 );
                 let mut hystart_label = "not_exited";
+                let mut search_label = "not_exited";
                 if let (Some(exit_cwnd), Some(reason)) = (
                     stats.cc.slow_start_exit_cwnd,
                     stats.cc.slow_start_exit_reason,
@@ -801,6 +802,7 @@ impl NeqoHttp3Conn {
                                 .get(direction_label)
                                 .add(1);
                             hystart_label = "exited_ce";
+                            search_label = "exited_ce";
                             ("ce", "ce_exit")
                         }
                         SlowStartExitReason::Heuristic => {
@@ -808,6 +810,7 @@ impl NeqoHttp3Conn {
                                 .get(direction_label)
                                 .add(1);
                             hystart_label = "exited_hystart";
+                            search_label = "exited_search";
                             ("heuristic", "heuristic_exit")
                         }
                     };
@@ -837,6 +840,66 @@ impl NeqoHttp3Conn {
                     glean::http_3_hystart_css_entries
                         .get(hystart_label)
                         .accumulate_single_sample_signed(stats.cc.hystart_css_entries as i64);
+                }
+
+                // Only record SEARCH metrics when SEARCH is enabled (2 == SEARCH, see constructor).
+                if static_prefs::pref!("network.http.http3.slow_start_algorithm") == 2 {
+                    // Metrics for drain phase evaluation
+                    if let Some(empty_buffer_bdp) = stats.cc.search_empty_buffer_target {
+                        glean::http_3_search_empty_buffer_bdp_estimate.accumulate(empty_buffer_bdp);
+                    }
+                    if let Some(full_buffer_bdp) = stats.cc.search_full_buffer_target {
+                        glean::http_3_search_full_buffer_bdp_estimate.accumulate(full_buffer_bdp);
+                    }
+                    // Metrics to tune EXTRA_BINS
+                    if let Some(lookback_bins) = stats.cc.search_lookback_bins_needed {
+                        glean::http_3_search_lookback_bins
+                            .accumulate_single_sample_signed(lookback_bins as i64);
+                        glean::http_3_search_rtt_inflated.get("inflated").add(1);
+                    } else {
+                        glean::http_3_search_rtt_inflated
+                            .get("never_inflated")
+                            .add(1);
+                    }
+                    // Metrics to tune THRESH
+                    if let Some(max_norm_diff) = stats.cc.search_max_norm_diff {
+                        glean::http_3_search_max_norm_diff
+                            .get(search_label)
+                            .accumulate_single_sample_signed(max_norm_diff as i64);
+                    }
+                    // Metrics to calibrate reset mechanism
+                    glean::http_3_search_reset_count
+                        .get(search_label)
+                        .accumulate_single_sample_signed(stats.cc.search_reset.count as i64);
+                    if let Some(max_passed_bins) = stats.cc.search_reset.max_passed_bins {
+                        glean::http_3_search_max_passed_bins
+                            .accumulate_single_sample_signed(max_passed_bins as i64);
+                    }
+                    // Metrics to gain insights into app-limited behavior during SEARCH slow start
+                    glean::http_3_search_zero_bytes_sent
+                        .get(search_label)
+                        .accumulate_single_sample_signed(stats.cc.search_zero_sent_bytes as i64);
+
+                    // Metrics to evaluate whether the first RTT used to initialize SEARCH is inflated
+                    if let Some(first_rtt) = stats.cc.search_first_rtt {
+                        let first_us = u64::try_from(first_rtt.as_micros()).unwrap_or(u64::MAX);
+                        let min_us = u64::try_from(stats.min_rtt.as_micros()).unwrap_or(u64::MAX);
+                        if min_us > 0 {
+                            glean::http_3_search_first_rtt_vs_min_rtt
+                                .accumulate_single_sample_signed((first_us * 100 / min_us) as i64);
+                        }
+                        // And whether using `min(first, second)` would be a viable fix
+                        if let Some(second_rtt) = stats.cc.search_second_rtt {
+                            let second_us =
+                                u64::try_from(second_rtt.as_micros()).unwrap_or(u64::MAX);
+                            if second_us > 0 {
+                                glean::http_3_search_first_rtt_vs_second_rtt
+                                    .accumulate_single_sample_signed(
+                                        (first_us * 100 / second_us) as i64,
+                                    );
+                            }
+                        }
+                    }
                 }
             }
 

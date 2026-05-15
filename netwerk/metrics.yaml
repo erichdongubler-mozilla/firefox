@@ -1320,6 +1320,209 @@ networking:
       - exited_ce
       - not_exited
 
+  http_3_search_empty_buffer_bdp_estimate:
+    type: memory_distribution
+    memory_unit: byte
+    description: >
+      HTTP3: Records the BDP estimate with empty buffers at slow start exit when using SEARCH. The SEARCH draft suggests a cwnd drain-phase using this as a target value; We record it for evaluation without implementing the drain-phase.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
+
+  http_3_search_full_buffer_bdp_estimate:
+    type: memory_distribution
+    memory_unit: byte
+    description: >
+      HTTP3: Records the BDP estimate with full buffers at slow start exit when using SEARCH. The SEARCH draft suggests a cwnd drain-phase using the empty-buffer version of this as a target value; We record this alternative for evaluation without implementing the drain-phase.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
+
+  http_3_search_lookback_bins:
+    type: custom_distribution
+    range_min: 0
+    range_max: 50
+    bucket_count: 50
+    histogram_type: linear
+    description: >
+      HTTP3: Tracks the per connection maximum of lookback bins needed when RTT inflation prevents SEARCH from evaluating. Helps determine if the EXTRA_BINS constant value is sufficient.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
+
+  http_3_search_rtt_inflated:
+    type: labeled_counter
+    description: >
+      HTTP3: Tracks whether a connection couldn't run the SEARCH evaluation because the RTT inflated past the point where there wasn't enough data for lookback.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
+    labels:
+      - inflated
+      - never_inflated
+
+  http_3_search_max_norm_diff:
+    type: labeled_custom_distribution
+    range_min: 0
+    range_max: 25
+    bucket_count: 25
+    histogram_type: linear
+    description: >
+      HTTP3: Records the maximum non-exiting value that the scaled, normalized difference between sent and acked bytes ever reached for a connection. Can be used to tune the exit threshold (THRESH). Is capped out at 25, since the current THRESH is 26, so any diff > 25 will exit.
+
+      The bucket with the 'exited_ce' label is of special interest, since those are connections that then ended up exiting slow start with loss.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
+    labels:
+      - exited_search
+      - exited_ce
+      - not_exited
+
+  http_3_search_reset_count:
+    type: labeled_custom_distribution
+    range_min: 0
+    range_max: 100
+    bucket_count: 30
+    histogram_type: exponential
+    description: >
+      HTTP3: Records how many resets due to stale data happened for each SEARCH connection. Is labeled by slow start outcome to help with evaluation (i.e. no resets + not_exited makes sense, since the connection might've been very short).
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
+    labels:
+      - exited_search
+      - exited_ce
+      - not_exited
+
+  http_3_search_max_passed_bins:
+    type: custom_distribution
+    range_min: 11
+    range_max: 50
+    bucket_count: 30
+    histogram_type: exponential
+    description: >
+      HTTP3: Tracks the maximum number of passed bins for SEARCH connections that had at least one reset due to stale data. Can help evaluate the aggressiveness of the reset mechanism. Starts at 11, because that is the first value that would trigger a reset.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
+
+  http_3_search_zero_bytes_sent:
+    type: labeled_custom_distribution
+    range_min: 0
+    range_max: 100
+    bucket_count: 30
+    histogram_type: exponential
+    description: >
+      HTTP3: Records how often SEARCH observes zero bytes sent in the previous RTT. Provides insight into app-limited behavior. Is labeled by slow start outcome to help reason about results.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
+    labels:
+      - exited_search
+      - exited_ce
+      - not_exited
+
+  http_3_search_first_rtt_vs_min_rtt:
+    type: custom_distribution
+    range_min: 100
+    range_max: 200
+    bucket_count: 50
+    histogram_type: exponential
+    description: >
+      HTTP3: Records the ratio of SEARCH's first RTT sample to the connection's
+      min_rtt, expressed as an integer percentage (100 = identical, 200 = 2x
+      inflated). Quantifies how much the initial RTT used to set bin_duration is
+      inflated relative to the minimum path RTT.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
+
+  http_3_search_first_rtt_vs_second_rtt:
+    type: custom_distribution
+    range_min: 100
+    range_max: 200
+    bucket_count: 50
+    histogram_type: exponential
+    description: >
+      HTTP3: Records the ratio of SEARCH's first RTT sample to the second RTT
+      sample, expressed as an integer percentage (100 = identical, 200 = first
+      was 2x the second). Helps evaluate whether using the second RTT sample
+      instead of the first would improve SEARCH initialization.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039381
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - omansfeld@mozilla.com
+    expires: 157
+
   http_3_congestion_window_growth:
     type: labeled_counter
     description: >
