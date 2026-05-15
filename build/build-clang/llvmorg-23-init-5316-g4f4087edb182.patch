@@ -1,8 +1,8 @@
-From 3e2a1810c156db3a1fc6ae340091207a0a546d67 Mon Sep 17 00:00:00 2001
+From 4f4087edb1823d943ae9b5e4128e2a4e6ef983dd Mon Sep 17 00:00:00 2001
 From: Mike Hommey <mh@glandium.org>
-Date: Fri, 14 Nov 2025 09:17:05 +0900
+Date: Wed, 25 Feb 2026 17:45:30 +0900
 Subject: [PATCH] [Windows] Adjust exported symbols to filter out profile
- symbols
+ symbols (#167985)
 
 When building Clang for Windows with clang-cl with -fprofile-generate
 and LLVM_EXPORT_SYMBOLS_FOR_PLUGINS, the build fails with
@@ -15,10 +15,10 @@ Removing the symbols generated from the use of that flag removes about
  1 file changed, 3 insertions(+)
 
 diff --git a/llvm/utils/extract_symbols.py b/llvm/utils/extract_symbols.py
-index 5254d16e410d..0aff8096bfc4 100755
+index 61e2021f0175..40a43d365555 100755
 --- a/llvm/utils/extract_symbols.py
 +++ b/llvm/utils/extract_symbols.py
-@@ -123,6 +123,9 @@ def should_keep_microsoft_symbol(symbol, calling_convention_decoration):
+@@ -128,6 +128,9 @@ def should_keep_microsoft_symbol(symbol, calling_convention_decoration):
          and (symbol.startswith("?Head@") or symbol.startswith("?Tail@"))
      ):
          return symbol

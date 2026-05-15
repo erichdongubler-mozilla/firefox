@@ -1,8 +1,9 @@
-From fb720045b0d58911ec2257f340b2208af3591512 Mon Sep 17 00:00:00 2001
+From 19e9bcba0bab9efe6f6d75ff5bce880b4c644783 Mon Sep 17 00:00:00 2001
 From: Mike Hommey <mh@glandium.org>
-Date: Tue, 24 Feb 2026 09:20:56 +0900
-Subject: [PATCH] [Windows] Don't hide Type::getAs symbols
+Date: Wed, 25 Feb 2026 17:45:06 +0900
+Subject: [PATCH] [Windows] Don't hide Type::getAs symbols (#182966)
 
+Cc: @michalpaszkowski, @john-brawn-arm
 ---
  llvm/utils/extract_symbols.py | 5 +++++
  1 file changed, 5 insertions(+)
