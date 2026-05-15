@@ -602,7 +602,7 @@
   "link/color/visited": {
     "light": "{Theme$link/color}",
     "dark": "{Theme$link/color}",
-    "forcedColors": "{Theme$link/color}"
+    "forcedColors": "{HCM Theme$VisitedText}"
   },
   "opacity/deemphasized-strong": {
     "light": 0.6,

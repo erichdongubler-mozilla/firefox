@@ -1678,7 +1678,7 @@ export const tokensTable = {
     },
     {
       value: {
-        forcedColors: "var(--link-color)",
+        forcedColors: "VisitedText",
         brand: { default: "var(--link-color)" },
         platform: { default: "var(--link-color)" },
       },
@@ -3122,7 +3122,7 @@ export const variableLookupTable = {
     platform: { default: "color-mix(in srgb, black 20%, var(--link-color))" },
   },
   "link-color-visited": {
-    forcedColors: "var(--link-color)",
+    forcedColors: "VisitedText",
     brand: { default: "var(--link-color)" },
     platform: { default: "var(--link-color)" },
   },

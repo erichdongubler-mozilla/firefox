@@ -612,7 +612,7 @@
       --link-color: LinkText;
       --link-color-hover: LinkText;
       --link-color-active: ActiveText;
-      --link-color-visited: var(--link-color);
+      --link-color-visited: VisitedText;
 
       /** table **/
       --table-background-color: Canvas;
@@ -1044,6 +1044,7 @@
         --link-color: LinkText;
         --link-color-hover: LinkText;
         --link-color-active: ActiveText;
+        --link-color-visited: VisitedText;
 
         /** panel **/
         --panel-border-color: var(--border-color);
