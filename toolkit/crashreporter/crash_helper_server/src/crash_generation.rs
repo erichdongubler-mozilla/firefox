@@ -253,13 +253,15 @@ fn retrieve_annotations(
     }
 
     // Add a unique identifier for this crash event.
-    let crash_id = uuid::Uuid::new_v4()
+    let crash_event_id = uuid::Uuid::new_v4()
         .as_hyphenated()
         .encode_lower(&mut uuid::Uuid::encode_buffer())
         .to_string();
     annotations.push(CAnnotation {
-        id: CrashAnnotation::CrashID as u32,
-        data: AnnotationData::String(CString::new(crash_id).context("uuid contains nul byte")?),
+        id: CrashAnnotation::CrashEventID as u32,
+        data: AnnotationData::String(
+            CString::new(crash_event_id).context("uuid contains nul byte")?,
+        ),
     });
 
     Ok(annotations)
