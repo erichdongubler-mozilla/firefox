@@ -673,6 +673,7 @@ SettingGroupManager.registerGroups({
     items: [
       {
         id: "warningCard",
+        subcategory: "security-warning-card",
         l10nId: "security-privacy-issue-card",
         control: "moz-card",
         controlAttrs: {
@@ -1154,6 +1155,7 @@ SettingGroupManager.registerGroups({
           },
           {
             id: "etpLevelStrict",
+            subcategory: "etp-strict-control",
             value: "strict",
             l10nId: "preferences-etp-level-strict",
             items: [
@@ -1174,6 +1176,7 @@ SettingGroupManager.registerGroups({
           },
           {
             id: "etpLevelCustom",
+            subcategory: "etp-custom-control",
             value: "custom",
             l10nId: "preferences-etp-level-custom",
             items: [
