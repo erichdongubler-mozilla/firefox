@@ -5,7 +5,6 @@
 import json
 import os
 import shutil
-import unicodedata
 
 import mozpack.path as mozpath
 from mozpack.files import FileFinder
@@ -25,37 +24,13 @@ def clear_dir(path):
             print(f"Failed to delete {file_path}. Reason: {e}")
 
 
-def generate_individual_json_files_from_interventions_json(
-    interventions_json_path, output_interventions_dir
-):
-    """Generate data/interventions/*.json from interventions.json"""
-
-    clear_dir(output_interventions_dir)
-
-    with open(interventions_json_path) as fd:
-        for bug, config in json.load(fd).items():
-            label = (
-                config["label"]
-                .replace(" ", "_")
-                .replace(os.path.sep, "_")
-                .replace("(", "")
-                .replace(")", "")
-            )
-            normalized = unicodedata.normalize("NFD", f"{bug}-{label}.json")
-            filename = "".join([c for c in normalized if not unicodedata.combining(c)])
-            with open(mozpath.join(output_interventions_dir, filename), "w") as fd2:
-                fd2.write(json.dumps(config, indent=2))
-
-
 def generate_run_js(
-    output_fd, template_path, interventions_dir, interventions_json_path=None
+    output_fd,
+    template_path,
+    interventions_dir,
+    *_preprocessed_intervention_files_mozbuild,
 ):
     with open(template_path) as template_fd:
-        if interventions_json_path:
-            generate_individual_json_files_from_interventions_json(
-                interventions_json_path, interventions_dir
-            )
-
         input_files = list(FileFinder(interventions_dir).find("*.json"))
 
         interventions = {}
@@ -75,6 +50,10 @@ def generate_run_js(
             f"AVAILABLE_INTERVENTIONS = {interventions_json}",
         )
         output_fd.write(subbed)
+
+
+def generate_file(outfile, interventions_dir, *ignored):
+    pass
 
 
 def main(*args):  # mach requires this
