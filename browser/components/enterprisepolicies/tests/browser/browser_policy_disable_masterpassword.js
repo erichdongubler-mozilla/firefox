@@ -43,29 +43,14 @@ async function checkDeviceManager({ buttonIsDisabled }) {
   await BrowserTestUtils.closeWindow(deviceManagerWindow);
 }
 
-async function checkAboutPreferences({
-  checkboxIsDisabled,
-  hasPassword = false,
-}) {
-  let srdEnabled = Services.prefs.getBoolPref(
-    "browser.settings-redesign.enabled",
-    false
-  );
+async function checkAboutPreferences({ checkboxIsDisabled }) {
   await BrowserTestUtils.withNewTab(
-    srdEnabled
-      ? "about:preferences#passwordsAutofill"
-      : "about:preferences#privacy",
+    "about:preferences#privacy",
     async browser => {
-      let target;
-      if (srdEnabled) {
-        target = hasPassword ? "changePrimaryPassword" : "addPrimaryPassword";
-      } else {
-        target = "useMasterPassword";
-      }
       is(
-        browser.contentDocument.getElementById(target).disabled,
+        browser.contentDocument.getElementById("useMasterPassword").disabled,
         checkboxIsDisabled,
-        `SRD ${srdEnabled} - Master Password checkbox is in the correct state: ` +
+        "Master Password checkbox is in the correct state: " +
           checkboxIsDisabled
       );
     }
@@ -97,7 +82,7 @@ add_task(async function test_policy_disable_masterpassword() {
   // If a Primary Password is already set, there's no point in disabling
   // the
   await checkDeviceManager({ buttonIsDisabled: false });
-  await checkAboutPreferences({ checkboxIsDisabled: false, hasPassword: true });
+  await checkAboutPreferences({ checkboxIsDisabled: false });
 
   // Clean up
   mpToken.changePassword(MASTER_PASSWORD, "");

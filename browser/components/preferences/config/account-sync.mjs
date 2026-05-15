@@ -2,20 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// preferences.js typedefs are duplicated here because @import requires an ES
-// module source. preferences.js is a plain script currently.
-/**
- * @typedef {object} PaneShownEventDetail
- * @property {string} category
- * @property {string} subcategory
- */
-
-/**
- * @typedef {Omit<CustomEvent, 'detail'> & {
- *   detail: PaneShownEventDetail
- * }} PaneShownEvent
- */
-
 import { Preferences } from "chrome://global/content/preferences/Preferences.mjs";
 import { SettingGroupManager } from "chrome://browser/content/preferences/config/SettingGroupManager.mjs";
 
@@ -283,7 +269,7 @@ export var SyncHelpers = new (class SyncHelpers {
 window.SyncHelpers = SyncHelpers;
 
 // Listen for when sync pane is loaded to check for actions
-window.addEventListener("paneshown", (/** @type {PaneShownEvent} */ e) => {
+window.addEventListener("paneshown", e => {
   if (e.detail.category == "paneSync") {
     SyncHelpers.maybeShowSyncAction();
   }
@@ -1093,21 +1079,3 @@ SettingGroupManager.registerGroups({
     ],
   },
 });
-
-document.addEventListener(
-  "paneshown",
-  (/** @type {PaneShownEvent} */ event) => {
-    if (event.detail.category !== "paneSync") {
-      return;
-    }
-    if (Services.policies && !Services.policies.isAllowed("profileImport")) {
-      return;
-    }
-    let { subcategory } = event.detail;
-    if (subcategory == "migrate") {
-      window.gMainPane.showMigrationWizardDialog();
-    } else if (subcategory == "migrate-autoclose") {
-      window.gMainPane.showMigrationWizardDialog({ closeTabWhenDone: true });
-    }
-  }
-);

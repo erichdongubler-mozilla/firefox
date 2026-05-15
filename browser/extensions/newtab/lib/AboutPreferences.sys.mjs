@@ -479,7 +479,6 @@ export class AboutPreferences {
       headingLevel: 2,
       iconSrc: "chrome://browser/skin/window-firefox.svg",
       l10nId: "home-homepage-title",
-      subcategory: "homepage",
       items: [
         {
           id: "homepageNewWindows",
@@ -529,17 +528,14 @@ export class AboutPreferences {
     Preferences.addSetting(
       /** @type {{ _inputValue: string } & SettingConfig } */ ({
         id: "customHomepageAddUrlInput",
-        deps: ["homepageDisplayPref"],
         _inputValue: "",
         get() {
           return this._inputValue;
         },
+
         set(val, _, setting) {
           this._inputValue = val.trim();
           setting.onChange();
-        },
-        disabled({ homepageDisplayPref }) {
-          return homepageDisplayPref.locked;
         },
       })
     );
@@ -577,9 +573,6 @@ export class AboutPreferences {
 
         // Reset the field to empty string
         customHomepageAddUrlInput.value = "";
-      },
-      disabled({ homepageDisplayPref }) {
-        return homepageDisplayPref.locked;
       },
     });
 
@@ -629,12 +622,11 @@ export class AboutPreferences {
             .join("|");
         }
       },
-      disabled: ({ disableCurrentPagesButton, homepageDisplayPref }) =>
+      disabled: ({ disableCurrentPagesButton }) =>
         // Disable this button if the only open tab is `about:preferences`/`about:settings`
         // or when an enterprise policy sets a special pref to true
         lazy.HomePage.getTabsForCustomHomepage().length < 1 ||
-        disableCurrentPagesButton?.value === true ||
-        homepageDisplayPref.locked,
+        disableCurrentPagesButton?.value === true,
     });
 
     Preferences.addSetting({
@@ -662,9 +654,9 @@ export class AboutPreferences {
           rv
         );
       },
-      disabled: ({ disableBookmarkButton, homepageDisplayPref }) =>
+      disabled: ({ disableBookmarkButton }) =>
         // Disable this button if an enterprise policy sets a special pref to true
-        disableBookmarkButton?.value === true || homepageDisplayPref.locked,
+        disableBookmarkButton?.value === true,
     });
 
     Preferences.addSetting({
@@ -685,26 +677,24 @@ export class AboutPreferences {
             homepageDisplayPref.value.trim()
           ) === false
         ) {
-          type = homepageDisplayPref.locked ? "list" : "reorderable-list";
+          type = "reorderable-list";
           listItems = urls.map((url, index) => ({
             id: `customHomepageUrl-${index}`,
             key: `url-${index}-${url}`,
             control: "moz-box-item",
             controlAttrs: { label: url, "data-url": url },
-            options: homepageDisplayPref.locked
-              ? []
-              : [
-                  {
-                    control: "moz-button",
-                    iconSrc: "chrome://global/skin/icons/delete.svg",
-                    l10nId: "home-custom-homepage-delete-address-button",
-                    slot: "actions-start",
-                    controlAttrs: {
-                      "data-action": "delete",
-                      "data-index": index,
-                    },
-                  },
-                ],
+            options: [
+              {
+                control: "moz-button",
+                iconSrc: "chrome://global/skin/icons/delete.svg",
+                l10nId: "home-custom-homepage-delete-address-button",
+                slot: "actions-start",
+                controlAttrs: {
+                  "data-action": "delete",
+                  "data-index": index,
+                },
+              },
+            ],
           }));
         } else {
           // If no custom URLs have been set, show the "no results" string instead.
