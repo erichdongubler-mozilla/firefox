@@ -4655,10 +4655,18 @@ void ChildViewMouseTracker::OnDestroyWindow(NSWindow* aWindow) {
 
 void ChildViewMouseTracker::MouseEnteredWindow(NSEvent* aEvent) {
   NSWindow* window = aEvent.window;
-  if (!window.ignoresMouseEvents) {
-    sWindowUnderMouse = window;
-    ReEvaluateMouseEnterState(aEvent);
+  if (window.ignoresMouseEvents) {
+    return;
   }
+  // NSTrackingActiveAlways can deliver spurious mouseEntered: to windows on
+  // inactive Spaces. Accepting them clobbers the global sWindowUnderMouse and
+  // causes hover flicker when Firefox windows span multiple Spaces or
+  // displays (Bug 1854862).
+  if (!window.isOnActiveSpace) {
+    return;
+  }
+  sWindowUnderMouse = window;
+  ReEvaluateMouseEnterState(aEvent);
 }
 
 void ChildViewMouseTracker::MouseExitedWindow(NSEvent* aEvent) {
