@@ -139,8 +139,6 @@ toolkit.jar:
    content/global/elements/moz-input-text.css    (widgets/moz-input-text/moz-input-text.css)
    content/global/elements/moz-input-text.mjs    (widgets/moz-input-text/moz-input-text.mjs)
    content/global/elements/moz-input-url.mjs    (widgets/moz-input-url/moz-input-url.mjs)
-   content/global/elements/moz-textarea.css    (widgets/moz-textarea/moz-textarea.css)
-   content/global/elements/moz-textarea.mjs    (widgets/moz-textarea/moz-textarea.mjs)
    content/global/elements/moz-page-header.css    (widgets/moz-page-header/moz-page-header.css)
    content/global/elements/moz-page-header.mjs    (widgets/moz-page-header/moz-page-header.mjs)
    content/global/elements/moz-page-nav.tokens.css    (widgets/moz-page-nav/moz-page-nav.tokens.css)

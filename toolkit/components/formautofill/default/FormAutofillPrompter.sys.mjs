@@ -195,13 +195,9 @@ export class AutofillDoorhanger {
       return;
     }
 
-    const button = this.doc.createElement("moz-button");
+    const button = this.doc.createElement("button");
     button.setAttribute("id", AutofillDoorhanger.menuButtonId);
-    button.setAttribute("type", "icon ghost");
-    button.setAttribute(
-      "iconsrc",
-      "chrome://browser/skin/formautofill/icon-doorhanger-menu.svg"
-    );
+    button.setAttribute("class", "address-capture-icon-button");
     this.doc.l10n.setAttributes(button, "address-capture-open-menu-button");
 
     const menupopup = this.doc.createXULElement("menupopup");
@@ -347,18 +343,20 @@ export class AutofillDoorhanger {
 
     let secondaryActions = [];
     for (const params of secondaryActionParams) {
+      const secondaryCallback = () => {
+        AutofillTelemetry.recordDoorhangerClicked(
+          this.constructor.telemetryType,
+          params.callbackState,
+          this.constructor.telemetryObject,
+          this.flowId
+        );
+
+        this.resolve(params.callbackState);
+      };
+
       secondaryActions.push({
         ...getLabelAndAccessKey(params),
-        callback: () => {
-          AutofillTelemetry.recordDoorhangerClicked(
-            this.constructor.telemetryType,
-            params.callbackState,
-            this.constructor.telemetryObject,
-            this.flowId
-          );
-
-          this.resolve(params.callbackState);
-        },
+        callback: secondaryCallback,
       });
     }
 
@@ -369,13 +367,20 @@ export class AutofillDoorhanger {
 export class AddressSaveDoorhanger extends AutofillDoorhanger {
   static preferenceURL = "privacy-address-autofill";
   static learnMoreURL = "automatically-fill-your-address-web-forms";
-  static editLinkId = "address-capture-edit-address-button";
+  static editButtonId = "address-capture-edit-address-button";
 
   static telemetryType = AutofillTelemetry.ADDRESS;
   static telemetryObject = "capture_doorhanger";
 
   constructor(browser, oldRecord, newRecord, flowId) {
     super(browser, oldRecord, newRecord, flowId);
+  }
+
+  static editButton(panel) {
+    return panel.querySelector(`#${AddressSaveDoorhanger.editButtonId}`);
+  }
+  get editButton() {
+    return AddressSaveDoorhanger.editButton(this.panel);
   }
 
   /**
@@ -558,21 +563,26 @@ export class AddressSaveDoorhanger extends AutofillDoorhanger {
       section.appendChild(lineContainer);
 
       this.content.appendChild(section);
-    }
 
-    const link = this.doc.createXULElement("label", { is: "text-link" });
-    link.setAttribute("id", AddressSaveDoorhanger.editLinkId);
-    link.setAttribute("tabindex", "0");
-    link.setAttribute("role", "link");
-    this.doc.l10n.setAttributes(link, "address-capture-edit-address-link");
-    /* eslint-disable mozilla/balanced-listeners */
-    link.addEventListener("click", () => {
-      this.closeDoorhanger("edit-address");
-    });
-    const linkContainer = this.doc.createXULElement("hbox");
-    linkContainer.className = "address-capture-edit-link-container";
-    linkContainer.appendChild(link);
-    this.content.appendChild(linkContainer);
+      // Put the edit address button in the first section
+      if (!AddressSaveDoorhanger.editButton(this.panel)) {
+        const button = this.doc.createElement("button");
+        button.setAttribute("id", AddressSaveDoorhanger.editButtonId);
+        button.setAttribute("class", "address-capture-icon-button");
+        this.doc.l10n.setAttributes(
+          button,
+          "address-capture-edit-address-button"
+        );
+
+        // The element will be removed after the popup is closed
+        /* eslint-disable mozilla/balanced-listeners */
+        button.addEventListener("click", event => {
+          event.stopPropagation();
+          this.closeDoorhanger("edit-address");
+        });
+        section.appendChild(button);
+      }
+    }
   }
 
   // The record to be saved by this doorhanger
@@ -629,180 +639,190 @@ export class AddressEditDoorhanger extends AutofillDoorhanger {
     // The layout of the address edit doorhanger should be changed when the
     // country is changed.
     this.#buildCountrySpecificAddressFields();
-
-    // Replace country-specific fixed fields in-place to update their labels and options.
-    for (const fieldId of ["address-level1", "postal-code"]) {
-      const oldInput = this.panel.querySelector(
-        `#${AddressEditDoorhanger.getInputId(fieldId)}`
-      );
-      if (oldInput) {
-        oldInput.replaceWith(this.#createInputField(fieldId));
-      }
-    }
   }
 
   renderContent() {
     this.content.replaceChildren();
-    this.#buildAddressFields(this.content, this.ui.content.fixedRowsBefore);
+
+    this.#buildAddressFields(this.content, this.ui.content.fixedFields);
+
     this.#buildCountrySpecificAddressFields();
-    this.#buildAddressFields(this.content, this.ui.content.fixedRowsAfter);
   }
 
-  #buildAddressFields(container, rows) {
-    for (const row of rows) {
-      const rowDiv = this.doc.createElement("div");
-      rowDiv.setAttribute("class", "address-edit-row-container");
-      container.appendChild(rowDiv);
-      for (const fieldId of row) {
-        rowDiv.appendChild(this.#createInputField(fieldId));
+  // Put address fields that should be in the same line together.
+  // Determined by the `newLine` property that is defined in libaddressinput
+  #buildAddressFields(container, fields) {
+    const createRowContainer = () => {
+      const div = this.doc.createElement("div");
+      div.setAttribute("class", "address-edit-row-container");
+      container.appendChild(div);
+      return div;
+    };
+
+    let row = null;
+    let createRow = true;
+    for (const { fieldId, newLine } of fields) {
+      if (createRow) {
+        row = createRowContainer();
       }
+      row.appendChild(this.#createInputField(fieldId));
+      createRow = newLine;
     }
   }
 
   #buildCountrySpecificAddressFields() {
-    const allFixedFieldIds = [
-      ...this.ui.content.fixedRowsBefore.flat(),
-      ...this.ui.content.fixedRowsAfter.flat(),
-      "street-address",
-    ];
-
+    const fixedFieldIds = this.ui.content.fixedFields.map(f => f.fieldId);
     let container = this.doc.getElementById(
       "country-specific-fields-container"
     );
     if (container) {
+      // Country-specific fields might be rebuilt after users update the country
+      // field, so if the container already exists, we remove all its childern and
+      // then rebuild it.
       container.replaceChildren();
     } else {
       container = this.doc.createElement("div");
       container.setAttribute("id", "country-specific-fields-container");
-      const insertIndex = this.ui.content.fixedRowsBefore.length;
-      this.content.insertBefore(container, this.content.children[insertIndex]);
+
+      // Find where to insert country-specific fields
+      const nth = fixedFieldIds.indexOf(
+        this.ui.content.countrySpecificFieldsBefore
+      );
+      this.content.insertBefore(container, this.content.children[nth]);
     }
 
-    const countrySpecificFields = this.layout.fieldsOrder.filter(
-      f => !allFixedFieldIds.includes(f.fieldId)
+    this.#buildAddressFields(
+      container,
+      // Filter out fields that are always displayed
+      this.layout.fieldsOrder.filter(f => !fixedFieldIds.includes(f.fieldId))
     );
-
-    const rows = [];
-    let currentRow = [];
-    for (const { fieldId, newLine } of countrySpecificFields) {
-      currentRow.push(fieldId);
-      if (newLine) {
-        rows.push(currentRow);
-        currentRow = [];
-      }
-    }
-    if (currentRow.length) {
-      rows.push(currentRow);
-    }
-
-    this.#buildAddressFields(container, rows);
   }
 
+  #buildCountryMenupopup() {
+    const menupopup = this.doc.createXULElement("menupopup");
+
+    let menuitem = this.doc.createXULElement("menuitem");
+    menuitem.setAttribute("value", "");
+    menupopup.appendChild(menuitem);
+
+    const countries = [...FormAutofill.countries.entries()].sort((e1, e2) =>
+      e1[1].localeCompare(e2[1])
+    );
+    for (const [country] of countries) {
+      const countryName = Services.intl.getRegionDisplayNames(undefined, [
+        country.toLowerCase(),
+      ]);
+      menuitem = this.doc.createXULElement("menuitem");
+      menuitem.setAttribute("label", countryName);
+      menuitem.setAttribute("value", country);
+      menupopup.appendChild(menuitem);
+    }
+
+    return menupopup;
+  }
+
+  #buildAddressLevel1Menupopup() {
+    const menupopup = this.doc.createXULElement("menupopup");
+
+    let menuitem = this.doc.createXULElement("menuitem");
+    menuitem.setAttribute("value", "");
+    menupopup.appendChild(menuitem);
+
+    for (const [regionCode, regionName] of this.layout.addressLevel1Options) {
+      menuitem = this.doc.createXULElement("menuitem");
+      menuitem.setAttribute("label", regionCode);
+      menuitem.setAttribute("value", regionName);
+      menupopup.appendChild(menuitem);
+    }
+
+    return menupopup;
+  }
+
+  /**
+   * Creates an input field with a label and attaches it to a container element.
+   * The type of the input field is determined by the `fieldName`.
+   *
+   * @param {string} fieldName The name of the address field
+   */
   #createInputField(fieldName) {
-    let labelL10nId;
+    const div = this.doc.createElement("div");
+    div.setAttribute("class", "address-edit-input-container");
+
+    const inputId = AddressEditDoorhanger.getInputId(fieldName);
+    const label = this.doc.createElement("label");
+    label.setAttribute("for", inputId);
+
     switch (fieldName) {
       case "address-level1":
-        labelL10nId = this.layout.addressLevel1L10nId;
+        this.doc.l10n.setAttributes(label, this.layout.addressLevel1L10nId);
         break;
       case "address-level2":
-        labelL10nId = this.layout.addressLevel2L10nId;
+        this.doc.l10n.setAttributes(label, this.layout.addressLevel2L10nId);
         break;
       case "address-level3":
-        labelL10nId = this.layout.addressLevel3L10nId;
+        this.doc.l10n.setAttributes(label, this.layout.addressLevel3L10nId);
         break;
       case "postal-code":
-        labelL10nId = this.layout.postalCodeL10nId;
-        break;
-      case "street-address":
-        labelL10nId = "autofill-address-street-address";
+        this.doc.l10n.setAttributes(label, this.layout.postalCodeL10nId);
         break;
       case "country":
         // workaround because `autofill-address-country` is already defined
-        labelL10nId = "autofill-address-country-only";
+        this.doc.l10n.setAttributes(
+          label,
+          `autofill-address-${fieldName}-only`
+        );
         break;
       default:
-        labelL10nId = `autofill-address-${fieldName}`;
+        this.doc.l10n.setAttributes(label, `autofill-address-${fieldName}`);
         break;
     }
-
-    const labelText = labelL10nId
-      ? (l10n.formatValueSync(labelL10nId) ?? "")
-      : "";
-    const inputId = AddressEditDoorhanger.getInputId(fieldName);
+    div.appendChild(label);
 
     let input;
-    if (fieldName === "country") {
-      input = this.doc.createElement("moz-select");
-      input.setAttribute("label", labelText);
-      input.setAttribute("id", inputId);
+    let popup;
+    if ("street-address".includes(fieldName)) {
+      input = this.doc.createElement("textarea");
+      input.setAttribute("rows", 3);
+    } else if (fieldName == "country") {
+      input = this.doc.createXULElement("menulist");
+      popup = this.#buildCountryMenupopup();
+      popup.addEventListener("popuphidden", e => e.stopPropagation());
+      input.appendChild(popup);
 
-      const emptyOpt = this.doc.createElement("moz-option");
-      emptyOpt.setAttribute("value", "");
-      emptyOpt.setAttribute("label", "");
-      input.appendChild(emptyOpt);
-
-      const countries = [...FormAutofill.countries.entries()].sort((e1, e2) =>
-        e1[1].localeCompare(e2[1])
-      );
-      for (const [countryCode] of countries) {
-        const countryName = Services.intl.getRegionDisplayNames(undefined, [
-          countryCode.toLowerCase(),
-        ]);
-        const opt = this.doc.createElement("moz-option");
-        opt.setAttribute("value", countryCode);
-        opt.setAttribute("label", countryName);
-        input.appendChild(opt);
-      }
-
-      input.value = this.newRecord.country ?? "";
+      // The element will be removed after the popup is closed
       /* eslint-disable mozilla/balanced-listeners */
-      input.addEventListener("change", event => {
+      input.addEventListener("command", event => {
         event.stopPropagation();
-        this.country = input.value;
+        this.country = input.selectedItem.value;
       });
     } else if (
-      fieldName === "address-level1" &&
+      fieldName == "address-level1" &&
       this.layout.addressLevel1Options
     ) {
-      input = this.doc.createElement("moz-select");
-      input.setAttribute("label", labelText);
-      input.setAttribute("id", inputId);
-
-      const emptyOpt = this.doc.createElement("moz-option");
-      emptyOpt.setAttribute("value", "");
-      emptyOpt.setAttribute("label", "");
-      input.appendChild(emptyOpt);
-
-      const optionData = [];
-      for (const [regionCode, regionName] of this.layout.addressLevel1Options) {
-        const opt = this.doc.createElement("moz-option");
-        opt.setAttribute("label", regionCode);
-        opt.setAttribute("value", regionName);
-        input.appendChild(opt);
-        optionData.push({ text: regionCode, value: regionName });
-      }
-
-      const matched = FormAutofillUtils.findAddressSelectOption(
-        optionData,
-        this.newRecord,
-        "address-level1",
-        this.newRecord["address-level1"]
-      );
-      input.value = matched?.value ?? "";
-    } else if (fieldName === "street-address") {
-      input = this.doc.createElement("moz-textarea");
-      input.setAttribute("label", labelText);
-      input.setAttribute("id", inputId);
-      input.rows = 3;
-      input.value = this.newRecord["street-address"] ?? "";
+      input = this.doc.createXULElement("menulist");
+      popup = this.#buildAddressLevel1Menupopup();
+      popup.addEventListener("popuphidden", e => e.stopPropagation());
+      input.appendChild(popup);
     } else {
-      input = this.doc.createElement("moz-input-text");
-      input.setAttribute("label", labelText);
-      input.setAttribute("id", inputId);
+      input = this.doc.createElement("input");
+    }
+
+    input.setAttribute("id", inputId);
+
+    if (popup) {
+      input.selectedItem =
+        FormAutofillUtils.findAddressSelectOptionWithMenuPopup(
+          popup,
+          this.newRecord,
+          fieldName
+        );
+    } else {
       input.value = this.newRecord[fieldName] ?? "";
     }
 
-    return input;
+    div.appendChild(input);
+
+    return div;
   }
 
   /**
@@ -830,9 +850,7 @@ export class AddressEditDoorhanger extends AutofillDoorhanger {
   recordToSave() {
     let record = {};
     const regex = AddressEditDoorhanger.#getInputIdMatchRegexp();
-    const elements = this.panel.querySelectorAll(
-      "moz-input-text, moz-textarea, moz-select"
-    );
+    const elements = this.panel.querySelectorAll("input, textarea, menulist");
     for (const element of elements) {
       const match = element.id.match(regex);
       if (match && match[1]) {
@@ -1152,11 +1170,18 @@ CONTENT = {
     },
     menu: null,
     content: {
-      fixedRowsBefore: [["name"], ["organization"], ["street-address"]],
-      fixedRowsAfter: [
-        ["address-level1", "country"],
-        ["postal-code", "tel"],
-        ["email"],
+      // We start by organizing the fields in a specific order:
+      // name, organization, and country are fixed and come first.
+      // These are followed by country-specific fields, which are
+      // laid out differently for each country (as referenced from libaddressinput).
+      // Finally, we place the telephone and email fields at the end.
+      countrySpecificFieldsBefore: "tel",
+      fixedFields: [
+        { fieldId: "name", newLine: true },
+        { fieldId: "organization", newLine: true },
+        { fieldId: "country", newLine: true },
+        { fieldId: "tel", newLine: false },
+        { fieldId: "email", newLine: true },
       ],
     },
     footer: {
