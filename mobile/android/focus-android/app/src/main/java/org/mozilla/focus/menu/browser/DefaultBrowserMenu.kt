@@ -161,7 +161,7 @@ class DefaultBrowserMenu(
 
         val openInApp = BrowserMenuImageText(
             label = context.getString(R.string.menu_open_with_a_browser2),
-            imageResource = iconsR.drawable.mozac_ic_open_in,
+            imageResource = iconsR.drawable.mozac_ic_external_link_24,
             textColorResource = context.theme.resolveAttribute(R.attr.primaryText),
         ) {
             onItemTapped.invoke(ToolbarMenu.Item.OpenInApp)
