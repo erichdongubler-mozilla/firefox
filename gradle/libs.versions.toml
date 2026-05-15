@@ -100,7 +100,7 @@ junit6 = "6.0.3"
 leakcanary = "2.14"
 mockito = "5.23.0"
 mockk = "1.14.9"
-robolectric = "4.16"
+robolectric = "4.16.1"
 
 # Third party libraries
 adjust = "5.7.0"
