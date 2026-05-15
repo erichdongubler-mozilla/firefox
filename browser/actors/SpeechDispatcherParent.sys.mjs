@@ -50,7 +50,8 @@ export class SpeechDispatcherParent extends JSWindowActorParent {
         break;
 
       default:
-        break;
+        console.error("Unknown SpeechDispatcher error message.");
+        return;
     }
 
     let MozXULElement = browser.documentGlobal.MozXULElement;
