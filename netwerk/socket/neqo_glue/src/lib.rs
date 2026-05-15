@@ -38,8 +38,8 @@ use neqo_http3::{
 };
 use neqo_transport::{
     stream_id::StreamType, CongestionControl, Connection, ConnectionParameters,
-    Error as TransportError, Output, OutputBatch, RandomConnectionIdGenerator, SlowStart, StreamId,
-    Version,
+    Error as TransportError, HyStartCssBaseline, Output, OutputBatch, RandomConnectionIdGenerator,
+    SlowStart, StreamId, Version,
 };
 use nserror::{
     nsresult, NS_BASE_STREAM_WOULD_BLOCK, NS_ERROR_CONNECTION_REFUSED,
@@ -441,6 +441,7 @@ impl NeqoHttp3Conn {
         let slow_start = match static_prefs::pref!("network.http.http3.slow_start_algorithm") {
             0 => SlowStart::Classic,
             1 => SlowStart::HyStart,
+            2 => SlowStart::Search,
             _ => {
                 // Unknown preferences; default to Classic
                 debug!("Unknown http3.slow_start_algorithm pref, defaulting to SlowStart::Classic");
@@ -457,6 +458,15 @@ impl NeqoHttp3Conn {
             // transmitted UDP datagrams might get fragmented by the IP layer.
             && socket.as_ref().map_or(false, |s| !s.may_fragment());
 
+        let spurious_recovery = static_prefs::pref!("network.http.http3.spurious_recovery");
+
+        let css_baseline =
+            if static_prefs::pref!("network.http.http3.hystart_alternative_css_baseline") {
+                HyStartCssBaseline::EntryThreshold
+            } else {
+                HyStartCssBaseline::CurrentRoundMinRtt
+            };
+
         let mut params = ConnectionParameters::default()
             .versions(quic_version, version_list)
             .congestion_control(cc_algorithm)
@@ -470,7 +480,9 @@ impl NeqoHttp3Conn {
             .pmtud_iface_mtu(cfg!(not(target_os = "openbsd")))
             // MLKEM support is configured further below. By default, disable it.
             .mlkem(false)
-            .pmtud(pmtud_enabled);
+            .pmtud(pmtud_enabled)
+            .spurious_recovery(spurious_recovery)
+            .hystart_css_baseline(css_baseline);
 
         // 0 means "use neqo's spec-compliant default PTO scaling".
         if fast_pto > 0 {

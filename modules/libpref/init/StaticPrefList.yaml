@@ -16106,9 +16106,25 @@
 # The slow start algorithm with which to configure neqo.
 # 0 => Classic
 # 1 => HyStart++
+# 2 => SEARCH
 - name: network.http.http3.slow_start_algorithm
   type: RelaxedAtomicUint32
   value: 0
+  mirror: always
+  rust: true
+
+# HTTP3: Whether the HyStart++ alternative CSS baseline value should be used.
+# Has no effect unless network.http.http3.slow_start_algorithm is set to 1, which activates HyStart++.
+- name: network.http.http3.hystart_alternative_css_baseline
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+  rust: true
+
+# HTTP3: Whether Spurious Congestion Event Recovery should be turned on.
+- name: network.http.http3.spurious_recovery
+  type: RelaxedAtomicBool
+  value: true
   mirror: always
   rust: true
 
