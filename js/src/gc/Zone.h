@@ -434,6 +434,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
     return availableChunks_.ref();
   }
 
+  template <typename F>
+  inline void forEachNonEmptyChunk(js::gc::GCRuntime* gc,
+                                   const js::AutoLockGC& lock, F&& func);
+
   js::gc::BufferAllocator bufferAllocator;
 
   // Per-zone data for use by an embedder.

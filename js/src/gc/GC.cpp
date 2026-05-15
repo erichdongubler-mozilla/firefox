@@ -1191,6 +1191,11 @@ bool GCRuntime::freezeSharedAtomsZone() {
 
   atomsZone()->arenas.clearFreeLists();
 
+  {
+    AutoLockGC lock(this);
+    clearCurrentChunk(atomsZone(), lock);
+  }
+
   for (auto kind : AllAllocKinds()) {
     for (auto thing =
              atomsZone()->cellIterUnsafe<TenuredCell>(kind, nurseryIsEmpty);

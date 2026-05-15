@@ -75,6 +75,8 @@ class ChunkPool {
    private:
     ArenaChunk* current_;
   };
+
+  Iter iter() { return Iter(*this); }
 };
 
 } /* namespace gc */
