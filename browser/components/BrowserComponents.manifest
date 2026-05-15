@@ -52,6 +52,7 @@ category browser-window-delayed-startup resource:///modules/taskbartabs/TaskbarT
 
 category browser-window-unload-begin chrome://browser/content/browser-customtitlebar.js CustomTitlebar.uninit
 category browser-window-unload-begin moz-src:///browser/themes/ToolbarIconColor.sys.mjs ToolbarIconColor.uninit
+category browser-window-unload-begin moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs ReportBrokenSite.uninit
 
 category browser-window-unload chrome://browser/content/browser-addons.js gUnifiedExtensions.uninit
 category browser-window-unload chrome://browser/content/browser.js FirefoxViewHandler.uninit

@@ -11,6 +11,13 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
     const { antitracking, browser, devicePixelRatio, screenshot, childData } =
       await this.getWebCompatInfo(options);
 
+    let favicon;
+    try {
+      favicon = this.browsingContext.topFrameElement?.mIconURL;
+    } catch (err) {
+      console.error("Report Broken Site: failed to get favicon", err);
+    }
+
     const reportData = {
       antitracking: {
         blockList: {
@@ -18,14 +25,17 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
           glean: "tabInfo.antitracking",
         },
         blockedOrigins: {
+          isTabSpecific: true,
           value: antitracking.blockedOrigins,
           glean: "tabInfo.antitracking",
         },
         isPrivateBrowsing: {
+          isTabSpecific: true,
           value: antitracking.isPrivateBrowsing,
           glean: "tabInfo.antitracking",
         },
         hasMixedActiveContentBlocked: {
+          isTabSpecific: true,
           value: antitracking.hasMixedActiveContentBlocked,
           glean: "tabInfo.antitracking",
         },
@@ -34,10 +44,12 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
           glean: "tabInfo.antitracking",
         },
         hasTrackingContentBlocked: {
+          isTabSpecific: true,
           value: antitracking.hasTrackingContentBlocked,
           glean: "tabInfo.antitracking",
         },
         btpHasPurgedSite: {
+          isTabSpecific: true,
           value: antitracking.btpHasPurgedSite,
           glean: "tabInfo.antitracking",
         },
@@ -171,16 +183,23 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
     if (childData) {
       const { consoleLog, frameworks, languages, userAgent, url } = childData;
       reportData.tabInfo = {
+        isTabSpecific: true,
         consoleLog: {
           value: consoleLog,
           do_not_preview: true,
           // Only sent to webcompat.com with send more info, not with Glean.
+        },
+        favicon: {
+          value: favicon,
+          do_not_preview: true,
+          // Only to be displayed to the user on the UI, not to be sent to Glean.
         },
         languages: {
           value: languages,
           glean: "tabInfo",
         },
         screenshot: {
+          isTabSpecific: true,
           value: screenshot,
           do_not_preview: true,
           // Binary data not sent by Glean
@@ -197,6 +216,7 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
       };
 
       reportData.frameworks = {
+        isTabSpecific: true,
         fastclick: {
           value: frameworks.fastclick,
           glean: "tabInfo.frameworks",
@@ -240,8 +260,8 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
     let childData;
     try {
       childData = await this.sendQuery("GetWebCompatInfo");
-    } catch (e) {
-      console.error("Report Broken Site: failed to get child data", e);
+    } catch (err) {
+      console.error("Report Broken Site: failed to get child data", err);
     }
 
     const info = {
@@ -257,8 +277,8 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
         options.screenshotFormat || "jpeg",
         options.screenshotQuality || 75
       );
-    } catch (e) {
-      console.error("Report Broken Site: failed to get a screenshot", e);
+    } catch (err) {
+      console.error("Report Broken Site: failed to get a screenshot", err);
     }
 
     return info;
