@@ -96,8 +96,7 @@ export default class MozPageNav extends MozLitElement {
     let currentIndex = pageNavButtons.findIndex(b => b.selected);
     let prev = pageNavButtons[currentIndex - 1];
     if (prev) {
-      prev.activate();
-      prev.buttonEl.focus();
+      prev.activate({ focusVisible: true });
     }
   }
 
@@ -106,8 +105,7 @@ export default class MozPageNav extends MozLitElement {
     let currentIndex = pageNavButtons.findIndex(b => b.selected);
     let next = pageNavButtons[currentIndex + 1];
     if (next) {
-      next.activate();
-      next.buttonEl.focus();
+      next.activate({ focusVisible: true });
     }
   }
 
@@ -227,13 +225,16 @@ export class MozPageNavButton extends MozLitElement {
     return this.getAttribute("view");
   }
 
-  activate() {
+  activate(options = {}) {
+    let focusVisible = options.focusVisible ?? false;
+
     this.dispatchEvent(
       new CustomEvent("change-view", {
         bubbles: true,
         composed: true,
       })
     );
+    this.buttonEl?.focus({ focusVisible });
   }
 
   itemTemplate() {
