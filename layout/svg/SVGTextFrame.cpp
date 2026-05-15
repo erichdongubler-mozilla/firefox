@@ -3484,6 +3484,10 @@ SVGBBox SVGTextFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
         TextRenderedRunFlagsForBBoxContribution(run, aFlags);
     gfxMatrix m = ThebesMatrix(aToBBoxUserspace);
     SVGBBox bboxForRun = run.GetUserSpaceRect(presContext, flags, &m);
+    if (aFlags.contains(SVGBBoxFlag::DisregardCSSZoom)) {
+      bboxForRun.Scale(1 / run.mFrame->Style()->EffectiveZoom().ToFloat());
+    }
+
     bbox.UnionEdges(bboxForRun);
   }
 
