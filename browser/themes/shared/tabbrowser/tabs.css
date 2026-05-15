@@ -45,10 +45,7 @@
   &[lwt-tab-selected="dark"] {
     --tab-selected-color-scheme: dark;
   }
-  /* stylelint-disable-next-line media-query-no-invalid */
-  @media -moz-pref("browser.nova.enabled") {
-    --tab-selected-shadow: var(--tab-box-shadow);
-  }
+  --tab-selected-shadow: var(--tab-box-shadow);
   @media (forced-colors) {
     &:not([lwtheme]) {
       --tab-outline-color: ButtonText;
