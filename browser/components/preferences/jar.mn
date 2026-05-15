@@ -43,6 +43,7 @@ browser.jar:
    content/browser/preferences/config/permissions-data.mjs              (config/permissions-data.mjs)
    content/browser/preferences/config/tabs-browsing.mjs                 (config/tabs-browsing.mjs)
    content/browser/preferences/config/privacy.mjs                       (config/privacy.mjs)
+   content/browser/preferences/config/LegacyPaneMappings.mjs            (config/LegacyPaneMappings.mjs)
    content/browser/preferences/config/search.mjs                        (config/search.mjs)
    content/browser/preferences/config/translations.mjs                  (config/translations.mjs)
    content/browser/preferences/config/SettingGroupManager.mjs           (config/SettingGroupManager.mjs)
