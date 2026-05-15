@@ -67,6 +67,9 @@ add_task(async function testFallbackHiddenWhenPreferredIsDefault() {
       ["intl.multilingual.enabled", true],
       ["intl.multilingual.downloadEnabled", false],
       ["extensions.langpacks.signatures.required", false],
+      // Pin requested locale so this test's precondition (preferred ==
+      // default) holds independent of state leaked by earlier tests.
+      ["intl.locale.requested", Services.locale.defaultLocale],
     ],
   });
 
