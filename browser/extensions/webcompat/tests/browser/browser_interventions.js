@@ -110,13 +110,11 @@ function check_special_content_script_info(source, name, valuesKey, id) {
   if (valuesKey in value) {
     for (const prop of Object.keys(value)) {
       ok(
-        ["all_frames", "must_match_origin_as_fallback", valuesKey].includes(
-          prop
-        ),
+        ["all_frames", "match_origin_as_fallback", valuesKey].includes(prop),
         `${prop} is an expected key for ${name} in id ${id}`
       );
     }
-    for (const prop of ["all_frames", "must_match_origin_as_fallback"]) {
+    for (const prop of ["all_frames", "match_origin_as_fallback"]) {
       ok(
         !(prop in value) || value[prop] === true,
         `${prop} is true or omitted for ${name} in id ${id}`
@@ -131,7 +129,7 @@ function is_non_null_object(value, key, id) {
   const passes = typeof value == "object" && value !== null;
   ok(
     passes,
-    `JSON.stringify(${value}) is a non-null object in ${key} for id ${id}`
+    `${JSON.stringify(value)} is a non-null object in ${key} for id ${id}`
   );
   return passes;
 }
@@ -140,7 +138,7 @@ function is_non_empty_string(value, key, id) {
   const passes = typeof value == "string" && value.trim().length;
   ok(
     passes,
-    `JSON.stringify(${value}) is a non-empty string in ${key} for id ${id}`
+    `${JSON.stringify(value)} is a non-empty string in ${key} for id ${id}`
   );
   return passes;
 }
@@ -153,7 +151,7 @@ function is_valid_css_selector(value, key, id) {
   } catch (_) {}
   ok(
     passes,
-    `JSON.stringify(${value}) is a valid CSS selector in ${key} for id ${id}`
+    `${JSON.stringify(value)} is a non-empty string in ${key} for id ${id}`
   );
   return passes;
 }
@@ -299,6 +297,7 @@ add_task(async function test_json_data() {
 
     const non_custom_names = [
       "content_scripts",
+      "css",
       "hide_alerts",
       "hide_messages",
       "modify_meta_viewport",
@@ -352,6 +351,7 @@ add_task(async function test_json_data() {
       }
       let {
         content_scripts,
+        css,
         hide_alerts,
         hide_messages,
         modify_meta_viewport,
@@ -423,6 +423,7 @@ add_task(async function test_json_data() {
       }
       ok(
         content_scripts ||
+          css ||
           hide_alerts ||
           hide_messages ||
           modify_meta_viewport ||
@@ -463,6 +464,17 @@ add_task(async function test_json_data() {
             fn in helpers.skip_if_functions,
             `'${fn}' is not in the skip_if_functions`
           );
+        }
+      }
+      for (const value of check_special_content_script_info(
+        intervention,
+        "css",
+        "which",
+        id
+      )) {
+        if (is_non_empty_string(value, "css", id)) {
+          // Note: the actual CSS in config.css is checked with mach lint in the python tests.
+          ok(config.css?.[value], `${value} is a CSS file listed on ${id}`);
         }
       }
       for (const value of check_special_content_script_info(

@@ -521,12 +521,42 @@ class ConsoleLoggingScript extends AbstractSpecialContentScriptKey {
   }
 }
 
+class InjectCSSKey extends AbstractSpecialContentScriptKey {
+  static jsonKey = "css";
+  static valuesKey = "which";
+  static metadataKey = "cssToInject";
+  static scriptFilename = "inject_css.js";
+
+  addRegs(regsBuilder) {
+    if (this.needed) {
+      regsBuilder.add("js", {
+        js: [this.constructor.scriptFilename],
+        isolated: true,
+        run_at: "document_start",
+        all_frames: this.needed_on_all_frames,
+        match_origin_as_fallback: this.must_match_origin_as_fallback,
+      });
+    }
+  }
+
+  addToMetadata(metadata, interventionConfig) {
+    if (this.needed) {
+      const sheets = interventionConfig.css;
+      const whichSheets = [...new Set(this.values.flat())];
+      metadata[this.constructor.metadataKey] = whichSheets
+        .map(name => sheets[name] ?? "")
+        .join("\n");
+    }
+  }
+}
+
 // This class encapsulates and manages all of the content scripts keys at once.
 
 class SpecialContentScriptKeys {
   static #classes = [
     HideAlertsKey,
     HideMessagesKey,
+    InjectCSSKey,
     ModifyMetaViewportKey,
     ConsoleLoggingScript,
   ];
@@ -767,6 +797,7 @@ var InterventionHelpers = {
   nonCustomInterventionKeys: Object.freeze(
     new Set([
       "content_scripts",
+      "css",
       "enabled",
       "hide_alerts",
       "hide_messages",
