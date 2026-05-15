@@ -628,45 +628,26 @@ void GMPChild::ProcessingError(Result aCode, const char* aReason) {
   }
 }
 
-PGMPTimerChild* GMPChild::AllocPGMPTimerChild() {
-  return new GMPTimerChild(this);
-}
-
-bool GMPChild::DeallocPGMPTimerChild(PGMPTimerChild* aActor) {
-  MOZ_ASSERT(mTimerChild == static_cast<GMPTimerChild*>(aActor));
-  mTimerChild = nullptr;
-  return true;
-}
-
 GMPTimerChild* GMPChild::GetGMPTimers() {
-  if (!mTimerChild) {
-    PGMPTimerChild* sc = SendPGMPTimerConstructor();
-    if (!sc) {
-      return nullptr;
-    }
-    mTimerChild = static_cast<GMPTimerChild*>(sc);
+  if (auto* timer = SingleManagedOrNull(ManagedPGMPTimerChild())) {
+    return static_cast<GMPTimerChild*>(timer);
   }
-  return mTimerChild;
-}
-
-PGMPStorageChild* GMPChild::AllocPGMPStorageChild() {
-  return new GMPStorageChild(this);
-}
-
-bool GMPChild::DeallocPGMPStorageChild(PGMPStorageChild* aActor) {
-  mStorage = nullptr;
-  return true;
+  auto timerChild = MakeRefPtr<GMPTimerChild>(this);
+  if (!SendPGMPTimerConstructor(timerChild)) {
+    return nullptr;
+  }
+  return timerChild.get();
 }
 
 GMPStorageChild* GMPChild::GetGMPStorage() {
-  if (!mStorage) {
-    PGMPStorageChild* sc = SendPGMPStorageConstructor();
-    if (!sc) {
-      return nullptr;
-    }
-    mStorage = static_cast<GMPStorageChild*>(sc);
+  if (auto* storage = SingleManagedOrNull(ManagedPGMPStorageChild())) {
+    return static_cast<GMPStorageChild*>(storage);
   }
-  return mStorage;
+  auto storageChild = MakeRefPtr<GMPStorageChild>(this);
+  if (!SendPGMPStorageConstructor(storageChild)) {
+    return nullptr;
+  }
+  return storageChild.get();
 }
 
 mozilla::ipc::IPCResult GMPChild::RecvCrashPluginNow() {
