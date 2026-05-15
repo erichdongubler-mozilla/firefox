@@ -27,6 +27,9 @@ describe("AboutPreferences Feed", () => {
     globals.set("NimbusFeatures", {
       newtab: { getAllVariables: sandbox.stub() },
     });
+    globals.set("Management", {
+      asyncLoadSettingsModules: sandbox.stub(),
+    });
   });
   afterEach(() => {
     globals.restore();
