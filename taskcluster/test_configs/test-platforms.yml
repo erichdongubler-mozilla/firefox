@@ -437,6 +437,7 @@ macosx1500-aarch64-vms-shippable/opt:
 
 macosx1500-aarch64-vms-devedition/opt:
     build-platform: macosx64-aarch64-devedition/opt
+    build-signing-label: repackage-macosx64-devedition/opt
     test-sets:
         - macosx1500-aarch64-vms-tests
 
