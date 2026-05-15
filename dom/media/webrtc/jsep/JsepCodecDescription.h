@@ -1003,7 +1003,7 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
   // Some parameters are hierarchical, meaning that a lower value reflects a
   // lower capability.  In these cases, we want the sender to use the lower of
   // the two values. There is also an implied default value which may be higher
-  // than the signalled value.
+  // than the signaled value.
   template <typename T>
   static auto NegotiateHierarchicalParam(const sdp::Direction direction,
                                          const Maybe<T>& localParam,

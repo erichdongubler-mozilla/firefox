@@ -2394,7 +2394,7 @@ nsresult JsepSessionImpl::UpdateDefaultCandidate(
 
       auto& msection = sdp->GetMediaSection(level);
 
-      // Do not add default candidate to a bundle-only m-section, sinice that
+      // Do not add default candidate to a bundle-only m-section, since that
       // might confuse endpoints that do not support bundle-only.
       if (!msection.GetAttributeList().HasAttribute(
               SdpAttribute::kBundleOnlyAttribute)) {

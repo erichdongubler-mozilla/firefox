@@ -387,7 +387,7 @@ void SipccSdpMediaSection::Serialize(std::ostream& os) const {
   }
   os << CRLF;
 
-  // We dont do i=
+  // We don't do i=
 
   if (mConnection) {
     os << *mConnection;
@@ -395,7 +395,7 @@ void SipccSdpMediaSection::Serialize(std::ostream& os) const {
 
   mBandwidths.Serialize(os);
 
-  // We dont do k= because they're evil
+  // We don't do k= because they're evil
 
   os << mAttributeList;
 }

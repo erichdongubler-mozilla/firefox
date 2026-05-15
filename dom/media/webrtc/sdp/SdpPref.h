@@ -35,7 +35,7 @@ class SdpPref {
 
   // How is the alternate used
   enum class AlternateParseModes {
-    Parallel,  // Alternate is always run, if A succedes it is used, otherwise B
+    Parallel,  // Alternate is always run, if A succeeds it is used, otherwise B
                // is used
     Failover,  // Alternate is only run on failure of the primary to parse
     Never,     // Alternate is never run; this is effectively a kill switch

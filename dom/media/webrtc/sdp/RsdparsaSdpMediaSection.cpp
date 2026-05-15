@@ -212,7 +212,7 @@ void RsdparsaSdpMediaSection::Serialize(std::ostream& os) const {
   }
   os << CRLF;
 
-  // We dont do i=
+  // We don't do i=
 
   if (mConnection) {
     os << *mConnection;
@@ -222,7 +222,7 @@ void RsdparsaSdpMediaSection::Serialize(std::ostream& os) const {
   sdp_serialize_bandwidth(sdp_get_media_bandwidth_vec(GetSection()), &bwString);
   os << bwString.get();
 
-  // We dont do k= because they're evil
+  // We don't do k= because they're evil
 
   os << *mAttributeList;
 }

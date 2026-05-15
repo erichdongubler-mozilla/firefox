@@ -153,7 +153,7 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   /**
    * Override the remote ssrc configured on mRecvStreamConfig.
    *
-   * Recreates and restarts the recv stream if needed. The overriden value is
+   * Recreates and restarts the recv stream if needed. The overridden value is
    * overwritten the next time the mControl.mRemoteSsrc mirror changes value.
    *
    * Call thread only.

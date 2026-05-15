@@ -93,7 +93,7 @@ static std::pair<H264_PROFILE, H264_LEVEL> ConvertProfileLevel(
       webrtc::ParseSdpForH264ProfileLevelId(aParameters);
 
   if (!profileLevel) {
-    // TODO: Eveluate if there is a better default setting.
+    // TODO: Evaluate if there is a better default setting.
     return std::make_pair(H264_PROFILE::H264_PROFILE_MAIN,
                           H264_LEVEL::H264_LEVEL_3_1);
   }
