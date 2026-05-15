@@ -407,61 +407,7 @@ internal class ReleaseMetricController(
 
         Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.AMP_SUGGESTION_IMPRESSED,
         Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.WIKIPEDIA_SUGGESTION_IMPRESSED,
-        -> {
-            val impressionInfo = metadata?.get(FxSuggestFacts.MetadataKeys.INTERACTION_INFO)
-            val engagementAbandoned = metadata?.get(FxSuggestFacts.MetadataKeys.ENGAGEMENT_ABANDONED) as? Boolean
-                ?: false
-
-            // Record an event for this impression in the `events` ping. These events include the `client_id`, and
-            // we record them for engaged and abandoned search sessions.
-            when (impressionInfo) {
-                is FxSuggestInteractionInfo.Amp -> {
-                    Awesomebar.sponsoredSuggestionImpressed.record(
-                        Awesomebar.SponsoredSuggestionImpressedExtra(
-                            provider = "amp",
-                        ),
-                    )
-                }
-                is FxSuggestInteractionInfo.Wikipedia -> {
-                    Awesomebar.nonSponsoredSuggestionImpressed.record(
-                        Awesomebar.NonSponsoredSuggestionImpressedExtra(
-                            provider = "wikipedia",
-                        ),
-                    )
-                }
-            }
-
-            // Submit a separate `fx-suggest` ping for this impression. These pings do not include the `client_id`,
-            // and we submit them for engaged search sessions only.
-            if (!engagementAbandoned) {
-                FxSuggest.pingType.set("fxsuggest-impression")
-                (metadata?.get(FxSuggestFacts.MetadataKeys.CLIENT_COUNTRY) as? String)?.let {
-                    FxSuggest.country.set(it)
-                }
-                (metadata?.get(FxSuggestFacts.MetadataKeys.IS_CLICKED) as? Boolean)?.let {
-                    FxSuggest.isClicked.set(it)
-                }
-                (metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)?.let {
-                    FxSuggest.position.set(it)
-                }
-                when (impressionInfo) {
-                    is FxSuggestInteractionInfo.Amp -> {
-                        FxSuggest.blockId.set(impressionInfo.blockId)
-                        FxSuggest.advertiser.set(impressionInfo.advertiser)
-                        FxSuggest.reportingUrl.set(impressionInfo.reportingUrl)
-                        FxSuggest.iabCategory.set(impressionInfo.iabCategory)
-                        FxSuggest.contextId.set(UUID.fromString(impressionInfo.contextId))
-                    }
-                    is FxSuggestInteractionInfo.Wikipedia -> {
-                        FxSuggest.advertiser.set("wikipedia")
-                        FxSuggest.contextId.set(UUID.fromString(impressionInfo.contextId))
-                    }
-                }
-                Pings.fxSuggest.submit()
-            }
-
-            Unit
-        }
+        -> recordFxSuggestImpression(metadata)
 
         Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.SUGGESTION_QUERY_COUNT -> {
             FxSuggest.pingType.set("fxsuggest-query")
@@ -607,6 +553,60 @@ internal class ReleaseMetricController(
 
                 it.track(event)
             }
+    }
+
+    private fun recordFxSuggestImpression(metadata: Map<String, Any>?) {
+        val impressionInfo = metadata?.get(FxSuggestFacts.MetadataKeys.INTERACTION_INFO)
+        val engagementAbandoned = metadata?.get(FxSuggestFacts.MetadataKeys.ENGAGEMENT_ABANDONED) as? Boolean
+            ?: false
+
+        // Record an event for this impression in the `events` ping. These events include the `client_id`, and
+        // we record them for engaged and abandoned search sessions.
+        when (impressionInfo) {
+            is FxSuggestInteractionInfo.Amp -> {
+                Awesomebar.sponsoredSuggestionImpressed.record(
+                    Awesomebar.SponsoredSuggestionImpressedExtra(
+                        provider = "amp",
+                    ),
+                )
+            }
+            is FxSuggestInteractionInfo.Wikipedia -> {
+                Awesomebar.nonSponsoredSuggestionImpressed.record(
+                    Awesomebar.NonSponsoredSuggestionImpressedExtra(
+                        provider = "wikipedia",
+                    ),
+                )
+            }
+        }
+
+        // Submit a separate `fx-suggest` ping for this impression. These pings do not include the `client_id`,
+        // and we submit them for engaged search sessions only.
+        if (engagementAbandoned) return
+
+        FxSuggest.pingType.set("fxsuggest-impression")
+        (metadata?.get(FxSuggestFacts.MetadataKeys.CLIENT_COUNTRY) as? String)?.let {
+            FxSuggest.country.set(it)
+        }
+        (metadata?.get(FxSuggestFacts.MetadataKeys.IS_CLICKED) as? Boolean)?.let {
+            FxSuggest.isClicked.set(it)
+        }
+        (metadata?.get(FxSuggestFacts.MetadataKeys.POSITION) as? Long)?.let {
+            FxSuggest.position.set(it)
+        }
+        when (impressionInfo) {
+            is FxSuggestInteractionInfo.Amp -> {
+                FxSuggest.blockId.set(impressionInfo.blockId)
+                FxSuggest.advertiser.set(impressionInfo.advertiser)
+                FxSuggest.reportingUrl.set(impressionInfo.reportingUrl)
+                FxSuggest.iabCategory.set(impressionInfo.iabCategory)
+                FxSuggest.contextId.set(UUID.fromString(impressionInfo.contextId))
+            }
+            is FxSuggestInteractionInfo.Wikipedia -> {
+                FxSuggest.advertiser.set("wikipedia")
+                FxSuggest.contextId.set(UUID.fromString(impressionInfo.contextId))
+            }
+        }
+        Pings.fxSuggest.submit()
     }
 
     private fun isInitialized(type: MetricServiceType): Boolean = initialized.contains(type)
