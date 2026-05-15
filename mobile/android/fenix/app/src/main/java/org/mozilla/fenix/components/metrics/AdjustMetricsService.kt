@@ -108,6 +108,7 @@ class AdjustMetricsService(
 
             config.setLogLevel(LogLevel.SUPPRESS)
 
+            config.disableFbIdReading()
             applyThirdPartySharingSettings(
                 distribution = distributionIdManager.getDistribution(),
                 isUserMetaAttributed = settings.isUserMetaAttributed,
