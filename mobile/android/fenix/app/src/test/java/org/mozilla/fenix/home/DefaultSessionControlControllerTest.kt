@@ -46,8 +46,8 @@ import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
-import org.mozilla.fenix.components.share.ShareSheetLauncher
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
@@ -89,7 +89,7 @@ class DefaultSessionControlControllerTest {
     private val selectTabUseCase: TabsUseCases = mockk(relaxed = true)
     private val fenixBrowserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
     private val settings: Settings = mockk(relaxed = true)
-    private val shareSheetLauncher: ShareSheetLauncher = mockk(relaxed = true)
+    private val shareUseCases: ShareUseCases = mockk(relaxed = true)
     private val searchEngine = SearchEngine(
         id = "test",
         name = "Test Engine",
@@ -329,31 +329,7 @@ class DefaultSessionControlControllerTest {
     }
 
     @Test
-    fun handleCollectionShareTabsClicked() {
-        val collection = mockk<TabCollection> {
-            every { tabs } returns emptyList()
-            every { title } returns ""
-        }
-        createController().handleCollectionShareTabsClicked(collection)
-
-        assertNotNull(Collections.shared.testGetValue())
-        val recordedEvents = Collections.shared.testGetValue()!!
-        assertEquals(1, recordedEvents.size)
-        assertEquals(null, recordedEvents.single().extra)
-
-        verify {
-            navController.navigate(
-                match<NavDirections> { it.actionId == R.id.action_global_shareFragment },
-                null,
-            )
-        }
-    }
-
-    @Config(sdk = [34])
-    @Test
-    fun `GIVEN native share sheet is enabled AND device supports it WHEN handleCollectionShareTabsClicked is called THEN launch the system share sheet with the collection title as subject`() {
-        every { settings.nativeShareSheetEnabled } returns true
-
+    fun `WHEN handleCollectionShareTabsClicked is called THEN share use case is invoked with the collection items and title as subject`() {
         val collectionTitle = "Reading list"
         val collection = mockk<TabCollection> {
             every { tabs } returns emptyList()
@@ -362,34 +338,16 @@ class DefaultSessionControlControllerTest {
 
         createController().handleCollectionShareTabsClicked(collection)
 
+        assertNotNull(Collections.shared.testGetValue())
+        val recordedEvents = Collections.shared.testGetValue()!!
+        assertEquals(1, recordedEvents.size)
+        assertEquals(null, recordedEvents.single().extra)
+
         verify {
-            shareSheetLauncher.showSystemShareSheet(
+            shareUseCases.shareItems(
                 items = emptyList(),
                 subject = collectionTitle,
-            )
-        }
-        verify(exactly = 0) { navController.navigate(any<NavDirections>(), null) }
-    }
-
-    @Config(sdk = [33])
-    @Test
-    fun `GIVEN native share sheet is enabled AND device does not support it WHEN handleCollectionShareTabsClicked is called THEN navigate to share fragment`() {
-        every { settings.nativeShareSheetEnabled } returns true
-
-        val collection = mockk<TabCollection> {
-            every { tabs } returns emptyList()
-            every { title } returns "Reading list"
-        }
-
-        createController().handleCollectionShareTabsClicked(collection)
-
-        verify(exactly = 0) {
-            shareSheetLauncher.showSystemShareSheet(items = any(), subject = any())
-        }
-        verify {
-            navController.navigate(
-                match<NavDirections> { it.actionId == R.id.action_global_shareFragment },
-                null,
+                navigateToShareFragment = any(),
             )
         }
     }
@@ -752,7 +710,7 @@ class DefaultSessionControlControllerTest {
             appStore = appStore,
             navControllerRef = WeakReference(navController),
             viewLifecycleScope = TestScope(),
-            shareSheetLauncher = shareSheetLauncher,
+            shareUseCases = shareUseCases,
             showAddSearchWidgetPrompt = { showAddSearchWidgetPromptCalled = true },
             requestSetDefaultBrowserPrompt = { requestSetDefaultBrowserPromptCalled = true },
         ).apply {

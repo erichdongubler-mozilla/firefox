@@ -70,7 +70,6 @@ import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.support.utils.ext.top
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.automotive.isAndroidAutomotiveAvailable
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
@@ -93,7 +92,6 @@ import org.mozilla.fenix.components.menu.store.MenuStore
 import org.mozilla.fenix.components.menu.store.SummarizationMenuState
 import org.mozilla.fenix.components.menu.store.TranslationInfo
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
-import org.mozilla.fenix.components.share.DefaultShareSheetLauncher
 import org.mozilla.fenix.ext.canGoBackInHistoryOrToStories
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
@@ -354,6 +352,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 openToBrowser = ::openToBrowser,
                                 sessionUseCases = components.useCases.sessionUseCases,
                                 webAppUseCases = webAppUseCases,
+                                shareUseCases = components.useCases.shareUseCases,
                                 settings = settings,
                                 onDismiss = {
                                     withContext(Dispatchers.Main) {
@@ -363,10 +362,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 scope = coroutineScope,
                                 customTab = customTab,
                                 webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
-                                shareSheetLauncher = DefaultShareSheetLauncher(
-                                    applicationContext = requireContext().applicationContext,
-                                    homeActivityClass = HomeActivity::class.java,
-                                ),
                             ),
                             MenuTelemetryMiddleware(
                                 accessPoint = args.accesspoint,

@@ -20,7 +20,6 @@ import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.EngineAction
-import mozilla.components.browser.state.action.ShareResourceAction
 import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.ContentState
@@ -32,7 +31,6 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
-import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.pwa.WebAppUseCases
 import mozilla.components.feature.session.SessionUseCases
@@ -57,7 +55,7 @@ import org.mozilla.fenix.components.menu.store.BrowserMenuState
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
-import org.mozilla.fenix.components.share.ShareSheetLauncher
+import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.settings.SupportUtils.AMO_HOMEPAGE_FOR_ANDROID
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.Stories.markAsOpenedFromHomeScreen
@@ -67,7 +65,6 @@ import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
 import org.mozilla.fenix.webcompat.fake.FakeWebCompatReporterMoreInfoSender
 import org.mozilla.fenix.webcompat.store.WebCompatReporterState
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
@@ -82,7 +79,7 @@ class MenuNavigationMiddlewareTest {
     private val sessionUseCases: SessionUseCases = mockk(relaxed = true)
     private val webAppUseCases: WebAppUseCases = mockk(relaxed = true)
     private val settings: Settings = mockk(relaxed = true)
-    private val shareSheetLauncher: ShareSheetLauncher = mockk(relaxed = true)
+    private val shareUseCases: ShareUseCases = mockk(relaxed = true)
 
     @Test
     fun `GIVEN account state is authenticated WHEN navigate to Mozilla account action is dispatched THEN dispatch navigate action to Mozilla account settings`() = runTest {
@@ -443,11 +440,8 @@ class MenuNavigationMiddlewareTest {
         }
     }
 
-    @Config(sdk = [34])
     @Test
-    fun `GIVEN native share sheet is active AND device supports it WHEN navigate to share action is dispatched THEN navigate to native share sheet`() = runTest {
-        every { settings.nativeShareSheetEnabled } returns true
-
+    fun `WHEN navigate to share action is dispatched THEN share use case is invoked and onDismiss is called`() = runTest {
         val title = "Mozilla"
         val url = "https://mozilla.org"
         val id = "123"
@@ -471,51 +465,20 @@ class MenuNavigationMiddlewareTest {
         testScheduler.advanceUntilIdle()
 
         verify {
-            shareSheetLauncher.showSystemShareSheet(id, url, title, false)
+            shareUseCases.shareUrl(
+                id = id,
+                url = url,
+                title = title,
+                isPrivate = false,
+                isCustomTab = false,
+                navigateToShareFragment = any(),
+            )
         }
         assertTrue(dismissWasCalled)
     }
 
-    @Config(sdk = [33])
     @Test
-    fun `GIVEN native share sheet is active AND device does not support it WHEN navigate to share action is dispatched THEN navigate to share fragment`() = runTest {
-        every { settings.nativeShareSheetEnabled } returns true
-
-        val title = "Mozilla"
-        val url = "https://mozilla.org"
-        val id = "123"
-        val tab = createTab(
-            id = id,
-            url = url,
-            title = title,
-        )
-
-        val store = createStore(
-            menuState = MenuState(
-                browserMenuState = BrowserMenuState(
-                    selectedTab = tab,
-                ),
-            ),
-            scope = this,
-        )
-        val directionsSlot = slot<NavDirections>()
-        val optionsSlot = slot<NavOptions>()
-
-        store.dispatch(MenuAction.Navigate.Share)
-        testScheduler.advanceUntilIdle()
-
-        verify(exactly = 0) { shareSheetLauncher.showSystemShareSheet(any(), any<String>(), any(), any(), any()) }
-        verify { navController.navigate(capture(directionsSlot), capture(optionsSlot)) }
-
-        val shareData = directionsSlot.captured.arguments
-            .getParcelableArray("data", ShareData::class.java)?.firstOrNull()
-        assertEquals(R.id.action_global_shareFragment, directionsSlot.captured.actionId)
-        assertEquals(url, shareData?.url)
-        assertEquals(title, shareData?.title)
-    }
-
-    @Test
-    fun `GIVEN reader view is active WHEN navigate to share action is dispatched THEN navigate to share sheet`() = runTest {
+    fun `GIVEN reader view is active WHEN navigate to share action is dispatched THEN share use case is invoked with the active url`() = runTest {
         val title = "Mozilla"
         val readerUrl = "moz-extension://1234"
         val activeUrl = "https://mozilla.org"
@@ -532,24 +495,24 @@ class MenuNavigationMiddlewareTest {
                 ),
             ),
         )
-        val directionsSlot = slot<NavDirections>()
-        val optionsSlot = slot<NavOptions>()
 
         store.dispatch(MenuAction.Navigate.Share)
         testScheduler.advanceUntilIdle()
 
-        verify { navController.navigate(capture(directionsSlot), capture(optionsSlot)) }
-        val shareData = directionsSlot.captured.arguments
-            .getParcelableArray("data", ShareData::class.java)?.firstOrNull()
-        assertEquals(R.id.action_global_shareFragment, directionsSlot.captured.actionId)
-        assertEquals(activeUrl, shareData?.url)
-        assertEquals(title, shareData?.title)
-        assertEquals(R.id.browserFragment, optionsSlot.captured.popUpToId)
-        assertFalse(optionsSlot.captured.isPopUpToInclusive())
+        verify {
+            shareUseCases.shareUrl(
+                id = readerTab.id,
+                url = activeUrl,
+                title = title,
+                isPrivate = false,
+                isCustomTab = false,
+                navigateToShareFragment = any(),
+            )
+        }
     }
 
     @Test
-    fun `GIVEN reader view is inactive WHEN navigate to share action is dispatched THEN navigate to share sheet`() = runTest {
+    fun `GIVEN reader view is inactive WHEN navigate to share action is dispatched THEN share use case is invoked with the tab url`() = runTest {
         val url = "https://www.mozilla.org"
         val title = "Mozilla"
         val tab = createTab(
@@ -564,23 +527,24 @@ class MenuNavigationMiddlewareTest {
                 ),
             ),
         )
-        val directionsSlot = slot<NavDirections>()
-        val optionsSlot = slot<NavOptions>()
 
         store.dispatch(MenuAction.Navigate.Share)
         testScheduler.advanceUntilIdle()
 
-        verify { navController.navigate(capture(directionsSlot), capture(optionsSlot)) }
-        val shareData = directionsSlot.captured.arguments
-            .getParcelableArray("data", ShareData::class.java)?.firstOrNull()
-        assertEquals(R.id.action_global_shareFragment, directionsSlot.captured.actionId)
-        assertEquals(url, shareData?.url)
-        assertEquals(title, shareData?.title)
-        assertEquals(R.id.browserFragment, optionsSlot.captured.popUpToId)
+        verify {
+            shareUseCases.shareUrl(
+                id = tab.id,
+                url = url,
+                title = title,
+                isPrivate = false,
+                isCustomTab = false,
+                navigateToShareFragment = any(),
+            )
+        }
     }
 
     @Test
-    fun `GIVEN the current tab is a local PDF WHEN share menu item is pressed THEN trigger ShareResourceAction`() = runTest {
+    fun `GIVEN the current tab is a local PDF WHEN share menu item is pressed THEN share use case is invoked with the PDF url`() = runTest {
         val id = "1"
         val url = "content://pdf.pdf"
         val tab = createTab(
@@ -602,13 +566,20 @@ class MenuNavigationMiddlewareTest {
         store.dispatch(MenuAction.Navigate.Share)
         testScheduler.advanceUntilIdle()
 
-        verify { browserStore.dispatch(any<ShareResourceAction.AddShareAction>()) }
-        verify(exactly = 0) { navController.navigate(any<NavDirections>(), any<NavOptions>()) }
-        verify(exactly = 0) { shareSheetLauncher.showSystemShareSheet(any(), any<String>(), any(), any(), any()) }
+        verify {
+            shareUseCases.shareUrl(
+                id = id,
+                url = url,
+                title = any(),
+                isPrivate = any(),
+                isCustomTab = false,
+                navigateToShareFragment = any(),
+            )
+        }
     }
 
     @Test
-    fun `GIVEN the current tab is a custom tab WHEN navigate to share action is dispatched THEN navigate to share sheet`() = runTest {
+    fun `GIVEN the current tab is a custom tab WHEN navigate to share action is dispatched THEN share use case is invoked with isCustomTab true`() = runTest {
         val url = "https://www.mozilla.org"
         val title = "Mozilla"
         val customTab = CustomTabSessionState(
@@ -623,19 +594,20 @@ class MenuNavigationMiddlewareTest {
             customTab = customTab,
             menuState = MenuState(),
         )
-        val directionsSlot = slot<NavDirections>()
-        val optionsSlot = slot<NavOptions>()
 
         store.dispatch(MenuAction.Navigate.Share)
         testScheduler.advanceUntilIdle()
 
-        verify { navController.navigate(capture(directionsSlot), capture(optionsSlot)) }
-        val shareData = directionsSlot.captured.arguments
-            .getParcelableArray("data", ShareData::class.java)?.firstOrNull()
-        assertEquals(R.id.action_global_shareFragment, directionsSlot.captured.actionId)
-        assertEquals(url, shareData?.url)
-        assertEquals(title, shareData?.title)
-        assertEquals(R.id.externalAppBrowserFragment, optionsSlot.captured.popUpToId)
+        verify {
+            shareUseCases.shareUrl(
+                id = customTab.id,
+                url = url,
+                title = title,
+                isPrivate = false,
+                isCustomTab = true,
+                navigateToShareFragment = any(),
+            )
+        }
     }
 
     @Test
@@ -1186,12 +1158,12 @@ class MenuNavigationMiddlewareTest {
                 openToBrowser = openToBrowser,
                 sessionUseCases = sessionUseCases,
                 webAppUseCases = webAppUseCases,
+                shareUseCases = shareUseCases,
                 settings = settings,
                 onDismiss = onDismiss,
                 scope = scope,
                 customTab = customTab,
                 webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
-                shareSheetLauncher = shareSheetLauncher,
             ),
         ),
     )

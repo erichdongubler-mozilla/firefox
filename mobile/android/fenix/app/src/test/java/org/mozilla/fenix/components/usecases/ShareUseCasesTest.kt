@@ -131,6 +131,20 @@ class ShareUseCasesTest {
 
     @Config(sdk = [34])
     @Test
+    fun `GIVEN url is null WHEN shareUrl is called THEN navigate to share fragment`() {
+        shareUseCases.shareUrl(
+            id = "123",
+            url = null,
+            title = "Mozilla",
+            navigateToShareFragment = navigateToShareFragment,
+        )
+
+        assertTrue(shareSheetLauncher.urlShares.isEmpty())
+        assertTrue(navigatedToShareFragment)
+    }
+
+    @Config(sdk = [34])
+    @Test
     fun `GIVEN a list of share data and subject WHEN shareItems is called THEN system share sheet is launched`() {
         val items = listOf(ShareData(url = "https://mozilla.org", title = "Mozilla"))
 

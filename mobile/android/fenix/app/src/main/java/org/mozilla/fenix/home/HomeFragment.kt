@@ -95,7 +95,6 @@ import org.mozilla.fenix.components.appstate.AppAction.SportsWidgetAction
 import org.mozilla.fenix.components.appstate.OrientationMode
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.metrics.installSourcePackage
-import org.mozilla.fenix.components.share.DefaultShareSheetLauncher
 import org.mozilla.fenix.components.toolbar.BottomToolbarContainerView
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.compose.snackbar.SnackbarState
@@ -1357,11 +1356,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
             appStore = requireComponents.appStore,
             navControllerRef = WeakReference(findNavController()),
             viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
-            shareSheetLauncher = DefaultShareSheetLauncher(
-                applicationContext = requireContext().applicationContext,
-                homeActivityClass = HomeActivity::class.java,
-                scope = viewLifecycleOwner.lifecycleScope,
-            ),
+            shareUseCases = requireComponents.useCases.shareUseCases,
             showAddSearchWidgetPrompt = ::showAddSearchWidgetPrompt,
             requestSetDefaultBrowserPrompt = {
                 maybeRequestDefaultBrowserPrompt(

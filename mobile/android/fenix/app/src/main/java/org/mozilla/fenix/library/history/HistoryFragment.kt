@@ -108,8 +108,6 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.history.DefaultPagedHistoryProvider
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
-import org.mozilla.fenix.components.share.DefaultShareSheetLauncher
-import org.mozilla.fenix.components.share.isSystemShareSheetSupported
 import org.mozilla.fenix.databinding.FragmentHistoryBinding
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
@@ -698,18 +696,15 @@ class HistoryFragment :
     private fun share(data: List<ShareData>) {
         GleanHistory.shared.record(NoExtras())
 
-        if (requireContext().settings().nativeShareSheetEnabled && isSystemShareSheetSupported) {
-            DefaultShareSheetLauncher(
-                applicationContext = requireContext().applicationContext,
-                homeActivityClass = HomeActivity::class.java,
-                scope = viewLifecycleOwner.lifecycleScope,
-            ).showSystemShareSheet(items = data)
-        } else {
-            val directions = HistoryFragmentDirections.actionGlobalShareFragment(
-                data = data.toTypedArray(),
-            )
-            navigateToHistoryFragment(directions)
-        }
+        requireComponents.useCases.shareUseCases.shareItems(
+            items = data,
+            navigateToShareFragment = {
+                val directions = HistoryFragmentDirections.actionGlobalShareFragment(
+                    data = data.toTypedArray(),
+                )
+                navigateToHistoryFragment(directions)
+            },
+        )
     }
 
     private fun navigateToHistoryFragment(directions: NavDirections) {

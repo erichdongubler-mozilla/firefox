@@ -36,11 +36,10 @@ import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
 import org.mozilla.fenix.components.menu.toFenixFxAEntryPoint
-import org.mozilla.fenix.components.share.ShareSheetLauncher
-import org.mozilla.fenix.components.share.createPdfShareAction
-import org.mozilla.fenix.components.share.isSystemShareSheetSupported
+import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.settings.SupportUtils.AMO_HOMEPAGE_FOR_ANDROID
+import org.mozilla.fenix.share.ShareFragment
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.Stories.hasUrlOfAHomeScreenStory
 import org.mozilla.fenix.utils.Stories.hasUrlOfAStoriesScreenStory
@@ -58,12 +57,12 @@ import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
  * in a new browser tab.
  * @param sessionUseCases [SessionUseCases] used to reload the page and navigate back/forward.
  * @param webAppUseCases [WebAppUseCases] used for adding items to the home screen.
+ * @param shareUseCases [ShareUseCases] for sharing content via the system share sheet or the in-app [ShareFragment].
  * @param settings Used to check [Settings] when adding items to the home screen.
  * @param onDismiss Callback invoked to dismiss the menu dialog.
  * @param scope [CoroutineScope] used to launch coroutines.
  * @param customTab [CustomTabSessionState] used for sharing custom tab.
  * @param webCompatReporterMoreInfoSender [WebCompatReporterMoreInfoSender] used
- * @param shareSheetLauncher [ShareSheetLauncher] used to launch the share sheet.
  * to send WebCompat info to webcompat.com.
  */
 @Suppress("LongParameterList")
@@ -73,12 +72,12 @@ class MenuNavigationMiddleware(
     private val openToBrowser: (params: BrowserNavigationParams) -> Unit,
     private val sessionUseCases: SessionUseCases,
     private val webAppUseCases: WebAppUseCases,
+    private val shareUseCases: ShareUseCases,
     private val settings: Settings,
     private val onDismiss: suspend () -> Unit,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
     private val customTab: CustomTabSessionState?,
     private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender,
-    private val shareSheetLauncher: ShareSheetLauncher,
 ) : Middleware<MenuState, MenuAction> {
 
     @Suppress("CyclomaticComplexMethod", "LongMethod", "CognitiveComplexMethod")
@@ -211,28 +210,14 @@ class MenuNavigationMiddleware(
                 is MenuAction.Navigate.Share -> {
                     val session: SessionState? = customTab ?: currentState.browserMenuState?.selectedTab
                     val url = customTab?.content?.url ?: currentState.browserMenuState?.selectedTab?.getUrl()
-                    val pdfShareAction = browserStore.createPdfShareAction(session?.id, url)
 
-                    when {
-                        pdfShareAction != null -> {
-                            browserStore.dispatch(pdfShareAction)
-                        }
-
-                        // Show the system share sheet if it is supported.
-                        settings.nativeShareSheetEnabled && isSystemShareSheetSupported -> {
-                            url?.let {
-                                shareSheetLauncher.showSystemShareSheet(
-                                    id = session?.id,
-                                    longUrl = it,
-                                    title = session?.content?.title,
-                                    isPrivate = session?.content?.private ?: false,
-                                    isCustomTab = customTab != null,
-                                )
-                            }
-                        }
-
-                        // Show the custom Share fragment when the system share sheet is not supported.
-                        else -> {
+                    shareUseCases.shareUrl(
+                        id = session?.id,
+                        url = url,
+                        title = session?.content?.title,
+                        isPrivate = session?.content?.private ?: false,
+                        isCustomTab = customTab != null,
+                        navigateToShareFragment = {
                             val shareData = arrayOf(ShareData(title = session?.content?.title, url = url))
                             val popUpToId = if (customTab != null) {
                                 R.id.externalAppBrowserFragment
@@ -251,8 +236,8 @@ class MenuNavigationMiddleware(
                                     .setPopUpTo(popUpToId, false)
                                     .build(),
                             )
-                        }
-                    }
+                        },
+                    )
 
                     onDismiss()
                 }

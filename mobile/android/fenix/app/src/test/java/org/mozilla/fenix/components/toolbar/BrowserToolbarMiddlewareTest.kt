@@ -160,6 +160,7 @@ import org.mozilla.fenix.components.toolbar.TabCounterInteractions.CloseCurrentT
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterClicked
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterLongClicked
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.directionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.settings.ShortcutType
@@ -213,7 +214,7 @@ class BrowserToolbarMiddlewareTest {
     private val publicSuffixList = PublicSuffixList(testContext)
     private val bookmarksStorage: BookmarksStorage = mockk()
     private val ipProtectionStore = IPProtectionStore()
-    private val shareSheetLauncher: ShareSheetLauncher = mockk(relaxed = true)
+    private val shareUseCases: ShareUseCases = mockk(relaxed = true)
     private lateinit var appStore: AppStore
 
     @Before
@@ -1316,6 +1317,7 @@ class BrowserToolbarMiddlewareTest {
         val middleware = buildMiddleware(
             browserScreenStore = browserScreenStore,
             browserStore = browserStore,
+            shareUseCases = ShareUseCases(browserStore, mockk<ShareSheetLauncher>(relaxed = true), settings),
             isWideScreen = { true },
         )
         val toolbarStore = buildStore(middleware)
@@ -1352,6 +1354,7 @@ class BrowserToolbarMiddlewareTest {
         val middleware = buildMiddleware(
             browserScreenStore = browserScreenStore,
             browserStore = browserStore,
+            shareUseCases = ShareUseCases(browserStore, mockk<ShareSheetLauncher>(relaxed = true), settings),
             isWideScreen = { true },
         )
         val toolbarStore = buildStore(middleware)
@@ -1394,6 +1397,7 @@ class BrowserToolbarMiddlewareTest {
         val middleware = buildMiddleware(
             browserScreenStore = browserScreenStore,
             browserStore = browserStore,
+            shareUseCases = ShareUseCases(browserStore, mockk<ShareSheetLauncher>(relaxed = true), settings),
             isWideScreen = { true },
         )
         val toolbarStore = buildStore(middleware)
@@ -1422,13 +1426,11 @@ class BrowserToolbarMiddlewareTest {
         }
     }
 
-    @Config(sdk = [34])
     @Test
-    fun `GIVEN native share sheet is enabled AND device supports it WHEN the share shortcut is clicked THEN launch the system share sheet`() {
+    fun `WHEN the share shortcut is clicked THEN the share use case is invoked with the current tab's details`() {
         settings.isTabStripEnabled = true
         settings.shouldUseExpandedToolbar = false
         settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
-        settings.nativeShareSheetEnabled = true
 
         every { navController.currentDestination?.id } returns R.id.browserFragment
 
@@ -1452,65 +1454,13 @@ class BrowserToolbarMiddlewareTest {
         toolbarStore.dispatch(shareButton.onClick as BrowserToolbarEvent)
 
         verify {
-            shareSheetLauncher.showSystemShareSheet(
+            shareUseCases.shareUrl(
                 id = currentTab.id,
-                longUrl = currentTab.content.url,
+                url = currentTab.content.url,
                 title = currentTab.content.title,
                 isPrivate = false,
                 isCustomTab = false,
-            )
-        }
-        verify(exactly = 0) { navController.navigate(any<NavDirections>(), null) }
-    }
-
-    @Config(sdk = [33])
-    @Test
-    fun `GIVEN native share sheet is enabled AND device does not support it WHEN the share shortcut is clicked THEN navigate to share fragment`() {
-        settings.isTabStripEnabled = true
-        settings.shouldUseExpandedToolbar = false
-        settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
-        settings.nativeShareSheetEnabled = true
-
-        every { navController.currentDestination?.id } returns R.id.browserFragment
-        every { navController.navigate(any<NavDirections>(), null) } just Runs
-
-        val browserScreenStore = buildBrowserScreenStore()
-        val currentTab = createTab(url = "https://www.mozilla.org", title = "Mozilla", private = false)
-        val browserStore = BrowserStore(
-            initialState = BrowserState(
-                tabs = listOf(currentTab),
-                selectedTabId = currentTab.id,
-            ),
-        )
-        val middleware = buildMiddleware(
-            browserScreenStore = browserScreenStore,
-            browserStore = browserStore,
-            isWideScreen = { true },
-        )
-        val toolbarStore = buildStore(middleware)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        val shareButton = toolbarStore.state.displayState.browserActionsEnd[0] as ActionButtonRes
-        toolbarStore.dispatch(shareButton.onClick as BrowserToolbarEvent)
-
-        verify(exactly = 0) {
-            shareSheetLauncher.showSystemShareSheet(any(), any<String>(), any(), any(), any())
-        }
-        verify {
-            navController.navigate(
-                directions = directionsEq(
-                    BrowserFragmentDirections.actionGlobalShareFragment(
-                        sessionId = currentTab.id,
-                        data = arrayOf(
-                            ShareData(
-                                url = currentTab.content.url,
-                                title = currentTab.content.title,
-                            ),
-                        ),
-                        showPage = true,
-                    ),
-                ),
-                navOptions = null,
+                navigateToShareFragment = any(),
             )
         }
     }
@@ -3753,11 +3703,11 @@ class BrowserToolbarMiddlewareTest {
         bookmarksStorage: BookmarksStorage = this.bookmarksStorage,
         useCases: UseCases = this.useCases,
         sessionUseCases: SessionUseCases = SessionUseCases(browserStore),
+        shareUseCases: ShareUseCases = this.shareUseCases,
         nimbusComponents: NimbusComponents = this.nimbusComponents,
         clipboard: ClipboardHandler = this.clipboard,
         publicSuffixList: PublicSuffixList = this.publicSuffixList,
         settings: Settings = this.settings,
-        shareSheetLauncher: ShareSheetLauncher = this.shareSheetLauncher,
         navController: NavController = this.navController,
         browsingModeManager: BrowsingModeManager = this.browsingModeManager,
         readerModeController: ReaderModeController = this.readerModeController,
@@ -3776,18 +3726,18 @@ class BrowserToolbarMiddlewareTest {
         bookmarksStorage = bookmarksStorage,
         trackingProtectionUseCases = trackingProtectionUseCases,
         useCases = useCases,
+        sessionUseCases = sessionUseCases,
+        shareUseCases = shareUseCases,
         nimbusComponents = nimbusComponents,
         clipboard = clipboard,
         publicSuffixList = publicSuffixList,
         settings = settings,
-        shareSheetLauncher = shareSheetLauncher,
         navController = navController,
         browsingModeManager = browsingModeManager,
         readerModeController = readerModeController,
         thumbnailsFeature = thumbnailsFeature,
         isWideScreen = isWideScreen,
         isTallScreen = isTallScreen,
-        sessionUseCases = sessionUseCases,
         scope = scope,
         ioDispatcher = testDispatcher,
     )

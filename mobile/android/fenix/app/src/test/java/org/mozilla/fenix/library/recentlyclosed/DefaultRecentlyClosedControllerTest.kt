@@ -5,7 +5,6 @@
 package org.mozilla.fenix.library.recentlyclosed
 
 import androidx.navigation.NavController
-import androidx.navigation.NavDirections
 import androidx.navigation.NavOptions
 import io.mockk.coJustRun
 import io.mockk.coVerify
@@ -36,13 +35,11 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppState
-import org.mozilla.fenix.components.share.ShareSheetLauncher
+import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.directionsEq
 import org.mozilla.fenix.ext.optionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
-import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
@@ -54,8 +51,7 @@ class DefaultRecentlyClosedControllerTest {
     private val browserStore: BrowserStore = BrowserStore(middleware = listOf(captureActionsMiddleware))
     private val recentlyClosedStore: RecentlyClosedFragmentStore = mockk(relaxed = true)
     private val tabsUseCases: TabsUseCases = mockk(relaxed = true)
-    private val settings: Settings = mockk(relaxed = true)
-    private val shareSheetLauncher: ShareSheetLauncher = mockk(relaxed = true)
+    private val shareUseCases: ShareUseCases = mockk(relaxed = true)
 
     @get:Rule
     val gleanTestRule = FenixGleanTestRule(testContext)
@@ -230,59 +226,11 @@ class DefaultRecentlyClosedControllerTest {
 
         createController().handleShare(tabs.toSet())
 
-        verify {
-            val data = arrayOf(
-                ShareData(title = tabs[0].title, url = tabs[0].url),
-                ShareData(title = tabs[1].title, url = tabs[1].url),
-            )
-            navController.navigate(
-                directionsEq(RecentlyClosedFragmentDirections.actionGlobalShareFragment(data)),
-            )
-        }
-        assertNotNull(RecentlyClosedTabs.menuShare.testGetValue())
-        assertEquals(1, RecentlyClosedTabs.menuShare.testGetValue()!!.size)
-        assertNull(RecentlyClosedTabs.menuShare.testGetValue()!!.single().extra)
-    }
-
-    @Config(sdk = [34])
-    @Test
-    fun `GIVEN native share sheet is enabled AND device supports it WHEN share is invoked THEN launch the system share sheet`() {
-        every { settings.nativeShareSheetEnabled } returns true
-
-        val tabs = createFakeTabList(2)
-        assertNull(RecentlyClosedTabs.menuShare.testGetValue())
-
-        createController().handleShare(tabs.toSet())
-
-        verify { shareSheetLauncher.showSystemShareSheet(items = any(), isPrivate = any()) }
-        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
-        assertNotNull(RecentlyClosedTabs.menuShare.testGetValue())
-        assertEquals(1, RecentlyClosedTabs.menuShare.testGetValue()!!.size)
-        assertNull(RecentlyClosedTabs.menuShare.testGetValue()!!.single().extra)
-    }
-
-    @Config(sdk = [33])
-    @Test
-    fun `GIVEN native share sheet is enabled AND device does not support it WHEN share is invoked THEN navigate to share fragment`() {
-        every { settings.nativeShareSheetEnabled } returns true
-
-        val tabs = createFakeTabList(2)
-        assertNull(RecentlyClosedTabs.menuShare.testGetValue())
-
-        createController().handleShare(tabs.toSet())
-
-        verify {
-            val data = arrayOf(
-                ShareData(title = tabs[0].title, url = tabs[0].url),
-                ShareData(title = tabs[1].title, url = tabs[1].url),
-            )
-            navController.navigate(
-                directionsEq(RecentlyClosedFragmentDirections.actionGlobalShareFragment(data)),
-            )
-        }
-        verify(exactly = 0) {
-            shareSheetLauncher.showSystemShareSheet(items = any(), isPrivate = any())
-        }
+        val items = listOf(
+            ShareData(url = tabs[0].url, title = tabs[0].title),
+            ShareData(url = tabs[1].url, title = tabs[1].title),
+        )
+        verify { shareUseCases.shareItems(items = items, navigateToShareFragment = any()) }
         assertNotNull(RecentlyClosedTabs.menuShare.testGetValue())
         assertEquals(1, RecentlyClosedTabs.menuShare.testGetValue()!!.size)
         assertNull(RecentlyClosedTabs.menuShare.testGetValue()!!.single().extra)
@@ -386,8 +334,7 @@ class DefaultRecentlyClosedControllerTest {
             recentlyClosedStore = recentlyClosedStore,
             recentlyClosedTabsStorage = RecentlyClosedTabsStorage(testContext, mockk(), mockk()),
             tabsUseCases = tabsUseCases,
-            settings = settings,
-            shareSheetLauncher = shareSheetLauncher,
+            shareUseCases = shareUseCases,
             lifecycleScope = scope,
             openToBrowser = openToBrowser,
         )

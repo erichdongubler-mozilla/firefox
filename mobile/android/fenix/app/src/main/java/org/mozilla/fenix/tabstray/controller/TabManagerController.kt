@@ -43,13 +43,14 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
-import org.mozilla.fenix.components.share.ShareSheetLauncher
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.DEFAULT_ACTIVE_DAYS
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.potentialInactiveTabs
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_NORMAL_TABS
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_PRIVATE_TABS
+import org.mozilla.fenix.share.ShareFragment
 import org.mozilla.fenix.tabstray.SyncedTabsController
 import org.mozilla.fenix.tabstray.browser.InactiveTabsController
 import org.mozilla.fenix.tabstray.browser.TabsTrayFabController
@@ -215,15 +216,15 @@ interface TabManagerController :
  * @param tabsTrayStore [TabsTrayStore] used to read/update the [TabsTrayState].
  * @param browserStore [BrowserStore] used to read/update the current [BrowserState].
  * @param settings [Settings] used to update any user preferences.
- * @param shareSheetLauncher [ShareSheetLauncher] used to show the native share sheet.
  * @param browsingModeManager [BrowsingModeManager] used to read/update the current [BrowsingMode].
  * @param navController [NavController] used to navigate away from the tab manager.
  * @param navigateToHomeAndDeleteSession Lambda used to return to the Homescreen and delete the current session.
  * @param profiler [Profiler] used to add profiler markers.
  * @param tabsUseCases Use case wrapper for interacting with tabs.
  * @param fenixBrowserUseCases [FenixBrowserUseCases] used for adding new homepage tabs.
- * @param bookmarksStorage Storage layer for retrieving and saving bookmarks.
+ * @param shareUseCases [ShareUseCases] for sharing content via the system share sheet or the in-app [ShareFragment].
  * @param closeSyncedTabsUseCases Use cases for closing synced tabs.
+ * @param bookmarksStorage Storage layer for retrieving and saving bookmarks.
  * @param ioDispatcher [CoroutineContext] used for storage operations.
  * @param mainDispatcher [CoroutineContext] used for UI operations.
  * @param collectionStorage Storage layer for interacting with collections.
@@ -243,15 +244,15 @@ class DefaultTabManagerController(
     private val tabsTrayStore: TabsTrayStore,
     private val browserStore: BrowserStore,
     private val settings: Settings,
-    private val shareSheetLauncher: ShareSheetLauncher,
     private val browsingModeManager: BrowsingModeManager,
     private val navController: NavController,
     private val navigateToHomeAndDeleteSession: (String) -> Unit,
     private val profiler: Profiler?,
     private val tabsUseCases: TabsUseCases,
     private val fenixBrowserUseCases: FenixBrowserUseCases,
-    private val bookmarksStorage: BookmarksStorage,
+    private val shareUseCases: ShareUseCases,
     private val closeSyncedTabsUseCases: CloseTabsUseCases,
+    private val bookmarksStorage: BookmarksStorage,
     private val ioDispatcher: CoroutineContext = Dispatchers.IO,
     private val mainDispatcher: CoroutineContext = Dispatchers.Main,
     private val collectionStorage: TabCollectionStorage,
@@ -508,16 +509,15 @@ class DefaultTabManagerController(
             ShareData(url = it.url, title = it.title)
         }
 
-        if (settings.nativeShareSheetEnabled) {
-            shareSheetLauncher.showSystemShareSheet(
-                items = data,
-                isPrivate = tabs.any { it.private },
-            )
-        } else {
-            navController.navigate(
-                TabManagementFragmentDirections.actionGlobalShareFragment(data = data.toTypedArray()),
-            )
-        }
+        shareUseCases.shareItems(
+            items = data,
+            isPrivate = tabs.any { it.private },
+            navigateToShareFragment = {
+                navController.navigate(
+                    TabManagementFragmentDirections.actionGlobalShareFragment(data = data.toTypedArray()),
+                )
+            },
+        )
     }
 
     @VisibleForTesting

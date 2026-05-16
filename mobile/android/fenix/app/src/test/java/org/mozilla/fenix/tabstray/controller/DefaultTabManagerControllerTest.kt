@@ -34,6 +34,7 @@ import mozilla.components.browser.storage.sync.Tab
 import mozilla.components.browser.storage.sync.TabEntry
 import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.concept.engine.EngineSession
+import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
@@ -66,8 +67,8 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppState
-import org.mozilla.fenix.components.share.ShareSheetLauncher
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.maxActiveTime
 import org.mozilla.fenix.helpers.FenixGleanTestRule
@@ -117,7 +118,7 @@ class DefaultTabManagerControllerTest {
 
     private val appStore: AppStore = mockk(relaxed = true)
     private val settings: Settings = mockk(relaxed = true)
-    private val shareSheetLauncher: ShareSheetLauncher = mockk(relaxed = true)
+    private val shareUseCases: ShareUseCases = mockk(relaxed = true)
 
     private val bookmarksStorage: BookmarksStorage = mockk(relaxed = true)
     private val closeSyncedTabsUseCases: CloseTabsUseCases = mockk(relaxed = true)
@@ -1170,14 +1171,19 @@ class DefaultTabManagerControllerTest {
     }
 
     @Test
-    fun `GIVEN native share is disabled AND one tab is selected WHEN the share button is clicked THEN report telemetry and navigate to share fragment`() {
-        every { settings.nativeShareSheetEnabled } returns false
-        every { trayStore.state.mode.selectedTabs } returns setOf(TabsTrayItem.Tab(tab = createTab(url = "https://mozilla.org")))
+    fun `GIVEN one tab is selected WHEN the share button is clicked THEN report telemetry and invoke the share use case`() {
+        val tab = createTab(url = "https://mozilla.org", title = "Mozilla")
+        every { trayStore.state.mode.selectedTabs } returns setOf(TabsTrayItem.Tab(tab = tab))
 
         createController().handleShareSelectedTabsClicked()
 
-        verify(exactly = 1) { navController.navigate(any<NavDirections>()) }
-        verify(exactly = 0) { shareSheetLauncher.showSystemShareSheet(items = any(), isPrivate = any()) }
+        verify {
+            shareUseCases.shareItems(
+                items = listOf(ShareData(url = tab.content.url, title = tab.content.title)),
+                isPrivate = false,
+                navigateToShareFragment = any(),
+            )
+        }
 
         assertNotNull(TabsTray.shareSelectedTabs.testGetValue())
         val snapshot = TabsTray.shareSelectedTabs.testGetValue()!!
@@ -1186,40 +1192,22 @@ class DefaultTabManagerControllerTest {
     }
 
     @Test
-    fun `GIVEN native share is enabled AND one tab is selected WHEN the share button is clicked THEN report telemetry and show native share sheet`() {
-        every { settings.nativeShareSheetEnabled } returns true
-        val tab = createTab(url = "https://mozilla.org", title = "Mozilla")
-        every { trayStore.state.mode.selectedTabs } returns setOf(TabsTrayItem.Tab(tab = tab))
-
-        createController().handleShareSelectedTabsClicked()
-
-        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
-        verify {
-            shareSheetLauncher.showSystemShareSheet(
-                items = any(),
-                isPrivate = false,
-            )
-        }
-
-        assertNotNull(TabsTray.shareSelectedTabs.testGetValue())
-    }
-
-    @Test
-    fun `GIVEN native share is enabled AND multiple tabs are selected WHEN the share button is clicked THEN show native share sheet with all tabs`() {
-        every { settings.nativeShareSheetEnabled } returns true
-        val tabs = setOf(
-            TabsTrayItem.Tab(tab = createTab(url = "https://mozilla.org", title = "Mozilla")),
-            TabsTrayItem.Tab(tab = createTab(url = "https://firefox.com", title = "Firefox")),
-        )
+    fun `GIVEN multiple tabs are selected WHEN the share button is clicked THEN invoke the share use case with all tabs`() {
+        val tab1 = createTab(url = "https://mozilla.org", title = "Mozilla")
+        val tab2 = createTab(url = "https://firefox.com", title = "Firefox")
+        val tabs = setOf(TabsTrayItem.Tab(tab = tab1), TabsTrayItem.Tab(tab = tab2))
         every { trayStore.state.mode.selectedTabs } returns tabs
 
         createController().handleShareSelectedTabsClicked()
 
-        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
         verify {
-            shareSheetLauncher.showSystemShareSheet(
-                items = any(),
+            shareUseCases.shareItems(
+                items = listOf(
+                    ShareData(url = tab1.content.url, title = tab1.content.title),
+                    ShareData(url = tab2.content.url, title = tab2.content.title),
+                ),
                 isPrivate = false,
+                navigateToShareFragment = any(),
             )
         }
 
@@ -1651,24 +1639,24 @@ class DefaultTabManagerControllerTest {
             tabsTrayStore = trayStore,
             browserStore = browserStore,
             settings = settings,
-            shareSheetLauncher = shareSheetLauncher,
             browsingModeManager = browsingModeManager,
             navController = navController,
             navigateToHomeAndDeleteSession = navigateToHomeAndDeleteSession,
             profiler = profiler,
             tabsUseCases = tabsUseCases,
             fenixBrowserUseCases = fenixBrowserUseCases,
-            bookmarksStorage = bookmarksStorage,
+            shareUseCases = shareUseCases,
             closeSyncedTabsUseCases = closeSyncedTabsUseCases,
-            collectionStorage = collectionStorage,
+            bookmarksStorage = bookmarksStorage,
             ioDispatcher = testDispatcher,
             mainDispatcher = testDispatcher,
+            collectionStorage = collectionStorage,
             showUndoSnackbarForTab = showUndoSnackbarForTab,
             showUndoSnackbarForInactiveTab = showUndoSnackbarForInactiveTab,
             showUndoSnackbarForSyncedTab = showUndoSnackbarForSyncedTab,
             showCancelledDownloadWarning = showCancelledDownloadWarning,
-            showCollectionSnackbar = showCollectionSnackbar,
             showBookmarkSnackbar = showBookmarkSnackbar,
+            showCollectionSnackbar = showCollectionSnackbar,
         )
     }
 
