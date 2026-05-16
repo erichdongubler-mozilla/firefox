@@ -1227,6 +1227,8 @@ void GCRuntime::restoreSharedAtomsZone() {
   // Return the shared atoms zone to the zone list. This allows the contents of
   // the shared atoms zone to be collected when the parent runtime is shut down.
 
+  MOZ_ASSERT(!allocTask.wasStarted());
+
   if (!sharedAtomsZone_) {
     return;
   }
