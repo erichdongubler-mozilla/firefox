@@ -402,11 +402,21 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
       case AnimationPlayState::Idle:
         break;
     }
-  } else if (fromFiniteTimeline && !previousProgress.IsNull()) {
-    // If from finite timeline and previous progress is resolved, run the
-    // procedure to set the current time to previous progress * end time.
-    SetCurrentTimeNoUpdate(
-        TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
+  } else if (fromFiniteTimeline) {
+    // mAutoAlignStartTime is only meaningful for finite timelines; clear it
+    // here. Transitioning into a new finite timeline is handled by the
+    // toFiniteTimeline branch above. This clearing is a deviation from spec
+    // [1], which only acts when previousProgress is resolved; without it the
+    // flag's invariant (true only while the timeline is finite) is violated
+    // and AutoAlignStartTime would later fire on a monotonic timeline.
+    // [1] https://drafts.csswg.org/web-animations-2/#setting-the-timeline
+    mAutoAlignStartTime = false;
+    if (!previousProgress.IsNull()) {
+      // If from finite timeline and previous progress is resolved, run the
+      // procedure to set the current time to previous progress * end time.
+      SetCurrentTimeNoUpdate(
+          TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
+    }
   }
   if (fromFiniteTimeline && !aTimeline && mTimelineName) {
     // Make sure to remove any pending playing task, if we stopped referring to
@@ -2206,6 +2216,11 @@ void Animation::AutoAlignStartTime() {
 
   MOZ_ASSERT(!mTimeline->IsMonotonicallyIncreasing(),
              "We shouldn't come here for monotonically increasing timeline");
+  // Bail out in release builds if we somehow get here with a monotonic
+  // timeline, to avoid dereferencing AsScrollTimeline() below.
+  if (mTimeline->IsMonotonicallyIncreasing()) {
+    return;
+  }
 
   // If play state is idle, abort this procedure.
   const AnimationPlayState playState = PlayState();
