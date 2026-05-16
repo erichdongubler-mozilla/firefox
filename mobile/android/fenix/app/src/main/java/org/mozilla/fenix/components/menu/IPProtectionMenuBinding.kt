@@ -19,24 +19,20 @@ import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.ipprotection.store.state.Uninitialized
 import mozilla.components.feature.ipprotection.store.state.maxDataGb
-import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.helpers.AbstractBinding
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
-import org.mozilla.fenix.components.menu.store.MenuAction
-import org.mozilla.fenix.components.menu.store.MenuState
-import org.mozilla.fenix.components.menu.store.MenuStore
 
 /**
  * Helper for observing [IPProtectionState] and dispatching menu state updates.
  *
  * @param ipProtectionStore The store to observe for proxy status changes.
- * @param menuStore The [Store] for holding the [MenuState] and applying [MenuAction]s.
+ * @param onIPProtectionStatusUpdate Invoked when the IP protection status is updated.
  * @param mainDispatcher The [CoroutineDispatcher] for state observation.
  */
 class IPProtectionMenuBinding(
     ipProtectionStore: IPProtectionStore,
-    private val menuStore: MenuStore,
+    private val onIPProtectionStatusUpdate: (IPProtectionMenuState) -> Unit,
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : AbstractBinding<IPProtectionState>(ipProtectionStore, mainDispatcher) {
 
@@ -45,9 +41,7 @@ class IPProtectionMenuBinding(
             .map { it.toMenuState() }
             .distinctUntilChanged()
             .collect {
-                menuStore.dispatch(
-                    MenuAction.UpdateIPProtectionMenuState(it),
-                )
+                onIPProtectionStatusUpdate(it)
             }
     }
 

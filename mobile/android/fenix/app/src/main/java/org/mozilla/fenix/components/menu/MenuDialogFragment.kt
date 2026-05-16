@@ -462,7 +462,9 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                     ipProtectionMenuBinding.set(
                         feature = IPProtectionMenuBinding(
                             ipProtectionStore = components.ipProtection.store,
-                            menuStore = store,
+                            onIPProtectionStatusUpdate = {
+                                store.dispatch(MenuAction.UpdateIPProtectionMenuState(it))
+                            },
                         ),
                         owner = this@MenuDialogFragment,
                         view = this,
