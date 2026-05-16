@@ -84,7 +84,7 @@ interface ShareSheetLauncher {
      * Show the system share sheet for sharing resources outside the app.
      *
      * @param id The session id of the tab to share from.
-     * @param longUrl The url to share.
+     * @param url The url to share.
      * @param title The title of the page to share.
      * @param isPrivate Whether the tab is in private browsing mode.
      * @param isCustomTab Whether the share is being initiated from a custom tab,
@@ -92,7 +92,7 @@ interface ShareSheetLauncher {
      */
     fun showSystemShareSheet(
         id: String?,
-        longUrl: String,
+        url: String,
         title: String?,
         isPrivate: Boolean = false,
         isCustomTab: Boolean = false,
@@ -144,19 +144,19 @@ class DefaultShareSheetLauncher(
      * Show the system share sheet for sharing resources outside the app.
      *
      * @param id The session id of the tab to share from.
-     * @param longUrl The url to share.
+     * @param url The url to share.
      * @param title The title of the page to share.
      * @param isPrivate Whether the tab is in private browsing mode.
      * @param isCustomTab Whether the share is being initiated from a custom tab.
      */
     override fun showSystemShareSheet(
         id: String?,
-        longUrl: String,
+        url: String,
         title: String?,
         isPrivate: Boolean,
         isCustomTab: Boolean,
     ) {
-        val displayUrl = longUrl.trimmed()
+        val displayUrl = url.trimmed()
         if (id != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             scope.launch {
                 val qrCodeAction = withContext(ioDispatcher) {
@@ -168,7 +168,7 @@ class DefaultShareSheetLauncher(
                     actions = arrayOf(
                         savePDFChooserAction(applicationContext, id),
                         printAction(applicationContext, id),
-                        sendToDevicesAction(applicationContext, id, longUrl, title, isPrivate),
+                        sendToDevicesAction(applicationContext, id, url, title, isPrivate),
                         qrCodeAction,
                     ),
                 )

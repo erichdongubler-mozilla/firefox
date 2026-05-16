@@ -62,7 +62,7 @@ class ShareSheetLauncherTest {
     fun `WHEN native share sheet triggered on older API THEN share is invoked`() {
         launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
             isCustomTab = false,
         )
@@ -75,7 +75,7 @@ class ShareSheetLauncherTest {
     fun `GIVEN API level below 34 WHEN native share sheet triggered THEN basic share is used`() {
         launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
         )
 
@@ -88,7 +88,7 @@ class ShareSheetLauncherTest {
     fun `GIVEN API level 34 and valid tab id WHEN native share sheet triggered THEN chooser actions share is used`() {
         launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
         )
 
@@ -101,7 +101,7 @@ class ShareSheetLauncherTest {
     fun `GIVEN API level 34 and null tab id WHEN native share sheet triggered THEN basic share is used`() {
         launcher.showSystemShareSheet(
             id = null,
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
         )
 
@@ -114,7 +114,7 @@ class ShareSheetLauncherTest {
     fun `GIVEN a private tab WHEN native share sheet triggered THEN chooser actions share is still used`() {
         launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
             isPrivate = true,
         )
@@ -131,7 +131,7 @@ class ShareSheetLauncherTest {
 
         launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
         )
 

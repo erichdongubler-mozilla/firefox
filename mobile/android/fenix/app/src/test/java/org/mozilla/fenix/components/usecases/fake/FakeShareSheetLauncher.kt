@@ -28,12 +28,12 @@ class FakeShareSheetLauncher : ShareSheetLauncher {
 
     override fun showSystemShareSheet(
         id: String?,
-        longUrl: String,
+        url: String,
         title: String?,
         isPrivate: Boolean,
         isCustomTab: Boolean,
     ) {
-        urlShares += UrlShare(id, longUrl, title, isPrivate, isCustomTab)
+        urlShares += UrlShare(id, url, title, isPrivate, isCustomTab)
     }
 
     override fun showSystemShareSheet(

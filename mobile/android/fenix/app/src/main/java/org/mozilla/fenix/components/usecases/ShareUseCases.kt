@@ -54,7 +54,7 @@ class ShareUseCases(
             settings.nativeShareSheetEnabled && isSystemShareSheetSupported && url != null -> {
                 shareSheetLauncher.showSystemShareSheet(
                     id = id,
-                    longUrl = url,
+                    url = url,
                     title = title,
                     isPrivate = isPrivate,
                     isCustomTab = isCustomTab,
