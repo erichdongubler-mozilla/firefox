@@ -618,27 +618,49 @@ class TSFTextStore final : public TSFTextStoreBase,
       mPendingActions.SetCapacity(5);
     }
 
-    void Clear() { mPendingActions.Clear(); }
+    [[nodiscard]] bool IsLocked() const { return mLocked; }
+
+    bool Clear() {
+      if (mLocked && !mPendingActions.IsEmpty()) [[unlikely]] {
+        return false;
+      }
+      mPendingActions.Clear();
+      return true;
+    }
     [[nodiscard]] bool IsEmpty() const { return mPendingActions.IsEmpty(); }
     [[nodiscard]] size_type Length() const { return mPendingActions.Length(); }
     [[nodiscard]] PendingAction& operator[](size_t aIndex) {
       return mPendingActions[aIndex];
     }
     [[nodiscard]] PendingAction* CreateNewAction() {
+      // It's okay to append new action during a lock since it's safe to refer
+      // extant pending actions.
       return mPendingActions.AppendElement();
     }
     [[nodiscard]] PendingAction* CreateNewActions(size_t aNumOfNewActions) {
       return mPendingActions.AppendElements(aNumOfNewActions);
     }
     PendingAction* AppendNewAction(PendingAction&& aNewAction) {
+      // It's okay to append new action during a lock since it's safe to refer
+      // extant pending actions.
       return mPendingActions.AppendElement(std::move(aNewAction));
     }
     [[nodiscard]] PendingAction& LastAction() {
       return mPendingActions.LastElement();
     }
-    void RemoveLastAction() { mPendingActions.RemoveLastElement(); }
-    void RemoveActionsFrom(size_type aIndex) {
+    [[nodiscard]] bool RemoveLastAction() {
+      if (mLocked) [[unlikely]] {
+        return false;
+      }
+      mPendingActions.RemoveLastElement();
+      return true;
+    }
+    [[nodiscard]] bool RemoveActionsFrom(size_type aIndex) {
+      if (mLocked) [[unlikely]] {
+        return false;
+      }
       mPendingActions.RemoveLastElements(mPendingActions.Length() - aIndex);
+      return true;
     }
 
     PendingAction* LastOrNewPendingCompositionUpdate() {
@@ -687,19 +709,62 @@ class TSFTextStore final : public TSFTextStoreBase,
              lastAction.mIncomplete;
     }
 
-    void RemoveLastCompositionUpdateActions() {
+    [[nodiscard]] bool RemoveLastCompositionUpdateActions() {
       while (!mPendingActions.IsEmpty()) {
         const PendingAction& lastAction = mPendingActions.LastElement();
         if (lastAction.mType != PendingAction::Type::CompositionUpdate) {
           break;
         }
+        if (mLocked) [[unlikely]] {
+          return false;
+        }
         mPendingActions.RemoveLastElement();
       }
+      return true;
     }
 
+    /**
+     * Lock the PendingActions to avoid to remove extant pending actions.
+     */
+    class MOZ_STACK_CLASS AutoLockPendingActions {
+     public:
+      explicit AutoLockPendingActions(PendingActions& aPendingActions)
+          : mPendingActions(aPendingActions),
+            mDoLockAndUnlock(!aPendingActions.mLocked) {
+        if (mDoLockAndUnlock) {
+          mPendingActions.Lock();
+        }
+      }
+      ~AutoLockPendingActions() {
+        if (mDoLockAndUnlock) {
+          mPendingActions.Unlock();
+        }
+      }
+
+     private:
+      PendingActions& mPendingActions;
+      const bool mDoLockAndUnlock;
+    };
+
+    using iterator = nsTArray<PendingAction>::iterator;
+    [[nodiscard]] iterator begin() { return mPendingActions.begin(); }
+    [[nodiscard]] iterator end() { return mPendingActions.end(); }
+
    private:
+    void Lock() {
+      MOZ_ASSERT(!mLocked);
+      mLocked = true;
+    }
+    void Unlock() {
+      MOZ_ASSERT(mLocked);
+      mLocked = false;
+    }
+
     nsTArray<PendingAction> mPendingActions;
+    bool mLocked = false;
   } mPendingActions;
+
+  using AutoLockPendingActions = PendingActions::AutoLockPendingActions;
 
   void CompleteLastActionIfStillIncomplete() {
     if (!mPendingActions.IsPendingCompositionUpdateIncomplete()) {
