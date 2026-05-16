@@ -104,10 +104,13 @@ interface ShareSheetLauncher {
      *
      * @param items The list of [ShareData] items to share.
      * @param isPrivate Whether the tabs are in private browsing mode.
+     * @param subject Optional explicit subject for the share. When `null`, defaults
+     * to the first item's title.
      */
     fun showSystemShareSheet(
         items: List<ShareData>,
         isPrivate: Boolean = false,
+        subject: String? = null,
     )
 }
 
@@ -180,10 +183,13 @@ class DefaultShareSheetLauncher(
     override fun showSystemShareSheet(
         items: List<ShareData>,
         isPrivate: Boolean,
+        subject: String?,
     ) {
         val text = items.mapNotNull { it.url }.joinToString("\n")
-        val subject = items.firstOrNull()?.title ?: ""
-        shareDelegate.share(text = text, subject = subject)
+        shareDelegate.share(
+            text = text,
+            subject = subject ?: items.firstOrNull()?.title ?: "",
+        )
     }
 
     /**

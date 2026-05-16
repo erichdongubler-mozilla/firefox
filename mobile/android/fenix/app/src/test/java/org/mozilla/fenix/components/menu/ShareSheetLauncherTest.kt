@@ -189,4 +189,21 @@ class ShareSheetLauncherTest {
 
         verify { mockShareDelegate.share(text = "", subject = "") }
     }
+
+    @Test
+    fun `WHEN showSystemShareSheet is called with multiple items and a subject THEN share is invoked with urls and subject`() {
+        val items = listOf(
+            ShareData(url = "https://mozilla.org", title = "Mozilla"),
+            ShareData(url = "https://firefox.com", title = "Firefox"),
+        )
+
+        launcher.showSystemShareSheet(items = items, subject = "My collection")
+
+        verify {
+            mockShareDelegate.share(
+                text = "https://mozilla.org\nhttps://firefox.com",
+                subject = "My collection",
+            )
+        }
+    }
 }
