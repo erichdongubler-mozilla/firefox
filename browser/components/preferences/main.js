@@ -804,12 +804,6 @@ var gMainPane = {
 
     setEventListener("chooseLanguage", "command", gMainPane.showLanguages);
 
-    document
-      .getElementById("migrationWizardDialog")
-      .addEventListener("MigrationWizard:Close", function (e) {
-        e.currentTarget.close();
-      });
-
     // Initilize Application section.
 
     if (!srdSectionEnabled("applications")) {
@@ -1690,12 +1684,17 @@ var gMainPane = {
 
     await customElements.whenDefined("migration-wizard");
 
-    // If we've been opened before, remove the old wizard and insert a
-    // new one to put it back into its starting state.
+    // Only create the migration-wizard once.
     if (!migrationWizardDialog.firstElementChild) {
       let wizard = document.createElement("migration-wizard");
       wizard.toggleAttribute("dialog-mode", true);
       migrationWizardDialog.appendChild(wizard);
+      migrationWizardDialog.addEventListener(
+        "MigrationWizard:Close",
+        function (e) {
+          e.currentTarget.close();
+        }
+      );
     }
     migrationWizardDialog.firstElementChild.requestState();
 

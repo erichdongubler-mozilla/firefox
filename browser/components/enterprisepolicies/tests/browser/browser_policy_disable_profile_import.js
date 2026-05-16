@@ -168,12 +168,15 @@ add_task(async function test_prefs_entrypoint() {
         "migration-wizard"
       );
       let doc = browser.contentDocument;
+      const entrypoint = Services.prefs.getBoolPref(
+        "browser.settings-redesign.enabled",
+        false
+      )
+        ? doc.querySelector('setting-group[groupid="importBrowserData"]')
+        : doc.getElementById("dataMigrationGroup");
+      ok(entrypoint, "Import entrypoint group should exist.");
       ok(
-        doc.getElementById("dataMigrationGroup"),
-        "Import entrypoint group should exist."
-      );
-      ok(
-        BrowserTestUtils.isHidden(doc.getElementById("dataMigrationGroup")),
+        BrowserTestUtils.isHidden(entrypoint),
         "Import entrypoint should be hidden in prefs if disabled via policy."
       );
       ok(

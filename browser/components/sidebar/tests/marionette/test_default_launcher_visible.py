@@ -174,7 +174,10 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
 
         # Navigate to about:preferences and enable the new sidebar
         self.marionette.set_context("content")
-        self.marionette.navigate("about:preferences")
+        srd_enabled = self.marionette.get_pref("browser.settings-redesign.enabled")
+        self.marionette.navigate(
+            "about:preferences#appearance" if srd_enabled else "about:preferences"
+        )
 
         self.marionette.execute_script(
             """
