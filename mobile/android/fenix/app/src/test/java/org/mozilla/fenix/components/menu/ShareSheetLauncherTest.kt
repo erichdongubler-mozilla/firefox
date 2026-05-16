@@ -9,9 +9,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.service.chooser.ChooserAction
-import androidx.navigation.NavController
-import androidx.navigation.NavDirections
-import androidx.navigation.NavOptions
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -35,10 +32,6 @@ import org.robolectric.annotation.Config
 class ShareSheetLauncherTest {
 
     private val mockContext = mockk<Context>(relaxed = true)
-    private val mockNavController: NavController = mockk(relaxed = true) {
-        every { navigate(any<NavDirections>(), any<NavOptions>()) } just runs
-        every { context } returns mockContext
-    }
     private val mockShareDelegate: ShareDelegate = mockk(relaxed = true) {
         every { share(any(), any()) } just runs
         every { shareWithChooserActions(any(), any(), any()) } just runs
@@ -55,7 +48,7 @@ class ShareSheetLauncherTest {
     private val testDispatcher = UnconfinedTestDispatcher()
 
     private val launcher = DefaultShareSheetLauncher(
-        navController = mockNavController,
+        applicationContext = mockContext,
         qrCodeGenerator = mockQRCodeGenerator,
         cacheHelper = mockCacheHelper,
         scope = CoroutineScope(testDispatcher),

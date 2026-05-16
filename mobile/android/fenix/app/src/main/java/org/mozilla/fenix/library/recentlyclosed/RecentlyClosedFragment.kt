@@ -130,7 +130,7 @@ class RecentlyClosedFragment :
             recentlyClosedTabsStorage = requireComponents.core.recentlyClosedTabsStorage.value,
             settings = requireContext().settings(),
             shareSheetLauncher = DefaultShareSheetLauncher(
-                navController = findNavController(),
+                applicationContext = requireContext().applicationContext,
                 homeActivityClass = HomeActivity::class.java,
                 scope = viewLifecycleOwner.lifecycleScope,
             ),

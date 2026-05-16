@@ -107,7 +107,7 @@ object BrowserToolbarStoreBuilder {
                         publicSuffixList = components.publicSuffixList,
                         settings = settings,
                         shareSheetLauncher = DefaultShareSheetLauncher(
-                            navController = navController,
+                            applicationContext = activity.applicationContext,
                             homeActivityClass = HomeActivity::class.java,
                             scope = lifecycleScope,
                         ),

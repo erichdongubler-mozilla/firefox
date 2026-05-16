@@ -12,7 +12,6 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.service.chooser.ChooserAction
 import androidx.annotation.RequiresApi
-import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -117,7 +116,7 @@ interface ShareSheetLauncher {
 /**
  * Default implementation for launching the system share sheet.
  *
- * @param navController [NavController] used for navigation.
+ * @param applicationContext The application [Context] used to build share intents and chooser actions.
  * @param homeActivityClass The [Class] of the activity used to handle send-to-devices and display QR codes.
  * @param qrCodeGenerator [QRCodeGenerator] used to generate QR codes for URLs.
  * @param cacheHelper [CacheHelper] used to store image in cache.
@@ -126,11 +125,11 @@ interface ShareSheetLauncher {
  * @param ioDispatcher [CoroutineDispatcher] used for IO-bound QR code generation work.
  */
 class DefaultShareSheetLauncher(
-    private val navController: NavController,
+    private val applicationContext: Context,
     private val homeActivityClass: Class<out Activity>,
     private val qrCodeGenerator: QRCodeGenerator = QRCodeGenerator(),
     private val cacheHelper: CacheHelper = CacheHelper(),
-    private val shareDelegate: ShareDelegate = ContextShareDelegate { navController.context },
+    private val shareDelegate: ShareDelegate = ContextShareDelegate { applicationContext },
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ShareSheetLauncher {
@@ -158,19 +157,18 @@ class DefaultShareSheetLauncher(
         isCustomTab: Boolean,
     ) {
         val displayUrl = longUrl.trimmed()
-        val context = navController.context
         if (id != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             scope.launch {
                 val qrCodeAction = withContext(ioDispatcher) {
-                    sendQRCodeChooserAction(context, id, displayUrl)
+                    sendQRCodeChooserAction(applicationContext, id, displayUrl)
                 }
                 shareDelegate.shareWithChooserActions(
                     text = displayUrl,
                     subject = title ?: "",
                     actions = arrayOf(
-                        savePDFChooserAction(context, id),
-                        printAction(context, id),
-                        sendToDevicesAction(context, id, longUrl, title, isPrivate),
+                        savePDFChooserAction(applicationContext, id),
+                        printAction(applicationContext, id),
+                        sendToDevicesAction(applicationContext, id, longUrl, title, isPrivate),
                         qrCodeAction,
                     ),
                 )

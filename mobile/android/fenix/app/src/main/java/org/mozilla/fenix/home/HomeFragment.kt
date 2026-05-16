@@ -1358,7 +1358,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
             navControllerRef = WeakReference(findNavController()),
             viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
             shareSheetLauncher = DefaultShareSheetLauncher(
-                navController = findNavController(),
+                applicationContext = requireContext().applicationContext,
                 homeActivityClass = HomeActivity::class.java,
                 scope = viewLifecycleOwner.lifecycleScope,
             ),

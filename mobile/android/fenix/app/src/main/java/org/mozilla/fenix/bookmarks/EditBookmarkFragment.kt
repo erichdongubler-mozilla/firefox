@@ -91,7 +91,7 @@ class EditBookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                     shareBookmarks = { bookmarks ->
                                         if (settings().nativeShareSheetEnabled && isSystemShareSheetSupported) {
                                             DefaultShareSheetLauncher(
-                                                navController = navController,
+                                                applicationContext = requireContext().applicationContext,
                                                 homeActivityClass = HomeActivity::class.java,
                                                 scope = viewLifecycleOwner.lifecycleScope,
                                             ).showSystemShareSheet(

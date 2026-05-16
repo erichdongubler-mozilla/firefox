@@ -108,7 +108,7 @@ class HistoryMetadataGroupFragment :
                 navController = findNavController(),
                 settings = requireComponents.settings,
                 shareSheetLauncher = DefaultShareSheetLauncher(
-                    navController = findNavController(),
+                    applicationContext = requireContext().applicationContext,
                     homeActivityClass = HomeActivity::class.java,
                     scope = viewLifecycleOwner.lifecycleScope,
                 ),

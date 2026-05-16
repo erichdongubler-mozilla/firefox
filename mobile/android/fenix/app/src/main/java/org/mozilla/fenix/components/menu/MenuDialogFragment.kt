@@ -364,7 +364,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 customTab = customTab,
                                 webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
                                 shareSheetLauncher = DefaultShareSheetLauncher(
-                                    navController = findNavController(),
+                                    applicationContext = requireContext().applicationContext,
                                     homeActivityClass = HomeActivity::class.java,
                                 ),
                             ),

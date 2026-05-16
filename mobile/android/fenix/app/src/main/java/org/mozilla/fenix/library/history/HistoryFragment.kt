@@ -700,7 +700,7 @@ class HistoryFragment :
 
         if (requireContext().settings().nativeShareSheetEnabled && isSystemShareSheetSupported) {
             DefaultShareSheetLauncher(
-                navController = findNavController(),
+                applicationContext = requireContext().applicationContext,
                 homeActivityClass = HomeActivity::class.java,
                 scope = viewLifecycleOwner.lifecycleScope,
             ).showSystemShareSheet(items = data)

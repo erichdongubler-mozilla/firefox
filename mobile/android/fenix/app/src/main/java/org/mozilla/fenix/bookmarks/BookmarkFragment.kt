@@ -164,7 +164,7 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                         isSystemShareSheetSupported
                                     ) {
                                         DefaultShareSheetLauncher(
-                                            navController = navController,
+                                            applicationContext = requireContext().applicationContext,
                                             homeActivityClass = HomeActivity::class.java,
                                             scope = viewLifecycleOwner.lifecycleScope,
                                         ).showSystemShareSheet(
