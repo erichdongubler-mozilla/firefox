@@ -3243,9 +3243,11 @@ void UnmarkGrayTracer<opts>::onChild(JS::GCCellPtr thing, const char* name) {
       barrierTracer->markAndTraverse(thing);
     });
   } else if (tenured.isMarkedGray()) {
-    // TODO: It may be a small improvement to only use the atomic version
-    // during parallel marking.
-    tenured.markBlackAtomic();
+    if constexpr (bool(opts & MarkingOptions::AtomicMarking)) {
+      tenured.markBlackAtomic();
+    } else {
+      tenured.markBlack();
+    }
     if (!stack.append(thing)) {
       oom = true;
     }
