@@ -568,6 +568,7 @@ class TabStorageMiddleware(
         if (tab.isFocused) {
             updateSelectedTabIndex(normalTabs.size - 1)
             assignedGroup.isFocused = true
+            assignedGroup.initialScrollIndex = assignedGroup.tabs.lastIndex
         }
     }
 

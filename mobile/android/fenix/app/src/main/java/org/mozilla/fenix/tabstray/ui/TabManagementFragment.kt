@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -289,6 +290,8 @@ class TabManagementFragment : Fragment() {
                         performTabClick(tab = tab)
                     }
                 }
+                val windowSize = FirefoxTheme.windowSize
+                val resources = LocalResources.current
 
                 // When the TabTray is hidden by an action, if a new tab is being selected, navigate to it.
                 LaunchedEffect(tabTrayVisibilityState.currentState) {
@@ -435,12 +438,17 @@ class TabManagementFragment : Fragment() {
                             }
 
                             entry<TabManagerNavDestination.ExpandedTabGroup>(
-                                metadata = BottomSheetSceneStrategy.bottomSheet(
-                                    handleContentDescription = stringResource(
-                                        id = R.string.tab_group_sheet_dismiss_description,
-                                    ),
-                                    showBetaLabel = true,
-                                ),
+                                metadata = { destination ->
+                                    BottomSheetSceneStrategy.bottomSheet(
+                                        handleContentDescription = resources.getString(
+                                            R.string.tab_group_sheet_dismiss_description,
+                                        ),
+                                        showBetaLabel = true,
+                                        fullyExpandOnFirstOpen = destination.group.shouldFullyExpandOnFirstOpen(
+                                            windowSize = windowSize,
+                                        ),
+                                    )
+                                },
                             ) { args ->
                                 val expandedGroup by tabsTrayStore.observeTabGroup(tabGroup = args.group)
                                     .collectAsState(initial = args.group)

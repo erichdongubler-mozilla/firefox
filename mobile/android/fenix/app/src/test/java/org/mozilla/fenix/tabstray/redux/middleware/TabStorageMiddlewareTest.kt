@@ -157,13 +157,15 @@ class TabStorageMiddlewareTest {
         }
 
     @Test
-    fun `GIVEN the tab group feature is enabled WHEN the selected tab ID is updated to a normal tab within a tab group THEN update the selected normal tab index and the group's focus state`() =
+    fun `GIVEN the tab group feature is enabled WHEN the selected tab ID is updated to a normal tab within a tab group THEN update the selected normal tab index, the group's initial scroll index, and the group's focus state`() =
         runTest {
             val initialTabId = "1"
             val expectedTabId = "2"
             val initiallySelectedTab = createTab(id = initialTabId, url = "")
             val groupedTab = createTab(id = expectedTabId, url = "")
-            val tabs = listOf(initiallySelectedTab, groupedTab)
+            val otherGroupedTabs = List(size = 10) { createTab("") }
+            val tabs = listOf(initiallySelectedTab) + otherGroupedTabs + groupedTab
+            val transformedGroupTabs = otherGroupedTabs.map { TabsTrayItem.Tab(tab = it) } + TabsTrayItem.Tab(tab = groupedTab, isFocused = true)
             val storedGroup = StoredTabGroup(
                 title = "test group",
                 theme = "Red",
@@ -173,8 +175,9 @@ class TabStorageMiddlewareTest {
                 id = storedGroup.id,
                 title = storedGroup.title,
                 theme = TabGroupTheme.valueOf(storedGroup.theme),
-                tabs = mutableListOf(TabsTrayItem.Tab(tab = groupedTab, isFocused = true)),
+                tabs = transformedGroupTabs.toMutableList(),
                 isFocused = true,
+                initialScrollIndex = transformedGroupTabs.lastIndex,
             )
             val expectedTabList = listOf(
                 TabsTrayItem.Tab(initiallySelectedTab),
@@ -201,7 +204,7 @@ class TabStorageMiddlewareTest {
                 tabGroupsEnabled = true,
                 tabGroupRepository = createRepository(
                     tabGroupFlow = MutableStateFlow(listOf(storedGroup)),
-                    tabGroupAssignmentFlow = MutableStateFlow(mapOf(groupedTab.id to storedGroup.id)),
+                    tabGroupAssignmentFlow = MutableStateFlow(transformedGroupTabs.associate { it.id to storedGroup.id }),
                 ),
                 scope = backgroundScope,
             )

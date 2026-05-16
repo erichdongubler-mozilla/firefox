@@ -91,10 +91,10 @@ fun ExpandedTabGroup(
         )
 
         TabLayout(
-            tabs = group.tabs.toList(),
+            tabs = group.tabs,
             displayTabsInGrid = true,
             dragAndDropEnabled = false,
-            selectedItemIndex = 0, // updating this in Bug 2030474
+            selectedItemIndex = group.initialScrollIndex,
             selectionMode = TabsTrayState.Mode.Normal,
             tabInteractionHandler = NoOpTabInteractionHandler, // todo Bug 2032255: Inject interaction handling
             modifier = Modifier,

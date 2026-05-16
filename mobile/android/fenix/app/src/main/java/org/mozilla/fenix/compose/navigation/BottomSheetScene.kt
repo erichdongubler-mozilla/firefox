@@ -12,6 +12,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -20,10 +21,14 @@ import androidx.navigation3.scene.OverlayScene
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
+import kotlinx.coroutines.delay
 import org.mozilla.fenix.compose.BetaLabel
 import org.mozilla.fenix.compose.BottomSheetHandle
 import org.mozilla.fenix.compose.navigation.BottomSheetSceneStrategy.Companion.bottomSheet
 import org.mozilla.fenix.theme.FirefoxTheme
+import kotlin.time.Duration.Companion.milliseconds
+
+private val firstOpenDelay = 25.milliseconds
 
 /**
  * An [OverlayScene] that renders an [entry] within a [ModalBottomSheet].
@@ -39,6 +44,7 @@ internal class BottomSheetScene<T : Any>(
     private val skipPartiallyExpanded: Boolean,
     private val handleContentDescription: String,
     private val showBetaLabel: Boolean,
+    private val fullyExpandOnFirstOpen: Boolean,
     private val onBack: () -> Unit,
 ) : OverlayScene<T> {
 
@@ -48,6 +54,15 @@ internal class BottomSheetScene<T : Any>(
         val sheetState = rememberModalBottomSheetState(
             skipPartiallyExpanded = skipPartiallyExpanded,
         )
+
+        LaunchedEffect(Unit) {
+            if (fullyExpandOnFirstOpen) {
+                // There is a race condition with the sheet's initial animation and invoking `sheetState.expand()`.
+                // Wait a minor amount of time to invoke the full expansion.
+                delay(duration = firstOpenDelay)
+                sheetState.expand()
+            }
+        }
 
         ModalBottomSheet(
             onDismissRequest = onBack,
@@ -99,6 +114,7 @@ class BottomSheetSceneStrategy<T : Any> : SceneStrategy<T> {
         val skipPartiallyExpanded = lastEntry?.metadata?.get(SKIP_PARTIALLY_EXPANDED_KEY) as? Boolean ?: false
         val handleContentDescription = lastEntry?.metadata?.get(HANDLE_CONTENT_DESCRIPTION_KEY) as? String ?: ""
         val showBetaLabel = lastEntry?.metadata?.get(SHOW_BETA_LABEL_KEY) as? Boolean ?: false
+        val fullyExpandOnFirstOpen = lastEntry?.metadata?.get(EXPAND_ON_FIRST_OPEN_KEY) as? Boolean ?: false
 
         return bottomSheetProperties?.let { properties ->
             val underlyingEntries = entries.dropLast(bottomSheetEntries.size)
@@ -113,6 +129,7 @@ class BottomSheetSceneStrategy<T : Any> : SceneStrategy<T> {
                 modalBottomSheetProperties = properties,
                 skipPartiallyExpanded = skipPartiallyExpanded,
                 showBetaLabel = showBetaLabel,
+                fullyExpandOnFirstOpen = fullyExpandOnFirstOpen,
                 onBack = onBack,
                 handleContentDescription = handleContentDescription,
             )
@@ -128,7 +145,8 @@ class BottomSheetSceneStrategy<T : Any> : SceneStrategy<T> {
          * @param handleContentDescription Content description for the bottom sheet's drag handle.
          * @param modalBottomSheetProperties properties that should be passed to the containing
          * [ModalBottomSheet].
-         * @param showBetaLabel Whether or not to display the beta label next to the bottom sheet's drag handle
+         * @param showBetaLabel Whether to display the beta label next to the bottom sheet's drag handle
+         * @param fullyExpandOnFirstOpen Whether to fully expand the bottom sheet on first open.
          */
         @OptIn(ExperimentalMaterial3Api::class)
         fun bottomSheet(
@@ -136,17 +154,20 @@ class BottomSheetSceneStrategy<T : Any> : SceneStrategy<T> {
             handleContentDescription: String,
             modalBottomSheetProperties: ModalBottomSheetProperties = ModalBottomSheetProperties(),
             showBetaLabel: Boolean = false,
+            fullyExpandOnFirstOpen: Boolean = false,
         ): Map<String, Any> = mapOf(
             BOTTOM_SHEET_KEY to modalBottomSheetProperties,
             SKIP_PARTIALLY_EXPANDED_KEY to skipPartiallyExpanded,
             HANDLE_CONTENT_DESCRIPTION_KEY to handleContentDescription,
             SHOW_BETA_LABEL_KEY to showBetaLabel,
+            EXPAND_ON_FIRST_OPEN_KEY to fullyExpandOnFirstOpen,
         )
 
         internal const val BOTTOM_SHEET_KEY = "bottom_sheet"
         private const val SKIP_PARTIALLY_EXPANDED_KEY = "skip_partially_expanded"
         private const val HANDLE_CONTENT_DESCRIPTION_KEY = "handle_content_description"
         private const val SHOW_BETA_LABEL_KEY = "show_beta_label"
+        private const val EXPAND_ON_FIRST_OPEN_KEY = "expand_on_first_open"
     }
 }
 
