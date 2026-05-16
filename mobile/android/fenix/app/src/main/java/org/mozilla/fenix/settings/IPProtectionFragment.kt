@@ -12,12 +12,14 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import mozilla.components.ExperimentalAndroidComponentsApi
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -41,7 +43,7 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                         if (enabled) {
                             requireContext().settings().hasAlreadyUsedVpn = true
                         }
-                        // will be implemented in https://bugzilla.mozilla.org/show_bug.cgi?id=2030143
+                        requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
                     },
                     onLearnMoreClick = {
                         Vpn.settingsLearnMoreTapped.record(NoExtras())
@@ -55,7 +57,7 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                         )
                     },
                     onGetStartedClick = {
-                        // will be implemented in https://bugzilla.mozilla.org/show_bug.cgi?id=2030528
+                        requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
                     },
                 )
             }

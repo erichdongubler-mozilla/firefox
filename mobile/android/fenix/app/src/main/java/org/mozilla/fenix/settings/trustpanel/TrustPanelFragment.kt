@@ -46,6 +46,7 @@ import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.lib.state.ext.consumeFlow
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.view.setNavigationBarColorCompat
@@ -56,6 +57,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelMiddleware
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelNavigationMiddleware
@@ -312,7 +314,7 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                                     store.dispatch(TrustPanelAction.Navigate.QWAC)
                                 },
                                 onIPProtectionToggle = {
-                                    // will be implemented in https://bugzilla.mozilla.org/show_bug.cgi?id=2030143
+                                    requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
                                 },
                                 onIPProtectionNavigate = {
                                     store.dispatch(TrustPanelAction.Navigate.IPProtectionSettings)
