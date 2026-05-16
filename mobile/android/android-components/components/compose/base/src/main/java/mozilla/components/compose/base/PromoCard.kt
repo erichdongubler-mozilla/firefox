@@ -42,6 +42,8 @@ import mozilla.components.ui.icons.R as iconsR
  * @param footer An optional piece of text with a clickable link.
  * @param illustration Composable slot displayed at the end of the card. Commonly used for illustrations.
  * @param contentSpacing The vertical spacing between the title, message, and actions slots.
+ * @param verticalAlignment Vertical alignment of the text content and the [illustration].
+ * Defaults to [Alignment.Bottom].
  * @param colors Defines the color styling for the card. Defaults to
  * [PromoCardColors.promoCardColors].
  * @param closeButtonContentDescription The content description for the close button. Ignored
@@ -57,6 +59,7 @@ fun PromoCard(
     footer: Pair<String, LinkTextState>? = null,
     illustration: (@Composable () -> Unit)? = null,
     contentSpacing: Dp = AcornTheme.layout.space.static50,
+    verticalAlignment: Alignment.Vertical = Alignment.Bottom,
     colors: PromoCardColors = PromoCardColors.promoCardColors(),
     closeButtonContentDescription: String? = null,
     onDismiss: (() -> Unit)? = null,
@@ -80,6 +83,7 @@ fun PromoCard(
         },
         illustration = illustration,
         contentSpacing = contentSpacing,
+        verticalAlignment = verticalAlignment,
         colors = colors,
         closeButtonContentDescription = closeButtonContentDescription,
         onDismiss = onDismiss,
@@ -96,6 +100,8 @@ fun PromoCard(
  * @param actions Composable slot below the message, intended for actions such as a link or buttons.
  * @param illustration Composable slot displayed at the end of the card.
  * @param contentSpacing The vertical spacing between the title, message, and actions slots.
+ * @param verticalAlignment Vertical alignment of the text content and the [illustration].
+ * Defaults to [Alignment.Bottom].
  * @param colors Defines the color styling for the card. Defaults to [PromoCardColors.promoCardColors].
  * @param closeButtonContentDescription The content description for the close button. Ignored
  * when [onDismiss] is null.
@@ -110,6 +116,7 @@ fun PromoCard(
     actions: (@Composable () -> Unit)? = null,
     illustration: (@Composable () -> Unit)? = null,
     contentSpacing: Dp = AcornTheme.layout.space.static50,
+    verticalAlignment: Alignment.Vertical = Alignment.Bottom,
     colors: PromoCardColors = PromoCardColors.promoCardColors(),
     closeButtonContentDescription: String? = null,
     onDismiss: (() -> Unit)? = null,
@@ -126,7 +133,7 @@ fun PromoCard(
                     .fillMaxWidth()
                     .padding(horizontal = AcornTheme.layout.space.static200),
                 horizontalArrangement = Arrangement.spacedBy(AcornTheme.layout.space.static200),
-                verticalAlignment = Alignment.Bottom,
+                verticalAlignment = verticalAlignment,
             ) {
                 Column(
                     modifier = Modifier
