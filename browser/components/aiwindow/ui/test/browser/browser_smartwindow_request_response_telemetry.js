@@ -133,6 +133,14 @@ describe("SmartWindowRequestResponseTelemetry", () => {
           "model_response: latency is greater than 0"
         );
         Assert.ok(
+          /^\d+$/.test(responseEvents[0].extra.latency),
+          `model_response: latency is integer ms (got ${responseEvents[0].extra.latency})`
+        );
+        Assert.ok(
+          /^\d+$/.test(responseEvents[0].extra.duration),
+          `model_response: duration is integer ms (got ${responseEvents[0].extra.duration})`
+        );
+        Assert.ok(
           "chat_id" in responseEvents[0].extra,
           "model_response: chat_id exists"
         );

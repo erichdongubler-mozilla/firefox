@@ -70,6 +70,16 @@ async function loadMemories() {
     sanitizedBasename: "memories",
   });
 
+  let markerData = null;
+  if (Services.profiler.IsActive()) {
+    let sizeLabel = "0 B";
+    try {
+      const stat = await IOUtils.stat(lazy.gStorePath);
+      sizeLabel = `${(stat.size / 1048576).toFixed(1)} MiB`;
+    } catch (_e) {}
+    markerData = { startTime: ChromeUtils.now(), sizeLabel };
+  }
+
   try {
     await gJSONFile.load();
   } catch (ex) {
@@ -78,6 +88,14 @@ async function loadMemories() {
     gJSONFile.data = gState;
     gInitialized = true;
     return;
+  } finally {
+    if (markerData) {
+      ChromeUtils.addProfilerMarker(
+        "SmartWindow",
+        { startTime: markerData.startTime },
+        `MemoryStore:load_db(${markerData.sizeLabel})`
+      );
+    }
   }
 
   // Normalize the loaded data into our expected shape.

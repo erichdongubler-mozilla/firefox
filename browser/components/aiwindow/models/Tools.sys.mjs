@@ -337,6 +337,8 @@ export async function getOpenTabs(conversation) {
   // No security check needed. The security checks prevent data exfiltration,
   // which requires external communication. This tool makes no external requests.
 
+  const startTime = ChromeUtils.now();
+
   /** @type {Array<TabInfo>} */
   const tabs = [];
 
@@ -372,6 +374,12 @@ export async function getOpenTabs(conversation) {
   lazy.console.log("[Tool] getOpenTabs", recentTabs);
 
   conversation.addSeenUrls(recentTabs.map(({ url }) => url));
+
+  ChromeUtils.addProfilerMarker(
+    "SmartWindow",
+    { startTime },
+    `Tool:get_open_tabs(${recentTabs.length})`
+  );
 
   return recentTabs;
 }
@@ -749,11 +757,17 @@ export class GetPageContent {
         if (!isAllowedURL(url)) {
           return "This URL is not allowed: " + url;
         }
+        const startTime = ChromeUtils.now();
         try {
           const text = await GetPageContent.#getPageContentsForSingleURL(
             url,
             mentionedUrls,
             conversation
+          );
+          ChromeUtils.addProfilerMarker(
+            "SmartWindow",
+            { startTime },
+            `Tool:get_page_content(${url})`
           );
           return text;
         } catch (error) {
@@ -763,6 +777,7 @@ export class GetPageContent {
       })
     );
     lazy.console.log("[Tool] getPageContent", results);
+
     return results;
   }
 

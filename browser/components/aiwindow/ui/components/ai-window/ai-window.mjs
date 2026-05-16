@@ -1472,6 +1472,8 @@ export class AIWindow extends MozLitElement {
       return;
     }
 
+    const startTime = ChromeUtils.now();
+
     const firstUserMessage = this.#conversation.messages.find(
       m => m.role === lazy.MESSAGE_ROLE.USER
     );
@@ -1492,6 +1494,12 @@ export class AIWindow extends MozLitElement {
     this.#conversation.title = title;
     document.title = title;
     this.#updateConversation();
+
+    ChromeUtils.addProfilerMarker(
+      "SmartWindow",
+      { startTime },
+      "Title generation"
+    );
   }
 
   #updateTabFavicon() {
@@ -1566,13 +1574,18 @@ export class AIWindow extends MozLitElement {
     const { signal } = this.#abortController;
     this.isGenerating = true;
 
-    const requestStart = Date.now();
+    const requestStart = ChromeUtils.now();
     let firstTokenTime = null;
     const onUpdate = (_e, message) => {
       if (message.role !== lazy.MESSAGE_ROLE.ASSISTANT) {
         return;
       }
-      firstTokenTime = Date.now();
+      firstTokenTime = ChromeUtils.now();
+      ChromeUtils.addProfilerMarker(
+        "SmartWindow",
+        { startTime: requestStart },
+        "Time to first token (TTFT)"
+      );
       conversation?.off("chat-conversation:message-update", onUpdate);
     };
     conversation.on("chat-conversation:message-update", onUpdate);
@@ -1607,6 +1620,12 @@ export class AIWindow extends MozLitElement {
         mode: this.mode,
         signal,
       });
+
+      ChromeUtils.addProfilerMarker(
+        "SmartWindow",
+        { startTime: requestStart },
+        "Total turnaround time"
+      );
 
       this.#sendModelResponseTelemetryEvent(
         null,
@@ -1659,8 +1678,10 @@ export class AIWindow extends MozLitElement {
   };
 
   #getModelRequestLatencyAndDuration(requestStart, firstTokenTime) {
-    const duration = Date.now() - requestStart;
-    const latency = firstTokenTime ? firstTokenTime - requestStart : 0;
+    const duration = Math.round(ChromeUtils.now() - requestStart);
+    const latency = firstTokenTime
+      ? Math.round(firstTokenTime - requestStart)
+      : 0;
     return { duration, latency };
   }
 

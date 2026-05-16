@@ -319,6 +319,12 @@ Object.assign(Chat, {
       /** @type {ToolCall[] | null} */
       let pendingToolCalls = null;
 
+      ChromeUtils.addProfilerMarker(
+        "SmartWindow",
+        {},
+        "chat-server-request-start"
+      );
+      const turnStart = ChromeUtils.now();
       try {
         this.lastUsage = null;
         const response = await conversation.receiveResponse(
@@ -339,9 +345,16 @@ Object.assign(Chat, {
       } catch (err) {
         console.error("fetchWithHistory streaming error:", err);
         throw err;
+      } finally {
+        ChromeUtils.addProfilerMarker(
+          "SmartWindow",
+          { startTime: turnStart },
+          "ServerE2E"
+        );
       }
 
       if (!pendingToolCalls || pendingToolCalls.length === 0) {
+        ChromeUtils.addProfilerMarker("SmartWindow", {}, "chat-no-tool-calls");
         // Debug logging: Mark the end of the streaming loop for this turn
         logConversationStream(currentTurn, "STREAM END");
         return;
@@ -428,10 +441,23 @@ Object.assign(Chat, {
 
       lazy.AIWindow.chatStore?.updateConversation(conversation).catch(() => {});
 
+      ChromeUtils.addProfilerMarker(
+        "SmartWindow",
+        {},
+        `chat-tools-detected(${pendingToolCalls.length})`
+      );
+
       for (const toolCall of pendingToolCalls) {
         const { id, function: functionSpec } = toolCall;
         const toolName = functionSpec?.name || "";
         let toolParams = {};
+
+        ChromeUtils.addProfilerMarker(
+          "SmartWindow",
+          {},
+          `chat-run-tool-start(${toolName})`
+        );
+        const toolStart = ChromeUtils.now();
 
         try {
           toolParams = functionSpec?.arguments
@@ -439,7 +465,12 @@ Object.assign(Chat, {
             : {};
 
           expandUrlTokensInToolParams(toolParams, conversation.tokenToUrl);
-        } catch {
+        } catch (e) {
+          ChromeUtils.addProfilerMarker(
+            "SmartWindow",
+            {},
+            `chat-run-tool-error(${toolName}:argument-parse)`
+          );
           const content = {
             tool_call_id: id,
             body: { error: "Invalid JSON arguments" },
@@ -489,11 +520,22 @@ Object.assign(Chat, {
             toolName
           );
 
+          ChromeUtils.addProfilerMarker(
+            "SmartWindow",
+            { startTime: toolStart },
+            `chat-run-tool-complete(${toolName})`
+          );
+
           const content = { tool_call_id: id, body: result, name: toolName };
           conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
         } catch (error) {
           console.error(error);
           result = { error: `Tool execution failed: ${String(error)}` };
+          ChromeUtils.addProfilerMarker(
+            "SmartWindow",
+            { startTime: toolStart },
+            `chat-run-tool-error(${toolName})`
+          );
           const content = { tool_call_id: id, body: result };
           conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
         }
