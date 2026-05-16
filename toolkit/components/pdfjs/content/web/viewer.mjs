@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.96
- * pdfjsBuild = cd4fd7563
+ * pdfjsVersion = 6.0.109
+ * pdfjsBuild = d27b9ab5f
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -958,7 +958,6 @@ const {
   getRGB,
   getRGBA,
   getUuid,
-  getXfaPageViewport,
   GlobalWorkerOptions,
   ImageKind,
   InvalidPDFException,
@@ -7690,7 +7689,7 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
       linkService,
       xfaHtml: xfaPage
     });
-    const viewport = getXfaPageViewport(xfaPage, {
+    const viewport = XfaLayer.getPageViewport(xfaPage, {
       scale
     });
     builder.render({
@@ -12917,7 +12916,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.96";
+    const viewerVersion = "6.0.109";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
