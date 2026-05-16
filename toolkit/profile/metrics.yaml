@@ -108,6 +108,34 @@ startup:
     expires: 156
     telemetry_mirror: STARTUP_PROFILE_DATABASE_VERSION
 
+  profiles_ini_status:
+    type: string
+    description: >
+      Records the status of parsing the profiles.ini file during startup:
+        ok:
+          The ini file parsed correctly
+        ini-failed:
+          Parsing the ini file completely failed, normally this would indicate
+          an out of memory issue.
+        ini-error:
+          The ini parser recorded some kind of failure during parsing
+        missing-name:
+          A profile section was missing the name
+        missing-path:
+          A profile section was missing the path
+        invalid-path:
+          A profile section's path was invalid
+      Note that if multiple profile sections contain errors then only the last
+      will be reported.
+    bugs:
+      - https://bugzil.la/2038187
+    data_reviews:
+      - https://bugzil.la/2038187
+    notification_emails:
+      - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
+    expires: never
+
   profile_count:
     type: quantity
     description: >

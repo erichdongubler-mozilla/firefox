@@ -733,6 +733,11 @@ void nsToolkitProfileService::CompleteStartup() {
   glean::startup::profile_selection_reason.Set(mStartupReason);
   glean::startup::profile_database_version.Set(mStartupFileVersion);
   glean::startup::profile_count.Set(static_cast<uint32_t>(mProfiles.length()));
+  if (mIniStatus.IsEmpty()) {
+    glean::startup::profiles_ini_status.Set("ok"_ns);
+  } else {
+    glean::startup::profiles_ini_status.Set(mIniStatus);
+  }
 
   nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
   nsCOMPtr<nsIObserverService> observerService =
@@ -1058,11 +1063,17 @@ nsresult nsToolkitProfileService::Init() {
   rv = UpdateFileStats(mProfileDBFile, &mProfileDBExists,
                        &mProfileDBModifiedTime, &mProfileDBFileSize);
   if (NS_SUCCEEDED(rv) && mProfileDBExists) {
-    rv = mProfileDB.Init(mProfileDBFile);
+    bool iniContainedErrors = false;
+    rv = mProfileDB.Init(mProfileDBFile, &iniContainedErrors);
     // Init does not fail on parsing errors, only on OOM/really unexpected
     // conditions.
     if (NS_FAILED(rv)) {
+      mIniStatus = "ini-failed"_ns;
       return rv;
+    }
+
+    if (iniContainedErrors) {
+      mIniStatus = "ini-error"_ns;
     }
 
     rv = mProfileDB.GetString("General", "StartWithLastProfile", buffer);
@@ -1180,6 +1191,7 @@ nsresult nsToolkitProfileService::Init() {
     rv = mProfileDB.GetString(profileID.get(), "Path", filePath);
     if (NS_FAILED(rv)) {
       NS_ERROR("Malformed profiles.ini: Path= not found");
+      mIniStatus = "missing-path";
       continue;
     }
 
@@ -1188,6 +1200,7 @@ nsresult nsToolkitProfileService::Init() {
     rv = mProfileDB.GetString(profileID.get(), "Name", name);
     if (NS_FAILED(rv)) {
       NS_ERROR("Malformed profiles.ini: Name= not found");
+      mIniStatus = "missing-name";
       continue;
     }
 
@@ -1199,7 +1212,10 @@ nsresult nsToolkitProfileService::Init() {
       rv = NS_NewLocalFileWithPersistentDescriptor(filePath,
                                                    getter_AddRefs(rootDir));
     }
-    if (NS_FAILED(rv)) continue;
+    if (NS_FAILED(rv)) {
+      mIniStatus = "invalid-path";
+      continue;
+    }
 
     nsCOMPtr<nsIFile> localDir;
     rv = nsToolkitProfileService::gService->GetLocalDirFromRootDir(
