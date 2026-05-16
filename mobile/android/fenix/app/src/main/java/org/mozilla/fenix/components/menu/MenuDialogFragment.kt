@@ -61,7 +61,6 @@ import mozilla.components.concept.engine.translate.TranslationSupport
 import mozilla.components.concept.engine.translate.findLanguage
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
-import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.isEligible
 import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
@@ -88,7 +87,6 @@ import org.mozilla.fenix.components.menu.middleware.MenuNavigationMiddleware
 import org.mozilla.fenix.components.menu.middleware.MenuTelemetryMiddleware
 import org.mozilla.fenix.components.menu.store.BrowserMenuState
 import org.mozilla.fenix.components.menu.store.ExtensionMenuState
-import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
@@ -560,18 +558,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                     }.collectAsState(initial = SummarizationMenuState.Default)
 
                     val ipProtectionMenuState by remember {
-                        // FIXME(IPP) map to correct menu state.
-                        components.ipProtection.store.stateFlow.map { ipState ->
-                            store.state.ipProtectionMenuState.copy(
-                                status = run {
-                                    if (ipState.proxyStatus is Authorized.Active) {
-                                        IPProtectionMenuStatus.Enabled
-                                    } else {
-                                        IPProtectionMenuStatus.Disabled
-                                    }
-                                },
-                            )
-                        }
+                        store.stateFlow.map { state -> state.ipProtectionMenuState }
                     }.collectAsState(initial = store.state.ipProtectionMenuState)
 
                     val contentState: Route by remember { mutableStateOf(initRoute) }
