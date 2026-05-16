@@ -610,69 +610,102 @@ class TSFTextStore final : public TSFTextStoreBase,
   // DOM composition events.  However, we cannot dispatch while the document is
   // locked because it can cause modifying the locked document.  So, the pending
   // actions should be performed when document lock is unlocked.
-  nsTArray<PendingAction> mPendingActions;
+  class PendingActions {
+   public:
+    using size_type = nsTArray<PendingAction>::size_type;
+    PendingActions() {
+      // We hope that 5 or more actions don't occur at once.
+      mPendingActions.SetCapacity(5);
+    }
 
-  PendingAction* LastOrNewPendingCompositionUpdate() {
-    if (!mPendingActions.IsEmpty()) {
-      PendingAction& lastAction = mPendingActions.LastElement();
-      if (lastAction.mType == PendingAction::Type::CompositionUpdate) {
-        return &lastAction;
+    void Clear() { mPendingActions.Clear(); }
+    [[nodiscard]] bool IsEmpty() const { return mPendingActions.IsEmpty(); }
+    [[nodiscard]] size_type Length() const { return mPendingActions.Length(); }
+    [[nodiscard]] PendingAction& operator[](size_t aIndex) {
+      return mPendingActions[aIndex];
+    }
+    [[nodiscard]] PendingAction* CreateNewAction() {
+      return mPendingActions.AppendElement();
+    }
+    [[nodiscard]] PendingAction* CreateNewActions(size_t aNumOfNewActions) {
+      return mPendingActions.AppendElements(aNumOfNewActions);
+    }
+    PendingAction* AppendNewAction(PendingAction&& aNewAction) {
+      return mPendingActions.AppendElement(std::move(aNewAction));
+    }
+    [[nodiscard]] PendingAction& LastAction() {
+      return mPendingActions.LastElement();
+    }
+    void RemoveLastAction() { mPendingActions.RemoveLastElement(); }
+    void RemoveActionsFrom(size_type aIndex) {
+      mPendingActions.RemoveLastElements(mPendingActions.Length() - aIndex);
+    }
+
+    PendingAction* LastOrNewPendingCompositionUpdate() {
+      if (!mPendingActions.IsEmpty()) {
+        PendingAction& lastAction = mPendingActions.LastElement();
+        if (lastAction.mType == PendingAction::Type::CompositionUpdate) {
+          return &lastAction;
+        }
+      }
+      PendingAction* newAction = mPendingActions.AppendElement();
+      newAction->mType = PendingAction::Type::CompositionUpdate;
+      newAction->mRanges = new TextRangeArray();
+      newAction->mIncomplete = true;
+      return newAction;
+    }
+
+    /**
+     * IsLastPendingActionCompositionEndAt() checks whether the previous pending
+     * action is committing composition whose range starts from aStart and its
+     * length is aLength.  In other words, this checks whether new composition
+     * which will replace same range as previous pending commit can be merged
+     * with the previous composition.
+     *
+     * @param aStart              The inserted offset you expected.
+     * @param aLength             The inserted text length you expected.
+     * @return                    true if the last pending action is
+     *                            eCompositionEnd and it inserted the text
+     *                            between aStart and aStart + aLength.
+     */
+    bool IsLastPendingActionCompositionEndAt(LONG aStart, LONG aLength) const {
+      if (mPendingActions.IsEmpty()) {
+        return false;
+      }
+      const PendingAction& pendingLastAction = mPendingActions.LastElement();
+      return pendingLastAction.mType == PendingAction::Type::CompositionEnd &&
+             pendingLastAction.mSelectionStart == aStart &&
+             pendingLastAction.mData.Length() == static_cast<ULONG>(aLength);
+    }
+
+    bool IsPendingCompositionUpdateIncomplete() const {
+      if (mPendingActions.IsEmpty()) {
+        return false;
+      }
+      const PendingAction& lastAction = mPendingActions.LastElement();
+      return lastAction.mType == PendingAction::Type::CompositionUpdate &&
+             lastAction.mIncomplete;
+    }
+
+    void RemoveLastCompositionUpdateActions() {
+      while (!mPendingActions.IsEmpty()) {
+        const PendingAction& lastAction = mPendingActions.LastElement();
+        if (lastAction.mType != PendingAction::Type::CompositionUpdate) {
+          break;
+        }
+        mPendingActions.RemoveLastElement();
       }
     }
-    PendingAction* newAction = mPendingActions.AppendElement();
-    newAction->mType = PendingAction::Type::CompositionUpdate;
-    newAction->mRanges = new TextRangeArray();
-    newAction->mIncomplete = true;
-    return newAction;
-  }
 
-  /**
-   * IsLastPendingActionCompositionEndAt() checks whether the previous pending
-   * action is committing composition whose range starts from aStart and its
-   * length is aLength.  In other words, this checks whether new composition
-   * which will replace same range as previous pending commit can be merged
-   * with the previous composition.
-   *
-   * @param aStart              The inserted offset you expected.
-   * @param aLength             The inserted text length you expected.
-   * @return                    true if the last pending action is
-   *                            eCompositionEnd and it inserted the text
-   *                            between aStart and aStart + aLength.
-   */
-  bool IsLastPendingActionCompositionEndAt(LONG aStart, LONG aLength) const {
-    if (mPendingActions.IsEmpty()) {
-      return false;
-    }
-    const PendingAction& pendingLastAction = mPendingActions.LastElement();
-    return pendingLastAction.mType == PendingAction::Type::CompositionEnd &&
-           pendingLastAction.mSelectionStart == aStart &&
-           pendingLastAction.mData.Length() == static_cast<ULONG>(aLength);
-  }
-
-  bool IsPendingCompositionUpdateIncomplete() const {
-    if (mPendingActions.IsEmpty()) {
-      return false;
-    }
-    const PendingAction& lastAction = mPendingActions.LastElement();
-    return lastAction.mType == PendingAction::Type::CompositionUpdate &&
-           lastAction.mIncomplete;
-  }
+   private:
+    nsTArray<PendingAction> mPendingActions;
+  } mPendingActions;
 
   void CompleteLastActionIfStillIncomplete() {
-    if (!IsPendingCompositionUpdateIncomplete()) {
+    if (!mPendingActions.IsPendingCompositionUpdateIncomplete()) {
       return;
     }
     RecordCompositionUpdateAction();
-  }
-
-  void RemoveLastCompositionUpdateActions() {
-    while (!mPendingActions.IsEmpty()) {
-      const PendingAction& lastAction = mPendingActions.LastElement();
-      if (lastAction.mType != PendingAction::Type::CompositionUpdate) {
-        break;
-      }
-      mPendingActions.RemoveLastElement();
-    }
   }
 
   // When On*Composition() is called without document lock, we need to flush

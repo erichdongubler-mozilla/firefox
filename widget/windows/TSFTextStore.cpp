@@ -61,9 +61,6 @@ const MSG* TSFTextStore::sHandlingKeyMsg = nullptr;
 bool TSFTextStore::sIsKeyboardEventDispatched = false;
 
 TSFTextStore::TSFTextStore() : TSFTextStoreBase(Editable::Yes) {
-  // We hope that 5 or more actions don't occur at once.
-  mPendingActions.SetCapacity(5);
-
   MOZ_LOG(gIMELog, LogLevel::Info,
           ("0x%p TSFTextStore::TSFTextStore() SUCCEEDED", this));
 }
@@ -701,7 +698,7 @@ void TSFTextStore::MaybeDispatchKeyboardEventAsProcessedByIME() {
         ("0x%p   TSFTextStore::MaybeDispatchKeyboardEventAsProcessedByIME(), "
          "adding to dispatch a keyboard event into the queue...",
          this));
-    PendingAction* action = mPendingActions.AppendElement();
+    PendingAction* action = mPendingActions.CreateNewAction();
     action->mType = PendingAction::Type::KeyboardEvent;
     memcpy(&action->mKeyMsg, sHandlingKeyMsg, sizeof(MSG));
     return;
@@ -1253,7 +1250,7 @@ HRESULT TSFTextStore::RestartComposition(Composition& aCurrentComposition,
                                  oldComposition.Length(), commitString);
   MOZ_ASSERT(mComposition.isSome());
   // Record a compositionupdate action for commit the part of composing string.
-  PendingAction* action = LastOrNewPendingCompositionUpdate();
+  PendingAction* action = mPendingActions.LastOrNewPendingCompositionUpdate();
   if (mComposition.isSome()) {
     action->mData = mComposition->DataRef();
   }
@@ -1357,7 +1354,7 @@ HRESULT TSFTextStore::RecordCompositionUpdateAction() {
     return E_FAIL;
   }
 
-  PendingAction* action = LastOrNewPendingCompositionUpdate();
+  PendingAction* action = mPendingActions.LastOrNewPendingCompositionUpdate();
   action->mData = mComposition->DataRef();
   // The ranges might already have been initialized, however, if this is
   // called again, that means we need to overwrite the ranges with current
@@ -1626,7 +1623,7 @@ HRESULT TSFTextStore::SetSelectionInternal(
   }
 
   CompleteLastActionIfStillIncomplete();
-  PendingAction* action = mPendingActions.AppendElement();
+  PendingAction* action = mPendingActions.CreateNewAction();
   action->mType = PendingAction::Type::SetSelection;
   action->mSelectionStart = selectionInContent.acpStart;
   action->mSelectionLength =
@@ -2550,7 +2547,7 @@ bool TSFTextStore::InsertTextAtSelectionInternal(const nsAString& aInsertStr,
   TS_SELECTION_ACP oldSelection = contentForTSF->Selection()->ACPRef();
   if (mComposition.isNothing()) {
     // Use a temporary composition to contain the text
-    PendingAction* compositionStart = mPendingActions.AppendElements(2);
+    PendingAction* compositionStart = mPendingActions.CreateNewActions(2);
     PendingAction* compositionEnd = compositionStart + 1;
 
     compositionStart->mType = PendingAction::Type::CompositionStart;
@@ -2665,11 +2662,11 @@ HRESULT TSFTextStore::RecordCompositionStartAction(
   // when user removes last character of composition string with Backspace
   // key (bug 1462257).
   if (!aPreserveSelection &&
-      IsLastPendingActionCompositionEndAt(aStart, aLength)) {
-    const PendingAction& pendingCompositionEnd = mPendingActions.LastElement();
+      mPendingActions.IsLastPendingActionCompositionEndAt(aStart, aLength)) {
+    const PendingAction& pendingCompositionEnd = mPendingActions.LastAction();
     contentForTSF->RestoreCommittedComposition(aCompositionView,
                                                pendingCompositionEnd);
-    mPendingActions.RemoveLastElement();
+    mPendingActions.RemoveLastAction();
     MOZ_LOG(gIMELog, LogLevel::Info,
             ("0x%p   TSFTextStore::RecordCompositionStartAction() "
              "succeeded: restoring the committed string as composing string, "
@@ -2679,7 +2676,7 @@ HRESULT TSFTextStore::RecordCompositionStartAction(
     return S_OK;
   }
 
-  PendingAction* action = mPendingActions.AppendElement();
+  PendingAction* action = mPendingActions.CreateNewAction();
   action->mType = PendingAction::Type::CompositionStart;
   action->mSelectionStart = aStart;
   action->mSelectionLength = aLength;
@@ -2692,7 +2689,8 @@ HRESULT TSFTextStore::RecordCompositionStartAction(
              this));
     action->mAdjustSelection = true;
   } else if (!selectionForTSF->HasRange()) {
-    // If there is no selection, let's collapse seletion to the insertion point.
+    // If there is no selection, let's collapse selection to the insertion
+    // point.
     action->mAdjustSelection = true;
   } else if (selectionForTSF->MinOffset() != aStart ||
              selectionForTSF->MaxOffset() != aStart + aLength) {
@@ -2750,8 +2748,8 @@ HRESULT TSFTextStore::RecordCompositionEndAction() {
   // the latest composition string and it overwrites the composition string
   // even if we dispatch eCompositionChange event before that.  So, let's
   // forget all composition updates now.
-  RemoveLastCompositionUpdateActions();
-  PendingAction* action = mPendingActions.AppendElement();
+  mPendingActions.RemoveLastCompositionUpdateActions();
+  PendingAction* action = mPendingActions.CreateNewAction();
   action->mType = PendingAction::Type::CompositionEnd;
   action->mData = mComposition->DataRef();
   action->mSelectionStart = mComposition->StartOffset();
@@ -2769,31 +2767,36 @@ HRESULT TSFTextStore::RecordCompositionEndAction() {
   // If this composition was restart but the composition doesn't modify
   // anything, we should remove the pending composition for preventing to
   // dispatch redundant composition events.
-  for (size_t i = mPendingActions.Length(), j = 1; i > 0; --i, ++j) {
-    PendingAction& pendingAction = mPendingActions[i - 1];
-    if (pendingAction.mType == PendingAction::Type::CompositionStart) {
-      if (pendingAction.mData != action->mData) {
-        break;
-      }
-      // When only setting selection is necessary, we should append it.
-      if (pendingAction.mAdjustSelection) {
-        LONG selectionStart = pendingAction.mSelectionStart;
-        LONG selectionLength = pendingAction.mSelectionLength;
-
-        PendingAction* setSelection = mPendingActions.AppendElement();
-        setSelection->mType = PendingAction::Type::SetSelection;
-        setSelection->mSelectionStart = selectionStart;
-        setSelection->mSelectionLength = selectionLength;
-        setSelection->mSelectionReversed = false;
-      }
-      // Remove the redundant pending composition.
-      mPendingActions.RemoveElementsAt(i - 1, j);
-      MOZ_LOG(gIMELog, LogLevel::Info,
-              ("0x%p   TSFTextStore::RecordCompositionEndAction(), "
-               "succeeded, but the composition was canceled due to redundant",
-               this));
-      return S_OK;
+  for (const auto i : Reversed(IntegerRange(mPendingActions.Length()))) {
+    PendingAction& pendingAction = mPendingActions[i];
+    if (pendingAction.mType != PendingAction::Type::CompositionStart) {
+      continue;
     }
+    if (pendingAction.mData != action->mData) {
+      break;
+    }
+    // When only setting selection is necessary, we should append it.
+    Maybe<PendingAction> pendingSetSelection;
+    if (pendingAction.mAdjustSelection) {
+      LONG selectionStart = pendingAction.mSelectionStart;
+      LONG selectionLength = pendingAction.mSelectionLength;
+
+      pendingSetSelection.emplace();
+      pendingSetSelection->mType = PendingAction::Type::SetSelection;
+      pendingSetSelection->mSelectionStart = selectionStart;
+      pendingSetSelection->mSelectionLength = selectionLength;
+      pendingSetSelection->mSelectionReversed = false;
+    }
+    // Remove the redundant pending composition.
+    mPendingActions.RemoveActionsFrom(i);
+    if (pendingSetSelection) {
+      mPendingActions.AppendNewAction(pendingSetSelection.extract());
+    }
+    MOZ_LOG(gIMELog, LogLevel::Info,
+            ("0x%p   TSFTextStore::RecordCompositionEndAction(), "
+             "succeeded, but the composition was canceled due to redundant",
+             this));
+    return S_OK;
   }
 
   MOZ_LOG(
@@ -2887,7 +2890,7 @@ STDMETHODIMP TSFTextStore::OnUpdateComposition(ITfCompositionView* pComposition,
                this));
       return E_FAIL;
     }
-    PendingAction* action = LastOrNewPendingCompositionUpdate();
+    PendingAction* action = mPendingActions.LastOrNewPendingCompositionUpdate();
     action->mIncomplete = true;
     MOZ_LOG(gIMELog, LogLevel::Info,
             ("0x%p   TSFTextStore::OnUpdateComposition() succeeded but "
