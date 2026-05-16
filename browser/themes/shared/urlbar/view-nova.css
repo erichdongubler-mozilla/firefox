@@ -1307,9 +1307,13 @@
       text-align: start;
       grid-row-gap: var(--space-xsmall);
 
+      > .urlbarView-realtime-description-top,
       > .urlbarView-realtime-description-bottom {
         display: flex;
-        align-items: center;
+        align-items: baseline;
+      }
+
+      > .urlbarView-realtime-description-bottom {
         font-size: var(--urlbarView-small-font-size);
         color: var(--urlbarView-secondary-text-color);
       }
@@ -1563,6 +1567,11 @@
 /* Realtime sports suggestions */
 
 .urlbarView-row[dynamicType="realtime-sports"] > .urlbarView-realtime-root > .urlbarView-realtime-item {
+  > .urlbarView-realtime-image-container > .urlbarView-realtime-image {
+    width: 44px;
+    max-height: 44px;
+  }
+
   > .urlbarView-realtime-image-container[hidden] {
     display: none;
   }
@@ -1632,13 +1641,16 @@
 
   > .urlbarView-realtime-description {
     > .urlbarView-realtime-description-top {
-      > .urlbarView-sports-team-names {
+      > .urlbarView-sports-team-names,
+      > .urlbarView-sports-score {
         font-weight: var(--font-weight-bold);
       }
 
-      > .urlbarView-sports-score {
-        font-weight: var(--font-weight-bold);
-        margin-inline-start: var(--space-xsmall);
+      > .urlbarView-sports-score-home {
+        margin-inline-start: var(--space-small);
+      }
+      > .urlbarView-sports-score-away {
+        margin-inline-end: var(--space-small);
       }
     }
 
