@@ -497,7 +497,7 @@ webextensions:
         - toolkit/components/extensions/test/
         - toolkit/mozapps/extensions/test/
     query:
-        - "'android | '64/ | 'windows11-64-24h2 !wpt !gpu !msix !-lite !-asan"
+        - "'android | '64/ | 'windows11-64- !wpt !gpu !msix !-lite !-asan"
 
 webgpu:
     selector: fuzzy
