@@ -3147,15 +3147,17 @@ struct AssertNonGrayTracer final : public JS::CallbackTracer {
 #endif
 
 template <uint32_t markingOptions>
-class js::gc::UnmarkGrayTracer final : public JS::CallbackTracer {
+class js::gc::UnmarkGrayTracer final
+    : public GenericTracerImpl<UnmarkGrayTracer<markingOptions>> {
+  using Base = GenericTracerImpl<UnmarkGrayTracer<markingOptions>>;
   using BarrierTracer = MarkingTracerT<markingOptions>;
 
  public:
   // We set weakMapAction to WeakMapTraceAction::Skip because the cycle
   // collector will fix up any color mismatches involving weakmaps when it runs.
   explicit UnmarkGrayTracer(BarrierTracer* barrierTracer)
-      : JS::CallbackTracer(barrierTracer->runtime(), JS::TracerKind::UnmarkGray,
-                           JS::WeakMapTraceAction::Skip),
+      : Base(barrierTracer->runtime(), JS::TracerKind::UnmarkGray,
+             JS::WeakMapTraceAction::Skip),
         unmarkedAny(false),
         oom(false),
         barrierTracer(barrierTracer),
@@ -3180,35 +3182,43 @@ class js::gc::UnmarkGrayTracer final : public JS::CallbackTracer {
   // Stack of cells to traverse.
   Vector<JS::GCCellPtr, 0, SystemAllocPolicy>& stack;
 
-  void onChild(JS::GCCellPtr thing, const char* name) override;
+  template <typename T>
+  void onChild(T* thing);
+
+  template <typename T>
+  void onEdge(T** thingp, const char* name) {
+    if (T* thing = *thingp) {
+      onChild(thing);
+    }
+  }
+  friend class js::GenericTracerImpl<UnmarkGrayTracer<markingOptions>>;
 };
 
 template <uint32_t opts>
-void UnmarkGrayTracer<opts>::onChild(JS::GCCellPtr thing, const char* name) {
-  Cell* cell = thing.asCell();
-
+template <typename T>
+void UnmarkGrayTracer<opts>::onChild(T* thing) {
   // Cells in the nursery cannot be gray, and nor can certain kinds of tenured
   // cells. These must necessarily point only to black edges.
-  if (!cell->isTenured() || !TraceKindCanBeMarkedGray(thing.kind())) {
+  if (!TraceKindCanBeGray<T>::value || !thing->isTenured()) {
 #ifdef DEBUG
-    MOZ_ASSERT(!cell->isMarkedGray());
-    AssertNonGrayTracer nongray(runtime());
-    JS::TraceChildren(&nongray, thing);
+    MOZ_ASSERT(!thing->isMarkedGray());
+    AssertNonGrayTracer nongray(this->runtime());
+    thing->traceChildren(&nongray);
 #endif
     return;
   }
 
-  TenuredCell& tenured = cell->asTenured();
+  TenuredCell& tenured = thing->asTenured();
   Zone* zone = tenured.zoneFromAnyThread();
 
   // As well as updating the mark bits, we may need to update the color in the
   // atom marking bitmap for symbols to record that |sourceZone| now has a black
   // edge to |thing|.
-  if (zone->isAtomsZone() && sourceZone) {
-    GCRuntime* gc = &runtime()->gc;
-    if (tenured.is<JS::Symbol>()) {
-      JS::Symbol* symbol = tenured.as<JS::Symbol>();
-      gc->atomMarking.maybeUnmarkGrayAtomically(sourceZone, symbol);
+  if constexpr (std::is_same_v<T, JS::Symbol>) {
+    MOZ_ASSERT(zone->isAtomsZone());
+    if (sourceZone) {
+      GCRuntime* gc = &this->runtime()->gc;
+      gc->atomMarking.maybeUnmarkGrayAtomically(sourceZone, thing);
     }
   }
 
@@ -3237,11 +3247,9 @@ void UnmarkGrayTracer<opts>::onChild(JS::GCCellPtr thing, const char* name) {
 
     AutoClearTracingSource acts(marker);
 
-    ApplyGCThingTyped(thing, [&](auto* thing) {
-      MOZ_ASSERT(ShouldMark(MarkColor::Black, thing));
-      CheckTracedThing(barrierTracer, thing);
-      barrierTracer->markAndTraverse(thing);
-    });
+    MOZ_ASSERT(ShouldMark(MarkColor::Black, thing));
+    CheckTracedThing(barrierTracer, thing);
+    barrierTracer->markAndTraverse(thing);
   } else if (tenured.isMarkedGray()) {
     if constexpr (bool(opts & MarkingOptions::AtomicMarking)) {
       tenured.markBlackAtomic();
@@ -3265,7 +3273,7 @@ void UnmarkGrayTracer<opts>::unmark(JS::GCCellPtr cell) {
   // fail because it asserts that something gets unmarked.
 
   sourceZone = nullptr;
-  onChild(cell, "unmarking root");
+  ApplyGCThingTyped(cell, [&](auto* thing) { onChild(thing); });
 
   while (!stack.empty() && !oom) {
     JS::GCCellPtr thing = stack.popCopy();
@@ -3277,7 +3285,7 @@ void UnmarkGrayTracer<opts>::unmark(JS::GCCellPtr cell) {
     // If we run out of memory, we take a drastic measure: require that we
     // GC again before the next CC.
     stack.clear();
-    runtime()->gc.setGrayBitsInvalid();
+    this->runtime()->gc.setGrayBitsInvalid();
   }
 }
 
