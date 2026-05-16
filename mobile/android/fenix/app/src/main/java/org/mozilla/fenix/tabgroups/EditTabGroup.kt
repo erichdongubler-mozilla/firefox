@@ -58,12 +58,12 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.BottomSheetHandle
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.layout.AcornWindowSize.Companion.isLargeWindow
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.BottomSheetHandle
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.TabsTrayTestTag.BOTTOM_SHEET_COLOR_LIST
 import org.mozilla.fenix.tabstray.data.TabGroupTheme

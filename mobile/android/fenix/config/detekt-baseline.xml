@@ -178,7 +178,6 @@
     <ID>HardcodedPaddingUsage:BookmarksScreen.kt$(all = 16.dp)</ID>
     <ID>HardcodedPaddingUsage:BookmarksScreen.kt$(horizontal = 32.dp)</ID>
     <ID>HardcodedPaddingUsage:BookmarksScreen.kt$(vertical = 16.dp)</ID>
-    <ID>HardcodedPaddingUsage:BottomSheetHandle.kt$(all = 16.dp)</ID>
     <ID>HardcodedPaddingUsage:BottomSheetScene.kt$BottomSheetScene$(all = 16.dp)</ID>
     <ID>HardcodedPaddingUsage:ChecklistView.kt$(16.dp)</ID>
     <ID>HardcodedPaddingUsage:ChecklistView.kt$(start = 16.dp)</ID>

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.mozilla.fenix.compose
+package mozilla.components.compose.base
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -20,7 +20,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.compose.base.theme.AcornTheme
 
 private val BottomSheetHandleWidth = 32.dp
 private val BottomSheetHandleHeight = 4.dp
@@ -60,11 +60,11 @@ fun BottomSheetHandle(
 @Composable
 @PreviewLightDark
 private fun BottomSheetHandlePreview() {
-    FirefoxTheme {
+    AcornTheme {
         Surface {
             BottomSheetHandle(
                 onRequestDismiss = {},
-                modifier = Modifier.padding(all = 16.dp),
+                modifier = Modifier.padding(all = AcornTheme.layout.space.static200),
                 contentDescription = "",
             )
         }

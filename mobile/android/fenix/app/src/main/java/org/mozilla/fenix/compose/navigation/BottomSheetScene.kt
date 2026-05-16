@@ -22,8 +22,8 @@ import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
 import kotlinx.coroutines.delay
+import mozilla.components.compose.base.BottomSheetHandle
 import org.mozilla.fenix.compose.BetaLabel
-import org.mozilla.fenix.compose.BottomSheetHandle
 import org.mozilla.fenix.compose.navigation.BottomSheetSceneStrategy.Companion.bottomSheet
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.time.Duration.Companion.milliseconds
