@@ -51,6 +51,8 @@ pub enum LockstoreError {
     NotExtractable(String),
     #[error("Authentication cancelled")]
     AuthenticationCancelled,
+    #[error("Authentication failed")]
+    AuthenticationFailed,
     #[error("Token error: {0}")]
     TokenError(String),
     #[error("Invalid kek_ref: {0}")]

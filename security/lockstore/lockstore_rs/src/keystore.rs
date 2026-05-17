@@ -470,14 +470,19 @@ impl LockstoreKeystore {
     //   LocalKey        → no-op; always reported as unlocked.
     //   PrimaryPassword → `secret` is the password, fed to PBKDF2; KEK bytes
     //                     cached in memory with `now + timeout` deadline.
-    //   Pkcs11Token     → `secret` is typically unused (NSS prompts for the
-    //                     PIN via its password callback); the slot is
-    //                     authenticated and a per-kek_ref unlock deadline is
-    //                     cached.
+    //                     `secret` is required (non-empty).
+    //   Pkcs11Token     → `secret` is the PIN. When non-empty, we authenticate
+    //                     via PK11_CheckUserPassword — a direct C_Login with
+    //                     the caller-supplied PIN, bypassing NSS's password
+    //                     callback. When empty, we fall back to
+    //                     slot.authenticate() which delegates to whatever
+    //                     callback the embedding application has installed.
+    //                     A per-kek_ref unlock deadline is cached in either
+    //                     case.
     //   Test       → no-op (treated like LocalKey).
     //
-    // Callers should not rely on `secret` being consumed by any given KEK
-    // type; pass what the type expects.
+    // Callers should supply `secret` matching the KEK type (password for PP,
+    // PIN for PKCS#11, or empty to defer to NSS).
     // ========================================================================
 
     /// Returns true if a primary password has been initialized for this keystore.
@@ -505,10 +510,8 @@ impl LockstoreKeystore {
 
     /// Drop any cached authentication for `kek_ref`. No-op for KEK types that
     /// don't require interaction (LocalKey, Test). For PKCS#11, this
-    /// clears the Lockstore-side auth cache; the underlying NSS slot remains
-    /// authenticated until the token session ends or another consumer calls
-    /// `PK11_Logout` — a follow-up binding can tighten this once `nss-gk-api`
-    /// exposes `Slot::logout`.
+    /// clears the Lockstore-side auth cache **and** calls `PK11_Logout` on
+    /// the slot so NSS's own authenticated-session state is also cleared.
     pub fn lock_kek(&self, kek_ref: &str) {
         let level = match KekType::from_kek_ref(kek_ref) {
             Ok(l) => l,
@@ -519,6 +522,16 @@ impl LockstoreKeystore {
             KekType::PrimaryPassword => self.lock_prp_impl(),
             KekType::Pkcs11Token => {
                 self.pkcs11_auth_cache.lock().unwrap().remove(kek_ref);
+                // Best-effort NSS logout. If the kek_ref is malformed or the
+                // slot isn't resolvable, we've still cleared our cache which
+                // is what callers observe.
+                if let Some(uri_str) = kek_ref.strip_prefix(KEK_REF_PREFIX) {
+                    if let Ok(uri) = nss_rs::pk11_utils::parse(uri_str) {
+                        if let Ok(slot) = self.resolve_pkcs11_slot(&uri) {
+                            let _ = slot.logout();
+                        }
+                    }
+                }
             }
             #[cfg(test)]
             KekType::Test => {}
@@ -548,7 +561,7 @@ impl LockstoreKeystore {
         match level {
             KekType::LocalKey => Ok(()),
             KekType::PrimaryPassword => self.unlock_prp_impl(secret, timeout),
-            KekType::Pkcs11Token => self.unlock_pkcs11_impl(kek_ref, timeout),
+            KekType::Pkcs11Token => self.unlock_pkcs11_impl(kek_ref, secret, timeout),
             #[cfg(test)]
             KekType::Test => Ok(()),
         }
@@ -620,7 +633,12 @@ impl LockstoreKeystore {
         }
     }
 
-    fn unlock_pkcs11_impl(&self, kek_ref: &str, timeout: Duration) -> Result<(), LockstoreError> {
+    fn unlock_pkcs11_impl(
+        &self,
+        kek_ref: &str,
+        secret: &[u8],
+        timeout: Duration,
+    ) -> Result<(), LockstoreError> {
         let pkcs11_uri_str = kek_ref.strip_prefix(KEK_REF_PREFIX).ok_or_else(|| {
             LockstoreError::InvalidKekRef(format!("Invalid kek_ref format: {}", kek_ref))
         })?;
@@ -628,8 +646,29 @@ impl LockstoreKeystore {
             LockstoreError::InvalidKekRef(format!("Invalid PKCS#11 URI: {}", kek_ref))
         })?;
         let slot = self.resolve_pkcs11_slot(&uri)?;
-        slot.authenticate()
-            .map_err(|_| LockstoreError::AuthenticationCancelled)?;
+
+        if !secret.is_empty() {
+            // Caller-supplied PIN path: PK11_CheckUserPassword performs
+            // C_Login with the given PIN, bypassing the NSS password
+            // callback. NSS reports a PIN mismatch as
+            // `PR_WOULD_BLOCK_ERROR`; everything else is an opaque
+            // failure.
+            let pin_str =
+                std::str::from_utf8(secret).map_err(|_| LockstoreError::AuthenticationFailed)?;
+            match slot.check_user_password(pin_str) {
+                Ok(()) => {}
+                Err(nss_rs::Error::Nss { name, .. }) if name == "PR_WOULD_BLOCK_ERROR" => {
+                    return Err(LockstoreError::WrongPassword);
+                }
+                Err(_) => return Err(LockstoreError::AuthenticationFailed),
+            }
+        } else {
+            // No PIN supplied: fall back to NSS's own password callback
+            // (the embedding application's registered prompt — typically
+            // PSM in Firefox).
+            slot.authenticate()
+                .map_err(|_| LockstoreError::AuthenticationCancelled)?;
+        }
 
         let mut guard = self.pkcs11_auth_cache.lock().unwrap();
         guard.insert(kek_ref.to_string(), Instant::now() + timeout);
