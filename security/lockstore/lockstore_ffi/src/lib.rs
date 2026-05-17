@@ -127,6 +127,10 @@ pub extern "C" fn lockstore_keystore_get_dek(
     }
 }
 
+/// Delete the DEK for `collection`. The keystore does not track the
+/// associated datastore; callers are responsible for disposing of any
+/// ciphertext under this collection by other means before (or after)
+/// this call.
 #[no_mangle]
 pub extern "C" fn lockstore_keystore_delete_dek(
     handle: &LockstoreKeystoreHandle,
