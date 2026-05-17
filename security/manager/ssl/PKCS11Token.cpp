@@ -1,9 +1,8 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#include "nsPK11TokenDB.h"
 
+#include "PKCS11Token.h"
 #include "ScopedNSSTypes.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Logging.h"
@@ -18,9 +17,24 @@
 
 extern mozilla::LazyLogModule gPIPNSSLog;
 
-NS_IMPL_ISUPPORTS(nsPK11Token, nsIPK11Token)
+NS_IMPL_ISUPPORTS(PKCS11Token, nsIPKCS11Token)
 
-nsPK11Token::nsPK11Token(PK11SlotInfo* slot) : mUIContext(new PipUIContext()) {
+PKCS11Token::PKCS11Token() : mUIContext(new PipUIContext()) {}
+
+nsresult PKCS11Token::Init() {
+  static NS_DEFINE_CID(kNSSComponentCID, NS_NSSCOMPONENT_CID);
+  nsCOMPtr<nsINSSComponent> nss(do_GetService(kNSSComponentCID));
+  if (!nss) {
+    return NS_ERROR_FAILURE;
+  }
+  mSlot.reset(PK11_GetInternalKeySlot());
+  mIsInternalCryptoToken = false;
+  mIsInternalKeyToken = true;
+  mSeries = PK11_GetSlotSeries(mSlot.get());
+  return refreshTokenInfo();
+}
+
+PKCS11Token::PKCS11Token(PK11SlotInfo* slot) : mUIContext(new PipUIContext()) {
   MOZ_ASSERT(slot);
   mSlot.reset(PK11_ReferenceSlot(slot));
   mIsInternalCryptoToken =
@@ -30,7 +44,7 @@ nsPK11Token::nsPK11Token(PK11SlotInfo* slot) : mUIContext(new PipUIContext()) {
   (void)refreshTokenInfo();
 }
 
-nsresult nsPK11Token::refreshTokenInfo() {
+nsresult PKCS11Token::refreshTokenInfo() {
   if (mIsInternalCryptoToken) {
     nsresult rv;
     if (PK11_IsFIPS()) {
@@ -92,7 +106,7 @@ nsresult nsPK11Token::refreshTokenInfo() {
   return NS_OK;
 }
 
-nsresult nsPK11Token::GetAttributeHelper(const nsACString& attribute,
+nsresult PKCS11Token::GetAttributeHelper(const nsACString& attribute,
                                          /*out*/ nsACString& xpcomOutParam) {
   // Handle removals/insertions.
   if (PK11_GetSlotSeries(mSlot.get()) != mSeries) {
@@ -107,46 +121,46 @@ nsresult nsPK11Token::GetAttributeHelper(const nsACString& attribute,
 }
 
 NS_IMETHODIMP
-nsPK11Token::GetTokenName(/*out*/ nsACString& tokenName) {
+PKCS11Token::GetTokenName(/*out*/ nsACString& tokenName) {
   return GetAttributeHelper(mTokenName, tokenName);
 }
 
 NS_IMETHODIMP
-nsPK11Token::GetIsInternalKeyToken(/*out*/ bool* _retval) {
+PKCS11Token::GetIsInternalKeyToken(/*out*/ bool* _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
   *_retval = mIsInternalKeyToken;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsPK11Token::GetTokenManID(/*out*/ nsACString& tokenManufacturerID) {
+PKCS11Token::GetTokenManID(/*out*/ nsACString& tokenManufacturerID) {
   return GetAttributeHelper(mTokenManufacturerID, tokenManufacturerID);
 }
 
 NS_IMETHODIMP
-nsPK11Token::GetTokenHWVersion(/*out*/ nsACString& tokenHWVersion) {
+PKCS11Token::GetTokenHWVersion(/*out*/ nsACString& tokenHWVersion) {
   return GetAttributeHelper(mTokenHWVersion, tokenHWVersion);
 }
 
 NS_IMETHODIMP
-nsPK11Token::GetTokenFWVersion(/*out*/ nsACString& tokenFWVersion) {
+PKCS11Token::GetTokenFWVersion(/*out*/ nsACString& tokenFWVersion) {
   return GetAttributeHelper(mTokenFWVersion, tokenFWVersion);
 }
 
 NS_IMETHODIMP
-nsPK11Token::GetTokenSerialNumber(/*out*/ nsACString& tokenSerialNum) {
+PKCS11Token::GetTokenSerialNumber(/*out*/ nsACString& tokenSerialNum) {
   return GetAttributeHelper(mTokenSerialNum, tokenSerialNum);
 }
 
 NS_IMETHODIMP
-nsPK11Token::IsLoggedIn(bool* _retval) {
+PKCS11Token::IsLoggedIn(bool* _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
   *_retval = PK11_IsLoggedIn(mSlot.get(), 0);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsPK11Token::Login(bool force) {
+PKCS11Token::Login(bool force) {
   bool test;
   nsresult rv = this->NeedsLogin(&test);
   if (NS_FAILED(rv)) {
@@ -164,7 +178,7 @@ nsPK11Token::Login(bool force) {
 }
 
 NS_IMETHODIMP
-nsPK11Token::LogoutSimple() {
+PKCS11Token::LogoutSimple() {
   // PK11_Logout() can fail if the user wasn't logged in beforehand. We want
   // this method to succeed even in this case, so we ignore the return value.
   (void)PK11_Logout(mSlot.get());
@@ -172,7 +186,7 @@ nsPK11Token::LogoutSimple() {
 }
 
 NS_IMETHODIMP
-nsPK11Token::LogoutAndDropAuthenticatedResources() {
+PKCS11Token::LogoutAndDropAuthenticatedResources() {
   static NS_DEFINE_CID(kNSSComponentCID, NS_NSSCOMPONENT_CID);
 
   nsresult rv = LogoutSimple();
@@ -186,19 +200,19 @@ nsPK11Token::LogoutAndDropAuthenticatedResources() {
 }
 
 NS_IMETHODIMP
-nsPK11Token::Reset() {
+PKCS11Token::Reset() {
   return mozilla::MapSECStatus(PK11_ResetToken(mSlot.get(), nullptr));
 }
 
 NS_IMETHODIMP
-nsPK11Token::GetNeedsUserInit(bool* aNeedsUserInit) {
+PKCS11Token::GetNeedsUserInit(bool* aNeedsUserInit) {
   NS_ENSURE_ARG_POINTER(aNeedsUserInit);
   *aNeedsUserInit = PK11_NeedUserInit(mSlot.get());
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsPK11Token::CheckPassword(const nsACString& password, bool* _retval) {
+PKCS11Token::CheckPassword(const nsACString& password, bool* _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
   SECStatus srv =
       PK11_CheckUserPassword(mSlot.get(), PromiseFlatCString(password).get());
@@ -216,7 +230,7 @@ nsPK11Token::CheckPassword(const nsACString& password, bool* _retval) {
 }
 
 NS_IMETHODIMP
-nsPK11Token::InitPassword(const nsACString& initialPassword) {
+PKCS11Token::InitPassword(const nsACString& initialPassword) {
   const nsCString& passwordCStr = PromiseFlatCString(initialPassword);
   // PSM initializes the sqlite-backed softoken with an empty password. The
   // implementation considers this not to be a password (GetHasPassword returns
@@ -236,7 +250,7 @@ nsPK11Token::InitPassword(const nsACString& initialPassword) {
 }
 
 NS_IMETHODIMP
-nsPK11Token::ChangePassword(const nsACString& oldPassword,
+PKCS11Token::ChangePassword(const nsACString& oldPassword,
                             const nsACString& newPassword) {
   // PK11_ChangePW() has different semantics for the empty string and for
   // nullptr. In order to support this difference, we need to check IsVoid() to
@@ -249,7 +263,7 @@ nsPK11Token::ChangePassword(const nsACString& oldPassword,
 }
 
 NS_IMETHODIMP
-nsPK11Token::GetHasPassword(bool* hasPassword) {
+PKCS11Token::GetHasPassword(bool* hasPassword) {
   NS_ENSURE_ARG_POINTER(hasPassword);
   // PK11_NeedLogin returns true if the token is currently configured to require
   // the user to log in (whether or not the user is actually logged in makes no
@@ -259,26 +273,8 @@ nsPK11Token::GetHasPassword(bool* hasPassword) {
 }
 
 NS_IMETHODIMP
-nsPK11Token::NeedsLogin(bool* _retval) {
+PKCS11Token::NeedsLogin(bool* _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
   *_retval = PK11_NeedLogin(mSlot.get());
-  return NS_OK;
-}
-
-/*=========================================================*/
-
-NS_IMPL_ISUPPORTS(nsPK11TokenDB, nsIPK11TokenDB)
-
-NS_IMETHODIMP
-nsPK11TokenDB::GetInternalKeyToken(nsIPK11Token** _retval) {
-  NS_ENSURE_ARG_POINTER(_retval);
-  mozilla::UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
-  if (!slot) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsCOMPtr<nsIPK11Token> token = new nsPK11Token(slot.get());
-  token.forget(_retval);
-
   return NS_OK;
 }

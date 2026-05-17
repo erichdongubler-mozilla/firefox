@@ -1539,10 +1539,9 @@ export const LoginHelper = {
    * Returns true if the user has a primary password set and false otherwise.
    */
   isPrimaryPasswordSet() {
-    let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
-      Ci.nsIPK11TokenDB
+    let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
+      Ci.nsIPKCS11Token
     );
-    let token = tokenDB.getInternalKeyToken();
     return token.hasPassword;
   },
 
@@ -1655,10 +1654,9 @@ export const LoginHelper = {
     let telemetryEvent;
 
     // This does no harm if primary password isn't set.
-    let tokendb = Cc["@mozilla.org/security/pk11tokendb;1"].createInstance(
-      Ci.nsIPK11TokenDB
+    let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
+      Ci.nsIPKCS11Token
     );
-    let token = tokendb.getInternalKeyToken();
 
     // Do we have a recent authorization?
     if (expirationTime && Date.now() < expirationTime) {

@@ -5,8 +5,8 @@
 
 #include "nsISupports.idl"
 
-[scriptable, uuid(51191434-1dd2-11b2-a17c-e49c4e99a4e3)]
-interface nsIPK11Token : nsISupports
+[scriptable, builtinclass, uuid(51191434-1dd2-11b2-a17c-e49c4e99a4e3)]
+interface nsIPKCS11Token : nsISupports
 {
   /*
    * The name of the token

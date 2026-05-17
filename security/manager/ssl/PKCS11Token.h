@@ -3,30 +3,31 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsPK11TokenDB_h
-#define nsPK11TokenDB_h
+#ifndef PKCS11Token_h
+#define PKCS11Token_h
 
 #include "nsCOMPtr.h"
-#include "nsIPK11Token.h"
-#include "nsIPK11TokenDB.h"
+#include "nsIPKCS11Token.h"
 #include "nsISupports.h"
 #include "nsNSSHelper.h"
 #include "nsString.h"
 #include "pk11func.h"
 #include "ScopedNSSTypes.h"
 
-class nsPK11Token : public nsIPK11Token {
+class PKCS11Token : public nsIPKCS11Token {
  public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIPK11TOKEN
+  NS_DECL_NSIPKCS11TOKEN
 
-  explicit nsPK11Token(PK11SlotInfo* slot);
+  explicit PKCS11Token(PK11SlotInfo* slot);
+
+  PKCS11Token();
+  nsresult Init();
 
  protected:
-  virtual ~nsPK11Token() = default;
+  virtual ~PKCS11Token() = default;
 
  private:
-  friend class nsPK11TokenDB;
   nsresult refreshTokenInfo();
 
   nsCString mTokenName;
@@ -45,18 +46,4 @@ class nsPK11Token : public nsIPK11Token {
                               /*out*/ nsACString& xpcomOutParam);
 };
 
-class nsPK11TokenDB : public nsIPK11TokenDB {
- public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIPK11TOKENDB
-
-  nsPK11TokenDB() = default;
-
- protected:
-  virtual ~nsPK11TokenDB() = default;
-};
-
-#define NS_PK11TOKENDB_CID \
-  {0xb084a2ce, 0x1dd1, 0x11b2, {0xbf, 0x10, 0x83, 0x24, 0xf8, 0xe0, 0x65, 0xcc}}
-
-#endif  // nsPK11TokenDB_h
+#endif  // PKCS11Token_h
