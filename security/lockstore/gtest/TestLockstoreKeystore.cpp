@@ -406,11 +406,9 @@ TEST_F(LockstoreKeystoreTest, UnlockPrpWithoutInitFails) {
   nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
   ASSERT_NS_SUCCEEDED(rv);
 
-  nsTArray<uint8_t> pw;
-  pw.AppendElements("pw", 2);
+  const nsCString pw("pw"_ns);
   // No primary password has been set, so unlock must report not-initialized.
-  rv = lockstore_keystore_unlock_prp(mKeystore, pw.Elements(), pw.Length(),
-                                     /* timeoutMs */ 60000);
+  rv = lockstore_keystore_unlock_prp(mKeystore, &pw, /* timeoutMs */ 60000);
   ASSERT_EQ(rv, NS_ERROR_NOT_INITIALIZED);
 }
 

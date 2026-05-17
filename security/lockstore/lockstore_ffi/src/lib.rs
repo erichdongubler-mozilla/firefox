@@ -201,11 +201,12 @@ pub extern "C" fn lockstore_keystore_remove_kek(
 }
 
 /// # Safety
-/// `plaintext_ptr` may be null only when `plaintext_len == 0` (empty
-/// plaintext). Otherwise it must point to at least `plaintext_len`
-/// initialised bytes that remain valid for the duration of the call.
-/// Ownership remains with the caller; Lockstore copies what it needs
-/// before returning.
+/// `plaintext_ptr` must point to at least `plaintext_len` initialised
+/// bytes that remain valid for the duration of the call when
+/// `plaintext_len > 0`. When `plaintext_len == 0` the pointer is not
+/// dereferenced and may be null (or whatever sentinel
+/// `nsTArray::Elements()` returns for empty arrays). Ownership remains
+/// with the caller; Lockstore copies what it needs before returning.
 #[no_mangle]
 pub unsafe extern "C" fn lockstore_keystore_encrypt(
     handle: &LockstoreKeystoreHandle,
@@ -218,12 +219,19 @@ pub unsafe extern "C" fn lockstore_keystore_encrypt(
     if collection.is_empty() || kek_ref.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
-    if plaintext_ptr.is_null() || plaintext_len == 0 {
+    // Length-first check: short-circuits before any pointer
+    // dereference, so the caller does not need to nullptr-guard for
+    // empty buffers — passing `nsTArray::Elements()` unconditionally is
+    // safe.
+    if plaintext_len == 0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+    if plaintext_ptr.is_null() {
         return NS_ERROR_INVALID_ARG;
     }
     let coll_str = collection.to_utf8();
     let kek_ref_str = kek_ref.to_utf8();
-    // SAFETY: non-null ptr + non-zero len validated above; caller's
+    // SAFETY: non-zero len + non-null ptr validated above; caller's
     // contract requires this to point at `plaintext_len` valid bytes.
     let plaintext = unsafe { std::slice::from_raw_parts(plaintext_ptr, plaintext_len) };
     match handle.keystore.encrypt(&coll_str, &kek_ref_str, plaintext) {
@@ -236,10 +244,10 @@ pub unsafe extern "C" fn lockstore_keystore_encrypt(
 }
 
 /// # Safety
-/// `ciphertext_ptr` must point to at least `ciphertext_len` initialised
-/// bytes that remain valid for the duration of the call.
-/// `ciphertext_len` must be non-zero. Ownership remains with the
-/// caller; Lockstore copies what it needs before returning.
+/// `ciphertext_ptr` must point to at least `ciphertext_len`
+/// initialised bytes that remain valid for the duration of the call
+/// when `ciphertext_len > 0`. When `ciphertext_len == 0` the pointer
+/// is not dereferenced. Ownership remains with the caller.
 #[no_mangle]
 pub unsafe extern "C" fn lockstore_keystore_decrypt(
     handle: &LockstoreKeystoreHandle,
@@ -252,12 +260,15 @@ pub unsafe extern "C" fn lockstore_keystore_decrypt(
     if collection.is_empty() || kek_ref.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
-    if ciphertext_ptr.is_null() || ciphertext_len == 0 {
+    if ciphertext_len == 0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+    if ciphertext_ptr.is_null() {
         return NS_ERROR_INVALID_ARG;
     }
     let coll_str = collection.to_utf8();
     let kek_ref_str = kek_ref.to_utf8();
-    // SAFETY: non-null ptr + non-zero len validated above; caller's
+    // SAFETY: non-zero len + non-null ptr validated above; caller's
     // contract requires this to point at `ciphertext_len` valid bytes.
     let ciphertext = unsafe { std::slice::from_raw_parts(ciphertext_ptr, ciphertext_len) };
     match handle.keystore.decrypt(&coll_str, &kek_ref_str, ciphertext) {
@@ -300,44 +311,34 @@ pub unsafe extern "C" fn lockstore_keystore_close(
 // Primary Password FFI Functions
 // ============================================================================
 
-/// # Safety
-/// `old_ptr` may be null (and `old_len == 0`) only for initial setup
-/// (when no PrP is yet stored); otherwise it must point to a writable,
-/// initialised buffer of length `old_len`. `new_ptr` must point to a
-/// writable buffer of length `new_len`. Lockstore zeroises both
-/// buffers in place before returning so the caller's plaintext copy
-/// does not linger; the caller still owns the allocations and must
-/// release them as usual.
+/// Set or change the primary password. `old` is empty for initial
+/// setup. Lockstore copies the caller's bytes into its own buffers,
+/// uses them, and zeroises those internal buffers before returning;
+/// the caller's `nsACString` views are never mutated. Callers should
+/// still observe their own hygiene for the strings they passed in.
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_set_prp(
+pub extern "C" fn lockstore_keystore_set_prp(
     handle: &LockstoreKeystoreHandle,
-    old_ptr: *mut u8,
-    old_len: usize,
-    new_ptr: *mut u8,
-    new_len: usize,
+    old: &nsACString,
+    new: &nsACString,
 ) -> nsresult {
-    if new_ptr.is_null() {
+    if new.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
-    // SAFETY: caller's contract requires each non-null pointer to
-    // point at `<…_len>` writable bytes that remain valid for the
-    // duration of the call.
-    let new_slice = unsafe { std::slice::from_raw_parts_mut(new_ptr, new_len) };
-    let mut old_slice = if old_ptr.is_null() {
+    // Defensive copies that we own and can zeroise; the caller's
+    // `&nsACString` references remain const-correct.
+    let mut new_buf: Vec<u8> = new[..].to_vec();
+    let mut old_buf: Option<Vec<u8>> = if old.is_empty() {
         None
     } else {
-        // SAFETY: see above.
-        Some(unsafe { std::slice::from_raw_parts_mut(old_ptr, old_len) })
+        Some(old[..].to_vec())
     };
 
-    let result = handle.keystore.set_prp(old_slice.as_deref(), &*new_slice);
+    let result = handle.keystore.set_prp(old_buf.as_deref(), &new_buf);
 
-    // Wipe the caller's plaintext copy before returning. Each slice
-    // already covers exactly the caller's buffer; the null cases drop
-    // through.
-    new_slice.zeroize();
-    if let Some(ref mut old) = old_slice {
-        old.zeroize();
+    new_buf.zeroize();
+    if let Some(ref mut o) = old_buf {
+        o.zeroize();
     }
 
     match result {
@@ -346,30 +347,24 @@ pub unsafe extern "C" fn lockstore_keystore_set_prp(
     }
 }
 
-/// # Safety
-/// `pw_ptr` must point to a writable buffer of length `pw_len`.
-/// Lockstore zeroises the buffer in place before returning; the
-/// caller still owns the allocation and must release it as usual.
+/// Unlock the primary-password KEK. Lockstore copies the password
+/// into its own buffer, uses it to derive the KEK, and zeroises that
+/// buffer before returning; the caller's `nsACString` is never
+/// mutated.
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_unlock_prp(
+pub extern "C" fn lockstore_keystore_unlock_prp(
     handle: &LockstoreKeystoreHandle,
-    pw_ptr: *mut u8,
-    pw_len: usize,
+    pw: &nsACString,
     timeout_ms: u32,
 ) -> nsresult {
-    if pw_ptr.is_null() {
+    if pw.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
-    // SAFETY: caller's contract requires `pw_ptr` to point at `pw_len`
-    // writable bytes that remain valid for the duration of the call.
-    let pw = unsafe { std::slice::from_raw_parts_mut(pw_ptr, pw_len) };
-
+    let mut pw_buf: Vec<u8> = pw[..].to_vec();
     let result = handle
         .keystore
-        .unlock_prp(&*pw, Duration::from_millis(timeout_ms as u64));
-
-    pw.zeroize();
-
+        .unlock_prp(&pw_buf, Duration::from_millis(timeout_ms as u64));
+    pw_buf.zeroize();
     match result {
         Ok(()) => NS_OK,
         Err(e) => error_to_nsresult(e),
