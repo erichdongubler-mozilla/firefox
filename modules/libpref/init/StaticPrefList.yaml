@@ -4068,7 +4068,7 @@
 # while the lock is active.
 - name: dom.pointer-lock.unadjusted-movement.enabled
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # re-SAB: Whether to allow postMessage of a SharedArrayBuffer if various
