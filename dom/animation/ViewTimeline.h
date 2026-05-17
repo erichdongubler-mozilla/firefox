@@ -59,7 +59,7 @@ class ViewTimeline final : public ScrollTimeline {
                              const PseudoStyleRequest& aPseudoRequest,
                              const StyleViewTimeline& aNew);
 
-  void UpdateCachedCurrentTime() override;
+  bool UpdateCachedCurrentTime() override;
 
   std::pair<double, double> IntervalForAttachmentRange(
       const AnimationRange& aStyleRange) const override;
@@ -132,6 +132,10 @@ class ViewTimeline final : public ScrollTimeline {
              mSubjectPosition != aOther.mSubjectPosition ||
              mSubjectSize != aOther.mSubjectSize ||
              mInsetStart != aOther.mInsetStart || mInsetEnd != aOther.mInsetEnd;
+    }
+    bool operator==(const CurrentTimeData& aOther) const {
+      return mScrollData.mPosition == aOther.mScrollData.mPosition &&
+             !IsChanged(aOther);
     }
   };
   Maybe<CurrentTimeData> mCachedCurrentTime;

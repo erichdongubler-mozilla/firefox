@@ -123,7 +123,7 @@ static std::pair<nscoord, nscoord> ComputeInsets(
   return {startInset, endInset};
 }
 
-void ViewTimeline::UpdateCachedCurrentTime() {
+bool ViewTimeline::UpdateCachedCurrentTime() {
   const auto prevCachedCurrentTime = std::move(mCachedCurrentTime);
 
   mCachedCurrentTime.reset();
@@ -131,14 +131,14 @@ void ViewTimeline::UpdateCachedCurrentTime() {
   const auto state = GetState();
   // If no layout box, this timeline is inactive.
   if (const auto* e = state.mSource.mElement; !e || !e->GetPrimaryFrame()) {
-    return;
+    return prevCachedCurrentTime.isSome();
   }
 
   // if this is not a scroller container, this timeline is inactive.
   const ScrollContainerFrame* scrollContainerFrame =
       state.GetScrollContainerFrame();
   if (!scrollContainerFrame) {
-    return;
+    return prevCachedCurrentTime.isSome();
   }
 
   // If there is no scrollable overflow, then the ScrollTimeline is inactive.
@@ -146,7 +146,7 @@ void ViewTimeline::UpdateCachedCurrentTime() {
   const auto orientation = state.Axis();
   if (!scrollContainerFrame->GetAvailableScrollingDirections().contains(
           orientation)) {
-    return;
+    return prevCachedCurrentTime.isSome();
   }
 
   // Note: We may fail to get the pseudo element (or its primary frame) if it is
@@ -163,7 +163,7 @@ void ViewTimeline::UpdateCachedCurrentTime() {
     // No principal box of the subject, so we cannot compute the offset. This
     // may happen when we clear all animation collections during unbinding from
     // the tree.
-    return;
+    return prevCachedCurrentTime.isSome();
   }
 
   // The current scroll position and scroll range.
@@ -220,6 +220,7 @@ void ViewTimeline::UpdateCachedCurrentTime() {
       prevCachedCurrentTime->IsChanged(*mCachedCurrentTime)) {
     TimelineDataDidChange();
   }
+  return mCachedCurrentTime != prevCachedCurrentTime;
 }
 
 // FIXME: Bug 2018678. Need to be adjusted for sticky positioning element.
