@@ -146,18 +146,22 @@ add_task(async function test_makeValid() {
     [INVALID_BOOKMARKS_SHARE_2, false],
     [INVALID_BOOKMARKS_SHARE_3, true],
   ]) {
-    const share = ContentSharingUtils.buildShare(invalidShare);
+    let shareResult = ContentSharingUtils.buildShare(invalidShare);
+    shareResult = await ContentSharingUtils.validateSchema(shareResult);
 
     if (shouldPass) {
       Assert.ok(
-        await ContentSharingUtils.validateSchema(share),
-        "The validate function should not throw for valid shares"
+        !shareResult.errors.length,
+        "There should be no errors in the share result"
       );
     } else {
-      await Assert.rejects(
-        ContentSharingUtils.validateSchema(share),
-        new RegExp("ContentSharing Schema Error:"),
-        "The validate function should throw for invalid shares"
+      Assert.ok(
+        shareResult.errors.length,
+        "There should be errors in the share result"
+      );
+      Assert.ok(
+        shareResult.errors.includes(ERRORS.INVALID_SCHEMA),
+        "ERRORS.INVALID_SCHEMA should be in the share result errors"
       );
     }
   }

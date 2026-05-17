@@ -26,6 +26,22 @@
   background-color: var(--background-color-canvas);
 }
 
+.policy {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-end: 0;
+  width: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  span {
+    padding: var(--space-xlarge);
+    color: var(--text-color-deemphasized);
+    border-top: 1px solid var(--border-color-deemphasized);
+  }
+}
+
 .container {
   --modal-size: var(--dimension-400);
   display: flex;
@@ -101,6 +117,10 @@
           max-width: 40ch;
           text-wrap: nowrap;
         }
+      }
+
+      .too-many-links {
+        color: var(--text-color-error);
       }
     }
   }

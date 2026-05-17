@@ -35,32 +35,32 @@ add_setup(function () {
 add_task(async function test_shareBookmarks() {
   const folder = await createFolderWithBookmarks("test folder");
 
-  const shareObject = await ContentSharingUtils.buildShareFromBookmarkFolders([
+  const shareResult = await ContentSharingUtils.buildShareFromBookmarkFolders([
     folder.guid,
   ]);
   ok(
-    await ContentSharingUtils.validateSchema(shareObject),
+    await ContentSharingUtils.validateSchema(shareResult),
     "The result from buildShareFromBookmarkFolders should be valid against the schema"
   );
 
   await createFolderWithBookmarks("nested folder", folder.guid);
 
-  const nestedShareObject =
+  const nestedShareResult =
     await ContentSharingUtils.buildShareFromBookmarkFolders([folder.guid]);
   ok(
-    await ContentSharingUtils.validateSchema(nestedShareObject),
+    await ContentSharingUtils.validateSchema(nestedShareResult),
     "The result from buildShareFromBookmarkFolders should be valid against the schema"
   );
 
   const folder2 = await createFolderWithBookmarks("test folder 2");
 
-  const twoFolderShareObject =
+  const twoFolderShareResult =
     await ContentSharingUtils.buildShareFromBookmarkFolders([
       folder.guid,
       folder2.guid,
     ]);
   ok(
-    await ContentSharingUtils.validateSchema(twoFolderShareObject),
+    await ContentSharingUtils.validateSchema(twoFolderShareResult),
     "The result from buildShareFromBookmarkFolders should be valid against the schema"
   );
 });
@@ -79,11 +79,15 @@ add_task(async function test_createShareableLink() {
     );
     const body = server.requests[0].body;
 
-    await assertContentSharingModal(window, {
-      share: body,
-      url: server.mockResponse.url,
-      isSignedIn: true,
-    });
+    await assertContentSharingModal(
+      window,
+      new ShareResult({
+        share: body,
+        url: server.mockResponse.url,
+        isSignedIn: true,
+        isSchemaValid: true,
+      })
+    );
 
     Assert.equal(body.type, "bookmarks", "Share type is 'bookmarks'");
     Assert.equal(body.links.length, 5, "Share contains 5 links");

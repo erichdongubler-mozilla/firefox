@@ -15,25 +15,35 @@ add_task(async function test_Server410Response() {
       "Server URL is set"
     );
 
-    const share = {
-      type: "tabs",
-      title: "1 Tabs",
-      links: [{ url: "https://example.com", title: "Example" }],
-    };
+    let shareResult = new ShareResult({
+      share: {
+        type: "tabs",
+        title: "1 Tabs",
+        links: [{ url: "https://example.com", title: "Example" }],
+      },
+    });
 
-    let result = await ContentSharingUtils.createShareableLink(share);
+    shareResult = await ContentSharingUtils.createShareableLink(shareResult);
 
-    Assert.equal(result.url, server.mockShareURL, "Got share url");
+    Assert.equal(shareResult.url, server.mockShareURL, "Got share url");
 
     // Now set the response to 410
     server.reset();
     server.mockResponseStatus = 410;
     server.mockResponse = {};
 
-    result = await ContentSharingUtils.createShareableLink(share);
+    shareResult = new ShareResult({
+      share: {
+        type: "tabs",
+        title: "1 Tabs",
+        links: [{ url: "https://example.com", title: "Example" }],
+      },
+    });
+
+    shareResult = await ContentSharingUtils.createShareableLink(shareResult);
     Assert.strictEqual(
-      result.url,
-      undefined,
+      shareResult.url,
+      null,
       "The server never returned a valid response"
     );
 

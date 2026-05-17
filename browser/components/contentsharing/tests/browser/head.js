@@ -1,6 +1,9 @@
 ChromeUtils.defineESModuleGetters(this, {
   ContentSharingUtils:
     "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
+  ShareResult: "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
+  ERRORS: "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
+  WARNINGS: "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(this, "ContentSharingMockServer", () => {
@@ -95,18 +98,43 @@ async function assertContentSharingModal(window, expected) {
     Math.min(expected.share.links.length, 3),
     "Modal has the expected number of links. Max of 3 links"
   );
-  if (expected.share.links.length > 3) {
-    await TestUtils.waitForCondition(() =>
-      modalEl.moreLinks.innerText.startsWith(
-        `+${expected.share.links.length - 3}`
-      )
-    );
+
+  if (expected.errors.length) {
     Assert.ok(
-      modalEl.moreLinks.innerText.startsWith(
-        `+${expected.share.links.length - 3}`
-      ),
-      `Modal has +${expected.share.links.length - 3} more links text`
+      BrowserTestUtils.isVisible(modalEl.errorMessageBar),
+      "Error message is visible"
     );
+  } else if (expected.isSignedIn) {
+    Assert.ok(
+      BrowserTestUtils.isVisible(modalEl.copyButton),
+      "Copy button is visible"
+    );
+  } else {
+    Assert.ok(
+      BrowserTestUtils.isVisible(modalEl.signInButton),
+      "Sign in button is visible"
+    );
+  }
+
+  if (expected.share.links.length > 3) {
+    if (expected.warnings.includes(WARNINGS.TOO_MANY_LINKS)) {
+      Assert.ok(
+        BrowserTestUtils.isVisible(modalEl.tooManyLinks),
+        "Too many links warning is visible"
+      );
+    } else {
+      await TestUtils.waitForCondition(() =>
+        modalEl.moreLinks.innerText.startsWith(
+          `+${expected.share.links.length - 3}`
+        )
+      );
+      Assert.ok(
+        modalEl.moreLinks.innerText.startsWith(
+          `+${expected.share.links.length - 3}`
+        ),
+        `Modal has +${expected.share.links.length - 3} more links text`
+      );
+    }
   }
 
   window.gDialogBox.dialog.close();

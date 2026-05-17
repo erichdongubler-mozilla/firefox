@@ -26,11 +26,15 @@ add_task(async function test_handleShareTabs() {
 
     const body = server.requests[0].body;
 
-    await assertContentSharingModal(window, {
-      share: body,
-      url: server.mockResponse.url,
-      isSignedIn: true,
-    });
+    await assertContentSharingModal(
+      window,
+      new ShareResult({
+        share: body,
+        url: server.mockResponse.url,
+        isSignedIn: true,
+        isSchemaValid: true,
+      })
+    );
 
     Assert.equal(body.type, "tabs", "Share type is 'tabs'");
     Assert.equal(

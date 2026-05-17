@@ -5,6 +5,9 @@
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 
+const { ERRORS, WARNINGS, MAX_ITEM_COUNT } = ChromeUtils.importESModule(
+  "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs"
+);
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -32,16 +35,22 @@ const DEFAULT_COPY_L10N_ID = "content-sharing-modal-copy-link";
 const COPIED_COPY_ICON = "chrome://global/skin/icons/check.svg";
 const COPIED_COPY_L10N_ID = "content-sharing-modal-link-copied";
 
+const ACCEPTABLE_USE_POLICY_URL =
+  "https://www.mozilla.org/about/legal/acceptable-use/";
+
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-card.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-message-bar.mjs";
 
 /**
  * Element used for content sharing modal content
  */
 export class ContentSharingModal extends MozLitElement {
   static properties = {
+    shareResult: { type: Object },
     share: { type: Object },
     error: { type: String },
     isSignedIn: { type: Boolean },
@@ -56,6 +65,8 @@ export class ContentSharingModal extends MozLitElement {
     copyButton: "#copy-button",
     viewPageButton: "#view-page",
     signInButton: "#sign-in",
+    tooManyLinks: ".too-many-links",
+    errorMessageBar: "moz-message-bar",
   };
 
   async getUpdateComplete() {
@@ -66,11 +77,7 @@ export class ContentSharingModal extends MozLitElement {
   connectedCallback() {
     super.connectedCallback();
 
-    const shareObject = window.arguments?.[0];
-    this.share = shareObject.share;
-    this.error = shareObject.error;
-    this.url = shareObject.url;
-    this.isSignedIn = shareObject.isSignedIn;
+    this.shareResult = window.arguments?.[0];
   }
 
   close() {
@@ -91,37 +98,51 @@ export class ContentSharingModal extends MozLitElement {
     </div>`;
   }
 
+  linksInfoTemplate() {
+    if (this.shareResult.warnings.includes(WARNINGS.TOO_MANY_LINKS)) {
+      return html`<div
+        class="too-many-links"
+        data-l10n-id="content-sharing-modal-too-many-links"
+        data-l10n-args=${JSON.stringify({
+          count: MAX_ITEM_COUNT,
+        })}
+      ></div>`;
+    }
+
+    return html`<div
+      class="more-links"
+      data-l10n-id="content-sharing-modal-more-tabs"
+      data-l10n-args=${JSON.stringify({
+        count: this.shareResult.share.links.length - MAX_PREVIEW_LINKS,
+      })}
+    ></div>`;
+  }
+
   linksTemplate() {
-    if (!this.share?.links) {
+    if (!this.shareResult.share?.links) {
       return null;
     }
 
-    if (this.share.links.length > MAX_PREVIEW_LINKS) {
-      return html`${this.share.links
-          .slice(0, 3)
-          .map(link => this.linkTemplate(link))}
-        <div
-          class="more-links"
-          data-l10n-id="content-sharing-modal-more-tabs"
-          data-l10n-args=${JSON.stringify({
-            count: this.share.links.length - MAX_PREVIEW_LINKS,
-          })}
-        ></div>`;
+    if (this.shareResult.share.links.length > MAX_PREVIEW_LINKS) {
+      return html`${this.shareResult.share.links
+        .slice(0, 3)
+        .map(link => this.linkTemplate(link))}
+      ${this.linksInfoTemplate()}`;
     }
 
-    return this.share.links.map(link => this.linkTemplate(link));
+    return this.shareResult.share.links.map(link => this.linkTemplate(link));
   }
 
   handleViewPageClick() {
     this.close();
-    this.documentGlobal.frameElement.documentGlobal.openWebLinkIn(
-      this.url,
+    this.documentGlobal.frameElement.documentGlobal.openTrustedLinkIn(
+      this.shareResult.url,
       "tab"
     );
   }
 
   handleCopyClick() {
-    window.navigator.clipboard.writeText(this.url);
+    window.navigator.clipboard.writeText(this.shareResult.url);
 
     this.copyButton.setAttribute("iconsrc", COPIED_COPY_ICON);
     this.copyButton.setAttribute("data-l10n-id", COPIED_COPY_L10N_ID);
@@ -138,14 +159,54 @@ export class ContentSharingModal extends MozLitElement {
       : "/accounts/fxa/login/";
     const signInURL = lazy.CONTENT_SHARING_SERVER_URL + accountSlug;
     this.close();
-    this.documentGlobal.frameElement.documentGlobal.openWebLinkIn(
+    this.documentGlobal.frameElement.documentGlobal.openTrustedLinkIn(
       signInURL,
       "tab"
     );
   }
 
+  acceptableUseClick(event) {
+    if (!HTMLAnchorElement.isInstance(event.target)) {
+      return;
+    }
+    event.preventDefault();
+    this.close();
+    // Need to do this explicity because just clicking isn't opening a tab
+    this.documentGlobal.frameElement.documentGlobal.openTrustedLinkIn(
+      event.target.href,
+      "tab"
+    );
+  }
+
+  descriptionActionTemplate() {
+    // If we got the url or
+    // if there were no errors or
+    // if were not signed in and got an unauthorized error
+    if (
+      this.shareResult.url ||
+      !this.shareResult.errors.length ||
+      (!this.shareResult.isSignedIn &&
+        this.shareResult.errors.length === 1 &&
+        this.shareResult.errors.includes(ERRORS.UNAUTHORIZED))
+    ) {
+      return html`<moz-button-group
+        >${this.buttonsTemplate()}</moz-button-group
+      >`;
+    }
+
+    if (this.shareResult.errors.length) {
+      return html`<moz-message-bar
+        type="critical"
+        data-l10n-id="content-sharing-modal-generic-error"
+      ></moz-message-bar>`;
+    }
+
+    // I don't think we can be in this state?
+    return null;
+  }
+
   buttonsTemplate() {
-    if (this.isSignedIn) {
+    if (this.shareResult.isSignedIn) {
       return html`<moz-button
           @click=${this.handleViewPageClick}
           id="view-page"
@@ -168,8 +229,24 @@ export class ContentSharingModal extends MozLitElement {
     ></moz-button>`;
   }
 
+  policyTemplate() {
+    if (this.shareResult.isSignedIn) {
+      return null;
+    }
+
+    return html`<div class="policy" @click=${this.acceptableUseClick}>
+      <span data-l10n-id="content-sharing-modal-policy"
+        ><a
+          data-l10n-name="aup-link"
+          href=${ACCEPTABLE_USE_POLICY_URL}
+          target="_blank"
+        ></a
+      ></span>
+    </div>`;
+  }
+
   render() {
-    if (!this.share) {
+    if (!this.shareResult.share) {
       return null;
     }
 
@@ -187,13 +264,13 @@ export class ContentSharingModal extends MozLitElement {
         <div class="preview">
           <moz-card
             ><label class="share-header"
-              ><span class="share-title">${this.share.title}</span>
+              ><span class="share-title">${this.shareResult.share.title}</span>
               <span class="share-count"
                 ><img
                   class="share-icon"
                   src="chrome://browser/content/contentsharing/content-sharing-icon.svg"
                 />
-                ${this.share.links.length}</span
+                ${this.shareResult.share.links.length}</span
               ></label
             >
             <div class="link-preview-list">${this.linksTemplate()}</div>
@@ -212,12 +289,13 @@ export class ContentSharingModal extends MozLitElement {
               <h2 data-l10n-id="content-sharing-modal-title"></h2>
               <p data-l10n-id="content-sharing-modal-description"></p>
             </div>
-            <moz-button-group>${this.buttonsTemplate()}</moz-button-group>
+            ${this.descriptionActionTemplate()}
           </div>
 
           <div class="empty"></div>
         </div>
-      </div>`;
+      </div>
+      ${this.policyTemplate()}`;
   }
 }
 customElements.define("content-sharing-modal", ContentSharingModal);

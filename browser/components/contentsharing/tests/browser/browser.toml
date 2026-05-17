@@ -5,9 +5,12 @@ prefs = [
   "browser.contentsharing.enabled=true",
 ]
 
+
 ["browser_testFeatureDisabled.js"]
 
 ["browser_testPrivateBrowsing.js"]
+
+["browser_testModalErrors.js"]
 
 ["browser_testServerErrors.js"]
 
