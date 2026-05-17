@@ -251,6 +251,8 @@ class ScrollTimeline : public AnimationTimeline,
 
   void WillRefresh();
 
+  bool UpdateIfStale();
+
   // May return null if script created us.
   Element* SourceElement() const { return mScrollerInfo.Source().mElement; }
 

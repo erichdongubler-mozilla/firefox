@@ -210,6 +210,28 @@ void ScrollTimeline::WillRefresh() {
   Tick(dummyState);
 }
 
+bool ScrollTimeline::UpdateIfStale() {
+  // The scroll timeline may be stale if there are any updates in
+  // RenderingPhase::AnimationFrameCallbacks and RenderingPhase::Layout.
+  // We have to check if the ranges are still valid.
+  // https://drafts.csswg.org/scroll-animations-1/#event-loop
+  if (MOZ_LIKELY(!UpdateCachedCurrentTime())) {
+    return false;
+  }
+
+  if (mAnimations.IsEmpty()) {
+    return false;
+  }
+
+  // Check all animations and request restyle.
+  // NOTE: Even if the animation doesn't have the target, it would be okay to
+  // post update. We can optimize the case later.
+  for (const auto& animation : mAnimations) {
+    animation->PostUpdate();
+  }
+  return true;
+}
+
 bool ScrollTimeline::SourceMatches(
     const Element* aElement, const PseudoStyleRequest& aPseudoRequest) const {
   if (mScrollerInfo.IsAnonymous()) {
