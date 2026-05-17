@@ -291,16 +291,16 @@ pub unsafe extern "C" fn lockstore_keystore_close(
 ) -> nsresult {
     // C++ can't trigger Rust's `Drop` directly, so this fn is the
     // C-callable entry point that consumes the boxed handle. The
-    // explicit `lock_prp` call here is defensive: it
-    // zeroises the PrP cache even if another `Arc<LockstoreKeystore>`
-    // is still alive somewhere (the struct is `Clone`). Without that
-    // call we'd only zeroise when the *last* `Arc` drops, which the
-    // FFI consumer can't always guarantee.
+    // explicit `lock()` call here is defensive: it zeroises every
+    // cached KEK (PrP + PKCS#11 auth cache) even if another
+    // `Arc<LockstoreKeystore>` is still alive somewhere (the struct is
+    // `Clone`). Without that call we'd only zeroise when the *last*
+    // `Arc` drops, which the FFI consumer can't always guarantee.
     //
     // SAFETY: caller's contract guarantees `handle` is a live, owned
     // `Box::into_raw` pointer that has not yet been passed to this fn.
     if let Some(boxed) = unsafe { handle.as_mut() } {
-        boxed.keystore.lock_prp();
+        boxed.keystore.lock();
     }
     // SAFETY: same as above; consumes the handle.
     let _ = unsafe { Box::from_raw(handle) };
@@ -308,8 +308,12 @@ pub unsafe extern "C" fn lockstore_keystore_close(
 }
 
 // ============================================================================
-// Primary Password FFI Functions
+// Primary Password FFI Functions (init / change)
 // ============================================================================
+//
+// These remain PrP-specific: PKCS#11 tokens have no equivalent
+// "initialise" concept in Lockstore (the PIN is set elsewhere), so
+// these are not part of the unified lock/unlock API.
 
 /// Set or change the primary password. `old` is empty for initial
 /// setup. Lockstore copies the caller's bytes into its own buffers,
@@ -347,24 +351,48 @@ pub extern "C" fn lockstore_keystore_set_prp(
     }
 }
 
-/// Unlock the primary-password KEK. Lockstore copies the password
-/// into its own buffer, uses it to derive the KEK, and zeroises that
-/// buffer before returning; the caller's `nsACString` is never
-/// mutated.
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_unlock_prp(
+pub extern "C" fn lockstore_keystore_has_prp(
     handle: &LockstoreKeystoreHandle,
-    pw: &nsACString,
+    out_has: &mut bool,
+) -> nsresult {
+    *out_has = handle.keystore.has_prp();
+    NS_OK
+}
+
+// ============================================================================
+// Unified KEK lock/unlock FFI
+// ============================================================================
+//
+// Dispatches internally on the kek_ref's KekType. For PrimaryPassword
+// `secret` is the password used to derive the KEK; for Pkcs11Token
+// `secret` is typically unused (NSS prompts for the PIN). For LocalKey
+// these are no-ops.
+
+/// Unlock the KEK referenced by `kek_ref` using `secret` (a password
+/// for PrimaryPassword, a PIN for PKCS#11, or empty / ignored for
+/// LocalKey). Lockstore copies the secret bytes into its own buffer,
+/// uses them, and zeroises that buffer before returning; the caller's
+/// `nsACString` view is never mutated.
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_unlock_kek(
+    handle: &LockstoreKeystoreHandle,
+    kek_ref: &nsACString,
+    secret: &nsACString,
     timeout_ms: u32,
 ) -> nsresult {
-    if pw.is_empty() {
+    if kek_ref.is_empty() {
         return NS_ERROR_INVALID_ARG;
     }
-    let mut pw_buf: Vec<u8> = pw[..].to_vec();
-    let result = handle
-        .keystore
-        .unlock_prp(&pw_buf, Duration::from_millis(timeout_ms as u64));
-    pw_buf.zeroize();
+    let mut secret_buf: Vec<u8> = secret[..].to_vec();
+    let kek_ref_str = kek_ref.to_utf8();
+    let result = handle.keystore.unlock_kek(
+        &kek_ref_str,
+        &secret_buf,
+        Duration::from_millis(timeout_ms as u64),
+    );
+    secret_buf.zeroize();
+
     match result {
         Ok(()) => NS_OK,
         Err(e) => error_to_nsresult(e),
@@ -372,26 +400,38 @@ pub extern "C" fn lockstore_keystore_unlock_prp(
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_lock_prp(handle: &LockstoreKeystoreHandle) -> nsresult {
-    handle.keystore.lock_prp();
+pub extern "C" fn lockstore_keystore_lock_kek(
+    handle: &LockstoreKeystoreHandle,
+    kek_ref: &nsACString,
+) -> nsresult {
+    if kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let kek_ref_str = kek_ref.to_utf8();
+    handle.keystore.lock_kek(&kek_ref_str);
     NS_OK
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_is_prp_unlocked(
+pub extern "C" fn lockstore_keystore_is_kek_unlocked(
     handle: &LockstoreKeystoreHandle,
+    kek_ref: &nsACString,
     out_unlocked: &mut bool,
 ) -> nsresult {
-    *out_unlocked = handle.keystore.is_prp_unlocked();
+    if kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let kek_ref_str = kek_ref.to_utf8();
+    *out_unlocked = handle.keystore.is_kek_unlocked(&kek_ref_str);
     NS_OK
 }
 
+/// Lock every KEK that holds cached authentication (PrimaryPassword KEK
+/// and every per-kek_ref PKCS#11 entry). Intended for shutdown / logout
+/// paths that should invalidate all unlocked state in a single call.
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_has_prp(
-    handle: &LockstoreKeystoreHandle,
-    out_has: &mut bool,
-) -> nsresult {
-    *out_has = handle.keystore.has_prp();
+pub extern "C" fn lockstore_keystore_lock(handle: &LockstoreKeystoreHandle) -> nsresult {
+    handle.keystore.lock();
     NS_OK
 }
 

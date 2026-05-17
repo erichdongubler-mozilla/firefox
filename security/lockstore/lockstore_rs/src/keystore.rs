@@ -12,6 +12,7 @@ use nss_rs::aead::Aead;
 use nss_rs::p11;
 use nss_rs::SymKey;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -154,6 +155,11 @@ pub struct LockstoreKeystore {
     store: Arc<Store>,
     in_memory: bool,
     prp_cache: Arc<Mutex<Option<CachedKek>>>,
+    /// Per-`kek_ref` unlock deadline for PKCS#11 tokens. Presence of a
+    /// non-expired entry means the user has authenticated this token within
+    /// the current timeout window and may access its keys. Absence or expiry
+    /// means `get_kek_from_token` returns `Locked`.
+    pkcs11_auth_cache: Arc<Mutex<HashMap<String, Instant>>>,
     /// Backs the `ConnectionHandle` guard: a coarse write-lock
     /// acquired by every operation that walks or mutates DEK metadata.
     /// Callers acquire a handle via [`acquire_connection`](Self::acquire_connection)
@@ -174,6 +180,7 @@ impl LockstoreKeystore {
             store,
             in_memory: false,
             prp_cache: Arc::new(Mutex::new(None)),
+            pkcs11_auth_cache: Arc::new(Mutex::new(HashMap::new())),
             connection_lock: Arc::new(Mutex::new(())),
         })
     }
@@ -185,6 +192,7 @@ impl LockstoreKeystore {
             store,
             in_memory: true,
             prp_cache: Arc::new(Mutex::new(None)),
+            pkcs11_auth_cache: Arc::new(Mutex::new(HashMap::new())),
             connection_lock: Arc::new(Mutex::new(())),
         })
     }
@@ -447,7 +455,7 @@ impl LockstoreKeystore {
     }
 
     pub fn close(self) {
-        self.lock_prp();
+        self.lock();
         if self.in_memory {
             let _ = crypto::zeroize(&self.store, DB_NAME, "lockstore::kek::local");
         }
@@ -455,16 +463,102 @@ impl LockstoreKeystore {
     }
 
     // ========================================================================
-    // Primary password
+    // Unified lock/unlock API
+    //
+    // These dispatch on the KekType derived from `kek_ref`:
+    //
+    //   LocalKey        → no-op; always reported as unlocked.
+    //   PrimaryPassword → `secret` is the password, fed to PBKDF2; KEK bytes
+    //                     cached in memory with `now + timeout` deadline.
+    //   Pkcs11Token     → `secret` is typically unused (NSS prompts for the
+    //                     PIN via its password callback); the slot is
+    //                     authenticated and a per-kek_ref unlock deadline is
+    //                     cached.
+    //   Test       → no-op (treated like LocalKey).
+    //
+    // Callers should not rely on `secret` being consumed by any given KEK
+    // type; pass what the type expects.
     // ========================================================================
 
     /// Returns true if a primary password has been initialized for this keystore.
+    /// (PP-specific: PKCS#11 tokens have no equivalent "initialised" state in
+    /// Lockstore — they're either discoverable on the system or not.)
     pub fn has_prp(&self) -> bool {
         self.load_prp_params().ok().flatten().is_some()
     }
 
-    /// Returns true if the primary password KEK is currently cached and not expired.
-    pub fn is_prp_unlocked(&self) -> bool {
+    /// Returns true if `kek_ref` is currently unlocked (KEK material available
+    /// without further user interaction).
+    pub fn is_kek_unlocked(&self, kek_ref: &str) -> bool {
+        let level = match KekType::from_kek_ref(kek_ref) {
+            Ok(l) => l,
+            Err(_) => return false,
+        };
+        match level {
+            KekType::LocalKey => true,
+            KekType::PrimaryPassword => self.is_prp_unlocked_impl(),
+            KekType::Pkcs11Token => self.is_pkcs11_unlocked_impl(kek_ref),
+            #[cfg(test)]
+            KekType::Test => true,
+        }
+    }
+
+    /// Drop any cached authentication for `kek_ref`. No-op for KEK types that
+    /// don't require interaction (LocalKey, Test). For PKCS#11, this
+    /// clears the Lockstore-side auth cache; the underlying NSS slot remains
+    /// authenticated until the token session ends or another consumer calls
+    /// `PK11_Logout` — a follow-up binding can tighten this once `nss-gk-api`
+    /// exposes `Slot::logout`.
+    pub fn lock_kek(&self, kek_ref: &str) {
+        let level = match KekType::from_kek_ref(kek_ref) {
+            Ok(l) => l,
+            Err(_) => return,
+        };
+        match level {
+            KekType::LocalKey => {}
+            KekType::PrimaryPassword => self.lock_prp_impl(),
+            KekType::Pkcs11Token => {
+                self.pkcs11_auth_cache.lock().unwrap().remove(kek_ref);
+            }
+            #[cfg(test)]
+            KekType::Test => {}
+        }
+    }
+
+    /// Lock every KEK that holds cached authentication — zeroises the
+    /// PrimaryPassword KEK in memory and clears every per-kek_ref PKCS#11
+    /// unlock entry. Called on `close()` and should also be wired to
+    /// `xpcom-shutdown` by the XPCOM consumer.
+    pub fn lock(&self) {
+        self.lock_prp_impl();
+        self.pkcs11_auth_cache.lock().unwrap().clear();
+    }
+
+    /// Unlock `kek_ref` so subsequent DEK accesses under it succeed for at
+    /// most `timeout`. `secret` carries the password (for PrimaryPassword) or
+    /// PIN (for a future PKCS#11 caller-supplied path) — it may be empty
+    /// when the KEK type has its own prompting mechanism.
+    pub fn unlock_kek(
+        &self,
+        kek_ref: &str,
+        secret: &[u8],
+        timeout: Duration,
+    ) -> Result<(), LockstoreError> {
+        let level = KekType::from_kek_ref(kek_ref)?;
+        match level {
+            KekType::LocalKey => Ok(()),
+            KekType::PrimaryPassword => self.unlock_prp_impl(secret, timeout),
+            KekType::Pkcs11Token => self.unlock_pkcs11_impl(kek_ref, timeout),
+            #[cfg(test)]
+            KekType::Test => Ok(()),
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // PrimaryPassword-specific implementations
+    // ------------------------------------------------------------------------
+
+    fn is_prp_unlocked_impl(&self) -> bool {
         let mut guard = self.prp_cache.lock().unwrap();
         match guard.as_ref() {
             Some(cached) if cached.expires_at > Instant::now() => true,
@@ -476,16 +570,12 @@ impl LockstoreKeystore {
         }
     }
 
-    /// Clears the cached primary-password KEK; cached bytes are
-    /// zeroised on drop.
-    pub fn lock_prp(&self) {
+    fn lock_prp_impl(&self) {
         let mut guard = self.prp_cache.lock().unwrap();
         *guard = None;
     }
 
-    /// Derives the KEK from `password`, authenticates against the stored verifier,
-    /// and caches the KEK in memory with an absolute deadline of `now + timeout`.
-    pub fn unlock_prp(&self, password: &[u8], timeout: Duration) -> Result<(), LockstoreError> {
+    fn unlock_prp_impl(&self, password: &[u8], timeout: Duration) -> Result<(), LockstoreError> {
         let params = self
             .load_prp_params()?
             .ok_or(LockstoreError::NotInitialized)?;
@@ -511,6 +601,38 @@ impl LockstoreKeystore {
             expires_at: Instant::now() + timeout,
         });
 
+        Ok(())
+    }
+
+    // ------------------------------------------------------------------------
+    // PKCS#11 token-specific implementations
+    // ------------------------------------------------------------------------
+
+    fn is_pkcs11_unlocked_impl(&self, kek_ref: &str) -> bool {
+        let mut guard = self.pkcs11_auth_cache.lock().unwrap();
+        match guard.get(kek_ref) {
+            Some(&expires_at) if expires_at > Instant::now() => true,
+            Some(_) => {
+                guard.remove(kek_ref);
+                false
+            }
+            None => false,
+        }
+    }
+
+    fn unlock_pkcs11_impl(&self, kek_ref: &str, timeout: Duration) -> Result<(), LockstoreError> {
+        let pkcs11_uri_str = kek_ref.strip_prefix(KEK_REF_PREFIX).ok_or_else(|| {
+            LockstoreError::InvalidKekRef(format!("Invalid kek_ref format: {}", kek_ref))
+        })?;
+        let uri = nss_rs::pk11_utils::parse(pkcs11_uri_str).map_err(|_| {
+            LockstoreError::InvalidKekRef(format!("Invalid PKCS#11 URI: {}", kek_ref))
+        })?;
+        let slot = self.resolve_pkcs11_slot(&uri)?;
+        slot.authenticate()
+            .map_err(|_| LockstoreError::AuthenticationCancelled)?;
+
+        let mut guard = self.pkcs11_auth_cache.lock().unwrap();
+        guard.insert(kek_ref.to_string(), Instant::now() + timeout);
         Ok(())
     }
 
@@ -596,7 +718,7 @@ impl LockstoreKeystore {
             verifier,
             cipher_suite,
         })?;
-        self.lock_prp();
+        self.lock_prp_impl();
         Ok(())
     }
 
@@ -720,6 +842,22 @@ impl LockstoreKeystore {
         cipher_suite: CipherSuite,
         kek_ref: &str,
     ) -> Result<SymKey, LockstoreError> {
+        // The caller must `unlock_kek` first; we gate on the Lockstore-side
+        // auth cache. Absent or expired entries are reported as Locked so
+        // the caller re-prompts instead of silently riding NSS's
+        // already-authenticated-slot state.
+        {
+            let mut guard = self.pkcs11_auth_cache.lock().unwrap();
+            match guard.get(kek_ref) {
+                Some(&expires_at) if expires_at > Instant::now() => {}
+                Some(_) => {
+                    guard.remove(kek_ref);
+                    return Err(LockstoreError::Locked);
+                }
+                None => return Err(LockstoreError::Locked),
+            }
+        }
+
         let pkcs11_uri_str = kek_ref.strip_prefix(KEK_REF_PREFIX).ok_or_else(|| {
             LockstoreError::InvalidKekRef(format!("Invalid kek_ref format: {}", kek_ref))
         })?;
@@ -727,9 +865,6 @@ impl LockstoreKeystore {
             LockstoreError::InvalidKekRef(format!("Invalid PKCS#11 URI: {}", kek_ref))
         })?;
         let slot = self.resolve_pkcs11_slot(&uri)?;
-
-        slot.authenticate()
-            .map_err(|_| LockstoreError::AuthenticationCancelled)?;
 
         if let Some(existing) = slot.find_key_by_nickname(kek_ref) {
             return Ok(existing);

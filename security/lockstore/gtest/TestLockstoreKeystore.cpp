@@ -20,12 +20,13 @@ using mozilla::security::lockstore::lockstore_keystore_delete_dek;
 using mozilla::security::lockstore::lockstore_keystore_encrypt;
 using mozilla::security::lockstore::lockstore_keystore_get_dek;
 using mozilla::security::lockstore::lockstore_keystore_has_prp;
-using mozilla::security::lockstore::lockstore_keystore_is_prp_unlocked;
+using mozilla::security::lockstore::lockstore_keystore_is_kek_unlocked;
 using mozilla::security::lockstore::lockstore_keystore_list_collections;
-using mozilla::security::lockstore::lockstore_keystore_lock_prp;
+using mozilla::security::lockstore::lockstore_keystore_lock;
+using mozilla::security::lockstore::lockstore_keystore_lock_kek;
 using mozilla::security::lockstore::lockstore_keystore_open;
 using mozilla::security::lockstore::lockstore_keystore_remove_kek;
-using mozilla::security::lockstore::lockstore_keystore_unlock_prp;
+using mozilla::security::lockstore::lockstore_keystore_unlock_kek;
 using mozilla::security::lockstore::LockstoreKeystoreHandle;
 
 class LockstoreKeystoreTest : public ::testing::Test {
@@ -383,33 +384,67 @@ TEST_F(LockstoreKeystoreTest, HasPrpInitiallyFalse) {
   EXPECT_FALSE(has);
 }
 
-TEST_F(LockstoreKeystoreTest, IsPrpUnlockedInitiallyFalse) {
+TEST_F(LockstoreKeystoreTest, IsKekUnlockedLocalAlwaysTrue) {
   nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
   ASSERT_NS_SUCCEEDED(rv);
 
+  // LocalKey has no interactive gate, so it's always reported unlocked.
+  bool unlocked = false;
+  rv = lockstore_keystore_is_kek_unlocked(mKeystore, &mLocalKekRef, &unlocked);
+  ASSERT_NS_SUCCEEDED(rv);
+  EXPECT_TRUE(unlocked);
+}
+
+TEST_F(LockstoreKeystoreTest, IsKekUnlockedPrpInitiallyFalse) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  const nsCString ppKekRef("lockstore::kek::primary_password"_ns);
   bool unlocked = true;
-  rv = lockstore_keystore_is_prp_unlocked(mKeystore, &unlocked);
+  rv = lockstore_keystore_is_kek_unlocked(mKeystore, &ppKekRef, &unlocked);
   ASSERT_NS_SUCCEEDED(rv);
   EXPECT_FALSE(unlocked);
 }
 
-TEST_F(LockstoreKeystoreTest, LockPrpWhenNotUnlockedIsNoop) {
+TEST_F(LockstoreKeystoreTest, LockKekEmptyRef) {
   nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
   ASSERT_NS_SUCCEEDED(rv);
 
-  // Locking when there's nothing cached is a successful no-op.
-  rv = lockstore_keystore_lock_prp(mKeystore);
+  nsAutoCString empty;
+  rv = lockstore_keystore_lock_kek(mKeystore, &empty);
+  ASSERT_EQ(rv, NS_ERROR_INVALID_ARG);
+}
+
+TEST_F(LockstoreKeystoreTest, LockKekLocalIsNoop) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  // LocalKey lock/unlock never fail; they're no-ops.
+  rv = lockstore_keystore_lock_kek(mKeystore, &mLocalKekRef);
   ASSERT_NS_SUCCEEDED(rv);
 }
 
-TEST_F(LockstoreKeystoreTest, UnlockPrpWithoutInitFails) {
+TEST_F(LockstoreKeystoreTest, UnlockKekPrpWithoutInitFails) {
   nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
   ASSERT_NS_SUCCEEDED(rv);
 
+  const nsCString ppKekRef("lockstore::kek::primary_password"_ns);
   const nsCString pw("pw"_ns);
   // No primary password has been set, so unlock must report not-initialized.
-  rv = lockstore_keystore_unlock_prp(mKeystore, &pw, /* timeoutMs */ 60000);
+  rv = lockstore_keystore_unlock_kek(mKeystore, &ppKekRef, &pw,
+                                     /* timeoutMs */ 60000);
   ASSERT_EQ(rv, NS_ERROR_NOT_INITIALIZED);
+}
+
+TEST_F(LockstoreKeystoreTest, UnlockKekUnknownRefFails) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  const nsCString bogus("lockstore::kek::bogus"_ns);
+  const nsCString pw("pw"_ns);
+  rv = lockstore_keystore_unlock_kek(mKeystore, &bogus, &pw,
+                                     /* timeoutMs */ 60000);
+  ASSERT_EQ(rv, NS_ERROR_INVALID_ARG);
 }
 
 TEST_F(LockstoreKeystoreTest, GetDekForPrpWhenLockedFails) {
@@ -422,4 +457,14 @@ TEST_F(LockstoreKeystoreTest, GetDekForPrpWhenLockedFails) {
   // with NS_ERROR_NOT_AVAILABLE (Locked).
   rv = lockstore_keystore_create_dek(mKeystore, &coll, &ppKekRef, false);
   ASSERT_EQ(rv, NS_ERROR_NOT_AVAILABLE);
+}
+
+TEST_F(LockstoreKeystoreTest, LockAllIsNoopWhenNothingCached) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  // `lock()` clears every cached KEK. With nothing cached it must still
+  // succeed (callers on shutdown shouldn't have to check first).
+  rv = lockstore_keystore_lock(mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
 }
