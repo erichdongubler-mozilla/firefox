@@ -11,7 +11,6 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Utf8.h"  // mozilla::Utf8Unit
-#include "mozilla/FlowMarkers.h"
 
 #include "js/SourceText.h"
 
@@ -104,10 +103,7 @@ ScriptLoadRequest::ScriptLoadRequest(ScriptKind aKind,
   }
 }
 
-ScriptLoadRequest::~ScriptLoadRequest() {
-  PROFILER_MARKER("~ScriptLoadRequest", JS, {}, TerminatingFlowMarker,
-                  Flow::FromPointer(this));
-}
+ScriptLoadRequest::~ScriptLoadRequest() = default;
 
 void ScriptLoadRequest::SetReady() {
   MOZ_ASSERT(!IsFinished());
