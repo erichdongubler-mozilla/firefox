@@ -4,7 +4,7 @@
 
 use crate::crypto;
 use crate::utils;
-use crate::{datastore_filename, LockstoreError, LockstoreKeystore, StoredValue};
+use crate::{datastore_filename, Keystore, LockstoreError, StoredValue};
 
 use kvstore::{Database, DatabaseError, GetOptions, Key, Store, StorePath};
 use std::path::PathBuf;
@@ -13,7 +13,7 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct LockstoreDatastore {
     store: Arc<Store>,
-    keystore: Arc<LockstoreKeystore>,
+    keystore: Arc<Keystore>,
     collection_name: String,
     kek_ref: String,
 }
@@ -22,7 +22,7 @@ impl LockstoreDatastore {
     pub fn new(
         dir: PathBuf,
         collection_name: String,
-        keystore: Arc<LockstoreKeystore>,
+        keystore: Arc<Keystore>,
         kek_ref: &str,
     ) -> Result<Self, LockstoreError> {
         keystore.get_dek_internal(&collection_name, kek_ref)?;
@@ -37,7 +37,7 @@ impl LockstoreDatastore {
 
     pub fn new_in_memory(
         collection_name: String,
-        keystore: Arc<LockstoreKeystore>,
+        keystore: Arc<Keystore>,
         kek_ref: &str,
     ) -> Result<Self, LockstoreError> {
         keystore.get_dek_internal(&collection_name, kek_ref)?;
@@ -52,7 +52,7 @@ impl LockstoreDatastore {
     fn init(
         store_path: StorePath,
         collection_name: String,
-        keystore: Arc<LockstoreKeystore>,
+        keystore: Arc<Keystore>,
         kek_ref: &str,
     ) -> Result<Self, LockstoreError> {
         let store = Arc::new(Store::new(store_path));

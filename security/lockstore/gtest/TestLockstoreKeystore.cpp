@@ -12,6 +12,7 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
+using mozilla::security::lockstore::KeystoreHandle;
 using mozilla::security::lockstore::lockstore_keystore_add_kek;
 using mozilla::security::lockstore::lockstore_keystore_close;
 using mozilla::security::lockstore::lockstore_keystore_create_dek;
@@ -27,13 +28,12 @@ using mozilla::security::lockstore::lockstore_keystore_lock_kek;
 using mozilla::security::lockstore::lockstore_keystore_open;
 using mozilla::security::lockstore::lockstore_keystore_remove_kek;
 using mozilla::security::lockstore::lockstore_keystore_unlock_kek;
-using mozilla::security::lockstore::LockstoreKeystoreHandle;
 
 class LockstoreKeystoreTest : public ::testing::Test {
  protected:
   nsCOMPtr<nsIFile> mTmpDir;
   nsAutoCString mProfilePath;
-  LockstoreKeystoreHandle* mKeystore = nullptr;
+  KeystoreHandle* mKeystore = nullptr;
   const nsCString mLocalKekRef{"lockstore::kek::local"_ns};
 
   void SetUp() override {

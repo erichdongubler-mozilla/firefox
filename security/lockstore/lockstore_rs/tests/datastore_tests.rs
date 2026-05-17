@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use lockstore_rs::{LockstoreDatastore, LockstoreError, LockstoreKeystore};
+use lockstore_rs::{Keystore, LockstoreDatastore, LockstoreError};
 use std::sync::Arc;
 use tempfile::tempdir;
 
@@ -10,7 +10,7 @@ const LOCAL: &str = "lockstore::kek::local";
 const TEST_LEVEL: &str = "lockstore::kek::test";
 
 fn make_in_memory_ds(collection: &str) -> LockstoreDatastore {
-    let keystore = Arc::new(LockstoreKeystore::new_in_memory().expect("Failed to create keystore"));
+    let keystore = Arc::new(Keystore::new_in_memory().expect("Failed to create keystore"));
     keystore
         .create_dek(collection, LOCAL, false)
         .expect("Failed to create DEK");
@@ -20,7 +20,7 @@ fn make_in_memory_ds(collection: &str) -> LockstoreDatastore {
 
 #[test]
 fn test_new_in_memory() {
-    let keystore = Arc::new(LockstoreKeystore::new_in_memory().expect("Failed to create keystore"));
+    let keystore = Arc::new(Keystore::new_in_memory().expect("Failed to create keystore"));
     keystore
         .create_dek("test", LOCAL, false)
         .expect("Failed to create DEK");
@@ -31,7 +31,7 @@ fn test_new_in_memory() {
 
 #[test]
 fn test_new_in_memory_without_dek() {
-    let keystore = Arc::new(LockstoreKeystore::new_in_memory().expect("Failed to create keystore"));
+    let keystore = Arc::new(Keystore::new_in_memory().expect("Failed to create keystore"));
     let result = LockstoreDatastore::new_in_memory("missing".to_string(), keystore, LOCAL);
     assert!(matches!(result, Err(LockstoreError::NotFound(_))));
 }
@@ -166,13 +166,13 @@ fn test_large_data() {
 
 #[test]
 fn test_multiple_collections_independent() {
-    let ks1 = Arc::new(LockstoreKeystore::new_in_memory().expect("Failed to create keystore"));
+    let ks1 = Arc::new(Keystore::new_in_memory().expect("Failed to create keystore"));
     ks1.create_dek("col1", LOCAL, false)
         .expect("Failed to create DEK");
     let ds1 = LockstoreDatastore::new_in_memory("col1".to_string(), ks1, LOCAL)
         .expect("Failed to create ds1");
 
-    let ks2 = Arc::new(LockstoreKeystore::new_in_memory().expect("Failed to create keystore"));
+    let ks2 = Arc::new(Keystore::new_in_memory().expect("Failed to create keystore"));
     ks2.create_dek("col2", LOCAL, false)
         .expect("Failed to create DEK");
     let ds2 = LockstoreDatastore::new_in_memory("col2".to_string(), ks2, LOCAL)
@@ -199,7 +199,7 @@ fn test_new_on_disk() {
     let dir = tempdir().expect("Failed to create temp dir");
     let ks_path = dir.path().join("keystore.sqlite");
 
-    let keystore = Arc::new(LockstoreKeystore::new(ks_path).expect("Failed to create keystore"));
+    let keystore = Keystore::get(ks_path).expect("Failed to create keystore");
     keystore
         .create_dek("col1", LOCAL, false)
         .expect("Failed to create DEK");
@@ -223,7 +223,7 @@ fn test_new_on_disk_without_dek() {
     let dir = tempdir().expect("Failed to create temp dir");
     let ks_path = dir.path().join("keystore.sqlite");
 
-    let keystore = Arc::new(LockstoreKeystore::new(ks_path).expect("Failed to create keystore"));
+    let keystore = Keystore::get(ks_path).expect("Failed to create keystore");
     let result = LockstoreDatastore::new(
         dir.path().to_path_buf(),
         "missing".to_string(),
@@ -240,8 +240,7 @@ fn test_on_disk_persistence() {
     let ks_path = dir.path().join("keystore.sqlite");
 
     {
-        let keystore =
-            Arc::new(LockstoreKeystore::new(ks_path.clone()).expect("Failed to create keystore"));
+        let keystore = Keystore::get(ks_path.clone()).expect("Failed to create keystore");
         keystore
             .create_dek("persist", LOCAL, false)
             .expect("Failed to create DEK");
@@ -252,7 +251,7 @@ fn test_on_disk_persistence() {
         datastore.close();
     }
 
-    let keystore = Arc::new(LockstoreKeystore::new(ks_path).expect("Failed to reopen keystore"));
+    let keystore = Keystore::get(ks_path).expect("Failed to reopen keystore");
     let datastore = LockstoreDatastore::new(data_path, "persist".to_string(), keystore, LOCAL)
         .expect("Failed to reopen datastore");
     let value = datastore.get("key1").expect("Data should persist");
@@ -267,8 +266,7 @@ fn test_on_disk_keys_persists() {
     let ks_path = dir.path().join("keystore.sqlite");
 
     {
-        let keystore =
-            Arc::new(LockstoreKeystore::new(ks_path.clone()).expect("Failed to create keystore"));
+        let keystore = Keystore::get(ks_path.clone()).expect("Failed to create keystore");
         keystore
             .create_dek("listcol", LOCAL, false)
             .expect("Failed to create DEK");
@@ -281,7 +279,7 @@ fn test_on_disk_keys_persists() {
         datastore.close();
     }
 
-    let keystore = Arc::new(LockstoreKeystore::new(ks_path).expect("Failed to reopen keystore"));
+    let keystore = Keystore::get(ks_path).expect("Failed to reopen keystore");
     let datastore = LockstoreDatastore::new(data_path, "listcol".to_string(), keystore, LOCAL)
         .expect("Failed to reopen datastore");
     let keys = datastore.keys().expect("Failed to list keys");
@@ -297,7 +295,7 @@ fn test_in_memory_datastore_with_on_disk_keystore() {
     let dir = tempdir().expect("Failed to create temp dir");
     let ks_path = dir.path().join("keystore.sqlite");
 
-    let keystore = Arc::new(LockstoreKeystore::new(ks_path).expect("Failed to create keystore"));
+    let keystore = Keystore::get(ks_path).expect("Failed to create keystore");
     keystore
         .create_dek("memcol", LOCAL, false)
         .expect("Failed to create DEK");
@@ -315,7 +313,7 @@ fn test_in_memory_datastore_with_on_disk_keystore() {
 fn test_on_disk_datastore_with_in_memory_keystore() {
     let dir = tempdir().expect("Failed to create temp dir");
 
-    let keystore = Arc::new(LockstoreKeystore::new_in_memory().expect("Failed to create keystore"));
+    let keystore = Arc::new(Keystore::new_in_memory().expect("Failed to create keystore"));
     keystore
         .create_dek("ondisk", LOCAL, false)
         .expect("Failed to create DEK");
@@ -339,7 +337,7 @@ fn test_multiple_collections_shared_on_disk_keystore() {
     let dir = tempdir().expect("Failed to create temp dir");
     let ks_path = dir.path().join("keystore.sqlite");
 
-    let keystore = Arc::new(LockstoreKeystore::new(ks_path).expect("Failed to create keystore"));
+    let keystore = Keystore::get(ks_path).expect("Failed to create keystore");
     keystore
         .create_dek("col_a", LOCAL, false)
         .expect("Failed to create DEK for col_a");
@@ -384,7 +382,7 @@ fn test_cross_kek_access() {
     let ks_path = dir.path().join("keystore.sqlite");
     let data_path = dir.path().to_path_buf();
 
-    let keystore = Arc::new(LockstoreKeystore::new(ks_path).expect("Failed to create keystore"));
+    let keystore = Keystore::get(ks_path).expect("Failed to create keystore");
     keystore
         .create_dek("col", LOCAL, false)
         .expect("Failed to create DEK");

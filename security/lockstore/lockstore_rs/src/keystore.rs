@@ -2,6 +2,39 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+//! # On-disk layout
+//!
+//! All keystore rows live in `lockstore.keys.sqlite`, in the logical
+//! kvstore database `"lockstore.keys"`. Two row families:
+//!
+//! - **DEK metadata** at row key `"lockstore::dek::<collection>"`.
+//!   Value is a JSON `DekMetadata` (via `utils::bytes_to_value`):
+//!
+//!   ```text
+//!   {
+//!     "wrapped_deks": [
+//!       { "kek_type": "...", "kek_ref": "...", "wrapped_dek": [<bytes>...] },
+//!       ...
+//!     ],
+//!     "cipher_suite": "...",
+//!     "extractable": <bool>
+//!   }
+//!   ```
+//!
+//! - **PrimaryPassword params** at row key `"lockstore::prp::params"`.
+//!   Value is a JSON `PrimaryPasswordParams { salt, iterations,
+//!   verifier, cipher_suite }`.
+//!
+//! # Threat model for the on-disk layout
+//!
+//! The `wrapped_dek` bytes are the only piece encrypted at rest (under
+//! the KEK named by `kek_ref`). Every structural field — including the
+//! `kek_ref` strings — is plaintext on disk, so a plain `sqlite3` dump
+//! of `lockstore.keys.sqlite` is enough to enumerate which KEKs wrap
+//! each collection. The `nsILockstore.listKeks` API surfaces this same
+//! data programmatically; the on-disk format is documented here as a
+//! stable contract for offline tooling.
+
 use crate::crypto::{self, CipherSuite, DEFAULT_CIPHER_SUITE};
 use crate::pbkdf2;
 use crate::utils;
@@ -50,7 +83,7 @@ struct PrimaryPasswordParams {
 }
 
 /// Exclusive access to the keystore's DEK metadata. Acquired via
-/// [`LockstoreKeystore::acquire_connection`].
+/// [`Keystore::acquire_connection`].
 ///
 /// Holding a `ConnectionHandle` is the witness that the caller has
 /// exclusive write access to DEK metadata: every operation that walks
@@ -59,13 +92,13 @@ struct PrimaryPasswordParams {
 /// `save_metadata`) is a method on this type, so the compiler enforces
 /// that a thread cannot read the collection list and then load a row
 /// without holding the lock across both steps. Single-step mutations
-/// on [`LockstoreKeystore`] (`create_dek`, `add_kek`, `remove_kek`,
+/// on [`Keystore`] (`create_dek`, `add_kek`, `remove_kek`,
 /// `delete_dek`, `set_prp`) acquire a connection internally;
 /// multi-step operations (primary-password rotation, batch
 /// maintenance) acquire one explicitly and hold it across the whole
 /// pass.
 pub struct ConnectionHandle<'a> {
-    keystore: &'a LockstoreKeystore,
+    keystore: &'a Keystore,
     // The guard's `Drop` is what releases the underlying mutex; the
     // leading underscore tells the compiler we're keeping it solely
     // for its drop-time side-effect.
@@ -151,7 +184,7 @@ impl Drop for CachedKek {
 }
 
 #[derive(Clone)]
-pub struct LockstoreKeystore {
+pub struct Keystore {
     store: Arc<Store>,
     in_memory: bool,
     prp_cache: Arc<Mutex<Option<CachedKek>>>,
@@ -172,8 +205,14 @@ pub struct LockstoreKeystore {
     connection_lock: Arc<Mutex<()>>,
 }
 
-impl LockstoreKeystore {
-    pub fn new(path: PathBuf) -> Result<Self, LockstoreError> {
+impl Keystore {
+    /// Construct a fresh on-disk keystore. Private; callers go through
+    /// `get`, which returns the process-wide `Arc<Keystore>`.
+    /// Bypassing `get` and constructing two `Keystore` instances for the
+    /// same path would give each one its own `prp_cache` and
+    /// `pkcs11_auth_cache`, so an unlock through one would not be
+    /// visible through the other.
+    fn new_on_disk(path: PathBuf) -> Result<Self, LockstoreError> {
         let store = Arc::new(Store::new(StorePath::OnDisk(path)));
         nss_rs::init().map_err(|e| LockstoreError::NssInitialization(e.to_string()))?;
         Ok(Self {
@@ -183,6 +222,55 @@ impl LockstoreKeystore {
             pkcs11_auth_cache: Arc::new(Mutex::new(HashMap::new())),
             connection_lock: Arc::new(Mutex::new(())),
         })
+    }
+
+    /// Get the process-wide `Arc<Keystore>` for `path`, opening it on
+    /// the first call (or any call after every previous `Arc` has been
+    /// dropped). Concurrent callers receive clones of the same `Arc`,
+    /// so all in-process consumers share one keystore handle, one
+    /// PrimaryPassword cache, and one PKCS#11 auth-cache.
+    ///
+    /// `path` is used as the cache key. Two `get` calls return the
+    /// same `Arc` iff their `PathBuf`s compare equal; in practice every
+    /// in-tree caller routes through `lockstore_keystore_open` which
+    /// constructs `<profile>/lockstore.keys.sqlite` deterministically,
+    /// so this is automatic.
+    ///
+    /// **Process scope.** The cache is parent-process-only. Child
+    /// processes (network, content, …) don't open the keystore
+    /// directly; they reach it through the `nsILockstore` XPCOM
+    /// service hosted in the parent. Cross-Firefox-instance
+    /// concurrency on the underlying SQLite file is handled by the
+    /// kvstore layer (WAL mode + file locks); Lockstore itself does
+    /// not add a profile lock because Firefox already enforces
+    /// single-instance-per-profile via the profile lock file.
+    ///
+    /// The cache stores `Weak<Keystore>`, so once the last `Arc` is
+    /// dropped the underlying SQLite connection closes and a
+    /// subsequent call against the same path re-opens the keystore
+    /// from disk with empty PrP / PKCS#11 caches (i.e. fully locked).
+    /// This matters for tests that recycle a tempdir path.
+    ///
+    /// In-memory keystores are *not* shared — `new_in_memory` returns
+    /// a fresh per-call instance for test isolation.
+    pub fn get(path: PathBuf) -> Result<Arc<Self>, LockstoreError> {
+        let map = SHARED_KEYSTORES.get_or_init(|| Mutex::new(HashMap::new()));
+        // Surface mutex poisoning as a `LockingFailure`; an earlier
+        // holder panicked while mutating the registry, so any state
+        // observable through the guard may be inconsistent.
+        let mut guard = map
+            .lock()
+            .map_err(|_| LockstoreError::LockingFailure("SHARED_KEYSTORES poisoned".into()))?;
+        if let Some(weak) = guard.get(&path) {
+            if let Some(arc) = weak.upgrade() {
+                return Ok(arc);
+            }
+            // Stale entry: every prior consumer dropped its Arc, so the
+            // SQLite connection is already closed. Fall through and rebuild.
+        }
+        let ks = Arc::new(Self::new_on_disk(path.clone())?);
+        guard.insert(path, Arc::downgrade(&ks));
+        Ok(ks)
     }
 
     pub fn new_in_memory() -> Result<Self, LockstoreError> {
@@ -438,7 +526,7 @@ impl LockstoreKeystore {
         let guard = self
             .connection_lock
             .lock()
-            .map_err(|_| LockstoreError::InvalidConfiguration("connection_lock poisoned".into()))?;
+            .map_err(|_| LockstoreError::LockingFailure("connection_lock poisoned".into()))?;
         Ok(ConnectionHandle {
             keystore: self,
             _guard: guard,
@@ -454,7 +542,34 @@ impl LockstoreKeystore {
         self.acquire_connection()?.list_collections()
     }
 
-    pub fn close(self) {
+    /// Return the list of `kek_ref`s currently wrapping the DEK for
+    /// `collection_name`. Always non-empty for an existing collection
+    /// (the keystore enforces at least one KEK wrapping); rejects with
+    /// `LockstoreError::NotFound` if no collection by that name exists.
+    /// Order of the returned list is unspecified. Useful for callers
+    /// that need to discover the wrapping state without owning the
+    /// wrapped bytes — see the `nsILockstore.listKeks` scriptable
+    /// wrapper for the JS-side API.
+    pub fn list_collection_keks(
+        &self,
+        collection_name: &str,
+    ) -> Result<Vec<String>, LockstoreError> {
+        let conn = self.acquire_connection()?;
+        let metadata = conn.load_metadata(collection_name)?;
+        Ok(metadata
+            .wrapped_deks
+            .iter()
+            .map(|w| w.kek_ref.clone())
+            .collect())
+    }
+
+    /// Flush sensitive in-memory state (PrP cache, PKCS#11 auth cache)
+    /// and close the underlying store eagerly. Takes `&self` so it
+    /// works on the `Arc` returned by `get`. Calling this is optional
+    /// — `Drop` performs the same flush automatically when the last
+    /// `Arc<Keystore>` goes away — but it gives callers a deterministic
+    /// flush point (useful for tests and shutdown paths).
+    pub fn close(&self) {
         self.lock();
         if self.in_memory {
             let _ = crypto::zeroize(&self.store, DB_NAME, "lockstore::kek::local");
@@ -948,3 +1063,30 @@ impl LockstoreKeystore {
     // `ConnectionHandle` so the type system enforces that the caller
     // holds the connection lock.
 }
+
+impl Drop for Keystore {
+    /// Flush PrP / PKCS#11 in-memory caches and close the underlying
+    /// kvstore connection when the last `Arc<Keystore>` is dropped.
+    /// Manual `close()` callers see the same behaviour; this is the
+    /// safety net for paths that just let the Arc fall out of scope.
+    fn drop(&mut self) {
+        self.lock();
+        if self.in_memory {
+            let _ = crypto::zeroize(&self.store, DB_NAME, "lockstore::kek::local");
+        }
+        self.store.close();
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Process-wide cache backing `Keystore::get`
+// ----------------------------------------------------------------------------
+
+use std::sync::{OnceLock, Weak};
+
+/// Per-path cached keystore stored as a `Weak` so the entry self-evicts
+/// when every caller has dropped its `Arc`. A `HashMap` (rather than a
+/// single `OnceLock<Weak>`) keeps `Keystore::get` correct
+/// across tests that exercise multiple temporary profiles in one
+/// process; production has exactly one entry.
+static SHARED_KEYSTORES: OnceLock<Mutex<HashMap<PathBuf, Weak<Keystore>>>> = OnceLock::new();
