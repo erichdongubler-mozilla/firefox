@@ -848,3 +848,188 @@ fn test_lockstore_keystore_get_state_visible_across_handles() {
         "DEK created via the first handle must be visible via the second"
     );
 }
+
+#[test]
+fn test_import_dek_local_key() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+
+    let dek = [7u8; 32];
+    keystore
+        .import_dek("imported", LOCAL, &dek, true)
+        .expect("Failed to import DEK");
+
+    let (round, suite) = keystore
+        .get_dek("imported", LOCAL)
+        .expect("Failed to get imported DEK");
+    assert_eq!(round, dek, "round-tripped DEK matches imported bytes");
+    assert_eq!(suite, CipherSuite::Aes256Gcm);
+
+    // Sanity: encrypt/decrypt under the imported DEK.
+    let ct = keystore
+        .encrypt("imported", LOCAL, b"payload")
+        .expect("encrypt");
+    let pt = keystore.decrypt("imported", LOCAL, &ct).expect("decrypt");
+    assert_eq!(pt, b"payload");
+
+    keystore.close();
+}
+
+#[test]
+fn test_import_dek_rejects_wrong_length() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+
+    let short = [9u8; 16];
+    let result = keystore.import_dek("short", LOCAL, &short, true);
+    assert!(matches!(
+        result,
+        Err(LockstoreError::InvalidConfiguration(_))
+    ));
+
+    keystore.close();
+}
+
+#[test]
+fn test_import_dek_rejects_existing_collection() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+
+    let dek = [3u8; 32];
+    keystore
+        .import_dek("dup", LOCAL, &dek, true)
+        .expect("first import");
+
+    let result = keystore.import_dek("dup", LOCAL, &dek, true);
+    assert!(matches!(
+        result,
+        Err(LockstoreError::InvalidConfiguration(_))
+    ));
+
+    keystore.close();
+}
+
+#[test]
+fn test_import_dek_non_extractable() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+
+    let dek = [11u8; 32];
+    keystore
+        .import_dek("hidden", LOCAL, &dek, false)
+        .expect("import");
+
+    assert!(!keystore
+        .is_dek_extractable("hidden")
+        .expect("query extractability"));
+
+    let result = keystore.get_dek("hidden", LOCAL);
+    assert!(matches!(result, Err(LockstoreError::NotExtractable(_))));
+
+    // encrypt/decrypt still works — the bytes never need to leave the keystore.
+    let ct = keystore
+        .encrypt("hidden", LOCAL, b"opaque")
+        .expect("encrypt");
+    let pt = keystore.decrypt("hidden", LOCAL, &ct).expect("decrypt");
+    assert_eq!(pt, b"opaque");
+
+    keystore.close();
+}
+
+#[test]
+fn test_switch_kek_local_to_test() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+
+    keystore
+        .create_dek("col", LOCAL, true)
+        .expect("Failed to create DEK");
+    let (before, _) = keystore.get_dek("col", LOCAL).expect("get DEK before");
+
+    keystore
+        .switch_kek("col", LOCAL, TEST_LEVEL)
+        .expect("Failed to switch KEK");
+
+    let keks = keystore.list_collection_keks("col").expect("list keks");
+    assert_eq!(
+        keks,
+        vec![TEST_LEVEL.to_string()],
+        "only the new kek_ref should wrap the collection after switch"
+    );
+
+    let (after, _) = keystore
+        .get_dek("col", TEST_LEVEL)
+        .expect("get DEK via new kek_ref");
+    assert_eq!(before, after, "DEK bytes are unchanged across switch");
+
+    let missing = keystore.get_dek("col", LOCAL);
+    assert!(
+        matches!(missing, Err(LockstoreError::NotFound(_))),
+        "old kek_ref no longer wraps the collection"
+    );
+
+    keystore.close();
+}
+
+#[test]
+fn test_switch_kek_rejects_same_ref() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+
+    keystore.create_dek("col", LOCAL, true).expect("create");
+    let result = keystore.switch_kek("col", LOCAL, LOCAL);
+    assert!(matches!(
+        result,
+        Err(LockstoreError::InvalidConfiguration(_))
+    ));
+
+    keystore.close();
+}
+
+#[test]
+fn test_switch_kek_rejects_new_already_wraps() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+
+    keystore.create_dek("col", LOCAL, true).expect("create");
+    keystore
+        .add_kek("col", LOCAL, TEST_LEVEL)
+        .expect("add second KEK");
+
+    // Both LOCAL and TEST_LEVEL wrap "col"; switching LOCAL → TEST_LEVEL
+    // would duplicate the new wrapping.
+    let result = keystore.switch_kek("col", LOCAL, TEST_LEVEL);
+    assert!(matches!(
+        result,
+        Err(LockstoreError::InvalidConfiguration(_))
+    ));
+
+    keystore.close();
+}
+
+#[test]
+fn test_switch_kek_rejects_missing_old() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+
+    keystore.create_dek("col", LOCAL, true).expect("create");
+    let result = keystore.switch_kek("col", TEST_LEVEL, LOCAL);
+    assert!(matches!(result, Err(LockstoreError::NotFound(_))));
+
+    keystore.close();
+}
+
+#[test]
+fn test_switch_kek_preserves_ciphertext() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+
+    keystore.create_dek("col", LOCAL, false).expect("create");
+    let ct = keystore
+        .encrypt("col", LOCAL, b"pre-switch")
+        .expect("encrypt before switch");
+
+    keystore
+        .switch_kek("col", LOCAL, TEST_LEVEL)
+        .expect("switch");
+
+    // The same ciphertext must still decrypt under the new kek_ref:
+    // switch_kek changes only the wrapping, not the DEK itself.
+    let pt = keystore
+        .decrypt("col", TEST_LEVEL, &ct)
+        .expect("decrypt after switch");
+    assert_eq!(pt, b"pre-switch");
+
+    keystore.close();
+}

@@ -336,6 +336,71 @@ impl Keystore {
         conn.save_metadata(collection_name, &metadata)
     }
 
+    /// Install caller-supplied `dek_bytes` as the DEK for `collection_name`,
+    /// wrapped under the existing KEK at `kek_ref`. Migration primitive: use
+    /// this to bring data already encrypted under a known external DEK under
+    /// keystore management without re-encrypting ciphertexts at rest.
+    ///
+    /// `dek_bytes` must match the wire length of the default cipher suite
+    /// (32 bytes for AES-256-GCM); other lengths are rejected with
+    /// `InvalidConfiguration`. The collection must not already have a DEK
+    /// and the KEK at `kek_ref` must be unlocked (required so we can wrap
+    /// the caller's bytes).
+    ///
+    /// Imported DEKs are inherently extractable by the caller (the bytes
+    /// are already in their hands). The `extractable` flag controls only
+    /// whether future `get_dek` calls succeed.
+    pub fn import_dek(
+        &self,
+        collection_name: &str,
+        kek_ref: &str,
+        dek_bytes: &[u8],
+        extractable: bool,
+    ) -> Result<(), LockstoreError> {
+        let cipher_suite = DEFAULT_CIPHER_SUITE;
+        if dek_bytes.len() != cipher_suite.key_size() {
+            return Err(LockstoreError::InvalidConfiguration(format!(
+                "DEK length {} does not match expected {} bytes for {}",
+                dek_bytes.len(),
+                cipher_suite.key_size(),
+                cipher_suite.as_str()
+            )));
+        }
+
+        let kek_type = KekType::from_kek_ref(kek_ref)?;
+
+        // Serialises against `set_prp`'s rewrap pass and any other DEK-ops
+        // for the same reason `create_dek` does (see comment there).
+        let conn = self.acquire_connection()?;
+
+        let dek_key = format!("{}{}", DEK_PREFIX, collection_name);
+        let db = Database::new(&self.store, DB_NAME);
+        let key = Key::from(dek_key.as_str());
+        let existing = db.get(&key, &GetOptions::default())?;
+
+        if existing.is_some() {
+            return Err(LockstoreError::InvalidConfiguration(format!(
+                "DEK already exists for collection: {}",
+                collection_name
+            )));
+        }
+
+        let kek = self.get_kek_symkey(cipher_suite, kek_ref)?;
+        let wrapped = crypto::encrypt_with_symkey(dek_bytes, &kek, cipher_suite)?;
+
+        let metadata = DekMetadata {
+            wrapped_deks: vec![WrappedDek {
+                kek_type,
+                kek_ref: kek_ref.to_string(),
+                wrapped_dek: wrapped,
+            }],
+            cipher_suite,
+            extractable,
+        };
+
+        conn.save_metadata(collection_name, &metadata)
+    }
+
     pub(crate) fn get_dek_internal(
         &self,
         collection_name: &str,
@@ -495,6 +560,81 @@ impl Keystore {
         crypto::decrypt_with_symkey(&entry.wrapped_dek, &kek)?;
 
         metadata.wrapped_deks.retain(|w| w.kek_ref != kek_ref);
+
+        conn.save_metadata(collection_name, &metadata)
+    }
+
+    /// Atomically rewrap the DEK for `collection_name` from `old_kek_ref` to
+    /// `new_kek_ref`. The DEK bytes are unchanged, so ciphertexts at rest
+    /// under this collection remain valid.
+    ///
+    /// Equivalent in effect to `add_kek` followed by `remove_kek` but
+    /// atomic at the kvstore-row level: a crash mid-operation leaves the
+    /// keystore in the old state or the new state, never an intermediate
+    /// half-state. The wrapping entry is replaced in place, so the
+    /// "collection always has at least one wrapping" invariant is
+    /// preserved at every observable disk state.
+    ///
+    /// `old_kek_ref` must currently wrap the collection and be unlocked.
+    /// `new_kek_ref` must not currently wrap the collection.
+    pub fn switch_kek(
+        &self,
+        collection_name: &str,
+        old_kek_ref: &str,
+        new_kek_ref: &str,
+    ) -> Result<(), LockstoreError> {
+        if old_kek_ref == new_kek_ref {
+            return Err(LockstoreError::InvalidConfiguration(format!(
+                "old_kek_ref and new_kek_ref are the same: '{}'",
+                old_kek_ref
+            )));
+        }
+
+        let new_kek_type = KekType::from_kek_ref(new_kek_ref)?;
+
+        let conn = self.acquire_connection()?;
+        let mut metadata = conn.load_metadata(collection_name)?;
+
+        let old_entry = metadata
+            .wrapped_deks
+            .iter()
+            .find(|w| w.kek_ref == old_kek_ref)
+            .ok_or_else(|| {
+                LockstoreError::NotFound(format!(
+                    "No DEK for collection '{}' with kek_ref '{}'",
+                    collection_name, old_kek_ref
+                ))
+            })?;
+
+        if metadata
+            .wrapped_deks
+            .iter()
+            .any(|w| w.kek_ref == new_kek_ref)
+        {
+            return Err(LockstoreError::InvalidConfiguration(format!(
+                "new_kek_ref '{}' already wraps collection '{}'",
+                new_kek_ref, collection_name
+            )));
+        }
+
+        let old_kek = self.get_kek_symkey(metadata.cipher_suite, old_kek_ref)?;
+        let mut dek = crypto::decrypt_with_symkey(&old_entry.wrapped_dek, &old_kek)?;
+
+        let new_kek = self.get_kek_symkey(metadata.cipher_suite, new_kek_ref)?;
+        let new_wrapped = crypto::encrypt_with_symkey(&dek, &new_kek, metadata.cipher_suite)?;
+        dek.zeroize();
+
+        // In-place replace preserves the "at least one wrapping" invariant
+        // at every observable state — at no point during the metadata
+        // mutation is the wrappings vector empty.
+        for w in metadata.wrapped_deks.iter_mut() {
+            if w.kek_ref == old_kek_ref {
+                w.kek_type = new_kek_type;
+                w.kek_ref = new_kek_ref.to_string();
+                w.wrapped_dek = new_wrapped;
+                break;
+            }
+        }
 
         conn.save_metadata(collection_name, &metadata)
     }

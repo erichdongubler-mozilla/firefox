@@ -107,6 +107,78 @@ pub extern "C" fn lockstore_keystore_create_dek(
     }
 }
 
+/// Install caller-supplied `dek_bytes` as the DEK for `collection`,
+/// wrapped under `kek_ref`. Migration primitive used to bring data
+/// already encrypted under a known external DEK under keystore
+/// management without re-encrypting ciphertexts at rest.
+///
+/// # Safety
+/// `dek_ptr` must point to at least `dek_len` initialised bytes that
+/// remain valid for the duration of the call. `dek_len` must equal the
+/// wire length of the default cipher suite (32 bytes for AES-256-GCM);
+/// other lengths are rejected with `NS_ERROR_INVALID_ARG`. Ownership
+/// remains with the caller; Lockstore copies what it needs before
+/// returning.
+#[no_mangle]
+pub unsafe extern "C" fn lockstore_keystore_import_dek(
+    handle: &KeystoreHandle,
+    collection: &nsACString,
+    kek_ref: &nsACString,
+    dek_ptr: *const u8,
+    dek_len: usize,
+    extractable: bool,
+) -> nsresult {
+    if collection.is_empty() || kek_ref.is_empty() {
+        log::error!("Collection and kek_ref cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+    // Length-first check: short-circuits before any pointer
+    // dereference, so the caller does not need to nullptr-guard for
+    // empty buffers — passing `nsTArray::Elements()` unconditionally is
+    // safe.
+    if dek_len == 0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+    if dek_ptr.is_null() {
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    let coll_str = collection.to_utf8();
+    let kek_ref_str = kek_ref.to_utf8();
+    // SAFETY: non-zero len + non-null ptr validated above; caller's
+    // contract requires `dek_len` valid bytes at `dek_ptr`.
+    let dek = unsafe { std::slice::from_raw_parts(dek_ptr, dek_len) };
+
+    match handle
+        .keystore
+        .import_dek(&coll_str, &kek_ref_str, dek, extractable)
+    {
+        Ok(()) => NS_OK,
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_is_dek_extractable(
+    handle: &KeystoreHandle,
+    collection: &nsACString,
+    out_extractable: &mut bool,
+) -> nsresult {
+    if collection.is_empty() {
+        log::error!("Collection cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    let coll_str = collection.to_utf8();
+    match handle.keystore.is_dek_extractable(&coll_str) {
+        Ok(b) => {
+            *out_extractable = b;
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn lockstore_keystore_get_dek(
     handle: &KeystoreHandle,
@@ -223,6 +295,30 @@ pub extern "C" fn lockstore_keystore_remove_kek(
     let coll_str = collection.to_utf8();
     let kek_ref_str = kek_ref.to_utf8();
     match handle.keystore.remove_kek(&coll_str, &kek_ref_str) {
+        Ok(()) => NS_OK,
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+/// Atomically rewrap the DEK for `collection` from `old_kek_ref` to
+/// `new_kek_ref`. The DEK bytes are unchanged; ciphertexts at rest stay
+/// valid. Equivalent in effect to `add_kek` + `remove_kek` but atomic
+/// at the kvstore-row level.
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_switch_kek(
+    handle: &KeystoreHandle,
+    collection: &nsACString,
+    old_kek_ref: &nsACString,
+    new_kek_ref: &nsACString,
+) -> nsresult {
+    if collection.is_empty() || old_kek_ref.is_empty() || new_kek_ref.is_empty() {
+        log::error!("Collection, old_kek_ref and new_kek_ref cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+    let coll_str = collection.to_utf8();
+    let old_str = old_kek_ref.to_utf8();
+    let new_str = new_kek_ref.to_utf8();
+    match handle.keystore.switch_kek(&coll_str, &old_str, &new_str) {
         Ok(()) => NS_OK,
         Err(e) => error_to_nsresult(e),
     }

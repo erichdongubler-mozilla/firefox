@@ -21,12 +21,15 @@ using mozilla::security::lockstore::lockstore_keystore_delete_dek;
 using mozilla::security::lockstore::lockstore_keystore_encrypt;
 using mozilla::security::lockstore::lockstore_keystore_get_dek;
 using mozilla::security::lockstore::lockstore_keystore_has_prp;
+using mozilla::security::lockstore::lockstore_keystore_import_dek;
+using mozilla::security::lockstore::lockstore_keystore_is_dek_extractable;
 using mozilla::security::lockstore::lockstore_keystore_is_kek_unlocked;
 using mozilla::security::lockstore::lockstore_keystore_list_collections;
 using mozilla::security::lockstore::lockstore_keystore_lock;
 using mozilla::security::lockstore::lockstore_keystore_lock_kek;
 using mozilla::security::lockstore::lockstore_keystore_open;
 using mozilla::security::lockstore::lockstore_keystore_remove_kek;
+using mozilla::security::lockstore::lockstore_keystore_switch_kek;
 using mozilla::security::lockstore::lockstore_keystore_unlock_kek;
 
 class LockstoreKeystoreTest : public ::testing::Test {
@@ -467,4 +470,165 @@ TEST_F(LockstoreKeystoreTest, LockAllIsNoopWhenNothingCached) {
   // succeed (callers on shutdown shouldn't have to check first).
   rv = lockstore_keystore_lock(mKeystore);
   ASSERT_NS_SUCCEEDED(rv);
+}
+
+TEST_F(LockstoreKeystoreTest, ImportDekRoundtripExtractable) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  const nsCString coll("imported");
+  uint8_t dek[32];
+  for (size_t i = 0; i < sizeof(dek); ++i) {
+    dek[i] = static_cast<uint8_t>(i + 1);
+  }
+  rv = lockstore_keystore_import_dek(mKeystore, &coll, &mLocalKekRef, dek,
+                                     sizeof(dek), true);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  nsTArray<uint8_t> round;
+  rv = lockstore_keystore_get_dek(mKeystore, &coll, &mLocalKekRef, &round);
+  ASSERT_NS_SUCCEEDED(rv);
+  ASSERT_EQ(round.Length(), sizeof(dek));
+  for (size_t i = 0; i < sizeof(dek); ++i) {
+    EXPECT_EQ(round[i], dek[i]);
+  }
+}
+
+TEST_F(LockstoreKeystoreTest, ImportDekWrongLength) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  const nsCString coll("badlen");
+  uint8_t shortDek[16] = {0};
+  rv = lockstore_keystore_import_dek(mKeystore, &coll, &mLocalKekRef, shortDek,
+                                     sizeof(shortDek), true);
+  ASSERT_EQ(rv, NS_ERROR_FAILURE);
+}
+
+TEST_F(LockstoreKeystoreTest, ImportDekEmptyCollection) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  nsAutoCString empty;
+  uint8_t dek[32] = {0};
+  rv = lockstore_keystore_import_dek(mKeystore, &empty, &mLocalKekRef, dek,
+                                     sizeof(dek), true);
+  ASSERT_EQ(rv, NS_ERROR_INVALID_ARG);
+}
+
+TEST_F(LockstoreKeystoreTest, ImportDekDuplicate) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  const nsCString coll("dup");
+  uint8_t dek[32] = {0};
+  rv = lockstore_keystore_import_dek(mKeystore, &coll, &mLocalKekRef, dek,
+                                     sizeof(dek), true);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  rv = lockstore_keystore_import_dek(mKeystore, &coll, &mLocalKekRef, dek,
+                                     sizeof(dek), true);
+  ASSERT_EQ(rv, NS_ERROR_FAILURE);
+}
+
+TEST_F(LockstoreKeystoreTest, IsDekExtractableTrue) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  const nsCString coll("extract-yes");
+  rv = lockstore_keystore_create_dek(mKeystore, &coll, &mLocalKekRef, true);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  bool extractable = false;
+  rv = lockstore_keystore_is_dek_extractable(mKeystore, &coll, &extractable);
+  ASSERT_NS_SUCCEEDED(rv);
+  EXPECT_TRUE(extractable);
+}
+
+TEST_F(LockstoreKeystoreTest, IsDekExtractableFalse) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  const nsCString coll("extract-no");
+  rv = lockstore_keystore_create_dek(mKeystore, &coll, &mLocalKekRef, false);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  bool extractable = true;
+  rv = lockstore_keystore_is_dek_extractable(mKeystore, &coll, &extractable);
+  ASSERT_NS_SUCCEEDED(rv);
+  EXPECT_FALSE(extractable);
+}
+
+TEST_F(LockstoreKeystoreTest, IsDekExtractableMissingCollection) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  const nsCString coll("nope");
+  bool extractable = false;
+  rv = lockstore_keystore_is_dek_extractable(mKeystore, &coll, &extractable);
+  ASSERT_EQ(rv, NS_ERROR_NOT_AVAILABLE);
+}
+
+TEST_F(LockstoreKeystoreTest, IsDekExtractableEmptyCollection) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  nsAutoCString empty;
+  bool extractable = false;
+  rv = lockstore_keystore_is_dek_extractable(mKeystore, &empty, &extractable);
+  ASSERT_EQ(rv, NS_ERROR_INVALID_ARG);
+}
+
+TEST_F(LockstoreKeystoreTest, SwitchKekEmptyArgs) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  nsAutoCString empty;
+  const nsCString coll("col");
+  rv = lockstore_keystore_switch_kek(mKeystore, &empty, &mLocalKekRef,
+                                     &mLocalKekRef);
+  ASSERT_EQ(rv, NS_ERROR_INVALID_ARG);
+  rv = lockstore_keystore_switch_kek(mKeystore, &coll, &empty, &mLocalKekRef);
+  ASSERT_EQ(rv, NS_ERROR_INVALID_ARG);
+  rv = lockstore_keystore_switch_kek(mKeystore, &coll, &mLocalKekRef, &empty);
+  ASSERT_EQ(rv, NS_ERROR_INVALID_ARG);
+}
+
+TEST_F(LockstoreKeystoreTest, SwitchKekSameRefRejected) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  const nsCString coll("col");
+  rv = lockstore_keystore_create_dek(mKeystore, &coll, &mLocalKekRef, false);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  rv = lockstore_keystore_switch_kek(mKeystore, &coll, &mLocalKekRef,
+                                     &mLocalKekRef);
+  // old == new is InvalidConfiguration → NS_ERROR_FAILURE per the FFI mapping.
+  ASSERT_EQ(rv, NS_ERROR_FAILURE);
+}
+
+TEST_F(LockstoreKeystoreTest, SwitchKekNonexistentCollection) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  const nsCString coll("nope");
+  const nsCString pp("lockstore::kek::primary_password"_ns);
+  rv = lockstore_keystore_switch_kek(mKeystore, &coll, &mLocalKekRef, &pp);
+  ASSERT_EQ(rv, NS_ERROR_NOT_AVAILABLE);
+}
+
+TEST_F(LockstoreKeystoreTest, SwitchKekMissingOldWrapping) {
+  nsresult rv = lockstore_keystore_open(&mProfilePath, &mKeystore);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  // Collection wrapped only under LocalKey; "switch from PrimaryPassword"
+  // must reject because PP doesn't currently wrap this collection.
+  const nsCString coll("local-only");
+  rv = lockstore_keystore_create_dek(mKeystore, &coll, &mLocalKekRef, false);
+  ASSERT_NS_SUCCEEDED(rv);
+
+  const nsCString pp("lockstore::kek::primary_password"_ns);
+  rv = lockstore_keystore_switch_kek(mKeystore, &coll, &pp, &mLocalKekRef);
+  ASSERT_EQ(rv, NS_ERROR_NOT_AVAILABLE);
 }
