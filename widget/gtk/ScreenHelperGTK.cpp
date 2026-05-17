@@ -64,6 +64,7 @@ static uint32_t GetGTKPixelDepth() {
   return gdk_visual_get_depth(visual);
 }
 
+#ifdef MOZ_WAYLAND
 static already_AddRefed<Screen> MakeDummyScreen(unsigned int aMonitor) {
   LOG_SCREEN("MakeScreenGtk() create dummy screen for monitor [%d]", aMonitor);
   return MakeAndAddRef<Screen>(LayoutDeviceIntRect(), LayoutDeviceIntRect(), 0,
@@ -71,6 +72,7 @@ static already_AddRefed<Screen> MakeDummyScreen(unsigned int aMonitor) {
                                CSSToLayoutDeviceScale(1.0), 1,
                                Screen::IsPseudoDisplay::No, Screen::IsHDR(0));
 }
+#endif
 
 static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
                                               bool aIsHDR) {
