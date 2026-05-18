@@ -527,6 +527,10 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
   max-width: var(--menu-panel-width-wide);
 }
 
+#toolbar-tabGroupsListView {
+  max-width: var(--menu-panel-width);
+}
+
 /* Add 2 * 16px extra width for touch mode button padding. */
 #appMenu-popup[touchmode] panelview {
   min-width: calc(var(--menu-panel-width) + 32px);

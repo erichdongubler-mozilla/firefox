@@ -120,16 +120,73 @@ add_task(async function test_rendersSavedGroups() {
 
 add_task(async function test_emptyState() {
   let subView = await openTabGroupsSubView();
-  Assert.ok(
-    subView.querySelector(".tab-groups-list-empty-state"),
-    "Empty state element is rendered"
-  );
+  let emptyState = subView.querySelector(".tab-groups-list-empty-state");
+  Assert.ok(emptyState, "Empty state element is rendered");
   Assert.equal(
     subView.querySelectorAll(".tab-group-row").length,
     0,
     "No group rows rendered in empty state"
   );
+  Assert.ok(
+    emptyState.querySelector(".tab-groups-list-empty-state-header"),
+    "Empty state header is rendered"
+  );
+  Assert.ok(
+    emptyState.querySelector(".tab-groups-list-empty-state-description"),
+    "Empty state description is rendered"
+  );
+  Assert.ok(
+    emptyState.querySelector("moz-button"),
+    "Empty state button is rendered"
+  );
   await closeAppMenu();
+});
+
+add_task(async function test_emptyStateButtonCreatesTabGroup() {
+  let initialTabCount = gBrowser.tabs.length;
+  let selectedTab = gBrowser.selectedTab;
+
+  let subView = await openTabGroupsSubView();
+  let button = subView.querySelector(".tab-groups-list-empty-state moz-button");
+
+  let panel = document.getElementById("appMenu-popup");
+  let panelHidden = BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+  let groupCreated = BrowserTestUtils.waitForEvent(
+    window,
+    "TabGroupCreateByUser"
+  );
+  // Tab group menu needs to initialize before safely removing the tab group
+  let tabGroupMenuShown = BrowserTestUtils.waitForPopupEvent(
+    gBrowser.tabGroupMenu.panel,
+    "shown"
+  );
+  button.click();
+  let [tabGroupCreatedEvent] = await Promise.all([
+    groupCreated,
+    panelHidden,
+    tabGroupMenuShown,
+  ]);
+  let tabGroup = tabGroupCreatedEvent.target;
+
+  Assert.equal(
+    gBrowser.tabs.length,
+    initialTabCount + 1,
+    "A new tab was opened"
+  );
+  Assert.equal(tabGroup.tagName, "tab-group", "tab group was created");
+  Assert.equal(tabGroup.tabs.length, 1, "tab group has 1 tab");
+  Assert.equal(
+    tabGroup.tabs[0].linkedBrowser.currentURI.spec,
+    window.BROWSER_NEW_TAB_URL,
+    "new tab in the group uses the new tab URL"
+  );
+  Assert.ok(
+    !selectedTab.group,
+    "The previously selected tab was not added to a group"
+  );
+
+  await removeTabGroup(tabGroup);
+  TabGroupTestUtils.forgetSavedTabGroups();
 });
 
 add_task(async function test_clickOpenGroupActivatesGroup() {

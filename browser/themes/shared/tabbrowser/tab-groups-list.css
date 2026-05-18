@@ -64,3 +64,29 @@ tab-groups-list:not([hidden]) {
   text-overflow: ellipsis;
   pointer-events: none;
 }
+
+.tab-groups-list-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  /* Apply panel menuitem spacing to all children to emulate the spacing
+   * of menuitems within a subview body. */
+  > img,
+  > p,
+  > moz-button {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    margin: var(--panel-menuitem-margin);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    padding: var(--panel-menuitem-padding);
+  }
+}
+
+.tab-groups-list-empty-state-header {
+  font-size: larger;
+}
+
+.tab-groups-list-empty-state-description {
+  color: var(--text-color-deemphasized);
+}
