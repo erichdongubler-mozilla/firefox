@@ -31,7 +31,6 @@
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/SVGUtils.h"
-#include "mozilla/dom/DOMPointBinding.h"
 #include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/dom/SVGRect.h"
 #include "mozilla/dom/SVGTextContentElementBinding.h"
@@ -3851,7 +3850,7 @@ float SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
  * text content element.
  */
 int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
-                                           const DOMPointInit& aPoint) {
+                                           const gfx::Point& aPoint) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (kid->IsSubtreeDirty()) {
     // We're never reflowed if we're under a non-SVG element that is
@@ -3863,7 +3862,7 @@ int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
 
   nsPresContext* context = PresContext();
 
-  gfxPoint p(aPoint.mX, aPoint.mY);
+  gfxPoint p = ThebesPoint(aPoint);
 
   int32_t result = -1;
 

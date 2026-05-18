@@ -33,7 +33,6 @@ struct TextRenderedRun;
 class TextRenderedRunIterator;
 
 namespace dom {
-struct DOMPointInit;
 class DOMSVGPoint;
 class SVGRect;
 class SVGGeometryElement;
@@ -265,8 +264,7 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
   float GetSubStringLengthSlowFallback(nsIContent* aContent, uint32_t charnum,
                                        uint32_t nchars, ErrorResult& aRv);
 
-  int32_t GetCharNumAtPosition(nsIContent* aContent,
-                               const dom::DOMPointInit& aPoint);
+  int32_t GetCharNumAtPosition(nsIContent* aContent, const gfx::Point& aPoint);
 
   already_AddRefed<dom::DOMSVGPoint> GetStartPositionOfChar(
       nsIContent* aContent, uint32_t aCharNum, ErrorResult& aRv);
