@@ -673,11 +673,11 @@ index e15fa92c00..67f946b9b3 100644
  
  rtc_source_set("arch") {
 diff --git a/rtc_tools/network_tester/BUILD.gn b/rtc_tools/network_tester/BUILD.gn
-index f39654771e..13e85e152c 100644
+index 646f43e1cf..aadc4b0a30 100644
 --- a/rtc_tools/network_tester/BUILD.gn
 +++ b/rtc_tools/network_tester/BUILD.gn
-@@ -186,8 +186,8 @@ if (is_android) {
-       "../../rtc_base:threading",
+@@ -188,8 +188,8 @@ if (is_android) {
+       "../../test:create_test_environment",
      ]
  
 -    suppressed_configs += [ "//build/config/android:hide_all_but_jni_onload" ]
