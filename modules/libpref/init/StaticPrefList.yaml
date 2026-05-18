@@ -17441,13 +17441,13 @@
 # Enable resetting the fingerprinting randomization key daily for normal windwos.
 - name: privacy.resistFingerprinting.randomization.daily_reset.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # Enable resetting the fingerprinting randomization key daily for private windwos.
 - name: privacy.resistFingerprinting.randomization.daily_reset.private.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # Control whether we use the SipHash to generate the canvas random key.
