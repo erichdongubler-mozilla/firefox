@@ -212,7 +212,7 @@ class DevToolsClient extends EventEmitter {
    *                           completion by resolving / rejecting this promise.
    *                           If it's rejected, the transport will be closed.
    *                           If an Error is supplied as a rejection value, it
-   *                           will be logged via |dumpn|.  If you do use
+   *                           will be logged via MOZ_LOG.  If you do use
    *                           |copyTo| or |copyToBuffer|, resolving is taken
    *                           care of for you when copying completes.
    *           * copyTo:       A helper function for getting your data out of the
@@ -325,7 +325,7 @@ class DevToolsClient extends EventEmitter {
    *                             completion by resolving / rejecting this
    *                             promise.  If it's rejected, the transport will
    *                             be closed.  If an Error is supplied as a
-   *                             rejection value, it will be logged via |dumpn|.
+   *                             rejection value, it will be logged via MOZ_LOG.
    *                             If you do use |copyFrom| or |copyFromBuffer|,
    *                             resolving is taken care of for you when copying
    *                             completes.
@@ -364,7 +364,7 @@ class DevToolsClient extends EventEmitter {
    *                           by resolving / rejecting this promise.  If it's
    *                           rejected, the transport will be closed.  If an
    *                           Error is supplied as a rejection value, it will
-   *                           be logged via |dumpn|.  If you do use |copyTo| or
+   *                           be logged via MOZ_LOG.  If you do use |copyTo| or
    *                           |copyToBuffer|, resolving is taken care of for
    *                           you when copying completes.
    *           * copyTo:       A helper function for getting your data out of the
@@ -600,7 +600,7 @@ class DevToolsClient extends EventEmitter {
    *                        by resolving / rejecting this promise.  If it's
    *                        rejected, the transport will be closed.  If an Error
    *                        is supplied as a rejection value, it will be logged
-   *                        via |dumpn|.  If you do use |copyTo| or
+   *                        via MOZ_LOG.  If you do use |copyTo| or
    *                        |copyToBuffer|, resolving is taken care of for you
    *                        when copying completes.
    *        * copyTo:       A helper function for getting your data out of the stream
