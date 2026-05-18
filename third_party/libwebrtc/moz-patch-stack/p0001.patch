@@ -56,7 +56,7 @@ diff --git a/.yapfignore b/.yapfignore
 deleted file mode 100644
 index e69de29bb2..0000000000
 diff --git a/BUILD.gn b/BUILD.gn
-index 06421da289..4d154f8e19 100644
+index cf54ae0f0e..2d17e81306 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -46,91 +46,81 @@ if (!build_with_chromium) {
