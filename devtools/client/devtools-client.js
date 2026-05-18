@@ -509,9 +509,8 @@ class DevToolsClient extends EventEmitter {
    *        The incoming packet.
    */
   onPacket(packet) {
-    logger.log(RECEIVE_MOZ_LOG_STRING, packet);
-
     if (!packet.from) {
+      logger.log(RECEIVE_MOZ_LOG_STRING, packet);
       DevToolsUtils.reportException(
         "onPacket",
         new Error(
@@ -530,6 +529,7 @@ class DevToolsClient extends EventEmitter {
       packet.from == this.mainRoot.actorID &&
       packet.type == "forwardingCancelled"
     ) {
+      logger.log(RECEIVE_MOZ_LOG_STRING, packet);
       this.purgeRequests(packet.prefix);
       return;
     }
@@ -541,6 +541,10 @@ class DevToolsClient extends EventEmitter {
       front.onPacket(packet);
       return;
     }
+
+    // Log incoming RDP packet being sent via DevToolsClient.
+    // (packet received via protocol.js will be logged from protocol.js codebase)
+    logger.log(RECEIVE_MOZ_LOG_STRING, packet);
 
     let activeRequest;
     // See if we have a handler function waiting for a reply from this
