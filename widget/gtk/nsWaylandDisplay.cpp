@@ -14,7 +14,6 @@
 #include "mozilla/StaticPrefs_general.h"
 #include "mozilla/Sprintf.h"
 #include "WidgetUtilsGtk.h"
-#include "mozilla/widget/xx-pip-v1-client-protocol.h"
 #include "nsGtkKeyUtils.h"
 #include "nsGtkUtils.h"
 #include "nsLayoutUtils.h"
@@ -825,6 +824,10 @@ static void global_registry_handler(void* data, wl_registry* registry,
     auto* manager = WaylandRegistryBind<wp_fractional_scale_manager_v1>(
         registry, id, &wp_fractional_scale_manager_v1_interface, 1);
     display->SetFractionalScaleManager(manager);
+  } else if (iface.EqualsLiteral("xx_fractional_scale_manager_v2")) {
+    auto* manager = WaylandRegistryBind<xx_fractional_scale_manager_v2>(
+        registry, id, &xx_fractional_scale_manager_v2_interface, 1);
+    display->SetFractionalScaleManagerV2(manager);
   } else if (iface.EqualsLiteral("gtk_primary_selection_device_manager") ||
              iface.EqualsLiteral("zwp_primary_selection_device_manager_v1")) {
     display->EnablePrimarySelection();
@@ -866,6 +869,8 @@ static void global_registry_handler(void* data, wl_registry* registry,
       auto* fixes = WaylandRegistryBind<wl_fixes>(
           registry, id, sWlFixesInterface, MIN(version, 2));
       display->SetFixes(fixes);
+    } else {
+      LOG("wl_fixes_interface is missing!");
     }
   }
 }

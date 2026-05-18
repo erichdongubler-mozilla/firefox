@@ -20099,6 +20099,12 @@
   value: true
   mirror: always
 
+# Enable experimental xx-fractional-scale-v2
+- name: widget.wayland.coordinates-scale.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Use opaque region for MozContainer wl_surface
 - name: widget.wayland.opaque-region.enabled
   type: bool
