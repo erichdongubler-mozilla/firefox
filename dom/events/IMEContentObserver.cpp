@@ -986,8 +986,7 @@ void IMEContentObserver::CharacterDataChanged(
   } else {
     nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
         RawNodePosition::BeforeFirstContentOf(*mRootElement),
-        RawNodePosition(aContent, aInfo.mChangeStart), mRootElement, &offset,
-        LINE_BREAK_TYPE_NATIVE);
+        RawNodePosition(aContent, aInfo.mChangeStart), mRootElement, &offset);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
@@ -2344,8 +2343,7 @@ nsresult IMEContentObserver::FlatTextCache::
   uint32_t length = 0;
   nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
       RawNodePosition::BeforeFirstContentOf(*aRootElement),
-      RawNodePosition::After(aContent), aRootElement, &length,
-      LineBreakType::LINE_BREAK_TYPE_NATIVE);
+      RawNodePosition::After(aContent), aRootElement, &length);
   if (NS_FAILED(rv)) {
     Clear(aCallerName);
     return rv;
@@ -2540,7 +2538,7 @@ IMEContentObserver::FlatTextCache::ComputeTextLengthOfContent(
     start.mAfterOpenTag = false;
     nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
         start, RawNodePosition::AtEndOf(aContent), aRootElement, &textLength,
-        LineBreakType::LINE_BREAK_TYPE_NATIVE, /* aIsRemovingNode = */ true);
+        /* aIsRemovingNode = */ true);
     if (NS_FAILED(rv)) {
       return Err(rv);
     }
@@ -2558,8 +2556,8 @@ IMEContentObserver::FlatTextCache::ComputeTextLengthBeforeContent(
   uint32_t textLengthBeforeContent = 0;
   nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
       RawNodePosition::BeforeFirstContentOf(*aRootElement),
-      RawNodePosition::Before(aContent), aRootElement, &textLengthBeforeContent,
-      LineBreakType::LINE_BREAK_TYPE_NATIVE);
+      RawNodePosition::Before(aContent), aRootElement,
+      &textLengthBeforeContent);
   if (NS_FAILED(rv)) {
     return Err(rv);
   }
@@ -2574,8 +2572,7 @@ Result<uint32_t, nsresult> IMEContentObserver::FlatTextCache::
   uint32_t textLength = 0;
   nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
       RawNodePosition::Before(aStartContent),
-      RawNodePosition::After(aEndContent), aRootElement, &textLength,
-      LineBreakType::LINE_BREAK_TYPE_NATIVE);
+      RawNodePosition::After(aEndContent), aRootElement, &textLength);
   if (NS_FAILED(rv)) {
     return Err(rv);
   }
@@ -2592,8 +2589,7 @@ IMEContentObserver::FlatTextCache::ComputeTextLengthBeforeFirstContentOf(
       // Include the line break caused by open tag of aContainer if it's an
       // element when we cache text length before first content of aContainer.
       RawNodePosition(const_cast<nsINode*>(&aContainer), nullptr), aRootElement,
-      &lengthIncludingLineBreakCausedByOpenTagOfContent,
-      LineBreakType::LINE_BREAK_TYPE_NATIVE);
+      &lengthIncludingLineBreakCausedByOpenTagOfContent);
   if (NS_FAILED(rv)) {
     return Err(rv);
   }
