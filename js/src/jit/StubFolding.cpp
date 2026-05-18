@@ -280,12 +280,12 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
     MOZ_ASSERT_IF(hasSlotOffsets, shapeList.length() == offsetList.length());
 
     for (uint32_t i = 0; i < shapeList.length(); i++) {
-      if (!shapeObj->append(cx, shapeList[i])) {
-        return false;
-      }
-
       if (hasSlotOffsets) {
-        if (!shapeObj->append(cx, offsetList[i])) {
+        if (!shapeObj->append(cx, shapeList[i], offsetList[i])) {
+          return false;
+        }
+      } else {
+        if (!shapeObj->append(cx, shapeList[i])) {
           return false;
         }
       }
@@ -742,15 +742,13 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
     return false;
   }
 
-  if (!shapeList->append(cx, newShape)) {
-    cx->recoverFromOutOfMemory();
-    return false;
-  }
-
   if (offsetFieldOffset.isSome()) {
-    if (!shapeList->append(cx, newOffset)) {
-      // Drop corresponding shape if we failed adding offset.
-      shapeList->shrinkElements(cx, shapeList->length() - 1);
+    if (!shapeList->append(cx, newShape, newOffset)) {
+      cx->recoverFromOutOfMemory();
+      return false;
+    }
+  } else {
+    if (!shapeList->append(cx, newShape)) {
       cx->recoverFromOutOfMemory();
       return false;
     }
