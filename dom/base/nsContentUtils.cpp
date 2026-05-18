@@ -11400,15 +11400,14 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
              "Can only create XUL or XHTML elements.");
 
   nsAtom* name = nodeInfo->NameAtom();
+  int32_t tag = eHTMLTag_unknown;
   bool isCustomElementName = false;
-  const Maybe<const nsHTMLTag>& tag = nodeInfo->HTMLTag();
-  if (tag.isSome()) {
-    MOZ_ASSERT(nodeInfo->NamespaceEquals(kNameSpaceID_XHTML));
+  if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
+    tag = nsHTMLTags::CaseSensitiveAtomTagToId(name);
     isCustomElementName =
-        (*tag == eHTMLTag_userdefined &&
+        (tag == eHTMLTag_userdefined &&
          nsContentUtils::IsCustomElementName(name, kNameSpaceID_XHTML));
-  } else {
-    MOZ_ASSERT(nodeInfo->NamespaceEquals(kNameSpaceID_XUL));
+  } else {  // kNameSpaceID_XUL
     if (aIsAtom) {
       // Make sure the customized built-in element to be constructed confirms
       // to our naming requirement, i.e. [is] must be a dashed name and
@@ -11499,7 +11498,7 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
       // 4.2. "Set result to the result of creating an element internal..."
       if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
         *aResult =
-            CreateHTMLElement(*tag, nodeInfo.forget(), aFromParser).take();
+            CreateHTMLElement(tag, nodeInfo.forget(), aFromParser).take();
       } else {
         NS_IF_ADDREF(*aResult = nsXULElement::Construct(nodeInfo.forget()));
       }
@@ -11578,7 +11577,7 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
       NS_IF_ADDREF(*aResult =
                        NS_NewHTMLElement(nodeInfo.forget(), aFromParser));
     } else {
-      *aResult = CreateHTMLElement(*tag, nodeInfo.forget(), aFromParser).take();
+      *aResult = CreateHTMLElement(tag, nodeInfo.forget(), aFromParser).take();
     }
   } else {
     NS_IF_ADDREF(*aResult = nsXULElement::Construct(nodeInfo.forget()));

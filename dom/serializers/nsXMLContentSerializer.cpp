@@ -960,8 +960,10 @@ static bool ElementNeedsSeparateEndTag(Element* aElement,
   // HTML container tags should have a separate end tag even if empty, per spec.
   // See
   // https://w3c.github.io/DOM-Parsing/#dfn-concept-xml-serialization-algorithm
-  return nsHTMLElement::IsContainer(
-      aElement->NodeInfo()->HTMLTag().valueOr(eHTMLTag_userdefined));
+  nsAtom* localName = aElement->NodeInfo()->NameAtom();
+  bool isHTMLContainer = nsHTMLElement::IsContainer(
+      nsHTMLTags::CaseSensitiveAtomTagToId(localName));
+  return isHTMLContainer;
 }
 
 bool nsXMLContentSerializer::AppendEndOfElementStart(Element* aElement,
