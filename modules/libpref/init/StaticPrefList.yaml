@@ -2594,6 +2594,13 @@
   value: true
   mirror: always
 
+# Audio Session API: navigator.audioSession surface
+# https://w3c.github.io/audio-session/
+- name: dom.audio_session.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 # Checks if offscreen animation throttling is enabled.
 - name: dom.animations.offscreen-throttling
   type: bool

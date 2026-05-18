@@ -30,6 +30,7 @@ class ErrorResult;
 
 namespace dom {
 class AddonManager;
+class AudioSession;
 class BodyExtractorBase;
 class Geolocation;
 class Serial;
@@ -233,6 +234,7 @@ class Navigator final : public nsISupports, public nsWrapperCache {
 
   dom::MediaCapabilities* MediaCapabilities();
   dom::MediaSession* MediaSession();
+  dom::AudioSession* AudioSession();
 
   AddonManager* GetMozAddonManager(ErrorResult& aRv);
 
@@ -315,6 +317,7 @@ class Navigator final : public nsISupports, public nsWrapperCache {
   RefPtr<StorageManager> mStorageManager;
   RefPtr<dom::MediaCapabilities> mMediaCapabilities;
   RefPtr<dom::MediaSession> mMediaSession;
+  RefPtr<dom::AudioSession> mAudioSession;
   RefPtr<AddonManager> mAddonManager;
   RefPtr<webgpu::Instance> mWebGpu;
   RefPtr<Promise> mSharePromise;  // Web Share API related

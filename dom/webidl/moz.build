@@ -456,6 +456,7 @@ WEBIDL_FILES = [
     "AudioParamMap.webidl",
     "AudioProcessingEvent.webidl",
     "AudioScheduledSourceNode.webidl",
+    "AudioSession.webidl",
     "AudioTrack.webidl",
     "AudioTrackList.webidl",
     "AudioWorklet.webidl",
