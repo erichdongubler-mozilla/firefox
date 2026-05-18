@@ -1044,9 +1044,8 @@ add_task(async function testPrivateBrowsingExtension() {
 
 add_task(async function testInvalidExtension() {
   let win = await open_manager("addons://detail/foo");
-  let categoryUtils = new CategoryUtilities(win);
   is(
-    categoryUtils.selectedCategory,
+    AboutAddonsTestUtils.getSidebarSelectedCategory(win),
     "discover",
     "Should fall back to the discovery pane"
   );
@@ -1062,9 +1061,8 @@ add_task(async function testInvalidExtensionNoDiscover() {
   });
 
   let win = await open_manager("addons://detail/foo");
-  let categoryUtils = new CategoryUtilities(win);
   is(
-    categoryUtils.selectedCategory,
+    AboutAddonsTestUtils.getSidebarSelectedCategory(win),
     "extension",
     "Should fall back to the extension list if discover is disabled"
   );
@@ -1324,7 +1322,9 @@ add_task(async function testGoBackButtonIsDisabledAfterBrowserBackButton() {
   await assertBackButtonIsDisabled(win);
 
   // Navigate to the extensions list.
-  await new CategoryUtilities(win).openType("extension");
+  let viewLoaded = wait_for_view_load(win);
+  AboutAddonsTestUtils.clickCategoryButton(win, "extension");
+  await viewLoaded;
 
   // Click on the browser back button.
   gBrowser.goBack();

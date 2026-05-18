@@ -216,10 +216,8 @@ add_task(async function testLocalesHiddenIfPreviousViewAndNoLocales() {
   });
   let win = await viewLoaded;
 
-  let categoryUtils = new CategoryUtilities(win);
-
   await TestUtils.waitForCondition(
-    () => categoryUtils.selectedCategory != "locale"
+    () => AboutAddonsTestUtils.getSidebarSelectedCategory(win) != "locale"
   );
 
   await checkCategory(win, "locale", {
@@ -228,7 +226,7 @@ add_task(async function testLocalesHiddenIfPreviousViewAndNoLocales() {
   });
 
   is(
-    categoryUtils.getSelectedViewId(),
+    AboutAddonsTestUtils.getSidebarSelectedViewId(win),
     win.gViewController.defaultViewId,
     "default view is selected"
   );
