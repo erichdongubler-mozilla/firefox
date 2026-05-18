@@ -61,7 +61,6 @@ FINAL_TARGET_FILES.actors += [
     "PrintingChild.sys.mjs",
     "PrintingParent.sys.mjs",
     "PrintingSelectionChild.sys.mjs",
-    "PurgeSessionHistoryChild.sys.mjs",
     "RemotePageChild.sys.mjs",
     "SelectChild.sys.mjs",
     "SelectParent.sys.mjs",

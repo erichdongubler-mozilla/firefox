@@ -112,6 +112,9 @@ function Widgets() {
   const { messageData } = useSelector(state => state.Messages);
   const timerType = useSelector(state => state.TimerWidget.timerType);
   const timerData = useSelector(state => state.TimerWidget);
+  const sportsWidgetState = useSelector(
+    state => state.SportsWidget?.widgetState
+  );
   const dispatch = useDispatch();
   const { openWidgetsPanel } = useContext(BaseContext);
 
@@ -496,7 +499,15 @@ function Widgets() {
                 return null;
               }
               const entry = WIDGET_REGISTRY.find(w => w.id === id);
-              const size = entry ? resolveWidgetSize(entry, prefs) : null;
+              let size = entry ? resolveWidgetSize(entry, prefs) : null;
+              // The follow-teams panel needs the larger grid cell to fit its content,
+              // so we override the user's size pref while that state is active.
+              if (
+                id === "sportsWidget" &&
+                sportsWidgetState === "sports-follow-state"
+              ) {
+                size = "large";
+              }
               return (
                 <WidgetWrapper
                   key={id}

@@ -52,9 +52,6 @@ skip-if = [
 ]
 
 ["test_tracking_db_service.js"]
-skip-if = [
-  "os == 'android'", # Bug 1697936
-]
 
 ["test_url_classifier_allow_list_category_pref_migration.js"]
 

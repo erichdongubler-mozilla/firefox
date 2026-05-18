@@ -26,7 +26,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -199,12 +200,8 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                 val bottomSheet = findViewById<View?>(materialR.id.design_bottom_sheet)
                 bottomSheet?.let {
                     ViewCompat.setOnApplyWindowInsetsListener(it) { view, insets ->
-                        view.setPadding(
-                            0,
-                            insets.getInsets(systemBars()).top,
-                            0,
-                            insets.getInsets(systemBars()).bottom,
-                        )
+                        val systemBarInsets = insets.getInsets(systemBars())
+                        view.setPadding(0, systemBarInsets.top, 0, systemBarInsets.bottom)
                         insets
                     }
                 }
@@ -398,7 +395,10 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                             !settings.shouldUseExpandedToolbar &&
                             (isExtensionsExpanded || isMoreMenuExpanded) &&
                             args.accesspoint == MenuAccessPoint.Browser,
-                    cornerShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                    cornerShape = MaterialTheme.shapes.extraLarge.copy(
+                        bottomStart = CornerSize(0.dp),
+                        bottomEnd = CornerSize(0.dp),
+                    ),
                     menuCfrState = if (settings.shouldShowMenuCFR && settings.cfrPopupsEnabled) {
                         MenuCFRState(
                             showCFR = settings.shouldShowMenuCFR && settings.cfrPopupsEnabled,

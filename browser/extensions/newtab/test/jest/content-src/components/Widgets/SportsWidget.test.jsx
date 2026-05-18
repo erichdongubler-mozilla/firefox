@@ -16,6 +16,47 @@ const defaultProps = {
   handleUserInteraction: jest.fn(),
 };
 
+function makeTeams() {
+  return [
+    {
+      key: "CAN",
+      global_team_id: 90000966,
+      name: "Canada",
+      region: "CAN",
+      colors: ["#FF0000", "#FFFFFF", "#D52B1E"],
+      icon_url: "https://example.test/CAN.svg",
+      eliminated: false,
+    },
+    {
+      key: "AUS",
+      global_team_id: 90001244,
+      name: "Australia",
+      region: "AUS",
+      colors: ["#012169", "#FFFFFF", "#E4002B"],
+      icon_url: "https://example.test/AUS.svg",
+      eliminated: false,
+    },
+    {
+      key: "ALG",
+      global_team_id: 90001054,
+      name: "Algeria",
+      region: "ALG",
+      colors: ["#006233", "#FFFFFF", "#D21034"],
+      icon_url: "https://example.test/ALG.svg",
+      eliminated: false,
+    },
+    {
+      key: "ENG",
+      global_team_id: 90000858,
+      name: "England",
+      region: "ENG",
+      colors: ["#FFFFFF", "#CE1126"],
+      icon_url: "https://example.test/ENG.svg",
+      eliminated: false,
+    },
+  ];
+}
+
 function makeState(prefOverrides = {}, sportsWidgetOverrides = {}) {
   return {
     ...INITIAL_STATE,
@@ -148,12 +189,16 @@ describe("<SportsWidget> follow teams flow", () => {
     handleUserInteraction = jest.fn();
   });
 
-  function renderInFollowState(selectedTeams = []) {
+  function renderInFollowState(selectedTeams = [], dataOverride) {
     return render(
       <WrapWithProvider
         state={makeState(
           {},
-          { widgetState: "sports-follow-state", selectedTeams }
+          {
+            widgetState: "sports-follow-state",
+            selectedTeams,
+            data: dataOverride ?? { teams: makeTeams(), matches: [] },
+          }
         )}
       >
         <SportsWidget
@@ -217,6 +262,12 @@ describe("<SportsWidget> follow teams flow", () => {
     expect(dispatch).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: at.WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS })
     );
+    expect(dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_USER_EVENT,
+        data: expect.objectContaining({ user_action: "save_teams" }),
+      })
+    );
   });
 
   it("dispatches CHANGE_SELECTED_TEAMS and navigates to intro when Done is clicked", () => {
@@ -228,7 +279,7 @@ describe("<SportsWidget> follow teams flow", () => {
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
         type: at.WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS,
-        data: ["CA"],
+        data: ["ALG"],
       })
     );
     expect(dispatch).toHaveBeenCalledWith(
@@ -250,7 +301,7 @@ describe("<SportsWidget> follow teams flow", () => {
   });
 
   it("saves the team removed from pre-selected teams when Done is clicked", () => {
-    const { container } = renderInFollowState(["CA"]);
+    const { container } = renderInFollowState(["ALG"]);
     fireEvent.change(container.querySelector("moz-checkbox"), {
       target: { checked: false },
     });
@@ -264,20 +315,20 @@ describe("<SportsWidget> follow teams flow", () => {
   });
 
   it("marks pre-selected teams as checked", () => {
-    const { container } = renderInFollowState(["CA"]);
+    const { container } = renderInFollowState(["ALG"]);
     const checkboxes = container.querySelectorAll("moz-checkbox");
     expect(checkboxes[0].getAttribute("checked")).not.toBeNull();
     expect(checkboxes[1].getAttribute("checked")).toBeNull();
   });
 
   it("disables unselected checkboxes when 3 teams are already selected", () => {
-    const { container } = renderInFollowState(["CA", "AU", "DZ"]);
+    const { container } = renderInFollowState(["CAN", "AUS", "ALG"]);
     const checkboxes = container.querySelectorAll("moz-checkbox");
     const disabled = Array.from(checkboxes).filter(
       c => c.getAttribute("disabled") !== null
     );
-    // 11 countries total, 3 selected — the remaining 8 should be disabled
-    expect(disabled.length).toBe(8);
+    // 4 teams in fixture, 3 selected -> remaining 1 should be disabled
+    expect(disabled.length).toBe(1);
   });
 
   it("expands to large-widget when in follow state even if size pref is medium", () => {
@@ -300,7 +351,7 @@ describe("<SportsWidget> follow teams flow", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("filters the country list when a search query is entered", () => {
+  it("filters the team list when a search query is entered", () => {
     const { container } = renderInFollowState();
     const searchInput = container.querySelector("moz-input-search");
     Object.defineProperty(searchInput, "value", {
@@ -308,12 +359,14 @@ describe("<SportsWidget> follow teams flow", () => {
       configurable: true,
     });
     fireEvent.input(searchInput);
-    const checkboxes = container.querySelectorAll("moz-checkbox");
-    expect(checkboxes.length).toBe(1);
-    expect(checkboxes[0].getAttribute("label")).toBe("Canada");
+    const rows = container.querySelectorAll(".sports-follow-teams-row");
+    expect(rows.length).toBe(1);
+    expect(rows[0].querySelector(".sports-team-name").textContent).toBe(
+      "Canada"
+    );
   });
 
-  it("shows all countries when the search query is cleared", () => {
+  it("shows all teams when the search query is cleared", () => {
     const { container } = renderInFollowState();
     const searchInput = container.querySelector("moz-input-search");
     Object.defineProperty(searchInput, "value", {
@@ -326,7 +379,191 @@ describe("<SportsWidget> follow teams flow", () => {
       configurable: true,
     });
     fireEvent.input(searchInput);
-    expect(container.querySelectorAll("moz-checkbox").length).toBe(11);
+    expect(container.querySelectorAll("moz-checkbox").length).toBe(4);
+  });
+
+  it("renders teams sorted alphabetically by name", () => {
+    const { container } = renderInFollowState();
+    const names = Array.from(
+      container.querySelectorAll(".sports-team-name")
+    ).map(el => el.textContent);
+    expect(names).toEqual(["Algeria", "Australia", "Canada", "England"]);
+  });
+
+  it("renders a flag image for each team with src, empty alt, and a title tooltip", () => {
+    const { container } = renderInFollowState();
+    const flags = container.querySelectorAll(".sports-team-flag");
+    expect(flags.length).toBe(4);
+    expect(flags[0].getAttribute("src")).toBe("https://example.test/ALG.svg");
+    expect(flags[0].getAttribute("alt")).toBe("");
+    expect(flags[0].getAttribute("title")).toBe("Algeria");
+  });
+
+  it("sets aria-label on each checkbox to its team name", () => {
+    const { container } = renderInFollowState();
+    const checkboxes = container.querySelectorAll("moz-checkbox");
+    expect(checkboxes[0].getAttribute("aria-label")).toBe("Algeria");
+    expect(checkboxes[1].getAttribute("aria-label")).toBe("Australia");
+    expect(checkboxes[2].getAttribute("aria-label")).toBe("Canada");
+    expect(checkboxes[3].getAttribute("aria-label")).toBe("England");
+  });
+
+  it("toggles the checkbox when the flag image is clicked", () => {
+    const { container } = renderInFollowState();
+    fireEvent.click(container.querySelectorAll(".sports-team-flag")[0]);
+    fireEvent.click(container.querySelector(".sports-done-button"));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS,
+        data: ["ALG"],
+      })
+    );
+  });
+
+  it("toggles the checkbox when the team name is clicked", () => {
+    const { container } = renderInFollowState();
+    fireEvent.click(container.querySelectorAll(".sports-team-name")[1]);
+    fireEvent.click(container.querySelector(".sports-done-button"));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS,
+        data: ["AUS"],
+      })
+    );
+  });
+
+  it("does not toggle when clicking the flag on a row that is disabled by max-selection", () => {
+    // 3 teams selected (ALG, AUS, CAN), the 4th (ENG) row is disabled.
+    const { container } = renderInFollowState(["ALG", "AUS", "CAN"]);
+    fireEvent.click(container.querySelectorAll(".sports-team-flag")[3]);
+    fireEvent.click(container.querySelector(".sports-done-button"));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS,
+        data: ["ALG", "AUS", "CAN"],
+      })
+    );
+  });
+
+  it("does not toggle twice when the user clicks the checkbox itself", () => {
+    // Mimic a real checkbox click: both a change event AND a click event on the row fire.
+    const { container } = renderInFollowState();
+    const checkbox = container.querySelector("moz-checkbox");
+    fireEvent.change(checkbox, { target: { checked: true } });
+    fireEvent.click(checkbox);
+    fireEvent.click(container.querySelector(".sports-done-button"));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS,
+        data: ["ALG"],
+      })
+    );
+  });
+
+  it("sorts accented team names using locale-aware comparison", () => {
+    const { container } = render(
+      <WrapWithProvider
+        state={makeState(
+          {},
+          {
+            widgetState: "sports-follow-state",
+            data: {
+              teams: [
+                { key: "CUW", name: "Curaçao" },
+                { key: "CIV", name: "Côte d'Ivoire" },
+                { key: "CAN", name: "Canada" },
+              ],
+              matches: [],
+            },
+          }
+        )}
+      >
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+    const names = Array.from(
+      container.querySelectorAll(".sports-team-name")
+    ).map(el => el.textContent);
+    expect(names).toEqual(["Canada", "Côte d'Ivoire", "Curaçao"]);
+  });
+
+  it("renders a row without crashing when icon_url is missing", () => {
+    const { container } = render(
+      <WrapWithProvider
+        state={makeState(
+          {},
+          {
+            widgetState: "sports-follow-state",
+            data: {
+              teams: [{ key: "CAN", name: "Canada" }],
+              matches: [],
+            },
+          }
+        )}
+      >
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+    expect(container.querySelector(".sports-team-name").textContent).toBe(
+      "Canada"
+    );
+    expect(container.querySelectorAll(".sports-team-flag").length).toBe(1);
+  });
+
+  it("renders no rows and does not crash when teams data is missing", () => {
+    const { container } = renderInFollowState([], { teams: null, matches: [] });
+    expect(container.querySelectorAll("moz-checkbox").length).toBe(0);
+    expect(container.querySelector(".sports-follow-teams")).toBeInTheDocument();
+  });
+
+  it("renders no rows when teams is an empty array", () => {
+    const { container } = renderInFollowState([], { teams: [], matches: [] });
+    expect(container.querySelectorAll("moz-checkbox").length).toBe(0);
+  });
+
+  it("dispatches save_teams telemetry with the team count and widget size when Done is clicked", () => {
+    const { container } = renderInFollowState([]);
+    fireEvent.change(container.querySelector("moz-checkbox"), {
+      target: { checked: true },
+    });
+    fireEvent.click(container.querySelector(".sports-done-button"));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_USER_EVENT,
+        data: expect.objectContaining({
+          widget_name: "sports_widget",
+          widget_source: "widget",
+          user_action: "save_teams",
+          action_value: 1,
+          widget_size: "medium",
+        }),
+      })
+    );
+  });
+
+  it("does not dispatch save_teams when the user checks then unchecks a team before Done", () => {
+    const { container } = renderInFollowState([]);
+    const firstCheckbox = container.querySelector("moz-checkbox");
+    fireEvent.change(firstCheckbox, { target: { checked: true } });
+    fireEvent.change(firstCheckbox, { target: { checked: false } });
+    fireEvent.click(container.querySelector(".sports-done-button"));
+    expect(dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_USER_EVENT,
+        data: expect.objectContaining({ user_action: "save_teams" }),
+      })
+    );
+  });
+
+  it("does not dispatch save_teams telemetry when Done is clicked with no teams selected", () => {
+    const { container } = renderInFollowState([]);
+    fireEvent.click(container.querySelector(".sports-done-button"));
+    expect(dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_USER_EVENT,
+        data: expect.objectContaining({ user_action: "save_teams" }),
+      })
+    );
   });
 });
 

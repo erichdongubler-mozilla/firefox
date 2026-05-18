@@ -1139,6 +1139,7 @@ private fun generateFakeTabsList(
     }
 }
 
+@Composable
 private fun getTabShapeInfo(
     firstVisibleIndex: Int,
     lastVisibleIndex: Int,

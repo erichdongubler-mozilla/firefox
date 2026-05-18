@@ -621,6 +621,7 @@ function prompt(aActor, aBrowser, aRequest) {
     actionL10nIds.push({ id }, { id: "webrtc-action-always-block" });
     secondaryActions = [
       {
+        disableSecurityDelay: true,
         callback() {
           aActor.denyRequest(aRequest);
           if (!isNotNowLabelEnabled) {
@@ -635,6 +636,7 @@ function prompt(aActor, aBrowser, aRequest) {
         },
       },
       {
+        disableSecurityDelay: true,
         callback() {
           aActor.denyRequest(aRequest);
           lazy.SitePermissions.setForPrincipal(
@@ -656,6 +658,7 @@ function prompt(aActor, aBrowser, aRequest) {
     actionL10nIds.push({ id });
     secondaryActions = [
       {
+        disableSecurityDelay: true,
         callback(aState) {
           aActor.denyRequest(aRequest);
 

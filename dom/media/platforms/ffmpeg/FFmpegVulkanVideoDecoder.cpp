@@ -58,7 +58,7 @@ FFmpegVideoDecoder<
   // Resources should already be cleaned up by ProcessShutdown()
   // If mDevice is not null here, it means ProcessShutdown wasn't called
   // and the device may already be destroyed - don't try to clean up
-  if (mDevice) {
+  if (mDevice != VK_NULL_HANDLE) {
     NS_WARNING(
         "~FFmpegVulkanVideoDecoder called with device still set - resources "
         "may leak");
@@ -67,18 +67,19 @@ FFmpegVideoDecoder<
 
 void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::Cleanup() {
   FFMPEGV_LOG("FFmpegVulkanVideoDecoder::Cleanup()");
-  if (mDevice) {
+  if (mDevice != VK_NULL_HANDLE) {
     if (mDeviceWaitIdle) {
       mDeviceWaitIdle(mDevice);
     }
     for (uint32_t qi = 0; qi < mCopyQueueCount; qi++) {
-      if (mCopyCmdBuf[qi] && mCopyCmdPool[qi] && mFreeCommandBuffers) {
+      if ((mCopyCmdBuf[qi] != VK_NULL_HANDLE) &&
+          (mCopyCmdPool[qi] != VK_NULL_HANDLE) && mFreeCommandBuffers) {
         mFreeCommandBuffers(mDevice, mCopyCmdPool[qi], 1, &mCopyCmdBuf[qi]);
       }
-      if (mCopyCmdPool[qi] && mDestroyCommandPool) {
+      if (mCopyCmdPool[qi] != VK_NULL_HANDLE && mDestroyCommandPool) {
         mDestroyCommandPool(mDevice, mCopyCmdPool[qi], nullptr);
       }
-      if (mCopyFence[qi] && mDestroyFence) {
+      if (mCopyFence[qi] != VK_NULL_HANDLE && mDestroyFence) {
         mDestroyFence(mDevice, mCopyFence[qi], nullptr);
       }
     }
@@ -90,23 +91,23 @@ void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::Cleanup() {
       }
       mCopyDoneSemValue[i] = 0;
       mCopyDoneSemSignaled[i] = false;
-      if (mCopyDoneSem[i] && mDestroySemaphore) {
+      if ((mCopyDoneSem[i] != VK_NULL_HANDLE) && mDestroySemaphore) {
         mDestroySemaphore(mDevice, mCopyDoneSem[i], nullptr);
         mCopyDoneSem[i] = VK_NULL_HANDLE;
       }
       if (mNv12BaseFd[i] >= 0) {
         close(mNv12BaseFd[i]);
       }
-      if (mNv12Image[i] && mDestroyImage) {
+      if ((mNv12Image[i] != VK_NULL_HANDLE) && mDestroyImage) {
         mDestroyImage(mDevice, mNv12Image[i], nullptr);
       }
-      if (mNv12Mem[i] && mFreeMemory) {
+      if ((mNv12Mem[i] != VK_NULL_HANDLE) && mFreeMemory) {
         mFreeMemory(mDevice, mNv12Mem[i], nullptr);
       }
     }
   }
 
-  mDevice = nullptr;
+  mDevice = VK_NULL_HANDLE;
   mCopyQueueCount = 0;
   mCopyQueueIsDedicatedTransfer = false;
   mCopyQueueRoundRobin = 0;
@@ -117,8 +118,8 @@ void FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::Cleanup() {
   mDeviceFunctions.Clear();
 
   for (int i = 0; i < kNumBuffers; i++) {
-    mNv12Image[i] = nullptr;
-    mNv12Mem[i] = nullptr;
+    mNv12Image[i] = VK_NULL_HANDLE;
+    mNv12Mem[i] = VK_NULL_HANDLE;
     mNv12BaseFd[i] = -1;
     mCopyDoneSem[i] = VK_NULL_HANDLE;
     mCopyDoneSemFd[i] = -1;
@@ -774,7 +775,7 @@ bool FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCtx(
                    .get());
   }
 
-  return mDevice != nullptr;
+  return mDevice != VK_NULL_HANDLE;
 }
 
 MediaResult
@@ -794,13 +795,13 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCopyRingBuffer(
       close(mNv12BaseFd[buf]);
       mNv12BaseFd[buf] = -1;
     }
-    if (mNv12Image[buf]) {
+    if (mNv12Image[buf] != VK_NULL_HANDLE) {
       mDestroyImage(mDevice, mNv12Image[buf], nullptr);
-      mNv12Image[buf] = nullptr;
+      mNv12Image[buf] = VK_NULL_HANDLE;
     }
-    if (mNv12Mem[buf]) {
+    if (mNv12Mem[buf] != VK_NULL_HANDLE) {
       mFreeMemory(mDevice, mNv12Mem[buf], nullptr);
-      mNv12Mem[buf] = nullptr;
+      mNv12Mem[buf] = VK_NULL_HANDLE;
     }
   }
 
@@ -840,13 +841,13 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCopyRingBuffer(
         close(mNv12BaseFd[b]);
         mNv12BaseFd[b] = -1;
       }
-      if (mNv12Mem[b]) {
+      if (mNv12Mem[b] != VK_NULL_HANDLE) {
         mFreeMemory(mDevice, mNv12Mem[b], nullptr);
-        mNv12Mem[b] = nullptr;
+        mNv12Mem[b] = VK_NULL_HANDLE;
       }
-      if (mNv12Image[b]) {
+      if (mNv12Image[b] != VK_NULL_HANDLE) {
         mDestroyImage(mDevice, mNv12Image[b], nullptr);
-        mNv12Image[b] = nullptr;
+        mNv12Image[b] = VK_NULL_HANDLE;
       }
     }
   });
@@ -924,7 +925,7 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCopyRingBuffer(
     }
     if (memTypeIndex == UINT32_MAX) {
       mDestroyImage(mDevice, mNv12Image[buf], nullptr);
-      mNv12Image[buf] = nullptr;
+      mNv12Image[buf] = VK_NULL_HANDLE;
       return MediaResult(
           NS_ERROR_DOM_MEDIA_FATAL_ERR,
           RESULT_DETAIL("No compatible memory type for NV12 image"));
@@ -944,7 +945,7 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCopyRingBuffer(
     res = mAllocateMemory(mDevice, &allocInfo, nullptr, &mNv12Mem[buf]);
     if (res != VK_SUCCESS) {
       mDestroyImage(mDevice, mNv12Image[buf], nullptr);
-      mNv12Image[buf] = nullptr;
+      mNv12Image[buf] = VK_NULL_HANDLE;
       return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                          RESULT_DETAIL("Failed to alloc NV12 memory"));
     }
@@ -953,8 +954,8 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCopyRingBuffer(
     if (res != VK_SUCCESS) {
       mFreeMemory(mDevice, mNv12Mem[buf], nullptr);
       mDestroyImage(mDevice, mNv12Image[buf], nullptr);
-      mNv12Mem[buf] = nullptr;
-      mNv12Image[buf] = nullptr;
+      mNv12Mem[buf] = VK_NULL_HANDLE;
+      mNv12Image[buf] = VK_NULL_HANDLE;
       return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                          RESULT_DETAIL("Failed to bind NV12 memory"));
     }
@@ -981,8 +982,8 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitCopyRingBuffer(
     if (res != VK_SUCCESS) {
       mFreeMemory(mDevice, mNv12Mem[buf], nullptr);
       mDestroyImage(mDevice, mNv12Image[buf], nullptr);
-      mNv12Mem[buf] = nullptr;
-      mNv12Image[buf] = nullptr;
+      mNv12Mem[buf] = VK_NULL_HANDLE;
+      mNv12Image[buf] = VK_NULL_HANDLE;
       return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                          RESULT_DETAIL("Failed to export NV12 FD"));
     }
@@ -1052,7 +1053,8 @@ FFmpegVideoDecoder<LIBAV_VER>::FFmpegVulkanVideoDecoder::InitExternalSemaphores(
         mCreateSemaphore(mDevice, &semInfo, nullptr, &mCopyDoneSem[buf]);
     if (res != VK_SUCCESS) {
       for (int b = 0; b < kNumBuffers; b++) {
-        if (created[b] && mCopyDoneSem[b] && mDestroySemaphore) {
+        if (created[b] && (mCopyDoneSem[b] != VK_NULL_HANDLE) &&
+            mDestroySemaphore) {
           mDestroySemaphore(mDevice, mCopyDoneSem[b], nullptr);
           mCopyDoneSem[b] = VK_NULL_HANDLE;
         }

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -30,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.theme.layout.AcornElevation
-import mozilla.components.compose.base.theme.layout.AcornLayout
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
@@ -42,7 +40,6 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
 private val elevation = AcornElevation.level4
-private val shapeChecklist = RoundedCornerShape(size = AcornLayout.AcornCorner.large)
 
 /**
  * The Setup checklist displayed on homepage that contains onboarding tasks.
@@ -54,7 +51,7 @@ private val shapeChecklist = RoundedCornerShape(size = AcornLayout.AcornCorner.l
 fun SetupChecklist(setupChecklistState: SetupChecklistState, interactor: SetupChecklistInteractor) {
     Card(
         modifier = Modifier.padding(16.dp),
-        shape = shapeChecklist,
+        shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
     ) {

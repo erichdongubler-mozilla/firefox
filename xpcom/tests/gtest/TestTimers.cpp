@@ -282,11 +282,12 @@ TEST_F(SimpleTimerTest, RepeatingPrecise) {
 
 class FindExpirationTimeState final {
  public:
-  // We'll offset the timers 10 seconds into the future to assure that they
-  // won't fire
-  const uint32_t kTimerOffset = 10 * 1000;
-  // And we'll set the timers spaced by 5 seconds.
-  const uint32_t kTimerInterval = 5 * 1000;
+  // Offset the timers far enough into the future that they won't fire during
+  // the test, but small enough that the pre-clear loop in InitTimers isn't a
+  // wall-time bottleneck on slow runners (Bug 1952147).
+  const uint32_t kTimerOffset = 1000;
+  // And we'll set the timers spaced by 250 ms.
+  const uint32_t kTimerInterval = 250;
   // We'll use 20 timers
   const uint32_t kNumTimers = 20;
 

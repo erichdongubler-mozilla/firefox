@@ -2977,7 +2977,7 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
       continue;
     }
 
-    if (!coverage::CollectScriptCoverage(script, false)) {
+    if (!coverage::CollectScriptCoverage(script)) {
       ReportOutOfMemory(cx);
       return false;
     }

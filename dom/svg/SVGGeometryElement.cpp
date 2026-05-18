@@ -15,6 +15,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/SVGContentUtils.h"
 #include "mozilla/SVGUtils.h"
+#include "mozilla/dom/DOMPoint.h"
 #include "mozilla/dom/DOMPointBinding.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/gfx/2D.h"
@@ -184,10 +185,6 @@ FillRule SVGGeometryElement::GetFillRule() {
   return fillRule;
 }
 
-static Point GetPointFrom(const DOMPointInit& aPoint) {
-  return Point(aPoint.mX, aPoint.mY);
-}
-
 bool SVGGeometryElement::IsPointInFill(const DOMPointInit& aPoint) {
   FlushIfNeeded();
 
@@ -196,7 +193,8 @@ bool SVGGeometryElement::IsPointInFill(const DOMPointInit& aPoint) {
     return false;
   }
 
-  auto point = GetPointFrom(aPoint);
+  auto point =
+      DOMPointReadOnly::ToPoint(aPoint) * dom::UserSpaceMetrics::GetZoom(this);
   return path->ContainsPoint(point, {});
 }
 
@@ -210,7 +208,8 @@ bool SVGGeometryElement::IsPointInStroke(const DOMPointInit& aPoint) {
     return false;
   }
 
-  auto point = GetPointFrom(aPoint);
+  auto point =
+      DOMPointReadOnly::ToPoint(aPoint) * dom::UserSpaceMetrics::GetZoom(this);
   bool res = false;
   SVGGeometryProperty::DoForComputedStyle(this, [&](const ComputedStyle* s) {
     // Per spec, we should take vector-effect into account.

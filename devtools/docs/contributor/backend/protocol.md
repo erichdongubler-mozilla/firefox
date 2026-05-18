@@ -58,6 +58,17 @@ where `actor` is the name of the non-existent actor. (It is strange to receive m
 
 Clients should silently ignore packet properties they do not recognize. We expect that, as the protocol evolves, we will specify new properties that can appear in existing packets, and experimental implementations will do the same.
 
+### Logging RDP Packets
+
+You can easily trace all RDP Packets to stdout, or in the Browser Console by using MOZ_LOG.
+
+```
+$ MOZ_LOG="devtools_rdp:3" ./mach run
+[...]
+[Parent 258112: Main Thread]: I/devtools_rdp log: -> ({type:"connect", frontendVersion:"152.0a1", to:"root"})
+[Parent 258112: Main Thread]: I/devtools_rdp log: <- ({from:"root"})
+```
+
 ### Common Patterns of Actor Communication
 
 Each type of actor specifies which packets it can receive, which it might send, and when it can do each. Although in principle these interaction rules could be complex, in practice most actors follow one of two simple patterns:

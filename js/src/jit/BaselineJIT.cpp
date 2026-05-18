@@ -31,6 +31,7 @@
 
 #include "debugger/DebugAPI-inl.h"
 #include "gc/GC-inl.h"
+#include "gc/WeakMap-inl.h"
 #include "jit/JitHints-inl.h"
 #include "jit/JitScript-inl.h"
 #include "vm/GeckoProfiler-inl.h"
@@ -585,27 +586,29 @@ static bool MaybeCreateBaselineInterpreterEntryScript(JSContext* cx,
                                                       JSScript* script) {
   MOZ_ASSERT(script->hasJitScript());
 
+  Zone* zone = script->zone();
+  EntryTrampolineMap* map =
+      zone->jitZone()->getOrCreateInterpreterEntryMap(zone);
+  if (!map) {
+    return false;
+  }
+
   JitRuntime* jitRuntime = cx->runtime()->jitRuntime();
   if (script->jitCodeRaw() != jitRuntime->baselineInterpreter().codeRaw()) {
     // script already has an updated interpreter trampoline.
 #ifdef DEBUG
-    auto p = jitRuntime->getInterpreterEntryMap()->lookup(script);
-    MOZ_ASSERT(p);
-    MOZ_ASSERT(p->value().raw() == script->jitCodeRaw());
+    auto ptr = map->lookup(script);
+    MOZ_ASSERT(ptr);
+    MOZ_ASSERT(ptr->value()->raw() == script->jitCodeRaw());
 #endif
     return true;
   }
 
-  auto p = jitRuntime->getInterpreterEntryMap()->lookupForAdd(script);
-  if (!p) {
+  auto ptr = map->lookupForAdd(script);
+  if (!ptr) {
     Rooted<JitCode*> code(
         cx, jitRuntime->generateEntryTrampolineForScript(cx, script));
-    if (!code) {
-      return false;
-    }
-
-    EntryTrampoline entry(cx, code);
-    if (!jitRuntime->getInterpreterEntryMap()->add(p, script, entry)) {
+    if (!code || !map->relookupOrAdd(ptr, script, code)) {
       return false;
     }
   }
@@ -643,6 +646,7 @@ static MethodStatus CanEnterBaselineInterpreter(JSContext* cx,
 
   if (JitOptions.emitInterpreterEntryTrampoline) {
     if (!MaybeCreateBaselineInterpreterEntryScript(cx, script)) {
+      ReportOutOfMemory(cx);
       return Method_Error;
     }
   }

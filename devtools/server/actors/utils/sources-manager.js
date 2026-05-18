@@ -445,9 +445,9 @@ class SourcesManager extends EventEmitter {
 
 function isLocationInRange({ line, column }, range) {
   return (
-    (range.start.line <= line ||
+    (range.start.line < line ||
       (range.start.line == line && range.start.column <= column)) &&
-    (range.end.line >= line ||
+    (range.end.line > line ||
       (range.end.line == line && range.end.column >= column))
   );
 }

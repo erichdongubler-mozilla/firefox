@@ -1270,6 +1270,7 @@ class BrowserToolbarSearchMiddlewareTest {
     @Test
     fun `GIVEN Google search engine and Lens enabled WHEN toolbar enters edit mode with blank query THEN a Lens button is shown`() {
         every { settings.googleLensIntegrationEnabled } returns true
+        every { settings.googleLensIntegrationUserEnabled } returns true
         val appStore: AppStore = mockk(relaxed = true) {
             every { state.searchState.selectedSearchEngine?.searchEngine } returns googleSearchEngine()
         }
@@ -1313,8 +1314,26 @@ class BrowserToolbarSearchMiddlewareTest {
     }
 
     @Test
+    fun `GIVEN Lens enabled but user disabled WHEN toolbar enters edit mode with Google engine THEN no Lens button is shown`() {
+        every { settings.googleLensIntegrationEnabled } returns true
+        every { settings.googleLensIntegrationUserEnabled } returns false
+        val appStore: AppStore = mockk(relaxed = true) {
+            every { state.searchState.selectedSearchEngine?.searchEngine } returns googleSearchEngine()
+        }
+        val (_, store) = buildMiddlewareAndAddToStore(appStore = appStore)
+
+        store.dispatch(EnterEditMode(false))
+        store.dispatch(SearchQueryUpdated(BrowserToolbarQuery("")))
+
+        val actions = store.state.editState.editActionsEnd
+        val lensButton = actions.filterIsInstance<ActionButtonRes>().find { it.onClick == LensButtonClicked }
+        assertEquals(null, lensButton)
+    }
+
+    @Test
     fun `WHEN the Lens button is clicked THEN dispatch LensRequested and record telemetry`() {
         every { settings.googleLensIntegrationEnabled } returns true
+        every { settings.googleLensIntegrationUserEnabled } returns true
         val appStore: AppStore = mockk(relaxed = true) {
             every { state.searchState.selectedSearchEngine?.searchEngine } returns googleSearchEngine()
         }
@@ -1348,6 +1367,7 @@ class BrowserToolbarSearchMiddlewareTest {
         val browserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
         every { components.useCases.fenixBrowserUseCases } returns browserUseCases
         every { settings.googleLensIntegrationEnabled } returns true
+        every { settings.googleLensIntegrationUserEnabled } returns true
         val browsingModeManager: BrowsingModeManager = mockk(relaxed = true) {
             every { mode } returns Normal
         }
@@ -1396,6 +1416,7 @@ class BrowserToolbarSearchMiddlewareTest {
         val browserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
         every { components.useCases.fenixBrowserUseCases } returns browserUseCases
         every { settings.googleLensIntegrationEnabled } returns true
+        every { settings.googleLensIntegrationUserEnabled } returns true
         val browsingModeManager: BrowsingModeManager = mockk(relaxed = true) {
             every { mode } returns Private
         }

@@ -60,7 +60,6 @@ import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.feature.syncedtabs.commands.GlobalSyncedTabsCommandsProvider
 import mozilla.components.feature.top.sites.TopSitesFrecencyConfig
 import mozilla.components.feature.top.sites.TopSitesProviderConfig
-import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
 import mozilla.components.service.sync.autofill.GlobalAutofillDependencyProvider
@@ -823,7 +822,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         }
     }
 
-    @Suppress("ForbiddenComment")
     private fun initializeWebExtensionSupport() {
         try {
             GlobalAddonDependencyProvider.initialize(
@@ -857,15 +855,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 onExtensionsLoaded = { extensions ->
                     components.addonUpdater.registerForFutureUpdates(extensions)
                     subscribeForNewAddonsIfNeeded(components.supportedAddonsChecker, extensions)
-
-                    // Bug 1948634 - Make sure the webcompat-reporter extension is fully uninstalled.
-                    // This is added here because we need gecko to load the extension first.
-                    //
-                    // TODO: Bug 1953359 - remove the code below in the next release.
-                    if (Config.channel.isNightlyOrDebug || Config.channel.isBeta) {
-                        logger.debug("Attempting to uninstall the WebCompat Reporter extension")
-                        WebCompatReporterFeature.uninstall(components.core.engine)
-                    }
                 },
                 onUpdatePermissionRequest = components.addonUpdater::onUpdatePermissionRequest,
             )

@@ -540,6 +540,17 @@ ABIArg ABIArgGenerator::next(MIRType type) {
     case MIRType::Float32:
     case MIRType::Double: {
       if (floatRegIndex_ == NumFloatArgRegs) {
+        // A real floating-point argument is passed in a floating-point
+        // argument register if [...] at least one floating-point argument
+        // register is available. Otherwise, it is passed according to the
+        // integer calling convention.
+        //
+        // <https://riscv-non-isa.github.io/riscv-elf-psabi-doc/#_hardware_floating_point_calling_convention>
+        if (kind_ == ABIKind::System && intRegIndex_ != NumIntArgRegs) {
+          current_ = ABIArg(Register::FromCode(intRegIndex_ + a0.encoding()));
+          intRegIndex_++;
+          break;
+        }
         current_ = ABIArg(stackOffset_);
         stackOffset_ += sizeof(double);
         break;

@@ -2,11 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-let MESSAGE_COUNTER = 0;
+const logger = console.createInstance({
+  prefix: "devtools_worker",
+  maxLogLevel: "Warn",
+});
 
-function dumpn(_msg) {
-  // dump(msg + "\n");
-}
+let MESSAGE_COUNTER = 0;
 
 /**
  * Creates a wrapper around a ChromeWorker, providing easy
@@ -18,12 +19,10 @@ function dumpn(_msg) {
  * @param Object opts
  *        An option with the following optional fields:
  *        - name: a name that will be printed with logs
- *        - verbose: log incoming and outgoing messages
  */
 export function DevToolsWorker(url, opts) {
   opts = opts || {};
   this._worker = new ChromeWorker(url);
-  this._verbose = opts.verbose;
   this._name = opts.name;
 
   this._worker.addEventListener("error", this.onError);
@@ -52,8 +51,8 @@ DevToolsWorker.prototype.performTask = function (task, data, transfer) {
   const id = ++MESSAGE_COUNTER;
   const payload = { task, id, data };
 
-  if (this._verbose && dumpn) {
-    dumpn(
+  if (logger.shouldLog("Log")) {
+    logger.log(
       "Sending message to worker" +
         (this._name ? " (" + this._name + ")" : "") +
         ": " +
@@ -64,8 +63,8 @@ DevToolsWorker.prototype.performTask = function (task, data, transfer) {
 
   return new Promise((resolve, reject) => {
     const listener = ({ data: result }) => {
-      if (this._verbose && dumpn) {
-        dumpn(
+      if (logger.shouldLog("Log")) {
+        logger.log(
           "Received message from worker" +
             (this._name ? " (" + this._name + ")" : "") +
             ": " +

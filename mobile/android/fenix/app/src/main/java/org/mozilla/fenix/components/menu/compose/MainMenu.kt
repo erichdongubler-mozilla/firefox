@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -488,7 +487,7 @@ private fun MoreMenuButtonGroup(
             modifier = Modifier
                 .background(
                     color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    shape = RoundedCornerShape(16.dp),
+                    shape = MaterialTheme.shapes.large,
                 )
                 .padding(2.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -517,21 +516,15 @@ private fun LibraryMenuGroup(
     onPasswordsMenuClick: () -> Unit,
 ) {
     val spacerWidth = 2.dp
-    val innerRounding = 4.dp
-    val outerRounding = 28.dp
 
-    val leftShape = RoundedCornerShape(
-        topStart = outerRounding,
-        topEnd = innerRounding,
-        bottomStart = outerRounding,
-        bottomEnd = innerRounding,
+    val leftShape = MaterialTheme.shapes.extraLarge.copy(
+        topEnd = MaterialTheme.shapes.extraSmall.topEnd,
+        bottomEnd = MaterialTheme.shapes.extraSmall.bottomEnd,
     )
-    val middleShape = RoundedCornerShape(innerRounding)
-    val rightShape = RoundedCornerShape(
-        topStart = innerRounding,
-        topEnd = outerRounding,
-        bottomStart = innerRounding,
-        bottomEnd = outerRounding,
+    val middleShape = MaterialTheme.shapes.extraSmall
+    val rightShape = MaterialTheme.shapes.extraLarge.copy(
+        topStart = MaterialTheme.shapes.extraSmall.topStart,
+        bottomStart = MaterialTheme.shapes.extraSmall.bottomStart,
     )
 
     Row(
@@ -715,7 +708,7 @@ private fun MoreExtensionsMenuItem(
                 contentDescription = label
             }
             .wrapContentSize()
-            .clip(shape = RoundedCornerShape(4.dp))
+            .clip(shape = MaterialTheme.shapes.extraSmall)
             .background(
                 color = MaterialTheme.colorScheme.surfaceDimVariant,
             ),

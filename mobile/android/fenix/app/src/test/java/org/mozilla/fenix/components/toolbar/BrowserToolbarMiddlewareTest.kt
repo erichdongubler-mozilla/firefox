@@ -1385,6 +1385,7 @@ class BrowserToolbarMiddlewareTest {
         settings.isTabStripEnabled = true
         settings.shouldUseExpandedToolbar = false
         settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
+        settings.nativeShareSheetEnabled = false
         every { navController.currentDestination?.id } returns R.id.browserFragment
         every { navController.navigate(any<NavDirections>(), null) } just Runs
         val browserScreenStore = buildBrowserScreenStore()

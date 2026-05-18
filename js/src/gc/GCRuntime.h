@@ -939,6 +939,7 @@ class GCRuntime {
   void sweepObjectsWithWeakPointers();
   void sweepDebuggerOnMainThread(JS::GCContext* gcx);
   void sweepJitDataOnMainThread(JS::GCContext* gcx);
+  void maybeWriteCoverageAndSpew();
   void sweepFinalizationObserversOnMainThread();
   void traceWeakFinalizationObserverEdges(JSTracer* trc, Zone* zone);
   void sweepWeakRefs();

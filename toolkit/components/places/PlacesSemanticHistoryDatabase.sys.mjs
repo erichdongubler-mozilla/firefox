@@ -34,9 +34,6 @@ const CURRENT_SCHEMA_VERSION = 2;
 // Maximum percentage of wasted space before defragmenting the database.
 const MAX_WASTED_SPACE_PERC = 0.6;
 
-// Maximum number of _chunksNN tables in sqlite-vec.
-const MAX_CHUNKS_TABLES = 100;
-
 /**
  * Handles the database connection, reading and writing for semantic history.
  */
@@ -310,36 +307,25 @@ export class PlacesSemanticHistoryDatabase {
   /**
    * Defragments the database contents.
    *
-   * Due to https://github.com/asg017/sqlite-vec/issues/220 the database may
-   * grow unbound if continuous insertions and removals are made, because the
-   * space left by embeddings removed from chunks is not reused. The only
-   * workaround for now is to create a new virtual table and copy the data over.
+   * The database only removes a chunk when all vectors in the chunk have been removed.
+   *
+   * Given the frecency cleanup behavior it may be unlikely for that to happen.
+   *
+   * A workaround for now is to create a new virtual table and copy the data over.
    * Then a VACUUM is necessary to compact the leftover space.
    *
-   * Updating sqlite-vec in the future may make this obsolete, or require deep
-   * changes.
+   * This may be removed when Sqlite-vec merges this PR or similar:
+   * https://github.com/asg017/sqlite-vec/pull/269
    */
   async #defragmentDatabase() {
-    lazy.logger.info(`Defragmenting the database`);
+    lazy.logger.info("Defragmenting the database");
+
     let timer = Glean.places.databaseSemanticHistoryDefragmentTime.start();
     await this.#conn.executeTransaction(async () => {
-      // sqlite-vec supports removing shadow tables on DROP, but unfortunately
-      // doesn't rename them on ALTER, so we must do it manually.
-      for (let suffix of ["", "_info", "_chunks", "_rowids"]) {
-        await this.#conn.execute(`
-          ALTER TABLE vec_history${suffix} RENAME TO old_vec_history${suffix}
-        `);
-      }
-      for (let i = 0; i < MAX_CHUNKS_TABLES; ++i) {
-        try {
-          await this.#conn.execute(`
-              ALTER TABLE vec_history_vector_chunks${`${i}`.padStart(2, "0")}
-              RENAME TO old_vec_history_vector_chunks${`${i}`.padStart(2, "0")}
-            `);
-        } catch (e) {
-          break;
-        }
-      }
+      await this.#conn.execute(`
+          ALTER TABLE vec_history RENAME TO old_vec_history
+          `);
+
       await this.#conn.execute(this.#createVirtualTableSQL);
       await this.#conn.execute(`
           INSERT INTO vec_history(rowid, embedding, embedding_coarse)

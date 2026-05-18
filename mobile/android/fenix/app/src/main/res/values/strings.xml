@@ -1646,8 +1646,6 @@
   <string name="tab_group_color_pink">Pink</string>
   <!-- Tab group color: Purple -->
   <string name="tab_group_color_purple">Purple</string>
-  <!-- Tab group color: Violet -->
-  <string name="tab_group_color_violet">Violet</string>
   <!-- Tab group color: Blue -->
   <string name="tab_group_color_blue">Blue</string>
   <!-- Tab group color: Cyan -->

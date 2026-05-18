@@ -23,7 +23,18 @@ class MainMenuTest : BaseTest() {
     @Test
     fun verifyMainMenuItemsTest() {
         on.mainMenu.navigateToPage()
-            .mozVerifyElementsByGroup("homeBanner")
+            .mozVerifyElementsByGroup("homePageMainMenuItems")
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080124
+    @SmokeTest
+    @Test
+    fun verifyTheBrowserViewMainMenuItemsTest() {
+        val website = mockWebServer.getGenericAsset(1)
+
+        on.browserPage.navigateToPage(website.url.toString())
+        on.mainMenu.navigateToPage()
+            .mozVerifyElementsByGroup("browserViewMainMenuItems")
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080172

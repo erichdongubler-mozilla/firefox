@@ -657,8 +657,7 @@ bool ContentEventHandler::ShouldBreakLineBefore(const nsIContent& aContent,
     return false;
   }
 
-  switch (
-      nsHTMLTags::CaseSensitiveAtomTagToId(aContent.NodeInfo()->NameAtom())) {
+  switch (aContent.NodeInfo()->HTMLTag().valueOr(eHTMLTag_unknown)) {
     case eHTMLTag_br:
       // If the element is <br>, we need to check if the <br> is caused by web
       // content.  Otherwise, i.e., it's caused by internal reason of Gecko,

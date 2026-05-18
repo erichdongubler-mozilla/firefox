@@ -2342,7 +2342,7 @@ class Editor extends EventEmitter {
     if (this.config.cm6) {
       const el = this.getElementAtLine(line);
       return {
-        text: el.innerText,
+        text: cm.state.doc.line(line).text,
         // TODO: Expose those, or see usage for those and do things differently
         line: null,
         gutterMarkers: null,

@@ -23,7 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -65,10 +65,6 @@ import mozilla.components.ui.icons.R as iconsR
 private val MENU_ITEM_HEIGHT_WITHOUT_DESC = 52.dp
 
 private val MENU_ITEM_HEIGHT_WITH_DESC = 56.dp
-
-private val BADGE_ROUNDED_CORNER = 100.dp
-
-private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(4.dp)
 
 /**
  * An [IconListItem] wrapper for menu items in a [MenuGroup] with an optional icon at the end.
@@ -147,7 +143,7 @@ internal fun MenuItem(
                 }
             }
             .wrapContentSize()
-            .clip(shape = ROUNDED_CORNER_SHAPE)
+            .clip(shape = MaterialTheme.shapes.extraSmall)
             .background(
                 color = MaterialTheme.colorScheme.surfaceDimVariant,
             ),
@@ -206,7 +202,7 @@ internal fun MenuTextItem(
             MENU_ITEM_HEIGHT_WITHOUT_DESC
         },
         modifier = modifier
-            .clip(shape = ROUNDED_CORNER_SHAPE)
+            .clip(shape = MaterialTheme.shapes.extraSmall)
             .background(
                 color = MaterialTheme.colorScheme.surfaceDimVariant,
             ),
@@ -260,7 +256,7 @@ internal fun WebExtensionMenuItem(
                 testTagsAsResourceId = true
             }
             .wrapContentSize()
-            .clip(shape = ROUNDED_CORNER_SHAPE)
+            .clip(shape = MaterialTheme.shapes.extraSmall)
             .background(
                 color = MaterialTheme.colorScheme.surfaceDimVariant,
             ),
@@ -324,7 +320,7 @@ internal fun MenuBadgeItem(
                 Modifier.semantics { disabled() },
             ) { !enabled }
             .semantics { disabled() }
-            .clip(shape = ROUNDED_CORNER_SHAPE)
+            .clip(shape = MaterialTheme.shapes.extraSmall)
             .background(
                 color = MaterialTheme.colorScheme.surfaceDimVariant,
             )
@@ -368,7 +364,7 @@ internal fun Badge(
 ) {
     Column(
         modifier = Modifier
-            .clip(shape = RoundedCornerShape(BADGE_ROUNDED_CORNER))
+            .clip(CircleShape)
             .background(color = getBadgeColor(state))
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

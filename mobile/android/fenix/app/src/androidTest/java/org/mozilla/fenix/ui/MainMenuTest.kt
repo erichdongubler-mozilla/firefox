@@ -13,6 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertExternalAppOpens
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertNativeAppOpens
@@ -77,9 +78,14 @@ class MainMenuTest {
     val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080168
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyMainMenuItemsTest"],
+        bug = 2040343,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
-    fun verifyTheHomepageRedesignedMenuItemsTest() {
+    fun verifyMainMenuItemsTest() {
         homeScreen(composeTestRule) {
         }.openThreeDotMenu {
             verifyHomeMainMenuItems()
@@ -87,9 +93,14 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080124
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheBrowserViewMainMenuItemsTest"],
+        bug = 2040343,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
-    fun verifyTheWebpageRedesignedMenuItemsTest() {
+    fun verifyTheBrowserViewMainMenuItemsTest() {
         val testPage = mockWebServer.getGenericAsset(1)
 
         navigationToolbar(composeTestRule) {

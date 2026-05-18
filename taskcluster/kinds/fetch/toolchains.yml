@@ -830,11 +830,14 @@ firefox-profiler:
         revision: 8c0afb1f47190487b08ea2561ae3cc0f7a5d31e9
 
 # See https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads
+# We can't catch regressions from these updates in CI. Testing should focus on
+# "no tabs in toolbar" functionality, making sure tabs are selectable at the
+# very top of the screen when maximized, and fullscreen transitions (F11).
 windowsappsdk-redist:
     description: Windows App SDK Redistributable
     fetch:
         type: static-url
-        url: https://aka.ms/windowsappsdk/1.8/1.8.251106002/Microsoft.WindowsAppRuntime.Redist.1.8.zip
-        sha256: 57748c37e2b0ce381518bbe7ac72e015c150771a343af89f9f0bd95aa5e9bbc0
-        size: 465986932
+        url: https://aka.ms/windowsappsdk/2.0/2.0.1/Microsoft.WindowsAppRuntime.Redist.2.0.zip
+        sha256: fdad383673b388762bfb4dfecd173e0f38531cdab1f14668953424082b743612
+        size: 470804318
         artifact-name: Microsoft.WindowsAppRuntime.Redist.tar.zst

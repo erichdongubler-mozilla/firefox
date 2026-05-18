@@ -61,12 +61,19 @@ let JSPROCESSACTORS = {
   },
 
   ProcessConduits: {
+    // "parent" remoteTypes is currently needed to support MV3 background service workers
+    // also when extensions.webextensions.remote is set to false.
+    remoteTypes: ["parent", "extension"],
     parent: {
       esModuleURI: "resource://gre/modules/ConduitsParent.sys.mjs",
     },
     child: {
       esModuleURI: "resource://gre/modules/ConduitsChild.sys.mjs",
     },
+    // This actor is only meant to be used when MV3 background service worker
+    // implementation is enabled (which is currently only allowed in Nightly
+    // and gated by this about:config preference).
+    enablePreference: "extensions.backgroundServiceWorker.enabled",
   },
 
   // A single process (shared with MLEngine) that controls all of the translations.
@@ -533,13 +540,6 @@ let JSWINDOWACTORS = {
   PrintingSelection: {
     child: {
       esModuleURI: "resource://gre/actors/PrintingSelectionChild.sys.mjs",
-    },
-    allFrames: true,
-  },
-
-  PurgeSessionHistory: {
-    child: {
-      esModuleURI: "resource://gre/actors/PurgeSessionHistoryChild.sys.mjs",
     },
     allFrames: true,
   },

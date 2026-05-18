@@ -15285,7 +15285,7 @@ function Weather_Weather({
     };
     el.addEventListener("click", listener);
     return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  }, [handleChangeSize, weatherData?.initialized]);
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
       return;
@@ -15799,42 +15799,9 @@ function getVisibleMatchesTabs(hasLiveGames, hasPreviousResults) {
     disabled: id === MATCHES_TABS.RESULTS && !hasPreviousResults
   }));
 }
-const COUNTRIES = [{
-  id: "CA",
-  name: "Canada"
-}, {
-  id: "AU",
-  name: "Australia"
-}, {
-  id: "DZ",
-  name: "Algeria"
-}, {
-  id: "IQ",
-  name: "Iraq"
-}, {
-  id: "IT",
-  name: "Italy"
-}, {
-  id: "ES",
-  name: "Spain"
-}, {
-  id: "NG",
-  name: "Nigeria"
-}, {
-  id: "MR",
-  name: "Morocco"
-}, {
-  id: "PT",
-  name: "Portugal"
-}, {
-  id: "DE",
-  name: "Germany"
-}, {
-  id: "SN",
-  name: "Senegal"
-}];
 const SportsWidget_USER_ACTION_TYPES = {
   FOLLOW_TEAMS: "follow_teams",
+  SAVE_TEAMS: "save_teams",
   VIEW_UPCOMING: "view_upcoming",
   VIEW_RESULTS: "view_results",
   VIEW_SCHEDULE: "view_schedule",
@@ -15857,6 +15824,7 @@ function SportsWidget_SportsWidget({
   const widgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;
   const displaySize = widgetState === WIDGET_STATES.FOLLOW_TEAMS ? "large" : widgetSize;
   const selectedTeams = sportsWidgetData.selectedTeams || [];
+  const teams = sportsWidgetData?.data?.teams ?? [];
   const {
     matchesTab
   } = sportsWidgetData;
@@ -16061,6 +16029,25 @@ function SportsWidget_SportsWidget({
     type: actionTypes.WIDGETS_SPORTS_CHANGE_WIDGET_STATE,
     data: WIDGET_STATES.INTRO
   })), [dispatch]);
+  const handleSaveSelection = (0,external_React_namespaceObject.useCallback)(newSelectedTeams => {
+    if (newSelectedTeams.length) {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "sports_widget",
+          widget_source: "widget",
+          user_action: SportsWidget_USER_ACTION_TYPES.SAVE_TEAMS,
+          action_value: newSelectedTeams.length,
+          widget_size: widgetSize
+        }
+      }));
+    }
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS,
+      data: newSelectedTeams
+    }));
+    handleCancelSelection();
+  }, [dispatch, widgetSize, handleCancelSelection]);
   const handleViewIntro = (0,external_React_namespaceObject.useCallback)(() => dispatch(actionCreators.AlsoToMain({
     type: actionTypes.WIDGETS_SPORTS_CHANGE_WIDGET_STATE,
     data: WIDGET_STATES.INTRO
@@ -16181,9 +16168,9 @@ function SportsWidget_SportsWidget({
   })))), /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-body"
   }, widgetState === WIDGET_STATES.FOLLOW_TEAMS && /*#__PURE__*/external_React_default().createElement(SportsWidgetFollowTeams, {
+    teams: teams,
     initialSelectedTeams: selectedTeams,
-    dispatch: dispatch,
-    onClose: handleCancelSelection
+    onSave: handleSaveSelection
   }), widgetState === WIDGET_STATES.MATCHES && /*#__PURE__*/external_React_default().createElement(SportsMatchesView, {
     matchesTab: activeTab,
     hasLiveGames: hasLiveGames
@@ -16208,25 +16195,17 @@ function SportsWidget_SportsWidget({
   }))));
 }
 function SportsWidgetFollowTeams({
-  onClose,
+  teams,
   initialSelectedTeams,
-  dispatch
+  onSave
 }) {
   const [selectedTeams, setSelectedTeams] = (0,external_React_namespaceObject.useState)(initialSelectedTeams);
   const [searchQuery, setSearchQuery] = (0,external_React_namespaceObject.useState)("");
   const isMaxSelected = selectedTeams.length >= 3;
-  const filteredCountries = searchQuery ? COUNTRIES.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())) : COUNTRIES;
-  function handleCountryToggle(countryId, isChecked) {
-    setSelectedTeams(prev => isChecked ? [...prev, countryId] : prev.filter(id => id !== countryId));
-  }
-
-  // Save the selected teams and go back to the intro state.
-  function handleDoneSelection() {
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS,
-      data: selectedTeams
-    }));
-    onClose();
+  const sortedTeams = [...teams].sort((a, b) => a.name.localeCompare(b.name));
+  const filteredTeams = searchQuery ? sortedTeams.filter(team => team.name.toLowerCase().includes(searchQuery.toLowerCase())) : sortedTeams;
+  function handleTeamToggle(teamKey, isChecked) {
+    setSelectedTeams(prev => isChecked ? [...prev, teamKey] : prev.filter(key => key !== teamKey));
   }
   return /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-follow-teams"
@@ -16236,21 +16215,41 @@ function SportsWidgetFollowTeams({
     onInput: e => setSearchQuery(e.target.value)
   }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-follow-teams-list"
-  }, filteredCountries.map(country => {
-    const isSelected = selectedTeams.includes(country.id);
-    return /*#__PURE__*/external_React_default().createElement("moz-checkbox", {
-      key: country.id,
-      label: country.name,
+  }, filteredTeams.map(team => {
+    const isSelected = selectedTeams.includes(team.key);
+    const isRowDisabled = !isSelected && isMaxSelected;
+    return /*#__PURE__*/external_React_default().createElement("div", {
+      key: team.key,
+      className: `sports-follow-teams-row${isRowDisabled ? " is-disabled" : ""}`,
+      onClick: e => {
+        // The checkbox already handles its own toggle; skip here so we don't toggle twice.
+        if (e.target.localName === "moz-checkbox") {
+          return;
+        }
+        if (isRowDisabled) {
+          return;
+        }
+        handleTeamToggle(team.key, !isSelected);
+      }
+    }, /*#__PURE__*/external_React_default().createElement("moz-checkbox", {
       checked: isSelected || undefined,
-      disabled: !isSelected && isMaxSelected ? true : undefined,
-      onChange: e => handleCountryToggle(country.id, e.target.checked)
-    });
+      disabled: isRowDisabled ? true : undefined,
+      onChange: e => handleTeamToggle(team.key, e.target.checked),
+      "aria-label": team.name
+    }), /*#__PURE__*/external_React_default().createElement("img", {
+      className: "sports-team-flag",
+      src: team.icon_url,
+      alt: "",
+      title: team.name
+    }), /*#__PURE__*/external_React_default().createElement("span", {
+      className: "sports-team-name"
+    }, team.name));
   })), /*#__PURE__*/external_React_default().createElement("moz-button", {
     className: "sports-done-button",
     "data-l10n-id": "newtab-sports-widget-done-button",
     type: "primary",
     size: "small",
-    onClick: handleDoneSelection
+    onClick: () => onSave(selectedTeams)
   }));
 }
 function SportsMatchesView({
@@ -17750,6 +17749,7 @@ function Widgets() {
   } = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Messages);
   const timerType = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget.timerType);
   const timerData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.TimerWidget);
+  const sportsWidgetState = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.SportsWidget?.widgetState);
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
   const {
     openWidgetsPanel
@@ -18051,7 +18051,12 @@ function Widgets() {
         return null;
       }
       const entry = WIDGET_REGISTRY.find(w => w.id === id);
-      const size = entry ? resolveWidgetSize(entry, prefs) : null;
+      let size = entry ? resolveWidgetSize(entry, prefs) : null;
+      // The follow-teams panel needs the larger grid cell to fit its content,
+      // so we override the user's size pref while that state is active.
+      if (id === "sportsWidget" && sportsWidgetState === "sports-follow-state") {
+        size = "large";
+      }
       return /*#__PURE__*/external_React_default().createElement(WidgetWrapper, {
         key: id,
         className: size ? `${size}-widget` : ""

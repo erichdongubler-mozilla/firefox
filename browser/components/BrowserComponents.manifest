@@ -43,6 +43,24 @@ category browser-window-domcontentloaded moz-src:///browser/components/customiza
 category browser-window-domcontentloaded chrome://browser/content/browser-addons.js gUnifiedExtensions.init
 category browser-window-domcontentloaded chrome://browser/content/browser.js FirefoxViewHandler.init
 
+category browser-window-load-before-sessionstore-init chrome://browser/content/browser-captivePortal.js CaptivePortalWatcher.init
+category browser-window-load-before-sessionstore-init resource:///modules/ZoomUI.sys.mjs ZoomUI.init
+category browser-window-load-before-sessionstore-init chrome://browser/content/sidebar/browser-sidebar.js SidebarController.init
+category browser-window-load-before-sessionstore-init chrome://browser/content/downloads/indicator.js DownloadsButton.init
+
+# The category manager uses the entry name (the URL below) as a unique key
+# per category, so consumers sharing the same module need a `#<id>` suffix
+# to avoid overwriting each other. BrowserUtils.callModulesFromCategory
+# strips the suffix before using the URL.
+category browser-window-load chrome://browser/content/browser.js#gUIDensity gUIDensity.init
+category browser-window-load chrome://browser/content/browser.js#Win10TabletModeUpdater Win10TabletModeUpdater.init
+category browser-window-load chrome://browser/content/browser.js#CombinedStopReload CombinedStopReload.ensureInitialized
+category browser-window-load moz-src:///browser/modules/PrivateBrowsingUI.sys.mjs PrivateBrowsingUI.init
+category browser-window-load resource:///modules/taskbartabs/TaskbarTabsChrome.sys.mjs TaskbarTabsChrome.init
+category browser-window-load chrome://browser/content/browser-pageActions.js BrowserPageActions.init
+category browser-window-load chrome://browser/content/browser-toolbarKeyNav.js ToolbarKeyboardNavigator.init
+category browser-window-load moz-src:///browser/components/customkeys/CustomKeys.sys.mjs CustomKeys.initWindow
+
 category browser-window-delayed-startup moz-src:///browser/components/contentanalysis/content/ContentAnalysis.sys.mjs ContentAnalysis.initialize
 category browser-window-delayed-startup resource:///modules/HomePage.sys.mjs HomePage.delayedStartup
 category browser-window-delayed-startup moz-src:///browser/components/genai/LinkPreview.sys.mjs LinkPreview.init
@@ -53,9 +71,19 @@ category browser-window-delayed-startup resource:///modules/taskbartabs/TaskbarT
 category browser-window-unload-begin chrome://browser/content/browser-customtitlebar.js CustomTitlebar.uninit
 category browser-window-unload-begin moz-src:///browser/themes/ToolbarIconColor.sys.mjs ToolbarIconColor.uninit
 category browser-window-unload-begin moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs ReportBrokenSite.uninit
+category browser-window-unload-begin chrome://browser/content/browser.js gUIDensity.uninit
 
+category browser-window-unload chrome://browser/content/downloads/indicator.js DownloadsButton.uninit
+category browser-window-unload chrome://browser/content/sidebar/browser-sidebar.js SidebarController.uninit
+category browser-window-unload chrome://browser/content/browser-captivePortal.js CaptivePortalWatcher.uninit
+category browser-window-unload moz-src:///browser/components/customkeys/CustomKeys.sys.mjs CustomKeys.uninitWindow
+category browser-window-unload chrome://browser/content/browser-toolbarKeyNav.js ToolbarKeyboardNavigator.uninit
+# `#<id>` suffix disambiguates multiple consumers in the same module; see
+# the comment in `browser-window-load` above.
+category browser-window-unload chrome://browser/content/browser.js#Win10TabletModeUpdater Win10TabletModeUpdater.uninit
+category browser-window-unload chrome://browser/content/browser.js#CombinedStopReload CombinedStopReload.uninit
 category browser-window-unload chrome://browser/content/browser-addons.js gUnifiedExtensions.uninit
-category browser-window-unload chrome://browser/content/browser.js FirefoxViewHandler.uninit
+category browser-window-unload chrome://browser/content/browser.js#FirefoxViewHandler FirefoxViewHandler.uninit
 category browser-window-unload moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs NewTabPagePreloading.removePreloadedBrowser
 
 # The category below is specific to Tabbrowser destruction. For consumers that need to uninitialize during

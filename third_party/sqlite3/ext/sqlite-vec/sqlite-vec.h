@@ -17,15 +17,15 @@
   #endif
 #endif
 
-#define SQLITE_VEC_VERSION "v0.1.7-alpha.2"
+#define SQLITE_VEC_VERSION "v0.1.10-alpha.3"
 // TODO rm
-#define SQLITE_VEC_DATE "2025-01-10T23:18:50Z+0000"
-#define SQLITE_VEC_SOURCE "bdc336d1cf2a2222b6227784bd30c6631603279b"
+#define SQLITE_VEC_DATE "2026-04-01T06:40:47Z+0000"
+#define SQLITE_VEC_SOURCE "4e2dfcb79dcb961bdbaca11dfc91b5bfb9de4fd3"
 
 
 #define SQLITE_VEC_VERSION_MAJOR 0
 #define SQLITE_VEC_VERSION_MINOR 1
-#define SQLITE_VEC_VERSION_PATCH 7
+#define SQLITE_VEC_VERSION_PATCH 10
 
 #ifdef __cplusplus
 extern "C" {

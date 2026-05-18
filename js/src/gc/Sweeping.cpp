@@ -34,11 +34,14 @@
 #include "gc/TraceKind.h"
 #include "gc/WeakMap.h"
 #include "gc/Zone.h"
+#include "jit/CacheIRHealth.h"
 #include "jit/JitFrames.h"
 #include "jit/JitRuntime.h"
+#include "jit/JitScript.h"
 #include "jit/JitZone.h"
 #include "proxy/DeadObjectProxy.h"
 #include "vm/BigIntType.h"
+#include "vm/CodeCoverage.h"
 #include "vm/HelperThreads.h"
 #include "vm/JSContext.h"
 #include "vm/Probes.h"
@@ -49,6 +52,7 @@
 #include "gc/PrivateIterators-inl.h"
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSObject-inl.h"
+#include "vm/JSScript-inl.h"
 #include "vm/PropMap-inl.h"
 #include "vm/Shape-inl.h"
 #include "vm/StringType-inl.h"
@@ -1463,6 +1467,44 @@ void JS::Zone::sweepUniqueIds() {
   uniqueIds().traceWeak(&trc);
 }
 
+void GCRuntime::maybeWriteCoverageAndSpew() {
+  // Write any code coverage information and JIT spew for dying scripts before
+  // the relevant tables are swept.
+
+  gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_SCRIPT_MAPS);
+  for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
+    AutoSetThreadIsSweeping threadIsSweeping(zone);
+    zone->maybeWriteCoverageAndSpew();
+  }
+}
+
+void JS::Zone::maybeWriteCoverageAndSpew() {
+  MOZ_ASSERT_IF(scriptLCovMap, coverage::IsLCovEnabled());
+  if (scriptLCovMap) {
+    for (auto iter = scriptLCovMap->get().iter(); !iter.done(); iter.next()) {
+      if (IsAboutToBeFinalized(iter.get().key())) {
+        (void)MaybeWriteScriptCoverage(iter.get().key()->asJSScript(),
+                                       iter.get().value());
+      }
+    }
+  }
+
+#ifdef JS_CACHEIR_SPEW
+  if (scriptFinalWarmUpCountMap) {
+    for (auto iter = scriptFinalWarmUpCountMap->get().iter(); !iter.done();
+         iter.next()) {
+      if (IsAboutToBeFinalized(iter.get().key())) {
+        JSScript* jsScript = iter.get().key()->asJSScript();
+        if (jsScript->hasJitScript()) {
+          maybeUpdateWarmUpCount(jsScript);
+        }
+        maybeSpewScriptFinalWarmUpCount(jsScript);
+      }
+    }
+  }
+#endif
+}
+
 /* static */
 bool UniqueIdGCPolicy::traceWeak(JSTracer* trc, Cell** keyp, uint64_t* valuep) {
   // Since this is only ever used for sweeping, we can optimize it for that
@@ -1751,6 +1793,8 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
   sweepRealmGlobals();
 
   sweepEmbeddingWeakPointers(gcx);
+
+  maybeWriteCoverageAndSpew();
 
   {
     AutoLockHelperThreadState lock;

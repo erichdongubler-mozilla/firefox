@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -62,6 +63,7 @@ import mozilla.components.compose.base.BottomSheetHandle
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.modifier.thenConditional
+import mozilla.components.compose.base.theme.AcornCorners
 import mozilla.components.compose.base.theme.layout.AcornWindowSize.Companion.isLargeWindow
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
@@ -75,7 +77,9 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 
-private val formFieldShape = RoundedCornerShape(16.dp)
+private val formFieldShape: Shape
+    @Composable
+    get() = MaterialTheme.shapes.large
 private const val COLOR_PICKER_MAX_ITEMS_PER_ROW = 5
 internal const val MAX_TAB_GROUP_NAME_LENGTH = 256
 
@@ -246,8 +250,7 @@ private fun TabGroupColorPickerItem(
         targetValue = if (selected) {
             circularRadius
         } else {
-            // todo: Replace with corner values from Acorn
-            FirefoxTheme.layout.corner.large
+            AcornCorners.large
         },
         animationSpec = colorPickerAnimationSpec(),
     )

@@ -937,16 +937,26 @@ var gEditItemOverlay = {
     }
 
     if (aEvent.target.id == "editBMPanel_chooseFolderMenuItem") {
-      // reset the selection back to where it was and expand the tree
-      // (this menu-item is hidden when the tree is already visible
+      // Restore the current parent-folder selection before opening the tree.
+      // "Choose Folder" is only visible while the tree is collapsed.
       let item = this._getFolderMenuItem(
         this._bookmarkState._originalState.parentGuid,
         this._bookmarkState._originalState.title
       );
       this._folderMenuList.selectedItem = item;
-      // XXXmano HACK: setTimeout 100, otherwise focus goes back to the
-      // menulist right away
-      setTimeout(() => this.toggleFolderTreeVisibility(), 100);
+      // Only activate "Choose Folder" for explicit user interaction from the
+      // open popup (click or Enter). When the popup was open, the command fires
+      // asynchronously after HideOpenMenusBeforeExecutingMenu has set the popup
+      // to "hiding" state. Arrow keys with the popup closed fire the command
+      // synchronously via doCommand(), at which point the popup state is
+      // "closed", we don't want to toggle the tree in that case.
+      if (this._folderMenuList.menupopup.state == "hiding") {
+        this._folderMenuList.menupopup.addEventListener(
+          "popuphidden",
+          () => this.toggleFolderTreeVisibility(),
+          { once: true }
+        );
+      }
       return;
     }
 

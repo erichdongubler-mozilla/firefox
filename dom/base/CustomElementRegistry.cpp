@@ -70,9 +70,9 @@ class CustomElementUpgradeReaction final : public CustomElementReaction {
 };
 
 //-----------------------------------------------------
-// CustomElementCallbackReaction
+// CustomElementCallback
 
-class CustomElementCallback {
+class CustomElementCallback final : public CustomElementReaction {
  public:
   CustomElementCallback(Element* aThisObject, ElementCallbackType aCallbackType,
                         CallbackFunction* aCallback,
@@ -81,15 +81,16 @@ class CustomElementCallback {
   // disconnected/connected callbacks.
   void SetSecondaryCallback(ElementCallbackType aType,
                             CallbackFunction* aCallback);
-  void Traverse(nsCycleCollectionTraversalCallback& aCb) const;
-  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
-  void Call();
+  void Traverse(nsCycleCollectionTraversalCallback& aCb) const override;
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
   static UniquePtr<CustomElementCallback> Create(
       ElementCallbackType aType, Element* aCustomElement,
       const LifecycleCallbackArgs& aArgs, CustomElementDefinition* aDefinition);
 
  private:
+  MOZ_CAN_RUN_SCRIPT
+  void Invoke(Element* aElement, ErrorResult& aRv) override;
   void Call(ElementCallbackType aType, RefPtr<CallbackFunction>& aCallback);
   // The this value to use for invocation of the callback.
   RefPtr<Element> mThisObject;
@@ -101,36 +102,6 @@ class CustomElementCallback {
   // Arguments to be passed to the callback,
   LifecycleCallbackArgs mArgs;
 };
-
-class CustomElementCallbackReaction final : public CustomElementReaction {
- public:
-  explicit CustomElementCallbackReaction(
-      UniquePtr<CustomElementCallback> aCustomElementCallback)
-      : mCustomElementCallback(std::move(aCustomElementCallback)) {}
-
-  virtual void Traverse(
-      nsCycleCollectionTraversalCallback& aCb) const override {
-    mCustomElementCallback->Traverse(aCb);
-  }
-
-  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override {
-    size_t n = aMallocSizeOf(this);
-
-    n += mCustomElementCallback->SizeOfIncludingThis(aMallocSizeOf);
-
-    return n;
-  }
-
- private:
-  virtual void Invoke(Element* aElement, ErrorResult& aRv) override {
-    mCustomElementCallback->Call();
-  }
-
-  UniquePtr<CustomElementCallback> mCustomElementCallback;
-};
-
-//-----------------------------------------------------
-// CustomElementCallback
 
 size_t LifecycleCallbackArgs::SizeOfExcludingThis(
     MallocSizeOf aMallocSizeOf) const {
@@ -242,7 +213,7 @@ UniquePtr<CustomElementCallback> CustomElementCallback::Create(
   return MakeUnique<CustomElementCallback>(aCustomElement, aType, func, aArgs);
 }
 
-void CustomElementCallback::Call() {
+void CustomElementCallback::Invoke(Element* aElement, ErrorResult& aRv) {
   if (mCallback) {
     Call(mType, mCallback);
   }
@@ -1647,8 +1618,14 @@ void CustomElementReactionsStack::CreateAndPushElementQueue() {
   MOZ_ASSERT(mRecursionDepth);
   MOZ_ASSERT(!mIsElementQueuePushedForCurrentRecursionDepth);
 
-  // Push a new element queue onto the custom element reactions stack.
-  mReactionsStack.AppendElement(MakeUnique<ElementQueue>());
+  // Push an element queue onto the custom element reactions stack, reusing
+  // the cached one if available to avoid a heap allocation.
+  if (mCachedElementQueue) {
+    MOZ_ASSERT(mCachedElementQueue->IsEmpty());
+    mReactionsStack.AppendElement(std::move(mCachedElementQueue));
+  } else {
+    mReactionsStack.AppendElement(MakeUnique<ElementQueue>());
+  }
   mIsElementQueuePushedForCurrentRecursionDepth = true;
 }
 
@@ -1682,7 +1659,14 @@ void CustomElementReactionsStack::PopAndInvokeElementQueue() {
       lastIndex == mReactionsStack.Length() - 1,
       "reactions created by InvokeReactions() should be consumed and removed");
 
+  UniquePtr<ElementQueue> popped = std::move(mReactionsStack.LastElement());
   mReactionsStack.RemoveLastElement();
+  // Cache the popped queue for reuse, but only if it still uses inline
+  // storage so we don't hold on to a grown heap buffer.
+  if (!mCachedElementQueue && popped->Capacity() == kElementQueueInlineSize) {
+    popped->ClearAndRetainStorage();
+    mCachedElementQueue = std::move(popped);
+  }
   mIsElementQueuePushedForCurrentRecursionDepth = false;
 }
 
@@ -1694,8 +1678,7 @@ void CustomElementReactionsStack::EnqueueUpgradeReaction(
 void CustomElementReactionsStack::EnqueueCallbackReaction(
     Element* aElement,
     UniquePtr<CustomElementCallback> aCustomElementCallback) {
-  Enqueue(aElement,
-          new CustomElementCallbackReaction(std::move(aCustomElementCallback)));
+  Enqueue(aElement, aCustomElementCallback.release());
 }
 
 void CustomElementReactionsStack::Enqueue(Element* aElement,

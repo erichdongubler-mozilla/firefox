@@ -65,7 +65,6 @@ import mozilla.components.ui.icons.R as iconsR
 
 private const val TAB_COUNT_SHOW_CFR = 6
 private val RowHeight = 48.dp
-private val TabIndicatorRoundedCornerDp = 100.dp
 
 /**
  * Top-level UI for displaying the banner in [TabsTray].
@@ -261,8 +260,8 @@ private fun TabPageBanner(
                     ),
                     width = Dp.Unspecified,
                     shape = RoundedCornerShape(
-                        topStart = TabIndicatorRoundedCornerDp,
-                        topEnd = TabIndicatorRoundedCornerDp,
+                        topStartPercent = 50,
+                        topEndPercent = 50,
                     ),
                 )
             },

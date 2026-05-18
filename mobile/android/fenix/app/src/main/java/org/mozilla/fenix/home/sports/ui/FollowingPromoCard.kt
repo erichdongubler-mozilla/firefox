@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -46,7 +45,7 @@ fun FollowingPromoCard(
             Image(
                 painter = painterResource(team.flagResId),
                 contentDescription = null,
-                modifier = Modifier.clip(RoundedCornerShape(8.dp)),
+                modifier = Modifier.clip(MaterialTheme.shapes.small),
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -77,7 +76,7 @@ fun FollowingPromoCard(
                 contentDescription = null,
                 modifier = Modifier
                     .width(100.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .clip(MaterialTheme.shapes.small),
             )
         },
         contentSpacing = 0.dp,
