@@ -6805,7 +6805,6 @@ var SessionStoreInternal = {
         aWinData.sizemode || "",
         aWinData.sizemodeBeforeMinimized || ""
       );
-      this.restoreSidebar(aWindow, aWinData.sidebar, aWinData.isPopup);
       promiseParts.resolve(aWindow);
     }, 0);
     return promiseParts.promise;
@@ -6821,6 +6820,7 @@ var SessionStoreInternal = {
     if (!aSidebar || isPopup) {
       return;
     }
+    aWindow.SidebarController.markSessionRestoreStateReceived();
     aWindow.SidebarController.updateUIState(aSidebar);
   },
 
