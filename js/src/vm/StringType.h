@@ -873,6 +873,11 @@ class JSRope : public JSString {
   // Returns the same value as if this were a linear string being hashed.
   [[nodiscard]] bool hash(uint32_t* outhHash) const;
 
+  // Like hash(), but hashes only the first |budget| characters. Cheaper for
+  // long ropes when an approximate hash is acceptable (caller must verify
+  // equality with match()).
+  [[nodiscard]] bool hashPrefix(size_t budget, uint32_t* outHash) const;
+
   // The process of flattening a rope temporarily overwrites the left pointer of
   // interior nodes in the rope DAG with the parent pointer.
   bool isBeingFlattened() const {
