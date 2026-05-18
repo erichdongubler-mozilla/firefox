@@ -16,7 +16,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/bbec1b95ddb5e0096
  5 files changed, 26 insertions(+), 6 deletions(-)
 
 diff --git a/modules/audio_coding/BUILD.gn b/modules/audio_coding/BUILD.gn
-index 3c45508693..48878feefb 100644
+index 1327e33ebf..fd4c18c076 100644
 --- a/modules/audio_coding/BUILD.gn
 +++ b/modules/audio_coding/BUILD.gn
 @@ -338,7 +338,7 @@ rtc_library("webrtc_opus_wrapper") {
