@@ -36,6 +36,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
 import org.mozilla.fenix.components.menu.toFenixFxAEntryPoint
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.settings.SupportUtils.AMO_HOMEPAGE_FOR_ANDROID
@@ -215,6 +216,11 @@ class MenuNavigationMiddleware(
                         id = session?.id,
                         url = url,
                         title = session?.content?.title,
+                        source = if (customTab != null) {
+                            ShareSource.CUSTOM_TAB_MENU
+                        } else {
+                            ShareSource.BROWSER_MENU
+                        },
                         isPrivate = session?.content?.private ?: false,
                         isCustomTab = customTab != null,
                         navigateToShareFragment = {

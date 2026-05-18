@@ -43,6 +43,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.DEFAULT_ACTIVE_DAYS
@@ -511,6 +512,7 @@ class DefaultTabManagerController(
 
         shareUseCases.shareItems(
             items = data,
+            source = ShareSource.TABS_TRAY,
             isPrivate = tabs.any { it.private },
             navigateToShareFragment = {
                 navController.navigate(

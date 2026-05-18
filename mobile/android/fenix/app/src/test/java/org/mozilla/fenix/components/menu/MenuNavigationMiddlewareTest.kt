@@ -55,6 +55,7 @@ import org.mozilla.fenix.components.menu.store.BrowserMenuState
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.settings.SupportUtils.AMO_HOMEPAGE_FOR_ANDROID
 import org.mozilla.fenix.utils.Settings
@@ -461,6 +462,7 @@ class MenuNavigationMiddlewareTest {
             onDismiss = { dismissWasCalled = true },
             scope = this,
         )
+
         store.dispatch(MenuAction.Navigate.Share)
         testScheduler.advanceUntilIdle()
 
@@ -469,6 +471,7 @@ class MenuNavigationMiddlewareTest {
                 id = id,
                 url = url,
                 title = title,
+                source = ShareSource.BROWSER_MENU,
                 isPrivate = false,
                 isCustomTab = false,
                 navigateToShareFragment = any(),
@@ -504,6 +507,7 @@ class MenuNavigationMiddlewareTest {
                 id = readerTab.id,
                 url = activeUrl,
                 title = title,
+                source = ShareSource.BROWSER_MENU,
                 isPrivate = false,
                 isCustomTab = false,
                 navigateToShareFragment = any(),
@@ -536,6 +540,7 @@ class MenuNavigationMiddlewareTest {
                 id = tab.id,
                 url = url,
                 title = title,
+                source = ShareSource.BROWSER_MENU,
                 isPrivate = false,
                 isCustomTab = false,
                 navigateToShareFragment = any(),
@@ -571,6 +576,7 @@ class MenuNavigationMiddlewareTest {
                 id = id,
                 url = url,
                 title = any(),
+                source = ShareSource.BROWSER_MENU,
                 isPrivate = any(),
                 isCustomTab = false,
                 navigateToShareFragment = any(),
@@ -603,6 +609,7 @@ class MenuNavigationMiddlewareTest {
                 id = customTab.id,
                 url = url,
                 title = title,
+                source = ShareSource.CUSTOM_TAB_MENU,
                 isPrivate = false,
                 isCustomTab = true,
                 navigateToShareFragment = any(),

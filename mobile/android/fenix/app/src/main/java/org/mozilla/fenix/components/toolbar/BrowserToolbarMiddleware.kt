@@ -106,6 +106,7 @@ import org.mozilla.fenix.components.appstate.AppAction.URLCopiedToClipboard
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.toolbar.DisplayActions.AddBookmarkClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.EditBookmarkClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.HomepageClicked
@@ -592,6 +593,7 @@ class BrowserToolbarMiddleware(
                     id = selectedTab.id,
                     url = selectedTab.content.url,
                     title = selectedTab.content.title,
+                    source = ShareSource.BROWSER_TOOLBAR,
                     isPrivate = selectedTab.content.private,
                     isCustomTab = false,
                     navigateToShareFragment = {

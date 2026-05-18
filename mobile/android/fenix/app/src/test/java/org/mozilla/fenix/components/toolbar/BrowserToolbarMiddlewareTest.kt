@@ -139,6 +139,7 @@ import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.share.ShareSheetLauncher
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.toolbar.BrowserToolbarMiddleware.ToolbarAction
 import org.mozilla.fenix.components.toolbar.DisplayActions.AddBookmarkClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.EditBookmarkClicked
@@ -1458,6 +1459,7 @@ class BrowserToolbarMiddlewareTest {
                 id = currentTab.id,
                 url = currentTab.content.url,
                 title = currentTab.content.title,
+                source = ShareSource.BROWSER_TOOLBAR,
                 isPrivate = false,
                 isCustomTab = false,
                 navigateToShareFragment = any(),

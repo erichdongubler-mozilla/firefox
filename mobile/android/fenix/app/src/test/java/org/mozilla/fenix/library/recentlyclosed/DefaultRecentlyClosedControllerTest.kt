@@ -35,6 +35,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.directionsEq
 import org.mozilla.fenix.ext.optionsEq
@@ -230,7 +231,13 @@ class DefaultRecentlyClosedControllerTest {
             ShareData(url = tabs[0].url, title = tabs[0].title),
             ShareData(url = tabs[1].url, title = tabs[1].title),
         )
-        verify { shareUseCases.shareItems(items = items, navigateToShareFragment = any()) }
+        verify {
+            shareUseCases.shareItems(
+                items = items,
+                source = ShareSource.RECENTLY_CLOSED,
+                navigateToShareFragment = any(),
+            )
+        }
         assertNotNull(RecentlyClosedTabs.menuShare.testGetValue())
         assertEquals(1, RecentlyClosedTabs.menuShare.testGetValue()!!.size)
         assertNull(RecentlyClosedTabs.menuShare.testGetValue()!!.single().extra)

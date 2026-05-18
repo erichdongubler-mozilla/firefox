@@ -35,6 +35,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.components
@@ -197,7 +198,11 @@ class HistoryMetadataGroupControllerTest {
         controller.handleShare(setOf(mozillaHistoryMetadataItem, firefoxHistoryMetadataItem))
 
         verify {
-            shareUseCases.shareItems(items = expected, navigateToShareFragment = any())
+            shareUseCases.shareItems(
+                items = expected,
+                source = ShareSource.HISTORY_METADATA_GROUP,
+                navigateToShareFragment = any(),
+            )
         }
     }
 

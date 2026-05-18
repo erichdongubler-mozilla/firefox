@@ -23,6 +23,7 @@ import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStor
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.bookmarkStorage
 import org.mozilla.fenix.ext.nav
@@ -88,6 +89,7 @@ class EditBookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                     shareBookmarks = { bookmarks ->
                                         requireComponents.useCases.shareUseCases.shareItems(
                                             items = bookmarks.asShareDataArray().toList(),
+                                            source = ShareSource.BOOKMARKS,
                                             navigateToShareFragment = {
                                                 navController.nav(
                                                     R.id.bookmarkFragment,

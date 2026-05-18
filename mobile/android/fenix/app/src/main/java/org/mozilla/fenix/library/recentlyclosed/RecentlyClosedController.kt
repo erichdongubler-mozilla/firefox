@@ -19,6 +19,7 @@ import org.mozilla.fenix.GleanMetrics.RecentlyClosedTabs
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.openToBrowser
 
@@ -110,6 +111,7 @@ class DefaultRecentlyClosedController(
         val shareData = tabs.map { ShareData(url = it.url, title = it.title) }
         shareUseCases.shareItems(
             items = shareData,
+            source = ShareSource.RECENTLY_CLOSED,
             navigateToShareFragment = {
                 navController.navigate(
                     RecentlyClosedFragmentDirections.actionGlobalShareFragment(

@@ -16170,3 +16170,45 @@ vpn:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
+
+native_share_sheet:
+  shown:
+    type: event
+    description: |
+      A user opened the native Android share sheet.
+    extra_keys:
+      source:
+        type: string
+        description: |
+          The surface from which the native share sheet was opened.
+          Current values: browser_menu, custom_tab_menu, browser_toolbar,
+          tabs_tray, home, bookmarks, history, history_metadata_group,
+          recently_closed.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010859
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010859
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+    metadata:
+      tags:
+        - Sharing
+  qr_code_tapped:
+    type: event
+    description: |
+      A user tapped the QR code action in the native share sheet and the QR code was displayed.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010858
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010858
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+    metadata:
+      tags:
+        - Sharing

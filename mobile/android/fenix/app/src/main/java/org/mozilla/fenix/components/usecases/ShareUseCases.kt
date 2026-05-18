@@ -6,7 +6,9 @@ package org.mozilla.fenix.components.usecases
 
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.prompt.ShareData
+import org.mozilla.fenix.GleanMetrics.NativeShareSheet
 import org.mozilla.fenix.components.share.ShareSheetLauncher
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.share.createPdfShareAction
 import org.mozilla.fenix.components.share.isSystemShareSheetSupported
 import org.mozilla.fenix.share.ShareFragment
@@ -30,6 +32,7 @@ class ShareUseCases(
      * @param id The session id of the tab to share from.
      * @param url The url to share.
      * @param title The title of the page to share.
+     * @param source The surface from which the share was initiated, used for telemetry.
      * @param isPrivate Whether the tab is in private browsing mode.
      * @param isCustomTab Whether the share is being initiated from a custom tab.
      * @param navigateToShareFragment Lambda provided by the caller that provides navigation to the
@@ -40,6 +43,7 @@ class ShareUseCases(
         id: String?,
         url: String?,
         title: String?,
+        source: ShareSource,
         isPrivate: Boolean = false,
         isCustomTab: Boolean = false,
         navigateToShareFragment: () -> Unit,
@@ -52,6 +56,7 @@ class ShareUseCases(
             }
 
             settings.nativeShareSheetEnabled && isSystemShareSheetSupported && url != null -> {
+                NativeShareSheet.shown.record(NativeShareSheet.ShownExtra(source = source.value))
                 shareSheetLauncher.showSystemShareSheet(
                     id = id,
                     url = url,
@@ -71,6 +76,7 @@ class ShareUseCases(
      * Shares multiple [ShareData] items.
      *
      * @param items The list of [ShareData] items to share.
+     * @param source The surface from which the share was initiated, used for telemetry.
      * @param isPrivate Whether the items belong to private browsing mode.
      * @param subject Optional subject for the share. When `null`, the
      * underlying launcher defaults to the first item's title.
@@ -79,11 +85,13 @@ class ShareUseCases(
      */
     fun shareItems(
         items: List<ShareData>,
+        source: ShareSource,
         isPrivate: Boolean = false,
         subject: String? = null,
         navigateToShareFragment: () -> Unit,
     ) {
         if (settings.nativeShareSheetEnabled && isSystemShareSheetSupported) {
+            NativeShareSheet.shown.record(NativeShareSheet.ShownExtra(source = source.value))
             shareSheetLauncher.showSystemShareSheet(
                 items = items,
                 isPrivate = isPrivate,

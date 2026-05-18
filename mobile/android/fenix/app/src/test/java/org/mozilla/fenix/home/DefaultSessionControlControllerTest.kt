@@ -46,6 +46,7 @@ import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.components
@@ -346,6 +347,7 @@ class DefaultSessionControlControllerTest {
         verify {
             shareUseCases.shareItems(
                 items = emptyList(),
+                source = ShareSource.HOME,
                 subject = collectionTitle,
                 navigateToShareFragment = any(),
             )

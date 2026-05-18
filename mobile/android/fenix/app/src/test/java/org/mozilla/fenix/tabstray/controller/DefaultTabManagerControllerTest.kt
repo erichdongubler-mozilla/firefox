@@ -67,6 +67,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.components
@@ -1180,6 +1181,7 @@ class DefaultTabManagerControllerTest {
         verify {
             shareUseCases.shareItems(
                 items = listOf(ShareData(url = tab.content.url, title = tab.content.title)),
+                source = ShareSource.TABS_TRAY,
                 isPrivate = false,
                 navigateToShareFragment = any(),
             )
@@ -1206,6 +1208,7 @@ class DefaultTabManagerControllerTest {
                     ShareData(url = tab1.content.url, title = tab1.content.title),
                     ShareData(url = tab2.content.url, title = tab2.content.title),
                 ),
+                source = ShareSource.TABS_TRAY,
                 isPrivate = false,
                 navigateToShareFragment = any(),
             )

@@ -31,6 +31,7 @@ import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.nav
@@ -352,6 +353,7 @@ class DefaultSessionControlController(
     private fun showShareFragment(shareSubject: String, data: List<ShareData>) {
         shareUseCases.shareItems(
             items = data,
+            source = ShareSource.HOME,
             subject = shareSubject,
             navigateToShareFragment = {
                 val directions = HomeFragmentDirections.actionGlobalShareFragment(

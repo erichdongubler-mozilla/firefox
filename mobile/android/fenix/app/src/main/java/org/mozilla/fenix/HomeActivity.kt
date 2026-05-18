@@ -89,6 +89,7 @@ import org.mozilla.experiments.nimbus.initializeTooling
 import org.mozilla.fenix.GleanMetrics.AppIcon
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.Metrics
+import org.mozilla.fenix.GleanMetrics.NativeShareSheet
 import org.mozilla.fenix.GleanMetrics.SplashScreen
 import org.mozilla.fenix.GleanMetrics.StartOnHome
 import org.mozilla.fenix.addons.ExtensionsProcessDisabledBackgroundController
@@ -973,18 +974,24 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             val title = intent.getStringExtra(SendToDevicesDialogFragment.EXTRA_TITLE)
             val isPrivate = intent.getStringExtra(SendToDevicesDialogFragment.EXTRA_PRIVACY) ==
                 SendToDevicesDialogFragment.PRIVACY_PRIVATE
+
             if (supportFragmentManager.findFragmentByTag(SendToDevicesDialogFragment.TAG) == null) {
                 SendToDevicesDialogFragment.newInstance(url, title, isPrivate).showNow(
                     supportFragmentManager,
                     SendToDevicesDialogFragment.TAG,
                 )
             }
+
             return
         }
 
         val qrCodeUri = intent.getStringExtra(QR_CODE_URI_KEY)
         if (qrCodeUri != null) {
             if (supportFragmentManager.findFragmentByTag(QRCodeDialogFragment.TAG) == null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    NativeShareSheet.qrCodeTapped.record(NoExtras())
+                }
+
                 QRCodeDialogFragment.newInstance(qrCodeUri).showNow(
                     supportFragmentManager,
                     QRCodeDialogFragment.TAG,
