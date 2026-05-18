@@ -5,7 +5,6 @@
 #include "Animation.h"
 
 #include "AnimationUtils.h"
-#include "ScrollTimelineAnimationTracker.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/AnimationTarget.h"
@@ -418,16 +417,6 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
           TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
     }
   }
-  if (fromFiniteTimeline && !aTimeline && mTimelineName) {
-    // Make sure to remove any pending playing task, if we stopped referring to
-    // an existing named timeline.
-    Document* doc = GetRenderedDocument();
-    auto* tracker = doc ? doc->GetScrollTimelineAnimationTracker() : nullptr;
-    if (tracker) {
-      tracker->RemovePending(*this);
-    }
-  }
-
   // 10. If the start time of animation is resolved, make animation’s hold time
   // unresolved.
   if (!mStartTime.IsNull()) {
@@ -1688,12 +1677,6 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   mPendingState = PendingState::PlayPending;
   mPendingReadyTime = {};
   if (Document* doc = GetRenderedDocument()) {
-    if (HasFiniteTimeline()) {
-      // If there's no rendered document, we fail to track this animation, so
-      // let the scroll container to schedule the sampling of timelines and then
-      // tick the associated animations to trigger them.
-      doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
-    }
     mPendingReadyTime = EnsurePaintIsScheduled(*doc);
   }
 
@@ -1769,9 +1752,6 @@ void Animation::Pause(ErrorResult& aRv) {
   mPendingState = PendingState::PausePending;
   mPendingReadyTime = {};
   if (Document* doc = GetRenderedDocument()) {
-    if (HasFiniteTimeline()) {
-      doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
-    }
     mPendingReadyTime = EnsurePaintIsScheduled(*doc);
   }
 
@@ -1948,17 +1928,6 @@ void Animation::PostUpdate() {
 
 void Animation::CancelPendingTasks() {
   mPendingState = PendingState::NotPending;
-
-  // If we cancel the pending animation, we need to remove it from the pending
-  // scroll-driven animation tracker. Also, the caller should put this animation
-  // back into the pending animation tracker if needed, for scroll-timeline or
-  // view-timeline.
-  if (Document* doc = GetRenderedDocument()) {
-    if (auto* tracker = doc->GetScrollTimelineAnimationTracker()) {
-      // no-op if |this| is not in the tracker.
-      tracker->RemovePending(*this);
-    }
-  }
 }
 
 // https://drafts.csswg.org/web-animations/#reset-an-animations-pending-tasks

@@ -198,7 +198,6 @@ struct LangGroupFontPrefs;
 class PendingFullscreenEvent;
 class PermissionDelegateHandler;
 class PresShell;
-class ScrollTimelineAnimationTracker;
 class ServoStyleSet;
 enum class StyleOrigin : uint8_t;
 class SMILAnimationController;
@@ -2940,19 +2939,6 @@ class Document : public nsINode,
   // If HasAnimationController is true, this is guaranteed to return non-null.
   SMILAnimationController* GetAnimationController();
 
-  // Gets the tracker for scroll-driven animations that are waiting to start.
-  // Returns nullptr if there is no scroll-driven animation tracker for this
-  // document which will be the case if there have never been any scroll-driven
-  // animations in the document.
-  ScrollTimelineAnimationTracker* GetScrollTimelineAnimationTracker() {
-    return mScrollTimelineAnimationTracker;
-  }
-
-  // Gets the tracker for scroll-driven animations that are waiting to start and
-  // creates it if it doesn't already exist. As a result, the return value
-  // will never be nullptr.
-  ScrollTimelineAnimationTracker* GetOrCreateScrollTimelineAnimationTracker();
-
   /**
    * Prevents user initiated events from being dispatched to the document and
    * subdocuments.
@@ -5667,10 +5653,6 @@ class Document : public nsINode,
   AnimationTimelinesController mTimelinesController;
 
   RefPtr<dom::ScriptLoader> mScriptLoader;
-
-  // Tracker for scroll-driven animations that are waiting to start.
-  // nullptr until GetOrCreateScrollTimelineAnimationTracker is called.
-  RefPtr<ScrollTimelineAnimationTracker> mScrollTimelineAnimationTracker;
 
   // A document "without a browsing context" that owns the content of
   // HTMLTemplateElement.
