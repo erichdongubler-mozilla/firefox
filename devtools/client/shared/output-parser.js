@@ -57,6 +57,8 @@ const COLOR_TAKING_FUNCTIONS = new Set([
   "oklab",
   "oklch",
   "rgb",
+  // image(<color>) is equivalent to linear-gradient(<color>)
+  "image",
 ]);
 // Functions that accept a shape argument.
 const BASIC_SHAPE_FUNCTIONS = new Set([

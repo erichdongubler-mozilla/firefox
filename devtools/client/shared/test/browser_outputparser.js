@@ -412,6 +412,18 @@ function testParseCssProperty(doc, parser) {
 
     {
       name: "background-image",
+      value: `image(rgb(255 0 0 / 0.5)), url("bg-image.png")`,
+      expected:
+        `image(` +
+        getColorMarkup({
+          color: "rgb(255 0 0 / 0.5)",
+          colorFunction: "image",
+        }) +
+        `), url("bg-image.png")`,
+    },
+
+    {
+      name: "background-image",
       value: "linear-gradient(to right, #F60 10%, rgb(from gold r g b))",
       expected:
         `linear-gradient(to right, ` +
