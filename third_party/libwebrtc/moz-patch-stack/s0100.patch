@@ -602,7 +602,7 @@ index 322488a20c..b97a142017 100644
  
  if (rtc_build_libsrtp) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index faa4da32ca..681e1c0b2a 100644
+index de875c4d85..cf9a8e80f1 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -9,8 +9,8 @@
@@ -616,7 +616,7 @@ index faa4da32ca..681e1c0b2a 100644
  }
  
  rtc_source_set("protobuf_utils") {
-@@ -1957,8 +1957,8 @@ if (!rtc_rusty_base64) {
+@@ -1960,8 +1960,8 @@ if (!rtc_rusty_base64) {
      ]
    }
  } else {
