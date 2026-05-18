@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -166,7 +166,7 @@ private fun DataLimitSection(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = FirefoxTheme.layout.space.dynamic200)
-            .clip(RoundedCornerShape(percent = 50)),
+            .clip(CircleShape),
         color = MaterialTheme.colorScheme.primary,
         trackColor = MaterialTheme.colorScheme.surfaceVariant,
         drawStopIndicator = {},

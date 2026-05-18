@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -54,7 +53,6 @@ import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 private val BUTTON_HEIGHT = 56.dp
-private val BUTTON_SHAPE = RoundedCornerShape(size = 4.dp)
 private val AVATAR_SIZE = 24.dp
 
 @SuppressWarnings("LongMethod")
@@ -103,7 +101,7 @@ internal fun MozillaAccountMenuItem(
                 this.contentDescription = contentDescription
             }
             .wrapContentSize()
-            .clip(shape = BUTTON_SHAPE)
+            .clip(MaterialTheme.shapes.extraSmall)
             .background(color = MaterialTheme.colorScheme.surfaceDimVariant)
             .height(IntrinsicSize.Min)
             .defaultMinSize(minHeight = BUTTON_HEIGHT)

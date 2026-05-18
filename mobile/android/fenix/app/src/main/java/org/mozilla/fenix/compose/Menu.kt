@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -57,7 +57,7 @@ import mozilla.components.ui.icons.R as iconsR
 private fun Menu(
     menuItems: List<MenuItem>,
     showMenu: Boolean,
-    cornerShape: RoundedCornerShape,
+    cornerShape: CornerBasedShape,
     modifier: Modifier = Modifier,
     canShowCheckItems: Boolean = false,
     offset: DpOffset = DpOffset.Zero,
@@ -177,7 +177,7 @@ fun ContextualMenu(
         showMenu = showMenu,
         modifier = modifier,
         canShowCheckItems = canShowCheckItems,
-        cornerShape = RoundedCornerShape(size = 5.dp),
+        cornerShape = MaterialTheme.shapes.extraSmall,
         offset = offset,
         onDismissRequest = onDismissRequest,
     )

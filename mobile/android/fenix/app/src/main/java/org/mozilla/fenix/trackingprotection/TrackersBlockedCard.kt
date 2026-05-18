@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -132,7 +131,7 @@ private fun ProtectionStatusPill(
     trackersBlockedCount: Int,
     interactor: TrackingProtectionInteractor? = null,
 ) {
-    val shape = RoundedCornerShape(24.dp)
+    val shape = MaterialTheme.shapes.extraLarge
     Row(
         modifier = Modifier
             .background(

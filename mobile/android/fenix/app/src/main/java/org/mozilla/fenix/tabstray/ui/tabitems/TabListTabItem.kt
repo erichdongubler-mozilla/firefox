@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -227,7 +226,7 @@ private fun Thumbnail(
                 height = ThumbnailHeight,
             )
             .testTag(TabsTrayTestTag.TAB_ITEM_THUMBNAIL),
-        shape = RoundedCornerShape(size = 4.dp),
+        shape = MaterialTheme.shapes.extraSmall,
         border = BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant),
         contentDescription = stringResource(id = tabstrayR.string.mozac_browser_tabstray_open_tab),
     )

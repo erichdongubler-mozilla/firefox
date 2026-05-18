@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -274,7 +273,7 @@ private fun WallpaperThumbnailItem(
                 .aspectRatio(aspectRatio)
                 .debouncedClickable { onSelect(wallpaper) }
                 .then(contentDescriptionModifier),
-            shape = RoundedCornerShape(size = FirefoxTheme.layout.corner.large),
+            shape = MaterialTheme.shapes.small,
             border = border,
             shadowElevation = FirefoxTheme.layout.elevation.level2,
         ) {

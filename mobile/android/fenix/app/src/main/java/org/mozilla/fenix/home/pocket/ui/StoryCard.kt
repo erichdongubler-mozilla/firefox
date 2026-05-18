@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +38,6 @@ import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.math.roundToInt
 
-private val cardShape = RoundedCornerShape(8.dp)
 private val defaultCardContentPadding = 8.dp
 private val imageWidth = 345.dp
 private val imageHeight = 180.dp
@@ -64,7 +62,7 @@ internal fun StoryCard(
             onClick(story, Triple(0, 0, 0))
         },
         modifier = modifier,
-        shape = cardShape,
+        shape = MaterialTheme.shapes.small,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
     ) {
@@ -76,7 +74,7 @@ internal fun StoryCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(imageWidth / imageHeight)
-                    .clip(cardShape),
+                    .clip(MaterialTheme.shapes.small),
                 private = false,
                 targetSize = imageWidth,
                 contentScale = ContentScale.Crop,

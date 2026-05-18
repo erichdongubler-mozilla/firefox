@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -194,7 +194,7 @@ private fun AddonDetails(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(FirefoxTheme.layout.corner.xLarge))
+            .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             .padding(
                 horizontal = FirefoxTheme.layout.space.static150,

@@ -247,7 +247,7 @@ private fun AppLinkRedirectBottomSheetContent(
         modifier = Modifier
             .background(
                 color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                shape = MaterialTheme.shapes.large,
             )
             .padding(top = 8.dp)
             .fillMaxWidth(),
@@ -405,7 +405,7 @@ private fun AppLinkDetailItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(shape = RoundedCornerShape(4.dp))
+            .clip(shape = MaterialTheme.shapes.extraSmall)
             .background(color = MaterialTheme.colorScheme.surfaceContainerHigh)
             .padding(
                 horizontal = 16.dp,

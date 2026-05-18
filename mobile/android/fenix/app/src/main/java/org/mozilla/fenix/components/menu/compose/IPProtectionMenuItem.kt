@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,7 +42,6 @@ import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 private val MENU_ITEM_MIN_HEIGHT = 52.dp
-private val ROUNDED_CORNER = RoundedCornerShape(4.dp)
 
 /**
  * A menu item showing the current IP Protection status.
@@ -64,7 +62,7 @@ internal fun IPProtectionMenuItem(
     Row(
         modifier = Modifier
             .wrapContentSize()
-            .clip(ROUNDED_CORNER)
+            .clip(MaterialTheme.shapes.extraSmall)
             .background(MaterialTheme.colorScheme.surfaceDimVariant)
             .height(IntrinsicSize.Min)
             .defaultMinSize(minHeight = MENU_ITEM_MIN_HEIGHT),

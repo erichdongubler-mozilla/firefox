@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
@@ -126,7 +125,7 @@ private fun PreviewStatusBadgeWithCustomizations(
             StatusBadge(
                 containerColor = param.containerColor,
                 contentColor = param.contentColor,
-                shape = RoundedCornerShape(FirefoxTheme.layout.corner.small),
+                shape = MaterialTheme.shapes.small,
             ) {
                 Text(text = param.status)
             }

@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -114,7 +113,7 @@ internal fun AnimatedPillButton(
             .onSizeChanged { size ->
                 if (fullWidthPx == 0 && size.width > 0) fullWidthPx = size.width
             }
-            .clip(RoundedCornerShape(90.dp))
+            .clip(CircleShape)
             .background(containerColor)
             .clickable {
                 view.playSoundEffect(SoundEffectConstants.CLICK)
