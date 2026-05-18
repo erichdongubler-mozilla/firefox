@@ -537,13 +537,6 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
-  PurgeSessionHistory: {
-    child: {
-      esModuleURI: "resource://gre/actors/PurgeSessionHistoryChild.sys.mjs",
-    },
-    allFrames: true,
-  },
-
   ReportBrokenSite: {
     parent: {
       esModuleURI: "resource://gre/actors/ReportBrokenSiteParent.sys.mjs",
