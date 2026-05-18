@@ -13,12 +13,12 @@
   <script type="application/javascript"
           src="../role.js"></script>
   <script type="application/javascript"
-          src="../events.js"></script>
+          src="../promisified-events.js"></script>
 
   <script type="application/javascript">
     // gA11yEventDumpToConsole = true;
     function doPreTest() {
-      waitForImageMap("imgmap", doTest);
+      waitForImageMapInContent("imgmap").then(doTest);
     }
 
     function doTest() {

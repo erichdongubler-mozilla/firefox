@@ -18,7 +18,7 @@
             EVENT_OBJECT_ATTRIBUTE_CHANGED, EVENT_MENUPOPUP_START, EVENT_MENUPOPUP_END, EVENT_ERRORMESSAGE_CHANGED,
             UnexpectedEvents, waitForEvent,
             waitForEvents, waitForOrderedEvents, waitForStateChange,
-            stateChangeEventArgs */
+            stateChangeEventArgs, waitForImageMapInContent */
 
 const EVENT_ANNOUNCEMENT = nsIAccessibleEvent.EVENT_ANNOUNCEMENT;
 const EVENT_DOCUMENT_LOAD_COMPLETE =
@@ -343,4 +343,27 @@ function selectAllTextAndFocus(id) {
   }
 
   elem.focus();
+}
+
+/**
+ * Call the given function when the tree of the given image map is built.
+ * This version runs in content (ie. mochitests) as opposed to the browser
+ * test one in shared-head.js.
+ */
+async function waitForImageMapInContent(aImageMapID) {
+  const reorder = waitForEvent(EVENT_REORDER, aImageMapID);
+  const imageMapNode = getNode(aImageMapID);
+  const imageMapAcc = getAccessible(aImageMapID);
+  if (imageMapAcc.firstChild) {
+    return;
+  }
+  synthesizeMouse(
+    imageMapNode,
+    10,
+    10,
+    { type: "mousemove" },
+    imageMapNode.documentGlobal
+  );
+
+  await reorder;
 }

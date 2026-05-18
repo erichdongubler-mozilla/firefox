@@ -12,11 +12,11 @@
   <script type="application/javascript"
           src="../layout.js"></script>
   <script type="application/javascript"
-          src="../events.js"></script>
+          src="../promisified-events.js"></script>
 
   <script type="application/javascript">
     function doPreTest() {
-      waitForImageMap("imgmap", doTest);
+      waitForImageMapInContent("imgmap").then(doTest);
     }
 
     function doTest() {

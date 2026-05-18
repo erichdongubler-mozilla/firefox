@@ -13,7 +13,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=428248
   <script type="application/javascript"
           src="../common.js"></script>
   <script type="application/javascript"
-          src="../events.js"></script>
+          src="../promisified-events.js"></script>
 
   <script type="application/javascript">
     var gParagraphAcc;
@@ -39,7 +39,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=428248
 
     // gA11yEventDumpToConsole = true;
     function doPreTest() {
-      waitForImageMap("imgmap", doTest);
+      waitForImageMapInContent("imgmap").then(doTest);
     }
 
     function doTest() {
