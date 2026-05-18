@@ -11,8 +11,6 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-// Services.prefs.setBoolPref("devtools.debugger.log", true);
-
 // Import helpers for the inspector that are also shared with others
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/inspector/test/shared-head.js",

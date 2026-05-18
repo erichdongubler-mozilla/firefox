@@ -177,10 +177,6 @@ const SETTINGS_MENU_ITEMS = {
 // All tests are asynchronous.
 waitForExplicitFinish();
 
-const gEnableLogging = Services.prefs.getBoolPref("devtools.debugger.log");
-// To enable logging for try runs, just set the pref to true.
-Services.prefs.setBoolPref("devtools.debugger.log", false);
-
 // Uncomment this pref to dump all devtools emitted events to the console.
 // Services.prefs.setBoolPref("devtools.dump.emit", true);
 
