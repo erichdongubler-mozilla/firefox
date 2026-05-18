@@ -51,22 +51,6 @@ static RefPtr<nsIContent> GetMenuChildContent(
       });
 }
 
-static NSMenuItem* GetNativeMenuItem(const nsMenuParentX::MenuChild& aChild) {
-  return aChild.match(
-      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->NativeNSMenuItem(); },
-      [](const RefPtr<nsMenuItemX>& aMenuItem) {
-        return aMenuItem->NativeNSMenuItem();
-      });
-}
-
-static bool IsMenuChildVisible(const nsMenuParentX::MenuChild& aChild) {
-  return aChild.match(
-      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->IsVisible(); },
-      [](const RefPtr<nsMenuItemX>& aMenuItem) {
-        return aMenuItem->IsVisible();
-      });
-}
-
 // Global rather than per-instance: building a menu triggers DOM observer
 // callbacks on child/sibling nsMenuX instances, and we need to suppress those
 // across all instances to prevent re-entrant rebuilds.
@@ -209,7 +193,7 @@ nsMenuX::~nsMenuX() {
   // Make sure pending popuphiding/popuphidden events aren't dropped.
   FlushMenuClosedRunnable();
 
-  OnHighlightedItemChanged(nil);
+  OnHighlightedItemChanged(Nothing());
   RemoveAll();
 
   mNativeMenu.delegate = nil;
@@ -285,14 +269,22 @@ void nsMenuX::AddMenuChild(const MenuChild& aChild) {
   WillInsertChild(aChild);
   mMenuChildren.AppendElement(aChild);
 
-  bool isVisible = IsMenuChildVisible(aChild);
-  NSMenuItem* nativeItem = GetNativeMenuItem(aChild);
+  bool isVisible = aChild.match(
+      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->IsVisible(); },
+      [](const RefPtr<nsMenuItemX>& aMenuItem) {
+        return aMenuItem->IsVisible();
+      });
+  NSMenuItem* nativeItem = aChild.match(
+      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->NativeNSMenuItem(); },
+      [](const RefPtr<nsMenuItemX>& aMenuItem) {
+        return aMenuItem->NativeNSMenuItem();
+      });
 
-  nativeItem.hidden = !isVisible;
   if (isVisible) {
     RemovePlaceholderIfPresent();
+    [mNativeMenu addItem:nativeItem];
+    ++mVisibleItemsCount;
   }
-  [mNativeMenu addItem:nativeItem];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -304,26 +296,27 @@ void nsMenuX::InsertMenuChild(const MenuChild& aChild) {
   size_t insertionIndex = FindInsertionIndex(aChild);
   mMenuChildren.InsertElementAt(insertionIndex, aChild);
 
-  bool isVisible = IsMenuChildVisible(aChild);
-  NSMenuItem* nativeItem = GetNativeMenuItem(aChild);
-
-  nativeItem.hidden = !isVisible;
+  bool isVisible = aChild.match(
+      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->IsVisible(); },
+      [](const RefPtr<nsMenuItemX>& aMenuItem) {
+        return aMenuItem->IsVisible();
+      });
   if (isVisible) {
-    RemovePlaceholderIfPresent();
+    MenuChildChangedVisibility(aChild, true);
   }
-  NSInteger nativeIndex = static_cast<NSInteger>(insertionIndex) +
-                          (mIsPullDownPlaceholderPresent ? 1 : 0) +
-                          (mIsEmptyMenuPlaceholderPresent ? 1 : 0);
-  [mNativeMenu insertItem:nativeItem atIndex:nativeIndex];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 void nsMenuX::RemoveMenuChild(const MenuChild& aChild) {
-  NSMenuItem* nativeItem = GetNativeMenuItem(aChild);
-
-  [mNativeMenu removeItem:nativeItem];
-  InsertPlaceholderIfNeeded();
+  bool isVisible = aChild.match(
+      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->IsVisible(); },
+      [](const RefPtr<nsMenuItemX>& aMenuItem) {
+        return aMenuItem->IsVisible();
+      });
+  if (isVisible) {
+    MenuChildChangedVisibility(aChild, false);
+  }
 
   WillRemoveChild(aChild);
   mMenuChildren.RemoveElement(aChild);
@@ -370,6 +363,43 @@ mozilla::Maybe<nsMenuX::MenuChild> nsMenuX::GetItemAt(uint32_t aPos) {
   return Some(mMenuChildren[aPos]);
 }
 
+// Only includes visible items
+nsresult nsMenuX::GetVisibleItemCount(uint32_t& aCount) {
+  aCount = mVisibleItemsCount;
+  return NS_OK;
+}
+
+// Only includes visible items. Note that this is provides O(N) access
+// If you need to iterate or search, consider using GetItemAt and doing your own
+// filtering
+Maybe<nsMenuX::MenuChild> nsMenuX::GetVisibleItemAt(uint32_t aPos) {
+  uint32_t count = mMenuChildren.Length();
+  if (aPos >= mVisibleItemsCount || aPos >= count) {
+    return {};
+  }
+
+  // If there are no invisible items, can provide direct access
+  if (mVisibleItemsCount == count) {
+    return GetItemAt(aPos);
+  }
+
+  // Otherwise, traverse the array until we find the item we're looking for.
+  uint32_t visibleNodeIndex = 0;
+  for (uint32_t i = 0; i < count; i++) {
+    MenuChild item = *GetItemAt(i);
+    RefPtr<nsIContent> content = GetMenuChildContent(item);
+    if (!nsMenuUtilsX::NodeIsHiddenOrCollapsed(content)) {
+      if (aPos == visibleNodeIndex) {
+        // we found the visible node we're looking for, return it
+        return Some(item);
+      }
+      visibleNodeIndex++;
+    }
+  }
+
+  return {};
+}
+
 Maybe<nsMenuX::MenuChild> nsMenuX::GetItemForElement(
     Element* aMenuChildElement) {
   for (auto& child : mMenuChildren) {
@@ -391,8 +421,8 @@ nsresult nsMenuX::RemoveAll() {
   }
 
   mMenuChildren.Clear();
+  mVisibleItemsCount = 0;
   mIsPullDownPlaceholderPresent = false;
-  mIsEmptyMenuPlaceholderPresent = false;
 
   return NS_OK;
 
@@ -447,7 +477,7 @@ void nsMenuX::MenuOpened() {
   mDidFirePopupshowingAndIsApprovedToOpen = false;
 
   if (mNeedsRebuild) {
-    OnHighlightedItemChanged(nil);
+    OnHighlightedItemChanged(Nothing());
     RemoveAll();
     RebuildMenu();
   }
@@ -594,7 +624,7 @@ void nsMenuX::MenuClosedAsync() {
   }
 
   // Make sure no item is highlighted.
-  OnHighlightedItemChanged(nil);
+  OnHighlightedItemChanged(Nothing());
 
   nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent();
   nsCOMPtr<nsIContent> dispatchTo = popupContent ? popupContent : mContent;
@@ -687,34 +717,40 @@ bool nsMenuX::Close() {
   NS_OBJC_END_TRY_BLOCK_RETURN(false);
 }
 
-void nsMenuX::OnHighlightedItemChanged(NSMenuItem* aHighlightedItem) {
-  if (mHighlightedItem == aHighlightedItem) {
+void nsMenuX::OnHighlightedItemChanged(
+    const Maybe<uint32_t>& aNewHighlightedIndex) {
+  Maybe<uint32_t> newIndex = aNewHighlightedIndex;
+  if (mIsPullDownPlaceholderPresent && newIndex) {
+    if (newIndex.ref() > 0) {
+      // Account for the pulldown placeholder item.
+      newIndex.ref()--;
+    } else {
+      // Index 0 is the placeholder itself, not a real item.
+      newIndex = Nothing();
+    }
+  }
+
+  if (mHighlightedItemIndex == newIndex) {
     return;
   }
 
-  if (mHighlightedItem) {
-    for (auto& child : mMenuChildren) {
-      if (GetNativeMenuItem(child) == mHighlightedItem &&
-          child.is<RefPtr<nsMenuItemX>>()) {
-        bool handlerCalledPreventDefault;
-        child.as<RefPtr<nsMenuItemX>>()->DispatchDOMEvent(
-            u"DOMMenuItemInactive"_ns, &handlerCalledPreventDefault);
-        break;
-      }
+  if (mHighlightedItemIndex) {
+    Maybe<nsMenuX::MenuChild> target = GetVisibleItemAt(*mHighlightedItemIndex);
+    if (target && target->is<RefPtr<nsMenuItemX>>()) {
+      bool handlerCalledPreventDefault;  // but we don't actually care
+      target->as<RefPtr<nsMenuItemX>>()->DispatchDOMEvent(
+          u"DOMMenuItemInactive"_ns, &handlerCalledPreventDefault);
     }
   }
-  if (aHighlightedItem) {
-    for (auto& child : mMenuChildren) {
-      if (GetNativeMenuItem(child) == aHighlightedItem &&
-          child.is<RefPtr<nsMenuItemX>>()) {
-        bool handlerCalledPreventDefault;
-        child.as<RefPtr<nsMenuItemX>>()->DispatchDOMEvent(
-            u"DOMMenuItemActive"_ns, &handlerCalledPreventDefault);
-        break;
-      }
+  if (newIndex) {
+    Maybe<nsMenuX::MenuChild> target = GetVisibleItemAt(*newIndex);
+    if (target && target->is<RefPtr<nsMenuItemX>>()) {
+      bool handlerCalledPreventDefault;  // but we don't actually care
+      target->as<RefPtr<nsMenuItemX>>()->DispatchDOMEvent(
+          u"DOMMenuItemActive"_ns, &handlerCalledPreventDefault);
     }
   }
-  mHighlightedItem = aHighlightedItem;
+  mHighlightedItemIndex = newIndex;
 }
 
 void nsMenuX::OnWillActivateItem(NSMenuItem* aItem) {
@@ -827,21 +863,6 @@ void nsMenuX::RefreshMenuChildren(const MenuChild& aChildInserted) {
   gConstructingMenu = false;
 }
 
-bool nsMenuX::HasVisibleNativeItems() {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
-
-  NSInteger start = (mIsPullDownPlaceholderPresent ? 1 : 0) +
-                    (mIsEmptyMenuPlaceholderPresent ? 1 : 0);
-  for (NSInteger i = start; i < mNativeMenu.numberOfItems; i++) {
-    if (![mNativeMenu itemAtIndex:i].hidden) {
-      return true;
-    }
-  }
-  return false;
-
-  NS_OBJC_END_TRY_BLOCK_RETURN(false);
-}
-
 void nsMenuX::InsertPlaceholderIfNeeded() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -855,17 +876,16 @@ void nsMenuX::InsertPlaceholderIfNeeded() {
     [mNativeMenu insertItem:item atIndex:0];
     [item release];
     mIsPullDownPlaceholderPresent = true;
-  } else if (!HasVisibleNativeItems() && !mIsEmptyMenuPlaceholderPresent) {
+  } else if ([mNativeMenu numberOfItems] == 0) {
+    MOZ_RELEASE_ASSERT(mVisibleItemsCount == 0);
     NSMenuItem* item = [[GeckoNSMenuItem alloc] initWithTitle:@""
                                                        action:nil
                                                 keyEquivalent:@""];
     item.enabled = NO;
     item.view =
         [[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 20, 1)] autorelease];
-    NSInteger index = mIsPullDownPlaceholderPresent ? 1 : 0;
-    [mNativeMenu insertItem:item atIndex:index];
+    [mNativeMenu addItem:item];
     [item release];
-    mIsEmptyMenuPlaceholderPresent = true;
   }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -874,10 +894,10 @@ void nsMenuX::InsertPlaceholderIfNeeded() {
 void nsMenuX::RemovePlaceholderIfPresent() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  if (mIsEmptyMenuPlaceholderPresent) {
-    NSInteger index = mIsPullDownPlaceholderPresent ? 1 : 0;
-    [mNativeMenu removeItemAtIndex:index];
-    mIsEmptyMenuPlaceholderPresent = false;
+  if (mVisibleItemsCount == 0 && [mNativeMenu numberOfItems] == 1 &&
+      !mIsPullDownPlaceholderPresent) {
+    // Remove the placeholder.
+    [mNativeMenu removeItemAtIndex:0];
   }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -1234,15 +1254,52 @@ void nsMenuX::MenuChildChangedVisibility(const MenuChild& aChild,
                                          bool aIsVisible) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  NSMenuItem* nativeItem = GetNativeMenuItem(aChild);
-  nativeItem.hidden = !aIsVisible;
+  NSMenuItem* nativeItem = aChild.match(
+      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->NativeNSMenuItem(); },
+      [](const RefPtr<nsMenuItemX>& aMenuItem) {
+        return aMenuItem->NativeNSMenuItem();
+      });
   if (aIsVisible) {
+    MOZ_RELEASE_ASSERT(
+        !nativeItem.menu,
+        "The native item should not be in a menu while it is hidden");
     RemovePlaceholderIfPresent();
+    NSInteger insertionPoint = CalculateNativeInsertionPoint(aChild);
+    [mNativeMenu insertItem:nativeItem atIndex:insertionPoint];
+    mVisibleItemsCount++;
   } else {
+    MOZ_RELEASE_ASSERT(
+        [mNativeMenu indexOfItem:nativeItem] != -1,
+        "The native item should be in this menu while it is visible");
+    [mNativeMenu removeItem:nativeItem];
+    mVisibleItemsCount--;
     InsertPlaceholderIfNeeded();
   }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+NSInteger nsMenuX::CalculateNativeInsertionPoint(const MenuChild& aChild) {
+  NSInteger insertionPoint = 0;
+  for (auto& currItem : mMenuChildren) {
+    if (currItem == aChild) {
+      break;
+    }
+    NSMenuItem* nativeItem = currItem.match(
+        [](const RefPtr<nsMenuX>& aMenu) { return aMenu->NativeNSMenuItem(); },
+        [](const RefPtr<nsMenuItemX>& aMenuItem) {
+          return aMenuItem->NativeNSMenuItem();
+        });
+    // Only count visible items.
+    if (nativeItem.menu) {
+      insertionPoint++;
+    }
+  }
+  if (mIsPullDownPlaceholderPresent) {
+    // Account for the pulldown placeholder item.
+    insertionPoint++;
+  }
+  return insertionPoint;
 }
 
 void nsMenuX::Dump(uint32_t aIndent) const {
@@ -1262,6 +1319,7 @@ void nsMenuX::Dump(uint32_t aIndent) const {
   if (mIsEnabled) {
     printf(" [IsEnabled]");
   }
+  printf(" (%d visible items)", int(mVisibleItemsCount));
   printf("\n");
   for (const auto& subitem : mMenuChildren) {
     subitem.match(
@@ -1302,7 +1360,14 @@ void nsMenuX::Dump(uint32_t aIndent) const {
     return;
   }
 
-  mGeckoMenu->OnHighlightedItemChanged(aItem);
+  Maybe<uint32_t> index;
+  if (aItem) {
+    NSInteger nativeIndex = [aMenu indexOfItem:aItem];
+    if (nativeIndex != -1) {
+      index = Some(static_cast<uint32_t>(nativeIndex));
+    }
+  }
+  mGeckoMenu->OnHighlightedItemChanged(index);
 }
 
 - (void)menuWillOpen:(NSMenu*)menu {

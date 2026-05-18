@@ -137,6 +137,18 @@ class nsMenuBarX : public nsMenuParentX,
                                       NativeMenuItemTarget* aTarget);
   void CreateApplicationMenu(nsMenuX* aMenu);
 
+  // Calculates the index at which aChild's NSMenuItem should be inserted into
+  // our NSMenu. The order of NSMenuItems in the NSMenu is the same as the order
+  // of nsMenuX objects in mMenuArray; there are two differences:
+  //  - mMenuArray contains both visible and invisible menus, and the NSMenu
+  //  only contains visible
+  //    menus.
+  //  - Our NSMenu may also contain an item for the app menu, whereas mMenuArray
+  //  never does.
+  // So the insertion index is equal to the number of visible previous siblings
+  // of aChild in mMenuArray, plus one if the app menu is present.
+  NSInteger CalculateNativeInsertionPoint(nsMenuX* aChild);
+
   RefPtr<nsIContent> mContent;
   RefPtr<nsMenuGroupOwnerX> mMenuGroupOwner;
   nsTArray<RefPtr<nsMenuX>> mMenuArray;

@@ -260,12 +260,12 @@ void nsMenuBarX::InsertMenuAtIndex(RefPtr<nsMenuX>&& aMenu, uint32_t aIndex) {
   // add menu to array that owns our menus
   mMenuArray.InsertElementAt(aIndex, aMenu);
 
-  NSMenuItem* item = aMenu->NativeNSMenuItem();
-  item.hidden = !aMenu->IsVisible();
-  // All items (including hidden) are always in the native menu, so array index
-  // maps directly to native index, offset only by the app menu item.
-  NSInteger insertionIndex = aIndex + (MenuContainsAppMenu() ? 1 : 0);
-  [mNativeMenu insertItem:item atIndex:insertionIndex];
+  // hook up submenus
+  RefPtr<nsIContent> menuContent = aMenu->Content();
+  if (menuContent->GetChildCount() > 0 &&
+      !nsMenuUtilsX::NodeIsHiddenOrCollapsed(menuContent)) {
+    MenuChildChangedVisibility(MenuChild(aMenu), true);
+  }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -284,9 +284,13 @@ void nsMenuBarX::RemoveMenuAtIndex(uint32_t aIndex) {
   menu->DetachFromGroupOwnerRecursive();
   menu->DetachFromParent();
 
+  // Our native menu and our internal menu object array might be out of sync.
+  // This happens, for example, when a submenu is hidden. Because of this we
+  // should not assume that a native submenu is hooked up.
   NSMenuItem* nativeMenuItem = menu->NativeNSMenuItem();
-  if ([mNativeMenu indexOfItem:nativeMenuItem] != -1) {
-    [mNativeMenu removeItem:nativeMenuItem];
+  int nativeMenuItemIndex = [mNativeMenu indexOfItem:nativeMenuItem];
+  if (nativeMenuItemIndex != -1) {
+    [mNativeMenu removeItemAtIndex:nativeMenuItemIndex];
   }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -299,33 +303,18 @@ void nsMenuBarX::ObserveAttributeChanged(mozilla::dom::Document* aDocument,
 void nsMenuBarX::ObserveContentRemoved(mozilla::dom::Document* aDocument,
                                        nsIContent* aContainer,
                                        nsIContent* aChild) {
-  for (uint32_t i = 0; i < mMenuArray.Length(); i++) {
-    if (mMenuArray[i]->Content() == aChild) {
-      RemoveMenuAtIndex(i);
-      return;
-    }
-  }
+  nsINode* parent = NODE_FROM(aContainer, aDocument);
+  MOZ_ASSERT(parent);
+  const Maybe<uint32_t> index = parent->ComputeIndexOf(aChild);
+  MOZ_ASSERT(*index != UINT32_MAX);
+  RemoveMenuAtIndex(index.valueOr(0u));
 }
 
 void nsMenuBarX::ObserveContentInserted(mozilla::dom::Document* aDocument,
                                         nsIContent* aContainer,
                                         nsIContent* aChild) {
-  if (!aChild->IsXULElement(nsGkAtoms::menu)) {
-    return;
-  }
-
-  // Find the correct insertion index in mMenuArray by counting how many menu
-  // siblings precede aChild in the DOM.
-  uint32_t insertionIndex = 0;
-  for (nsIContent* sibling = aChild->GetPreviousSibling(); sibling;
-       sibling = sibling->GetPreviousSibling()) {
-    if (sibling->IsXULElement(nsGkAtoms::menu)) {
-      insertionIndex++;
-    }
-  }
-
   InsertMenuAtIndex(MakeRefPtr<nsMenuX>(this, mMenuGroupOwner, aChild),
-                    insertionIndex);
+                    aContainer->ComputeIndexOf(aChild).valueOr(UINT32_MAX));
 }
 
 void nsMenuBarX::ForceUpdateNativeMenuAt(const nsAString& aIndexString) {
@@ -341,12 +330,25 @@ void nsMenuBarX::ForceUpdateNativeMenuAt(const nsAString& aIndexString) {
     return;
   }
 
+  RefPtr<nsMenuX> currentMenu = nullptr;
   int targetIndex = [[indexes objectAtIndex:0] intValue];
-  if (targetIndex < 0 ||
-      static_cast<uint32_t>(targetIndex) >= mMenuArray.Length()) {
+  int visible = 0;
+  uint32_t length = mMenuArray.Length();
+  // first find a menu in the menu bar
+  for (unsigned int i = 0; i < length; i++) {
+    RefPtr<nsMenuX> menu = mMenuArray[i];
+    if (!nsMenuUtilsX::NodeIsHiddenOrCollapsed(menu->Content())) {
+      visible++;
+      if (visible == (targetIndex + 1)) {
+        currentMenu = std::move(menu);
+        break;
+      }
+    }
+  }
+
+  if (!currentMenu) {
     return;
   }
-  RefPtr<nsMenuX> currentMenu = mMenuArray[targetIndex];
 
   // fake open/close to cause lazy update to happen so submenus populate
   currentMenu->MenuOpened();
@@ -355,14 +357,29 @@ void nsMenuBarX::ForceUpdateNativeMenuAt(const nsAString& aIndexString) {
   // now find the correct submenu
   for (unsigned int i = 1; currentMenu && i < indexCount; i++) {
     targetIndex = [[indexes objectAtIndex:i] intValue];
-    Maybe<nsMenuX::MenuChild> targetChild = currentMenu->GetItemAt(targetIndex);
-    if (!targetChild || !targetChild->is<RefPtr<nsMenuX>>()) {
-      return;
+    visible = 0;
+    length = currentMenu->GetItemCount();
+    for (unsigned int j = 0; j < length; j++) {
+      Maybe<nsMenuX::MenuChild> targetMenu = currentMenu->GetItemAt(j);
+      if (!targetMenu) {
+        return;
+      }
+      RefPtr<nsIContent> content = targetMenu->match(
+          [](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
+          [](const RefPtr<nsMenuItemX>& aMenuItem) {
+            return aMenuItem->Content();
+          });
+      if (!nsMenuUtilsX::NodeIsHiddenOrCollapsed(content)) {
+        visible++;
+        if (targetMenu->is<RefPtr<nsMenuX>>() && visible == (targetIndex + 1)) {
+          currentMenu = targetMenu->as<RefPtr<nsMenuX>>();
+          // fake open/close to cause lazy update to happen
+          currentMenu->MenuOpened();
+          currentMenu->MenuClosed();
+          break;
+        }
+      }
     }
-    currentMenu = targetChild->as<RefPtr<nsMenuX>>();
-    // fake open/close to cause lazy update to happen
-    currentMenu->MenuOpened();
-    currentMenu->MenuClosed();
   }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -399,12 +416,13 @@ nsMenuX* nsMenuBarX::GetXULHelpMenu() {
       return aMenu;
     }
   }
-  return nullptr;
+  return nil;
 }
 
-// We must tell the OS which is our Help menu. Otherwise it will only add
-// Spotlight for Help (the Search item) to our Help menu if its label/title
-// is "Help" -- i.e. if the menu is in English. See bugs 489196 and 539317.
+// On SnowLeopard and later we must tell the OS which is our Help menu.
+// Otherwise it will only add Spotlight for Help (the Search item) to our
+// Help menu if its label/title is "Help" -- i.e. if the menu is in English.
+// This resolves bugs 489196 and 539317.
 void nsMenuBarX::SetSystemHelpMenu() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -432,7 +450,9 @@ void nsMenuBarX::SetSystemHelpMenu() {
 // Removing these items before setting `NSApp.mainMenu` prevents this slowdown.
 // See bug 1808223.
 static bool RemoveProblematicMenuItems(NSMenu* aMenu) {
-  NSMutableArray* itemsToRemove = [NSMutableArray arrayWithCapacity:3];
+  uint8_t problematicMenuItemCount = 3;
+  NSMutableArray* itemsToRemove =
+      [NSMutableArray arrayWithCapacity:problematicMenuItemCount];
 
   bool didRemoveItems = false;
 
@@ -479,14 +499,12 @@ nsresult nsMenuBarX::Paint() {
       outgoingMenu.numberOfItems > 0,
       "Main menu does not have any items, something is terribly wrong!");
 
-  if (outgoingMenu.numberOfItems > 0) {
-    NSMenuItem* appMenuItem = [[outgoingMenu itemAtIndex:0] retain];
-    [outgoingMenu removeItemAtIndex:0];
-    if (appMenuItem) {
-      [mNativeMenu insertItem:appMenuItem atIndex:0];
-    }
-    [appMenuItem release];
+  NSMenuItem* appMenuItem = [[outgoingMenu itemAtIndex:0] retain];
+  [outgoingMenu removeItemAtIndex:0];
+  if (appMenuItem) {
+    [mNativeMenu insertItem:appMenuItem atIndex:0];
   }
+  [appMenuItem release];
   [outgoingMenu release];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -598,7 +616,30 @@ void nsMenuBarX::MenuChildChangedVisibility(const MenuChild& aChild,
   MOZ_RELEASE_ASSERT(aChild.is<RefPtr<nsMenuX>>(),
                      "nsMenuBarX only has nsMenuX children");
   const RefPtr<nsMenuX>& child = aChild.as<RefPtr<nsMenuX>>();
-  child->NativeNSMenuItem().hidden = !aIsVisible;
+  NSMenuItem* item = child->NativeNSMenuItem();
+  if (aIsVisible) {
+    NSInteger insertionPoint = CalculateNativeInsertionPoint(child);
+    [mNativeMenu insertItem:item atIndex:insertionPoint];
+  } else if ([mNativeMenu indexOfItem:item] != -1) {
+    [mNativeMenu removeItem:item];
+  }
+}
+
+NSInteger nsMenuBarX::CalculateNativeInsertionPoint(nsMenuX* aChild) {
+  NSInteger insertionPoint = MenuContainsAppMenu() ? 1 : 0;
+  for (auto& currMenu : mMenuArray) {
+    if (currMenu == aChild) {
+      return insertionPoint;
+    }
+    // Only count items that are inside a menu.
+    // XXXmstange Not sure what would cause free-standing items. Maybe for
+    // collapsed/hidden menus? In that case, an nsMenuX::IsVisible() method
+    // would be better.
+    if (currMenu->NativeNSMenuItem().menu) {
+      insertionPoint++;
+    }
+  }
+  return insertionPoint;
 }
 
 // Hide the item in the menu by setting the 'hidden' attribute. Returns it so

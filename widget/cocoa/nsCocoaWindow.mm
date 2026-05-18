@@ -685,19 +685,9 @@ nsresult nsCocoaWindow::ActivateNativeMenuItemAt(const nsAString& indexString) {
       [NSApp mainMenu], locationString, true);
   // We can't perform an action on an item with a submenu, that will raise
   // an obj-c exception.
-  // We also refuse to activate an item that is hidden or inside a hidden
-  // ancestor menu.
-  if (item && ![item hasSubmenu] && !item.hidden) {
+  if (item && ![item hasSubmenu]) {
     NSMenu* parent = [item menu];
-    bool hasHiddenAncestor = false;
-    for (NSMenu* m = parent; m && m.supermenu; m = m.supermenu) {
-      NSInteger idx = [m.supermenu indexOfItemWithSubmenu:m];
-      if (idx != -1 && [m.supermenu itemAtIndex:idx].hidden) {
-        hasHiddenAncestor = true;
-        break;
-      }
-    }
-    if (parent && !hasHiddenAncestor) {
+    if (parent) {
       // NSLog(@"Performing action for native menu item titled: %@\n",
       //       [[currentSubmenu itemAtIndex:targetIndex] title]);
       mozilla::AutoRestore<bool> autoRestore(
