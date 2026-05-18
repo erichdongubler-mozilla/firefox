@@ -1,232 +1,192 @@
-From: =?UTF-8?q?Henrik=20Bostr=C3=B6m?= <hbos@google.com>
-Date: Thu, 9 Apr 2026 12:19:32 +0200
-Subject: (cherry-pick-branch-heads/7778) [Merge-148] Cherry pick "Move the
- NullVideoDecoder into a separate file and target."
+From: Tommi <tommi@webrtc.org>
+Date: Thu, 16 Apr 2026 14:48:05 +0200
+Subject: (cherry-pick-branch-heads/7778) [M148] Allow signaled SSRCs to
+ override learned bindings in RtpDemuxer
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Original change's description:
-> Move the NullVideoDecoder into a separate file and target.
->
-> This is necessary because the Chromium video decoder factory needs to
-> be able to instantiate it for fallback purposes (e.g. Decode error
-> causing the HW to no longer be available).
->
-> Bug: chromium:500960863
-> Change-Id: I724a5f28aa0a0a615972dd49eebde701c3b7ec90
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/462243
-> Reviewed-by: Evan Shrubsole <eshr@webrtc.org>
-> Commit-Queue: Henrik Boström <hbos@webrtc.org>
-> Cr-Commit-Position: refs/heads/main@{#47366}
+Update RtpDemuxer to permit signaled SSRCs to override existing learned
+SSRC bindings. This prevents registration failures during session
+renegotiation when an SSRC, previously identified through payload type
+demuxing, is subsequently explicitly signaled.
 
-Bug: chromium:500960863
-Change-Id: I724a5f28aa0a0a615972dd49eebde701c3b7ec90
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464521
-Reviewed-by: Ilya Nikolaevskiy <ilnik@webrtc.org>
-Commit-Queue: Evan Shrubsole <eshr@webrtc.org>
-Cr-Commit-Position: refs/branch-heads/7778@{#1}
+The demuxer now maintains a set of signaled SSRCs to differentiate
+explicit configurations from learned state. Conflict detection is
+modified to allow these overrides while maintaining strict checks
+between multiple signaled SSRCs. This ensures that explicit signaling
+always takes precedence over internally learned bindings, resolving
+routing issues during media stream updates.
+
+(cherry picked from commit 186d42a3010981882a8679a145ce36aa84581c78)
+
+Fixed: chromium:503666505
+Bug: webrtc:502130956
+Change-Id: I551c2b7ee5af18fc9792ee52be08c5349c20b641
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464220
+Reviewed-by: Harald Alvestrand <hta@webrtc.org>
+Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
+Cr-Original-Commit-Position: refs/heads/main@{#47446}
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464764
+Reviewed-by: Björn Terelius <terelius@webrtc.org>
+Cr-Commit-Position: refs/branch-heads/7778@{#2}
 Cr-Branched-From: ca896b7ffef011bbf6957c99d413c5aac602c99f-refs/heads/main@{#47319}
 ---
- video/BUILD.gn                 | 18 +++++++++++++
- video/null_video_decoder.cc    | 48 ++++++++++++++++++++++++++++++++++
- video/null_video_decoder.h     | 39 +++++++++++++++++++++++++++
- video/video_receive_stream2.cc | 34 +++---------------------
- 4 files changed, 108 insertions(+), 31 deletions(-)
- create mode 100644 video/null_video_decoder.cc
- create mode 100644 video/null_video_decoder.h
+ call/rtp_demuxer.cc          | 22 +++++++---
+ call/rtp_demuxer.h           |  1 +
+ call/rtp_demuxer_unittest.cc | 83 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 101 insertions(+), 5 deletions(-)
 
-diff --git a/video/BUILD.gn b/video/BUILD.gn
-index f7f773e62b..766f6b2fb0 100644
---- a/video/BUILD.gn
-+++ b/video/BUILD.gn
-@@ -73,6 +73,7 @@ rtc_library("video") {
-     ":frame_cadence_adapter",
-     ":frame_decode_scheduler",
-     ":frame_dumping_decoder",
-+    ":null_video_decoder",
-     ":task_queue_frame_decode_scheduler",
-     ":unique_timestamp_counter",
-     ":video_stream_buffer_controller",
-@@ -191,6 +192,23 @@ rtc_library("video") {
+diff --git a/call/rtp_demuxer.cc b/call/rtp_demuxer.cc
+index 598764b71c..e078347544 100644
+--- a/call/rtp_demuxer.cc
++++ b/call/rtp_demuxer.cc
+@@ -161,7 +161,13 @@ bool RtpDemuxer::AddSink(const RtpDemuxerCriteria& criteria,
    }
+ 
+   for (uint32_t ssrc : criteria.ssrcs()) {
+-    sink_by_ssrc_.emplace(ssrc, sink);
++    auto result = sink_by_ssrc_.emplace(ssrc, sink);
++    if (!result.second) {
++      if (signaled_ssrcs_.find(ssrc) == signaled_ssrcs_.end()) {
++        result.first->second = sink;
++      }
++    }
++    signaled_ssrcs_.insert(ssrc);
+   }
+ 
+   for (uint8_t payload_type : criteria.payload_types()) {
+@@ -231,10 +237,12 @@ bool RtpDemuxer::CriteriaWouldConflict(
+   for (uint32_t ssrc : criteria.ssrcs()) {
+     const auto sink_by_ssrc = sink_by_ssrc_.find(ssrc);
+     if (sink_by_ssrc != sink_by_ssrc_.end()) {
+-      RTC_LOG(LS_INFO) << criteria.ToString()
+-                       << " would conflict with existing sink = "
+-                       << sink_by_ssrc->second << " binding by SSRC=" << ssrc;
+-      return true;
++      if (signaled_ssrcs_.find(ssrc) != signaled_ssrcs_.end()) {
++        RTC_LOG(LS_INFO) << criteria.ToString()
++                         << " would conflict with existing sink = "
++                         << sink_by_ssrc->second << " binding by SSRC=" << ssrc;
++        return true;
++      }
+     }
+   }
+ 
+@@ -270,6 +278,10 @@ void RtpDemuxer::AddSink(absl::string_view rsid, RtpPacketSinkInterface* sink) {
+ 
+ bool RtpDemuxer::RemoveSink(const RtpPacketSinkInterface* sink) {
+   RTC_DCHECK(sink);
++  flat_set<uint32_t> ssrcs = GetSsrcsForSink(sink);
++  for (uint32_t ssrc : ssrcs) {
++    signaled_ssrcs_.erase(ssrc);
++  }
+   size_t num_removed = RemoveFromMapByValue(&sink_by_mid_, sink) +
+                        RemoveFromMapByValue(&sink_by_ssrc_, sink) +
+                        RemoveFromMultimapByValue(&sinks_by_pt_, sink) +
+diff --git a/call/rtp_demuxer.h b/call/rtp_demuxer.h
+index cc6a84c878..f2f76cb562 100644
+--- a/call/rtp_demuxer.h
++++ b/call/rtp_demuxer.h
+@@ -217,6 +217,7 @@ class RtpDemuxer {
+   flat_map<std::pair<std::string, std::string>, RtpPacketSinkInterface*>
+       sink_by_mid_and_rsid_;
+   flat_map<std::string, RtpPacketSinkInterface*> sink_by_rsid_;
++  flat_set<uint32_t> signaled_ssrcs_;
+ 
+   // Tracks all the MIDs that have been identified in added criteria. Used to
+   // determine if a packet should be dropped right away because the MID is
+diff --git a/call/rtp_demuxer_unittest.cc b/call/rtp_demuxer_unittest.cc
+index 363d58aa13..b878d2bbae 100644
+--- a/call/rtp_demuxer_unittest.cc
++++ b/call/rtp_demuxer_unittest.cc
+@@ -369,6 +369,89 @@ TEST_F(RtpDemuxerTest, OnRtpPacketCalledOnCorrectSinkByPayloadType) {
+   EXPECT_TRUE(demuxer_.OnRtpPacket(*packet));
  }
  
-+rtc_library("null_video_decoder") {
-+  visibility = [ "*" ]
++TEST_F(RtpDemuxerTest, DontSignalRtpPayloadTypeWhenPtDemuxingDisabled) {
++  constexpr uint32_t ssrc1 = 10;
++  constexpr uint32_t ssrc2 = 11;
++  constexpr uint8_t pt1 = 30;
++  constexpr uint8_t pt2 = 31;
 +
-+  sources = [
-+    "null_video_decoder.cc",
-+    "null_video_decoder.h",
-+  ]
++  // Sink 1 registered when PT demuxing is enabled (default).
++  MockRtpPacketSink sink1;
++  RtpDemuxerCriteria criteria1;
++  criteria1.payload_types() = {pt1};
++  EXPECT_TRUE(AddSink(criteria1, &sink1));
 +
-+  deps = [
-+    "../api/video:encoded_image",
-+    "../api/video_codecs:video_codecs_api",
-+    "../modules/video_coding:video_codec_interface",
-+    "../rtc_base:logging",
-+    "../rtc_base/system:rtc_export",
-+  ]
++  // Disable PT demuxing.
++  demuxer_.set_use_payload_type_demuxing(false);
++
++  // Sink 2 registered when PT demuxing is disabled.
++  MockRtpPacketSink sink2;
++  RtpDemuxerCriteria criteria2;
++  criteria2.payload_types() = {pt2};
++  EXPECT_TRUE(AddSink(criteria2, &sink2));
++
++  // Packet with pt1 should not go to sink1 because fallback is disabled.
++  auto packet1 = CreatePacketWithSsrc(ssrc1);
++  packet1->SetPayloadType(pt1);
++  EXPECT_CALL(sink1, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet1));
++
++  // Packet with pt2 should not go to sink2 because fallback is disabled and it
++  // was not registered by PT.
++  auto packet2 = CreatePacketWithSsrc(ssrc2);
++  packet2->SetPayloadType(pt2);
++  EXPECT_CALL(sink2, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet2));
 +}
 +
- rtc_library("frame_dumping_decoder") {
-   visibility = [ "*" ]
- 
-diff --git a/video/null_video_decoder.cc b/video/null_video_decoder.cc
-new file mode 100644
-index 0000000000..3ce581204a
---- /dev/null
-+++ b/video/null_video_decoder.cc
-@@ -0,0 +1,48 @@
-+/*
-+ *  Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
-+ *
-+ *  Use of this source code is governed by a BSD-style license
-+ *  that can be found in the LICENSE file in the root of the source
-+ *  tree. An additional intellectual property rights grant can be found
-+ *  in the file PATENTS.  All contributing project authors may
-+ *  be found in the AUTHORS file in the root of the source tree.
-+ */
++TEST_F(RtpDemuxerTest, DynamicPayloadTypeDemuxing) {
++  constexpr uint32_t ssrc = 10;
++  constexpr uint8_t payload_type = 30;
 +
-+#include "video/null_video_decoder.h"
++  MockRtpPacketSink sink;
++  RtpDemuxerCriteria criteria;
++  criteria.payload_types() = {payload_type};
 +
-+#include <cstdint>
++  demuxer_.set_use_payload_type_demuxing(false);
++  EXPECT_TRUE(AddSink(criteria, &sink));
 +
-+#include "api/video/encoded_image.h"
-+#include "api/video_codecs/video_decoder.h"
-+#include "modules/video_coding/include/video_error_codes.h"
-+#include "rtc_base/logging.h"
++  auto packet = CreatePacketWithSsrc(ssrc);
++  packet->SetPayloadType(payload_type);
 +
-+namespace webrtc {
++  EXPECT_CALL(sink, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet));
 +
-+bool NullVideoDecoder::Configure(const Settings& settings) {
-+  RTC_LOG(LS_ERROR) << "Can't initialize NullVideoDecoder.";
-+  return true;
++  demuxer_.set_use_payload_type_demuxing(true);
++
++  EXPECT_CALL(sink, OnRtpPacket(SamePacketAs(*packet))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet));
 +}
 +
-+int32_t NullVideoDecoder::Decode(const EncodedImage& input_image,
-+                                 int64_t render_time_ms) {
-+  RTC_LOG(LS_ERROR) << "The NullVideoDecoder doesn't support decoding.";
-+  return WEBRTC_VIDEO_CODEC_OK;
++TEST_F(RtpDemuxerTest, SignaledSsrcOverridesLearnedBinding) {
++  constexpr uint32_t ssrc = 10;
++  constexpr uint8_t payload_type = 30;
++
++  MockRtpPacketSink sink1;
++  RtpDemuxerCriteria criteria1;
++  criteria1.payload_types() = {payload_type};
++  EXPECT_TRUE(AddSink(criteria1, &sink1));
++
++  auto packet1 = CreatePacketWithSsrc(ssrc);
++  packet1->SetPayloadType(payload_type);
++  EXPECT_CALL(sink1, OnRtpPacket(SamePacketAs(*packet1))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet1));
++
++  MockRtpPacketSink sink2;
++  RtpDemuxerCriteria criteria2;
++  criteria2.ssrcs().insert(ssrc);
++  EXPECT_TRUE(AddSink(criteria2, &sink2));
++
++  auto packet2 = CreatePacketWithSsrc(ssrc);
++  EXPECT_CALL(sink1, OnRtpPacket(_)).Times(0);
++  EXPECT_CALL(sink2, OnRtpPacket(SamePacketAs(*packet2))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet2));
 +}
 +
-+int32_t NullVideoDecoder::RegisterDecodeCompleteCallback(
-+    DecodedImageCallback* callback) {
-+  RTC_LOG(LS_ERROR)
-+      << "Can't register decode complete callback on NullVideoDecoder.";
-+  return WEBRTC_VIDEO_CODEC_OK;
-+}
-+
-+int32_t NullVideoDecoder::Release() {
-+  return WEBRTC_VIDEO_CODEC_OK;
-+}
-+
-+const char* NullVideoDecoder::ImplementationName() const {
-+  return "NullVideoDecoder";
-+}
-+
-+}  // namespace webrtc
-diff --git a/video/null_video_decoder.h b/video/null_video_decoder.h
-new file mode 100644
-index 0000000000..3ed049c839
---- /dev/null
-+++ b/video/null_video_decoder.h
-@@ -0,0 +1,39 @@
-+/*
-+ *  Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
-+ *
-+ *  Use of this source code is governed by a BSD-style license
-+ *  that can be found in the LICENSE file in the root of the source
-+ *  tree. An additional intellectual property rights grant can be found
-+ *  in the file PATENTS.  All contributing project authors may
-+ *  be found in the AUTHORS file in the root of the source tree.
-+ */
-+
-+#ifndef VIDEO_NULL_VIDEO_DECODER_H_
-+#define VIDEO_NULL_VIDEO_DECODER_H_
-+
-+#include <cstdint>
-+
-+#include "api/video/encoded_image.h"
-+#include "api/video_codecs/video_decoder.h"
-+#include "rtc_base/system/rtc_export.h"
-+
-+namespace webrtc {
-+
-+// The decoder used when there is no real decoder implementation available.
-+class RTC_EXPORT NullVideoDecoder : public VideoDecoder {
-+ public:
-+  // These are NO-OPs except for RTC_LOG lines.
-+  bool Configure(const Settings& settings) override;
-+  int32_t Decode(const EncodedImage& input_image,
-+                 int64_t render_time_ms) override;
-+  int32_t RegisterDecodeCompleteCallback(
-+      DecodedImageCallback* callback) override;
-+  int32_t Release() override;
-+
-+  // This is exposed in getStats() as "decoderImplementation".
-+  const char* ImplementationName() const override;
-+};
-+
-+}  // namespace webrtc
-+
-+#endif  // VIDEO_NULL_VIDEO_DECODER_H_
-diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 8e3f6a8132..79624b6f51 100644
---- a/video/video_receive_stream2.cc
-+++ b/video/video_receive_stream2.cc
-@@ -88,6 +88,7 @@
- #include "video/decode_synchronizer.h"
- #include "video/frame_decode_scheduler.h"
- #include "video/frame_dumping_decoder.h"
-+#include "video/null_video_decoder.h"
- #include "video/receive_statistics_proxy.h"
- #include "video/render/incoming_video_stream.h"
- #include "video/task_queue_frame_decode_scheduler.h"
-@@ -170,33 +171,6 @@ RenderResolution InitialDecoderResolution(const FieldTrialsView& field_trials) {
-   return RenderResolution(320, 180);
- }
- 
--// Video decoder class to be used for unknown codecs. Doesn't support decoding
--// but logs messages to LS_ERROR.
--class NullVideoDecoder : public VideoDecoder {
-- public:
--  bool Configure(const Settings& settings) override {
--    RTC_LOG(LS_ERROR) << "Can't initialize NullVideoDecoder.";
--    return true;
--  }
--
--  int32_t Decode(const EncodedImage& input_image,
--                 int64_t render_time_ms) override {
--    RTC_LOG(LS_ERROR) << "The NullVideoDecoder doesn't support decoding.";
--    return WEBRTC_VIDEO_CODEC_OK;
--  }
--
--  int32_t RegisterDecodeCompleteCallback(
--      DecodedImageCallback* callback) override {
--    RTC_LOG(LS_ERROR)
--        << "Can't register decode complete callback on NullVideoDecoder.";
--    return WEBRTC_VIDEO_CODEC_OK;
--  }
--
--  int32_t Release() override { return WEBRTC_VIDEO_CODEC_OK; }
--
--  const char* ImplementationName() const override { return "NullVideoDecoder"; }
--};
--
- bool IsKeyFrameAndUnspecifiedResolution(const EncodedFrame& frame) {
-   return frame.IsKey() && frame.EncodedImage()._encodedWidth == 0 &&
-          frame.EncodedImage()._encodedHeight == 0;
-@@ -555,10 +529,8 @@ void VideoReceiveStream2::CreateAndRegisterExternalDecoder(
-                "VideoReceiveStream2::CreateAndRegisterExternalDecoder");
-   std::unique_ptr<VideoDecoder> video_decoder =
-       config_.decoder_factory->Create(env_, decoder.video_format);
--  // If we still have no valid decoder, we have to create a "Null" decoder
--  // that ignores all calls. The reason we can get into this state is that the
--  // old decoder factory interface doesn't have a way to query supported
--  // codecs.
-+  // The factory can end up in this state either if the format is not supported
-+  // or because a creation step failed, e.g. HW is unavailable.
-   if (!video_decoder) {
-     video_decoder = std::make_unique<NullVideoDecoder>();
-   }
+ TEST_F(RtpDemuxerTest, PacketsDeliveredInRightOrder) {
+   constexpr uint32_t ssrc = 101;
+   MockRtpPacketSink sink;
