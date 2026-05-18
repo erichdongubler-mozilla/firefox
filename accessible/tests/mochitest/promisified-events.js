@@ -325,9 +325,6 @@ function waitForStateChange(id, state, isEnabled, isExtra = false) {
   return waitForEvent(...stateChangeEventArgs(id, state, isEnabled, isExtra));
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Utility functions ported from events.js.
-
 /**
  * This function selects all text in the passed-in element if it has an editor,
  * before setting focus to it. This simulates behavio with the keyboard when

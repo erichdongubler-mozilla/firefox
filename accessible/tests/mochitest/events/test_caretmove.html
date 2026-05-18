@@ -15,7 +15,6 @@
           src="../promisified-events.js"></script>
 
   <script type="application/javascript">
-    // gA11yEventDumpToConsole = true;
 
     async function checkCaretMove(target, expectedOffset, isCollapsed) {
       let evt = await waitForEvent(EVENT_TEXT_CARET_MOVED, target);

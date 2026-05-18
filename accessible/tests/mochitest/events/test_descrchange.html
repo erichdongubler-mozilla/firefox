@@ -23,8 +23,6 @@
     // //////////////////////////////////////////////////////////////////////////
     // Do tests
 
-    // gA11yEventDumpToConsole = true; // debuggin
-
     async function doTests() {
       let descChanged = waitForEvent(EVENT_DESCRIPTION_CHANGE, "tst1");
       getNode("tst1").setAttribute("aria-describedby", "display");
