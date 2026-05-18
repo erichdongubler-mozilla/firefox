@@ -443,10 +443,10 @@ index 0000000000..45194f5ace
 +
 +#endif  // API_RTP_SENDER_SETPARAMETERS_CALLBACK_H_
 diff --git a/api/task_queue/BUILD.gn b/api/task_queue/BUILD.gn
-index ebc6ec0177..d0c8e6d843 100644
+index c40c481a7a..cb35bf1839 100644
 --- a/api/task_queue/BUILD.gn
 +++ b/api/task_queue/BUILD.gn
-@@ -29,6 +29,7 @@ rtc_library("task_queue") {
+@@ -28,6 +28,7 @@ rtc_library("task_queue") {
    ]
  }
  
@@ -454,7 +454,7 @@ index ebc6ec0177..d0c8e6d843 100644
  rtc_library("task_queue_test") {
    visibility = [ "*" ]
    testonly = true
-@@ -75,6 +76,7 @@ rtc_library("task_queue_test") {
+@@ -74,6 +75,7 @@ rtc_library("task_queue_test") {
      ]
    }
  }
@@ -463,10 +463,10 @@ index ebc6ec0177..d0c8e6d843 100644
  rtc_library("default_task_queue_factory") {
    visibility = [ "*" ]
 diff --git a/api/transport/BUILD.gn b/api/transport/BUILD.gn
-index 26737a2717..11528cd246 100644
+index a9c55b0cc1..df0f540588 100644
 --- a/api/transport/BUILD.gn
 +++ b/api/transport/BUILD.gn
-@@ -102,6 +102,7 @@ rtc_source_set("sctp_transport_factory_interface") {
+@@ -98,6 +98,7 @@ rtc_source_set("sctp_transport_factory_interface") {
  }
  
  rtc_library("stun_types") {
@@ -474,7 +474,7 @@ index 26737a2717..11528cd246 100644
    visibility = [ "*" ]
    sources = [
      "stun.cc",
-@@ -123,6 +124,7 @@ rtc_library("stun_types") {
+@@ -119,6 +120,7 @@ rtc_library("stun_types") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  }

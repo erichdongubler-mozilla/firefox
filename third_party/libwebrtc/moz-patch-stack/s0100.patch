@@ -155,7 +155,7 @@ index edd3dcd701..c8cdec999b 100644
  
  if (rtc_include_tests) {
 diff --git a/api/audio_codecs/BUILD.gn b/api/audio_codecs/BUILD.gn
-index 0d5b919e8a..b5ec38c29d 100644
+index b5e5b105cc..2a39ce7db7 100644
 --- a/api/audio_codecs/BUILD.gn
 +++ b/api/audio_codecs/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -170,7 +170,7 @@ index 0d5b919e8a..b5ec38c29d 100644
  
  rtc_library("audio_codecs_api") {
 diff --git a/api/audio_codecs/L16/BUILD.gn b/api/audio_codecs/L16/BUILD.gn
-index 8ce7122cec..b7ec211eaf 100644
+index 835524931f..ad232205e8 100644
 --- a/api/audio_codecs/L16/BUILD.gn
 +++ b/api/audio_codecs/L16/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -185,7 +185,7 @@ index 8ce7122cec..b7ec211eaf 100644
  
  rtc_library("audio_encoder_L16") {
 diff --git a/api/audio_codecs/g711/BUILD.gn b/api/audio_codecs/g711/BUILD.gn
-index 6c00e040fe..380e167dc6 100644
+index cfe3511e7a..591baaa689 100644
 --- a/api/audio_codecs/g711/BUILD.gn
 +++ b/api/audio_codecs/g711/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -200,7 +200,7 @@ index 6c00e040fe..380e167dc6 100644
  
  rtc_library("audio_encoder_g711") {
 diff --git a/api/audio_codecs/g722/BUILD.gn b/api/audio_codecs/g722/BUILD.gn
-index a3ee0d4e0c..322c52ac64 100644
+index 9c3c438d43..2b087726f1 100644
 --- a/api/audio_codecs/g722/BUILD.gn
 +++ b/api/audio_codecs/g722/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -215,7 +215,7 @@ index a3ee0d4e0c..322c52ac64 100644
  
  rtc_source_set("audio_encoder_g722_config") {
 diff --git a/api/audio_codecs/opus/BUILD.gn b/api/audio_codecs/opus/BUILD.gn
-index 31b3383edc..66cf8caf9f 100644
+index 12cca839b9..262265239a 100644
 --- a/api/audio_codecs/opus/BUILD.gn
 +++ b/api/audio_codecs/opus/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -245,7 +245,7 @@ index 40714b196e..2c6b39f59e 100644
  
  if (rtc_include_tests) {
 diff --git a/api/video/BUILD.gn b/api/video/BUILD.gn
-index 0566d8b205..a9d312fa13 100644
+index 55f8b453f4..053ff2cd5a 100644
 --- a/api/video/BUILD.gn
 +++ b/api/video/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -260,7 +260,7 @@ index 0566d8b205..a9d312fa13 100644
  
  rtc_library("video_rtp_headers") {
 diff --git a/api/video_codecs/BUILD.gn b/api/video_codecs/BUILD.gn
-index 1ec3dff92c..522907e1f1 100644
+index 0afffa1edd..71595c9ad9 100644
 --- a/api/video_codecs/BUILD.gn
 +++ b/api/video_codecs/BUILD.gn
 @@ -8,8 +8,8 @@
