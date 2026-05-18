@@ -198,10 +198,6 @@ void NativeLayerRootWayland::Init() {
         return !isVisible;
       });
 
-  if (StaticPrefs::widget_wayland_coordinates_scale_enabled()) {
-    mRootSurface->EnableCoordinatesScaleLocked(lock);
-  }
-
   // Get the best DMABuf format for root wl_surface. We use the same
   // for child surfaces as we expect them to share the same window/monitor.
   //
@@ -718,12 +714,6 @@ NativeLayerWayland::NativeLayerWayland(NativeLayerRootWayland* aRootLayer,
 
   mState.mMutatedStackingOrder = true;
   mState.mMutatedPlacement = true;
-
-  // TODO: Move more init here to avoid map/unmap overhead
-  if (StaticPrefs::widget_wayland_coordinates_scale_enabled()) {
-    WaylandSurfaceLock lock(mSurface);
-    mSurface->EnableCoordinatesScaleLocked(lock);
-  }
 }
 
 NativeLayerWayland::~NativeLayerWayland() {
@@ -884,11 +874,6 @@ void NativeLayerWayland::UpdateLayerPlacementLocked(
   Rect surfaceRectClipped = Rect(0, 0, (float)mSize.width, (float)mSize.height);
   surfaceRectClipped = surfaceRectClipped.Intersect(Rect(mDisplayRect));
 
-  LOGVERBOSE(
-      " size [%d x %d] clipped (display rect) size [%f, %f] -> [%f x %f]",
-      mSize.width, mSize.height, surfaceRectClipped.x, surfaceRectClipped.y,
-      surfaceRectClipped.width, surfaceRectClipped.height);
-
   transform2D.PostTranslate((float)mPosition.x, (float)mPosition.y);
   surfaceRectClipped = transform2D.TransformBounds(surfaceRectClipped);
 
@@ -912,32 +897,27 @@ void NativeLayerWayland::UpdateLayerPlacementLocked(
   mSurface->SetTransformFlippedLocked(aProofOfLock, transform2D._11 < 0.0,
                                       transform2D._22 < 0.0);
 
+  // TODO! Downscale introduces rounding errors here.
   auto unscaledRect =
-      mSurface->HasCoordinatesScale()
-          ? gfx::RoundedToInt(surfaceRectClipped)
-          : gfx::RoundedToInt(surfaceRectClipped / UnknownScaleFactor(mScale));
+      gfx::RoundedToInt(surfaceRectClipped / UnknownScaleFactor(mScale));
   auto rect = DesktopIntRect::FromUnknownRect(unscaledRect);
   mSurface->MoveLocked(aProofOfLock, rect.TopLeft());
   mSurface->SetViewPortDestLocked(aProofOfLock, rect.Size());
 
-  LOGVERBOSE("  destination [%d, %d] -> [%d x %d] coordinate scale [%f]",
-             rect.x, rect.y, rect.width, rect.height,
-             mSurface->GetCoordinatesScale());
+  LOGVERBOSE(
+      "NativeLayerWayland::UpdateLayerPlacement(): destination [%d,%d] -> [%d "
+      "x %d]",
+      rect.x, rect.y, rect.width, rect.height);
 
   auto transform2DInversed = transform2D.Inverse();
   Rect bufferClip = transform2DInversed.TransformBounds(surfaceRectClipped);
-  auto unscaledViewportRect =
-      bufferClip.Intersect(Rect(0, 0, mSize.width, mSize.height));
-  auto viewportRect =
-      mSurface->HasCoordinatesScale()
-          ? gfx::RoundedToInt(
-                unscaledViewportRect *
-                UnknownScaleFactor(mSurface->GetCoordinatesScale()))
-          : gfx::RoundedToInt(unscaledViewportRect);
+  auto viewportRect = gfx::RoundedToInt(
+      bufferClip.Intersect(Rect(0, 0, mSize.width, mSize.height)));
 
-  LOGVERBOSE("  source [%d, %d] -> [%d x %d] coordinate scale [%f]",
-             viewportRect.x, viewportRect.y, viewportRect.width,
-             viewportRect.height, mSurface->GetCoordinatesScale());
+  LOGVERBOSE(
+      "NativeLayerWayland::UpdateLayerPlacement(): source [%d,%d] -> [%d x %d]",
+      viewportRect.x, viewportRect.y, viewportRect.width, viewportRect.height);
+
   mSurface->SetViewPortSourceRectLocked(
       aProofOfLock, DesktopIntRect::FromUnknownRect(viewportRect));
 }
