@@ -531,9 +531,12 @@ def select_tasks_to_lambda(config, tasks):
     all motionmark tests
     speedometer3 test
     unity-webgl test
-    all non-power-testing youtube-playback tests
+    all youtube-playback tests (including power)
     all vpl (video-playback-latency) tests
     all pageload tests (ideally fenix/CaR/ChR)
+    jetstream2/jetstream3 benchmarks
+    background/foreground resource tests (browsertime-power idle/idle-bg)
+    trr-* performance tests
 
     """
     tests_to_run_at_lambdatest = [
@@ -545,7 +548,25 @@ def select_tasks_to_lambda(config, tasks):
         "youtube-playback-av1-sfr",
         "youtube-playback-hfr",
         "youtube-playback-vp9-sfr",
+        "youtube-playback-h264-sfr",
+        "youtube-playback-h264-720p60",
+        "youtube-playback-vp9-720p60",
         "tp6m",
+        "jetstream2",
+        "jetstream3",
+        "browsertime-power",
+        "browsertime-trr-performance",
+    ]
+
+    # Bug 2017151 - newly-migrated tests run at tier 2 while stabilizing on LT
+    tests_to_force_tier2 = [
+        "youtube-playback-h264-sfr",
+        "youtube-playback-h264-720p60",
+        "youtube-playback-vp9-720p60",
+        "jetstream2",
+        "jetstream3",
+        "browsertime-power",
+        "browsertime-trr-performance",
     ]
 
     def redirect_to_lt(task):
@@ -566,6 +587,10 @@ def select_tasks_to_lambda(config, tasks):
             ])
         task["worker"]["command"] = cmds
         task["worker"]["env"]["DISABLE_USB_POWER_METER_RESET"] = "1"
+        # Bug 2017151 - newly-migrated tests run at tier 2 while stabilizing on LT
+        if any(t in task["label"] for t in tests_to_force_tier2):
+            th = task.setdefault("treeherder", {})
+            th["tier"] = max(th.get("tier", 1), 2)
         return task
 
     def make_sp3_lt_copy(task):
