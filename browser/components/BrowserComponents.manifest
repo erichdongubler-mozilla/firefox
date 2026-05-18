@@ -48,9 +48,13 @@ category browser-window-load-before-sessionstore-init resource:///modules/ZoomUI
 category browser-window-load-before-sessionstore-init chrome://browser/content/sidebar/browser-sidebar.js SidebarController.init
 category browser-window-load-before-sessionstore-init chrome://browser/content/downloads/indicator.js DownloadsButton.init
 
-category browser-window-load chrome://browser/content/browser.js gUIDensity.init
-category browser-window-load chrome://browser/content/browser.js Win10TabletModeUpdater.init
-category browser-window-load chrome://browser/content/browser.js CombinedStopReload.ensureInitialized
+# The category manager uses the entry name (the URL below) as a unique key
+# per category, so consumers sharing the same module need a `#<id>` suffix
+# to avoid overwriting each other. BrowserUtils.callModulesFromCategory
+# strips the suffix before using the URL.
+category browser-window-load chrome://browser/content/browser.js#gUIDensity gUIDensity.init
+category browser-window-load chrome://browser/content/browser.js#Win10TabletModeUpdater Win10TabletModeUpdater.init
+category browser-window-load chrome://browser/content/browser.js#CombinedStopReload CombinedStopReload.ensureInitialized
 category browser-window-load moz-src:///browser/modules/PrivateBrowsingUI.sys.mjs PrivateBrowsingUI.init
 category browser-window-load resource:///modules/taskbartabs/TaskbarTabsChrome.sys.mjs TaskbarTabsChrome.init
 category browser-window-load chrome://browser/content/browser-pageActions.js BrowserPageActions.init
@@ -74,10 +78,12 @@ category browser-window-unload chrome://browser/content/sidebar/browser-sidebar.
 category browser-window-unload chrome://browser/content/browser-captivePortal.js CaptivePortalWatcher.uninit
 category browser-window-unload moz-src:///browser/components/customkeys/CustomKeys.sys.mjs CustomKeys.uninitWindow
 category browser-window-unload chrome://browser/content/browser-toolbarKeyNav.js ToolbarKeyboardNavigator.uninit
-category browser-window-unload chrome://browser/content/browser.js Win10TabletModeUpdater.uninit
-category browser-window-unload chrome://browser/content/browser.js CombinedStopReload.uninit
+# `#<id>` suffix disambiguates multiple consumers in the same module; see
+# the comment in `browser-window-load` above.
+category browser-window-unload chrome://browser/content/browser.js#Win10TabletModeUpdater Win10TabletModeUpdater.uninit
+category browser-window-unload chrome://browser/content/browser.js#CombinedStopReload CombinedStopReload.uninit
 category browser-window-unload chrome://browser/content/browser-addons.js gUnifiedExtensions.uninit
-category browser-window-unload chrome://browser/content/browser.js FirefoxViewHandler.uninit
+category browser-window-unload chrome://browser/content/browser.js#FirefoxViewHandler FirefoxViewHandler.uninit
 category browser-window-unload moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs NewTabPagePreloading.removePreloadedBrowser
 
 # The category below is specific to Tabbrowser destruction. For consumers that need to uninitialize during
