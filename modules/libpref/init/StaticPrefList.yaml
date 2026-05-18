@@ -5361,7 +5361,7 @@
 # and disable this optimization for a site.
 - name: dom.timeout.defer_during_load
   type: bool
-  value: false
+  value: true
   mirror: always
 
 # Sites we shouldn't defer timeouts and intervals while loading a page.
