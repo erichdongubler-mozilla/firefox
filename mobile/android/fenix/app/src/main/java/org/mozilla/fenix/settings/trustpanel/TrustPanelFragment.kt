@@ -32,7 +32,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat.Type.systemBars
 import androidx.fragment.compose.content
 import androidx.lifecycle.coroutineScope
 import androidx.navigation.fragment.findNavController
@@ -52,12 +53,9 @@ import mozilla.components.lib.state.ext.consumeFlow
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.ktx.android.view.setNavigationBarColorCompat
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import org.mozilla.fenix.BuildConfig
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.menu.IPProtectionMenuBinding
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
@@ -99,8 +97,6 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
     private val requestPermissionsLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { isGranted: Map<String, Boolean> -> permissionsCallback.invoke(isGranted) }
-
-    private lateinit var browsingModeManager: BrowsingModeManager
 
     private val store by fragmentStore(TrustPanelState()) {
         val lifecycleScope = viewLifecycleOwner.lifecycle.coroutineScope
@@ -152,18 +148,15 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         (super.onCreateDialog(savedInstanceState) as BottomSheetDialog).apply {
             setOnShowListener {
-                val safeActivity = activity ?: return@setOnShowListener
-                browsingModeManager = (safeActivity as HomeActivity).browsingModeManager
-
-                val navigationBarColor = if (browsingModeManager.mode.isPrivate) {
-                    ContextCompat.getColor(context, R.color.fx_mobile_private_layer_color_3)
-                } else {
-                    ContextCompat.getColor(context, R.color.fx_mobile_layer_color_3)
+                val bottomSheet = findViewById<FrameLayout>(materialR.id.design_bottom_sheet)
+                bottomSheet?.let {
+                    ViewCompat.setOnApplyWindowInsetsListener(it) { view, insets ->
+                        val systemBarInsets = insets.getInsets(systemBars())
+                        view.setPadding(0, systemBarInsets.top, 0, systemBarInsets.bottom)
+                        insets
+                    }
                 }
-                window?.setNavigationBarColorCompat(navigationBarColor)
-
-                findViewById<FrameLayout>(materialR.id.design_bottom_sheet)
-                    ?.setBackgroundResource(android.R.color.transparent)
+                bottomSheet?.setBackgroundResource(R.drawable.bottom_sheet_with_top_rounded_corners)
 
                 behavior.peekHeight = resources.displayMetrics.heightPixels
                 behavior.state = BottomSheetBehavior.STATE_EXPANDED

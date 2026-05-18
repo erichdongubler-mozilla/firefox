@@ -200,12 +200,8 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                 val bottomSheet = findViewById<View?>(materialR.id.design_bottom_sheet)
                 bottomSheet?.let {
                     ViewCompat.setOnApplyWindowInsetsListener(it) { view, insets ->
-                        view.setPadding(
-                            0,
-                            insets.getInsets(systemBars()).top,
-                            0,
-                            insets.getInsets(systemBars()).bottom,
-                        )
+                        val systemBarInsets = insets.getInsets(systemBars())
+                        view.setPadding(0, systemBarInsets.top, 0, systemBarInsets.bottom)
                         insets
                     }
                 }
