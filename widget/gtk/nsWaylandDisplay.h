@@ -22,6 +22,7 @@
 #include "mozilla/widget/color-management-v1-client-protocol.h"
 #include "mozilla/widget/color-representation-v1-client-protocol.h"
 #include "mozilla/widget/xdg-shell-client-protocol.h"
+#include "mozilla/widget/xx-fractional-scale-v2-client-protocol.h"
 #include "mozilla/widget/xx-pip-v1-client-protocol.h"
 #include "mozilla/widget/xx-session-management-v1-client-protocol.h"
 
@@ -72,6 +73,9 @@ class nsWaylandDisplay {
   wp_fractional_scale_manager_v1* GetFractionalScaleManager() {
     return mFractionalScaleManager;
   }
+  xx_fractional_scale_manager_v2* GetFractionalScaleManagerV2() {
+    return mFractionalScaleManagerV2;
+  }
   bool IsPrimarySelectionEnabled() { return mIsPrimarySelectionEnabled; }
 
   wl_pointer* GetPointer() { return mPointer; }
@@ -106,6 +110,9 @@ class nsWaylandDisplay {
   void SetAppMenuManager(org_kde_kwin_appmenu_manager* appMenuManager);
   void SetFractionalScaleManager(wp_fractional_scale_manager_v1* aManager) {
     mFractionalScaleManager = aManager;
+  }
+  void SetFractionalScaleManagerV2(xx_fractional_scale_manager_v2* aManager) {
+    mFractionalScaleManagerV2 = aManager;
   }
   void EnablePrimarySelection() { mIsPrimarySelectionEnabled = true; }
 
@@ -194,6 +201,7 @@ class nsWaylandDisplay {
   xdg_activation_v1* mXdgActivation = nullptr;
   org_kde_kwin_appmenu_manager* mAppMenuManager = nullptr;
   wp_fractional_scale_manager_v1* mFractionalScaleManager = nullptr;
+  xx_fractional_scale_manager_v2* mFractionalScaleManagerV2 = nullptr;
   wp_color_manager_v1* mColorManager = nullptr;
   wp_color_representation_manager_v1* mColorRepresentationManager = nullptr;
   xx_pip_shell_v1* mPipShell = nullptr;

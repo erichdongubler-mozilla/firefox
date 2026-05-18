@@ -216,21 +216,18 @@ class WaylandSurface final {
       const WaylandSurfaceLock& aProofOfLock,
       std::function<void(void)> aFractionalScaleCallback, bool aManageViewport);
   bool EnableCeiledScaleLocked(const WaylandSurfaceLock& aProofOfLock);
+  bool EnableCoordinatesScaleLocked(const WaylandSurfaceLock& aProofOfLock);
 
-  bool IsFractionalScaleLocked(const WaylandSurfaceLock& aProofOfLock) const {
-    return mScaleType == ScaleType::Disabled;
-  }
   bool IsCeiledScaleLocked(const WaylandSurfaceLock& aProofOfLock) const {
     return mScaleType == ScaleType::Ceiled;
-  }
-  bool IsScaleEnabledLocked(const WaylandSurfaceLock& aProofOfLock) const {
-    return mScaleType != ScaleType::Disabled;
   }
 
   // Returns scale as float point number. If WaylandSurface is not mapped,
   // return fractional scale of parent surface or monitor.
   static constexpr const double sNoScale = -1;
   double GetScale() const;
+  double GetCoordinatesScale() const;
+  bool HasCoordinatesScale() const { return !!mCoordinatesScaleManager; }
 
   // Called when screen ceiled scale changed or set initial scale before we map
   // and paint the surface.
@@ -241,6 +238,9 @@ class WaylandSurface final {
   static void FractionalScaleHandler(void* data,
                                      struct wp_fractional_scale_v1* info,
                                      uint32_t wire_scale);
+  static void CoordinatesScaleHandler(
+      void* data, struct xx_fractional_scale_v2* xx_fractional_scale_v2,
+      uint32_t scale_8_24);
 
   static void AfterPaintHandler(GdkFrameClock* aClock, void* aData);
 
@@ -490,8 +490,10 @@ class WaylandSurface final {
   // mScreenScale is set from main thread only but read from
   // different threads.
   mozilla::Atomic<double, mozilla::Relaxed> mScreenScale{sNoScale};
+  mozilla::Atomic<double, mozilla::Relaxed> mCoordinatesScale{sNoScale};
 
   wp_fractional_scale_v1* mFractionalScaleListener = nullptr;
+  xx_fractional_scale_v2* mCoordinatesScaleManager = nullptr;
 
   // mFractionalScaleCallback is called from
   // wp_fractional_scale_v1_add_listener when scale is changed.

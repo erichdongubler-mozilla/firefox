@@ -576,6 +576,7 @@ void WaylandSurface::UnmapLocked(WaylandSurfaceLock& aSurfaceLock) {
   mViewportSourceRect = DesktopIntRect(-1, -1, -1, -1);
 
   MozClearPointer(mFractionalScaleListener, wp_fractional_scale_v1_destroy);
+  MozClearPointer(mCoordinatesScaleManager, xx_fractional_scale_v2_destroy);
   MozClearPointer(mSubsurface, wl_subsurface_destroy);
   MozClearPointer(mColorSurface, wp_color_management_surface_v1_destroy);
   MozClearPointer(mColorRepresentationSurface,
@@ -783,8 +784,6 @@ bool WaylandSurface::EnableFractionalScaleLocked(
     std::function<void(void)> aFractionalScaleCallback, bool aManageViewport) {
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
 
-  LOGWAYLAND("WaylandSurface::SetupFractionalScale()");
-
   MOZ_DIAGNOSTIC_ASSERT(!mFractionalScaleListener);
   auto* manager = WaylandDisplayGet()->GetFractionalScaleManager();
   if (!manager) {
@@ -793,6 +792,7 @@ bool WaylandSurface::EnableFractionalScaleLocked(
         "FractionalScaleManager");
     return false;
   }
+  LOGWAYLAND("WaylandSurface::SetupFractionalScale()");
   mFractionalScaleListener =
       wp_fractional_scale_manager_v1_get_fractional_scale(manager, mSurface);
   wp_fractional_scale_v1_add_listener(mFractionalScaleListener,
@@ -814,6 +814,43 @@ bool WaylandSurface::EnableFractionalScaleLocked(
   // Init scale to default values and load ceiled screen scale from GdkWindow.
   // We use it as fallback before we get mScreenScale from system.
   mScaleType = ScaleType::Fractional;
+  return true;
+}
+
+void WaylandSurface::CoordinatesScaleHandler(
+    void* data, struct xx_fractional_scale_v2* xx_fractional_scale_v2,
+    uint32_t scale_8_24) {
+  AssertIsOnMainThread();
+  WaylandSurface* waylandSurface = static_cast<WaylandSurface*>(data);
+
+  waylandSurface->mCoordinatesScale = scale_8_24 / (1 << 24);
+
+  LOGS("[%p]: WaylandSurface::CoordinatesScaleHandler() scale: %f\n",
+       waylandSurface->mLoggingWidget,
+       (double)waylandSurface->mCoordinatesScale);
+
+  xx_fractional_scale_v2_set_scale_factor(
+      waylandSurface->mCoordinatesScaleManager, scale_8_24);
+}
+
+static const struct xx_fractional_scale_v2_listener coordinates_scale_listener =
+    {
+        .scale_factor = WaylandSurface::CoordinatesScaleHandler,
+};
+
+bool WaylandSurface::EnableCoordinatesScaleLocked(
+    const WaylandSurfaceLock& aProofOfLock) {
+  MOZ_DIAGNOSTIC_ASSERT(!mCoordinatesScaleManager);
+  auto* manager = WaylandDisplayGet()->GetFractionalScaleManagerV2();
+  if (!manager) {
+    return false;
+  }
+
+  LOGWAYLAND("WaylandSurface::EnableCoordinatesScaleLocked()");
+  mCoordinatesScaleManager =
+      xx_fractional_scale_manager_v2_get_fractional_scale(manager, mSurface);
+  xx_fractional_scale_v2_add_listener(mCoordinatesScaleManager,
+                                      &coordinates_scale_listener, this);
   return true;
 }
 
@@ -1306,6 +1343,8 @@ double WaylandSurface::GetScale() const {
 
   return ScreenHelperGTK::GetGTKMonitorFractionalScaleFactor();
 }
+
+double WaylandSurface::GetCoordinatesScale() const { return mCoordinatesScale; }
 
 void WaylandSurface::SetParentLocked(const WaylandSurfaceLock& aProofOfLock,
                                      RefPtr<WaylandSurface> aParent) {
