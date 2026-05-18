@@ -1647,8 +1647,14 @@ void CustomElementReactionsStack::CreateAndPushElementQueue() {
   MOZ_ASSERT(mRecursionDepth);
   MOZ_ASSERT(!mIsElementQueuePushedForCurrentRecursionDepth);
 
-  // Push a new element queue onto the custom element reactions stack.
-  mReactionsStack.AppendElement(MakeUnique<ElementQueue>());
+  // Push an element queue onto the custom element reactions stack, reusing
+  // the cached one if available to avoid a heap allocation.
+  if (mCachedElementQueue) {
+    MOZ_ASSERT(mCachedElementQueue->IsEmpty());
+    mReactionsStack.AppendElement(std::move(mCachedElementQueue));
+  } else {
+    mReactionsStack.AppendElement(MakeUnique<ElementQueue>());
+  }
   mIsElementQueuePushedForCurrentRecursionDepth = true;
 }
 
@@ -1682,7 +1688,14 @@ void CustomElementReactionsStack::PopAndInvokeElementQueue() {
       lastIndex == mReactionsStack.Length() - 1,
       "reactions created by InvokeReactions() should be consumed and removed");
 
+  UniquePtr<ElementQueue> popped = std::move(mReactionsStack.LastElement());
   mReactionsStack.RemoveLastElement();
+  // Cache the popped queue for reuse, but only if it still uses inline
+  // storage so we don't hold on to a grown heap buffer.
+  if (!mCachedElementQueue && popped->Capacity() == kElementQueueInlineSize) {
+    popped->ClearAndRetainStorage();
+    mCachedElementQueue = std::move(popped);
+  }
   mIsElementQueuePushedForCurrentRecursionDepth = false;
 }
 

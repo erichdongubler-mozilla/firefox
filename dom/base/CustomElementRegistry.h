@@ -199,7 +199,8 @@ class CustomElementReactionsStack {
   // We need to lookup ElementReactionQueueMap again to get relevant reaction
   // queue. The choice of 3 for the auto size here is based on running Custom
   // Elements wpt tests.
-  typedef AutoTArray<RefPtr<Element>, 3> ElementQueue;
+  static constexpr size_t kElementQueueInlineSize = 3;
+  typedef AutoTArray<RefPtr<Element>, kElementQueueInlineSize> ElementQueue;
 
   /**
    * Enqueue a custom element upgrade reaction
@@ -286,6 +287,11 @@ class CustomElementReactionsStack {
 
   // The choice of 8 for the auto size here is based on gut feeling.
   AutoTArray<UniquePtr<ElementQueue>, 8> mReactionsStack;
+  // A cached ElementQueue, moved out when pushed onto mReactionsStack and
+  // moved back on pop, to avoid a heap allocation per push/pop cycle. Only
+  // cached when the queue still uses its inline storage, so we don't hold
+  // on to a grown buffer.
+  UniquePtr<ElementQueue> mCachedElementQueue;
   ElementQueue mBackupQueue;
   // https://html.spec.whatwg.org/#enqueue-an-element-on-the-appropriate-element-queue
   bool mIsBackupQueueProcessing;
