@@ -3244,6 +3244,18 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 #endif  // #if !defined(RELEASE_OR_BETA) || defined(DEBUG)
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
+
+  // Handle fn+f (Globe+F) to toggle fullscreen. We must intercept this before
+  // the TextInputHandler processes it, otherwise it gets treated as normal 'f'
+  // character input.
+  if ([theEvent keyCode] == kVK_ANSI_F &&
+      ([theEvent modifierFlags] &
+       NSEventModifierFlagDeviceIndependentFlagsMask) ==
+          NSEventModifierFlagFunction) {
+    [[self window] toggleFullScreen:nil];
+    return;
+  }
+
   if (mGeckoChild) {
     if (mTextInputHandler) {
       sUniqueKeyEventId++;
