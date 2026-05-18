@@ -1,216 +1,152 @@
-From: Tommi <tommi@webrtc.org>
-Date: Mon, 20 Apr 2026 10:25:57 +0200
-Subject: (cherry-pick-branch-heads/7778) [M148] Relax RTP header extension ID
- reuse checks in RtpTransport
+From: Harald Alvestrand <hta@webrtc.org>
+Date: Fri, 10 Apr 2026 11:52:19 +0000
+Subject: (cherry-pick-branch-heads/7778) [M148] Fix TOCTOU race in
+ RtpVideoSender::OnVideoLayersAllocationUpdated
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-Removing the historical_rtp_header_extensions_ list and instead only
-check header_extensions_by_mid_ for conflicts with active extensions.
+RtpVideoSender::OnVideoLayersAllocationUpdated runs on the encoder thread,
+checks if it's active, and then posts a task to the transport queue to
+update module status.
 
-Also borrowing a test for this provided by philipp.hancke.
+If SetSending(false) is called on the transport queue before the posted
+task runs, the task would previously re-register modules in PacketRouter
+even though active_ was false. This lead to dangling pointers in
+PacketRouter when the RtpVideoSender was destroyed.
 
-(cherry picked from commit 8915e3564c0593501ba1a0ffa1ac08b8cb7cd00f)
+This CL adds an IsActive() check inside the posted task to ensure we don't
+re-register modules if the sender has been deactivated.
 
-Fixed: chromium:504980502
-Bug: webrtc:503013383
-Change-Id: I08874edb1d46d638641c74255fe5379622a43c0e
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464501
-Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
-Reviewed-by: Harald Alvestrand <hta@webrtc.org>
-Cr-Original-Commit-Position: refs/heads/main@{#47472}
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/465760
-Cr-Commit-Position: refs/branch-heads/7778@{#4}
+(cherry picked from commit 77d265670fa7d7f358c86c54704a6e97c27a6005)
+
+Bug: chromium:500767595
+Test: RtpVideoSenderTest.PostTaskRaceDoesNotLeadToDanglingPointer
+Change-Id: I18827c34bece7f5ebc41d159d9e19e356afbc404
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/462880
+Commit-Queue: Harald Alvestrand <hta@webrtc.org>
+Reviewed-by: Erik Språng <sprang@webrtc.org>
+Cr-Original-Commit-Position: refs/heads/main@{#47384}
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/465961
+Cr-Commit-Position: refs/branch-heads/7778@{#5}
 Cr-Branched-From: ca896b7ffef011bbf6957c99d413c5aac602c99f-refs/heads/main@{#47319}
 ---
- pc/channel_unittest.cc                   |  6 ++-
- pc/peer_connection_simulcast_unittest.cc | 55 ++++++++++++++++++++++++
- pc/rtp_transport.cc                      | 40 +++++++----------
- pc/rtp_transport.h                       |  3 --
- pc/rtp_transport_unittest.cc             | 22 ++++++++++
- 5 files changed, 97 insertions(+), 29 deletions(-)
+ call/BUILD.gn                     |  1 +
+ call/rtp_video_sender.cc          |  5 +++
+ call/rtp_video_sender_unittest.cc | 70 +++++++++++++++++++++++++++++++
+ 3 files changed, 76 insertions(+)
 
-diff --git a/pc/channel_unittest.cc b/pc/channel_unittest.cc
-index 8a91c4750a..62ea4d8f72 100644
---- a/pc/channel_unittest.cc
-+++ b/pc/channel_unittest.cc
-@@ -769,8 +769,10 @@ class ChannelTest : public ::testing::Test {
-     });
-     RTCError error =
-         channel1_->SetLocalContent(&local_updated, SdpType::kOffer);
--    EXPECT_FALSE(error.ok());
--    EXPECT_THAT(error.message(), HasSubstr("RTP extension ID reassignment"));
-+    // Expected to succeed because the mapping for ID 1 was cleared by the
-+    // previous SetLocalContent call (which set extensions to empty).
-+    // RtpTransport allows reuse when not in use by any active MID.
-+    EXPECT_TRUE(error.ok());
-   }
- 
-   // Test that SetLocalContent and SetRemoteContent properly configure
-diff --git a/pc/peer_connection_simulcast_unittest.cc b/pc/peer_connection_simulcast_unittest.cc
-index 2cd0df043b..e8cd73f95d 100644
---- a/pc/peer_connection_simulcast_unittest.cc
-+++ b/pc/peer_connection_simulcast_unittest.cc
-@@ -556,4 +556,59 @@ TEST_F(PeerConnectionSimulcastTests, SimulcastSldModificationRejected) {
-   EXPECT_TRUE(modified_offer);
-   EXPECT_TRUE(local->SetLocalDescription(std::move(modified_offer)));
+diff --git a/call/BUILD.gn b/call/BUILD.gn
+index 815d28a81b..a78433233a 100644
+--- a/call/BUILD.gn
++++ b/call/BUILD.gn
+@@ -550,6 +550,7 @@ if (rtc_include_tests) {
+         "../api/video:video_codec_constants",
+         "../api/video:video_frame",
+         "../api/video:video_frame_type",
++        "../api/video:video_layers_allocation",
+         "../api/video:video_rtp_headers",
+         "../api/video_codecs:video_codecs_api",
+         "../audio",
+diff --git a/call/rtp_video_sender.cc b/call/rtp_video_sender.cc
+index 73e8898784..7267add42b 100644
+--- a/call/rtp_video_sender.cc
++++ b/call/rtp_video_sender.cc
+@@ -695,6 +695,11 @@ void RtpVideoSender::OnVideoLayersAllocationUpdated(
+     transport_queue_.PostTask(
+         SafeTask(safety_.flag(), [this, sending = std::move(sending)] {
+           RTC_DCHECK_RUN_ON(&transport_checker_);
++          // It's possible for another task to be scheduled on the transport
++          // checker ahead of this call that makes the sender not active.
++          if (!IsActive()) {
++            return;
++          }
+           RTC_CHECK_EQ(sending.size(), rtp_streams_.size());
+           for (size_t i = 0; i < sending.size(); ++i) {
+             SetModuleIsActive(sending[i], *rtp_streams_[i].rtp_rtcp);
+diff --git a/call/rtp_video_sender_unittest.cc b/call/rtp_video_sender_unittest.cc
+index a979e05db7..d7d30dfb29 100644
+--- a/call/rtp_video_sender_unittest.cc
++++ b/call/rtp_video_sender_unittest.cc
+@@ -40,6 +40,7 @@
+ #include "api/video/encoded_image.h"
+ #include "api/video/video_codec_type.h"
+ #include "api/video/video_frame_type.h"
++#include "api/video/video_layers_allocation.h"
+ #include "api/video_codecs/video_encoder.h"
+ #include "call/rtp_config.h"
+ #include "call/rtp_transport_config.h"
+@@ -1607,4 +1608,73 @@ TEST(RtpVideoSenderTest, RetransmitsBaseLayerOnly) {
+   EXPECT_EQ(retransmitted_rtp_sequence_numbers, base_rtp_sequence_numbers);
  }
+ 
++TEST(RtpVideoSenderTest, PostTaskRaceDoesNotLeadToDanglingPointer) {
++  NiceMock<MockTransport> transport;
++  NiceMock<MockRtcpIntraFrameObserver> encoder_feedback;
 +
-+// Reproduces the bug reported by @ibc where RTP extension IDs are reassigned
-+// to different URIs in subsequent offers, causing SetLocalDescription to fail.
-+TEST_F(PeerConnectionSimulcastTests,
-+       NoRtpExtensionIdReassignmentWhenAddingTransceiver) {
-+  auto local = CreatePeerConnectionWrapper();
-+  auto layers = CreateLayers({"f", "h", "q"}, true);
++  GlobalSimulatedTimeController time_controller(Timestamp::Millis(1000000));
++  Environment env = CreateEnvironment(time_controller.GetClock(),
++                                      time_controller.CreateTaskQueueFactory());
 +
-+  // Add video transceiver with simulcast.
-+  AddTransceiver(local.get(), layers);
-+  ASSERT_TRUE(local->CreateOfferAndSetAsLocal());
++  VideoSendStream::Config config(&transport);
++  config.rtp.ssrcs = {kSsrc1};
 +
-+  // Set remote answer without header extensions.
-+  std::string remote_answer_sdp =
-+      "v=0\r\n"
-+      "o=- 8403615332048243445 2 IN IP4 127.0.0.1\r\n"
-+      "s=-\r\n"
-+      "t=0 0\r\n"
-+      "a=group:BUNDLE 0\r\n"
-+      "m=video 9 UDP/TLS/RTP/SAVPF 96\r\n"
-+      "c=IN IP4 0.0.0.0\r\n"
-+      "a=mid:0\r\n"
-+      "a=ice-ufrag:IZeV\r\n"
-+      "a=ice-pwd:uaZhQD4rYM/Tta2qWBT1Bbt4\r\n"
-+      "a=fingerprint:sha-256 "
-+      "D8:6C:3D:FA:23:E2:2C:63:11:2D:D0:86:BE:C4:D0:65:F9:42:F7:1C:06:04:27:E6:"
-+      "1C:2C:74:01:8D:50:67:23\r\n"
-+      "a=setup:active\r\n"
-+      "a=rtcp-mux\r\n"
-+      "a=extmap:9 urn:ietf:params:rtp-hdrext:sdes:mid\r\n"
-+      "a=extmap:10 urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id\r\n"
-+      "a=extmap:11 urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id\r\n"
-+      "a=extmap:2 "
-+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time\r\n"
-+      "a=extmap:4 "
-+      "http://www.ietf.org/id/"
-+      "draft-holmer-rmcat-transport-wide-cc-extensions-01\r\n"
-+      "a=extmap:3 urn:3gpp:video-orientation\r\n"
-+      "a=extmap:1 urn:ietf:params:rtp-hdrext:toffset\r\n"
-+      "a=extmap:5 "
-+      "http://www.webrtc.org/experiments/rtp-hdrext/playout-delay\r\n"
-+      "a=rtpmap:96 VP8/90000\r\n";
-+  // Answer recvonly.
-+  ASSERT_TRUE(local->SetRemoteDescription(CreateSessionDescription(
-+      SdpType::kAnswer, remote_answer_sdp + "a=recvonly\r\n")));
++  SendStatisticsProxy stats_proxy(
++      time_controller.GetClock(), config,
++      VideoEncoderConfig::ContentType::kRealtimeVideo, env.field_trials());
 +
-+  ASSERT_TRUE(local->CreateOfferAndSetAsLocal());
-+  // Answer inactive.
-+  ASSERT_TRUE(local->SetRemoteDescription(CreateSessionDescription(
-+      SdpType::kAnswer, remote_answer_sdp + "a=inactive\r\n")));
++  BitrateConstraints bitrate_config = GetBitrateConfig();
++  RtpTransportConfig transport_config{.env = env,
++                                      .bitrate_config = bitrate_config};
++  RtpTransportControllerSend transport_controller(transport_config);
++  transport_controller.EnsureStarted();
 +
-+  // Add an audio transceiver.
-+  local->AddAudioTrack("audio");
-+  EXPECT_TRUE(local->CreateOfferAndSetAsLocal());
++  RateLimiter retransmission_rate_limiter(time_controller.GetClock(),
++                                          kRetransmitWindowSizeMs);
++
++  std::map<uint32_t, RtpState> suspended_ssrcs;
++  std::map<uint32_t, RtpPayloadState> suspended_payload_states;
++
++  auto router = std::make_unique<RtpVideoSender>(
++      env, time_controller.GetMainThread(), suspended_ssrcs,
++      suspended_payload_states, config.rtp, config.rtcp_report_interval_ms,
++      &transport,
++      CreateObservers(&encoder_feedback, &stats_proxy, &stats_proxy,
++                      &stats_proxy, nullptr, &stats_proxy),
++      &transport_controller, &retransmission_rate_limiter,
++      std::make_unique<FecControllerDefault>(env), nullptr, CryptoOptions{},
++      nullptr);
++
++  router->SetSending(true);
++  // Verify it's registered
++  EXPECT_TRUE(
++      transport_controller.packet_router()->SsrcOfFirstSender().has_value());
++
++  // Trigger race:
++  // 1. OnVideoLayersAllocationUpdated posts a task to re-register modules
++  // because it sees active_ is true.
++  VideoLayersAllocation allocation;
++  allocation.active_spatial_layers.push_back({.rtp_stream_index = 0});
++  router->OnVideoLayersAllocationUpdated(allocation);
++
++  // 2. Immediately set active_ to false. This happens BEFORE the posted task
++  // runs.
++  router->SetSending(false);
++
++  // 3. Let the posted task run. With the fix, it should return early and not
++  // re-register the module because active_ is now false.
++  time_controller.AdvanceTime(TimeDelta::Zero());
++
++  // 4. Verify that PacketRouter does NOT have a sender.
++  EXPECT_FALSE(
++      transport_controller.packet_router()->SsrcOfFirstSender().has_value());
++
++  // 5. Destroy the router.
++  router.reset();
++
++  // 6. Verify that PacketRouter still does not have a sender.
++  EXPECT_FALSE(
++      transport_controller.packet_router()->SsrcOfFirstSender().has_value());
 +}
++
  }  // namespace webrtc
-diff --git a/pc/rtp_transport.cc b/pc/rtp_transport.cc
-index 05ef651486..086ea72869 100644
---- a/pc/rtp_transport.cc
-+++ b/pc/rtp_transport.cc
-@@ -242,15 +242,22 @@ RTCError RtpTransport::VerifyRtpHeaderExtensionMap(
-     if (new_extension.id == 0) {
-       continue;
-     }
--    auto it = absl::c_find_if(
--        historical_rtp_header_extensions_,
--        [&](const RtpExtension& ext) { return ext.id == new_extension.id; });
--    if (it != historical_rtp_header_extensions_.end() &&
--        it->uri != new_extension.uri) {
--      return RTCError::InvalidParameter()
--             << "RTP extension ID reassignment not supported (id="
--             << new_extension.id << ", old_uri=\"" << it->uri
--             << "\", new_uri=\"" << new_extension.uri << "\").";
-+    // TODO: bugs.webrtc.org/503013383 - Introduce checking against IDs that are
-+    // currently not present in the SDP, but have been used in previous
-+    // negotiation rounds. Reusing extensions with a different ID is a protocol
-+    // violation, but we cannot check this until we check against the same
-+    // protocol violation on the sender side.
-+    for (const auto& [mid, active_extensions] : header_extensions_by_mid_) {
-+      auto it = absl::c_find_if(
-+          active_extensions,
-+          [&](const RtpExtension& ext) { return ext.id == new_extension.id; });
-+      if (it != active_extensions.end() && it->uri != new_extension.uri) {
-+        return RTCError::InvalidParameter()
-+               << "RTP extension ID reassignment not supported (collision on "
-+                  "active MID "
-+               << mid << ", id=" << new_extension.id << ", old_uri=\""
-+               << it->uri << "\", new_uri=\"" << new_extension.uri << "\").";
-+      }
-     }
-   }
- 
-@@ -275,21 +282,6 @@ RTCError RtpTransport::RegisterRtpHeaderExtensionMap(
-     return RTCError::OK();
-   }
- 
--  for (const RtpExtension& extension : extensions) {
--    if (extension.id == 0) {
--      continue;
--    }
--    auto it = absl::c_find_if(historical_rtp_header_extensions_,
--                              [&extension](const RtpExtension& ext) {
--                                return ext.id == extension.id;
--                              });
--    if (it == historical_rtp_header_extensions_.end()) {
--      historical_rtp_header_extensions_.push_back(extension);
--    } else {
--      RTC_DCHECK_EQ(it->uri, extension.uri);
--    }
--  }
--
-   RemoveExtensionMapForMid(mid, header_extensions_by_mid_);
-   header_extensions_by_mid_.emplace_back(std::string(mid), extensions);
- 
-diff --git a/pc/rtp_transport.h b/pc/rtp_transport.h
-index e51a1247fa..185201586c 100644
---- a/pc/rtp_transport.h
-+++ b/pc/rtp_transport.h
-@@ -181,9 +181,6 @@ class RtpTransport : public RtpTransportInternal {
-   std::vector<std::pair<std::string, RtpHeaderExtensions>>
-       header_extensions_by_mid_ RTC_GUARDED_BY(network_thread_checker_);
- 
--  RtpHeaderExtensions historical_rtp_header_extensions_
--      RTC_GUARDED_BY(network_thread_checker_);
--
-   // Guard against recursive "ready to send" signals
-   bool processing_ready_to_send_ = false;
-   RTC_NO_UNIQUE_ADDRESS SequenceChecker network_thread_checker_;
-diff --git a/pc/rtp_transport_unittest.cc b/pc/rtp_transport_unittest.cc
-index 65762faec8..07430e6427 100644
---- a/pc/rtp_transport_unittest.cc
-+++ b/pc/rtp_transport_unittest.cc
-@@ -390,6 +390,28 @@ TEST(RtpTransportTest, VerifyRtpHeaderExtensionMapRejectsIdReassignment) {
-   EXPECT_EQ(error.type(), RTCErrorType::INVALID_PARAMETER);
- }
- 
-+TEST(RtpTransportTest,
-+     VerifyRtpHeaderExtensionMapAllowsIdReuseAfterUnregister) {
-+  test::RunLoop loop;
-+  RtpTransport transport(kMuxDisabled, CreateTestFieldTrials());
-+  RtpHeaderExtensions extensions1 = {
-+      RtpExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 1)};
-+  RtpHeaderExtensions extensions2 = {RtpExtension(
-+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time", 1)};
-+
-+  // Registering the first map should succeed.
-+  EXPECT_TRUE(
-+      transport.RegisterRtpHeaderExtensionMap("audio", extensions1).ok());
-+
-+  // Unregister the first map.
-+  transport.UnregisterRtpHeaderExtensionMap("audio");
-+
-+  // Registering the second map with same ID but different URI should now
-+  // succeed!
-+  EXPECT_TRUE(
-+      transport.RegisterRtpHeaderExtensionMap("video", extensions2).ok());
-+}
-+
- // Test that SignalPacketReceived fires with rtcp=true when a RTCP packet is
- // received.
- TEST(RtpTransportTest, SignalDemuxedRtcp) {
