@@ -28,6 +28,7 @@ enum class SelectorStrategy {
      * Supported strategies for locating UI elements.
      */
     COMPOSE_BY_CONTENT_DESCRIPTION,
+    COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
     COMPOSE_BY_TAG,
     COMPOSE_ON_ALL_NODES_BY_TAG_ON_FIRST,
     COMPOSE_BY_TEXT,

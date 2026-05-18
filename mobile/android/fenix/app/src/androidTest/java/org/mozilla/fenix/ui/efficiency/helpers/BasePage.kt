@@ -617,6 +617,14 @@ abstract class BasePage(
                 }
             }
 
+            SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING -> {
+                try {
+                    composeRule.onNodeWithContentDescription(selector.value, substring = true)
+                } catch (_: Exception) {
+                    Log.i("mozGetElement", "Compose node not found for content description: ${selector.value}"); null
+                }
+            }
+
             SelectorStrategy.ESPRESSO_BY_ID -> {
                 val resId = selector.toResourceId()
                 if (resId == 0) {
