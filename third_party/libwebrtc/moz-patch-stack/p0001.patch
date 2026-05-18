@@ -1,232 +1,782 @@
-From: =?UTF-8?q?Henrik=20Bostr=C3=B6m?= <hbos@google.com>
-Date: Thu, 9 Apr 2026 12:19:32 +0200
-Subject: (cherry-pick-branch-heads/7778) [Merge-148] Cherry pick "Move the
- NullVideoDecoder into a separate file and target."
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+From: Byron Campen <docfaraday@gmail.com>
+Date: Mon, 18 May 2026 16:37:44 -0500
+Subject: (tmp-cherry-pick) Revert "Introduce rtc_test_suite and rtc_cc_test "
+ (d04d3c22d4)
+
+This reverts commit cfe2b7818cf0e8cb26caf765cb77fef751c36a61.
+
+Reason for revert: breaks downstream bots
 
 Original change's description:
-> Move the NullVideoDecoder into a separate file and target.
+> Introduce rtc_test_suite and rtc_cc_test
 >
-> This is necessary because the Chromium video decoder factory needs to
-> be able to instantiate it for fallback purposes (e.g. Decode error
-> causing the HW to no longer be available).
+> rtc_cc_test represents a single test or a small collection of tests. It
+> generates both an rtc_library to be included in an rtc_test or
+> rtc_test_suite, as well as a standalone rtc_test to run those few tests.
 >
-> Bug: chromium:500960863
-> Change-Id: I724a5f28aa0a0a615972dd49eebde701c3b7ec90
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/462243
-> Reviewed-by: Evan Shrubsole <eshr@webrtc.org>
-> Commit-Queue: Henrik Boström <hbos@webrtc.org>
-> Cr-Commit-Position: refs/heads/main@{#47366}
+> rtc_test_suite represents a collection of tests and produces a binary
+> containing all tests.
+>
+> An action is added to confirm that an rtc_cc_test is included in an
+> rtc_test_suite. If this is not the case, one may not compile the
+> standalone test binary for the unit test.
+>
+> These new templates will replace the monolithic rtc_test/rtc_library
+> to allow for faster test execution.
+>
+> Bug: webrtc:498394143
+> Change-Id: Id3fb3108449bd9c73bc0e7f674d7a97f6a6a6964
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/461480
+> Reviewed-by: Jeremy Leconte <jleconte@google.com>
+> Commit-Queue: Evan Shrubsole <eshr@webrtc.org>
+> Cr-Commit-Position: refs/heads/main@{#47352}
 
-Bug: chromium:500960863
-Change-Id: I724a5f28aa0a0a615972dd49eebde701c3b7ec90
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464521
-Reviewed-by: Ilya Nikolaevskiy <ilnik@webrtc.org>
-Commit-Queue: Evan Shrubsole <eshr@webrtc.org>
-Cr-Commit-Position: refs/branch-heads/7778@{#1}
-Cr-Branched-From: ca896b7ffef011bbf6957c99d413c5aac602c99f-refs/heads/main@{#47319}
+Bug: webrtc:498394143
+Change-Id: Iac7ddf907e429375b435ec36f6aa3086ce792525
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/462460
+Bot-Commit: Rubber Stamper <rubber-stamper@appspot.gserviceaccount.com>
+Reviewed-by: Evan Shrubsole <eshr@webrtc.org>
+Reviewed-by: Jeremy Leconte <jleconte@google.com>
+Commit-Queue: Philip Eliasson <philipel@webrtc.org>
+Cr-Commit-Position: refs/heads/main@{#47363}
 ---
- video/BUILD.gn                 | 18 +++++++++++++
- video/null_video_decoder.cc    | 48 ++++++++++++++++++++++++++++++++++
- video/null_video_decoder.h     | 39 +++++++++++++++++++++++++++
- video/video_receive_stream2.cc | 34 +++---------------------
- 4 files changed, 108 insertions(+), 31 deletions(-)
- create mode 100644 video/null_video_decoder.cc
- create mode 100644 video/null_video_decoder.h
+ .yapfignore                                |   0
+ BUILD.gn                                   | 164 ++++++++++-----------
+ rtc_base/BUILD.gn                          |  96 ++----------
+ tools_webrtc/BUILD.gn                      |  31 ----
+ tools_webrtc/validate_test_registration.py | 128 ----------------
+ tools_webrtc/verify_test_suite_metadata.py |  73 ---------
+ webrtc.gni                                 | 140 ------------------
+ 7 files changed, 86 insertions(+), 546 deletions(-)
+ delete mode 100644 .yapfignore
+ delete mode 100755 tools_webrtc/validate_test_registration.py
+ delete mode 100755 tools_webrtc/verify_test_suite_metadata.py
 
-diff --git a/video/BUILD.gn b/video/BUILD.gn
-index f7f773e62b..766f6b2fb0 100644
---- a/video/BUILD.gn
-+++ b/video/BUILD.gn
-@@ -73,6 +73,7 @@ rtc_library("video") {
-     ":frame_cadence_adapter",
-     ":frame_decode_scheduler",
-     ":frame_dumping_decoder",
-+    ":null_video_decoder",
-     ":task_queue_frame_decode_scheduler",
-     ":unique_timestamp_counter",
-     ":video_stream_buffer_controller",
-@@ -191,6 +192,23 @@ rtc_library("video") {
+diff --git a/.yapfignore b/.yapfignore
+deleted file mode 100644
+index e69de29bb2..0000000000
+diff --git a/BUILD.gn b/BUILD.gn
+index 06421da289..4d154f8e19 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -46,91 +46,81 @@ if (!build_with_chromium) {
+       deps += [ "rtc_tools" ]
+     }
+     if (rtc_include_tests) {
+-      deps += [ ":test_suites" ]
+-    }
+-    if (!build_with_chromium && rtc_include_tests) {
+-      deps += [ "tools_webrtc:validate_test_registration" ]
+-    }
+-    if (target_os == "android") {
+-      deps += [ "tools_webrtc:binary_version_check" ]
+-    }
+-  }
+-}
+-
+-if (rtc_include_tests) {
+-  group("test_suites") {
+-    testonly = true
+-    deps = [
+-      ":audio_engine_tests",
+-      ":rtc_unittests",
+-      ":video_engine_tests",
+-      ":voip_unittests",
+-      ":webrtc_nonparallel_tests",
+-      ":webrtc_perf_tests",
+-      "common_audio:common_audio_unittests",
+-      "common_video:common_video_unittests",
+-      "examples:examples_unittests",
+-      "media:rtc_media_unittests",
+-      "modules:modules_tests",
+-      "modules:modules_unittests",
+-      "modules/audio_coding:audio_coding_tests",
+-      "modules/audio_processing:audio_processing_tests",
+-      "modules/remote_bitrate_estimator:rtp_to_text",
+-      "modules/rtp_rtcp:test_packet_masks_metrics",
+-      "modules/video_capture:video_capture_internal_impl",
+-      "modules/video_coding:video_codec_perf_tests",
+-      "net/dcsctp:dcsctp_unittests",
+-      "p2p:dtls_ice_integration_bench",
+-      "p2p:rtc_p2p_unittests",
+-      "pc:peerconnection_unittests",
+-      "pc:rtc_pc_unittests",
+-      "pc:slow_peer_connection_unittests",
+-      "pc:svc_tests",
+-      "rtc_tools:video_encoder",
+-      "rtc_tools:video_replay",
+-      "stats:rtc_stats_unittests",
+-      "system_wrappers:system_wrappers_unittests",
+-      "test",
+-      "video:screenshare_loopback",
+-      "video:sv_loopback",
+-      "video:video_loopback",
+-      "video/timing:video_timing_tests",
+-    ]
+-    if (use_libfuzzer) {
+-      deps += [ "test/fuzzers" ]
+-    }
+-
+-    # TODO(bugs.webrtc.org/430260876): Remove once rust links with libwebrtc.
+-    if (!is_asan && !rtc_rusty_base64) {
+-      # Do not build :webrtc_lib_link_test because lld complains on some OS
+-      # (e.g. when target_os = "mac") when is_asan=true. For more details,
+-      # see bugs.webrtc.org/11027#c5.
+-      deps += [ ":webrtc_lib_link_test" ]
+-    }
+-    if (is_ios) {
+       deps += [
+-        "examples:apprtcmobile_tests",
+-        "sdk:sdk_framework_unittests",
+-        "sdk:sdk_unittests",
+-      ]
+-    }
+-    if (is_android) {
+-      deps += [
+-        "examples:android_examples_junit_tests",
+-        "sdk/android:android_instrumentation_test_apk",
+-        "sdk/android:android_sdk_junit_tests",
+-      ]
+-    } else {
+-      deps += [ "modules/video_capture:video_capture_tests" ]
+-    }
+-    if (rtc_enable_protobuf) {
+-      deps += [
+-        "logging:rtc_event_log_rtp_dump",
+-        "tools_webrtc/perf:webrtc_dashboard_upload",
++        ":audio_engine_tests",
++        ":rtc_p2p_unittests",
++        ":rtc_unittests",
++        ":video_engine_tests",
++        ":voip_unittests",
++        ":webrtc_nonparallel_tests",
++        ":webrtc_perf_tests",
++        "common_audio:common_audio_unittests",
++        "common_video:common_video_unittests",
++        "examples:examples_unittests",
++        "media:rtc_media_unittests",
++        "modules:modules_tests",
++        "modules:modules_unittests",
++        "modules/audio_coding:audio_coding_tests",
++        "modules/audio_processing:audio_processing_tests",
++        "modules/remote_bitrate_estimator:rtp_to_text",
++        "modules/rtp_rtcp:test_packet_masks_metrics",
++        "modules/video_capture:video_capture_internal_impl",
++        "modules/video_coding:video_codec_perf_tests",
++        "net/dcsctp:dcsctp_unittests",
++        "p2p:dtls_ice_integration_bench",
++        "pc:peerconnection_unittests",
++        "pc:rtc_pc_unittests",
++        "pc:slow_peer_connection_unittests",
++        "pc:svc_tests",
++        "rtc_tools:video_encoder",
++        "rtc_tools:video_replay",
++        "stats:rtc_stats_unittests",
++        "system_wrappers:system_wrappers_unittests",
++        "test",
++        "video:screenshare_loopback",
++        "video:sv_loopback",
++        "video:video_loopback",
++        "video/timing:video_timing_tests",
+       ]
++      if (use_libfuzzer) {
++        deps += [ "test/fuzzers" ]
++      }
++
++      # TODO(bugs.webrtc.org/430260876): Remove once rust links with libwebrtc.
++      if (!is_asan && !rtc_rusty_base64) {
++        # Do not build :webrtc_lib_link_test because lld complains on some OS
++        # (e.g. when target_os = "mac") when is_asan=true. For more details,
++        # see bugs.webrtc.org/11027#c5.
++        deps += [ ":webrtc_lib_link_test" ]
++      }
++      if (is_ios) {
++        deps += [
++          "examples:apprtcmobile_tests",
++          "sdk:sdk_framework_unittests",
++          "sdk:sdk_unittests",
++        ]
++      }
++      if (is_android) {
++        deps += [
++          "examples:android_examples_junit_tests",
++          "sdk/android:android_instrumentation_test_apk",
++          "sdk/android:android_sdk_junit_tests",
++        ]
++      } else {
++        deps += [ "modules/video_capture:video_capture_tests" ]
++      }
++      if (rtc_enable_protobuf) {
++        deps += [
++          "logging:rtc_event_log_rtp_dump",
++          "tools_webrtc/perf:webrtc_dashboard_upload",
++        ]
++      }
++      if ((is_linux || is_chromeos) && rtc_use_pipewire) {
++        deps += [ "modules/desktop_capture:shared_screencast_stream_test" ]
++      }
+     }
+-    if ((is_linux || is_chromeos) && rtc_use_pipewire) {
+-      deps += [ "modules/desktop_capture:shared_screencast_stream_test" ]
++    if (target_os == "android") {
++      deps += [ "tools_webrtc:binary_version_check" ]
+     }
    }
  }
- 
-+rtc_library("null_video_decoder") {
-+  visibility = [ "*" ]
-+
-+  sources = [
-+    "null_video_decoder.cc",
-+    "null_video_decoder.h",
-+  ]
-+
-+  deps = [
-+    "../api/video:encoded_image",
-+    "../api/video_codecs:video_codecs_api",
-+    "../modules/video_coding:video_codec_interface",
-+    "../rtc_base:logging",
-+    "../rtc_base/system:rtc_export",
-+  ]
-+}
-+
- rtc_library("frame_dumping_decoder") {
-   visibility = [ "*" ]
- 
-diff --git a/video/null_video_decoder.cc b/video/null_video_decoder.cc
-new file mode 100644
-index 0000000000..3ce581204a
---- /dev/null
-+++ b/video/null_video_decoder.cc
-@@ -0,0 +1,48 @@
-+/*
-+ *  Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
-+ *
-+ *  Use of this source code is governed by a BSD-style license
-+ *  that can be found in the LICENSE file in the root of the source
-+ *  tree. An additional intellectual property rights grant can be found
-+ *  in the file PATENTS.  All contributing project authors may
-+ *  be found in the AUTHORS file in the root of the source tree.
-+ */
-+
-+#include "video/null_video_decoder.h"
-+
-+#include <cstdint>
-+
-+#include "api/video/encoded_image.h"
-+#include "api/video_codecs/video_decoder.h"
-+#include "modules/video_coding/include/video_error_codes.h"
-+#include "rtc_base/logging.h"
-+
-+namespace webrtc {
-+
-+bool NullVideoDecoder::Configure(const Settings& settings) {
-+  RTC_LOG(LS_ERROR) << "Can't initialize NullVideoDecoder.";
-+  return true;
-+}
-+
-+int32_t NullVideoDecoder::Decode(const EncodedImage& input_image,
-+                                 int64_t render_time_ms) {
-+  RTC_LOG(LS_ERROR) << "The NullVideoDecoder doesn't support decoding.";
-+  return WEBRTC_VIDEO_CODEC_OK;
-+}
-+
-+int32_t NullVideoDecoder::RegisterDecodeCompleteCallback(
-+    DecodedImageCallback* callback) {
-+  RTC_LOG(LS_ERROR)
-+      << "Can't register decode complete callback on NullVideoDecoder.";
-+  return WEBRTC_VIDEO_CODEC_OK;
-+}
-+
-+int32_t NullVideoDecoder::Release() {
-+  return WEBRTC_VIDEO_CODEC_OK;
-+}
-+
-+const char* NullVideoDecoder::ImplementationName() const {
-+  return "NullVideoDecoder";
-+}
-+
-+}  // namespace webrtc
-diff --git a/video/null_video_decoder.h b/video/null_video_decoder.h
-new file mode 100644
-index 0000000000..3ed049c839
---- /dev/null
-+++ b/video/null_video_decoder.h
-@@ -0,0 +1,39 @@
-+/*
-+ *  Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
-+ *
-+ *  Use of this source code is governed by a BSD-style license
-+ *  that can be found in the LICENSE file in the root of the source
-+ *  tree. An additional intellectual property rights grant can be found
-+ *  in the file PATENTS.  All contributing project authors may
-+ *  be found in the AUTHORS file in the root of the source tree.
-+ */
-+
-+#ifndef VIDEO_NULL_VIDEO_DECODER_H_
-+#define VIDEO_NULL_VIDEO_DECODER_H_
-+
-+#include <cstdint>
-+
-+#include "api/video/encoded_image.h"
-+#include "api/video_codecs/video_decoder.h"
-+#include "rtc_base/system/rtc_export.h"
-+
-+namespace webrtc {
-+
-+// The decoder used when there is no real decoder implementation available.
-+class RTC_EXPORT NullVideoDecoder : public VideoDecoder {
-+ public:
-+  // These are NO-OPs except for RTC_LOG lines.
-+  bool Configure(const Settings& settings) override;
-+  int32_t Decode(const EncodedImage& input_image,
-+                 int64_t render_time_ms) override;
-+  int32_t RegisterDecodeCompleteCallback(
-+      DecodedImageCallback* callback) override;
-+  int32_t Release() override;
-+
-+  // This is exposed in getStats() as "decoderImplementation".
-+  const char* ImplementationName() const override;
-+};
-+
-+}  // namespace webrtc
-+
-+#endif  // VIDEO_NULL_VIDEO_DECODER_H_
-diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 8e3f6a8132..79624b6f51 100644
---- a/video/video_receive_stream2.cc
-+++ b/video/video_receive_stream2.cc
-@@ -88,6 +88,7 @@
- #include "video/decode_synchronizer.h"
- #include "video/frame_decode_scheduler.h"
- #include "video/frame_dumping_decoder.h"
-+#include "video/null_video_decoder.h"
- #include "video/receive_statistics_proxy.h"
- #include "video/render/incoming_video_stream.h"
- #include "video/task_queue_frame_decode_scheduler.h"
-@@ -170,33 +171,6 @@ RenderResolution InitialDecoderResolution(const FieldTrialsView& field_trials) {
-   return RenderResolution(320, 180);
- }
- 
--// Video decoder class to be used for unknown codecs. Doesn't support decoding
--// but logs messages to LS_ERROR.
--class NullVideoDecoder : public VideoDecoder {
-- public:
--  bool Configure(const Settings& settings) override {
--    RTC_LOG(LS_ERROR) << "Can't initialize NullVideoDecoder.";
--    return true;
--  }
--
--  int32_t Decode(const EncodedImage& input_image,
--                 int64_t render_time_ms) override {
--    RTC_LOG(LS_ERROR) << "The NullVideoDecoder doesn't support decoding.";
--    return WEBRTC_VIDEO_CODEC_OK;
--  }
--
--  int32_t RegisterDecodeCompleteCallback(
--      DecodedImageCallback* callback) override {
--    RTC_LOG(LS_ERROR)
--        << "Can't register decode complete callback on NullVideoDecoder.";
--    return WEBRTC_VIDEO_CODEC_OK;
--  }
--
--  int32_t Release() override { return WEBRTC_VIDEO_CODEC_OK; }
--
--  const char* ImplementationName() const override { return "NullVideoDecoder"; }
--};
--
- bool IsKeyFrameAndUnspecifiedResolution(const EncodedFrame& frame) {
-   return frame.IsKey() && frame.EncodedImage()._encodedWidth == 0 &&
-          frame.EncodedImage()._encodedHeight == 0;
-@@ -555,10 +529,8 @@ void VideoReceiveStream2::CreateAndRegisterExternalDecoder(
-                "VideoReceiveStream2::CreateAndRegisterExternalDecoder");
-   std::unique_ptr<VideoDecoder> video_decoder =
-       config_.decoder_factory->Create(env_, decoder.video_format);
--  // If we still have no valid decoder, we have to create a "Null" decoder
--  // that ignores all calls. The reason we can get into this state is that the
--  // old decoder factory interface doesn't have a way to query supported
--  // codecs.
-+  // The factory can end up in this state either if the format is not supported
-+  // or because a creation step failed, e.g. HW is unavailable.
-   if (!video_decoder) {
-     video_decoder = std::make_unique<NullVideoDecoder>();
+@@ -770,15 +760,9 @@ if (rtc_include_tests && !build_with_chromium) {
+     }
    }
+ 
+-  rtc_test_suite("webrtc_nonparallel_tests") {
++  rtc_test("webrtc_nonparallel_tests") {
+     testonly = true
+-    tests = [
+-      "rtc_base:cpu_time_unittest",
+-      "rtc_base:file_rotating_stream_unittest",
+-      "rtc_base:null_socket_server_unittest",
+-      "rtc_base:physical_socket_server_unittest",
+-      "rtc_base:socket_address_unittest",
+-    ]
++    deps = [ "rtc_base:rtc_base_nonparallel_tests" ]
+     if (is_android) {
+       shard_timeout = 900
+     }
+diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
+index 3bdb19c2f1..7120fe48dd 100644
+--- a/rtc_base/BUILD.gn
++++ b/rtc_base/BUILD.gn
+@@ -1938,54 +1938,21 @@ if (rtc_include_tests) {
+   }
+ 
+   if (!build_with_chromium) {
+-    rtc_library("socket_unittest") {
++    rtc_library("rtc_base_nonparallel_tests") {
+       testonly = true
++
+       sources = [
++        "cpu_time_unittest.cc",
++        "file_rotating_stream_unittest.cc",
++        "null_socket_server_unittest.cc",
++        "physical_socket_server_unittest.cc",
++        "socket_address_unittest.cc",
+         "socket_unittest.cc",
+         "socket_unittest.h",
+       ]
+       deps = [
+         ":async_udp_socket",
+         ":buffer",
+-        ":checks",
+-        ":ip_address",
+-        ":logging",
+-        ":net_helpers",
+-        ":net_test_helpers",
+-        ":rtc_base_tests_utils",
+-        ":socket",
+-        ":socket_address",
+-        ":socket_factory",
+-        ":socket_server",
+-        ":testclient",
+-        ":threading",
+-        "../api:rtc_error_matchers",
+-        "../api/environment",
+-        "../api/transport:ecn_marking",
+-        "../api/units:time_delta",
+-        "../test:create_test_environment",
+-        "../test:near_matcher",
+-        "../test:test_support",
+-        "../test:wait_until",
+-        "//testing/gtest",
+-        "//third_party/abseil-cpp/absl/strings:string_view",
+-      ]
+-    }
+-
+-    rtc_cc_test("cpu_time_unittest") {
+-      sources = [ "cpu_time_unittest.cc" ]
+-      deps = [
+-        ":platform_thread",
+-        ":rtc_base_tests_utils",
+-        ":threading",
+-        ":timeutils",
+-        "../test:test_support",
+-      ]
+-    }
+-
+-    rtc_cc_test("file_rotating_stream_unittest") {
+-      sources = [ "file_rotating_stream_unittest.cc" ]
+-      deps = [
+         ":file_rotating_stream",
+         ":ip_address",
+         ":logging",
+@@ -2008,53 +1975,14 @@ if (rtc_include_tests) {
+         "../api/units:timestamp",
+         "../test:create_test_environment",
+         "../test:fileutils",
+-        "../test:test_support",
+-        "system:file_wrapper",
+-        "//third_party/abseil-cpp/absl/strings:string_view",
+-      ]
+-    }
+-
+-    rtc_cc_test("null_socket_server_unittest") {
+-      sources = [ "null_socket_server_unittest.cc" ]
+-      deps = [
+-        ":null_socket_server",
+-        ":socket_server",
+-        ":threading",
+-        "../api/environment",
+-        "../api/units:time_delta",
+-        "../api/units:timestamp",
+-        "../test:create_test_environment",
+-        "../test:run_loop",
+-        "../test:test_support",
+-      ]
+-    }
+-
+-    rtc_cc_test("physical_socket_server_unittest") {
+-      sources = [ "physical_socket_server_unittest.cc" ]
+-      deps = [
+-        ":ip_address",
+-        ":logging",
+-        ":net_helpers",
+-        ":net_test_helpers",
+-        ":rtc_base_tests_utils",
+-        ":socket",
+-        ":socket_address",
+-        ":socket_unittest",
+-        ":threading",
+-        "../api:rtc_error_matchers",
++        "../test:near_matcher",
+         "../test:run_loop",
+         "../test:test_support",
+         "../test:wait_until",
+-      ]
+-    }
+-
+-    rtc_cc_test("socket_address_unittest") {
+-      sources = [ "socket_address_unittest.cc" ]
+-      deps = [
+-        ":ip_address",
+-        ":net_helpers",
+-        ":socket_address",
+-        "../test:test_support",
++        "system:file_wrapper",
++        "//testing/gtest",
++        "//third_party/abseil-cpp/absl/memory",
++        "//third_party/abseil-cpp/absl/strings:string_view",
+       ]
+     }
+ 
+diff --git a/tools_webrtc/BUILD.gn b/tools_webrtc/BUILD.gn
+index d824f8ab3a..ee9a734107 100644
+--- a/tools_webrtc/BUILD.gn
++++ b/tools_webrtc/BUILD.gn
+@@ -6,8 +6,6 @@
+ # in the file PATENTS.  All contributing project authors may
+ # be found in the AUTHORS file in the root of the source tree.
+ 
+-import("../webrtc.gni")
+-
+ if (target_os == "android") {
+   action("binary_version_check") {
+     testonly = true
+@@ -18,32 +16,3 @@ if (target_os == "android") {
+     args = [ "libjingle_peerconnection_so.so" ]
+   }
+ }
+-
+-if (!build_with_chromium && rtc_include_tests) {
+-  generated_file("unittests_in_suites") {
+-    testonly = true
+-    outputs = [ "$root_gen_dir/tests_in_suites.json" ]
+-    data_keys = [ "rtc_cc_test" ]
+-    output_conversion = "json"
+-    deps = [ "//:test_suites" ]
+-  }
+-
+-  action("validate_test_registration") {
+-    testonly = true
+-    script = "validate_test_registration.py"
+-    inputs = [ "$root_gen_dir/tests_in_suites.json" ]
+-    outputs = [ "$root_gen_dir/test_registration_validator.stamp" ]
+-    depfile = "$root_gen_dir/test_registration_validator.d"
+-    args = [
+-      "--suite-tests",
+-      rebase_path(inputs[0], root_build_dir),
+-      "--stamp",
+-      rebase_path(outputs[0], root_build_dir),
+-      "--build-dir",
+-      ".",
+-      "--depfile",
+-      rebase_path(depfile, root_build_dir),
+-    ]
+-    deps = [ ":unittests_in_suites" ]
+-  }
+-}
+diff --git a/tools_webrtc/validate_test_registration.py b/tools_webrtc/validate_test_registration.py
+deleted file mode 100755
+index d6186ff1e9..0000000000
+--- a/tools_webrtc/validate_test_registration.py
++++ /dev/null
+@@ -1,128 +0,0 @@
+-#!/usr/bin/env vpython3
+-# Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-#
+-# Use of this source code is governed by a BSD-style license
+-# that can be found in the LICENSE file in the root of the source
+-# tree. An additional intellectual property rights grant can be found
+-# in the file PATENTS.  All contributing project authors may
+-# be found in the AUTHORS file in the root of the source tree.
+-"""Script to validate test registration using GN metadata."""
+-
+-import argparse
+-import json
+-import os
+-import subprocess
+-import sys
+-
+-
+-def _find_root_path():
+-    root_dir = os.path.dirname(os.path.abspath(__file__))
+-    while os.path.basename(root_dir) not in ('src', 'chromium'):
+-        par_dir = os.path.normpath(os.path.join(root_dir, os.pardir))
+-        if par_dir == root_dir:
+-            raise RuntimeError('Could not find the repo root.')
+-        root_dir = par_dir
+-    return root_dir
+-
+-
+-def _dump_dep_file(depfile_path, stamp_path, build_dir, root_dir):
+-    build_files = []
+-    for walk_root, _, files in os.walk(root_dir):
+-        if any(d in walk_root for d in ['.git', 'out', 'third_party']):
+-            continue
+-        if 'BUILD.gn' in files:
+-            build_files.append(
+-                os.path.relpath(os.path.join(walk_root, 'BUILD.gn'),
+-                                build_dir))
+-
+-    with open(depfile_path, 'w', encoding='utf-8') as depfile:
+-        depfile.write(f"{stamp_path}: {' '.join(build_files)}\n")
+-
+-
+-def _all_rtc_cc_tests(build_dir, root_dir):
+-    sys.path.append(os.path.join(root_dir, 'build'))
+-    import find_depot_tools
+-    gn_path = os.path.join(find_depot_tools.DEPOT_TOOLS_PATH, 'gn.py')
+-
+-    desc_out = subprocess.check_output(
+-        [
+-            sys.executable, gn_path, '--quiet', 'desc', '.', '*', 'metadata',
+-            '--format=json'
+-        ],
+-        cwd=build_dir,
+-        stderr=subprocess.STDOUT).decode('utf-8')
+-
+-    json_start = desc_out.find('{')
+-    if json_start == -1:
+-        all_metadata = {}
+-    else:
+-        all_metadata = json.loads(desc_out[json_start:])
+-
+-    all_tests = set()
+-    for label, data in all_metadata.items():
+-        target_metadata = data.get('metadata', {})
+-        if 'rtc_cc_test' in target_metadata:
+-            all_tests.add(label)
+-    return all_tests
+-
+-
+-def _rtc_cc_tests_in_test_suites(suite_tests_path):
+-    with open(suite_tests_path, 'r', encoding='utf-8') as suite_tests_file:
+-        suite_tests_metadata = json.load(suite_tests_file)
+-
+-    suite_tests = {
+-        item['label']
+-        for item in suite_tests_metadata if 'label' in item
+-    }
+-    return suite_tests
+-
+-
+-def main():
+-    parser = argparse.ArgumentParser()
+-    parser.add_argument('--suite-tests', required=True)
+-    parser.add_argument('--stamp', required=True)
+-    parser.add_argument('--build-dir', default='.')
+-    parser.add_argument(
+-        '--depfile',
+-        help='Optional depfile to write. Used to track dependencies for '
+-        'the build system.')
+-    args = parser.parse_args()
+-
+-    build_dir = os.path.abspath(args.build_dir)
+-    root_dir = _find_root_path()
+-
+-    if args.depfile:
+-        _dump_dep_file(args.depfile, args.stamp, build_dir, root_dir)
+-
+-    try:
+-        all_tests = _all_rtc_cc_tests(build_dir, root_dir)
+-    except (subprocess.CalledProcessError, json.JSONDecodeError) as error:
+-        print(f"Error querying GN metadata: {error}")
+-        return 1
+-
+-    try:
+-        suite_tests = _rtc_cc_tests_in_test_suites(args.suite_tests)
+-    except (IOError, json.JSONDecodeError) as error:
+-        print(f"Error reading suite tests file: {error}")
+-        return 1
+-
+-    orphans = all_tests - suite_tests
+-
+-    if orphans:
+-        print("\nERROR: The following rtc_cc_test targets are reachable from "
+-              "the root build but NOT registered in any rtc_test_suite:")
+-        for orphan in sorted(list(orphans)):
+-            print(f"  {orphan}")
+-        print(
+-            "\nThey will not run on CQ! Please add them to an rtc_test_suite "
+-            "in the root BUILD.gn or a relevant sub-directory.\n")
+-        return 1
+-
+-    with open(args.stamp, 'w', encoding='utf-8') as stamp_file:
+-        stamp_file.write('success')
+-
+-    return 0
+-
+-
+-if __name__ == '__main__':
+-    sys.exit(main())
+diff --git a/tools_webrtc/verify_test_suite_metadata.py b/tools_webrtc/verify_test_suite_metadata.py
+deleted file mode 100755
+index fabacf3d15..0000000000
+--- a/tools_webrtc/verify_test_suite_metadata.py
++++ /dev/null
+@@ -1,73 +0,0 @@
+-#!/usr/bin/env vpython3
+-
+-# Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
+-#
+-# Use of this source code is governed by a BSD-style license
+-# that can be found in the LICENSE file in the root of the source
+-# tree. An additional intellectual property rights grant can be found
+-# in the file PATENTS.  All contributing project authors may
+-# be found in the AUTHORS file in the root of the source tree.
+-"""Verifies that rtc_test_suite targets contribute 'rtc_cc_test' metadata.
+-
+-This ensures that rtc_test_suite aggregates valid rtc_cc_test targets.
+-"""
+-
+-import json
+-import sys
+-
+-
+-def main():
+-    if len(sys.argv) != 3:
+-        print("Usage: verify_test_suite_metadata.py <metadata_map_json> "
+-              "<output_stamp>")
+-        return 1
+-
+-    map_path = sys.argv[1]
+-    output_stamp = sys.argv[2]
+-
+-    try:
+-        with open(map_path, 'r', encoding='utf-8') as map_file:
+-            check_map = json.load(map_file)
+-    except Exception as error:
+-        print(f"Error reading input map file: {error}")
+-        return 1
+-
+-    missing_unittests = []
+-
+-    for item in check_map:
+-        label = item['label']
+-        output_file = item['output']
+-
+-        # The output file contains the list of unittest metadata objects.
+-        try:
+-            with open(output_file, 'r', encoding='utf-8') as metadata_file:
+-                unittests = json.load(metadata_file)
+-                # Check if the target itself is an rtc_cc_test.
+-                is_valid = any(m.get('label') == label for m in unittests)
+-                if not is_valid:
+-                    missing_unittests.append(label)
+-        except Exception as error:
+-            print(
+-                f"Error reading generated metadata file for {label}: {error}")
+-            return 1
+-
+-    if missing_unittests:
+-        lines = [
+-            "Error: The following targets in rtc_test_suite are not "
+-            "rtc_cc_test targets:"
+-        ]
+-        for missing_test in sorted(missing_unittests):
+-            lines.append(f"  {missing_test}")
+-        lines.append(
+-            "\nEnsure these targets are rtc_cc_test targets themselves.")
+-        print('\n'.join(lines))
+-        return 1
+-
+-    with open(output_stamp, 'w', encoding='utf-8') as stamp_file:
+-        stamp_file.write("OK")
+-
+-    return 0
+-
+-
+-if __name__ == '__main__':
+-    sys.exit(main())
+diff --git a/webrtc.gni b/webrtc.gni
+index 8428c0d632..6eb16cf188 100644
+--- a/webrtc.gni
++++ b/webrtc.gni
+@@ -812,7 +812,6 @@ template("rtc_library") {
+   } else {
+     target_type = "static_library"
+   }
+-
+   target(target_type, target_name) {
+     forward_variables_from(invoker,
+                            "*",
+@@ -1278,142 +1277,3 @@ if (is_android) {
+     }
+   }
+ }
+-
+-# Defines a unit test target.
+-#
+-# This template generates:
+-# 1. A static library containing the test sources.
+-# 2. An executable to run the test locally.
+-# 3. A verification step to ensure the test is included in at least one
+-#    `rtc_test_suite` (when not building with Chromium).
+-#
+-# Arguments:
+-#   sources: List of source files.
+-#   deps: List of dependencies.
+-#   data_deps: List of data dependencies.
+-#   ... (other standard rtc_library arguments)
+-template("rtc_cc_test") {
+-  _lib_target_name = "${target_name}"
+-
+-  rtc_library(_lib_target_name) {
+-    forward_variables_from(invoker,
+-                           "*",
+-                           [
+-                             "configs",
+-                             "public_configs",
+-                             "suppressed_configs",
+-                             "deps",
+-                             "visibility",
+-                           ])
+-    testonly = true
+-
+-    if (defined(invoker.deps)) {
+-      deps = invoker.deps
+-    } else {
+-      deps = []
+-    }
+-
+-    # Adds a metadata key "rtc_cc_test" with a value of this test. This is used
+-    # to confirm this test is included in a test suite.
+-    metadata = {
+-      rtc_cc_test = [
+-        {
+-          label = get_label_info(":$_lib_target_name", "label_no_toolchain")
+-          type = "rtc_cc_test"
+-        },
+-      ]
+-    }
+-  }
+-
+-  _path_from_webrtc_root = rebase_path(".", webrtc_root)
+-  if (_path_from_webrtc_root == ".") {
+-    _binary_name = "${target_name}_bin"
+-  } else {
+-    _binary_name = string_replace(_path_from_webrtc_root, "/", "_") + "_" +
+-                   target_name + "_bin"
+-  }
+-  rtc_test("${target_name}_bin") {
+-    testonly = true
+-
+-    # Output into the target's directory.
+-    output_name = _binary_name
+-    deps = [ ":${_lib_target_name}" ]
+-    if (defined(invoker.data_deps)) {
+-      data_deps = invoker.data_deps
+-    }
+-  }
+-}
+-
+-# Defines a test suite that aggregates multiple unit tests.
+-#
+-# This template is used to create "mega-targets" for CI/CQ. It collects
+-# dependencies (which should be rtc_cc_test targets) and verifies that
+-# they are reachable. The `tests_in_suites.json` file is generated by
+-# walking the dependency graph starting from these suites.
+-#
+-# Arguments:
+-#   tests: List of rtc_cc_test targets to include in this suite.
+-#   deps: Additional dependencies (e.g. groups of tests).
+-template("rtc_test_suite") {
+-  _suite_name = target_name
+-
+-  # This checks that all of the tests strings listed are an rtc_cc_test by
+-  # extracting their "rtc_cc_test" metadata into a file. This uses a simple
+-  # set comparison in //tools_webrtc/verify_test_suite_metadata.py.
+-  assert(defined(invoker.tests))
+-
+-  _metadata_map = []
+-  _metadata_check_deps = []
+-  foreach(t, invoker.tests) {
+-    _test_label = get_label_info(t, "label_no_toolchain")
+-    _safe_label = string_replace(_test_label, "//", "")
+-    _safe_label = string_replace(_safe_label, "/", "_")
+-    _safe_label = string_replace(_safe_label, ":", "_")
+-    _output_file = "$target_gen_dir/${_suite_name}_${_safe_label}_metadata.json"
+-    _check_target = "${_suite_name}_${_safe_label}_check"
+-
+-    generated_file(_check_target) {
+-      testonly = true
+-      outputs = [ _output_file ]
+-      data_keys = [ "rtc_cc_test" ]
+-      output_conversion = "json"
+-      deps = [ t ]
+-    }
+-    _metadata_check_deps += [ ":${_check_target}" ]
+-    _metadata_map += [
+-      {
+-        label = _test_label
+-        output = rebase_path(_output_file, root_build_dir)
+-      },
+-    ]
+-  }
+-
+-  write_file("$target_gen_dir/${_suite_name}_metadata_map.json",
+-             _metadata_map,
+-             "json")
+-
+-  action("${_suite_name}_verify_metadata") {
+-    testonly = true
+-    script = "//tools_webrtc/verify_test_suite_metadata.py"
+-    inputs = [ "$target_gen_dir/${_suite_name}_metadata_map.json" ]
+-    outputs = [ "$target_gen_dir/${_suite_name}_metadata.stamp" ]
+-    args = [
+-      rebase_path(inputs[0], root_build_dir),
+-      rebase_path(outputs[0], root_build_dir),
+-    ]
+-    deps = _metadata_check_deps
+-  }
+-
+-  rtc_test(_suite_name) {
+-    forward_variables_from(invoker, "*", [ "tests" ])
+-
+-    if (!defined(deps)) {
+-      deps = []
+-    }
+-    if (defined(invoker.deps)) {
+-      deps += invoker.deps
+-    }
+-    deps += invoker.tests
+-    deps += [ ":${_suite_name}_verify_metadata" ]
+-  }
+-}
