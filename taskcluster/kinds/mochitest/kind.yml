@@ -29,9 +29,9 @@ task-defaults:
     use-uv: true
     worker-type:
         by-test-platform:
-            windows.*-asan/.*: win11-64-25h2-large
-            windows.*aarch64.*/.*: win11-a64-25h2
-            windows.*/.*: win11-64-25h2
+            windows11.*-asan/.*: win11-64-25h2-large
+            windows11.*aarch64.*/.*: win11-a64-25h2
+            windows11.*/.*: win11-64-25h2
             default: default
     require-signed-extensions:
         by-release-type:
@@ -791,7 +791,7 @@ tasks:
         loopback-video: true
         worker-type:
             by-test-platform:
-                windows.*/.*: win11-64-25h2-gpu
+                windows11.*/.*: win11-64-25h2-gpu
                 default: default
         variants:
             - no-fission
@@ -857,7 +857,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows.*/.*: win11-64-25h2-gpu
+                windows11.*/.*: win11-64-25h2-gpu
                 default: default
         run-without-variant: false
         variants:
@@ -1054,9 +1054,9 @@ tasks:
                         default: default
                 default:
                     by-test-platform:
-                        windows.*-asan/.*: win11-64-25h2-large
-                        windows.*aarch64.*/.*: win11-a64-25h2
-                        windows.*/.*: win11-64-25h2
+                        windows11.*-asan/.*: win11-64-25h2-large
+                        windows11.*aarch64.*/.*: win11-a64-25h2
+                        windows11.*/.*: win11-64-25h2
                         default: default
 
     mochitest-valgrind:
@@ -1084,7 +1084,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows.*/.*: win11-64-25h2-gpu
+                windows11.*/.*: win11-64-25h2-gpu
                 default: default
 
         loopback-video: true
@@ -1129,7 +1129,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows.*/.*: win11-64-25h2-gpu
+                windows11.*/.*: win11-64-25h2-gpu
                 default: default
 
         loopback-video: true
@@ -1174,7 +1174,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows.*/.*: win11-64-25h2-gpu
+                windows11.*/.*: win11-64-25h2-gpu
                 default: default
         chunks:
             by-test-platform:
@@ -1225,7 +1225,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows.*/.*: win11-64-25h2-gpu
+                windows11.*/.*: win11-64-25h2-gpu
                 default: default
         variants:
             - no-fission
@@ -1269,7 +1269,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows.*/.*: win11-64-25h2-gpu
+                windows11.*/.*: win11-64-25h2-gpu
                 default: default
         variants:
             - webrender-sw
@@ -1291,7 +1291,7 @@ tasks:
         virtualization: virtual-with-gpu
         worker-type:
             by-test-platform:
-                windows.*/.*: win11-64-25h2-gpu
+                windows11.*/.*: win11-64-25h2-gpu
                 default: default
         loopback-video: true
         variants:
