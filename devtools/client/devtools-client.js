@@ -48,6 +48,25 @@ loader.lazyRequireGetter(
   true
 );
 
+const logger = console.createInstance({
+  prefix: "devtools_rdp",
+  maxLogLevel: "Warn",
+});
+
+// Hack MOZ_LOG/Console.cpp usage of ToSource logic
+// to be able to write raw strings to stdout.
+// This prevent being wrapped with quotes, and use color characters.
+const SEND_MOZ_LOG_STRING = {
+  toSource() {
+    return "\x1b[2m->\x1b[0m";
+  },
+};
+const RECEIVE_MOZ_LOG_STRING = {
+  toSource() {
+    return "\x1b[2m<-\x1b[0m";
+  },
+};
+
 /**
  * Creates a client for the remote debugging protocol server. This client
  * provides the means to communicate with the server and exchange the messages
@@ -414,6 +433,10 @@ class DevToolsClient extends EventEmitter {
     this.expectReply(actor, request);
 
     if (request.format === "json") {
+      // Log outgoing RDP packet being sent via DevToolsClient.
+      // (packet sent via protocol.js will be logged from protocol.js codebase)
+      logger.log(SEND_MOZ_LOG_STRING, request.request);
+
       this._transport.send(request.request);
       return;
     }
@@ -486,6 +509,8 @@ class DevToolsClient extends EventEmitter {
    *        The incoming packet.
    */
   onPacket(packet) {
+    logger.log(RECEIVE_MOZ_LOG_STRING, packet);
+
     if (!packet.from) {
       DevToolsUtils.reportException(
         "onPacket",

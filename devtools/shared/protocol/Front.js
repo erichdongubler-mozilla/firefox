@@ -13,6 +13,20 @@ var {
   callFunctionWithAsyncStack,
 } = require("resource://devtools/shared/platform/stack.js");
 
+const logger = console.createInstance({
+  prefix: "devtools_rdp",
+  maxLogLevel: "Warn",
+});
+
+// Hack MOZ_LOG/Console.cpp usage of ToSource logic
+// to be able to write raw strings to stdout.
+// This prevent being wrapped with quotes, and use color characters.
+const SEND_MOZ_LOG_STRING = {
+  toSource() {
+    return "\x1b[2m->\x1b[0m";
+  },
+};
+
 /**
  * Base class for client-side actor fronts.
  *
@@ -294,6 +308,11 @@ class Front extends Pool {
       if (!packet.to) {
         packet.to = this.actorID;
       }
+
+      // Log outgoing RDP packet being sent via Protocol.js
+      // (packet sent via DevToolsClient will be logged from DevToolsClient codebase)
+      logger.log(SEND_MOZ_LOG_STRING, packet);
+
       this.conn._transport.send(packet);
     } else {
       if (!packet.actor) {
