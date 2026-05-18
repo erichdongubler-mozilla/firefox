@@ -285,8 +285,9 @@ class IMEContentObserver final : public nsStubMutationObserver,
   void MaybeNotifyIMEOfSelectionChange(bool aCausedByComposition,
                                        bool aCausedBySelectionEvent,
                                        bool aOccurredDuringComposition);
-  void PostPositionChangeNotification();
-  void MaybeNotifyIMEOfPositionChange();
+  enum class Immediately : bool { No, Yes };
+  void PostPositionChangeNotification(Immediately aImmediately);
+  void MaybeNotifyIMEOfPositionChange(Immediately aImmediately);
   void CancelNotifyingIMEOfPositionChange();
   void PostCompositionEventHandledNotification();
 
@@ -364,14 +365,14 @@ class IMEContentObserver final : public nsStubMutationObserver,
     mNeedsToNotifyIMEOfFocusSet = false;
     mNeedsToNotifyIMEOfTextChange = false;
     mNeedsToNotifyIMEOfSelectionChange = false;
-    mNeedsToNotifyIMEOfPositionChange = false;
+    mTicksUntilNotifyIMEOfPositionChange = 0;
     mNeedsToNotifyIMEOfCompositionEventHandled = false;
     mTextChangeData.Clear();
   }
   bool NeedsToNotifyIMEOfSomething() const {
     return mNeedsToNotifyIMEOfFocusSet || mNeedsToNotifyIMEOfTextChange ||
            mNeedsToNotifyIMEOfSelectionChange ||
-           mNeedsToNotifyIMEOfPositionChange ||
+           mTicksUntilNotifyIMEOfPositionChange ||
            mNeedsToNotifyIMEOfCompositionEventHandled;
   }
 
@@ -846,13 +847,16 @@ class IMEContentObserver final : public nsStubMutationObserver,
   // not sending any notification.
   IMEMessage mSendingNotification = widget::NOTIFY_IME_OF_NOTHING;
 
+  // If this is set to non-zero, we need to notify IME of a position change when
+  // it becomes 0.
+  uint8_t mTicksUntilNotifyIMEOfPositionChange = 0;
+
   bool mIsObserving = false;
   bool mIsTextControl = false;
   bool mIMEHasFocus = false;
   bool mNeedsToNotifyIMEOfFocusSet = false;
   bool mNeedsToNotifyIMEOfTextChange = false;
   bool mNeedsToNotifyIMEOfSelectionChange = false;
-  bool mNeedsToNotifyIMEOfPositionChange = false;
   bool mNeedsToNotifyIMEOfCompositionEventHandled = false;
   // mIsHandlingQueryContentEvent is true when IMEContentObserver is handling
   // WidgetQueryContentEvent with ContentEventHandler.

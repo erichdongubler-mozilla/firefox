@@ -8883,6 +8883,22 @@
 # Prefs starting with "intl."
 #---------------------------------------------------------------------------
 
+# The number of ticks before notifying IME of a position change caused by scrolling.
+#
+# If this is set to 1, IMEContentObserver notifies the position change at the next vsync
+# update. In this case, the IME UI is updated quickly and appears smooth. However, this
+# can make scrolling slower when the editing host contains a large number of nodes.
+# If this is set to 0, IMEContentObserver won't notify IME of position change caused by
+# scrolling.
+#
+# On the other hand, larger values delay IME UI updates during/after scrolling. Although
+# Gecko can skip some layout computations in this case, the delayed IME UI updates may
+# still make scrolling feel sluggish.
+- name: intl.ime.content_observer.notifications.position_change.ticks_after_scrolling
+  type: uint32_t
+  value: 10
+  mirror: always
+
 #ifdef XP_WIN
   # Whether Gecko creates or does not create native caret for legacy ATOK
   # (2011 - 2015).
