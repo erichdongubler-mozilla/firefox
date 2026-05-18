@@ -1098,11 +1098,14 @@ void Animation::Tick(AnimationTimeline::TickState& aTickState) {
   AutoAlignStartTime();
 
   if (Pending()) {
-    if (!mPendingReadyTime.IsNull()) {
+    if (!mPendingReadyTime.IsNull() || HasFiniteTimeline()) {
+      // mPendingReadyTime is only meaningful for monotonic timelines (see its
+      // declaration comment). For finite timelines, trigger directly using the
+      // timeline's current time.
       TryTriggerNow();
     } else if (MOZ_LIKELY(mTimeline)) {
-      // Makes sure that we trigger the animation on the next tick but,
-      // importantly, with this tick's timestamp.
+      // Monotonic timeline with no ready time yet — schedule the trigger for
+      // the next tick, but with this tick's timestamp.
       mPendingReadyTime = mTimeline->GetCurrentTimeAsTimeStamp();
     }
   }
@@ -1139,10 +1142,9 @@ bool Animation::TryTriggerNow() {
   }
   // FIXME: Bug 2017448. Force to use timeline current time for finite
   // timelines. We may have to figure out a more suitable way to handle it.
-  auto currentTime =
-      mPendingReadyTime.IsNull() || !mTimeline->IsMonotonicallyIncreasing()
-          ? mTimeline->GetCurrentTimeAsDuration()
-          : mTimeline->ToTimelineTime(mPendingReadyTime);
+  auto currentTime = (mPendingReadyTime.IsNull() || HasFiniteTimeline())
+                         ? mTimeline->GetCurrentTimeAsDuration()
+                         : mTimeline->ToTimelineTime(mPendingReadyTime);
   mPendingReadyTime = {};
   if (NS_WARN_IF(currentTime.IsNull())) {
     return false;
