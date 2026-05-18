@@ -29,6 +29,7 @@
 #include "jit/BaselineJIT.h"
 #include "jit/Jit.h"
 #include "jit/JitRuntime.h"
+#include "jit/JitZone.h"
 #include "js/EnvironmentChain.h"      // JS::SupportUnscopables
 #include "js/experimental/JitInfo.h"  // JSJitInfo
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
@@ -65,6 +66,7 @@
 #endif
 #include "builtin/Boolean-inl.h"
 #include "debugger/DebugAPI-inl.h"
+#include "gc/WeakMap-inl.h"
 #include "vm/ArgumentsObject-inl.h"
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 #  include "vm/DisposableRecord-inl.h"
@@ -350,29 +352,32 @@ static MOZ_ALWAYS_INLINE bool MaybeEnterInterpreterTrampoline(JSContext* cx,
 #ifdef NIGHTLY_BUILD
   if (jit::JitOptions.emitInterpreterEntryTrampoline &&
       cx->runtime()->hasJitRuntime()) {
-    js::jit::JitRuntime* jitRuntime = cx->runtime()->jitRuntime();
     JSScript* script = state.script();
-
-    uint8_t* codeRaw = nullptr;
-    auto p = jitRuntime->getInterpreterEntryMap()->lookup(script);
-    if (p) {
-      codeRaw = p->value().raw();
-    } else {
-      js::jit::JitCode* code =
-          jitRuntime->generateEntryTrampolineForScript(cx, script);
-      if (!code) {
-        ReportOutOfMemory(cx);
-        return false;
-      }
-
-      js::jit::EntryTrampoline entry(cx, code);
-      if (!jitRuntime->getInterpreterEntryMap()->put(script, entry)) {
-        ReportOutOfMemory(cx);
-        return false;
-      }
-      codeRaw = code->raw();
+    Zone* zone = script->zone();
+    jit::JitZone* jitZone = zone->getOrCreateJitZone(cx);
+    if (!jitZone) {
+      return false;
     }
 
+    jit::EntryTrampolineMap* map =
+        jitZone->getOrCreateInterpreterEntryMap(zone);
+    if (!map) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+
+    jit::JitRuntime* jitRuntime = cx->runtime()->jitRuntime();
+    auto ptr = map->lookupForAdd(script);
+    if (!ptr) {
+      jit::JitCode* code =
+          jitRuntime->generateEntryTrampolineForScript(cx, script);
+      if (!code || !map->relookupOrAdd(ptr, script, code)) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
+    }
+
+    uint8_t* codeRaw = ptr->value()->raw();
     MOZ_ASSERT(codeRaw, "Should have a valid trampoline here.");
     // The C++ entry thunk is located at the vmInterpreterEntryOffset offset.
     codeRaw += jitRuntime->vmInterpreterEntryOffset();

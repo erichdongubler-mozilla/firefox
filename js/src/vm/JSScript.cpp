@@ -41,6 +41,7 @@
 #include "jit/JitCode.h"
 #include "jit/JitOptions.h"
 #include "jit/JitRuntime.h"
+#include "jit/JitZone.h"
 #include "js/CharacterEncoding.h"  // JS_EncodeStringToUTF8
 #include "js/ColumnNumber.h"  // JS::LimitedColumnNumberOneOrigin, JS::ColumnNumberOneOrigin, JS::ColumnNumberOffset
 #include "js/CompileOptions.h"
@@ -132,14 +133,7 @@ void js::BaseScript::finalize(JS::GCContext* gcx) {
     script->destroyScriptCounts();
   }
 
-  {
-    JSRuntime* rt = gcx->runtime();
-    if (rt->hasJitRuntime() && rt->jitRuntime()->hasInterpreterEntryMap()) {
-      rt->jitRuntime()->getInterpreterEntryMap()->remove(this);
-    }
-
-    rt->geckoProfiler().onScriptFinalized(this);
-  }
+  gcx->runtime()->geckoProfiler().onScriptFinalized(this);
 
 #ifdef MOZ_VTUNE
   if (zone()->scriptVTuneIdMap) {
@@ -3458,11 +3452,16 @@ void JSScript::updateJitCodeRaw(JSRuntime* rt) {
     setJitCodeRaw(baselineScript()->method()->raw());
   } else if (hasJitScript() && js::jit::IsBaselineInterpreterEnabled()) {
     bool usingEntryTrampoline = false;
-    if (js::jit::JitOptions.emitInterpreterEntryTrampoline) {
-      auto p = rt->jitRuntime()->getInterpreterEntryMap()->lookup(this);
-      if (p) {
-        setJitCodeRaw(p->value().raw());
-        usingEntryTrampoline = true;
+    if (jit::JitOptions.emitInterpreterEntryTrampoline) {
+      if (jit::JitZone* jz = zone()->jitZone()) {
+        if (jit::EntryTrampolineMap* map = jz->maybeInterpreterEntryMap()) {
+          // Unbarriered because the JitCode doesn't escape and we can be called
+          // from inside GC.
+          if (auto ptr = map->lookupUnbarriered(this)) {
+            setJitCodeRaw(ptr->value()->raw());
+            usingEntryTrampoline = true;
+          }
+        }
       }
     }
     if (!usingEntryTrampoline) {

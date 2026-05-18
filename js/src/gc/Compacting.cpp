@@ -846,10 +846,6 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
     cache->traceWeak(&trc, JS::detail::WeakCacheBase::DontLock);
   }
 
-  if (rt->hasJitRuntime() && rt->jitRuntime()->hasInterpreterEntryMap()) {
-    rt->jitRuntime()->getInterpreterEntryMap()->updateScriptsAfterMovingGC();
-  }
-
   // Type inference may put more blocks here to free.
   {
     AutoLockHelperThreadState lock;

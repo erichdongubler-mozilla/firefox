@@ -99,10 +99,6 @@ JitRuntime::~JitRuntime() {
   MOZ_ASSERT_IF(jitcodeGlobalTable_, jitcodeGlobalTable_->empty());
   js_delete(jitcodeGlobalTable_.ref());
 
-  // interpreterEntryMap should be cleared out during finishRoots()
-  MOZ_ASSERT_IF(interpreterEntryMap_, interpreterEntryMap_->empty());
-  js_delete(interpreterEntryMap_.ref());
-
   js_delete(jitHintsMap_.ref());
 }
 
@@ -138,13 +134,6 @@ bool JitRuntime::initialize(JSContext* cx) {
   if (!JitOptions.disableJitHints) {
     jitHintsMap_ = cx->new_<JitHintsMap>();
     if (!jitHintsMap_) {
-      return false;
-    }
-  }
-
-  if (JitOptions.emitInterpreterEntryTrampoline) {
-    interpreterEntryMap_ = cx->new_<EntryTrampolineMap>();
-    if (!interpreterEntryMap_) {
       return false;
     }
   }
@@ -529,6 +518,22 @@ void JitZone::traceWeak(JSTracer* trc, Zone* zone) {
                 "JitZone::lastStubFoldingBailoutInner_");
   TraceWeakEdge(trc, &lastStubFoldingBailoutOuter_,
                 "JitZone::lastStubFoldingBailoutOuter_");
+}
+
+void JitZone::traceScriptTableRoots(JSTracer* trc) {
+  // Trace the table used to hold interpreter entry code generated with
+  // --emit-interpreter-entry.
+  if (interpreterEntryMap) {
+    interpreterEntryMap->trace(trc);
+  }
+}
+
+void JitZone::finishScriptTableRoots() {
+  // Clear out the interpreter entry map before the final gc.
+  if (interpreterEntryMap) {
+    interpreterEntryMap->clear();
+    interpreterEntryMap.reset();
+  }
 }
 
 void JitZone::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,

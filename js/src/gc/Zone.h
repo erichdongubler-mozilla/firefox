@@ -734,12 +734,12 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   }
   static constexpr size_t offsetOfJitZone() { return offsetof(Zone, jitZone_); }
 
-  js::jit::JitZone* getJitZone(JSContext* cx) {
+  js::jit::JitZone* getOrCreateJitZone(JSContext* cx) {
     return jitZone_ ? jitZone_ : createJitZone(cx);
   }
   js::jit::JitZone* jitZone() { return jitZone_; }
 
-  bool ensureJitZoneExists(JSContext* cx) { return !!getJitZone(cx); }
+  bool ensureJitZoneExists(JSContext* cx) { return getOrCreateJitZone(cx); }
 
   bool preserveWrapper(JSObject* obj) {
     MOZ_ASSERT(preservedWrappersCount_ <= preservedWrappersCapacity_);

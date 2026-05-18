@@ -536,6 +536,9 @@ class WeakMap : public WeakMapBase {
   static void valueReadBarrier(JSObject* obj) {
     JS::ExposeObjectToActiveJS(obj);
   }
+  static void valueReadBarrier(jit::JitCode* code) {
+    gc::ExposeGCThingToActiveJS(JS::GCCellPtr(code));
+  }
 
   void writeBarrier(const Key& key, const Value& value) {
     keyKindBarrier(key);

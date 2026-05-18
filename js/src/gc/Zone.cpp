@@ -194,6 +194,8 @@ Zone::~Zone() {
   DebugAPI::deleteDebugScriptMap(debugScriptMap);
   js_delete(finalizationObservers_.ref().release());
 
+  js_delete(jitZone_.ref());
+
   MOZ_ASSERT(gcSystemWeakMaps().isEmpty());
   MOZ_ASSERT(gcUserWeakMaps().isEmpty());
   MOZ_ASSERT(gcMarkedUserWeakMaps().isEmpty());
@@ -204,8 +206,6 @@ Zone::~Zone() {
     MOZ_ASSERT(isSystemZone());
     rt->gc.systemZone = nullptr;
   }
-
-  js_delete(jitZone_.ref());
 
   if (preservedWrappers_) {
     MOZ_RELEASE_ASSERT(preservedWrappersCount_ == 0);
@@ -758,6 +758,12 @@ void Zone::traceScriptTableRoots(JSTracer* trc) {
   if (debugScriptMap) {
     DebugAPI::traceDebugScriptMap(trc, debugScriptMap);
   }
+
+  // Trace the table used to hold interpreter entry code generated with
+  // --emit-interpreter-entry.
+  if (jitZone()) {
+    jitZone()->traceScriptTableRoots(trc);
+  }
 }
 
 void Zone::fixupScriptMapsAfterMovingGC(JSTracer* trc) {
@@ -886,6 +892,10 @@ void Zone::clearRootsForShutdownGC() {
 }
 
 void Zone::finishRoots() {
+  if (jitZone()) {
+    jitZone()->finishScriptTableRoots();
+  }
+
   for (RealmsInZoneIter r(this); !r.done(); r.next()) {
     r->finishRoots();
   }
