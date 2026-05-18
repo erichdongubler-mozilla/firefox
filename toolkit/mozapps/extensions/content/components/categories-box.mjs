@@ -270,24 +270,12 @@ class CategoriesBox extends MozLitElement {
   }
 
   #categoryButtonTemplate(category) {
-    // TODO: this is currently here to let some tests calling
-    // .click() directly to pass (e.g. browser_html_detail_view.js),
-    // is it actually needed for any reasons behind that?
-    // if it is test only we can consider changing the tests instead.
-    const categoryClickMethodHandler = e => {
-      const button = e.target.closest("moz-page-nav-button");
-      if (button && e.composedPath()[0] === button) {
-        button.activate();
-      }
-    };
-
     return html`<moz-page-nav-button
       id="category-${category.name}"
       view=${category.name}
       ?hidden=${this._hiddenCategories.has(category.name)}
       ?badged-category=${this.#isBadgedCategory(category)}
       iconsrc=${category.iconSrc}
-      @click=${categoryClickMethodHandler}
       @keydown=${this.#handleButtonKeyDown}
     >
       <span data-l10n-id=${category.l10nId}></span>
