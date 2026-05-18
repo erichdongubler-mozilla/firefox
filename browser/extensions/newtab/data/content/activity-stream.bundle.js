@@ -15285,7 +15285,7 @@ function Weather_Weather({
     };
     el.addEventListener("click", listener);
     return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  }, [handleChangeSize, weatherData?.initialized]);
   const handleIntersection = (0,external_React_namespaceObject.useCallback)(() => {
     if (impressionFired.current) {
       return;

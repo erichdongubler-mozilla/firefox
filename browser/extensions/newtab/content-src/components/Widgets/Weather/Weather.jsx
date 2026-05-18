@@ -78,7 +78,7 @@ function Weather({ dispatch, size }) {
     };
     el.addEventListener("click", listener);
     return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  }, [handleChangeSize, weatherData?.initialized]);
 
   const handleIntersection = useCallback(() => {
     if (impressionFired.current) {
