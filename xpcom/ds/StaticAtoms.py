@@ -593,7 +593,6 @@ STATIC_ATOMS = [
     Atom("integrity_violation", "integrity-violation"),
     Atom("interactive_widget", "interactive-widget"),
     Atom("internal", "internal"),
-    Atom("internalSelectButton", "internal-select-button"),
     Atom("internals", "internals"),
     Atom("intersection", "intersection"),
     Atom("is", "is"),

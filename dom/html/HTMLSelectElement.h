@@ -30,7 +30,6 @@ namespace dom {
 
 class ContentList;
 class FormData;
-class HTMLButtonElement;
 class HTMLCollection;
 class HTMLElementOrLong;
 class HTMLOptionElementOrHTMLOptGroupElement;
@@ -288,13 +287,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   }
   void GetAutofillState(nsAString& aState) { GetFormAutofillState(aState); }
 
-  HTMLButtonElement* GetFirstButton() const;
-
   void SetupShadowTree();
-  void GetSlotNameFor(const ShadowRoot&, const nsIContent&,
-                      nsAString&) const override;
-  void OnChildBeforeSlotted(ShadowRoot&, nsIContent&) override;
-  void OnChildUnslotted(ShadowRoot&, nsIContent&) override;
 
   // Returns the text node that has the selected <option>'s text.
   // Note that it might return null for printing.
