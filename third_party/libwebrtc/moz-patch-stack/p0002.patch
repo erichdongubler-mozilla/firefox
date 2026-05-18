@@ -1,0 +1,192 @@
+From: Tommi <tommi@webrtc.org>
+Date: Thu, 16 Apr 2026 14:48:05 +0200
+Subject: (cherry-pick-branch-heads/7778) [M148] Allow signaled SSRCs to
+ override learned bindings in RtpDemuxer
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Update RtpDemuxer to permit signaled SSRCs to override existing learned
+SSRC bindings. This prevents registration failures during session
+renegotiation when an SSRC, previously identified through payload type
+demuxing, is subsequently explicitly signaled.
+
+The demuxer now maintains a set of signaled SSRCs to differentiate
+explicit configurations from learned state. Conflict detection is
+modified to allow these overrides while maintaining strict checks
+between multiple signaled SSRCs. This ensures that explicit signaling
+always takes precedence over internally learned bindings, resolving
+routing issues during media stream updates.
+
+(cherry picked from commit 186d42a3010981882a8679a145ce36aa84581c78)
+
+Fixed: chromium:503666505
+Bug: webrtc:502130956
+Change-Id: I551c2b7ee5af18fc9792ee52be08c5349c20b641
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464220
+Reviewed-by: Harald Alvestrand <hta@webrtc.org>
+Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
+Cr-Original-Commit-Position: refs/heads/main@{#47446}
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464764
+Reviewed-by: Björn Terelius <terelius@webrtc.org>
+Cr-Commit-Position: refs/branch-heads/7778@{#2}
+Cr-Branched-From: ca896b7ffef011bbf6957c99d413c5aac602c99f-refs/heads/main@{#47319}
+---
+ call/rtp_demuxer.cc          | 22 +++++++---
+ call/rtp_demuxer.h           |  1 +
+ call/rtp_demuxer_unittest.cc | 83 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 101 insertions(+), 5 deletions(-)
+
+diff --git a/call/rtp_demuxer.cc b/call/rtp_demuxer.cc
+index 598764b71c..e078347544 100644
+--- a/call/rtp_demuxer.cc
++++ b/call/rtp_demuxer.cc
+@@ -161,7 +161,13 @@ bool RtpDemuxer::AddSink(const RtpDemuxerCriteria& criteria,
+   }
+ 
+   for (uint32_t ssrc : criteria.ssrcs()) {
+-    sink_by_ssrc_.emplace(ssrc, sink);
++    auto result = sink_by_ssrc_.emplace(ssrc, sink);
++    if (!result.second) {
++      if (signaled_ssrcs_.find(ssrc) == signaled_ssrcs_.end()) {
++        result.first->second = sink;
++      }
++    }
++    signaled_ssrcs_.insert(ssrc);
+   }
+ 
+   for (uint8_t payload_type : criteria.payload_types()) {
+@@ -231,10 +237,12 @@ bool RtpDemuxer::CriteriaWouldConflict(
+   for (uint32_t ssrc : criteria.ssrcs()) {
+     const auto sink_by_ssrc = sink_by_ssrc_.find(ssrc);
+     if (sink_by_ssrc != sink_by_ssrc_.end()) {
+-      RTC_LOG(LS_INFO) << criteria.ToString()
+-                       << " would conflict with existing sink = "
+-                       << sink_by_ssrc->second << " binding by SSRC=" << ssrc;
+-      return true;
++      if (signaled_ssrcs_.find(ssrc) != signaled_ssrcs_.end()) {
++        RTC_LOG(LS_INFO) << criteria.ToString()
++                         << " would conflict with existing sink = "
++                         << sink_by_ssrc->second << " binding by SSRC=" << ssrc;
++        return true;
++      }
+     }
+   }
+ 
+@@ -270,6 +278,10 @@ void RtpDemuxer::AddSink(absl::string_view rsid, RtpPacketSinkInterface* sink) {
+ 
+ bool RtpDemuxer::RemoveSink(const RtpPacketSinkInterface* sink) {
+   RTC_DCHECK(sink);
++  flat_set<uint32_t> ssrcs = GetSsrcsForSink(sink);
++  for (uint32_t ssrc : ssrcs) {
++    signaled_ssrcs_.erase(ssrc);
++  }
+   size_t num_removed = RemoveFromMapByValue(&sink_by_mid_, sink) +
+                        RemoveFromMapByValue(&sink_by_ssrc_, sink) +
+                        RemoveFromMultimapByValue(&sinks_by_pt_, sink) +
+diff --git a/call/rtp_demuxer.h b/call/rtp_demuxer.h
+index cc6a84c878..f2f76cb562 100644
+--- a/call/rtp_demuxer.h
++++ b/call/rtp_demuxer.h
+@@ -217,6 +217,7 @@ class RtpDemuxer {
+   flat_map<std::pair<std::string, std::string>, RtpPacketSinkInterface*>
+       sink_by_mid_and_rsid_;
+   flat_map<std::string, RtpPacketSinkInterface*> sink_by_rsid_;
++  flat_set<uint32_t> signaled_ssrcs_;
+ 
+   // Tracks all the MIDs that have been identified in added criteria. Used to
+   // determine if a packet should be dropped right away because the MID is
+diff --git a/call/rtp_demuxer_unittest.cc b/call/rtp_demuxer_unittest.cc
+index 363d58aa13..b878d2bbae 100644
+--- a/call/rtp_demuxer_unittest.cc
++++ b/call/rtp_demuxer_unittest.cc
+@@ -369,6 +369,89 @@ TEST_F(RtpDemuxerTest, OnRtpPacketCalledOnCorrectSinkByPayloadType) {
+   EXPECT_TRUE(demuxer_.OnRtpPacket(*packet));
+ }
+ 
++TEST_F(RtpDemuxerTest, DontSignalRtpPayloadTypeWhenPtDemuxingDisabled) {
++  constexpr uint32_t ssrc1 = 10;
++  constexpr uint32_t ssrc2 = 11;
++  constexpr uint8_t pt1 = 30;
++  constexpr uint8_t pt2 = 31;
++
++  // Sink 1 registered when PT demuxing is enabled (default).
++  MockRtpPacketSink sink1;
++  RtpDemuxerCriteria criteria1;
++  criteria1.payload_types() = {pt1};
++  EXPECT_TRUE(AddSink(criteria1, &sink1));
++
++  // Disable PT demuxing.
++  demuxer_.set_use_payload_type_demuxing(false);
++
++  // Sink 2 registered when PT demuxing is disabled.
++  MockRtpPacketSink sink2;
++  RtpDemuxerCriteria criteria2;
++  criteria2.payload_types() = {pt2};
++  EXPECT_TRUE(AddSink(criteria2, &sink2));
++
++  // Packet with pt1 should not go to sink1 because fallback is disabled.
++  auto packet1 = CreatePacketWithSsrc(ssrc1);
++  packet1->SetPayloadType(pt1);
++  EXPECT_CALL(sink1, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet1));
++
++  // Packet with pt2 should not go to sink2 because fallback is disabled and it
++  // was not registered by PT.
++  auto packet2 = CreatePacketWithSsrc(ssrc2);
++  packet2->SetPayloadType(pt2);
++  EXPECT_CALL(sink2, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet2));
++}
++
++TEST_F(RtpDemuxerTest, DynamicPayloadTypeDemuxing) {
++  constexpr uint32_t ssrc = 10;
++  constexpr uint8_t payload_type = 30;
++
++  MockRtpPacketSink sink;
++  RtpDemuxerCriteria criteria;
++  criteria.payload_types() = {payload_type};
++
++  demuxer_.set_use_payload_type_demuxing(false);
++  EXPECT_TRUE(AddSink(criteria, &sink));
++
++  auto packet = CreatePacketWithSsrc(ssrc);
++  packet->SetPayloadType(payload_type);
++
++  EXPECT_CALL(sink, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet));
++
++  demuxer_.set_use_payload_type_demuxing(true);
++
++  EXPECT_CALL(sink, OnRtpPacket(SamePacketAs(*packet))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet));
++}
++
++TEST_F(RtpDemuxerTest, SignaledSsrcOverridesLearnedBinding) {
++  constexpr uint32_t ssrc = 10;
++  constexpr uint8_t payload_type = 30;
++
++  MockRtpPacketSink sink1;
++  RtpDemuxerCriteria criteria1;
++  criteria1.payload_types() = {payload_type};
++  EXPECT_TRUE(AddSink(criteria1, &sink1));
++
++  auto packet1 = CreatePacketWithSsrc(ssrc);
++  packet1->SetPayloadType(payload_type);
++  EXPECT_CALL(sink1, OnRtpPacket(SamePacketAs(*packet1))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet1));
++
++  MockRtpPacketSink sink2;
++  RtpDemuxerCriteria criteria2;
++  criteria2.ssrcs().insert(ssrc);
++  EXPECT_TRUE(AddSink(criteria2, &sink2));
++
++  auto packet2 = CreatePacketWithSsrc(ssrc);
++  EXPECT_CALL(sink1, OnRtpPacket(_)).Times(0);
++  EXPECT_CALL(sink2, OnRtpPacket(SamePacketAs(*packet2))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet2));
++}
++
+ TEST_F(RtpDemuxerTest, PacketsDeliveredInRightOrder) {
+   constexpr uint32_t ssrc = 101;
+   MockRtpPacketSink sink;
