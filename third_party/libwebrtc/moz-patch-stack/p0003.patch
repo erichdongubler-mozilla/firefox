@@ -1,186 +1,192 @@
-From: Jakob Ivarsson <jakobi@webrtc.org>
-Date: Thu, 16 Apr 2026 10:35:57 +0000
-Subject: (cherry-pick-branch-heads/7778) [M148] Check vector sizes when
- crossfading from CNG/expand to normal.
+From: Tommi <tommi@webrtc.org>
+Date: Thu, 16 Apr 2026 14:48:05 +0200
+Subject: (cherry-pick-branch-heads/7778) [M148] Allow signaled SSRCs to
+ override learned bindings in RtpDemuxer
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Original change's description:
-> Check vector sizes when crossfading from CNG/expand to normal.
->
-> This fixes a potential out-of-bounds write.
->
-> Bug: chromium:502661101
-> Change-Id: I6f03b522643d7a55040d7f5403f342b32d47f0c7
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464500
-> Commit-Queue: Jakob Ivarsson‎ <jakobi@webrtc.org>
-> Reviewed-by: Henrik Lundin <henrik.lundin@webrtc.org>
-> Cr-Commit-Position: refs/heads/main@{#47447}
+Update RtpDemuxer to permit signaled SSRCs to override existing learned
+SSRC bindings. This prevents registration failures during session
+renegotiation when an SSRC, previously identified through payload type
+demuxing, is subsequently explicitly signaled.
 
-(cherry picked from commit ff1be2e8524fe63069fc2406d5e3f3ddccafee1a)
+The demuxer now maintains a set of signaled SSRCs to differentiate
+explicit configurations from learned state. Conflict detection is
+modified to allow these overrides while maintaining strict checks
+between multiple signaled SSRCs. This ensures that explicit signaling
+always takes precedence over internally learned bindings, resolving
+routing issues during media stream updates.
 
-Bug: chromium:504500274,chromium:502661101
-Change-Id: I6f03b522643d7a55040d7f5403f342b32d47f0c7
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/465220
-Commit-Queue: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Auto-Submit: Chrome Cherry Picker <chrome-cherry-picker@chops-service-accounts.iam.gserviceaccount.com>
-Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Cr-Commit-Position: refs/branch-heads/7778@{#3}
+(cherry picked from commit 186d42a3010981882a8679a145ce36aa84581c78)
+
+Fixed: chromium:503666505
+Bug: webrtc:502130956
+Change-Id: I551c2b7ee5af18fc9792ee52be08c5349c20b641
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464220
+Reviewed-by: Harald Alvestrand <hta@webrtc.org>
+Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
+Cr-Original-Commit-Position: refs/heads/main@{#47446}
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464764
+Reviewed-by: Björn Terelius <terelius@webrtc.org>
+Cr-Commit-Position: refs/branch-heads/7778@{#2}
 Cr-Branched-From: ca896b7ffef011bbf6957c99d413c5aac602c99f-refs/heads/main@{#47319}
 ---
- modules/audio_coding/neteq/normal.cc          | 57 ++++++++-----------
- modules/audio_coding/neteq/normal.h           |  4 --
- modules/audio_coding/neteq/normal_unittest.cc | 15 +++++
- 3 files changed, 39 insertions(+), 37 deletions(-)
+ call/rtp_demuxer.cc          | 22 +++++++---
+ call/rtp_demuxer.h           |  1 +
+ call/rtp_demuxer_unittest.cc | 83 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 101 insertions(+), 5 deletions(-)
 
-diff --git a/modules/audio_coding/neteq/normal.cc b/modules/audio_coding/neteq/normal.cc
-index 117c480f8c..be727fb799 100644
---- a/modules/audio_coding/neteq/normal.cc
-+++ b/modules/audio_coding/neteq/normal.cc
-@@ -22,12 +22,32 @@
- #include "common_audio/signal_processing/include/spl_inl.h"
- #include "modules/audio_coding/codecs/cng/webrtc_cng.h"
- #include "modules/audio_coding/neteq/audio_multi_vector.h"
-+#include "modules/audio_coding/neteq/audio_vector.h"
- #include "modules/audio_coding/neteq/background_noise.h"
- #include "modules/audio_coding/neteq/decoder_database.h"
- #include "modules/audio_coding/neteq/expand.h"
- #include "rtc_base/checks.h"
- 
- namespace webrtc {
-+namespace {
-+
-+void Crossfade(const AudioVector& from, AudioVector& to, size_t win_length) {
-+  const size_t win_length_clamped =
-+      std::min({win_length, from.Size(), to.Size()});
-+  if (win_length_clamped == 0) {
-+    return;
-+  }
-+  int16_t win_slope_Q14 = (1 << 14) / static_cast<int16_t>(win_length_clamped);
-+  int16_t win_up_Q14 = 0;
-+  for (size_t i = 0; i < win_length_clamped; i++) {
-+    win_up_Q14 += win_slope_Q14;
-+    to[i] =
-+        (win_up_Q14 * to[i] + ((1 << 14) - win_up_Q14) * from[i] + (1 << 13)) >>
-+        14;
-+  }
-+}
-+
-+}  // namespace
- 
- int Normal::Process(const int16_t* input,
-                     size_t length,
-@@ -138,23 +158,7 @@ int Normal::Process(const int16_t* input,
- 
-       // Interpolate the expanded data into the new vector.
-       // (NB/WB/SWB32/SWB48 8/16/32/48 samples.)
--      size_t win_length = samples_per_ms_;
--      int16_t win_slope_Q14 = default_win_slope_Q14_;
--      RTC_DCHECK_LT(channel_ix, output->Channels());
--      if (win_length > output->Size()) {
--        win_length = output->Size();
--        win_slope_Q14 = (1 << 14) / static_cast<int16_t>(win_length);
--      }
--      int16_t win_up_Q14 = 0;
--      for (size_t i = 0; i < win_length; i++) {
--        win_up_Q14 += win_slope_Q14;
--        (*output)[channel_ix][i] =
--            (win_up_Q14 * (*output)[channel_ix][i] +
--             ((1 << 14) - win_up_Q14) * expanded[channel_ix][i] + (1 << 13)) >>
--            14;
--      }
--      RTC_DCHECK_GT(win_up_Q14,
--                    (1 << 14) - 32);  // Worst case rouding is a length of 34
-+      Crossfade(expanded[channel_ix], (*output)[channel_ix], samples_per_ms_);
-     }
-   } else if (last_mode == NetEq::Mode::kRfc3389Cng) {
-     RTC_DCHECK_EQ(output->Channels(), 1);  // Not adapted for multi-channel yet.
-@@ -176,22 +180,9 @@ int Normal::Process(const int16_t* input,
-     }
-     // Interpolate the CNG into the new vector.
-     // (NB/WB/SWB32/SWB48 8/16/32/48 samples.)
--    size_t win_length = samples_per_ms_;
--    int16_t win_slope_Q14 = default_win_slope_Q14_;
--    if (win_length > kCngLength) {
--      win_length = kCngLength;
--      win_slope_Q14 = (1 << 14) / static_cast<int16_t>(win_length);
--    }
--    int16_t win_up_Q14 = 0;
--    for (size_t i = 0; i < win_length; i++) {
--      win_up_Q14 += win_slope_Q14;
--      (*output)[0][i] =
--          (win_up_Q14 * (*output)[0][i] +
--           ((1 << 14) - win_up_Q14) * cng_output[i] + (1 << 13)) >>
--          14;
--    }
--    RTC_DCHECK_GT(win_up_Q14,
--                  (1 << 14) - 32);  // Worst case rouding is a length of 34
-+    AudioVector temp_vector(kCngLength);
-+    temp_vector.OverwriteAt(cng_output, kCngLength, 0);
-+    Crossfade(temp_vector, (*output)[0], samples_per_ms_);
+diff --git a/call/rtp_demuxer.cc b/call/rtp_demuxer.cc
+index 598764b71c..e078347544 100644
+--- a/call/rtp_demuxer.cc
++++ b/call/rtp_demuxer.cc
+@@ -161,7 +161,13 @@ bool RtpDemuxer::AddSink(const RtpDemuxerCriteria& criteria,
    }
  
-   return static_cast<int>(length);
-diff --git a/modules/audio_coding/neteq/normal.h b/modules/audio_coding/neteq/normal.h
-index e6c918764f..d0dfc2f6cb 100644
---- a/modules/audio_coding/neteq/normal.h
-+++ b/modules/audio_coding/neteq/normal.h
-@@ -17,7 +17,6 @@
- #include "api/neteq/neteq.h"
- #include "modules/audio_coding/neteq/statistics_calculator.h"
- #include "rtc_base/checks.h"
--#include "rtc_base/numerics/safe_conversions.h"
+   for (uint32_t ssrc : criteria.ssrcs()) {
+-    sink_by_ssrc_.emplace(ssrc, sink);
++    auto result = sink_by_ssrc_.emplace(ssrc, sink);
++    if (!result.second) {
++      if (signaled_ssrcs_.find(ssrc) == signaled_ssrcs_.end()) {
++        result.first->second = sink;
++      }
++    }
++    signaled_ssrcs_.insert(ssrc);
+   }
  
- namespace webrtc {
+   for (uint8_t payload_type : criteria.payload_types()) {
+@@ -231,10 +237,12 @@ bool RtpDemuxer::CriteriaWouldConflict(
+   for (uint32_t ssrc : criteria.ssrcs()) {
+     const auto sink_by_ssrc = sink_by_ssrc_.find(ssrc);
+     if (sink_by_ssrc != sink_by_ssrc_.end()) {
+-      RTC_LOG(LS_INFO) << criteria.ToString()
+-                       << " would conflict with existing sink = "
+-                       << sink_by_ssrc->second << " binding by SSRC=" << ssrc;
+-      return true;
++      if (signaled_ssrcs_.find(ssrc) != signaled_ssrcs_.end()) {
++        RTC_LOG(LS_INFO) << criteria.ToString()
++                         << " would conflict with existing sink = "
++                         << sink_by_ssrc->second << " binding by SSRC=" << ssrc;
++        return true;
++      }
+     }
+   }
  
-@@ -42,8 +41,6 @@ class Normal {
-         background_noise_(background_noise),
-         expand_(expand),
-         samples_per_ms_(CheckedDivExact(fs_hz_, 1000)),
--        default_win_slope_Q14_(
--            dchecked_cast<uint16_t>((1 << 14) / samples_per_ms_)),
-         statistics_(statistics) {}
+@@ -270,6 +278,10 @@ void RtpDemuxer::AddSink(absl::string_view rsid, RtpPacketSinkInterface* sink) {
  
-   virtual ~Normal() {}
-@@ -68,7 +65,6 @@ class Normal {
-   const BackgroundNoise& background_noise_;
-   Expand* expand_;
-   const size_t samples_per_ms_;
--  const int16_t default_win_slope_Q14_;
-   StatisticsCalculator* const statistics_;
- };
+ bool RtpDemuxer::RemoveSink(const RtpPacketSinkInterface* sink) {
+   RTC_DCHECK(sink);
++  flat_set<uint32_t> ssrcs = GetSsrcsForSink(sink);
++  for (uint32_t ssrc : ssrcs) {
++    signaled_ssrcs_.erase(ssrc);
++  }
+   size_t num_removed = RemoveFromMapByValue(&sink_by_mid_, sink) +
+                        RemoveFromMapByValue(&sink_by_ssrc_, sink) +
+                        RemoveFromMultimapByValue(&sinks_by_pt_, sink) +
+diff --git a/call/rtp_demuxer.h b/call/rtp_demuxer.h
+index cc6a84c878..f2f76cb562 100644
+--- a/call/rtp_demuxer.h
++++ b/call/rtp_demuxer.h
+@@ -217,6 +217,7 @@ class RtpDemuxer {
+   flat_map<std::pair<std::string, std::string>, RtpPacketSinkInterface*>
+       sink_by_mid_and_rsid_;
+   flat_map<std::string, RtpPacketSinkInterface*> sink_by_rsid_;
++  flat_set<uint32_t> signaled_ssrcs_;
  
-diff --git a/modules/audio_coding/neteq/normal_unittest.cc b/modules/audio_coding/neteq/normal_unittest.cc
-index 272869d701..c29a2c3314 100644
---- a/modules/audio_coding/neteq/normal_unittest.cc
-+++ b/modules/audio_coding/neteq/normal_unittest.cc
-@@ -14,6 +14,7 @@
- 
- #include <cstddef>
- #include <cstdint>
-+#include <vector>
- 
- #include "api/neteq/neteq.h"
- #include "api/neteq/tick_timer.h"
-@@ -147,6 +148,20 @@ TEST(Normal, LastModeExpand120msPacket) {
-   EXPECT_CALL(expand, Die());  // Called when `expand` goes out of scope.
+   // Tracks all the MIDs that have been identified in added criteria. Used to
+   // determine if a packet should be dropped right away because the MID is
+diff --git a/call/rtp_demuxer_unittest.cc b/call/rtp_demuxer_unittest.cc
+index 363d58aa13..b878d2bbae 100644
+--- a/call/rtp_demuxer_unittest.cc
++++ b/call/rtp_demuxer_unittest.cc
+@@ -369,6 +369,89 @@ TEST_F(RtpDemuxerTest, OnRtpPacketCalledOnCorrectSinkByPayloadType) {
+   EXPECT_TRUE(demuxer_.OnRtpPacket(*packet));
  }
  
-+TEST(Normal, LastModeRfc3389CngSmallInput) {
-+  constexpr size_t kChannels = 1;
-+  constexpr size_t kInputFrames = 10;
-+  MockDecoderDatabase db;
-+  Normal normal(/*fs_hz=*/48000, /*decoder_database=*/&db,
-+                /*background_noise=*/BackgroundNoise(kChannels),
-+                /*expand=*/nullptr, /*statistics=*/nullptr);
-+  AudioMultiVector output(kChannels);
-+  std::vector<int16_t> input(kChannels * kInputFrames, 0);
-+  EXPECT_EQ(normal.Process(input.data(), input.size(), NetEq::Mode::kRfc3389Cng,
-+                           &output),
-+            static_cast<int>(input.size()));
++TEST_F(RtpDemuxerTest, DontSignalRtpPayloadTypeWhenPtDemuxingDisabled) {
++  constexpr uint32_t ssrc1 = 10;
++  constexpr uint32_t ssrc2 = 11;
++  constexpr uint8_t pt1 = 30;
++  constexpr uint8_t pt2 = 31;
++
++  // Sink 1 registered when PT demuxing is enabled (default).
++  MockRtpPacketSink sink1;
++  RtpDemuxerCriteria criteria1;
++  criteria1.payload_types() = {pt1};
++  EXPECT_TRUE(AddSink(criteria1, &sink1));
++
++  // Disable PT demuxing.
++  demuxer_.set_use_payload_type_demuxing(false);
++
++  // Sink 2 registered when PT demuxing is disabled.
++  MockRtpPacketSink sink2;
++  RtpDemuxerCriteria criteria2;
++  criteria2.payload_types() = {pt2};
++  EXPECT_TRUE(AddSink(criteria2, &sink2));
++
++  // Packet with pt1 should not go to sink1 because fallback is disabled.
++  auto packet1 = CreatePacketWithSsrc(ssrc1);
++  packet1->SetPayloadType(pt1);
++  EXPECT_CALL(sink1, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet1));
++
++  // Packet with pt2 should not go to sink2 because fallback is disabled and it
++  // was not registered by PT.
++  auto packet2 = CreatePacketWithSsrc(ssrc2);
++  packet2->SetPayloadType(pt2);
++  EXPECT_CALL(sink2, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet2));
 +}
 +
- // TODO(hlundin): Write more tests.
- 
- }  // namespace webrtc
++TEST_F(RtpDemuxerTest, DynamicPayloadTypeDemuxing) {
++  constexpr uint32_t ssrc = 10;
++  constexpr uint8_t payload_type = 30;
++
++  MockRtpPacketSink sink;
++  RtpDemuxerCriteria criteria;
++  criteria.payload_types() = {payload_type};
++
++  demuxer_.set_use_payload_type_demuxing(false);
++  EXPECT_TRUE(AddSink(criteria, &sink));
++
++  auto packet = CreatePacketWithSsrc(ssrc);
++  packet->SetPayloadType(payload_type);
++
++  EXPECT_CALL(sink, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet));
++
++  demuxer_.set_use_payload_type_demuxing(true);
++
++  EXPECT_CALL(sink, OnRtpPacket(SamePacketAs(*packet))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet));
++}
++
++TEST_F(RtpDemuxerTest, SignaledSsrcOverridesLearnedBinding) {
++  constexpr uint32_t ssrc = 10;
++  constexpr uint8_t payload_type = 30;
++
++  MockRtpPacketSink sink1;
++  RtpDemuxerCriteria criteria1;
++  criteria1.payload_types() = {payload_type};
++  EXPECT_TRUE(AddSink(criteria1, &sink1));
++
++  auto packet1 = CreatePacketWithSsrc(ssrc);
++  packet1->SetPayloadType(payload_type);
++  EXPECT_CALL(sink1, OnRtpPacket(SamePacketAs(*packet1))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet1));
++
++  MockRtpPacketSink sink2;
++  RtpDemuxerCriteria criteria2;
++  criteria2.ssrcs().insert(ssrc);
++  EXPECT_TRUE(AddSink(criteria2, &sink2));
++
++  auto packet2 = CreatePacketWithSsrc(ssrc);
++  EXPECT_CALL(sink1, OnRtpPacket(_)).Times(0);
++  EXPECT_CALL(sink2, OnRtpPacket(SamePacketAs(*packet2))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet2));
++}
++
+ TEST_F(RtpDemuxerTest, PacketsDeliveredInRightOrder) {
+   constexpr uint32_t ssrc = 101;
+   MockRtpPacketSink sink;
