@@ -158,7 +158,8 @@ class DefaultTabGroupRepository : TabGroupRepository {
             context = applicationContext,
             klass = TabGroupDatabase::class.java,
             name = "tab_groups",
-        ).build()
+        ).addMigrations(TabGroupDatabase.MIGRATION_1_2)
+            .build()
     }
 
     internal constructor(database: TabGroupDatabase) {

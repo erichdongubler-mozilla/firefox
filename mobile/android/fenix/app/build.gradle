@@ -223,6 +223,7 @@ android {
     sourceSets {
         androidTest {
             resources.srcDirs += ['src/androidTest/resources']
+            assets.srcDirs += files("$projectDir/schemas".toString())
         }
         if (project.hasProperty('baselineProfilePath')) {
             main {
@@ -744,6 +745,7 @@ dependencies {
     androidTestImplementation libs.androidx.test.uiautomator
     androidTestImplementation libs.androidx.work.testing
     androidTestImplementation libs.kotlin.test
+    androidTestImplementation libs.androidx.room.testing
     androidTestImplementation libs.leakcanary.instrumentation
     androidTestImplementation libs.mockk.android
     androidTestImplementation libs.mockwebserver
