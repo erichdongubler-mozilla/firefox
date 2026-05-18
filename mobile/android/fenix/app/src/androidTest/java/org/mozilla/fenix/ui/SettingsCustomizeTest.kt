@@ -7,6 +7,7 @@ package org.mozilla.fenix.ui
 import android.content.res.Configuration
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.enableOrDisableBackGestureNavigationOnDevice
 import org.mozilla.fenix.helpers.FenixTestRule
@@ -136,6 +137,11 @@ class SettingsCustomizeTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3186732
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsCustomizeTest#verifyTheDefaultAppIconSettingTest"],
+        bug = 2039839,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifyTheDefaultAppIconSettingTest() {
