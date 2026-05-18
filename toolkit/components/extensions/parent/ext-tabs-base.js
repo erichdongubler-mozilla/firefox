@@ -99,6 +99,17 @@ class TabBase {
       resetScrollPosition = !!options?.resetScrollPosition;
     }
 
+    // The purpose of this getBoundingClientRect() call is to force a dimension
+    // update to propagate to the child, so that the drawSnapshot() call below
+    // does not fail with NS_ERROR_LOSS_OF_SIGNIFICANT_DATA.
+    let parentRect = this.browser.getBoundingClientRect();
+
+    // If there are no dimensions, throw a meaningful error instead of letting
+    // drawSnapshot() reject with NS_ERROR_LOSS_OF_SIGNIFICANT_DATA.
+    if (!parentRect.width && !parentRect.height) {
+      throw new ExtensionError("Cannot capture invisible tab");
+    }
+
     let wgp = this.browsingContext.currentWindowGlobal;
     let image = await wgp.drawSnapshot(
       rect,
