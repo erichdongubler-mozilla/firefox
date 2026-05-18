@@ -5837,7 +5837,6 @@ void GCRuntime::checkHashTablesAfterMovingGC() {
    * Check that internal hash tables no longer have any pointers to things
    * that have been moved.
    */
-  rt->geckoProfiler().checkStringsMapAfterMovingGC();
   for (ZonesIter zone(this, SkipAtoms); !zone.done(); zone.next()) {
     zone->checkUniqueIdTableAfterMovingGC();
     zone->shapeZone().checkTablesAfterMovingGC(zone);

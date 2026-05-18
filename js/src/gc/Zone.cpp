@@ -211,6 +211,8 @@ Zone::~Zone() {
     MOZ_RELEASE_ASSERT(preservedWrappersCount_ == 0);
     js_free(preservedWrappers_);
   }
+
+  profilerStrings.reset();
 }
 
 bool Zone::init() {
@@ -831,6 +833,15 @@ void Zone::checkScriptMapsAfterMovingGC() {
                             });
   }
 #  endif  // JS_CACHEIR_SPEW
+
+  if (profilerStrings) {
+    ProfileStringMap& map = profilerStrings->get();
+    CheckTableAfterMovingGC(map, [this](const auto& entry) {
+      BaseScript* script = entry.key();
+      CheckGCThingAfterMovingGC(script, this);
+      return script;
+    });
+  }
 }
 #endif
 

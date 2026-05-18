@@ -821,8 +821,6 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
 
   Zone::fixupAllCrossCompartmentWrappersAfterMovingGC(&trc);
 
-  rt->geckoProfiler().fixupStringsMapAfterMovingGC();
-
   // Mark roots to update them.
 
   traceRuntimeForMajorGC(&trc, session);

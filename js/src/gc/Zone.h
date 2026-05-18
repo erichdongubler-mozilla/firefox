@@ -485,6 +485,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::UniquePtr<js::ScriptFinalWarmUpCountMap> scriptFinalWarmUpCountMap;
 #endif
 
+  js::UniquePtr<JS::WeakCache<js::ProfileStringMap>> profilerStrings;
+
   js::MainThreadData<js::StringStats> previousGCStringStats;
   js::MainThreadData<js::StringStats> stringStats;
 

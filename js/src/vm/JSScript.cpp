@@ -133,8 +133,6 @@ void js::BaseScript::finalize(JS::GCContext* gcx) {
     script->destroyScriptCounts();
   }
 
-  gcx->runtime()->geckoProfiler().onScriptFinalized(this);
-
 #ifdef MOZ_VTUNE
   if (zone()->scriptVTuneIdMap) {
     // Note: we should only get here if the VTune JIT profiler is running.
