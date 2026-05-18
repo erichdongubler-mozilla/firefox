@@ -6,6 +6,7 @@
 
 var gProvider;
 var gManagerWindow;
+var gCategoryUtilities;
 
 function getName(item) {
   return item.addonNameEl.textContent;
@@ -47,10 +48,8 @@ add_task(async function test_updateid() {
   ]);
 
   gManagerWindow = await open_manager("addons://list/extension");
-
-  let viewLoaded = wait_for_view_load(gManagerWindow);
-  AboutAddonsTestUtils.clickCategoryButton(gManagerWindow, "extension");
-  await viewLoaded;
+  gCategoryUtilities = new CategoryUtilities(gManagerWindow);
+  await gCategoryUtilities.openType("extension");
 
   gProvider.createInstalls([
     {

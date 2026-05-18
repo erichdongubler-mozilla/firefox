@@ -38,8 +38,12 @@ list-empty-button =
     .label = Learn more about add-ons
 
 help-button = Add-ons Support
+sidebar-help-button-title =
+    .title = Add-ons Support
 
 addons-settings-button = { -brand-short-name } Settings
+sidebar-settings-button-title =
+    .title = { -brand-short-name } Settings
 
 show-unsigned-extensions-button =
     .label = Some extensions could not be verified
@@ -168,19 +172,33 @@ private-browsing-description2 =
     there. We’ve made this change to keep your private browsing private.
     <label data-l10n-name="private-browsing-learn-more">Learn how to manage extension settings</label>
 
-aboutaddons-sidebar =
-    .heading = Add-ons
-
 addon-category-discover = Recommendations
+addon-category-discover-title =
+    .title = Recommendations
 addon-category-extension = Extensions
+addon-category-extension-title =
+    .title = Extensions
 addon-category-theme = Themes
+addon-category-theme-title =
+    .title = Themes
 addon-category-plugin = Plugins
+addon-category-plugin-title =
+    .title = Plugins
 addon-category-dictionary = Dictionaries
+addon-category-dictionary-title =
+    .title = Dictionaries
 addon-category-locale = Languages
+addon-category-locale-title =
+    .title = Languages
 addon-category-available-updates = Available Updates
+addon-category-available-updates-title =
+    .title = Available Updates
 addon-category-recent-updates = Recent Updates
+addon-category-recent-updates-title =
+    .title = Recent Updates
 addon-category-sitepermission = Site Permissions
-
+addon-category-sitepermission-title =
+    .title = Site Permissions
 # String displayed in about:addons in the Site Permissions section
 # Variables:
 #  $host (string) - DNS host name for which the webextension enables permissions

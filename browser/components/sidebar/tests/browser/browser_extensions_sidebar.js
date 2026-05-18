@@ -104,7 +104,7 @@ add_task(async function test_open_new_window_after_install() {
 
   await BrowserTestUtils.withNewTab("about:addons", async browser => {
     await BrowserTestUtils.synthesizeMouseAtCenter(
-      "categories-box moz-page-nav-button[view=extension]",
+      "categories-box button[name=extension]",
       {},
       browser
     );

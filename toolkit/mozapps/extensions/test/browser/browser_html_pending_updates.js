@@ -157,13 +157,12 @@ async function promiseUpdateAvailable(extension) {
 }
 
 function expectUpdatesAvailableBadgeCount({ win, expectedNumber }) {
-  const availableButton = AboutAddonsTestUtils.getCategoryButton(
-    win,
-    "available-updates"
-  );
-  ok(availableButton, "Found available-updates category sidebar button");
+  const categoriesSidebar = win.document.querySelector("categories-box");
+  ok(categoriesSidebar, "Found the categories-box element");
+  const availableButton =
+    categoriesSidebar.getButtonByName("available-updates");
   is(
-    AboutAddonsTestUtils.getCategoryBadgeCount(availableButton),
+    availableButton.badgeCount,
     expectedNumber,
     expectedNumber
       ? `Expect only ${expectedNumber} available updates`
