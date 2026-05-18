@@ -13,10 +13,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/4e7b3c485e549e7e3
  1 file changed, 6 insertions(+)
 
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 476a83d8e0..c58fb2c44b 100644
+index 4f65ff332c..c374aa7c28 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -1039,6 +1039,12 @@ rtc_library("threading") {
+@@ -1017,6 +1017,12 @@ rtc_library("threading") {
      "thread.cc",
      "thread.h",
    ]
@@ -28,4 +28,4 @@ index 476a83d8e0..c58fb2c44b 100644
 +  }
    deps = [
      ":async_dns_resolver",
-     ":byte_order",
+     ":checks",

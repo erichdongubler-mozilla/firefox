@@ -602,7 +602,7 @@ index a603deeb4e..accd059f89 100644
  
  if (rtc_build_libsrtp) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index de875c4d85..cf9a8e80f1 100644
+index 22b86ed323..7817e7a361 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -9,8 +9,8 @@
@@ -616,7 +616,7 @@ index de875c4d85..cf9a8e80f1 100644
  }
  
  rtc_source_set("protobuf_utils") {
-@@ -1960,8 +1960,8 @@ if (!rtc_rusty_base64) {
+@@ -1901,8 +1901,8 @@ if (!rtc_rusty_base64) {
      ]
    }
  } else {
@@ -628,7 +628,7 @@ index de875c4d85..cf9a8e80f1 100644
    rust_static_library("base64_rust_bridge") {
      allow_unsafe = true  # Needed for FFI with cxx crate.
 diff --git a/rtc_base/memory/BUILD.gn b/rtc_base/memory/BUILD.gn
-index 2a0ec551a2..2e634fe3a3 100644
+index 9682dae9fe..4aede9e8ba 100644
 --- a/rtc_base/memory/BUILD.gn
 +++ b/rtc_base/memory/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -643,7 +643,7 @@ index 2a0ec551a2..2e634fe3a3 100644
  
  rtc_library("aligned_malloc") {
 diff --git a/rtc_base/synchronization/BUILD.gn b/rtc_base/synchronization/BUILD.gn
-index 2a197152b9..4d5008874e 100644
+index c1d924db9a..f91206a08f 100644
 --- a/rtc_base/synchronization/BUILD.gn
 +++ b/rtc_base/synchronization/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -658,7 +658,7 @@ index 2a197152b9..4d5008874e 100644
  
  rtc_library("yield") {
 diff --git a/rtc_base/system/BUILD.gn b/rtc_base/system/BUILD.gn
-index ad91b314f9..94280afb3d 100644
+index e15fa92c00..67f946b9b3 100644
 --- a/rtc_base/system/BUILD.gn
 +++ b/rtc_base/system/BUILD.gn
 @@ -8,8 +8,8 @@
