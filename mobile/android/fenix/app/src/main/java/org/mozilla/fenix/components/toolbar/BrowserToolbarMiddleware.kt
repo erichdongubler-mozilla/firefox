@@ -380,7 +380,13 @@ class BrowserToolbarMiddleware(
 
                 val selectedTab = browserStore.state.selectedTab
                 val url = selectedTab?.readerState?.activeUrl ?: selectedTab?.content?.url
-                clipboard.text = url
+                val isPrivate = selectedTab?.content?.private ?: true
+
+                if (isPrivate) {
+                    clipboard.sensitiveText = url
+                } else {
+                    clipboard.text = url
+                }
 
                 // Android 13+ shows by default a popup for copied text.
                 // Avoid overlapping popups informing the user when the URL is copied to the clipboard.
