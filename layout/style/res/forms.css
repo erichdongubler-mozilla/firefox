@@ -274,6 +274,11 @@ select:-moz-select-list-box::picker(select) {
   display: contents !important;
 }
 
+select > button:first-child {
+  all: unset;
+  display: contents;
+}
+
 option[label]::before {
   content: attr(label);
 }
