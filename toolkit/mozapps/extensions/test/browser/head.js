@@ -9,6 +9,10 @@ const { TelemetryTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TelemetryTestUtils.sys.mjs"
 );
 
+const { AboutAddonsTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/AboutAddonsTestUtils.sys.mjs"
+);
+
 let { AddonManagerPrivate } = ChromeUtils.importESModule(
   "resource://gre/modules/AddonManager.sys.mjs"
 );
@@ -273,7 +277,7 @@ function check_all_in_list(aManager, aIds, aIgnoreExtras) {
 }
 
 function getAddonCard(win, id) {
-  return win.document.querySelector(`addon-card[addon-id="${id}"]`);
+  return AboutAddonsTestUtils.getAddonCard(win, id);
 }
 
 async function wait_for_view_load(
@@ -513,9 +517,9 @@ CategoryUtilities.prototype = {
   },
 
   getSelectedViewId() {
-    let selectedItem = this._categoriesBox.querySelector("[selected]");
-    isnot(selectedItem, null, "A category should be selected");
-    return selectedItem.getAttribute("viewid");
+    let viewId = this._categoriesBox.currentViewId;
+    isnot(viewId, undefined, "A category should be selected");
+    return viewId;
   },
 
   get selectedCategory() {
@@ -536,7 +540,10 @@ CategoryUtilities.prototype = {
       "Should not get category when manager window is not loaded"
     );
 
-    let button = this._categoriesBox.querySelector(`[name="${categoryType}"]`);
+    let button = AboutAddonsTestUtils.getCategoryButton(
+      this.window,
+      categoryType
+    );
     if (button) {
       return button;
     }

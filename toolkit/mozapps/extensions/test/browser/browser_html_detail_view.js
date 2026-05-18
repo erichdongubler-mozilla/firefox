@@ -1580,7 +1580,7 @@ add_task(async function testQuarantinedDomainsUserAllowedUI() {
 
   info("Switch to theme list view");
   loaded = waitForViewLoad(win);
-  doc.querySelector("#categories > [name=theme]").click();
+  AboutAddonsTestUtils.clickCategoryButton(win, "theme");
   await loaded;
 
   info("Test quarantineIgnoredByUser UI on a non extension addon type (theme)");
@@ -1597,7 +1597,7 @@ add_task(async function testQuarantinedDomainsUserAllowedUI() {
 
   info("Switch to extension list view");
   loaded = waitForViewLoad(win);
-  doc.querySelector("#categories > [name=extension]").click();
+  AboutAddonsTestUtils.clickCategoryButton(win, "extension");
   await loaded;
 
   loaded = waitForViewLoad(win);
@@ -1622,7 +1622,7 @@ add_task(async function testQuarantinedDomainsUserAllowedUI() {
 
   info("Switch to extension list view");
   loaded = waitForViewLoad(win);
-  doc.querySelector("#categories > [name=extension]").click();
+  AboutAddonsTestUtils.clickCategoryButton(win, "extension");
   await loaded;
 
   loaded = waitForViewLoad(win);
