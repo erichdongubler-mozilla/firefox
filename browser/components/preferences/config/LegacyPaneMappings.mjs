@@ -26,6 +26,7 @@ export const LEGACY_PANE_MAPPINGS = new Map([
     "general-update-box-group",
     { category: "about", subcategory: "update-box-group" },
   ],
+  ["general-update-state", { category: "about", subcategory: "update-state" }],
 
   ["general-cfraddons", { category: "tabsBrowsing", subcategory: "cfraddons" }],
   [

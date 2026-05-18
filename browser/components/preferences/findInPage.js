@@ -122,6 +122,12 @@ var gSearchResultsPane = {
           document.addEventListener("L10nMutationsFinished", r, { once: true })
         );
       }
+      queueMicrotask(() =>
+        Services.obs.notifyObservers(
+          window,
+          "preferences-MaybeCategoriesInitializedSLOW"
+        )
+      );
     }
   },
 
