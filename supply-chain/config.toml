@@ -159,10 +159,6 @@ audit-as-crates-io = true
 audit-as-crates-io = true
 notes = "This is a pinned version of the upstream code, presumably to get a fix that hadn't been released yet. We should consider switching to the latest official release."
 
-[policy."mio:1.1.1@git:5e8b202db39facecc343170f50a07916640a607c"]
-audit-as-crates-io = false
-notes = "Fork of mio 1.1.1 with windows-sys downgraded to 0.52."
-
 [policy.mls-rs-provider-sqlite]
 audit-as-crates-io = true
 notes = "This is a pinned version of the upstream code, pending update of the crate."
@@ -291,8 +287,15 @@ notes = "This is a first-party crate which is also published to crates.io. We ce
 
 [policy.webrender]
 audit-as-crates-io = false
-dependency-criteria = { hyper = "safe-to-run", tokio = "safe-to-run" }
-notes = "the hyper and tokio dependencies are only enabled in local debug builds, and are not shipped to users"
+notes = "the hyper and tokio dependencies (and their transitive deps) are only enabled via the debugger feature in local debug builds, and are not shipped to users"
+
+[policy.webrender.dependency-criteria]
+http-body = "safe-to-run"
+http-body-util = "safe-to-run"
+hyper = "safe-to-run"
+hyper-util = "safe-to-run"
+tokio = "safe-to-run"
+tower-service = "safe-to-run"
 
 [policy.webrender_api]
 audit-as-crates-io = false

@@ -27,7 +27,7 @@ chrono = "0.4.6"
 clap = { version = "4", default-features = false, features = ["cargo", "std", "suggestions", "wrap_help", "string"] }
 # Depend on flate2 to enable the rust backend (the default) for flate2 used by the zip crate.
 flate2 = "1"
-hyper = "0.14"
+http = "1.4"
 icu_segmenter = { version = "2.0", default-features = false, features = ["auto", "compiled_data"] }
 lazy_static = "1.0"
 log = { version = "0.4", features = ["std"] }

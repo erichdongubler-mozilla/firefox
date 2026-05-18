@@ -24,7 +24,7 @@ minidump-writer = "0.11"
 
 [target."cfg(target_os = \"windows\")".dependencies]
 getrandom = { version = "0.3" }
-windows-sys = { version = "0.52", features = [
+windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_Security",
     "Win32_Storage_FileSystem",

@@ -325,7 +325,7 @@ who = "Ryan Safaeian <rsafaeian@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 158511 # Yarik (lotas)
 start = "2022-05-05"
-end = "2026-04-24"
+end = "2027-04-24"
 notes = "Hawk is written and maintained by mozilla employees."
 
 [[wildcard-audits.io-surface]]
@@ -4645,9 +4645,9 @@ criteria = "safe-to-deploy"
 delta = "0.3.0 -> 0.4.1"
 
 [[audits.mtu]]
-who = "Oskar Mansfeld <git@omansfeld.net>"
+who = "Henrik Skupin <mail@hskupin.info>"
 criteria = "safe-to-deploy"
-delta = "0.4.1 -> 0.4.1@git:cca436bc84a8f6606cb66cf68add1a5a15a440ad"
+delta = "0.4.1 -> 0.4.1@git:006442de909e35d9ab9d6fcb86155f77779d3090"
 importable = false
 
 [[audits.naga]]
@@ -6383,6 +6383,11 @@ delta = "0.4.4 -> 0.4.7"
 who = "Kershaw Chang <kershaw@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.5.5 -> 0.5.7"
+
+[[audits.socket2]]
+who = "Henrik Skupin <mail@hskupin.info>"
+criteria = "safe-to-deploy"
+delta = "0.5.7 -> 0.6.3"
 
 [[audits.spirv]]
 who = "Nicolas Silva <nical@fastmail.com>"
@@ -8415,7 +8420,7 @@ end = "2024-07-17"
 criteria = "safe-to-deploy"
 user-id = 6825 # Dan Gohman (sunfishcode)
 start = "2023-08-29"
-end = "2025-01-11"
+end = "2027-01-11"
 
 [[trusted.flate2]]
 criteria = "safe-to-deploy"
@@ -8427,7 +8432,7 @@ end = "2024-05-05"
 criteria = "safe-to-deploy"
 user-id = 359 # Sean McArthur (seanmonstar)
 start = "2019-03-13"
-end = "2024-12-05"
+end = "2027-05-01"
 
 [[trusted.hashbrown]]
 criteria = "safe-to-deploy"
@@ -8445,19 +8450,49 @@ end = "2026-09-30"
 criteria = "safe-to-deploy"
 user-id = 359 # Sean McArthur (seanmonstar)
 start = "2019-09-09"
-end = "2024-04-25"
+end = "2027-05-01"
+
+[[trusted.headers-core]]
+criteria = "safe-to-run"
+user-id = 359 # Sean McArthur (seanmonstar)
+start = "2019-09-09"
+end = "2027-05-01"
+
+[[trusted.http]]
+criteria = "safe-to-deploy"
+user-id = 359 # Sean McArthur (seanmonstar)
+start = "2019-03-01"
+end = "2027-05-01"
+
+[[trusted.http-body]]
+criteria = "safe-to-run"
+user-id = 359 # Sean McArthur (seanmonstar)
+start = "2019-03-01"
+end = "2027-05-01"
+
+[[trusted.http-body-util]]
+criteria = "safe-to-run"
+user-id = 359 # Sean McArthur (seanmonstar)
+start = "2019-03-01"
+end = "2027-05-01"
 
 [[trusted.httparse]]
 criteria = "safe-to-deploy"
 user-id = 359 # Sean McArthur (seanmonstar)
 start = "2019-07-03"
-end = "2024-04-25"
+end = "2027-05-01"
 
 [[trusted.hyper]]
 criteria = "safe-to-run"
 user-id = 359 # Sean McArthur (seanmonstar)
 start = "2019-03-01"
-end = "2026-07-04"
+end = "2027-05-01"
+
+[[trusted.hyper-util]]
+criteria = "safe-to-run"
+user-id = 359 # Sean McArthur (seanmonstar)
+start = "2019-03-01"
+end = "2027-05-01"
 
 [[trusted.indexmap]]
 criteria = "safe-to-deploy"
@@ -8517,7 +8552,7 @@ end = "2024-09-01"
 criteria = "safe-to-deploy"
 user-id = 6825 # Dan Gohman (sunfishcode)
 start = "2021-06-12"
-end = "2024-09-08"
+end = "2027-09-08"
 
 [[trusted.lock_api]]
 criteria = "safe-to-deploy"
@@ -8541,7 +8576,13 @@ end = "2024-04-25"
 criteria = "safe-to-deploy"
 user-id = 10 # Carl Lerche (carllerche)
 start = "2019-05-15"
-end = "2024-05-06"
+end = "2027-05-06"
+
+[[trusted.mio]]
+criteria = "safe-to-deploy"
+user-id = 6025 # Thomas de Zeeuw (Thomasdezeeuw)
+start = "2019-12-17"
+end = "2027-04-27"
 
 [[trusted.num]]
 criteria = "safe-to-deploy"
@@ -8781,19 +8822,19 @@ end = "2024-04-25"
 criteria = "safe-to-run"
 user-id = 6741 # Alice Ryhl (Darksonn)
 start = "2020-12-25"
-end = "2025-07-30"
+end = "2027-07-30"
 
 [[trusted.tokio-macros]]
 criteria = "safe-to-deploy"
 user-id = 6741 # Alice Ryhl (Darksonn)
 start = "2020-10-26"
-end = "2025-07-30"
+end = "2027-07-30"
 
 [[trusted.tokio-util]]
 criteria = "safe-to-deploy"
 user-id = 6741 # Alice Ryhl (Darksonn)
 start = "2021-01-12"
-end = "2024-05-05"
+end = "2027-05-05"
 
 [[trusted.toml]]
 criteria = "safe-to-deploy"
@@ -8853,7 +8894,7 @@ end = "2024-05-03"
 criteria = "safe-to-deploy"
 user-id = 359 # Sean McArthur (seanmonstar)
 start = "2019-03-20"
-end = "2024-05-08"
+end = "2027-05-01"
 
 [[trusted.wasi]]
 criteria = "safe-to-deploy"
