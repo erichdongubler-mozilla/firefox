@@ -6,7 +6,7 @@ who = "Paul Adenot <paul@paul.cx>"
 criteria = "safe-to-deploy"
 user-id = 1258 # Paul Adenot (padenot)
 start = "2019-05-09"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = """
 I've written most of this crate, the rest has been either written and in any
 case has been reviewed by Mozilla developers.
@@ -71,7 +71,7 @@ who = "John M. Schanck <jschanck@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 175410 # John Schanck (jschanck)
 start = "2024-10-01"
-end = "2025-10-01"
+end = "2027-04-23"
 notes = "Maintained by the CryptoEng team at Mozilla."
 
 [[wildcard-audits.clubcard-crlite]]
@@ -79,7 +79,7 @@ who = "John M. Schanck <jschanck@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 175410 # John Schanck (jschanck)
 start = "2024-10-01"
-end = "2025-10-01"
+end = "2027-04-23"
 notes = "Maintained by the CryptoEng team at Mozilla."
 
 [[wildcard-audits.cocoa]]
@@ -228,7 +228,7 @@ who = "Nicolas Silva <nical@fastmail.com>"
 criteria = "safe-to-deploy"
 user-id = 1281 # Nicolas Silva (nical)
 start = "2020-11-12"
-end = "2025-06-01"
+end = "2027-04-23"
 notes = "I am the author of this crate."
 
 [[wildcard-audits.euclid]]
@@ -244,7 +244,7 @@ who = "Alex Franchuk <afranchuk@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 20227 # Markus Stange (mstange)
 start = "2022-03-12"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "This crate is written and solely maintained by a mozilla employee."
 
 [[wildcard-audits.freetype]]
@@ -318,7 +318,7 @@ who = "Jamie Nicol <jnicol@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 84794 # Jamie Nicol (jamienicol)
 start = "2020-04-07"
-end = "2025-08-30"
+end = "2027-04-23"
 
 [[wildcard-audits.hawk]]
 who = "Ryan Safaeian <rsafaeian@mozilla.com>"
@@ -350,7 +350,7 @@ who = "Henrik Skupin <mail@hskupin.info>"
 criteria = "safe-to-run"
 user-id = 22262
 start = "2020-11-03"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the DevTools team at Mozilla and has no unsafe code."
 
 [[wildcard-audits.minidump]]
@@ -382,7 +382,7 @@ who = "Henrik Skupin <mail@hskupin.info>"
 criteria = "safe-to-run"
 user-id = 22262
 start = "2020-11-03"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the DevTools team at Mozilla and has no unsafe code."
 
 [[wildcard-audits.mozprofile]]
@@ -390,7 +390,7 @@ who = "Henrik Skupin <mail@hskupin.info>"
 criteria = "safe-to-deploy"
 user-id = 22262
 start = "2020-11-03"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the DevTools team at Mozilla and has no unsafe code."
 
 [[wildcard-audits.mozrunner]]
@@ -398,7 +398,7 @@ who = "Henrik Skupin <mail@hskupin.info>"
 criteria = "safe-to-deploy"
 user-id = 22262
 start = "2020-11-03"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the DevTools team at Mozilla and has no unsafe code."
 
 [[wildcard-audits.mozversion]]
@@ -406,7 +406,7 @@ who = "Henrik Skupin <mail@hskupin.info>"
 criteria = "safe-to-run"
 user-id = 22262
 start = "2020-11-03"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the DevTools team at Mozilla and has no unsafe code."
 
 [[wildcard-audits.mtu]]
@@ -461,7 +461,7 @@ who = "Manish Goregaokar <manishsmail@gmail.com>"
 criteria = "safe-to-deploy"
 user-id = 1139 # Manish Goregaokar (Manishearth)
 start = "2019-11-06"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "All code written or reviewed by Manish"
 
 [[wildcard-audits.unicode-segmentation]]
@@ -469,7 +469,7 @@ who = "Manish Goregaokar <manishsmail@gmail.com>"
 criteria = "safe-to-deploy"
 user-id = 1139 # Manish Goregaokar (Manishearth)
 start = "2019-05-15"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "All code written or reviewed by Manish"
 
 [[wildcard-audits.unicode-width]]
@@ -485,7 +485,7 @@ who = "Manish Goregaokar <manishsmail@gmail.com>"
 criteria = "safe-to-deploy"
 user-id = 1139 # Manish Goregaokar (Manishearth)
 start = "2019-07-25"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "All code written or reviewed by Manish"
 
 [[wildcard-audits.uniffi]]
@@ -493,7 +493,7 @@ who = "Ben Dean-Kawamura <bdk@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 127697 # bendk
 start = "2021-10-27"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi]]
@@ -501,7 +501,7 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 48 # Jan-Erik Rediger (badboy)
 start = "2022-05-05"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_bindgen]]
@@ -509,7 +509,7 @@ who = "Ben Dean-Kawamura <bdk@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 127697 # bendk
 start = "2021-10-27"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_bindgen]]
@@ -517,7 +517,7 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 48 # Jan-Erik Rediger (badboy)
 start = "2022-05-05"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_build]]
@@ -525,7 +525,7 @@ who = "Ben Dean-Kawamura <bdk@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 127697 # bendk
 start = "2021-10-27"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_build]]
@@ -533,7 +533,7 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 48 # Jan-Erik Rediger (badboy)
 start = "2022-05-05"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_checksum_derive]]
@@ -541,7 +541,7 @@ who = "Ben Dean-Kawamura <bdk@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 127697 # bendk
 start = "2023-01-27"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_checksum_derive]]
@@ -549,7 +549,7 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 48 # Jan-Erik Rediger (badboy)
 start = "2022-12-16"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_core]]
@@ -557,7 +557,7 @@ who = "Ben Dean-Kawamura <bdk@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 127697 # bendk
 start = "2023-01-27"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_core]]
@@ -565,7 +565,7 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 48 # Jan-Erik Rediger (badboy)
 start = "2023-06-21"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_internal_macros]]
@@ -573,14 +573,14 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 111105 # Mark Hammond (mhammond)
 start = "2025-03-18"
-end = "2026-03-25"
+end = "2027-04-23"
 
 [[wildcard-audits.uniffi_macros]]
 who = "Ben Dean-Kawamura <bdk@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 127697 # bendk
 start = "2021-10-27"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_macros]]
@@ -588,7 +588,7 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 48 # Jan-Erik Rediger (badboy)
 start = "2022-05-05"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_meta]]
@@ -596,7 +596,7 @@ who = "Ben Dean-Kawamura <bdk@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 127697 # bendk
 start = "2022-09-13"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_meta]]
@@ -604,7 +604,7 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 48 # Jan-Erik Rediger (badboy)
 start = "2022-08-31"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_pipeline]]
@@ -612,7 +612,7 @@ who = "Ben Dean-Kawamura <bdk@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 127697 # bendk
 start = "2021-10-27"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_testing]]
@@ -620,7 +620,7 @@ who = "Ben Dean-Kawamura <bdk@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 127697 # bendk
 start = "2023-01-27"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_testing]]
@@ -628,7 +628,7 @@ who = "Jan-Erik Rediger <jrediger@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 48 # Jan-Erik Rediger (badboy)
 start = "2022-12-16"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.uniffi_udl]]
@@ -636,7 +636,7 @@ who = "Ben Dean-Kawamura <bdk@mozilla.com>"
 criteria = "safe-to-deploy"
 user-id = 127697 # bendk
 start = "2023-10-18"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the Glean and Application Services teams"
 
 [[wildcard-audits.utf8_iter]]
@@ -652,7 +652,7 @@ who = "Henrik Skupin <mail@hskupin.info>"
 criteria = "safe-to-deploy"
 user-id = 22262
 start = "2020-11-03"
-end = "2026-02-01"
+end = "2027-04-23"
 notes = "Maintained by the DevTools team at Mozilla and has no unsafe code."
 
 [[audits.aa-stroke]]
