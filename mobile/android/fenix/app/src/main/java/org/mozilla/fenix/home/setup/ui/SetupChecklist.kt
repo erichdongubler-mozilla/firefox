@@ -154,7 +154,7 @@ private fun createPreviewTasks() = listOf(
 private fun setAsDefaultTaskPreview() = ChecklistItem.Task(
     type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
     title = R.string.setup_checklist_task_default_browser,
-    icon = iconsR.drawable.mozac_ic_android_robot_fill_24,
+    icon = iconsR.drawable.mozac_ic_globe_24,
     isCompleted = false,
 )
 
@@ -168,7 +168,7 @@ private fun webExtensionTaskPreview() = ChecklistItem.Task(
 private fun signInTaskPreview() = ChecklistItem.Task(
     type = ChecklistItem.Task.Type.SIGN_IN,
     title = R.string.setup_checklist_task_account_sync,
-    icon = iconsR.drawable.mozac_ic_android_robot_fill_24,
+    icon = iconsR.drawable.mozac_ic_globe_24,
     isCompleted = true,
 )
 
@@ -184,13 +184,13 @@ private fun createPreviewGroups() = listOf(
             ChecklistItem.Task(
                 type = ChecklistItem.Task.Type.SELECT_THEME,
                 title = R.string.setup_checklist_task_toolbar_selection,
-                icon = iconsR.drawable.mozac_ic_android_robot_fill_24,
+                icon = iconsR.drawable.mozac_ic_globe_24,
                 isCompleted = false,
             ),
             ChecklistItem.Task(
                 type = ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT,
                 title = R.string.setup_checklist_task_theme_selection,
-                icon = iconsR.drawable.mozac_ic_android_robot_fill_24,
+                icon = iconsR.drawable.mozac_ic_globe_24,
                 isCompleted = false,
             ),
         ),
@@ -202,7 +202,7 @@ private fun createPreviewGroups() = listOf(
             ChecklistItem.Task(
                 type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
                 title = R.string.setup_checklist_task_search_widget_2,
-                icon = iconsR.drawable.mozac_ic_android_robot_fill_24,
+                icon = iconsR.drawable.mozac_ic_globe_24,
                 isCompleted = false,
             ),
             ChecklistItem.Task(

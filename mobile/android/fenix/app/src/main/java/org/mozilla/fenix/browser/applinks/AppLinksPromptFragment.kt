@@ -503,7 +503,7 @@ private fun AppHeader(
             )
         } else {
             Icon(
-                painter = painterResource(iconsR.drawable.mozac_ic_android_robot_fill_24),
+                painter = painterResource(iconsR.drawable.mozac_ic_globe_24),
                 contentDescription = null,
                 modifier = Modifier
                     .size(40.dp)
