@@ -155,10 +155,10 @@ async function runTest({ html, fullZoom, coords, rect, scale }) {
 
     await extension.startup();
 
-    let testWindow = window.open(url);
+    let tab = await AppTestDelegate.openNewForegroundTab(window, url);
     await extension.awaitFinish("captureTab");
 
-    testWindow.close();
+    await AppTestDelegate.removeTab(window, tab);
     await extension.unload();
   }
 }
@@ -403,12 +403,13 @@ add_task(async function testCaptureVisibleTabWithActiveTab() {
 
   await extension.startup();
 
-  let testWindow = window.open(`data:text/html,${encodeURIComponent(html)}#scroll`);
+  let url = `data:text/html,${encodeURIComponent(html)}#scroll`;
+  let tab = await AppTestDelegate.openNewForegroundTab(window, url);
   await extension.awaitMessage("ready");
-  await AppTestDelegate.clickBrowserAction(testWindow, extension);
+  await AppTestDelegate.clickBrowserAction(window, extension);
   await extension.awaitFinish("captureVisibleTabPermissions");
-  await AppTestDelegate.closeBrowserAction(testWindow, extension);
-  testWindow.close();
+  await AppTestDelegate.closeBrowserAction(window, extension);
+  await AppTestDelegate.removeTab(window, tab);
 
   await extension.unload();
 });
@@ -451,9 +452,10 @@ add_task(async function testCaptureVisibleTabWithActiveTabAndNotUserInteraction(
 
   await extension.startup();
 
-  let testWindow = window.open(`data:text/html,${encodeURIComponent(html)}#scroll`);
+  let url = `data:text/html,${encodeURIComponent(html)}#scroll`;
+  let tab = await AppTestDelegate.openNewForegroundTab(window, url);
   await extension.awaitFinish("captureVisibleTabPermissions");
-  testWindow.close();
+  await AppTestDelegate.removeTab(window, tab);
 
   await extension.unload();
 });
@@ -492,9 +494,10 @@ add_task(async function testCaptureVisibleTabWithActiveTabAndAllURLs() {
 
   await extension.startup();
 
-  let testWindow = window.open(`data:text/html,${encodeURIComponent(html)}#scroll`);
+  let url = `data:text/html,${encodeURIComponent(html)}#scroll`;
+  let tab = await AppTestDelegate.openNewForegroundTab(window, url);
   await extension.awaitFinish("captureVisibleTabPermissions");
-  testWindow.close();
+  await AppTestDelegate.removeTab(window, tab);
 
   await extension.unload();
 });
