@@ -398,9 +398,6 @@ function _setupDevToolsServer(breakpointFiles, callback) {
   if (_Services.env.get("DEVTOOLS_DEBUGGER_LOG")) {
     _Services.prefs.setBoolPref("devtools.debugger.log", true);
   }
-  if (_Services.env.get("DEVTOOLS_DEBUGGER_LOG_VERBOSE")) {
-    _Services.prefs.setBoolPref("devtools.debugger.log.verbose", true);
-  }
 
   let require;
   try {
