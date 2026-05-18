@@ -120,39 +120,14 @@ void js::BaseScript::setEnclosingScope(Scope* enclosingScope) {
 }
 
 void js::BaseScript::finalize(JS::GCContext* gcx) {
-  // Scripts with bytecode may have optional data stored in per-runtime or
-  // per-zone maps. Note that a failed compilation must not have entries since
-  // the script itself will not be marked as having bytecode.
-  if (hasBytecode()) {
-    JSScript* script = this->asJSScript();
-
-    if (coverage::IsLCovEnabled()) {
-      coverage::CollectScriptCoverage(script, true);
-    }
-
-    script->destroyScriptCounts();
-  }
-
-#ifdef MOZ_VTUNE
-  if (zone()->scriptVTuneIdMap) {
-    // Note: we should only get here if the VTune JIT profiler is running.
-    zone()->scriptVTuneIdMap->remove(this);
-  }
-#endif
+  // Per-zone script side-tables such as scriptCountsMap, scriptLCovMap,
+  // scriptVTuneIdMap, scriptFinalWarmUpCountMap are WeakCaches and are swept
+  // automatically.
 
   if (warmUpData_.isJitScript()) {
     JSScript* script = this->asJSScript();
-#ifdef JS_CACHEIR_SPEW
-    maybeUpdateWarmUpCount(script);
-#endif
     script->releaseJitScriptOnFinalize(gcx);
   }
-
-#ifdef JS_CACHEIR_SPEW
-  if (hasBytecode()) {
-    maybeSpewScriptFinalWarmUpCount(this->asJSScript());
-  }
-#endif
 
   freeSharedData();
 }
@@ -454,7 +429,7 @@ bool JSScript::initScriptCounts(JSContext* cx) {
 
   // Create zone's scriptCountsMap if necessary.
   if (!zone()->scriptCountsMap) {
-    auto map = cx->make_unique<ScriptCountsMap>();
+    auto map = cx->make_unique<JS::WeakCache<ScriptCountsMap>>(zone());
     if (!map) {
       return false;
     }
@@ -471,7 +446,7 @@ bool JSScript::initScriptCounts(JSContext* cx) {
   MOZ_ASSERT(this->hasBytecode());
 
   // Register the current ScriptCounts in the zone's map.
-  if (!zone()->scriptCountsMap->putNew(this, std::move(sc))) {
+  if (!zone()->scriptCountsMap->get().putNew(this, std::move(sc))) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -492,7 +467,8 @@ bool JSScript::initScriptCounts(JSContext* cx) {
 
 static inline ScriptCountsMap::Ptr GetScriptCountsMapEntry(JSScript* script) {
   MOZ_ASSERT(script->hasScriptCounts());
-  ScriptCountsMap::Ptr p = script->zone()->scriptCountsMap->lookup(script);
+  ScriptCountsMap::Ptr p =
+      script->zone()->scriptCountsMap->get().lookup(script);
   MOZ_ASSERT(p);
   return p;
 }
@@ -650,7 +626,7 @@ jit::IonScriptCounts* JSScript::getIonCounts() {
 void JSScript::releaseScriptCounts(ScriptCounts* counts) {
   ScriptCountsMap::Ptr p = GetScriptCountsMapEntry(this);
   *counts = std::move(*p->value().get());
-  zone()->scriptCountsMap->remove(p);
+  zone()->scriptCountsMap->get().remove(p);
   clearHasScriptCounts();
 }
 
@@ -2553,7 +2529,7 @@ JSScript* JSScript::Create(JSContext* cx, JS::Handle<JSFunction*> function,
 #ifdef MOZ_VTUNE
 uint32_t JSScript::vtuneMethodID() {
   if (!zone()->scriptVTuneIdMap) {
-    auto map = MakeUnique<ScriptVTuneIdMap>();
+    auto map = MakeUnique<JS::WeakCache<ScriptVTuneIdMap>>(zone());
     if (!map) {
       MOZ_CRASH("Failed to allocate ScriptVTuneIdMap");
     }
@@ -2561,7 +2537,8 @@ uint32_t JSScript::vtuneMethodID() {
     zone()->scriptVTuneIdMap = std::move(map);
   }
 
-  ScriptVTuneIdMap::AddPtr p = zone()->scriptVTuneIdMap->lookupForAdd(this);
+  ScriptVTuneIdMap::AddPtr p =
+      zone()->scriptVTuneIdMap->get().lookupForAdd(this);
   if (p) {
     return p->value();
   }
@@ -2569,7 +2546,7 @@ uint32_t JSScript::vtuneMethodID() {
   MOZ_ASSERT(this->hasBytecode());
 
   uint32_t id = vtune::GenerateUniqueMethodID();
-  if (!zone()->scriptVTuneIdMap->add(p, this, id)) {
+  if (!zone()->scriptVTuneIdMap->get().add(p, this, id)) {
     MOZ_CRASH("Failed to add vtune method id");
   }
 
@@ -3005,45 +2982,42 @@ JS_PUBLIC_API unsigned js::GetScriptLineExtent(
 #ifdef JS_CACHEIR_SPEW
 void js::maybeUpdateWarmUpCount(JSScript* script) {
   if (script->needsFinalWarmUpCount()) {
-    ScriptFinalWarmUpCountMap* map =
-        script->zone()->scriptFinalWarmUpCountMap.get();
     // If needsFinalWarmUpCount is true, ScriptFinalWarmUpCountMap must have
     // already been created and thus must be asserted.
-    MOZ_ASSERT(map);
-    ScriptFinalWarmUpCountMap::Ptr p = map->lookup(script);
+    MOZ_ASSERT(script->zone()->scriptFinalWarmUpCountMap);
+    ScriptFinalWarmUpCountMap& map =
+        script->zone()->scriptFinalWarmUpCountMap->get();
+    ScriptFinalWarmUpCountMap::Ptr p = map.lookup(script);
     MOZ_ASSERT(p);
 
     std::get<0>(p->value()) += script->jitScript()->warmUpCount();
   }
 }
 
+// Spew the accumulated final warm-up count for `script`.
 void js::maybeSpewScriptFinalWarmUpCount(JSScript* script) {
-  if (script->needsFinalWarmUpCount()) {
-    ScriptFinalWarmUpCountMap* map =
-        script->zone()->scriptFinalWarmUpCountMap.get();
-    // If needsFinalWarmUpCount is true, ScriptFinalWarmUpCountMap must have
-    // already been created and thus must be asserted.
-    MOZ_ASSERT(map);
-    ScriptFinalWarmUpCountMap::Ptr p = map->lookup(script);
-    MOZ_ASSERT(p);
-    auto& tuple = p->value();
-    uint32_t warmUpCount = std::get<0>(tuple);
-    SharedImmutableString& scriptName = std::get<1>(tuple);
-
-    JSContext* cx = TlsContext.get();
-    cx->spewer().enableSpewing();
-
-    // In the case that we care about a script's final warmup count but the
-    // spewer is not enabled, AutoSpewChannel automatically sets and unsets
-    // the proper channel for the duration of spewing a health report's warm
-    // up count.
-    AutoSpewChannel channel(cx, SpewChannel::CacheIRHealthReport, script);
-    jit::CacheIRHealth cih;
-    cih.spewScriptFinalWarmUpCount(cx, scriptName.chars(), script, warmUpCount);
-
-    script->zone()->scriptFinalWarmUpCountMap->remove(script);
-    script->setNeedsFinalWarmUpCount(false);
+  if (!script->needsFinalWarmUpCount()) {
+    return;
   }
+  MOZ_ASSERT(script->zone()->scriptFinalWarmUpCountMap);
+  ScriptFinalWarmUpCountMap& map =
+      script->zone()->scriptFinalWarmUpCountMap->get();
+  ScriptFinalWarmUpCountMap::Ptr p = map.lookup(script);
+  MOZ_ASSERT(p);
+  auto& tuple = p->value();
+  uint32_t warmUpCount = std::get<0>(tuple);
+  SharedImmutableString& scriptName = std::get<1>(tuple);
+
+  JSContext* cx = TlsContext.get();
+  cx->spewer().enableSpewing();
+
+  // In the case that we care about a script's final warmup count but the
+  // spewer is not enabled, AutoSpewChannel automatically sets and unsets
+  // the proper channel for the duration of spewing a health report's warm
+  // up count.
+  AutoSpewChannel channel(cx, SpewChannel::CacheIRHealthReport, script);
+  jit::CacheIRHealth cih;
+  cih.spewScriptFinalWarmUpCount(cx, scriptName.chars(), script, warmUpCount);
 }
 #endif
 

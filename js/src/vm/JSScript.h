@@ -147,18 +147,10 @@ class ScriptCounts {
   jit::IonScriptCounts* ionCounts_;
 };
 
-// The key of these side-table hash maps are intentionally not traced GC
-// references to JSScript. Instead, we use bare pointers and manually fix up
-// when objects could have moved (see Zone::fixupScriptMapsAfterMovingGC) and
-// remove when the realm is destroyed (see Zone::clearScriptCounts and
-// Zone::clearScriptNames). They essentially behave as weak references, except
-// that the references are not cleared early by the GC. They must be non-strong
-// references because the tables are kept at the Zone level and otherwise the
-// table keys would keep scripts alive, thus keeping Realms alive, beyond their
-// expected lifetimes. However, We do not use actual weak references (e.g. as
-// used by WeakMap tables provided in gc/WeakMap.h) because they would be
-// collected before the calls to the JSScript::finalize function which are used
-// to aggregate code coverage results on the realm.
+// These side-tables are held as WeakCaches so that dead entries are removed as
+// part of GC sweeping and entries are rekeyed automatically after a compacting
+// GC. Entries are not traced during marking, so scripts are not kept alive by
+// these tables alone. They are weak references and do not keep scripts alive.
 //
 // Note carefully, however, that there is an exceptional case for which we *do*
 // want the JSScripts to be strong references (and thus traced): when the
