@@ -1612,6 +1612,21 @@ static void ReportZoneStats(const JS::ZoneStats& zStats,
         "is refreshed.");
   }
 
+  if (zStats.stringsDeduplicationTruncated) {
+    MOZ_ASSERT(!zStats.isTotals);
+    nsAutoCString desc;
+    desc.AppendPrintf(
+        "String deduplication was stopped after 5 seconds because there "
+        "were too many strings (%zu total in this zone). The notable strings "
+        "listed above are only those seen before the cutoff.",
+        zStats.stringsTotalCount);
+    handleReport->Callback(
+        ""_ns,
+        pathPrefix + "strings/string(<deduplication-truncated>)/count"_ns,
+        nsIMemoryReporter::KIND_OTHER, nsIMemoryReporter::UNITS_COUNT,
+        zStats.stringsTotalCount, desc, data);
+  }
+
   const JS::ShapeInfo& shapeInfo = zStats.shapeInfo;
   if (shapeInfo.shapesGCHeapShared > 0) {
     REPORT_GC_BYTES(pathPrefix + "shapes/gc-heap/shared"_ns,

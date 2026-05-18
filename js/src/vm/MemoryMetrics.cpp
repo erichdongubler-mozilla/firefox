@@ -14,6 +14,7 @@
 #include "jit/BaselineJIT.h"
 #include "jit/Ion.h"
 #include "js/HeapAPI.h"
+#include "js/SliceBudget.h"
 #include "util/Text.h"
 #include "vm/BigIntType.h"
 #include "vm/HelperThreadState.h"
@@ -197,9 +198,14 @@ struct StatsClosure {
   wasm::Code::SeenSet wasmSeenCode;
   wasm::Table::SeenSet wasmSeenTables;
   bool anonymize;
+  // Stop deduplicating strings after this many milliseconds to avoid hangs.
+  JS::SliceBudget stringBudget;
 
   StatsClosure(RuntimeStats* rt, ObjectPrivateVisitor* v, bool anon)
-      : rtStats(rt), opv(v), anonymize(anon) {}
+      : rtStats(rt),
+        opv(v),
+        anonymize(anon),
+        stringBudget(JS::TimeBudget(mozilla::TimeDuration::FromSeconds(5))) {}
 };
 
 static void DecommittedPagesChunkCallback(JSRuntime* rt, void* data,
@@ -439,19 +445,26 @@ static void StatsCellCallback(JSRuntime* rt, void* data, JS::GCCellPtr cellptr,
       info.numCopies = 1;
 
       zStats->stringInfo.add(info);
+      zStats->stringsTotalCount++;
 
       // The primary use case for anonymization is automated crash submission
       // (to help detect OOM crashes). In that case, we don't want to pay the
       // memory cost required to do notable string detection.
-      if (granularity == FineGrained && !closure->anonymize) {
-        ZoneStats::StringsHashMap::AddPtr p =
-            zStats->allStrings->lookupForAdd(str);
-        if (!p) {
-          bool ok = zStats->allStrings->add(p, str, info);
-          // Ignore failure -- we just won't record the string as notable.
-          (void)ok;
+      if (granularity == FineGrained && !closure->anonymize &&
+          !zStats->stringsDeduplicationTruncated) {
+        closure->stringBudget.step();
+        if (!closure->stringBudget.isOverBudget()) {
+          ZoneStats::StringsHashMap::AddPtr p =
+              zStats->allStrings->lookupForAdd(str);
+          if (!p) {
+            bool ok = zStats->allStrings->add(p, str, info);
+            // Ignore failure -- we just won't record the string as notable.
+            (void)ok;
+          } else {
+            p->value().add(info);
+          }
         } else {
-          p->value().add(info);
+          zStats->stringsDeduplicationTruncated = true;
         }
       }
       break;

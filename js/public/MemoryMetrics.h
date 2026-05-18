@@ -751,6 +751,11 @@ struct ZoneStats {
   js::Vector<NotableStringInfo, 0, js::SystemAllocPolicy> notableStrings;
   bool isTotals = true;
 
+  // Set when string deduplication was stopped early due to a time budget.
+  // When true, |notableStrings| only reflects strings seen before the cutoff.
+  bool stringsDeduplicationTruncated = false;
+  size_t stringsTotalCount = 0;
+
 #undef FOR_EACH_SIZE
 };
 
