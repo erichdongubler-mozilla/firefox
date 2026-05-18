@@ -39,9 +39,10 @@ use cfg_if::cfg_if;
 cfg_if! {
     if #[cfg(not(target_os = "android"))] {
         use std::sync::mpsc::{channel, Receiver, TryRecvError};
-        use hyper::body::HttpBody;
+        use http_body_util::{BodyExt, Full};
         use hyper::header::{HeaderName, HeaderValue};
-        use hyper::{Body, Client, Method, Request};
+        use hyper::Method;
+        use hyper_util::client::legacy::Client;
     }
 }
 
@@ -858,12 +859,12 @@ impl Http3ReverseProxyServer {
 
     #[cfg(not(target_os = "android"))]
     async fn fetch_url(
-        request: Request<Body>,
+        request: http::Request<Full<hyper::body::Bytes>>,
         out_header: &mut Vec<Header>,
         out_body: &mut Vec<u8>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = Client::new();
-        let mut resp = client.request(request).await?;
+        let client = Client::builder(hyper_util::rt::TokioExecutor::new()).build_http();
+        let resp = client.request(request).await?;
         out_header.push(Header::new(":status", resp.status().as_str()));
         for (key, value) in resp.headers() {
             out_header.push(Header::new(
@@ -875,12 +876,15 @@ impl Http3ReverseProxyServer {
             ));
         }
 
-        while let Some(chunk) = resp.body_mut().data().await {
-            match chunk {
-                Ok(data) => {
-                    out_body.append(&mut data.to_vec());
+        let mut body = resp.into_body();
+        while let Some(frame) = body.frame().await {
+            match frame {
+                Ok(frame) => {
+                    if let Ok(data) = frame.into_data() {
+                        out_body.extend_from_slice(&data);
+                    }
                 }
-                _ => {}
+                Err(_) => break,
             }
         }
 
@@ -894,7 +898,7 @@ impl Http3ReverseProxyServer {
         request_headers: &Vec<Header>,
         request_body: Vec<u8>,
     ) {
-        let mut request: Request<Body> = Request::default();
+        let mut request: http::Request<Full<hyper::body::Bytes>> = http::Request::new(Full::new(hyper::body::Bytes::new()));
         let mut path = String::new();
         for hdr in request_headers.iter() {
             match hdr.name() {
@@ -920,7 +924,7 @@ impl Http3ReverseProxyServer {
                 }
             }
         }
-        *request.body_mut() = Body::from(request_body);
+        *request.body_mut() = Full::new(hyper::body::Bytes::from(request_body));
         *request.uri_mut() =
             match format!("http://127.0.0.1:{}{}", self.server_port.to_string(), path).parse() {
                 Ok(uri) => uri,

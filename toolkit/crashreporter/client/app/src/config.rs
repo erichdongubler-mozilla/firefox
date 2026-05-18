@@ -628,7 +628,7 @@ impl Config {
                 };
 
                 let mut path: PWSTR = std::ptr::null_mut();
-                let result = unsafe { SHGetKnownFolderPath(&FOLDERID_RoamingAppData, 0, 0, &mut path) };
+                let result = unsafe { SHGetKnownFolderPath(&FOLDERID_RoamingAppData, 0, std::ptr::null_mut(), &mut path) };
                 if result != 0 {
                     unsafe { CoTaskMemFree(path as _) };
                     anyhow::bail!("failed to get known path for roaming appdata");

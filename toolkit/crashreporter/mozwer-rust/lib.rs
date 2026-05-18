@@ -20,12 +20,12 @@ use std::path::{Path, PathBuf};
 use std::ptr::{null, null_mut};
 use std::slice::from_raw_parts;
 use uuid::Uuid;
-use windows_sys::core::{HRESULT, PWSTR};
+use windows_sys::core::{BOOL, HRESULT, PWSTR};
 use windows_sys::Wdk::System::Threading::{NtQueryInformationProcess, ProcessBasicInformation};
 use windows_sys::Win32::Foundation::WIN32_ERROR;
 use windows_sys::Win32::{
     Foundation::{
-        CloseHandle, GetLastError, SetLastError, BOOL, ERROR_INSUFFICIENT_BUFFER, ERROR_SUCCESS,
+        CloseHandle, GetLastError, SetLastError, ERROR_INSUFFICIENT_BUFFER, ERROR_SUCCESS,
         EXCEPTION_BREAKPOINT, E_UNEXPECTED, FALSE, FILETIME, HANDLE, HWND, LPARAM, MAX_PATH,
         STATUS_SUCCESS, S_OK, TRUE,
     },
@@ -166,7 +166,7 @@ fn out_of_process_exception_event_callback(
                     let thread_handle = unsafe { OpenThread(THREAD_GET_CONTEXT, FALSE, thread_id) };
                     // SAFETY: `thread_handle` is guaranteed to be valid and the
                     // `context` parameter points to an object on the stack.
-                    if thread_handle != 0
+                    if !thread_handle.is_null()
                         && unsafe {
                             GetThreadContext(thread_handle, &mut exception_information.context)
                         }
@@ -334,7 +334,7 @@ fn get_process_id(process: BorrowedHandle) -> Result<DWORD> {
 fn get_process_handle(pid: DWORD) -> Result<OwnedHandle> {
     // SAFETY: This is always safe to call.
     let handle = unsafe { OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid) };
-    if handle != 0 {
+    if !handle.is_null() {
         // SAFETY: `handle` is guaranteed to contain a valid handle here
         Ok(unsafe { OwnedHandle::from_raw_handle(handle as RawHandle) })
     } else {
@@ -517,7 +517,7 @@ impl ApplicationInformation {
         unsafe {
             let res = K32GetModuleFileNameExW(
                 process.as_raw_handle() as HANDLE,
-                0,
+                std::ptr::null_mut(),
                 path.as_mut_ptr(),
                 (MAX_PATH + 1) as DWORD,
             );
@@ -549,7 +549,7 @@ impl ApplicationInformation {
             let res = SHGetKnownFolderPath(
                 &FOLDERID_RoamingAppData as *const _,
                 0,
-                0,
+                std::ptr::null_mut(),
                 &mut psz_path as *mut _,
             );
 
@@ -818,7 +818,7 @@ fn get_process_basic_information(process: BorrowedHandle) -> Result<PROCESS_BASI
 }
 
 fn is_sandboxed_process(process: BorrowedHandle) -> Result<bool> {
-    let mut token: HANDLE = 0;
+    let mut token: HANDLE = null_mut();
     // SAFETY: All the pointers going into this call point to stack-allocated
     // variables and `process` is guaranteed to be a valid handle.
     let res = unsafe {

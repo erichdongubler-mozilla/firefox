@@ -1917,14 +1917,21 @@ impl TestCrashReportServer {
                 .expect("failed to create tokio runtime");
             let _guard = rt.enter();
 
-            let (addr, server) =
-                warp::serve(submit).bind_with_graceful_shutdown(([127, 0, 0, 1], 0), async move {
-                    rx.await.ok();
-                });
+            rt.block_on(async move {
+                let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+                    .await
+                    .expect("failed to bind");
+                let addr = listener.local_addr().expect("failed to get local addr");
+                addr_channel_tx.send(addr).unwrap();
 
-            addr_channel_tx.send(addr).unwrap();
-
-            rt.block_on(server)
+                warp::serve(submit)
+                    .incoming(listener)
+                    .graceful(async move {
+                        rx.await.ok();
+                    })
+                    .run()
+                    .await;
+            })
         });
 
         let addr = addr_channel_rx.recv().unwrap();
