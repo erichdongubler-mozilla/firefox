@@ -258,9 +258,7 @@ class OSXBootstrapper(OSXAndroidBootstrapper, BaseBootstrapper):
     def install_homebrew(self):
         print(BREW_INSTALL)
         ssl_context = ssl.create_default_context(cafile=certifi.where())
-        bootstrap = urlopen(
-            HOMEBREW_BOOTSTRAP, context=ssl_context, timeout=20
-        ).read()
+        bootstrap = urlopen(HOMEBREW_BOOTSTRAP, context=ssl_context, timeout=20).read()
         with tempfile.NamedTemporaryFile() as tf:
             tf.write(bootstrap)
             tf.flush()
