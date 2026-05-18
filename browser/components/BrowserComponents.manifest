@@ -43,6 +43,20 @@ category browser-window-domcontentloaded moz-src:///browser/components/customiza
 category browser-window-domcontentloaded chrome://browser/content/browser-addons.js gUnifiedExtensions.init
 category browser-window-domcontentloaded chrome://browser/content/browser.js FirefoxViewHandler.init
 
+category browser-window-load-before-sessionstore-init chrome://browser/content/browser-captivePortal.js CaptivePortalWatcher.init
+category browser-window-load-before-sessionstore-init resource:///modules/ZoomUI.sys.mjs ZoomUI.init
+category browser-window-load-before-sessionstore-init chrome://browser/content/sidebar/browser-sidebar.js SidebarController.init
+category browser-window-load-before-sessionstore-init chrome://browser/content/downloads/indicator.js DownloadsButton.init
+
+category browser-window-load chrome://browser/content/browser.js gUIDensity.init
+category browser-window-load chrome://browser/content/browser.js Win10TabletModeUpdater.init
+category browser-window-load chrome://browser/content/browser.js CombinedStopReload.ensureInitialized
+category browser-window-load moz-src:///browser/modules/PrivateBrowsingUI.sys.mjs PrivateBrowsingUI.init
+category browser-window-load resource:///modules/taskbartabs/TaskbarTabsChrome.sys.mjs TaskbarTabsChrome.init
+category browser-window-load chrome://browser/content/browser-pageActions.js BrowserPageActions.init
+category browser-window-load chrome://browser/content/browser-toolbarKeyNav.js ToolbarKeyboardNavigator.init
+category browser-window-load moz-src:///browser/components/customkeys/CustomKeys.sys.mjs CustomKeys.initWindow
+
 category browser-window-delayed-startup moz-src:///browser/components/contentanalysis/content/ContentAnalysis.sys.mjs ContentAnalysis.initialize
 category browser-window-delayed-startup resource:///modules/HomePage.sys.mjs HomePage.delayedStartup
 category browser-window-delayed-startup moz-src:///browser/components/genai/LinkPreview.sys.mjs LinkPreview.init
@@ -53,7 +67,15 @@ category browser-window-delayed-startup resource:///modules/taskbartabs/TaskbarT
 category browser-window-unload-begin chrome://browser/content/browser-customtitlebar.js CustomTitlebar.uninit
 category browser-window-unload-begin moz-src:///browser/themes/ToolbarIconColor.sys.mjs ToolbarIconColor.uninit
 category browser-window-unload-begin moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs ReportBrokenSite.uninit
+category browser-window-unload-begin chrome://browser/content/browser.js gUIDensity.uninit
 
+category browser-window-unload chrome://browser/content/downloads/indicator.js DownloadsButton.uninit
+category browser-window-unload chrome://browser/content/sidebar/browser-sidebar.js SidebarController.uninit
+category browser-window-unload chrome://browser/content/browser-captivePortal.js CaptivePortalWatcher.uninit
+category browser-window-unload moz-src:///browser/components/customkeys/CustomKeys.sys.mjs CustomKeys.uninitWindow
+category browser-window-unload chrome://browser/content/browser-toolbarKeyNav.js ToolbarKeyboardNavigator.uninit
+category browser-window-unload chrome://browser/content/browser.js Win10TabletModeUpdater.uninit
+category browser-window-unload chrome://browser/content/browser.js CombinedStopReload.uninit
 category browser-window-unload chrome://browser/content/browser-addons.js gUnifiedExtensions.uninit
 category browser-window-unload chrome://browser/content/browser.js FirefoxViewHandler.uninit
 category browser-window-unload moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs NewTabPagePreloading.removePreloadedBrowser

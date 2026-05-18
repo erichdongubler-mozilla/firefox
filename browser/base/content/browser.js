@@ -3158,7 +3158,7 @@ function updateToggleControlLabel(control) {
 
 // Propagates Win10's tablet mode into the browser CSS. (Win11's tablet mode is
 // more like non-tablet mode and has no need for this.)
-const Win10TabletModeUpdater = {
+var Win10TabletModeUpdater = {
   init() {
     if (AppConstants.platform == "win") {
       this.update(WindowsUIUtils.inWin10TabletMode);
