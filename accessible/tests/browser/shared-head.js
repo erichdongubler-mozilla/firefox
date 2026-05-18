@@ -6,7 +6,7 @@
 
 /* import-globals-from ../mochitest/common.js */
 /* import-globals-from ../mochitest/layout.js */
-/* import-globals-from ../mochitest/promisified-events.js */
+/* import-globals-from ../mochitest/events.js */
 
 /* exported Logger, MOCHITESTS_DIR, invokeSetAttribute, invokeFocus,
             invokeSetStyle, getAccessibleDOMNodeID, getAccessibleTagName,

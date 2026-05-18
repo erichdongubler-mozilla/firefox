@@ -1,6 +1,6 @@
 /* import-globals-from ../attributes.js */
 /* import-globals-from ../common.js */
-/* import-globals-from ../promisified-events.js */
+/* import-globals-from ../events.js */
 /* import-globals-from ../name.js */
 
 // //////////////////////////////////////////////////////////////////////////////

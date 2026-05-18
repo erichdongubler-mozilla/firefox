@@ -12,7 +12,7 @@ Services.scriptloader.loadSubScript(
 );
 loadScripts(
   { name: "common.js", dir: MOCHITESTS_DIR },
-  { name: "promisified-events.js", dir: MOCHITESTS_DIR }
+  { name: "events.js", dir: MOCHITESTS_DIR }
 );
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/toolkit/components/printing/tests/head.js",

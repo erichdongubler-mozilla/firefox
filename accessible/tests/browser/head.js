@@ -96,7 +96,7 @@ function shutdownAccService(target) {
 
 /**
  * Simpler verions of waitForEvent defined in
- * accessible/tests/mochitest/promisified-events.js
+ * accessible/tests/mochitest/events.js
  */
 function waitForEvent(eventType, expectedId) {
   return new Promise(resolve => {
