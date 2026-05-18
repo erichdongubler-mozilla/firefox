@@ -801,7 +801,6 @@ struct ParamTraits<mozilla::WidgetSelectionEvent> {
     WriteParam(aWriter, aParam.mReversed);
     WriteParam(aWriter, aParam.mExpandToClusterBoundary);
     WriteParam(aWriter, aParam.mSucceeded);
-    WriteParam(aWriter, aParam.mUseNativeLineBreak);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
@@ -811,8 +810,7 @@ struct ParamTraits<mozilla::WidgetSelectionEvent> {
            ReadParam(aReader, &aResult->mLength) &&
            ReadParam(aReader, &aResult->mReversed) &&
            ReadParam(aReader, &aResult->mExpandToClusterBoundary) &&
-           ReadParam(aReader, &aResult->mSucceeded) &&
-           ReadParam(aReader, &aResult->mUseNativeLineBreak);
+           ReadParam(aReader, &aResult->mSucceeded);
   }
 };
 

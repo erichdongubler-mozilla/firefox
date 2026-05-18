@@ -703,9 +703,8 @@ nsresult IMEContentObserver::HandleQueryContentEvent(
   // value.  Note that don't update selection cache here since if you update
   // selection cache here, IMENotificationSender won't notify IME of selection
   // change because it looks like that the selection isn't actually changed.
-  const bool isSelectionCacheAvailable = aEvent->mUseNativeLineBreak &&
-                                         mSelectionData.IsInitialized() &&
-                                         !mNeedsToNotifyIMEOfSelectionChange;
+  const bool isSelectionCacheAvailable =
+      mSelectionData.IsInitialized() && !mNeedsToNotifyIMEOfSelectionChange;
   if (isSelectionCacheAvailable && aEvent->mMessage == eQuerySelectedText &&
       aEvent->mInput.mSelectionType == SelectionType::eNormal) {
     aEvent->EmplaceReply();
@@ -791,15 +790,14 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
   NS_ASSERTION(!mNeedsToNotifyIMEOfSelectionChange,
                "Selection cache has not been updated yet");
 
-  MOZ_LOG(
-      sIMECOLog, LogLevel::Debug,
-      ("0x%p MaybeHandleSelectionEvent(aEvent={ "
-       "mMessage=%s, mOffset=%u, mLength=%u, mReversed=%s, "
-       "mExpandToClusterBoundary=%s, mUseNativeLineBreak=%s }), "
-       "mSelectionData=%s",
-       this, ToChar(aEvent->mMessage), aEvent->mOffset, aEvent->mLength,
-       ToChar(aEvent->mReversed), ToChar(aEvent->mExpandToClusterBoundary),
-       ToChar(aEvent->mUseNativeLineBreak), ToString(mSelectionData).c_str()));
+  MOZ_LOG(sIMECOLog, LogLevel::Debug,
+          ("0x%p MaybeHandleSelectionEvent(aEvent={ "
+           "mMessage=%s, mOffset=%u, mLength=%u, mReversed=%s, "
+           "mExpandToClusterBoundary=%s }), "
+           "mSelectionData=%s",
+           this, ToChar(aEvent->mMessage), aEvent->mOffset, aEvent->mLength,
+           ToChar(aEvent->mReversed), ToChar(aEvent->mExpandToClusterBoundary),
+           ToString(mSelectionData).c_str()));
 
   // When we have Selection cache, and the caller wants to set same selection
   // range, we shouldn't try to compute same range because it may be impossible
@@ -807,12 +805,8 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
   // serialized with line breaks like close tags of inline elements.  In that
   // case, inserting new text at different point may be different from intention
   // of users or web apps which set current selection.
-  // FIXME: We cache only selection data computed with native line breaker
-  // lengths.  Perhaps, we should improve the struct to have both data of
-  // offset and length.  E.g., adding line break counts for both offset and
-  // length.
-  if (!mNeedsToNotifyIMEOfSelectionChange && aEvent->mUseNativeLineBreak &&
-      mSelectionData.IsInitialized() && mSelectionData.HasRange() &&
+  if (!mNeedsToNotifyIMEOfSelectionChange && mSelectionData.IsInitialized() &&
+      mSelectionData.HasRange() &&
       mSelectionData.StartOffset() == aEvent->mOffset &&
       mSelectionData.Length() == aEvent->mLength) {
     if (RefPtr<Selection> selection = GetSelection()) {

@@ -2795,8 +2795,6 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
 
   WidgetQueryContentEvent queryCharAtPointOnRootWidgetEvent(
       true, eQueryCharacterAtPoint, rootWidget);
-  queryCharAtPointOnRootWidgetEvent.mUseNativeLineBreak =
-      aEvent->mUseNativeLineBreak;
   queryCharAtPointOnRootWidgetEvent.mRefPoint = aEvent->mRefPoint;
   if (rootWidget != aEvent->mWidget) {
     queryCharAtPointOnRootWidgetEvent.mRefPoint +=

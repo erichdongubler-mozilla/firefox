@@ -1030,9 +1030,7 @@ class WidgetQueryContentEvent final : public WidgetGUIEvent {
   ALLOW_DEPRECATED_READPARAM
 
   WidgetQueryContentEvent()
-      : mUseNativeLineBreak(true),
-        mWithFontRanges(false),
-        mNeedsToFlushLayout(true) {
+      : mWithFontRanges(false), mNeedsToFlushLayout(true) {
     MOZ_CRASH("WidgetQueryContentEvent is created without proper arguments");
   }
 
@@ -1041,18 +1039,14 @@ class WidgetQueryContentEvent final : public WidgetGUIEvent {
 
   WidgetQueryContentEvent(bool aIsTrusted, EventMessage aMessage,
                           nsIWidget* aWidget)
-      : WidgetGUIEvent(aIsTrusted, aMessage, aWidget, eQueryContentEventClass),
-        mUseNativeLineBreak(true),
-        mWithFontRanges(false),
-        mNeedsToFlushLayout(true) {}
+      : WidgetGUIEvent(aIsTrusted, aMessage, aWidget, eQueryContentEventClass) {
+  }
 
   WidgetQueryContentEvent(EventMessage aMessage,
                           const WidgetQueryContentEvent& aOtherEvent)
       : WidgetGUIEvent(aOtherEvent.IsTrusted(), aMessage,
                        const_cast<nsIWidget*>(aOtherEvent.mWidget.get()),
                        eQueryContentEventClass),
-        mUseNativeLineBreak(aOtherEvent.mUseNativeLineBreak),
-        mWithFontRanges(false),
         mNeedsToFlushLayout(aOtherEvent.mNeedsToFlushLayout) {}
 
   NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(WidgetQueryContentEvent,
@@ -1067,19 +1061,14 @@ class WidgetQueryContentEvent final : public WidgetGUIEvent {
   }
 
   struct Options final {
-    bool mUseNativeLineBreak;
-    bool mRelativeToInsertionPoint;
-
-    explicit Options()
-        : mUseNativeLineBreak(true), mRelativeToInsertionPoint(false) {}
-
+    explicit Options() {}  // XXX Cannot use `= default` here
     explicit Options(const WidgetQueryContentEvent& aEvent)
-        : mUseNativeLineBreak(aEvent.mUseNativeLineBreak),
-          mRelativeToInsertionPoint(aEvent.mInput.mRelativeToInsertionPoint) {}
+        : mRelativeToInsertionPoint(aEvent.mInput.mRelativeToInsertionPoint) {}
+
+    bool mRelativeToInsertionPoint = false;
   };
 
   void Init(const Options& aOptions) {
-    mUseNativeLineBreak = aOptions.mUseNativeLineBreak;
     mInput.mRelativeToInsertionPoint = aOptions.mRelativeToInsertionPoint;
     MOZ_ASSERT(mInput.IsValidEventMessage(mMessage));
   }
@@ -1185,28 +1174,24 @@ class WidgetQueryContentEvent final : public WidgetGUIEvent {
     return Failed() || mReply->mTentativeCaretOffset.isNothing();
   }
 
-  bool mUseNativeLineBreak;
-  bool mWithFontRanges;
-  bool mNeedsToFlushLayout;
+  bool mWithFontRanges = false;
+  bool mNeedsToFlushLayout = true;
+
   struct Input final {
     uint32_t EndOffset() const {
       CheckedInt<uint32_t> endOffset = CheckedInt<uint32_t>(mOffset) + mLength;
       return NS_WARN_IF(!endOffset.isValid()) ? UINT32_MAX : endOffset.value();
     }
 
-    int64_t mOffset;
-    uint32_t mLength;
-    SelectionType mSelectionType;
+    int64_t mOffset = 0;
+    uint32_t mLength = 0;
+    SelectionType mSelectionType = SelectionType::eNormal;
     // If mOffset is true, mOffset is relative to the start offset of
     // composition if there is, otherwise, the start of the first selection
     // range.
-    bool mRelativeToInsertionPoint;
+    bool mRelativeToInsertionPoint = false;
 
-    Input()
-        : mOffset(0),
-          mLength(0),
-          mSelectionType(SelectionType::eNormal),
-          mRelativeToInsertionPoint(false) {}
+    Input() = default;
 
     bool IsValidOffset() const {
       return mRelativeToInsertionPoint || mOffset >= 0;
@@ -1420,28 +1405,14 @@ class WidgetSelectionEvent final : public WidgetGUIEvent {
   friend class mozilla::dom::PBrowserChild;
   ALLOW_DEPRECATED_READPARAM
 
-  WidgetSelectionEvent()
-      : mOffset(0),
-        mLength(0),
-        mReversed(false),
-        mExpandToClusterBoundary(true),
-        mSucceeded(false),
-        mUseNativeLineBreak(true),
-        mReason(nsISelectionListener::NO_REASON) {}
+  WidgetSelectionEvent() = default;
 
  public:
   NS_DEFINE_AS_EVENT_OVERRIDE(Widget, SelectionEvent);
 
   WidgetSelectionEvent(bool aIsTrusted, EventMessage aMessage,
                        nsIWidget* aWidget)
-      : WidgetGUIEvent(aIsTrusted, aMessage, aWidget, eSelectionEventClass),
-        mOffset(0),
-        mLength(0),
-        mReversed(false),
-        mExpandToClusterBoundary(true),
-        mSucceeded(false),
-        mUseNativeLineBreak(true),
-        mReason(nsISelectionListener::NO_REASON) {}
+      : WidgetGUIEvent(aIsTrusted, aMessage, aWidget, eSelectionEventClass) {}
 
   NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(WidgetSelectionEvent,
                                                     eSelectionEventClass,
@@ -1456,20 +1427,18 @@ class WidgetSelectionEvent final : public WidgetGUIEvent {
   }
 
   // Start offset of selection
-  uint32_t mOffset;
+  uint32_t mOffset = 0;
   // Length of selection
-  uint32_t mLength;
+  uint32_t mLength = 0;
   // Selection "anchor" should be in front
-  bool mReversed;
+  bool mReversed = false;
   // Cluster-based or character-based
-  bool mExpandToClusterBoundary;
+  bool mExpandToClusterBoundary = true;
   // true if setting selection succeeded.
-  bool mSucceeded;
-  // true if native line breaks are used for mOffset and mLength
-  bool mUseNativeLineBreak;
+  bool mSucceeded = false;
   // Fennec provides eSetSelection reason codes for downstream
   // use in AccessibleCaret visibility logic.
-  int16_t mReason;
+  int16_t mReason = nsISelectionListener::NO_REASON;
 };
 
 /******************************************************************************
