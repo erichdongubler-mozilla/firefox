@@ -6319,6 +6319,38 @@ button.arrow-button:dir(rtl) {
   overflow-y: auto;
 }
 
+.sports-follow-teams-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  cursor: pointer;
+}
+.sports-follow-teams-row.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.sports-follow-teams-row.is-disabled moz-checkbox {
+  pointer-events: none;
+}
+.sports-follow-teams-row.is-disabled .sports-team-flag,
+.sports-follow-teams-row.is-disabled .sports-team-name {
+  cursor: not-allowed;
+}
+
+.sports-team-flag {
+  width: 37px;
+  height: 26px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.sports-team-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-root);
+  color: var(--text-color);
+}
+
 .sports-back-button {
   grid-column: 1;
   justify-self: start;
