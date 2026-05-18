@@ -235,10 +235,10 @@ index 6a119c01c9..fb11c73c29 100644
          /*first_seq_num=*/metadata.GetFrameId().value_or(0),
          /*last_seq_num=*/metadata.GetFrameId().value_or(0),
 diff --git a/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate_unittest.cc b/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate_unittest.cc
-index 989beddcba..367ac4ec30 100644
+index b02785e5e0..c7cf59e995 100644
 --- a/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate_unittest.cc
 +++ b/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate_unittest.cc
-@@ -63,10 +63,11 @@ std::unique_ptr<RtpFrameObject> CreateRtpFrameObject(
+@@ -64,10 +64,11 @@ std::unique_ptr<RtpFrameObject> CreateRtpFrameObject(
                              /*receive_time=*/Timestamp::Seconds(123456));
    return std::make_unique<RtpFrameObject>(
        kFirstSeqNum, kLastSeqNum, /*markerBit=*/true,
@@ -254,7 +254,7 @@ index 989beddcba..367ac4ec30 100644
        /*color_space=*/std::nullopt, /*frame_instrumentation_data=*/std::nullopt,
        RtpPacketInfos({packet_info}), EncodedImageBuffer::Create(0));
  }
-@@ -353,7 +354,7 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
+@@ -354,7 +355,7 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
    EXPECT_CALL(receiver, ManageFrame)
        .WillOnce([&](std::unique_ptr<RtpFrameObject> frame) {
          EXPECT_EQ(frame->codec_type(), metadata.GetCodec());
