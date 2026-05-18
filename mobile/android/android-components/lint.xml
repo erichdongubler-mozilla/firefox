@@ -26,4 +26,5 @@
     <issue id="Typos" severity="error">
         <ignore path="**/values-*/strings.xml" />
     </issue>
+    <issue id="NoSystemCurrentTimeMillis" severity="warning" />
 </lint>
