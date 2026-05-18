@@ -553,9 +553,11 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
         showFor = { _, hitResult ->
             val isImage = hitResult is HitResult.IMAGE || hitResult is HitResult.IMAGE_SRC
             val selectedEngine = context.components.core.store.state.search.selectedOrDefaultSearchEngine
+            val settings = context.settings()
             isImage &&
                 hitResult.src.isHttpUrl() &&
-                context.settings().googleLensIntegrationEnabled &&
+                settings.googleLensIntegrationEnabled &&
+                settings.googleLensIntegrationUserEnabled &&
                 selectedEngine.isGoogleSearchEngine()
         },
         action = { _, hitResult ->

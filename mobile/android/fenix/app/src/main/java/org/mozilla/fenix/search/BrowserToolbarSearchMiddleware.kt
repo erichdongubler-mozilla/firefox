@@ -563,7 +563,10 @@ class BrowserToolbarSearchMiddleware(
                 ),
             )
         } else if (isValidSearchEngine) {
-            if (settings.googleLensIntegrationEnabled && selectedSearchEngine.isGoogleSearchEngine()) {
+            if (settings.googleLensIntegrationEnabled &&
+                settings.googleLensIntegrationUserEnabled &&
+                selectedSearchEngine.isGoogleSearchEngine()
+            ) {
                 add(
                     ActionButtonRes(
                         drawableResId = iconsR.drawable.mozac_ic_image_24,

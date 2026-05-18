@@ -183,7 +183,8 @@ class LensFeature(
             activityResultLauncher: ActivityResultLauncher<Intent>,
             cameraPermissionLauncher: ActivityResultLauncher<String>,
         ): ViewBoundFeatureWrapper<LensFeature>? {
-            if (!fragment.requireContext().settings().googleLensIntegrationEnabled) {
+            val settings = fragment.requireContext().settings()
+            if (!settings.googleLensIntegrationEnabled || !settings.googleLensIntegrationUserEnabled) {
                 return null
             }
 

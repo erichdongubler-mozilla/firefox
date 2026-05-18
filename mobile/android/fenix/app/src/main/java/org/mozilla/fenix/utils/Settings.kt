@@ -3199,6 +3199,16 @@ class Settings(
     )
 
     /**
+     * User preference (local only) controlling whether the Google Lens integration is active
+     * when [googleLensIntegrationEnabled] is on. When false, the standard QR scanner is used
+     * and the "Open with Google Lens" image context menu entry is hidden.
+     */
+    var googleLensIntegrationUserEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_google_lens_integration_user_enabled),
+        default = true,
+    )
+
+    /**
      * Whether Longfox is enabled.
      */
     var longfoxEnabled by booleanPreference(
