@@ -1,216 +1,186 @@
-From: Tommi <tommi@webrtc.org>
-Date: Mon, 20 Apr 2026 10:25:57 +0200
-Subject: (cherry-pick-branch-heads/7778) [M148] Relax RTP header extension ID
- reuse checks in RtpTransport
+From: Jakob Ivarsson <jakobi@webrtc.org>
+Date: Thu, 16 Apr 2026 10:35:57 +0000
+Subject: (cherry-pick-branch-heads/7778) [M148] Check vector sizes when
+ crossfading from CNG/expand to normal.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-Removing the historical_rtp_header_extensions_ list and instead only
-check header_extensions_by_mid_ for conflicts with active extensions.
+Original change's description:
+> Check vector sizes when crossfading from CNG/expand to normal.
+>
+> This fixes a potential out-of-bounds write.
+>
+> Bug: chromium:502661101
+> Change-Id: I6f03b522643d7a55040d7f5403f342b32d47f0c7
+> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464500
+> Commit-Queue: Jakob Ivarsson‎ <jakobi@webrtc.org>
+> Reviewed-by: Henrik Lundin <henrik.lundin@webrtc.org>
+> Cr-Commit-Position: refs/heads/main@{#47447}
 
-Also borrowing a test for this provided by philipp.hancke.
+(cherry picked from commit ff1be2e8524fe63069fc2406d5e3f3ddccafee1a)
 
-(cherry picked from commit 8915e3564c0593501ba1a0ffa1ac08b8cb7cd00f)
-
-Fixed: chromium:504980502
-Bug: webrtc:503013383
-Change-Id: I08874edb1d46d638641c74255fe5379622a43c0e
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464501
-Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
-Reviewed-by: Harald Alvestrand <hta@webrtc.org>
-Cr-Original-Commit-Position: refs/heads/main@{#47472}
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/465760
-Cr-Commit-Position: refs/branch-heads/7778@{#4}
+Bug: chromium:504500274,chromium:502661101
+Change-Id: I6f03b522643d7a55040d7f5403f342b32d47f0c7
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/465220
+Commit-Queue: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
+Auto-Submit: Chrome Cherry Picker <chrome-cherry-picker@chops-service-accounts.iam.gserviceaccount.com>
+Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
+Cr-Commit-Position: refs/branch-heads/7778@{#3}
 Cr-Branched-From: ca896b7ffef011bbf6957c99d413c5aac602c99f-refs/heads/main@{#47319}
 ---
- pc/channel_unittest.cc                   |  6 ++-
- pc/peer_connection_simulcast_unittest.cc | 55 ++++++++++++++++++++++++
- pc/rtp_transport.cc                      | 40 +++++++----------
- pc/rtp_transport.h                       |  3 --
- pc/rtp_transport_unittest.cc             | 22 ++++++++++
- 5 files changed, 97 insertions(+), 29 deletions(-)
+ modules/audio_coding/neteq/normal.cc          | 57 ++++++++-----------
+ modules/audio_coding/neteq/normal.h           |  4 --
+ modules/audio_coding/neteq/normal_unittest.cc | 15 +++++
+ 3 files changed, 39 insertions(+), 37 deletions(-)
 
-diff --git a/pc/channel_unittest.cc b/pc/channel_unittest.cc
-index 8a91c4750a..62ea4d8f72 100644
---- a/pc/channel_unittest.cc
-+++ b/pc/channel_unittest.cc
-@@ -769,8 +769,10 @@ class ChannelTest : public ::testing::Test {
-     });
-     RTCError error =
-         channel1_->SetLocalContent(&local_updated, SdpType::kOffer);
--    EXPECT_FALSE(error.ok());
--    EXPECT_THAT(error.message(), HasSubstr("RTP extension ID reassignment"));
-+    // Expected to succeed because the mapping for ID 1 was cleared by the
-+    // previous SetLocalContent call (which set extensions to empty).
-+    // RtpTransport allows reuse when not in use by any active MID.
-+    EXPECT_TRUE(error.ok());
+diff --git a/modules/audio_coding/neteq/normal.cc b/modules/audio_coding/neteq/normal.cc
+index 117c480f8c..be727fb799 100644
+--- a/modules/audio_coding/neteq/normal.cc
++++ b/modules/audio_coding/neteq/normal.cc
+@@ -22,12 +22,32 @@
+ #include "common_audio/signal_processing/include/spl_inl.h"
+ #include "modules/audio_coding/codecs/cng/webrtc_cng.h"
+ #include "modules/audio_coding/neteq/audio_multi_vector.h"
++#include "modules/audio_coding/neteq/audio_vector.h"
+ #include "modules/audio_coding/neteq/background_noise.h"
+ #include "modules/audio_coding/neteq/decoder_database.h"
+ #include "modules/audio_coding/neteq/expand.h"
+ #include "rtc_base/checks.h"
+ 
+ namespace webrtc {
++namespace {
++
++void Crossfade(const AudioVector& from, AudioVector& to, size_t win_length) {
++  const size_t win_length_clamped =
++      std::min({win_length, from.Size(), to.Size()});
++  if (win_length_clamped == 0) {
++    return;
++  }
++  int16_t win_slope_Q14 = (1 << 14) / static_cast<int16_t>(win_length_clamped);
++  int16_t win_up_Q14 = 0;
++  for (size_t i = 0; i < win_length_clamped; i++) {
++    win_up_Q14 += win_slope_Q14;
++    to[i] =
++        (win_up_Q14 * to[i] + ((1 << 14) - win_up_Q14) * from[i] + (1 << 13)) >>
++        14;
++  }
++}
++
++}  // namespace
+ 
+ int Normal::Process(const int16_t* input,
+                     size_t length,
+@@ -138,23 +158,7 @@ int Normal::Process(const int16_t* input,
+ 
+       // Interpolate the expanded data into the new vector.
+       // (NB/WB/SWB32/SWB48 8/16/32/48 samples.)
+-      size_t win_length = samples_per_ms_;
+-      int16_t win_slope_Q14 = default_win_slope_Q14_;
+-      RTC_DCHECK_LT(channel_ix, output->Channels());
+-      if (win_length > output->Size()) {
+-        win_length = output->Size();
+-        win_slope_Q14 = (1 << 14) / static_cast<int16_t>(win_length);
+-      }
+-      int16_t win_up_Q14 = 0;
+-      for (size_t i = 0; i < win_length; i++) {
+-        win_up_Q14 += win_slope_Q14;
+-        (*output)[channel_ix][i] =
+-            (win_up_Q14 * (*output)[channel_ix][i] +
+-             ((1 << 14) - win_up_Q14) * expanded[channel_ix][i] + (1 << 13)) >>
+-            14;
+-      }
+-      RTC_DCHECK_GT(win_up_Q14,
+-                    (1 << 14) - 32);  // Worst case rouding is a length of 34
++      Crossfade(expanded[channel_ix], (*output)[channel_ix], samples_per_ms_);
+     }
+   } else if (last_mode == NetEq::Mode::kRfc3389Cng) {
+     RTC_DCHECK_EQ(output->Channels(), 1);  // Not adapted for multi-channel yet.
+@@ -176,22 +180,9 @@ int Normal::Process(const int16_t* input,
+     }
+     // Interpolate the CNG into the new vector.
+     // (NB/WB/SWB32/SWB48 8/16/32/48 samples.)
+-    size_t win_length = samples_per_ms_;
+-    int16_t win_slope_Q14 = default_win_slope_Q14_;
+-    if (win_length > kCngLength) {
+-      win_length = kCngLength;
+-      win_slope_Q14 = (1 << 14) / static_cast<int16_t>(win_length);
+-    }
+-    int16_t win_up_Q14 = 0;
+-    for (size_t i = 0; i < win_length; i++) {
+-      win_up_Q14 += win_slope_Q14;
+-      (*output)[0][i] =
+-          (win_up_Q14 * (*output)[0][i] +
+-           ((1 << 14) - win_up_Q14) * cng_output[i] + (1 << 13)) >>
+-          14;
+-    }
+-    RTC_DCHECK_GT(win_up_Q14,
+-                  (1 << 14) - 32);  // Worst case rouding is a length of 34
++    AudioVector temp_vector(kCngLength);
++    temp_vector.OverwriteAt(cng_output, kCngLength, 0);
++    Crossfade(temp_vector, (*output)[0], samples_per_ms_);
    }
  
-   // Test that SetLocalContent and SetRemoteContent properly configure
-diff --git a/pc/peer_connection_simulcast_unittest.cc b/pc/peer_connection_simulcast_unittest.cc
-index 2cd0df043b..e8cd73f95d 100644
---- a/pc/peer_connection_simulcast_unittest.cc
-+++ b/pc/peer_connection_simulcast_unittest.cc
-@@ -556,4 +556,59 @@ TEST_F(PeerConnectionSimulcastTests, SimulcastSldModificationRejected) {
-   EXPECT_TRUE(modified_offer);
-   EXPECT_TRUE(local->SetLocalDescription(std::move(modified_offer)));
+   return static_cast<int>(length);
+diff --git a/modules/audio_coding/neteq/normal.h b/modules/audio_coding/neteq/normal.h
+index e6c918764f..d0dfc2f6cb 100644
+--- a/modules/audio_coding/neteq/normal.h
++++ b/modules/audio_coding/neteq/normal.h
+@@ -17,7 +17,6 @@
+ #include "api/neteq/neteq.h"
+ #include "modules/audio_coding/neteq/statistics_calculator.h"
+ #include "rtc_base/checks.h"
+-#include "rtc_base/numerics/safe_conversions.h"
+ 
+ namespace webrtc {
+ 
+@@ -42,8 +41,6 @@ class Normal {
+         background_noise_(background_noise),
+         expand_(expand),
+         samples_per_ms_(CheckedDivExact(fs_hz_, 1000)),
+-        default_win_slope_Q14_(
+-            dchecked_cast<uint16_t>((1 << 14) / samples_per_ms_)),
+         statistics_(statistics) {}
+ 
+   virtual ~Normal() {}
+@@ -68,7 +65,6 @@ class Normal {
+   const BackgroundNoise& background_noise_;
+   Expand* expand_;
+   const size_t samples_per_ms_;
+-  const int16_t default_win_slope_Q14_;
+   StatisticsCalculator* const statistics_;
+ };
+ 
+diff --git a/modules/audio_coding/neteq/normal_unittest.cc b/modules/audio_coding/neteq/normal_unittest.cc
+index 272869d701..c29a2c3314 100644
+--- a/modules/audio_coding/neteq/normal_unittest.cc
++++ b/modules/audio_coding/neteq/normal_unittest.cc
+@@ -14,6 +14,7 @@
+ 
+ #include <cstddef>
+ #include <cstdint>
++#include <vector>
+ 
+ #include "api/neteq/neteq.h"
+ #include "api/neteq/tick_timer.h"
+@@ -147,6 +148,20 @@ TEST(Normal, LastModeExpand120msPacket) {
+   EXPECT_CALL(expand, Die());  // Called when `expand` goes out of scope.
  }
-+
-+// Reproduces the bug reported by @ibc where RTP extension IDs are reassigned
-+// to different URIs in subsequent offers, causing SetLocalDescription to fail.
-+TEST_F(PeerConnectionSimulcastTests,
-+       NoRtpExtensionIdReassignmentWhenAddingTransceiver) {
-+  auto local = CreatePeerConnectionWrapper();
-+  auto layers = CreateLayers({"f", "h", "q"}, true);
-+
-+  // Add video transceiver with simulcast.
-+  AddTransceiver(local.get(), layers);
-+  ASSERT_TRUE(local->CreateOfferAndSetAsLocal());
-+
-+  // Set remote answer without header extensions.
-+  std::string remote_answer_sdp =
-+      "v=0\r\n"
-+      "o=- 8403615332048243445 2 IN IP4 127.0.0.1\r\n"
-+      "s=-\r\n"
-+      "t=0 0\r\n"
-+      "a=group:BUNDLE 0\r\n"
-+      "m=video 9 UDP/TLS/RTP/SAVPF 96\r\n"
-+      "c=IN IP4 0.0.0.0\r\n"
-+      "a=mid:0\r\n"
-+      "a=ice-ufrag:IZeV\r\n"
-+      "a=ice-pwd:uaZhQD4rYM/Tta2qWBT1Bbt4\r\n"
-+      "a=fingerprint:sha-256 "
-+      "D8:6C:3D:FA:23:E2:2C:63:11:2D:D0:86:BE:C4:D0:65:F9:42:F7:1C:06:04:27:E6:"
-+      "1C:2C:74:01:8D:50:67:23\r\n"
-+      "a=setup:active\r\n"
-+      "a=rtcp-mux\r\n"
-+      "a=extmap:9 urn:ietf:params:rtp-hdrext:sdes:mid\r\n"
-+      "a=extmap:10 urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id\r\n"
-+      "a=extmap:11 urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id\r\n"
-+      "a=extmap:2 "
-+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time\r\n"
-+      "a=extmap:4 "
-+      "http://www.ietf.org/id/"
-+      "draft-holmer-rmcat-transport-wide-cc-extensions-01\r\n"
-+      "a=extmap:3 urn:3gpp:video-orientation\r\n"
-+      "a=extmap:1 urn:ietf:params:rtp-hdrext:toffset\r\n"
-+      "a=extmap:5 "
-+      "http://www.webrtc.org/experiments/rtp-hdrext/playout-delay\r\n"
-+      "a=rtpmap:96 VP8/90000\r\n";
-+  // Answer recvonly.
-+  ASSERT_TRUE(local->SetRemoteDescription(CreateSessionDescription(
-+      SdpType::kAnswer, remote_answer_sdp + "a=recvonly\r\n")));
-+
-+  ASSERT_TRUE(local->CreateOfferAndSetAsLocal());
-+  // Answer inactive.
-+  ASSERT_TRUE(local->SetRemoteDescription(CreateSessionDescription(
-+      SdpType::kAnswer, remote_answer_sdp + "a=inactive\r\n")));
-+
-+  // Add an audio transceiver.
-+  local->AddAudioTrack("audio");
-+  EXPECT_TRUE(local->CreateOfferAndSetAsLocal());
+ 
++TEST(Normal, LastModeRfc3389CngSmallInput) {
++  constexpr size_t kChannels = 1;
++  constexpr size_t kInputFrames = 10;
++  MockDecoderDatabase db;
++  Normal normal(/*fs_hz=*/48000, /*decoder_database=*/&db,
++                /*background_noise=*/BackgroundNoise(kChannels),
++                /*expand=*/nullptr, /*statistics=*/nullptr);
++  AudioMultiVector output(kChannels);
++  std::vector<int16_t> input(kChannels * kInputFrames, 0);
++  EXPECT_EQ(normal.Process(input.data(), input.size(), NetEq::Mode::kRfc3389Cng,
++                           &output),
++            static_cast<int>(input.size()));
 +}
++
+ // TODO(hlundin): Write more tests.
+ 
  }  // namespace webrtc
-diff --git a/pc/rtp_transport.cc b/pc/rtp_transport.cc
-index 05ef651486..086ea72869 100644
---- a/pc/rtp_transport.cc
-+++ b/pc/rtp_transport.cc
-@@ -242,15 +242,22 @@ RTCError RtpTransport::VerifyRtpHeaderExtensionMap(
-     if (new_extension.id == 0) {
-       continue;
-     }
--    auto it = absl::c_find_if(
--        historical_rtp_header_extensions_,
--        [&](const RtpExtension& ext) { return ext.id == new_extension.id; });
--    if (it != historical_rtp_header_extensions_.end() &&
--        it->uri != new_extension.uri) {
--      return RTCError::InvalidParameter()
--             << "RTP extension ID reassignment not supported (id="
--             << new_extension.id << ", old_uri=\"" << it->uri
--             << "\", new_uri=\"" << new_extension.uri << "\").";
-+    // TODO: bugs.webrtc.org/503013383 - Introduce checking against IDs that are
-+    // currently not present in the SDP, but have been used in previous
-+    // negotiation rounds. Reusing extensions with a different ID is a protocol
-+    // violation, but we cannot check this until we check against the same
-+    // protocol violation on the sender side.
-+    for (const auto& [mid, active_extensions] : header_extensions_by_mid_) {
-+      auto it = absl::c_find_if(
-+          active_extensions,
-+          [&](const RtpExtension& ext) { return ext.id == new_extension.id; });
-+      if (it != active_extensions.end() && it->uri != new_extension.uri) {
-+        return RTCError::InvalidParameter()
-+               << "RTP extension ID reassignment not supported (collision on "
-+                  "active MID "
-+               << mid << ", id=" << new_extension.id << ", old_uri=\""
-+               << it->uri << "\", new_uri=\"" << new_extension.uri << "\").";
-+      }
-     }
-   }
- 
-@@ -275,21 +282,6 @@ RTCError RtpTransport::RegisterRtpHeaderExtensionMap(
-     return RTCError::OK();
-   }
- 
--  for (const RtpExtension& extension : extensions) {
--    if (extension.id == 0) {
--      continue;
--    }
--    auto it = absl::c_find_if(historical_rtp_header_extensions_,
--                              [&extension](const RtpExtension& ext) {
--                                return ext.id == extension.id;
--                              });
--    if (it == historical_rtp_header_extensions_.end()) {
--      historical_rtp_header_extensions_.push_back(extension);
--    } else {
--      RTC_DCHECK_EQ(it->uri, extension.uri);
--    }
--  }
--
-   RemoveExtensionMapForMid(mid, header_extensions_by_mid_);
-   header_extensions_by_mid_.emplace_back(std::string(mid), extensions);
- 
-diff --git a/pc/rtp_transport.h b/pc/rtp_transport.h
-index e51a1247fa..185201586c 100644
---- a/pc/rtp_transport.h
-+++ b/pc/rtp_transport.h
-@@ -181,9 +181,6 @@ class RtpTransport : public RtpTransportInternal {
-   std::vector<std::pair<std::string, RtpHeaderExtensions>>
-       header_extensions_by_mid_ RTC_GUARDED_BY(network_thread_checker_);
- 
--  RtpHeaderExtensions historical_rtp_header_extensions_
--      RTC_GUARDED_BY(network_thread_checker_);
--
-   // Guard against recursive "ready to send" signals
-   bool processing_ready_to_send_ = false;
-   RTC_NO_UNIQUE_ADDRESS SequenceChecker network_thread_checker_;
-diff --git a/pc/rtp_transport_unittest.cc b/pc/rtp_transport_unittest.cc
-index 65762faec8..07430e6427 100644
---- a/pc/rtp_transport_unittest.cc
-+++ b/pc/rtp_transport_unittest.cc
-@@ -390,6 +390,28 @@ TEST(RtpTransportTest, VerifyRtpHeaderExtensionMapRejectsIdReassignment) {
-   EXPECT_EQ(error.type(), RTCErrorType::INVALID_PARAMETER);
- }
- 
-+TEST(RtpTransportTest,
-+     VerifyRtpHeaderExtensionMapAllowsIdReuseAfterUnregister) {
-+  test::RunLoop loop;
-+  RtpTransport transport(kMuxDisabled, CreateTestFieldTrials());
-+  RtpHeaderExtensions extensions1 = {
-+      RtpExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 1)};
-+  RtpHeaderExtensions extensions2 = {RtpExtension(
-+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time", 1)};
-+
-+  // Registering the first map should succeed.
-+  EXPECT_TRUE(
-+      transport.RegisterRtpHeaderExtensionMap("audio", extensions1).ok());
-+
-+  // Unregister the first map.
-+  transport.UnregisterRtpHeaderExtensionMap("audio");
-+
-+  // Registering the second map with same ID but different URI should now
-+  // succeed!
-+  EXPECT_TRUE(
-+      transport.RegisterRtpHeaderExtensionMap("video", extensions2).ok());
-+}
-+
- // Test that SignalPacketReceived fires with rtcp=true when a RTCP packet is
- // received.
- TEST(RtpTransportTest, SignalDemuxedRtcp) {
