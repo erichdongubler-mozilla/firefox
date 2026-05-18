@@ -38,6 +38,7 @@
 #include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/AutoRestore.h"
+#include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DisplayPortUtils.h"
@@ -1408,6 +1409,31 @@ static nsDocShell* GetDocShell(nsPresContext* aPresContext) {
   return static_cast<nsDocShell*>(aPresContext->GetDocShell());
 }
 
+namespace mozilla {
+
+class PaintPendingHangAnnotator final : public BackgroundHangAnnotator {
+ public:
+  explicit PaintPendingHangAnnotator(nsRefreshDriver& aDriver)
+      : mDriver(aDriver) {
+    BackgroundHangMonitor::RegisterAnnotator(*this);
+  }
+
+  ~PaintPendingHangAnnotator() {
+    BackgroundHangMonitor::UnregisterAnnotator(*this);
+  }
+
+  void AnnotateHang(BackgroundHangAnnotations& aAnnotations) override {
+    if (mDriver.IsPaintPending()) {
+      aAnnotations.AddAnnotation(u"PaintPending"_ns, true);
+    }
+  }
+
+ private:
+  nsRefreshDriver& mDriver;
+};
+
+}  // namespace mozilla
+
 nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
     : mActiveTimer(nullptr),
       mOwnTimer(nullptr),
@@ -1442,6 +1468,10 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
     sRegularRateTimerList = new nsTArray<RefreshDriverTimer*>();
   }
   ++sRefreshDriverCount;
+
+  if (aPresContext->IsRoot()) {
+    mHangAnnotator = MakeUnique<PaintPendingHangAnnotator>(*this);
+  }
 }
 
 nsRefreshDriver::~nsRefreshDriver() {
