@@ -196,6 +196,8 @@ run-if = [
   "os != 'win'", # Content process killing throws on Window
 ]
 
+["browser_toolbox_measure_button_highlighter_destroy.js"]
+
 ["browser_toolbox_meatball.js"]
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2034604
