@@ -70,6 +70,11 @@ add_task(async function () {
     "watchResources",
     "toolboxServerError packet type is correct"
   );
+  is(
+    events[0].extra.session_id,
+    toolbox.sessionId,
+    "toolboxServerError session_id matches the toolbox session id"
+  );
 
   await toolbox.destroy();
   gBrowser.removeCurrentTab();

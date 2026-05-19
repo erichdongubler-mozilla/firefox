@@ -2115,6 +2115,10 @@ devtools.main:
         description: >
           The server-side content process stack trace for the error.
         type: string
+      session_id:
+        description: >
+          The start time of DevTools since the browser session began in milliseconds.
+        type: string
 
 devtools.accessibility:
   opened_count:
