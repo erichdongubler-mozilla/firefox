@@ -685,9 +685,19 @@ nsresult nsCocoaWindow::ActivateNativeMenuItemAt(const nsAString& indexString) {
       [NSApp mainMenu], locationString, true);
   // We can't perform an action on an item with a submenu, that will raise
   // an obj-c exception.
-  if (item && ![item hasSubmenu]) {
+  // We also refuse to activate an item that is hidden or inside a hidden
+  // ancestor menu.
+  if (item && ![item hasSubmenu] && !item.hidden) {
     NSMenu* parent = [item menu];
-    if (parent) {
+    bool hasHiddenAncestor = false;
+    for (NSMenu* m = parent; m && m.supermenu; m = m.supermenu) {
+      NSInteger idx = [m.supermenu indexOfItemWithSubmenu:m];
+      if (idx != -1 && [m.supermenu itemAtIndex:idx].hidden) {
+        hasHiddenAncestor = true;
+        break;
+      }
+    }
+    if (parent && !hasHiddenAncestor) {
       // NSLog(@"Performing action for native menu item titled: %@\n",
       //       [[currentSubmenu itemAtIndex:targetIndex] title]);
       mozilla::AutoRestore<bool> autoRestore(
@@ -5209,6 +5219,13 @@ void nsCocoaWindow::Destroy() {
   mOnDestroyCalled = true;
 
   nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
+
+  // Release our menu bar eagerly rather than waiting for ~nsCocoaWindow.
+  // nsMenuGroupOwnerX holds a strong RefPtr to the menubar's chrome Element,
+  // which CC cannot trace through these non-CC widget classes. If we wait for
+  // refcounting, the docshell -> widget edge can keep this window alive
+  // indefinitely whenever anything pins the document into a JS cycle.
+  mMenuBar = nullptr;
 
   // Deal with the possibility that we're being destroyed while running modal.
   if (mModal) {

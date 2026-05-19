@@ -114,9 +114,6 @@ class nsMenuX final : public nsMenuParentX,
   mozilla::Maybe<MenuChild> GetItemAt(uint32_t aPos);
   uint32_t GetItemCount();
 
-  mozilla::Maybe<MenuChild> GetVisibleItemAt(uint32_t aPos);
-  nsresult GetVisibleItemCount(uint32_t& aCount);
-
   mozilla::Maybe<MenuChild> GetItemForElement(
       mozilla::dom::Element* aMenuChildElement);
 
@@ -158,11 +155,8 @@ class nsMenuX final : public nsMenuParentX,
   bool Close();
 
   // Called from the menu delegate during menu:willHighlightItem:.
-  // If called with Nothing(), it means that no item is highlighted.
-  // The index only accounts for visible items, i.e. items for which there
-  // exists an NSMenuItem* in mNativeMenu.
-  void OnHighlightedItemChanged(
-      const mozilla::Maybe<uint32_t>& aNewHighlightedIndex);
+  // If called with nil, it means that no item is highlighted.
+  void OnHighlightedItemChanged(NSMenuItem* aNewHighlightedItem);
 
   // Called from the menu delegate before an item anywhere in this menu is
   // activated. Called after MenuClosed().
@@ -225,14 +219,6 @@ class nsMenuX final : public nsMenuParentX,
   // <menupopup>.
   size_t FindInsertionIndex(const MenuChild& aChild);
 
-  // Calculates the index at which aChild's NSMenuItem should be inserted into
-  // our NSMenu. The order of NSMenuItems in the NSMenu is the same as the order
-  // of menu children in mMenuChildren; the only difference is that
-  // mMenuChildren contains both visible and invisible children, and the NSMenu
-  // only contains visible items. So the insertion index is equal to the number
-  // of visible previous siblings of aChild in mMenuChildren.
-  NSInteger CalculateNativeInsertionPoint(const MenuChild& aChild);
-
   // Fires the popupshown event.
   MOZ_CAN_RUN_SCRIPT void MenuOpenedAsync();
 
@@ -254,10 +240,11 @@ class nsMenuX final : public nsMenuParentX,
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void FlushMenuClosedRunnable();
 
-  // Make sure the NSMenu contains at least one item, even if mVisibleItemsCount
-  // is zero. Otherwise it won't open.
+  bool HasVisibleNativeItems();
+  // Make sure the NSMenu contains at least one visible item. Otherwise it
+  // won't open.
   void InsertPlaceholderIfNeeded();
-  // Remove the placeholder before adding an item to mNativeNSMenu.
+  // Remove the empty-menu placeholder before making an item visible.
   void RemovePlaceholderIfPresent();
 
   nsCOMPtr<nsIContent> mContent;  // XUL <menu> or <menupopup>
@@ -266,7 +253,6 @@ class nsMenuX final : public nsMenuParentX,
   nsTArray<MenuChild> mMenuChildren;
 
   nsString mLabel;
-  uint32_t mVisibleItemsCount = 0;                     // cache
   nsMenuParentX* mParent = nullptr;                    // [weak]
   nsMenuGroupOwnerX* mMenuGroupOwner = nullptr;        // [weak]
   nsMenuItemIconX::Listener* mIconListener = nullptr;  // [weak]
@@ -298,9 +284,7 @@ class nsMenuX final : public nsMenuParentX,
   // nsMenuX objects should always have a valid native menu item.
   NSMenuItem* mNativeMenuItem = nil;  // [strong]
 
-  // Nothing() if no item is highlighted. The index only accounts for visible
-  // items.
-  mozilla::Maybe<uint32_t> mHighlightedItemIndex;
+  NSMenuItem* mHighlightedItem = nil;  // [weak]
 
   size_t mNestingDepth = 0;
 
@@ -326,6 +310,7 @@ class nsMenuX final : public nsMenuParentX,
   // usesItemFromMenu=false). We insert our own placeholder to prevent
   // legitimate menu items from being removed.
   bool mIsPullDownPlaceholderPresent = false;
+  bool mIsEmptyMenuPlaceholderPresent = false;
 
   // true between an OnOpen() call that returned true, and the subsequent call
   // to MenuOpened().
