@@ -1392,10 +1392,10 @@ index c3326509ce..293ccd7089 100644
    const bool enable_svc_for_simulcast_;
    std::optional<SimulcastToSvcConverter> simulcast_to_svc_converter_;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 94a87d570e..e1611b6f6f 100644
+index 066059f312..c4d48fb534 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -472,6 +472,12 @@ rtc_library("logging") {
+@@ -473,6 +473,12 @@ rtc_library("logging") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  
@@ -1409,7 +1409,7 @@ index 94a87d570e..e1611b6f6f 100644
      # Dependency on chromium's logging (in //base).
      deps += [ "//base" ]
 diff --git a/rtc_base/logging.cc b/rtc_base/logging.cc
-index 6437cc4b87..51ea1e824f 100644
+index d8972724ac..34f590f532 100644
 --- a/rtc_base/logging.cc
 +++ b/rtc_base/logging.cc
 @@ -25,6 +25,7 @@
@@ -1445,7 +1445,7 @@ index 6437cc4b87..51ea1e824f 100644
  namespace {
  
  // By default, release builds don't log, debug builds at info level
-@@ -126,7 +145,7 @@ std::string LogLineRef::DefaultLogLine() const {
+@@ -163,7 +182,7 @@ std::string LogLineRef::DefaultLogLine() const {
  // LogMessage
  /////////////////////////////////////////////////////////////////////////////
  
@@ -1455,10 +1455,10 @@ index 6437cc4b87..51ea1e824f 100644
  // The list of logging streams currently configured.
  // Note: we explicitly do not clean this up, because of the uncertain ordering
 diff --git a/rtc_base/logging.h b/rtc_base/logging.h
-index 5667aee3fb..9d17ffeec8 100644
+index 60c05c772e..2ba263c318 100644
 --- a/rtc_base/logging.h
 +++ b/rtc_base/logging.h
-@@ -583,6 +583,12 @@ class LogMessage {
+@@ -653,6 +653,12 @@ class LogMessage {
    }
  #endif  // RTC_LOG_ENABLED()
  
@@ -1471,7 +1471,7 @@ index 5667aee3fb..9d17ffeec8 100644
   private:
    friend class LogMessageForTesting;
  
-@@ -640,6 +646,9 @@ class LogMessage {
+@@ -700,6 +706,9 @@ class LogMessage {
  
    // The stringbuilder that buffers the formatted message before output
    StringBuilder print_stream_;
