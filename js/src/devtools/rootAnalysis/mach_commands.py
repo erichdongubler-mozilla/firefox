@@ -327,23 +327,19 @@ def gather_hazard_data(command_context, **kwargs):
 
     work_dir = get_work_dir(command_context, project, kwargs["work_dir"])
     ensure_dir_exists(work_dir)
-    with open(os.path.join(work_dir, "defaults.py"), "w") as fh:
-        data = textwrap.dedent(
-            """\
-            analysis_scriptdir = "{script_dir}"
-            objdir = "{objdir}"
-            source = "{srcdir}"
-            sixgill = "{sixgill_dir}/usr/libexec/sixgill"
-            sixgill_bin = "{sixgill_dir}/usr/bin"
-        """
-        ).format(
-            script_dir=script_dir(command_context),
-            objdir=objdir,
-            srcdir=command_context.topsrcdir,
-            sixgill_dir=sixgill_dir(),
-            gcc_dir=gcc_dir(),
+    with open(os.path.join(work_dir, "config.json"), "w") as fh:
+        json.dump(
+            {
+                "analysis_scriptdir": script_dir(command_context),
+                "objdir": objdir,
+                "source": command_context.topsrcdir,
+                "sixgill": os.path.join(sixgill_dir(), "usr", "libexec", "sixgill"),
+                "sixgill_bin": os.path.join(sixgill_dir(), "usr", "bin"),
+            },
+            fh,
+            indent=4,
         )
-        fh.write(data)
+        fh.write("\n")
 
     buildscript = " ".join([
         command_context.topsrcdir + "/mach hazards compile",
