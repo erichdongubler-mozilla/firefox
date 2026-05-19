@@ -941,7 +941,8 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
         Instr instr = JAL;
         instr = SetJalOffset(pos.getOffset(), target_pos.getOffset(), instr);
         MOZ_ASSERT(reinterpret_cast<Instruction*>(&instr)->IsJal());
-        MOZ_ASSERT(JumpOffset(instr) == offset);
+        MOZ_ASSERT(reinterpret_cast<Instruction*>(&instr)->Imm20JValue() ==
+                   offset);
         putInstrAt(pos, instr);
         putInstrAt(BufferOffset(pos.getOffset() + 4), kNopByte);
       } else {
@@ -990,10 +991,9 @@ int Assembler::jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
 #ifdef JS_DISASM_RISCV64
   disassembleInstr(instruction->InstructionBits());
 #endif /* JS_DISASM_RISCV64 */
-  Instr instr = instruction->InstructionBits();
   switch (instruction->InstructionOpcodeType()) {
     case BRANCH: {
-      int32_t imm13 = BranchOffset(instr);
+      int32_t imm13 = instruction->BranchOffset();
       if (imm13 == kEndOfJumpChain) {
         // EndOfChain sentinel is returned directly, not relative to pc or pos.
         return kEndOfChain;
@@ -1003,7 +1003,7 @@ int Assembler::jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
       return pos.getOffset() + imm13;
     }
     case JAL: {
-      int32_t imm21 = JumpOffset(instr);
+      int32_t imm21 = instruction->Imm20JValue();
       if (imm21 == kEndOfJumpChain) {
         // EndOfChain sentinel is returned directly, not relative to pc or pos.
         return kEndOfChain;
@@ -1013,7 +1013,7 @@ int Assembler::jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
       return pos.getOffset() + imm21;
     }
     case JALR: {
-      int32_t imm12 = instr >> 20;
+      int32_t imm12 = instruction->Imm12Value();
       if (imm12 == kEndOfJumpChain) {
         // EndOfChain sentinel is returned directly, not relative to pc or pos.
         return kEndOfChain;
@@ -1035,11 +1035,14 @@ int Assembler::jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
     }
     case AUIPC: {
       MOZ_ASSERT(instruction2 != nullptr);
-      Instr instr_auipc = instr;
-      Instr instr_I = instruction2->InstructionBits();
       MOZ_ASSERT(instruction2->IsJalr() || instruction2->IsAddi());
-      int32_t offset = BrachlongOffset(instr_auipc, instr_I);
-      if (offset == kEndOfJumpChain) return kEndOfChain;
+
+      int32_t imm_auipc = instruction->Imm20UValue() << kImm20Shift;
+      int32_t imm12 = instruction2->Imm12Value();
+      int32_t offset = imm_auipc + imm12;
+      if (offset == kEndOfJumpChain) {
+        return kEndOfChain;
+      }
       DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", offset,
                    pos.getOffset() + offset);
       return offset + pos.getOffset();

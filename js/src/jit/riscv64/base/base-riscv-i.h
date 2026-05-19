@@ -87,12 +87,6 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
   // invalid instruction traps).
   void unimp();
 
-  static int JumpOffset(Instr instr);
-  static int AuipcOffset(Instr instr);
-  static int JalrOffset(Instr instr);
-  static int LoadOffset(Instr instr);
-  static int BranchOffset(Instr instr);
-  static int BrachlongOffset(Instr auipc, Instr instr_I);
   static inline Instr SetBranchOffset(int32_t pos, int32_t target_pos,
                                       Instr instr) {
     int32_t imm = target_pos - pos;
@@ -131,7 +125,7 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
     int32_t imm12 = offset << kImm12Shift;
     Instr result = instr | (imm12 & kImm12Mask);
     MOZ_ASSERT(reinterpret_cast<Instruction*>(&result)->IsJalr());
-    MOZ_ASSERT(JalrOffset(result) == offset);
+    MOZ_ASSERT(reinterpret_cast<Instruction*>(&result)->Imm12Value() == offset);
     return result;
   }
 

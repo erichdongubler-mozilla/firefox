@@ -223,25 +223,6 @@ void AssemblerRISCVI::unimp() {
   GenInstrI(0b001, SYSTEM, ToRegister(0), ToRegister(0), 0b110000000000);
 }
 
-int AssemblerRISCVI::JumpOffset(Instr instr) {
-  int32_t imm21 = ((instr & 0x7fe00000) >> 20) | ((instr & 0x100000) >> 9) |
-                  (instr & 0xff000) | ((instr & 0x80000000) >> 11);
-  imm21 = imm21 << 11 >> 11;
-  return imm21;
-}
-
-int AssemblerRISCVI::JalrOffset(Instr instr) {
-  MOZ_ASSERT(IsJalr(instr));
-  int32_t imm12 = static_cast<int32_t>(instr & kImm12Mask) >> 20;
-  return imm12;
-}
-
-int AssemblerRISCVI::AuipcOffset(Instr instr) {
-  MOZ_ASSERT(IsAuipc(instr));
-  int32_t imm20 = static_cast<int32_t>(instr & kImm20Mask);
-  return imm20;
-}
-
 void AssemblerRISCVI::lwu(Register rd, Register rs1, int16_t imm12) {
   GenInstrLoad_ri(0b110, rd, rs1, imm12);
 }
@@ -288,27 +269,6 @@ void AssemblerRISCVI::srlw(Register rd, Register rs1, Register rs2) {
 
 void AssemblerRISCVI::sraw(Register rd, Register rs1, Register rs2) {
   GenInstrALUW_rr(0b0100000, 0b101, rd, rs1, rs2);
-}
-
-int AssemblerRISCVI::BranchOffset(Instr instr) {
-  // | imm[12] | imm[10:5] | rs2 | rs1 | funct3 | imm[4:1|11] | opcode |
-  //  31          25                      11          7
-  int32_t imm13 = ((instr & 0xf00) >> 7) | ((instr & 0x7e000000) >> 20) |
-                  ((instr & 0x80) << 4) | ((instr & 0x80000000) >> 19);
-  imm13 = imm13 << 19 >> 19;
-  return imm13;
-}
-
-int AssemblerRISCVI::BrachlongOffset(Instr auipc, Instr instr_I) {
-  MOZ_ASSERT(reinterpret_cast<Instruction*>(&instr_I)->InstructionType() ==
-             InstructionBase::kIType);
-  MOZ_ASSERT(IsAuipc(auipc));
-  MOZ_ASSERT(((auipc & kRdFieldMask) >> kRdShift) ==
-             ((instr_I & kRs1FieldMask) >> kRs1Shift));
-  int32_t imm_auipc = AuipcOffset(auipc);
-  int32_t imm12 = static_cast<int32_t>(instr_I & kImm12Mask) >> 20;
-  int32_t offset = imm12 + imm_auipc;
-  return offset;
 }
 
 }  // namespace jit

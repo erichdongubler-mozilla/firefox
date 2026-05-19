@@ -54,8 +54,6 @@ class AssemblerRISCVC : public AssemblerRiscvBase {
   void c_ldsp(Register rd, uint16_t uimm9);
   void c_sdsp(Register rs2, uint16_t uimm9);
 
-  int CJumpOffset(Instr instr);
-
   inline int16_t cjumpOffset(Label* L) {
     return (int16_t)branchOffsetHelper(L, OffsetSize::kOffset11);
   }
