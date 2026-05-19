@@ -692,8 +692,16 @@ static uint8_t ToServoCssType(InspectorPropertyType aType) {
 
 bool InspectorUtils::Supports(GlobalObject&, const nsACString& aDeclaration,
                               const SupportsOptions& aOptions) {
-  return Servo_CSSSupports(&aDeclaration, aOptions.mUserAgent, aOptions.mChrome,
-                           aOptions.mQuirks);
+  StyleCssSupportsParams params{
+      .origin =
+          aOptions.mUserAgent ? StyleOrigin::UserAgent : StyleOrigin::Author,
+      .url_context = aOptions.mChrome ? StyleCssSupportsUrlContext::Chrome
+                                      : StyleCssSupportsUrlContext::Default,
+      .quirks = aOptions.mQuirks
+                    ? nsCompatibility::eCompatibility_NavQuirks
+                    : nsCompatibility::eCompatibility_FullStandards,
+  };
+  return Servo_CSSSupports(&aDeclaration, &params);
 }
 
 bool InspectorUtils::CssPropertySupportsType(GlobalObject& aGlobalObject,
