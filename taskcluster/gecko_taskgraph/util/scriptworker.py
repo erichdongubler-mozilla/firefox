@@ -530,7 +530,6 @@ def generate_beetmover_upstream_artifacts(
                 "from",
                 f"beetmover filename {filename}",
                 platform=platform,
-                level=str(config.params.get("level", "1")),
             )
             if dep not in map_config["mapping"][filename]["from"]:
                 continue
