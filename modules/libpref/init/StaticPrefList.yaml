@@ -14265,7 +14265,7 @@
 # Include an idempotency-key header for POST requests
 - name: network.http.idempotencyKey.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: false
   mirror: always
 
 # Whether to respect the redirected-tainted origin flag
