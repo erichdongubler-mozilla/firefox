@@ -235,7 +235,7 @@ bool SVGGeometryElement::IsPointInStroke(const DOMPointInit& aPoint) {
 
 float SVGGeometryElement::GetTotalLengthForBinding() {
   FlushIfNeeded();
-  return GetTotalLength();
+  return GetTotalLength() / dom::UserSpaceMetrics::GetZoom(this);
 }
 
 already_AddRefed<DOMSVGPoint> SVGGeometryElement::GetPointAtLength(
@@ -247,9 +247,11 @@ already_AddRefed<DOMSVGPoint> SVGGeometryElement::GetPointAtLength(
     rv.ThrowInvalidStateError("No path available for measuring");
     return nullptr;
   }
+  float zoom = dom::UserSpaceMetrics::GetZoom(this);
+  gfx::Point point = path->ComputePointAtLength(
+      std::clamp(distance * zoom, 0.f, path->ComputeLength()));
 
-  return MakeAndAddRef<DOMSVGPoint>(path->ComputePointAtLength(
-      std::clamp(distance, 0.f, path->ComputeLength())));
+  return MakeAndAddRef<DOMSVGPoint>(point / zoom);
 }
 
 gfx::Matrix SVGGeometryElement::LocalTransform() const {
