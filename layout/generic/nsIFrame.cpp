@@ -4661,15 +4661,10 @@ void nsIFrame::MarkAbsoluteFramesForDisplayList(
   }
 }
 
-nsIContent* nsIFrame::GetExplicitEventTargetContent(
-    const WidgetEvent* aEvent /* = nullptr */) const {
-  // Return the content as-is if this is not a generated content.
+nsIContent* nsIFrame::GetContentForEvent(const WidgetEvent* aEvent) const {
   if (!IsGeneratedContentFrame()) {
     return GetContent();
   }
-  // If the content is a generated content, it won't handle any events from the
-  // DOM point of view. Therefore, let's return the parent of the generated
-  // content.
   const nsIFrame* generatedRoot = this;
   while (true) {
     auto* parent = nsLayoutUtils::GetParentOrPlaceholderFor(generatedRoot);
@@ -4680,12 +4675,6 @@ nsIContent* nsIFrame::GetExplicitEventTargetContent(
   }
   // Return the non-generated ancestor.
   return generatedRoot->GetContent()->GetParent();
-}
-
-nsIContent* nsIFrame::GetEventTargetContent(
-    const mozilla::WidgetEvent* aEvent /* = nullptr */) const {
-  return nsContentUtils::GetEventTargetContent(
-      GetExplicitEventTargetContent(aEvent), aEvent);
 }
 
 void nsIFrame::FireDOMEvent(const nsAString& aDOMEventName,

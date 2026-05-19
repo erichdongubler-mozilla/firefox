@@ -777,20 +777,23 @@ void PointerEventHandler::SynthesizeMoveToDispatchBoundaryEvents(
 
 /* static */
 void PointerEventHandler::ImplicitlyCapturePointer(nsIFrame* aFrame,
-                                                   const WidgetEvent& aEvent) {
-  MOZ_ASSERT(aEvent.mMessage == ePointerDown);
+                                                   WidgetEvent* aEvent) {
+  MOZ_ASSERT(aEvent->mMessage == ePointerDown);
   if (!aFrame || !IsPointerEventImplicitCaptureForTouchEnabled()) {
     return;
   }
-  const WidgetPointerEvent* pointerEvent = aEvent.AsPointerEvent();
+  WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
   NS_WARNING_ASSERTION(pointerEvent,
                        "Call ImplicitlyCapturePointer with non-pointer event");
   if (!pointerEvent->mFromTouchEvent) {
     // We only implicitly capture the pointer for touch device.
     return;
   }
-  nsIContent* target = aFrame->GetEventTargetContent(aEvent);
-  if (NS_WARN_IF(!target) || NS_WARN_IF(!target->IsElement())) {
+  nsIContent* target = aFrame->GetContentForEvent(aEvent);
+  while (target && !target->IsElement()) {
+    target = target->GetParent();
+  }
+  if (NS_WARN_IF(!target)) {
     return;
   }
   RequestPointerCaptureById(pointerEvent->pointerId, target->AsElement());
@@ -1153,9 +1156,9 @@ nsresult PointerEventHandler::DispatchPointerEventWithTarget(
   if (targetWeakFrame) {
     MOZ_ASSERT_IF(
         targetContent,
-        targetContent == targetWeakFrame->GetEventTargetContent(aPointerEvent));
+        targetContent == targetWeakFrame->GetContentForEvent(&aPointerEvent));
     if (!targetContent) {
-      targetContent = targetWeakFrame->GetEventTargetContent(aPointerEvent);
+      targetContent = targetWeakFrame->GetContentForEvent(&aPointerEvent);
       if (NS_WARN_IF(!targetContent)) {
         return NS_ERROR_FAILURE;
       }

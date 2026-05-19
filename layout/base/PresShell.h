@@ -734,16 +734,9 @@ class PresShell final : public nsStubDocumentObserver,
   nsIFrame* GetCurrentEventFrame();
 
   /**
-   * Gets the explicit event target content of the current event target frame
+   * Gets the current target event frame from the PresShell
    */
-  nsIContent* GetExplicitEventTargetContent(const WidgetEvent* = nullptr);
-
-  /**
-   * Gets the event target content from the current event target frame. If the
-   * event target should be an element node, this returns an inclusive ancestor
-   * element of the explicit event target content.
-   */
-  nsIContent* GetEventTargetContent(const WidgetEvent* = nullptr);
+  already_AddRefed<nsIContent> GetEventTargetContent(WidgetEvent* aEvent);
 
   /**
    * Get and set the history state for the current document

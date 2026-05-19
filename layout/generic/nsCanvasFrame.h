@@ -68,10 +68,7 @@ class nsCanvasFrame final : public nsContainerFrame,
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override;
 #endif
-  nsIContent* GetExplicitEventTargetContent(
-      const mozilla::WidgetEvent* = nullptr) const final;
-  using nsIFrame::GetExplicitEventTargetContent;
-
+  nsIContent* GetContentForEvent(const mozilla::WidgetEvent*) const override;
   nsRect CanvasArea() const;
 
  protected:

@@ -395,8 +395,7 @@ class PointerEventHandler final {
   static void CheckPointerCaptureState(WidgetPointerEvent* aEvent);
 
   // Implicitly get and release capture of current pointer for touch.
-  static void ImplicitlyCapturePointer(nsIFrame* aFrame,
-                                       const WidgetEvent& aEvent);
+  static void ImplicitlyCapturePointer(nsIFrame* aFrame, WidgetEvent* aEvent);
   MOZ_CAN_RUN_SCRIPT
   static void ImplicitlyReleasePointerCapture(WidgetEvent* aEvent);
   MOZ_CAN_RUN_SCRIPT static void MaybeImplicitlyReleasePointerCapture(

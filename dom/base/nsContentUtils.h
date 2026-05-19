@@ -1590,14 +1590,6 @@ class nsContentUtils {
       nsINode& aRemovingNode);
 
   /**
-   * Return inclusive ancestor element of aExplicitEventTargetContent if
-   * aEvent's target should be an Element node.
-   */
-  [[nodiscard]] static nsIContent* GetEventTargetContent(
-      nsIContent* aExplicitEventTargetContent,
-      const mozilla::WidgetEvent* aEvent);
-
-  /**
    * These methods create and dispatch a trusted event.
    * Works only with events which can be created by calling
    * Document::CreateEvent() with parameter "Events".

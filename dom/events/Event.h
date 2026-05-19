@@ -404,7 +404,7 @@ class Event : public nsISupports, public nsWrapperCache {
  protected:
   // Internal helper functions
   void SetEventType(const nsAString& aEventTypeArg);
-  nsIContent* GetExplicitTargetFromFrame();
+  nsIContent* GetTargetFromFrame();
 
   friend class EventMessageAutoOverride;
   friend class PopupBlocker;

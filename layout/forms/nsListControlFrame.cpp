@@ -846,8 +846,8 @@ nsresult nsListControlFrame::GetIndexFromEvent(const WidgetMouseEvent& aEvent,
   }
 
   RefPtr<dom::HTMLOptionElement> option;
-  for (nsIContent* content =
-           PresContext()->EventStateManager()->GetEventTargetContent();
+  for (nsCOMPtr<nsIContent> content =
+           PresContext()->EventStateManager()->GetEventTargetContent(nullptr);
        content && !option; content = content->GetParent()) {
     option = dom::HTMLOptionElement::FromNode(content);
   }

@@ -2810,9 +2810,8 @@ bool nsImageFrame::IsLeafDynamic() const {
   return !shadow;
 }
 
-nsIContent* nsImageFrame::GetExplicitEventTargetContent(
-    const WidgetEvent* aEvent /* = nullptr */) const {
-  if (mImageMap && aEvent) {
+nsIContent* nsImageFrame::GetContentForEvent(const WidgetEvent* aEvent) const {
+  if (mImageMap) {
     // XXX We need to make this special check for area element's capturing the
     // mouse due to bug 135040. Remove it once that's fixed.
     nsIContent* capturingContent = aEvent->HasMouseEventMessage()
@@ -2827,7 +2826,7 @@ nsIContent* nsImageFrame::GetExplicitEventTargetContent(
       return area;
     }
   }
-  return nsIFrame::GetExplicitEventTargetContent(aEvent);
+  return nsIFrame::GetContentForEvent(aEvent);
 }
 
 // XXX what should clicks on transparent pixels do?
