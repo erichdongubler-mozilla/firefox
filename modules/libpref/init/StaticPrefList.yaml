@@ -18954,6 +18954,12 @@
   value: false
   mirror: always
 
+# Enable perfetto on Android
+- name: toolkit.perfetto.enabled
+  type: bool
+  value: false
+  mirror: always
+
 # Returns true if BHR is disabled.
 - name: toolkit.content-background-hang-monitor.disabled
   type: bool
