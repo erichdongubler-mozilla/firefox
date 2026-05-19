@@ -15226,6 +15226,7 @@ function WeatherForecast({
 
 
 
+
 const Weather_USER_ACTION_TYPES = {
   CHANGE_LOCATION: "change_location",
   DETECT_LOCATION: "detect_location",
@@ -15235,7 +15236,6 @@ const Weather_USER_ACTION_TYPES = {
   OPT_IN_ACCEPTED: "opt_in_accepted",
   PROVIDER_LINK_CLICK: "provider_link_click"
 };
-const Weather_PREF_WEATHER_SIZE = "widgets.weather.size";
 function Weather_Weather({
   dispatch,
   size
@@ -15246,7 +15246,7 @@ function Weather_Weather({
   const errorTelemetrySent = (0,external_React_namespaceObject.useRef)(false);
   const errorRef = (0,external_React_namespaceObject.useRef)(null);
   const sizeSubmenuRef = (0,external_React_namespaceObject.useRef)(null);
-  const currentWeatherSize = prefs[Weather_PREF_WEATHER_SIZE] || "medium";
+  const currentWeatherSize = prefs[PREF_WEATHER_SIZE] || "medium";
   const trainhopWidgetsEnabled = prefs.trainhopConfig?.widgets?.enabled;
   const widgetsSystemEnabled = trainhopWidgetsEnabled || prefs["widgets.system.enabled"];
   const widgetsEnabled = trainhopWidgetsEnabled || prefs["widgets.enabled"];
@@ -15256,7 +15256,7 @@ function Weather_Weather({
       dispatch(actionCreators.OnlyToMain({
         type: actionTypes.SET_PREF,
         data: {
-          name: Weather_PREF_WEATHER_SIZE,
+          name: PREF_WEATHER_SIZE,
           value: newSize
         }
       }));
@@ -20788,7 +20788,7 @@ const Weather_VISIBLE = "visible";
 const Weather_VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const PREF_SYSTEM_SHOW_WEATHER = "system.showWeather";
 const Weather_PREF_NOVA_ENABLED = "nova.enabled";
-const Weather_Weather_PREF_WEATHER_SIZE = "widgets.weather.size";
+const Weather_PREF_WEATHER_SIZE = "widgets.weather.size";
 function WeatherPlaceholder() {
   const [isSeen, setIsSeen] = (0,external_React_namespaceObject.useState)(false);
 
@@ -21059,7 +21059,7 @@ class _Weather extends (external_React_default()).PureComponent {
       this.props.dispatch(actionCreators.OnlyToMain({
         type: actionTypes.SET_PREF,
         data: {
-          name: Weather_Weather_PREF_WEATHER_SIZE,
+          name: Weather_PREF_WEATHER_SIZE,
           value: size
         }
       }));
@@ -21238,7 +21238,7 @@ class _Weather extends (external_React_default()).PureComponent {
     const showDetailedView = Prefs.values["weather.display"] === "detailed";
     // @nova-cleanup(remove-pref): Remove this line and PREF_NOVA_ENABLED constant
     const novaEnabled = Prefs.values[Weather_PREF_NOVA_ENABLED];
-    const currentWeatherSize = Prefs.values[Weather_Weather_PREF_WEATHER_SIZE] || "large";
+    const currentWeatherSize = Prefs.values[Weather_PREF_WEATHER_SIZE] || "large";
     const nimbusWeatherForecastTrainhopEnabled = Prefs.values.trainhopConfig?.widgets?.weatherForecastEnabled;
     const weatherForecastWidgetEnabled = nimbusWeatherForecastTrainhopEnabled || Prefs.values["widgets.system.weatherForecast.enabled"];
 

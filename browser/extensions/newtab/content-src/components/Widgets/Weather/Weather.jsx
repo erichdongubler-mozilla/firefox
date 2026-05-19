@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { PREF_WEATHER_SIZE } from "common/WidgetsRegistry.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
 import { LocationSearch } from "content-src/components/Weather/LocationSearch";
 
@@ -17,8 +18,6 @@ const USER_ACTION_TYPES = {
   OPT_IN_ACCEPTED: "opt_in_accepted",
   PROVIDER_LINK_CLICK: "provider_link_click",
 };
-
-const PREF_WEATHER_SIZE = "widgets.weather.size";
 
 function Weather({ dispatch, size }) {
   const prefs = useSelector(state => state.Prefs.values);
