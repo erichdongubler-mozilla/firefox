@@ -230,7 +230,6 @@ firefox_desktop_pings = [
     "browser/components/urlbar/pings.yaml",
     "browser/extensions/data-leak-blocker/pings.yaml",
     "browser/modules/pings.yaml",
-    "dom/security/pings.yaml",
     "services/fxaccounts/pings.yaml",
     "services/sync/pings.yaml",
     "toolkit/components/nimbus/pings.yaml",

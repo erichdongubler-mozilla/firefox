@@ -1851,11 +1851,3 @@ nsScriptSecurityManager::EnsureFileURIAllowlist() {
 
   return mFileURIAllowlist.ref();
 }
-
-NS_IMETHODIMP
-nsScriptSecurityManager::GetFirstUnexpectedJavaScriptLoad(
-    nsACString& aScriptFilename) {
-  aScriptFilename.Truncate();
-  return nsContentSecurityUtils::GetVeryFirstUnexpectedScriptFilename(
-      aScriptFilename);
-}

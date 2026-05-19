@@ -4270,21 +4270,6 @@ export const FeatureManifest: {
             };
         };
     };
-    unexpectedScriptLoadNotificationBar: {
-        description: string;
-        owner: string;
-        hasExposure: boolean;
-        variables: {
-            enabled: {
-                description: string;
-                type: string;
-                setPref: {
-                    branch: string;
-                    pref: string;
-                };
-            };
-        };
-    };
     gc: {
         description: string;
         owner: string;

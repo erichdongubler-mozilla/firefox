@@ -96,7 +96,6 @@ class nsContentSecurityUtils {
 #endif
 
   static bool ValidateScriptFilename(JSContext* cx, const char* aFilename);
-  static nsresult GetVeryFirstUnexpectedScriptFilename(nsACString& aFilename);
 
   // Helper Function to Post a message to the corresponding JS-Console
   static void LogMessageToConsole(nsIHttpChannel* aChannel, const char* aMsg);

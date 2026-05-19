@@ -384,7 +384,6 @@ export interface Modules {
   "moz-src:///browser/modules/CanvasPermissionPromptHelper.sys.mjs": typeof import("moz-src:///browser/modules/CanvasPermissionPromptHelper.sys.mjs"),
   "moz-src:///browser/modules/ContextId.sys.mjs": typeof import("moz-src:///browser/modules/ContextId.sys.mjs"),
   "moz-src:///browser/modules/PrivateBrowsingUI.sys.mjs": typeof import("moz-src:///browser/modules/PrivateBrowsingUI.sys.mjs"),
-  "moz-src:///browser/modules/UnexpectedScriptObserver.sys.mjs": typeof import("moz-src:///browser/modules/UnexpectedScriptObserver.sys.mjs"),
   "moz-src:///browser/modules/WebAuthnPromptHelper.sys.mjs": typeof import("moz-src:///browser/modules/WebAuthnPromptHelper.sys.mjs"),
   "moz-src:///browser/themes/ToolbarIconColor.sys.mjs": typeof import("moz-src:///browser/themes/ToolbarIconColor.sys.mjs"),
   "moz-src:///dom/notification/MemoryNotificationDB.sys.mjs": typeof import("moz-src:///dom/notification/MemoryNotificationDB.sys.mjs"),

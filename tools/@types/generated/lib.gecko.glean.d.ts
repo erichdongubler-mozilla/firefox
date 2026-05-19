@@ -666,7 +666,7 @@ interface GleanImpl {
     evalUsageSystemContext: GleanEventWithExtras<{ fileinfo?: string, value?: string }>;
     httpsOnlyModeUpgradeTime: Record<"sub_f_aborted"|"sub_f_cxnrefused"|"sub_f_other"|"sub_f_redirectloop"|"sub_f_ssl_badcertdm"|"sub_f_ssl_other"|"sub_f_ssl_selfsignd"|"sub_f_ssl_unkwnissr"|"sub_f_timeout"|"sub_successful"|"top_f_aborted"|"top_f_cxnrefused"|"top_f_other"|"top_f_redirectloop"|"top_f_ssl_badcertdm"|"top_f_ssl_other"|"top_f_ssl_selfsignd"|"top_f_ssl_unkwnissr"|"top_f_timeout"|"top_successful", GleanTimingDistribution>;
     httpsOnlyModeUpgradeType: GleanDualLabeledCounter;
-    javascriptLoadParentProcess: GleanEventWithExtras<{ blocked?: string, fileinfo?: string, value?: string }>;
+    javascriptLoadParentProcess: GleanEventWithExtras<{ fileinfo?: string, value?: string }>;
     referrerPolicyCount: GleanCustomDistribution;
     unexpectedLoad: GleanEventWithExtras<{ contenttype?: string, filedetails?: string, redirects?: string, remotetype?: string, value?: string }>;
     prefUsageContentProcess: GleanEventWithExtras<{ value?: string }>;
@@ -4775,18 +4775,6 @@ interface GleanImpl {
     events: GleanCustomDistribution;
   }
 
-  unexpectedScriptLoad: {
-    dialogDismissed: GleanEventNoExtras;
-    infobarDismissed: GleanEventNoExtras;
-    infobarShown: GleanEventNoExtras;
-    moreInfoOpened: GleanEventNoExtras;
-    scriptAllowed: GleanEventNoExtras;
-    scriptAllowedOpened: GleanEventNoExtras;
-    scriptBlocked: GleanEventNoExtras;
-    scriptBlockedOpened: GleanEventNoExtras;
-    scriptReported: GleanEventWithExtras<{ script_url?: string, user_email?: string }>;
-  }
-
   serviceWorker: {
     fetchEventChannelReset: Record<string, GleanTimingDistribution>;
     fetchEventDispatch: Record<string, GleanTimingDistribution>;
@@ -7828,7 +7816,6 @@ interface GleanPingsImpl {
   pageload: GleanPingWithReason<"startup"|"threshold">;
   pageloadBaseDomain: GleanPingWithReason<"pageload">;
   useCounters: GleanPingWithReason<"app_shutdown_confirmed"|"idle_startup">;
-  unexpectedScriptLoad: GleanPingNoReason;
   contentDecodingError: GleanPingWithReason<"error">;
   localNetworkAccess: GleanPingNoReason;
   urlClassifierHarmfulAddon: GleanPingNoReason;
