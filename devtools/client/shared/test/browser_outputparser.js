@@ -3032,6 +3032,34 @@ function testParseFunctionsForCssExplainers(doc, parser) {
         `</span>`,
     },
     {
+      message: "Custom elements and attributes when using parenthesis block",
+      propertyName: "opacity",
+      propertyValue: "calc(1 - (var(--x) - 0.8rem))",
+      cssExplainersEnabled: true,
+      variables: { "--x": "2em" },
+      expected:
+        // prettier-ignore
+        `<span data-function-expression="calc(1 - (var(--x) - 0.8rem))">` +
+          `<span class="css-explainers-function-name">calc</span>` +
+          `(` +
+          `1 - (` +
+          `<span data-function-expression="var(--x)">` +
+            `<span>` +
+              `<span class="css-explainers-function-name">var</span>` +
+              `(` +
+              `<span data-variable="2em">` +
+                `--x` +
+                `<button class="ruleview-variable-link jump-definition" data-variable-name="--x" title="Jump to variable definition"></button>` +
+              `</span>` +
+              `)` +
+            `</span>` +
+          `</span>` +
+          ` - 0.8rem` +
+          `)` +
+          `)` +
+        `</span>`,
+    },
+    {
       message:
         "No data-function-expression attribute when a nested function isn't supported",
       propertyName: "width",
@@ -3064,7 +3092,13 @@ function testParseFunctionsForCssExplainers(doc, parser) {
           "getAttributeValue" in test
             ? test.getAttributeValue
             : attrName => test.attributes[attrName] ?? null,
-        getVariableData: () => ({}),
+        getVariableData: varName => {
+          if (typeof test.variables?.[varName] === "string") {
+            return { value: test.variables[varName] };
+          }
+
+          return test.variables?.[varName] || {};
+        },
       }
     );
 

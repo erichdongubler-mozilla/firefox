@@ -413,7 +413,7 @@ class OutputParser {
           break;
 
         case "ParenthesisBlock":
-          this.#createStackEntry({ isParenthesis: true, text: tokenText });
+          this.#createStackEntry({ text: tokenText });
           this.#appendTextNode(tokenText, token);
           break;
 
@@ -517,8 +517,6 @@ class OutputParser {
       // Boolean indicating if the function accepts color parameters
       // if token is a function, null otherwise.
       isColorTakingFunction: null,
-      // Boolean indicating if the stack entry represent a parenthesis block
-      isParenthesis: null,
       // Will hold the text for the stack entry, i.e. the whole function call
       // (e.g. `min(10px, max(1em, var(--w, 20w)))`),
       text: "",
@@ -631,11 +629,16 @@ class OutputParser {
       // Then update the authored text
       lastStackEntry.text += text;
 
-      // Set the nested functions by adding the one for the stack entry we just handled
-      lastStackEntry.nestedFunctions = [
-        stackEntry.lowerCaseFunctionName,
-        ...stackEntry.nestedFunctions,
-      ];
+      if (stackEntry.lowerCaseFunctionName) {
+        // Set the nested functions by adding the one for the stack entry we just handled
+        lastStackEntry.nestedFunctions = [
+          stackEntry.lowerCaseFunctionName,
+          ...stackEntry.nestedFunctions,
+        ];
+      } else {
+        // If we closed a parenthesis block, just copy the nested functions we had
+        lastStackEntry.nestedFunctions = Array.from(stackEntry.nestedFunctions);
+      }
 
       const compoundEntryToken = {
         // Associate AGGREGATED_TOKEN_TYPE to the part so consumers can know the part was for
