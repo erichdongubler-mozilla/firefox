@@ -32,8 +32,8 @@
 // modified significantly by Google Inc.
 // Copyright 2021 the V8 project authors. All rights reserved.
 
-#ifndef jit_riscv64_extension_Base_assembler_riscv_h
-#define jit_riscv64_extension_Base_assembler_riscv_h
+#ifndef jit_riscv64_base_Base_assembler_riscv_h
+#define jit_riscv64_base_Base_assembler_riscv_h
 
 #include <stdio.h>
 
@@ -223,4 +223,4 @@ class AssemblerRiscvBase {
 }  // namespace jit
 }  // namespace js
 
-#endif  // jit_riscv64_extension_Base_assembler_riscv_h
+#endif  // jit_riscv64_base_Base_assembler_riscv_h

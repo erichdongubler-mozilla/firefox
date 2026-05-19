@@ -1,14 +1,16 @@
 // Copyright 2022 the V8 project authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-#ifndef jit_riscv64_extension_Base_riscv_i_h_
-#define jit_riscv64_extension_Base_riscv_i_h_
+#ifndef jit_riscv64_base_Base_riscv_i_h_
+#define jit_riscv64_base_Base_riscv_i_h_
+
 #include "mozilla/Assertions.h"
 
 #include <stdint.h>
 
+#include "jit/riscv64/base/base-assembler-riscv.h"
 #include "jit/riscv64/constant/Constant-riscv64.h"
-#include "jit/riscv64/extension/base-assembler-riscv.h"
+
 namespace js {
 namespace jit {
 
@@ -264,4 +266,4 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
 }  // namespace jit
 }  // namespace js
 
-#endif  // jit_riscv64_extension_Base_riscv_I_h_
+#endif  // jit_riscv64_base_Base_riscv_I_h_

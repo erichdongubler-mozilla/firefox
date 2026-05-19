@@ -42,10 +42,10 @@
 #include <utility>
 
 #include "jit/IonTypes.h"
+#include "jit/riscv64/base/base-assembler-riscv.h"
 #include "jit/riscv64/constant/Constant-riscv64.h"
 #include "jit/riscv64/constant/util-riscv64.h"
 #include "jit/riscv64/disasm/Disasm-riscv64.h"
-#include "jit/riscv64/extension/base-assembler-riscv.h"
 #include "js/ProfilingFrameIterator.h"
 #include "js/Utility.h"
 #include "js/Vector.h"

@@ -1,10 +1,12 @@
 // Copyright 2022 the V8 project authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-#include "jit/riscv64/extension/base-riscv-i.h"
+
+#include "jit/riscv64/base/base-riscv-i.h"
 #include "jit/riscv64/constant/Constant-riscv64.h"
 #include "jit/riscv64/Assembler-riscv64.h"
 #include "jit/riscv64/Architecture-riscv64.h"
+
 namespace js {
 namespace jit {
 
