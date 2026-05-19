@@ -252,6 +252,32 @@ fun TabGroupMenuButton(
     }
 }
 
+/**
+ * The trailing dismiss/close button in the list presentation of tab tray items.
+ *
+ * @param contentDescription Accessibility label describing the dismiss action.
+ * @param modifier The [Modifier] applied to the button.
+ * @param onClick Invoked when the dismiss button is clicked.
+ */
+@Composable
+fun ListItemDismissButton(
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    IconButton(
+        onClick = onClick,
+        contentDescription = contentDescription,
+        modifier = modifier.size(48.dp),
+    ) {
+        Icon(
+            painter = painterResource(id = iconsR.drawable.mozac_ic_cross_24),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.secondary,
+        )
+    }
+}
+
 private fun generateTabGroupMenuItems(
     includeCloseOption: Boolean = false,
     editTabGroup: () -> Unit,
