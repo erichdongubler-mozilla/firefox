@@ -1,304 +1,192 @@
-From: Byron Campen <docfaraday@gmail.com>
-Date: Tue, 19 May 2026 18:27:29 -0500
-Subject: (tmp-cherry-pick) Revert "Handle scalabilityMode in default
- VideoEncoderFactory::QueryCodecSupport" (07a13d347f)
+From: Tommi <tommi@webrtc.org>
+Date: Thu, 16 Apr 2026 14:48:05 +0200
+Subject: (cherry-pick-branch-heads/7778) [M148] Allow signaled SSRCs to
+ override learned bindings in RtpDemuxer
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-This reverts commit b816671aec33ee2c1c2da3dc7a5d64e8ad8503d5.
+Update RtpDemuxer to permit signaled SSRCs to override existing learned
+SSRC bindings. This prevents registration failures during session
+renegotiation when an SSRC, previously identified through payload type
+demuxing, is subsequently explicitly signaled.
 
-Reason for revert: Breaks downstream project
+The demuxer now maintains a set of signaled SSRCs to differentiate
+explicit configurations from learned state. Conflict detection is
+modified to allow these overrides while maintaining strict checks
+between multiple signaled SSRCs. This ensures that explicit signaling
+always takes precedence over internally learned bindings, resolving
+routing issues during media stream updates.
 
-Original change's description:
-> Handle scalabilityMode in default VideoEncoderFactory::QueryCodecSupport
->
-> The default implementation always returned unsupported when a
-> scalability_mode was specified. Fix by looking up the requested mode in
-> the matching format's scalability_modes list from GetSupportedFormats().
->
-> Bug: webrtc:496700735
-> Change-Id: I0835ee7e7111cf181d90dff48e3505c0f97a6365
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/462260
-> Reviewed-by: Erik Språng <sprang@webrtc.org>
-> Reviewed-by: Johannes Kron <kron@webrtc.org>
-> Commit-Queue: Yury Yarashevich <yura.yaroshevich@gmail.com>
-> Cr-Commit-Position: refs/heads/main@{#47432}
+(cherry picked from commit 186d42a3010981882a8679a145ce36aa84581c78)
 
-Bug: webrtc:496700735
-No-Presubmit: true
-No-Tree-Checks: true
-No-Try: true
-Change-Id: I5bc6df20884a13e7c117ee6edff873db0ff289fa
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464161
-Auto-Submit: Fredrik Solenberg <solenberg@webrtc.org>
-Reviewed-by: Tomas Gunnarsson <tommi@webrtc.org>
-Reviewed-by: Mirko Bonadei <mbonadei@webrtc.org>
-Bot-Commit: rubber-stamper@appspot.gserviceaccount.com <rubber-stamper@appspot.gserviceaccount.com>
-Commit-Queue: Fredrik Solenberg <solenberg@webrtc.org>
-Cr-Commit-Position: refs/heads/main@{#47436}
+Fixed: chromium:503666505
+Bug: webrtc:502130956
+Change-Id: I551c2b7ee5af18fc9792ee52be08c5349c20b641
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464220
+Reviewed-by: Harald Alvestrand <hta@webrtc.org>
+Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
+Cr-Original-Commit-Position: refs/heads/main@{#47446}
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464764
+Reviewed-by: Björn Terelius <terelius@webrtc.org>
+Cr-Commit-Position: refs/branch-heads/7778@{#2}
+Cr-Branched-From: ca896b7ffef011bbf6957c99d413c5aac602c99f-refs/heads/main@{#47319}
 ---
- api/video_codecs/BUILD.gn                     |   1 -
- api/video_codecs/test/BUILD.gn                |   2 -
- .../test/video_encoder_factory_unittest.cc    | 126 ------------------
- api/video_codecs/video_encoder_factory.cc     |  48 -------
- api/video_codecs/video_encoder_factory.h      |  14 +-
- 5 files changed, 11 insertions(+), 180 deletions(-)
- delete mode 100644 api/video_codecs/test/video_encoder_factory_unittest.cc
- delete mode 100644 api/video_codecs/video_encoder_factory.cc
+ call/rtp_demuxer.cc          | 22 +++++++---
+ call/rtp_demuxer.h           |  1 +
+ call/rtp_demuxer_unittest.cc | 83 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 101 insertions(+), 5 deletions(-)
 
-diff --git a/api/video_codecs/BUILD.gn b/api/video_codecs/BUILD.gn
-index 51da74c69f..583ade7986 100644
---- a/api/video_codecs/BUILD.gn
-+++ b/api/video_codecs/BUILD.gn
-@@ -60,7 +60,6 @@ rtc_library("video_codecs_api") {
-     "video_decoder_factory.h",
-     "video_encoder.cc",
-     "video_encoder.h",
--    "video_encoder_factory.cc",
-     "video_encoder_factory.h",
-     "vp8_frame_buffer_controller.h",
-     "vp8_frame_config.cc",
-diff --git a/api/video_codecs/test/BUILD.gn b/api/video_codecs/test/BUILD.gn
-index 82fb965323..9c1e7959ff 100644
---- a/api/video_codecs/test/BUILD.gn
-+++ b/api/video_codecs/test/BUILD.gn
-@@ -17,7 +17,6 @@ if (rtc_include_tests) {
-       "sdp_video_format_unittest.cc",
-       "video_codec_unittest.cc",
-       "video_decoder_software_fallback_wrapper_unittest.cc",
--      "video_encoder_factory_unittest.cc",
-       "video_encoder_software_fallback_wrapper_unittest.cc",
-     ]
+diff --git a/call/rtp_demuxer.cc b/call/rtp_demuxer.cc
+index 598764b71c..e078347544 100644
+--- a/call/rtp_demuxer.cc
++++ b/call/rtp_demuxer.cc
+@@ -161,7 +161,13 @@ bool RtpDemuxer::AddSink(const RtpDemuxerCriteria& criteria,
+   }
  
-@@ -30,7 +29,6 @@ if (rtc_include_tests) {
-       ":video_encoder_factory_template_tests",
-       "..:builtin_video_encoder_factory",
-       "..:rtc_software_fallback_wrappers",
--      "..:scalability_mode",
-       "..:video_codecs_api",
-       "../..:fec_controller_api",
-       "../..:field_trials",
-diff --git a/api/video_codecs/test/video_encoder_factory_unittest.cc b/api/video_codecs/test/video_encoder_factory_unittest.cc
-deleted file mode 100644
-index 2480b56f75..0000000000
---- a/api/video_codecs/test/video_encoder_factory_unittest.cc
-+++ /dev/null
-@@ -1,126 +0,0 @@
--/*
-- *  Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
-- *
-- *  Use of this source code is governed by a BSD-style license
-- *  that can be found in the LICENSE file in the root of the source
-- *  tree. An additional intellectual property rights grant can be found
-- *  in the file PATENTS.  All contributing project authors may
-- *  be found in the AUTHORS file in the root of the source tree.
-- */
--
--#include "api/video_codecs/video_encoder_factory.h"
--
--#include <memory>
--#include <optional>
--#include <string>
--#include <utility>
--#include <vector>
--
--#include "absl/container/inlined_vector.h"
--#include "api/environment/environment.h"
--#include "api/video_codecs/scalability_mode.h"
--#include "api/video_codecs/sdp_video_format.h"
--#include "api/video_codecs/video_encoder.h"
--#include "api/video_codecs/vp9_profile.h"
--#include "test/gmock.h"
--#include "test/gtest.h"
--
--namespace webrtc {
--namespace {
--
--constexpr VideoEncoderFactory::CodecSupport kSupported = {
--    .is_supported = true,
--    .is_power_efficient = false};
--constexpr VideoEncoderFactory::CodecSupport kUnsupported = {
--    .is_supported = false,
--    .is_power_efficient = false};
--
--MATCHER_P(SupportIs, expected, "") {
--  return arg.is_supported == expected.is_supported &&
--         arg.is_power_efficient == expected.is_power_efficient;
--}
--
--class TestVideoEncoderFactory : public VideoEncoderFactory {
-- public:
--  explicit TestVideoEncoderFactory(std::vector<SdpVideoFormat> formats)
--      : formats_(std::move(formats)) {}
--
--  std::vector<SdpVideoFormat> GetSupportedFormats() const override {
--    return formats_;
--  }
--
--  std::unique_ptr<VideoEncoder> Create(const Environment& env,
--                                       const SdpVideoFormat& format) override {
--    return nullptr;
--  }
--
-- private:
--  std::vector<SdpVideoFormat> formats_;
--};
--
--TEST(VideoEncoderFactoryTest, QueryCodecSupportNoScalabilityMode) {
--  TestVideoEncoderFactory factory({SdpVideoFormat("VP8")});
--  EXPECT_THAT(factory.QueryCodecSupport(SdpVideoFormat("VP8"), std::nullopt),
--              SupportIs(kSupported));
--}
--
--TEST(VideoEncoderFactoryTest, QueryCodecSupportUnsupportedFormat) {
--  TestVideoEncoderFactory factory({SdpVideoFormat("VP8")});
--  EXPECT_THAT(factory.QueryCodecSupport(SdpVideoFormat("H264"), std::nullopt),
--              SupportIs(kUnsupported));
--}
--
--TEST(VideoEncoderFactoryTest,
--     QueryCodecSupportWithScalabilityModeAndEmptyModeList) {
--  TestVideoEncoderFactory factory({SdpVideoFormat("VP8")});
--  EXPECT_THAT(factory.QueryCodecSupport(SdpVideoFormat("VP8"), "L1T2"),
--              SupportIs(kUnsupported));
--}
--
--TEST(VideoEncoderFactoryTest, QueryCodecSupportWithMatchingScalabilityMode) {
--  SdpVideoFormat format("VP8", {}, {ScalabilityMode::kL1T2});
--  TestVideoEncoderFactory factory({format});
--  EXPECT_THAT(factory.QueryCodecSupport(SdpVideoFormat("VP8"), "L1T2"),
--              SupportIs(kSupported));
--}
--
--TEST(VideoEncoderFactoryTest, QueryCodecSupportWithNonMatchingScalabilityMode) {
--  SdpVideoFormat format("VP8", {}, {ScalabilityMode::kL1T2});
--  TestVideoEncoderFactory factory({format});
--  EXPECT_THAT(factory.QueryCodecSupport(SdpVideoFormat("VP8"), "L3T3"),
--              SupportIs(kUnsupported));
--}
--
--TEST(VideoEncoderFactoryTest, QueryCodecSupportWithInvalidScalabilityMode) {
--  SdpVideoFormat format("VP8", {}, {ScalabilityMode::kL1T2});
--  TestVideoEncoderFactory factory({format});
--  EXPECT_THAT(factory.QueryCodecSupport(SdpVideoFormat("VP8"), "INVALID"),
--              SupportIs(kUnsupported));
--}
--
--TEST(VideoEncoderFactoryTest,
--     QueryCodecSupportScalabilityModeUnsupportedFormat) {
--  SdpVideoFormat format("VP8", {}, {ScalabilityMode::kL1T2});
--  TestVideoEncoderFactory factory({format});
--  EXPECT_THAT(factory.QueryCodecSupport(SdpVideoFormat("H264"), "L1T2"),
--              SupportIs(kUnsupported));
--}
--
--TEST(VideoEncoderFactoryTest,
--     QueryCodecSupportDistinguishesDifferentCodecParameters) {
--  SdpVideoFormat vp9_profile0("VP9", {{kVP9FmtpProfileId, "0"}},
--                              {ScalabilityMode::kL1T2, ScalabilityMode::kL3T3});
--  SdpVideoFormat vp9_profile2("VP9", {{kVP9FmtpProfileId, "2"}},
--                              {ScalabilityMode::kL1T2});
--  TestVideoEncoderFactory factory({vp9_profile0, vp9_profile2});
--
--  EXPECT_THAT(factory.QueryCodecSupport(
--                  SdpVideoFormat("VP9", {{kVP9FmtpProfileId, "0"}}), "L3T3"),
--              SupportIs(kSupported));
--  EXPECT_THAT(factory.QueryCodecSupport(
--                  SdpVideoFormat("VP9", {{kVP9FmtpProfileId, "2"}}), "L3T3"),
--              SupportIs(kUnsupported));
--}
--
--}  // namespace
--}  // namespace webrtc
-diff --git a/api/video_codecs/video_encoder_factory.cc b/api/video_codecs/video_encoder_factory.cc
-deleted file mode 100644
-index 3ec83b1422..0000000000
---- a/api/video_codecs/video_encoder_factory.cc
-+++ /dev/null
-@@ -1,48 +0,0 @@
--/*
-- *  Copyright (c) 2026 The WebRTC project authors. All Rights Reserved.
-- *
-- *  Use of this source code is governed by a BSD-style license
-- *  that can be found in the LICENSE file in the root of the source
-- *  tree. An additional intellectual property rights grant can be found
-- *  in the file PATENTS.  All contributing project authors may
-- *  be found in the AUTHORS file in the root of the source tree.
-- */
--
--#include "api/video_codecs/video_encoder_factory.h"
--
--#include <optional>
--#include <string>
--
--#include "absl/algorithm/container.h"
--#include "api/video_codecs/scalability_mode.h"
--#include "api/video_codecs/sdp_video_format.h"
--
--namespace webrtc {
--
--VideoEncoderFactory::CodecSupport VideoEncoderFactory::QueryCodecSupport(
--    const SdpVideoFormat& format,
--    std::optional<std::string> scalability_mode) const {
--  // Default implementation, query for supported formats and check if the
--  // specified format is supported. If a scalability mode is specified, check
--  // that it is present in the matching format's scalability_modes list.
--
--  for (const auto& supported_format : GetSupportedFormats()) {
--    if (supported_format.IsSameCodec(format)) {
--      if (!scalability_mode.has_value()) {
--        return {.is_supported = true};
--      } else {
--        // Unable to use existing scalability mode parser due to circular
--        // dependency between api/video_codecs and modules/video_coding.
--        return {.is_supported = absl::c_any_of(
--                    supported_format.scalability_modes,
--                    [&](ScalabilityMode supported_mode) {
--                      return ScalabilityModeToString(supported_mode) ==
--                             *scalability_mode;
--                    })};
--      }
--    }
--  }
--  return {.is_supported = false};
--}
--
--}  // namespace webrtc
-diff --git a/api/video_codecs/video_encoder_factory.h b/api/video_codecs/video_encoder_factory.h
-index a5cf3dbb34..ebc6e39726 100644
---- a/api/video_codecs/video_encoder_factory.h
-+++ b/api/video_codecs/video_encoder_factory.h
-@@ -22,13 +22,12 @@
- #include "api/video/render_resolution.h"
- #include "api/video_codecs/sdp_video_format.h"
- #include "api/video_codecs/video_encoder.h"
--#include "rtc_base/system/rtc_export.h"
- 
- namespace webrtc {
- 
- // A factory that creates VideoEncoders.
- // NOTE: This class is still under development and may change without notice.
--class RTC_EXPORT VideoEncoderFactory {
-+class VideoEncoderFactory {
-  public:
-   struct CodecSupport {
-     bool is_supported = false;
-@@ -90,7 +89,16 @@ class RTC_EXPORT VideoEncoderFactory {
-   // subject to change without notice.
-   virtual CodecSupport QueryCodecSupport(
-       const SdpVideoFormat& format,
--      std::optional<std::string> scalability_mode) const;
-+      std::optional<std::string> scalability_mode) const {
-+    // Default implementation, query for supported formats and check if the
-+    // specified format is supported. Returns false if scalability_mode is
-+    // specified.
-+    CodecSupport codec_support;
-+    if (!scalability_mode) {
-+      codec_support.is_supported = format.IsCodecInList(GetSupportedFormats());
+   for (uint32_t ssrc : criteria.ssrcs()) {
+-    sink_by_ssrc_.emplace(ssrc, sink);
++    auto result = sink_by_ssrc_.emplace(ssrc, sink);
++    if (!result.second) {
++      if (signaled_ssrcs_.find(ssrc) == signaled_ssrcs_.end()) {
++        result.first->second = sink;
++      }
 +    }
-+    return codec_support;
-+  }
++    signaled_ssrcs_.insert(ssrc);
+   }
  
-   // Creates a VideoEncoder for the specified format.
-   virtual std::unique_ptr<VideoEncoder> Create(
+   for (uint8_t payload_type : criteria.payload_types()) {
+@@ -231,10 +237,12 @@ bool RtpDemuxer::CriteriaWouldConflict(
+   for (uint32_t ssrc : criteria.ssrcs()) {
+     const auto sink_by_ssrc = sink_by_ssrc_.find(ssrc);
+     if (sink_by_ssrc != sink_by_ssrc_.end()) {
+-      RTC_LOG(LS_INFO) << criteria.ToString()
+-                       << " would conflict with existing sink = "
+-                       << sink_by_ssrc->second << " binding by SSRC=" << ssrc;
+-      return true;
++      if (signaled_ssrcs_.find(ssrc) != signaled_ssrcs_.end()) {
++        RTC_LOG(LS_INFO) << criteria.ToString()
++                         << " would conflict with existing sink = "
++                         << sink_by_ssrc->second << " binding by SSRC=" << ssrc;
++        return true;
++      }
+     }
+   }
+ 
+@@ -270,6 +278,10 @@ void RtpDemuxer::AddSink(absl::string_view rsid, RtpPacketSinkInterface* sink) {
+ 
+ bool RtpDemuxer::RemoveSink(const RtpPacketSinkInterface* sink) {
+   RTC_DCHECK(sink);
++  flat_set<uint32_t> ssrcs = GetSsrcsForSink(sink);
++  for (uint32_t ssrc : ssrcs) {
++    signaled_ssrcs_.erase(ssrc);
++  }
+   size_t num_removed = RemoveFromMapByValue(&sink_by_mid_, sink) +
+                        RemoveFromMapByValue(&sink_by_ssrc_, sink) +
+                        RemoveFromMultimapByValue(&sinks_by_pt_, sink) +
+diff --git a/call/rtp_demuxer.h b/call/rtp_demuxer.h
+index cc6a84c878..f2f76cb562 100644
+--- a/call/rtp_demuxer.h
++++ b/call/rtp_demuxer.h
+@@ -217,6 +217,7 @@ class RtpDemuxer {
+   flat_map<std::pair<std::string, std::string>, RtpPacketSinkInterface*>
+       sink_by_mid_and_rsid_;
+   flat_map<std::string, RtpPacketSinkInterface*> sink_by_rsid_;
++  flat_set<uint32_t> signaled_ssrcs_;
+ 
+   // Tracks all the MIDs that have been identified in added criteria. Used to
+   // determine if a packet should be dropped right away because the MID is
+diff --git a/call/rtp_demuxer_unittest.cc b/call/rtp_demuxer_unittest.cc
+index 363d58aa13..b878d2bbae 100644
+--- a/call/rtp_demuxer_unittest.cc
++++ b/call/rtp_demuxer_unittest.cc
+@@ -369,6 +369,89 @@ TEST_F(RtpDemuxerTest, OnRtpPacketCalledOnCorrectSinkByPayloadType) {
+   EXPECT_TRUE(demuxer_.OnRtpPacket(*packet));
+ }
+ 
++TEST_F(RtpDemuxerTest, DontSignalRtpPayloadTypeWhenPtDemuxingDisabled) {
++  constexpr uint32_t ssrc1 = 10;
++  constexpr uint32_t ssrc2 = 11;
++  constexpr uint8_t pt1 = 30;
++  constexpr uint8_t pt2 = 31;
++
++  // Sink 1 registered when PT demuxing is enabled (default).
++  MockRtpPacketSink sink1;
++  RtpDemuxerCriteria criteria1;
++  criteria1.payload_types() = {pt1};
++  EXPECT_TRUE(AddSink(criteria1, &sink1));
++
++  // Disable PT demuxing.
++  demuxer_.set_use_payload_type_demuxing(false);
++
++  // Sink 2 registered when PT demuxing is disabled.
++  MockRtpPacketSink sink2;
++  RtpDemuxerCriteria criteria2;
++  criteria2.payload_types() = {pt2};
++  EXPECT_TRUE(AddSink(criteria2, &sink2));
++
++  // Packet with pt1 should not go to sink1 because fallback is disabled.
++  auto packet1 = CreatePacketWithSsrc(ssrc1);
++  packet1->SetPayloadType(pt1);
++  EXPECT_CALL(sink1, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet1));
++
++  // Packet with pt2 should not go to sink2 because fallback is disabled and it
++  // was not registered by PT.
++  auto packet2 = CreatePacketWithSsrc(ssrc2);
++  packet2->SetPayloadType(pt2);
++  EXPECT_CALL(sink2, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet2));
++}
++
++TEST_F(RtpDemuxerTest, DynamicPayloadTypeDemuxing) {
++  constexpr uint32_t ssrc = 10;
++  constexpr uint8_t payload_type = 30;
++
++  MockRtpPacketSink sink;
++  RtpDemuxerCriteria criteria;
++  criteria.payload_types() = {payload_type};
++
++  demuxer_.set_use_payload_type_demuxing(false);
++  EXPECT_TRUE(AddSink(criteria, &sink));
++
++  auto packet = CreatePacketWithSsrc(ssrc);
++  packet->SetPayloadType(payload_type);
++
++  EXPECT_CALL(sink, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet));
++
++  demuxer_.set_use_payload_type_demuxing(true);
++
++  EXPECT_CALL(sink, OnRtpPacket(SamePacketAs(*packet))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet));
++}
++
++TEST_F(RtpDemuxerTest, SignaledSsrcOverridesLearnedBinding) {
++  constexpr uint32_t ssrc = 10;
++  constexpr uint8_t payload_type = 30;
++
++  MockRtpPacketSink sink1;
++  RtpDemuxerCriteria criteria1;
++  criteria1.payload_types() = {payload_type};
++  EXPECT_TRUE(AddSink(criteria1, &sink1));
++
++  auto packet1 = CreatePacketWithSsrc(ssrc);
++  packet1->SetPayloadType(payload_type);
++  EXPECT_CALL(sink1, OnRtpPacket(SamePacketAs(*packet1))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet1));
++
++  MockRtpPacketSink sink2;
++  RtpDemuxerCriteria criteria2;
++  criteria2.ssrcs().insert(ssrc);
++  EXPECT_TRUE(AddSink(criteria2, &sink2));
++
++  auto packet2 = CreatePacketWithSsrc(ssrc);
++  EXPECT_CALL(sink1, OnRtpPacket(_)).Times(0);
++  EXPECT_CALL(sink2, OnRtpPacket(SamePacketAs(*packet2))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet2));
++}
++
+ TEST_F(RtpDemuxerTest, PacketsDeliveredInRightOrder) {
+   constexpr uint32_t ssrc = 101;
+   MockRtpPacketSink sink;
