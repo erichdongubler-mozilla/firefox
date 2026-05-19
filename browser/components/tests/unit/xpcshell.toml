@@ -35,6 +35,8 @@ skip-if = [
 
 ["test_distribution_observer.js"]
 
+["test_profileDataUpgrade_backupProfiles.js"]
+
 ["test_profileDataUpgrade_smartwindow.js"]
 
 ["test_profileDataUpgrade_smartwindow_semanticHistory.js"]
