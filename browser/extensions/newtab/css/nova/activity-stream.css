@@ -4634,6 +4634,10 @@ button.arrow-button:dir(rtl) {
 .nova-enabled .widget-wrapper.large-widget {
   grid-row: span 4;
 }
+.nova-enabled .widget-wrapper:has(> .large-widget) {
+  grid-column: span 4;
+  grid-row: span 4;
+}
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
