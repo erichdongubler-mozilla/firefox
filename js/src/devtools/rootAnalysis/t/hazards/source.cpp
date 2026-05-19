@@ -755,3 +755,13 @@ void closure() {
     if (lambda_unsafe2()) break;
   }
 }
+
+ANNOTATE("Expect Hazards") void expected() {
+  Cell* cell = makecell();
+  GC();
+  usecell(cell);
+}
+
+ANNOTATE("Expect Hazards") void missing() { GC(); }
+
+ANNOTATE("Expect Hazards") void missing2() { GC(); }

@@ -879,14 +879,15 @@ function processBodies(ffg)
             ]
         } = ffg.mainBody();
 
-        const loc = (startfile == endfile) ? `${startfile}:${startline}-${endline}`
-              : `${startfile}:${startline}`;
+        const range = [[startfile, startline], [endfile, endline]];
+        const loc = `${startfile}:${startline}`;
 
         const record = {
             record: "missing",
             functionName: ffg.name,
             mangled: mangledSymbol,
             readable,
+            range,
             loc,
         }
         print(",");

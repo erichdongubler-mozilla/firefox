@@ -153,6 +153,16 @@ def quoted_dict(d):
     return {k: escape(v) for k, v in d.items() if type(v) is str}
 
 
+def brief_function(readable):
+    """Attempt to parse out just the base function name eg 'scope::foo()' from
+    Result<Messy<Type>> scope::foo(LongType<bleh>&). Fall back to the original
+    (readable) function declaration."""
+    if m := re.search(r"((?:\w|:|<[^>]*?>)+)\(", readable):
+        return m.group(1) + "()"
+    else:
+        return readable
+
+
 num_hazards = 0
 num_refs = 0
 num_missing = 0
@@ -180,6 +190,7 @@ try:
 
         checkboxCounter = 0
         hazard_results = []
+        missing = []
         seen_time = False
         for result in results:
             if result["record"] == "unrooted":
@@ -215,6 +226,7 @@ try:
                     ),
                     file=hazards,
                 )
+                missing.append(result)
                 num_missing += 1
 
         readable2mangled = {}
@@ -244,7 +256,7 @@ try:
                 gcExplanations[splitfunc(current_func)[0]] = explanation
 
         print(
-            "Found %d hazards, %d unsafe references, %d missing."
+            "Found %d hazards, %d unsafe references, %d expected but missing."
             % (num_hazards, num_refs, num_missing),
             file=html,
         )
@@ -327,6 +339,16 @@ try:
             for func in explanation:
                 print(f"<pre>{escape(func)}</pre>", file=html)
             print("</div><hr></ul>", file=html)
+
+        for result in missing:
+            print(
+                "<li>MISSING expected hazard in <a href='{loc_url}'><tt>{call_short}</tt></a> at {loc}".format(
+                    loc_url=sourcelink(range=result["range"], loc=result["loc"]),
+                    call_short=brief_function(result["readable"]),
+                    loc=result["loc"],
+                ),
+                file=html,
+            )
 
         print_footer(html)
 
