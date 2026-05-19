@@ -650,6 +650,49 @@ class InstructionBase {
 
   inline bool RlValue() const { return Bits(kRlShift, kRlShift); }
 
+  /// Setters
+
+  inline void SetImm12Value(int32_t imm12) {
+    MOZ_ASSERT(InstructionType() == InstructionBase::kIType);
+    MOZ_ASSERT(is_uint12(imm12) || is_int12(imm12));
+
+    // | imm[11:0] | rs1 | funct3 | rd | opcode |
+    //  31       20
+    Instr bits = InstructionBits() & ~kImm12Mask;
+    SetInstructionBits((imm12 << kImm12Shift) | bits);
+  }
+
+  inline void SetImm20UValue(int32_t imm20) {
+    MOZ_ASSERT(InstructionType() == InstructionBase::kUType);
+    MOZ_ASSERT(is_int20(imm20) || is_uint20(imm20));
+
+    // | imm[31:12] | rd | opcode |
+    //  31        12
+    Instr bits = InstructionBits() & ~kImm20Mask;
+    SetInstructionBits((imm20 << kImm20Shift) | bits);
+  }
+
+  inline void SetShamt(int32_t shamt) {
+    // Valid only for shift instructions (SLLI, SRLI, SRAI)
+    MOZ_ASSERT(((InstructionBits() & kBaseOpcodeMask) == OP_IMM ||
+                (InstructionBits() & kBaseOpcodeMask) == OP_IMM_32) &&
+               (Funct3Value() == 0b001 || Funct3Value() == 0b101));
+    MOZ_ASSERT_IF((InstructionBits() & kBaseOpcodeMask) == OP_IMM,
+                  0 <= shamt && shamt <= 63);
+    MOZ_ASSERT_IF((InstructionBits() & kBaseOpcodeMask) == OP_IMM_32,
+                  0 <= shamt && shamt <= 31);
+
+    // SLLI, SRLI, SRAI:
+    // | 0A0000 | shamt | rs1 | funct3 | rd | opcode |
+    //  31       25    20
+    //
+    // SLLIW, SRLIW, SRAIW:
+    // | 0A00000 | shamt | rs1 | funct3 | rd | opcode |
+    //  31        24   20
+    int32_t imm12 = ((InstructionBits() & 0x40000000) >> kImm12Shift) | shamt;
+    SetImm12Value(imm12);
+  }
+
  protected:
   InstructionBase() {}
 };

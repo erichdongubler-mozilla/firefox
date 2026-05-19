@@ -3668,14 +3668,10 @@ void MacroAssembler::patchSub32FromMemAndBranchIfNegative(CodeOffset offset,
                                                           Imm32 imm) {
   int32_t val = imm.value;
   MOZ_RELEASE_ASSERT(val >= 1 && val <= 127);
+
   auto* inst = getInstructionAt(BufferOffset(offset.offset() - 4));
-  inst->InstructionOpcodeType();
   MOZ_ASSERT(IsAddiw(inst->InstructionBits()));
-  /*
-   * | imm[11:0] | rs1 | 000 | rd | 0011011 |
-   */
-  inst->SetInstructionBits(((uint32_t)inst->InstructionBits() & ~kImm12Mask) |
-                           (((uint32_t)(-val) & 0xfff) << kImm12Shift));
+  inst->SetImm12Value(-val);
 }
 
 void MacroAssembler::flexibleDivMod32(Register lhs, Register rhs,

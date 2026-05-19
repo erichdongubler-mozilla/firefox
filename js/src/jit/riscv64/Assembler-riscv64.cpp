@@ -742,30 +742,27 @@ void Assembler::UpdateLoad64Value(Instruction* inst0, uint64_t value) {
         IsSlli(instr4->InstructionBits()) &&
         IsAddi(instr5->InstructionBits()) &&
         IsSlli(instr6->InstructionBits()) && IsAddi(instr7->InstructionBits()));
-    // lui(rd, (imm + (1LL << 47) + (1LL << 35) + (1LL << 23) + (1LL << 11)) >>
-    //             48);  // Bits 63:48
-    // addiw(rd, rd,
-    //       (imm + (1LL << 35) + (1LL << 23) + (1LL << 11)) << 16 >>
-    //           52);  // Bits 47:36
+
+    // clang-format off
+    //
+    // lui(rd, (imm + (1LL << 47) + (1LL << 35) + (1LL << 23) + (1LL << 11)) >> 48);  // Bits 63:48
+    // addiw(rd, rd, (imm + (1LL << 35) + (1LL << 23) + (1LL << 11)) << 16 >> 52);  // Bits 47:36
     // slli(rd, rd, 12);
-    // addi(rd, rd, (imm + (1LL << 23) + (1LL << 11)) << 28 >> 52);  // Bits
-    // 35:24 slli(rd, rd, 12); addi(rd, rd, (imm + (1LL << 11)) << 40 >> 52); //
-    // Bits 23:12 slli(rd, rd, 12); addi(rd, rd, imm << 52 >> 52);  // Bits 11:0
-    *reinterpret_cast<Instr*>(instr0) &= 0xfff;
-    *reinterpret_cast<Instr*>(instr0) |=
-        (((value + (1LL << 47) + (1LL << 35) + (1LL << 23) + (1LL << 11)) >> 48)
-         << 12);
-    *reinterpret_cast<Instr*>(instr1) &= 0xfffff;
-    *reinterpret_cast<Instr*>(instr1) |=
-        (((value + (1LL << 35) + (1LL << 23) + (1LL << 11)) << 16 >> 52) << 20);
-    *reinterpret_cast<Instr*>(instr3) &= 0xfffff;
-    *reinterpret_cast<Instr*>(instr3) |=
-        (((value + (1LL << 23) + (1LL << 11)) << 28 >> 52) << 20);
-    *reinterpret_cast<Instr*>(instr5) &= 0xfffff;
-    *reinterpret_cast<Instr*>(instr5) |=
-        (((value + (1LL << 11)) << 40 >> 52) << 20);
-    *reinterpret_cast<Instr*>(instr7) &= 0xfffff;
-    *reinterpret_cast<Instr*>(instr7) |= ((value << 52 >> 52) << 20);
+    // addi(rd, rd, (imm + (1LL << 23) + (1LL << 11)) << 28 >> 52);  // Bits 35:24
+    // slli(rd, rd, 12);
+    // addi(rd, rd, (imm + (1LL << 11)) << 40 >> 52); // Bits 23:12
+    // slli(rd, rd, 12);
+    // addi(rd, rd, imm << 52 >> 52);  // Bits 11:0
+    //
+    // clang-format on
+    instr0->SetImm20UValue(
+        (value + (1LL << 47) + (1LL << 35) + (1LL << 23) + (1LL << 11)) >> 48);
+    instr1->SetImm12Value(
+        (value + (1LL << 35) + (1LL << 23) + (1LL << 11)) << 16 >> 52);
+    instr3->SetImm12Value((value + (1LL << 23) + (1LL << 11)) << 28 >> 52);
+    instr5->SetImm12Value((value + (1LL << 11)) << 40 >> 52);
+    instr7->SetImm12Value(value << 52 >> 52);
+
 #ifdef JS_DISASM_RISCV64
     disassembleInstr(instr0->InstructionBits());
     disassembleInstr(instr1->InstructionBits());
@@ -803,50 +800,51 @@ void Assembler::UpdateLoad64Value(Instruction* inst0, uint64_t value) {
 void Assembler::jumpChainSetTargetValueAt(Instruction* pc, uint64_t target) {
   DEBUG_PRINTF("\tjumpChainSetTargetValueAt: pc: %p\ttarget: %" PRIx64 "\n", pc,
                target);
-  uint32_t* p = reinterpret_cast<uint32_t*>(pc);
   MOZ_ASSERT((target & 0xffff000000000000ll) == 0);
-#ifdef DEBUG
-  // Check we have the result from a li macro-instruction.
+
   Instruction* instr0 = pc;
   Instruction* instr1 = pc + 1 * kInstrSize;
+  Instruction* instr2 = pc + 2 * kInstrSize;
   Instruction* instr3 = pc + 3 * kInstrSize;
+  Instruction* instr4 = pc + 4 * kInstrSize;
   Instruction* instr5 = pc + 5 * kInstrSize;
+
+  // Check we have the result from a li macro-instruction.
   MOZ_ASSERT(
       IsLui(instr0->InstructionBits()) && IsAddi(instr1->InstructionBits()) &&
       IsOri(instr3->InstructionBits()) && IsOri(instr5->InstructionBits()));
-#endif
+
   int64_t a6 = target & 0x3f;                     // bits 0:6. 6 bits
   int64_t b11 = (target >> 6) & 0x7ff;            // bits 6:11. 11 bits
   int64_t high_31 = (target >> 17) & 0x7fffffff;  // 31 bits
   int64_t high_20 = ((high_31 + 0x800) >> 12);    // 19 bits
   int64_t low_12 = high_31 & 0xfff;               // 12 bits
-  *p = *p & 0xfff;
-  *p = *p | ((int32_t)high_20 << 12);
-  *(p + 1) = *(p + 1) & 0xfffff;
-  *(p + 1) = *(p + 1) | ((int32_t)low_12 << 20);
-  *(p + 2) = *(p + 2) & 0xfffff;
-  *(p + 2) = *(p + 2) | (11 << 20);
-  *(p + 3) = *(p + 3) & 0xfffff;
-  *(p + 3) = *(p + 3) | ((int32_t)b11 << 20);
-  *(p + 4) = *(p + 4) & 0xfffff;
-  *(p + 4) = *(p + 4) | (6 << 20);
-  *(p + 5) = *(p + 5) & 0xfffff;
-  *(p + 5) = *(p + 5) | ((int32_t)a6 << 20);
+
+  instr0->SetImm20UValue(high_20);
+  instr1->SetImm12Value(low_12);
+  instr2->SetShamt(11);
+  instr3->SetImm12Value(b11);
+  instr4->SetShamt(6);
+  instr5->SetImm12Value(a6);
+
   MOZ_ASSERT(jumpChainTargetAddressAt(pc) == target);
 }
 
 void Assembler::WriteLoad64Instructions(Instruction* inst0, Register reg,
                                         uint64_t value) {
   DEBUG_PRINTF("\tWriteLoad64Instructions\n");
+
   // Initialize rd with an address
   // Pointers are 48 bits
   // 6 fixed instructions are generated
   MOZ_ASSERT((value & 0xfff0000000000000ll) == 0);
+
   int64_t a6 = value & 0x3f;                     // bits 0:5. 6 bits
   int64_t b11 = (value >> 6) & 0x7ff;            // bits 6:11. 11 bits
   int64_t high_31 = (value >> 17) & 0x7fffffff;  // 31 bits
   int64_t high_20 = ((high_31 + 0x800) >> 12);   // 19 bits
   int64_t low_12 = high_31 & 0xfff;              // 12 bits
+
   Instr lui_ = LUI | (reg.code() << kRdShift) |
                ((int32_t)high_20 << kImm20Shift);  // lui(rd, (int32_t)high_20);
   inst0->SetInstructionBits(lui_);
@@ -881,6 +879,7 @@ void Assembler::WriteLoad64Instructions(Instruction* inst0, Register reg,
                  (a6 << kImm12Shift);  // ori(rd, rd, a6);       // 6 bits are
                                        // put in. 48 bis in rd
   (inst0 + 5 * kInstrSize)->SetInstructionBits(ori_a6);
+
 #ifdef JS_DISASM_RISCV64
   disassembleInstr((inst0 + 0 * kInstrSize)->InstructionBits());
   disassembleInstr((inst0 + 1 * kInstrSize)->InstructionBits());
@@ -889,6 +888,7 @@ void Assembler::WriteLoad64Instructions(Instruction* inst0, Register reg,
   disassembleInstr((inst0 + 4 * kInstrSize)->InstructionBits());
   disassembleInstr((inst0 + 5 * kInstrSize)->InstructionBits());
 #endif /* JS_DISASM_RISCV64 */
+
   MOZ_ASSERT(ExtractLoad64Value(inst0) == value);
 }
 
