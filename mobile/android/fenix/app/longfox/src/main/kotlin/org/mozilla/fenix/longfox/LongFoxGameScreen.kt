@@ -124,8 +124,6 @@ fun LongFoxGameScreen() {
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = { onTap(it) })
-                }
-                .pointerInput(Unit) {
                     var totalDrag = Offset.Zero
                     detectDragGestures(
                         onDrag = { change, dragAmount ->
