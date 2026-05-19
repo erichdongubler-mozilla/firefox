@@ -15779,6 +15779,7 @@ function WidgetsRowFeatureHighlight({
 
 
 
+
 const WIDGET_STATES = {
   INTRO: "sports-intro",
   FOLLOW_TEAMS: "sports-follow-state",
@@ -15812,13 +15813,14 @@ const SportsWidget_USER_ACTION_TYPES = {
 const SportsWidget_PREF_NOVA_ENABLED = "nova.enabled";
 const SportsWidget_PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
+const SPORTS_WIDGET_REGISTRY_ENTRY = WIDGET_REGISTRY.find(widget => widget.id === "sportsWidget");
 function SportsWidget_SportsWidget({
   dispatch,
   handleUserInteraction
 }) {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const sportsWidgetData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.SportsWidget);
-  const widgetSize = prefs[SportsWidget_PREF_SPORTS_WIDGET_SIZE] || "medium";
+  const widgetSize = resolveWidgetSize(SPORTS_WIDGET_REGISTRY_ENTRY, prefs);
   const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED];
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
   const widgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;

@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
+import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 
 const WIDGET_STATES = {
   INTRO: "sports-intro",
@@ -49,11 +50,15 @@ const PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
 
+const SPORTS_WIDGET_REGISTRY_ENTRY = WIDGET_REGISTRY.find(
+  widget => widget.id === "sportsWidget"
+);
+
 function SportsWidget({ dispatch, handleUserInteraction }) {
   const prefs = useSelector(state => state.Prefs.values);
   const sportsWidgetData = useSelector(state => state.SportsWidget);
 
-  const widgetSize = prefs[PREF_SPORTS_WIDGET_SIZE] || "medium";
+  const widgetSize = resolveWidgetSize(SPORTS_WIDGET_REGISTRY_ENTRY, prefs);
   const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED];
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
   const widgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;

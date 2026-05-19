@@ -114,6 +114,20 @@ describe("<SportsWidget>", () => {
     expect(container.querySelector(".sports.large-widget")).toBeInTheDocument();
   });
 
+  it("falls back to the registry default size (medium) when no size pref is set", () => {
+    const { container } = render(
+      <WrapWithProvider state={makeState({ [PREF_SPORTS_WIDGET_SIZE]: "" })}>
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+    expect(
+      container.querySelector(".sports.medium-widget")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".sports.large-widget")
+    ).not.toBeInTheDocument();
+  });
+
   it("should always render the intro wrapper", () => {
     const { container } = render(
       <WrapWithProvider state={makeState()}>
