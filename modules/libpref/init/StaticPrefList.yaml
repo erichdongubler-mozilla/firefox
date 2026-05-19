@@ -6195,7 +6195,7 @@
 # Whether to block the shadowing of known document properties.
 - name: dom.document.name_getter_prevent_shadowing.enabled
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # Whether to enable about:blank async-load workaround for ckeditor.
