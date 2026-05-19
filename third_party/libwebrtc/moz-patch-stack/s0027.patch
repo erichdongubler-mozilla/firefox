@@ -354,7 +354,7 @@ index ac6bbc6f7c..82a13c2520 100644
  rtc_library("neteq_simulator_api") {
    visibility = [ "*" ]
 diff --git a/api/rtp_sender_interface.h b/api/rtp_sender_interface.h
-index 5ea6efee18..7897f01fd9 100644
+index 32cbfeb556..31629ddc21 100644
 --- a/api/rtp_sender_interface.h
 +++ b/api/rtp_sender_interface.h
 @@ -36,6 +36,8 @@
@@ -509,7 +509,7 @@ index 40bfd812a4..46be3bcc47 100644
  #include "api/units/time_delta.h"
  #include "call/audio_sender.h"
 diff --git a/call/video_send_stream.h b/call/video_send_stream.h
-index 683be5f469..2eaed4a961 100644
+index 07a26350bf..7ce5ca4f00 100644
 --- a/call/video_send_stream.h
 +++ b/call/video_send_stream.h
 @@ -24,7 +24,7 @@
@@ -695,7 +695,7 @@ index dcdb269995..7372dec8f6 100644
  
  rtc_library("rtc_audio_video") {
 diff --git a/media/base/media_channel.h b/media/base/media_channel.h
-index 1e9d0d4c49..52599ba151 100644
+index 10ab6eb6e0..1766864134 100644
 --- a/media/base/media_channel.h
 +++ b/media/base/media_channel.h
 @@ -69,9 +69,6 @@ namespace webrtc {
