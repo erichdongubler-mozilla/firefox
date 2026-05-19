@@ -279,6 +279,7 @@ void ZeroRttHandle::Transition(State aNext, HappyEyeballsTransaction* aWinner,
       MOZ_ASSERT(aWinner, "WinnerDeclared entry requires winner");
       mState = State::WinnerDeclared;
       mWinner = aWinner;
+      mHadWinner = true;
       if (aRejected) {
         mRejected = true;
       }
@@ -289,19 +290,13 @@ void ZeroRttHandle::Transition(State aNext, HappyEyeballsTransaction* aWinner,
                  "CleanedUp entry from Open or WinnerDeclared only");
       mState = State::CleanedUp;
       mHet = nullptr;
+      mWinner = nullptr;  // break RefPtr cycle with HET::mZeroRttHandle
       break;
   }
 }
 
 nsHttpTransaction* ZeroRttHandle::RealTxn() const {
   return ResolveRealTxn(mHet);
-}
-
-Maybe<uint64_t> ZeroRttHandle::WinnerOffset() const {
-  if (!mWinner) {
-    return Nothing();
-  }
-  return mWinner->Request0RttStreamOffset();
 }
 
 }  // namespace mozilla::net

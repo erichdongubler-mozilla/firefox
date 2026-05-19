@@ -188,6 +188,12 @@ void HappyEyeballsTransaction::Transition(State aNext,
       }
 
       SetConnection(nullptr);
+      // The HET no longer participates in 0-RTT coordination after adoption.
+      // Break the RefPtr cycle between ZeroRttHandle::mWinner (RefPtr<HET>)
+      // and HET::mZeroRttHandle (RefPtr<ZeroRttHandle>): Cleanup() drops
+      // mWinner; clearing mZeroRttHandle here drops the HET's ref back to the
+      // handle.
+      mZeroRttHandle = nullptr;
       break;
     }
 
