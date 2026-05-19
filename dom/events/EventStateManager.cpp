@@ -6051,10 +6051,8 @@ void EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
     case eDragExit: {
       // This is actually the window mouse exit event.
       if (sLastDragOverFrame) {
-        // FIXME: bug 2035992
         nsCOMPtr<nsIContent> lastContent =
-            sLastDragOverFrame->GetExplicitEventTargetContent(aDragEvent);
-
+            sLastDragOverFrame->GetEventTargetContent(aDragEvent);
         RefPtr<nsPresContext> lastDragOverFramePresContext =
             sLastDragOverFrame->PresContext();
         FireDragEnterOrExit(lastDragOverFramePresContext, aDragEvent, eDragExit,
