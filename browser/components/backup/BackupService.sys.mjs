@@ -5402,6 +5402,9 @@ export class BackupService extends EventTarget {
    * @returns {Promise<boolean>}
    */
   async #infalliblePathExists(path) {
+    if (!path) {
+      return false;
+    }
     let exists = false;
     try {
       exists = await IOUtils.exists(path);
