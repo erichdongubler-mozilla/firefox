@@ -7,13 +7,18 @@
 
 #include <stdio.h>
 
+#include "jit/riscv64/base/Vector.h"
 #include "jit/riscv64/constant/Constant-riscv64.h"
-#include "jit/riscv64/constant/util-riscv64.h"
+
 namespace js {
 namespace jit {
 namespace disasm {
 
 typedef unsigned char byte;
+
+// A reasonable (ie, safe) buffer size for the disassembly of a single
+// instruction.
+constexpr int ReasonableBufferSize = 256;
 
 // Interface and default implementation for converting addresses and
 // register-numbers to text.  The default implementation is machine

@@ -1,13 +1,21 @@
-
 // Copyright 2022 the V8 project authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-#ifndef jit_riscv64_constant_util_riscv64_h_
-#define jit_riscv64_constant_util_riscv64_h_
+
+#ifndef jit_riscv64_base_Vector_h
+#define jit_riscv64_base_Vector_h
+
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
+
 #include <stdarg.h>
 #include <stdio.h>
-namespace js {
-namespace jit {
+
+namespace js::jit {
+
+// Vector as used by the original code to allow for minimal modification.
+// Functions exactly like a character array with helper methods.
+
 template <typename T>
 class V8Vector {
  public:
@@ -43,25 +51,8 @@ class EmbeddedVector : public V8Vector<T> {
  public:
   EmbeddedVector() : V8Vector<T>(buffer_, kSize) {}
 
-  explicit EmbeddedVector(T initial_value) : V8Vector<T>(buffer_, kSize) {
-    for (int i = 0; i < kSize; ++i) {
-      buffer_[i] = initial_value;
-    }
-  }
-
-  // When copying, make underlying Vector to reference our buffer.
-  EmbeddedVector(const EmbeddedVector& rhs) : V8Vector<T>(rhs) {
-    MemCopy(buffer_, rhs.buffer_, sizeof(T) * kSize);
-    this->set_start(buffer_);
-  }
-
-  EmbeddedVector& operator=(const EmbeddedVector& rhs) {
-    if (this == &rhs) return *this;
-    V8Vector<T>::operator=(rhs);
-    MemCopy(buffer_, rhs.buffer_, sizeof(T) * kSize);
-    this->set_start(buffer_);
-    return *this;
-  }
+  EmbeddedVector(const EmbeddedVector&) = delete;
+  EmbeddedVector& operator=(const EmbeddedVector&) = delete;
 
  private:
   T buffer_[kSize];
@@ -76,6 +67,7 @@ static inline int MOZ_FORMAT_PRINTF(2, 3)
   va_end(args);
   return result;
 }
-}  // namespace jit
-}  // namespace js
-#endif
+
+}  // namespace js::jit
+
+#endif  // jit_riscv64_base_Vector_h
