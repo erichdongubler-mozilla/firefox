@@ -32,10 +32,10 @@ index 55d58e2e05..6ca070fce7 100644
  
    if (rtc_enable_win_wgc) {
 diff --git a/modules/portal/BUILD.gn b/modules/portal/BUILD.gn
-index 72972d18e1..70b4739ad0 100644
+index 0a463c7619..7f91839dfd 100644
 --- a/modules/portal/BUILD.gn
 +++ b/modules/portal/BUILD.gn
-@@ -139,11 +139,9 @@ if (!build_with_mozilla) {
+@@ -143,11 +143,9 @@ if (!build_with_mozilla) {
        deps -= [ ":pipewire_stubs" ]
        defines -= [ "WEBRTC_DLOPEN_PIPEWIRE" ]
        public_deps = [

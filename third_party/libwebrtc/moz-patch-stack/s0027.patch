@@ -930,7 +930,7 @@ index 6b15ad7b80..d2926f8468 100644
    if (use_desktop_capture_differ_sse2) {
      deps += [ ":desktop_capture_differ_sse2" ]
 diff --git a/modules/portal/BUILD.gn b/modules/portal/BUILD.gn
-index de8a81be55..e8367393a3 100644
+index 52e515c1fc..11c8285abe 100644
 --- a/modules/portal/BUILD.gn
 +++ b/modules/portal/BUILD.gn
 @@ -11,6 +11,7 @@ import("//tools/generate_stubs/rules.gni")
@@ -954,7 +954,7 @@ index de8a81be55..e8367393a3 100644
  
    rtc_library("portal") {
      sources = [
-@@ -122,5 +129,22 @@ if ((is_linux || is_chromeos) && rtc_use_pipewire) {
+@@ -126,5 +133,22 @@ if ((is_linux || is_chromeos) && rtc_use_pipewire) {
  
        deps += [ ":pipewire_stubs" ]
      }
