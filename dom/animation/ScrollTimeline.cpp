@@ -132,7 +132,8 @@ ScrollTimeline::FindNearestScroller(Element* aSubject,
     return {nullptr, PseudoStyleRequest{}};
   }
   Element* curr = subject->GetFlattenedTreeParentElement();
-  Element* root = subject->OwnerDoc()->GetDocumentElement();
+  // Rely on the behaviour of document.scrollingElement.
+  Element* root = subject->OwnerDoc()->GetScrollingElementNoFlush();
   while (curr && curr != root) {
     const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(curr);
     MOZ_ASSERT(style, "The ancestor should be styled.");
@@ -457,7 +458,7 @@ NonOwningAnimationTarget ScrollTimeline::ScrollerInfo::Source() const {
   // We use the owner doc of the animation target. This may be different
   // from |mDocument| after we implement ScrollTimeline interface for
   // script.
-  return {mSourceOrTarget.mElement->OwnerDoc()->GetDocumentElement(),
+  return {mSourceOrTarget.mElement->OwnerDoc()->GetScrollingElementNoFlush(),
           PseudoStyleRequest{}};
 }
 
