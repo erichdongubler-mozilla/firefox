@@ -1234,7 +1234,7 @@ void DisplayListBuilder::End(layers::DisplayListData& aOutTransaction) {
 
 Maybe<wr::WrSpatialId> DisplayListBuilder::PushStackingContext(
     const wr::StackingContextParams& aParams, const wr::LayoutRect& aBounds,
-    const wr::RasterSpace& aRasterSpace, wr::SpatialTreeItemKey aSCOriginKey) {
+    const wr::RasterSpace& aRasterSpace) {
   WRDL_LOG(
       "PushStackingContext b=%s t=%s id=0x%" PRIx64 "\n", mWrState,
       ToString(aBounds).c_str(),
@@ -1260,7 +1260,7 @@ Maybe<wr::WrSpatialId> DisplayListBuilder::PushStackingContext(
       mWrState, aBounds, mCurrentSpaceAndClipChain.space, &aParams,
       aParams.mTransformPtr, aParams.mFilters.Elements(),
       aParams.mFilters.Length(), aParams.mFilterDatas.Elements(),
-      aParams.mFilterDatas.Length(), aRasterSpace, aSCOriginKey);
+      aParams.mFilterDatas.Length(), aRasterSpace);
 
   return spatialId.id != 0 ? Some(spatialId) : Nothing();
 }
@@ -1332,12 +1332,12 @@ wr::WrSpatialId DisplayListBuilder::DefineStickyFrame(
     const float* aBottomMargin, const float* aLeftMargin,
     const StickyOffsetBounds& aVerticalBounds,
     const StickyOffsetBounds& aHorizontalBounds,
-    const wr::LayoutVector2D& aAppliedOffset, wr::SpatialTreeItemKey aKey,
+    const wr::LayoutVector2D& aAppliedOffset,
     const WrAnimationProperty* aAnimation) {
   auto spatialId = wr_dp_define_sticky_frame(
       mWrState, aParentSpatialId.valueOr(mCurrentSpaceAndClipChain.space),
       aContentRect, aTopMargin, aRightMargin, aBottomMargin, aLeftMargin,
-      aVerticalBounds, aHorizontalBounds, aAppliedOffset, aKey, aAnimation);
+      aVerticalBounds, aHorizontalBounds, aAppliedOffset, aAnimation);
 
   mASRToSpatialIdMap.emplace(aStickyAsr, spatialId);
 
@@ -1384,8 +1384,7 @@ wr::WrSpatialId DisplayListBuilder::DefineScrollLayer(
     const Maybe<wr::WrSpatialId>& aParent, const wr::LayoutRect& aContentRect,
     const wr::LayoutRect& aClipRect, const wr::LayoutVector2D& aScrollOffset,
     wr::APZScrollGeneration aScrollOffsetGeneration,
-    wr::HasScrollLinkedEffect aHasScrollLinkedEffect,
-    wr::SpatialTreeItemKey aKey) {
+    wr::HasScrollLinkedEffect aHasScrollLinkedEffect) {
   auto it = mScrollIds.find(aViewId);
   if (it != mScrollIds.end()) {
     return it->second;
@@ -1396,8 +1395,8 @@ wr::WrSpatialId DisplayListBuilder::DefineScrollLayer(
 
   auto space = wr_dp_define_scroll_layer(
       mWrState, aViewId, aParent ? aParent.ptr() : &defaultParent, aContentRect,
-      aClipRect, aScrollOffset, aScrollOffsetGeneration, aHasScrollLinkedEffect,
-      aKey);
+      aClipRect, aScrollOffset, aScrollOffsetGeneration,
+      aHasScrollLinkedEffect);
 
   WRDL_LOG("DefineScrollLayer id=%" PRIu64
            "/%zu p=%s co=%s cl=%s generation=%s hasScrollLinkedEffect=%s\n",

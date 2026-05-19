@@ -607,8 +607,7 @@ class DisplayListBuilder final {
 
   Maybe<wr::WrSpatialId> PushStackingContext(
       const StackingContextParams& aParams, const wr::LayoutRect& aBounds,
-      const wr::RasterSpace& aRasterSpace,
-      wr::SpatialTreeItemKey aSCOriginKey = wr::SpatialTreeItemKey{0, 0});
+      const wr::RasterSpace& aRasterSpace);
   void PopStackingContext(bool aIsReferenceFrame);
 
   wr::WrClipChainId DefineClipChain(Span<const wr::WrClipId> aClips,
@@ -629,7 +628,7 @@ class DisplayListBuilder final {
       const float* aRightMargin, const float* aBottomMargin,
       const float* aLeftMargin, const StickyOffsetBounds& aVerticalBounds,
       const StickyOffsetBounds& aHorizontalBounds,
-      const wr::LayoutVector2D& aAppliedOffset, wr::SpatialTreeItemKey aKey,
+      const wr::LayoutVector2D& aAppliedOffset,
       const WrAnimationProperty* aAnimation);
 
   Maybe<wr::WrSpatialId> GetScrollIdForDefinedScrollLayer(
@@ -641,8 +640,7 @@ class DisplayListBuilder final {
       const Maybe<wr::WrSpatialId>& aParent, const wr::LayoutRect& aContentRect,
       const wr::LayoutRect& aClipRect, const wr::LayoutVector2D& aScrollOffset,
       wr::APZScrollGeneration aScrollOffsetGeneration,
-      wr::HasScrollLinkedEffect aHasScrollLinkedEffect,
-      wr::SpatialTreeItemKey aKey);
+      wr::HasScrollLinkedEffect aHasScrollLinkedEffect);
 
   void PushRect(const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
                 bool aIsBackfaceVisible, bool aForceAntiAliasing,
