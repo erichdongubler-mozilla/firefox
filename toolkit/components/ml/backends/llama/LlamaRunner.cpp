@@ -634,10 +634,20 @@ class MetadataCallback final : public nsIFileMetadataCallback {
   NS_DECL_THREADSAFE_ISUPPORTS
   explicit MetadataCallback(LlamaRunner* aRunner) : mRunner(aRunner) {}
   NS_IMETHOD OnFileMetadataReady(nsIAsyncFileMetadata* aObject) override {
-    mRunner->OnMetadataReceived();
+    // Promoting to a RefPtr here guarantees the runner stays
+    // alive for the duration of OnMetadataReceived.
+    if (RefPtr<LlamaRunner> runner = mRunner.get()) {
+      runner->OnMetadataReceived();
+    }
     return NS_OK;
   }
-  LlamaRunner* mRunner = nullptr;
+  // LlamaRunner is referenced weakly so that this callback does not keep it
+  // alive: if the runner dies before the metadata wait completes, the call
+  // becomes a no-op.
+  // Note: WeakPtr is not thread-safe. This is safe because MetadataCallback is
+  // constructed, dispatched to, and destroyed on the same serial event target
+  // that owns LlamaRunner (see Initialize: GetCurrentSerialEventTarget()).
+  WeakPtr<LlamaRunner> mRunner;
 
  private:
   virtual ~MetadataCallback() = default;
