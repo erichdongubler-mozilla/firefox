@@ -10,7 +10,6 @@ import androidx.test.filters.SdkSuppress
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
-import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingResources
@@ -68,11 +67,6 @@ class HistoryTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2302742
-    @Converted(
-        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.HistoryTest#verifyHistoryMenuWithHistoryItemsTest"],
-        bug = 2039573,
-        since = "2026-05",
-    )
     // Test running on beta/release builds in CI:
     // caution when making changes to it, so they don't block the builds
     @SmokeTest
@@ -123,11 +117,6 @@ class HistoryTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1848881
-    @Converted(
-        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.HistoryTest#deleteAllHistoryTest"],
-        bug = 2039573,
-        since = "2026-05",
-    )
     @SmokeTest
     @Test
     fun deleteAllHistoryTest() {
