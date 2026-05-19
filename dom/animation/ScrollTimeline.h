@@ -208,7 +208,10 @@ class ScrollTimeline : public AnimationTimeline,
   MOZ_CAN_RUN_SCRIPT Element* GetSource() const;
   dom::ScrollAxis GetScrollAxis() const;
 
-  State GetState() const;
+  State GetState() const {
+    return State{mScrollerInfo.Source(), mAxis,
+                 mScrollerInfo.mType == ScrollerInfo::Type::Root};
+  };
 
   // AnimationTimeline methods.
   Nullable<TimeDuration> GetCurrentTimeAsDuration() const override;
