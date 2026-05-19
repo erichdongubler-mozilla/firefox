@@ -538,6 +538,11 @@ class Simulator {
   void set_pc(int64_t value);
   int64_t get_pc() const;
 
+  template <typename T>
+  T get_pc_as() const {
+    return reinterpret_cast<T>(get_pc());
+  }
+
   SimInstruction instr_;
   // RISCV utlity API to access register value
   // Helpers for data value tracing.
@@ -781,11 +786,6 @@ class Simulator {
 
   template <typename T>
   bool CompareFHelper(T input1, T input2, FPUCondition cc);
-
-  template <typename T>
-  T get_pc_as() const {
-    return reinterpret_cast<T>(get_pc());
-  }
 
   void enable_single_stepping(SingleStepCallback cb, void* arg);
   void disable_single_stepping();

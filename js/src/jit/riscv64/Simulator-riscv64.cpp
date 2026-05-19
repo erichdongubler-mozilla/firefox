@@ -414,7 +414,7 @@ void RiscvDebugger::Debug() {
       disasm::Disassembler dasm(converter);
       // Use a reasonably large buffer.
       EmbeddedVector<char, 256> buffer;
-      dasm.InstructionDecode(buffer, reinterpret_cast<byte*>(sim_->get_pc()));
+      dasm.InstructionDecode(buffer, sim_->get_pc_as<Instruction*>());
       printf("  0x%016" REGIx_FORMAT "   %s\n", sim_->get_pc(), buffer.start());
       last_pc = sim_->get_pc();
     }
@@ -438,7 +438,7 @@ void RiscvDebugger::Debug() {
             "%" XSTR(ARG_SIZE) "s",
             cmd, arg1, arg2);
     if ((strcmp(cmd, "si") == 0) || (strcmp(cmd, "stepi") == 0)) {
-      SimInstruction instr(reinterpret_cast<Instruction*>(sim_->get_pc()));
+      SimInstruction instr(sim_->get_pc_as<Instruction*>());
       if (!(instr.IsTrap()) || instr.InstructionBits() == rtCallRedirInstr) {
         sim_->icount_++;
         sim_->InstructionDecode(instr);
@@ -566,7 +566,7 @@ void RiscvDebugger::Debug() {
       byte* end = nullptr;
 
       if (argc == 1) {
-        cur = reinterpret_cast<byte*>(sim_->get_pc());
+        cur = sim_->get_pc_as<byte*>();
         end = cur + (10 * kInstrSize);
       } else if (argc == 2) {
         auto regnum = Registers::FromName(arg1);
@@ -582,7 +582,7 @@ void RiscvDebugger::Debug() {
           // The argument is the number of instructions.
           sreg_t value;
           if (GetValue(arg1, &value)) {
-            cur = reinterpret_cast<byte*>(sim_->get_pc());
+            cur = sim_->get_pc_as<byte*>();
             // Disassemble <arg1> instructions.
             end = cur + (value * kInstrSize);
           }
@@ -773,7 +773,7 @@ void Simulator::ListBreakpoints() {
 void Simulator::CheckBreakpoints() {
   bool hit_a_breakpoint = false;
   bool is_tbreak = false;
-  SimInstruction pc_(reinterpret_cast<Instruction*>(get_pc()));
+  SimInstruction pc_(get_pc_as<Instruction*>());
   for (unsigned i = 0; i < breakpoints_.size(); i++) {
     if ((breakpoints_.at(i).location == pc_.instr()) &&
         breakpoints_.at(i).enabled) {
