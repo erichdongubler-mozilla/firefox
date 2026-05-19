@@ -87,12 +87,12 @@ class InstructionBase {
   }
 
   inline uint8_t InstructionSize() const {
-    return (this->IsShortInstruction()) ? kShortInstrSize : kInstrSize;
+    return IsShortInstruction() ? kShortInstrSize : kInstrSize;
   }
 
   // Get the raw instruction bits.
   inline Instr InstructionBits() const {
-    if (this->IsShortInstruction()) {
+    if (IsShortInstruction()) {
       return 0x0000FFFF & (*reinterpret_cast<const ShortInstr*>(this));
     }
     return *reinterpret_cast<const Instr*>(this);
@@ -165,209 +165,205 @@ class InstructionBase {
   /// Getters
 
   // Say if the instruction is a break or a trap.
-  inline bool IsTrap() const {
-    return (this->InstructionBits() == kBreakInstr);
-  }
+  inline bool IsTrap() const { return InstructionBits() == kBreakInstr; }
 
-  inline int BaseOpcode() const {
-    return this->InstructionBits() & kBaseOpcodeMask;
-  }
+  inline int BaseOpcode() const { return InstructionBits() & kBaseOpcodeMask; }
 
   inline int RvcOpcode() const {
-    MOZ_ASSERT(this->IsShortInstruction());
-    return this->InstructionBits() & kRvcOpcodeMask;
+    MOZ_ASSERT(IsShortInstruction());
+    return InstructionBits() & kRvcOpcodeMask;
   }
 
   inline int Rs1Value() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kRType ||
-               this->InstructionType() == InstructionBase::kR4Type ||
-               this->InstructionType() == InstructionBase::kIType ||
-               this->InstructionType() == InstructionBase::kSType ||
-               this->InstructionType() == InstructionBase::kBType ||
-               this->InstructionType() == InstructionBase::kIType ||
-               this->InstructionType() == InstructionBase::kVType);
-    return this->Bits(kRs1Shift + kRs1Bits - 1, kRs1Shift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kRType ||
+               InstructionType() == InstructionBase::kR4Type ||
+               InstructionType() == InstructionBase::kIType ||
+               InstructionType() == InstructionBase::kSType ||
+               InstructionType() == InstructionBase::kBType ||
+               InstructionType() == InstructionBase::kIType ||
+               InstructionType() == InstructionBase::kVType);
+    return Bits(kRs1Shift + kRs1Bits - 1, kRs1Shift);
   }
 
   inline int Rs2Value() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kRType ||
-               this->InstructionType() == InstructionBase::kR4Type ||
-               this->InstructionType() == InstructionBase::kSType ||
-               this->InstructionType() == InstructionBase::kBType ||
-               this->InstructionType() == InstructionBase::kIType ||
-               this->InstructionType() == InstructionBase::kVType);
-    return this->Bits(kRs2Shift + kRs2Bits - 1, kRs2Shift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kRType ||
+               InstructionType() == InstructionBase::kR4Type ||
+               InstructionType() == InstructionBase::kSType ||
+               InstructionType() == InstructionBase::kBType ||
+               InstructionType() == InstructionBase::kIType ||
+               InstructionType() == InstructionBase::kVType);
+    return Bits(kRs2Shift + kRs2Bits - 1, kRs2Shift);
   }
 
   inline int Rs3Value() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kR4Type);
-    return this->Bits(kRs3Shift + kRs3Bits - 1, kRs3Shift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kR4Type);
+    return Bits(kRs3Shift + kRs3Bits - 1, kRs3Shift);
   }
 
   inline int Vs1Value() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kVType ||
-               this->InstructionType() == InstructionBase::kIType ||
-               this->InstructionType() == InstructionBase::kSType);
-    return this->Bits(kVs1Shift + kVs1Bits - 1, kVs1Shift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kVType ||
+               InstructionType() == InstructionBase::kIType ||
+               InstructionType() == InstructionBase::kSType);
+    return Bits(kVs1Shift + kVs1Bits - 1, kVs1Shift);
   }
 
   inline int Vs2Value() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kVType ||
-               this->InstructionType() == InstructionBase::kIType ||
-               this->InstructionType() == InstructionBase::kSType);
-    return this->Bits(kVs2Shift + kVs2Bits - 1, kVs2Shift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kVType ||
+               InstructionType() == InstructionBase::kIType ||
+               InstructionType() == InstructionBase::kSType);
+    return Bits(kVs2Shift + kVs2Bits - 1, kVs2Shift);
   }
 
   inline int VdValue() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kVType ||
-               this->InstructionType() == InstructionBase::kIType ||
-               this->InstructionType() == InstructionBase::kSType);
-    return this->Bits(kVdShift + kVdBits - 1, kVdShift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kVType ||
+               InstructionType() == InstructionBase::kIType ||
+               InstructionType() == InstructionBase::kSType);
+    return Bits(kVdShift + kVdBits - 1, kVdShift);
   }
 
   inline int RdValue() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kRType ||
-               this->InstructionType() == InstructionBase::kR4Type ||
-               this->InstructionType() == InstructionBase::kIType ||
-               this->InstructionType() == InstructionBase::kSType ||
-               this->InstructionType() == InstructionBase::kUType ||
-               this->InstructionType() == InstructionBase::kJType ||
-               this->InstructionType() == InstructionBase::kVType);
-    return this->Bits(kRdShift + kRdBits - 1, kRdShift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kRType ||
+               InstructionType() == InstructionBase::kR4Type ||
+               InstructionType() == InstructionBase::kIType ||
+               InstructionType() == InstructionBase::kSType ||
+               InstructionType() == InstructionBase::kUType ||
+               InstructionType() == InstructionBase::kJType ||
+               InstructionType() == InstructionBase::kVType);
+    return Bits(kRdShift + kRdBits - 1, kRdShift);
   }
 
-  inline int RvcRs1Value() const { return this->RvcRdValue(); }
+  inline int RvcRs1Value() const { return RvcRdValue(); }
 
   inline int RvcRdValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
-    return this->Bits(kRvcRdShift + kRvcRdBits - 1, kRvcRdShift);
+    MOZ_ASSERT(IsShortInstruction());
+    return Bits(kRvcRdShift + kRvcRdBits - 1, kRvcRdShift);
   }
 
   inline int RvcRs2Value() const {
-    MOZ_ASSERT(this->IsShortInstruction());
-    return this->Bits(kRvcRs2Shift + kRvcRs2Bits - 1, kRvcRs2Shift);
+    MOZ_ASSERT(IsShortInstruction());
+    return Bits(kRvcRs2Shift + kRvcRs2Bits - 1, kRvcRs2Shift);
   }
 
   inline int RvcRs1sValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
-    return 0b1000 + this->Bits(kRvcRs1sShift + kRvcRs1sBits - 1, kRvcRs1sShift);
+    MOZ_ASSERT(IsShortInstruction());
+    return 0b1000 + Bits(kRvcRs1sShift + kRvcRs1sBits - 1, kRvcRs1sShift);
   }
 
   inline int RvcRs2sValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
-    return 0b1000 + this->Bits(kRvcRs2sShift + kRvcRs2sBits - 1, kRvcRs2sShift);
+    MOZ_ASSERT(IsShortInstruction());
+    return 0b1000 + Bits(kRvcRs2sShift + kRvcRs2sBits - 1, kRvcRs2sShift);
   }
 
   inline int Funct7Value() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kRType);
-    return this->Bits(kFunct7Shift + kFunct7Bits - 1, kFunct7Shift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kRType);
+    return Bits(kFunct7Shift + kFunct7Bits - 1, kFunct7Shift);
   }
 
   inline int Funct2Value() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kR4Type);
-    return this->Bits(kFunct2Shift + kFunct2Bits - 1, kFunct2Shift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kR4Type);
+    return Bits(kFunct2Shift + kFunct2Bits - 1, kFunct2Shift);
   }
 
   inline int Funct3Value() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kRType ||
-               this->InstructionType() == InstructionBase::kR4Type ||
-               this->InstructionType() == InstructionBase::kIType ||
-               this->InstructionType() == InstructionBase::kSType ||
-               this->InstructionType() == InstructionBase::kBType);
-    return this->Bits(kFunct3Shift + kFunct3Bits - 1, kFunct3Shift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kRType ||
+               InstructionType() == InstructionBase::kR4Type ||
+               InstructionType() == InstructionBase::kIType ||
+               InstructionType() == InstructionBase::kSType ||
+               InstructionType() == InstructionBase::kBType);
+    return Bits(kFunct3Shift + kFunct3Bits - 1, kFunct3Shift);
   }
 
   inline int Funct5Value() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kRType &&
-               this->BaseOpcode() == OP_FP);
-    return this->Bits(kFunct5Shift + kFunct5Bits - 1, kFunct5Shift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kRType &&
+               BaseOpcode() == OP_FP);
+    return Bits(kFunct5Shift + kFunct5Bits - 1, kFunct5Shift);
   }
 
   inline int RvcFunct6Value() const {
-    MOZ_ASSERT(this->IsShortInstruction());
-    return this->Bits(kRvcFunct6Shift + kRvcFunct6Bits - 1, kRvcFunct6Shift);
+    MOZ_ASSERT(IsShortInstruction());
+    return Bits(kRvcFunct6Shift + kRvcFunct6Bits - 1, kRvcFunct6Shift);
   }
 
   inline int RvcFunct4Value() const {
-    MOZ_ASSERT(this->IsShortInstruction());
-    return this->Bits(kRvcFunct4Shift + kRvcFunct4Bits - 1, kRvcFunct4Shift);
+    MOZ_ASSERT(IsShortInstruction());
+    return Bits(kRvcFunct4Shift + kRvcFunct4Bits - 1, kRvcFunct4Shift);
   }
 
   inline int RvcFunct3Value() const {
-    MOZ_ASSERT(this->IsShortInstruction());
-    return this->Bits(kRvcFunct3Shift + kRvcFunct3Bits - 1, kRvcFunct3Shift);
+    MOZ_ASSERT(IsShortInstruction());
+    return Bits(kRvcFunct3Shift + kRvcFunct3Bits - 1, kRvcFunct3Shift);
   }
 
   inline int RvcFunct2Value() const {
-    MOZ_ASSERT(this->IsShortInstruction());
-    return this->Bits(kRvcFunct2Shift + kRvcFunct2Bits - 1, kRvcFunct2Shift);
+    MOZ_ASSERT(IsShortInstruction());
+    return Bits(kRvcFunct2Shift + kRvcFunct2Bits - 1, kRvcFunct2Shift);
   }
 
   inline int RvcFunct2BValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
-    return this->Bits(kRvcFunct2BShift + kRvcFunct2Bits - 1, kRvcFunct2BShift);
+    MOZ_ASSERT(IsShortInstruction());
+    return Bits(kRvcFunct2BShift + kRvcFunct2Bits - 1, kRvcFunct2BShift);
   }
 
   inline int CsrValue() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kIType &&
-               this->BaseOpcode() == SYSTEM);
-    return (this->Bits(kCsrShift + kCsrBits - 1, kCsrShift));
+    MOZ_ASSERT(InstructionType() == InstructionBase::kIType &&
+               BaseOpcode() == SYSTEM);
+    return Bits(kCsrShift + kCsrBits - 1, kCsrShift);
   }
 
   inline int RoundMode() const {
-    MOZ_ASSERT((this->InstructionType() == InstructionBase::kRType ||
-                this->InstructionType() == InstructionBase::kR4Type) &&
-               this->BaseOpcode() == OP_FP);
-    return this->Bits(kFunct3Shift + kFunct3Bits - 1, kFunct3Shift);
+    MOZ_ASSERT((InstructionType() == InstructionBase::kRType ||
+                InstructionType() == InstructionBase::kR4Type) &&
+               BaseOpcode() == OP_FP);
+    return Bits(kFunct3Shift + kFunct3Bits - 1, kFunct3Shift);
   }
 
   inline int MemoryOrder(bool is_pred) const {
-    MOZ_ASSERT((this->InstructionType() == InstructionBase::kIType &&
-                this->BaseOpcode() == MISC_MEM));
+    MOZ_ASSERT(InstructionType() == InstructionBase::kIType &&
+               BaseOpcode() == MISC_MEM);
     if (is_pred) {
-      return this->Bits(kPredOrderShift + kMemOrderBits - 1, kPredOrderShift);
+      return Bits(kPredOrderShift + kMemOrderBits - 1, kPredOrderShift);
     }
-    return this->Bits(kSuccOrderShift + kMemOrderBits - 1, kSuccOrderShift);
+    return Bits(kSuccOrderShift + kMemOrderBits - 1, kSuccOrderShift);
   }
 
   inline int Imm12Value() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kIType);
-    int Value = this->Bits(kImm12Shift + kImm12Bits - 1, kImm12Shift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kIType);
+    int Value = Bits(kImm12Shift + kImm12Bits - 1, kImm12Shift);
     return Value << 20 >> 20;
   }
 
   inline int BranchOffset() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kBType);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kBType);
     // | imm[12|10:5] | rs2 | rs1 | funct3 | imm[4:1|11] | opcode |
     //  31          25                      11          7
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int16_t imm13 = ((Bits & 0xf00) >> 7) | ((Bits & 0x7e000000) >> 20) |
                     ((Bits & 0x80) << 4) | ((Bits & 0x80000000) >> 19);
     return imm13 << 19 >> 19;
   }
 
   inline int StoreOffset() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kSType);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kSType);
     // | imm[11:5] | rs2 | rs1 | funct3 | imm[4:0] | opcode |
     //  31       25                      11       7
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int16_t imm12 = ((Bits & 0xf80) >> 7) | ((Bits & 0xfe000000) >> 20);
     return imm12 << 20 >> 20;
   }
 
   inline int Imm20UValue() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kUType);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kUType);
     // | imm[31:12] | rd | opcode |
     //  31        12
-    int32_t Bits = this->InstructionBits();
+    int32_t Bits = InstructionBits();
     return Bits >> 12;
   }
 
   inline int Imm20JValue() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kJType);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kJType);
     // | imm[20|10:1|11|19:12] | rd | opcode |
     //  31                   12
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int32_t imm20 = ((Bits & 0x7fe00000) >> 20) | ((Bits & 0x100000) >> 9) |
                     (Bits & 0xff000) | ((Bits & 0x80000000) >> 11);
     return imm20 << 11 >> 11;
@@ -375,46 +371,45 @@ class InstructionBase {
 
   inline bool IsArithShift() const {
     // Valid only for right shift operations
-    MOZ_ASSERT((this->BaseOpcode() == OP || this->BaseOpcode() == OP_32 ||
-                this->BaseOpcode() == OP_IMM ||
-                this->BaseOpcode() == OP_IMM_32) &&
-               this->Funct3Value() == 0b101);
-    return this->InstructionBits() & 0x40000000;
+    MOZ_ASSERT((BaseOpcode() == OP || BaseOpcode() == OP_32 ||
+                BaseOpcode() == OP_IMM || BaseOpcode() == OP_IMM_32) &&
+               Funct3Value() == 0b101);
+    return InstructionBits() & 0x40000000;
   }
 
   inline int Shamt() const {
     // Valid only for shift instructions (SLLI, SRLI, SRAI)
-    MOZ_ASSERT(((this->InstructionBits() & kBaseOpcodeMask) == OP_IMM ||
-                (this->InstructionBits() & kBaseOpcodeMask) == OP_IMM_32) &&
-               (this->Funct3Value() == 0b001 || this->Funct3Value() == 0b101));
+    MOZ_ASSERT(((InstructionBits() & kBaseOpcodeMask) == OP_IMM ||
+                (InstructionBits() & kBaseOpcodeMask) == OP_IMM_32) &&
+               (Funct3Value() == 0b001 || Funct3Value() == 0b101));
     // | 0A0000 | shamt | rs1 | funct3 | rd | opcode |
     //  31       25    20
-    return this->Bits(kImm12Shift + 5, kImm12Shift);
+    return Bits(kImm12Shift + 5, kImm12Shift);
   }
 
   inline int Shamt32() const {
     // Valid only for shift instructions (SLLIW, SRLIW, SRAIW)
-    MOZ_ASSERT((this->InstructionBits() & kBaseOpcodeMask) == OP_IMM_32 &&
-               (this->Funct3Value() == 0b001 || this->Funct3Value() == 0b101));
+    MOZ_ASSERT((InstructionBits() & kBaseOpcodeMask) == OP_IMM_32 &&
+               (Funct3Value() == 0b001 || Funct3Value() == 0b101));
     // | 0A00000 | shamt | rs1 | funct3 | rd | opcode |
     //  31        24   20
-    return this->Bits(kImm12Shift + 4, kImm12Shift);
+    return Bits(kImm12Shift + 4, kImm12Shift);
   }
 
   inline int RvcImm6Value() const {
-    MOZ_ASSERT(this->IsShortInstruction());
+    MOZ_ASSERT(IsShortInstruction());
     // | funct3 | imm[5] | rs1/rd | imm[4:0] | opcode |
     //  15         12              6        2
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int32_t imm6 = ((Bits & 0x1000) >> 7) | ((Bits & 0x7c) >> 2);
     return imm6 << 26 >> 26;
   }
 
   inline int RvcImm6Addi16spValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
+    MOZ_ASSERT(IsShortInstruction());
     // | funct3 | nzimm[9] | 2 | nzimm[4|6|8:7|5] | opcode |
     //  15         12           6                2
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int32_t imm10 = ((Bits & 0x1000) >> 3) | ((Bits & 0x40) >> 2) |
                     ((Bits & 0x20) << 1) | ((Bits & 0x18) << 4) |
                     ((Bits & 0x4) << 3);
@@ -423,10 +418,10 @@ class InstructionBase {
   }
 
   inline int RvcImm8Addi4spnValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
+    MOZ_ASSERT(IsShortInstruction());
     // | funct3 | nzimm[11]  | rd' | opcode |
     //  15      13           5     2
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int32_t uimm10 = ((Bits & 0x20) >> 2) | ((Bits & 0x40) >> 4) |
                      ((Bits & 0x780) >> 1) | ((Bits & 0x1800) >> 7);
     MOZ_ASSERT(uimm10 != 0);
@@ -434,75 +429,75 @@ class InstructionBase {
   }
 
   inline int RvcShamt6() const {
-    MOZ_ASSERT(this->IsShortInstruction());
+    MOZ_ASSERT(IsShortInstruction());
     // | funct3 | nzuimm[5] | rs1/rd | nzuimm[4:0] | opcode |
     //  15         12                 6           2
-    int32_t imm6 = this->RvcImm6Value();
+    int32_t imm6 = RvcImm6Value();
     return imm6 & 0x3f;
   }
 
   inline int RvcImm6LwspValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
+    MOZ_ASSERT(IsShortInstruction());
     // | funct3 | uimm[5] | rs1 | uimm[4:2|7:6] | opcode |
     //  15         12            6             2
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int32_t imm8 =
         ((Bits & 0x1000) >> 7) | ((Bits & 0x70) >> 2) | ((Bits & 0xc) << 4);
     return imm8;
   }
 
   inline int RvcImm6LdspValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
+    MOZ_ASSERT(IsShortInstruction());
     // | funct3 | uimm[5] | rs1 | uimm[4:3|8:6] | opcode |
     //  15         12            6             2
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int32_t imm9 =
         ((Bits & 0x1000) >> 7) | ((Bits & 0x60) >> 2) | ((Bits & 0x1c) << 4);
     return imm9;
   }
 
   inline int RvcImm6SwspValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
+    MOZ_ASSERT(IsShortInstruction());
     // | funct3 | uimm[5:2|7:6] | rs2 | opcode |
     //  15       12            7
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int32_t imm8 = ((Bits & 0x1e00) >> 7) | ((Bits & 0x180) >> 1);
     return imm8;
   }
 
   inline int RvcImm6SdspValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
+    MOZ_ASSERT(IsShortInstruction());
     // | funct3 | uimm[5:3|8:6] | rs2 | opcode |
     //  15       12            7
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int32_t imm9 = ((Bits & 0x1c00) >> 7) | ((Bits & 0x380) >> 1);
     return imm9;
   }
 
   inline int RvcImm5WValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
+    MOZ_ASSERT(IsShortInstruction());
     // | funct3 | imm[5:3] | rs1 | imm[2|6] | rd | opcode |
     //  15       12       10     6          4     2
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int32_t imm7 =
         ((Bits & 0x1c00) >> 7) | ((Bits & 0x40) >> 4) | ((Bits & 0x20) << 1);
     return imm7;
   }
 
   inline int RvcImm5DValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
+    MOZ_ASSERT(IsShortInstruction());
     // | funct3 | imm[5:3] | rs1 | imm[7:6] | rd | opcode |
     //  15       12        10    6          4     2
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int32_t imm8 = ((Bits & 0x1c00) >> 7) | ((Bits & 0x60) << 1);
     return imm8;
   }
 
   inline int RvcImm11CJValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
+    MOZ_ASSERT(IsShortInstruction());
     // | funct3 | [11|4|9:8|10|6|7|3:1|5] | opcode |
     //  15      12                        2
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int32_t imm12 = ((Bits & 0x4) << 3) | ((Bits & 0x38) >> 2) |
                     ((Bits & 0x40) << 1) | ((Bits & 0x80) >> 1) |
                     ((Bits & 0x100) << 2) | ((Bits & 0x600) >> 1) |
@@ -511,10 +506,10 @@ class InstructionBase {
   }
 
   inline int RvcImm8BValue() const {
-    MOZ_ASSERT(this->IsShortInstruction());
+    MOZ_ASSERT(IsShortInstruction());
     // | funct3 | imm[8|4:3] | rs1` | imm[7:6|2:1|5]  | opcode |
     //  15       12        10       7                 2
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     int32_t imm9 = ((Bits & 0x4) << 3) | ((Bits & 0x18) >> 2) |
                    ((Bits & 0x60) << 1) | ((Bits & 0xc00) >> 7) |
                    ((Bits & 0x1000) >> 4);
@@ -523,11 +518,11 @@ class InstructionBase {
 
   inline int vl_vs_width() {
     int width = 0;
-    if ((this->InstructionBits() & kBaseOpcodeMask) != LOAD_FP &&
-        (this->InstructionBits() & kBaseOpcodeMask) != STORE_FP) {
+    if ((InstructionBits() & kBaseOpcodeMask) != LOAD_FP &&
+        (InstructionBits() & kBaseOpcodeMask) != STORE_FP) {
       return -1;
     }
-    switch (this->InstructionBits() & (kRvvWidthMask | kRvvMewMask)) {
+    switch (InstructionBits() & (kRvvWidthMask | kRvvMewMask)) {
       case 0x0:
         width = 8;
         break;
@@ -560,49 +555,49 @@ class InstructionBase {
   }
 
   inline uint32_t Rvvzimm() const {
-    if ((this->InstructionBits() &
-         (kBaseOpcodeMask | kFunct3Mask | 0x80000000)) == RO_V_VSETVLI) {
-      uint32_t Bits = this->InstructionBits();
+    if ((InstructionBits() & (kBaseOpcodeMask | kFunct3Mask | 0x80000000)) ==
+        RO_V_VSETVLI) {
+      uint32_t Bits = InstructionBits();
       uint32_t zimm = Bits & kRvvZimmMask;
       return zimm >> kRvvZimmShift;
     } else {
-      MOZ_ASSERT((this->InstructionBits() & (kBaseOpcodeMask | kFunct3Mask |
-                                             0xC0000000)) == RO_V_VSETIVLI);
-      uint32_t Bits = this->InstructionBits();
+      MOZ_ASSERT((InstructionBits() & (kBaseOpcodeMask | kFunct3Mask |
+                                       0xC0000000)) == RO_V_VSETIVLI);
+      uint32_t Bits = InstructionBits();
       uint32_t zimm = Bits & kRvvZimmMask;
       return (zimm >> kRvvZimmShift) & 0x3FF;
     }
   }
 
   inline uint32_t Rvvuimm() const {
-    MOZ_ASSERT((this->InstructionBits() &
+    MOZ_ASSERT((InstructionBits() &
                 (kBaseOpcodeMask | kFunct3Mask | 0xC0000000)) == RO_V_VSETIVLI);
-    uint32_t Bits = this->InstructionBits();
+    uint32_t Bits = InstructionBits();
     uint32_t uimm = Bits & kRvvUimmMask;
     return uimm >> kRvvUimmShift;
   }
 
   inline uint32_t RvvVsew() const {
-    uint32_t zimm = this->Rvvzimm();
+    uint32_t zimm = Rvvzimm();
     uint32_t vsew = (zimm >> 3) & 0x7;
     return vsew;
   }
 
   inline uint32_t RvvVlmul() const {
-    uint32_t zimm = this->Rvvzimm();
+    uint32_t zimm = Rvvzimm();
     uint32_t vlmul = zimm & 0x7;
     return vlmul;
   }
 
   inline uint8_t RvvVM() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kVType ||
-               this->InstructionType() == InstructionBase::kIType ||
-               this->InstructionType() == InstructionBase::kSType);
-    return this->Bits(kRvvVmShift + kRvvVmBits - 1, kRvvVmShift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kVType ||
+               InstructionType() == InstructionBase::kIType ||
+               InstructionType() == InstructionBase::kSType);
+    return Bits(kRvvVmShift + kRvvVmBits - 1, kRvvVmShift);
   }
 
   inline const char* RvvSEW() const {
-    uint32_t vsew = this->RvvVsew();
+    uint32_t vsew = RvvVsew();
     switch (vsew) {
 #define CAST_VSEW(name) \
   case name:            \
@@ -615,7 +610,7 @@ class InstructionBase {
   }
 
   inline const char* RvvLMUL() const {
-    uint32_t vlmul = this->RvvVlmul();
+    uint32_t vlmul = RvvVlmul();
     switch (vlmul) {
 #define CAST_VLMUL(name) \
   case name:             \
@@ -631,21 +626,21 @@ class InstructionBase {
 #define zext(x, len) (((uint32_t)(x) << (32 - len)) >> (32 - len))
 
   inline int32_t RvvSimm5() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kVType);
-    return sext(this->Bits(kRvvImm5Shift + kRvvImm5Bits - 1, kRvvImm5Shift),
+    MOZ_ASSERT(InstructionType() == InstructionBase::kVType);
+    return sext(Bits(kRvvImm5Shift + kRvvImm5Bits - 1, kRvvImm5Shift),
                 kRvvImm5Bits);
   }
 
   inline uint32_t RvvUimm5() const {
-    MOZ_ASSERT(this->InstructionType() == InstructionBase::kVType);
-    uint32_t imm = this->Bits(kRvvImm5Shift + kRvvImm5Bits - 1, kRvvImm5Shift);
+    MOZ_ASSERT(InstructionType() == InstructionBase::kVType);
+    uint32_t imm = Bits(kRvvImm5Shift + kRvvImm5Bits - 1, kRvvImm5Shift);
     return zext(imm, kRvvImm5Bits);
   }
 #undef sext
 #undef zext
-  inline bool AqValue() const { return this->Bits(kAqShift, kAqShift); }
+  inline bool AqValue() const { return Bits(kAqShift, kAqShift); }
 
-  inline bool RlValue() const { return this->Bits(kRlShift, kRlShift); }
+  inline bool RlValue() const { return Bits(kRlShift, kRlShift); }
 
  protected:
   InstructionBase() {}
