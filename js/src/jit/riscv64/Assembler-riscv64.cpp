@@ -479,21 +479,39 @@ int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
   return count;
 }
 
+struct ImmPtrParts {
+  int32_t high_20;  // Bits 47:29, 19 bits.
+  int16_t low_12;   // Bits 28:17, 12 bits.
+  int16_t b11;      // Bits 16:6, 11 bits.
+  int16_t a6;       // Bits 5:0, 6 bits.
+};
+
+static constexpr auto ToImmPtrParts(int64_t imm) {
+  MOZ_ASSERT((imm & 0xffff'0000'0000'0000ll) == 0, "pointers are 48 bits");
+
+  int64_t high_31 = (imm >> 17) & 0x7fffffff;  // 31 bits
+
+  return ImmPtrParts{
+      .high_20 = int32_t((high_31 + 0x800) >> 12),
+      .low_12 = int16_t(high_31 & 0xfff),
+      .b11 = int16_t((imm >> 6) & 0x7ff),
+      .a6 = int16_t(imm & 0x3f),
+  };
+}
+
 void Assembler::li_ptr(Register rd, int64_t imm) {
   m_buffer.enterNoNops();
   m_buffer.assertNoPoolAndNoNops();
+
   // Initialize rd with an address
   // Pointers are 48 bits
   // 6 fixed instructions are generated
   DEBUG_PRINTF("li_ptr(%d, %" PRIx64 " <%" PRId64 ">)\n", ToNumber(rd), imm,
                imm);
-  MOZ_ASSERT((imm & 0xfff0000000000000ll) == 0);
-  int64_t a6 = imm & 0x3f;                      // bits 0:5. 6 bits
-  int64_t b11 = (imm >> 6) & 0x7ff;             // bits 6:11. 11 bits
-  int64_t high_31 = (imm >> 17) & 0x7fffffff;   // 31 bits
-  int64_t high_20 = ((high_31 + 0x800) >> 12);  // 19 bits
-  int64_t low_12 = high_31 & 0xfff;             // 12 bits
-  lui(rd, (int32_t)high_20);
+
+  auto [high_20, low_12, b11, a6] = ToImmPtrParts(imm);
+
+  lui(rd, high_20);
   addi(rd, rd, low_12);  // 31 bits in rd.
   slli(rd, rd, 11);      // Space for next 11 bis
   ori(rd, rd, b11);      // 11 bits are put in. 42 bit in rd
@@ -502,22 +520,42 @@ void Assembler::li_ptr(Register rd, int64_t imm) {
   m_buffer.leaveNoNops();
 }
 
+struct Imm64Parts {
+  int32_t high_20;  // Bits 63:48, 16 bits.
+  int16_t d12;      // Bits 47:36, 12 bits.
+  int16_t c12;      // Bits 35:24, 12 bits.
+  int16_t b12;      // Bits 23:12, 12 bits.
+  int16_t a12;      // Bits 11:0, 12 bits.
+};
+
+static constexpr auto ToImm64Parts(int64_t imm) {
+  return Imm64Parts{
+      .high_20 = int32_t(
+          (imm + (1LL << 47) + (1LL << 35) + (1LL << 23) + (1LL << 11)) >> 48),
+      .d12 =
+          int16_t((imm + (1LL << 35) + (1LL << 23) + (1LL << 11)) << 16 >> 52),
+      .c12 = int16_t((imm + (1LL << 23) + (1LL << 11)) << 28 >> 52),
+      .b12 = int16_t((imm + (1LL << 11)) << 40 >> 52),
+      .a12 = int16_t(imm << 52 >> 52),
+  };
+}
+
 void Assembler::li_constant(Register rd, int64_t imm) {
   m_buffer.enterNoNops();
   m_buffer.assertNoPoolAndNoNops();
   DEBUG_PRINTF("li_constant(%d, %" PRIx64 " <%" PRId64 ">)\n", ToNumber(rd),
                imm, imm);
-  lui(rd, (imm + (1LL << 47) + (1LL << 35) + (1LL << 23) + (1LL << 11)) >>
-              48);  // Bits 63:48
-  addiw(rd, rd,
-        (imm + (1LL << 35) + (1LL << 23) + (1LL << 11)) << 16 >>
-            52);  // Bits 47:36
+
+  auto [high_20, d12, c12, b12, a12] = ToImm64Parts(imm);
+
+  lui(rd, high_20);    // Bits 63:48
+  addiw(rd, rd, d12);  // Bits 47:36
   slli(rd, rd, 12);
-  addi(rd, rd, (imm + (1LL << 23) + (1LL << 11)) << 28 >> 52);  // Bits 35:24
+  addi(rd, rd, c12);  // Bits 35:24
   slli(rd, rd, 12);
-  addi(rd, rd, (imm + (1LL << 11)) << 40 >> 52);  // Bits 23:12
+  addi(rd, rd, b12);  // Bits 23:12
   slli(rd, rd, 12);
-  addi(rd, rd, imm << 52 >> 52);  // Bits 11:0
+  addi(rd, rd, a12);  // Bits 11:0
   m_buffer.leaveNoNops();
 }
 
@@ -725,35 +763,41 @@ void Assembler::UpdateLoad64Value(Instruction* inst0, uint64_t value) {
   }
   if (instr1->IsAddiw()) {
     Instruction* instr0 = inst0;
-    Instruction* instr2 = inst0 + 2 * kInstrSize;
+    [[maybe_unused]] Instruction* instr2 = inst0 + 2 * kInstrSize;
     Instruction* instr3 = inst0 + 3 * kInstrSize;
-    Instruction* instr4 = inst0 + 4 * kInstrSize;
+    [[maybe_unused]] Instruction* instr4 = inst0 + 4 * kInstrSize;
     Instruction* instr5 = inst0 + 5 * kInstrSize;
-    Instruction* instr6 = inst0 + 6 * kInstrSize;
+    [[maybe_unused]] Instruction* instr6 = inst0 + 6 * kInstrSize;
     Instruction* instr7 = inst0 + 7 * kInstrSize;
     MOZ_ASSERT(inst0->IsLui() && instr1->IsAddiw() && instr2->IsSlli() &&
                instr3->IsAddi() && instr4->IsSlli() && instr5->IsAddi() &&
                instr6->IsSlli() && instr7->IsAddi());
 
-    // clang-format off
-    //
-    // lui(rd, (imm + (1LL << 47) + (1LL << 35) + (1LL << 23) + (1LL << 11)) >> 48);  // Bits 63:48
-    // addiw(rd, rd, (imm + (1LL << 35) + (1LL << 23) + (1LL << 11)) << 16 >> 52);  // Bits 47:36
+    auto [high_20, d12, c12, b12, a12] = ToImm64Parts(value);
+
+    // lui(rd, high_20);  // Bits 63:48
+    instr0->SetImm20UValue(high_20);
+
+    // addiw(rd, rd, d12);  // Bits 47:36
+    instr1->SetImm12Value(d12);
+
     // slli(rd, rd, 12);
-    // addi(rd, rd, (imm + (1LL << 23) + (1LL << 11)) << 28 >> 52);  // Bits 35:24
+    MOZ_ASSERT(instr2->Shamt() == 12);
+
+    // addi(rd, rd, c12);  // Bits 35:24
+    instr3->SetImm12Value(c12);
+
     // slli(rd, rd, 12);
-    // addi(rd, rd, (imm + (1LL << 11)) << 40 >> 52); // Bits 23:12
+    MOZ_ASSERT(instr4->Shamt() == 12);
+
+    // addi(rd, rd, b12);  // Bits 23:12
+    instr5->SetImm12Value(b12);
+
     // slli(rd, rd, 12);
-    // addi(rd, rd, imm << 52 >> 52);  // Bits 11:0
-    //
-    // clang-format on
-    instr0->SetImm20UValue(
-        (value + (1LL << 47) + (1LL << 35) + (1LL << 23) + (1LL << 11)) >> 48);
-    instr1->SetImm12Value(
-        (value + (1LL << 35) + (1LL << 23) + (1LL << 11)) << 16 >> 52);
-    instr3->SetImm12Value((value + (1LL << 23) + (1LL << 11)) << 28 >> 52);
-    instr5->SetImm12Value((value + (1LL << 11)) << 40 >> 52);
-    instr7->SetImm12Value(value << 52 >> 52);
+    MOZ_ASSERT(instr6->Shamt() == 12);
+
+    // addi(rd, rd, a12);  // Bits 11:0
+    instr7->SetImm12Value(a12);
 
 #ifdef JS_DISASM_RISCV64
     disassembleInstr(instr0);
@@ -792,7 +836,6 @@ void Assembler::UpdateLoad64Value(Instruction* inst0, uint64_t value) {
 void Assembler::jumpChainSetTargetValueAt(Instruction* pc, uint64_t target) {
   DEBUG_PRINTF("\tjumpChainSetTargetValueAt: pc: %p\ttarget: %" PRIx64 "\n", pc,
                target);
-  MOZ_ASSERT((target & 0xffff000000000000ll) == 0);
 
   Instruction* instr0 = pc;
   Instruction* instr1 = pc + 1 * kInstrSize;
@@ -805,11 +848,7 @@ void Assembler::jumpChainSetTargetValueAt(Instruction* pc, uint64_t target) {
   MOZ_ASSERT(instr0->IsLui() && instr1->IsAddi() && instr2->IsSlli() &&
              instr3->IsOri() && instr4->IsSlli() && instr5->IsOri());
 
-  int64_t a6 = target & 0x3f;                     // bits 0:6. 6 bits
-  int64_t b11 = (target >> 6) & 0x7ff;            // bits 6:11. 11 bits
-  int64_t high_31 = (target >> 17) & 0x7fffffff;  // 31 bits
-  int64_t high_20 = ((high_31 + 0x800) >> 12);    // 19 bits
-  int64_t low_12 = high_31 & 0xfff;               // 12 bits
+  auto [high_20, low_12, b11, a6] = ToImmPtrParts(target);
 
   instr0->SetImm20UValue(high_20);
   instr1->SetImm12Value(low_12);
@@ -828,13 +867,8 @@ void Assembler::WriteLoad64Instructions(Instruction* inst0, Register reg,
   // Initialize rd with an address
   // Pointers are 48 bits
   // 6 fixed instructions are generated
-  MOZ_ASSERT((value & 0xfff0000000000000ll) == 0);
 
-  int64_t a6 = value & 0x3f;                     // bits 0:5. 6 bits
-  int64_t b11 = (value >> 6) & 0x7ff;            // bits 6:11. 11 bits
-  int64_t high_31 = (value >> 17) & 0x7fffffff;  // 31 bits
-  int64_t high_20 = ((high_31 + 0x800) >> 12);   // 19 bits
-  int64_t low_12 = high_31 & 0xfff;              // 12 bits
+  auto [high_20, low_12, b11, a6] = ToImmPtrParts(value);
 
   // lui(rd, high_20);
   inst0->SetUFormat(RO_LUI, reg.code(), high_20);
