@@ -19,14 +19,6 @@ struct MarkerSupportsETW : std::false_type {};
 template <typename T>
 struct MarkerSupportsETW<T, std::void_t<decltype(T::Name)>> : std::true_type {};
 
-// Allows checking for the presence of T::TranslateMarkerInputToSchema.
-template <typename T, typename = void>
-struct MarkerHasTranslator : std::false_type {};
-template <typename T>
-struct MarkerHasTranslator<
-    T, std::void_t<decltype(T::TranslateMarkerInputToSchema)>>
-    : std::true_type {};
-
 }  // namespace ETW
 
 #if defined(XP_WIN) && !defined(RUST_BINDGEN) && !defined(__MINGW32__)
@@ -364,7 +356,7 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
     }
 
     if constexpr (mozilla::MarkerHasPayloadFields<MarkerType>::value) {
-      if constexpr (MarkerHasTranslator<MarkerType>::value) {
+      if constexpr (mozilla::MarkerHasTranslator<MarkerType>::value) {
         // When this function is implemented the arguments are passed back to
         // the MarkerType object which is expected to call OutputMarkerSchema
         // with the correct argument format.
@@ -431,7 +423,7 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
   // markers because this code is only compiled on non-Windows. The idea is that
   // we want to catch mistakes on all platforms.
   if constexpr (mozilla::MarkerHasPayloadFields<MarkerType>::value) {
-    if constexpr (MarkerHasTranslator<MarkerType>::value) {
+    if constexpr (mozilla::MarkerHasTranslator<MarkerType>::value) {
       // Call TranslateMarkerInputToSchema, which we expect to be a no-op on
       // non-Windows.
       MarkerType::TranslateMarkerInputToSchema(nullptr, aPayloadArguments...);
