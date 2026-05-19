@@ -755,6 +755,21 @@ void closure() {
     if (lambda_unsafe2()) break;
   }
 }
+void do_bad_stuff(Cell**) { GC(); }
+
+void unsafe_address1() {
+  static Cell cell;
+  Cell* addr_unsafe1 = &cell;
+  do_bad_stuff(&addr_unsafe1);
+  use(addr_unsafe1);
+}
+
+void unsafe_address2() {
+  static Cell cell;
+  Cell* addr_unsafe2 = &cell;
+  Cell** addr_unsafe3 = &addr_unsafe2;
+  do_bad_stuff(addr_unsafe3);
+}
 
 ANNOTATE("Expect Hazards") void expected() {
   Cell* cell = makecell();
