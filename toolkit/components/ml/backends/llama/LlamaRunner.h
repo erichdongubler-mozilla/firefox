@@ -255,9 +255,7 @@ class MetadataCallback;
  *
  * This class is designed for use in JS, from a single thread.
  */
-class LlamaRunner final : public nsISupports,
-                          public nsWrapperCache,
-                          public SupportsWeakPtr {
+class LlamaRunner final : public nsISupports, public nsWrapperCache {
  public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(LlamaRunner)
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
