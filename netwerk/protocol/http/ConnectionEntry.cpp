@@ -231,6 +231,12 @@ bool ConnectionEntry::RestrictConnections() {
   // If the restriction is based on a tcp handshake in progress
   // let that connect and then see if it was SPDY or not
   if (mConnectionAttemptPool->UnconnectedConnectionAttempts()) {
+    LOG(
+        ("ConnectionEntry::RestrictConnections %p %s restricted: "
+         "%u unconnected HCA(s) still negotiating (pool length=%zu)\n",
+         this, mConnInfo->HashKey().get(),
+         mConnectionAttemptPool->UnconnectedConnectionAttempts(),
+         mConnectionAttemptPool->Length()));
     return true;
   }
 
@@ -245,7 +251,14 @@ bool ConnectionEntry::RestrictConnections() {
     for (uint32_t index = 0; index < mActiveConns.Length(); ++index) {
       HttpConnectionBase* conn = mActiveConns[index];
       RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
-      if ((connTCP && !connTCP->ReportedNPN()) || conn->CanDirectlyActivate()) {
+      bool npnPending = connTCP && !connTCP->ReportedNPN();
+      bool canActivate = conn->CanDirectlyActivate();
+      LOG(
+          ("ConnectionEntry::RestrictConnections %p %s active conn[%u]=%p "
+           "npnPending=%d canActivate=%d dontReuse=%d\n",
+           this, mConnInfo->HashKey().get(), index, conn, npnPending,
+           canActivate, !conn->CanReuse()));
+      if (npnPending || canActivate) {
         confirmedRestrict = true;
         break;
       }
@@ -908,7 +921,13 @@ Http3ConnectionStatsParams ConnectionEntry::GetHttp3ConnectionStatsData() {
 void ConnectionEntry::LogConnections() {
   LOG(("active conns ["));
   for (HttpConnectionBase* conn : mActiveConns) {
-    LOG(("  %p (ready=%d)", conn, conn->CanDirectlyActivate()));
+    if (conn->CanDirectlyActivate()) {
+      LOG(("  %p (ready=1)", conn));
+    } else {
+      RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
+      LOG(("  %p (ready=0 reason=%s)", conn,
+           connTCP ? connTCP->CanDirectlyActivateReason() : "not-tcp-conn"));
+    }
   }
 
   LOG(("] idle conns ["));

@@ -960,6 +960,14 @@ bool nsHttpConnection::CanDirectlyActivate() {
          mSpdySession->RoomForMoreStreams();
 }
 
+const char* nsHttpConnection::CanDirectlyActivateReason() const {
+  if (mUsingSpdyVersion == SpdyVersion::NONE) return "not-h2";
+  if (mDontReuse) return "dont-reuse";
+  if (!mSpdySession) return "no-spdy-session";
+  if (!mSpdySession->RoomForMoreStreams()) return "streams-full";
+  return "ok";
+}
+
 PRIntervalTime nsHttpConnection::IdleTime() {
   return mSpdySession ? mSpdySession->IdleTime()
                       : (PR_IntervalNow() - mLastReadTime);

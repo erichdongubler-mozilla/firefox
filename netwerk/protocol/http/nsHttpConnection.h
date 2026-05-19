@@ -96,6 +96,9 @@ class nsHttpConnection final : public HttpConnectionBase,
   // AvailableForDispatchNow() to avoid a redundant probe before
   // GetIdleConnection() performs the definitive check.
   bool CanReuseLikely();
+  // Returns a short string naming which CanDirectlyActivate() condition is
+  // false, for use in diagnostic logs. Returns "ok" when all pass.
+  const char* CanDirectlyActivateReason() const;
 
   // Returns time in seconds for how long connection can be reused.
   uint32_t TimeToLive();

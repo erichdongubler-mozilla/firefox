@@ -90,6 +90,9 @@ bool ZeroRttHandle::Do0RTT(HappyEyeballsTransaction* aCaller,
            this, aCaller));
       return false;
     }
+
+    MOZ_ASSERT(mState == State::Open,
+               "Do0RTT locking transaction from queue on a non-Open handle");
   }
 
   LOG(("ZeroRttHandle::Do0RTT %p caller=%p accepted, offset=0", this, aCaller));
@@ -187,6 +190,11 @@ nsresult ZeroRttHandle::Finish0RTT(HappyEyeballsTransaction* aCaller,
          this));
     return NS_OK;
   }
+
+  // At this point we are about to declare a winner.  The handle must still be
+  // Open.
+  MOZ_ASSERT(mState == State::Open,
+             "Finish0RTT declaring winner on a non-Open handle");
 
   nsHttpTransaction* realTxn = ResolveRealTxn(mHet);
   if (!realTxn) {
