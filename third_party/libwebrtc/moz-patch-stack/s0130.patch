@@ -9,10 +9,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c00f6910cab76176f
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
-index 1079cb8d0a..7607daf886 100644
+index dbfde9f90a..dc27b1f170 100644
 --- a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
 +++ b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
-@@ -283,7 +283,7 @@ LibaomAv1Encoder::LibaomAv1Encoder(const Environment& env,
+@@ -278,7 +278,7 @@ LibaomAv1Encoder::LibaomAv1Encoder(const Environment& env,
        drop_repeat_frames_on_enhancement_layers_(env.field_trials().IsEnabled(
            "WebRTC-LibaomAv1Encoder-DropRepeatFramesOnEnhancementLayers")),
        encoder_speed_experiment_(env.field_trials()),
