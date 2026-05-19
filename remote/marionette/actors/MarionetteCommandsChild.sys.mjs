@@ -483,14 +483,7 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
    */
   async getElementRect(options = {}) {
     const { elem } = options;
-
-    const rect = elem.getBoundingClientRect();
-    return {
-      x: rect.x + this.document.defaultView.pageXOffset,
-      y: rect.y + this.document.defaultView.pageYOffset,
-      width: rect.width,
-      height: rect.height,
-    };
+    return lazy.dom.getElementRect(elem);
   }
 
   /**
@@ -566,10 +559,40 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
     let rect;
 
     if (elem) {
+      // Throw an error if 'full' is passed with an element, as this is an invalid state.
+      if (full) {
+        throw new Error(
+          "Full screenshot is not supported when an element is provided."
+        );
+      }
+
       if (scroll) {
         lazy.dom.scrollIntoView(elem);
       }
-      rect = this.getElementRect({ elem });
+
+      rect = lazy.dom.getElementRect(elem);
+
+      // Calculate the intersection between the element's bounding client rect
+      // and the visual viewport to draw a bounding box from the framebuffer.
+      // Spec: https://w3c.github.io/webdriver/#dfn-draw-a-bounding-box-from-the-framebuffer
+      const viewport = win.visualViewport;
+
+      const viewportX = viewport.pageLeft;
+      const viewportY = viewport.pageTop;
+
+      const viewportWidth = win.innerWidth;
+      const viewportHeight = win.innerHeight;
+
+      const left = Math.max(rect.x, viewportX);
+      const top = Math.max(rect.y, viewportY);
+
+      const right = Math.min(rect.x + rect.width, viewportX + viewportWidth);
+      const bottom = Math.min(rect.y + rect.height, viewportY + viewportHeight);
+
+      const width = Math.max(right - left, 0);
+      const height = Math.max(bottom - top, 0);
+
+      rect = new DOMRect(left, top, width, height);
     } else if (full) {
       const docEl = win.document.documentElement;
       rect = new DOMRect(0, 0, docEl.scrollWidth, docEl.scrollHeight);

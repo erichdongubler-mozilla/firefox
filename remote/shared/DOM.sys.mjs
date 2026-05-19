@@ -1233,3 +1233,24 @@ dom.isBooleanAttribute = function (el, attr) {
   }
   return boolEls[el.localName].includes(attr);
 };
+
+/**
+ * Get the position and dimensions of the element.
+ *
+ * @param {Element} el
+ *     Element to get the dimensions of.
+ *
+ * @returns {DOMRect}
+ *     A DOMRect describing the element's position relative to the document.
+ */
+dom.getElementRect = function (el) {
+  const win = el.documentGlobal;
+  const rect = el.getBoundingClientRect();
+
+  return new DOMRect(
+    rect.x + win.pageXOffset,
+    rect.y + win.pageYOffset,
+    rect.width,
+    rect.height
+  );
+};
