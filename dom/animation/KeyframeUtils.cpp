@@ -333,15 +333,24 @@ double KeyframeUtils::GetComputedOffset(const Keyframe::OffsetType& aOffset,
   }
 
   const dom::ViewTimeline* vt = aTimeline->AsViewTimeline();
-  const auto result =
+  const auto offset =
       vt->MapKeyframeOffsetToOffset(aOffset.mRangeName, aOffset.mPercentage);
-  if (!result) {
+  if (!offset) {
     return std::numeric_limits<double>::quiet_NaN();
   }
 
-  // TODO: Apply |aRange| in the next patch.
+  if (!aRange) {
+    return *offset;
+  }
 
-  return *result;
+  // Attach this keyframe offset, |*offset|, which is calculated based on the
+  // whole timeline range, i.e. [0.0, 1.0], to the animation attachment range,
+  // i.e. [range.first, range.second], to get the final computed offset.
+  //
+  // Note: [range.first, range.second] is calculated based on the whole timeline
+  // range as well.
+  const auto& range = vt->IntervalForAttachmentRange(*aRange);
+  return (*offset - range.first) / (range.second - range.first);
 }
 
 /* static */
@@ -1044,17 +1053,16 @@ static void BuildSegmentsFromValueEntries(
              aEntries[j + 1].mProperty == aEntries[j].mProperty) {
         ++j;
       }
-    } else if (aEntries[i].mOffset == 1.0f) {
-      if (aEntries[i + 1].mOffset == 1.0f &&
+    } else if (aEntries[i].mOffset >= 1.0f) {
+      if (aEntries[i].mOffset == 1.0f && aEntries[i + 1].mOffset == 1.0f &&
           aEntries[i + 1].mProperty == aEntries[i].mProperty) {
         // We need to generate a final zero-length segment.
         while (j + 1 < n && aEntries[j + 1].mOffset == 1.0f &&
                aEntries[j + 1].mProperty == aEntries[j].mProperty) {
           ++j;
         }
-      } else {
+      } else if (aEntries[i].mProperty != aEntries[i + 1].mProperty) {
         // New property.
-        MOZ_ASSERT(aEntries[i].mProperty != aEntries[i + 1].mProperty);
         animationProperty = nullptr;
         ++i;
         continue;
