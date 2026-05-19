@@ -4684,14 +4684,8 @@ nsIContent* nsIFrame::GetExplicitEventTargetContent(
 
 nsIContent* nsIFrame::GetEventTargetContent(
     const mozilla::WidgetEvent* aEvent /* = nullptr */) const {
-  nsIContent* const content = GetExplicitEventTargetContent(aEvent);
-  if (!content || content->IsElement() || !aEvent ||
-      !IsForbiddenDispatchingToNonElementContent(aEvent->mMessage)) {
-    return content;
-  }
-  Element* const ancestorElement =
-      content->GetInclusiveFlattenedTreeAncestorElement();
-  return ancestorElement ? ancestorElement : content;
+  return nsContentUtils::GetEventTargetContent(
+      GetExplicitEventTargetContent(aEvent), aEvent);
 }
 
 void nsIFrame::FireDOMEvent(const nsAString& aDOMEventName,

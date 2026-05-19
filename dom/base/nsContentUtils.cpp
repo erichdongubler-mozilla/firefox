@@ -5650,6 +5650,19 @@ static already_AddRefed<Event> GetEventWithTarget(
 }
 
 // static
+nsIContent* nsContentUtils::GetEventTargetContent(
+    nsIContent* aExplicitEventTargetContent, const WidgetEvent* aEvent) {
+  if (!aExplicitEventTargetContent ||
+      aExplicitEventTargetContent->IsElement() || !aEvent ||
+      !IsForbiddenDispatchingToNonElementContent(aEvent->mMessage)) {
+    return aExplicitEventTargetContent;
+  }
+  Element* const ancestorElement =
+      aExplicitEventTargetContent->GetInclusiveFlattenedTreeAncestorElement();
+  return ancestorElement ? ancestorElement : aExplicitEventTargetContent;
+}
+
+// static
 nsresult nsContentUtils::DispatchTrustedEvent(
     Document* aDoc, EventTarget* aTarget, const nsAString& aEventName,
     CanBubble aCanBubble, Cancelable aCancelable, Composed aComposed,

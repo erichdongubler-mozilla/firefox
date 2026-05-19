@@ -6600,6 +6600,12 @@ nsIContent* EventStateManager::GetExplicitEventTargetContent(
                         : nullptr;
 }
 
+nsIContent* EventStateManager::GetEventTargetContent(
+    const WidgetEvent* aEvent /* = nullptr */) {
+  return nsContentUtils::GetEventTargetContent(
+      GetExplicitEventTargetContent(aEvent), aEvent);
+}
+
 static Element* GetLabelTarget(nsIContent* aPossibleLabel) {
   mozilla::dom::HTMLLabelElement* label =
       mozilla::dom::HTMLLabelElement::FromNode(aPossibleLabel);
