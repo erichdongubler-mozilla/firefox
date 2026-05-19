@@ -164,7 +164,7 @@ void Assembler::WritePoolGuard(BufferOffset branch, Instruction* inst,
 
   DEBUG_PRINTF("%p(%x): ", inst, branch.getOffset());
 #ifdef JS_DISASM_RISCV64
-  disassembleInstr(inst->InstructionBits(), JitSpew_Codegen);
+  disassembleInstr(inst, JitSpew_Codegen);
 #endif /* JS_DISASM_RISCV64 */
 }
 
@@ -581,14 +581,15 @@ bool Assembler::oom() const {
 }
 
 #ifdef JS_DISASM_RISCV64
-int Assembler::disassembleInstr(Instr instr, bool enable_spew) {
-  if (!FLAG_riscv_debug && !enable_spew) return -1;
+int Assembler::disassembleInstr(Instruction* instr, bool enable_spew) {
+  if (!FLAG_riscv_debug && !enable_spew) {
+    return -1;
+  }
   disasm::NameConverter converter;
   disasm::Disassembler disasm(converter);
   EmbeddedVector<char, 128> disasm_buffer;
 
-  int size =
-      disasm.InstructionDecode(disasm_buffer, reinterpret_cast<byte*>(&instr));
+  int size = disasm.InstructionDecode(disasm_buffer, instr);
   DEBUG_PRINTF("%s\n", disasm_buffer.start());
   if (enable_spew) {
     JitSpew(JitSpew_Codegen, "%s", disasm_buffer.start());
@@ -680,14 +681,14 @@ uint64_t Assembler::ExtractLoad64Value(Instruction* inst0) {
     }
 #ifdef JS_DISASM_RISCV64
     FLAG_riscv_debug = true;
-    disassembleInstr(inst0->InstructionBits());
-    disassembleInstr(instr1->InstructionBits());
-    disassembleInstr(instr2->InstructionBits());
-    disassembleInstr(instr3->InstructionBits());
-    disassembleInstr(instr4->InstructionBits());
-    disassembleInstr(instr5->InstructionBits());
-    disassembleInstr(instr6->InstructionBits());
-    disassembleInstr(instr7->InstructionBits());
+    disassembleInstr(inst0);
+    disassembleInstr(instr1);
+    disassembleInstr(instr2);
+    disassembleInstr(instr3);
+    disassembleInstr(instr4);
+    disassembleInstr(instr5);
+    disassembleInstr(instr6);
+    disassembleInstr(instr7);
 #endif /* JS_DISASM_RISCV64 */
     MOZ_CRASH();
   } else {
@@ -700,15 +701,15 @@ uint64_t Assembler::ExtractLoad64Value(Instruction* inst0) {
     Instruction* instr5 = inst0 + 5 * kInstrSize;
     Instruction* instr6 = inst0 + 6 * kInstrSize;
     Instruction* instr7 = inst0 + 7 * kInstrSize;
-    disassembleInstr(instrf1->InstructionBits());
-    disassembleInstr(inst0->InstructionBits());
-    disassembleInstr(instr1->InstructionBits());
-    disassembleInstr(instr2->InstructionBits());
-    disassembleInstr(instr3->InstructionBits());
-    disassembleInstr(instr4->InstructionBits());
-    disassembleInstr(instr5->InstructionBits());
-    disassembleInstr(instr6->InstructionBits());
-    disassembleInstr(instr7->InstructionBits());
+    disassembleInstr(instrf1);
+    disassembleInstr(inst0);
+    disassembleInstr(instr1);
+    disassembleInstr(instr2);
+    disassembleInstr(instr3);
+    disassembleInstr(instr4);
+    disassembleInstr(instr5);
+    disassembleInstr(instr6);
+    disassembleInstr(instr7);
 #endif /* JS_DISASM_RISCV64 */
     MOZ_ASSERT(instr1->IsAddi());
     // Li48
@@ -757,14 +758,14 @@ void Assembler::UpdateLoad64Value(Instruction* inst0, uint64_t value) {
     instr7->SetImm12Value(value << 52 >> 52);
 
 #ifdef JS_DISASM_RISCV64
-    disassembleInstr(instr0->InstructionBits());
-    disassembleInstr(instr1->InstructionBits());
-    disassembleInstr(instr2->InstructionBits());
-    disassembleInstr(instr3->InstructionBits());
-    disassembleInstr(instr4->InstructionBits());
-    disassembleInstr(instr5->InstructionBits());
-    disassembleInstr(instr6->InstructionBits());
-    disassembleInstr(instr7->InstructionBits());
+    disassembleInstr(instr0);
+    disassembleInstr(instr1);
+    disassembleInstr(instr2);
+    disassembleInstr(instr3);
+    disassembleInstr(instr4);
+    disassembleInstr(instr5);
+    disassembleInstr(instr6);
+    disassembleInstr(instr7);
 #endif /* JS_DISASM_RISCV64 */
     MOZ_ASSERT(ExtractLoad64Value(inst0) == value);
   } else {
@@ -776,14 +777,14 @@ void Assembler::UpdateLoad64Value(Instruction* inst0, uint64_t value) {
     Instruction* instr5 = inst0 + 5 * kInstrSize;
     Instruction* instr6 = inst0 + 6 * kInstrSize;
     Instruction* instr7 = inst0 + 7 * kInstrSize;
-    disassembleInstr(instr0->InstructionBits());
-    disassembleInstr(instr1->InstructionBits());
-    disassembleInstr(instr2->InstructionBits());
-    disassembleInstr(instr3->InstructionBits());
-    disassembleInstr(instr4->InstructionBits());
-    disassembleInstr(instr5->InstructionBits());
-    disassembleInstr(instr6->InstructionBits());
-    disassembleInstr(instr7->InstructionBits());
+    disassembleInstr(instr0);
+    disassembleInstr(instr1);
+    disassembleInstr(instr2);
+    disassembleInstr(instr3);
+    disassembleInstr(instr4);
+    disassembleInstr(instr5);
+    disassembleInstr(instr6);
+    disassembleInstr(instr7);
 #endif /* JS_DISASM_RISCV64 */
     MOZ_ASSERT(instr1->IsAddi());
     jumpChainSetTargetValueAt(inst0, value);
@@ -856,12 +857,12 @@ void Assembler::WriteLoad64Instructions(Instruction* inst0, Register reg,
   (inst0 + 5 * kInstrSize)->SetIFormat(RO_ORI, reg.code(), reg.code(), a6);
 
 #ifdef JS_DISASM_RISCV64
-  disassembleInstr((inst0 + 0 * kInstrSize)->InstructionBits());
-  disassembleInstr((inst0 + 1 * kInstrSize)->InstructionBits());
-  disassembleInstr((inst0 + 2 * kInstrSize)->InstructionBits());
-  disassembleInstr((inst0 + 3 * kInstrSize)->InstructionBits());
-  disassembleInstr((inst0 + 4 * kInstrSize)->InstructionBits());
-  disassembleInstr((inst0 + 5 * kInstrSize)->InstructionBits());
+  disassembleInstr(inst0 + 0 * kInstrSize);
+  disassembleInstr(inst0 + 1 * kInstrSize);
+  disassembleInstr(inst0 + 2 * kInstrSize);
+  disassembleInstr(inst0 + 3 * kInstrSize);
+  disassembleInstr(inst0 + 4 * kInstrSize);
+  disassembleInstr(inst0 + 5 * kInstrSize);
 #endif /* JS_DISASM_RISCV64 */
 
   MOZ_ASSERT(ExtractLoad64Value(inst0) == value);
@@ -953,7 +954,7 @@ int Assembler::jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
   DEBUG_PRINTF("\t jumpChainTargetAt: %p(%x)\n\t",
                reinterpret_cast<Instr*>(instruction), pos.getOffset());
 #ifdef JS_DISASM_RISCV64
-  disassembleInstr(instruction->InstructionBits());
+  disassembleInstr(instruction);
 #endif /* JS_DISASM_RISCV64 */
   switch (instruction->InstructionOpcodeType()) {
     case BRANCH: {
@@ -1580,7 +1581,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   // Verify that the branch range matches what's encoded.
   DEBUG_PRINTF("\t%p(%x): ", branchInst, branch.getOffset());
 #ifdef JS_DISASM_RISCV64
-  disassembleInstr(branchInst->InstructionBits(), JitSpew_Codegen);
+  disassembleInstr(branchInst, JitSpew_Codegen);
 #endif /* JS_DISASM_RISCV64 */
   DEBUG_PRINTF("\t insert veneer %x, branch: %x deadline: %x\n",
                veneer.getOffset(), branch.getOffset(), deadline.getOffset());
@@ -1618,7 +1619,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   }
 #ifdef JS_DISASM_RISCV64
   DEBUG_PRINTF("\tfix to veneer:");
-  disassembleInstr(branchInst->InstructionBits());
+  disassembleInstr(branchInst);
 #endif /* JS_DISASM_RISCV64 */
 }
 }  // namespace jit

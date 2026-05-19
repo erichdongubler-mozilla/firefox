@@ -3918,12 +3918,12 @@ void MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset) {
 
     DEBUG_PRINTF("\t%p %zu\n\t", auipc_, callerOffset - 2 * sizeof(uint32_t));
 #ifdef JS_DISASM_RISCV64
-    disassembleInstr(auipc_->InstructionBits());
+    disassembleInstr(auipc_);
 #endif /* JS_DISASM_RISCV64 */
     DEBUG_PRINTF("\t%p %zu\n\t", jalr_, callerOffset - 1 * sizeof(uint32_t));
 
 #ifdef JS_DISASM_RISCV64
-    disassembleInstr(jalr_->InstructionBits());
+    disassembleInstr(jalr_);
 #endif /* JS_DISASM_RISCV64 */
     DEBUG_PRINTF("\t\n");
 

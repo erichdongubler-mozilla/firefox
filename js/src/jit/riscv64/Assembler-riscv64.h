@@ -385,7 +385,7 @@ class Assembler : public AssemblerShared,
   Register getStackPointer() const { return StackPointer; }
   void flushBuffer() {}
 #ifdef JS_DISASM_RISCV64
-  static int disassembleInstr(Instr instr, bool enable_spew = false);
+  static int disassembleInstr(Instruction* instr, bool enable_spew = false);
 #endif /* JS_DISASM_RISCV64 */
   int jumpChainTargetAt(BufferOffset pos);
   static int jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
@@ -418,7 +418,8 @@ class Assembler : public AssemblerShared,
     if (offset.assigned()) {
       DEBUG_PRINTF("0x%" PRIx64 "(%x):", uint64_t(getInstructionAt(offset)),
                    unsigned(offset.getOffset()));
-      disassembleInstr(x, JitSpewEnabled(JitSpew_Codegen));
+      disassembleInstr(getInstructionAt(offset),
+                       JitSpewEnabled(JitSpew_Codegen));
     }
 #endif
     return offset;
