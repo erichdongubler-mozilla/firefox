@@ -15,8 +15,6 @@ prefs = [
 
 ["test_IPPChannelFilter.js"]
 
-["test_IPPEnterpriseAuthProvider.js"]
-
 ["test_IPPExceptionsManager.js"]
 
 ["test_IPPFxaAuthProvider.js"]
