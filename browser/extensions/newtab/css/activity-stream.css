@@ -8033,12 +8033,12 @@ dialog:dir(rtl)::after {
 .nova-enabled .clocks-widget.small-widget:not(.is-panel-open):hover .clocks-list, .nova-enabled .clocks-widget.small-widget:not(.is-panel-open):focus-within .clocks-list {
   justify-content: flex-start;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
-  padding-block-start: 1.75rem;
+  padding-block-start: 1.5rem;
 }
 .nova-enabled .clocks-widget.small-widget[data-clock-count="2"]:not(.is-panel-open):hover .clocks-list, .nova-enabled .clocks-widget.small-widget[data-clock-count="2"]:not(.is-panel-open):focus-within .clocks-list {
   /* Two full rows with timezone text need a slightly smaller header lane. */
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
-  padding-block-start: 1.25rem;
+  padding-block-start: 1rem;
 }
 .nova-enabled .clocks-widget.small-widget[data-clock-count="2"]:not(.is-panel-open):hover .clocks-row, .nova-enabled .clocks-widget.small-widget[data-clock-count="2"]:not(.is-panel-open):focus-within .clocks-row {
   padding-block: var(--space-xsmall);
@@ -8046,13 +8046,12 @@ dialog:dir(rtl)::after {
 .nova-enabled .clocks-widget.small-widget[data-clock-count="4"]:not(.is-panel-open):hover .clocks-list, .nova-enabled .clocks-widget.small-widget[data-clock-count="4"]:not(.is-panel-open):focus-within .clocks-list {
   /* Only the menu remains at 4 clocks, so reserve less header room. */
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
-  padding-block-start: 1.25rem;
+  padding-block-start: 0.85rem;
 }
 .nova-enabled .clocks-widget.medium-widget:not(.is-panel-open):hover .clocks-list, .nova-enabled .clocks-widget.medium-widget:not(.is-panel-open):focus-within .clocks-list {
-  padding-block-start: var(--space-xxlarge);
+  padding-block-start: var(--space-medium);
 }
 .nova-enabled .clocks-widget.medium-widget[data-clock-count="3"]:not(.is-panel-open):hover .clocks-list, .nova-enabled .clocks-widget.medium-widget[data-clock-count="3"]:not(.is-panel-open):focus-within .clocks-list {
-  /* Dense 3-clock layouts need a smaller header lane to keep the time inside the card. */
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
   padding-block-start: 1.25rem;
 }
