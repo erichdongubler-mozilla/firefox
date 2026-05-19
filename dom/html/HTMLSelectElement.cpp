@@ -6,6 +6,7 @@
 
 #include "ButtonControlFrame.h"
 #include "mozilla/BasicEvents.h"
+#include "mozilla/BuiltInStyleSheets.h"
 #include "mozilla/Casting.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EventDispatcher.h"
@@ -123,6 +124,7 @@ void HTMLSelectElement::SetupShadowTree() {
   if (NS_WARN_IF(!sr)) {
     return;
   }
+  sr->AppendBuiltInStyleSheet(BuiltInStyleSheet::Select);
   Document* doc = OwnerDoc();
   // A select button slot, which is a slot element. It is appended to the
   // select's shadow root as the first child. It is expected to take the first
