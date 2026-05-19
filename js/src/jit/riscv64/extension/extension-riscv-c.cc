@@ -244,15 +244,6 @@ void AssemblerRISCVC::c_andi(Register rs1, int8_t imm6) {
   GenInstrCBA(0b100, 0b10, C1, rs1, imm6);
 }
 
-bool AssemblerRISCVC::IsCJal(Instr instr) {
-  return (instr & kRvcOpcodeMask) == RO_C_J;
-}
-
-bool AssemblerRISCVC::IsCBranch(Instr instr) {
-  int Op = instr & kRvcOpcodeMask;
-  return Op == RO_C_BNEZ || Op == RO_C_BEQZ;
-}
-
 int AssemblerRISCVC::CJumpOffset(Instr instr) {
   int32_t imm12 = ((instr & 0x4) << 3) | ((instr & 0x38) >> 2) |
                   ((instr & 0x40) << 1) | ((instr & 0x80) >> 1) |

@@ -223,41 +223,6 @@ void AssemblerRISCVI::unimp() {
   GenInstrI(0b001, SYSTEM, ToRegister(0), ToRegister(0), 0b110000000000);
 }
 
-bool AssemblerRISCVI::IsBranch(Instr instr) {
-  return (instr & kBaseOpcodeMask) == BRANCH;
-}
-
-bool AssemblerRISCVI::IsJump(Instr instr) {
-  int Op = instr & kBaseOpcodeMask;
-  return Op == JAL || Op == JALR;
-}
-
-bool AssemblerRISCVI::IsNop(Instr instr) { return instr == kNopByte; }
-
-bool AssemblerRISCVI::IsJal(Instr instr) {
-  return (instr & kBaseOpcodeMask) == JAL;
-}
-
-bool AssemblerRISCVI::IsJalr(Instr instr) {
-  return (instr & kBaseOpcodeMask) == JALR;
-}
-
-bool AssemblerRISCVI::IsLui(Instr instr) {
-  return (instr & kBaseOpcodeMask) == LUI;
-}
-bool AssemblerRISCVI::IsAuipc(Instr instr) {
-  return (instr & kBaseOpcodeMask) == AUIPC;
-}
-bool AssemblerRISCVI::IsAddi(Instr instr) {
-  return (instr & (kBaseOpcodeMask | kFunct3Mask)) == RO_ADDI;
-}
-bool AssemblerRISCVI::IsOri(Instr instr) {
-  return (instr & (kBaseOpcodeMask | kFunct3Mask)) == RO_ORI;
-}
-bool AssemblerRISCVI::IsSlli(Instr instr) {
-  return (instr & (kBaseOpcodeMask | kFunct3Mask)) == RO_SLLI;
-}
-
 int AssemblerRISCVI::JumpOffset(Instr instr) {
   int32_t imm21 = ((instr & 0x7fe00000) >> 20) | ((instr & 0x100000) >> 9) |
                   (instr & 0xff000) | ((instr & 0x80000000) >> 11);
@@ -275,24 +240,6 @@ int AssemblerRISCVI::AuipcOffset(Instr instr) {
   MOZ_ASSERT(IsAuipc(instr));
   int32_t imm20 = static_cast<int32_t>(instr & kImm20Mask);
   return imm20;
-}
-
-bool AssemblerRISCVI::IsLw(Instr instr) {
-  return (instr & (kBaseOpcodeMask | kFunct3Mask)) == RO_LW;
-}
-
-int AssemblerRISCVI::LoadOffset(Instr instr) {
-  MOZ_ASSERT(IsLd(instr));
-  int32_t imm12 = static_cast<int32_t>(instr & kImm12Mask) >> 20;
-  return imm12;
-}
-
-bool AssemblerRISCVI::IsAddiw(Instr instr) {
-  return (instr & (kBaseOpcodeMask | kFunct3Mask)) == RO_ADDIW;
-}
-
-bool AssemblerRISCVI::IsLd(Instr instr) {
-  return (instr & (kBaseOpcodeMask | kFunct3Mask)) == RO_LD;
 }
 
 void AssemblerRISCVI::lwu(Register rd, Register rs1, int16_t imm12) {

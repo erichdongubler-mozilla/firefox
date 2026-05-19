@@ -3670,7 +3670,7 @@ void MacroAssembler::patchSub32FromMemAndBranchIfNegative(CodeOffset offset,
   MOZ_RELEASE_ASSERT(val >= 1 && val <= 127);
 
   auto* inst = getInstructionAt(BufferOffset(offset.offset() - 4));
-  MOZ_ASSERT(IsAddiw(inst->InstructionBits()));
+  MOZ_ASSERT(inst->IsAddiw());
   inst->SetImm12Value(-val);
 }
 
@@ -3927,8 +3927,7 @@ void MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset) {
 #endif /* JS_DISASM_RISCV64 */
     DEBUG_PRINTF("\t\n");
 
-    MOZ_ASSERT(IsJalr(jalr_->InstructionBits()) &&
-               IsAuipc(auipc_->InstructionBits()));
+    MOZ_ASSERT(jalr_->IsJalr() && auipc_->IsAuipc());
     MOZ_ASSERT(auipc_->RdValue() == jalr_->Rs1Value());
 
     int32_t Hi20 = (((int32_t)offset + 0x800) >> 12);

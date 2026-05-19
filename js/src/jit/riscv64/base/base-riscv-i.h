@@ -110,7 +110,7 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
 
   static inline Instr SetJalOffset(int32_t pos, int32_t target_pos,
                                    Instr instr) {
-    MOZ_ASSERT(IsJal(instr));
+    MOZ_ASSERT(reinterpret_cast<Instruction*>(&instr)->IsJal());
     int32_t imm = target_pos - pos;
     MOZ_ASSERT((imm & 1) == 0);
     MOZ_ASSERT(is_intn(imm, kJumpOffsetBits));
@@ -125,42 +125,22 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
   }
 
   static inline Instr SetJalrOffset(int32_t offset, Instr instr) {
-    MOZ_ASSERT(IsJalr(instr));
+    MOZ_ASSERT(reinterpret_cast<Instruction*>(&instr)->IsJalr());
     MOZ_ASSERT(is_int12(offset));
     instr &= ~kImm12Mask;
     int32_t imm12 = offset << kImm12Shift;
-    MOZ_ASSERT(IsJalr(instr | (imm12 & kImm12Mask)));
-    MOZ_ASSERT(JalrOffset(instr | (imm12 & kImm12Mask)) == offset);
-    return instr | (imm12 & kImm12Mask);
-  }
-
-  static inline Instr SetLoadOffset(int32_t offset, Instr instr) {
-    MOZ_ASSERT(IsLd(instr));
-    MOZ_ASSERT(is_int12(offset));
-    instr &= ~kImm12Mask;
-    int32_t imm12 = offset << kImm12Shift;
-    return instr | (imm12 & kImm12Mask);
+    Instr result = instr | (imm12 & kImm12Mask);
+    MOZ_ASSERT(reinterpret_cast<Instruction*>(&result)->IsJalr());
+    MOZ_ASSERT(JalrOffset(result) == offset);
+    return result;
   }
 
   static inline Instr SetAuipcOffset(int32_t offset, Instr instr) {
-    MOZ_ASSERT(IsAuipc(instr));
+    MOZ_ASSERT(reinterpret_cast<Instruction*>(&instr)->IsAuipc());
     MOZ_ASSERT(is_int20(offset));
     instr = (instr & ~kImm31_12Mask) | ((offset & kImm19_0Mask) << 12);
     return instr;
   }
-
-  // Check if an instruction is a branch of some kind.
-  static bool IsBranch(Instr instr);
-  static bool IsNop(Instr instr);
-  static bool IsJump(Instr instr);
-  static bool IsJal(Instr instr);
-  static bool IsJalr(Instr instr);
-  static bool IsLui(Instr instr);
-  static bool IsAuipc(Instr instr);
-  static bool IsAddi(Instr instr);
-  static bool IsOri(Instr instr);
-  static bool IsSlli(Instr instr);
-  static bool IsLw(Instr instr);
 
   inline int32_t branchOffset(Label* L) {
     return branchOffsetHelper(L, OffsetSize::kOffset13);
@@ -259,9 +239,6 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
   void sraw(Register rd, Register rs1, Register rs2);
   void negw(Register rd, Register rs) { subw(rd, zero_reg, rs); }
   void sext_w(Register rd, Register rs) { addiw(rd, rs, 0); }
-
-  static bool IsAddiw(Instr instr);
-  static bool IsLd(Instr instr);
 };
 
 }  // namespace jit

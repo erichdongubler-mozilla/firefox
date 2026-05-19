@@ -179,6 +179,37 @@ class InstructionBase {
   // Say if the instruction is a break or a trap.
   inline bool IsTrap() const { return InstructionBits() == kBreakInstr; }
 
+  // Check if the instruction is a branch of some kind.
+  inline bool IsBranch() const { return BaseOpcode() == BRANCH; }
+
+  inline bool IsJal() const { return BaseOpcode() == JAL; }
+
+  inline bool IsJalr() const { return BaseOpcode() == JALR; }
+
+  inline bool IsLui() const { return BaseOpcode() == LUI; }
+
+  inline bool IsAuipc() const { return BaseOpcode() == AUIPC; }
+
+  inline bool IsAddi() const {
+    return (InstructionBits() & kITypeMask) == RO_ADDI;
+  }
+
+  inline bool IsOri() const {
+    return (InstructionBits() & kITypeMask) == RO_ORI;
+  }
+
+  inline bool IsSlli() const {
+    return (InstructionBits() & kITypeMask) == RO_SLLI;
+  }
+
+  inline bool IsLw() const { return (InstructionBits() & kITypeMask) == RO_LW; }
+
+  inline bool IsLd() const { return (InstructionBits() & kITypeMask) == RO_LD; }
+
+  inline bool IsAddiw() const {
+    return (InstructionBits() & kITypeMask) == RO_ADDIW;
+  }
+
   inline int BaseOpcode() const { return InstructionBits() & kBaseOpcodeMask; }
 
   inline int RvcOpcode() const {

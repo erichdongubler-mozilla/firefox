@@ -56,9 +56,6 @@ class AssemblerRISCVC : public AssemblerRiscvBase {
 
   int CJumpOffset(Instr instr);
 
-  static bool IsCBranch(Instr instr);
-  static bool IsCJal(Instr instr);
-
   inline int16_t cjumpOffset(Label* L) {
     return (int16_t)branchOffsetHelper(L, OffsetSize::kOffset11);
   }
