@@ -29,6 +29,13 @@
     <color name="fx_mobile_on_error">@color/photonLightGrey05</color>
     <color name="fx_mobile_error_container">@color/photonRed05</color>
     <color name="fx_mobile_on_error_container">@color/photonDarkGrey90</color>
+    <color name="fx_mobile_information">@color/photonBlue60</color>
+    <color name="fx_mobile_information_container">@color/photonBlue50A44</color>
+    <color name="fx_mobile_on_information_container">@color/photonDarkGrey90</color>
+    <color name="fx_mobile_success">@color/photonGreen80</color>
+    <color name="fx_mobile_warning">@color/photonYellow80</color>
+    <color name="fx_mobile_warning_container">@color/photonYellow20</color>
+    <color name="fx_mobile_on_warning_container">@color/photonDarkGrey90</color>
     <color name="fx_mobile_outline">@color/photonLightGrey90</color>
     <color name="fx_mobile_outline_variant">@color/photonLightGrey30</color>
     <color name="fx_mobile_surface_bright">@color/photonWhite</color>
@@ -124,6 +131,13 @@
     <color name="fx_mobile_private_on_error">@color/photonDarkGrey90</color>
     <color name="fx_mobile_private_error_container">@color/photonRed80</color>
     <color name="fx_mobile_private_on_error_container">@color/photonLightGrey05</color>
+    <color name="fx_mobile_private_information">@color/photonBlue30</color>
+    <color name="fx_mobile_private_information_container">@color/photonBlue50</color>
+    <color name="fx_mobile_private_on_information_container">@color/photonLightGrey05</color>
+    <color name="fx_mobile_private_success">@color/photonGreen50</color>
+    <color name="fx_mobile_private_warning">@color/photonYellow50</color>
+    <color name="fx_mobile_private_warning_container">@color/photonYellow70A77</color>
+    <color name="fx_mobile_private_on_warning_container">@color/photonLightGrey05</color>
     <color name="fx_mobile_private_outline">@color/photonLightGrey80</color>
     <color name="fx_mobile_private_outline_variant">@color/photonDarkGrey05</color>
     <color name="fx_mobile_private_surface_bright">#FF413857</color>

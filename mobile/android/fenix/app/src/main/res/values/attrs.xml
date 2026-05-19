@@ -26,6 +26,16 @@
     <!-- Icon inverted (on color) -->
     <attr name="iconOnColor" format="reference" />
 
+    <!-- Material3 extended palettes -->
+    <attr name="colorInformation" format="reference" />
+    <attr name="colorInformationContainer" format="reference" />
+    <attr name="colorOnInformationContainer" format="reference" />
+    <attr name="colorSuccess" format="reference" />
+    <attr name="colorWarning" format="reference" />
+    <attr name="colorWarningContainer" format="reference" />
+    <attr name="colorOnWarningContainer" format="reference" />
+    <attr name="colorSurfaceDimVariant" format="reference" />
+
     <!-- Color palette attributes -->
     <attr name="accent" format="reference" />
     <attr name="accentBright" format="reference" />
