@@ -49,7 +49,6 @@ interface MetricsStorage {
     fun updateUsageState(usageLength: Long)
 }
 
-@Suppress("TooManyFunctions")
 internal class DefaultMetricsStorage(
     context: Context,
     private val settings: Settings,
@@ -61,6 +60,7 @@ internal class DefaultMetricsStorage(
 ) : MetricsStorage {
 
     private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    private val installAge by lazy { InstallAge(getInstalledTime()) }
 
     /**
      * Checks local state to see whether the [event] should be sent.
@@ -70,34 +70,32 @@ internal class DefaultMetricsStorage(
         withContext(dispatcher) {
             // Update the persistent state before checking if we should track.
             updatePersistentState(event)
-            val currentTime = System.currentTimeMillis()
+            val currentTime = dateTimeProvider.currentTimeMillis()
             shouldSendGenerally() && when (event) {
                 Event.GrowthData.ConversionEvent1 -> {
-                    currentTime.duringFirstMonth() &&
+                    installAge.isDuringFirstMonth(currentTime) &&
                             !settings.setAsDefaultGrowthSent &&
                             checkDefaultBrowser()
                 }
 
                 Event.GrowthData.ConversionEvent2 -> {
-                    currentTime.afterFirstDay() &&
-                            currentTime.duringFirstMonth() &&
-                            settings.resumeGrowthLastSent.hasBeenMoreThanDaySince()
+                    isInsideGrowthTrackingPeriod(currentTime) &&
+                        hasBeenMoreThanDaySince(settings.resumeGrowthLastSent)
                 }
 
                 Event.GrowthData.ConversionEvent3 -> {
-                    currentTime.afterFirstDay() &&
-                            currentTime.duringFirstMonth() &&
-                            settings.uriLoadGrowthLastSent.hasBeenMoreThanDaySince()
+                    isInsideGrowthTrackingPeriod(currentTime) &&
+                        hasBeenMoreThanDaySince(settings.uriLoadGrowthLastSent)
                 }
 
                 Event.GrowthData.ConversionEvent4 -> {
-                    currentTime.duringFirstWeek() &&
+                    installAge.isDuringFirstWeek(currentTime) &&
                             !settings.firstWeekSeriesGrowthSent &&
                             hasBeenActiveThreeDaysInFirstWeek()
                 }
 
                 Event.GrowthData.ConversionEvent5 -> {
-                    currentTime.duringFirstMonth() && !settings.adClickGrowthSent
+                    installAge.isDuringFirstMonth(currentTime) && !settings.adClickGrowthSent
                 }
 
                 Event.GrowthData.ConversionEvent6 -> {
@@ -105,7 +103,7 @@ internal class DefaultMetricsStorage(
                 }
 
                 is Event.GrowthData.ConversionEvent7 -> {
-                    currentTime.duringFirstWeek() &&
+                    installAge.isDuringFirstWeek(currentTime) &&
                             !settings.growthUserActivatedSent &&
                             settings.growthEarlySearchUsed &&
                             hasBeenActiveThreeDaysInFirstWeek()
@@ -144,11 +142,11 @@ internal class DefaultMetricsStorage(
             }
 
             Event.GrowthData.ConversionEvent2 -> {
-                settings.resumeGrowthLastSent = System.currentTimeMillis()
+                settings.resumeGrowthLastSent = dateTimeProvider.currentTimeMillis()
             }
 
             Event.GrowthData.ConversionEvent3 -> {
-                settings.uriLoadGrowthLastSent = System.currentTimeMillis()
+                settings.uriLoadGrowthLastSent = dateTimeProvider.currentTimeMillis()
             }
 
             Event.GrowthData.ConversionEvent4 -> {
@@ -195,12 +193,13 @@ internal class DefaultMetricsStorage(
     }
 
     override fun tryRegisterAsUsageRecorder(application: Application) {
+        val currentTime = dateTimeProvider.currentTimeMillis()
         // Currently there is only interest in measuring usage during the first day of install.
-        if (!settings.usageTimeGrowthSent && System.currentTimeMillis().duringFirstDay()) {
+        if (!settings.usageTimeGrowthSent && installAge.isDuringFirstDay(currentTime)) {
             application.registerActivityLifecycleCallbacks(
                 FirstDayUsageRecorder(
                     this,
-                    duringFirstDay = { duringFirstDay() },
+                    duringFirstDay = { installAge.isDuringFirstDay(this) },
                 ),
             )
         }
@@ -214,7 +213,7 @@ internal class DefaultMetricsStorage(
         val daysOfUse = settings.firstWeekDaysOfUseGrowthData
         val currentDate = Calendar.getInstance(Locale.US)
         val currentDateString = dateFormatter.format(currentDate.time)
-        if (currentDate.timeInMillis.duringFirstWeek() && daysOfUse.none { it == currentDateString }) {
+        if (installAge.isDuringFirstWeek(currentDate.timeInMillis) && daysOfUse.none { it == currentDateString }) {
             settings.firstWeekDaysOfUseGrowthData = daysOfUse + currentDateString
         }
     }
@@ -243,12 +242,12 @@ internal class DefaultMetricsStorage(
         firstWeekDaysOfUse: Set<String>,
         eventSent: Boolean,
     ): Boolean = Result.runCatching {
-        if (!currentTime.duringFirst7Days() || eventSent) {
+        if (!installAge.isDuringFirst7Days(currentTime) || eventSent) {
             return false
         }
 
         return firstWeekDaysOfUse.toTimestamps().any { date ->
-            date.duringLastThreeDays()
+            installAge.isDuringLastThreeDays(date)
         }
     }.getOrDefault(false)
 
@@ -258,7 +257,7 @@ internal class DefaultMetricsStorage(
         firstWeekDaysOfUse: Set<String>,
         eventSent: Boolean,
     ): Boolean = Result.runCatching {
-        if (!currentTime.duringFirst7Days() || eventSent) {
+        if (!installAge.isDuringFirst7Days(currentTime) || eventSent) {
             return false
         }
 
@@ -275,7 +274,7 @@ internal class DefaultMetricsStorage(
         isBrowserSetToDefaultDuringFirstFourDays: Boolean =
             settings.firstWeekPostInstallIsBrowserSetToDefaultDuringFirstFourDays,
     ): Boolean = Result.runCatching {
-        if (!currentTime.duringFirst7Days() || eventSent) {
+        if (!installAge.isDuringFirst7Days(currentTime) || eventSent) {
             return false
         }
 
@@ -285,7 +284,7 @@ internal class DefaultMetricsStorage(
         )
 
         val isAllWeekActive = firstWeekDaysOfUse.toTimestamps().count { date ->
-            date.duringFirst7Days()
+            installAge.isDuringFirst7Days(date)
         } == NUMBER_OF_DAYS_IN_A_WEEK
 
         return isBrowserSetToDefaultDuringFirstFourDays && isAllWeekActive
@@ -294,12 +293,12 @@ internal class DefaultMetricsStorage(
     @VisibleForTesting
     internal fun activeInFirstPartOfTheWeek(firstWeekDaysOfUse: Set<String>): Boolean =
         firstWeekDaysOfUse.toTimestamps()
-            .count { date -> date.duringFirstFourDays() } >= MINIMUM_ACTIVE_DAYS_FOR_RECURRENT_ACTIVITY
+            .count { date -> installAge.isDuringFirstFourDays(date) } >= MINIMUM_ACTIVE_DAYS_FOR_RECURRENT_ACTIVITY
 
     @VisibleForTesting
     internal fun activeInLastPartOfTheWeek(firstWeekDaysOfUse: Set<String>): Boolean =
         firstWeekDaysOfUse.toTimestamps()
-            .count { date -> date.duringLastThreeDays() } >= MINIMUM_ACTIVE_DAYS_FOR_RECURRENT_ACTIVITY
+            .count { date -> installAge.isDuringLastThreeDays(date) } >= MINIMUM_ACTIVE_DAYS_FOR_RECURRENT_ACTIVITY
 
     @VisibleForTesting
     internal fun updateIsDefaultBrowserDuringFirstFourDays(
@@ -309,7 +308,7 @@ internal class DefaultMetricsStorage(
     ) {
         val shouldUpdate = !isDefaultBrowserDuringFirstFourDay &&
                 isDefaultBrowser &&
-                currentTime.duringFirstFourDays()
+                installAge.isDuringFirstFourDays(currentTime)
 
         if (shouldUpdate) {
             settings.firstWeekPostInstallIsBrowserSetToDefaultDuringFirstFourDays = true
@@ -324,39 +323,19 @@ internal class DefaultMetricsStorage(
         calendar.timeInMillis = this
     }
 
-    private fun Long.hasBeenMoreThanDaySince() = System.currentTimeMillis() - this > DAY_MILLIS
-
-    private fun Long.afterFirstDay() = this > getInstalledTime() + DAY_MILLIS
-
-    private fun Long.duringFirstDay() = this < getInstalledTime() + DAY_MILLIS
-
-    private fun Long.afterThirdDay() = this > getInstalledTime() + THREE_DAY_MILLIS
-
-    private fun Long.afterFourthDay() = this >= getInstalledTimeToMidnight() + FOUR_DAY_MILLIS
-
-    private fun Long.duringLastThreeDays() = this.afterFourthDay() && this.duringFirst7Days()
-
-    private fun Long.duringFirstFourDays() = this < getInstalledTimeToMidnight() + FOUR_DAY_MILLIS
-
-    private fun Long.duringFirstWeek() = this < getInstalledTime() + FULL_WEEK_MILLIS
-
-    private fun Long.duringFirst7Days() = this < getInstalledTimeToMidnight() + SEVEN_DAYS_MILLIS
-
-    private fun Long.duringFirstMonth() = this < getInstalledTime() + SHORTEST_MONTH_MILLIS
-
-    private fun getInstalledTimeToMidnight() = getInstalledTime().toMidnight()
-
-    private fun Long.toMidnight(): Long = this.toCalendar().apply {
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }.timeInMillis
+    private fun hasBeenMoreThanDaySince(lastSentTimestamp: Long): Boolean {
+        return (dateTimeProvider.currentTimeMillis() - lastSentTimestamp) >= DAY_MILLIS
+    }
 
     private fun shouldUpdateSearchUsage(): Boolean {
-        val currentTime = System.currentTimeMillis()
-        return currentTime.afterThirdDay() &&
-                currentTime.duringFirstWeek()
+        val currentTime = dateTimeProvider.currentTimeMillis()
+        return installAge.isAfterThirdDay(currentTime) &&
+            installAge.isDuringFirstWeek(currentTime)
+    }
+
+    private fun isInsideGrowthTrackingPeriod(currentTime: Long): Boolean {
+        return installAge.isAfterFirstDay(currentTime) &&
+            installAge.isDuringFirstMonth(currentTime)
     }
 
     /**
@@ -389,17 +368,7 @@ internal class DefaultMetricsStorage(
 
     companion object {
         private const val DAY_MILLIS: Long = 1000 * 60 * 60 * 24
-        private const val THREE_DAY_MILLIS: Long = 3 * DAY_MILLIS
-        private const val FOUR_DAY_MILLIS: Long = 4 * DAY_MILLIS
-        private const val SHORTEST_MONTH_MILLIS: Long = DAY_MILLIS * 28
-
         private const val MINIMUM_DAYS_IN_FIRST_WEEK_SERIES = 3
-
-        // Note this is 8 so that recording of FirstWeekSeriesActivity happens throughout the length
-        // of the 7th day after install
-        private const val FULL_WEEK_MILLIS: Long = DAY_MILLIS * 8
-
-        private const val SEVEN_DAYS_MILLIS: Long = DAY_MILLIS * 7
 
         // Minimum active days required for recurrent activity.
         private const val MINIMUM_ACTIVE_DAYS_FOR_RECURRENT_ACTIVITY = 2
