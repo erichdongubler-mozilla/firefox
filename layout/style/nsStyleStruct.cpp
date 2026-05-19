@@ -2572,6 +2572,13 @@ nsChangeHint nsStyleDisplay::CalcDifference(
       // Here only whether we have a 'clip' changes, so just repaint and
       // update our overflow areas in that case.
       hint |= nsChangeHint_UpdateOverflow | nsChangeHint_RepaintFrame;
+      // For the root element, 'visible' and 'clip' propagate to the viewport
+      // as 'auto' and 'hidden' respectively (see
+      // https://drafts.csswg.org/css-overflow/#overflow-propagation), so the
+      // viewport's scrollbar state must be re-evaluated.
+      if (aOldStyle.IsRootElementStyle()) {
+        hint |= nsChangeHint_ScrollbarChange;
+      }
     }
   }
 
