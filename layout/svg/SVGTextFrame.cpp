@@ -3600,7 +3600,8 @@ float SVGTextFrame::GetComputedTextLength(
   TextRenderedRunIterator it(
       this, TextRenderedRunIterator::RenderedRunFilter::AllFrames, aElement);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
-    length += run.GetAdvanceWidth();
+    length +=
+        run.GetAdvanceWidth() / run.mFrame->Style()->EffectiveZoom().ToFloat();
   }
 
   return PresContext()->AppUnitsToGfxUnits(length) * cssPxPerDevPx *
@@ -3763,7 +3764,8 @@ float SVGTextFrame::GetSubStringLengthFastPath(
       Range range = ConvertOriginalToSkipped(it, offset, trimmedLength);
 
       // Accumulate the advance.
-      textLength += textRun->GetAdvanceWidth(range, &provider);
+      textLength += textRun->GetAdvanceWidth(range, &provider) /
+                    frame->Style()->EffectiveZoom().ToFloat();
     }
 
     // Advance, ready for next call:
@@ -3831,7 +3833,8 @@ float SVGTextFrame::GetSubStringLengthSlowFallback(
       Range range = ConvertOriginalToSkipped(it, offset, length);
 
       // Accumulate the advance.
-      textLength += textRun->GetAdvanceWidth(range, &provider);
+      textLength += textRun->GetAdvanceWidth(range, &provider) /
+                    run.mFrame->Style()->EffectiveZoom().ToFloat();
     }
 
     run = runIter.Next();
@@ -3862,7 +3865,7 @@ int32_t SVGTextFrame::GetCharNumAtPosition(dom::SVGTextContentElement* aElement,
 
   nsPresContext* context = PresContext();
 
-  gfxPoint p = ThebesPoint(aPoint);
+  gfxPoint p = ThebesPoint(aPoint) * dom::UserSpaceMetrics::GetZoom(aElement);
 
   int32_t result = -1;
 
@@ -3908,7 +3911,9 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetStartPositionOfChar(
   // We need to return the start position of the whole glyph.
   uint32_t startIndex = it.GlyphStartTextElementCharIndex();
 
-  return MakeAndAddRef<DOMSVGPoint>(ToPoint(mPositions[startIndex].mPosition));
+  return MakeAndAddRef<DOMSVGPoint>(
+      ToPoint(mPositions[startIndex].mPosition) /
+      it.GetTextFrame()->Style()->EffectiveZoom().ToFloat());
 }
 
 /**
@@ -3992,6 +3997,7 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetEndPositionOfChar(
 
   // We need to return the end position of the whole glyph.
   uint32_t startIndex = it.GlyphStartTextElementCharIndex();
+  float zoom = it.GetTextFrame()->Style()->EffectiveZoom().ToFloat();
 
   // Get the advance of the glyph.
   gfxFloat advance =
@@ -4009,7 +4015,7 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetEndPositionOfChar(
   Matrix m = Matrix::Rotation(mPositions[startIndex].mAngle) *
              Matrix::Translation(ToPoint(mPositions[startIndex].mPosition));
 
-  return MakeAndAddRef<DOMSVGPoint>(m.TransformPoint(p));
+  return MakeAndAddRef<DOMSVGPoint>(m.TransformPoint(p) / zoom);
 }
 
 /**
@@ -4077,6 +4083,7 @@ already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(
 
   // Transform the glyph's rect into user space.
   gfxRect r = m.TransformBounds(glyphRect);
+  r.Scale(1 / textFrame->Style()->EffectiveZoom().ToFloat());
 
   return MakeAndAddRef<SVGRect>(aElement, ToRect(r));
 }
