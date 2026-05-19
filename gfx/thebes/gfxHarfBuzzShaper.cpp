@@ -1107,6 +1107,19 @@ hb_position_t gfxHarfBuzzShaper::GetHKerning(uint16_t aFirstGlyph,
   return shaper->GetHKerning(first_glyph, second_glyph);
 }
 
+/* static */ hb_bool_t gfxHarfBuzzShaper::HBGetHExtents(
+    hb_font_t* font, void* font_data, hb_font_extents_t* extents,
+    void* user_data) {
+  const gfxHarfBuzzShaper* shaper =
+      static_cast<const gfxHarfBuzzShaper*>(font_data);
+  const gfxFont::Metrics& metrics =
+      shaper->GetFont()->GetMetrics(nsFontMetrics::eHorizontal);
+  extents->ascender = FloatToFixed(metrics.maxAscent);
+  extents->descender = -FloatToFixed(metrics.maxDescent);
+  extents->line_gap = FloatToFixed(metrics.externalLeading);
+  return true;
+}
+
 static void AddOpenTypeFeature(uint32_t aTag, uint32_t aValue, void* aUserArg) {
   nsTArray<hb_feature_t>* features =
       static_cast<nsTArray<hb_feature_t>*>(aUserArg);
@@ -1153,6 +1166,8 @@ bool gfxHarfBuzzShaper::Initialize() {
                                                nullptr, nullptr);
     hb_font_funcs_set_glyph_h_kerning_func(funcs, HBGetHKerning, nullptr,
                                            nullptr);
+    hb_font_funcs_set_font_h_extents_func(funcs, HBGetHExtents, nullptr,
+                                          nullptr);
     hb_font_funcs_make_immutable(funcs);
     return funcs;
   }();
@@ -1161,6 +1176,8 @@ bool gfxHarfBuzzShaper::Initialize() {
     auto* funcs = hb_font_funcs_create();
     hb_font_funcs_set_nominal_glyph_func(funcs, HBGetNominalGlyph, nullptr,
                                          nullptr);
+    hb_font_funcs_set_font_h_extents_func(funcs, HBGetHExtents, nullptr,
+                                          nullptr);
     hb_font_funcs_make_immutable(funcs);
     return funcs;
   }();
