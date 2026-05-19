@@ -11693,6 +11693,13 @@ StyleAlignmentBaseline nsIFrame::AlignmentBaseline() const {
     return ConvertSVGDominantBaselineToAlignmentBaseline(dominantBaseline);
   }
 
+  if (IsTableCellFrame()) {
+    // The alignment-baseline / vertical-align property on a table cell is used
+    // to align its children (see nsTableCellFrame::GetTableCellAlignment), but
+    // does not affect the alignment of the cell itself within its row.
+    return StyleAlignmentBaseline::Baseline;
+  }
+
   if (StyleDisplay()->mAlignmentBaseline == StyleAlignmentBaseline::Baseline) {
     // The CSS Inline Layout specification says `alignment-baseline: baseline`
     // uses the dominant baseline choice of the parent.

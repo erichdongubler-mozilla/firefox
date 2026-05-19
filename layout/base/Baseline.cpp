@@ -56,16 +56,43 @@ static nscoord SynthesizeBOffsetFromInnerBox(const nsIFrame* aFrame,
     MOZ_CRASH();
   })();
 
-  if (aWM.IsCentralBaseline()) {
-    nscoord boxBSize = aFrame->BSize(aWM) + bp.BStartEnd(aWM);
-    nscoord halfBoxBSize = (boxBSize / 2) + (boxBSize % 2);
-    return aWM.IsLineInverted() ? -bp.BEnd(aWM) + halfBoxBSize
-                                : -bp.BStart(aWM) + halfBoxBSize;
+  StyleAlignmentBaseline baseline = aFrame->AlignmentBaseline();
+  if (baseline == StyleAlignmentBaseline::Baseline) {
+    baseline = aWM.IsCentralBaseline() ? StyleAlignmentBaseline::Central
+                                       : StyleAlignmentBaseline::Alphabetic;
   }
 
-  return aWM.IsLineInverted()
-             ? ComputeBStartOffset(aWM, aGroup, aFrame->BSize(aWM), bp)
-             : ComputeBEndOffset(aWM, aGroup, aFrame->BSize(aWM), bp);
+  BaselineSharingGroup group = aGroup;
+  if (aWM.IsLineInverted()) {
+    group = GetOppositeBaselineSharingGroup(aGroup);
+  }
+
+  // Synthesize the inline baseline for an atomic inline from its margin box.
+  // See: https://www.w3.org/TR/css-inline-3/#baseline-synthesis-box
+  switch (baseline) {
+    case StyleAlignmentBaseline::Baseline:
+      MOZ_ASSERT_UNREACHABLE("Baseline is already handled");
+      [[fallthrough]];
+
+    default:
+    case StyleAlignmentBaseline::Alphabetic:
+    case StyleAlignmentBaseline::Ideographic:
+    case StyleAlignmentBaseline::TextBottom:
+      return ComputeBEndOffset(aWM, group, aFrame->BSize(aWM), bp);
+
+    case StyleAlignmentBaseline::Central:
+    case StyleAlignmentBaseline::Mathematical:
+    case StyleAlignmentBaseline::Middle: {
+      nscoord boxBSize = aFrame->BSize(aWM) + bp.BStartEnd(aWM);
+      nscoord halfBoxBSize = (boxBSize / 2) + (boxBSize % 2);
+      return aWM.IsLineInverted() ? -bp.BEnd(aWM) + halfBoxBSize
+                                  : -bp.BStart(aWM) + halfBoxBSize;
+    }
+
+    case StyleAlignmentBaseline::Hanging:
+    case StyleAlignmentBaseline::TextTop:
+      return ComputeBStartOffset(aWM, group, aFrame->BSize(aWM), bp);
+  }
 }
 
 nscoord Baseline::SynthesizeBOffsetFromContentBox(const nsIFrame* aFrame,
