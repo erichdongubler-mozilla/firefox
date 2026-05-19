@@ -322,14 +322,15 @@ void AnimationEffect::GetComputedTimingAsDict(
   // Specified timing
   GetEffectTimingDictionary(SpecifiedTiming(), aRetVal);
 
-  // Computed timing
+  // Computed timing. For progress-based timelines, use the normalized timing
+  // so duration/endTime reflect the timeline's progress range (100%).
   double playbackRate = mAnimation ? mAnimation->PlaybackRateInternal() : 1;
   const Nullable<TimeDuration> currentTime = GetLocalTime();
   const auto progressTimelinePosition =
       mAnimation ? mAnimation->AtProgressTimelineBoundary()
                  : Animation::ProgressTimelinePosition::NotBoundary;
   ComputedTiming computedTiming = GetComputedTimingAt(
-      currentTime, SpecifiedTiming(), playbackRate, progressTimelinePosition);
+      currentTime, NormalizedTiming(), playbackRate, progressTimelinePosition);
 
   aRetVal.mDuration.SetAsUnrestrictedDouble() =
       computedTiming.mDuration.ToMilliseconds();
