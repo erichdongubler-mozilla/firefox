@@ -168,7 +168,11 @@ class Assembler : public AssemblerShared,
   CompactBufferWriter dataRelocations_;
   Buffer m_buffer;
   bool isFinished = false;
-  Instruction* editSrc(BufferOffset bo) { return m_buffer.getInst(bo); }
+
+  // Return the Instruction at a given byte offset.
+  Instruction* getInstructionAt(BufferOffset offset) {
+    return m_buffer.getInst(offset);
+  }
 
   struct RelativePatch {
     // the offset within the code buffer where the value is loaded that
@@ -413,11 +417,9 @@ class Assembler : public AssemblerShared,
     MOZ_ASSERT(hasCreator());
     BufferOffset offset = m_buffer.putInt(x);
 #if (defined(DEBUG) || defined(JS_JITSPEW)) && defined(JS_DISASM_RISCV64)
-    if (!oom()) {
-      DEBUG_PRINTF(
-          "0x%" PRIx64 "(%" PRIxPTR "):",
-          (uint64_t)editSrc(BufferOffset(currentOffset() - sizeof(Instr))),
-          currentOffset() - sizeof(Instr));
+    if (offset.assigned()) {
+      DEBUG_PRINTF("0x%" PRIx64 "(%x):", uint64_t(getInstructionAt(offset)),
+                   unsigned(offset.getOffset()));
       disassembleInstr(x, JitSpewEnabled(JitSpew_Codegen));
     }
 #endif
@@ -426,29 +428,33 @@ class Assembler : public AssemblerShared,
   virtual BufferOffset emit(ShortInstr x) { MOZ_CRASH(); }
   virtual BufferOffset emit(uint64_t x) { MOZ_CRASH(); }
   virtual BufferOffset emit(uint32_t x) {
-    DEBUG_PRINTF(
-        "0x%" PRIx64 "(%" PRIxPTR "): uint32_t: %" PRId32 "\n",
-        (uint64_t)editSrc(BufferOffset(currentOffset() - sizeof(Instr))),
-        currentOffset() - sizeof(Instr), x);
-    return m_buffer.putInt(x);
+    BufferOffset offset = m_buffer.putInt(x);
+    if (offset.assigned()) {
+      DEBUG_PRINTF("0x%" PRIx64 "(%x): uint32_t: %" PRId32 "\n",
+                   uint64_t(getInstructionAt(offset)),
+                   unsigned(offset.getOffset()), x);
+    }
+    return offset;
   }
 
   void putInstrAt(BufferOffset offset, Instr instr) {
+    Instruction* inst = getInstructionAt(offset);
+
 #ifdef JS_DISASM_RISCV64
     DEBUG_PRINTF("\t[putInstrAt\n");
-    DEBUG_PRINTF("\t%p %d \n\t", editSrc(offset), offset.getOffset());
-    disassembleInstr(editSrc(offset)->InstructionBits());
+    DEBUG_PRINTF("\t%p %d \n\t", inst, offset.getOffset());
+    disassembleInstr(inst->InstructionBits());
     DEBUG_PRINTF("\t");
-    *reinterpret_cast<Instr*>(editSrc(offset)) = instr;
-    disassembleInstr(editSrc(offset)->InstructionBits());
+    inst->SetInstructionBits(instr);
+    disassembleInstr(inst->InstructionBits());
     DEBUG_PRINTF("\t]\n");
 #else
     DEBUG_PRINTF(
         "\t[putInstrAt\n"
         "\t%p %d \n\t"
         "\t]\n",
-        editSrc(offset), offset.getOffset());
-    *reinterpret_cast<Instr*>(editSrc(offset)) = instr;
+        inst, offset.getOffset());
+    inst->SetInstructionBits(instr);
 #endif /* JS_DISASM_RISCV64 */
   }
 

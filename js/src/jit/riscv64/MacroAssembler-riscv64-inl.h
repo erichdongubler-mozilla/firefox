@@ -1900,10 +1900,8 @@ void MacroAssembler::orPtr(Imm32 imm, Register src, Register dest) {
 void MacroAssembler::patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) {
   DEBUG_PRINTF("patchSub32FromStackPtr at offset %zu with immediate %d\n",
                offset.offset(), imm.value);
-  Instruction* inst0 =
-      (Instruction*)m_buffer.getInst(BufferOffset(offset.offset()));
-  Instruction* inst1 =
-      (Instruction*)m_buffer.getInst(BufferOffset(offset.offset() + 4));
+  Instruction* inst0 = getInstructionAt(BufferOffset(offset.offset()));
+  Instruction* inst1 = getInstructionAt(BufferOffset(offset.offset() + 4));
   MOZ_ASSERT(IsLui(*reinterpret_cast<Instr*>(inst0)));
   MOZ_ASSERT(IsAddi(*reinterpret_cast<Instr*>(inst1)));
 

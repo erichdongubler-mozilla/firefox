@@ -916,12 +916,12 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
   if (m_buffer.oom()) {
     return true;
   }
-  DEBUG_PRINTF("\tjumpChainPutTargetAt: %p (%d) to %p (%d)\n",
-               reinterpret_cast<Instr*>(editSrc(pos)), pos.getOffset(),
-               reinterpret_cast<Instr*>(editSrc(pos)) + target_pos.getOffset() -
-                   pos.getOffset(),
+
+  Instruction* instruction = getInstructionAt(pos);
+  DEBUG_PRINTF("\tjumpChainPutTargetAt: %p (%d) to %p (%d)\n", instruction,
+               pos.getOffset(),
+               instruction + target_pos.getOffset() - pos.getOffset(),
                target_pos.getOffset());
-  Instruction* instruction = editSrc(pos);
   Instr instr = instruction->InstructionBits();
   switch (instruction->InstructionOpcodeType()) {
     case BRANCH: {
@@ -941,13 +941,13 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
       putInstrAt(pos, instr);
     } break;
     case LUI: {
-      jumpChainSetTargetValueAt(
-          instruction, reinterpret_cast<uintptr_t>(editSrc(target_pos)));
+      jumpChainSetTargetValueAt(instruction, reinterpret_cast<uintptr_t>(
+                                                 getInstructionAt(target_pos)));
     } break;
     case AUIPC: {
       Instr instr_auipc = instr;
-      Instr instr_I =
-          editSrc(BufferOffset(pos.getOffset() + 4))->InstructionBits();
+      Instr instr_I = getInstructionAt(BufferOffset(pos.getOffset() + 4))
+                          ->InstructionBits();
       MOZ_ASSERT(IsJalr(instr_I) || IsAddi(instr_I));
 
       intptr_t offset = target_pos.getOffset() - pos.getOffset();
@@ -961,8 +961,9 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
         putInstrAt(BufferOffset(pos.getOffset() + 4), kNopByte);
       } else {
         MOZ_RELEASE_ASSERT(is_int32(offset + 0x800));
-        MOZ_ASSERT(instruction->RdValue() ==
-                   editSrc(BufferOffset(pos.getOffset() + 4))->Rs1Value());
+        MOZ_ASSERT(
+            instruction->RdValue() ==
+            getInstructionAt(BufferOffset(pos.getOffset() + 4))->Rs1Value());
         int32_t Hi20 = (((int32_t)offset + 0x800) >> 12);
         int32_t Lo12 = (int32_t)offset << 20 >> 20;
 
@@ -989,10 +990,10 @@ int Assembler::jumpChainTargetAt(BufferOffset pos, bool is_internal) {
   if (oom()) {
     return kEndOfChain;
   }
-  Instruction* instruction = editSrc(pos);
+  Instruction* instruction = getInstructionAt(pos);
   Instruction* instruction2 = nullptr;
   if (IsAuipc(instruction->InstructionBits())) {
-    instruction2 = editSrc(BufferOffset(pos.getOffset() + kInstrSize));
+    instruction2 = getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
   }
   return jumpChainTargetAt(instruction, pos, is_internal, instruction2);
 }
@@ -1109,15 +1110,16 @@ void Assembler::bind(Label* label, BufferOffset boff) {
           "currOffset: %d\n",
           label, fixup_pos, next, dest.getOffset(), dist,
           nextOffset().getOffset(), currentOffset());
-      Instr instr = editSrc(b)->InstructionBits();
+      Instr instr = getInstructionAt(b)->InstructionBits();
       if (IsBranch(instr)) {
         if (!is_intn(dist, kBranchOffsetBits)) {
           MOZ_ASSERT(next != LabelBase::INVALID_OFFSET);
           MOZ_RELEASE_ASSERT(
               is_intn(static_cast<int>(next) - fixup_pos, kJumpOffsetBits));
-          MOZ_ASSERT(IsAuipc(editSrc(BufferOffset(next))->InstructionBits()));
           MOZ_ASSERT(
-              IsJalr(editSrc(BufferOffset(next + 4))->InstructionBits()));
+              IsAuipc(getInstructionAt(BufferOffset(next))->InstructionBits()));
+          MOZ_ASSERT(IsJalr(
+              getInstructionAt(BufferOffset(next + 4))->InstructionBits()));
           DEBUG_PRINTF("\t\ttrampolining: %d\n", next);
         } else {
           jumpChainPutTargetAt(b, dest);
@@ -1130,9 +1132,10 @@ void Assembler::bind(Label* label, BufferOffset boff) {
           MOZ_ASSERT(next != LabelBase::INVALID_OFFSET);
           MOZ_RELEASE_ASSERT(
               is_intn(static_cast<int>(next) - fixup_pos, kJumpOffsetBits));
-          MOZ_ASSERT(IsAuipc(editSrc(BufferOffset(next))->InstructionBits()));
           MOZ_ASSERT(
-              IsJalr(editSrc(BufferOffset(next + 4))->InstructionBits()));
+              IsAuipc(getInstructionAt(BufferOffset(next))->InstructionBits()));
+          MOZ_ASSERT(IsJalr(
+              getInstructionAt(BufferOffset(next + 4))->InstructionBits()));
           DEBUG_PRINTF("\t\ttrampolining: %d\n", next);
         } else {
           jumpChainPutTargetAt(b, dest);
