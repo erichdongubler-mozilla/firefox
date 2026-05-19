@@ -860,7 +860,12 @@ private fun waitForPopupToDismiss(composeTestRule: ComposeTestRule, timeoutMs: L
  * here prevents the IME animation from dismissing a dropdown popup that opens immediately after.
  */
 private fun waitForKeyboardDismiss(timeoutMs: Long = 15000L) {
+    Log.i(TAG, "waitForKeyboardDismiss: Trying to close the soft keyboard")
     closeSoftKeyboard()
+    Log.i(TAG, "waitForKeyboardDismiss: Successfully closed the soft keyboard")
+
+    waitForAppWindowToBeUpdated()
+
     val startTime = SystemClock.elapsedRealtime()
     var polled = 0
     while (SystemClock.elapsedRealtime() - startTime < timeoutMs) {
