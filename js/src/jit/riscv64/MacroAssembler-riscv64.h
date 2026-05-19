@@ -119,9 +119,7 @@ class MacroAssemblerRiscv64 : public Assembler {
   int32_t GetOffset(int32_t offset, Label* L, OffsetSize bits);
 
   inline void GenPCRelativeJump(Register rd, int32_t imm32) {
-    MOZ_ASSERT(is_int32(imm32 + 0x800));
-    int32_t Hi20 = ((imm32 + 0x800) >> 12);
-    int32_t Lo12 = imm32 << 20 >> 20;
+    auto [Hi20, Lo12] = ToHigh20Low12(imm32);
     auipc(rd, Hi20);  // Read PC + Hi20 into scratch.
     jr(rd, Lo12);     // jump PC + Hi20 + Lo12
   }

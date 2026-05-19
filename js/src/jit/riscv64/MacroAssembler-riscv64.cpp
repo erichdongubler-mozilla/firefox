@@ -3896,8 +3896,7 @@ CodeOffset MacroAssembler::callWithPatch() {
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   int32_t imm32 = 1 * sizeof(uint32_t);
-  int32_t Hi20 = ((imm32 + 0x800) >> 12);
-  int32_t Lo12 = imm32 << 20 >> 20;
+  auto [Hi20, Lo12] = ToHigh20Low12(imm32);
   auipc(scratch, Hi20);  // Read PC + Hi20 into scratch.
   jalr(scratch, Lo12);   // jump PC + Hi20 + Lo12
   DEBUG_PRINTF("\tret %d\n", currentOffset());
@@ -3930,8 +3929,7 @@ void MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset) {
     MOZ_ASSERT(jalr_->IsJalr() && auipc_->IsAuipc());
     MOZ_ASSERT(auipc_->RdValue() == jalr_->Rs1Value());
 
-    int32_t Hi20 = (((int32_t)offset + 0x800) >> 12);
-    int32_t Lo12 = (int32_t)offset << 20 >> 20;
+    auto [Hi20, Lo12] = ToHigh20Low12(offset);
 
     auipc_->SetImm20UValue(Hi20);
     jalr_->SetImm12Value(Lo12);
@@ -4862,9 +4860,7 @@ CodeOffset MacroAssembler::wasmMarkedSlowCall(const wasm::CallSiteDesc& desc,
 // Assembler::bind), or during execution (eg. jit::PatchJump).
 void MacroAssemblerRiscv64::ma_liPatchable(Register dest, Imm32 imm) {
   m_buffer.ensureSpace(2 * sizeof(uint32_t));
-  int64_t value = imm.value;
-  int64_t high_20 = ((value + 0x800) >> 12);
-  int64_t low_12 = value << 52 >> 52;
+  auto [high_20, low_12] = ToHigh20Low12(imm.value);
   lui(dest, high_20);
   addi(dest, dest, low_12);
 }
@@ -7102,9 +7098,7 @@ void MacroAssemblerRiscv64::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
 
 void MacroAssemblerRiscv64::GenPCRelativeJumpAndLink(Register rd,
                                                      int32_t imm32) {
-  MOZ_ASSERT(is_int32(imm32 + 0x800));
-  int32_t Hi20 = ((imm32 + 0x800) >> 12);
-  int32_t Lo12 = imm32 << 20 >> 20;
+  auto [Hi20, Lo12] = ToHigh20Low12(imm32);
   auipc(rd, Hi20);  // Read PC + Hi20 into scratch.
   jalr(rd, Lo12);   // jump PC + Hi20 + Lo12
 }

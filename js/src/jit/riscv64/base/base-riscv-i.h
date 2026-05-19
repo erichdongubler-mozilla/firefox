@@ -155,8 +155,9 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
   void jalr(Register rs, int32_t imm12) { jalr(ra, rs, imm12); }
   void jalr(Register rs) { jalr(ra, rs, 0); }
   void call(int32_t offset) {
-    auipc(ra, (offset >> 12) + ((offset & 0x800) >> 11));
-    jalr(ra, ra, offset << 20 >> 20);
+    auto [high20, low12] = ToHigh20Low12(offset);
+    auipc(ra, high20);
+    jalr(ra, ra, low12);
   }
 
   void mv(Register rd, Register rs) { addi(rd, rs, 0); }

@@ -226,8 +226,7 @@ void Assembler::GeneralLi(Register rd, int64_t imm) {
   // to the upper part built in rd.
   if (is_int32(imm + 0x800)) {
     // 32-bit case. Maximum of 2 instructions generated
-    int64_t high_20 = ((imm + 0x800) >> 12);
-    int64_t low_12 = imm << 52 >> 52;
+    auto [high_20, low_12] = ToHigh20Low12(int32_t(imm));
     if (high_20) {
       lui(rd, (int32_t)high_20);
       if (low_12) {
@@ -365,8 +364,7 @@ int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
   // imitate Assembler::RV_li
   if (is_int32(imm + 0x800)) {
     // 32-bit case. Maximum of 2 instructions generated
-    int64_t high_20 = ((imm + 0x800) >> 12);
-    int64_t low_12 = imm << 52 >> 52;
+    auto [high_20, low_12] = ToHigh20Low12(int32_t(imm));
     if (high_20) {
       count++;
       if (low_12) {
@@ -918,11 +916,8 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos,
       MOZ_ASSERT(instruction2->IsJalr() || instruction2->IsAddi());
       MOZ_ASSERT(instruction->RdValue() == instruction2->Rs1Value());
 
-      intptr_t offset = target_pos.getOffset() - pos.getOffset();
-      MOZ_RELEASE_ASSERT(is_int32(offset + 0x800));
-
-      int32_t Hi20 = (((int32_t)offset + 0x800) >> 12);
-      int32_t Lo12 = (int32_t)offset << 20 >> 20;
+      int32_t offset = target_pos.getOffset() - pos.getOffset();
+      auto [Hi20, Lo12] = ToHigh20Low12(offset);
 
       instruction->SetImm20UValue(Hi20);
       instruction2->SetImm12Value(Lo12);
@@ -1602,8 +1597,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
     dist = kEndOfJumpChain;
   }
 
-  int32_t Hi20 = (((int32_t)dist + 0x800) >> 12);
-  int32_t Lo12 = (int32_t)dist << 20 >> 20;
+  auto [Hi20, Lo12] = ToHigh20Low12(dist);
 
   // Insert veneer as a long jump.
   veneerInst_1->SetUFormat(RO_AUIPC, t6.code(), Hi20);

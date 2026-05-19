@@ -68,6 +68,21 @@ typedef FloatRegister FPURegister;
 int ToNumber(Register reg);
 Register ToRegister(uint32_t num);
 
+struct High20Low12 {
+  int32_t high20;
+  int32_t low12;
+};
+
+constexpr auto ToHigh20Low12(int32_t imm) {
+  // Cast |imm| to int64 to avoid arithmetic overflow when adding 0x800.
+  int64_t value = imm;
+  return High20Low12{
+      // NB: Bit-and with 0xFFFFF keeps the generated assembly code smaller.
+      .high20 = int32_t(((value + 0x800) >> 12) & 0xFFFFF),
+      .low12 = int32_t(value << 52 >> 52),
+  };
+}
+
 class AssemblerRiscvBase {
  protected:
   virtual int32_t branchOffsetHelper(Label* L, OffsetSize bits) = 0;
