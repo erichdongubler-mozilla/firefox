@@ -777,23 +777,20 @@ void PointerEventHandler::SynthesizeMoveToDispatchBoundaryEvents(
 
 /* static */
 void PointerEventHandler::ImplicitlyCapturePointer(nsIFrame* aFrame,
-                                                   WidgetEvent* aEvent) {
-  MOZ_ASSERT(aEvent->mMessage == ePointerDown);
+                                                   const WidgetEvent& aEvent) {
+  MOZ_ASSERT(aEvent.mMessage == ePointerDown);
   if (!aFrame || !IsPointerEventImplicitCaptureForTouchEnabled()) {
     return;
   }
-  WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
+  const WidgetPointerEvent* pointerEvent = aEvent.AsPointerEvent();
   NS_WARNING_ASSERTION(pointerEvent,
                        "Call ImplicitlyCapturePointer with non-pointer event");
   if (!pointerEvent->mFromTouchEvent) {
     // We only implicitly capture the pointer for touch device.
     return;
   }
-  nsIContent* target = aFrame->GetContentForEvent(aEvent);
-  while (target && !target->IsElement()) {
-    target = target->GetParent();
-  }
-  if (NS_WARN_IF(!target)) {
+  nsIContent* target = aFrame->GetEventTargetContent(aEvent);
+  if (NS_WARN_IF(!target) || NS_WARN_IF(!target->IsElement())) {
     return;
   }
   RequestPointerCaptureById(pointerEvent->pointerId, target->AsElement());
@@ -1154,11 +1151,15 @@ nsresult PointerEventHandler::DispatchPointerEventWithTarget(
   AutoWeakFrame targetWeakFrame(aTargetWeakFrame);
   nsCOMPtr<nsIContent> targetContent = aTargetContent;
   if (targetWeakFrame) {
+    // FIXME: bug 2035992
     MOZ_ASSERT_IF(
         targetContent,
-        targetContent == targetWeakFrame->GetContentForEvent(&aPointerEvent));
+        targetContent ==
+            targetWeakFrame->GetExplicitEventTargetContent(aPointerEvent));
     if (!targetContent) {
-      targetContent = targetWeakFrame->GetContentForEvent(&aPointerEvent);
+      // FIXME: bug 2035992
+      targetContent =
+          targetWeakFrame->GetExplicitEventTargetContent(aPointerEvent);
       if (NS_WARN_IF(!targetContent)) {
         return NS_ERROR_FAILURE;
       }
