@@ -3759,6 +3759,10 @@ class Document : public nsINode,
   already_AddRefed<nsRange> CaretRangeFromPoint(int32_t aX, int32_t aY);
 
   Element* GetScrollingElement();
+  // Like GetScrollingElement, but does not flush pending layout. Callers get
+  // an answer based on the current (possibly stale) frame state; if accuracy
+  // matters, callers should just call GetScrollingElement.
+  Element* GetScrollingElementNoFlush();
   // A way to check whether a given element is what would get returned from
   // GetScrollingElement.  It can be faster than comparing to the return value
   // of GetScrollingElement() due to being able to avoid flushes in various
@@ -4821,6 +4825,12 @@ class Document : public nsINode,
 
   // Helper for GetScrollingElement/IsScrollingElement.
   bool IsPotentiallyScrollable(HTMLBodyElement* aBody);
+
+  // Whether GetScrollingElementImpl / IsPotentiallyScrollableImpl should flush
+  // pending style and frame construction before answering.
+  enum class Flush : bool { No, Yes };
+  Element* GetScrollingElementImpl(Flush);
+  bool IsPotentiallyScrollableImpl(HTMLBodyElement* aBody, Flush);
 
   void MaybeAllowStorageForOpenerAfterUserInteraction();
 
