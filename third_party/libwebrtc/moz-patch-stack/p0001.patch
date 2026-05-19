@@ -1,470 +1,192 @@
-From: Byron Campen <docfaraday@gmail.com>
-Date: Tue, 19 May 2026 18:14:40 -0500
-Subject: (tmp-cherry-pick) Revert "Extend IP normalization to handle various
- IPv4-embedding formats." (f97c6c86bb)
+From: Tommi <tommi@webrtc.org>
+Date: Thu, 16 Apr 2026 14:48:05 +0200
+Subject: (cherry-pick-branch-heads/7778) [M148] Allow signaled SSRCs to
+ override learned bindings in RtpDemuxer
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-This reverts commit 395e7f93121d7f129056a471644b9b901956f59a.
+Update RtpDemuxer to permit signaled SSRCs to override existing learned
+SSRC bindings. This prevents registration failures during session
+renegotiation when an SSRC, previously identified through payload type
+demuxing, is subsequently explicitly signaled.
 
-Reason for revert: Downstream was using 6to4 with local IP for tests.
+The demuxer now maintains a set of signaled SSRCs to differentiate
+explicit configurations from learned state. Conflict detection is
+modified to allow these overrides while maintaining strict checks
+between multiple signaled SSRCs. This ensures that explicit signaling
+always takes precedence over internally learned bindings, resolving
+routing issues during media stream updates.
 
-Original change's description:
-> Extend IP normalization to handle various IPv4-embedding formats.
->
-> This change introduces NormalizeWithCheckForEmbeddedIPv4Address() which
-> handles IPv4-mapped, IPv4-compatible (obsolete), NAT64 (RFC 6052),
-> 6to4 (RFC 3056), Teredo (RFC 4380), and ISATAP (RFC 5214) formats.
->
-> The IP classification functions (IPIsLoopback, IPIsLinkLocal, etc.)
-> are updated to use this more thorough normalization to ensure correct
-> identification of local and private addresses regardless of the
-> IPv6 embedding format used.
->
-> Original Normalized() is kept for backward compatibility and used by
-> VirtualSocketServer to maintain separation between native and mapped
-> address families.
->
-> In order to make the tests readable, win32.cc has been updated to
-> support several formats that inet_pton on linux did support, but
-> the special function in win32.cc did not support.
->
-> Bug: webrtc:497635018
-> Change-Id: I20fe73d77b9f7e534a76ba6f2f271ac3034f7046
-> Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/462843
-> Reviewed-by: Danil Chapovalov <danilchap@webrtc.org>
-> Commit-Queue: Harald Alvestrand <hta@webrtc.org>
-> Auto-Submit: Harald Alvestrand <hta@webrtc.org>
-> Commit-Queue: Danil Chapovalov <danilchap@webrtc.org>
-> Cr-Commit-Position: refs/heads/main@{#47424}
+(cherry picked from commit 186d42a3010981882a8679a145ce36aa84581c78)
 
-Bug: webrtc:497635018
-No-Presubmit: true
-No-Tree-Checks: true
-No-Try: true
-Change-Id: I29cf3c5b0b52cec62a22d02f9345e1db37356692
-Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464240
-Auto-Submit: Harald Alvestrand <hta@webrtc.org>
-Reviewed-by: Danil Chapovalov <danilchap@webrtc.org>
-Commit-Queue: Danil Chapovalov <danilchap@webrtc.org>
-Cr-Commit-Position: refs/heads/main@{#47429}
+Fixed: chromium:503666505
+Bug: webrtc:502130956
+Change-Id: I551c2b7ee5af18fc9792ee52be08c5349c20b641
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464220
+Reviewed-by: Harald Alvestrand <hta@webrtc.org>
+Commit-Queue: Tomas Gunnarsson <tommi@webrtc.org>
+Cr-Original-Commit-Position: refs/heads/main@{#47446}
+Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/464764
+Reviewed-by: Björn Terelius <terelius@webrtc.org>
+Cr-Commit-Position: refs/branch-heads/7778@{#2}
+Cr-Branched-From: ca896b7ffef011bbf6957c99d413c5aac602c99f-refs/heads/main@{#47319}
 ---
- rtc_base/ip_address.cc          |  80 ++++---------------------
- rtc_base/ip_address.h           |   5 --
- rtc_base/ip_address_unittest.cc | 100 --------------------------------
- rtc_base/win32.cc               |  56 +++++++++++-------
- 4 files changed, 46 insertions(+), 195 deletions(-)
+ call/rtp_demuxer.cc          | 22 +++++++---
+ call/rtp_demuxer.h           |  1 +
+ call/rtp_demuxer_unittest.cc | 83 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 101 insertions(+), 5 deletions(-)
 
-diff --git a/rtc_base/ip_address.cc b/rtc_base/ip_address.cc
-index f8f1588bcd..007f13e010 100644
---- a/rtc_base/ip_address.cc
-+++ b/rtc_base/ip_address.cc
-@@ -31,22 +31,13 @@
- namespace webrtc {
- 
- // Prefixes used for categorizing IPv6 addresses.
--// V4 mapped addresses are defined in RFC 4291 section 2.5.5.
- static const in6_addr kV4MappedPrefix = {
-     {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0}}};
--// 6to4 is defined in RFC 3056
- static const in6_addr k6To4Prefix = {{{0x20, 0x02, 0}}};
--// TEREDO is defined in RFC 8190.
- static const in6_addr kTeredoPrefix = {{{0x20, 0x01, 0x00, 0x00}}};
--// V4 compatible addresses are defined in RFC 4291 section 2.5.5.
- static const in6_addr kV4CompatibilityPrefix = {{{0}}};
--// 6bone is no longer in use, see RFC 5156
- static const in6_addr k6BonePrefix = {{{0x3f, 0xfe, 0}}};
--// Unique Local Address with the L bit set, defined in RFC 4193 section 3.1
- static const in6_addr kPrivateNetworkPrefix = {{{0xFD}}};
--// The NAT64 prefix is defined in RFC 6052 section 2.1
--static const in6_addr kNat64Prefix = {
--    {{0x00, 0x64, 0xff, 0x9b, 0, 0, 0, 0, 0, 0, 0, 0}}};
- 
- static bool IPIsHelper(const IPAddress& ip,
-                        const in6_addr& tomatch,
-@@ -192,32 +183,6 @@ IPAddress IPAddress::Normalized() const {
-   return IPAddress(addr);
- }
- 
--IPAddress IPAddress::NormalizeWithCheckForEmbeddedIPv4Address() const {
--  if (family_ != AF_INET6) {
--    return *this;
--  }
--  if (IPIsV4Mapped(*this) || IPIsV4Compatibility(*this) || IPIsNat64(*this)) {
--    in_addr addr = ExtractMappedAddress(u_.ip6);
--    return IPAddress(addr);
--  }
--  if (IPIs6To4(*this)) {
--    in_addr addr;
--    ::memcpy(&addr.s_addr, &u_.ip6.s6_addr[2], sizeof(addr.s_addr));
--    return IPAddress(addr);
--  }
--  if (IPIsTeredo(*this)) {
--    in_addr addr;
--    ::memcpy(&addr.s_addr, &u_.ip6.s6_addr[12], sizeof(addr.s_addr));
--    addr.s_addr = ~addr.s_addr;
--    return IPAddress(addr);
--  }
--  if (IPIsIsatap(*this)) {
--    in_addr addr = ExtractMappedAddress(u_.ip6);
--    return IPAddress(addr);
--  }
--  return *this;
--}
--
- IPAddress IPAddress::AsIPv6Address() const {
-   if (family_ != AF_INET) {
-     return *this;
-@@ -264,7 +229,7 @@ static bool IPIsPrivateNetworkV6(const IPAddress& ip) {
- }
- 
- bool IPIsPrivateNetwork(const IPAddress& ip) {
--  IPAddress normalized = ip.NormalizeWithCheckForEmbeddedIPv4Address();
-+  IPAddress normalized = ip.Normalized();
-   switch (normalized.family()) {
-     case AF_INET: {
-       return IPIsPrivateNetworkV4(normalized);
-@@ -282,7 +247,7 @@ static bool IPIsSharedNetworkV4(const IPAddress& ip) {
- }
- 
- bool IPIsSharedNetwork(const IPAddress& ip) {
--  IPAddress normalized = ip.NormalizeWithCheckForEmbeddedIPv4Address();
-+  IPAddress normalized = ip.Normalized();
-   if (normalized.family() == AF_INET) {
-     return IPIsSharedNetworkV4(normalized);
+diff --git a/call/rtp_demuxer.cc b/call/rtp_demuxer.cc
+index 598764b71c..e078347544 100644
+--- a/call/rtp_demuxer.cc
++++ b/call/rtp_demuxer.cc
+@@ -161,7 +161,13 @@ bool RtpDemuxer::AddSink(const RtpDemuxerCriteria& criteria,
    }
-@@ -361,7 +326,7 @@ static bool IPIsLoopbackV6(const IPAddress& ip) {
- }
  
- bool IPIsLoopback(const IPAddress& ip) {
--  IPAddress normalized = ip.NormalizeWithCheckForEmbeddedIPv4Address();
-+  IPAddress normalized = ip.Normalized();
-   switch (normalized.family()) {
-     case AF_INET: {
-       return IPIsLoopbackV4(normalized);
-@@ -383,7 +348,7 @@ bool IPIsUnspec(const IPAddress& ip) {
- }
- 
- size_t HashIP(const IPAddress& ip) {
--  IPAddress normalized = ip.NormalizeWithCheckForEmbeddedIPv4Address();
-+  IPAddress normalized = ip.Normalized();
-   switch (normalized.family()) {
-     case AF_INET: {
-       return normalized.ipv4_address().s_addr;
-@@ -503,21 +468,11 @@ bool IPIsHelper(const IPAddress& ip, const in6_addr& tomatch, int length) {
- }
- 
- bool IPIs6Bone(const IPAddress& ip) {
--  return ip.family() == AF_INET6 && IPIsHelper(ip, k6BonePrefix, 16);
-+  return IPIsHelper(ip, k6BonePrefix, 16);
- }
- 
- bool IPIs6To4(const IPAddress& ip) {
--  return ip.family() == AF_INET6 && IPIsHelper(ip, k6To4Prefix, 16);
--}
--
--bool IPIsIsatap(const IPAddress& ip) {
--  if (ip.family() != AF_INET6) {
--    return false;
--  }
--  in6_addr addr = ip.ipv6_address();
--  return (addr.s6_addr[8] == 0x00 || addr.s6_addr[8] == 0x02) &&
--         addr.s6_addr[9] == 0x00 && addr.s6_addr[10] == 0x5E &&
--         addr.s6_addr[11] == 0xFE;
-+  return IPIsHelper(ip, k6To4Prefix, 16);
- }
- 
- static bool IPIsLinkLocalV4(const IPAddress& ip) {
-@@ -532,7 +487,7 @@ static bool IPIsLinkLocalV6(const IPAddress& ip) {
- }
- 
- bool IPIsLinkLocal(const IPAddress& ip) {
--  IPAddress normalized = ip.NormalizeWithCheckForEmbeddedIPv4Address();
-+  IPAddress normalized = ip.Normalized();
-   switch (normalized.family()) {
-     case AF_INET: {
-       return IPIsLinkLocalV4(normalized);
-@@ -553,43 +508,28 @@ bool IPIsMacBased(const IPAddress& ip) {
-           addr.s6_addr[12] == 0xFE);
- }
- 
--bool IPIsNat64(const IPAddress& ip) {
--  return ip.family() == AF_INET6 && IPIsHelper(ip, kNat64Prefix, 96);
--}
--
- bool IPIsSiteLocal(const IPAddress& ip) {
-   // Can't use the helper because the prefix is 10 bits.
--  if (ip.family() != AF_INET6) {
--    return false;
--  }
-   in6_addr addr = ip.ipv6_address();
-   return addr.s6_addr[0] == 0xFE && (addr.s6_addr[1] & 0xC0) == 0xC0;
- }
- 
- bool IPIsULA(const IPAddress& ip) {
-   // Can't use the helper because the prefix is 7 bits.
--  if (ip.family() != AF_INET6) {
--    return false;
--  }
-   in6_addr addr = ip.ipv6_address();
-   return (addr.s6_addr[0] & 0xFE) == 0xFC;
- }
- 
- bool IPIsTeredo(const IPAddress& ip) {
--  return ip.family() == AF_INET6 && IPIsHelper(ip, kTeredoPrefix, 32);
-+  return IPIsHelper(ip, kTeredoPrefix, 32);
- }
- 
- bool IPIsV4Compatibility(const IPAddress& ip) {
--  if (ip.family() != AF_INET6 || !IPIsHelper(ip, kV4CompatibilityPrefix, 96)) {
--    return false;
--  }
--  in_addr v4 = ExtractMappedAddress(ip.ipv6_address());
--  uint32_t v4_h = NetworkToHost32(v4.s_addr);
--  return v4_h != 0 && v4_h != 1;
-+  return IPIsHelper(ip, kV4CompatibilityPrefix, 96);
- }
- 
- bool IPIsV4Mapped(const IPAddress& ip) {
--  return ip.family() == AF_INET6 && IPIsHelper(ip, kV4MappedPrefix, 96);
-+  return IPIsHelper(ip, kV4MappedPrefix, 96);
- }
- 
- int IPAddressPrecedence(const IPAddress& ip) {
-diff --git a/rtc_base/ip_address.h b/rtc_base/ip_address.h
-index f7f3822cda..7ebad4724b 100644
---- a/rtc_base/ip_address.h
-+++ b/rtc_base/ip_address.h
-@@ -116,9 +116,6 @@ class RTC_EXPORT IPAddress {
-   // Returns the same address if this isn't a mapped address.
-   IPAddress Normalized() const;
- 
--  // Returns an unmapped address from multiple IPv4-embedding formats.
--  IPAddress NormalizeWithCheckForEmbeddedIPv4Address() const;
--
-   // Returns this address as an IPv6 address.
-   // Maps v4 addresses (as ::ffff:a.b.c.d), returns v6 addresses unchanged.
-   IPAddress AsIPv6Address() const;
-@@ -216,9 +213,7 @@ size_t HashIP(const IPAddress& ip);
- // These are only really applicable for IPv6 addresses.
- bool IPIs6Bone(const IPAddress& ip);
- bool IPIs6To4(const IPAddress& ip);
--bool IPIsIsatap(const IPAddress& ip);
- RTC_EXPORT bool IPIsMacBased(const IPAddress& ip);
--bool IPIsNat64(const IPAddress& ip);
- bool IPIsSiteLocal(const IPAddress& ip);
- bool IPIsTeredo(const IPAddress& ip);
- bool IPIsULA(const IPAddress& ip);
-diff --git a/rtc_base/ip_address_unittest.cc b/rtc_base/ip_address_unittest.cc
-index 6a9ab9f8a3..38b625b440 100644
---- a/rtc_base/ip_address_unittest.cc
-+++ b/rtc_base/ip_address_unittest.cc
-@@ -674,57 +674,6 @@ TEST(IPAddressTest, TestIsEui64) {
-   EXPECT_FALSE(IPIsMacBased(addr));
- }
- 
--TEST(IPAddressTest, TestFromStringRFC4291) {
--  IPAddress addr, addr2;
--
--  // RFC 4291 Section 2.2, item 1
--  EXPECT_TRUE(IPFromString("ABCD:EF01:2345:6789:ABCD:EF01:2345:6789", &addr));
--  EXPECT_TRUE(IPFromString("2001:DB8:0:0:8:800:200C:417A", &addr));
--
--  // RFC 4291 Section 2.2, item 2 (Compressed)
--  EXPECT_TRUE(IPFromString("2001:DB8::8:800:200C:417A", &addr2));
--  EXPECT_EQ(addr, addr2);
--
--  EXPECT_TRUE(IPFromString("FF01:0:0:0:0:0:0:101", &addr));
--  EXPECT_TRUE(IPFromString("FF01::101", &addr2));
--  EXPECT_EQ(addr, addr2);
--
--  EXPECT_TRUE(IPFromString("0:0:0:0:0:0:0:1", &addr));
--  EXPECT_TRUE(IPFromString("::1", &addr2));
--  EXPECT_EQ(addr, addr2);
--
--  EXPECT_TRUE(IPFromString("0:0:0:0:0:0:0:0", &addr));
--  EXPECT_TRUE(IPFromString("::", &addr2));
--  EXPECT_EQ(addr, addr2);
--
--  // RFC 4291 Section 2.2, item 3 (Hybrid)
--  // 13.1.68.3 is 0D 01 44 03
--  EXPECT_TRUE(IPFromString("0:0:0:0:0:0:13.1.68.3", &addr));
--  EXPECT_TRUE(IPFromString("::13.1.68.3", &addr2));
--  EXPECT_EQ(addr, addr2);
--  EXPECT_TRUE(IPFromString("::0:13.1.68.3", &addr2));
--  EXPECT_EQ(addr, addr2);
--
--  // 129.144.52.38 is 81 90 34 26
--  EXPECT_TRUE(IPFromString("0:0:0:0:0:FFFF:129.144.52.38", &addr));
--  EXPECT_TRUE(IPFromString("::FFFF:129.144.52.38", &addr2));
--  EXPECT_EQ(addr, addr2);
--
--  // NAT64 (RFC 6052) Well-Known Prefix (not in RFC 4291 but uses hybrid)
--  EXPECT_TRUE(IPFromString("64:ff9b::192.168.7.1", &addr));
--  EXPECT_TRUE(IPFromString("64:ff9b::c0a8:0701", &addr2));
--  EXPECT_EQ(addr, addr2);
--
--  // ISATAP (RFC 5214) (not in RFC 4291 but uses hybrid)
--  EXPECT_TRUE(IPFromString("fe80::5efe:192.168.7.1", &addr));
--  EXPECT_TRUE(IPFromString("fe80::5efe:c0a8:0701", &addr2));
--  EXPECT_EQ(addr, addr2);
--
--  EXPECT_TRUE(IPFromString("fe80::200:5efe:192.168.7.1", &addr));
--  EXPECT_TRUE(IPFromString("fe80::200:5efe:c0a8:0701", &addr2));
--  EXPECT_EQ(addr, addr2);
--}
--
- TEST(IPAddressTest, TestNormalized) {
-   // Check normalizing a ::ffff:a.b.c.d address.
-   IPAddress addr;
-@@ -760,61 +709,12 @@ TEST(IPAddressTest, TestNormalized) {
-   addr2 = addr;
-   addr = addr.Normalized();
-   EXPECT_EQ(addr, addr2);
--}
--
--TEST(IPAddressTest, TestNormalizeWithCheckForEmbeddedIPv4Address) {
--  IPAddress addr, addr2;
- 
--  // IPv4-mapped
--  EXPECT_TRUE(IPFromString(kIPv4MappedV4StyleAddrString, &addr));
--  addr = addr.NormalizeWithCheckForEmbeddedIPv4Address();
--  EXPECT_EQ(addr, IPAddress(kIPv4RFC1918Addr));
--
--  // IPv4-compatible
--  EXPECT_TRUE(IPFromString("::0102:0304", &addr));
--  addr = addr.NormalizeWithCheckForEmbeddedIPv4Address();
--  EXPECT_EQ(addr, IPAddress(kIPv4PublicAddr));
--
--  EXPECT_TRUE(IPFromString("::192.168.7.1", &addr));
--  addr = addr.NormalizeWithCheckForEmbeddedIPv4Address();
--  EXPECT_EQ(addr, IPAddress(kIPv4RFC1918Addr));
--
--  // NAT64 (RFC 6052) Well-Known Prefix normalization
--  EXPECT_TRUE(IPFromString("64:ff9b::192.168.7.1", &addr));
--  addr = addr.NormalizeWithCheckForEmbeddedIPv4Address();
--  EXPECT_EQ(addr, IPAddress(kIPv4RFC1918Addr));
--
--  // 6to4 (RFC 3056) normalization: 2002:c0a8:0701::
--  EXPECT_TRUE(IPFromString("2002:c0a8:0701::", &addr));
--  addr = addr.NormalizeWithCheckForEmbeddedIPv4Address();
--  EXPECT_EQ(addr, IPAddress(kIPv4RFC1918Addr));
--
--  // Teredo (RFC 4380) normalization: 2001:0000:....:3f57:f8fe
--  // Embedded IPv4 is at the end, bit-flipped.
--  // 192.168.7.1 is c0 a8 07 01. Bit-flipped: 3f 57 f8 fe.
--  EXPECT_TRUE(IPFromString("2001:0000:4112:1:2831:3421:3f57:f8fe", &addr));
--  addr = addr.NormalizeWithCheckForEmbeddedIPv4Address();
--  EXPECT_EQ(addr, IPAddress(kIPv4RFC1918Addr));
--
--  // ISATAP (RFC 5214) normalization: fe80::5efe:c0a8:0701
--  EXPECT_TRUE(IPFromString("fe80::5efe:192.168.7.1", &addr));
--  addr = addr.NormalizeWithCheckForEmbeddedIPv4Address();
--  EXPECT_EQ(addr, IPAddress(kIPv4RFC1918Addr));
--
--  EXPECT_TRUE(IPFromString("fe80::200:5efe:192.168.7.1", &addr));
--  addr = addr.NormalizeWithCheckForEmbeddedIPv4Address();
--  EXPECT_EQ(addr, IPAddress(kIPv4RFC1918Addr));
--}
--
--TEST(IPAddressTest, TestV4NotAltered) {
--  IPAddress addr, addr2;
-   // Check that v4 addresses aren't altered.
-   addr = IPAddress(htonl(kIPv4PublicAddr));
-   addr2 = IPAddress(htonl(kIPv4PublicAddr));
-   addr = addr.Normalized();
-   EXPECT_EQ(addr, addr2);
--  addr = addr.NormalizeWithCheckForEmbeddedIPv4Address();
--  EXPECT_EQ(addr, addr2);
- }
- 
- TEST(IPAddressTest, TestAsIPv6Address) {
-diff --git a/rtc_base/win32.cc b/rtc_base/win32.cc
-index 53e3c02262..a50501750f 100644
---- a/rtc_base/win32.cc
-+++ b/rtc_base/win32.cc
-@@ -217,6 +217,40 @@ int inet_pton_v6(const char* src, void* dst) {
-   uint16_t* addr_end = reinterpret_cast<uint16_t*>(&an_addr.s6_addr[16]);
-   bool seencompressed = false;
- 
-+  // Addresses that start with "::" (i.e., a run of initial zeros) or
-+  // "::ffff:" can potentially be IPv4 mapped or compatibility addresses.
-+  // These have dotted-style IPv4 addresses on the end (e.g. "::192.168.7.1").
-+  if (*readcursor == ':' && *(readcursor + 1) == ':' &&
-+      *(readcursor + 2) != 0) {
-+    // Check for periods, which we'll take as a sign of v4 addresses.
-+    const char* addrstart = readcursor + 2;
-+    if (strchr(addrstart, '.')) {
-+      const char* colon = strchr(addrstart, ':');
-+      if (colon) {
-+        uint16_t a_short;
-+        int bytesread = 0;
-+        if (sscanf(addrstart, "%hx%n", &a_short, &bytesread) != 1 ||
-+            a_short != 0xFFFF || bytesread != 4) {
-+          // Colons + periods means has to be ::ffff:a.b.c.d. But it wasn't.
-+          return 0;
-+        } else {
-+          an_addr.s6_addr[10] = 0xFF;
-+          an_addr.s6_addr[11] = 0xFF;
-+          addrstart = colon + 1;
-+        }
-+      }
-+      struct in_addr v4;
-+      if (inet_pton_v4(addrstart, &v4.s_addr)) {
-+        memcpy(&an_addr.s6_addr[12], &v4, sizeof(v4));
-+        memcpy(dst, &an_addr, sizeof(an_addr));
-+        return 1;
-+      } else {
-+        // Invalid v4 address.
-+        return 0;
+   for (uint32_t ssrc : criteria.ssrcs()) {
+-    sink_by_ssrc_.emplace(ssrc, sink);
++    auto result = sink_by_ssrc_.emplace(ssrc, sink);
++    if (!result.second) {
++      if (signaled_ssrcs_.find(ssrc) == signaled_ssrcs_.end()) {
++        result.first->second = sink;
 +      }
 +    }
++    signaled_ssrcs_.insert(ssrc);
+   }
+ 
+   for (uint8_t payload_type : criteria.payload_types()) {
+@@ -231,10 +237,12 @@ bool RtpDemuxer::CriteriaWouldConflict(
+   for (uint32_t ssrc : criteria.ssrcs()) {
+     const auto sink_by_ssrc = sink_by_ssrc_.find(ssrc);
+     if (sink_by_ssrc != sink_by_ssrc_.end()) {
+-      RTC_LOG(LS_INFO) << criteria.ToString()
+-                       << " would conflict with existing sink = "
+-                       << sink_by_ssrc->second << " binding by SSRC=" << ssrc;
+-      return true;
++      if (signaled_ssrcs_.find(ssrc) != signaled_ssrcs_.end()) {
++        RTC_LOG(LS_INFO) << criteria.ToString()
++                         << " would conflict with existing sink = "
++                         << sink_by_ssrc->second << " binding by SSRC=" << ssrc;
++        return true;
++      }
+     }
+   }
+ 
+@@ -270,6 +278,10 @@ void RtpDemuxer::AddSink(absl::string_view rsid, RtpPacketSinkInterface* sink) {
+ 
+ bool RtpDemuxer::RemoveSink(const RtpPacketSinkInterface* sink) {
+   RTC_DCHECK(sink);
++  flat_set<uint32_t> ssrcs = GetSsrcsForSink(sink);
++  for (uint32_t ssrc : ssrcs) {
++    signaled_ssrcs_.erase(ssrc);
 +  }
+   size_t num_removed = RemoveFromMapByValue(&sink_by_mid_, sink) +
+                        RemoveFromMapByValue(&sink_by_ssrc_, sink) +
+                        RemoveFromMultimapByValue(&sinks_by_pt_, sink) +
+diff --git a/call/rtp_demuxer.h b/call/rtp_demuxer.h
+index cc6a84c878..f2f76cb562 100644
+--- a/call/rtp_demuxer.h
++++ b/call/rtp_demuxer.h
+@@ -217,6 +217,7 @@ class RtpDemuxer {
+   flat_map<std::pair<std::string, std::string>, RtpPacketSinkInterface*>
+       sink_by_mid_and_rsid_;
+   flat_map<std::string, RtpPacketSinkInterface*> sink_by_rsid_;
++  flat_set<uint32_t> signaled_ssrcs_;
+ 
+   // Tracks all the MIDs that have been identified in added criteria. Used to
+   // determine if a packet should be dropped right away because the MID is
+diff --git a/call/rtp_demuxer_unittest.cc b/call/rtp_demuxer_unittest.cc
+index 363d58aa13..b878d2bbae 100644
+--- a/call/rtp_demuxer_unittest.cc
++++ b/call/rtp_demuxer_unittest.cc
+@@ -369,6 +369,89 @@ TEST_F(RtpDemuxerTest, OnRtpPacketCalledOnCorrectSinkByPayloadType) {
+   EXPECT_TRUE(demuxer_.OnRtpPacket(*packet));
+ }
+ 
++TEST_F(RtpDemuxerTest, DontSignalRtpPayloadTypeWhenPtDemuxingDisabled) {
++  constexpr uint32_t ssrc1 = 10;
++  constexpr uint32_t ssrc2 = 11;
++  constexpr uint8_t pt1 = 30;
++  constexpr uint8_t pt2 = 31;
 +
-   // For addresses without a trailing IPv4 component ('normal' IPv6 addresses).
-   while (*readcursor != 0 && addr_cursor < addr_end) {
-     if (*readcursor == ':') {
-@@ -234,43 +268,25 @@ int inet_pton_v6(const char* src, void* dst) {
-           // Special case - trailing ::.
-           addr_cursor = addr_end;
-         } else {
--          bool has_dot = false;
-           while (*coloncounter) {
-             if (*coloncounter == ':') {
-               ++coloncount;
--            } else if (*coloncounter == '.') {
--              has_dot = true;
-             }
-             ++coloncounter;
-           }
-           // (coloncount + 1) is the number of shorts left in the address.
--          // If there's a dot, the last part is an IPv4 address, which is 2
--          // shorts but has no internal colon.
--          int expected_shorts = coloncount + 1;
--          if (has_dot) {
--            expected_shorts++;
--          }
-           // If this number is greater than the number of available shorts, the
-           // address is malformed.
--          if (expected_shorts > addr_end - addr_cursor) {
-+          if (coloncount + 1 > addr_end - addr_cursor) {
-             return 0;
-           }
--          addr_cursor = addr_end - expected_shorts;
-+          addr_cursor = addr_end - (coloncount + 1);
-           seencompressed = true;
-         }
-       } else {
-         ++readcursor;
-       }
-     } else {
--      if (strchr(readcursor, '.') && addr_cursor + 2 <= addr_end) {
--        struct in_addr v4;
--        if (inet_pton_v4(readcursor, &v4.s_addr)) {
--          memcpy(addr_cursor, &v4, sizeof(v4));
--          addr_cursor += 2;
--          readcursor += strlen(readcursor);
--          break;
--        }
--      }
-       uint16_t word;
-       int bytesread = 0;
-       if (sscanf(readcursor, "%4hx%n", &word, &bytesread) != 1) {
++  // Sink 1 registered when PT demuxing is enabled (default).
++  MockRtpPacketSink sink1;
++  RtpDemuxerCriteria criteria1;
++  criteria1.payload_types() = {pt1};
++  EXPECT_TRUE(AddSink(criteria1, &sink1));
++
++  // Disable PT demuxing.
++  demuxer_.set_use_payload_type_demuxing(false);
++
++  // Sink 2 registered when PT demuxing is disabled.
++  MockRtpPacketSink sink2;
++  RtpDemuxerCriteria criteria2;
++  criteria2.payload_types() = {pt2};
++  EXPECT_TRUE(AddSink(criteria2, &sink2));
++
++  // Packet with pt1 should not go to sink1 because fallback is disabled.
++  auto packet1 = CreatePacketWithSsrc(ssrc1);
++  packet1->SetPayloadType(pt1);
++  EXPECT_CALL(sink1, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet1));
++
++  // Packet with pt2 should not go to sink2 because fallback is disabled and it
++  // was not registered by PT.
++  auto packet2 = CreatePacketWithSsrc(ssrc2);
++  packet2->SetPayloadType(pt2);
++  EXPECT_CALL(sink2, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet2));
++}
++
++TEST_F(RtpDemuxerTest, DynamicPayloadTypeDemuxing) {
++  constexpr uint32_t ssrc = 10;
++  constexpr uint8_t payload_type = 30;
++
++  MockRtpPacketSink sink;
++  RtpDemuxerCriteria criteria;
++  criteria.payload_types() = {payload_type};
++
++  demuxer_.set_use_payload_type_demuxing(false);
++  EXPECT_TRUE(AddSink(criteria, &sink));
++
++  auto packet = CreatePacketWithSsrc(ssrc);
++  packet->SetPayloadType(payload_type);
++
++  EXPECT_CALL(sink, OnRtpPacket(_)).Times(0);
++  EXPECT_FALSE(demuxer_.OnRtpPacket(*packet));
++
++  demuxer_.set_use_payload_type_demuxing(true);
++
++  EXPECT_CALL(sink, OnRtpPacket(SamePacketAs(*packet))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet));
++}
++
++TEST_F(RtpDemuxerTest, SignaledSsrcOverridesLearnedBinding) {
++  constexpr uint32_t ssrc = 10;
++  constexpr uint8_t payload_type = 30;
++
++  MockRtpPacketSink sink1;
++  RtpDemuxerCriteria criteria1;
++  criteria1.payload_types() = {payload_type};
++  EXPECT_TRUE(AddSink(criteria1, &sink1));
++
++  auto packet1 = CreatePacketWithSsrc(ssrc);
++  packet1->SetPayloadType(payload_type);
++  EXPECT_CALL(sink1, OnRtpPacket(SamePacketAs(*packet1))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet1));
++
++  MockRtpPacketSink sink2;
++  RtpDemuxerCriteria criteria2;
++  criteria2.ssrcs().insert(ssrc);
++  EXPECT_TRUE(AddSink(criteria2, &sink2));
++
++  auto packet2 = CreatePacketWithSsrc(ssrc);
++  EXPECT_CALL(sink1, OnRtpPacket(_)).Times(0);
++  EXPECT_CALL(sink2, OnRtpPacket(SamePacketAs(*packet2))).Times(1);
++  EXPECT_TRUE(demuxer_.OnRtpPacket(*packet2));
++}
++
+ TEST_F(RtpDemuxerTest, PacketsDeliveredInRightOrder) {
+   constexpr uint32_t ssrc = 101;
+   MockRtpPacketSink sink;
