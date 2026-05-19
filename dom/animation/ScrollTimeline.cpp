@@ -91,18 +91,6 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::Constructor(
 
 Element* ScrollTimeline::GetSource() const { return SourceElement(); }
 
-ScrollTimeline::State ScrollTimeline::GetState() const {
-  const auto source = mScrollerInfo.Source();
-  // Use document.scrollingElement to tell whether it's the root scroll
-  // container. Note that we can't use mScrollerInfo.mType since Type::Nearest
-  // can also reach the root scroll container.
-  const bool isRoot =
-      source.mElement &&
-      source.mElement->OwnerDoc()->GetScrollingElementNoFlush() ==
-          source.mElement;
-  return State{source, mAxis, isRoot};
-}
-
 dom::ScrollAxis ScrollTimeline::GetScrollAxis() const {
   switch (mAxis) {
     case StyleScrollAxis::Block:
@@ -144,8 +132,7 @@ ScrollTimeline::FindNearestScroller(Element* aSubject,
     return {nullptr, PseudoStyleRequest{}};
   }
   Element* curr = subject->GetFlattenedTreeParentElement();
-  // Rely on the behaviour of document.scrollingElement.
-  Element* root = subject->OwnerDoc()->GetScrollingElementNoFlush();
+  Element* root = subject->OwnerDoc()->GetDocumentElement();
   while (curr && curr != root) {
     const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(curr);
     MOZ_ASSERT(style, "The ancestor should be styled.");
@@ -303,8 +290,6 @@ const ScrollContainerFrame* ScrollTimeline::State::GetScrollContainerFrame()
   }
 
   if (mIsRoot) {
-    // document.scrollingElement may point to <body> in quirks mode, but the
-    // root scroll container frame is what actually scrolls - return it.
     if (const PresShell* presShell = e->OwnerDoc()->GetPresShell()) {
       return presShell->GetRootScrollContainerFrame();
     }
@@ -472,7 +457,7 @@ NonOwningAnimationTarget ScrollTimeline::ScrollerInfo::Source() const {
   // We use the owner doc of the animation target. This may be different
   // from |mDocument| after we implement ScrollTimeline interface for
   // script.
-  return {mSourceOrTarget.mElement->OwnerDoc()->GetScrollingElementNoFlush(),
+  return {mSourceOrTarget.mElement->OwnerDoc()->GetDocumentElement(),
           PseudoStyleRequest{}};
 }
 
