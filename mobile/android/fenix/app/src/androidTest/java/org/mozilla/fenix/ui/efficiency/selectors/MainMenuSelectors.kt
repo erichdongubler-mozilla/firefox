@@ -154,6 +154,13 @@ object MainMenuSelectors {
         groups = listOf("homeBanner", "homePageMainMenuItems"),
     )
 
+    val QUIT_FIREFOX_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = "Quit $appName",
+        description = "Quit Firefox button",
+        groups = listOf(),
+    )
+
     val all = listOf(
         NEW_PRIVATE_TAB_BUTTON,
         EXTENSIONS_BUTTON,
