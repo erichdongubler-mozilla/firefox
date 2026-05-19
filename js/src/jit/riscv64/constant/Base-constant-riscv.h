@@ -412,14 +412,13 @@ enum OffsetSize : uint32_t {
 };
 
 // The classes of immediate branch ranges, in order of increasing range.
-// Note that CondBranchType and CompareBranchType have the same range.
 enum ImmBranchRangeType {
-  CondBranchRangeType,    //
-  UncondBranchRangeType,  //
+  CondBranchRangeType,    // RISCV branch
+  UncondBranchRangeType,  // RISCV jal
   UnknownBranchRangeType,
 
   // Number of 'short-range' branch range types.
-  // We don't consider unconditional branches 'short-range'.
+  // RISCV branch and jal are both considered 'short-range'.
   NumShortBranchRangeTypes = UnknownBranchRangeType
 };
 
