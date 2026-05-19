@@ -18,11 +18,7 @@ class IPPAddonActivator {
 
   #pendingTabs = new Set(); // pending due to tab URL change while inactive
   #pendingWebRequests = new Map(); // tabId -> Set of pending request URLs
-  // tabId -> { domain, l10nId, condition, shown } for every tab that currently
-  // has a matching breakage. The entry is kept alive (and the condition keeps
-  // listening) even when the condition is false, so we re-show the
-  // notification if the condition becomes true again.
-  #stateByTab = new Map();
+  #shownDomainByTab = new Map(); // tabId -> baseDomain of currently shown notification
 
   constructor() {
     this.tabUpdated = this.#tabUpdated.bind(this);
@@ -31,7 +27,8 @@ class IPPAddonActivator {
     this.onRequest = this.#onRequest.bind(this);
     this.ippExceptionsChanged = this.#ippExceptionsChanged.bind(this);
 
-    this.#loadAndRebuildBreakages().then(() => {
+    browser.ippActivator.isTesting().then(async isTesting => {
+      await this.#loadAndRebuildBreakages();
       browser.ippActivator.onDynamicTabBreakagesUpdated.addListener(() =>
         this.#loadAndRebuildBreakages()
       );
@@ -39,7 +36,24 @@ class IPPAddonActivator {
         this.#loadAndRebuildBreakages()
       );
 
-      this.#init();
+      if (isTesting) {
+        this.#init();
+        return;
+      }
+
+      // Initialize only when IPP is active, keep in sync with activation.
+      if (await browser.ippActivator.isIPPActive()) {
+        this.#init();
+      }
+
+      // IPP start event: initialize when service starts.
+      browser.ippActivator.onIPPActivated.addListener(async () => {
+        if (await browser.ippActivator.isIPPActive()) {
+          this.#init();
+        } else {
+          this.#uninit();
+        }
+      });
     });
   }
 
@@ -52,6 +66,31 @@ class IPPAddonActivator {
     this.#registerListeners();
 
     this.#initialized = true;
+  }
+
+  async #uninit() {
+    if (!this.#initialized) {
+      return;
+    }
+
+    this.#unregisterListeners();
+
+    // When IPP is deactivated, mark currently shown banners as consumed
+    const uniqueDomains = new Set(this.#shownDomainByTab.values());
+    await Promise.allSettled(
+      Array.from(uniqueDomains).map(d =>
+        browser.ippActivator.addNotifiedDomain(d)
+      )
+    );
+
+    const ids = Array.from(this.#shownDomainByTab.keys());
+    await Promise.allSettled(
+      ids.map(id => browser.ippActivator.hideMessage(id))
+    );
+
+    this.#shownDomainByTab.clear();
+
+    this.#initialized = false;
   }
 
   async #loadAndRebuildBreakages() {
@@ -171,11 +210,11 @@ class IPPAddonActivator {
   }
 
   async #ippExceptionsChanged() {
-    if (!this.#stateByTab.size) {
+    if (!this.#shownDomainByTab.size) {
       return;
     }
 
-    const tabIds = Array.from(this.#stateByTab.keys());
+    const tabIds = Array.from(this.#shownDomainByTab.keys());
     await Promise.allSettled(
       tabIds.map(async tabId => {
         try {
@@ -185,7 +224,7 @@ class IPPAddonActivator {
           }
 
           if (await browser.ippActivator.hasExclusion(tab.url)) {
-            await this.#dropTabState(tabId);
+            await this.#maybeHideNotification(tabId);
           }
         } catch (_) {}
       })
@@ -205,13 +244,13 @@ class IPPAddonActivator {
         const info = await browser.ippActivator.getBaseDomainFromURL(
           changeInfo.url || tab?.url || ""
         );
-        const entry = this.#stateByTab.get(tabId);
+        const shownBase = this.#shownDomainByTab.get(tabId);
         if (
-          entry &&
-          entry.domain !== info.baseDomain &&
-          entry.domain !== info.host
+          shownBase &&
+          shownBase !== info.baseDomain &&
+          shownBase !== info.host
         ) {
-          await this.#dropTabState(tabId);
+          await this.#maybeHideNotification(tabId);
         }
       } catch (_) {
         // ignore lookup issues
@@ -278,12 +317,12 @@ class IPPAddonActivator {
   async #maybeNotify(tab, breakages, url) {
     const info = await browser.ippActivator.getBaseDomainFromURL(url);
     if (!info.baseDomain && !info.host) {
-      await this.#dropTabState(tab.id);
+      await this.#maybeHideNotification(tab.id);
       return false;
     }
 
     if (await browser.ippActivator.hasExclusion(url)) {
-      await this.#dropTabState(tab.id);
+      await this.#maybeHideNotification(tab.id);
       return false;
     }
 
@@ -296,7 +335,7 @@ class IPPAddonActivator {
         b => Array.isArray(b.domains) && b.domains.includes(info.host)
       );
       if (!breakage) {
-        await this.#dropTabState(tab.id);
+        await this.#maybeHideNotification(tab.id);
         return false;
       }
 
@@ -304,103 +343,59 @@ class IPPAddonActivator {
     }
 
     // Do not show the same notification again for the same base domain.
-    const notified = await browser.ippActivator.getNotifiedDomains();
-    if (Array.isArray(notified) && notified.includes(domain)) {
-      await this.#dropTabState(tab.id);
+    const shown = await browser.ippActivator.getNotifiedDomains();
+    if (Array.isArray(shown) && shown.includes(domain)) {
+      await this.#maybeHideNotification(tab.id);
       return false;
     }
 
-    // If we already track this tab but for a different domain, reset the state.
-    let entry = this.#stateByTab.get(tab.id);
-    if (entry && entry.domain !== domain) {
-      await this.#dropTabState(tab.id);
-      entry = null;
-    }
-
-    if (!entry) {
-      let condition = null;
-      if (breakage.condition !== undefined) {
-        const factory = new ConditionFactory({ tabId: tab.id, url });
-        condition = factory.create(breakage.condition);
-        await condition.init();
-      }
-
-      entry = { domain, l10nId: breakage.l10nId, condition, shown: false };
-      this.#stateByTab.set(tab.id, entry);
-
-      if (condition) {
-        condition.onChange(() => {
-          if (this.#stateByTab.get(tab.id) !== entry) {
-            return;
-          }
-          this.#updateNotification(tab.id);
-        });
-      }
-    }
-
-    return this.#updateNotification(tab.id);
-  }
-
-  #updateNotification(tabId) {
-    const entry = this.#stateByTab.get(tabId);
-    if (!entry) {
+    if (
+      !(await ConditionFactory.run(breakage.condition, { tabId: tab.id, url }))
+    ) {
+      await this.#maybeHideNotification(tab.id);
       return false;
     }
 
-    const matches = !entry.condition || entry.condition.check();
-
-    if (!matches) {
-      if (entry.shown) {
-        entry.shown = false;
-        browser.ippActivator.hideMessage(tabId);
-      }
-      return false;
-    }
-
-    if (entry.shown) {
-      return true;
-    }
-
-    entry.shown = true;
+    // Track which base domain this tab is showing a notification for
+    this.#shownDomainByTab.set(tab.id, domain);
 
     // This function returns when the notification is dismissed. We don't want
     // to wait for that to happen.
     browser.ippActivator
-      .showMessage({ l10nId: entry.l10nId }, tabId)
+      .showMessage({ l10nId: breakage.l10nId }, tab.id)
       .then(async dismissed => {
         if (!dismissed) {
           return;
         }
 
-        await browser.ippActivator.addNotifiedDomain(entry.domain);
+        await browser.ippActivator.addNotifiedDomain(domain);
 
         // Close all notifications currently shown for the same base domain
         // across all tabs and clean up tracking state.
         const toClose = [];
-        for (const [tid, e] of this.#stateByTab.entries()) {
-          if (e.domain === entry.domain) {
+        for (const [tid, base] of this.#shownDomainByTab.entries()) {
+          if (base === domain) {
             toClose.push(tid);
           }
         }
 
-        await Promise.allSettled(toClose.map(id => this.#dropTabState(id)));
+        await Promise.allSettled(
+          toClose.map(id => browser.ippActivator.hideMessage(id))
+        );
+
+        for (const id of toClose) {
+          this.#shownDomainByTab.delete(id);
+        }
       });
 
     return true;
   }
 
-  async #dropTabState(tabId) {
-    const entry = this.#stateByTab.get(tabId);
-    if (!entry) {
-      return;
-    }
-    if (entry.condition) {
-      entry.condition.uninit();
-    }
-    if (entry.shown) {
+  async #maybeHideNotification(tabId) {
+    if (this.#shownDomainByTab.get(tabId)) {
       await browser.ippActivator.hideMessage(tabId);
+      this.#shownDomainByTab.delete(tabId);
     }
-    this.#stateByTab.delete(tabId);
   }
 
   async #onRequest(details) {
@@ -435,11 +430,7 @@ class IPPAddonActivator {
     // Clean up any pending state associated with the closed tab
     this.#pendingTabs.delete(tabId);
     this.#pendingWebRequests.delete(tabId);
-    const entry = this.#stateByTab.get(tabId);
-    if (entry?.condition) {
-      entry.condition.uninit();
-    }
-    this.#stateByTab.delete(tabId);
+    this.#shownDomainByTab.delete(tabId);
   }
 }
 

@@ -54,16 +54,16 @@
         "parameters": [{ "name": "domain", "type": "string" }]
       },
       {
-        "name": "isIPPActive",
+        "name": "isTesting",
         "type": "function",
-        "description": "Return whether IPP connection is active.",
+        "description": "Return whether we are running in testing mode.",
         "async": true,
         "parameters": []
       },
       {
-        "name": "getRegion",
+        "name": "isIPPActive",
         "type": "function",
-        "description": "Return the user's home region as an ISO 3166-1 alpha-2 code (uppercase), or null if unknown.",
+        "description": "Return whether IPP connection is active.",
         "async": true,
         "parameters": []
       },
@@ -112,18 +112,11 @@
       {
         "name": "onIPPActivated",
         "type": "function",
-        "description": "Fired when IPProtectionService dispatches 'IPProtectionService:Started'. The listener receives the current active state.",
+        "description": "Fired when IPProtectionService dispatches 'IPProtectionService:Started'.",
         "parameters": [
           {
             "name": "listener",
-            "type": "function",
-            "parameters": [
-              {
-                "name": "active",
-                "type": "boolean",
-                "description": "Whether the IPP connection is currently active."
-              }
-            ]
+            "type": "function"
           }
         ]
       },
@@ -157,25 +150,6 @@
           {
             "name": "listener",
             "type": "function"
-          }
-        ]
-      },
-      {
-        "name": "onRegionChanged",
-        "type": "function",
-        "description": "Fired when the user's home region changes (observer on 'browser-region-updated'). The listener receives the new region.",
-        "parameters": [
-          {
-            "name": "listener",
-            "type": "function",
-            "parameters": [
-              {
-                "name": "region",
-                "type": "string",
-                "optional": true,
-                "description": "The new home region as an ISO 3166-1 alpha-2 code (uppercase), or null if unknown."
-              }
-            ]
           }
         ]
       }

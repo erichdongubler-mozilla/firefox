@@ -13,7 +13,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPPProxyStates:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
-  Region: "resource://gre/modules/Region.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "tabTracker", () => {
@@ -40,9 +39,7 @@ this.ippActivator = class extends ExtensionAPI {
           register: fire => {
             const topics = ["IPPProxyManager:StateChanged"];
             const observer = _event => {
-              fire.async(
-                lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE
-              );
+              fire.async();
             };
 
             topics.forEach(topic =>
@@ -56,6 +53,12 @@ this.ippActivator = class extends ExtensionAPI {
             };
           },
         }).api(),
+        isTesting() {
+          return Services.prefs.getBoolPref(
+            "extensions.ippactivator.testMode",
+            false
+          );
+        },
         hideMessage(tabId) {
           try {
             const tab = tabId
@@ -79,9 +82,6 @@ this.ippActivator = class extends ExtensionAPI {
         },
         isIPPActive() {
           return lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE;
-        },
-        getRegion() {
-          return lazy.Region.home;
         },
         getDynamicTabBreakages() {
           try {
@@ -315,22 +315,6 @@ this.ippActivator = class extends ExtensionAPI {
 
             Services.obs.addObserver(observer, "perm-changed");
             return () => Services.obs.removeObserver(observer, "perm-changed");
-          },
-        }).api(),
-        onRegionChanged: new ExtensionCommon.EventManager({
-          context,
-          name: "ippActivator.onRegionChanged",
-          register: fire => {
-            const observer = {
-              observe(_subject, topic) {
-                if (topic === "browser-region-updated") {
-                  fire.async(lazy.Region.home);
-                }
-              },
-            };
-            Services.obs.addObserver(observer, "browser-region-updated");
-            return () =>
-              Services.obs.removeObserver(observer, "browser-region-updated");
           },
         }).api(),
       },
