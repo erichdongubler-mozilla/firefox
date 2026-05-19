@@ -41,7 +41,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_Activate_ResponsiveDesign
 
@@ -80,7 +80,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_AddBreakpoint_Debugger
 
@@ -105,7 +105,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_Blackbox_Debugger
 
@@ -138,7 +138,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_Close_Tools
 
@@ -167,7 +167,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_CloseAdbg_Aboutdebugging
 
@@ -208,7 +208,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_ConnectionAttempt_Aboutdebugging
 
@@ -233,7 +233,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_Continue_Debugger
 
@@ -267,7 +267,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_Deactivate_ResponsiveDesign
 
@@ -314,7 +314,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_DeviceAdded_Aboutdebugging
 
@@ -347,7 +347,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_DeviceRemoved_Aboutdebugging
 
@@ -380,7 +380,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_EditHtml_Inspector
 
@@ -431,7 +431,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_EditRule_Ruleview
 
@@ -480,7 +480,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_Enter_Accessibility
 
@@ -760,7 +760,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_ExecuteJs_Webconsole
 
@@ -790,7 +790,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_ReverseSearch_Webconsole
 
@@ -835,7 +835,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_Exit_Accessibility
 
@@ -1121,7 +1121,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_FiltersChanged_Netmonitor
 
@@ -1168,7 +1168,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_Inspect_Aboutdebugging
 
@@ -1194,7 +1194,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_JumpToDefinition_Webconsole
 
@@ -1219,7 +1219,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_JumpToSource_Webconsole
 
@@ -1244,7 +1244,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_ObjectExpanded_Webconsole
 
@@ -1295,7 +1295,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_Open_Tools
 
@@ -1324,7 +1324,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_OpenAdbg_Aboutdebugging
 
@@ -1357,7 +1357,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_PauseOnExceptions_Debugger
 
@@ -1390,7 +1390,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_Pause_Debugger
 
@@ -1417,7 +1417,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_PersistChanged_Netmonitor
 
@@ -1455,7 +1455,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_PrettyPrint_Debugger
 
@@ -1480,7 +1480,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_RemoveBreakpoint_Debugger
 
@@ -1521,7 +1521,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_RuntimeAdded_Aboutdebugging
 
@@ -1572,7 +1572,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_RuntimeConnected_Aboutdebugging
 
@@ -1613,7 +1613,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_RuntimeDisconnected_Aboutdebugging
 
@@ -1654,7 +1654,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_RuntimeRemoved_Aboutdebugging
 
@@ -1686,7 +1686,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_SelectPage_Aboutdebugging
 
@@ -1730,7 +1730,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_ShowProfiler_Aboutdebugging
 
@@ -1755,7 +1755,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_SelectWsFrame_Netmonitor
 
@@ -1794,7 +1794,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_SidepanelChanged_Inspector
 
@@ -1832,7 +1832,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_StartWorker_Application
 
@@ -1896,7 +1896,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_ToolTimer_Animationinspector
 
@@ -1999,7 +1999,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_UnregisterWorker_Application
 
@@ -2033,7 +2033,7 @@ devtools.main:
         type: string
       session_id:
         description: >
-          The start time of the session in milliseconds since epoch (Unix Timestamp) e.g. 1396381378123.
+          The start time of DevTools since the browser session began in milliseconds.
         type: string
     telemetry_mirror: DevtoolsMain_UpdateConnPrompt_Aboutdebugging
 
