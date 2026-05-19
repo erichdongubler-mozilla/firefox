@@ -50,7 +50,7 @@ std::string VideoReceiveStreamInterface::Decoder::ToString() const {
   ss << "}";
   ss << "}";
 
-  return ss.str();
+  return ss.Release();
 }
 
 VideoReceiveStreamInterface::Stats::Stats() = default;
@@ -101,7 +101,7 @@ std::string VideoReceiveStreamInterface::Stats::ToString(
   ss << "firCount: " << rtcp_packet_type_counts.fir_packets << ", ";
   ss << "pliCount: " << rtcp_packet_type_counts.pli_packets;
   ss << "}";
-  return ss.str();
+  return ss.Release();
 }
 
 VideoReceiveStreamInterface::Config::Config(const Config&) = default;
@@ -132,7 +132,7 @@ std::string VideoReceiveStreamInterface::Config::ToString() const {
     ss << ", sync_group: " << sync_group;
   ss << "}";
 
-  return ss.str();
+  return ss.Release();
 }
 
 VideoReceiveStreamInterface::Config::Rtp::Rtp() = default;
@@ -167,7 +167,7 @@ std::string VideoReceiveStreamInterface::Config::Rtp::ToString() const {
   ss << ", rtcp_event_observer: "
      << (rtcp_event_observer ? "(rtcp_event_observer)" : "nullptr");
   ss << "}";
-  return ss.str();
+  return ss.Release();
 }
 
 }  // namespace webrtc
