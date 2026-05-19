@@ -808,10 +808,12 @@ if (is_ios || is_mac) {
       ]
 
       deps = [
+        ":base_native_additions_objc",
         ":base_objc",
         ":helpers_objc",
         ":wrapped_native_codec_objc",
         "../api/video_codecs:scalability_mode",
+        "../api/video_codecs:video_codecs_api",
         "../modules/video_coding:webrtc_vp8",
         "../modules/video_coding:webrtc_vp8_scalability",
       ]
@@ -828,10 +830,12 @@ if (is_ios || is_mac) {
       ]
 
       deps = [
+        ":base_native_additions_objc",
         ":base_objc",
         ":helpers_objc",
         ":wrapped_native_codec_objc",
         "../api/video_codecs:scalability_mode",
+        "../api/video_codecs:video_codecs_api",
         "../modules/video_coding:webrtc_vp9",
       ]
     }
@@ -845,8 +849,10 @@ if (is_ios || is_mac) {
       ]
 
       deps = [
+        ":base_native_additions_objc",
         ":base_objc",
         ":wrapped_native_codec_objc",
+        "../api/video_codecs:video_codecs_api",
         "../media:rtc_media_base",
         "../modules/video_coding/codecs/av1:dav1d_decoder",
       ]
@@ -861,10 +867,12 @@ if (is_ios || is_mac) {
       ]
 
       deps = [
+        ":base_native_additions_objc",
         ":base_objc",
         ":helpers_objc",
         ":wrapped_native_codec_objc",
         "../api/video_codecs:scalability_mode",
+        "../api/video_codecs:video_codecs_api",
         "../modules/video_coding/codecs/av1:av1_svc_config",
         "../modules/video_coding/codecs/av1:libaom_av1_encoder",
       ]
