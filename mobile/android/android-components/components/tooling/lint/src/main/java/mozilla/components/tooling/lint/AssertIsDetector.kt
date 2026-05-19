@@ -84,11 +84,13 @@ class AssertIsDetector : Detector(), Detector.UastScanner {
             }
 
             val quickFix = replacementText?.let {
+                val fullyQualified = "kotlin.test.$replacementText"
                 LintFix.create()
                     .name("Replace with $replacementText")
                     .replace()
                     .all()
-                    .with(replacementText)
+                    .with(fullyQualified)
+                    .shortenNames()
                     .build()
             }
 
