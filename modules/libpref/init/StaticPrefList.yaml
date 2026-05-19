@@ -4969,7 +4969,7 @@
 # scope-based checks in "in body" mode.
 - name: dom.lift_select_parser_restrictions.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 - name: dom.send_after_paint_to_content
@@ -6195,7 +6195,7 @@
 # Whether to block the shadowing of known document properties.
 - name: dom.document.name_getter_prevent_shadowing.enabled
   type: bool
-  value: true
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Whether to enable about:blank async-load workaround for ckeditor.
