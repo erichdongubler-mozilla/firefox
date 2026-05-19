@@ -80,8 +80,6 @@
     <color name="fx_mobile_text_color_oncolor_secondary">@color/photonLightGrey40</color>
     <!-- Action Primary disabled text -->
     <color name="fx_mobile_text_color_action_primary_disabled">@color/photonDarkGrey90A50</color>
-    <!-- Action Secondary text -->
-    <color name="fx_mobile_text_color_action_secondary">@color/photonDarkGrey90</color>
 
     <!-- Icon -->
     <!-- Disabled icon -->
@@ -93,8 +91,6 @@
     <color name="fx_mobile_icon_color_accent_pink">@color/photonPink60</color>
     <color name="fx_mobile_icon_color_accent_green">@color/photonGreen60</color>
     <color name="fx_mobile_icon_color_accent_yellow">@color/photonYellow60</color>
-    <!-- Action Secondary Icon -->
-    <color name="fx_mobile_icon_color_action_secondary">@color/photonDarkGrey90</color>
 
     <!-- Border -->
     <!-- Active tab (Nav), Selected tab, Active form -->
