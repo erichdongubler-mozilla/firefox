@@ -84,7 +84,7 @@ internal fun menuItemComposable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = ripple(
                                     bounded = true,
-                                    color = AcornTheme.colors.ripple,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 ),
                                 onClick = {
                                     view.playSoundEffect(SoundEffectConstants.CLICK)

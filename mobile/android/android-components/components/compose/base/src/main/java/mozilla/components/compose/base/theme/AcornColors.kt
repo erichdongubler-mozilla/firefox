@@ -28,7 +28,6 @@ class AcornColors(
     formDefault: Color,
     textOnColorPrimary: Color,
     iconOnColor: Color,
-    ripple: Color,
     tabActive: Color,
     tabInactive: Color,
     information: Color,
@@ -68,9 +67,6 @@ class AcornColors(
 
     // Icon inverted (on color)
     var iconOnColor by mutableStateOf(iconOnColor)
-        private set
-
-    var ripple by mutableStateOf(ripple)
         private set
 
     // Tab Active
@@ -147,7 +143,6 @@ class AcornColors(
         formDefault = other.formDefault
         textOnColorPrimary = other.textOnColorPrimary
         iconOnColor = other.iconOnColor
-        ripple = other.ripple
         tabActive = other.tabActive
         tabInactive = other.tabInactive
         information = other.information
@@ -171,7 +166,6 @@ class AcornColors(
         formDefault: Color = this.formDefault,
         textOnColorPrimary: Color = this.textOnColorPrimary,
         iconOnColor: Color = this.iconOnColor,
-        ripple: Color = this.ripple,
         tabActive: Color = this.tabActive,
         tabInactive: Color = this.tabInactive,
         information: Color = this.information,
@@ -189,7 +183,6 @@ class AcornColors(
         formDefault = formDefault,
         textOnColorPrimary = textOnColorPrimary,
         iconOnColor = iconOnColor,
-        ripple = ripple,
         tabActive = tabActive,
         tabInactive = tabInactive,
         information = information,
@@ -210,7 +203,6 @@ val darkColorPalette = AcornColors(
     formDefault = PhotonColors.LightGrey05,
     textOnColorPrimary = PhotonColors.LightGrey05,
     iconOnColor = PhotonColors.LightGrey05,
-    ripple = PhotonColors.White,
     tabActive = PhotonColors.DarkGrey30,
     tabInactive = PhotonColors.DarkGrey80,
     information = PhotonColors.Blue30,
@@ -230,7 +222,6 @@ val lightColorPalette = AcornColors(
     formDefault = PhotonColors.DarkGrey90,
     textOnColorPrimary = PhotonColors.LightGrey05,
     iconOnColor = PhotonColors.LightGrey05,
-    ripple = PhotonColors.Black,
     tabActive = PhotonColors.LightGrey10,
     tabInactive = PhotonColors.LightGrey20,
     information = PhotonColors.Blue60,
