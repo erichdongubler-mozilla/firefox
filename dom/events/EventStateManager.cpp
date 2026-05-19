@@ -4688,9 +4688,8 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
     case eMouseEnterIntoWidget:
       if (mCurrentTarget) {
-        // FIXME: bug 2035992
         nsCOMPtr<nsIContent> targetContent =
-            mCurrentTarget->GetExplicitEventTargetContent(aEvent);
+            mCurrentTarget->GetEventTargetContent(aEvent);
         SetContentState(targetContent, ElementState::HOVER);
       }
       break;
