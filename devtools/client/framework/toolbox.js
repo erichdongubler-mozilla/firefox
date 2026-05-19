@@ -91,7 +91,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
-  TYPES: "resource://devtools/shared/highlighters.mjs",
 });
 loader.lazyRequireGetter(this, "flags", "resource://devtools/shared/flags.js");
 loader.lazyRequireGetter(
@@ -358,8 +357,8 @@ class Toolbox extends EventEmitter {
     this._onMouseDown = this._onMouseDown.bind(this);
     this.updateToolboxButtonsVisibility =
       this.updateToolboxButtonsVisibility.bind(this);
-    this.updateToolboxButtons = this.updateToolboxButtons.bind(this);
     this.selectTool = this.selectTool.bind(this);
+    this._renderToolboxButtons = this._renderToolboxButtons.bind(this);
     this._pingTelemetrySelectTool = this._pingTelemetrySelectTool.bind(this);
     this.toggleSplitConsole = this.toggleSplitConsole.bind(this);
     this.toggleOptions = this.toggleOptions.bind(this);
@@ -2186,7 +2185,7 @@ class Toolbox extends EventEmitter {
       this.toolbarButtons.push(button);
     });
 
-    this.component.setToolboxButtons(this.toolbarButtons);
+    this._renderToolboxButtons();
   }
 
   /**
@@ -2462,24 +2461,7 @@ class Toolbox extends EventEmitter {
     this.toolbarButtons.forEach(button => {
       button.isVisible = this._commandIsVisible(button);
     });
-    this.component.setToolboxButtons(this.toolbarButtons);
-  }
-
-  /**
-   * Update the buttons.
-   */
-  updateToolboxButtons() {
-    const inspectorFront = this.target.getCachedFront("inspector");
-    // two of the buttons have highlighters that need to be cleared
-    // on will-navigate, otherwise we hold on to the stale highlighter
-    const hasHighlighters =
-      inspectorFront &&
-      (inspectorFront.hasHighlighter(lazy.TYPES.RULERS) ||
-        inspectorFront.hasHighlighter(lazy.TYPES.MEASURING));
-    if (hasHighlighters) {
-      inspectorFront.destroyHighlighters();
-      this.component.setToolboxButtons(this.toolbarButtons);
-    }
+    this._renderToolboxButtons();
   }
 
   /**
@@ -3100,6 +3082,13 @@ class Toolbox extends EventEmitter {
     });
   }
 
+  /**
+   * Render the toolbox buttons
+   */
+  _renderToolboxButtons() {
+    this.component.setToolboxButtons(this.toolbarButtons);
+  }
+
   _pingTelemetrySelectTool(id, reason) {
     const width = Math.ceil(this.win.outerWidth / 50) * 50;
     const panelName = this.getTelemetryPanelNameOrOther(id);
@@ -3444,7 +3433,20 @@ class Toolbox extends EventEmitter {
     if (!isFrameSwitching) {
       this._updateFrames({ destroyAll: true });
     }
-    this.updateToolboxButtons();
+
+    // Any highlighters associated with the toolbox buttons need to be cleared
+    // before navigating away to another web page, otherwise we hold on to the
+    // stale highlighter.
+    const inspectorFront = this.target.getCachedFront("inspector");
+    if (inspectorFront) {
+      this.toolbarButtons.forEach(toolboxButton => {
+        toolboxButton.highlighterTypes?.forEach(type => {
+          inspectorFront.destroyHighlighterByType(type);
+        });
+      });
+    }
+    this.updateToolboxButtonsVisibility();
+
     const toolId = this.currentToolId;
     // For now, only inspector, webconsole, netmonitor and accessibility fire "reloaded" event
     if (
@@ -3812,7 +3814,7 @@ class Toolbox extends EventEmitter {
         () => {
           // Toolbox may have been destroyed in the meantime
           if (this.component) {
-            this.component.setToolboxButtons(this.toolbarButtons);
+            this._renderToolboxButtons();
           }
           this.debouncedToolbarUpdate = null;
         },
@@ -4231,8 +4233,8 @@ class Toolbox extends EventEmitter {
     this.updateFrameButton();
     this.updateErrorCountButton();
 
-    // Calling setToolboxButtons in case the visibility of a button changed.
-    this.component.setToolboxButtons(this.toolbarButtons);
+    // Calling _renderToolboxButtons in case the visibility of a button changed.
+    this._renderToolboxButtons();
   }
 
   /**
