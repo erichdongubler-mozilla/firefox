@@ -8600,9 +8600,7 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
     return true;
   }
 
-  // FIXME: bug 2035992
-  if (auto* target =
-          aFrameToHandleEvent->GetExplicitEventTargetContent(aGUIEvent)) {
+  if (auto* target = aFrameToHandleEvent->GetEventTargetContent(aGUIEvent)) {
     aGUIEvent->mTarget = target;
   }
 
