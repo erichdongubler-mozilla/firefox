@@ -2006,7 +2006,8 @@ void Animation::MaybeUpdateKeyframeComputedOffsets() {
     return;
   }
 
-  mEffect->AsKeyframeEffect()->MaybeUpdateKeyframeComputedOffsets(mTimeline);
+  mEffect->AsKeyframeEffect()->MaybeUpdateKeyframeComputedOffsets(
+      mTimeline, mTimelineRange);
 }
 
 StickyTimeDuration Animation::EffectEnd() const {

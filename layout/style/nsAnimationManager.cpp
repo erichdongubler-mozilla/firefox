@@ -86,8 +86,10 @@ class MOZ_STACK_CLASS ServoCSSAnimationBuilder final {
         aElement, *mComputedStyle, aName, aTimingFunction, aKeyframes);
   }
   void SetKeyframes(KeyframeEffect& aEffect, nsTArray<Keyframe>&& aKeyframes,
-                    const dom::AnimationTimeline* aTimeline) {
-    aEffect.SetKeyframes(std::move(aKeyframes), mComputedStyle, aTimeline);
+                    const dom::AnimationTimeline* aTimeline,
+                    const dom::AnimationRange& aRange) {
+    aEffect.SetKeyframes(std::move(aKeyframes), mComputedStyle, aTimeline,
+                         &aRange);
   }
 
   // Currently all the animation building code in this file is based on
@@ -214,7 +216,7 @@ static void UpdateOldAnimationPropertiesWithNew(
     if (KeyframeEffect* oldKeyframeEffect = oldEffect->AsKeyframeEffect()) {
       if (~aOverriddenProperties & CSSAnimationProperties::Keyframes) {
         aBuilder.SetKeyframes(*oldKeyframeEffect, std::move(aNewKeyframes),
-                              aTimeline);
+                              aTimeline, aTimelineRange);
       }
 
       if (~aOverriddenProperties & CSSAnimationProperties::Composition) {
@@ -424,7 +426,7 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
       OwningAnimationTarget(aTarget.mElement, aTarget.mPseudoRequest),
       std::move(timing), effectOptions);
 
-  aBuilder.SetKeyframes(*effect, std::move(keyframes), timeline);
+  aBuilder.SetKeyframes(*effect, std::move(keyframes), timeline, range);
 
   auto animation = MakeRefPtr<CSSAnimation>(
       aPresContext->Document()->GetScopeObject(), animationName);

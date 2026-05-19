@@ -273,7 +273,8 @@ nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
 
 /* static */
 KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
-    nsTArray<Keyframe>& aKeyframes, const dom::AnimationTimeline* aTimeline) {
+    nsTArray<Keyframe>& aKeyframes, const dom::AnimationTimeline* aTimeline,
+    const dom::AnimationRange* aRange) {
   if (aKeyframes.IsEmpty()) {
     return {false, false};
   }
@@ -309,7 +310,8 @@ KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
     }
 
     hasTimelineRangeOffset = true;
-    keyframe.mComputedOffset = GetComputedOffset(offset.ref(), aTimeline);
+    keyframe.mComputedOffset =
+        GetComputedOffset(offset.ref(), aTimeline, aRange);
   }
 
   // 2. The 2nd pass. Follow the spec to compute the missing offsets.
@@ -319,9 +321,9 @@ KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
 }
 
 /* static */
-double KeyframeUtils::GetComputedOffset(
-    const Keyframe::OffsetType& aOffset,
-    const dom::AnimationTimeline* aTimeline) {
+double KeyframeUtils::GetComputedOffset(const Keyframe::OffsetType& aOffset,
+                                        const dom::AnimationTimeline* aTimeline,
+                                        const dom::AnimationRange* aRange) {
   MOZ_ASSERT(aOffset.mRangeName != StyleTimelineRangeName::None &&
                  aOffset.mRangeName != StyleTimelineRangeName::Normal,
              "This is only for keyframe selector with timeline range name");
@@ -333,11 +335,13 @@ double KeyframeUtils::GetComputedOffset(
   const dom::ViewTimeline* vt = aTimeline->AsViewTimeline();
   const auto result =
       vt->MapKeyframeOffsetToOffset(aOffset.mRangeName, aOffset.mPercentage);
+  if (!result) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
 
-  // FIXME: Bug 2039090. We should apply animation-range to get the correct
-  // computed offset.
+  // TODO: Apply |aRange| in the next patch.
 
-  return result ? result.value() : std::numeric_limits<double>::quiet_NaN();
+  return *result;
 }
 
 /* static */
