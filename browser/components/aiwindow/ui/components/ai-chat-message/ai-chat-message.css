@@ -32,6 +32,11 @@
     accent-color: var(--smartwindow-assistant-accent-color-focus);
     outline-style: inset;
   }
+
+  /* making sure links keep the same color while being printed */
+  :host(:not([complete])) & a {
+    --smartwindow-assistant-link-color-visited: var(--smartwindow-assistant-link-color);
+  }
 }
 
 .message-user p {

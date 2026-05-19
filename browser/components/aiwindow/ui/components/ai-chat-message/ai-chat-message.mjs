@@ -41,7 +41,7 @@ export class AIChatMessage extends MozLitElement {
     role: { type: String }, // "user" | "assistant"
     message: { type: String },
     messageId: { type: String, reflect: true, attribute: "data-message-id" },
-    complete: { type: Boolean },
+    complete: { type: Boolean, reflect: true },
     seenUrls: { type: Object, attribute: false },
     conversationId: { type: String },
   };
