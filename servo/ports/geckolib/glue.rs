@@ -6883,7 +6883,11 @@ pub struct CssSupportsParams {
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_CSSSupports(cond: &nsACString, params: &CssSupportsParams) -> bool {
+pub unsafe extern "C" fn Servo_CSSSupports(
+    cond: &nsACString,
+    params: &CssSupportsParams,
+    raw_extra_data: *mut URLExtraData,
+) -> bool {
     let condition = unsafe { cond.as_str_unchecked() };
     let mut input = ParserInput::new(&condition);
     let mut input = Parser::new(&mut input);
@@ -6894,7 +6898,13 @@ pub extern "C" fn Servo_CSSSupports(cond: &nsACString, params: &CssSupportsParam
 
     let url_data = unsafe {
         match params.url_context {
-            CssSupportsUrlContext::Default => dummy_url_data(),
+            CssSupportsUrlContext::Default => {
+                if !raw_extra_data.is_null() {
+                    UrlExtraData::from_ptr_ref(&raw_extra_data)
+                } else {
+                    dummy_url_data()
+                }
+            },
             CssSupportsUrlContext::Chrome => dummy_chrome_url_data(),
         }
     };

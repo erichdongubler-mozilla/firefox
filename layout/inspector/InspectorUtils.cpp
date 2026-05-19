@@ -701,7 +701,8 @@ bool InspectorUtils::Supports(GlobalObject&, const nsACString& aDeclaration,
                     ? nsCompatibility::eCompatibility_NavQuirks
                     : nsCompatibility::eCompatibility_FullStandards,
   };
-  return Servo_CSSSupports(&aDeclaration, &params);
+  return Servo_CSSSupports(&aDeclaration, &params,
+                           /* aUrlData = */ nullptr);
 }
 
 bool InspectorUtils::CssPropertySupportsType(GlobalObject& aGlobalObject,
