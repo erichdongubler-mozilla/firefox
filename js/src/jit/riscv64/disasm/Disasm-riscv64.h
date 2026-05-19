@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 
+#include "jit/riscv64/base/Instruction.h"
 #include "jit/riscv64/base/Vector.h"
 #include "jit/riscv64/constant/Constant-riscv64.h"
 

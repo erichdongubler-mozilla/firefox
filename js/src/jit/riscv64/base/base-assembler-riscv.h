@@ -39,6 +39,7 @@
 
 #include "jit/Label.h"
 #include "jit/riscv64/Architecture-riscv64.h"
+#include "jit/riscv64/base/Instruction.h"
 #include "jit/riscv64/constant/Constant-riscv64.h"
 #include "jit/riscv64/Register-riscv64.h"
 #include "jit/shared/IonAssemblerBuffer.h"

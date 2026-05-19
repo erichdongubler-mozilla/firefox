@@ -1,21 +1,13 @@
 // Copyright 2021 the V8 project authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-#include "jit/riscv64/constant/Base-constant-riscv.h"
+#include "jit/riscv64/base/Instruction.h"
 
 #include "mozilla/Assertions.h"
 
-#include "jit/riscv64/constant/Constant-riscv-c.h"
-#include "jit/riscv64/constant/Constant-riscv-d.h"
-#include "jit/riscv64/constant/Constant-riscv-f.h"
-#include "jit/riscv64/constant/Constant-riscv-i.h"
-#include "jit/riscv64/constant/Constant-riscv-m.h"
-#include "jit/riscv64/constant/Constant-riscv-v.h"
-#include "jit/riscv64/constant/Constant-riscv-zicsr.h"
-#include "jit/riscv64/constant/Constant-riscv-zifencei.h"
 #include "jit/riscv64/Simulator-riscv64.h"
-namespace js {
-namespace jit {
+
+namespace js::jit {
 
 int32_t ImmBranchMaxForwardOffset(OffsetSize bits) {
   return (1 << (bits - 1)) - 1;
@@ -230,5 +222,5 @@ InstructionBase::Type InstructionBase::InstructionType() const {
   }
   return kUnsupported;
 }
-}  // namespace jit
-}  // namespace js
+
+}  // namespace js::jit

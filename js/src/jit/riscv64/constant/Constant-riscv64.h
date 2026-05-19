@@ -45,8 +45,6 @@ static constexpr int kMaxJumpOffset = (1 << (kJumpOffsetBits - 1)) - 1;
 
 static constexpr int kCJumpOffset = (1 << (kCJalOffsetBits - 1)) - 1;
 
-static constexpr int kTrampolineSlotsSize = 2 * kInstrSize;
-
 static_assert(kCJalOffsetBits == kOffset12);
 static_assert(kCBranchOffsetBits == kOffset9);
 static_assert(kJumpOffsetBits == kOffset21);
