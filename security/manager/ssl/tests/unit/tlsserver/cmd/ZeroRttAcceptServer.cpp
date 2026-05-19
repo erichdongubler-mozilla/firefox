@@ -360,6 +360,14 @@ void HandleH2Session(Connection& conn) {
     return;
   }
 
+  // Emit a second NewSessionTicket.  SSLTokensCache::Get consumes one
+  // token per call, so a warm-up connection that leaves two tokens in
+  // the cache lets two concurrent race connections each start 0-RTT
+  // with a distinct ticket — the precondition for the HE 0-RTT requeue
+  // regression test.  The ticket is buffered and flushed to the client
+  // on the next SSL write (the server SETTINGS frame below).
+  (void)SSL_SendSessionTicket(conn.mSocket, nullptr, 0);
+
   // Send our (empty) server SETTINGS frame immediately.
   static const uint8_t kServerSettings[] = {
       0x00, 0x00, 0x00,       // length = 0
@@ -522,10 +530,11 @@ void HandleHttpConnection(PRFileDesc* aSocket,
   SSL_ResetHandshake(sslSocket, /* asServer */ 1);
 
   // Drive the handshake so ALPN is actually selected before we look
-  // at it — SSL_ForceHandshake returns WOULD_BLOCK on a non-blocking
-  // socket but still progresses the state machine as far as the
-  // current input allows.
+  // at it.  SSL_ForceHandshake on the blocking socket returns only
+  // when the full TLS exchange is done — but we ignore the return
+  // value and handle the remaining handshake steps later.
   (void)SSL_ForceHandshake(sslSocket);
+
   SSLNextProtoState state = SSL_NEXT_PROTO_NO_SUPPORT;
   uint8_t protoBuf[32] = {0};
   unsigned int protoLen = 0;
