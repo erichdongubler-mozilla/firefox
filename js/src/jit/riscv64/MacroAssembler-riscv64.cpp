@@ -3895,8 +3895,7 @@ CodeOffset MacroAssembler::callWithPatch() {
   DEBUG_PRINTF("\tcallWithPatch\n");
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  int32_t imm32 = 1 * sizeof(uint32_t);
-  auto [Hi20, Lo12] = ToHigh20Low12(imm32);
+  auto [Hi20, Lo12] = ToHigh20Low12(0);
   auipc(scratch, Hi20);  // Read PC + Hi20 into scratch.
   jalr(scratch, Lo12);   // jump PC + Hi20 + Lo12
   DEBUG_PRINTF("\tret %d\n", currentOffset());
