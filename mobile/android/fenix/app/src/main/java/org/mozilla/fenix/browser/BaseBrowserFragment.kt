@@ -1035,11 +1035,11 @@ abstract class BaseBrowserFragment :
                         get() = emailMaskBar
 
                     override fun shouldShowEmailMaskCfr() =
-                        context.settings().shouldShowEmailMaskCfr &&
+                        requireComponents.emailMasksRepository.shouldShowCfr() &&
                             context.settings().cfrPopupsEnabled
 
                     override fun onEmailMaskCfrDismissed() {
-                        context.settings().shouldShowEmailMaskCfr = false
+                        requireComponents.emailMasksRepository.dismissCfr()
                     }
 
                     override suspend fun onEmailMaskClick(generatedFor: String) = withContext(Dispatchers.IO) {
@@ -1066,7 +1066,7 @@ abstract class BaseBrowserFragment :
                     }
                 },
                 isEmailMaskFeatureEnabled = { context.settings().isEmailMaskFeatureEnabled },
-                isSuggestEmailMaskEnabled = { context.settings().isEmailMaskSuggestionEnabled },
+                isSuggestEmailMaskEnabled = { requireComponents.emailMasksRepository.isSuggestionEnabled() },
                 shouldAutomaticallyShowSuggestedPassword = { context.settings().isFirstTimeEngagingWithSignup },
                 onFirstTimeEngagedWithSignup = {
                     context.settings().isFirstTimeEngagingWithSignup = false

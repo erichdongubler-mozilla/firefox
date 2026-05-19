@@ -99,6 +99,8 @@ import org.mozilla.fenix.reviewprompt.ReviewPromptMiddleware
 import org.mozilla.fenix.search.VoiceSearchAIControlFeature
 import org.mozilla.fenix.settings.ai.AIControlsSearchProvider
 import org.mozilla.fenix.settings.datachoices.DataChoicesSearchProvider
+import org.mozilla.fenix.settings.emailmasks.middleware.DefaultEmailMasksRepository
+import org.mozilla.fenix.settings.emailmasks.middleware.EmailMasksRepository
 import org.mozilla.fenix.settings.labs.FirefoxLabsSettingsSearchProvider
 import org.mozilla.fenix.settings.pagesummaries.PageSummariesSettingsSearchProvider
 import org.mozilla.fenix.settings.settingssearch.DefaultFenixSettingsIndexer
@@ -464,6 +466,10 @@ class Components(private val context: Context) {
 
     val relayEligibilityStore by lazyMonitored {
         RelayEligibilityStore(middleware = listOf(ClearLastUsedMiddleware()))
+    }
+
+    val emailMasksRepository: EmailMasksRepository by lazyMonitored {
+        DefaultEmailMasksRepository(settings)
     }
 
     val relayFeatureIntegration by lazyMonitored {
