@@ -67,6 +67,7 @@ private val MenuMaxWidth = 280.dp
  * @param menuItems the list of [MenuItem]s to display in the menu.
  * @param expanded whether or not the menu is expanded.
  * @param modifier [Modifier] to be applied to the menu.
+ * @param headerText optional [Text] to be displayed as a header at the top of the menu.
  * @param offset [DpOffset] from the original anchor position of the menu.
  * @param scrollState [ScrollState] used by the menu's content for vertical scrolling.
  * @param onDismissRequest Invoked when the user requests to dismiss the menu, such as by tapping
@@ -77,6 +78,7 @@ fun DropdownMenu(
     menuItems: List<MenuItem>,
     expanded: Boolean,
     modifier: Modifier = Modifier,
+    headerText: Text? = null,
     offset: DpOffset = DpOffset(0.dp, 0.dp),
     scrollState: ScrollState = rememberScrollState(),
     onDismissRequest: () -> Unit,
@@ -92,6 +94,11 @@ fun DropdownMenu(
         shape = MaterialTheme.shapes.large,
     ) {
         Spacer(modifier = Modifier.height(height = AcornTheme.layout.space.static100))
+
+        headerText?.let { header ->
+            HeaderMenuItemContent(text = header)
+        }
+
         DropdownMenuContent(
             menuItems = menuItems,
             onDismissRequest = onDismissRequest,
@@ -125,6 +132,24 @@ private fun MenuItem.FixedItem.supportingTextColor(): Color {
     } else {
         Color.Unspecified
     }
+}
+
+@Composable
+private fun HeaderMenuItemContent(
+    text: Text,
+) {
+    Text(
+        text = text.value,
+        style = AcornTheme.typography.caption,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AcornTheme.layout.space.static150)
+            .padding(
+                bottom = AcornTheme.layout.space.static100,
+                top = AcornTheme.layout.space.static50,
+            ),
+    )
 }
 
 @Composable
@@ -303,6 +328,7 @@ private fun MenuItemText(
 private data class MenuPreviewParameter(
     val itemType: ItemType,
     val menuItems: List<MenuItem>,
+    val headerText: Text? = null,
 ) {
     enum class ItemType {
         TEXT_ITEMS,
@@ -315,6 +341,7 @@ private val menuPreviewParameters by lazy {
     listOf(
         MenuPreviewParameter(
             itemType = MenuPreviewParameter.ItemType.TEXT_ITEMS,
+            headerText = Text.String("Header Label"),
             menuItems = listOf(
                 MenuItem.TextItem(
                     text = Text.String("Text Item 1"),
@@ -413,6 +440,7 @@ private fun DropdownMenuPreview() {
                     DropdownMenu(
                         menuItems = it.menuItems,
                         expanded = expanded,
+                        headerText = it.headerText,
                         onDismissRequest = { expanded = false },
                     )
                 }
