@@ -2592,7 +2592,7 @@ CodeOffset MacroAssembler::farJumpWithPatch() {
   // Allocate space which will be patched by patchFarJump().
   CodeOffset farJump(nextInstrOffset(5, 0).getOffset());
   auipc(scratch, 0);
-  lw(scratch2, scratch, 4 * sizeof(Instr));
+  lw(scratch2, scratch, 4 * kInstrSize);
   add(scratch, scratch, scratch2);
   jr(scratch, 0);
   spew(".space 32bit initValue 0xffff ffff");
@@ -3669,7 +3669,7 @@ void MacroAssembler::patchSub32FromMemAndBranchIfNegative(CodeOffset offset,
   int32_t val = imm.value;
   MOZ_RELEASE_ASSERT(val >= 1 && val <= 127);
 
-  auto* inst = getInstructionAt(BufferOffset(offset.offset() - 4));
+  auto* inst = getInstructionAt(BufferOffset(offset.offset() - kInstrSize));
   MOZ_ASSERT(inst->IsAddiw());
   inst->SetImm12Value(-val);
 }
@@ -3906,20 +3906,20 @@ CodeOffset MacroAssembler::callWithPatch() {
 void MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset) {
   DEBUG_PRINTF("\tpatchCall\n");
 
-  BufferOffset call(callerOffset - 2 * sizeof(uint32_t));
+  BufferOffset call(callerOffset - 2 * kInstrSize);
   DEBUG_PRINTF("\tcallerOffset %d\n", callerOffset);
 
   int32_t offset = BufferOffset(calleeOffset).getOffset() - call.getOffset();
   if (is_int32(offset)) {
     Instruction* auipc_ = getInstructionAt(call);
     Instruction* jalr_ =
-        getInstructionAt(BufferOffset(callerOffset - 1 * sizeof(uint32_t)));
+        getInstructionAt(BufferOffset(callerOffset - 1 * kInstrSize));
 
-    DEBUG_PRINTF("\t%p %zu\n\t", auipc_, callerOffset - 2 * sizeof(uint32_t));
+    DEBUG_PRINTF("\t%p %u\n\t", auipc_, callerOffset - 2 * kInstrSize);
 #ifdef JS_DISASM_RISCV64
     disassembleInstr(auipc_);
 #endif /* JS_DISASM_RISCV64 */
-    DEBUG_PRINTF("\t%p %zu\n\t", jalr_, callerOffset - 1 * sizeof(uint32_t));
+    DEBUG_PRINTF("\t%p %u\n\t", jalr_, callerOffset - 1 * kInstrSize);
 
 #ifdef JS_DISASM_RISCV64
     disassembleInstr(jalr_);
@@ -4855,11 +4855,11 @@ CodeOffset MacroAssembler::wasmMarkedSlowCall(const wasm::CallSiteDesc& desc,
 }
 //}}} check_macroassembler_style
 
-// This method generates lui, dsll and ori instruction block that can be
+// This method generates lui + addi instruction block that can be
 // modified by UpdateLoad64Value, either during compilation (eg.
 // Assembler::bind), or during execution (eg. jit::PatchJump).
 void MacroAssemblerRiscv64::ma_liPatchable(Register dest, Imm32 imm) {
-  m_buffer.ensureSpace(2 * sizeof(uint32_t));
+  m_buffer.ensureSpace(2 * kInstrSize);
   auto [high_20, low_12] = ToHigh20Low12(imm.value);
   lui(dest, high_20);
   addi(dest, dest, low_12);

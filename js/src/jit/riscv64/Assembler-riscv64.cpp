@@ -946,7 +946,7 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos,
     } break;
     case AUIPC: {
       Instruction* instruction2 =
-          getInstructionAt(BufferOffset(pos.getOffset() + 4));
+          getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
       MOZ_ASSERT(instruction2->IsJalr() || instruction2->IsAddi());
       MOZ_ASSERT(instruction->RdValue() == instruction2->Rs1Value());
 
@@ -1098,7 +1098,8 @@ void Assembler::bind(Label* label, BufferOffset boff) {
           MOZ_RELEASE_ASSERT(
               is_intn(static_cast<int>(next) - fixup_pos, kJumpOffsetBits));
           MOZ_ASSERT(getInstructionAt(BufferOffset(next))->IsAuipc());
-          MOZ_ASSERT(getInstructionAt(BufferOffset(next + 4))->IsJalr());
+          MOZ_ASSERT(
+              getInstructionAt(BufferOffset(next + kInstrSize))->IsJalr());
           DEBUG_PRINTF("\t\ttrampolining: %d\n", next);
         } else {
           jumpChainPutTargetAt(b, dest);
@@ -1112,7 +1113,8 @@ void Assembler::bind(Label* label, BufferOffset boff) {
           MOZ_RELEASE_ASSERT(
               is_intn(static_cast<int>(next) - fixup_pos, kJumpOffsetBits));
           MOZ_ASSERT(getInstructionAt(BufferOffset(next))->IsAuipc());
-          MOZ_ASSERT(getInstructionAt(BufferOffset(next + 4))->IsJalr());
+          MOZ_ASSERT(
+              getInstructionAt(BufferOffset(next + kInstrSize))->IsJalr());
           DEBUG_PRINTF("\t\ttrampolining: %d\n", next);
         } else {
           jumpChainPutTargetAt(b, dest);
@@ -1605,7 +1607,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   Instruction* branchInst = buffer->getInst(branch);
   Instruction* veneerInst_1 = buffer->getInst(veneer);
   Instruction* veneerInst_2 =
-      buffer->getInst(BufferOffset(veneer.getOffset() + 4));
+      buffer->getInst(BufferOffset(veneer.getOffset() + kInstrSize));
 
   // Verify that the branch range matches what's encoded.
   DEBUG_PRINTF("\t%p(%x): ", branchInst, branch.getOffset());

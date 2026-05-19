@@ -115,7 +115,7 @@ static constexpr uint32_t JitStackAlignment = 16;
 static constexpr uint32_t JitStackValueAlignment =
     JitStackAlignment / sizeof(Value);
 static const uint32_t WasmStackAlignment = 16;
-static const uint32_t WasmTrapInstructionLength = 2 * sizeof(uint32_t);
+static const uint32_t WasmTrapInstructionLength = 2 * kInstrSize;
 // See comments in wasm::GenerateFunctionPrologue.  The difference between these
 // is the size of the largest callable prologue on the platform.
 static constexpr uint32_t WasmCheckedCallEntryOffset = 0u;
@@ -128,7 +128,7 @@ class Assembler;
 using Buffer =
     js::jit::AssemblerBufferWithConstantPools<Instruction, Assembler,
                                               js::jit::AssemblerBufferSettings{
-                                                  .instSize = 4,
+                                                  .instSize = kInstrSize,
                                                   .guardSize = 2,
                                                   .headerSize = 2,
                                                   .pcBias = 8,
@@ -469,7 +469,7 @@ class Assembler : public AssemblerShared,
   static void WriteLoad64Instructions(Instruction* inst0, Register reg,
                                       uint64_t value);
 
-  static uint32_t PatchWrite_NearCallSize() { return 7 * sizeof(uint32_t); }
+  static uint32_t PatchWrite_NearCallSize() { return 7 * kInstrSize; }
 
   static void TraceJumpRelocations(JSTracer* trc, JitCode* code,
                                    CompactBufferReader& reader);
@@ -486,7 +486,7 @@ class Assembler : public AssemblerShared,
   void bind(CodeLabel* label) { label->target()->bind(currentOffset()); }
   uint32_t currentOffset() { return nextOffset().getOffset(); }
   void retarget(Label* label, Label* target);
-  static uint32_t NopSize() { return 4; }
+  static uint32_t NopSize() { return kInstrSize; }
 
   static uint64_t GetPointer(uint8_t* instPtr) {
     Instruction* inst = Instruction::At(instPtr);

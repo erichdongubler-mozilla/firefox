@@ -1901,7 +1901,8 @@ void MacroAssembler::patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) {
   DEBUG_PRINTF("patchSub32FromStackPtr at offset %zu with immediate %d\n",
                offset.offset(), imm.value);
   Instruction* inst0 = getInstructionAt(BufferOffset(offset.offset()));
-  Instruction* inst1 = getInstructionAt(BufferOffset(offset.offset() + 4));
+  Instruction* inst1 =
+      getInstructionAt(BufferOffset(offset.offset() + kInstrSize));
   MOZ_ASSERT(inst0->IsLui());
   MOZ_ASSERT(inst1->IsAddi());
 
