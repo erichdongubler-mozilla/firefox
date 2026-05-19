@@ -67,14 +67,12 @@ RefPtr<GenericNonExclusivePromise> MFMediaEngineChild::Init(
             RefPtr<RemoteMediaManagerChild> manager =
                 RemoteMediaManagerChild::GetSingleton(
                     RemoteMediaIn::UtilityProcess_MFMediaEngineCDM);
-            if (!manager || !manager->CanSend()) {
+            if (!manager || !manager->CanSend() ||
+                !manager->SendPMFMediaEngineConstructor(this)) {
               CLOG("Manager not exists or can't send");
               mInitPromiseHolder.RejectIfExists(NS_ERROR_FAILURE, __func__);
               return;
             }
-
-            mIPDLSelfRef = this;
-            (void)manager->SendPMFMediaEngineConstructor(this);
 
             MediaInfoIPDL mediaInfo(
                 info.HasAudio() ? Some(info.mAudio) : Nothing(),
@@ -291,13 +289,12 @@ void MFMediaEngineChild::OwnerDestroyed() {
                              }));
 }
 
-void MFMediaEngineChild::IPDLActorDestroyed() {
+void MFMediaEngineChild::ActorDestroy(ActorDestroyReason aWhy) {
   AssertOnManagerThread();
   if (!mShutdown && mOwner) {
     CLOG("Destroyed actor without shutdown, remote process has crashed!");
     mOwner->NotifyError(NS_ERROR_DOM_MEDIA_REMOTE_CRASHED_MF_CDM_ERR);
   }
-  mIPDLSelfRef = nullptr;
 }
 
 void MFMediaEngineChild::Shutdown() {

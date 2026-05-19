@@ -940,56 +940,6 @@ TrackSupportSet RemoteMediaManagerChild::GetTrackSupport(
   return s;
 }
 
-PRemoteDecoderChild* RemoteMediaManagerChild::AllocPRemoteDecoderChild(
-    const RemoteDecoderInfoIPDL& /* not used */,
-    const CreateDecoderParams::OptionSet& aOptions,
-    const Maybe<layers::TextureFactoryIdentifier>& aIdentifier,
-    const Maybe<uint64_t>& aMediaEngineId, const Maybe<TrackingId>& aTrackingId,
-    PRemoteCDMChild* aCDM) {
-  // RemoteDecoderModule is responsible for creating RemoteDecoderChild
-  // classes.
-  MOZ_ASSERT(false,
-             "RemoteMediaManagerChild cannot create "
-             "RemoteDecoderChild classes");
-  return nullptr;
-}
-
-bool RemoteMediaManagerChild::DeallocPRemoteDecoderChild(
-    PRemoteDecoderChild* actor) {
-  RemoteDecoderChild* child = static_cast<RemoteDecoderChild*>(actor);
-  child->IPDLActorDestroyed();
-  return true;
-}
-
-PMFMediaEngineChild* RemoteMediaManagerChild::AllocPMFMediaEngineChild() {
-  MOZ_ASSERT_UNREACHABLE(
-      "RemoteMediaManagerChild cannot create MFMediaEngineChild classes");
-  return nullptr;
-}
-
-bool RemoteMediaManagerChild::DeallocPMFMediaEngineChild(
-    PMFMediaEngineChild* actor) {
-#ifdef MOZ_WMF_MEDIA_ENGINE
-  MFMediaEngineChild* child = static_cast<MFMediaEngineChild*>(actor);
-  child->IPDLActorDestroyed();
-#endif
-  return true;
-}
-
-PMFCDMChild* RemoteMediaManagerChild::AllocPMFCDMChild(const nsAString&) {
-  MOZ_ASSERT_UNREACHABLE(
-      "RemoteMediaManagerChild cannot create PMFContentDecryptionModuleChild "
-      "classes");
-  return nullptr;
-}
-
-bool RemoteMediaManagerChild::DeallocPMFCDMChild(PMFCDMChild* actor) {
-#ifdef MOZ_WMF_CDM
-  static_cast<MFCDMChild*>(actor)->IPDLActorDestroyed();
-#endif
-  return true;
-}
-
 RemoteMediaManagerChild::RemoteMediaManagerChild(RemoteMediaIn aLocation)
     : mLocation(aLocation) {
   MOZ_ASSERT(mLocation == RemoteMediaIn::GpuProcess ||

@@ -32,7 +32,7 @@ class MFCDMProxy;
  */
 class MFCDMParent final : public PMFCDMParent {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFCDMParent);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFCDMParent, final);
 
   MFCDMParent(const nsAString& aKeySystem, RemoteMediaManagerParent* aManager,
               nsISerialEventTarget* aManagerThread);
@@ -54,6 +54,8 @@ class MFCDMParent final : public PMFCDMParent {
   }
   uint64_t Id() const { return mId; }
   const nsString& GetKeySystem() const { return mKeySystem; }
+
+  void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvGetCapabilities(
       const MFCDMCapabilitiesRequest& aRequest,
@@ -103,8 +105,6 @@ class MFCDMParent final : public PMFCDMParent {
   // all active CDM sessions. Closes every open session and resets the trusted
   // input so the content process can re-establish keys.
   void OnHardwareContextReset();
-
-  void Destroy();
 
  private:
   ~MFCDMParent();
@@ -164,7 +164,6 @@ class MFCDMParent final : public PMFCDMParent {
 
   static inline BSTR sWidevineL1Path;
 
-  RefPtr<MFCDMParent> mIPDLSelfRef;
   Microsoft::WRL::ComPtr<IMFContentDecryptionModuleFactory> mFactory;
   Microsoft::WRL::ComPtr<MFPMPHostWrapper> mPMPHostWrapper;
 

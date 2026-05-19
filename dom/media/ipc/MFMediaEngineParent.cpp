@@ -97,7 +97,6 @@ MFMediaEngineParent::MFMediaEngineParent(RemoteMediaManagerParent* aManager,
              ipc::SandboxingKind::MF_MEDIA_ENGINE_CDM);
   LOG("Created MFMediaEngineParent");
   RegisterMediaEngine(this);
-  mIPDLSelfRef = this;
   CreateMediaEngine();
 }
 
@@ -736,11 +735,6 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvShutdown() {
   ENGINE_MARKER("MFMediaEngineParent,Shutdown");
   DestroyEngineIfExists();
   return IPC_OK();
-}
-
-void MFMediaEngineParent::Destroy() {
-  AssertOnManagerThread();
-  mIPDLSelfRef = nullptr;
 }
 
 void MFMediaEngineParent::HandleRequestSample(const SampleRequest& aRequest) {

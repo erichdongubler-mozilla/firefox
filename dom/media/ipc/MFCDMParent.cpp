@@ -430,7 +430,6 @@ MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
     MFCDM_PARENT_LOG("%s", msg.get());
     PROFILER_MARKER_TEXT("MFCDMParent::Ctor", MEDIA_PLAYBACK, {}, msg);
   }
-  mIPDLSelfRef = this;
   Register();
 
   mKeyMessageListener = mKeyMessageEvents.Connect(
@@ -536,9 +535,9 @@ void MFCDMParent::ShutdownCDM() {
   MFCDM_PARENT_LOG("Shutdown CDM completed");
 }
 
-void MFCDMParent::Destroy() {
+void MFCDMParent::ActorDestroy(ActorDestroyReason aWhy) {
   ASSERT_CDM_ACCESS_READ_ONLY_ON_MANAGER_THREAD();
-  PROFILER_MARKER_UNTYPED("MFCDMParent::Destroy", MEDIA_PLAYBACK);
+  PROFILER_MARKER_UNTYPED("MFCDMParent::ActorDestroy", MEDIA_PLAYBACK);
   mKeyMessageEvents.DisconnectAll();
   mKeyChangeEvents.DisconnectAll();
   mExpirationEvents.DisconnectAll();
@@ -557,7 +556,6 @@ void MFCDMParent::Destroy() {
     iter.second->Close(dom::MediaKeySessionClosedReason::Closed_by_application);
   }
   mSessions.clear();
-  mIPDLSelfRef = nullptr;
 }
 
 MFCDMParent::~MFCDMParent() {
