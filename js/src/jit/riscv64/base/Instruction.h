@@ -34,6 +34,18 @@ constexpr uint8_t kInstrSize = 4;
 constexpr uint8_t kShortInstrSize = 2;
 
 class InstructionBase {
+  // Sign-extend a |len|-bits integer.
+  static constexpr int32_t sext(int32_t x, uint32_t len) {
+    MOZ_ASSERT(0 < len && len <= 32);
+    return ((x << (32 - len)) >> (32 - len));
+  }
+
+  // Zero-extend a |len|-bits integer.
+  static constexpr uint32_t zext(uint32_t x, uint32_t len) {
+    MOZ_ASSERT(0 < len && len <= 32);
+    return ((x << (32 - len)) >> (32 - len));
+  }
+
  public:
   enum {
     // On RISC-V, PC cannot actually be directly accessed. We behave as if PC
@@ -329,7 +341,7 @@ class InstructionBase {
   inline int Imm12Value() const {
     MOZ_ASSERT(InstructionType() == InstructionBase::kIType);
     int Value = Bits(kImm12Shift + kImm12Bits - 1, kImm12Shift);
-    return Value << 20 >> 20;
+    return sext(Value, kImm12Bits);
   }
 
   inline int BranchOffset() const {
@@ -339,7 +351,7 @@ class InstructionBase {
     uint32_t Bits = InstructionBits();
     int16_t imm13 = ((Bits & 0xf00) >> 7) | ((Bits & 0x7e000000) >> 20) |
                     ((Bits & 0x80) << 4) | ((Bits & 0x80000000) >> 19);
-    return imm13 << 19 >> 19;
+    return sext(imm13, 13);
   }
 
   inline int StoreOffset() const {
@@ -348,7 +360,7 @@ class InstructionBase {
     //  31       25                      11       7
     uint32_t Bits = InstructionBits();
     int16_t imm12 = ((Bits & 0xf80) >> 7) | ((Bits & 0xfe000000) >> 20);
-    return imm12 << 20 >> 20;
+    return sext(imm12, 12);
   }
 
   inline int Imm20UValue() const {
@@ -366,7 +378,7 @@ class InstructionBase {
     uint32_t Bits = InstructionBits();
     int32_t imm20 = ((Bits & 0x7fe00000) >> 20) | ((Bits & 0x100000) >> 9) |
                     (Bits & 0xff000) | ((Bits & 0x80000000) >> 11);
-    return imm20 << 11 >> 11;
+    return sext(imm20, 20 + 1);  // +1 b/c J immediates are shifted by 1 bit.
   }
 
   inline bool IsArithShift() const {
@@ -402,7 +414,7 @@ class InstructionBase {
     //  15         12              6        2
     uint32_t Bits = InstructionBits();
     int32_t imm6 = ((Bits & 0x1000) >> 7) | ((Bits & 0x7c) >> 2);
-    return imm6 << 26 >> 26;
+    return sext(imm6, 6);
   }
 
   inline int RvcImm6Addi16spValue() const {
@@ -414,7 +426,7 @@ class InstructionBase {
                     ((Bits & 0x20) << 1) | ((Bits & 0x18) << 4) |
                     ((Bits & 0x4) << 3);
     MOZ_ASSERT(imm10 != 0);
-    return imm10 << 22 >> 22;
+    return sext(imm10, 10);
   }
 
   inline int RvcImm8Addi4spnValue() const {
@@ -502,7 +514,7 @@ class InstructionBase {
                     ((Bits & 0x40) << 1) | ((Bits & 0x80) >> 1) |
                     ((Bits & 0x100) << 2) | ((Bits & 0x600) >> 1) |
                     ((Bits & 0x800) >> 7) | ((Bits & 0x1000) >> 1);
-    return imm12 << 20 >> 20;
+    return sext(imm12, 12);
   }
 
   inline int RvcImm8BValue() const {
@@ -513,7 +525,7 @@ class InstructionBase {
     int32_t imm9 = ((Bits & 0x4) << 3) | ((Bits & 0x18) >> 2) |
                    ((Bits & 0x60) << 1) | ((Bits & 0xc00) >> 7) |
                    ((Bits & 0x1000) >> 4);
-    return imm9 << 23 >> 23;
+    return sext(imm9, 9);
   }
 
   inline int vl_vs_width() {
@@ -622,9 +634,6 @@ class InstructionBase {
     }
   }
 
-#define sext(x, len) (((int32_t)(x) << (32 - len)) >> (32 - len))
-#define zext(x, len) (((uint32_t)(x) << (32 - len)) >> (32 - len))
-
   inline int32_t RvvSimm5() const {
     MOZ_ASSERT(InstructionType() == InstructionBase::kVType);
     return sext(Bits(kRvvImm5Shift + kRvvImm5Bits - 1, kRvvImm5Shift),
@@ -636,8 +645,7 @@ class InstructionBase {
     uint32_t imm = Bits(kRvvImm5Shift + kRvvImm5Bits - 1, kRvvImm5Shift);
     return zext(imm, kRvvImm5Bits);
   }
-#undef sext
-#undef zext
+
   inline bool AqValue() const { return Bits(kAqShift, kAqShift); }
 
   inline bool RlValue() const { return Bits(kRlShift, kRlShift); }
