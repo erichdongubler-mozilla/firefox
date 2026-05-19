@@ -20,5 +20,4 @@ RUN mkdir -p /builds/worker/workspace/keys && \
     chmod -R a+r,a-w /builds/worker/workspace/keys
 
 # Copy files
-# %include tools/update-packaging/make_incremental_zucchini.py
-COPY topsrcdir/tools/update-packaging/make_incremental_zucchini.py /builds/worker/bin/make_incremental_zucchini.py
+COPY make_incremental_zucchini.py /builds/worker/bin/make_incremental_zucchini.py
