@@ -387,12 +387,11 @@ class Assembler : public AssemblerShared,
 #ifdef JS_DISASM_RISCV64
   static int disassembleInstr(Instr instr, bool enable_spew = false);
 #endif /* JS_DISASM_RISCV64 */
-  int jumpChainTargetAt(BufferOffset pos, bool is_internal);
+  int jumpChainTargetAt(BufferOffset pos);
   static int jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
-                               bool is_internal,
                                Instruction* instruction2 = nullptr);
-  BufferOffset jumpChainGetNextLink(BufferOffset pos, bool is_internal);
-  uint32_t jumpChainUseNextLink(Label* label, bool is_internal);
+  BufferOffset jumpChainGetNextLink(BufferOffset pos);
+  uint32_t jumpChainUseNextLink(Label* label);
   static uint64_t jumpChainTargetAddressAt(Instruction* pos);
   static void jumpChainSetTargetValueAt(Instruction* pc, uint64_t target);
   // Returns true if the target was successfully assembled and spewed.

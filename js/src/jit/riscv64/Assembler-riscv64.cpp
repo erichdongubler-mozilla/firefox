@@ -972,7 +972,7 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
 const int kEndOfChain = -1;
 const int32_t kEndOfJumpChain = 0;
 
-int Assembler::jumpChainTargetAt(BufferOffset pos, bool is_internal) {
+int Assembler::jumpChainTargetAt(BufferOffset pos) {
   if (oom()) {
     return kEndOfChain;
   }
@@ -981,11 +981,11 @@ int Assembler::jumpChainTargetAt(BufferOffset pos, bool is_internal) {
   if (instruction->IsAuipc()) {
     instruction2 = getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
   }
-  return jumpChainTargetAt(instruction, pos, is_internal, instruction2);
+  return jumpChainTargetAt(instruction, pos, instruction2);
 }
 
 int Assembler::jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
-                                 bool is_internal, Instruction* instruction2) {
+                                 Instruction* instruction2) {
   DEBUG_PRINTF("\t jumpChainTargetAt: %p(%x)\n\t",
                reinterpret_cast<Instr*>(instruction), pos.getOffset());
 #ifdef JS_DISASM_RISCV64
@@ -1053,15 +1053,14 @@ int Assembler::jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
   }
 }
 
-BufferOffset Assembler::jumpChainGetNextLink(BufferOffset pos,
-                                             bool is_internal) {
-  int link = jumpChainTargetAt(pos, is_internal);
+BufferOffset Assembler::jumpChainGetNextLink(BufferOffset pos) {
+  int link = jumpChainTargetAt(pos);
   return link == kEndOfChain ? BufferOffset() : BufferOffset(link);
 }
 
-uint32_t Assembler::jumpChainUseNextLink(Label* L, bool is_internal) {
+uint32_t Assembler::jumpChainUseNextLink(Label* L) {
   MOZ_ASSERT(L->used());
-  BufferOffset link = jumpChainGetNextLink(BufferOffset(L), is_internal);
+  BufferOffset link = jumpChainGetNextLink(BufferOffset(L));
   if (!link.assigned()) {
     L->reset();
     return LabelBase::INVALID_OFFSET;
@@ -1092,7 +1091,7 @@ void Assembler::bind(Label* label, BufferOffset boff) {
       }
       int fixup_pos = b.getOffset();
       int dist = dest.getOffset() - fixup_pos;
-      next = jumpChainUseNextLink(label, false);
+      next = jumpChainUseNextLink(label);
       DEBUG_PRINTF(
           "\t%p fixup: %d next: %u dest: %d dist: %d nextOffset: %d "
           "currOffset: %d\n",
@@ -1233,7 +1232,7 @@ int32_t Assembler::branchLongOffsetHelper(Label* L) {
     BufferOffset exbr;
     do {
       exbr = next;
-      next = jumpChainGetNextLink(next, false);
+      next = jumpChainGetNextLink(next);
     } while (next.assigned());
     mozilla::DebugOnly<bool> ok = jumpChainPutTargetAt(exbr, next_instr_offset);
     MOZ_ASSERT(ok, "Still can't reach list head");
@@ -1320,7 +1319,7 @@ int32_t Assembler::branchOffsetHelper(Label* L, OffsetSize bits) {
     BufferOffset exbr;
     do {
       exbr = next;
-      next = jumpChainGetNextLink(next, false);
+      next = jumpChainGetNextLink(next);
     } while (next.assigned());
     mozilla::DebugOnly<bool> ok = jumpChainPutTargetAt(exbr, next_instr_offset);
     MOZ_ASSERT(ok, "Still can't reach list head");
@@ -1549,7 +1548,7 @@ void Assembler::retarget(Label* label, Label* target) {
 
       // Find the head of the use chain for label.
       do {
-        next = jumpChainUseNextLink(label, false);
+        next = jumpChainUseNextLink(label);
         labelBranchOffset = BufferOffset(next);
       } while (next != LabelBase::INVALID_OFFSET);
 
@@ -1634,8 +1633,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   // We want to insert veneer after branch in the linked list of instructions
   // that use the same unbound label.
   // The veneer should be an unconditional branch.
-  int32_t nextElemOffset =
-      jumpChainTargetAt(buffer->getInst(branch), branch, false);
+  int32_t nextElemOffset = jumpChainTargetAt(buffer->getInst(branch), branch);
   int32_t dist;
   // If offset is kEndOfChain, this is the end of the linked list.
   if (nextElemOffset != kEndOfChain) {
