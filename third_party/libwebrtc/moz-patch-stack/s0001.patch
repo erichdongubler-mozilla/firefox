@@ -1286,7 +1286,7 @@ index 3b0a981d98..80d961c84c 100644
  
    int64_t _lastProcessFrameTimeNanos RTC_GUARDED_BY(capture_checker_);
 diff --git a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
-index 08fc695bb5..0a54d9e9cc 100644
+index 4392c0f631..46878860e2 100644
 --- a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
 +++ b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
 @@ -286,6 +286,7 @@ LibvpxVp9Encoder::LibvpxVp9Encoder(const Environment& env,
@@ -1297,7 +1297,7 @@ index 08fc695bb5..0a54d9e9cc 100644
        is_flexible_mode_(false),
        variable_framerate_controller_(variable_framerate_screenshare::kMinFps),
        quality_scaler_experiment_(ParseQualityScalerConfig(env.field_trials())),
-@@ -606,6 +607,7 @@ int LibvpxVp9Encoder::InitEncode(const VideoCodec* inst,
+@@ -608,6 +609,7 @@ int LibvpxVp9Encoder::InitEncode(const VideoCodec* inst,
  
    force_key_frame_ = true;
    pics_since_key_ = 0;
@@ -1305,7 +1305,7 @@ index 08fc695bb5..0a54d9e9cc 100644
  
    scalability_mode_ = codec_.GetScalabilityMode();
    if (scalability_mode_.has_value()) {
-@@ -1160,6 +1162,14 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
+@@ -1166,6 +1168,14 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
      config_changed_ = false;
    }
  
@@ -1320,7 +1320,7 @@ index 08fc695bb5..0a54d9e9cc 100644
    // Set input image for use in the callback.
    // This was necessary since you need some information from input_image.
    // You can save only the necessary information (such as timestamp) instead of
-@@ -1307,6 +1317,48 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
+@@ -1313,6 +1323,48 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
    return WEBRTC_VIDEO_CODEC_OK;
  }
  
@@ -1370,7 +1370,7 @@ index 08fc695bb5..0a54d9e9cc 100644
                                               std::optional<int>* spatial_idx,
                                               std::optional<int>* temporal_idx,
 diff --git a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h
-index 133c229ba3..5017d67c1a 100644
+index c3326509ce..293ccd7089 100644
 --- a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h
 +++ b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h
 @@ -84,6 +84,9 @@ class LibvpxVp9Encoder : public VideoEncoder {
