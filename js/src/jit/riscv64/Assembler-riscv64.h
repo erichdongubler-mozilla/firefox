@@ -395,8 +395,7 @@ class Assembler : public AssemblerShared,
   static uint64_t jumpChainTargetAddressAt(Instruction* pos);
   static void jumpChainSetTargetValueAt(Instruction* pc, uint64_t target);
   // Returns true if the target was successfully assembled and spewed.
-  bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
-                            bool trampoline = false);
+  bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
   int32_t branchOffsetHelper(Label* L, OffsetSize bits);
   int32_t branchLongOffsetHelper(Label* L);
 

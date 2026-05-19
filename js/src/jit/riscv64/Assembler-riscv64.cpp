@@ -895,8 +895,8 @@ void Assembler::PatchWrite_Imm32(CodeLocationLabel label, Imm32 imm) {
   *(raw - 1) = imm.value;
 }
 
-bool Assembler::jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
-                                     bool trampoline) {
+bool Assembler::jumpChainPutTargetAt(BufferOffset pos,
+                                     BufferOffset target_pos) {
   if (m_buffer.oom()) {
     return true;
   }
@@ -936,31 +936,20 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
       MOZ_ASSERT(instruction2->IsJalr() || instruction2->IsAddi());
 
       intptr_t offset = target_pos.getOffset() - pos.getOffset();
-      if (is_int21(offset) && instruction2->IsJalr() && trampoline) {
-        MOZ_ASSERT(is_int21(offset) && ((offset & 1) == 0));
-        Instr instr = JAL;
-        instr = SetJalOffset(pos.getOffset(), target_pos.getOffset(), instr);
-        MOZ_ASSERT(reinterpret_cast<Instruction*>(&instr)->IsJal());
-        MOZ_ASSERT(reinterpret_cast<Instruction*>(&instr)->Imm20JValue() ==
-                   offset);
-        putInstrAt(pos, instr);
-        putInstrAt(BufferOffset(pos.getOffset() + 4), kNopByte);
-      } else {
-        MOZ_RELEASE_ASSERT(is_int32(offset + 0x800));
-        MOZ_ASSERT(
-            instruction->RdValue() ==
-            getInstructionAt(BufferOffset(pos.getOffset() + 4))->Rs1Value());
-        int32_t Hi20 = (((int32_t)offset + 0x800) >> 12);
-        int32_t Lo12 = (int32_t)offset << 20 >> 20;
+      MOZ_RELEASE_ASSERT(is_int32(offset + 0x800));
+      MOZ_ASSERT(
+          instruction->RdValue() ==
+          getInstructionAt(BufferOffset(pos.getOffset() + 4))->Rs1Value());
+      int32_t Hi20 = (((int32_t)offset + 0x800) >> 12);
+      int32_t Lo12 = (int32_t)offset << 20 >> 20;
 
-        instr_auipc = SetAuipcOffset(Hi20, instr_auipc);
-        putInstrAt(pos, instr_auipc);
+      instr_auipc = SetAuipcOffset(Hi20, instr_auipc);
+      putInstrAt(pos, instr_auipc);
 
-        const int kImm31_20Mask = ((1 << 12) - 1) << 20;
-        const int kImm11_0Mask = ((1 << 12) - 1);
-        instr_I = (instr_I & ~kImm31_20Mask) | ((Lo12 & kImm11_0Mask) << 20);
-        putInstrAt(BufferOffset(pos.getOffset() + 4), instr_I);
-      }
+      const int kImm31_20Mask = ((1 << 12) - 1) << 20;
+      const int kImm11_0Mask = ((1 << 12) - 1);
+      instr_I = (instr_I & ~kImm31_20Mask) | ((Lo12 & kImm11_0Mask) << 20);
+      putInstrAt(BufferOffset(pos.getOffset() + 4), instr_I);
     } break;
     default:
       UNIMPLEMENTED_RISCV();
