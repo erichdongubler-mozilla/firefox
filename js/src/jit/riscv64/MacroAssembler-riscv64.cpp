@@ -3910,32 +3910,29 @@ void MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset) {
   DEBUG_PRINTF("\tcallerOffset %d\n", callerOffset);
 
   int32_t offset = BufferOffset(calleeOffset).getOffset() - call.getOffset();
-  if (is_int32(offset)) {
-    Instruction* auipc_ = getInstructionAt(call);
-    Instruction* jalr_ =
-        getInstructionAt(BufferOffset(callerOffset - 1 * kInstrSize));
 
-    DEBUG_PRINTF("\t%p %u\n\t", auipc_, callerOffset - 2 * kInstrSize);
+  Instruction* auipc_ = getInstructionAt(call);
+  Instruction* jalr_ =
+      getInstructionAt(BufferOffset(callerOffset - 1 * kInstrSize));
+
+  DEBUG_PRINTF("\t%p %u\n\t", auipc_, callerOffset - 2 * kInstrSize);
 #ifdef JS_DISASM_RISCV64
-    disassembleInstr(auipc_);
+  disassembleInstr(auipc_);
 #endif /* JS_DISASM_RISCV64 */
-    DEBUG_PRINTF("\t%p %u\n\t", jalr_, callerOffset - 1 * kInstrSize);
+  DEBUG_PRINTF("\t%p %u\n\t", jalr_, callerOffset - 1 * kInstrSize);
 
 #ifdef JS_DISASM_RISCV64
-    disassembleInstr(jalr_);
+  disassembleInstr(jalr_);
 #endif /* JS_DISASM_RISCV64 */
-    DEBUG_PRINTF("\t\n");
+  DEBUG_PRINTF("\t\n");
 
-    MOZ_ASSERT(jalr_->IsJalr() && auipc_->IsAuipc());
-    MOZ_ASSERT(auipc_->RdValue() == jalr_->Rs1Value());
+  MOZ_ASSERT(jalr_->IsJalr() && auipc_->IsAuipc());
+  MOZ_ASSERT(auipc_->RdValue() == jalr_->Rs1Value());
 
-    auto [Hi20, Lo12] = ToHigh20Low12(offset);
+  auto [Hi20, Lo12] = ToHigh20Low12(offset);
 
-    auipc_->SetImm20UValue(Hi20);
-    jalr_->SetImm12Value(Lo12);
-  } else {
-    MOZ_CRASH();
-  }
+  auipc_->SetImm20UValue(Hi20);
+  jalr_->SetImm12Value(Lo12);
 }
 
 void MacroAssembler::patchFarJump(CodeOffset farJump, uint32_t targetOffset) {

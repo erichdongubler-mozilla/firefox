@@ -1176,10 +1176,9 @@ int32_t Assembler::branchLongOffsetHelper(Label* L) {
     // The label is bound: all uses are already linked.
     JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
             next_instr_offset.getOffset());
-    intptr_t offset = L->offset() - next_instr_offset.getOffset();
+    int32_t offset = L->offset() - next_instr_offset.getOffset();
     MOZ_ASSERT((offset & 3) == 0);
-    MOZ_ASSERT(is_int32(offset));
-    return static_cast<int32_t>(offset);
+    return offset;
   }
 
   // The label is unbound and previously unused: Store the offset in the label
