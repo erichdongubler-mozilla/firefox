@@ -143,38 +143,48 @@ class IncrementalFinalizeRunnable : public DiscardableRunnable {
 
 }  // namespace mozilla
 
-struct NoteWeakMapChildrenTracer : public JS::CallbackTracer {
+struct NoteWeakMapChildrenTracer
+    : public js::GenericTracerImpl<NoteWeakMapChildrenTracer> {
   NoteWeakMapChildrenTracer(JSRuntime* aRt,
                             nsCycleCollectionNoteRootCallback& aCb)
-      : JS::CallbackTracer(aRt, JS::TracerKind::Callback),
+      : js::GenericTracerImpl<NoteWeakMapChildrenTracer>(
+            aRt, JS::TracerKind::Callback, JS::TraceOptions()),
         mCb(aCb),
         mTracedAny(false),
         mMap(nullptr),
         mKey(nullptr),
         mKeyDelegate(nullptr) {}
-  void onChild(JS::GCCellPtr aThing, const char* name) override;
   nsCycleCollectionNoteRootCallback& mCb;
   bool mTracedAny;
   JSObject* mMap;
   JS::GCCellPtr mKey;
   JSObject* mKeyDelegate;
+
+ private:
+  template <typename T>
+  void onEdge(T** aThingPtr, const char* aName);
+  friend class js::GenericTracerImpl<NoteWeakMapChildrenTracer>;
 };
 
-void NoteWeakMapChildrenTracer::onChild(JS::GCCellPtr aThing,
-                                        const char* name) {
-  if (aThing.is<JSString>()) {
+template <typename T>
+void NoteWeakMapChildrenTracer::onEdge(T** aThingPtr, const char* aName) {
+  if constexpr (std::is_same_v<T, JSString>) {
     return;
   }
 
-  if (!JS::GCThingIsMarkedGrayInCC(aThing) && !mCb.WantAllTraces()) {
+  T* thing = *aThingPtr;
+  MOZ_ASSERT(thing);
+  if (JS::GCThingIsMarkedGrayInCC(js::gc::ToCell(thing)) &&
+      !mCb.WantAllTraces()) {
     return;
   }
 
-  if (JS::IsCCTraceKind(aThing.kind())) {
-    mCb.NoteWeakMapping(mMap, mKey, mKeyDelegate, aThing);
+  JS::GCCellPtr cellPtr(thing);
+  if constexpr (JS::IsCCTraceKind(JS::MapTypeToTraceKind<T>::kind)) {
+    mCb.NoteWeakMapping(mMap, mKey, mKeyDelegate, cellPtr);
     mTracedAny = true;
   } else {
-    JS::TraceChildren(this, aThing);
+    JS::TraceChildren(this, cellPtr);
   }
 }
 
