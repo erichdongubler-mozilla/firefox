@@ -435,27 +435,6 @@ class Assembler : public AssemblerShared,
     return offset;
   }
 
-  void putInstrAt(BufferOffset offset, Instr instr) {
-    Instruction* inst = getInstructionAt(offset);
-
-#ifdef JS_DISASM_RISCV64
-    DEBUG_PRINTF("\t[putInstrAt\n");
-    DEBUG_PRINTF("\t%p %d \n\t", inst, offset.getOffset());
-    disassembleInstr(inst->InstructionBits());
-    DEBUG_PRINTF("\t");
-    inst->SetInstructionBits(instr);
-    disassembleInstr(inst->InstructionBits());
-    DEBUG_PRINTF("\t]\n");
-#else
-    DEBUG_PRINTF(
-        "\t[putInstrAt\n"
-        "\t%p %d \n\t"
-        "\t]\n",
-        inst, offset.getOffset());
-    inst->SetInstructionBits(instr);
-#endif /* JS_DISASM_RISCV64 */
-  }
-
   static Condition InvertCondition(Condition);
 
   static DoubleCondition InvertCondition(DoubleCondition);
@@ -482,10 +461,9 @@ class Assembler : public AssemblerShared,
     // WriteLoad64Instructions will emit 6 instrs to load a addr.
     Assembler::WriteLoad64Instructions(inst, SavedScratchRegister,
                                        (uint64_t)dest);
-    Instr jalr_ = JALR | (ra.code() << kRdShift) | (0x0 << kFunct3Shift) |
-                  (SavedScratchRegister.code() << kRs1Shift) |
-                  (0x0 << kImm12Shift);
-    (inst + 6 * kInstrSize)->SetInstructionBits(jalr_);
+
+    Instruction* jalr = (inst + 6 * kInstrSize);
+    jalr->SetIFormat(RO_JALR, ra.code(), SavedScratchRegister.code(), 0);
   }
   static void WriteLoad64Instructions(Instruction* inst0, Register reg,
                                       uint64_t value);

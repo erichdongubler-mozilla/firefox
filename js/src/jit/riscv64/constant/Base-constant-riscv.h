@@ -157,8 +157,6 @@ const uint32_t kBImm12Mask = kFunct7Mask | kRdFieldMask;
 const uint32_t kImm20Mask = ((1 << kImm20Bits) - 1) << kImm20Shift;
 const uint32_t kImm12Mask = ((1 << kImm12Bits) - 1) << kImm12Shift;
 const uint32_t kImm11Mask = ((1 << kImm11Bits) - 1) << kImm11Shift;
-const uint32_t kImm31_12Mask = ((1 << 20) - 1) << 12;
-const uint32_t kImm19_0Mask = ((1 << 20) - 1);
 
 // for RVV extension
 #define RVV_LMUL(V) \

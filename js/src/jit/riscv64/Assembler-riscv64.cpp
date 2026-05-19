@@ -157,9 +157,11 @@ void Assembler::processCodeLabels(uint8_t* rawCode) {
 void Assembler::WritePoolGuard(BufferOffset branch, Instruction* inst,
                                BufferOffset dest) {
   DEBUG_PRINTF("\tWritePoolGuard\n");
-  Instr jal = JAL | (0 & kImm20Mask);
-  jal = SetJalOffset(branch.getOffset(), dest.getOffset(), jal);
-  inst->SetInstructionBits(jal);
+
+  int32_t offset = dest.getOffset() - branch.getOffset();
+
+  inst->SetJFormat(RO_JAL, zero_reg.code(), offset);
+
   DEBUG_PRINTF("%p(%x): ", inst, branch.getOffset());
 #ifdef JS_DISASM_RISCV64
   disassembleInstr(inst->InstructionBits(), JitSpew_Codegen);
@@ -801,8 +803,8 @@ void Assembler::jumpChainSetTargetValueAt(Instruction* pc, uint64_t target) {
   Instruction* instr5 = pc + 5 * kInstrSize;
 
   // Check we have the result from a li macro-instruction.
-  MOZ_ASSERT(instr0->IsLui() && instr1->IsAddi() && instr3->IsOri() &&
-             instr5->IsOri());
+  MOZ_ASSERT(instr0->IsLui() && instr1->IsAddi() && instr2->IsSlli() &&
+             instr3->IsOri() && instr4->IsSlli() && instr5->IsOri());
 
   int64_t a6 = target & 0x3f;                     // bits 0:6. 6 bits
   int64_t b11 = (target >> 6) & 0x7ff;            // bits 6:11. 11 bits
@@ -835,40 +837,23 @@ void Assembler::WriteLoad64Instructions(Instruction* inst0, Register reg,
   int64_t high_20 = ((high_31 + 0x800) >> 12);   // 19 bits
   int64_t low_12 = high_31 & 0xfff;              // 12 bits
 
-  Instr lui_ = LUI | (reg.code() << kRdShift) |
-               ((int32_t)high_20 << kImm20Shift);  // lui(rd, (int32_t)high_20);
-  inst0->SetInstructionBits(lui_);
+  // lui(rd, high_20);
+  inst0->SetUFormat(RO_LUI, reg.code(), high_20);
 
-  Instr addi_ =
-      OP_IMM | (reg.code() << kRdShift) | (0b000 << kFunct3Shift) |
-      (reg.code() << kRs1Shift) |
-      (low_12 << kImm12Shift);  // addi(rd, rd, low_12);  // 31 bits in rd.
-  (inst0 + 1 * kInstrSize)->SetInstructionBits(addi_);
+  // addi(rd, rd, low_12);  // 31 bits in rd.
+  (inst0 + 1 * kInstrSize)->SetIFormat(RO_ADDI, reg.code(), reg.code(), low_12);
 
-  Instr slli_ =
-      OP_IMM | (reg.code() << kRdShift) | (0b001 << kFunct3Shift) |
-      (reg.code() << kRs1Shift) |
-      (11 << kImm12Shift);  // slli(rd, rd, 11);      // Space for next 11 bis
-  (inst0 + 2 * kInstrSize)->SetInstructionBits(slli_);
+  // slli(rd, rd, 11);  // Space for next 11 bis
+  (inst0 + 2 * kInstrSize)->SetIFormat(RO_SLLI, reg.code(), reg.code(), 11);
 
-  Instr ori_b11 = OP_IMM | (reg.code() << kRdShift) | (0b110 << kFunct3Shift) |
-                  (reg.code() << kRs1Shift) |
-                  (b11 << kImm12Shift);  // ori(rd, rd, b11);      // 11 bits
-                                         // are put in. 42 bit in rd
-  (inst0 + 3 * kInstrSize)->SetInstructionBits(ori_b11);
+  // ori(rd, rd, b11);  // 11 bits are added, 42 bit in rd.
+  (inst0 + 3 * kInstrSize)->SetIFormat(RO_ORI, reg.code(), reg.code(), b11);
 
-  slli_ = OP_IMM | (reg.code() << kRdShift) | (0b001 << kFunct3Shift) |
-          (reg.code() << kRs1Shift) |
-          (6 << kImm12Shift);  // slli(rd, rd, 6);      // Space for next 11 bis
-  (inst0 + 4 * kInstrSize)
-      ->SetInstructionBits(
-          slli_);  // slli(rd, rd, 6);       // Space for next 6 bits
+  // slli(rd, rd, 6);  // Space for next 6 bits
+  (inst0 + 4 * kInstrSize)->SetIFormat(RO_SLLI, reg.code(), reg.code(), 6);
 
-  Instr ori_a6 = OP_IMM | (reg.code() << kRdShift) | (0b110 << kFunct3Shift) |
-                 (reg.code() << kRs1Shift) |
-                 (a6 << kImm12Shift);  // ori(rd, rd, a6);       // 6 bits are
-                                       // put in. 48 bis in rd
-  (inst0 + 5 * kInstrSize)->SetInstructionBits(ori_a6);
+  // ori(rd, rd, a6);  // 6 bits are added, 48 bit in rd.
+  (inst0 + 5 * kInstrSize)->SetIFormat(RO_ORI, reg.code(), reg.code(), a6);
 
 #ifdef JS_DISASM_RISCV64
   disassembleInstr((inst0 + 0 * kInstrSize)->InstructionBits());
@@ -906,50 +891,40 @@ bool Assembler::jumpChainPutTargetAt(BufferOffset pos,
                pos.getOffset(),
                instruction + target_pos.getOffset() - pos.getOffset(),
                target_pos.getOffset());
-  Instr instr = instruction->InstructionBits();
   switch (instruction->InstructionOpcodeType()) {
     case BRANCH: {
-      if (!is_intn(pos.getOffset() - target_pos.getOffset(),
-                   kBranchOffsetBits)) {
+      int32_t offset = target_pos.getOffset() - pos.getOffset();
+      if (!is_intn(offset, kBranchOffsetBits)) {
         return false;
       }
-      instr = SetBranchOffset(pos.getOffset(), target_pos.getOffset(), instr);
-      putInstrAt(pos, instr);
+      instruction->SetBranchOffset(offset);
     } break;
     case JAL: {
       MOZ_ASSERT(instruction->IsJal());
-      if (!is_intn(pos.getOffset() - target_pos.getOffset(), kJumpOffsetBits)) {
+      int32_t offset = target_pos.getOffset() - pos.getOffset();
+      if (!is_intn(offset, kJumpOffsetBits)) {
         return false;
       }
-      instr = SetJalOffset(pos.getOffset(), target_pos.getOffset(), instr);
-      putInstrAt(pos, instr);
+      instruction->SetImm20JValue(offset);
     } break;
     case LUI: {
       jumpChainSetTargetValueAt(instruction, reinterpret_cast<uintptr_t>(
                                                  getInstructionAt(target_pos)));
     } break;
     case AUIPC: {
-      Instr instr_auipc = instr;
       Instruction* instruction2 =
           getInstructionAt(BufferOffset(pos.getOffset() + 4));
-      Instr instr_I = instruction2->InstructionBits();
       MOZ_ASSERT(instruction2->IsJalr() || instruction2->IsAddi());
+      MOZ_ASSERT(instruction->RdValue() == instruction2->Rs1Value());
 
       intptr_t offset = target_pos.getOffset() - pos.getOffset();
       MOZ_RELEASE_ASSERT(is_int32(offset + 0x800));
-      MOZ_ASSERT(
-          instruction->RdValue() ==
-          getInstructionAt(BufferOffset(pos.getOffset() + 4))->Rs1Value());
+
       int32_t Hi20 = (((int32_t)offset + 0x800) >> 12);
       int32_t Lo12 = (int32_t)offset << 20 >> 20;
 
-      instr_auipc = SetAuipcOffset(Hi20, instr_auipc);
-      putInstrAt(pos, instr_auipc);
-
-      const int kImm31_20Mask = ((1 << 12) - 1) << 20;
-      const int kImm11_0Mask = ((1 << 12) - 1);
-      instr_I = (instr_I & ~kImm31_20Mask) | ((Lo12 & kImm11_0Mask) << 20);
-      putInstrAt(BufferOffset(pos.getOffset() + 4), instr_I);
+      instruction->SetImm20UValue(Hi20);
+      instruction2->SetImm12Value(Lo12);
     } break;
     default:
       UNIMPLEMENTED_RISCV();
@@ -1407,15 +1382,12 @@ void Assembler::break_(uint32_t code, bool break_as_stop) {
 void Assembler::ToggleToJmp(CodeLocationLabel inst_) {
   Instruction* inst = Instruction::At(inst_.raw());
   MOZ_ASSERT(inst->IsAddi());
+
   int32_t offset = inst->Imm12Value();
   MOZ_ASSERT(is_int12(offset));
-  Instr jal_ = JAL | (0b000 << kFunct3Shift) |
-               (offset & 0xff000) |          // bits 19-12
-               ((offset & 0x800) << 9) |     // bit  11
-               ((offset & 0x7fe) << 20) |    // bits 10-1
-               ((offset & 0x100000) << 11);  // bit  20
+
   // jal(zero, offset);
-  inst->SetInstructionBits(jal_);
+  inst->SetJFormat(RO_JAL, zero_reg.code(), offset);
 }
 
 void Assembler::ToggleToCmp(CodeLocationLabel inst_) {
@@ -1423,12 +1395,12 @@ void Assembler::ToggleToCmp(CodeLocationLabel inst_) {
 
   // toggledJump is allways used for short jumps.
   MOZ_ASSERT(inst->IsJal());
+
   // Replace "jal zero_reg, offset" with "addi $zero, $zero, offset"
   int32_t offset = inst->Imm20JValue();
   MOZ_ASSERT(is_int12(offset));
-  Instr addi_ = OP_IMM | (0b000 << kFunct3Shift) |
-                (offset << kImm12Shift);  // addi(zero, zero, low_12);
-  inst->SetInstructionBits(addi_);
+
+  inst->SetIFormat(RO_ADDI, zero_reg.code(), zero_reg.code(), offset);
 }
 
 bool Assembler::reserve(size_t size) {
@@ -1582,11 +1554,9 @@ void Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled) {
   MOZ_ASSERT(i5->IsOri());
 
   if (enabled) {
-    Instr jalr_ = JALR | (ra.code() << kRdShift) | (0x0 << kFunct3Shift) |
-                  (i5->RdValue() << kRs1Shift) | (0x0 << kImm12Shift);
-    i6->SetInstructionBits(jalr_);
+    i6->SetIFormat(RO_JALR, ra.code(), i5->RdValue(), 0);
   } else {
-    i6->SetInstructionBits(kNopByte);
+    i6->SetNop();
   }
 }
 
@@ -1597,6 +1567,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
     return;
   }
   DEBUG_PRINTF("\tPatchShortRangeBranchToVeneer\n");
+
   // Reconstruct the position of the branch from (rangeIdx, deadline).
   ImmBranchRangeType branchRange = static_cast<ImmBranchRangeType>(rangeIdx);
   BufferOffset branch(deadline.getOffset() -
@@ -1605,6 +1576,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   Instruction* veneerInst_1 = buffer->getInst(veneer);
   Instruction* veneerInst_2 =
       buffer->getInst(BufferOffset(veneer.getOffset() + 4));
+
   // Verify that the branch range matches what's encoded.
   DEBUG_PRINTF("\t%p(%x): ", branchInst, branch.getOffset());
 #ifdef JS_DISASM_RISCV64
@@ -1614,10 +1586,6 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
                veneer.getOffset(), branch.getOffset(), deadline.getOffset());
   MOZ_ASSERT(branchRange <= UncondBranchRangeType);
   MOZ_ASSERT(branchInst->GetImmBranchRangeType() == branchRange);
-  // emit a long jump slot
-  Instr auipc = AUIPC | (t6.code() << kRdShift) | (0x0 << kImm20Shift);
-  Instr jalr = JALR | (zero_reg.code() << kRdShift) | (0x0 << kFunct3Shift) |
-               (t6.code() << kRs1Shift) | (0x0 << kImm12Shift);
 
   // We want to insert veneer after branch in the linked list of instructions
   // that use the same unbound label.
@@ -1632,21 +1600,21 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   } else {
     dist = kEndOfJumpChain;
   }
+
   int32_t Hi20 = (((int32_t)dist + 0x800) >> 12);
   int32_t Lo12 = (int32_t)dist << 20 >> 20;
-  auipc = SetAuipcOffset(Hi20, auipc);
-  jalr = SetJalrOffset(Lo12, jalr);
-  // insert veneer
-  veneerInst_1->SetInstructionBits(auipc);
-  veneerInst_2->SetInstructionBits(jalr);
+
+  // Insert veneer as a long jump.
+  veneerInst_1->SetUFormat(RO_AUIPC, t6.code(), Hi20);
+  veneerInst_2->SetIFormat(RO_JALR, zero_reg.code(), t6.code(), Lo12);
+
   // Now link branchInst to veneer.
+  int32_t offset = veneer.getOffset() - branch.getOffset();
   if (branchInst->IsBranch()) {
-    branchInst->SetInstructionBits(SetBranchOffset(
-        branch.getOffset(), veneer.getOffset(), branchInst->InstructionBits()));
+    branchInst->SetBranchOffset(offset);
   } else {
     MOZ_ASSERT(branchInst->IsJal());
-    branchInst->SetInstructionBits(SetJalOffset(
-        branch.getOffset(), veneer.getOffset(), branchInst->InstructionBits()));
+    branchInst->SetImm20JValue(offset);
   }
 #ifdef JS_DISASM_RISCV64
   DEBUG_PRINTF("\tfix to veneer:");

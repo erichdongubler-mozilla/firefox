@@ -3881,13 +3881,13 @@ void MacroAssembler::patchCallToNop(uint8_t* call) {
   // See nopPatchableToCall() for the expected code layout.
 
   Instruction* instr = Instruction::At(call - 7 * kInstrSize);
-  (instr + 0 * kInstrSize)->SetInstructionBits(kNopByte);
-  (instr + 1 * kInstrSize)->SetInstructionBits(kNopByte);
-  (instr + 2 * kInstrSize)->SetInstructionBits(kNopByte);
-  (instr + 3 * kInstrSize)->SetInstructionBits(kNopByte);
-  (instr + 4 * kInstrSize)->SetInstructionBits(kNopByte);
-  (instr + 5 * kInstrSize)->SetInstructionBits(kNopByte);
-  (instr + 6 * kInstrSize)->SetInstructionBits(kNopByte);
+  (instr + 0 * kInstrSize)->SetNop();
+  (instr + 1 * kInstrSize)->SetNop();
+  (instr + 2 * kInstrSize)->SetNop();
+  (instr + 3 * kInstrSize)->SetNop();
+  (instr + 4 * kInstrSize)->SetNop();
+  (instr + 5 * kInstrSize)->SetNop();
+  (instr + 6 * kInstrSize)->SetNop();
 }
 
 CodeOffset MacroAssembler::callWithPatch() {
@@ -3932,9 +3932,9 @@ void MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset) {
 
     int32_t Hi20 = (((int32_t)offset + 0x800) >> 12);
     int32_t Lo12 = (int32_t)offset << 20 >> 20;
-    putInstrAt(call, SetAuipcOffset(Hi20, auipc_->InstructionBits()));
-    putInstrAt(BufferOffset(callerOffset - 1 * sizeof(uint32_t)),
-               SetJalrOffset(Lo12, jalr_->InstructionBits()));
+
+    auipc_->SetImm20UValue(Hi20);
+    jalr_->SetImm12Value(Lo12);
   } else {
     MOZ_CRASH();
   }
@@ -3986,10 +3986,8 @@ void MacroAssembler::patchNopToCall(uint8_t* call, uint8_t* target) {
                ExtractLoad64Value(instr));
   MOZ_ASSERT(ExtractLoad64Value(instr) == (uint64_t)target);
 
-  Instr jalr_ = JALR | (ra.code() << kRdShift) | (0x0 << kFunct3Shift) |
-                (SavedScratchRegister.code() << kRs1Shift) |
-                (0x0 << kImm12Shift);
-  (instr + 6 * kInstrSize)->SetInstructionBits(jalr_);
+  Instruction* jalr = (instr + 6 * kInstrSize);
+  jalr->SetIFormat(RO_JALR, ra.code(), SavedScratchRegister.code(), 0);
 }
 void MacroAssembler::Pop(Register reg) {
   pop(reg);

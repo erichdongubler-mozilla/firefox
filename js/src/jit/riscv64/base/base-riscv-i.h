@@ -4,12 +4,9 @@
 #ifndef jit_riscv64_base_Base_riscv_i_h_
 #define jit_riscv64_base_Base_riscv_i_h_
 
-#include "mozilla/Assertions.h"
-
 #include <stdint.h>
 
 #include "jit/riscv64/base/base-assembler-riscv.h"
-#include "jit/riscv64/base/Integer.h"
 #include "jit/riscv64/constant/Constant-riscv64.h"
 
 namespace js {
@@ -86,55 +83,6 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
   // instruction (i.e., it should always trap, if your implementation has
   // invalid instruction traps).
   void unimp();
-
-  static inline Instr SetBranchOffset(int32_t pos, int32_t target_pos,
-                                      Instr instr) {
-    int32_t imm = target_pos - pos;
-    MOZ_ASSERT((imm & 1) == 0);
-    MOZ_ASSERT(is_intn(imm, kBranchOffsetBits));
-
-    instr &= ~kBImm12Mask;
-    int32_t imm12 = ((imm & 0x800) >> 4) |   // bit  11
-                    ((imm & 0x1e) << 7) |    // bits 4-1
-                    ((imm & 0x7e0) << 20) |  // bits 10-5
-                    ((imm & 0x1000) << 19);  // bit 12
-
-    return instr | (imm12 & kBImm12Mask);
-  }
-
-  static inline Instr SetJalOffset(int32_t pos, int32_t target_pos,
-                                   Instr instr) {
-    MOZ_ASSERT(reinterpret_cast<Instruction*>(&instr)->IsJal());
-    int32_t imm = target_pos - pos;
-    MOZ_ASSERT((imm & 1) == 0);
-    MOZ_ASSERT(is_intn(imm, kJumpOffsetBits));
-
-    instr &= ~kImm20Mask;
-    int32_t imm20 = (imm & 0xff000) |          // bits 19-12
-                    ((imm & 0x800) << 9) |     // bit  11
-                    ((imm & 0x7fe) << 20) |    // bits 10-1
-                    ((imm & 0x100000) << 11);  // bit  20
-
-    return instr | (imm20 & kImm20Mask);
-  }
-
-  static inline Instr SetJalrOffset(int32_t offset, Instr instr) {
-    MOZ_ASSERT(reinterpret_cast<Instruction*>(&instr)->IsJalr());
-    MOZ_ASSERT(is_int12(offset));
-    instr &= ~kImm12Mask;
-    int32_t imm12 = offset << kImm12Shift;
-    Instr result = instr | (imm12 & kImm12Mask);
-    MOZ_ASSERT(reinterpret_cast<Instruction*>(&result)->IsJalr());
-    MOZ_ASSERT(reinterpret_cast<Instruction*>(&result)->Imm12Value() == offset);
-    return result;
-  }
-
-  static inline Instr SetAuipcOffset(int32_t offset, Instr instr) {
-    MOZ_ASSERT(reinterpret_cast<Instruction*>(&instr)->IsAuipc());
-    MOZ_ASSERT(is_int20(offset));
-    instr = (instr & ~kImm31_12Mask) | ((offset & kImm19_0Mask) << 12);
-    return instr;
-  }
 
   inline int32_t branchOffset(Label* L) {
     return branchOffsetHelper(L, OffsetSize::kOffset13);

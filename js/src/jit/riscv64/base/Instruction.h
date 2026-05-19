@@ -223,7 +223,6 @@ class InstructionBase {
                InstructionType() == InstructionBase::kIType ||
                InstructionType() == InstructionBase::kSType ||
                InstructionType() == InstructionBase::kBType ||
-               InstructionType() == InstructionBase::kIType ||
                InstructionType() == InstructionBase::kVType);
     return Bits(kRs1Shift + kRs1Bits - 1, kRs1Shift);
   }
@@ -683,6 +682,33 @@ class InstructionBase {
 
   /// Setters
 
+  inline void SetRdValue(int rd) {
+    MOZ_ASSERT(InstructionType() == InstructionBase::kRType ||
+               InstructionType() == InstructionBase::kR4Type ||
+               InstructionType() == InstructionBase::kIType ||
+               InstructionType() == InstructionBase::kSType ||
+               InstructionType() == InstructionBase::kUType ||
+               InstructionType() == InstructionBase::kJType ||
+               InstructionType() == InstructionBase::kVType);
+    MOZ_ASSERT(is_uintn(rd, kRdBits));
+
+    Instr bits = InstructionBits() & ~kRdFieldMask;
+    SetInstructionBits((rd << kRdShift) | bits);
+  }
+
+  inline void SetRs1Value(int rs1) {
+    MOZ_ASSERT(InstructionType() == InstructionBase::kRType ||
+               InstructionType() == InstructionBase::kR4Type ||
+               InstructionType() == InstructionBase::kIType ||
+               InstructionType() == InstructionBase::kSType ||
+               InstructionType() == InstructionBase::kBType ||
+               InstructionType() == InstructionBase::kVType);
+    MOZ_ASSERT(is_uintn(rs1, kRs1Bits));
+
+    Instr bits = InstructionBits() & ~kRs1FieldMask;
+    SetInstructionBits((rs1 << kRs1Shift) | bits);
+  }
+
   inline void SetImm12Value(int32_t imm12) {
     MOZ_ASSERT(InstructionType() == InstructionBase::kIType);
     MOZ_ASSERT(is_uint12(imm12) || is_int12(imm12));
@@ -693,6 +719,21 @@ class InstructionBase {
     SetInstructionBits((imm12 << kImm12Shift) | bits);
   }
 
+  inline void SetBranchOffset(int32_t imm13) {
+    MOZ_ASSERT(InstructionType() == InstructionBase::kBType);
+    MOZ_ASSERT((imm13 & 1) == 0);
+    MOZ_ASSERT(is_intn(imm13, kBranchOffsetBits));
+
+    // | imm[12|10:5] | rs2 | rs1 | funct3 | imm[4:1|11] | opcode |
+    //  31          25                      11          7
+    Instr bits = InstructionBits() & ~kBImm12Mask;
+    int32_t imm12 = ((imm13 & 0x800) >> 4) |   // bit  11
+                    ((imm13 & 0x1e) << 7) |    // bits 4-1
+                    ((imm13 & 0x7e0) << 20) |  // bits 10-5
+                    ((imm13 & 0x1000) << 19);  // bit 12
+    SetInstructionBits((imm12 & kBImm12Mask) | bits);
+  }
+
   inline void SetImm20UValue(int32_t imm20) {
     MOZ_ASSERT(InstructionType() == InstructionBase::kUType);
     MOZ_ASSERT(is_int20(imm20) || is_uint20(imm20));
@@ -701,6 +742,21 @@ class InstructionBase {
     //  31        12
     Instr bits = InstructionBits() & ~kImm20Mask;
     SetInstructionBits((imm20 << kImm20Shift) | bits);
+  }
+
+  inline void SetImm20JValue(int32_t imm21) {
+    MOZ_ASSERT(InstructionType() == InstructionBase::kJType);
+    MOZ_ASSERT((imm21 & 1) == 0);
+    MOZ_ASSERT(is_intn(imm21, kJumpOffsetBits));
+
+    // | imm[20|10:1|11|19:12] | rd | opcode |
+    //  31                   12
+    Instr bits = InstructionBits() & ~kImm20Mask;
+    int32_t imm20 = (imm21 & 0xff000) |          // bits 19-12
+                    ((imm21 & 0x800) << 9) |     // bit  11
+                    ((imm21 & 0x7fe) << 20) |    // bits 10-1
+                    ((imm21 & 0x100000) << 11);  // bit  20
+    SetInstructionBits((imm20 & kImm20Mask) | bits);
   }
 
   inline void SetShamt(int32_t shamt) {
@@ -723,6 +779,35 @@ class InstructionBase {
     int32_t imm12 = ((InstructionBits() & 0x40000000) >> kImm12Shift) | shamt;
     SetImm12Value(imm12);
   }
+
+  /// Compound setters
+
+  void SetIFormat(OpcodeRISCV32I opcode, int rd, int rs1, int32_t imm12) {
+    SetInstructionBits(opcode);
+    MOZ_ASSERT(InstructionType() == kIType);
+
+    SetRdValue(rd);
+    SetRs1Value(rs1);
+    SetImm12Value(imm12);
+  }
+
+  void SetJFormat(OpcodeRISCV32I opcode, int rd, int32_t imm21) {
+    SetInstructionBits(opcode);
+    MOZ_ASSERT(InstructionType() == kJType);
+
+    SetRdValue(rd);
+    SetImm20JValue(imm21);
+  }
+
+  void SetUFormat(OpcodeRISCV32I opcode, int rd, int32_t imm20) {
+    SetInstructionBits(opcode);
+    MOZ_ASSERT(InstructionType() == kUType);
+
+    SetRdValue(rd);
+    SetImm20UValue(imm20);
+  }
+
+  void SetNop() { SetInstructionBits(kNopByte); }
 
  protected:
   InstructionBase() {}
