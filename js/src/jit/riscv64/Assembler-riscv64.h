@@ -473,7 +473,7 @@ class Assembler : public AssemblerShared,
 
   static void PatchWrite_NearCall(CodeLocationLabel start,
                                   CodeLocationLabel toCall) {
-    Instruction* inst = (Instruction*)start.raw();
+    Instruction* inst = Instruction::At(start.raw());
     uint8_t* dest = toCall.raw();
 
     // Overwrite whatever instruction used to be here with a call.
@@ -512,7 +512,7 @@ class Assembler : public AssemblerShared,
   static uint32_t NopSize() { return 4; }
 
   static uint64_t GetPointer(uint8_t* instPtr) {
-    Instruction* inst = (Instruction*)instPtr;
+    Instruction* inst = Instruction::At(instPtr);
     return Assembler::ExtractLoad64Value(inst);
   }
 

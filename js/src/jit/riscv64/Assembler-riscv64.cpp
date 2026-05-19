@@ -638,7 +638,7 @@ void Assembler::PatchDataWithValueCheck(CodeLocationLabel label,
 void Assembler::PatchDataWithValueCheck(CodeLocationLabel label,
                                         PatchedImmPtr newValue,
                                         PatchedImmPtr expectedValue) {
-  Instruction* inst = (Instruction*)label.raw();
+  Instruction* inst = Instruction::At(label.raw());
 
   // Extract old Value
   DebugOnly<uint64_t> value = Assembler::ExtractLoad64Value(inst);
@@ -1163,7 +1163,7 @@ void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
     } else {
       MOZ_ASSERT(mode == CodeLabel::MoveImmediate ||
                  mode == CodeLabel::JumpImmediate);
-      Instruction* inst = (Instruction*)(rawCode + offset);
+      Instruction* inst = Instruction::At(rawCode + offset);
       Assembler::UpdateLoad64Value(inst, (uint64_t)(rawCode + target));
     }
   }
@@ -1433,7 +1433,7 @@ void Assembler::break_(uint32_t code, bool break_as_stop) {
 }
 
 void Assembler::ToggleToJmp(CodeLocationLabel inst_) {
-  Instruction* inst = (Instruction*)inst_.raw();
+  Instruction* inst = Instruction::At(inst_.raw());
   MOZ_ASSERT(IsAddi(inst->InstructionBits()));
   int32_t offset = inst->Imm12Value();
   MOZ_ASSERT(is_int12(offset));
@@ -1447,7 +1447,7 @@ void Assembler::ToggleToJmp(CodeLocationLabel inst_) {
 }
 
 void Assembler::ToggleToCmp(CodeLocationLabel inst_) {
-  Instruction* inst = (Instruction*)inst_.raw();
+  Instruction* inst = Instruction::At(inst_.raw());
 
   // toggledJump is allways used for short jumps.
   MOZ_ASSERT(IsJal(inst->InstructionBits()));
@@ -1474,7 +1474,7 @@ void Assembler::TraceJumpRelocations(JSTracer* trc, JitCode* code,
                                      CompactBufferReader& reader) {
   while (reader.more()) {
     JitCode* child =
-        CodeFromJump((Instruction*)(code->raw() + reader.readUnsigned()));
+        CodeFromJump(Instruction::At(code->raw() + reader.readUnsigned()));
     TraceManuallyBarrieredEdge(trc, &child, "rel32");
   }
 }
@@ -1516,7 +1516,7 @@ void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
   mozilla::Maybe<AutoWritableJitCode> awjc;
   while (reader.more()) {
     size_t offset = reader.readUnsigned();
-    Instruction* inst = (Instruction*)(code->raw() + offset);
+    Instruction* inst = Instruction::At(code->raw() + offset);
     TraceOneDataRelocation(trc, awjc, code, inst);
   }
 }
@@ -1593,14 +1593,14 @@ bool Assembler::appendRawCode(const uint8_t* code, size_t numBytes) {
 
 void Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled) {
 #ifdef DEBUG
-  Instruction* i0 = (Instruction*)inst_.raw();
-  Instruction* i1 = (Instruction*)(inst_.raw() + 1 * kInstrSize);
-  Instruction* i2 = (Instruction*)(inst_.raw() + 2 * kInstrSize);
-  Instruction* i3 = (Instruction*)(inst_.raw() + 3 * kInstrSize);
-  Instruction* i4 = (Instruction*)(inst_.raw() + 4 * kInstrSize);
+  Instruction* i0 = Instruction::At(inst_.raw());
+  Instruction* i1 = Instruction::At(inst_.raw() + 1 * kInstrSize);
+  Instruction* i2 = Instruction::At(inst_.raw() + 2 * kInstrSize);
+  Instruction* i3 = Instruction::At(inst_.raw() + 3 * kInstrSize);
+  Instruction* i4 = Instruction::At(inst_.raw() + 4 * kInstrSize);
 #endif
-  Instruction* i5 = (Instruction*)(inst_.raw() + 5 * kInstrSize);
-  Instruction* i6 = (Instruction*)(inst_.raw() + 6 * kInstrSize);
+  Instruction* i5 = Instruction::At(inst_.raw() + 5 * kInstrSize);
+  Instruction* i6 = Instruction::At(inst_.raw() + 6 * kInstrSize);
 
   MOZ_ASSERT(IsLui(i0->InstructionBits()));
   MOZ_ASSERT(IsAddi(i1->InstructionBits()));

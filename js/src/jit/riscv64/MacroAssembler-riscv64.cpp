@@ -3964,7 +3964,7 @@ void MacroAssembler::patchFarJump(uint8_t* farJump, uint8_t* target) {
   //   add
   //   jr
   //   <immediate>  ; farJump + 4 * kInstrSize
-  Instruction* inst = reinterpret_cast<Instruction*>(farJump + 4 * kInstrSize);
+  Instruction* inst = Instruction::At(farJump + 4 * kInstrSize);
 
   int64_t distance = int64_t(target) - int64_t(farJump);
 
