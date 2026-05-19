@@ -45,7 +45,6 @@
     <ID>ForbiddenSuppress:EngineSession.kt$EngineSession.CookieBannerHandlingMode$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:EngineSession.kt$EngineSession.SessionPriority$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:EngineSession.kt$EngineSession.TrackingProtectionPolicy.CookiePolicy$@Suppress("MagicNumber")</ID>
-    <ID>ForbiddenSuppress:EngineStateReducer.kt$EngineStateReducer$@Suppress("LongMethod")</ID>
     <ID>ForbiddenSuppress:EngineVersion.kt$EngineVersion.Companion$@Suppress("MagicNumber", "ReturnCount")</ID>
     <ID>ForbiddenSuppress:ExpandableLayout.kt$ExpandableLayout$@Suppress("ReturnCount", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:FullDisplayToolbar.kt$@Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod", "CognitiveComplexMethod")</ID>
