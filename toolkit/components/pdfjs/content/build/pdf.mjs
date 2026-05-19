@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.109
- * pdfjsBuild = d27b9ab5f
+ * pdfjsVersion = 6.0.135
+ * pdfjsBuild = 00af75905
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -55,6 +55,7 @@ const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 const LINE_FACTOR = 1.35;
 const LINE_DESCENT_FACTOR = 0.35;
 const BASELINE_FACTOR = LINE_DESCENT_FACTOR / LINE_FACTOR;
+const SVG_NS = "http://www.w3.org/2000/svg";
 const RenderingIntentFlag = {
   ANY: 0x01,
   DISPLAY: 0x02,
@@ -555,50 +556,6 @@ class Util {
   }
   static makeHexColor(r, g, b) {
     return `#${this.hexNums[r]}${this.hexNums[g]}${this.hexNums[b]}`;
-  }
-  static scaleMinMax(transform, minMax) {
-    let temp;
-    if (transform[0]) {
-      if (transform[0] < 0) {
-        temp = minMax[0];
-        minMax[0] = minMax[2];
-        minMax[2] = temp;
-      }
-      minMax[0] *= transform[0];
-      minMax[2] *= transform[0];
-      if (transform[3] < 0) {
-        temp = minMax[1];
-        minMax[1] = minMax[3];
-        minMax[3] = temp;
-      }
-      minMax[1] *= transform[3];
-      minMax[3] *= transform[3];
-    } else {
-      temp = minMax[0];
-      minMax[0] = minMax[1];
-      minMax[1] = temp;
-      temp = minMax[2];
-      minMax[2] = minMax[3];
-      minMax[3] = temp;
-      if (transform[1] < 0) {
-        temp = minMax[1];
-        minMax[1] = minMax[3];
-        minMax[3] = temp;
-      }
-      minMax[1] *= transform[1];
-      minMax[3] *= transform[1];
-      if (transform[2] < 0) {
-        temp = minMax[0];
-        minMax[0] = minMax[2];
-        minMax[2] = temp;
-      }
-      minMax[0] *= transform[2];
-      minMax[2] *= transform[2];
-    }
-    minMax[0] += transform[4];
-    minMax[1] += transform[5];
-    minMax[2] += transform[4];
-    minMax[3] += transform[5];
   }
   static transform(m1, m2) {
     return [m1[0] * m2[0] + m1[2] * m2[1], m1[1] * m2[0] + m1[3] * m2[1], m1[0] * m2[2] + m1[2] * m2[3], m1[1] * m2[2] + m1[3] * m2[3], m1[0] * m2[4] + m1[2] * m2[5] + m1[4], m1[1] * m2[4] + m1[3] * m2[5] + m1[5]];
@@ -1244,7 +1201,6 @@ class XfaLayer {
 
 
 
-const SVG_NS = "http://www.w3.org/2000/svg";
 class PixelsPerInch {
   static CSS = 96.0;
   static PDF = 72.0;
@@ -2130,7 +2086,7 @@ class ImageManager {
   #id = 0;
   #cache = null;
   static get _isSVGFittingCanvas() {
-    const svg = `data:image/svg+xml;charset=UTF-8,<svg viewBox="0 0 1 1" width="1" height="1" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1" style="fill:red;"/></svg>`;
+    const svg = `data:image/svg+xml;charset=UTF-8,<svg viewBox="0 0 1 1" width="1" height="1" xmlns="${SVG_NS}"><rect width="1" height="1" style="fill:red;"/></svg>`;
     const canvas = new OffscreenCanvas(1, 3);
     const ctx = canvas.getContext("2d", {
       willReadFrequently: true
@@ -6959,6 +6915,50 @@ function expandBBox(array, index, minX, minY, maxX, maxY) {
   array[index * 4 + 2] = Math.max(array[index * 4 + 2], maxX);
   array[index * 4 + 3] = Math.max(array[index * 4 + 3], maxY);
 }
+function scaleMinMax(transform, minMax) {
+  let temp;
+  if (transform[0]) {
+    if (transform[0] < 0) {
+      temp = minMax[0];
+      minMax[0] = minMax[2];
+      minMax[2] = temp;
+    }
+    minMax[0] *= transform[0];
+    minMax[2] *= transform[0];
+    if (transform[3] < 0) {
+      temp = minMax[1];
+      minMax[1] = minMax[3];
+      minMax[3] = temp;
+    }
+    minMax[1] *= transform[3];
+    minMax[3] *= transform[3];
+  } else {
+    temp = minMax[0];
+    minMax[0] = minMax[1];
+    minMax[1] = temp;
+    temp = minMax[2];
+    minMax[2] = minMax[3];
+    minMax[3] = temp;
+    if (transform[1] < 0) {
+      temp = minMax[1];
+      minMax[1] = minMax[3];
+      minMax[3] = temp;
+    }
+    minMax[1] *= transform[1];
+    minMax[3] *= transform[1];
+    if (transform[2] < 0) {
+      temp = minMax[0];
+      minMax[0] = minMax[2];
+      minMax[2] = temp;
+    }
+    minMax[0] *= transform[2];
+    minMax[2] *= transform[2];
+  }
+  minMax[0] += transform[4];
+  minMax[1] += transform[5];
+  minMax[2] += transform[4];
+  minMax[3] += transform[5];
+}
 const EMPTY_BBOX = new Uint32Array(new Uint8Array([255, 255, 0, 0]).buffer)[0];
 class BBoxReader {
   #bboxes;
@@ -7362,7 +7362,7 @@ class CanvasDependencyTracker {
         computedBBox = [0, 0, 0, 0];
         Util.axialAlignedBoundingBox(fontBBox, font.fontMatrix, computedBBox);
         if (scale !== 1 || x !== 0 || y !== 0) {
-          Util.scaleMinMax([scale, 0, 0, -scale, x, y], computedBBox);
+          scaleMinMax([scale, 0, 0, -scale, x, y], computedBBox);
         }
         if (isBBoxTrustworthy) {
           return this.recordBBox(idx, ctx, computedBBox[0], computedBBox[2], computedBBox[1], computedBBox[3]);
@@ -14121,7 +14121,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.109",
+    apiVersion: "6.0.135",
     data,
     password,
     disableAutoFetch,
@@ -15749,8 +15749,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.109";
-const build = "d27b9ab5f";
+const version = "6.0.135";
+const build = "00af75905";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -16138,7 +16138,6 @@ const DateFormats = (/* unused pure expression or super */ null && (["m/d", "m/d
 const TimeFormats = (/* unused pure expression or super */ null && (["HH:MM", "h:MM tt", "HH:MM:ss", "h:MM:ss tt"]));
 
 ;// ./src/display/svg_factory.js
-
 
 class BaseSVGFactory {
   create(width, height, skipDimensions = false) {
@@ -16711,7 +16710,7 @@ class AnnotationElement {
         borderWidth
       } = style;
       style.borderWidth = 0;
-      svgBuffer = ["url('data:image/svg+xml;utf8,", `<svg xmlns="http://www.w3.org/2000/svg"`, ` preserveAspectRatio="none" viewBox="0 0 1 1">`, `<g fill="transparent" stroke="${borderColor}" stroke-width="${borderWidth}">`];
+      svgBuffer = ["url('data:image/svg+xml;utf8,", `<svg xmlns="${SVG_NS}" preserveAspectRatio="none" viewBox="0 0 1 1">`, `<g fill="transparent" stroke="${borderColor}" stroke-width="${borderWidth}">`];
       this.container.classList.add("hasBorder");
     }
     const width = rectTrX - rectBlX;
@@ -20260,18 +20259,6 @@ class Outline {
         return [y / parentWidth, 1 - x / parentHeight];
       default:
         return [x / parentWidth, y / parentHeight];
-    }
-  }
-  static _normalizePagePoint(x, y, rotation) {
-    switch (rotation) {
-      case 90:
-        return [1 - y, x];
-      case 180:
-        return [1 - x, 1 - y];
-      case 270:
-        return [y, 1 - x];
-      default:
-        return [x, y];
     }
   }
   static createBezierPoints(x1, y1, x2, y2, x3, y3) {
