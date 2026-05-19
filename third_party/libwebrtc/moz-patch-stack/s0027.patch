@@ -208,7 +208,7 @@ index 2d17e81306..7ed9b168b4 100644
      }
  
 diff --git a/api/BUILD.gn b/api/BUILD.gn
-index ac6bbc6f7c..82a13c2520 100644
+index b6692cd92e..b5898975c8 100644
 --- a/api/BUILD.gn
 +++ b/api/BUILD.gn
 @@ -34,6 +34,9 @@ rtc_library("enable_media") {
@@ -289,7 +289,7 @@ index ac6bbc6f7c..82a13c2520 100644
  
  rtc_library("sctp_transport_interface") {
    visibility = [ "*" ]
-@@ -572,6 +599,7 @@ rtc_library("video_track_source_proxy_factory") {
+@@ -574,6 +601,7 @@ rtc_library("video_track_source_proxy_factory") {
  }
  
  rtc_library("libjingle_peerconnection_api") {
@@ -297,7 +297,7 @@ index ac6bbc6f7c..82a13c2520 100644
    # This target is visible externally for backwards compatibility,
    # but should not be depended on by webrtc source.
    visibility = [ "*" ]
-@@ -674,6 +702,7 @@ rtc_library("libjingle_peerconnection_api") {
+@@ -676,6 +704,7 @@ rtc_library("libjingle_peerconnection_api") {
      "../rtc_base/system:rtc_export",  # keep
    ]
  }
@@ -305,7 +305,7 @@ index ac6bbc6f7c..82a13c2520 100644
  
  rtc_library("frame_transformer_interface") {
    visibility = [ "*" ]
-@@ -898,6 +927,7 @@ rtc_source_set("peer_network_dependencies") {
+@@ -900,6 +929,7 @@ rtc_source_set("peer_network_dependencies") {
  }
  
  rtc_source_set("peer_connection_quality_test_fixture_api") {
@@ -313,7 +313,7 @@ index ac6bbc6f7c..82a13c2520 100644
    visibility = [ "*" ]
    testonly = true
    sources = [ "test/peerconnection_quality_test_fixture.h" ]
-@@ -913,6 +943,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
+@@ -915,6 +945,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  }
@@ -321,7 +321,7 @@ index ac6bbc6f7c..82a13c2520 100644
  
  rtc_library("frame_generator_api") {
    visibility = [ "*" ]
-@@ -1014,6 +1045,7 @@ rtc_library("create_frame_generator") {
+@@ -1016,6 +1047,7 @@ rtc_library("create_frame_generator") {
    ]
  }
  
@@ -329,7 +329,7 @@ index ac6bbc6f7c..82a13c2520 100644
  rtc_library("create_peer_connection_quality_test_frame_generator") {
    visibility = [ "*" ]
    testonly = true
-@@ -1031,6 +1063,7 @@ rtc_library("create_peer_connection_quality_test_frame_generator") {
+@@ -1033,6 +1065,7 @@ rtc_library("create_peer_connection_quality_test_frame_generator") {
      "units:time_delta",
    ]
  }
@@ -337,7 +337,7 @@ index ac6bbc6f7c..82a13c2520 100644
  
  rtc_source_set("data_channel_event_observer_interface") {
    visibility = [ "*" ]
-@@ -1204,6 +1237,7 @@ rtc_source_set("refcountedbase") {
+@@ -1206,6 +1239,7 @@ rtc_source_set("refcountedbase") {
  }
  
  rtc_library("ice_transport_factory") {
@@ -345,7 +345,7 @@ index ac6bbc6f7c..82a13c2520 100644
    visibility = [ "*" ]
    sources = [
      "ice_transport_factory.cc",
-@@ -1221,6 +1255,7 @@ rtc_library("ice_transport_factory") {
+@@ -1223,6 +1257,7 @@ rtc_library("ice_transport_factory") {
      "../rtc_base/system:rtc_export",
    ]
  }
