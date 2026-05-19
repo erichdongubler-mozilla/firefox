@@ -23,10 +23,6 @@ linux32-llvm-symbolizer-20:
             - build/build-clang/clang-20.json
             - build/build-clang/llvm-symbolizer-19.json
             - taskcluster/scripts/misc/build-llvm-common.sh
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: linux32-llvm-symbolizer
     fetches:
         fetch:
             - clang-20
@@ -47,10 +43,6 @@ linux64-llvm-symbolizer-20:
             - build/build-clang/clang-20.json
             - build/build-clang/llvm-symbolizer-19.json
             - taskcluster/scripts/misc/build-llvm-common.sh
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: linux64-llvm-symbolizer
     fetches:
         fetch:
             - clang-20
@@ -71,10 +63,6 @@ macosx64-llvm-symbolizer-20:
             - build/build-clang/clang-20.json
             - build/build-clang/llvm-symbolizer-19.json
             - taskcluster/scripts/misc/build-llvm-common.sh
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: macosx64-llvm-symbolizer
     fetches:
         fetch:
             - clang-20
@@ -95,10 +83,6 @@ macosx64-aarch64-llvm-symbolizer-20:
             - build/build-clang/clang-20.json
             - build/build-clang/llvm-symbolizer-19.json
             - taskcluster/scripts/misc/build-llvm-common.sh
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: macosx64-aarch64-llvm-symbolizer
     fetches:
         fetch:
             - clang-20
@@ -119,10 +103,6 @@ win64-llvm-symbolizer-20:
             - build/build-clang/clang-20.json
             - build/build-clang/llvm-symbolizer-19.json
             - taskcluster/scripts/misc/build-llvm-common.sh
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: win64-llvm-symbolizer
     fetches:
         fetch:
             - clang-20
@@ -132,8 +112,6 @@ win64-llvm-symbolizer-20:
 
 linux32-llvm-symbolizer-21:
     description: "llvm-symbolizer for Linux"
-    attributes:
-        cached_task: false
     treeherder:
         symbol: TL32(llvm-symbolizer-21)
     run:
@@ -145,6 +123,10 @@ linux32-llvm-symbolizer-21:
             - build/build-clang/clang-21.json
             - build/build-clang/llvm-symbolizer-19.json
             - taskcluster/scripts/misc/build-llvm-common.sh
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: linux32-llvm-symbolizer
     fetches:
         fetch:
             - clang-21
@@ -165,6 +147,10 @@ linux64-llvm-symbolizer-21:
             - build/build-clang/clang-21.json
             - build/build-clang/llvm-symbolizer-19.json
             - taskcluster/scripts/misc/build-llvm-common.sh
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: linux64-llvm-symbolizer
     fetches:
         fetch:
             - clang-21
@@ -185,6 +171,10 @@ macosx64-llvm-symbolizer-21:
             - build/build-clang/clang-21.json
             - build/build-clang/llvm-symbolizer-19.json
             - taskcluster/scripts/misc/build-llvm-common.sh
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: macosx64-llvm-symbolizer
     fetches:
         fetch:
             - clang-21
@@ -205,6 +195,10 @@ macosx64-aarch64-llvm-symbolizer-21:
             - build/build-clang/clang-21.json
             - build/build-clang/llvm-symbolizer-19.json
             - taskcluster/scripts/misc/build-llvm-common.sh
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: macosx64-aarch64-llvm-symbolizer
     fetches:
         fetch:
             - clang-21
@@ -225,6 +219,10 @@ win64-llvm-symbolizer-21:
             - build/build-clang/clang-21.json
             - build/build-clang/llvm-symbolizer-19.json
             - taskcluster/scripts/misc/build-llvm-common.sh
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: win64-llvm-symbolizer
     fetches:
         fetch:
             - clang-21
