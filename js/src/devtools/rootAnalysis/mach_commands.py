@@ -547,7 +547,14 @@ def annotated_source(filename, query):
 
     fh = open(filename)
 
-    out = "<pre>"
+    out = """
+<style>
+:target {
+  scroll-margin-top: 4rem; /* show 4 lines above the targeted line */
+}
+</style>
+<pre>
+"""
     for lineno, line in enumerate(fh, 1):
         processed = f"{lineno} <span id='{lineno}'"
         if line0 <= lineno <= line1:
