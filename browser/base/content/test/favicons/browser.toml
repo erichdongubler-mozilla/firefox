@@ -106,6 +106,9 @@ skip-if = [
 https_first_disabled = true
 support-files = ["file_invalid_href.html"]
 
+["browser_favicon_pdf.js"]
+support-files = ["blank.pdf"]
+
 ["browser_missing_favicon.js"]
 support-files = ["blank.html"]
 
