@@ -42,6 +42,7 @@
 
 #include "gc/Marking.h"
 #include "jit/AutoWritableJitCode.h"
+#include "jit/riscv64/base/Integer.h"
 #include "jit/riscv64/disasm/Disasm-riscv64.h"
 
 #if defined(__linux__) && !defined(JS_SIMULATOR_RISCV64)
