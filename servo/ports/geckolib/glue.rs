@@ -2652,9 +2652,7 @@ pub extern "C" fn Servo_DeclarationBlock_IsImmutable(
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_DeclarationBlock_SetImmutable(
-    declarations: &LockedDeclarationBlock,
-) {
+pub extern "C" fn Servo_DeclarationBlock_SetImmutable(declarations: &LockedDeclarationBlock) {
     use std::sync::atomic::Ordering;
     // SAFETY: See StyleSource::mark_in_rule_tree. This boolean is conceptually not part of the
     // locked data, and it's a relaxed atomic, so it's sound to read.
