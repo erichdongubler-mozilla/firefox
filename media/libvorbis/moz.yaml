@@ -74,7 +74,6 @@ vendoring:
     - lib/block.c
     - include/vorbis/codec.h
     - COPYING
-    - README.md
     - AUTHORS
     # Encoder support
     - lib/vorbisenc.c
