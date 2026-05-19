@@ -104,6 +104,8 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       case eCSSProperty_transition_duration:
       case eCSSProperty_grid_template_columns:
       case eCSSProperty_grid_template_rows:
+      case eCSSProperty_grid_auto_columns:
+      case eCSSProperty_grid_auto_rows:
       case eCSSProperty_column_gap:
       case eCSSProperty_row_gap:
       case eCSSProperty_max_block_size:
