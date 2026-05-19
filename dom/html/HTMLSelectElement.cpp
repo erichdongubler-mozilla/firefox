@@ -19,10 +19,15 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FormData.h"
+#include "mozilla/dom/HTMLButtonElement.h"
 #include "mozilla/dom/HTMLOptGroupElement.h"
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/HTMLSelectElementBinding.h"
+#include "mozilla/dom/HTMLSlotElement.h"
+#include "mozilla/dom/HTMLSlotElementBinding.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/dom/ShadowRootBinding.h"
 #include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "nsComboboxControlFrame.h"
@@ -103,38 +108,108 @@ HTMLSelectElement::HTMLSelectElement(
   AddMutationObserver(this);
 }
 
+HTMLButtonElement* HTMLSelectElement::GetFirstButton() const {
+  return HTMLButtonElement::FromNodeOrNull(nsINode::GetFirstElementChild());
+}
+
+/* https://html.spec.whatwg.org/#the-select-element-2:the-select-element-13 */
 void HTMLSelectElement::SetupShadowTree() {
-  AttachAndSetUAShadowRoot(NotifyUAWidget::No);
+  AttachAndSetUAShadowRoot(NotifyUAWidget::No, DelegatesFocus::No,
+                           CustomSlotDispatch::Yes);
+  // When a select is being rendered as a drop-down box with base appearance, it
+  // is expected to render with a shadow tree that contains the following
+  // elements:
   RefPtr<ShadowRoot> sr = GetShadowRoot();
   if (NS_WARN_IF(!sr)) {
     return;
   }
-  // For now, we append a <label> with a text node, a <span> (for the menulist
-  // icon), and an hidden <slot> element.
   Document* doc = OwnerDoc();
-  RefPtr label = doc->CreateHTMLElement(nsGkAtoms::label);
-  label->SetPseudoElementType(PseudoStyleType::MozSelectContent);
+  // A select button slot, which is a slot element. It is appended to the
+  // select's shadow root as the first child. It is expected to take the first
+  // child element of the select if the first child element is a button.
   {
-    // This matches ButtonControlFrame::EnsureNonEmptyLabel.
-    RefPtr text = doc->CreateTextNode(u"\ufeff"_ns);
-    label->AppendChildTo(text, false, IgnoreErrors());
+    RefPtr slot = doc->CreateHTMLElement(nsGkAtoms::slot);
+    slot->SetAttr(kNameSpaceID_None, nsGkAtoms::name,
+                  u"internal-select-button"_ns, false);
+    sr->AppendChildTo(slot, false, IgnoreErrors());
   }
-  sr->AppendChildTo(label, false, IgnoreErrors());
-  RefPtr icon = doc->CreateHTMLElement(nsGkAtoms::span);
-  icon->SetPseudoElementType(PseudoStyleType::PickerIcon);
+
   {
-    RefPtr text = doc->CreateTextNode(u"\ufeff"_ns);
-    icon->AppendChildTo(text, false, IgnoreErrors());
+    RefPtr label = doc->CreateHTMLElement(nsGkAtoms::label);
+    label->SetPseudoElementType(PseudoStyleType::MozSelectContent);
+    {
+      RefPtr text = doc->CreateTextNode(u"\ufeff"_ns);
+      label->AppendChildTo(text, false, IgnoreErrors());
+    }
+    sr->AppendChildTo(label, false, IgnoreErrors());
   }
-  sr->AppendChildTo(icon, false, IgnoreErrors());
+
+  {
+    RefPtr icon = doc->CreateHTMLElement(nsGkAtoms::span);
+    icon->SetPseudoElementType(PseudoStyleType::PickerIcon);
+    {
+      RefPtr text = doc->CreateTextNode(u"\ufeff"_ns);
+      icon->AppendChildTo(text, false, IgnoreErrors());
+    }
+    sr->AppendChildTo(icon, false, IgnoreErrors());
+  }
 
   RefPtr picker = doc->CreateHTMLElement(nsGkAtoms::div);
   picker->SetPseudoElementType(PseudoStyleType::Picker);
   picker->SetAttr(nsGkAtoms::name, u"select"_ns, IgnoreErrors());
+  {
+    nsAutoString popoverstate;
+    picker->SetAttr(kNameSpaceID_None, nsGkAtoms::popover, popoverstate, false);
 
-  RefPtr slot = doc->CreateHTMLElement(nsGkAtoms::slot);
-  picker->AppendChildTo(slot, false, IgnoreErrors());
+    RefPtr pickerSlot = doc->CreateHTMLElement(nsGkAtoms::slot);
+    picker->AppendChildTo(pickerSlot, false, IgnoreErrors());
+  }
   sr->AppendChildTo(picker, false, IgnoreErrors());
+}
+
+void HTMLSelectElement::GetSlotNameFor(const ShadowRoot& aShadow,
+                                       const nsIContent& aContent,
+                                       nsAString& aName) const {
+  const auto* button = HTMLButtonElement::FromNode(aContent);
+  if (!button) {
+    return;
+  }
+  const auto* select = HTMLSelectElement::FromNodeOrNull(button->GetParent());
+  if (select && select->GetFirstButton() == button) {
+    aName.AssignLiteral("internal-select-button");
+  }
+}
+
+void HTMLSelectElement::OnChildBeforeSlotted(ShadowRoot& aShadow,
+                                             nsIContent& aChild) {
+  if (!aChild.IsHTMLElement(nsGkAtoms::button)) {
+    return;
+  }
+  HTMLSlotElement* slot =
+      aShadow.GetFirstNamedSlot(u"internal-select-button"_ns);
+  MOZ_RELEASE_ASSERT(slot);
+  auto assigned = slot->AssignedNodes();
+  if (assigned.IsEmpty()) {
+    return;
+  }
+  if (auto* button = HTMLButtonElement::FromNode(assigned[0])) {
+    aShadow.MaybeReassignContent(*button);
+  }
+}
+
+void HTMLSelectElement::OnChildUnslotted(ShadowRoot& aShadow,
+                                         nsIContent& aChild) {
+  if (!aChild.IsHTMLElement(nsGkAtoms::button)) {
+    return;
+  }
+  if (!MOZ_LIKELY(aShadow.GetHost())) {
+    return;
+  }
+  auto* select = HTMLSelectElement::FromNode(aShadow.GetHost());
+  MOZ_DIAGNOSTIC_ASSERT(select);
+  if (HTMLButtonElement* newButton = select->GetFirstButton()) {
+    aShadow.MaybeReassignContent(*newButton);
+  }
 }
 
 Text* HTMLSelectElement::GetSelectedContentText() const {
@@ -143,7 +218,10 @@ Text* HTMLSelectElement::GetSelectedContentText() const {
     MOZ_ASSERT(OwnerDoc()->IsStaticDocument() || !IsInComposedDoc());
     return nullptr;
   }
-  auto* label = sr->GetFirstChild();
+  auto* slot = sr->GetFirstChild();
+  MOZ_DIAGNOSTIC_ASSERT(slot);
+  MOZ_DIAGNOSTIC_ASSERT(slot->IsHTMLElement(nsGkAtoms::slot));
+  auto* label = slot->GetNextSibling();
   MOZ_DIAGNOSTIC_ASSERT(label);
   MOZ_DIAGNOSTIC_ASSERT(label->IsHTMLElement(nsGkAtoms::label));
   MOZ_DIAGNOSTIC_ASSERT(label->GetFirstChild());
