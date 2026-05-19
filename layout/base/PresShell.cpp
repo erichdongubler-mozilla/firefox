@@ -12616,8 +12616,7 @@ void PresShell::EventHandler::EventTargetData::
 void PresShell::EventHandler::EventTargetData::SetContentForEventFromFrame(
     WidgetGUIEvent* aGUIEvent) {
   MOZ_ASSERT(mFrame);
-  // FIXME: bug 2035992
-  mContent = mFrame->GetExplicitEventTargetContent(aGUIEvent);
+  mContent = mFrame->GetEventTargetContent(aGUIEvent);
   AssertIfEventTargetContentAndFrameContentMismatch(aGUIEvent);
 }
 
@@ -12635,8 +12634,7 @@ void PresShell::EventHandler::EventTargetData::
 
   // If we know the event, we can compute the target correctly.
   if (aGUIEvent) {
-    // FIXME: bug 2035992
-    MOZ_ASSERT(mContent == mFrame->GetExplicitEventTargetContent(aGUIEvent));
+    MOZ_ASSERT(mContent == mFrame->GetEventTargetContent(aGUIEvent));
     return;
   }
   // If clicking an image map, mFrame should be the image frame, but mContent
