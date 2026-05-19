@@ -17,6 +17,14 @@ origin:
   license: BSD-3-Clause
   license-file: COPYING
 
+updatebot:
+    maintainer-phab: chunmin
+    maintainer-bz: cchang@mozilla.com
+    tasks:
+      - type: vendoring
+        enabled: true
+        frequency: release
+
 vendoring:
   url: https://gitlab.xiph.org/xiph/vorbis
   source-hosting: gitlab
