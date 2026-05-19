@@ -274,6 +274,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   nsIFrame* GetEventTarget();
   nsIContent* GetExplicitEventTargetContent(const WidgetEvent* = nullptr);
+  nsIContent* GetEventTargetContent(const WidgetEvent* = nullptr);
 
   // We manage 4 states here: ACTIVE, HOVER, DRAGOVER, URLTARGET
   static bool ManagesState(ElementState aState) {
