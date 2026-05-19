@@ -15769,12 +15769,210 @@ function WidgetsRowFeatureHighlight({
   }));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/SportsMatchRow.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+const STATUS_L10N_MAP = {
+  delayed: "newtab-sports-widget-delayed",
+  postponed: "newtab-sports-widget-postponed",
+  suspended: "newtab-sports-widget-suspended",
+  cancelled: "newtab-sports-widget-cancelled"
+};
+const UPCOMING_STATUS_ARIA_L10N_MAP = {
+  delayed: "newtab-sports-widget-match-aria-label-upcoming-delayed",
+  postponed: "newtab-sports-widget-match-aria-label-upcoming-postponed",
+  suspended: "newtab-sports-widget-match-aria-label-upcoming-suspended",
+  cancelled: "newtab-sports-widget-match-aria-label-upcoming-cancelled"
+};
+function ScorePill({
+  homeScore,
+  awayScore,
+  homePenalty,
+  awayPenalty,
+  variant
+}) {
+  return /*#__PURE__*/external_React_default().createElement("div", {
+    className: `sports-score-pill sports-score-pill-${variant}`
+  }, homePenalty !== null && homePenalty !== undefined && /*#__PURE__*/external_React_default().createElement("span", {
+    className: "sports-score-penalty"
+  }, "(", homePenalty, ")"), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "sports-score-home"
+  }, homeScore), /*#__PURE__*/external_React_default().createElement("span", {
+    "aria-hidden": "true"
+  }, "-"), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "sports-score-away"
+  }, awayScore), awayPenalty !== null && awayPenalty !== undefined && /*#__PURE__*/external_React_default().createElement("span", {
+    className: "sports-score-penalty"
+  }, "(", awayPenalty, ")"));
+}
+function SportsMatchRow({
+  match,
+  variant,
+  size = "large"
+}) {
+  const {
+    home_team,
+    away_team,
+    date,
+    status_type,
+    home_score,
+    away_score,
+    home_extra,
+    away_extra,
+    home_penalty,
+    away_penalty
+  } = match;
+  const dateTimestamp = new Date(date).getTime();
+  // (developer note): Assumes home_score/away_score exclude extra time goals
+  const displayHomeScore = home_score + (home_extra || 0);
+  const displayAwayScore = away_score + (away_extra || 0);
+  // A match went to a shootout only when both penalty scores are present.
+  // Checking both guards against asymmetric/corrupt data where one side is
+  // null — which would otherwise pass a `null` into the aria-label args.
+  const hasPenalties = home_penalty !== null && home_penalty !== undefined && away_penalty !== null && away_penalty !== undefined;
+
+  // Picks the Fluent message + args used to translate the row's aria-label.
+  // We pick a separate Fluent ID per sub-case (penalty shootout for results,
+  // non-scheduled status for upcoming) instead of using Fluent selectors, so
+  // translators see complete sentences and the strings are independently
+  // translatable.
+  function getAriaLabelL10n() {
+    const teams = {
+      homeTeam: home_team.name,
+      awayTeam: away_team.name
+    };
+    if (variant === "results") {
+      if (hasPenalties) {
+        return {
+          id: "newtab-sports-widget-match-aria-label-results-penalties",
+          args: {
+            ...teams,
+            homeScore: displayHomeScore,
+            awayScore: displayAwayScore,
+            homePenalty: home_penalty,
+            awayPenalty: away_penalty
+          }
+        };
+      }
+      return {
+        id: "newtab-sports-widget-match-aria-label-results",
+        args: {
+          ...teams,
+          homeScore: displayHomeScore,
+          awayScore: displayAwayScore
+        }
+      };
+    }
+    if (variant === "now") {
+      return {
+        id: "newtab-sports-widget-match-aria-label-now",
+        args: {
+          ...teams,
+          homeScore: displayHomeScore,
+          awayScore: displayAwayScore
+        }
+      };
+    }
+    // Upcoming. Non-scheduled statuses use a per-status Fluent ID; the
+    // default ("scheduled") announces kickoff time/date.
+    const upcomingId = UPCOMING_STATUS_ARIA_L10N_MAP[status_type] || "newtab-sports-widget-match-aria-label-upcoming";
+    return {
+      id: upcomingId,
+      args: {
+        ...teams,
+        date: dateTimestamp
+      }
+    };
+  }
+  const ariaLabelL10n = getAriaLabelL10n();
+  function renderMiddle() {
+    switch (variant) {
+      case "now":
+        return /*#__PURE__*/external_React_default().createElement(ScorePill, {
+          homeScore: displayHomeScore,
+          awayScore: displayAwayScore,
+          variant: "now"
+        });
+      case "results":
+        {
+          return /*#__PURE__*/external_React_default().createElement("div", {
+            className: "sports-match-result"
+          }, /*#__PURE__*/external_React_default().createElement(ScorePill, {
+            homeScore: displayHomeScore,
+            awayScore: displayAwayScore,
+            homePenalty: home_penalty,
+            awayPenalty: away_penalty,
+            variant: "results"
+          }), /*#__PURE__*/external_React_default().createElement("div", {
+            className: "sports-match-result-footer"
+          }, /*#__PURE__*/external_React_default().createElement("span", {
+            "data-l10n-id": "newtab-sports-widget-match-full-time"
+          }), hasPenalties && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("span", {
+            "aria-hidden": "true"
+          }, "\u2022"), /*#__PURE__*/external_React_default().createElement("span", {
+            "data-l10n-id": "newtab-sports-widget-match-penalties"
+          }))));
+        }
+      // Default is the upcoming variant
+      default:
+        {
+          const statusL10nId = STATUS_L10N_MAP[status_type];
+          const dateArgs = JSON.stringify({
+            date: dateTimestamp
+          });
+          return /*#__PURE__*/external_React_default().createElement("div", {
+            className: "sports-match-upcoming"
+          }, /*#__PURE__*/external_React_default().createElement("span", {
+            className: "sports-match-time",
+            "data-l10n-id": "newtab-sports-widget-match-time",
+            "data-l10n-args": dateArgs
+          }), statusL10nId ? /*#__PURE__*/external_React_default().createElement("span", {
+            className: "sports-widget-match-status",
+            "data-l10n-id": statusL10nId
+          }) : /*#__PURE__*/external_React_default().createElement("span", {
+            className: "sports-match-date",
+            "data-l10n-id": "newtab-sports-widget-key-date",
+            "data-l10n-args": dateArgs
+          }));
+        }
+    }
+  }
+  return /*#__PURE__*/external_React_default().createElement("a", {
+    className: `sports-match-row sports-match-row-${size}`,
+    "data-l10n-id": ariaLabelL10n.id,
+    "data-l10n-args": JSON.stringify(ariaLabelL10n.args),
+    href: ""
+  }, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "sports-match-team",
+    title: home_team.name
+  }, /*#__PURE__*/external_React_default().createElement("img", {
+    className: "sports-match-flag",
+    src: home_team.icon_url,
+    alt: ""
+  }), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "sports-match-code"
+  }, home_team.key)), renderMiddle(), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "sports-match-team",
+    title: away_team.name
+  }, /*#__PURE__*/external_React_default().createElement("img", {
+    className: "sports-match-flag",
+    src: away_team.icon_url,
+    alt: ""
+  }), /*#__PURE__*/external_React_default().createElement("span", {
+    className: "sports-match-code"
+  }, away_team.key)));
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/SportsWidget.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // eslint-disable-next-line no-unused-vars
+
 
 
 
@@ -15805,7 +16003,7 @@ const SportsWidget_USER_ACTION_TYPES = {
   SAVE_TEAMS: "save_teams",
   VIEW_UPCOMING: "view_upcoming",
   VIEW_RESULTS: "view_results",
-  VIEW_SCHEDULE: "view_schedule",
+  VIEW_MATCHES: "view_matches",
   VIEW_KEY_DATES: "view_key_dates",
   CHANGE_SIZE: "change_size",
   LEARN_MORE: "learn_more"
@@ -15823,16 +16021,18 @@ function SportsWidget_SportsWidget({
   const widgetSize = resolveWidgetSize(SPORTS_WIDGET_REGISTRY_ENTRY, prefs);
   const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED];
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
-  const widgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;
+  const hasLiveGames = sportsWidgetData?.data?.matches?.current?.length > 0;
+  const hasPreviousResults = sportsWidgetData?.data?.matches?.previous?.length > 0;
+  const tournamentStarted = hasLiveGames || hasPreviousResults;
+  const savedWidgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;
+  // Once the tournament has started, skip the intro and open on the match schedule.
+  const widgetState = tournamentStarted && savedWidgetState === WIDGET_STATES.INTRO ? WIDGET_STATES.MATCHES : savedWidgetState;
   const displaySize = widgetState === WIDGET_STATES.FOLLOW_TEAMS ? "large" : widgetSize;
   const selectedTeams = sportsWidgetData.selectedTeams || [];
   const teams = sportsWidgetData?.data?.teams ?? [];
   const {
     matchesTab
   } = sportsWidgetData;
-  const hasLiveGames = sportsWidgetData?.data?.current?.length > 0;
-  const hasPreviousResults = sportsWidgetData?.data?.previous?.length > 0;
-  const tournamentStarted = hasLiveGames || hasPreviousResults;
   const hasUserSelectedTab = (0,external_React_namespaceObject.useRef)(false);
   const activeTab = hasLiveGames && !hasUserSelectedTab.current ? MATCHES_TABS.NOW : matchesTab;
   const impressionFired = (0,external_React_namespaceObject.useRef)(false);
@@ -15994,7 +16194,7 @@ function SportsWidget_SportsWidget({
         data: {
           widget_name: "sports_widget",
           widget_source: widgetSource,
-          user_action: SportsWidget_USER_ACTION_TYPES.VIEW_SCHEDULE,
+          user_action: SportsWidget_USER_ACTION_TYPES.VIEW_MATCHES,
           widget_size: widgetSize
         }
       }));
@@ -16175,7 +16375,11 @@ function SportsWidget_SportsWidget({
     onSave: handleSaveSelection
   }), widgetState === WIDGET_STATES.MATCHES && /*#__PURE__*/external_React_default().createElement(SportsMatchesView, {
     matchesTab: activeTab,
-    hasLiveGames: hasLiveGames
+    hasLiveGames: hasLiveGames,
+    size: widgetSize,
+    previous: sportsWidgetData?.data?.matches?.previous ?? [],
+    current: sportsWidgetData?.data?.matches?.current ?? [],
+    next: sportsWidgetData?.data?.matches?.next ?? []
   }), widgetState === WIDGET_STATES.KEY_DATES && /*#__PURE__*/external_React_default().createElement(SportsWidgetKeyDates, {
     handleViewMatches: handleViewMatches
   }), widgetState === WIDGET_STATES.INTRO && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
@@ -16256,17 +16460,97 @@ function SportsWidgetFollowTeams({
 }
 function SportsMatchesView({
   matchesTab,
-  hasLiveGames
+  hasLiveGames,
+  size,
+  previous,
+  current,
+  next
 }) {
+  const [showResultsList, setShowResultsList] = (0,external_React_namespaceObject.useState)(false);
+  const [showUpcomingList, setShowUpcomingList] = (0,external_React_namespaceObject.useState)(false);
+  const resultsPanelRef = (0,external_React_namespaceObject.useRef)(null);
+  const upcomingPanelRef = (0,external_React_namespaceObject.useRef)(null);
+
+  // When the user expands a tab into list mode, move keyboard focus to the
+  // first match row in the just-revealed list. Without this, focus stays on
+  // the "View all" button, which sits at the bottom of the widget — pressing
+  // Tab from there moves focus *out* of the widget instead of into the new
+  // content, creating a keyboard trap for screen reader / keyboard users.
+  // We don't move focus when collapsing back to highlight view: focus
+  // naturally remains on the "Show less" button the user just activated,
+  // which is the expected behavior.
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (showResultsList) {
+      resultsPanelRef.current?.querySelector(".sports-match-row")?.focus();
+    }
+  }, [showResultsList]);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (showUpcomingList) {
+      upcomingPanelRef.current?.querySelector(".sports-match-row")?.focus();
+    }
+  }, [showUpcomingList]);
   return /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-matches-view"
   }, /*#__PURE__*/external_React_default().createElement("div", {
-    hidden: matchesTab !== MATCHES_TABS.RESULTS
-  }), hasLiveGames && /*#__PURE__*/external_React_default().createElement("div", {
+    className: "sports-matches-tab-panel",
+    hidden: matchesTab !== MATCHES_TABS.RESULTS,
+    ref: resultsPanelRef
+  }, showResultsList ? /*#__PURE__*/external_React_default().createElement("ul", {
+    className: "sports-matches-list"
+  }, previous.map(match => /*#__PURE__*/external_React_default().createElement("li", {
+    key: `${match.home_team.key}-${match.away_team.key}-${match.date}`
+  }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
+    match: match,
+    variant: "results",
+    size: "list"
+  })))) : previous[0] && /*#__PURE__*/external_React_default().createElement("div", {
+    className: "match-highlight-view"
+  }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
+    match: previous[0],
+    variant: "results",
+    size: size
+  })), size === "large" && !!previous.length && /*#__PURE__*/external_React_default().createElement("moz-button", {
+    type: "secondary",
+    "data-l10n-id": showResultsList ? "newtab-sports-widget-show-less" : "newtab-sports-widget-view-all",
+    onClick: () => setShowResultsList(v => !v)
+  })), hasLiveGames && /*#__PURE__*/external_React_default().createElement("div", {
+    className: "sports-matches-tab-panel",
     hidden: matchesTab !== MATCHES_TABS.NOW
-  }), /*#__PURE__*/external_React_default().createElement("div", {
-    hidden: matchesTab !== MATCHES_TABS.UPCOMING
-  }));
+  }, current[0] && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
+    className: "match-highlight-view"
+  }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
+    match: current[0],
+    variant: "now",
+    size: size
+  })), /*#__PURE__*/external_React_default().createElement("moz-button", {
+    type: size === "medium" ? "icon" : "default",
+    size: size === "medium" ? "small" : undefined,
+    iconSrc: "chrome://browser/skin/device-tv.svg",
+    "data-l10n-id": size === "medium" ? "newtab-sports-widget-watch-icon" : "newtab-sports-widget-watch"
+  }))), /*#__PURE__*/external_React_default().createElement("div", {
+    className: "sports-matches-tab-panel",
+    hidden: matchesTab !== MATCHES_TABS.UPCOMING,
+    ref: upcomingPanelRef
+  }, showUpcomingList ? /*#__PURE__*/external_React_default().createElement("ul", {
+    className: "sports-matches-list"
+  }, next.map(match => /*#__PURE__*/external_React_default().createElement("li", {
+    key: `${match.home_team.key}-${match.away_team.key}-${match.date}`
+  }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
+    match: match,
+    variant: "upcoming",
+    size: "list"
+  })))) : next[0] && /*#__PURE__*/external_React_default().createElement("div", {
+    className: "match-highlight-view"
+  }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
+    match: next[0],
+    variant: "upcoming",
+    size: size
+  })), !!next.length && /*#__PURE__*/external_React_default().createElement("moz-button", {
+    type: "secondary",
+    size: size === "medium" ? "small" : undefined,
+    "data-l10n-id": showUpcomingList ? "newtab-sports-widget-show-less" : "newtab-sports-widget-view-all",
+    onClick: () => setShowUpcomingList(v => !v)
+  })));
 }
 const keyDatesList = [{
   stageL10nId: "newtab-sports-widget-group-stage",

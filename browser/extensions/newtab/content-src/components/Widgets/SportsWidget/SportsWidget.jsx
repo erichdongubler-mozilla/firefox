@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
+import { SportsMatchRow } from "./SportsMatchRow";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 
 const WIDGET_STATES = {
@@ -40,7 +41,7 @@ const USER_ACTION_TYPES = {
   SAVE_TEAMS: "save_teams",
   VIEW_UPCOMING: "view_upcoming",
   VIEW_RESULTS: "view_results",
-  VIEW_SCHEDULE: "view_schedule",
+  VIEW_MATCHES: "view_matches",
   VIEW_KEY_DATES: "view_key_dates",
   CHANGE_SIZE: "change_size",
   LEARN_MORE: "learn_more",
@@ -61,15 +62,21 @@ function SportsWidget({ dispatch, handleUserInteraction }) {
   const widgetSize = resolveWidgetSize(SPORTS_WIDGET_REGISTRY_ENTRY, prefs);
   const liveEnabled = prefs[PREF_SPORTS_WIDGET_LIVE_ENABLED];
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
-  const widgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;
+  const hasLiveGames = sportsWidgetData?.data?.matches?.current?.length > 0;
+  const hasPreviousResults =
+    sportsWidgetData?.data?.matches?.previous?.length > 0;
+  const tournamentStarted = hasLiveGames || hasPreviousResults;
+  const savedWidgetState = sportsWidgetData.widgetState || WIDGET_STATES.INTRO;
+  // Once the tournament has started, skip the intro and open on the match schedule.
+  const widgetState =
+    tournamentStarted && savedWidgetState === WIDGET_STATES.INTRO
+      ? WIDGET_STATES.MATCHES
+      : savedWidgetState;
   const displaySize =
     widgetState === WIDGET_STATES.FOLLOW_TEAMS ? "large" : widgetSize;
   const selectedTeams = sportsWidgetData.selectedTeams || [];
   const teams = sportsWidgetData?.data?.teams ?? [];
   const { matchesTab } = sportsWidgetData;
-  const hasLiveGames = sportsWidgetData?.data?.current?.length > 0;
-  const hasPreviousResults = sportsWidgetData?.data?.previous?.length > 0;
-  const tournamentStarted = hasLiveGames || hasPreviousResults;
   const hasUserSelectedTab = useRef(false);
   const activeTab =
     hasLiveGames && !hasUserSelectedTab.current ? MATCHES_TABS.NOW : matchesTab;
@@ -274,7 +281,7 @@ function SportsWidget({ dispatch, handleUserInteraction }) {
           data: {
             widget_name: "sports_widget",
             widget_source: widgetSource,
-            user_action: USER_ACTION_TYPES.VIEW_SCHEDULE,
+            user_action: USER_ACTION_TYPES.VIEW_MATCHES,
             widget_size: widgetSize,
           },
         })
@@ -529,6 +536,10 @@ function SportsWidget({ dispatch, handleUserInteraction }) {
           <SportsMatchesView
             matchesTab={activeTab}
             hasLiveGames={hasLiveGames}
+            size={widgetSize}
+            previous={sportsWidgetData?.data?.matches?.previous ?? []}
+            current={sportsWidgetData?.data?.matches?.current ?? []}
+            next={sportsWidgetData?.data?.matches?.next ?? []}
           />
         )}
         {widgetState === WIDGET_STATES.KEY_DATES && (
@@ -636,12 +647,138 @@ function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
   );
 }
 
-function SportsMatchesView({ matchesTab, hasLiveGames }) {
+function SportsMatchesView({
+  matchesTab,
+  hasLiveGames,
+  size,
+  previous,
+  current,
+  next,
+}) {
+  const [showResultsList, setShowResultsList] = useState(false);
+  const [showUpcomingList, setShowUpcomingList] = useState(false);
+  const resultsPanelRef = useRef(null);
+  const upcomingPanelRef = useRef(null);
+
+  // When the user expands a tab into list mode, move keyboard focus to the
+  // first match row in the just-revealed list. Without this, focus stays on
+  // the "View all" button, which sits at the bottom of the widget — pressing
+  // Tab from there moves focus *out* of the widget instead of into the new
+  // content, creating a keyboard trap for screen reader / keyboard users.
+  // We don't move focus when collapsing back to highlight view: focus
+  // naturally remains on the "Show less" button the user just activated,
+  // which is the expected behavior.
+  useEffect(() => {
+    if (showResultsList) {
+      resultsPanelRef.current?.querySelector(".sports-match-row")?.focus();
+    }
+  }, [showResultsList]);
+  useEffect(() => {
+    if (showUpcomingList) {
+      upcomingPanelRef.current?.querySelector(".sports-match-row")?.focus();
+    }
+  }, [showUpcomingList]);
+
   return (
     <div className="sports-matches-view">
-      <div hidden={matchesTab !== MATCHES_TABS.RESULTS} />
-      {hasLiveGames && <div hidden={matchesTab !== MATCHES_TABS.NOW} />}
-      <div hidden={matchesTab !== MATCHES_TABS.UPCOMING} />
+      <div
+        className="sports-matches-tab-panel"
+        hidden={matchesTab !== MATCHES_TABS.RESULTS}
+        ref={resultsPanelRef}
+      >
+        {showResultsList ? (
+          <ul className="sports-matches-list">
+            {previous.map(match => (
+              <li
+                key={`${match.home_team.key}-${match.away_team.key}-${match.date}`}
+              >
+                <SportsMatchRow match={match} variant="results" size="list" />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          previous[0] && (
+            <div className="match-highlight-view">
+              <SportsMatchRow
+                match={previous[0]}
+                variant="results"
+                size={size}
+              />
+            </div>
+          )
+        )}
+        {size === "large" && !!previous.length && (
+          <moz-button
+            type="secondary"
+            data-l10n-id={
+              showResultsList
+                ? "newtab-sports-widget-show-less"
+                : "newtab-sports-widget-view-all"
+            }
+            onClick={() => setShowResultsList(v => !v)}
+          ></moz-button>
+        )}
+      </div>
+      {hasLiveGames && (
+        <div
+          className="sports-matches-tab-panel"
+          hidden={matchesTab !== MATCHES_TABS.NOW}
+        >
+          {current[0] && (
+            <>
+              <div className="match-highlight-view">
+                <SportsMatchRow match={current[0]} variant="now" size={size} />
+              </div>
+              {/* TODO: Add onClick handler + play icon when we start implementing Watch dialog UI */}
+              <moz-button
+                type={size === "medium" ? "icon" : "default"}
+                size={size === "medium" ? "small" : undefined}
+                iconSrc="chrome://browser/skin/device-tv.svg"
+                data-l10n-id={
+                  size === "medium"
+                    ? "newtab-sports-widget-watch-icon"
+                    : "newtab-sports-widget-watch"
+                }
+              ></moz-button>
+            </>
+          )}
+        </div>
+      )}
+      <div
+        className="sports-matches-tab-panel"
+        hidden={matchesTab !== MATCHES_TABS.UPCOMING}
+        ref={upcomingPanelRef}
+      >
+        {showUpcomingList ? (
+          <ul className="sports-matches-list">
+            {next.map(match => (
+              <li
+                key={`${match.home_team.key}-${match.away_team.key}-${match.date}`}
+              >
+                <SportsMatchRow match={match} variant="upcoming" size="list" />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          next[0] && (
+            <div className="match-highlight-view">
+              <SportsMatchRow match={next[0]} variant="upcoming" size={size} />
+            </div>
+          )
+        )}
+        {!!next.length && (
+          <moz-button
+            type="secondary"
+            size={size === "medium" ? "small" : undefined}
+            data-l10n-id={
+              showUpcomingList
+                ? "newtab-sports-widget-show-less"
+                : "newtab-sports-widget-view-all"
+            }
+            onClick={() => setShowUpcomingList(v => !v)}
+          ></moz-button>
+        )}
+      </div>
     </div>
   );
 }

@@ -362,8 +362,13 @@ add_task(async function test_fetchSportsData_reads_endpoint_prefs() {
     teamsStub.calledWith({ source: "newtab", endpointUrl: teamsEndpoint }),
     "fetchSportsTeams called with correct endpoint"
   );
+  // TODO: remove the `?date=2026-06-15` query param 10 days before kickoff
+  // (June 1st 2026) once the backend no longer requires it.
   Assert.ok(
-    matchesStub.calledWith({ source: "newtab", endpointUrl: matchesEndpoint }),
+    matchesStub.calledWith({
+      source: "newtab",
+      endpointUrl: `${matchesEndpoint}?date=2026-06-15`,
+    }),
     "fetchSportsMatches called with correct endpoint"
   );
 });
@@ -404,10 +409,12 @@ add_task(
       }),
       "fetchSportsTeams called with trainhopConfig endpoint"
     );
+    // TODO: remove the `?date=2026-06-15` query param 10 days before kickoff
+    // (June 1st 2026) once the backend no longer requires it.
     Assert.ok(
       matchesStub.calledWith({
         source: "newtab",
-        endpointUrl: trainhopMatchesEndpoint,
+        endpointUrl: `${trainhopMatchesEndpoint}?date=2026-06-15`,
       }),
       "fetchSportsMatches called with trainhopConfig endpoint"
     );
@@ -421,7 +428,7 @@ add_task(async function test_fetchSportsData_handles_null_responses() {
   sinon.stub(feed.merino, "fetchSportsMatches").resolves(null);
 
   info(
-    "fetchSportsData should dispatch empty arrays when endpoints return null"
+    "fetchSportsData should dispatch empty fallbacks when endpoints return null"
   );
   await feed.fetchSportsData();
 
@@ -433,8 +440,8 @@ add_task(async function test_fetchSportsData_handles_null_responses() {
   );
   Assert.deepEqual(
     dispatchedAction.data.matches,
-    [],
-    "matches falls back to empty array"
+    { previous: [], current: [], next: [] },
+    "matches falls back to an object with empty previous/current/next arrays"
   );
 });
 

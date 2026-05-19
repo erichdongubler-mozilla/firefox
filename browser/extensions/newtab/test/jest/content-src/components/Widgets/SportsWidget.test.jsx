@@ -8,6 +8,35 @@ import { actionTypes as at } from "common/Actions.mjs";
 import { WrapWithProvider } from "test/jest/test-utils";
 import { SportsWidget } from "content-src/components/Widgets/SportsWidget/SportsWidget";
 
+const mockTeams = [
+  { key: "CAN", name: "Canada" },
+  { key: "AUS", name: "Australia" },
+  { key: "ALG", name: "Algeria" },
+  { key: "IRQ", name: "Iraq" },
+  { key: "ITA", name: "Italy" },
+  { key: "ESP", name: "Spain" },
+  { key: "NGA", name: "Nigeria" },
+  { key: "MAR", name: "Morocco" },
+  { key: "POR", name: "Portugal" },
+  { key: "GER", name: "Germany" },
+  { key: "SEN", name: "Senegal" },
+];
+
+const emptyMatches = { previous: [], current: [], next: [] };
+
+const mockMatch = {
+  home_team: { key: "ENG", name: "England" },
+  away_team: { key: "USA", name: "United States" },
+  date: "2026-05-08T14:00:00+00:00",
+  status_type: "live",
+  home_score: 1,
+  away_score: 0,
+  home_extra: null,
+  away_extra: null,
+  home_penalty: null,
+  away_penalty: null,
+};
+
 const PREF_NOVA_ENABLED = "nova.enabled";
 const PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 
@@ -192,6 +221,30 @@ describe("<SportsWidget>", () => {
       container.querySelector(".sports-follow-teams-btn").getAttribute("size")
     ).toBeNull();
   });
+
+  it("opens on match schedule when the tournament has started", () => {
+    const { container } = render(
+      <WrapWithProvider
+        state={makeState(
+          {},
+          {
+            data: {
+              teams: [],
+              matches: { current: [mockMatch], previous: [], next: [] },
+            },
+          }
+        )}
+      >
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+    expect(
+      container.querySelector(".sports.sports-matches")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".sports-intro-wrapper")
+    ).not.toBeInTheDocument();
+  });
 });
 
 describe("<SportsWidget> follow teams flow", () => {
@@ -350,7 +403,10 @@ describe("<SportsWidget> follow teams flow", () => {
       <WrapWithProvider
         state={makeState(
           { [PREF_SPORTS_WIDGET_SIZE]: "medium" },
-          { widgetState: "sports-follow-state" }
+          {
+            widgetState: "sports-follow-state",
+            data: { teams: mockTeams, matches: emptyMatches },
+          }
         )}
       >
         <SportsWidget
@@ -597,7 +653,7 @@ describe("<SportsWidget> matches view", () => {
           {},
           {
             widgetState: "sports-matches",
-            data: { current: [], previous: [], upcoming: [] },
+            data: { teams: [], matches: emptyMatches },
             ...overrides,
           }
         )}
@@ -636,7 +692,10 @@ describe("<SportsWidget> matches view", () => {
 
   it("hides the back button once the tournament has started", () => {
     const { container } = renderInMatchesState({
-      data: { current: [{}], previous: [], upcoming: [] },
+      data: {
+        teams: [],
+        matches: { current: [mockMatch], previous: [], next: [] },
+      },
     });
     expect(
       container.querySelector(".sports-back-button").style.visibility
@@ -650,7 +709,10 @@ describe("<SportsWidget> matches view", () => {
     ).not.toBeInTheDocument();
 
     const { container: withLive } = renderInMatchesState({
-      data: { current: [{}], previous: [], upcoming: [] },
+      data: {
+        teams: [],
+        matches: { current: [mockMatch], previous: [], next: [] },
+      },
     });
     expect(
       withLive.querySelector("[data-l10n-id='newtab-sports-widget-now']")
@@ -668,7 +730,10 @@ describe("<SportsWidget> matches view", () => {
   it("defaults to Now on load when there are live games", () => {
     const { container } = renderInMatchesState({
       matchesTab: "upcoming",
-      data: { current: [{}], previous: [], upcoming: [] },
+      data: {
+        teams: [],
+        matches: { current: [mockMatch], previous: [], next: [] },
+      },
     });
     expect(
       container
@@ -691,7 +756,10 @@ describe("<SportsWidget> matches view", () => {
 
   it("enables the results tab when there are previous results", () => {
     const { container } = renderInMatchesState({
-      data: { current: [], previous: [{}], upcoming: [] },
+      data: {
+        teams: [],
+        matches: { current: [], previous: [mockMatch], next: [] },
+      },
     });
     expect(
       container.querySelector("[data-l10n-id='newtab-sports-widget-results']")
@@ -712,7 +780,7 @@ describe("<SportsWidget> matches view", () => {
     );
   });
 
-  it("dispatches CHANGE_WIDGET_STATE to matches when the View schedule button is clicked", () => {
+  it("dispatches CHANGE_WIDGET_STATE to matches when the View matches button is clicked", () => {
     const { container } = render(
       <WrapWithProvider state={makeState()}>
         <SportsWidget
@@ -732,6 +800,213 @@ describe("<SportsWidget> matches view", () => {
         data: "sports-matches",
       })
     );
+  });
+});
+
+describe("<SportsWidget> keyboard accessibility", () => {
+  // Without focus management, the "View all" button sits at the bottom of
+  // the widget — pressing it leaves keyboard focus at the bottom edge, so a
+  // Tab keypress moves focus *out* of the widget instead of into the newly-
+  // revealed list. The widget moves focus to the first match row in the new
+  // list to avoid this trap.
+  function renderWithResults() {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: "large" },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            data: {
+              teams: [],
+              matches: {
+                previous: [
+                  mockMatch,
+                  {
+                    ...mockMatch,
+                    date: "2026-05-09T14:00:00+00:00",
+                    home_score: 2,
+                  },
+                ],
+                current: [],
+                next: [],
+              },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  function renderWithUpcoming() {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: "large" },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            data: {
+              teams: [],
+              matches: {
+                // A `previous` entry is needed to keep tournamentStarted
+                // truthy so the widget stays in the matches view.
+                previous: [mockMatch],
+                current: [],
+                next: [
+                  { ...mockMatch, status_type: "scheduled" },
+                  {
+                    ...mockMatch,
+                    date: "2026-05-10T14:00:00+00:00",
+                    status_type: "scheduled",
+                    home_score: null,
+                  },
+                ],
+              },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  it("moves keyboard focus to the first match row when expanding the Results list", () => {
+    const { container } = renderWithResults();
+    const resultsPanel = [
+      ...container.querySelectorAll(".sports-matches-tab-panel"),
+    ].find(p => !p.hasAttribute("hidden"));
+    expect(resultsPanel).toBeTruthy();
+    // Sanity: before expanding, only the highlight row is rendered.
+    expect(resultsPanel.querySelectorAll(".sports-match-row")).toHaveLength(1);
+
+    fireEvent.click(
+      resultsPanel.querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+
+    const rows = resultsPanel.querySelectorAll(".sports-match-row");
+    expect(rows).toHaveLength(2);
+    expect(document.activeElement).toBe(rows[0]);
+  });
+
+  it("moves keyboard focus to the first match row when expanding the Upcoming list", () => {
+    const { container } = renderWithUpcoming();
+    const upcomingPanel = [
+      ...container.querySelectorAll(".sports-matches-tab-panel"),
+    ].find(p => !p.hasAttribute("hidden"));
+    expect(upcomingPanel).toBeTruthy();
+
+    fireEvent.click(
+      upcomingPanel.querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+
+    const rows = upcomingPanel.querySelectorAll(".sports-match-row");
+    expect(rows).toHaveLength(2);
+    expect(document.activeElement).toBe(rows[0]);
+  });
+
+  it("does not steal focus on initial render when in highlight view", () => {
+    // Regression guard: if the focus-on-expand effect ever drops its
+    // `if (showResultsList)` guard, it would fire on mount too and yank
+    // focus to a match row before any user input.
+    const preMountFocus = document.activeElement;
+    const { container } = renderWithResults();
+    const firstRow = container.querySelector(".sports-match-row");
+    expect(document.activeElement).not.toBe(firstRow);
+    expect(document.activeElement).toBe(preMountFocus);
+  });
+});
+
+describe("<SportsWidget> Watch button (live tab)", () => {
+  // The Watch button on the live tab swaps between an icon-only variant
+  // (medium widget) and a labelled variant (large widget). The two cases
+  // also use different Fluent ids because moz-button only renders icon-only
+  // when no `.label` attribute is set — see _SportsWidget.scss notes and the
+  // separate `newtab-sports-widget-watch-icon` message.
+  function renderLive(size) {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: size },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "now",
+            data: {
+              teams: [],
+              matches: { previous: [], current: [mockMatch], next: [] },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  function findWatchButton(container) {
+    return [...container.querySelectorAll("moz-button")].find(b => {
+      const id = b.getAttribute("data-l10n-id");
+      return (
+        id === "newtab-sports-widget-watch" ||
+        id === "newtab-sports-widget-watch-icon"
+      );
+    });
+  }
+
+  it("renders an icon-only Watch button when the widget is medium", () => {
+    const { container } = renderLive("medium");
+    const button = findWatchButton(container);
+    expect(button).toBeTruthy();
+    expect(button.getAttribute("type")).toBe("icon");
+    // Uses the no-`.label` variant so moz-button doesn't add the .labelled
+    // class — otherwise its CSS would render the visible "Watch" text.
+    expect(button.getAttribute("data-l10n-id")).toBe(
+      "newtab-sports-widget-watch-icon"
+    );
+    expect(button.getAttribute("iconSrc")).toBe(
+      "chrome://browser/skin/device-tv.svg"
+    );
+  });
+
+  it("renders a labelled Watch button when the widget is large", () => {
+    const { container } = renderLive("large");
+    const button = findWatchButton(container);
+    expect(button).toBeTruthy();
+    expect(button.getAttribute("type")).toBe("default");
+    expect(button.getAttribute("data-l10n-id")).toBe(
+      "newtab-sports-widget-watch"
+    );
+  });
+
+  it("does not render the Watch button when there is no live match", () => {
+    const { container } = render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: "medium" },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            data: {
+              teams: [],
+              // Need a previous match so tournamentStarted stays truthy and
+              // the widget renders the matches view at all, but no `current`
+              // matches means the Now tab + Watch button shouldn't render.
+              matches: { previous: [mockMatch], current: [], next: [] },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+    expect(findWatchButton(container)).toBeUndefined();
   });
 });
 
@@ -755,7 +1030,7 @@ describe("<SportsWidget> telemetry", () => {
     );
   }
 
-  it("should dispatch view_schedule telemetry when view-matches is clicked", () => {
+  it("should dispatch view_matches telemetry when view-matches is clicked", () => {
     const { container } = renderWidget();
     fireEvent.click(
       container.querySelector(
@@ -767,7 +1042,7 @@ describe("<SportsWidget> telemetry", () => {
         type: at.WIDGETS_USER_EVENT,
         data: expect.objectContaining({
           widget_source: "widget",
-          user_action: "view_schedule",
+          user_action: "view_matches",
         }),
       })
     );
@@ -798,7 +1073,7 @@ describe("<SportsWidget> telemetry", () => {
     );
   });
 
-  it("should dispatch view_schedule telemetry with key_dates_state source when View matches is clicked from key dates", () => {
+  it("should dispatch view_matches telemetry with key_dates_state source when View matches is clicked from key dates", () => {
     const { container } = render(
       <WrapWithProvider
         state={makeState({}, { widgetState: "sports-key-dates" })}
@@ -819,7 +1094,7 @@ describe("<SportsWidget> telemetry", () => {
         type: at.WIDGETS_USER_EVENT,
         data: expect.objectContaining({
           widget_source: "key_dates_state",
-          user_action: "view_schedule",
+          user_action: "view_matches",
         }),
       })
     );

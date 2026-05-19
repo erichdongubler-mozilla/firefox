@@ -19,6 +19,9 @@ const PREF_SYSTEM_SPORTS_ENABLED = "widgets.system.sportsWidget.enabled";
 const FOLLOW_STATE = "sports-follow-state";
 const CACHE_KEY = "sports_feed";
 const MERINO_CLIENT_KEY = "HNT_SPORTS_FEED";
+// Temporary: backend requires a date parameter on the matches endpoint until
+// TODO: 10 days before kickoff (2026-06-11). Remove this and the appendDate logic once the backend no longer requires it.
+const SPORTS_MATCHES_PRE_KICKOFF_DATE = "2026-06-15";
 
 /**
  * Manages persistent state for the Sports widget (selected teams and widget
@@ -83,7 +86,10 @@ export class SportsFeed {
       this.store.dispatch(
         ac.BroadcastToContent({
           type: at.WIDGETS_SPORTS_WIDGET_SET,
-          data: { teams: teams ?? [], matches: matches ?? [] },
+          data: {
+            teams: teams ?? [],
+            matches: matches ?? { previous: [], current: [], next: [] },
+          },
         })
       );
     }
@@ -120,6 +126,14 @@ export class SportsFeed {
       return;
     }
 
+    // TODO: remove matchesEndpointWithDate variable and all references to it 10 days before kickoff (June 1st 2026)
+    let matchesEndpointWithDate = matchesEndpoint;
+    if (matchesEndpoint) {
+      const matchesUrl = new URL(matchesEndpoint);
+      matchesUrl.searchParams.set("date", SPORTS_MATCHES_PRE_KICKOFF_DATE);
+      matchesEndpointWithDate = matchesUrl.toString();
+    }
+
     const [teams, matches] = await Promise.all([
       this.merino.fetchSportsTeams({
         source: "newtab",
@@ -127,7 +141,7 @@ export class SportsFeed {
       }),
       this.merino.fetchSportsMatches({
         source: "newtab",
-        endpointUrl: matchesEndpoint,
+        endpointUrl: matchesEndpointWithDate,
       }),
     ]);
 
@@ -141,7 +155,10 @@ export class SportsFeed {
     this.store.dispatch(
       ac.BroadcastToContent({
         type: at.WIDGETS_SPORTS_WIDGET_SET,
-        data: { teams: teams?.teams ?? [], matches: matches ?? [] },
+        data: {
+          teams: teams?.teams ?? [],
+          matches: matches ?? { previous: [], current: [], next: [] },
+        },
       })
     );
   }
