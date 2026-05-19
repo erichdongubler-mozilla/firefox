@@ -138,5 +138,5 @@ Affix file Copyright:
   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
   SUCH DAMAGE.
 
-Build Date: Mon May 18 07:21:00 CEST 2026
+Build Date: Mon May 18 10:48:06 CEST 2026
 With Input Command: ../mk-list -v1 --accents=both en_US 60
