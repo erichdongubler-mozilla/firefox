@@ -118,7 +118,6 @@
 ::slotted([slot="content"].location-message) {
   border: none;
   margin-top: var(--space-small);
-  font-size: var(--font-size-small, 11px);
   color: var(--text-color-deemphasized);
   text-align: center;
 }
