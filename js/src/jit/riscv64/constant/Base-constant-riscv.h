@@ -447,7 +447,9 @@ inline OffsetSize ImmBranchRangeTypeToOffsetSize(ImmBranchRangeType type) {
   }
 }
 
-int32_t ImmBranchMaxForwardOffset(OffsetSize bits);
+inline int32_t ImmBranchMaxForwardOffset(OffsetSize bits) {
+  return (1 << (bits - 1)) - 1;
+}
 
 inline int32_t ImmBranchMaxForwardOffset(ImmBranchRangeType type) {
   return ImmBranchMaxForwardOffset(ImmBranchRangeTypeToOffsetSize(type));
