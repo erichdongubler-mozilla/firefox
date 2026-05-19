@@ -84,8 +84,6 @@
     <color name="fx_mobile_text_color_action_secondary">@color/photonDarkGrey90</color>
 
     <!-- Icon -->
-    <!-- Secondary icon -->
-    <color name="fx_mobile_icon_color_secondary">@color/photonDarkGrey05</color>
     <!-- Disabled icon -->
     <color name="fx_mobile_icon_color_disabled">@color/photonDarkGrey90A40</color>
     <!-- Icon inverted (on color) -->
@@ -285,14 +283,14 @@
     <color name="mozac_ui_private_mode_circle_fill" tools:ignore="UnusedResources">@color/photonPurple60</color>
 
     <!-- Account Sync Avatar fill colors -->
-    <color name="mozac_ui_avatar_warning_bg_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_icon_color_secondary</color>
+    <color name="mozac_ui_avatar_warning_bg_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_on_surface_variant</color>
     <color name="mozac_ui_avatar_warning_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_error</color>
 
     <!-- Extensions disabled icon fill colors -->
-    <color name="mozac_ui_extensions_warning_bg_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_icon_color_secondary</color>
+    <color name="mozac_ui_extensions_warning_bg_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_on_surface_variant</color>
     <color name="mozac_ui_extensions_warning_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_error</color>
 
     <!-- Lock slash critical fill colors for mozac_ic_lock_slash_critical_24 -->
-    <color name="mozac_ui_lock_slash_bg_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_icon_color_secondary</color>
+    <color name="mozac_ui_lock_slash_bg_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_on_surface_variant</color>
     <color name="mozac_ui_lock_slash_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_error</color>
 </resources>
