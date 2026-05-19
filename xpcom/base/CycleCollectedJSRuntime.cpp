@@ -385,25 +385,37 @@ JSZoneParticipant::TraverseNative(void* aPtr,
   return NS_OK;
 }
 
-struct TraversalTracer : public JS::CallbackTracer {
+struct TraversalTracer : public js::GenericTracerImpl<TraversalTracer> {
   TraversalTracer(JSRuntime* aRt, nsCycleCollectionTraversalCallback& aCb)
-      : JS::CallbackTracer(aRt, JS::TracerKind::Callback,
-                           JS::TraceOptions(JS::WeakMapTraceAction::Skip,
-                                            JS::WeakEdgeTraceAction::Trace)),
+      : js::GenericTracerImpl<TraversalTracer>(
+            aRt, JS::TracerKind::Callback,
+            JS::TraceOptions(JS::WeakMapTraceAction::Skip,
+                             JS::WeakEdgeTraceAction::Trace)),
         mCb(aCb) {}
-  void onChild(JS::GCCellPtr aThing, const char* name) override;
   nsCycleCollectionTraversalCallback& mCb;
+
+ private:
+  template <typename T>
+  void onEdge(T** aThingPtr, const char* aName);
+  friend class js::GenericTracerImpl<TraversalTracer>;
 };
 
-void TraversalTracer::onChild(JS::GCCellPtr aThing, const char* name) {
-  // Checking strings for being gray is rather slow, and we don't need them for
-  // the cycle collector.
-  if (aThing.is<JSString>()) {
+template <typename T>
+void TraversalTracer::onEdge(T** aThingPtr, const char* aName) {
+  // Strings can never be gray and don't participate in the CC graph.
+  if constexpr (std::is_same_v<T, JSString>) {
+    return;
+  }
+
+  // Skip null edges.
+  T* thing = *aThingPtr;
+  if (!thing) {
     return;
   }
 
   // Don't traverse non-gray objects, unless we want all traces.
-  if (!JS::GCThingIsMarkedGrayInCC(aThing) && !mCb.WantAllTraces()) {
+  if (!JS::GCThingIsMarkedGrayInCC(js::gc::ToCell(thing)) &&
+      !mCb.WantAllTraces()) {
     return;
   }
 
@@ -414,25 +426,25 @@ void TraversalTracer::onChild(JS::GCCellPtr aThing, const char* name) {
    * or cyclic chains of non-IsCCTraceKind GC things. Places where this can
    * occur use special APIs to handle such chains iteratively.
    */
-  if (JS::IsCCTraceKind(aThing.kind())) {
+  if constexpr (JS::IsCCTraceKind(JS::MapTypeToTraceKind<T>::kind)) {
     if (MOZ_UNLIKELY(mCb.WantDebugInfo())) {
       char buffer[200];
-      context().getEdgeName(name, buffer, sizeof(buffer));
+      context().getEdgeName(aName, buffer, sizeof(buffer));
       mCb.NoteNextEdgeName(buffer);
     }
-    mCb.NoteJSChild(aThing);
+    mCb.NoteJSChild(JS::GCCellPtr(thing));
     return;
   }
 
   // Allow re-use of this tracer inside trace callback.
   JS::AutoClearTracingContext actc(this);
 
-  if (aThing.is<js::Shape>()) {
+  if constexpr (std::is_same_v<T, js::Shape>) {
     // The maximum depth of traversal when tracing a Shape is unbounded, due to
     // the parent pointers on the shape.
-    JS_TraceShapeCycleCollectorChildren(this, aThing);
+    JS_TraceShapeCycleCollectorChildren(this, thing);
   } else {
-    JS::TraceChildren(this, aThing);
+    JS::TraceChildren(this, JS::GCCellPtr(thing));
   }
 }
 

@@ -92,7 +92,7 @@ void js::gc::TraceIncomingCCWs(JSTracer* trc,
 // CC parlance, traverse -- a Shape. The CC does not care about Shapes,
 // BaseShapes or PropMaps themselves, only things held live by them that can
 // participate in cycles.
-void gc::TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape) {
+void gc::TraceCycleCollectorChildren(JSTracer* trc, Shape* shape) {
   shape->base()->traceChildren(trc);
 
   // TODO: Trace symbols reachable from |shape|. Shapes can entrain symbols via

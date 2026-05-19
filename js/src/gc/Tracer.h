@@ -369,7 +369,7 @@ namespace gc {
 
 // Trace through a shape iteratively during cycle collection to avoid deep or
 // infinite recursion.
-void TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape);
+void TraceCycleCollectorChildren(JSTracer* trc, Shape* shape);
 
 /**
  * Trace every value within |compartments| that is wrapped by a
