@@ -185,6 +185,10 @@ class Test:
                 data.unmangledToMangled[unmangled] = mangled
                 return
 
+            if line.startswith("!"):
+                # JSON describing the format and available attributes.
+                return
+
             # Sample lines:
             #   D 10 20
             #   D /3 10 20
