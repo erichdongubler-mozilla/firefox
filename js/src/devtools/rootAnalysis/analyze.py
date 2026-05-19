@@ -370,6 +370,7 @@ args = parser.parse_args()
 args.verbose = max(0, args.verbose - args.quiet)
 
 data = None
+firsterr = None
 for default in defaults:
     try:
         with open(default) as fh:
@@ -377,7 +378,7 @@ for default in defaults:
         if args.verbose > 1:
             print(f"Loaded {default}")
     except OSError as e:
-        firsterr = e
+        firsterr = firsterr or e
         pass
 
 if data is None:

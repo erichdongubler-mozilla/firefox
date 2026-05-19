@@ -594,7 +594,7 @@ def view_hazards(command_context, project, haz_objdir, work_dir, port, serve_onl
     httpd = None
 
     def serve_source_file(request, path):
-        info = {"req": path}
+        info = {"req": path, "path": path}
 
         def log(fmt, level=logging.INFO):
             return command_context.log(level, "view-hazards", info, fmt)
@@ -609,17 +609,18 @@ def view_hazards(command_context, project, haz_objdir, work_dir, port, serve_onl
         roots = (command_context.topsrcdir, haz_objdir)
 
         try:
-            # Validate the path. Some source files have weird characters in their paths (eg "+"), but they
-            # all start with an alphanumeric or underscore.
             command_context.log(
                 logging.DEBUG, "view-hazards", {"path": path}, "Raw path: {path}"
             )
+
+            # Validate the path. Source file paths may have weird characters (eg
+            # "+"), but they all start with an alphanumeric or underscore.
             path_component = r"\w[\w\-\.\+]*"
             if not re.match(f"({path_component}/)*{path_component}$", path):
                 raise ValueError("invalid path")
 
-            # Resolve the path to under one of the roots, and
-            # ensure that the actual file really is underneath a root directory.
+            # Resolve the path to under one of the roots, and ensure that the
+            # actual file really is underneath a root directory.
             for rootdir in roots:
                 fullpath = os.path.join(rootdir, path)
                 info["path"] = fullpath
