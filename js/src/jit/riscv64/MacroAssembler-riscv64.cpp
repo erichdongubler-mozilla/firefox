@@ -2605,15 +2605,17 @@ CodeOffset MacroAssembler::moveNearAddressWithPatch(Register dest) {
 }
 
 CodeOffset MacroAssembler::nopPatchableToCall() {
+  // Generate a seven instruction sequence:
+  // - Six instructions for WriteLoad64Instructions.
+  // - Plus one instruction for the final jalr.
   BlockTrampolinePoolScope block_trampoline_pool(this, 7);
-  // riscv64
   nop();  // lui(rd, (int32_t)high_20);
   nop();  // addi(rd, rd, low_12);  // 31 bits in rd.
   nop();  // slli(rd, rd, 11);      // Space for next 11 bis
   nop();  // ori(rd, rd, b11);      // 11 bits are put in. 42 bit in rd
   nop();  // slli(rd, rd, 6);       // Space for next 6 bits
   nop();  // ori(rd, rd, a6);       // 6 bits are put in. 48 bis in rd
-  nop();  // jirl
+  nop();  // jalr
   return CodeOffset(currentOffset());
 }
 
@@ -3880,14 +3882,16 @@ void MacroAssembler::oolWasmTruncateCheckF64ToI64(
 }
 
 void MacroAssembler::patchCallToNop(uint8_t* call) {
-  uint32_t* p = reinterpret_cast<uint32_t*>(call) - 7;
-  *reinterpret_cast<Instr*>(p) = kNopByte;
-  *reinterpret_cast<Instr*>(p + 1) = kNopByte;
-  *reinterpret_cast<Instr*>(p + 2) = kNopByte;
-  *reinterpret_cast<Instr*>(p + 3) = kNopByte;
-  *reinterpret_cast<Instr*>(p + 4) = kNopByte;
-  *reinterpret_cast<Instr*>(p + 5) = kNopByte;
-  *reinterpret_cast<Instr*>(p + 6) = kNopByte;
+  // See nopPatchableToCall() for the expected code layout.
+
+  Instruction* instr = Instruction::At(call - 7 * kInstrSize);
+  (instr + 0 * kInstrSize)->SetInstructionBits(kNopByte);
+  (instr + 1 * kInstrSize)->SetInstructionBits(kNopByte);
+  (instr + 2 * kInstrSize)->SetInstructionBits(kNopByte);
+  (instr + 3 * kInstrSize)->SetInstructionBits(kNopByte);
+  (instr + 4 * kInstrSize)->SetInstructionBits(kNopByte);
+  (instr + 5 * kInstrSize)->SetInstructionBits(kNopByte);
+  (instr + 6 * kInstrSize)->SetInstructionBits(kNopByte);
 }
 
 CodeOffset MacroAssembler::callWithPatch() {
@@ -3978,16 +3982,19 @@ void MacroAssembler::patchNearAddressMove(CodeLocationLabel loc,
 }
 
 void MacroAssembler::patchNopToCall(uint8_t* call, uint8_t* target) {
-  uint32_t* p = reinterpret_cast<uint32_t*>(call) - 7;
-  Assembler::WriteLoad64Instructions((Instruction*)p, SavedScratchRegister,
+  // See nopPatchableToCall() for the expected code layout.
+
+  Instruction* instr = Instruction::At(call - 7 * kInstrSize);
+  Assembler::WriteLoad64Instructions(instr, SavedScratchRegister,
                                      (uint64_t)target);
   DEBUG_PRINTF("\tpatchNopToCall %" PRIu64 " %" PRIu64 "\n", (uint64_t)target,
-               ExtractLoad64Value((Instruction*)p));
-  MOZ_ASSERT(ExtractLoad64Value((Instruction*)p) == (uint64_t)target);
+               ExtractLoad64Value(instr));
+  MOZ_ASSERT(ExtractLoad64Value(instr) == (uint64_t)target);
+
   Instr jalr_ = JALR | (ra.code() << kRdShift) | (0x0 << kFunct3Shift) |
                 (SavedScratchRegister.code() << kRs1Shift) |
                 (0x0 << kImm12Shift);
-  *reinterpret_cast<Instr*>(p + 6) = jalr_;
+  (instr + 6 * kInstrSize)->SetInstructionBits(jalr_);
 }
 void MacroAssembler::Pop(Register reg) {
   pop(reg);

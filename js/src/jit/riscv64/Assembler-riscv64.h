@@ -487,7 +487,7 @@ class Assembler : public AssemblerShared,
     Instr jalr_ = JALR | (ra.code() << kRdShift) | (0x0 << kFunct3Shift) |
                   (SavedScratchRegister.code() << kRs1Shift) |
                   (0x0 << kImm12Shift);
-    *reinterpret_cast<Instr*>(inst + 6 * kInstrSize) = jalr_;
+    (inst + 6 * kInstrSize)->SetInstructionBits(jalr_);
   }
   static void WriteLoad64Instructions(Instruction* inst0, Register reg,
                                       uint64_t value);
