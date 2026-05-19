@@ -113,13 +113,13 @@ class InstructionBase {
 
   // Accessors for the different named fields used in the RISC-V encoding.
   inline BaseOpcode BaseOpcodeValue() const {
-    return static_cast<BaseOpcode>(
+    return static_cast<enum BaseOpcode>(
         Bits(kBaseOpcodeShift + kBaseOpcodeBits - 1, kBaseOpcodeShift));
   }
 
   // Return the fields at their original place in the instruction encoding.
   inline BaseOpcode BaseOpcodeFieldRaw() const {
-    return static_cast<BaseOpcode>(InstructionBits() & kBaseOpcodeMask);
+    return static_cast<enum BaseOpcode>(InstructionBits() & kBaseOpcodeMask);
   }
 
   // Safe to call within R-type instructions
@@ -162,15 +162,12 @@ class InstructionBase {
     return OffsetSizeToImmBranchRangeType(GetOffsetSize());
   }
 
- protected:
-  InstructionBase() {}
-};
+  /// Getters
 
-template <class T>
-class InstructionGetters : public T {
- public:
   // Say if the instruction is a break or a trap.
-  bool IsTrap() const;
+  inline bool IsTrap() const {
+    return (this->InstructionBits() == kBreakInstr);
+  }
 
   inline int BaseOpcode() const {
     return this->InstructionBits() & kBaseOpcodeMask;
@@ -337,11 +334,6 @@ class InstructionGetters : public T {
     MOZ_ASSERT(this->InstructionType() == InstructionBase::kIType);
     int Value = this->Bits(kImm12Shift + kImm12Bits - 1, kImm12Shift);
     return Value << 20 >> 20;
-  }
-
-  inline int32_t Imm12SExtValue() const {
-    int32_t Value = this->Imm12Value() << 20 >> 20;
-    return Value;
   }
 
   inline int BranchOffset() const {
@@ -654,9 +646,12 @@ class InstructionGetters : public T {
   inline bool AqValue() const { return this->Bits(kAqShift, kAqShift); }
 
   inline bool RlValue() const { return this->Bits(kRlShift, kRlShift); }
+
+ protected:
+  InstructionBase() {}
 };
 
-class Instruction : public InstructionGetters<InstructionBase> {
+class Instruction : public InstructionBase {
  public:
   // Instructions are read of out a code stream. The only way to get a
   // reference to an instruction is to convert a pointer. There is no way
@@ -666,20 +661,11 @@ class Instruction : public InstructionGetters<InstructionBase> {
     return reinterpret_cast<Instruction*>(pc);
   }
 
- private:
   // We need to prevent the creation of instances of class Instruction.
   Instruction() = delete;
   Instruction(const Instruction&) = delete;
   Instruction& operator=(const Instruction&) = delete;
 };
-
-// -----------------------------------------------------------------------------
-// Instructions.
-
-template <class P>
-bool InstructionGetters<P>::IsTrap() const {
-  return (this->InstructionBits() == kBreakInstr);
-}
 
 }  // namespace js::jit
 

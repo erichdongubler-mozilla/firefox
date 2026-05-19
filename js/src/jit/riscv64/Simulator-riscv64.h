@@ -251,25 +251,11 @@ inline uint64_t box_float(uint32_t v) { return (0xFFFFFFFF00000000 | v); }
 // -----------------------------------------------------------------------------
 // Utility functions
 
-class SimInstructionBase : public InstructionBase {
- public:
-  Type InstructionType() const { return type_; }
-  inline Instruction* instr() const { return instr_; }
-  inline int32_t operand() const { return operand_; }
+class SimInstruction : public InstructionBase {
+  int32_t operand_ = -1;
+  Instruction* instr_ = nullptr;
+  Type type_ = kUnsupported;
 
- protected:
-  SimInstructionBase() : operand_(-1), instr_(nullptr), type_(kUnsupported) {}
-  explicit SimInstructionBase(Instruction* instr) {}
-
-  int32_t operand_;
-  Instruction* instr_;
-  Type type_;
-
- private:
-  SimInstructionBase& operator=(const SimInstructionBase&) = delete;
-};
-
-class SimInstruction : public InstructionGetters<SimInstructionBase> {
  public:
   SimInstruction() = default;
 
@@ -282,6 +268,12 @@ class SimInstruction : public InstructionGetters<SimInstructionBase> {
     MOZ_ASSERT(reinterpret_cast<void*>(&operand_) == this);
     return *this;
   }
+
+  SimInstruction& operator=(const SimInstruction&) = delete;
+
+  Type InstructionType() const { return type_; }
+  inline Instruction* instr() const { return instr_; }
+  inline int32_t operand() const { return operand_; }
 };
 
 // std::vector shim for breakpoints

@@ -5,14 +5,7 @@
 
 #include "mozilla/Assertions.h"
 
-#include "jit/riscv64/Simulator-riscv64.h"
-
 namespace js::jit {
-
-template class InstructionGetters<InstructionBase>;
-#ifdef JS_SIMULATOR_RISCV64
-template class InstructionGetters<SimInstructionBase>;
-#endif
 
 OffsetSize InstructionBase::GetOffsetSize() const {
   if (IsIllegalInstruction()) {
