@@ -84,8 +84,6 @@
     <color name="fx_mobile_text_color_action_secondary">@color/photonLightGrey05</color>
 
     <!-- Icon -->
-    <!-- Primary icon -->
-    <color name="fx_mobile_icon_color_primary">@color/photonLightGrey05</color>
     <!-- Secondary icon -->
     <color name="fx_mobile_icon_color_secondary">@color/photonLightGrey40</color>
     <!-- Disabled icon -->
@@ -144,7 +142,7 @@
     <color name="mozac_feature_readerview_text_color">@color/fx_mobile_on_surface</color>
 
     <!-- Tab Counter colors -->
-    <color name="mozac_ui_tabcounter_default_tint" tools:ignore="UnusedResources">@color/fx_mobile_icon_color_primary</color>
+    <color name="mozac_ui_tabcounter_default_tint" tools:ignore="UnusedResources">@color/fx_mobile_on_surface</color>
     <color name="mozac_ui_tabcounter_default_text" tools:ignore="UnusedResources">@color/fx_mobile_on_surface</color>
 
     <!-- Private Mode mask icon circle fill colors -->

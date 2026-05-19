@@ -84,8 +84,6 @@
     <color name="fx_mobile_text_color_action_secondary">@color/photonDarkGrey90</color>
 
     <!-- Icon -->
-    <!-- Primary icon -->
-    <color name="fx_mobile_icon_color_primary">@color/photonDarkGrey90</color>
     <!-- Secondary icon -->
     <color name="fx_mobile_icon_color_secondary">@color/photonDarkGrey05</color>
     <!-- Disabled icon -->
@@ -170,8 +168,6 @@
     <color name="fx_mobile_private_text_color_action_primary_disabled">@color/photonLightGrey05A40</color>
 
     <!-- Icon -->
-    <!-- Primary icon -->
-    <color name="fx_mobile_private_icon_color_primary">@color/photonLightGrey05</color>
     <!-- Icon inverted (on color) -->
     <color name="fx_mobile_private_icon_color_oncolor">@color/photonLightGrey05</color>
 
@@ -250,7 +246,7 @@
     <color name="mozac_feat_prompt_cancel_save_dialog_text_color" tools:ignore="UnusedResources">@color/photonViolet70A80</color>
 
     <!-- Reader View colors -->
-    <color name="mozac_feature_readerview_text_color" tools:ignore="UnusedResources">@color/fx_mobile_icon_color_primary</color>
+    <color name="mozac_feature_readerview_text_color" tools:ignore="UnusedResources">@color/fx_mobile_on_surface</color>
     <color name="mozac_feature_readerview_selected">@color/photonViolet40</color>
 
     <!-- Share UI -->
@@ -272,7 +268,7 @@
     <color name="search_view_hint_color">@color/photonDarkGrey05</color>
 
     <!-- Tab Counter colors -->
-    <color name="mozac_ui_tabcounter_default_tint" tools:ignore="UnusedResources">@color/fx_mobile_icon_color_primary</color>
+    <color name="mozac_ui_tabcounter_default_tint" tools:ignore="UnusedResources">@color/fx_mobile_on_surface</color>
     <color name="mozac_ui_tabcounter_default_text" tools:ignore="UnusedResources">@color/fx_mobile_on_surface</color>
 
     <!-- App Spinners colors -->
