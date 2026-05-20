@@ -91,7 +91,7 @@ h2 {
   align-items: center;
   padding-inline-start: 28px;
   padding-top: 20px;
-  padding-bottom: 30px;
+  padding-bottom: var(--space-small);
   max-width: var(--page-main-content-width);
 }
 
