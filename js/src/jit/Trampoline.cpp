@@ -243,10 +243,11 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     {
       // Unwrap the baseline interpreter entry frame and try again.
       masm.loadPtr(Address(fpScratch, CallerFPOffset), fpScratch);
-      emitAssertPrevFrameType(fpScratch, scratch,
-                              {FrameType::IonJS, FrameType::BaselineJS,
-                               FrameType::BaselineStub, FrameType::CppToJSJit,
-                               FrameType::WasmToJSJit, FrameType::IonICCall});
+      emitAssertPrevFrameType(
+          fpScratch, scratch,
+          {FrameType::IonJS, FrameType::BaselineJS, FrameType::BaselineStub,
+           FrameType::CppToJSJit, FrameType::WasmToJSJit, FrameType::IonICCall,
+           FrameType::TrampolineNative});
       masm.jump(&again);
     }
   }

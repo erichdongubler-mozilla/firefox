@@ -349,6 +349,11 @@ InterpreterFrame* RunState::pushInterpreterFrame(JSContext* cx) {
 
 static MOZ_ALWAYS_INLINE bool MaybeEnterInterpreterTrampoline(JSContext* cx,
                                                               RunState& state) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
+    return false;
+  }
+
 #ifdef NIGHTLY_BUILD
   if (jit::JitOptions.emitInterpreterEntryTrampoline &&
       cx->runtime()->hasJitRuntime()) {
