@@ -484,6 +484,8 @@ macosx1500-aarch64-tests:
     - test-verify-gpu
     - test-verify-wpt
     - web-platform-tests
+    - web-platform-tests-crashtest
+    - web-platform-tests-wdspec
     - xpcshell
 
 # Test set for ARM64 VMs (VirtualMac2,1). No GPU, no display, no perf hardware.
