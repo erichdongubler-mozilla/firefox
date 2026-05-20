@@ -337,17 +337,6 @@ nsNativeThemeCocoa::~nsNativeThemeCocoa() {
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
-// Limit on the area of the target rect (in pixels^2) in
-// DrawCellWithScaling() and DrawButton() and above which we
-// don't draw the object into a bitmap buffer.  This is to avoid crashes in
-// [NSGraphicsContext graphicsContextWithCGContext:flipped:] and
-// CGContextDrawImage(), and also to avoid very poor drawing performance in
-// CGContextDrawImage() when it scales the bitmap (particularly if xscale or
-// yscale is less than but near 1 -- e.g. 0.9).  This value was determined
-// by trial and error, on macOS 10.4.11 and 10.5.4, and on systems with
-// different amounts of RAM.
-#define BITMAP_MAX_AREA 500000
-
 static int GetBackingScaleFactorForRendering(CGContextRef cgContext) {
   CGAffineTransform ctm =
       CGContextGetUserSpaceToDeviceSpaceTransform(cgContext);
@@ -409,94 +398,78 @@ static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext,
 
   [NSGraphicsContext saveGraphicsState];
 
-  // Only skip the buffer if the area of our cell (in pixels^2) is too large.
-  if (drawRect.size.width * drawRect.size.height > BITMAP_MAX_AREA) {
-    // Inflate the rect Gecko gave us by the margin for the control.
-    InflateControlRect(&drawRect, controlSize, marginSet);
+  float w = ceil(drawRect.size.width);
+  float h = ceil(drawRect.size.height);
+  NSRect tmpRect = NSMakeRect(kMaxFocusRingWidth, kMaxFocusRingWidth, w, h);
 
-    NSGraphicsContext* savedContext = [NSGraphicsContext currentContext];
-    [NSGraphicsContext
-        setCurrentContext:[NSGraphicsContext
-                              graphicsContextWithCGContext:cgContext
-                                                   flipped:YES]];
+  // inflate to figure out the frame we need to tell NSCell to draw in, to get
+  // something that's 0,0,w,h
+  InflateControlRect(&tmpRect, controlSize, marginSet);
 
-    DrawCellIncludingFocusRing(cell, drawRect, view);
+  // and then, expand by kMaxFocusRingWidth size to make sure we can capture
+  // any focus ring
+  w += kMaxFocusRingWidth * 2.0;
+  h += kMaxFocusRingWidth * 2.0;
 
-    [NSGraphicsContext setCurrentContext:savedContext];
-  } else {
-    float w = ceil(drawRect.size.width);
-    float h = ceil(drawRect.size.height);
-    NSRect tmpRect = NSMakeRect(kMaxFocusRingWidth, kMaxFocusRingWidth, w, h);
+  int backingScaleFactor = GetBackingScaleFactorForRendering(cgContext);
+  CGColorSpaceRef rgb = CGColorSpaceCreateDeviceRGB();
+  CGContextRef ctx = CGBitmapContextCreate(
+      NULL, (int)w * backingScaleFactor, (int)h * backingScaleFactor, 8,
+      (int)w * backingScaleFactor * 4, rgb, kCGImageAlphaPremultipliedFirst);
+  CGColorSpaceRelease(rgb);
 
-    // inflate to figure out the frame we need to tell NSCell to draw in, to get
-    // something that's 0,0,w,h
-    InflateControlRect(&tmpRect, controlSize, marginSet);
-
-    // and then, expand by kMaxFocusRingWidth size to make sure we can capture
-    // any focus ring
-    w += kMaxFocusRingWidth * 2.0;
-    h += kMaxFocusRingWidth * 2.0;
-
-    int backingScaleFactor = GetBackingScaleFactorForRendering(cgContext);
-    CGColorSpaceRef rgb = CGColorSpaceCreateDeviceRGB();
-    CGContextRef ctx = CGBitmapContextCreate(
-        NULL, (int)w * backingScaleFactor, (int)h * backingScaleFactor, 8,
-        (int)w * backingScaleFactor * 4, rgb, kCGImageAlphaPremultipliedFirst);
-    CGColorSpaceRelease(rgb);
-
-    // We need to flip the image twice in order to avoid drawing bugs on 10.4,
-    // see bug 465069. This is the first flip transform, applied to cgContext.
-    CGContextScaleCTM(cgContext, 1.0f, -1.0f);
-    CGContextTranslateCTM(cgContext, 0.0f,
-                          -(2.0 * destRect.origin.y + destRect.size.height));
-    if (mirrorHorizontal) {
-      CGContextScaleCTM(cgContext, -1.0f, 1.0f);
-      CGContextTranslateCTM(
-          cgContext, -(2.0 * destRect.origin.x + destRect.size.width), 0.0f);
-    }
-
-    NSGraphicsContext* savedContext = [NSGraphicsContext currentContext];
-    [NSGraphicsContext
-        setCurrentContext:[NSGraphicsContext graphicsContextWithCGContext:ctx
-                                                                  flipped:YES]];
-
-    CGContextScaleCTM(ctx, backingScaleFactor, backingScaleFactor);
-
-    // Set the context's "base transform" to in order to get correctly-sized
-    // focus rings.
-    CGContextSetBaseCTM(ctx, CGAffineTransformMakeScale(backingScaleFactor,
-                                                        backingScaleFactor));
-
-    // This is the second flip transform, applied to ctx.
-    CGContextScaleCTM(ctx, 1.0f, -1.0f);
-    CGContextTranslateCTM(ctx, 0.0f,
-                          -(2.0 * tmpRect.origin.y + tmpRect.size.height));
-
-    DrawCellIncludingFocusRing(cell, tmpRect, view);
-
-    [NSGraphicsContext setCurrentContext:savedContext];
-
-    CGImageRef img = CGBitmapContextCreateImage(ctx);
-
-    // Drop the image into the original destination rectangle, scaling to fit
-    // Only scale kMaxFocusRingWidth by xscale/yscale when the resulting rect
-    // doesn't extend beyond the overflow rect
-    float xscale = destRect.size.width / drawRect.size.width;
-    float yscale = destRect.size.height / drawRect.size.height;
-    float scaledFocusRingX =
-        xscale < 1.0f ? kMaxFocusRingWidth * xscale : kMaxFocusRingWidth;
-    float scaledFocusRingY =
-        yscale < 1.0f ? kMaxFocusRingWidth * yscale : kMaxFocusRingWidth;
-    CGContextDrawImage(cgContext,
-                       CGRectMake(destRect.origin.x - scaledFocusRingX,
-                                  destRect.origin.y - scaledFocusRingY,
-                                  destRect.size.width + scaledFocusRingX * 2,
-                                  destRect.size.height + scaledFocusRingY * 2),
-                       img);
-
-    CGImageRelease(img);
-    CGContextRelease(ctx);
+  // We need to flip the image twice in order to avoid drawing bugs on 10.4,
+  // see bug 465069. This is the first flip transform, applied to cgContext.
+  CGContextScaleCTM(cgContext, 1.0f, -1.0f);
+  CGContextTranslateCTM(cgContext, 0.0f,
+                        -(2.0 * destRect.origin.y + destRect.size.height));
+  if (mirrorHorizontal) {
+    CGContextScaleCTM(cgContext, -1.0f, 1.0f);
+    CGContextTranslateCTM(
+        cgContext, -(2.0 * destRect.origin.x + destRect.size.width), 0.0f);
   }
+
+  NSGraphicsContext* savedContext = [NSGraphicsContext currentContext];
+  [NSGraphicsContext
+      setCurrentContext:[NSGraphicsContext graphicsContextWithCGContext:ctx
+                                                                flipped:YES]];
+
+  CGContextScaleCTM(ctx, backingScaleFactor, backingScaleFactor);
+
+  // Set the context's "base transform" to in order to get correctly-sized
+  // focus rings.
+  CGContextSetBaseCTM(
+      ctx, CGAffineTransformMakeScale(backingScaleFactor, backingScaleFactor));
+
+  // This is the second flip transform, applied to ctx.
+  CGContextScaleCTM(ctx, 1.0f, -1.0f);
+  CGContextTranslateCTM(ctx, 0.0f,
+                        -(2.0 * tmpRect.origin.y + tmpRect.size.height));
+
+  DrawCellIncludingFocusRing(cell, tmpRect, view);
+
+  [NSGraphicsContext setCurrentContext:savedContext];
+
+  CGImageRef img = CGBitmapContextCreateImage(ctx);
+
+  // Drop the image into the original destination rectangle, scaling to fit
+  // Only scale kMaxFocusRingWidth by xscale/yscale when the resulting rect
+  // doesn't extend beyond the overflow rect
+  float xscale = destRect.size.width / drawRect.size.width;
+  float yscale = destRect.size.height / drawRect.size.height;
+  float scaledFocusRingX =
+      xscale < 1.0f ? kMaxFocusRingWidth * xscale : kMaxFocusRingWidth;
+  float scaledFocusRingY =
+      yscale < 1.0f ? kMaxFocusRingWidth * yscale : kMaxFocusRingWidth;
+  CGContextDrawImage(cgContext,
+                     CGRectMake(destRect.origin.x - scaledFocusRingX,
+                                destRect.origin.y - scaledFocusRingY,
+                                destRect.size.width + scaledFocusRingX * 2,
+                                destRect.size.height + scaledFocusRingY * 2),
+                     img);
+
+  CGImageRelease(img);
+  CGContextRelease(ctx);
 
   [NSGraphicsContext restoreGraphicsState];
 
@@ -996,61 +969,54 @@ static void RenderTransformedHIThemeControl(CGContextRef aCGContext,
     drawDirect = FALSE;
   }
 
-  // Fall back to no bitmap buffer if the area of our control (in pixels^2)
-  // is too large.
-  if (drawDirect || (aRect.size.width * aRect.size.height > BITMAP_MAX_AREA)) {
-    aFunc(aCGContext, drawRect, aData);
-  } else {
-    // Inflate the buffer to capture focus rings.
-    int w = ceil(drawRect.size.width) + 2 * kMaxFocusRingWidth;
-    int h = ceil(drawRect.size.height) + 2 * kMaxFocusRingWidth;
+  // Inflate the buffer to capture focus rings.
+  int w = ceil(drawRect.size.width) + 2 * kMaxFocusRingWidth;
+  int h = ceil(drawRect.size.height) + 2 * kMaxFocusRingWidth;
 
-    int backingScaleFactor = GetBackingScaleFactorForRendering(aCGContext);
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    CGContextRef bitmapctx = CGBitmapContextCreate(
-        NULL, w * backingScaleFactor, h * backingScaleFactor, 8,
-        w * backingScaleFactor * 4, colorSpace,
-        kCGImageAlphaPremultipliedFirst);
-    CGColorSpaceRelease(colorSpace);
+  int backingScaleFactor = GetBackingScaleFactorForRendering(aCGContext);
+  CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+  CGContextRef bitmapctx = CGBitmapContextCreate(
+      NULL, w * backingScaleFactor, h * backingScaleFactor, 8,
+      w * backingScaleFactor * 4, colorSpace, kCGImageAlphaPremultipliedFirst);
+  CGColorSpaceRelease(colorSpace);
 
-    CGContextScaleCTM(bitmapctx, backingScaleFactor, backingScaleFactor);
-    CGContextTranslateCTM(bitmapctx, kMaxFocusRingWidth, kMaxFocusRingWidth);
+  CGContextScaleCTM(bitmapctx, backingScaleFactor, backingScaleFactor);
+  CGContextTranslateCTM(bitmapctx, kMaxFocusRingWidth, kMaxFocusRingWidth);
 
-    // Set the context's "base transform" to in order to get correctly-sized
-    // focus rings.
-    CGContextSetBaseCTM(bitmapctx, CGAffineTransformMakeScale(
-                                       backingScaleFactor, backingScaleFactor));
+  // Set the context's "base transform" to in order to get correctly-sized
+  // focus rings.
+  CGContextSetBaseCTM(bitmapctx, CGAffineTransformMakeScale(
+                                     backingScaleFactor, backingScaleFactor));
 
-    // HITheme always wants to draw into a flipped context, or things
-    // get confused.
-    CGContextTranslateCTM(bitmapctx, 0.0f, aRect.size.height);
-    CGContextScaleCTM(bitmapctx, 1.0f, -1.0f);
+  // HITheme always wants to draw into a flipped context, or things
+  // get confused.
+  CGContextTranslateCTM(bitmapctx, 0.0f, aRect.size.height);
+  CGContextScaleCTM(bitmapctx, 1.0f, -1.0f);
 
-    aFunc(bitmapctx, drawRect, aData);
+  aFunc(bitmapctx, drawRect, aData);
 
-    CGImageRef bitmap = CGBitmapContextCreateImage(bitmapctx);
+  CGImageRef bitmap = CGBitmapContextCreateImage(bitmapctx);
 
-    CGAffineTransform ctm = CGContextGetCTM(aCGContext);
+  CGAffineTransform ctm = CGContextGetCTM(aCGContext);
 
-    // We need to unflip, so that we can do a DrawImage without getting a
-    // flipped image.
-    CGContextTranslateCTM(aCGContext, 0.0f, aRect.size.height);
-    CGContextScaleCTM(aCGContext, 1.0f, -1.0f);
+  // We need to unflip, so that we can do a DrawImage without getting a
+  // flipped image.
+  CGContextTranslateCTM(aCGContext, 0.0f, aRect.size.height);
+  CGContextScaleCTM(aCGContext, 1.0f, -1.0f);
 
-    if (mirrorHorizontally) {
-      CGContextTranslateCTM(aCGContext, aRect.size.width, 0);
-      CGContextScaleCTM(aCGContext, -1.0f, 1.0f);
-    }
-
-    NSRect inflatedDrawRect =
-        CGRectMake(-kMaxFocusRingWidth, -kMaxFocusRingWidth, w, h);
-    CGContextDrawImage(aCGContext, inflatedDrawRect, bitmap);
-
-    CGContextSetCTM(aCGContext, ctm);
-
-    CGImageRelease(bitmap);
-    CGContextRelease(bitmapctx);
+  if (mirrorHorizontally) {
+    CGContextTranslateCTM(aCGContext, aRect.size.width, 0);
+    CGContextScaleCTM(aCGContext, -1.0f, 1.0f);
   }
+
+  NSRect inflatedDrawRect =
+      CGRectMake(-kMaxFocusRingWidth, -kMaxFocusRingWidth, w, h);
+  CGContextDrawImage(aCGContext, inflatedDrawRect, bitmap);
+
+  CGContextSetCTM(aCGContext, ctm);
+
+  CGImageRelease(bitmap);
+  CGContextRelease(bitmapctx);
 
   CGContextSetCTM(aCGContext, savedCTM);
 }
