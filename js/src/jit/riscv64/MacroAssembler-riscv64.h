@@ -640,7 +640,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
 
   void j(Label* dest) { ma_branch(dest); }
 
-  void mov(Register src, Register dest) { addi(dest, src, 0); }
+  void mov(Register src, Register dest) { mv(dest, src); }
   void mov(ImmWord imm, Register dest) { ma_li(dest, imm); }
   void mov(ImmPtr imm, Register dest) {
     mov(ImmWord(uintptr_t(imm.value)), dest);
