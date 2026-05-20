@@ -82,7 +82,7 @@ add_task(async function testModelHubProvider() {
   ok(!modelHubCategory.hidden, "Model hub category is shown");
 
   let mlmodelLoaded = waitForViewLoad(win);
-  modelHubCategory.click();
+  AboutAddonsTestUtils.clickCategoryButton(win, "mlmodel");
   await mlmodelLoaded;
 
   let enabledSection = getSection(doc, "mlmodel-enabled-section");
