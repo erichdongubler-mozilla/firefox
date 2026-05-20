@@ -29,6 +29,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/webdriver-bidi/RemoteValue.sys.mjs",
   UserContextManager:
     "chrome://remote/content/shared/UserContextManager.sys.mjs",
+  waitForTopBrowsingContextToBeReady:
+    "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
   WindowGlobalMessageHandler:
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.sys.mjs",
   workerListenerRegistry:
@@ -70,6 +72,7 @@ const ScriptEvaluateResultType = {
  */
 
 class ScriptModule extends RootBiDiModule {
+  #submittedContextsCreated;
   #contextListener;
   #preloadScriptMap;
   #realmInfoMap;
@@ -80,6 +83,10 @@ class ScriptModule extends RootBiDiModule {
 
     this.#contextListener = new lazy.BrowsingContextListener();
     this.#contextListener.on("attached", this.#onContextAttached);
+    this.#contextListener.on("discarded", this.#onContextDiscarded);
+
+    // Set of browsing context ids for which "browsingContext.contextCreated" event was sent.
+    this.#submittedContextsCreated = new Set();
 
     // Map in which the keys are UUIDs, and the values are structs
     // of the type PreloadScript.
@@ -95,8 +102,10 @@ class ScriptModule extends RootBiDiModule {
 
   destroy() {
     this.#contextListener.off("attached", this.#onContextAttached);
+    this.#contextListener.off("discarded", this.#onContextDiscarded);
     this.#contextListener.destroy();
 
+    this.#submittedContextsCreated = null;
     this.#preloadScriptMap = null;
     this.#realmInfoMap = null;
     this.#subscribedEvents = null;
@@ -1091,7 +1100,7 @@ class ScriptModule extends RootBiDiModule {
     );
   }
 
-  #onContextAttached = (eventName, data) => {
+  #onContextAttached = async (eventName, data) => {
     const { browsingContext } = data;
     // If there is a subscription for "browsingContext.contextCreated" event,
     // do not send "script.realmCreated" event yet and
@@ -1100,29 +1109,62 @@ class ScriptModule extends RootBiDiModule {
       this.#realmInfoMap.has(browsingContext) &&
       !this.#hasEventSubscriptionToContextCreated(browsingContext)
     ) {
+      // If `waitForTopBrowsingContextToBeReady` returns `null`,
+      // it means that the browsing context was discarded.
+      // Do not send an event in this case.
+      if (
+        !browsingContext.parent &&
+        (await lazy.waitForTopBrowsingContextToBeReady(browsingContext)) ===
+          null
+      ) {
+        return;
+      }
+
       this.#sendDelayedRealmCreatedEvent(browsingContext);
     }
   };
 
+  #onContextDiscarded = (eventName, data) => {
+    const { browsingContext } = data;
+
+    const contextId =
+      lazy.NavigableManager.getIdForBrowsingContext(browsingContext);
+
+    this.#submittedContextsCreated.delete(contextId);
+  };
+
   #onContextCreatedSubmitted = (eventName, { browsingContext }) => {
+    const contextId =
+      lazy.NavigableManager.getIdForBrowsingContext(browsingContext);
+    this.#submittedContextsCreated.add(contextId);
+
     if (this.#realmInfoMap.has(browsingContext)) {
       this.#sendDelayedRealmCreatedEvent(browsingContext);
     }
   };
 
   #onRealmCreated = (eventName, { realmInfo }) => {
-    // Resolve browsing context to a TabManager id.
-    const context = lazy.NavigableManager.getIdForBrowsingContext(
-      realmInfo.context
-    );
+    const browsingContext = realmInfo.context;
 
-    // Do not emit the event, if the browsing context is gone or not created yet.
-    if (context === null) {
+    // Resolve browsing context to a TabManager id.
+    const contextId =
+      lazy.NavigableManager.getIdForBrowsingContext(browsingContext);
+
+    // Do not emit the event, if the browsing context is gone, not created, not ready yet,
+    // or if the browsing context with the subscription for
+    // "browsingContext.contextCreated" event is not received yet.
+    if (
+      contextId === null ||
+      (!browsingContext.currentWindowGlobal && !browsingContext.parent) ||
+      (this.#hasEventSubscriptionToContextCreated(browsingContext) &&
+        !this.#submittedContextsCreated.has(contextId))
+    ) {
       // Save the realm info to send it when the browsing context is ready.
-      this.#realmInfoMap.set(realmInfo.context, realmInfo);
+      this.#realmInfoMap.set(browsingContext, realmInfo);
       return;
     }
-    this.#sendRealmCreatedEvent(realmInfo, realmInfo.context, context);
+
+    this.#sendRealmCreatedEvent(realmInfo, browsingContext, contextId);
   };
 
   #onRealmDestroyed = (eventName, { realm, context }) => {
@@ -1164,13 +1206,19 @@ class ScriptModule extends RootBiDiModule {
   };
 
   #sendDelayedRealmCreatedEvent(browsingContext) {
-    const realmInfo = this.#realmInfoMap.get(browsingContext);
-    // Resolve browsing context to a TabManager id.
-    const browsingContextId = lazy.NavigableManager.getIdForBrowsingContext(
-      realmInfo.context
-    );
-    this.#sendRealmCreatedEvent(realmInfo, browsingContext, browsingContextId);
-    this.#realmInfoMap.delete(browsingContext);
+    if (this.#realmInfoMap?.has(browsingContext)) {
+      const realmInfo = this.#realmInfoMap.get(browsingContext);
+      // Resolve browsing context to a TabManager id.
+      const browsingContextId = lazy.NavigableManager.getIdForBrowsingContext(
+        realmInfo.context
+      );
+      this.#sendRealmCreatedEvent(
+        realmInfo,
+        browsingContext,
+        browsingContextId
+      );
+      this.#realmInfoMap.delete(browsingContext);
+    }
   }
 
   #sendRealmCreatedEvent(realmInfo, context, browsingContextId) {
