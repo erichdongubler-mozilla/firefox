@@ -975,6 +975,18 @@ bool HTMLEditor::EntireDocumentIsEditable() const {
           (document->GetBody() && document->GetBody()->IsEditable()));
 }
 
+dom::EditContext* HTMLEditor::GetEditContext() const {
+  if (!StaticPrefs::dom_editcontext_enabled() ||
+      !EditContext::IsAnyAttached()) {
+    return nullptr;
+  }
+  if (auto* element = nsGenericHTMLElement::FromNodeOrNull(
+          ComputeEditingHost(LimitInBodyElement::No))) {
+    return element->GetEditContext();
+  }
+  return nullptr;
+}
+
 void HTMLEditor::CreateEventListeners() {
   // Don't create the handler twice
   if (!mEventListener) {
