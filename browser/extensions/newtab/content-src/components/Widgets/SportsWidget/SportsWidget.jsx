@@ -9,6 +9,7 @@ import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
 import { SportsMatchRow } from "./SportsMatchRow";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
+import { useLocalizedTeamNames } from "./useLocalizedTeamNames.jsx";
 
 const WIDGET_STATES = {
   INTRO: "sports-intro",
@@ -578,20 +579,27 @@ function SportsWidget({ dispatch, handleUserInteraction }) {
 function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
   const [selectedTeams, setSelectedTeams] = useState(initialSelectedTeams);
   const [searchQuery, setSearchQuery] = useState("");
+  const localizedNames = useLocalizedTeamNames(teams);
   const isMaxSelected = selectedTeams.length >= 3;
-
-  const sortedTeams = [...teams].sort((a, b) => a.name.localeCompare(b.name));
-  const filteredTeams = searchQuery
-    ? sortedTeams.filter(team =>
-        team.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : sortedTeams;
 
   function handleTeamToggle(teamKey, isChecked) {
     setSelectedTeams(prev =>
       isChecked ? [...prev, teamKey] : prev.filter(key => key !== teamKey)
     );
   }
+
+  const sortedTeams = localizedNames
+    ? [...teams].sort((a, b) =>
+        localizedNames[a.key].localeCompare(localizedNames[b.key])
+      )
+    : [];
+  const filteredTeams = searchQuery
+    ? sortedTeams.filter(team =>
+        localizedNames[team.key]
+          .toLocaleLowerCase()
+          .includes(searchQuery.toLocaleLowerCase())
+      )
+    : sortedTeams;
 
   return (
     <div className="sports-follow-teams">
@@ -601,40 +609,43 @@ function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
         onInput={e => setSearchQuery(e.target.value)}
       />
       <div className="sports-follow-teams-list">
-        {filteredTeams.map(team => {
-          const isSelected = selectedTeams.includes(team.key);
-          const isRowDisabled = !isSelected && isMaxSelected;
-          return (
-            <div
-              key={team.key}
-              className={`sports-follow-teams-row${isRowDisabled ? " is-disabled" : ""}`}
-              onClick={e => {
-                // The checkbox already handles its own toggle; skip here so we don't toggle twice.
-                if (e.target.localName === "moz-checkbox") {
-                  return;
-                }
-                if (isRowDisabled) {
-                  return;
-                }
-                handleTeamToggle(team.key, !isSelected);
-              }}
-            >
-              <moz-checkbox
-                checked={isSelected || undefined}
-                disabled={isRowDisabled ? true : undefined}
-                onChange={e => handleTeamToggle(team.key, e.target.checked)}
-                aria-label={team.name}
-              />
-              <img
-                className="sports-team-flag"
-                src={team.icon_url}
-                alt=""
-                title={team.name}
-              />
-              <span className="sports-team-name">{team.name}</span>
-            </div>
-          );
-        })}
+        {/* Wait until names are localized so users in other locales don't see a flicker of content in English. */}
+        {localizedNames &&
+          filteredTeams.map(team => {
+            const isSelected = selectedTeams.includes(team.key);
+            const isRowDisabled = !isSelected && isMaxSelected;
+            const localizedName = localizedNames[team.key];
+            return (
+              <div
+                key={team.key}
+                className={`sports-follow-teams-row${isRowDisabled ? " is-disabled" : ""}`}
+                onClick={e => {
+                  // The checkbox already handles its own toggle; skip here so we don't toggle twice.
+                  if (e.target.localName === "moz-checkbox") {
+                    return;
+                  }
+                  if (isRowDisabled) {
+                    return;
+                  }
+                  handleTeamToggle(team.key, !isSelected);
+                }}
+              >
+                <moz-checkbox
+                  checked={isSelected || undefined}
+                  disabled={isRowDisabled ? true : undefined}
+                  onChange={e => handleTeamToggle(team.key, e.target.checked)}
+                  aria-label={localizedName}
+                />
+                <img
+                  className="sports-team-flag"
+                  src={team.icon_url}
+                  alt=""
+                  title={localizedName}
+                />
+                <span className="sports-team-name">{localizedName}</span>
+              </div>
+            );
+          })}
       </div>
       <moz-button
         className="sports-done-button"

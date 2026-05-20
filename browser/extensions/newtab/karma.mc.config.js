@@ -461,6 +461,14 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            // Coverage for this hook lives in Jest (test/jest/content-src/components/Widgets/useLocalizedTeamNames.test.jsx)
+            "content-src/components/Widgets/SportsWidget/useLocalizedTeamNames.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
             "content-src/components/**/*.jsx": {
               statements: 51.1,
               lines: 52.38,
