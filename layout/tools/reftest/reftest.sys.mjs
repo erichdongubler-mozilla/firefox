@@ -458,8 +458,16 @@ function ReadTests() {
       var manifestURLs = Object.keys(manifests);
 
       // Ensure we read manifests from higher up the directory tree first so that we
-      // process includes before reading the included manifest again
+      // process includes before reading the included manifest again.
+      // Manifests in "final" directories must always run last since they open
+      // popup windows that cannot be closed, which would occlude the reftest
+      // window and stall all subsequent tests.
       manifestURLs.sort(function (a, b) {
+        const aFinal = a.includes("/final/") ? 1 : 0;
+        const bFinal = b.includes("/final/") ? 1 : 0;
+        if (aFinal !== bFinal) {
+          return aFinal - bFinal;
+        }
         return a.length - b.length;
       });
       manifestURLs.forEach(function (manifestURL) {
