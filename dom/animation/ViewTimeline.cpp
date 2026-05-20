@@ -193,13 +193,21 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
       ComputeInsets(scrollContainerFrame, orientation, mAxis, mInset);
 
   // Adjuct the positions and sizes based on the physical axis.
+  const WritingMode wm = scrolledFrame->GetWritingMode();
   switch (orientation) {
-    case layers::ScrollDirection::eVertical:
+    case layers::ScrollDirection::eVertical: {
+      // Mirror of the R-L case below for bottom-to-top scrolling (vertical
+      // writing-mode + direction:rtl), where the inline axis is vertical and
+      // reversed, so scrollPosition.y is zero or negative.
+      const bool isBottomToTop = wm.IsVertical() && wm.IsInlineReversed();
       mCachedCurrentTime.emplace(CurrentTimeData{
           ScrollTimeline::CurrentTimeData{scrollPosition.y, scrollRange.height},
-          scrollPort.height, subjectRect.y, subjectRect.height,
-          sideInsets.first, sideInsets.second});
+          scrollPort.height,
+          isBottomToTop ? scrolledFrame->GetSize().height - subjectRect.YMost()
+                        : subjectRect.y,
+          subjectRect.height, sideInsets.first, sideInsets.second});
       break;
+    }
     case layers::ScrollDirection::eHorizontal:
       mCachedCurrentTime.emplace(CurrentTimeData{
           ScrollTimeline::CurrentTimeData{scrollPosition.x, scrollRange.width},
@@ -209,7 +217,7 @@ bool ViewTimeline::UpdateCachedCurrentTime() {
           // start border edge of the subject, and compute its position by using
           // the x-most side of the scrolled frame as the origin on the
           // horizontal axis.
-          scrolledFrame->GetWritingMode().IsPhysicalRTL()
+          wm.IsPhysicalRTL()
               ? scrolledFrame->GetSize().width - subjectRect.XMost()
               : subjectRect.x,
           subjectRect.width, sideInsets.first, sideInsets.second});
