@@ -1477,6 +1477,7 @@ export var PlacesUIUtils = {
         "sidebar-history-context-menu",
         "placesContext",
         "sidebar-synced-tabs-context-menu",
+        "sidebar-bookmarks-context-menu",
       ].includes(menupopup.id)
     ) {
       PlacesUIUtils.lastContextMenuTriggerNode = null;
