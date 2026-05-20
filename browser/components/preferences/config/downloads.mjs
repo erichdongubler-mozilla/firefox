@@ -1070,6 +1070,7 @@ export class ApplicationListItem {
         defaultMenuItem,
         "applications-use-os-default"
       );
+      defaultMenuItem.setAttribute("iconsrc", ICON_URL_APP);
     } else {
       document.l10n.setAttributes(
         defaultMenuItem,
@@ -1078,10 +1079,10 @@ export class ApplicationListItem {
           "app-name": handlerInfo.defaultDescription,
         }
       );
-    }
-    let image = handlerInfo.iconURLForSystemDefault;
-    if (image) {
-      defaultMenuItem.setAttribute("iconsrc", image);
+      let image = handlerInfo.iconURLForSystemDefault;
+      if (image) {
+        defaultMenuItem.setAttribute("iconsrc", image);
+      }
     }
     return defaultMenuItem;
   }
