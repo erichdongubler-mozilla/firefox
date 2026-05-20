@@ -709,6 +709,11 @@
     "dark": "{Colors$color/gray/05}",
     "forcedColors": "transparent"
   },
+  "toolbarbutton/badge/background/color": {
+    "light": "{Colors$color/red/60}",
+    "dark": "{Colors$color/red/40}",
+    "forcedColors": "transparent"
+  },
   "toolbarbutton/icon/fill": {
     "light": "{Colors$color/gray/70}",
     "dark": "{Colors$color/gray/05}",
