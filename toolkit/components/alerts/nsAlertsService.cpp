@@ -230,11 +230,3 @@ NS_IMETHODIMP nsAlertsService::PbmTeardown() {
   }
   return backend->PbmTeardown();
 }
-
-NS_IMETHODIMP nsAlertsService::IsFullscreen(bool* aRetVal) {
-  *aRetVal = false;
-  if (mBackend) {
-    return mBackend->IsFullscreen(aRetVal);
-  }
-  return NS_OK;
-}

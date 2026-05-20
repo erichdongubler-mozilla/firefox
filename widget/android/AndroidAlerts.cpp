@@ -185,11 +185,6 @@ NS_IMETHODIMP AndroidAlerts::Teardown() {
 
 NS_IMETHODIMP AndroidAlerts::PbmTeardown() { return NS_ERROR_NOT_IMPLEMENTED; }
 
-NS_IMETHODIMP AndroidAlerts::IsFullscreen(bool* aRetVal) {
-  *aRetVal = false;
-  return NS_OK;
-}
-
 nsresult RespondViaNotificationHandler(const nsAString& aName,
                                        const nsACString& aTopic,
                                        Maybe<nsString> aAction,
