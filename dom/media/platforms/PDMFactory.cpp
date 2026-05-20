@@ -15,6 +15,7 @@
 #include "MP4Decoder.h"
 #include "MediaChangeMonitor.h"
 #include "MediaInfo.h"
+#include "PDMFactorySupport.h"
 #include "VPXDecoder.h"
 #include "VideoUtils.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -846,8 +847,11 @@ StaticMutex PDMFactory::sSupportedMutex;
 media::MediaCodecsSupported PDMFactory::Supported(bool aForceRefresh) {
   StaticMutexAutoLock lock(sSupportedMutex);
 
-  static auto calculate = []() {
-    auto pdm = MakeRefPtr<PDMFactory>();
+  if (aForceRefresh) {
+    PDMFactorySupport::Invalidate();
+  }
+
+  auto calculate = []() {
     MediaCodecsSupported supported;
     // H264 and AAC depends on external framework that must be dynamically
     // loaded.
@@ -859,7 +863,8 @@ media::MediaCodecsSupported PDMFactory::Supported(bool aForceRefresh) {
     // will be added in addition to the WMF and FFmpeg PDM (such as OpenH264)
     for (const auto& cd : MCSInfo::GetAllCodecDefinitions()) {
       supported += MCSInfo::GetDecodeMediaCodecsSupported(
-          cd.codec, pdm->SupportsMimeType(nsCString(cd.mimeTypeString)));
+          cd.codec,
+          PDMFactorySupport::IsTypeSupported(nsCString(cd.mimeTypeString)));
     }
 #ifdef MOZ_WIDGET_ANDROID
     if (AndroidDecoderModule::IsJavaDecoderModuleAllowed()) {
