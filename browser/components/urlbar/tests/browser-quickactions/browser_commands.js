@@ -8,6 +8,8 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  AboutAddonsTestUtils:
+    "resource://testing-common/AboutAddonsTestUtils.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
 });
@@ -101,17 +103,6 @@ let COMMANDS_TESTS = [
     },
   },
   {
-    cmd: "add-ons",
-    uri: "about:addons",
-    testFun: async () => isSelected("button[name=discover]"),
-  },
-  {
-    cmd: "extensions",
-    uri: "about:addons",
-    numTabPress: 2,
-    testFun: async () => isSelected("button[name=extension]"),
-  },
-  {
     cmd: "labs",
     uri: "about:preferences#experimental",
     loadType: LOAD_TYPE.PRE_LOADED,
@@ -130,10 +121,36 @@ let COMMANDS_TESTS = [
     },
   },
   {
+    cmd: "add-ons",
+    uri: "about:addons",
+    // AboutAddonsTestUtils.isCategoryButtonSelected is actually synchronous
+    // but we are leaving testFun as an async function so that the caller can
+    // assume all entries' testFun function to be always returning a promise.
+    testFun: async () =>
+      AboutAddonsTestUtils.isCategoryButtonSelected(
+        gBrowser.selectedBrowser.contentWindow,
+        "discover"
+      ),
+  },
+  {
+    cmd: "extensions",
+    uri: "about:addons",
+    numTabPress: 2,
+    testFun: async () =>
+      AboutAddonsTestUtils.isCategoryButtonSelected(
+        gBrowser.selectedBrowser.contentWindow,
+        "extension"
+      ),
+  },
+  {
     cmd: "themes",
     uri: "about:addons",
     numTabPress: 2,
-    testFun: async () => isSelected("button[name=theme]"),
+    testFun: async () =>
+      AboutAddonsTestUtils.isCategoryButtonSelected(
+        gBrowser.selectedBrowser.contentWindow,
+        "theme"
+      ),
   },
   {
     cmd: "add-ons",
@@ -151,7 +168,11 @@ let COMMANDS_TESTS = [
     },
     uri: "about:addons",
     loadType: LOAD_TYPE.NEW_TAB,
-    testFun: async () => isSelected("button[name=discover]"),
+    testFun: async () =>
+      AboutAddonsTestUtils.isCategoryButtonSelected(
+        gBrowser.selectedBrowser.contentWindow,
+        "discover"
+      ),
   },
   {
     cmd: "extensions",
@@ -169,7 +190,11 @@ let COMMANDS_TESTS = [
     },
     uri: "about:addons",
     loadType: LOAD_TYPE.NEW_TAB,
-    testFun: async () => isSelected("button[name=extension]"),
+    testFun: async () =>
+      AboutAddonsTestUtils.isCategoryButtonSelected(
+        gBrowser.selectedBrowser.contentWindow,
+        "extension"
+      ),
     numTabPress: 2,
   },
   {
@@ -188,7 +213,11 @@ let COMMANDS_TESTS = [
     },
     uri: "about:addons",
     loadType: LOAD_TYPE.NEW_TAB,
-    testFun: async () => isSelected("button[name=theme]"),
+    testFun: async () =>
+      AboutAddonsTestUtils.isCategoryButtonSelected(
+        gBrowser.selectedBrowser.contentWindow,
+        "theme"
+      ),
     numTabPress: 2,
   },
   {
@@ -203,13 +232,6 @@ let COMMANDS_TESTS = [
     },
   },
 ];
-
-let isSelected = async selector =>
-  SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], arg => {
-    return ContentTaskUtils.waitForCondition(() =>
-      content.document.querySelector(arg)?.hasAttribute("selected")
-    );
-  });
 
 add_task(async function test_pages() {
   for (const {
