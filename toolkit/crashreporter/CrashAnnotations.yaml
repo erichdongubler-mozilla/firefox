@@ -1208,14 +1208,6 @@ ShutdownReason:
   type: string
   scope: ping
 
-SignalOrigin:
-  description: >
-    Process name of the source of the signal that caused the crash, if applicable.
-    - On Linux, populated with the name of the process that sent a fatal signal
-    to the crashing process, if it can be determined.
-  type: string
-  scope: report
-
 StackTraces:
   description: >
     Stack traces extracted from the crash minidump, if available. A serialized
