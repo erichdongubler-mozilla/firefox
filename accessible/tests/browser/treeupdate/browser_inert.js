@@ -156,3 +156,28 @@ addAccessibleTask(
     );
   }
 );
+
+/**
+ * Test that display: contents children are correctly omitted from an inert
+ * subtree.
+ */
+addAccessibleTask(
+  `
+<div id="inert" style="overflow: hidden;">
+  <a href="/" style="display: contents;">test</a>
+</div>
+  `,
+  async function testDisplayContentsInInert(browser, docAcc) {
+    testAccessibleTree(docAcc, {
+      DOCUMENT: [{ SECTION: [{ LINK: [{ TEXT_LEAF: [] }] }] }],
+    });
+    info("Making inert");
+    let reordered = waitForEvent(EVENT_REORDER, docAcc);
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("inert").inert = true;
+    });
+    await reordered;
+    testAccessibleTree(docAcc, { DOCUMENT: [] });
+  },
+  { chrome: true, topLevel: true }
+);
