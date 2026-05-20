@@ -5307,60 +5307,6 @@ void MacroAssemblerRiscv64::ExtractBits(Register rt, Register rs, uint16_t pos,
   }
 }
 
-void MacroAssemblerRiscv64::InsertBits(Register dest, Register source, int pos,
-                                       int size) {
-  MOZ_ASSERT(size < 64);
-
-  UseScratchRegisterScope temps(this);
-  BlockTrampolinePoolScope block_trampoline_pool(this, 9);
-  Register source_ = temps.Acquire();
-  if (pos != 0) {
-    Register mask = temps.Acquire();
-    // Create a mask of the length=size.
-    ma_li(mask, Imm32(1));
-    slli(mask, mask, size);
-    addi(mask, mask, -1);
-    and_(source_, mask, source);
-    slli(source_, source_, pos);
-    // Make a mask containing 0's. 0's start at "pos" with length=size.
-    slli(mask, mask, pos);
-    not_(mask, mask);
-    // cut area for insertion of source.
-    and_(dest, mask, dest);
-  } else {
-    // clear top bits from source and bottom bits from dest.
-    slli(source_, source, 64 - size);
-    srli(source_, source_, 64 - size);
-    srli(dest, dest, size);
-    slli(dest, dest, size);
-  }
-  // insert source
-  or_(dest, dest, source_);
-}
-
-void MacroAssemblerRiscv64::InsertBits(Register dest, Register source,
-                                       Register pos, int size) {
-  MOZ_ASSERT(size < 64);
-
-  UseScratchRegisterScope temps(this);
-  Register mask = temps.Acquire();
-  BlockTrampolinePoolScope block_trampoline_pool(this, 9);
-  Register source_ = temps.Acquire();
-  // Create a mask of the length=size.
-  ma_li(mask, Imm32(1));
-  slli(mask, mask, size);
-  addi(mask, mask, -1);
-  and_(source_, mask, source);
-  sll(source_, source_, pos);
-  // Make a mask containing 0's. 0's start at "pos" with length=size.
-  sll(mask, mask, pos);
-  not_(mask, mask);
-  // cut area for insertion of source.
-  and_(dest, mask, dest);
-  // insert source
-  or_(dest, dest, source_);
-}
-
 void MacroAssemblerRiscv64::ma_add32(Register rd, Register rs, Operand rt) {
   if (rt.is_imm()) {
     if (is_int12(rt.immediate())) {

@@ -421,12 +421,6 @@ class MacroAssemblerRiscv64 : public Assembler {
     ExtractBits(dest, dest, 0, size, sign_extend);
   }
 
-  // Insert bits [0, size) of source to bits [pos, pos+size) of dest
-  void InsertBits(Register dest, Register source, Register pos, int size);
-
-  // Insert bits [0, size) of source to bits [pos, pos+size) of dest
-  void InsertBits(Register dest, Register source, int pos, int size);
-
   template <typename F_TYPE>
   void RoundHelper(FPURegister dst, FPURegister src, FPURegister fpu_scratch,
                    FPURoundingMode mode);
