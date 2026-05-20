@@ -84,12 +84,96 @@ def xz_compression_options(arch):
 
 
 # Copied from scriptworker
-def get_hash(path):
-    h = hashlib.new("sha512")
+def get_hash(path, algo="sha512"):
+    h = hashlib.new(algo)
     with open(path, "rb") as f:
         for chunk in iter(functools.partial(f.read, 4096), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _hash_dir(directory):
+    """Return {rel_path: sha256_hex} for every file under directory."""
+    result = {}
+    for root, _, filenames in os.walk(directory):
+        for filename in filenames:
+            abs_path = os.path.join(root, filename)
+            rel_path = os.path.relpath(abs_path, directory)
+            result[rel_path] = get_hash(abs_path, "sha256")
+    return result
+
+
+def _extract_cache_mar(patch_cache_dir, target_mar, workdir):
+    """Extract the cached partial mar matching target_mar's basename into
+    workdir/cache_extracted. Returns the extracted dir on success, or None
+    if the cached mar is missing or extraction fails."""
+    dest_mar_basename = os.path.basename(target_mar)
+    cached_mar = os.path.join(patch_cache_dir, dest_mar_basename)
+    if not os.path.exists(cached_mar):
+        log(
+            f"Cached mar not found: {cached_mar}",
+            "_extract_cache_mar",
+        )
+        return None
+    cache_extracted_dir = os.path.join(workdir, "cache_extracted")
+    try:
+        mar_extract(cached_mar, cache_extracted_dir)
+    except Exception as e:
+        log(
+            f"Failed to extract cached mar {cached_mar}: {e}",
+            "_extract_cache_mar",
+        )
+        return None
+    return cache_extracted_dir
+
+
+def _maybe_use_cached_file(
+    cache_entry,
+    rel_path,
+    local_from_sha,
+    local_to_sha,
+    cache_extracted_dir,
+    partials_dir,
+    manifest_file,
+):
+    """Reuse a precomputed patch/full file from a previously-built partial mar
+    when the (from, to) sha256 pair for rel_path matches a cache entry.
+    Returns the archivefile name on hit, None on miss."""
+    if local_from_sha is None or local_to_sha is None:
+        return None
+    expected_from = cache_entry.get("from_mar_files", {}).get(rel_path)
+    expected_to = cache_entry.get("to_mar_files", {}).get(rel_path)
+    if expected_from != local_from_sha or expected_to != local_to_sha:
+        return None
+
+    src_patch = os.path.join(cache_extracted_dir, f"{rel_path}.patch")
+    src_full = os.path.join(cache_extracted_dir, rel_path)
+    try:
+        if os.path.exists(src_patch):
+            dest = os.path.join(partials_dir, f"{rel_path}.patch")
+            os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
+            shutil.copy2(src_patch, dest)
+            make_patch_instruction(rel_path, manifest_file)
+            log(f"Cache hit (patch): {rel_path}", "_maybe_use_cached_file")
+            return f"{rel_path}.patch"
+        if os.path.exists(src_full):
+            # The cached partial mar stored the full file (not a .patch)
+            # likely because the patch was bigger than the file itself. Reuse
+            # that decision so we don't re-run the diff just to throw it away.
+            dest = os.path.join(partials_dir, rel_path)
+            os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
+            shutil.copy2(src_full, dest)
+            make_add_instruction(rel_path, manifest_file)
+            log(f"Cache hit (add): {rel_path}", "_maybe_use_cached_file")
+            return rel_path
+    except OSError as e:
+        log(f"Cache copy failed for {rel_path}: {e}", "_maybe_use_cached_file")
+        return None
+    log(
+        f"Cache hashes match but file missing in upstream mar: {rel_path}",
+        "_maybe_use_cached_file",
+    )
+    return None
 
 
 # The thread-safety of this function should be ok, given that each thread only reads it's own from_mar
@@ -275,6 +359,10 @@ def make_partial(
     arch="",
     force=None,
     staging=False,
+    compute_hashes=False,
+    cache_entry=None,
+    to_hashes=None,
+    patch_cache_dir=None,
 ):
     # Download from_mar
     from_mar = os.path.join(workdir, "from.mar")
@@ -298,6 +386,13 @@ def make_partial(
     )
     log(f"Processing from_mar: {from_version}", "make_partial")
 
+    from_hashes = _hash_dir(from_mar_dir) if compute_hashes else None
+
+    # Extract upstream enUS partial mar once for cache reuse
+    cache_extracted_dir = None
+    if cache_entry is not None and patch_cache_dir is not None:
+        cache_extracted_dir = _extract_cache_mar(patch_cache_dir, target_mar, workdir)
+
     partials_dir = os.path.abspath(os.path.join(workdir, "partials"))
     os.makedirs(partials_dir, exist_ok=True)
 
@@ -315,7 +410,7 @@ def make_partial(
         os.path.join(to_mar_dir, "Contents/Resources/precomplete")
     ):
         log("precomplete file is missing!", "make_partial")
-        return 1
+        raise Exception("precomplete file is missing!")
 
     # Create update manifest
     with open(manifest_file, "w") as manifest_fd:
@@ -342,27 +437,41 @@ def make_partial(
                 make_add_instruction(rel_path, manifest_file)
                 shutil.copy2(new_file_abs, patch_file)
                 archivefiles.append(rel_path)
-            elif (
-                # TODO: !!! This check will always trigger if we switch XZ options!
-                subprocess.run(
-                    ("diff", old_file_abs, new_file_abs),
-                    check=False,
-                ).returncode
-                != 0
-            ):
-                # Check for smaller patch or full file size and choose the smaller of the two to package
-                create_patch(old_file_abs, new_file_abs, f"{patch_file}.patch")
-                if (
-                    os.stat(f"{patch_file}.patch").st_size
-                    > os.stat(new_file_abs).st_size
+            else:
+                cache_archive = None
+                if cache_extracted_dir is not None and cache_entry is not None:
+                    cache_archive = _maybe_use_cached_file(
+                        cache_entry,
+                        rel_path,
+                        from_hashes[rel_path],
+                        to_hashes[rel_path],
+                        cache_extracted_dir,
+                        partials_dir,
+                        manifest_file,
+                    )
+                if cache_archive is not None:
+                    archivefiles.append(cache_archive)
+                elif (
+                    # TODO: !!! This check will always trigger if we switch XZ options!
+                    subprocess.run(
+                        ("diff", old_file_abs, new_file_abs),
+                        check=False,
+                    ).returncode
+                    != 0
                 ):
-                    make_add_instruction(rel_path, manifest_file)
-                    os.unlink(f"{patch_file}.patch")
-                    shutil.copy2(new_file_abs, patch_file)
-                    archivefiles.append(rel_path)
-                else:
-                    make_patch_instruction(rel_path, manifest_file)
-                    archivefiles.append(f"{rel_path}.patch")
+                    # Check for smaller patch or full file size and choose the smaller of the two to package
+                    create_patch(old_file_abs, new_file_abs, f"{patch_file}.patch")
+                    if (
+                        os.stat(f"{patch_file}.patch").st_size
+                        > os.stat(new_file_abs).st_size
+                    ):
+                        make_add_instruction(rel_path, manifest_file)
+                        os.unlink(f"{patch_file}.patch")
+                        shutil.copy2(new_file_abs, patch_file)
+                        archivefiles.append(rel_path)
+                    else:
+                        make_patch_instruction(rel_path, manifest_file)
+                        archivefiles.append(f"{rel_path}.patch")
 
         else:
             remove_array.append(rel_path)
@@ -410,7 +519,7 @@ def make_partial(
         log(f"Error creating mar:\n{e.stderr}")
         raise Exception(f"Mar exited with code {e.returncode}")
 
-    return {
+    mar_manifest = {
         "MAR_CHANNEL_ID": mar_channel_id,
         "appName": get_option_from_compressed(
             from_mar_dir, filename="application.ini", section="App", option="Name"
@@ -424,6 +533,7 @@ def make_partial(
         "size": os.path.getsize(target_mar),
         "from_mar": from_mar_url,
     }
+    return mar_manifest, from_hashes
 
 
 def validate_url(url, allow_staging):
@@ -479,9 +589,13 @@ def process_single(
     force,
     staging,
     previousVersion=None,
+    compute_hashes=False,
+    cache_entry=None,
+    to_hashes=None,
+    patch_cache_dir=None,
 ):
     try:
-        mar_manifest = make_partial(
+        mar_manifest, from_hashes = make_partial(
             from_mar_url=from_mar_url,
             to_mar_dir=to_mar_dir,
             target_mar=target_mar,
@@ -491,19 +605,23 @@ def process_single(
             arch=arch,
             force=force,
             staging=staging,
+            compute_hashes=compute_hashes,
+            cache_entry=cache_entry,
+            to_hashes=to_hashes,
+            patch_cache_dir=patch_cache_dir,
         )
         mar_manifest["update_number"] = update_number
         if previousVersion:
             mar_manifest["previousVersion"] = previousVersion
         # Validate the created mar has valid channel id
         if validate_mar_channel_id(target_mar, mar_channel_id):
-            return None, mar_manifest
+            return None, mar_manifest, from_hashes
         else:
             # Since we still want to capture the manifest, we return the exception without raising it
-            return Exception("Invalid partial MAR id!"), mar_manifest
+            return Exception("Invalid partial MAR id!"), mar_manifest, from_hashes
     except Exception as e:
         log(traceback.format_exc(), "process_single")
-        return e, None
+        return e, None, None
 
 
 def main():
@@ -558,6 +676,17 @@ def main():
         help="Clobber this file in the installation. Must be a path to a file to clobber in the partial update.",
         action="append",
     )
+    parser.add_argument(
+        "--generate-hashes",
+        help="Write a hashes.json file alongside manifest.json with per-file sha256 metadata. Used by downstream l10n tasks for cache reuse.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--patch-cache-dir",
+        help="Directory containing an upstream hashes.json plus the cached partial mars. When set, per-file diffs are reused from the upstream cache when (from, to) sha256 hashes match.",
+        action="store",
+        default=None,
+    )
 
     args = parser.parse_args()
 
@@ -587,6 +716,22 @@ def main():
         log("Invalid MAR channel id in to-mar!", "main")
         raise Exception("Invalid MAR channel id in to-mar!")
 
+    cache_index = {}
+    if args.patch_cache_dir:
+        cache_path = os.path.join(args.patch_cache_dir, "hashes.json")
+        try:
+            with open(cache_path) as fd:
+                cache_index = json.load(fd)
+            log(f"Loaded patch cache index from {cache_path}", "main")
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            log(
+                f"Could not load patch cache index from {cache_path}: {e}; cache disabled.",
+                "main",
+            )
+
+    compute_hashes = args.generate_hashes or bool(args.patch_cache_dir)
+    to_hashes = _hash_dir(to_mar_dir) if compute_hashes else None
+
     futures = []
     futures_result = []
 
@@ -594,7 +739,7 @@ def main():
         if not f.cancelled():
             futures_result.append(f.result())
         else:
-            futures_result.append(("Cancelled", None))
+            futures_result.append(("Cancelled", None, None))
 
     with ProcessPoolExecutor(cpus) as executor:
         from_data = json.loads(args.from_mars_json)
@@ -610,6 +755,13 @@ def main():
 
             target_mar = os.path.join(target, source_data["dest_mar"])
 
+            cache_entry = cache_index.get(source_data["dest_mar"])
+            if args.patch_cache_dir and cache_entry is None:
+                log(
+                    f"No upstream cache entry for {source_data['dest_mar']}; cache disabled for this partial.",
+                    "main",
+                )
+
             future = executor.submit(
                 process_single,
                 update_number=update_number,
@@ -623,6 +775,10 @@ def main():
                 force=args.force,
                 staging=args.allow_staging_urls,
                 previousVersion=source_data.get("previousVersion"),
+                compute_hashes=compute_hashes,
+                cache_entry=cache_entry,
+                to_hashes=to_hashes,
+                patch_cache_dir=args.patch_cache_dir,
             )
             future.add_done_callback(future_cb)
             futures.append(future)
@@ -655,10 +811,16 @@ def main():
 
     errd = False
     results = []
-    for error, manifest in futures_result:
+    hashes_output = {}
+    for error, manifest, from_hashes in futures_result:
         if manifest:
             manifest.update(to_mar_info)
             results.append(manifest)
+            if args.generate_hashes and from_hashes is not None:
+                hashes_output[manifest["mar"]] = {
+                    "from_mar_files": from_hashes,
+                    "to_mar_files": to_hashes,
+                }
         else:
             errd = True
             log("Process raised an exception!", "main")
@@ -669,6 +831,11 @@ def main():
         fd.write(json.dumps(results))
 
     log("Finished writing final manifest.", "main")
+
+    if args.generate_hashes:
+        with open(os.path.join(target, "hashes.json"), "w") as fd:
+            fd.write(json.dumps(hashes_output))
+        log("Finished writing hashes.json.", "main")
 
     if errd:
         sys.exit(1)
