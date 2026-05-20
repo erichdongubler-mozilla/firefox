@@ -958,6 +958,19 @@ newtab-sports-widget-team-name-label-eng =
 newtab-sports-widget-team-name-label-sco =
     .label = Scotland
 
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = Kick off the World Cup with new wallpapers
+newtab-sports-widget-message-wallpapers-body = Bring some match-day energy to your browser for the tournament.
+newtab-sports-widget-message-wallpapers-cta = Choose wallpaper
+newtab-sports-widget-message-add-widgets-cta =
+    .label = Add widgets
+newtab-sports-widget-message-day-in-play-title = Keep your day in play with { -brand-product-name } widgets
+newtab-sports-widget-message-day-in-play-body = Follow the World Cup, stay on task, track time around the globe, and more.
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = Explore widgets
+
 ## Strings introduced by the Nova redesign of the Timer widget
 
 # Variables:
@@ -1012,6 +1025,9 @@ newtab-daily-briefing-card-timestamp = Updated { $minutes }m ago
 newtab-widget-message-title = Stay focused with lists and a built-in timer
 # to-dos stands for "things to do".
 newtab-widget-message-copy = From quick reminders to daily to-dos, focus sessions to stretch breaks — stay on task and on time.
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = One spot for focus, forecasts, and more
+newtab-widget-message-focus-forecasts-body = Keep your day flowing with { -brand-product-name } widgets. Check the forecast, stay on task, or track time across the globe.
 
 # Strings for the default promo card
 
