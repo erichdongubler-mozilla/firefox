@@ -17,17 +17,20 @@ var gInstallProperties = [
 var gInstall;
 var gExpectedCancel = false;
 var gTestInstallListener = {
-  onInstallStarted() {
+  async onInstallStarted() {
+    await AboutAddonsTestUtils.waitForCategoriesUpdate(gManagerWindow);
     check_hidden(false);
   },
 
-  onInstallEnded() {
+  async onInstallEnded() {
+    await AboutAddonsTestUtils.waitForCategoriesUpdate(gManagerWindow);
     check_hidden(false);
     run_next_test();
   },
 
-  onInstallCancelled() {
+  async onInstallCancelled() {
     ok(gExpectedCancel, "Should expect install cancel");
+    await AboutAddonsTestUtils.waitForCategoriesUpdate(gManagerWindow);
     check_hidden(false);
     run_next_test();
   },

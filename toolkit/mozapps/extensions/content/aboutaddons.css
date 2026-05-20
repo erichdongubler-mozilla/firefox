@@ -10,7 +10,7 @@
   --z-index-popup: 10;
 }
 
-@media (max-width: 830px) {
+@media (max-width: 950px) {
   :root {
     --main-margin-start: 16px;
     /* Maintain a main margin so card shadows don't overlap the sidebar. */
@@ -64,64 +64,16 @@ h2 {
   }
 }
 
-#categories {
-  display: flex;
-  flex-direction: column;
-  padding-inline-end: 4px; /* Leave space for the button focus styles. */
-}
-
-.category {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  margin-block: 0;
-  align-items: center;
-  font-weight: normal;
-}
-
-.category[badge-count]::after {
-  display: inline-block;
-  min-width: 20px;
+.category-badge {
+  min-width: var(--dimension-20);
   background-color: var(--color-accent-primary);
   color: var(--button-text-color-primary);
   font-weight: var(--font-weight-bold);
   /* Use a large border-radius to get semi-circles on the sides. */
   border-radius: var(--border-radius-circle);
-  padding: 2px 6px;
-  content: attr(badge-count);
+  padding: var(--space-xxsmall) var(--space-small);
   text-align: center;
-  margin-inline-start: 8px;
-  grid-column: 2;
-}
-
-.category[name="discover"] {
-  background-image: url("chrome://global/skin/icons/trophy.svg");
-}
-.category[name="locale"] {
-  background-image: url("chrome://mozapps/skin/extensions/category-languages.svg");
-}
-.category[name="extension"] {
-  background-image: url("chrome://mozapps/skin/extensions/category-extensions.svg");
-}
-.category[name="theme"] {
-  background-image: url("chrome://mozapps/skin/extensions/category-themes.svg");
-}
-.category[name="plugin"] {
-  background-image: url("chrome://mozapps/skin/extensions/category-plugins.svg");
-}
-.category[name="dictionary"] {
-  background-image: url("chrome://mozapps/skin/extensions/category-dictionaries.svg");
-}
-.category[name="available-updates"] {
-  background-image: url("chrome://mozapps/skin/extensions/category-available.svg");
-}
-.category[name="recent-updates"] {
-  background-image: url("chrome://mozapps/skin/extensions/category-recent.svg");
-}
-.category[name="sitepermission"] {
-  background-image: url("chrome://mozapps/skin/extensions/category-sitepermission.svg");
-}
-.category[name="mlmodel"] {
-  background-image: url("chrome://global/skin/icons/highlights.svg");
+  margin-inline-start: auto;
 }
 
 .sticky-container {
@@ -799,20 +751,26 @@ section:not(:empty) ~ #empty-addons-message {
   display: none;
 }
 
-@media (max-width: 830px) {
-  .category[badge-count]::after {
+.permission-header > .addon-sitepermissions-host {
+  font-weight: var(--font-weight-bold);
+}
+
+/* Position the badged dot in the top-end (right in ltr, left in rtl)
+ * corner of the badged category icon. */
+@media (max-width: 950px) {
+  moz-page-nav-button {
+    position: relative;
+  }
+
+  moz-page-nav-button[badged-category]::after {
     content: "";
+    position: absolute;
+    top: var(--space-xsmall);
+    inset-inline-end: var(--space-xsmall);
     display: block;
     width: 5px;
     height: 5px;
     border-radius: var(--border-radius-circle);
-    min-width: auto;
-    padding: 0;
-    /* move the badged dot into the top-end (right in ltr, left in rtl) corner. */
-    margin-top: -20px;
+    background-color: var(--color-accent-primary);
   }
-}
-
-.permission-header > .addon-sitepermissions-host {
-  font-weight: var(--font-weight-bold);
 }
