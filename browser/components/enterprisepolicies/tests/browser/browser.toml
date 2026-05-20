@@ -106,6 +106,8 @@ support-files = [
 
 ["browser_policy_masterpassword_doorhanger.js"]
 
+["browser_policy_mv3_force_installed_host_permissions.js"]
+
 ["browser_policy_offertosavelogins.js"]
 
 ["browser_policy_override_postupdatepage.js"]

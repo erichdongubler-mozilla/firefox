@@ -1329,7 +1329,11 @@ export class ExtensionData {
         )
       : [];
 
-    if (this.originControls && lazy.installIncludesOrigins) {
+    if (
+      this.originControls &&
+      (lazy.installIncludesOrigins ||
+        Services.policies?.isAddonRequiredByPolicy(this.id))
+    ) {
       return {
         permissions: [],
         origins: this.getManifestOrigins(),
@@ -1466,13 +1470,15 @@ export class ExtensionData {
    * @param {object} oldOptionalPermissions
    * @param {object} newPermissions
    * @param {object} newOptionalPermissions
+   * @param {boolean} newIsPrivileged
    */
   static async migratePermissions(
     id,
     oldPermissions,
     oldOptionalPermissions,
     newPermissions,
-    newOptionalPermissions
+    newOptionalPermissions,
+    newIsPrivileged
   ) {
     let migrated = ExtensionData.intersectPermissions(
       oldPermissions,
@@ -1517,13 +1523,44 @@ export class ExtensionData {
       )
     );
 
+    // For policy-managed extensions, revoke any previously-granted host
+    // origins that are no longer in the new manifest (required or optional).
+    // Optional host permissions granted by the user are preserved when still
+    // subsumed by the new optional set.
+    // TODO(Bug 2022704): extend the host permissions migration logic also to
+    // extensions not managed by the enterprise policies.
+    let originsToRevoke = [];
+    if (Services.policies?.isAddonRequiredByPolicy(id)) {
+      // Match the criteria used by ExtensionData restrictSchemes getter. The
+      // policy/extension for `id` is not registered at this point (old shut
+      // down, new not started yet), so we cannot look it up via
+      // WebExtensionPolicy.getByID — newIsPrivileged is propagated from the
+      // XPIProvider via BootstrapScope.update.
+      let restrictSchemes = !(
+        newIsPrivileged && newPermissions.permissions?.includes("mozillaAddons")
+      );
+      let newRequiredSet = new MatchPatternSet(newPermissions.origins ?? [], {
+        restrictSchemes,
+        ignorePath: true,
+      });
+      let newOptionalSet = new MatchPatternSet(
+        newOptionalPermissions.origins ?? [],
+        { restrictSchemes, ignorePath: true }
+      );
+      let granted = await lazy.ExtensionPermissions.get(id);
+      originsToRevoke = granted.origins.filter(o => {
+        let p = new MatchPattern(o, { ignorePath: true });
+        return !newRequiredSet.subsumes(p) && !newOptionalSet.subsumes(p);
+      });
+    }
+
     // Remove any optional permissions that have been removed from the manifest.
     await lazy.ExtensionPermissions.remove(id, {
       permissions: removed,
       data_collection: Array.from(
         oldDataCollectionSet.difference(dataCollectionSet)
       ),
-      origins: [],
+      origins: originsToRevoke,
     });
   }
 
@@ -3229,7 +3266,8 @@ class BootstrapScope {
         data.oldPermissions,
         data.oldOptionalPermissions,
         data.userPermissions || emptyPermissions,
-        data.optionalPermissions || emptyPermissions
+        data.optionalPermissions || emptyPermissions,
+        data.isPrivileged
       );
     }
 
@@ -4292,8 +4330,12 @@ export class Extension extends ExtensionData {
 
     if (
       this.originControls &&
-      this.startupReason === "ADDON_INSTALL" &&
-      (this.manifest.granted_host_permissions || lazy.installIncludesOrigins)
+      (this.startupReason === "ADDON_INSTALL" ||
+        (this.startupReason === "ADDON_UPGRADE" &&
+          Services.policies?.isAddonRequiredByPolicy(this.id))) &&
+      (this.manifest.granted_host_permissions ||
+        lazy.installIncludesOrigins ||
+        Services.policies?.isAddonRequiredByPolicy(this.id))
     ) {
       let origins = this.getManifestOrigins();
       lazy.ExtensionPermissions.add(this.id, { permissions: [], origins });

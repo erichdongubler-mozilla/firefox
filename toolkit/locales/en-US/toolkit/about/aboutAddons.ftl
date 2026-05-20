@@ -501,6 +501,10 @@ addon-permissions-empty2 = This extension doesn’t require any permissions.
 addon-permissions-required-label = Required:
 addon-permissions-optional-label = Optional:
 addon-permissions-learnmore = Learn more about permissions
+# Shown above the permissions list when one or more permissions for this
+# extension are controlled by an enterprise policy and cannot be changed by
+# the user.
+addon-permissions-managed-by-policy = Some permissions are managed by your organization.
 
 recommended-extensions-heading = Recommended Extensions
 recommended-themes-heading = Recommended Themes

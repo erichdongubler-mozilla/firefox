@@ -11,6 +11,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
 import { AboutAddonsHTMLElement } from "../aboutaddons-utils.mjs";
 import { AddonCard } from "./addon-card.mjs";
 
+function createPolicyPermissionsBanner() {
+  let banner = document.createElement("moz-message-bar");
+  banner.classList.add("addon-permissions-policy-banner");
+  banner.setAttribute("type", "info");
+  banner.messageL10nId = "addon-permissions-managed-by-policy";
+  banner.supportPage =
+    "managed-browser-firefox#w_why-some-features-may-be-disabled";
+  return banner;
+}
+
 class AddonPermissionsList extends AboutAddonsHTMLElement {
   static get markup() {
     return `
@@ -107,6 +117,17 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
       list.appendChild(item);
     }
 
+    let isPolicyManaged = Services.policies?.isAddonRequiredByPolicy(
+      this.addon.id
+    );
+    let policyLockedOrigins = new Set(
+      isPolicyManaged
+        ? (this.addon.requestedPermissions?.origins ?? []).map(
+            o => new MatchPattern(o, { ignorePath: true }).pattern
+          )
+        : []
+    );
+
     if (optionalEntries.length) {
       let section = permissionsFrag.querySelector(
         ".addon-permissions-optional"
@@ -151,6 +172,10 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
 
         toggle.pressed = checked;
 
+        if (type === "origin" && policyLockedOrigins.has(perm)) {
+          toggle.setAttribute("disabled", "true");
+        }
+
         toggle.setAttribute("permission-key", perm);
         toggle.setAttribute("action", "toggle-permission");
 
@@ -170,6 +195,20 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
           section.hidden = false;
           list.appendChild(item);
         }
+      }
+
+      let hasPolicyLockedHosts = optionalEntries.some(([perm]) =>
+        policyLockedOrigins.has(perm)
+      );
+
+      if (hasPolicyLockedHosts) {
+        let wrapper = permissionsFrag.querySelector(
+          ".addon-permissions-list-wrapper"
+        );
+        let requiredSection = wrapper.querySelector(
+          ".addon-permissions-required"
+        );
+        wrapper.insertBefore(createPolicyPermissionsBanner(), requiredSection);
       }
     }
 
