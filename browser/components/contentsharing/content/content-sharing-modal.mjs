@@ -65,6 +65,7 @@ export class ContentSharingModal extends MozLitElement {
     copyButton: "#copy-button",
     viewPageButton: "#view-page",
     signInButton: "#sign-in",
+    loadingButton: "#loading-button",
     tooManyLinks: ".too-many-links",
     errorMessageBar: "moz-message-bar",
   };
@@ -78,6 +79,11 @@ export class ContentSharingModal extends MozLitElement {
     super.connectedCallback();
 
     this.shareResult = window.arguments?.[0];
+    if (this.shareResult?.loadingPromise) {
+      this.shareResult.loadingPromise.then(result => {
+        this.shareResult = result;
+      });
+    }
   }
 
   close() {
@@ -178,7 +184,23 @@ export class ContentSharingModal extends MozLitElement {
     );
   }
 
+  loadingTemplate() {
+    return html`<moz-button-group
+      ><moz-button
+        disabled
+        id="loading-button"
+        iconsrc="chrome://global/skin/icons/loading.svg"
+        data-l10n-id="content-sharing-modal-generating-page"
+        type="icon"
+      ></moz-button
+    ></moz-button-group>`;
+  }
+
   descriptionActionTemplate() {
+    if (this.shareResult.loadingPromise) {
+      return this.loadingTemplate();
+    }
+
     // If we got the url or
     // if there were no errors or
     // if were not signed in and got an unauthorized error

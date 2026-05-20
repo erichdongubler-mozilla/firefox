@@ -90,6 +90,7 @@ export class ShareResult {
     url = null,
     isSchemaValid = null,
     isSignedIn = null,
+    loadingPromise = null,
   } = {}) {
     this.share = share;
     this.errors = Array.isArray(errors) ? Array.from(errors) : [];
@@ -103,6 +104,7 @@ export class ShareResult {
     this.url = url;
     this.isSchemaValid = isSchemaValid;
     this.isSignedIn = isSignedIn;
+    this.loadingPromise = loadingPromise;
 
     Object.freeze(this);
   }
@@ -367,18 +369,33 @@ class ContentSharingUtilsClass {
    * @param {string} context Used in error logging (e.g. "tabs", "tab group")
    */
   async #createLinkAndOpenModal(shareResult, context) {
-    // Note: the result object contains either the URL or an error. It's safe
-    // to pass into the modal, which handles error UI as needed.
-    shareResult = await this.createShareableLink(shareResult);
-    shareResult = shareResult.with({
-      isSignedIn:
-        this.isSignedIn() && !shareResult.errors.includes(ERRORS.UNAUTHORIZED),
+    let resolveLoading;
+    const loadingPromise = new Promise(resolve => {
+      resolveLoading = resolve;
     });
 
     let window = Services.wm.getMostRecentBrowserWindow();
 
     // Note: we deliberately do not await the open.
-    window.gDialogBox.open(CONTENT_SHARING_MODAL_URL, shareResult);
+    window.gDialogBox.open(
+      CONTENT_SHARING_MODAL_URL,
+      shareResult.with({ loadingPromise })
+    );
+
+    // Note: the result object contains either the URL or an error. It's safe
+    // to pass into the modal, which handles error UI as needed.
+    try {
+      shareResult = await this.createShareableLink(shareResult);
+      shareResult = shareResult.with({
+        isSignedIn:
+          this.isSignedIn() &&
+          !shareResult.errors.includes(ERRORS.UNAUTHORIZED),
+        loadingPromise: null,
+      });
+    } finally {
+      resolveLoading(shareResult);
+    }
+
     if (shareResult.errors.length && !shareResult.isSignedIn) {
       console.error(
         `ContentSharingUtils: failed to share ${context}`,
