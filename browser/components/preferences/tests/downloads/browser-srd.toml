@@ -15,5 +15,3 @@ tags = "os_integration"
 ["browser_open_download_preferences.js"]
 support-files = [
   "head.js","../empty_pdf_file.pdf"]
-
-["browser_downloads_handle_new_file_types.js"]
