@@ -63,15 +63,7 @@ already_AddRefed<CSSMathSum> CSSMathSum::Constructor(
   nsTArray<RefPtr<CSSNumericValue>> values;
 
   for (const OwningCSSNumberish& arg : aArgs) {
-    RefPtr<CSSNumericValue> value;
-
-    if (arg.IsDouble()) {
-      value = MakeRefPtr<CSSUnitValue>(global, arg.GetAsDouble(), "number"_ns);
-    } else {
-      MOZ_ASSERT(arg.IsCSSNumericValue());
-
-      value = arg.GetAsCSSNumericValue();
-    }
+    RefPtr<CSSNumericValue> value = CSSNumericValue::Create(global, arg);
 
     values.AppendElement(std::move(value));
   }

@@ -44,6 +44,15 @@ class CSSNumericValue : public CSSStyleValue {
   CSSNumericValue(nsCOMPtr<nsISupports> aParent,
                   NumericValueType aNumericValueType);
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#rectify-a-numberish-value
+  static RefPtr<CSSNumericValue> Create(nsCOMPtr<nsISupports> aParent,
+                                        const CSSNumberish& aNumberish);
+
+  // https://drafts.css-houdini.org/css-typed-om-1/#rectify-a-numberish-value
+  static RefPtr<CSSNumericValue> Create(
+      nsCOMPtr<nsISupports> aParent,
+      const OwningCSSNumberish& aOwningNumberish);
+
   static RefPtr<CSSNumericValue> Create(nsCOMPtr<nsISupports> aParent,
                                         const StyleNumericValue& aNumericValue);
 

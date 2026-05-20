@@ -24,9 +24,21 @@ CSSUnitValue::CSSUnitValue(nsCOMPtr<nsISupports> aParent, double aValue,
 
 // static
 RefPtr<CSSUnitValue> CSSUnitValue::Create(nsCOMPtr<nsISupports> aParent,
+                                          double aValue,
+                                          const nsACString& aUnit) {
+  return MakeRefPtr<CSSUnitValue>(std::move(aParent), aValue, aUnit);
+}
+
+// static
+RefPtr<CSSUnitValue> CSSUnitValue::Create(nsCOMPtr<nsISupports> aParent,
+                                          double aValue) {
+  return Create(std::move(aParent), aValue, "number"_ns);
+}
+
+// static
+RefPtr<CSSUnitValue> CSSUnitValue::Create(nsCOMPtr<nsISupports> aParent,
                                           const StyleUnitValue& aUnitValue) {
-  return MakeRefPtr<CSSUnitValue>(std::move(aParent), aUnitValue.value,
-                                  aUnitValue.unit);
+  return Create(std::move(aParent), aUnitValue.value, aUnitValue.unit);
 }
 
 JSObject* CSSUnitValue::WrapObject(JSContext* aCx,
