@@ -1509,6 +1509,10 @@ void nsCSPContext::HandleInternalPageViolation(
     extra.blockeduridetails = blocked.second;
   }
 
+  extra.baseline =
+      Some(aCSPViolationData.mViolatedPolicyIndex == 0 &&
+           aInit.mOriginalPolicy == nsContentSecurityUtils::kBaselineChromeCSP);
+
   glean::security::csp_violation_internal_page.Record(Some(extra));
 
 #ifdef DEBUG

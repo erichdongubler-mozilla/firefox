@@ -17835,6 +17835,12 @@
   value: true
   mirror: always
 
+# Whether all chrome: documents will automatically get a baseline CSP
+- name: security.chrome_baseline_csp.enabled
+  type: bool
+  value: true
+  mirror: always
+
 # Allow unsafe eval usage with high privileges to. This should
 # not be activated without a very good reason.
 # This pref has to be set before starting Firefox!

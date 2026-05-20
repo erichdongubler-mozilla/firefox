@@ -1922,71 +1922,90 @@ void nsContentSecurityUtils::AssertChromePageHasCSP(Document* aDocument) {
   nsAutoCString spec;
   documentURI->GetSpec(spec);
 
+  if (IsExemptedFromBaselineChromeCSP(spec)) {
+    return;
+  }
+
   nsCOMPtr<nsIContentSecurityPolicy> csp =
       PolicyContainer::GetCSP(aDocument->GetPolicyContainer());
   uint32_t count = 0;
   if (csp) {
     static_cast<nsCSPContext*>(csp.get())->GetPolicyCount(&count);
   }
-  if (count != 0) {
-    MOZ_ASSERT(count == 1, "chrome: pages should have exactly one CSP");
 
-    // Both of these have a known weaker policy that differs
-    // from all other chrome: pages.
-    if (StringBeginsWith(spec, "chrome://browser/content/browser.xhtml"_ns) ||
-        StringBeginsWith(spec,
-                         "chrome://browser/content/hiddenWindowMac.xhtml"_ns)) {
-      return;
-    }
+  // All chrome: pages should have exactly two CSPs (baseline + custom)
+  if (count != 2) {
+    MOZ_CRASH_UNSAFE_PRINTF("Document (%s) does not have a custom CSP!",
+                            spec.get());
+  }
 
-    // Thunderbird's CSP does not pass these checks.
+  // Thunderbird's CSP does not pass these checks.
 #  ifndef MOZ_THUNDERBIRD
-    const nsCSPPolicy* policy =
-        static_cast<nsCSPContext*>(csp.get())->GetPolicy(0);
-    {
-      AllowBuiltinSrcVisitor visitor(CSPDirective::DEFAULT_SRC_DIRECTIVE, spec);
-      if (!visitor.visit(policy)) {
-        MOZ_CRASH_UNSAFE_PRINTF(
-            "Document (%s) CSP does not have a default-src!", spec.get());
-      }
-    }
+  nsAutoString baselinePolicy;
+  static_cast<nsCSPContext*>(csp.get())->GetPolicy(0)->toString(baselinePolicy);
+  MOZ_ASSERT(baselinePolicy == kBaselineChromeCSP);
 
-    CHECK_DIR(SCRIPT_SRC_DIRECTIVE, AllowBuiltinSrcVisitor);
-    // If the policy being checked does not have an explicit |script-src-attr|
-    // directive, nsCSPPolicy::visitDirectiveSrcs will fallback to using the
-    // |script-src| directive, but not default-src.
-    // This means we can't use DisallowingVisitor here, because the script-src
-    // fallback will usually contain at least a chrome: source.
-    // This is not a problem from a security perspective, because inline scripts
-    // are not loaded from an URL and thus still disallowed.
-    CHECK_DIR(SCRIPT_SRC_ATTR_DIRECTIVE, AllowBuiltinSrcVisitor);
-    CHECK_DIR(STYLE_SRC_DIRECTIVE, StyleSrcVisitor);
-    CHECK_DIR(IMG_SRC_DIRECTIVE, ImgSrcVisitor);
-    CHECK_DIR(MEDIA_SRC_DIRECTIVE, MediaSrcVisitor);
-    // For now we don't require chrome: pages to have a `object-src 'none'`
-    // directive.
-    CHECK_DIR(OBJECT_SRC_DIRECTIVE, DisallowingVisitor);
-
-    nsTArray<nsString> directiveNames;
-    policy->getDirectiveNames(directiveNames);
-    for (const nsString& dir : directiveNames) {
-      if (dir.EqualsLiteral("default-src") || dir.EqualsLiteral("script-src") ||
-          dir.EqualsLiteral("script-src-attr") ||
-          dir.EqualsLiteral("style-src") || dir.EqualsLiteral("img-src") ||
-          dir.EqualsLiteral("media-src") || dir.EqualsLiteral("object-src")) {
-        continue;
-      }
-
-      MOZ_CRASH_UNSAFE_PRINTF(
-          "Document (%s) must not contain a CSP with the unchecked directive "
-          "%s",
-          spec.get(), NS_ConvertUTF16toUTF8(dir).get());
-    }
-#  endif
+  // Both of these have a known weaker policy that differs
+  // from all other chrome: pages.
+  if (StringBeginsWith(spec, "chrome://browser/content/browser.xhtml"_ns) ||
+      StringBeginsWith(spec,
+                       "chrome://browser/content/hiddenWindowMac.xhtml"_ns)) {
     return;
   }
 
-  if (xpc::IsInAutomation()) {
+  const nsCSPPolicy* policy =
+      static_cast<nsCSPContext*>(csp.get())->GetPolicy(1);
+  {
+    AllowBuiltinSrcVisitor visitor(CSPDirective::DEFAULT_SRC_DIRECTIVE, spec);
+    if (!visitor.visit(policy)) {
+      MOZ_CRASH_UNSAFE_PRINTF("Document (%s) CSP does not have a default-src!",
+                              spec.get());
+    }
+  }
+
+  CHECK_DIR(SCRIPT_SRC_DIRECTIVE, AllowBuiltinSrcVisitor);
+  // If the policy being checked does not have an explicit |script-src-attr|
+  // directive, nsCSPPolicy::visitDirectiveSrcs will fallback to using the
+  // |script-src| directive, but not default-src.
+  // This means we can't use DisallowingVisitor here, because the script-src
+  // fallback will usually contain at least a chrome: source.
+  // This is not a problem from a security perspective, because inline scripts
+  // are not loaded from an URL and thus still disallowed.
+  CHECK_DIR(SCRIPT_SRC_ATTR_DIRECTIVE, AllowBuiltinSrcVisitor);
+  CHECK_DIR(STYLE_SRC_DIRECTIVE, StyleSrcVisitor);
+  CHECK_DIR(IMG_SRC_DIRECTIVE, ImgSrcVisitor);
+  CHECK_DIR(MEDIA_SRC_DIRECTIVE, MediaSrcVisitor);
+  // For now we don't require chrome: pages to have a `object-src 'none'`
+  // directive.
+  CHECK_DIR(OBJECT_SRC_DIRECTIVE, DisallowingVisitor);
+
+  nsTArray<nsString> directiveNames;
+  policy->getDirectiveNames(directiveNames);
+  for (const nsString& dir : directiveNames) {
+    if (dir.EqualsLiteral("default-src") || dir.EqualsLiteral("script-src") ||
+        dir.EqualsLiteral("script-src-attr") ||
+        dir.EqualsLiteral("style-src") || dir.EqualsLiteral("img-src") ||
+        dir.EqualsLiteral("media-src") || dir.EqualsLiteral("object-src")) {
+      continue;
+    }
+
+    MOZ_CRASH_UNSAFE_PRINTF(
+        "Document (%s) must not contain a CSP with the unchecked directive "
+        "%s",
+        spec.get(), NS_ConvertUTF16toUTF8(dir).get());
+  }
+#  endif
+  return;
+}
+
+#  undef CHECK_DIR
+
+#endif
+
+/* static */
+bool nsContentSecurityUtils::IsExemptedFromBaselineChromeCSP(
+    nsACString& aSpec) {
+  if (xpc::IsInAutomation()) [[unlikely]] {
     // Test files
     static nsLiteralCString sAllowedTestPathsWithNoCSP[] = {
         "chrome://mochikit/"_ns,
@@ -1996,24 +2015,20 @@ void nsContentSecurityUtils::AssertChromePageHasCSP(Document* aDocument) {
     };
 
     for (const nsLiteralCString& entry : sAllowedTestPathsWithNoCSP) {
-      if (StringBeginsWith(spec, entry)) {
-        return;
+      if (StringBeginsWith(aSpec, entry)) {
+        return true;
       }
     }
   }
 
   // CSP for browser.xhtml has been disabled
-  if (spec.EqualsLiteral("chrome://browser/content/browser.xhtml") &&
-      !StaticPrefs::security_browser_xhtml_csp_enabled()) {
-    return;
+  if (!StaticPrefs::security_browser_xhtml_csp_enabled() &&
+      aSpec.EqualsLiteral("chrome://browser/content/browser.xhtml")) {
+    return true;
   }
 
-  MOZ_CRASH_UNSAFE_PRINTF("Document (%s) does not have a CSP!", spec.get());
+  return false;
 }
-
-#  undef CHECK_DIR
-
-#endif
 
 /* static */
 bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,

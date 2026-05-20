@@ -324,6 +324,10 @@ security:
           The same as SecurityPolicyViolationEvent's sample.
           (Only for violations from chrome:)
         type: string
+      baseline:
+        description: >
+          The violation was triggered by the kBaselineChromeCSP.
+        type: boolean
 
 
   eval_usage_parent_process:

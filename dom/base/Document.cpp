@@ -3817,6 +3817,17 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
     return rv;
   }
 
+  if (mDocumentURI && mDocumentURI->SchemeIs("chrome") &&
+      StaticPrefs::security_chrome_baseline_csp_enabled()) {
+    nsAutoCString spec;
+    mDocumentURI->GetSpec(spec);
+    if (!nsContentSecurityUtils::IsExemptedFromBaselineChromeCSP(spec)) {
+      rv = CSP_AppendCSPFromHeader(
+          csp, nsContentSecurityUtils::kBaselineChromeCSP, false);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+  }
+
   nsAutoCString tCspHeaderValue, tCspROHeaderValue;
 
   nsCOMPtr<nsIHttpChannel> httpChannel;
