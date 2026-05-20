@@ -77,8 +77,6 @@
     <!-- Action -->
     <!-- Primary button in a disabled state-->
     <color name="fx_mobile_action_color_primary_disabled">@color/photonInk20A20</color>
-    <!-- Secondary button -->
-    <color name="fx_mobile_action_color_secondary">@color/photonLightGrey30</color>
 
     <!-- Text -->
     <!-- Text Inverted/On Color -->
