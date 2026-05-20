@@ -45,7 +45,11 @@ class CSSTransformComponent : public nsISupports, public nsWrapperCache {
     MatrixComponent
   };
 
+  // TODO: Remove once the implementation is complete.
   CSSTransformComponent(nsCOMPtr<nsISupports> aParent,
+                        TransformComponentType aTransformComponentType);
+
+  CSSTransformComponent(nsCOMPtr<nsISupports> aParent, bool aIs2D,
                         TransformComponentType aTransformComponentType);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -57,6 +61,7 @@ class CSSTransformComponent : public nsISupports, public nsWrapperCache {
 
   // start of CSSTransformComponent Web IDL declarations
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-csstransformcomponent-is2d
   bool Is2D() const;
 
   void SetIs2D(bool aArg);
@@ -142,6 +147,8 @@ class CSSTransformComponent : public nsISupports, public nsWrapperCache {
   virtual ~CSSTransformComponent() = default;
 
   nsCOMPtr<nsISupports> mParent;
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-csstransformcomponent-is2d
+  bool mIs2D;
   const TransformComponentType mTransformComponentType;
 };
 

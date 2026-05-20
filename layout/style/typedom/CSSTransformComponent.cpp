@@ -25,6 +25,16 @@ CSSTransformComponent::CSSTransformComponent(
     nsCOMPtr<nsISupports> aParent,
     TransformComponentType aTransformComponentType)
     : mParent(std::move(aParent)),
+      mIs2D(false),
+      mTransformComponentType(aTransformComponentType) {
+  MOZ_ASSERT(mParent);
+}
+
+CSSTransformComponent::CSSTransformComponent(
+    nsCOMPtr<nsISupports> aParent, bool aIs2D,
+    TransformComponentType aTransformComponentType)
+    : mParent(std::move(aParent)),
+      mIs2D(aIs2D),
       mTransformComponentType(aTransformComponentType) {
   MOZ_ASSERT(mParent);
 }
@@ -45,7 +55,9 @@ JSObject* CSSTransformComponent::WrapObject(JSContext* aCx,
 }
 
 // start of CSSTransformComponent Web IDL implementation
-bool CSSTransformComponent::Is2D() const { return false; }
+
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-csstransformcomponent-is2d
+bool CSSTransformComponent::Is2D() const { return mIs2D; }
 
 void CSSTransformComponent::SetIs2D(bool aArg) {}
 
