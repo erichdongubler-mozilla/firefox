@@ -15946,21 +15946,21 @@ function SportsMatchRow({
     "data-l10n-args": JSON.stringify(ariaLabelL10n.args),
     href: ""
   }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "sports-match-team",
-    title: home_team.name
+    className: "sports-match-team"
   }, /*#__PURE__*/external_React_default().createElement("img", {
     className: "sports-match-flag",
     src: home_team.icon_url,
-    alt: ""
+    alt: home_team.name,
+    title: home_team.name
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "sports-match-code"
   }, home_team.key)), renderMiddle(), /*#__PURE__*/external_React_default().createElement("div", {
-    className: "sports-match-team",
-    title: away_team.name
+    className: "sports-match-team"
   }, /*#__PURE__*/external_React_default().createElement("img", {
     className: "sports-match-flag",
     src: away_team.icon_url,
-    alt: ""
+    alt: away_team.name,
+    title: away_team.name
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "sports-match-code"
   }, away_team.key)));

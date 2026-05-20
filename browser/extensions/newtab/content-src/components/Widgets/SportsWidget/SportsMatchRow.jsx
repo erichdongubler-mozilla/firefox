@@ -186,13 +186,23 @@ function SportsMatchRow({ match, variant, size = "large" }) {
       href=""
     >
       {/* (developer note): Replace href with SERP link. */}
-      <div className="sports-match-team" title={home_team.name}>
-        <img className="sports-match-flag" src={home_team.icon_url} alt="" />
+      <div className="sports-match-team">
+        <img
+          className="sports-match-flag"
+          src={home_team.icon_url}
+          alt={home_team.name}
+          title={home_team.name}
+        />
         <span className="sports-match-code">{home_team.key}</span>
       </div>
       {renderMiddle()}
-      <div className="sports-match-team" title={away_team.name}>
-        <img className="sports-match-flag" src={away_team.icon_url} alt="" />
+      <div className="sports-match-team">
+        <img
+          className="sports-match-flag"
+          src={away_team.icon_url}
+          alt={away_team.name}
+          title={away_team.name}
+        />
         <span className="sports-match-code">{away_team.key}</span>
       </div>
     </a>
