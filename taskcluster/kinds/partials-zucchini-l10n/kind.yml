@@ -13,7 +13,7 @@ transforms:
 
 kind-dependencies:
     - toolchain
-    - repackage
+    - repackage-l10n
 
 only-for-attributes:
     - nightly
@@ -39,6 +39,7 @@ only-for-build-platforms:
 tasks:
     zucchini:
         from-deps:
+            kinds: [repackage-l10n]
             copy-attributes: true
             group-by: single-with-filters
         shipping-phase: promote

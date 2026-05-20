@@ -696,10 +696,15 @@ in the parameters. See ``mach release-history`` if doing this manually.
 partials-zucchini
 -----------------
 Partials-zucchini takes the complete.mar files produced in previous tasks and generates partial
-updates between previous nightly releases and the new one. Requires a release_history
-in the parameters. See ``mach release-history`` if doing this manually.
+updates between previous nightly releases and the new one for the en-US locale only.
+Requires a release_history in the parameters. See ``mach release-history`` if doing this manually.
 The zucchini tool is compiled via toolchain task. The source code can be found at:
 https://chromium.googlesource.com/chromium/src/components/zucchini/
+
+partials-zucchini-l10n
+----------------------
+Partials-zucchini-l10n is the localized counterpart of partials-zucchini. It produces the same
+partial updates for every shipped locale.
 
 partials-signing
 ----------------
