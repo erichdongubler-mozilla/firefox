@@ -378,7 +378,10 @@ class ContentSharingUtilsClass {
     let window = Services.wm.getMostRecentBrowserWindow();
 
     // Note: we deliberately do not await the open.
-    window.gDialogBox.open(CONTENT_SHARING_MODAL_URL, shareResult);
+    window.gDialogBox.open(CONTENT_SHARING_MODAL_URL, [
+      shareResult,
+      window.innerWidth,
+    ]);
     if (shareResult.errors.length && !shareResult.isSignedIn) {
       console.error(
         `ContentSharingUtils: failed to share ${context}`,
