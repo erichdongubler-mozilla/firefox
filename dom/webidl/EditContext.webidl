@@ -17,7 +17,6 @@ interface EditContext : EventTarget {
     [Throws, UseCounter]
     constructor(optional EditContextInit options = {});
 
-    [Throws]
     undefined updateText(unsigned long rangeStart, unsigned long rangeEnd,
         DOMString text);
     undefined updateSelection(unsigned long start, unsigned long end);
