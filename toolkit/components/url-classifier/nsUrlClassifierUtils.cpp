@@ -539,7 +539,7 @@ nsUrlClassifierUtils::MakeUpdateRequestV4(
 
   // Then serialize.
   std::string s;
-  r.SerializeToString(&s);
+  (void)r.SerializeToString(&s);
 
   nsCString out;
   nsresult rv = Base64URLEncode(s.size(), (const uint8_t*)s.c_str(),
@@ -666,7 +666,7 @@ nsUrlClassifierUtils::MakeFindFullHashRequestV4(
 
   // Then serialize.
   std::string s;
-  r.SerializeToString(&s);
+  (void)r.SerializeToString(&s);
 
   nsCString out;
   rv = Base64URLEncode(s.size(), (const uint8_t*)s.c_str(),
@@ -909,7 +909,7 @@ nsUrlClassifierUtils::MakeThreatHitReport(nsIChannel* aChannel,
   hit.set_allocated_client_info(CreateClientInfo());
 
   std::string s;
-  hit.SerializeToString(&s);
+  (void)hit.SerializeToString(&s);
 
   nsCString out;
   rv = Base64URLEncode(s.size(), reinterpret_cast<const uint8_t*>(s.c_str()),
