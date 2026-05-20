@@ -32,6 +32,7 @@ import {
 } from "../../lib/asrouter-message-utils.mjs";
 import {
   WIDGET_REGISTRY,
+  isWidgetEnabled,
   resolveWidgetHasSidebar,
   resolveWidgetSize,
 } from "common/WidgetsRegistry.mjs";
@@ -799,6 +800,9 @@ export class BaseContent extends React.PureComponent {
     const topSitesEnabled = prefs["feeds.topsites"];
     const pocketEnabled =
       prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
+    // @nova-cleanup(remove): pre-Nova; `filteredSections` is the legacy
+    // Sections redux slice that no longer drives Nova layout. Nova uses
+    // `noContentSectionsEnabled` (declared in the Nova branch below).
     const noSectionsEnabled =
       !topSitesEnabled &&
       !pocketEnabled &&
@@ -971,9 +975,11 @@ export class BaseContent extends React.PureComponent {
     //  mobileDownloadPromo*, etc.) will become dead code and should
     // be deleted — expect lint errors for unused vars.
     if (novaEnabled) {
-      // Logo renders in .content (above search/topsites) when no Pocket content
-      // feed and no content-area widgets are present. When either is enabled,
-      // the sidebar provides a better visual anchor.
+      // Logo placement: when there's no Pocket feed and no content-area
+      // widget, the Logo renders centered in .content; otherwise it
+      // anchors the inline-start sidebar. If the page has nothing on it
+      // (no content sections, no search, no widgets), the Logo is
+      // suppressed entirely via `isPageEmpty`.
       const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
       const weatherGoesToSidebar =
         resolveWidgetHasSidebar(weatherWidget, prefs) &&
@@ -986,6 +992,15 @@ export class BaseContent extends React.PureComponent {
           enabledWidgets.weatherEnabled &&
           !weatherGoesToSidebar) ||
         (mayHaveSportsWidget && enabledWidgets.sportsWidgetEnabled);
+      const widgetsEnabled = prefs["widgets.enabled"];
+      const hasAnyEnabledWidget = WIDGET_REGISTRY.some(w =>
+        isWidgetEnabled(w, prefs, widgetsEnabled)
+      );
+      const highlightsEnabled = prefs["feeds.section.highlights"];
+      const noContentSectionsEnabled =
+        !topSitesEnabled && !pocketEnabled && !highlightsEnabled;
+      const isPageEmpty =
+        noContentSectionsEnabled && !prefs.showSearch && !hasAnyEnabledWidget;
       const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets;
 
       return (
@@ -995,7 +1010,7 @@ export class BaseContent extends React.PureComponent {
               className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`}
             >
               <aside className="sidebar-inline-start">
-                {!logoShouldBeCentered && (
+                {!logoShouldBeCentered && !isPageEmpty && (
                   <ErrorBoundary>
                     <Logo />
                   </ErrorBoundary>
@@ -1012,7 +1027,7 @@ export class BaseContent extends React.PureComponent {
                 )}
               </aside>
               <main className="content">
-                {logoShouldBeCentered && (
+                {logoShouldBeCentered && !isPageEmpty && (
                   <ErrorBoundary>
                     <Logo />
                   </ErrorBoundary>

@@ -23105,6 +23105,9 @@ class BaseContent extends (external_React_default()).PureComponent {
     let filteredSections = props.Sections.filter(section => section.id !== "topstories");
     const topSitesEnabled = prefs["feeds.topsites"];
     const pocketEnabled = prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
+    // @nova-cleanup(remove): pre-Nova; `filteredSections` is the legacy
+    // Sections redux slice that no longer drives Nova layout. Nova uses
+    // `noContentSectionsEnabled` (declared in the Nova branch below).
     const noSectionsEnabled = !topSitesEnabled && !pocketEnabled && filteredSections.filter(section => section.enabled).length === 0;
     const enabledSections = {
       topSitesEnabled,
@@ -23192,12 +23195,19 @@ class BaseContent extends (external_React_default()).PureComponent {
     //  mobileDownloadPromo*, etc.) will become dead code and should
     // be deleted — expect lint errors for unused vars.
     if (novaEnabled) {
-      // Logo renders in .content (above search/topsites) when no Pocket content
-      // feed and no content-area widgets are present. When either is enabled,
-      // the sidebar provides a better visual anchor.
+      // Logo placement: when there's no Pocket feed and no content-area
+      // widget, the Logo renders centered in .content; otherwise it
+      // anchors the inline-start sidebar. If the page has nothing on it
+      // (no content sections, no search, no widgets), the Logo is
+      // suppressed entirely via `isPageEmpty`.
       const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
       const weatherGoesToSidebar = resolveWidgetHasSidebar(weatherWidget, prefs) && resolveWidgetSize(weatherWidget, prefs) === "small";
       const hasContentWidgets = mayHaveListsWidget && enabledWidgets.listsEnabled || mayHaveTimerWidget && enabledWidgets.timerEnabled || mayHaveClocksWidget && enabledWidgets.clocksEnabled || mayHaveWeatherWidget && enabledWidgets.weatherEnabled && !weatherGoesToSidebar || mayHaveSportsWidget && enabledWidgets.sportsWidgetEnabled;
+      const widgetsEnabled = prefs["widgets.enabled"];
+      const hasAnyEnabledWidget = WIDGET_REGISTRY.some(w => isWidgetEnabled(w, prefs, widgetsEnabled));
+      const highlightsEnabled = prefs["feeds.section.highlights"];
+      const noContentSectionsEnabled = !topSitesEnabled && !pocketEnabled && !highlightsEnabled;
+      const isPageEmpty = noContentSectionsEnabled && !prefs.showSearch && !hasAnyEnabledWidget;
       const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets;
       return /*#__PURE__*/external_React_default().createElement(BaseContext.Provider, {
         value: baseContextValue
@@ -23207,13 +23217,13 @@ class BaseContent extends (external_React_default()).PureComponent {
         className: `container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`
       }, /*#__PURE__*/external_React_default().createElement("aside", {
         className: "sidebar-inline-start"
-      }, !logoShouldBeCentered && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null))), /*#__PURE__*/external_React_default().createElement("aside", {
+      }, !logoShouldBeCentered && !isPageEmpty && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null))), /*#__PURE__*/external_React_default().createElement("aside", {
         className: "sidebar-inline-end"
       }, novaEnabled && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(WidgetsSidebar, {
         dispatch: props.dispatch
       }))), /*#__PURE__*/external_React_default().createElement("main", {
         className: "content"
-      }, logoShouldBeCentered && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null)), prefs.showSearch && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Search_Search, Base_extends({
+      }, logoShouldBeCentered && !isPageEmpty && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Logo, null)), prefs.showSearch && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(Search_Search, Base_extends({
         showLogo: false
       }, props.Search))), shouldShowASRouterNewTabMessage(this.props.Messages, "ASRouterNewTabMessage", ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES) && /*#__PURE__*/external_React_default().createElement(ErrorBoundary, null, /*#__PURE__*/external_React_default().createElement(MessageWrapper, {
         dispatch: this.props.dispatch

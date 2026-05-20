@@ -117,6 +117,139 @@ describe("<Base> Nova startup layout stability", () => {
   });
 });
 
+describe("<Base> Nova hides Logo when no sections are enabled", () => {
+  function renderNova(overrides = {}) {
+    const store = createStore(combineReducers(reducers), {
+      ...INITIAL_STATE,
+      App: { ...INITIAL_STATE.App, initialized: true },
+      Prefs: {
+        ...INITIAL_STATE.Prefs,
+        values: {
+          ...INITIAL_STATE.Prefs.values,
+          "nova.enabled": true,
+          showSearch: false,
+          "feeds.topsites": false,
+          "feeds.section.topstories": false,
+          "feeds.system.topstories": false,
+          "feeds.section.highlights": false,
+          "widgets.enabled": false,
+          "widgets.system.enabled": false,
+          "widgets.system.weather.enabled": false,
+          "widgets.weather.enabled": false,
+          "widgets.system.lists.enabled": false,
+          "widgets.lists.enabled": false,
+          "widgets.system.focusTimer.enabled": false,
+          "widgets.focusTimer.enabled": false,
+          "widgets.system.clocks.enabled": false,
+          "widgets.clocks.enabled": false,
+          "widgets.system.sportsWidget.enabled": false,
+          "widgets.sportsWidget.enabled": false,
+          ...overrides,
+        },
+      },
+    });
+    return render(
+      <Provider store={store}>
+        <ConnectedBase />
+      </Provider>
+    );
+  }
+
+  it("does not render the Logo when every section is disabled", () => {
+    const { container } = renderNova();
+    expect(
+      container.querySelector(".logo-and-wordmark-wrapper")
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders the Logo when only search is enabled", () => {
+    const { container } = renderNova({ showSearch: true });
+    expect(
+      container.querySelector(".logo-and-wordmark-wrapper")
+    ).toBeInTheDocument();
+  });
+
+  it("renders the Logo when only topsites is enabled", () => {
+    const { container } = renderNova({ "feeds.topsites": true });
+    expect(
+      container.querySelector(".logo-and-wordmark-wrapper")
+    ).toBeInTheDocument();
+  });
+
+  it("renders the Logo when only Highlights (Recent Activity) is enabled", () => {
+    const { container } = renderNova({ "feeds.section.highlights": true });
+    expect(
+      container.querySelector(".logo-and-wordmark-wrapper")
+    ).toBeInTheDocument();
+  });
+
+  it("renders the Logo when only Pocket is enabled", () => {
+    const { container } = renderNova({
+      "feeds.section.topstories": true,
+      "feeds.system.topstories": true,
+    });
+    expect(
+      container.querySelector(".logo-and-wordmark-wrapper")
+    ).toBeInTheDocument();
+  });
+
+  it("renders the Logo when a content widget (lists) is enabled", () => {
+    const { container } = renderNova({
+      "widgets.enabled": true,
+      "widgets.system.enabled": true,
+      "widgets.system.lists.enabled": true,
+      "widgets.lists.enabled": true,
+    });
+    expect(
+      container.querySelector(".logo-and-wordmark-wrapper")
+    ).toBeInTheDocument();
+  });
+
+  it("renders the Logo when a widget is enabled via trainhopConfig (system pref off)", () => {
+    const { container } = renderNova({
+      "widgets.enabled": true,
+      "widgets.system.enabled": true,
+      "widgets.system.lists.enabled": false,
+      "widgets.lists.enabled": true,
+      trainhopConfig: { widgets: { listsEnabled: true } },
+    });
+    expect(
+      container.querySelector(".logo-and-wordmark-wrapper")
+    ).toBeInTheDocument();
+  });
+
+  it("hides the Logo when per-widget prefs are on but widgets.enabled is off", () => {
+    const { container } = renderNova({
+      "widgets.enabled": false,
+      "widgets.system.enabled": true,
+      "widgets.system.lists.enabled": true,
+      "widgets.lists.enabled": true,
+      "widgets.system.clocks.enabled": true,
+      "widgets.clocks.enabled": true,
+      "widgets.system.focusTimer.enabled": true,
+      "widgets.focusTimer.enabled": true,
+      "widgets.system.sportsWidget.enabled": true,
+      "widgets.sportsWidget.enabled": true,
+    });
+    expect(
+      container.querySelector(".logo-and-wordmark-wrapper")
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders the Logo when only the sidebar weather widget is enabled", () => {
+    const { container } = renderNova({
+      "widgets.enabled": true,
+      "widgets.system.enabled": true,
+      "widgets.system.weather.enabled": true,
+      "widgets.weather.enabled": true,
+      "widgets.weather.size": "small",
+    });
+    expect(
+      container.querySelector(".logo-and-wordmark-wrapper")
+    ).toBeInTheDocument();
+  });
+});
+
 describe("<BaseContent> weather opt-in dialog trigger", () => {
   function makeInstance(currentPrefs, dispatch = jest.fn()) {
     const inst = Object.create(BaseContent.prototype);
