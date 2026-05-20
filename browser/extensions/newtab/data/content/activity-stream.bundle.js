@@ -15541,7 +15541,10 @@ function Weather_Weather({
     })));
   }
   function getArticleClassNames() {
-    return ["weather-widget", "col-4", `${size}-widget`, hasError && "weather-error-state",
+    return ["weather-widget", "col-4", `${size}-widget`,
+    // weather-error-state is suppressed during opt-in so the error UI does
+    // not overlap or push the opt-in layout out of its container.
+    hasError && !showOptInState && "weather-error-state",
     // weather-opt-in is suppressed while search is active so the opt-in
     // layout styles don't conflict with the search UI layout.
     showOptInState && !searchActive && "weather-opt-in",
@@ -15562,7 +15565,7 @@ function Weather_Weather({
     className: "widget-title-bar"
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "widget-title"
-  }, !showOptInState && !searchActive && /*#__PURE__*/external_React_default().createElement("h3", null, weatherData.locationData.city)), !searchActive && renderContextMenu()), hasError && /*#__PURE__*/external_React_default().createElement("div", {
+  }, !showOptInState && !searchActive && /*#__PURE__*/external_React_default().createElement("h3", null, weatherData.locationData.city)), !searchActive && renderContextMenu()), hasError && !showOptInState && /*#__PURE__*/external_React_default().createElement("div", {
     className: "weather-error",
     ref: errorRef
   }, /*#__PURE__*/external_React_default().createElement("span", {

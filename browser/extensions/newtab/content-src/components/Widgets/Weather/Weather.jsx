@@ -429,7 +429,9 @@ function Weather({ dispatch, size }) {
       "weather-widget",
       "col-4",
       `${size}-widget`,
-      hasError && "weather-error-state",
+      // weather-error-state is suppressed during opt-in so the error UI does
+      // not overlap or push the opt-in layout out of its container.
+      hasError && !showOptInState && "weather-error-state",
       // weather-opt-in is suppressed while search is active so the opt-in
       // layout styles don't conflict with the search UI layout.
       showOptInState && !searchActive && "weather-opt-in",
@@ -467,7 +469,7 @@ function Weather({ dispatch, size }) {
         </div>
         {!searchActive && renderContextMenu()}
       </div>
-      {hasError && (
+      {hasError && !showOptInState && (
         <div className="weather-error" ref={errorRef}>
           <span className="icon icon-info-warning" />{" "}
           <p data-l10n-id="newtab-weather-error-not-available"></p>

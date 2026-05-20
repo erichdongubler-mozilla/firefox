@@ -831,6 +831,21 @@ describe("<Weather> (Widgets/Weather)", () => {
         container.querySelector(".weather-anchor")
       ).not.toBeInTheDocument();
     });
+
+    it("suppresses weather-error when opt-in is showing", () => {
+      const state = {
+        ...optInMockState,
+        Weather: { ...optInMockState.Weather, suggestions: [{}] },
+      };
+      const { container } = renderWeather("small", state);
+      expect(container.querySelector(".weather-error")).not.toBeInTheDocument();
+      expect(
+        container.querySelector(".weather-widget.weather-error-state")
+      ).not.toBeInTheDocument();
+      expect(
+        container.querySelector(".weather-opt-in-container")
+      ).toBeInTheDocument();
+    });
   });
 
   describe("provider link / anchor", () => {
