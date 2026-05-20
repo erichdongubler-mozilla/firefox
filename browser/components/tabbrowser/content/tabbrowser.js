@@ -686,18 +686,13 @@
         }
 
         if (uriToLoad && typeof uriToLoad == "string") {
-          let oa = E10SUtils.predictOriginAttributes({
-            window,
-            userContextId,
-          });
-          remoteType = E10SUtils.getRemoteTypeForURI(
-            uriToLoad,
-            gMultiProcessBrowser,
-            gFissionBrowser,
-            triggeringRemoteType ?? E10SUtils.DEFAULT_REMOTE_TYPE,
-            null,
-            oa
-          );
+          let opts = { window, userContextId };
+          if (triggeringRemoteType) {
+            // NOTE: We intentionally don't allow setting preferredRemoteType to
+            // NOT_REMOTE (null), as we don't want to choose the parent process.
+            opts.preferredRemoteType = triggeringRemoteType;
+          }
+          remoteType = ChromeUtils.predictRemoteTypeForURI(uriToLoad, opts);
         } else {
           // If we reach here, we don't have the url to load. This means that
           // `uriToLoad` is most likely a promise which is waiting on SessionStore
@@ -2708,16 +2703,11 @@
 
       let oldRemoteType = aBrowser.remoteType;
 
-      let oa = E10SUtils.predictOriginAttributes({ browser: aBrowser });
-
-      aOptions.remoteType = E10SUtils.getRemoteTypeForURI(
-        aURL,
-        gMultiProcessBrowser,
-        gFissionBrowser,
-        oldRemoteType,
-        aBrowser.currentURI,
-        oa
-      );
+      aOptions.remoteType = ChromeUtils.predictRemoteTypeForURI(aURL, {
+        window,
+        userContextId: aBrowser.getAttribute("usercontextid") ?? 0,
+        preferredRemoteType: oldRemoteType,
+      });
 
       // If this URL can't load in the current browser then flip it to the
       // correct type.
@@ -2906,25 +2896,10 @@
             getter = () => {
               let url =
                 SessionStore.getLazyTabValue(aTab, "url") || "about:blank";
-              // Avoid recreating the same nsIURI object over and over again...
-              let uri;
-              if (browser._cachedCurrentURI) {
-                uri = browser._cachedCurrentURI;
-              } else {
-                uri = browser._cachedCurrentURI = Services.io.newURI(url);
-              }
-              let oa = E10SUtils.predictOriginAttributes({
-                browser,
+              return ChromeUtils.predictRemoteTypeForURI(url, {
+                window,
                 userContextId: aTab.getAttribute("usercontextid"),
               });
-              return E10SUtils.getRemoteTypeForURI(
-                url,
-                gMultiProcessBrowser,
-                gFissionBrowser,
-                undefined,
-                uri,
-                oa
-              );
             };
             break;
           case "userTypedValue":
@@ -4270,8 +4245,6 @@
 
       let { userContextId } = tab;
 
-      var oa = E10SUtils.predictOriginAttributes({ window, userContextId });
-
       // If URI is about:blank and we don't have a preferred remote type,
       // then we need to use the referrer, if we have one, to get the
       // correct remote type for the new tab.
@@ -4281,26 +4254,19 @@
         referrerInfo &&
         referrerInfo.originalReferrer
       ) {
-        preferredRemoteType = E10SUtils.getRemoteTypeForURI(
-          referrerInfo.originalReferrer.spec,
-          gMultiProcessBrowser,
-          gFissionBrowser,
-          E10SUtils.DEFAULT_REMOTE_TYPE,
-          null,
-          oa
+        preferredRemoteType = ChromeUtils.predictRemoteTypeForURI(
+          referrerInfo.originalReferrer,
+          { window, userContextId }
         );
       }
 
       let remoteType = forceNotRemote
         ? E10SUtils.NOT_REMOTE
-        : E10SUtils.getRemoteTypeForURI(
-            uriString,
-            gMultiProcessBrowser,
-            gFissionBrowser,
+        : ChromeUtils.predictRemoteTypeForURI(uriString, {
+            window,
+            userContextId,
             preferredRemoteType,
-            null,
-            oa
-          );
+          });
 
       let b,
         usingPreloadedContent = false;
@@ -4549,14 +4515,10 @@
             url = tabData.entries[activeIndex].url;
           }
 
-          let preferredRemoteType = E10SUtils.getRemoteTypeForURI(
-            url,
-            gMultiProcessBrowser,
-            gFissionBrowser,
-            E10SUtils.DEFAULT_REMOTE_TYPE,
-            null,
-            E10SUtils.predictOriginAttributes({ window, userContextId })
-          );
+          let preferredRemoteType = ChromeUtils.predictRemoteTypeForURI(url, {
+            window,
+            userContextId,
+          });
 
           // If we're creating a lazy browser, let tabbrowser know the future
           // URI because progress listeners won't get onLocationChange
