@@ -186,7 +186,6 @@ describe("ASRouter", () => {
         platformName: "macosx",
         scores: {},
         scoreThreshold: 5000,
-        isChinaRepack: false,
         userId: "adsf",
         currentProfileId: "1",
         canCreateSelectableProfiles: false,

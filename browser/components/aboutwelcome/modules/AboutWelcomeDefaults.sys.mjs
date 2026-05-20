@@ -1444,14 +1444,6 @@ function prepareMobileDownload(content) {
       string_id: "mr2022-onboarding-no-mobile-download-cta-text",
     };
   }
-  // Update CN specific QRCode url
-  if (lazy.BrowserUtils.isChinaRepack()) {
-    mobileContent.hero_image.url = `${mobileContent.hero_image.url.slice(
-      0,
-      mobileContent.hero_image.url.indexOf(".svg")
-    )}-cn.svg`;
-  }
-
   return content;
 }
 

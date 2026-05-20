@@ -55,7 +55,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AttributionCode:
     "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
   BackupService: "resource:///modules/backup/BackupService.sys.mjs",
-  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   ClientEnvironment: "resource://normandy/lib/ClientEnvironment.sys.mjs",
   CustomizableUI:
@@ -982,9 +981,6 @@ const TargetingGetters = {
   },
   get platformName() {
     return AppConstants.platform;
-  },
-  get isChinaRepack() {
-    return lazy.BrowserUtils.isChinaRepack();
   },
   get userId() {
     return lazy.ClientEnvironment.userId;
