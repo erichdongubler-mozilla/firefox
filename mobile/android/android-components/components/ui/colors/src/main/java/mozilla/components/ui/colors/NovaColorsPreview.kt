@@ -60,6 +60,7 @@ private val novaColorGroups = listOf(
     ColorGroup(
         listOf(
             ColorSwatch("Violet Desaturated 0", NovaColors.VioletDesaturated0),
+            ColorSwatch("Violet Desaturated 0A70", NovaColors.VioletDesaturated0A70),
             ColorSwatch("Violet Desaturated 10", NovaColors.VioletDesaturated10),
             ColorSwatch("Violet Desaturated 20", NovaColors.VioletDesaturated20),
             ColorSwatch("Violet Desaturated 30", NovaColors.VioletDesaturated30),
@@ -69,12 +70,15 @@ private val novaColorGroups = listOf(
             ColorSwatch("Violet Desaturated 70", NovaColors.VioletDesaturated70),
             ColorSwatch("Violet Desaturated 80", NovaColors.VioletDesaturated80),
             ColorSwatch("Violet Desaturated 90", NovaColors.VioletDesaturated90),
+            ColorSwatch("Violet Desaturated 90A50", NovaColors.VioletDesaturated90A50),
+            ColorSwatch("Violet Desaturated 90A70", NovaColors.VioletDesaturated90A70),
         ),
     ),
     ColorGroup(
         listOf(
             ColorSwatch("Violet 0", NovaColors.Violet0),
             ColorSwatch("Violet 10", NovaColors.Violet10),
+            ColorSwatch("Violet 10A50", NovaColors.Violet10A50),
             ColorSwatch("Violet 20", NovaColors.Violet20),
             ColorSwatch("Violet 30", NovaColors.Violet30),
             ColorSwatch("Violet 40", NovaColors.Violet40),
@@ -131,12 +135,14 @@ private val novaColorGroups = listOf(
         listOf(
             ColorSwatch("Orange 0", NovaColors.Orange0),
             ColorSwatch("Orange 10", NovaColors.Orange10),
+            ColorSwatch("Orange 10A50", NovaColors.Orange10A50),
             ColorSwatch("Orange 20", NovaColors.Orange20),
             ColorSwatch("Orange 30", NovaColors.Orange30),
             ColorSwatch("Orange 40", NovaColors.Orange40),
             ColorSwatch("Orange 50", NovaColors.Orange50),
             ColorSwatch("Orange 60", NovaColors.Orange60),
             ColorSwatch("Orange 70", NovaColors.Orange70),
+            ColorSwatch("Orange 70A50", NovaColors.Orange70A50),
             ColorSwatch("Orange 80", NovaColors.Orange80),
             ColorSwatch("Orange 90", NovaColors.Orange90),
         ),
@@ -201,6 +207,7 @@ private val novaColorGroups = listOf(
         listOf(
             ColorSwatch("White", NovaColors.White),
             ColorSwatch("Black", NovaColors.Black),
+            ColorSwatch("BlackA32", NovaColors.BlackA32),
         ),
     ),
 )
