@@ -45,7 +45,6 @@
 using namespace mozilla;
 using namespace mozilla::gfx;
 
-#define DRAW_IN_FRAME_DEBUG 0
 #define SCROLLBARS_VISUAL_DEBUG 0
 
 // private Quartz routines needed here
@@ -499,11 +498,6 @@ static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext,
   }
 
   [NSGraphicsContext restoreGraphicsState];
-
-#if DRAW_IN_FRAME_DEBUG
-  CGContextSetRGBFillColor(cgContext, 0.0, 0.0, 0.5, 0.25);
-  CGContextFillRect(cgContext, destRect);
-#endif
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -1081,11 +1075,6 @@ void nsNativeThemeCocoa::DrawHIThemeButton(
 
   RenderTransformedHIThemeControl(cgContext, aRect, RenderButton, &bdi,
                                   aParams.rtl);
-
-#if DRAW_IN_FRAME_DEBUG
-  CGContextSetRGBFillColor(cgContext, 0.0, 0.0, 0.5, 0.25);
-  CGContextFillRect(cgContext, inBoxRect);
-#endif
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
