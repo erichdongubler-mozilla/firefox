@@ -5125,26 +5125,6 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
                                                  mCachedResponseHead.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Purge stale cache entries that have dcb/dcz Content-Encoding in their
-  // metadata. These were written by early compression dictionary code that
-  // failed to clear Content-Encoding before writing cache metadata.  The data
-  // body is decompressed but the header is wrong; serving such entries would
-  // cause crashes in content processes.  Doom and re-fetch from network.
-  {
-    nsAutoCString cachedEncoding;
-    (void)mCachedResponseHead->GetHeader(nsHttp::Content_Encoding,
-                                         cachedEncoding);
-    if (cachedEncoding.LowerCaseFindASCII("dcb") != -1 ||
-        cachedEncoding.LowerCaseFindASCII("dcz") != -1) {
-      LOG(("Dooming stale cache entry with dcb/dcz Content-Encoding [%s]\n",
-           mSpec.get()));
-      glean::http::stale_dcb_dcz_cache_entries_purged.Add(1);
-      entry->AsyncDoom(nullptr);
-      *aResult = ENTRY_NOT_WANTED;
-      return NS_OK;
-    }
-  }
-
   bool isCachedRedirect = WillRedirect(*mCachedResponseHead);
 
   // Do not return 304 responses from the cache, and also do not return
