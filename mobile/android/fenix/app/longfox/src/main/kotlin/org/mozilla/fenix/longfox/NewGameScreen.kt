@@ -103,19 +103,23 @@ fun NewGameScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 30.sp,
+                fontFamily = LongFoxText.zx,
+                letterSpacing = 4.sp,
                 color = Color(0xffff5500),
                 text = stringResource(R.string.longfox)
             )
             Text(
-                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp),
+                fontSize = 12.sp,
+                fontFamily = LongFoxText.zx,
                 color = Color.Yellow,
                 text = stringResource(R.string.likes_cookies)
             )
             Text(
-                modifier = Modifier.padding(top = 8.dp),
-                fontSize = 16.sp,
+                modifier = Modifier.padding(top = 10.dp),
+                fontSize = 14.sp,
+                fontFamily = LongFoxText.zx,
                 fontStyle = FontStyle.Italic,
                 color = Color.Green,
                 text = stringResource(R.string.tap_to_play)
@@ -129,6 +133,7 @@ fun NewGameScreen(
             ) {
                 Text(
                     fontSize = 22.sp,
+                    fontFamily = LongFoxText.zx,
                     color = Color.Cyan,
                     text = stringResource(R.string.hiscore, hiscore)
                 )
@@ -141,9 +146,10 @@ fun NewGameScreen(
             }
             Text(
                 modifier = Modifier
-                    .border(width = 2.dp, Color.DarkGray)
+                    .border(width = 2.dp, color = if (soundOn) Color.White else Color.Gray)
                     .padding(8.dp)
                     .clickable { coroutineScope.launch { longFoxDataStore.toggleSoundOn() } },
+                fontFamily = LongFoxText.zx,
                 fontSize = 16.sp,
                 color = if (soundOn) Color.White else Color.Gray,
                 text = if (soundOn) stringResource(R.string.sound_on) else stringResource(R.string.sound_off)
