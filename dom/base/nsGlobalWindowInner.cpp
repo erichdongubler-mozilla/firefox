@@ -6242,7 +6242,7 @@ nsresult nsGlobalWindowInner::FireDelayedDOMEvents(bool aIncludeSubWindows) {
       }
     }
 
-    for (nsCOMPtr<nsIDocShellTreeItem> childShell : children) {
+    for (const nsCOMPtr<nsIDocShellTreeItem>& childShell : children) {
       if (nsCOMPtr<nsPIDOMWindowOuter> pWin = childShell->GetWindow()) {
         auto* win = nsGlobalWindowOuter::Cast(pWin);
         win->FireDelayedDOMEvents(true);

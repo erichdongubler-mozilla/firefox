@@ -140,7 +140,7 @@ bool GMPInfoFileParser::Init(nsIFile* aInfoFile) {
   // by \n (Unix), \r\n (Windows) and \r (old MacOSX).
   SplitAt("\r\n", info, lines);
 
-  for (nsCString line : lines) {
+  for (const nsCString& line : lines) {
     // Field name is the string up to but not including the first ':'
     // character on the line.
     int32_t colon = line.FindChar(':');

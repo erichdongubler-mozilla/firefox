@@ -1709,7 +1709,7 @@ void GLContext::InitExtensions() {
     const char* rawExts =
         reinterpret_cast<const char*>(fGetString(LOCAL_GL_EXTENSIONS));
     if (rawExts) {
-      for (auto extension : nsDependentCString(rawExts).Split(' ')) {
+      for (const auto& extension : nsDependentCString(rawExts).Split(' ')) {
         if (!extension.IsEmpty()) {
           mExtensionStrings.AppendElement(extension);
         }

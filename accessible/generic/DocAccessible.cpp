@@ -1721,7 +1721,7 @@ void DocAccessible::ProcessQueuedCacheUpdates(uint64_t aInitialDomains) {
   // DO NOT ADD CODE ABOVE THIS BLOCK: THIS CODE IS MEASURING TIMINGS.
 
   nsTArray<CacheData> data;
-  for (auto [acc, domain] : mQueuedCacheUpdatesArray) {
+  for (const auto& [acc, domain] : mQueuedCacheUpdatesArray) {
     if (acc && acc->IsInDocument() && !acc->IsDefunct()) {
       RefPtr<AccAttributes> fields = acc->BundleFieldsForCache(
           domain, CacheUpdateType::Update, aInitialDomains);

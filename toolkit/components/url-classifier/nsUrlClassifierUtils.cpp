@@ -1094,7 +1094,7 @@ nsresult nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict) {
     nsTArray<nsCString> tables;
     Classifier::SplitTables(owningLists, tables);
     nsAutoCString providerToUse(provider);
-    for (auto tableName : tables) {
+    for (const auto& tableName : tables) {
       // If the Safe Browsing V5 is disabled, we will use V4 instead. This means
       // that we will put the V5 lists to the V4 provider to instruct using
       // Safe Browsing V4 for those tables.
