@@ -621,15 +621,17 @@ class DisplayListBuilder final {
   wr::WrClipId DefineRectClip(Maybe<wr::WrSpatialId> aSpace,
                               wr::LayoutRect aClipRect);
 
-  wr::WrSpatialId DefineStickyFrame(
-      const ActiveScrolledRoot* aStickyAsr,
-      Maybe<wr::WrSpatialId> aParentSpatialId,
-      const wr::LayoutRect& aContentRect, const float* aTopMargin,
-      const float* aRightMargin, const float* aBottomMargin,
-      const float* aLeftMargin, const StickyOffsetBounds& aVerticalBounds,
-      const StickyOffsetBounds& aHorizontalBounds,
-      const wr::LayoutVector2D& aAppliedOffset,
-      const WrAnimationProperty* aAnimation);
+  wr::WrSpatialId DefineStickyFrame(const ActiveScrolledRoot* aStickyAsr,
+                                    Maybe<wr::WrSpatialId> aParentSpatialId,
+                                    const wr::LayoutRect& aContentRect,
+                                    const float* aTopMargin,
+                                    const float* aRightMargin,
+                                    const float* aBottomMargin,
+                                    const float* aLeftMargin,
+                                    const StickyOffsetBounds& aVerticalBounds,
+                                    const StickyOffsetBounds& aHorizontalBounds,
+                                    const wr::LayoutVector2D& aAppliedOffset,
+                                    const WrAnimationProperty* aAnimation);
 
   Maybe<wr::WrSpatialId> GetScrollIdForDefinedScrollLayer(
       layers::ScrollableLayerGuid::ViewID aViewId) const;
