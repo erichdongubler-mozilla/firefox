@@ -159,6 +159,13 @@ class TabGroupsList extends MozLitElement {
       return this.#emptyState();
     }
     return html`
+      <button
+        id="tab-groups-list-create-group"
+        class="subviewbutton"
+        data-l10n-id="tab-groups-list-create-group-button"
+        @click=${this.#handleCreateTabGroup}
+      ></button>
+      <hr />
       ${repeat(
         this._openGroups,
         group => group.id,
