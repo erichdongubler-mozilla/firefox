@@ -688,7 +688,7 @@ index 9da8b4ef4c..9a89320eb2 100644
      output_extension = "so"
    }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index d95cee02f0..50260df37f 100644
+index a4ba1541de..d6e6bba112 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
 @@ -9,12 +9,12 @@
