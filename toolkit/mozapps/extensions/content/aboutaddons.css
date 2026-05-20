@@ -324,7 +324,9 @@ addon-card[expanded] .update-postponed-bar,
 .addon-badge-recommended {
   background-image: url("chrome://global/skin/icons/trophy.svg");
   background-size: 14px;
-  fill: var(--orange-50);
+  /* This color will be removed once the icons are updated for Nova. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-base-design-tokens */
+  fill: #ff9400;
 }
 
 .addon-badge-line {
@@ -333,8 +335,9 @@ addon-card[expanded] .update-postponed-bar,
 }
 
 .addon-badge-verified {
-  background-color: var(--green-70);
+  background-color: var(--icon-color-success);
   background-image: url("chrome://global/skin/icons/check.svg");
+  fill: var(--background-color-canvas);
 }
 
 .theme-enable-button {
