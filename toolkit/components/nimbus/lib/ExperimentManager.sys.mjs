@@ -186,15 +186,6 @@ export const UnenrollmentCause = {
 };
 
 /**
- * An entry in the list of opt-in recipes, which includes the recipe and its
- * source.
- *
- * @typedef {object} OptInEntry
- * @property {object} recipe
- * @property {string} source
- */
-
-/**
  * A module for processes Experiment recipes, choosing and storing enrollment state,
  * and sending experiment-related Telemetry.
  */
@@ -205,9 +196,7 @@ export class ExperimentManager {
   constructor({ id = "experimentmanager", store } = {}) {
     this.id = id;
     this.store = store || new lazy.ExperimentStore();
-
-    /** @type {OptInEntry[]} */
-    this.optIns = [];
+    this.optInRecipes = [];
     // By default, no extra context.
     this.extraContext = {};
 
@@ -423,7 +412,7 @@ export class ExperimentManager {
       result.status !== lazy.MatchStatus.DISABLED
     ) {
       // We do not enroll directly into Firefox Labs opt-ins.
-      this.optIns.push({ recipe, source });
+      this.optInRecipes.push(recipe);
       return;
     }
 
@@ -500,11 +489,11 @@ export class ExperimentManager {
   }
 
   /**
-   * Get the list of opt-ins that are available for enrollment.
+   * Get all of the opt-in recipes that match targeting and bucketing.
    *
-   * @returns {OptInEntry[]} The opt-in recipes and their sources.
+   * @returns opt in recipes
    */
-  async getAvailableOptIns() {
+  async getAllOptInRecipes() {
     const enrollmentsCtx = new lazy.EnrollmentsContext(this, null, {
       validationEnabled: false,
     });
@@ -516,18 +505,17 @@ export class ExperimentManager {
     // RemoteSettingsExperimentLoader should have finished updating at least
     // once. Prevent concurrent updates while we filter through the list of
     // available opt-in recipes.
-    const entries = await lazy.ExperimentAPI._rsLoader.withUpdateLock(
+    return lazy.ExperimentAPI._rsLoader.withUpdateLock(
       async () => {
         const filtered = [];
 
-        for (const entry of this.optIns) {
+        for (const recipe of this.optInRecipes) {
           if (
-            (await enrollmentsCtx.checkTargeting(entry.recipe)) &&
-            (await this.isInBucketAllocation(entry.recipe.bucketConfig)) &&
-            (this.store.get(entry.recipe.slug)?.active ||
-              this.canEnroll(entry.recipe).ok)
+            (await enrollmentsCtx.checkTargeting(recipe)) &&
+            (await this.isInBucketAllocation(recipe.bucketConfig)) &&
+            (this.store.get(recipe.slug)?.active || this.canEnroll(recipe).ok)
           ) {
-            filtered.push(entry);
+            filtered.push(recipe);
           }
         }
 
@@ -535,14 +523,24 @@ export class ExperimentManager {
       },
       { mode: "shared" }
     );
+  }
 
-    entries.sort(
-      (a, b) =>
-        new Date(a.recipe.publishedDate ?? 0) -
-        new Date(b.recipe.publishedDate ?? 0)
-    );
+  /**
+   * Get a single opt in recipe given its slug.
+   *
+   * @returns a single opt in recipe or undefined if not found.
+   */
+  async getSingleOptInRecipe(slug) {
+    if (!slug) {
+      throw new Error("Slug required for .getSingleOptInRecipe");
+    }
 
-    return entries;
+    // RemoteSettingsExperimentLoader could be in a middle of updating recipes
+    // so let's wait for the update to finish and this promise to resolve.
+    await lazy.ExperimentAPI._rsLoader.finishedUpdating();
+
+    // We don't need to hold the RSEL lock here because we are not doing any async work.
+    return this.optInRecipes.find(recipe => recipe.slug === slug);
   }
 
   /**
@@ -928,7 +926,7 @@ export class ExperimentManager {
       }
 
       if (recipe?.isFirefoxLabsOptIn) {
-        this.optIns.push({ recipe, source });
+        this.optInRecipes.push(recipe);
       }
     }
 
@@ -1170,7 +1168,7 @@ export class ExperimentManager {
       );
     }
 
-    this.optIns = [];
+    this.optinRecipes = [];
   }
 
   /**
@@ -1871,8 +1869,6 @@ export class ExperimentManager {
   /**
    * Clear the opt-in list.
    *
-   * @param {string} source
-   * Only recipes from this source will be removed.
    * @param {object} options
    * @param {Set<string> | undefined} options.onlyFeatureIds
    * If provided, only recipes that contain at least one of the features in this
@@ -1880,14 +1876,26 @@ export class ExperimentManager {
    *
    * Otherwise, all recipes will be removed.
    */
-  _clearOptIns(source, { onlyFeatureIds = undefined } = {}) {
-    this.optIns = this.optIns.filter(
-      entry =>
-        source !== entry.source ||
-        (typeof onlyFeatureIds !== "undefined" &&
-          entry.recipe.featureIds.every(
-            featureId => !onlyFeatureIds.has(featureId)
-          ))
+  _clearOptInRecipes({ onlyFeatureIds = undefined } = {}) {
+    if (onlyFeatureIds) {
+      this.optInRecipes = this.optInRecipes.filter(recipe =>
+        recipe.featureIds.some(featureId => !onlyFeatureIds.has(featureId))
+      );
+    } else {
+      this.optInRecipes = [];
+    }
+  }
+
+  /**
+   * Sort the opt-in list by recipe published date.
+   *
+   * This must be called at the end of each update cycle to ensure that
+   * presentation of the features in about:preferences#experimental is
+   * consistent.
+   */
+  _sortOptInRecipes() {
+    this.optInRecipes.sort(
+      (a, b) => new Date(a.publishedDate ?? 0) - new Date(b.publishedDate ?? 0)
     );
   }
 

@@ -729,8 +729,8 @@ add_task(async function test_migration_firefoxLabsEnrollments() {
 
     Assert.deepEqual(
       await manager
-        .getAvailableOptIns()
-        .then(optIns => optIns.map(({ recipe }) => recipe.slug).toSorted()),
+        .getAllOptInRecipes()
+        .then(recipes => recipes.map(recipe => recipe.slug).toSorted()),
       Object.values(LABS_MIGRATION_FEATURE_MAP).toSorted(),
       "The labs recipes should be available"
     );
@@ -815,7 +815,7 @@ add_task(async function test_migration_firefoxLabsEnrollments_falseTargeting() {
   });
 
   Assert.deepEqual(
-    await manager.getAvailableOptIns(),
+    await manager.getAllOptInRecipes(),
     [],
     "There should be no opt-in recipes"
   );

@@ -422,7 +422,7 @@ export class RemoteSettingsExperimentLoader {
   ) {
     lazy.log.debug(`Updating recipes with trigger "${trigger ?? ""}"`);
 
-    this.manager._clearOptIns(this.SOURCE, { onlyFeatureIds });
+    this.manager._clearOptInRecipes({ onlyFeatureIds });
 
     // The targeting context metrics do not work in artifact builds.
     // See-also: https://bugzilla.mozilla.org/show_bug.cgi?id=1936317
@@ -511,6 +511,8 @@ export class RemoteSettingsExperimentLoader {
         Services.obs.notifyObservers(null, "nimbus:enrollments-updated");
       }
     } finally {
+      this.manager._sortOptInRecipes();
+
       // Submit targeting context ping after all enrollment status events should be generated
       GleanPings.nimbusTargetingContext.submit();
     }

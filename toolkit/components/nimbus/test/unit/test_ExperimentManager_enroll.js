@@ -1103,7 +1103,61 @@ add_task(async function test_group_enrollment() {
   Services.prefs.clearUserPref("app.normandy.user_id");
 });
 
-add_task(async function test_getAvailableOptIns() {
+add_task(async function test_getSingleOptInRecipe() {
+  const optInRecipes = [
+    NimbusTestUtils.factories.recipe("opt-in-one", {
+      isRollout: true,
+      isFirefoxLabsOptIn: true,
+      firefoxLabsTitle: "bogus-title",
+      firefoxLabsDescription: "bogus-title",
+      firefoxLabsDescriptionLinks: {},
+      firefoxLabsGroup: "bogus-group",
+      requiresRestart: false,
+    }),
+    NimbusTestUtils.factories.recipe("opt-in-two", {
+      isRollout: true,
+      isFirefoxLabsOptIn: true,
+      firefoxLabsTitle: "bogus-title",
+      firefoxLabsDescription: "bogus-title",
+      firefoxLabsDescriptionLinks: {},
+      firefoxLabsGroup: "bogus-group",
+      requiresRestart: false,
+    }),
+  ];
+
+  const { loader, manager, cleanup } = await setupTest({
+    experiments: optInRecipes,
+  });
+  await loader.finishedUpdating();
+
+  Assert.deepEqual(
+    manager.optInRecipes,
+    optInRecipes,
+    "Should have recorded opt-in recipes"
+  );
+
+  Assert.equal(
+    await manager.getSingleOptInRecipe(optInRecipes[0].slug),
+    optInRecipes[0],
+    "should return the correct opt in recipe with the slug opt-in-one"
+  );
+
+  Assert.equal(
+    await manager.getSingleOptInRecipe("non-existent"),
+    undefined,
+    "should return undefined if no opt in recipe exists with the slug non-existent"
+  );
+
+  await Assert.rejects(
+    manager.getSingleOptInRecipe(),
+    /Slug required for .getSingleOptInRecipe/,
+    "Should throw when .getSingleOptInRecipe is called without a slug argument"
+  );
+
+  await cleanup();
+});
+
+add_task(async function test_getAllOptInRecipes() {
   const recipes = [
     NimbusTestUtils.factories.recipe("match-1", {
       isRollout: true,
@@ -1176,8 +1230,8 @@ add_task(async function test_getAvailableOptIns() {
   await loader.finishedUpdating();
 
   const slugs = await manager
-    .getAvailableOptIns()
-    .then(optIns => optIns.map(({ recipe }) => recipe.slug));
+    .getAllOptInRecipes()
+    .then(rs => rs.map(r => r.slug));
 
   Assert.deepEqual(
     slugs.sort(),

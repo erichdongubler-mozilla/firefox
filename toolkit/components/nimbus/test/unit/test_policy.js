@@ -119,7 +119,7 @@ async function doTest({
   );
 
   Assert.deepEqual(
-    ExperimentAPI.manager.optIns.map(({ recipe }) => recipe.slug).sort(),
+    ExperimentAPI.manager.optInRecipes.map(e => e.slug).sort(),
     expectedOptIns,
     "Should have expected available opt-ins"
   );
