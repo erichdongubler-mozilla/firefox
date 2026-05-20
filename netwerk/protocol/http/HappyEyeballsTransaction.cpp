@@ -106,7 +106,13 @@ nsresult HappyEyeballsTransaction::ReadSegments(nsAHttpSegmentReader* aReader,
 nsresult HappyEyeballsTransaction::WriteSegments(nsAHttpSegmentWriter* aWriter,
                                                  uint32_t aCount,
                                                  uint32_t* aCountWritten) {
-  MOZ_ASSERT_UNREACHABLE("Shoud not be called");
+  // OnSocketReadable calls WriteSegments after EnsureNPNComplete returns true,
+  // which can happen after our Finish0RTT already closed the HET (e.g. the
+  // PostProcessNPNSetup path has no early return on Finish0RTT failure).
+  if (mState == State::Closed) {
+    return NS_BASE_STREAM_CLOSED;
+  }
+  MOZ_ASSERT_UNREACHABLE("Should not be called");
   return NullHttpTransaction::WriteSegments(aWriter, aCount, aCountWritten);
 }
 
@@ -236,6 +242,29 @@ nsHttpRequestHead* HappyEyeballsTransaction::RequestHead() {
     }
   }
   return SpeculativeTransaction::RequestHead();
+}
+
+void HappyEyeballsTransaction::MaybeRemoveSSLTokens() {
+  nsAHttpConnection* handle = Connection();
+  if (!handle) {
+    return;
+  }
+  RefPtr<HttpConnectionBase> base = handle->HttpConnection();
+  RefPtr<nsHttpConnection> conn = do_QueryObject(base);
+  if (!conn) {
+    return;
+  }
+  nsCOMPtr<nsITLSSocketControl> tlsCtrl;
+  conn->GetTLSSocketControl(getter_AddRefs(tlsCtrl));
+  nsCOMPtr<nsITransportSecurityInfo> secInfo;
+  if (tlsCtrl) {
+    tlsCtrl->GetSecurityInfo(getter_AddRefs(secInfo));
+  }
+  if (mZeroRttHandle) {
+    if (nsHttpTransaction* realTxn = mZeroRttHandle->RealTxn()) {
+      realTxn->RemoveSSLTokens(secInfo);
+    }
+  }
 }
 
 nsresult HappyEyeballsTransaction::FetchHTTPSRR() {
