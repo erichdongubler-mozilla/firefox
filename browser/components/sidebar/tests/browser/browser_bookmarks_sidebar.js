@@ -53,10 +53,9 @@ async function addFolder(title = "Test Folder", parentGuid) {
 
 add_setup(async function () {
   await PlacesUtils.bookmarks.eraseEverything();
-  await SidebarTestUtils.waitForInitialized(window);
   registerCleanupFunction(async () => {
     await PlacesUtils.bookmarks.eraseEverything();
-    SidebarTestUtils.closePanel(window);
+    SidebarController.hide();
   });
 });
 
@@ -67,7 +66,7 @@ add_task(async function test_bookmarks_panel_opens() {
   ok(component.panelHeader, "Panel header is rendered.");
   ok(component.searchInput, "Search input is rendered.");
 
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_shows_toolbar_folder() {
@@ -93,7 +92,7 @@ add_task(async function test_bookmarks_shows_toolbar_folder() {
   );
 
   await PlacesUtils.bookmarks.remove(bookmark);
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_shows_bookmark_in_folder() {
@@ -136,7 +135,7 @@ add_task(async function test_bookmarks_shows_bookmark_in_folder() {
   ok(matchingRow, "The added bookmark is visible in the panel.");
 
   await PlacesUtils.bookmarks.remove(bookmark);
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_search_filters_results() {
@@ -183,7 +182,7 @@ add_task(async function test_bookmarks_search_filters_results() {
 
   await PlacesUtils.bookmarks.remove(bm1);
   await PlacesUtils.bookmarks.remove(bm2);
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_search_results_show_tab_list() {
@@ -208,7 +207,7 @@ add_task(async function test_bookmarks_search_results_show_tab_list() {
   ok(header, "Search results header is shown.");
 
   await PlacesUtils.bookmarks.remove(bm);
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_folder_expand_collapse() {
@@ -263,7 +262,7 @@ add_task(async function test_bookmarks_folder_expand_collapse() {
   Assert.notEqual(folderDetails.open, wasOpen, "Folder toggled open/closed.");
 
   await PlacesUtils.bookmarks.remove({ guid: folder.guid });
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_panel_updates_on_places_event() {
@@ -297,7 +296,7 @@ add_task(async function test_bookmarks_panel_updates_on_places_event() {
     () => !findInTree(component.bookmarks, "Dynamic Bookmark")
   );
 
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_context_menu_bookmark() {
@@ -355,125 +354,10 @@ add_task(async function test_bookmarks_context_menu_bookmark() {
     !document.getElementById("sidebar-bookmarks-context-copy-link").hidden,
     "Copy link is visible for a bookmark."
   );
-  ok(
-    document.getElementById("sidebar-bookmarks-context-show-in-folder").hidden,
-    "Show in Folder is hidden when not searching."
-  );
 
   contextMenu.hidePopup();
   await PlacesUtils.bookmarks.remove(bm);
-  SidebarTestUtils.closePanel(window);
-});
-
-add_task(async function test_bookmarks_search_context_menu_show_in_folder() {
-  const folder = await addFolder("Outer");
-  const bm = await addBookmark({
-    title: "FindMe",
-    url: TEST_URL,
-    parentGuid: folder.guid,
-  });
-
-  const { component, contentWindow } = await showBookmarksSidebar();
-
-  info("Search for the nested bookmark.");
-  EventUtils.synthesizeMouseAtCenter(component.searchInput, {}, contentWindow);
-  EventUtils.sendString("FindMe", contentWindow);
-  await BrowserTestUtils.waitForMutationCondition(
-    component.shadowRoot,
-    { childList: true, subtree: true },
-    () => component.searchResults?.length === 1
-  );
-
-  const resultsList = component.bookmarkList;
-  await BrowserTestUtils.waitForMutationCondition(
-    resultsList.shadowRoot,
-    { childList: true, subtree: true },
-    () => resultsList.rowEls[0]?.guid === bm.guid
-  );
-  const row = resultsList.rowEls[0];
-
-  const contextMenu = SidebarController.currentContextMenu;
-  await openAndWaitForContextMenu(contextMenu, row.mainEl, () => {});
-
-  ok(
-    !document.getElementById("sidebar-bookmarks-context-show-in-folder").hidden,
-    "Show in Folder is visible in search results."
-  );
-  ok(
-    document.getElementById("sidebar-bookmarks-context-copy-link").hidden,
-    "Copy Link is hidden in search results."
-  );
-  ok(
-    document.getElementById("sidebar-bookmarks-context-paste").hidden,
-    "Paste is hidden in search results."
-  );
-  for (const id of [
-    "sidebar-bookmarks-context-sep-edit-copy",
-    "sidebar-bookmarks-context-sep-add",
-    "sidebar-bookmarks-context-add-bookmark",
-    "sidebar-bookmarks-context-add-folder",
-    "sidebar-bookmarks-context-add-separator",
-  ]) {
-    ok(
-      document.getElementById(id).hidden,
-      `${id} is hidden in search results.`
-    );
-  }
-
-  info("Activate Show in Folder.");
-  const promiseHidden = BrowserTestUtils.waitForPopupEvent(
-    contextMenu,
-    "hidden"
-  );
-  contextMenu.activateItem(
-    document.getElementById("sidebar-bookmarks-context-show-in-folder")
-  );
-  await promiseHidden;
-
-  await BrowserTestUtils.waitForCondition(
-    () => component.searchQuery === "",
-    "Search is cleared after Show in Folder."
-  );
-
-  const tabList = component.bookmarkList;
-  await BrowserTestUtils.waitForMutationCondition(
-    tabList.shadowRoot,
-    { childList: true, subtree: true },
-    () => tabList.folderEls[0]
-  );
-
-  const findRow = list => {
-    if (!list) {
-      return null;
-    }
-    for (const r of list.rowEls ?? []) {
-      if (r.guid === bm.guid) {
-        return r;
-      }
-    }
-    for (const details of list.folderEls ?? []) {
-      const sublist = details.querySelector("sidebar-bookmark-list");
-      const found = findRow(sublist);
-      if (found) {
-        return found;
-      }
-    }
-    return null;
-  };
-
-  await BrowserTestUtils.waitForCondition(
-    () => findRow(tabList),
-    "The bookmark row appears in the tree view after Show in Folder."
-  );
-  const revealedRow = findRow(tabList);
-  await BrowserTestUtils.waitForCondition(
-    () => revealedRow.selected,
-    "The bookmark row is visually selected after Show in Folder."
-  );
-
-  await PlacesUtils.bookmarks.remove(bm);
-  await PlacesUtils.bookmarks.remove({ guid: folder.guid });
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_context_menu_folder() {
@@ -532,7 +416,7 @@ add_task(async function test_bookmarks_context_menu_folder() {
 
   contextMenu.hidePopup();
   await PlacesUtils.bookmarks.remove({ guid: folder.guid });
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_delete_via_context_menu() {
@@ -584,7 +468,7 @@ add_task(async function test_bookmarks_delete_via_context_menu() {
       ![...nestedList.rowEls].some(r => r.title === "Delete Me")
   );
 
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_empty_folder_shows_label() {
@@ -624,7 +508,7 @@ add_task(async function test_bookmarks_empty_folder_shows_label() {
   );
 
   await PlacesUtils.bookmarks.remove({ guid: folder.guid });
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 async function openToolbarFolder(tabList) {
@@ -697,7 +581,7 @@ add_task(async function test_bookmarks_drag_reorders_items() {
 
   await PlacesUtils.bookmarks.remove(bmA.guid);
   await PlacesUtils.bookmarks.remove(bmB.guid);
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_drag_into_folder() {
@@ -763,7 +647,7 @@ add_task(async function test_bookmarks_drag_into_folder() {
   }, "Bookmark is moved into the folder.");
 
   await PlacesUtils.bookmarks.remove({ guid: folder.guid });
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_drag_url_to_panel() {
@@ -837,7 +721,7 @@ add_task(async function test_bookmarks_drag_url_to_panel() {
   );
 
   await PlacesUtils.bookmarks.remove({ guid: folder.guid });
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
 
 add_task(async function test_bookmarks_drag_tab_to_panel() {
@@ -894,5 +778,5 @@ add_task(async function test_bookmarks_drag_tab_to_panel() {
   await PlacesUtils.bookmarks.remove(fetchInfo.guid);
   BrowserTestUtils.removeTab(tab);
   await PlacesUtils.bookmarks.remove(bm.guid);
-  SidebarTestUtils.closePanel(window);
+  SidebarController.hide();
 });
