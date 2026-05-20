@@ -822,6 +822,7 @@ struct ParamTraits<mozilla::layers::APZEventResult> {
     WriteParam(aWriter, aParam.GetHandledResult());
     WriteParam(aWriter, aParam.mTargetGuid);
     WriteParam(aWriter, aParam.mInputBlockId);
+    WriteParam(aWriter, aParam.mTargetCanScrollHorizontally);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
@@ -838,7 +839,8 @@ struct ParamTraits<mozilla::layers::APZEventResult> {
     aResult->UpdateHandledResult(handledResult);
 
     return (ReadParam(aReader, &aResult->mTargetGuid) &&
-            ReadParam(aReader, &aResult->mInputBlockId));
+            ReadParam(aReader, &aResult->mInputBlockId) &&
+            ReadParam(aReader, &aResult->mTargetCanScrollHorizontally));
   }
 };
 

@@ -2339,7 +2339,8 @@ WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
     return event;
   }
 
-  if (aPanInput.mHandledByAPZ && aPanInput.AllowsSwipe()) {
+  if (aPanInput.mHandledByAPZ && aPanInput.AllowsSwipe() &&
+      !aApzResult.mTargetCanScrollHorizontally) {
     SwipeInfo swipeInfo = SendMayStartSwipe(aPanInput);
     event.mCanTriggerSwipe = swipeInfo.wantsSwipe;
     if (swipeInfo.wantsSwipe) {
