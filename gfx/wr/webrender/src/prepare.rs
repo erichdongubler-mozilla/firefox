@@ -271,6 +271,10 @@ fn prepare_prim_for_render(
                     &data_stores.image[*data_handle].kind,
                     frame_state.resource_cache,
                 );
+
+                use_legacy_path = use_legacy_path || scratch.frame
+                    .draws[prim_instance_index]
+                    .compositor_surface_kind == CompositorSurfaceKind::Underlay;
             }
             _ => {}
         };
@@ -990,6 +994,7 @@ fn prepare_interned_prim_for_render(
             quad::prepare_repeatable_quad(
                 prim_data,
                 &local_rect,
+                &prim_info.clip_chain.local_clip_rect,
                 stretch_size,
                 prim_data.tile_spacing,
                 prim_data.common.aligned_aa_edges,
@@ -1041,6 +1046,7 @@ fn prepare_interned_prim_for_render(
             quad::prepare_repeatable_quad(
                 prim_data,
                 &local_rect,
+                &prim_info.clip_chain.local_clip_rect,
                 stretch_size,
                 prim_data.tile_spacing,
                 prim_data.common.aligned_aa_edges,
@@ -1125,6 +1131,7 @@ fn prepare_interned_prim_for_render(
             quad::prepare_repeatable_quad(
                 prim_data,
                 &local_rect,
+                &prim_info.clip_chain.local_clip_rect,
                 stretch_size,
                 prim_data.tile_spacing,
                 prim_data.common.aligned_aa_edges,

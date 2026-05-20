@@ -196,6 +196,43 @@ nsresult ZeroRttHandle::Finish0RTT(HappyEyeballsTransaction* aCaller,
   MOZ_ASSERT(mState == State::Open,
              "Finish0RTT declaring winner on a non-Open handle");
 
+  // H1/H2, alpnChanged=1: early data was sent for a protocol the server no
+  //   longer speaks, so the request must restart.  For H2, Http2Session also
+  //   calls Close(NS_ERROR_NET_RESET) immediately after, killing the
+  //   connection; declaring the HE winner at this point would insert a dead
+  //   connection into mActiveConns (mReportedSpdy=false, so npnPending=true in
+  //   RestrictConnections(), blocking all future connections).
+  //   Action: close the HET so HE treats this as a failure, not a winner.
+  //
+  // H1/H2, alpnChanged=0: early data was rejected but the connection is still
+  //   usable (H1 retries the request; H2 rewinds its output queue).
+  //   Action: fall through to InvokeCallback(NS_OK) so HE declares the winner
+  //   and the session retries the request on the same connection.
+  //
+  // H3, any: the QUIC connection survives a 0-RTT restart.
+  //   Action: fall through so HE declares the winner and retries normally.
+  if (aRestart && aAlpnChanged) {
+    bool isH3 = false;
+    if (nsAHttpConnection* conn = aCaller->Connection()) {
+      if (RefPtr<HttpConnectionBase> base = conn->HttpConnection()) {
+        isH3 = base->UsingHttp3();
+      }
+    }
+    if (!isH3) {
+      nsHttpTransaction* realTxn = ResolveRealTxn(mHet);
+      if (realTxn) {
+        realTxn->FinishAdopted0RTT(/*aRestart=*/true);
+      }
+      // Remove SSL tokens via the live connection (uses GetPeerId(), not
+      // HashKey()).  Without removal, Check0RttEnabled sets
+      // mEarlyDataState=USED before Do0RTT runs, so Finish0RTT(restart=1) loops
+      // on the re-queued txn.
+      aCaller->MaybeRemoveSSLTokens();
+      aCaller->Close(NS_ERROR_NET_RESET);
+      return NS_OK;
+    }
+  }
+
   nsHttpTransaction* realTxn = ResolveRealTxn(mHet);
   if (!realTxn) {
     LOG(("ZeroRttHandle::Finish0RTT %p real txn gone; closing caller=%p", this,

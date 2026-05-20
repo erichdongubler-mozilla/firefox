@@ -6,10 +6,13 @@ function handleRequest(request, response) {
   file.append("test");
   file.append("mochitest");
 
-  if (
-    request.getHeader("Accept") ==
-    "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5"
-  ) {
+  let expected = "image/avif,";
+  if (Services.prefs.getBoolPref("image.jxl.enabled", false)) {
+    expected += "image/jxl,";
+  }
+  expected += "image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5";
+
+  if (request.getHeader("Accept") == expected) {
     file.append("blue.png");
   } else {
     file.append("red.png");

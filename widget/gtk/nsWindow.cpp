@@ -7834,7 +7834,7 @@ uint32_t nsWindow::GetMaxTouchPoints() const {
   // and then query it. Not sure it's worth the effort, just return
   // fixed value if touch device is present for now.
   if (GdkIsWaylandDisplay()) {
-    static constexpr bool sMaxTouchPoints = 5;
+    static constexpr uint32_t sMaxTouchPoints = 5;
     return WaylandDisplayGet()->GetTouch() ? sMaxTouchPoints : 0;
   }
 #endif

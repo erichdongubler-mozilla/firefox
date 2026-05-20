@@ -97,8 +97,8 @@ sealed class MatchStatus {
  * @property globalEventId Stable upstream identifier; the natural cache key.
  * @property date Date string for start of match e.g. Jun 13.
  * @property time Time string for start of match e.g. 5:00 PM.
- * @property home Home [Team].
- * @property away Away [Team].
+ * @property home Home [Team]. Null if the match has not been scheduled.
+ * @property away Away [Team]. Null if the match has not been scheduled.
  * @property matchStatus Current [MatchStatus].
  * @property homeScore Home team score. Null if the match has not started.
  * @property awayScore Away team score. Null if the match has not started.
@@ -113,8 +113,8 @@ data class Match(
     val globalEventId: Long = 0L,
     val date: String,
     val time: String,
-    val home: Team,
-    val away: Team,
+    val home: Team?,
+    val away: Team?,
     val matchStatus: MatchStatus = MatchStatus.Scheduled,
     val homeScore: Int? = null,
     val awayScore: Int? = null,
@@ -155,14 +155,16 @@ sealed class FollowedTeamOutcome {
     data object Eliminated : FollowedTeamOutcome()
 
     /**
-     * Followed team won the tournament with this match.
+     * Tournament has been decided. [winner] is the team that won the final, regardless of
+     * whether any team is followed. The celebration card uses this directly.
      */
-    data object TournamentWinner : FollowedTeamOutcome()
+    data class TournamentWinner(val winner: Team) : FollowedTeamOutcome()
 
     /**
-     * Followed team won the third-place playoff with this match.
+     * Third-place playoff has been decided. [winner] is the team that won the playoff,
+     * regardless of whether any team is followed. The celebration card uses this directly.
      */
-    data object ThirdPlace : FollowedTeamOutcome()
+    data class ThirdPlace(val winner: Team) : FollowedTeamOutcome()
 }
 
 /**

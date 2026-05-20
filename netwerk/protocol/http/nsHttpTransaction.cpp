@@ -3281,6 +3281,18 @@ void nsHttpTransaction::GetNetworkAddresses(
   aEchConfigUsed = mEchConfigUsed;
 }
 
+void nsHttpTransaction::RemoveSSLTokens(nsITransportSecurityInfo* aSecInfo) {
+  if (!aSecInfo) {
+    return;
+  }
+  // Always evict regardless of
+  // network_http_remove_resumption_token_when_early_data_failed: skipping
+  // eviction causes an infinite Finish0RTT(restart=1) loop.
+  nsAutoCString key;
+  aSecInfo->GetPeerId(key);
+  SSLTokensCache::RemoveAll(key);
+}
+
 bool nsHttpTransaction::Do0RTT(bool aCanSendEarlyData) {
   LOG(("nsHttpTransaction::Do0RTT [aCanSendEarlyData=%d]", aCanSendEarlyData));
   mResumptionAttempted = true;

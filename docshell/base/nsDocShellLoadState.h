@@ -200,6 +200,8 @@ class nsDocShellLoadState final {
   void SetSHEntry(SessionHistoryEntry* aSHEntry);
 
   void SetPreviousEntryForActivation(nsISHEntry* aSHEntry);
+  void SetPreviousEntryForActivation(
+      const mozilla::Maybe<mozilla::dom::PreviousSessionHistoryInfo>& aInfo);
 
   const mozilla::dom::LoadingSessionHistoryInfo* GetLoadingSessionHistoryInfo()
       const;
@@ -474,6 +476,15 @@ class nsDocShellLoadState final {
   }
   bool IsInitialAboutBlankHandlingProhibited() {
     return mIsInitialAboutBlankHandlingProhibited;
+  }
+
+  void SetIsResumingInterceptedNavigation(
+      bool aIsResumingInterceptedNavigation) {
+    mIsResumingInterceptedNavigation = aIsResumingInterceptedNavigation;
+  }
+
+  bool IsResumingInterceptedNavigation() const {
+    return mIsResumingInterceptedNavigation;
   }
 
  protected:
@@ -764,6 +775,14 @@ class nsDocShellLoadState final {
   // to take the regular load path. It will replace the previous document
   // and not load synchronous.
   bool mIsInitialAboutBlankHandlingProhibited;
+
+  // True when this LoadURI call is synchronously resuming a traversal
+  // navigation that was paused while the Navigation API's NavigateEvent was
+  // dispatched and intercepted. Set by Navigation::CommitNavigateEvent after
+  // the event commits, and consumed on the docshell side to keep the existing
+  // ongoing navigation in place (rather than resetting it) and to forward the
+  // flag through LoadHistoryEntry.
+  bool mIsResumingInterceptedNavigation = false;
 };
 
 #endif /* nsDocShellLoadState_h_ */

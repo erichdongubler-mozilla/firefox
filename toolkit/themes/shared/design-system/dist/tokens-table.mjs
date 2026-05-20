@@ -323,6 +323,14 @@ export const tokensTable = {
       name: "--toolbar-background-color",
     },
     {
+      value: {
+        light: "var(--color-red-60)",
+        dark: "var(--color-red-40)",
+        default: "light-dark(var(--color-red-60), var(--color-red-40))",
+      },
+      name: "--toolbarbutton-badge-background-color",
+    },
+    {
       value: "color-mix(in srgb, currentColor 17%, transparent)",
       name: "--toolbarbutton-background-color-hover",
     },
@@ -1258,6 +1266,7 @@ export const tokensTable = {
     { value: "var(--font-size-large)", name: "--font-size-heading-medium" },
     { value: "var(--font-size-root)", name: "--button-font-size" },
     { value: "var(--font-size-small)", name: "--button-font-size-small" },
+    { value: "10px", name: "--toolbarbutton-badge-font-size" },
     { value: "var(--button-font-size)", name: "--select-font-size" },
   ],
   "font-weight": [
@@ -1302,6 +1311,8 @@ export const tokensTable = {
       name: "--page-main-content-width",
     },
     { value: "initial", name: "--panel-width" },
+    { value: "14px", name: "--toolbarbutton-badge-min-width" },
+    { value: "20px", name: "--toolbarbutton-badge-max-width" },
     {
       value: "var(--size-item-large)",
       name: "--message-bar-container-min-height",
@@ -1368,6 +1379,8 @@ export const tokensTable = {
     { value: "16px", name: "--panel-padding" },
     { value: "4px", name: "--panel-padding-block" },
     { value: "8px", name: "--toolbar-padding-inline" },
+    { value: "2px", name: "--toolbarbutton-badge-padding-inline" },
+    { value: "1px", name: "--toolbarbutton-badge-padding-block-end" },
     { value: "2px", name: "--toolbarbutton-padding-outer" },
     { value: "1px", name: "--toolbarbutton-padding-outer-narrow" },
     { value: "8px", name: "--toolbarbutton-padding-inner" },
@@ -3263,6 +3276,16 @@ export const variableLookupTable = {
     nativeTheme: "-moz-dialogtext",
     default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
   },
+  "toolbarbutton-badge-background-color": {
+    light: "var(--color-red-60)",
+    dark: "var(--color-red-40)",
+    default: "light-dark(var(--color-red-60), var(--color-red-40))",
+  },
+  "toolbarbutton-badge-font-size": "10px",
+  "toolbarbutton-badge-min-width": "14px",
+  "toolbarbutton-badge-max-width": "20px",
+  "toolbarbutton-badge-padding-inline": "2px",
+  "toolbarbutton-badge-padding-block-end": "1px",
   "toolbarbutton-padding-outer": "2px",
   "toolbarbutton-padding-outer-narrow": "1px",
   "toolbarbutton-padding-inner": "8px",

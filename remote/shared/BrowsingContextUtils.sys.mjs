@@ -217,3 +217,40 @@ export async function waitForCurrentWindowGlobal(browsingContext) {
     );
   }
 }
+
+/**
+ * Wait until `currentWindowGlobal` is available on a top-level browsing context.
+ * When a browsing context has just been created, the `currentWindowGlobal` might not
+ * be attached yet.
+ *
+ * @param {CanonicalBrowsingContext} browsingContext
+ *     The top-level browsing context to wait for.
+ *
+ * @returns {CanonicalBrowsingContext|null}
+ *     Return the browsing context or `null` if the browsing context has been discarded.
+ *
+ * @throws {Error}
+ *     If the passed browsing context is not top-level.
+ */
+export async function waitForTopBrowsingContextToBeReady(browsingContext) {
+  // We might want to do the same for iframes once
+  // https://github.com/w3c/webdriver-bidi/issues/832 is resolved.
+  if (browsingContext.parent) {
+    throw new Error(`The provided browsing context is not top-level`);
+  }
+
+  if (!browsingContext.currentWindowGlobal) {
+    try {
+      await waitForCurrentWindowGlobal(browsingContext);
+    } catch (e) {
+      // Don't throw if the browsing context was discarded or
+      // the window global never attached.
+      if (e.name === "DiscardedBrowsingContextError") {
+        return null;
+      }
+      throw e;
+    }
+  }
+
+  return browsingContext;
+}

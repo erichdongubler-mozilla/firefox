@@ -5,32 +5,49 @@
 tab-groups-list:not([hidden]) {
   display: flex;
   flex-direction: column;
+
+  /* emulate a <toolbarbutton> */
+  .subviewbutton {
+    border: none;
+    text-align: start;
+    color: var(--button-text-color-menu);
+    background-color: var(--button-background-color-menu);
+
+    &:not([disabled]):hover {
+      color: var(--button-text-color-menu-hover);
+      background-color: var(--button-background-color-menu-hover);
+
+      &:active {
+        color: var(--button-text-color-menu-active);
+        background-color: var(--button-background-color-menu-active);
+      }
+    }
+
+    &:focus-visible {
+      outline: var(--focus-outline);
+      outline-offset: var(--focus-outline-inset);
+    }
+  }
+
+  /* emulate a <toolbarseparator> */
+  hr {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    width: -moz-available;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    margin: var(--panel-separator-padding);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    border-width: 1px 0 0 0;
+    border-style: solid;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    color: var(--panel-separator-color);
+  }
 }
 
 .tab-group-row {
   display: flex;
   align-items: center;
   gap: var(--space-small);
-  border: none;
   flex: 1;
-  text-align: start;
-  color: var(--button-text-color-menu);
-  background-color: var(--button-background-color-menu);
-
-  &:not([disabled]):hover {
-    color: var(--button-text-color-menu-hover);
-    background-color: var(--button-background-color-menu-hover);
-
-    &:active {
-      color: var(--button-text-color-menu-active);
-      background-color: var(--button-background-color-menu-active);
-    }
-  }
-
-  &:focus-visible {
-    outline: var(--focus-outline);
-    outline-offset: var(--focus-outline-inset);
-  }
 }
 
 .tab-group-row-icon {

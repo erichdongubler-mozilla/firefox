@@ -154,6 +154,10 @@ class HappyEyeballsTransaction final : public SpeculativeTransaction {
   }
   bool Entered0RTT() const { return m0RttRequestStreamOffset.isSome(); }
 
+  // Remove SSL session tokens for this 0-RTT attempt via the live connection
+  // (uses GetPeerId() as the SSLTokensCache key, not mConnInfo->HashKey()).
+  void MaybeRemoveSSLTokens();
+
  private:
   ~HappyEyeballsTransaction() override;
 

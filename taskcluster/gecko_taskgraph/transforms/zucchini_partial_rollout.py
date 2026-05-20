@@ -39,7 +39,11 @@ def filter_partials_by_project(config, tasks):
         primary_dep = get_primary_dependency(config, task)
         assert primary_dep
 
-        if primary_dep.kind not in ("partials", "partials-zucchini"):
+        if primary_dep.kind not in (
+            "partials",
+            "partials-zucchini",
+            "partials-zucchini-l10n",
+        ):
             yield task
             continue
 
@@ -50,7 +54,7 @@ def filter_partials_by_project(config, tasks):
             continue
 
         if (
-            primary_dep.kind == "partials-zucchini"
+            primary_dep.kind in ("partials-zucchini", "partials-zucchini-l10n")
             and config.params["project"] in LEGACY_PARTIALS_PROJECTS
         ):
             continue

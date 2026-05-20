@@ -81,12 +81,10 @@ export class SidebarBookmarkList extends SidebarTabList {
    * @returns {SidebarBookmarkList}
    */
   findSublistForGuid(guid) {
-    for (const details of this.shadowRoot.querySelectorAll("details")) {
-      if (details.guid === guid) {
-        return details.querySelector("sidebar-bookmark-list");
-      }
-    }
-    return null;
+    const folder = this.shadowRoot.querySelector(
+      `summary[data-guid="${CSS.escape(guid)}"]`
+    );
+    return folder?.parentElement?.querySelector("sidebar-bookmark-list");
   }
 
   willUpdate(changes) {
@@ -115,209 +113,6 @@ export class SidebarBookmarkList extends SidebarTabList {
     folderLabelEl: ".bookmark-folder-label",
   };
 
-  static #getFocusableItemsInList(listEl) {
-    const container = listEl.shadowRoot?.querySelector("#fxview-tab-list");
-    if (!container) {
-      return [];
-    }
-    const items = [];
-    const walker = document.createTreeWalker(
-      container,
-      NodeFilter.SHOW_ELEMENT
-    );
-    let node = walker.nextNode();
-    while (node) {
-      if (
-        node.localName === "summary" ||
-        node.localName === "sidebar-bookmark-row" ||
-        node.classList.contains("bookmark-separator") ||
-        node.classList.contains("bookmark-folder-label")
-      ) {
-        items.push(node);
-      }
-      node = walker.nextNode();
-    }
-    return items;
-  }
-
-  #focusParentSummary() {
-    this.closest("details")?.querySelector("summary")?.focus();
-  }
-
-  #focusLastVisibleItem(item) {
-    if (item.localName !== "summary" || !item.parentElement?.open) {
-      item.focus();
-      return;
-    }
-    const nestedList = item.parentElement.querySelector(
-      "sidebar-bookmark-list"
-    );
-    if (!nestedList) {
-      item.focus();
-      return;
-    }
-    const nestedItems =
-      SidebarBookmarkList.#getFocusableItemsInList(nestedList);
-    if (!nestedItems.length) {
-      item.focus();
-      return;
-    }
-    this.#focusLastVisibleItem(nestedItems[nestedItems.length - 1]);
-  }
-
-  #focusNextItemAfterFolder() {
-    const parentDetails = this.closest("details");
-    if (!parentDetails) {
-      return;
-    }
-    const parentList = parentDetails.getRootNode().host;
-    if (parentList?.localName !== "sidebar-bookmark-list") {
-      return;
-    }
-    const parentItems =
-      SidebarBookmarkList.#getFocusableItemsInList(parentList);
-    const idx = parentItems.indexOf(parentDetails.querySelector("summary"));
-    if (idx >= 0 && idx < parentItems.length - 1) {
-      parentItems[idx + 1].focus();
-    } else {
-      parentList.#focusNextItemAfterFolder();
-    }
-  }
-
-  handleFocusElementInRow(e) {
-    if (
-      e.getModifierState("Accel") &&
-      e.key.toUpperCase() === this.selectAllShortcut
-    ) {
-      e.preventDefault();
-      this.selectAll();
-      return;
-    }
-    if (
-      e.code !== "ArrowUp" &&
-      e.code !== "ArrowDown" &&
-      e.code !== "ArrowLeft" &&
-      e.code !== "ArrowRight"
-    ) {
-      return;
-    }
-    // Events from nested lists are retargeted to the nested list element; ignore them.
-    if (e.target.localName === "sidebar-bookmark-list") {
-      return;
-    }
-    e.preventDefault();
-    const { target } = e;
-    const isSummary = target.localName === "summary";
-    let nextFocusedRow = null;
-    switch (e.code) {
-      case "ArrowLeft":
-        if (isSummary && target.parentElement?.open) {
-          target.parentElement.open = false;
-        } else {
-          this.#focusParentSummary();
-        }
-        break;
-      case "ArrowRight":
-        if (isSummary) {
-          const details = target.parentElement;
-          if (!details.open) {
-            details.open = true;
-            const nestedList = details.querySelector("sidebar-bookmark-list");
-            if (nestedList) {
-              nestedList.updateComplete.then(() => {
-                SidebarBookmarkList.#getFocusableItemsInList(
-                  nestedList
-                )[0]?.focus();
-              });
-            }
-          } else {
-            const nestedList = details.querySelector("sidebar-bookmark-list");
-            if (nestedList) {
-              SidebarBookmarkList.#getFocusableItemsInList(
-                nestedList
-              )[0]?.focus();
-            }
-          }
-        }
-        break;
-      case "ArrowDown": {
-        if (isSummary && target.parentElement?.open) {
-          const nestedList = target.parentElement.querySelector(
-            "sidebar-bookmark-list"
-          );
-          if (nestedList) {
-            const nestedItems =
-              SidebarBookmarkList.#getFocusableItemsInList(nestedList);
-            if (nestedItems.length) {
-              nestedItems[0].focus();
-              break;
-            }
-          }
-        }
-        const items = SidebarBookmarkList.#getFocusableItemsInList(this);
-        const idx = items.indexOf(target);
-        if (idx < items.length - 1) {
-          items[idx + 1].focus();
-          if (
-            !isSummary &&
-            items[idx + 1].localName === "sidebar-bookmark-row"
-          ) {
-            nextFocusedRow = items[idx + 1];
-          }
-        } else {
-          this.#focusNextItemAfterFolder();
-        }
-        break;
-      }
-      case "ArrowUp": {
-        const items = SidebarBookmarkList.#getFocusableItemsInList(this);
-        const idx = items.indexOf(target);
-        if (idx > 0) {
-          this.#focusLastVisibleItem(items[idx - 1]);
-          if (
-            !isSummary &&
-            items[idx - 1].localName === "sidebar-bookmark-row"
-          ) {
-            nextFocusedRow = items[idx - 1];
-          }
-        } else {
-          this.#focusParentSummary();
-        }
-        break;
-      }
-    }
-    if (
-      (e.code === "ArrowDown" || e.code === "ArrowUp") &&
-      !e.getModifierState("Accel") &&
-      nextFocusedRow
-    ) {
-      if (e.shiftKey) {
-        this.dispatchEvent(
-          new CustomEvent("shift-select", {
-            bubbles: true,
-            composed: true,
-            detail: { row: nextFocusedRow },
-          })
-        );
-      } else {
-        this.clearSelection();
-        this.dispatchEvent(
-          new CustomEvent("clear-selection", {
-            bubbles: true,
-            composed: true,
-          })
-        );
-        this.dispatchEvent(
-          new CustomEvent("set-anchor", {
-            bubbles: true,
-            composed: true,
-            detail: { guid: nextFocusedRow.guid },
-          })
-        );
-      }
-    }
-  }
-
   itemTemplate = (tabItem, i) => {
     let tabIndex = -1;
     if ((this.searchQuery || this.sortOption == "lastvisited") && i == 0) {
@@ -331,6 +126,7 @@ export class SidebarBookmarkList extends SidebarTabList {
         draggable="true"
         role="separator"
         tabindex="0"
+        data-guid=${tabItem.guid}
         .guid=${tabItem.guid}
       ></div>`;
     }
@@ -340,6 +136,7 @@ export class SidebarBookmarkList extends SidebarTabList {
           class="bookmark-folder-label"
           tabindex="0"
           draggable="true"
+          data-guid=${tabItem.guid}
           .guid=${tabItem.guid}
         >
           ${tabItem.title}
@@ -351,7 +148,9 @@ export class SidebarBookmarkList extends SidebarTabList {
           @toggle=${e => this.#onFolderToggle(e, tabItem.guid)}
           .guid=${tabItem.guid}
         >
-          <summary draggable="true" part="summary">${tabItem.title}</summary>
+          <summary draggable="true" part="summary" data-guid=${tabItem.guid}>
+            ${tabItem.title}
+          </summary>
           <div id="content">
             <sidebar-bookmark-list
               maxTabsLength="-1"

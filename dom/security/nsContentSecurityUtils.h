@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "mozilla/Maybe.h"
-#include "nsStringFwd.h"
+#include "nsLiteralString.h"
 
 struct JSContext;
 class nsIChannel;
@@ -89,6 +89,12 @@ class nsContentSecurityUtils {
                                           const char* format_string);
   static nsCString SmartFormatCrashString(char* part1, char* part2,
                                           const char* format_string);
+
+  // Everything that is allowed by AllowBuiltinSrcVisitor.
+  static constexpr nsLiteralString kBaselineChromeCSP =
+      u"script-src chrome: resource: moz-src:"_ns;
+
+  static bool IsExemptedFromBaselineChromeCSP(nsACString& aSpec);
 
 #if defined(DEBUG)
   static void AssertAboutPageHasCSP(mozilla::dom::Document* aDocument);

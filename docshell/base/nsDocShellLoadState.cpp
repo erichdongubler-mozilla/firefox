@@ -794,6 +794,13 @@ void nsDocShellLoadState::SetPreviousEntryForActivation(nsISHEntry* aSHEntry) {
   }
 }
 
+void nsDocShellLoadState::SetPreviousEntryForActivation(
+    const Maybe<PreviousSessionHistoryInfo>& aInfo) {
+  if (mLoadingSessionHistoryInfo) {
+    mLoadingSessionHistoryInfo->mPreviousEntry = aInfo;
+  }
+}
+
 void nsDocShellLoadState::SetLoadingSessionHistoryInfo(
     const mozilla::dom::LoadingSessionHistoryInfo& aLoadingInfo) {
   SetLoadingSessionHistoryInfo(

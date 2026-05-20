@@ -1,4 +1,39 @@
 {
+  "badge": {
+    "background": {
+      "color": {
+        "value": {
+          "light": "{color.red.60}",
+          "dark": "{color.red.40}"
+        }
+      }
+    },
+    "font": {
+      "size": {
+        "value": "10px"
+      }
+    },
+    "min": {
+      "width": {
+        "value": "14px"
+      }
+    },
+    "max": {
+      "width": {
+        "value": "20px"
+      }
+    },
+    "padding": {
+      "inline": {
+        "value": "2px"
+      },
+      "block": {
+        "end": {
+          "value": "1px"
+        }
+      }
+    }
+  },
   "padding": {
     "outer": {
       "@base": {

@@ -447,6 +447,12 @@
     /** toolbarbutton **/
     --toolbarbutton-background-color-hover: color-mix(in srgb, currentColor 17%, transparent);
     --toolbarbutton-background-color-active: color-mix(in srgb, currentColor 30%, transparent);
+    --toolbarbutton-badge-background-color: light-dark(var(--color-red-60), var(--color-red-40));
+    --toolbarbutton-badge-font-size: 10px;
+    --toolbarbutton-badge-max-width: 20px;
+    --toolbarbutton-badge-min-width: 14px;
+    --toolbarbutton-badge-padding-block-end: 1px;
+    --toolbarbutton-badge-padding-inline: 2px;
     --toolbarbutton-border-radius: var(--button-border-radius);
     --toolbarbutton-icon-fill: currentColor;
     --toolbarbutton-icon-fill-attention: AccentColor;

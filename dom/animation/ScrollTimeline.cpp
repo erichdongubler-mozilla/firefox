@@ -143,22 +143,35 @@ ScrollTimeline::FindNearestScroller(Element* aSubject,
   if (!subject) {
     return {nullptr, PseudoStyleRequest{}};
   }
-  Element* curr = subject->GetFlattenedTreeParentElement();
+
   // Rely on the behaviour of document.scrollingElement.
   Element* root = subject->OwnerDoc()->GetScrollingElementNoFlush();
-  while (curr && curr != root) {
-    const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(curr);
-    MOZ_ASSERT(style, "The ancestor should be styled.");
-    if (style->StyleDisplay()->IsScrollableOverflow()) {
-      break;
-    }
-    curr = curr->GetFlattenedTreeParentElement();
-  }
-  // If there is no scroll container, we use root.
-  if (!curr) {
+  if (root == subject) {
+    // If the element is the scrollingElement, we don't need to walk up the
+    // frame tree.
     return {root, PseudoStyleRequest::NotPseudo()};
   }
-  return AnimationUtils::GetElementPseudoPair(curr);
+
+  nsIFrame* subjectFrame = subject->GetPrimaryFrame();
+  if (!subjectFrame) {
+    return {nullptr, PseudoStyleRequest{}};
+  }
+  // Walk the frame tree rather than the flattened DOM tree.
+  for (nsIFrame* curr = subjectFrame->GetParent(); curr;
+       curr = curr->GetParent()) {
+    nsIContent* content = curr->GetContent();
+    if (!content || !content->IsElement()) {
+      continue;
+    }
+    Element* element = content->AsElement();
+    if (element == root) {
+      break;
+    }
+    if (curr->IsScrollContainerFrame()) {
+      return AnimationUtils::GetElementPseudoPair(element);
+    }
+  }
+  return {root, PseudoStyleRequest::NotPseudo()};
 }
 
 /* static */

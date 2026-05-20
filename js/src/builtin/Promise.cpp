@@ -1065,6 +1065,17 @@ class PromiseReactionRecord : public MicroTaskEntry {
     MOZ_ASSERT(targetState() != JS::PromiseState::Pending);
     return getFixedSlot(handlerSlot());
   }
+
+  // Get the handler for a target state, before the state
+  // transition has happened in setTargetStateAndHandlerArg
+  Value targetStateHandler(JS::PromiseState targetState) {
+    MOZ_ASSERT(this->targetState() == JS::PromiseState::Pending);
+    MOZ_ASSERT(targetState != JS::PromiseState::Pending);
+
+    return getFixedSlot(targetState == JS::PromiseState::Fulfilled
+                            ? Slots::OnFulfilled
+                            : Slots::OnRejected);
+  }
   Value handlerArg() {
     MOZ_ASSERT(targetState() != JS::PromiseState::Pending);
     return getFixedSlot(handlerArgSlot());
@@ -1638,18 +1649,65 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
     }
   }
 
-  // We need to root this job because useDebugQueue can GC.
-  Rooted<JS::JSMicroTask*> rootedJob(cx, job);
-
   // Only check if we need to use the debug queue when we're not on main thread.
-  if (MOZ_UNLIKELY(!cx->runtime()->isMainRuntime() &&
-                   cx->jobQueue->useDebugQueue(cx->global()))) {
-    return cx->microTaskQueues->enqueueDebugMicroTask(cx,
-                                                      ObjectValue(*rootedJob));
+  if (MOZ_UNLIKELY(!cx->runtime()->isMainRuntime())) {
+    // We need to root this job because useDebugQueue can GC.
+    Rooted<JS::JSMicroTask*> rootedJob(cx, job);
+    if (MOZ_UNLIKELY(cx->jobQueue->useDebugQueue(cx->global()))) {
+      return cx->microTaskQueues->enqueueDebugMicroTask(
+          cx, ObjectValue(*rootedJob));
+    }
   }
-  return cx->microTaskQueues->enqueueRegularMicroTask(cx,
-                                                      ObjectValue(*rootedJob));
+
+  return cx->microTaskQueues->enqueueRegularMicroTask(cx, ObjectValue(*job));
 }
+
+// This traces the paths in EnqueuePromiseReactionJobCrossRealm where you'd
+// actually change realms.
+static bool CanUseSameRealmEnqueue(JSContext* cx, HandleObject reactionObj,
+                                   JS::PromiseState targetState) {
+  if (IsProxy(reactionObj)) {
+    return false;
+  }
+
+  MOZ_RELEASE_ASSERT(reactionObj->is<PromiseReactionRecord>());
+  PromiseReactionRecord* reaction = &reactionObj->as<PromiseReactionRecord>();
+  if (cx->realm() != reaction->realm()) {
+    return false;
+  }
+
+  // Handle only real promise objects
+  JSObject* reactionPromise = reaction->promise();
+  if (reactionPromise && !reactionPromise->is<PromiseObject>()) {
+    return false;
+  }
+
+  Value targetHandler = reaction->targetStateHandler(targetState);
+
+  // This mimics AutoFunctionOrCurrentRealm on handler, however we
+  // don't handle anything but the simplest cases, returning false
+  // at any point of complexity.
+  if (targetHandler.isObject()) {
+    RootedObject handlerObj(cx, &targetHandler.toObject());
+    JS::Realm* handlerRealm = JS::GetFunctionRealm(cx, handlerObj);
+    if (!handlerRealm) {
+      cx->clearPendingException();
+      return false;
+    }
+
+    if (cx->realm() != handlerRealm) {
+      return false;
+    }
+  }
+  return true;
+}
+
+[[nodiscard]] static bool EnqueuePromiseReactionJobCrossRealm(
+    JSContext* cx, HandleObject reactionObj, HandleValue handlerArg,
+    JS::PromiseState targetState);
+[[nodiscard]] static bool EnqueuePromiseReactionJobSameRealm(
+    JSContext* cx, HandleObject reactionObj, HandleValue handlerArg,
+    JS::PromiseState targetState);
 
 /**
  * ES2022 draft rev d03c1ec6e235a5180fa772b6178727c17974cb14
@@ -1668,11 +1726,25 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
  *               whether the onFulfilled or onRejected handler is called.
  */
 [[nodiscard]] static bool EnqueuePromiseReactionJob(
-    JSContext* cx, HandleObject reactionObj, HandleValue handlerArg_,
+    JSContext* cx, HandleObject reactionObj, HandleValue handlerArg,
     JS::PromiseState targetState) {
   MOZ_ASSERT(targetState == JS::PromiseState::Fulfilled ||
              targetState == JS::PromiseState::Rejected);
+  if (CanUseSameRealmEnqueue(cx, reactionObj, targetState)) {
+    return EnqueuePromiseReactionJobSameRealm(cx, reactionObj, handlerArg,
+                                              targetState);
+  }
+  return EnqueuePromiseReactionJobCrossRealm(cx, reactionObj, handlerArg,
+                                             targetState);
+}
 
+// The most general handling of promise enqueue cross realm.
+//
+// Note: Changes to this will almost certainly require changes to
+//       CanUseSameRealmEnqueue and EnqueuePromiseReactionJobSameRealm
+[[nodiscard]] static bool EnqueuePromiseReactionJobCrossRealm(
+    JSContext* cx, HandleObject reactionObj, HandleValue handlerArg_,
+    JS::PromiseState targetState) {
   // The reaction might have been stored on a Promise from another
   // compartment, which means it would've been wrapped in a CCW.
   // To properly handle that case here, unwrap it and enter its
@@ -1854,6 +1926,69 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
 
   // HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
   return EnqueueJob(cx, &reactionVal.toObject());
+}
+
+// A specialization of EnqueuePromiseReactionJobCrossRealm for very common
+// same realm case. Should not be called directly, rather
+// EnqueuePromiseReactionJob will dispatch here if it's safe.
+[[nodiscard]] static bool EnqueuePromiseReactionJobSameRealm(
+    JSContext* cx, HandleObject reactionObj, HandleValue handlerArg_,
+    JS::PromiseState targetState) {
+  RootedTuple<PromiseReactionRecord*, Value, JSObject*, JSObject*, JSObject*>
+      roots(cx);
+  RootedField<PromiseReactionRecord*, 0> reaction(roots);
+  RootedField<Value, 1> handlerArg(roots, handlerArg_);
+
+  // Checked in CanUseSameRealmEnqueue
+  MOZ_ASSERT(!IsProxy(reactionObj));
+  MOZ_ASSERT(reactionObj->is<PromiseReactionRecord>());
+
+  reaction = &reactionObj->as<PromiseReactionRecord>();
+
+  // Checked in CanUseSameRealmEnqueue
+  MOZ_ASSERT(cx->realm() == reaction->realm());
+
+  // Must not enqueue a reaction job more than once.
+  MOZ_ASSERT(reaction->targetState() == JS::PromiseState::Pending);
+
+  // NOTE: Instead of capturing reaction and arguments separately in the
+  //       Job Abstract Closure below, store arguments (= handlerArg) in
+  //       reaction object and capture it.
+  //       Also, set reaction.[[Type]] is represented by targetState here.
+  cx->check(handlerArg);
+  reaction->setTargetStateAndHandlerArg(targetState, handlerArg);
+
+  // NewPromiseReactionJob
+  // Checked in CanUseSameRealmEnqueue: the reaction's promise is either null
+  // or a PromiseObject.
+  RootedField<JSObject*, 2> promise(roots, reaction->promise());
+
+  // NewPromiseReactionJob
+  // Step 1 (reordered). Let job be a new Job Abstract Closure with no
+  //                     parameters that captures reaction and argument
+  //                     and performs the following steps when called:
+
+  // Get a representative object for this global: We will use this later
+  // to extract the target global for execution. We don't store the global
+  // directly because CCWs to globals can change identity.
+  //
+  // So instead we simply store Object.prototype from the target global,
+  // an object which always exists.
+  RootedField<JSObject*, 3> globalRepresentative(
+      roots, &cx->global()->getObjectPrototype());
+
+  cx->check(reaction);
+
+  RootedField<JSObject*, 4> stack(
+      roots,
+      JS::MaybeGetPromiseAllocationSiteFromPossiblyWrappedPromise(promise));
+  cx->check(stack, globalRepresentative);
+
+  reaction->setAllocationStack(stack);
+  reaction->setEnqueueGlobalRepresentative(globalRepresentative);
+
+  // HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
+  return EnqueueJob(cx, reaction);
 }
 
 [[nodiscard]] static bool TriggerPromiseReactions(JSContext* cx,

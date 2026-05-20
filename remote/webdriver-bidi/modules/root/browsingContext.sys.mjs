@@ -42,6 +42,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/UserContextManager.sys.mjs",
   waitForInitialNavigationCompleted:
     "chrome://remote/content/shared/Navigate.sys.mjs",
+  waitForTopBrowsingContextToBeReady:
+    "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
   WindowGlobalMessageHandler:
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.sys.mjs",
   windowManager: "chrome://remote/content/shared/WindowManager.sys.mjs",
@@ -208,6 +210,7 @@ class BrowsingContextModule extends RootBiDiModule {
   #navigationListener;
   #promptListener;
   #subscribedEvents;
+  #waitForContextCreatedEvent;
 
   /**
    * Create a new module instance.
@@ -253,8 +256,13 @@ class BrowsingContextModule extends RootBiDiModule {
     // Treat the event of moving a page to BFCache as context discarded event for iframes.
     this.messageHandler.on("windowglobal-pagehide", this.#onPageHideEvent);
 
-    // Maps browsers to a promise and resolver that is used to block the create method.
+    // Maps browsers to a promise and resolver that is used to block the create method
+    // until configurations are applied.
     this.#blockedCreateCommands = new WeakMap();
+
+    // Maps browsing contexts to a promise and resolver that is used to block the create method
+    // until "browsingContext.contextCreated" event is submitted.
+    this.#waitForContextCreatedEvent = new WeakMap();
   }
 
   destroy() {
@@ -287,6 +295,8 @@ class BrowsingContextModule extends RootBiDiModule {
     this.#subscribedEvents = null;
 
     this.messageHandler.off("windowglobal-pagehide", this.#onPageHideEvent);
+
+    this.#waitForContextCreatedEvent = new WeakMap();
   }
 
   /**
@@ -751,18 +761,45 @@ class BrowsingContextModule extends RootBiDiModule {
       this.#blockedCreateCommands.set(browser, blocker);
     }
 
+    const browsingContext = browser.browsingContext;
+    const sessionData =
+      this.messageHandler.sessionData.getSessionDataForContext(
+        "browsingContext",
+        "event",
+        browsingContext
+      );
+
+    const hasEventSubscriptionToContextCreated = sessionData.some(
+      item => item.value === "browsingContext.contextCreated"
+    );
+
+    let waitForContextCreatedEvent = Promise.withResolvers();
+
+    // If a client subscribed to "browsingContext.contextCreated" event,
+    // we have to wait for it to be submitted.
+    if (hasEventSubscriptionToContextCreated) {
+      if (!this.#waitForContextCreatedEvent.has(browsingContext)) {
+        this.#waitForContextCreatedEvent.set(
+          browsingContext,
+          Promise.withResolvers()
+        );
+      }
+      waitForContextCreatedEvent =
+        this.#waitForContextCreatedEvent.get(browsingContext);
+    } else {
+      waitForContextCreatedEvent.resolve();
+    }
     await Promise.all([
-      lazy.waitForInitialNavigationCompleted(
-        browser.browsingContext.webProgress,
-        {
-          unloadTimeout: 5000,
-        }
-      ),
+      lazy.waitForInitialNavigationCompleted(browsingContext.webProgress, {
+        unloadTimeout: 5000,
+      }),
       waitForVisibilityStatePromise,
       blocker.promise,
+      waitForContextCreatedEvent.promise,
     ]);
 
     this.#blockedCreateCommands.delete(browser);
+    this.#waitForContextCreatedEvent.delete(browsingContext);
 
     // The tab on Android is always opened in the foreground,
     // so we need to select the previous tab,
@@ -2045,6 +2082,17 @@ class BrowsingContextModule extends RootBiDiModule {
         return;
       }
 
+      // If `waitForTopBrowsingContextToBeReady` returns `null`,
+      // it means that the browsing context was discarded.
+      // Do not send an event in this case.
+      if (
+        !browsingContext.parent &&
+        (await lazy.waitForTopBrowsingContextToBeReady(browsingContext)) ===
+          null
+      ) {
+        return;
+      }
+
       const browsingContextInfo = getBrowsingContextInfo(browsingContext, {
         maxDepth: 0,
       });
@@ -2063,13 +2111,29 @@ class BrowsingContextModule extends RootBiDiModule {
         { browsingContext },
         browsingContextInfo
       );
+
+      if (!this.#waitForContextCreatedEvent.has(browsingContext)) {
+        this.#waitForContextCreatedEvent.set(
+          browsingContext,
+          Promise.withResolvers()
+        );
+      }
+
+      this.#waitForContextCreatedEvent.get(browsingContext).resolve();
     }
   };
 
   #onContextDiscarded = async (eventName, data = {}) => {
-    if (this.#subscribedEvents.has("browsingContext.contextDestroyed")) {
-      const { browsingContext, why } = data;
+    const { browsingContext, why } = data;
 
+    // In case the newly created browsing context got discarded immediately resolve pending promise.
+    if (this.#waitForContextCreatedEvent.has(browsingContext)) {
+      const waitForContextCreatedEvent =
+        this.#waitForContextCreatedEvent.get(browsingContext);
+      waitForContextCreatedEvent.resolve();
+    }
+
+    if (this.#subscribedEvents.has("browsingContext.contextDestroyed")) {
       // Filter out top-level browsing contexts that are destroyed because of a
       // cross-group navigation.
       if (why === "replace") {
