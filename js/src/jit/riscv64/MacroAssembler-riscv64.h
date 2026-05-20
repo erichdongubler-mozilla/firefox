@@ -891,7 +891,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
                   JSValueType type);
 
   void notBoolean(const ValueOperand& val) {
-    xori(val.valueReg(), val.valueReg(), 1);
+    NegateBool(val.valueReg(), val.valueReg());
   }
 
   // boxing code
