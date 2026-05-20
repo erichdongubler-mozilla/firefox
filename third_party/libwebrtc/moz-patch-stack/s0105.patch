@@ -16,10 +16,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/4527c41ef71d7683c
  4 files changed, 24 insertions(+), 12 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index ca1f01034b..9d3a4973d1 100644
+index fda45b6cfb..97495709df 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -499,6 +499,9 @@ if (!rtc_build_ssl) {
+@@ -508,6 +508,9 @@ if (!rtc_build_ssl) {
        "crypto",
        "ssl",
      ]
@@ -29,7 +29,7 @@ index ca1f01034b..9d3a4973d1 100644
    }
  }
  
-@@ -593,6 +596,7 @@ if (!build_with_chromium) {
+@@ -602,6 +605,7 @@ if (!build_with_chromium) {
          "api/environment:environment_factory",
          "api/video:video_frame",
          "api/video:video_rtp_headers",
@@ -117,7 +117,7 @@ index a358ef03ab..7cddb06ba4 100644
    public_configs = []
    if (!build_with_chromium) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 88abe41f3d..c0b2d931a3 100644
+index 4b6eb6fb9e..be1550fcc1 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -1570,6 +1570,7 @@ rtc_source_set("ssl_header") {
@@ -148,7 +148,7 @@ index 88abe41f3d..c0b2d931a3 100644
  rtc_library("ssl") {
  if (!build_with_mozilla) {
 diff --git a/webrtc.gni b/webrtc.gni
-index fd0efa063f..4f63ab5990 100644
+index eb963f146f..366755e02f 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -112,7 +112,7 @@ declare_args() {
