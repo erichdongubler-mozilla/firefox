@@ -57,8 +57,7 @@ add_task(async function testClickingSidebarEntriesChangesView() {
 
 add_task(async function testClickingSidebarPaddingNoChange() {
   let win = await loadInitialView("theme");
-  let categoryUtils = new CategoryUtilities(win);
-  let themeCategory = categoryUtils.get("theme");
+  let themeCategory = AboutAddonsTestUtils.getCategoryButton(win, "theme");
 
   let loadDetailView = async () => {
     let loaded = waitForViewLoad(win);

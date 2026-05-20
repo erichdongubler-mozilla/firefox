@@ -2,6 +2,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 import { Assert } from "resource://testing-common/Assert.sys.mjs";
+import { BrowserTestUtils } from "resource://testing-common/BrowserTestUtils.sys.mjs";
 
 const ASSERT_MESSAGE_EXPECTED_ABOUTADDONS_GLOBAL =
   "Expect window to be an about:addons page global";
@@ -33,10 +34,27 @@ function assertIsAboutAddonsSidebarButton(button) {
   );
 }
 
+function getCategoriesBox(win) {
+  assertIsAboutAddonsWindow(win);
+  const categoriesBox = win.document.querySelector("categories-box");
+  if (!categoriesBox) {
+    throw new Error("No categories-box element found");
+  }
+  return categoriesBox;
+}
+
 export const AboutAddonsTestUtils = {
   getAddonCard(win, id) {
     assertIsAboutAddonsWindow(win);
     return win.document.querySelector(`addon-card[addon-id="${id}"]`);
+  },
+
+  getSidebarSelectedViewId(win) {
+    return getCategoriesBox(win).currentViewId;
+  },
+
+  getSidebarSelectedCategory(win) {
+    return getCategoriesBox(win)._currentView;
   },
 
   getAllCategoryButtons(win) {
@@ -67,6 +85,15 @@ export const AboutAddonsTestUtils = {
     }
     // NOTE: moz-page-nav selected may also be null.
     return !!button.selected;
+  },
+
+  isCategoryVisible(win, type) {
+    assertIsAboutAddonsWindow(win);
+    const button = this.getCategoryButton(win, type);
+    if (!button) {
+      throw Error(`No button found for category ${type}`);
+    }
+    return BrowserTestUtils.isVisible(button);
   },
 
   clickCategoryButton(win, type) {

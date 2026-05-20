@@ -595,9 +595,11 @@ add_task(async function testAvailableUpdates() {
   let win = await loadInitialView("extension");
   let doc = win.document;
   let updatesMessage = doc.getElementById("updates-message");
-  let categoryUtils = new CategoryUtilities(win);
 
-  let availableCat = categoryUtils.get("available-updates");
+  let availableCat = AboutAddonsTestUtils.getCategoryButton(
+    win,
+    "available-updates"
+  );
 
   ok(availableCat.hidden, "Available updates is hidden");
   is(
@@ -663,7 +665,7 @@ add_task(async function testAvailableUpdates() {
   // Check the detail page for the first add-on.
   await loadDetailView(win, ids[0]);
   is(
-    categoryUtils.getSelectedViewId(),
+    AboutAddonsTestUtils.getSidebarSelectedViewId(win),
     "addons://list/extension",
     "The extensions category is selected"
   );
@@ -675,7 +677,7 @@ add_task(async function testAvailableUpdates() {
 
   // We're back on the updates view.
   is(
-    categoryUtils.getSelectedViewId(),
+    AboutAddonsTestUtils.getSidebarSelectedViewId(win),
     "addons://updates/available",
     "The available updates category is selected"
   );
@@ -826,8 +828,10 @@ add_task(async function testUpdatesShownOnLoad() {
   await findUpdatesForAddonId(id);
 
   let win = await loadInitialView("extension");
-  let categoryUtils = new CategoryUtilities(win);
-  let updatesButton = categoryUtils.get("available-updates");
+  let updatesButton = AboutAddonsTestUtils.getCategoryButton(
+    win,
+    "available-updates"
+  );
 
   ok(!updatesButton.hidden, "The updates button is shown");
   is(
@@ -859,8 +863,10 @@ add_task(async function testUpdatesShownOnLoad() {
   info("Check that the updates section is hidden when re-opened");
   await closeView(win);
   win = await loadInitialView("extension");
-  categoryUtils = new CategoryUtilities(win);
-  updatesButton = categoryUtils.get("available-updates");
+  updatesButton = AboutAddonsTestUtils.getCategoryButton(
+    win,
+    "available-updates"
+  );
 
   ok(updatesButton.hidden, "Available updates is hidden");
   is(
