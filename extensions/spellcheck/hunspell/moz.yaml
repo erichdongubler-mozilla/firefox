@@ -40,6 +40,7 @@ vendoring:
     - patches/bug1410214.patch
     - patches/bug1653659.patch
     - patches/bug1739761.patch
+    - patches/bug2037089-hentry-pack.patch
 
   update-actions:
     - action: move-dir
