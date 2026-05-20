@@ -10,8 +10,6 @@ ChromeUtils.defineESModuleGetters(this, {
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
-const SCALAR_KEY = "timestamps.about_home_topsites_first_paint";
-
 const MAX_ATTEMPTS = 10;
 
 let gAttempts = 0;
@@ -34,12 +32,14 @@ this.startup_about_home_paint = class extends ExtensionAPI {
   }
 
   async checkForTelemetry() {
-    let snapshot = Services.telemetry.getSnapshotForScalars("main");
-    let measurement = snapshot.parent[SCALAR_KEY];
+    let measurement =
+      Glean.timestamps.aboutHomeTopsitesFirstPaint.testGetValue();
     let win = BrowserWindowTracker.getTopWindow();
     if (!measurement) {
       if (gAttempts == MAX_ATTEMPTS) {
-        dump(`Failed to get ${SCALAR_KEY} scalar probe in time.\n`);
+        dump(
+          "Failed to get timestamps.about_home_topsites_first_paint metric in time.\n"
+        );
         await this.quit();
         return;
       }
