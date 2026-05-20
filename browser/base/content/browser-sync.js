@@ -536,7 +536,11 @@ var gSync = {
   },
 
   shouldHideSendContextMenuItems(enabled) {
-    return !enabled || !this.FXA_ENABLED;
+    return (
+      !enabled ||
+      !this.FXA_ENABLED ||
+      UIState.get().status == UIState.STATUS_NOT_VERIFIED
+    );
   },
 
   getSendTabTargets() {
