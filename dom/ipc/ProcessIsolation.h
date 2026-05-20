@@ -28,6 +28,13 @@ constexpr nsLiteralCString kHighValueHasSavedLoginPermission =
 constexpr nsLiteralCString kHighValueIsLoggedInPermission =
     "highValueIsLoggedIn"_ns;
 
+/**
+ * Given a specific set of BrowsingContext origin attributes, get a shared "web"
+ * process which should be used for loading shared content.
+ */
+nsCString SharedWebRemoteType(const OriginAttributes& aAttrs,
+                              bool aDisableJit = false);
+
 // NavigationIsolationOptions is passed through the methods to store the state
 // of the possible process and/or browsing context change.
 struct NavigationIsolationOptions {

@@ -30,21 +30,6 @@ function assertJitState(url, isAllowed) {
     preferredRemoteType: "web",
   });
 
-  // NOTE: Until bug 1729352, pages loaded into the generic 'web' remote type
-  // always have jit permitted, as the process isolation logic does not attach
-  // the 'disableJit' attribute to the generic 'web' remote type.
-  //
-  // We are only able to actually meaningfully disable the jit for 'webIsolated'
-  // or 'webCOOP+COEP' remote types.
-  if (remoteType == "web") {
-    Assert.equal(
-      uri.scheme,
-      "data",
-      `We only expect shared remote type for data URIs in this test ${url}`
-    );
-    return;
-  }
-
   Assert.equal(
     isJitDisabledForRemoteType(remoteType),
     !isAllowed,
