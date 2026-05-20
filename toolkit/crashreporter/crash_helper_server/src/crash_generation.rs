@@ -20,14 +20,14 @@ use crash_helper_common::{
     crash_annotations::{
         should_include_annotation, type_of_annotation, CrashAnnotation, CrashAnnotationType,
     },
-    BreakpadChar, BreakpadString, GeckoChildId, Pid,
+    BreakpadChar, BreakpadString, ExtraCrashData, GeckoChildId, Pid,
 };
 use mozannotation_server::{AnnotationData, CAnnotation};
 use num_traits::FromPrimitive;
 use std::{
     collections::HashMap,
     convert::TryInto,
-    ffi::{c_char, c_void, CStr, CString, OsStr, OsString},
+    ffi::{c_void, CStr, CString, OsStr, OsString},
     fs::File,
     io::{Seek, SeekFrom, Write},
     mem::size_of,
@@ -112,16 +112,20 @@ impl CrashGenerator {
     fn finalize_crash_report(
         &mut self,
         process_id: BreakpadProcessId,
-        error: Option<CString>,
+        extra_data: Option<&ExtraCrashData>,
         minidump_path: &Path,
         origin: MinidumpOrigin,
     ) {
         let mut extra_path = PathBuf::from(minidump_path);
         extra_path.set_extension("extra");
 
+        let (error, extra_annotations) = extra_data
+            .map(|d| (d.error.clone(), d.annotations.clone()))
+            .unwrap_or_default();
         let annotations = retrieve_annotations(&process_id, origin);
         let annotations = [
             (annotations.ok(), c"MissingChildProcessAnnotations"),
+            (Some(extra_annotations), c"ShouldNotFail"),
         ]
         .into_iter()
         .fold(HashMap::new(), fold_annotations);
@@ -215,25 +219,25 @@ fn serialize_phc_stack(stack_trace: &StackTrace) -> String {
 /// # Safety
 ///
 /// The caller must guarantee that the `generator` parameter points to a
-/// Mutex<CrashGenerator> object and that `error_ptr` and `minidump_path_ptr`
-/// point to valid strings.
+/// Mutex<CrashGenerator> object and that `extra_data` and `minidump_path_ptr`
+/// point to valid objects or are null. The ownership remains to the caller for
+/// those two objects.
 pub(crate) unsafe extern "C" fn finalize_breakpad_minidump(
     generator: *const c_void,
     process_id: BreakpadProcessId,
-    error_ptr: *const c_char,
+    extra_data: Option<&ExtraCrashData>,
     minidump_path_ptr: *const BreakpadChar,
 ) {
     let generator = generator as *const Mutex<CrashGenerator>;
     let minidump_path = PathBuf::from(<OsString as BreakpadString>::from_ptr(minidump_path_ptr));
-    let error = if !error_ptr.is_null() {
-        // SAFETY: The string is a valid C string we passed in ourselves.
-        Some(CStr::from_ptr(error_ptr).to_owned())
-    } else {
-        None
-    };
 
     let mut generator = generator.as_ref().unwrap().lock().unwrap();
-    generator.finalize_crash_report(process_id, error, &minidump_path, MinidumpOrigin::Breakpad);
+    generator.finalize_crash_report(
+        process_id,
+        extra_data,
+        &minidump_path,
+        MinidumpOrigin::Breakpad,
+    );
 }
 
 fn retrieve_annotations(

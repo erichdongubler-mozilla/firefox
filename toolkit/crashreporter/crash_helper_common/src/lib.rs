@@ -20,6 +20,7 @@ pub mod crash_annotations {
 
 use bytes::Bytes;
 use messages::MessageError;
+use mozannotation_server::CAnnotation;
 
 // Matches the same type in mozglue/misc/ProcessType.h
 pub type GeckoChildId = i32;
@@ -77,3 +78,11 @@ pub trait BreakpadString {
 }
 
 pub const IO_TIMEOUT: u16 = 2 * 1000;
+
+/// Payload that can be passed through the minidump writer to the finalizing callback.
+/// It will typically be weaved through FFIs via opaque pointers.
+#[derive(Default)]
+pub struct ExtraCrashData {
+    pub error: Option<std::ffi::CString>,
+    pub annotations: Vec<CAnnotation>,
+}
