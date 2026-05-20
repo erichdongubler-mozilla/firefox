@@ -988,41 +988,46 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
       asyncStackSetter.emplace(aCx, allocStack, reason);
     }
 
-    bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
-    AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
+    {
+      // A new scope is used to make sure the UserInputState is reset before
+      // potentially draining more microtasks.
+      bool propagate = ShouldPropagateUserInputEventHandlingState(aMicroTask);
+      AutoHandlingUserInputStatePusher userInputStateSwitcher(propagate);
 
-    // Inform the profiler about the flow for this microtask.
-    mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly> terminatingMarker;
-    MaybeGetFlowMarker(aMicroTask, terminatingMarker);
+      // Inform the profiler about the flow for this microtask.
+      mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly>
+          terminatingMarker;
+      MaybeGetFlowMarker(aMicroTask, terminatingMarker);
 
-    if (incumbentGlobal) {
-      // https://wicg.github.io/scheduling-apis/#sec-patches-html-hostcalljobcallback
-      // 2. Set event loop’s current scheduling state to
-      // callback.[[HostDefined]].[[SchedulingState]].
-      incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
+      if (incumbentGlobal) {
+        // https://wicg.github.io/scheduling-apis/#sec-patches-html-hostcalljobcallback
+        // 2. Set event loop’s current scheduling state to
+        // callback.[[HostDefined]].[[SchedulingState]].
+        incumbentGlobal->SetWebTaskSchedulingState(schedulingState);
+      }
+
+      // Note: We're dropping the return value on the floor here, however
+      // cleanup and exception handling are done as part of the CallSetup
+      // destructor if necessary.
+      bool ret = aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+
+      // (The step after step 7): Set event loop’s current scheduling
+      // state to null
+      if (incumbentGlobal) {
+        incumbentGlobal->SetWebTaskSchedulingState(nullptr);
+      }
+
+      // If we failed to execute, we should not attempt to execute more
+      // tasks without running cleanup.
+      if (!ret) {
+        return;
+      }
     }
 
-    // Note: We're dropping the return value on the floor here, however
-    // cleanup and exception handling are done as part of the CallSetup
-    // destructor if necessary.
-    bool ret = aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
-
-    // (The step after step 7): Set event loop’s current scheduling
-    // state to null
-    if (incumbentGlobal) {
-      incumbentGlobal->SetWebTaskSchedulingState(nullptr);
-    }
-
-    // Note: It's quite costly to set up all the execution state, and there's a
-    // common case where the next task is run in the same execution state.
+    // Note: It's quite costly to set up all the execution state, and there's
+    // a common case where the next task is run in the same execution state.
     // To avoid setting it up again, we'll try to drain more if it's possible.
     if (!StaticPrefs::javascript_options_batch_microtask_execution()) {
-      return;
-    }
-
-    // If we failed to execute, we should not attempt to execute more
-    // tasks without running cleanup.
-    if (!ret) {
       return;
     }
 
@@ -1101,7 +1106,7 @@ void RunJSMicroTask(JSContext* aCx, CycleCollectedJSContext* aCCJS,
 
       // If this task fails we need cleanup code, which is in AutoJSAPI's
       // destructor to run, so abort execution.
-      ret = aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
+      bool ret = aMicroTask.get().RunAndConsumeJSMicroTask(aCx);
 
       // (The step after step 7): Set event loop’s current scheduling
       // state to null
