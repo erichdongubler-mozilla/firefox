@@ -4,11 +4,6 @@
 import { HttpServer } from "resource://testing-common/httpd.sys.mjs";
 import { NetUtil } from "resource://gre/modules/NetUtil.sys.mjs";
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  setTimeout: "resource://gre/modules/Timer.sys.mjs",
-});
-
 const SERVER_PATH = "/api/v1/create";
 const SHARE_PATH = "/share/mockShare001";
 
@@ -26,7 +21,6 @@ class ContentSharingMockServerClass {
   #originalServerUrl = null;
   #mockResponse = null;
   #mockResponseStatus = 201;
-  #responseDelay = 0;
   get url() {
     return this.#url;
   }
@@ -51,13 +45,6 @@ class ContentSharingMockServerClass {
   }
   set mockResponseStatus(value) {
     this.#mockResponseStatus = value;
-  }
-
-  get responseDelay() {
-    return this.#responseDelay;
-  }
-  set responseDelay(value) {
-    this.#responseDelay = value;
   }
 
   constructor() {
@@ -112,7 +99,6 @@ class ContentSharingMockServerClass {
     this.#requests = [];
     this.#mockResponse = { url: this.#mockShareURL };
     this.#mockResponseStatus = 201;
-    this.#responseDelay = 0;
   }
 
   #handleRequest(httpRequest, httpResponse) {
@@ -133,22 +119,14 @@ class ContentSharingMockServerClass {
     this.#requests.push({ body });
 
     httpResponse.processAsync();
+    httpResponse.setStatusLine("", this.#mockResponseStatus, "");
 
-    const respond = () => {
-      httpResponse.setStatusLine("", this.#mockResponseStatus, "");
-      if (this.#mockResponseStatus !== 401) {
-        httpResponse.setHeader("Set-Cookie", COOKIE_CONTENTS);
-      }
-      httpResponse.setHeader("Content-Type", "application/json", false);
-      httpResponse.write(JSON.stringify(this.#mockResponse));
-      httpResponse.finish();
-    };
-
-    if (this.#responseDelay > 0) {
-      lazy.setTimeout(respond, this.#responseDelay);
-    } else {
-      respond();
+    if (this.#mockResponseStatus !== 401) {
+      httpResponse.setHeader("Set-Cookie", COOKIE_CONTENTS);
     }
+    httpResponse.setHeader("Content-Type", "application/json", false);
+    httpResponse.write(JSON.stringify(this.#mockResponse));
+    httpResponse.finish();
   }
 }
 
