@@ -2,7 +2,7 @@
 name = "crash_helper_server"
 version = "0.1.0"
 authors = ["Gabriele Svelto <gsvelto@mozilla.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 anyhow = "1"
