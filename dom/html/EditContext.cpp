@@ -6,15 +6,22 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/dom/AnonymousContent.h"
 #include "mozilla/dom/CompositionEvent.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Text.h"
+#include "mozilla/dom/TextUpdateEvent.h"
+#include "nsDOMCSSDeclaration.h"
 #include "nsGenericHTMLElement.h"
+#include "nsTextNode.h"
 
 namespace mozilla::dom {
 
 NS_IMPL_ADDREF_INHERITED(EditContext, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(EditContext, DOMEventTargetHelper)
-NS_IMPL_CYCLE_COLLECTION(EditContext, mAssociatedElement)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(EditContext, DOMEventTargetHelper,
+                                   mAssociatedElement, mText, mTextContainer)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(EditContext)
 NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
@@ -27,7 +34,10 @@ already_AddRefed<EditContext> EditContext::Constructor(
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
-  RefPtr<EditContext> context = new EditContext(global, aInit);
+  RefPtr<EditContext> context = new EditContext(global, aInit, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
   return context.forget();
 }
 
@@ -91,11 +101,37 @@ bool EditContext::IsAnyAttached() {
 }
 
 EditContext::EditContext(nsIGlobalObject* aGlobalObject,
-                         const EditContextInit& aInit)
+                         const EditContextInit& aInit, ErrorResult& aRv)
     : DOMEventTargetHelper(aGlobalObject) {
+  auto window = aGlobalObject->GetAsInnerWindow();
+  MOZ_ASSERT(window);
+  auto* document = window->GetDoc();
+  MOZ_ASSERT(document);
+  RefPtr<AnonymousContent> anonymousContent =
+      document->InsertAnonymousContent(aRv);
+  if (NS_WARN_IF(!anonymousContent)) {
+    return;
+  }
+  RefPtr<Element> textContainer =
+      document->CreateElem(u"div"_ns, nullptr, kNameSpaceID_XHTML);
+  if (NS_WARN_IF(!textContainer)) {
+    return;
+  }
+  mTextContainer = nsGenericHTMLElement::FromNode(textContainer);
+  MOZ_ASSERT(mTextContainer);
+  mText = document->CreateTextNode(u""_ns);
+  mText->MarkAsMaybeModifiedFrequently();
+  mTextContainer->AppendChild(*mText, IgnoreErrors());
+  anonymousContent->Root()->AppendChild(*mTextContainer, IgnoreErrors());
+  mText->SetEditableFlag(true);
+  mTextContainer->SetEditableFlag(true);
+  mTextContainer->Style()->SetProperty("visibility"_ns, "hidden"_ns, ""_ns,
+                                       IgnoreErrors());
   UpdateSelection(aInit.mSelectionStart, aInit.mSelectionEnd);
-  UpdateText(0, 0, aInit.mText);
+  UpdateText(0, 0, aInit.mText, aRv);
 }
+
+void EditContext::GetText(nsAString& aText) const { mText->GetData(aText); }
 
 RefPtr<DOMRect> EditContext::ToDOMRect(const Rect& copy) const {
   return MakeRefPtr<DOMRect>(GetRelevantGlobal(), copy.x, copy.y, copy.width,
@@ -124,12 +160,60 @@ void EditContext::CharacterBounds(nsTArray<RefPtr<DOMRect>>& aRetVal) const {
   }
 }
 
+uint32_t EditContext::TextLength() const { return mText->TextLength(); }
+
+void EditContext::UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
+                             const nsAString& aText, ErrorResult& aRv) {
+  if (NS_WARN_IF(!mText->DataBuffer().CanGrowBy(aText.Length()))) {
+    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+    return;
+  }
+  uint32_t start = std::min(aRangeStart, aRangeEnd);
+  start = std::min(start, TextLength());
+  uint32_t end = std::max(aRangeStart, aRangeEnd);
+  end = std::min(end, TextLength());
+  mText->ReplaceData(start, end - start, aText, IgnoreErrors());
+  // XXX: Perhaps mSelectionStart/End should be clamped to new length
+  //      of text? See https://github.com/w3c/edit-context/issues/88
+}
+
 void EditContext::UpdateControlBounds(DOMRect& aControlBounds) {
   mControlBounds = ToRect(aControlBounds);
 }
 
 void EditContext::UpdateSelectionBounds(DOMRect& aSelectionBounds) {
   mSelectionBounds = ToRect(aSelectionBounds);
+}
+
+void EditContext::UpdateTextAndFireEvent(uint32_t aStart, uint32_t aEnd,
+                                         const nsAString& aString) {
+  aStart = std::min(aStart, TextLength());
+  aEnd = std::min(aEnd, TextLength());
+  if (aStart == aEnd && aString.IsEmpty()) {
+    // Edit doesn't change anything
+    return;
+  }
+  if (aStart > aEnd) {
+    std::swap(aStart, aEnd);
+  }
+  IgnoredErrorResult rv;
+  UpdateText(aStart, aEnd, aString, rv);
+  if (rv.Failed()) {
+    return;
+  }
+  mSelectionStart = mSelectionEnd = aStart + aString.Length();
+  TextUpdateEventInit options;
+  options.mText = aString;
+  options.mSelectionStart = mSelectionStart;
+  options.mSelectionEnd = mSelectionEnd;
+  options.mUpdateRangeStart = aStart;
+  options.mUpdateRangeEnd = aEnd;
+  options.mBubbles = false;
+  options.mCancelable = true;
+  RefPtr<TextUpdateEvent> e =
+      TextUpdateEvent::Constructor(this, u"textupdate"_ns, options);
+  e->SetTrusted(true);
+  DispatchEvent(*e);
 }
 
 }  // namespace mozilla::dom
