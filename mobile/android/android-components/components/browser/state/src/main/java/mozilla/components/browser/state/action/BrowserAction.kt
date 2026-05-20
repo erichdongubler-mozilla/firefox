@@ -1332,26 +1332,6 @@ sealed class WebExtensionAction : BrowserAction() {
     ) : WebExtensionAction()
 
     /**
-     * Passes url and title necessary for opening options page via [WebExtensionState].
-     * And keeps track of the last instance used to display an extension options page.
-     * optionsPageInstanceId keeps repeated requests distinguishable when the observer
-     * misses the cleared state.
-     */
-    data class UpdateOptionsPageSessionAction(
-        val extensionId: String,
-        val optionsPageInstanceId: String,
-        val optionsPageUrl: String,
-        val extensionTranslatedName: String,
-    ) : WebExtensionAction()
-
-    /**
-     * Clears the state of an options page session.
-     */
-    data class ClearOptionsPageSession(
-        val extensionId: String,
-    ) : WebExtensionAction()
-
-    /**
      * Updates a tab-specific browser action that belongs to the given [sessionId] and [extensionId] on the
      * [TabSessionState.extensionState].
      */

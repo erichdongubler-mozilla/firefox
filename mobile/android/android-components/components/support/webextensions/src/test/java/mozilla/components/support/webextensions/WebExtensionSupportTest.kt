@@ -774,31 +774,6 @@ class WebExtensionSupportTest {
     }
 
     @Test
-    fun `reacts to call for opening options page by dispatching to the store`() {
-        val store = BrowserStore(middleware = listOf(captureMiddleware))
-        val engine: Engine = mock()
-        val ext: WebExtension = mock()
-        val metaData: Metadata = mock()
-        whenever(ext.id).thenReturn("testId")
-        whenever(ext.getMetadata()).thenReturn(metaData)
-        whenever(metaData.openOptionsPageInTab).thenReturn(false)
-        whenever(metaData.optionsPageUrl).thenReturn("testUrl")
-        whenever(metaData.name).thenReturn("testName")
-
-        val delegateCaptor = argumentCaptor<WebExtensionDelegate>()
-        WebExtensionSupport.initialize(engine, store)
-        verify(engine).registerWebExtensionDelegate(delegateCaptor.capture())
-
-        delegateCaptor.value.onOpenOptionsPage(ext)
-        captureMiddleware.assertFirstAction(WebExtensionAction.UpdateOptionsPageSessionAction::class) { action ->
-            assertEquals(ext.id, action.extensionId)
-            assertTrue(action.optionsPageInstanceId.isNotEmpty())
-            assertEquals(metaData.optionsPageUrl, action.optionsPageUrl)
-            assertEquals(metaData.name, action.extensionTranslatedName)
-        }
-    }
-
-    @Test
     fun `reacts to action popup being toggled by opening tab as needed`() {
         val engine: Engine = mock()
 

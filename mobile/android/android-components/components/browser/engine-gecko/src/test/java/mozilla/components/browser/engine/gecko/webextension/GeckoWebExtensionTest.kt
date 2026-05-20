@@ -344,7 +344,20 @@ class GeckoWebExtensionTest {
         assertNotNull(engineSessionCaptor.value)
 
         tabDelegateCaptor.value.onOpenOptionsPage(nativeGeckoWebExt)
-        verify(tabHandler).onOpenOptionsPage(eq(extension))
+        verify(tabHandler, never()).onNewTab(eq(extension), any(), eq(false), eq("http://options-page.moz"))
+
+        val nativeGeckoWebExtWithMetadata =
+            mockNativeWebExtension(id = "id", location = "uri", metaData = mockNativeWebExtensionMetaData())
+        tabDelegateCaptor.value.onOpenOptionsPage(nativeGeckoWebExtWithMetadata)
+        verify(tabHandler, never()).onNewTab(eq(extension), any(), eq(false), eq("http://options-page.moz"))
+
+        val nativeGeckoWebExtWithOptionsPageUrl = mockNativeWebExtension(
+            id = "id",
+            location = "uri",
+            metaData = mockNativeWebExtensionMetaData(optionsPageUrl = "http://options-page.moz"),
+        )
+        tabDelegateCaptor.value.onOpenOptionsPage(nativeGeckoWebExtWithOptionsPageUrl)
+        verify(tabHandler).onNewTab(eq(extension), any(), eq(false), eq("http://options-page.moz"))
     }
 
     @Test
