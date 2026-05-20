@@ -572,7 +572,7 @@ static bool IsParameterUnrecognized(const nsAString& aContentType) {
     }
   }
 
-  for (auto param : params) {
+  for (const auto& param : params) {
     if (!param.LowerCaseEqualsLiteral("codecs") &&
         !param.LowerCaseEqualsLiteral("profiles")) {
       return true;

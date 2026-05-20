@@ -1854,7 +1854,7 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
 
     nsTArray<nsString> directiveNames;
     policy->getDirectiveNames(directiveNames);
-    for (nsString dir : directiveNames) {
+    for (const nsString& dir : directiveNames) {
       MOZ_ASSERT(!dir.EqualsLiteral("script-src-elem") &&
                  !dir.EqualsLiteral("script-src-attr"));
     }
@@ -1890,7 +1890,7 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   // Make sure we have a checker for all the directives that are being used.
   nsTArray<nsString> directiveNames;
   policy->getDirectiveNames(directiveNames);
-  for (nsString dir : directiveNames) {
+  for (const nsString& dir : directiveNames) {
     if (dir.EqualsLiteral("default-src") || dir.EqualsLiteral("object-src") ||
         dir.EqualsLiteral("script-src") || dir.EqualsLiteral("style-src") ||
         dir.EqualsLiteral("img-src") || dir.EqualsLiteral("media-src") ||
@@ -1969,7 +1969,7 @@ void nsContentSecurityUtils::AssertChromePageHasCSP(Document* aDocument) {
 
     nsTArray<nsString> directiveNames;
     policy->getDirectiveNames(directiveNames);
-    for (nsString dir : directiveNames) {
+    for (const nsString& dir : directiveNames) {
       if (dir.EqualsLiteral("default-src") || dir.EqualsLiteral("script-src") ||
           dir.EqualsLiteral("script-src-attr") ||
           dir.EqualsLiteral("style-src") || dir.EqualsLiteral("img-src") ||

@@ -299,3 +299,32 @@ describe("<SportsMatchRow> aria-label l10n", () => {
     );
   });
 });
+
+describe("<SportsMatchRow> flag accessibility", () => {
+  it("sets alt and title on the home team flag image to the team name", () => {
+    const { container } = render(
+      <SportsMatchRow match={baseMatch} variant="upcoming" />
+    );
+    const flags = container.querySelectorAll(".sports-match-flag");
+    expect(flags[0].getAttribute("alt")).toBe("England");
+    expect(flags[0].getAttribute("title")).toBe("England");
+  });
+
+  it("sets alt and title on the away team flag image to the team name", () => {
+    const { container } = render(
+      <SportsMatchRow match={baseMatch} variant="upcoming" />
+    );
+    const flags = container.querySelectorAll(".sports-match-flag");
+    expect(flags[1].getAttribute("alt")).toBe("United States");
+    expect(flags[1].getAttribute("title")).toBe("United States");
+  });
+
+  it("does not set title on the parent .sports-match-team div", () => {
+    const { container } = render(
+      <SportsMatchRow match={baseMatch} variant="upcoming" />
+    );
+    const teamDivs = container.querySelectorAll(".sports-match-team");
+    expect(teamDivs[0].getAttribute("title")).toBeNull();
+    expect(teamDivs[1].getAttribute("title")).toBeNull();
+  });
+});

@@ -17,14 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import androidx.preference.Preference
-import androidx.preference.PreferenceViewHolder
 import mozilla.components.compose.base.theme.information
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -32,35 +28,24 @@ import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 
 /**
- * A [Preference] for the built-in VPN (IP Protection) settings entry.
+ * A [ComposePreference] for the built-in VPN (IP Protection) settings entry.
  */
 class IPProtectionPreference @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-) : Preference(context, attrs) {
+) : ComposePreference(context, attrs) {
 
     /**
      * Enables a `beta` badge next to the entry.
      */
     var showBetaBadge: Boolean = false
 
-    init {
-        layoutResource = R.layout.preference_ip_protection
-    }
-
-    override fun onBindViewHolder(holder: PreferenceViewHolder) {
-        super.onBindViewHolder(holder)
-        holder.itemView.findViewById<ComposeView>(R.id.compose_view)?.apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                FirefoxTheme {
-                    IPProtectionPreferenceRow(
-                        title = context.getString(R.string.preferences_ip_protection_title_2),
-                        showBetaBadge = showBetaBadge,
-                    )
-                }
-            }
-        }
+    @Composable
+    override fun Content() {
+        IPProtectionPreferenceRow(
+            title = context.getString(R.string.preferences_ip_protection_title_2),
+            showBetaBadge = showBetaBadge,
+        )
     }
 }
 

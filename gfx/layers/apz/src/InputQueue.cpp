@@ -499,7 +499,10 @@ APZEventResult InputQueue::ReceivePanGestureInput(
     const bool waitingForContentResponse =
         MaybeRequestContentResponse(aTarget, block);
 
-    if (event.AllowsSwipe() && !CanScrollTargetHorizontally(event, block)) {
+    bool targetCanScrollHorizontally =
+        CanScrollTargetHorizontally(event, block);
+    result.mTargetCanScrollHorizontally = targetCanScrollHorizontally;
+    if (event.AllowsSwipe() && !targetCanScrollHorizontally) {
       // We will ask the browser whether this pan event is going to be used for
       // swipe or not, so we need to wait the response.
       block->SetNeedsToWaitForBrowserGestureResponse(true);

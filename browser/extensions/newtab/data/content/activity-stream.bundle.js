@@ -15946,32 +15946,155 @@ function SportsMatchRow({
     "data-l10n-args": JSON.stringify(ariaLabelL10n.args),
     href: ""
   }, /*#__PURE__*/external_React_default().createElement("div", {
-    className: "sports-match-team",
-    title: home_team.name
+    className: "sports-match-team"
   }, /*#__PURE__*/external_React_default().createElement("img", {
     className: "sports-match-flag",
     src: home_team.icon_url,
-    alt: ""
+    alt: home_team.name,
+    title: home_team.name
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "sports-match-code"
   }, home_team.key)), renderMiddle(), /*#__PURE__*/external_React_default().createElement("div", {
-    className: "sports-match-team",
-    title: away_team.name
+    className: "sports-match-team"
   }, /*#__PURE__*/external_React_default().createElement("img", {
     className: "sports-match-flag",
     src: away_team.icon_url,
-    alt: ""
+    alt: away_team.name,
+    title: away_team.name
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "sports-match-code"
   }, away_team.key)));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/teamRegions.mjs
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+// FIFA team code to ISO 3166-1 alpha-2 region code accepted by
+// Intl.DisplayNames. Covers the 43 qualified 2026 World Cup teams not
+// in FLUENT_OVERRIDE_KEYS (see useLocalizedTeamNames.jsx). Teams Merino
+// sends that are in neither map fall back to team.name.
+const TEAM_REGION_CODES = {
+  ALG: "DZ",
+  ARG: "AR",
+  AUS: "AU",
+  AUT: "AT",
+  BEL: "BE",
+  BRA: "BR",
+  CAN: "CA",
+  COL: "CO",
+  CPV: "CV",
+  CRO: "HR",
+  CUW: "CW",
+  CZE: "CZ",
+  ECU: "EC",
+  EGY: "EG",
+  ESP: "ES",
+  FRA: "FR",
+  GER: "DE",
+  GHA: "GH",
+  HAI: "HT",
+  IRN: "IR",
+  IRQ: "IQ",
+  JOR: "JO",
+  JPN: "JP",
+  KOR: "KR",
+  KSA: "SA",
+  MAR: "MA",
+  MEX: "MX",
+  NED: "NL",
+  NOR: "NO",
+  NZL: "NZ",
+  PAN: "PA",
+  PAR: "PY",
+  POR: "PT",
+  QAT: "QA",
+  RSA: "ZA",
+  SEN: "SN",
+  SUI: "CH",
+  SWE: "SE",
+  TUN: "TN",
+  TUR: "TR",
+  URU: "UY",
+  USA: "US",
+  UZB: "UZ",
+};
+
+;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/useLocalizedTeamNames.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
+
+// FIFA team codes whose localized names must come from Fluent because
+// Intl.DisplayNames cannot produce a usable result: England and Scotland
+// have no ISO 3166-1 code, and Bosnia and Herzegovina / Ivory Coast /
+// DR Congo differ in wording from what UX wants to show.
+const FLUENT_OVERRIDE_KEYS = new Set(["BIH", "CIV", "COD", "ENG", "SCO"]);
+
+/**
+ * Resolves localized country names for `teams`. Returns `null` until
+ * the current `teams` reference is resolved, then an object mapping
+ * FIFA code to localized name. Resets to `null` on `teams` change so
+ * callers can't read stale entries during sort or filter.
+ */
+function useLocalizedTeamNames(teams) {
+  const [resolved, setResolved] = (0,external_React_namespaceObject.useState)({
+    teams: null,
+    names: null
+  });
+  (0,external_React_namespaceObject.useEffect)(() => {
+    let cancelled = false;
+    async function resolveNames() {
+      const overrideKeys = teams.map(team => team.key).filter(key => FLUENT_OVERRIDE_KEYS.has(key));
+
+      // The override strings ship as attribute-only Fluent messages
+      // (`.label = ...`), so we use formatMessages and read the label
+      // attribute rather than formatValues (which would return null).
+      const messages = overrideKeys.length ? await document.l10n.formatMessages(overrideKeys.map(key => ({
+        id: `newtab-sports-widget-team-name-label-${key.toLowerCase()}`
+      }))) : [];
+      if (cancelled) {
+        return;
+      }
+      const overrideValues = new Map(overrideKeys.map((key, i) => [key, messages[i]?.attributes?.find(attr => attr.name === "label")?.value]));
+      const displayNames = new Intl.DisplayNames(undefined, {
+        type: "region"
+      });
+      const names = {};
+      for (const team of teams) {
+        if (FLUENT_OVERRIDE_KEYS.has(team.key)) {
+          names[team.key] = overrideValues.get(team.key) || team.name;
+        } else if (TEAM_REGION_CODES[team.key]) {
+          names[team.key] = displayNames.of(TEAM_REGION_CODES[team.key]) || team.name;
+        } else {
+          names[team.key] = team.name;
+        }
+      }
+      setResolved({
+        teams,
+        names
+      });
+    }
+    resolveNames();
+    return () => {
+      cancelled = true;
+    };
+  }, [teams]);
+
+  // Only expose names that match the current `teams` reference.
+  return resolved.teams === teams ? resolved.names : null;
+}
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/SportsWidget.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // eslint-disable-next-line no-unused-vars
+
 
 
 
@@ -16407,12 +16530,13 @@ function SportsWidgetFollowTeams({
 }) {
   const [selectedTeams, setSelectedTeams] = (0,external_React_namespaceObject.useState)(initialSelectedTeams);
   const [searchQuery, setSearchQuery] = (0,external_React_namespaceObject.useState)("");
+  const localizedNames = useLocalizedTeamNames(teams);
   const isMaxSelected = selectedTeams.length >= 3;
-  const sortedTeams = [...teams].sort((a, b) => a.name.localeCompare(b.name));
-  const filteredTeams = searchQuery ? sortedTeams.filter(team => team.name.toLowerCase().includes(searchQuery.toLowerCase())) : sortedTeams;
   function handleTeamToggle(teamKey, isChecked) {
     setSelectedTeams(prev => isChecked ? [...prev, teamKey] : prev.filter(key => key !== teamKey));
   }
+  const sortedTeams = localizedNames ? [...teams].sort((a, b) => localizedNames[a.key].localeCompare(localizedNames[b.key])) : [];
+  const filteredTeams = searchQuery ? sortedTeams.filter(team => localizedNames[team.key].toLocaleLowerCase().includes(searchQuery.toLocaleLowerCase())) : sortedTeams;
   return /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-follow-teams"
   }, /*#__PURE__*/external_React_default().createElement("moz-input-search", {
@@ -16421,9 +16545,10 @@ function SportsWidgetFollowTeams({
     onInput: e => setSearchQuery(e.target.value)
   }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-follow-teams-list"
-  }, filteredTeams.map(team => {
+  }, localizedNames && filteredTeams.map(team => {
     const isSelected = selectedTeams.includes(team.key);
     const isRowDisabled = !isSelected && isMaxSelected;
+    const localizedName = localizedNames[team.key];
     return /*#__PURE__*/external_React_default().createElement("div", {
       key: team.key,
       className: `sports-follow-teams-row${isRowDisabled ? " is-disabled" : ""}`,
@@ -16441,15 +16566,15 @@ function SportsWidgetFollowTeams({
       checked: isSelected || undefined,
       disabled: isRowDisabled ? true : undefined,
       onChange: e => handleTeamToggle(team.key, e.target.checked),
-      "aria-label": team.name
+      "aria-label": localizedName
     }), /*#__PURE__*/external_React_default().createElement("img", {
       className: "sports-team-flag",
       src: team.icon_url,
       alt: "",
-      title: team.name
+      title: localizedName
     }), /*#__PURE__*/external_React_default().createElement("span", {
       className: "sports-team-name"
-    }, team.name));
+    }, localizedName));
   })), /*#__PURE__*/external_React_default().createElement("moz-button", {
     className: "sports-done-button",
     "data-l10n-id": "newtab-sports-widget-done-button",
@@ -16509,8 +16634,9 @@ function SportsMatchesView({
     match: previous[0],
     variant: "results",
     size: size
-  })), size === "large" && !!previous.length && /*#__PURE__*/external_React_default().createElement("moz-button", {
+  })), !!previous.length && /*#__PURE__*/external_React_default().createElement("moz-button", {
     type: "secondary",
+    size: size === "medium" ? "small" : undefined,
     "data-l10n-id": showResultsList ? "newtab-sports-widget-show-less" : "newtab-sports-widget-view-all",
     onClick: () => setShowResultsList(v => !v)
   })), hasLiveGames && /*#__PURE__*/external_React_default().createElement("div", {

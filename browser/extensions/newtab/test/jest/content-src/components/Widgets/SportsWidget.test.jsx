@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { render, fireEvent } from "@testing-library/react";
+import { act, render, fireEvent } from "@testing-library/react";
 import { INITIAL_STATE } from "common/Reducers.sys.mjs";
 import { actionTypes as at } from "common/Actions.mjs";
 import { WrapWithProvider } from "test/jest/test-utils";
@@ -44,6 +44,26 @@ const defaultProps = {
   dispatch: jest.fn(),
   handleUserInteraction: jest.fn(),
 };
+
+// Default Fluent mock returns the en-US `.label` value for each
+// requested team name ID. Individual tests can override `formatMessages`.
+function mockDocumentL10n() {
+  const fluentLabels = {
+    "newtab-sports-widget-team-name-label-bih": "Bosnia and Herzegovina",
+    "newtab-sports-widget-team-name-label-civ": "Ivory Coast",
+    "newtab-sports-widget-team-name-label-cod": "DR Congo",
+    "newtab-sports-widget-team-name-label-eng": "England",
+    "newtab-sports-widget-team-name-label-sco": "Scotland",
+  };
+  document.l10n = {
+    formatMessages: jest.fn(async ids =>
+      ids.map(({ id }) => ({
+        value: null,
+        attributes: [{ name: "label", value: fluentLabels[id] }],
+      }))
+    ),
+  };
+}
 
 function makeTeams() {
   return [
@@ -254,10 +274,15 @@ describe("<SportsWidget> follow teams flow", () => {
   beforeEach(() => {
     dispatch = jest.fn();
     handleUserInteraction = jest.fn();
+    mockDocumentL10n();
   });
 
-  function renderInFollowState(selectedTeams = [], dataOverride) {
-    return render(
+  afterEach(() => {
+    delete document.l10n;
+  });
+
+  async function renderInFollowState(selectedTeams = [], dataOverride) {
+    const result = render(
       <WrapWithProvider
         state={makeState(
           {},
@@ -274,10 +299,14 @@ describe("<SportsWidget> follow teams flow", () => {
         />
       </WrapWithProvider>
     );
+    // Flush the resolveNames effect so localizedNames is populated and
+    // rows are rendered before the test queries the DOM.
+    await act(async () => {});
+    return result;
   }
 
-  it("renders the follow teams title and hides the intro wrapper when in the follow state", () => {
-    const { container } = renderInFollowState();
+  it("renders the follow teams title and hides the intro wrapper when in the follow state", async () => {
+    const { container } = await renderInFollowState();
     expect(
       container.querySelector(".sports-follow-teams-title")
     ).toBeInTheDocument();
@@ -304,8 +333,8 @@ describe("<SportsWidget> follow teams flow", () => {
     );
   });
 
-  it("hides the context menu and shows a cancel button in the follow state", () => {
-    const { container } = renderInFollowState();
+  it("hides the context menu and shows a cancel button in the follow state", async () => {
+    const { container } = await renderInFollowState();
     expect(
       container.querySelector(".sports-context-menu-wrapper")
     ).not.toBeInTheDocument();
@@ -314,8 +343,8 @@ describe("<SportsWidget> follow teams flow", () => {
     ).toBeInTheDocument();
   });
 
-  it("dispatches CHANGE_WIDGET_STATE back to intro when Cancel is clicked without saving teams", () => {
-    const { container } = renderInFollowState();
+  it("dispatches CHANGE_WIDGET_STATE back to intro when Cancel is clicked without saving teams", async () => {
+    const { container } = await renderInFollowState();
     fireEvent.change(container.querySelector("moz-checkbox"), {
       target: { checked: true },
     });
@@ -337,8 +366,8 @@ describe("<SportsWidget> follow teams flow", () => {
     );
   });
 
-  it("dispatches CHANGE_SELECTED_TEAMS and navigates to intro when Done is clicked", () => {
-    const { container } = renderInFollowState([]);
+  it("dispatches CHANGE_SELECTED_TEAMS and navigates to intro when Done is clicked", async () => {
+    const { container } = await renderInFollowState([]);
     fireEvent.change(container.querySelector("moz-checkbox"), {
       target: { checked: true },
     });
@@ -357,8 +386,8 @@ describe("<SportsWidget> follow teams flow", () => {
     );
   });
 
-  it("does not dispatch CHANGE_SELECTED_TEAMS when a country is checked without clicking Done", () => {
-    const { container } = renderInFollowState([]);
+  it("does not dispatch CHANGE_SELECTED_TEAMS when a country is checked without clicking Done", async () => {
+    const { container } = await renderInFollowState([]);
     fireEvent.change(container.querySelector("moz-checkbox"), {
       target: { checked: true },
     });
@@ -367,8 +396,8 @@ describe("<SportsWidget> follow teams flow", () => {
     );
   });
 
-  it("saves the team removed from pre-selected teams when Done is clicked", () => {
-    const { container } = renderInFollowState(["ALG"]);
+  it("saves the team removed from pre-selected teams when Done is clicked", async () => {
+    const { container } = await renderInFollowState(["ALG"]);
     fireEvent.change(container.querySelector("moz-checkbox"), {
       target: { checked: false },
     });
@@ -381,15 +410,15 @@ describe("<SportsWidget> follow teams flow", () => {
     );
   });
 
-  it("marks pre-selected teams as checked", () => {
-    const { container } = renderInFollowState(["ALG"]);
+  it("marks pre-selected teams as checked", async () => {
+    const { container } = await renderInFollowState(["ALG"]);
     const checkboxes = container.querySelectorAll("moz-checkbox");
     expect(checkboxes[0].getAttribute("checked")).not.toBeNull();
     expect(checkboxes[1].getAttribute("checked")).toBeNull();
   });
 
-  it("disables unselected checkboxes when 3 teams are already selected", () => {
-    const { container } = renderInFollowState(["CAN", "AUS", "ALG"]);
+  it("disables unselected checkboxes when 3 teams are already selected", async () => {
+    const { container } = await renderInFollowState(["CAN", "AUS", "ALG"]);
     const checkboxes = container.querySelectorAll("moz-checkbox");
     const disabled = Array.from(checkboxes).filter(
       c => c.getAttribute("disabled") !== null
@@ -398,7 +427,7 @@ describe("<SportsWidget> follow teams flow", () => {
     expect(disabled.length).toBe(1);
   });
 
-  it("expands to large-widget when in follow state even if size pref is medium", () => {
+  it("expands to large-widget when in follow state even if size pref is medium", async () => {
     const { container } = render(
       <WrapWithProvider
         state={makeState(
@@ -415,14 +444,15 @@ describe("<SportsWidget> follow teams flow", () => {
         />
       </WrapWithProvider>
     );
+    await act(async () => {});
     expect(container.querySelector(".sports.large-widget")).toBeInTheDocument();
     expect(
       container.querySelector(".sports.medium-widget")
     ).not.toBeInTheDocument();
   });
 
-  it("filters the team list when a search query is entered", () => {
-    const { container } = renderInFollowState();
+  it("filters the team list when a search query is entered", async () => {
+    const { container } = await renderInFollowState();
     const searchInput = container.querySelector("moz-input-search");
     Object.defineProperty(searchInput, "value", {
       value: "can",
@@ -436,8 +466,8 @@ describe("<SportsWidget> follow teams flow", () => {
     );
   });
 
-  it("shows all teams when the search query is cleared", () => {
-    const { container } = renderInFollowState();
+  it("shows all teams when the search query is cleared", async () => {
+    const { container } = await renderInFollowState();
     const searchInput = container.querySelector("moz-input-search");
     Object.defineProperty(searchInput, "value", {
       value: "can",
@@ -452,16 +482,38 @@ describe("<SportsWidget> follow teams flow", () => {
     expect(container.querySelectorAll("moz-checkbox").length).toBe(4);
   });
 
-  it("renders teams sorted alphabetically by name", () => {
-    const { container } = renderInFollowState();
+  it("renders teams sorted alphabetically by name", async () => {
+    const { container } = await renderInFollowState();
     const names = Array.from(
       container.querySelectorAll(".sports-team-name")
     ).map(el => el.textContent);
     expect(names).toEqual(["Algeria", "Australia", "Canada", "England"]);
   });
 
-  it("renders a flag image for each team with src, empty alt, and a title tooltip", () => {
-    const { container } = renderInFollowState();
+  it("sorts follow-teams rows by the resolved localized name, not the Merino source name", async () => {
+    document.l10n.formatMessages = jest.fn(async ids =>
+      ids.map(({ id }) => ({
+        value: null,
+        attributes: [
+          {
+            name: "label",
+            value:
+              id === "newtab-sports-widget-team-name-label-eng"
+                ? "a-England"
+                : "unused-fallback",
+          },
+        ],
+      }))
+    );
+    const { container } = await renderInFollowState();
+    const names = Array.from(
+      container.querySelectorAll(".sports-team-name")
+    ).map(el => el.textContent);
+    expect(names).toEqual(["a-England", "Algeria", "Australia", "Canada"]);
+  });
+
+  it("renders a flag image for each team with src, empty alt, and a title tooltip", async () => {
+    const { container } = await renderInFollowState();
     const flags = container.querySelectorAll(".sports-team-flag");
     expect(flags.length).toBe(4);
     expect(flags[0].getAttribute("src")).toBe("https://example.test/ALG.svg");
@@ -469,8 +521,8 @@ describe("<SportsWidget> follow teams flow", () => {
     expect(flags[0].getAttribute("title")).toBe("Algeria");
   });
 
-  it("sets aria-label on each checkbox to its team name", () => {
-    const { container } = renderInFollowState();
+  it("sets aria-label on each checkbox to its team name", async () => {
+    const { container } = await renderInFollowState();
     const checkboxes = container.querySelectorAll("moz-checkbox");
     expect(checkboxes[0].getAttribute("aria-label")).toBe("Algeria");
     expect(checkboxes[1].getAttribute("aria-label")).toBe("Australia");
@@ -478,8 +530,8 @@ describe("<SportsWidget> follow teams flow", () => {
     expect(checkboxes[3].getAttribute("aria-label")).toBe("England");
   });
 
-  it("toggles the checkbox when the flag image is clicked", () => {
-    const { container } = renderInFollowState();
+  it("toggles the checkbox when the flag image is clicked", async () => {
+    const { container } = await renderInFollowState();
     fireEvent.click(container.querySelectorAll(".sports-team-flag")[0]);
     fireEvent.click(container.querySelector(".sports-done-button"));
     expect(dispatch).toHaveBeenCalledWith(
@@ -490,8 +542,8 @@ describe("<SportsWidget> follow teams flow", () => {
     );
   });
 
-  it("toggles the checkbox when the team name is clicked", () => {
-    const { container } = renderInFollowState();
+  it("toggles the checkbox when the team name is clicked", async () => {
+    const { container } = await renderInFollowState();
     fireEvent.click(container.querySelectorAll(".sports-team-name")[1]);
     fireEvent.click(container.querySelector(".sports-done-button"));
     expect(dispatch).toHaveBeenCalledWith(
@@ -502,9 +554,9 @@ describe("<SportsWidget> follow teams flow", () => {
     );
   });
 
-  it("does not toggle when clicking the flag on a row that is disabled by max-selection", () => {
+  it("does not toggle when clicking the flag on a row that is disabled by max-selection", async () => {
     // 3 teams selected (ALG, AUS, CAN), the 4th (ENG) row is disabled.
-    const { container } = renderInFollowState(["ALG", "AUS", "CAN"]);
+    const { container } = await renderInFollowState(["ALG", "AUS", "CAN"]);
     fireEvent.click(container.querySelectorAll(".sports-team-flag")[3]);
     fireEvent.click(container.querySelector(".sports-done-button"));
     expect(dispatch).toHaveBeenCalledWith(
@@ -515,9 +567,9 @@ describe("<SportsWidget> follow teams flow", () => {
     );
   });
 
-  it("does not toggle twice when the user clicks the checkbox itself", () => {
+  it("does not toggle twice when the user clicks the checkbox itself", async () => {
     // Mimic a real checkbox click: both a change event AND a click event on the row fire.
-    const { container } = renderInFollowState();
+    const { container } = await renderInFollowState();
     const checkbox = container.querySelector("moz-checkbox");
     fireEvent.change(checkbox, { target: { checked: true } });
     fireEvent.click(checkbox);
@@ -530,7 +582,15 @@ describe("<SportsWidget> follow teams flow", () => {
     );
   });
 
-  it("sorts accented team names using locale-aware comparison", () => {
+  it("sorts accented team names using locale-aware comparison", async () => {
+    // Mock "Côte d'Ivoire" for CIV to verify the sort comparator is
+    // locale-aware for accented characters.
+    document.l10n.formatMessages = jest.fn(async ids =>
+      ids.map(() => ({
+        value: null,
+        attributes: [{ name: "label", value: "Côte d'Ivoire" }],
+      }))
+    );
     const { container } = render(
       <WrapWithProvider
         state={makeState(
@@ -551,13 +611,14 @@ describe("<SportsWidget> follow teams flow", () => {
         <SportsWidget {...defaultProps} />
       </WrapWithProvider>
     );
+    await act(async () => {});
     const names = Array.from(
       container.querySelectorAll(".sports-team-name")
     ).map(el => el.textContent);
     expect(names).toEqual(["Canada", "Côte d'Ivoire", "Curaçao"]);
   });
 
-  it("renders a row without crashing when icon_url is missing", () => {
+  it("renders a row without crashing when icon_url is missing", async () => {
     const { container } = render(
       <WrapWithProvider
         state={makeState(
@@ -574,25 +635,32 @@ describe("<SportsWidget> follow teams flow", () => {
         <SportsWidget {...defaultProps} />
       </WrapWithProvider>
     );
+    await act(async () => {});
     expect(container.querySelector(".sports-team-name").textContent).toBe(
       "Canada"
     );
     expect(container.querySelectorAll(".sports-team-flag").length).toBe(1);
   });
 
-  it("renders no rows and does not crash when teams data is missing", () => {
-    const { container } = renderInFollowState([], { teams: null, matches: [] });
+  it("renders no rows and does not crash when teams data is missing", async () => {
+    const { container } = await renderInFollowState([], {
+      teams: null,
+      matches: [],
+    });
     expect(container.querySelectorAll("moz-checkbox").length).toBe(0);
     expect(container.querySelector(".sports-follow-teams")).toBeInTheDocument();
   });
 
-  it("renders no rows when teams is an empty array", () => {
-    const { container } = renderInFollowState([], { teams: [], matches: [] });
+  it("renders no rows when teams is an empty array", async () => {
+    const { container } = await renderInFollowState([], {
+      teams: [],
+      matches: [],
+    });
     expect(container.querySelectorAll("moz-checkbox").length).toBe(0);
   });
 
-  it("dispatches save_teams telemetry with the team count and widget size when Done is clicked", () => {
-    const { container } = renderInFollowState([]);
+  it("dispatches save_teams telemetry with the team count and widget size when Done is clicked", async () => {
+    const { container } = await renderInFollowState([]);
     fireEvent.change(container.querySelector("moz-checkbox"), {
       target: { checked: true },
     });
@@ -611,8 +679,8 @@ describe("<SportsWidget> follow teams flow", () => {
     );
   });
 
-  it("does not dispatch save_teams when the user checks then unchecks a team before Done", () => {
-    const { container } = renderInFollowState([]);
+  it("does not dispatch save_teams when the user checks then unchecks a team before Done", async () => {
+    const { container } = await renderInFollowState([]);
     const firstCheckbox = container.querySelector("moz-checkbox");
     fireEvent.change(firstCheckbox, { target: { checked: true } });
     fireEvent.change(firstCheckbox, { target: { checked: false } });
@@ -625,8 +693,8 @@ describe("<SportsWidget> follow teams flow", () => {
     );
   });
 
-  it("does not dispatch save_teams telemetry when Done is clicked with no teams selected", () => {
-    const { container } = renderInFollowState([]);
+  it("does not dispatch save_teams telemetry when Done is clicked with no teams selected", async () => {
+    const { container } = await renderInFollowState([]);
     fireEvent.click(container.querySelector(".sports-done-button"));
     expect(dispatch).not.toHaveBeenCalledWith(
       expect.objectContaining({
@@ -634,6 +702,85 @@ describe("<SportsWidget> follow teams flow", () => {
         data: expect.objectContaining({ user_action: "save_teams" }),
       })
     );
+  });
+
+  it("filters follow-teams rows by the resolved localized name via the search input", async () => {
+    // Override ENG so the localized name differs from the Merino source.
+    // Substring "ingl" matches the localized form but not "England".
+    document.l10n.formatMessages = jest.fn(async ids =>
+      ids.map(({ id }) => ({
+        value: null,
+        attributes: [
+          {
+            name: "label",
+            value:
+              id === "newtab-sports-widget-team-name-label-eng"
+                ? "Inglaterra"
+                : "unused-fallback",
+          },
+        ],
+      }))
+    );
+    const { container } = await renderInFollowState();
+    const search = container.querySelector("moz-input-search");
+
+    Object.defineProperty(search, "value", {
+      value: "ingl",
+      configurable: true,
+    });
+    fireEvent.input(search);
+    let names = Array.from(container.querySelectorAll(".sports-team-name")).map(
+      el => el.textContent
+    );
+    expect(names).toEqual(["Inglaterra"]);
+
+    Object.defineProperty(search, "value", {
+      value: "england",
+      configurable: true,
+    });
+    fireEvent.input(search);
+    names = Array.from(container.querySelectorAll(".sports-team-name")).map(
+      el => el.textContent
+    );
+    expect(names).toEqual([]);
+  });
+
+  it("does not render rows until localizedNames is populated", async () => {
+    let resolveFn;
+    document.l10n = {
+      formatMessages: jest.fn(
+        () =>
+          new Promise(r => {
+            resolveFn = r;
+          })
+      ),
+    };
+    const { container } = render(
+      <WrapWithProvider
+        state={makeState(
+          {},
+          {
+            widgetState: "sports-follow-state",
+            data: { teams: makeTeams(), matches: [] },
+          }
+        )}
+      >
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+
+    expect(container.querySelectorAll(".sports-follow-teams-row")).toHaveLength(
+      0
+    );
+
+    await act(async () => {
+      resolveFn([
+        { value: null, attributes: [{ name: "label", value: "England" }] },
+      ]);
+    });
+    expect(
+      container.querySelectorAll(".sports-follow-teams-row").length
+    ).toBeGreaterThan(0);
   });
 });
 
@@ -921,6 +1068,56 @@ describe("<SportsWidget> keyboard accessibility", () => {
     const firstRow = container.querySelector(".sports-match-row");
     expect(document.activeElement).not.toBe(firstRow);
     expect(document.activeElement).toBe(preMountFocus);
+  });
+});
+
+describe("<SportsWidget> Results tab View all button", () => {
+  function renderResultsAtSize(widgetSize, previous = [mockMatch]) {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: widgetSize },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            data: {
+              teams: [],
+              matches: { previous, current: [], next: [] },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  function findResultsViewAllButton(container) {
+    const resultsPanel = [
+      ...container.querySelectorAll(".sports-matches-tab-panel"),
+    ].find(panel => !panel.hasAttribute("hidden"));
+    return resultsPanel?.querySelector(
+      "[data-l10n-id='newtab-sports-widget-view-all']"
+    );
+  }
+
+  it("renders the View all button on the results tab when widget size is large", () => {
+    const { container } = renderResultsAtSize("large");
+    const viewAllButton = findResultsViewAllButton(container);
+    expect(viewAllButton).toBeInTheDocument();
+    expect(viewAllButton.getAttribute("size")).toBeNull();
+  });
+
+  it("renders the View all button on the results tab when widget size is medium", () => {
+    const { container } = renderResultsAtSize("medium");
+    const viewAllButton = findResultsViewAllButton(container);
+    expect(viewAllButton).toBeInTheDocument();
+    expect(viewAllButton.getAttribute("size")).toBe("small");
+  });
+
+  it("does not render the View all button when there are no previous results", () => {
+    const { container } = renderResultsAtSize("medium", []);
+    expect(findResultsViewAllButton(container)).toBeNull();
   });
 });
 

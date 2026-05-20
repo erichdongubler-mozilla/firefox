@@ -490,7 +490,7 @@ already_AddRefed<CSSTransition> nsTransitionManager::DoCreateTransition(
   keyframeEffect->SetKeyframes(
       GetTransitionKeyframes(aProperty, std::move(aStartValue),
                              std::move(aEndValue)),
-      &aNewStyle, timeline);
+      &aNewStyle, timeline, nullptr /* No AnimationRange for transitions */);
 
   if (NS_WARN_IF(MOZ_UNLIKELY(!keyframeEffect->IsValidTransition()))) {
     return nullptr;

@@ -5411,8 +5411,6 @@ bool nsDisplayOwnLayer::CreateWebRenderCommands(
 
     prop.emplace();
     prop->id = mWrAnimationId;
-    prop->key = wr::SpatialKey(uint64_t(mFrame), GetPerFrameKey(),
-                               wr::SpatialKeyKind::APZ);
     prop->effect_type = wr::WrAnimationType::Transform;
   }
 
@@ -5572,8 +5570,6 @@ bool nsDisplayViewTransitionCapture::CreateWebRenderCommands(
     // coordinate system for view transition captured frame.
     params.mTransformPtr = [&]() {
       info.transform = wr::ToLayoutTransform(gfx::Matrix4x4());
-      info.key = wr::SpatialKey(uint64_t(mFrame), GetPerFrameKey(),
-                                wr::SpatialKeyKind::ViewTransition);
       return &info;
     }();
     params.reference_frame_kind = wr::WrReferenceFrameKind::Transform;
@@ -6796,9 +6792,6 @@ bool nsDisplayTransform::CreateWebRenderCommands(
     }
   }
 
-  auto key = wr::SpatialKey(uint64_t(mFrame), GetPerFrameKey(),
-                            wr::SpatialKeyKind::Transform);
-
   // We don't send animations for transform separator display items.
   uint64_t animationsId =
       mIsTransformSeparator
@@ -6806,8 +6799,7 @@ bool nsDisplayTransform::CreateWebRenderCommands(
           : AddAnimationsForWebRender(
                 this, aManager, aDisplayListBuilder,
                 IsPartialPrerender() ? Some(position) : Nothing());
-  wr::WrAnimationProperty prop{wr::WrAnimationType::Transform, animationsId,
-                               key};
+  wr::WrAnimationProperty prop{wr::WrAnimationType::Transform, animationsId};
 
   nsDisplayTransform* deferredTransformItem = nullptr;
   if (ShouldDeferTransform()) {
@@ -6837,7 +6829,6 @@ bool nsDisplayTransform::CreateWebRenderCommands(
   wr::WrTransformInfo transform_info;
   if (transformForSC) {
     transform_info.transform = wr::ToLayoutTransform(newTransformMatrix);
-    transform_info.key = key;
     params.mTransformPtr = &transform_info;
   } else {
     params.mTransformPtr = nullptr;
@@ -7584,8 +7575,6 @@ bool nsDisplayPerspective::CreateWebRenderCommands(
 
   wr::WrTransformInfo transform_info;
   transform_info.transform = wr::ToLayoutTransform(perspectiveMatrix);
-  transform_info.key = wr::SpatialKey(uint64_t(mFrame), GetPerFrameKey(),
-                                      wr::SpatialKeyKind::Perspective);
   params.mTransformPtr = &transform_info;
 
   params.reference_frame_kind = wr::WrReferenceFrameKind::Perspective;

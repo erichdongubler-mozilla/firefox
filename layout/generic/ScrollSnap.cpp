@@ -530,7 +530,7 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForDestination(
   // NOTE: |aDestination| sometimes points outside of the scroll range, e.g.
   // by the APZC fling, so for the overflow checks we need to clamp it.
   nsPoint clampedDestination = aScrollRange.ClampPoint(aDestination);
-  for (auto range : aSnapInfo.mXRangeWiderThanSnapport) {
+  for (const auto& range : aSnapInfo.mXRangeWiderThanSnapport) {
     if (range.IsValid(clampedDestination.x, aSnapInfo.mSnapportSize.width) &&
         calcSnapPoints.XDistanceBetweenBestAndSecondEdge() >
             aSnapInfo.mSnapportSize.width) {
@@ -540,7 +540,7 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForDestination(
       break;
     }
   }
-  for (auto range : aSnapInfo.mYRangeWiderThanSnapport) {
+  for (const auto& range : aSnapInfo.mYRangeWiderThanSnapport) {
     if (range.IsValid(clampedDestination.y, aSnapInfo.mSnapportSize.height) &&
         calcSnapPoints.YDistanceBetweenBestAndSecondEdge() >
             aSnapInfo.mSnapportSize.height) {

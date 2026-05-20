@@ -499,7 +499,7 @@ void GatherCertificateTransparencyTelemetry(
   glean::ssl::scts_per_connection.AccumulateSingleSample(sctsCount);
 
   uint32_t sctsFromTiledLogs = 0;
-  for (auto verifiedSCT : info.verifyResult.verifiedScts) {
+  for (const auto& verifiedSCT : info.verifyResult.verifiedScts) {
     if (verifiedSCT.logFormat == ct::CTLogFormat::Tiled) {
       sctsFromTiledLogs++;
     }

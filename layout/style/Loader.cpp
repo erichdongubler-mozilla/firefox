@@ -1591,7 +1591,8 @@ void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus) {
       observer->StyleSheetLoaded(aData.mSheet, aData.ShouldDefer(), aStatus);
     }
 
-    for (nsCOMPtr<nsICSSLoaderObserver> obs : mObservers.ForwardRange()) {
+    for (const auto& obsRef : mObservers.ForwardRange()) {
+      nsCOMPtr<nsICSSLoaderObserver> obs{obsRef};
       LOG(("  Notifying global observer %p for data %p.  deferred: %d",
            obs.get(), &aData, aData.ShouldDefer()));
       obs->StyleSheetLoaded(aData.mSheet, aData.ShouldDefer(), aStatus);

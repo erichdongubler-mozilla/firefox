@@ -98,6 +98,7 @@ support-files = ["helper_scrollbar_colors.html"]
 ["browser_test_swipe_gesture.js"]
 support-files = [
   "helper_swipe_gesture.html",
+  "helper_swipe_gesture_rotated_vertical.html",
   "!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js",
   "!/gfx/layers/apz/test/mochitest/apz_test_utils.js",
 ]

@@ -21,4 +21,9 @@
   &.large-widget {
     grid-row: span 4;
   }
+
+  &:has(> .large-widget) {
+    grid-column: span 4;
+    grid-row: span 4;
+  }
 }

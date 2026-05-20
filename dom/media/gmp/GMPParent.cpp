@@ -1045,7 +1045,7 @@ RefPtr<GenericPromise> GMPParent::ReadGMPInfoFile(nsIFile* aFile) {
 
   nsTArray<nsCString> apiTokens;
   SplitAt(", ", apis, apiTokens);
-  for (nsCString api : apiTokens) {
+  for (const nsCString& api : apiTokens) {
     int32_t tagsStart = api.FindChar('[');
     if (tagsStart == 0) {
       // Not allowed to be the first character.
@@ -1071,7 +1071,7 @@ RefPtr<GenericPromise> GMPParent::ReadGMPInfoFile(nsIFile* aFile) {
             Substring(api, tagsStart + 1, tagsEnd - tagsStart - 1));
         nsTArray<nsCString> tagTokens;
         SplitAt(":", ts, tagTokens);
-        for (nsCString tag : tagTokens) {
+        for (const nsCString& tag : tagTokens) {
           cap.mAPITags.AppendElement(tag);
         }
       }

@@ -7265,7 +7265,7 @@ bool BaselineInterpreterGenerator::emitInterpreterLoop() {
 
   tableOffset_ = masm.currentOffset();
 
-  for (auto opLabel : opLabels) {
+  for (const auto& opLabel : opLabels) {
     MOZ_ASSERT(opLabel.bound());
     CodeLabel cl;
     masm.writeCodePointer(&cl);

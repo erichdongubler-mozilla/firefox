@@ -532,11 +532,9 @@ Maybe<wr::WrSpatialId> ClipManager::DefineStickyNode(
   bool needsProp =
       nsDisplayStickyPosition::ShouldGetStickyAnimationId(stickyFrame);
   Maybe<wr::WrAnimationProperty> prop;
-  auto displayItemKey = nsDisplayItem::GetPerFrameKey(
-      0, 0, DisplayItemType::TYPE_STICKY_POSITION);
-  auto spatialKey = wr::SpatialKey(uint64_t(stickyFrame), displayItemKey,
-                                   wr::SpatialKeyKind::Sticky);
   if (needsProp) {
+    auto displayItemKey = nsDisplayItem::GetPerFrameKey(
+        0, 0, DisplayItemType::TYPE_STICKY_POSITION);
     RefPtr<WebRenderAPZAnimationData> animationData =
         mManager->CommandBuilder()
             .CreateOrRecycleWebRenderUserData<WebRenderAPZAnimationData>(
@@ -545,14 +543,13 @@ Maybe<wr::WrSpatialId> ClipManager::DefineStickyNode(
 
     prop.emplace();
     prop->id = animationId;
-    prop->key = spatialKey;
     prop->effect_type = wr::WrAnimationType::Transform;
   }
   wr::WrSpatialId spatialId = mBuilder->DefineStickyFrame(
       aASR, aParentSpatialId, wr::ToLayoutRect(bounds),
       topMargin.ptrOr(nullptr), rightMargin.ptrOr(nullptr),
       bottomMargin.ptrOr(nullptr), leftMargin.ptrOr(nullptr), vBounds, hBounds,
-      applied, spatialKey, prop.ptrOr(nullptr));
+      applied, prop.ptrOr(nullptr));
 
   return Some(spatialId);
 }
@@ -654,9 +651,7 @@ Maybe<wr::WrSpatialId> ClipManager::DefineSpatialNodes(
       wr::ToLayoutRect(clipBounds), wr::ToLayoutVector2D(scrollOffset),
       wr::ToWrAPZScrollGeneration(
           scrollContainerFrame->ScrollGenerationOnApz()),
-      wr::ToWrHasScrollLinkedEffect(hasScrollLinkedEffect),
-      wr::SpatialKey(uint64_t(scrollContainerFrame), 0,
-                     wr::SpatialKeyKind::Scroll)));
+      wr::ToWrHasScrollLinkedEffect(hasScrollLinkedEffect)));
 }
 
 Maybe<wr::WrClipChainId> ClipManager::DefineClipChain(
