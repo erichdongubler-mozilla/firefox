@@ -5,12 +5,24 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   actionTypes: "resource://newtab/common/Actions.mjs",
+  SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SportsFeed: "resource://newtab/lib/Widgets/SportsFeed.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
 const PREF_SPORTS_ENABLED = "widgets.sportsWidget.enabled";
 const PREF_SYSTEM_SPORTS_ENABLED = "widgets.system.sportsWidget.enabled";
+
+// Stub SearchUIUtils.loadSearch so the openMatchSearch handler tests can
+// observe what we asked it to do without requiring a real chrome window,
+// browser, or search engine.
+let gLoadSearchStub;
+
+add_setup(async () => {
+  const sandbox = sinon.createSandbox();
+  gLoadSearchStub = sandbox.stub(SearchUIUtils, "loadSearch").resolves();
+  registerCleanupFunction(() => sandbox.restore());
+});
 
 function makeFeed({ enabled = true, systemEnabled = true } = {}) {
   const feed = new SportsFeed();
@@ -184,7 +196,11 @@ add_task(async function test_syncState_broadcasts_selectedTeams() {
 add_task(async function test_syncState_broadcasts_cached_teams_and_matches() {
   const feed = makeFeed();
   const cachedTeams = [{ id: "team1", name: "Team 1" }];
-  const cachedMatches = [{ id: "match1" }];
+  const cachedMatches = {
+    previous: [{ id: "match0", query: "team0 vs team1" }],
+    current: [{ id: "match1", query: "team1 vs team2" }],
+    next: [{ id: "match2", query: "team2 vs team3" }],
+  };
   const getStub = sinon.stub(feed.cache, "get").resolves({
     sportsData: { teams: cachedTeams, matches: cachedMatches },
   });
@@ -206,7 +222,7 @@ add_task(async function test_syncState_broadcasts_cached_teams_and_matches() {
   Assert.deepEqual(
     firstCall.args[0].data.matches,
     cachedMatches,
-    "with correct cached matches"
+    "passes cached matches through unchanged"
   );
 
   getStub.restore();
@@ -305,7 +321,13 @@ add_task(async function test_CHANGE_SELECTED_TEAMS_saves_and_broadcasts() {
 add_task(async function test_fetchSportsData_dispatches_teams_and_matches() {
   const feed = makeFeed();
   const mockTeamsResponse = { teams: [{ id: "team1", name: "Team 1" }] };
-  const mockMatches = [{ id: "match1", teams: ["team1", "team2"] }];
+  const mockMatches = {
+    previous: [],
+    current: [],
+    next: [
+      { id: "match1", teams: ["team1", "team2"], query: "team1 vs team2" },
+    ],
+  };
 
   sinon.stub(feed.merino, "fetchSportsTeams").resolves(mockTeamsResponse);
   sinon.stub(feed.merino, "fetchSportsMatches").resolves(mockMatches);
@@ -335,7 +357,7 @@ add_task(async function test_fetchSportsData_dispatches_teams_and_matches() {
   Assert.deepEqual(
     dispatchedAction.data.matches,
     mockMatches,
-    "with correct matches"
+    "matches are passed through unchanged"
   );
 });
 
@@ -448,7 +470,11 @@ add_task(async function test_fetchSportsData_handles_null_responses() {
 add_task(async function test_fetchSportsData_caches_teams_and_matches() {
   const feed = makeFeed();
   const mockTeamsResponse = { teams: [{ id: "team1", name: "Team 1" }] };
-  const mockMatches = [{ id: "match1" }];
+  const mockMatches = {
+    previous: [],
+    current: [],
+    next: [{ id: "match1", query: "a vs b" }],
+  };
 
   sinon.stub(feed.merino, "fetchSportsTeams").resolves(mockTeamsResponse);
   sinon.stub(feed.merino, "fetchSportsMatches").resolves(mockMatches);
@@ -559,4 +585,125 @@ add_task(async function test_CHANGE_MATCHES_TAB_saves_and_broadcasts() {
   Assert.equal(firstDispatch.args[0].data, "results");
 
   setStub.restore();
+});
+
+add_task(async function test_OPEN_MATCH_SEARCH_calls_loadSearch() {
+  const feed = makeFeed();
+  gLoadSearchStub.resetHistory();
+  // Fake window object — only needs to be non-null; SearchUIUtils.loadSearch
+  // is stubbed, so it never reads window properties.
+  const fakeWindow = {};
+
+  info(
+    "OPEN_MATCH_SEARCH should call SearchUIUtils.loadSearch with the query, " +
+      "the source window, and the about_newtab SAP source"
+  );
+  await feed.onAction({
+    type: actionTypes.WIDGETS_SPORTS_OPEN_MATCH_SEARCH,
+    data: {
+      query: "Brazil vs Argentina",
+      eventInfo: { button: 0, shiftKey: false, ctrlKey: false, metaKey: false },
+    },
+    _target: { window: fakeWindow },
+  });
+
+  Assert.ok(gLoadSearchStub.calledOnce, "SearchUIUtils.loadSearch called once");
+  const [args] = gLoadSearchStub.firstCall.args;
+  Assert.equal(args.window, fakeWindow, "window propagated from action target");
+  Assert.equal(
+    args.searchText,
+    "Brazil vs Argentina",
+    "searchText comes from the match's query field"
+  );
+  Assert.equal(
+    args.sapSource,
+    "about_newtab",
+    "sapSource is about_newtab so telemetry attributes the search to newtab"
+  );
+  Assert.equal(
+    args.where,
+    "current",
+    "plain left-click (no modifiers) opens the SERP in the current tab"
+  );
+  Assert.ok(
+    args.triggeringPrincipal,
+    "triggeringPrincipal is set so loadSearch doesn't throw"
+  );
+});
+
+add_task(async function test_OPEN_MATCH_SEARCH_translates_modifier_clicks() {
+  const feed = makeFeed();
+  const fakeWindow = {};
+
+  info(
+    "OPEN_MATCH_SEARCH should pass the click's modifier/button state through " +
+      "BrowserUtils.whereToOpenLink to pick a new-tab destination"
+  );
+  gLoadSearchStub.resetHistory();
+  await feed.onAction({
+    type: actionTypes.WIDGETS_SPORTS_OPEN_MATCH_SEARCH,
+    data: {
+      query: "Brazil vs Argentina",
+      // Middle-click. whereToOpenLink reads `button === 1` and returns "tab".
+      eventInfo: { button: 1, shiftKey: false, ctrlKey: false, metaKey: false },
+    },
+    _target: { window: fakeWindow },
+  });
+  Assert.equal(
+    gLoadSearchStub.lastCall.args[0].where,
+    "tab",
+    "middle-click opens in a new tab"
+  );
+
+  gLoadSearchStub.resetHistory();
+  // Shift-click (no meta/ctrl). On both Mac and non-Mac, this is "new window".
+  await feed.onAction({
+    type: actionTypes.WIDGETS_SPORTS_OPEN_MATCH_SEARCH,
+    data: {
+      query: "Brazil vs Argentina",
+      eventInfo: { button: 0, shiftKey: true, ctrlKey: false, metaKey: false },
+    },
+    _target: { window: fakeWindow },
+  });
+  Assert.equal(
+    gLoadSearchStub.lastCall.args[0].where,
+    "window",
+    "shift-click opens in a new window"
+  );
+});
+
+add_task(async function test_OPEN_MATCH_SEARCH_ignores_missing_query() {
+  const feed = makeFeed();
+  gLoadSearchStub.resetHistory();
+
+  info("OPEN_MATCH_SEARCH should be a no-op if the match somehow has no query");
+  await feed.onAction({
+    type: actionTypes.WIDGETS_SPORTS_OPEN_MATCH_SEARCH,
+    data: { query: "", eventInfo: { button: 0 } },
+    _target: { window: {} },
+  });
+
+  Assert.ok(
+    gLoadSearchStub.notCalled,
+    "loadSearch is not called when there's no query"
+  );
+});
+
+add_task(async function test_OPEN_MATCH_SEARCH_ignores_missing_target_window() {
+  const feed = makeFeed();
+  gLoadSearchStub.resetHistory();
+
+  info(
+    "OPEN_MATCH_SEARCH should bail out if the action wasn't routed with a " +
+      "_target.window — we can't call loadSearch without it"
+  );
+  await feed.onAction({
+    type: actionTypes.WIDGETS_SPORTS_OPEN_MATCH_SEARCH,
+    data: { query: "Brazil vs Argentina", eventInfo: { button: 0 } },
+  });
+
+  Assert.ok(
+    gLoadSearchStub.notCalled,
+    "loadSearch is not called without a target window"
+  );
 });

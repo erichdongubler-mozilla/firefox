@@ -3,6 +3,10 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+
+const PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 
 const STATUS_L10N_MAP = {
   delayed: "newtab-sports-widget-delayed",
@@ -40,7 +44,14 @@ function ScorePill({
   );
 }
 
-function SportsMatchRow({ match, variant, size = "large" }) {
+function SportsMatchRow({ match, variant, size = "large", handleInteraction }) {
+  const dispatch = useDispatch();
+  // Read the widget size pref (not `size`, which can be "list" when the
+  // user expanded the view) so the telemetry event below reports the user's
+  // actual chosen size.
+  const widgetSize = useSelector(
+    state => state.Prefs.values[PREF_SPORTS_WIDGET_SIZE] || "medium"
+  );
   const {
     home_team,
     away_team,
@@ -52,6 +63,7 @@ function SportsMatchRow({ match, variant, size = "large" }) {
     away_extra,
     home_penalty,
     away_penalty,
+    query,
   } = match;
   const dateTimestamp = new Date(date).getTime();
   // (developer note): Assumes home_score/away_score exclude extra time goals
@@ -178,12 +190,65 @@ function SportsMatchRow({ match, variant, size = "large" }) {
     }
   }
 
+  // Hand the click off to the main process, which calls
+  // SearchUIUtils.loadSearch to resolve the user's default engine, navigate
+  // (handling POST + private windows), and record SAP telemetry. We also
+  // dispatch a WIDGETS_USER_EVENT so newtab-side telemetry can attribute
+  // the click to the right tab variant + widget size.
+  function openMatchSearch(event) {
+    if (!query) {
+      return;
+    }
+    event.preventDefault();
+    dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "sports_widget",
+          widget_source: variant,
+          user_action: "open_match_search",
+          widget_size: widgetSize,
+        },
+      })
+    );
+    dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_SPORTS_OPEN_MATCH_SEARCH,
+        data: {
+          query,
+          eventInfo: {
+            button: event.button,
+            shiftKey: event.shiftKey,
+            ctrlKey: event.ctrlKey,
+            metaKey: event.metaKey,
+            altKey: event.altKey,
+          },
+        },
+      })
+    );
+    handleInteraction?.();
+  }
+
+  function onKeyDown(event) {
+    // Anchor without an href doesn't fire click on Enter/Space, so wire it
+    // up manually to keep keyboard activation working.
+    if (event.key === "Enter" || event.key === " ") {
+      openMatchSearch(event);
+    }
+  }
+
+  const clickable = !!query;
   return (
     <a
-      className={`sports-match-row sports-match-row-${size}`}
+      className={`sports-match-row sports-match-row-${size}${clickable ? " clickable" : ""}`}
       data-l10n-id={ariaLabelL10n.id}
       data-l10n-args={JSON.stringify(ariaLabelL10n.args)}
-      href=""
+      {...(clickable && {
+        role: "link",
+        tabIndex: 0,
+        onClick: openMatchSearch,
+        onKeyDown,
+      })}
     >
       {/* (developer note): Replace href with SERP link. */}
       <div className="sports-match-team">

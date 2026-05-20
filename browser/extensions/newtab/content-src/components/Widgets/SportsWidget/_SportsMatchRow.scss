@@ -13,6 +13,13 @@
   padding: var(--space-small);
   border-radius: var(--border-radius-medium);
 
+  // The row has no href (clicks go through a JS handler), so the browser
+  // doesn't apply the link cursor automatically. The component adds the
+  // .clickable class when a `query` is present on the match.
+  &.clickable {
+    cursor: pointer;
+  }
+
   &:hover {
     background: var(--button-background-color-hover);
   }

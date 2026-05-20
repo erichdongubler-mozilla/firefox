@@ -309,6 +309,7 @@ for (const type of [
   "WIDGETS_SPORTS_CHANGE_MATCHES_TAB",
   "WIDGETS_SPORTS_CHANGE_SELECTED_TEAMS",
   "WIDGETS_SPORTS_CHANGE_WIDGET_STATE",
+  "WIDGETS_SPORTS_OPEN_MATCH_SEARCH",
   "WIDGETS_SPORTS_SET_MATCHES_TAB",
   "WIDGETS_SPORTS_SET_SELECTED_TEAMS",
   "WIDGETS_SPORTS_SET_WIDGET_STATE",
@@ -15773,11 +15774,15 @@ function WidgetsRowFeatureHighlight({
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/SportsWidget/SportsMatchRow.jsx
+function SportsMatchRow_extends() { return SportsMatchRow_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, SportsMatchRow_extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 
+
+
+const SportsMatchRow_PREF_SPORTS_WIDGET_SIZE = "widgets.sportsWidget.size";
 const STATUS_L10N_MAP = {
   delayed: "newtab-sports-widget-delayed",
   postponed: "newtab-sports-widget-postponed",
@@ -15814,8 +15819,14 @@ function ScorePill({
 function SportsMatchRow({
   match,
   variant,
-  size = "large"
+  size = "large",
+  handleInteraction
 }) {
+  const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+  // Read the widget size pref (not `size`, which can be "list" when the
+  // user expanded the view) so the telemetry event below reports the user's
+  // actual chosen size.
+  const widgetSize = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values[SportsMatchRow_PREF_SPORTS_WIDGET_SIZE] || "medium");
   const {
     home_team,
     away_team,
@@ -15826,7 +15837,8 @@ function SportsMatchRow({
     home_extra,
     away_extra,
     home_penalty,
-    away_penalty
+    away_penalty,
+    query
   } = match;
   const dateTimestamp = new Date(date).getTime();
   // (developer note): Assumes home_score/away_score exclude extra time goals
@@ -15943,12 +15955,59 @@ function SportsMatchRow({
         }
     }
   }
-  return /*#__PURE__*/external_React_default().createElement("a", {
-    className: `sports-match-row sports-match-row-${size}`,
+
+  // Hand the click off to the main process, which calls
+  // SearchUIUtils.loadSearch to resolve the user's default engine, navigate
+  // (handling POST + private windows), and record SAP telemetry. We also
+  // dispatch a WIDGETS_USER_EVENT so newtab-side telemetry can attribute
+  // the click to the right tab variant + widget size.
+  function openMatchSearch(event) {
+    if (!query) {
+      return;
+    }
+    event.preventDefault();
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.WIDGETS_USER_EVENT,
+      data: {
+        widget_name: "sports_widget",
+        widget_source: variant,
+        user_action: "open_match_search",
+        widget_size: widgetSize
+      }
+    }));
+    dispatch(actionCreators.OnlyToMain({
+      type: actionTypes.WIDGETS_SPORTS_OPEN_MATCH_SEARCH,
+      data: {
+        query,
+        eventInfo: {
+          button: event.button,
+          shiftKey: event.shiftKey,
+          ctrlKey: event.ctrlKey,
+          metaKey: event.metaKey,
+          altKey: event.altKey
+        }
+      }
+    }));
+    handleInteraction?.();
+  }
+  function onKeyDown(event) {
+    // Anchor without an href doesn't fire click on Enter/Space, so wire it
+    // up manually to keep keyboard activation working.
+    if (event.key === "Enter" || event.key === " ") {
+      openMatchSearch(event);
+    }
+  }
+  const clickable = !!query;
+  return /*#__PURE__*/external_React_default().createElement("a", SportsMatchRow_extends({
+    className: `sports-match-row sports-match-row-${size}${clickable ? " clickable" : ""}`,
     "data-l10n-id": ariaLabelL10n.id,
-    "data-l10n-args": JSON.stringify(ariaLabelL10n.args),
-    href: ""
-  }, /*#__PURE__*/external_React_default().createElement("div", {
+    "data-l10n-args": JSON.stringify(ariaLabelL10n.args)
+  }, clickable && {
+    role: "link",
+    tabIndex: 0,
+    onClick: openMatchSearch,
+    onKeyDown
+  }), /*#__PURE__*/external_React_default().createElement("div", {
     className: "sports-match-team"
   }, /*#__PURE__*/external_React_default().createElement("img", {
     className: "sports-match-flag",
@@ -16505,7 +16564,8 @@ function SportsWidget_SportsWidget({
     size: widgetSize,
     previous: sportsWidgetData?.data?.matches?.previous ?? [],
     current: sportsWidgetData?.data?.matches?.current ?? [],
-    next: sportsWidgetData?.data?.matches?.next ?? []
+    next: sportsWidgetData?.data?.matches?.next ?? [],
+    handleInteraction: handleInteraction
   }), widgetState === WIDGET_STATES.KEY_DATES && /*#__PURE__*/external_React_default().createElement(SportsWidgetKeyDates, {
     handleViewMatches: handleViewMatches
   }), widgetState === WIDGET_STATES.INTRO && /*#__PURE__*/external_React_default().createElement((external_React_default()).Fragment, null, /*#__PURE__*/external_React_default().createElement("div", {
@@ -16592,7 +16652,8 @@ function SportsMatchesView({
   size,
   previous,
   current,
-  next
+  next,
+  handleInteraction
 }) {
   const [showResultsList, setShowResultsList] = (0,external_React_namespaceObject.useState)(false);
   const [showUpcomingList, setShowUpcomingList] = (0,external_React_namespaceObject.useState)(false);
@@ -16630,13 +16691,15 @@ function SportsMatchesView({
   }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
     match: match,
     variant: "results",
-    size: "list"
+    size: "list",
+    handleInteraction: handleInteraction
   })))) : previous[0] && /*#__PURE__*/external_React_default().createElement("div", {
     className: "match-highlight-view"
   }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
     match: previous[0],
     variant: "results",
-    size: size
+    size: size,
+    handleInteraction: handleInteraction
   })), !!previous.length && /*#__PURE__*/external_React_default().createElement("moz-button", {
     type: "secondary",
     size: size === "medium" ? "small" : undefined,
@@ -16650,7 +16713,8 @@ function SportsMatchesView({
   }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
     match: current[0],
     variant: "now",
-    size: size
+    size: size,
+    handleInteraction: handleInteraction
   })), /*#__PURE__*/external_React_default().createElement("moz-button", {
     type: size === "medium" ? "icon" : "default",
     size: size === "medium" ? "small" : undefined,
@@ -16667,13 +16731,15 @@ function SportsMatchesView({
   }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
     match: match,
     variant: "upcoming",
-    size: "list"
+    size: "list",
+    handleInteraction: handleInteraction
   })))) : next[0] && /*#__PURE__*/external_React_default().createElement("div", {
     className: "match-highlight-view"
   }, /*#__PURE__*/external_React_default().createElement(SportsMatchRow, {
     match: next[0],
     variant: "upcoming",
-    size: size
+    size: size,
+    handleInteraction: handleInteraction
   })), !!next.length && /*#__PURE__*/external_React_default().createElement("moz-button", {
     type: "secondary",
     size: size === "medium" ? "small" : undefined,

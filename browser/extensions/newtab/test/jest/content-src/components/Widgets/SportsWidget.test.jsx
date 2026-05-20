@@ -35,6 +35,9 @@ const mockMatch = {
   away_extra: null,
   home_penalty: null,
   away_penalty: null,
+  // `query` makes the row focusable (tabIndex=0) so the focus-on-expand
+  // assertions below have something to receive focus.
+  query: "ENG vs USA",
 };
 
 const PREF_NOVA_ENABLED = "nova.enabled";

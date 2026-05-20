@@ -6547,6 +6547,9 @@ button.arrow-button:dir(rtl) {
   padding: var(--space-small);
   border-radius: var(--border-radius-medium);
 }
+.sports-match-row.clickable {
+  cursor: pointer;
+}
 .sports-match-row:hover {
   background: var(--button-background-color-hover);
 }

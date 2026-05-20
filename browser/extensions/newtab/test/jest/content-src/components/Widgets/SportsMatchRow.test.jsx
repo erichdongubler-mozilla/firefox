@@ -2,7 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
+import { Provider } from "react-redux";
+import { actionTypes as at } from "common/Actions.mjs";
 import { SportsMatchRow } from "content-src/components/Widgets/SportsWidget/SportsMatchRow";
 
 const baseMatch = {
@@ -16,11 +18,30 @@ const baseMatch = {
   away_extra: null,
   home_penalty: null,
   away_penalty: null,
+  query: "England vs United States",
 };
+
+// SportsMatchRow uses `useDispatch` and `useSelector`, which need a
+// Provider context. We give it a fake store whose `dispatch` is a jest
+// mock so we can assert on what got dispatched when a user clicks a row.
+// The fake state surfaces the widgets.sportsWidget.size pref because the
+// row reads it for telemetry.
+function renderWithDispatch(ui, { widgetSize = "large" } = {}) {
+  const dispatch = jest.fn();
+  const store = {
+    getState: () => ({
+      Prefs: { values: { "widgets.sportsWidget.size": widgetSize } },
+    }),
+    subscribe: () => () => {},
+    dispatch,
+  };
+  const result = render(<Provider store={store}>{ui}</Provider>);
+  return { ...result, dispatch };
+}
 
 describe("<SportsMatchRow> upcoming variant", () => {
   it("renders home and away team codes", () => {
-    const { container } = render(
+    const { container } = renderWithDispatch(
       <SportsMatchRow match={baseMatch} variant="upcoming" />
     );
     const codes = container.querySelectorAll(".sports-match-code");
@@ -29,7 +50,7 @@ describe("<SportsMatchRow> upcoming variant", () => {
   });
 
   it("renders match time element", () => {
-    const { container } = render(
+    const { container } = renderWithDispatch(
       <SportsMatchRow match={baseMatch} variant="upcoming" />
     );
     expect(
@@ -40,7 +61,7 @@ describe("<SportsMatchRow> upcoming variant", () => {
   });
 
   it("renders match date when no special status", () => {
-    const { container } = render(
+    const { container } = renderWithDispatch(
       <SportsMatchRow match={baseMatch} variant="upcoming" />
     );
     expect(
@@ -49,7 +70,7 @@ describe("<SportsMatchRow> upcoming variant", () => {
   });
 
   it("renders status label instead of date for a special status", () => {
-    const { container } = render(
+    const { container } = renderWithDispatch(
       <SportsMatchRow
         match={{ ...baseMatch, status_type: "postponed" }}
         variant="upcoming"
@@ -66,7 +87,7 @@ describe("<SportsMatchRow> upcoming variant", () => {
 
 describe("<SportsMatchRow> now variant", () => {
   it("renders home and away scores including extra time", () => {
-    const { container } = render(
+    const { container } = renderWithDispatch(
       <SportsMatchRow
         match={{
           ...baseMatch,
@@ -85,7 +106,7 @@ describe("<SportsMatchRow> now variant", () => {
 
 describe("<SportsMatchRow> results variant", () => {
   it("renders home and away scores including extra time", () => {
-    const { container } = render(
+    const { container } = renderWithDispatch(
       <SportsMatchRow
         match={{
           ...baseMatch,
@@ -102,7 +123,7 @@ describe("<SportsMatchRow> results variant", () => {
   });
 
   it("renders the Full time footer", () => {
-    const { container } = render(
+    const { container } = renderWithDispatch(
       <SportsMatchRow match={baseMatch} variant="results" />
     );
     expect(
@@ -113,7 +134,7 @@ describe("<SportsMatchRow> results variant", () => {
   });
 
   it("renders penalty scores and footer text when penalties are present", () => {
-    const { container } = render(
+    const { container } = renderWithDispatch(
       <SportsMatchRow
         match={{ ...baseMatch, home_penalty: 4, away_penalty: 3 }}
         variant="results"
@@ -130,7 +151,7 @@ describe("<SportsMatchRow> results variant", () => {
   });
 
   it("does not render penalty elements when no penalties", () => {
-    const { container } = render(
+    const { container } = renderWithDispatch(
       <SportsMatchRow match={baseMatch} variant="results" />
     );
     expect(container.querySelectorAll(".sports-score-penalty")).toHaveLength(0);
@@ -153,7 +174,7 @@ describe("<SportsMatchRow> aria-label l10n", () => {
 
   describe("results variant", () => {
     it("uses the results l10n id for a normal full-time result", () => {
-      const { container } = render(
+      const { container } = renderWithDispatch(
         <SportsMatchRow
           match={{ ...baseMatch, home_score: 3, away_score: 2 }}
           variant="results"
@@ -170,7 +191,7 @@ describe("<SportsMatchRow> aria-label l10n", () => {
     });
 
     it("uses the results-penalties l10n id and includes penalty scores when the match went to a shootout", () => {
-      const { container } = render(
+      const { container } = renderWithDispatch(
         <SportsMatchRow
           match={{
             ...baseMatch,
@@ -191,7 +212,7 @@ describe("<SportsMatchRow> aria-label l10n", () => {
     });
 
     it("adds extra-time goals into the announced scores", () => {
-      const { container } = render(
+      const { container } = renderWithDispatch(
         <SportsMatchRow
           match={{
             ...baseMatch,
@@ -211,7 +232,7 @@ describe("<SportsMatchRow> aria-label l10n", () => {
     it("treats home_penalty === 0 as a real shootout value, not a missing one", () => {
       // Guards against a regression where a falsy check on home_penalty
       // would route a 0-goal shootout to the non-penalties ID.
-      const { container } = render(
+      const { container } = renderWithDispatch(
         <SportsMatchRow
           match={{
             ...baseMatch,
@@ -234,7 +255,7 @@ describe("<SportsMatchRow> aria-label l10n", () => {
 
   describe("now variant", () => {
     it("uses the now l10n id with the current score", () => {
-      const { container } = render(
+      const { container } = renderWithDispatch(
         <SportsMatchRow
           match={{ ...baseMatch, home_score: 1, away_score: 0 }}
           variant="now"
@@ -255,7 +276,7 @@ describe("<SportsMatchRow> aria-label l10n", () => {
 
   describe("upcoming variant", () => {
     it("uses the upcoming l10n id and passes the date timestamp for a scheduled match", () => {
-      const { container } = render(
+      const { container } = renderWithDispatch(
         <SportsMatchRow
           match={{ ...baseMatch, status_type: "scheduled" }}
           variant="upcoming"
@@ -269,7 +290,7 @@ describe("<SportsMatchRow> aria-label l10n", () => {
     it("falls back to the upcoming (scheduled) l10n id when status_type is missing", () => {
       // Defensive: API can omit status_type; the default scheduled string
       // must still be picked.
-      const { container } = render(
+      const { container } = renderWithDispatch(
         <SportsMatchRow
           match={{ ...baseMatch, status_type: null }}
           variant="upcoming"
@@ -288,7 +309,7 @@ describe("<SportsMatchRow> aria-label l10n", () => {
     ])(
       "picks the matching per-status l10n id when status_type is %s",
       (statusType, expectedId) => {
-        const { container } = render(
+        const { container } = renderWithDispatch(
           <SportsMatchRow
             match={{ ...baseMatch, status_type: statusType }}
             variant="upcoming"
@@ -300,9 +321,157 @@ describe("<SportsMatchRow> aria-label l10n", () => {
   });
 });
 
+describe("<SportsMatchRow> click handling", () => {
+  it("dispatches a newtab telemetry event and the open-search action on click", () => {
+    const { container, dispatch } = renderWithDispatch(
+      <SportsMatchRow match={baseMatch} variant="upcoming" />,
+      { widgetSize: "medium" }
+    );
+
+    fireEvent.click(container.querySelector("a.sports-match-row"));
+
+    expect(dispatch).toHaveBeenCalledTimes(2);
+    const [[userEvent], [openSearch]] = dispatch.mock.calls;
+
+    // First dispatch: newtab-side telemetry. The widget_source is the row's
+    // variant so we can attribute clicks to the right tab in analytics; the
+    // widget_size comes from the pref (not the row's display `size`, which
+    // can be "list").
+    expect(userEvent).toMatchObject({
+      type: at.WIDGETS_USER_EVENT,
+      data: {
+        widget_name: "sports_widget",
+        widget_source: "upcoming",
+        user_action: "open_match_search",
+        widget_size: "medium",
+      },
+    });
+
+    // Second dispatch: the action the SportsFeed backend uses to call
+    // SearchUIUtils.loadSearch.
+    expect(openSearch).toMatchObject({
+      type: at.WIDGETS_SPORTS_OPEN_MATCH_SEARCH,
+      data: {
+        query: baseMatch.query,
+        eventInfo: expect.objectContaining({ button: 0 }),
+      },
+    });
+  });
+
+  it("propagates modifier key state in the dispatched eventInfo", () => {
+    const { container, dispatch } = renderWithDispatch(
+      <SportsMatchRow match={baseMatch} variant="upcoming" />
+    );
+
+    fireEvent.click(container.querySelector("a.sports-match-row"), {
+      metaKey: true,
+      shiftKey: true,
+    });
+
+    // calls[0] is the USER_EVENT; calls[1] is the OPEN_MATCH_SEARCH action
+    // whose eventInfo carries the modifier state.
+    const [, [openSearch]] = dispatch.mock.calls;
+    expect(openSearch.data.eventInfo).toMatchObject({
+      metaKey: true,
+      shiftKey: true,
+      button: 0,
+    });
+  });
+
+  it("treats Enter and Space key presses as activation", () => {
+    // Anchors without href don't fire click on Enter/Space natively, so the
+    // component wires keyboard activation up manually. Each activation
+    // produces two dispatches (USER_EVENT + OPEN_MATCH_SEARCH).
+    const { container, dispatch } = renderWithDispatch(
+      <SportsMatchRow match={baseMatch} variant="upcoming" />
+    );
+
+    const anchor = container.querySelector("a.sports-match-row");
+    fireEvent.keyDown(anchor, { key: "Enter" });
+    fireEvent.keyDown(anchor, { key: " " });
+
+    expect(dispatch).toHaveBeenCalledTimes(4);
+    expect(dispatch.mock.calls[0][0].type).toBe(at.WIDGETS_USER_EVENT);
+    expect(dispatch.mock.calls[1][0].type).toBe(
+      at.WIDGETS_SPORTS_OPEN_MATCH_SEARCH
+    );
+    expect(dispatch.mock.calls[2][0].type).toBe(at.WIDGETS_USER_EVENT);
+    expect(dispatch.mock.calls[3][0].type).toBe(
+      at.WIDGETS_SPORTS_OPEN_MATCH_SEARCH
+    );
+  });
+
+  it("does not dispatch when the match has no query", () => {
+    const { container, dispatch } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch, query: undefined }}
+        variant="upcoming"
+      />
+    );
+
+    fireEvent.click(container.querySelector("a.sports-match-row"));
+
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("calls handleInteraction on click to mark the widget as interacted-with", () => {
+    const handleInteraction = jest.fn();
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={baseMatch}
+        variant="upcoming"
+        handleInteraction={handleInteraction}
+      />
+    );
+
+    fireEvent.click(container.querySelector("a.sports-match-row"));
+
+    expect(handleInteraction).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not call handleInteraction when the match has no query", () => {
+    const handleInteraction = jest.fn();
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch, query: undefined }}
+        variant="upcoming"
+        handleInteraction={handleInteraction}
+      />
+    );
+
+    fireEvent.click(container.querySelector("a.sports-match-row"));
+
+    expect(handleInteraction).not.toHaveBeenCalled();
+  });
+
+  it("applies link semantics only when the match has a query", () => {
+    // With a query: the row claims a link role and is in the tab order.
+    const { container: withQuery } = renderWithDispatch(
+      <SportsMatchRow match={baseMatch} variant="upcoming" />
+    );
+    const clickableAnchor = withQuery.querySelector("a.sports-match-row");
+    expect(clickableAnchor).toHaveAttribute("tabindex", "0");
+    expect(clickableAnchor).toHaveAttribute("role", "link");
+    expect(clickableAnchor.className).toContain("clickable");
+
+    // Without a query: no role, no tabindex, no `clickable` class — the
+    // anchor is an inert wrapper so AT doesn't announce a phantom link.
+    const { container: noQuery } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch, query: undefined }}
+        variant="upcoming"
+      />
+    );
+    const inertAnchor = noQuery.querySelector("a.sports-match-row");
+    expect(inertAnchor).not.toHaveAttribute("tabindex");
+    expect(inertAnchor).not.toHaveAttribute("role");
+    expect(inertAnchor.className).not.toContain("clickable");
+  });
+});
+
 describe("<SportsMatchRow> flag accessibility", () => {
   it("sets alt and title on the home team flag image to the team name", () => {
-    const { container } = render(
+    const { container } = renderWithDispatch(
       <SportsMatchRow match={baseMatch} variant="upcoming" />
     );
     const flags = container.querySelectorAll(".sports-match-flag");
@@ -311,7 +480,7 @@ describe("<SportsMatchRow> flag accessibility", () => {
   });
 
   it("sets alt and title on the away team flag image to the team name", () => {
-    const { container } = render(
+    const { container } = renderWithDispatch(
       <SportsMatchRow match={baseMatch} variant="upcoming" />
     );
     const flags = container.querySelectorAll(".sports-match-flag");
@@ -320,7 +489,7 @@ describe("<SportsMatchRow> flag accessibility", () => {
   });
 
   it("does not set title on the parent .sports-match-team div", () => {
-    const { container } = render(
+    const { container } = renderWithDispatch(
       <SportsMatchRow match={baseMatch} variant="upcoming" />
     );
     const teamDivs = container.querySelectorAll(".sports-match-team");

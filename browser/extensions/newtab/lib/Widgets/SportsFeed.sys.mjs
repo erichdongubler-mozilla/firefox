@@ -4,7 +4,9 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   PersistentCache: "resource://newtab/lib/PersistentCache.sys.mjs",
+  SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   TemporaryMerinoClientShim:
     "resource://newtab/lib/TemporaryMerinoClientShim.sys.mjs",
 });
@@ -19,6 +21,11 @@ const PREF_SYSTEM_SPORTS_ENABLED = "widgets.system.sportsWidget.enabled";
 const FOLLOW_STATE = "sports-follow-state";
 const CACHE_KEY = "sports_feed";
 const MERINO_CLIENT_KEY = "HNT_SPORTS_FEED";
+// SAP source string passed to BrowserSearchTelemetry — must be a key in
+// BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES. Today this widget reports under
+// the generic newtab source; the search team may ask us to switch to a
+// widget-specific source later.
+const SEARCH_SAP_SOURCE = "about_newtab";
 // Temporary: backend requires a date parameter on the matches endpoint until
 // TODO: 10 days before kickoff (2026-06-11). Remove this and the appendDate logic once the backend no longer requires it.
 const SPORTS_MATCHES_PRE_KICKOFF_DATE = "2026-06-15";
@@ -47,6 +54,34 @@ export class SportsFeed {
     this.initialized = true;
     await this.syncState();
     await this.fetchSportsData();
+  }
+
+  // Handle a click on a match row. Resolves the user's default search engine
+  // (or default-private in a private window), builds a submission via
+  // SearchUIUtils.loadSearch, navigates to it, and records SAP telemetry.
+  // Using loadSearch (rather than a pre-computed href) handles POST-based
+  // engines, private windows, and `BrowserSearchTelemetry.recordSearch` all
+  // in one call.
+  async openMatchSearch(action) {
+    const { query, eventInfo } = action.data || {};
+    const window = action._target?.window;
+    if (!query || !window) {
+      return;
+    }
+    try {
+      await lazy.SearchUIUtils.loadSearch({
+        window,
+        searchText: query,
+        // eventInfo is a plain object carrying the click modifiers/button so
+        // whereToOpenLink can decide current-tab vs new-tab vs new-window.
+        where: lazy.BrowserUtils.whereToOpenLink(eventInfo || null),
+        triggeringPrincipal:
+          Services.scriptSecurityManager.getSystemPrincipal(),
+        sapSource: SEARCH_SAP_SOURCE,
+      });
+    } catch (e) {
+      console.error("Sports widget failed to open match search", e);
+    }
   }
 
   // On startup, read whatever was saved to disk and send it to the UI.
@@ -184,6 +219,11 @@ export class SportsFeed {
         break;
       case at.PREF_CHANGED:
         await this.onPrefChangedAction(action);
+        break;
+      // User clicked a match row — run a search for the match's `query` using
+      // their default search engine via SearchUIUtils.loadSearch.
+      case at.WIDGETS_SPORTS_OPEN_MATCH_SEARCH:
+        await this.openMatchSearch(action);
         break;
       // User changed the widget state — save it and send the updated state to the UI.
       case at.WIDGETS_SPORTS_CHANGE_WIDGET_STATE:
