@@ -913,11 +913,9 @@ std::unique_ptr<const DrawBlitProg> GLBlitHelper::CreateDrawBlitProg(
 #ifdef XP_MACOSX
 static RefPtr<MacIOSurface> LookupSurface(
     const layers::SurfaceDescriptorMacIOSurface& sd) {
-  MacIOSurface::AllowAlpha allowAlpha = sd.isOpaque()
-                                            ? MacIOSurface::AllowAlpha::No
-                                            : MacIOSurface::AllowAlpha::Yes;
-  return MacIOSurface::LookupSurface(sd.surfaceId(), sd.yUVColorSpace(),
-                                     gfx::TransferFunction::SRGB, allowAlpha);
+  return MacIOSurface::LookupSurface(sd.surfaceId(), !sd.isOpaque(),
+                                     sd.yUVColorSpace(),
+                                     gfx::TransferFunction::SRGB);
 }
 #endif
 
@@ -1598,12 +1596,9 @@ bool GLBlitHelper::BlitImage(layers::GPUVideoImage* const srcImage,
     case layers::RemoteDecoderVideoSubDescriptor::
         TSurfaceDescriptorMacIOSurface: {
       const auto& subdesc = subdescUnion.get_SurfaceDescriptorMacIOSurface();
-      MacIOSurface::AllowAlpha allowAlpha = subdesc.isOpaque()
-                                                ? MacIOSurface::AllowAlpha::No
-                                                : MacIOSurface::AllowAlpha::Yes;
       RefPtr<MacIOSurface> surface = MacIOSurface::LookupSurface(
-          subdesc.surfaceId(), subdesc.yUVColorSpace(),
-          subdesc.transferFunction(), allowAlpha);
+          subdesc.surfaceId(), !subdesc.isOpaque(), subdesc.yUVColorSpace(),
+          subdesc.transferFunction());
       MOZ_ASSERT(surface);
       if (!surface) {
         return false;

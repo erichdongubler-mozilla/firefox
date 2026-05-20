@@ -53,35 +53,30 @@ class MacIOSurface final
   typedef mozilla::gfx::ColorRange ColorRange;
   typedef mozilla::gfx::ColorDepth ColorDepth;
 
-  enum class AllowAlpha : bool { No, Yes };
-
   // The usage count of the IOSurface is increased by 1 during the lifetime
   // of the MacIOSurface instance.
   // MacIOSurface holds a reference to the corresponding IOSurface.
 
   static already_AddRefed<MacIOSurface> CreateIOSurface(int aWidth, int aHeight,
-                                                        AllowAlpha aAllowAlpha);
+                                                        bool aHasAlpha = true);
   static already_AddRefed<MacIOSurface> CreateBiPlanarSurface(
       const IntSize& aYSize, const IntSize& aCbCrSize,
       ChromaSubsampling aChromaSubsampling, YUVColorSpace aColorSpace,
       TransferFunction aTransferFunction, ColorRange aColorRange,
-      ColorDepth aColorDepth, AllowAlpha aAllowAlpha);
+      ColorDepth aColorDepth);
   static already_AddRefed<MacIOSurface> CreateSinglePlanarSurface(
       const IntSize& aSize, YUVColorSpace aColorSpace,
-      TransferFunction aTransferFunction, ColorRange aColorRange,
-      AllowAlpha aAllowAlpha);
+      TransferFunction aTransferFunction, ColorRange aColorRange);
   static void ReleaseIOSurface(MacIOSurface* aIOSurface);
   static already_AddRefed<MacIOSurface> LookupSurface(
-      IOSurfaceID aSurfaceID, YUVColorSpace aColorSpace,
-      TransferFunction aTransferFunction, AllowAlpha aAllowAlpha);
+      IOSurfaceID aSurfaceID, bool aHasAlpha, YUVColorSpace aColorSpace,
+      TransferFunction aTransferFunction);
   static mozilla::gfx::SurfaceFormat SurfaceFormatForPixelFormat(
-      OSType aPixelFormat, AllowAlpha aAllowAlpha);
-  static bool HasAlphaForPixelFormat(OSType aPixelFormat);
+      OSType aPixelFormat, bool aHasAlpha);
 
   explicit MacIOSurface(CFTypeRefPtr<IOSurfaceRef> aIOSurfaceRef,
-                        YUVColorSpace aColorSpace,
-                        TransferFunction aTransferFunction,
-                        AllowAlpha aAllowAlpha);
+                        bool aHasAlpha, YUVColorSpace aColorSpace,
+                        TransferFunction aTransferFunction);
 
   ~MacIOSurface();
   IOSurfaceID GetIOSurfaceID() const;

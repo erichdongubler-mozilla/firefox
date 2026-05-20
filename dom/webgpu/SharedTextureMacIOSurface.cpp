@@ -29,8 +29,8 @@ UniquePtr<SharedTextureMacIOSurface> SharedTextureMacIOSurface::Create(
     return nullptr;
   }
 
-  RefPtr<MacIOSurface> surface = MacIOSurface::CreateIOSurface(
-      aWidth, aHeight, MacIOSurface::AllowAlpha::Yes);
+  RefPtr<MacIOSurface> surface =
+      MacIOSurface::CreateIOSurface(aWidth, aHeight, true);
   if (!surface) {
     gfxCriticalNoteOnce << "Failed to create MacIOSurface: (" << aWidth << ", "
                         << aHeight << ")";
