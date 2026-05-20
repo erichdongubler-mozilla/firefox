@@ -962,12 +962,13 @@ class nsDocShell final : public nsDocLoader,
   // indicate that we should cancel the navigation.
   MOZ_CAN_RUN_SCRIPT
   nsIDocumentViewer::PermitUnloadResult MaybeFireTraversableTraverseHistory(
-      const mozilla::dom::SessionHistoryInfo& aInfo,
+      nsDocShellLoadState* aLoadState,
       mozilla::Maybe<mozilla::dom::UserNavigationInvolvement> aUserInvolvement);
 
   nsresult LoadHistoryEntry(
       const mozilla::dom::LoadingSessionHistoryInfo& aEntry, uint32_t aLoadType,
-      bool aUserActivation, bool aNotifiedBeforeUnloadListeners);
+      bool aUserActivation, bool aNotifiedBeforeUnloadListeners,
+      bool aIsResumingInterceptedNavigation);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult LoadHistoryEntry(nsDocShellLoadState* aLoadState, uint32_t aLoadType,
                             bool aLoadingCurrentEntry);

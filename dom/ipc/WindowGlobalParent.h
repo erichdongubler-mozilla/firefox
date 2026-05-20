@@ -164,8 +164,8 @@ class WindowGlobalParent final : public WindowContext,
   void PermitUnload(
       std::function<void(nsIDocumentViewer::PermitUnloadResult)>&& aResolver);
 
-  void PermitUnloadTraversable(
-      const SessionHistoryInfo& aInfo,
+  void CheckIfUnloadingIsCanceledForTraversable(
+      nsDocShellLoadState* aDocShellLoadState,
       nsIDocumentViewer::PermitUnloadAction aAction,
       std::function<void(nsIDocumentViewer::PermitUnloadResult)>&& aResolver);
 

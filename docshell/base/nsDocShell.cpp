@@ -818,7 +818,8 @@ nsresult nsDocShell::LoadURI(nsDocShellLoadState* aLoadState,
     return LoadHistoryEntry(*aLoadState->GetLoadingSessionHistoryInfo(),
                             aLoadState->LoadType(),
                             aLoadState->HasValidUserGestureActivation(),
-                            aLoadState->NotifiedBeforeUnloadListeners());
+                            aLoadState->NotifiedBeforeUnloadListeners(),
+                            aLoadState->IsResumingInterceptedNavigation());
   }
 
   // On history navigation via Back/Forward buttons, don't execute
@@ -8616,7 +8617,10 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     }
     if (sameDocument) {
       if (aLoadState->LoadIsFromSessionHistory() &&
-          (mLoadType & LOAD_CMD_HISTORY)) {
+          (mLoadType & LOAD_CMD_HISTORY) &&
+          !aLoadState->IsResumingInterceptedNavigation()) {
+        // We must ensure to not abort intercepted history navigations. See
+        // https://github.com/whatwg/html/issues/12407
         SetOngoingNavigation(Nothing());
       }
       return rv;
@@ -11194,7 +11198,8 @@ void nsDocShell::UpdateActiveEntry(
 
 nsresult nsDocShell::LoadHistoryEntry(const LoadingSessionHistoryInfo& aEntry,
                                       uint32_t aLoadType, bool aUserActivation,
-                                      bool aNotifiedBeforeUnloadListeners) {
+                                      bool aNotifiedBeforeUnloadListeners,
+                                      bool aIsResumingInterceptedNavigation) {
   RefPtr<nsDocShellLoadState> loadState = aEntry.CreateLoadInfo();
   loadState->SetHasValidUserGestureActivation(
       loadState->HasValidUserGestureActivation() || aUserActivation);
@@ -11203,6 +11208,9 @@ nsresult nsDocShell::LoadHistoryEntry(const LoadingSessionHistoryInfo& aEntry,
       loadState->GetTextDirectiveUserActivation() || aUserActivation);
 
   loadState->SetNotifiedBeforeUnloadListeners(aNotifiedBeforeUnloadListeners);
+
+  loadState->SetIsResumingInterceptedNavigation(
+      aIsResumingInterceptedNavigation);
 
   return LoadHistoryEntry(loadState, aLoadType, aEntry.mLoadingCurrentEntry);
 }
@@ -11239,9 +11247,8 @@ void nsDocShell::MaybeFireTraverseHistory(nsDocShellLoadState* aLoadState) {
     if (RefPtr navigation = window->Navigation()) {
       if (AutoJSAPI jsapi; jsapi.Init(window)) {
         // This should send the correct user involvment. See bug 1903552.
-        navigation->FireTraverseNavigateEvent(
-            jsapi.cx(), aLoadState->GetLoadingSessionHistoryInfo()->mInfo,
-            Nothing());
+        navigation->FireTraverseNavigateEvent(jsapi.cx(), aLoadState,
+                                              Nothing());
       }
     }
   }
@@ -11249,7 +11256,7 @@ void nsDocShell::MaybeFireTraverseHistory(nsDocShellLoadState* aLoadState) {
 
 nsIDocumentViewer::PermitUnloadResult
 nsDocShell::MaybeFireTraversableTraverseHistory(
-    const SessionHistoryInfo& aInfo,
+    nsDocShellLoadState* aLoadState,
     Maybe<UserNavigationInvolvement> aUserInvolvement) {
   MOZ_DIAGNOSTIC_ASSERT(GetBrowsingContext());
   MOZ_DIAGNOSTIC_ASSERT(GetBrowsingContext()->IsTop());
@@ -11262,7 +11269,7 @@ nsDocShell::MaybeFireTraversableTraverseHistory(
     if (RefPtr navigation = activeWindow->Navigation()) {
       if (AutoJSAPI jsapi; jsapi.Init(activeWindow)) {
         bool shouldContinue = navigation->FireTraverseNavigateEvent(
-            jsapi.cx(), aInfo, aUserInvolvement);
+            jsapi.cx(), aLoadState, aUserInvolvement);
 
         if (!shouldContinue) {
           finalStatus = nsIDocumentViewer::eCanceledByNavigate;

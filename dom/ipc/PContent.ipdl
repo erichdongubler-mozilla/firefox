@@ -1077,11 +1077,11 @@ child:
     // the `PermitUnloadResult` enum. If `aStartingAt` is an in-process, top-level
     // browsing context, then a "navigate" event will also be dispatched.
     // See https://html.spec.whatwg.org/#preventing-navigation:fire-a-traverse-navigate-event
-    async DispatchBeforeUnloadToSubtree(MaybeDiscardedBrowsingContext aStartingAt, SessionHistoryInfo? info)
+    async DispatchBeforeUnloadToSubtree(MaybeDiscardedBrowsingContext aStartingAt, nsDocShellLoadState? info)
         returns (PermitUnloadResult result);
 
     // Only dispatches "navigate" to the traversable. Used in case we don't want to dispatch beforeunload.
-    async DispatchNavigateToTraversable(MaybeDiscardedBrowsingContext aTraversable, SessionHistoryInfo? info)
+    async DispatchNavigateToTraversable(MaybeDiscardedBrowsingContext aTraversable, nsDocShellLoadState info)
         returns (PermitUnloadResult result);
 
     // Update the cached list of codec supported in the given process.

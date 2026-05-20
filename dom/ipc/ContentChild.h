@@ -794,13 +794,14 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvDispatchBeforeUnloadToSubtree(
       const MaybeDiscarded<BrowsingContext>& aStartingAt,
-      const mozilla::Maybe<SessionHistoryInfo>& aInfo,
+      const mozilla::Maybe<mozilla::NotNull<RefPtr<nsDocShellLoadState>>>&
+          aLoadState,
       DispatchBeforeUnloadToSubtreeResolver&& aResolver);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvDispatchNavigateToTraversable(
       const MaybeDiscarded<BrowsingContext>& aTraversable,
-      const mozilla::Maybe<SessionHistoryInfo>& aInfo,
+      const mozilla::NotNull<RefPtr<nsDocShellLoadState>>& aLoadState,
       DispatchNavigateToTraversableResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvInitNextGenLocalStorageEnabled(
@@ -809,7 +810,8 @@ class ContentChild final : public PContentChild,
  public:
   static void DispatchBeforeUnloadToSubtree(
       BrowsingContext* aStartingAt,
-      const mozilla::Maybe<SessionHistoryInfo>& aInfo,
+      const mozilla::Maybe<mozilla::NotNull<RefPtr<nsDocShellLoadState>>>&
+          aLoadState,
       const DispatchBeforeUnloadToSubtreeResolver& aResolver);
 
   hal::ProcessPriority GetProcessPriority() const { return mProcessPriority; }

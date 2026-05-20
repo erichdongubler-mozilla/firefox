@@ -500,39 +500,36 @@ static void LogEvent(Event* aEvent, NavigateEvent* aOngoingEvent,
   LOG_FMTD("{}", fmt::join(log.begin(), log.end(), std::string_view{" "}));
 }
 
-// https://html.spec.whatwg.org/#resume-applying-the-traverse-history-step
-static void ResumeApplyTheHistoryStep(
-    SessionHistoryInfo* aTarget, BrowsingContext* aTraversable,
-    UserNavigationInvolvement aUserInvolvement) {
-  MOZ_DIAGNOSTIC_ASSERT(aTraversable->IsTop());
-  auto* childSHistory = aTraversable->GetChildSessionHistory();
-  // Since we've already called #checking-if-unloading-is-canceled, we here pass
-  // checkForCancelation set to false.
-  childSHistory->AsyncGo(aTarget->NavigationKey(), aTraversable,
-                         /* aRequireUserInteraction */ false,
-                         /* aUserActivation */ false,
-                         /* aCheckForCancelation */ false, [](auto) {});
-}
-
 struct NavigationWaitForAllScope final : public nsISupports,
                                          public SupportsWeakPtr {
   NavigationWaitForAllScope(Navigation* aNavigation,
                             NavigationAPIMethodTracker* aApiMethodTracker,
                             NavigateEvent* aEvent,
-                            NavigationDestination* aDestination)
+                            NavigationDestination* aDestination,
+                            nsDocShellLoadState* aLoadState)
       : mNavigation(aNavigation),
         mAPIMethodTracker(aApiMethodTracker),
         mEvent(aEvent),
-        mDestination(aDestination) {}
+        mDestination(aDestination),
+        mLoadState(aLoadState) {}
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(NavigationWaitForAllScope)
   RefPtr<Navigation> mNavigation;
   RefPtr<NavigationAPIMethodTracker> mAPIMethodTracker;
   RefPtr<NavigateEvent> mEvent;
   RefPtr<NavigationDestination> mDestination;
+  RefPtr<nsDocShellLoadState> mLoadState;
 
  private:
   ~NavigationWaitForAllScope() = default;
+
+  BrowsingContext* GetBrowsingContext() const {
+    nsGlobalWindowInner* window = mNavigation->GetOwnerWindow();
+    if (!window) {
+      return nullptr;
+    }
+    return window->GetBrowsingContext();
+  }
 
  public:
   // https://html.spec.whatwg.org/#process-navigate-event-handler-failure
@@ -572,6 +569,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
       navigation->AbortNavigateEvent(jsapi.cx(), event, aRejectionReason);
     }
   }
+
   // https://html.spec.whatwg.org/#commit-a-navigate-event
   MOZ_CAN_RUN_SCRIPT void CommitNavigateEvent() {
     // 1. Let navigation be event's target.
@@ -585,10 +583,6 @@ struct NavigationWaitForAllScope final : public nsISupports,
     }
     // 2. Let navigable be event's relevant global object's navigable.
     RefPtr<nsDocShell> docShell = nsDocShell::Cast(document->GetDocShell());
-    Maybe<BrowsingContext&> navigable =
-        ToMaybeRef(mNavigation->GetOwnerWindow()).andThen([](auto& aWindow) {
-          return ToMaybeRef(aWindow.GetBrowsingContext());
-        });
     // 4. If event's abort controller's signal is aborted, then return.
     if (AbortSignal* signal = mEvent->Signal(); signal->Aborted()) {
       return;
@@ -600,10 +594,22 @@ struct NavigationWaitForAllScope final : public nsISupports,
         mEvent->InterceptionState() != NavigateEvent::InterceptionState::None ||
         mDestination->SameDocument();
 
+    // Set up to maybe resume applying the history step. This needs to run after
+    // the microtask checkpoint, and it's therefore important that this is done
+    // before step 7.
+    auto resumeApplyTheHistoryStep =
+        MakeScopeExit([browsingContext = RefPtr{GetBrowsingContext()},
+                       loadState = RefPtr{mLoadState}]() {
+          if (browsingContext && loadState) {
+            browsingContext->LoadURI(loadState, /* aSetNavigating */ false);
+          }
+        });
+
     // 7. Prepare to run script given navigation's relevant settings object.
     // This runs step 12 when going out of scope.
     nsAutoMicroTask mt;
 
+    bool traverseWasIntercepted = false;
     // 9. If event's interception state is not "none":
     if (mEvent->InterceptionState() != NavigateEvent::InterceptionState::None) {
       // The copy of the active session history info might be stale at this
@@ -651,37 +657,38 @@ struct NavigationWaitForAllScope final : public nsISupports,
                 mEvent->NavigationType());
           }
           break;
-        case NavigationType::Traverse:
-          if (auto* entry = mDestination->GetEntry()) {
-            // 1. Set navigation's suppress normal scroll restoration during
-            //    ongoing navigation to true.
-            mNavigation
-                ->mSuppressNormalScrollRestorationDuringOngoingNavigation =
-                true;
-            // 2. Let userInvolvement be "none".
-            // 3. If event's userInitiated is true, then set userInvolvement to
-            // "activation".
-            UserNavigationInvolvement userInvolvement =
-                mEvent->UserInitiated() ? UserNavigationInvolvement::Activation
-                                        : UserNavigationInvolvement::None;
-            // 4. Append the following session history traversal steps to
-            //    navigable's traversable navigable:
-            // 4.1 Resume applying the traverse history step given event's
-            //     destination's entry's session history entry's step,
-            //     navigable's traversable navigable, and userInvolvement.
-            ResumeApplyTheHistoryStep(entry->SessionHistoryInfo(),
-                                      navigable->Top(), userInvolvement);
-
-            // This is not in the spec, but both Chrome and Safari does this or
-            // something similar.
-            MOZ_ASSERT(entry->Index() >= 0);
-            mNavigation->SetCurrentEntryIndex(entry->SessionHistoryInfo());
+        case NavigationType::Traverse: {
+          // 1. Set navigation's suppress normal scroll restoration during
+          //    ongoing navigation to true.
+          mNavigation->mSuppressNormalScrollRestorationDuringOngoingNavigation =
+              true;
+          // 2. Let userInvolvement be "none".
+          // 3. If event's userInitiated is true, then set userInvolvement to
+          // "activation".
+          UserNavigationInvolvement userInvolvement =
+              mEvent->UserInitiated() ? UserNavigationInvolvement::Activation
+                                      : UserNavigationInvolvement::None;
+          if (mLoadState) {
+            mLoadState->SetUserNavigationInvolvement(userInvolvement);
+            mLoadState->SetIsResumingInterceptedNavigation(true);
           }
+          // 4. Append the following session history traversal steps to
+          //    navigable's traversable navigable:
+          // 4.1 Resume applying the traverse history step given event's
+          //     destination's entry's session history entry's step,
+          //     navigable's traversable navigable, and userInvolvement.
+          traverseWasIntercepted = true;
           break;
+        }
         default:
           break;
       }
     }
+
+    if (!traverseWasIntercepted) {
+      resumeApplyTheHistoryStep.release();
+    }
+
     // 8. If navigation's transition is not null, then resolve navigation's
     //    transition's committed promise with undefined.
     // Steps 8 and 9 are swapped to have a consistent promise behavior
@@ -710,6 +717,8 @@ struct NavigationWaitForAllScope final : public nsISupports,
       // See also https://github.com/whatwg/html/issues/11802
       mNavigation->mOngoingNavigateEvent = nullptr;
     }
+
+    return;
   }
 
   MOZ_CAN_RUN_SCRIPT void CommitNavigateEventSuccessSteps() {
@@ -800,8 +809,8 @@ void Navigation::RunNavigateEventHandlerSteps(
 
   // 10.4 Wait for all of promisesList, with the following success steps:
   RefPtr destination = event->Destination();
-  RefPtr scope =
-      MakeRefPtr<NavigationWaitForAllScope>(this, tracker, event, destination);
+  RefPtr scope = MakeRefPtr<NavigationWaitForAllScope>(this, tracker, event,
+                                                       destination, nullptr);
 
   // If the committed promise in the api method tracker hasn't resolved yet,
   // we can't run neither of the success nor failure steps. To handle that
@@ -1413,9 +1422,11 @@ void LogEntry(NavigationHistoryEntry* aEntry, uint64_t aIndex, uint64_t aTotal,
 
 // https://html.spec.whatwg.org/#fire-a-traverse-navigate-event
 bool Navigation::FireTraverseNavigateEvent(
-    JSContext* aCx, const SessionHistoryInfo& aDestinationSessionHistoryInfo,
+    JSContext* aCx, nsDocShellLoadState* aLoadState,
     Maybe<UserNavigationInvolvement> aUserInvolvement) {
   // aDestinationSessionHistoryInfo corresponds to
+  const SessionHistoryInfo& destinationSessionHistoryInfo =
+      aLoadState->GetLoadingSessionHistoryInfo()->mInfo;
   // https://html.spec.whatwg.org/#fire-navigate-traverse-destinationshe
 
   // To not unnecessarily create an event that's never used, step 1 and step 2
@@ -1427,7 +1438,7 @@ bool Navigation::FireTraverseNavigateEvent(
 
   // Step 5
   RefPtr<NavigationHistoryEntry> destinationNHE =
-      FindNavigationHistoryEntry(aDestinationSessionHistoryInfo);
+      FindNavigationHistoryEntry(destinationSessionHistoryInfo);
 
   // Step 6.2 and step 7.2
   RefPtr<nsIStructuredCloneContainer> state =
@@ -1440,8 +1451,8 @@ bool Navigation::FireTraverseNavigateEvent(
           .andThen([](auto& aDocShell) {
             return ToMaybeRef(aDocShell.GetActiveSessionHistoryInfo());
           })
-          .map([&aDestinationSessionHistoryInfo](auto& aSessionHistoryInfo) {
-            return aDestinationSessionHistoryInfo.SharesDocumentWith(
+          .map([&destinationSessionHistoryInfo](auto& aSessionHistoryInfo) {
+            return destinationSessionHistoryInfo.SharesDocumentWith(
                 aSessionHistoryInfo);
           })
           .valueOr(false);
@@ -1449,7 +1460,7 @@ bool Navigation::FireTraverseNavigateEvent(
   // Step 3, step 4, step 6.1, and step 7.1.
   RefPtr<NavigationDestination> destination =
       MakeAndAddRef<NavigationDestination>(
-          GetRelevantGlobal(), aDestinationSessionHistoryInfo.GetURI(),
+          GetRelevantGlobal(), destinationSessionHistoryInfo.GetURI(),
           destinationNHE, state, isSameDocument);
 
   // Step 9
@@ -1459,7 +1470,8 @@ bool Navigation::FireTraverseNavigateEvent(
       /* aSourceElement */ nullptr,
       /* aFormDataEntryList*/ nullptr,
       /* aClassicHistoryAPIState */ nullptr,
-      /* aDownloadRequestFilename */ VoidString());
+      /* aDownloadRequestFilename */ VoidString(),
+      /* aOngoingAPIMethodTracker */ nullptr, aLoadState);
 }
 
 // https://html.spec.whatwg.org/#fire-a-push/replace/reload-navigate-event
@@ -1646,7 +1658,8 @@ bool Navigation::InnerFireNavigateEvent(
     FormData* aFormDataEntryList,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
     const nsAString& aDownloadRequestFilename,
-    NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
+    NavigationAPIMethodTracker* aNavigationAPIMethodTracker,
+    nsDocShellLoadState* aLoadState) {
   nsCOMPtr<nsIGlobalObject> globalObject = GetRelevantGlobal();
   RefPtr apiMethodTracker = aNavigationAPIMethodTracker;
 
@@ -1822,8 +1835,8 @@ bool Navigation::InnerFireNavigateEvent(
     MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
   }
 
-  RefPtr scope = MakeRefPtr<NavigationWaitForAllScope>(this, apiMethodTracker,
-                                                       event, aDestination);
+  RefPtr scope = MakeRefPtr<NavigationWaitForAllScope>(
+      this, apiMethodTracker, event, aDestination, aLoadState);
   // Step 30
   if (event->NavigationPrecommitHandlerList().IsEmpty()) {
     LOG_FMTD("No precommit handlers, committing directly");
