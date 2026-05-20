@@ -128,6 +128,14 @@
         padding-inline: var(--space-small);
       }
     }
+
+    &:has(.sports-match-result) {
+      padding-block: 0;
+
+      .sports-score-pill {
+        padding-block: var(--space-xxsmall);
+      }
+    }
   }
 
   &.sports-match-row-list {

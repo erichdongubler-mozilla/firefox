@@ -1071,6 +1071,56 @@ describe("<SportsWidget> keyboard accessibility", () => {
   });
 });
 
+describe("<SportsWidget> Results tab View all button", () => {
+  function renderResultsAtSize(widgetSize, previous = [mockMatch]) {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: widgetSize },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            data: {
+              teams: [],
+              matches: { previous, current: [], next: [] },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  function findResultsViewAllButton(container) {
+    const resultsPanel = [
+      ...container.querySelectorAll(".sports-matches-tab-panel"),
+    ].find(panel => !panel.hasAttribute("hidden"));
+    return resultsPanel?.querySelector(
+      "[data-l10n-id='newtab-sports-widget-view-all']"
+    );
+  }
+
+  it("renders the View all button on the results tab when widget size is large", () => {
+    const { container } = renderResultsAtSize("large");
+    const viewAllButton = findResultsViewAllButton(container);
+    expect(viewAllButton).toBeInTheDocument();
+    expect(viewAllButton.getAttribute("size")).toBeNull();
+  });
+
+  it("renders the View all button on the results tab when widget size is medium", () => {
+    const { container } = renderResultsAtSize("medium");
+    const viewAllButton = findResultsViewAllButton(container);
+    expect(viewAllButton).toBeInTheDocument();
+    expect(viewAllButton.getAttribute("size")).toBe("small");
+  });
+
+  it("does not render the View all button when there are no previous results", () => {
+    const { container } = renderResultsAtSize("medium", []);
+    expect(findResultsViewAllButton(container)).toBeNull();
+  });
+});
+
 describe("<SportsWidget> Watch button (live tab)", () => {
   // The Watch button on the live tab swaps between an icon-only variant
   // (medium widget) and a labelled variant (large widget). The two cases

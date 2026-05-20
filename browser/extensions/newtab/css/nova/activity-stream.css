@@ -6583,6 +6583,12 @@ button.arrow-button:dir(rtl) {
 .sports-match-row.sports-match-row-medium .sports-score-pill:has(.sports-score-penalty) {
   padding-inline: var(--space-small);
 }
+.sports-match-row.sports-match-row-medium:has(.sports-match-result) {
+  padding-block: 0;
+}
+.sports-match-row.sports-match-row-medium:has(.sports-match-result) .sports-score-pill {
+  padding-block: var(--space-xxsmall);
+}
 .sports-match-row.sports-match-row-list {
   margin-block: var(--space-xsmall);
 }

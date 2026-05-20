@@ -16634,8 +16634,9 @@ function SportsMatchesView({
     match: previous[0],
     variant: "results",
     size: size
-  })), size === "large" && !!previous.length && /*#__PURE__*/external_React_default().createElement("moz-button", {
+  })), !!previous.length && /*#__PURE__*/external_React_default().createElement("moz-button", {
     type: "secondary",
+    size: size === "medium" ? "small" : undefined,
     "data-l10n-id": showResultsList ? "newtab-sports-widget-show-less" : "newtab-sports-widget-view-all",
     onClick: () => setShowResultsList(v => !v)
   })), hasLiveGames && /*#__PURE__*/external_React_default().createElement("div", {

@@ -718,9 +718,10 @@ function SportsMatchesView({
             </div>
           )
         )}
-        {size === "large" && !!previous.length && (
+        {!!previous.length && (
           <moz-button
             type="secondary"
+            size={size === "medium" ? "small" : undefined}
             data-l10n-id={
               showResultsList
                 ? "newtab-sports-widget-show-less"
