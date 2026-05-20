@@ -813,7 +813,7 @@ dxc-src:
     fetch:
         type: git
         repo: https://github.com/FirefoxGraphics/DirectXShaderCompiler
-        revision: dc9cb8960f8d4fbb5f904eac1e3bf7f1821e4be1
+        revision: 9c26d96149925760ca86cd43610d9d32b6ec70c2
 
 jj:
     description: jj 0.38.0 source code
