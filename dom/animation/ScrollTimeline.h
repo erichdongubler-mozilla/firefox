@@ -201,6 +201,7 @@ class ScrollTimeline : public AnimationTimeline,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   // ScrollTimeline methods.
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static already_AddRefed<ScrollTimeline> Constructor(
       const GlobalObject& aGlobal, const ScrollTimelineOptions& aOptions,
       ErrorResult& aRv);

@@ -3758,7 +3758,7 @@ class Document : public nsINode,
    */
   already_AddRefed<nsRange> CaretRangeFromPoint(int32_t aX, int32_t aY);
 
-  Element* GetScrollingElement();
+  MOZ_CAN_RUN_SCRIPT Element* GetScrollingElement();
   // Like GetScrollingElement, but does not flush pending layout. Callers get
   // an answer based on the current (possibly stale) frame state; if accuracy
   // matters, callers should just call GetScrollingElement.
