@@ -554,6 +554,7 @@ function Clocks({ dispatch, size }) {
           }
           canAddClock={canAddClock}
           supportedTimeZones={supportedTimeZones}
+          locale={locale}
           onSave={handleSaveClock}
           onCancel={handleCloseClockForm}
         />

@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import {
   buildClockZone,
+  buildLocalizedTimeZoneMap,
   getCityFromTimeZone,
   getClockFormDerivedState,
   getRandomLabelColor,
@@ -28,6 +29,7 @@ const MAX_NICKNAME_LENGTH = 11;
  * @param {object|null} props.initialClock Pre-fill values when editing.
  * @param {boolean} props.canAddClock
  * @param {string[]} props.supportedTimeZones
+ * @param {string} [props.locale] Locale for localized zone names.
  * @param {(zone: object) => void} props.onSave
  * @param {() => void} props.onCancel
  */
@@ -36,9 +38,14 @@ export function AddClockForm({
   initialClock,
   canAddClock,
   supportedTimeZones,
+  locale,
   onSave,
   onCancel,
 }) {
+  const localizedTimeZoneMap = useMemo(
+    () => buildLocalizedTimeZoneMap(supportedTimeZones, locale),
+    [supportedTimeZones, locale]
+  );
   const [searchQuery, setSearchQuery] = useState(
     initialClock
       ? initialClock.city || getCityFromTimeZone(initialClock.timeZone)
@@ -62,9 +69,17 @@ export function AddClockForm({
         clockSearchQuery: searchQuery,
         clockSelectedTimeZone: selectedTimeZone,
         isEditingClock: isEditing,
+        localizedTimeZoneMap,
         supportedTimeZones,
       }),
-    [canAddClock, searchQuery, selectedTimeZone, isEditing, supportedTimeZones]
+    [
+      canAddClock,
+      searchQuery,
+      selectedTimeZone,
+      isEditing,
+      localizedTimeZoneMap,
+      supportedTimeZones,
+    ]
   );
 
   // moz-input-search renders its inner input asynchronously, so focusing
@@ -201,7 +216,7 @@ export function AddClockForm({
                     {getCityFromTimeZone(timeZone)}
                   </span>
                   <span className="clocks-search-result-timezone">
-                    {timeZone}
+                    {localizedTimeZoneMap?.get(timeZone) || timeZone}
                   </span>
                 </div>
               ))
