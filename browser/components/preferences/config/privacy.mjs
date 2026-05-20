@@ -1401,7 +1401,10 @@ SettingGroupManager.registerGroups({
     items: [
       {
         id: "ipProtectionNotOptedInSection",
-        l10nId: "ip-protection-not-opted-in-4",
+        l10nId: "ip-protection-not-opted-in-3",
+        l10nArgs: {
+          maxUsage: "50",
+        },
         control: "moz-promo",
         controlAttrs: {
           imagesrc:
