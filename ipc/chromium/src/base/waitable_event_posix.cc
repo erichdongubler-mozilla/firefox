@@ -264,6 +264,11 @@ size_t WaitableEvent::WaitMany(WaitableEvent** raw_waitables,
       raw_waitables[i]->kernel_->Dequeue(&sw, &sw);
       raw_waitables[i]->kernel_->lock_.Unlock();
     } else {
+      // By taking this lock here we ensure that |Signal| has completed by the
+      // time we return, because |Signal| holds this lock. This matches the
+      // behaviour of |Wait| and |TimedWait|.
+      raw_waitables[i]->kernel_->lock_.Lock();
+      raw_waitables[i]->kernel_->lock_.Unlock();
       signaled_index = i;
     }
   }
