@@ -156,7 +156,7 @@ private fun ProtectionStatusPill(
         Text(
             text = if (trackersBlockedCount > 0) {
                 pluralStringResource(
-                    R.plurals.trackers_blocked_count,
+                    R.plurals.trackers_blocked_count_2,
                     trackersBlockedCount,
                     trackersBlockedCount,
                 )

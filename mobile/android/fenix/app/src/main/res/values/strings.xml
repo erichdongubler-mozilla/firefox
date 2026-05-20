@@ -2456,9 +2456,9 @@
 
     <!-- Trackers blocked card on homepage -->
     <!-- Text shown on the trackers blocked card. %d is the number of trackers blocked. -->
-    <plurals name="trackers_blocked_count">
-        <item quantity="one">%d Tracker blocked</item>
-        <item quantity="other">%d Trackers blocked</item>
+    <plurals name="trackers_blocked_count_2">
+        <item quantity="one">%d tracker blocked</item>
+        <item quantity="other">%d trackers blocked</item>
     </plurals>
     <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
     <string name="trackers_blocked_empty">You’re protected</string>
