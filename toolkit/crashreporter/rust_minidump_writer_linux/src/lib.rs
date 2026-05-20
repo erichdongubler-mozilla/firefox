@@ -6,12 +6,13 @@
 
 use {
     anyhow::Context,
-    crash_helper_common::ExtraCrashData,
-    libc::pid_t,
+    crash_helper_common::{crash_annotations::CrashAnnotation, ExtraCrashData},
+    libc::{pid_t, SI_TKILL, SI_USER},
     minidump_writer::{
         crash_context::CrashContext,
         minidump_writer::{DirectAuxvDumpInfo as InternalDumpInfo, MinidumpWriterConfig},
     },
+    mozannotation_server::{AnnotationData, CAnnotation},
     std::{
         convert::TryInto,
         ffi::{c_char, CStr, CString},
@@ -39,6 +40,41 @@ pub struct MinidumpWriterContext {
     // them separate to create the CrashContext.
     process_id: pid_t,
     blamed_thread: pid_t,
+    // Also not available in `MinidumpWriterConfig`, but needed to compute extra annotations
+    siginfo: Option<libc::signalfd_siginfo>,
+}
+
+/// Gather any extra crash data that the minidump writer doesn't support natively.
+fn gather_extra_annotations(
+    siginfo: &Option<libc::signalfd_siginfo>,
+    crashed_pid: pid_t,
+    annotations: &mut Vec<CAnnotation>,
+) -> anyhow::Result<()> {
+    let Some(siginfo) = siginfo else {
+        return Ok(());
+    };
+
+    // Only user/tkill codes have relevant ssi_pid, and we only care if it's not our own process.
+    if ![SI_USER, SI_TKILL].contains(&siginfo.ssi_code) || siginfo.ssi_pid == crashed_pid as u32 {
+        return Ok(());
+    }
+
+    let path = format!("/proc/{}/comm", siginfo.ssi_pid);
+    let comm = match std::fs::read_to_string(path) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            // The process doesn't exist, most likely reaped before we could read the comm.
+            // This isn't really an error for our purposes, just return without data.
+            return Ok(());
+        }
+        Err(e) => return Err(e).context("failed to read comm for extra crash data"),
+        Ok(comm) => comm,
+    };
+    let trimmed = comm.trim();
+    annotations.push(CAnnotation {
+        id: CrashAnnotation::SignalOrigin as u32,
+        data: AnnotationData::String(CString::new(trimmed)?),
+    });
+    Ok(())
 }
 
 /// Mirror of [minidump_writer::DirectAuxvDumpInfo][InternalDumpInfo] (`cbindgen` workaround)
@@ -109,6 +145,7 @@ pub unsafe extern "C" fn minidump_writer_create(
             writer_config,
             process_id: child,
             blamed_thread: child_blamed_thread,
+            siginfo: None,
         }))
     });
     if !extra_data.is_null() {
@@ -138,6 +175,7 @@ pub extern "C" fn minidump_writer_set_crash_context(
     #[cfg(target_arch = "arm")]
     assert!(float_state.is_none());
 
+    context.siginfo = siginfo.cloned();
     context.writer_config.set_crash_context(CrashContext {
         inner: crash_context::CrashContext {
             context: ucontext.clone(),
@@ -197,14 +235,22 @@ pub extern "C" fn minidump_writer_set_direct_auxv_dump_info(
 #[no_mangle]
 pub unsafe extern "C" fn minidump_writer_dump(
     mut context: Box<MinidumpWriterContext>,
-    extra_data: Option<&mut ExtraCrashData>,
+    mut extra_data: Option<&mut ExtraCrashData>,
 ) -> bool {
+    if let Some(ref mut extra_data) = extra_data {
+        if let Err(e) = gather_extra_annotations(
+            &context.siginfo,
+            context.process_id,
+            &mut extra_data.annotations,
+        ) {
+            extra_data.error = Some(CString::new(format!("{e:#?}")).unwrap());
+        }
+    }
     err_to_error_msg(extra_data, || {
         context
             .writer_config
             .write(&mut context.dump_file)
-            .context("failed to write dump file")?;
-        Ok(())
+            .context("failed to write dump file")
     })
     .is_some()
 }

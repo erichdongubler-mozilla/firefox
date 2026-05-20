@@ -6990,6 +6990,7 @@ dependencies = [
  "crash_helper_common",
  "libc",
  "minidump-writer",
+ "mozannotation_server",
 ]
 
 [[package]]
