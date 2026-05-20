@@ -227,11 +227,11 @@ class MOZ_RAII AutoProfilerFlowTextMarker {
   AutoProfilerFlowTextMarker(const char* aMarkerName,
                              const mozilla::MarkerCategory& aCategory,
                              mozilla::MarkerOptions&& aOptions,
-                             const ProfilerString8View& aText, Flow aFlow)
+                             ProfilerString8View aText, Flow aFlow)
       : mMarkerName(aMarkerName),
         mCategory(aCategory),
         mOptions(std::move(aOptions)),
-        mText(aText),
+        mText(std::move(aText)),
         mFlow(aFlow) {
     MOZ_ASSERT(mOptions.Timing().EndTime().IsNull(),
                "AutoProfilerTextMarker options shouldn't have an end time");
@@ -254,7 +254,7 @@ class MOZ_RAII AutoProfilerFlowTextMarker {
   const char* mMarkerName;
   mozilla::MarkerCategory mCategory;
   mozilla::MarkerOptions mOptions;
-  const ProfilerString8View& mText;
+  const ProfilerString8View mText;
   Flow mFlow;
 };
 
