@@ -1638,17 +1638,17 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
     }
   }
 
-  // We need to root this job because useDebugQueue can GC.
-  Rooted<JS::JSMicroTask*> rootedJob(cx, job);
-
   // Only check if we need to use the debug queue when we're not on main thread.
-  if (MOZ_UNLIKELY(!cx->runtime()->isMainRuntime() &&
-                   cx->jobQueue->useDebugQueue(cx->global()))) {
-    return cx->microTaskQueues->enqueueDebugMicroTask(cx,
-                                                      ObjectValue(*rootedJob));
+  if (MOZ_UNLIKELY(!cx->runtime()->isMainRuntime())) {
+    // We need to root this job because useDebugQueue can GC.
+    Rooted<JS::JSMicroTask*> rootedJob(cx, job);
+    if (MOZ_UNLIKELY(cx->jobQueue->useDebugQueue(cx->global()))) {
+      return cx->microTaskQueues->enqueueDebugMicroTask(
+          cx, ObjectValue(*rootedJob));
+    }
   }
-  return cx->microTaskQueues->enqueueRegularMicroTask(cx,
-                                                      ObjectValue(*rootedJob));
+
+  return cx->microTaskQueues->enqueueRegularMicroTask(cx, ObjectValue(*job));
 }
 
 /**
