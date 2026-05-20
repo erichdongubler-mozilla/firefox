@@ -646,9 +646,29 @@ class TestManifestLoader(TestLoader):
         manifest = reftest.ReftestManifest(finder=self.finder)
         manifest.load(mpath)
 
+        manifests_with_tests = set()
         for test in sorted(manifest.tests, key=lambda x: x.get("path")):
             test["manifest_relpath"] = test["manifest"][len(self.topsrcdir) + 1 :]
+            manifests_with_tests.add(test["manifest"])
             yield test
+
+        # Sub-manifests with no file-based tests (e.g. those containing only
+        # data: URL tests, which ReftestManifest skips) would otherwise be
+        # invisible to the taskgraph manifest loader. Yield a placeholder so
+        # they still get scheduled.
+        for manifest_path in sorted(manifest.manifests - {manifest.path}):
+            if manifest_path not in manifests_with_tests:
+                relpath = manifest_path[len(self.topsrcdir) + 1 :]
+                yield {
+                    "path": manifest_path,
+                    "here": os.path.dirname(manifest_path),
+                    "manifest": manifest_path,
+                    "manifest_relpath": relpath,
+                    "name": os.path.basename(manifest_path),
+                    "head": "",
+                    "support-files": "",
+                    "subsuite": "",
+                }
 
     def __call__(self):
         for path, name, key, value in self.reader.find_variables_from_ast(
