@@ -13,7 +13,6 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 );
 
 const MAX_PREVIEW_LINKS = 3;
-const WINDOW_BREAKPOINT_SIZE = 830;
 const lazy = {};
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -55,7 +54,6 @@ export class ContentSharingModal extends MozLitElement {
     share: { type: Object },
     error: { type: String },
     isSignedIn: { type: Boolean },
-    size: { type: String, reflect: true },
   };
 
   static queries = {
@@ -79,12 +77,7 @@ export class ContentSharingModal extends MozLitElement {
   connectedCallback() {
     super.connectedCallback();
 
-    this.shareResult = window.arguments?.[0][0];
-    // The modal does not resize with the window so when the modal is opened
-    // from ContentSharingUtils the current windows width is passed. If the
-    // window width is less than 830, the modal will open in the "small" state.
-    this.size =
-      window.arguments?.[0][1] < WINDOW_BREAKPOINT_SIZE ? "small" : null;
+    this.shareResult = window.arguments?.[0];
   }
 
   close() {
@@ -269,8 +262,8 @@ export class ContentSharingModal extends MozLitElement {
         rel="stylesheet"
         href="chrome://global/skin/in-content/common.css"
       />
-      <div id="background-image"></div>
-      <div id="plain-background"></div>
+      <div id="backgroud-image"></div>
+      <div id="plain-backgroud"></div>
       <div class="container">
         <div class="preview">
           <moz-card
