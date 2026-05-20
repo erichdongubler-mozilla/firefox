@@ -5282,8 +5282,8 @@ void MacroAssemblerRiscv64::ma_b(Register lhs, Register rhs, Label* label,
   }
 }
 
-void MacroAssemblerRiscv64::ExtractBits(Register rt, Register rs, uint16_t pos,
-                                        uint16_t size, bool sign_extend) {
+void MacroAssemblerRiscv64::ExtractBits(Register rd, Register rs, uint16_t pos,
+                                        uint16_t size) {
   constexpr uint16_t MaxBits = 64;
 
   MOZ_ASSERT(pos < MaxBits);
@@ -5294,17 +5294,13 @@ void MacroAssemblerRiscv64::ExtractBits(Register rt, Register rs, uint16_t pos,
 
   Register src;
   if (uint16_t shift = MaxBits - (pos + size)) {
-    slli(rt, rs, shift);
-    src = rt;
+    slli(rd, rs, shift);
+    src = rd;
   } else {
     src = rs;
   }
 
-  if (sign_extend) {
-    srai(rt, src, MaxBits - size);
-  } else {
-    srli(rt, src, MaxBits - size);
-  }
+  srli(rd, src, MaxBits - size);
 }
 
 void MacroAssemblerRiscv64::ma_add32(Register rd, Register rs, Operand rt) {
