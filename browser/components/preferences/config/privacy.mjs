@@ -2882,9 +2882,13 @@ Preferences.addSetting({
       });
     }
   },
-  disabled({ privateBrowsingAutoStart }) {
-    // Disable history dropdown if PBM autostart is locked on.
-    return privateBrowsingAutoStart.locked && privateBrowsingAutoStart.value;
+  disabled({ privateBrowsingAutoStart, sanitizeOnShutdown }) {
+    // Disable history dropdown if PBM autostart is locked on, or if
+    // SanitizeOnShutdown policy locks clear-on-shutdown on (forces "custom").
+    return (
+      (privateBrowsingAutoStart.locked && privateBrowsingAutoStart.value) ||
+      (sanitizeOnShutdown.locked && sanitizeOnShutdown.value)
+    );
   },
   getControlConfig(config, { privateBrowsingAutoStart }, setting) {
     let l10nId = null;
@@ -2938,6 +2942,9 @@ Preferences.addSetting({
   visible({ historyMode }) {
     return PrivateBrowsingUtils.enabled && historyMode.value == "custom";
   },
+  disabled({ historyMode }) {
+    return historyMode.disabled;
+  },
 });
 Preferences.addSetting({
   id: "rememberHistory",
@@ -2968,8 +2975,8 @@ Preferences.addSetting({
   visible({ historyMode }) {
     return historyMode.value == "custom";
   },
-  disabled({ privateBrowsingAutoStart }) {
-    return privateBrowsingAutoStart.value;
+  disabled({ privateBrowsingAutoStart, historyMode }) {
+    return privateBrowsingAutoStart.value || historyMode.disabled;
   },
 });
 
