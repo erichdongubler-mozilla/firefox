@@ -941,7 +941,7 @@ void MacroAssembler::branchTestInt32Truthy(bool b, const ValueOperand& value,
                                            Label* label) {
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  ExtractBits(scratch, value.valueReg(), 0, 32);
+  SignExtendWord(scratch, value.valueReg());
   ma_b(scratch, scratch, label, b ? NonZero : Zero);
 }
 void MacroAssembler::branchTestMagic(Condition cond, Register tag,
