@@ -561,10 +561,10 @@ index fcc4113b42..58eb0616b2 100644
  std::unique_ptr<DesktopCapturer> WindowCapturerX11::CreateRawWindowCapturer(
      const DesktopCaptureOptions& options) {
 diff --git a/modules/desktop_capture/linux/x11/window_capturer_x11.h b/modules/desktop_capture/linux/x11/window_capturer_x11.h
-index 2605c54650..53aabb46fe 100644
+index 67d001f4a1..1b5f0d89c5 100644
 --- a/modules/desktop_capture/linux/x11/window_capturer_x11.h
 +++ b/modules/desktop_capture/linux/x11/window_capturer_x11.h
-@@ -22,6 +22,7 @@
+@@ -26,6 +26,7 @@
  #include "modules/desktop_capture/desktop_capturer.h"
  #include "modules/desktop_capture/desktop_geometry.h"
  #include "modules/desktop_capture/linux/x11/shared_x_display.h"
@@ -572,7 +572,7 @@ index 2605c54650..53aabb46fe 100644
  #include "modules/desktop_capture/linux/x11/window_finder_x11.h"
  #include "modules/desktop_capture/linux/x11/x_atom_cache.h"
  #include "modules/desktop_capture/linux/x11/x_server_pixel_buffer.h"
-@@ -57,6 +58,9 @@ class WindowCapturerX11 : public DesktopCapturer,
+@@ -61,6 +62,9 @@ class WindowCapturerX11 : public DesktopCapturer,
    // Returns window title for the specified X `window`.
    bool GetWindowTitle(::Window window, std::string* title);
  
