@@ -299,58 +299,57 @@ fn fold_annotations(
     merged
 }
 
+fn prepare_annotation_data(id: CrashAnnotation, data: &AnnotationData) -> Option<Vec<u8>> {
+    match type_of_annotation(id) {
+        CrashAnnotationType::String => match data {
+            AnnotationData::String(string) => Some(escape_value(string.as_bytes())),
+            AnnotationData::ByteBuffer(buffer) => Some(escape_value(buffer)),
+            _ => None,
+        },
+        CrashAnnotationType::Boolean => {
+            if let AnnotationData::ByteBuffer(buff) = data {
+                if buff.len() == 1 {
+                    Some(vec![if buff[0] != 0 { b'1' } else { b'0' }])
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+        CrashAnnotationType::U32 => {
+            read_numeric_annotation!(u32, data)
+        }
+        CrashAnnotationType::U64 => {
+            read_numeric_annotation!(u64, data)
+        }
+        CrashAnnotationType::USize => {
+            read_numeric_annotation!(usize, data)
+        }
+        CrashAnnotationType::Object => None, // This cannot be found in memory
+    }
+}
+
 fn write_extra_file(annotations: HashMap<u32, AnnotationData>, path: &Path) -> Result<()> {
     let mut annotations_written: usize = 0;
     let mut file = File::create(path)?;
     write!(&mut file, "{{")?;
 
-    for (id, val) in annotations {
-        if let Some(annotation_id) = CrashAnnotation::from_u32(id) {
-            if annotation_id == CrashAnnotation::PHCBaseAddress {
-                if let AnnotationData::ByteBuffer(buff) = &val {
-                    write_phc_annotations(&mut file, buff)?;
-                }
-
-                continue;
+    for (id, value) in annotations {
+        let Some(annotation_id) = CrashAnnotation::from_u32(id) else { continue };
+        if annotation_id == CrashAnnotation::PHCBaseAddress {
+            if let AnnotationData::ByteBuffer(buff) = &value {
+                write_phc_annotations(&mut file, buff)?;
             }
 
-            let value = match type_of_annotation(annotation_id) {
-                CrashAnnotationType::String => match &val {
-                    AnnotationData::String(string) => Some(escape_value(string.as_bytes())),
-                    AnnotationData::ByteBuffer(buffer) => Some(escape_value(buffer)),
-                    _ => None,
-                },
-                CrashAnnotationType::Boolean => {
-                    if let AnnotationData::ByteBuffer(buff) = &val {
-                        if buff.len() == 1 {
-                            Some(vec![if buff[0] != 0 { b'1' } else { b'0' }])
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
-                }
-                CrashAnnotationType::U32 => {
-                    read_numeric_annotation!(u32, &val)
-                }
-                CrashAnnotationType::U64 => {
-                    read_numeric_annotation!(u64, &val)
-                }
-                CrashAnnotationType::USize => {
-                    read_numeric_annotation!(usize, &val)
-                }
-                CrashAnnotationType::Object => None, // This cannot be found in memory
-            };
-
-            if let Some(value) = value {
-                if !value.is_empty() && should_include_annotation(annotation_id, &value) {
-                    write!(&mut file, "\"{annotation_id:}\":\"")?;
-                    file.write_all(&value)?;
-                    write!(&mut file, "\",")?;
-                    annotations_written += 1;
-                }
-            }
+            continue;
+        }
+        let Some(value) = prepare_annotation_data(annotation_id, &value) else { continue };
+        if !value.is_empty() && should_include_annotation(annotation_id, &value) {
+            write!(&mut file, "\"{annotation_id:}\":\"")?;
+            file.write_all(&value)?;
+            write!(&mut file, "\",")?;
+            annotations_written += 1;
         }
     }
 
