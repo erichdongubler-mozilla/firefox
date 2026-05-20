@@ -203,29 +203,6 @@ export var E10SUtils = {
     return null;
   },
 
-  canLoadURIInRemoteType(
-    aURL,
-    aRemoteSubframes,
-    aRemoteType = DEFAULT_REMOTE_TYPE,
-    aOriginAttributes = {}
-  ) {
-    // aRemoteType cannot be undefined, as that would cause it to default to
-    // `DEFAULT_REMOTE_TYPE`. This means any falsy remote types are
-    // intentionally `NOT_REMOTE`.
-
-    return (
-      aRemoteType ==
-      ChromeUtils.predictRemoteTypeForURI(aURL, {
-        userContextId: aOriginAttributes.userContextId,
-        privateBrowsingId: aOriginAttributes.privateBrowsingId,
-        geckoViewSessionContextId: aOriginAttributes.geckoViewSessionContextId,
-        originAttributes: aOriginAttributes,
-        useRemoteSubframes: aRemoteSubframes,
-        preferredRemoteType: aRemoteType,
-      })
-    );
-  },
-
   makeInputStream(data) {
     if (typeof data == "string") {
       let stream = Cc["@mozilla.org/io/string-input-stream;1"].createInstance(
