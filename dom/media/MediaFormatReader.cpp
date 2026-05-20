@@ -14,6 +14,7 @@
 #include "MediaGleanMetrics.h"
 #include "MediaInfo.h"
 #include "PDMFactory.h"
+#include "PDMFactorySupport.h"
 #include "PerformanceRecorder.h"
 #include "VPXDecoder.h"
 #include "VideoFrameContainer.h"
@@ -1213,10 +1214,7 @@ void MediaFormatReader::OnDemuxerInitDone(const MediaResult& aResult) {
 
   UniquePtr<MetadataTags> tags(MakeUnique<MetadataTags>());
 
-  RefPtr<PDMFactory> platform;
-  if (!IsWaitingOnCDMResource()) {
-    platform = new PDMFactory();
-  }
+  const bool checkSupport = !IsWaitingOnCDMResource();
 
   // To decode, we need valid video and a place to put it.
   bool videoActive = !!mDemuxer->GetNumberTracks(TrackInfo::kVideoTrack) &&
@@ -1235,8 +1233,8 @@ void MediaFormatReader::OnDemuxerInitDone(const MediaResult& aResult) {
     UniquePtr<TrackInfo> videoInfo = mVideo.mTrackDemuxer->GetInfo();
     videoActive = videoInfo && videoInfo->IsValid();
     if (videoActive) {
-      if (platform &&
-          platform->SupportsMimeType(videoInfo->mMimeType).isEmpty()) {
+      if (checkSupport &&
+          PDMFactorySupport::IsTypeSupported(videoInfo->mMimeType).isEmpty()) {
         // We have no decoder for this track. Error.
         LOG("No supported decoder for video track (%s)",
             videoInfo->mMimeType.get());
@@ -1274,9 +1272,10 @@ void MediaFormatReader::OnDemuxerInitDone(const MediaResult& aResult) {
 
     UniquePtr<TrackInfo> audioInfo = mAudio.mTrackDemuxer->GetInfo();
     // We actively ignore audio tracks that we know we can't play.
-    audioActive = audioInfo && audioInfo->IsValid() &&
-                  (!platform ||
-                   !platform->SupportsMimeType(audioInfo->mMimeType).isEmpty());
+    audioActive =
+        audioInfo && audioInfo->IsValid() &&
+        (!checkSupport ||
+         !PDMFactorySupport::IsTypeSupported(audioInfo->mMimeType).isEmpty());
 
     if (audioActive) {
       mInfo.mAudio = *audioInfo->GetAsAudioInfo();

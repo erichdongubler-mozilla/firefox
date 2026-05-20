@@ -12,7 +12,7 @@
 #include "MediaCapabilitiesValidation.h"
 #include "MediaInfo.h"
 #include "MediaRecorder.h"
-#include "PDMFactory.h"
+#include "PDMFactorySupport.h"
 #include "VPXDecoder.h"
 #include "WindowRenderer.h"
 #include "mozilla/CheckedInt.h"
@@ -986,9 +986,10 @@ void MediaCapabilities::CreateNonWebRTCDecodingInfo(
       // results.
       promises.AppendElement(
           InvokeAsync(taskQueue, __func__, [config = std::move(config)]() {
-            RefPtr<PDMFactory> pdm = new PDMFactory();
             SupportDecoderParams params{*config};
-            if (pdm->Supports(params, nullptr /* decoder doctor */).isEmpty()) {
+            if (PDMFactorySupport::IsSupported(params,
+                                               nullptr /* decoder doctor */)
+                    .isEmpty()) {
               return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
                                                           __func__);
             }

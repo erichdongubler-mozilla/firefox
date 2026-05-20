@@ -4,7 +4,7 @@
 
 #include "MediaDataCodec.h"
 
-#include "PDMFactory.h"
+#include "PDMFactorySupport.h"
 #include "WebrtcGmpVideoCodec.h"
 #include "WebrtcMediaDataDecoderCodec.h"
 #include "WebrtcMediaDataEncoderCodec.h"
@@ -57,15 +57,13 @@ media::DecodeSupportSet MediaDataCodec::SupportsDecoderCodec(
     case webrtc::VideoCodecType::kVideoCodecVP8:
     case webrtc::VideoCodecType::kVideoCodecVP9:
       if (StaticPrefs::media_navigator_mediadatadecoder_vpx_enabled()) {
-        RefPtr<PDMFactory> pdm = new PDMFactory();
-        return pdm->SupportsMimeType(MimeTypeFor(aCodecType));
+        return PDMFactorySupport::IsTypeSupported(MimeTypeFor(aCodecType));
       }
       break;
     case webrtc::VideoCodecType::kVideoCodecH264:
       if (StaticPrefs::media_navigator_mediadatadecoder_h264_enabled()) {
-        RefPtr<PDMFactory> pdm = new PDMFactory();
-        media::DecodeSupportSet support;
-        support = pdm->SupportsMimeType(MimeTypeFor(aCodecType));
+        media::DecodeSupportSet support =
+            PDMFactorySupport::IsTypeSupported(MimeTypeFor(aCodecType));
         if (!StaticPrefs::media_webrtc_hw_h264_enabled()) {
           support -= media::DecodeSupport::HardwareDecode;
         }
