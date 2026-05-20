@@ -90,7 +90,7 @@ gecko_parameters_schema = {
             "service.",
         ): bool,
         Optional("priority"): Any("lowest", "very-low", "low"),
-        Optional("rebuild"): int,
+        Optional("rebuild"): Any(int, {str: int}),
         Optional("tasks-regex"): {
             "include": Any(None, [str]),
             "exclude": Any(None, [str]),
