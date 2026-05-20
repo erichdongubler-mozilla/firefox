@@ -9,7 +9,7 @@ export default {
   title: "Domain-specific UI Widgets/AI Window/Website select",
   component: "ai-website-select",
   argTypes: {
-    linkedPanel: {
+    tabId: {
       control: "text",
     },
     label: {
@@ -18,7 +18,7 @@ export default {
     iconSrc: {
       control: "text",
     },
-    url: {
+    href: {
       control: "text",
     },
     checked: {
@@ -32,21 +32,21 @@ aiwindow-website-select-placeholder = site name
   },
 };
 
-const Template = ({ linkedPanel, label, iconSrc, url, checked }) => html`
+const Template = ({ tabId, label, iconSrc, href, checked }) => html`
   <ai-website-select
-    .linkedPanel=${linkedPanel}
+    .tabId=${tabId}
     .label=${label}
     .iconSrc=${iconSrc}
-    .url=${url || ""}
+    .href=${href || ""}
     .checked=${checked ?? false}
   ></ai-website-select>
 `;
 
 export const Default = Template.bind({});
 Default.args = {
-  linkedPanel: "tab-1",
+  tabId: "tab-1",
   label: "Mozilla Developer Network - Web Docs",
   iconSrc: "chrome://branding/content/about-logo.svg",
-  url: "https://developer.mozilla.org",
+  href: "https://developer.mozilla.org",
   checked: false,
 };
