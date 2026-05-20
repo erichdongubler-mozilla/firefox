@@ -143,6 +143,45 @@ add_task(async function toolbar_icon_status() {
 });
 
 /**
+ * Tests that the panel opens when the toolbar button is activated via the
+ * Enter or Space keys. Bug 2027922 — on macOS, native XUL toolbarbutton key
+ * handling does not fire `command` for Enter, so we rely on the explicit
+ * keypress handler in navigator-toolbox.js.
+ */
+add_task(async function toolbar_keyboard_activation() {
+  for (let key of ["KEY_Enter", " "]) {
+    let button = document.getElementById(IPProtectionWidget.WIDGET_ID);
+    Assert.ok(
+      BrowserTestUtils.isVisible(button),
+      "IP Protection widget should be visible"
+    );
+
+    button.setAttribute("tabindex", "-1");
+    button.focus();
+
+    let panelShownPromise = waitForPanelEvent(document, "popupshown");
+    let panelInitPromise = BrowserTestUtils.waitForEvent(
+      document,
+      "IPProtection:Init"
+    );
+    EventUtils.synthesizeKey(key, {}, window);
+    await Promise.all([panelShownPromise, panelInitPromise]);
+
+    Assert.equal(
+      button.getAttribute("open"),
+      "true",
+      `Panel should be open after pressing ${key}`
+    );
+
+    let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
+    EventUtils.synthesizeKey("KEY_Escape");
+    await panelHiddenPromise;
+
+    button.removeAttribute("tabindex");
+  }
+});
+
+/**
  * Tests that the toolbar icon in a new window has the previous status.
  */
 add_task(async function toolbar_icon_status_new_window() {

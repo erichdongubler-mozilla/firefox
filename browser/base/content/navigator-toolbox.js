@@ -330,6 +330,7 @@ document.addEventListener(
         #fxa-toolbar-menu-button,
         #unified-extensions-button,
         #library-button,
+        #ipprotection-button,
         #split-view-button,
         #smartwindow-ask-button
       `);
@@ -415,6 +416,10 @@ document.addEventListener(
 
         case "library-button":
           PanelUI.showSubView("appMenu-libraryView", element, event);
+          break;
+
+        case "ipprotection-button":
+          PanelUI.showSubView("PanelUI-ipprotection", element, event);
           break;
 
         case "split-view-button":
