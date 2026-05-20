@@ -164,27 +164,81 @@ export class SidebarBookmarks extends SidebarPage {
     this.requestUpdate();
   }
 
-  getRowsInOrder() {
-    return this.#getRowsForList(this.bookmarkList);
+  getNodesInOrder() {
+    const nodes = [];
+    this.#collectNodesFromList(this.bookmarkList, nodes);
+    return nodes;
   }
 
-  #getRowsForList(list) {
-    let rows = [];
+  #collectNodesFromList(list, nodes) {
     for (const item of list.tabItems) {
       const isFolder = Array.isArray(item.children);
-      if (!isFolder) {
-        rows.push({ list, item });
-      } else if (
-        item.children.length &&
-        this.#expandedFolderGuids.has(item.guid)
-      ) {
-        const sublist = list.findSublistForGuid(item.guid);
-        if (sublist) {
-          rows = rows.concat(this.#getRowsForList(sublist));
-        }
+      if (isFolder) {
+        this.#collectNodesFromFolder(item, list, nodes);
+      } else {
+        nodes.push({
+          list,
+          item,
+          type: item.url ? "row" : "separator",
+          get domNode() {
+            return list.shadowRoot.querySelector(
+              `[data-guid="${CSS.escape(item.guid)}"]`
+            );
+          },
+        });
       }
     }
-    return rows;
+  }
+
+  #collectNodesFromFolder(folder, list, nodes) {
+    const isExpanded = this.#expandedFolderGuids.has(folder.guid);
+    if (folder.children.length) {
+      nodes.push({
+        list,
+        item: folder,
+        type: "folder",
+        get domNode() {
+          return list.shadowRoot.querySelector(
+            `summary[data-guid="${CSS.escape(folder.guid)}"]`
+          );
+        },
+      });
+      if (isExpanded) {
+        const sublist = list.findSublistForGuid(folder.guid);
+        if (sublist) {
+          this.#collectNodesFromList(sublist, nodes);
+        }
+      }
+    } else {
+      nodes.push({
+        list,
+        item: folder,
+        type: "empty-folder",
+        get domNode() {
+          return list.shadowRoot.querySelector(
+            `[data-guid="${CSS.escape(folder.guid)}"]`
+          );
+        },
+      });
+    }
+  }
+
+  setExpanded(node, expanded) {
+    if (node.type === "folder") {
+      const sublist = node.list?.findSublistForGuid(node.item.guid);
+      const details = sublist?.closest("details");
+      if (details && details.open !== expanded) {
+        details.open = expanded;
+        if (expanded) {
+          this.#expandedFolderGuids.add(node.item.guid);
+        } else {
+          this.#expandedFolderGuids.delete(node.item.guid);
+        }
+        return true;
+      }
+      return false;
+    }
+    return super.setExpanded(node, expanded);
   }
 
   onPrimaryAction(e) {
