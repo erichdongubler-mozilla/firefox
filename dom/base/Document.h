@@ -3647,16 +3647,23 @@ class Document : public nsINode,
   MOZ_CAN_RUN_SCRIPT void GetWireframe(bool aIncludeNodes,
                                        Nullable<Wireframe>&);
 
-  // https://html.spec.whatwg.org/#hide-popover-stack-until
-  MOZ_CAN_RUN_SCRIPT void HidePopoverStackUntil(
-      Element* aEndpoint, PopoverAttributeState aStackType,
-      bool aFocusPreviousElement, bool aFireEvents);
+  // https://html.spec.whatwg.org/#close-entire-popover-list
+  MOZ_CAN_RUN_SCRIPT void CloseEntirePopoverList(PopoverAttributeState aMode,
+                                                 bool aFocusPreviousElement,
+                                                 bool aFireEvents);
 
-  // Hides hint then auto popover stacks until the given endpoint.
-  // https://html.spec.whatwg.org/#hide-popovers-until
-  MOZ_CAN_RUN_SCRIPT void HidePopoversUntil(Element* aEndpoint,
-                                            bool aFocusPreviousElement,
-                                            bool aFireEvents);
+  // Hides all popovers until the given end point, see
+  // https://html.spec.whatwg.org/multipage/popover.html#hide-all-popovers-until
+  MOZ_CAN_RUN_SCRIPT void HideAllPopoversUntil(nsINode& aEndpoint,
+                                               bool aFocusPreviousElement,
+                                               bool aFireEvents);
+
+  // Hides all popovers, until the given end point, see
+  // https://html.spec.whatwg.org/#hide-popover-stack-until
+  MOZ_CAN_RUN_SCRIPT void HidePopoverStackUntil(PopoverAttributeState aMode,
+                                                nsINode& aEndpoint,
+                                                bool aFocusPreviousElement,
+                                                bool aFireEvents);
 
   // Hides the given popover element, see
   // https://html.spec.whatwg.org/multipage/popover.html#hide-popover-algorithm
@@ -3669,9 +3676,7 @@ class Document : public nsINode,
   // popover opened in mode is in the given state.
   // See https://html.spec.whatwg.org/multipage/popover.html#auto-popover-list
   // See https://html.spec.whatwg.org/#showing-hint-popover-list
-  nsTArray<RefPtr<Element>> PopoverListOf(PopoverAttributeState aMode) const;
-  bool IsInPopoverListOf(const Element& aElement,
-                         PopoverAttributeState aMode) const;
+  nsTArray<Element*> PopoverListOf(PopoverAttributeState aMode) const;
 
   // Return document's popover list's last element of a particular mode.
   // See
@@ -3680,21 +3685,6 @@ class Document : public nsINode,
 
   void AddPopoverToTopLayer(Element&);
   void RemovePopoverFromTopLayer(Element&);
-
-  Element* PopoverHintStackParent() const;
-  void SetPopoverHintStackParent(Element* aParent);
-
-  bool IsShowingPopover() const { return mShowingPopover; }
-  void SetShowingPopover(bool aShowing) { mShowingPopover = aShowing; }
-
-  uint32_t HidingPopoverNestingCount() const {
-    return mHidingPopoverNestingCount;
-  }
-  void IncrementHidingPopoverNestingCount() { ++mHidingPopoverNestingCount; }
-  void DecrementHidingPopoverNestingCount() {
-    MOZ_ASSERT(mHidingPopoverNestingCount > 0);
-    --mHidingPopoverNestingCount;
-  }
 
   Element* GetTopLayerTop();
   // Return the fullscreen element in the top layer
@@ -5642,15 +5632,6 @@ class Document : public nsINode,
 
   // Stack of top layer elements.
   nsTArray<nsWeakPtr> mTopLayer;
-
-  // https://html.spec.whatwg.org/#hint-stack-parent
-  RefPtr<Element> mPopoverHintStackParent;
-
-  // https://html.spec.whatwg.org/#showing-popover
-  bool mShowingPopover = false;
-
-  // https://html.spec.whatwg.org/#hiding-popover-nesting-count
-  uint32_t mHidingPopoverNestingCount = 0;
 
   // Stack of open dialogs
   // https://html.spec.whatwg.org/#open-dialogs-list

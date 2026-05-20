@@ -1525,73 +1525,44 @@ void EventStateManager::LightDismissOpenPopovers(WidgetEvent* aEvent,
   MOZ_ASSERT(aEvent->mMessage == ePointerDown || aEvent->mMessage == ePointerUp,
              "Light dismiss must be called for pointer up/down only");
 
-  // 1. Assert: event's isTrusted attribute is true.
   if (!aEvent->IsTrusted() || !aTargetContent) {
     return;
   }
 
-  // 2. Let target be event's target.
-
-  // 3. Let document be target's node document.
   RefPtr<Document> targetDoc(aTargetContent->OwnerDoc());
 
-  // 4. If the result of running topmost auto or hint popover given document is
-  // null, then return.
   RefPtr<Element> topmostPopover =
       targetDoc->GetTopmostPopoverOf(PopoverAttributeState::Hint);
+
   if (!topmostPopover) {
     topmostPopover =
         targetDoc->GetTopmostPopoverOf(PopoverAttributeState::Auto);
   }
+
   if (!topmostPopover) {
     return;
   }
 
-  // 5. If event's type is "pointerdown": set document's popover pointerdown
-  // target to the result of running topmost clicked popover given target.
+  // Pointerdown: set document's popover pointerdown target to the result of
+  // running topmost clicked popover given target.
   if (aEvent->mMessage == ePointerDown) {
     mPopoverPointerDownTarget = aTargetContent->GetTopmostClickedPopover();
     return;
   }
-  // 6. If event's type is "pointerup":
 
-  // 6.1. Let ancestor be the result of running topmost clicked popover given
-  // target.
-  RefPtr<Element> ancestor = aTargetContent->GetTopmostClickedPopover();
-
-  // 6.2. Let sameTarget be true if ancestor is document's popover pointerdown
-  // target.
-  bool sameTarget =
-      mPopoverPointerDownTarget == static_cast<nsINode*>(ancestor.get());
-
-  // 6.3. Set document's popover pointerdown target to null.
+  // Pointerup: hide open popovers.
+  RefPtr<nsINode> ancestor = aTargetContent->GetTopmostClickedPopover();
+  bool sameTarget = mPopoverPointerDownTarget == ancestor;
   mPopoverPointerDownTarget = nullptr;
-
-  // 6.4. If sameTarget is false, then return.
   if (!sameTarget) {
     return;
   }
 
-  // 6.5. Let endpointIsHint be true if document's showing hint popover list
-  // contains ancestor; otherwise false.
-  bool endpointIsHint = targetDoc->PopoverListOf(PopoverAttributeState::Hint)
-                            .Contains(ancestor.get());
-
-  // 6.6. Run hide popover stack until given document, ancestor, Hint, false,
-  // and true.
-  targetDoc->HidePopoverStackUntil(ancestor, PopoverAttributeState::Hint, false,
-                                   true);
-
-  // 6.7. Let autoEndpoint be ancestor.
-  // 6.8. If endpointIsHint is true, then set autoEndpoint to document's hint
-  // stack parent.
-  RefPtr<Element> autoEndpoint =
-      endpointIsHint ? targetDoc->PopoverHintStackParent() : ancestor.get();
-
-  // 6.9. Run hide popover stack until given document, autoEndpoint, Auto,
-  // false, and true.
-  targetDoc->HidePopoverStackUntil(autoEndpoint, PopoverAttributeState::Auto,
-                                   false, true);
+  if (!ancestor) {
+    ancestor = aTargetContent->OwnerDoc();
+  }
+  RefPtr<Document> doc(ancestor->OwnerDoc());
+  doc->HideAllPopoversUntil(*ancestor, false, true);
 }
 
 // https://html.spec.whatwg.org/multipage/interactive-elements.html#run-light-dismiss-activities
