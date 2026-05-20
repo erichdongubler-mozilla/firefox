@@ -2,10 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-pub mod crash_annotations {
-    include!(concat!(env!("OUT_DIR"), "/crash_annotations.rs"));
-}
-
 use super::{
     breakpad_crash_generator::BreakpadProcessId,
     phc::{self, StackTrace},
@@ -20,10 +16,12 @@ pub(crate) use linux::get_auxv_info;
 mod windows;
 
 use anyhow::{Context, Result};
-use crash_annotations::{
-    should_include_annotation, type_of_annotation, CrashAnnotation, CrashAnnotationType,
+use crash_helper_common::{
+    crash_annotations::{
+        should_include_annotation, type_of_annotation, CrashAnnotation, CrashAnnotationType,
+    },
+    BreakpadChar, BreakpadString, GeckoChildId, Pid,
 };
-use crash_helper_common::{BreakpadChar, BreakpadString, GeckoChildId, Pid};
 use mozannotation_server::{AnnotationData, CAnnotation};
 use num_traits::FromPrimitive;
 use std::{
