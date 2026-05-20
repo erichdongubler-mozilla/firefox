@@ -545,7 +545,6 @@ class Assembler : public AssemblerShared,
 
   // Assembler Pseudo Instructions (Tables 25.2, 25.3, RISC-V Unprivileged ISA)
   void break_(uint32_t code, bool break_as_stop = false);
-  void nop();
   void RV_li(Register rd, int64_t imm);
   static int RV_li_count(int64_t imm, bool is_get_temp_reg = false);
   void GeneralLi(Register rd, int64_t imm);

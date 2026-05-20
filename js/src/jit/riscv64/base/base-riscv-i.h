@@ -69,6 +69,8 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
     not_(rd, rd);
   }
 
+  void nop() { addi(zero_reg, zero_reg, 0); }
+
   // Memory fences
   void fence(uint8_t pred, uint8_t succ);
   void fence_tso();
