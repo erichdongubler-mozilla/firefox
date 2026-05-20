@@ -3729,7 +3729,7 @@ Element* nsINode::GetTopmostClickedPopover() const {
   auto hintPopoverList =
       clickedPopover->OwnerDoc()->PopoverListOf(PopoverAttributeState::Hint);
 
-  for (Element* el : Reversed(hintPopoverList)) {
+  for (const RefPtr<Element>& el : Reversed(hintPopoverList)) {
     if (el == clickedPopover || el == invokedPopover) {
       return el;
     }
@@ -3738,7 +3738,7 @@ Element* nsINode::GetTopmostClickedPopover() const {
   auto autoPopoverList =
       clickedPopover->OwnerDoc()->PopoverListOf(PopoverAttributeState::Auto);
 
-  for (Element* el : Reversed(autoPopoverList)) {
+  for (const RefPtr<Element>& el : Reversed(autoPopoverList)) {
     if (el == clickedPopover || el == invokedPopover) {
       return el;
     }

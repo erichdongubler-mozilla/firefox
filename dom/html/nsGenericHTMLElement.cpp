@@ -803,7 +803,7 @@ void nsGenericHTMLElement::AfterSetPopoverAttr() {
         // the popover attribute is removed as part of the popover focusing
         // steps in https://html.spec.whatwg.org/#show-popover. So we can't
         // clear the popover data in that case.
-        if (popoverData->IsShowingOrHiding()) {
+        if (popoverData->IsPopoverHiding() || OwnerDoc()->IsShowingPopover()) {
           popoverData->SetPopoverAttributeState(newState);
         } else {
           ClearPopoverData();
@@ -3652,227 +3652,189 @@ void nsGenericHTMLElement::ShowPopover(const ShowPopoverOptions& aOptions,
 // https://html.spec.whatwg.org/#show-popover
 void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
                                                ErrorResult& aRv) {
-  // 1. If the result of running check popover validity given element, false,
-  // throwExceptions, and null is false, then return.
+  // 1. Let document be element's node document.
+  RefPtr<Document> document = OwnerDoc();
+
+  // 2. If document's showing popover is true, or document's hiding popover
+  // nesting count is not 0, then throw an InvalidStateError.
+  if (document->IsShowingPopover() ||
+      document->HidingPopoverNestingCount() != 0) {
+    aRv.ThrowInvalidStateError(
+        "Cannot show a popover during the show or hide of another popover.");
+    return;
+  }
+
+  // 3. Let validityResult be the result of running check popover validity
+  // given element, false, and null.
+  // 4. If validityResult is false, then return.
   if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, nullptr, aRv)) {
     return;
   }
 
-  // 2. Let document be element's node document.
-  RefPtr<Document> document = OwnerDoc();
+  // 5. Set document's showing popover to true.
+  document->SetShowingPopover(true);
 
-  // 3. Assert: element's popover trigger is null.
+  // 6. Assert: element's popover trigger is null.
   MOZ_ASSERT(!GetPopoverData() || !GetPopoverData()->GetInvoker());
 
-  // 4. Assert: element is not in document's top layer.
+  // 7. Assert: element is not in document's top layer.
   MOZ_ASSERT(!OwnerDoc()->TopLayerContains(*this));
 
-  // 5. Let nestedShow be element's popover showing or hiding.
-  bool nestedShow = GetPopoverData()->IsShowingOrHiding();
-
-  // 6. Let fireEvents be the boolean negation of nestedShow.
-  bool fireEvents = !nestedShow;
-
-  // 7. Set element's popover showing or hiding to true.
-  GetPopoverData()->SetIsShowingOrHiding(true);
-
-  // 8. Let cleanupShowingFlag be the following steps:
-  auto cleanupShowingFlag = MakeScopeExit([&]() {
-    // 8.1. If nestedShow is false, then set element's popover showing or hiding
-    // to false.
-    if (auto* popoverData = GetPopoverData()) {
-      popoverData->SetIsShowingOrHiding(nestedShow);
-    }
-  });
+  // 8. Let cleanupShowingSteps be the following steps:
+  auto cleanupShowingSteps =
+      MakeScopeExit([&]() { document->SetShowingPopover(false); });
 
   // 9. If the result of firing an event named beforetoggle, using ToggleEvent,
   // with the cancelable attribute initialized to true, the oldState attribute
   // initialized to "closed", the newState attribute initialized to "open", and
   // the source attribute initialized to source at element is false, then run
-  // cleanupShowingFlag and return.
+  // cleanupShowingSteps and return.
   if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns, aSource)) {
     return;
   }
 
-  // 10. If the result of running check popover validity given element, false,
-  // throwExceptions, and document is false, then run cleanupShowingFlag and
-  // return.
+  // 10. Set validityResult to the result of running check popover validity
+  // given element, false, and document.
+  // 11. If validityResult is not true, run cleanupShowingSteps and return.
   if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
     return;
   }
 
-  // 11. Let shouldRestoreFocus be false.
+  // 12. Let shouldRestoreFocus be false.
   bool shouldRestoreFocus = false;
 
-  // 12. Let originalType be the current state of element's popover attribute.
+  // 13. Let originalType be the current state of element's popover attribute.
   auto originalType = GetPopoverAttributeState();
 
-  // 13. Let stackToAppendTo be null.
-  PopoverAttributeState stackToAppendTo = PopoverAttributeState::None;
+  // 14. Let ancestor be the result of running topmost popover ancestor given
+  // element, source, and true.
+  RefPtr<Element> ancestor = GetTopmostPopoverAncestor(aSource, true);
 
-  // 14. Let autoAncestor be the result of running the topmost popover ancestor
-  // algorithm given element, document's showing auto popover list, source, and
-  // true.
-  RefPtr<nsINode> autoAncestor =
-      GetTopmostPopoverAncestor(PopoverAttributeState::Auto, aSource, true);
+  // 15. Let effectiveType be originalType.
+  auto effectiveType = originalType;
 
-  // 15. Let hintAncestor be the result of running the topmost popover ancestor
-  // algorithm given element, document's showing hint popover list, source, and
-  // true.
-  RefPtr<nsINode> hintAncestor =
-      GetTopmostPopoverAncestor(PopoverAttributeState::Hint, aSource, true);
-
-  nsWeakPtr originallyFocusedElement;
-
-  // 16. If originalType is the Auto state, then:
-  if (originalType == PopoverAttributeState::Auto) {
-    // 16.1. Run close entire popover list given document's showing hint popover
-    // list, shouldRestoreFocus, and fireEvents.
-    document->CloseEntirePopoverList(PopoverAttributeState::Hint,
-                                     shouldRestoreFocus, fireEvents);
-
-    // 16.2. Let ancestor be the result of running the topmost popover ancestor
-    // algorithm given element, document's showing auto popover list, source,
-    // and true.
-    RefPtr<nsINode> ancestor =
-        GetTopmostPopoverAncestor(PopoverAttributeState::Auto, aSource, true);
-
-    // 16.3. If ancestor is null, then set ancestor to document.
-    if (!ancestor) {
-      ancestor = document;
-    }
-
-    // 16.4. Run hide all popovers until given ancestor, shouldRestoreFocus, and
-    // fireEvents.
-    document->HideAllPopoversUntil(*ancestor, false, fireEvents);
-
-    // 16.5. Set stackToAppendTo to "auto".
-    stackToAppendTo = PopoverAttributeState::Auto;
-  }
-
-  // 17. If originalType is the Hint state, then:
-  if (originalType == PopoverAttributeState::Hint) {
-    // 17.1. If hintAncestor is not null, then:
-    if (hintAncestor) {
-      MOZ_ASSERT(StaticPrefs::dom_element_popoverhint_enabled());
-      // 17.1.1. Run hide all popovers until given hintAncestor,
-      // shouldRestoreFocus, and fireEvents.
-      document->HideAllPopoversUntil(*hintAncestor, shouldRestoreFocus,
-                                     fireEvents);
-      // 17.1.2. Set stackToAppendTo to "hint".
-      stackToAppendTo = PopoverAttributeState::Hint;
-    } else {
-      // 17.2. Otherwise:
-      // 17.2.1. Run close entire popover list given document's showing hint
-      // popover list, shouldRestoreFocus, and fireEvents.
-      document->CloseEntirePopoverList(PopoverAttributeState::Hint,
-                                       shouldRestoreFocus, fireEvents);
-      // 17.2.2. If autoAncestor is not null, then:
-      if (autoAncestor) {
-        // 17.2.2.1 Run hide all popovers until given autoAncestor,
-        // shouldRestoreFocus, and fireEvents.
-        document->HideAllPopoversUntil(*autoAncestor, shouldRestoreFocus,
-                                       fireEvents);
-        // 17.2.2.2 Set stackToAppendTo to "auto".
-        stackToAppendTo = PopoverAttributeState::Auto;
-      } else {
-        // 17.2.3. Otherwise, set stackToAppendTo to "hint".
-        stackToAppendTo = PopoverAttributeState::Hint;
-      }
+  // 16. If ancestor is not null, ancestor's opened in popover mode is "hint",
+  // and effectiveType is Auto, then set effectiveType to Hint.
+  if (ancestor && effectiveType == PopoverAttributeState::Auto) {
+    auto* ancestorHTML = nsGenericHTMLElement::FromNode(ancestor);
+    if (ancestorHTML && ancestorHTML->GetPopoverData() &&
+        ancestorHTML->GetPopoverData()->GetOpenedInMode() ==
+            PopoverAttributeState::Hint) {
+      effectiveType = PopoverAttributeState::Hint;
     }
   }
 
-  // 18. If originalType is Auto or Hint, then:
-  if (originalType == PopoverAttributeState::Auto ||
-      originalType == PopoverAttributeState::Hint) {
-    // 18.1. Assert: stackToAppendTo is not null.
-    MOZ_ASSERT(stackToAppendTo != PopoverAttributeState::None);
+  // 17. If effectiveType is Auto or Hint, run hide popover stack until given
+  // document, ancestor, Hint, shouldRestoreFocus, and true.
+  if (effectiveType == PopoverAttributeState::Auto ||
+      effectiveType == PopoverAttributeState::Hint) {
+    document->HidePopoverStackUntil(ancestor, PopoverAttributeState::Hint,
+                                    shouldRestoreFocus, true);
+  }
 
-    // 18.2. If originalType is not equal to the value of element's popover
-    // attribute, then:
+  // 18. If effectiveType is Auto, run hide popover stack until given document,
+  // ancestor, Auto, shouldRestoreFocus, and true.
+  if (effectiveType == PopoverAttributeState::Auto) {
+    document->HidePopoverStackUntil(ancestor, PopoverAttributeState::Auto,
+                                    shouldRestoreFocus, true);
+  }
+
+  // 19. If effectiveType is Auto or Hint, then:
+  if (effectiveType == PopoverAttributeState::Auto ||
+      effectiveType == PopoverAttributeState::Hint) {
+    // 19.1. If originalType is not equal to element's popover attribute state,
+    // run cleanupShowingSteps and throw InvalidStateError.
     if (originalType != GetPopoverAttributeState()) {
-      // 18.2.1. If throwExceptions is true, then throw an
-      // "InvalidStateError" DOMException.
       aRv.ThrowInvalidStateError(
           "The value of the popover attribute was changed while hiding the "
           "popover.");
-      // 18.2.2. Return.
       return;
     }
-
-    // 18.3. If the result of running check popover validity given element,
-    // false, throwExceptions, and document is false, then run
-    // cleanupShowingFlag and return.
+    // 19.2. Set validityResult to the result of running check popover validity
+    // given element, false, and document.
+    // 19.3. If validityResult is not true, run cleanupShowingSteps and return.
     if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
       return;
     }
-
-    // 18.4. If the result of running topmost
-    // auto or hint popover on document is null, then set shouldRestoreFocus to
-    // true.
+    // Re-compute ancestor after hiding.
+    ancestor = GetTopmostPopoverAncestor(aSource, true);
+    // 19.4. If topmost auto or hint popover on document is null, set
+    // shouldRestoreFocus to true.
     shouldRestoreFocus =
-        !document->GetTopmostPopoverOf(PopoverAttributeState::Auto);
+        !document->GetTopmostPopoverOf(PopoverAttributeState::Auto) &&
+        !document->GetTopmostPopoverOf(PopoverAttributeState::Hint);
 
-    // 18.5. If stackToAppendTo is "auto":
-    if (stackToAppendTo == PopoverAttributeState::Auto) {
-      // 18.5.1. Assert: document's showing auto popover list does not contain
+    // 19.5. If effectiveType is Auto:
+    if (effectiveType == PopoverAttributeState::Auto) {
+      // 19.5.1. Assert: document's showing auto popover list does not contain
       // element.
       MOZ_ASSERT(
           !document->PopoverListOf(PopoverAttributeState::Auto).Contains(this));
-
-      // 18.5.2. Set element's opened in popover mode to "auto".
+      // 19.5.2. Set element's opened in popover mode to "auto".
       GetPopoverData()->SetOpenedInMode(PopoverAttributeState::Auto);
     } else {
-      MOZ_ASSERT(StaticPrefs::dom_element_popoverhint_enabled());
-      // 18.5.- Otherwise:
-      // 18.5.-.1. Assert: stackToAppendTo is "hint".
-      MOZ_ASSERT(stackToAppendTo == PopoverAttributeState::Hint);
-      // 18.5.-.2. Assert: document's showing hint popover list does not contain
+      // Otherwise:
+      // 19.5.1. Assert: effectiveType is Hint.
+      MOZ_ASSERT(effectiveType == PopoverAttributeState::Hint);
+      // 19.5.2. Assert: document's showing hint popover list does not contain
       // element.
       MOZ_ASSERT(
           !document->PopoverListOf(PopoverAttributeState::Hint).Contains(this));
-      // 18.5.-.3. Set element's opened in popover mode to "hint".
+      // 19.5.3. Set element's opened in popover mode to "hint".
       GetPopoverData()->SetOpenedInMode(PopoverAttributeState::Hint);
     }
-    // 18.6. Set element's popover close watcher to the result of establishing a
-    // close watcher given element's relevant global object, with:
-    //       - cancelAction being to return true.
-    //       - closeAction being to hide a popover given element, true, true,
-    //       false, and null.
-    //       - getEnabledState being to return true.
+    // 19.6. Set element's popover close watcher.
     if (StaticPrefs::dom_closewatcher_enabled()) {
       GetPopoverData()->EnsureCloseWatcher(this);
     }
   }
 
-  // 20. Let originallyFocusedElement be document's focused area of the
+  // 20. Set element's previously focused element to null.
+  // 21. Let originallyFocusedElement be document's focused area of the
   // document's DOM anchor.
+  if (auto* popoverData = GetPopoverData()) {
+    popoverData->SetPreviouslyFocusedElement(nullptr);
+  }
+
+  nsWeakPtr originallyFocusedElement;
   if (nsIContent* unretargetedFocus =
           document->GetUnretargetedFocusedContent()) {
     originallyFocusedElement =
         do_GetWeakReference(unretargetedFocus->AsElement());
   }
 
-  // 21. Add an element to the top layer given element.
+  // 22. Add an element to the top layer given element.
   document->AddPopoverToTopLayer(*this);
 
   PopoverPseudoStateUpdate(true, true);
 
+  // 23. If effectiveType is Hint and ancestor's opened in popover mode is
+  // "auto", set document's hint stack parent to ancestor.
+  if (effectiveType == PopoverAttributeState::Hint && ancestor) {
+    auto* ancestorHTML = nsGenericHTMLElement::FromNode(ancestor);
+    if (ancestorHTML && ancestorHTML->GetPopoverData() &&
+        ancestorHTML->GetPopoverData()->GetOpenedInMode() ==
+            PopoverAttributeState::Auto) {
+      document->SetPopoverHintStackParent(ancestor);
+    }
+  }
+
   {
     auto* popoverData = GetPopoverData();
-    // 22. Set element's popover visibility state to showing.
+    // 24. Set element's popover visibility state to showing.
     popoverData->SetPopoverVisibilityState(PopoverVisibilityState::Showing);
-    // 23. Set element's popover trigger to source.
+    // 25. Set element's popover trigger to source.
     popoverData->SetInvoker(aSource);
+    // 26. Set element's implicit anchor element to source.
     if (aSource && aSource->IsHTMLElement()) {
       aSource->SetAssociatedPopover(*this);
     }
   }
 
-  // 25. Run the popover focusing steps given element.
+  // 27. Run the popover focusing steps given element.
   FocusPopover();
 
-  // 26. If shouldRestoreFocus is true and element's popover attribute is not
+  // 28. If shouldRestoreFocus is true and element's popover attribute is not
   // in the No Popover state, then set element's previously focused element to
   // originallyFocusedElement.
   if (shouldRestoreFocus &&
@@ -3880,12 +3842,13 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
     GetPopoverData()->SetPreviouslyFocusedElement(originallyFocusedElement);
   }
 
-  // 27. Queue a popover toggle event task given element, "closed", "open",
-  // and source.
-  QueuePopoverEventTask(PopoverVisibilityState::Hidden, aSource);
+  // 29. Run cleanupShowingSteps.
+  cleanupShowingSteps.release();
+  document->SetShowingPopover(false);
 
-  // 28. Run cleanupShowingFlag.
-  // XXX (see MakeScopeExit above).
+  // 30. Queue a popover toggle event task given element, "closed", "open", and
+  // source.
+  QueuePopoverEventTask(PopoverVisibilityState::Hidden, aSource);
 }
 
 void nsGenericHTMLElement::HidePopoverWithoutRunningScript() {

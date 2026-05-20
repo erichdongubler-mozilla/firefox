@@ -635,11 +635,8 @@ class Element : public FragmentOrElement {
   void SetAssociatedPopover(nsGenericHTMLElement& aPopover);
   nsGenericHTMLElement* GetAssociatedPopover() const;
 
-  /**
-   * https://html.spec.whatwg.org/multipage/popover.html#topmost-popover-ancestor
-   */
-  Element* GetTopmostPopoverAncestor(PopoverAttributeState aMode,
-                                     const Element* aInvoker,
+  // https://html.spec.whatwg.org/multipage/popover.html#topmost-popover-ancestor
+  Element* GetTopmostPopoverAncestor(const Element* aInvoker,
                                      bool isPopover) const;
 
   ElementAnimationData* GetAnimationData() const {
