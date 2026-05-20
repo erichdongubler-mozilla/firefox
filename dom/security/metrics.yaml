@@ -266,11 +266,14 @@ security:
   csp_violation_internal_page:
     type: event
     description: >
-      Information about Content-Security-Policy violations that happen in internal pages like chrome://
+      Information about Content-Security-Policy violations that happen in
+      internal pages like chrome:// or the pdf.js viewer.
     bugs:
       - https://bugzil.la/1942622
+      - https://bugzil.la/1960363
     data_reviews:
       - https://bugzil.la/1942622
+      - https://bugzil.la/1960363
     notification_emails:
       - tschuster@mozilla.com
       - freddy@mozilla.com
@@ -322,7 +325,7 @@ security:
       sample:
         description: >
           The same as SecurityPolicyViolationEvent's sample.
-          (Only for violations from chrome:)
+          (Only for violations from chrome: or the pdf.js viewer)
         type: string
 
 

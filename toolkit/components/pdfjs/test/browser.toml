@@ -33,6 +33,8 @@ run-if = [
   "!headless",
 ]
 
+["browser_pdfjs_csp.js"]
+
 ["browser_pdfjs_download_button.js"]
 
 ["browser_pdfjs_editing_contextmenu.js"]
