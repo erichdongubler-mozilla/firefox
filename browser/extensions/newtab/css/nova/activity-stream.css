@@ -4824,8 +4824,6 @@ button.arrow-button:dir(rtl) {
   --widget-celebration-panel-delay: var(--widget-celebration-headline-delay);
   --widget-celebration-illustration-delay: 180ms;
   --widget-celebration-subhead-delay: 280ms;
-  --lists-size-transition-duration: 180ms;
-  --lists-size-transition-easing: ease;
   border-radius: var(--border-radius-large);
   padding-block-start: var(--space-medium);
   box-shadow: var(--card-box-shadow, var(--box-shadow-card));
@@ -4837,13 +4835,32 @@ button.arrow-button:dir(rtl) {
   background: var(--newtab-background-color-secondary);
 }
 .nova-enabled .lists {
-  height: var(--newtab-card-height);
+  --widget-size-transition-duration: 180ms;
+  --widget-size-transition-easing: ease;
   padding: var(--space-medium);
-  transition: height var(--lists-size-transition-duration) var(--lists-size-transition-easing), padding var(--lists-size-transition-duration) var(--lists-size-transition-easing);
+  background-color: var(--newtab-background-card);
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--box-shadow-level-2);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+}
+.nova-enabled .lists.small-widget, .nova-enabled .lists.medium-widget {
+  height: var(--newtab-card-height-small);
+}
+.nova-enabled .lists.large-widget {
+  height: var(--newtab-card-height);
 }
 .nova-enabled .lists:hover, .nova-enabled .lists:focus-within {
   outline: 1px solid var(--border-color-deemphasized);
   box-shadow: var(--card-box-shadow-hover);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nova-enabled .lists {
+    transition: none;
+  }
 }
 .classic-enabled .lists {
   grid-column: span 1;
@@ -5494,11 +5511,6 @@ button.arrow-button:dir(rtl) {
   width: 48px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .nova-enabled .lists {
-    transition: none;
-  }
-}
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -5516,11 +5528,32 @@ button.arrow-button:dir(rtl) {
   background: var(--newtab-background-color-secondary);
 }
 .nova-enabled .focus-timer {
+  --widget-size-transition-duration: 180ms;
+  --widget-size-transition-easing: ease;
+  padding: var(--space-medium);
+  background-color: var(--newtab-background-card);
+  border-radius: var(--border-radius-large);
   box-shadow: var(--box-shadow-level-2);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+}
+.nova-enabled .focus-timer.small-widget, .nova-enabled .focus-timer.medium-widget {
+  height: var(--newtab-card-height-small);
+}
+.nova-enabled .focus-timer.large-widget {
+  height: var(--newtab-card-height);
 }
 .nova-enabled .focus-timer:hover, .nova-enabled .focus-timer:focus-within {
   outline: 1px solid var(--border-color-deemphasized);
   box-shadow: var(--card-box-shadow-hover);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nova-enabled .focus-timer {
+    transition: none;
+  }
 }
 .classic-enabled .focus-timer {
   grid-column: span 1;
@@ -6177,9 +6210,35 @@ button.arrow-button:dir(rtl) {
   flex-direction: column;
   box-shadow: var(--box-shadow-level-2);
   height: 100%;
+  --widget-size-transition-duration: 180ms;
+  --widget-size-transition-easing: ease;
+  padding: var(--space-medium);
+  background-color: var(--newtab-background-card);
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--box-shadow-level-2);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
 }
 .sports:hover {
   background: var(--newtab-background-color-secondary);
+}
+.sports.small-widget, .sports.medium-widget {
+  height: var(--newtab-card-height-small);
+}
+.sports.large-widget {
+  height: var(--newtab-card-height);
+}
+.sports:hover, .sports:focus-within {
+  outline: 1px solid var(--border-color-deemphasized);
+  box-shadow: var(--card-box-shadow-hover);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sports {
+    transition: none;
+  }
 }
 .sports:hover, .sports:has(:focus-visible) {
   outline: 1px solid var(--border-color-deemphasized);
@@ -6709,6 +6768,7 @@ button.arrow-button:dir(rtl) {
   display: flex;
   flex-direction: column;
   position: relative;
+  transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
   z-index: 1;
   height: 100%;
   --weather-sunny-background-color: light-dark(var(--color-yellow-0), var(--color-yellow-90));
@@ -6717,9 +6777,20 @@ button.arrow-button:dir(rtl) {
   --weather-snowy-background-color: light-dark(var(--color-violet-0), var(--color-violet-90));
   --weather-hot-background-color: light-dark(var(--color-orange-0), var(--color-orange-90));
 }
+.nova-enabled .weather-widget.small-widget, .nova-enabled .weather-widget.medium-widget {
+  height: var(--newtab-card-height-small);
+}
+.nova-enabled .weather-widget.large-widget {
+  height: var(--newtab-card-height);
+}
 .nova-enabled .weather-widget:hover, .nova-enabled .weather-widget:focus-within {
   outline: 1px solid var(--border-color-deemphasized);
   box-shadow: var(--card-box-shadow-hover);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nova-enabled .weather-widget {
+    transition: none;
+  }
 }
 .nova-enabled .weather-widget .weather-anchor {
   position: absolute;
@@ -7190,12 +7261,24 @@ button.arrow-button:dir(rtl) {
   display: flex;
   flex-direction: column;
   position: relative;
+  transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
   height: var(--newtab-card-height-small);
   transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+}
+.nova-enabled .clocks-widget.small-widget, .nova-enabled .clocks-widget.medium-widget {
+  height: var(--newtab-card-height-small);
+}
+.nova-enabled .clocks-widget.large-widget {
+  height: var(--newtab-card-height);
 }
 .nova-enabled .clocks-widget:hover, .nova-enabled .clocks-widget:focus-within {
   outline: 1px solid var(--border-color-deemphasized);
   box-shadow: var(--card-box-shadow-hover);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nova-enabled .clocks-widget {
+    transition: none;
+  }
 }
 .nova-enabled .clocks-widget.large-widget {
   height: var(--newtab-card-height);

@@ -167,9 +167,6 @@ $side-col-width-px: $col-width-px * 2;
 
 // Baseline styles for all widgets
 @mixin widget-base-style {
-  // Shared size-change transition values. Reference these in widget SCSS
-  // when animating properties that change between small/medium/large sizes
-  // so all widgets stay visually consistent.
   --widget-size-transition-duration: 180ms;
   --widget-size-transition-easing: ease;
 
@@ -181,10 +178,24 @@ $side-col-width-px: $col-width-px * 2;
   display: flex;
   flex-direction: column;
   position: relative;
+  transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+
+  &.small-widget,
+  &.medium-widget {
+    height: var(--newtab-card-height-small);
+  }
+
+  &.large-widget {
+    height: var(--newtab-card-height);
+  }
 
   &:hover,
   &:focus-within {
     outline: 1px solid var(--border-color-deemphasized);
     box-shadow: var(--card-box-shadow-hover);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
   }
 }
