@@ -14,6 +14,7 @@ transforms:
 kind-dependencies:
     - toolchain
     - repackage-l10n
+    - partials-zucchini
 
 only-for-attributes:
     - nightly
