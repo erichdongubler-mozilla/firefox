@@ -119,11 +119,7 @@ def generate_try_task_config(method, labels, params=None, routes=None):
     # and have no way of knowing how many chunks will be scheduled for a given
     # task. For the purposes of this check, we'll ignore test chunks as it's
     # causing us to underestimate anyway.
-    rebuild = try_config.get("rebuild", 1)
-    if isinstance(rebuild, dict):
-        num_tasks = sum(rebuild.get(label, 1) for label in labels)
-    else:
-        num_tasks = len(labels) * rebuild
+    num_tasks = len(labels) * try_config.get("rebuild", 1)
     if "priority" not in try_config and num_tasks > LARGE_PUSH_THRESHOLD:
         print(LARGE_PUSH_WARNING.format(num_tasks))
         while True:

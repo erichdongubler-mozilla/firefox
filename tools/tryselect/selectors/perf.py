@@ -1395,63 +1395,29 @@ class PerfParser(CompareParser):
         finally:
             comparator_obj.teardown()
 
-    def _apply_category_defaults(
-        selected_categories, categories, try_config_params, selected_tasks=None
-    ):
-        """Apply category rebuild defaults unless the user already passed --rebuild.
+    def _apply_category_defaults(selected_categories, categories, try_config_params):
+        """Apply per-category try-config-defaults if the user hasn't set them explicitly.
 
-        Categories can define per-task-rebuild to give different retrigger counts
-        to different tests within the same push (e.g. more runs for SP3 than for
-        jetstream). If no per-task counts are defined, falls back to a single scalar
-        from try-config-defaults. If the user selected multiple categories with
-        conflicting scalar defaults we warn and leave rebuild at 1.
+        If multiple categories with conflicting defaults are selected, warn and skip.
         """
-        if try_config_params is not None and (
-            try_config_params.get("try_task_config", {}).get("rebuild") is not None
+        if (
+            try_config_params is None
+            or try_config_params.get("try_task_config", {}).get("rebuild") is None
         ):
-            return try_config_params
-
-        # Per-task rebuild takes priority over scalar defaults. Collect all
-        # patterns from every selected category and map each task to its count.
-        per_task_patterns = {}
-        for cat in selected_categories:
-            per_task_patterns.update(
-                categories
-                .get(cat, {})
-                .get("try-config-defaults", {})
-                .get("per-task-rebuild", {})
-            )
-
-        if per_task_patterns and selected_tasks:
-            per_task_rebuild = {}
-            for task in selected_tasks:
-                for pattern, count in per_task_patterns.items():
-                    if pattern in task:
-                        per_task_rebuild[task] = count
-                        break
-            if any(v > 1 for v in per_task_rebuild.values()):
+            default_rebuilds = {
+                categories.get(cat, {}).get("try-config-defaults", {}).get("rebuild", 1)
+                for cat in selected_categories
+            }
+            if len(default_rebuilds) > 1:
+                print(
+                    "\nMultiple categories with different rebuild defaults were selected. "
+                    "Defaulting to 1 rebuild. Use --rebuild to set an explicit count.\n"
+                )
+            elif default_rebuilds != {1}:
+                rebuild = default_rebuilds.pop()
                 if try_config_params is None:
                     try_config_params = {}
-                try_config_params.setdefault("try_task_config", {})["rebuild"] = (
-                    per_task_rebuild
-                )
-            return try_config_params
-
-        # No per-task patterns, fall back to a single rebuild count for all tasks.
-        default_rebuilds = {
-            categories.get(cat, {}).get("try-config-defaults", {}).get("rebuild", 1)
-            for cat in selected_categories
-        }
-        if len(default_rebuilds) > 1:
-            print(
-                "\nMultiple categories with different rebuild defaults were selected. "
-                "Defaulting to 1 rebuild. Use --rebuild to set an explicit count.\n"
-            )
-        elif default_rebuilds != {1}:
-            rebuild = default_rebuilds.pop()
-            if try_config_params is None:
-                try_config_params = {}
-            try_config_params.setdefault("try_task_config", {})["rebuild"] = rebuild
+                try_config_params.setdefault("try_task_config", {})["rebuild"] = rebuild
         return try_config_params
 
     def run(
@@ -1542,7 +1508,7 @@ class PerfParser(CompareParser):
 
         if selected_categories:
             try_config_params = PerfParser._apply_category_defaults(
-                selected_categories, categories, try_config_params, selected_tasks
+                selected_categories, categories, try_config_params
             )
 
         total_task_count = len(selected_tasks) * rebuild

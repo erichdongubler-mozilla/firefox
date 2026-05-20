@@ -1815,7 +1815,7 @@ def test_unknown_framework():
 
 EXPANDED_CATEGORIES = {
     "Critical Desktop Performance desktop firefox": {
-        "try-config-defaults": {"per-task-rebuild": {"speedometer3": 20}},
+        "try-config-defaults": {"rebuild": 20},
     },
     "Benchmarks desktop firefox": {
         "try-config-defaults": {},
@@ -1823,21 +1823,12 @@ EXPANDED_CATEGORIES = {
 }
 
 
-SP3_TASK = "browsertime-benchmark-firefox-speedometer3"
-
-
 @pytest.mark.parametrize(
-    "selected_categories, tasks, try_config_params, expected_rebuild",
+    "selected_categories, try_config_params, expected_rebuild",
     [
+        (["Critical Desktop Performance desktop firefox"], {}, 20),
         (
             ["Critical Desktop Performance desktop firefox"],
-            [SP3_TASK],
-            {},
-            {SP3_TASK: 20},
-        ),
-        (
-            ["Critical Desktop Performance desktop firefox"],
-            [SP3_TASK],
             {"try_task_config": {"rebuild": 5}},
             5,
         ),
@@ -1846,14 +1837,13 @@ SP3_TASK = "browsertime-benchmark-firefox-speedometer3"
                 "Critical Desktop Performance desktop firefox",
                 "Benchmarks desktop firefox",
             ],
-            [SP3_TASK, "browsertime-benchmark-firefox-motionmark"],
             {},
-            {SP3_TASK: 20},
+            1,
         ),
     ],
 )
 def test_category_default_rebuild(
-    selected_categories, tasks, try_config_params, expected_rebuild
+    selected_categories, try_config_params, expected_rebuild
 ):
     with category_reset():
         from tryselect.selectors.perfselector.classification import (
@@ -1878,14 +1868,15 @@ def test_category_default_rebuild(
             "tryselect.selectors.perf.PerfParser.get_categories",
             return_value=EXPANDED_CATEGORIES,
         ):
-            get_perf_tasks_mock.return_value = tasks, selected_categories, []
+            get_perf_tasks_mock.return_value = ["a-task"], selected_categories, []
 
             run(try_config_params=try_config_params, push_to_vcs=True)
 
             assert perf_push_to_try_mock.call_count == 1
             actual_try_config = perf_push_to_try_mock.call_args[0][3]
-            task_config = (actual_try_config or {}).get("try_task_config", {})
-            actual_rebuild = task_config.get("rebuild", 1)
+            actual_rebuild = (
+                (actual_try_config or {}).get("try_task_config", {}).get("rebuild", 1)
+            )
             assert actual_rebuild == expected_rebuild
 
 
