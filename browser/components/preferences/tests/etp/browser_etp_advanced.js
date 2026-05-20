@@ -17,6 +17,7 @@ const PERMISSIONS_DIALOG_URL =
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["browser.settings-redesign.enabled", true],
       ["privacy.trackingprotection.allow_list.hasMigratedCategoryPrefs", true],
     ],
   });
