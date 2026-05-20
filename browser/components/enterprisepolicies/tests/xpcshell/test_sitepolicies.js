@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { E10SUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/E10SUtils.sys.mjs"
+);
+
 function isJitDisabledForRemoteType(remoteType) {
   return (
     remoteType.endsWith("^disableJit=1") || remoteType.endsWith("&disableJit=1")
@@ -12,22 +16,16 @@ function isJitDisabledForRemoteType(remoteType) {
 function assertJitState(url, isAllowed) {
   let uri = Services.io.newURI(url);
 
-  // Extract the site URI.
-  let siteUri = Services.io.newURI(
-    Services.scriptSecurityManager.createContentPrincipal(uri, {})
-      .siteOriginNoSuffix
-  );
-
   Assert.equal(
-    Services.policies.isAllowedForURI("jit", siteUri),
+    Services.policies.isAllowedForURI("jit", uri),
     isAllowed,
-    `Policy service should return the expected state for ${url} (site: ${siteUri})`
+    `Policy service should return the expected state for ${url}`
   );
 
-  let remoteType = ChromeUtils.predictRemoteTypeForURI(uri, {
-    useRemoteTabs: true,
-    useRemoteSubframes: true,
-    preferredRemoteType: "web",
+  let remoteType = E10SUtils.getRemoteTypeForURIObject(uri, {
+    remoteSubFrames: true,
+    multiProcess: true,
+    preferredRemoteType: E10SUtils.DEFAULT_REMOTE_TYPE,
   });
 
   Assert.equal(
@@ -48,7 +46,10 @@ add_task(async function test_isAllowedForSite() {
   assertJitState("http://example.net/", true);
   assertJitState("http://example.org/", true);
   assertJitState("http://example.com/", true);
-  assertJitState("data:text/html,example", true);
+  assertJitState(
+    "moz-nullprincipal:{56cac540-864d-47e7-8e25-1614eab5155e}",
+    true
+  );
 
   // Simple match case
   await setupPolicyEngineWithJson({
@@ -69,7 +70,10 @@ add_task(async function test_isAllowedForSite() {
   assertJitState("http://example.com/", false);
   assertJitState("http://www.example.com/", false);
   assertJitState("http://test.example.com/", false);
-  assertJitState("data:text/html,example", true);
+  assertJitState(
+    "moz-nullprincipal:{56cac540-864d-47e7-8e25-1614eab5155e}",
+    true
+  );
 
   // Multiple match case
   await setupPolicyEngineWithJson({
@@ -88,7 +92,10 @@ add_task(async function test_isAllowedForSite() {
   assertJitState("http://example.net/", true);
   assertJitState("http://example.org/", false);
   assertJitState("http://example.com/", false);
-  assertJitState("data:text/html,example", true);
+  assertJitState(
+    "moz-nullprincipal:{56cac540-864d-47e7-8e25-1614eab5155e}",
+    true
+  );
 
   // Missing wildcard or being too specific still uses the base domain
   await setupPolicyEngineWithJson({
@@ -111,7 +118,10 @@ add_task(async function test_isAllowedForSite() {
   assertJitState("http://example.com/", false);
   assertJitState("http://www.example.com/", false);
   assertJitState("http://test.example.com/", false);
-  assertJitState("data:text/html,example", true);
+  assertJitState(
+    "moz-nullprincipal:{56cac540-864d-47e7-8e25-1614eab5155e}",
+    true
+  );
 
   // No match implies all sites
   await setupPolicyEngineWithJson({
@@ -130,7 +140,10 @@ add_task(async function test_isAllowedForSite() {
   assertJitState("http://example.net/", false);
   assertJitState("http://example.org/", false);
   assertJitState("http://example.com/", true);
-  assertJitState("data:text/html,example", false);
+  assertJitState(
+    "moz-nullprincipal:{56cac540-864d-47e7-8e25-1614eab5155e}",
+    false
+  );
 
   // Empty match implies all sites
   await setupPolicyEngineWithJson({
@@ -150,7 +163,10 @@ add_task(async function test_isAllowedForSite() {
   assertJitState("http://example.net/", false);
   assertJitState("http://example.org/", false);
   assertJitState("http://example.com/", true);
-  assertJitState("data:text/html,example", false);
+  assertJitState(
+    "moz-nullprincipal:{56cac540-864d-47e7-8e25-1614eab5155e}",
+    false
+  );
 
   // Wildcard implies all sites
   await setupPolicyEngineWithJson({
@@ -170,7 +186,10 @@ add_task(async function test_isAllowedForSite() {
   assertJitState("http://example.net/", false);
   assertJitState("http://example.org/", false);
   assertJitState("http://example.com/", true);
-  assertJitState("data:text/html,example", false);
+  assertJitState(
+    "moz-nullprincipal:{56cac540-864d-47e7-8e25-1614eab5155e}",
+    false
+  );
 
   // Empty policies do nothing
   await setupPolicyEngineWithJson({
@@ -187,7 +206,10 @@ add_task(async function test_isAllowedForSite() {
   assertJitState("http://example.net/", true);
   assertJitState("http://example.org/", true);
   assertJitState("http://example.com/", true);
-  assertJitState("data:text/html,example", true);
+  assertJitState(
+    "moz-nullprincipal:{56cac540-864d-47e7-8e25-1614eab5155e}",
+    true
+  );
 
   // Earlier policies take precedence over later ones.
   await setupPolicyEngineWithJson({
@@ -212,7 +234,10 @@ add_task(async function test_isAllowedForSite() {
   assertJitState("http://example.net/", true);
   assertJitState("http://example.org/", false);
   assertJitState("http://example.com/", true);
-  assertJitState("data:text/html,example", true);
+  assertJitState(
+    "moz-nullprincipal:{56cac540-864d-47e7-8e25-1614eab5155e}",
+    true
+  );
 
   // Earlier policies only take precedence if they include the relevant policy.
   await setupPolicyEngineWithJson({
@@ -235,5 +260,8 @@ add_task(async function test_isAllowedForSite() {
   assertJitState("http://example.net/", true);
   assertJitState("http://example.org/", false);
   assertJitState("http://example.com/", false);
-  assertJitState("data:text/html,example", true);
+  assertJitState(
+    "moz-nullprincipal:{56cac540-864d-47e7-8e25-1614eab5155e}",
+    true
+  );
 });

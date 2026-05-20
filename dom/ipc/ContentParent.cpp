@@ -1404,7 +1404,7 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
 
   nsAutoCString remoteType(aRemoteType);
   if (remoteType.IsEmpty()) {
-    remoteType = SharedWebRemoteType(aBrowsingContext->OriginAttributesRef());
+    remoteType = DEFAULT_REMOTE_TYPE;
   }
 
   TabId tabId(nsContentUtils::GenerateTabId());

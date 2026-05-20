@@ -1696,6 +1696,12 @@ class MochitestDesktop:
             manifestFile.write(
                 f"content mochitests {chrometestDir} contentaccessible=yes\n"
             )
+            manifestFile.write(
+                f"content mochitests-any {chrometestDir} contentaccessible=yes remoteenabled=yes\n"
+            )
+            manifestFile.write(
+                f"content mochitests-content {chrometestDir} contentaccessible=yes remoterequired=yes\n"
+            )
 
             if options.testingModulesDir is not None:
                 manifestFile.write(
