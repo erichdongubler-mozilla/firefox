@@ -5304,6 +5304,12 @@
   value: false
   mirror: always
 
+- name: dom.headingoffset.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+  rust: true
+
 - name: dom.text_fragments.enabled
   type: RelaxedAtomicBool
   value: true
@@ -10712,13 +10718,6 @@
 #else
   value: false
 #endif
-  mirror: always
-  rust: true
-
-# Is support for :heading and :heading() pseudo classes enabled?
-- name: layout.css.heading-selector.enabled
-  type: RelaxedAtomicBool
-  value: false
   mirror: always
   rust: true
 

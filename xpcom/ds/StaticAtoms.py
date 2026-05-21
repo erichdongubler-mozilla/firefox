@@ -531,6 +531,8 @@ STATIC_ATOMS = [
     Atom("head", "head"),
     Atom("header", "header"),
     Atom("headers", "headers"),
+    Atom("headingoffset", "headingoffset"),
+    Atom("headingreset", "headingreset"),
     Atom("hebrew", "hebrew"),
     Atom("height", "height"),
     Atom("hgroup", "hgroup"),
@@ -2477,6 +2479,7 @@ STATIC_ATOMS = [
     Atom("layout_css_appearance_base_enabled", "layout.css.appearance-base.enabled"),
     Atom("layout_css_cached_scrollbar_styles_enabled", "layout.css.cached-scrollbar-styles.enabled"),
     Atom("layout_testing_scrollbars_always_hidden", "layout.testing.scrollbars.always-hidden"),
+    Atom("dom_headingoffset_enabled", "dom.headingoffset.enabled"),
     # Contextual Identity / Containers
     Atom("usercontextid", "usercontextid"),
     Atom("geckoViewSessionContextId", "geckoViewSessionContextId"),
