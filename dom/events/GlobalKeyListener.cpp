@@ -650,9 +650,7 @@ bool XULKeySetGlobalKeyListener::IsExecutableElement(
     return false;
   }
 
-  nsAutoString value;
-  aElement->GetAttr(nsGkAtoms::disabled, value);
-  if (value.EqualsLiteral("true")) {
+  if (aElement->GetBoolAttr(nsGkAtoms::disabled)) {
     return false;
   }
 
