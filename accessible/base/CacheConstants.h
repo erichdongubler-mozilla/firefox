@@ -40,6 +40,19 @@ class CacheDomain {
   static constexpr uint64_t All = ~((uint64_t)0x0);
 };
 
+// Cache domains needed by PdfStructTreeBuilder to walk an accessibility tree
+// and produce a tagged PDF struct tree. These are all the domains required by
+// calls from PdfStructTreeBuilder::BuildStructSubtree.
+static constexpr uint64_t kPdfCacheDomains =
+    // RemoteAccessible::Name
+    CacheDomain::NameAndDescription | CacheDomain::Text |
+    CacheDomain::Relations |
+    // Accessible::GroupPosition
+    CacheDomain::ARIA | CacheDomain::GroupInfo | CacheDomain::State |
+    CacheDomain::Viewport |
+    // TableCellAccessible headers/spans
+    CacheDomain::Table;
+
 enum class CacheUpdateType {
   /*
    * An initial cache push of a loaded document or inserted subtree.

@@ -23,6 +23,7 @@
 
 #include "AnchorPositioningUtils.h"
 #include "nsIDocShell.h"
+#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "nsPIDOMWindow.h"
 #include "nsIContentInlines.h"
@@ -389,6 +390,13 @@ static uint64_t GetCacheDomainsQueueUpdateSuperset(uint64_t aCacheDomains) {
 }
 
 uint64_t DocAccessible::EffectiveCacheDomains() const {
+  if (mDocumentNode) {
+    if (dom::BrowsingContext* bc = mDocumentNode->GetBrowsingContext()) {
+      if (bc->Top()->GetIsPrinting()) {
+        return kPdfCacheDomains;
+      }
+    }
+  }
   return nsAccessibilityService::GetActiveCacheDomains();
 }
 
