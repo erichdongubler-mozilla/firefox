@@ -11225,7 +11225,8 @@ void nsDocShell::MaybeFireTraverseHistory(nsDocShellLoadState* aLoadState) {
     return;
   }
 
-  if (!mActiveEntry || !aLoadState->GetLoadingSessionHistoryInfo()) {
+  if (!mActiveEntry || !aLoadState->GetLoadingSessionHistoryInfo() ||
+      aLoadState->IsResumingInterceptedNavigation()) {
     return;
   }
   if (mActiveEntry->NavigationKey() ==
