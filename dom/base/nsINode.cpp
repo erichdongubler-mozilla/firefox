@@ -291,6 +291,9 @@ class ChildIndexCache {
   static nsIContent* GetChildAt(const nsINode* aParent, uint32_t aIndex) {
     MOZ_ASSERT(aParent->GetChildCount() > aIndex,
                "Caller should have checked bounds");
+    if (aParent == sLastInvalidatedParent) {
+      sLastInvalidatedParent = nullptr;
+    }
     auto& entry =
         sCache.LookupOrInsertWith(aParent, [&] { return MakeEntry(aParent); });
     if (aIndex < entry.mChildren.Length()) {
@@ -304,6 +307,9 @@ class ChildIndexCache {
                                  const nsIContent* aChild) {
     MOZ_ASSERT(aChild->GetParentNode() == aParent,
                "Child is not actually a child of parent");
+    if (aParent == sLastInvalidatedParent) {
+      sLastInvalidatedParent = nullptr;
+    }
     auto& entry =
         sCache.LookupOrInsertWith(aParent, [&] { return MakeEntry(aParent); });
 
@@ -353,14 +359,37 @@ class ChildIndexCache {
   }
 
   static void Invalidate(const nsINode* aParent) {
+    MOZ_ASSERT(aParent);
+    if (aParent->GetChildCount() < kThreshold) {
+      return;
+    }
+    if (aParent->GetChildCount() == kThreshold) {
+      sCache.Remove(aParent);
+      sLastInvalidatedParent = nullptr;
+      return;
+    }
+    if (aParent == sLastInvalidatedParent) {
+      return;
+    }
+
     auto entry = sCache.Lookup(aParent);
     if (entry) {
       entry.Data().mChildren.ClearAndRetainStorage();
       entry.Data().mIndexMap.Clear();
     }
+
+    sLastInvalidatedParent = aParent;
   }
 
-  static void Remove(const nsINode* aParent) { sCache.Remove(aParent); }
+#ifdef DEBUG
+  static bool Contains(const nsINode* aParent) {
+    return sCache.Contains(aParent);
+  }
+
+  static const nsINode* LastInvalidatedParent() {
+    return sLastInvalidatedParent;
+  }
+#endif
 
  private:
   struct Entry {
@@ -393,12 +422,17 @@ class ChildIndexCache {
   }
 
   static nsTHashMap<const nsINode*, Entry> sCache;
+  static const nsINode* sLastInvalidatedParent;
 };
 
 nsTHashMap<const nsINode*, ChildIndexCache::Entry> ChildIndexCache::sCache;
+const nsINode* ChildIndexCache::sLastInvalidatedParent = nullptr;
 
 nsINode::~nsINode() {
-  ChildIndexCache::Remove(this);
+  MOZ_ASSERT(!ChildIndexCache::Contains(this),
+             "Node still in ChildIndexCache at destruction?");
+  MOZ_ASSERT(ChildIndexCache::LastInvalidatedParent() != this,
+             "ChildIndexCache should have cleaned last invalidated parent");
   MOZ_ASSERT(!HasSlots(), "LastRelease was not called?");
   MOZ_ASSERT(mSubtreeRoot == this, "Didn't restore state properly?");
 }
