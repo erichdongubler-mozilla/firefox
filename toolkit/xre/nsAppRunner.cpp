@@ -5921,6 +5921,13 @@ nsresult XREMain::XRE_mainRun() {
         tempArgv[i] = strdup(gArgv[i]);
       }
       CommandLineServiceMac::SetupMacCommandLine(gArgc, tempArgv, false);
+
+      // All startup URLs have been consumed by SetupMacCommandLine. From this
+      // point, any URLs received via Apple Events (application:openURLs:) will
+      // be handled immediately by nsICommandLineRunner instead of being
+      // buffered. See bug 2036237.
+      StartupURLCollectionComplete();
+
       rv = cmdLine->Init(gArgc, tempArgv, workingDir,
                          nsICommandLine::STATE_INITIAL_LAUNCH);
       free(tempArgv);
