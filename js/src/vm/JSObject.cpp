@@ -967,17 +967,9 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
   // execute all necessary barriers.
   gc::AutoSuppressGC nogc(cx);
 
-  // Ensure we update any embedded nursery pointers in either object.
-  gc::StoreBuffer& storeBuffer = cx->runtime()->gc.storeBuffer();
-  if (a->isTenured()) {
-    storeBuffer.putWholeCell(a);
-  }
-  if (b->isTenured()) {
-    storeBuffer.putWholeCell(b);
-  }
   if (a->isTenured() || b->isTenured()) {
     if (a->zone()->wasGCStarted()) {
-      storeBuffer.setMayHavePointersToDeadCells();
+      cx->runtime()->gc.storeBuffer().setMayHavePointersToDeadCells();
     }
   }
 
@@ -994,8 +986,6 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
     MOZ_RELEASE_ASSERT(a->staticPrototype() != b);
   }
 
-  Zone* zone = a->zone();
-
 #ifdef DEBUG
   // Record any associated unique IDs.
   //
@@ -1007,15 +997,35 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
   (void)gc::MaybeGetUniqueId(b, &bid);
 #endif
 
-  // The objects have matching alloc kinds, so they're the same size and we
-  // can just memcpy their contents.
-  size_t size = gc::Arena::thingSize(a->allocKind());
-  char tmp[sizeof(JSObject_Slots16)];
-  MOZ_ASSERT(size <= sizeof(tmp));
+  ProxyObject& proxyA = a->as<ProxyObject>();
+  ProxyObject& proxyB = b->as<ProxyObject>();
 
-  js_memcpy(tmp, a, size);
-  js_memcpy(a, b, size);
-  js_memcpy(b, tmp, size);
+  // Swap shape.
+  Shape* shapeA = a->shape();
+  a->setShapeForProxySwap(b->shape());
+  b->setShapeForProxySwap(shapeA);
+
+  // Swap handler.
+  const BaseProxyHandler* handlerA = proxyA.handler();
+  proxyA.setHandler(proxyB.handler());
+  proxyB.setHandler(handlerA);
+
+  // Swap expando objects.
+  JSObject* expandoA = proxyA.expando();
+  proxyA.setExpando(proxyB.expando());
+  proxyB.setExpando(expandoA);
+
+  // Swap private slot.
+  Value privateA = GetProxyPrivate(a);
+  SetProxyPrivate(a, GetProxyPrivate(b));
+  SetProxyPrivate(b, privateA);
+
+  // Swap reserved slots.
+  for (size_t i = 0; i < SwappableProxyReservedSlots; i++) {
+    Value slotA = GetProxyReservedSlot(a, i);
+    SetProxyReservedSlot(a, i, GetProxyReservedSlot(b, i));
+    SetProxyReservedSlot(b, i, slotA);
+  }
 
   MOZ_ASSERT_IF(aid, gc::GetUniqueIdInfallible(a) == aid);
   MOZ_ASSERT_IF(bid, gc::GetUniqueIdInfallible(b) == bid);
@@ -1031,21 +1041,6 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
       oomUnsafe.crash("setIsUsedAsPrototype");
     }
   }
-
-  /*
-   * We need a write barrier here. If |a| was marked and |b| was not, then
-   * after the swap, |b|'s guts would never be marked. The write barrier
-   * solves this.
-   *
-   * Normally write barriers happen before the write. However, that's not
-   * necessary here because nothing is being destroyed. We're just swapping.
-   */
-  PreWriteBarrier(zone, a.get(), [](JSTracer* trc, JSObject* obj) {
-    obj->traceChildren(trc);
-  });
-  PreWriteBarrier(zone, b.get(), [](JSTracer* trc, JSObject* obj) {
-    obj->traceChildren(trc);
-  });
 
   NotifyGCPostSwap(a, b, r);
 }
