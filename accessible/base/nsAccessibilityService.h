@@ -446,6 +446,13 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   void FullInit(uint64_t aCacheDomains, uint32_t aConsumer);
 
   /**
+   * Run the init steps that Init skipped because the original consumer was
+   * ePdfOutput. Called from GetOrCreateAccService when a non-PDF consumer
+   * arrives while the service is still only for PDF output.
+   */
+  void PromoteFromPdfOutput(uint64_t aCacheDomains, uint32_t aConsumer);
+
+  /**
    * Create an accessible whose type depends on the given frame.
    */
   already_AddRefed<LocalAccessible> CreateAccessibleByFrameType(
