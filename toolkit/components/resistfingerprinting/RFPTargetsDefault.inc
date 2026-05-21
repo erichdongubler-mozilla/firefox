@@ -13,11 +13,6 @@ DESKTOP_DEFAULT(ScreenAvailToResolution)
 DESKTOP_DEFAULT(NavigatorHWConcurrencyTiered)
 DESKTOP_DEFAULT(MaxTouchPointsCollapse)
 
-#ifdef NIGHTLY_BUILD
-DESKTOP_DEFAULT(DiskStorageLimit)
-ANDROID_DEFAULT(DiskStorageLimit)
-#endif
-
 ANDROID_DEFAULT(CanvasRandomization)
 ANDROID_DEFAULT(EfficientCanvasRandomization)
 ANDROID_DEFAULT(FontVisibilityLangPack)
