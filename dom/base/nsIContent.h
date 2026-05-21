@@ -587,13 +587,6 @@ class nsIContent : public nsINode {
 
   void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
 
-  /**
-   * Whenever a HeadingReset or HeadingOffset attribute changes on an ancestor,
-   * or a node is slotted/unslotted, all descendant heading elements (including
-   * those in shadow trees and assigned to slots) should be updated.
-   */
-  void UpdateHeadingElementsOffsetChange();
-
   bool IsPurple() const { return mRefCnt.IsPurple(); }
 
   void RemovePurple() { mRefCnt.RemovePurple(); }

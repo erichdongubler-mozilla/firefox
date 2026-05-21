@@ -80,12 +80,6 @@ interface HTMLElement : Element {
   [Throws] undefined showPopover(optional ShowPopoverOptions options = {});
   [Throws] undefined hidePopover();
   [Throws] boolean togglePopover(optional (TogglePopoverOptions or boolean) options = {});
-
-  [CEReactions, SetterThrows, Pref="dom.headingoffset.enabled"]
-  attribute unsigned long headingOffset;
-
-  [CEReactions, Pref="dom.headingoffset.enabled"]
-  attribute boolean headingReset;
 };
 
 dictionary ShowPopoverOptions {

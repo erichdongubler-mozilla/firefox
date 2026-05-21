@@ -1213,10 +1213,6 @@ void DocAccessible::ElementStateChanged(dom::Document* aDocument,
     // which would change this association).
     QueueCacheUpdateForPopoverInvokers(aElement);
   }
-
-  if (aStateMask.HasAtLeastOneOfStates(dom::ElementState::HEADING_LEVEL_BITS)) {
-    QueueCacheUpdate(accessible, CacheDomain::GroupInfo);
-  }
 }
 
 void DocAccessible::CharacterDataWillChange(nsIContent* aContent,

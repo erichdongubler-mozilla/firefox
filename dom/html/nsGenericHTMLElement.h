@@ -4,7 +4,6 @@
 #ifndef nsGenericHTMLElement_h_
 #define nsGenericHTMLElement_h_
 
-#include <algorithm>
 #include <cstdint>
 
 #include "mozilla/Attributes.h"
@@ -359,18 +358,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   bool Autofocus() const { return GetBoolAttr(nsGkAtoms::autofocus); }
   void SetAutofocus(bool aVal, ErrorResult& aRv) {
     SetHTMLBoolAttr(nsGkAtoms::autofocus, aVal, aRv);
-  }
-
-  uint32_t HeadingOffset() const {
-    return std::min(GetUnsignedIntAttr(nsGkAtoms::headingoffset, 0), 8u);
-  }
-  void SetHeadingOffset(uint32_t aValue, ErrorResult& aError) {
-    SetUnsignedIntAttr(nsGkAtoms::headingoffset, aValue, 0, aError);
-  }
-
-  bool HeadingReset() const { return GetBoolAttr(nsGkAtoms::headingreset); }
-  void SetHeadingReset(bool aValue) {
-    SetBoolAttr(nsGkAtoms::headingreset, aValue);
   }
 
  protected:
