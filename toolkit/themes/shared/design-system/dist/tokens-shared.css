@@ -67,6 +67,11 @@
     --button-background-color-primary-disabled: var(--button-background-color-primary);
     --button-background-color-primary-selected: var(--button-background-color-primary-active);
     --button-background-color-selected: var(--button-background-color-active);
+    --button-background-color-toolbar: transparent;
+    --button-background-color-toolbar-hover: var(--toolbarbutton-background-color-hover);
+    --button-background-color-toolbar-active: var(--toolbarbutton-background-color-active);
+    --button-background-color-toolbar-disabled: var(--button-background-color-ghost);
+    --button-background-color-toolbar-selected: var(--button-background-color-ghost-active);
     --button-border: var(--border-width) solid var(--button-border-color);
     --button-border-color: transparent;
     --button-border-color-hover: var(--button-border-color);
@@ -88,6 +93,11 @@
     --button-border-color-primary-disabled: var(--button-border-color-primary);
     --button-border-color-primary-selected: var(--button-border-color-primary-active);
     --button-border-color-selected: var(--button-border-color-active);
+    --button-border-color-toolbar: var(--button-border-color);
+    --button-border-color-toolbar-hover: var(--button-border-color-hover);
+    --button-border-color-toolbar-active: var(--button-border-color-active);
+    --button-border-color-toolbar-disabled: var(--button-border-color-disabled);
+    --button-border-color-toolbar-selected: var(--button-border-color-ghost-active);
     --button-border-radius: var(--border-radius-medium);
     --button-font-size: var(--font-size-root);
     --button-font-size-small: var(--font-size-small);
@@ -123,6 +133,11 @@
     --button-text-color-primary-disabled: var(--button-text-color-primary);
     --button-text-color-primary-selected: var(--button-text-color-primary-active);
     --button-text-color-selected: var(--button-text-color-active);
+    --button-text-color-toolbar: inherit;
+    --button-text-color-toolbar-hover: inherit;
+    --button-text-color-toolbar-active: inherit;
+    --button-text-color-toolbar-disabled: inherit;
+    --button-text-color-toolbar-selected: var(--button-text-color-ghost-active);
 
     /** card **/
     /* TODO Bug 2030793 - Move card tokens to be used by moz-card rather than globally */
@@ -526,6 +541,8 @@
       --button-border-color: var(--button-text-color);
       --button-text-color-ghost-hover: var(--button-text-color-hover);
       --button-text-color-ghost-active: var(--button-text-color-active);
+      --button-text-color-toolbar-hover: var(--button-text-color-hover);
+      --button-text-color-toolbar-active: var(--button-text-color-active);
 
       /** card **/
       --card-border-color: color-mix(in srgb, currentColor 41%, transparent);
@@ -617,6 +634,8 @@
       --button-text-color-menu-active: var(--button-text-color-primary);
       --button-text-color-primary: ButtonFace;
       --button-text-color-primary-hover: SelectedItemText;
+      --button-text-color-toolbar-hover: var(--button-text-color-hover);
+      --button-text-color-toolbar-active: var(--button-text-color-active);
 
       /** card **/
       --card-border-color: CanvasText;

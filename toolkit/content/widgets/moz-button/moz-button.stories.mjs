@@ -26,6 +26,7 @@ export default {
         "default",
         "primary",
         "destructive",
+        "toolbar",
         "icon",
         "icon ghost",
         "split",
@@ -166,6 +167,7 @@ WithAccesskey.args = {
 export const Toolbar = Template.bind({});
 Toolbar.args = {
   ...Default.args,
+  type: "toolbar",
   showOuterPadding: true,
 };
 export const Badged = Template.bind({});

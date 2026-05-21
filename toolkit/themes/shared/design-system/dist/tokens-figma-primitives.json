@@ -99,6 +99,8 @@
   "space/large": "{Primitives$dimension/relative/100}",
   "space/xlarge": "{Primitives$dimension/relative/150}",
   "space/xxlarge": "{Primitives$dimension/relative/200}",
+  "button/background/color/toolbar/active": "{Primitives$toolbarbutton/background/color/active}",
+  "button/background/color/toolbar/hover": "{Primitives$toolbarbutton/background/color/hover}",
   "button/border/radius": "{Primitives$border/radius/medium}",
   "button/min-height": "{Primitives$size/item/large}",
   "button/min-height/small": "{Primitives$size/item/medium}",

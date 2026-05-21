@@ -265,6 +265,32 @@ export const tokensTable = {
       value: "var(--button-background-color-active)",
       name: "--button-background-color-selected",
     },
+    {
+      value: {
+        default: "transparent",
+        brand: { forcedColors: "var(--button-background-color)" },
+      },
+      name: "--button-background-color-toolbar",
+    },
+    {
+      value: "var(--toolbarbutton-background-color-active)",
+      name: "--button-background-color-toolbar-active",
+    },
+    {
+      value: {
+        default: "var(--button-background-color-ghost)",
+        brand: { forcedColors: "var(--button-background-color-disabled)" },
+      },
+      name: "--button-background-color-toolbar-disabled",
+    },
+    {
+      value: "var(--toolbarbutton-background-color-hover)",
+      name: "--button-background-color-toolbar-hover",
+    },
+    {
+      value: "var(--button-background-color-ghost-active)",
+      name: "--button-background-color-toolbar-selected",
+    },
     { value: "var(--background-color-box)", name: "--card-background-color" },
     { value: "Field", name: "--input-text-background-color" },
     {
@@ -756,6 +782,26 @@ export const tokensTable = {
     {
       value: "var(--button-border-color-active)",
       name: "--button-border-color-selected",
+    },
+    {
+      value: { default: "var(--button-border-color)" },
+      name: "--button-border-color-toolbar",
+    },
+    {
+      value: { default: "var(--button-border-color-active)" },
+      name: "--button-border-color-toolbar-active",
+    },
+    {
+      value: { default: "var(--button-border-color-disabled)" },
+      name: "--button-border-color-toolbar-disabled",
+    },
+    {
+      value: { default: "var(--button-border-color-hover)" },
+      name: "--button-border-color-toolbar-hover",
+    },
+    {
+      value: "var(--button-border-color-ghost-active)",
+      name: "--button-border-color-toolbar-selected",
     },
     {
       value: {
@@ -1754,6 +1800,46 @@ export const tokensTable = {
     {
       value: "var(--button-text-color-active)",
       name: "--button-text-color-selected",
+    },
+    {
+      value: {
+        default: "inherit",
+        brand: {
+          prefersContrast: "var(--button-text-color)",
+          forcedColors: "var(--button-text-color)",
+        },
+      },
+      name: "--button-text-color-toolbar",
+    },
+    {
+      value: {
+        default: "inherit",
+        prefersContrast: "var(--button-text-color-active)",
+        forcedColors: "var(--button-text-color-active)",
+      },
+      name: "--button-text-color-toolbar-active",
+    },
+    {
+      value: {
+        default: "inherit",
+        brand: {
+          prefersContrast: "var(--button-text-color-disabled)",
+          forcedColors: "var(--button-text-color-disabled)",
+        },
+      },
+      name: "--button-text-color-toolbar-disabled",
+    },
+    {
+      value: {
+        default: "inherit",
+        prefersContrast: "var(--button-text-color-hover)",
+        forcedColors: "var(--button-text-color-hover)",
+      },
+      name: "--button-text-color-toolbar-hover",
+    },
+    {
+      value: "var(--button-text-color-ghost-active)",
+      name: "--button-text-color-toolbar-selected",
     },
     { value: "FieldText", name: "--input-text-color" },
     {
@@ -3038,6 +3124,20 @@ export const variableLookupTable = {
     forcedColors: "var(--button-background-color-primary)",
   },
   "button-background-color-selected": "var(--button-background-color-active)",
+  "button-background-color-toolbar": {
+    default: "transparent",
+    brand: { forcedColors: "var(--button-background-color)" },
+  },
+  "button-background-color-toolbar-active":
+    "var(--toolbarbutton-background-color-active)",
+  "button-background-color-toolbar-disabled": {
+    default: "var(--button-background-color-ghost)",
+    brand: { forcedColors: "var(--button-background-color-disabled)" },
+  },
+  "button-background-color-toolbar-hover":
+    "var(--toolbarbutton-background-color-hover)",
+  "button-background-color-toolbar-selected":
+    "var(--button-background-color-ghost-active)",
   "button-border": "var(--border-width) solid var(--button-border-color)",
   "button-border-color": {
     default: "transparent",
@@ -3102,6 +3202,18 @@ export const variableLookupTable = {
   "button-border-color-primary-selected":
     "var(--button-border-color-primary-active)",
   "button-border-color-selected": "var(--button-border-color-active)",
+  "button-border-color-toolbar": { default: "var(--button-border-color)" },
+  "button-border-color-toolbar-active": {
+    default: "var(--button-border-color-active)",
+  },
+  "button-border-color-toolbar-disabled": {
+    default: "var(--button-border-color-disabled)",
+  },
+  "button-border-color-toolbar-hover": {
+    default: "var(--button-border-color-hover)",
+  },
+  "button-border-color-toolbar-selected":
+    "var(--button-border-color-ghost-active)",
   "button-border-radius": "var(--border-radius-medium)",
   "button-font-size": "var(--font-size-root)",
   "button-font-size-small": "var(--font-size-small)",
@@ -3209,6 +3321,31 @@ export const variableLookupTable = {
   "button-text-color-primary-selected":
     "var(--button-text-color-primary-active)",
   "button-text-color-selected": "var(--button-text-color-active)",
+  "button-text-color-toolbar": {
+    default: "inherit",
+    brand: {
+      prefersContrast: "var(--button-text-color)",
+      forcedColors: "var(--button-text-color)",
+    },
+  },
+  "button-text-color-toolbar-active": {
+    default: "inherit",
+    prefersContrast: "var(--button-text-color-active)",
+    forcedColors: "var(--button-text-color-active)",
+  },
+  "button-text-color-toolbar-disabled": {
+    default: "inherit",
+    brand: {
+      prefersContrast: "var(--button-text-color-disabled)",
+      forcedColors: "var(--button-text-color-disabled)",
+    },
+  },
+  "button-text-color-toolbar-hover": {
+    default: "inherit",
+    prefersContrast: "var(--button-text-color-hover)",
+    forcedColors: "var(--button-text-color-hover)",
+  },
+  "button-text-color-toolbar-selected": "var(--button-text-color-ghost-active)",
   "button-attention-dot-color": "var(--color-accent-attention)",
   "card-background-color": "var(--background-color-box)",
   "card-border": "var(--card-border-width) solid var(--card-border-color)",

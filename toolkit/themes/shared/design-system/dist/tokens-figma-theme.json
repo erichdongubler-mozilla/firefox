@@ -307,6 +307,21 @@
     "dark": "{Theme$button/background/color/active}",
     "forcedColors": "{Theme$button/background/color/active}"
   },
+  "button/background/color/toolbar": {
+    "light": "transparent",
+    "dark": "transparent",
+    "forcedColors": "transparent"
+  },
+  "button/background/color/toolbar/disabled": {
+    "light": "{Theme$button/background/color/ghost}",
+    "dark": "{Theme$button/background/color/ghost}",
+    "forcedColors": "{Theme$button/background/color/ghost}"
+  },
+  "button/background/color/toolbar/selected": {
+    "light": "{Theme$button/background/color/ghost/active}",
+    "dark": "{Theme$button/background/color/ghost/active}",
+    "forcedColors": "{Theme$button/background/color/ghost/active}"
+  },
   "button/border": {
     "light": "{Primitives$border/width} solid {Theme$button/border/color}",
     "dark": "{Primitives$border/width} solid {Theme$button/border/color}",
@@ -411,6 +426,31 @@
     "light": "{Theme$button/border/color/active}",
     "dark": "{Theme$button/border/color/active}",
     "forcedColors": "{Theme$button/border/color/active}"
+  },
+  "button/border/color/toolbar": {
+    "light": "{Theme$button/border/color}",
+    "dark": "{Theme$button/border/color}",
+    "forcedColors": "{Theme$button/border/color}"
+  },
+  "button/border/color/toolbar/active": {
+    "light": "{Theme$button/border/color/active}",
+    "dark": "{Theme$button/border/color/active}",
+    "forcedColors": "{Theme$button/border/color/active}"
+  },
+  "button/border/color/toolbar/disabled": {
+    "light": "{Theme$button/border/color/disabled}",
+    "dark": "{Theme$button/border/color/disabled}",
+    "forcedColors": "{Theme$button/border/color/disabled}"
+  },
+  "button/border/color/toolbar/hover": {
+    "light": "{Theme$button/border/color/hover}",
+    "dark": "{Theme$button/border/color/hover}",
+    "forcedColors": "{Theme$button/border/color/hover}"
+  },
+  "button/border/color/toolbar/selected": {
+    "light": "{Theme$button/border/color/ghost/active}",
+    "dark": "{Theme$button/border/color/ghost/active}",
+    "forcedColors": "{Theme$button/border/color/ghost/active}"
   },
   "button/icon/fill": "currentColor",
   "button/icon/stroke": "{Theme$button/icon/fill}",
@@ -538,6 +578,31 @@
     "light": "{Theme$button/text/color/active}",
     "dark": "{Theme$button/text/color/active}",
     "forcedColors": "{Theme$button/text/color/active}"
+  },
+  "button/text/color/toolbar": {
+    "light": "inherit",
+    "dark": "inherit",
+    "forcedColors": "inherit"
+  },
+  "button/text/color/toolbar/active": {
+    "light": "inherit",
+    "dark": "inherit",
+    "forcedColors": "{Theme$button/text/color/active}"
+  },
+  "button/text/color/toolbar/disabled": {
+    "light": "inherit",
+    "dark": "inherit",
+    "forcedColors": "inherit"
+  },
+  "button/text/color/toolbar/hover": {
+    "light": "inherit",
+    "dark": "inherit",
+    "forcedColors": "{Theme$button/text/color/hover}"
+  },
+  "button/text/color/toolbar/selected": {
+    "light": "{Theme$button/text/color/ghost/active}",
+    "dark": "{Theme$button/text/color/ghost/active}",
+    "forcedColors": "{Theme$button/text/color/ghost/active}"
   },
   "button/attention/dot/color": {
     "light": "{Theme$color/accent/attention}",
