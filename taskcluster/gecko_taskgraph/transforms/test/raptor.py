@@ -667,7 +667,10 @@ def add_simpleperf(config, tests):
                 "linux64-samply",
             ]
             by_app = fetches.setdefault("toolchain", {}).setdefault("by-app", {})
-            by_app.setdefault("default", []).extend(toolchains)
+            default_toolchains = by_app.setdefault("default", [])
+            for toolchain in toolchains:
+                if toolchain not in default_toolchains:
+                    default_toolchains.append(toolchain)
         yield test
 
 
