@@ -88,6 +88,7 @@ add_task(async function test_createShareableLink() {
         url: server.mockResponse.url,
         isSchemaValid: true,
         isSignedIn: true,
+        loadingPromise: null,
       },
       true
     );
