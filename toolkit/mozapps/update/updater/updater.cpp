@@ -2510,7 +2510,7 @@ static bool WriteToFile(const NS_tchar* aFilename, const char* aStatus) {
   }
 #endif
 
-  AutoFile statusFile(CreateAndOpenFile(statusFilePath, true));
+  AutoFile statusFile(NS_tfopen(statusFilePath, NS_T("wb+")));
   if (statusFile == nullptr) {
     LOG(("WriteToFile failed to open status file: %d", errno));
     return false;
@@ -3303,8 +3303,6 @@ bool ShouldRunSilently(int argc, NS_tchar** argv) {
 }
 
 int NS_main(int argc, NS_tchar** argv) {
-  LogToOS(NS_T("Updater started"));
-
   // We may need to tweak our argument list when we launch the Second Updater
   // Invocation (SUI), so we are going to make a copy of our arguments to
   // modify.
@@ -3341,7 +3339,6 @@ int NS_main(int argc, NS_tchar** argv) {
 
 #ifdef XP_MACOSX
   if (argc > 2 && NS_tstrcmp(argv[1], NS_T("--openAppBundle")) == 0) {
-    LogToOS(NS_T("Opening App Bundle"));
     // We have been asked to open a .app bundle. The path to the .app bundle and
     // any command line arguments have been passed to us as arguments after
     // "--openAppBundle", so remove the first two arguments and launch the .app
@@ -3401,7 +3398,6 @@ int NS_main(int argc, NS_tchar** argv) {
 
 #ifdef XP_MACOSX
   if (isElevated) {
-    LogToOS(NS_T("Updater is elevated"));
     if (!ObtainUpdaterArguments(&argc, &argv, &gMARStrings)) {
       // Won't actually get here because ObtainUpdaterArguments will terminate
       // the current process on failure.
