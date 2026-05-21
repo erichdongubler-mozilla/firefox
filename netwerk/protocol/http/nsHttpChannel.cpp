@@ -5138,6 +5138,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
         cachedEncoding.LowerCaseFindASCII("dcz") != -1) {
       LOG(("Dooming stale cache entry with dcb/dcz Content-Encoding [%s]\n",
            mSpec.get()));
+      glean::http::stale_dcb_dcz_cache_entries_purged.Add(1);
       entry->AsyncDoom(nullptr);
       *aResult = ENTRY_NOT_WANTED;
       return NS_OK;
