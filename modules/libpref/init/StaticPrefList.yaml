@@ -4103,6 +4103,22 @@
   value: false
   mirror: always
 
+#ifdef NIGHTLY_BUILD
+# When true, Promise::MaybeResolve routes through JS::SafeResolve, which
+# implements the thenable-curtailment proposal's MaybeDeferredPromiseResolve.
+# In brief: when resolving with a thenable would synchronously run user code,
+# the steps that do so are deferred to a microtask, but the promise can no
+# longer be resolved by anyone else.
+#
+# This is experimental. For more details see
+# - https://github.com/whatwg/webidl/issues/1584
+# - https://github.com/tc39/proposal-thenable-curtailment
+- name: dom.promise.experimental_safe_resolve
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+#endif  // NIGHTLY_BUILD
+
 # This currently only affects XHTML. For XUL the cache is always allowed.
 - name: dom.prototype_document_cache.enabled
   type: bool
