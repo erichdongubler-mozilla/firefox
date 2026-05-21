@@ -584,6 +584,36 @@
     "dark": "{Theme$border/color/interactive}",
     "forcedColors": "{Theme$border/color/interactive}"
   },
+  "input/text/background/color/disabled": {
+    "light": "{Theme$button/background/color/disabled}",
+    "dark": "{Theme$button/background/color/disabled}",
+    "forcedColors": "{Theme$button/background/color/disabled}"
+  },
+  "input/text/border": {
+    "light": "{Primitives$border/width} solid {Theme$input/text/border/color}",
+    "dark": "{Primitives$border/width} solid {Theme$input/text/border/color}",
+    "forcedColors": "{Primitives$border/width} solid {Theme$input/text/border/color}"
+  },
+  "input/text/border/color": {
+    "light": "{Theme$border/color}",
+    "dark": "{Theme$border/color}",
+    "forcedColors": "{Theme$border/color}"
+  },
+  "input/text/border/color/disabled": {
+    "light": "{Theme$border/color/interactive/disabled}",
+    "dark": "{Theme$border/color/interactive/disabled}",
+    "forcedColors": "{Theme$border/color/interactive/disabled}"
+  },
+  "input/text/color/disabled": {
+    "light": "{Primitives$input/text/color}",
+    "dark": "{Primitives$input/text/color}",
+    "forcedColors": "{HCM Theme$GrayText}"
+  },
+  "input/text/opacity/disabled": {
+    "light": "{Theme$button/opacity/disabled}",
+    "dark": "{Theme$button/opacity/disabled}",
+    "forcedColors": "{Theme$button/opacity/disabled}"
+  },
   "link/color": {
     "light": "{Theme$color/accent/primary}",
     "dark": "{Theme$color/accent/primary}",

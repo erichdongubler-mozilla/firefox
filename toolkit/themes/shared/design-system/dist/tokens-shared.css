@@ -348,7 +348,21 @@
 
     /** input **/
     --input-border-color: var(--border-color-interactive);
+    --input-folder-gap: var(--space-medium);
+    --input-height: var(--size-item-small);
+    --input-swatch-size: var(--size-item-medium);
+    --input-text-background-color: Field;
+    --input-text-background-color-disabled: var(--button-background-color-disabled);
+    --input-text-border: var(--border-width) solid var(--input-text-border-color);
+    --input-text-border-color: var(--border-color);
+    --input-text-border-color-disabled: var(--border-color-interactive-disabled);
+    --input-text-border-radius: var(--border-radius-medium);
+    --input-text-color: FieldText;
+    --input-text-color-disabled: var(--input-text-color);
+    --input-text-icon-size: var(--icon-size-xsmall);
     --input-text-min-height: var(--button-min-height);
+    --input-text-opacity-disabled: var(--button-opacity-disabled);
+    --input-width: var(--size-item-small);
 
     /** link **/
     /**
@@ -613,6 +627,9 @@
 
       /** focus-outline **/
       --focus-outline-color: var(--text-color);
+
+      /** input **/
+      --input-text-color-disabled: GrayText;
 
       /** link **/
       --link-color: LinkText;
