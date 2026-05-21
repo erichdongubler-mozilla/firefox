@@ -476,6 +476,16 @@ void DocManager::RemoveListeners(Document* aDocument) {
 
 DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
                                                      bool aAllowStatic) {
+  // In PDF-only mode, the service exists purely to build the accessibility
+  // tree for a document being printed. Only the print path
+  // (NotifyOfPrintDocument) passes aAllowStatic=true; everything else
+  // (DOM load notifications, GetDocAccessible, etc.) defaults to false.
+  // Suppress those other cases here so unrelated documents loaded while a
+  // tagged PDF is being generated don't get DocAccessibles.
+  if (!aAllowStatic && nsAccessibilityService::IsOnlyForPdfOutput()) {
+    return nullptr;
+  }
+
   // Ignore hidden documents, resource documents, static clone
   // (printing) documents and documents without a docshell.
   if (!nsCoreUtils::IsDocumentVisibleConsideringInProcessAncestors(aDocument) ||
@@ -532,9 +542,16 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
     // XXXaaronl: ideally we would traverse the presshell chain. Since there's
     // no easy way to do that, we cheat and use the document hierarchy.
     parentDocAcc = GetDocAccessible(aDocument->GetInProcessParentDocument());
-    // We should always get parentDocAcc except sometimes for background
-    // extension pages, where the parent has an invisible DocShell but the child
-    // does not. See bug 1888649.
+    // We should always get parentDocAcc except:
+    // 1. Sometimes for background extension pages, where the parent has an
+    // invisible DocShell but the child does not. See bug 1888649. In this case,
+    // we should return null.
+    // 2. When this is a printing document and the accessibility service is in
+    // PDF output only mode. In this case, we should still return the document,
+    // just without a parent.
+    const bool shouldAllowNoParent =
+        aAllowStatic && XRE_IsParentProcess() &&
+        nsAccessibilityService::IsOnlyForPdfOutput();
     NS_ASSERTION(
         parentDocAcc ||
             (BasePrincipal::Cast(aDocument->GetPrincipal())->AddonPolicy() &&
@@ -542,9 +559,12 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
              aDocument->GetInProcessParentDocument()->GetDocShell() &&
              aDocument->GetInProcessParentDocument()
                  ->GetDocShell()
-                 ->IsInvisible()),
+                 ->IsInvisible()) ||
+            shouldAllowNoParent,
         "Can't create an accessible for the document!");
-    if (!parentDocAcc) return nullptr;
+    if (!parentDocAcc && !shouldAllowNoParent) {
+      return nullptr;
+    }
   }
 
   // We only create root accessibles for the true root, otherwise create a
@@ -575,7 +595,7 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
     docAcc->FireDelayedEvent(nsIAccessibleEvent::EVENT_REORDER,
                              ApplicationAcc());
 
-  } else {
+  } else if (parentDocAcc) {
     parentDocAcc->BindChildDocument(docAcc);
   }
 
