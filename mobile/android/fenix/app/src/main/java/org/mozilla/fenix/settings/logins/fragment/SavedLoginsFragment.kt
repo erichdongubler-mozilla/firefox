@@ -22,6 +22,7 @@ import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.settings.logins.ImportPasswordsDialogFragment
 import org.mozilla.fenix.settings.logins.ui.DefaultSavedLoginsStorage
 import org.mozilla.fenix.settings.logins.ui.LoginsMiddleware
 import org.mozilla.fenix.settings.logins.ui.LoginsSortOrder
@@ -51,6 +52,7 @@ class SavedLoginsFragment : SecureFragment(), SystemInsetsPaddedFragment {
 
             val store by fragmentStore(
                 LoginsState.default.copy(
+                    showPasswordsImport = requireContext().settings().importPasswordsFeatureFlagEnabled,
                     sortOrder = LoginsSortOrder.fromString(
                         value = requireContext().settings().loginsListSortOrder,
                         default = LoginsSortOrder.Alphabetical,
@@ -73,6 +75,12 @@ class SavedLoginsFragment : SecureFragment(), SystemInsetsPaddedFragment {
                                 DefaultSavedLoginsStorage(
                                     requireContext().settings(),
                                 ).savedLoginsSortOrder = sortOrder
+                            },
+                            navigateToImportDialog = {
+                                ImportPasswordsDialogFragment().show(
+                                    childFragmentManager,
+                                    ImportPasswordsDialogFragment.TAG,
+                                )
                             },
                             openTab = { url, openInNewTab ->
                                 findNavController().openToBrowser()
