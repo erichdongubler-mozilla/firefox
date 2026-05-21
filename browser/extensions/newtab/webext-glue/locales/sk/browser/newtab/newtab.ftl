@@ -58,7 +58,7 @@ newtab-search-box-input =
 
 ## Clear text button for the URL and image URL input fields in the Top Sites form.
 
-newtab-topsites-add-search-engine-header = Pridať vyhľadávací modul
+newtab-topsites-add-search-engine-header = Pridať vyhľadávač
 newtab-topsites-add-shortcut-header = Nová skratka
 newtab-topsites-edit-topsites-header = Upraviť top stránku
 newtab-topsites-edit-shortcut-header = Upraviť skratku
@@ -229,7 +229,7 @@ newtab-section-menu-expand-section = Rozbaliť sekciu
 newtab-section-menu-manage-section = Spravovať sekciu
 newtab-section-menu-manage-webext = Spravovať rozšírenie
 newtab-section-menu-add-topsite = Pridať top stránku
-newtab-section-menu-add-search-engine = Pridať vyhľadávací modul
+newtab-section-menu-add-search-engine = Pridať vyhľadávač
 newtab-section-menu-move-up = Posunúť vyššie
 newtab-section-menu-move-down = Posunúť nižšie
 newtab-section-menu-privacy-notice = Vyhlásenie o ochrane osobných údajov
@@ -788,6 +788,15 @@ newtab-widget-lists-name-placeholder-new =
 newtab-widget-section-title = Miniaplikácie
 newtab-widget-menu-hide = Skryť miniaplikáciu
 newtab-widget-menu-change-size = Zmeniť veľkosť
+# Parent label for a submenu in the widget menu that reorders the widget
+# among its siblings. "Left" and "Right" appear as items inside this submenu.
+newtab-widget-menu-move = Presunúť
+# Submenu item under "Move"; moves the widget one position to the left.
+# RTL locales should translate this as "Right".
+newtab-widget-menu-move-left = Doľava
+# Submenu item under "Move"; moves the widget one position to the right.
+# RTL locales should translate this as "Left".
+newtab-widget-menu-move-right = Doprava
 newtab-widget-size-small = Malá
 newtab-widget-size-medium = Stredná
 newtab-widget-size-large = Veľká
@@ -804,6 +813,9 @@ newtab-widget-section-minimize =
 newtab-widget-section-menu-button =
     .title = Ponuka Miniaplikácie
     .aria-label = Otvorí ponuku Miniaplikácie
+newtab-widget-add-widgets-button =
+    .aria-label = Pridať miniaplikáciu
+    .title = Pridať miniaplikáciu
 newtab-widget-section-menu-manage = Spravovať miniaplikácie
 newtab-widget-section-menu-hide-all = Skryť miniaplikácie
 newtab-widget-section-menu-learn-more = Ďalšie informácie
@@ -900,6 +912,7 @@ newtab-widget-timer-celebration-message-break = Pripravení sústrediť sa?
 ## Sports widget
 
 newtab-sports-widget-menu-follow-teams = Sledovať tímy
+newtab-sports-widget-menu-view-schedule = Zobraziť rozpis zápasov
 newtab-sports-widget-menu-view-upcoming = Zobraziť nadchádzajúce
 newtab-sports-widget-menu-view-results = Zobraziť výsledky
 # Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
@@ -912,6 +925,8 @@ newtab-sports-widget-view-schedule =
     .label = Zobraziť rozpis zápasov
 newtab-sports-widget-follow-teams =
     .label = Sledovať tímy
+newtab-sports-widget-view-matches =
+    .label = Zobraziť zápasy
 # Variables:
 #   $number (number) - Maximum number of teams a user can choose to follow in the team selection state
 newtab-sports-widget-follow-teams-title =
@@ -928,6 +943,8 @@ newtab-sports-widget-search-country =
     .placeholder = Hľadať krajinu
     .aria-label = Hľadať krajinu
 newtab-sports-widget-cancel = Zrušiť
+newtab-sports-widget-back-button =
+    .aria-label = Naspäť
 newtab-sports-widget-done-button =
     .label = Hotovo
 newtab-sports-widget-group-stage = Skupinová fáza
@@ -942,6 +959,8 @@ newtab-custom-widget-live-refresh =
 # Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
 newtab-sports-widget-key-dates = Kľúčové dátumy
 newtab-sports-widget-upcoming = Nadchádzajúce
+# Used for a match currently ongoing
+newtab-sports-widget-now = Teraz
 newtab-sports-widget-results = Výsledky
 newtab-sports-widget-semi-finals = Semifinále
 newtab-sports-widget-bronze-finals = O tretie miesto
@@ -1036,6 +1055,10 @@ newtab-clock-widget-edit-clock-form =
 # It means "results of the search", not "search within the results".
 newtab-clock-widget-search-results =
     .aria-label = Výsledky vyhľadávania
+# Shown in place of the search results when the user's query does not match any
+# supported city — e.g. typing a misspelled name or a place not in the IANA
+# time zone list.
+newtab-clock-widget-search-no-results = Nenájdené
 # "Open menu for clock" is an icon-only button in the widget toolbar — the
 # attributes are consumed as tooltip/screen-reader label only. The button
 # never renders visible text.

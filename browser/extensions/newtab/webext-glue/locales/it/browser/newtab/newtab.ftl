@@ -861,7 +861,7 @@ newtab-promo-card-title-addons = Rendi { -brand-product-name } davvero tuo
 newtab-promo-card-body-addons = Scegli uno sfondo dalla nostra raccolta oppure creane uno tuo.
 newtab-promo-card-cta-addons = Provalo ora
 newtab-promo-card-title = Sostieni { -brand-product-name }
-newtab-promo-card-body = Gli sponsor sostengono la nostra missione di costruire un Web migliore
+newtab-promo-card-body = Gli sponsor sostengono la nostra missione per un Web migliore
 newtab-promo-card-cta = Ulteriori informazioni
 newtab-promo-card-dismiss-button =
     .title = Chiudi
@@ -909,7 +909,7 @@ newtab-widget-timer-celebration-message-focus = Hai bisogno di una pausa?
 # Message shown inside the Timer widget after a break session ends.
 newtab-widget-timer-celebration-message-break = Sei pronto a concentrarti?
 
-## Sports widget
+##
 
 newtab-sports-widget-menu-follow-teams = Segui squadre
 newtab-sports-widget-menu-view-schedule = Vedi il calendario
@@ -945,7 +945,52 @@ newtab-sports-widget-back-button =
     .aria-label = Indietro
 newtab-sports-widget-done-button =
     .label = Fatto
+newtab-sports-widget-view-all =
+    .label = Mostra tutto
+newtab-sports-widget-show-less =
+    .label = Nascondi dettagli
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch =
+    .label = Guarda
+    .title = Guarda online
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch-icon =
+    .aria-label = Guarda in diretta
+    .title = Guarda in diretta
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = Chiudi
+    .title = Chiudi
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = Gratuito
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = Prova gratuita
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = Gratuito e a pagamento
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = A pagamento
+# Note: provider only streams some matches, not the full tournament.
+newtab-sports-widget-watch-stream-select-games-only = Solo alcune partite
+# Heading for the list of streaming services available in the user’s country/region.
+newtab-sports-widget-watch-available-region = Disponibili nella tua regione
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = Altre regioni
+# Button that opens the provider’s stream page in a new tab.
+newtab-sports-widget-watch-play =
+    .aria-label = Apri diretta video
+    .title = Apri diretta video
 newtab-sports-widget-group-stage = Fase a gironi
+newtab-sports-widget-group-a = Gruppo A
+newtab-sports-widget-group-b = Gruppo B
+newtab-sports-widget-group-c = Gruppo C
+newtab-sports-widget-group-d = Gruppo D
+newtab-sports-widget-group-e = Gruppo E
+newtab-sports-widget-group-f = Gruppo F
+newtab-sports-widget-group-g = Gruppo G
+newtab-sports-widget-group-h = Gruppo H
+newtab-sports-widget-group-i = Gruppo I
+newtab-sports-widget-group-j = Gruppo J
+newtab-sports-widget-group-k = Gruppo K
+newtab-sports-widget-group-l = Gruppo L
 newtab-sports-widget-round-32 = Sedicesimi di finale
 newtab-sports-widget-round-16 = Ottavi di finale
 newtab-sports-widget-quarter-finals = Quarti di finale
@@ -972,9 +1017,9 @@ newtab-sports-widget-key-date-range = { DATETIME($start, month: "short", day: "n
 #   $date (Date) - Date of a single tournament event
 newtab-sports-widget-key-date = { DATETIME($date, month: "short", day: "numeric") }
 newtab-sports-widget-delayed = In ritardo
-newtab-sports-widget-postponed = Rinviato
-newtab-sports-widget-suspended = Sospeso
-newtab-sports-widget-cancelled = Annullato
+newtab-sports-widget-postponed = Rinviata
+newtab-sports-widget-suspended = Sospesa
+newtab-sports-widget-cancelled = Annullata
 newtab-sports-widget-information = Informazioni sulla partita
 newtab-sports-widget-no-live-data = Al momento i dati delle partite in diretta non si stanno aggiornando
 newtab-sports-widget-view-results-link = Visualizza risultati
@@ -983,6 +1028,71 @@ newtab-sports-widget-third-place = Terzo posto
 newtab-sports-widget-runner-up = Secondi classificati
 newtab-sports-widget-champions = Campioni
 newtab-sports-widget-world-cup-champions = Campioni della Coppa del Mondo 2026
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = Fine partita
+newtab-sports-widget-match-penalties = Rigori
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }, { $homeScore } contro { $awayTeam }, { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) contro { $awayTeam }, { $awayScore } ({ $awayPenalty })
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = In diretta: { $homeTeam }, { $homeScore } contro { $awayTeam }, { $awayScore }
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } contro { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } contro { $awayTeam }, in ritardo
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } contro { $awayTeam }, posticipata
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } contro { $awayTeam }, sospesa
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } contro { $awayTeam }, annullata
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = Bosnia ed Erzegovina
+newtab-sports-widget-team-name-label-civ =
+    .label = Costa d’Avorio
+newtab-sports-widget-team-name-label-cod =
+    .label = RD Congo
+newtab-sports-widget-team-name-label-eng =
+    .label = Inghilterra
+newtab-sports-widget-team-name-label-sco =
+    .label = Scozia
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1053,6 +1163,10 @@ newtab-clock-widget-edit-clock-form =
 # It means "results of the search", not "search within the results".
 newtab-clock-widget-search-results =
     .aria-label = Risultati della ricerca
+# Shown in place of the search results when the user's query does not match any
+# supported city — e.g. typing a misspelled name or a place not in the IANA
+# time zone list.
+newtab-clock-widget-search-no-results = Nessuna corrispondenza
 # "Open menu for clock" is an icon-only button in the widget toolbar — the
 # attributes are consumed as tooltip/screen-reader label only. The button
 # never renders visible text.
@@ -1061,4 +1175,3 @@ newtab-clock-widget-menu-button =
     .aria-label = Apri il menu per l’orologio
 # $nickname (String) - The user-defined nickname for a saved clock location (e.g., "Home", "Office").
 newtab-clock-widget-label-nickname-with-value = Nome: { $nickname }
-

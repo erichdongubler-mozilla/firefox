@@ -486,7 +486,7 @@ newtab-wallpaper-category-title-firefox = { -brand-product-name }
 # “Celestial” referring to astronomy; positioned in or relating to the sky,
 # or outer space as observed in astronomy.
 # Not to be confused with religious definition of the word.
-newtab-wallpaper-category-title-celestial = Небесный
+newtab-wallpaper-category-title-celestial = Космос
 newtab-wallpaper-celestial-lunar-eclipse = Лунное затмение
 newtab-wallpaper-celestial-earth-night = Ночное фото с низкой околоземной орбиты
 newtab-wallpaper-celestial-starry-sky = Звёздное небо
@@ -833,7 +833,7 @@ newtab-widget-timer-mode-focus =
 newtab-widget-timer-mode-break =
     .label = Перерыв
 newtab-widget-timer-label-play =
-    .label = Воспроизвести
+    .label = Запустить
 newtab-widget-timer-label-pause =
     .label = Приостановить
 newtab-widget-timer-reset =
@@ -1052,6 +1052,10 @@ newtab-clock-widget-edit-clock-form =
 # It means "results of the search", not "search within the results".
 newtab-clock-widget-search-results =
     .aria-label = Результаты поиска
+# Shown in place of the search results when the user's query does not match any
+# supported city — e.g. typing a misspelled name or a place not in the IANA
+# time zone list.
+newtab-clock-widget-search-no-results = Нет совпадений
 # "Open menu for clock" is an icon-only button in the widget toolbar — the
 # attributes are consumed as tooltip/screen-reader label only. The button
 # never renders visible text.
