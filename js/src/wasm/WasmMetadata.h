@@ -168,6 +168,10 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   // functionality, using special opcodes. Otherwise, it has the same rules
   // as wasm modules and so it does not get a new ModuleKind.
   bool isBuiltinModule() const { return features().isBuiltinModule; }
+  // All builtin modules are self-hosted, but not all self-hosted modules are
+  // builtin modules. JS-PI and WebAssembly.Function also produce self-hosted
+  // modules without the builtin module flag.
+  bool isSelfHostedModule() const { return scriptedCaller().isSelfHosted(); }
 
 #define WASM_FEATURE(NAME, SHORT_NAME, ...) \
   bool SHORT_NAME##Enabled() const { return features().SHORT_NAME; }

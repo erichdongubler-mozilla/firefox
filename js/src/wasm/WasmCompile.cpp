@@ -58,7 +58,8 @@ ScriptedCaller ScriptedCaller::selfHosted(JSContext* cx) {
   if (!selfHosted) {
     oomUnsafe.crash("ScriptedCaller::selfHosted");
   }
-  return ScriptedCaller(std::move(selfHosted), false, 0);
+  return ScriptedCaller(std::move(selfHosted), ScriptedCallerKind::SelfHosted,
+                        0);
 }
 
 uint32_t wasm::ObservedCPUFeatures() {

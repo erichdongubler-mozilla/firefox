@@ -470,7 +470,7 @@ bool WasmFrameIter::hasSourceInfo() const {
 const char* WasmFrameIter::filename() const {
   MOZ_ASSERT(!done());
   MOZ_ASSERT(hasSourceInfo());
-  return code_->codeMeta().scriptedCaller().filename.get();
+  return code_->codeMeta().scriptedCaller().source.get();
 }
 
 const char16_t* WasmFrameIter::displayURL() const {

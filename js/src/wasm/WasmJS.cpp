@@ -398,9 +398,9 @@ static bool DescribeScriptedCaller(JSContext* cx, ScriptedCaller* caller,
 
   JS::AutoFilename af;
   if (JS::DescribeScriptedCaller(&af, cx, &caller->line)) {
-    caller->filename =
+    caller->source =
         FormatIntroducedFilename(af.get(), caller->line, introducer);
-    if (!caller->filename) {
+    if (!caller->source) {
       ReportOutOfMemory(cx);
       return false;
     }
@@ -413,7 +413,7 @@ static bool CreateCompileError(JSContext* cx, const ScriptedCaller& caller,
                                HandleObject stack, const char* error,
                                MutableHandleObject errorObj) {
   RootedString fileName(cx);
-  if (const char* fn = caller.filename.get()) {
+  if (const char* fn = caller.source.get()) {
     fileName = JS_NewStringCopyUTF8N(cx, JS::UTF8Chars(fn, strlen(fn)));
   } else {
     fileName = JS_GetEmptyString(cx);
@@ -617,11 +617,11 @@ bool js::wasm::CompileForESM(JSContext* cx,
   //         as module.
   ScriptedCaller scriptedCaller;
   if (options.filename()) {
-    scriptedCaller.filename = DuplicateString(cx, options.filename().c_str());
-    if (!scriptedCaller.filename) {
+    scriptedCaller.source = DuplicateString(cx, options.filename().c_str());
+    if (!scriptedCaller.source) {
       return false;
     }
-    scriptedCaller.filenameIsURL = true;
+    scriptedCaller.kind = ScriptedCallerKind::Url;
   }
   SharedCompileArgs compileArgs = CompileArgs::buildAndReport(
       cx, std::move(scriptedCaller), featureOptions, /* reportOOM */ true);
@@ -5107,8 +5107,8 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
 
   void noteResponseURLs(const char* url, const char* sourceMapUrl) override {
     if (url) {
-      compileArgs_->scriptedCaller.filename = DuplicateString(url);
-      compileArgs_->scriptedCaller.filenameIsURL = true;
+      compileArgs_->scriptedCaller.source = DuplicateString(url);
+      compileArgs_->scriptedCaller.kind = ScriptedCallerKind::Url;
     }
     if (sourceMapUrl) {
       compileArgs_->sourceMapURL = DuplicateString(sourceMapUrl);
