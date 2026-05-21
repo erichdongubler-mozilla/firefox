@@ -206,6 +206,8 @@ class AppLinksPromptFragment : RedirectDialogFragment() {
     }
 }
 
+private const val WWW_PREFIX = "www."
+
 private data class AppLinkRedirectConfig(
     val appName: String,
     val title: String,
@@ -228,7 +230,8 @@ private fun AppLinkRedirectBottomSheetContent(
     var isCheckboxChecked by remember { mutableStateOf(false) }
 
     val sourceDomain = if (config.sourceUrl.isNotEmpty()) {
-        config.sourceUrl.toUri().host ?: ""
+        // Strip "www." per design. Other prefixes are kept as they carry meaningful context.
+        config.sourceUrl.toUri().host?.removePrefix(WWW_PREFIX) ?: ""
     } else {
         ""
     }
@@ -521,11 +524,13 @@ private fun AppHeader(
                 style = FirefoxTheme.typography.headline7,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Text(
-                text = url,
-                style = FirefoxTheme.typography.caption,
-                color = MaterialTheme.colorScheme.secondary,
-            )
+            if (url.isNotEmpty()) {
+                Text(
+                    text = stringResource(AppLinksR.string.mozac_feature_applinks_link_from, url),
+                    style = FirefoxTheme.typography.caption,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
         }
     }
 }

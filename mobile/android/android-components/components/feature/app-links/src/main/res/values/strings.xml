@@ -40,4 +40,6 @@
     <string name="mozac_feature_applinks_unique_identifier">Unique identifier</string>
     <!-- The text shown when there is no Firefox URL -->
     <string name="mozac_feature_applinks_none">None</string>
+    <!-- The subtitle showing where the link was navigated from. %s is the domain. -->
+    <string name="mozac_feature_applinks_link_from">Link from %s</string>
 </resources>
