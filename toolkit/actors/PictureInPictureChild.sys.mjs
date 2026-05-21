@@ -1000,10 +1000,13 @@ export class PictureInPictureToggleChild extends JSWindowActorChild {
       return;
     }
 
+    // We don't listen for visibilityState = "visible" because we set the pip
+    // browser.docShellIsActive = true after auto pip-ing so we will never get
+    // a visibilityState change when switching back to the tab. Instead,
+    // PictureInPicture listens for TabSelect events and unpips the video if
+    // the video was auto pip'd
     if (this.document.visibilityState == "hidden") {
       this.sendAsyncMessage("PictureInPicture:VideoTabHidden");
-    } else if (this.document.visibilityState == "visible") {
-      this.sendAsyncMessage("PictureInPicture:VideoTabShown");
     }
   }
 

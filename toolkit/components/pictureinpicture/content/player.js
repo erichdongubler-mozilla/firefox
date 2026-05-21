@@ -78,7 +78,7 @@ const BOTTOM_RIGHT_QUADRANT = 4;
  *    is being created for
  */
 function setupPlayer(id, wgp, videoRef, autoFocus) {
-  Player.init(id, wgp, videoRef, autoFocus);
+  return Player.init(id, wgp, videoRef, autoFocus);
 }
 
 /**
@@ -380,6 +380,8 @@ let Player = {
     }
 
     this._isInitialized = true;
+
+    return this.actor;
   },
 
   uninit() {

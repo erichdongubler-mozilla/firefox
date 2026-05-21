@@ -128,22 +128,6 @@ export class PictureInPictureToggleParent extends JSWindowActorParent {
         actor.sendAsyncMessage("PictureInPicture:AutoToggle");
         break;
       }
-      case "PictureInPicture:VideoTabShown": {
-        if (!lazy.PIP_ENABLED || !lazy.PIP_WHEN_SWITCHING_TABS) {
-          break;
-        }
-        if (browser.documentGlobal.gBrowser.selectedBrowser != browser) {
-          break;
-        }
-        for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
-          let originatingBrowser = PictureInPicture.weakWinToBrowser.get(win);
-          if (browser == originatingBrowser) {
-            win.closeFromForeground();
-            break;
-          }
-        }
-        break;
-      }
     }
   }
 }
@@ -251,6 +235,9 @@ export var PictureInPicture = {
   currentPlayerCount: 0,
   maxConcurrentPlayerCount: 0,
 
+  // Maps auto pip browser to PictureInPictureParent actor
+  weakAutoPipBrowserToParent: new WeakMap(),
+
   /**
    * Returns the player window if one exists and if it hasn't yet been closed.
    *
@@ -305,6 +292,7 @@ export var PictureInPicture = {
         break;
       }
       case "TabSelect": {
+        this.unpipAutoPipBrowser(event);
         this.updatePlayingDurationHistograms();
         break;
       }
@@ -409,6 +397,24 @@ export var PictureInPicture = {
     }
   },
 
+  /**
+   * Because we set the docShellIsActive = true on pip browsers, we never get a
+   * visibilitychange when we switch back to the pip browser tab. Therefore we
+   * use the TabSelect event to detect when we switch back to a tab that was
+   * auto pip'd and close the pip window if so.
+   * Note: this is the function that closes auto pip and is the counterpart to
+   * VideoTabHidden
+   */
+  unpipAutoPipBrowser(event) {
+    let browser = event.target.linkedBrowser;
+    if (this.weakAutoPipBrowserToParent.has(browser)) {
+      this.closeSinglePipWindow({
+        reason: "Foregrounded",
+        actorRef: this.weakAutoPipBrowserToParent.get(browser),
+      });
+    }
+  },
+
   onPipSwappedBrowsers(event) {
     let otherTab = event.detail;
     if (otherTab) {
@@ -419,6 +425,15 @@ export var PictureInPicture = {
           this.removeOriginatingWinFromWeakMap(event.target.linkedBrowser);
           this.addPiPBrowserToWeakMap(otherTab.linkedBrowser);
           this.addOriginatingWinToWeakMap(otherTab.linkedBrowser);
+        }
+        if (this.weakAutoPipBrowserToParent.has(event.target.linkedBrowser)) {
+          // Add the new browser with the existing actor
+          this.weakAutoPipBrowserToParent.set(
+            otherTab.linkedBrowser,
+            this.weakAutoPipBrowserToParent.get(event.target.linkedBrowser)
+          );
+          // Delete the old browser
+          this.weakAutoPipBrowserToParent.delete(event.target.linkedBrowser);
         }
       }
       otherTab.addEventListener("TabSwapPictureInPicture", this);
@@ -844,6 +859,7 @@ export var PictureInPicture = {
       return;
     }
     this.removePiPBrowserFromWeakMap(this.weakWinToBrowser.get(win));
+    this.weakAutoPipBrowserToParent.delete(this.weakWinToBrowser.get(win));
 
     Glean.pictureinpicture["closedMethod" + reason].record();
     await this.closePipWindow(win);
@@ -896,12 +912,22 @@ export var PictureInPicture = {
     tab.addEventListener("TabSwapPictureInPicture", this);
 
     let pipId = gNextWindowID.toString();
-    win.setupPlayer(pipId, wgp, videoData.videoRef, videoData.autoFocus);
+    let actorRef = win.setupPlayer(
+      pipId,
+      wgp,
+      videoData.videoRef,
+      videoData.autoFocus
+    );
     gNextWindowID++;
 
     this.weakWinToBrowser.set(win, browser);
     this.addPiPBrowserToWeakMap(browser);
     this.addOriginatingWinToWeakMap(browser);
+    if (lazy.PIP_WHEN_SWITCHING_TABS && !browser.docShellIsActive) {
+      // The docshell would only not be active when the video was pip'd via auto toggle
+      browser.docShellIsActive = true;
+      this.weakAutoPipBrowserToParent.set(browser, actorRef);
+    }
 
     win.setScrubberPosition(videoData.scrubberPosition);
     win.setTimestamp(videoData.timestamp);
