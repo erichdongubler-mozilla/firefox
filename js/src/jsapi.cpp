@@ -3054,6 +3054,36 @@ JS_PUBLIC_API bool JS::RejectPromise(JSContext* cx, JS::HandleObject promiseObj,
   return ResolveOrRejectPromise(cx, promiseObj, rejectionValue, true);
 }
 
+#ifdef NIGHTLY_BUILD
+JS_PUBLIC_API bool JS::SafeResolve(JSContext* cx, JS::HandleObject promiseObj,
+                                   JS::HandleValue resolutionValue) {
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+  cx->check(promiseObj, resolutionValue);
+
+  // This is basically ResolveOrRejectPromise and could be extracted
+  // in the future.
+  mozilla::Maybe<AutoRealm> ar;
+  Rooted<PromiseObject*> promise(cx);
+  RootedValue resolution(cx, resolutionValue);
+  if (IsWrapper(promiseObj)) {
+    promise = promiseObj->maybeUnwrapAs<PromiseObject>();
+    if (!promise) {
+      ReportAccessDenied(cx);
+      return false;
+    }
+    ar.emplace(cx, promise);
+    if (!cx->compartment()->wrap(cx, &resolution)) {
+      return false;
+    }
+  } else {
+    promise = promiseObj.as<PromiseObject>();
+  }
+
+  return js::SafeResolvePromise(cx, promise, resolution);
+}
+#endif  // NIGHTLY_BUILD
+
 JS_PUBLIC_API JSObject* JS::CallOriginalPromiseThen(
     JSContext* cx, JS::HandleObject promiseObj, JS::HandleObject onFulfilled,
     JS::HandleObject onRejected) {
