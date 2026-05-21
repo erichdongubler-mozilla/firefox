@@ -19,8 +19,6 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = XPCOMUtils.declareLazy({
   AppProvidedConfigEngine:
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
-  ConfigSearchEngine:
-    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
@@ -267,7 +265,7 @@ class SearchUtils {
       let resultDomain = engine.searchUrlDomain;
       // For config engines, sanitize the data in a few special cases to make
       // analysis easier.
-      if (!(engine instanceof lazy.ConfigSearchEngine)) {
+      if (!engine.isConfigEngine) {
         scalarKey = "other";
       } else if (resultDomain.includes("amazon.")) {
         // Group all the localized Amazon sites together.

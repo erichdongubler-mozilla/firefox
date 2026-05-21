@@ -6,10 +6,6 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
-  AppProvidedConfigEngine:
-    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
-  ConfigSearchEngine:
-    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
@@ -567,7 +563,7 @@ export class SearchSettings {
           case lazy.SearchUtils.MODIFIED_TYPE.ICON_CHANGED:
             // Config Search Engines have their icons stored in Remote
             // Settings, so we don't need to update the saved settings.
-            if (!(subject.wrappedJSObject instanceof lazy.ConfigSearchEngine)) {
+            if (!subject.wrappedJSObject.isConfigEngine) {
               this._delayedWrite();
             }
             break;
@@ -630,7 +626,7 @@ export class SearchSettings {
       // users who backup/sync their profile in custom ways.
       if (
         currentDefaultEngine &&
-        (currentDefaultEngine instanceof lazy.AppProvidedConfigEngine ||
+        (currentDefaultEngine.isAppProvided ||
           lazy.SearchUtils.getVerificationHash(
             clonedSettings.metaData.current
           ) == clonedSettings.metaData[this.getHashName("current")])
@@ -646,7 +642,7 @@ export class SearchSettings {
 
       if (
         privateDefaultEngine &&
-        (privateDefaultEngine instanceof lazy.AppProvidedConfigEngine ||
+        (privateDefaultEngine.isAppProvided ||
           lazy.SearchUtils.getVerificationHash(
             clonedSettings.metaData.private
           ) == clonedSettings.metaData[this.getHashName("private")])

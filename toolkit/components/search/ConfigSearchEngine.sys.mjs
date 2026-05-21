@@ -540,6 +540,15 @@ export class ConfigSearchEngine extends SearchEngine {
   }
 
   /**
+   * @returns {boolean}
+   *   Whether this engine is a config search engine, i.e. it comes from
+   *   the search-config-v2.
+   */
+  get isConfigEngine() {
+    return true;
+  }
+
+  /**
    * Whether or not this engine is a "general" search engine, e.g. is it for
    * generally searching the web, or does it have a specific purpose like
    * shopping.
@@ -851,6 +860,17 @@ export class ConfigSearchEngine extends SearchEngine {
  * application based on the user's environment, rather than user-installed.
  */
 export class AppProvidedConfigEngine extends ConfigSearchEngine {
+  /**
+   * Whether or not this engine is provided by the application, e.g. it is
+   * in the list of configured search engines. Overrides the definition in
+   * `SearchEngine`.
+   *
+   * @returns {boolean}
+   */
+  get isAppProvided() {
+    return true;
+  }
+
   /**
    * Converts this engine into a UserInstalledConfigEngine.
    *

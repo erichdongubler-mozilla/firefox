@@ -50,8 +50,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/AboutNewTabResourceMapping.sys.mjs",
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
-  AppProvidedConfigEngine:
-    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   ASRouterPreferences:
     "resource:///modules/asrouter/ASRouterPreferences.sys.mjs",
   AttributionCode:
@@ -808,10 +806,7 @@ const TargetingGetters = {
 
           resolve({
             // Skip reporting the id for third party engines.
-            current:
-              defaultEngine instanceof lazy.AppProvidedConfigEngine
-                ? defaultEngine.id
-                : null,
+            current: defaultEngine.isAppProvided ? defaultEngine.id : null,
             // We don't need to filter the id here, as getAppProvidedEngines has
             // already done that for us.
             installed: engines.map(engine => engine.id),

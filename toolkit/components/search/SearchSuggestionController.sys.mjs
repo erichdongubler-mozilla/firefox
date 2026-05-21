@@ -9,8 +9,6 @@ const HTTP_OK = 200;
 const REMOTE_TIMEOUT_DEFAULT = 500;
 
 const lazy = XPCOMUtils.declareLazy({
-  ConfigSearchEngine:
-    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
@@ -427,10 +425,9 @@ export class SearchSuggestionController {
     // If the timer id has been reset, then we have already handled telemetry.
     // This might occur in the context of an abort or or cancel.
     if (context.gleanTimerId) {
-      let engineId =
-        context.engine instanceof lazy.ConfigSearchEngine
-          ? context.engine.id
-          : "other";
+      let engineId = context.engine.isConfigEngine
+        ? context.engine.id
+        : "other";
       // Stop the latency stopwatch.
       if (context.aborted) {
         Glean.searchSuggestions.latency[engineId].cancel(context.gleanTimerId);
@@ -557,9 +554,7 @@ export class SearchSuggestionController {
 
     context.gleanTimerId =
       Glean.searchSuggestions.latency[
-        context.engine instanceof lazy.ConfigSearchEngine
-          ? context.engine.id
-          : "other"
+        context.engine.isConfigEngine ? context.engine.id : "other"
       ].start();
 
     return deferredResponse.promise;

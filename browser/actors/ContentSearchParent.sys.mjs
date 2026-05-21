@@ -9,8 +9,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserSearchTelemetry:
     "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
-  ConfigSearchEngine:
-    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   DEFAULT_FORM_HISTORY_PARAM:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
@@ -360,7 +358,7 @@ export let ContentSearch = {
         name: engine.name,
         iconData: await this._getEngineIconURL(engine),
         hidden: engine.hideOneOffButton,
-        isConfigEngine: engine instanceof lazy.ConfigSearchEngine,
+        isConfigEngine: engine.isConfigEngine,
       });
     }
 
@@ -642,7 +640,7 @@ export let ContentSearch = {
     return {
       name: engine.name,
       iconData: await this._getEngineIconURL(engine),
-      isConfigEngine: engine instanceof lazy.ConfigSearchEngine,
+      isConfigEngine: engine.isConfigEngine,
     };
   },
 

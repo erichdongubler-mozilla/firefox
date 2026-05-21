@@ -11,11 +11,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  AppProvidedConfigEngine:
-    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
-  ConfigSearchEngine:
-    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   OpenSearchManager:
     "moz-src:///browser/components/search/OpenSearchManager.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -162,11 +158,7 @@ export class SearchModeSwitcher {
       let engine = lazy.UrlbarSearchUtils.getEngineByName(
         this.#input.searchMode?.engineName
       );
-      if (
-        engine &&
-        engine instanceof lazy.ConfigSearchEngine &&
-        !engine.hasBeenUsed
-      ) {
+      if (engine && engine.isConfigEngine && !engine.hasBeenUsed) {
         engine.markAsUsed();
       }
     }
@@ -654,7 +646,7 @@ export class SearchModeSwitcher {
     menuitem.setAttribute("title", engine.name);
     menuitem.setAttribute("closemenu", "none");
 
-    if (engine.isNew() && engine instanceof lazy.AppProvidedConfigEngine) {
+    if (engine.isNew() && engine.isAppProvided) {
       menuitem.setAttribute("badge-type", "new");
     }
 
@@ -738,9 +730,7 @@ export class SearchModeSwitcher {
     if (this.#input.sapName == "urlbar") {
       // TODO do we really need to distinguish here?
       Glean.urlbarUnifiedsearchbutton.picked[
-        searchEngine instanceof lazy.ConfigSearchEngine
-          ? "builtin_search"
-          : "addon_search"
+        searchEngine.isConfigEngine ? "builtin_search" : "addon_search"
       ].add(1);
     }
   }

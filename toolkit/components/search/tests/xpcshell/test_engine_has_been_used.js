@@ -7,10 +7,6 @@
 
 "use strict";
 
-const { AppProvidedConfigEngine } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs"
-);
-
 ChromeUtils.defineESModuleGetters(this, {
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
 });
@@ -53,7 +49,7 @@ add_setup(async function () {
 
   let engines = await SearchService.getEngines();
   for (let engine of engines) {
-    if (engine instanceof AppProvidedConfigEngine) {
+    if (engine.isAppProvided) {
       engine.clearUsage();
     }
   }
@@ -63,12 +59,14 @@ add_task(async function test_app_provided_engine_record_usage() {
   let mochiEngine = SearchService.getEngineByName("Mochi Search");
   let exampleEngine = SearchService.getEngineByName("Example");
 
-  Assert.ok(
-    mochiEngine instanceof AppProvidedConfigEngine,
+  Assert.equal(
+    mochiEngine.isAppProvided,
+    true,
     "Mochi Search should be app-provided."
   );
-  Assert.ok(
-    exampleEngine instanceof AppProvidedConfigEngine,
+  Assert.equal(
+    exampleEngine.isAppProvided,
+    true,
     "Example should be app-provided."
   );
 
@@ -112,8 +110,9 @@ add_task(async function test_app_provided_engine_record_usage() {
 add_task(async function test_non_app_provided_engine_record_usage() {
   let testEngine = SearchService.getEngineByName("Test");
 
-  Assert.ok(
-    !(testEngine instanceof AppProvidedConfigEngine),
+  Assert.equal(
+    testEngine.isAppProvided,
+    false,
     "Test search engine should not be app-provided."
   );
 

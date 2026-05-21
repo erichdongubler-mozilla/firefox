@@ -7,8 +7,6 @@ const lazy = {};
 import { UrlbarUtils } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  ConfigSearchEngine:
-    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
 });
@@ -161,7 +159,7 @@ class _UrlbarSearchTermsPersistence {
     if (provider) {
       let result = lazy.SearchService.parseSubmissionURL(uri.spec);
       if (
-        !(result.engine instanceof lazy.ConfigSearchEngine) ||
+        !result.engine?.isConfigEngine ||
         !this.isDefaultPage(uri, provider)
       ) {
         return "";
@@ -169,7 +167,7 @@ class _UrlbarSearchTermsPersistence {
       searchTerm = result.terms;
     } else {
       let result = lazy.SearchService.parseSubmissionURL(uri.spec);
-      if (!(result.engine instanceof lazy.ConfigSearchEngine)) {
+      if (!result.engine?.isConfigEngine) {
         return "";
       }
       searchTerm = result.engine.searchTermFromResult(uri);
@@ -405,7 +403,7 @@ class _UrlbarSearchTermsPersistence {
       return null;
     }
     let result = lazy.SearchService.parseSubmissionURL(url);
-    if (!(result.engine instanceof lazy.ConfigSearchEngine)) {
+    if (!result.engine?.isConfigEngine) {
       return null;
     }
     return {

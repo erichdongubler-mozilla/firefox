@@ -10,8 +10,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
-  AppProvidedConfigEngine:
-    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
@@ -1588,14 +1586,11 @@ export var UITour = {
           .then(engines => {
             let { defaultEngine } = lazy.SearchService;
             this.sendPageCallback(aBrowser, aCallbackID, {
-              searchEngineIdentifier:
-                defaultEngine instanceof lazy.AppProvidedConfigEngine
-                  ? defaultEngine.id
-                  : null,
+              searchEngineIdentifier: defaultEngine.isAppProvided
+                ? defaultEngine.id
+                : null,
               engines: engines
-                .filter(
-                  engine => engine instanceof lazy.AppProvidedConfigEngine
-                )
+                .filter(engine => engine.isAppProvided)
                 .map(engine => TARGET_SEARCHENGINE_PREFIX + engine.id),
             });
           })

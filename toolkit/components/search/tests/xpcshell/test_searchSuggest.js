@@ -15,9 +15,6 @@ const { SearchSuggestionController } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs"
 );
 
-const { ConfigSearchEngine } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs"
-);
 let getEngine;
 let postEngine;
 let unresolvableEngine;
@@ -1007,7 +1004,7 @@ function assertLatencyCollection(engine, shouldRecord) {
   let latencyDistribution =
     Glean.searchSuggestions.latency[
       // Third party engines are always recorded as "other".
-      engine instanceof ConfigSearchEngine ? engine.id : "other"
+      engine.isConfigEngine ? engine.id : "other"
     ].testGetValue();
 
   if (shouldRecord) {

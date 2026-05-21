@@ -12,8 +12,6 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 const lazy = XPCOMUtils.declareLazy({
   AddonSearchEngine:
     "moz-src:///toolkit/components/search/AddonSearchEngine.sys.mjs",
-  ConfigSearchEngine:
-    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
@@ -856,7 +854,7 @@ Preferences.addSetting(
     handleDeletionOptions(engine) {
       /** @type {SettingControlConfig} */
       let deletionOptions;
-      if (engine instanceof lazy.ConfigSearchEngine) {
+      if (engine.isConfigEngine) {
         let toggleId = `toggleEngine-${engine.id}`;
         maybeMakeSetting(ToggleSetting(toggleId, engine));
 

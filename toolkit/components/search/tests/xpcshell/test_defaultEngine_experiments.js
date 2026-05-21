@@ -11,9 +11,6 @@
 ChromeUtils.defineESModuleGetters(this, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
 });
-const { ConfigSearchEngine } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs"
-);
 
 const CONFIG = [
   { identifier: "engine1" },
@@ -117,7 +114,7 @@ async function switchExperiment(newExperiment) {
 function getSettingsAttribute(setting, engine) {
   return SearchService._settings.getVerifiedMetaDataAttribute(
     setting,
-    engine instanceof ConfigSearchEngine
+    engine.isConfigEngine
   );
 }
 

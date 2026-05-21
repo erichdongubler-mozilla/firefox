@@ -8,10 +8,6 @@
 
 "use strict";
 
-ChromeUtils.defineESModuleGetters(this, {
-  ConfigSearchEngine: "resource://gre/modules/ConfigSearchEngine.sys.mjs",
-});
-
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
@@ -174,7 +170,7 @@ async function doDelayedUpdatePlaceholderTest({ defaultEngine }) {
   info("Simulate user interaction");
   let urlTab = BrowserTestUtils.addTab(newWin.gBrowser, "about:mozilla");
   await BrowserTestUtils.switchTab(newWin.gBrowser, urlTab);
-  if (defaultEngine instanceof ConfigSearchEngine) {
+  if (defaultEngine.isConfigEngine) {
     await TestUtils.waitForCondition(
       () => newWin.gURLBar.placeholder == expectedString,
       "The placeholder should include the engine name for built-in engines."
