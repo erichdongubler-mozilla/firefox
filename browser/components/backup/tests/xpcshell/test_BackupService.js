@@ -41,6 +41,7 @@ const APP_VERSION = "test-app-version";
 const BUILD_ID = "test-build-id";
 const OS_NAME = "test-os-name";
 const OS_VERSION = "test-os-version";
+const OS_BUILD_NUMBER = "test-os-build-number";
 const TELEMETRY_ENABLED = true;
 const LEGACY_CLIENT_ID = "legacy-client-id";
 const PROFILE_NAME = "test-profile-name";
@@ -341,13 +342,15 @@ async function testCreateBackupHelper(sandbox, taskFn) {
     1,
     "Should be a single restore start event after we start restoring a profile"
   );
-  Assert.deepEqual(
-    restoreStartedEvents[0].extra,
-    {
-      restore_id: restoreID,
-      replace: "true",
-    },
-    "Restore start event should have the right data"
+  Assert.equal(
+    restoreStartedEvents[0].extra.restore_id,
+    restoreID,
+    "Restore started event should have the right restore_id"
+  );
+  Assert.equal(
+    restoreStartedEvents[0].extra.replace,
+    "true",
+    "Restore started event should have replace=true"
   );
 
   Assert.equal(
@@ -355,10 +358,10 @@ async function testCreateBackupHelper(sandbox, taskFn) {
     1,
     "Should be a single restore complete event after we start restoring a profile"
   );
-  Assert.deepEqual(
-    restoreCompleteEvents[0].extra,
-    { restore_id: restoreID },
-    "Restore complete event should have the right data"
+  Assert.equal(
+    restoreCompleteEvents[0].extra.restore_id,
+    restoreID,
+    "Restore complete event should have the right restore_id"
   );
 
   // Check that resources were recovered from highest to lowest backup priority.
@@ -1127,6 +1130,7 @@ add_task(async function test_getBackupFileInfo() {
         buildID: BUILD_ID,
         osName: OS_NAME,
         osVersion: OS_VERSION,
+        osBuildNumber: OS_BUILD_NUMBER,
         healthTelemetryEnabled: TELEMETRY_ENABLED,
         legacyClientID: LEGACY_CLIENT_ID,
         profileName: PROFILE_NAME,
@@ -1159,6 +1163,7 @@ add_task(async function test_getBackupFileInfo() {
       buildID: BUILD_ID,
       osName: OS_NAME,
       osVersion: OS_VERSION,
+      osBuildNumber: OS_BUILD_NUMBER,
       healthTelemetryEnabled: TELEMETRY_ENABLED,
       legacyClientID: LEGACY_CLIENT_ID,
       profileName: PROFILE_NAME,
@@ -1224,6 +1229,7 @@ add_task(async function test_getBackupFileInfo_error_handling() {
           buildID: BUILD_ID,
           osName: OS_NAME,
           osVersion: OS_VERSION,
+          osBuildNumber: OS_BUILD_NUMBER,
           healthTelemetryEnabled: TELEMETRY_ENABLED,
           legacyClientID: LEGACY_CLIENT_ID,
           profileName: PROFILE_NAME,
@@ -1249,6 +1255,7 @@ add_task(async function test_getBackupFileInfo_error_handling() {
         buildID: BUILD_ID,
         osName: OS_NAME,
         osVersion: OS_VERSION,
+        osBuildNumber: OS_BUILD_NUMBER,
         healthTelemetryEnabled: TELEMETRY_ENABLED,
         legacyClientID: LEGACY_CLIENT_ID,
         profileName: PROFILE_NAME,

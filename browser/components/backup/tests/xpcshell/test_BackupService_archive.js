@@ -16,6 +16,9 @@ const { DecoderDecryptorTransformer, FileWriterStream } =
   ChromeUtils.importESModule(
     "resource:///modules/backup/BackupService.sys.mjs"
   );
+const { ERRORS } = ChromeUtils.importESModule(
+  "chrome://browser/content/backup/backup-constants.mjs"
+);
 
 let testProfilePath;
 let fakeCompressedStagingPath;
@@ -296,7 +299,7 @@ add_task(async function test_createArchive_encrypted_truncated() {
       EXTRACTION_PATH,
       TEST_RECOVERY_CODE
     ),
-    /Corrupted archive/
+    err => err.cause == ERRORS.DECRYPTION_FAILED
   );
 
   Assert.ok(

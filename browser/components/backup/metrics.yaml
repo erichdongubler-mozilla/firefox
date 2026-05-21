@@ -818,6 +818,11 @@ browser.backup:
       os_version:
         type: string
         description: The OS version in which the backup was created.
+      os_build_number:
+        type: string
+        description: >
+          The OS build number from the machine that created the backup. On
+          Windows, build numbers >= 22000 indicate Windows 11.
       telemetry_enabled:
         type: boolean
         description: Whether telemetry was enabled when the backup was created.
@@ -843,6 +848,20 @@ browser.backup:
       replace:
         type: boolean
         description: Indicates if the restore will replace the current running profile.
+      backup_version:
+        type: string
+        description: The application version that created the backup file.
+      backup_os_name:
+        type: string
+        description: The OS name from the machine that created the backup.
+      backup_os_version:
+        type: string
+        description: The OS version from the machine that created the backup.
+      backup_os_build_number:
+        type: string
+        description: >
+          The OS build number from the machine that created the backup. On
+          Windows, build numbers >= 22000 indicate Windows 11.
 
   restore_failed:
     type: event
@@ -867,7 +886,37 @@ browser.backup:
         description: >
           The reason for the failure. Possible values include, but are not
           limited to, "UNAUTHORIZED" (bad password provided by user),
-          "CORRUPTED_ARCHIVE", and "FILE_SYSTEM_ERROR".
+          "CORRUPTED_ARCHIVE", "DECOMPRESSION_FAILED",
+          "PROFILE_CREATION_FAILED", "RESOURCE_RECOVERY_FAILED",
+          and "FILE_SYSTEM_ERROR".
+      error_detail:
+        type: string
+        description: >
+          Additional detail about the failure. For RESOURCE_RECOVERY_FAILED,
+          this contains the resource key that failed (e.g.
+          "PlacesBackupResource"). For other non-BackupError exceptions,
+          this contains the error message (truncated to 100 characters).
+          Empty string if not applicable.
+      restore_step:
+        type: string
+        description: >
+          The step that restore was in when the failure occurred. For
+          resource-specific failures, value is
+          "RECOVER_RESOURCE:{resourceKey}".
+      backup_version:
+        type: string
+        description: The application version that created the backup file.
+      backup_os_name:
+        type: string
+        description: The OS name from the machine that created the backup.
+      backup_os_version:
+        type: string
+        description: The OS version from the machine that created the backup.
+      backup_os_build_number:
+        type: string
+        description: >
+          The OS build number from the machine that created the backup. On
+          Windows, build numbers >= 22000 indicate Windows 11.
 
   restore_complete:
     type: event
@@ -889,6 +938,20 @@ browser.backup:
       restore_id:
         type: string
         description: The identifier for the potential profile restore event.
+      backup_version:
+        type: string
+        description: The application version that created the backup file.
+      backup_os_name:
+        type: string
+        description: The OS name from the machine that created the backup.
+      backup_os_version:
+        type: string
+        description: The OS version from the machine that created the backup.
+      backup_os_build_number:
+        type: string
+        description: >
+          The OS build number from the machine that created the backup. On
+          Windows, build numbers >= 22000 indicate Windows 11.
 
   backup_detection_complete:
     type: event
@@ -992,6 +1055,8 @@ browser.backup:
         backup_os_name:
           type: string
         backup_os_version:
+          type: string
+        backup_os_build_number:
           type: string
         backup_legacy_client_id:
           type: string
