@@ -14,6 +14,8 @@ import "chrome://browser/content/aiwindow/components/chat-assistant-loader.mjs";
 import "chrome://browser/content/aiwindow/components/website-chip-container.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-website-confirmation.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/kit-mention.mjs";
 
 const FOLLOW_UP_QTY = 2;
 
@@ -424,6 +426,10 @@ export class AIChatContent extends MozLitElement {
     wrapper.scrollTo({ top: wrapper.scrollHeight, behavior: "instant" });
   }
 
+  get #kitMention() {
+    return this.shadowRoot?.querySelector("kit-mention");
+  }
+
   #setMessageComplete(message) {
     const messageId = message.content?.id;
     if (!messageId) {
@@ -473,6 +479,7 @@ export class AIChatContent extends MozLitElement {
       this.followUpSuggestions = [];
       this.#clearAssistantResponseAnnouncement();
       this.isSearching = false;
+      this.#kitMention?.reset();
       if (convIdChanged) {
         this.shadowRoot
           ?.querySelector(".chat-inner-wrapper")
@@ -591,6 +598,7 @@ export class AIChatContent extends MozLitElement {
       followUpSuggestions = [],
       isPreviousMessage,
       toolUIData,
+      kit,
     } = event.detail;
 
     if (!this.#isAIResponseValid(content, toolUIData)) {
@@ -612,6 +620,10 @@ export class AIChatContent extends MozLitElement {
       isLastChunk: !!isPreviousMessage,
       toolUIData,
     };
+
+    if (kit && !isPreviousMessage) {
+      this.#kitMention?.trigger({ value: kit, convId });
+    }
 
     this.requestUpdate();
   }
@@ -867,6 +879,7 @@ export class AIChatContent extends MozLitElement {
           ${this.#renderLoader()} ${this.#renderError()}
         </div>
       </div>
+      <kit-mention variant="sidebar"></kit-mention>
       <div
         class="assistant-response-announcer"
         role="status"

@@ -7,6 +7,7 @@ const TOKEN_LABELS = {
   EXISTING_MEMORY: "existing_memory",
   SEARCH: "search",
   FOLLOWUP: "followup",
+  KIT: "kit",
 };
 
 // Deterministic fallback normalization for follow-up suggestions. Token/tag
@@ -76,6 +77,7 @@ export class ChatMessage {
   pageHistoryDeleted;
   tokens;
   toolUIData;
+  kit;
 
   /**
    * @param {object} param
@@ -207,6 +209,9 @@ export class ChatMessage {
           break;
         case TOKEN_LABELS.FOLLOWUP:
           this.followUpSuggestions.push(storedValue);
+          break;
+        case TOKEN_LABELS.KIT:
+          this.kit = value;
       }
     });
   }

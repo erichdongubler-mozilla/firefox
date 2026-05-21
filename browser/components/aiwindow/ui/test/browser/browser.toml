@@ -13,6 +13,7 @@ support-files = [
   "test_applied_memories_page.html",
   "test_chat_assistant_error.html",
   "test_chat_assistant_error.mjs",
+  "test_kit_mention_page.html",
   "test_memories_icon_button_page.html",
   "test_memories_icon_button.mjs",
   "test_smartwindow_panel_list_page.html",
@@ -69,6 +70,8 @@ skip-if = [
 ["browser_aiwindow_immersive.js"]
 
 ["browser_aiwindow_integration.js"]
+
+["browser_aiwindow_kit_mention.js"]
 
 ["browser_aiwindow_memories.js"]
 

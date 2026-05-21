@@ -8,6 +8,8 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import "chrome://browser/content/aiwindow/components/smartwindow-prompts.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-promo.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/kit-mention.mjs";
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -196,6 +198,10 @@ export class AIWindow extends MozLitElement {
   #windowModeObserver = null;
   #swapDocShellsChromeWindow = null;
   #hasMemories = false;
+
+  get #kitMention() {
+    return this.shadowRoot?.querySelector("kit-mention");
+  }
 
   get #memoriesIconShown() {
     return (
@@ -427,6 +433,18 @@ export class AIWindow extends MozLitElement {
   };
 
   #onMessageUpdate = (_event, message) => {
+    // In fullpage, Kit must anchor to the chrome viewport (bottom of the
+    // page, alongside the footer) — `position: fixed` inside the embedded
+    // chat-content document would anchor to that browser's viewport, not
+    // ours. So we trigger our own chrome-side kit-mention here and strip
+    // the token before dispatching to content to avoid double-render.
+    if (this.mode === MODE.FULLPAGE && message.kit) {
+      this.#kitMention?.trigger({
+        value: message.kit,
+        convId: message.convId,
+      });
+      message = { ...message, kit: undefined };
+    }
     this.#dispatchMessageToChatContent(message);
   };
 
@@ -1964,6 +1982,7 @@ export class AIWindow extends MozLitElement {
     this.#conversation = conversation;
     this.#attachConversationListeners();
     this.syncSmartbarMemoriesStateFromConversation();
+    this.#kitMention?.reset();
 
     // If the new conversation is empty and already has cached starters
     // (tab switch-back), restore them synchronously so they appear without
@@ -2392,6 +2411,7 @@ export class AIWindow extends MozLitElement {
           </div>`
         : ""}
       ${this.#footerTemplate()}
+      <kit-mention variant="fullpage"></kit-mention>
       <div
         class="sr-only"
         aria-live="polite"
