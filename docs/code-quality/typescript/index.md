@@ -1,4 +1,5 @@
 # TypeScript
+
 In firefox-main, we are introducing the use of [TypeScript](https://www.typescriptlang.org/)
 to help provide type autocompletion, static analysis and type checking of our
 JavaScript code.
@@ -24,6 +25,7 @@ on Matrix.
 TypeScript is currently only enabled on a [limited set of directories](https://searchfox.org/firefox-main/source/tools/lint/typescript.yml).
 
 ## Editor Support
+
 VS Code has TypeScript support built-in and should work "out of the box".
 
 For other editors, see this [TypeScript Wiki Page](https://github.com/Microsoft/TypeScript/wiki/TypeScript-Editor-Support).
