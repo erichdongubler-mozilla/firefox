@@ -392,12 +392,25 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
    *
    * ePlatformAPI - accessibility service is used by the platform api in the
    *                main process.
+   *
+   * ePdfOutput   - accessibility service is used to generate a tagged PDF for
+   *                a document being printed. While this is the only active
+   *                consumer, accessibility is suppressed for everything except
+   *                the document(s) being printed.
    */
   enum ServiceConsumer {
     eXPCOM = 1 << 0,
     eMainProcess = 1 << 1,
     ePlatformAPI = 1 << 2,
+    ePdfOutput = 1 << 3,
   };
+
+  /**
+   * Return true if the only active service consumer is ePdfOutput. In this
+   * mode the service is alive purely to build the accessibility tree for a
+   * document being printed and must not do work for any other document.
+   */
+  static bool IsOnlyForPdfOutput() { return gConsumers == ePdfOutput; }
 
   static uint64_t GetActiveCacheDomains() { return gCacheDomains; }
   bool ShouldAllowNewCacheDomains() { return mShouldAllowNewCacheDomains; }
