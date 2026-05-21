@@ -1318,6 +1318,554 @@ describe("<SportsWidget> Watch button (live tab)", () => {
   });
 });
 
+describe("<SportsWidget> followed teams matches view", () => {
+  // Two distinct matches per bucket so we can verify which one bubbles to the
+  // highlight position when a team is followed.
+  const matchEngUsa = {
+    ...mockMatch,
+    home_team: { key: "ENG", name: "England" },
+    away_team: { key: "USA", name: "United States" },
+    date: "2026-05-08T14:00:00+00:00",
+  };
+  const matchCanAus = {
+    ...mockMatch,
+    home_team: { key: "CAN", name: "Canada" },
+    away_team: { key: "AUS", name: "Australia" },
+    date: "2026-05-09T14:00:00+00:00",
+  };
+  const matchAlgGer = {
+    ...mockMatch,
+    home_team: { key: "ALG", name: "Algeria" },
+    away_team: { key: "GER", name: "Germany" },
+    date: "2026-05-10T14:00:00+00:00",
+  };
+  const teamsWithColors = [
+    {
+      key: "CAN",
+      name: "Canada",
+      colors: ["#FF0000", "#FFFFFF"],
+      icon_url: "https://example.test/CAN.svg",
+    },
+    {
+      key: "ENG",
+      name: "England",
+      colors: ["#FFFFFF", "#CE1126"],
+      icon_url: "https://example.test/ENG.svg",
+    },
+    {
+      key: "USA",
+      name: "United States",
+      // single color — too few entries for a gradient
+      colors: ["#3C3B6E"],
+      icon_url: "https://example.test/USA.svg",
+    },
+    {
+      key: "AUS",
+      name: "Australia",
+      // colors omitted — gradient lookup should fall back to null
+      icon_url: "https://example.test/AUS.svg",
+    },
+  ];
+
+  function renderMatchesWith({
+    selectedTeams = [],
+    matchesTab = "upcoming",
+    previous = [],
+    current = [],
+    next = [],
+    followedOnly,
+    teams = teamsWithColors,
+  } = {}) {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: "large" },
+          {
+            widgetState: "sports-matches",
+            matchesTab,
+            selectedTeams,
+            followedOnly,
+            data: { teams, matches: { previous, current, next } },
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  function visiblePanel(container) {
+    return [...container.querySelectorAll(".sports-matches-tab-panel")].find(
+      panel => !panel.hasAttribute("hidden")
+    );
+  }
+
+  function highlightMatchCodes(container) {
+    // Both tab panels render their highlight view; the inactive one is just
+    // `hidden`. Scope to the visible panel so we read the right one.
+    const highlight = visiblePanel(container).querySelector(
+      ".match-highlight-view"
+    );
+    return [...highlight.querySelectorAll(".sports-match-code")].map(
+      el => el.textContent
+    );
+  }
+
+  it("bubbles a followed team's upcoming match to the highlight position", () => {
+    // Without a followed team, the original chronological order would put
+    // ENG vs USA first. Following CAN should bring CAN vs AUS to the front.
+    const { container } = renderMatchesWith({
+      selectedTeams: ["CAN"],
+      matchesTab: "upcoming",
+      previous: [matchEngUsa],
+      next: [matchEngUsa, matchCanAus, matchAlgGer],
+    });
+    expect(highlightMatchCodes(container)).toEqual(["CAN", "AUS"]);
+  });
+
+  it("preserves chronological order when none of the matches involve a followed team", () => {
+    const { container } = renderMatchesWith({
+      selectedTeams: ["IRQ"],
+      matchesTab: "upcoming",
+      previous: [matchEngUsa],
+      next: [matchEngUsa, matchCanAus],
+    });
+    expect(highlightMatchCodes(container)).toEqual(["ENG", "USA"]);
+  });
+
+  it("does not show the followed-only toggle when no teams are followed", () => {
+    const { container } = renderMatchesWith({
+      selectedTeams: [],
+      matchesTab: "upcoming",
+      previous: [matchEngUsa],
+      next: [matchEngUsa, matchCanAus],
+    });
+    fireEvent.click(
+      visiblePanel(container).querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+    expect(
+      visiblePanel(container).querySelector(".sports-followed-only-toggle")
+    ).toBeNull();
+  });
+
+  it("shows the followed-only toggle in the expanded list when teams are followed", () => {
+    const { container } = renderMatchesWith({
+      selectedTeams: ["CAN"],
+      matchesTab: "upcoming",
+      previous: [matchEngUsa],
+      next: [matchEngUsa, matchCanAus],
+    });
+    fireEvent.click(
+      visiblePanel(container).querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+    const toggle = visiblePanel(container).querySelector(
+      ".sports-followed-only-toggle"
+    );
+    expect(toggle).toBeInTheDocument();
+    // Defaults to pressed (followed-only on) the first time.
+    expect(toggle.getAttribute("pressed")).not.toBeNull();
+  });
+
+  it("filters the expanded Upcoming list to followed teams when the toggle is on", () => {
+    const { container } = renderMatchesWith({
+      selectedTeams: ["CAN"],
+      matchesTab: "upcoming",
+      previous: [matchEngUsa],
+      next: [matchEngUsa, matchCanAus, matchAlgGer],
+    });
+    fireEvent.click(
+      visiblePanel(container).querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+    const rows = visiblePanel(container).querySelectorAll(".sports-match-row");
+    expect(rows).toHaveLength(1);
+    const codes = [...rows[0].querySelectorAll(".sports-match-code")].map(
+      el => el.textContent
+    );
+    expect(codes).toEqual(["CAN", "AUS"]);
+  });
+
+  it("shows every upcoming match when the persisted followedOnly toggle is off", () => {
+    const { container } = renderMatchesWith({
+      selectedTeams: ["CAN"],
+      matchesTab: "upcoming",
+      previous: [matchEngUsa],
+      next: [matchEngUsa, matchCanAus, matchAlgGer],
+      followedOnly: { results: true, upcoming: false },
+    });
+    fireEvent.click(
+      visiblePanel(container).querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+    expect(
+      visiblePanel(container).querySelectorAll(".sports-match-row")
+    ).toHaveLength(3);
+    const toggle = visiblePanel(container).querySelector(
+      ".sports-followed-only-toggle"
+    );
+    expect(toggle.getAttribute("pressed")).toBeNull();
+  });
+
+  it("filters the expanded Results list to followed teams when the toggle is on", () => {
+    const { container } = renderMatchesWith({
+      selectedTeams: ["CAN"],
+      matchesTab: "results",
+      previous: [matchEngUsa, matchCanAus, matchAlgGer],
+    });
+    fireEvent.click(
+      visiblePanel(container).querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+    const rows = visiblePanel(container).querySelectorAll(".sports-match-row");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].querySelector(".sports-match-code").textContent).toBe("CAN");
+  });
+
+  it("dispatches CHANGE_FOLLOWED_ONLY for the upcoming tab when the toggle is flipped", () => {
+    const dispatch = jest.fn();
+    const { container } = render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: "large" },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            selectedTeams: ["CAN"],
+            data: {
+              teams: teamsWithColors,
+              matches: {
+                previous: [matchEngUsa],
+                current: [],
+                next: [matchEngUsa, matchCanAus],
+              },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+    fireEvent.click(
+      visiblePanel(container).querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+    const toggle = visiblePanel(container).querySelector(
+      ".sports-followed-only-toggle"
+    );
+    // Simulate moz-toggle flipping its `pressed` property and firing `toggle`.
+    Object.defineProperty(toggle, "pressed", {
+      value: false,
+      configurable: true,
+    });
+    fireEvent(toggle, new CustomEvent("toggle", { bubbles: true }));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY,
+        data: { upcoming: false },
+      })
+    );
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_USER_EVENT,
+        data: expect.objectContaining({
+          widget_name: "sports_widget",
+          widget_source: "upcoming",
+          user_action: "toggle_followed_only",
+          action_value: false,
+          widget_size: "large",
+        }),
+      })
+    );
+  });
+
+  it("dispatches CHANGE_FOLLOWED_ONLY for the results tab when the toggle is flipped", () => {
+    const dispatch = jest.fn();
+    const { container } = render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: "large" },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            selectedTeams: ["CAN"],
+            followedOnly: { results: false, upcoming: true },
+            data: {
+              teams: teamsWithColors,
+              matches: {
+                previous: [matchEngUsa, matchCanAus],
+                current: [],
+                next: [],
+              },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+    fireEvent.click(
+      visiblePanel(container).querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+    const toggle = visiblePanel(container).querySelector(
+      ".sports-followed-only-toggle"
+    );
+    Object.defineProperty(toggle, "pressed", {
+      value: true,
+      configurable: true,
+    });
+    fireEvent(toggle, new CustomEvent("toggle", { bubbles: true }));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY,
+        data: { results: true },
+      })
+    );
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: at.WIDGETS_USER_EVENT,
+        data: expect.objectContaining({
+          widget_name: "sports_widget",
+          widget_source: "results",
+          user_action: "toggle_followed_only",
+          action_value: true,
+          widget_size: "large",
+        }),
+      })
+    );
+  });
+
+  it("applies the followed-team gradient to the widget when the highlight involves exactly one followed team", () => {
+    const { container } = renderMatchesWith({
+      selectedTeams: ["ENG"],
+      matchesTab: "upcoming",
+      previous: [matchEngUsa],
+      next: [matchEngUsa],
+    });
+    const widget = container.querySelector(".sports");
+    expect(widget.classList.contains("is-followed-highlight")).toBe(true);
+    expect(widget.style.getPropertyValue("--sports-followed-gradient")).toBe(
+      "linear-gradient(to right, #FFFFFF, #CE1126)"
+    );
+  });
+
+  it("does not apply the gradient when both teams in the highlight are followed", () => {
+    const { container } = renderMatchesWith({
+      selectedTeams: ["ENG", "USA"],
+      matchesTab: "upcoming",
+      previous: [matchEngUsa],
+      next: [matchEngUsa],
+    });
+    const widget = container.querySelector(".sports");
+    expect(widget.classList.contains("is-followed-highlight")).toBe(false);
+    expect(widget.style.getPropertyValue("--sports-followed-gradient")).toBe(
+      ""
+    );
+  });
+
+  it("does not apply the gradient when the followed team has fewer than two colors", () => {
+    // USA in teamsWithColors has only one color entry.
+    const { container } = renderMatchesWith({
+      selectedTeams: ["USA"],
+      matchesTab: "upcoming",
+      previous: [matchEngUsa],
+      next: [matchEngUsa],
+    });
+    expect(
+      container
+        .querySelector(".sports")
+        .classList.contains("is-followed-highlight")
+    ).toBe(false);
+  });
+
+  it("does not apply the gradient when the followed team has no colors entry at all", () => {
+    // AUS in teamsWithColors has no `colors` property.
+    const { container } = renderMatchesWith({
+      selectedTeams: ["AUS"],
+      matchesTab: "upcoming",
+      previous: [matchEngUsa],
+      next: [matchCanAus],
+    });
+    expect(
+      container
+        .querySelector(".sports")
+        .classList.contains("is-followed-highlight")
+    ).toBe(false);
+  });
+
+  it("does not apply the gradient once the user expands the list view", () => {
+    const { container } = renderMatchesWith({
+      selectedTeams: ["ENG"],
+      matchesTab: "upcoming",
+      previous: [matchEngUsa],
+      next: [matchEngUsa],
+    });
+    fireEvent.click(
+      visiblePanel(container).querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+    expect(
+      container
+        .querySelector(".sports")
+        .classList.contains("is-followed-highlight")
+    ).toBe(false);
+  });
+
+  it("passes followedTeams down to highlight rows so they render the followed treatment", () => {
+    const { container } = renderMatchesWith({
+      selectedTeams: ["ENG"],
+      matchesTab: "upcoming",
+      previous: [matchEngUsa],
+      next: [matchEngUsa],
+    });
+    const highlight = visiblePanel(container).querySelector(
+      ".match-highlight-view"
+    );
+    const followedWrapper = highlight.querySelector(
+      ".sports-match-flag-wrapper.is-followed"
+    );
+    expect(followedWrapper).toBeTruthy();
+    expect(
+      highlight.querySelector(".sports-match-flag-check")
+    ).toBeInTheDocument();
+    expect(
+      highlight.querySelector(".sports-match-code strong").textContent
+    ).toBe("ENG");
+  });
+
+  describe("eliminated teams", () => {
+    // Once a followed team is eliminated, the rest of the matches UI should
+    // behave as if the user weren't following it: no bubble-to-front, no
+    // gradient border, no per-row check/bold. If every followed team is
+    // eliminated, the followed-only toggle goes away entirely.
+    const teamsEngEliminated = teamsWithColors.map(team =>
+      team.key === "ENG" ? { ...team, eliminated: true } : team
+    );
+
+    it("does not bubble an eliminated followed team's matches to the front", () => {
+      const { container } = renderMatchesWith({
+        selectedTeams: ["ENG"],
+        matchesTab: "upcoming",
+        previous: [matchCanAus],
+        next: [matchCanAus, matchEngUsa, matchAlgGer],
+        teams: teamsEngEliminated,
+      });
+      // ENG is eliminated, so chronological order wins: CAN vs AUS stays first.
+      expect(highlightMatchCodes(container)).toEqual(["CAN", "AUS"]);
+    });
+
+    it("does not apply the gradient border when the only followed team is eliminated", () => {
+      const { container } = renderMatchesWith({
+        selectedTeams: ["ENG"],
+        matchesTab: "upcoming",
+        previous: [matchEngUsa],
+        next: [matchEngUsa],
+        teams: teamsEngEliminated,
+      });
+      expect(
+        container
+          .querySelector(".sports")
+          .classList.contains("is-followed-highlight")
+      ).toBe(false);
+    });
+
+    it("does not render the check/bold treatment on rows for eliminated followed teams", () => {
+      const { container } = renderMatchesWith({
+        selectedTeams: ["ENG"],
+        matchesTab: "upcoming",
+        previous: [matchEngUsa],
+        next: [matchEngUsa],
+        teams: teamsEngEliminated,
+      });
+      const highlight = visiblePanel(container).querySelector(
+        ".match-highlight-view"
+      );
+      expect(
+        highlight.querySelector(".sports-match-flag-wrapper.is-followed")
+      ).toBeNull();
+      expect(highlight.querySelector(".sports-match-flag-check")).toBeNull();
+      expect(highlight.querySelector(".sports-match-code strong")).toBeNull();
+    });
+
+    it("hides the followed-only toggle when every followed team is eliminated", () => {
+      const { container } = renderMatchesWith({
+        selectedTeams: ["ENG"],
+        matchesTab: "upcoming",
+        previous: [matchEngUsa],
+        next: [matchEngUsa, matchCanAus],
+        teams: teamsEngEliminated,
+      });
+      fireEvent.click(
+        visiblePanel(container).querySelector(
+          "[data-l10n-id='newtab-sports-widget-view-all']"
+        )
+      );
+      expect(
+        visiblePanel(container).querySelector(".sports-followed-only-toggle")
+      ).toBeNull();
+    });
+
+    it("shows the unfiltered list when every followed team is eliminated", () => {
+      // followedOnly defaults to true, but with no active followed teams the
+      // filter must be a no-op so the user still sees the schedule.
+      const { container } = renderMatchesWith({
+        selectedTeams: ["ENG"],
+        matchesTab: "upcoming",
+        previous: [matchEngUsa],
+        next: [matchEngUsa, matchCanAus, matchAlgGer],
+        teams: teamsEngEliminated,
+      });
+      fireEvent.click(
+        visiblePanel(container).querySelector(
+          "[data-l10n-id='newtab-sports-widget-view-all']"
+        )
+      );
+      expect(
+        visiblePanel(container).querySelectorAll(".sports-match-row")
+      ).toHaveLength(3);
+    });
+
+    it("keeps the followed treatment for the still-active followed teams when only some are eliminated", () => {
+      // Follow ENG (eliminated) and CAN (still active). CAN's match should
+      // bubble and get the followed-team treatment; ENG should not.
+      const { container } = renderMatchesWith({
+        selectedTeams: ["ENG", "CAN"],
+        matchesTab: "upcoming",
+        previous: [matchEngUsa],
+        next: [matchEngUsa, matchCanAus, matchAlgGer],
+        teams: teamsEngEliminated,
+      });
+      expect(highlightMatchCodes(container)).toEqual(["CAN", "AUS"]);
+      const highlight = visiblePanel(container).querySelector(
+        ".match-highlight-view"
+      );
+      // CAN side gets the followed treatment; AUS side does not.
+      const wrappers = highlight.querySelectorAll(".sports-match-flag-wrapper");
+      expect(wrappers[0].classList.contains("is-followed")).toBe(true);
+      expect(wrappers[1].classList.contains("is-followed")).toBe(false);
+      // Toggle is still present because at least one followed team is active.
+      fireEvent.click(
+        visiblePanel(container).querySelector(
+          "[data-l10n-id='newtab-sports-widget-view-all']"
+        )
+      );
+      expect(
+        visiblePanel(container).querySelector(".sports-followed-only-toggle")
+      ).toBeInTheDocument();
+    });
+  });
+});
+
 describe("<SportsWidget> telemetry", () => {
   let dispatch;
   let handleUserInteraction;

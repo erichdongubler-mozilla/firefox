@@ -87,7 +87,8 @@ export class SportsFeed {
   // On startup, read whatever was saved to disk and send it to the UI.
   async syncState() {
     const cachedData = (await this.cache.get()) || {};
-    const { widgetState, selectedTeams, sportsData, matchesTab } = cachedData;
+    const { widgetState, selectedTeams, sportsData, matchesTab, followedOnly } =
+      cachedData;
     const { teams, matches } = sportsData || {};
 
     if (widgetState) {
@@ -113,6 +114,15 @@ export class SportsFeed {
         ac.BroadcastToContent({
           type: at.WIDGETS_SPORTS_SET_MATCHES_TAB,
           data: matchesTab,
+        })
+      );
+    }
+
+    if (followedOnly) {
+      this.store.dispatch(
+        ac.BroadcastToContent({
+          type: at.WIDGETS_SPORTS_SET_FOLLOWED_ONLY,
+          data: followedOnly,
         })
       );
     }
@@ -257,6 +267,20 @@ export class SportsFeed {
           })
         );
         break;
+      // User toggled the "Only followed teams" filter for a tab — merge into
+      // the existing followedOnly object and persist.
+      case at.WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY: {
+        const cached = (await this.cache.get()) || {};
+        const merged = { ...(cached.followedOnly || {}), ...action.data };
+        await this.cache.set("followedOnly", merged);
+        this.store.dispatch(
+          ac.BroadcastToContent({
+            type: at.WIDGETS_SPORTS_SET_FOLLOWED_ONLY,
+            data: action.data,
+          })
+        );
+        break;
+      }
     }
   }
 }

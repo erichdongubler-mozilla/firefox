@@ -3,7 +3,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // eslint-disable-next-line no-unused-vars
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
@@ -51,6 +57,7 @@ const USER_ACTION_TYPES = {
   VIEW_KEY_DATES: "view_key_dates",
   CHANGE_SIZE: "change_size",
   LEARN_MORE: "learn_more",
+  TOGGLE_FOLLOWED_ONLY: "toggle_followed_only",
 };
 
 const PREF_NOVA_ENABLED = "nova.enabled";
@@ -60,6 +67,74 @@ const PREF_SPORTS_WIDGET_LIVE_ENABLED = "widgets.sportsWidget.live.enabled";
 const SPORTS_WIDGET_REGISTRY_ENTRY = WIDGET_REGISTRY.find(
   widget => widget.id === "sportsWidget"
 );
+
+// Stable sort that bubbles matches involving a followed team to the front
+// while preserving the original chronological order otherwise.
+function sortFollowedFirst(matches, selectedTeamsSet) {
+  if (!selectedTeamsSet.size) {
+    return matches;
+  }
+  const involvesFollowed = match =>
+    selectedTeamsSet.has(match.home_team.key) ||
+    selectedTeamsSet.has(match.away_team.key);
+  return [...matches]
+    .map((match, index) => ({ match, index }))
+    .sort((a, b) => {
+      const aFollowed = involvesFollowed(a.match) ? 1 : 0;
+      const bFollowed = involvesFollowed(b.match) ? 1 : 0;
+      if (aFollowed !== bFollowed) {
+        return bFollowed - aFollowed;
+      }
+      return a.index - b.index;
+    })
+    .map(entry => entry.match);
+}
+
+// Returns the match shown in the highlight view for the active tab, or null
+// when the user has expanded a list view (no highlight is visible then).
+function getHighlightMatch({
+  widgetState,
+  activeTab,
+  showResultsList,
+  showUpcomingList,
+  sortedPrevious,
+  sortedCurrent,
+  sortedNext,
+}) {
+  if (widgetState !== WIDGET_STATES.MATCHES) {
+    return null;
+  }
+  if (activeTab === MATCHES_TABS.RESULTS && !showResultsList) {
+    return sortedPrevious[0] || null;
+  }
+  if (activeTab === MATCHES_TABS.NOW) {
+    return sortedCurrent[0] || null;
+  }
+  if (activeTab === MATCHES_TABS.UPCOMING && !showUpcomingList) {
+    return sortedNext[0] || null;
+  }
+  return null;
+}
+
+// Builds a CSS gradient string from the followed team's `colors` palette in
+// the highlight state. The gradient doesn't show when both teams in the match
+// are followed or when neither team is followed.
+function getFollowedGradient(match, selectedTeamsSet, teamColorsByKey) {
+  if (!match) {
+    return null;
+  }
+  const homeFollowed = selectedTeamsSet.has(match.home_team.key);
+  const awayFollowed = selectedTeamsSet.has(match.away_team.key);
+  if (homeFollowed === awayFollowed) {
+    return null;
+  }
+  const followedKey = homeFollowed ? match.home_team.key : match.away_team.key;
+  const colors = teamColorsByKey.get(followedKey);
+  if (!colors || colors.length < 2) {
+    return null;
+  }
+  return `linear-gradient(to right, ${colors.join(", ")})`;
+}
 
 function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
@@ -80,12 +155,82 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
       : savedWidgetState;
   const displaySize =
     widgetState === WIDGET_STATES.FOLLOW_TEAMS ? "large" : widgetSize;
-  const selectedTeams = sportsWidgetData.selectedTeams || [];
-  const teams = sportsWidgetData?.data?.teams ?? [];
+  const rawSelectedTeams = sportsWidgetData.selectedTeams;
+  const rawTeams = sportsWidgetData?.data?.teams;
+  const rawMatches = sportsWidgetData?.data?.matches;
+  const selectedTeams = useMemo(
+    () => rawSelectedTeams || [],
+    [rawSelectedTeams]
+  );
+  const teams = useMemo(() => rawTeams ?? [], [rawTeams]);
   const { matchesTab } = sportsWidgetData;
   const hasUserSelectedTab = useRef(false);
   const activeTab =
     hasLiveGames && !hasUserSelectedTab.current ? MATCHES_TABS.NOW : matchesTab;
+
+  // Set of followed team keys that are still in the tournament. Eliminated
+  // teams drop out so the rest of the UI (toggle, bubble-to-front sort,
+  // gradient border, per-row check/bold) behaves as if the user weren't
+  // following them anymore. The raw `selectedTeams` array is kept intact for
+  // the Follow Teams editor so users still see their original selection when
+  // re-opening it.
+  const selectedTeamsSet = useMemo(() => {
+    const eliminated = new Set();
+    for (const team of teams) {
+      if (team.eliminated) {
+        eliminated.add(team.key);
+      }
+    }
+    return new Set(selectedTeams.filter(key => !eliminated.has(key)));
+  }, [selectedTeams, teams]);
+  // Map of team key -> colors[] for looking up the gradient palette of a
+  // followed team in the currently-highlighted match.
+  const teamColorsByKey = useMemo(() => {
+    const map = new Map();
+    for (const team of teams) {
+      if (Array.isArray(team.colors) && team.colors.length) {
+        map.set(team.key, team.colors);
+      }
+    }
+    return map;
+  }, [teams]);
+
+  // Pre-sort each match bucket so followed teams' matches bubble to the front
+  // for the highlight view and the list view.
+  const { sortedPrevious, sortedCurrent, sortedNext } = useMemo(() => {
+    return {
+      sortedPrevious: sortFollowedFirst(
+        rawMatches?.previous ?? [],
+        selectedTeamsSet
+      ),
+      sortedCurrent: sortFollowedFirst(
+        rawMatches?.current ?? [],
+        selectedTeamsSet
+      ),
+      sortedNext: sortFollowedFirst(rawMatches?.next ?? [], selectedTeamsSet),
+    };
+  }, [rawMatches, selectedTeamsSet]);
+
+  // List-view toggle states for the Results and Upcoming tabs are lifted up
+  // here so we can tell whether a highlight match is currently visible (for
+  // applying the followed-team gradient on the article wrapper).
+  const [showResultsList, setShowResultsList] = useState(false);
+  const [showUpcomingList, setShowUpcomingList] = useState(false);
+
+  const highlightMatch = getHighlightMatch({
+    widgetState,
+    activeTab,
+    showResultsList,
+    showUpcomingList,
+    sortedPrevious,
+    sortedCurrent,
+    sortedNext,
+  });
+  const followedGradient = getFollowedGradient(
+    highlightMatch,
+    selectedTeamsSet,
+    teamColorsByKey
+  );
   const impressionFired = useRef(false);
   const sizeSubmenuRef = useRef(null);
 
@@ -397,7 +542,14 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
 
   return (
     <article
-      className={`sports widget col-4 ${displaySize}-widget ${widgetState}`}
+      className={`sports widget col-4 ${displaySize}-widget ${widgetState}${
+        followedGradient ? " is-followed-highlight" : ""
+      }`}
+      style={
+        followedGradient
+          ? { "--sports-followed-gradient": followedGradient }
+          : undefined
+      }
       ref={el => {
         widgetRef.current = [el];
       }}
@@ -544,13 +696,20 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
         )}
         {widgetState === WIDGET_STATES.MATCHES && (
           <SportsMatchesView
+            dispatch={dispatch}
             matchesTab={activeTab}
             hasLiveGames={hasLiveGames}
             size={widgetSize}
-            previous={sportsWidgetData?.data?.matches?.previous ?? []}
-            current={sportsWidgetData?.data?.matches?.current ?? []}
-            next={sportsWidgetData?.data?.matches?.next ?? []}
+            previous={sortedPrevious}
+            current={sortedCurrent}
+            next={sortedNext}
             handleInteraction={handleInteraction}
+            selectedTeamsSet={selectedTeamsSet}
+            followedOnly={sportsWidgetData.followedOnly}
+            showResultsList={showResultsList}
+            setShowResultsList={setShowResultsList}
+            showUpcomingList={showUpcomingList}
+            setShowUpcomingList={setShowUpcomingList}
           />
         )}
         {widgetState === WIDGET_STATES.KEY_DATES && (
@@ -712,6 +871,7 @@ function SportsSectionLabel({ match, withLiveBadge = false }) {
 }
 
 function SportsMatchesView({
+  dispatch,
   matchesTab,
   hasLiveGames,
   size,
@@ -719,11 +879,60 @@ function SportsMatchesView({
   current,
   next,
   handleInteraction,
+  selectedTeamsSet,
+  followedOnly,
+  showResultsList,
+  setShowResultsList,
+  showUpcomingList,
+  setShowUpcomingList,
 }) {
-  const [showResultsList, setShowResultsList] = useState(false);
-  const [showUpcomingList, setShowUpcomingList] = useState(false);
   const resultsPanelRef = useRef(null);
   const upcomingPanelRef = useRef(null);
+  const hasFollowedTeams = selectedTeamsSet.size > 0;
+  // Read the persisted per-tab toggle state from redux. Defaults to true so
+  // users with followed teams see the filtered list right away.
+  const resultsFollowedOnly = followedOnly?.results ?? true;
+  const upcomingFollowedOnly = followedOnly?.upcoming ?? true;
+
+  const setFollowedOnly = (tab, value) =>
+    batch(() => {
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_USER_EVENT,
+          data: {
+            widget_name: "sports_widget",
+            // `widget_source` carries the originating tab (results/upcoming)
+            // since the toggle is rendered per-tab. `action_value` carries
+            // the new pressed state.
+            widget_source: tab,
+            user_action: USER_ACTION_TYPES.TOGGLE_FOLLOWED_ONLY,
+            action_value: value,
+            widget_size: size,
+          },
+        })
+      );
+      dispatch(
+        ac.AlsoToMain({
+          type: at.WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY,
+          data: { [tab]: value },
+        })
+      );
+    });
+
+  const filterFollowed = matches =>
+    matches.filter(
+      match =>
+        selectedTeamsSet.has(match.home_team.key) ||
+        selectedTeamsSet.has(match.away_team.key)
+    );
+  // Filtering is only meaningful when the user has followed at least one
+  // team — otherwise we'd hide every match.
+  const displayedPrevious =
+    hasFollowedTeams && resultsFollowedOnly
+      ? filterFollowed(previous)
+      : previous;
+  const displayedNext =
+    hasFollowedTeams && upcomingFollowedOnly ? filterFollowed(next) : next;
 
   // When the user expands a tab into list mode, move keyboard focus to the
   // first match row in the just-revealed list. Without this, focus stays on
@@ -752,30 +961,43 @@ function SportsMatchesView({
         ref={resultsPanelRef}
       >
         {showResultsList ? (
-          <div className="sports-matches-list">
-            {groupMatchesBySection(previous).map((section, idx) => (
-              <div
-                key={`${section.key}-${idx}`}
-                className="sports-matches-list-section"
-              >
-                <SportsSectionLabel match={section.matches[0]} />
-                <ul>
-                  {section.matches.map(match => (
-                    <li
-                      key={`${match.home_team.key}-${match.away_team.key}-${match.date}`}
-                    >
-                      <SportsMatchRow
-                        match={match}
-                        variant="results"
-                        size="list"
-                        handleInteraction={handleInteraction}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+          <>
+            {hasFollowedTeams && (
+              /** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */
+              <moz-toggle
+                className="sports-followed-only-toggle"
+                pressed={resultsFollowedOnly || null}
+                data-l10n-id="newtab-sports-widget-followed-only-toggle"
+                ontoggle={e => setFollowedOnly("results", !!e.target.pressed)}
+                onToggle={e => setFollowedOnly("results", !!e.target.pressed)}
+              ></moz-toggle>
+            )}
+            <div className="sports-matches-list">
+              {groupMatchesBySection(displayedPrevious).map((section, idx) => (
+                <div
+                  key={`${section.key}-${idx}`}
+                  className="sports-matches-list-section"
+                >
+                  <SportsSectionLabel match={section.matches[0]} />
+                  <ul>
+                    {section.matches.map(match => (
+                      <li
+                        key={`${match.home_team.key}-${match.away_team.key}-${match.date}`}
+                      >
+                        <SportsMatchRow
+                          match={match}
+                          variant="results"
+                          size="list"
+                          handleInteraction={handleInteraction}
+                          followedTeams={selectedTeamsSet}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           previous[0] && (
             <>
@@ -786,6 +1008,7 @@ function SportsMatchesView({
                   variant="results"
                   size={size}
                   handleInteraction={handleInteraction}
+                  followedTeams={selectedTeamsSet}
                 />
               </div>
             </>
@@ -820,6 +1043,7 @@ function SportsMatchesView({
                   variant="now"
                   size={size}
                   handleInteraction={handleInteraction}
+                  followedTeams={selectedTeamsSet}
                 />
               </div>
               {/* TODO: Add onClick handler + play icon when we start implementing Watch dialog UI */}
@@ -843,30 +1067,43 @@ function SportsMatchesView({
         ref={upcomingPanelRef}
       >
         {showUpcomingList ? (
-          <div className="sports-matches-list">
-            {groupMatchesBySection(next).map((section, idx) => (
-              <div
-                key={`${section.key}-${idx}`}
-                className="sports-matches-list-section"
-              >
-                <SportsSectionLabel match={section.matches[0]} />
-                <ul>
-                  {section.matches.map(match => (
-                    <li
-                      key={`${match.home_team.key}-${match.away_team.key}-${match.date}`}
-                    >
-                      <SportsMatchRow
-                        match={match}
-                        variant="upcoming"
-                        size="list"
-                        handleInteraction={handleInteraction}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+          <>
+            {hasFollowedTeams && (
+              /** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */
+              <moz-toggle
+                className="sports-followed-only-toggle"
+                pressed={upcomingFollowedOnly || null}
+                data-l10n-id="newtab-sports-widget-followed-only-toggle"
+                ontoggle={e => setFollowedOnly("upcoming", !!e.target.pressed)}
+                onToggle={e => setFollowedOnly("upcoming", !!e.target.pressed)}
+              ></moz-toggle>
+            )}
+            <div className="sports-matches-list">
+              {groupMatchesBySection(displayedNext).map((section, idx) => (
+                <div
+                  key={`${section.key}-${idx}`}
+                  className="sports-matches-list-section"
+                >
+                  <SportsSectionLabel match={section.matches[0]} />
+                  <ul>
+                    {section.matches.map(match => (
+                      <li
+                        key={`${match.home_team.key}-${match.away_team.key}-${match.date}`}
+                      >
+                        <SportsMatchRow
+                          match={match}
+                          variant="upcoming"
+                          size="list"
+                          handleInteraction={handleInteraction}
+                          followedTeams={selectedTeamsSet}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           next[0] && (
             <>
@@ -877,6 +1114,7 @@ function SportsMatchesView({
                   variant="upcoming"
                   size={size}
                   handleInteraction={handleInteraction}
+                  followedTeams={selectedTeamsSet}
                 />
               </div>
             </>

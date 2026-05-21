@@ -780,6 +780,9 @@ newtab-sports-widget-view-all =
     .label = View all
 newtab-sports-widget-show-less =
     .label = Show less
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = Only followed teams
 
 ## Watch live stream dialog
 ## Shown when the user clicks the “Watch live” button on a live match.

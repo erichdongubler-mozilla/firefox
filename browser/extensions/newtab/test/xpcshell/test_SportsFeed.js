@@ -707,3 +707,92 @@ add_task(async function test_OPEN_MATCH_SEARCH_ignores_missing_target_window() {
     "loadSearch is not called without a target window"
   );
 });
+
+add_task(async function test_syncState_broadcasts_followedOnly() {
+  const feed = makeFeed();
+  const getStub = sinon.stub(feed.cache, "get").resolves({
+    followedOnly: { results: false, upcoming: true },
+  });
+
+  info("syncState should broadcast followedOnly from cache to the UI");
+  await feed.syncState();
+
+  const [firstCall] = feed.store.dispatch.getCalls();
+  Assert.equal(
+    firstCall.args[0].type,
+    actionTypes.WIDGETS_SPORTS_SET_FOLLOWED_ONLY,
+    "dispatches SET_FOLLOWED_ONLY"
+  );
+  Assert.deepEqual(
+    firstCall.args[0].data,
+    { results: false, upcoming: true },
+    "with the cached per-tab map"
+  );
+
+  getStub.restore();
+});
+
+add_task(async function test_CHANGE_FOLLOWED_ONLY_merges_and_broadcasts() {
+  // Each tab persists its own pref, but the cache stores a single map
+  // {results, upcoming}. The handler must merge a partial change into any
+  // pre-existing entry so the other tab's pref isn't lost.
+  const feed = makeFeed();
+  const getStub = sinon.stub(feed.cache, "get").resolves({
+    followedOnly: { results: true, upcoming: true },
+  });
+  const setStub = sinon.stub(feed.cache, "set").resolves();
+
+  info(
+    "CHANGE_FOLLOWED_ONLY should merge the partial update into the cached map and broadcast only the partial update"
+  );
+  await feed.onAction({
+    type: actionTypes.WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY,
+    data: { upcoming: false },
+  });
+
+  Assert.ok(setStub.calledOnce, "cache.set called once");
+  Assert.equal(setStub.firstCall.args[0], "followedOnly");
+  Assert.deepEqual(
+    setStub.firstCall.args[1],
+    { results: true, upcoming: false },
+    "cache.set persists the merged map"
+  );
+
+  const [firstDispatch] = feed.store.dispatch.getCalls();
+  Assert.equal(
+    firstDispatch.args[0].type,
+    actionTypes.WIDGETS_SPORTS_SET_FOLLOWED_ONLY,
+    "dispatches SET_FOLLOWED_ONLY"
+  );
+  Assert.deepEqual(
+    firstDispatch.args[0].data,
+    { upcoming: false },
+    "broadcasts only the partial update so the reducer can merge"
+  );
+
+  getStub.restore();
+  setStub.restore();
+});
+
+add_task(async function test_CHANGE_FOLLOWED_ONLY_starts_empty_cache() {
+  // First-time toggle: cache.get may return undefined or an object with no
+  // followedOnly entry. The handler must still write a complete partial.
+  const feed = makeFeed();
+  const getStub = sinon.stub(feed.cache, "get").resolves(undefined);
+  const setStub = sinon.stub(feed.cache, "set").resolves();
+
+  await feed.onAction({
+    type: actionTypes.WIDGETS_SPORTS_CHANGE_FOLLOWED_ONLY,
+    data: { results: false },
+  });
+
+  Assert.ok(setStub.calledOnce, "cache.set called once");
+  Assert.deepEqual(
+    setStub.firstCall.args[1],
+    { results: false },
+    "cache.set writes the partial as the new map when nothing was cached"
+  );
+
+  getStub.restore();
+  setStub.restore();
+});

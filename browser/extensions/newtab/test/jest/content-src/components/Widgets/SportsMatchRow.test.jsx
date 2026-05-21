@@ -469,6 +469,97 @@ describe("<SportsMatchRow> click handling", () => {
   });
 });
 
+describe("<SportsMatchRow> followed teams", () => {
+  function getFlagWrappers(container) {
+    return container.querySelectorAll(".sports-match-flag-wrapper");
+  }
+  function getCodes(container) {
+    return container.querySelectorAll(".sports-match-code");
+  }
+
+  it("does not mark either side as followed when followedTeams is undefined", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow match={baseMatch} variant="upcoming" />
+    );
+    const wrappers = getFlagWrappers(container);
+    expect(wrappers[0].classList.contains("is-followed")).toBe(false);
+    expect(wrappers[1].classList.contains("is-followed")).toBe(false);
+    expect(container.querySelectorAll(".sports-match-flag-check")).toHaveLength(
+      0
+    );
+    const codes = getCodes(container);
+    expect(codes[0].querySelector("strong")).toBeNull();
+    expect(codes[1].querySelector("strong")).toBeNull();
+  });
+
+  it("marks only the home side when only the home team is followed", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={baseMatch}
+        variant="upcoming"
+        followedTeams={new Set(["ENG"])}
+      />
+    );
+    const wrappers = getFlagWrappers(container);
+    expect(wrappers[0].classList.contains("is-followed")).toBe(true);
+    expect(wrappers[1].classList.contains("is-followed")).toBe(false);
+    const checks = container.querySelectorAll(".sports-match-flag-check");
+    expect(checks).toHaveLength(1);
+    expect(wrappers[0].querySelector(".sports-match-flag-check")).toBeTruthy();
+    const codes = getCodes(container);
+    expect(codes[0].querySelector("strong").textContent).toBe("ENG");
+    expect(codes[1].querySelector("strong")).toBeNull();
+  });
+
+  it("marks only the away side when only the away team is followed", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={baseMatch}
+        variant="results"
+        followedTeams={new Set(["USA"])}
+      />
+    );
+    const wrappers = getFlagWrappers(container);
+    expect(wrappers[0].classList.contains("is-followed")).toBe(false);
+    expect(wrappers[1].classList.contains("is-followed")).toBe(true);
+    expect(wrappers[1].querySelector(".sports-match-flag-check")).toBeTruthy();
+    const codes = getCodes(container);
+    expect(codes[0].querySelector("strong")).toBeNull();
+    expect(codes[1].querySelector("strong").textContent).toBe("USA");
+  });
+
+  it("marks both sides when both teams are followed", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={baseMatch}
+        variant="now"
+        followedTeams={new Set(["ENG", "USA"])}
+      />
+    );
+    const wrappers = getFlagWrappers(container);
+    expect(wrappers[0].classList.contains("is-followed")).toBe(true);
+    expect(wrappers[1].classList.contains("is-followed")).toBe(true);
+    expect(container.querySelectorAll(".sports-match-flag-check")).toHaveLength(
+      2
+    );
+  });
+
+  it("hides the check badge from assistive technology", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={baseMatch}
+        variant="upcoming"
+        followedTeams={new Set(["ENG"])}
+      />
+    );
+    expect(
+      container
+        .querySelector(".sports-match-flag-check")
+        .getAttribute("aria-hidden")
+    ).toBe("true");
+  });
+});
+
 describe("<SportsMatchRow> flag accessibility", () => {
   it("sets alt and title on the home team flag image to the team name", () => {
     const { container } = renderWithDispatch(

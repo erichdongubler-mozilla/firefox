@@ -6679,6 +6679,7 @@ dialog:dir(rtl)::after {
   flex-direction: column;
   box-shadow: var(--box-shadow-level-2);
   height: 100%;
+  position: relative;
   --widget-size-transition-duration: 180ms;
   --widget-size-transition-easing: ease;
   padding: var(--space-medium);
@@ -6712,6 +6713,18 @@ dialog:dir(rtl)::after {
 .sports:hover, .sports:has(:focus-visible) {
   outline: 1px solid var(--border-color-deemphasized);
   box-shadow: var(--card-box-shadow-hover);
+}
+.sports.is-followed-highlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  /* stylelint-disable-line declaration-property-value-disallowed-list */
+  background: var(--sports-followed-gradient);
+  mask: linear-gradient(#FFF 0 0) content-box, linear-gradient(#FFF 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
 }
 .sports.medium-widget .sports-title-wrapper {
   align-items: center;
@@ -6962,6 +6975,11 @@ dialog:dir(rtl)::after {
   margin-block-start: calc(var(--space-large) + var(--space-xsmall));
 }
 
+.sports-followed-only-toggle {
+  display: block;
+  margin-block-end: var(--space-small);
+}
+
 .sports-matches-tab-panel:not(:has(.match-highlight-view)) > moz-button {
   margin-block-start: var(--space-medium);
   padding-block-end: var(--space-small);
@@ -6978,7 +6996,7 @@ dialog:dir(rtl)::after {
   margin-block-start: var(--space-medium);
 }
 
-.sports-matches-tab-panel:has(.match-highlight-view) > .match-highlight-view {
+.large-widget .sports-matches-tab-panel:has(.match-highlight-view) > .match-highlight-view {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -7057,7 +7075,7 @@ dialog:dir(rtl)::after {
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 .sports-match-row {
-  --sports-flag-width: 57px;
+  --sports-flag-width: 63px;
   --sports-flag-height: 40px;
   display: grid;
   grid-template-columns: 3fr 4fr 3fr;
@@ -7078,12 +7096,37 @@ dialog:dir(rtl)::after {
   align-items: center;
   gap: var(--space-xsmall);
 }
+.sports-match-row .sports-match-team .sports-match-flag-wrapper {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+.sports-match-row .sports-match-team .sports-match-flag-wrapper.is-followed .sports-match-flag {
+  outline: 3px solid var(--color-accent-primary);
+  outline-offset: -3px;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
+  border-radius: 6px;
+}
 .sports-match-row .sports-match-team .sports-match-flag {
   width: var(--sports-flag-width);
   /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
   height: var(--sports-flag-height);
   /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
-  object-fit: cover;
+  display: block;
+}
+.sports-match-row .sports-match-team .sports-match-flag-check {
+  position: absolute;
+  inset-block-start: calc(var(--space-xsmall) * -1);
+  inset-inline-end: calc(var(--space-xsmall) * -1);
+  width: var(--icon-size-medium);
+  height: var(--icon-size-medium);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border: 2px solid var(--newtab-background-color-secondary);
+  border-radius: var(--border-radius-circle);
+  background-color: var(--newtab-background-color-secondary);
+  background-image: url("chrome://global/skin/icons/check-filled.svg");
+  -moz-context-properties: fill;
+  fill: var(--color-accent-primary);
 }
 .sports-match-row .sports-match-upcoming,
 .sports-match-row .sports-match-result {
@@ -7147,6 +7190,10 @@ dialog:dir(rtl)::after {
 .sports-match-row.sports-match-row-medium .sports-match-team:first-child .sports-match-code, .sports-match-row.sports-match-row-list .sports-match-team:first-child .sports-match-code {
   order: -1;
 }
+.sports-match-row.sports-match-row-medium .sports-match-code, .sports-match-row.sports-match-row-list .sports-match-code {
+  width: 35px;
+  /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+}
 .sports-match-row.sports-match-row-medium .sports-match-result-footer, .sports-match-row.sports-match-row-list .sports-match-result-footer {
   font-size: var(--font-size-small);
   column-gap: var(--space-xsmall);
@@ -7164,14 +7211,19 @@ dialog:dir(rtl)::after {
 .sports-match-row.sports-match-row-medium .sports-score-pill:has(.sports-score-penalty) {
   padding-inline: var(--space-small);
 }
-.sports-match-row.sports-match-row-medium:has(.sports-match-result) {
-  padding-block: 0;
-}
 .sports-match-row.sports-match-row-medium:has(.sports-match-result) .sports-score-pill {
   padding-block: var(--space-xxsmall);
+  font-size: var(--font-size-root);
+}
+.sports-match-row.sports-match-row-medium:has(.sports-match-result) .sports-match-result {
+  gap: 0;
 }
 .sports-match-row.sports-match-row-list {
   margin-block: var(--space-xsmall);
+}
+.sports-match-row.sports-match-row-list .sports-match-flag-wrapper.is-followed .sports-match-flag {
+  outline-width: 2px;
+  outline-offset: -2px;
 }
 .sports-match-row.sports-match-row-list .sports-score-pill {
   font-size: var(--font-size-root);
