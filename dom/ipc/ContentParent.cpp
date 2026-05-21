@@ -1637,8 +1637,11 @@ void ContentParent::Init() {
 
 #ifdef ACCESSIBILITY
   // If accessibility is running in chrome process then start it in content
-  // process.
-  if (GetAccService()) {
+  // process. We skip this when the only consumer is ePdfOutput. In that mode,
+  // the service exists purely to build the accessibility tree for a document
+  // being printed in some specific process and unrelated content processes
+  // shouldn't bring up accessibility.
+  if (GetAccService() && !nsAccessibilityService::IsOnlyForPdfOutput()) {
     (void)SendActivateA11y(nsAccessibilityService::GetActiveCacheDomains());
   }
 #endif  // #ifdef ACCESSIBILITY
@@ -3921,9 +3924,10 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
   else if (aData && !strcmp(aTopic, "a11y-init-or-shutdown")) {
     if (*aData == '1') {
       // Make sure accessibility is running in content process when
-      // accessibility gets initiated in chrome process.
+      // accessibility gets fully initiated in chrome process.
+      MOZ_ASSERT(!nsAccessibilityService::IsOnlyForPdfOutput());
       (void)SendActivateA11y(nsAccessibilityService::GetActiveCacheDomains());
-    } else {
+    } else if (*aData == '0') {
       // If possible, shut down accessibility in content process when
       // accessibility gets shutdown in chrome process.
       (void)SendShutdownA11y();

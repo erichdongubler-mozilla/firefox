@@ -427,13 +427,23 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
  private:
   /**
    * Initialize accessibility service.
+   * @param aConsumer The consumer requesting initialization. When this is
+   *        ePdfOutput, work that is unnecessary for tagged PDF generation
+   *        will be skipped.
    */
-  bool Init(uint64_t aCacheDomains = kDefaultCacheDomains);
+  bool Init(uint64_t aCacheDomains = kDefaultCacheDomains,
+            uint32_t aConsumer = ePlatformAPI);
 
   /**
    * Shutdowns accessibility service.
    */
   void Shutdown();
+
+  /**
+   * Run init steps specific to a full (non-PDF) consumer: create initial docs,
+   * initialize the platform, and set cache domains.
+   */
+  void FullInit(uint64_t aCacheDomains, uint32_t aConsumer);
 
   /**
    * Create an accessible whose type depends on the given frame.

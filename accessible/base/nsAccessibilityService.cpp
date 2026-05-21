@@ -1647,7 +1647,7 @@ mozilla::Monitor& nsAccessibilityService::GetAndroidMonitor() {
 ////////////////////////////////////////////////////////////////////////////////
 // nsAccessibilityService private
 
-bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
+bool nsAccessibilityService::Init(uint64_t aCacheDomains, uint32_t aConsumer) {
   AUTO_PROFILER_MARKER_UNTYPED("nsAccessibilityService::Init", A11Y, {});
   // DO NOT ADD CODE ABOVE HERE: THIS CODE IS MEASURING TIMINGS.
   PerfStats::AutoMetricRecording<
@@ -1697,30 +1697,49 @@ bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
   }
 
   NS_ADDREF(gApplicationAccessible);  // will release in Shutdown()
-  gApplicationAccessible->CreateInitialDocs();
-
   CrashReporter::RecordAnnotationCString(
       CrashReporter::Annotation::Accessibility, "Active");
 
-  // Now its safe to start platform accessibility.
-  if (XRE_IsParentProcess()) PlatformInit();
+  if (aConsumer == ePdfOutput) {
+    // When running purely for PDF output, we don't force creation of
+    // DocAccessibles for existing documents (which would affect unrelated
+    // documents) or initialize platform AT APIs (which have no clients in this
+    // mode). PDF output also uses doc-specific cache domains.
+    gCacheDomains = aCacheDomains;
+  } else {
+    FullInit(aCacheDomains, aConsumer);
+  }
 
-  // Check the startup cache domain pref. We might be in a test environment
-  // where we need to have all cache domains enabled (e.g., fuzzing).
+  // We deliberately fire the a11y init notification even for ePdfOutput so that
+  // tests know that the accessibility service has started in all cases. We use
+  // a different value to differentiate this from full init notifications. Note
+  // that gConsumers hasn't been set yet, so we can't use IsOnlyForPdfOutput()
+  // here.
+  observerService->NotifyObservers(nullptr, "a11y-init-or-shutdown",
+                                   aConsumer == ePdfOutput ? u"pdf" : u"1");
+
+  return true;
+}
+
+void nsAccessibilityService::FullInit(uint64_t aCacheDomains,
+                                      uint32_t aConsumer) {
+  gApplicationAccessible->CreateInitialDocs();
+  if (XRE_IsParentProcess()) {
+    PlatformInit();
+  }
   if (XRE_IsParentProcess() &&
       StaticPrefs::accessibility_enable_all_cache_domains_AtStartup()) {
+    // We might be in a test environment where we need to have all cache domains
+    // enabled (e.g., fuzzing).
+    gCacheDomains = CacheDomain::All;
+  } else if (aConsumer == eXPCOM) {
+    // When instantiated via XPCOM, cache all accessibility information.
     gCacheDomains = CacheDomain::All;
   } else {
     // Set the active accessibility cache domains. We might want to modify the
     // domains that we activate based on information about the instantiator.
     gCacheDomains = ::GetCacheDomainsForKnownClients(aCacheDomains);
   }
-
-  static const char16_t kInitIndicator[] = {'1', 0};
-  observerService->NotifyObservers(nullptr, "a11y-init-or-shutdown",
-                                   kInitIndicator);
-
-  return true;
 }
 
 void nsAccessibilityService::Shutdown() {
@@ -2070,14 +2089,8 @@ nsAccessibilityService* GetOrCreateAccService(uint32_t aNewConsumer,
   }
 
   if (!nsAccessibilityService::gAccessibilityService) {
-    uint64_t cacheDomains = aCacheDomains;
-    if (aNewConsumer == nsAccessibilityService::eXPCOM) {
-      // When instantiated via XPCOM, cache all accessibility information.
-      cacheDomains = CacheDomain::All;
-    }
-
     RefPtr<nsAccessibilityService> service = new nsAccessibilityService();
-    if (!service->Init(cacheDomains)) {
+    if (!service->Init(aCacheDomains, aNewConsumer)) {
       service->Shutdown();
       return nullptr;
     }
