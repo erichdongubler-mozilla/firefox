@@ -35,11 +35,13 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/Event.h"
+#include "mozilla/dom/HTMLHeadingElement.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/dom/RadioGroupContainer.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/StylePropertyMap.h"
 #include "mozilla/dom/StylePropertyMapReadOnly.h"
+#include "mozilla/dom/TreeIterator.h"
 #include "mozilla/dom/UnbindContext.h"
 #include "mozilla/mozInlineSpellChecker.h"
 #include "nsAtom.h"
@@ -348,6 +350,15 @@ already_AddRefed<URLExtraData> nsIContent::GetURLDataForStyleAttr(
                                        aSubjectPrincipal);
   }
   return do_AddRef(doc->DefaultStyleAttrURLData());
+}
+
+void nsIContent::UpdateHeadingElementsOffsetChange() {
+  TreeIterator<FlattenedChildIterator> iter(*this);
+  for (; iter.GetCurrent(); iter.GetNext()) {
+    if (auto* heading = HTMLHeadingElement::FromNode(iter.GetCurrent())) {
+      heading->UpdateLevel(true);
+    }
+  }
 }
 
 void nsIContent::ConstructUbiNode(void* storage) {

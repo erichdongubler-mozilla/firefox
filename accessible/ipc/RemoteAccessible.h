@@ -381,6 +381,8 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
 
   virtual void DOMNodeClass(nsString& aClass) const override;
 
+  virtual int32_t HeadingLevel() const override;
+
   virtual void ScrollToPoint(uint32_t aScrollType, int32_t aX,
                              int32_t aY) override;
 

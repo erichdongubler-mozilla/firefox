@@ -1663,6 +1663,20 @@ void RemoteAccessible::DOMNodeClass(nsString& aClass) const {
   }
 }
 
+int32_t RemoteAccessible::HeadingLevel() const {
+  if (RequestDomainsIfInactive(CacheDomain::GroupInfo)) {
+    return 0;
+  }
+  if (mCachedFields) {
+    if (auto maybeLevel =
+            mCachedFields->GetAttribute<int32_t>(CacheKey::HeadingLevel)) {
+      VERIFY_CACHE(CacheDomain::GroupInfo);
+      return *maybeLevel;
+    }
+  }
+  return 0;
+}
+
 void RemoteAccessible::ScrollToPoint(uint32_t aScrollType, int32_t aX,
                                      int32_t aY) {
   (void)mDoc->SendScrollToPoint(mID, aScrollType, aX, aY);
