@@ -290,17 +290,17 @@ add_task(async function test_website_confirmation_programmatic_methods() {
       // Set tabs programmatically
       const testTabs = [
         {
-          linkedPanel: "prog-1",
-          title: "Programmatic Tab 1",
+          tabId: "prog-1",
+          label: "Programmatic Tab 1",
           iconSrc: "chrome://branding/content/icon16.png",
-          url: "https://prog1.example",
+          href: "https://prog1.example",
           checked: false,
         },
         {
-          linkedPanel: "prog-2",
-          title: "Programmatic Tab 2",
+          tabId: "prog-2",
+          label: "Programmatic Tab 2",
           iconSrc: "chrome://branding/content/icon16.png",
-          url: "https://prog2.example",
+          href: "https://prog2.example",
           checked: false,
         },
       ];
@@ -335,12 +335,12 @@ add_task(async function test_website_confirmation_programmatic_methods() {
         "getSelectedTabs returns all tabs when all selected"
       );
       Assert.equal(
-        selected[0].linkedPanel,
+        selected[0].tabId,
         "prog-1",
         "First selected tab has correct ID"
       );
       Assert.equal(
-        selected[1].linkedPanel,
+        selected[1].tabId,
         "prog-2",
         "Second selected tab has correct ID"
       );
@@ -382,10 +382,10 @@ add_task(async function test_website_confirmation_scroll_behavior() {
       const manyTabs = [];
       for (let i = 0; i < 20; i++) {
         manyTabs.push({
-          linkedPanel: `scroll-tab-${i}`,
-          title: `Scroll Test Tab ${i}`,
+          tabId: `scroll-tab-${i}`,
+          label: `Scroll Test Tab ${i}`,
           iconSrc: "chrome://global/skin/icons/defaultFavicon.svg",
-          url: `https://scroll${i}.example`,
+          href: `https://scroll${i}.example`,
           checked: i % 2 === 0,
         });
       }

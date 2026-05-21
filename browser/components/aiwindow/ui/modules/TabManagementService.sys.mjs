@@ -98,9 +98,6 @@ export class TabManagementService {
     const restoredTabs = [];
     const failedTabs = [];
 
-    // Remember the currently selected tab to switch back to it after restoration
-    const originalSelectedTab = window.gBrowser.selectedTab;
-
     for (const closedOperationTab of operation.closedTabs) {
       try {
         const closedTabIndex = this.#findClosedTabIndexForOperationTab(
@@ -140,14 +137,6 @@ export class TabManagementService {
           message: error.message,
         });
       }
-    }
-
-    // Switch back to the originally selected tab to keep restorations in background
-    if (
-      originalSelectedTab &&
-      window.gBrowser.tabs.includes(originalSelectedTab)
-    ) {
-      window.gBrowser.selectedTab = originalSelectedTab;
     }
 
     // Only delete the operation if all tabs were successfully restored
