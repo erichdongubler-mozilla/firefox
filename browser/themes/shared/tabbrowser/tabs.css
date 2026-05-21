@@ -941,7 +941,7 @@ tab-split-view-wrapper[dragtarget] {
     /* The below lines are required for dark, light, and
       system themes to achieve the gradient border appearance */
     /* stylelint-disable-next-line media-query-no-invalid */
-    @media (not ((forced-colors) or (-moz-native-theme))) and (-moz-pref("browser.nova.enabled")) {
+    @media (not (prefers-contrast)) and (-moz-pref("browser.nova.enabled")) {
       :root:not([lwtheme]) & {
         background:
           linear-gradient(var(--tab-background-color-selected)) padding-box,
@@ -2738,7 +2738,7 @@ tab-group {
   /* The below lines are required for dark, light, and
       system themes to achieve the gradient border appearance */
   /* stylelint-disable-next-line media-query-no-invalid */
-  @media (not ((forced-colors) or (-moz-native-theme))) and (-moz-pref("browser.nova.enabled")) {
+  @media (not (prefers-contrast)) and (-moz-pref("browser.nova.enabled")) {
     :root:not([lwtheme]) & {
       border: 1px solid transparent;
       background:
