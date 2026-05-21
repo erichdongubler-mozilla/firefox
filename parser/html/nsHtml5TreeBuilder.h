@@ -227,10 +227,6 @@ class nsHtml5TreeBuilder : public nsAHtml5TreeBuilderState {
 
   static const int32_t IN_COLUMN_GROUP = 9;
 
-  static const int32_t IN_SELECT_IN_TABLE = 10;
-
-  static const int32_t IN_SELECT = 11;
-
   static const int32_t AFTER_BODY = 12;
 
   static const int32_t IN_FRAMESET = 13;
@@ -314,7 +310,6 @@ class nsHtml5TreeBuilder : public nsAHtml5TreeBuilderState {
   bool quirks;
   bool forceNoQuirks;
   bool allowDeclarativeShadowRoots;
-  bool noInSelectMode;
   bool keepBuffer;
   inline nsHtml5ContentCreatorFunction htmlCreator(
       mozilla::dom::HTMLContentCreatorFunction htmlCreator) {
@@ -566,8 +561,6 @@ class nsHtml5TreeBuilder : public nsAHtml5TreeBuilderState {
   void setIsSrcdocDocument(bool isSrcdocDocument);
   bool isAllowDeclarativeShadowRoots();
   void setAllowDeclarativeShadowRoots(bool allow);
-  bool isNoInSelectMode();
-  void setNoInSelectMode(bool mode);
   void flushCharacters();
 
  private:

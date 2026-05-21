@@ -226,12 +226,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
     // no fall-through
 
-    private static final int IN_SELECT_IN_TABLE = 10;
-
-    private static final int IN_SELECT = 11;
-
-    // no fall-through
-
     private static final int AFTER_BODY = 12;
 
     // no fall-through
@@ -435,8 +429,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     private boolean forceNoQuirks = false;
 
     private boolean allowDeclarativeShadowRoots = false;
-
-    private boolean noInSelectMode = false;
 
     private boolean keepBuffer = false;
 
@@ -955,10 +947,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                      * current node.
                                      */
                                     break charactersloop;
-                                case IN_SELECT:
-                                case IN_SELECT_IN_TABLE:
-                                    // CPPONLY: MOZ_ASSERT(!noInSelectMode);
-                                    break charactersloop;
                                 case IN_TABLE:
                                 case IN_TABLE_BODY:
                                 case IN_ROW:
@@ -1170,10 +1158,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                     mode = IN_TABLE;
                                     i--;
                                     continue;
-                                case IN_SELECT:
-                                case IN_SELECT_IN_TABLE:
-                                    // CPPONLY: MOZ_ASSERT(!noInSelectMode);
-                                    break charactersloop;
                                 case AFTER_BODY:
                                     errNonSpaceAfterBody();
                                     fatal();
@@ -1339,8 +1323,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 case IN_TABLE_BODY:
                 case IN_ROW:
                 case IN_TABLE:
-                case IN_SELECT_IN_TABLE:
-                case IN_SELECT:
                 case IN_COLUMN_GROUP:
                 case FRAMESET_OK:
                 case IN_CAPTION:
@@ -2168,8 +2150,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 break starttagloop;
                             case HR:
                                 implicitlyCloseP();
-                                if (noInSelectMode
-                                        && findLastInScope("select") != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                if (findLastInScope("select") != TreeBuilder.NOT_FOUND_ON_STACK) {
                                     generateImpliedEndTags();
                                     if (errorHandler != null
                                             && (findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK
@@ -2191,20 +2172,18 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 elementName = ElementName.IMG;
                                 continue starttagloop;
                             case INPUT:
-                                if (noInSelectMode) {
-                                    if (fragment && "select" == contextName) {
-                                        errStartTagWithSelectOpen(name);
-                                        break starttagloop;
+                                if (fragment && "select" == contextName) {
+                                    errStartTagWithSelectOpen(name);
+                                    break starttagloop;
+                                }
+                                eltPos = findLastInScope("select");
+                                if (eltPos != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    errStartTagWithSelectOpen(name);
+                                    while (currentPtr >= eltPos) {
+                                        pop();
                                     }
-                                    eltPos = findLastInScope("select");
-                                    if (eltPos != TreeBuilder.NOT_FOUND_ON_STACK) {
-                                        errStartTagWithSelectOpen(name);
-                                        while (currentPtr >= eltPos) {
-                                            pop();
-                                        }
-                                        resetTheInsertionMode();
-                                        continue starttagloop;
-                                    }
+                                    resetTheInsertionMode();
+                                    continue starttagloop;
                                 }
                                 // CPPONLY: MOZ_FALLTHROUGH;
                             case IMG:
@@ -2258,93 +2237,56 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 attributes = null; // CPP
                                 break starttagloop;
                             case SELECT:
-                                if (noInSelectMode) {
-                                    if (fragment && "select" == contextName) {
-                                        errStartSelectWhereEndSelectExpected();
-                                        break starttagloop;
+                                if (fragment && "select" == contextName) {
+                                    errStartSelectWhereEndSelectExpected();
+                                    break starttagloop;
+                                }
+                                eltPos = findLastInScope("select");
+                                if (eltPos != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    errStartSelectWhereEndSelectExpected();
+                                    while (currentPtr >= eltPos) {
+                                        pop();
                                     }
-                                    eltPos = findLastInScope("select");
-                                    if (eltPos != TreeBuilder.NOT_FOUND_ON_STACK) {
-                                        errStartSelectWhereEndSelectExpected();
-                                        while (currentPtr >= eltPos) {
-                                            pop();
-                                        }
-                                        break starttagloop;
-                                    }
-                                    reconstructTheActiveFormattingElements();
-                                    appendToCurrentNodeAndPushElementMayFoster(
-                                            elementName,
-                                            attributes, formPointer);
-                                    framesetOk = false;
-                                    attributes = null; // CPP
                                     break starttagloop;
                                 }
                                 reconstructTheActiveFormattingElements();
                                 appendToCurrentNodeAndPushElementMayFoster(
                                         elementName,
                                         attributes, formPointer);
-                                if (!noInSelectMode) {
-                                    switch (mode) {
-                                        case IN_TABLE:
-                                        case IN_CAPTION:
-                                        case IN_COLUMN_GROUP:
-                                        case IN_TABLE_BODY:
-                                        case IN_ROW:
-                                        case IN_CELL:
-                                            mode = IN_SELECT_IN_TABLE;
-                                            break;
-                                        default:
-                                            mode = IN_SELECT;
-                                            break;
-                                    }
-                                }
+                                framesetOk = false;
                                 attributes = null; // CPP
                                 break starttagloop;
                             case OPTION:
-                                if (noInSelectMode) {
-                                    if (findLastInScope("select") != TreeBuilder.NOT_FOUND_ON_STACK) {
-                                        generateImpliedEndTagsExceptFor("optgroup");
-                                        if (errorHandler != null
-                                            && findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK) {
-                                            errUnclosedElements(findLastInScope("option"), name);
-                                        }
-                                    } else {
-                                        if (isCurrent("option")) {
-                                            pop();
-                                        }
+                                if (findLastInScope("select") != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    generateImpliedEndTagsExceptFor("optgroup");
+                                    if (errorHandler != null
+                                        && findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                        errUnclosedElements(findLastInScope("option"), name);
                                     }
-                                    reconstructTheActiveFormattingElements();
-                                    appendToCurrentNodeAndPushElement(
-                                            elementName,
-                                            attributes);
-                                    attributes = null; // CPP
-                                    break starttagloop;
-                                }
-                                // CPPONLY: MOZ_FALLTHROUGH;
-                            case OPTGROUP:
-                                if (noInSelectMode) {
-                                    if (findLastInScope("select") != TreeBuilder.NOT_FOUND_ON_STACK) {
-                                        generateImpliedEndTags();
-                                        if (errorHandler != null
-                                            && (findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK
-                                                || findLastInScope("optgroup") != TreeBuilder.NOT_FOUND_ON_STACK)) {
-                                            errUnclosedElements(currentPtr, name);
-                                        }
-                                    } else if (isCurrent("option")) {
+                                } else {
+                                    if (isCurrent("option")) {
                                         pop();
                                     }
-                                    reconstructTheActiveFormattingElements();
-                                    appendToCurrentNodeAndPushElement(
-                                            elementName,
-                                            attributes);
-                                    attributes = null; // CPP
-                                    break starttagloop;
                                 }
-                                if (isCurrent("option")) {
+                                reconstructTheActiveFormattingElements();
+                                appendToCurrentNodeAndPushElement(
+                                        elementName,
+                                        attributes);
+                                attributes = null; // CPP
+                                break starttagloop;
+                            case OPTGROUP:
+                                if (findLastInScope("select") != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    generateImpliedEndTags();
+                                    if (errorHandler != null
+                                        && (findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK
+                                            || findLastInScope("optgroup") != TreeBuilder.NOT_FOUND_ON_STACK)) {
+                                        errUnclosedElements(currentPtr, name);
+                                    }
+                                } else if (isCurrent("option")) {
                                     pop();
                                 }
                                 reconstructTheActiveFormattingElements();
-                                appendToCurrentNodeAndPushElementMayFoster(
+                                appendToCurrentNodeAndPushElement(
                                         elementName,
                                         attributes);
                                 attributes = null; // CPP
@@ -2597,113 +2539,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             pop();
                             mode = IN_TABLE;
                             continue;
-                    }
-                case IN_SELECT_IN_TABLE:
-                    // CPPONLY: MOZ_ASSERT(!noInSelectMode);
-                    switch (group) {
-                        case CAPTION:
-                        case TBODY_OR_THEAD_OR_TFOOT:
-                        case TR:
-                        case TD_OR_TH:
-                        case TABLE:
-                            errStartTagWithSelectOpen(name);
-                            eltPos = findLastInTableScope("select");
-                            if (eltPos == TreeBuilder.NOT_FOUND_ON_STACK) {
-                                assert fragment;
-                                break starttagloop; // http://www.w3.org/Bugs/Public/show_bug.cgi?id=8375
-                            }
-                            while (currentPtr >= eltPos) {
-                                pop();
-                            }
-                            resetTheInsertionMode();
-                            continue;
-                        default:
-                            // fall through to IN_SELECT
-                    }
-                    // CPPONLY: MOZ_FALLTHROUGH;
-                case IN_SELECT:
-                    // CPPONLY: MOZ_ASSERT(!noInSelectMode);
-                    switch (group) {
-                        case HTML:
-                            errStrayStartTag(name);
-                            if (!fragment) {
-                                addAttributesToHtml(attributes);
-                                attributes = null; // CPP
-                            }
-                            break starttagloop;
-                        case OPTION:
-                            if (isCurrent("option")) {
-                                pop();
-                            }
-                            appendToCurrentNodeAndPushElement(
-                                    elementName,
-                                    attributes);
-                            attributes = null; // CPP
-                            break starttagloop;
-                        case OPTGROUP:
-                            if (isCurrent("option")) {
-                                pop();
-                            }
-                            if (isCurrent("optgroup")) {
-                                pop();
-                            }
-                            appendToCurrentNodeAndPushElement(
-                                    elementName,
-                                    attributes);
-                            attributes = null; // CPP
-                            break starttagloop;
-                        case SELECT:
-                            errStartSelectWhereEndSelectExpected();
-                            eltPos = findLastInTableScope(name);
-                            if (eltPos == TreeBuilder.NOT_FOUND_ON_STACK) {
-                                assert fragment;
-                                errNoSelectInTableScope();
-                                break starttagloop;
-                            } else {
-                                while (currentPtr >= eltPos) {
-                                    pop();
-                                }
-                                resetTheInsertionMode();
-                                break starttagloop;
-                            }
-                        case INPUT:
-                        case TEXTAREA:
-                            errStartTagWithSelectOpen(name);
-                            eltPos = findLastInTableScope("select");
-                            if (eltPos == TreeBuilder.NOT_FOUND_ON_STACK) {
-                                assert fragment;
-                                break starttagloop;
-                            }
-                            while (currentPtr >= eltPos) {
-                                pop();
-                            }
-                            resetTheInsertionMode();
-                            continue;
-                        case SCRIPT:
-                            startTagScriptInHead(elementName, attributes);
-                            attributes = null; // CPP
-                            break starttagloop;
-                        case TEMPLATE:
-                            startTagTemplateInHead(elementName, attributes);
-                            attributes = null; // CPP
-                            break starttagloop;
-                        case HR:
-                            if (isCurrent("option")) {
-                                pop();
-                            }
-                            if (isCurrent("optgroup")) {
-                                pop();
-                            }
-                            appendVoidElementToCurrent(elementName, attributes);
-                            selfClosing = false;
-                            // [NOCPP[
-                            voidElement = true;
-                            // ]NOCPP]
-                            attributes = null; // CPP
-                            break starttagloop;
-                        default:
-                            errStrayStartTag(name);
-                            break starttagloop;
                     }
                 case AFTER_BODY:
                     switch (group) {
@@ -3609,6 +3444,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         case FIELDSET:
                         case BUTTON:
                         case ADDRESS_OR_ARTICLE_OR_ASIDE_OR_DETAILS_OR_DIALOG_OR_DIR_OR_FIGCAPTION_OR_FIGURE_OR_FOOTER_OR_HEADER_OR_HGROUP_OR_MAIN_OR_NAV_OR_SEARCH_OR_SECTION_OR_SUMMARY:
+                        case SELECT:
                             eltPos = findLastInScope(name);
                             if (eltPos == TreeBuilder.NOT_FOUND_ON_STACK) {
                                 errStrayEndTag(name);
@@ -3761,24 +3597,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         case TEMPLATE:
                             // fall through to IN_HEAD;
                             break;
-                        case SELECT:
-                            // TODO: once noInSelectMode goes away, case SELECT: should move together with BUTTON and ADDRESS_OR_ARTICLE_OR_ASIDE_OR_DETAILS_OR_DIALOG_OR_DIR_OR_FIGCAPTION_OR_FIGURE_OR_FOOTER_OR_HEADER_OR_HGROUP_OR_MAIN_OR_NAV_OR_SEARCH_OR_SECTION_OR_SUMMARY.
-                            if (noInSelectMode) {
-                                eltPos = findLastInScope(name);
-                                if (eltPos == TreeBuilder.NOT_FOUND_ON_STACK) {
-                                    errStrayEndTag(name);
-                                } else {
-                                    generateImpliedEndTags();
-                                    if (errorHandler != null && !isCurrent(name)) {
-                                        errUnclosedElements(eltPos, name);
-                                    }
-                                    while (currentPtr >= eltPos) {
-                                        pop();
-                                    }
-                                }
-                                break endtagloop;
-                            }
-                            // CPPONLY: MOZ_FALLTHROUGH;
                         case AREA_OR_WBR:
                         case KEYGEN: // XXX??
                         case PARAM_OR_SOURCE_OR_TRACK:
@@ -3898,74 +3716,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             pop();
                             mode = IN_TABLE;
                             continue;
-                    }
-                case IN_SELECT_IN_TABLE:
-                    // CPPONLY: MOZ_ASSERT(!noInSelectMode);
-                    switch (group) {
-                        case CAPTION:
-                        case TABLE:
-                        case TBODY_OR_THEAD_OR_TFOOT:
-                        case TR:
-                        case TD_OR_TH:
-                            errEndTagSeenWithSelectOpen(name);
-                            if (findLastInTableScope(name) != TreeBuilder.NOT_FOUND_ON_STACK) {
-                                eltPos = findLastInTableScope("select");
-                                if (eltPos == TreeBuilder.NOT_FOUND_ON_STACK) {
-                                    assert fragment;
-                                    break endtagloop; // http://www.w3.org/Bugs/Public/show_bug.cgi?id=8375
-                                }
-                                while (currentPtr >= eltPos) {
-                                    pop();
-                                }
-                                resetTheInsertionMode();
-                                continue;
-                            } else {
-                                break endtagloop;
-                            }
-                        default:
-                            // fall through to IN_SELECT
-                    }
-                    // CPPONLY: MOZ_FALLTHROUGH;
-                case IN_SELECT:
-                    // CPPONLY: MOZ_ASSERT(!noInSelectMode);
-                    switch (group) {
-                        case OPTION:
-                            if (isCurrent("option")) {
-                                pop();
-                                break endtagloop;
-                            } else {
-                                errStrayEndTag(name);
-                                break endtagloop;
-                            }
-                        case OPTGROUP:
-                            if (isCurrent("option")
-                                    && "optgroup" == stack[currentPtr - 1].name) {
-                                pop();
-                            }
-                            if (isCurrent("optgroup")) {
-                                pop();
-                            } else {
-                                errStrayEndTag(name);
-                            }
-                            break endtagloop;
-                        case SELECT:
-                            eltPos = findLastInTableScope("select");
-                            if (eltPos == TreeBuilder.NOT_FOUND_ON_STACK) {
-                                assert fragment;
-                                errStrayEndTag(name);
-                                break endtagloop;
-                            }
-                            while (currentPtr >= eltPos) {
-                                pop();
-                            }
-                            resetTheInsertionMode();
-                            break endtagloop;
-                        case TEMPLATE:
-                            endTagTemplateInHead();
-                            break endtagloop;
-                        default:
-                            errStrayEndTag(name);
-                            break endtagloop;
                     }
                 case AFTER_BODY:
                     switch (group) {
@@ -4426,30 +4176,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                     return;
                 }
             }
-            if ("select" == name) {
-                if (!noInSelectMode) {
-                    int ancestorIndex = i;
-                    while (ancestorIndex > 0) {
-                        StackNode<T> ancestor = stack[ancestorIndex--];
-                        if ("http://www.w3.org/1999/xhtml" == ancestor.ns) {
-                            if ("template" == ancestor.name) {
-                                break;
-                            }
-                            if ("table" == ancestor.name) {
-                                mode = IN_SELECT_IN_TABLE;
-                                return;
-                            }
-                        }
-                    }
-                    mode = IN_SELECT;
-                    return;
-                }
-                if (i == 0) {
-                    mode = framesetOk ? FRAMESET_OK : IN_BODY;
-                    return;
-                }
-                continue;
-            } else if ("td" == name || "th" == name) {
+            if ("td" == name || "th" == name) {
                 mode = IN_CELL;
                 return;
             } else if ("tr" == name) {
@@ -6091,14 +5818,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
     public void setAllowDeclarativeShadowRoots(boolean allow) {
         allowDeclarativeShadowRoots = allow;
-    }
-
-    public boolean isNoInSelectMode() {
-        return noInSelectMode;
-    }
-
-    public void setNoInSelectMode(boolean mode) {
-        noInSelectMode = mode;
     }
 
     // [NOCPP[
