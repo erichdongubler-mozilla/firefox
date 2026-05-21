@@ -1518,12 +1518,19 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             if (!(group == FONT && !(attributes.contains(AttributeName.COLOR)
                                     || attributes.contains(AttributeName.FACE) || attributes.contains(AttributeName.SIZE)))) {
                                 errHtmlStartTagInForeignContext(name);
-                                if (!fragment) {
-                                    while (!isSpecialParentInForeign(stack[currentPtr])) {
-                                        popForeign(-1, -1);
-                                    }
+                                // Pop until we reach an HTML namespace element,
+                                // HTML integration point, or MathML text integration point.
+                                // In fragment case, stop before popping the context element.
+                                while (currentPtr > 0 && !isSpecialParentInForeign(stack[currentPtr])) {
+                                    popForeign(-1, -1);
+                                }
+                                if (currentPtr > 0 || isSpecialParentInForeign(stack[currentPtr])) {
+                                    // Popped to an HTML element or integration point
                                     continue starttagloop;
-                                } // else fall thru
+                                }
+                                // In fragment case with foreign context, fall through
+                                // to let switch(mode) handle the token in HTML namespace
+                                break;
                             }
                             // CPPONLY: MOZ_FALLTHROUGH;
                         default:
@@ -2150,12 +2157,23 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 break starttagloop;
                             case HR:
                                 implicitlyCloseP();
+                                // https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody
+                                // "A start tag whose tag name is "hr""
+                                // "If the stack of open elements has a select element in scope:"
                                 if (findLastInScope("select") != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    // "1. Generate implied end tags."
                                     generateImpliedEndTags();
+                                    // "2. If the stack of open elements has an option element
+                                    //     in scope or has an optgroup element in scope, then
+                                    //     this is a parse error."
                                     if (errorHandler != null
                                             && (findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK
-                                            || findLastInScope("optgroup") != TreeBuilder.NOT_FOUND_ON_STACK)) {
-                                        errUnclosedElements(currentPtr, name);
+                                                || findLastInScope("optgroup") != TreeBuilder.NOT_FOUND_ON_STACK)) {
+                                        errUnclosedElementsImplied(
+                                                findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK
+                                                        ? findLastInScope("option")
+                                                        : findLastInScope("optgroup"),
+                                                name);
                                     }
                                 }
                                 appendVoidElementToCurrentMayFoster(
@@ -2171,22 +2189,32 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 errImage();
                                 elementName = ElementName.IMG;
                                 continue starttagloop;
+                            case IMG:
+                                reconstructTheActiveFormattingElements();
+                                appendVoidElementToCurrentMayFoster(
+                                        elementName, attributes,
+                                        formPointer);
+                                selfClosing = false;
+                                // [NOCPP[
+                                voidElement = true;
+                                // ]NOCPP]
+                                attributes = null; // CPP
+                                break starttagloop;
                             case INPUT:
-                                if (fragment && "select" == contextName) {
-                                    errStartTagWithSelectOpen(name);
-                                    break starttagloop;
-                                }
+                                // https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody
+                                // "A start tag whose tag name is "input""
+                                // "If the stack of open elements has a select element
+                                //  in scope:"
                                 eltPos = findLastInScope("select");
                                 if (eltPos != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    // "Parse error."
                                     errStartTagWithSelectOpen(name);
+                                    // "Pop elements until a select element has been popped."
                                     while (currentPtr >= eltPos) {
                                         pop();
                                     }
-                                    resetTheInsertionMode();
                                     continue starttagloop;
                                 }
-                                // CPPONLY: MOZ_FALLTHROUGH;
-                            case IMG:
                                 reconstructTheActiveFormattingElements();
                                 appendVoidElementToCurrentMayFoster(
                                         elementName, attributes,
@@ -2237,56 +2265,101 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 attributes = null; // CPP
                                 break starttagloop;
                             case SELECT:
+                                // https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody
+                                // "A start tag whose tag name is "select""
+                                // "If the parser was created as part of the HTML fragment
+                                //  parsing algorithm and the context element is a select
+                                //  element:"
                                 if (fragment && "select" == contextName) {
+                                    // "Parse error. Ignore the token."
                                     errStartSelectWhereEndSelectExpected();
                                     break starttagloop;
                                 }
-                                eltPos = findLastInScope("select");
+                                // "Otherwise, if the stack of open elements has a select
+                                //  element in scope:"
+                                eltPos = findLastInScope(name);
                                 if (eltPos != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    // "Parse error."
                                     errStartSelectWhereEndSelectExpected();
+                                    // "Pop elements until a select element has been popped."
                                     while (currentPtr >= eltPos) {
                                         pop();
                                     }
                                     break starttagloop;
                                 }
+                                // "Otherwise:"
+                                // "Reconstruct the active formatting elements, if any."
                                 reconstructTheActiveFormattingElements();
+                                // "Insert an HTML element for the token."
                                 appendToCurrentNodeAndPushElementMayFoster(
                                         elementName,
                                         attributes, formPointer);
+                                // "Set the frameset-ok flag to "not ok"."
                                 framesetOk = false;
                                 attributes = null; // CPP
                                 break starttagloop;
                             case OPTION:
+                                // https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody
+                                // "A start tag whose tag name is "option""
+                                // "If the stack of open elements has a select element in scope:"
                                 if (findLastInScope("select") != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    // "1. Generate implied end tags except for optgroup elements."
                                     generateImpliedEndTagsExceptFor("optgroup");
-                                    if (errorHandler != null
-                                        && findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK) {
-                                        errUnclosedElements(findLastInScope("option"), name);
+                                    // "2. If the stack of open elements has an option element
+                                    //     in scope, then this is a parse error."
+                                    if (errorHandler != null) {
+                                        int optionPos = findLastInScope("option");
+                                        if (optionPos != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                            errUnclosedElementsImplied(optionPos, name);
+                                        }
                                     }
                                 } else {
+                                    // "Otherwise, if the current node is an option element,
+                                    //  then pop the current node from the stack of open elements."
                                     if (isCurrent("option")) {
                                         pop();
                                     }
                                 }
+                                // "Reconstruct the active formatting elements, if any."
                                 reconstructTheActiveFormattingElements();
-                                appendToCurrentNodeAndPushElement(
+                                // "Insert an HTML element for the token."
+                                appendToCurrentNodeAndPushElementMayFoster(
                                         elementName,
                                         attributes);
                                 attributes = null; // CPP
                                 break starttagloop;
                             case OPTGROUP:
+                                // https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody
+                                // "A start tag whose tag name is "optgroup""
+                                // "If the stack of open elements has a select element in scope:"
                                 if (findLastInScope("select") != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                    // "1. Generate implied end tags."
                                     generateImpliedEndTags();
-                                    if (errorHandler != null
-                                        && (findLastInScope("option") != TreeBuilder.NOT_FOUND_ON_STACK
-                                            || findLastInScope("optgroup") != TreeBuilder.NOT_FOUND_ON_STACK)) {
-                                        errUnclosedElements(currentPtr, name);
+                                    // "2. If the stack of open elements has an option element
+                                    //     in scope or has an optgroup element in scope, then
+                                    //     this is a parse error."
+                                    if (errorHandler != null) {
+                                        int optionPos = findLastInScope("option");
+                                        if (optionPos != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                            errUnclosedElementsImplied(optionPos, name);
+                                        } else {
+                                            int optgroupPos = findLastInScope("optgroup");
+                                            if (optgroupPos != TreeBuilder.NOT_FOUND_ON_STACK) {
+                                                errUnclosedElementsImplied(optgroupPos, name);
+                                            }
+                                        }
                                     }
-                                } else if (isCurrent("option")) {
-                                    pop();
+                                } else {
+                                    // "Otherwise, if the current node is an option element,
+                                    //  then pop the current node from the stack of open elements."
+                                    if (isCurrent("option")) {
+                                        pop();
+                                    }
                                 }
+                                // "Reconstruct the active formatting elements, if any."
                                 reconstructTheActiveFormattingElements();
-                                appendToCurrentNodeAndPushElement(
+                                // "Insert an HTML element for the token."
+                                appendToCurrentNodeAndPushElementMayFoster(
                                         elementName,
                                         attributes);
                                 attributes = null; // CPP
@@ -2355,14 +2428,18 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 attributes = null; // CPP
                                 break starttagloop;
                             case CAPTION:
-                            case COL:
-                            case COLGROUP:
                             case TBODY_OR_THEAD_OR_TFOOT:
                             case TR:
                             case TD_OR_TH:
+                            case COL:
+                            case COLGROUP:
                             case FRAME:
                             case FRAMESET:
                             case HEAD:
+                                // https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody
+                                // "A start tag whose tag name is one of: "caption", "col",
+                                //  "colgroup", "frame", "frameset", "head", "tbody", "td",
+                                //  "tfoot", "th", "thead", "tr""
                                 errStrayStartTag(name);
                                 break starttagloop;
                             case OUTPUT:
@@ -3150,6 +3227,11 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 for (;;) {
                     if (eltPos == 0) {
                         assert fragment: "We can get this close to the root of the stack in foreign content only in the fragment case.";
+                        // For </p> and </br>, continue to mode handling
+                        // which will create implied start tags
+                        if (group == P || group == BR) {
+                            break; // break from inner loop, continue to switch(mode)
+                        }
                         break endtagloop;
                     }
                     if (stack[eltPos].name == name) {
@@ -3443,8 +3525,11 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         case PRE_OR_LISTING:
                         case FIELDSET:
                         case BUTTON:
-                        case ADDRESS_OR_ARTICLE_OR_ASIDE_OR_DETAILS_OR_DIALOG_OR_DIR_OR_FIGCAPTION_OR_FIGURE_OR_FOOTER_OR_HEADER_OR_HGROUP_OR_MAIN_OR_NAV_OR_SEARCH_OR_SECTION_OR_SUMMARY:
                         case SELECT:
+                        case ADDRESS_OR_ARTICLE_OR_ASIDE_OR_DETAILS_OR_DIALOG_OR_DIR_OR_FIGCAPTION_OR_FIGURE_OR_FOOTER_OR_HEADER_OR_HGROUP_OR_MAIN_OR_NAV_OR_SEARCH_OR_SECTION_OR_SUMMARY:
+                            // https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody
+                            // "An end tag whose tag name is one of: "address", "article",
+                            //  ..., "select", ..., "ul""
                             eltPos = findLastInScope(name);
                             if (eltPos == TreeBuilder.NOT_FOUND_ON_STACK) {
                                 errStrayEndTag(name);
@@ -3495,12 +3580,10 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             eltPos = findLastInButtonScope("p");
                             if (eltPos == TreeBuilder.NOT_FOUND_ON_STACK) {
                                 errNoElementToCloseButEndTagSeen("p");
-                                // XXX Can the 'in foreign' case happen anymore?
                                 if (isInForeign()) {
                                     errHtmlStartTagInForeignContext(name);
-                                    // Check for currentPtr for the fragment
-                                    // case.
-                                    while (currentPtr >= 0 && stack[currentPtr].ns != "http://www.w3.org/1999/xhtml") {
+                                    // Pop foreign elements, but keep context element in fragment case
+                                    while (currentPtr > 0 && stack[currentPtr].ns != "http://www.w3.org/1999/xhtml") {
                                         pop();
                                     }
                                 }
@@ -3581,11 +3664,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                         case BR:
                             errEndTagBr();
                             if (isInForeign()) {
-                                // XXX can this happen anymore?
                                 errHtmlStartTagInForeignContext(name);
-                                // Check for currentPtr for the fragment
-                                // case.
-                                while (currentPtr >= 0 && stack[currentPtr].ns != "http://www.w3.org/1999/xhtml") {
+                                // Pop foreign elements, but keep context element in fragment case
+                                while (currentPtr > 0 && stack[currentPtr].ns != "http://www.w3.org/1999/xhtml") {
                                     pop();
                                 }
                             }
@@ -5611,7 +5692,16 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
     protected abstract void detachFromParent(T element) throws SAXException;
 
+    /**
+     * Called when an option element is popped from the stack.
+     *
+     * https://html.spec.whatwg.org/multipage/form-elements.html#maybe-clone-an-option-into-selectedcontent
+     * Implements "maybe clone an option into selectedcontent" for
+     * customizable select. Subclasses that support DOM operations
+     * should override this to perform the cloning.
+     */
     protected void optionElementPopped(T option) throws SAXException {
+        // Default: no-op (streaming/SAX mode ignores cloning)
     }
 
     protected abstract boolean hasChildren(T element) throws SAXException;
@@ -6361,10 +6451,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         }
     }
 
-    private void errNoSelectInTableScope() throws SAXException {
-        err("No \u201Cselect\u201D in table scope.");
-    }
-
     private void errStartSelectWhereEndSelectExpected() throws SAXException {
         err("\u201Cselect\u201D start tag where end tag expected.");
     }
@@ -6440,14 +6526,6 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
     private void errEndTagAfterBody() throws SAXException {
         err("Saw an end tag after \u201Cbody\u201D had been closed.");
-    }
-
-    private void errEndTagSeenWithSelectOpen(@Local String name) throws SAXException {
-        if (errorHandler == null) {
-            return;
-        }
-        errNoCheck("\u201C" + name
-                + "\u201D end tag with \u201Cselect\u201D open.");
     }
 
     private void errGarbageInColgroup() throws SAXException {
