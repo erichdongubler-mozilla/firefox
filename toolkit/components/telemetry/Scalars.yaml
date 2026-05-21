@@ -1265,6 +1265,70 @@ browser.engagement.navigation:
     record_in_processes:
       - 'main'
 
+browser.startup:
+  abouthome_cache_result:
+    bug_numbers:
+      - 1622263
+      - 1614351
+      - 1683101
+      - 1714258
+      - 1730042
+      - 1754641
+      - 1781978
+      - 1811151
+      - 1841926
+    description: >
+      How the about:home startup cache functioned on startup.
+
+      0: Result value was never set (error case)
+      1: Cache did not exist
+      2: Cache page stream was corrupt / inaccessible
+      3: Cache script stream was corrupt / inaccessible
+      4: Cache was invalidated by a version bump
+      5: Cache was valid, but read too late to be useful.
+      6: Cache was valid and used.
+      7: Cache is disabled.
+      8: User did not load about:home on its own by default.
+      9: Cache is disabled because about:newtab preloading is disabled.
+
+    expires: never
+    kind: uint
+    notification_emails:
+      - mconley@mozilla.com
+      - perf-telemetry-alerts@mozilla.com
+    release_channel_collection: opt-out
+    products:
+      - 'firefox'
+    record_in_processes:
+      - 'main'
+
+  abouthome_cache_shutdownwrite:
+    bug_numbers:
+      - 1622263
+      - 1614351
+      - 1683101
+      - 1714258
+      - 1730042
+      - 1754641
+      - 1781978
+      - 1811151
+      - 1841926
+    description: >
+      True if the about:home startup cache was written via the AsyncShutdown
+      blocker.
+
+    expires: never
+    kind: boolean
+    notification_emails:
+      - mconley@mozilla.com
+      - perf-telemetry-alerts@mozilla.com
+    release_channel_collection: opt-out
+    products:
+      - 'firefox'
+    record_in_processes:
+      - 'main'
+
+# The following section contains the browser usage scalars.
 browser.ui:
   toolbar_widgets:
     bug_numbers:
@@ -3552,6 +3616,23 @@ gfx.hdr:
       - 'main'
 
 gfx:
+  skipped_composites:
+    bug_numbers:
+      - 1797975
+    description: >
+      Number of skipped composites, happening when rendering is too slow to keep up with content.
+    keyed: false
+    kind: uint
+    expires: "never"
+    notification_emails:
+      - gfx-telemetry-alerts@mozilla.com
+      - perf-telemetry-alerts@mozilla.com
+    products:
+      - 'firefox'
+      - 'fennec'
+    record_in_processes:
+      - 'main'
+      - 'gpu'
   os_compositor:
     bug_numbers:
       - 1623492
@@ -3772,6 +3853,80 @@ printing:
     release_channel_collection: opt-out
     products:
       - 'firefox'
+    record_in_processes:
+      - 'main'
+
+# The following section contains probes that record timestamps.
+timestamps:
+  first_paint:
+    bug_numbers:
+      - 1386186
+    description: >
+     Record the timestamp of the first content window paint, in milliseconds since process start.
+    expires: never
+    kind: uint
+    notification_emails:
+      - perf-telemetry-alerts@mozilla.com
+    release_channel_collection: opt-out
+    products:
+      - 'firefox'
+      - 'fennec'
+    record_in_processes:
+      - main
+
+  first_paint_two:
+    bug_numbers:
+      - 1556568
+    description: >
+     Record the timestamp of the first main window paint, in milliseconds since process start.
+     Intended to replace first_paint since first_paint is broken.
+    expires: never
+    kind: uint
+    notification_emails:
+      - perf-telemetry-alerts@mozilla.com
+      - gfx-telemetry-alerts@mozilla.com
+    release_channel_collection: opt-out
+    products:
+      - firefox
+      - fennec
+    record_in_processes:
+      - main
+
+  about_home_topsites_first_paint:
+    bug_numbers:
+      - 1518521
+    description: >
+      Record the timestamp of when the first about:home's Topsites are painted. Only records if
+      about:home is set as the default homepage, and if sessions are not being restored by default.
+    expires: never
+    kind: uint
+    notification_emails:
+      - perf-telemetry-alerts@mozilla.com
+      - mconley@mozilla.com
+    release_channel_collection: opt-out
+    products:
+      - 'firefox'
+      - 'fennec'
+    record_in_processes:
+      - main
+
+browser.timings:
+  last_shutdown:
+    bug_numbers:
+      - 1429510
+    description: >
+      The time, in milliseconds, it took to complete the last shutdown.
+      On successful shutdown, Telemetry saves this to disk into Telemetry.ShutdownTime.txt.
+      On the next startup this is loaded and recorded.
+    expires: never
+    kind: uint
+    notification_emails:
+      - perf-telemetry-alerts@mozilla.com
+      - florian@mozilla.com
+    release_channel_collection: opt-in
+    products:
+      - 'firefox'
+      - 'fennec'
     record_in_processes:
       - 'main'
 
