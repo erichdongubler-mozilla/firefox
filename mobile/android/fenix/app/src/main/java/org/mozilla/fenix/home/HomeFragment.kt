@@ -5,9 +5,7 @@
 package org.mozilla.fenix.home
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -18,22 +16,27 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.getSystemService
@@ -63,14 +66,13 @@ import mozilla.components.feature.top.sites.presenter.DefaultTopSitesPresenter
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.components.service.nimbus.messaging.Message
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.view.toScope
 import mozilla.components.support.utils.BuildManufacturerChecker
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
-import mozilla.components.support.utils.KeyboardState
 import mozilla.components.support.utils.ext.navigateToDefaultBrowserAppsSettings
-import mozilla.components.support.utils.keyboardAsState
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.HomeScreen
@@ -96,18 +98,14 @@ import org.mozilla.fenix.components.appstate.AppAction.MessagingAction
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.MicrosurveyAction
 import org.mozilla.fenix.components.appstate.AppAction.ReviewPromptAction.CheckIfEligibleForReviewPrompt
 import org.mozilla.fenix.components.appstate.AppAction.SportsWidgetAction
-import org.mozilla.fenix.components.appstate.OrientationMode
+import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.metrics.installSourcePackage
-import org.mozilla.fenix.components.toolbar.BottomToolbarContainerView
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.compose.snackbar.SnackbarState
-import org.mozilla.fenix.databinding.FragmentHomeBinding
 import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.getBottomToolbarHeight
 import org.mozilla.fenix.ext.getRootView
-import org.mozilla.fenix.ext.getTopToolbarHeight
 import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.isOnline
 import org.mozilla.fenix.ext.isToolbarAtBottom
@@ -116,7 +114,6 @@ import org.mozilla.fenix.ext.recordEventInNimbus
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.tabClosedUndoMessage
-import org.mozilla.fenix.ext.updateMicrosurveyPromptForConfigurationChange
 import org.mozilla.fenix.home.bookmarks.BookmarksFeature
 import org.mozilla.fenix.home.bookmarks.controller.DefaultBookmarksController
 import org.mozilla.fenix.home.ext.showWallpaperOnboardingDialog
@@ -154,7 +151,6 @@ import org.mozilla.fenix.messaging.DefaultMessageController
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.messaging.MessagingFeature
 import org.mozilla.fenix.microsurvey.ui.MicrosurveyRequestPrompt
-import org.mozilla.fenix.microsurvey.ui.ext.MicrosurveyUIData
 import org.mozilla.fenix.microsurvey.ui.ext.toMicrosurveyUIData
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.onboarding.OnboardingFragmentDirections
@@ -181,6 +177,7 @@ import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerTelemetryMiddleware
 import org.mozilla.fenix.termsofuse.store.Surface
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.trackingprotection.TrackersBlockedFeature
+import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.allowUndo
 import org.mozilla.fenix.utils.getUndoDelay
 import org.mozilla.fenix.utils.showAddSearchWidgetPromptIfSupported
@@ -198,11 +195,6 @@ class HomeFragment : Fragment() {
     @VisibleForTesting
     internal lateinit var bundleArgs: Bundle
 
-    @VisibleForTesting
-    @Suppress("VariableNaming")
-    internal var _binding: FragmentHomeBinding? = null
-    internal val binding get() = _binding!!
-
     private val homeViewModel: HomeScreenViewModel by activityViewModels()
 
     private val snackbarHostState = SnackbarHostState()
@@ -210,9 +202,6 @@ class HomeFragment : Fragment() {
     @VisibleForTesting
     internal var homeNavigationBar: HomeNavigationBar? = null
 
-    private var _bottomToolbarContainerView: BottomToolbarContainerView? = null
-    private val bottomToolbarContainerView: BottomToolbarContainerView
-        get() = _bottomToolbarContainerView!!
     private var awesomeBarComposable: AwesomeBarComposable? = null
 
     private val browsingModeManager get() = (activity as HomeActivity).browsingModeManager
@@ -387,12 +376,15 @@ class HomeFragment : Fragment() {
     ): View {
         // DO NOT ADD ANYTHING ABOVE THIS getProfilerTime CALL!
         val profilerStartTime = requireComponents.core.engine.profiler?.getProfilerTime()
-        _binding = FragmentHomeBinding.inflate(inflater, container, false)
 
         val activity = activity as HomeActivity
-        nullableToolbarView = buildToolbar(activity)
+        val view = ComposeView(activity).apply {
+            id = R.id.homepageView
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        }
 
-        initComposeHomepage()
+        nullableToolbarView = buildToolbar(activity, view)
+        initComposeHomepage(view = view, activity = activity)
 
         // DO NOT MOVE ANYTHING BELOW THIS addMarker CALL!
         requireComponents.core.engine.profiler?.addMarker(
@@ -400,10 +392,10 @@ class HomeFragment : Fragment() {
             profilerStartTime,
             "HomeFragment.onCreateView",
         )
-        return binding.root
+        return view
     }
 
-    private fun buildToolbar(activity: HomeActivity): FenixHomeToolbar {
+    private fun buildToolbar(activity: HomeActivity, view: View): FenixHomeToolbar {
         val toolbarStore by buildToolbarStore(activity)
 
         if (homepageEdgeToEdgeFeature.get() == null) {
@@ -416,7 +408,7 @@ class HomeFragment : Fragment() {
                     toolbarStore = toolbarStore,
                 ),
                 owner = viewLifecycleOwner,
-                view = binding.root,
+                view = view,
             )
         }
 
@@ -429,7 +421,6 @@ class HomeFragment : Fragment() {
 
         return HomeToolbarComposable(
             context = activity,
-            homeBinding = binding,
             navController = findNavController(),
             toolbarStore = toolbarStore,
             appStore = activity.components.appStore,
@@ -443,13 +434,13 @@ class HomeFragment : Fragment() {
                 sessionId = args.sessionToStartSearchFor,
                 source = args.searchAccessPoint,
             ),
-            coroutineScope = binding.homeLayout.toScope(),
+            coroutineScope = view.toScope(),
             tabStripContent = { TabStrip(toolbarStore) },
             searchSuggestionsContent = { modifier ->
                 (awesomeBarComposable ?: initializeAwesomeBarComposable(toolbarStore, modifier))
                     ?.SearchSuggestions()
             },
-            navigationBarContent = homeNavigationBar?.asComposable(),
+            navigationBarContent = null,
         )
     }
 
@@ -462,20 +453,7 @@ class HomeFragment : Fragment() {
         browsingModeManager = activity.browsingModeManager,
     )
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-
-        // If the microsurvey feature is visible, we should update it's state.
-        if (shouldShowMicrosurveyPrompt(requireContext())) {
-            updateMicrosurveyPromptForConfigurationChange(
-                parent = binding.homeLayout,
-                bottomToolbarContainerView = _bottomToolbarContainerView?.toolbarContainerView,
-                reinitializeMicrosurveyPrompt = { initializeMicrosurveyPrompt() },
-            )
-        }
-    }
-
-    private fun initMessagingFeature() {
+    private fun initMessagingFeature(view: View) {
         if (requireContext().settings().isExperimentationEnabled) {
             messagingFeatureHomescreen.set(
                 feature = MessagingFeature(
@@ -484,15 +462,15 @@ class HomeFragment : Fragment() {
                     runWhenReadyQueue = requireComponents.performance.visualCompletenessQueue,
                 ),
                 owner = viewLifecycleOwner,
-                view = binding.root,
+                view = view,
             )
 
-            initializeMicrosurveyFeature(requireContext().settings().microsurveyFeatureEnabled)
+            initializeMicrosurveyFeature(requireContext().settings().microsurveyFeatureEnabled, view)
         }
     }
 
     @VisibleForTesting
-    internal fun initializeMicrosurveyFeature(isMicrosurveyEnabled: Boolean) {
+    internal fun initializeMicrosurveyFeature(isMicrosurveyEnabled: Boolean, view: View) {
         if (isMicrosurveyEnabled) {
             messagingFeatureMicrosurvey.set(
                 feature = MessagingFeature(
@@ -501,116 +479,10 @@ class HomeFragment : Fragment() {
                     runWhenReadyQueue = requireComponents.performance.visualCompletenessQueue,
                 ),
                 owner = viewLifecycleOwner,
-                view = binding.root,
+                view = view,
             )
         }
     }
-
-    @Suppress("CognitiveComplexMethod")
-    private fun initializeMicrosurveyPrompt() {
-        val context = requireContext()
-
-        val isToolbarAtTheBottom = context.isToolbarAtBottom()
-        // The toolbar view has already been added directly to the container.
-        if (isToolbarAtTheBottom) {
-            binding.root.removeView(toolbarView.layout)
-        }
-
-        _bottomToolbarContainerView = BottomToolbarContainerView(
-            context = context,
-            parent = binding.homeLayout,
-            content = {
-                FirefoxTheme {
-                    Column {
-                        val activity = requireActivity() as HomeActivity
-                        val shouldShowMicrosurveyPrompt = !activity.isMicrosurveyPromptDismissed.value
-
-                        if (shouldShowMicrosurveyPrompt) {
-                            currentMicrosurvey
-                                ?.let {
-                                    if (isToolbarAtTheBottom) {
-                                        updateToolbarViewUIForMicrosurveyPrompt()
-                                    }
-
-                                    HorizontalDivider()
-
-                                    MicrosurveyRequestPrompt(
-                                        microsurvey = it,
-                                        onStartSurveyClicked = {
-                                            context.components.appStore.dispatch(MicrosurveyAction.Started(it.id))
-                                            findNavController().nav(
-                                                R.id.homeFragment,
-                                                HomeFragmentDirections.actionGlobalMicrosurveyDialog(it.id),
-                                            )
-                                        },
-                                        onCloseButtonClicked = {
-                                            context.components.appStore.dispatch(
-                                                MicrosurveyAction.Dismissed(it.id),
-                                            )
-                                            context.settings().shouldShowMicrosurveyPrompt = false
-                                            activity.isMicrosurveyPromptDismissed.value = true
-
-                                            resetToolbarViewUI()
-                                            initializeMicrosurveyPrompt()
-                                        },
-                                    )
-                                }
-                        } else {
-                            val showDivider = !requireContext().settings().enableHomepageSearchBar
-                            toolbarView.updateDividerVisibility(showDivider)
-                        }
-
-                        if (isToolbarAtTheBottom) {
-                            AndroidView(factory = { _ -> toolbarView.layout })
-                        }
-                    }
-                }
-            },
-        )
-    }
-
-    private fun updateToolbarViewUIForMicrosurveyPrompt() {
-        updateToolbarViewUI(false, 0.0f)
-    }
-
-    private fun resetToolbarViewUI() {
-        val elevation = requireContext().resources.getDimension(R.dimen.browser_fragment_toolbar_elevation)
-        _binding?.homeLayout?.removeView(bottomToolbarContainerView.toolbarContainerView)
-        val showDivider = requireContext().isToolbarAtBottom() || !requireContext().settings().enableHomepageSearchBar
-
-        updateToolbarViewUI(showDivider, elevation)
-    }
-
-    private fun updateToolbarViewUI(
-        showDivider: Boolean,
-        elevation: Float,
-    ) {
-        toolbarView.updateDividerVisibility(showDivider)
-        toolbarView.layout.elevation = elevation
-    }
-
-    private var currentMicrosurvey: MicrosurveyUIData? = null
-
-    /**
-     * Listens for the microsurvey message and initializes the microsurvey prompt if one is available.
-     */
-    private fun listenForMicrosurveyMessage(context: Context) {
-        binding.root.consumeFrom(context.components.appStore, viewLifecycleOwner) { state ->
-            state.messaging.messageToShow[FenixMessageSurfaceId.MICROSURVEY]?.let { message ->
-                if (message.id != currentMicrosurvey?.id) {
-                    message.toMicrosurveyUIData()?.let { microsurvey ->
-                        context.components.settings.shouldShowMicrosurveyPrompt = true
-                        currentMicrosurvey = microsurvey
-
-                        initializeMicrosurveyPrompt()
-                    }
-                }
-            }
-        }
-    }
-
-    private fun shouldShowMicrosurveyPrompt(context: Context) =
-        context.components.settings.shouldShowMicrosurveyPrompt
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // DO NOT ADD ANYTHING ABOVE THIS getProfilerTime CALL!
@@ -647,13 +519,13 @@ class HomeFragment : Fragment() {
         lensFeature = LensFeature.register(this, lensLauncher, lensCameraPermissionLauncher)
 
         initStoriesState()
-        initMessagingFeature()
-        initTopSitesBinding()
-        initRecentTabsListFeature()
-        initPrivacyReportFeature()
-        initBookmarksFeature()
-        initHistoryMetadataFeature()
-        initThumbnailsFeature()
+        initMessagingFeature(view = view)
+        initTopSitesBinding(view = view)
+        initRecentTabsListFeature(view = view)
+        initPrivacyReportFeature(view = view)
+        initBookmarksFeature(view = view)
+        initHistoryMetadataFeature(view = view)
+        initThumbnailsFeature(view = view)
         initReviewPromptBinding(view = view)
         initTabsCleanupFeature(view = view)
         initSnackbarBinding(view = view)
@@ -673,10 +545,6 @@ class HomeFragment : Fragment() {
         initController()
         initInteractor()
 
-        if (requireContext().settings().microsurveyFeatureEnabled) {
-            listenForMicrosurveyMessage(requireContext())
-        }
-
         continuousOnboardingFeature.maybeRunContinuousOnboarding(
             activity = requireActivity(),
             launcher = continuousOnboardingDefaultBrowserLauncher,
@@ -691,90 +559,177 @@ class HomeFragment : Fragment() {
     }
 
     @Suppress("LongMethod")
-    private fun initComposeHomepage() {
-        binding.homepageView.apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+    private fun initComposeHomepage(
+        view: ComposeView,
+        activity: HomeActivity,
+    ) {
+        view.setContent {
+            FirefoxTheme {
+                val settings = LocalContext.current.settings()
+                val appState = with(components.appStore) {
+                    remember {
+                        // Ignore AppState changes where only the browsing mode differs.
+                        // This avoids unnecessary recompositions triggered by theme/browsing mode transitions,
+                        // which are handled outside Compose via ThemeManager recreating the activity.
+                        // Without this, transient states can cause visual glitches (e.g., incorrect theme/frame)
+                        flow().distinctUntilChanged { old, new -> old.mode != new.mode }
+                    }.collectAsState(state)
+                }
+                val privacyNoticeBannerState = privacyNoticeBannerStore.flow().collectAsState(
+                    initial = privacyNoticeBannerStore.state,
+                )
+                val isToolbarAtTop = settings.toolbarPosition == ToolbarPosition.TOP
 
-            setContent {
-                FirefoxTheme {
-                    val settings = LocalContext.current.settings()
-                    val appState = with(components.appStore) {
-                        remember {
-                            // Ignore AppState changes where only the browsing mode differs.
-                            // This avoids unnecessary recompositions triggered by theme/browsing mode transitions,
-                            // which are handled outside Compose via ThemeManager recreating the activity.
-                            // Without this, transient states can cause visual glitches (e.g., incorrect theme/frame)
-                            flow().distinctUntilChanged { old, new -> old.mode != new.mode }
-                        }.collectAsState(state)
-                    }
-                    val keyboardState by keyboardAsState()
-                    val privacyNoticeBannerState = privacyNoticeBannerStore.flow().collectAsState(
-                        initial = privacyNoticeBannerStore.state,
-                    )
-
-                    val density = LocalDensity.current
-                    val topPadding = with(density) { (getTopToolbarHeight()).toDp() }
-                    val bottomPadding = with(density) {
-                        getBottomToolbarHeight(
-                            includeNavBarIfEnabled = keyboardState == KeyboardState.Closed &&
-                                settings.toolbarPosition == ToolbarPosition.BOTTOM,
-                        ).toDp()
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                top = topPadding,
-                                bottom = bottomPadding,
+                val isMicrosurveyDismissed by activity.isMicrosurveyPromptDismissed
+                val microsurveyVisible by remember(isMicrosurveyDismissed) {
+                    derivedStateOf {
+                        settings.microsurveyFeatureEnabled &&
+                            !appState.value.mode.isPrivate &&
+                            !isMicrosurveyDismissed &&
+                            appState.value.messaging.messageToShow.containsKey(
+                                FenixMessageSurfaceId.MICROSURVEY,
                             )
-                            .systemBarsPadding()
-                            .displayCutoutPadding(),
-                    ) {
-                        if (!appState.value.mode.isPrivate) {
-                            WallpaperBackground(
-                                wallpaper = appState.value.wallpaperState.currentWallpaper,
-                                loadBitmap = components.useCases.wallpaperUseCases.loadBitmap::invoke,
-                                onLoadFailed = {
-                                    requireContext().settings().currentWallpaperTextColor = 0L
-                                    showComposeSnackbar(
-                                        SnackbarState(
-                                            message = resources.getString(
-                                                R.string.wallpaper_select_error_snackbar_message,
-                                            ),
-                                        ),
-                                    )
-                                },
-                            )
-                        }
-
-                        Homepage(
-                            state = HomepageState.build(
-                                appState = appState.value,
-                                privacyNoticeBannerState = privacyNoticeBannerState.value,
-                                settings = settings,
-                                browsingModeManager = browsingModeManager,
-                            ),
-                            interactor = sessionControlInteractor,
-                            onTopSitesItemBound = {
-                                StartupTimeline.onTopSitesItemBound(activity = (requireActivity() as HomeActivity))
-                            },
-                            navigationBarContent = homeNavigationBar?.asComposable(),
-                        )
-
-                        SnackbarHost(
-                            hostState = snackbarHostState,
-                            modifier = Modifier.align(Alignment.BottomCenter),
-                        ) { snackbarData ->
-                            Snackbar(snackbarData = snackbarData)
-                        }
-                    }
-
-                    LaunchedEffect(Unit) {
-                        onFirstHomepageFrameDrawn()
                     }
                 }
+
+                LaunchedEffect(microsurveyVisible) {
+                    settings.shouldShowMicrosurveyPrompt = microsurveyVisible
+                }
+
+                Scaffold(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .systemBarsPadding()
+                        .displayCutoutPadding()
+                        .imePadding(),
+                    topBar = {
+                        if (isToolbarAtTop) {
+                            AndroidView(factory = { toolbarView.layout })
+                        }
+                    },
+                    bottomBar = {
+                        if (isToolbarAtTop) {
+                            homeNavigationBar?.let { navBar ->
+                                AndroidView(factory = { navBar.layout })
+                            }
+                        } else {
+                            AndroidView(factory = { toolbarView.layout })
+                        }
+                    },
+                    containerColor = Color.Transparent,
+                ) { innerPadding ->
+                    HomeContent(
+                        appState = appState.value,
+                        privacyNoticeBannerState = privacyNoticeBannerState.value,
+                        settings = settings,
+                        innerPadding = innerPadding,
+                        microsurveyVisible = microsurveyVisible,
+                        microsurveyMessage = appState.value.messaging.messageToShow[
+                            FenixMessageSurfaceId.MICROSURVEY,
+                        ],
+                        onMicrosurveyDismiss = {
+                            activity.isMicrosurveyPromptDismissed.value = true
+                        },
+                    )
+                }
+
+                LaunchedEffect(Unit) {
+                    onFirstHomepageFrameDrawn()
+                }
             }
+        }
+    }
+
+    @Composable
+    private fun HomeContent(
+        appState: AppState,
+        privacyNoticeBannerState: PrivacyNoticeBannerState,
+        settings: Settings,
+        innerPadding: PaddingValues,
+        microsurveyVisible: Boolean,
+        microsurveyMessage: Message?,
+        onMicrosurveyDismiss: () -> Unit,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+        ) {
+            if (!appState.mode.isPrivate) {
+                WallpaperBackground(
+                    wallpaper = appState.wallpaperState.currentWallpaper,
+                    loadBitmap = components.useCases.wallpaperUseCases.loadBitmap::invoke,
+                    onLoadFailed = {
+                        requireContext().settings().currentWallpaperTextColor = 0L
+                        showComposeSnackbar(
+                            SnackbarState(
+                                message = resources.getString(
+                                    R.string.wallpaper_select_error_snackbar_message,
+                                ),
+                            ),
+                        )
+                    },
+                )
+            }
+
+            Homepage(
+                state = HomepageState.build(
+                    appState = appState,
+                    privacyNoticeBannerState = privacyNoticeBannerState,
+                    settings = settings,
+                    browsingModeManager = browsingModeManager,
+                ),
+                interactor = sessionControlInteractor,
+                onTopSitesItemBound = {
+                    StartupTimeline.onTopSitesItemBound(activity = (requireActivity() as HomeActivity))
+                },
+                navigationBarContent = null,
+            )
+
+            if (microsurveyVisible) {
+                MicrosurveyPrompt(
+                    message = microsurveyMessage,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    onDismiss = onMicrosurveyDismiss,
+                )
+            }
+
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            ) { snackbarData ->
+                Snackbar(snackbarData = snackbarData)
+            }
+        }
+    }
+
+    @Composable
+    private fun MicrosurveyPrompt(
+        message: Message?,
+        modifier: Modifier = Modifier,
+        onDismiss: () -> Unit,
+    ) {
+        val microsurvey = remember(message?.id) { message?.toMicrosurveyUIData() } ?: return
+        val appStore = requireComponents.appStore
+        val navController = findNavController()
+
+        Column(modifier = modifier) {
+            HorizontalDivider()
+
+            MicrosurveyRequestPrompt(
+                microsurvey = microsurvey,
+                onStartSurveyClicked = {
+                    appStore.dispatch(MicrosurveyAction.Started(microsurvey.id))
+                    navController.nav(
+                        R.id.homeFragment,
+                        HomeFragmentDirections.actionGlobalMicrosurveyDialog(microsurvey.id),
+                    )
+                },
+                onCloseButtonClicked = {
+                    appStore.dispatch(MicrosurveyAction.Dismissed(microsurvey.id))
+                    onDismiss()
+                },
+            )
         }
     }
 
@@ -880,9 +835,7 @@ class HomeFragment : Fragment() {
         _sessionControlController = null
 
         _sessionControlInteractor = null
-        _bottomToolbarContainerView = null
         awesomeBarComposable = null
-        _binding = null
 
         bundleArgs.clear()
     }
@@ -1100,7 +1053,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun initTopSitesBinding() {
+    private fun initTopSitesBinding(view: View) {
         if (requireContext().settings().showTopSitesFeature) {
             topSitesBinding.set(
                 feature = TopSitesBinding(
@@ -1118,12 +1071,12 @@ class HomeFragment : Fragment() {
                     ),
                 ),
                 owner = viewLifecycleOwner,
-                view = binding.root,
+                view = view,
             )
         }
     }
 
-    private fun initRecentTabsListFeature() {
+    private fun initRecentTabsListFeature(view: View) {
         if (requireContext().settings().showRecentTabsFeature) {
             recentTabsListFeature.set(
                 feature = RecentTabsListFeature(
@@ -1131,7 +1084,7 @@ class HomeFragment : Fragment() {
                     appStore = requireComponents.appStore,
                 ),
                 owner = viewLifecycleOwner,
-                view = binding.root,
+                view = view,
             )
 
             recentSyncedTabFeature.set(
@@ -1145,12 +1098,12 @@ class HomeFragment : Fragment() {
                     coroutineScope = viewLifecycleOwner.lifecycleScope,
                 ),
                 owner = viewLifecycleOwner,
-                view = binding.root,
+                view = view,
             )
         }
     }
 
-    private fun initPrivacyReportFeature() {
+    private fun initPrivacyReportFeature(view: View) {
         if (requireContext().settings().showPrivacyReportFeature) {
             trackersBlockedFeature.set(
                 feature = TrackersBlockedFeature(
@@ -1159,12 +1112,12 @@ class HomeFragment : Fragment() {
                         .trackingProtectionUseCases.fetchTotalTrackersBlocked,
                 ),
                 owner = viewLifecycleOwner,
-                view = binding.root,
+                view = view,
             )
         }
     }
 
-    private fun initBookmarksFeature() {
+    private fun initBookmarksFeature(view: View) {
         if (requireContext().settings().showBookmarksHomeFeature) {
             bookmarksFeature.set(
                 feature = BookmarksFeature(
@@ -1175,12 +1128,12 @@ class HomeFragment : Fragment() {
                     scope = viewLifecycleOwner.lifecycleScope,
                 ),
                 owner = viewLifecycleOwner,
-                view = binding.root,
+                view = view,
             )
         }
     }
 
-    private fun initHistoryMetadataFeature() {
+    private fun initHistoryMetadataFeature(view: View) {
         if (requireContext().settings().historyMetadataUIFeature) {
             historyMetadataFeature.set(
                 feature = RecentVisitsFeature(
@@ -1190,21 +1143,21 @@ class HomeFragment : Fragment() {
                     scope = viewLifecycleOwner.lifecycleScope,
                 ),
                 owner = viewLifecycleOwner,
-                view = binding.root,
+                view = view,
             )
         }
     }
 
-    private fun initThumbnailsFeature() {
+    private fun initThumbnailsFeature(view: View) {
         thumbnailsFeature.set(
             feature = HomepageThumbnailIntegration(
                 context = requireContext(),
-                view = binding.homepageView,
+                view = view,
                 store = requireComponents.core.store,
                 appStore = requireComponents.appStore,
             ),
             owner = this,
-            view = binding.homepageView,
+            view = view,
         )
     }
 
