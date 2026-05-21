@@ -240,7 +240,7 @@ class BaseCalculator {
     if (["-", "+"].includes(val)) {
       return 2;
     }
-    if (["*", "/"].includes(val)) {
+    if (["*", "/", "÷", "×"].includes(val)) {
       return 3;
     }
     if ("^" === val) {
@@ -251,7 +251,7 @@ class BaseCalculator {
   }
 
   isLeftAssociative(val) {
-    if (["-", "+", "*", "/"].includes(val)) {
+    if (["-", "+", "*", "/", "÷", "×"].includes(val)) {
       return true;
     }
     if ("^" === val) {
@@ -310,9 +310,11 @@ class BaseCalculator {
 
   evaluate = {
     "*": (a, b) => a * b,
+    "×": (a, b) => a * b,
     "+": (a, b) => a + b,
     "-": (a, b) => a - b,
     "/": (a, b) => a / b,
+    "÷": (a, b) => a / b,
     "^": (a, b) => a ** b,
   };
 
@@ -326,7 +328,7 @@ class BaseCalculator {
         let op2 = stack.pop();
         let op1 = stack.pop();
         let result = this.evaluate[token](op1, op2);
-        if (token == "/" && op2 == 0) {
+        if ((token == "/" || token == "÷") && op2 == 0) {
           return UNDEFINED_VALUE;
         }
         if (isNaN(result) || !isFinite(result)) {
