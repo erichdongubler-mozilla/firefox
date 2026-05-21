@@ -511,6 +511,15 @@ export class AIWindow extends MozLitElement {
     return this.#conversation.messageCount;
   }
 
+  /**
+   * Get the current conversation object
+   *
+   * @returns {ChatConversation} The conversation object
+   */
+  get conversation() {
+    return this.#conversation;
+  }
+
   #registerSwapDocShellsListener(win) {
     if (!win) {
       return;
@@ -2204,7 +2213,7 @@ export class AIWindow extends MozLitElement {
   }
 
   handleToolUIUpdate(data) {
-    lazy.ToolUI.handleUpdate(data, this.#conversation);
+    lazy.ToolUI.handleUpdate(data, this.#conversation, this.#topChromeWindow);
   }
 
   #openFeedbackModal(type) {
