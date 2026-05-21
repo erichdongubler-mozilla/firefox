@@ -139,8 +139,6 @@
     <string name="preferences_debug_settings_remote_search_configuration" translatable="false">Enable Remote Search Configuration (requires restart)</string>
     <!-- Label for enabling Address Sync -->
     <string name="preferences_debug_settings_address_sync" translatable="false">Enable Address Sync for supported regions</string>
-    <!-- Label for enabling Settings Search-->
-    <string name="preferences_debug_settings_settings_search" translatable="false">Enable Settings Search</string>
     <!-- Label for enabling the DNS over HTTPS settings -->
     <string name="preferences_debug_settings_enable_doh_settings" translatable="false">Enable DNS over HTTPS settings</string>
     <!-- Label for enabling the persistent onboarding -->

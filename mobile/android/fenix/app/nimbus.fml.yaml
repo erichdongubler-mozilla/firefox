@@ -948,15 +948,6 @@ features:
         type: Boolean
         default: true
 
-  settings-search:
-      description: Feature to allow users to search for settings.
-      variables:
-        enabled:
-          description: >
-            Enables the user to search for settings.
-          type: Boolean
-          default: true
-
   tab-management-enhancements:
     description: Control the visibility of the tab management enhancements.
     variables:

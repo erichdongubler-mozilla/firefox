@@ -104,8 +104,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
     override fun onResume() {
         super.onResume()
 
-        val showSearch = requireContext().settings().isSettingsSearchEnabled &&
-            !args.searchInProgress
+        val showSearch = !args.searchInProgress
 
         if (showSearch) {
             showToolbarWithIconButton(
@@ -268,12 +267,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
                     return super.onPreferenceChange(preference, newValue)
                 }
             }
-        }
-
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_allow_settings_search).apply {
-            isVisible = Config.channel.isNightlyOrDebug
-            isChecked = context.settings().isSettingsSearchEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_fxsuggest).apply {
