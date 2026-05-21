@@ -203,8 +203,6 @@ class CacheKey {
   static constexpr nsStaticAtom* HasLongdesc = nsGkAtoms::longdesc;
   // nsString, CacheDomain::NameAndDescription
   static constexpr nsStaticAtom* HTMLPlaceholder = nsGkAtoms::placeholder;
-  // int32_t, CacheDomain::GroupInfo
-  static constexpr nsStaticAtom* HeadingLevel = nsGkAtoms::level;
 #ifdef XP_WIN
   // nsString, CacheDomain::InnerHTML
   static constexpr nsStaticAtom* InnerHTML = nsGkAtoms::html;

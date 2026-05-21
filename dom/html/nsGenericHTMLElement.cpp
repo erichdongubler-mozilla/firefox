@@ -48,15 +48,12 @@
 #include "mozilla/dom/HTMLDialogElement.h"
 #include "mozilla/dom/HTMLElementBinding.h"
 #include "mozilla/dom/HTMLFormElement.h"
-#include "mozilla/dom/HTMLHeadingElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLLabelElement.h"
-#include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/InputEvent.h"
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/ScriptLoader.h"
-#include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/ToggleEvent.h"
 #include "mozilla/dom/TouchEvent.h"
 #include "mozilla/dom/UnbindContext.h"
@@ -992,11 +989,6 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
           }
         }
       }
-    } else if (aName == nsGkAtoms::headingreset ||
-               aName == nsGkAtoms::headingoffset) {
-      if (StaticPrefs::dom_headingoffset_enabled()) {
-        UpdateHeadingElementsOffsetChange();
-      }
     }
 
     // The nonce will be copied over to an internal slot and cleared from the
@@ -1185,13 +1177,6 @@ bool nsGenericHTMLElement::ParseAttribute(int32_t aNamespaceID,
 
     if (aAttribute == nsGkAtoms::autocapitalize) {
       return aResult.ParseEnumValue(aValue, kAutocapitalizeTable, false);
-    }
-
-    if (StaticPrefs::dom_headingoffset_enabled()) {
-      if (aAttribute == nsGkAtoms::headingoffset) {
-        aResult.ParseNonNegativeIntValue(aValue);
-        return true;
-      }
     }
   }
 

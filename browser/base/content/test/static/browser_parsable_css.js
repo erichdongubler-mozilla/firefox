@@ -125,14 +125,6 @@ if (
   });
 }
 
-if (!Services.prefs.getBoolPref("dom.headingoffset.enabled")) {
-  ignoreList.push({
-    sourceName: /\b(html)\.css$/i,
-    errorMessage: /Unknown pseudo-class.*heading/i,
-    isFromDevTools: false,
-  });
-}
-
 let propNameAllowlist = [
   // These custom properties are retrieved directly from CSSOM
   // in videocontrols.xml to get pre-defined style instead of computed

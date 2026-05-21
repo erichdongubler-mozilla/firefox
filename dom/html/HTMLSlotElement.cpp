@@ -352,9 +352,6 @@ void HTMLSlotElement::RemoveAssignedNode(nsIContent& aNode) {
 
   RecalculateHasSlottedState();
   SlotAssignedNodeRemoved(this, aNode);
-  if (StaticPrefs::dom_headingoffset_enabled()) {
-    aNode.AsContent()->UpdateHeadingElementsOffsetChange();
-  }
 }
 
 void HTMLSlotElement::ClearAssignedNodes() {
@@ -363,9 +360,6 @@ void HTMLSlotElement::ClearAssignedNodes() {
                    node->AsContent()->GetAssignedSlot() == this,
                "How exactly?");
     node->AsContent()->SetAssignedSlot(nullptr);
-    if (StaticPrefs::dom_headingoffset_enabled()) {
-      node->AsContent()->UpdateHeadingElementsOffsetChange();
-    }
   }
 
   mAssignedNodes.Clear();
