@@ -657,8 +657,9 @@ nsresult nsHttpChannel::PrepareToConnect() {
         self->mUsingDictionary = true;
         // If this fails, we won't add the dictionary and the
         // Available-Dictionary header.
+        RefPtr<LoadContextInfo> lci = GetLoadContextInfo(self);
         if (NS_SUCCEEDED(aDict->Prefetch(
-                GetLoadContextInfo(self), self->mShouldSuspendForDictionary,
+                lci, self->mShouldSuspendForDictionary,
                 [self](nsresult aResult) {
                   // this is called when the prefetch is complete to
                   // un-Suspend the channel
