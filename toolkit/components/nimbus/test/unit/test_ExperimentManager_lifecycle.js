@@ -29,19 +29,23 @@ add_task(async function test_onStartup_setExperimentActive_called() {
     storePath: await NimbusTestUtils.createStoreWith(store => {
       NimbusTestUtils.addEnrollmentForRecipe(
         NimbusTestUtils.factories.recipe("foo"),
-        { store, branchSlug: "control" }
+        { store, branchSlug: "control", extra: { source: "test" } }
       );
       NimbusTestUtils.addEnrollmentForRecipe(
         NimbusTestUtils.factories.recipe("bar", { isRollout: true }),
-        { store }
+        { store, extra: { source: "test" } }
       );
       NimbusTestUtils.addEnrollmentForRecipe(
         NimbusTestUtils.factories.recipe("baz"),
-        { store, branchSlug: "control", extra: { active: false } }
+        {
+          store,
+          branchSlug: "control",
+          extra: { active: false, source: "test" },
+        }
       );
       NimbusTestUtils.addEnrollmentForRecipe(
         NimbusTestUtils.factories.recipe("qux", { isRollout: true }),
-        { store, extra: { active: false } }
+        { store, extra: { active: false, source: "test" } }
       );
     }),
     migrationState: NimbusTestUtils.migrationState.LATEST,
@@ -85,7 +89,7 @@ add_task(async function test_startup_unenroll() {
         { store, branchSlug: "control" }
       );
     }),
-    migrationState: NimbusTestUtils.migrationState.UNMIGRATED,
+    migrationState: NimbusTestUtils.migrationState.LATEST,
   });
 
   sandbox.spy(manager, "_unenroll");
@@ -515,6 +519,87 @@ add_task(async function testDb() {
     manager.store.get(experimentRecipe.slug).branch.slug,
     "experiment branch slug matches"
   );
+
+  await cleanup();
+});
+
+add_task(async function testUpdateEnrollmentSourceMismatchActive() {
+  const SLUG = "foo";
+
+  const { manager, cleanup } = await NimbusTestUtils.setupTest({
+    experiments: [
+      NimbusTestUtils.factories.recipe.withFeatureConfig(
+        SLUG,
+        {
+          featureId: "no-feature-firefox-desktop",
+        },
+        { isRollout: true }
+      ),
+    ],
+    migrationState: NimbusTestUtils.migrationState.LATEST,
+    storePath: await NimbusTestUtils.createStoreWith(store => {
+      NimbusTestUtils.addEnrollmentForRecipe(
+        NimbusTestUtils.factories.recipe.withFeatureConfig(
+          SLUG,
+          {
+            featureId: "no-feature-firefox-desktop",
+          },
+          { isRollout: true }
+        ),
+        { store, extra: { source: "nimbus-devtools" } }
+      );
+    }),
+  });
+
+  const enrollment = manager.store.get(SLUG);
+
+  Assert.equal(enrollment.source, "nimbus-devtools");
+  Assert.ok(enrollment.active);
+
+  await NimbusTestUtils.cleanupManager([SLUG]);
+
+  await cleanup();
+});
+
+add_task(async function testUpdateEnrollmentSourceMismatchInactive() {
+  const SLUG = "foo";
+
+  const { manager, cleanup } = await NimbusTestUtils.setupTest({
+    experiments: [
+      NimbusTestUtils.factories.recipe.withFeatureConfig(
+        SLUG,
+        {
+          featureId: "no-feature-firefox-desktop",
+        },
+        { isRollout: true }
+      ),
+    ],
+    migrationState: NimbusTestUtils.migrationState.LATEST,
+    storePath: await NimbusTestUtils.createStoreWith(store => {
+      NimbusTestUtils.addEnrollmentForRecipe(
+        NimbusTestUtils.factories.recipe.withFeatureConfig(
+          SLUG,
+          {
+            featureId: "no-feature-firefox-desktop",
+          },
+          { isRollout: true }
+        ),
+        {
+          store,
+          extra: {
+            active: false,
+            unenrollReason: "bucketing",
+            source: "nimbus-devtools",
+          },
+        }
+      );
+    }),
+  });
+
+  const enrollment = manager.store.get(SLUG);
+
+  Assert.equal(enrollment.source, "nimbus-devtools");
+  Assert.ok(!enrollment.active);
 
   await cleanup();
 });

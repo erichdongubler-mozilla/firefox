@@ -2369,7 +2369,7 @@ add_task(async function test_prefFlips_restore_unenroll() {
       NimbusTestUtils.addEnrollmentForRecipe(recipe, {
         store,
         extra: {
-          source: "rs-loader",
+          source: "test",
           prefFlips: {
             originalValues: {
               "test.pref.please.ignore": null,
@@ -2860,6 +2860,7 @@ add_task(async function test_prefFlips_restore() {
       {
         store,
         extra: {
+          source: "test",
           prefFlips: {
             originalValues: {
               [PREF_1]: null,
@@ -2881,6 +2882,7 @@ add_task(async function test_prefFlips_restore() {
       {
         store,
         extra: {
+          source: "test",
           prefFlips: {
             originalValues: {
               [PREF_2]: "original-pref-2-value",
@@ -2902,6 +2904,7 @@ add_task(async function test_prefFlips_restore() {
       {
         store,
         extra: {
+          source: "test",
           prefFlips: {
             originalValues: {
               [PREF_3]: null,
@@ -2923,6 +2926,7 @@ add_task(async function test_prefFlips_restore() {
       {
         store,
         extra: {
+          source: "test",
           prefFlips: {
             originalValues: {
               [PREF_4]: "original-pref-4-value",
@@ -3009,6 +3013,7 @@ add_task(async function test_prefFlips_restore_failure_conflict() {
       {
         store,
         extra: {
+          source: "test",
           prefFlips: {
             originalValues: {
               [PREF]: null,
@@ -3034,6 +3039,7 @@ add_task(async function test_prefFlips_restore_failure_conflict() {
       {
         store,
         extra: {
+          source: "test",
           prefFlips: {
             originalValues: {
               [PREF]: null,
@@ -3059,6 +3065,7 @@ add_task(async function test_prefFlips_restore_failure_conflict() {
       {
         store,
         extra: {
+          source: "test",
           prefFlips: {
             originalValues: {
               [PREF]: null,
@@ -3139,7 +3146,7 @@ add_task(async function test_prefFlips_restore_failure_wrong_type() {
     await NimbusTestUtils.addEnrollmentForRecipe(recipe, {
       store,
       extra: {
-        source: "rs-loader",
+        source: "test",
         prefFlips: {
           originalValues: {
             [PREF_1]: "original-value",

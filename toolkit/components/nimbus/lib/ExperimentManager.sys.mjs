@@ -907,13 +907,25 @@ export class ExperimentManager {
    *        The result of validation, targeting, and bucketing.
    *
    *        See `CheckRecipeResult` for details.
-   *
-   * @returns {boolean}
-   *          Whether the enrollment is active.
    */
   async updateEnrollment(enrollment, recipe, source, result) {
     const { EnrollmentStatus, EnrollmentStatusReason, UnenrollReason } =
       lazy.NimbusTelemetry;
+
+    if (enrollment.source !== source) {
+      // In practice this function is only called with source == "rs-loader".
+      // Therefore this condition can only really happen if the user has
+      // force-enrolled into an experiment via the console or nimbus-devtools.
+      //
+      // Either way their state is "corrupted" and the only way to fix it is to
+      // manually delete the entry from the enrollment database.
+      //
+      // Report the error and move on.
+      lazy.log.error(
+        `Refusing to update enrollment for recipe ${recipe.slug} from source ${source}: the existing enrollment has a different source (${enrollment.source})`
+      );
+      return;
+    }
 
     if (result.ok) {
       // Unenrollment due to studies or rollouts becoming disabled are handled in
@@ -924,7 +936,7 @@ export class ExperimentManager {
           status: EnrollmentStatus.NOT_ENROLLED,
           reason: EnrollmentStatusReason.OPT_OUT,
         });
-        return false;
+        return;
       }
 
       if (recipe?.isFirefoxLabsOptIn) {
@@ -939,7 +951,7 @@ export class ExperimentManager {
           enrollment,
           UnenrollmentCause.fromCheckRecipeResult(result)
         );
-        return false;
+        return;
       }
 
       if (result.status === lazy.MatchStatus.NOT_SEEN) {
@@ -948,7 +960,7 @@ export class ExperimentManager {
           enrollment,
           UnenrollmentCause.fromCheckRecipeResult(result)
         );
-        return false;
+        return;
       }
 
       if (!recipe.branches.find(b => b.slug === enrollment.branch.slug)) {
@@ -959,7 +971,7 @@ export class ExperimentManager {
           enrollment,
           UnenrollmentCause.fromReason(UnenrollReason.BRANCH_REMOVED)
         );
-        return false;
+        return;
       }
 
       if (result.status === lazy.MatchStatus.NO_MATCH) {
@@ -969,7 +981,7 @@ export class ExperimentManager {
           enrollment,
           UnenrollmentCause.fromCheckRecipeResult(result)
         );
-        return false;
+        return;
       }
 
       if (
@@ -982,7 +994,7 @@ export class ExperimentManager {
           enrollment,
           UnenrollmentCause.fromCheckRecipeResult(result)
         );
-        return false;
+        return;
       }
 
       if (result.status === lazy.MatchStatus.UNENROLLED_IN_ANOTHER_PROFILE) {
@@ -990,7 +1002,7 @@ export class ExperimentManager {
           enrollment,
           UnenrollmentCause.fromCheckRecipeResult(result)
         );
-        return false;
+        return;
       }
 
       if (result.status === lazy.MatchStatus.TARGETING_AND_BUCKETING) {
@@ -1006,13 +1018,13 @@ export class ExperimentManager {
       // are in the bucket allocation. For the former, we do not re-evaluate
       // bucketing for experiments because the bucketing cannot change. For the
       // latter, we are already active so we don't need to enroll.
-      return true;
+      return;
     }
 
     if (!enrollment.isRollout || enrollment.isFirefoxLabsOptIn) {
       // We can only re-enroll into rollouts and we do not enroll directly into
       // Firefox Labs Opt-Ins.
-      return false;
+      return;
     }
 
     if (
@@ -1028,10 +1040,8 @@ export class ExperimentManager {
       // We only re-enroll if we match targeting and bucketing and the unenroll
       // reason is one of the above reasons.
       lazy.log.debug(`Re-enrolling in rollout "${recipe.slug}`);
-      return !!(await this.enroll(recipe, source, { reenroll: true }));
+      await this.enroll(recipe, source, { reenroll: true });
     }
-
-    return false;
   }
 
   /**
