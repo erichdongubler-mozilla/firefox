@@ -1411,15 +1411,36 @@ sftk_DeleteObject(SFTKSession *session, SFTKObject *object)
 
     /* Handle Token case */
     if (so && so->session) {
-        session = so->session;
-        PR_Lock(session->objectLock);
-        sftkqueue_delete(&so->sessionList, 0, session->objects, 0);
-        PR_Unlock(session->objectLock);
+        /* Atomically claim the right to remove this object. Two threads
+         * can race here via NSC_DestroyObject after both succeed in
+         * sftk_ObjectFromHandle; without the claim each would unlink
+         * the queue entry and drop the queue's reference, leading to a
+         * double sftk_FreeObject (and on the second pass, a use-after-
+         * free when sftk_FreeObject reads object->refLock). */
+        PRBool ownsRemove = PR_FALSE;
         PR_Lock(slot->objectLock);
-        sftkqueue_delete2(object, object->handle, index, slot->sessObjHashTable);
+        if (object->next || object->prev ||
+            slot->sessObjHashTable[index] == object) {
+            sftkqueue_delete2(object, object->handle, index,
+                              slot->sessObjHashTable);
+            /* sftkqueue_delete2 patches the neighbour pointers but
+             * leaves object->next/prev pointing at their old neighbours.
+             * Clear them inside the slot lock so a racing thread that
+             * acquires the lock next sees an empty-looking object and
+             * doesn't re-claim ownership, which would lead to a double
+             * sftk_FreeObject of the queue's reference. */
+            sftkqueue_clear_deleted_element(object);
+            ownsRemove = PR_TRUE;
+        }
         PR_Unlock(slot->objectLock);
-        sftkqueue_clear_deleted_element(object);
-        sftk_FreeObject(object); /* free the reference owned by the queue */
+
+        if (ownsRemove) {
+            session = so->session;
+            PR_Lock(session->objectLock);
+            sftkqueue_delete(&so->sessionList, 0, session->objects, 0);
+            PR_Unlock(session->objectLock);
+            sftk_FreeObject(object); /* drop the queue's reference */
+        }
     } else {
         SFTKDBHandle *handle = sftk_getDBForTokenObject(slot, object->handle);
 #ifdef DEBUG
@@ -1979,7 +2000,7 @@ sftk_update_all_states(SFTKSlot *slot)
     SFTKSession *session;
 
     for (i = 0; i < slot->sessHashSize; i++) {
-        PRLock *lock = SFTK_SESSION_LOCK(slot, i);
+        PRLock *lock = SFTK_HEAD_BUCKET_LOCK(slot, i);
         PR_Lock(lock);
         for (session = slot->head[i]; session; session = session->next) {
             sftk_update_state(slot, session);
@@ -2020,9 +2041,9 @@ sftk_InitSession(SFTKSession *session, SFTKSlot *slot, CK_SLOT_ID slotID,
                  CK_NOTIFY notify, CK_VOID_PTR pApplication, CK_FLAGS flags)
 {
     session->next = session->prev = NULL;
+    session->refCount = 1;
     session->enc_context = NULL;
     session->hash_context = NULL;
-    session->sign_context = NULL;
     session->search = NULL;
     session->objectIDCount = 1;
     session->objectLock = PR_NewLock();
@@ -2091,18 +2112,17 @@ sftk_ClearSession(SFTKSession *session)
     if (session->hash_context) {
         sftk_FreeContext(session->hash_context);
     }
-    if (session->sign_context) {
-        sftk_FreeContext(session->sign_context);
-    }
     if (session->search) {
         sftk_FreeSearch(session->search);
     }
 }
 
-/* free the data associated with the session, and the session */
-void
+/* free the data associated with the session, and the session.
+ * Caller must have driven refCount to 0; reachable only via sftk_FreeSession. */
+static void
 sftk_DestroySession(SFTKSession *session)
 {
+    PORT_Assert(session->refCount == 0);
     sftk_ClearSession(session);
     PORT_Free(session);
 }
@@ -2124,20 +2144,37 @@ sftk_SessionFromHandle(CK_SESSION_HANDLE handle)
 
     PR_Lock(lock);
     sftkqueue_find(session, handle, slot->head, slot->sessHashSize);
+    if (session)
+        session->refCount++;
     PR_Unlock(lock);
 
     return (session);
 }
 
 /*
- * release a reference to a session handle. This method of using SFTKSessions
- * is deprecated, but the pattern should be retained until a future effort
- * to refactor all SFTKSession users at once is completed.
+ * release a reference to a session. The slot's session bucket holds the
+ * initial reference (created by sftk_InitSession); sftk_SessionFromHandle
+ * adds another for the duration of the caller's use. NSC_CloseSession and
+ * sftk_CloseAllSessions drop the bucket's reference once the session has
+ * been removed from the queue. The thread that drives refCount to 0
+ * destroys the session.
  */
 void
 sftk_FreeSession(SFTKSession *session)
 {
-    return;
+    PRBool destroy = PR_FALSE;
+    SFTKSlot *slot = sftk_SlotFromSession(session);
+    PRLock *lock = SFTK_SESSION_LOCK(slot, session->handle);
+
+    PR_Lock(lock);
+    PORT_Assert(session->refCount > 0);
+    if (session->refCount == 1)
+        destroy = PR_TRUE;
+    session->refCount--;
+    PR_Unlock(lock);
+
+    if (destroy)
+        sftk_DestroySession(session);
 }
 
 void
