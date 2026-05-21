@@ -1726,6 +1726,19 @@ export const PREFS_CONFIG = new Map([
       value: false,
     },
   ],
+  /**
+   * @backward-compat { version 153 }
+   * Remove this pref entry after Firefox 153 hits Release — it's only
+   * needed while the 2026 World Cup logo variation is live.
+   */
+  [
+    "logo.variation",
+    {
+      title:
+        "Variant ID of a logo variation to render in place of the standard newtab logo (e.g. 'spin-ball-small'). Empty string disables. Overridden by trainhopConfig.logo.variation when set.",
+      value: "",
+    },
+  ],
 ]);
 
 // Array of each feed's FEEDS_CONFIG factory and values to add to PREFS_CONFIG
