@@ -69,7 +69,6 @@ reftest.Runner = class {
     this.windowUtils = null;
     this.lastURL = null;
     this.useRemoteTabs = lazy.AppInfo.browserTabsRemoteAutostart;
-    this.useRemoteSubframes = lazy.AppInfo.fissionAutostart;
     this.cacheScreenshots = true;
     this.useDrawSnapshot = Services.prefs.getBoolPref(
       "reftest.use-draw-snapshot",
@@ -633,15 +632,9 @@ reftest.Runner = class {
     if (lazy.AppInfo.isAndroid) {
       return;
     }
-    let oa = lazy.E10SUtils.predictOriginAttributes({ browser });
-    let remoteType = lazy.E10SUtils.getRemoteTypeForURI(
-      url,
-      this.useRemoteTabs,
-      this.useRemoteSubframes,
-      lazy.E10SUtils.DEFAULT_REMOTE_TYPE,
-      null,
-      oa
-    );
+    let remoteType = ChromeUtils.predictRemoteTypeForURI(url, {
+      window: browser.documentGlobal,
+    });
 
     // Only re-construct the browser if its remote type needs to change.
     if (browser.remoteType !== remoteType) {

@@ -76,6 +76,20 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
     const nsACString& aCurrentRemoteType, bool aUseRemoteSubframes);
 
 /**
+ * Given a URI being loaded, and some relevant context, predict what remote type
+ * the load will complete in. The preferred remote type will be used in cases
+ * where the process to load in would otherwise be ambiguous, such as when
+ * loading documents like `about:blank`.
+ *
+ * This should generally only be used for opening new tabs as requested by
+ * frontend JS, and should not be used as part of navigation. The remote types
+ * selected by this method are not used to enforce security invariants.
+ */
+Result<nsCString, nsresult> PredictRemoteTypeForURI(
+    nsIURI* aURI, const OriginAttributes& aOriginAttributes,
+    const nsACString& aPreferredRemoteType, bool aUseRemoteSubframes);
+
+/**
  * Adds a `highValue` permission to the permissions database, and make loads of
  * that origin isolated.
  *

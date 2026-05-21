@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { E10SUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/E10SUtils.sys.mjs"
-);
-
 function isJitDisabledForRemoteType(remoteType) {
   return (
     remoteType.endsWith("^disableJit=1") || remoteType.endsWith("&disableJit=1")
@@ -22,10 +18,10 @@ function assertJitState(url, isAllowed) {
     `Policy service should return the expected state for ${url}`
   );
 
-  let remoteType = E10SUtils.getRemoteTypeForURIObject(uri, {
-    remoteSubFrames: true,
-    multiProcess: true,
-    preferredRemoteType: E10SUtils.DEFAULT_REMOTE_TYPE,
+  let remoteType = ChromeUtils.predictRemoteTypeForURI(uri, {
+    useRemoteTabs: true,
+    useRemoteSubframes: true,
+    preferredRemoteType: "web",
   });
 
   Assert.equal(

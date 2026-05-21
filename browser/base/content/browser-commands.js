@@ -439,15 +439,9 @@ var BrowserCommands = {
       // source in tab expects the new view source browser's remoteness to match
       // that of the original URL, so disable remoteness if necessary for this
       // URL.
-      const oa = E10SUtils.predictOriginAttributes({ window });
-      preferredRemoteType = E10SUtils.getRemoteTypeForURI(
-        args.URL,
-        gMultiProcessBrowser,
-        gFissionBrowser,
-        E10SUtils.DEFAULT_REMOTE_TYPE,
-        null,
-        oa
-      );
+      preferredRemoteType = ChromeUtils.predictRemoteTypeForURI(args.URL, {
+        window,
+      });
     }
 
     // In the case of popups, we need to find a non-popup browser window.

@@ -4678,17 +4678,10 @@ var SessionStoreInternal = {
   },
 
   getPreferredRemoteType(url, aWindow, userContextId) {
-    return lazy.E10SUtils.getRemoteTypeForURI(
-      url,
-      aWindow.gMultiProcessBrowser,
-      aWindow.gFissionBrowser,
-      lazy.E10SUtils.DEFAULT_REMOTE_TYPE,
-      null,
-      lazy.E10SUtils.predictOriginAttributes({
-        window: aWindow,
-        userContextId,
-      })
-    );
+    return ChromeUtils.predictRemoteTypeForURI(url, {
+      window: aWindow,
+      userContextId,
+    });
   },
 
   /**
